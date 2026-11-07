@@ -12,6 +12,7 @@ export interface ConsentSignersRowProps {
 	readonly isSignPadOpen: boolean;
 	readonly onToggleSignPad: () => void;
 	readonly hasSigned: boolean;
+	readonly signedStatusText?: string;
 	readonly onClearCanvas: () => void;
 	readonly canvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly onStartDrawing: (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => void;
@@ -27,6 +28,7 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 	isSignPadOpen,
 	onToggleSignPad,
 	hasSigned,
+	signedStatusText,
 	onClearCanvas,
 	canvasRef,
 	onStartDrawing,
@@ -37,6 +39,8 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 	doctorFullName,
 	toastNotice,
 }) => {
+	const currentStatusLabel = signedStatusText || (hasSigned ? "✓ Подписано" : "Ожидает росписи");
+
 	return (
 		<div className="space-y-3">
 			{/* Интерактивная подпись пальцем/стилусом на Canvas */}
@@ -54,6 +58,12 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 						{isSignPadOpen ? "Скрыть" : "Открыть холст"}
 					</button>
 				</div>
+
+				{!isSignPadOpen && (
+					<div className="text-[11px] text-emerald-600 font-medium mt-1">
+						{currentStatusLabel}
+					</div>
+				)}
 
 				{isSignPadOpen && (
 					<div>
@@ -79,7 +89,7 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 								Очистить роспись
 							</button>
 							<span className="text-[11px] text-emerald-600 font-medium">
-								{hasSigned ? "✓ Подписано" : "Ожидает росписи"}
+								{currentStatusLabel}
 							</span>
 						</div>
 					</div>

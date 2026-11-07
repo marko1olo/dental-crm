@@ -426,3 +426,20 @@ export function getDocumentsCatalogData(handlers: DocumentCatalogActionHandlers 
 		},
 	];
 }
+
+export const DEMO_SAMPLE_SERVICES: readonly DocumentServiceItem[] = [
+	{ id: "srv-01", title: "Приём (осмотр, консультация) врача-стоматолога первичный", code: "B01.065.001", quantity: 1, priceKopecks: 150000, amountKopecks: 150000 },
+	{ id: "srv-02", title: "Восстановление зуба 4.6 пломбой световой полимеризации", code: "A16.07.002.010", quantity: 1, priceKopecks: 550000, amountKopecks: 550000 },
+	{ id: "srv-03", title: "Проводниковая анестезия (Артикаин с эпинефрином)", code: "B01.003.004.004", quantity: 1, priceKopecks: 80000, amountKopecks: 80000 },
+];
+
+export const DEMO_SAMPLE_PATIENT: PatientRequisites = {
+	fullName: "Смирнов Алексей Петрович",
+	birthDate: "12.04.1988",
+	passport: "45 12 654321 выдан ОВД г. Москвы",
+	address: "г. Москва, ул. Тверская, д. 14, кв. 8",
+	phone: "+7 (916) 123-45-67",
+};
+
+export const EMPTY_PATIENT_REQUISITES: PatientRequisites = { fullName: "", birthDate: "", passport: "", address: "", phone: "" };
+export const EMPTY_SERVICES: readonly DocumentServiceItem[] = [];

@@ -8,3 +8,5 @@ export * from "./DocumentsStudioHeader";
 export * from "./DocumentsStudioFooter";
 export * from "./DocumentsPackageSelector";
 export * from "./ConsentSignersRow";
+export * from "./useCanvasSigner";
+export * from "./usePatientConsents";

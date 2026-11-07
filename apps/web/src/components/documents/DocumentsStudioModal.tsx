@@ -9,11 +9,16 @@
  * Целевой размер фасада: 320–360 строк (Sweet Spot Mandate 8b, строго <= 420 строк).
  */
 
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
-import { printTaxCertificate } from "./taxCertificateEngine";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { printTaxCertificate, buildTaxCertificateDocumentData } from "./taxCertificateEngine";
 import {
 	DEFAULT_CLINIC_REQUISITES,
+	DEMO_SAMPLE_PATIENT,
+	DEMO_SAMPLE_SERVICES,
+	EMPTY_PATIENT_REQUISITES,
+	EMPTY_SERVICES,
 	type ConsentSubKind,
 	type DocumentLegalContext,
 	type DocumentPackageKey,
@@ -32,6 +37,8 @@ import {
 	DocumentsStudioFooter,
 	DocumentsPackageSelector,
 	ConsentSignersRow,
+	useCanvasSigner,
+	usePatientConsents,
 } from "./studio";
 import "./documentsStudio.css";
 
@@ -57,23 +64,6 @@ export interface DocumentsStudioModalProps {
 	readonly epicrisisRu?: string;
 	readonly onSigned?: (payload: { packageKey: DocumentPackageKey; signedAt: string; isDigital: boolean }) => void;
 }
-
-const DEMO_SAMPLE_SERVICES: readonly DocumentServiceItem[] = [
-	{ id: "srv-01", title: "Приём (осмотр, консультация) врача-стоматолога первичный", code: "B01.065.001", quantity: 1, priceKopecks: 150000, amountKopecks: 150000 },
-	{ id: "srv-02", title: "Восстановление зуба 4.6 пломбой световой полимеризации", code: "A16.07.002.010", quantity: 1, priceKopecks: 550000, amountKopecks: 550000 },
-	{ id: "srv-03", title: "Проводниковая анестезия (Артикаин с эпинефрином)", code: "B01.003.004.004", quantity: 1, priceKopecks: 80000, amountKopecks: 80000 },
-];
-
-const DEMO_SAMPLE_PATIENT: PatientRequisites = {
-	fullName: "Смирнов Алексей Петрович",
-	birthDate: "12.04.1988",
-	passport: "45 12 654321 выдан ОВД г. Москвы",
-	address: "г. Москва, ул. Тверская, д. 14, кв. 8",
-	phone: "+7 (916) 123-45-67",
-};
-
-const EMPTY_PATIENT_REQUISITES: PatientRequisites = { fullName: "", birthDate: "", passport: "", address: "", phone: "" };
-const EMPTY_SERVICES: readonly DocumentServiceItem[] = [];
 
 export const NO_PATIENT_SELECTED_PLACEHOLDER =
 	"[Пациент не выбран. Выберите пациента в CRM для автоматического заполнения договора и ИДС]";
@@ -106,8 +96,31 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	const [hasSigned, setHasSigned] = useState<boolean>(false);
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
 
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const isDrawingRef = useRef<boolean>(false);
+	const {
+		canvasRef,
+		startDrawing,
+		draw,
+		stopDrawing,
+		clearCanvas,
+		getSignatureDataUrl,
+	} = useCanvasSigner(() => setHasSigned(false));
+
+	const { patientConsentsMap, recordConsentLocally } = usePatientConsents(isOpen, patientContext?.id);
+
+	const currentConsentKey = useMemo<string>(() => {
+		if (activePackage === "informed_consent") return activeConsentSubKind;
+		return activePackage;
+	}, [activePackage, activeConsentSubKind]);
+
+	const existingConsent = patientConsentsMap[currentConsentKey] || patientConsentsMap[activePackage];
+
+	const signedAtTimeStr = useMemo(() => {
+		if (!existingConsent?.grantedAt) return null;
+		return new Date(existingConsent.grantedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+	}, [existingConsent]);
+
+	const effectiveHasSigned = hasSigned || Boolean(existingConsent);
+	const signedStatusLabel = signedAtTimeStr ? `✓ Подписано пациентом в ${signedAtTimeStr}` : hasSigned ? "✓ Подписано" : undefined;
 
 	const patient: PatientRequisites = useMemo(() => {
 		if (patientContext) {
@@ -163,8 +176,6 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			return NO_PATIENT_SELECTED_PLACEHOLDER;
 		}
 		switch (activePackage) {
-			case "intake":
-				return generateIntakePackageTemplate(legalContext);
 			case "informed_consent":
 				return generateInformedConsentTemplate(legalContext, activeConsentSubKind);
 			case "tax_certificate":
@@ -202,114 +213,92 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		showToast("Ссылка сформирована для WhatsApp");
 	}, [patient.fullName, patient.phone, showToast]);
 
-	// Рисование на Canvas
-	const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-		const canvas = canvasRef.current;
-		if (!canvas) return null;
-		const rect = canvas.getBoundingClientRect();
-		const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-		const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-		return { x: clientX - rect.left, y: clientY - rect.top, ctx: canvas.getContext("2d") };
-	};
-
-	const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-		const coords = getCanvasCoords(e);
-		if (!coords?.ctx) return;
-		isDrawingRef.current = true;
-		coords.ctx.beginPath();
-		coords.ctx.moveTo(coords.x, coords.y);
-	};
-
-	const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-		if (!isDrawingRef.current) return;
-		const coords = getCanvasCoords(e);
-		if (!coords?.ctx) return;
-		coords.ctx.lineWidth = 2.5;
-		coords.ctx.lineCap = "round";
-		coords.ctx.strokeStyle = "#0d9488";
-		coords.ctx.lineTo(coords.x, coords.y);
-		coords.ctx.stroke();
-	};
-
-	const stopDrawing = () => {
-		isDrawingRef.current = false;
-	};
-
-	const clearCanvas = () => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		setHasSigned(false);
-	};
-
-	const handlePrimarySignAndPrint = useCallback(() => {
+	const handlePrimarySignAndPrint = useCallback(async () => {
 		setHasSigned(true);
-		const nowStr = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+		const now = new Date();
+		const nowStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+		const nowIso = now.toISOString();
+		const isDigital = isSignPadOpen;
+		const signatureType = isDigital ? "digital_canvas" : "paper_scanned";
+
 		onSigned?.({
 			packageKey: activePackage,
 			signedAt: nowStr,
-			isDigital: isSignPadOpen,
+			isDigital,
 		});
+
+		// Отправка реального сетевого запроса к Fastify API POST /api/patients/:patientId/consents
+		if (patientContext?.id) {
+			const signatureDataUrl = isDigital ? getSignatureDataUrl() : undefined;
+
+			const consentPayload = {
+				consentType: currentConsentKey,
+				kind: activePackage === "informed_consent" ? "procedure_specific_consent_packet" : "informed_consent",
+				title: activePackage === "informed_consent" ? `Информированное согласие: ${activeConsentSubKind}` : `Документ: ${activePackage}`,
+				isSigned: true,
+				signedAt: nowIso,
+				signatureType,
+				verificationMethod: isDigital ? "tablet_stylus" : "paper_signed",
+				doctorFullName,
+				signatureSvg: signatureDataUrl,
+				notes: isDigital ? `Подписано пациентом на экране (Canvas, ${nowStr})` : `Подписано на бумажном носителе (${nowStr})`,
+			};
+
+			void fetch(`/api/patients/${encodeURIComponent(patientContext.id)}/consents`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(consentPayload),
+			})
+				.then((res) => {
+					if (res.ok) {
+						recordConsentLocally(currentConsentKey, nowIso);
+					}
+				})
+				.catch(() => {
+					/* offline fallback */
+				});
+		}
 
 		if (activePackage === "tax_certificate") {
 			// Вызов официального генератора справки ФНС КНД 1151156 с QR-кодом и штампом (Мандат 8n)
-			printTaxCertificate({
-				certificateNumber: legalContext.documentNumber,
-				issueDateIso: new Date().toISOString(),
-				taxYear,
-				clinic: {
-					fullName: DEFAULT_CLINIC_REQUISITES.name,
-					shortName: DEFAULT_CLINIC_REQUISITES.name,
-					inn: DEFAULT_CLINIC_REQUISITES.inn,
-					kpp: "770101001",
-					ogrn: DEFAULT_CLINIC_REQUISITES.ogrn,
-					licenseNumber: DEFAULT_CLINIC_REQUISITES.license,
-					licenseDate: "14.02.2021",
-					licenseIssuer: "Департамент здравоохранения города Москвы",
-					address: DEFAULT_CLINIC_REQUISITES.address,
-					phone: DEFAULT_CLINIC_REQUISITES.phone,
-					directorTitle: "Главный врач",
-					directorFullName: doctorFullName,
-					chiefDoctorOrDirector: doctorFullName,
-				},
-				taxpayer: {
-					fullName: patient.fullName || "Смирнов Алексей Петрович",
-					birthDate: patient.birthDate || "12.04.1988",
-					inn: patient.inn || "770123456789",
-					passportSeries: patient.passport ? patient.passport.slice(0, 4) : "45 12",
-					passportNumber: patient.passport ? patient.passport.slice(5, 11) : "654321",
-					relationship: "patient",
-				},
-				patient: {
-					fullName: patient.fullName || "Смирнов Алексей Петрович",
-					birthDate: patient.birthDate || "12.04.1988",
-					inn: patient.inn,
-					passportSeries: patient.passport ? patient.passport.slice(0, 4) : "45 12",
-					passportNumber: patient.passport ? patient.passport.slice(5, 11) : "654321",
-				},
-				aggregation: {
+			printTaxCertificate(
+				buildTaxCertificateDocumentData({
+					documentNumber: legalContext.documentNumber,
+					issueDateIso: nowIso,
 					taxYear,
+					clinicName: DEFAULT_CLINIC_REQUISITES.name,
+					clinicInn: DEFAULT_CLINIC_REQUISITES.inn,
+					clinicOgrn: DEFAULT_CLINIC_REQUISITES.ogrn,
+					clinicLicense: DEFAULT_CLINIC_REQUISITES.license,
+					clinicAddress: DEFAULT_CLINIC_REQUISITES.address,
+					doctorFullName,
+					patient,
 					receiptsCount: effectiveServices.length || 1,
-					code01Kopecks: totalAmountKopecks,
-					code02Kopecks: 0,
-					code01Rub: Math.floor(totalAmountKopecks / 100),
-					code02Rub: 0,
-					eligibleCode01Rub: Math.min(150000, Math.floor(totalAmountKopecks / 100)),
-					totalNetRub: Math.floor(totalAmountKopecks / 100),
-					totalNetKopecks: totalAmountKopecks,
-					refundedKopecks: 0,
-					estimatedRefund13Rub: Math.round((Math.floor(totalAmountKopecks / 100)) * 0.13),
-					records: [],
-				},
-			});
+					totalAmountKopecks,
+				}),
+			);
 			showToast("✓ Справка ФНС (КНД 1151156) сформирована и отправлена на печать");
 		} else {
 			window.print();
 			showToast("✓ Комплект документов утвержден и отправлен на печать");
 		}
-	}, [activePackage, isSignPadOpen, onSigned, legalContext.documentNumber, taxYear, doctorFullName, patient, effectiveServices.length, totalAmountKopecks, showToast]);
+	}, [
+		activePackage,
+		currentConsentKey,
+		activeConsentSubKind,
+		isSignPadOpen,
+		patientContext?.id,
+		doctorFullName,
+		onSigned,
+		getSignatureDataUrl,
+		recordConsentLocally,
+		legalContext.documentNumber,
+		taxYear,
+		patient,
+		effectiveServices.length,
+		totalAmountKopecks,
+		showToast,
+	]);
 
 	if (!isOpen) return null;
 
@@ -355,7 +344,8 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 						<ConsentSignersRow
 							isSignPadOpen={isSignPadOpen}
 							onToggleSignPad={() => setIsSignPadOpen(!isSignPadOpen)}
-							hasSigned={hasSigned}
+							hasSigned={effectiveHasSigned}
+							signedStatusText={signedStatusLabel}
 							onClearCanvas={clearCanvas}
 							canvasRef={canvasRef}
 							onStartDrawing={startDrawing}
@@ -413,7 +403,9 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 									<div className="font-semibold text-slate-800">Пациент:</div>
 									<div className="text-slate-600">{patient.fullName || "______________________"}</div>
 									<div className="mt-4 text-slate-400">
-										{hasSigned ? "Подписано электронной подписью [OK]" : "Подпись: ______________________"}
+										{effectiveHasSigned
+											? `Подписано пациентом ${signedAtTimeStr ? `в ${signedAtTimeStr} ` : ""}[OK]`
+											: "Подпись: ______________________"}
 									</div>
 								</div>
 							</div>
@@ -426,7 +418,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 					onPrimarySignAndPrint={handlePrimarySignAndPrint}
 					onDownloadTxt={handleDownloadTxt}
 					onSendMessenger={handleSendMessenger}
-					hasSigned={hasSigned}
+					hasSigned={effectiveHasSigned}
 					activePackage={activePackage}
 				/>
 			</div>

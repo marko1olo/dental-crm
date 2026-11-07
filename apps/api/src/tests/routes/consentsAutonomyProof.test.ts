@@ -165,4 +165,50 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 		assert.strictEqual(found.signatureSvg, testSvg, "GET must return signatureSvg from joined generatedDocuments");
 		assert.strictEqual(found.integrityHash, testHash, "GET must return integrityHash from joined generatedDocuments");
 	});
+
+	it("5. POST /api/patients/:patientId/consents accepts consentType and signatureType from studio", async () => {
+		const app = Fastify();
+		await registerConsentRoutes(app);
+
+		const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
+		const signedAt = new Date().toISOString();
+
+		const postRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${token}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				consentType: "implant",
+				isSigned: true,
+				signedAt,
+				signatureType: "digital_canvas",
+				doctorFullName: "Д-р Правдолюбов Ю. В.",
+			}),
+		});
+
+		assert.strictEqual(postRes.statusCode, 201, `Expected 201, got ${postRes.statusCode}: ${postRes.body}`);
+		const postBody = postRes.json();
+		assert.ok(postBody.id, "Must return consent ID");
+		assert.strictEqual(postBody.kind, "implant");
+		assert.strictEqual(postBody.isSigned, true);
+		assert.strictEqual(postBody.doctorFullName, "Д-р Правдолюбов Ю. В.");
+		assert.strictEqual(postBody.signatureType, "digital_canvas");
+
+		const getRes = await app.inject({
+			method: "GET",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${token}`,
+			},
+		});
+
+		assert.strictEqual(getRes.statusCode, 200);
+		const getBody = getRes.json();
+		const found = getBody.consents.find((c: any) => c.kind === "implant");
+		assert.ok(found, "Must find saved implant consent in database");
+		assert.ok(found.grantedAt, "Must have grantedAt timestamp");
+	});
 });

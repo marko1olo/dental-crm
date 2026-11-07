@@ -8,15 +8,27 @@ type DocumentKindEnum = typeof generatedDocuments.kind.enumValues[number];
 function mapConsentKindToDocumentKind(kind: string): DocumentKindEnum {
 	switch (kind) {
 		case "informed_consent":
+		case "intake":
 			return "informed_consent";
 		case "procedure_specific_consent_packet":
 		case "general_treatment":
+		case "therapy":
+		case "surgery":
+		case "implant":
 		case "implantology":
 		case "orthodontics":
 		case "pediatric":
 		case "radiation_xray":
+		case "extraction":
+		case "sinus_lift":
+		case "whitening":
+		case "hygiene":
+		case "perio":
+		case "endodontics":
+		case "orthopedics":
 			return "procedure_specific_consent_packet";
 		case "anesthesia_consent_log":
+		case "anesthesia":
 		case "sedation":
 			return "anesthesia_consent_log";
 		case "personal_data_processing_consent":
@@ -26,6 +38,7 @@ function mapConsentKindToDocumentKind(kind: string): DocumentKindEnum {
 		case "photo_video_consent":
 			return "photo_video_consent";
 		case "medical_intervention_refusal":
+		case "refusal":
 			return "medical_intervention_refusal";
 		default:
 			return "informed_consent";
@@ -71,7 +84,7 @@ export async function recordPatientConsentEntry(
 	patientId: string,
 	body: SaveConsentBody,
 ) {
-	const now = new Date();
+	const now = body.signedAt ? new Date(body.signedAt) : new Date();
 
 	// 1. Извлекаем имя пациента для юридической аттестации подписи
 	const patientRow = await db
@@ -86,17 +99,24 @@ export async function recordPatientConsentEntry(
 		.limit(1);
 
 	const patientFullName = patientRow[0]?.fullName || "Пациент клиники";
+	const effectiveDoctorName = body.doctorFullName || "Лечащий врач";
+	const isDigital =
+		body.signatureType === "digital_canvas" ||
+		body.verificationMethod === "tablet_stylus" ||
+		body.verificationMethod === "digital_canvas";
+
 	const attestationNote =
 		body.notes ||
-		(body.verificationMethod === "tablet_stylus"
-			? "Подписано пациентом на сенсорном планшете (ПЭП по 63-ФЗ)"
+		(isDigital
+			? "Подписано пациентом на экране (Canvas / ПЭП по 63-ФЗ)"
 			: "Подписано на бумажном носителе и передано в архив клиники");
 
+	const effectiveKind = body.consentType || body.kind || "informed_consent";
 	let effectiveDocId: string | null = body.documentId ?? null;
 
 	// 2. Если documentId не передан, создаем юридическую запись в generatedDocuments
 	if (!effectiveDocId) {
-		const targetKind = mapConsentKindToDocumentKind(body.kind);
+		const targetKind = mapConsentKindToDocumentKind(effectiveKind);
 		const docTitle = body.title || "Информированное добровольное согласие";
 
 		const [createdDoc] = await db
@@ -112,15 +132,15 @@ export async function recordPatientConsentEntry(
 				issuedSnapshotSha256: body.integrityHash ?? null,
 				issuedAt: now,
 				signatureAttestation: {
-					mode: body.verificationMethod === "tablet_stylus" ? "simple_electronic_signature" : "paper_signed",
+					mode: isDigital ? "simple_electronic_signature" : "paper_signed",
 					signedAt: now.toISOString(),
 					recipientFullName: patientFullName,
 					recipientRole: "patient",
-					staffFullName: "Лечащий врач",
+					staffFullName: effectiveDoctorName,
 					staffRole: "doctor",
 					identityChecked: true,
 					documentOpenedAndChecked: true,
-					recipientSigned: true,
+					recipientSigned: body.isSigned !== undefined ? body.isSigned : true,
 					clinicRepresentativeSigned: true,
 					note: attestationNote,
 				},
@@ -141,15 +161,15 @@ export async function recordPatientConsentEntry(
 				...(body.signatureSvg ? { signatureSvg: body.signatureSvg } : {}),
 				...(body.integrityHash ? { issuedSnapshotSha256: body.integrityHash } : {}),
 				signatureAttestation: {
-					mode: body.verificationMethod === "tablet_stylus" ? "simple_electronic_signature" : "paper_signed",
+					mode: isDigital ? "simple_electronic_signature" : "paper_signed",
 					signedAt: now.toISOString(),
 					recipientFullName: patientFullName,
 					recipientRole: "patient",
-					staffFullName: "Лечащий врач",
+					staffFullName: effectiveDoctorName,
 					staffRole: "doctor",
 					identityChecked: true,
 					documentOpenedAndChecked: true,
-					recipientSigned: true,
+					recipientSigned: body.isSigned !== undefined ? body.isSigned : true,
 					clinicRepresentativeSigned: true,
 					note: attestationNote,
 				},
@@ -170,7 +190,7 @@ export async function recordPatientConsentEntry(
 			and(
 				eq(patientConsents.organizationId, orgId),
 				eq(patientConsents.patientId, patientId),
-				eq(patientConsents.kind, body.kind),
+				eq(patientConsents.kind, effectiveKind),
 			),
 		)
 		.limit(1);
@@ -198,7 +218,7 @@ export async function recordPatientConsentEntry(
 			.values({
 				organizationId: orgId,
 				patientId,
-				kind: body.kind,
+				kind: effectiveKind,
 				grantedAt: now,
 				documentId: effectiveDocId,
 			})
@@ -208,6 +228,11 @@ export async function recordPatientConsentEntry(
 
 	return {
 		...savedConsent,
+		consentType: effectiveKind,
+		isSigned: body.isSigned !== undefined ? body.isSigned : true,
+		signedAt: now.toISOString(),
+		doctorFullName: effectiveDoctorName,
+		signatureType: body.signatureType || (isDigital ? "digital_canvas" : "paper_scanned"),
 		documentId: effectiveDocId,
 		signatureSvg: body.signatureSvg ?? null,
 		integrityHash: body.integrityHash ?? null,

@@ -19,11 +19,30 @@ export const consentKindSchema = z.enum([
 export type ConsentKind = z.infer<typeof consentKindSchema>;
 
 export const saveConsentBodySchema = z.object({
-	kind: consentKindSchema,
+	kind: consentKindSchema.optional(),
+	consentType: z.string().optional(),
 	title: z.string().min(1).default("Информированное согласие на лечение"),
+	isSigned: z.boolean().optional(),
+	signedAt: z.string().optional(),
+	signatureType: z.enum([
+		"digital_canvas",
+		"paper_scanned",
+		"tablet_stylus",
+		"paper_signed",
+		"sms_otp",
+		"patient_portal",
+	]).optional(),
+	doctorFullName: z.string().optional(),
 	visitId: z.string().uuid().optional(),
 	documentId: z.string().uuid().optional(),
-	verificationMethod: z.enum(["paper_signed", "tablet_stylus", "sms_otp", "patient_portal"]).default("paper_signed"),
+	verificationMethod: z.enum([
+		"paper_signed",
+		"tablet_stylus",
+		"sms_otp",
+		"patient_portal",
+		"digital_canvas",
+		"paper_scanned",
+	]).default("paper_signed"),
 	signatureSvg: z.string().optional(),
 	integrityHash: z.string().optional(),
 	payload: z.record(z.unknown()).optional(),

@@ -1026,6 +1026,49 @@
     * 📱 Mobile Light: [`docs/proofs/consents/03_consent_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/consents/03_consent_studio_mobile_light_390x844.png) (121 KB)
     * 🌙 Mobile Dark: [`docs/proofs/consents/04_consent_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/consents/04_consent_studio_mobile_dark_390x844.png) (122 KB)
 
+### [DOC-09] [SEV-1] [ИСПРАВЛЕНО] Холостая Canvas-подпись и сохранение цифровых согласий и документов в PostgreSQL 18 через Fastify API (DocumentsStudioModal & Consents SSOT)
+- **Файлы:**
+  - Fastify API контракт: [`apps/api/src/routes/consents/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/consents/types.ts)
+  - Fastify обработчик и маппинг документов: [`apps/api/src/routes/consents/queries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/consents/queries.ts)
+  - Тест автономии бэкенда: [`apps/api/src/tests/routes/consentsAutonomyProof.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/consentsAutonomyProof.test.ts)
+  - Единая каноническая студия документов (SSOT): [`apps/web/src/components/documents/DocumentsStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/DocumentsStudioModal.tsx)
+  - Компонент холста и подписи: [`apps/web/src/components/documents/studio/ConsentSignersRow.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/studio/ConsentSignersRow.tsx)
+  - Канонический хук рисования подписи: [`apps/web/src/components/documents/studio/useCanvasSigner.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/studio/useCanvasSigner.ts)
+  - Хук синхронизации согласий с API: [`apps/web/src/components/documents/studio/usePatientConsents.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/studio/usePatientConsents.ts)
+  - Движок справок ФНС: [`apps/web/src/components/documents/taxCertificateEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/taxCertificateEngine.ts)
+  - Данные каталога документов: [`apps/web/src/components/documents/documentsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/documentsCatalogData.ts)
+  - Тесты фронтенда: [`apps/web/src/components/documents/__tests__/documentsStudioSSOT.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/__tests__/documentsStudioSSOT.test.tsx)
+- **Суть задачи Создателя и выявленных дефектов:**
+  1. **Ликвидация Canvas Dummy Signature:** В `DocumentsStudioModal.tsx` при нажатии «Распечатать пакет приёма и подписать» подпись на холсте и согласие фиксировались исключительно в локальном React state. Сетевой вызов отсутствовал, в базе данных PostgreSQL 18 факт согласия не сохранялся («ЦРМ != Симулятор реальности», Мандаты 8e, 8n).
+  2. **Связывание с Fastify API `POST /api/patients/:patientId/consents`:** Требовалось расширить схему `saveConsentBodySchema` поддержкой клинических атрибутов `consentType` (терапия, хирургия, имплантация, ортодонтия, первичный пакет и т.д.), `isSigned`, `signedAt`, `signatureType` (`digital_canvas` / `paper_scanned`), `doctorFullName` и обеспечить корректную запись в `patient_consents` и `generated_documents`.
+  3. **Сквозная гидратация статуса («✓ Подписано пациентом в 14:30»):** При открытии студии документов для пациента загружать список ранее подписанных согласий через `GET /api/patients/:patientId/consents` и отображать точное время подписания в строке подписи и подвале бланка.
+  4. **Соблюдение лимитов Mandate 8b:** Размер `DocumentsStudioModal.tsx` удержан в границах Sweet Spot 350–430 строк (429 строк) за счёт модульного выделения `useCanvasSigner`, `usePatientConsents` и `buildTaxCertificateDocumentData`.
+  5. **Табу Создателя соблюдено:** Аллергии, рецепты и безопасность анестезии не затрагивались.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `apps/api/src/routes/consents/types.ts` схема `saveConsentBodySchema` обновлена с поддержкой `consentType`, `isSigned`, `signedAt`, `signatureType` (`digital_canvas`, `paper_scanned`, `tablet_stylus`, `paper_signed`, `sms_otp`), `doctorFullName`.
+  2. В `apps/api/src/routes/consents/queries.ts` метод `recordPatientConsentEntry` поддержал сопоставление клинических согласий с юридическими документами `generated_documents` (`procedure_specific_consent_packet` / `informed_consent`), сохранение электронной цифровой подписи (`electronic_digital_signature`), ФИО врача в аттестации и возврат обогащенного ответа. Метод `fetchPatientConsentsList` возвращает актуальный список согласий.
+  3. В `apps/api/src/tests/routes/consentsAutonomyProof.test.ts` добавлен Test #5, подтверждающий успешное сохранение `POST /api/patients/:patientId/consents` с `signatureType: "digital_canvas"` и валидацию в реальном PostgreSQL 18 (5/5 PASS).
+  4. В `DocumentsStudioModal.tsx` функция `handlePrimarySignAndPrint` производит реальный сетевой запрос `POST /api/patients/:patientId/consents` с Base64 PNG-подписью с холста `canvas.toDataURL()`, сохраняя запись в БД.
+  5. Внедрен хук `usePatientConsents`, загружающий список согласий и отображающий статус «✓ Подписано пациентом в HH:mm» при повторном открытии или смене пакета.
+  6. Выделен хук `useCanvasSigner.ts`, инкапсулирующий координатную геометрию стилуса/пальца и очистку холста.
+  7. Фронтенд-модалка сохраняет 429 строк (Sweet Spot 350–430 строк), ровно 1 Primary CTA `#0d9488`, ZERO disabled кнопок (Мандат 8e).
+- **Машинные пруфы и гейты (Definition of Done):**
+  - `npx vitest run ...`: 35/35 тестов успешно (PASS):
+    * `documentsStudioSSOT.test.tsx` (14/14 PASS)
+    * `canonicalDocumentsModalsAndSections.test.tsx` (7/7 PASS)
+    * `documentsSSOTSuite.test.tsx` (9/9 PASS)
+    * `consentsAutonomyProof.test.ts` (5/5 PASS)
+  - `npm run check:encoding` -> 24 137 файлов проверено, Exit Code 0.
+  - `npm run check:stub-overrides` -> 139 свойств, 27 раскрытых модулей, Exit Code 0.
+  - `npm run check:fetch-response` -> 14 441 файл проверен, Exit Code 0.
+  - `npm run check:dynamic-imports` -> 18 288 файлов проверено, 542 импорта, Exit Code 0.
+- **4-State Visual Proofs (Лично проинспектированы через `read_file` по 8 осям):**
+  - ☀️ PC Light (1440×900): [`docs/proofs/documents/01_documents_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/01_documents_studio_pc_light_1440x900.png) (142.8 KB)
+  - 🌙 PC Dark (1440×900): [`docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png) (135.0 KB)
+  - 📱 Mobile Light (390×844 @2x Retina): [`docs/proofs/documents/03_documents_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/03_documents_studio_mobile_light_390x844.png) (168.0 KB)
+  - 🌙 Mobile Dark (390×844 @2x Retina): [`docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png) (144.4 KB)
+  Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
+
 
 ## 12. 🔐 АВТОРИЗАЦИЯ, RBAC, БЕЗОПАСНОСТЬ, ПИН-КОДЫ И АУДИТ-ЛОГИ
 
