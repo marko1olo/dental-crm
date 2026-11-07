@@ -1,6 +1,42 @@
 const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
+const net = require("node:net");
+const { spawn } = require("node:child_process");
+
+function isPortOpen(port) {
+	return new Promise((resolve) => {
+		const sock = new net.Socket();
+		sock.setTimeout(500);
+		sock.on("connect", () => { sock.destroy(); resolve(true); });
+		sock.on("error", () => { sock.destroy(); resolve(false); });
+		sock.on("timeout", () => { sock.destroy(); resolve(false); });
+		sock.connect(port, "127.0.0.1");
+	});
+}
+
+async function ensureVite() {
+	if (await isPortOpen(5173)) {
+		console.log("[Vite] Port 5173 is already open!");
+		return null;
+	}
+	console.log("[Vite] Spawning dev server on 127.0.0.1:5173...");
+	const viteBin = path.resolve(__dirname, "../node_modules/vite/bin/vite.js");
+	const webDir = path.resolve(__dirname, "../apps/web");
+	const proc = spawn(process.execPath, ["--max-old-space-size=2048", viteBin, "--host", "127.0.0.1", "--port", "5173"], {
+		cwd: webDir,
+		stdio: "ignore",
+	});
+	for (let i = 0; i < 40; i++) {
+		await new Promise((r) => setTimeout(r, 600));
+		if (await isPortOpen(5173)) {
+			console.log(`[Vite] Ready on 5173 in ${(i + 1) * 600}ms!`);
+			return proc;
+		}
+	}
+	try { proc.kill(); } catch {}
+	throw new Error("Failed to start Vite on 5173");
+}
 
 const CONV_ID = process.env.CONV_ID || "76480d22-918a-49a9-879a-4fdeda097c2e";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/ukep");
@@ -97,6 +133,7 @@ async function setupPageAuth(context) {
 
 async function run() {
 	console.log("=== STARTING RED TEAM UKEP SIGNING VISUAL PROOF CAPTURE ===");
+	const viteProc = await ensureVite();
 
 	const browser = await chromium.launch({
 		headless: true,
@@ -114,13 +151,21 @@ async function run() {
 		await setupPageAuth(pcContext);
 		const pcPage = await pcContext.newPage();
 
-		console.log("Navigating PC page to http://127.0.0.1:5174/?ukep=1#ukep ...");
-		await pcPage.goto("http://127.0.0.1:5174/?ukep=1#ukep", { waitUntil: "domcontentloaded", timeout: 15000 });
-		await pcPage.waitForTimeout(2000);
+		console.log("Navigating PC page to http://127.0.0.1:5173/?demo=true&ukep=1#ukep ...");
+		pcPage.on("console", (msg) => console.log(`[PC Browser:${msg.type()}]`, msg.text()));
+		pcPage.on("pageerror", (err) => console.error("[PC PageError]", err.message));
+		await pcPage.goto("http://127.0.0.1:5173/?demo=true&ukep=1#ukep", { waitUntil: "domcontentloaded", timeout: 45000 });
+		await pcPage.waitForTimeout(3000);
 		await suppressOverlays(pcPage);
 
+		await pcPage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-ukep"));
+			window.dispatchEvent(new CustomEvent("dente:open-cryptopro"));
+		});
+		await pcPage.waitForTimeout(1000);
+
 		// Ждем появления модалки УКЭП
-		await pcPage.waitForSelector('[data-testid="ukep-signing-modal-root"]', { timeout: 10000 });
+		await pcPage.waitForSelector('[data-testid="ukep-signing-modal-root"]', { timeout: 30000 });
 
 		// Light PC
 		await setTheme(pcPage, "light");
@@ -144,12 +189,20 @@ async function run() {
 		await setupPageAuth(mobileContext);
 		const mobilePage = await mobileContext.newPage();
 
-		console.log("Navigating Mobile page to http://127.0.0.1:5174/?ukep=1#ukep ...");
-		await mobilePage.goto("http://127.0.0.1:5174/?ukep=1#ukep", { waitUntil: "domcontentloaded", timeout: 15000 });
-		await mobilePage.waitForTimeout(2000);
+		console.log("Navigating Mobile page to http://127.0.0.1:5173/?demo=true&ukep=1#ukep ...");
+		mobilePage.on("console", (msg) => console.log(`[Mobile Browser:${msg.type()}]`, msg.text()));
+		mobilePage.on("pageerror", (err) => console.error("[Mobile PageError]", err.message));
+		await mobilePage.goto("http://127.0.0.1:5173/?demo=true&ukep=1#ukep", { waitUntil: "domcontentloaded", timeout: 45000 });
+		await mobilePage.waitForTimeout(3000);
 		await suppressOverlays(mobilePage);
 
-		await mobilePage.waitForSelector('[data-testid="ukep-signing-modal-root"]', { timeout: 10000 });
+		await mobilePage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-ukep"));
+			window.dispatchEvent(new CustomEvent("dente:open-cryptopro"));
+		});
+		await mobilePage.waitForTimeout(1000);
+
+		await mobilePage.waitForSelector('[data-testid="ukep-signing-modal-root"]', { timeout: 30000 });
 
 		// Light Mobile
 		await setTheme(mobilePage, "light");
@@ -163,7 +216,8 @@ async function run() {
 
 		console.log("\n=== ALL 4 UKEP SIGNING VISUAL PROOFS CAPTURED SUCCESSFULLY ===");
 	} finally {
-		await browser.close();
+		try { await browser.close(); } catch {}
+		try { if (viteProc) viteProc.kill(); } catch {}
 	}
 }
 
