@@ -33,6 +33,11 @@ const MobileSelfCheckinModal = React.lazy(() =>
 		default: m.MobileSelfCheckinModal,
 	})),
 );
+const MobilePhotoUploadPage = React.lazy(() =>
+	import("./components/photography/mobileBridge/MobilePhotoUploadPage").then((m) => ({
+		default: m.MobilePhotoUploadPage,
+	})),
+);
 import { WaitingLoungeSignage } from "./components/lounge/WaitingLoungeSignage";
 const QueueBillboardView = React.lazy(() =>
 	import("./components/queue/QueueBillboardView").then((m) => ({
@@ -266,6 +271,8 @@ if (publicPortalRoute) {
 						/>
 					) : publicPortalRoute.kind === "lab-order" ? (
 						<GuestLabPortal token={publicPortalRoute.token} />
+					) : publicPortalRoute.kind === "photo-bridge" ? (
+						<MobilePhotoUploadPage />
 					) : null}
 				</React.Suspense>
 				<GlobalToast />

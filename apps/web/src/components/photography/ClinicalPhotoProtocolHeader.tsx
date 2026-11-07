@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, X, Grid, FileText, MoveHorizontal, ExternalLink } from 'lucide-react';
+import { CheckCircle, X, Grid, FileText, MoveHorizontal, ExternalLink, QrCode } from 'lucide-react';
 import { CheekRetractor } from '../icons/DentalIcons';
 import { openPatientPresentationWindow } from './presentationSyncProtocol';
 import type { PhotoSlotRecord } from './photoGridPresets';
@@ -15,6 +15,7 @@ export interface ClinicalPhotoProtocolHeaderProps {
 	readonly activePresetId: string;
 	readonly onSaveProtocol: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
 	readonly onClose: () => void;
+	readonly onOpenQrBridge?: () => void;
 }
 
 export const ClinicalPhotoProtocolHeader: React.FC<ClinicalPhotoProtocolHeaderProps> = ({
@@ -28,6 +29,7 @@ export const ClinicalPhotoProtocolHeader: React.FC<ClinicalPhotoProtocolHeaderPr
 	activePresetId,
 	onSaveProtocol,
 	onClose,
+	onOpenQrBridge,
 }) => {
 	return (
 		<div className="photo-protocol-header">
@@ -46,6 +48,19 @@ export const ClinicalPhotoProtocolHeader: React.FC<ClinicalPhotoProtocolHeaderPr
 				<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'export' ? 'active' : ''}`} onClick={() => setActiveViewMode('export')}><FileText size={16} /> В ЗТЛ</button>
 			</div>
 			<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+				{onOpenQrBridge && (
+					<button
+						type="button"
+						className="photo-touch-btn"
+						onClick={onOpenQrBridge}
+						title="Загрузка фото со смартфона врача через QR-код"
+						data-testid="btn-open-photo-qr-bridge"
+						style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--teal, #0d9488)' }}
+					>
+						<QrCode size={16} />
+						<span>Телефон (QR)</span>
+					</button>
+				)}
 				<button type="button" className="photo-touch-btn" data-testid="btn-patient-presentation-popout" onClick={() => openPatientPresentationWindow({ clinicName, patientName, mode: 'split' })} title="Экран пациента"><ExternalLink size={16} /> Экран</button>
 				<button type="button" className="photo-touch-btn primary" onClick={() => onSaveProtocol(slotsData, activePresetId)} data-testid="btn-save-photo-protocol"><CheckCircle size={16} /> Сохранить</button>
 				<button type="button" className="photo-touch-btn" onClick={onClose} title="Закрыть"><X size={18} /></button>

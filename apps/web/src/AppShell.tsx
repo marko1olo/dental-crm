@@ -14,6 +14,7 @@ import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
+import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
 import { DirectVisiographLauncher } from "./components/visiograph/DirectVisiographLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
@@ -45,12 +46,14 @@ import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLaunche
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
+import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
 import { DirectGate0InspectionLauncher } from "./components/odontogram/DirectGate0InspectionLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
+import { DirectPhotoProtocolLauncher } from "./components/photography/DirectPhotoProtocolLauncher";
 import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLauncher";
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
@@ -258,8 +261,16 @@ function isStandaloneActive(): boolean {
 		s.includes("dashboard=direct") ||
 		s.includes("reports") ||
 		h.includes("reports") ||
+		s.includes("doctor_payroll") ||
+		h.includes("doctor-payroll-report") ||
+		h.includes("executive-payroll") ||
+		s.includes("executive_payroll") ||
+		h.includes("assistant-payroll") ||
+		s.includes("assistant_payroll") ||
 		s.includes("leads") ||
 		h.includes("leads") ||
+		h.includes("photo") ||
+		s.includes("photo") ||
 		h.includes("crm-leads") ||
 		h.includes("kanban") ||
 		s.includes("settings") ||
@@ -312,6 +323,7 @@ export function AppShell() {
 			<DirectImplantPassportLauncher />
 			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
+			<DirectRvgCaptureLauncher />
 			<DirectVisiographLauncher />
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
@@ -342,12 +354,14 @@ export function AppShell() {
 			<DirectOrthoLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
+			<DirectDoctorPayrollReportLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />
 			<DirectGate0InspectionLauncher />
 			<DirectTelephonyLauncher />
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />
+			<DirectPhotoProtocolLauncher />
 			<DirectEndodonticsLauncher />
 			<DirectOrthopedicsLauncher />
 			<DirectHygieneLauncher />

@@ -73,6 +73,11 @@ export type PublicPortalRoute =
 			readonly kind: "warranty";
 			readonly certificateNumber: string | null;
 			readonly cardNumber?: string | null;
+	  }
+	| {
+			/** Мобильный QR-мост загрузки снимков со смартфона врача у кресла (PHO-01) */
+			readonly kind: "photo-bridge";
+			readonly token: string;
 	  };
 
 /**
@@ -302,6 +307,27 @@ export function publicPortalRouteFromHash(
 				certificateNumber: certNum ? decodeSegment(certNum) : null,
 				cardNumber: cardNum ? decodeSegment(cardNum) : null,
 			};
+		}
+	}
+
+	for (const pPath of ["/portal/photo-bridge", "/photo-bridge", "photo-bridge"]) {
+		const pBase = pPath.replace(/\/$/, "");
+		if (
+			path === pBase ||
+			path.startsWith(`${pBase}/`) ||
+			path.startsWith(`${pBase}?`)
+		) {
+			const queryIndex = path.indexOf("?");
+			let token: string | null = null;
+			if (queryIndex !== -1) {
+				const params = new URLSearchParams(path.slice(queryIndex));
+				token = params.get("token");
+			}
+			if (!token) {
+				const segment = path.slice(pBase.length).replace(/^\//, "").split(/[/?#&]/)[0] ?? "";
+				token = segment || null;
+			}
+			return token ? { kind: "photo-bridge", token: decodeSegment(token) } : null;
 		}
 	}
 

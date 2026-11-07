@@ -1,5 +1,6 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { updateSlotPhoto, removeSlotPhoto, type OrthodonticPhotoSession, type OrthodonticAngleId } from "@dental/shared";
+import { compressChairsidePhotoToBlobUrl } from "../../photography/chairsidePhotoCompressor";
 
 interface UseOrthoSlotActionsProps {
 	session: OrthodonticPhotoSession;
@@ -10,13 +11,36 @@ export function useOrthoSlotActions({ session, setSession }: UseOrthoSlotActions
 	const [dragOverSlotId, setDragOverSlotId] = useState<OrthodonticAngleId | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const currentUploadingAngleRef = useRef<OrthodonticAngleId | null>(null);
+	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
 
-	const handleFileSelect = useCallback((angleId: OrthodonticAngleId, file: File) => {
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const resultUrl = e.target?.result as string;
-			setSession((prev) =>
-				updateSlotPhoto(prev, angleId, {
+	// Освобождение Blob URL из памяти браузера при размонтировании (ликвидация утечек памяти PHO-04)
+	useEffect(() => {
+		const urls = createdBlobUrlsRef.current;
+		return () => {
+			urls.forEach((u) => URL.revokeObjectURL(u));
+			urls.clear();
+		};
+	}, []);
+
+	const handleFileSelect = useCallback(async (angleId: OrthodonticAngleId, file: File) => {
+		try {
+			// Клиентская аппаратная компрессия до 1920x1080 (WebP/JPEG) с очисткой текстур GPU
+			// Предотвращает раздувание памяти Base64 до 400 МБ на слабых мониторах врача (PHO-04)
+			const comp = await compressChairsidePhotoToBlobUrl(file, {
+				maxDimension: 1920,
+				quality: 0.85,
+			}).catch(() => null);
+
+			const resultUrl = comp ? comp.blobUrl : URL.createObjectURL(file);
+			createdBlobUrlsRef.current.add(resultUrl);
+
+			setSession((prev) => {
+				const existingUrl = prev.slots[angleId]?.imageUrl;
+				if (existingUrl?.startsWith("blob:")) {
+					URL.revokeObjectURL(existingUrl);
+					createdBlobUrlsRef.current.delete(existingUrl);
+				}
+				return updateSlotPhoto(prev, angleId, {
 					imageUrl: resultUrl,
 					capturedAt: new Date().toISOString(),
 					rotationDegrees: 0,
@@ -28,10 +52,11 @@ export function useOrthoSlotActions({ session, setSession }: UseOrthoSlotActions
 					panX: 0,
 					panY: 0,
 					guidelineOverlayEnabled: true,
-				}),
-			);
-		};
-		reader.readAsDataURL(file);
+				});
+			});
+		} catch (err) {
+			console.error("[useOrthoSlotActions] Failed to compress ortho photo:", err);
+		}
 	}, [setSession]);
 
 	const triggerUploadForAngle = (angleId: OrthodonticAngleId) => {
@@ -76,7 +101,14 @@ export function useOrthoSlotActions({ session, setSession }: UseOrthoSlotActions
 
 	const handleDeletePhoto = (angleId: OrthodonticAngleId, e: React.MouseEvent) => {
 		e.stopPropagation();
-		setSession((prev) => removeSlotPhoto(prev, angleId));
+		setSession((prev) => {
+			const existingUrl = prev.slots[angleId]?.imageUrl;
+			if (existingUrl?.startsWith("blob:")) {
+				URL.revokeObjectURL(existingUrl);
+				createdBlobUrlsRef.current.delete(existingUrl);
+			}
+			return removeSlotPhoto(prev, angleId);
+		});
 	};
 
 	return {

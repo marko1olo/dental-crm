@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
 import { PhotoGridSixSlots } from './PhotoGridSixSlots';
@@ -11,6 +11,7 @@ import { ClinicalPhotoProtocolHeader } from './ClinicalPhotoProtocolHeader';
 import { usePhotoProtocolUpload } from './modal/usePhotoProtocolUpload';
 import { compressChairsidePhotoToBlobUrl } from './chairsidePhotoCompressor';
 import { openPatientPresentationWindow } from './presentationSyncProtocol';
+import { ChairsidePhotoQrBridgeModal } from './ChairsidePhotoQrBridgeModal';
 
 if (typeof document !== 'undefined') import('./clinicalPhotography.css');
 
@@ -52,6 +53,8 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
 	useEffect(() => () => { createdBlobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u)); }, []);
+
+	const [isQrBridgeOpen, setIsQrBridgeOpen] = useState(false);
 
 	const {
 		activePreset, setActivePreset, slotsData, setSlotsData, activeViewMode, setActiveViewMode,
@@ -167,6 +170,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					activePresetId={activePreset.id}
 					onSaveProtocol={handleSaveProtocol}
 					onClose={onClose}
+					onOpenQrBridge={() => setIsQrBridgeOpen(true)}
 				/>
 				<div className="photo-protocol-body">
 					{activeViewMode === 'grid' && (
@@ -227,6 +231,21 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 						/>
 					)}
 				</div>
+				<ChairsidePhotoQrBridgeModal
+					isOpen={isQrBridgeOpen}
+					onClose={() => setIsQrBridgeOpen(false)}
+					patientId={patientId || 'chairside'}
+					patientName={patientName}
+					visitId={props.visitId}
+					presetId={activePreset.id}
+					onPhotoReceived={(photo) => {
+						updateSlotRecord(photo.slotId, {
+							imageUrl: photo.url,
+							uploadedAt: photo.uploadedAt,
+							...(toothCode ? { toothCode } : {}),
+						});
+					}}
+				/>
 			</div>
 		</div>,
 		document.body,

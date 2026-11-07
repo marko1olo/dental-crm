@@ -70,6 +70,7 @@ import { registerOutpatientRoutes } from "../routes/outpatient.js";
 import { registerPatientDuplicateRoutes } from "../routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "../routes/patientRecall.js";
 import { registerPatientRoutes } from "../routes/patients.js";
+import { registerPhotoBridgeRoutes } from "../routes/photoBridgeRoutes.js";
 import { patientPortalRoutes } from "../routes/patientPortal.js";
 import { portalRoutes } from "../routes/portal.js";
 import { portalBudgetRoutes } from "../routes/portalBudgetRoutes.js";
@@ -214,6 +215,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	// registerWhatsappRoutes инкапсулирует канонический вебхук-контур (/api/whatsapp/webhook и /api/v1/webhooks/whatsapp)
 	await app.register(registerWhatsappRoutes);
 	await registerPatientRoutes(app);
+	await registerPhotoBridgeRoutes(app);
 	await registerOrthodonticsRoutes(app);
 	await registerExportRoutes(app);
 	await registerMarketingRoutes(app);

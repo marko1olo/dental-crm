@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import {
 	Camera,
 	Check,
@@ -23,6 +23,7 @@ import {
 import { BeforeAfterSplitSlider } from "./BeforeAfterSplitSlider";
 import { showToast } from "../GlobalToast";
 import { useClipboardPhotoPaste } from "./useClipboardPhotoPaste";
+import { compressChairsidePhotoToBlobUrl } from "./chairsidePhotoCompressor";
 
 export interface ClinicalPhotoProtocolGridProps {
 	readonly patientId?: string | undefined;
@@ -52,6 +53,16 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const targetSlotRef = useRef<string | null>(null);
+	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
+
+	// Освобождение Blob URL из памяти браузера при размонтировании (ликвидация утечек памяти PHO-04)
+	useEffect(() => {
+		const urls = createdBlobUrlsRef.current;
+		return () => {
+			urls.forEach((u) => URL.revokeObjectURL(u));
+			urls.clear();
+		};
+	}, []);
 
 	// 12 canonical slots from Standard 12 protocol
 	const allSlots = STANDARD_12_SLOT_PROTOCOL.slots;
@@ -69,26 +80,40 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 		return Object.values(slotsData).filter((s) => Boolean(s?.imageUrl)).length;
 	}, [slotsData]);
 
-	// Handle upload
-	const handleSlotUpload = useCallback((slotId: string, file: File) => {
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const dataUrl = e.target?.result as string;
-			setSlotsData((prev) => ({
-				...prev,
-				[slotId]: {
-					slotId,
-					imageUrl: dataUrl,
-					uploadedAt: new Date().toISOString(),
-					metadata: { fileName: file.name, fileSize: file.size },
-				},
-			}));
+	// Handle upload with hardware GPU compression (PHO-04)
+	const handleSlotUpload = useCallback(async (slotId: string, file: File) => {
+		try {
+			const comp = await compressChairsidePhotoToBlobUrl(file, {
+				maxDimension: 1920,
+				quality: 0.85,
+			}).catch(() => null);
+
+			const blobUrl = comp ? comp.blobUrl : URL.createObjectURL(file);
+			createdBlobUrlsRef.current.add(blobUrl);
+
+			setSlotsData((prev) => {
+				const existingUrl = prev[slotId]?.imageUrl;
+				if (existingUrl?.startsWith("blob:")) {
+					URL.revokeObjectURL(existingUrl);
+					createdBlobUrlsRef.current.delete(existingUrl);
+				}
+				return {
+					...prev,
+					[slotId]: {
+						slotId,
+						imageUrl: blobUrl,
+						uploadedAt: new Date().toISOString(),
+						metadata: { fileName: file.name, fileSize: comp ? comp.sizeBytes : file.size },
+					},
+				};
+			});
 			showToast(`Снимок «${getSlotDefinitionById(slotId)?.shortLabelRu || slotId}» успешно загружен`, "success", 2500);
-		};
-		reader.readAsDataURL(file);
+		} catch (err) {
+			console.error("[ClinicalPhotoProtocolGrid] Upload compression failed:", err);
+		}
 	}, []);
 
-	// Clipboard Paste (Ctrl+V)
+	// Clipboard Paste (Ctrl+V) with hardware GPU compression (PHO-04)
 	useClipboardPhotoPaste({
 		enabled: true,
 		onPhotoReceived: async (blob, fileName) => {
@@ -97,21 +122,36 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 				allSlots.find((s) => !slotsData[s.id]?.imageUrl)?.id ||
 				allSlots[0]?.id ||
 				"portrait_smile";
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const dataUrl = e.target?.result as string;
-				setSlotsData((prev) => ({
-					...prev,
-					[targetId]: {
-						slotId: targetId,
-						imageUrl: dataUrl,
-						uploadedAt: new Date().toISOString(),
-						metadata: { fileName, fileSize: blob.size },
-					},
-				}));
+
+			try {
+				const comp = await compressChairsidePhotoToBlobUrl(blob, {
+					maxDimension: 1920,
+					quality: 0.85,
+				}).catch(() => null);
+
+				const blobUrl = comp ? comp.blobUrl : URL.createObjectURL(blob);
+				createdBlobUrlsRef.current.add(blobUrl);
+
+				setSlotsData((prev) => {
+					const existingUrl = prev[targetId]?.imageUrl;
+					if (existingUrl?.startsWith("blob:")) {
+						URL.revokeObjectURL(existingUrl);
+						createdBlobUrlsRef.current.delete(existingUrl);
+					}
+					return {
+						...prev,
+						[targetId]: {
+							slotId: targetId,
+							imageUrl: blobUrl,
+							uploadedAt: new Date().toISOString(),
+							metadata: { fileName, fileSize: comp ? comp.sizeBytes : blob.size },
+						},
+					};
+				});
 				showToast(`Вставлен снимок из буфера (Ctrl+V) в ракурс «${getSlotDefinitionById(targetId)?.shortLabelRu || targetId}»`, "success", 3000);
-			};
-			reader.readAsDataURL(blob);
+			} catch (err) {
+				console.error("[ClinicalPhotoProtocolGrid] Clipboard compression failed:", err);
+			}
 		},
 	});
 
@@ -309,6 +349,11 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 													onClick={(e) => {
 														e.stopPropagation();
 														setSlotsData((prev) => {
+															const existingUrl = prev[slot.id]?.imageUrl;
+															if (existingUrl?.startsWith("blob:")) {
+																URL.revokeObjectURL(existingUrl);
+																createdBlobUrlsRef.current.delete(existingUrl);
+															}
 															const next = { ...prev };
 															delete next[slot.id];
 															return next;
