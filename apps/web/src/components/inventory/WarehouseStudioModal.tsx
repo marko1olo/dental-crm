@@ -40,6 +40,8 @@ export interface WarehouseStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly organizationId?: string;
+	readonly initialTab?: WarehouseStudioTab | undefined;
+	readonly defaultTab?: WarehouseStudioTab | undefined;
 	readonly onStockUpdated?: (items: readonly WarehouseStockItem[]) => void;
 	readonly onConfirmWriteoff?: ((items: readonly any[]) => void | Promise<void>) | undefined;
 	readonly onOpenInventoryAudit?: (() => void) | undefined;
@@ -53,6 +55,7 @@ export type WarehouseStudioTab = "stock" | "deduct" | "inbound";
 
 export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 	isOpen, onClose, organizationId = "org-main-01", onStockUpdated,
+	initialTab, defaultTab,
 	onConfirmWriteoff, onOpenInventoryAudit, initialItems,
 	doctorName: propDoctorName, nurseName: propNurseName, cabinetName: propCabinetName,
 }) => {
@@ -79,7 +82,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 		}
 		return INITIAL_WAREHOUSE_STOCK.map((item) => ({ ...item }));
 	});
-	const [activeTab, setActiveTab] = useState<WarehouseStudioTab>("stock");
+	const [activeTab, setActiveTab] = useState<WarehouseStudioTab>(() => initialTab || defaultTab || "stock");
 	const [selectedCategory, setSelectedCategory] = useState<WarehouseCategoryKey | "all">("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [selectedTechMapId, setSelectedTechMapId] = useState<string>("proc-filling-light");
@@ -136,7 +139,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 		setStockItems(updatedItems);
 		onStockUpdated?.(updatedItems);
 		onOpenInventoryAudit?.();
-		setStatusFeedback(`Сверка склада завершена в 1 клик: выровнено ${clearedDeficitCount} позиций.`);
+		setStatusFeedback(`Сверка остатков склада выполнена: выровнено ${clearedDeficitCount} позиций.`);
 	}, [stockItems, onStockUpdated, onOpenInventoryAudit]);
 
 	if (!isOpen) return null;
@@ -156,7 +159,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 						<div className="min-w-0">
 							<h2 className="text-sm sm:text-lg font-bold text-[var(--ink)] leading-tight truncate">
 								<span className="hidden sm:inline">Склад и пакетное списание расходных материалов</span>
-								<span className="sm:hidden">Склад материалов</span>
+								<span className="sm:hidden">Склад и материалы</span>
 							</h2>
 							<p className="text-xs text-[var(--ink)]/60 leading-tight truncate">
 								<span className="hidden sm:inline">Организация: {organizationId} • {cabinetName} • {doctorName} • {nurseName}</span>
@@ -164,7 +167,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 							</p>
 						</div>
 					</div>
-					<button type="button" onClick={onClose} className="warehouse-touch-target p-2 rounded-lg text-[var(--ink)]/70 hover:text-[var(--ink)] hover:bg-[var(--line)]/10 transition-colors" aria-label="Закрыть окно склада">
+					<button type="button" onClick={onClose} className="warehouse-touch-target p-2 rounded-lg bg-transparent text-[var(--ink)]/70 hover:text-[var(--ink)] hover:bg-[var(--line)]/10 transition-colors" aria-label="Закрыть окно склада">
 						<X className="w-5 h-5" />
 					</button>
 				</header>
@@ -196,7 +199,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 						</button>
 						<button type="button" data-testid="btn-quick-inventory-audit" onClick={handleQuickAudit} className="warehouse-secondary-btn">
 							<RefreshCw className="w-3.5 h-3.5 text-[#0d9488]" />
-							<span className="hidden sm:inline">Сверка в 1 клик</span>
+							<span className="hidden sm:inline">Сверка остатков</span>
 							<span className="sm:hidden">Сверка</span>
 						</button>
 					</div>
@@ -228,9 +231,9 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 
 								{/* Категории фильтра */}
 								<div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs shrink-0 max-w-full no-scrollbar">
-									<button type="button" onClick={() => setSelectedCategory("all")} className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg border warehouse-touch-target min-h-[40px] ${selectedCategory === "all" ? "bg-[#0d9488]/15 border-[#0d9488] text-[#0d9488] font-semibold" : "border-[var(--line)] text-[var(--ink)]/70 hover:bg-[var(--line)]/10"}`}>Все ({stockItems.length})</button>
+									<button type="button" onClick={() => setSelectedCategory("all")} className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg border warehouse-touch-target min-h-[40px] ${selectedCategory === "all" ? "bg-[#0d9488]/15 border-[#0d9488] text-[#0d9488] font-semibold" : "bg-transparent border-[var(--line)] text-[var(--ink)]/70 hover:bg-[var(--line)]/10"}`}>Все ({stockItems.length})</button>
 									{WAREHOUSE_CATEGORIES.map((cat) => (
-										<button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.id)} className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg border warehouse-touch-target min-h-[40px] ${selectedCategory === cat.id ? "bg-[#0d9488]/15 border-[#0d9488] text-[#0d9488] font-semibold" : "border-[var(--line)] text-[var(--ink)]/70 hover:bg-[var(--line)]/10"}`}>{cat.nameRu}</button>
+										<button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.id)} className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg border warehouse-touch-target min-h-[40px] ${selectedCategory === cat.id ? "bg-[#0d9488]/15 border-[#0d9488] text-[#0d9488] font-semibold" : "bg-transparent border-[var(--line)] text-[var(--ink)]/70 hover:bg-[var(--line)]/10"}`}>{cat.nameRu}</button>
 									))}
 								</div>
 							</div>
@@ -274,7 +277,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 														<td className="p-3 text-center"><span className={fefo.badgeClass}>{fefo.text}</span></td>
 														<td className="p-3 text-right text-[var(--ink)] font-mono">{formatKopecksToRubles(item.unitCostKopecks)}</td>
 														<td className="p-3 text-center">
-															<button type="button" onClick={() => setActiveTab("deduct")} className="h-7 px-2 rounded-lg border border-[var(--line)] hover:bg-[var(--line)]/10 text-xs font-medium inline-flex items-center gap-1 transition-colors text-[var(--ink)]" title={`Списать ${item.nameRu}`}>
+															<button type="button" onClick={() => setActiveTab("deduct")} className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line)] bg-transparent hover:bg-[var(--line)]/10 text-xs font-medium inline-flex items-center gap-1 transition-colors text-[var(--ink)]" title={`Списать ${item.nameRu}`}>
 																<MinusCircle className="w-3.5 h-3.5 text-amber-500" />
 																<span>Списать</span>
 															</button>
@@ -305,7 +308,12 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 											</div>
 											<div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--line)]/40">
 												<span className="text-[var(--ink)]/60 truncate">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</span>
-												<span className={fefo.badgeClass}>{fefo.text}</span>
+												<div className="flex items-center gap-2">
+													<span className={fefo.badgeClass}>{fefo.text}</span>
+													<button type="button" onClick={() => setActiveTab("deduct")} className="warehouse-touch-target bg-transparent text-[var(--teal,#0d9488)] font-semibold hover:underline" aria-label={`Списать ${item.nameRu}`}>
+														Расход →
+													</button>
+												</div>
 											</div>
 										</div>
 									);
@@ -323,7 +331,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 									Автоматическое списание по техкартам процедур
 								</h3>
 								<p className="text-xs text-[var(--ink)]/70">
-									Списание расходников крупным пакетом за рабочую смену врача в 1 клик. Если остаток нулевой — применяется мягкий овердрафт без блокировок.
+									Пакетный расчет расхода материалов за смену врача по клиническим нормам. При нулевом остатке применяется мягкий овердрафт без прерывания приёма.
 								</p>
 
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

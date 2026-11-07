@@ -285,6 +285,16 @@
 	background-color: rgba(16, 185, 129, 0.2);
 }
 
+/* Устранение белых пятен на вспомогательных кнопках в темной теме */
+.warehouse-sheet-container button:not(.warehouse-primary-btn):not(.warehouse-tab-active) {
+	background-color: transparent;
+}
+
+.dark .warehouse-sheet-container button:not(.warehouse-primary-btn):not(.warehouse-tab-active) {
+	background-color: transparent;
+	color: var(--ink, #f1f5f9);
+}
+
 /* ==========================================================================
    7. УТИЛИТЫ И АНИМАЦИИ
    ========================================================================== */
