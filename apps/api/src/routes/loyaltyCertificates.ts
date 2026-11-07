@@ -221,6 +221,79 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 	});
 
 	/**
+	 * Валидация подарочного сертификата через реальную базу (POST /api/loyalty/certificates/validate)
+	 */
+	app.post("/api/loyalty/certificates/validate", async (request, reply) => {
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const body = (request.body as { serialNumber?: string; serial?: string }) || {};
+		const rawSerial = (body.serialNumber || body.serial || "").trim();
+
+		if (!validateLuhn16Certificate(rawSerial)) {
+			return reply.status(400).send({
+				valid: false,
+				exists: false,
+				message: "Недействительный 16-значный номер сертификата (ошибка контрольной суммы Luhn)",
+			});
+		}
+
+		return withTenantCtx(orgId, async () => {
+			const cleaned = rawSerial.replace(/[\s-]/g, "");
+			const canonicalFormatted = `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8, 12)}-${cleaned.slice(12, 16)}`;
+
+			const [cert] = await db
+				.select()
+				.from(giftCertificates)
+				.where(
+					and(
+						eq(giftCertificates.organizationId, orgId),
+						sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
+					),
+				)
+				.limit(1);
+
+			if (!cert) {
+				return reply.status(404).send({
+					valid: true,
+					exists: false,
+					message: "Сертификат с указанным номером не найден в базе данных клиники",
+				});
+			}
+
+			let effectiveStatus = cert.status;
+			const isExpired = new Date() > cert.expiresAt;
+			if (isExpired && cert.status === "active") {
+				effectiveStatus = "expired";
+				await db
+					.update(giftCertificates)
+					.set({ status: "expired", updatedAt: new Date() })
+					.where(eq(giftCertificates.id, cert.id));
+			}
+
+			return reply.send({
+				valid: true,
+				exists: true,
+				certificate: {
+					id: cert.id,
+					serialNumber: canonicalFormatted,
+					nominalRub: Number(cert.nominalRub),
+					currentBalanceRub: Number(cert.currentBalanceRub),
+					nominalKop: Math.round(Number(cert.nominalRub) * 100),
+					currentBalanceKop: Math.round(Number(cert.currentBalanceRub) * 100),
+					status: effectiveStatus,
+					issuedAtIso: cert.issuedAt.toISOString(),
+					expiresAtIso: cert.expiresAt.toISOString(),
+					purchaserName: cert.purchaserName,
+					recipientName: cert.recipientName,
+					recipientPhone: cert.recipientPhone,
+					notes: cert.notes,
+				},
+			});
+		});
+	});
+
+	/**
 	 * Списание средств с подарочного сертификата в счет оплаты лечения
 	 * Фискальный зачёт аванса по 54-ФЗ (тег 1215)
 	 */
