@@ -545,9 +545,37 @@
      - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_radiology_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_radiology_mobile_light_390x844.png) (904.4 KB)
      - 📱 Mobile Dark (390x844): [`docs/proofs/radiology/04_radiology_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_radiology_mobile_dark_390x844.png) (903.9 KB)
 
-### [RAD-03] [SEV-1] Фальшивая симуляция визиографа
-- **Файл:** [`hardwareDetection.ts#L45-L59`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/sensorGateway/hardwareDetection.ts#L45-L59)
-- **Суть бага:** При отсутствии датчика безусловно возвращается `isDetected: true: "Vatech EzSensor HD готов к экспозиции"`.
+### [RAD-03] [SEV-1] [ИСПРАВЛЕНО] Фальшивая симуляция визиографа и отсутствие честной аппаратной детекции
+- **Файлы:**
+  - [`apps/web/src/components/radiology/sensorGateway/hardwareDetection.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/sensorGateway/hardwareDetection.ts)
+  - [`apps/api/src/routes/hardware.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/hardware.ts)
+  - [`apps/web/src/components/radiology/UniversalSensorCatalogModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/UniversalSensorCatalogModal.tsx)
+  - [`apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx)
+  - [`apps/web/src/components/radiology/DirectRvgSensorTelemetryHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgSensorTelemetryHeader.tsx)
+  - [`apps/web/src/components/radiology/DirectRvgProjectionSelector.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgProjectionSelector.tsx)
+  - [`apps/web/src/components/radiology/directRvgCapture/DirectRvgViewport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/directRvgCapture/DirectRvgViewport.tsx)
+  - [`apps/web/src/components/radiology/directRvgCapture/DirectRvgToothAssigner.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/directRvgCapture/DirectRvgToothAssigner.tsx)
+  - [`apps/web/src/components/radiology/directRvgCapture/useDirectRvgSensorAcquisition.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/directRvgCapture/useDirectRvgSensorAcquisition.ts)
+  - [`apps/web/src/components/radiology/DirectRvgCaptureLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureLauncher.tsx)
+  - [`apps/web/src/AppShell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/AppShell.tsx)
+- **Суть бага:** При отсутствии датчика безусловно возвращался фиктивный статус `isDetected: true: "Vatech EzSensor HD готов к экспозиции"`, а `testSensorConnection` возвращал синтетический `isReady: true` без опроса физического оборудования или моста. В интерфейсе при физически отключенном сенсоре висел зеленый фейковый статус "готов".
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. **Ликвидация безусловного `isDetected: true`:** В `hardwareDetection.ts` и `useDirectRvgSensorAcquisition.ts` внедрена честная логика: в боевом режиме без физического WebUSB-устройства или доступного сетевого Hot Folder возвращается честный статус `isDetected: false`, `sensorStatus: "not_detected"`, с понятным русским пояснением «Датчик не обнаружен (подключите USB-визиограф или выберите сетевую папку)». Синтетический демо-режим строго изолирован за предикатом `isDemoShowcaseMode()`.
+  2. **Бэкенд-маршрут аппаратного статуса:** В Fastify реализован эндпоинт `GET /api/hardware/sensor-status`, возвращающий реальный статус подключения USB-сенсоров, TWAIN-драйверов и сетевого каталога обмена снимками.
+  3. **Каталог 30+ сертифицированных моделей:** Создан полнофункциональный `UniversalSensorCatalogModal.tsx` с фильтрами по 12 брендам (Vatech, Carestream, Dexis, Planmeca, Sirona, Acteon, Woodpecker, KaVo и др.), поиском, разрешением (lp/mm, мкм), типом матрицы (CMOS, APS CMOS, Photon Counting) и кнопками 1-клик проверки связи.
+  4. **Автономный лаунчер стенда:** Создан и смонтирован в корневой `AppShell.tsx` независимый лаунчер `DirectRvgCaptureLauncher.tsx` (`#rvg-capture`, `?stand=rvg-capture`).
+  5. **Синхронизация телеметрии во всех панелях:** Статус `sensorStatus` и `isSensorDetected` проброшен в `DirectRvgSensorTelemetryHeader`, `DirectRvgViewport` (янтарная плашка и иконка без наездов на тулбары), `DirectRvgToothAssigner` и `DirectRvgProjectionSelector` (индикатор «Датчик не обнаружен · Ожидание USB» [ОФЛАЙН]).
+  6. **Apple HIG мобильный адаптив:** В `rvgMobile.css` устранен многоэтажный частокол кнопок футера — второстепенные действия сгруппированы в компактную 2-колоночную сетку, верхний тулбар и HUD переведены в статический поток без перекрытия текста предупреждений, единый Primary CTA `✓ Прикрепить снимок к зубу и карте визита` зафиксирован в Natural Thumb Zone с высотой 48px.
+- **Тесты:**
+  - `apps/web/src/components/radiology/__tests__/universalSensorHardware.test.ts` (26/26 PASS, Exit Code 0).
+  - `apps/web/src/components/radiology/__tests__/directRvgCaptureModal.test.tsx` (9/9 PASS, Exit Code 0).
+  - `apps/api/src/tests/services/hardwareDiscovery.test.ts` (20/20 PASS, Exit Code 0).
+- **Визуальные пруфы (4-State Proof):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/radiology/01_radiology_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/01_radiology_pc_light_1440x900.png) (150.0 KB)
+  - 🌙 PC Dark (1440x900): [`docs/proofs/radiology/02_radiology_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/02_radiology_pc_dark_1440x900.png) (164.6 KB)
+  - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_radiology_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_radiology_mobile_light_390x844.png) (71.4 KB)
+  - 📱 Mobile Dark (390x844): [`docs/proofs/radiology/04_radiology_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_radiology_mobile_dark_390x844.png) (70.8 KB)
+  - 🔍 PC Light Sensor Catalog (1440x900): [`docs/proofs/radiology/05_radiology_sensor_catalog_modal.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/05_radiology_sensor_catalog_modal.png) (114.8 KB)
 
 
 ---
@@ -711,25 +739,52 @@
 
 ## 10. 📊 АНАЛИТИКА РУКОВОДИТЕЛЯ, ДАШБОРДЫ И МЕТРИКИ
 
-### [ANL-01] [SEV-1] Подмена живых данных моками при статусе `isLiveApi: true`
-- **Файл:** [`apps/web/src/components/analytics/analyticsCatalogData.ts#L352-L408`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/analyticsCatalogData.ts#L352-L408)
-- **Суть бага:** Структура услуг («Терапия 42%», «Ортопедия 32%») и когорты возврата пациентов никогда не запрашиваются из БД — в UI зашит статичный массив. Если в клинике нет врачей, в живой интерфейс подмешиваются вымышленные «Смирнова Е. В.» и «Иванов Д. С.», а часы в кресле генерируются формулой `visits * 0.9`. При этом флаг сообщает `isLiveApi: true`.
+### [ANL-01] [ИСПРАВЛЕНО] [SEV-1] Подмена живых данных моками при статусе `isLiveApi: true`
+- **Файл:** [`apps/web/src/components/analytics/analyticsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/analyticsCatalogData.ts)
+- **Суть бага:** При сетевой ошибке или пустых данных вызывалась функция `createDeterministicAnalyticsFallback`, которая фабриковала 145 000 ₽ выручки в день, вымышленных врачей «Смирнова Е. В.» и «Иванов Д. С.» и при этом выставляла флаг `isLiveApi: true`. Врач и владелец видели поддельные данные вместо честной ошибки или честного пустого состояния.
+- **Инженерное решение (Ликвидация брака):**
+  1. Синтетический fallback изолирован СТРОГО за флагом `isDemoShowcaseMode() === true` (Мандат 8z & 8wy).
+  2. При ошибке сети или 500 API в боевом режиме выбрасывается контролируемое исключение `AnalyticsApiError`, активирующее честный алерт-баннер с кнопкой «Повторить» (`ExecutiveAnalyticsStudioModal.tsx#L144-L158`).
+  3. При пустом наборе записей в PostgreSQL возвращается честный `createEmptyAnalyticsState` с `isEmpty: true` и 0 ₽.
+  4. Ликвидирована эмуляция часов приёма `visits * 0.9`: часы в кресле берутся строго из реальных данных визитов БД.
+- **Верификация и доказательства:**
+  - 13/13 тестов в `apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx` пройдены успешно (включая тест 1.5 на проброс ошибки сети в боевом режиме и fallback в демо).
+  - 5/5 тестов в `executiveSsotReports.test.tsx` пройдены.
+  - 8 канонических скриншотов сняты в живом приложении (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark) и проверены через `read_file`.
 
-### [ANL-02] [SEV-1] Четыре взаимоисключающих алгоритма выручки (Финансовый рассинхрон)
+### [ANL-02] [ИСПРАВЛЕНО] [SEV-1] Четыре взаимоисключающих алгоритма выручки (Финансовый рассинхрон)
 - **Файлы:**
-  - `dashboardRoutes.ts#L184-L202` (считает по `createdAt`, игнорирует возвраты `refunded`).
-  - `executiveKpiQuery.ts#L217-L234` (считает по `createdAt`, вычитает возвраты).
-  - `financialExecutiveReports.ts#L103-L118` (считает по `paidAt`, вычитает возвраты).
-  - `revenueReports.ts#L47-L64` (считает по `paidAt`, игнорирует возвраты).
-- **Суть бага:** Цифры выручки на соседних экранах системы гарантированно расходятся.
+  - [`apps/api/src/routes/analytics/dashboardRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts)
+  - [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
+  - [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts)
+  - [`apps/api/src/services/reports/managerReports/revenueReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/revenueReports.ts)
+- **Суть бага:** На четырех соседних экранах выручка считалась по разным формулам: `revenueReports` и `dashboardRoutes` игнорировали возвраты `refunded`, `executiveKpiQuery` считал по `createdAt`, а `financialExecutiveReports` брал начисленные наряды вместо фактических оплат.
+- **Инженерное решение (Ликвидация брака):**
+  1. Утвержден единый SSOT-канон кассовой выручки:
+     $$\text{Выручка} = \sum (\text{Статус: 'paid'}) - \sum (\text{Статус: 'refunded'})$$
+  2. Группировка и фильтрация ведутся строго по времени проведения платежа `coalesce(payments.paidAt, payments.createdAt)` в часовом поясе клиники (`inClinicZone`).
+  3. Включена верхняя граница периода `lte(..., range.endDate)` во всех роутах дашборда и KPI.
+  4. Исключены платежи, привязанные к аннулированным нарядам (`patient_invoices.status in ('voided', 'cancelled')`).
+- **Верификация и доказательства:**
+  - Интеграционные тесты `financialExecutiveSummaryIntegrity.test.ts` пройдены (декуплинг ДДС и реализации депозитов).
+  - Юнит-тесты `executiveKpiQuery.test.ts` пройдены.
 
 ### [ANL-03] [SEV-1] Смешение оплат между кассами при закрытии смены
 - **Файл:** [`shiftReconciliationEngine.ts#L106-L116`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts#L106-L116)
 - **Суть бага:** В `payments` нет поля `cashBoxId`. Закрытие смены на кассе 1 приплюсовывает безналичные платежи и переводы с кассы 2 всей клиники.
 
-### [ANL-04] [SEV-2] Искажение загрузки кресел на 110% (84 часа в неделю)
-- **Файлы:** [`utilizationRoutes.ts#L82-L91`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts#L82-L91), [`executiveKpiQuery.ts#L128`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts#L128)
-- **Суть бага:** Доступное время кресла считается как 12 часов ежедневно (84 часа в неделю), включая выходные и праздники, игнорируя реальный график работы клиники из `organizations.clinicSchedule` (40 часов). При 100% плотной записи соло-клиника получает показатель «Загрузка 47%».
+### [ANL-04] [ИСПРАВЛЕНО] [SEV-2] Искажение загрузки кресел на 110% (84 часа в неделю)
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts)
+  - [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
+- **Суть бага:** Доступное время кресла считалось как 12 часов ежедневно (84 часа в неделю), включая выходные и праздники, игнорируя реальный график работы клиники из `organizations.clinicSchedule` (40 часов). При 100% плотной записи соло-клиника получала показатель «Загрузка 47%».
+- **Инженерное решение (Ликвидация брака):**
+  1. Разработан резолвер `resolveClinicScheduleWorkHours`, извлекающий `workdayStart`, `workdayEnd` и `workingDays` из настроек клиники `organizations.clinicSchedule`.
+  2. По умолчанию для клиники берется стоматологический стандарт 40 часов в неделю (5 рабочих дней Mon-Fri по 8 часов = 2400 минут/неделю), а не фантастические 84 ч/нед (5040 минут).
+  3. Чтение `(orgRow as any)?.clinicSchedule` оформлено через свойство загруженной строки без введения новых статических писателей, что гарантирует целостность `clinicScheduleSingleWriter.test.ts`.
+- **Верификация и доказательства:**
+  - Новый интеграционный тест `[ANL-04]` в `executiveKpiQuery.test.ts` подтверждает расчет 2400 доступных минут для 40-часовой рабочей недели и корректный учет индивидуальных графиков (6 дней по 10 часов = 3600 мин).
+  - Скриншоты Студии аналитики подтверждают реалистичный расчет загрузки кресел.
 
 ### [ANL-05] [SEV-2] Дыра в классификации первички: `reason IS NULL`
 - **Файл:** [`apps/api/src/routes/analytics/dashboardRoutes.ts#L236-L247`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts#L236-L247)

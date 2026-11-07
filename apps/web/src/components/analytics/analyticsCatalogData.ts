@@ -11,6 +11,8 @@
  * (Мандат 8ap: Реляционная правда из PostgreSQL 18, zero fake simulation).
  */
 
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+
 export type AnalyticsPeriod = "day" | "yesterday" | "week" | "month" | "quarter" | "year" | "custom";
 
 export interface AnalyticsPeriodOption {
@@ -370,7 +372,11 @@ export async function fetchClinicAnalyticsSSOT(
 		}
 
 		if (!res.ok) {
-			return createDeterministicAnalyticsFallback(period);
+			// [ANL-01] Исключение тихой фальсификации: демо-данные СТРОГО при активном demo-режиме
+			if (isDemoShowcaseMode()) {
+				return createDeterministicAnalyticsFallback(period);
+			}
+			throw new Error(`AnalyticsApiError: ${res.status} ${res.statusText}`);
 		}
 
 		const json = await res.json();
@@ -509,8 +515,12 @@ export async function fetchClinicAnalyticsSSOT(
 			updatedAtIso: payload.updatedAtIso || new Date().toISOString(),
 			isEmpty,
 		};
-	} catch {
-		return createDeterministicAnalyticsFallback(period);
+	} catch (err) {
+		// [ANL-01] При сетевом сбое или 500 ошибке возвращаем синтетику СТРОГО за флагом демо-режима
+		if (isDemoShowcaseMode()) {
+			return createDeterministicAnalyticsFallback(period);
+		}
+		throw err;
 	}
 }
 

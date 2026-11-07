@@ -7,7 +7,7 @@ import {
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
 } from "@dental/shared";
-import { and, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -18,6 +18,7 @@ import {
 	diagnocatReports,
 	inventoryTransactions,
 	labOrders,
+	organizations,
 	patients,
 	payments,
 	treatmentPlans,
@@ -86,24 +87,98 @@ export function resolveExecutiveDateRange(
 	return { execPeriod, startDate, endDate, daysCount };
 }
 
+export interface ClinicWorkingHoursSpec {
+	workdayStartMinutes: number; // e.g. 9 * 60 = 540
+	workdayEndMinutes: number; // e.g. 17 * 60 = 1020 (8h)
+	workingDays: Set<number>; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+}
+
 /**
- * [ANL-04] Честный расчет доступных рабочих минут клиники в периоде (6 дней/нед по 11ч, без искажения на 84 ч/нед).
+ * [ANL-04] Разбор реального расписания клиники из organizations.clinicSchedule.
+ * По умолчанию: 40 часов в неделю (5 рабочих дней Mon-Fri по 8 часов), а не фиктивные 84 ч/нед.
+ */
+export function resolveClinicScheduleWorkHours(scheduleRaw: unknown): ClinicWorkingHoursSpec {
+	const defaultSpec: ClinicWorkingHoursSpec = {
+		workdayStartMinutes: 9 * 60,
+		workdayEndMinutes: 17 * 60,
+		workingDays: new Set([1, 2, 3, 4, 5]),
+	};
+
+	if (!scheduleRaw || typeof scheduleRaw !== "object") {
+		return defaultSpec;
+	}
+
+	const raw = scheduleRaw as Record<string, unknown>;
+	let startMins = defaultSpec.workdayStartMinutes;
+	let endMins = defaultSpec.workdayEndMinutes;
+	let days = defaultSpec.workingDays;
+
+	if (typeof raw.workdayStart === "string") {
+		const [h, m] = raw.workdayStart.split(":").map(Number);
+		if (!isNaN(h) && !isNaN(m)) startMins = h * 60 + m;
+	}
+	if (typeof raw.workdayEnd === "string") {
+		const [h, m] = raw.workdayEnd.split(":").map(Number);
+		if (!isNaN(h) && !isNaN(m)) endMins = h * 60 + m;
+	}
+	if (endMins <= startMins) {
+		endMins = startMins + 8 * 60;
+	}
+
+	if (Array.isArray(raw.workingDays) && raw.workingDays.length > 0) {
+		const validDays = raw.workingDays
+			.map(Number)
+			.filter((d) => !isNaN(d) && d >= 0 && d <= 6);
+		if (validDays.length > 0) {
+			days = new Set(validDays);
+		}
+	}
+
+	return {
+		workdayStartMinutes: startMins,
+		workdayEndMinutes: endMins,
+		workingDays: days,
+	};
+}
+
+/**
+ * [ANL-04] Честный расчет доступных рабочих минут клиники в периоде
+ * на основе реального графика (organizations.clinicSchedule) или 40 часов/нед по умолчанию.
  */
 export function calculateWorkingMinutesInPeriod(
 	startDate: Date,
 	endDate: Date = new Date(),
-	dailyWorkingHours: number = 11,
+	scheduleSpec?: ClinicWorkingHoursSpec | number,
 ): { workingDays: number; availableMinutesPerChair: number } {
 	const cur = new Date(startDate);
 	cur.setHours(0, 0, 0, 0);
 	const end = new Date(endDate);
 	end.setHours(23, 59, 59, 999);
 
+	let spec: ClinicWorkingHoursSpec;
+	if (typeof scheduleSpec === "object" && scheduleSpec !== null) {
+		spec = scheduleSpec;
+	} else if (typeof scheduleSpec === "number") {
+		spec = {
+			workdayStartMinutes: 9 * 60,
+			workdayEndMinutes: 9 * 60 + scheduleSpec * 60,
+			workingDays: new Set([1, 2, 3, 4, 5, 6]),
+		};
+	} else {
+		// Стандартные 40 часов в неделю: 5 дней по 8 часов (480 минут в день)
+		spec = {
+			workdayStartMinutes: 9 * 60,
+			workdayEndMinutes: 17 * 60,
+			workingDays: new Set([1, 2, 3, 4, 5]),
+		};
+	}
+
+	const dailyMinutes = Math.max(60, spec.workdayEndMinutes - spec.workdayStartMinutes);
 	let workingDays = 0;
 	const temp = new Date(cur);
 	while (temp <= end) {
 		const dayOfWeek = temp.getDay(); // 0 = Sunday
-		if (dayOfWeek !== 0) {
+		if (spec.workingDays.has(dayOfWeek)) {
 			workingDays++;
 		}
 		temp.setDate(temp.getDate() + 1);
@@ -111,7 +186,7 @@ export function calculateWorkingMinutesInPeriod(
 	if (workingDays === 0) {
 		workingDays = 1;
 	}
-	const availableMinutesPerChair = workingDays * dailyWorkingHours * 60;
+	const availableMinutesPerChair = workingDays * dailyMinutes;
 	return { workingDays, availableMinutesPerChair };
 }
 
@@ -145,6 +220,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(appointments.organizationId, orgId),
 				gte(appointments.startsAt, startDate),
+				lte(appointments.startsAt, range.endDate),
 			),
 		);
 
@@ -153,9 +229,15 @@ export async function queryExecutiveKpiAndFunnel(
 		.from(chairs)
 		.where(eq(chairs.organizationId, orgId));
 
+	const [orgRow] = await db
+		.select()
+		.from(organizations)
+		.where(eq(organizations.id, orgId));
+	const clinicScheduleSpec = resolveClinicScheduleWorkHours((orgRow as any)?.clinicSchedule);
+
 	const totalChairs = Math.max(1, Number(chairCountRow?.count || 1));
-	// [ANL-04] Честный расчет доступных минут кресел по рабочему графику (6 дней в неделю, 11 часов/день) вместо вымышленных 84 ч/нед
-	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(startDate, range.endDate, 11);
+	// [ANL-04] Честный расчет доступных минут кресел по реальному графику клиники (40 ч/нед по умолчанию) вместо 84 ч/нед
+	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(startDate, range.endDate, clinicScheduleSpec);
 	const totalAvailableMinutes = totalChairs * availableMinutesPerChair;
 
 	// 2. Лиды и входящие обращения
@@ -166,6 +248,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(crmLeads.organizationId, orgId),
 				gte(crmLeads.createdAt, startDate),
+				lte(crmLeads.createdAt, range.endDate),
 			),
 		);
 
@@ -176,6 +259,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(patients.organizationId, orgId),
 				gte(patients.createdAt, startDate),
+				lte(patients.createdAt, range.endDate),
 			),
 		);
 
@@ -189,6 +273,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(diagnocatReports.organizationId, orgId),
 				gte(diagnocatReports.createdAt, startDate),
+				lte(diagnocatReports.createdAt, range.endDate),
 			),
 		);
 
@@ -199,6 +284,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(diagnocatAiFindings.organizationId, orgId),
 				gte(diagnocatAiFindings.createdAt, startDate),
+				lte(diagnocatAiFindings.createdAt, range.endDate),
 			),
 		);
 
@@ -219,6 +305,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(treatmentPlans.organizationId, orgId),
 				gte(treatmentPlans.createdAt, startDate),
+				lte(treatmentPlans.createdAt, range.endDate),
 			),
 		)
 		.groupBy(treatmentPlans.status);
@@ -244,7 +331,7 @@ export async function queryExecutiveKpiAndFunnel(
 		}
 	}
 
-	// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа)
+	// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа, исключая аннулированные счета)
 	const [paymentsSummary] = await db
 		.select({
 			paidRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} else 0 end), 0)`,
@@ -256,7 +343,9 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(payments.organizationId, orgId),
 				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
+				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				inArray(payments.status, ["paid", "refunded"]),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -276,7 +365,9 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(payments.organizationId, orgId),
 				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
+				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				inArray(payments.status, ["paid", "refunded"]),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.groupBy(payments.method);
@@ -325,6 +416,7 @@ export async function queryExecutiveKpiAndFunnel(
 				eq(cashOperations.organizationId, orgId),
 				eq(cashOperations.operationType, "expense"),
 				gte(cashOperations.createdAt, startDate),
+				lte(cashOperations.createdAt, range.endDate),
 			),
 		)
 		.groupBy(cashOperations.reasonCode);
@@ -364,6 +456,7 @@ export async function queryExecutiveKpiAndFunnel(
 				eq(labOrders.organizationId, orgId),
 				ne(labOrders.status, "cancelled"),
 				gte(labOrders.createdAt, startDate),
+				lte(labOrders.createdAt, range.endDate),
 			),
 		);
 
@@ -379,6 +472,7 @@ export async function queryExecutiveKpiAndFunnel(
 				eq(inventoryTransactions.organizationId, orgId),
 				inArray(inventoryTransactions.transactionType, ["usage", "write_off"]),
 				gte(inventoryTransactions.createdAt, startDate),
+				lte(inventoryTransactions.createdAt, range.endDate),
 			),
 		);
 
@@ -422,14 +516,20 @@ export async function queryExecutiveKpiAndFunnel(
 		totalMarketingSpendKopecks,
 	);
 
-	// 8. Исторический когортный LTV и первичная/повторная выручка
+	// 8. Исторический когортный LTV и первичная/повторная выручка (исключая аннулированные счета)
 	const [historicalLtvRow] = await db
 		.select({
 			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
 			payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
-		.where(and(eq(payments.organizationId, orgId), inArray(payments.status, ["paid", "refunded"])));
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				inArray(payments.status, ["paid", "refunded"]),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+			),
+		);
 
 	const histPayingPatients = Number(historicalLtvRow?.payingPatientsCount || 0);
 	const histTotalRevenueKop = Math.round(Number(historicalLtvRow?.totalRevenueRub || 0) * 100);
@@ -447,8 +547,11 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(payments.organizationId, orgId),
 				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
+				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				gte(patients.createdAt, startDate),
+				lte(patients.createdAt, range.endDate),
 				inArray(payments.status, ["paid", "refunded"]),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -463,8 +566,10 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(payments.organizationId, orgId),
 				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
+				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				lt(patients.createdAt, startDate),
 				inArray(payments.status, ["paid", "refunded"]),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 

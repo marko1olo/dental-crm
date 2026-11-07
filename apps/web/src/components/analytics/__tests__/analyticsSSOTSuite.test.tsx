@@ -26,6 +26,7 @@ import {
 	getOccupancyStatus,
 	getRebookingStatus,
 } from "../analyticsCatalogData.js";
+import { setRuntimeDemoMode } from "../../../lib/demoMode.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const analyticsDir = path.resolve(__dirname, "..");
@@ -82,16 +83,29 @@ test("1.4. createDeterministicAnalyticsFallback обеспечивает стр�
 	}
 });
 
-test("1.5. fetchClinicAnalyticsSSOT безопасно возвращает детерминированный fallback при сбое сети", async () => {
+test("1.5. [ANL-01] fetchClinicAnalyticsSSOT: ошибка сети выбрасывает исключение в проде и fallback в демо", async () => {
 	const originalFetch = globalThis.fetch;
 	(globalThis as any).fetch = () => Promise.reject(new Error("Network offline"));
 
 	try {
-		const data = await fetchClinicAnalyticsSSOT("month");
-		assert.ok(data, "Data must be returned");
-		assert.ok(data.revenueKopecks > 0, "Fallback revenue must be positive");
-		assert.equal(data.isLiveApi, false, "Fallback must flag isLiveApi = false");
+		// В боевом режиме без демо-флага: ошибка не скрывается, а пробрасывается наружу
+		setRuntimeDemoMode(false);
+		await assert.rejects(
+			async () => {
+				await fetchClinicAnalyticsSSOT("month");
+			},
+			{ message: "Network offline" },
+			"In production mode, network error must throw to show retry banner",
+		);
+
+		// В демо-витринном режиме: безопасный возврат детерминированного fallback
+		setRuntimeDemoMode(true);
+		const demoData = await fetchClinicAnalyticsSSOT("month");
+		assert.ok(demoData, "Data must be returned in demo mode");
+		assert.ok(demoData.revenueKopecks > 0, "Fallback revenue must be positive");
+		assert.equal(demoData.isLiveApi, false, "Fallback must flag isLiveApi = false");
 	} finally {
+		setRuntimeDemoMode(null);
 		globalThis.fetch = originalFetch;
 	}
 });

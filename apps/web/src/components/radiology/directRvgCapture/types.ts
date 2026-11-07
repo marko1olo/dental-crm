@@ -75,6 +75,7 @@ export interface DirectRvgDeviceSelectorProps {
 	sensorStatusMessage: string;
 	fileInputRef: React.RefObject<HTMLInputElement | null>;
 	onFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onOpenCatalog?: () => void;
 }
 
 export interface DirectRvgViewportProps {
@@ -120,6 +121,8 @@ export interface DirectRvgToothAssignerProps {
 	capturedImage?: string;
 	onTriggerAiAnalysis?: () => void;
 	isAnalyzingAi?: boolean;
+	sensorStatus?: SensorCaptureStatus;
+	isSensorDetected?: boolean;
 }
 
 export interface DirectRvgFooterActionsProps {

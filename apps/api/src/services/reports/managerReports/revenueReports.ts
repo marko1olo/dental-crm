@@ -2,7 +2,7 @@
  * Отчёты по динамике выручки и потоку первичных/повторных пациентов.
  */
 
-import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { appointments, payments } from "../../../db/schema.js";
 import { inClinicZone, postgresKnowsTimeZone } from "./timezone.js";
@@ -36,7 +36,8 @@ export async function revenueTimeline(
 	 * иначе AT TIME ZONE бросает 22023 и отчёт превращается в 500.
 	 */
 	const zone = await postgresKnowsTimeZone(scope.timeZone);
-	const localPaidAt = inClinicZone(payments.paidAt, zone);
+	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
+	const localPaidAt = inClinicZone(paymentTimestamp, zone);
 	const truncated =
 		granularity === "month"
 			? sql`date_trunc('month', ${localPaidAt})`
@@ -47,18 +48,19 @@ export async function revenueTimeline(
 	const rows = await db
 		.select({
 			bucket: sql<string>`to_char(${truncated}, 'YYYY-MM-DD')`,
-			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
-			paymentCount: sql<number>`count(*)::int`,
-			payingPatients: sql<number>`count(distinct ${payments.patientId})::int`,
+			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)::numeric(12,2)`,
+			paymentCount: sql<number>`count(case when ${payments.status} = 'paid' then 1 end)::int`,
+			payingPatients: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
 		.where(
 			and(
 				eq(payments.organizationId, scope.organizationId),
-				// Только фактически полученные деньги.
-				eq(payments.status, "paid"),
-				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to),
+				// [ANL-02] Только фактически полученные деньги за вычетом подтвержденных возвратов по времени проведения оплаты, исключая аннулированные счета
+				inArray(payments.status, ["paid", "refunded"]),
+				gte(paymentTimestamp, scope.from),
+				lte(paymentTimestamp, scope.to),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.groupBy(truncated)

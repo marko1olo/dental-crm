@@ -401,5 +401,35 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 
 			assert.equal(response.statusCode, 400);
 		});
+
+		it("GET /api/hardware/sensor-status returns honest detection status [RAD-03]", async () => {
+			// 1. Without physical sensor or hot folder: honest not detected status
+			const response = await app.inject({
+				method: "GET",
+				url: "/api/hardware/sensor-status",
+			});
+
+			assert.equal(response.statusCode, 200);
+			const body = JSON.parse(response.payload);
+			assert.equal(body.success, true);
+			assert.equal(body.connected, false);
+			assert.equal(body.isDetected, false);
+			assert.equal(body.statusMessage, "Датчик не обнаружен");
+			assert.ok(body.details.includes("Подключите USB-визиограф"));
+
+			// 2. With verified hotFolder directory: marks ready
+			const responseWithFolder = await app.inject({
+				method: "GET",
+				url: `/api/hardware/sensor-status?modelId=vatech_ezsensor_hd&hotFolder=${encodeURIComponent(process.cwd())}`,
+			});
+
+			assert.equal(responseWithFolder.statusCode, 200);
+			const bodyFolder = JSON.parse(responseWithFolder.payload);
+			assert.equal(bodyFolder.success, true);
+			assert.equal(bodyFolder.connected, true);
+			assert.equal(bodyFolder.isDetected, true);
+			assert.equal(bodyFolder.sensorModelId, "vatech_ezsensor_hd");
+			assert.ok(bodyFolder.statusMessage.includes("Hot Folder"));
+		});
 	});
 });

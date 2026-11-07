@@ -1,6 +1,6 @@
 import type { RadiologyStudy } from "./types";
 
-export type SensorCaptureStatus = "ready" | "acquiring" | "captured";
+export type SensorCaptureStatus = "ready" | "acquiring" | "captured" | "not_detected";
 
 export type CaptureSourceMode = "io_sensor" | "io_camera" | "twain" | "dslr" | "import";
 

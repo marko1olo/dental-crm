@@ -1,6 +1,6 @@
 import React from "react";
 import { Activity, Layers } from "lucide-react";
-import { PROJECTION_TYPES, type ProjectionAngleType } from "./directRvgTypes";
+import { PROJECTION_TYPES, type ProjectionAngleType, type SensorCaptureStatus } from "./directRvgTypes";
 
 export type AnatomicalZone = "incisor" | "premolar" | "molar";
 export type PatientCategory = "adult" | "child";
@@ -12,6 +12,8 @@ export interface DirectRvgProjectionSelectorProps {
 	onChangePatientCategory?: (category: PatientCategory) => void;
 	anatomicalZone?: AnatomicalZone;
 	onChangeAnatomicalZone?: (zone: AnatomicalZone) => void;
+	sensorStatus?: SensorCaptureStatus;
+	isSensorDetected?: boolean;
 	// Backward-compatibility props (no longer used in UI)
 	voltageKv?: number;
 	onChangeVoltageKv?: (val: number) => void;
@@ -32,7 +34,10 @@ export const DirectRvgProjectionSelector: React.FC<DirectRvgProjectionSelectorPr
 	onSelectProjectionType,
 	anatomicalZone = "molar",
 	onChangeAnatomicalZone,
+	sensorStatus,
+	isSensorDetected,
 }) => {
+	const isDetected = isSensorDetected ?? (sensorStatus ? sensorStatus !== "not_detected" : true);
 	return (
 		<div className="rvg-dock-section" data-testid="rvg-projection-dock-section">
 			<div className="rvg-section-header">
@@ -88,20 +93,37 @@ export const DirectRvgProjectionSelector: React.FC<DirectRvgProjectionSelectorPr
 			</div>
 
 			{/* 3. Sensor Auto-Trigger Telemetry Status Banner (Friction-Killer Law) */}
-			<div
-				className="flex items-center gap-2 p-2 rounded-lg bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300"
-				data-testid="rvg-auto-trigger-status"
-			>
-				<Activity className="w-4 h-4 text-teal-500 dark:text-teal-400 shrink-0" />
-				<div className="min-w-0 flex-1 flex items-center justify-between">
-					<span className="text-xs font-semibold">
-						Датчик подключен · Ожидание снимка
-					</span>
-					<span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-600 dark:text-teal-300 font-mono font-bold">
-						АВТОПОДЖИГ
-					</span>
+			{isDetected ? (
+				<div
+					className="flex items-center gap-2 p-2 rounded-lg bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300"
+					data-testid="rvg-auto-trigger-status"
+				>
+					<Activity className="w-4 h-4 text-teal-500 dark:text-teal-400 shrink-0" />
+					<div className="min-w-0 flex-1 flex items-center justify-between">
+						<span className="text-xs font-semibold">
+							Датчик подключен · Ожидание снимка
+						</span>
+						<span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-600 dark:text-teal-300 font-mono font-bold">
+							АВТОПОДЖИГ
+						</span>
+					</div>
 				</div>
-			</div>
+			) : (
+				<div
+					className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300"
+					data-testid="rvg-auto-trigger-status"
+				>
+					<Activity className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
+					<div className="min-w-0 flex-1 flex items-center justify-between">
+						<span className="text-xs font-semibold">
+							Датчик не обнаружен · Ожидание USB
+						</span>
+						<span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">
+							ОФЛАЙН
+						</span>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

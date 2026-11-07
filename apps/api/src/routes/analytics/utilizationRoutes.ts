@@ -11,12 +11,16 @@ import {
 	chairs,
 	doctorPayrollStatements,
 	labOrders,
+	organizations,
 	payments,
 	treatmentItems,
 	users,
 	visits,
 } from "../../db/schema.js";
-import { calculateWorkingMinutesInPeriod } from "./executiveKpiQuery.js";
+import {
+	calculateWorkingMinutesInPeriod,
+	resolveClinicScheduleWorkHours,
+} from "./executiveKpiQuery.js";
 
 export interface ChairUtilizationItem {
 	chairId: string | null;
@@ -89,9 +93,15 @@ export async function calculateChairUtilization(
 				),
 			)
 		: 30;
-	// [ANL-04] Честный расчет рабочих минут клиники (6 рабочих дней в неделю по 11ч) вместо вымышленных 84ч/нед
+	const [orgRow] = await db
+		.select()
+		.from(organizations)
+		.where(eq(organizations.id, orgId));
+	const clinicScheduleSpec = resolveClinicScheduleWorkHours((orgRow as any)?.clinicSchedule);
+
+	// [ANL-04] Честный расчет рабочих минут кресел по реальному графику клиники (40ч/нед по умолчанию) вместо 84ч/нед
 	const effectiveStart = startDate ?? new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(effectiveStart, now, 11);
+	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(effectiveStart, now, clinicScheduleSpec);
 
 	const chairConditions: any[] = [eq(chairs.organizationId, orgId)];
 	if (branchId && branchId !== "all") {

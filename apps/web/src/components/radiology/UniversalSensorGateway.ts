@@ -9,3 +9,5 @@
  */
 
 export * from "./sensorGateway";
+export { UniversalSensorCatalogModal } from "./UniversalSensorCatalogModal";
+export type { UniversalSensorCatalogModalProps } from "./UniversalSensorCatalogModal";

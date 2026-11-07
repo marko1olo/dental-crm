@@ -138,44 +138,63 @@ describe("Universal Sensor Hardware & Telemetry Suite", () => {
 		});
 	});
 
-	describe("7. Autonomous Sensor Detection & Diagnostics (Mandate 8e)", () => {
-		it("executes autoDetectConnectedSensor() without throwing and returns valid sensor", async () => {
+	describe("7. Autonomous Sensor Detection & Diagnostics (Mandate 8e & [RAD-03])", () => {
+		it("executes autoDetectConnectedSensor() honestly in production without physical hardware", async () => {
 			const result = await autoDetectConnectedSensor();
-			assert.ok(result.isDetected);
-			assert.ok(result.sensorModelId.length > 0);
-			assert.ok(result.calibratedPixelSpacingMm > 0);
-			assert.ok(result.calibratedResolution.length > 0);
-			assert.ok(result.statusMessage.includes("Сенсор готов") || result.statusMessage.includes("Обнаружен"));
+			assert.equal(result.isDetected, false);
+			assert.equal(result.sensorModelId, "none");
+			assert.equal(result.statusMessage, "Датчик не обнаружен");
+			assert.ok(result.details.includes("Подключите USB-визиограф или выберите сетевую папку"));
+			assert.equal(result.nonConflictingNotice, NON_CONFLICTING_USB_POLICY.notice);
 		});
 
-		it("tests sensor connection and returns instant status in <20ms", async () => {
+		it("tests sensor connection and returns honest status in <20ms when hardware is absent", async () => {
 			const status = await testSensorConnection("vatech_ezsensor_hd");
-			assert.equal(status.isReady, true);
-			assert.equal(status.statusText, "Статус: Сенсор готов к экспозиции");
+			assert.equal(status.isReady, false);
+			assert.ok(status.statusText.includes("не обнаружен"));
 			assert.ok(status.latencyMs < 20, `Latency ${status.latencyMs} ms must be <20ms`);
 			assert.equal(status.calibratedPixelSpacingMm, 0.035);
 			assert.equal(status.bitDepth, 14);
+			assert.equal(status.nonConflictingNotice, NON_CONFLICTING_USB_POLICY.notice);
+		});
+
+		it("returns honest false status when sensorModelId is empty or none", async () => {
+			const status = await testSensorConnection("none");
+			assert.equal(status.isReady, false);
+			assert.equal(status.statusText, "Статус: Датчик не подключен");
 		});
 	});
 
 	describe("8. Doctor Interface Integration Verification", () => {
-		it("verifies DirectRvgSensorTelemetryHeader contains auto-detect and test connection controls", () => {
+		it("verifies DirectRvgSensorTelemetryHeader contains auto-detect, test connection, and catalog controls", () => {
 			const headerSrc = readSource("components/radiology/DirectRvgSensorTelemetryHeader.tsx");
 			assert.ok(headerSrc.includes('data-testid="btn-rvg-auto-detect-sensor"'));
 			assert.ok(headerSrc.includes('data-testid="btn-rvg-test-connection"'));
+			assert.ok(headerSrc.includes('data-testid="btn-rvg-open-catalog"'));
 			assert.ok(headerSrc.includes('data-testid="rvg-sensor-health-chip"'));
-			assert.ok(headerSrc.includes("Авто-детект сенсора"));
+			assert.ok(headerSrc.includes("Авто-детект"));
 			assert.ok(headerSrc.includes("Проверить связь"));
+			assert.ok(headerSrc.includes("Каталог"));
 		});
 
-		it("verifies DirectRvgCaptureModal integrates UniversalSensorGateway callbacks", () => {
+		it("verifies DirectRvgCaptureModal integrates UniversalSensorGateway and UniversalSensorCatalogModal", () => {
 			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
 			assert.ok(modalSrc.includes("autoDetectConnectedSensor"));
 			assert.ok(modalSrc.includes("testSensorConnection"));
 			assert.ok(modalSrc.includes("UNIVERSAL_SENSOR_CATALOG"));
+			assert.ok(modalSrc.includes("UniversalSensorCatalogModal"));
 			assert.ok(modalSrc.includes("onAutoDetectSensor"));
 			assert.ok(modalSrc.includes("onTestSensorConnection"));
+			assert.ok(modalSrc.includes("onOpenCatalog"));
 			assert.ok(modalSrc.includes("sensorStatusMessage"));
+		});
+
+		it("verifies UniversalSensorCatalogModal contains 30+ sensors and search filter", () => {
+			const catalogSrc = readSource("components/radiology/UniversalSensorCatalogModal.tsx");
+			assert.ok(catalogSrc.includes('data-testid="universal-sensor-catalog-modal"'));
+			assert.ok(catalogSrc.includes('data-testid="sensor-catalog-search-input"'));
+			assert.ok(catalogSrc.includes("Каталог радиовизиографов"));
+			assert.ok(catalogSrc.includes("UNIVERSAL_SENSOR_CATALOG"));
 		});
 
 		it("verifies HardwareSettingsTab renders universal-sensor-gateway-card with 1-click diagnostics", () => {
@@ -219,14 +238,14 @@ describe("Universal Sensor Hardware & Telemetry Suite", () => {
 		it("verifies autoDetectConnectedSensor yields non-conflicting hot_folder channel and clear status", async () => {
 			const res = await autoDetectConnectedSensor();
 			assert.equal(res.intakeChannel, "hot_folder");
-			assert.ok(res.statusMessage.includes("Ожидание снимка (Hot Folder / Автоподхват)"));
+			assert.equal(res.statusMessage, "Датчик не обнаружен");
 			assert.equal(res.nonConflictingNotice, NON_CONFLICTING_USB_POLICY.notice);
-			assert.ok(res.details.includes("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"));
+			assert.ok(res.details.includes("Подключите USB-визиограф или выберите сетевую папку"));
 		});
 
-		it("verifies testSensorConnection returns nonConflictingNotice and instant telemetry", async () => {
+		it("verifies testSensorConnection returns nonConflictingNotice and honest telemetry", async () => {
 			const status = await testSensorConnection("vatech_ezsensor_hd");
-			assert.equal(status.isReady, true);
+			assert.equal(status.isReady, false);
 			assert.equal(status.intakeChannel, "hot_folder");
 			assert.equal(status.nonConflictingNotice, NON_CONFLICTING_USB_POLICY.notice);
 		});

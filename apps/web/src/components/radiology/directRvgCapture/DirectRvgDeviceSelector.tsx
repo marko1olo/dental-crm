@@ -21,6 +21,7 @@ export const DirectRvgDeviceSelector: React.FC<DirectRvgDeviceSelectorProps> = (
 	sensorStatusMessage,
 	fileInputRef,
 	onFileInputChange,
+	onOpenCatalog,
 }) => {
 	const uploadActionSlot = (
 		<>
@@ -62,6 +63,7 @@ export const DirectRvgDeviceSelector: React.FC<DirectRvgDeviceSelectorProps> = (
 			onTestSensorConnection={onTestSensorConnection}
 			isDetectingSensor={isDetectingSensor}
 			sensorStatusMessage={sensorStatusMessage}
+			onOpenCatalog={onOpenCatalog}
 			uploadAction={uploadActionSlot}
 		/>
 	);

@@ -116,7 +116,8 @@ export type DoctorPayrollReportData = {
 export async function financialExecutiveSummary(
 	scope: ReportScope,
 ): Promise<FinancialExecutiveSummaryReport> {
-	// 1. Честные платежи за период (включая возвраты со знаком минус)
+	// 1. [ANL-02] Честные платежи за период (чистый приход минус возвраты строго по времени оплаты)
+	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
 	const paymentRows = await db
 		.select({
 			method: payments.method,
@@ -128,8 +129,9 @@ export async function financialExecutiveSummary(
 			and(
 				eq(payments.organizationId, scope.organizationId),
 				inArray(payments.status, ["paid", "refunded"]),
-				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to),
+				gte(paymentTimestamp, scope.from),
+				lte(paymentTimestamp, scope.to),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.groupBy(payments.method);

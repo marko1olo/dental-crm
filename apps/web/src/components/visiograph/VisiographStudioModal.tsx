@@ -435,7 +435,7 @@ export const VisiographStudioModal: React.FC<VisiographStudioModalProps> = ({
 				>
 					<div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 text-[11px] sm:text-xs text-[var(--muted)]">
 						<div className="flex items-center gap-2">
-							<span className="hidden sm:inline">Датчик: <b>Vatech EzSensor 1.5</b></span>
+							<span className="hidden sm:inline">Модальность: <b>{MODALITY_CATALOG[activeModality].shortName}</b></span>
 							<span className="hidden sm:inline opacity-40">|</span>
 							<span>Доза: <b>{MODALITY_CATALOG[activeModality].typicalDoseMsv} мЗв</b></span>
 						</div>

@@ -193,12 +193,14 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					insurance: sql<number>`coalesce(sum(case when ${payments.method} = 'insurance' then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
 				})
 				.from(payments)
-				// [ANL-02] Только фактически полученные деньги: чистый приход минус возвраты по фактическому времени проведения платежа
+				// [ANL-02] Только фактически полученные деньги: чистый приход минус возвраты по фактическому времени проведения платежа, исключая аннулированные счета
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
 						inArray(payments.status, ["paid", "refunded"]),
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 					),
 				);
 
@@ -212,7 +214,9 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					and(
 						eq(payments.organizationId, orgId),
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
 						eq(payments.status, "paid"),
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 					),
 				);
 

@@ -27,6 +27,7 @@ export interface DirectRvgSensorTelemetryHeaderProps {
 	readonly onUploadClick?: () => void;
 	readonly onAutoDetectSensor?: (() => void) | undefined;
 	readonly onTestSensorConnection?: (() => void) | undefined;
+	readonly onOpenCatalog?: (() => void) | undefined;
 	readonly isDetectingSensor?: boolean | undefined;
 	readonly sensorStatusMessage?: string | undefined;
 }
@@ -58,15 +59,21 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 	onUploadClick,
 	onAutoDetectSensor,
 	onTestSensorConnection,
+	onOpenCatalog,
 	isDetectingSensor,
 	sensorStatusMessage,
 }) => {
 	const currentSensor = availableSensors.find((s) => s.id === selectedSensorModel) || availableSensors[0];
-	const sensorDisplayName = currentSensor?.name ? (currentSensor.name.split("(")[0]?.trim() || "Визиограф RVG") : "Визиограф RVG";
+	const isSensorDetected = selectedSensorModel && selectedSensorModel !== "none" && sensorStatus !== "not_detected";
+	const sensorDisplayName = currentSensor?.name
+		? (currentSensor.name.split("(")[0]?.trim() || "Визиограф RVG")
+		: "Визиограф RVG";
 	const formattedCard = patientCardNumber
-		? (patientCardNumber.startsWith("043/") || patientCardNumber.startsWith("043/у-")
-			? `ЭМК №${patientCardNumber.replace(/^043\/[уy]-?/, "")}`
-			: `ЭМК №${patientCardNumber}`)
+		? (patientCardNumber.startsWith("ЭМК №")
+			? patientCardNumber
+			: (patientCardNumber.startsWith("043/") || patientCardNumber.startsWith("043/у-")
+				? `ЭМК №${patientCardNumber.replace(/^043\/[уy]-?/, "")}`
+				: `ЭМК №${patientCardNumber}`))
 		: "—";
 
 	return (
@@ -98,26 +105,32 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 
 			{/* Center: Quiet Equipment Telemetry Banner */}
 			<div
-				className={`rvg-sensor-status-banner rvg-status-${sensorStatus}`}
+				className={`rvg-sensor-status-banner rvg-status-${sensorStatus} ${!isSensorDetected ? "rvg-status-not_detected" : ""}`}
 				data-testid="rvg-sensor-status-banner"
 			>
 				<div
 					className="rvg-sensor-status-state"
 					data-testid="rvg-sensor-health-chip"
-					title={sensorStatusMessage || "Статус датчика"}
+					title={sensorStatusMessage || (isSensorDetected ? "Датчик готов (Auto-Trigger)" : "Датчик не обнаружен")}
 				>
 					<div className="rvg-status-indicator-dot" />
 					<span className="rvg-status-badge">
-						{availableSensors.length > 1 ? "" : `${sensorDisplayName} — `}
-						{sensorStatus === "ready" && (sensorStatusMessage || "Датчик готов (Auto-Trigger)")}
-						{sensorStatus === "acquiring" && `Получение данных (${acquisitionProgress}%)`}
-						{sensorStatus === "captured" && "Кадр получен"}
+						{isSensorDetected ? (
+							<>
+								{availableSensors.length > 1 ? "" : `${sensorDisplayName} — `}
+								{sensorStatus === "ready" && (sensorStatusMessage || "Датчик готов (Auto-Trigger)")}
+								{sensorStatus === "acquiring" && `Получение данных (${acquisitionProgress}%)`}
+								{sensorStatus === "captured" && "Кадр получен"}
+							</>
+						) : (
+							<span title={sensorStatusMessage || "Датчик не обнаружен"}>Датчик не обнаружен</span>
+						)}
 					</span>
 				</div>
 
 				{/* Non-conflicting coexistence hint */}
 				<div
-					className="text-[11px] text-teal-600/90 dark:text-teal-400/90 font-medium px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/20 max-w-[280px] truncate hidden sm:block"
+					className="text-[11px] text-teal-600/90 dark:text-teal-400/90 font-medium px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/20 whitespace-nowrap hidden lg:block"
 					title="Работает параллельно с ПО оборудования: Параллельно с EzDent-i / Romexis (без конфликта за USB)"
 					data-testid="rvg-coexistence-hint"
 				>
@@ -135,6 +148,9 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 							data-testid="rvg-sensor-device-select"
 							title="Выбор модели датчика"
 						>
+							<option value="none" className="bg-[var(--paper,#0f172a)] text-[var(--ink,#ffffff)]">
+								[ Не выбран / Автопоиск ]
+							</option>
 							{availableSensors.map((sensor) => (
 								<option key={sensor.id} value={sensor.id} className="bg-[var(--paper,#0f172a)] text-[var(--ink,#ffffff)]">
 									{sensor.name}
@@ -154,7 +170,7 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 							data-testid="btn-rvg-auto-detect-sensor"
 							title="Автоматический поиск подключенного USB/IP датчика"
 						>
-							{isDetectingSensor ? "Поиск..." : "Авто-детект сенсора"}
+							{isDetectingSensor ? "Поиск..." : "Авто-детект"}
 						</button>
 					)}
 					{onTestSensorConnection && (
@@ -166,6 +182,17 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 							title="Проверить отклик и калибровку датчика"
 						>
 							Проверить связь
+						</button>
+					)}
+					{onOpenCatalog && (
+						<button
+							type="button"
+							onClick={onOpenCatalog}
+							className="rvg-chip-btn"
+							data-testid="btn-rvg-open-catalog"
+							title="Каталог 30+ моделей визиографов"
+						>
+							Каталог
 						</button>
 					)}
 				</div>

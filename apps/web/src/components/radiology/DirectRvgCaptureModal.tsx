@@ -8,6 +8,7 @@ import {
 	DirectRvgToothAssigner,
 	DirectRvgFooterActions,
 } from "./directRvgCapture";
+import { UniversalSensorCatalogModal } from "./UniversalSensorGateway";
 
 if (typeof document !== "undefined") {
 	import("./rvgCapture.css");
@@ -65,7 +66,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 					modalId={logic.modalId} patientName={props.patientName || "Пациент"} patientCardNumber={props.patientCardNumber || "МК-2026/891"} doctorName={props.doctorName || "Лечащий врач"} onClose={props.onClose}
 					sensorStatus={logic.sensorStatus} acquisitionProgress={logic.acquisitionProgress} selectedSensorModel={logic.selectedSensorModel} onSelectSensorModel={logic.setSelectedSensorModel} availableSensors={logic.availableSensors}
 					onTriggerCapture={logic.handleTriggerCapture} onAutoDetectSensor={logic.handleAutoDetectSensor} onTestSensorConnection={logic.handleTestSensorConnection} isDetectingSensor={logic.isDetectingSensor} sensorStatusMessage={logic.sensorHealthStatus}
-					fileInputRef={logic.fileInputRef} onFileInputChange={logic.handleFileInputChange}
+					fileInputRef={logic.fileInputRef} onFileInputChange={logic.handleFileInputChange} onOpenCatalog={logic.handleOpenCatalog}
 				/>
 				<div className="rvg-capture-body">
 					<DirectRvgViewport
@@ -79,6 +80,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 						projectionType={logic.projectionType} onSelectProjectionType={logic.handleSelectProjectionType} patientCategory={logic.patientCategory} onChangePatientCategory={logic.setPatientCategory}
 						anatomicalZone={logic.anatomicalZone} onChangeAnatomicalZone={logic.setAnatomicalZone} clinicalNotes={logic.clinicalNotes} onChangeClinicalNotes={logic.setClinicalNotes}
 						capturedImage={logic.capturedImage}
+						sensorStatus={logic.sensorStatus}
+						isSensorDetected={logic.selectedSensorModel !== "none" && logic.sensorStatus !== "not_detected"}
 					/>
 				</div>
 				<DirectRvgFooterActions
@@ -91,6 +94,12 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 							// quiet fallback
 						}
 					}}
+				/>
+				<UniversalSensorCatalogModal
+					isOpen={logic.isCatalogOpen}
+					onClose={logic.handleCloseCatalog}
+					onSelectSensor={logic.handleSelectSensorFromCatalog}
+					activeSensorId={logic.selectedSensorModel}
 				/>
 			</div>
 		</div>

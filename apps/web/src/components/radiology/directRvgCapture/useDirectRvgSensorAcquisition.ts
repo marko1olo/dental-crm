@@ -39,18 +39,35 @@ export function useDirectRvgSensorAcquisition({
 		return "";
 	}, [initialImageUrl, isDemo]);
 
-	const [sensorStatus, setSensorStatus] = useState<SensorCaptureStatus>("ready");
-	const [selectedSensorModel, setSelectedSensorModel] = useState<string>("vatech_ezsensor_hd");
+	const [sensorStatus, setSensorStatus] = useState<SensorCaptureStatus>(
+		isDemo ? "ready" : "not_detected"
+	);
+	const [selectedSensorModel, setSelectedSensorModel] = useState<string>(
+		isDemo ? "vatech_ezsensor_hd" : "none"
+	);
 	const [acquisitionProgress, setAcquisitionProgress] = useState<number>(0);
 	const [isDetectingSensor, setIsDetectingSensor] = useState<boolean>(false);
 	const [sensorHealthStatus, setSensorHealthStatus] = useState<string>(
-		"Ожидание снимка (Hot Folder / Автоподхват)",
+		isDemo
+			? "Ожидание снимка (Hot Folder / Автоподхват) — Vatech EzSensor HD"
+			: "Датчик не обнаружен (подключите USB-визиограф или выберите сетевую папку)"
 	);
 	const [capturedImage, setCapturedImage] = useState<string>(defaultImage);
+	const [isCatalogOpen, setIsCatalogOpen] = useState<boolean>(false);
 
 	// Direct File Upload & Ingestion State
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDragOver, setIsDragOver] = useState<boolean>(false);
+
+	const handleOpenCatalog = useCallback(() => setIsCatalogOpen(true), []);
+	const handleCloseCatalog = useCallback(() => setIsCatalogOpen(false), []);
+	const handleSelectSensorFromCatalog = useCallback((sensor: { id: string; name: string }) => {
+		setSelectedSensorModel(sensor.id);
+		setSensorStatus("ready");
+		setSensorHealthStatus(`Выбран из каталога: ${sensor.name}`);
+		setIsCatalogOpen(false);
+		showToast(`Выбран датчик: ${sensor.name}`, "success");
+	}, []);
 
 	const handleAutoDetectSensor = useCallback(async () => {
 		setIsDetectingSensor(true);
@@ -58,10 +75,16 @@ export function useDirectRvgSensorAcquisition({
 			const res = await autoDetectConnectedSensor();
 			setSelectedSensorModel(res.sensorModelId);
 			setSensorHealthStatus(res.statusMessage);
-			showToast(`${res.statusMessage}`, "success");
+			setSensorStatus(res.isDetected ? "ready" : "not_detected");
+			if (res.isDetected) {
+				showToast(res.statusMessage, "success");
+			} else {
+				showToast(res.statusMessage, "info");
+			}
 		} catch {
-			setSensorHealthStatus("Ожидание снимка (Hot Folder / Автоподхват) — Vatech EzSensor HD");
-			showToast("Датчик определен по умолчанию: Vatech EzSensor HD (Hot Folder)", "info");
+			setSensorStatus("not_detected");
+			setSensorHealthStatus("Датчик не обнаружен. Проверьте USB или сетевую папку (Hot Folder)");
+			showToast("Датчик не обнаружен", "info");
 		} finally {
 			setIsDetectingSensor(false);
 		}
@@ -70,7 +93,13 @@ export function useDirectRvgSensorAcquisition({
 	const handleTestSensorConnection = useCallback(async () => {
 		const res = await testSensorConnection(selectedSensorModel);
 		setSensorHealthStatus(res.statusText);
-		showToast(`${res.statusText} (${res.latencyMs} мс)`, "success");
+		if (res.isReady) {
+			setSensorStatus("ready");
+			showToast(`${res.statusText} (${res.latencyMs} мс)`, "success");
+		} else {
+			setSensorStatus("not_detected");
+			showToast(res.statusText, "info");
+		}
 	}, [selectedSensorModel]);
 
 	// Popular sensors merged with SENSOR_MODELS and UNIVERSAL_SENSOR_CATALOG
@@ -214,5 +243,9 @@ export function useDirectRvgSensorAcquisition({
 		handleViewportDragLeave,
 		handleViewportDrop,
 		handleProcessFile,
+		isCatalogOpen,
+		handleOpenCatalog,
+		handleCloseCatalog,
+		handleSelectSensorFromCatalog,
 	};
 }

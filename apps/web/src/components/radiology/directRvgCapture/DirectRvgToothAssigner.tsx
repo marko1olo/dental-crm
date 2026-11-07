@@ -22,6 +22,8 @@ export const DirectRvgToothAssigner: React.FC<DirectRvgToothAssignerProps> = ({
 	capturedImage,
 	onTriggerAiAnalysis,
 	isAnalyzingAi = false,
+	sensorStatus,
+	isSensorDetected,
 }) => {
 	// Real Misch Bone Density Assessment (HU & Misch D1-D4 classification via @dental/shared)
 	const boneHU = useMemo(() => {
@@ -83,6 +85,8 @@ export const DirectRvgToothAssigner: React.FC<DirectRvgToothAssignerProps> = ({
 				onChangePatientCategory={onChangePatientCategory}
 				anatomicalZone={anatomicalZone}
 				onChangeAnatomicalZone={onChangeAnatomicalZone}
+				sensorStatus={sensorStatus}
+				isSensorDetected={isSensorDetected}
 			/>
 
 			{/* 3. Real Misch Bone Density Panel (HU & D1-D4 without pseudophysics) */}

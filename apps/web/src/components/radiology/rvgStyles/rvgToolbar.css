@@ -39,6 +39,7 @@
 .rvg-status-ready .rvg-status-indicator-dot { background: #10b981; box-shadow: 0 0 8px #10b981; animation: rvgPulseDot 1.5s infinite ease-in-out; }
 .rvg-status-acquiring .rvg-status-indicator-dot { background: #06b6d4; box-shadow: 0 0 8px #06b6d4; animation: rvgPulseAcquiring 0.8s infinite ease-in-out; }
 .rvg-status-captured .rvg-status-indicator-dot { background: #14b8a6; box-shadow: 0 0 6px #14b8a6; }
+.rvg-status-not_detected .rvg-status-indicator-dot { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.4); animation: none; }
 @keyframes rvgPulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.2); } }
 @keyframes rvgPulseAcquiring { 0%, 100% { opacity: 1; transform: scale(1.3); } 50% { opacity: 0.4; transform: scale(0.9); } }
 .rvg-status-badge { font-size: 0.75rem; font-weight: 600; color: var(--ink, #ffffff); letter-spacing: 0.01em; }

@@ -112,18 +112,37 @@ export const DirectRvgViewport: React.FC<DirectRvgViewportProps> = ({
 						className="rvg-empty-sensor-state flex flex-col items-center justify-center h-full w-full p-8 text-center z-10"
 						data-testid="rvg-empty-sensor-state"
 					>
-						<div className="w-16 h-16 rounded-full bg-teal-500/15 border border-teal-500/35 flex items-center justify-center mb-4 text-teal-400 shadow-lg shadow-teal-500/10">
-							<Zap className="w-8 h-8 animate-pulse text-teal-400" />
-						</div>
-						<h3 className="text-base font-bold text-white mb-2">
-							Датчик готов к захвату (Auto-Trigger)
-						</h3>
-						<p className="text-xs max-w-md leading-relaxed text-teal-300 font-medium mb-1">
-							Бесконфликтный режим (без монопольного захвата USB-шины)
-						</p>
-						<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
-							Сделайте экспозицию на рентген-аппарате. Датчик автоматически зафиксирует импульс (&lt;50 мс), либо снимок поступит из папки аппарата. Также можно перетащить файл (Drag &amp; Drop) или вставить из буфера (Ctrl+V).
-						</p>
+						{sensorStatus === "not_detected" ? (
+							<>
+								<div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/35 flex items-center justify-center mb-4 text-amber-400 shadow-lg shadow-amber-500/10">
+									<Zap className="w-8 h-8 text-amber-400" />
+								</div>
+								<h3 className="text-base font-bold text-white mb-2">
+									Датчик не обнаружен (подключите USB-визиограф или выберите сетевую папку)
+								</h3>
+								<p className="text-xs max-w-md leading-relaxed text-amber-300 font-medium mb-1">
+									Ожидание подключения оборудования или входящего файла
+								</p>
+								<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
+									Подключите датчик к USB-разъёму, либо выберите готовую сетевую папку (Hot Folder) аппарата. Вы также можете перетащить файл снимка (Drag &amp; Drop) или вставить из буфера обмена (Ctrl+V).
+								</p>
+							</>
+						) : (
+							<>
+								<div className="w-16 h-16 rounded-full bg-teal-500/15 border border-teal-500/35 flex items-center justify-center mb-4 text-teal-400 shadow-lg shadow-teal-500/10">
+									<Zap className="w-8 h-8 animate-pulse text-teal-400" />
+								</div>
+								<h3 className="text-base font-bold text-white mb-2">
+									Датчик готов к захвату (Auto-Trigger)
+								</h3>
+								<p className="text-xs max-w-md leading-relaxed text-teal-300 font-medium mb-1">
+									Бесконфликтный режим (без монопольного захвата USB-шины)
+								</p>
+								<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
+									Сделайте экспозицию на рентген-аппарате. Датчик автоматически зафиксирует импульс (&lt;50 мс), либо снимок поступит из папки аппарата. Также можно перетащить файл (Drag &amp; Drop) или вставить из буфера (Ctrl+V).
+								</p>
+							</>
+						)}
 						<div className="flex gap-2.5 items-center flex-wrap justify-center">
 							<button
 								type="button"
