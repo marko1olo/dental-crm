@@ -81,6 +81,14 @@ export {
 } from "./consents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
+export {
+	DENTAL_ICD10_FULL_CATALOG,
+	normalizeDentalIcd10Code,
+	isDentalIcd10Code,
+	findDentalIcd10,
+	searchDentalIcd10Catalog,
+	type DentalIcd10Entry,
+} from "./clinical/dentalIcd10Catalog.js";
 export * from "./clinical/therapyProtocolEngine.js";
 export * from "./pricelist/index.js";
 export { ORDER_804N_CODE_REGEX } from "./pricelist/index.js";
@@ -115,6 +123,7 @@ export {
 export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./finance/cashFlowCatalogs.js";
+export * from "./finance/clinicalCashFlowCatalogs.js";
 export * from "./finance/stomxCashFlowCatalogs.js";
 export * from "./finance/treatmentBudgetEngine.js";
 export * from "./finance/accountingExportEngine.js";

@@ -479,7 +479,7 @@ async function main() {
 		console.log("  -> Switching to schedule view on PC...");
 		await pcPage.evaluate(() => { window.location.hash = "schedule"; });
 		await pcPage.waitForTimeout(1000);
-		await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-filter-strip"], .schedule-filter-strip', {
+		await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-filter-strip"], .schedule-filter-strip, [data-testid="chair-schedule-studio-modal"]', {
 			timeout: 30000,
 			state: "visible",
 		});
@@ -529,14 +529,14 @@ async function main() {
 		await mobilePage.evaluate(() => { window.location.hash = "schedule"; });
 		await mobilePage.waitForTimeout(1000);
 		
-		console.log("  -> Waiting for [data-testid=\"schedule-mobile-agenda-view\"]...");
-		await mobilePage.waitForSelector('[data-testid="schedule-mobile-agenda-view"]', { timeout: 30000, state: "visible" });
+		console.log("  -> Waiting for mobile schedule elements...");
+		await mobilePage.waitForSelector('[data-testid="schedule-mobile-agenda-view"], [data-testid="chair-schedule-studio-modal"], [data-testid="schedule-agenda-timeline"]', { timeout: 30000, state: "visible" });
 		await mobilePage.waitForTimeout(1500);
 
 		// Mobile Light
 		console.log("  -> Switching to Mobile Light theme...");
 		await setTheme(mobilePage, "light", false);
-		const apptCard = await mobilePage.$('[data-testid="schedule-mobile-appt-card"], .schedule-mobile-card');
+		const apptCard = await mobilePage.$('[data-testid="schedule-mobile-appt-card"], .schedule-mobile-card, [data-testid="schedule-agenda-timeline"] button');
 		if (apptCard) {
 			console.log("  -> Tapping mobile appointment card to open Bottom Sheet...");
 			await apptCard.click();

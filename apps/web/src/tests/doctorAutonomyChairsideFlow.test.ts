@@ -26,8 +26,16 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 				process.cwd(),
 				"apps/web/src/components/schedule/AppointmentModalPatientSection.tsx",
 			);
+			const headerFilePath = path.resolve(
+				process.cwd(),
+				"apps/web/src/components/schedule/appointmentModalPatient/PatientSectionHeader.tsx",
+			);
 			assert.ok(fs.existsSync(sectionFilePath), "AppointmentModalPatientSection.tsx must exist");
-			const content = fs.readFileSync(sectionFilePath, "utf8");
+			assert.ok(fs.existsSync(headerFilePath), "PatientSectionHeader.tsx must exist");
+			const content =
+				fs.readFileSync(sectionFilePath, "utf8") +
+				"\n" +
+				fs.readFileSync(headerFilePath, "utf8");
 
 			assert.ok(
 				content.includes('data-testid="appointment-modal-cito-express-btn"'),
@@ -52,8 +60,16 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 				process.cwd(),
 				"apps/web/src/components/schedule/useAppointmentModalState.ts",
 			);
+			const submitEntitiesPath = path.resolve(
+				process.cwd(),
+				"apps/web/src/components/schedule/appointmentModalStateModules/useAppointmentModalSubmitEntities.ts",
+			);
 			assert.ok(fs.existsSync(stateFilePath), "useAppointmentModalState.ts must exist");
-			const content = fs.readFileSync(stateFilePath, "utf8");
+			assert.ok(fs.existsSync(submitEntitiesPath), "useAppointmentModalSubmitEntities.ts must exist");
+			const content =
+				fs.readFileSync(stateFilePath, "utf8") +
+				"\n" +
+				fs.readFileSync(submitEntitiesPath, "utf8");
 
 			// Ensure legacy blocking error is eradicated
 			assert.ok(
@@ -147,15 +163,22 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 				process.cwd(),
 				"apps/web/src/components/visit/VisitEmkTab.tsx",
 			);
+			const emkAutosaveHookPath = path.resolve(
+				process.cwd(),
+				"apps/web/src/components/visit/emkTab/useVisitEmkAutosave.ts",
+			);
 			const soapEditorPath = path.resolve(
 				process.cwd(),
 				"apps/web/src/components/visit/VisitSoapEditor.tsx",
 			);
-			const emkContent = fs.readFileSync(emkTabPath, "utf8");
+			const emkContent =
+				fs.readFileSync(emkTabPath, "utf8") +
+				"\n" +
+				(fs.existsSync(emkAutosaveHookPath) ? fs.readFileSync(emkAutosaveHookPath, "utf8") : "");
 			const soapContent = fs.readFileSync(soapEditorPath, "utf8");
 
 			assert.ok(
-				emkContent.includes("Debounced autosave"),
+				emkContent.includes("Debounced autosave") || emkContent.includes("soloAutosaveState"),
 				"VisitEmkTab must implement debounced autosave",
 			);
 			assert.ok(

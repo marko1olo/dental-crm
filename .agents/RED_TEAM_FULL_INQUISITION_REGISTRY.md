@@ -2242,4 +2242,38 @@
        * 🌙 Mobile Dark: [`docs/proofs/warehouse/warehouse_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_mobile_dark_390x844.png) (147.4 KB)
      Личный осмотр подтвердил строгое соответствие 8 осям визуального контроля: нулевой клиппинг, ровно 1 Primary CTA, 100% тёмные токены, поддержка Apple HIG (Bottom Sheets, Drag Handles, тач $\ge 44$px).
 
+---
+
+## 29. 🛡️ FRONTEND STATE, EDGE-CASES & APPLE HIG INQUISITION (MANDATES 8e, 8n, 8ze, 8al)
+
+### [HIG-01] [SEV-1] [ЗАКРЫТО] Ликвидация регрессий декомпозиции, боевой сьют инвариантов автономии врача, защита от амнезии и 4-State пруфы Apple HIG
+- **Файлы:**
+  - Новый комплексный тестовый сьют: [`apps/web/src/tests/frontendStateEdgeCasesAppleHigInquisition.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/frontendStateEdgeCasesAppleHigInquisition.test.tsx)
+  - Исправление регрессий декомпозиции: [`apps/web/src/tests/doctorAutonomyChairsideFlow.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/doctorAutonomyChairsideFlow.test.ts)
+  - Реэкспорт классификатора МКБ-10: [`apps/web/src/lib/icd10.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/lib/icd10.ts) & [`packages/shared/src/index.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/index.ts)
+  - Скрипт визуального пруфа: [`scripts/take_schedule_4state_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/take_schedule_4state_proofs.cjs)
+- **Суть проблемы:**
+  1. В `doctorAutonomyChairsideFlow.test.ts` 3 теста падали из-за исторической декомпозиции компонентов (`AppointmentModalPatientSection.tsx`, `useAppointmentModalState.ts`, `VisitEmkTab.tsx`) на дочерние модули (`appointmentModalPatient/`, `appointmentModalStateModules/`, `emkTab/`), проверяя устаревшие пути.
+  2. Отсутствовал комплексный поведенческий тест-сьют, проверяющий на краевые случаи: автономию врача и неблокирующие CTA (`disabled={false}` при незаполненных второстепенных полях), мягкий фокус (Soft Focus) вместо блокировки, 100% гарантийные переделки (0 ₽), синхронное зеркалирование ввода в RAM (0ms L1), аварийный сброс черновиков при `beforeunload`, сохранение стейта при смене табов, реактивную гидратацию без F5, и Apple HIG геометрию (тач $\ge 44\times 44$px, Bottom Sheets, 0px горизонтального дрифта).
+  3. В `apps/web/src/lib/icd10.ts` отсутствовал явный именованный экспорт `DENTAL_ICD10_FULL_CATALOG`, вызывавший ошибку сборщика при открытии модалок.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. **Исправлен `doctorAutonomyChairsideFlow.test.ts`:** Все 10/10 тестов проходят (100% pass), пути обновлены на декомпозированные модули (`PatientSectionHeader.tsx`, `useAppointmentModalSubmitEntities.ts`, `useVisitEmkAutosave.ts`).
+  2. **Создан и внедрен `frontendStateEdgeCasesAppleHigInquisition.test.tsx` (19/19 тестов проходят):**
+     - Секция 1: Автономия врача — безопасные физиологические пресеты, мягкий фокус `executeSoftFocusGuidance` на обязательные поля, опциональная анестезия (ноль блокировок осмотра/гигиены), отсутствие `disabled={true}` на Primary CTA (`MobileChairsideEHR`), поддержка 0 ₽ гарантийных переделок и скидки врача 100%.
+     - Секция 2: Защита от амнезии — `saveVisitDraftDebounced` с синхронным L1 RAM зеркалированием (0ms), `flushPendingOfflineDrafts` при аварийном размонтировании, сохранение черновиков между табами в `visitStore`, грациозная обработка поврежденного JSON без падений.
+     - Секция 3: Реактивная гидратация — реактивное обновление статусов расписания, выбор активного пациента и мгновенное переключение видов в `appStore` без F5.
+     - Секция 4: Apple HIG сенсорная эргономика — `MobileBottomSheet` со скруглением `rounded-t-[24px]` и тактильным Drag Handle `36x5px`, `MobileFloatingBottomBar` с кнопкой высотой $\ge 52$px в Natural Thumb Zone, карточки `MobileGroupedList` с высотой строк $\ge 52$px, Segmented Control без обрезания слов, компактный Top Bar $\le 56$px и CSS-токены `overflow-x: clip`, `max-width: 100vw`.
+  3. **Исправлен экспорт МКБ-10:** В `apps/web/src/lib/icd10.ts` и `packages/shared/src/index.ts` добавлен строгий экспорт `DENTAL_ICD10_FULL_CATALOG`, пакет `@dental/shared` пересобран с `tsc`.
+  4. **Машинные пруфы:**
+     - Vitest: `npx vitest run apps/web/src/tests/doctorAutonomyChairsideFlow.test.ts` -> 10/10 passing (Exit Code 0).
+     - Node test runner: `node ... --test apps/web/src/tests/doctorAutonomyChairsideFlow.test.ts apps/web/src/tests/frontendStateEdgeCasesAppleHigInquisition.test.tsx` -> 29/29 passing (Exit Code 0).
+     - Кодировка: `npm run check:encoding` -> 24 105 файлов проверено, замечаний нет (Exit Code 0).
+  5. **4-State Visual Proofs (Apple HIG & Расписание) сняты на живом Chromium и лично проинспектированы через `read_file`:**
+     - ☀️ PC Light (1440x900): [`docs/proofs/frontend_hig/pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/frontend_hig/pc_light_1440x900.png) (121.5 KB, md5: df54aaa2)
+     - 🌙 PC Dark (1440x900): [`docs/proofs/frontend_hig/pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/frontend_hig/pc_dark_1440x900.png) (126.3 KB, md5: 5e74e065)
+     - 📱 Mobile Light (390x844): [`docs/proofs/frontend_hig/mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/frontend_hig/mobile_light_390x844.png) (126.8 KB, md5: a888d884)
+     - 🌙 Mobile Dark (390x844): [`docs/proofs/frontend_hig/mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/frontend_hig/mobile_dark_390x844.png) (127.6 KB, md5: 858f17fa)
+     Личный осмотр подтвердил полное соблюдение 8 осей: 0 клиппинга, ровно 1 Primary CTA в Natural Thumb Zone, нативный Bottom Sheet с Drag Handle `36x5px`, 100% тёмные токены, отсутствие белых пятен и нулевой горизонтальный дрифт.
+
+
 
