@@ -5,7 +5,9 @@ import { TelephonyToastHeader } from "./telephonyToast/TelephonyToastHeader";
 import { TelephonyToastPatientCard } from "./telephonyToast/TelephonyToastPatientCard";
 import type { TelephonyToastProps } from "./telephonyToast/types";
 import { useTelephonyToastController } from "./telephonyToast/useTelephonyToastController";
-import "./telephonyFloatingWidget.css";
+if (typeof document !== "undefined") {
+	import("./telephonyFloatingWidget.css");
+}
 
 export type { TelephonyToastProps };
 

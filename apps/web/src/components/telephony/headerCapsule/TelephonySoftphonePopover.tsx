@@ -1,10 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Headphones, PhoneCall, PhoneOff, Volume2, VolumeX, X } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { useTelephonyStore, formatDurationTimer } from "../../../store/telephonyStore";
 import { TelephonyPopoverDialer } from "./TelephonyPopoverDialer";
 import { TelephonyPopoverHistory } from "./TelephonyPopoverHistory";
 import { initiateOutboundCall } from "../initiateOutboundCall";
+import { LiveCallAudioVisualizer } from "../LiveCallAudioVisualizer";
+import { getSharedTelephonyAudioStreamManager } from "../../../store/telephonyModules/telephonyAudioStreamManager";
 
 const AGENT_STATES = [
 	{ id: "online" as const, label: "Онлайн", dot: "bg-emerald-500", active: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
@@ -15,9 +17,11 @@ const AGENT_STATES = [
 export interface TelephonySoftphonePopoverProps {
 	onClose: () => void;
 	isMobile?: boolean;
+	isStandalone?: boolean;
+	className?: string;
 }
 
-export function TelephonySoftphonePopover({ onClose, isMobile }: TelephonySoftphonePopoverProps): React.JSX.Element {
+export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, className }: TelephonySoftphonePopoverProps): React.JSX.Element {
 	const tel = useTelephonyStore();
 	const [activeTab, setActiveTab] = useState<"dialer" | "history">("dialer");
 	const [dialNumber, setDialNumber] = useState("");
@@ -28,9 +32,19 @@ export function TelephonySoftphonePopover({ onClose, isMobile }: TelephonySoftph
 		showToast(`Набор номера: ${phone}`, "info");
 	};
 
+	useEffect(() => {
+		if (tel.activeCall) {
+			const streamMgr = getSharedTelephonyAudioStreamManager();
+			void streamMgr.acquireLocalAudioStream();
+			streamMgr.ensurePeerConnection();
+		}
+	}, [tel.activeCall]);
+
 	const containerClass = isMobile
-		? "fixed inset-x-0 bottom-0 rounded-t-[24px] bg-[var(--paper-strong)] border-t border-[var(--line-strong)] shadow-2xl z-[99990] p-4 flex flex-col gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] animate-in slide-in-from-bottom duration-200 overflow-x-clip max-w-[100vw]"
-		: "absolute right-0 top-full mt-2 w-84 sm:w-92 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line-strong)] shadow-2xl backdrop-blur-xl p-3 z-50 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-150";
+		? `fixed inset-x-0 bottom-0 rounded-t-[24px] bg-[var(--paper-strong)] border-t border-[var(--line-strong)] shadow-2xl z-[99990] p-4 flex flex-col gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] animate-in slide-in-from-bottom duration-200 overflow-x-clip max-w-[100vw] ${className || ""}`
+		: isStandalone
+		? `relative w-84 sm:w-92 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line-strong)] shadow-2xl backdrop-blur-xl p-3 z-50 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 ${className || ""}`
+		: `absolute right-0 top-full mt-2 w-84 sm:w-92 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line-strong)] shadow-2xl backdrop-blur-xl p-3 z-50 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-150 ${className || ""}`;
 
 	return (
 		<div
@@ -47,13 +61,13 @@ export function TelephonySoftphonePopover({ onClose, isMobile }: TelephonySoftph
 					<span className="text-xs font-bold text-[var(--ink)]">Mango PBX · Л{tel.activeLineId}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<button type="button" onClick={() => tel.switchLine(tel.activeLineId === 1 ? 2 : 1)} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] px-2 py-0.5 rounded-lg border border-[var(--line)] text-[11px] font-mono hover:bg-[var(--paper-soft)] cursor-pointer" title="Переключить линию">
+					<button type="button" onClick={() => tel.switchLine(tel.activeLineId === 1 ? 2 : 1)} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] px-2 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] font-mono hover:bg-[var(--paper-subtle)] cursor-pointer" title="Переключить линию">
 						Л{tel.activeLineId}
 					</button>
-					<button type="button" onClick={tel.toggleMute} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] p-1 rounded-lg border border-[var(--line)] flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title={tel.isMuted ? "Включить звук" : "Выключить звук"}>
+					<button type="button" onClick={tel.toggleMute} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center hover:bg-[var(--paper-subtle)] cursor-pointer" title={tel.isMuted ? "Включить звук" : "Выключить звук"}>
 						{tel.isMuted ? <VolumeX size={14} className="text-rose-500" /> : <Volume2 size={14} />}
 					</button>
-					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted)] hover:text-rose-600 flex items-center justify-center cursor-pointer" title="Закрыть софтфон" aria-label="Закрыть">
+					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-rose-500/15 text-[var(--muted)] hover:text-rose-500 flex items-center justify-center cursor-pointer" title="Закрыть софтфон" aria-label="Закрыть">
 						<X size={16} />
 					</button>
 				</div>
@@ -61,7 +75,16 @@ export function TelephonySoftphonePopover({ onClose, isMobile }: TelephonySoftph
 
 			<div className="grid grid-cols-3 gap-1">
 				{AGENT_STATES.map((st) => (
-					<button key={st.id} type="button" onClick={() => tel.setAgentState(st.id)} className={`min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${tel.agentState === st.id ? st.active : "border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+					<button
+						key={st.id}
+						type="button"
+						onClick={() => tel.setAgentState(st.id)}
+						className={`min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+							tel.agentState === st.id
+								? st.active
+								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
+						}`}
+					>
 						<span className={`w-2 h-2 rounded-full ${st.dot}`} />
 						<span>{st.label}</span>
 					</button>
@@ -69,22 +92,41 @@ export function TelephonySoftphonePopover({ onClose, isMobile }: TelephonySoftph
 			</div>
 
 			{tel.activeCall && (
-				<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between gap-2">
-					<div className="min-w-0">
-						<p className="text-xs font-bold text-[var(--ink)] truncate">{tel.activeCall.patientName || tel.activeCall.phone}</p>
-						<p className="text-[11px] font-mono text-[var(--teal)] font-bold">{formatDurationTimer(Math.floor((Date.now() - (tel.activeCall.callStartedAt || Date.now())) / 1000))}</p>
+				<div className="flex flex-col gap-2 p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30">
+					<div className="flex items-center justify-between gap-2">
+						<div className="min-w-0">
+							<p className="text-xs font-bold text-[var(--ink)] truncate">{tel.activeCall.patientName || tel.activeCall.phone}</p>
+							<p className="text-[11px] font-mono text-[var(--teal)] font-bold">{formatDurationTimer(Math.floor((Date.now() - (tel.activeCall.callStartedAt || Date.now())) / 1000))}</p>
+						</div>
+						<button type="button" onClick={() => { tel.rejectCall(); showToast("Вызов завершен", "info"); }} className="min-h-[44px] sm:min-h-[32px] px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0" title="Завершить звонок" aria-label="Завершить звонок">
+							<PhoneOff size={13} /><span>Завершить звонок</span>
+						</button>
 					</div>
-					<button type="button" onClick={() => { tel.rejectCall(); showToast("Вызов завершен", "info"); }} className="min-h-[44px] sm:min-h-[32px] px-2.5 rounded-lg bg-rose-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer" title="Завершить вызов">
-						<PhoneOff size={13} /><span>Сброс</span>
-					</button>
+					<LiveCallAudioVisualizer isCallActive={Boolean(tel.activeCall)} isMuted={tel.isMuted} volume={1.0} />
 				</div>
 			)}
 
 			<div className="flex border-b border-[var(--line)]">
-				<button type="button" onClick={() => setActiveTab("dialer")} className={`flex-1 py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors ${activeTab === "dialer" ? "border-[var(--teal)] text-[var(--teal)]" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+				<button
+					type="button"
+					onClick={() => setActiveTab("dialer")}
+					className={`flex-1 py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors bg-transparent ${
+						activeTab === "dialer"
+							? "border-[var(--teal)] text-[var(--teal)]"
+							: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+				>
 					Набор
 				</button>
-				<button type="button" onClick={() => setActiveTab("history")} className={`flex-1 py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors ${activeTab === "history" ? "border-[var(--teal)] text-[var(--teal)]" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+				<button
+					type="button"
+					onClick={() => setActiveTab("history")}
+					className={`flex-1 py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors bg-transparent ${
+						activeTab === "history"
+							? "border-[var(--teal)] text-[var(--teal)]"
+							: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+				>
 					Журнал ({tel.callHistory.length})
 				</button>
 			</div>

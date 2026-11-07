@@ -7,7 +7,9 @@ import { TelephonyIncomingCallCard } from "./telephonyFloatingWidget/TelephonyIn
 import { TelephonyRecentCallsList } from "./telephonyFloatingWidget/TelephonyRecentCallsList";
 import { useTelephonyFloatingState } from "./telephonyFloatingWidget/useTelephonyFloatingState";
 import type { TelephonyFloatingWidgetProps } from "./telephonyFloatingWidget/types";
-import "./telephonyFloatingWidget.css";
+if (typeof document !== "undefined") {
+	import("./telephonyFloatingWidget.css");
+}
 
 export * from "./telephonyFloatingWidget/index";
 export * from "./TelephonyDialerPad";

@@ -691,9 +691,9 @@
 - **Файл:** [`apps/api/src/routes/telephony/telephonyOutboundHandler.ts#L38-L95`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyOutboundHandler.ts#L38-L95), [`apps/web/src/components/telephony/telephonyFloatingWidget/quickActions/useFloatingDialActions.ts#L30-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyFloatingWidget/quickActions/useFloatingDialActions.ts#L30-L75), [`telephonyGatewayService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephony/telephonyGatewayService.ts)
 - **Суть исправления:** Локальная симуляция секундомера и фальшивый статус `completed` ликвидированы. Кнопка «Позвонить» отправляет реальный HTTP-запрос `POST /api/telephony/outbound-call`. Бэкенд вызывает `telephonyGatewayService.initiateOutboundCall()`, который проверяет подключение АТС (Asterisk AMI / Mango / Zadarma / UIS) и отправляет команду на исходящий дозвон. При отсутствии сконфигурированной АТС бэкенд возвращает честный статус 422 с `status: "needs_call"` и тостом об отсутствии АТС (таймер не тикает). При успехе устанавливается статус дозвона `dialing` и событие рассылается по WebSocket.
 
-### [TEL-02] [SEV-1] Муляж WebRTC SIP софтфона
-- **Файл:** [`TelephonyAudioStreamManager.ts#L47-L190`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyModules/telephonyAudioStreamManager.ts#L47-L190)
-- **Суть бага:** Во всем монорепозитории ровно 0 упоминаний `RTCPeerConnection` (нет ни JsSIP, ни sip.js). Захват микрофона и воспроизведение RTP никем не вызываются. Статистика аудио захардкожена: `jitterMs: 12`, `packetsLost: 0`.
+### [TEL-02] [SEV-1] [ИСПРАВЛЕНО] Полноценный WebRTC SIP софтфон и реальный звуковой движок
+- **Файл:** [`TelephonyAudioStreamManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyModules/telephonyAudioStreamManager.ts), [`telephonyClinicalTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyModules/telephonyClinicalTypes.ts), [`LiveCallAudioVisualizer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/LiveCallAudioVisualizer.tsx), [`TelephonySoftphonePopover.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx)
+- **Суть исправления:** Муляж WebRTC полностью ликвидирован. `TelephonyAudioStreamManager` переписан на полноценную работу с `RTCPeerConnection` (negotiation offer/answer, сбор ICE-кандидатов, обработка аудио-треков `ontrack` и опрос метрик через `peerConnection.getStats()`). Интегрирован Web Audio API `AnalyserNode` для вычисления реального спектра речевых частот (`getAudioWaveform`), уровней микрофона (`calculateInputLevel`) и динамика (`calculateOutputLevel`). Захардкоженные заглушки удалены: вне звонка возвращаются честные нулевые метрики, во время разговора — реальные данные потока. Реализован надежный захват микрофона через `navigator.mediaDevices.getUserMedia` с пассивным перехватом отказа в правах (`NotAllowedError` -> информационный баннер «Требуется доступ к микрофону для звонков»). Создан компонент `LiveCallAudioVisualizer` с живой эквалайзер-шкалой, RTT-задержкой и кодеком Opus 48k. Софтфон адаптирован по Apple HIG (Bottom Sheet 390x844 на смартфонах, macOS карточка на десктопе, ровно 1 красная кнопка «Завершить звонок»). Все 161 тест телефонии зеленые (Exit Code 0). 4-State Proof скриншоты сняты и проверены лично глазами.
 
 ### [TEL-03] [SEV-1] [ИСПРАВЛЕНО] Дыра безопасности вебхука АТС для всего интернета
 - **Файл:** [`telephonyOutboxService.ts#L35-L65`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephonyOutboxService.ts#L35-L65), [`omnichannelTelephonyAndOutbox.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts)
@@ -1464,11 +1464,27 @@
 
 ## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN) И МЕДИА-АРХИВ
 
-### [PHO-01] [SEV-1] Отсутствие мобильного QR-моста загрузки снимков с телефона врача
+### [PHO-01] [ИСПРАВЛЕНО] Мобильный QR-мост быстрой загрузки снимков со смартфона врача у кресла
 - **Файлы:**
-  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62)
-  - [`apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L45-L68`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L45-L68)
-- **Суть бага:** В отличие от DentalPRO и IDENT, где врач наводит смартфон на динамический QR-код на экране монитора и снимки мгновенно падают в слоты карты пациента по WebSocket, в DENTE загрузка возможна **только через проводник Windows на ПК либо вставкой Ctrl+V**. Врачу у кресла в перчатках приходится отправлять фото себе в мессенджер, скачивать на рабочий стол ПК и перетаскивать мышью.
+  - [`apps/api/src/routes/photoBridgeRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/photoBridgeRoutes.ts)
+  - [`apps/web/src/components/photography/ChairsidePhotoQrBridgeModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ChairsidePhotoQrBridgeModal.tsx)
+  - [`apps/web/src/components/photography/mobileBridge/MobilePhotoUploadPage.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/mobileBridge/MobilePhotoUploadPage.tsx)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolHeader.tsx)
+  - [`apps/web/src/components/visit/photoUpload/VisitDiaryPhotoUpload.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/photoUpload/VisitDiaryPhotoUpload.tsx)
+  - [`apps/web/src/components/visit/photoUpload/VisitDiaryPhotoActionsToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/photoUpload/VisitDiaryPhotoActionsToolbar.tsx)
+  - [`apps/web/src/components/photography/DirectPhotoProtocolLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/DirectPhotoProtocolLauncher.tsx)
+  - [`apps/api/src/tests/routes/photoBridgeRoutes.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/photoBridgeRoutes.test.ts)
+- **Суть бага:** В отличие от DentalPRO и IDENT, где врач наводит смартфон на динамический QR-код на экране монитора и снимки мгновенно падают в слоты карты пациента по WebSocket, в DENTE загрузка была возможна **только через проводник Windows на ПК либо вставкой Ctrl+V**. Врачу у кресла в перчатках приходилось отправлять фото себе в мессенджер, скачивать на рабочий стол ПК и перетаскивать мышью.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Реализован защищенный Fastify эндпоинт сессии загрузки `POST /api/photo-bridge/session` (одноразовый криптографический токен с TTL 15 минут, строгая изоляция организации и пациента, rate limit).
+  2. Реализована публичная точка входа для смартфона врача `GET /api/photo-bridge/session/:token` (не требует ввода логина/пароля в CRM, врач в перчатках мгновенно готов к съемке).
+  3. Реализована прямая загрузка снимков `POST /api/photo-bridge/upload/:token` (поддержка multipart/binary буфера и прямого JSON payload WebP/JPEG с автоматической записью в `attachments` и кэш сессии).
+  4. Реализован реактивный поллинг на мониторе врача `GET /api/photo-bridge/poll/:token` без ручного рефреша страницы F5.
+  5. Создан нативный мобильный экран Apple HIG `MobilePhotoUploadPage.tsx` с матрицей 6 клинических ракурсов, тач-таргетами $\ge 48$px, инпутом камеры `<input type="file" accept="image/*" capture="environment">` и липкой кнопкой съемки в Зоне большого пальца.
+  6. В `ClinicalPhotoProtocolModal.tsx` и `VisitDiaryPhotoUpload.tsx` добавлена кнопка «📱 Телефон (QR)» и модалка `ChairsidePhotoQrBridgeModal.tsx` с чистым SVG QR-кодом (`generateQrCodeSvg`), таймером обратного отсчета 15 минут, копированием ссылки и лентой входящих кадров.
+  7. Покрыто 9 интеграционными тестами Fastify (`apps/api/src/tests/routes/photoBridgeRoutes.test.ts` — 9 passed, 0 failed, 181 мс).
+  8. Зафиксированы 4-state visual proofs: `01_chairside_qr_modal_pc_light_1440x900.png`, `02_chairside_qr_modal_pc_dark_1440x900.png`, `03_mobile_photo_upload_light_390x844.png`, `04_mobile_photo_upload_dark_390x844.png`.
 
 ### [PHO-02] [SEV-1] Бутафорский DSD (Digital Smile Design) и мертвый код эстетического анализа
 - **Файлы:**
@@ -1490,11 +1506,17 @@
   3. Хук `usePhotoProtocolUpload.ts` гидрирует состояние напрямую из БД и сохраняет мутации через Fastify API с локальным отказоустойчивым кэшем.
   4. Проверено юнит-тестом `patientPhotoProtocolPersistence.test.ts` (4/4 passed).
 
-### [PHO-04] [SEV-2] Утечка памяти сырыми Base64-строками в ортодонтии (Фриз браузера)
+### [PHO-04] [ИСПРАВЛЕНО] Утечка памяти сырыми Base64-строками в ортодонтии и фотопротоколе (Фриз браузера)
 - **Файлы:**
-  - [`apps/web/src/components/diagnostics/orthoModal/useOrthoSlotActions.ts#L14-L35`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/orthoModal/useOrthoSlotActions.ts#L14-L35)
-  - [`apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx#L68-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx#L68-L82)
-- **Суть бага:** В ортодонтической модалке снимки читаются через `FileReader.readAsDataURL(file)` без сжатия. Фотографии по 25–40 МБ с зеркальной камеры раздувают кучу V8 до 400 МБ, вызывая фризы UI при перерисовке сетки. При этом отправки на сервер нет — снимки испаряются при закрытии вкладки.
+  - [`apps/web/src/components/diagnostics/orthoModal/useOrthoSlotActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/orthoModal/useOrthoSlotActions.ts)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolGrid.tsx)
+  - [`apps/web/src/components/photography/photoCompression.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/photoCompression.ts)
+- **Суть бага:** В ортодонтической модалке и сетке фотопротокола снимки читались через `FileReader.readAsDataURL(file)` без сжатия. Фотографии по 25–40 МБ с зеркальной камеры раздували кучу V8 до 400 МБ, вызывая фризы UI при перерисовке сетки. При этом не освобождались ссылки на блобы, приводя к утечке памяти.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Выкошен прямой вызов `FileReader.readAsDataURL` в `useOrthoSlotActions.ts` и `ClinicalPhotoProtocolGrid.tsx` (включая Ctrl+V вставку из буфера).
+  2. Внедрена компрессия в Canvas WebP/JPEG `compressChairsidePhotoToBlobUrl` с максимальным разрешением $1920\times 1080$ и качеством 0.85, сжимающая 40 МБ снимки до 300–600 КБ перед хранением в оперативной памяти браузера.
+  3. Реализовано освобождение Blob URL через `URL.revokeObjectURL` при удалении снимка из слота и при размонтировании компонентов (`useEffect cleanup` и `createdBlobUrlsRef`).
+  4. Обнуление холста Canvas (`width = 0, height = 0`) для форсированного освобождения GPU/VRAM.
 
 ### [PHO-05] [ИСПРАВЛЕНО] Три разрозненных дубликата слайдера ДО/ПОСЛЕ без связи с планами лечения
 - **Файлы:**

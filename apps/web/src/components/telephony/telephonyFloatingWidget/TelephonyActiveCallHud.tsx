@@ -7,6 +7,7 @@
 import { Mic, MicOff, Pause, PhoneForwarded, PhoneOff, Play } from "lucide-react";
 import React from "react";
 import { TelephonyActiveCallHudTransfer } from "./TelephonyActiveCallHudTransfer";
+import { LiveCallAudioVisualizer } from "../LiveCallAudioVisualizer";
 import type { TelephonyActiveCallHudProps } from "./types";
 
 export function TelephonyActiveCallHud({
@@ -23,6 +24,9 @@ export function TelephonyActiveCallHud({
 }: TelephonyActiveCallHudProps) {
 	return (
 		<div className="dnt-hud-card" data-testid="telephony-active-call-hud">
+			{/* Real-time WebRTC audio waveform and volume telemetry */}
+			<LiveCallAudioVisualizer isCallActive={true} isMuted={isMuted} volume={1.0} />
+
 			{/* Action Control Buttons (Hold, Mute, Transfer, Hangup) */}
 			<div className="dnt-hud-controls-grid">
 				<button

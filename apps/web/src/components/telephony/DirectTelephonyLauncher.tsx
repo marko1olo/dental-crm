@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { TelephonyStudioModal } from "./TelephonyStudioModal";
+import { TelephonySoftphonePopover } from "./headerCapsule/TelephonySoftphonePopover";
 
 function checkIsTelephonyActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -20,7 +21,8 @@ function checkIsTelephonyActive(): boolean {
 		h.includes("calls") ||
 		h.includes("softphone") ||
 		params.get("telephony") === "1" ||
-		params.get("calls") === "1"
+		params.get("calls") === "1" ||
+		params.get("softphone") === "1"
 	);
 }
 
@@ -62,6 +64,23 @@ export const DirectTelephonyLauncher: React.FC = () => {
 	}, []);
 
 	if (!isActive) return null;
+
+	const isSoftphone = typeof window !== "undefined" && (
+		window.location.hash.includes("softphone") ||
+		new URLSearchParams(window.location.search).get("softphone") === "1"
+	);
+
+	if (isSoftphone) {
+		const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+		return (
+			<main
+				data-testid="direct-telephony-launcher-root"
+				className="fixed inset-0 z-[100000] w-full h-full bg-[var(--paper-soft)]/60 backdrop-blur-md text-[var(--ink)] flex flex-col items-center justify-center p-2 sm:p-4"
+			>
+				<TelephonySoftphonePopover onClose={handleClose} isMobile={isMobile} isStandalone={true} />
+			</main>
+		);
+	}
 
 	return (
 		<main

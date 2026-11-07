@@ -9,7 +9,9 @@ import { TelephonyMissedCallsAlertBar } from "./drawerModules/TelephonyMissedCal
 import { TelephonyDrawerTabs } from "./drawerModules/TelephonyDrawerTabs";
 import { useTelephonyDrawerController } from "./drawerModules/useTelephonyDrawerController";
 import type { TelephonyDrawerProps } from "./drawerModules/telephonyDrawerTypes";
-import "./telephonyFloatingWidget.css";
+if (typeof document !== "undefined") {
+	import("./telephonyFloatingWidget.css");
+}
 
 export type { TelephonyDrawerProps };
 export * from "./drawerModules/telephonyDrawerTypes";

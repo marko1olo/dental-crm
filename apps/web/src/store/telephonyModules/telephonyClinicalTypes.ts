@@ -51,6 +51,12 @@ export interface TelephonyAudioStreamConfig {
 	noiseSuppression?: boolean;
 	sampleRate?: number;
 	channelCount?: number;
+	iceServers?: RTCIceServer[];
+	onTrack?: (event: RTCTrackEvent) => void;
+	onIceCandidate?: (candidate: RTCIceCandidate | null) => void;
+	onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
+	onError?: (error: Error | string) => void;
+	onAudioStatsUpdate?: (stats: TelephonyAudioStreamStats) => void;
 }
 
 /**
@@ -63,6 +69,8 @@ export interface TelephonyAudioStreamStats {
 	jitterMs?: number;
 	roundTripTimeMs?: number;
 	codecName?: string;
+	connectionState?: RTCPeerConnectionState | "uninitialized";
+	audioLevelsHistory?: number[];
 }
 
 /**

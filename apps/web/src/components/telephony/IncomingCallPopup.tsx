@@ -9,7 +9,9 @@ import {
 	IncomingCallDrawerPortal,
 	useIncomingCallPopupController,
 } from "./incomingCallPopupModules";
-import "./telephonyFloatingWidget.css";
+if (typeof document !== "undefined") {
+	import("./telephonyFloatingWidget.css");
+}
 
 // 100% Transparent Re-exports (Zero-Downtime Contract & Mandate 8b)
 // min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95

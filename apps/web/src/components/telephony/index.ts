@@ -24,3 +24,4 @@ export * from "./telephonyCatalogData";
 export * from "./TelephonyStudioModal";
 export * from "./TelephonyCallList";
 export * from "./DirectTelephonyLauncher";
+export * from "./LiveCallAudioVisualizer";

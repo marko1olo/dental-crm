@@ -20,7 +20,9 @@ import { CallAudioPlayer } from "./CallAudioPlayer";
 import { useTelephonyStore } from "../../store/telephonyStore";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import "./styles/telephonyStudio.css";
+if (typeof document !== "undefined") {
+	import("./styles/telephonyStudio.css");
+}
 
 export const QUICK_NOTE_PRESETS = [
 	"Записан на приём", "Уточнение стоимости", "Острая боль", "Перезвонить после 18:00",
