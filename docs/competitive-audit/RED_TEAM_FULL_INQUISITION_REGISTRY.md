@@ -167,6 +167,38 @@
   - `apps/api/src/tests/concurrency/acidTransactionStress.test.ts` (5/5 PASS).
   - `apps/api/src/tests/routes/financialCorrectionAndLedger.test.ts` (6/6 PASS).
 
+### [FIN-11] [ИСПРАВЛЕНО] [SEV-1] Синхронизация выставления счетов из визита, автозагрузка в кассовый чекаут и PostgreSQL 18 контур
+- **Файлы:**
+  - [`apps/api/src/routes/invoiceRoutes/handlers/createInvoiceHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/handlers/createInvoiceHandler.ts)
+  - [`apps/api/src/routes/invoiceRoutes/invoiceCrudHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/invoiceCrudHandlers.ts)
+  - [`apps/api/src/routes/invoiceRoutes/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/types.ts)
+  - [`apps/api/src/db/billing/paymentCreationPipeline.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentCreationPipeline.ts)
+  - [`apps/api/src/db/billing/billingLookups.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/billingLookups.ts)
+  - [`apps/web/src/views/financeView/useFinanceView.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/views/financeView/useFinanceView.ts)
+  - [`apps/web/src/views/financeView/hooks/useFinancePendingCheckoutAndPayment.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/views/financeView/hooks/useFinancePendingCheckoutAndPayment.ts)
+  - [`apps/web/src/views/financeView/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/views/financeView/types.ts)
+- **Суть бага:**
+  1. При завершении визита созданный счёт не сохранялся в БД через реальный API с расчётом копеек и Zod-валидацией, из-за чего кассир не видел открытый счёт пациента и был вынужден повторно вбивать сумму руками.
+  2. В `paymentCreationPipeline.ts` и `billingLookups.ts` не учитывались бонусные/депозитные реплеи идемпотентности (`:bonus`), а сущность `patientInvoices` мапилась как `invoice` вместо `payment_invoice`, что приводило к сбоям поиска документа для биллинга.
+  3. В `useFinanceView.ts` и `useFinancePendingCheckoutAndPayment.ts` отсутствовала фоновая синхронизация с эндпоинтом `/api/invoices/pending` и подписка на кассовые события (`dente-invoice-created`, `dente-cashbox-refresh`), а также возникали ошибки типов при `exactOptionalPropertyTypes: true`.
+- **Решение:**
+  1. Реализован боевой обработчик `handleCreateInvoice` с сохранением в `patientInvoices` и `treatmentItems` в рамках ACID-транзакции PostgreSQL 18, проверкой существования пациента, идемпотентностью по `visitId` и рассылкой WebSocket-события `INVOICE_CREATED`.
+  2. Зарегистрированы маршруты POST `/api/invoices`, `/api/v1/billing/invoices`, `/api/visits/:visitId/invoice`, `/api/v1/visits/:visitId/invoice`.
+  3. В `paymentCreationPipeline.ts` добавлена поддержка масок `:bonus` и флага `isReplay: true`, а в `billingLookups.ts` нормализован тип документа `payment_invoice`.
+  4. В `useFinanceView.ts` и хуках настроена реактивная синхронизация неоплаченных счетов из БД при смене пациента и событиях кассы, а также исправлена типизация опциональных свойств под `exactOptionalPropertyTypes: true`.
+- **Машинные пруфы:**
+  - `npm run check:encoding`: 24 139 файлов проверено, Exit Code 0.
+  - `npx tsc -p apps/api/tsconfig.json --noEmit`: Exit Code 0.
+  - `apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts` (6/6 PASS).
+  - `apps/api/src/routes/cashbox.test.ts` (2/2 PASS).
+  - `apps/api/src/tests/concurrency/invoiceAndCashboxAcidStress.test.ts` (4/4 PASS).
+  - `apps/api/src/tests/routes/invoiceKeepsItsAmount.test.ts` (5/5 PASS).
+  - `4-State Visual Proof` на живом сервере (`http://127.0.0.1:5173/?checkout=1`):
+    * ☀️ PC Light: `docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png` (86 KB)
+    * 🌙 PC Dark: `docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png` (83 KB)
+    * 📱 Mobile Light: `docs/proofs/cashbox/05_cashbox_studio_mobile_light_390x844.png` (132 KB)
+    * 🌙 Mobile Dark: `docs/proofs/cashbox/06_cashbox_studio_mobile_dark_390x844.png` (132 KB)
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ

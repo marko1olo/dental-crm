@@ -59,6 +59,7 @@ export async function createPaymentInDb(
 							eq(schema.payments.clientMutationId, `${input.clientMutationId}:cash`),
 							eq(schema.payments.clientMutationId, `${input.clientMutationId}:electronic`),
 							eq(schema.payments.clientMutationId, `${input.clientMutationId}:deposit`),
+							eq(schema.payments.clientMutationId, `${input.clientMutationId}:bonus`),
 							eq(schema.payments.clientMutationId, `${input.clientMutationId}:dms`),
 						),
 					),
@@ -88,6 +89,7 @@ export async function createPaymentInDb(
 					createdAt: alreadyCreated.createdAt.toISOString(),
 					paidAt: alreadyCreated.paidAt.toISOString(),
 					status: alreadyCreated.status,
+					isReplay: true,
 				};
 			}
 		}

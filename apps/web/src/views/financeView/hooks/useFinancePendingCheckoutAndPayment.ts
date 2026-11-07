@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
 import { rubAmountForInput } from "../../../components/payments/cashDeskAmounts.js";
 import type { PendingCheckout } from "../types.js";
+import {
+	resolveEffectiveBillingSummary,
+	resolveEffectivePatient,
+} from "../useFinanceView.js";
 
 export interface UseFinancePendingCheckoutAndPaymentParams {
 	readonly billingSummary: Dashboard["billingSummary"] | null;
@@ -19,6 +23,7 @@ export interface UseFinancePendingCheckoutAndPaymentParams {
 /**
  * useFinancePendingCheckoutAndPayment — Синхронизация отложенного чека из визита,
  * авто-расчет эффективной суммы долга и привязка активного пациента.
+ * Делегирует вычисления каноническим резолверам useFinanceView (устранение 150 строк дублирования).
  */
 export function useFinancePendingCheckoutAndPayment(params: UseFinancePendingCheckoutAndPaymentParams) {
 	const {
@@ -70,54 +75,22 @@ export function useFinancePendingCheckoutAndPayment(params: UseFinancePendingChe
 		};
 	}, [onOpenSplitPayment]);
 
-	const effectiveBillingSummary = useMemo(() => {
-		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
-			return {
-				totalDueRub: pendingCheckout.totalDueRub,
-				totalPlannedRub: pendingCheckout.totalDueRub + (billingSummary?.totalPaidRub ?? 0),
-				totalPaidRub: billingSummary?.totalPaidRub ?? 0,
-				totalInvoicedRub: pendingCheckout.totalDueRub,
-				taxDeductionEligibleRub:
-					billingSummary?.taxDeductionEligibleRub || pendingCheckout.totalDueRub,
-				openTreatmentItems: (pendingCheckout.services || []).length || 1,
-				unpaidDocuments: 1,
-				unpaidInvoicesCount: 1,
-			};
-		}
-		if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;
-		if (billingSummary) return billingSummary;
-		return null;
-	}, [billingSummary, pendingCheckout]);
+	const effectiveBillingSummary = useMemo(
+		() => resolveEffectiveBillingSummary({ pendingCheckout, billingSummary }),
+		[pendingCheckout, billingSummary],
+	);
 
-	const effectivePatient = useMemo(() => {
-		if (pendingCheckout?.patientId) {
-			if (dashboard?.patients) {
-				const found = dashboard.patients.find((p: any) => p.id === pendingCheckout.patientId);
-				if (found) return found;
-			}
-			if (documentPatient?.id === pendingCheckout.patientId) {
-				return documentPatient;
-			}
-			return {
-				id: pendingCheckout.patientId,
-				fullName: pendingCheckout.patientName || "Пациент",
-				name: pendingCheckout.patientName || "Пациент",
-				phone: (pendingCheckout as any).patientPhone,
-			};
-		}
-		if (documentPatient) return documentPatient;
-		if (propsActivePatient) return propsActivePatient;
-		const selId = propsSelectedPatientId;
-		if (selId && dashboard?.patients) {
-			const found = dashboard.patients.find((p: any) => p.id === selId);
-			if (found) return found;
-		}
-		if ((dashboard as any)?.patient) return (dashboard as any).patient;
-		if (dashboard?.patients && dashboard.patients.length > 0) {
-			return dashboard.patients[0];
-		}
-		return null;
-	}, [documentPatient, pendingCheckout, propsActivePatient, propsSelectedPatientId, dashboard]);
+	const effectivePatient = useMemo(
+		() =>
+			resolveEffectivePatient({
+				pendingCheckout,
+				documentPatient,
+				activePatient: propsActivePatient,
+				selectedPatientId: propsSelectedPatientId,
+				dashboard,
+			}),
+		[pendingCheckout, documentPatient, propsActivePatient, propsSelectedPatientId, dashboard],
+	);
 
 	const [localPaymentAmount, setLocalPaymentAmount] = useState<string>(() => {
 		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {

@@ -142,7 +142,7 @@ export async function getDocumentForBilling(
 				organizationId: inv.organizationId,
 				patientId: inv.patientId,
 				visitId: inv.visitId,
-				kind: "invoice",
+				kind: "payment_invoice",
 				status: inv.status === "paid" ? "settled" : "issued",
 				totalAmountRub: inv.totalAmountRub ?? Number(inv.totalRub || 0),
 			} as any;

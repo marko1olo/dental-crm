@@ -4,17 +4,46 @@ import { money as formatMoney } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { motionSafeScrollIntoView } from "../../motionPreference";
 import { rubAmountForInput } from "../../components/payments/cashDeskAmounts.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
-	type FinanceViewComponentProps,
-	type PendingCheckout,
-	type TreatmentPlanItem,
-	type TreatmentPlanScenario,
-	EMPTY_CLINICAL_RULE_SUMMARY,
-	noLabels,
+	type FinanceViewComponentProps, type PendingCheckout, type TreatmentPlanItem,
+	type TreatmentPlanScenario, EMPTY_CLINICAL_RULE_SUMMARY, noLabels,
 } from "./types.js";
 import { useFinanceModalsNavigation } from "./hooks/useFinanceModalsNavigation.js";
 import { useFinanceCashShift } from "./hooks/useFinanceCashShift.js";
 import { useFinanceTransactionsData } from "./hooks/useFinanceTransactionsData.js";
+
+export function resolveEffectiveBillingSummary({ pendingCheckout, billingSummary }: { pendingCheckout?: PendingCheckout | null | undefined; billingSummary?: any }) {
+	if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
+		return {
+			totalDueRub: pendingCheckout.totalDueRub,
+			totalPlannedRub: pendingCheckout.totalDueRub + (billingSummary?.totalPaidRub ?? 0),
+			totalPaidRub: billingSummary?.totalPaidRub ?? 0,
+			totalInvoicedRub: pendingCheckout.totalDueRub,
+			taxDeductionEligibleRub: billingSummary?.taxDeductionEligibleRub || pendingCheckout.totalDueRub,
+			openTreatmentItems: (pendingCheckout.services || []).length || 1,
+			unpaidDocuments: 1,
+			unpaidInvoicesCount: 1,
+		};
+	}
+	return billingSummary ?? null;
+}
+
+export function resolveEffectivePatient({ pendingCheckout, dashboard, documentPatient, activePatient, selectedPatientId }: { pendingCheckout?: PendingCheckout | null | undefined; dashboard?: any; documentPatient?: any; activePatient?: any; selectedPatientId?: string | null | undefined }) {
+	if (pendingCheckout?.patientId) {
+		const found = dashboard?.patients?.find((p: any) => p.id === pendingCheckout.patientId);
+		if (found) return found;
+		if (documentPatient?.id === pendingCheckout.patientId) return documentPatient;
+		return { id: pendingCheckout.patientId, fullName: pendingCheckout.patientName || "Пациент", name: pendingCheckout.patientName || "Пациент", phone: (pendingCheckout as any).patientPhone };
+	}
+	if (documentPatient) return documentPatient;
+	if (activePatient) return activePatient;
+	if (selectedPatientId && dashboard?.patients) {
+		const found = dashboard.patients.find((p: any) => p.id === selectedPatientId);
+		if (found) return found;
+	}
+	return (dashboard as any)?.patient ?? (dashboard?.patients?.[0] ?? null);
+}
 
 /**
  * useFinanceView — Тонкий фасад экрана финансов клиники (Мандат 8b: лимит строк <=300).
@@ -74,50 +103,83 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		};
 	}, [modals.setIsSplitPaymentOpen]);
 
-	const effectiveBillingSummary = useMemo(() => {
-		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
-			return {
-				totalDueRub: pendingCheckout.totalDueRub,
-				totalPlannedRub: pendingCheckout.totalDueRub + (billingSummary?.totalPaidRub ?? 0),
-				totalPaidRub: billingSummary?.totalPaidRub ?? 0,
-				totalInvoicedRub: pendingCheckout.totalDueRub,
-				taxDeductionEligibleRub: billingSummary?.taxDeductionEligibleRub || pendingCheckout.totalDueRub,
-				openTreatmentItems: (pendingCheckout.services || []).length || 1,
-				unpaidDocuments: 1,
-				unpaidInvoicesCount: 1,
-			};
-		}
-		if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;
-		if (billingSummary) return billingSummary;
-		return null;
-	}, [billingSummary, pendingCheckout]);
+	const effectiveBillingSummary = useMemo(
+		() => resolveEffectiveBillingSummary({ pendingCheckout, billingSummary }),
+		[billingSummary, pendingCheckout],
+	);
 
-	const effectivePatient = useMemo(() => {
-		if (pendingCheckout?.patientId) {
-			if (dashboard?.patients) {
-				const found = dashboard.patients.find((p: any) => p.id === pendingCheckout.patientId);
-				if (found) return found;
+	const effectivePatient = useMemo(
+		() =>
+			resolveEffectivePatient({
+				pendingCheckout,
+				dashboard,
+				documentPatient,
+				activePatient: (props as any).activePatient || logicContext?.activePatient,
+				selectedPatientId: (props as any).selectedPatientId || logicContext?.selectedPatientId,
+			}),
+		[documentPatient, pendingCheckout, props, logicContext, dashboard],
+	);
+
+	useEffect(() => {
+		let isMounted = true;
+		const loadUnpaidInvoicesFromDb = async () => {
+			try {
+				const res = await fetch("/api/invoices/pending", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (!isMounted) return;
+				const invoices = Array.isArray(data.invoices) ? data.invoices : [];
+				if (invoices.length === 0) return;
+
+				const targetPatientId = effectivePatient?.id;
+				const matchedInvoice = targetPatientId
+					? invoices.find((inv: any) => inv.patientId === targetPatientId)
+					: invoices[0];
+
+				if (matchedInvoice) {
+					setPendingCheckout((current) => {
+						if (current?.totalDueRub && current.totalDueRub > 0 && current.patientId === matchedInvoice.patientId) {
+							return current.invoiceId ? current : { ...current, invoiceId: matchedInvoice.id };
+						}
+						return {
+							patientId: matchedInvoice.patientId,
+							patientName: matchedInvoice.patientName || "Пациент",
+							visitId: matchedInvoice.visitId || undefined,
+							invoiceId: matchedInvoice.id,
+							services: [
+								{
+									name: `Стоматологические услуги (${matchedInvoice.invoiceNumber || matchedInvoice.number})`,
+									priceRub: matchedInvoice.totalAmountRub,
+									quantity: 1,
+								},
+							],
+							totalDueRub: matchedInvoice.totalAmountRub,
+							receiptNumber: matchedInvoice.invoiceNumber || matchedInvoice.number,
+							timestamp: Date.now(),
+						};
+					});
+				}
+			} catch {
+				// Soft network resilience
 			}
-			if (documentPatient?.id === pendingCheckout.patientId) return documentPatient;
-			return {
-				id: pendingCheckout.patientId,
-				fullName: pendingCheckout.patientName || "Пациент",
-				name: pendingCheckout.patientName || "Пациент",
-				phone: (pendingCheckout as any).patientPhone,
-			};
-		}
-		if (documentPatient) return documentPatient;
-		if ((props as any).activePatient) return (props as any).activePatient;
-		if (logicContext?.activePatient) return logicContext.activePatient;
-		const selId = (props as any).selectedPatientId || logicContext?.selectedPatientId;
-		if (selId && dashboard?.patients) {
-			const found = dashboard.patients.find((p: any) => p.id === selId);
-			if (found) return found;
-		}
-		if ((dashboard as any)?.patient) return (dashboard as any).patient;
-		if (dashboard?.patients && dashboard.patients.length > 0) return dashboard.patients[0];
-		return null;
-	}, [documentPatient, pendingCheckout, props, logicContext, dashboard]);
+		};
+
+		void loadUnpaidInvoicesFromDb();
+
+		const handleRefresh = () => void loadUnpaidInvoicesFromDb();
+		window.addEventListener("dente-invoice-created", handleRefresh);
+		window.addEventListener("dente-cashbox-refresh", handleRefresh);
+		window.addEventListener("dente-invoices-updated", handleRefresh);
+
+		return () => {
+			isMounted = false;
+			window.removeEventListener("dente-invoice-created", handleRefresh);
+			window.removeEventListener("dente-cashbox-refresh", handleRefresh);
+			window.removeEventListener("dente-invoices-updated", handleRefresh);
+		};
+	}, [effectivePatient?.id]);
 
 	const [localPaymentAmount, setLocalPaymentAmount] = useState<string>(() => {
 		if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) return rubAmountForInput(pendingCheckout.totalDueRub);

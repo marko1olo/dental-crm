@@ -95,6 +95,42 @@ export const invoiceListQuerySchema = z.object({
 	limit: z.coerce.number().int().min(1).max(500).optional().default(100),
 });
 
+export const createInvoiceItemSchema = z.object({
+	serviceId: z.string().optional().nullable(),
+	serviceCode: z.string().optional().nullable(),
+	serviceName: z.string().optional().nullable(),
+	code804n: z.string().optional().nullable(),
+	title: z.string().optional().nullable(),
+	nameRu: z.string().optional().nullable(),
+	toothNumber: z.union([z.number().int(), z.string()]).optional().nullable(),
+	toothCode: z.string().optional().nullable(),
+	priceKopecks: z.number().int().nonnegative().optional().nullable(),
+	priceRub: z.number().nonnegative().optional().nullable(),
+	unitPriceRub: z.number().nonnegative().optional().nullable(),
+	quantity: z.number().positive().default(1),
+	discountPercent: z.number().min(0).max(100).optional().default(0),
+	discountRub: z.number().min(0).optional().default(0),
+	totalRub: z.number().nonnegative().optional().nullable(),
+});
+
+export const createInvoiceSchema = z.object({
+	visitId: z.string().uuid().optional().nullable(),
+	patientId: z.string().uuid("Некорректный UUID пациента"),
+	doctorId: z.string().uuid().optional().nullable(),
+	totalAmountRub: z.number().nonnegative().optional(),
+	totalAmountKopecks: z.number().int().nonnegative().optional(),
+	discountRub: z.number().min(0).optional().default(0),
+	discountPercent: z.number().min(0).max(100).optional().default(0),
+	status: z.enum(["draft", "issued"]).optional().default("issued"),
+	documentType: z.enum(["invoice", "work_order", "completed_act"]).optional().default("invoice"),
+	notes: z.string().optional().nullable(),
+	clientMutationId: z.string().optional(),
+	items: z.array(createInvoiceItemSchema).default([]),
+});
+
+export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+export type CreateInvoiceItemInput = z.infer<typeof createInvoiceItemSchema>;
+
 export type ValidatePlanBody = z.infer<typeof validatePlanBodySchema>;
 export type GenerateInvoiceFromPlanBody = z.infer<typeof generateInvoiceFromPlanSchema>;
 export type GenerateInvoiceItemInput = GenerateInvoiceFromPlanBody["items"][number];

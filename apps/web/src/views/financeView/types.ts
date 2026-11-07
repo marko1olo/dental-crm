@@ -11,6 +11,7 @@ export interface PendingCheckout {
 	patientId: string;
 	patientName: string;
 	visitId?: string;
+	invoiceId?: string;
 	services: any[];
 	totalDueRub: number;
 	receiptNumber?: string;
