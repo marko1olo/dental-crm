@@ -16,7 +16,7 @@ export const CopilotDictationBanner: React.FC<CopilotDictationBannerProps> = ({
 }) => {
   const modeLabel =
     dictationMode === "gemini_live"
-      ? "Gemini 3.5 Transcribe Live"
+      ? "Google Gemini Live"
       : dictationMode === "server_whisper"
       ? "Server Whisper"
       : "Web Speech Live";
