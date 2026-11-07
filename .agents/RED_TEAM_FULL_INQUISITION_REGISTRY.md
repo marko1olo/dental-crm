@@ -167,6 +167,33 @@
   - `apps/api/src/tests/concurrency/acidTransactionStress.test.ts` (5/5 PASS).
   - `apps/api/src/tests/routes/financialCorrectionAndLedger.test.ts` (6/6 PASS).
 
+### [FIN-11] [ИСПРАВЛЕНО] [SEV-1] Гонка кассовых счетов, Lost Update и задвоение оплат счетов (Zero Double-Spend & Exact Kopeck ACID)
+- **Файлы:**
+  - [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts)
+  - [`apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)
+  - [`apps/api/src/db/billing/fiscalAccounting.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/fiscalAccounting.ts)
+  - Тест-сьют: [`apps/api/src/tests/concurrency/invoiceAndCashboxAcidStress.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrency/invoiceAndCashboxAcidStress.test.ts)
+- **Суть бага:**
+  1. При параллельной оплате одного счёта несколькими кассирами отсутствовала пессимистическая блокировка `patientInvoices FOR UPDATE`, из-за чего несколько параллельных запросов успешно пробивали оплату, создавая дублирующие фискальные чеки и повторные записи в `payments` и `cashOperations`.
+  2. Проверка идемпотентности не защищалась транзакционным advisory-замком (`pg_advisory_xact_lock`), что приводило к гонкам при одновременных сетевых кликах с одинаковым `clientMutationId`.
+  3. В `processCashboxPayment` при поиске безналичной кассы условие `b.type === "cashless" || b.type === "bank_account" || b.isCashless` в общем предикате из-за сортировки по UUIDv7 приводило к тому, что первой матчилась страховая касса ДМС (`type: "dms"`, у которой также `isCashless: true`), а не эквайринговый безналичный счёт POS-терминала (`type: "cashless"`), искажая финансовый учёт.
+  4. Неупорядоченная блокировка строк кассовых счетов и смен провоцировала взаимные блокировки PostgreSQL `40P01 deadlock detected`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Внедрён транзакционный замок `SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cashbox_payment:' || ${effectiveMutationId}))` для атомарной защиты от гонок при мульти-кликах.
+  2. Добавлена пессимистическая блокировка `patientInvoices FOR UPDATE`: при повторной попытке оплаты закрытого счёта возвращается `409 Conflict` (`InvoiceAlreadyPaidConflict`) без создания дублирующих записей в БД. При отсутствии счёта возвращается `404 Not Found` (`InvoiceNotFound`).
+  3. Наложен детерминированный порядок блокировки строк: `.orderBy(cashBoxes.id).for("update")` и `.orderBy(cashBoxShifts.id).for("update")` для полной защиты от дедлоков.
+  4. Исправлен приоритет сопоставления кассовых счетов: строгий приоритет `type: "cashless"` и `type: "main"` перед общими флагами `isCashless`, гарантируя зачисление платежей по картам на правильный эквайринговый счёт.
+  5. В HTTP-ответы кассового роута добавлены заголовки `idempotency-replayed: true` и `x-idempotency-replayed: true` при возврате кэшированного результата.
+  6. Написан и проверен стресс-тест сьют на реальном PostgreSQL 18:
+     - 5 параллельных запросов на оплату счёта: ровно 1 x 200 OK, 4 x 409 Conflict, 1 строка в `payments`, 1 строка в `cashOperations`.
+     - 10 параллельных идентичных запросов с одним `Idempotency-Key`: 10 x 200 OK, заголовки реплея, ровно 1 строка в БД.
+     - 10 конкурентных оплат по 123.45 ₽: точный прирост баланса на 1 234.50 ₽ (123 450 копеек) без float погрешности.
+     - Проверка контрактов ошибок RFC 7807 с 0% утечки стектрейсов и путей хоста.
+- **Машинные пруфы:**
+  - `apps/api/src/tests/concurrency/invoiceAndCashboxAcidStress.test.ts` (4/4 PASS in 785ms).
+  - Полный прогон всех 5 сьютов конкурентности: 19/19 PASS in 4.8s.
+  - `npm run check:encoding`: 24 096 файлов проверено, Exit Code 0.
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ

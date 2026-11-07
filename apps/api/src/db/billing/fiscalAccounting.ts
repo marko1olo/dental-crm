@@ -35,11 +35,13 @@ export async function recordCashAndFiscalAccounting(
 		resolvedDepositKop,
 	} = params;
 
-	// 1. Поиск кассовых счетов клиники и открытых смен (Мандаты 8e, 8n)
+	// 1. Поиск кассовых счетов клиники и открытых смен (Мандаты 8e, 8n) с детерминированной блокировкой
 	const allBoxes = await tx
 		.select()
 		.from(schema.cashBoxes)
-		.where(eq(schema.cashBoxes.organizationId, organizationId));
+		.where(eq(schema.cashBoxes.organizationId, organizationId))
+		.orderBy(schema.cashBoxes.id)
+		.for("update");
 
 	const openShifts = await tx
 		.select()
@@ -49,7 +51,9 @@ export async function recordCashAndFiscalAccounting(
 				eq(schema.cashBoxShifts.organizationId, organizationId),
 				eq(schema.cashBoxShifts.status, "open"),
 			),
-		);
+		)
+		.orderBy(schema.cashBoxShifts.id)
+		.for("update");
 
 	const getTargetBoxAndShift = (preferredType: string, specificBoxId?: string | null) => {
 		let box = specificBoxId ? allBoxes.find((b) => b.id === specificBoxId) : undefined;

@@ -10,7 +10,7 @@
  * - Idempotency & Financial Resilience: clientMutationId & idempotencyKey.
  */
 
-import { and, desc, eq, gte, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
@@ -42,6 +42,22 @@ export type CashboxPaymentOutcome =
 				error: string;
 				message: string;
 				details?: unknown;
+			};
+	  }
+	| {
+			statusCode: 404;
+			body: {
+				error: string;
+				message: string;
+				invoiceId?: string;
+			};
+	  }
+	| {
+			statusCode: 409;
+			body: {
+				error: string;
+				message: string;
+				invoiceId?: string;
 			};
 	  };
 
@@ -123,6 +139,13 @@ export async function processCashboxPayment(
 	const amountRubNumber = Number(totalKopecks) / 100;
 
 	const result = await withTenantCtx(orgId, async (tx) => {
+		// ACID pg_advisory_xact_lock на clientMutationId для защиты от состояния гонки
+		if (effectiveMutationId) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cashbox_payment:' || ${effectiveMutationId}))`,
+			);
+		}
+
 		// Проверка идемпотентности
 		const [existingPayment] = await tx
 			.select()
@@ -144,6 +167,7 @@ export async function processCashboxPayment(
 				status: existingPayment.status,
 				fiscalReceiptNumber: existingPayment.fiscalReceiptNumber,
 				clientMutationId: existingPayment.clientMutationId,
+				isReplay: true,
 			};
 		}
 
@@ -323,11 +347,12 @@ export async function processCashboxPayment(
 			}
 		}
 
-		// [FIN-02] Связывание платежа с приёмом врача (visitId)
+		// [FIN-02] Пессимистическая блокировка инвойса от двойной оплаты и связывание с приёмом
 		let effectiveVisitId = body.visitId || null;
-		if (!effectiveVisitId && body.invoiceId) {
+		let lockedInvoice: typeof patientInvoices.$inferSelect | null = null;
+		if (body.invoiceId) {
 			const [inv] = await tx
-				.select({ visitId: patientInvoices.visitId })
+				.select()
 				.from(patientInvoices)
 				.where(
 					and(
@@ -335,8 +360,21 @@ export async function processCashboxPayment(
 						eq(patientInvoices.organizationId, orgId),
 					),
 				)
+				.for("update")
 				.limit(1);
-			if (inv?.visitId) {
+
+			if (!inv) {
+				return { kind: "invoice_not_found" as const, invoiceId: body.invoiceId };
+			}
+			if (inv.status === "paid" || inv.status === "paid_warranty") {
+				return {
+					kind: "invoice_already_paid" as const,
+					invoiceId: inv.id,
+					status: inv.status,
+				};
+			}
+			lockedInvoice = inv;
+			if (!effectiveVisitId && inv.visitId) {
 				effectiveVisitId = inv.visitId;
 			}
 		}
@@ -477,17 +515,23 @@ export async function processCashboxPayment(
 				.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)));
 		}
 
-		// 3. Инициализируем и находим кассовые счета клиники
+		// 3. Инициализируем и находим кассовые счета клиники с упорядоченной блокировкой строк
 		await ensureOrganizationCashBoxes(tx, orgId);
 		const boxes = await tx
 			.select()
 			.from(cashBoxes)
-			.where(eq(cashBoxes.organizationId, orgId));
+			.where(eq(cashBoxes.organizationId, orgId))
+			.orderBy(cashBoxes.id)
+			.for("update");
 
 		const cashDeskBox =
-			boxes.find((b) => b.type === "cash_desk" || !b.isCashless) || boxes[0];
+			boxes.find((b) => b.type === "main" || b.type === "cash_desk") ||
+			boxes.find((b) => b.isMain && !b.isCashless) ||
+			boxes.find((b) => !b.isCashless) ||
+			boxes[0];
 		const cashlessBox =
-			boxes.find((b) => b.type === "bank_account" || b.isCashless) ||
+			boxes.find((b) => b.type === "cashless" || b.type === "bank_account") ||
+			boxes.find((b) => b.isCashless) ||
 			boxes[1] ||
 			cashDeskBox;
 
@@ -586,6 +630,28 @@ export async function processCashboxPayment(
 			body: {
 				error: "PatientNotFound",
 				message: "Пациент не найден в этой клинике — платёж не проведён.",
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "invoice_not_found") {
+		return {
+			statusCode: 404,
+			body: {
+				error: "InvoiceNotFound",
+				message: `Счёт с идентификатором ${result.invoiceId} не найден в данной клинике.`,
+				invoiceId: result.invoiceId,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "invoice_already_paid") {
+		return {
+			statusCode: 409,
+			body: {
+				error: "InvoiceAlreadyPaidConflict",
+				message: `Счёт ${result.invoiceId} уже был полностью оплачен. Повторное списание средств отклонено для исключения задвоения чеков.`,
+				invoiceId: result.invoiceId,
 			},
 		};
 	}

@@ -241,6 +241,16 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			request.body,
 			headerIdemp,
 		);
+		if (
+			result.statusCode === 200 &&
+			"data" in result.body &&
+			typeof result.body.data === "object" &&
+			result.body.data !== null &&
+			(result.body.data as Record<string, unknown>).isReplay
+		) {
+			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
+		}
 		return reply.code(result.statusCode).send(result.body);
 	};
 
