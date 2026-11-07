@@ -909,3 +909,36 @@
 	background: #0f172a;
 	border-color: var(--teal, #14b8a6);
 }
+
+/* Подсветка совпадений поиска и бейджи тегов */
+.pricelist-match-highlight {
+	background: rgba(20, 184, 166, 0.25);
+	color: inherit;
+	border-radius: 3px;
+	padding: 0 2px;
+	font-weight: 700;
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-match-highlight {
+	background: rgba(20, 184, 166, 0.4);
+	color: #ffffff;
+}
+
+.pricelist-tag-match-chip {
+	display: inline-flex;
+	align-items: center;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	padding: 0.125rem 0.375rem;
+	border-radius: 4px;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+	border: 1px solid rgba(13, 148, 136, 0.2);
+	white-space: nowrap;
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-tag-match-chip {
+	background: rgba(20, 184, 166, 0.18);
+	color: #2dd4bf;
+	border-color: rgba(20, 184, 166, 0.35);
+}

@@ -2182,6 +2182,22 @@
   2. Схемы данных `@dental/shared` и эндпоинты канонического API `/api/pricelist` принимают, валидируют и сохраняют тарифные сетки (включая `priceKopecks` в копейках по Мандату 8aa).
   3. Тарифы VIP и ДМС надежно сохраняются в PostgreSQL и восстанавливаются при любых перезагрузках страницы.
 
+### [PRC-09] [ЗАКРЫТО] [SEV-2] Архитектурный разрыв модалок прейскуранта: дублирование PriceItemEditModal и PricelistItemDrawer
+- **Файлы:**
+  - [`apps/web/src/components/catalog/PricelistStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/PricelistStudioModal.tsx)
+  - [`apps/web/src/components/settings/pricesTab/PriceItemEditModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/pricesTab/PriceItemEditModal.tsx)
+  - [`apps/web/src/components/catalog/PricelistItemDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/PricelistItemDrawer.tsx)
+  - [`apps/web/src/components/catalog/pricelistCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/pricelistCatalogData.ts)
+  - [`apps/web/src/components/catalog/pricelistStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/pricelistStudio.css)
+- **Суть бага:** В кодовой базе существовали параллельные модалки редактирования услуг с расхождением структуры полей и стилей (нарушение Мандата 8aq и 8s).
+- **Инженерное решение (Ликвидация брака):**
+  1. `PriceItemEditModal.tsx` консолидирован как единый канонический SSOT модалки редактирования, поддерживающий как полный режим настроек клиники, так и быстрый режим прейскурант-студии (`DrawerModeProps`).
+  2. `PricelistItemDrawer.tsx` преобразован в ультратонкий прозрачный фасад-делегат над `PriceItemEditModal`.
+  3. Внедрены 8 чистых стоматологических категорий (Терапия, Хирургия, Ортопедия, Ортодонтия, Имплантология, Детство, Профилактика/Гигиена, Диагностика) с быстрым фильтром в 1 клик.
+  4. Внедрен мгновенный поиск с подсветкой совпадений `<mark className="pricelist-match-highlight">` (`HighlightMatch`) и бейджами найденных тегов/синонимов.
+  5. Цены хранятся в целых копейках (`amountKopecks`), исключен `parseInt`, запрещен `type="number"` с шагом, сохраняется русская запятая при вводе.
+  6. Сняты и лично отсмотрены через `read_file` 4-state визуальные пруфы в `docs/proofs/pricelist/` (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark Bottom Sheet с тач-таргетами $\ge 44$px).
+
 ---
 **Верификация и машинные доказательства (Definition of Done):**
 - **Автотесты:**

@@ -12,12 +12,14 @@
  */
 
 export type PricelistCategoryKey =
-	| "diagnostics"
 	| "therapy"
 	| "surgery"
 	| "orthopedics"
+	| "orthodontics"
+	| "implantology"
+	| "pediatric"
 	| "hygiene"
-	| "orthodontics";
+	| "diagnostics";
 
 export interface PricelistCategoryMeta {
 	readonly key: PricelistCategoryKey;
@@ -29,46 +31,60 @@ export interface PricelistCategoryMeta {
 
 export const CANONICAL_CLINICAL_CATEGORIES: readonly PricelistCategoryMeta[] = [
 	{
-		key: "diagnostics",
-		title: "Диагностика и снимки",
-		shortTitle: "Диагностика",
-		description: "Консультации, прицельные снимки, КЛКТ и планы лечения",
-		badgeClass: "badge-diagnostics",
-	},
-	{
 		key: "therapy",
 		title: "Терапия и лечение",
 		shortTitle: "Терапия",
-		description: "Лечение кариеса, пульпита, каналов и реставрации",
+		description: "Лечение кариеса, пульпита, каналов и эстетические реставрации",
 		badgeClass: "badge-therapy",
 	},
 	{
 		key: "surgery",
-		title: "Хирургия и имплантация",
+		title: "Хирургия и удаление",
 		shortTitle: "Хирургия",
-		description: "Удаление зубов, синус-лифтинг и установка имплантатов",
+		description: "Удаление зубов любой сложности, резекции верхушек, пластика уздечек",
 		badgeClass: "badge-surgery",
 	},
 	{
 		key: "orthopedics",
 		title: "Ортопедия и коронки",
 		shortTitle: "Ортопедия",
-		description: "Коронки, виниры, протезы и восстановление окклюзии",
+		description: "Коронки, мостовидные протезы, виниры, съемное протезирование",
 		badgeClass: "badge-orthopedics",
-	},
-	{
-		key: "hygiene",
-		title: "Профгигиена и пародонтология",
-		shortTitle: "Гигиена",
-		description: "Air-Flow, ультразвук, фторирование и лечение десен",
-		badgeClass: "badge-hygiene",
 	},
 	{
 		key: "orthodontics",
 		title: "Ортодонтия и прикус",
 		shortTitle: "Ортодонтия",
-		description: "Брекет-системы, элайнеры и ретенционные аппараты",
+		description: "Брекет-системы, ортодонтические дуги, элайнеры, ретейнеры",
 		badgeClass: "badge-orthodontics",
+	},
+	{
+		key: "implantology",
+		title: "Имплантология",
+		shortTitle: "Имплантация",
+		description: "Дентальная имплантация, остеопластика, синус-лифтинг и формирователи десны",
+		badgeClass: "badge-implantology",
+	},
+	{
+		key: "pediatric",
+		title: "Детская стоматология",
+		shortTitle: "Детство",
+		description: "Адаптационный приём, лечение молочных зубов, цветные пломбы, герметизация",
+		badgeClass: "badge-pediatric",
+	},
+	{
+		key: "hygiene",
+		title: "Профилактика и гигиена",
+		shortTitle: "Гигиена",
+		description: "Air-Flow, ультразвуковой скейлинг, полировка, фторирование и пародонтология",
+		badgeClass: "badge-hygiene",
+	},
+	{
+		key: "diagnostics",
+		title: "Диагностика и снимки",
+		shortTitle: "Диагностика",
+		description: "Консультации, прицельные снимки, радиовизиография, КЛКТ 3D",
+		badgeClass: "badge-diagnostics",
 	},
 ];
 
@@ -154,10 +170,20 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 		title: "Дентальная имплантация под ключ",
 		shortTitle: "Имплантация под ключ",
 		description: "Анестезия + ложе + имплантат титановый + формирователь десны + снимок",
-		category: "surgery",
+		category: "implantology",
 		priceKopecks: 4150000,
 		itemsCount: 4,
 		items: ["Анестезия", "Установка имплантата Osstem", "Формирователь десны", "Рентген-контроль"],
+	},
+	{
+		id: "bundle-kids",
+		title: "Детский приём без страха (адаптация + цветная пломба + подарок)",
+		shortTitle: "Детство под ключ",
+		description: "Адаптационный приём + чистка + цветная пломба Twinky Star + фторирование",
+		category: "pediatric",
+		priceKopecks: 420000,
+		itemsCount: 4,
+		items: ["Адаптация ребенка", "Обезболивание гелем", "Пломба Twinky Star", "Подарок за смелость"],
 	},
 ];
 
@@ -285,7 +311,7 @@ export const CANONICAL_PRICELIST_PRESETS: readonly PricelistStudioItem[] = [
 		costKopecks: 35000,
 		durationMin: 30,
 		isActive: true,
-		tags: ["удаление", "экстракция", "хирургия"],
+		tags: ["удаление", "экстракция", "хирургия", "вырвать"],
 	},
 	{
 		id: "srv-surg-02",
@@ -296,18 +322,18 @@ export const CANONICAL_PRICELIST_PRESETS: readonly PricelistStudioItem[] = [
 		costKopecks: 90000,
 		durationMin: 60,
 		isActive: true,
-		tags: ["восьмерка", "ретинированный", "мудрость"],
+		tags: ["восьмерка", "ретинированный", "мудрость", "дистопированный"],
 	},
 	{
 		id: "srv-surg-03",
 		code: "ХИР-03",
-		title: "Имплантат под ключ",
+		title: "Резекция верхушки корня зуба",
 		category: "surgery",
-		priceKopecks: 3500000,
-		costKopecks: 1100000,
-		durationMin: 60,
+		priceKopecks: 450000,
+		costKopecks: 60000,
+		durationMin: 45,
 		isActive: true,
-		tags: ["имплантация", "титан", "osstem", "имплант"],
+		tags: ["резекция", "корень", "хирургия", "верхушка"],
 	},
 
 	// 4. Ортопедия
@@ -320,7 +346,7 @@ export const CANONICAL_PRICELIST_PRESETS: readonly PricelistStudioItem[] = [
 		costKopecks: 420000,
 		durationMin: 45,
 		isActive: true,
-		tags: ["коронка", "металлокерамика", "протезирование"],
+		tags: ["коронка", "металлокерамика", "протезирование", "мост"],
 	},
 	{
 		id: "srv-ortho-02",
@@ -331,7 +357,7 @@ export const CANONICAL_PRICELIST_PRESETS: readonly PricelistStudioItem[] = [
 		costKopecks: 750000,
 		durationMin: 45,
 		isActive: true,
-		tags: ["цирконий", "безметалловая", "коронка", "ztl"],
+		tags: ["цирконий", "безметалловая", "коронка", "ztl", "протезирование"],
 	},
 	{
 		id: "srv-ortho-03",
@@ -342,34 +368,10 @@ export const CANONICAL_PRICELIST_PRESETS: readonly PricelistStudioItem[] = [
 		costKopecks: 820000,
 		durationMin: 60,
 		isActive: true,
-		tags: ["винир", "emax", "голливудская улыбка"],
+		tags: ["винир", "emax", "голливудская улыбка", "эстетика"],
 	},
 
-	// 5. Профгигиена
-	{
-		id: "srv-hyg-01",
-		code: "ГИГ-01",
-		title: "Профессиональная гигиена полости рта (Air-Flow + УЗ)",
-		category: "hygiene",
-		priceKopecks: 420000,
-		costKopecks: 65000,
-		durationMin: 45,
-		isActive: true,
-		tags: ["чистка", "air-flow", "ультразвук", "камни", "налет"],
-	},
-	{
-		id: "srv-hyg-02",
-		code: "ГИГ-02",
-		title: "Глубокое фторирование эмали и ремотерапия",
-		category: "hygiene",
-		priceKopecks: 180000,
-		costKopecks: 30000,
-		durationMin: 20,
-		isActive: true,
-		tags: ["фторирование", "эмаль", "чувствительность"],
-	},
-
-	// 6. Ортодонтия
+	// 5. Ортодонтия
 	{
 		id: "srv-orthodont-01",
 		code: "БРЕК-01",
@@ -390,11 +392,105 @@ export const CANONICAL_PRICELIST_PRESETS: readonly PricelistStudioItem[] = [
 		costKopecks: 450000,
 		durationMin: 30,
 		isActive: true,
-		tags: ["элайнеры", "каппа", "ретейнер"],
+		tags: ["элайнеры", "каппа", "ретейнер", "ортодонтия"],
+	},
+
+	// 6. Имплантология
+	{
+		id: "srv-impl-01",
+		code: "ИМПЛ-01",
+		title: "Имплантат под ключ",
+		category: "implantology",
+		priceKopecks: 3500000,
+		costKopecks: 1100000,
+		durationMin: 60,
+		isActive: true,
+		tags: ["имплантация", "титан", "osstem", "имплант", "вживление", "штифт"],
+	},
+	{
+		id: "srv-impl-02",
+		code: "ИМПЛ-02",
+		title: "Установка формирователя десны",
+		category: "implantology",
+		priceKopecks: 450000,
+		costKopecks: 80000,
+		durationMin: 20,
+		isActive: true,
+		tags: ["имплантация", "формирователь", "десна"],
+	},
+	{
+		id: "srv-impl-03",
+		code: "ИМПЛ-03",
+		title: "Синус-лифтинг (закрытый)",
+		category: "implantology",
+		priceKopecks: 1800000,
+		costKopecks: 450000,
+		durationMin: 45,
+		isActive: true,
+		tags: ["синус", "синуслифтинг", "кость", "имплантация"],
+	},
+
+	// 7. Детская стоматология
+	{
+		id: "srv-ped-01",
+		code: "ДЕТ-01",
+		title: "Адаптационный осмотр ребенка и консультация",
+		category: "pediatric",
+		priceKopecks: 150000,
+		costKopecks: 20000,
+		durationMin: 30,
+		isActive: true,
+		tags: ["детство", "дети", "адаптация", "консультация", "ребенок", "детский"],
+	},
+	{
+		id: "srv-ped-02",
+		code: "ДЕТ-02",
+		title: "Лечение кариеса молочного зуба с цветной пломбой Twinky Star",
+		category: "pediatric",
+		priceKopecks: 320000,
+		costKopecks: 50000,
+		durationMin: 30,
+		isActive: true,
+		tags: ["детство", "дети", "молочный", "кариес", "твинки", "цветная", "пломба"],
+	},
+	{
+		id: "srv-ped-03",
+		code: "ДЕТ-03",
+		title: "Герметизация фиссур молочного зуба",
+		category: "pediatric",
+		priceKopecks: 180000,
+		costKopecks: 30000,
+		durationMin: 20,
+		isActive: true,
+		tags: ["детство", "дети", "герметизация", "фиссуры", "профилактика"],
+	},
+
+	// 8. Профгигиена
+	{
+		id: "srv-hyg-01",
+		code: "ГИГ-01",
+		title: "Профессиональная гигиена полости рта (Air-Flow + УЗ)",
+		category: "hygiene",
+		priceKopecks: 420000,
+		costKopecks: 65000,
+		durationMin: 45,
+		isActive: true,
+		tags: ["чистка", "air-flow", "ультразвук", "камни", "налет", "гигиена"],
+	},
+	{
+		id: "srv-hyg-02",
+		code: "ГИГ-02",
+		title: "Глубокое фторирование эмали и ремотерапия",
+		category: "hygiene",
+		priceKopecks: 180000,
+		costKopecks: 30000,
+		durationMin: 20,
+		isActive: true,
+		tags: ["фторирование", "эмаль", "чувствительность", "профилактика"],
 	},
 ];
 
-const LOCAL_STORAGE_KEY = "dente_canonical_pricelist_v2";
+const LOCAL_STORAGE_KEY = "dente_canonical_pricelist_v3";
 
 /**
  * Загрузка сохраненного прейскуранта или возврат базового пресета
@@ -429,7 +525,16 @@ export function saveCanonicalPricelist(
 }
 
 /**
- * Поиск и фильтрация услуг за 1 клик
+ * Возвращает клинический тег/синоним, по которому совпал поисковый запрос
+ */
+export function getMatchedTag(item: PricelistStudioItem, query: string): string | undefined {
+	const q = query.trim().toLowerCase();
+	if (!q || !item.tags) return undefined;
+	return item.tags.find((t) => t.toLowerCase().includes(q));
+}
+
+/**
+ * Поиск и фильтрация услуг за 1 клик (по названию, коду и синонимам/клиническим тегам)
  */
 export function filterPricelist(
 	items: readonly PricelistStudioItem[],

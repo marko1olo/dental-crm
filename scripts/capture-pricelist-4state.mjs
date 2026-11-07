@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONVERSATION_ID = process.env.CONVERSATION_ID || "36d056c5-4ff6-47d8-8a68-67fefb3a5f33";
+const CONVERSATION_ID = process.env.CONVERSATION_ID || "d7bb973b-2890-4dd1-8013-e3d9ab88b984";
 const DOCS_DIR = path.resolve(__dirname, "../docs/proofs/pricelist");
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONVERSATION_ID}`);
 
@@ -127,6 +127,36 @@ async function run() {
 			args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 		});
 
+		const initScript = (theme) => {
+			try {
+				localStorage.setItem("dente_demo_showcase", "true");
+				localStorage.setItem("dente_clinic_token", "demo-clinic-token");
+				localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-chief");
+				localStorage.setItem("dente_active_session_token", "demo-showcase-staff-token-chief");
+				localStorage.setItem("dente_organization_id", "01a00000-0000-0000-0000-000000000000");
+				localStorage.setItem("dente_user_id", "doc-1");
+				localStorage.setItem("dente_user_name", "Д-р Воронов Алексей Владимирович");
+				localStorage.setItem("dente_user_role", "owner");
+				localStorage.setItem("dente_active_role", "owner");
+				localStorage.setItem("dente_role", "owner");
+				localStorage.setItem("dente_perspective", "owner");
+				localStorage.setItem("session_mode", "staff");
+				sessionStorage.setItem("dente_unlocked", "true");
+				localStorage.setItem("dente_onboarding_completed", "true");
+				localStorage.setItem("dente_tour_completed", "true");
+				localStorage.setItem("dente_tour_dismissed", "true");
+				localStorage.setItem("dente_demo_banner_dismissed", "true");
+				localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+				localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
+				localStorage.setItem("dente_theme_mode", theme);
+				localStorage.setItem("dente-theme", theme);
+				localStorage.setItem("dente_theme", theme);
+				localStorage.setItem("theme", theme);
+				document.cookie = "dente_clinic_token=demo-clinic-token; path=/; max-age=31536000";
+				document.cookie = "dente_staff_token=demo-showcase-staff-token-chief; path=/; max-age=31536000";
+			} catch (_) {}
+		};
+
 		// ─── 1. Desktop Context (1440x900) ───
 		console.log("\n>>> Capturing Desktop proofs (1440x900)...");
 		const pcContext = await browser.newContext({
@@ -134,21 +164,15 @@ async function run() {
 			deviceScaleFactor: 1,
 		});
 
-		await pcContext.addInitScript(() => {
-			localStorage.setItem("dente_active_role", "owner");
-			localStorage.setItem("dente_user_role", "owner");
-			localStorage.setItem("dente_demo_showcase", "true");
-			sessionStorage.setItem("dente_unlocked", "true");
-			localStorage.setItem("dente_onboarding_completed", "true");
-			localStorage.setItem("dente_tour_completed", "true");
-			localStorage.setItem("dente_tour_dismissed", "true");
-			localStorage.setItem("dente_demo_banner_dismissed", "true");
-			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-			localStorage.setItem("dente_theme_mode", "light");
-		});
+		await pcContext.addInitScript(initScript, "light");
 
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto("http://127.0.0.1:5173/?demo=true&pricelist=1#pricelist", { waitUntil: "commit", timeout: 20000 });
+		await pcPage.goto("http://127.0.0.1:5173/?demo=true&pricelist=1#pricelist", { waitUntil: "domcontentloaded", timeout: 25000 });
+		await pcPage.waitForTimeout(1000);
+		await pcPage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-pricelist"));
+			window.dispatchEvent(new CustomEvent("dente-open-pricelist"));
+		});
 		await pcPage.waitForSelector('[data-testid="service-pricelist-studio-modal"], .pricelist-studio-modal', { timeout: 20000 });
 		await cleanNoise(pcPage);
 
@@ -158,11 +182,44 @@ async function run() {
 		await cleanNoise(pcPage);
 		await saveProof(pcPage, "01_pricelist_pc_light_1440x900.png");
 
+		// 1.1.1 PC Light Search Match
+		console.log("Capturing pricelist_search_pc_light_1440x900.png...");
+		await pcPage.fill(".pricelist-search-input", "кариес");
+		await pcPage.waitForTimeout(400);
+		await saveProof(pcPage, "pricelist_search_pc_light_1440x900.png");
+		await pcPage.fill(".pricelist-search-input", "");
+		await pcPage.waitForTimeout(300);
+
+		// 1.1.2 PC Light Editor Modal
+		console.log("Capturing pricelist_editor_pc_light_1440x900.png...");
+		const editBtn = await pcPage.$('.pricelist-table-row button[title="Редактировать услугу"]');
+		if (editBtn) {
+			await editBtn.click();
+			await pcPage.waitForTimeout(600);
+			await saveProof(pcPage, "pricelist_editor_pc_light_1440x900.png");
+			// Close modal cleanly
+			const closeBtn = await pcPage.$('.premium-modal-close, button:has-text("Отмена")');
+			if (closeBtn) await closeBtn.click();
+			await pcPage.waitForTimeout(500);
+		}
+
 		// 1.2 PC Dark
 		console.log("Capturing 02_pricelist_pc_dark_1440x900.png...");
 		await setTheme(pcPage, "dark");
 		await cleanNoise(pcPage);
 		await saveProof(pcPage, "02_pricelist_pc_dark_1440x900.png");
+
+		// 1.2.1 PC Dark Editor Modal
+		console.log("Capturing pricelist_editor_pc_dark_1440x900.png...");
+		const editBtnDark = await pcPage.$('.pricelist-table-row button[title="Редактировать услугу"]');
+		if (editBtnDark) {
+			await editBtnDark.click();
+			await pcPage.waitForTimeout(600);
+			await saveProof(pcPage, "pricelist_editor_pc_dark_1440x900.png");
+			const closeBtn = await pcPage.$('.premium-modal-close, button:has-text("Отмена")');
+			if (closeBtn) await closeBtn.click();
+			await pcPage.waitForTimeout(500);
+		}
 
 		await pcContext.close();
 
@@ -175,21 +232,15 @@ async function run() {
 			hasTouch: true,
 		});
 
-		await mobileContext.addInitScript(() => {
-			localStorage.setItem("dente_active_role", "owner");
-			localStorage.setItem("dente_user_role", "owner");
-			localStorage.setItem("dente_demo_showcase", "true");
-			sessionStorage.setItem("dente_unlocked", "true");
-			localStorage.setItem("dente_onboarding_completed", "true");
-			localStorage.setItem("dente_tour_completed", "true");
-			localStorage.setItem("dente_tour_dismissed", "true");
-			localStorage.setItem("dente_demo_banner_dismissed", "true");
-			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-			localStorage.setItem("dente_theme_mode", "light");
-		});
+		await mobileContext.addInitScript(initScript, "light");
 
 		const mobilePage = await mobileContext.newPage();
-		await mobilePage.goto("http://127.0.0.1:5173/?demo=true&pricelist=1#pricelist", { waitUntil: "commit", timeout: 20000 });
+		await mobilePage.goto("http://127.0.0.1:5173/?demo=true&pricelist=1#pricelist", { waitUntil: "domcontentloaded", timeout: 25000 });
+		await mobilePage.waitForTimeout(1000);
+		await mobilePage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-pricelist"));
+			window.dispatchEvent(new CustomEvent("dente-open-pricelist"));
+		});
 		await mobilePage.waitForSelector('[data-testid="service-pricelist-studio-modal"], .pricelist-studio-modal', { timeout: 20000 });
 		await cleanNoise(mobilePage);
 
@@ -199,11 +250,35 @@ async function run() {
 		await cleanNoise(mobilePage);
 		await saveProof(mobilePage, "03_pricelist_mobile_light_390x844.png");
 
+		// 2.1.1 Mobile Light Editor
+		console.log("Capturing pricelist_editor_mobile_light_390x844.png...");
+		const mobEditBtn = await mobilePage.$('.pricelist-mobile-card button:has-text("Изменить")');
+		if (mobEditBtn) {
+			await mobEditBtn.click();
+			await mobilePage.waitForTimeout(600);
+			await saveProof(mobilePage, "pricelist_editor_mobile_light_390x844.png");
+			const closeBtn = await mobilePage.$('.premium-modal-close, button:has-text("Отмена")');
+			if (closeBtn) await closeBtn.click();
+			await mobilePage.waitForTimeout(500);
+		}
+
 		// 2.2 Mobile Dark
 		console.log("Capturing 04_pricelist_mobile_dark_390x844.png...");
 		await setTheme(mobilePage, "dark");
 		await cleanNoise(mobilePage);
 		await saveProof(mobilePage, "04_pricelist_mobile_dark_390x844.png");
+
+		// 2.2.1 Mobile Dark Editor
+		console.log("Capturing pricelist_editor_mobile_dark_390x844.png...");
+		const mobEditBtnDark = await mobilePage.$('.pricelist-mobile-card button:has-text("Изменить")');
+		if (mobEditBtnDark) {
+			await mobEditBtnDark.click();
+			await mobilePage.waitForTimeout(600);
+			await saveProof(mobilePage, "pricelist_editor_mobile_dark_390x844.png");
+			const closeBtn = await mobilePage.$('.premium-modal-close, button:has-text("Отмена")');
+			if (closeBtn) await closeBtn.click();
+			await mobilePage.waitForTimeout(500);
+		}
 
 		await mobileContext.close();
 

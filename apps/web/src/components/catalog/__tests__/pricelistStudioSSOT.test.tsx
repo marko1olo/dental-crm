@@ -52,16 +52,18 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 	});
 
 	describe("2. Клиническая полнота РФ (Мандаты 8x, 8n)", () => {
-		it("содержит ровно 6 канонических категорий частной стоматологии", () => {
-			assert.equal(CANONICAL_CLINICAL_CATEGORIES.length, 6);
+		it("содержит ровно 8 канонических категорий частной стоматологии", () => {
+			assert.equal(CANONICAL_CLINICAL_CATEGORIES.length, 8);
 			const keys = CANONICAL_CLINICAL_CATEGORIES.map((c) => c.key);
 			assert.deepEqual(keys, [
-				"diagnostics",
 				"therapy",
 				"surgery",
 				"orthopedics",
-				"hygiene",
 				"orthodontics",
+				"implantology",
+				"pediatric",
+				"hygiene",
+				"diagnostics",
 			]);
 		});
 
@@ -128,9 +130,13 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 		});
 
 		it("выполняет поиск по коду артикула", () => {
-			const found = filterPricelist(CANONICAL_PRICELIST_PRESETS, "all", "ХИР-03");
+			const found = filterPricelist(CANONICAL_PRICELIST_PRESETS, "all", "ИМПЛ-01");
 			assert.equal(found.length, 1);
 			assert.equal(found[0]?.title, "Имплантат под ключ");
+
+			const foundSurg = filterPricelist(CANONICAL_PRICELIST_PRESETS, "all", "ХИР-03");
+			assert.equal(foundSurg.length, 1);
+			assert.equal(foundSurg[0]?.title, "Резекция верхушки корня зуба");
 		});
 	});
 

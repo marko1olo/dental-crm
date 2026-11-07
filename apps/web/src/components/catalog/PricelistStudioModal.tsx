@@ -32,6 +32,7 @@ import {
 	calculatePricelistStats,
 	filterPricelist,
 	formatKopecksToRubles,
+	getMatchedTag,
 	loadCanonicalPricelist,
 	parseRublesToKopecks,
 	saveCanonicalPricelist,
@@ -55,6 +56,30 @@ export interface PricelistStudioModalProps {
 
 export type ServicePriceListStudioModalProps = PricelistStudioModalProps;
 export type ServicePricelistManagerModalProps = PricelistStudioModalProps;
+
+const HighlightMatch: React.FC<{ readonly text: string; readonly query: string }> = ({
+	text,
+	query,
+}) => {
+	const trimmed = query.trim();
+	if (!trimmed) return <>{text}</>;
+	const escaped = trimmed.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+	const regex = new RegExp(`(${escaped})`, "gi");
+	const parts = text.split(regex);
+	return (
+		<>
+			{parts.map((part, i) =>
+				part.toLowerCase() === trimmed.toLowerCase() ? (
+					<mark key={i} className="pricelist-match-highlight">
+						{part}
+					</mark>
+				) : (
+					part
+				),
+			)}
+		</>
+	);
+};
 
 export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 	isOpen,
@@ -504,6 +529,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 								{filteredItems.map((item) => {
 									const isEditingPrice = editingPriceId === item.id;
 									const margin = calculateMarginPercent(item.priceKopecks, item.costKopecks);
+									const matchedTag = searchQuery.trim() ? getMatchedTag(item, searchQuery) : null;
 									return (
 										<tr
 											key={item.id}
@@ -512,15 +538,22 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 										>
 											<td>
 												<span className="pricelist-item-code-badge" title="Код позиции в каталоге клиники">
-													{item.code}
+													<HighlightMatch text={item.code} query={searchQuery} />
 												</span>
 											</td>
 											<td>
-												<div className="pricelist-item-title flex items-center gap-1.5">
+												<div className="pricelist-item-title flex items-center gap-1.5 flex-wrap">
 													{item.isBundle && (
 														<Package size={14} className="text-[var(--teal)] shrink-0" />
 													)}
-													<span>{item.title}</span>
+													<span>
+														<HighlightMatch text={item.title} query={searchQuery} />
+													</span>
+													{matchedTag && (
+														<span className="pricelist-tag-match-chip" title={`Найдено по тегу / синониму: ${matchedTag}`}>
+															#{matchedTag}
+														</span>
+													)}
 												</div>
 											</td>
 											<td>
@@ -601,7 +634,9 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 
 						{/* Мобильный список карточек (Apple HIG) */}
 						<div className="pricelist-mobile-card-list">
-							{filteredItems.map((item) => (
+							{filteredItems.map((item) => {
+								const matchedTag = searchQuery.trim() ? getMatchedTag(item, searchQuery) : null;
+								return (
 								<div
 									key={item.id}
 									className="pricelist-mobile-card"
@@ -610,12 +645,21 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 									<div className="flex items-start justify-between gap-3 w-full">
 										<div className="min-w-0 flex-1 pr-1">
 											<div className="flex items-center gap-1.5 mb-1 flex-wrap">
-												<span className="pricelist-item-code-badge font-mono shrink-0">{item.code}</span>
+												<span className="pricelist-item-code-badge font-mono shrink-0">
+													<HighlightMatch text={item.code} query={searchQuery} />
+												</span>
 												{item.isBundle && (
 													<span className="text-[11px] font-semibold text-[var(--teal)] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded-md shrink-0">Комплекс</span>
 												)}
+												{matchedTag && (
+													<span className="pricelist-tag-match-chip font-mono">
+														#{matchedTag}
+													</span>
+												)}
 											</div>
-											<h4 className="font-semibold text-sm text-[var(--ink)] leading-snug break-words">{item.title}</h4>
+											<h4 className="font-semibold text-sm text-[var(--ink)] leading-snug break-words">
+												<HighlightMatch text={item.title} query={searchQuery} />
+											</h4>
 										</div>
 										<button
 											type="button"
@@ -654,7 +698,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 										</div>
 									</div>
 								</div>
-							))}
+								);
+							})}
 						</div>
 					</main>
 				</div>
