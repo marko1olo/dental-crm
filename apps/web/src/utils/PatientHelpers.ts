@@ -245,7 +245,8 @@ export function findPatient(patients: Patient[] | undefined | null, patientId: s
  * не подсвечивать красным долг, которого никто не считал.
  */
 
-import { isOptionValue, buildPatientCorePayload } from "./CommonHelpers";
+import { isOptionValue } from "./commonHelpers/predicateHelpers";
+import { buildPatientCorePayload } from "./commonHelpers/visitDraftHelpers";
 
 export type PatientCoreDraft = {
 	fullName: string;

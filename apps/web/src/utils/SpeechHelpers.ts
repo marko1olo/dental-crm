@@ -22,15 +22,17 @@ import {
 } from "../lib/safeLocalStorage";
 import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
 import {
-	type PendingVisitSave,
 	assertSpeechChunkDbStores,
+	sortPendingSpeechChunks,
+} from "./commonHelpers/speechChunkHelpers";
+import {
+	type PendingVisitSave,
 	localQueueOrganizationMatches,
 	pendingVisitSaveQueueLocalKey,
 	pendingVisitSaveStoreName,
-	sensitiveLocalDraftRetentionMs,
-	sortPendingSpeechChunks,
 	sortPendingVisitSaves,
-} from "./CommonHelpers";
+} from "./commonHelpers/visitDraftHelpers";
+import { sensitiveLocalDraftRetentionMs } from "./commonHelpers/documentDraftHelpers";
 import {
 	dicomWorkbenchDraftStoreName,
 	mprWorkbenchDraftStoreName,

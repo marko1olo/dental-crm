@@ -25,12 +25,18 @@ export type {
 } from "./types.js";
 
 export {
+	browserGeneratedId,
 	sensitiveLocalDraftRetentionMs,
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
 } from "./uiFormatters.js";
 
 export {
+	onboardingStorageKey,
+} from "./preferenceHelpers.js";
+
+export {
+	imagingViewerLocalStoragePrefix,
 	dicomWorkbenchDraftStoreName,
 	mprWorkbenchDraftStoreName,
 } from "./imagingHelpers.js";

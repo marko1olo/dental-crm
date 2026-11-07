@@ -3,7 +3,6 @@ import type {
 	GeneratedDocument,
 } from "@dental/shared";
 import type { AppView } from "../routeUtils.js";
-import { isDenteTelegramPortalSection } from "../CommonHelpers.js";
 
 export const telegramPublicUrlSensitiveQueryKeys = new Set([
 	"patient",
@@ -148,6 +147,12 @@ export const denteTelegramHandoffTargets: Record<
 			"Открыта очередь записей, фильтры врачей, ассистентов и кресел сохранены.",
 	},
 };
+
+export function isDenteTelegramPortalSection(
+	value: string | null,
+): value is DenteTelegramPortalSection {
+	return Boolean(value && Object.hasOwn(denteTelegramHandoffTargets, value));
+}
 
 export function readDenteTelegramHandoffTarget(): DenteTelegramHandoffTarget | null {
 	if (typeof window === "undefined") return null;

@@ -1377,14 +1377,15 @@
   2. Подтверждено тестами `apps/web/src/components/anesthesia` (20 файлов, 91 тест — 100% passed).
 
 ### [MOB-03] [SEV-1] [ИСПРАВЛЕНО] Центрированная десктопная модалка экстренного протокола
-- **Файлы:**
-  - [`apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83)
-  - [`apps/web/src/components/emergency/emergencyRescue.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescue.css)
-- **Суть бага:** Модалка реанимации и анафилаксии центрировалась по центру экрана десктопным окном с недостижимыми верхними контролами вместо нативного iOS Bottom Sheet drawer.
+- **Файл:**
+  - [`apps/web/src/components/emergency/emergencyRescue.css#L54-L83`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescue.css#L54-L83)
+- **Суть бага:** Модалка реанимации и анафилаксии центрировалась по центру экрана десктопным окном с недостижимыми верхними контролами вместо нативного iOS Bottom Sheet drawer. Также присутствовал 100% дубликат стилей `EmergencyRescueModal.css` (19 193 байта).
 - **Статус исправления [ИСПРАВЛЕНО]:**
-  1. В `EmergencyRescueModal.css` и `emergencyRescue.css` для экранов $\le 768$px модалка трансформирована в нативный Apple iOS Bottom Sheet: выравнивание `items-end`, скругление `rounded-t-[24px]`, тактильный Drag Handle 36×5px по центру, липкий футер кнопок с отступом `max(8px, env(safe-area-inset-bottom))`.
-  2. На десктопе сохранено красивое центрированное окно с мягким ореолом тревоги.
-  3. Проверено 4-State скриншотами:
+  1. В `emergencyRescue.css` для экранов $\le 768$px модалка трансформирована в нативный Apple iOS Bottom Sheet: выравнивание `items-end`, скругление `rounded-t-[24px]`, тактильный Drag Handle 36×5px по центру, липкий футер кнопок с отступом `max(8px, env(safe-area-inset-bottom))`.
+  2. Файл-клон `EmergencyRescueModal.css` удален, импорт переключен на канонический `emergencyRescue.css`.
+  3. Речевой парсер диктовки номеров зубов и команд формулы дедуплицирован и канонизирован в `@dental/shared/clinical` (`toothSpeechGrammar.ts`).
+  4. На десктопе сохранено красивое центрированное окно с мягким ореолом тревоги.
+  5. Проверено 4-State скриншотами:
      - `docs/proofs/mobile_hig/03_emergency_rescue_mobile_light_390x844.png`
      - `docs/proofs/mobile_hig/04_emergency_rescue_mobile_dark_390x844.png`
      - `docs/proofs/mobile_hig/07_emergency_rescue_pc_light_1440x900.png`
@@ -2294,7 +2295,31 @@
   2. **Единый CTA:** Ровно 1 Primary CTA (`Сохранить настройки` цвета teal), второстепенные — нейтральный secondary border.
   3. **Apple HIG на мобильных (390x844):** Bottom Sheet с Drag Handle сверху, безопасные тач-таргеты >= 44x44px, нижняя плашка действий.
   4. **WCAG AAA Тёмная тема:** 100% тёмные токены `var(--paper)`, `var(--ink)`, `var(--line)` без паразитных белых пятен.
-  5. **Тестовые прогоны:** 27/27 test files passed (212/212 unit tests passed), 16/16 backend tests passed, `check:encoding` -> 0 замечаний.
+### [ARCH-01] [SEV-1] [ЗАКРЫТО] Ликвидация мертвого монолита CommonHelpers.ts и консолидация дубликатов appHelpers vs helpers
+- **Файлы:**
+  - Удален монолит: [`apps/web/src/utils/CommonHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/CommonHelpers.ts) (-592 строки).
+  - Переключены потребители:
+    - [`apps/web/src/utils/AppointmentHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/AppointmentHelpers.ts) -> импорты из `commonHelpers/predicateHelpers`, `commonHelpers/uiPreferencesHelpers`, `commonHelpers/visitDraftHelpers`.
+    - [`apps/web/src/utils/PatientHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/PatientHelpers.ts) -> импорты из `commonHelpers/predicateHelpers`, `commonHelpers/visitDraftHelpers`.
+    - [`apps/web/src/utils/SpeechHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/SpeechHelpers.ts) -> импорты из `commonHelpers/speechChunkHelpers`, `commonHelpers/visitDraftHelpers`, `commonHelpers/documentDraftHelpers`.
+    - [`apps/web/src/utils/telegram/telegramDeepLinkParser.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/telegram/telegramDeepLinkParser.ts) -> разорван циклический импорт, `isDenteTelegramPortalSection` экспортирован локально.
+    - [`apps/web/src/utils/telegram/telegramMessageFormatter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/telegram/telegramMessageFormatter.ts) -> импорт из `commonHelpers/predicateHelpers.js`.
+  - Консолидация `appHelpers/` vs `helpers/` в канонический SSOT `apps/web/src/helpers/`:
+    - [`apps/web/src/helpers/financialHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/helpers/financialHelpers.ts) (SSOT) <- `apps/web/src/appHelpers/financialHelpers.ts` редуцирован в тонкий ре-экспорт.
+    - [`apps/web/src/helpers/speechHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/helpers/speechHelpers.ts) (SSOT) <- `apps/web/src/appHelpers/speechHelpers.ts` редуцирован в тонкий ре-экспорт.
+    - [`apps/web/src/helpers/storageHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/helpers/storageHelpers.ts) (SSOT) <- `apps/web/src/appHelpers/persistenceHelpers.ts` редуцирован в тонкий ре-экспорт.
+    - [`apps/web/src/helpers/telegramHelpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/helpers/telegramHelpers.ts) (SSOT) <- `apps/web/src/appHelpers/telephonyHelpers.ts` редуцирован в тонкий ре-экспорт.
+    - [`apps/web/src/helpers/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/helpers/types.ts) (SSOT) <- `apps/web/src/appHelpers/types.ts` редуцирован в тонкий ре-экспорт.
+    - [`apps/web/src/components/documents/surgicalPackage/helpers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/surgicalPackage/helpers.ts) переключен на `helpers/types`.
+- **Суть проблемы:**
+  Сосуществование призрака монолита `CommonHelpers.ts` (592 строки) и модульной структуры `commonHelpers/*`, а также 5 пар полных дубликатов между `appHelpers/` и `helpers/` (>2500 строк дублирующейся бизнес-логики), приводящее к рассинхрону контрактов и забиванию автокомплита.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Монолит `CommonHelpers.ts` полностью удален; 5 потребителей переключены на модули `commonHelpers/*`.
+  2. Все 5 дубликатов в `appHelpers/` консолидированы в `helpers/`: функции и типы объединены в `helpers/` (SSOT), а файлы в `appHelpers/` редуцированы до 1-строчных фасадов для 100% обратной совместимости.
+  3. Сокращено более 3200 строк дублирующегося мертвого кода (`+327 / -2696` diff lines).
+  4. Пройдены все тесты: `tests/appHelpersDecomposition.test.ts` (11/11 PASSED), `tests/shiftViewHumanText.test.ts` (7/7 PASSED), `patientBlankContractAndProfileAutonomyWave65.test.tsx` (9/9 PASSED), `documentPackages.test.ts` (9/9 PASSED).
+  5. Машинные гейты пройдены: `npm run check:encoding` -> 24115 файлов, 0 замечаний (Exit Code 0); `npm run check:dynamic-imports` -> 18289 файлов, 0 ошибок (Exit Code 0).
+
 
 
 

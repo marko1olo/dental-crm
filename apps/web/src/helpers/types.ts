@@ -424,4 +424,10 @@ export type AdminSecretSessionDomain =
 
 export type AdminSecretUnlockDomain = AdminSecretSessionDomain | "all";
 
+export type {
+	ClinicProfileDraft,
+	PatientAdministrativeProfileDraft,
+	StaffScheduleDraft,
+} from "../utils/clinicProfileUtils";
+
 export type { SettingsTabGroup } from "../AppConstants";

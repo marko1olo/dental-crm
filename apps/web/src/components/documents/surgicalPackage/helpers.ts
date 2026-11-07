@@ -1,7 +1,7 @@
 import { escapeHtml, formatDateRu } from "../documentPrintFormatters";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import type { SurgicalPackagePrintOptions, SurgicalRequisitesContext } from "./types";
-import type { ClinicProfileDraft } from "../../../appHelpers/types";
+import type { ClinicProfileDraft } from "../../../helpers/types";
 import type { Patient } from "@dental/shared";
 
 export function buildSurgicalRequisitesContext(options: SurgicalPackagePrintOptions): SurgicalRequisitesContext {

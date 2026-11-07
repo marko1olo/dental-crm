@@ -5,6 +5,7 @@
 
 import {
 	type DentalSpecialty,
+	type DicomViewerWorkbenchManifestResponse,
 	type VisitNoteDraft,
 	buildRuleBasedVisitDraftFromTranscript,
 } from "@dental/shared";
@@ -40,12 +41,25 @@ import {
 	openSpeechChunkDb,
 	pendingVisitSaveIndexedDbAvailable,
 	pendingVisitSaveStoreName,
+	speechChunkIndexedDbAvailable,
+	dicomWorkbenchDraftStoreName,
 } from "./offlineStorageEngine";
 import {
+	type DicomWorkbenchIndexedDbDraft,
+	type DicomWorkbenchLocalDraft,
 	type PendingVisitSave,
 	type PersistenceHealth,
 	type VisitLocalDraft,
 } from "./types";
+import {
+	dicomWorkbenchIndexedDbKey,
+	normalizeLocalDicomWorkbenchDraft,
+	loadLocalDicomWorkbenchDraftFromLocalStorage,
+	newerDicomWorkbenchDraft,
+	removeLocalDicomWorkbenchDraftFromLocalStorage,
+	saveLocalDicomWorkbenchDraftToLocalStorage,
+	createLocalDicomWorkbenchDraft,
+} from "./imagingStorage";
 
 export const imagingViewerLocalStoragePrefix = "dental-crm:imaging-viewer:";
 
@@ -302,6 +316,165 @@ export function savePendingVisitSavesToLocalStorage(
 		return;
 	}
 	safeLocalStorageSetItem(localKey, JSON.stringify(scopedQueue));
+}
+
+export async function readLocalDicomWorkbenchDraftFromIndexedDb(
+	organizationId: string | null | undefined = null,
+): Promise<DicomWorkbenchLocalDraft | null> {
+	const db = await openSpeechChunkDb();
+	const key = dicomWorkbenchIndexedDbKey(organizationId);
+	const record = await new Promise<unknown>((resolve, reject) => {
+		const transaction = db.transaction(
+			dicomWorkbenchDraftStoreName,
+			"readonly",
+		);
+		const request = transaction
+			.objectStore(dicomWorkbenchDraftStoreName)
+			.get(key);
+		request.onsuccess = () => resolve(request.result ?? null);
+		request.onerror = () =>
+			reject(
+				request.error ?? new Error("Local DICOM workbench draft read failed"),
+			);
+		transaction.onerror = () =>
+			reject(
+				transaction.error ??
+					new Error("Local DICOM workbench draft transaction failed"),
+			);
+	});
+	const normalized = normalizeLocalDicomWorkbenchDraft(record);
+	if (!normalized && record && typeof record === "object") {
+		await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(
+			() => undefined,
+		);
+	}
+	return normalized;
+}
+
+export async function saveLocalDicomWorkbenchDraftToIndexedDb(
+	draft: DicomWorkbenchLocalDraft,
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	const normalizedOrganizationId =
+		normalizedLocalOrganizationId(organizationId);
+	const record: DicomWorkbenchIndexedDbDraft = {
+		...draft,
+		storageKey: dicomWorkbenchIndexedDbKey(normalizedOrganizationId),
+		organizationId: normalizedOrganizationId,
+	};
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(
+			dicomWorkbenchDraftStoreName,
+			"readwrite",
+		);
+		transaction.objectStore(dicomWorkbenchDraftStoreName).put(record);
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(
+				transaction.error ??
+					new Error("Local DICOM workbench draft save failed"),
+			);
+		transaction.onabort = () =>
+			reject(
+				transaction.error ??
+					new Error("Local DICOM workbench draft save aborted"),
+			);
+	});
+}
+
+export async function deleteLocalDicomWorkbenchDraftFromIndexedDb(
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	const db = await openSpeechChunkDb();
+	await new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(
+			dicomWorkbenchDraftStoreName,
+			"readwrite",
+		);
+		transaction
+			.objectStore(dicomWorkbenchDraftStoreName)
+			.delete(dicomWorkbenchIndexedDbKey(organizationId));
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () =>
+			reject(
+				transaction.error ??
+					new Error("Local DICOM workbench draft delete failed"),
+			);
+		transaction.onabort = () =>
+			reject(
+				transaction.error ??
+					new Error("Local DICOM workbench draft delete aborted"),
+			);
+	});
+}
+
+export async function migrateLocalDicomWorkbenchDraftFromLocalStorage(
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	if (!speechChunkIndexedDbAvailable()) return;
+	const legacyDraft =
+		loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+	if (!legacyDraft) return;
+	const existing = await readLocalDicomWorkbenchDraftFromIndexedDb(
+		organizationId,
+	).catch((err) => {
+		logger.error("[Dente] read draft error:", err);
+		showToast(
+			actionFailureToast(
+				"Ошибка чтения черновика DICOM",
+				(err as { status?: number })?.status ?? null,
+			),
+			"error",
+		);
+		return null;
+	});
+	const draft = newerDicomWorkbenchDraft(existing, legacyDraft);
+	if (!draft) return;
+	await saveLocalDicomWorkbenchDraftToIndexedDb(draft, organizationId);
+	removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+}
+
+export async function loadLocalDicomWorkbenchDraft(
+	organizationId: string | null | undefined = null,
+): Promise<DicomWorkbenchLocalDraft | null> {
+	if (!speechChunkIndexedDbAvailable())
+		return loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+	try {
+		await migrateLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+		return await readLocalDicomWorkbenchDraftFromIndexedDb(organizationId);
+	} catch {
+		return loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+	}
+}
+
+export async function saveLocalDicomWorkbenchDraft(
+	manifest: DicomViewerWorkbenchManifestResponse,
+	clientSavedAt: string,
+	organizationId: string | null | undefined = null,
+): Promise<boolean> {
+	const draft = createLocalDicomWorkbenchDraft(manifest, clientSavedAt);
+	if (speechChunkIndexedDbAvailable()) {
+		try {
+			await saveLocalDicomWorkbenchDraftToIndexedDb(draft, organizationId);
+			removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+			return true;
+		} catch {
+			// Keep local CT workbench recovery available on restricted browsers.
+		}
+	}
+	return saveLocalDicomWorkbenchDraftToLocalStorage(draft, organizationId);
+}
+
+export async function removeLocalDicomWorkbenchDraft(
+	organizationId: string | null | undefined = null,
+): Promise<void> {
+	if (speechChunkIndexedDbAvailable()) {
+		await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(
+			() => undefined,
+		);
+	}
+	removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
 }
 
 export async function readPendingVisitSavesFromIndexedDb(

@@ -168,7 +168,9 @@ import {
 import { money, moneyUnknownLabel } from "./financeUtils";
 import { countLabel } from "../lib/russianPlural.js";
 import { logger } from "./logger";
-import { isRecordKey, isAppointmentStatusFilterPreference, nullableAppointmentDraftValue } from "./CommonHelpers";
+import { isRecordKey } from "./commonHelpers/predicateHelpers";
+import { isAppointmentStatusFilterPreference } from "./commonHelpers/uiPreferencesHelpers";
+import { nullableAppointmentDraftValue } from "./commonHelpers/visitDraftHelpers";
 
 export type AppointmentScheduleDraft = {
 	patientId: string;

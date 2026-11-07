@@ -37,6 +37,6 @@ According to its internal documentation, it previously caused build/test failure
 - `utils/PatientHelpers`
 - `utils/AuthOnboardingHelpers`
 - `utils/AppointmentHelpers`
-- `utils/CommonHelpers`
+- `utils/commonHelpers/*`
 
 It also explicitly re-exports UI metadata and localized helpers, such as `countLabel` from `lib/russianPlural.js`, avoiding deeply nested imports in consumer components.

@@ -37,9 +37,34 @@ import {
 } from "./guardUtils";
 import {
 	openSpeechChunkDb,
+	assertSpeechChunkDbStores,
 	speechChunkIndexedDbAvailable,
+	pendingVisitSaveIndexedDbAvailable,
+	speechChunkDbName,
+	speechChunkDbVersion,
+	pendingVisitSaveStoreName,
+	dicomWorkbenchDraftStoreName,
+	mprWorkbenchDraftStoreName,
 	speechChunkStoreName,
+	requiredSpeechChunkDbStoreNames,
+	speechChunkDbPromise,
 } from "./offlineStorageEngine";
+
+export {
+	openSpeechChunkDb,
+	assertSpeechChunkDbStores,
+	speechChunkIndexedDbAvailable,
+	pendingVisitSaveIndexedDbAvailable,
+	speechChunkDbName,
+	speechChunkDbVersion,
+	pendingVisitSaveStoreName,
+	dicomWorkbenchDraftStoreName,
+	mprWorkbenchDraftStoreName,
+	speechChunkStoreName,
+	requiredSpeechChunkDbStoreNames,
+	speechChunkDbPromise,
+};
+export { pendingVisitSaveQueueKey } from "./storageHelpers";
 import {
 	createLocalQueueId,
 	localQueueOrganizationMatches,

@@ -5,7 +5,7 @@ import type {
 	DenteTelegramPrivacyMode,
 	DenteTelegramLinkCodePublic,
 } from "@dental/shared";
-import { isRecordKey } from "../CommonHelpers.js";
+import { isRecordKey } from "../commonHelpers/predicateHelpers.js";
 
 export const telegramBlockedReasonLabels: Record<string, string> = {
 	missing_patient_portal_base_url: "Не настроена ссылка на портал пациента.",
