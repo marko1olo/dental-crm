@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import "./styles/dentalLabStudio.css";
+if (typeof document !== "undefined") { void import("./styles/dentalLabStudio.css"); }
 import {
 	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES,
 	UPPER_JAW_TEETH, LOWER_JAW_TEETH, SEED_LAB_ORDERS, type DentalLabOrderEntry, type DentalLabStage,
@@ -18,6 +18,8 @@ import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
 export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue";
 export type LabStudioMainTab = "new_order" | "registry" | "print_blank";
@@ -39,6 +41,7 @@ export type LabStudioModalProps = DentalLabStudioModalProps;
 export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, initialTab = "new_order", onOrderCreated,
 }) => {
+	const { hasDentalLab } = useWorkspaceProfile();
 	const storeActivePatientId = useAppStore((s) => s.activePatientId);
 	const storeSelectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const dashboard = useAppStore((s) => s.dashboard);
@@ -50,7 +53,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const effectivePatientName = patientName || activePatient?.fullName || (activePatient as any)?.name || "Ковалев Дмитрий Сергеевич";
 	const effectiveDoctorName = doctorName || "Д-р Смирнова Е. В. (Ортопед)";
 
-	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => [...SEED_LAB_ORDERS]);
+	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => isDemoShowcaseMode() ? [...SEED_LAB_ORDERS] : []);
 	const [activeMainTab, setActiveMainTab] = useState<LabStudioMainTab>(initialTab);
 	const [activeFilter, setActiveFilter] = useState<LabFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -64,6 +67,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб");
 	const [isUrgent, setIsUrgent] = useState(false);
 	const [notes, setNotes] = useState("");
+	const [scanFileName, setScanFileName] = useState("");
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -93,7 +97,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		let isCancelled = false;
 		async function loadLiveOrders() {
 			try {
-				const res = await fetch("/api/clinical/lab-orders", { headers: denteAdminSecretRequestHeaders() });
+				let res = await fetch("/api/lab/orders", { headers: denteAdminSecretRequestHeaders() });
+				if (!res.ok) res = await fetch("/api/clinical/lab-orders", { headers: denteAdminSecretRequestHeaders() });
 				if (!res.ok) return;
 				const data = await res.json();
 				const list = Array.isArray(data) ? data : data?.orders;
@@ -150,10 +155,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				colorVita: selectedShade, laboratoryName: selectedLab, labName: selectedLab, dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks,
 				patientPriceKopecks: totalPatientPriceKopecks, isUrgent, notes: notes.trim() || undefined, status: "sent",
 			};
-			const res = await fetch("/api/clinical/lab-orders", {
-				method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
+			const reqOpts = { method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+			let res = await fetch("/api/lab/orders", reqOpts);
+			if (!res.ok) res = await fetch("/api/clinical/lab-orders", reqOpts);
 			if (res.ok && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: payload }));
 		} catch {}
 	}, [selectedTeeth, orders.length, effectivePatientName, effectiveDoctorName, effectivePatientId, selectedMaterialId, selectedMaterial,
@@ -208,7 +212,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const currentPrintOrder = selectedOrderForPrint || orders[0] || SEED_LAB_ORDERS[0];
 	const printMaterial = getMaterialMeta(currentPrintOrder.materialId);
 
-	if (!isOpen) return null;
+	if (!isOpen || (!hasDentalLab && !isDemoShowcaseMode())) return null;
 
 	return (
 		<div data-testid="dental-lab-studio-modal-root" className="dental-lab-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>

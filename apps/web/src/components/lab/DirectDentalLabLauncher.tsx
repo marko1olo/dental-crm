@@ -8,6 +8,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DentalLabStudioModal } from "./DentalLabStudioModal";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
 export function checkIsLabActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -21,6 +23,7 @@ export function checkIsLabActive(): boolean {
 }
 
 export const DirectDentalLabLauncher: React.FC = () => {
+	const { hasDentalLab } = useWorkspaceProfile();
 	const [isActive, setIsActive] = useState<boolean>(() => checkIsLabActive());
 	const [isOpen, setIsOpen] = useState<boolean>(true);
 	const [initialToothFdi, setInitialToothFdi] = useState<string>("16");
@@ -61,7 +64,7 @@ export const DirectDentalLabLauncher: React.FC = () => {
 		}
 	}, []);
 
-	if (!isActive) return null;
+	if (!isActive || (!hasDentalLab && !isDemoShowcaseMode())) return null;
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
 			<DentalLabStudioModal

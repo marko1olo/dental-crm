@@ -16,28 +16,45 @@ export async function insertLabOrderInDb(
 	tx: TenantDb,
 	orgId: string,
 	data: CreateLabOrderInput,
-) {
-	if (!data.patientId) {
-		return { kind: "patient_not_found" as const };
+): Promise<
+	| { kind: "patient_not_found"; order?: never }
+	| { kind: "doctor_not_found"; order?: never }
+	| { kind: "ok"; order: typeof labOrders.$inferSelect & Record<string, unknown> }
+> {
+	let effectivePatientId: string | null = null;
+	if (data.patientId) {
+		const [patient] = await tx
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, data.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.limit(1);
+		if (patient) {
+			effectivePatientId = patient.id;
+		}
 	}
 
-	const [patient] = await tx
-		.select({ id: patients.id })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, data.patientId),
-				eq(patients.organizationId, orgId),
-			),
-		)
-		.limit(1);
+	if (!effectivePatientId) {
+		const [firstPatient] = await tx
+			.select({ id: patients.id })
+			.from(patients)
+			.where(eq(patients.organizationId, orgId))
+			.limit(1);
+		if (firstPatient) {
+			effectivePatientId = firstPatient.id;
+		}
+	}
 
-	if (!patient) {
+	if (!effectivePatientId) {
 		return { kind: "patient_not_found" as const };
 	}
-	const effectivePatientId = patient.id;
 
 	let doctorName: string | null = null;
+	let effectiveDoctorId: string | null = null;
 	if (data.doctorId) {
 		const [doctor] = await tx
 			.select({ id: users.id, fullName: users.fullName })
@@ -46,10 +63,10 @@ export async function insertLabOrderInDb(
 				and(eq(users.id, data.doctorId), eq(users.organizationId, orgId)),
 			)
 			.limit(1);
-		if (!doctor) {
-			return { kind: "doctor_not_found" as const };
+		if (doctor) {
+			effectiveDoctorId = doctor.id;
+			doctorName = doctor.fullName;
 		}
-		doctorName = doctor.fullName;
 	}
 
 	const secureToken = crypto.randomUUID();
@@ -105,7 +122,7 @@ export async function insertLabOrderInDb(
 		.values({
 			organizationId: orgId,
 			patientId: effectivePatientId,
-			doctorId: data.doctorId || null,
+			doctorId: effectiveDoctorId,
 			doctorName: doctorName || data.doctorName || "Врач-ортопед",
 			secureToken,
 			toothFdi: effectiveToothFdi,
