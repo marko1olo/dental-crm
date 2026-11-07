@@ -4,6 +4,7 @@ import {
 	Printer,
 	RefreshCw,
 	Search,
+	Sparkles,
 	Square,
 	Trash2,
 	X,
@@ -31,6 +32,7 @@ export interface VisitDiaryPhotoThumbnailGridProps {
 	onTogglePrint: (id: string) => void;
 	onDeletePhoto: (id: string) => void;
 	onReload: () => void;
+	onDsdPhotoOpen?: (photo: { id: string; url: string; name: string }) => void;
 }
 
 export function VisitDiaryPhotoThumbnailGrid({
@@ -46,6 +48,7 @@ export function VisitDiaryPhotoThumbnailGrid({
 	onTogglePrint,
 	onDeletePhoto,
 	onReload,
+	onDsdPhotoOpen,
 }: VisitDiaryPhotoThumbnailGridProps) {
 	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -85,20 +88,39 @@ export function VisitDiaryPhotoThumbnailGrid({
 										className="h-full w-full object-cover transition-transform group-hover:scale-105"
 									/>
 
-									<button
-										type="button"
-										onClick={() =>
-											onZoomChange({
-												id: att.id,
-												url: objectUrl,
-												name: att.name,
-											})
-										}
-										className="cursor-pointer absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-										title="Увеличить снимок на весь экран"
-									>
-										<Search className="w-5 h-5 drop-shadow-md" />
-									</button>
+									<div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white">
+										<button
+											type="button"
+											onClick={() =>
+												onZoomChange({
+													id: att.id,
+													url: objectUrl,
+													name: att.name,
+												})
+											}
+											className="cursor-pointer p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white transition-colors"
+											title="Увеличить снимок на весь экран"
+										>
+											<Search className="w-4 h-4 drop-shadow-md" />
+										</button>
+										{onDsdPhotoOpen && (
+											<button
+												type="button"
+												onClick={() =>
+													onDsdPhotoOpen({
+														id: att.id,
+														url: objectUrl,
+														name: att.name,
+													})
+												}
+												className="cursor-pointer p-2 rounded-lg bg-teal-600/80 hover:bg-teal-600 text-white transition-colors"
+												title="DSD: Анализ эстетики улыбки для этого фото"
+												data-testid={`btn-dsd-photo-${att.id}`}
+											>
+												<Sparkles className="w-4 h-4 text-teal-200" />
+											</button>
+										)}
+									</div>
 
 									{!isLocked && (
 										<div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">

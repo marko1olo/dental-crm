@@ -13,6 +13,7 @@ import {
 	Eye,
 	X,
 	Maximize2,
+	Sparkles,
 } from "lucide-react";
 import {
 	STANDARD_12_SLOT_PROTOCOL,
@@ -24,6 +25,15 @@ import { BeforeAfterSplitSlider } from "./BeforeAfterSplitSlider";
 import { showToast } from "../GlobalToast";
 import { useClipboardPhotoPaste } from "./useClipboardPhotoPaste";
 import { compressChairsidePhotoToBlobUrl } from "./chairsidePhotoCompressor";
+import {
+	DsdCanvasOverlay,
+	type DsdCanvasGuideFlags,
+	type DsdFacialLandmarks,
+	type DsdCalibrationState,
+} from "./dsd/DsdCanvasOverlay";
+import { DsdMetricsSidebar } from "./dsd/DsdMetricsSidebar";
+import { DEFAULT_CLINICAL_SMILE_PHOTO } from "./dsd/DsdAestheticStudioModal";
+import type { DsdAnalysisData } from "@dental/shared";
 
 export interface ClinicalPhotoProtocolGridProps {
 	readonly patientId?: string | undefined;
@@ -46,10 +56,40 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 }) => {
 	const [slotsData, setSlotsData] = useState<Record<string, PhotoSlotRecord>>(initialSlots);
 	const [activeFilter, setActiveFilter] = useState<"all" | "extraoral" | "intraoral" | "occlusal">("all");
-	const [viewMode, setViewMode] = useState<"grid" | "compare">("grid");
+	const [viewMode, setViewMode] = useState<"grid" | "compare" | "dsd">("grid");
 	const [beforeSlotId, setBeforeSlotId] = useState<string>("portrait_rest");
 	const [afterSlotId, setAfterSlotId] = useState<string>("portrait_smile");
 	const [selectedSlotForZoom, setSelectedSlotForZoom] = useState<string | null>(null);
+
+	// DSD Студия эстетического анализа
+	const [dsdSlotId, setDsdSlotId] = useState<string>("portrait_smile");
+	const [dsdRotationDegrees, setDsdRotationDegrees] = useState<number>(0);
+	const [dsdActiveMobileTab, setDsdActiveMobileTab] = useState<"canvas" | "metrics">("canvas");
+	const [dsdGuides, setDsdGuides] = useState<DsdCanvasGuideFlags>({
+		bipupillary: true,
+		midline: true,
+		smileArc: true,
+		goldenRatio: true,
+		calibration: true,
+	});
+	const [dsdLandmarks, setDsdLandmarks] = useState<DsdFacialLandmarks>({
+		leftPupil: { x: 340, y: 380 },
+		rightPupil: { x: 660, y: 380 },
+		midlineTop: { x: 500, y: 150 },
+		midlineBottom: { x: 500, y: 850 },
+		commissureLeft: { x: 280, y: 620 },
+		commissureRight: { x: 720, y: 620 },
+		smileArcCenter: { x: 500, y: 690 },
+		incisalCenter: { x: 500, y: 670 },
+		teethArchOrigin: { x: 500, y: 580 },
+		teethArchWidth: 380,
+		teethArchHeight: 110,
+	});
+	const [dsdCalibration, setDsdCalibration] = useState<DsdCalibrationState>({
+		p1: { x: 450, y: 540 },
+		p2: { x: 550, y: 540 },
+		knownMm: 10,
+	});
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const targetSlotRef = useRef<string | null>(null);
@@ -161,6 +201,77 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 		fileInputRef.current?.click();
 	};
 
+	// DSD Callbacks
+	const handleToggleDsdGuide = useCallback((key: keyof DsdCanvasGuideFlags) => {
+		setDsdGuides((prev) => ({ ...prev, [key]: !prev[key] }));
+	}, []);
+
+	const handleRotateDsdPhoto = useCallback((delta: number) => {
+		setDsdRotationDegrees((prev) => (prev + delta) % 360);
+	}, []);
+
+	const handleAutoLevelDsd = useCallback(() => {
+		const dx = dsdLandmarks.rightPupil.x - dsdLandmarks.leftPupil.x;
+		const dy = dsdLandmarks.rightPupil.y - dsdLandmarks.leftPupil.y;
+		const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+		setDsdRotationDegrees(-angle);
+		showToast(`Горизонт фото выровнен по зрачковой линии (${(-angle).toFixed(1)}°)`, "success");
+	}, [dsdLandmarks.leftPupil, dsdLandmarks.rightPupil]);
+
+	const handleResetDsdToNorm = useCallback(() => {
+		setDsdLandmarks({
+			leftPupil: { x: 340, y: 380 },
+			rightPupil: { x: 660, y: 380 },
+			midlineTop: { x: 500, y: 150 },
+			midlineBottom: { x: 500, y: 850 },
+			commissureLeft: { x: 280, y: 620 },
+			commissureRight: { x: 720, y: 620 },
+			smileArcCenter: { x: 500, y: 690 },
+			incisalCenter: { x: 500, y: 670 },
+			teethArchOrigin: { x: 500, y: 580 },
+			teethArchWidth: 380,
+			teethArchHeight: 110,
+		});
+		setDsdRotationDegrees(0);
+		showToast("Направляющие DSD возвращены к канонической норме", "info");
+	}, []);
+
+	const handleApplyDsd = useCallback(
+		(analysis: Partial<DsdAnalysisData>) => {
+			const currentSlot = slotsData[dsdSlotId];
+			if (currentSlot) {
+				setSlotsData((prev) => ({
+					...prev,
+					[dsdSlotId]: {
+						...currentSlot,
+						metadata: {
+							...currentSlot.metadata,
+							dsdAnalysis: analysis,
+						},
+					},
+				}));
+			}
+
+			if (typeof window !== "undefined") {
+				const labDetail = {
+					patientId,
+					patientName,
+					doctorName,
+					teeth: [13, 12, 11, 21, 22, 23],
+					toothFdi: 11,
+					material: analysis.recommendedMaterial,
+					colorVita: analysis.recommendedVitaShade,
+					notes: `[DSD Эстетика из фотопротокола]: Цвет ${analysis.recommendedVitaShade}, дуга ${analysis.smileArcCurvature}. ${analysis.doctorNotes || ""}`,
+					dsdAnalysis: analysis,
+				};
+				window.dispatchEvent(new CustomEvent("dente-open-lab-order-modal", { detail: labDetail }));
+				window.dispatchEvent(new CustomEvent("dente-apply-dsd-to-treatment-plan", { detail: labDetail }));
+			}
+			showToast("Параметры DSD успешно перенесены в заказ-наряд лаборатории и план лечения!", "success");
+		},
+		[slotsData, dsdSlotId, patientId, patientName, doctorName],
+	);
+
 	// Save protocol
 	const handleSave = () => {
 		onSaveProtocol?.(slotsData);
@@ -239,6 +350,18 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 								<SplitSquareHorizontal size={14} />
 								<span className="hidden sm:inline">Сравнение До/После</span>
 							</button>
+							<button
+								type="button"
+								onClick={() => setViewMode("dsd")}
+								className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer min-h-[32px] ${
+									viewMode === "dsd" ? "bg-[var(--paper)] text-[var(--teal)] shadow-xs" : "text-[var(--muted)]"
+								}`}
+								title="Digital Smile Design: эстетический анализ улыбки и золотые пропорции Wheeler"
+								data-testid="btn-view-mode-dsd"
+							>
+								<Sparkles size={14} className="text-teal-500" />
+								<span className="hidden sm:inline">DSD Эстетика</span>
+							</button>
 						</div>
 
 						{onClose && (
@@ -288,8 +411,8 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 				)}
 
 				{/* Main Body */}
-				<div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[var(--paper-soft)]">
-					{viewMode === "grid" ? (
+				<div className={`flex-1 p-2 sm:p-4 bg-[var(--paper-soft)] ${viewMode === "dsd" ? "overflow-hidden flex flex-col" : "overflow-y-auto"}`}>
+					{viewMode === "grid" && (
 						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
 							{visibleSlots.map((slot) => {
 								const record = slotsData[slot.id];
@@ -344,33 +467,51 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 										<div className="flex items-center justify-between text-[10px] text-[var(--muted)] z-10">
 											<span className="truncate">{slot.clinicalPurposeRu}</span>
 											{isUploaded && (
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														setSlotsData((prev) => {
-															const existingUrl = prev[slot.id]?.imageUrl;
-															if (existingUrl?.startsWith("blob:")) {
-																URL.revokeObjectURL(existingUrl);
-																createdBlobUrlsRef.current.delete(existingUrl);
-															}
-															const next = { ...prev };
-															delete next[slot.id];
-															return next;
-														});
-													}}
-													className="p-1 hover:text-red-500 rounded text-[var(--muted)] transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center"
-													title="Удалить снимок"
-												>
-													<Trash2 size={12} />
-												</button>
+												<div className="flex items-center gap-1">
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															setDsdSlotId(slot.id);
+															setViewMode("dsd");
+														}}
+														className="px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20 text-[10px] font-bold flex items-center gap-1 transition-colors min-h-[24px]"
+														title="Открыть DSD эстетический анализ этого фото"
+														data-testid={`btn-dsd-slot-${slot.id}`}
+													>
+														<Sparkles size={10} />
+														<span>DSD</span>
+													</button>
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															setSlotsData((prev) => {
+																const existingUrl = prev[slot.id]?.imageUrl;
+																if (existingUrl?.startsWith("blob:")) {
+																	URL.revokeObjectURL(existingUrl);
+																	createdBlobUrlsRef.current.delete(existingUrl);
+																}
+																const next = { ...prev };
+																delete next[slot.id];
+																return next;
+															});
+														}}
+														className="p-1 hover:text-red-500 rounded text-[var(--muted)] transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center"
+														title="Удалить снимок"
+													>
+														<Trash2 size={12} />
+													</button>
+												</div>
 											)}
 										</div>
 									</div>
 								);
 							})}
 						</div>
-					) : (
+					)}
+
+					{viewMode === "compare" && (
 						/* Before/After Comparison View */
 						<div className="flex flex-col gap-4 h-full">
 							<div className="flex items-center justify-between bg-[var(--paper)] p-3 rounded-xl border border-[var(--line)] flex-wrap gap-2">
@@ -417,6 +558,98 @@ export const ClinicalPhotoProtocolGrid: React.FC<ClinicalPhotoProtocolGridProps>
 										setAfterSlotId(tmp);
 									}}
 								/>
+							</div>
+						</div>
+					)}
+
+					{viewMode === "dsd" && (
+						/* DSD Digital Smile Design Workspace (PHO-02..05) */
+						<div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--paper)] rounded-xl border border-[var(--line)]">
+							{/* DSD Sub-Header: Slot Selector & Tools */}
+							<div className="flex items-center justify-between px-3 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] gap-2 flex-wrap shrink-0">
+								<div className="flex items-center gap-2">
+									<label className="text-xs font-bold text-[var(--muted)]">Снимок для DSD:</label>
+									<select
+										value={dsdSlotId}
+										onChange={(e) => setDsdSlotId(e.target.value)}
+										className="bg-[var(--paper)] border border-[var(--line)] text-xs font-semibold rounded-lg px-2.5 py-1.5 text-[var(--ink)] cursor-pointer"
+										data-testid="select-dsd-slot"
+									>
+										{allSlots.map((s) => (
+											<option key={s.id} value={s.id}>
+												{s.shortLabelRu} {slotsData[s.id]?.imageUrl ? "✓ (загружено)" : "(нет фото)"}
+											</option>
+										))}
+									</select>
+									{!slotsData[dsdSlotId]?.imageUrl && (
+										<button
+											type="button"
+											onClick={() => triggerUpload(dsdSlotId)}
+											className="px-2 py-1 rounded bg-[var(--teal)] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer min-h-[32px]"
+										>
+											<Upload size={12} />
+											<span>Загрузить фото для этого слота</span>
+										</button>
+									)}
+								</div>
+
+								{/* Mobile Segmented Control */}
+								<div className="sm:hidden flex bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)]">
+									<button
+										type="button"
+										onClick={() => setDsdActiveMobileTab("canvas")}
+										className={`px-2.5 py-1 text-xs font-bold rounded ${
+											dsdActiveMobileTab === "canvas" ? "bg-[var(--paper)] text-[var(--teal)] shadow-xs" : "text-[var(--muted)]"
+										}`}
+									>
+										Холст
+									</button>
+									<button
+										type="button"
+										onClick={() => setDsdActiveMobileTab("metrics")}
+										className={`px-2.5 py-1 text-xs font-bold rounded ${
+											dsdActiveMobileTab === "metrics" ? "bg-[var(--paper)] text-[var(--teal)] shadow-xs" : "text-[var(--muted)]"
+										}`}
+									>
+										Замеры и ЗТЛ
+									</button>
+								</div>
+							</div>
+
+							{/* DSD Split Workspace */}
+							<div className="flex-1 flex overflow-hidden">
+								<div
+									className={`flex-1 relative flex items-center justify-center p-2 bg-slate-950 overflow-hidden ${
+										dsdActiveMobileTab === "canvas" ? "flex" : "max-sm:hidden"
+									}`}
+								>
+									<DsdCanvasOverlay
+										imageUrl={slotsData[dsdSlotId]?.imageUrl || DEFAULT_CLINICAL_SMILE_PHOTO}
+										guides={dsdGuides}
+										landmarks={dsdLandmarks}
+										calibration={dsdCalibration}
+										rotationDegrees={dsdRotationDegrees}
+										onLandmarksChange={setDsdLandmarks}
+										onCalibrationChange={setDsdCalibration}
+									/>
+								</div>
+								<div
+									className={`w-full sm:w-[340px] lg:w-[380px] shrink-0 h-full border-l border-[var(--line)] bg-[var(--paper)] overflow-y-auto ${
+										dsdActiveMobileTab === "metrics" ? "block" : "max-sm:hidden"
+									}`}
+								>
+									<DsdMetricsSidebar
+										landmarks={dsdLandmarks}
+										calibration={dsdCalibration}
+										guides={dsdGuides}
+										rotationDegrees={dsdRotationDegrees}
+										onToggleGuide={handleToggleDsdGuide}
+										onRotatePhoto={handleRotateDsdPhoto}
+										onAutoLevel={handleAutoLevelDsd}
+										onApplyToTreatmentPlanAndLab={handleApplyDsd}
+										onResetToNorm={handleResetDsdToNorm}
+									/>
+								</div>
 							</div>
 						</div>
 					)}
