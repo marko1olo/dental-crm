@@ -11,7 +11,7 @@ export function PatientCreationModalBody({
 	onClose,
 }: PatientCreationModalBodyProps) {
 	return (
-		<div className="create-patient-modal-body">
+		<div className="create-patient-modal-body" data-testid="patient-express-registration-form">
 			{/* 1. Поле ФИО (быстрый ввод за 2 клика) */}
 			<PatientNameInputRow
 				newPatientName={form.newPatientName}

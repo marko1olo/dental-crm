@@ -75,7 +75,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [globalDictationHotkey, setGlobalHotkey] = useState<string>(settings.globalDictationHotkey || "F9");
 
 	// Рабочая станция и сенсорная эргономика
-	const [localDropzonePath] = useState<string>(settings.localDropzonePath);
+	const [localDropzonePath, setLocalDropzonePath] = useState<string>(settings.localDropzonePath || "C:\\Radiology\\Export");
 	const [gloveModeTouchTarget] = useState<boolean>(settings.gloveModeTouchTarget ?? true);
 	const [screenWakeLock] = useState<boolean>(settings.screenWakeLock ?? true);
 	const [hapticFeedbackEnabled] = useState<boolean>(settings.hapticFeedbackEnabled ?? true);
@@ -305,6 +305,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setAutoMic={setAutoMic}
 							globalDictationHotkey={globalDictationHotkey}
 							setGlobalHotkey={setGlobalHotkey}
+							localDropzonePath={localDropzonePath}
+							setLocalDropzonePath={setLocalDropzonePath}
 						/>
 					)}
 

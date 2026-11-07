@@ -42,11 +42,12 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
     const handleLoc = () => { const a = checkIsCopilotActive(); setIsActive(a); if (a) setIsOpen(true); };
     const handleOpen = (e: Event) => {
       const d = (e as CustomEvent<LaunchDetail>)?.detail;
-      if (typeof window !== "undefined" && (window as any).__denteCopilot) {
+      if (d) setCtx(d);
+      if (typeof window !== "undefined" && (window as any).__denteCopilot && !checkIsCopilotActive()) {
         if (d) (window as any).__denteCopilot.setContext?.({ patientName: d.patientName, patientId: d.patientId, activeTooth: d.activeTooth ?? d.tooth });
         (window as any).__denteCopilot.open(); return;
       }
-      if (d) setCtx(d); setIsActive(true); setIsOpen(true);
+      setIsActive(true); setIsOpen(true);
     };
     const handleToggle = () => { setIsActive((p) => !p); setIsOpen((p) => !p); };
     const handleKey = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && ["k", "K", "j", "J"].includes(e.key)) { e.preventDefault(); handleToggle(); } };

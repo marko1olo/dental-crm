@@ -63,6 +63,47 @@ export function getClinicalDiff(
     return { target: `План лечения: Зуб ${tooth}`, from: 'Первичный статус', to: `${diag} (${summary})`, badge: 'План лечения' };
   }
 
+  // 7. Desktop Native File modifications (replace_file_content / edit_file)
+  if (name.includes('replace_file') || name.includes('edit_file') || name.includes('patch_file')) {
+    const path = String(args.path || args.filePath || 'Файл на ПК');
+    const from = String(args.target || 'Исходный фрагмент');
+    const to = String(args.replacement || 'Заменяемый фрагмент');
+    return { target: `Правка файла: ${path}`, from, to, badge: 'Файловая система ОС' };
+  }
+
+  // 8. Desktop Native File write (write_clinical_file)
+  if (name.includes('write_clinical_file') || name.includes('write_file')) {
+    const path = String(args.path || args.filePath || 'Новый файл на ПК');
+    const content = typeof args.content === 'string' ? (args.content.length > 120 ? args.content.slice(0, 120) + '...' : args.content) : 'Запись данных';
+    return { target: `Файл: ${path}`, from: 'Файл отсутствует / перезапись', to: content, badge: 'Файловая система ОС' };
+  }
+
+  // 9. Workstation App launch (launch_workstation_app: Romexis, Ez3D, Sidexis, 3Shape)
+  if (name.includes('launch_workstation_app') || name.includes('launch_app')) {
+    const app = String(args.appId || args.appName || 'Стоматологический софт');
+    const appArgs = Array.isArray(args.args) ? args.args.join(' ') : String(args.args || '');
+    return { target: `Запуск ПО: ${app}`, from: 'Приложение не запущено', to: appArgs ? `Старт с параметрами: ${appArgs}` : 'Старт программы', badge: 'Рабочая станция' };
+  }
+
+  // 10. Workstation CLI command (run_workstation_command)
+  if (name.includes('run_workstation_command') || name.includes('run_command')) {
+    const cmd = String(args.cmd || args.command || 'Системная команда');
+    return { target: 'Команда терминала', from: 'Терминал в покое', to: cmd, badge: 'Терминал ОС' };
+  }
+
+  // 11. Clinic Configuration (configure_clinic_setup)
+  if (name.includes('configure_clinic') || name.includes('clinic_setup')) {
+    const clinic = String(args.clinicName || args.organizationId || 'Параметры клиники');
+    return { target: `Настройка: ${clinic}`, from: 'Текущая конфигурация', to: 'Обновление реквизитов, кабинетов и кассы', badge: 'Профиль клиники' };
+  }
+
+  // 12. Clinic Data Import (import_clinic_data_file)
+  if (name.includes('import_clinic_data') || name.includes('import_data')) {
+    const file = String(args.filePath || 'Файл данных');
+    const kind = String(args.dataType || 'Прейскурант / Пациенты');
+    return { target: `Импорт: ${kind}`, from: 'Текущий каталог', to: `Загрузка из файла ${file}`, badge: 'Импорт данных' };
+  }
+
   // 7. Generic fallback if args have fields
   const keys = Object.keys(args);
   if (keys.length > 0) {

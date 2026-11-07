@@ -72,7 +72,7 @@ export const IdentityAddressFields: React.FC<IdentityAddressFieldsProps> = ({
 					value={addressesMatchState ? (patient?.registrationAddress ?? patient?.address ?? "") : (patient?.residentialAddress ?? "")}
 					onChange={(e) => onUpdatePatient?.("residentialAddress", e.target.value)}
 					placeholder="Фактическое место жительства"
-					disabled={disabled || addressesMatchState}
+					readOnly={disabled || addressesMatchState}
 					data-testid="input-residential-address"
 				/>
 			</div>

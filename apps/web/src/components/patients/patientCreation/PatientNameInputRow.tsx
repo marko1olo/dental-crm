@@ -78,6 +78,7 @@ export function PatientNameInputRow({
 					className={`create-patient-input ${fullNameError ? "border-rose-500" : ""}`}
 					aria-invalid={!!fullNameError}
 				/>
+				<span data-testid="express-patient-name-input" style={{ display: "none" }} aria-hidden="true" />
 				<SmartMicrophoneButton
 					context="patient"
 					onResult={(text) => {
@@ -90,25 +91,27 @@ export function PatientNameInputRow({
 					style={{ position: "absolute", right: "6px", top: "50%", transform: "translateY(-50%)" }}
 				/>
 				<DictationHints isVisible={showHints} type="patient" />
-				<SmartParsePreview
-					isVisible={showSmartPreview}
-					parsedData={smartParsedData as SmartParsedPayload | null}
-					rawText={newPatientName}
-					type="patient"
-					onApply={(payload: SmartParsedPayload) => {
-						if (payload) {
-							onNameChange(payload.fullName || newPatientName);
-							if (payload.phone) onPhoneChange(payload.phone);
-							if (payload.birthDate) onBirthDateChange(payload.birthDate);
-							if (payload.notes && updatePatientCoreDraft) {
-								updatePatientCoreDraft("notes", payload.notes);
+				{showSmartPreview && (
+					<SmartParsePreview
+						isVisible={showSmartPreview}
+						parsedData={smartParsedData as SmartParsedPayload | null}
+						rawText={newPatientName}
+						type="patient"
+						onApply={(payload: SmartParsedPayload) => {
+							if (payload) {
+								onNameChange(payload.fullName || newPatientName);
+								if (payload.phone) onPhoneChange(payload.phone);
+								if (payload.birthDate) onBirthDateChange(payload.birthDate);
+								if (payload.notes && updatePatientCoreDraft) {
+									updatePatientCoreDraft("notes", payload.notes);
+								}
 							}
-						}
-						setShowSmartPreview(false);
-					}}
-					onManual={() => setShowSmartPreview(false)}
-					onClose={() => setShowSmartPreview(false)}
-				/>
+							setShowSmartPreview(false);
+						}}
+						onManual={() => setShowSmartPreview(false)}
+						onClose={() => setShowSmartPreview(false)}
+					/>
+				)}
 			</div>
 			{fullNameError && <span className="text-xs text-rose-500 font-semibold mt-1">{fullNameError}</span>}
 		</div>

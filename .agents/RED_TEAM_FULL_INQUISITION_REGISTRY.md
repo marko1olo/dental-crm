@@ -1612,12 +1612,30 @@
   7. Покрыто 9 интеграционными тестами Fastify (`apps/api/src/tests/routes/photoBridgeRoutes.test.ts` — 9 passed, 0 failed, 181 мс).
   8. Зафиксированы 4-state visual proofs: `01_chairside_qr_modal_pc_light_1440x900.png`, `02_chairside_qr_modal_pc_dark_1440x900.png`, `03_mobile_photo_upload_light_390x844.png`, `04_mobile_photo_upload_dark_390x844.png`.
 
-### [PHO-02] [SEV-1] Бутафорский DSD (Digital Smile Design) и мертвый код эстетического анализа
+### [PHO-02] [SEV-1] Бутафорский DSD (Digital Smile Design) и мертвый код эстетического анализа — [ИСПРАВЛЕНО]
 - **Файлы:**
-  - [`apps/web/src/components/photography/math/goldenProportionMath.ts#L19-L51`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/math/goldenProportionMath.ts#L19-L51)
-  - [`apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx#L19-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx#L19-L64)
-  - [`apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81)
-- **Суть бага:** Заявленный модуль DSD — бутафория. Математика золотого сечения (1:1.618) и линий Риккетса существует только в тестах и не вызывается ни одним UI-компонентом. Оверлей направляющих (`IncisalAlignmentGuideOverlay.tsx`) содержит статичный SVG с захардкоженными координатами, заблокирован (`pointerEvents: 'none'`) и **вообще не импортируется ни в одном экране системы**! Панель точной подгонки крена зрачков и резцов — 100% несмонтированный сирота (Orphan Component).
+  - [`packages/shared/src/clinical/photoProtocol.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/photoProtocol.ts) (Zod-контракты DSD, `DsdAnalysisData`, канонические нормы Wheeler 2.5D для резцов и клыков 11..23)
+  - [`apps/api/src/routes/patients/photoRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/photoRoutes.ts) (Поддержка сохранения `dsdAnalysis` в Fastify API и PostgreSQL 18)
+  - [`apps/web/src/components/photography/DigitalSmileDesignModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/DigitalSmileDesignModal.tsx) (Мастер-модалка DSD студии, адаптивная раскладка десктоп/мобайл)
+  - [`apps/web/src/components/photography/dsd/DsdCanvasOverlay.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/dsd/DsdCanvasOverlay.tsx) (Интерактивный SVG/Canvas оверлей с drag-контроллерами зрачков, средней линии, дуги улыбки, калибровочной 10-мм линейки и золотого сечения)
+  - [`apps/web/src/components/photography/dsd/DsdMetricsSidebar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/dsd/DsdMetricsSidebar.tsx) (Клинические расчеты, интеграция с нарядами ЗТЛ и этапами плана лечения)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx) (Сквозная вкладка DSD в мастер-фотопротоколе)
+  - [`apps/web/src/components/photography/DirectPhotoProtocolLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/DirectPhotoProtocolLauncher.tsx) (Роутер `#dsd` и лаунчер быстрого старта)
+  - [`apps/web/src/components/visit/photoUpload/VisitDiaryPhotoActionsToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/photoUpload/VisitDiaryPhotoActionsToolbar.tsx) (Кнопка вызова DSD из дневника приёма)
+  - [`apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts) (7 всеобъемлющих тестов золотого сечения Wheeler, крена, дуги улыбки, тач-таргетов и Мандата 8e)
+- **Суть бага:** Заявленный модуль DSD — бутафория. Математика золотого сечения (1:1.618) и линий Риккетса существовала только в тестах и не вызывалась ни одним UI-компонентом. Оверлей направляющих (`IncisalAlignmentGuideOverlay.tsx`) содержал статичный SVG с захардкоженными координатами, был заблокирован (`pointerEvents: 'none'`) и не был смонтирован в рабочий UI. Не было связи с нарядами ЗТЛ и планом лечения.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Реализован полноценный интерактивный клинический анализатор улыбки по канонам Wheeler 2.5D и золотого сечения (1.618 : 1.0 : 0.618 для центральных резцов, боковых резцов и клыков).
+  2. Интерактивные направляющие с перетаскиванием (drag-and-drop) и крупными тач-мишенями $\ge 44\times 44$px: межзрачковая линия с вычислением угла крена (°), срединная линия лица с микро-сдвигом (мм), дуга улыбки (Smile Arc) с контрольными точками на комиссурах и режущих краях, калибровочная 10-мм миллиметровая плашка.
+  3. Пакетная интеграция в 1 клик с зуботехнической лабораторией (событие `dente-open-lab-order-modal`) и ортопедическими этапами плана лечения (`dente-apply-dsd-to-treatment-plan`) без ручной рутины.
+  4. Автономия врача (Мандат 8e): Primary CTA («✓ Применить к плану лечения и ЗТЛ») никогда не disabled, норма и пресеты выставляются в 1 клик («К норме»).
+  5. Мобильный адаптивный слой Apple iOS HIG: шторка Bottom Sheet с Drag Handle 36x5px, Segmented Control `[ Холст и направляющие | Замеры и ЗТЛ ]`, безопасная шапка без выталкивания кнопок закрытия, 0px горизонтального скролла.
+  6. Все 10 тестовых файлов в `apps/web/src/components/photography/__tests__/` (91 тест) проходят со 100% успехом (Exit Code 0).
+  7. 4-State Visual Proofs высокого разрешения ($\ge 80$KB) зафиксированы в `docs/proofs/photography/` и лично проверены через `read_file`:
+     * ☀️ PC Light: [`01_dsd_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/01_dsd_modal_pc_light_1440x900.png) (107.5 KB)
+     * 🌙 PC Dark: [`02_dsd_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/02_dsd_modal_pc_dark_1440x900.png) (106.1 KB)
+     * 📱 Mobile Light: [`03_dsd_modal_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/03_dsd_modal_mobile_light_390x844.png) (82.0 KB)
+     * 🌙 Mobile Dark: [`04_dsd_modal_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/04_dsd_modal_mobile_dark_390x844.png) (143.4 KB)
 
 ### [PHO-03] [ИСПРАВЛЕНО] Сохранение фотопротокола в localStorage браузера мимо PostgreSQL 18
 - **Файлы:**
@@ -2142,6 +2160,37 @@
      - 📱 `docs/proofs/patient-card/patient_card_mobile_light_390x844.png`
      - 📱 `docs/proofs/patient-card/patient_card_mobile_dark_390x844.png`
      Дефектов клиппинга, срезанных слов и визуального брака не обнаружено.
+
+### [PAT-02] [SEV-1] [ЗАКРЫТО] Раскол картотеки пациентов (PatientCardModal vs PatientStudioModal), уничтожение тестов-саботажников и консолидация единого SSOT
+- **Файлы:**
+  - SSOT Мастер-компонент: [`apps/web/src/components/patients/PatientCardModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientCardModal.tsx)
+  - Канонический тонкий фасад: [`apps/web/src/components/patients/PatientStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientStudioModal.tsx)
+  - Тест-сьюты: [`apps/web/src/components/patients/__tests__/patientStudioSSOT.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/__tests__/patientStudioSSOT.test.tsx), [`apps/web/src/components/patients/__tests__/patientStudioDecomposedModules.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/__tests__/patientStudioDecomposedModules.test.tsx), [`apps/web/src/components/patients/__tests__/patientSSOTSuite.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/__tests__/patientSSOTSuite.test.tsx)
+  - Семейный кошелек и адресные поля: [`apps/web/src/components/patients/tabs/generalInfo/IdentityAddressFields.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/tabs/generalInfo/IdentityAddressFields.tsx), [`apps/web/src/components/patients/PatientFamilyAndInsuranceWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientFamilyAndInsuranceWidget.tsx)
+- **Суть бага:**
+  1. В системе образовался опасный раскол: существовала 478-строчная параллельная модалка `PatientStudioModal.tsx` с моковыми данными `DEMO_PATIENT_CATALOG`, частично дублирующая `PatientCardModal.tsx` (включая формы создания, табы и семейный баланс).
+  2. Данный архитектурный раскол охранялся тестами-саботажниками (`patientStudioSSOT.test.tsx` и `patientStudioDecomposedModules.test.tsx`), которые проверяли через `fs.readFileSync` размер файла `lines >= 350 && lines <= 500`, принуждая кодовую базу сохранять 480 строк дублирующего кода!
+  3. В `IdentityAddressFields.tsx` чекбокс совпадения адреса регистрации выставлял на поле фактического проживания `disabled={addressesMatchState}`, что приводило к паразитному `disabled=""` атрибуту в DOM и нарушало автономию врача (Мандат 8e).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. **Единый SSOT Мастер-компонент:** `PatientCardModal.tsx` полностью консолидировал функционал:
+     - Экспресс-регистрация за 10 секунд (только ФИО и телефон, паспорт/СНИЛС строго опционально).
+     - Единая карточка пациента с 9 клиническими табами.
+     - Семейный кошелек и списание долга родственника в 1 клик (`calculateFamilyBalanceKopecks`, целочисленные копейки, связка с `/api/finance/family/patient/:id`).
+  2. **Ультратонкий фасад:** `PatientStudioModal.tsx` сокращен с 478 до **20 строк**, прозрачно делегируя все вызовы в канонический `PatientCardModal`.
+  3. **Сожжение тестов-саботажников:** Тесты обновлены — теперь они требуют ультратонкий фасад $\le 35$ строк.
+  4. **Автономия врача и адреса:** В `IdentityAddressFields.tsx` убран `disabled`, заменен на `readOnly` при совпадении адресов.
+  5. **Ленивый парсинг:** `SmartParsePreview` защищен ленивым рендерингом `{showSmartPreview && <SmartParsePreview ... />}`, предотвращая краш при изоляции тестов без `AppLogicProvider`.
+  6. **Машинные пруфы:**
+     - 26/26 тестов в SSOT-сьютах пройдены (Exit Code 0).
+     - 45 тестовых файлов в `components/patients/__tests__/` пройдены (176 тестов green).
+     - `check:encoding` -> 24 116 файлов проверено, Exit Code 0.
+     - `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` -> Exit Code 0.
+  7. **4-State Visual Proofs (Лично проинспектированы через `read_file`):**
+     - ☀️ PC Light (1440×900): [`docs/proofs/patient_studio/patient_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_studio/patient_studio_pc_light_1440x900.png) (92 KB)
+     - 🌙 PC Dark (1440×900): [`docs/proofs/patient_studio/patient_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_studio/patient_studio_pc_dark_1440x900.png) (83 KB)
+     - 📱 Mobile Light (390×844): [`docs/proofs/patient_studio/patient_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_studio/patient_studio_mobile_light_390x844.png) (118 KB)
+     - 🌙 Mobile Dark (390×844): [`docs/proofs/patient_studio/patient_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_studio/patient_studio_mobile_dark_390x844.png) (121 KB)
+     Дефектов клиппинга, наездов текста и белых пятен нет. Полноценный Bottom Sheet, drag handle, 0px горизонтального скролла.
 
 ---
 

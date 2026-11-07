@@ -7,6 +7,7 @@
  */
 
 import { dispatchCrmAction } from "../../../services/ai";
+import { useCopilotStore } from "../../../store/copilotStore";
 import type {
   ConfirmUiMessage,
   CopilotPhase,
@@ -90,21 +91,42 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
           m.kind === "thinking" && m.streaming ? { ...m, streaming: false } : m,
         ),
       );
+      const toolName = String(data.name || "tool");
+      const toolArgs =
+        (data.args as Record<string, unknown>) ||
+        (data.arguments as Record<string, unknown>) ||
+        {};
       const toolMsg: ToolUiMessage = {
         kind: "tool",
         callId: String(data.callId || data.call_id || Date.now()),
-        name: String(data.name || "tool"),
+        name: toolName,
         status: "running",
-        args:
-          (data.args as Record<string, unknown>) ||
-          (data.arguments as Record<string, unknown>) ||
-          {},
+        args: toolArgs,
       };
       setMessages((prev) => [...prev, toolMsg]);
+
+      // Telemetry log in SSOT store
+      const category = toolName.includes("file") || toolName.includes("workstation") || toolName.includes("dropzone")
+        ? "workstation"
+        : toolName.includes("invoice") || toolName.includes("price")
+        ? "financial"
+        : "clinical";
+      useCopilotStore.getState().addToolLog({
+        toolName,
+        category,
+        status: "running",
+        args: toolArgs,
+        resultSummary: "Выполняется...",
+      });
     } else if (event === "tool_result") {
       const callId = String(data.callId || data.call_id);
       const isOk = Boolean(data.ok !== false && data.status !== "failed");
       const res = data.result;
+      const toolName = String(data.name || "");
+      const toolArgs =
+        (data.args as Record<string, unknown>) ||
+        (data.arguments as Record<string, unknown>) ||
+        {};
 
       setMessages((prev) =>
         prev.map((m) => {
@@ -119,12 +141,45 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
         }),
       );
 
+      // Log completion in store
+      const category = toolName.includes("file") || toolName.includes("workstation") || toolName.includes("dropzone")
+        ? "workstation"
+        : toolName.includes("invoice") || toolName.includes("price")
+        ? "financial"
+        : "clinical";
+      useCopilotStore.getState().addToolLog({
+        toolName: toolName || "tool",
+        category,
+        status: isOk ? "success" : "rejected",
+        args: toolArgs,
+        resultSummary: isOk ? (typeof res === "string" ? res : "Успешно выполнено") : "Ошибка выполнения",
+      });
+
+      // Active diff synchronization for workstation & clinical state mutations
+      if (isOk) {
+        if (toolName.includes("replace_file") || toolName.includes("edit_file")) {
+          useCopilotStore.getState().setActiveDiff({
+            id: `diff-${Date.now()}`,
+            title: "Правка файла на ПК",
+            targetEntity: String(toolArgs.path || toolArgs.filePath || "Файл на ПК"),
+            beforeText: String(toolArgs.target || ""),
+            afterText: String(toolArgs.replacement || ""),
+            applied: true,
+          });
+        } else if (toolName.includes("write_clinical_file") || toolName.includes("write_file")) {
+          useCopilotStore.getState().setActiveDiff({
+            id: `diff-${Date.now()}`,
+            title: "Запись файла на ПК",
+            targetEntity: String(toolArgs.path || toolArgs.filePath || "Файл на ПК"),
+            beforeText: "Файл отсутствует или перезаписывается",
+            afterText: typeof toolArgs.content === "string" ? toolArgs.content : JSON.stringify(toolArgs.content, null, 2),
+            applied: true,
+          });
+        }
+      }
+
       if (isOk && data.name) {
         cacheNames(String(data.name), res);
-        const toolArgs =
-          (data.args as Record<string, unknown>) ||
-          (data.arguments as Record<string, unknown>) ||
-          {};
         dispatchCrmAction(
           {
             callId,
@@ -139,17 +194,40 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
       event === "confirmation_required" ||
       event === "tool_confirmation_required"
     ) {
+      const cToolName = String(data.name || "action");
+      const cArgs =
+        (data.args as Record<string, unknown>) ||
+        (data.arguments as Record<string, unknown>) ||
+        {};
       const cMsg: ConfirmUiMessage = {
         kind: "confirmation",
         callId: String(data.callId || data.call_id || Date.now()),
-        name: String(data.name || "action"),
-        args:
-          (data.args as Record<string, unknown>) ||
-          (data.arguments as Record<string, unknown>) ||
-          {},
+        name: cToolName,
+        args: cArgs,
       };
       setMessages((prev) => [...prev, cMsg]);
       setPending({ callId: cMsg.callId, name: cMsg.name, args: cMsg.args });
+
+      // Generate active diff card ahead of confirmation
+      if (cToolName.includes("replace_file") || cToolName.includes("edit_file")) {
+        useCopilotStore.getState().setActiveDiff({
+          id: `diff-${Date.now()}`,
+          title: "Правка файла на ПК",
+          targetEntity: String(cArgs.path || cArgs.filePath || "Файл на ПК"),
+          beforeText: String(cArgs.target || ""),
+          afterText: String(cArgs.replacement || ""),
+          applied: false,
+        });
+      } else if (cToolName.includes("write_clinical_file") || cToolName.includes("write_file")) {
+        useCopilotStore.getState().setActiveDiff({
+          id: `diff-${Date.now()}`,
+          title: "Запись файла на ПК",
+          targetEntity: String(cArgs.path || cArgs.filePath || "Файл на ПК"),
+          beforeText: "Файл отсутствует или перезаписывается",
+          afterText: typeof cArgs.content === "string" ? cArgs.content : JSON.stringify(cArgs.content, null, 2),
+          applied: false,
+        });
+      }
     } else if (event === "react_steps" || event === "react_pipeline") {
       const steps = (data.steps as ReactStepItem[]) || [];
       const title = typeof data.title === "string" ? data.title : undefined;

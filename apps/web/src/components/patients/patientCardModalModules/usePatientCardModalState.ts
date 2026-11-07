@@ -6,6 +6,7 @@ import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import type { PatientSectionSaveState } from "../patientCardSavePill";
+import { DEMO_PATIENT_CATALOG } from "../patientCatalogData";
 import { DEMO_SHOWCASE_MODAL_PATIENT, DEMO_SHOWCASE_MODAL_SAFETY, type PatientCardTab, type PatientCardModalProps } from "./patientCardModalTypes";
 import { usePatientCardDraftSync } from "./usePatientCardDraftSync";
 import { savePatientCardModal } from "./patientCardSaveAction";
@@ -14,12 +15,23 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	const {
 		isOpen, onClose, initialTab, patient: initP, patientData: initPAlias,
 		initialSafetyProfile: initS, safetyProfile: initSAlias, onSavePatient, onApplySomaticNorm,
+		initialPatientId, patientId: propPatientId,
 	} = props;
 
-	const isDemo = isDemoShowcaseMode();
-	const rawP = initP ?? initPAlias ?? (isDemo ? DEMO_SHOWCASE_MODAL_PATIENT : {});
+	const targetId = initialPatientId || propPatientId;
+	const demoMatch = targetId ? DEMO_PATIENT_CATALOG.find((p) => p.id === targetId) : null;
+	const fallbackDemoPatient = demoMatch ? {
+		id: demoMatch.id,
+		fullName: demoMatch.fullName,
+		phone: demoMatch.phone,
+		birthDate: demoMatch.birthDate,
+		patientBalanceRub: demoMatch.balanceKopecks / 100,
+		doctorClinicalNotes: demoMatch.notes,
+	} : (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT : {});
+
+	const rawP = initP ?? initPAlias ?? fallbackDemoPatient;
 	const effP = mapPatientToGeneralInfo(rawP);
-	const effS = initS ?? initSAlias ?? (isDemo ? DEMO_SHOWCASE_MODAL_SAFETY : undefined);
+	const effS = initS ?? initSAlias ?? (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_SAFETY : undefined);
 
 	const [activeTab, setActiveTab] = useState<PatientCardTab>(() => initialTab ?? "general");
 	useEffect(() => { if (initialTab) setActiveTab(initialTab); }, [initialTab]);

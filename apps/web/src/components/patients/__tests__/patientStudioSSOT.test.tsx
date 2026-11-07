@@ -217,13 +217,13 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		assert.equal(FAMILY_ROLE_LABELS.spouse, "Супруг / Супруга");
 	});
 
-	it("15. [Мандат 8b / 8zi Sweet Spot] Архитектурная метрика: канонический файл PatientStudioModal.tsx <= 480 строк", () => {
+	it("15. [Мандат 8b / 8zi Sweet Spot] Архитектурная метрика: канонический фасад PatientStudioModal.tsx <= 35 строк", () => {
 		const filePath = path.resolve(__dirname, "../PatientStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines >= 400 && lines <= 480,
-			`PatientStudioModal.tsx обязан быть в Sweet Spot 400-480 строк, сейчас ${lines} строк`,
+			lines <= 35,
+			`PatientStudioModal.tsx обязан быть ультратонким фасадом <= 35 строк, сейчас ${lines} строк`,
 		);
 
 		const launcherPath = path.resolve(__dirname, "../DirectPatientStudioLauncher.tsx");

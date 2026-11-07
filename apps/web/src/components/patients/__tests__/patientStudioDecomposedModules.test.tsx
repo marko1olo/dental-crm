@@ -41,12 +41,12 @@ describe("Patient Studio Decomposed Modules Suite (Mandates 8b, 8e, 8n, 8am)", (
 			);
 		}
 
-		// Канонический мастер-компонент PatientStudioModal.tsx (Мандат 8b/8zi: Sweet Spot 400–480 строк)
+		// Канонический тонкий фасад PatientStudioModal.tsx (Мандат 8b/8zi: фасад <= 35 строк)
 		const studioPath = path.resolve(__dirname, "../PatientStudioModal.tsx");
 		const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
 		assert.ok(
-			studioLines >= 350 && studioLines <= 500,
-			`PatientStudioModal.tsx обязан быть в Sweet Spot 400-480 строк (текущий: ${studioLines})`,
+			studioLines <= 35,
+			`PatientStudioModal.tsx обязан быть ультратонким фасадом <= 35 строк (текущий: ${studioLines})`,
 		);
 	});
 

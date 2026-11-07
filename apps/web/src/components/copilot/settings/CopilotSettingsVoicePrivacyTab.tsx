@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { Command, Mic, Radio, Shield, Volume2 } from "lucide-react";
+import { Command, HardDrive, Mic, Radio, Shield, Volume2 } from "lucide-react";
 import type { SpeechEngine, WebSpeechSensitivity } from "../../../store/copilotStore";
 
 export interface CopilotSettingsVoicePrivacyTabProps {
@@ -22,6 +22,8 @@ export interface CopilotSettingsVoicePrivacyTabProps {
 	setAutoMic: (v: boolean) => void;
 	globalDictationHotkey?: string;
 	setGlobalHotkey?: (v: string) => void;
+	localDropzonePath?: string;
+	setLocalDropzonePath?: (v: string) => void;
 }
 
 export function CopilotSettingsVoicePrivacyTab({
@@ -37,6 +39,8 @@ export function CopilotSettingsVoicePrivacyTab({
 	setAutoMic,
 	globalDictationHotkey = "F9",
 	setGlobalHotkey,
+	localDropzonePath = "C:\\Radiology\\Export",
+	setLocalDropzonePath,
 }: CopilotSettingsVoicePrivacyTabProps) {
 	return (
 		<div className="space-y-4 text-xs" data-testid="copilot-settings-voice-privacy-tab">
@@ -117,13 +121,34 @@ export function CopilotSettingsVoicePrivacyTab({
 			)}
 
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+					<HardDrive size={14} className="text-[var(--teal,#0d9488)]" />
+					<span>Папка снимков и КЛКТ на ПК (DICOM Dropzone)</span>
+				</label>
+				<input
+					type="text"
+					value={localDropzonePath}
+					onChange={(e) => setLocalDropzonePath?.(e.target.value)}
+					placeholder="C:\Radiology\Export"
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-xs focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+					data-testid="copilot-dropzone-path-input"
+				/>
+				<div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-[var(--muted)]">
+					<span>Быстрые пути:</span>
+					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Radiology\\Export")} className="text-[var(--teal,#0d9488)] hover:underline cursor-pointer bg-transparent">C:\Radiology\Export</button>
+					<span>•</span>
+					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Planmeca\\Romexis\\Export")} className="text-[var(--teal,#0d9488)] hover:underline cursor-pointer bg-transparent">Romexis</button>
+					<span>•</span>
+					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Vatech\\Ez3D\\Export")} className="text-[var(--teal,#0d9488)] hover:underline cursor-pointer bg-transparent">Ez3D</button>
+				</div>
+				<p className="text-[10px] text-[var(--muted)] m-0">
+					Каталог сканирования и экспорта срезов КЛКТ, ортопантомограмм и радиовизиографа на рабочей станции.
+				</p>
+			</section>
+
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
-					<input
-						type="checkbox"
-						checked={autoSaveDrafts}
-						onChange={(e) => setAutoSaveDrafts(e.target.checked)}
-						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
-					/>
+					<input type="checkbox" checked={autoSaveDrafts} onChange={(e) => setAutoSaveDrafts(e.target.checked)} className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]" />
 					<span>Автосохранение черновиков дневников SOAP</span>
 				</label>
 				<p className="text-[10px] text-[var(--muted)] pl-5">
@@ -133,12 +158,7 @@ export function CopilotSettingsVoicePrivacyTab({
 
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
-					<input
-						type="checkbox"
-						checked={maskPhiData}
-						onChange={(e) => setMaskPhiData(e.target.checked)}
-						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
-					/>
+					<input type="checkbox" checked={maskPhiData} onChange={(e) => setMaskPhiData(e.target.checked)} className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]" />
 					<span className="flex items-center gap-1.5">
 						<Shield size={13} className="text-[var(--teal,#0d9488)]" />
 						<span>Защита персональных данных пациента (Маскирование PHI)</span>
@@ -151,12 +171,7 @@ export function CopilotSettingsVoicePrivacyTab({
 
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
-					<input
-						type="checkbox"
-						checked={autoMicOnAppointmentOpen}
-						onChange={(e) => setAutoMic(e.target.checked)}
-						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
-					/>
+					<input type="checkbox" checked={autoMicOnAppointmentOpen} onChange={(e) => setAutoMic(e.target.checked)} className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]" />
 					<span className="flex items-center gap-1.5">
 						<Mic size={13} className="text-[var(--teal,#0d9488)]" />
 						<span>Автоматический переход к микрофону в карте приёма</span>

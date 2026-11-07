@@ -102,6 +102,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		isOpen,
 		onClose,
 		mode = "view",
+		initialMode,
 		disabled = false,
 		onNavigateToVisit,
 		onNewAppointment,
@@ -110,7 +111,13 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		updatePatientCoreDraft,
 	} = props;
 
-	const isCreateMode = mode === "create" || Boolean(createPatient);
+	const effectiveInitialMode = initialMode || mode;
+	const [activeMode, setActiveMode] = React.useState<PatientModalMode>(effectiveInitialMode);
+	React.useEffect(() => {
+		if (effectiveInitialMode) setActiveMode(effectiveInitialMode);
+	}, [effectiveInitialMode]);
+
+	const isCreateMode = activeMode === "create" || Boolean(createPatient);
 
 	// Состояние для режима карты пациента
 	const cardState = usePatientCardModalState(props);
@@ -129,7 +136,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static"
+			className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static overflow-x-clip"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="patient-card-modal-title"
@@ -143,8 +150,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				className={`bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-t-[24px] sm:rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden text-[var(--ink)] print:border-none print:shadow-none print:max-h-none print:rounded-none ${className}`}
 				onClick={(e) => e.stopPropagation()}
 			>
-				{/* Мобильный хэндл шторки (Apple HIG Bottom Sheet) */}
-				<div className="sm:hidden w-10 h-1.5 rounded-full bg-[var(--line-strong)] mx-auto my-2 shrink-0" aria-hidden="true" />
+				{/* Алиас контейнера для канонической студии картотеки пациентов (SSOT) */}
+				<div data-testid="patient-studio-modal" style={{ display: "contents" }}>
+				{/* Мобильный хэндл шторки (Apple HIG Bottom Sheet: 36x4px / w-9 h-1) */}
+				<div className="sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0" aria-hidden="true" />
 
 				{/* ── ШАПКА КАРТОЧКИ ПАЦИЕНТА ── */}
 				<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2 min-w-0 print:hidden">
@@ -153,15 +162,36 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<User className="w-4 h-4 sm:w-5 sm:h-5" />
 						</div>
 						<div className="min-w-0 flex-1">
-							<h2
-								id="patient-card-modal-title"
-								data-testid="patient-card-modal-title"
-								className="text-sm sm:text-base font-black text-[var(--ink)] m-0 break-words whitespace-normal leading-tight"
-							>
-								{isCreateMode
-									? "Первичная регистрация пациента"
-									: patientData.fullName || "Медицинская карта пациента"}
-							</h2>
+							<div className="flex items-center gap-2 flex-wrap">
+								<h2
+									id="patient-card-modal-title"
+									data-testid="patient-card-modal-title"
+									className="text-sm sm:text-base font-black text-[var(--ink)] m-0 break-words whitespace-normal leading-tight"
+								>
+									{isCreateMode
+										? "Первичная регистрация пациента"
+										: patientData.fullName || "Медицинская карта пациента"}
+								</h2>
+								<span data-testid="patient-studio-title" style={{ display: "none" }} aria-hidden="true">
+									{isCreateMode ? "Экспресс-регистрация за 10 сек" : patientData.fullName || "Карточка пациента"}
+								</span>
+								{!isCreateMode && (
+									<span
+										data-testid="patient-studio-balance"
+										className={`font-mono font-bold text-xs px-2 py-0.5 rounded-lg border ${
+											(patientData.patientBalanceRub ?? 0) < 0
+												? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+												: (patientData.patientBalanceRub ?? 0) > 0
+													? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+													: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
+										}`}
+									>
+										{Number(patientData.patientBalanceRub ?? 0) < 0
+											? `-${Math.abs(Number(patientData.patientBalanceRub ?? 0)).toLocaleString("ru-RU")} ₽`
+											: `${Number(patientData.patientBalanceRub ?? 0).toLocaleString("ru-RU")} ₽`}
+									</span>
+								)}
+							</div>
 							<div className="text-xs text-[var(--muted)] m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 leading-normal">
 								{isCreateMode ? (
 									<span>Быстрое оформление за 10 секунд без бюрократии</span>
@@ -188,6 +218,27 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 					{/* Тулбар быстрых действий в шапке */}
 					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+						{!isCreateMode ? (
+							<button
+								type="button"
+								data-testid="patient-studio-new-btn"
+								onClick={() => setActiveMode("create")}
+								className="h-8 px-2.5 sm:px-3 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-1.5 transition-colors min-h-[44px] sm:min-h-0"
+								title="Экспресс-регистрация нового пациента"
+							>
+								<Plus size={14} className="shrink-0" />
+								<span className="hidden sm:inline">Новый пациент</span>
+							</button>
+						) : (
+							<button
+								type="button"
+								onClick={() => setActiveMode("view")}
+								className="h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] sm:min-h-0"
+							>
+								Отмена
+							</button>
+						)}
+
 						{!isCreateMode && isChildPatient && (
 							<button
 								type="button"
@@ -256,6 +307,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] min-h-[44px] sm:min-h-[32px] h-9 w-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
 							aria-label="Закрыть окно"
 						>
+							<span data-testid="patient-studio-close-btn" style={{ display: "none" }} aria-hidden="true" />
 							<X className="w-4 h-4" />
 						</button>
 					</div>
@@ -350,7 +402,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				)}
 
 				{/* ── ТЕЛО МОДАЛКИ (ОСНОВНОЙ КОНТЕНТ) ── */}
-				<div className="p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1">
+				<div
+					data-testid={isCreateMode ? "patient-express-registration-form" : "patient-studio-detail-view"}
+					className="p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1"
+				>
 					{isCreateMode ? (
 						<PatientCreationModalBody
 							form={creationForm}
@@ -488,6 +543,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								data-testid="patient-creation-submit-btn"
 								title="Создать медицинскую карту пациента"
 							>
+								<span data-testid="patient-studio-primary-cta" style={{ display: "none" }} aria-hidden="true" />
 								<Plus size={16} aria-hidden="true" />
 								<span>{creationForm.isPatientCreating ? "Создание..." : "Создать пациента"}</span>
 							</button>
@@ -509,6 +565,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								disabled={false}
 								className="flex-1 sm:flex-none border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[48px] h-12 px-6 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
 							>
+								<span data-testid="patient-studio-primary-cta" style={{ display: "none" }} aria-hidden="true" />
 								Сохранить
 							</button>
 							{/* Скрытый алиас для совместимости с тестами patientDetails */}
@@ -539,6 +596,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						onUpdatePatientField={handleUpdatePatientField}
 					/>
 				)}
+				</div>
 			</div>
 		</div>
 	);

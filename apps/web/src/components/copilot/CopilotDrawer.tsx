@@ -18,6 +18,7 @@ import { CopilotMessage } from "./CopilotMessage";
 import { CopilotSettingsModal } from "./CopilotSettingsModal";
 import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
+import { ActiveDiffCard } from "./cards/ActiveDiffCard";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
 import type { CopilotDrawerTab } from "./drawer/drawerTypes";
@@ -48,21 +49,32 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const copilotSettings = useCopilotStore((s) => s.settings);
-  const selectThread = useCopilotStore((s) => s.selectThread);
-  const activeThreadId = useCopilotStore((s) => s.activeThreadId);
-  const saveThreadMessages = useCopilotStore((s) => s.saveThreadMessages);
-  const threadMessages = useCopilotStore((s) => s.threadMessages);
+  const { settings: copilotSettings, selectThread, activeThreadId, saveThreadMessages, threadMessages, setRuntimeMode: setStoreRuntimeMode, activeDiff, applyActiveDiff, rejectActiveDiff } = useCopilotStore();
 
   useEffect(() => {
     if (activeThreadId && messages.length > 0) {
       saveThreadMessages(activeThreadId, messages);
     }
   }, [activeThreadId, messages, saveThreadMessages]);
+
   const [runtimeMode, setRuntimeMode] = useState<"web_browser" | "desktop_native">(() => {
     const saved = safeLocalStorageGetItem("dente_copilot_runtime_mode");
-    return saved === "desktop_native" ? "desktop_native" : "web_browser";
+    if (saved === "desktop_native" || saved === "web_browser") return saved;
+    return copilotSettings.runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
   });
+
+  useEffect(() => {
+    const storeMode = copilotSettings.runtimeMode;
+    if (storeMode === "desktop_native" || storeMode === "web_browser") {
+      setRuntimeMode(storeMode);
+    }
+  }, [copilotSettings.runtimeMode]);
+
+  const handleToggleRuntimeMode = (mode: "web_browser" | "desktop_native") => {
+    setRuntimeMode(mode);
+    setStoreRuntimeMode(mode);
+    safeLocalStorageSetItem("dente_copilot_runtime_mode", mode);
+  };
   const [input, setInput] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [isDocked, setIsDocked] = useState(false);
   const baseTextRef = useRef<string>("");
@@ -274,7 +286,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           <button
             type="button"
             className={`copilot-mode-btn ${runtimeMode === "web_browser" ? "active" : ""}`}
-            onClick={() => { setRuntimeMode("web_browser"); safeLocalStorageSetItem("dente_copilot_runtime_mode", "web_browser"); }}
+            onClick={() => handleToggleRuntimeMode("web_browser")}
           >
             <Globe size={13} />
             <span>Веб-клиника</span>
@@ -282,7 +294,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           <button
             type="button"
             className={`copilot-mode-btn ${runtimeMode === "desktop_native" ? "active" : ""}`}
-            onClick={() => { setRuntimeMode("desktop_native"); safeLocalStorageSetItem("dente_copilot_runtime_mode", "desktop_native"); }}
+            onClick={() => handleToggleRuntimeMode("desktop_native")}
           >
             <Monitor size={13} />
             <span>Рабочая станция (ПК)</span>
@@ -359,6 +371,9 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   onBookSlot={onBookSlot}
                 />
               ))}
+
+              {/* Active Diff Card for Workstation/EMR changes */}
+              {activeDiff && <div className="copilot-feed-item my-2"><ActiveDiffCard diff={activeDiff} onApply={applyActiveDiff} onReject={rejectActiveDiff} /></div>}
 
               {/* Two-Phase Confirmation Guard */}
               {pending && (

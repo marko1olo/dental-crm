@@ -63,6 +63,8 @@ export interface PatientCardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly mode?: PatientModalMode | undefined;
+	readonly initialMode?: "view" | "edit" | "create" | undefined;
+	readonly initialPatientId?: string | null | undefined;
 	readonly initialTab?: PatientCardTab | undefined;
 	readonly patient?: PatientGeneralInfo | any | null | undefined;
 	readonly patientData?: PatientGeneralInfo | any | null | undefined;

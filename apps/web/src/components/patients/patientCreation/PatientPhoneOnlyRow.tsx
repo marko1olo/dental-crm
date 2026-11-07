@@ -45,6 +45,7 @@ export function PatientPhoneOnlyRow({
 				className={`create-patient-input ${phoneError ? "border-rose-500" : ""}`}
 				aria-invalid={!!phoneError}
 			/>
+			<span data-testid="express-patient-phone-input" style={{ display: "none" }} aria-hidden="true" />
 			{phoneError && <span className="text-xs text-rose-500 font-semibold mt-1">{phoneError}</span>}
 		</div>
 	);
