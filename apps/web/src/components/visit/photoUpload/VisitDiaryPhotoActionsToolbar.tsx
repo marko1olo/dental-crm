@@ -1,4 +1,4 @@
-import { Camera, MoveHorizontal, Paperclip } from "lucide-react";
+import { Camera, MoveHorizontal, Paperclip, QrCode, Sparkles } from "lucide-react";
 import type React from "react";
 import { useRef } from "react";
 
@@ -10,6 +10,8 @@ export interface VisitDiaryPhotoActionsToolbarProps {
 	onCameraOpen: () => void;
 	onBeforeAfterOpen: () => void;
 	onFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onQrBridgeOpen?: () => void;
+	onDsdOpen?: () => void;
 }
 
 export function VisitDiaryPhotoActionsToolbar({
@@ -20,6 +22,8 @@ export function VisitDiaryPhotoActionsToolbar({
 	onCameraOpen,
 	onBeforeAfterOpen,
 	onFileInputChange,
+	onQrBridgeOpen,
+	onDsdOpen,
 }: VisitDiaryPhotoActionsToolbarProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,6 +59,36 @@ export function VisitDiaryPhotoActionsToolbar({
 							<span>До / После</span>
 						</button>
 					)}
+
+					{onQrBridgeOpen && (
+						<button
+							type="button"
+							onClick={onQrBridgeOpen}
+							className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--teal)] flex items-center gap-1.5 active:scale-[0.98]"
+							title="Загрузка фото со смартфона врача через динамический QR-код (Chairside QR Bridge)"
+							data-testid="btn-visit-diary-qr-bridge"
+						>
+							<QrCode className="w-4 h-4" />
+							<span>Телефон (QR)</span>
+						</button>
+					)}
+
+					<button
+						type="button"
+						onClick={() => {
+							if (onDsdOpen) {
+								onDsdOpen();
+							} else if (typeof window !== "undefined") {
+								window.dispatchEvent(new CustomEvent("dente:open-dsd", { detail: { dsd: true } }));
+							}
+						}}
+						className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-teal-600 dark:text-teal-400 flex items-center gap-1.5 active:scale-[0.98]"
+						title="Digital Smile Design (DSD): эстетический дизайн улыбки и золотое сечение"
+						data-testid="btn-visit-diary-open-dsd"
+					>
+						<Sparkles className="w-4 h-4 text-teal-500" />
+						<span>DSD Эстетика</span>
+					</button>
 
 					<button
 						type="button"

@@ -6,6 +6,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ClinicalPhotoProtocolModal } from "./ClinicalPhotoProtocolModal";
 import { ChairsidePhotoQrBridgeModal } from "./ChairsidePhotoQrBridgeModal";
+import { DigitalSmileDesignModal } from "./DigitalSmileDesignModal";
 import { useAppStore } from "../../store/appStore";
 
 export const DirectPhotoProtocolLauncher: React.FC = () => {
@@ -19,7 +20,10 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 			h.includes("photo-protocol") ||
 			s.includes("photo-protocol") ||
 			h === "#photo" ||
-			s.includes("photo=1")
+			s.includes("photo=1") ||
+			h.includes("dsd") ||
+			s.includes("dsd=1") ||
+			s.includes("smile-design")
 		);
 	};
 
@@ -29,6 +33,12 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 		const h = window.location.hash || "";
 		const s = window.location.search || "";
 		return h.includes("photo-qr") || s.includes("photo-qr");
+	});
+	const [isDsdMode, setIsDsdMode] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		const h = window.location.hash || "";
+		const s = window.location.search || "";
+		return h.includes("dsd") || s.includes("dsd=1") || s.includes("smile-design");
 	});
 
 	const storeActivePatient = useAppStore((st) => {
@@ -71,20 +81,23 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 	}, [storeActivePatient]);
 
 	const handleOpenEvent = useCallback((e: Event) => {
-		const detail = (e as CustomEvent<{ qrOnly?: boolean }>).detail;
+		const detail = (e as CustomEvent<{ qrOnly?: boolean; dsd?: boolean }>).detail;
 		setIsQrMode(Boolean(detail?.qrOnly));
+		setIsDsdMode(Boolean(detail?.dsd));
 		setIsOpen(true);
 	}, []);
 
 	useEffect(() => {
 		window.addEventListener("dente:open-photo-protocol", handleOpenEvent);
 		window.addEventListener("dente:open-photo-qr", handleOpenEvent);
+		window.addEventListener("dente:open-dsd", handleOpenEvent);
 
 		const handleHash = () => {
 			if (checkUrlMatches()) {
 				const h = window.location.hash || "";
 				const s = window.location.search || "";
 				setIsQrMode(h.includes("photo-qr") || s.includes("photo-qr"));
+				setIsDsdMode(h.includes("dsd") || s.includes("dsd=1") || s.includes("smile-design"));
 				setIsOpen(true);
 			}
 		};
@@ -94,6 +107,7 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 		return () => {
 			window.removeEventListener("dente:open-photo-protocol", handleOpenEvent);
 			window.removeEventListener("dente:open-photo-qr", handleOpenEvent);
+			window.removeEventListener("dente:open-dsd", handleOpenEvent);
 			window.removeEventListener("hashchange", handleHash);
 			window.removeEventListener("popstate", handleHash);
 		};
@@ -101,17 +115,32 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 
 	const handleClose = () => {
 		setIsOpen(false);
+		setIsDsdMode(false);
+		setIsQrMode(false);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("photo-qr");
 			url.searchParams.delete("photo-protocol");
 			url.searchParams.delete("photo");
-			const cleanHash = window.location.hash.replace(/#photo-qr|#photo-protocol|#photo/g, "");
+			url.searchParams.delete("dsd");
+			url.searchParams.delete("smile-design");
+			const cleanHash = window.location.hash.replace(/#photo-qr|#photo-protocol|#photo|#dsd|#smile-design/g, "");
 			window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
 		}
 	};
 
 	if (!isOpen) return null;
+
+	if (isDsdMode) {
+		return (
+			<DigitalSmileDesignModal
+				isOpen={isOpen}
+				onClose={handleClose}
+				patientId={effectivePatient.id}
+				patientName={effectivePatient.fullName}
+			/>
+		);
+	}
 
 	if (isQrMode) {
 		return (

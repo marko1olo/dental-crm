@@ -14,6 +14,8 @@ import {
 	TOOTH_CLINICAL_PROTOCOLS,
 	type ToothClinicalProtocol,
 } from "./types";
+import { useWorkspaceProfile } from "../../../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 
 export interface ToothSurgeryTabProps {
 	// biome-ignore lint/suspicious/noExplicitAny: selection
@@ -39,28 +41,37 @@ export function ToothSurgeryTab({
 	setLabOrderModalToothNumber,
 	setIsLabOrderModalOpen,
 }: ToothSurgeryTabProps) {
+	const { hasDentalLab } = useWorkspaceProfile();
+	const showLab = hasDentalLab || isDemoShowcaseMode();
+
 	return (
 		<div className="_ccm-pane-section">
-			<div className="_ccm-sub-label">Ортопедия (CAD/CAM & Лаборатория)</div>
-			<div className="_ccm-items-grid">
-				<button
-					type="button"
-					className="_ccm-action-item"
-					onClick={() => {
-						setLabOrderModalToothNumber(
-							selectedToothForMenu?.code,
-						);
-						setIsLabOrderModalOpen(true);
-						closeClinicalModal();
-					}}
-				>
-					<FileCheck2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-					<span className="_ccm-item-title font-semibold">
-						Наряд в ЗТЛ (CAD/CAM коронка диоксид циркония / керамика)
-					</span>
-					<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
-				</button>
+			{showLab && (
+				<>
+					<div className="_ccm-sub-label">Ортопедия (CAD/CAM & Лаборатория)</div>
+					<div className="_ccm-items-grid">
+						<button
+							type="button"
+							className="_ccm-action-item"
+							onClick={() => {
+								setLabOrderModalToothNumber(
+									selectedToothForMenu?.code,
+								);
+								setIsLabOrderModalOpen(true);
+								closeClinicalModal();
+							}}
+						>
+							<FileCheck2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<span className="_ccm-item-title font-semibold">
+								Наряд в ЗТЛ (CAD/CAM коронка диоксид циркония / керамика)
+							</span>
+							<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+						</button>
+					</div>
+				</>
+			)}
 
+			<div className="_ccm-items-grid">
 				<button
 					type="button"
 					data-testid="preset-surgery-crown"

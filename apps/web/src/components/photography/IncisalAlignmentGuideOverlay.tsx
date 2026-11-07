@@ -1,20 +1,28 @@
 import React from 'react';
 
-export type GuideOverlayType = 'bipupillary' | 'incisal' | 'midline' | 'thirds';
+export type GuideOverlayType = 'bipupillary' | 'incisal' | 'midline' | 'thirds' | 'goldenRatio';
 
 export interface IncisalAlignmentGuideOverlayProps {
-	activeGuides: Record<GuideOverlayType, boolean>;
+	activeGuides: Partial<Record<GuideOverlayType, boolean>>;
 	bipupillaryTiltDegrees?: number;
 	incisalCantingDegrees?: number;
+	midlineOffsetPx?: number;
+	goldenRatioWidth?: number;
 }
 
 export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlayProps> = ({
 	activeGuides,
 	bipupillaryTiltDegrees = 0,
 	incisalCantingDegrees = 0,
+	midlineOffsetPx = 0,
+	goldenRatioWidth = 380,
 }) => {
 	const hasAnyGuide = Object.values(activeGuides).some(Boolean);
 	if (!hasAnyGuide) return null;
+
+	const cW = (1.618 / 3.236) * (goldenRatioWidth / 2);
+	const lW = (1.0 / 3.236) * (goldenRatioWidth / 2);
+	const kW = (0.618 / 3.236) * (goldenRatioWidth / 2);
 
 	return (
 		<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 20 }}>
@@ -31,9 +39,9 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 			{/* 2. Facial Midline */}
 			{activeGuides.midline && (
 				<g>
-					<line x1="500" y1="0" x2="500" y2="1000" stroke="var(--teal-light, #38bdf8)" strokeWidth="2.5" strokeDasharray="8 6" />
-					<rect x="420" y="20" width="160" height="24" rx="4" fill="rgba(15, 23, 42, 0.75)" />
-					<text x="500" y="36" textAnchor="middle" fill="var(--teal-light, #38bdf8)" fontSize="12" fontWeight="700">Срединная линия</text>
+					<line x1={500 + midlineOffsetPx} y1="0" x2={500 + midlineOffsetPx} y2="1000" stroke="var(--teal-light, #38bdf8)" strokeWidth="2.5" strokeDasharray="8 6" />
+					<rect x={420 + midlineOffsetPx} y="20" width="160" height="24" rx="4" fill="rgba(15, 23, 42, 0.75)" />
+					<text x={500 + midlineOffsetPx} y="36" textAnchor="middle" fill="var(--teal-light, #38bdf8)" fontSize="12" fontWeight="700">Срединная линия</text>
 				</g>
 			)}
 
@@ -58,6 +66,18 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 					<text x="500" y="676" textAnchor="middle" fill="var(--green, #10b981)" fontSize="12" fontWeight="700">
 						Резцовый край ({incisalCantingDegrees !== 0 ? `${incisalCantingDegrees > 0 ? '+' : ''}${incisalCantingDegrees.toFixed(1)}°` : '0.0°'})
 					</text>
+				</g>
+			)}
+
+			{/* 5. Golden Proportion Wheeler 2.5D */}
+			{activeGuides.goldenRatio && (
+				<g opacity="0.8">
+					<rect x={500 - cW} y="580" width={cW} height="100" fill="none" stroke="#eab308" strokeWidth="1.8" strokeDasharray="3 2" />
+					<rect x="500" y="580" width={cW} height="100" fill="none" stroke="#eab308" strokeWidth="1.8" strokeDasharray="3 2" />
+					<rect x={500 - cW - lW} y="585" width={lW} height="88" fill="none" stroke="#eab308" strokeWidth="1.8" strokeDasharray="3 2" />
+					<rect x={500 + cW} y="585" width={lW} height="88" fill="none" stroke="#eab308" strokeWidth="1.8" strokeDasharray="3 2" />
+					<rect x={500 - cW - lW - kW} y="590" width={kW} height="95" fill="none" stroke="#eab308" strokeWidth="1.8" strokeDasharray="3 2" />
+					<rect x={500 + cW + lW} y="590" width={kW} height="95" fill="none" stroke="#eab308" strokeWidth="1.8" strokeDasharray="3 2" />
 				</g>
 			)}
 		</svg>

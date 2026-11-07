@@ -38,7 +38,7 @@ export function usePhotoProtocolUpload(
 		return seeded;
 	});
 	const [isSaving, setIsSaving] = useState(false);
-	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export'>('grid');
+	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export' | 'dsd'>('grid');
 	const [activeFilter, setActiveFilter] = useState<'all' | 'extraoral' | 'intraoral'>('all');
 	const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<string | null>(null);
 	const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);

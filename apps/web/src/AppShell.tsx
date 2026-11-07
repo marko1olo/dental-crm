@@ -271,6 +271,10 @@ function isStandaloneActive(): boolean {
 		h.includes("leads") ||
 		h.includes("photo") ||
 		s.includes("photo") ||
+		h.includes("dsd") ||
+		s.includes("dsd") ||
+		h.includes("smile-design") ||
+		s.includes("smile-design") ||
 		h.includes("crm-leads") ||
 		h.includes("kanban") ||
 		s.includes("settings") ||

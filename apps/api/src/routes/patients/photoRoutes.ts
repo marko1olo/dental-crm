@@ -17,6 +17,7 @@ const photoProtocolPayloadSchema = z.object({
 	visitId: z.string().uuid().optional().nullable(),
 	stage: z.string().optional().default("before"),
 	notes: z.string().optional().nullable(),
+	dsdAnalysis: z.any().optional().nullable(),
 });
 
 export function registerPatientPhotoRoutes(app: FastifyInstance) {
@@ -184,7 +185,8 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { presetId, slots, visitId, stage, notes } = parseResult.data;
+		const { presetId, slots, visitId, stage, notes, dsdAnalysis } = parseResult.data;
+		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
 
 		// Если передан visitId, проверяем его существование
 		if (visitId) {
@@ -218,7 +220,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 					.update(patientPhotoProtocols)
 					.set({
 						presetId,
-						slots,
+						slots: effectiveSlots,
 						stage: stage || "before",
 						notes: notes || null,
 						visitId: visitId || null,
@@ -235,7 +237,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 						patientId,
 						visitId: visitId || null,
 						presetId,
-						slots,
+						slots: effectiveSlots,
 						stage: stage || "before",
 						notes: notes || null,
 					})
@@ -315,7 +317,8 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { presetId, slots, stage, notes } = parseResult.data;
+		const { presetId, slots, stage, notes, dsdAnalysis } = parseResult.data;
+		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
 
 		const [created] = await db
 			.insert(patientPhotoProtocols)
@@ -324,7 +327,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 				patientId: visit.patientId,
 				visitId,
 				presetId,
-				slots,
+				slots: effectiveSlots,
 				stage: stage || "during",
 				notes: notes || null,
 			})

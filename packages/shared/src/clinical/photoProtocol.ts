@@ -492,3 +492,160 @@ export const STANDARD_PROJECTION_KEYS = [
 	{ id: "intraoral_left_buccal", labelRu: "Левый боковой сегмент", category: "intraoral" },
 	{ id: "intraoral_overjet", labelRu: "Сагиттальная щель", category: "intraoral" },
 ] as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. DIGITAL SMILE DESIGN (DSD) AESTHETIC ANALYSIS ENGINE (Mandates 8e, 8ar, 8s, PHO-02)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DsdPoint2D {
+	x: number;
+	y: number;
+}
+
+export const dsdPoint2DSchema = z.object({
+	x: z.number(),
+	y: z.number(),
+});
+
+export interface DsdToothMetric {
+	toothFdi: number; // 13, 12, 11, 21, 22, 23
+	widthMm: number;
+	heightMm: number;
+	ratioWidthToHeight: number; // Идеал Wheeler 2.5D: 0.75 - 0.80 (75-80%)
+	visibleProportionToCentral: number; // Идеал 1.0 (центральный), ~0.618 (боковой), ~0.382 (клык)
+	goldenDeviationPercent: number;
+}
+
+export const dsdToothMetricSchema = z.object({
+	toothFdi: z.number().int().min(11).max(85),
+	widthMm: z.number().nonnegative(),
+	heightMm: z.number().nonnegative(),
+	ratioWidthToHeight: z.number().nonnegative(),
+	visibleProportionToCentral: z.number().nonnegative(),
+	goldenDeviationPercent: z.number().nonnegative(),
+});
+
+export interface DsdAnalysisData {
+	id: string;
+	photoUrl: string;
+	slotId?: string;
+	calibratedMmPerPx: number;
+	calibrationDistancePx: number;
+	calibrationKnownMm: number;
+	bipupillaryTiltDegrees: number;
+	facialMidlineOffsetMm: number;
+	incisalCantingDegrees: number;
+	smileArcCurvature: "consonant" | "flat" | "reverse";
+	smileArcSymmetryPercent: number;
+	teethMetrics: DsdToothMetric[];
+	recommendedMaterial: "emax_lithium_disilicate" | "zirconia_multilayer" | "feldspathic_ceramic" | "composite";
+	recommendedVitaShade: string;
+	translucencyLevel: "HT" | "LT" | "MO" | "HO";
+	doctorNotes?: string;
+	createdAt: string;
+}
+
+export const dsdAnalysisDataSchema = z.object({
+	id: z.string().min(1),
+	photoUrl: z.string().min(1),
+	slotId: z.string().optional(),
+	calibratedMmPerPx: z.number().positive().default(0.05),
+	calibrationDistancePx: z.number().positive().default(200),
+	calibrationKnownMm: z.number().positive().default(10),
+	bipupillaryTiltDegrees: z.number().default(0),
+	facialMidlineOffsetMm: z.number().default(0),
+	incisalCantingDegrees: z.number().default(0),
+	smileArcCurvature: z.enum(["consonant", "flat", "reverse"]).default("consonant"),
+	smileArcSymmetryPercent: z.number().min(0).max(100).default(95),
+	teethMetrics: z.array(dsdToothMetricSchema).default([]),
+	recommendedMaterial: z.enum([
+		"emax_lithium_disilicate",
+		"zirconia_multilayer",
+		"feldspathic_ceramic",
+		"composite",
+	]).default("emax_lithium_disilicate"),
+	recommendedVitaShade: z.string().default("A2"),
+	translucencyLevel: z.enum(["HT", "LT", "MO", "HO"]).default("HT"),
+	doctorNotes: z.string().optional(),
+	createdAt: z.string().default(() => new Date().toISOString()),
+});
+
+/**
+ * Расчет эталонных пропорций зубов Wheeler 2.5D для цифрового моделирования улыбки
+ */
+export const WHEELER_AESTHETIC_NORMS: Record<number, { widthMm: number; heightMm: number; ratioWH: number }> = {
+	11: { widthMm: 8.5, heightMm: 10.5, ratioWH: 0.81 },
+	21: { widthMm: 8.5, heightMm: 10.5, ratioWH: 0.81 },
+	12: { widthMm: 6.5, heightMm: 9.0, ratioWH: 0.72 },
+	22: { widthMm: 6.5, heightMm: 9.0, ratioWH: 0.72 },
+	13: { widthMm: 7.5, heightMm: 10.0, ratioWH: 0.75 },
+	23: { widthMm: 7.5, heightMm: 10.0, ratioWH: 0.75 },
+};
+
+/**
+ * Вычисляет анатомические метрики передней группы зубов (13..23) по каноническому золотому сечению Wheeler (1.618 : 1.0 : 0.618)
+ */
+export function calculateWheelerToothMetrics(
+	teethArchWidthPx: number,
+	teethArchHeightPx: number,
+	mmPerPx: number,
+): DsdToothMetric[] {
+	const centralWidthMm = Math.round(teethArchWidthPx * 0.25 * mmPerPx * 10) / 10;
+	const lateralWidthMm = Math.round((centralWidthMm / 1.618) * 10) / 10;
+	const canineWidthMm = Math.round((lateralWidthMm / 1.618) * 10) / 10;
+	const centralHeightMm = Math.round(teethArchHeightPx * mmPerPx * 10) / 10;
+	const lateralHeightMm = Math.round(centralHeightMm * 0.85 * 10) / 10;
+	const canineHeightMm = Math.round(centralHeightMm * 0.95 * 10) / 10;
+
+	return [
+		{
+			toothFdi: 11,
+			widthMm: centralWidthMm,
+			heightMm: centralHeightMm,
+			ratioWidthToHeight: Math.round((centralWidthMm / Math.max(0.1, centralHeightMm)) * 100) / 100,
+			visibleProportionToCentral: 1.0,
+			goldenDeviationPercent: 0,
+		},
+		{
+			toothFdi: 21,
+			widthMm: centralWidthMm,
+			heightMm: centralHeightMm,
+			ratioWidthToHeight: Math.round((centralWidthMm / Math.max(0.1, centralHeightMm)) * 100) / 100,
+			visibleProportionToCentral: 1.0,
+			goldenDeviationPercent: 0,
+		},
+		{
+			toothFdi: 12,
+			widthMm: lateralWidthMm,
+			heightMm: lateralHeightMm,
+			ratioWidthToHeight: Math.round((lateralWidthMm / Math.max(0.1, lateralHeightMm)) * 100) / 100,
+			visibleProportionToCentral: Math.round((lateralWidthMm / Math.max(0.1, centralWidthMm)) * 100) / 100,
+			goldenDeviationPercent: Math.round(Math.abs(1.618 - centralWidthMm / Math.max(0.1, lateralWidthMm)) * 10),
+		},
+		{
+			toothFdi: 22,
+			widthMm: lateralWidthMm,
+			heightMm: lateralHeightMm,
+			ratioWidthToHeight: Math.round((lateralWidthMm / Math.max(0.1, lateralHeightMm)) * 100) / 100,
+			visibleProportionToCentral: Math.round((lateralWidthMm / Math.max(0.1, centralWidthMm)) * 100) / 100,
+			goldenDeviationPercent: Math.round(Math.abs(1.618 - centralWidthMm / Math.max(0.1, lateralWidthMm)) * 10),
+		},
+		{
+			toothFdi: 13,
+			widthMm: canineWidthMm,
+			heightMm: canineHeightMm,
+			ratioWidthToHeight: Math.round((canineWidthMm / Math.max(0.1, canineHeightMm)) * 100) / 100,
+			visibleProportionToCentral: Math.round((canineWidthMm / Math.max(0.1, centralWidthMm)) * 100) / 100,
+			goldenDeviationPercent: Math.round(Math.abs(1.618 - lateralWidthMm / Math.max(0.1, canineWidthMm)) * 10),
+		},
+		{
+			toothFdi: 23,
+			widthMm: canineWidthMm,
+			heightMm: canineHeightMm,
+			ratioWidthToHeight: Math.round((canineWidthMm / Math.max(0.1, canineHeightMm)) * 100) / 100,
+			visibleProportionToCentral: Math.round((canineWidthMm / Math.max(0.1, centralWidthMm)) * 100) / 100,
+			goldenDeviationPercent: Math.round(Math.abs(1.618 - lateralWidthMm / Math.max(0.1, canineWidthMm)) * 10),
+		},
+	];
+}
+

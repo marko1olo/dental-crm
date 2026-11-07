@@ -23,3 +23,7 @@ export * from './chairsidePhotoCompressor';
 export * from './useClipboardPhotoPaste';
 export * from './IntraoralCameraModal';
 export * from '../visit/BeforeAfterSplitter';
+export * from './DigitalSmileDesignModal';
+export * from './dsd/DsdAestheticStudioModal';
+export * from './dsd/DsdCanvasOverlay';
+export * from './dsd/DsdMetricsSidebar';

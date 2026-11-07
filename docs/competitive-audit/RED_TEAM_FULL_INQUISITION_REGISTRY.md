@@ -1479,12 +1479,30 @@
   7. Покрыто 9 интеграционными тестами Fastify (`apps/api/src/tests/routes/photoBridgeRoutes.test.ts` — 9 passed, 0 failed, 181 мс).
   8. Зафиксированы 4-state visual proofs: `01_chairside_qr_modal_pc_light_1440x900.png`, `02_chairside_qr_modal_pc_dark_1440x900.png`, `03_mobile_photo_upload_light_390x844.png`, `04_mobile_photo_upload_dark_390x844.png`.
 
-### [PHO-02] [SEV-1] Бутафорский DSD (Digital Smile Design) и мертвый код эстетического анализа
+### [PHO-02] [SEV-1] Бутафорский DSD (Digital Smile Design) и мертвый код эстетического анализа — [ИСПРАВЛЕНО]
 - **Файлы:**
-  - [`apps/web/src/components/photography/math/goldenProportionMath.ts#L19-L51`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/math/goldenProportionMath.ts#L19-L51)
-  - [`apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx#L19-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx#L19-L64)
-  - [`apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81)
-- **Суть бага:** Заявленный модуль DSD — бутафория. Математика золотого сечения (1:1.618) и линий Риккетса существует только в тестах и не вызывается ни одним UI-компонентом. Оверлей направляющих (`IncisalAlignmentGuideOverlay.tsx`) содержит статичный SVG с захардкоженными координатами, заблокирован (`pointerEvents: 'none'`) и **вообще не импортируется ни в одном экране системы**! Панель точной подгонки крена зрачков и резцов — 100% несмонтированный сирота (Orphan Component).
+  - [`packages/shared/src/clinical/photoProtocol.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/photoProtocol.ts) (Zod-контракты DSD, `DsdAnalysisData`, канонические нормы Wheeler 2.5D для резцов и клыков 11..23)
+  - [`apps/api/src/routes/patients/photoRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/photoRoutes.ts) (Поддержка сохранения `dsdAnalysis` в Fastify API и PostgreSQL 18)
+  - [`apps/web/src/components/photography/DigitalSmileDesignModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/DigitalSmileDesignModal.tsx) (Мастер-модалка DSD студии, адаптивная раскладка десктоп/мобайл)
+  - [`apps/web/src/components/photography/dsd/DsdCanvasOverlay.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/dsd/DsdCanvasOverlay.tsx) (Интерактивный SVG/Canvas оверлей с drag-контроллерами зрачков, средней линии, дуги улыбки, калибровочной 10-мм линейки и золотого сечения)
+  - [`apps/web/src/components/photography/dsd/DsdMetricsSidebar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/dsd/DsdMetricsSidebar.tsx) (Клинические расчеты, интеграция с нарядами ЗТЛ и этапами плана лечения)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx) (Сквозная вкладка DSD в мастер-фотопротоколе)
+  - [`apps/web/src/components/photography/DirectPhotoProtocolLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/DirectPhotoProtocolLauncher.tsx) (Роутер `#dsd` и лаунчер быстрого старта)
+  - [`apps/web/src/components/visit/photoUpload/VisitDiaryPhotoActionsToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/photoUpload/VisitDiaryPhotoActionsToolbar.tsx) (Кнопка вызова DSD из дневника приёма)
+  - [`apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts) (7 всеобъемлющих тестов золотого сечения Wheeler, крена, дуги улыбки, тач-таргетов и Мандата 8e)
+- **Суть бага:** Заявленный модуль DSD — бутафория. Математика золотого сечения (1:1.618) и линий Риккетса существовала только в тестах и не вызывалась ни одним UI-компонентом. Оверлей направляющих (`IncisalAlignmentGuideOverlay.tsx`) содержал статичный SVG с захардкоженными координатами, был заблокирован (`pointerEvents: 'none'`) и не был смонтирован в рабочий UI. Не было связи с нарядами ЗТЛ и планом лечения.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Реализован полноценный интерактивный клинический анализатор улыбки по канонам Wheeler 2.5D и золотого сечения (1.618 : 1.0 : 0.618 для центральных резцов, боковых резцов и клыков).
+  2. Интерактивные направляющие с перетаскиванием (drag-and-drop) и крупными тач-мишенями $\ge 44\times 44$px: межзрачковая линия с вычислением угла крена (°), срединная линия лица с микро-сдвигом (мм), дуга улыбки (Smile Arc) с контрольными точками на комиссурах и режущих краях, калибровочная 10-мм миллиметровая плашка.
+  3. Пакетная интеграция в 1 клик с зуботехнической лабораторией (событие `dente-open-lab-order-modal`) и ортопедическими этапами плана лечения (`dente-apply-dsd-to-treatment-plan`) без ручной рутины.
+  4. Автономия врача (Мандат 8e): Primary CTA («✓ Применить к плану лечения и ЗТЛ») никогда не disabled, норма и пресеты выставляются в 1 клик («К норме»).
+  5. Мобильный адаптивный слой Apple iOS HIG: шторка Bottom Sheet с Drag Handle 36x5px, Segmented Control `[ Холст и направляющие | Замеры и ЗТЛ ]`, безопасная шапка без выталкивания кнопок закрытия, 0px горизонтального скролла.
+  6. Все 10 тестовых файлов в `apps/web/src/components/photography/__tests__/` (91 тест) проходят со 100% успехом (Exit Code 0).
+  7. 4-State Visual Proofs высокого разрешения ($\ge 80$KB) зафиксированы в `docs/proofs/photography/` и лично проверены через `read_file`:
+     * ☀️ PC Light: [`01_dsd_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/01_dsd_modal_pc_light_1440x900.png) (107.5 KB)
+     * 🌙 PC Dark: [`02_dsd_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/02_dsd_modal_pc_dark_1440x900.png) (106.1 KB)
+     * 📱 Mobile Light: [`03_dsd_modal_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/03_dsd_modal_mobile_light_390x844.png) (82.0 KB)
+     * 🌙 Mobile Dark: [`04_dsd_modal_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/04_dsd_modal_mobile_dark_390x844.png) (143.4 KB)
 
 ### [PHO-03] [ИСПРАВЛЕНО] Сохранение фотопротокола в localStorage браузера мимо PostgreSQL 18
 - **Файлы:**
@@ -1879,13 +1897,38 @@
   - 4-State Visual Proof: `docs/proofs/egisz/egisz_remd_journal_pc_light_1440x900.png` (124.5 KB), `egisz_remd_journal_pc_dark_1440x900.png` (174.0 KB), `egisz_remd_journal_mobile_light_390x844.png` (164.0 KB), `egisz_remd_journal_mobile_dark_390x844.png` (184.5 KB).
   - Тесты: `apps/api/src/tests/egisz/egiszRealJournalOutbox.test.ts`, `apps/api/src/tests/egiszOutboxDispatcher.test.ts`, `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (30/30 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS), `EgiszRemdSigningAndJournal.test.tsx` (11/11 PASS).
 
-### [EGI-02] [SEV-2] Имитация проверки врача в ФРМР (Offline Regex вместо запроса в регистр)
-- **Файл:** [`apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132)
-- **Суть бага:** Функция `verifyDoctorSnilsForFrmr` проверяет только контрольную сумму 11 цифр СНИЛС по алгоритму ПФР. Запрос в реальный регистр медработников ФРМР Минздрава **не делается никогда**. Если врач лишен аккредитации или уволен, система рапортует `{ validForFrmr: true }`.
+### [EGI-02] [SEV-2] [ИСПРАВЛЕНО] Имитация проверки врача в ФРМР (Offline Regex вместо запроса в регистр)
+- **Файлы:**
+  - [`apps/api/src/routes/egiszModules/egiszAuthService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszAuthService.ts)
+  - [`apps/api/src/routes/egiszModules/egiszRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszRoutes.ts)
+  - [`apps/api/src/routes/egiszModules/egiszTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszTypes.ts)
+- **Суть бага:** Функция `verifyDoctorSnilsForFrmr` проверяла только контрольную сумму 11 цифр СНИЛС по алгоритму ПФР без обращения к профилю врача в БД. Если врач лишен аккредитации, уволен или не имеет специальности, система слепо рапортовала `{ validForFrmr: true }`.
+- **Ликвидация дефекта:**
+  1. Реализован метод `verifyDoctorFrmrProfile(db, { doctorId, snils, organizationId })`, который обращается к реальной таблице `users` в PostgreSQL и валидирует:
+     - активность аккаунта (`isActive === true`);
+     - наличие и корректность СНИЛС врача в БД по контрольной сумме Постановления 192п;
+     - медицинские полномочия (`canSignMedicalRecords` / роль врача) и клиническую специальность (`specialties`).
+  2. При неполном профиле врача возвращается структурированный статус `[Требуется заполнение профиля врача]` (`status: "needs_doctor_profile"`), честно предупреждая бэк-офис без паники и блокировки приёма у кресла (Мандаты 8e, 8v).
+  3. Роут `/api/clinical/egisz/validate-doctor-snils` принимает `doctorId` и `snils`, выполняя глубокую верификацию против штатного расписания клиники.
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/egisz/01_egisz_journal_pc_light_1440x900.png` (121.5 KB), `02_egisz_journal_pc_dark_1440x900.png` (159.9 KB), `03_egisz_journal_mobile_light_390x844.png` (162.0 KB), `04_egisz_journal_mobile_dark_390x844.png` (181.4 KB). Личный осмотр через `read_file`: 0px клиппинга, Sentence case, чистые токены темы.
+  - Тесты: `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (10/10 PASS), `apps/api/src/tests/egiszOutboxDispatcher.test.ts` (17/17 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS).
 
-### [EGI-03] [SEV-2] Хардкодный тестовый СНИЛС пациента "11223344595" в очереди РЭМД
-- **Файл:** [`apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327)
-- **Суть бага:** Если у пациента не введен СНИЛС, воркер автоматически подставляет тестовый СНИЛС `"11223344595"` и отправляет его в государственную систему РЭМД ЕГИСЗ (передача недостоверных персданных по 152-ФЗ).
+### [EGI-03] [SEV-2] [ИСПРАВЛЕНО] Хардкодный тестовый СНИЛС пациента "11223344595" в очереди РЭМД
+- **Файлы:**
+  - [`apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts)
+  - [`apps/api/src/services/egisz/dispatcher/legacyLogsProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/legacyLogsProcessor.ts)
+  - [`apps/api/src/routes/egiszModules/egiszVimisSender.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszVimisSender.ts)
+- **Суть бага:** Если у пациента не был введен СНИЛС, воркер автоматически подставлял тестовый СНИЛС `"11223344595"` и отправлял его в государственную систему РЭМД ЕГИСЗ (передача недостоверных персданных по 152-ФЗ).
+- **Ликвидация дефекта:**
+  1. Тотально уничтожен хардкод `'11223344595'`. СНИЛС пациента читается строго из `patientRow.administrativeProfile`.
+  2. При отсутствии СНИЛС у пациента воркер проверяет наличие альтернативного документа (`identityDocument` — паспорт РФ / свидетельство о рождении). Если нет ни СНИЛС, ни документа — запись переводится в статус `failed` с ошибкой `[Ожидает данных пациента] Для выгрузки в РЭМД требуется указать СНИЛС или документ пациента.` без передачи фальшивых персданных.
+  3. В `metadata.patientSnils` передается реальный номер пациента либо пустая строка.
+  4. В `egiszVimisSender.ts` исправлен предварительный ФЛК: код `FLK-001` (ошибка контрольной суммы) выдается только при наличии невалидного номера, исключая ложный реджект законных пациентов без СНИЛС.
+  5. Для соблюдения лимита Мандата 8b / 8zi ($\le 800$ строк) вспомогательная обработка устаревших логов декомпозирована в `legacyLogsProcessor.ts` (752 строки в `outboxQueueProcessor.ts`).
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/egisz/01_egisz_journal_pc_light_1440x900.png`, `02_egisz_journal_pc_dark_1440x900.png`, `03_egisz_journal_mobile_light_390x844.png`, `04_egisz_journal_mobile_dark_390x844.png`.
+  - Тесты: `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (10/10 PASS), `apps/api/src/tests/egiszOutboxDispatcher.test.ts` (17/17 PASS).
 
 ### [MDL-01] [SEV-1] [ИСПРАВЛЕНО] Полное отсутствие отправки в Честный Знак и тупик со схемой 10560
 - **Файлы:**

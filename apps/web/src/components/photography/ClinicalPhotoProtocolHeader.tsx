@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, X, Grid, FileText, MoveHorizontal, ExternalLink, QrCode } from 'lucide-react';
+import { CheckCircle, X, Grid, FileText, MoveHorizontal, ExternalLink, QrCode, Sparkles } from 'lucide-react';
 import { CheekRetractor } from '../icons/DentalIcons';
 import { openPatientPresentationWindow } from './presentationSyncProtocol';
 import type { PhotoSlotRecord } from './photoGridPresets';
@@ -9,8 +9,8 @@ export interface ClinicalPhotoProtocolHeaderProps {
 	readonly patientCardNumber: string;
 	readonly doctorName: string;
 	readonly clinicName: string;
-	readonly activeViewMode: 'grid' | 'comparison' | 'export';
-	readonly setActiveViewMode: (mode: 'grid' | 'comparison' | 'export') => void;
+	readonly activeViewMode: 'grid' | 'comparison' | 'export' | 'dsd';
+	readonly setActiveViewMode: (mode: 'grid' | 'comparison' | 'export' | 'dsd') => void;
 	readonly slotsData: Record<string, PhotoSlotRecord>;
 	readonly activePresetId: string;
 	readonly onSaveProtocol: (slots: Record<string, PhotoSlotRecord>, presetId: string) => void;
@@ -45,6 +45,7 @@ export const ClinicalPhotoProtocolHeader: React.FC<ClinicalPhotoProtocolHeaderPr
 			<div className="photo-protocol-tabs">
 				<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'grid' ? 'active' : ''}`} onClick={() => setActiveViewMode('grid')}><Grid size={16} /> Сетка</button>
 				<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'comparison' ? 'active' : ''}`} onClick={() => setActiveViewMode('comparison')}><MoveHorizontal size={16} /> Сравнение</button>
+				<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'dsd' ? 'active' : ''}`} onClick={() => setActiveViewMode('dsd')} data-testid="tab-dsd-aesthetic"><Sparkles size={16} /> DSD Эстетика</button>
 				<button type="button" className={`photo-protocol-tab-btn ${activeViewMode === 'export' ? 'active' : ''}`} onClick={() => setActiveViewMode('export')}><FileText size={16} /> В ЗТЛ</button>
 			</div>
 			<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -190,10 +190,14 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 	it("6. Chairside Before/After Splitter Invariants", () => {
 		const viewportPath = path.join(visitDir, "BeforeAfterViewport.tsx");
 		const hookPath = path.join(visitDir, "useBeforeAfterSplitter.ts");
+		const sliderPath = path.join(componentsDir, "BeforeAfterSplitSlider.tsx");
+		const presentationPath = path.join(componentsDir, "presentation/PresentationHeader.tsx");
 		const splitterContent = [
 			fs.readFileSync(splitterPath, "utf8"),
+			fs.existsSync(sliderPath) ? fs.readFileSync(sliderPath, "utf8") : "",
 			fs.existsSync(viewportPath) ? fs.readFileSync(viewportPath, "utf8") : "",
 			fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf8") : "",
+			fs.existsSync(presentationPath) ? fs.readFileSync(presentationPath, "utf8") : "",
 		].join("\n");
 
 		// Proves split clip path math is utilized
