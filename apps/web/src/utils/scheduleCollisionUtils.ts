@@ -94,11 +94,19 @@ export function findNearestAvailableSlot(
 	});
 
 	const isIntervalFree = (startMs: number, endMs: number): boolean => {
-		// 1. Chair maintenance blocks (Mandate 8i & [SCH-01]: sanitation never blocks booking)
+		// 1. Chair maintenance blocks (Mandate 8e & Core Law: sanitation and maintenance never block clinical appointments)
 		if (draft.chairId && options.chairMaintenanceBlocks?.length) {
 			for (const block of options.chairMaintenanceBlocks) {
 				if (block.chairId !== draft.chairId) continue;
-				if (block.reason === "sanitation" || block.reason === "disinfection") continue;
+				// Mandate 8e & [SCH-01]: sanitation, disinfection, tech_break and maintenance never block booking slots
+				if (
+					block.reason === "sanitation" ||
+					block.reason === "disinfection" ||
+					block.reason === "maintenance" ||
+					block.reason === "tech_break"
+				) {
+					continue;
+				}
 				const bStart = Date.parse(block.startsAt);
 				const bEnd = Date.parse(block.endsAt);
 				if (!Number.isFinite(bStart) || !Number.isFinite(bEnd)) continue;
@@ -302,11 +310,19 @@ export function checkAppointmentResourceCollision(
 		}
 	}
 
-	// 2. Check scheduled maintenance time windows (Mandate 8i & [SCH-01]: sanitation never blocks)
+	// 2. Check scheduled maintenance time windows (Mandate 8e & Core Law: sanitation/maintenance never block booking)
 	if (draft.chairId && options.chairMaintenanceBlocks?.length) {
 		for (const block of options.chairMaintenanceBlocks) {
 			if (block.chairId !== draft.chairId) continue;
-			if (block.reason === "sanitation" || block.reason === "disinfection") continue;
+			// Mandate 8e & [SCH-01]: sanitation, disinfection, tech_break and maintenance never block clinical appointments
+			if (
+				block.reason === "sanitation" ||
+				block.reason === "disinfection" ||
+				block.reason === "maintenance" ||
+				block.reason === "tech_break"
+			) {
+				continue;
+			}
 			const blockStart = Date.parse(block.startsAt);
 			const blockEnd = Date.parse(block.endsAt);
 			if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd)) continue;

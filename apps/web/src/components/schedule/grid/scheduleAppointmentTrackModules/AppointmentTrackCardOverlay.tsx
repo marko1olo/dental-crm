@@ -25,7 +25,7 @@ export function ChairMaintenanceCard({
   return (
     <div
       key={mBlock.id}
-      className="w-full p-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-[var(--ink)] flex items-center justify-between"
+      className="w-full p-2 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs text-[var(--ink)] flex items-center justify-between pointer-events-none select-none z-10"
       data-testid={`chair-maintenance-block-${chairId}`}
     >
       <div className="flex items-center gap-1.5 truncate min-w-0">
@@ -43,7 +43,7 @@ export function ChairMaintenanceCard({
           e.stopPropagation();
           onRemove(mBlock.id);
         }}
-        className="p-1 rounded-lg hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 cursor-pointer shrink-0"
+        className="p-1 rounded-lg hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 cursor-pointer shrink-0 pointer-events-auto"
         title="Удалить технический перерыв"
         aria-label="Удалить технический перерыв"
         data-testid={`btn-remove-maintenance-${chairId}`}

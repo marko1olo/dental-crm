@@ -493,16 +493,30 @@
   - [`apps/web/src/components/schedule/grid/ScheduleGridChairsHeaderRow.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleGridChairsHeaderRow.tsx)
   - [`apps/web/src/components/schedule/grid/ScheduleChairHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleChairHeader.tsx)
   - [`apps/web/src/components/schedule/grid/ScheduleChairHeaderTopBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleChairHeaderTopBar.tsx)
+  - [`apps/web/src/components/schedule/grid/quantumCollisionChecker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/quantumCollisionChecker.ts)
+  - [`apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTimeSlotCell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTimeSlotCell.tsx)
+  - [`apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackCardOverlay.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackCardOverlay.tsx)
   - [`apps/web/src/utils/scheduleCollisionUtils.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/scheduleCollisionUtils.ts)
 - **Суть бага:** Симуляция реальности и тайм-локи: принудительная блокировка кресел и санобработка сохранялись в `localStorage` конкретного браузера, блокируя реальную запись пациентов и парализуя работу администраторов и врачей.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
-  1. **Ликвидация механизма блокировок (Мандат 8i / 8n):** Полностью вырезано локальное состояние `internalMaintenanceBlocks` и его запись в `localStorage` из `useGridDisplaySettings.ts`. Метод `handleAddMaintenance` нейтрализован в безопасный no-op.
+  1. **Ликвидация механизма блокировок (Мандат 8i / 8n / Закон Создателя):** Полностью вырезано локальное состояние `internalMaintenanceBlocks` и его запись в `localStorage` из `useGridDisplaySettings.ts`. Метод `handleAddMaintenance` нейтрализован в безопасный no-op.
   2. **Физический снос мертвого кода:** Поповер `ScheduleChairMaintenancePopover.tsx` удален из репозитория через `git rm`. Очищены все рудиментарные стейты `activeHeaderMaintenanceChairId` и пропсы `onAddMaintenanceBlock`.
-  3. **Снятие коллизий при записи (Мандат 8e):** В `apps/web/src/utils/scheduleCollisionUtils.ts` методы `isIntervalFree` и `checkAppointmentResourceCollision` обновлены: блоки санитарной обработки (`reason === "sanitation"` или `"disinfection"`) больше никогда не препятствуют созданию или переносу клинических приёмов.
-  4. **Автоматизированная верификация:** 
-     - Юнит-тест `apps/web/src/components/schedule/__tests__/scheduleAutonomyAndInspectorClick.test.tsx` (PASS, 0 коллизий при санобработке).
-     - Регрессионный тест `apps/web/src/tests/scheduleStressAndSanitation.test.ts` (PASS, 16/16).
-  5. **Визуальный пруф:** `docs/proofs/schedule/schedule_pc_light_1440x900.png` и `schedule_pc_dark_1440x900.png` подтверждают отсутствие блокировок слотов.
+  3. **Снятие коллизий при записи и перемещении визитов (Мандат 8e):** 
+     - В `apps/web/src/utils/scheduleCollisionUtils.ts` методы `isIntervalFree` и `checkAppointmentResourceCollision` обновлены: блоки санитарной обработки (`sanitation`, `disinfection`), техобслуживания (`maintenance`) и технических перерывов (`tech_break`) больше никогда не препятствуют созданию или переносу клинических приёмов.
+     - В `apps/web/src/components/schedule/grid/quantumCollisionChecker.ts` метод `checkQuantumQuanta` теперь полностью игнорирует блоки техобслуживания (`isMaintenanceBlock(chairEntity) -> continue`), сохраняя полную свободу квантового перемещения записей.
+  4. **Интерактивность пустых слотов сетки (1-Click Booking):** 
+     - В `AppointmentTimeSlotCell.tsx` `Case A` активируется строго при наличии приёмов (`cellAppointments.length > 0`). Если слот пуст от приёмов, но содержит блок ТО, слот гарантированно рендерится в `Case C` с интерактивной кнопкой создания записи.
+     - В `AppointmentTrackCardOverlay.tsx` карточка `ChairMaintenanceCard` переведена в пассивный информационный слой с `pointer-events-none select-none z-10`, а кнопка удаления снабжена `pointer-events-auto`, что исключает перехват кликов по слотам.
+  5. **Автоматизированная верификация:** 
+     - Юнит-тест `apps/web/src/components/schedule/__tests__/scheduleAutonomyAndInspectorClick.test.tsx` (PASS).
+     - Регрессионный тест `apps/web/src/tests/scheduleStressAndSanitation.test.ts` (PASS, 7/7).
+     - Квантовый тест `apps/web/src/components/schedule/__tests__/scheduleDecoupledDragAndQuantum.test.ts` (PASS, 14/14).
+     - Инспектор `apps/web/src/components/schedule/__tests__/scheduleAppointmentInspector.test.tsx` (PASS, 5/5).
+  6. **4-State Visual Proofs (Личный осмотр через `read_file`):** 
+     - ☀️ PC Light 1440×900: `docs/proofs/schedule/schedule_pc_light_1440x900.png` (118.6 KB)
+     - 🌙 PC Dark 1440×900: `docs/proofs/schedule/schedule_pc_dark_1440x900.png` (118.6 KB)
+     - 📱 Mobile Light 390×844: `docs/proofs/schedule/schedule_mobile_light_390x844.png` (124.0 KB)
+     - 🌙 Mobile Dark 390×844: `docs/proofs/schedule/schedule_mobile_dark_390x844.png` (125.4 KB)
 
 ### [SCH-02] [ИСПРАВЛЕНО] Лист ожидания: фантомная запись без запроса в БД и тупики лаунчера
 - **Файлы:**

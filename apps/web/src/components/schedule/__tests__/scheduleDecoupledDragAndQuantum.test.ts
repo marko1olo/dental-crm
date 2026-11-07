@@ -178,17 +178,15 @@ describe("Schedule Quantum Time Engine & O(1) Collision Index", () => {
       assert.match(check.message ?? "", /Пациент уже записан/);
     });
 
-    it("detects chair maintenance and technical break collisions", () => {
+    it("allows booking over chair maintenance and sanitation blocks without collisions (Mandate 8e)", () => {
       const check = index.checkCollision({
         startsAt: `${testDate}T12:15:00.000Z`,
         endsAt: `${testDate}T12:45:00.000Z`,
         chairId: "chair-alpha",
       });
 
-      assert.equal(check.hasCollision, true);
-      assert.equal(check.conflictType, "chair_maintenance");
-      assert.equal(check.conflictingEntity?.id, "maint-1");
-      assert.match(check.message ?? "", /Технический перерыв/);
+      assert.equal(check.hasCollision, false);
+      assert.equal(check.conflictType, null);
     });
 
     it("excludes the appointment itself during move/reschedule", () => {

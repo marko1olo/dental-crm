@@ -44,8 +44,8 @@ export function AppointmentTimeSlotCell({
   );
   const { cellAppointments, continuingAppointments, cellMaintenance } = cellData;
 
-  // Case A: Appointments or maintenance starting in this slot
-  if (cellAppointments.length > 0 || cellMaintenance.length > 0) {
+  // Case A: Appointments starting in this slot (Mandate 8e: maintenance never blocks empty slots)
+  if (cellAppointments.length > 0) {
     for (const a of cellAppointments) {
       renderedApptIds.add(a.id);
     }
@@ -203,7 +203,7 @@ export function AppointmentTimeSlotCell({
   return (
     <div
       key={`empty-${chair.id}-${hour}`}
-      className={`p-0.5 sm:p-1 border-b border-[var(--line)] ${isLastCol ? "" : "border-r"} min-h-[52px] flex items-center justify-center hover:bg-[var(--paper-soft)]/50 transition-colors`}
+      className={`p-0.5 sm:p-1 border-b border-[var(--line)] ${isLastCol ? "" : "border-r"} min-h-[52px] flex flex-col items-center justify-center hover:bg-[var(--paper-soft)]/50 transition-colors relative`}
       style={{
         gridColumn: colIndex,
         gridRow: rowIndex,
@@ -220,6 +220,18 @@ export function AppointmentTimeSlotCell({
       }}
       onDrop={(e) => onSlotDrop(e, chair, hour)}
     >
+      {cellMaintenance.length > 0 && (
+        <div className="w-full mb-1">
+          {cellMaintenance.map((mBlock) => (
+            <ChairMaintenanceCard
+              key={mBlock.id}
+              mBlock={mBlock}
+              chairId={chair.id}
+              onRemove={props.handleRemoveMaintenance}
+            />
+          ))}
+        </div>
+      )}
       {isEmergencyBuffer ? (
         <button
           type="button"

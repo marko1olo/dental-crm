@@ -35,8 +35,9 @@ export function checkQuantumQuanta(
       const chairEntity = chairOccupancy.get(chairId)?.get(q);
       if (chairEntity && (!excludeAppointmentId || chairEntity.id !== excludeAppointmentId)) {
         if (isMaintenanceBlock(chairEntity)) {
-          const rLabel = chairEntity.note || (chairEntity.reason === "sanitation" ? "санитарную обработку" : chairEntity.reason === "maintenance" ? "техобслуживание" : "технический перерыв");
-          return { hasCollision: true, conflictType: "chair_maintenance", conflictingEntity: chairEntity, message: `Кресло «${chairName}» заблокировано: ${rLabel} (Технический перерыв).` };
+          // Mandate 8e & Core Law: sanitation, disinfection, tech_break and maintenance never block clinical booking or slot moves
+          // Purely passive informational presence; slots remain 100% available in 1 click
+          continue;
         }
         if (isCito || allowCitoOverbooking) {
           return { hasCollision: true, isCitoOverbooking: true, conflictType: "chair", conflictingEntity: chairEntity, message: `Острая боль (CITO): наложение на кресле «${chairName}» допустимо` };

@@ -306,7 +306,7 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 		assert.equal(afterCheck.hasCollision, false);
 	});
 
-	it("blocks booking during technical maintenance and disinfection breaks", () => {
+	it("does not block booking during technical maintenance and disinfection breaks (Mandate 8e & Reality Invariant)", () => {
 		const techBlocks: ChairMaintenanceBlock[] = [
 			{
 				id: "maint-2",
@@ -326,7 +326,7 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 			},
 		];
 
-		// Chair 2 maintenance conflict
+		// Chair 2 maintenance non-blocking (informative only)
 		const resChair2 = checkAppointmentResourceCollision(
 			{
 				startsAt: "2026-08-21T15:30:00.000Z",
@@ -341,10 +341,10 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 				chairMaintenanceBlocks: techBlocks,
 			},
 		);
-		assert.equal(resChair2.hasCollision, true);
-		assert.ok(resChair2.message?.includes("техобслуживание"));
+		assert.equal(resChair2.hasCollision, false);
+		assert.equal(resChair2.conflictType, null);
 
-		// Chair 3 tech break conflict
+		// Chair 3 tech break non-blocking (informative only)
 		const resChair3 = checkAppointmentResourceCollision(
 			{
 				startsAt: "2026-08-21T12:00:00.000Z",
@@ -359,7 +359,7 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 				chairMaintenanceBlocks: techBlocks,
 			},
 		);
-		assert.equal(resChair3.hasCollision, true);
-		assert.ok(resChair3.message?.includes("технический перерыв"));
+		assert.equal(resChair3.hasCollision, false);
+		assert.equal(resChair3.conflictType, null);
 	});
 });
