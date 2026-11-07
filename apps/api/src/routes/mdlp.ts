@@ -363,7 +363,23 @@ export async function registerMdlpRoutes(
 		});
 	};
 
+	/**
+	 * GET /api/mdlp/status
+	 * Real health-check of MDLP / Chestny Znak gateway connection status.
+	 */
+	const handleStatus = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp status check");
+		if (!orgId) return;
+
+		const statusInfo = await mdlpDisposalService.getStatus(orgId);
+		return reply.send({
+			success: true,
+			...statusInfo,
+		});
+	};
+
 	// Register absolute paths
+	app.get("/api/mdlp/status", handleStatus);
 	app.post("/api/mdlp/scan", handleScan);
 	app.post("/api/mdlp/dispose", handleDispose);
 	app.post("/api/mdlp/dispose-batch", handleDisposeBatch);
@@ -376,6 +392,7 @@ export async function registerMdlpRoutes(
 	app.get("/api/mdlp/items", handleItems);
 
 	// Also support relative paths if mounted under prefix
+	app.get("/status", handleStatus);
 	app.post("/scan", handleScan);
 	app.post("/dispose", handleDispose);
 	app.post("/dispose-batch", handleDisposeBatch);

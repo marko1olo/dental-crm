@@ -30,7 +30,7 @@ export interface VimisSendResult {
 	outboxId: string;
 	logId: string;
 	status: EgiszTransmissionStatus;
-	regNumber: string;
+	regNumber?: string | null | undefined;
 	transactionId: string;
 	canonicalXmlLength: number;
 	flkErrors?: readonly string[] | undefined;
@@ -130,6 +130,9 @@ export async function dispatchPackageToVimis(
 								? "Error"
 								: "Pending";
 
+		const isRegistered =
+			itemResult?.status === "registered_in_remd" || itemResult?.status === "Registered";
+
 		return {
 			success: isSuccess,
 			queued: false,
@@ -137,23 +140,24 @@ export async function dispatchPackageToVimis(
 			logId: enqueueRes.logId,
 			status: mappedStatus,
 			transactionId: itemResult?.transactionId || enqueueRes.outboxId,
-			regNumber: itemResult?.transactionId || enqueueRes.outboxId,
+			regNumber: isRegistered ? (itemResult?.transactionId || enqueueRes.outboxId) : null,
 			canonicalXmlLength: enqueueRes.canonicalXmlLength,
 			...(decodedErrors !== undefined ? { flkErrors: decodedErrors } : {}),
 			...(rawErr ? { message: String(rawErr) } : !isSuccess ? { message: "Ошибка при передаче документа в РЭМД" } : {}),
 		};
 	}
 
-	const regNumber = `РЭМД-77-2026-${enqueueRes.outboxId.slice(0, 8).toUpperCase()}`;
-
+	// [EGI-01] Ликвидация фабрикации фиктивных номеров регистрации:
+	// При постановке СЭМД в очередь отправки регистрационный номер отсутствует (строго null),
+	// настоящий регистрационный номер присваивается исключительно при получении официальной квитанции Минздрава РФ.
 	return {
 		success: true,
 		queued: true,
 		outboxId: enqueueRes.outboxId,
 		logId: enqueueRes.logId,
-		status: enqueueRes.status as EgiszTransmissionStatus,
+		status: (enqueueRes.status as EgiszTransmissionStatus) || "Pending",
 		transactionId: enqueueRes.outboxId,
-		regNumber,
+		regNumber: null,
 		canonicalXmlLength: enqueueRes.canonicalXmlLength,
 		message: "Пакет СЭМД успешно принят в очередь отправки в РЭМД ЕГИСЗ Минздрава",
 	};

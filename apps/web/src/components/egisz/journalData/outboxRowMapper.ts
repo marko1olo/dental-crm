@@ -54,10 +54,10 @@ export function mapOutboxRowToRemdRecord(raw: unknown, clinicFallback?: unknown)
 	let registrationInfo: RemdRegistrationInfo | undefined = undefined;
 	if (item.registrationInfo && typeof item.registrationInfo === "object") {
 		registrationInfo = item.registrationInfo as RemdRegistrationInfo;
-	} else if (item.remdDocumentId || item.remdTransactionId || status === "registered") {
+	} else if (status === "registered" && (item.remdDocumentId || item.remdTransactionId || item.registrationNumber)) {
 		registrationInfo = {
 			remdDocId: String(item.remdDocumentId || id),
-			regNumber: String(item.remdTransactionId || item.remdDocumentId || "РЭМД-77-ПРИНЯТО"),
+			regNumber: String(item.remdTransactionId || item.remdDocumentId || item.registrationNumber),
 			registeredAt: updatedAt, registryOid: "1.2.643.5.1.13.13.11.1527",
 			documentHashGost: String(item.payloadHashSha256 || ""), channel: "EGISZ_INTEGRATION_GATEWAY_V3",
 		};

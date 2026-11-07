@@ -67,7 +67,7 @@ export function useEgiszModalController({
 		try {
 			if (activeDocType === "cda_semd") {
 				const txId = await submitCdaPackageToRemd({ semdPayload: state.semdPayload, generatedXml: state.generatedXml, doctorSig: crypto.doctorSig, moSig: crypto.moSig });
-				showToast(`СЭМД успешно передан в РЭМД ЕГИСЗ (Рег. №: ${txId})`, "success");
+				showToast(`СЭМД успешно поставлен в очередь отправки РЭМД ЕГИСЗ (ID: ${txId})`, "success");
 				if (onSentSuccess) onSentSuccess({ type: activeDocType, documentId: txId, timestamp: new Date().toISOString() });
 			} else {
 				const txId = await submitFnsTaxToGateway({ patientId: state.fnsPayload.taxpayer?.inn || "taxpayer", visitId: state.fnsPayload.documentNumber || `FNS-${Date.now()}` });

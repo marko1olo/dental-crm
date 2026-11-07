@@ -140,6 +140,24 @@ describe("MDLP / Chestny Znak API Routes", () => {
 		assert(disposeJson.disposalDocument.xmlContent.includes("<sgtin>03400930000038DISPOSE123456</sgtin>"));
 	});
 
+	test("GET /api/mdlp/status returns honest gateway connection status and statistics", async () => {
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/mdlp/status",
+			headers: clinicHeaders,
+		});
+
+		assert.strictEqual(response.statusCode, 200);
+		const json = response.json();
+		assert.strictEqual(json.success, true);
+		assert(["online", "degraded", "offline"].includes(json.status));
+		assert(typeof json.mode === "string");
+		assert(typeof json.message === "string");
+		assert(typeof json.registeredItemsCount === "number");
+		assert(typeof json.disposedItemsCount === "number");
+		assert(typeof json.pendingQueueCount === "number");
+	});
+
 	test("GET /api/mdlp/catalog/anesthetics returns catalog of dental anesthetics", async () => {
 		const response = await app.inject({
 			method: "GET",

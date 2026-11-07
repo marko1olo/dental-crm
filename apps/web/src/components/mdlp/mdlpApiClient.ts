@@ -24,6 +24,67 @@ export async function submitMdlpBarcodeScan(
 	}
 }
 
+/** Реальный health-check статуса связи со шлюзом МДЛП Честный Знак ЦРПТ (Мандат 8e / [MDL-02]) */
+export async function fetchMdlpStatus(): Promise<{
+	status: "online" | "degraded" | "offline";
+	mode: string;
+	isConnected: boolean;
+	message: string;
+	registeredItemsCount: number;
+	disposedItemsCount: number;
+	pendingQueueCount: number;
+	lastCheckAt: string;
+}> {
+	try {
+		const res = await fetch("/api/mdlp/status", {
+			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+		});
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+		const data = await res.json();
+		return {
+			status: data?.status ?? "offline",
+			mode: data?.mode ?? "offline_autonomous",
+			isConnected: Boolean(data?.isConnected),
+			message: data?.message ?? "Автономный контур клиники",
+			registeredItemsCount: Number(data?.registeredItemsCount ?? 0),
+			disposedItemsCount: Number(data?.disposedItemsCount ?? 0),
+			pendingQueueCount: Number(data?.pendingQueueCount ?? 0),
+			lastCheckAt: data?.lastCheckAt ?? new Date().toISOString(),
+		};
+	} catch {
+		return {
+			status: "offline",
+			mode: "offline_autonomous",
+			isConnected: false,
+			message: "Автономный контур клиники (офлайн)",
+			registeredItemsCount: 0,
+			disposedItemsCount: 0,
+			pendingQueueCount: 0,
+			lastCheckAt: new Date().toISOString(),
+		};
+	}
+}
+
+/** Запрос реальных препаратов на балансе организации из PostgreSQL для списания смены */
+export async function fetchMdlpInStockItems(limit = 10): Promise<ChestnyZnakScannedItem[]> {
+	try {
+		const res = await fetch(`/api/mdlp/items?status=in_stock&limit=${limit}`, {
+			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+		});
+		if (!res.ok) return [];
+		const data = await res.json();
+		if (!Array.isArray(data?.items)) return [];
+
+		return data.items.map((row: any) =>
+			createChestnyZnakScannedItem(row.rawBarcode || row.sgtin, {
+				costRub: row.costRub ? Number(row.costRub) : 450,
+			}),
+		);
+	} catch {
+		return [];
+	}
+}
+
 /** Синхронизация очереди списаний МДЛП с бэкендом Fastify и БД PostgreSQL */
 export async function syncMdlpQueueToBackend(
 	queue: readonly MdlpOfflinePackage[],

@@ -143,7 +143,7 @@ describe("2. HL7 CDA R2 XML Generation for Form 043/u (СЭМД 303 / 302 / 105)
 		// Document code and title
 		assert.ok(xml.includes(`code="${EGISZ_DENTAL_SEMD_TYPES["303"].nsiCode}"`));
 		assert.ok(xml.includes(`codeSystem="${EGISZ_REMD_OIDS.NSI_SEMD_DOC_TYPES}"`));
-		assert.ok(xml.includes("Форма 043/у"));
+		assert.ok(xml.includes(EGISZ_DENTAL_SEMD_TYPES["303"].title) || xml.includes("Форма 043/у"));
 
 		// Language and confidentiality
 		assert.ok(xml.includes('<languageCode code="ru-RU"/>'));

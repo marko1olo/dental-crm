@@ -74,8 +74,10 @@ export async function submitCdaPackageToRemd({
 		throw new Error(errMsg);
 	}
 
-	const data = (await res.json()) as { regNumber?: string; transactionId?: string; outboxId?: string };
-	return data.regNumber || data.transactionId || data.outboxId || "РЕГ-РЭМД-ПРИНЯТО";
+	const data = (await res.json()) as { regNumber?: string | null; transactionId?: string; outboxId?: string; queued?: boolean };
+	// [EGI-01] Если документ зарегистрирован и получен реальный номер квитанции Минздрава — возвращаем его,
+	// иначе возвращаем честный идентификатор пакета в очереди отправки (outboxId / transactionId) без фабрикации номеров
+	return data.regNumber || data.transactionId || data.outboxId || effectiveVisitId;
 }
 
 export async function submitFnsTaxToGateway({

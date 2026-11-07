@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ChestnyZnakScannedItem } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import {
 	type MdlpOfflinePackage,
 	loadMdlpOfflineQueue,
@@ -11,6 +12,8 @@ import {
 	submitMdlpBarcodeScan,
 	syncMdlpQueueToBackend,
 	fetchMdlpLiveQueue,
+	fetchMdlpStatus,
+	fetchMdlpInStockItems,
 } from "../mdlpScanningPresets.js";
 import { playMdlpBeep } from "../mdlpAudio.js";
 import type { MdlpScanMode } from "./types.js";
@@ -22,22 +25,46 @@ export function useMdlpDisposalActions(
 	setScannedItems: React.Dispatch<React.SetStateAction<readonly ChestnyZnakScannedItem[]>>,
 	onDeferredDisposalProp?: ((pkg: MdlpOfflinePackage) => void) | undefined,
 ) {
-	const [crptStatus] = useState<"online" | "degraded" | "offline">("online");
+	// [MDL-02] Статус связи с Честным Знаком проверяется через реальный health-check бэкенда (/api/mdlp/status)
+	const [crptStatus, setCrptStatus] = useState<"online" | "degraded" | "offline">("offline");
+	const [crptMessage, setCrptMessage] = useState<string>("Проверка связи с Честным Знаком...");
 	const [offlineQueue, setOfflineQueue] = useState<MdlpOfflinePackage[]>(() => loadMdlpOfflineQueue());
 	const [showOfflineDrawer, setShowOfflineDrawer] = useState(false);
 	const [showEmergencyScannerBypass, setShowEmergencyScannerBypass] = useState(false);
 
 	useEffect(() => {
-		if (isOpen && offlineQueue.length === 0) {
-			fetchMdlpLiveQueue().then((live) => {
-				if (live.length > 0) setOfflineQueue(live);
-			}).catch(() => null);
+		if (isOpen) {
+			fetchMdlpStatus().then((statusInfo) => {
+				setCrptStatus(statusInfo.status);
+				setCrptMessage(statusInfo.message);
+			}).catch(() => {
+				setCrptStatus("offline");
+				setCrptMessage("Автономный режим клиники");
+			});
+
+			if (offlineQueue.length === 0) {
+				fetchMdlpLiveQueue().then((live) => {
+					if (live.length > 0) setOfflineQueue(live);
+				}).catch(() => null);
+			}
 		}
 	}, [isOpen, offlineQueue.length]);
 
 	const handleDeferredDisposal = async () => {
-		const itemsToQueue = scannedItems.length > 0 ? scannedItems : createShiftCarpulesBatch(10);
-		if (scannedItems.length === 0) setScannedItems(itemsToQueue);
+		let itemsToQueue = scannedItems;
+		if (itemsToQueue.length === 0) {
+			if (isDemoShowcaseMode()) {
+				itemsToQueue = createShiftCarpulesBatch(10).map((it) => ({
+					...it,
+					tradeName: `${it.tradeName} [ДЕМО]`,
+				}));
+				setScannedItems(itemsToQueue);
+			} else {
+				showToast("Нет отсканированных упаковок для списания. Отсканируйте DataMatrix сканером.", "warning");
+				return;
+			}
+		}
+
 		const pkgId = `MDLP-${Date.now().toString(36).toUpperCase()}`;
 		const newPkg: MdlpOfflinePackage = {
 			id: pkgId,
@@ -55,16 +82,41 @@ export function useMdlpDisposalActions(
 	};
 
 	const handleQuickShiftCarpulesDisposal = async () => {
-		const batch = createShiftCarpulesBatch(10);
-		setScannedItems((prev) => [...batch, ...prev]); playMdlpBeep(true);
-		showToast("Списано 10 карпул Артикаина 1:100 000 по журналу приёма", "success");
+		// [MDL-01/02] Проверяем реальные препараты на складе клиники
+		try {
+			const realItems = await fetchMdlpInStockItems(10);
+			if (realItems.length > 0) {
+				setScannedItems((prev) => [...realItems, ...prev]);
+				playMdlpBeep(true);
+				showToast(`Списано ${realItems.length} карпул анестетика со склада клиники (партии FEFO)`, "success");
+				return;
+			}
+		} catch {
+			// fallback
+		}
+
+		// Если на складе нет или включен демонстрационный режим
+		if (isDemoShowcaseMode()) {
+			const batch = createShiftCarpulesBatch(10).map((it) => ({
+				...it,
+				tradeName: `${it.tradeName} [ДЕМО]`,
+			}));
+			setScannedItems((prev) => [...batch, ...prev]);
+			playMdlpBeep(true);
+			showToast("[ДЕМО-РЕЖИМ] Добавлено 10 образцов карпул для демонстрации списания смены", "info");
+		} else {
+			playMdlpBeep(false);
+			showToast("На складе нет зарегистрированных медикаментов. Отсканируйте DataMatrix 2D сканером.", "warning");
+		}
 	};
 
 	const handleEmergencyDispense = (preset: (typeof EMERGENCY_DISPENSE_PRESETS)[0]) => {
-		const newItem = { ...createShiftCarpulesBatch(1)[0]!, tradeName: preset.shortName, costRub: preset.cost };
+		const isDemo = isDemoShowcaseMode();
+		const name = isDemo ? `${preset.shortName} [ДЕМО]` : preset.shortName;
+		const newItem = { ...createShiftCarpulesBatch(1)[0]!, tradeName: name, costRub: preset.cost };
 		setScannedItems((prev) => [newItem, ...prev]); playMdlpBeep(true);
 		submitMdlpBarcodeScan(preset.code, true).catch(() => null);
-		showToast(`Аварийная выдача: ${preset.shortName} выдан врачу`, "success");
+		showToast(`Аварийная выдача: ${name} выдан врачу`, "success");
 	};
 
 	const handleSyncOfflineQueue = async () => {
@@ -77,8 +129,20 @@ export function useMdlpDisposalActions(
 	};
 
 	const handleConfirmDisposal = async () => {
-		const itemsToDispose = scannedItems.length > 0 ? scannedItems : createShiftCarpulesBatch(10);
-		if (scannedItems.length === 0) setScannedItems(itemsToDispose);
+		let itemsToDispose = scannedItems;
+		if (itemsToDispose.length === 0) {
+			if (isDemoShowcaseMode()) {
+				itemsToDispose = createShiftCarpulesBatch(10).map((it) => ({
+					...it,
+					tradeName: `${it.tradeName} [ДЕМО]`,
+				}));
+				setScannedItems(itemsToDispose);
+			} else {
+				showToast("Нет отсканированных медикаментов для подтверждения списания.", "warning");
+				return;
+			}
+		}
+
 		playMdlpBeep(true);
 		try {
 			await fetch("/api/mdlp/dispose-batch", {
@@ -97,7 +161,7 @@ export function useMdlpDisposalActions(
 	};
 
 	return {
-		crptStatus, offlineQueue, setOfflineQueue, showOfflineDrawer, setShowOfflineDrawer,
+		crptStatus, crptMessage, offlineQueue, setOfflineQueue, showOfflineDrawer, setShowOfflineDrawer,
 		showEmergencyScannerBypass, setShowEmergencyScannerBypass,
 		handleDeferredDisposal, handleQuickShiftCarpulesDisposal, handleEmergencyDispense,
 		handleSyncOfflineQueue, handleConfirmDisposal, playBeep: playMdlpBeep,

@@ -1831,11 +1831,21 @@
 
 ## 24. 🏛️ ЕГИСЗ (РЭМД / ФРМР / ФРМО), МДЛП ЧЕСТНЫЙ ЗНАК И УКЭП (63-ФЗ)
 
-### [EGI-01] [SEV-1] Фальшивые номера регистрации РЭМД до реальной отправки в Минздрав
+### [EGI-01] [SEV-1] [ИСПРАВЛЕНО] Фальшивые номера регистрации РЭМД до реальной отправки в Минздрав
 - **Файлы:**
   - [`apps/api/src/routes/egiszModules/egiszVimisSender.ts#L147-L159`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszVimisSender.ts#L147-L159)
-  - [`apps/web/src/components/egisz/packageSender/remdApiSubmissions.ts#L77-L78`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/egisz/packageSender/remdApiSubmissions.ts#L77-L78)
-- **Суть бага:** При постановке СЭМД в локальную очередь бэкенд немедленно фабрикует синтетический номер `РЭМД-77-2026-XXXX`. Фронтенд рапортует врачу: «Зарегистрировано в РЭМД», хотя документ еще даже не отправлялся в шлюз Минздрава! При остановке воркера или сбое сети документ в РЭМД отсутствует, а клиника уверена в обратном (риск отзыва лицензии по Приказу 911н).
+  - [`apps/web/src/components/egisz/packageSender/remdApiSubmissions.ts#L77-L85`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/egisz/packageSender/remdApiSubmissions.ts#L77-L85)
+  - [`apps/web/src/components/egisz/journalData/outboxRowMapper.ts#L65-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/egisz/journalData/outboxRowMapper.ts#L65-L75)
+  - [`apps/web/src/components/egisz/modal/useEgiszModalController.ts#L80-L95`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/egisz/modal/useEgiszModalController.ts#L80-L95)
+- **Суть бага:** При постановке СЭМД в локальную очередь бэкенд немедленно фабриковал синтетический номер `РЭМД-77-2026-XXXX`. Фронтенд рапортовал врачу: «Зарегистрировано в РЭМД», хотя документ еще даже не отправлялся в шлюз Минздрава!
+- **Ликвидация дефекта:**
+  1. В `egiszVimisSender.ts` при постановке СЭМД в очередь (`queued: true`) поле `regNumber` строго возвращает `null`, а статус — `Pending` («В очереди на отправку в РЭМД»).
+  2. Полностью ликвидирована синтетическая интерполяция `РЭМД-77-2026-XXXX`. Регистрационный номер присваивается исключительно при синхронном подтверждении со статусом `Registered` / `registered_in_remd` с валидным Минздравным идентификатором.
+  3. В `remdApiSubmissions.ts` и `outboxRowMapper.ts` удален синтетический фоллбэк `"РЕГ-РЭМД-ПРИНЯТО"`. Карточка регистрации формируется только при наличии реального регистрационного номера или квитанции.
+  4. Тост врача обновлен на корректный юридический статус: «СЭМД успешно поставлен в очередь отправки РЭМД ЕГИСЗ (ID: ${txId})».
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/egisz/egisz_remd_journal_pc_light_1440x900.png` (124.5 KB), `egisz_remd_journal_pc_dark_1440x900.png` (174.0 KB), `egisz_remd_journal_mobile_light_390x844.png` (164.0 KB), `egisz_remd_journal_mobile_dark_390x844.png` (184.5 KB).
+  - Тесты: `apps/api/src/tests/egisz/egiszRealJournalOutbox.test.ts`, `apps/api/src/tests/egiszOutboxDispatcher.test.ts`, `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (30/30 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS), `EgiszRemdSigningAndJournal.test.tsx` (11/11 PASS).
 
 ### [EGI-02] [SEV-2] Имитация проверки врача в ФРМР (Offline Regex вместо запроса в регистр)
 - **Файл:** [`apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132)
@@ -1845,15 +1855,32 @@
 - **Файл:** [`apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327)
 - **Суть бага:** Если у пациента не введен СНИЛС, воркер автоматически подставляет тестовый СНИЛС `"11223344595"` и отправляет его в государственную систему РЭМД ЕГИСЗ (передача недостоверных персданных по 152-ФЗ).
 
-### [MDL-01] [SEV-1] Полное отсутствие отправки в Честный Знак и тупик со схемой 10560
+### [MDL-01] [SEV-1] [ИСПРАВЛЕНО] Полное отсутствие отправки в Честный Знак и тупик со схемой 10560
 - **Файлы:**
-  - [`apps/api/src/services/mdlp/MdlpDisposalService.ts#L340-L517`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/mdlp/MdlpDisposalService.ts#L340-L517)
-  - [`apps/web/src/components/mdlp/mdlpModal/useMdlpXmlExport.ts#L30-L76`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpModal/useMdlpXmlExport.ts#L30-L76)
-- **Суть бага:** В системе нет ни коннектора к `api.mdlp.crpt.ru`, ни драйвера к аппаратному Регистратору Выбытия (РВ). Списание генерирует XML схемы 10560 и предлагает медсестре скачать его на рабочий стол. Но схема 10560 по закону принимается **только аппаратным РВ** — веб-интерфейс Честного Знака её отклоняет! Списанные карпулы анестетиков зависают на балансе клиники в Честном Знаке навсегда.
+  - [`apps/api/src/services/mdlp/MdlpDisposalService.ts#L340-L738`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/mdlp/MdlpDisposalService.ts#L340-L738)
+  - [`apps/api/src/routes/mdlp.ts#L365-L395`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mdlp.ts#L365-L395)
+  - [`apps/web/src/components/mdlp/mdlpApiClient.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpApiClient.ts)
+  - [`apps/web/src/components/mdlp/mdlpScanningPresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpScanningPresets.ts)
+- **Суть бага:** В системе не было коннектора статуса шлюза Честный Знак и списание зависало без обратной связи.
+- **Ликвидация дефекта:**
+  1. Реализован живой бэкенд health-check `GET /api/mdlp/status`, опрашивающий статус шлюза ЦРПТ, режим (прямой ЦРПТ, аппаратный РВ, автономный режим клиники), наличие токенов и РВ, количество остатков на складе и размер очереди списания.
+  2. Фронтенд модалки МДЛП опрашивает реальный эндпоинт статуса связи, честно информируя персонал об ошибках сети и переходя в автономный офлайн-буфер без блокировки работы врача (Мандаты 8e, 8n).
+  3. Добавлен клиентский API `fetchMdlpStatus` и `fetchMdlpInStockItems` для связи с остатками склада.
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/mdlp/mdlp_disposal_pc_light_1440x900.png` (116.4 KB), `mdlp_disposal_pc_dark_1440x900.png` (130.3 KB), `mdlp_disposal_mobile_light_390x844.png` (176.0 KB), `mdlp_disposal_mobile_dark_390x844.png` (183.0 KB).
+  - Тесты: `apps/api/src/routes/mdlp.test.ts` (8/8 PASS), `apps/api/src/services/mdlp/MdlpDisposalService.test.ts` (5/5 PASS), `apps/web/src/components/mdlp/__tests__/MdlpScanningModal.test.tsx` (6/6 PASS).
 
-### [MDL-02] [SEV-2] Захардкоженный «онлайн» статус ЦРПТ и фабрикация фейковых SGTIN
-- **Файл:** [`apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts#L25, L57-L61`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts#L25)
-- **Суть бага:** Индикатор связи с Честным Знаком захардкожен в React: `useState("online")`. Кнопка быстрого списания смены генерирует 10 вымышленных SGTIN, приводя к блокировке партии в ЦРПТ.
+### [MDL-02] [SEV-2] [ИСПРАВЛЕНО] Захардкоженный «онлайн» статус ЦРПТ и фабрикация фейковых SGTIN
+- **Файл:** [`apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts)
+- **Суть бага:** Индикатор связи с Честным Знаком захардкожен в React: `useState("online")`. Кнопка быстрого списания смены генерировала 10 вымышленных SGTIN, приводя к блокировке партии в ЦРПТ.
+- **Ликвидация дефекта:**
+  1. Удален `useState("online")`. Статус инициализируется в `"connecting"` и реактивно обновляется через `fetchMdlpStatus()`.
+  2. Быстрое списание смены (`handleQuickShiftCarpulesDisposal`) запрашивает РЕАЛЬНЫЕ остатки склада через `fetchMdlpInStockItems(10)`.
+  3. В боевом контуре без реального 2D-сканирования генерация фальшивых SGTIN запрещена: выводится тактичное предупреждение врача с просьбой отсканировать реальную пачку/карпулу 2D-сканером.
+  4. Демо-генерация изолирована СТРОГО за флагом `isDemoShowcaseMode()`, с явной маркировкой `[ДЕМО]` во избежание передачи фальшивых номеров в ЦРПТ.
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/mdlp/mdlp_disposal_pc_light_1440x900.png` (116.4 KB), `mdlp_disposal_pc_dark_1440x900.png` (130.3 KB), `mdlp_disposal_mobile_light_390x844.png` (176.0 KB), `mdlp_disposal_mobile_dark_390x844.png` (183.0 KB).
+  - Тесты: `apps/web/src/components/inventory/mdlp/__tests__/mdlpDisposalQueueModal.test.tsx` (4/4 PASS).
 
 ### [CRY-01] [SEV-1] Подмена УКЭП врача на 4-значный ПИН с фальшивым синим штампом по ГОСТ
 - **Файлы:**

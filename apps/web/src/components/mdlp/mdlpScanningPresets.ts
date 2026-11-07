@@ -21,4 +21,6 @@ export {
 	submitMdlpBarcodeScan,
 	syncMdlpQueueToBackend,
 	fetchMdlpLiveQueue,
+	fetchMdlpStatus,
+	fetchMdlpInStockItems,
 } from "./mdlpApiClient.js";
