@@ -16,6 +16,7 @@ import {
 } from "@dental/shared";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { enqueueOfflinePayment } from "../../../offline/offlinePaymentQueue.js";
 import type {
 	CashboxTenderType,
 	ClientPayerType,
@@ -239,10 +240,6 @@ export function useCheckoutState(props: CashRegisterCheckoutModalProps) {
 			onPaymentComplete?.(paymentData);
 			setTimeout(onClose, 800);
 		} catch (err: unknown) {
-			const errorMsg =
-				err instanceof Error
-					? err.message
-					: "Сетевой сбой при связи с кассой. Проверьте подключение и повторите.";
 			if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
 				const fallbackData = { ...payload, status: isWarrantyCase ? "paid_warranty" : "paid" };
 				setReceiptSuccess(fallbackData);
@@ -252,8 +249,59 @@ export function useCheckoutState(props: CashRegisterCheckoutModalProps) {
 				setTimeout(onClose, 800);
 				return;
 			}
-			setErrorMessage(errorMsg);
-			setIsSubmitting(false);
+
+			try {
+				const queuedPayment = await enqueueOfflinePayment({
+					patientId: patientId || "pat-walkin",
+					patientName: (props as any).patientName || "Пациент",
+					visitId: visitId || undefined,
+					totalKopecks: amountKopecks,
+					paymentType: method === "split" ? "mixed" : (method as any),
+					splitDetails:
+						method === "split"
+							? {
+									cashKopecks: cashKop > 0 ? cashKop : undefined,
+									cardKopecks: cardKop > 0 ? cardKop : undefined,
+									sbpKopecks: sbpKop > 0 ? sbpKop : undefined,
+									depositKopecks: depKop > 0 ? depKop : undefined,
+								}
+							: undefined,
+					items: [
+						{
+							name: isWarrantyCase
+								? "Гарантийный расчёт (скидка 100%)"
+								: note || "Оплата стоматологических услуг",
+							priceKopecks: amountKopecks,
+							quantity: 1,
+						},
+					],
+					cashierName,
+					patientPhoneOrEmail: customerContact.trim() || undefined,
+					printFiscalReceipt: true,
+				});
+
+				const offlineSuccessData = {
+					...payload,
+					status: isWarrantyCase ? "paid_warranty" : "paid",
+					fiscalReceiptNumber:
+						queuedPayment.fiscalQueueId ||
+						`OFF-${queuedPayment.id.slice(-6).toUpperCase()}`,
+					isOfflineBuffered: true,
+				};
+				setReceiptSuccess(offlineSuccessData);
+				setIsSubmitting(false);
+				onSuccess?.(offlineSuccessData);
+				onPaymentComplete?.(offlineSuccessData);
+				setTimeout(onClose, 800);
+				return;
+			} catch (enqueueErr) {
+				const errorMsg =
+					err instanceof Error
+						? err.message
+						: "Сетевой сбой при связи с кассой. Проверьте подключение и повторите.";
+				setErrorMessage(errorMsg);
+				setIsSubmitting(false);
+			}
 		}
 	};
 

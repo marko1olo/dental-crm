@@ -220,6 +220,91 @@ export async function syncAppointmentQueue(
 }
 
 /**
+ * Standard server dispatcher to flush offline appointment mutations to /api/appointments.
+ */
+export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount: number; failedCount: number }> {
+	return syncAppointmentQueue(async (mutation) => {
+		const appt = mutation.appointment;
+		let url = "/api/appointments";
+		let method = "POST";
+		let body: Record<string, unknown> = {};
+
+		if (mutation.action === "CREATE_APPOINTMENT") {
+			url = "/api/appointments";
+			method = "POST";
+			body = {
+				patientId: appt.patientId,
+				doctorUserId: appt.doctorId,
+				chairId: appt.chairId,
+				startsAt: appt.startTime,
+				endsAt: appt.endTime,
+				reason: appt.notes || "Приём (офлайн)",
+				clientMutationId: appt.clientReferenceId || mutation.id,
+			};
+		} else if (mutation.action === "UPDATE_APPOINTMENT") {
+			url = `/api/appointments/${encodeURIComponent(appt.id)}`;
+			method = "PATCH";
+			body = {
+				startsAt: appt.startTime,
+				endsAt: appt.endTime,
+				status: appt.status,
+				reason: appt.notes,
+				chairId: appt.chairId,
+				doctorUserId: appt.doctorId,
+				clientMutationId: mutation.id,
+			};
+		} else if (mutation.action === "CANCEL_APPOINTMENT") {
+			url = `/api/appointments/${encodeURIComponent(appt.id)}/status`;
+			method = "PATCH";
+			body = {
+				status: "cancelled",
+				clientMutationId: mutation.id,
+			};
+		}
+
+		const res = await fetch(url, {
+			method,
+			headers: {
+				"Content-Type": "application/json",
+				"X-Dente-Admin-Secret": "dente-core-secret-2026",
+				"Idempotency-Key": appt.clientReferenceId || mutation.id,
+			},
+			body: JSON.stringify(body),
+		});
+
+		if (res.ok) {
+			const data = (await res.json().catch(() => null)) as { id?: string; appointment?: { id?: string } } | null;
+			return { success: true, serverId: data?.id || data?.appointment?.id };
+		}
+		if (res.status === 409) {
+			// Idempotent duplicate: already registered on server
+			return { success: true };
+		}
+		return { success: false };
+	});
+}
+
+/**
+ * Online event listener for automatic offline appointment flushing.
+ */
+let isAppointmentOnlineListenerInit = false;
+export function initOfflineAppointmentAutoSync(): void {
+	if (typeof window !== "undefined" && !isAppointmentOnlineListenerInit) {
+		window.addEventListener("online", () => {
+			void flushOfflineAppointmentsToServer().then((result) => {
+				if (result.syncedCount > 0) {
+					logger.info(`[offlineAppointmentQueue] Synced ${result.syncedCount} queued appointments to server on network restore.`);
+				}
+			});
+		});
+		isAppointmentOnlineListenerInit = true;
+	}
+}
+
+// Auto-initialize online sync listener
+initOfflineAppointmentAutoSync();
+
+/**
  * Clears schedule cache memory.
  */
 export function clearScheduleMemoryCache(): void {

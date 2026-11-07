@@ -1,4 +1,5 @@
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { enqueueOfflinePayment } from "../../../offline/offlinePaymentQueue.js";
 
 export interface RecordCrmPaymentParams {
 	patientId?: string | undefined;
@@ -77,6 +78,35 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 			}
 			return data;
 		}
+
+		// Офлайн-устойчивость (Мандат 8e, 8n): если сервер недоступен, ставим платеж в IndexedDB offlinePaymentQueue
+		const queuedPayment = await enqueueOfflinePayment({
+			patientId,
+			patientName: "Пациент",
+			visitId: visitId || undefined,
+			totalKopecks: targetBillKop,
+			paymentType: targetBillKop === 0 ? "cash" : (isSplitPayment ? "mixed" : (primaryMethod as any)),
+			splitDetails: isSplitPayment
+				? {
+						cashKopecks: cashKop > 0 ? cashKop : undefined,
+						cardKopecks: electronicKop > 0 ? electronicKop : undefined,
+						depositKopecks: bonusKop > 0 ? bonusKop : undefined,
+					}
+				: undefined,
+			items: [
+				{
+					name: targetBillKop === 0 ? "Гарантийное обслуживание (100% скидка)" : "Оплата стоматологических услуг",
+					priceKopecks: targetBillKop,
+					quantity: 1,
+				},
+			],
+			cashierName: effectiveCashierFullName,
+			printFiscalReceipt: true,
+		});
+
+		return {
+			fiscalReceiptNumber: queuedPayment.fiscalQueueId || `OFF-${queuedPayment.id.slice(-6).toUpperCase()}`,
+		};
 	} catch (crmErr) {
 		console.warn("[FastCheckoutModal] Failed to record payment in CRM:", crmErr);
 	}

@@ -18,6 +18,26 @@ import { useScheduleStore } from "../../../store/scheduleStore";
 import { useSettingsStore } from "../../../store/settingsStore";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { scheduleAdminSecretRefusal } from "./scheduleAdminSecretRefusal";
+import {
+	enqueueOfflineAppointment,
+	generateOfflineAppointmentId,
+	type OfflineAppointmentItem,
+} from "../../../offline/offlineAppointmentQueue";
+
+function isNetworkFailure(error: unknown, status?: number): boolean {
+	if (typeof navigator !== "undefined" && !navigator.onLine) return true;
+	if (status && [502, 503, 504].includes(status)) return true;
+	if (error instanceof TypeError) return true;
+	const msg = String(error).toLowerCase();
+	return (
+		msg.includes("failed to fetch") ||
+		msg.includes("network") ||
+		msg.includes("offline") ||
+		msg.includes("econnrefused") ||
+		msg.includes("timeout") ||
+		msg.includes("abort")
+	);
+}
 
 export interface UseAppointmentMutationsProps {
 	dashboard: any;
@@ -232,6 +252,52 @@ export function useAppointmentMutations({
 			setError(null);
 			return true;
 		} catch (saveError) {
+			if (isNetworkFailure(saveError)) {
+				const offlineAppt: OfflineAppointmentItem = {
+					id: appointmentId,
+					clientReferenceId: appointmentId,
+					patientId: draft.patientId || sourceAppointment?.patientId || "",
+					patientName: sourceAppointment?.patientName || "Пациент",
+					doctorId: draft.doctorUserId || sourceAppointment?.doctorUserId || "",
+					chairId: draft.chairId || sourceAppointment?.chairId,
+					startTime: draft.startsAt,
+					endTime: draft.endsAt,
+					status: (draft.status as any) || sourceAppointment?.status || "scheduled",
+					notes: draft.reason,
+					organizationId: dashboard?.organizationId || "default_org",
+					createdAt: new Date().toISOString(),
+				};
+				await enqueueOfflineAppointment("UPDATE_APPOINTMENT", offlineAppt);
+
+				if (dashboard?.appointments) {
+					const updatedAppts = dashboard.appointments.map((a: any) =>
+						a.id === appointmentId
+							? { ...a, ...offlineAppt, startsAt: offlineAppt.startTime, endsAt: offlineAppt.endTime }
+							: a,
+					);
+					setDashboard({ ...dashboard, appointments: updatedAppts });
+				}
+
+				setAppointmentScheduleDirtyIds((current: Set<string>) => {
+					const next = new Set(current);
+					next.delete(appointmentId);
+					return next;
+				});
+				setAppointmentScheduleSaveStates((current: any) => ({
+					...current,
+					[appointmentId]: "saved",
+				}));
+				if (options.closeEditorOnSave !== false) {
+					setEditingAppointmentId(null);
+				}
+				setError(null);
+				showToast(
+					"Изменения записи сохранены локально (офлайн-режим) и будут синхронизированы при восстановлении связи.",
+					"success",
+				);
+				return true;
+			}
+
 			const message = operatorWorkflowFailureMessage(
 				"Запись не сохранена",
 				saveError,
@@ -407,6 +473,72 @@ export function useAppointmentMutations({
 			setError(null);
 			return true;
 		} catch (createError) {
+			if (isNetworkFailure(createError)) {
+				const clientRefId = generateOfflineAppointmentId();
+				const matchedPatient = dashboard?.patients?.find((p: any) => p.id === activeNewDraft.patientId);
+				const patientName = matchedPatient?.fullName || "Пациент (офлайн)";
+				const matchedDoctor = dashboard?.clinicSettings?.staff?.find(
+					(s: any) => s.id === activeNewDraft.doctorUserId,
+				);
+				const doctorName = matchedDoctor?.name || matchedDoctor?.fullName || "Врач";
+
+				const offlineAppt: OfflineAppointmentItem = {
+					id: clientRefId,
+					clientReferenceId: clientRefId,
+					patientId: activeNewDraft.patientId || selectedPatientId || "pat-offline",
+					patientName,
+					doctorId: activeNewDraft.doctorUserId || "doc-offline",
+					doctorName,
+					chairId: activeNewDraft.chairId,
+					startTime: activeNewDraft.startsAt,
+					endTime: activeNewDraft.endsAt,
+					status: "scheduled",
+					notes: activeNewDraft.reason,
+					organizationId: dashboard?.organizationId || "default_org",
+					createdAt: new Date().toISOString(),
+					isOfflineCreated: true,
+				};
+				await enqueueOfflineAppointment("CREATE_APPOINTMENT", offlineAppt);
+
+				const createdAppointmentModel = {
+					id: clientRefId,
+					patientId: offlineAppt.patientId,
+					doctorUserId: offlineAppt.doctorId,
+					chairId: offlineAppt.chairId,
+					startsAt: offlineAppt.startTime,
+					endsAt: offlineAppt.endTime,
+					status: "scheduled",
+					reason: offlineAppt.notes,
+					isOfflineCreated: true,
+				};
+
+				const nextAppointments = [...(dashboard?.appointments ?? []), createdAppointmentModel];
+				const nextDashboard = { ...(dashboard ?? {}), appointments: nextAppointments };
+				setDashboard(nextDashboard);
+
+				newAppointmentDraftUserEditedRef.current = false;
+				const freshNewDraft = newAppointmentDraftFromDashboard(nextDashboard, {
+					selectedPatientId: activeNewDraft.patientId || selectedPatientId,
+					selectedSpecialty: (selectedSpecialty as any) || undefined,
+					scheduleDefaultDoctorUserId: activeNewDraft.doctorUserId || null,
+					scheduleDefaultAssistantUserId: activeNewDraft.assistantUserId || null,
+					scheduleDefaultChairId: activeNewDraft.chairId || null,
+				});
+				if (newAppointmentDraftRef) {
+					newAppointmentDraftRef.current = freshNewDraft;
+				}
+				setNewAppointmentDraft(freshNewDraft);
+				setNewAppointmentSaveState("saved");
+				setNewAppointmentError(null);
+				setError(null);
+
+				showToast(
+					"Запись сохранена локально (офлайн-режим) и будет передана на сервер при появлении сети.",
+					"success",
+				);
+				return true;
+			}
+
 			const message = operatorWorkflowFailureMessage(
 				"Запись не создана",
 				createError,

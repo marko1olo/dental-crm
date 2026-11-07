@@ -300,7 +300,7 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 						action: "update",
 						payload: { status: "confirmed" },
 						timestamp: Date.now(),
-						idempotencyKey: "idem-batch-1",
+						idempotencyKey: `idem-batch-${Date.now()}`,
 						originNodeId: "doctor-remote",
 					},
 				],
@@ -311,5 +311,67 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		const json = res.json();
 		assert.strictEqual(json.ok, true);
 		assert.strictEqual(json.appliedCount, 1);
+	});
+
+	it("13. POST /api/sync/mesh/exchange: processes P2P bidirectional mesh exchange between workstations", async () => {
+		const payloadData = { status: "in_treatment" };
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/sync/mesh/exchange",
+			payload: {
+				exchangeId: `exch-${Date.now()}`,
+				senderNodeId: "tablet-dr-ivanov",
+				senderRole: "doctor_tablet",
+				senderVectorClock: { "tablet-dr-ivanov": 3 },
+				mutations: [
+					{
+						mutationId: "mut-p2p-1",
+						idempotencyKey: `idem-p2p-${Date.now()}`,
+						payloadHash: "0123456789abcdef0123456789abcdef",
+						entityKind: "appointment",
+						entityId: "app-p2p-101",
+						action: "update",
+						payload: payloadData,
+						updatedAt: new Date().toISOString(),
+						clientId: "tablet-dr-ivanov",
+					},
+				],
+				sentAt: new Date().toISOString(),
+				organizationId: testOrgId,
+			},
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.ok(json.exchangeId);
+		assert.ok(json.responderNodeId);
+		assert.ok(json.responderVectorClock);
+		assert.strictEqual(json.processedMutationsCount, 1);
+		assert.strictEqual(typeof json.appliedMutationsCount, "number");
+		assert.ok(Array.isArray(json.results));
+	});
+
+	it("14. POST /api/lan/p2p/dispatch: dispatches peer-to-peer event without server drop", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/lan/p2p/dispatch",
+			payload: {
+				messageId: `p2p-msg-${Date.now()}`,
+				eventType: "chair_status_changed",
+				senderNodeId: "workstation-cabinet-1",
+				senderRole: "reception_workstation",
+				senderName: "Ресепшн 1",
+				organizationId: testOrgId,
+				sentAt: new Date().toISOString(),
+				payload: { chairId: "chair-1", status: "patient_seated" },
+			},
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.strictEqual(json.ok, true);
+		assert.strictEqual(json.eventType, "chair_status_changed");
+		assert.ok(json.messageId);
+		assert.ok(json.receivedAt);
 	});
 });

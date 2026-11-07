@@ -22,6 +22,8 @@ import {
 } from "../services/offline";
 import { useOfflineStore } from "../store/offlineStore";
 import { useNetworkConnectivity } from "./useNetworkConnectivity";
+import { flushOfflineAppointmentsToServer } from "../offline/offlineAppointmentQueue";
+import { flushOfflinePaymentsToServer } from "../offline/offlinePaymentQueue";
 
 export interface UseOfflineSyncOptions extends SyncBatchDrainOptions {
 	autoSyncOnReconnect?: boolean | undefined;
@@ -174,6 +176,11 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 				};
 
 				const result = await offlineSyncService.drainOutbox(mergedOptions);
+				// Also flush appointment and payment domain queues
+				await Promise.allSettled([
+					flushOfflineAppointmentsToServer(),
+					flushOfflinePaymentsToServer(),
+				]);
 				await refresh();
 				return result;
 			} finally {

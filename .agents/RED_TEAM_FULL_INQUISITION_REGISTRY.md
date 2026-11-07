@@ -1188,23 +1188,44 @@
   3. Обеспечена 100% обратная совместимость и симметрия клиент-сервер: и плоский, и вложенный payload гарантированно проходят валидацию без 400 ошибок.
   4. Проверено тестами `packages/shared/src/fiscal/validation.test.ts` (20/20 PASS), `fiscalDecompositionSmoke.test.ts` (2/2 PASS), `fiscalQueueDisconnectionStress.test.ts` (5/5 PASS) и `offlineQueueResilienceOff01Off02Off03.test.ts` (DTO alignment 5/5 PASS).
 
-### [OFF-04] [SEV-1] Симулятор P2P LAN репликации (битые роуты и мертвый UDP-демон)
+### [OFF-04] [SEV-1] [ИСПРАВЛЕНО] Симулятор P2P LAN репликации (битые роуты и мертвый UDP-демон)
 - **Файлы:**
-  - [`apps/web/src/services/offline/lanMeshReplicationService.ts#L277`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/offline/lanMeshReplicationService.ts#L277)
-  - [`apps/web/src/services/offline/p2p/p2pPeerRelay.ts#L19`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/offline/p2p/p2pPeerRelay.ts#L19)
-  - [`apps/api/src/services/lanMeshService.ts#L101-L201`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/lanMeshService.ts#L101-L201)
-  - [`apps/api/src/routes/lanNetwork.ts#L519-L526`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lanNetwork.ts#L519-L526)
-- **Суть бага:** Декларации о «P2P LAN синхронизации без сервера» являются бутафорией:
-  1. Фронтенд шлёт запросы на `/api/sync/mesh/exchange` и `/api/lan/p2p/dispatch` — оба роута отсутствуют на бэкенде (HTTP 404).
-  2. Метод `lanMeshService.start()` (UDP-мультикаст на 4101 порту) нигде не вызывается при старте сервера Fastify.
-  3. Роут `POST /api/network/lan-mesh/mutations` валидирует тело и возвращает фиктивный `{ ok: true }` без записи в PostgreSQL.
+  - [`apps/api/src/routes/lanNetwork.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lanNetwork.ts)
+  - [`apps/api/src/serverModules/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/serverModules/index.ts)
+  - [`apps/api/src/tests/lanNetworkRoutes.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/lanNetworkRoutes.test.ts)
+  - [`docs/proofs/offline/lan_mesh_pairing_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/offline/lan_mesh_pairing_pc_light_1440x900.png)
+  - [`docs/proofs/offline/lan_mesh_pairing_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/offline/lan_mesh_pairing_pc_dark_1440x900.png)
+- **Суть бага:** Декларации о «P2P LAN синхронизации без сервера» являлись бутафорией:
+  1. Фронтенд шлёт запросы на `/api/sync/mesh/exchange` и `/api/lan/p2p/dispatch` — оба роута отсутствовали на бэкенде (HTTP 404).
+  2. Метод `lanMeshService.start()` (UDP-мультикаст на 4101 порту) нигде не вызывался при старте сервера Fastify.
+  3. Роут `POST /api/network/lan-mesh/mutations` возвращал фиктивный `{ ok: true }` без записи в PostgreSQL.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `lanNetwork.ts` реализован боевой эндпоинт `POST /api/sync/mesh/exchange`: принимает `meshSyncExchangeRequestSchema`, валидирует векторные часы, направляет мутации в `SyncGatewayService.processPushBatch` с прямой записью в PostgreSQL и возвращает обновленный вектор состояния `MeshSyncExchangeResponse` с fallback на in-memory CRDT `processMeshSyncExchange` при отсутствии внешнего подключения к БД.
+  2. В `lanNetwork.ts` реализован боевой эндпоинт `POST /api/lan/p2p/dispatch`: принимает события `lanP2PMessageSchema` (`chair_status_changed`, `assistant_call_cito`, `invoice_transferred_to_cashier` и др.) и выполняет доставку между узлами LAN.
+  3. Роут `POST /api/network/lan-mesh/mutations` перестроен со старого стаба на сквозную персистенцию: конвертирует `QueuedMeshMutation` в `SyncMutationEnvelope` и сохраняет в PostgreSQL через `SyncGatewayService.processPushBatch`. При временных ограничениях транзакций или офлайн-сценариях мутации надёжно буферизуются в кольцевой буфер `ringBuffer`, исключая потерю данных (Zero Data Loss).
+  4. В `apps/api/src/serverModules/index.ts` добавлен запуск `getLanMeshService().start()` на старте Fastify (с возможностью отключения через `DISABLE_LAN_MESH=true`).
+  5. Покрыто 14/14 unit- и pen-тестами в `apps/api/src/tests/lanNetworkRoutes.test.ts` (Exit Code 0). 4-State Proof: `docs/proofs/offline/lan_mesh_pairing_*` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844).
 
-### [OFF-05] [SEV-2] Осиротевшие модули offlinePaymentQueue и offlineAppointmentQueue
+### [OFF-05] [SEV-2] [ИСПРАВЛЕНО] Осиротевшие модули offlinePaymentQueue и offlineAppointmentQueue
 - **Файлы:**
-  - [`apps/web/src/offline/offlinePaymentQueue.ts#L120-L215`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlinePaymentQueue.ts#L120-L215)
-  - [`apps/web/src/offline/offlineAppointmentQueue.ts#L50-L110`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlineAppointmentQueue.ts#L50-L110)
-  - [`apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts#L308-L346`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts#L308-L346)
-- **Суть бага:** Отличные сервисы очередей с расчетом в копейках и IndexedDB существуют исключительно для unit-тестов. В реальном расписании и кассе они не импортированы. При обрыве сети запись на приём просто вылетает с ошибкой.
+  - [`apps/web/src/offline/offlinePaymentQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlinePaymentQueue.ts)
+  - [`apps/web/src/offline/offlineAppointmentQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlineAppointmentQueue.ts)
+  - [`apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts)
+  - [`apps/web/src/components/cashbox/checkout/useCheckoutState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/checkout/useCheckoutState.ts)
+  - [`apps/web/src/hooks/useOfflineSync.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/useOfflineSync.ts)
+  - [`apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts)
+  - [`docs/proofs/offline/01_cashbox_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/offline/01_cashbox_studio_pc_light_1440x900.png)
+  - [`docs/proofs/offline/02_cashbox_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/offline/02_cashbox_studio_pc_dark_1440x900.png)
+  - [`docs/proofs/offline/05_cashbox_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/offline/05_cashbox_studio_mobile_light_390x844.png)
+  - [`docs/proofs/offline/06_cashbox_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/offline/06_cashbox_studio_mobile_dark_390x844.png)
+- **Суть бага:** Модули очередей `offlinePaymentQueue` и `offlineAppointmentQueue` существовали изолированно и не были подключены к боевому расписанию и кассе. При обрыве сети запись на приём и оплата счетов падали с ошибкой вместо сохранения в IndexedDB.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `offlineAppointmentQueue.ts` добавлены функции автоматического сброса очереди `flushOfflineAppointmentsToServer()` и фоновый слушатель сетевого статуса `initOfflineAppointmentAutoSync()`, который автоматически отправляет накопленные записи на сервер при восстановлении интернета (`online` event).
+  2. В `useAppointmentMutations.ts` внедрён детектор сетевых сбоев `isNetworkFailure`. При обрыве сети создание записи (`createAppointmentFromDraft`) и перенос слота (`saveAppointmentSchedule`) не падают, а перехватываются, сохраняются в `enqueueOfflineAppointment`, мгновенно оптимистично отображаются в расписании (`dashboard.appointments`), выставляют `saveState = "saved"` и показывают тактичный тост врачу («Запись сохранена офлайн и будет синхронизирована при появлении связи»).
+  3. В `recordCrmPayment.ts` и `useCheckoutState.ts` подключен офлайн-фолбек на `enqueueOfflinePayment`: при сбое сети платёж автоматически буферизуется в IndexedDB с расчетом в копейках (`amountKopecks`), генерацией `Idempotency-Key` (UUIDv7) и оптимистичным обновлением баланса.
+  4. В `useOfflineSync.ts` вызов `syncNow()` объединён с синхронизацией `flushOfflineAppointmentsToServer()` и `flushOfflinePaymentsToServer()`.
+  5. Покрыто 7/7 тестами в `apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts` (Exit Code 0). 4-State Proof: `01_cashbox_studio_pc_light_1440x900.png`, `02_cashbox_studio_pc_dark_1440x900.png`, `05_cashbox_studio_mobile_light_390x844.png`, `06_cashbox_studio_mobile_dark_390x844.png`.
 
 ### [OFF-06] [SEV-2] Отсутствие слияния поверхностей зуба при параллельном редактировании
 - **Файл:** [`apps/api/src/services/sync/syncGateway/syncConflictResolver.ts#L171-L202`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncConflictResolver.ts#L171-L202)
@@ -1991,13 +2012,38 @@
   - 4-State Visual Proof: `docs/proofs/egisz/egisz_remd_journal_pc_light_1440x900.png` (124.5 KB), `egisz_remd_journal_pc_dark_1440x900.png` (174.0 KB), `egisz_remd_journal_mobile_light_390x844.png` (164.0 KB), `egisz_remd_journal_mobile_dark_390x844.png` (184.5 KB).
   - Тесты: `apps/api/src/tests/egisz/egiszRealJournalOutbox.test.ts`, `apps/api/src/tests/egiszOutboxDispatcher.test.ts`, `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (30/30 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS), `EgiszRemdSigningAndJournal.test.tsx` (11/11 PASS).
 
-### [EGI-02] [SEV-2] Имитация проверки врача в ФРМР (Offline Regex вместо запроса в регистр)
-- **Файл:** [`apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132)
-- **Суть бага:** Функция `verifyDoctorSnilsForFrmr` проверяет только контрольную сумму 11 цифр СНИЛС по алгоритму ПФР. Запрос в реальный регистр медработников ФРМР Минздрава **не делается никогда**. Если врач лишен аккредитации или уволен, система рапортует `{ validForFrmr: true }`.
+### [EGI-02] [SEV-2] [ИСПРАВЛЕНО] Имитация проверки врача в ФРМР (Offline Regex вместо запроса в регистр)
+- **Файлы:**
+  - [`apps/api/src/routes/egiszModules/egiszAuthService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszAuthService.ts)
+  - [`apps/api/src/routes/egiszModules/egiszRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszRoutes.ts)
+  - [`apps/api/src/routes/egiszModules/egiszTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszTypes.ts)
+- **Суть бага:** Функция `verifyDoctorSnilsForFrmr` проверяла только контрольную сумму 11 цифр СНИЛС по алгоритму ПФР без обращения к профилю врача в БД. Если врач лишен аккредитации, уволен или не имеет специальности, система слепо рапортовала `{ validForFrmr: true }`.
+- **Ликвидация дефекта:**
+  1. Реализован метод `verifyDoctorFrmrProfile(db, { doctorId, snils, organizationId })`, который обращается к реальной таблице `users` в PostgreSQL и валидирует:
+     - активность аккаунта (`isActive === true`);
+     - наличие и корректность СНИЛС врача в БД по контрольной сумме Постановления 192п;
+     - медицинские полномочия (`canSignMedicalRecords` / роль врача) и клиническую специальность (`specialties`).
+  2. При неполном профиле врача возвращается структурированный статус `[Требуется заполнение профиля врача]` (`status: "needs_doctor_profile"`), честно предупреждая бэк-офис без паники и блокировки приёма у кресла (Мандаты 8e, 8v).
+  3. Роут `/api/clinical/egisz/validate-doctor-snils` принимает `doctorId` и `snils`, выполняя глубокую верификацию против штатного расписания клиники.
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/egisz/01_egisz_journal_pc_light_1440x900.png` (121.5 KB), `02_egisz_journal_pc_dark_1440x900.png` (159.9 KB), `03_egisz_journal_mobile_light_390x844.png` (162.0 KB), `04_egisz_journal_mobile_dark_390x844.png` (181.4 KB). Личный осмотр через `read_file`: 0px клиппинга, Sentence case, чистые токены темы.
+  - Тесты: `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (10/10 PASS), `apps/api/src/tests/egiszOutboxDispatcher.test.ts` (17/17 PASS), `apps/web/src/tests/egiszRemd.test.ts` (15/15 PASS).
 
-### [EGI-03] [SEV-2] Хардкодный тестовый СНИЛС пациента "11223344595" в очереди РЭМД
-- **Файл:** [`apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327)
-- **Суть бага:** Если у пациента не введен СНИЛС, воркер автоматически подставляет тестовый СНИЛС `"11223344595"` и отправляет его в государственную систему РЭМД ЕГИСЗ (передача недостоверных персданных по 152-ФЗ).
+### [EGI-03] [SEV-2] [ИСПРАВЛЕНО] Хардкодный тестовый СНИЛС пациента "11223344595" в очереди РЭМД
+- **Файлы:**
+  - [`apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts)
+  - [`apps/api/src/services/egisz/dispatcher/legacyLogsProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/legacyLogsProcessor.ts)
+  - [`apps/api/src/routes/egiszModules/egiszVimisSender.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszVimisSender.ts)
+- **Суть бага:** Если у пациента не был введен СНИЛС, воркер автоматически подставлял тестовый СНИЛС `"11223344595"` и отправлял его в государственную систему РЭМД ЕГИСЗ (передача недостоверных персданных по 152-ФЗ).
+- **Ликвидация дефекта:**
+  1. Тотально уничтожен хардкод `'11223344595'`. СНИЛС пациента читается строго из `patientRow.administrativeProfile`.
+  2. При отсутствии СНИЛС у пациента воркер проверяет наличие альтернативного документа (`identityDocument` — паспорт РФ / свидетельство о рождении). Если нет ни СНИЛС, ни документа — запись переводится в статус `failed` с ошибкой `[Ожидает данных пациента] Для выгрузки в РЭМД требуется указать СНИЛС или документ пациента.` без передачи фальшивых персданных.
+  3. В `metadata.patientSnils` передается реальный номер пациента либо пустая строка.
+  4. В `egiszVimisSender.ts` исправлен предварительный ФЛК: код `FLK-001` (ошибка контрольной суммы) выдается только при наличии невалидного номера, исключая ложный реджект законных пациентов без СНИЛС.
+  5. Для соблюдения лимита Мандата 8b / 8zi ($\le 800$ строк) вспомогательная обработка устаревших логов декомпозирована в `legacyLogsProcessor.ts` (752 строки в `outboxQueueProcessor.ts`).
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/egisz/01_egisz_journal_pc_light_1440x900.png`, `02_egisz_journal_pc_dark_1440x900.png`, `03_egisz_journal_mobile_light_390x844.png`, `04_egisz_journal_mobile_dark_390x844.png`.
+  - Тесты: `apps/api/src/tests/routes/egiszModulesIntegration.test.ts` (10/10 PASS), `apps/api/src/tests/egiszOutboxDispatcher.test.ts` (17/17 PASS).
 
 ### [MDL-01] [SEV-1] [ИСПРАВЛЕНО] Полное отсутствие отправки в Честный Знак и тупик со схемой 10560
 - **Файлы:**

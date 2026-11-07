@@ -20,7 +20,7 @@ import { dicomWatcherDaemon } from "../services/imaging/dicomFolderWatcherDaemon
 import { stopCloudRelayClient } from "../services/cloudRelayClient.js";
 import { stopNotificationWorker } from "../services/notificationWorker.js";
 import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
-import { resetLanMeshServiceForTest } from "../services/lanMeshService.js";
+import { getLanMeshService, resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
 import { startWatchdog } from "../watchdog.js";
 import {
@@ -170,6 +170,15 @@ export async function startDenteApiServer(): Promise<void> {
 
 		// Авто-обнаружение сервера в локальной сети (mDNS / UDP discovery responder)
 		startLanDiscoveryService({ logger: app.log });
+
+		// Автономный LAN Mesh сетевой узел (UDP мультикаст и обнаружение соседних рабочих мест на 4101 порту)
+		if (process.env.DISABLE_LAN_MESH !== "true") {
+			try {
+				getLanMeshService({ logger: app.log }).start();
+			} catch (meshErr) {
+				app.log.warn({ meshErr }, "[Server] LAN Mesh UDP service start notice");
+			}
+		}
 
 		// Фоновый шедулер клинических демонов (08:00 ZTL, 21:00 EMR Savior, Weekly Retention)
 		defaultDaemonScheduler.start({ logger: app.log });

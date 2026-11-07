@@ -7,6 +7,13 @@ import {
 	clearPaymentMemoryCache,
 } from "../offline/offlinePaymentQueue";
 import {
+	enqueueOfflineAppointment,
+	getPendingAppointmentMutations,
+	generateOfflineAppointmentId,
+	flushOfflineAppointmentsToServer,
+	clearScheduleMemoryCache,
+} from "../offline/offlineAppointmentQueue";
+import {
 	sendToothStatesBatch,
 	flushPendingOdontogramMutations,
 } from "../components/odontogram/syncModules/odontogramApiBatchSync";
@@ -221,6 +228,89 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 			assert.equal(dispatchedPayload.totalKopecks, 450000);
 			assert.equal(dispatchedPayload.items[0].name, "Установка фотополимерной пломбы");
 			assert.equal(dispatchedPayload.items[0].amountKopecks, 450000);
+		});
+	});
+
+	describe("4. [OFF-05] Offline Appointment Queue & Auto-Flush Resilience", () => {
+		beforeEach(() => {
+			clearScheduleMemoryCache();
+		});
+
+		it("enqueues appointment into offline queue when network fails", async () => {
+			const apptId = generateOfflineAppointmentId();
+			const apptData = {
+				id: apptId,
+				clientReferenceId: `ref-${Date.now()}`,
+				patientId: "pat-offline-001",
+				patientName: "Сидоров Иван",
+				doctorId: "doc-offline-001",
+				doctorName: "Д-р Иванов А. С.",
+				startTime: "2026-11-10T10:00:00.000Z",
+				endTime: "2026-11-10T11:00:00.000Z",
+				status: "scheduled" as const,
+				notes: "Первичный осмотр и консультация",
+				createdAt: new Date().toISOString(),
+				isOfflineCreated: true,
+			};
+
+			const mutation = await enqueueOfflineAppointment("CREATE_APPOINTMENT", apptData);
+
+			assert.ok(mutation.mutationId);
+			assert.equal((mutation.payload as any).patientName, "Сидоров Иван");
+			assert.equal((mutation.payload as any).isOfflineCreated, true);
+
+			const pending = await getPendingAppointmentMutations();
+			const found = pending.find((p) => p.appointment.id === apptId);
+			assert.ok(found, "Enqueued appointment must be found in pending list");
+			assert.equal(found?.action, "CREATE_APPOINTMENT");
+		});
+
+		it("flushes offline appointment queue to /api/appointments upon reconnect", async () => {
+			const apptId = generateOfflineAppointmentId();
+			await enqueueOfflineAppointment("CREATE_APPOINTMENT", {
+				id: apptId,
+				clientReferenceId: `ref-${Date.now()}`,
+				patientId: "pat-offline-002",
+				patientName: "Ковалева Ольга",
+				doctorId: "doc-offline-002",
+				startTime: "2026-11-10T14:00:00.000Z",
+				endTime: "2026-11-10T15:00:00.000Z",
+				status: "scheduled",
+				notes: "Лечение пульпита",
+				createdAt: new Date().toISOString(),
+				isOfflineCreated: true,
+			});
+
+			let dispatchedUrl: string | null = null;
+			let dispatchedBody: any = null;
+			let idempotencyHeader: string | null = null;
+
+			globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+				if (String(url).includes("/api/appointments")) {
+					dispatchedUrl = String(url);
+					dispatchedBody = JSON.parse(String(init?.body));
+					idempotencyHeader = (init?.headers as any)?.["Idempotency-Key"] || null;
+					return new Response(
+						JSON.stringify({
+							success: true,
+							id: "server-appt-999",
+						}),
+						{
+							status: 200,
+							headers: { "Content-Type": "application/json" },
+						},
+					);
+				}
+				return new Response(null, { status: 404 });
+			};
+
+			const result = await flushOfflineAppointmentsToServer();
+			assert.ok(result.syncedCount >= 1, "At least one queued appointment must be synced");
+			assert.ok(dispatchedUrl);
+			assert.ok(dispatchedBody);
+			assert.equal(dispatchedBody.patientId, "pat-offline-002");
+			assert.equal(dispatchedBody.reason, "Лечение пульпита");
+			assert.ok(idempotencyHeader, "Idempotency-Key header must be sent with offline flush");
 		});
 	});
 });
