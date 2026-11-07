@@ -126,6 +126,7 @@ export interface AgentHarnessParams {
 	memoryFacts?: string[] | undefined;
 	doctorSpecialization?: string | undefined;
 	speedMode?: "turbo" | "deep_reasoning" | undefined;
+	timeoutMs?: number | undefined;
 	activeTooth?: number | null | undefined;
 	fallbackToDeterministicAgent?: boolean | undefined;
 	modelRoutingMode?: "server_managed" | "custom_byok" | undefined;

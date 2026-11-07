@@ -149,6 +149,8 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	utmContent: z.string().trim().max(240).nullable().optional(),
 	utmTerm: z.string().trim().max(240).nullable().optional(),
 	leadSource: z.string().trim().max(240).nullable().optional(),
+	telegramUserId: z.string().trim().max(80).nullable().optional(),
+	telegramUsername: z.string().trim().max(120).nullable().optional(),
 });
 
 export const patientAdministrativeProfileSchema =

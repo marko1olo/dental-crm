@@ -51,7 +51,7 @@ function resolveCascadeModel(
 			return {
 				model: candidate,
 				provider: isGroq ? "groq" : "google",
-				baseUrl: isGroq ? "https://api.groq.com/openai/v1" : undefined,
+				...(isGroq ? { baseUrl: "https://api.groq.com/openai/v1" } : {}),
 				isFallback: i > 0,
 			};
 		}
@@ -62,7 +62,7 @@ function resolveCascadeModel(
 	return {
 		model: fallback,
 		provider: isGroq ? "groq" : "google",
-		baseUrl: isGroq ? "https://api.groq.com/openai/v1" : undefined,
+		...(isGroq ? { baseUrl: "https://api.groq.com/openai/v1" } : {}),
 		isFallback: true,
 	};
 }

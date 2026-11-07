@@ -28,7 +28,7 @@ import { SyncGatewayService } from "../services/sync/syncGatewayService.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 import {
 	type MeshSyncExchangeResponse,
-	type SyncEntityKind,
+	type SyncMutationEntityKind,
 	type SyncMutationEnvelope,
 	type SyncMutationResult,
 	computePayloadHash,
@@ -40,22 +40,25 @@ import {
 	queuedMeshMutationSchema,
 } from "@dental/shared";
 
-function normalizeMeshEntityKind(kind: string): SyncEntityKind {
+function normalizeMeshEntityKind(kind: string): SyncMutationEntityKind {
 	const normalized = kind.toLowerCase().trim();
 	if (normalized === "appointment") return "appointment";
 	if (normalized === "visit") return "visit";
 	if (
 		normalized === "tooth_status" ||
 		normalized === "odontogram" ||
-		normalized === "odontogram_status"
+		normalized === "odontogram_status" ||
+		normalized === "odontogram_state"
 	)
-		return "tooth_status";
+		return "odontogram_state";
 	if (normalized === "payment" || normalized === "receipt") return "payment";
 	if (normalized === "patient") return "patient";
-	if (normalized === "invoice") return "invoice";
-	if (normalized === "catalog_service" || normalized === "service")
-		return "catalog_service";
-	return "custom";
+	if (normalized === "invoice" || normalized === "patient_invoice") return "patient_invoice";
+	if (normalized === "visit_diary" || normalized === "diary") return "visit_diary";
+	if (normalized === "treatment_item" || normalized === "service") return "treatment_item";
+	if (normalized === "clinical_task") return "clinical_task";
+	if (normalized === "patient_administrative_profile") return "patient_administrative_profile";
+	return "patient";
 }
 
 const pairRoleSchema = z.enum(["doctor", "assistant"]);
@@ -544,7 +547,15 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const identity = getRequestIdentity(request);
-		const orgId = parseRes.data.mutations[0]?.organizationId || identity.organizationId || "clinic-default";
+		const firstMutationPayload = parseRes.data.mutations[0]?.payload;
+		const payloadOrgId =
+			firstMutationPayload &&
+			typeof firstMutationPayload === "object" &&
+			"organizationId" in firstMutationPayload &&
+			typeof (firstMutationPayload as Record<string, unknown>).organizationId === "string"
+				? ((firstMutationPayload as Record<string, unknown>).organizationId as string)
+				: undefined;
+		const orgId = payloadOrgId || identity.organizationId || "clinic-default";
 
 		// Transform QueuedMeshMutation to SyncMutationEnvelope
 		const envelopes: SyncMutationEnvelope[] = parseRes.data.mutations.map((m) => {
@@ -666,7 +677,13 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			}
 		} else {
 			// Fallback in-memory CRDT resolution if offline without DB
-			const localVectorClock = meshService.getVectorClockEngine().getClock() || {};
+			const allVectors = meshService.getVectorClockEngine().getAllVectors();
+			const localVectorClock: Record<string, number> = { [responderNodeId]: 1 };
+			for (const v of allVectors) {
+				for (const [nodeId, seq] of Object.entries(v.vectorClock)) {
+					localVectorClock[nodeId] = Math.max(localVectorClock[nodeId] ?? 0, seq);
+				}
+			}
 			const resolved = processMeshSyncExchange(
 				[],
 				reqData,

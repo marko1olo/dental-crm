@@ -87,7 +87,7 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 			if (request.method === "POST" || (queryOrBody as Record<string, unknown>).print) {
 				try {
 					kktResult = await LanKktDriverService.printXReport({
-						cashierName,
+						cashierName: cashierFullName,
 						shiftNumber: currentShiftNumber,
 					});
 				} catch (err: unknown) {

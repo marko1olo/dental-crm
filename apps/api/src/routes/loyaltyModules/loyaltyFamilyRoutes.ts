@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { familyGroups, patientBonusBalances, patients } from "../../db/schema.js";
+import { familyGroups, patientBonusBalances, patientRelationships, patients } from "../../db/schema.js";
 import { familyDebitBodySchema } from "./loyaltySchemas.js";
 import { executeBonusRedeem } from "./bonusRedemptionService.js";
 
@@ -45,7 +45,6 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
-					familyRole: patients.familyRole,
 				})
 				.from(patients)
 				.where(and(eq(patients.organizationId, orgId), eq(patients.familyGroupId, patient.familyGroupId)));
@@ -70,7 +69,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				return {
 					patientId: m.id,
 					fullName: m.fullName,
-					roleRu: m.id === family?.headPatientId ? "Глава семьи" : (m.familyRole || "Член семьи"),
+					roleRu: m.id === family?.headPatientId ? "Глава семьи" : "Член семьи",
 					individualPointsBalance: pts,
 					canSpendSharedPool: true,
 				};
@@ -145,7 +144,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				if (targetGroupId) {
 					await db
 						.update(patients)
-						.set({ familyGroupId: targetGroupId, familyRole: "head", updatedAt: new Date() })
+						.set({ familyGroupId: targetGroupId, updatedAt: new Date() })
 						.where(and(eq(patients.organizationId, orgId), eq(patients.id, primary.id)));
 				}
 			}
@@ -153,8 +152,19 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 			if (targetGroupId) {
 				await db
 					.update(patients)
-					.set({ familyGroupId: targetGroupId, familyRole: relationRole, updatedAt: new Date() })
+					.set({ familyGroupId: targetGroupId, updatedAt: new Date() })
 					.where(and(eq(patients.organizationId, orgId), eq(patients.id, relative.id)));
+
+				await db
+					.insert(patientRelationships)
+					.values({
+						organizationId: orgId,
+						patientId: primary.id,
+						relatedPatientId: relative.id,
+						relationshipType: relationRole,
+						canSpendFamilyWallet: true,
+					})
+					.onConflictDoNothing();
 			}
 
 			return reply.status(200).send({

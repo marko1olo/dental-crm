@@ -124,12 +124,12 @@ export async function getOrCreateSessionInDb(
 export async function updateSessionInDb(
 	sessionId: string,
 	organizationId: string,
-	updates: Partial<{
-		activeView: string | null;
-		summary: string | null;
-		patientId: string | null;
-		userId: string | null;
-	}>,
+	updates: {
+		activeView?: string | null | undefined;
+		summary?: string | null | undefined;
+		patientId?: string | null | undefined;
+		userId?: string | null | undefined;
+	},
 ): Promise<CopilotSessionRecord | null> {
 	if (!UUID_REGEX.test(sessionId)) {
 		return null;

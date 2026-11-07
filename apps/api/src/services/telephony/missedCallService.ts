@@ -86,8 +86,9 @@ export class MissedCallService {
 					)
 					.limit(1);
 
-				if (existingEvents.length > 0) {
-					const existingEv = existingEvents[0]!;
+				const candidateEv = existingEvents[0];
+				if (candidateEv && typeof candidateEv.patientId === "string") {
+					const existingPatientId: string = candidateEv.patientId;
 					const existingTasks = await tx
 						.select({
 							id: communicationTasks.id,
@@ -98,7 +99,7 @@ export class MissedCallService {
 							and(
 								eq(communicationTasks.organizationId, organizationId),
 								eq(communicationTasks.workflowCode, "MISSED_CALL_CALLBACK"),
-								eq(communicationTasks.patientId, existingEv.patientId),
+								eq(communicationTasks.patientId, existingPatientId),
 							),
 						)
 						.orderBy(desc(communicationTasks.createdAt))
@@ -108,7 +109,7 @@ export class MissedCallService {
 						success: true,
 						duplicate: true,
 						taskId: existingTasks[0]?.id,
-						patientId: existingEv.patientId,
+						patientId: existingPatientId,
 						patientName: `Пациент (${callerPhoneE164})`,
 						phone: callerPhoneE164,
 						isNewLead: false,

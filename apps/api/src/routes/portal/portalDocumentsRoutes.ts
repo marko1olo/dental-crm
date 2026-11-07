@@ -409,18 +409,28 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					),
 				);
 
-			const planStages = planItems.map((it, idx) => ({
-				id: it.id,
-				orderIndex: idx + 1,
-				titleRu: it.name || "Лечебная процедура",
-				categoryRu: it.category || "Стоматология",
-				teethFdi: it.toothNumber ? [String(it.toothNumber)] : [],
-				costRub: Math.round(Number(it.priceKopecks || 0) / 100),
-				paidRub: it.isCompleted ? Math.round(Number(it.priceKopecks || 0) / 100) : 0,
-				remainingRub: it.isCompleted ? 0 : Math.round(Number(it.priceKopecks || 0) / 100),
-				status: it.isCompleted ? ("completed" as const) : ("in_progress" as const),
-				procedures: [it.name || "Процедура по плану"],
-			}));
+			const planStages = planItems.map((it, idx) => {
+				const separatorIndex = (it.priceId ?? "").indexOf("::");
+				const titleRu =
+					separatorIndex >= 0
+						? it.priceId.slice(separatorIndex + 2) || "Лечебная процедура"
+						: it.priceId || "Лечебная процедура";
+				const rawPrice =
+					Number(it.price || 0) * (it.quantity || 1) - Number(it.discount || 0);
+				const costRub = Math.max(0, Math.round(rawPrice));
+				return {
+					id: it.id,
+					orderIndex: idx + 1,
+					titleRu,
+					categoryRu: "Стоматология",
+					teethFdi: it.toothNumber ? [String(it.toothNumber)] : [],
+					costRub,
+					paidRub: 0,
+					remainingRub: costRub,
+					status: "in_progress" as "in_progress" | "completed",
+					procedures: [titleRu],
+				};
+			});
 
 			const totalRealCostRub = planStages.reduce((sum, s) => sum + s.costRub, 0);
 

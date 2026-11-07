@@ -43,7 +43,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			.limit(1);
 
 		if (!patient) {
-			return sendPatientNotFound(reply, patientId);
+			return sendPatientNotFound(reply);
 		}
 
 		try {
@@ -173,7 +173,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			.limit(1);
 
 		if (!patient) {
-			return sendPatientNotFound(reply, patientId);
+			return sendPatientNotFound(reply);
 		}
 
 		const parseResult = photoProtocolPayloadSchema.safeParse(request.body);

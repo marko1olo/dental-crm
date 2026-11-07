@@ -71,7 +71,7 @@ export async function telephonyOutboundCallHandler(
 
 	const callId = outboundResult.callId;
 
-	// In progress call recorded as pending, never fake completed before talk
+	// In progress call recorded as queued, never fake completed before talk
 	await withTenantCtx(resolvedOrgId, async () => {
 		await db.insert(communicationEvents).values({
 			organizationId: resolvedOrgId!,
@@ -79,7 +79,7 @@ export async function telephonyOutboundCallHandler(
 			callerPhone: callerPhone.e164,
 			channel: "phone",
 			direction: "outbound",
-			status: "pending",
+			status: "queued",
 			message: `Исходящий вызов на ${callerPhone.e164} [call_id: ${callId}] через ${outboundResult.provider}`,
 		});
 	});

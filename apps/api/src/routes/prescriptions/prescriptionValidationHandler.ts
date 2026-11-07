@@ -3,7 +3,13 @@ import { and, eq } from "drizzle-orm";
 import { verifyPrescriptionStatutoryValidity } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { electronicPrescriptionItems, electronicPrescriptions } from "../../db/schema.js";
+import {
+	electronicPrescriptionItems,
+	electronicPrescriptions,
+	patientDrugAllergies,
+	patients,
+} from "../../db/schema.js";
+import { validatePrescriptionAllergiesAndSafety } from "../../services/clinical/prescriptionValidationService.js";
 import { FORBIDDEN_NARCOTIC_INN_PATTERNS } from "./prescriptionSchemas.js";
 
 /**
@@ -43,7 +49,60 @@ export async function handleValidatePrescription(request: FastifyRequest, reply:
 		};
 	}
 
-	return reply.send({ success: true, validation: result });
+	const proposedDrugs: string[] = [];
+	if (Array.isArray(body.items)) {
+		for (const item of body.items) {
+			const itemObj = item as { latinName?: string; tradeName?: string } | null;
+			const name = itemObj?.latinName || itemObj?.tradeName || "";
+			if (name) proposedDrugs.push(name);
+		}
+	}
+
+	let patientAllergies: string[] = [];
+	const customAllergies = (body as unknown as { patientAllergies?: string[] }).patientAllergies;
+	if (Array.isArray(customAllergies)) {
+		patientAllergies = customAllergies.filter(Boolean);
+	}
+	const maybePatientId = (body as unknown as { patientId?: string }).patientId;
+	if (maybePatientId && typeof maybePatientId === "string") {
+		const dbAllergies = await db
+			.select()
+			.from(patientDrugAllergies)
+			.where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, maybePatientId)));
+		const [patientRow] = await db
+			.select({ notes: patients.notes })
+			.from(patients)
+			.where(and(eq(patients.organizationId, orgId), eq(patients.id, maybePatientId)))
+			.limit(1);
+		const dbAllergyStrings = dbAllergies
+			.map((a) => a.allergenGroup || a.drugInnLatin)
+			.filter((s): s is string => typeof s === "string" && s.length > 0);
+		patientAllergies = [
+			...patientAllergies,
+			...dbAllergyStrings,
+			...(patientRow?.notes ? [patientRow.notes] : []),
+		];
+	}
+
+	const safetyAudit = validatePrescriptionAllergiesAndSafety({
+		proposedDrugs,
+		patientAllergies,
+	});
+
+	return reply.send({
+		success: true,
+		validation: result,
+		safetyAudit: {
+			safetyAuditPassed: safetyAudit.safetyAuditPassed,
+			hasAllergyWarning: safetyAudit.hasAllergyWarning,
+			hasDdiWarning: safetyAudit.hasDdiWarning,
+			passiveWarnings: safetyAudit.passiveWarnings,
+			allergyWarnings: safetyAudit.allergyWarnings,
+			drugInteractions: safetyAudit.drugInteractions,
+			safeAlternativeRecommendations: safetyAudit.safeAlternativeRecommendations,
+			isDoctorAutonomyPermitted: true,
+		},
+	});
 }
 
 /**

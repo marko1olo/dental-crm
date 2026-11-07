@@ -284,7 +284,6 @@ export async function register(app: FastifyInstance) {
 				.set({
 					signatureSvg,
 					signatureAttestation,
-					updatedAt: new Date(),
 				})
 				.where(
 					and(

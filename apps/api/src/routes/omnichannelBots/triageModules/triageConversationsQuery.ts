@@ -167,6 +167,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 
 	// Учитываем также исходящие сообщения в последнем сообщении
 	for (const out of outboundEvents) {
+		if (!out.patientId) continue;
 		const channel = out.channel as BotChannel;
 		const p = patientMap.get(out.patientId);
 		if (!p) continue;

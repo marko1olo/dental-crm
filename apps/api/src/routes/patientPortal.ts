@@ -19,6 +19,7 @@ import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { organizations, patients, payments, visitDiaries } from "../db/schema.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
+import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import {
 	PORTAL_TOKEN_KIND,
 	PORTAL_TOKEN_TTL_SECONDS,
@@ -486,11 +487,11 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 							await db
 								.update(patients)
 								.set({
-									administrativeProfile: {
-										...adminProfile,
+									administrativeProfile: normalizePatientAdministrativeProfile({
+										...(foundPatient.administrativeProfile ?? {}),
 										telegramUserId: callerTelegramId,
 										telegramUsername: validation.user?.username ?? null,
-									},
+									}),
 									updatedAt: new Date(),
 								})
 								.where(eq(patients.id, foundPatient.id));

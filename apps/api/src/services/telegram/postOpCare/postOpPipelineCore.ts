@@ -369,11 +369,18 @@ export class TelegramPostOpCarePipeline {
 				POST_OP_CARE_DAY_7: "day_7",
 			};
 
-			const stages: PostOpStageItem[] = postOpRows.map((r) => ({
-				stage: (r.workflowCode && stageCodeMap[r.workflowCode]) || "3_hours",
-				dueAt: r.dueAt ? r.dueAt.getTime() : Date.now(),
-				status: r.status === "completed" ? "completed" : "pending",
-			}));
+			const stages: PostOpStageItem[] = postOpRows.map((r) => {
+				let stageStatus: PostOpStageItem["status"] = "pending";
+				if (r.status === "completed") stageStatus = "answered";
+				else if (r.status === "sent") stageStatus = "sent";
+				else if (r.status === "skipped") stageStatus = "skipped";
+
+				return {
+					stage: (r.workflowCode && stageCodeMap[r.workflowCode]) || "3_hours",
+					dueAt: r.dueAt ? r.dueAt.getTime() : Date.now(),
+					status: stageStatus,
+				};
+			});
 
 			const firstRow = postOpRows[0]!;
 			const planId = `plan_${visitId}`;

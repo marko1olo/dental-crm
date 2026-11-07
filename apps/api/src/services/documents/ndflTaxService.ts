@@ -184,6 +184,14 @@ export class NdflTaxService {
 				serviceName?: string;
 				category?: string;
 				code804n?: string;
+				code1AmountKopecks?: number;
+				code1AmountRub?: number;
+				code2AmountKopecks?: number;
+				code2AmountRub?: number;
+				items?: any[];
+				positions?: any[];
+				serviceLines?: any[];
+				fiscalReceipt?: { items?: any[] };
 			};
 
 			const serviceName =
@@ -358,7 +366,7 @@ export class NdflTaxService {
 						isExcluded: false,
 					});
 				}
-			} else if (c2Match) {
+			} else if (c2Match && c2Match[1]) {
 				// 3. Расщепление по примечанию (note)
 				const c2Rub = parseFloat(c2Match[1].replace(",", "."));
 				const c2Kop = Math.min(amountKop, parseKopecks(c2Rub));

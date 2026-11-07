@@ -259,9 +259,9 @@ export async function sendThroughChannel(
 				? {
 						name: request.templateName,
 						language: "ru",
-						parameters: request.templateParameters
-							? [...request.templateParameters]
-							: undefined,
+						...(request.templateParameters
+							? { parameters: [...request.templateParameters] }
+							: {}),
 					}
 				: undefined;
 
@@ -279,9 +279,9 @@ export async function sendThroughChannel(
 					templateConfig = {
 						name: mappedName,
 						language: "ru",
-						parameters: request.templateParameters
-							? [...request.templateParameters]
-							: undefined,
+						...(request.templateParameters
+							? { parameters: [...request.templateParameters] }
+							: {}),
 					};
 				}
 			}
@@ -290,7 +290,7 @@ export async function sendThroughChannel(
 				...credentials.whatsapp,
 				toPhoneE164: request.recipientAddress,
 				text: request.body,
-				template: templateConfig,
+				...(templateConfig ? { template: templateConfig } : {}),
 			});
 			return result.ok
 				? {

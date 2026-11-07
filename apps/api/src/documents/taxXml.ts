@@ -320,7 +320,7 @@ export function buildKnd1151156Xml(
 					code1Kopecks += itKop;
 				}
 			}
-		} else if (c2Match) {
+		} else if (c2Match && c2Match[1]) {
 			const c2Rub = parseFloat(c2Match[1].replace(",", "."));
 			const c2Kop = Math.min(rawAmountKop, parseKopecks(c2Rub));
 			const c1Kop = Math.max(0, rawAmountKop - c2Kop);

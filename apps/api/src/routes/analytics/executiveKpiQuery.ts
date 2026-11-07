@@ -114,12 +114,20 @@ export function resolveClinicScheduleWorkHours(scheduleRaw: unknown): ClinicWork
 	let days = defaultSpec.workingDays;
 
 	if (typeof raw.workdayStart === "string") {
-		const [h, m] = raw.workdayStart.split(":").map(Number);
-		if (!isNaN(h) && !isNaN(m)) startMins = h * 60 + m;
+		const parts = raw.workdayStart.split(":");
+		const h = Number(parts[0]);
+		const m = Number(parts[1]);
+		if (Number.isFinite(h) && Number.isFinite(m)) {
+			startMins = h * 60 + m;
+		}
 	}
 	if (typeof raw.workdayEnd === "string") {
-		const [h, m] = raw.workdayEnd.split(":").map(Number);
-		if (!isNaN(h) && !isNaN(m)) endMins = h * 60 + m;
+		const parts = raw.workdayEnd.split(":");
+		const h = Number(parts[0]);
+		const m = Number(parts[1]);
+		if (Number.isFinite(h) && Number.isFinite(m)) {
+			endMins = h * 60 + m;
+		}
 	}
 	if (endMins <= startMins) {
 		endMins = startMins + 8 * 60;

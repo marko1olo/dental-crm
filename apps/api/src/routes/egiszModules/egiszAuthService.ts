@@ -43,9 +43,10 @@ export interface FrmrAccessVerificationResult {
 		| "InvalidSnilsChecksum"
 		| "DoctorNotFoundInFrmr"
 		| "DoctorProfileIncomplete"
-		| "DoctorAccountInactive";
-	message?: string;
-	doctor?: FrmrDoctorProfile;
+		| "DoctorAccountInactive"
+		| undefined;
+	message?: string | undefined;
+	doctor?: FrmrDoctorProfile | undefined;
 }
 
 export interface EgiszIntegrationStatusResult {
@@ -250,7 +251,7 @@ export async function verifyDoctorFrmrProfile(
 			valid: false,
 			snilsFormatted: snilsValidation.snilsFormatted,
 			status: "needs_doctor_profile",
-			error: snilsValidation.error,
+			...(snilsValidation.error ? { error: snilsValidation.error } : {}),
 			message: `[Требуется заполнение профиля врача] СНИЛС врача «${doctorRecord.fullName}» в базе данных (${doctorRecord.snils}) содержит некорректную контрольную сумму.`,
 		};
 	}

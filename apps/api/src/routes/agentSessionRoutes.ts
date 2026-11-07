@@ -82,7 +82,7 @@ const addMessageBodySchema = z.object({
 	autoCompact: z.boolean().optional(),
 });
 
-function getMemorySessions(orgId: string, query: { patientId?: string; q?: string; limit: number; offset: number }): MemorySession[] {
+function getMemorySessions(orgId: string, query: { patientId?: string | undefined; q?: string | undefined; limit: number; offset: number }): MemorySession[] {
 	return Array.from(fallbackSessions.values())
 		.filter((s) => s.organizationId === orgId)
 		.filter((s) => !query.patientId || s.patientId === query.patientId)

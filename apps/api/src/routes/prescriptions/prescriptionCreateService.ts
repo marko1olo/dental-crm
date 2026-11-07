@@ -1,4 +1,3 @@
-import { checkDrugDrugInteractions } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
@@ -6,8 +5,9 @@ import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
 	patientDrugAllergies,
-	type patients,
+	patients,
 } from "../../db/schema.js";
+import { validatePrescriptionAllergiesAndSafety } from "../../services/clinical/prescriptionValidationService.js";
 import type { createPrescriptionBodySchema } from "./prescriptionSchemas.js";
 
 type PrescriptionInput = z.infer<typeof createPrescriptionBodySchema>;
@@ -24,6 +24,12 @@ export async function auditPrescriptionDdiAndAllergies(
 		.from(patientDrugAllergies)
 		.where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, patientId)));
 
+	const [patientRow] = await db
+		.select({ notes: patients.notes })
+		.from(patients)
+		.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+		.limit(1);
+
 	const recent = await db
 		.select({ innLatin: electronicPrescriptionItems.innLatin })
 		.from(electronicPrescriptionItems)
@@ -31,18 +37,39 @@ export async function auditPrescriptionDdiAndAllergies(
 		.where(and(eq(electronicPrescriptions.organizationId, orgId), eq(electronicPrescriptions.patientId, patientId), eq(electronicPrescriptions.status, "issued")))
 		.limit(20);
 
-	const existing = Array.from(new Set([...recent.map((p) => p.innLatin), ...allergies.map((a) => a.drugInnLatin || a.allergenGroup).filter(Boolean)]));
-	const ddiAudit = checkDrugDrugInteractions(proposedDrugNames as string[], existing);
+	const allAllergyTerms: string[] = [
+		...allergies
+			.map((a) => a.allergenGroup || a.drugInnLatin)
+			.filter((s): s is string => typeof s === "string" && s.length > 0),
+		...(patientRow?.notes ? [patientRow.notes] : []),
+	];
+
+	const validationResult = validatePrescriptionAllergiesAndSafety({
+		proposedDrugs: proposedDrugNames,
+		patientAllergies: allAllergyTerms,
+		existingMedications: recent.map((p) => p.innLatin).filter((s): s is string => Boolean(s)),
+	});
 
 	const safetyAuditSnapshotJson = {
 		evaluatedAt: now.toISOString(),
-		drugInteractions: Array.from(ddiAudit.drugInteractions),
-		blockedPrescriptions: Array.from(ddiAudit.blockedPrescriptions),
-		safeAlternativeRecommendations: Array.from(ddiAudit.safeAlternativeRecommendations),
+		safetyAuditPassed: validationResult.safetyAuditPassed,
+		hasAllergyWarning: validationResult.hasAllergyWarning,
+		hasDdiWarning: validationResult.hasDdiWarning,
+		passiveWarnings: Array.from(validationResult.passiveWarnings),
+		allergyWarnings: Array.from(validationResult.allergyWarnings),
+		drugInteractions: Array.from(validationResult.drugInteractions),
+		blockedPrescriptions: [], // Mandate 8e: Nothing is blocked!
+		safeAlternativeRecommendations: Array.from(validationResult.safeAlternativeRecommendations),
 		patientAllergies: allergies.map((a) => ({ allergenGroup: a.allergenGroup, drugInnLatin: a.drugInnLatin, reactionSeverity: a.reactionSeverity })),
+		isDoctorAutonomyPermitted: true,
 	};
 
-	return { ddiAudit, safetyAuditSnapshotJson };
+	return {
+		ddiAudit: { drugInteractions: validationResult.drugInteractions },
+		safetyAuditSnapshotJson,
+		safetyAuditPassed: validationResult.safetyAuditPassed,
+		passiveWarnings: validationResult.passiveWarnings,
+	};
 }
 
 export async function insertPrescriptionWithItems(

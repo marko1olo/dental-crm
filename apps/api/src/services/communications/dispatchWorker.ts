@@ -101,7 +101,7 @@ export async function dispatchDueCareTasks(
 				await withSuperuserBypass(async (tx) => {
 					await tx
 						.update(communicationTasks)
-						.set({ status: "queued", updatedAt: new Date() })
+						.set({ status: "queued", lastEventAt: new Date() })
 						.where(eq(communicationTasks.id, task.id));
 				});
 			} else {

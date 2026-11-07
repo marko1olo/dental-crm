@@ -130,6 +130,10 @@ export async function executeBonusHold(p: ExecuteHoldParams) {
 			description: p.description,
 		}).returning();
 
+		if (!txRecord) {
+			throw new Error("Не удалось создать запись холда бонусных баллов");
+		}
+
 		return {
 			success: true as const,
 			holdId: txRecord.id,

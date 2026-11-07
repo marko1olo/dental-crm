@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, eq, gt, ilike, lt, notInArray, or } from "drizzle-orm";
+import { and, asc, eq, gt, ilike, lt, notInArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointments, chairs, patients, users } from "../../db/schema.js";
@@ -532,7 +532,7 @@ export class BookingQueueProcessor {
 					.where(
 						and(
 							eq(appointments.organizationId, orgId),
-							eq(appointments.doctorUserId, row.doctorUserId),
+							row.doctorUserId ? eq(appointments.doctorUserId, row.doctorUserId) : sql`true`,
 							notInArray(appointments.id, [row.id]),
 							lt(appointments.startsAt, row.endsAt),
 							gt(appointments.endsAt, row.startsAt),
@@ -670,6 +670,7 @@ export class BookingQueueProcessor {
 		organizationId: string,
 		bookingId: string,
 		chosenSlot: { startsAt: string; endsAt: string },
+		_options: { useDb?: boolean } = {},
 	): Promise<BookingReceipt> {
 		const orgId = ensureValidUuid(organizationId);
 		const apptId = ensureValidUuid(bookingId);

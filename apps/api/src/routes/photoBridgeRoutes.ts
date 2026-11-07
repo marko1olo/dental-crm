@@ -52,7 +52,11 @@ function getPatientInitials(fullName: string | null | undefined): string {
 	return `${parts[0]} ${parts[1]!.charAt(0)}. ${parts[2]!.charAt(0)}.`;
 }
 
-function stripMultipartWrapperFromBuffer(buffer: Buffer): { data: Buffer; filename?: string; mimeType?: string } {
+function stripMultipartWrapperFromBuffer(buffer: Buffer): {
+	data: Buffer;
+	filename?: string | undefined;
+	mimeType?: string | undefined;
+} {
 	const headerEndCrLf = buffer.indexOf("\r\n\r\n");
 	const headerEndLf = buffer.indexOf("\n\n");
 	let startOffset = 0;
@@ -83,8 +87,8 @@ function stripMultipartWrapperFromBuffer(buffer: Buffer): { data: Buffer; filena
 
 	return {
 		data: buffer.subarray(startOffset, endOffset),
-		filename,
-		mimeType,
+		...(filename ? { filename } : {}),
+		...(mimeType ? { mimeType } : {}),
 	};
 }
 

@@ -135,6 +135,8 @@ export function normalizePatientAdministrativeProfile(
 		utmContent: nullableTrimmed(input?.utmContent),
 		utmTerm: nullableTrimmed(input?.utmTerm),
 		leadSource: nullableTrimmed(input?.leadSource),
+		telegramUserId: nullableTrimmed(input?.telegramUserId),
+		telegramUsername: nullableTrimmed(input?.telegramUsername),
 	};
 
 	const hasValue = Object.values(profile).some((value) =>

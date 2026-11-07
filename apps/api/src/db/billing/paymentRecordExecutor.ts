@@ -290,7 +290,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 	}
 
 	const isBonusMethod =
-		input.method === "bonus" ||
+		(input.method as string) === "bonus" ||
 		input.method === "loyalty_points" ||
 		((input.method === "split" || input.method === "mixed") &&
 			(resolvedBonusKop ?? 0) > 0 &&

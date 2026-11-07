@@ -199,7 +199,7 @@ export async function handleAgentChat(
 				onEvent: (event: AgentHarnessEvent) => {
 					if (!reply.raw.writableEnded) {
 						if (event.type === "tool_start") {
-							reply.raw.write(formatSseMessage("tool_call_started", { name: event.tool, arguments: event.arguments }));
+							reply.raw.write(formatSseMessage("tool_call_started", { name: event.tool, arguments: event.args }));
 							reply.raw.write(formatSseMessage("tool_start", event));
 						} else if (event.type === "tool_end") {
 							reply.raw.write(formatSseMessage("tool_call_finished", { name: event.tool, result: event.result }));
@@ -210,7 +210,7 @@ export async function handleAgentChat(
 								sessId,
 								event.callId,
 								event.tool,
-								event.arguments,
+								event.args,
 								{ organizationId: resolvedOrgId, userId: doctorId },
 							);
 							reply.raw.write(formatSseMessage("confirmation_required", event));
