@@ -132,3 +132,16 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 		overflow-x: clip;
 	}
 }
+
+/* Desktop Clinical Density (32-36px, Mandate 8c & 8d) */
+.dnt-telephony-card button {
+	min-height: 32px;
+}
+
+/* Adaptive Touch Targets for Coarse Pointers (Apple HIG >= 44x44px) */
+@media (pointer: coarse) {
+	.dnt-telephony-card button,
+	.dnt-telephony-patient-drawer button {
+		min-height: 44px;
+	}
+}

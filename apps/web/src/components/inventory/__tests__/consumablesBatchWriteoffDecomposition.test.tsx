@@ -32,7 +32,8 @@ describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 
 		assert.ok(html.includes(DEFAULT_SHIFT_DATA.date), "Отображается текущая дата смены");
 		assert.ok(html.includes("пациентов") && html.includes("12"), "Отображается количество завершенных приёмов");
 		assert.ok(html.includes("Лечение кариеса"), "Отображается процедура из breakdown");
-		assert.ok(html.includes("Мягкий овердрафт активен (Мандат 8n)"), "Пассивное предупреждение овердрафта наличествует");
+		assert.ok(html.includes("Режим мягкого овердрафта"), "Пассивное предупреждение овердрафта наличествует");
+		assert.ok(html.includes("без прерывания клинического приёма"), "Пояснение овердрафта наличествует");
 		assert.ok(html.includes("btn-generate-supplier-order"), "Присутствует кнопка формирования заказа поставщику");
 	});
 
@@ -45,7 +46,7 @@ describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 
 			/>,
 		);
 
-		assert.ok(!html.includes("Мягкий овердрафт активен"), "Плашка дефицита скрыта при отсутствии овердрафта");
+		assert.ok(!html.includes("Режим мягкого овердрафта"), "Плашка дефицита скрыта при отсутствии овердрафта");
 		assert.ok(!html.includes("btn-generate-supplier-order"), "Кнопка заказа поставщику скрыта");
 	});
 

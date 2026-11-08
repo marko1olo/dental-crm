@@ -153,6 +153,7 @@
 
 | Назначение | Файл / Компонент | Маршрут API / Функция |
 | :--- | :--- | :--- |
+| **Пакетное списание расходников смены и кресла в 1 клик (SSOT)** | [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx) | `POST /api/inventory/:orgId/shift-batch-deduct` (`useConsumablesBatchWriteoff`, Soft Negative Stock) |
 | **Списание препаратов и медотходов (Врач / Админ)** | [`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx) | `POST /api/warehouse/:orgId/quick-carpule-disposal` (`executeSeniorNurseDisposalActInBackground`) |
 | **Складской API & Овердрафт** | [`warehouse/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/warehouse/index.ts) | `POST /api/warehouse/:orgId/soft-overdraft-deduct` |
 | **Списание по техкартам (BOM)** | [`treatmentConsumables.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentConsumables.ts) | `POST /api/treatment-consumables/:visitId/deduct` |
@@ -191,6 +192,19 @@
   * 🌙 PC Dark (1440×900): `docs/proofs/warehouse/warehouse_pc_dark_1440x900.png`
   * 📱 Mobile Light (390×844): `docs/proofs/warehouse/warehouse_mobile_light_390x844.png`
   * 📱 Mobile Dark (390×844): `docs/proofs/warehouse/warehouse_mobile_dark_390x844.png`
+
+---
+
+## 🧹 9. Инквизиторская зачистка сирот и канонический SSOT контур (Мандаты 8bd, 8ap, 8x, 8zg)
+
+* **Ликвидация 68 файлов-клонов и сирот (`git rm`)**:
+  * Удалены устаревшие дубликаты `consumablesRoutes/` (5 файлов), `inboundModal/` (13 файлов), `inboundWaybill/` (10 файлов), `shiftBatchModules/` (14 файлов), `batchWriteoffTypes.ts` (1 файл), устаревшие UI-компоненты `acceptanceWaybills/` (8 файлов), мертвые сироты старого списания `writeoff/` (15 файлов).
+  * Устранены устаревшие шимы с чужими брендами и номерами приказов: `identMaterialWriteoffEngine.ts` и `default804nBomCatalog.ts` переведены на канонические SSOT `clinicalMaterialWriteoffEngine.ts` и `defaultServiceBomCatalog.ts`.
+* **Сквозная замена потёмкинских симуляторов**:
+  * В `DirectWarehouseLauncher.tsx` ин-мемори мокап `WarehouseStudioModal` заменен на канонический боевой `InventoryView` с реальным Fastify API и PostgreSQL 18.
+* **Очистка от дев-жаргона**:
+  * Устранена утечка «(Мандат 8n)» в пользовательском интерфейсе (`BatchWriteoffShiftStats.tsx`) и аудит-логах транзакций БД (`useConsumablesBatchWriteoff.ts`, `shiftBatchExecution.ts`).
+
 
 
 

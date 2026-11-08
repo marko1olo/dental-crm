@@ -25,7 +25,7 @@ import {
 import {
 	DEFAULT_804N_CONSUMABLE_LINKS,
 	getDefaultBomLinksForService804n,
-} from "../../warehouse/default804nBomCatalog.js";
+} from "../../warehouse/defaultServiceBomCatalog.js";
 
 const ORTHO_BRACKET_MATERIALS = ORTHODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "ortho_bracket");
 const ORTHO_ALIGNER_MATERIALS = ORTHODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "ortho_aligner");

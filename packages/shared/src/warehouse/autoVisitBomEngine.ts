@@ -34,7 +34,7 @@ import {
 	renderedServiceItemSchema,
 	roundQuantity,
 } from "./treatmentConsumablesEngine.js";
-import { DEFAULT_804N_CONSUMABLE_LINKS } from "./default804nBomCatalog.js";
+import { DEFAULT_804N_CONSUMABLE_LINKS } from "./defaultServiceBomCatalog.js";
 
 // ─── 1. CLASS B MEDICAL WASTE TYPES & SCHEMAS (САНПИН 2.1.3684-21) ───────────
 

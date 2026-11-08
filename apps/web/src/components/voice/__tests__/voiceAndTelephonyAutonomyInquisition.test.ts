@@ -147,8 +147,10 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
 			const playerPath = path.join(telephonyDir, "CallAudioPlayer.tsx");
 			const drawerPath = path.join(telephonyDir, "TelephonyDrawer.tsx");
+			const activePanelPath = path.join(telephonyDir, "drawerModules", "TelephonyActiveCallPanel.tsx");
 			const code = (fs.existsSync(playerPath) ? fs.readFileSync(playerPath, "utf-8") : "") +
 				(fs.existsSync(drawerPath) ? fs.readFileSync(drawerPath, "utf-8") : "") +
+				(fs.existsSync(activePanelPath) ? fs.readFileSync(activePanelPath, "utf-8") : "") +
 				fs.readFileSync(popupPath, "utf-8");
 
 			// CallAudioPlayer default duration must be 0
@@ -188,8 +190,8 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 	});
 
 	describe("3. Desktop Density & HIG Ergonomics (Mandates 8c, 8d pt 2)", () => {
-		it("telephonyFloatingWidget.css enforces desktop clinical density (32-36px) and adaptive coarse touch targets", () => {
-			const cssPath = path.join(telephonyDir, "telephonyFloatingWidget.css");
+		it("telephonyCapsuleAndDrawer.css enforces desktop clinical density (32-36px) and adaptive coarse touch targets", () => {
+			const cssPath = path.join(telephonyDir, "styles", "telephonyCapsuleAndDrawer.css");
 			const css = fs.readFileSync(cssPath, "utf-8");
 
 			// Desktop base rules must be 32px

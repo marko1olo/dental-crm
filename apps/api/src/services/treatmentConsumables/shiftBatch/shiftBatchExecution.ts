@@ -52,7 +52,7 @@ export async function executeShiftBatchDeduction(
 		items: unifiedItems,
 		transactionType: "shift_batch_deduction",
 		userId,
-		notes: notes || `Пакетное списание расходников за смену ${effectiveDate} (1 клик, Мандат 8n)`,
+		notes: notes || `Пакетное списание расходников за смену ${effectiveDate} (пакетное списание)`,
 		reasonPrefix: `Списание под смену ${effectiveDate}`,
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Расходники за смену ${effectiveDate} списаны пакетом в 1 клик (${count} поз., мягкий овердрафт: ${hasOverdraft ? "активен" : "нет"}).`,

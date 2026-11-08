@@ -5,7 +5,6 @@
 
 import type { Kopecks } from "../../money.js";
 import type { ClinicalMaterialWriteoffResult } from "../../warehouse/clinicalMaterialWriteoffEngine.js";
-import type { IdentMaterialWriteoffResult } from "../../warehouse/identMaterialWriteoffEngine.js";
 
 export interface SpecialtyCategoryRates {
 	readonly therapyPercent?: number; // Терапия

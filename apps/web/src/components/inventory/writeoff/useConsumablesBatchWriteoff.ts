@@ -131,7 +131,7 @@ export function useConsumablesBatchWriteoff({
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const payload = {
 				date: data.date,
-				notes: `Пакетное списание расходников за смену (${data.shiftStats.completedVisitsCount} приёмов, 1 клик, Мандат 8n)`,
+				notes: `Пакетное списание расходников за смену (${data.shiftStats.completedVisitsCount} приёмов)`,
 				items: data.consumablesSummary.map((c) => ({ id: c.itemId, name: c.itemName, quantity: c.qtyToDeduct })),
 			};
 

@@ -235,7 +235,7 @@ export const TelephonyStudioFooter: React.FC<TelephonyStudioFooterProps> = ({
 }) => {
 	const primaryCtaLabel = hasDialed
 		? `Позвонить на ${formatPhoneRu(dialedNumber)}`
-		: isNoteSaved ? "✓ Заметка сохранена" : "✓ Сохранить заметку звонка";
+		: isNoteSaved ? "Заметка сохранена" : "Сохранить заметку звонка";
 
 	return (
 		<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-strong)] shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">

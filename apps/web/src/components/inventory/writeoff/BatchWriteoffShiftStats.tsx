@@ -80,10 +80,10 @@ export const BatchWriteoffShiftStats: React.FC<BatchWriteoffShiftStatsProps> = (
 						<AlertTriangle size={18} className="shrink-0 mt-0.5 text-amber-500" />
 						<div>
 							<div className="font-semibold text-amber-800 dark:text-amber-300">
-								Мягкий овердрафт активен (Мандат 8n)
+								Мягкий овердрафт активен
 							</div>
 							<p className="mt-0.5 text-amber-700/90 dark:text-amber-400/90 leading-relaxed">
-								Позиции с дефицитом списываются с отрицательным сальдо (накладная в пути). Приём и списание никогда не блокируются, приход покроет дефицит автоматически.
+								Режим мягкого овердрафта: позиции с дефицитом списываются с отрицательным сальдо (накладная в пути) без прерывания клинического приёма. Приход покроет дефицит автоматически.
 							</p>
 						</div>
 					</div>

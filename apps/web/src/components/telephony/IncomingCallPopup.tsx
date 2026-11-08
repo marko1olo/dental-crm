@@ -44,7 +44,8 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 
 	// Doctor sterile zone & chairside chart immunity (Mandates 8e, 8n, 8v):
 	// Chairside silence: doctor screen is 100% sterile from floating blobs and popups
-	if (!activeCall || isDoctorMode || isDndActive || isFullScreenStudioActive || !currentCall) return null;
+	if (isDoctorMode) return null;
+	if (!activeCall || isDndActive || isFullScreenStudioActive || !currentCall) return null;
 	if (typeof document === "undefined") return null;
 
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;

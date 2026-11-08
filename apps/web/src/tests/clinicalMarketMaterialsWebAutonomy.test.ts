@@ -68,14 +68,13 @@ describe("Web Integration: Clinical Market Materials & Consumables (90% CIS/RF M
 			"apps/web/src/components/inventory/MaterialBomsSettingsPanel.tsx",
 			"apps/web/src/components/inventory/MaterialBomsRuleModal.tsx",
 			"apps/web/src/components/inventory/MaterialBomsQuickCatalogModal.tsx",
-			"apps/web/src/components/orthodontics/OrthodonticMaterialsQuickSelector.tsx",
 			"apps/web/src/utils/draftDefaults.ts",
 			"apps/web/src/store/doctorPreferencesStore.ts",
 			"packages/shared/src/clinical/materials/implantAndBoneMaterialsData.ts",
 			"packages/shared/src/clinical/materials/endoAndOrthoMaterialsData.ts",
 			"packages/shared/src/clinical/materials/prosthoMaterialsData.ts",
 			"packages/shared/src/clinical/clinicalMarketMaterialsCatalog.ts",
-			"packages/shared/src/warehouse/default804nBomCatalog.ts",
+			"packages/shared/src/warehouse/defaultServiceBomCatalog.ts",
 		];
 
 		const repoRoot = process.cwd();
@@ -96,7 +95,6 @@ describe("Web Integration: Clinical Market Materials & Consumables (90% CIS/RF M
 			"apps/web/src/components/inventory/MaterialBomsSettingsPanel.tsx",
 			"apps/web/src/components/inventory/MaterialBomsRuleModal.tsx",
 			"apps/web/src/components/inventory/MaterialBomsQuickCatalogModal.tsx",
-			"apps/web/src/components/orthodontics/OrthodonticMaterialsQuickSelector.tsx",
 			"apps/web/src/utils/draftDefaults.ts",
 		];
 

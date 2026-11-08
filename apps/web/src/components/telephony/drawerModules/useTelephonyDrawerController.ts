@@ -15,9 +15,15 @@ export function useTelephonyDrawerController(
 	propOnClose?: () => void,
 	propCall?: IncomingCallPayload | null,
 ) {
-	const storeIsOpen = useTelephonyStore((s) => s.isCallDrawerOpen);
+	const storeIsOpenHook = useTelephonyStore((s) => s.isCallDrawerOpen);
+	const storeIsOpen = typeof window === "undefined"
+		? useTelephonyStore.getState().isCallDrawerOpen
+		: storeIsOpenHook;
 	const closeCallDrawer = useTelephonyStore((s) => s.closeCallDrawer);
-	const activeCall = useTelephonyStore((s) => s.activeCall);
+	const activeCallHook = useTelephonyStore((s) => s.activeCall);
+	const activeCall = typeof window === "undefined"
+		? useTelephonyStore.getState().activeCall
+		: activeCallHook;
 	const isConnected = useTelephonyStore((s) => s.isWsConnected);
 	const callHistory = useTelephonyStore((s) => s.callHistory);
 	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
