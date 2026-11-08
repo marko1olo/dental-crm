@@ -143,7 +143,10 @@ export async function executeAutonomousReActCycle(
 		userId,
 	} = parsed;
 
-	const effectivePatientId = input.patientId?.trim() || "00000000-0000-7000-8000-000000000001";
+	const effectivePatientId = input.patientId?.trim();
+	if (!effectivePatientId) {
+		throw new Error("Не указан идентификатор пациента (patientId обязателен)");
+	}
 
 	const ctx: AgentContext = {
 		organizationId: orgId,
@@ -189,10 +192,7 @@ export async function executeAutonomousReActCycle(
 		].join("\n");
 		fullThoughtTraces.push(thought1);
 
-		const plannedDrugs =
-			input.activeServices && input.activeServices.length > 0
-				? input.activeServices
-				: ["Артикаин 4% 1:100 000", "Амоксициллин 500 мг"];
+		const plannedDrugs = input.activeServices ?? [];
 
 		const ddiObservation = await checkDrugInteractionsTool.handler(ctx, {
 			patientId: effectivePatientId,

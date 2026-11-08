@@ -295,9 +295,9 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       <div className={`chairside-hud-panel ${!isDrawerOpen ? "chairside-hud-panel--compact" : ""}`}>
         {/* Capsule 1-Line Bar */}
         <div className="chairside-hud-capsule" data-testid="chairside-hud-capsule">
-          <div className="chairside-hud-capsule-brand flex items-center gap-2 min-w-0 shrink-0">
+          <div className="chairside-hud-capsule-brand flex items-center gap-2 shrink-0 whitespace-nowrap">
             <span className="chairside-hud-status-dot shrink-0" />
-            <span className="font-semibold text-xs text-[var(--ink)] whitespace-nowrap">Копилот у кресла</span>
+            <span className="font-semibold text-xs text-[var(--ink)] whitespace-nowrap shrink-0">Копилот у кресла</span>
             <span className="chairside-hud-badge-chair hidden md:inline-flex">В кресле</span>
             <span className="text-xs text-[var(--muted)] hidden lg:inline-block truncate max-w-[120px]">{displayPatientName}</span>
           </div>
@@ -421,25 +421,25 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
             )}
 
             {/* Quick Clinical Presets Chips */}
-            <div className="chairside-hud-presets flex flex-wrap gap-1.5" role="toolbar" aria-label="Клинические сценарии">
+            <div className="chairside-hud-presets flex flex-row overflow-x-auto no-scrollbar gap-2 py-1 max-sm:flex-nowrap shrink-0" role="toolbar" aria-label="Клинические сценарии">
               <button
                 type="button"
                 onClick={() => handleSelectPreset(0)}
-                className={`chairside-hud-preset-chip btn-preset-caries-16 ${activePresetIndex === 0 ? "chairside-hud-preset-chip--active" : ""}`}
+                className={`chairside-hud-preset-chip shrink-0 whitespace-nowrap btn-preset-caries-16 ${activePresetIndex === 0 ? "chairside-hud-preset-chip--active" : ""}`}
               >
                 Кариес 16 (пломба + анестезия)
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectPreset(1)}
-                className={`chairside-hud-preset-chip btn-preset-pulpitis-26 ${activePresetIndex === 1 ? "chairside-hud-preset-chip--active" : ""}`}
+                className={`chairside-hud-preset-chip shrink-0 whitespace-nowrap btn-preset-pulpitis-26 ${activePresetIndex === 1 ? "chairside-hud-preset-chip--active" : ""}`}
               >
                 Пульпит 26 (эндодонтия 3 канала)
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectPreset(2)}
-                className={`chairside-hud-preset-chip btn-preset-hygiene ${activePresetIndex === 2 ? "chairside-hud-preset-chip--active" : ""}`}
+                className={`chairside-hud-preset-chip shrink-0 whitespace-nowrap btn-preset-hygiene ${activePresetIndex === 2 ? "chairside-hud-preset-chip--active" : ""}`}
               >
                 Профгигиена (Air-Flow + УЗ)
               </button>
@@ -501,7 +501,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
                 type="text"
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}
-                placeholder="Команда врачебному ассистенту..."
+                placeholder="Команда ассистенту..."
                 className="input-chairside-prompt flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
               />
               <button

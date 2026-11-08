@@ -60,10 +60,16 @@
 }
 
 .chairside-live-pill-text {
-  max-width: 220px;
+  max-width: 360px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .chairside-live-pill-text {
+    max-width: 180px;
+  }
 }
 
 .chairside-live-pill-remove {

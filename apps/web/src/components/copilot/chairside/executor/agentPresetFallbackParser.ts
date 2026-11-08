@@ -11,7 +11,7 @@ import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
 
 export function matchPresetFallback(
   text: string,
-  activeTooth: number = 16,
+  activeTooth: number | null = null,
   matchedProtocol: MatchedProtocolInfo | null = null,
 ): CopilotExecutionResult {
   const presetIdx =
@@ -22,22 +22,22 @@ export function matchPresetFallback(
     /выручк|касс|деньг|доход/i.test(text) ? 5 : 0;
 
   const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
-  const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || preset.toothNumber;
+  const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || (preset.toothNumber || null);
 
   return {
     activePresetIndex: presetIdx,
     thoughts: preset.thoughts,
     verdict: (preset as any).verdict || "",
-    toothProposal: {
+    toothProposal: targetTooth ? {
       toothNumber: targetTooth,
       state: preset.toothState,
       stateLabel: preset.toothStateLabel,
       surfaces: preset.surfaces,
       applied: false,
-    },
+    } : null,
     servicesProposal: preset.services.map((s) => ({
       ...s,
-      toothNumber: targetTooth,
+      toothNumber: targetTooth ?? undefined,
       applied: false,
     })),
     soapProposal: { ...preset.soap, applied: false },
@@ -45,7 +45,7 @@ export function matchPresetFallback(
     consentProposal: preset.consent
       ? {
           ...preset.consent,
-          toothOrArea: `Зуб ${targetTooth}`,
+          toothOrArea: targetTooth ? `Зуб ${targetTooth}` : "Полость рта",
           applied: false,
         }
       : null,

@@ -50,8 +50,21 @@
 
   .chairside-hud-capsule-brand {
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     flex-shrink: 0;
+    min-width: max-content;
+  }
+
+  .chairside-hud-presets {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .chairside-hud-preset-chip {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
   .chairside-hud-live-pills {

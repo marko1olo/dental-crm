@@ -135,10 +135,10 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
           </div>
           <ul className="text-xs space-y-1 text-[var(--muted)] mb-2">
             {servicesProposal.map((s) => (
-              <li key={s.id} className="flex justify-between items-center">
-                <span className="truncate pr-2 font-mono text-[11px] text-[var(--muted)]">{s.serviceCode || s.code804n}</span>
-                <span className="truncate pr-2 flex-1">{s.title}</span>
-                <span className="shrink-0">{s.priceRub} ₽</span>
+              <li key={s.id} className="flex justify-between items-start py-0.5 gap-2">
+                <span className="shrink-0 font-mono text-[11px] text-[var(--muted)]">{s.serviceCode || s.code804n}</span>
+                <span className="flex-1 text-xs text-[var(--ink)] break-words leading-tight">{s.title}</span>
+                <span className="shrink-0 font-medium whitespace-nowrap">{s.priceRub} ₽</span>
               </li>
             ))}
           </ul>

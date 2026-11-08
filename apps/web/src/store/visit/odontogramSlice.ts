@@ -62,7 +62,7 @@ export type OdontogramSlice = Pick<
 
 export function createOdontogramSlice(set: VisitStoreSet): OdontogramSlice {
 	return {
-		activeToothNumber: 16,
+		activeToothNumber: null,
 		setActiveToothNumber: (val) =>
 			set((state) => ({
 				activeToothNumber:

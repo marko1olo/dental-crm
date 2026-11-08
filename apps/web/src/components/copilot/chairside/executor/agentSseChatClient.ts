@@ -100,13 +100,16 @@ export async function requestAgentSseStream(
           thoughts[thoughts.length - 1].status = "done";
         }
         if (toolName === "update_tooth_status" && result) {
-          toothProposal = {
-            toothNumber: Number(result.tooth || activeTooth || 16),
-            state: result.status || "C2",
-            stateLabel: result.statusLabel || `Статус: ${result.status || "C2"}`,
-            surfaces: Array.isArray(result.surfaces) ? result.surfaces : ["O"],
-            applied: false,
-          };
+          const resolvedTooth = Number(result.tooth || activeTooth || 0);
+          if (resolvedTooth > 0) {
+            toothProposal = {
+              toothNumber: resolvedTooth,
+              state: result.status || "C2",
+              stateLabel: result.statusLabel || `Статус: ${result.status || "C2"}`,
+              surfaces: Array.isArray(result.surfaces) ? result.surfaces : ["O"],
+              applied: false,
+            };
+          }
         } else if (toolName === "generate_form_043_entry" && result) {
           soapProposal = {
             complaint: result.complaints || "",

@@ -53,6 +53,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [byokModel, setByokModel] = useState<string>(settings.byokModel || "gemini-3.6-flash");
 	const [speedMode, setSpeedModeState] = useState<AiSpeedMode>(settings.speedMode);
 	const [showThinkingProcess, setShowThinkingState] = useState<boolean>(settings.showThinkingProcess);
+	const [showTypingAnimation, setShowTypingAnimation] = useState<boolean>(settings.showTypingAnimation ?? true);
 	const [temperature, setTemperatureState] = useState<number>(settings.temperature ?? 0.2);
 	const [contextLimitTokens, setContextLimitTokensState] = useState<number>(settings.contextLimitTokens ?? 32768);
 	const [clinicalSpecialization, setSpecState] = useState<ClinicalSpecialization>(settings.clinicalSpecialization);
@@ -106,6 +107,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			provider: modelRoutingMode === "custom_byok" ? byokProvider : (targetModel?.provider || "gemini"),
 			speedMode,
 			showThinkingProcess,
+			showTypingAnimation,
 			temperature,
 			contextLimitTokens,
 			clinicalSpecialization,
@@ -176,7 +178,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				</div>
 
 				{/* Логические навигационные вкладки настроек */}
-				<div className="flex border-b border-[var(--line)] px-5 gap-3 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
+				<div className="flex border-b border-[var(--line)] px-5 pr-8 gap-3 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
 					<button
 						type="button"
 						onClick={() => setActiveTab("intelligence")}
@@ -230,13 +232,14 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={() => setActiveTab("matrix")}
-						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+						className={`py-2.5 pr-2 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
 							activeTab === "matrix" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Table size={13} />
 						<span>Матрица возможностей</span>
 					</button>
+					<div className="w-4 shrink-0" aria-hidden="true" />
 				</div>
 
 				{/* Контент активной вкладки со скроллом */}
@@ -255,6 +258,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setSpeedMode={setSpeedModeState}
 							showThinkingProcess={showThinkingProcess}
 							setShowThinkingProcess={setShowThinkingState}
+							showTypingAnimation={showTypingAnimation}
+							setShowTypingAnimation={setShowTypingAnimation}
 							temperature={temperature}
 							setTemperature={setTemperatureState}
 							contextLimitTokens={contextLimitTokens}

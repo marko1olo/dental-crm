@@ -88,6 +88,7 @@ describe("DENTE Autonomous AI Engine — ReAct Cycle & API Routes", () => {
 				diagnoses: ["K04.0 Пульпит"],
 				allergies: ["Аллергия на пенициллин"],
 				somaticHistory: ["Гипертоническая болезнь II ст"],
+				activeServices: ["Амоксициллин 500 мг"],
 				discountPercent: 10,
 				labOrderRequest: {
 					workType: "Коронка цельноциркониевая ZrO2",

@@ -22,7 +22,7 @@ import type { ParsedAgentResult } from "./agentApiResponseParser";
 
 export function tryParseVoiceFallback(
   text: string,
-  activeTooth: number = 16,
+  activeTooth: number | null = null,
   catalogMatch: any = null,
   matchedProtocol: MatchedProtocolInfo | null = null,
 ): ParsedAgentResult | null {
@@ -45,22 +45,24 @@ export function tryParseVoiceFallback(
     voiceIntent.detectedTeeth[0] ||
     Number(text.match(/\b([1-4][1-8])\b/)?.[1]) ||
     activeTooth ||
-    16;
+    null;
   const toothState = catalogMatch
     ? catalogMatch.recommendedToothState
     : (firstToothUpdate?.state || "Caries");
   const toothStateLabel = catalogMatch
     ? `${catalogMatch.procedureName} (${catalogMatch.matchedIcd10 || "Каталог 1 142"})`
-    : `${firstToothUpdate?.icd10Title || "Кариес"} (${targetTooth})`;
+    : targetTooth
+    ? `${firstToothUpdate?.icd10Title || "Кариес"} (${targetTooth})`
+    : (firstToothUpdate?.icd10Title || "Клинический статус");
   const toothSurfaces = firstToothUpdate?.surfaces || ["O"];
 
-  const toothProposal: ChairsideToothProposal = {
+  const toothProposal: ChairsideToothProposal | null = targetTooth ? {
     toothNumber: targetTooth,
     state: toothState,
     stateLabel: toothStateLabel,
     surfaces: toothSurfaces,
     applied: false,
-  };
+  } : null;
 
   let servicesProposal: ChairsideServiceProposal[];
   const voiceProcs = (voiceIntent as any).treatmentProcedures || voiceIntent.procedures804n || [];
@@ -70,7 +72,7 @@ export function tryParseVoiceFallback(
       serviceCode: p.serviceCode || p.code804n || "A16.07.001",
       code804n: p.serviceCode || p.code804n || "A16.07.001",
       title: p.name || p.title || "Медицинская услуга",
-      toothNumber: targetTooth,
+      toothNumber: targetTooth ?? undefined,
       quantity: 1,
       priceRub: p.priceRub || 3500,
       applied: false,
@@ -80,7 +82,7 @@ export function tryParseVoiceFallback(
     const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
     servicesProposal = preset.services.map((s) => ({
       ...s,
-      toothNumber: targetTooth,
+      toothNumber: targetTooth ?? undefined,
       applied: false,
     }));
   }
@@ -88,9 +90,9 @@ export function tryParseVoiceFallback(
   let soapProposal: ChairsideSoapProposal;
   if (catalogMatch) {
     soapProposal = {
-      complaint: catalogMatch.patch.complaint || `Жалобы в области зуба ${targetTooth}`,
-      anamnesis: catalogMatch.patch.anamnesis || "Ранее зуб не лечен, симптомы возникли недавно.",
-      objectiveStatus: catalogMatch.patch.objectiveStatus || `При осмотре: кариозное поражение зуба ${targetTooth}.`,
+      complaint: catalogMatch.patch.complaint || (targetTooth ? `Жалобы в области зуба ${targetTooth}` : "Жалобы пациента"),
+      anamnesis: catalogMatch.patch.anamnesis || "Ранее не лечен, симптомы возникли недавно.",
+      objectiveStatus: catalogMatch.patch.objectiveStatus || (targetTooth ? `При осмотре: кариозное поражение зуба ${targetTooth}.` : "При осмотре: клинические проявления."),
       diagnosis: catalogMatch.patch.diagnosis || `${catalogMatch.matchedIcd10 || "K02.1"} ${catalogMatch.procedureName}`,
       treatmentPlan: catalogMatch.patch.treatmentPlan || "Проведено препарирование и пломбирование.",
       recommendations: catalogMatch.patch.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
@@ -99,9 +101,9 @@ export function tryParseVoiceFallback(
   } else if (voiceIntent.soapNotes) {
     const sn = voiceIntent.soapNotes;
     soapProposal = {
-      complaint: sn.subjective || `Жалобы в области зуба ${targetTooth}`,
+      complaint: sn.subjective || (targetTooth ? `Жалобы в области зуба ${targetTooth}` : "Жалобы пациента"),
       anamnesis: "Со слов пациента, ранее зуб не лечен, симптомы возникли недавно.",
-      objectiveStatus: sn.objective || `При осмотре: кариозное поражение зуба ${targetTooth}.`,
+      objectiveStatus: sn.objective || (targetTooth ? `При осмотре: кариозное поражение зуба ${targetTooth}.` : "При осмотре: кариозное поражение."),
       diagnosis: sn.assessment || `${firstToothUpdate?.icd10Code || "K02.1"} ${firstToothUpdate?.icd10Title || "Кариес"}`,
       treatmentPlan: sn.plan || "Проведено препарирование и пломбирование.",
       recommendations: sn.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
@@ -109,10 +111,10 @@ export function tryParseVoiceFallback(
     };
   } else {
     soapProposal = {
-      complaint: `Жалобы в области зуба ${targetTooth}`,
-      anamnesis: "Ранее зуб не лечен.",
-      objectiveStatus: `Кариозное поражение зуба ${targetTooth}.`,
-      diagnosis: `K02.1 Кариес дентина (зуб ${targetTooth})`,
+      complaint: targetTooth ? `Жалобы в области зуба ${targetTooth}` : "Жалобы пациента",
+      anamnesis: "Ранее не лечен.",
+      objectiveStatus: targetTooth ? `Кариозное поражение зуба ${targetTooth}.` : "Кариозное поражение.",
+      diagnosis: targetTooth ? `K02.1 Кариес дентина (зуб ${targetTooth})` : "K02.1 Кариес дентина",
       treatmentPlan: "Препарирование, пломбирование.",
       recommendations: "Контроль через 6 месяцев.",
       applied: false,

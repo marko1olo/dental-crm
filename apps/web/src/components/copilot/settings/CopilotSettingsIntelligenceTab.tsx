@@ -23,6 +23,8 @@ export interface CopilotSettingsIntelligenceTabProps {
 	setSpeedMode: (mode: AiSpeedMode) => void;
 	showThinkingProcess: boolean;
 	setShowThinkingProcess: (val: boolean) => void;
+	showTypingAnimation?: boolean;
+	setShowTypingAnimation?: (val: boolean) => void;
 	temperature: number;
 	setTemperature: (val: number) => void;
 	contextLimitTokens?: number;
@@ -42,6 +44,8 @@ export function CopilotSettingsIntelligenceTab({
 	setSpeedMode,
 	showThinkingProcess,
 	setShowThinkingProcess,
+	showTypingAnimation = true,
+	setShowTypingAnimation,
 	temperature,
 	setTemperature,
 	contextLimitTokens = 32768,
@@ -102,6 +106,17 @@ export function CopilotSettingsIntelligenceTab({
 					/>
 					<span>Показывать блок цепочки рассуждений (CoT) при формировании ответа</span>
 				</label>
+				{setShowTypingAnimation && (
+					<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-medium text-[var(--ink)]">
+						<input
+							type="checkbox"
+							checked={showTypingAnimation}
+							onChange={(e) => setShowTypingAnimation(e.target.checked)}
+							className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
+						/>
+						<span>Анимация набора текста (печатания) и фаз размышлений в реальном времени</span>
+					</label>
+				)}
 			</section>
 
 			{/* Лимиты контекстного окна (Мандат 8ab & Token Budget Law) */}

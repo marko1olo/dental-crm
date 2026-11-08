@@ -404,7 +404,6 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 	}
 
 	// СЦЕНАРИЙ В: Чистая одонтограмма (ничего еще не отмечено, пациент только сел)
-	const toothTarget = effectiveTooth || 36;
 	return (
 		<div className="copilot-visit-digest-empty flex flex-col items-center justify-center text-center py-4 px-2 h-full" data-testid="copilot-dialog-empty-state">
 			<div className="w-10 h-10 rounded-2xl bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,#0d9488)]/25 flex items-center justify-center text-[var(--teal,#0d9488)] mb-2 shrink-0">
@@ -419,21 +418,25 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				{[
 					{
 						id: "st-norm",
-						label: `✓ Норма (Зуб ${toothTarget})`,
-						prompt: `Зафиксируй зуб ${toothTarget}: норма, интактный, без патологии`,
+						label: effectiveTooth ? `✓ Норма (Зуб ${effectiveTooth})` : "✓ Полная норма (интактный)",
+						prompt: effectiveTooth
+							? `Зафиксируй зуб ${effectiveTooth}: норма, интактный, без патологии`
+							: "Осмотр полости рта: зубы интактны, кариозных поражений нет, слизистая бледно-розовая, норма",
 						icon: <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />,
 					},
 					{
 						id: "st-caries",
-						label: `Кариес ${toothTarget} (Эстелайт)`,
-						prompt: `Зафиксируй кариес дентина зуба ${toothTarget}, препарирование полости и нанокомпозит Estelite Asteria`,
+						label: effectiveTooth ? `Кариес ${effectiveTooth} (Эстелайт)` : "Кариес дентина (протокол)",
+						prompt: effectiveTooth
+							? `Зафиксируй кариес дентина зуба ${effectiveTooth}, препарирование полости и нанокомпозит Estelite Asteria`
+							: "Клинический протокол СтАР: лечение кариеса дентина светоотверждаемым композитом",
 						icon: <Activity size={13} className="text-[var(--teal,#0d9488)] shrink-0" />,
 					},
 					{
-						id: "st-anes",
-						label: `Артикаин 1.7 мл (${toothTarget})`,
-						prompt: `Инфильтрационная анестезия: Артикаин 1:100 000, 1.7 мл (Зуб ${toothTarget})`,
-						icon: <Zap size={13} className="text-amber-600 shrink-0" />,
+						id: "st-consult",
+						label: "Первичный осмотр и КПУ",
+						prompt: "Первичный консультативный осмотр полости рта, определение индекса КПУ и составление плана лечения",
+						icon: <FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />,
 					},
 					{
 						id: "st-hygiene",

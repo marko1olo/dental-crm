@@ -33,7 +33,7 @@ export interface ParsedAgentResult {
 
 export function parseAgentApiResponse(
   data: any,
-  activeTooth: number = 16,
+  activeTooth: number | null = null,
   matchedProtocol: MatchedProtocolInfo | null = null,
 ): ParsedAgentResult {
   const result: ParsedAgentResult = {
@@ -96,13 +96,16 @@ export function parseAgentApiResponse(
     for (const action of data.actions) {
       if (action.type === "apply_tooth_status" && action.payload) {
         const p = action.payload;
-        result.toothProposal = {
-          toothNumber: (p.tooth as number) || data.toothNumber || activeTooth || 16,
-          state: (p.statusCode as string) || (p.newStatus as string) || "C2",
-          stateLabel: p.newStatus ? `${p.newStatus} (${p.statusCode || ""})` : (p.diagnosisText as string) || "Обновление статуса",
-          surfaces: Array.isArray(p.surfaces) ? p.surfaces : [],
-          applied: false,
-        };
+        const resolvedTooth = (p.tooth as number) || data.toothNumber || activeTooth || null;
+        if (resolvedTooth) {
+          result.toothProposal = {
+            toothNumber: resolvedTooth,
+            state: (p.statusCode as string) || (p.newStatus as string) || "C2",
+            stateLabel: p.newStatus ? `${p.newStatus} (${p.statusCode || ""})` : (p.diagnosisText as string) || "Обновление статуса",
+            surfaces: Array.isArray(p.surfaces) ? p.surfaces : [],
+            applied: false,
+          };
+        }
       } else if ((action.type === "apply_treatment_estimate" || action.type === "apply_estimate_804n") && action.payload) {
         const p = action.payload;
         if (Array.isArray(p.items)) {

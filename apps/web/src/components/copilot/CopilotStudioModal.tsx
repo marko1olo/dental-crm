@@ -41,7 +41,7 @@ const extractSuggestions = (text: string) => {
   if (m) { try { const list = JSON.parse(m[1]); if (Array.isArray(list)) suggestions = list.filter((s): s is string => typeof s === "string"); } catch { /* skip */ } }
   return { cleanText: text.replace(/<<<SUGGESTIONS:[\s\S]*?(?:>>>|$)/g, "").trim(), suggestions };
 };
-export const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[];
+export const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [];
 
 const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((m, i) => {
   const raw = m.text || m.content || (m.kind === "tool" ? `Выполнен инструмент: ${m.name}` : "");
@@ -60,7 +60,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
   const threadKey = activeThreadId || "default-thread";
 
-  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : ((threadMessages[threadKey]?.length ? threadMessages[threadKey] : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : [])))));
+  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : ((threadMessages[threadKey]?.length ? threadMessages[threadKey] : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? (SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]) : [])))));
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
   const hydrateSession = useCallback(async (sId: string) => {
     try {
