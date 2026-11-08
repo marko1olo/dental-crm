@@ -27,7 +27,7 @@ export function useA4PreviewData(opts: UseA4PreviewDataOptions) {
 	const doctor =
 		opts.doctorFullName ||
 		cl.directorFullName ||
-		"Воронов Алексей Владимирович";
+		"______________________";
 
 	const { latestContractDoc, latestActDoc, latestPlanDoc } = useA4LatestDocs(
 		opts.patient,

@@ -71,6 +71,8 @@ export const DirectDocumentsLauncher: React.FC = () => {
 			setIsOutpatientCard(isCard);
 			setInitialTemplate(getInitialTemplateFromUrl());
 			setIsOpen(true);
+		} else {
+			setIsOpen(false);
 		}
 	}, []);
 

@@ -9,7 +9,7 @@ import type { TaxPaymentRecord } from "../taxCertificateEngine";
 export interface CatalogUtilityModalsProps {
 	patient?: Patient | null | undefined;
 	effectivePatientName: string;
-	patientAgeYears: number;
+	patientAgeYears?: number | null | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
@@ -53,7 +53,7 @@ export function CatalogUtilityModals({
 					isOpen={isDiplomaModalOpen}
 					onClose={() => setIsDiplomaModalOpen(false)}
 					patientName={effectivePatientName}
-					patientAgeYears={patientAgeYears}
+					patientAgeYears={typeof patientAgeYears === "number" ? patientAgeYears : undefined}
 					doctorName={doctorName}
 					clinicName={clinicName}
 				/>
@@ -69,7 +69,7 @@ export function CatalogUtilityModals({
 					}}
 					doctorName={doctorName}
 					clinicName={clinicName}
-					isMinorPatient={patientAgeYears < 15}
+					isMinorPatient={typeof patientAgeYears === "number" && patientAgeYears < 15}
 				/>
 			)}
 			{isLocalTaxModalOpen && (

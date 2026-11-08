@@ -28,6 +28,7 @@ export const DirectUkepSigningLauncher: React.FC = () => {
 	const handleOpen = useCallback(() => setIsOpen(true), []);
 	const handleHash = useCallback(() => {
 		if (isUkepTarget()) setIsOpen(true);
+		else setIsOpen(false);
 	}, []);
 
 	useEffect(() => {
@@ -56,11 +57,17 @@ export const DirectUkepSigningLauncher: React.FC = () => {
 
 	if (!isOpen) return null;
 
+	const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+	const patientId = searchParams?.get("patientId") || undefined;
+	const patientFullName = searchParams?.get("patientFullName") || undefined;
+
 	return (
 		<div className="w-full min-h-screen bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] flex items-center justify-center">
 			<UkepDocumentSigningModal
 				isOpen={true}
 				onClose={handleClose}
+				patientId={patientId}
+				patientFullName={patientFullName}
 				onPrintPaper={() => {
 					window.print();
 				}}

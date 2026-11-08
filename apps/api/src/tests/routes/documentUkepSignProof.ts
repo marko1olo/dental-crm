@@ -242,6 +242,24 @@ async function main(): Promise<void> {
 		check("повторное подписание отклонено", again.statusCode, 409);
 		console.log(`  повтор: HTTP ${again.statusCode} ${again.body}`);
 
+		// ЗАМЕР 5b (DEF-DOC-06). Повторное подписание через /signature (ПЭП / SVG)
+		// также строго отклоняется со статусом 409 Conflict.
+		const pepAttempt = await app.inject({
+			method: "POST",
+			url: `/api/documents/${document.id}/signature`,
+			headers,
+			payload: {
+				signatureSvg: "<svg></svg>",
+				signedByName: "Пациент Прогона",
+			},
+		});
+		check(
+			"повторное подписание через /signature отклонено (409 Conflict)",
+			pepAttempt.statusCode,
+			409,
+		);
+		console.log(`  повтор signature: HTTP ${pepAttempt.statusCode} ${pepAttempt.body}`);
+
 		const afterRetry = await withSuperuserBypass(async (tx) =>
 			tx.execute(sql`
 				select crypto_signature_pkcs7 as signature

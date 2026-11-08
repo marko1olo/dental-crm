@@ -368,9 +368,38 @@ export class NdflTaxService {
 				}
 			} else if (c2Match && c2Match[1]) {
 				// 3. Расщепление по примечанию (note)
-				const c2Rub = parseFloat(c2Match[1].replace(",", "."));
-				const c2Kop = Math.min(amountKop, parseKopecks(c2Rub));
+				const c2Kop = Math.min(amountKop, parseKopecks(c2Match[1].replace(",", ".")));
 				const c1Kop = Math.max(0, amountKop - c2Kop);
+
+				if (c1Kop > 0) {
+					code1Kopecks += c1Kop;
+					receipts.push({
+						id: `${pay.id}-code1`,
+						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/1`,
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName: `${serviceName} (Код 1: терапия/гигиена)`,
+						deductionCode: "1",
+						amountRub: rublesFromKopecks(c1Kop),
+						isExcluded: false,
+					});
+				}
+				if (c2Kop > 0) {
+					code2Kopecks += c2Kop;
+					receipts.push({
+						id: `${pay.id}-code2`,
+						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/2`,
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName: `${serviceName} (Код 2: имплантация/синус-лифтинг ПП РФ №458)`,
+						deductionCode: "2",
+						amountRub: rublesFromKopecks(c2Kop),
+						isExcluded: false,
+					});
+				}
+			} else if (c1Match && c1Match[1]) {
+				const c1Kop = Math.min(amountKop, parseKopecks(c1Match[1].replace(",", ".")));
+				const c2Kop = Math.max(0, amountKop - c1Kop);
 
 				if (c1Kop > 0) {
 					code1Kopecks += c1Kop;

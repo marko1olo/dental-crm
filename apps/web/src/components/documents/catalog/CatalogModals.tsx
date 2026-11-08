@@ -10,7 +10,7 @@ import { useCatalogModalsData } from "./useCatalogModalsData";
 export interface CatalogModalsProps {
 	patient?: Patient | null | undefined;
 	effectivePatientName: string;
-	patientAgeYears: number;
+	patientAgeYears?: number | null | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft

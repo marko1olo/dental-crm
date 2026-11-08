@@ -45,13 +45,18 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 	}, []);
 
 	const handleSendSmsCode = useCallback(async () => {
+		const rawPhone = (patient?.phone || "").trim();
+		if (!rawPhone) {
+			showToast("У пациента не указан номер телефона в карте для отправки СМС-кода", "error", 4000);
+			return;
+		}
 		try {
 			const res = await fetch("/api/documents/pep-sms/send", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					patientId: patient?.id || "patient",
-					phone: patient?.phone || "+7 (999) 000-00-00",
+					phone: rawPhone,
 					documentId: doc?.id,
 				}),
 			});
@@ -83,12 +88,20 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 		let signatureSvg = "";
 		if (activeTab === "canvas") {
 			const canvas = canvasRef.current;
-			signatureSvg = canvas && hasStroke ? canvas.toDataURL("image/png")
-				: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><text x='10' y='35' font-family='sans-serif' font-size='15' fill='%230d9488'>ЭЦП: ${encodeURIComponent(patientName)}</text></svg>`;
+			if (!canvas || !hasStroke) {
+				showToast("Поставьте личную подпись на экране перед подтверждением", "error", 4000);
+				return;
+			}
+			signatureSvg = canvas.toDataURL("image/png");
 		} else if (activeTab === "sms") {
 			const entered = smsCode.trim();
 			if (!entered) {
 				showToast("Введите код подтверждения", "error", 4000);
+				return;
+			}
+			const rawPhone = (patient?.phone || "").trim();
+			if (!rawPhone) {
+				showToast("У пациента не указан номер телефона в карте для проверки СМС-кода", "error", 4000);
 				return;
 			}
 			try {
@@ -97,7 +110,7 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						patientId: patient?.id || "patient",
-						phone: patient?.phone || "+7 (999) 000-00-00",
+						phone: rawPhone,
 						code: entered,
 					}),
 				});

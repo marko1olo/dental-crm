@@ -202,6 +202,10 @@ export async function register(app: FastifyInstance) {
 			return reply.code(409).send(apiError("Аннулированный документ нельзя подписать"));
 		}
 
+		if (existing.signatureSvg || existing.cryptoSignaturePkcs7) {
+			return reply.code(409).send(apiError("Документ уже подписан. Повторное подписание или перезапись подписи запрещены."));
+		}
+
 		const patient = await getPatientByIdFromDb(orgId, existing.patientId);
 		if (!patient) {
 			return reply.code(404).send(apiError("Пациент не найден"));

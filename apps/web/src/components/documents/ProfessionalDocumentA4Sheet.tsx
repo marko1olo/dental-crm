@@ -51,7 +51,7 @@ export const ProfessionalDocumentA4Sheet: React.FC<
 		treatmentPlanData?.doctorFullName ||
 		medicalCardData?.doctorFullName ||
 		cl.directorFullName ||
-		"Воронов Алексей Владимирович";
+		"______________________";
 
 	const effectiveConsentData = rawConsentData || informedConsentData;
 	const effectivePersonalDataConsent =

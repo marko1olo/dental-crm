@@ -72,7 +72,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	isOpen,
 	onClose,
 	patientContext,
-	doctorFullName = "Смирнова Елена Сергеевна",
+	doctorFullName,
 	initialTemplate = "intake",
 	services,
 	diagnosisRu,
@@ -153,10 +153,12 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		epicrisis: epicrisisRu !== undefined ? epicrisisRu : (isDemo ? "Кариозная полость санирована, анатомия восстановлена. Гарантия клиники: 12 месяцев." : ""),
 	}), [diagnosisRu, anamnesisRu, epicrisisRu, isDemo]);
 
+	const effectiveDoctorName = doctorFullName || (isDemo ? "Смирнова Елена Сергеевна" : "______________________");
+
 	const legalContext: DocumentLegalContext = useMemo(() => ({
 		clinic: DEFAULT_CLINIC_REQUISITES,
 		patient,
-		doctor: { fullName: doctorFullName, specialty: "Врач-стоматолог терапевт" },
+		doctor: { fullName: effectiveDoctorName, specialty: "Врач-стоматолог терапевт" },
 		documentNumber: isDemo
 			? "КЛ-2026/894"
 			: (patientContext?.id ? `Д-2026/${patientContext.id.slice(0, 6)}` : "БЛ-2026/001"),

@@ -6,7 +6,7 @@ import { CatalogToolbar } from "./catalog/CatalogToolbar";
 import type { DocumentsCatalogViewProps } from "./catalog/types";
 import { useDocumentsCatalogState } from "./catalog/useDocumentsCatalogState";
 
-export * from "./catalog/types";
+export type { DocumentsCatalogViewProps } from "./catalog/types";
 
 /**
  * DocumentsCatalogView — масштабируемый каталог документов, информированных согласий (ИДС)
@@ -24,7 +24,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = (
 	const {
 		patient,
 		patientName = "Пациент",
-		patientAgeYears = 6,
+		patientAgeYears,
 		doctorName,
 		clinicName,
 		clinicProfileDraft,

@@ -23,14 +23,18 @@ export interface UkepDocumentSigningModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onPrintPaper?: ((docId: string) => void) | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly patientFullName?: string | null | undefined;
 }
 
 export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> = ({
 	isOpen,
 	onClose,
 	onPrintPaper,
+	patientId,
+	patientFullName,
 }) => {
-	const engine = useUkepSigningEngine();
+	const engine = useUkepSigningEngine({ patientId, patientFullName });
 
 	if (!isOpen) return null;
 
@@ -130,58 +134,71 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 						{/* Левая колонка: Документы для подписания */}
 						<div className="flex flex-col gap-2.5">
 							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-								Документы текущего приёма ({documents.length})
+								Документы приёма ({documents.length})
 							</label>
 
-							<div className="flex flex-col gap-2">
-								{documents.map((doc) => {
-									const isSelected = doc.id === selectedDocId;
-									const isSignedUkep = doc.status === "signed_ukep";
-									const isSignedPep = doc.status === "signed_pep";
+							{documents.length > 0 ? (
+								<div className="flex flex-col gap-2">
+									{documents.map((doc) => {
+										const isSelected = doc.id === selectedDocId;
+										const isSignedUkep = doc.status === "signed_ukep";
+										const isSignedPep = doc.status === "signed_pep";
 
-									return (
-										<div
-											key={doc.id}
-											onClick={() => setSelectedDocId(doc.id)}
-											className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-												isSelected
-													? "border-[var(--primary)] bg-teal-500/5 shadow-xs"
-													: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
-											}`}
-											role="button"
-											tabIndex={0}
-										>
-											<div className="flex items-center justify-between gap-2 mb-1">
-												<span className="text-xs font-bold line-clamp-1">{doc.title}</span>
-												{isSignedUkep ? (
-													<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shrink-0">
-														УКЭП ГОСТ
-													</span>
-												) : isSignedPep ? (
-													<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 shrink-0">
-														ПЭП врача
-													</span>
-												) : (
-													<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
-														Черновик
-													</span>
+										return (
+											<div
+												key={doc.id}
+												onClick={() => setSelectedDocId(doc.id)}
+												className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+													isSelected
+														? "border-[var(--primary)] bg-teal-500/5 shadow-xs"
+														: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
+												}`}
+												role="button"
+												tabIndex={0}
+											>
+												<div className="flex items-center justify-between gap-2 mb-1">
+													<span className="text-xs font-bold line-clamp-1">{doc.title}</span>
+													{isSignedUkep ? (
+														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shrink-0">
+															УКЭП ГОСТ
+														</span>
+													) : isSignedPep ? (
+														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 shrink-0">
+															ПЭП врача
+														</span>
+													) : (
+														<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
+															Черновик
+														</span>
+													)}
+												</div>
+
+												<div className="text-[11px] text-[var(--muted)] flex items-center justify-between">
+													<span>{doc.documentNumber} · {doc.patientFullName}</span>
+													<span>{doc.date}</span>
+												</div>
+
+												{doc.signerFullName && (
+													<div className="text-[10px] text-teal-600 dark:text-teal-400 mt-1 line-clamp-1 font-mono">
+														Подписал: {doc.signerFullName}
+													</div>
 												)}
 											</div>
-
-											<div className="text-[11px] text-[var(--muted)] flex items-center justify-between">
-												<span>{doc.documentNumber} · {doc.patientFullName}</span>
-												<span>{doc.date}</span>
-											</div>
-
-											{doc.signerFullName && (
-												<div className="text-[10px] text-teal-600 dark:text-teal-400 mt-1 line-clamp-1 font-mono">
-													Подписал: {doc.signerFullName}
-												</div>
-											)}
-										</div>
-									);
-								})}
-							</div>
+										);
+									})}
+								</div>
+							) : (
+								<div
+									className="p-8 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] text-center flex flex-col items-center justify-center gap-2.5"
+									data-testid="ukep-empty-state"
+								>
+									<FileText className="w-8 h-8 text-[var(--muted)]" />
+									<div className="text-xs font-bold text-[var(--ink)]">Нет документов для подписания</div>
+									<p className="text-[11px] text-[var(--muted)] max-w-xs">
+										Все документы приёма уже подписаны либо ещё не сформированы.
+									</p>
+								</div>
+							)}
 						</div>
 
 						{/* Правая колонка: Сертификат, PIN и хэш */}
