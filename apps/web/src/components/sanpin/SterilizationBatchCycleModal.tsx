@@ -263,7 +263,7 @@ export function SterilizationBatchCycleModal({
 							<span>Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
 						</button>
 						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить единичный цикл стерилизации в 1 клик" className="h-10 min-h-[44px] px-3 rounded-xl font-semibold text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-[0.98]">
-							<span>{isSubmitting ? "Утверждение..." : "Утвердить 1 цикл"}</span>
+							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
 							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>
 					</div>

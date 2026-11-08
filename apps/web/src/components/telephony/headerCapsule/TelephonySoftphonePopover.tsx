@@ -79,7 +79,7 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 						key={st.id}
 						type="button"
 						onClick={() => tel.setAgentState(st.id)}
-						className={`min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+						className={`min-h-[48px] sm:min-h-[32px] px-2 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
 							tel.agentState === st.id
 								? st.active
 								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
@@ -110,7 +110,7 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 				<button
 					type="button"
 					onClick={() => setActiveTab("dialer")}
-					className={`flex-1 py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors bg-transparent ${
+					className={`flex-1 min-h-[44px] sm:min-h-[32px] py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors bg-transparent flex items-center justify-center ${
 						activeTab === "dialer"
 							? "border-[var(--teal)] text-[var(--teal)]"
 							: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -121,7 +121,7 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 				<button
 					type="button"
 					onClick={() => setActiveTab("history")}
-					className={`flex-1 py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors bg-transparent ${
+					className={`flex-1 min-h-[44px] sm:min-h-[32px] py-1.5 text-xs font-bold text-center border-b-2 cursor-pointer transition-colors bg-transparent flex items-center justify-center ${
 						activeTab === "history"
 							? "border-[var(--teal)] text-[var(--teal)]"
 							: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"

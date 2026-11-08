@@ -397,6 +397,16 @@
 		padding-bottom: env(safe-area-inset-bottom, 1rem);
 	}
 
+	.dnt-telephony-primary-cta {
+		min-height: 48px;
+		height: 3rem;
+		width: 100%;
+	}
+
+	.dnt-telephony-secondary-btn {
+		min-height: 44px;
+	}
+
 	.dnt-telephony-mobile-drag-handle {
 		width: 2.25rem;
 		height: 0.3125rem;

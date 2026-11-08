@@ -2,9 +2,19 @@
   "subagent": "sanpin_inquisitor",
   "role": "Supreme Red Team Inquisitor for SanPin & Sterilization Domain",
   "status": "COMPLETED",
-  "timestamp": "2026-11-06T11:48:00+04:00",
-  "ssot_modal": "apps/web/src/components/sanpin/SanpinStudioModal.tsx",
-  "ssot_modal_line_count": 478,
+  "timestamp": "2026-11-08T09:22:00+04:00",
+  "ssot_modals": {
+    "SanpinStudioModal.tsx": {
+      "path": "apps/web/src/components/sanpin/SanpinStudioModal.tsx",
+      "line_count": 416,
+      "sweet_spot_range": "400-480 lines"
+    },
+    "SterilizationBatchCycleModal.tsx": {
+      "path": "apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx",
+      "line_count": 276,
+      "sweet_spot_range": "250-350 lines"
+    }
+  },
   "canonical_mandates_enforced": [
     "Mandate 8e: 100% Doctor Autonomy (canProceed: true, no kraft bag barcode blockers at chairside)",
     "Mandate 8x: Pure clinical language (eradicated Form 257/u, PSO, 366/u, replaced with Journal of Autoclaving and Pre-sterilization Cleaning Negative Azopyram)",
@@ -13,7 +23,7 @@
     "Mandate 8am: Solitary Primary CTA (#0d9488 / CheckCircle vector icon)",
     "Mandate 8ze / Apple HIG: 390x844 Bottom Sheet, drag handle 36x5px, rounded-t-[24px], Grouped Cards, touch targets >= 44x44px",
     "Mandate 8an: Strict per-file git staging, zero git add .",
-    "Mandate 8az: Synchronous documentation and code evolution (Addendum 506)"
+    "Mandate 8az: Synchronous documentation and code evolution (Addendum 506 / SANPIN-02)"
   ],
   "verification_gates": {
     "vitest": {
@@ -22,32 +32,27 @@
       "tests_passed": 329,
       "exit_code": 0
     },
+    "kraft_package_sanpin_test": {
+      "command": "npx tsx --test packages/shared/src/tests/kraftPackageSanpin.test.ts",
+      "tests_passed": 27,
+      "exit_code": 0
+    },
     "check_encoding": {
-      "files_checked": 23967,
-      "exit_code": 0
-    },
-    "check_stub_overrides": {
-      "exit_code": 0
-    },
-    "check_fetch_response": {
-      "files_checked": 14405,
-      "exit_code": 0
-    },
-    "check_dynamic_imports": {
-      "files_checked": 18204,
-      "broken_imports": 0,
+      "files_checked": 24118,
       "exit_code": 0
     },
     "visual_proof_4state": {
-      "pc_light": "docs/proofs/sanpin/01_sanpin_studio_pc_light_1440x900.png (149 KB)",
-      "pc_dark": "docs/proofs/sanpin/02_sanpin_studio_pc_dark_1440x900.png (191 KB)",
-      "mobile_light": "docs/proofs/sanpin/03_sanpin_studio_mobile_light_390x844.png (152 KB)",
-      "mobile_dark": "docs/proofs/sanpin/04_sanpin_studio_mobile_dark_390x844.png (160 KB)",
+      "pc_light": "docs/proofs/sanpin/01_sanpin_studio_pc_light_1440x900.png (127 KB)",
+      "pc_dark": "docs/proofs/sanpin/02_sanpin_studio_pc_dark_1440x900.png (160 KB)",
+      "mobile_light": "docs/proofs/sanpin/03_sanpin_studio_mobile_light_390x844.png (162 KB)",
+      "mobile_dark": "docs/proofs/sanpin/04_sanpin_studio_mobile_dark_390x844.png (174 KB)",
       "all_sizes_ge_20kb": true,
       "read_file_inspected": true
     }
   },
-  "documentation": {
-    "features_registry_addendum": 506
+  "cta_unblocked": {
+    "selector": "#approve-cycle-primary-cta",
+    "canonical_text": "Утвердить цикл стерилизации",
+    "verified_in_test": "apps/web/src/components/sanpin/__tests__/sterilizationPresetsAndPurge.test.tsx"
   }
 }

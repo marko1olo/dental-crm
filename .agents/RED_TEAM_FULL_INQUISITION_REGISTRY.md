@@ -377,15 +377,15 @@
   4. На мобильных устройствах (390×844) Primary CTA кнопка «Зафиксировать автоклавирование смены» выпадала за пределы экрана и требовала вертикального скролла.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
   1. Из `apps/api/src/routes/sanpin/sterilizationRoutes.ts` вырезаны все ручки псевдо-сканирования крафт-пакетов у кресла; оставлен чистый контур пакетного автоклавирования в 1 клик с фоновым списанием расходников (Soft Negative Stock, Мандат 8n/8v).
-  2. Мастер-компонент `SanpinStudioModal.tsx` консолидирован как канонический SSOT с 3 вкладками («Автоклавирование смены», «Журнал циклов», «Печать бланков СанПиН») без советского канцелярита, ровно в 466 строк (норматив Мандата 8b: 400–480).
-  3. `SterilizationBatchCycleModal.tsx` сокращен до 348 строк (норматив 250–350) с сохранением полной тестовой совместимости.
+  2. Мастер-компонент `SanpinStudioModal.tsx` консолидирован как канонический SSOT с 3 вкладками («Автоклавирование смены», «Журнал циклов», «Печать бланков СанПиН») без советского канцелярита, ровно в 416 строк (норматив Мандата 8b: 400–480).
+  3. `SterilizationBatchCycleModal.tsx` выверен до 276 строк (норматив 250–350), Primary CTA (`#approve-cycle-primary-cta`) разблокирован и содержит канонический текст «Утвердить цикл стерилизации» с мгновенной фиксацией автоклавирования в 1 клик.
   4. В `styles/sanpinStudio.css` и `SanpinStudioModal.tsx` оптимизированы мобильные отступы и высота Bottom Sheet (`height: 94vh; max-height: 94vh;`), благодаря чему Primary CTA «Зафиксировать автоклавирование смены» на смартфонах (390×844) гарантированно находится в Natural Thumb Zone без необходимости скролла.
-  5. Прогон всех 29 тестовых файлов SanPiN (`apps/web/src/components/sanpin`): 329/329 тестов PASS 100%. API тесты: 13/13 PASS.
+  5. Прогон всех 29 тестовых файлов SanPiN (`apps/web/src/components/sanpin`): 329/329 тестов PASS 100%. Пакетный тест крафт-пакетов `packages/shared/src/tests/kraftPackageSanpin.test.ts`: 27/27 тестов PASS 100%. API тесты: 13/13 PASS. Кодировка UTF-8 (24 118 файлов): 0 ошибок.
   6. Снят и лично проинспектирован через `read_file` канонический 4-State Proof:
-     - ☀️ PC Light: `docs/proofs/sanpin/01_sanpin_studio_pc_light_1440x900.png` (125 KB)
+     - ☀️ PC Light: `docs/proofs/sanpin/01_sanpin_studio_pc_light_1440x900.png` (127 KB)
      - 🌙 PC Dark: `docs/proofs/sanpin/02_sanpin_studio_pc_dark_1440x900.png` (160 KB)
-     - 📱 Mobile Light: `docs/proofs/sanpin/03_sanpin_studio_mobile_light_390x844.png` (158 KB)
-     - 📱 Mobile Dark: `docs/proofs/sanpin/04_sanpin_studio_mobile_dark_390x844.png` (173 KB)
+     - 📱 Mobile Light: `docs/proofs/sanpin/03_sanpin_studio_mobile_light_390x844.png` (162 KB)
+     - 📱 Mobile Dark: `docs/proofs/sanpin/04_sanpin_studio_mobile_dark_390x844.png` (174 KB)
 
 ---
 
@@ -665,6 +665,23 @@
   - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_radiology_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_radiology_mobile_light_390x844.png) (71.4 KB)
   - 📱 Mobile Dark (390x844): [`docs/proofs/radiology/04_radiology_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_radiology_mobile_dark_390x844.png) (70.8 KB)
   - 🔍 PC Light Sensor Catalog (1440x900): [`docs/proofs/radiology/05_radiology_sensor_catalog_modal.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/05_radiology_sensor_catalog_modal.png) (114.8 KB)
+
+### [RAD-04] [SEV-2] [ИСПРАВЛЕНО] Опасный дубликат тяжелой геометрии КЛКТ (ctPlanningGeometry.ts vs dentalArchCurves.ts)
+- **Файлы:**
+  - Удалён дубликат: `apps/web/src/ctPlanningGeometry.ts` (14 KB, 434 строки)
+  - Канонический SSOT: [`apps/web/src/utils/math/toothGeometry/dentalArchCurves.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/math/toothGeometry/dentalArchCurves.ts)
+  - Потребители: [`apps/web/src/ctPlanningImplantModel.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/ctPlanningImplantModel.ts), [`apps/web/src/ctPlanningMeasurementPlan.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/ctPlanningMeasurementPlan.ts), [`apps/web/vite.config.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/vite.config.ts)
+- **Суть бага:** Корневой файл `apps/web/src/ctPlanningGeometry.ts` (почти 14 KB) практически 1:1 дублировал математический модуль `apps/web/src/utils/math/toothGeometry/dentalArchCurves.ts` (115 идентичных блоков логики кривых Безье, сплайнов зубного ряда и осей имплантатов). Любое исправление проекции или калибровки угла наклона в одном файле не попадало во второй, создавая риск расхождения клинических измерений при планировании имплантации.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. Выполнена сверка диффа: математические формулы и логика идентичны.
+  2. Все экспорты геометрических типов (`CtPlanningGeometrySummary`, `CtPlanningDistanceMeasurement`, `CtPlanningDistanceMeasurementRole`, `CtPlanningGeometryMetric`) реэкспортированы из канонического `dentalArchCurves.ts` / `toothGeometry`.
+  3. Потребители (`ctPlanningImplantModel.ts`, `ctPlanningMeasurementPlan.ts`, `smoke-imaging-viewer-usability-source.mjs`, `smoke-web-code-split-source.mjs`, `vite.config.ts`) переключены на канонический SSOT `dentalArchCurves.ts`.
+  4. Файл-дубликат `apps/web/src/ctPlanningGeometry.ts` физически ликвидирован (`git rm`).
+  5. Ссылки на старый дубликат в кодовой базе проверены через `git grep` — 0 вхождений.
+- **Тесты:**
+  - `apps/web/src/tests/wave125ToothSetup.test.ts` (2/2 PASS, Exit Code 0).
+  - `npm run check:encoding` (24115 файлов, 0 замечаний).
+  - `npm run check:stub-overrides` (Exit Code 0).
 
 
 ---
@@ -1717,14 +1734,15 @@
   2. Подтверждено тестами `apps/web/src/components/anesthesia` (20 файлов, 91 тест — 100% passed).
 
 ### [MOB-03] [SEV-1] [ИСПРАВЛЕНО] Центрированная десктопная модалка экстренного протокола
-- **Файлы:**
-  - [`apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83)
-  - [`apps/web/src/components/emergency/emergencyRescue.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescue.css)
-- **Суть бага:** Модалка реанимации и анафилаксии центрировалась по центру экрана десктопным окном с недостижимыми верхними контролами вместо нативного iOS Bottom Sheet drawer.
+- **Файл:**
+  - [`apps/web/src/components/emergency/emergencyRescue.css#L54-L83`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescue.css#L54-L83)
+- **Суть бага:** Модалка реанимации и анафилаксии центрировалась по центру экрана десктопным окном с недостижимыми верхними контролами вместо нативного iOS Bottom Sheet drawer. Также присутствовал 100% дубликат стилей `EmergencyRescueModal.css` (19 193 байта).
 - **Статус исправления [ИСПРАВЛЕНО]:**
-  1. В `EmergencyRescueModal.css` и `emergencyRescue.css` для экранов $\le 768$px модалка трансформирована в нативный Apple iOS Bottom Sheet: выравнивание `items-end`, скругление `rounded-t-[24px]`, тактильный Drag Handle 36×5px по центру, липкий футер кнопок с отступом `max(8px, env(safe-area-inset-bottom))`.
-  2. На десктопе сохранено красивое центрированное окно с мягким ореолом тревоги.
-  3. Проверено 4-State скриншотами:
+  1. В `emergencyRescue.css` для экранов $\le 768$px модалка трансформирована в нативный Apple iOS Bottom Sheet: выравнивание `items-end`, скругление `rounded-t-[24px]`, тактильный Drag Handle 36×5px по центру, липкий футер кнопок с отступом `max(8px, env(safe-area-inset-bottom))`.
+  2. Файл-клон `EmergencyRescueModal.css` удален, импорт переключен на канонический `emergencyRescue.css`.
+  3. Речевой парсер диктовки номеров зубов и команд формулы дедуплицирован и канонизирован в `@dental/shared/clinical` (`toothSpeechGrammar.ts`).
+  4. На десктопе сохранено красивое центрированное окно с мягким ореолом тревоги.
+  5. Проверено 4-State скриншотами:
      - `docs/proofs/mobile_hig/03_emergency_rescue_mobile_light_390x844.png`
      - `docs/proofs/mobile_hig/04_emergency_rescue_mobile_dark_390x844.png`
      - `docs/proofs/mobile_hig/07_emergency_rescue_pc_light_1440x900.png`
