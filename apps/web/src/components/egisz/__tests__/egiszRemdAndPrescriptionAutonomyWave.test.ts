@@ -14,7 +14,7 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { VisitDiaryHeader } from "../../visit/diary/section/VisitDiaryHeader";
 import { EgiszXmlPreviewTab } from "../tabs/EgiszXmlPreviewTab";
-import { TaxDeductionCertificateDrawer } from "../TaxDeductionCertificateDrawer";
+import { TaxDeductionCertificateDrawer } from "../EgiszCertificatesHubModal";
 
 import {
 	EGISZ_DENTAL_SEMD_TYPES,

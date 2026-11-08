@@ -28,7 +28,7 @@ export const TaxDeductionPaymentsTable: React.FC<TaxDeductionPaymentsTableProps>
 				</div>
 				<div className="space-y-1.5 max-w-md mx-auto">
 					<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
-						Нет подтвержденных оплат за {selectedYear} год для формирования справки на вычет
+						Нет подтвержденных фискальных оплат за {selectedYear} год для формирования справки на вычет
 					</h4>
 					<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
 						{allPaymentsCount === 0
@@ -70,7 +70,7 @@ export const TaxDeductionPaymentsTable: React.FC<TaxDeductionPaymentsTableProps>
 						style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)" }}
 					>
 						<div className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
-							Код 01 (Обычное лечение)
+							Код 1 (01) — Обычное лечение
 						</div>
 						<div className="text-lg font-bold font-mono text-teal-700 dark:text-teal-300">
 							{(targetYearSummary.code01Kopecks / 100).toLocaleString("ru-RU", {
@@ -89,7 +89,7 @@ export const TaxDeductionPaymentsTable: React.FC<TaxDeductionPaymentsTableProps>
 						style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)" }}
 					>
 						<div className="text-[11px] font-bold uppercase text-rose-500">
-							Код 02 (Дорогостоящее)
+							Код 2 (02) — Дорогостоящее
 						</div>
 						<div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-300">
 							{(targetYearSummary.code02Kopecks / 100).toLocaleString("ru-RU", {

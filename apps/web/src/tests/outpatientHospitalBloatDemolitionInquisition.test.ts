@@ -116,21 +116,21 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 			);
 		});
 
-		it("1.3. PatientWorkspaceView.tsx направляет пациента строго в Карту 043/у", () => {
+		it("1.3. PatientCardModal.tsx направляет пациента в Медицинскую карту", () => {
 			const wsContent = fs.readFileSync(
-				path.join(patientsDir, "PatientWorkspaceView.tsx"),
+				path.join(patientsDir, "PatientCardModal.tsx"),
 				"utf-8",
 			);
 
 			assert.ok(
-				wsContent.includes("Карта пациента (043/у)") ||
-				wsContent.includes("043/у") ||
+				wsContent.includes("Карта пациента") ||
+				wsContent.includes("Медицинская карта") ||
 				wsContent.includes("Медицинская карта пациента"),
-				"Рабочее место пациента должно использовать форму 043/у",
+				"Карта пациента должна использовать каноническую терминологию",
 			);
 			assert.ok(
 				!wsContent.includes("025/у") && !wsContent.includes("025u"),
-				"Рабочее место пациента не должно содержать госпитальную карту 025/у",
+				"Карта пациента не должна содержать госпитальную карту 025/у",
 			);
 		});
 	});

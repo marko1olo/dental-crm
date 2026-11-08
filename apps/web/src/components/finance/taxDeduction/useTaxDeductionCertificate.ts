@@ -9,14 +9,25 @@ import { useTaxDeductionCalculation } from "./useTaxDeductionCalculation";
 import { useTaxDeductionExportActions } from "./useTaxDeductionExportActions";
 
 export function useTaxDeductionCertificate(props: TaxDeductionCertificateModalProps) {
-	const { isOpen, patientName = "", patientBirthDate = "", patientInn = "", patientSnils = "", payerSnils: initialPayerSnils = "", payments = [], selectedYear: propSelectedYear, defaultTaxYear, patientId } = props;
 	const appLogic = useOptionalAppLogicContext();
 	const clinicProfile = appLogic?.clinic;
+	const clinicDraft = props.clinicProfileDraft;
 
-	const clinicName = props.clinicName || clinicProfile?.legalName || clinicProfile?.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
-	const clinicInn = props.clinicInn || clinicProfile?.inn || "";
-	const clinicKpp = props.clinicKpp || clinicProfile?.kpp || "";
-	const clinicOgrn = props.clinicOgrn || clinicProfile?.ogrn || "";
+	const patientName = props.patientName || props.patient?.fullName || "";
+	const patientBirthDate = props.patientBirthDate || props.patient?.birthDate || "";
+	const patientInn = props.patientInn || props.payerInn || props.patient?.administrativeProfile?.taxpayerInn || props.patient?.inn || "";
+	const patientSnils = props.patientSnils || props.patient?.administrativeProfile?.snils || "";
+	const initialPayerSnils = props.payerSnils || "";
+	const payments = props.payments || [];
+	const propSelectedYear = props.selectedYear || props.initialYear;
+	const defaultTaxYear = props.defaultTaxYear;
+	const isOpen = props.isOpen;
+	const patientId = props.patientId || props.patient?.id || "";
+
+	const clinicName = props.clinicName || clinicDraft?.legalName || clinicDraft?.clinicName || clinicProfile?.legalName || clinicProfile?.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
+	const clinicInn = props.clinicInn || clinicDraft?.inn || clinicProfile?.inn || "";
+	const clinicKpp = props.clinicKpp || clinicDraft?.kpp || clinicProfile?.kpp || "";
+	const clinicOgrn = props.clinicOgrn || clinicDraft?.ogrn || clinicProfile?.ogrn || "";
 	const clinicLicenseNumber = props.clinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "";
 	const clinicLicenseDate = props.clinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "";
 	const clinicAddress = props.clinicAddress || clinicProfile?.address || "";

@@ -114,8 +114,8 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(toolbarCode.includes("Экспорт снимка (JPEG, PNG, DICOM)"), "VisiographTopToolbar must use clean export title");
 	});
 
-	it("8. FnsTaxCertificateModal: purged Soviet ministerial decrees and order numbers", () => {
-		const fnsModalCode = readComponent("components/documents/FnsTaxCertificateModal.tsx");
+	it("8. TaxDeductionCertificateModal: purged Soviet ministerial decrees and order numbers", () => {
+		const fnsModalCode = readComponent("components/finance/TaxDeductionCertificateModal.tsx");
 		assert.ok(!fnsModalCode.includes("1089н"), "Purged decree 1089н");
 		assert.ok(!fnsModalCode.includes("366/у"), "Purged decree 366/у");
 		assert.ok(!fnsModalCode.includes("257/у"), "Purged decree 257/у");

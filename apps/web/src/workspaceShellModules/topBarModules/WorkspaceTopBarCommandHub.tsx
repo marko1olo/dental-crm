@@ -13,6 +13,7 @@ import { useAppStore } from "../../store/appStore";
 
 export function WorkspaceTopBarCommandHub() {
 	const handleOpenCommandHud = useCallback((initialQuery?: string) => {
+		useAppStore.getState().setOmnibarOpen(true);
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente:open-command-hud", {

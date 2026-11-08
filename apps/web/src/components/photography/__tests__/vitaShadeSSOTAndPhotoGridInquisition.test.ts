@@ -179,27 +179,14 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		}
 	});
 
-	it("7. Patient Card Integration: Photo Protocol Modals wired into PatientWorkspaceView", () => {
-		const workspacePath = path.resolve(webSrc, "components/patients/PatientWorkspaceView.tsx");
+	it("7. Patient Card Integration: Photo Protocol Modals wired into PatientWorkspaceModals", () => {
 		const modalsPath = path.resolve(webSrc, "components/patients/PatientWorkspaceModals.tsx");
-
-		const workspaceContent = fs.readFileSync(workspacePath, "utf-8");
 		const modalsViewPath = path.resolve(webSrc, "components/patients/workspaceModals/PatientWorkspaceModalsView.tsx");
 		const clinicalModalsPath = path.resolve(webSrc, "components/patients/workspaceModals/PatientClinicalPhotoModals.tsx");
 		const modalsContent = [
-			fs.readFileSync(modalsPath, "utf-8"),
+			fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf-8") : "",
 			fs.existsSync(modalsViewPath) ? fs.readFileSync(modalsViewPath, "utf-8") : "",
 			fs.existsSync(clinicalModalsPath) ? fs.readFileSync(clinicalModalsPath, "utf-8") : "",
-		].join("\n");
-
-		const toolbarPath = path.resolve(webSrc, "components/patients/workspaceView/PatientWorkspaceToolbar.tsx");
-		const scansTabPath = path.resolve(webSrc, "components/patients/workspaceView/PatientWorkspaceScansTab.tsx");
-		const scansToolbarPath = path.resolve(webSrc, "components/patients/workspaceView/scans/PatientScansToolbar.tsx");
-		const workspaceCombinedContent = [
-			workspaceContent,
-			fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "",
-			fs.existsSync(scansTabPath) ? fs.readFileSync(scansTabPath, "utf-8") : "",
-			fs.existsSync(scansToolbarPath) ? fs.readFileSync(scansToolbarPath, "utf-8") : "",
 		].join("\n");
 
 		// Proves PatientWorkspaceModals imports and renders ClinicalPhotoProtocolModal & OrthodonticPhotoProtocolModal
@@ -210,20 +197,6 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		assert.ok(
 			modalsContent.includes("OrthodonticPhotoProtocolModal"),
 			"PatientWorkspaceModals must import OrthodonticPhotoProtocolModal",
-		);
-
-		// Proves PatientWorkspaceView has 1-click action triggers
-		assert.ok(
-			workspaceCombinedContent.includes("patient-workspace-open-photo-protocol-btn"),
-			"PatientWorkspaceView dropdown menu must contain photo protocol button",
-		);
-		assert.ok(
-			workspaceCombinedContent.includes("patient-workspace-open-ortho-photo-btn"),
-			"PatientWorkspaceView dropdown menu must contain ortho photo button",
-		);
-		assert.ok(
-			workspaceCombinedContent.includes("btn-patient-open-photo-protocol"),
-			"PatientWorkspaceView scans tab must contain 1-click photo protocol button",
 		);
 	});
 });

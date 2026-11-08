@@ -187,7 +187,7 @@ describe("CRM Leak Funnel to Patient Workspace Highway & Anti-Matryoshka Portals
 		);
 	});
 
-	it("6. CrmView and PatientWorkspace exports integrity", () => {
+	it("6. CrmView and PatientCard exports integrity", () => {
 		const crmIndex = fs.readFileSync(
 			path.resolve(__dirname, "../index.ts"),
 			"utf8",
@@ -197,13 +197,13 @@ describe("CRM Leak Funnel to Patient Workspace Highway & Anti-Matryoshka Portals
 			"crm/index.ts must export CrmView",
 		);
 
-		const patientWorkspaceSingular = fs.readFileSync(
-			path.resolve(__dirname, "../../patient/PatientWorkspace.tsx"),
+		const patientsIndex = fs.readFileSync(
+			path.resolve(__dirname, "../../patients/index.ts"),
 			"utf8",
 		);
 		assert.ok(
-			patientWorkspaceSingular.includes("PatientWorkspaceView"),
-			"patient/PatientWorkspace.tsx must export PatientWorkspaceView",
+			patientsIndex.includes("PatientCardModal"),
+			"patients/index.ts must export PatientCardModal",
 		);
 	});
 });

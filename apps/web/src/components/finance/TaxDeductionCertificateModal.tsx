@@ -24,9 +24,12 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+		<div
+			className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs fns-tax-certificate-modal"
+			data-testid="tax-deduction-modal fns-tax-certificate-modal"
+		>
 			<div
-				className="w-full max-w-5xl max-h-[92vh] rounded-3xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink)]"
+				className="w-full max-w-5xl max-h-[92vh] rounded-3xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink)] fns-tax-certificate-modal"
 				style={{ backgroundColor: "var(--paper)", borderColor: "var(--line)", color: "var(--ink)" }}
 			>
 				<TaxDeductionHeader activeTab={s.activeTab} onTabChange={s.setActiveTab} onClose={onClose} yearPaymentsCount={s.yearPayments.length} />
@@ -96,3 +99,6 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	}
 	return modalContent;
 };
+
+export const FnsTaxCertificateModal = TaxDeductionCertificateModal;
+export default TaxDeductionCertificateModal;

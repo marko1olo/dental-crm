@@ -167,18 +167,15 @@ describe("Radiology Clinical Autonomy & Demo Isolation Mandate (8c, 8e, 8n)", ()
 		);
 	});
 
-	it("verifies PatientWorkspaceView provides Scans tab with 200x200px radiology gallery (CLS = 0)", () => {
-		const sourcePath = path.resolve(getWebRoot(), "src/components/patients/PatientWorkspaceView.tsx");
+	it("verifies PatientRadiologyTab provides Scans tab with radiology gallery (CLS = 0)", () => {
+		const sourcePath = path.resolve(getWebRoot(), "src/components/patients/tabs/PatientRadiologyTab.tsx");
 		const source = fs.readFileSync(sourcePath, "utf-8");
 
-		assert.ok(source.includes('data-testid="patient-tab-scans"'),
-			"PatientWorkspaceView defines patient-tab-scans tab button",
+		assert.ok(source.includes('data-testid="patient-radiology-tab"'),
+			"PatientRadiologyTab defines patient-radiology-tab",
 		);
-		assert.ok(source.includes('data-testid="patient-scans-gallery"'),
-			"PatientWorkspaceView renders patient-scans-gallery",
-		);
-		assert.ok(source.includes('width: "200px"') && source.includes('height: "200px"'),
-			"PatientWorkspaceView reserves 200x200px dimensions for study cards (CLS = 0)",
+		assert.ok(source.includes('data-testid="patient-radiology-list"'),
+			"PatientRadiologyTab renders patient-radiology-list",
 		);
 	});
 

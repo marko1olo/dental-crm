@@ -27,7 +27,53 @@ export function Omnibar() {
 	const { isOmnibarOpen, setOmnibarOpen, setCurrentView, dashboard, setActivePatientId } = useAppStore();
 	const [query, setQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
+	const [remotePatients, setRemotePatients] = useState<any[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		const handleOpenHud = (e: Event) => {
+			const customEvent = e as CustomEvent<{ query?: string }>;
+			setOmnibarOpen(true);
+			if (customEvent.detail?.query) {
+				setQuery(customEvent.detail.query);
+			}
+		};
+		window.addEventListener("dente:open-command-hud", handleOpenHud);
+		return () => window.removeEventListener("dente:open-command-hud", handleOpenHud);
+	}, [setOmnibarOpen]);
+
+	useEffect(() => {
+		const q = query.trim();
+		if (q.length < 2) {
+			setRemotePatients([]);
+			return;
+		}
+		const timer = setTimeout(async () => {
+			try {
+				const res = await fetch(`/api/patients?search=${encodeURIComponent(q)}&limit=15`);
+				if (res.ok) {
+					const data = await res.json();
+					const items = Array.isArray(data) ? data : (data.patients || data.items || []);
+					setRemotePatients(items);
+				}
+			} catch (err) {
+				console.warn("[Omnibar] Remote patient search failed:", err);
+			}
+		}, 150);
+		return () => clearTimeout(timer);
+	}, [query]);
+
+	const mergedPatients = useMemo(() => {
+		const local = dashboard?.patients ?? [];
+		const map = new Map<string, any>();
+		for (const p of local) {
+			if (p?.id) map.set(p.id, p);
+		}
+		for (const p of remotePatients) {
+			if (p?.id) map.set(p.id, { ...map.get(p.id), ...p });
+		}
+		return Array.from(map.values());
+	}, [dashboard?.patients, remotePatients]);
 
 	const commands = [
 		{
@@ -193,10 +239,10 @@ export function Omnibar() {
 
 	const patientResults = useMemo(() => {
 		const q = query.trim();
-		if (q.length < 2 || !dashboard?.patients || dashboard.patients.length === 0) {
+		if (q.length < 2 || mergedPatients.length === 0) {
 			return [];
 		}
-		return searchPatientsQuick(dashboard.patients, q, 5).map((res) => {
+		return searchPatientsQuick(mergedPatients, q, 10).map((res) => {
 			const patientWithCard = res.patient as unknown as {
 				cardNumber?: string | null | undefined;
 				chartNumber?: string | null | undefined;
@@ -219,7 +265,7 @@ export function Omnibar() {
 				},
 			};
 		});
-	}, [query, dashboard?.patients, setActivePatientId, setCurrentView]);
+	}, [query, mergedPatients, setActivePatientId, setCurrentView]);
 
 	const filteredCommands = useMemo(() => {
 		const q = (query ?? "").toLowerCase().trim();

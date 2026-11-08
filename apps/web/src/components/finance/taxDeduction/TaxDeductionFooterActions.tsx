@@ -179,6 +179,7 @@ export const TaxDeductionFooterActions: React.FC<TaxDeductionFooterActionsProps>
 						</button>
 						<button
 							type="button"
+							data-testid="tax-cert-print-btn"
 							onClick={onPrint}
 							className="cursor-pointer transition-colors"
 							title="Печать справки для налоговой (вычет 13%)"
