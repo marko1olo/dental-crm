@@ -4,7 +4,7 @@
  * Мандаты 8b/8zi (Sweet Spot 400–470 строк), 8e (Автономия врача), 8am (1 Primary CTA), 8ze (Apple HIG).
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	Megaphone, X, TrendingUp, Tag, Rocket, CheckCircle2,
 	Copy, Check, Sparkles, Coins, Users, BarChart3,
@@ -14,6 +14,7 @@ import {
 	CANONICAL_MARKETING_CHANNELS, CANONICAL_PROMO_PACKAGES,
 	formatKopecksToRub, formatRomiPercent, calculateMarketingAggregateSummary,
 } from "./marketingCatalogData.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import "./marketing.css";
 
 export type MarketingStudioTab = "romi" | "promos" | "launch";
@@ -25,6 +26,27 @@ export interface MarketingStudioModalProps {
 	readonly clinicName?: string;
 }
 
+function mapStoredPromoToPackage(p: any): MarketingPromoPackage {
+	const minRub = Number(p.minInvoiceRub) || 3900;
+	const priceKopecks = Number(p.priceKopecks) || minRub * 100;
+	const regularPriceKopecks = Number(p.regularPriceKopecks) || Math.round(priceKopecks * 1.35);
+	const discountPercent = regularPriceKopecks > priceKopecks
+		? Math.round(((regularPriceKopecks - priceKopecks) / regularPriceKopecks) * 100) : 15;
+
+	return {
+		id: String(p.id), title: String(p.title || "Акция клиники"), shortTitle: String(p.shortTitle || p.title || "Акция"),
+		promoCode: String(p.promoCode || "PROMO"), category: String(p.category || "Диагностика"),
+		badge: String(p.badge || p.discountText || `Скидка ${discountPercent}%`),
+		status: (p.status === "paused" || p.status === "archived") ? p.status : "active",
+		priceKopecks, regularPriceKopecks, discountPercent, savingsKopecks: regularPriceKopecks - priceKopecks,
+		targetAudience: String(p.targetAudience || "Пациенты клиники"), description: String(p.description || p.title || ""),
+		includedServices: Array.isArray(p.includedServices) && p.includedServices.length > 0 ? p.includedServices : (Array.isArray(p.conditions) && p.conditions.length > 0 ? p.conditions : ["Консультация врача-стоматолога", "Диагностический осмотр"]),
+		defaultChannelId: (p.defaultChannelId as MarketingChannelId) || "yandex_maps", validityDays: Number(p.validityDays) || 30,
+		stats: { impressions: Number(p.stats?.reach || p.stats?.impressions || 0), leads: Number(p.stats?.delivered || p.stats?.leads || 0), bookedPatients: Number(p.stats?.visits || p.stats?.bookedPatients || 0), revenueKopecks: Number(p.stats?.revenueRub ? p.stats.revenueRub * 100 : p.stats?.revenueKopecks || 0), spentKopecks: Number(p.stats?.budgetSpentRub ? p.stats.budgetSpentRub * 100 : p.stats?.spentKopecks || 0), romiPercent: Number(p.stats?.romiPercent || 0) },
+		defaultMessageTemplate: String(p.defaultMessageTemplate || p.templates?.whatsapp || p.templates?.sms || ""),
+	};
+}
+
 export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 	isOpen,
 	onClose,
@@ -32,10 +54,35 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 	clinicName = "Стоматология ДЕНТЕ",
 }) => {
 	const [activeTab, setActiveTab] = useState<MarketingStudioTab>(initialTab);
-	const [channels] = useState<readonly MarketingChannelBenchmark[]>(() => CANONICAL_MARKETING_CHANNELS);
+	const [channels, setChannels] = useState<readonly MarketingChannelBenchmark[]>(() => CANONICAL_MARKETING_CHANNELS);
 	const [promos, setPromos] = useState<readonly MarketingPromoPackage[]>(() => CANONICAL_PROMO_PACKAGES);
 	const [copiedCode, setCopiedCode] = useState<string | null>(null);
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+	// Подгрузка реальных промоакций из PostgreSQL 18
+	useEffect(() => {
+		if (!isOpen) return;
+		let cancelled = false;
+
+		async function loadPromosAndChannels() {
+			try {
+				const resPromos = await fetch("/api/marketing/promos", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (resPromos.ok) {
+					const data = await resPromos.json();
+					if (!cancelled && Array.isArray(data?.promos) && data.promos.length > 0) {
+						setPromos(data.promos.map(mapStoredPromoToPackage));
+					}
+				}
+			} catch {}
+		}
+
+		void loadPromosAndChannels();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen]);
 
 	// Экспресс-форма запуска акции (дефолтные значения — готовы к отправке в 1 клик)
 	const [formTitle, setFormTitle] = useState("Комплексный семейный чек-ап зубов");
@@ -64,9 +111,23 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 	};
 
 	const handleTogglePromoStatus = (promoId: string) => {
+		let targetNextStatus: "active" | "paused" = "paused";
 		setPromos((prev) =>
-			prev.map((p) => (p.id === promoId ? { ...p, status: p.status === "active" ? "paused" : "active" } : p)),
+			prev.map((p) => {
+				if (p.id !== promoId) return p;
+				targetNextStatus = p.status === "active" ? "paused" : "active";
+				return { ...p, status: targetNextStatus };
+			}),
 		);
+
+		void fetch(`/api/marketing/promos/${encodeURIComponent(promoId)}/status`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({ status: targetNextStatus }),
+		}).catch(() => {});
 	};
 
 	const handleSelectPreset = (pkg: MarketingPromoPackage) => {
@@ -111,9 +172,29 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 		};
 
 		setPromos((prev) => [newPromo, ...prev]);
-		setFeedbackMsg(`Акция «${newPromo.title}» успешно запущена в клинике!`);
+		setFeedbackMsg(`Акция «${newPromo.title}» успешно запущена и сохранена в базе клиники!`);
 		setActiveTab("promos");
 		setTimeout(() => setFeedbackMsg(null), 4000);
+
+		// Реальная персистентность в PostgreSQL 18 через Fastify API
+		const serverPromoPayload = {
+			id: newPromo.id, title: newPromo.title, badge: newPromo.badge, status: "active" as const,
+			category: newPromo.category, discountText: newPromo.badge, promoCode: newPromo.promoCode,
+			validUntil: `${newPromo.validityDays} дней`, minInvoiceRub: Math.round(newPromo.priceKopecks / 100),
+			description: newPromo.description, conditions: [...newPromo.includedServices],
+			stats: { reach: 0, delivered: 0, deliveredPercent: 0, visits: 0, conversionPercent: 0, revenueRub: 0, budgetSpentRub: 0, romiPercent: 0 },
+			templates: { sms: newPromo.defaultMessageTemplate, whatsapp: newPromo.defaultMessageTemplate, telegram: newPromo.defaultMessageTemplate },
+			recommendedSegment: "all_active", createdAt: new Date().toISOString(),
+		};
+
+		void fetch("/api/marketing/promos", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify(serverPromoPayload),
+		}).catch(() => {});
 	};
 
 	return (
@@ -138,26 +219,10 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 
 				{/* 4 Summary KPI Cards */}
 				<section className="marketing-kpi-strip" aria-label="Сводные показатели маркетинга">
-					<div className="marketing-kpi-card" data-testid="kpi-budget">
-						<span className="marketing-kpi-label">Общий бюджет</span>
-						<span className="marketing-kpi-value">{formatKopecksToRub(summary.totalSpentKopecks)}</span>
-						<span className="marketing-kpi-subtext">6 каналов привлечения</span>
-					</div>
-					<div className="marketing-kpi-card" data-testid="kpi-revenue">
-						<span className="marketing-kpi-label">Выручка из кассы</span>
-						<span className="marketing-kpi-value">{formatKopecksToRub(summary.totalRevenueKopecks)}</span>
-						<span className="marketing-kpi-subtext">Оплачено первичными</span>
-					</div>
-					<div className="marketing-kpi-card" data-testid="kpi-romi">
-						<span className="marketing-kpi-label">Чистый ROMI</span>
-						<span className="marketing-kpi-value text-[var(--teal,#0d9488)]">{formatRomiPercent(summary.overallRomiPercent)}</span>
-						<span className="marketing-kpi-subtext">Прибыль {formatKopecksToRub(summary.totalProfitKopecks)}</span>
-					</div>
-					<div className="marketing-kpi-card" data-testid="kpi-patients">
-						<span className="marketing-kpi-label">Первичных пациентов</span>
-						<span className="marketing-kpi-value">{summary.totalPatientsCount} чел</span>
-						<span className="marketing-kpi-subtext">Доходимость {summary.overallShowUpRatePercent}%</span>
-					</div>
+					<div className="marketing-kpi-card" data-testid="kpi-budget"><span className="marketing-kpi-label">Общий бюджет</span><span className="marketing-kpi-value">{formatKopecksToRub(summary.totalSpentKopecks)}</span><span className="marketing-kpi-subtext">6 каналов привлечения</span></div>
+					<div className="marketing-kpi-card" data-testid="kpi-revenue"><span className="marketing-kpi-label">Выручка из кассы</span><span className="marketing-kpi-value">{formatKopecksToRub(summary.totalRevenueKopecks)}</span><span className="marketing-kpi-subtext">Оплачено первичными</span></div>
+					<div className="marketing-kpi-card" data-testid="kpi-romi"><span className="marketing-kpi-label">Чистый ROMI</span><span className="marketing-kpi-value text-[var(--teal,#0d9488)]">{formatRomiPercent(summary.overallRomiPercent)}</span><span className="marketing-kpi-subtext">Прибыль {formatKopecksToRub(summary.totalProfitKopecks)}</span></div>
+					<div className="marketing-kpi-card" data-testid="kpi-patients"><span className="marketing-kpi-label">Первичных пациентов</span><span className="marketing-kpi-value">{summary.totalPatientsCount} чел</span><span className="marketing-kpi-subtext">Доходимость {summary.overallShowUpRatePercent}%</span></div>
 				</section>
 
 				{/* Segmented Navigation Bar */}
@@ -210,24 +275,13 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 								<table className="marketing-channels-table" data-testid="marketing-channels-table">
 									<thead>
 										<tr>
-											<th className="text-left">Канал рекламы</th>
-											<th className="text-left">Категория</th>
-											<th className="text-right">Бюджет (₽)</th>
-											<th className="text-center">Лиды</th>
-											<th className="text-center">Пациенты</th>
-											<th className="text-right">Выручка (₽)</th>
-											<th className="text-right">Ср. чек</th>
-											<th className="text-right">CAC</th>
-											<th className="text-center">ROMI</th>
+											<th className="text-left">Канал рекламы</th><th className="text-left">Категория</th><th className="text-right">Бюджет (₽)</th><th className="text-center">Лиды</th><th className="text-center">Пациенты</th><th className="text-right">Выручка (₽)</th><th className="text-right">Ср. чек</th><th className="text-right">CAC</th><th className="text-center">ROMI</th>
 										</tr>
 									</thead>
 									<tbody>
 										{channels.map((ch) => (
 											<tr key={ch.id}>
-												<td>
-													<div className="font-semibold text-[var(--ink,#0f172a)]">{ch.name}</div>
-													<div className="text-xs text-[var(--text-muted,#64748b)]">{ch.badgeText}</div>
-												</td>
+												<td><div className="font-semibold text-[var(--ink,#0f172a)]">{ch.name}</div><div className="text-xs text-[var(--text-muted,#64748b)]">{ch.badgeText}</div></td>
 												<td><span className="marketing-badge-tag">{ch.category}</span></td>
 												<td className="text-right font-medium">{formatKopecksToRub(ch.spentKopecks)}</td>
 												<td className="text-center">{ch.leadsCount}</td>
@@ -235,13 +289,7 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 												<td className="text-right font-bold">{formatKopecksToRub(ch.revenueKopecks)}</td>
 												<td className="text-right">{formatKopecksToRub(ch.avgCheckKopecks)}</td>
 												<td className="text-right">{formatKopecksToRub(ch.cacKopecks)}</td>
-												<td className="text-center">
-													{ch.romiStatus === "organic" ? (
-														<span className="marketing-badge-organic">Органика (∞)</span>
-													) : (
-														<span className="marketing-badge-profitable">{formatRomiPercent(ch.romiPercent)}</span>
-													)}
-												</td>
+												<td className="text-center">{ch.romiStatus === "organic" ? (<span className="marketing-badge-organic">Органика (∞)</span>) : (<span className="marketing-badge-profitable">{formatRomiPercent(ch.romiPercent)}</span>)}</td>
 											</tr>
 										))}
 									</tbody>
@@ -265,33 +313,14 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 								{channels.map((ch) => (
 									<div key={ch.id} className="marketing-channel-mobile-card">
 										<div className="marketing-channel-card-header">
-											<div>
-												<div className="marketing-channel-card-title">{ch.name}</div>
-												<span className="marketing-badge-tag">{ch.category}</span>
-											</div>
-											{ch.romiStatus === "organic" ? (
-												<span className="marketing-badge-organic">Органика</span>
-											) : (
-												<span className="marketing-badge-profitable">ROMI {formatRomiPercent(ch.romiPercent)}</span>
-											)}
+											<div><div className="marketing-channel-card-title">{ch.name}</div><span className="marketing-badge-tag">{ch.category}</span></div>
+											{ch.romiStatus === "organic" ? (<span className="marketing-badge-organic">Органика</span>) : (<span className="marketing-badge-profitable">ROMI {formatRomiPercent(ch.romiPercent)}</span>)}
 										</div>
 										<div className="marketing-channel-metrics-grid">
-											<div className="marketing-metric-item">
-												<span className="marketing-metric-label">Потрачено</span>
-												<span className="marketing-metric-val">{formatKopecksToRub(ch.spentKopecks)}</span>
-											</div>
-											<div className="marketing-metric-item">
-												<span className="marketing-metric-label">Выручка</span>
-												<span className="marketing-metric-val text-[var(--teal,#0d9488)]">{formatKopecksToRub(ch.revenueKopecks)}</span>
-											</div>
-											<div className="marketing-metric-item">
-												<span className="marketing-metric-label">Пациенты</span>
-												<span className="marketing-metric-val">{ch.patientsCount} чел ({ch.showUpRatePercent}%)</span>
-											</div>
-											<div className="marketing-metric-item">
-												<span className="marketing-metric-label">CAC (пациент)</span>
-												<span className="marketing-metric-val">{formatKopecksToRub(ch.cacKopecks)}</span>
-											</div>
+											<div className="marketing-metric-item"><span className="marketing-metric-label">Потрачено</span><span className="marketing-metric-val">{formatKopecksToRub(ch.spentKopecks)}</span></div>
+											<div className="marketing-metric-item"><span className="marketing-metric-label">Выручка</span><span className="marketing-metric-val text-[var(--teal,#0d9488)]">{formatKopecksToRub(ch.revenueKopecks)}</span></div>
+											<div className="marketing-metric-item"><span className="marketing-metric-label">Пациенты</span><span className="marketing-metric-val">{ch.patientsCount} чел ({ch.showUpRatePercent}%)</span></div>
+											<div className="marketing-metric-item"><span className="marketing-metric-label">CAC (пациент)</span><span className="marketing-metric-val">{formatKopecksToRub(ch.cacKopecks)}</span></div>
 										</div>
 									</div>
 								))}

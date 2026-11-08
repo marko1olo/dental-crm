@@ -34,7 +34,7 @@ export async function resolveOrCreatePatientFromLead(
 		if (existing) return { patient: existing, alreadyExisted: true };
 	}
 
-	const utmInfo = extractUtmAttribution(lead.source, lead.notes);
+	const utmInfo = extractUtmAttribution(lead.source, (lead as any).metadata ?? null);
 	const notesParts = [
 		lead.notes ? `Жалобы: ${lead.notes}` : null,
 		leadSource ? `Источник: ${leadSource}` : null,

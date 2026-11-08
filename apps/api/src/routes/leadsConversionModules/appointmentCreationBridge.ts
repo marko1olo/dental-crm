@@ -86,7 +86,7 @@ export async function convertLeadToAppointment(params: {
 
 		let appointment: unknown = null;
 		if (hasDates && doctor) {
-			const utm = extractUtmAttribution(lead.source, lead.notes);
+			const utm = extractUtmAttribution(lead.source, (lead as any).metadata ?? null);
 			const reason = payload.reason || (Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Первичная консультация: ${lead.clinicalTags.join(", ")}` : (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
 			const commentParts = [payload.comment, lead.notes ? `Жалоба: ${lead.notes}` : null, lead.source ? `Канал: ${lead.source}` : null, utm.formattedUtm, Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Теги: ${lead.clinicalTags.join(", ")}` : null, lead.audioRecordUrl ? `Аудио: ${lead.audioRecordUrl}` : null, lead.transcriptionSnippet ? `Транскрипт: ${lead.transcriptionSnippet}` : null].filter(Boolean);
 

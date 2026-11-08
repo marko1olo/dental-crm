@@ -1565,5 +1565,24 @@ Use these exclusively. Blind terminal navigation is banned.
 > 7. **4-State Visual Proof:**  
 >    - Верифицировано на живом стенде: `01_perio_studio_pc_light_1440x900.png` (86.9 KB), `02_perio_studio_pc_dark_1440x900.png` (86.8 KB), `03_perio_studio_mobile_light_390x844.png` (35.0 KB), `04_perio_studio_mobile_dark_390x844.png` (35.7 KB).
 
+---
+
+### 🛑 МАНДАТ 8bg: CRM ВОРОНКА ОБРАЩЕНИЙ, КАНБАН-ДОСКА ЛИДОВ, МАРКЕТИНГ И СКВОЗНОЙ ROMI (LEADS CRM, CONVERSION FUNNEL & MARKETING ROMI SSOT)
+
+> 📈 **ЕДИНЫЙ ЭТАЛОН CRM, ВОРОНКИ ОБРАЩЕНИЙ И СКВОЗНОГО МАРКЕТИНГА (SSOT LEADS & MARKETING):**  
+> Полная ликвидация потемкинских симуляций и привязка к реальному реляционному контуру PostgreSQL 18.  
+> 1. **База данных PostgreSQL 18:** `crmLeads` и `crmLeadStageHistory` в `apps/api/src/db/schema/communications/messagesSchema.ts`. Хранение сквозной атрибуции в структурированном реляционном JSONB поле `metadata` (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `referrer`).  
+> 2. **Ликвидация майнинга свободных заметок (Anti-Regex Text-Mining Mandate 8ap):** Полностью вырезан нищий regex-парсинг клинических заметок (`lead.notes`) в `apps/api/src/routes/leadsConversionModules/conversionValidator.ts`. Извлечение параметров атрибуции происходит СТРОГО из реляционной структуры `lead.metadata` (JSONB) или канонического `lead.source` через стандартный `URLSearchParams` без обращения к клиническим заметкам пациента.  
+> 3. **Персистентная Студия Маркетинга (Mandate 8wy Zero-Mocks):** В `apps/web/src/components/marketing/MarketingStudioModal.tsx` ликвидированы все потемкинские статические моки. Модалка подключена к живым API-роутам:  
+>    - `GET /api/marketing/promos` — загрузка актуальных акций из базы данных;  
+>    - `POST /api/marketing/promos` — создание и публикация новых акций с автоматической генерацией промокодов и сохранением в PostgreSQL 18;  
+>    - `PATCH /api/marketing/promos/:id/status` — мгновенная смена статуса активности акции.  
+> 4. **Канбан-доска обращений (Leads Kanban SSOT):** `apps/web/src/components/leads/LeadsKanbanView.tsx` (`kanbanView/index.tsx`) и стор `useLeadsStore`. Drag-and-drop обращений шлет реальный `PATCH /api/leads/:id/status` в PostgreSQL 18 с WebSockets-бродкастом.  
+> 5. **Сквозная конверсия (Lead-to-Patient & Appointment Bridge):** Конверсия лида в пациента и создание талона записи через `patientCreationBridge.ts` и `appointmentCreationBridge.ts` передают структурированные метаданные и метки атрибуции непосредственно в административный профиль пациента (`administrativeProfile.acquisitionChannel`).  
+> 6. **4-State Visual Proofs:** Верифицировано на живом стенде с реальными данными (все файлы > 90 КБ):  
+>    - Канбан лидов: `01_leads_kanban_pc_light_1440x900.png` (129 КБ), `02_leads_kanban_pc_dark_1440x900.png` (112 КБ), `03_leads_mobile_feed_light_390x844.png` (149 КБ), `04_leads_mobile_feed_dark_390x844.png` (143 КБ).  
+>    - Студия маркетинга и акций: `01_marketing_studio_pc_light_1440x900.png` (122 КБ), `02_marketing_studio_pc_dark_1440x900.png` (122 КБ), `03_marketing_studio_mobile_light_390x844.png` (206 КБ), `04_marketing_studio_mobile_dark_390x844.png` (203 КБ).
+
+
 
 

@@ -64,46 +64,62 @@ export function resolveStructuredLeadAttribution(input?: {
 	return res;
 }
 
+function parseUtmFromSource(source?: string | null): Partial<StructuredLeadAttribution> {
+	if (!source || !source.includes("=")) return {};
+	try {
+		const queryPart = source.includes("?") ? source.slice(source.indexOf("?") + 1) : source;
+		const cleaned = queryPart.replace(/[\[\]]/g, "&");
+		const params = new URLSearchParams(cleaned);
+		const get = (key: string): string | undefined => {
+			const val = params.get(key) || params.get(key.toLowerCase());
+			return val ? val.trim() : undefined;
+		};
+		const utmSource = get("utm_source");
+		const utmMedium = get("utm_medium");
+		const utmCampaign = get("utm_campaign");
+		const utmContent = get("utm_content");
+		const utmTerm = get("utm_term");
+
+		const res: Partial<StructuredLeadAttribution> = {};
+		if (utmSource) res.utmSource = utmSource;
+		if (utmMedium) res.utmMedium = utmMedium;
+		if (utmCampaign) res.utmCampaign = utmCampaign;
+		if (utmContent) res.utmContent = utmContent;
+		if (utmTerm) res.utmTerm = utmTerm;
+		return res;
+	} catch {
+		return {};
+	}
+}
+
 /**
  * Structured lead UTM attribution extractor.
- * Supports structured key-value maps and fallback text parser for legacy records.
+ * Strict Mandate 8ap: Zero regex-mining on freeform text / notes!
+ * Relational structured metadata and source column are authoritative.
  */
 export function extractUtmAttribution(
 	source?: string | null,
-	notes?: string | null,
+	metadataOrNotes?: Record<string, unknown> | string | null,
 	structured?: Partial<StructuredLeadAttribution> | null,
 ): StructuredLeadAttribution {
 	if (structured && Object.keys(structured).length > 0) {
 		return resolveStructuredLeadAttribution({ source, ...structured });
 	}
-	const text = `${source ?? ""} ${notes ?? ""}`.trim();
-	if (!text) return {};
 
-	const getParam = (param: string): string | undefined => {
-		const match = text.match(new RegExp(`(?:\\b|\\?|&)${param}\\s*[:=]\\s*([^&\\s,;\\n\\]\\)]+)`, "i"));
-		if (!match?.[1]) return undefined;
-		return decodeURIComponent(match[1].trim()).replace(/[\]),;]+$/, "").trim() || undefined;
-	};
+	if (metadataOrNotes && typeof metadataOrNotes === "object" && !Array.isArray(metadataOrNotes)) {
+		return resolveStructuredLeadAttribution({
+			source,
+			metadata: metadataOrNotes as Record<string, unknown>,
+		});
+	}
 
-	const utmSource = getParam("utm_source");
-	const utmMedium = getParam("utm_medium");
-	const utmCampaign = getParam("utm_campaign");
-	const utmContent = getParam("utm_content");
-	const utmTerm = getParam("utm_term");
+	if (source && source.trim()) {
+		const parsedFromSource = parseUtmFromSource(source.trim());
+		return resolveStructuredLeadAttribution({
+			source: source.trim(),
+			...parsedFromSource,
+		});
+	}
 
-	const parts: string[] = [];
-	if (utmSource) parts.push(`source=${utmSource}`);
-	if (utmMedium) parts.push(`medium=${utmMedium}`);
-	if (utmCampaign) parts.push(`campaign=${utmCampaign}`);
-	if (utmContent) parts.push(`content=${utmContent}`);
-	if (utmTerm) parts.push(`term=${utmTerm}`);
-
-	const res: StructuredLeadAttribution = {};
-	if (utmSource !== undefined) res.utmSource = utmSource;
-	if (utmMedium !== undefined) res.utmMedium = utmMedium;
-	if (utmCampaign !== undefined) res.utmCampaign = utmCampaign;
-	if (utmContent !== undefined) res.utmContent = utmContent;
-	if (utmTerm !== undefined) res.utmTerm = utmTerm;
-	if (parts.length > 0) res.formattedUtm = `UTM: ${parts.join(" | ")}`;
-	return res;
+	return {};
 }
