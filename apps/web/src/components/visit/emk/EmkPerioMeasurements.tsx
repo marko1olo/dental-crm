@@ -7,7 +7,7 @@ import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import {
 	buildPeriodontalTreatmentPlanJustification,
 	deductPeriodontalConsumablesSoftOverdraft,
-} from "../../perio/chart/perioPresets";
+} from "../../perio/perioCatalogData";
 
 export interface EmkPerioMeasurementsProps extends EmkSectionProps {
 	readonly activeTooth?: number | undefined;

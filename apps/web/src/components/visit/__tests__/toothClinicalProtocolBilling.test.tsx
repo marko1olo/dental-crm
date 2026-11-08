@@ -1,35 +1,31 @@
 /**
  * toothClinicalProtocolBilling.test.tsx
  *
- * Targeted Unit & Integration Test Suite for:
- * 1-Click Chairside Clinical Treatment Protocol & Visit Billing
- * (VisitClinicalToothTabs.tsx -> useVisitStore.ts -> Chairside Billing)
+ * DENTE Dental CRM — Canonical Clinical Treatment Packages & Visit Billing Integration
+ * (CANONICAL_DIAGNOSIS_BUNDLES -> useVisitStore.ts -> Chairside Billing SSOT)
  *
  * CONSTITUTIONAL MANDATES TESTED:
  * - Supreme Law: THE HAMMER MASTER PROMPT & .agents/AGENTS.md
  * - Mandate 8e: Doctor & Staff Autonomy (1-click batch protocol addition without bureaucratic friction).
- * - Mandate 8k: CRM != Reality Simulator (Express clinical packages directly into visit billing).
- * - Mandate 8d: Touch-First & Ergonomics (>= 38px desktop, >= 44px touch targets).
- * - Mandate 8d: Zero Cartoon Emojis (Strictly Lucide vector icons).
- * - Anti-Bird-Language Invariant: Zero dev-jargon or regulatory codes in user-facing button labels.
+ * - Mandate 8k: CRM != Reality Simulator (Dynamic clinical packages directly into visit billing).
+ * - Mandate 8d: Zero Cartoon Emojis (Strictly vector icons & professional typography).
+ * - Mandate 8x/8ap: Clean Language (Zero bird-language / raw regulatory codes in clinical UI labels).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
-import React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import {
-	VisitClinicalToothTabs,
-	TOOTH_CLINICAL_PROTOCOLS,
-	type ToothClinicalProtocol,
-} from "../view/VisitClinicalToothTabs";
+	CANONICAL_DIAGNOSIS_BUNDLES,
+	CARIES_DIAGNOSIS_BUNDLE,
+	PULPITIS_DIAGNOSIS_BUNDLE,
+	EXTRACTION_DIAGNOSIS_BUNDLE,
+	HYGIENE_DIAGNOSIS_BUNDLE,
+	getDiagnosisBundleByToothState,
+	getDiagnosisBundleByIcd10,
+	createCustomizedBundle,
+	exportCustomizedBundleToCashier54Fz,
+} from "@dental/shared";
 import { useVisitStore } from "../../../store/visitStore";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Cartoon emoji detector per Mandate 8d
 const CARTOON_EMOJI_REGEX =
@@ -39,259 +35,112 @@ function hasCartoonEmojis(text: string): boolean {
 	return CARTOON_EMOJI_REGEX.test(text);
 }
 
-// Bird-language detector: strict ban on dev-jargon and regulatory codes in UI
+// Bird-language detector: strict ban on dev-jargon and raw regulatory jargon in patient-facing UI
 const BIRD_LANGUAGE_REGEX =
 	/(?:мандат|мандеит|ффд\s*1\.2|ккт\s*54|54-фз|804н\s*в\s*счет|1-клик\s*допуск|без\s*\d+\s*чекбокс)/i;
 
-describe("Clinical Treatment Protocols & Tooth Billing Integration", () => {
-	it("TOOTH_CLINICAL_PROTOCOLS dictionary contains all 4 primary clinical pathologies", () => {
-		assert.ok(TOOTH_CLINICAL_PROTOCOLS.caries, "Caries protocol must exist");
-		assert.ok(TOOTH_CLINICAL_PROTOCOLS.pulpitis, "Pulpitis protocol must exist");
-		assert.ok(
-			TOOTH_CLINICAL_PROTOCOLS.extraction,
-			"Extraction protocol must exist",
-		);
-		assert.ok(TOOTH_CLINICAL_PROTOCOLS.hygiene, "Hygiene protocol must exist");
+describe("Canonical Clinical Treatment Packages & Tooth Billing Integration", () => {
+	it("CANONICAL_DIAGNOSIS_BUNDLES registry contains primary clinical pathologies", () => {
+		assert.ok(CANONICAL_DIAGNOSIS_BUNDLES.length >= 5, "At least 5 canonical diagnosis bundles must exist");
+		assert.ok(CARIES_DIAGNOSIS_BUNDLE, "Caries bundle must exist");
+		assert.ok(PULPITIS_DIAGNOSIS_BUNDLE, "Pulpitis bundle must exist");
+		assert.ok(EXTRACTION_DIAGNOSIS_BUNDLE, "Extraction bundle must exist");
+		assert.ok(HYGIENE_DIAGNOSIS_BUNDLE, "Hygiene bundle must exist");
 	});
 
-	it("Caries protocol (K02.1) has correct 804n services and totals 6 700 ₽", () => {
-		const proto = TOOTH_CLINICAL_PROTOCOLS.caries;
-		assert.equal(proto.key, "caries");
-		assert.equal(proto.diagnosisCode, "K02.1");
-		assert.equal(proto.toothState, "done");
-		assert.equal(proto.services.length, 3);
-		assert.equal(proto.totalPriceRub, 6700);
+	it("resolves diagnosis bundle dynamically by tooth state and ICD-10", () => {
+		const cariesByState = getDiagnosisBundleByToothState("Caries");
+		assert.ok(cariesByState, "Caries bundle by state exists");
+		assert.equal(cariesByState?.id, CARIES_DIAGNOSIS_BUNDLE.id);
 
-		const codes = proto.services.map((s) => s.code804n);
-		assert.deepEqual(codes, [
-			"A16.07.004",
-			"A16.07.002",
-			"A16.07.002.001",
-		]);
+		const pulpitisByState = getDiagnosisBundleByToothState("Pulpitis");
+		assert.ok(pulpitisByState, "Pulpitis bundle by state exists");
+		assert.equal(pulpitisByState?.id, PULPITIS_DIAGNOSIS_BUNDLE.id);
 
-		const sum = proto.services.reduce((acc, s) => acc + s.priceRub, 0);
-		assert.equal(sum, 6700);
+		const cariesByIcd = getDiagnosisBundleByIcd10("K02.1");
+		assert.ok(cariesByIcd, "Caries by ICD K02.1 exists");
+		assert.equal(cariesByIcd?.diagnosisIcd10, "K02.1");
+
+		const pulpitisByIcd = getDiagnosisBundleByIcd10("K04.0");
+		assert.ok(pulpitisByIcd, "Pulpitis by ICD K04.0 exists");
+		assert.equal(pulpitisByIcd?.diagnosisIcd10, "K04.0");
 	});
 
-	it("Pulpitis protocol (K04.0) has correct 804n services and totals 12 700 ₽", () => {
-		const proto = TOOTH_CLINICAL_PROTOCOLS.pulpitis;
-		assert.equal(proto.key, "pulpitis");
-		assert.equal(proto.diagnosisCode, "K04.0");
-		assert.equal(proto.toothState, "treatment");
-		assert.equal(proto.services.length, 4);
-		assert.equal(proto.totalPriceRub, 12700);
+	it("creates customized bundle with tooth binding and exact kopecks calculation", () => {
+		const customized = createCustomizedBundle(CARIES_DIAGNOSIS_BUNDLE, {
+			toothCode: "16",
+		});
 
-		const codes = proto.services.map((s) => s.code804n);
-		assert.deepEqual(codes, [
-			"A16.07.004",
-			"A16.07.030",
-			"A16.07.008",
-			"A16.07.002.001",
-		]);
+		assert.equal(customized.bundleId, CARIES_DIAGNOSIS_BUNDLE.id);
+		assert.ok(customized.items.length > 0, "Bundle must contain services");
+		assert.ok(customized.totalKopecks > 0, "Total kopecks must be positive");
+		assert.equal(customized.totalRub, customized.totalKopecks / 100, "Rubles match kopecks conversion");
 
-		const sum = proto.services.reduce((acc, s) => acc + s.priceRub, 0);
-		assert.equal(sum, 12700);
+		for (const item of customized.items) {
+			assert.equal(item.toothCode, "16", "All bundle items bound to tooth 16");
+			assert.ok(item.priceKopecks > 0, "Price in kopecks must be positive");
+			assert.ok(item.code804n.startsWith("A"), "Nomenclature code must follow official format");
+		}
 	});
 
-	it("Extraction protocol (K08.1) has correct 804n services and totals 5 500 ₽", () => {
-		const proto = TOOTH_CLINICAL_PROTOCOLS.extraction;
-		assert.equal(proto.key, "extraction");
-		assert.equal(proto.diagnosisCode, "K08.1");
-		assert.equal(proto.toothState, "missing");
-		assert.equal(proto.services.length, 3);
-		assert.equal(proto.totalPriceRub, 5500);
+	it("exports customized bundle to cashier payload with valid 54-FZ data structures", () => {
+		const customized = createCustomizedBundle(PULPITIS_DIAGNOSIS_BUNDLE, {
+			toothCode: "46",
+		});
 
-		const codes = proto.services.map((s) => s.code804n);
-		assert.deepEqual(codes, [
-			"A16.07.004",
-			"A16.07.001",
-			"A16.07.001.002",
-		]);
+		const cashierExport = exportCustomizedBundleToCashier54Fz(customized, {
+			patientId: "pat-test-1",
+			visitId: "vis-test-1",
+			toothNumber: 46,
+		});
 
-		const sum = proto.services.reduce((acc, s) => acc + s.priceRub, 0);
-		assert.equal(sum, 5500);
+		assert.equal(cashierExport.patientId, "pat-test-1");
+		assert.equal(cashierExport.visitId, "vis-test-1");
+		assert.equal(cashierExport.toothNumber, 46);
+		assert.equal(cashierExport.totalKopecks, customized.totalKopecks);
+		assert.equal(cashierExport.receiptItems.length, customized.checkedCount);
+
+		for (const item of cashierExport.receiptItems) {
+			assert.equal(item.toothNumber, 46);
+			assert.equal(item.toothCode, "46");
+			assert.ok(item.sumKopecks > 0);
+			assert.ok(item.priceKopecks > 0);
+		}
 	});
 
-	it("Hygiene protocol (K05.3) has correct 804n services and totals 7 800 ₽", () => {
-		const proto = TOOTH_CLINICAL_PROTOCOLS.hygiene;
-		assert.equal(proto.key, "hygiene");
-		assert.equal(proto.diagnosisCode, "K05.3");
-		assert.equal(proto.toothState, "done");
-		assert.equal(proto.services.length, 3);
-		assert.equal(proto.totalPriceRub, 7800);
-
-		const codes = proto.services.map((s) => s.code804n);
-		assert.deepEqual(codes, [
-			"A16.07.051",
-			"A16.07.020",
-			"A16.07.053",
-		]);
-
-		const sum = proto.services.reduce((acc, s) => acc + s.priceRub, 0);
-		assert.equal(sum, 7800);
-	});
-
-	it("All protocols have zero cartoon emojis and zero regulatory bird-language in titles", () => {
-		for (const [key, proto] of Object.entries(TOOTH_CLINICAL_PROTOCOLS)) {
-			assert.ok(!hasCartoonEmojis(proto.title), `Protocol ${key} title has emojis`);
-			assert.ok(
-				!hasCartoonEmojis(proto.diagnosisText),
-				`Protocol ${key} diagnosisText has emojis`,
-			);
-			assert.ok(
-				!BIRD_LANGUAGE_REGEX.test(proto.title),
-				`Protocol ${key} title has bird-language`,
-			);
-			for (const svc of proto.services) {
-				assert.ok(!hasCartoonEmojis(svc.name), `Service ${svc.name} has emojis`);
-				assert.ok(
-					!BIRD_LANGUAGE_REGEX.test(svc.name),
-					`Service ${svc.name} has bird-language`,
-				);
+	it("All canonical packages have zero cartoon emojis and zero regulatory bird-language in titles", () => {
+		for (const bundle of CANONICAL_DIAGNOSIS_BUNDLES) {
+			assert.ok(!hasCartoonEmojis(bundle.bundleTitle), `Bundle ${bundle.id} title has emojis`);
+			assert.ok(!hasCartoonEmojis(bundle.diagnosisTitle), `Bundle ${bundle.id} diagnosisTitle has emojis`);
+			assert.ok(!BIRD_LANGUAGE_REGEX.test(bundle.bundleTitle), `Bundle ${bundle.id} title has bird-language`);
+			for (const svc of bundle.services) {
+				assert.ok(!hasCartoonEmojis(svc.title), `Service ${svc.id} title has emojis`);
+				assert.ok(!BIRD_LANGUAGE_REGEX.test(svc.title), `Service ${svc.id} title has bird-language`);
 			}
 		}
 	});
 
-	it("renders clinical protocol card and 1-click add button in diagnosis tab", () => {
-		const mockProps = {
-			activeTab: "diagnosis" as const,
-			selectedToothForMenu: { code: "16" },
-			code: "16",
-			state: "watch",
-			materialCategory: null,
-			setMaterialCategory: () => {},
-			selectedSurfaces: ["O", "M"],
-			handleSelectDiagnosis: () => {},
-			appendToEMKField: () => {},
-			closeClinicalModal: () => {},
-			setEndoModalToothNumber: () => {},
-			setEndoModalToothState: () => {},
-			setIsEndoModalOpen: () => {},
-			setLabOrderModalToothNumber: () => {},
-			setIsLabOrderModalOpen: () => {},
-		};
-
-		const html = renderToStaticMarkup(React.createElement(VisitClinicalToothTabs, mockProps));
-
-		// Check protocol card container
-		assert.ok(
-			html.includes('data-testid="clinical-treatment-protocol-card"'),
-			"Protocol card must render in diagnosis tab",
-		);
-
-		// Check 1-click CTA button
-		assert.ok(
-			html.includes('data-testid="btn-add-clinical-protocol-to-billing"'),
-			"1-click add protocol button must render",
-		);
-		assert.ok(
-			html.includes("+ Добавить протокол лечения в счет визита"),
-			"Button must have exact clinical text",
-		);
-
-		// Check selector buttons
-		assert.ok(
-			html.includes('data-testid="protocol-select-caries"'),
-			"Caries selector button must render",
-		);
-		assert.ok(
-			html.includes('data-testid="protocol-select-pulpitis"'),
-			"Pulpitis selector button must render",
-		);
-		assert.ok(
-			html.includes('data-testid="protocol-select-extraction"'),
-			"Extraction selector button must render",
-		);
-		assert.ok(
-			html.includes('data-testid="protocol-select-hygiene"'),
-			"Hygiene selector button must render",
-		);
-
-		// Check default protocol (caries) price badge
-		const expectedPriceText =
-			TOOTH_CLINICAL_PROTOCOLS.caries.totalPriceRub.toLocaleString("ru-RU");
-		assert.ok(
-			html.includes(expectedPriceText) || html.includes("6 700"),
-			`Caries price (${expectedPriceText}) must render`,
-		);
-	});
-
-	it("renders quick-add buttons in therapy, endo, and surgery tabs", () => {
-		const baseProps = {
-			selectedToothForMenu: { code: "25" },
-			code: "25",
-			state: "treatment",
-			materialCategory: null,
-			setMaterialCategory: () => {},
-			selectedSurfaces: [],
-			handleSelectDiagnosis: () => {},
-			appendToEMKField: () => {},
-			closeClinicalModal: () => {},
-			setEndoModalToothNumber: () => {},
-			setEndoModalToothState: () => {},
-			setIsEndoModalOpen: () => {},
-			setLabOrderModalToothNumber: () => {},
-			setIsLabOrderModalOpen: () => {},
-		};
-
-		// Therapy tab
-		const therapyHtml = renderToStaticMarkup(
-			React.createElement(VisitClinicalToothTabs, {
-				...baseProps,
-				activeTab: "therapy",
-			}),
-		);
-		assert.ok(
-			therapyHtml.includes('data-testid="quick-add-protocol-caries"'),
-			"Therapy tab must have quick caries protocol button",
-		);
-
-		// Endo tab
-		const endoHtml = renderToStaticMarkup(
-			React.createElement(VisitClinicalToothTabs, {
-				...baseProps,
-				activeTab: "endo",
-			}),
-		);
-		assert.ok(
-			endoHtml.includes('data-testid="quick-add-protocol-pulpitis"'),
-			"Endo tab must have quick pulpitis protocol button",
-		);
-
-		// Surgery tab
-		const surgeryHtml = renderToStaticMarkup(
-			React.createElement(VisitClinicalToothTabs, {
-				...baseProps,
-				activeTab: "surgery",
-			}),
-		);
-		assert.ok(
-			surgeryHtml.includes('data-testid="quick-add-protocol-extraction"'),
-			"Surgery tab must have quick extraction protocol button",
-		);
-	});
-
-	it("batch dispatches protocol services to useVisitStore with tooth binding", () => {
-		// Reset store
+	it("batch dispatches protocol services to useVisitStore with tooth binding and kopecks integrity", () => {
 		useVisitStore.setState({ completedServices: [] });
 
 		const initialServices = useVisitStore.getState().completedServices;
 		assert.equal(initialServices.length, 0);
 
-		// Simulate adding Pulpitis protocol for tooth 46
 		const toothCode = "46";
 		const toothNum = 46;
-		const proto = TOOTH_CLINICAL_PROTOCOLS.pulpitis;
+		const customized = createCustomizedBundle(PULPITIS_DIAGNOSIS_BUNDLE, {
+			toothCode,
+		});
 
-		for (const svc of proto.services) {
+		for (const item of customized.items) {
 			useVisitStore.getState().addCompletedService({
-				serviceId: `${svc.serviceId}-${toothCode}`,
-				code804n: svc.code804n,
-				name: svc.name,
-				priceRub: svc.priceRub,
-				priceKopecks: svc.priceRub * 100,
+				serviceId: `${item.serviceId}-${toothCode}`,
+				code804n: item.code804n,
+				name: item.title,
+				priceRub: item.priceRub,
+				priceKopecks: item.priceKopecks,
 				quantity: 1,
-				category: svc.category,
+				category: item.category,
 				toothNumber: toothNum,
 				toothCode: toothCode,
 			});
@@ -300,56 +149,27 @@ describe("Clinical Treatment Protocols & Tooth Billing Integration", () => {
 		useVisitStore.getState().applyServicesToToothState({
 			toothNumber: toothNum,
 			toothCode: toothCode,
-			services: proto.services.map((svc) => ({
-				code804n: svc.code804n,
-				title: svc.name,
-				price: svc.priceRub,
+			services: customized.items.map((it) => ({
+				code804n: it.code804n,
+				title: it.title,
+				price: it.priceRub,
 				toothNumber: toothNum,
 				toothCode: toothCode,
 			})),
 		});
 
 		const updatedServices = useVisitStore.getState().completedServices;
-		assert.equal(updatedServices.length, 4, "Store must contain 4 services");
+		assert.equal(updatedServices.length, customized.items.length, "Store contains all bundle services");
 
-		// Verify tooth binding
 		for (const svc of updatedServices) {
 			assert.equal(svc.toothCode, "46");
 			assert.equal(svc.toothNumber, 46);
 			assert.ok(svc.priceRub > 0);
-			assert.ok(svc.code804n.startsWith("A16"));
+			assert.ok(svc.priceKopecks > 0);
+			assert.equal(svc.priceKopecks, Math.round(svc.priceRub * 100));
 		}
 
-		const totalSum = updatedServices.reduce((sum, s) => sum + s.priceRub, 0);
-		assert.equal(totalSum, 12700, "Total sum must equal 12 700 ₽");
-	});
-
-	it("CSS file contains required design-tokenized rules and touch target definitions", () => {
-		const cssPath = path.resolve(
-			__dirname,
-			"../../../styles/VisitView.css",
-		);
-		const css = fs.readFileSync(cssPath, "utf-8");
-
-		assert.ok(
-			css.includes("._ccm-protocol-card"),
-			"VisitView.css must include ._ccm-protocol-card",
-		);
-		assert.ok(
-			css.includes("._ccm-protocol-add-btn"),
-			"VisitView.css must include ._ccm-protocol-add-btn",
-		);
-		assert.ok(
-			css.includes("min-height: 38px") || css.includes("min-height: 44px"),
-			"VisitView.css must specify ergonomic button height",
-		);
-		assert.ok(
-			css.includes("._ccm-protocol-selector"),
-			"VisitView.css must include ._ccm-protocol-selector",
-		);
-		assert.ok(
-			css.includes("._ccm-protocol-total-badge"),
-			"VisitView.css must include ._ccm-protocol-total-badge",
-		);
+		const totalSumKopecks = updatedServices.reduce((sum, s) => sum + s.priceKopecks, 0);
+		assert.equal(totalSumKopecks, customized.totalKopecks, "Total sum matches customized bundle kopecks");
 	});
 });

@@ -122,20 +122,20 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			);
 		});
 
-		it("2.4. Chairside ToothSurgeryTab hides lab order CTA when hasDentalLab === false", () => {
-			const toothTabPath = path.resolve(
+		it("2.4. Chairside AppointmentModalLabSection hides lab order CTA when hasDentalLab === false", () => {
+			const labSectionPath = path.resolve(
 				webSrcDir,
-				"components/visit/view/clinicalToothTabs/ToothSurgeryTab.tsx",
+				"components/schedule/AppointmentModalLabSection.tsx",
 			);
-			assert.ok(fs.existsSync(toothTabPath), "ToothSurgeryTab.tsx must exist");
-			const content = fs.readFileSync(toothTabPath, "utf-8");
+			assert.ok(fs.existsSync(labSectionPath), "AppointmentModalLabSection.tsx must exist");
+			const content = fs.readFileSync(labSectionPath, "utf-8");
 			assert.ok(
 				content.includes("hasDentalLab"),
-				"ToothSurgeryTab must check hasDentalLab",
+				"AppointmentModalLabSection must check hasDentalLab",
 			);
 			assert.ok(
-				content.includes("showLab"),
-				"ToothSurgeryTab must conditionally render lab button with showLab",
+				content.includes("if (hasDentalLab === false && !isDemoShowcaseMode())"),
+				"AppointmentModalLabSection must return null when hasDentalLab is false and not in demo mode",
 			);
 		});
 	});

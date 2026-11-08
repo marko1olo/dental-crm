@@ -9,6 +9,7 @@ import {
 	ALL_PRIMARY_TEETH,
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	PERMANENT_TO_PRIMARY_PREDECESSOR_MAP,
+	PATHOLOGY_STAMPS,
 } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../lib/clinicalProtocols";
 import {
@@ -17,7 +18,6 @@ import {
 	type ToothState,
 } from "../components/odontogram/ToothChart";
 import { getToothConfig, getToothPath } from "../utils/math/toothGeometry";
-import { PATHOLOGY_STAMPS } from "../components/visit/view/VisitEmbeddedOdontogram";
 
 test("ToothChart Geometry — handles adult and pediatric FDI teeth", () => {
 	// Adult upper and lower teeth

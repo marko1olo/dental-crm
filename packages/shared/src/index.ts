@@ -34,11 +34,14 @@ export {
 	dentalSpecialtySchema,
 	staffRoleSchema,
 	type StaffRole,
+	type GeneratedDocument,
+	generatedDocumentSchema,
 } from "./schemas/index.js";
 
 // --- Package Module Re-exports ---
 export * from "./datetime/index.js";
 export * from "./demo/index.js";
+export type { Kopecks } from "./money.js";
 export { kopecksToRubles, formatRubles } from "./money.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
@@ -81,6 +84,7 @@ export {
 } from "./consents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
+export { PATHOLOGY_STAMPS, type PathologyStampItem } from "./clinical/dentalFormulaStates.js";
 export {
 	DENTAL_ICD10_FULL_CATALOG,
 	normalizeDentalIcd10Code,
@@ -99,6 +103,7 @@ export * from "./types/surgery.js";
 export * from "./dicom/index.js";
 export { consumableUnitSchema, type ConsumableUnit } from "./inventory/index.js";
 export {
+	type ToothState, type CanonicalToothState, type ToothStatus, type ToothClinicalState, type CrmToothState,
 	type TimelineCategory, type TimelineCategory as ClinicalTimelineCategory, CLINICAL_TIMELINE_CATEGORIES, TIMELINE_CATEGORY_LABELS_RU,
 	PATIENT_TIMELINE_EVENT_TYPES, type PatientTimelineEvent, type TimelineFilter, type TimelineQueryResult,
 	createTimelineEvent, filterAndPaginateTimeline, formatTimelineA4Summary, formatPatientTimelineChronology,
@@ -187,7 +192,6 @@ export {
 export * from "./recalls/index.js";
 export { type RecallCandidate } from "./recalls/index.js";
 export * from "./patients/index.js";
-export * from "./patients/stomxPatientTagsCatalog.js";
 export { DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG } from "./patients/tagsModules/representativeTypes.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";

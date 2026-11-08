@@ -512,5 +512,12 @@ apps/web/src/components/odontogram/gate0/teeth/tooth{ID}/
 - [x] **Red Team Fuzzing & Stress Inquisition (Завершен):**
   * Разработан и верифицирован стресс-сьют `packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` (10 000 мутаций строк FDI, 10 000 сплит-комбинаций, Wheeler-пропорции 48/54/60/68px, 0px дрифта на iPhone 390px, Mandate 8e 100% скидка).
   * Документирован реестр `docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`. Прогон 187 мс, 100% pass.
+- [x] **Gate 4.3 (Завершен — Red Team Purge of Tooth Context & Odontogram Clones):**
+  * **Ликвидация 28 файлов-клонов (`git rm -f`)**: Снесены устаревшие модалки визита (`VisitClinicalToothModal.tsx`, `clinicalToothTabs/`, `clinicalToothModal/`), семейный депозит из зуба (`ToothFamilyLoyaltyAccordion.tsx`, `ToothDrawerLoyaltyAccordion.tsx`, `family/`), и тонкий фасад `VisitEmbeddedOdontogram.tsx`.
+  * **Единый канонический эталон Tier 2 Warm Context**: `ToothContextDrawer.tsx` монтируется сбоку, не перекрывает одонтограмму, оставляет контекст открытым, на мобильных открывается как нативный Apple HIG Bottom Sheet (drag-handle 36x5px, сенсорные кнопки >= 44x44px, Natural Thumb Zone).
+  * **Экспресс-действия у кресла Tier 1 (0-1 клик)**: `ToothRadialMenu.tsx` (десктоп) и `ToothQuickStatusSheet.tsx` (мобильный).
+  * **Искоренение хардкода длины канала**: Выжжена выдуманная цифра «21.5 мм» в `ToothRvgThumbnail.tsx` в пользу честного физиологического протокола обтурации до апекса.
+  * **Биллинг и пакеты услуг**: Тест `toothClinicalProtocolBilling.test.tsx` переписан на канонический контракт `CANONICAL_DIAGNOSIS_BUNDLES` из `@dental/shared` с динамическим расчетом копеек без хардкода цен.
+  * **4-State Visual Proof**: Сняты и лично отсмотрены через `read_file` все 4 состояния в `docs/proofs/tooth_context/` (PC Light 1440x900, PC Dark 1440x900, Mobile Light 390x844, Mobile Dark 390x844, размер файлов 82–143 КБ).
 - [ ] **Gate 5:** Интерактивный 5-поверхностный селектор клика (Click-to-Apply) прямо по полигонам SVG.
 - [ ] **Gate 6:** Пародонтологический контур непрерывной альвеолярной кости и мостовидные протезы.

@@ -1,6 +1,6 @@
 import React from "react";
 import { VisitViewPanel } from "./VisitViewPanel";
-import { VisitClinicalToothModal } from "./VisitClinicalToothModal";
+import { ToothContextDrawer } from "../../diagnostics/ToothContextDrawer";
 import { VisitViewModals } from "./VisitViewModals";
 import type { useVisitViewState } from "./useVisitViewState";
 
@@ -9,32 +9,35 @@ export interface VisitViewDesktopLayoutProps {
 }
 
 export function VisitViewDesktopLayout({ s }: VisitViewDesktopLayoutProps) {
+	const toothNum = s.selectedToothForMenu
+		? Number.parseInt(s.selectedToothForMenu.code, 10) || 16
+		: 16;
+	const currentCode = s.selectedToothForMenu?.code ?? String(toothNum);
+	const rawState = s.toothStateByCode[currentCode] || s.selectedToothForMenu?.state || "Healthy";
+
 	return (
 		<>
 			<VisitViewPanel s={s} />
 
-			<VisitClinicalToothModal
-				selectedToothForMenu={s.selectedToothForMenu}
-				closeClinicalModal={() => {
+			<ToothContextDrawer
+				isOpen={Boolean(s.selectedToothForMenu)}
+				onClose={() => {
 					s.setSelectedSurfaces([]);
 					s.setSelectedToothForMenu(null);
 				}}
-				toothStateByCode={s.toothStateByCode}
-				materialCategory={s.materialCategory}
-				setMaterialCategory={s.setMaterialCategory}
-				handleSelectDiagnosis={s.handleToothDiagnosisSelect}
-				handleSelectSurface={s.handleSelectSurface}
-				selectedSurfaces={s.selectedSurfaces}
-				isSurfaceMode={s.isSurfaceMode}
-				setIsSurfaceMode={s.setIsSurfaceMode}
-				setEndoModalToothNumber={s.setEndoModalToothNumber}
-				setEndoModalToothState={s.setEndoModalToothState}
-				setIsEndoModalOpen={s.setIsEndoModalOpen}
-				appendToEMKField={s.appendToEMKField}
-				setLabOrderModalToothNumber={s.setLabOrderModalToothNumber}
-				setIsLabOrderModalOpen={s.setIsLabOrderModalOpen}
-				visitWarnings={s.visitWarnings}
-				onAddServiceToTooth={s.onAddServiceToTooth}
+				toothNumber={toothNum}
+				toothData={{
+					toothNumber: toothNum,
+					state: rawState as any,
+				}}
+				patient={s.activePatient}
+				doctorName={s.activeDoctor?.name || "Лечащий врач-стоматолог"}
+				onUpdateTooth={(num, updatedState) => {
+					s.setToothState(String(num), updatedState as any);
+				}}
+				onInsertToProtocol={(text) => {
+					s.appendToEMKField("objective", text);
+				}}
 			/>
 
 			<VisitViewModals

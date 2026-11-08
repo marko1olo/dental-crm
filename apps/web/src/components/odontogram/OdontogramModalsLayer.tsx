@@ -33,9 +33,9 @@ const TreatmentEstimator = React.lazy(() =>
 		default: m.TreatmentEstimator,
 	})),
 );
-const PeriodontogramChart = React.lazy(() =>
-	import("../perio/PeriodontogramChart").then((m) => ({
-		default: m.PeriodontogramChart,
+const PerioStudioModal = React.lazy(() =>
+	import("../perio/PerioStudioModal").then((m) => ({
+		default: m.PerioStudioModal,
 	})),
 );
 const VoiceDictationOverlay = React.lazy(() =>
@@ -195,7 +195,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 			{isPerioOpen && (
 				<div className="w-full mt-2 animate-in fade-in duration-200">
 					<React.Suspense fallback={null}>
-						<PeriodontogramChart
+						<PerioStudioModal
 							patientId={patientId}
 							patientName={activePatient?.name}
 							organizationId={auth?.organizationId}

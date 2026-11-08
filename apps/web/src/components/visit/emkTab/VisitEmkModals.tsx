@@ -5,7 +5,7 @@ import { InformedConsentModal } from "../../consents/InformedConsentModal";
 import { Form043PrintModal } from "../../emr/Form043PrintModal";
 import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { showToast } from "../../GlobalToast";
-import { PerioChartModal } from "../../perio/PerioChartModal";
+import { PerioStudioModal } from "../../perio/PerioStudioModal";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { appendClinicalText } from "../emk";
 import { VisitClinicalDiaryPrintSheet } from "../emk/VisitClinicalDiaryPrintSheet";
@@ -341,10 +341,11 @@ export function VisitEmkModals({
 				isSignedVisit={isSignedVisit}
 			/>
 
-			{/* Модальное окно полной пародонтограммы (Florida Probe / 192 точки) */}
+			{/* Модальное окно полной пародонтограммы */}
 			{isLocalPerioModalOpen && (
-				<PerioChartModal
+				<PerioStudioModal
 					isOpen={isLocalPerioModalOpen}
+					isModal={true}
 					onClose={() => setIsLocalPerioModalOpen(false)}
 					patientId={activePatient?.id}
 					patientName={patientName}

@@ -39,9 +39,10 @@ export const CANONICAL_TOOTH_STATES = [
 export type CanonicalToothState = (typeof CANONICAL_TOOTH_STATES)[number];
 
 /**
- * Canonical ToothStatus SSOT alias — unified across @dental/shared, apps/api, and apps/web.
+ * Canonical ToothStatus and ToothClinicalState SSOT aliases — unified across @dental/shared, apps/api, and apps/web.
  */
 export type ToothStatus = CanonicalToothState;
+export type ToothClinicalState = CanonicalToothState;
 
 /**
  * Legacy lowercase clinical tooth statuses preserved for backward-compatible
@@ -607,3 +608,71 @@ export const CLINICAL_DEFAULT_PRICES_RUB = Object.freeze({
 	IMPLANT: 35000,
 	EXTRACTION: 2500,
 });
+
+
+export interface PathologyStampItem {
+	readonly id: string;
+	readonly label: string;
+	readonly color: string;
+	readonly dotColor: string;
+	readonly description: string;
+}
+
+export const PATHOLOGY_STAMPS: readonly PathologyStampItem[] = Object.freeze([
+	{
+		id: "idle",
+		label: "Осмотр",
+		color: "var(--ink)",
+		dotColor: "#94a3b8",
+		description: "Клиническая карточка зуба и статус обследования",
+	},
+	{
+		id: "caries",
+		label: "Кариес",
+		color: "#ea580c",
+		dotColor: "#ea580c",
+		description: "Кариес дентина (K02.1)",
+	},
+	{
+		id: "pulpitis",
+		label: "Пульпит",
+		color: "#ef4444",
+		dotColor: "#ef4444",
+		description: "Пульпит зуба (K04.0)",
+	},
+	{
+		id: "treatment",
+		label: "Периодонтит",
+		color: "#dc2626",
+		dotColor: "#dc2626",
+		description: "Периодонтит и эндодонтическое лечение (K04.5)",
+	},
+	{
+		id: "done",
+		label: "Пломба",
+		color: "#0d9488",
+		dotColor: "#10b981",
+		description: "Пломбирование зуба композитом (A16.07.002)",
+	},
+	{
+		id: "crown",
+		label: "Коронка",
+		color: "#ca8a04",
+		dotColor: "#ca8a04",
+		description: "Искусственная коронка (A16.07.004)",
+	},
+	{
+		id: "missing",
+		label: "Удален",
+		color: "#64748b",
+		dotColor: "#ef4444",
+		description: "Отсутствующий зуб (удален ранее, K08.1)",
+	},
+	{
+		id: "watch",
+		label: "Наблюдение",
+		color: "#d97706",
+		dotColor: "#d97706",
+		description: "Клиническое наблюдение (сомнительный прогноз)",
+	},
+]);

@@ -2,7 +2,6 @@ import React from "react";
 import { ToothDrawerSurfacesAccordion } from "./ToothDrawerSurfacesAccordion";
 import { ToothDrawerAnesthesiaAccordion } from "./ToothDrawerAnesthesiaAccordion";
 import { ToothDrawerRvgAccordion } from "./ToothDrawerRvgAccordion";
-import { ToothDrawerLoyaltyAccordion } from "./ToothDrawerLoyaltyAccordion";
 import { ToothDrawerPediatricAccordion } from "./ToothDrawerPediatricAccordion";
 import type { ToothContextDrawerProps, WarmAccordionSection } from "./toothDrawerTypes";
 import type { ToothData } from "../../odontogram/ToothChart";
@@ -67,15 +66,6 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 				onOpenFullRadiology={onOpenFullRadiology}
 				onInsertToProtocol={onInsertToProtocol}
 				onUpdateTooth={onUpdateTooth}
-			/>
-
-			<ToothDrawerLoyaltyAccordion
-				toothNumber={toothNumber}
-				patientId={patient?.id}
-				patientName={patient?.fullName}
-				activeSection={activeSection}
-				toggleSection={toggleSection}
-				onOpenFamilyBilling={onOpenFamilyBilling}
 			/>
 
 			{isPediatricTooth && (

@@ -27,7 +27,7 @@ import {
 	applyPeriodontitisSeverePreset,
 	PERIO_EXPRESS_PRESETS,
 	type PerioExpressPresetId,
-} from "../components/perio/perioMath.js";
+} from "../components/perio/perioCatalogData.js";
 import {
 	UPPER_JAW_PRESETS,
 	LOWER_JAW_PRESETS,
@@ -212,8 +212,8 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 	});
 
 	describe("2. UI-аудит тулбаров пародонтограммы и одонтограммы (Мандаты 8e, 8k, 8d)", () => {
-		it("2.1. PeriodontogramChart.tsx: Тулбар 32-36px, кнопки 1-клик нормы и профгигиены, тач >= 44px", () => {
-			const perioChartPath = path.join(webSrcDir, "components/perio/PeriodontogramChart.tsx");
+		it("2.1. PerioStudioModal.tsx: Тулбар 32-36px, кнопки 1-клик нормы и профгигиены, тач >= 44px", () => {
+			const perioChartPath = path.join(webSrcDir, "components/perio/PerioStudioModal.tsx");
 			const toolbarPath = path.join(webSrcDir, "components/perio/chart/PerioToolbarPresets.tsx");
 			const perioCode = fs.readFileSync(perioChartPath, "utf-8") + (fs.existsSync(toolbarPath) ? "\n" + fs.readFileSync(toolbarPath, "utf-8") : "");
 
@@ -386,8 +386,8 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 			assert.ok(source.includes("pediatric-preset-pulpotec-btn"), "Кнопка Пульпотек должна присутствовать");
 		});
 
-		it("3.8. PeriodontogramChart.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
-			const perioChartPath = path.resolve(webSrcDir, "components/perio/PeriodontogramChart.tsx");
+		it("3.8. PerioStudioModal.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
+			const perioChartPath = path.resolve(webSrcDir, "components/perio/PerioStudioModal.tsx");
 			const toolbarPath = path.resolve(webSrcDir, "components/perio/chart/PerioToolbarPresets.tsx");
 			const source = fs.readFileSync(perioChartPath, "utf-8") + (fs.existsSync(toolbarPath) ? "\n" + fs.readFileSync(toolbarPath, "utf-8") : "");
 			assert.ok(source.includes("perio-preset-severe-btn"), "Кнопка perio-preset-severe-btn обязана присутствовать в тулбаре");

@@ -24,7 +24,7 @@ import {
 } from "@dental/shared";
 import {
 	applyHealthyPeriodontiumPreset,
-} from "../components/perio/perioMath.js";
+} from "../components/perio/perioCatalogData.js";
 import {
 	process100PercentDiscountCheckout,
 } from "../components/finance/cashboxOperations.js";

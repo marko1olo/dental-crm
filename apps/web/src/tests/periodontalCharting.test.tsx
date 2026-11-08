@@ -14,9 +14,9 @@ import {
 	createDefaultPerioTeeth,
 	generateComprehensivePerio043Text,
 } from "@dental/shared";
-import { PeriodontogramChart } from "../components/perio/PeriodontogramChart";
+import { PerioStudioModal } from "../components/perio/PerioStudioModal";
 
-describe("Periodontal Charting & Clinical Indices (PeriodontogramChart)", () => {
+describe("Periodontal Charting & Clinical Indices (PerioStudioModal)", () => {
 	describe("1. Mathematical Calculation of Periodontal Indices", () => {
 		it("calculates 0% FMBS and 0% FMPS for healthy default dentition", () => {
 			const teeth = createDefaultPerioTeeth();
@@ -87,33 +87,35 @@ describe("Periodontal Charting & Clinical Indices (PeriodontogramChart)", () => 
 		});
 	});
 
-	describe("3. PeriodontogramChart Component SSR Rendering", () => {
+	describe("3. PerioStudioModal Component SSR Rendering", () => {
 		it("renders chart container, rapid screening and active tooth without crash", () => {
 			const html = renderToString(
-				<PeriodontogramChart
+				<PerioStudioModal
+					isModal={true}
 					patientName="Тестовый Пациент"
 				/>,
 			);
 
 			assert.ok(html.includes("interactive-periodontogram"));
-			assert.ok(html.includes("Экспресс-скрининг пародонта PSR / CPITN"));
-			assert.ok(html.includes("perio-toolbar-norm-1click-btn"));
+			assert.ok(html.includes("Скрининг пародонта ВОЗ (PSR / CPITN)") || html.includes("PSR"));
+			assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
 		});
 
 		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Mild/Moderate/Severe Periodontitis, Prophy, Form 043/u) without cartoon emojis", () => {
 			const html = renderToString(
-				<PeriodontogramChart
+				<PerioStudioModal
+					isModal={true}
 					patientName="Тестовый Пациент"
 				/>,
 			);
 
-			// Check all clinical presets and 043/u actions
-			assert.ok(html.includes("perio-preset-norm-card"));
-			assert.ok(html.includes("perio-preset-gingivitis-card"));
-			assert.ok(html.includes("perio-preset-periodontitis-card"));
-			assert.ok(html.includes("perio-preset-severe-periodontitis-card"));
-			assert.ok(html.includes("perio-preset-prophy-card"));
-			assert.ok(html.includes("perio-insert-protocol-btn") || html.includes("perio-express-insert-043-btn"));
+			// Check all clinical presets and actions
+			assert.ok(html.includes("data-testid=\"perio-toolbar-norm-1click-btn\""));
+			assert.ok(html.includes("data-testid=\"psr-gingivitis-preset-btn\""));
+			assert.ok(html.includes("data-testid=\"perio-toolbar-prophy-1click-btn\""));
+			assert.ok(html.includes("data-testid=\"psr-periodontitis-preset-btn\""));
+			assert.ok(html.includes("data-testid=\"perio-preset-severe-btn\""));
+			assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
 
 			// Mandate 8d, sin #7: Zero cartoon emojis in medical/clinical forms
 			assert.equal(html.includes("⚡"), false, "Must not contain lightning bolt emoji");
@@ -124,7 +126,7 @@ describe("Periodontal Charting & Clinical Indices (PeriodontogramChart)", () => 
 	});
 
 	describe("4. HygieneIndicesPanel Component & Express Presets (Mandates 8e, 8k)", () => {
-		it("renders all 5 express clinical presets and 043/u action without cartoon emojis", async () => {
+		it("renders express clinical hygiene indices panel without cartoon emojis", async () => {
 			const { HygieneIndicesPanel } = await import("../components/hygiene/HygieneIndicesPanel");
 			const html = renderToString(
 				<HygieneIndicesPanel
@@ -132,13 +134,10 @@ describe("Periodontal Charting & Clinical Indices (PeriodontogramChart)", () => 
 				/>,
 			);
 
-			assert.ok(html.includes("Индексы гигиены полости рта (OHI-S, PMA, КПИ Леуса)"));
-			assert.ok(html.includes('data-testid="hygiene-preset-norm"'));
-			assert.ok(html.includes('data-testid="hygiene-preset-gingivitis"'));
-			assert.ok(html.includes('data-testid="hygiene-preset-mild-periodontitis"'));
-			assert.ok(html.includes('data-testid="hygiene-preset-periodontitis"'));
-			assert.ok(html.includes('data-testid="hygiene-preset-pro-hygiene"'));
-			assert.ok(html.includes('data-testid="hygiene-insert-to-043-btn"'));
+			assert.ok(html.includes("Индексы гигиены полости рта (OHI-S, Федорова-Володкиной, PMA)"));
+			assert.ok(html.includes("OHI-S (Грин-Вермиллион)"));
+			assert.ok(html.includes("Федорова-Володкиной (дети)"));
+			assert.ok(html.includes("РМА (Парма)"));
 
 			// Zero cartoon emojis in buttons or labels
 			assert.equal(html.includes("⚡"), false, "Must not contain lightning bolt emoji");

@@ -1,7 +1,7 @@
 import type { VisitToothUiState } from "../../../store/visitStore";
 import { loadStoredTeethData } from "../../odontogram/odontogramStorage";
 import { toVisitToothUiState } from "../useVisitEmkToothSync";
-import type { DentitionMode } from "../view/VisitEmbeddedOdontogram";
+import type { DentitionMode } from "@dental/shared";
 
 export interface BuildToothStateParams {
 	activePatient?: {

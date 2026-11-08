@@ -16,17 +16,17 @@ import {
 	convertSepaDentitionToPerio,
 	createDefaultPerioTeeth,
 } from "@dental/shared";
-import { PeriodontogramChart } from "../components/perio/PeriodontogramChart";
+import { PerioStudioModal } from "../components/perio/PerioStudioModal";
 import {
 	applyHealthyPeriodontiumPreset,
 	calculatePsrSextants,
-} from "../components/perio/perioMath";
+} from "../components/perio/perioCatalogData";
 import { completeClinicalVisitAndAssembleEstimate } from "../components/visit/clinicalVisitWorkflow";
 
 describe("192-Point Periodontal Probing Release Isolation & Runtime Contract Audit", () => {
 	it("1. Runtime Component Isolation: PeriodontogramChart renders cleanly via SSR without crashing", () => {
 		const html = renderToString(
-			React.createElement(PeriodontogramChart, {
+			React.createElement(PerioStudioModal, {
 				patientId: "550e8400-e29b-41d4-a716-446655440000",
 				patientName: "Иванов Иван Иванович",
 				doctorName: "Д-р Смирнов А.В.",

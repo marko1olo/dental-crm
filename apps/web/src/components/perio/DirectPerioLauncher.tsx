@@ -24,7 +24,7 @@ function checkIsPerioActive(): boolean {
 export const DirectPerioLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => checkIsPerioActive());
 	const [patientId, setPatientId] = useState<string>("demo_perio_patient");
-	const [patientName, setPatientName] = useState<string>("Смирнова Анна Сергеевна (Пародонтология)");
+	const [patientName, setPatientName] = useState<string>("Пациент приёма");
 
 	useEffect(() => {
 		const handleOpen = (e?: Event) => {

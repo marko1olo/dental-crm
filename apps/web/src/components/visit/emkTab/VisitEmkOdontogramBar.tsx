@@ -1,10 +1,10 @@
 import React from "react";
 import { Activity, ArrowUpRight, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
-import { calculateAge } from "@dental/shared";
 import {
+	calculateAge,
 	type DentitionMode,
 	PATHOLOGY_STAMPS,
-} from "../view/VisitEmbeddedOdontogram";
+} from "@dental/shared";
 import { OdontogramModule } from "../../odontogram/OdontogramModule";
 import { useVisitStore, type VisitToothUiState } from "../../../store/visitStore";
 import {

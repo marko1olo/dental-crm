@@ -34,7 +34,6 @@ export type WarmAccordionSection =
 	| "surfaces_endo"
 	| "anesthesia"
 	| "rvg_xray"
-	| "family_loyalty"
 	| "pediatric";
 
 export interface ToothContextDrawerProps {

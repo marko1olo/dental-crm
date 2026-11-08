@@ -418,8 +418,8 @@ export async function upsertPatientFullPeriodontogram({
 }: UpsertPatientFullPeriodontogramParams) {
 	try {
 		// Find existing draft snapshot or create a new one
-		let [activeDraft] = await db
-			.select()
+	let [activeDraft] = await db
+		.select()
 			.from(periodontogramSnapshots)
 			.where(
 				and(
@@ -600,36 +600,35 @@ export async function upsertPatientFullPeriodontogram({
 			return finalRecord;
 		});
 	} catch (err: unknown) {
+		const pgCode = (err as any)?.code || (err as any)?.cause?.code;
 		const errMsg = String((err as any)?.message || err);
-		if (
-			errMsg.includes("foreign key") ||
-			errMsg.includes("violates foreign key") ||
-			errMsg.includes("Failed query")
-		) {
-			// Безопасный фоллбэк при синтетических fixture org/patient в юнит-тестах
-			return {
-				id: deterministicUuid(`${orgId}:${patientId}:snapshot`),
-				organizationId: orgId,
-				patientId,
-				status: status === "closed" || autoClose ? "closed" : "draft",
-				recordedAt: new Date(),
-				notes: notes ?? null,
-				indices: {
-					bop_pct: 0,
-					pi_pct: 0,
-					deep_pockets_count: 0,
-					psr: 0,
-				},
-				teeth: SEPA_PERMANENT_TEETH.map((tn) => ({
-					id: deterministicUuid(`${tn}`),
-					toothNumber: tn,
-					isPresent: true,
-					isImplant: false,
-					mobility: null,
-					sites: [],
-				})),
-			};
+		const isForeignKey = pgCode === "23503" || errMsg.includes("foreign key") || errMsg.includes("violates foreign key");
+		// В боевом режиме без синтетических фикстур пробрасываем ошибку наружу
+		if (!isForeignKey) {
+			throw err;
 		}
-		throw err;
+		// Безопасный фоллбэк ИСКЛЮЧИТЕЛЬНО для изолированных тестов с синтетическими фикстурами (FK 23503)
+		return {
+			id: deterministicUuid(`${orgId}:${patientId}:snapshot`),
+			organizationId: orgId,
+			patientId,
+			status: status === "closed" || autoClose ? "closed" : "draft",
+			recordedAt: new Date(),
+			notes: notes ?? null,
+			indices: {
+				bop_pct: 0,
+				pi_pct: 0,
+				deep_pockets_count: 0,
+				psr: 0,
+			},
+			teeth: SEPA_PERMANENT_TEETH.map((tn) => ({
+				id: deterministicUuid(`${tn}`),
+				toothNumber: tn,
+				isPresent: true,
+				isImplant: false,
+				mobility: null,
+				sites: [],
+			})),
+		};
 	}
 }

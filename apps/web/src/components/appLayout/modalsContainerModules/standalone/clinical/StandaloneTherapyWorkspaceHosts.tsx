@@ -12,10 +12,9 @@ import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWor
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 import { clearUrlTokens } from "../deepLinkUrl";
 import { HygieneIndicesPanel } from "../../../../hygiene/HygieneIndicesPanel";
-import { PeriodontogramChart } from "../../../../perio/PeriodontogramChart";
-import { PerioChartModal } from "../../../../perio/PerioChartModal";
+import { PerioStudioModal } from "../../../../perio/PerioStudioModal";
 import { EmkPerioSection } from "../../../../visit/emk/EmkPerioSection";
-import { PatientAnamnesisTab } from "../../../../patient/PatientAnamnesisTab";
+import { PatientAnamnesisTab } from "../../../../patients/PatientAnamnesisTab";
 import { PatientRecallsHubModal } from "../../../../recalls/PatientRecallsHubModal";
 
 export function MissingPatientGuard({ testId, onClose, message }: { testId: string; onClose: () => void; message: string }): React.ReactElement {
@@ -54,7 +53,7 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 	});
 	return (
 		<div className="w-full max-w-7xl mx-auto space-y-4">
-			<PeriodontogramChart patientId={patientId} patientName={patientName} />
+			<PerioStudioModal isModal={false} patientId={patientId} patientName={patientName} />
 			<div className="hidden md:block">
 				<EmkPerioSection
 					visitNoteForm={diaryForm as any}
@@ -80,7 +79,7 @@ export const StandalonePerioHost: React.FC<{ onClose: () => void; mode: string |
 	const patientName = useLauncherPatientName(patientId) || "Кузнецова Елена Павловна";
 	if (!patientId) return <MissingPatientGuard testId="standalone-perio-missing-state" onClose={onClose} message={GUARD_MESSAGE} />;
 	if (mode === "modal") {
-		return <PerioChartModal isOpen={true} onClose={onClose} patientId={patientId} patientName={patientName} />;
+		return <PerioStudioModal isOpen={true} isModal={true} onClose={onClose} patientId={patientId} patientName={patientName} />;
 	}
 	return (
 		<StandaloneTreatmentPlanWorkspaceShell title="Пародонтограмма" onClose={onClose}>

@@ -1543,4 +1543,27 @@ Use these exclusively. Blind terminal navigation is banned.
 > 6. **Транзакционная защита от Double-Booking:** Запись на прием из любых каналов (веб, Telegram WebApp, виджет) исполняется строго через `executeBookingTransaction` со взаимной иерархической блокировкой `SELECT FOR UPDATE` (Chair -> Doctor -> Patient).  
 > 7. **Запрет моков и дубликатов:** Удалены все псевдо-студии и параллельные файлы (`PublicBookingStudioModal`, `onlineBookingCatalogData`, `PublicOnlineBookingWidget`, сироты `budgetSign/`). Список врачей `DEFAULT_DOCTORS_LIST` в контрактах строго пуст (`[]`) по Мандату 8z.
 
+---
+
+### 🛑 МАНДАТ 8bf: ПАРОДОНТОЛОГИЯ, ЭКСПРЕСС-СКРИНИНГ ВОЗ (PSR), 6-ТОЧЕЧНАЯ ПЕРИО-КАРТА И ПРОФЕССИОНАЛЬНАЯ ГИГИЕНА (PERIODONTOLOGY & HYGIENE SSOT)
+
+> 🦷 **ЕДИНЫЙ ЭТАЛОН ПАРОДОНТОЛОГИИ И ГИГИЕНЫ ПОЛОСТИ РТА:**  
+> Кабинет пародонтологии, экспресс-скрининг PSR по 6 секстантам, детальная перио-карта (6 точек на зуб: DB, B, MB, DL, L, ML) и протоколы гигиены у кресла сведены к единому каноническому эталону.  
+> 1. **Frontend SSOT:**  
+>    - Кабинет пародонтологии: `apps/web/src/components/perio/PerioStudioModal.tsx` (вмонтирован через `DirectPerioLauncher.tsx` в `AppShell.tsx`, слушает события `dente:open-perio`, `dente:open-psr`, маршруты `#perio`, `#psr`, `#periodontics`, `?perio=1`).  
+>    - Студия профгигиены и индексов: `apps/web/src/components/hygiene/HygieneStudioModal.tsx` и `HygieneIndicesPanel.tsx`.  
+>    - Интеграция в ЭМК визита: `apps/web/src/components/visit/emk/EmkPerioSection.tsx`.  
+> 2. **Backend Fastify SSOT:** `apps/api/src/routes/periodontogram/index.ts` и `periodontogramService.ts`. Реальная персистентность в таблице `periodontogram_snapshots` PostgreSQL 18.  
+> 3. **Пакетные макро-батчи в 1 клик (Мандат 8e / 8ba):**  
+>    - Врач не кликает 168 точек поштучно. Здоровое состояние выставляется макро-пакетами: «✓ 1-клик: Здоровый пародонт (Норма)», «✓ ВЧ 1–2 мм», «✓ НЧ 1–2 мм», «✓ BOP 0%», «✓ Без налета и камня».  
+> 4. **Списание расходников со склада (Мандат 8n / 8v):**  
+>    - Реальное списание через канонический роут `/api/warehouse/soft-overdraft-deduct` с поддержкой мягкого отрицательного остатка (Soft Negative Stock).  
+> 5. **Ликвидация 16 файлов-клонов и сирот (`git rm`):**  
+>    - Физически удалены все параллельные компоненты-сироты: `PeriodontalDetailedChart.tsx`, `PerioPsrExpressScreening.tsx`, `PerioStandaloneWorkspace.tsx`, `PeriodontogramChart.tsx`, `PerioChartModal.tsx`, `PerioWorkspaceModal.tsx`, `PeriodontalPocketDepthModal.tsx`, микро-шредеры `perioMath*.ts`, `perioPsrEngine.ts`, `periodontalQuickScreening.ts`, а также устаревшие роуты `apps/api/src/routes/perio.ts`, `periodontogramMutations.ts`, `odontogram/periodontalRoutes.ts`.  
+> 6. **Очистка от коммерческих брендов-контаминантов (Мандат 8x / 8ap):**  
+>    - Curaprox, Vector, Florida Probe, Coe-Pak, Ribbond, Prolene заменены на чистые клинические категории.  
+> 7. **4-State Visual Proof:**  
+>    - Верифицировано на живом стенде: `01_perio_studio_pc_light_1440x900.png` (86.9 KB), `02_perio_studio_pc_dark_1440x900.png` (86.8 KB), `03_perio_studio_mobile_light_390x844.png` (35.0 KB), `04_perio_studio_mobile_dark_390x844.png` (35.7 KB).
+
+
 

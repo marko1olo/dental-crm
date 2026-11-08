@@ -1,6 +1,6 @@
 /**
  * PerioStudioModal.tsx — Канонический SSOT кабинет пародонтологии и экспресс-скрининга PSR DENTE CRM.
- * Объединяет экспресс-скрининг ВОЗ (PSR) по 6 секстантам, протоколы профгигиены AirFlow/Vector/Шинирование,
+ * Объединяет экспресс-скрининг ВОЗ (PSR) по 6 секстантам, протоколы профгигиены AirFlow/Кюретаж/Шинирование,
  * списание расходников пакетом (Soft Negative Stock, Мандат 8n), автономию врача (Мандат 8e),
  * и ровно ОДНУ Primary CTA кнопку #0d9488 на видимый контекст (Мандат 8am).
  * Apple HIG: Bottom Sheet drawer на смартфонах, тач-таргеты >= 44x44px, Floating Bottom Bar.
@@ -17,11 +17,13 @@ import { Activity, Check, ChevronDown, ChevronUp, FileText, Info, Printer, Spark
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
-	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, computePsrSummary,
-	deductPeriodontalConsumablesSoftOverdraft, dispatchPresetSideEffects,
-	PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG, PERIO_TREATMENT_PROTOCOLS,
-	type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId,
-	SITES, type SiteKey,
+	applyExpressPerioPreset, applyHealthyPeriodontiumPreset,
+	applyUpperJawNormPreset, applyLowerJawNormPreset,
+	applyZeroBopPreset, applyZeroCalculusAndPlaquePreset,
+	computePsrSummary, deductPeriodontalConsumablesSoftOverdraft,
+	dispatchPresetSideEffects, PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG,
+	PERIO_TREATMENT_PROTOCOLS, type PerioTreatmentProtocol, type PsrCode,
+	type PsrScreeningMap, type PsrSextantId, SITES, type SiteKey,
 } from "./perioCatalogData";
 
 export interface PerioStudioModalProps {
@@ -41,7 +43,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	onClose,
 	isModal = false,
 	patientId,
-	patientName = "Смирнова Анна Сергеевна (Пародонтология)",
+	patientName = "Пациент приёма",
 	initialTeeth,
 	initialSelectedTooth = 16,
 	initialTier3Expanded = false,
@@ -119,6 +121,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		setSelectedProtocolId(null);
 		showToast("✓ Все секстанты интактны (PSR 0 во всех 6 секстантах)", "success");
 	}, []);
+
+	const handleApplyUpperJawNorm = useCallback(() => { setTeeth((p) => applyUpperJawNormPreset(p)); showToast("✓ ВЧ (18–28): норма 1–2 мм", "success"); }, []);
+	const handleApplyLowerJawNorm = useCallback(() => { setTeeth((p) => applyLowerJawNormPreset(p)); showToast("✓ НЧ (48–38): норма 1–2 мм", "success"); }, []);
+	const handleApplyZeroBop = useCallback(() => { setTeeth((p) => applyZeroBopPreset(p)); showToast("✓ Все десны без кровоточивости (BOP 0%)", "success"); }, []);
+	const handleApplyZeroCalculus = useCallback(() => { setTeeth((p) => applyZeroCalculusAndPlaquePreset(p)); showToast("✓ Налёт и камень сброшены (0%)", "success"); }, []);
 
 	const handleApplyPreset = useCallback((presetId: string) => {
 		const res = applyExpressPerioPreset(teeth, presetId);
@@ -198,19 +205,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	}, [selectedToothNum, selectedSiteKey]);
 
 	const handleToggleBop = useCallback(() => {
-		setTeeth((prev) => prev.map((t) => {
-			if (t.toothNumber !== selectedToothNum) return t;
-			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
-			return { ...t, [selectedSiteKey]: { ...site, bleedingOnProbing: !site.bleedingOnProbing } };
-		}));
+		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), bleedingOnProbing: !t[selectedSiteKey]?.bleedingOnProbing } }));
 	}, [selectedToothNum, selectedSiteKey]);
 
 	const handleTogglePlaque = useCallback(() => {
-		setTeeth((prev) => prev.map((t) => {
-			if (t.toothNumber !== selectedToothNum) return t;
-			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
-			return { ...t, [selectedSiteKey]: { ...site, plaque: !site.plaque } };
-		}));
+		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), plaque: !t[selectedSiteKey]?.plaque } }));
 	}, [selectedToothNum, selectedSiteKey]);
 
 	const handleUpdateMobility = useCallback((mobility: 0 | 1 | 2 | 3) => {
@@ -297,20 +296,29 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				</div>
 			)}
 
-			{/* Быстрые 1-клик кнопки */}
-			<div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-				<button type="button" onClick={handleSetAllIntact} data-testid="perio-toolbar-norm-1click-btn" data-preset-card="perio-preset-norm-card" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer transition-colors">
-					<span data-testid="psr-all-intact-btn" className="flex items-center gap-1.5">
-						<Check className="w-3.5 h-3.5" /> 1-клик: Здоровый пародонт (Норма)
-						<span className="sr-only">Норма (PSR 0) Пародонт в норме</span>
-					</span>
-				</button>
-				<button type="button" onClick={() => handleApplyPreset("gingivitis_express")} data-testid="psr-gingivitis-preset-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-amber-600 dark:text-amber-400 font-semibold text-xs border border-[var(--line)] hover:border-amber-500 flex items-center gap-1.5 cursor-pointer transition-colors">Гингивит (PSR 1–2)</button>
-				<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} data-testid="perio-toolbar-prophy-1click-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-sky-600 dark:text-sky-400 font-semibold text-xs border border-[var(--line)] hover:border-sky-500 flex items-center gap-1.5 cursor-pointer transition-colors">
-					<span data-testid="psr-hygiene-preset-btn" className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> Профгигиена AirFlow + УЗ</span>
-				</button>
-				<button type="button" onClick={() => handleApplyPreset("periodontitis_mild_express")} data-testid="psr-periodontitis-preset-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-orange-600 dark:text-orange-400 font-semibold text-xs border border-[var(--line)] hover:border-orange-500 flex items-center gap-1.5 cursor-pointer transition-colors">Пародонтит легкий (PSR 2–3)</button>
-				<button type="button" onClick={() => handleApplyPreset("periodontitis_severe_express")} data-testid="perio-preset-severe-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-rose-600 dark:text-rose-400 font-semibold text-xs border border-[var(--line)] hover:border-rose-500 flex items-center gap-1.5 cursor-pointer transition-colors">Пародонтит тяжелый (6-8 мм)</button>
+			{/* Быстрые 1-клик кнопки и макро-батчи челюстей */}
+			<div className="flex flex-col gap-1.5 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+				<div className="flex flex-wrap items-center gap-2">
+					<button type="button" onClick={handleSetAllIntact} data-testid="perio-toolbar-norm-1click-btn" data-preset-card="perio-preset-norm-card" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer transition-colors">
+						<span data-testid="psr-all-intact-btn" className="flex items-center gap-1.5">
+							<Check className="w-3.5 h-3.5" /> 1-клик: Здоровый пародонт (Норма)
+							<span className="sr-only">Норма (PSR 0) Пародонт в норме</span>
+						</span>
+					</button>
+					<button type="button" onClick={() => handleApplyPreset("gingivitis_express")} data-testid="psr-gingivitis-preset-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-amber-600 dark:text-amber-400 font-semibold text-xs border border-[var(--line)] hover:border-amber-500 flex items-center gap-1.5 cursor-pointer transition-colors">Гингивит (PSR 1–2)</button>
+					<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} data-testid="perio-toolbar-prophy-1click-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-sky-600 dark:text-sky-400 font-semibold text-xs border border-[var(--line)] hover:border-sky-500 flex items-center gap-1.5 cursor-pointer transition-colors">
+						<span data-testid="psr-hygiene-preset-btn" className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> Профгигиена AirFlow + УЗ</span>
+					</button>
+					<button type="button" onClick={() => handleApplyPreset("periodontitis_mild_express")} data-testid="psr-periodontitis-preset-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-orange-600 dark:text-orange-400 font-semibold text-xs border border-[var(--line)] hover:border-orange-500 flex items-center gap-1.5 cursor-pointer transition-colors">Пародонтит легкий (PSR 2–3)</button>
+					<button type="button" onClick={() => handleApplyPreset("periodontitis_severe_express")} data-testid="perio-preset-severe-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-rose-600 dark:text-rose-400 font-semibold text-xs border border-[var(--line)] hover:border-rose-500 flex items-center gap-1.5 cursor-pointer transition-colors">Пародонтит тяжелый (6-8 мм)</button>
+				</div>
+				<div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/60 text-xs">
+					<span className="text-[11px] text-[var(--muted)] font-bold shrink-0">Макро-батч:</span>
+					<button type="button" onClick={handleApplyUpperJawNorm} data-testid="perio-macro-upper-jaw-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[#0d9488] font-medium cursor-pointer transition-colors">✓ ВЧ 1–2 мм</button>
+					<button type="button" onClick={handleApplyLowerJawNorm} data-testid="perio-macro-lower-jaw-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[#0d9488] font-medium cursor-pointer transition-colors">✓ НЧ 1–2 мм</button>
+					<button type="button" onClick={handleApplyZeroBop} data-testid="perio-macro-zero-bop-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 border border-[var(--line)] hover:border-emerald-500 font-medium cursor-pointer transition-colors">✓ BOP 0%</button>
+					<button type="button" onClick={handleApplyZeroCalculus} data-testid="perio-macro-zero-calculus-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-sky-600 dark:text-sky-400 border border-[var(--line)] hover:border-sky-500 font-medium cursor-pointer transition-colors">✓ Без налета и камня</button>
+				</div>
 			</div>
 
 			{/* Сетка 6 секстантов экспресс-скрининга PSR */}

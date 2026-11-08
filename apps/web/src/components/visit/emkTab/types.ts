@@ -1,5 +1,5 @@
 import type React from "react";
-import type { DentitionMode } from "../view/VisitEmbeddedOdontogram";
+import type { DentitionMode } from "@dental/shared";
 import type { VisitToothUiState } from "../../../store/visitStore";
 import type { ClinicalVisitCompletionResult } from "../clinicalVisitWorkflow";
 import type { VisitNoteFieldsPatch } from "../clinicalCatalog/clinicalProtocolsCatalog";

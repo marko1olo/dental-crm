@@ -36,7 +36,7 @@ import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
-import { PeriodontogramChart } from "../perio/PeriodontogramChart";
+import { PerioStudioModal } from "../perio/PerioStudioModal";
 import { PatientCardFloatingSaveBar } from "./patientCardSavePill";
 import { PatientGeneralInfoTab } from "./tabs/PatientGeneralInfoTab";
 import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
@@ -428,7 +428,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 					) : activeTab === "documents" ? (
 						<PatientDocumentsTab patient={patientData as any} onPrintOutpatientCard={handlePrint} />
 					) : activeTab === "perio" ? (
-						<PeriodontogramChart patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
+						<PerioStudioModal isModal={false} patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
 					) : activeTab === "formula" ? (
 						<PatientDentalFormulaTab patientId={patientData.id || ""} patientBirthDate={patientData.birthDate ?? undefined} patientName={patientData.fullName ?? undefined} />
 					) : activeTab === "radiology" ? (

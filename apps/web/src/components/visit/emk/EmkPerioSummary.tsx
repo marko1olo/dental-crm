@@ -3,7 +3,7 @@ import { ShieldCheck, Sparkles } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
-import { deductPeriodontalConsumablesSoftOverdraft } from "../../perio/chart/perioPresets";
+import { deductPeriodontalConsumablesSoftOverdraft } from "../../perio/perioCatalogData";
 
 export interface EmkPerioSummaryProps extends EmkSectionProps {
 	readonly perioStatus: "healthy" | "gingivitis" | "periodontitis_mild" | "periodontitis_moderate" | "periodontitis_severe" | "custom";

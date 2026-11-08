@@ -6,7 +6,6 @@ import { ToothContextDrawer, TOOTH_EXPRESS_ANESTHESIA_OPTIONS } from "../ToothCo
 import { ToothSurfacesAndEndoMatrix, BLACK_MACROS } from "../ToothSurfacesAndEndoMatrix.js";
 import { AnesthesiaQuickBar, WEIGHT_PRESETS } from "../../anesthesia/AnesthesiaQuickBar.js";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail.js";
-import { ToothFamilyLoyaltyAccordion } from "../ToothFamilyLoyaltyAccordion.js";
 import { ToothPediatricContext, RESORPTION_STAGES } from "../ToothPediatricContext.js";
 
 describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
@@ -37,7 +36,7 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("2. Анестезия"), "Anesthesia quick tab should be present");
 		assert.ok(!html.includes("Крафт СанПиН"), "SanPiN Kraft quick tab must NOT be present (Mandate 8v, 8k)");
 		assert.ok(html.includes("3. Снимок RVG"), "RVG quick tab should be present");
-		assert.ok(html.includes("4. Депозит &amp; Бонусы") || html.includes("4. Депозит & Бонусы"), "Deposit tab should be present");
+		assert.ok(!html.includes("Депозит &amp; Бонусы") && !html.includes("Депозит & Бонусы"), "Family deposit must NOT be bound to individual tooth (billing SSOT)");
 	});
 
 	it("ToothContextDrawer returns null when closed (zero DOM bloat on Tier 1)", () => {
@@ -107,8 +106,8 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 
 		assert.ok(html.includes("anesthesia-quick-bar"), "Anesthesia tool should render");
 		assert.ok(html.includes("70 кг"), "Weight preset should be displayed");
-		assert.ok(html.includes("Ультракаин Д-С"), "Standard articaine option should be present");
-		assert.ok(html.includes("Скандонест 3%") || html.includes("Скандонест без адреналина"), "Plain mepivacaine option should be present");
+		assert.ok(html.includes("Артикаин 1:200 000") || html.includes("Артикаин 1:100 000"), "Standard articaine option should be present");
+		assert.ok(html.includes("Мепивакаин 3%") || html.includes("Скандонест 3%"), "Plain mepivacaine option should be present");
 		// Доз-калькуляторные симуляторы выжжены (анти-аутизм): никаких «безопасных
 		// лимитов по весу» — врач сам выбирает препарат и карпулы в 1 клик.
 		assert.ok(!html.includes("безопасно до"), "Dose-limit simulator badge must NOT be rendered");
@@ -141,22 +140,6 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("Зум апекса"), "Apex zoom button should be available");
 		assert.ok(html.includes("attach-rvg-scan-btn"), "1-click RVG scan attachment button should be present");
 		assert.ok(html.includes("rvg-file-input"), "Hidden RVG file input should be present");
-	});
-
-	it("ToothFamilyLoyaltyAccordion calculates family deposit split and loyalty cashback bonus", () => {
-		const html = renderToString(
-			<ToothFamilyLoyaltyAccordion
-				toothNumber={16}
-				estimatedCostRub={5000}
-				familyBalanceRub={15000}
-				loyaltyPointsBalance={1200}
-			/>,
-		);
-
-		assert.ok(html.includes("tooth-family-loyalty-accordion"), "Family loyalty tool should render");
-		assert.ok(html.includes("Семейный депозит"), "Family deposit metric should be present");
-		assert.ok(html.includes("Баллы кешбэка"), "Loyalty points metric should be present");
-		assert.ok(html.includes("Применить сплит к чеку"), "Split confirmation action should be present");
 	});
 
 	it("ToothPediatricContext renders Frankl behavioral scale and resorption stages for primary teeth", () => {

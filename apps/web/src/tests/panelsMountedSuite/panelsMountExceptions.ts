@@ -32,12 +32,6 @@ export const DECLARED_UNMOUNTED: ReadonlyArray<DeclaredUnmountedItem> = [
 			"Устаревший монолитный заголовок визита, вытесненный компактной 2-строчной клинической шапкой и панелью быстрого фокуса в каноническом VisitView.tsx (VisitFocusBar). Сохранён как исторический прототип.",
 	},
 	{
-		file: "components/visit/view/VisitEmbeddedOdontogram.tsx",
-		name: "VisitEmbeddedOdontogram",
-		reason:
-			"Экспериментальный прототип встроенной зубной формулы, вытесненный каноническим контейнером OdontogramViewContainer.tsx (ГОСТ и анатомический вид). Сохранён для экспорта констант PATHOLOGY_STAMPS в perspectiveOdontogram.test.ts.",
-	},
-	{
 		file: "components/visit/VisitMainTabs.tsx",
 		name: "VisitMainTabs",
 		reason:
@@ -114,18 +108,6 @@ export const DECLARED_UNMOUNTED: ReadonlyArray<DeclaredUnmountedItem> = [
 		name: "CtStudyViewer",
 		reason:
 			"Специализированный вьюер КТ-исследований пациента. В активном интерфейсе заменен канонической мультипланарной реконструкцией CbctMprImplantStudioModal.tsx. Сохранен для обратной совместимости с PatientRadiologyTab.tsx и zeroBirdLanguagePurity.test.ts.",
-	},
-	{
-		file: "components/schedule/WaitlistQuickFillModal.tsx",
-		name: "WaitlistQuickFillModal",
-		reason:
-			"Модальное окно быстрого заполнения окон расписания из листа ожидания. В активном интерфейсе консолидировано в канонический WaitlistDrawer (SSOT). Сохранено для обратной совместимости с тестами modalPortalsSsrSafety.test.ts и WaitlistQuickFillModal.test.tsx.",
-	},
-	{
-		file: "components/visiograph/VisiographComparisonModal.tsx",
-		name: "VisiographComparisonModal",
-		reason:
-			"Модальное окно сравнительного анализа снимков радиовизиографа До/После для врачебных консультаций пациентов. Зарезервировано для аппаратной консоли захвата рентгеновских снимков визиографа и протестировано в captureConsoleAndHardwareGateways.test.ts.",
 	},
 ];
 
