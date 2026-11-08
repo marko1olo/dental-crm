@@ -7,12 +7,8 @@
 
 export * from "./PatientCard";
 export * from "./PatientCardModal";
-export * from "./PatientDetailModal";
-export * from "./PatientDetailsModal";
 export * from "./PatientDrawer";
 export * from "./PatientHistoryTab";
-export * from "./PatientWorkspaceView";
-export { PatientWorkspaceView as PatientWorkspace } from "./PatientWorkspaceView";
 export * from "./TreatmentPlansList";
 export * from "./PatientAnamnesisTab";
 export * from "./PatientCreationModal";
@@ -21,10 +17,6 @@ export * from "./MobilePatientsGroupedList";
 export * from "./family/FamilyWalletModal";
 export * from "./tabs/PatientGeneralInfoTab";
 export * from "./safetyMath";
-export * from "./DirectPatientCardLauncher";
 export * from "./patientCatalogData";
-export * from "./PatientStudioModal";
 export * from "./studioModal";
-export * from "./DirectPatientLauncher";
-export * from "./DirectPatientStudioLauncher";
 

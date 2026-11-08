@@ -38,7 +38,7 @@ export function mapDashboardAppointmentsToVisits(
 			const toothMatch = /(?:зуб|tooth|#)\s*([1-4][1-8]|[5-8][1-5])/i.exec(
 				`${appt.reason || ""} ${appt.comment || ""}`,
 			);
-			const toothNumber: string | null = (toothMatch && toothMatch[1]) ? toothMatch[1] : (idx % 2 === 0 ? "16" : null);
+			const toothNumber: string | null = (toothMatch && toothMatch[1]) ? toothMatch[1] : null;
 
 			const reasonLower = (appt.reason || "").toLowerCase();
 			let specialty: ClinicalSpecialty = "therapy";
@@ -54,6 +54,16 @@ export function mapDashboardAppointmentsToVisits(
 				specialtyLabelRu = "Профгигиена";
 			}
 
+			const doctorName = appt.doctorUserId
+				? staffMap.get(appt.doctorUserId) || (appt as any).doctorName || "Врач-стоматолог"
+				: (appt as any).doctorName || "Врач-стоматолог";
+
+			const amountRub = typeof (appt as any).totalCostRub === "number"
+				? Math.round((appt as any).totalCostRub)
+				: typeof (appt as any).costRub === "number"
+					? Math.round((appt as any).costRub)
+					: 0;
+
 			return {
 				id: appt.id,
 				date: appt.startsAt || new Date().toISOString(),
@@ -62,31 +72,27 @@ export function mapDashboardAppointmentsToVisits(
 				monthNumber: monthNum,
 				monthNameRu,
 				toothNumber,
-				diagnosisCode: idx % 3 === 0 ? "K02.1" : idx % 3 === 1 ? "K04.0" : "K08.1",
-				diagnosisTitle: idx % 3 === 0 ? "Кариес дентина (средний)" : idx % 3 === 1 ? "Острый пульпит" : "Потеря зуба вследствие адентии",
-				doctorName: appt.doctorUserId ? staffMap.get(appt.doctorUserId) || "Др. Иванов А.С." : "Др. Иванов А.С.",
+				diagnosisCode: (appt as any).diagnosisCode || null,
+				diagnosisTitle: (appt as any).diagnosisTitle || appt.reason || "Консультация и лечение",
+				doctorName,
 				specialty,
 				specialtyLabelRu,
-				amountRub: 5000 + (idx * 2500) % 20000,
+				amountRub,
 				isPaid: appt.status === "completed",
 				paymentStatus: appt.status === "completed" ? "paid" : "scheduled",
-				warrantyUntil: idx % 2 === 0 ? `10.${year + 1}` : null,
-				warrantyStatus: idx % 2 === 0 ? "active" : "not_applicable",
+				warrantyUntil: (appt as any).warrantyUntil || null,
+				warrantyStatus: (appt as any).warrantyStatus || "not_applicable",
 				complaints: appt.reason || "Профилактический осмотр и плановое лечение.",
 				anamnesis: "Соматически здоров. Аллергоанамнез не отягощен.",
-				statusLocalis: toothNumber ? `Зуб ${toothNumber}: кариозная полость средней глубины, дентин плотный.` : "Полость рта санирована, десневой край бледно-розовый.",
+				statusLocalis: toothNumber
+					? `Зуб ${toothNumber}: осмотрен, лечение проведено в полном объёме.`
+					: (appt.comment || "Полость рта санирована, десневой край бледно-розовый."),
 				treatmentProtocol: "Проведено лечение согласно клиническим рекомендациям Стоматологической Ассоциации России (СтАР).",
 				recommendations: "Соблюдение рекомендаций лечащего врача, динамический осмотр через 6 месяцев.",
-				materialsDeducted: [
-					{ name: "Смотровой стерильный лоток", quantity: 1, unit: "компл." },
-					{ name: "Ультракаин Д-С 1:200 000", quantity: 1, unit: "карп." },
-				],
-				attachedScan: toothNumber === "16" ? {
-					title: "RVG снимок зуба 16",
-					previewUrl: "/radiology/sample_rvg_tooth16.jpg",
-					kind: "RVG",
-					tooth: "16",
-				} : null,
+				materialsDeducted: Array.isArray((appt as any).materialsDeducted)
+					? (appt as any).materialsDeducted
+					: [],
+				attachedScan: (appt as any).attachedScan || null,
 				isSigned: appt.status === "completed",
 			};
 		});

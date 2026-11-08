@@ -20,6 +20,7 @@ export interface PatientCardProps {
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onNewAppointment?: ((patientId?: string) => void) | undefined;
 	onEditPatient?: (() => void) | undefined;
+	onPrintMedicalCard?: (() => void) | undefined;
 	onPrintCard043?: (() => void) | undefined;
 	className?: string | undefined;
 }

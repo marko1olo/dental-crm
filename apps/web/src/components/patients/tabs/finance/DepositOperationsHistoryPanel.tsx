@@ -45,6 +45,15 @@ export const DepositOperationsHistoryPanel: React.FC<DepositOperationsHistoryPan
 				threshold={8}
 				getItemKey={(op) => op.id}
 				dataTestId="deposit-records-virtualized-scroller"
+				emptyState={
+					<div
+						className="p-6 text-center text-xs text-[var(--muted)] flex flex-col items-center justify-center gap-1.5"
+						data-testid="deposit-operations-empty-state"
+					>
+						<History className="w-6 h-6 opacity-30 text-[var(--muted)]" />
+						<span>Депозитных операций пока нет</span>
+					</div>
+				}
 				renderItem={(op) => {
 					const isTopup = op.type === "deposit" || op.type === "family_share";
 					return (

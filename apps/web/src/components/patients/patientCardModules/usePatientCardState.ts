@@ -19,10 +19,11 @@ export function usePatientCardState({
 	safetyProfile: propSafetyProfile,
 	dashboard,
 	initialTab = "timeline",
+	onPrintMedicalCard,
 	onPrintCard043,
 }: Pick<
 	PatientCardProps,
-	"patient" | "patientId" | "safetyProfile" | "dashboard" | "initialTab" | "onPrintCard043"
+	"patient" | "patientId" | "safetyProfile" | "dashboard" | "initialTab" | "onPrintMedicalCard" | "onPrintCard043"
 >) {
 	const [activeTab, setActiveTab] = useState<PatientCardActiveTab>(initialTab);
 
@@ -52,12 +53,13 @@ export function usePatientCardState({
 	}, []);
 
 	const handlePrint = useCallback(() => {
-		if (onPrintCard043) onPrintCard043();
+		const printFn = onPrintMedicalCard || onPrintCard043;
+		if (printFn) printFn();
 		else if (typeof window !== "undefined") {
 			window.print();
 			showToast("Печать медицинской карты", "info");
 		}
-	}, [onPrintCard043]);
+	}, [onPrintMedicalCard, onPrintCard043]);
 
 	const ageString = useMemo(() => {
 		if (!patientData.birthDate) return "";

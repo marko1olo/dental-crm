@@ -1,9 +1,7 @@
-import { History, Stethoscope, ClipboardList } from "lucide-react";
+import { History } from "lucide-react";
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
-import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
-import { PatientWorkspaceView } from "./PatientWorkspaceView";
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
@@ -19,21 +17,13 @@ export interface PatientOverviewTabProps {
 export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
 	const { selectedPatientId } = usePatientStore();
-	const workspaceFlags = useWorkspaceProfile();
-	const { selectedPatient, dashboard } = appLogic;
+	const { selectedPatient } = appLogic;
 	const { familyData, familyLoadFailure, loadFamily } = usePatientFamilyLoader(selectedPatientId, appLogic);
 
 	if (!selectedPatientId) return null;
 
 	return (
 		<div data-testid="patient-overview-tab" className="flex flex-col gap-3">
-			<PatientWorkspaceView
-				patientId={selectedPatientId}
-				patientName={selectedPatient?.fullName || null}
-				dashboard={dashboard}
-				compactHeader={true}
-			/>
-
 			<div className="patient-clinical-grid grid grid-cols-1 lg:grid-cols-2 gap-3">
 				<div className="flex flex-col gap-3">
 					<PatientFamilyCard

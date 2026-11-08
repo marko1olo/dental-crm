@@ -4,6 +4,7 @@ import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
 import { persistPatientCardModalToApi } from "../patientAutonomyActions";
 import type { PatientSectionSaveState } from "../patientCardSavePill";
 import { DEMO_SHOWCASE_MODAL_PATIENT } from "./patientCardModalTypes";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 
 export async function savePatientCardModal({
 	inFlightRef,
@@ -26,8 +27,15 @@ export async function savePatientCardModal({
 	inFlightRef.current = true;
 	setSaveState("saving");
 	try {
-		if (onSavePatient) await onSavePatient(patientData, safetyProfile);
-		else await persistPatientCardModalToApi(patientData, safetyProfile, patientData.id || DEMO_SHOWCASE_MODAL_PATIENT.id || "");
+		if (onSavePatient) {
+			await onSavePatient(patientData, safetyProfile);
+		} else {
+			const targetId = patientData.id || (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.id : "");
+			if (!targetId) {
+				throw new Error("Идентификатор пациента не найден. Сохранение невозможно.");
+			}
+			await persistPatientCardModalToApi(patientData, safetyProfile, isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.id : "");
+		}
 		setIsDirty(false);
 		setSaveState("saved");
 		showToast("Данные пациента сохранены", "success", 3000);

@@ -10,13 +10,14 @@ export interface UsePatientHistoryParams {
 	initialVisits?: ClinicalVisitItem[] | undefined;
 	dashboard?: Dashboard | null | undefined;
 	onPrintProtocol?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtractVisitSummary?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onAddToTreatmentPlan?: ((visit: ClinicalVisitItem) => void) | undefined;
 }
 
 export function usePatientHistory({
 	patientId, initialVisits, dashboard,
-	onPrintProtocol, onExtract043, onAddToTreatmentPlan,
+	onPrintProtocol, onExtractVisitSummary, onExtract043, onAddToTreatmentPlan,
 }: UsePatientHistoryParams) {
 	const [selectedSpecialty, setSelectedSpecialty] = useState<ClinicalSpecialty>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -79,16 +80,17 @@ export function usePatientHistory({
 		[onPrintProtocol],
 	);
 
-	const handleExtract043 = useCallback(
+	const handleExtract = useCallback(
 		(visit: ClinicalVisitItem) => {
-			if (onExtract043) onExtract043(visit);
+			const extractFn = onExtractVisitSummary || onExtract043;
+			if (extractFn) extractFn(visit);
 			else if (onPrintProtocol) onPrintProtocol(visit);
 			else if (typeof window !== "undefined") {
 				window.print();
 				showToast(`Медицинская выписка: сформирована по визиту от ${visit.date.slice(0, 10)} (${visit.diagnosisCode})`, "success");
 			}
 		},
-		[onExtract043, onPrintProtocol],
+		[onExtractVisitSummary, onExtract043, onPrintProtocol],
 	);
 
 	const handleAddToTreatmentPlan = useCallback(
@@ -108,7 +110,8 @@ export function usePatientHistory({
 		selectedSpecialty, setSelectedSpecialty, searchQuery, setSearchQuery,
 		expandedVisitIds, selectedDetailVisit, rawVisitsList, filteredVisits,
 		groupedByMonth, financialSummary, getSpecialtyCount, toggleAccordion,
-		handleExpandAll, handleCollapseAll, handlePrint, handleExtract043,
+		handleExpandAll, handleCollapseAll, handlePrint, handleExtract043: handleExtract,
+		handleExtractVisitSummary: handleExtract,
 		handleAddToTreatmentPlan, handleOpenDetailDrawer, handleCloseDetailDrawer,
 	};
 }

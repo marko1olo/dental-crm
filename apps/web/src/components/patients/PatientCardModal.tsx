@@ -57,10 +57,13 @@ import {
 	getRepresentativeLegalStatus,
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
+	PATIENT_LEGAL_REPRESENTATIVE_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
+	type LegalRepresentativeType,
+	type LegalRepresentativeTypeMeta,
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 	type PatientCardTab,
@@ -74,10 +77,13 @@ export {
 	getRepresentativeLegalStatus,
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
+	PATIENT_LEGAL_REPRESENTATIVE_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
+	type LegalRepresentativeType,
+	type LegalRepresentativeTypeMeta,
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 	type PatientCardTab,
@@ -452,7 +458,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<PatientHistoryTab
 							patientId={patientData.id}
 							patientName={patientData.fullName}
-							visits={props.visits || DEFAULT_CLINICAL_VISITS}
+							visits={props.visits}
 							dashboard={props.dashboard}
 							onNavigateToVisit={onNavigateToVisit}
 							onNewAppointment={onNewAppointment}

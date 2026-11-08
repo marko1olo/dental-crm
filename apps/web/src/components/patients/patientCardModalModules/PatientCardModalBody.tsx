@@ -71,7 +71,7 @@ export const PatientCardModalBody: React.FC<PatientCardModalBodyProps> = ({
 				<PatientHistoryTab
 					patientId={patientData.id}
 					patientName={patientData.fullName}
-					visits={visits || DEFAULT_CLINICAL_VISITS}
+					visits={visits}
 					dashboard={dashboard}
 					onNavigateToVisit={onNavigateToVisit}
 					onNewAppointment={onNewAppointment}

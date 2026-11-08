@@ -21,8 +21,8 @@ export function PatientCreationExtraSection({ form }: PatientCreationExtraSectio
 		form.showDocFields ||
 		Boolean(form.effectiveBirthDate);
 
-	const [isExpanded, setIsExpanded] = useState<boolean>(shouldAutoOpen);
-	const isOpen = isExpanded || shouldAutoOpen;
+	const [isExpanded, setIsExpanded] = useState<boolean>(() => shouldAutoOpen);
+	const isOpen = isExpanded;
 
 	return (
 		<details

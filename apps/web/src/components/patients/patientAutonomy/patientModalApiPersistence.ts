@@ -46,8 +46,9 @@ export async function persistPatientCardModalToApi(
 				clinicalSafetyProfile: safetyProfile,
 			}),
 		});
-	} catch {
-		// Non-blocking fallback
+	} catch (err: any) {
+		console.error("[PatientPersistence] Failed to persist patient card to API:", err);
+		throw err;
 	}
 }
 
@@ -115,5 +116,7 @@ export async function executePatientCardModalSaveAutonomy({
 			const saved = (await latestRes.json()) as Patient;
 			setDashboard((curr: any) => curr ? { ...curr, patients: curr.patients.map((p: Patient) => (p.id === saved.id ? saved : p)) } : curr);
 		}
-	} catch {}
+	} catch (err: any) {
+		console.error("[PatientPersistence] Failed to execute patient card save autonomy:", err);
+	}
 }

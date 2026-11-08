@@ -33,9 +33,7 @@ import {
 	type PatientCatalogItem,
 	type FamilyMember,
 } from "../patientCatalogData";
-import { PatientStudioModal } from "../PatientStudioModal";
-import { DirectPatientStudioLauncher } from "../DirectPatientStudioLauncher";
-import { DirectPatientLauncher } from "../DirectPatientLauncher";
+import { PatientCardModal } from "../PatientCardModal";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -65,7 +63,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 
 	it("3. [Мандат 8e & 8am] PatientStudioModal в режиме создания: Primary CTA НИКОГДА не disabled, ровно 1 Primary CTA", () => {
 		const markup = renderToStaticMarkup(
-			<PatientStudioModal isOpen={true} onClose={() => {}} initialMode="create" />,
+			<PatientCardModal isOpen={true} onClose={() => {}} initialMode="create" />,
 		);
 
 		assert.ok(markup.includes('data-testid="patient-studio-modal"'));
@@ -82,7 +80,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 
 	it("4. [Мандат 8e & 8am] PatientStudioModal в режиме просмотра: Primary CTA кликабельна, отображаются баланс и табы", () => {
 		const markup = renderToStaticMarkup(
-			<PatientStudioModal isOpen={true} onClose={() => {}} initialMode="view" initialPatientId="pat-001" />,
+			<PatientCardModal isOpen={true} onClose={() => {}} initialMode="view" initialPatientId="pat-001" />,
 		);
 
 		assert.ok(markup.includes('data-testid="patient-studio-modal"'));
@@ -124,7 +122,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 
 		// Проверка рендеринга бейджа нормы
 		const markup = renderToStaticMarkup(
-			<PatientStudioModal isOpen={true} onClose={() => {}} initialMode="view" initialPatientId="pat-001" />,
+			<PatientCardModal isOpen={true} onClose={() => {}} initialMode="view" initialPatientId="pat-001" />,
 		);
 		assert.ok(markup.includes("Соматически здоров") || markup.includes("Норма"));
 	});
@@ -179,7 +177,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 
 	it("12. [Apple HIG Mobile] Нативный Bottom Sheet, Drag Handle, сенсорный минимум >= 44px и 0px overflow-x", () => {
 		const markup = renderToStaticMarkup(
-			<PatientStudioModal isOpen={true} onClose={() => {}} initialMode="create" />,
+			<PatientCardModal isOpen={true} onClose={() => {}} initialMode="create" />,
 		);
 
 		// Мобильный drag handle iOS (36x5px / w-9 h-1)
@@ -195,13 +193,12 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		assert.ok(markup.includes("overflow-x-clip"), "Обязательна защита от горизонтального скролла overflow-x-clip");
 	});
 
-	it("13. [DirectPatientStudioLauncher] Автономный лаунчер корректно монтируется и экспортируется", () => {
-		assert.ok(typeof DirectPatientStudioLauncher === "function" || typeof DirectPatientStudioLauncher === "object");
-		assert.ok(typeof DirectPatientLauncher === "function" || typeof DirectPatientLauncher === "object");
-
-		// При отсутствии активных хэшей лаунчер не рендерит модалку
-		const markup = renderToStaticMarkup(<DirectPatientStudioLauncher />);
-		assert.equal(markup, "");
+	it("13. [PatientCardModal SSOT] Канонический мастер-компонент карточки пациента корректно монтируется", () => {
+		assert.ok(typeof PatientCardModal === "function" || typeof PatientCardModal === "object");
+		const markup = renderToStaticMarkup(
+			<PatientCardModal isOpen={true} onClose={() => {}} initialMode="create" />,
+		);
+		assert.ok(markup.includes('data-testid="patient-card-modal"'));
 	});
 
 	it("14. [Каталог категорий и ролей] Проверка констант PATIENT_CATEGORIES_CATALOG и FAMILY_ROLE_LABELS", () => {
@@ -217,20 +214,13 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		assert.equal(FAMILY_ROLE_LABELS.spouse, "Супруг / Супруга");
 	});
 
-	it("15. [Мандат 8b / 8zi Sweet Spot] Архитектурная метрика: канонический фасад PatientStudioModal.tsx <= 35 строк", () => {
-		const filePath = path.resolve(__dirname, "../PatientStudioModal.tsx");
+	it("15. [Мандат 8b / 8zi Sweet Spot] Архитектурная метрика: канонический мастер-компонент PatientCardModal.tsx и patientCatalogData.ts", () => {
+		const filePath = path.resolve(__dirname, "../PatientCardModal.tsx");
 		const content = fs.readFileSync(filePath, "utf8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines <= 35,
-			`PatientStudioModal.tsx обязан быть ультратонким фасадом <= 35 строк, сейчас ${lines} строк`,
-		);
-
-		const launcherPath = path.resolve(__dirname, "../DirectPatientStudioLauncher.tsx");
-		const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
-		assert.ok(
-			launcherLines >= 50 && launcherLines <= 85,
-			`DirectPatientStudioLauncher.tsx обязан быть в Sweet Spot 60-80 строк, сейчас ${launcherLines} строк`,
+			lines <= 650,
+			`PatientCardModal.tsx обязан быть в пределах Sweet Spot, сейчас ${lines} строк`,
 		);
 
 		const dataPath = path.resolve(__dirname, "../patientCatalogData.ts");

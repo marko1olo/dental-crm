@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import { showToast } from "../../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
-import { INITIAL_DEPOSIT_OPERATIONS } from "./constants";
 import type { DepositOperationRecord, OperationMode, PaymentMethod, TargetWallet } from "./types";
 import type { PatientGeneralInfo } from "../PatientGeneralInfoTab";
 
@@ -14,7 +13,7 @@ export function useDepositOperations(
 ) {
 	const [personalBalance, setPersonalBalance] = useState<number>(initialPersonalBalance);
 	const [familyBalance, setFamilyBalance] = useState<number>(initialFamilyBalance);
-	const [operationsLog, setOperationsLog] = useState<DepositOperationRecord[]>(INITIAL_DEPOSIT_OPERATIONS);
+	const [operationsLog, setOperationsLog] = useState<DepositOperationRecord[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 	const executeOperation = useCallback(
@@ -38,26 +37,34 @@ export function useDepositOperations(
 			const isTopup = mode === "topup";
 			const delta = isTopup ? amount : -amount;
 
+			const amountKopecks = Math.round(amount * 100);
+
 			try {
 				if (target === "family" && patient?.familyGroupId) {
 					const endpoint = isTopup ? "/api/finance/family/topup" : "/api/finance/family/pay";
-					await fetch(endpoint, {
+					const resp = await fetch(endpoint, {
 						method: "POST",
 						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 						body: JSON.stringify({
-							familyGroupId: patient.familyGroupId, patientId: patient.id, amountRub: amount,
+							familyGroupId: patient.familyGroupId, patientId: patient.id, amountRub: amount, amountKopecks,
 							method, clientMutationId: mutationId, note: isTopup ? "Пополнение семейного аванса" : "Списание семейного аванса",
 						}),
-					}).catch(() => null);
+					});
+					if (!resp.ok) {
+						throw new Error(`Ошибка операции с семейным авансом (код ${resp.status})`);
+					}
 				} else if (patient?.id) {
-					await fetch("/api/finance/payments", {
+					const resp = await fetch("/api/finance/payments", {
 						method: "POST",
 						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 						body: JSON.stringify({
-							patientId: patient.id, amountRub: amount, method, clientMutationId: mutationId,
+							patientId: patient.id, amountRub: amount, amountKopecks, method, clientMutationId: mutationId,
 							note: isTopup ? "Внесение аванса на лицевой счёт" : "Зачёт аванса в счёт лечения",
 						}),
-					}).catch(() => null);
+					});
+					if (!resp.ok) {
+						throw new Error(`Ошибка проведения финансовой операции (код ${resp.status})`);
+					}
 				}
 
 				if (target === "personal") {
@@ -76,6 +83,7 @@ export function useDepositOperations(
 					type: isTopup ? (target === "family" ? "family_share" : "deposit") : "charge",
 					typeLabelRu: isTopup ? (target === "family" ? "Семейный аванс (+)" : "Внесение аванса (+)") : "Списание аванса (-)",
 					amountRub: amount,
+					amountKopecks,
 					method,
 					methodLabelRu: method === "card" ? "Банковская карта" : method === "cash" ? "Наличные" : "СБП (QR-код)",
 					status: "completed",

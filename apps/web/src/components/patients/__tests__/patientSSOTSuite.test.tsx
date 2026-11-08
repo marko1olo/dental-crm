@@ -27,10 +27,7 @@ import {
 	type FamilyMember,
 	type PatientCatalogItem,
 } from "../patientCatalogData";
-import { PatientStudioModal } from "../PatientStudioModal";
-import { PatientDetailModal } from "../PatientDetailModal";
-import { PatientDetailsModal } from "../PatientDetailsModal";
-import { DirectPatientLauncher } from "../DirectPatientLauncher";
+import { PatientCardModal } from "../PatientCardModal";
 
 describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e, 8n, 8am)", () => {
 	it("1. [Мандат 8e] Экспресс-регистрация за 10 секунд требует ТОЛЬКО ФИО и Телефон (паспорт и СНИЛС не требуются)", () => {
@@ -106,7 +103,7 @@ describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e,
 
 	it("4. [Мандат 8e & 8am] PatientStudioModal: кнопка сохранения НИКОГДА не disabled, ровно 1 Primary CTA", () => {
 		const markup = renderToStaticMarkup(
-			<PatientStudioModal
+			<PatientCardModal
 				isOpen={true}
 				onClose={() => {}}
 				initialMode="create"
@@ -128,7 +125,7 @@ describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e,
 
 	it("5. [Apple HIG Mobile] Сенсорная эргономика: touch target >= 44x44px, drag handle, 0px overflow-x", () => {
 		const markup = renderToStaticMarkup(
-			<PatientStudioModal
+			<PatientCardModal
 				isOpen={true}
 				onClose={() => {}}
 				initialMode="view"
@@ -145,14 +142,12 @@ describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e,
 		assert.ok(markup.includes("overflow-x-clip"), "Должна быть защита от горизонтального дрейфа overflow-x-clip");
 	});
 
-	it("6. [Консолидация модалок] PatientDetailModal и PatientDetailsModal консолидированы без параллельных дублей", () => {
-		assert.ok(typeof PatientDetailModal === "function" || typeof PatientDetailModal === "object");
-		assert.ok(typeof PatientDetailsModal === "function" || typeof PatientDetailsModal === "object");
-		assert.ok(typeof DirectPatientLauncher === "function" || typeof DirectPatientLauncher === "object");
+	it("6. [Консолидация модалок] PatientCardModal является единым SSOT", () => {
+		assert.ok(typeof PatientCardModal === "function" || typeof PatientCardModal === "object");
 
-		// Проверка рендеринга консолидированного фасада
+		// Проверка рендеринга консолидированного мастера
 		const markup = renderToStaticMarkup(
-			<PatientDetailsModal
+			<PatientCardModal
 				isOpen={true}
 				onClose={() => {}}
 			/>,

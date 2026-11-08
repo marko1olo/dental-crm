@@ -25,18 +25,30 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 		disabled = false,
 	}) {
 		const initialPersonalBalance = useMemo(() => {
+			if (typeof (patient as any)?.balanceKopecks === "number") {
+				return Math.round((patient as any).balanceKopecks / 100);
+			}
 			if (typeof patient?.patientBalanceRub === "number") {
 				return Math.round(patient.patientBalanceRub);
 			}
-			return 4500;
-		}, [patient?.patientBalanceRub]);
+			if (typeof (patient as any)?.balanceRub === "number") {
+				return Math.round((patient as any).balanceRub);
+			}
+			return 0;
+		}, [patient?.patientBalanceRub, (patient as any)?.balanceRub, (patient as any)?.balanceKopecks]);
 
 		const initialFamilyBalance = useMemo(() => {
+			if (typeof (patient as any)?.familyBalanceKopecks === "number") {
+				return Math.round((patient as any).familyBalanceKopecks / 100);
+			}
 			if (typeof patient?.familyBalanceRub === "number") {
 				return Math.round(patient.familyBalanceRub);
 			}
-			return 12500;
-		}, [patient?.familyBalanceRub]);
+			if (typeof (patient as any)?.familyGroup?.totalBalanceRub === "number") {
+				return Math.round((patient as any).familyGroup.totalBalanceRub);
+			}
+			return 0;
+		}, [patient?.familyBalanceRub, (patient as any)?.familyGroup?.totalBalanceRub, (patient as any)?.familyBalanceKopecks]);
 
 		const {
 			personalBalance,

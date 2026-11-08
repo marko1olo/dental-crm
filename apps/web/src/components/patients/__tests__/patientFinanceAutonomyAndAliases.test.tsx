@@ -5,8 +5,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PatientFinanceTab } from "../tabs/PatientFinanceTab";
 import { PatientGeneralInfoTab } from "../tabs/PatientGeneralInfoTab";
 import { PatientCardModal } from "../PatientCardModal";
-import { PatientDetailModal } from "../PatientDetailModal";
-import { PatientCardView } from "../PatientCardView";
 
 describe("Patient Finance Autonomy, Pure Language & Aliases (Mandates 8e, 8x)", () => {
 	const mockPatient = {
@@ -55,14 +53,10 @@ describe("Patient Finance Autonomy, Pure Language & Aliases (Mandates 8e, 8x)", 
 		assert.equal(dialogOccurrences, 1, "Must have exactly 1 role='dialog', no Matryoshka nesting!");
 	});
 
-	it("exports canonical backwards-compatible aliases: PatientDetailModal, PatientCardView", () => {
-		assert.ok(typeof PatientDetailModal === "function" || typeof PatientDetailModal === "object");
-		assert.ok(typeof PatientCardView === "function" || typeof PatientCardView === "object");
+	it("PatientCardModal is canonical SSOT for patient card", () => {
+		assert.ok(typeof PatientCardModal === "function" || typeof PatientCardModal === "object");
 
-		const detailHtml = renderToStaticMarkup(createElement(PatientDetailModal, { isOpen: true, onClose: () => {}, patient: mockPatient, initialTab: "finance" }));
-		assert.ok(detailHtml.includes('data-testid="patient-card-modal"'));
-
-		const viewHtml = renderToStaticMarkup(createElement(PatientCardView, { isOpen: true, onClose: () => {}, patient: mockPatient, initialTab: "finance" }));
-		assert.ok(viewHtml.includes('data-testid="patient-card-modal"'));
+		const modalHtml = renderToStaticMarkup(createElement(PatientCardModal, { isOpen: true, onClose: () => {}, patient: mockPatient, initialTab: "finance" }));
+		assert.ok(modalHtml.includes('data-testid="patient-card-modal"'));
 	});
 });

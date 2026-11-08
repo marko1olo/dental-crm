@@ -34,17 +34,11 @@ describe("Family Wallet SSOT & Pooled Deposit Architecture", () => {
 		);
 	});
 
-	it("verifies clean backward-compatible shim in components/patient/FamilyWalletModal.tsx", () => {
-		const shimPath = path.resolve(patientDir, "FamilyWalletModal.tsx");
-		assert.ok(
-			fs.existsSync(shimPath),
-			"Shim FamilyWalletModal.tsx must exist in components/patient/",
-		);
-
-		const content = fs.readFileSync(shimPath, "utf-8");
-		assert.ok(
-			content.includes('export * from "../patients/family/FamilyWalletModal";'),
-			"Shim must re-export from canonical SSOT ../patients/family/FamilyWalletModal",
+	it("verifies legacy components/patient/ clone folder is eliminated", () => {
+		assert.equal(
+			fs.existsSync(patientDir),
+			false,
+			"Legacy clone components/patient/ must be eradicated from workspace",
 		);
 	});
 

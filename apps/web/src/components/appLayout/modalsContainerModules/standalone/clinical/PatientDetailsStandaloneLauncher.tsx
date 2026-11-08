@@ -8,7 +8,7 @@
 
 import type React from "react";
 import { useMemo } from "react";
-import { PatientDetailsModal } from "../../../../patient/PatientDetailsModal";
+import { PatientCardModal } from "../../../../patients/PatientCardModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 import { readPatientIdFromUrl } from "../useLauncherPatientDebt";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
@@ -35,5 +35,5 @@ function StandalonePatientDetailsHost(): React.ReactElement {
 		);
 	}
 
-	return <PatientDetailsModal isOpen={true} onClose={onClose} patientId={patientId} />;
+	return <PatientCardModal isOpen={true} onClose={onClose} patientId={patientId} />;
 }

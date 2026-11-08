@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PatientStudioModal } from "../PatientStudioModal";
+import { PatientCardModal } from "../PatientCardModal";
 import {
 	usePatientStudioState,
 	PatientStudioHeader,
@@ -41,12 +41,12 @@ describe("Patient Studio Decomposed Modules Suite (Mandates 8b, 8e, 8n, 8am)", (
 			);
 		}
 
-		// Канонический тонкий фасад PatientStudioModal.tsx (Мандат 8b/8zi: фасад <= 35 строк)
-		const studioPath = path.resolve(__dirname, "../PatientStudioModal.tsx");
+		// Канонический мастер-компонент PatientCardModal.tsx (Мандат 8b/8zi: Sweet Spot)
+		const studioPath = path.resolve(__dirname, "../PatientCardModal.tsx");
 		const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
 		assert.ok(
-			studioLines <= 35,
-			`PatientStudioModal.tsx обязан быть ультратонким фасадом <= 35 строк (текущий: ${studioLines})`,
+			studioLines <= 650,
+			`PatientCardModal.tsx обязан быть в пределах Sweet Spot (текущий: ${studioLines})`,
 		);
 	});
 

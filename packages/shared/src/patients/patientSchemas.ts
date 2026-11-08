@@ -229,8 +229,10 @@ export const patientSchema = z.object({
 	/*
 	 * Баланс пациента: оплачено минус запланировано.
 	 * Отрицательное значение — долг (moneyRubSchema).
+	 * balanceKopecks: канонический целочисленный баланс в копейках (Мандат 8d / BILLING_AND_FINANCE.md).
 	 */
 	balanceRub: moneyRubSchema.default(0),
+	balanceKopecks: z.number().int().default(0),
 	/*
 	 * Привязка пациента к семейной группе (общий кошелёк).
 	 */
