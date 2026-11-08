@@ -111,14 +111,18 @@ export function CopilotThinkingIndicator({
 			</div>
 
 			<div className="px-2.5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px] border-t border-[var(--line)]/30">
-				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
-					<Check size={9} className="stroke-[2.5]" />
-					<span>{`FDI ${activeTooth || 36}`}</span>
-				</span>
-				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
-					<Check size={9} className="stroke-[2.5]" />
-					<span>{icd10Code ? `МКБ-10 ${icd10Code}` : "МКБ-10 K02.1"}</span>
-				</span>
+				{activeTooth ? (
+					<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+						<Check size={9} className="stroke-[2.5]" />
+						<span>{`FDI ${activeTooth}`}</span>
+					</span>
+				) : null}
+				{icd10Code ? (
+					<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+						<Check size={9} className="stroke-[2.5]" />
+						<span>{`МКБ-10 ${icd10Code}`}</span>
+					</span>
+				) : null}
 				<span className="ml-auto inline-flex items-center gap-1 text-[var(--teal,#0d9488)] shrink-0 font-medium text-[10px]">
 					<span>Печатает</span>
 					<span className="inline-flex gap-0.5 items-center">

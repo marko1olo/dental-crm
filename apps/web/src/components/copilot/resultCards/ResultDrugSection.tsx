@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DrugInteractionItem, DdiSafetyAlertData } from '../copilotTypes';
-import { CopilotDdiSafetyCard } from './CopilotDdiSafetyCardFacade';
+import { CopilotDdiSafetyCard } from '../cards/CopilotDdiSafetyCard';
 import { CopilotDrugInteractionCard } from '../CopilotDrugInteractionCard';
 
 type Obj = Record<string, unknown>;

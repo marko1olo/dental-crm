@@ -95,7 +95,7 @@ export async function executeCopilotAgentRequest(
   }
 
   const currentTrust = useCopilotStore.getState().settings.trustLevel;
-  const activeMode = currentTrust === "cautious" ? "cautious" : currentTrust === "autonomous" ? "autonomous" : "supervised";
+  const activeMode = (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious" ? "cautious" : currentTrust === "autonomous" ? "autonomous" : "supervised";
 
   const requestBody = {
     patientId: patientId?.trim() || undefined,
@@ -125,7 +125,7 @@ export async function executeCopilotAgentRequest(
     patientId: patientId?.trim() || undefined,
     visitId,
     headers,
-    trustLevel: currentTrust === "cautious" ? "confirm_all" : currentTrust === "autonomous" ? "autonomous" : "balanced",
+    trustLevel: (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious" ? "confirm_all" : currentTrust === "autonomous" ? "autonomous" : "balanced",
     onThoughtChunk: params.onThoughtChunk,
   });
   if (sseResult) {

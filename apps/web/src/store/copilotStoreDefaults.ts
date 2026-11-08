@@ -57,7 +57,7 @@ export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
 }
 
 export const DEFAULT_SETTINGS: CopilotSettings = {
-	trustLevel: "supervised",
+	trustLevel: "balanced",
 	provider: "gemini",
 	model: "server_managed",
 	modelRoutingMode: "server_managed",
@@ -66,6 +66,7 @@ export const DEFAULT_SETTINGS: CopilotSettings = {
 	byokModel: "gemini-3.6-flash",
 	speedMode: "turbo",
 	showThinkingProcess: true,
+	showTypingAnimation: true,
 	clinicalSpecialization: "therapy",
 	diaryTemplate: "soap",
 	customDoctorInstructions: "",

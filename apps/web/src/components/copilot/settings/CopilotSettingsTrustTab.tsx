@@ -1,6 +1,6 @@
 /**
  * @file CopilotSettingsTrustTab.tsx
- * @description Trust Level & Autonomy settings tab: 3 trust tiers (cautious, supervised, autonomous)
+ * @description Trust Level & Autonomy settings tab: 3 trust tiers (confirm_all, balanced, autonomous)
  * and fine-grained agent tool auto-approve permissions (Mandate 8b <= 200 lines, Mandate 8e).
  */
 
@@ -17,14 +17,14 @@ export const TRUST_LEVELS: Array<{
 	icon: React.ComponentType<{ size?: number; className?: string }>;
 }> = [
 	{
-		id: "cautious",
+		id: "confirm_all",
 		title: "Максимальный контроль (Параноик)",
 		badge: "100% подтверждений",
-		description: "Двухфазное подтверждение каждого вызова инструмента и мутации БД (зубная формула, расписание, списание, чтение файлов).",
+		description: "Двухфазное подтверждение каждого вызова инструмента и мутации БД (зубная формула, расписание, списание, файлы). Подтверждать каждый шаг без самодеятельности.",
 		icon: Lock,
 	},
 	{
-		id: "supervised",
+		id: "balanced",
 		title: "Сбалансированный (Копайлот)",
 		badge: "Рекомендуемый",
 		description: "Авто-запись дневников SOAP и смет, свободное чтение снимков и разметка формулы; подтверждение только деструктивных мутаций и удаления.",
@@ -34,7 +34,7 @@ export const TRUST_LEVELS: Array<{
 		id: "autonomous",
 		title: "Высокая автономия (Суперагент)",
 		badge: "В 1 клик",
-		description: "Применение готовых планов и клинических протоколов в 1 клик без лишних преград с возможностью быстрой отмены.",
+		description: "Применение готовых планов и клинических протоколов в 1 клик без лишних преград с возможностью быстрой отмены (Undo).",
 		icon: Zap,
 	},
 ];
@@ -46,10 +46,10 @@ export interface CopilotSettingsTrustTabProps {
 	setGranularPermissions: (perms: GranularAgentPermissions) => void;
 }
 
-export function normalizeTrustLevel(level: AiTrustLevel): "cautious" | "supervised" | "autonomous" {
-	if (level === "confirm_all" || level === "cautious") return "cautious";
-	if (level === "balanced" || level === "supervised") return "supervised";
-	return "autonomous";
+export function normalizeTrustLevel(level: AiTrustLevel | string): AiTrustLevel {
+	if (level === "confirm_all" || level === "cautious") return "confirm_all";
+	if (level === "autonomous") return "autonomous";
+	return "balanced";
 }
 
 export function CopilotSettingsTrustTab({

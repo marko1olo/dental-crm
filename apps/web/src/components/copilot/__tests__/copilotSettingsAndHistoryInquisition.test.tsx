@@ -23,7 +23,7 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		useCopilotStore.setState({
 			settings: {
 				...useCopilotStore.getState().settings,
-				trustLevel: "supervised",
+				trustLevel: "balanced",
 				provider: "gemini",
 				model: "server_managed",
 				modelRoutingMode: "server_managed",
@@ -37,18 +37,18 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		});
 	});
 
-	it("1. Trust Levels: Cautious, Supervised and Autonomous are strictly defined and normalized", () => {
-		assert.equal(normalizeTrustLevel("cautious"), "cautious");
-		assert.equal(normalizeTrustLevel("confirm_all"), "cautious");
-		assert.equal(normalizeTrustLevel("supervised"), "supervised");
-		assert.equal(normalizeTrustLevel("balanced"), "supervised");
+	it("1. Trust Levels: Cautious/confirm_all, Supervised/balanced and Autonomous are strictly defined and normalized", () => {
+		assert.equal(normalizeTrustLevel("cautious"), "confirm_all");
+		assert.equal(normalizeTrustLevel("confirm_all"), "confirm_all");
+		assert.equal(normalizeTrustLevel("supervised"), "balanced");
+		assert.equal(normalizeTrustLevel("balanced"), "balanced");
 		assert.equal(normalizeTrustLevel("autonomous"), "autonomous");
 
-		useCopilotStore.getState().setTrustLevel("cautious");
-		assert.equal(useCopilotStore.getState().settings.trustLevel, "cautious");
+		useCopilotStore.getState().setTrustLevel("confirm_all");
+		assert.equal(useCopilotStore.getState().settings.trustLevel, "confirm_all");
 
-		useCopilotStore.getState().setTrustLevel("supervised");
-		assert.equal(useCopilotStore.getState().settings.trustLevel, "supervised");
+		useCopilotStore.getState().setTrustLevel("balanced");
+		assert.equal(useCopilotStore.getState().settings.trustLevel, "balanced");
 
 		useCopilotStore.getState().setTrustLevel("autonomous");
 		assert.equal(useCopilotStore.getState().settings.trustLevel, "autonomous");
@@ -129,6 +129,14 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		assert.ok(html.includes("K04.0"));
 		assert.ok(html.includes("Вызов инструмента: updateToothStatus"));
 		assert.ok(html.includes("copilot-thinking-cursor"));
+
+		const htmlZeroNoise = renderToString(
+			<CopilotThinkingIndicator
+				isThinking={true}
+			/>
+		);
+		assert.ok(!htmlZeroNoise.includes("FDI"), "FDI badge must not render without activeTooth");
+		assert.ok(!htmlZeroNoise.includes("МКБ-10"), "ICD-10 badge must not render without icd10Code");
 	});
 
 	it("5. History Threads: creation, switching, search filtering and message isolation", () => {

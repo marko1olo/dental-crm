@@ -74,7 +74,7 @@ describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 
 		const trustHtml = renderToString(
 			<CopilotSettingsTrustTab
-				trustLevel="supervised"
+				trustLevel="balanced"
 				setTrustLevel={() => {}}
 				granularPermissions={{
 					autoApproveFileReads: true,

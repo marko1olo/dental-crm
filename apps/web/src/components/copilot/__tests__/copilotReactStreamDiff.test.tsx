@@ -30,6 +30,7 @@ describe("Copilot ReAct Stream, Extended Thinking (CoT) & Two-Phase Diff Suite",
       <CopilotThinkingIndicator
         isThinking={true}
         activeTooth={36}
+        icd10Code="K02.1"
         thoughtProcess="Анализ снимка КЛКТ зуба 36: визуализация очага деструкции в периапикальной зоне."
         speedMode="turbo"
         showThinkingProcess={true}
@@ -142,6 +143,7 @@ describe("Copilot ReAct Stream, Extended Thinking (CoT) & Two-Phase Diff Suite",
           isOpen={true}
           onClose={() => {}}
           activeTooth={36}
+        icd10Code="K02.1"
           initialTab="dialog"
         />
       )

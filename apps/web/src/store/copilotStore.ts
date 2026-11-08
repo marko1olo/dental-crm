@@ -36,7 +36,7 @@ import {
 
 export { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState };
 
-export type AiTrustLevel = "cautious" | "supervised" | "autonomous" | "confirm_all" | "balanced";
+export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
 export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
 export type AiSpeedMode = "turbo" | "deep_reasoning";
 export type ModelRoutingMode = "server_managed" | "custom_byok";
@@ -104,6 +104,7 @@ export interface CopilotSettings {
 	byokBaseUrl?: string;
 	speedMode: AiSpeedMode;
 	showThinkingProcess: boolean;
+	showTypingAnimation?: boolean;
 	clinicalSpecialization: ClinicalSpecialization;
 	diaryTemplate: DiaryTemplate;
 	customDoctorInstructions: string;
