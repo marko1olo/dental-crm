@@ -21,7 +21,7 @@ import {
 	resetPortalOtpRateLimitsForTesting,
 	resetPortalRevokedTokensForTesting,
 } from "../../routes/portal.js";
-import { portalBudgetRoutes } from "../../routes/portalBudgetRoutes.js";
+import { publicBudgetRoutes } from "../../routes/publicBudgetRoutes.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
@@ -68,7 +68,7 @@ describe("Patient Portal Security, Multi-Tenant Isolation & 152-FZ Audit", () =>
 
 		app = Fastify({ logger: false });
 		await app.register(portalRoutes, { prefix: "/api/portal" });
-		await app.register(portalBudgetRoutes, { prefix: "/api/portal" });
+		await app.register(publicBudgetRoutes);
 		await app.ready();
 
 		try {

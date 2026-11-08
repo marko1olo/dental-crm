@@ -26,6 +26,7 @@ import {
 export type CheckinStep = "phone_auth" | "consents" | "somatic" | "completed";
 
 export interface UseMobileSelfCheckinStateProps {
+	readonly organizationId?: string | null | undefined;
 	readonly patientId?: string | undefined;
 	readonly initialPhone?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -173,6 +174,7 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
+					organizationId: props.organizationId || undefined,
 					phoneLast4: phoneDigits,
 					patientPhone: props.initialPhone,
 					patientId: props.patientId,
@@ -200,21 +202,34 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 				return;
 			}
 			const err = await res.json().catch(() => null);
-			if (err?.message) setAuthError(err.message);
-		} catch {
-			// In demo/test mode or offline kiosk, fallback gracefully
+			const errorMessage = err?.message || err?.error || "Не удалось зарегистрировать визит. Пожалуйста, обратитесь к администратору на ресепшн.";
+			setAuthError(errorMessage);
+			if (isDemo) {
+				setStep("completed");
+				props.onCheckinSuccess?.({
+					patientId: props.patientId || "",
+					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
+					somaticProfile: payload.evaluatedRisks,
+					queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
+					visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
+				});
+			}
+		} catch (err: any) {
+			const networkMsg = err?.message || "Ошибка связи с сервером терминала. Пожалуйста, обратитесь к администратору на ресепшн.";
+			setAuthError(networkMsg);
+			if (isDemo) {
+				setStep("completed");
+				props.onCheckinSuccess?.({
+					patientId: props.patientId || "",
+					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
+					somaticProfile: payload.evaluatedRisks,
+					queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
+					visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
+				});
+			}
 		} finally {
 			setIsSubmitting(false);
 		}
-
-		setStep("completed");
-		props.onCheckinSuccess?.({
-			patientId: props.patientId || "",
-			signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
-			somaticProfile: payload.evaluatedRisks,
-			queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
-			visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
-		});
 	};
 
 	const handleApplyPhysiologicalNorm = () => {

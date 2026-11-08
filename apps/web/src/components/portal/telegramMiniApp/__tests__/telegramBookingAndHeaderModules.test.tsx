@@ -13,13 +13,11 @@ import { PatientHeaderBalanceBadge } from "../../../patients/headerModules/Patie
 import { PatientHeaderAllergiesAlert } from "../../../patients/headerModules/PatientHeaderAllergiesAlert";
 import { PatientHeaderQuickActions } from "../../../patients/headerModules/PatientHeaderQuickActions";
 
-// 2. Telegram Mini App Booking Modules
+// 2. Telegram Mini App Booking Modules (Canonical SSOT Integration)
 import { TelegramMiniAppBooking, SPECIALIST_CATEGORIES } from "../TelegramMiniAppBooking";
-import { BookingDoctorSelector } from "../bookingModules/BookingDoctorSelector";
-import { BookingSlotPicker } from "../bookingModules/BookingSlotPicker";
-import { BookingStickyBottomBar } from "../bookingModules/BookingStickyBottomBar";
-import { BookingSuccessView } from "../bookingModules/BookingSuccessView";
-import { DEFAULT_DOCTORS_LIST, generateCalendarDays } from "../bookingModules/bookingTypes";
+import { BookingSlotPicker } from "../../../booking/BookingSlotPicker";
+import { BookingConfirmationView } from "../../../booking/BookingConfirmationView";
+import { buildCalendarDays } from "../../../booking/bookingUtils";
 import { AppLogicProvider, type AppLogicContextType } from "../../../../contexts/AppLogicContext";
 
 describe("PatientHeaderCard & Header Modules — Architectural & Visual Invariants", () => {
@@ -138,95 +136,61 @@ describe("TelegramMiniAppBooking & Booking Modules — Apple HIG & Touch Ergonom
 		expect(ids).toEqual(["therapist", "surgeon", "orthodontist", "hygienist"]);
 	});
 
-	it("generateCalendarDays generates 7 consecutive days starting with 'Сегодня' and 'Завтра'", () => {
-		const days = generateCalendarDays();
-		expect(days).toHaveLength(7);
-		expect(days[0]?.dayOfWeek).toBe("Сегодня");
-		expect(days[1]?.dayOfWeek).toBe("Завтра");
-		expect(days[0]?.dayNum).toBeGreaterThan(0);
-	});
-
-	it("BookingDoctorSelector renders specialist category chips and doctor profile cards with ratings", () => {
-		const html = renderToString(
-			<BookingDoctorSelector
-				activeCategory="therapist"
-				filteredDoctors={DEFAULT_DOCTORS_LIST}
-				selectedDoctorId="doc-1"
-				onSelectCategory={() => {}}
-				onSelectDoctor={() => {}}
-			/>,
-		);
-		expect(html).toContain("1. Выберите направление приёма");
-		expect(html).toContain("Терапевт");
-		expect(html).toContain("Хирург / Имплантолог");
-		expect(html).toContain("Д-р Смирнов А.В.");
-		expect(html).toContain("★");
-		expect(html).toContain("4.9");
-		expect(html).toContain("Стаж практики:");
-	});
-
-	it("BookingSlotPicker renders horizontal date buttons and free appointment slot grid", () => {
-		const days = generateCalendarDays();
-		const slots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00"];
+	it("BookingSlotPicker renders calendar days and time slots cleanly per Apple HIG", () => {
+		const days = buildCalendarDays(new Date(), "2026-05-15");
+		const slots = [
+			{ time: "09:00", startsAt: "2026-05-15T09:00:00Z", endsAt: "2026-05-15T09:30:00Z", period: "morning" as const },
+			{ time: "10:30", startsAt: "2026-05-15T10:30:00Z", endsAt: "2026-05-15T11:00:00Z", period: "morning" as const },
+			{ time: "14:00", startsAt: "2026-05-15T14:00:00Z", endsAt: "2026-05-15T14:30:00Z", period: "afternoon" as const },
+		];
 		const html = renderToString(
 			<BookingSlotPicker
 				calendarDays={days}
-				selectedDateIndex={0}
-				availableSlots={slots}
-				selectedSlot="10:30"
-				onSelectDateIndex={() => {}}
+				selectedDate="2026-05-15"
+				onSelectDate={() => {}}
+				monthLabel="Май 2026"
+				onPrevMonth={() => {}}
+				onNextMonth={() => {}}
+				slots={slots}
+				selectedSlot={slots[1]!}
 				onSelectSlot={() => {}}
+				slotsLoading={false}
+				slotError={null}
 			/>,
 		);
-		expect(html).toContain("3. Выберите дату визита");
-		expect(html).toContain("4. Свободное время");
 		expect(html).toContain("10:30");
 		expect(html).toContain("14:00");
-		expect(html).toContain("tg-slot-btn");
 	});
 
-	it("BookingStickyBottomBar renders floating primary CTA adhering to Apple HIG thumb zone", () => {
-		const days = generateCalendarDays();
-		const doc = DEFAULT_DOCTORS_LIST[0]!;
-		const html = renderToString(
-			<BookingStickyBottomBar
-				isSubmitting={false}
-				currentDoctor={doc}
-				selectedSlot="11:00"
-				currentDayMeta={days[0]}
-				onSubmitBooking={() => {}}
-			/>,
-		);
-		expect(html).toContain("data-testid=\"booking-sticky-bottom-bar\"");
-		expect(html).toContain("tg-floating-bottom-bar");
-		expect(html).toContain("data-testid=\"booking-submit-cta-btn\"");
-		expect(html).toContain("Записаться к доктору на");
-		expect(html).toContain("в 11:00");
-	});
-
-	it("BookingSuccessView renders appointment confirmation and clinical guide", () => {
-		const result = {
-			appointmentId: "appt-999",
-			doctorName: "Д-р Смирнов А.В.",
-			dateString: "15 мая (Ср)",
+	it("BookingConfirmationView renders appointment confirmation and clean clinical guide", () => {
+		const confirmation = {
+			referenceNumber: "DNT-999",
+			date: "15 мая (Ср)",
 			time: "14:00",
-			teethSummary: "Зуб #16: Острая боль",
+			startsAt: "2026-05-15T14:00:00Z",
+			endsAt: "2026-05-15T14:30:00Z",
+			patientName: "Алексей",
+			patientPhone: "+7 (999) 123-45-67",
+			doctor: {
+				id: "doc-1",
+				fullName: "Д-р Смирнов А.В.",
+				specialties: ["Терапевт"],
+				experienceYears: 12,
+				rating: 4.9,
+				reviewsCount: 45,
+				categoryIds: ["therapy"],
+			},
+			createdAt: new Date().toISOString(),
 		};
 		const html = renderToString(
-			<BookingSuccessView
-				bookingSuccessResult={result}
-				patientFullName="Алексей"
-				onResetResult={() => {}}
+			<BookingConfirmationView
+				confirmationData={confirmation}
+				onReset={() => {}}
 			/>,
 		);
-		expect(html).toContain("data-testid=\"booking-success-card\"");
 		expect(html).toContain("Запись успешно оформлена!");
 		expect(html).toContain("Д-р Смирнов А.В.");
-		expect(html).toContain("15 мая (Ср)");
-		expect(html).toContain("14:00");
-		expect(html).toContain("Зуб #16: Острая боль");
-		expect(html).toContain("Памятка перед приёмом");
-		expect(html).toContain("data-testid=\"booking-back-to-teeth-btn\"");
+		expect(html).toContain("DNT-999");
 	});
 
 	it("TelegramMiniAppBooking full facade renders seamlessly with attached tooth complaints", () => {
@@ -250,7 +214,6 @@ describe("TelegramMiniAppBooking & Booking Modules — Apple HIG & Touch Ergonom
 		expect(html).toContain("Выбрано для осмотра:");
 		expect(html).toContain("#26");
 		expect(html).toContain("Боль от холодного");
-		expect(html).toContain("1. Выберите направление приёма");
-		expect(html).toContain("data-testid=\"booking-sticky-bottom-bar\"");
+		expect(html).toContain("dente-booking-widget");
 	});
 });

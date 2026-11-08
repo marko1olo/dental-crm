@@ -250,6 +250,7 @@ if (publicPortalRoute) {
 						>
 							<MobileSelfCheckinModal
 								isOpen={true}
+								organizationId={publicPortalRoute.organizationId}
 								onClose={() => {
 									window.location.hash = publicPortalRoute.organizationId
 										? `#/portal/kiosk/${encodeURIComponent(publicPortalRoute.organizationId)}`

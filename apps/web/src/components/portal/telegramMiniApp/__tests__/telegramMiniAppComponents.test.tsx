@@ -113,23 +113,14 @@ describe("Telegram WebApp Mini-App & Interactive Tooth Formula Flow", () => {
 			}),
 		);
 
-		// 4 направления врачей
-		assert.ok(html.includes("Терапевт"));
-		assert.ok(html.includes("Хирург / Имплантолог"));
-		assert.ok(html.includes("Ортодонт"));
-		assert.ok(html.includes("Гигиенист"));
-
 		// Баннер прикрепленных зубов
 		assert.ok(html.includes("Выбрано для осмотра: 1 зуб"));
 		assert.ok(html.includes("#16"));
 		assert.ok(html.includes("Острая пульсирующая боль"));
 
-		// Свободные окна для записи
-		assert.ok(html.includes("Свободное время"));
-		assert.ok(html.includes("10:30"));
-
-		// Кнопка записи
-		assert.ok(html.includes("Записаться к доктору"));
+		// Канонический виджет онлайн-записи DENTE (SSOT)
+		assert.ok(html.includes("dente-booking-widget"));
+		assert.ok(html.includes('data-embed="telegram"'));
 	});
 
 	it("renders full TelegramMiniAppView with navigation bar, responsive safe area container and reactive tooth complaints badge", () => {

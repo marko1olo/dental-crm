@@ -56,7 +56,7 @@ export const BookingConfirmationDetails: React.FC<BookingConfirmationDetailsProp
 				<div className="min-w-0">
 					<div className="dbw-detail-label">Адрес клиники</div>
 					<div className="dbw-detail-value min-w-0 break-words">
-						{branchName} — {branchAddress}
+						{[branchName, branchAddress].filter(Boolean).join(" — ") || "Уточняется на ресепшене"}
 					</div>
 				</div>
 			</div>

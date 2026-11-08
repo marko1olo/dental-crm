@@ -40,6 +40,7 @@ export type { CheckinStep };
 export interface MobileSelfCheckinModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly organizationId?: string | null | undefined;
 	readonly patientId?: string | undefined;
 	readonly initialPhone?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -61,6 +62,7 @@ export interface MobileSelfCheckinModalProps {
 export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	isOpen,
 	onClose,
+	organizationId,
 	patientId = "",
 	initialPhone,
 	patientName,
@@ -73,6 +75,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	onCheckinSuccess,
 }) => {
 	const state = useMobileSelfCheckinState({
+		organizationId,
 		patientId,
 		initialPhone,
 		patientName,

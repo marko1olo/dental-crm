@@ -72,7 +72,6 @@ import { registerPatientRoutes } from "../routes/patients.js";
 import { registerPhotoBridgeRoutes } from "../routes/photoBridgeRoutes.js";
 import { patientPortalRoutes } from "../routes/patientPortal.js";
 import { portalRoutes } from "../routes/portal.js";
-import { portalBudgetRoutes } from "../routes/portalBudgetRoutes.js";
 import { publicBudgetRoutes } from "../routes/publicBudgetRoutes.js";
 import { treatmentPlanRoutes } from "../routes/treatmentPlanRoutes.js";
 import { clinicalBundlesRoutes } from "../routes/clinicalBundlesRoutes.js";
@@ -272,7 +271,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await app.register(copilotRoutes);
 	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
-	await app.register(portalBudgetRoutes, { prefix: "/api/portal" });
 	await app.register(publicBudgetRoutes);
 	await app.register(treatmentPlanRoutes);
 	await app.register(clinicalBundlesRoutes);

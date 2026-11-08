@@ -702,19 +702,29 @@
 - **Суть бага:** QR-код синтезировался как случайный шум из SHA-256 с фейковым счетом `"40702810938000123456"`. Банковские приложения (Сбер, Т-Банк) его не распознавали.
 - **Суть исправления [ИСПРАВЛЕНО]:** Псевдо-QR из случайных пикселей SHA-256 ликвидирован. `generateDeterministicQrSvg` переведен на канонический генератор QR-матрицы `@dental/shared` (`generateQrMatrix`) по стандарту ГОСТ Р 56042-2014 и NSPK EMVCo. Генерируется валидный, считываемый банковскими приложениями SVG со ссылкой `https://qr.nspk.ru/...`, `amountKopecks` и `orderId`. Покрыто тестами в `portalDecomposition.test.ts`.
 
+### [POR-08] [SEV-2] [ИСПРАВЛЕНО] Потёмкинская деревня в терминале саморегистрации (безусловный completed при ошибках API)
+- **Файлы:** [`apps/web/src/components/portal/selfCheckin/useMobileSelfCheckinState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/useMobileSelfCheckinState.ts), [`apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx), [`apps/web/src/main.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/main.tsx)
+- **Суть бага:** При 500 ошибке бэкенда `useMobileSelfCheckinState.ts` в блоке `catch` безусловно вызывал `setStep("completed")` и рисовал поддельный талон `"Э-01"`. Пациент думал, что зарегистрирован, но врач в CRM ничего не знал о визите. Также из `main.tsx` в киоск не передавался `organizationId`, нарушая изоляцию арендаторов.
+- **Суть исправления [ИСПРАВЛЕНО]:** Потёмкинская деревня вырезана под корень: при сбое API отображается честная ошибка `authError`, выдача фальшивого талона заблокирована. Из `main.tsx` проброшен `organizationId` в `MobileSelfCheckinModal` и сетевой запрос `lookup`.
+
+### [POR-09] [SEV-2] [ИСПРАВЛЕНО] Дублирующий параллельный движок бронирования в Telegram Mini App и коллизия роутов смет
+- **Файлы:** [`apps/web/src/components/portal/telegramMiniApp/TelegramMiniAppBooking.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/telegramMiniApp/TelegramMiniAppBooking.tsx), [`apps/api/src/routes/publicBudgetRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBudgetRoutes.ts), [`apps/api/src/serverModules/routeRegistrar.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/serverModules/routeRegistrar.ts)
+- **Суть бага:** В `telegramMiniApp/bookingModules/` существовал изолированный клон логики записи (10 файлов) без синхронизации слотов с ядром. На бэкенде два разных файла регистрировали маршруты согласования смет (`portalBudgetRoutes.ts` и `publicBudgetRoutes.ts`).
+- **Суть исправления [ИСПРАВЛЕНО]:** Все 10 дублирующих файлов `bookingModules/` удалены через `git rm -f`. `TelegramMiniAppBooking.tsx` переведен на единый SSOT `PublicBookingWidget` (`embedMode="telegram"`). Дубль `portalBudgetRoutes.ts` удален, `publicBudgetRoutes.ts` расширен алиасами маршрутов `/api/portal/budget` для полной обратной совместимости.
+
+### [POR-10] [SEV-3] [ИСПРАВЛЕНО] Мертвые CSS-сироты и ликвидация хардкода «Кабинет №3»
+- **Файлы:** [`apps/web/src/components/booking/engine/bookingSubmissionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/booking/engine/bookingSubmissionEngine.ts), [`apps/web/src/components/booking/BookingConfirmationView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/booking/BookingConfirmationView.tsx), [`apps/web/src/components/booking/BookingConfirmationDetails.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/booking/BookingConfirmationDetails.tsx)
+- **Суть исправления [ИСПРАВЛЕНО]:** Физически удалены 6 неиспользуемых CSS-файлов подписи смет. В движке бронирования вырезан хардкод вымышленного адреса («ул. Клиническая») и «Кабинета №3» в пользу динамических данных из подтверждения записи и ответа API.
+
 - **Визуальные пруфы раздела (4-State Visual Proof):**
-  - `docs/proofs/booking/01_booking_pc_light.png` (536 KB) — Онлайн-запись PC Light (1440x900).
-  - `docs/proofs/booking/02_booking_pc_dark.png` (814 KB) — Онлайн-запись PC Dark (1440x900, 100% темные токены).
-  - `docs/proofs/booking/03_booking_mobile_light.png` (66 KB) — Онлайн-запись Mobile Light (390x844, Apple HIG, плавающий CTA в зоне большого пальца).
-  - `docs/proofs/booking/04_booking_mobile_dark.png` (88 KB) — Онлайн-запись Mobile Dark (390x844, 0px горизонтального скролла).
-  - `docs/proofs/portal/01_patient_cabinet_pc_light.png` (278 KB) — Личный кабинет PC Light (1440x900).
-  - `docs/proofs/portal/02_patient_cabinet_pc_dark.png` (842 KB) — Личный кабинет PC Dark (1440x900).
-  - `docs/proofs/portal/03_patient_cabinet_mobile_light.png` (71 KB) — Личный кабинет Mobile Light (390x844).
-  - `docs/proofs/portal/04_patient_cabinet_mobile_dark.png` (91 KB) — Личный кабинет Mobile Dark (390x844).
-  - `docs/proofs/portal/05_kiosk_pc_light.png` (803 KB) — Терминал самочекина PC Light (1440x900).
-  - `docs/proofs/portal/06_kiosk_pc_dark.png` (1106 KB) — Терминал самочекина PC Dark (1440x900).
-  - `docs/proofs/portal/07_kiosk_mobile_light.png` (66 KB) — Терминал самочекина Mobile Light (390x844).
-  - `docs/proofs/portal/08_kiosk_mobile_dark.png` (61 KB) — Терминал самочекина Mobile Dark (390x844).
+  - `docs/proofs/portal/portal_kiosk_pc_light_1440x900.png` (1047 KB) — Терминал самочекина PC Light (1440x900).
+  - `docs/proofs/portal/portal_kiosk_pc_dark_1440x900.png` (1144 KB) — Терминал самочекина PC Dark (1440x900).
+  - `docs/proofs/portal/portal_kiosk_mobile_light_390x844.png` (188 KB) — Терминал самочекина Mobile Light (390x844).
+  - `docs/proofs/portal/portal_kiosk_mobile_dark_390x844.png` (187 KB) — Терминал самочекина Mobile Dark (390x844).
+  - `docs/proofs/portal/portal_booking_pc_light_1440x900.png` (426 KB) — Онлайн-запись PC Light (1440x900).
+  - `docs/proofs/portal/portal_booking_pc_dark_1440x900.png` (352 KB) — Онлайн-запись PC Dark (1440x900).
+  - `docs/proofs/portal/portal_tgapp_mobile_light_390x844.png` (99 KB) — Telegram Mini App Mobile Light (390x844).
+  - `docs/proofs/portal/portal_tgapp_mobile_dark_390x844.png` (97 KB) — Telegram Mini App Mobile Dark (390x844).
 
 
 ## 9. 📞 ТЕЛЕФОНИЯ, СОФТФОН И КОЛЛ-ЦЕНТР

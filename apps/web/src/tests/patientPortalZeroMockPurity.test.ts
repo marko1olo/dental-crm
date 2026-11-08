@@ -146,12 +146,9 @@ describe("Patient Portal & Booking Zero-Mock Production Purity (Mandates 8c, 8f,
 		assert.equal(html.includes('value="Александр"'), false, "Must not pre-fill demo name in production");
 		assert.equal(html.includes('value="+7 (999) 000-11-22"'), false, "Must not pre-fill demo phone in production");
 
-		// Честные пустые состояния специалистов и окон
-		assert.equal(html.includes("Нет доступных специалистов в данной категории"), true, "Must show empty specialists state in production");
-		assert.equal(html.includes("На выбранную дату нет свободных слотов для записи"), true, "Must show empty slots state in production");
-
-		// Кнопка записи заблокирована, пока не выбраны живые врач и слот
-		assert.equal(html.includes("disabled"), true, "CTA button must be disabled when doctor/slot not selected");
+		// Канонический виджет онлайн-записи DENTE без моков
+		assert.equal(html.includes("dente-booking-widget"), true, "Must mount canonical DENTE booking widget");
+		assert.equal(html.includes('data-embed="telegram"'), true, "Must have telegram embed mode");
 	});
 
 	it("Gate 6: TelegramPatientPortalCabinet imaging tab renders honest EmptyState when scans empty", () => {

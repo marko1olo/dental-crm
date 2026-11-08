@@ -46,13 +46,13 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 	const [copiedTicket, setCopiedTicket] = useState(false);
 	const headingId = useId();
 
-	const reference = confirmationData?.referenceNumber || "DNT-2026-8492";
+	const reference = confirmationData?.referenceNumber || `DNT-${Date.now().toString().slice(-6)}`;
 	const dateStr = confirmationData?.date || selectedDate || new Date().toISOString().slice(0, 10);
 	const timeStr = confirmationData?.time || selectedSlot?.time || "10:00";
 	const doctorFullName = confirmationData?.doctor?.fullName || selectedDoctor?.fullName || "Дежурный специалист";
-	const branchName = confirmationData?.branch?.name || selectedBranch?.name || "DENTE Стоматология";
-	const branchAddress = confirmationData?.branch?.address || selectedBranch?.address || "г. Москва, ул. Клиническая, д. 10";
-	const cabinet = confirmationData?.cabinetNumber || "Кабинет №3 (Терапевтическое отделение)";
+	const branchName = confirmationData?.branch?.name || selectedBranch?.name || "";
+	const branchAddress = confirmationData?.branch?.address || selectedBranch?.address || "";
+	const cabinet = confirmationData?.cabinetNumber || "Уточняется на ресепшене";
 	const patientDisplayName = confirmationData?.patientName || patientName || "Пациент";
 	const patientDisplayPhone = confirmationData?.patientPhone || patientPhone || "";
 	const isUnconfirmed = Boolean(confirmationData?.status === "unconfirmed" || confirmationData?.isPreBooking || confirmationData?.comment?.includes("Предварительная бронь"));

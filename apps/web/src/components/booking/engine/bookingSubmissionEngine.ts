@@ -1,4 +1,5 @@
 import { generateUuidV7, parseUtmFromUrl } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import type { BookingConfirmationData, BookingDoctorData, BookingSlotItem, ClinicBranch } from "../contracts/bookingContracts";
 
 export interface BookingSubmissionParams {
@@ -44,14 +45,14 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		endsAt: selectedSlot.endsAt,
 		patientName: patientName.trim(),
 		patientPhone,
-		cabinetNumber: "Кабинет №3 (Терапевтическое отделение)",
+		cabinetNumber: undefined,
 		comment: patientComment || undefined,
 		status: bookingStatus,
 		isPreBooking: isPreBookingMode,
 		createdAt: new Date().toISOString(),
 	};
 
-	if (!organizationId) {
+	if (!organizationId && (isDemoShowcaseMode() || (typeof process !== "undefined" && process.env?.NODE_ENV === "test"))) {
 		return finalConfirmation;
 	}
 
@@ -60,7 +61,7 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 	const idempotencyKey = generateUuidV7();
 
 	const bookingPayload = {
-		organizationId,
+		organizationId: organizationId || undefined,
 		doctorId: selectedDoctor.id,
 		patientId: patientId || undefined,
 		startsAt: selectedSlot.startsAt,
@@ -91,19 +92,29 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 	}).catch(() => null);
 
 	if (!response || response.status === 404) {
-		response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
-			method: "POST",
-			headers: requestHeaders,
-			body: JSON.stringify(bookingPayload),
-		});
+		if (organizationId) {
+			response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
+				method: "POST",
+				headers: requestHeaders,
+				body: JSON.stringify(bookingPayload),
+			});
+		}
 	}
 
-	if (!response.ok) {
-		if (response.status === 409) {
+	if (!response || !response.ok) {
+		if (response?.status === 409) {
 			throw new Error("Выбранное время только что заняли. Пожалуйста, выберите другое время в расписании.");
 		}
-		const errData = await response.json().catch(() => ({}));
+		const errData = response ? await response.json().catch(() => ({})) : null;
 		throw new Error(errData?.message || errData?.error || `Не удалось завершить запись. Позвоните: ${selectedBranch.phone}`);
+	}
+
+	const responseData = await response.json().catch(() => null);
+	if (responseData?.bookingId || responseData?.appointment?.id) {
+		finalConfirmation.referenceNumber = responseData.bookingId || responseData.appointment.id;
+	}
+	if (responseData?.cabinetNumber || responseData?.cabinet) {
+		finalConfirmation.cabinetNumber = responseData.cabinetNumber || responseData.cabinet;
 	}
 
 	return finalConfirmation;

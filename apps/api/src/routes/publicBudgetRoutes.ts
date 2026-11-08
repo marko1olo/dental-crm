@@ -20,12 +20,13 @@ import { completeBudgetSigning } from "../services/budget/budgetSigningService.j
 export { maskPhone };
 
 export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
-	// 1. GET /api/v1/public/budgets/:token — публичные данные сметы
+	// 1. GET /api/v1/public/budgets/:token & /api/portal/budget/:token — публичные данные сметы
 	// ИНВАРИАНТ БЕЗОПАСНОСТИ: ZERO DATA LEAKS prior to phone verification.
 	// Без подтверждения номера НЕ отдаются услуги, цены, скидки, ФИО врача и пациента!
-	server.get<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token",
-		async (request, reply) => {
+	const getBudgetHandler = async (
+		request: FastifyRequest<{ Params: { token: string } }>,
+		reply: FastifyReply,
+	) => {
 			const token = request.params.token?.trim();
 			if (!token) {
 				return reply.code(400).send({ error: "TokenRequired", message: "Укажите токен сметы." });
@@ -126,7 +127,15 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				documentHash: budget.documentHash,
 				validUntil: budget.validUntil ? budget.validUntil.toISOString() : null,
 			});
-		},
+	};
+
+	server.get<{ Params: { token: string } }>(
+		"/api/v1/public/budgets/:token",
+		getBudgetHandler,
+	);
+	server.get<{ Params: { token: string } }>(
+		"/api/portal/budget/:token",
+		getBudgetHandler,
 	);
 
 	// 2. POST /api/v1/public/budgets/:token/verify & /verify-pin — 2FA подтверждение по последним 4 цифрам телефона или PIN
@@ -284,11 +293,16 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 		"/api/v1/public/budgets/:token/verify-pin",
 		verifyHandler,
 	);
-
-	// 3. POST /api/v1/public/budgets/:token/sign — сохранение цифровой подписи пациента (Canvas PNG, хеш IP, аудит)
 	server.post<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token/sign",
-		async (request, reply) => {
+		"/api/portal/budget/:token/verify",
+		verifyHandler,
+	);
+
+	// 3. POST /api/v1/public/budgets/:token/sign & /api/portal/budget/:token/sign — сохранение цифровой подписи пациента (Canvas PNG, хеш IP, аудит)
+	const signHandler = async (
+		request: FastifyRequest<{ Params: { token: string } }>,
+		reply: FastifyReply,
+	) => {
 			const token = request.params.token?.trim();
 			if (!token) {
 				return reply.code(400).send({ error: "TokenRequired", message: "Укажите токен сметы." });
@@ -377,6 +391,14 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				signerName: signingResult.signerName,
 				ipHash: clientIpHash,
 			});
-		},
+	};
+
+	server.post<{ Params: { token: string } }>(
+		"/api/v1/public/budgets/:token/sign",
+		signHandler,
+	);
+	server.post<{ Params: { token: string } }>(
+		"/api/portal/budget/:token/sign",
+		signHandler,
 	);
 };
