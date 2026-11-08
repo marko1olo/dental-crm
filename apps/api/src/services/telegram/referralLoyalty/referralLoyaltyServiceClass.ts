@@ -17,6 +17,7 @@ import {
 	users,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
+import { executeBookingTransaction } from "../../../routes/publicBooking/bookingMutationService.js";
 import {
 	DEFAULT_REFERRAL_CONFIG,
 	type ChurnCandidateItem,
@@ -431,11 +432,11 @@ export class TelegramReferralLoyaltyService {
 		booking: WebAppBookingInput,
 	): Promise<{ success: boolean; appointmentId: string; message: string; confirmationMessage?: string }> {
 		try {
-			return await withTenantCtx(organizationId, async () => {
+			return await withTenantCtx(organizationId, async (tx) => {
 				const targetPatientId = booking.familyMemberPatientId || patientId;
 
-				const [targetPatient] = await db
-					.select({ id: patients.id, fullName: patients.fullName })
+				const [targetPatient] = await tx
+					.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
 					.from(patients)
 					.where(and(eq(patients.organizationId, organizationId), eq(patients.id, targetPatientId)))
 					.limit(1);
@@ -448,18 +449,11 @@ export class TelegramReferralLoyaltyService {
 				const startDateTime = new Date(`${booking.date}T${booking.time}:00`);
 				const endDateTime = new Date(startDateTime.getTime() + 45 * 60_000); // 45 минут дефолт
 
-				// Находим первое кресло клиники
-				const [chair] = await db
-					.select({ id: chairs.id })
-					.from(chairs)
-					.where(eq(chairs.organizationId, organizationId))
-					.limit(1);
-
 				// Разрешаем лечащего врача (валидация UUID и поиск реального врача в организации)
 				let resolvedDoctorUserId: string | null = null;
 				const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(booking.doctorId);
 				if (isUuid) {
-					const [foundDoc] = await db
+					const [foundDoc] = await tx
 						.select({ id: users.id })
 						.from(users)
 						.where(and(eq(users.organizationId, organizationId), eq(users.id, booking.doctorId), eq(users.isActive, true)))
@@ -470,7 +464,7 @@ export class TelegramReferralLoyaltyService {
 				}
 
 				if (!resolvedDoctorUserId) {
-					const [firstDoc] = await db
+					const [firstDoc] = await tx
 						.select({ id: users.id })
 						.from(users)
 						.where(and(eq(users.organizationId, organizationId), eq(users.isActive, true)))
@@ -478,25 +472,40 @@ export class TelegramReferralLoyaltyService {
 					resolvedDoctorUserId = firstDoc?.id || null;
 				}
 
-				const [createdAppt] = await db
-					.insert(appointments)
-					.values({
-						organizationId,
-						patientId: targetPatientId,
-						doctorUserId: resolvedDoctorUserId,
-						chairId: chair?.id,
-						startsAt: startDateTime,
-						endsAt: endDateTime,
-						status: "planned",
-						comment: booking.complaintNotes
-							? `Запись через Telegram WebApp: ${booking.complaintNotes}`
-							: `Запись через Telegram WebApp на ${booking.serviceName || "Консультация стоматолога"}`,
-					})
-					.returning();
-
-				if (!createdAppt) {
-					return { success: false, appointmentId: "", message: "Не удалось создать запись в расписании." };
+				if (!resolvedDoctorUserId) {
+					return { success: false, appointmentId: "", message: "В клинике не найден доступный врач для записи." };
 				}
+
+				const bookingResult = await executeBookingTransaction(tx, {
+					organizationId,
+					doctorId: resolvedDoctorUserId,
+					startDate: startDateTime,
+					endDate: endDateTime,
+					patientName: targetPatient.fullName,
+					patientPhone: targetPatient.phone || "",
+					comment: booking.complaintNotes
+						? `Запись через Telegram WebApp: ${booking.complaintNotes}`
+						: `Запись через Telegram WebApp на ${booking.serviceName || "Консультация стоматолога"}`,
+					source: "telegram_webapp",
+				});
+
+				if (bookingResult.conflict) {
+					return {
+						success: false,
+						appointmentId: "",
+						message: "Выбранное время уже занято. Пожалуйста, выберите другое время для записи.",
+					};
+				}
+
+				if (bookingResult.blocked) {
+					return {
+						success: false,
+						appointmentId: "",
+						message: bookingResult.message,
+					};
+				}
+
+				const createdAppt = bookingResult.appointment;
 
 				wsBroker.broadcastToOrganization(organizationId, {
 					type: "appointment_created_via_telegram_webapp",

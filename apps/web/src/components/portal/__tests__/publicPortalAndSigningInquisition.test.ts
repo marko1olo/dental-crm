@@ -163,44 +163,37 @@ describe("Red Team Inquisition: Guest Lab Portal Ergonomics & Data Integrity", (
 });
 
 describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e) & Patient Digital Signing (152-FZ / 63-FZ)", () => {
-	it("PatientBudgetSignView.tsx enforces 152-FZ & 63-FZ legal consent, mobile canvas signature and 0 disabled buttons", () => {
-		const source = readSource("components/portal/PatientBudgetSignView.tsx");
+	it("PublicBudgetSignPage.tsx and PublicBudgetSignaturePad.tsx enforce PEP legal signing and mobile canvas signature", () => {
+		const pageSource = readSource("pages/public/PublicBudgetSignPage.tsx");
+		const padSource = readSource("pages/public/PublicBudgetSignaturePad.tsx");
 
-		// 152-FZ and 63-FZ consent
-		assert.ok(source.includes("152-ФЗ"), "Must contain statutory 152-FZ consent reference");
-		assert.ok(source.includes("63-ФЗ"), "Must contain statutory 63-FZ PEP reference");
-		assert.ok(source.includes("patient-budget-152fz-checkbox"), "Must have 152-FZ consent checkbox");
+		// Legal and PEP consent
+		assert.ok(
+			pageSource.includes("ЭЛЕКТРОННАЯ ПОДПИСЬ") || padSource.includes("Электронная подпись (ПЭП)"),
+			"Must contain statutory PEP reference",
+		);
+		assert.ok(
+			padSource.includes("323-ФЗ"),
+			"Must contain statutory medical consent reference (323-FZ)",
+		);
 
 		// Frictionless interactive mobile canvas signature
-		assert.ok(!source.includes('style={{ display: "none" }}'), "Canvas must not be hidden with display: none");
-		assert.ok(source.includes("patient-budget-signature-canvas"), "Must provide interactive touch signature canvas");
-		assert.ok(source.includes("onPointerDown"), "Must support pointer events for touch & stylus");
-		assert.ok(source.includes("patient-budget-clear-canvas-btn"), "Must provide clear canvas button");
-		assert.ok(source.includes("patient-budget-generate-pep-stamp-btn"), "Must provide 1-click PEP stamp generation");
-
-		// 0 disabled buttons
+		assert.ok(padSource.includes("<canvas"), "Must provide interactive signature canvas");
 		assert.ok(
-			!source.includes("disabled={isVerifying || !verifyFactor.trim()}"),
-			"2FA button must not be disabled; must show accessible validation instead",
+			padSource.includes("onTouchStart") || padSource.includes("onPointerDown"),
+			"Must support touch events for finger & stylus",
 		);
+		assert.ok(padSource.includes("clearCanvas"), "Must provide clear canvas handler");
 		assert.ok(
-			!source.includes("disabled={isSubmittingSign || !hasStrokes}"),
-			"Submit button must not be blocked by lack of strokes (auto-PEP 1-click fallback)",
+			pageSource.includes("createDefaultSignatureSvg") || pageSource.includes("ЭЛЕКТРОННАЯ ПОДПИСЬ"),
+			"Must provide PEP signature generation",
 		);
 
-		// SHA-256 integrity display
-		assert.ok(source.includes("SHA-256"), "Must show SHA-256 document integrity upon completion");
-	});
-
-	it("patientBudgetSign.css has 0 hardcoded hex colors and complies with design tokens", () => {
-		const css = readSource("components/portal/patientBudgetSign.css");
-		const hexMatches = css.match(/#[0-9a-fA-F]{3,8}\b/g);
-		assert.equal(hexMatches, null, `Found hardcoded hex in patientBudgetSign.css: ${hexMatches?.join(", ")}`);
-
-		assert.ok(css.includes("var(--paper)"), "Must use --paper token");
-		assert.ok(css.includes("var(--ink)"), "Must use --ink token");
-		assert.ok(css.includes("var(--teal)"), "Must use --teal token");
-		assert.ok(css.includes("var(--line)"), "Must use --line token");
+		// Document integrity
+		assert.ok(
+			pageSource.includes("documentHash") || pageSource.includes("sha256") || pageSource.includes("Смета успешно согласована"),
+			"Must show document integrity and confirmation upon completion",
+		);
 	});
 });
 

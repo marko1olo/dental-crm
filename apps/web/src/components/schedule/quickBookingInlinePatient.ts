@@ -1,6 +1,8 @@
 import type { Patient } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { normalizePhoneToNational } from "../../utils/patientSearchUtils";
+import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import type { useQuickBookingPatientSearch } from "./useQuickBookingPatientSearch";
 
@@ -50,7 +52,10 @@ export async function resolveOrAutoCreateSubmitPatient(
         }) as Patient;
       }
     }
-  } catch {}
+  } catch (err) {
+    logger.error("[QuickBookingInlinePatient] Ошибка создания пациента:", err);
+    showToast("Не удалось создать пациента: проверьте сетевое соединение", "error");
+  }
 
   if (!inlinePat?.id) {
     return null;

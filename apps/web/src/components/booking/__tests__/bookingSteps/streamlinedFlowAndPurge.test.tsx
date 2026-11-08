@@ -7,7 +7,7 @@ import {
 	DEFAULT_DOCTORS,
 	DEFAULT_SERVICE_CATEGORIES,
 	PublicOnlineBookingWidget,
-} from "../../PublicOnlineBookingWidget";
+} from "../../PublicBookingWidget";
 
 describe("Booking Steps: Streamlined 1-Screen 2-Click UX & Mocks Purge (Mandates 8e, 8k)", () => {
 	it("renders streamlined 1-screen booking flow with Click 1 and Click 2", () => {

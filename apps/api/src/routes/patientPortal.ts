@@ -11,14 +11,14 @@
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
-import { organizations, patients, payments, visitDiaries } from "../db/schema.js";
-import { signToken, verifyToken } from "../utils/cryptoHelper.js";
+import { organizations, patients, payments, portalOtpCodes, visitDiaries } from "../db/schema.js";
+import { signToken, verifyCredential, verifyToken } from "../utils/cryptoHelper.js";
 import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import {
 	PORTAL_TOKEN_KIND,
@@ -473,12 +473,56 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 							};
 						}
 
-						const otpCheck = bookingVerificationEngine.verifyPhoneOtp(phone, verificationCode);
-						if (!otpCheck.valid) {
+						let isOtpValid = false;
+						const now = new Date();
+
+						// 1. Проверяем в PostgreSQL portal_otp_codes (каноническое персистентное хранилище)
+						try {
+							const activeOtps = await db
+								.select({
+									id: portalOtpCodes.id,
+									codeHash: portalOtpCodes.codeHash,
+								})
+								.from(portalOtpCodes)
+								.where(
+									and(
+										eq(portalOtpCodes.organizationId, orgId),
+										eq(portalOtpCodes.patientId, foundPatient.id),
+										eq(portalOtpCodes.deliveryStatus, "sent"),
+										isNull(portalOtpCodes.consumedAt),
+										gte(portalOtpCodes.expiresAt, now),
+									),
+								)
+								.orderBy(desc(portalOtpCodes.createdAt))
+								.limit(1);
+
+							if (activeOtps.length > 0 && activeOtps[0]) {
+								const candidate = activeOtps[0];
+								if (await verifyCredential(verificationCode, candidate.codeHash)) {
+									isOtpValid = true;
+									await db
+										.update(portalOtpCodes)
+										.set({ consumedAt: now })
+										.where(eq(portalOtpCodes.id, candidate.id));
+								}
+							}
+						} catch {
+							// fallback to in-memory check below
+						}
+
+						// 2. Если в БД не найден или сбой соединения — fallback на bookingVerificationEngine
+						if (!isOtpValid) {
+							const otpCheck = bookingVerificationEngine.verifyPhoneOtp(phone, verificationCode);
+							if (otpCheck.valid) {
+								isOtpValid = true;
+							}
+						}
+
+						if (!isOtpValid) {
 							reply.status(403);
 							return {
 								error: "VerificationFailed",
-								message: otpCheck.error || "Неверный или истёкший проверочный SMS-код.",
+								message: "Неверный или истёкший проверочный SMS-код.",
 							};
 						}
 

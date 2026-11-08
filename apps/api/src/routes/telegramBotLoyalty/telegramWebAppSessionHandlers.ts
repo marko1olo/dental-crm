@@ -7,6 +7,7 @@ import {
 	isDbConnectionError,
 	TelegramReferralLoyaltyService,
 } from "../../services/telegram/TelegramReferralLoyaltyService.js";
+import { calculateAvailableSlots } from "../publicBooking/bookingModules/publicBookingSlotEngine.js";
 import {
 	toothComplaintSchema,
 	webAppBookingSchema,
@@ -240,8 +241,8 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		}
 
 		try {
-			return await withTenantCtx(organizationId, async () => {
-				const doctors = await db
+			return await withTenantCtx(organizationId, async (tx) => {
+				const doctors = await tx
 					.select({
 						id: users.id,
 						fullName: users.fullName,
@@ -262,7 +263,6 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				}> = [];
 
 				const daysRu = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-				const standardSlots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"];
 
 				for (let i = 0; i < 7; i++) {
 					const d = new Date();
@@ -270,15 +270,36 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					const dateStr = d.toISOString().split("T")[0] || "";
 					const dayOfWeek = daysRu[d.getDay()] || "";
 
+					const doctorsWithSlots = await Promise.all(
+						doctors.map(async (doc) => {
+							try {
+								const calcResult = await calculateAvailableSlots(tx, {
+									organizationId,
+									date: dateStr,
+									requestedDoctorId: doc.id,
+								});
+								const slots = calcResult.success ? calcResult.slots.map((s) => s.time) : [];
+								return {
+									doctorId: doc.id,
+									doctorName: doc.fullName,
+									specialty: "Врач-стоматолог",
+									slots,
+								};
+							} catch {
+								return {
+									doctorId: doc.id,
+									doctorName: doc.fullName,
+									specialty: "Врач-стоматолог",
+									slots: [],
+								};
+							}
+						}),
+					);
+
 					weekSlots.push({
 						date: dateStr,
 						dayOfWeek,
-						doctors: doctors.map((doc) => ({
-							doctorId: doc.id,
-							doctorName: doc.fullName,
-							specialty: "Врач-стоматолог",
-							slots: standardSlots,
-						})),
+						doctors: doctorsWithSlots,
 					});
 				}
 

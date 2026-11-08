@@ -7,7 +7,7 @@ import {
 	DEFAULT_DOCTORS,
 	DEFAULT_SERVICE_CATEGORIES,
 	PublicOnlineBookingWidget,
-} from "../../PublicOnlineBookingWidget.js";
+} from "../../PublicBookingWidget.js";
 import {
 	clickNode,
 	expect,

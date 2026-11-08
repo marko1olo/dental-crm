@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { BookingDoctorData } from "../../BookingDoctorCard";
-import { PublicOnlineBookingWidget } from "../../PublicOnlineBookingWidget";
+import { PublicOnlineBookingWidget } from "../../PublicBookingWidget";
 
 describe("Booking Steps: Solo Doctor & Specialist Roster (Mandate 8n)", () => {
 	it("renders compact solo doctor banner when 1 doctor is provided", () => {

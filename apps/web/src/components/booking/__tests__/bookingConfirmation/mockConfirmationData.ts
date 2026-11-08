@@ -1,4 +1,4 @@
-import type { BookingConfirmationData } from "../../PublicOnlineBookingWidget";
+import type { BookingConfirmationData } from "../../PublicBookingWidget";
 
 export const mockConfirmationData: BookingConfirmationData = {
 	referenceNumber: "DNT-7788-9900",

@@ -244,8 +244,8 @@ test("ссылка согласования сметы пациентом раз
 test("страницу согласования сметы рендерит точка монтирования main.tsx", () => {
 	const entry = readSource("main.tsx");
 	assert.ok(
-		entry.includes("<PublicBudgetSignPage") || entry.includes("<PatientBudgetSignView"),
-		"main.tsx больше не рендерит PublicBudgetSignPage / PatientBudgetSignView для маршрута сметы.",
+		entry.includes("<PublicBudgetSignPage"),
+		"main.tsx больше не рендерит PublicBudgetSignPage для маршрута сметы.",
 	);
 	assert.ok(
 		entry.includes('kind === "budget"'),
@@ -253,14 +253,24 @@ test("страницу согласования сметы рендерит то
 	);
 });
 
-test("PublicBookingWidget интегрирует AuthArtBackground с overlayAlpha=0.4 и 100% непрозрачностью элементов", () => {
-	const widgetSource = readSource("pages/PublicBookingWidget.tsx");
+test("PublicBookingPage интегрирует AuthArtBackground с overlayAlpha=0.4 и 100% непрозрачностью элементов", () => {
+	const widgetSource = readSource("pages/PublicBookingPage.tsx");
 	assert.ok(
 		widgetSource.includes("<AuthArtBackground overlayAlpha={0.4} />"),
-		"PublicBookingWidget.tsx обязан внедрять AuthArtBackground с overlayAlpha={0.4} для стильного медицинского бэкдропа",
+		"PublicBookingPage.tsx обязан внедрять AuthArtBackground с overlayAlpha={0.4} для стильного медицинского бэкдропа",
 	);
 
-	const cssSource = readSource("pages/PublicBookingWidget.css");
+	let cssSource = readSource("pages/PublicBookingWidget.css");
+	if (cssSource.includes("@import")) {
+		const importMatches = [...cssSource.matchAll(/@import\s+["']([^"']+)["'];/g)].map((m) => m[1]);
+		for (const rel of importMatches) {
+			try {
+				cssSource += "\n" + readSource(path.join("pages", rel.replace(/^\.\//, "")));
+			} catch {
+				// ignore
+			}
+		}
+	}
 	assert.ok(
 		cssSource.includes(".PublicBookingWidget-root .dbw-doctor-card") &&
 			cssSource.includes("opacity: 1;"),

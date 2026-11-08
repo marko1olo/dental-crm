@@ -68,7 +68,7 @@ export const BookingFloatingBottomBar: React.FC<BookingFloatingBottomBarProps> =
 						<span>Оформление...</span>
 					) : (
 						<>
-							<span>Записаться на приём</span>
+							<span>Записаться<span className="hidden sm:inline"> на приём</span></span>
 							<ArrowRight size={16} />
 						</>
 					)}

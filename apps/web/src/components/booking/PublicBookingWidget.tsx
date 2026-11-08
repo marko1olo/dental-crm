@@ -97,8 +97,6 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = (props) =
 	);
 };
 
-export * from "./onlineBookingCatalogData";
-export { PublicBookingStudioModal } from "./PublicBookingStudioModal";
 export { DirectPublicBookingLauncher } from "./DirectPublicBookingLauncher";
 
 export const PublicBookingWidgetSSOT = PublicBookingWidget;

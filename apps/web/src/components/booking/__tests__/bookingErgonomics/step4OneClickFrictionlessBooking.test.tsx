@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, it } from "node:test";
-import { PublicOnlineBookingWidget } from "../../PublicOnlineBookingWidget.js";
+import { PublicOnlineBookingWidget } from "../../PublicBookingWidget.js";
 import {
 	changeInputValue,
 	clickNode,

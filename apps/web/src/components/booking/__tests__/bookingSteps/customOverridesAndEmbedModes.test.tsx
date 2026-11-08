@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PublicOnlineBookingWidget } from "../../PublicOnlineBookingWidget";
+import { PublicOnlineBookingWidget } from "../../PublicBookingWidget";
 
 describe("Booking Steps: Theme Overrides & Embed Modes", () => {
 	it("supports custom theme, title, and subtitle overrides", () => {

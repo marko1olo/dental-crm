@@ -13,13 +13,13 @@ import type {
 	DenteTelegramTemplateKind,
 	DocumentKind,
 	GeneratedDocument,
+	Kopecks,
 	Patient,
 	TreatmentPlanItem,
 } from "@dental/shared";
 import {
 	buildPatientLedger,
 	debtNumericText,
-	type Kopecks,
 	patientOwesClinicKopecks,
 	MoneyPrecisionError,
 	QuantityContractError,

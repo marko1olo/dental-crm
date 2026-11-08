@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BookingDoctorCard, type BookingDoctorData } from "../../BookingDoctorCard";
 import { BookingSlotPicker } from "../../BookingSlotPicker";
-import { PublicOnlineBookingWidget } from "../../PublicOnlineBookingWidget";
+import { PublicOnlineBookingWidget } from "../../PublicBookingWidget";
 
 describe("Booking Steps: Apple & Telegram Mini-App UX (Mandates 8c, 8e, 8n)", () => {
 	it("renders compact days ribbon with Сегодня, Завтра, and time slot periods", () => {

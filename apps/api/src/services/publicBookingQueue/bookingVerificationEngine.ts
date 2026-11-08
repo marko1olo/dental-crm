@@ -1,5 +1,9 @@
 import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { and, eq, or } from "drizzle-orm";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import { patients, portalOtpCodes } from "../../db/schema.js";
+import { hashCredential } from "../../utils/cryptoHelper.js";
 import { bookingRateLimiter, type BookingRateLimiter } from "./bookingRateLimiter.js";
 import {
 	OTP_MAX_ATTEMPTS,
@@ -20,7 +24,7 @@ export class BookingVerificationEngine {
 		phone: string,
 		method: "sms" | "flash_call" = "sms",
 		clientIp: string = "unknown",
-		_organizationId?: string,
+		organizationId?: string,
 	): { allowed: boolean; message: string; cooldownSeconds?: number; challengeId?: string } {
 		const cleanPhone = normalizePhoneDigits(phone);
 		if (cleanPhone.length < 10) {
@@ -64,6 +68,38 @@ export class BookingVerificationEngine {
 			windowStart: existing ? existing.windowStart : now,
 			failedAttempts: 0,
 		});
+
+		// Persist to PostgreSQL 18 portal_otp_codes table when organizationId is supplied
+		if (organizationId) {
+			void (async () => {
+				try {
+					const [pt] = await db
+						.select({ id: patients.id })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								or(eq(patients.phone, phone), eq(patients.phone, cleanPhone)),
+							),
+						)
+						.limit(1);
+
+					if (pt) {
+						const hashed = await hashCredential(code);
+						await db.insert(portalOtpCodes).values({
+							organizationId,
+							patientId: pt.id,
+							codeHash: hashed,
+							channel: method,
+							deliveryStatus: "sent",
+							expiresAt: new Date(now + OTP_TTL_MS),
+						});
+					}
+				} catch {
+					// In test/offline environments, in-memory challenge remains active
+				}
+			})();
+		}
 
 		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";
 		const isDevOrTest =

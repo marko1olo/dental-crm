@@ -5,7 +5,8 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { PublicBookingStudioModal } from "./PublicBookingStudioModal";
+import { X } from "lucide-react";
+import { PublicBookingWidget } from "./PublicBookingWidget";
 
 function checkIsPublicBookingActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -79,7 +80,26 @@ export const DirectPublicBookingLauncher: React.FC = () => {
 
 	if (!isOpen) return null;
 
-	return <PublicBookingStudioModal isOpen={isOpen} onClose={handleClose} />;
+	return (
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Онлайн-запись на приём"
+		>
+			<div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[var(--paper)] shadow-2xl border border-[var(--line)] p-4 sm:p-6">
+				<button
+					type="button"
+					onClick={handleClose}
+					className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors cursor-pointer select-none"
+					aria-label="Закрыть окно записи"
+				>
+					<X className="w-5 h-5" />
+				</button>
+				<PublicBookingWidget compact={false} />
+			</div>
+		</div>
+	);
 };
 
 export default DirectPublicBookingLauncher;

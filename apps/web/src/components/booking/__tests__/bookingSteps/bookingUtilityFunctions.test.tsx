@@ -7,7 +7,7 @@ import {
 	generateEmbedSnippet,
 	isValidRussianPhone,
 	localDateString,
-} from "../../PublicOnlineBookingWidget";
+} from "../../PublicBookingWidget";
 
 describe("Booking Steps: Utility Functions", () => {
 	it("localDateString produces valid YYYY-MM-DD format", () => {

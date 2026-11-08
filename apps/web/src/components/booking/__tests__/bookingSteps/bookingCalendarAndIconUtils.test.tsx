@@ -5,7 +5,7 @@ import {
 	generateIcsCalendarContent,
 	generateYandexCalendarUrl,
 	resolveCategoryIcon,
-} from "../../PublicOnlineBookingWidget";
+} from "../../PublicBookingWidget";
 
 describe("Booking Steps: Calendar & Icon Utilities", () => {
 	it("generateIcsCalendarContent produces valid RFC 5545 iCalendar content", () => {
@@ -60,10 +60,10 @@ describe("Booking Steps: Calendar & Icon Utilities", () => {
 		assert.ok(resolveCategoryIcon("UnknownFallback"));
 	});
 
-	it("verifies apps/web/src/components/PublicOnlineBookingWidget.tsx facade exports match SSOT", async () => {
-		const rootFacade = await import("../../../PublicOnlineBookingWidget.js");
-		assert.ok(rootFacade.PublicOnlineBookingWidget);
+	it("verifies apps/web/src/components/booking/PublicBookingWidget.tsx facade exports match SSOT", async () => {
+		const rootFacade = await import("../../PublicBookingWidget.js");
+		assert.ok(rootFacade.PublicBookingWidget);
 		assert.ok(rootFacade.default);
-		assert.equal(rootFacade.PublicOnlineBookingWidget, rootFacade.default);
+		assert.equal(rootFacade.PublicBookingWidget, rootFacade.default);
 	});
 });

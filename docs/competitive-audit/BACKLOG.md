@@ -12287,4 +12287,30 @@
   - Юнит-тесты: 33/33 PASS (Exit Code 0), включая `payrollReportsInquisition.test.ts`, `payrollStudioInquisition.test.ts`, `settlementPeriodCloseIntegration.test.ts`, `milestone3DataPurityInquisition.test.ts`, `consolidatedPayrollEngine.test.ts`, `doctorPieceworkEngine.test.ts`, `assistantAndAdminEngine.test.ts`, `doctorNetRevenueFormula.test.ts`, `kopeckExactArithmetic.test.ts`, `soloDoctorAutonomy.test.ts`.
   - Машинные гейты: `check:encoding` (23 483 файла), `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` — 0 ошибок (Exit Code 0).
 
+### ВОЛНА 504: Онлайн-запись Пациентов, Публичный Букинг-Виджет, Личный Кабинет Пациента и Telegram Mini App — Red Team Инквизиция [POR-01..10], Ликвидация Хардкода Слотов в Telegram WebApp, Double-Booking Гонки в Лояльности, Персистентность SMS OTP в PostgreSQL 18 (portal_otp_codes), Физический Снос 23 Файлов-Клонов и Сирот через git rm (Мандаты 8e, 8n, 8z, 8aq, 8bd) — Fastify API, Apple HIG и 4-State Visual Proof
+
+- **1. Динамический расчет слотов Telegram Mini App (Мандаты 8z, [POR-02])**:
+  - В `apps/api/src/routes/telegramBotLoyalty/telegramWebAppSessionHandlers.ts` убран статический массив 10 слотов (`standardSlots`). Эндпоинт `/api/telegram/webapp/slots` вычисляет реальные свободные окна через `calculateAvailableSlots(tx, ...)`.
+- **2. Устранение Double-Booking гонки в лояльности (Мандаты 8bc, [POR-03])**:
+  - В `apps/api/src/services/telegram/referralLoyalty/referralLoyaltyServiceClass.ts` запись из Telegram WebApp переведена на транзакционную мутацию `executeBookingTransaction` с взаимной иерархической блокировкой `SELECT FOR UPDATE` (кресло -> врач -> пациент), исключая параллельное дублирующее бронирование.
+- **3. Канонический виджет онлайн-записи и лаунчер (Мандаты 8aq, [POR-04])**:
+  - В `apps/web/src/components/booking/DirectPublicBookingLauncher.tsx` устранен запуск студии-симулятора `PublicBookingStudioModal`. Селекторы `#booking` и `#online-booking` открывают канонический `PublicBookingWidget.tsx` в доступном оверлее с кнопкой закрытия 44×44px.
+- **4. Персистентность OTP-авторизации (Мандаты 8z, [POR-05])**:
+  - В `apps/api/src/routes/patientPortal.ts` и `apps/api/src/services/publicBookingQueue/bookingVerificationEngine.ts` устранено хранение кодов в памяти сервера `Map`. SMS OTP сохраняются и проверяются через таблицу PostgreSQL 18 `portal_otp_codes`.
+- **5. Физический снос 23 файлов-клонов, моков и сирот (Мандат 8bd)**:
+  - Через `git rm` удалены 23 файла и директории дублирующей логики и сирот: `PublicBookingStudioModal.tsx`, `onlineBookingCatalogData.ts`, 3 фасада `PublicOnlineBookingWidget.tsx`, 8 файлов сирот одонтограммы Telegram Mini App, `PatientBudgetSignView.tsx` и 8 файлов `budgetSign/`, папка `packages/shared/src/portal/onlineBooking/` из 5 файлов, `patientOnlineBookingEngine.ts`.
+- **6. Сенсорная адаптивность Apple HIG (390×844) и 1 Primary CTA (Мандаты 8am, 8ze, 8al)**:
+  - В `BookingFloatingBottomBar.tsx` предотвращено переполнение строки на смартфонах 390px через адаптивный спан (`Записаться<span className="hidden sm:inline"> на приём</span>`).
+  - Ровно 1 Primary CTA, 0px горизонтального скролла, тач-таргеты >= 44×44px.
+- **7. 4-состоятельный Red Team Visual Proof**:
+  - В `docs/proofs/booking/` зафиксированы и лично осмотрены через `read_file` 4 скриншота на живом сервере (Vite 5173 + Fastify 4100 + PostgreSQL 18):
+    - `01_online_booking_pc_light_1440x900.png` (182 KB, 1440×900 PC Light, канонический виджет);
+    - `02_online_booking_pc_dark_1440x900.png` (260 KB, 1440×900 PC Dark, темная тема без белых пятен);
+    - `03_online_booking_mobile_light_390x844.png` (194 KB, 390×844 Mobile Light, Apple HIG Floating Bottom Bar);
+    - `04_online_booking_mobile_dark_390x844.png` (192 KB, 390×844 Mobile Dark, темная мобильная тема).
+- **8. 100% Машинные гейты верификации**:
+  - 309 тестов пройдены успешно: 23/23 `patientSmsAuthEngine.test.ts`, 64/64 vitest `components/booking/`, 194/194 vitest `components/portal/`, 12/12 `publicBookingQueue.test.ts`, 16/16 `publicPortalRoute.test.ts`.
+  - Все 4 машинных гейта DoD (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) — PASS (Exit Code 0).
+
+
 

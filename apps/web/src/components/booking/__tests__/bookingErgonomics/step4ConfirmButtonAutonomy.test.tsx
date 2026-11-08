@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
-import { PublicOnlineBookingWidget } from "../../PublicOnlineBookingWidget.js";
+import { PublicOnlineBookingWidget } from "../../PublicBookingWidget.js";
 import {
 	expect,
 	findNodeByTestId,
