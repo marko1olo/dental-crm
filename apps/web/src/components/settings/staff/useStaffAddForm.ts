@@ -37,7 +37,7 @@ export function useStaffAddForm(accessHeaders?: SettingsAccessHeaders, loadDashb
 					active: true,
 					canSignMedicalRecords: role === "doctor",
 					canManageMoney: role === "administrator" || role === "owner",
-					canManageImports: true,
+					canManageImports: role === "owner",
 					color: "#3b82f6",
 				},
 			});

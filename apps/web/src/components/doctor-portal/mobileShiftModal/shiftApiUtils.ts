@@ -34,7 +34,7 @@ export async function persistBatchSigningToApi(
 	updatedAppts: readonly DoctorShiftAppointment[],
 ): Promise<void> {
 	try {
-		await fetch("/api/diary/shifts", {
+		await fetch("/api/schedule/shifts", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -42,6 +42,7 @@ export async function persistBatchSigningToApi(
 					{
 						doctorId,
 						doctorName,
+						dateIso: shiftDateIso,
 						shiftDateIso,
 						protocolHash,
 						signedAtIso,
@@ -53,7 +54,7 @@ export async function persistBatchSigningToApi(
 		});
 	} catch (err) {
 		console.warn(
-			"[DoctorMobileShiftModal] Ошибка отправки статуса смены на /api/diary/shifts",
+			"[DoctorMobileShiftModal] Ошибка отправки статуса смены на /api/schedule/shifts",
 			err,
 		);
 	}

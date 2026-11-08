@@ -13,7 +13,6 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { StaffProfileCard } from "../StaffProfileCard";
-import { StaffModal } from "../StaffModal";
 import { DoctorShiftSummaryCard } from "../../shift/DoctorShiftSummaryCard";
 import { DoctorMobileShiftAutonomy } from "../../doctor-portal/DoctorMobileShiftAutonomy";
 import { DoctorShiftCloseFooter } from "../../shift/doctorShiftClose/DoctorShiftCloseFooter";
@@ -77,9 +76,9 @@ describe("Red Team: Staff Profile & Doctor Shift Autonomy", () => {
 		assert.ok(html.includes("Сохранить карточку"), "Must render 1-click save button");
 	});
 
-	it("StaffModal is a drop-in alias for StaffProfileCard", () => {
+	it("StaffProfileCard renders full staff details with commission %", () => {
 		const rawHtml = renderToString(
-			<StaffModal
+			<StaffProfileCard
 				staffMember={mockStaffMember}
 				callerRole="owner"
 				isOpen={true}
@@ -89,8 +88,8 @@ describe("Red Team: Staff Profile & Doctor Shift Autonomy", () => {
 		);
 		const html = cleanSsrHtml(rawHtml);
 
-		assert.ok(html.includes("Д-р Смирнова Елена Владимировна"), "StaffModal must render full name");
-		assert.ok(html.includes("Ставка ЗП (%)"), "StaffModal must render commission % label");
+		assert.ok(html.includes("Д-р Смирнова Елена Владимировна"), "StaffProfileCard must render full name");
+		assert.ok(html.includes("Ставка ЗП (%)"), "StaffProfileCard must render commission % label");
 	});
 
 	it("DoctorShiftSummaryCard displays clinical earnings without leaking cash safe controls", () => {

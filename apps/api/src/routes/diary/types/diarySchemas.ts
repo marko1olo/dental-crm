@@ -55,20 +55,3 @@ export const diaryVisitParamsSchema = z.object({
 export const diaryIdParamsSchema = z.object({
 	id: z.string().uuid(),
 });
-
-export const shiftsPayloadSchema = z.object({
-	shifts: z.array(
-		z
-			.object({
-				id: z.string(),
-				doctorId: z.string(),
-				doctorName: z.string(),
-				cabinetId: z.string(),
-				chairId: z.string(),
-				dateIso: z.string(),
-				startTime: z.string(),
-				endTime: z.string(),
-			})
-			.passthrough(),
-	),
-});

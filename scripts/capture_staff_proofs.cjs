@@ -43,6 +43,16 @@ async function captureScreen(page, filename) {
 	if (size < 20000) {
 		throw new Error(`Screenshot ${filename} is too small (${size} bytes < 20KB)!`);
 	}
+	// Also save canonical 4-state aliases
+	const aliasMap = {
+		"staff_list_pc_light.png": "staff_pc_light_1440x900.png",
+		"staff_list_pc_dark.png": "staff_pc_dark_1440x900.png",
+		"staff_mobile_light.png": "staff_mobile_light_390x844.png",
+		"staff_mobile_dark.png": "staff_mobile_dark_390x844.png",
+	};
+	if (aliasMap[filename]) {
+		fs.copyFileSync(targetPath, path.join(OUT_DOCS, aliasMap[filename]));
+	}
 }
 
 async function setTheme(page, theme) {
@@ -150,7 +160,7 @@ async function navigateToDesktopStaffSettings(page) {
 	for (let i = 0; i < 30; i++) {
 		const clicked = await page.evaluate(() => {
 			const btn = document.getElementById("settings-tab-staff") ||
-				Array.from(document.querySelectorAll("button")).find((b) => b.innerText && b.innerText.includes("Сотрудники"));
+				Array.from(document.querySelectorAll("button")).find((b) => b.innerText && (b.innerText.includes("Врачи и персонал") || b.innerText.includes("Сотрудники") || b.innerText.includes("Персонал")));
 			if (btn) {
 				btn.click();
 				return true;
@@ -158,7 +168,7 @@ async function navigateToDesktopStaffSettings(page) {
 			return false;
 		});
 		if (clicked) {
-			console.log("Clicked settings-tab-staff");
+			console.log("Clicked settings-tab-staff / Врачи и персонал");
 			break;
 		}
 		await page.waitForTimeout(500);
@@ -293,22 +303,22 @@ async function run() {
 		});
 		await mobPage.waitForTimeout(1500);
 
-		// Click "Сотрудники" in mobile settings root if visible and wait for staff view
-		console.log("Waiting for Mobile staff view to mount...");
-		for (let i = 0; i < 30; i++) {
-			await mobPage.evaluate(() => {
-				const row = Array.from(document.querySelectorAll("button, div, a")).find((el) => {
+		// Click "Врачи и персонал" tab
+		console.log("Switching to Mobile Врачи и персонал tab...");
+		for (let i = 0; i < 20; i++) {
+			const clickedTab = await mobPage.evaluate(() => {
+				const btn = Array.from(document.querySelectorAll("button")).find((el) => {
 					const t = el.innerText || "";
-					return (t.includes("Сотрудники") || t.includes("Персонал")) && el.querySelector("svg");
+					return t.includes("Врачи и персонал") || t.includes("Сотрудники");
 				});
-				if (row) row.click();
+				if (btn) {
+					btn.click();
+					return true;
+				}
+				return false;
 			});
-			const mounted = await mobPage.evaluate(() => {
-				return !!document.querySelector('[data-testid="btn-mobile-back-to-settings-from-staff"]') ||
-					!!document.querySelector('.staff-grouped-card');
-			});
-			if (mounted) {
-				console.log("Mobile staff view mounted successfully!");
+			if (clickedTab) {
+				console.log("Clicked mobile staff tab!");
 				break;
 			}
 			await mobPage.waitForTimeout(500);

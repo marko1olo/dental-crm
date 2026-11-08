@@ -18,14 +18,17 @@ const scheduleShiftsSchema = z.object({
 	shifts: z.array(
 		z
 			.object({
-				id: z.string(),
+				id: z.string().optional(),
 				doctorId: z.string(),
 				doctorName: z.string(),
-				cabinetId: z.string(),
-				chairId: z.string(),
-				dateIso: z.string(),
-				startTime: z.string(),
-				endTime: z.string(),
+				cabinetId: z.string().nullable().optional(),
+				chairId: z.string().nullable().optional(),
+				dateIso: z.string().optional(),
+				shiftDateIso: z.string().optional(),
+				startTime: z.string().optional(),
+				endTime: z.string().optional(),
+				role: z.string().nullable().optional(),
+				specialty: z.string().nullable().optional(),
 			})
 			.passthrough(),
 	),
@@ -118,7 +121,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 		const rawObj = (req.body && typeof req.body === "object" ? req.body : {}) as Record<string, unknown>;
 		const explicitDate = typeof rawObj.dateIso === "string" ? rawObj.dateIso.trim() : "";
 		const targetDates = Array.from(
-			new Set([...shifts.map((s) => s.dateIso), explicitDate].filter(Boolean)),
+			new Set([...shifts.map((s) => s.dateIso || (s as Record<string, unknown>).shiftDateIso || ""), explicitDate].filter(Boolean) as string[]),
 		);
 
 		await db.transaction(async (tx) => {
@@ -129,21 +132,25 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			await tx.delete(doctorShiftRosters).where(deleteCond);
 
 			if (shifts.length > 0) {
+				const now = new Date();
 				await tx.insert(doctorShiftRosters).values(
-					shifts.map((s) => ({
-						id: s.id || randomUUID(),
-						organizationId: orgId,
-						doctorId: s.doctorId,
-						doctorName: s.doctorName,
-						cabinetId: s.cabinetId || null,
-						chairId: s.chairId || null,
-						dateIso: s.dateIso,
-						startTime: s.startTime,
-						endTime: s.endTime,
-						role: (s as any).role || null,
-						specialty: (s as any).specialty || null,
-						updatedAt: new Date(),
-					})),
+					shifts.map((s) => {
+						const resolvedDate = s.dateIso || (s as Record<string, unknown>).shiftDateIso || now.toISOString().split("T")[0]!;
+						return {
+							id: s.id || randomUUID(),
+							organizationId: orgId,
+							doctorId: s.doctorId,
+							doctorName: s.doctorName,
+							cabinetId: s.cabinetId || null,
+							chairId: s.chairId || null,
+							dateIso: String(resolvedDate),
+							startTime: s.startTime || "08:00",
+							endTime: s.endTime || "20:00",
+							role: (s as Record<string, unknown>).role ? String((s as Record<string, unknown>).role) : (s as Record<string, unknown>).doctorRole ? String((s as Record<string, unknown>).doctorRole) : null,
+							specialty: (s as Record<string, unknown>).specialty ? String((s as Record<string, unknown>).specialty) : null,
+							updatedAt: now,
+						};
+					}),
 				);
 			}
 		});

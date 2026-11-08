@@ -58,7 +58,7 @@ export function useScheduleRosterData({
             ? auth.denteClinicalMutationHeaders()
             : {}),
         };
-        const res = await fetch("/api/diary/shifts", { headers }).catch(
+        const res = await fetch("/api/schedule/shifts", { headers }).catch(
           () => null,
         );
         if (res && res.ok) {
@@ -134,7 +134,7 @@ export function useScheduleRosterData({
             ? auth.denteClinicalMutationHeaders()
             : {}),
         };
-        await fetch("/api/diary/shifts", {
+        await fetch("/api/schedule/shifts", {
           method: "POST",
           headers,
           body: JSON.stringify({ shifts }),

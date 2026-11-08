@@ -41,7 +41,7 @@ export function useMobileStaffActions({ accessHeaders, loadDashboard }: UseMobil
 					active: true,
 					canSignMedicalRecords: data.role === "doctor",
 					canManageMoney: data.role === "administrator" || data.role === "owner",
-					canManageImports: true,
+					canManageImports: data.role === "owner",
 					color: "#0d9488",
 				},
 			});

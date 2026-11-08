@@ -256,7 +256,7 @@ export function useScheduleChairDoctorOps({
                 ? auth.denteClinicalMutationHeaders()
                 : {}),
             };
-            fetch("/api/diary/shifts", {
+            fetch("/api/schedule/shifts", {
               method: "POST",
               headers,
               body: JSON.stringify({ shifts: nextShifts }),

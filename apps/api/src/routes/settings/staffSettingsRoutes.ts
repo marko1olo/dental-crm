@@ -6,7 +6,10 @@ import {
 	updateStaffAuthorityGrantsSchema,
 	updateStaffWorkingHoursSchema,
 } from "@dental/shared";
+import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { db } from "../../db/client.js";
+import * as schema from "../../db/schema.js";
 import {
 	createStaffMemberInDb,
 	deactivateStaffMemberInDb,
@@ -480,5 +483,58 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		} catch (error) {
 			return staffAuthorityMutationRejection(reply, error);
 		}
+	});
+
+	/**
+	 * GET /api/settings/role-matrix — Получение кастомной матрицы прав ролей клиники.
+	 */
+	app.get("/api/settings/role-matrix", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const [org] = await db
+			.select()
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, orgId))
+			.limit(1);
+		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+		const roleMatrix = (flags.roleMatrixOverrides as Record<string, Record<string, string>> | null) ?? {};
+		return reply.send({ ok: true, matrix: roleMatrix });
+	});
+
+	/**
+	 * PUT /api/settings/role-matrix — Сохранение кастомной матрицы прав ролей клиники.
+	 */
+	app.put("/api/settings/role-matrix", async (request, reply) => {
+		const orgId = await requireSettingsMutationAccess(request, reply);
+		if (!orgId) return;
+		const raw = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
+		const incomingMatrix = (raw.matrix && typeof raw.matrix === "object" ? raw.matrix : raw) as Record<string, Record<string, string>>;
+
+		const [org] = await db
+			.select()
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, orgId))
+			.limit(1);
+		if (!org) {
+			reply.code(404);
+			return { error: "OrganizationNotFound", message: "Организация не найдена" };
+		}
+		const existingFlags = (org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+		const updatedOverrides = {
+			...((existingFlags.roleMatrixOverrides as Record<string, unknown> | null) ?? {}),
+			...incomingMatrix,
+		};
+		await db
+			.update(schema.organizations)
+			.set({
+				workspaceFeatureFlags: {
+					...existingFlags,
+					roleMatrixOverrides: updatedOverrides,
+				},
+				updatedAt: new Date(),
+			})
+			.where(eq(schema.organizations.id, orgId));
+
+		return reply.send({ ok: true, matrix: updatedOverrides });
 	});
 }

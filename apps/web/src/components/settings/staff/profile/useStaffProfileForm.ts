@@ -31,7 +31,7 @@ export function useStaffProfileForm(
 	const [labCostDeductionPct, setLabCostDeductionPct] = useState<number>(staffMember.labCostDeductionPct || 0);
 	const [canSignMedicalRecords, setCanSignMedicalRecords] = useState<boolean>(staffMember.canSignMedicalRecords ?? (staffMember.role === "doctor"));
 	const [canManageMoney, setCanManageMoney] = useState<boolean>(staffMember.canManageMoney ?? (staffMember.role === "administrator" || staffMember.role === "owner"));
-	const [canManageImports, setCanManageImports] = useState<boolean>(staffMember.canManageImports ?? true);
+	const [canManageImports, setCanManageImports] = useState<boolean>(staffMember.canManageImports ?? (staffMember.role === "owner"));
 	const [isSaving, setIsSaving] = useState(false);
 
 	const handleSave = async () => {
