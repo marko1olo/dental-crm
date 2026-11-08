@@ -15,7 +15,8 @@ import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { useCopilotStore } from "../../../store/copilotStore";
 import { CopilotSettingsGranularPermissions } from "../settings/CopilotSettingsGranularPermissions";
-import { CopilotSettingsGeneralTab } from "../settings/CopilotSettingsGeneralTab";
+import { CopilotSettingsPersonaTab } from "../settings/CopilotSettingsPersonaTab";
+import { CopilotSettingsTrustTab } from "../settings/CopilotSettingsTrustTab";
 import { CopilotThinkingIndicator } from "../CopilotThinkingIndicator";
 import { CopilotHistoryDrawer } from "../CopilotHistoryDrawer";
 import { CopilotMemoryTab } from "../CopilotMemoryTab";
@@ -56,10 +57,24 @@ describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 		assert.ok(html.includes("Запись и экспорт файлов на диск"));
 	});
 
-	it("3. CopilotSettingsGeneralTab renders doctor custom prompt textarea and granular permissions", () => {
-		const html = renderToString(
-			<CopilotSettingsGeneralTab
-				trustLevel="balanced"
+	it("3. CopilotSettingsPersonaTab and CopilotSettingsTrustTab render doctor prompt and trust levels", () => {
+		const personaHtml = renderToString(
+			<CopilotSettingsPersonaTab
+				clinicalSpecialization="therapy"
+				setClinicalSpecialization={() => {}}
+				diaryTemplate="soap"
+				setDiaryTemplate={() => {}}
+				customInstructions="Я терапевт-микроскопист, коффердам обязателен"
+				setCustomInstructions={() => {}}
+			/>
+		);
+
+		assert.ok(personaHtml.includes("Индивидуальные инструкции и персональный стиль врача"));
+		assert.ok(personaHtml.includes("Я терапевт-микроскопист, коффердам обязателен"));
+
+		const trustHtml = renderToString(
+			<CopilotSettingsTrustTab
+				trustLevel="supervised"
 				setTrustLevel={() => {}}
 				granularPermissions={{
 					autoApproveFileReads: true,
@@ -69,26 +84,11 @@ describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 					autoApproveExternalSoftware: false,
 				}}
 				setGranularPermissions={() => {}}
-				customInstructions="Я терапевт-микроскопист, коффердам обязателен"
-				setCustomInstructions={() => {}}
-				model="gemini-2.5-flash"
-				setModel={() => {}}
-				speedMode="turbo"
-				setSpeedMode={() => {}}
-				showThinkingProcess={true}
-				setShowThinkingProcess={() => {}}
-				clinicalSpecialization="therapy"
-				setClinicalSpecialization={() => {}}
-				diaryTemplate="soap"
-				setDiaryTemplate={() => {}}
-				memoryCount={3}
-				onOpenMemory={() => {}}
 			/>
 		);
 
-		assert.ok(html.includes("Индивидуальные инструкции и персональный стиль врача"));
-		assert.ok(html.includes("Я терапевт-микроскопист, коффердам обязателен"));
-		assert.ok(html.includes("Гранулярные разрешения действий"));
+		assert.ok(trustHtml.includes("Уровень доверия к действиям ИИ"));
+		assert.ok(trustHtml.includes("Гранулярные разрешения действий"));
 	});
 
 	it("5. saveThreadMessages persistently saves messages per thread and retrieves cleanly", () => {

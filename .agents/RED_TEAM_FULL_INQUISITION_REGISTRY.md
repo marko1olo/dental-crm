@@ -3053,6 +3053,42 @@ ead_file по 8 осям качества Хаммера:
      - `npm run check:encoding` -> **24 131 files checked, 0 errors (Exit Code 0)**.
   5. **4-State Visual Proofs**: Лично осмотрены через `read_file` в `docs/proofs/copilot/` (PC Light/Dark 1440×900, Mobile Light/Dark 390×844) по 8 осям Хаммера: 0px клиппинга, ровно 1 Primary CTA, Segmented Controls, WCAG AAA контраст в тёмной теме без белых пятен.
 
+### [COPILOT-02] [SEV-1] [ЗАКРЫТО] Ликвидация амнезии сессий через PostgreSQL 18, исправление десктопных тулов, триада уровней доверия и снос дубликатов
+- **Файлы:**
+  - [`apps/api/src/ai/harness/harnessTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/harnessTypes.ts)
+  - [`apps/api/src/ai/harness/toolDispatcher.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/toolDispatcher.ts)
+  - [`apps/api/src/routes/agentRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/agentRoutes.ts)
+  - [`apps/web/src/store/copilotSessionApi.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/copilotSessionApi.ts)
+  - [`apps/web/src/store/copilotStoreDefaults.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/copilotStoreDefaults.ts)
+  - [`apps/web/src/store/copilotStore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/copilotStore.ts)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
+  - [`apps/web/src/components/copilot/ChairsideCopilotHUD.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/ChairsideCopilotHUD.tsx)
+  - [`apps/web/src/components/copilot/chairside/chairsideAgentExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/chairside/chairsideAgentExecutor.ts)
+  - Снесен дубликат: `apps/web/src/components/copilot/settings/CopilotSettingsGeneralTab.tsx` (Мандат 8bd)
+- **Суть бага и предписание Создателя (1:1 Verbatim):**
+  «Не делать мокапы ради мокапов и существующие в вакууме компоненты! Все системы и компоненты должны быть связными, а не возникать из воздуха! Даже в демо и на скринах! Вся работа идет полными контурами через БД, фронт, бэк! Никаких фейковых страниц ради скриншота, никаких изолированных песочниц!».
+  1. Амнезия истории диалогов: `copilotStore` хранил историю только в локальном стейте, не синхронизируясь с боевыми таблицами `copilot_sessions` и `copilot_messages` в PostgreSQL 18 через Fastify REST API `/api/agent/sessions`.
+  2. Битые вызовы инструментов рабочей станции в Студии: кнопки вызывали несуществующие функции `desktop.captureVisigraphRoi` и `desktop.scanDicomDropzone` вместо боевых серверных инструментов `capture_workstation_screen` и `search_workstation_files`.
+  3. Разнобой уровней доверия: в типах и UI смешивались `paranoid/standard/super` и `confirm_all/balanced/autonomous`.
+  4. Хардкод зуба 16 и фейковый синтетический UUID пациента в `chairsideAgentExecutor.ts`.
+  5. Забытый файл-клон `CopilotSettingsGeneralTab.tsx`, не смонтированный в роутер.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. **Ликвидация амнезии сессий**: Создан модуль `copilotSessionApi.ts` для взаимодействия с `/api/agent/sessions` и `/api/agent/sessions/:id/messages` с валидацией UUID, токенами авторизации и graceful offline. В `copilotStore.ts` внедрены экшены `hydrateSessionsFromBackend` и `loadThreadMessages`, а создание и очистка тредов синхронизируются с базой данных PostgreSQL 18.
+  2. **Исправление десктопных инструментов**: В `CopilotStudioModal.tsx` вызовы тулов переведены на канонические инструменты `capture_workstation_screen` и `search_workstation_files`.
+  3. **Гармонизация матрицы доверия**: В `harnessTypes.ts`, `toolDispatcher.ts`, `agentRoutes.ts` и `copilotStore.ts` зафиксирована строгая каноническая триада уровней доверия (`"cautious" | "supervised" | "autonomous"`).
+  4. **Искоренение хардкода у кресла**: В `chairsideAgentExecutor.ts` убран прибитый гвоздями зуб 16 и синтетический UUID, контекст берется из активного приема врача, а режим исполнения привязан к `trustLevel`.
+  5. **Снос дубликатов по Мандату 8bd**: Файл `CopilotSettingsGeneralTab.tsx` физически удален через `git rm`, все тесты переключены на канонические табы персоны и доверия.
+  6. **Соблюдение лимита строк (Мандат 8b)**: `copilotStore.ts` декомпозирован с вынесением дефолтов в `copilotStoreDefaults.ts`, размер файла сокращен до 439 строк (строго <= 450 строк).
+  7. **Машинные гейты приёмки**:
+     - `npx tsx --test apps/api/src/tests/ai/agentSessionRoutes.test.ts` -> **5/5 PASS (Exit Code 0)**.
+     - `npx vitest run apps/web/src/components/copilot/` -> **25/25 файлов, 201/201 тестов PASS (100% green)**.
+     - `npm run check:encoding` -> **23 584 файлов проверено, 0 ошибок (Exit Code 0)**.
+  8. **4-State Visual Proofs**: Лично осмотрены через `read_file` 8 скриншотов в `docs/proofs/copilot/`:
+     - ☀️ PC Light (1440×900): `01_copilot_settings_pc_light_1440x900.png`, `copilot_settings_trust_tab_pc_light_1440x900.png`, `copilot_studio_pc_light_1440x900.png`, `copilot_history_pc_light_1440x900.png`.
+     - 🌙 PC Dark (1440×900): `02_copilot_settings_pc_dark_1440x900.png`, `copilot_studio_pc_dark_1440x900.png`, `copilot_history_pc_dark_1440x900.png`.
+     - 📱 Mobile Light (390×844): `03_copilot_mobile_light_390x844.png`.
+     - 📱 Mobile Dark (390×844): `04_copilot_mobile_dark_390x844.png`.
+
 ---
 
 ## 16. 🩺 КЛИНИЧЕСКИЙ ПРИЁМ У КРЕСЛА И ДНЕВНИК ЭМК SOAP (CHAIRSIDE VISIT & EMR SOAP DIARY SSOT)

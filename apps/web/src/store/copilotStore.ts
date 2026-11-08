@@ -18,6 +18,23 @@ import {
 	SHOWCASE_THREADS,
 	SHOWCASE_TOOL_LOGS,
 } from "./copilotShowcaseData";
+import {
+	appendRemoteMessage,
+	createRemoteSession,
+	deleteRemoteSession,
+	fetchRemoteMessages,
+	fetchRemoteSessions,
+	generateSessionUuid,
+	isSessionUuid,
+	updateRemoteSession,
+} from "./copilotSessionApi";
+import {
+	DEFAULT_SETTINGS,
+	detectRuntimeEnvironment,
+	getInitialCopilotState,
+} from "./copilotStoreDefaults";
+
+export { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState };
 
 export type AiTrustLevel = "cautious" | "supervised" | "autonomous" | "confirm_all" | "balanced";
 export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
@@ -35,38 +52,6 @@ export interface GranularAgentPermissions {
 	autoApproveClinicalMutations: boolean;
 	autoApproveFinancialDrafts: boolean;
 	autoApproveExternalSoftware: boolean;
-}
-
-/**
- * Автоматическое определение среды исполнения врача:
- * 1. desktop_native: Electron / Tauri / Dente native wrapper
- * 2. chairside_tablet: сенсорный планшет у кресла / экран <= 1024px / coarse pointer
- * 3. web_browser: стандартный десктопный браузер
- */
-export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
-	if (typeof window === "undefined") return "web_browser";
-	const w = window as unknown as Record<string, unknown>;
-	const ua = (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent.toLowerCase() : "";
-	if (
-		Boolean(w.isElectron) ||
-		Boolean(w.__TAURI__) ||
-		Boolean(w.__TAURI_INTERNALS__) ||
-		Boolean(w.denteDesktop) ||
-		Boolean(w.denteNative) ||
-		ua.includes("electron") ||
-		ua.includes("tauri") ||
-		ua.includes("dente-desktop")
-	) {
-		return "desktop_native";
-	}
-	const isCoarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
-	const isTouch = (typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints && navigator.maxTouchPoints > 0)) || ("ontouchstart" in window);
-	const isSmallScreen = typeof window.innerWidth === "number" && window.innerWidth <= 1024;
-
-	if (isCoarse || (isTouch && isSmallScreen)) {
-		return "chairside_tablet";
-	}
-	return "web_browser";
 }
 
 export interface AiMemoryFact {
@@ -173,75 +158,14 @@ export interface CopilotStoreState {
 	renameThread: (id: string, title: string) => void;
 	setThreadSearchQuery: (query: string) => void;
 	saveThreadMessages: (threadId: string, messages: any[]) => void;
+	hydrateSessionsFromBackend: () => Promise<void>;
+	loadThreadMessages: (threadId: string) => Promise<any[]>;
 	addToolLog: (log: Omit<ToolExecutionLog, "id" | "timestamp">) => void;
 	setActiveDiff: (diff: ActiveDiff | null) => void;
 	applyActiveDiff: () => void;
 	rejectActiveDiff: () => void;
 	setSettingsOpen: (open: boolean) => void;
 	setHistoryOpen: (open: boolean) => void;
-}
-
-const DEFAULT_SETTINGS: CopilotSettings = {
-	trustLevel: "supervised",
-	provider: "gemini",
-	model: "server_managed",
-	modelRoutingMode: "server_managed",
-	byokProvider: "gemini",
-	byokApiKey: "",
-	byokModel: "gemini-3.6-flash",
-	speedMode: "turbo",
-	showThinkingProcess: true,
-	clinicalSpecialization: "therapy",
-	diaryTemplate: "soap",
-	customDoctorInstructions: "",
-	granularPermissions: {
-		autoApproveFileReads: true,
-		autoApproveFileWrites: false,
-		autoApproveClinicalMutations: true,
-		autoApproveFinancialDrafts: true,
-		autoApproveExternalSoftware: false,
-	},
-	temperature: 0.2,
-	contextLimitTokens: 32768,
-	runtimeMode: detectRuntimeEnvironment(),
-	// Браузер и Голос (Web Speech, 152-ФЗ)
-	speechEngine: "gemini_live",
-	autoSaveDrafts: true,
-	webSpeechSensitivity: "normal",
-	maskPhiData: true,
-	globalDictationHotkey: "F9",
-	autoMicOnAppointmentOpen: false,
-	// Рабочая станция
-	localDropzonePath: "C:\\Radiology\\Export",
-	// Мобилка / Планшет
-	gloveModeTouchTarget: true,
-	screenWakeLock: true,
-	hapticFeedbackEnabled: true,
-};
-
-/**
- * Инициализирует состояние стора с изоляцией Демо и Продакшн (Мандат 8wy).
- * В боевом режиме (!isDemoShowcaseMode()): чистые пустые массивы и нулевой контекст.
- * В демо-режиме (isDemoShowcaseMode()): витринные клинические примеры.
- */
-export function getInitialCopilotState() {
-	const isDemo = isDemoShowcaseMode();
-	const defaultThreads: CopilotThread[] = isDemo ? SHOWCASE_THREADS : [];
-	const defaultMemory: AiMemoryFact[] = isDemo ? SHOWCASE_MEMORY_FACTS : [];
-	const defaultLogs: ToolExecutionLog[] = isDemo ? SHOWCASE_TOOL_LOGS : [];
-	const defaultTelemetry: ContextTelemetryData = isDemo ? SHOWCASE_TELEMETRY : PRODUCTION_TELEMETRY;
-
-	const threads = safeLocalStorageGetJson("dente_copilot_threads", defaultThreads) || [];
-	const memoryFacts = safeLocalStorageGetJson("dente_copilot_memory", defaultMemory) || [];
-	const activeThreadId = threads.length > 0 ? (threads[0]?.id || "") : "";
-
-	return {
-		threads,
-		activeThreadId,
-		memoryFacts,
-		toolExecutionLogs: defaultLogs,
-		telemetry: defaultTelemetry,
-	};
 }
 
 const initialState = getInitialCopilotState();
@@ -328,14 +252,15 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		});
 	},
 
-	createThread: (patientName = "Новый пациент", title = "Новый клинический диалог") => {
-		const newId = `thread-${Date.now()}`;
+	createThread: (patientName = "Новый пациент", title = "Новый клинический диалог", patientId?: string) => {
+		const newId = generateSessionUuid();
 		const newThread: CopilotThread = {
 			id: newId,
 			title,
 			updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
 			createdAt: new Date().toISOString(),
 			patientName,
+			patientId,
 			messageCount: 0,
 		};
 		set((state) => {
@@ -343,11 +268,23 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			safeLocalStorageSetJson("dente_copilot_threads", next);
 			return { threads: next, activeThreadId: newId };
 		});
+		if (!isDemoShowcaseMode()) {
+			void createRemoteSession({
+				id: newId,
+				patientId: patientId || null,
+				title,
+				summary: title,
+				activeView: "Одонтограмма",
+			});
+		}
 		return newId;
 	},
 
 	selectThread: (id) => {
 		set({ activeThreadId: id, isHistoryOpen: false });
+		if (isSessionUuid(id)) {
+			void get().loadThreadMessages(id);
+		}
 	},
 
 	deleteThread: (id) => {
@@ -357,6 +294,9 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			const activeId = state.activeThreadId === id ? (next[0]?.id || "") : state.activeThreadId;
 			return { threads: next, activeThreadId: activeId };
 		});
+		if (!isDemoShowcaseMode() && isSessionUuid(id)) {
+			void deleteRemoteSession(id);
+		}
 	},
 
 	clearThreads: () => {
@@ -381,6 +321,9 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			safeLocalStorageSetJson("dente_copilot_threads", next);
 			return { threads: next };
 		});
+		if (!isDemoShowcaseMode() && isSessionUuid(id)) {
+			void updateRemoteSession(id, { summary: title });
+		}
 	},
 
 	setThreadSearchQuery: (query) => {
@@ -393,6 +336,70 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			safeLocalStorageSetJson("dente_copilot_thread_messages", next);
 			return { threadMessages: next };
 		});
+		if (!isDemoShowcaseMode() && isSessionUuid(threadId) && Array.isArray(messages) && messages.length > 0) {
+			const last = messages[messages.length - 1];
+			const content = String(last.text || last.content || "").trim();
+			if (content && last.role) {
+				void appendRemoteMessage(threadId, {
+					role: last.role === "assistant" ? "assistant" : "user",
+					content,
+					toolCalls: last.actionProposal ? [last.actionProposal] : null,
+				});
+			}
+		}
+	},
+
+	hydrateSessionsFromBackend: async () => {
+		if (isDemoShowcaseMode()) return;
+		try {
+			const remote = await fetchRemoteSessions();
+			if (!remote || remote.length === 0) return;
+			set((state) => {
+				const existingMap = new Map(state.threads.map((t) => [t.id, t]));
+				const merged: CopilotThread[] = [...remote];
+				for (const r of merged) {
+					const local = existingMap.get(r.id);
+					if (local?.pinned) r.pinned = true;
+				}
+				for (const local of state.threads) {
+					if (!merged.some((m) => m.id === local.id)) {
+						merged.push(local);
+					}
+				}
+				safeLocalStorageSetJson("dente_copilot_threads", merged);
+				const activeId = state.activeThreadId || (merged[0]?.id || "");
+				return { threads: merged, activeThreadId: activeId };
+			});
+		} catch {
+			// Офлайн фоллбек на локальный кэш
+		}
+	},
+
+	loadThreadMessages: async (threadId: string) => {
+		const cached = get().threadMessages[threadId];
+		if (cached && cached.length > 0) return cached;
+		if (isDemoShowcaseMode() || !isSessionUuid(threadId)) return [];
+		try {
+			const remoteMsgs = await fetchRemoteMessages(threadId);
+			if (remoteMsgs && remoteMsgs.length > 0) {
+				const parsed = remoteMsgs.map((m: any, idx: number) => ({
+					id: m.id || `msg-${idx}`,
+					role: m.role || "user",
+					text: m.content || m.text || "",
+					timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
+					toolCalls: m.toolCalls,
+				}));
+				set((state) => {
+					const next = { ...state.threadMessages, [threadId]: parsed };
+					safeLocalStorageSetJson("dente_copilot_thread_messages", next);
+					return { threadMessages: next };
+				});
+				return parsed;
+			}
+		} catch {
+			// Офлайн фоллбек
+		}
+		return cached || [];
 	},
 
 	addToolLog: (log) => {
@@ -406,25 +413,18 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		}));
 	},
 
-	setActiveDiff: (diff) => {
-		set({ activeDiff: diff });
-	},
-
-	applyActiveDiff: () => {
-		set((state) => ({
-			activeDiff: state.activeDiff ? { ...state.activeDiff, applied: true } : null,
-		}));
-	},
-
-	rejectActiveDiff: () => {
-		set({ activeDiff: null });
-	},
-
+	setActiveDiff: (diff) => set({ activeDiff: diff }),
+	applyActiveDiff: () => set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: true } : null })),
+	rejectActiveDiff: () => set({ activeDiff: null }),
 	setSettingsOpen: (open) => set({ isSettingsOpen: open }),
 	setHistoryOpen: (open) => set({ isHistoryOpen: open }),
 }));
 
 if (typeof window !== "undefined") {
+	setTimeout(() => {
+		void useCopilotStore.getState().hydrateSessionsFromBackend();
+	}, 50);
+
 	let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	window.addEventListener("resize", () => {
 		if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);

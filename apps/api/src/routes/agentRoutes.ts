@@ -144,10 +144,10 @@ export async function handleAgentChat(
 	const identity = getRequestIdentity(request);
 	const doctorId = identity.userId || undefined;
 
-	// Normalize trust level
-	const normalizedTrust: "confirm_all" | "balanced" | "autonomous" | undefined =
-		body.trustLevel === "cautious" ? "confirm_all" :
-		body.trustLevel === "supervised" ? "balanced" :
+	// Canonical SSOT Trust Level normalization (cautious, supervised, autonomous)
+	const normalizedTrust: "cautious" | "supervised" | "autonomous" | undefined =
+		body.trustLevel === "confirm_all" ? "cautious" :
+		body.trustLevel === "balanced" ? "supervised" :
 		body.trustLevel;
 
 	const isSseRequested =

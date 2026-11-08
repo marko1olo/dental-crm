@@ -71,10 +71,10 @@ describe("Copilot Catalog Data & SSOT Architecture", () => {
   });
 
   it("содержит реестр боевых тулов и пресеты клинических фраз (Мандат 8e)", () => {
-    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus.includes("updateToothState"));
-    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot.includes("createAppointment"));
-    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary.includes("saveVisitDiary"));
-    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.calcInvoiceKopecks.includes("calculateTreatmentEstimate"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus.includes("update_tooth_status"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot.includes("create_appointment"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary.includes("generate_form_043_entry"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.calcInvoiceKopecks.includes("search_clinic_services_and_prices"));
 
     assert.ok(CLINICAL_QUICK_PRESETS.length >= 6);
     const cariesPreset = CLINICAL_QUICK_PRESETS.find((p) => p.label === "Кариес 16");

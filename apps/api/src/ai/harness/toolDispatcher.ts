@@ -29,7 +29,7 @@ export class ToolDispatcher {
 		private readonly effectiveToolContext: DentalToolContext,
 		private readonly requireConfirmationForDestructive = false,
 		private readonly onEvent?: (event: AgentHarnessEvent) => void | Promise<void>,
-		private readonly trustLevel: "confirm_all" | "balanced" | "autonomous" = "balanced",
+		private readonly trustLevel: "cautious" | "supervised" | "autonomous" | "confirm_all" | "balanced" = "supervised",
 		private readonly granularPermissions?: GranularAgentPermissions,
 	) {}
 
@@ -68,10 +68,12 @@ export class ToolDispatcher {
 		}
 
 		const isDestructive = isDestructiveDentalTool(toolName);
+		const isCautious = this.trustLevel === "cautious" || (this.trustLevel as string) === "confirm_all";
+		const isAutonomous = this.trustLevel === "autonomous";
 		const needsConfirmation =
-			this.trustLevel === "confirm_all"
+			isCautious
 				? !isAutoApprovedByGranular
-				: this.trustLevel === "autonomous"
+				: isAutonomous
 					? false
 					: isAutoApprovedByGranular
 						? false

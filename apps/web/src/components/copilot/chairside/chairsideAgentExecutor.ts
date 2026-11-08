@@ -8,6 +8,7 @@
  */
 
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { useCopilotStore } from "../../../store/copilotStore";
 import { findBestClinicalProtocol } from "../../visit/clinicalCatalog/clinicalProtocolsCatalog";
 import type {
   ChairsideThoughtStep,
@@ -22,6 +23,7 @@ import type { MatchedProtocolInfo } from "./ChairsideClinicalInsights";
 import { parseAgentApiResponse } from "./executor/agentApiResponseParser";
 import { tryParseVoiceFallback } from "./executor/agentVoiceFallbackParser";
 import { matchPresetFallback } from "./executor/agentPresetFallbackParser";
+import { requestAgentSseStream } from "./executor/agentSseChatClient";
 
 export interface ExecuteCopilotAgentParams {
   promptText: string;
@@ -31,6 +33,7 @@ export interface ExecuteCopilotAgentParams {
   chairId?: string | undefined;
   patientAllergies?: readonly string[] | string[] | undefined;
   patientSomaticHistory?: string | readonly string[] | string[] | undefined;
+  onThoughtChunk?: ((chunk: string) => void) | undefined;
 }
 
 export interface CopilotExecutionResult {
@@ -52,7 +55,7 @@ export async function executeCopilotAgentRequest(
 ): Promise<CopilotExecutionResult> {
   const {
     promptText,
-    activeTooth = 16,
+    activeTooth,
     patientId,
     visitId,
     chairId,
@@ -61,7 +64,8 @@ export async function executeCopilotAgentRequest(
   } = params;
 
   const text = promptText.trim();
-  const catalogMatch = findBestClinicalProtocol(text, activeTooth || undefined);
+  const effectiveTooth = typeof activeTooth === "number" ? activeTooth : undefined;
+  const catalogMatch = findBestClinicalProtocol(text, effectiveTooth);
 
   let matchedProtocol: MatchedProtocolInfo | null = null;
   if (catalogMatch) {
@@ -90,10 +94,13 @@ export async function executeCopilotAgentRequest(
     headers["x-dente-staff-token"] = staffToken;
   }
 
+  const currentTrust = useCopilotStore.getState().settings.trustLevel;
+  const activeMode = currentTrust === "cautious" ? "cautious" : currentTrust === "autonomous" ? "autonomous" : "supervised";
+
   const requestBody = {
-    patientId: patientId?.trim() || "00000000-0000-7000-8000-000000000001",
+    patientId: patientId?.trim() || undefined,
     prompt: text || undefined,
-    toothNumber: activeTooth ?? undefined,
+    toothNumber: effectiveTooth,
     complaints: text || undefined,
     allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
     somaticHistory: Array.isArray(patientSomaticHistory)
@@ -108,9 +115,25 @@ export async function executeCopilotAgentRequest(
           reason: text || "Повторный клинический приём",
         }
       : undefined,
-    mode: "autonomous" as const,
+    mode: activeMode,
   };
 
+  // 1. Canonical ReAct SSE streaming via /api/agent/chat
+  const sseResult = await requestAgentSseStream({
+    promptText: text,
+    activeTooth: effectiveTooth,
+    patientId: patientId?.trim() || undefined,
+    visitId,
+    headers,
+    trustLevel: currentTrust === "cautious" ? "confirm_all" : currentTrust === "autonomous" ? "autonomous" : "balanced",
+    onThoughtChunk: params.onThoughtChunk,
+  });
+  if (sseResult) {
+    if (matchedProtocol) sseResult.matchedProtocol = matchedProtocol;
+    return sseResult;
+  }
+
+  // 2. Secondary fallback via Fastify copilot agent route
   try {
     const response = await fetch("/api/v1/copilot/agent/execute", {
       method: "POST",
@@ -126,18 +149,18 @@ export async function executeCopilotAgentRequest(
     const data = json?.data;
 
     if (data) {
-      return parseAgentApiResponse(data, activeTooth || 16, matchedProtocol);
+      return parseAgentApiResponse(data, effectiveTooth || 16, matchedProtocol);
     }
   } catch (err) {
     console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);
   }
 
   // Local fallback parsing
-  const voiceResult = tryParseVoiceFallback(text, activeTooth || 16, catalogMatch, matchedProtocol);
+  const voiceResult = tryParseVoiceFallback(text, effectiveTooth || 16, catalogMatch, matchedProtocol);
   if (voiceResult) {
     return voiceResult;
   }
 
   // Fallback to presets
-  return matchPresetFallback(text, activeTooth || 16, matchedProtocol);
+  return matchPresetFallback(text, effectiveTooth || 16, matchedProtocol);
 }

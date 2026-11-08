@@ -120,7 +120,7 @@ export interface AgentHarnessParams {
 	// Multi-agent swarm role
 	swarmRole?: "orchestrator" | "triage" | "odontogram_inquisitor" | "billing_sentinel" | "vision_specialist" | undefined;
 	// Autonomy & trust level (Mandate 8e)
-	trustLevel?: "confirm_all" | "balanced" | "autonomous" | undefined;
+	trustLevel?: "cautious" | "supervised" | "autonomous" | "confirm_all" | "balanced" | undefined;
 	granularPermissions?: GranularAgentPermissions | undefined;
 	customInstructions?: string | undefined;
 	memoryFacts?: string[] | undefined;

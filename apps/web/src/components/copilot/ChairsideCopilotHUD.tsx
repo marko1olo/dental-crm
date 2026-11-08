@@ -127,6 +127,18 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
           activeTooth: activeTooth ?? 16,
           patientId: props.patientId,
           patientAllergies,
+          onThoughtChunk: (chunk) => {
+            setThoughts((prev) => {
+              if (prev.length === 0) {
+                return [{ id: "stream-thought-1", stepNumber: 1, title: chunk.trim().split("\n")[0] || "Анализ модели", status: "running", detail: chunk.trim() }];
+              }
+              const updated = [...prev];
+              const last = { ...updated[updated.length - 1] };
+              last.detail = (last.detail || "") + chunk;
+              updated[updated.length - 1] = last;
+              return updated;
+            });
+          },
         });
 
         if (result.toothProposal) setToothProposal(result.toothProposal);

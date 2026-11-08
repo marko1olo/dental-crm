@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain } from "lucide-react";
 import "./styles/copilotStudio.css";
-import { useVoiceEngine } from "../voice/voiceEngine";
+import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { showToast } from "../GlobalToast";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode";
@@ -17,6 +17,7 @@ import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { 
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest";
 import { handleClinicalSpeechOrText } from "./copilotDictationHandler";
 import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView";
+import { CopilotResultCard } from "./CopilotResultCard";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
 
@@ -30,6 +31,7 @@ export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 export interface CopilotChatMessage {
   id: string; role: "user" | "assistant"; text: string; citation?: string | undefined; timestamp: string; applied?: boolean | undefined;
   actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined; suggestedReplies?: string[] | undefined;
+  toolResult?: unknown | undefined; toolName?: string | undefined;
 }
 
 const extractSuggestions = (text: string) => {
@@ -46,7 +48,7 @@ export const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [
 const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((m, i) => {
   const raw = m.text || m.content || (m.kind === "tool" ? `Выполнен инструмент: ${m.name}` : "");
   const { cleanText, suggestions } = extractSuggestions(raw);
-  return { id: m.id || m.callId || `msg-${i}`, role: m.role || (m.kind === "tool" ? "assistant" : "user"), text: cleanText, timestamp: m.timestamp || "10:00", applied: m.applied, citation: m.citation, actionProposal: m.actionProposal, suggestedReplies: m.suggestedReplies || suggestions };
+  return { id: m.id || m.callId || `msg-${i}`, role: m.role || (m.kind === "tool" ? "assistant" : "user"), text: cleanText, timestamp: m.timestamp || "10:00", applied: m.applied, citation: m.citation, actionProposal: m.actionProposal, suggestedReplies: m.suggestedReplies || suggestions, toolResult: m.toolResult, toolName: m.toolName };
 });
 
 export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
@@ -63,9 +65,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const hydrateSession = useCallback(async (sId: string) => {
     try {
       const tok = readDenteClinicToken() || readDenteStaffToken() || "";
-      const res = await fetch(`/api/v1/copilot/sessions/${encodeURIComponent(sId)}/messages`, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} });
+      const res = await fetch(`/api/agent/sessions/${encodeURIComponent(sId)}/messages`, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} });
       if (res.ok) {
-        const b = await res.json(), raw = Array.isArray(b?.data) ? b.data : Array.isArray(b?.messages) ? b.messages : null;
+        const b = await res.json(), raw = Array.isArray(b?.messages) ? b.messages : Array.isArray(b?.data) ? b.data : null;
         if (raw?.length) {
           const p = parseChatMsgs(raw.map((m: any) => ({ id: m.id, role: m.role, content: m.content || m.text, timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined })));
           setMessages(p); saveThreadMessages(sId, p); return true;
@@ -419,7 +421,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                   { title: "Зубная формула FDI", badge: "Одонтограмма", desc: `Фиксация кариеса дентина и пломбирования зуба ${activeTooth || 36}.`, btn: `Обновить статус зуба ${activeTooth || 36}`, icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, { tooth: activeTooth || 36, state: "C", diagnosis: "K02.1" }) },
                   { title: "Выставление счёта", badge: "Касса и чеки", desc: "Пречек на препарирование и нанокомпозитную реставрацию: 6 500 руб.", btn: "Сформировать счёт (6 500 руб.)", icon: <Receipt size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft, { patientId, amountKopecks: 650000, serviceTitle: "Лечение кариеса" }) },
                   { title: "Протокол SOAP в карту", badge: "Медкарта", desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.", btn: "Сформировать протокол SOAP", icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, { patientId, tooth: activeTooth, diagnosis: "K02.1" }) },
-                  ...(runtimeMode === "desktop_native" ? [{ title: "Захват визиографа (ROI)", badge: "Workstation", desc: "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.captureVisigraphRoi", { roi: "visigraph_window", tooth: activeTooth || 36 }) }, { title: "Поиск КЛКТ на диске", badge: "Локальный I/O", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.scanDicomDropzone", { patientId }) }] : []),
+                  ...(runtimeMode === "desktop_native" ? [{ title: "Захват визиографа (ROI)", badge: "Рабочая станция", desc: "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("capture_workstation_screen", { diagnosticReason: `Анализ визиографа зуба ${activeTooth || 36}`, targetScreenIndex: 0 }) }, { title: "Поиск КЛКТ на диске", badge: "Локальный диск", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("search_workstation_files", { query: "dicom", category: "xray_study" }) }] : []),
                 ].map((item, idx) => (
                   <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">
                     <div className="copilot-action-item-header flex items-center justify-between"><div className="flex items-center gap-2">{item.icon}<span className="text-xs font-bold text-[var(--ink)]">{item.title}</span></div><span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">{item.badge}</span></div>
