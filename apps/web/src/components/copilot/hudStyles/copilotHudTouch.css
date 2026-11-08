@@ -39,9 +39,28 @@
     max-width: calc(100% - 16px);
   }
 
+  .chairside-hud-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .chairside-hud-capsule {
+    padding: 0 10px;
+  }
+
+  .chairside-hud-capsule-brand {
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .chairside-hud-live-pills {
+    display: none !important;
+  }
+
   .chairside-hud-capsule-actions .btn-chairside-hud-dock-toggle,
   .chairside-hud-capsule-actions .btn-chairside-hud-minimize {
-    display: none;
+    display: none !important;
   }
 }
 

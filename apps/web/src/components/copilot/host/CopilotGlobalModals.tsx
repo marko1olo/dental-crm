@@ -53,7 +53,7 @@ export const CopilotGlobalModals: React.FC<CopilotGlobalModalsProps> = ({
         <ClinicalProtocolsCatalogModal
           isOpen={isCatalogModalOpen}
           onClose={closeCatalogModal}
-          activeTooth={catalogTooth ?? activeTooth ?? 16}
+          activeTooth={catalogTooth ?? activeTooth ?? null}
           currentNoteForm={useVisitStore.getState().visitNoteForm}
           onApplyPatch={onApplyCatalogPatch}
           initialSpecialty={catalogSpecialty}

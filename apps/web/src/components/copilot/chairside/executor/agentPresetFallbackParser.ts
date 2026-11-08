@@ -6,8 +6,7 @@
  * - Mandate 8e: Doctor & Staff Autonomy.
  */
 
-import { CLINICAL_PRESETS, defaultPreset } from "../chairsideTypes";
-import type { MatchedProtocolInfo } from "../ChairsideClinicalInsights";
+import { CLINICAL_PRESETS, defaultPreset, type MatchedProtocolInfo } from "../chairsideTypes";
 import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
 
 export function matchPresetFallback(

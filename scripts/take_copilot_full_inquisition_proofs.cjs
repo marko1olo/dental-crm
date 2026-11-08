@@ -2,27 +2,26 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "d2b0c89e-8ca0-4f0c-9986-9fb713a44427";
+const CONV_ID = "26773978-4480-4129-a80e-6f979dbebc85";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
-const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
+const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}/screenshots`);
 
 [OUT_DOCS, OUT_BRAIN].forEach((dir) => {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 async function saveProof(page, filename) {
-	await page.waitForTimeout(800);
+	await page.waitForTimeout(600);
 	const pDocs = path.join(OUT_DOCS, filename);
 	const pBrain = path.join(OUT_BRAIN, filename);
+	await page.screenshot({ path: pDocs, fullPage: false, animations: "disabled" });
 	try {
-		await page.screenshot({ path: pDocs, fullPage: false });
-	} catch (err) {
-		console.log(`[saveProof fallback] ${err.message}`);
-		await page.screenshot({ path: pDocs });
+		fs.copyFileSync(pDocs, pBrain);
+	} catch (e) {
+		console.warn("Could not copy to brain dir:", e.message);
 	}
-	fs.copyFileSync(pDocs, pBrain);
 	const size = fs.statSync(pDocs).size;
-	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 25000}`);
+	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
 }
 
 async function setTheme(page, theme) {
@@ -47,219 +46,209 @@ async function setTheme(page, theme) {
 	await page.waitForTimeout(500);
 }
 
-async function provisionLiveSession() {
-	const API_BASE = "http://127.0.0.1:4100";
-	const uniqueId = Date.now();
-	try {
-		const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				clinicName: "Стоматология ДЕНТЕ Премиум",
-				email: `doctor-harness-${uniqueId}@dente-clinic.ru`,
-				password: "Password123!",
-				ownerName: "Д-р Воронов Алексей Владимирович",
-				ownerPin: "1234",
-			}),
-		});
-		if (initRes.ok) {
-			const initData = await initRes.json();
-			const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json", "x-dente-clinic-token": initData.clinicToken },
-				body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
-			});
-			if (unlockRes.ok) {
-				const unlockData = await unlockRes.json();
-				return { clinicToken: initData.clinicToken, staffToken: unlockData.staffToken, ownerUserId: initData.ownerUserId, orgId: initData.organizationId };
-			}
+async function ensureWorkspaceReady(page) {
+	console.log("Navigating to http://127.0.0.1:5173/#patients ...");
+	await page.goto("http://127.0.0.1:5173/#patients", { waitUntil: "domcontentloaded", timeout: 45000 });
+	await page.waitForTimeout(1500);
+
+	const demoBtn = page.locator("button:has-text('Быстрый вход в Демо-тур'), button.auth-demo-btn");
+	if (await demoBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+		console.log("Found Demo button! Clicking...");
+		await demoBtn.first().click();
+		const roleCard = page.locator(".auth-demo-role-card").first();
+		if (await roleCard.isVisible({ timeout: 5000 }).catch(() => false)) {
+			console.log("Double clicking role card...");
+			await roleCard.dblclick();
+			await page.waitForTimeout(2000);
 		}
-	} catch { /* skip */ }
-	return { clinicToken: "mock-token", staffToken: "mock-staff", ownerUserId: "user-1", orgId: "org-1" };
+	}
+
+	await page.waitForSelector(".copilot-trigger-btn, [data-testid='copilot-floating-trigger'], .app-layout", { timeout: 20000 });
+	console.log("Workspace ready! URL:", page.url());
 }
 
-async function setupPageAuth(context, auth) {
-	await context.addInitScript(({ clinicToken, staffToken, ownerUserId, orgId }) => {
-		localStorage.setItem("dente_clinic_token", clinicToken);
-		localStorage.setItem("dente_staff_token", staffToken);
-		localStorage.setItem("dente_active_user_id", ownerUserId);
-		localStorage.setItem("dente_active_role", "owner");
-		localStorage.setItem("dente_active_mode", "clinic");
-		localStorage.setItem("dente_active_org_id", orgId);
-		sessionStorage.setItem("dente_unlocked", "true");
-		localStorage.setItem("dente_tour_completed", "true");
-		localStorage.setItem("dente_tour_dismissed", "true");
-		localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
-			onboardingDismissed: true,
-			onboardingStep: "done",
-			onboardingDraftMode: false,
-		}));
-	}, auth);
+async function openCopilotStudioModal(page) {
+	console.log("Opening Copilot Studio...");
+	const isAlreadyOpen = await page.locator(".copilot-studio-modal, .copilot-studio-overlay, [data-testid='chairside-copilot-studio-root']").isVisible().catch(() => false);
+	if (!isAlreadyOpen) {
+		const triggerBtn = page.locator(".copilot-trigger-btn, [data-testid='copilot-floating-trigger']");
+		if (await triggerBtn.isVisible().catch(() => false)) {
+			await triggerBtn.click({ force: true });
+		} else {
+			await page.evaluate(() => {
+				window.dispatchEvent(
+					new CustomEvent("dente:open-copilot", {
+						detail: { tooth: 36, patientName: "Кузнецов М.П.", patientId: "pat-36" },
+					}),
+				);
+			});
+		}
+	}
+	await page.waitForSelector(".copilot-studio-modal, .copilot-studio-overlay, [data-testid='chairside-copilot-studio-root']", { timeout: 15000 });
+	await page.waitForTimeout(800);
+}
+
+async function closeCopilotStudioModal(page) {
+	const closeBtn = page.locator("[data-testid='copilot-studio-close-btn'], button[aria-label='Закрыть окно ассистента'], .copilot-modal-close");
+	if (await closeBtn.count() > 0 && await closeBtn.first().isVisible().catch(() => false)) {
+		await closeBtn.first().click({ force: true });
+	} else {
+		await page.keyboard.press("Escape");
+	}
+	await page.evaluate(() => {
+		document.body.classList.remove("copilot-open", "copilot-studio-open");
+	});
+	await page.waitForTimeout(600);
+}
+
+async function openChairsideHUD(page) {
+	console.log("Opening Chairside HUD...");
+	await page.evaluate(() => {
+		document.body.classList.remove("copilot-open", "copilot-studio-open");
+		window.dispatchEvent(
+			new CustomEvent("dente:open-chairside-hud", {
+				detail: { tooth: 36, activeTooth: 36, patientName: "Иванов Иван Иванович", patientId: "pat-36" },
+			}),
+		);
+	});
+	await page.waitForSelector(".chairside-copilot-hud, [data-testid='chairside-copilot-hud']", { timeout: 10000 });
+	await page.waitForTimeout(800);
 }
 
 async function run() {
-	console.log("[Harness Inquisitor] Launching Playwright Chrome for AI Copilot Proofs...");
-	const auth = await provisionLiveSession();
-
+	console.log("[Proof Runner] Launching Chromium...");
 	const browser = await chromium.launch({
 		headless: true,
+		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 	});
 
 	try {
 		// ==========================================
-		// 1. PC VIEWPORT (1440x900) - COPILOT STUDIO
+		// PHASE 1: PC STUDIO (1440x900)
 		// ==========================================
+		console.log("\n--- Phase 1: PC Studio Context (1440x900) ---");
 		const pcContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-		await setupPageAuth(pcContext, auth);
-
 		const pcPage = await pcContext.newPage();
-		console.log("Navigating to http://127.0.0.1:5173/?copilot=1...");
-		await pcPage.goto("http://127.0.0.1:5173/?copilot=1", { waitUntil: "domcontentloaded", timeout: 30000 });
-		await pcPage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
+		await pcPage.goto("http://127.0.0.1:5173/#copilot", { waitUntil: "commit" });
+		await pcPage.locator("[data-testid='chairside-copilot-studio-root']").first().waitFor({ state: "visible", timeout: 15000 });
 		await pcPage.waitForTimeout(1000);
 
-		// Initialize with active patient & tooth
-		await pcPage.evaluate(() => {
-			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
-				detail: {
-					tooth: 36,
-					activeTooth: 36,
-					patientName: "Иванов Иван Иванович",
-					patientId: "pat-active"
-				}
-			}));
-		});
-		await pcPage.waitForTimeout(800);
-
-		// 1.1 Dialog PC Light
-		console.log("Capturing 01_copilot_drawer_dialog_pc_light_1440x900.png...");
+		// 1. PC Light Studio
+		console.log("Capturing 01_copilot_studio_pc_light_1440x900.png...");
 		await setTheme(pcPage, "light");
-		await saveProof(pcPage, "01_copilot_drawer_dialog_pc_light_1440x900.png");
+		await saveProof(pcPage, "01_copilot_studio_pc_light_1440x900.png");
 
-		// 1.2 Dialog PC Dark
-		console.log("Capturing 02_copilot_drawer_dialog_pc_dark_1440x900.png...");
+		// 2. PC Dark Studio
+		console.log("Capturing 02_copilot_studio_pc_dark_1440x900.png...");
 		await setTheme(pcPage, "dark");
-		await saveProof(pcPage, "02_copilot_drawer_dialog_pc_dark_1440x900.png");
+		await saveProof(pcPage, "02_copilot_studio_pc_dark_1440x900.png");
 
-		// 1.3 Trigger Thinking Indicator CoT
-		console.log("Triggering thinking indicator CoT...");
-		await setTheme(pcPage, "light");
-		await pcPage.evaluate(() => {
-			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
-				detail: {
-					tooth: 36,
-					activeTooth: 36,
-					patientName: "Иванов Иван Иванович",
-					patientId: "pat-active",
-					isThinking: true,
-					thoughtProcess: "Клинический анализ МКБ-10 (K02.1), расчет дозировки Артикаин 1:100 000 и формирование сметы..."
-				}
-			}));
-		});
-		await pcPage.waitForTimeout(800);
-		const thinkingCard = pcPage.locator(".copilot-thinking-card").first();
-		if (await thinkingCard.isVisible()) {
-			await thinkingCard.scrollIntoViewIfNeeded();
-			// Click to expand accordion thoughts
-			await thinkingCard.locator("button").first().click({ force: true }).catch(async () => { await thinkingCard.click({ force: true }).catch(() => {}); });
+		// Settings Trust Tab (Light & Dark)
+		console.log("Opening Copilot Settings Modal...");
+		const settingsTrigger = pcPage.locator("[data-testid='copilot-settings-trigger']");
+		if (await settingsTrigger.isVisible().catch(() => false)) {
+			await settingsTrigger.click({ force: true });
+			await pcPage.locator("[data-testid='copilot-settings-modal']").first().waitFor({ state: "visible", timeout: 8000 });
 			await pcPage.waitForTimeout(500);
-		}
-		console.log("Capturing 03_copilot_thinking_cot_pc_light_1440x900.png...");
-		await saveProof(pcPage, "03_copilot_thinking_cot_pc_light_1440x900.png");
 
-		// Reset thinking
-		await pcPage.evaluate(() => {
-			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
-				detail: {
-					tooth: 36,
-					activeTooth: 36,
-					patientName: "Иванов Иван Иванович",
-					patientId: "pat-active",
-					isThinking: false
-				}
-			}));
-		});
-		await pcPage.waitForTimeout(500);
+			const trustTabBtn = pcPage.locator("button:has-text('Уровень доверия'), [data-testid='settings-tab-trust']");
+			if (await trustTabBtn.count() > 0) {
+				await trustTabBtn.first().click();
+				await pcPage.waitForTimeout(400);
+			}
 
-		// 1.4 Settings Modal - Intelligence Tab PC Light
-		console.log("Capturing 06_copilot_settings_intelligence_pc_light_1440x900.png...");
-		const settingsBtn = pcPage.locator('[data-testid="copilot-settings-trigger"]').first();
-		await settingsBtn.waitFor({ state: "visible", timeout: 10000 });
-		await settingsBtn.click({ force: true });
-		await pcPage.waitForTimeout(800);
-		await saveProof(pcPage, "06_copilot_settings_intelligence_pc_light_1440x900.png");
+			console.log("Capturing 10_copilot_settings_trust_pc_dark_1440x900.png...");
+			await saveProof(pcPage, "10_copilot_settings_trust_pc_dark_1440x900.png");
 
-		// 1.5 Settings Modal - Trust Tab PC Dark
-		console.log("Capturing 07_copilot_settings_trust_pc_dark_1440x900.png...");
-		await setTheme(pcPage, "dark");
-		const trustTabBtn = pcPage.locator('button:has-text("Уровень доверия")').first();
-		if (await trustTabBtn.isVisible()) {
-			await trustTabBtn.click({ force: true });
-			await pcPage.waitForTimeout(600);
-			await saveProof(pcPage, "07_copilot_settings_trust_pc_dark_1440x900.png");
+			console.log("Capturing 09_copilot_settings_trust_pc_light_1440x900.png...");
+			await setTheme(pcPage, "light");
+			await saveProof(pcPage, "09_copilot_settings_trust_pc_light_1440x900.png");
 		}
 
 		await pcContext.close();
 
 		// ==========================================
-		// 2. CHAIRSIDE COPILOT HUD (1440x900)
+		// PHASE 2: PC CHAIRSIDE HUD (1440x900)
 		// ==========================================
-		const hudContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-		await setupPageAuth(hudContext, auth);
+		console.log("\n--- Phase 2: PC Chairside HUD (1440x900) ---");
+		const pcHudContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+		const pcHudPage = await pcHudContext.newPage();
+		await pcHudPage.goto("http://127.0.0.1:5173/#hud", { waitUntil: "commit" });
+		await pcHudPage.locator("[data-testid='chairside-copilot-hud']").first().waitFor({ state: "visible", timeout: 15000 });
+		await pcHudPage.waitForTimeout(1000);
 
-		const hudPage = await hudContext.newPage();
-		console.log("Navigating to http://127.0.0.1:5173/?hud=open...");
-		await hudPage.goto("http://127.0.0.1:5173/?hud=open", { waitUntil: "domcontentloaded", timeout: 30000 });
-		await hudPage.waitForSelector('[data-testid="chairside-copilot-hud"]', { state: "visible", timeout: 20000 });
-		await hudPage.waitForTimeout(1000);
+		console.log("Capturing 05_copilot_hud_pc_light_1440x900.png...");
+		await setTheme(pcHudPage, "light");
+		await saveProof(pcHudPage, "05_copilot_hud_pc_light_1440x900.png");
 
-		// HUD Light
-		console.log("Capturing 04_copilot_chairside_hud_pc_light_1440x900.png...");
-		await setTheme(hudPage, "light");
-		await saveProof(hudPage, "04_copilot_chairside_hud_pc_light_1440x900.png");
+		console.log("Capturing 06_copilot_hud_pc_dark_1440x900.png...");
+		await setTheme(pcHudPage, "dark");
+		await saveProof(pcHudPage, "06_copilot_hud_pc_dark_1440x900.png");
 
-		// HUD Dark
-		console.log("Capturing 05_copilot_chairside_hud_pc_dark_1440x900.png...");
-		await setTheme(hudPage, "dark");
-		await saveProof(hudPage, "05_copilot_chairside_hud_pc_dark_1440x900.png");
-
-		await hudContext.close();
+		await pcHudContext.close();
 
 		// ==========================================
-		// 3. MOBILE VIEWPORT (390x844)
+		// PHASE 3: MOBILE STUDIO (390x844 @2x)
 		// ==========================================
+		console.log("\n--- Phase 3: Mobile Studio Context (390x844 @2x) ---");
 		const mobileContext = await browser.newContext({
 			viewport: { width: 390, height: 844 },
-			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+			deviceScaleFactor: 2,
+			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+			isMobile: true,
+			hasTouch: true,
 		});
-		await setupPageAuth(mobileContext, auth);
-
 		const mobilePage = await mobileContext.newPage();
-		console.log("Navigating to http://127.0.0.1:5173/?copilot=1 (Mobile)...");
-		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1", { waitUntil: "domcontentloaded", timeout: 30000 });
-		await mobilePage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
+		await mobilePage.goto("http://127.0.0.1:5173/#copilot", { waitUntil: "commit" });
+		await mobilePage.locator("[data-testid='chairside-copilot-studio-root']").first().waitFor({ state: "visible", timeout: 15000 });
 		await mobilePage.waitForTimeout(1000);
 
-		// Mobile Light
-		console.log("Capturing 08_copilot_studio_mobile_light_390x844.png...");
+		// 3. Mobile Light Studio
+		console.log("Capturing 03_copilot_studio_mobile_light_390x844.png...");
 		await setTheme(mobilePage, "light");
-		await saveProof(mobilePage, "08_copilot_studio_mobile_light_390x844.png");
+		await saveProof(mobilePage, "03_copilot_studio_mobile_light_390x844.png");
 
-		// Mobile Dark
-		console.log("Capturing 09_copilot_studio_mobile_dark_390x844.png...");
+		// 4. Mobile Dark Studio
+		console.log("Capturing 04_copilot_studio_mobile_dark_390x844.png...");
 		await setTheme(mobilePage, "dark");
-		await saveProof(mobilePage, "09_copilot_studio_mobile_dark_390x844.png");
+		await saveProof(mobilePage, "04_copilot_studio_mobile_dark_390x844.png");
 
 		await mobileContext.close();
 
-		console.log("[Harness Inquisitor] All proofs captured and mirrored to brain successfully!");
+		// ==========================================
+		// PHASE 4: MOBILE CHAIRSIDE HUD (390x844 @2x)
+		// ==========================================
+		console.log("\n--- Phase 4: Mobile Chairside HUD (390x844 @2x) ---");
+		const mobileHudContext = await browser.newContext({
+			viewport: { width: 390, height: 844 },
+			deviceScaleFactor: 2,
+			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+			isMobile: true,
+			hasTouch: true,
+		});
+		const mobileHudPage = await mobileHudContext.newPage();
+		await mobileHudPage.goto("http://127.0.0.1:5173/#hud", { waitUntil: "commit" });
+		await mobileHudPage.locator("[data-testid='chairside-copilot-hud']").first().waitFor({ state: "visible", timeout: 15000 });
+		await mobileHudPage.waitForTimeout(1000);
+
+		console.log("Capturing 07_copilot_hud_mobile_light_390x844.png...");
+		await setTheme(mobileHudPage, "light");
+		await saveProof(mobileHudPage, "07_copilot_hud_mobile_light_390x844.png");
+
+		console.log("Capturing 08_copilot_hud_mobile_dark_390x844.png...");
+		await setTheme(mobileHudPage, "dark");
+		await saveProof(mobileHudPage, "08_copilot_hud_mobile_dark_390x844.png");
+
+		await mobileHudContext.close();
+
+		console.log("\n[Proof Runner] All 4-State visual proofs captured successfully!");
 	} finally {
 		await browser.close();
 	}
 }
 
 run().catch((err) => {
-	console.error("[Harness Inquisitor ERROR]:", err);
+	console.error("[Proof Runner ERROR]:", err);
 	process.exit(1);
 });

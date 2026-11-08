@@ -98,5 +98,12 @@ export interface ChairsideCopilotHUDProps {
   readonly className?: string | undefined;
 }
 
+export interface MatchedProtocolInfo {
+  procedureName: string;
+  matchedIcd10?: string | undefined;
+  categoryKey: string;
+  tooth?: number | null | undefined;
+}
+
 export { mapToCanonicalToothState } from "./canonicalToothStateMapper";
 export { CLINICAL_PRESETS, defaultPreset, type ClinicalPreset } from "./chairsidePresets";

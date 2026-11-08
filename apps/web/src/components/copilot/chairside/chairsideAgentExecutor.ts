@@ -18,8 +18,8 @@ import type {
   ChairsideAnestheticProposal,
   ChairsideConsentProposal,
   ChairsideSafetyAlert,
+  MatchedProtocolInfo,
 } from "./chairsideTypes";
-import type { MatchedProtocolInfo } from "./ChairsideClinicalInsights";
 import { parseAgentApiResponse } from "./executor/agentApiResponseParser";
 import { tryParseVoiceFallback } from "./executor/agentVoiceFallbackParser";
 import { matchPresetFallback } from "./executor/agentPresetFallbackParser";
@@ -149,18 +149,18 @@ export async function executeCopilotAgentRequest(
     const data = json?.data;
 
     if (data) {
-      return parseAgentApiResponse(data, effectiveTooth || 16, matchedProtocol);
+      return parseAgentApiResponse(data, effectiveTooth || null, matchedProtocol);
     }
   } catch (err) {
     console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);
   }
 
   // Local fallback parsing
-  const voiceResult = tryParseVoiceFallback(text, effectiveTooth || 16, catalogMatch, matchedProtocol);
+  const voiceResult = tryParseVoiceFallback(text, effectiveTooth || null, catalogMatch, matchedProtocol);
   if (voiceResult) {
     return voiceResult;
   }
 
   // Fallback to presets
-  return matchPresetFallback(text, effectiveTooth || 16, matchedProtocol);
+  return matchPresetFallback(text, effectiveTooth || null, matchedProtocol);
 }

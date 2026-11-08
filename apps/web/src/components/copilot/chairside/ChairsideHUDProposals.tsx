@@ -73,7 +73,9 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
   );
 
   const soapDiagnosisLabel = soapProposal?.diagnosis
-    ? `${soapProposal.diagnosis}${toothProposal?.toothNumber ? ` (зуб ${toothProposal.toothNumber})` : ""}`
+    ? soapProposal.diagnosis.toLowerCase().includes("зуб") || !toothProposal?.toothNumber
+      ? soapProposal.diagnosis
+      : `${soapProposal.diagnosis} (зуб ${toothProposal.toothNumber})`
     : toothProposal?.toothNumber
       ? `Зуб ${toothProposal.toothNumber}: клинический статус`
       : "Клинический статус";
@@ -83,17 +85,17 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
       {/* 1-Click Macro-Batch Apply Header (Mandates 8e, 8ba, 8k) */}
       {hasBatchActions && onApplyAll && (
         <div
-          className="chairside-hud-macro-batch chairside-proposals-macro-banner p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal,#0d9488)]/30 flex items-center justify-between gap-2"
+          className="chairside-hud-macro-batch chairside-proposals-macro-banner p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal,#0d9488)]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
           data-testid="chairside-macro-batch-banner"
         >
           <div className="flex items-center gap-1.5 min-w-0">
             <Check size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
-            <span className="text-xs font-semibold text-[var(--ink)] truncate">Пакетное оформление приёма</span>
+            <span className="text-xs font-semibold text-[var(--ink)]">Пакетное оформление приёма</span>
           </div>
           <button
             type="button"
             onClick={onApplyAll}
-            className="chairside-hud-btn-primary h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all btn-proposals-macro-apply"
+            className="chairside-hud-btn-primary h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-all btn-proposals-macro-apply shrink-0"
             data-testid="chairside-btn-macro-apply-all"
             aria-label="Применить все предложения к схеме"
           >
@@ -154,11 +156,11 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
       {/* SOAP Diary Proposal Card */}
       {(soapProposal?.diagnosis || soapProposal?.complaint || soapProposal?.treatmentPlan) && (
         <div className="chairside-hud-card chairside-card-soap" data-testid="chairside-card-soap">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="font-semibold text-xs text-[var(--ink)]">Дневник приёма (SOAP)</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[var(--info,#3b82f6)] font-medium">{soapDiagnosisLabel}</span>
-              <button type="button" className="btn-edit-soap text-xs text-[var(--muted)] hover:underline">Редактировать</button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
+            <span className="font-semibold text-xs text-[var(--ink)] shrink-0">Дневник приёма (SOAP)</span>
+            <div className="flex items-center justify-between sm:justify-end gap-2 min-w-0">
+              <span className="text-xs text-[var(--info,#3b82f6)] font-medium truncate">{soapDiagnosisLabel}</span>
+              <button type="button" className="btn-edit-soap text-xs text-[var(--muted)] hover:underline bg-transparent border-0 p-0 cursor-pointer shrink-0">Редактировать</button>
             </div>
           </div>
           <div className="text-xs text-[var(--muted)] space-y-1 mb-2">

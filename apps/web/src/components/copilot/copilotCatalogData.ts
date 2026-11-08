@@ -3,6 +3,8 @@
  * Архитектура: Мандат 8b (300–350 строк), Мандат 8e (автономия), Мандат 8x (без канцелярита), Мандат 8wy.
  */
 
+import type { SuggestionCategory } from "./types/proactiveHitLTypes";
+
 export type CopilotRuntimeMode = "web_browser" | "desktop_native" | "mobile_tablet" | "both" | "all";
 
 export type CapabilityStatus = "available" | "desktop_required" | "mobile_specific" | "unavailable";
@@ -315,3 +317,12 @@ export function inspectSpeechEngineHealth(healthPayload?: Record<string, unknown
       : "Служба распознавания речи не поддерживается браузером",
   };
 }
+
+export const DEFAULT_SUGGESTION_CATEGORIES: SuggestionCategory[] = COPILOT_CATALOG_CATEGORIES.map((cat) => ({
+  category: cat.title,
+  items: cat.items.map((item) => ({
+    label: item.label,
+    prompt: item.prompt,
+    icon: item.icon,
+  })),
+}));

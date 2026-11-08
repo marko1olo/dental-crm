@@ -6,7 +6,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } from "lucide-react";
-import { useVoiceEngine, type ParsedClinicalSpeech } from "../voice/voiceEngine";
+import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
+import { extractClinicalTerms, type ParsedClinicalSpeech } from "../voice/voiceEngine";
 import "./CopilotVoiceStenographer.css";
 
 export interface ParsedClinicalCommand {
@@ -44,25 +45,30 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
   const [isEditingManually, setIsEditingManually] = useState(false);
 
   const {
-    isListening,
+    isRecording: isListening,
     interimText,
     finalText,
-    fullText,
-    parsed,
+    fullTranscript,
     error: voiceError,
-    toggleListening,
-    stopListening,
-    startListening,
+    toggleDictation: toggleListening,
+    stopDictation: stopListening,
+    startDictation: startListening,
     clearTranscript,
-    appendText,
-  } = useVoiceEngine({ mode: "auto" });
+  } = useUnifiedDictation({ preferredMode: "gemini_live", autoFallback: true });
+
+  const fullText = fullTranscript || (finalText ? `${finalText} ${interimText}`.trim() : interimText);
+
+  const parsed = useMemo<ParsedClinicalSpeech | null>(() => {
+    const textToAnalyze = isEditingManually ? manualDraft : (fullText || manualDraft);
+    if (!textToAnalyze.trim()) return null;
+    return extractClinicalTerms(textToAnalyze);
+  }, [isEditingManually, manualDraft, fullText]);
 
   useEffect(() => {
     if (initialTranscript && !finalText) {
-      appendText(initialTranscript);
       setManualDraft(initialTranscript);
     }
-  }, [initialTranscript, finalText, appendText]);
+  }, [initialTranscript, finalText]);
 
   // SSOT: Преобразование клинически распознанной речи в команды врача
   const parsedCommands = useMemo<ParsedClinicalCommand[]>(() => {
@@ -230,7 +236,6 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
           onBlur={(e) => {
             const text = (e.currentTarget.textContent || "").trim();
             setManualDraft(text);
-            appendText(text);
             setIsEditingManually(false);
           }}
           onInput={(e) => {

@@ -15,8 +15,8 @@ import type {
   ChairsideAnestheticProposal,
   ChairsideConsentProposal,
   ChairsideSafetyAlert,
+  MatchedProtocolInfo,
 } from "../chairsideTypes";
-import type { MatchedProtocolInfo } from "../ChairsideClinicalInsights";
 
 export interface ParsedAgentResult {
   thoughts?: ChairsideThoughtStep[];

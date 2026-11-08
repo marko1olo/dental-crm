@@ -13,8 +13,8 @@ import {
   getCatalogItemsByMode,
   findCatalogItemById,
   inspectSpeechEngineHealth,
+  DEFAULT_SUGGESTION_CATEGORIES,
 } from "../copilotCatalogData";
-import { DEFAULT_SUGGESTION_CATEGORIES } from "../suggestions/copilotSuggestionPresets";
 
 describe("Copilot Catalog Data & SSOT Architecture", () => {
   it("размер copilotCatalogData.ts строго в Sweet Spot (280–350 строк, Мандат 8b)", () => {

@@ -14,10 +14,10 @@ import {
   type ChairsideServiceProposal,
   type ChairsideSoapProposal,
   type ChairsideAnestheticProposal,
+  type MatchedProtocolInfo,
   CLINICAL_PRESETS,
   defaultPreset,
 } from "../chairsideTypes";
-import type { MatchedProtocolInfo } from "../ChairsideClinicalInsights";
 import type { ParsedAgentResult } from "./agentApiResponseParser";
 
 export function tryParseVoiceFallback(

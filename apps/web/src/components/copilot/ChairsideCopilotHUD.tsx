@@ -295,11 +295,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       <div className={`chairside-hud-panel ${!isDrawerOpen ? "chairside-hud-panel--compact" : ""}`}>
         {/* Capsule 1-Line Bar */}
         <div className="chairside-hud-capsule" data-testid="chairside-hud-capsule">
-          <div className="chairside-hud-capsule-brand flex items-center gap-2">
-            <span className="chairside-hud-status-dot" />
-            <span className="font-semibold text-xs text-[var(--ink)]">Копилот у кресла</span>
-            <span className="chairside-hud-badge-chair">В кресле</span>
-            <span className="text-xs text-[var(--muted)]">{displayPatientName}</span>
+          <div className="chairside-hud-capsule-brand flex items-center gap-2 min-w-0 shrink-0">
+            <span className="chairside-hud-status-dot shrink-0" />
+            <span className="font-semibold text-xs text-[var(--ink)] whitespace-nowrap">Копилот у кресла</span>
+            <span className="chairside-hud-badge-chair hidden md:inline-flex">В кресле</span>
+            <span className="text-xs text-[var(--muted)] hidden lg:inline-block truncate max-w-[120px]">{displayPatientName}</span>
           </div>
 
           {/* VU-meter Audio Microphone */}
@@ -321,7 +321,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
           </button>
 
           {/* Live Action Pills */}
-          <div className="chairside-hud-live-pills" data-testid="chairside-hud-live-pills">
+          <div className="chairside-hud-live-pills hidden md:flex" data-testid="chairside-hud-live-pills">
             {toothProposal && (
               <div className="chairside-live-pill chairside-live-pill--tooth live-pill-tooth" data-testid="live-pill-tooth">
                 <span className="chairside-live-pill-text">{`Зуб ${toothProposal.toothNumber}`}: {toothProposal.stateLabel}</span>
@@ -358,7 +358,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
             <button
               type="button"
               onClick={handleApplyAllActions}
-              className="chairside-hud-btn-quick-apply btn-capsule-apply-scheme"
+              className="chairside-hud-btn-quick-apply btn-capsule-apply-scheme hidden sm:inline-flex"
               data-testid="chairside-btn-quick-apply"
             >
               <Check size={14} />
