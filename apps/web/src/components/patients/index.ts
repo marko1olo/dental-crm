@@ -5,9 +5,7 @@
  * Conforms to Mandate 8s (SSOT) and Mandate 8aq (Ban on Orphan Components).
  */
 
-export * from "./PatientCard";
 export * from "./PatientCardModal";
-export * from "./PatientDrawer";
 export * from "./PatientHistoryTab";
 export * from "./TreatmentPlansList";
 export * from "./PatientAnamnesisTab";
@@ -18,5 +16,4 @@ export * from "./family/FamilyWalletModal";
 export * from "./tabs/PatientGeneralInfoTab";
 export * from "./safetyMath";
 export * from "./patientCatalogData";
-export * from "./studioModal";
 

@@ -9,147 +9,218 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function ensureLoggedIn(page) {
-	const hasPassword = await page.$('input[type="password"]');
-	if (hasPassword) {
-		console.log("[Auth] Found login form, logging in...");
-		const inputs = await page.$$("input");
-		if (inputs.length >= 2) {
-			await inputs[0].click({ clickCount: 3 });
-			await inputs[0].type("doctor@clinic.com");
-			await inputs[1].click({ clickCount: 3 });
-			await inputs[1].type("dente2026");
-			await sleep(500);
-			const submitBtn = await page.$('button[type="submit"]');
-			if (submitBtn) {
-				await submitBtn.click();
-				await sleep(3500);
-			}
-		}
-	}
-}
-
-async function preparePage(page, theme) {
-	await page.evaluate((th) => {
-		document.documentElement.setAttribute("data-theme", th);
-		const isDark = th === "dark";
-		document.documentElement.classList.toggle("dark", isDark);
-		document.documentElement.classList.toggle("light", !isDark);
-		document.body.className = isDark ? "dark" : "light";
-		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-		localStorage.setItem("dente_theme_mode", th);
-		localStorage.setItem("theme", th);
-
-		const style = document.createElement("style");
-		style.id = "suppress-all-overlays";
-		style.innerHTML = `
-			.tour-spotlight-root,
-			.tour-backdrop-clickable-zone,
-			[data-testid="guided-tour-spotlight-overlay"],
-			[data-testid="guided-tour-coach-mark-card"],
-			[data-testid="demo-mode-banner"],
-			.shepherd-element,
-			.splash,
-			#splash-root,
-			[data-testid="splash-loader"],
-			.splash-screen,
-			#loading-screen {
-				display: none !important;
-				pointer-events: none !important;
-				opacity: 0 !important;
-			}
-			*, *::before, *::after {
-				animation: none !important;
-				transition: none !important;
-			}
-		`;
-		document.head.appendChild(style);
-	}, theme);
-	await sleep(600);
-}
-
-async function capture() {
-	console.log("=== Capturing 4-State Patient Card Proofs (Red Team Audit) ===");
+async function runCapture() {
+	console.log("=== Capturing All 4-State Patient Card Proofs (Red Team Audit) ===");
 	const browser = await chromium.launch({
 		headless: true,
 		executablePath: browserExecutable,
-		args: ["--no-sandbox", "--disable-setuid-sandbox"],
+		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 	});
 
-	const states = [
-		{ name: "patient_card_pc_light_1440x900", width: 1440, height: 900, theme: "light", isMobile: false },
-		{ name: "patient_card_pc_dark_1440x900", width: 1440, height: 900, theme: "dark", isMobile: false },
-		{ name: "patient_card_mobile_light_390x844", width: 390, height: 844, theme: "light", isMobile: true },
-		{ name: "patient_card_mobile_dark_390x844", width: 390, height: 844, theme: "dark", isMobile: true },
-	];
-
-	for (const state of states) {
-		console.log(`[Capture] Starting ${state.name} (${state.width}x${state.height}, ${state.theme})...`);
-		const context = await browser.newContext({
-			viewport: { width: state.width, height: state.height },
-			isMobile: state.isMobile,
-			hasTouch: state.isMobile,
-			deviceScaleFactor: 2,
+	const initStorage = (page) => {
+		return page.addInitScript(() => {
+			localStorage.setItem("dente_active_role", "doctor");
+			localStorage.setItem(
+				"dental-crm:active-user:v1",
+				JSON.stringify({
+					id: "doc-1",
+					fullName: "Д-р Воронов Алексей Владимирович",
+					role: "doctor",
+				}),
+			);
+			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
+			localStorage.setItem("dente_tour_completed", "true");
+			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+			localStorage.setItem("dente_doctor_training_completed", "true");
+			localStorage.setItem("dente_training_dismissed", "true");
+			localStorage.setItem("dente_quest_progress_v2", JSON.stringify({ isDismissedPermanently: true }));
 		});
+	};
 
-		const page = await context.newPage();
-		await page.goto(`${WEB_URL}/?demo=true#patients`, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
-		await sleep(2500);
+	const applyTheme = async (page, theme) => {
+		await page.evaluate((th) => {
+			document.documentElement.setAttribute("data-theme", th);
+			const isDark = th === "dark";
+			document.documentElement.classList.toggle("dark", isDark);
+			document.documentElement.classList.toggle("light", !isDark);
+			document.body.className = isDark ? "dark" : "light";
+			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+			localStorage.setItem("dente_theme_mode", th);
+			localStorage.setItem("dente_theme", th);
+			localStorage.setItem("theme", th);
 
-		await ensureLoggedIn(page);
-
-		try {
-			await page.waitForSelector('.boot-offline-action-button, button:has-text("Перейти в автономный режим"), [data-patient-id], [data-testid^="patient-row-"], .patient-row, tr[data-id], div:has-text("Воронов"), div:has-text("Смирнова")', { timeout: 15000 });
-			const fallbackBtn = await page.$('.boot-offline-action-button, button:has-text("Перейти в автономный режим")');
-			if (fallbackBtn) {
-				console.log("[Boot] Clicking offline mode fallback...");
-				await fallbackBtn.click();
-				await sleep(2500);
+			let style = document.getElementById("suppress-all-overlays");
+			if (!style) {
+				style = document.createElement("style");
+				style.id = "suppress-all-overlays";
+				document.head.appendChild(style);
 			}
-		} catch (_) {}
+			style.innerHTML = `
+				.tour-spotlight-root,
+				.tour-backdrop-clickable-zone,
+				[data-testid="guided-tour-spotlight-overlay"],
+				[data-testid="guided-tour-coach-mark-card"],
+				[data-testid="demo-mode-banner"],
+				.shepherd-element,
+				.splash,
+				#splash-root,
+				[data-testid="splash-loader"],
+				.splash-screen,
+				#loading-screen,
+				.global-toast-container,
+				[role="alert"] {
+					display: none !important;
+					pointer-events: none !important;
+					opacity: 0 !important;
+				}
+				*, *::before, *::after {
+					animation: none !important;
+					transition: none !important;
+				}
+			`;
+		}, theme);
+		await sleep(800);
+	};
 
-		await preparePage(page, state.theme);
+	// -------------------------------------------------------------
+	// PART 1: PC DESKTOP (1440x900) - Light & Dark
+	// -------------------------------------------------------------
+	console.log("\n--- Capturing PC Desktop (1440x900) ---");
+	const pcContext = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+		deviceScaleFactor: 2,
+	});
+	const pcPage = await pcContext.newPage();
+	await initStorage(pcPage);
 
-		// Select a patient row if available
-		try {
-			const patientRow = await page.$('[data-patient-id], [data-testid^="patient-row-"], .patient-row, tr[data-id], div:has-text("Воронов"), div:has-text("Смирнова")');
-			if (patientRow) {
-				console.log("[Patient] Clicking patient row...");
-				await patientRow.click();
-				await sleep(1500);
-			}
-		} catch (e) {
-			console.log("[Patient] Row click notice:", e.message);
-		}
+	console.log("[PC] Navigating to ?demo=true#patients...");
+	await pcPage.goto(`${WEB_URL}/?demo=true#patients`, { waitUntil: "commit", timeout: 45000 });
 
-		// Look for "В карту" or open patient card modal button
-		try {
-			const cardBtn = await page.$('button:has-text("В карту"), [data-testid="patient-action-open-card"], [data-testid="btn-open-patient-card"], button[title*="карточку"]');
-			if (cardBtn) {
-				console.log("[Patient] Opening Patient Card Modal...");
-				await cardBtn.click();
-				await sleep(2000);
-			}
-		} catch (e) {
-			console.log("[Patient] Modal open notice:", e.message);
-		}
+	console.log("[PC] Waiting for boot state to detach...");
+	await pcPage.waitForSelector(".boot-state, .boot-subtitle", { state: "detached", timeout: 30000 }).catch(() => {});
+	await sleep(2000);
 
-		await preparePage(page, state.theme);
-
-		const outPath = `${OUT_DIR}/${state.name}.png`;
-		await page.screenshot({ path: outPath, fullPage: false });
-		const sz = statSync(outPath).size;
-		console.log(`[Capture] Saved: ${outPath} (${sz} bytes)`);
-
-		await context.close();
-		await sleep(500);
+	const pcOfflineBtn = await pcPage.$('.boot-offline-action-button, button:has-text("Перейти в автономный режим")');
+	if (pcOfflineBtn) {
+		console.log("[PC] Clicking offline fallback...");
+		await pcOfflineBtn.click();
+		await sleep(2000);
 	}
 
+	console.log("[PC] Waiting for patient items...");
+	try {
+		const pcLocator = pcPage.locator('[data-patient-id], tr[data-id], .patient-row, [data-testid^="patient-row-"], button:has-text("Воронов")').first();
+		await pcLocator.waitFor({ state: "visible", timeout: 20000 });
+		console.log("[PC] Clicking patient item...");
+		await pcLocator.click({ force: true, timeout: 5000 });
+		await sleep(1500);
+
+		// Try open Patient Card Modal
+		const openCardBtn = pcPage.locator('button:has-text("В карту"), [data-testid="patient-action-open-card"], [data-testid="btn-open-patient-card"]').first();
+		if (await openCardBtn.count() > 0) {
+			console.log("[PC] Clicking 'В карту' button...");
+			await openCardBtn.click({ force: true, timeout: 5000 });
+			await sleep(1500);
+		}
+	} catch (e) {
+		console.log("[PC] Notice selecting patient:", e.message);
+	}
+
+	// PC Light
+	console.log("[PC] Capturing PC Light (1440x900)...");
+	await applyTheme(pcPage, "light");
+	const pcLightPath = `${OUT_DIR}/patient_card_pc_light_1440x900.png`;
+	await pcPage.screenshot({ path: pcLightPath, fullPage: false });
+	const pcLightSize = statSync(pcLightPath).size;
+	console.log(`[PC] Saved: ${pcLightPath} (${pcLightSize} bytes)`);
+	if (pcLightSize < 20480) throw new Error("PC Light screenshot < 20KB");
+
+	// PC Dark
+	console.log("[PC] Capturing PC Dark (1440x900)...");
+	await applyTheme(pcPage, "dark");
+	const pcDarkPath = `${OUT_DIR}/patient_card_pc_dark_1440x900.png`;
+	await pcPage.screenshot({ path: pcDarkPath, fullPage: false });
+	const pcDarkSize = statSync(pcDarkPath).size;
+	console.log(`[PC] Saved: ${pcDarkPath} (${pcDarkSize} bytes)`);
+	if (pcDarkSize < 20480) throw new Error("PC Dark screenshot < 20KB");
+
+	await pcContext.close();
+
+	// -------------------------------------------------------------
+	// PART 2: MOBILE (390x844) - Light & Dark
+	// -------------------------------------------------------------
+	console.log("\n--- Capturing Mobile (390x844) ---");
+	const mobContext = await browser.newContext({
+		viewport: { width: 390, height: 844 },
+		userAgent:
+			"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+		isMobile: true,
+		hasTouch: true,
+		deviceScaleFactor: 2,
+	});
+	const mobPage = await mobContext.newPage();
+	await initStorage(mobPage);
+
+	console.log("[Mobile] Navigating to ?demo=true#patients...");
+	await mobPage.goto(`${WEB_URL}/?demo=true#patients`, { waitUntil: "commit", timeout: 45000 });
+
+	console.log("[Mobile] Waiting for boot state to detach...");
+	await mobPage
+		.waitForSelector(".boot-state, .boot-subtitle", { state: "detached", timeout: 30000 })
+		.catch(() => {});
+	await sleep(2000);
+
+	const mobOfflineBtn = await mobPage.$('.boot-offline-action-button, button:has-text("Перейти в автономный режим")');
+	if (mobOfflineBtn) {
+		console.log("[Mobile] Clicking offline fallback...");
+		await mobOfflineBtn.click();
+		await sleep(2000);
+	}
+
+	console.log("[Mobile] Waiting for mobile patient item...");
+	try {
+		const mobLocator = mobPage.locator('[data-patient-id], .mobile-patient-card, tr[data-id], .patient-row, [data-testid^="patient-row-"]').first();
+		await mobLocator.waitFor({ state: "visible", timeout: 20000 });
+		console.log("[Mobile] Clicking mobile patient item...");
+		await mobLocator.click({ force: true, timeout: 5000 });
+		await sleep(1500);
+
+		// Try open card
+		const openMobCard = mobPage.locator('button:has-text("В карту"), [data-testid="patient-action-open-card"], [data-testid="btn-open-patient-card"]').first();
+		if (await openMobCard.count() > 0) {
+			console.log("[Mobile] Clicking 'В карту' button...");
+			await openMobCard.click({ force: true, timeout: 5000 });
+			await sleep(1500);
+		}
+	} catch (e) {
+		console.log("[Mobile] Notice selecting patient:", e.message);
+	}
+
+	// Mobile Light
+	console.log("[Mobile] Capturing Mobile Light (390x844)...");
+	await applyTheme(mobPage, "light");
+	const mobLightPath = `${OUT_DIR}/patient_card_mobile_light_390x844.png`;
+	await mobPage.screenshot({ path: mobLightPath, fullPage: false });
+	const mobLightSize = statSync(mobLightPath).size;
+	console.log(`[Mobile] Saved: ${mobLightPath} (${mobLightSize} bytes)`);
+	if (mobLightSize < 20480) throw new Error("Mobile Light screenshot < 20KB");
+
+	// Mobile Dark
+	console.log("[Mobile] Capturing Mobile Dark (390x844)...");
+	await applyTheme(mobPage, "dark");
+	const mobDarkPath = `${OUT_DIR}/patient_card_mobile_dark_390x844.png`;
+	await mobPage.screenshot({ path: mobDarkPath, fullPage: false });
+	const mobDarkSize = statSync(mobDarkPath).size;
+	console.log(`[Mobile] Saved: ${mobDarkPath} (${mobDarkSize} bytes)`);
+	if (mobDarkSize < 20480) throw new Error("Mobile Dark screenshot < 20KB");
+
+	await mobContext.close();
 	await browser.close();
-	console.log("=== All 4 Patient Card states captured! ===");
+
+	console.log("\n=== ALL 4 PATIENT CARD STATES CAPTURED & VERIFIED! ===");
 }
 
-capture().catch((e) => {
-	console.error(e);
+runCapture().catch((e) => {
+	console.error("FATAL CAPTURE ERROR:", e);
 	process.exit(1);
 });

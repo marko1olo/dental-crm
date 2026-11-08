@@ -12,7 +12,7 @@ describe("Document Legal Audit and Issue Modals: Static Compliance", () => {
 	const auditModalPath = path.resolve(__dirname, "../tabs/DocumentAuditFactsModal.tsx");
 	const issueModalPath = path.resolve(__dirname, "../tabs/DocumentIssueConfirmationModal.tsx");
 	const patientDocsTabPath = path.resolve(__dirname, "../../patients/tabs/PatientDocumentsTab.tsx");
-	const patientCardPath = path.resolve(__dirname, "../../patients/PatientCard.tsx");
+	const patientCardPath = path.resolve(__dirname, "../../patients/PatientCardModal.tsx");
 
 	const auditFactsDir = path.resolve(__dirname, "../tabs/auditFacts");
 	const auditFactsExtra = fs.existsSync(auditFactsDir)
@@ -25,14 +25,14 @@ describe("Document Legal Audit and Issue Modals: Static Compliance", () => {
 		? fs.readdirSync(issueDir).map((f) => fs.readFileSync(path.join(issueDir, f), "utf8")).join("\n")
 		: "";
 	const issueModalSource = fs.readFileSync(issueModalPath, "utf8") + "\n" + issueExtra;
-	const patientCardModulesDir = path.resolve(__dirname, "../../patients/patientCardModules");
+	const patientCardModalModulesDir = path.resolve(__dirname, "../../patients/patientCardModalModules");
 	const patientCardSource =
 		fs.readFileSync(patientCardPath, "utf8") +
 		"\n" +
-		(fs.existsSync(patientCardModulesDir)
+		(fs.existsSync(patientCardModalModulesDir)
 			? fs
-					.readdirSync(patientCardModulesDir)
-					.map((f) => fs.readFileSync(path.join(patientCardModulesDir, f), "utf8"))
+					.readdirSync(patientCardModalModulesDir)
+					.map((f) => fs.readFileSync(path.join(patientCardModalModulesDir, f), "utf8"))
 					.join("\n")
 			: "");
 
@@ -67,7 +67,7 @@ describe("Document Legal Audit and Issue Modals: Static Compliance", () => {
 		assert.ok(issueModalSource.includes("setDocumentIssueIdentityChecked(true)"));
 	});
 
-	it("3. PatientCard mounts PatientDocumentsTab under activeTab === 'documents'", () => {
+	it("3. PatientCardModal mounts PatientDocumentsTab under activeTab === 'documents'", () => {
 		assert.ok(patientCardSource.includes("<PatientDocumentsTab"));
 		assert.ok(patientCardSource.includes('activeTab === "documents"'));
 		assert.ok(!patientCardSource.includes("Печать выписки из амбулаторной карты</span>\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>"));

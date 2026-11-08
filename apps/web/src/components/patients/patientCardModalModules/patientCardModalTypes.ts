@@ -25,18 +25,18 @@ export const DEMO_SHOWCASE_MODAL_SAFETY: PatientClinicalSafetyProfile = {
 
 export const PATIENT_LEGAL_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
 export const CLINICAL_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
+export const DENTE_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
 export type LegalRepresentativeType = RepresentativeRelationshipType;
 export type LegalRepresentativeTypeMeta = RepresentativeRelationshipMeta;
+export type DenteRepresentativeType = RepresentativeRelationshipType;
+export type DenteRepresentativeTypeMeta = RepresentativeRelationshipMeta;
 
 export {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	PATIENT_LEGAL_REPRESENTATIVE_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
-	type RepresentativeRelationshipType as StomxRepresentativeType,
-	type RepresentativeRelationshipMeta as StomxRepresentativeTypeMeta,
 };
 
 export function getRepresentativeLegalStatus(type: string | null | undefined): {

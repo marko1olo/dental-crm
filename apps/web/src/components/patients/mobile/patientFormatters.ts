@@ -1,3 +1,5 @@
+import { isNegativeAllergyStatement } from "../safetyMath";
+
 export function calculateAge(birthDateStr?: string | null): number | null {
 	if (!birthDateStr) return null;
 	const birth = new Date(birthDateStr);
@@ -22,9 +24,14 @@ export function formatAgeRu(age: number): string {
 
 export function extractAllergy(notes?: string | null): string | null {
 	if (!notes) return null;
+	if (isNegativeAllergyStatement(notes)) return null;
 	const match = notes.match(/(?:аллерги[яиею]|аллергическ\w*)\s*(?:на|:)?\s*([^.,;!\n]+)/i);
 	if (match && match[1]) {
-		let allergen = match[1].trim().replace(/^(на|к)\s+/i, "").trim();
+		const rawVal = match[1].trim();
+		if (/отрицает|нет|не отягощ|без осложнен|интактн/i.test(rawVal)) {
+			return null;
+		}
+		let allergen = rawVal.replace(/^(на|к)\s+/i, "").trim();
 		if (allergen.length > 32) {
 			allergen = `${allergen.slice(0, 30).trim()}…`;
 		}
@@ -32,7 +39,7 @@ export function extractAllergy(notes?: string | null): string | null {
 			return allergen;
 		}
 	}
-	return /аллерги/i.test(notes) ? "Аллергоанамнез" : null;
+	return null;
 }
 
 export function extractSomaticNote(notes?: string | null): string | null {

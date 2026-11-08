@@ -30,7 +30,12 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		hasMepivacaineAllergy: raw.includes("мепивакаин") || raw.includes("скандонест"),
 		hasEsterAnestheticsAllergy: raw.includes("новокаин") || raw.includes("прокаин") || raw.includes("анестезин"),
 		hasSulfiteAllergy: raw.includes("сульфит") || raw.includes("метабисульфит"),
-		hasPacemakerExs: raw.includes("кардиостимулятор") || /(^|[^а-яёa-z0-9])экс([^а-яёa-z0-9]|$)/i.test(raw) || raw.includes("пейсмейкер"),
+		hasPacemakerExs:
+			(raw.includes("кардиостимулятор") ||
+				raw.includes("электрокардиостимулятор") ||
+				/(^|[\s,.;])экс([\s,.;]|$)/i.test(raw) ||
+				raw.includes("пейсмейкер")) &&
+			!/(?:нет|отрицает|без|не\s+установлен)\s*(?:кардиостимулятор|экс|пейсмейкер)/i.test(raw),
 		takesBisphosphonates: raw.includes("бисфосфонат") || raw.includes("акласта") || raw.includes("зомета") || raw.includes("бонвива") || raw.includes("пролиа") || raw.includes("mronj") || raw.includes("бонч"),
 		takesAnticoagulants: raw.includes("варфарин") || raw.includes("ксарелто") || raw.includes("эликвис") || raw.includes("прадакса") || raw.includes("плавикс") || raw.includes("тромбо асс") || raw.includes("антикоагулянт"),
 		pregnancyTrimester,

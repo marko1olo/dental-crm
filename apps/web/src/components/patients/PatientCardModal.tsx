@@ -44,9 +44,7 @@ import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { PatientDocumentsTab } from "./tabs/PatientDocumentsTab";
 import { PatientHistoryTab, DEFAULT_CLINICAL_VISITS } from "./PatientHistoryTab";
-import { PatientAnamnesisTab } from "./PatientAnamnesisTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
-import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
 import { usePatientCardModalState } from "./patientCardModalModules/usePatientCardModalState";
 import { usePatientCreationForm } from "./patientCreation/usePatientCreationForm";
@@ -58,14 +56,14 @@ import {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	PATIENT_LEGAL_REPRESENTATIVE_CATALOG,
-	STOMX_REPRESENTATIVE_CATALOG,
+	DENTE_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
 	type LegalRepresentativeType,
 	type LegalRepresentativeTypeMeta,
-	type StomxRepresentativeType,
-	type StomxRepresentativeTypeMeta,
+	type DenteRepresentativeType,
+	type DenteRepresentativeTypeMeta,
 	type PatientCardTab,
 	type PatientModalMode,
 	type PatientCardModalProps,
@@ -78,14 +76,14 @@ export {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	PATIENT_LEGAL_REPRESENTATIVE_CATALOG,
-	STOMX_REPRESENTATIVE_CATALOG,
+	DENTE_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
 	type LegalRepresentativeType,
 	type LegalRepresentativeTypeMeta,
-	type StomxRepresentativeType,
-	type StomxRepresentativeTypeMeta,
+	type DenteRepresentativeType,
+	type DenteRepresentativeTypeMeta,
 	type PatientCardTab,
 	type PatientModalMode,
 	type PatientCardModalProps,
@@ -444,15 +442,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								onSave={(newProfile) => { setSafetyProfile(newProfile); setIsDirty(true); }}
 								onApplyNorm={(normProfile) => { setSafetyProfile(normProfile); handleApplyNorm(); }}
 							/>
-							<div className="hidden">
-								<PatientAnamnesisTab
-									patientId={patientData.id}
-									patientName={patientData.fullName}
-									initialProfile={safetyProfile}
-									onSaveProfile={(s) => { setSafetyProfile(s); setIsDirty(true); }}
-									onApplySomaticNorm={handleApplyNorm}
-								/>
-							</div>
 						</div>
 					) : activeTab === "visits" ? (
 						<PatientHistoryTab
@@ -471,13 +460,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								insurancePolicyNumber={patientData.omsPolicyNumber || undefined}
 								onUpdateInsurancePolicy={(p) => handleUpdatePatientField("omsPolicyNumber", p)}
 							/>
-							<div className="hidden">
-								<PatientFamilyCard
-									patientId={patientData.id || ""}
-									patientName={patientData.fullName || ""}
-									balanceRub={Number(patientData.patientBalanceRub ?? 0) || 0}
-								/>
-							</div>
 						</div>
 					) : (
 						<PatientGeneralInfoTab

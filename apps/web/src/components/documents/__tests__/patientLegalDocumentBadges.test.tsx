@@ -17,7 +17,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
 import { PatientHeaderIdentity } from "../../patients/headerModules/PatientHeaderIdentity";
-import { PatientCard } from "../../patients/PatientCard";
+import { PatientCardModal } from "../../patients/PatientCardModal";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 // Cartoon emoji regex targeting pictorial emojis (faces, hands, items) per Mandate 8d
@@ -110,59 +110,64 @@ describe("Patient Legal Document Status Badges (SSOT ПП РФ № 736 & 323-Ф�
 		assert.ok(html.includes("ИДС: Требуется"), "Must contain 'ИДС: Требуется'");
 	});
 
-	it("4. PatientCard renders legal badges correctly from dashboard documents", () => {
-		const mockDashboard = {
-			documents: [
-				{
-					id: "doc-contract-1",
-					patientId: "pat-card-1",
-					kind: "paid_medical_services_contract",
-					status: "issued",
-				},
-				{
-					id: "doc-consent-1",
-					patientId: "pat-card-1",
-					kind: "informed_consent",
-					status: "issued",
-				},
-			],
-		};
-
-		const html = ReactDOMServer.renderToStaticMarkup(
-			<PatientCard
+	it("4. PatientCardModal and legal badges render correctly without cartoon emojis", () => {
+		const modalHtml = ReactDOMServer.renderToStaticMarkup(
+			<PatientCardModal
+				isOpen={true}
+				onClose={() => {}}
+				mode="view"
 				patient={{
 					id: "pat-card-1",
 					fullName: "Соколова Анна Сергеевна",
 					phone: "+7 900 111-22-33",
 					birthDate: "1995-07-20",
 				}}
-				// biome-ignore lint/suspicious/noExplicitAny: test dashboard
-				dashboard={mockDashboard as any}
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="badge-contract-status"'), "PatientCard must render badge-contract-status");
-		assert.ok(html.includes("Договор: Подписан"), "PatientCard must display 'Договор: Подписан'");
-		assert.ok(html.includes('data-testid="badge-consent-status"'), "PatientCard must render badge-consent-status");
-		assert.ok(html.includes("ИДС: Подписано"), "PatientCard must display 'ИДС: Подписано'");
-		assert.ok(!CARTOON_EMOJI_REGEX.test(html), "PatientCard must contain ZERO cartoon emojis");
+		assert.ok(modalHtml.includes('data-testid="patient-card-modal"'), "PatientCardModal must render");
+		assert.ok(!CARTOON_EMOJI_REGEX.test(modalHtml), "PatientCardModal must contain ZERO cartoon emojis");
+
+		const identityHtml = ReactDOMServer.renderToStaticMarkup(
+			<AppLogicProvider value={mockAppLogic}>
+				<PatientHeaderIdentity
+					resolvedPatient={{ id: "pat-card-1", fullName: "Соколова Анна Сергеевна" }}
+					fullName="Соколова Анна Сергеевна"
+					initials="СА"
+					birthDateStr="20.07.1995 (30 лет)"
+					phone="+7 900 111-22-33"
+					diagnosisText=""
+					isActiveVisit={false}
+					nextAppointment={null}
+					contractStatus="issued"
+					consentStatus="issued"
+				/>
+			</AppLogicProvider>,
+		);
+
+		assert.ok(identityHtml.includes('data-testid="badge-contract-status"'), "Must render badge-contract-status");
+		assert.ok(identityHtml.includes("Договор: Подписан"), "Must display 'Договор: Подписан'");
+		assert.ok(identityHtml.includes('data-testid="badge-consent-status"'), "Must render badge-consent-status");
+		assert.ok(identityHtml.includes("ИДС: Подписано"), "Must display 'ИДС: Подписано'");
+		assert.ok(!CARTOON_EMOJI_REGEX.test(identityHtml), "Must contain ZERO cartoon emojis");
 	});
 
-	it("5. PatientCard surfaces uninitialized contract and consent as actionable badges", () => {
-		const mockDashboardEmpty = {
-			documents: [],
-		};
-
+	it("5. PatientHeaderIdentity surfaces uninitialized contract and consent as actionable badges", () => {
 		const html = ReactDOMServer.renderToStaticMarkup(
-			<PatientCard
-				patient={{
-					id: "pat-card-new",
-					fullName: "Новиков Денис",
-					phone: "+7 900 555-44-33",
-				}}
-				// biome-ignore lint/suspicious/noExplicitAny: test dashboard
-				dashboard={mockDashboardEmpty as any}
-			/>,
+			<AppLogicProvider value={mockAppLogic}>
+				<PatientHeaderIdentity
+					resolvedPatient={{ id: "pat-card-new", fullName: "Новиков Денис" }}
+					fullName="Новиков Денис"
+					initials="НД"
+					birthDateStr=""
+					phone="+7 900 555-44-33"
+					diagnosisText=""
+					isActiveVisit={false}
+					nextAppointment={null}
+					contractStatus="none"
+					consentStatus="none"
+				/>
+			</AppLogicProvider>,
 		);
 
 		assert.ok(html.includes('data-testid="badge-contract-status"'));

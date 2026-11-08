@@ -3,6 +3,7 @@
  */
 
 import type { ImagingStudy } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	DEFAULT_VISIOGRAPHY_VISITS,
 	matchesDatePreset,
@@ -13,25 +14,34 @@ import {
 export function buildVisiographyVisitsList(
 	studies?: readonly ImagingStudy[] | undefined,
 ): readonly ClinicalVisiographyVisit[] {
-	if (!studies || studies.length === 0) return DEFAULT_VISIOGRAPHY_VISITS;
+	if (!studies || studies.length === 0) {
+		return isDemoShowcaseMode() ? DEFAULT_VISIOGRAPHY_VISITS : [];
+	}
 	const groups = new Map<string, ImagingStudy[]>();
 	for (const s of studies) {
 		const d = s.studyDate || s.capturedAt?.slice(0, 10) || "2026-10-03";
 		(groups.get(d) || groups.set(d, []).get(d)!).push(s);
 	}
-	return Array.from(groups.entries()).map(([d, stList]) => ({
-		id: `visit-${d}`,
-		dateStr: d,
-		displayDate: d.split("-").reverse().join("."),
-		relativeLabel:
-			d === "2026-10-03" ? "Сегодня (Текущий приём)" : d === "2026-10-02" ? "Вчера" : "Архивный визит",
-		doctorName: stList[0]?.patientFullName ? "Лечащий врач" : "Д-р Иванов А.С.",
-		specialty: "Стоматолог-терапевт",
-		teeth: Array.from(new Set(stList.map((s) => s.toothCode).filter(Boolean) as string[])),
-		shotCount: stList.length,
-		clinicalNote: stList[0]?.title || "Прицельная визиография RVG",
-		previewThumbnails: stList.map((s) => s.previewUrl).filter(Boolean) as string[],
-	})).sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+	return Array.from(groups.entries()).map(([d, stList]) => {
+		const leadStudy = stList[0];
+		const resolvedDoctor =
+			leadStudy?.doctorName ||
+			leadStudy?.prescribedByName ||
+			(leadStudy?.patientFullName ? "Лечащий врач" : "Врач-рентгенолог");
+		return {
+			id: `visit-${d}`,
+			dateStr: d,
+			displayDate: d.split("-").reverse().join("."),
+			relativeLabel:
+				d === "2026-10-03" ? "Сегодня (Текущий приём)" : d === "2026-10-02" ? "Вчера" : "Архивный визит",
+			doctorName: resolvedDoctor,
+			specialty: "Стоматолог-терапевт",
+			teeth: Array.from(new Set(stList.map((s) => s.toothCode).filter(Boolean) as string[])),
+			shotCount: stList.length,
+			clinicalNote: leadStudy?.title || "Прицельная визиография RVG",
+			previewThumbnails: stList.map((s) => s.previewUrl).filter(Boolean) as string[],
+		};
+	}).sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 }
 
 export function filterVisiographyVisits(
