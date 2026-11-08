@@ -12,15 +12,11 @@ import { safeLocalStorageGetItem, safeLocalStorageSetItem, readDenteClinicToken,
 import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode";
 import { CLINICAL_QUICK_PRESETS, CRM_FASTIFY_TOOLS_REGISTRY } from "./copilotCatalogData";
 import { useCopilotStore } from "../../store/copilotStore";
-import { CopilotSettingsModal } from "./CopilotSettingsModal";
-import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
-import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
-import { CopilotMemoryTab } from "./CopilotMemoryTab";
-import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
-import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest";
+import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
+import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab";
+import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest";
 import { handleClinicalSpeechOrText } from "./copilotDictationHandler";
-import { ActiveDiffCard } from "./cards/ActiveDiffCard";
-import { CopilotToolLogsView } from "./cards/CopilotToolLogsView";
+import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
 
@@ -62,16 +58,28 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
   const threadKey = activeThreadId || "default-thread";
 
-  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => {
-    if (initialMessages?.length) return parseChatMsgs(initialMessages);
-    const saved = threadMessages[threadKey];
-    return (saved && saved.length > 0) ? saved : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : []);
-  });
+  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : ((threadMessages[threadKey]?.length ? threadMessages[threadKey] : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : [])))));
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
+  const hydrateSession = useCallback(async (sId: string) => {
+    try {
+      const tok = readDenteClinicToken() || readDenteStaffToken() || "";
+      const res = await fetch(`/api/v1/copilot/sessions/${encodeURIComponent(sId)}/messages`, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} });
+      if (res.ok) {
+        const b = await res.json(), raw = Array.isArray(b?.data) ? b.data : Array.isArray(b?.messages) ? b.messages : null;
+        if (raw?.length) {
+          const p = parseChatMsgs(raw.map((m: any) => ({ id: m.id, role: m.role, content: m.content || m.text, timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined })));
+          setMessages(p); saveThreadMessages(sId, p); return true;
+        }
+      }
+    } catch { /* офлайн */ }
+    return false;
+  }, [saveThreadMessages]);
   useEffect(() => {
     const saved = threadMessages[threadKey];
-    if (saved && saved.length > 0) setMessages(saved); else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]);
-  }, [threadKey, patientId]);
+    if (saved && saved.length > 0) setMessages(saved);
+    else if (threadKey && threadKey !== "default-thread") void hydrateSession(threadKey).then((ok) => { if (!ok && !isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]); });
+    else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]);
+  }, [threadKey, patientId, hydrateSession]);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
   useEffect(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); }, [messages, threadKey, saveThreadMessages]);
   const handleClose = useCallback(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); onClose(); }, [messages, threadKey, saveThreadMessages, onClose]);
@@ -432,7 +440,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         <CopilotHistoryDrawer isOpen={isHistoryOpen} onClose={() => setHistoryOpen(false)} onSelectThread={(tId) => {
           selectThread(tId); const saved = threadMessages[tId];
           if (saved && saved.length > 0) setMessages(saved);
-          else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); }
+          else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); void hydrateSession(tId); }
           setHistoryOpen(false); setActiveTab("dialog"); }} />
       </aside>
     </div>

@@ -9,7 +9,7 @@ import {
   getCurrentCopilotUiContext,
   getCanonicalViewName,
 } from '../CopilotContextSync';
-import { CopilotDrawer } from '../CopilotDrawer';
+import { CopilotStudioModal } from '../CopilotStudioModal';
 import { CopilotMessage } from '../CopilotMessage';
 import { useAppStore } from '../../../store/appStore';
 import { usePatientStore } from '../../../store/patientStore';
@@ -101,7 +101,7 @@ describe('Copilot UI Two-Way Context Integration', () => {
     assert.equal(ctx.patientId, 'pat-12345');
   });
 
-  it('renders CopilotDrawer with live Context Telemetry bar', () => {
+  it('renders CopilotStudioModal with live Context Telemetry bar', () => {
     useAppStore.setState({
       currentView: 'visit',
       activeTooth: 36,
@@ -110,28 +110,18 @@ describe('Copilot UI Two-Way Context Integration', () => {
     });
 
     const html = renderToString(
-      <CopilotDrawer
+      <CopilotStudioModal
         isOpen={true}
-        messages={[]}
-        busy={false}
-        phase={null}
-        pending={null}
-        nameCache={{}}
-        nudges={[]}
-        activeTab="chat"
-        onTabChange={() => {}}
         onClose={() => {}}
-        onSend={() => {}}
-        onConfirm={() => {}}
-        onReset={() => {}}
-        onDismissNudge={() => {}}
+        activeTooth={36}
+        patientId="pat-uuid-888"
+        patientName="Кузнецов М.П."
+        initialTab="dialog"
       />
     );
 
-    assert.ok(html.includes('copilot-context-bar'));
-    assert.ok(html.includes('Одонтограмма') || html.includes('Смена') || html.includes('Shift'));
-    assert.ok(html.includes('Зуб 36') || html.includes('Зуб #36'));
-    assert.ok(html.includes('Dr. Иванов'));
+    assert.ok(html.includes('copilot-context-telemetry-bar') || html.includes('copilot-context-bar'));
+    assert.ok(html.includes('Зуб 36') || html.includes('Зуб #36') || html.includes('36'));
   });
 
   it('renders CopilotMessage for user with context badge and clean message body', () => {

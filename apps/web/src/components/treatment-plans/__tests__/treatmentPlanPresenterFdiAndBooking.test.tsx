@@ -7,53 +7,41 @@ import React from "react";
 import { describe, it } from "node:test";
 import { expect } from "./helpers/signatureTestHelpers";
 import { renderToString } from "react-dom/server";
-import { TreatmentPlanPresenterDentalFormula } from "../presenterModules/TreatmentPlanPresenterDentalFormula";
-import { TreatmentPlanPresenterComparisonTab } from "../TreatmentPlanPresenterComparisonTab";
+import { TreatmentPlanStagesList } from "../presenterModules/TreatmentPlanStagesList";
+import { TreatmentPlanAcceptanceFooter } from "../presenterModules/TreatmentPlanAcceptanceFooter";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { sampleTeethSsot, sampleTiersSsot, standardTierSsot } from "./helpers/ssotTestHelpers";
 
 describe("Treatment Plan Presenter — FDI Formula & 1-Click Handoff", () => {
-	it("renders both upper and lower arches with correct FDI numbers and stage badges", () => {
-		const html = renderToString(<TreatmentPlanPresenterDentalFormula tier={standardTierSsot} teeth={sampleTeethSsot} />);
-		expect(html).toContain('data-testid="presenter-fdi-tooth-16"');
-		expect(html).toContain('data-testid="presenter-fdi-tooth-11"');
-		expect(html).toContain('data-testid="presenter-fdi-tooth-24"');
-		expect(html).toContain('data-testid="presenter-fdi-tooth-36"');
-		expect(html).toContain('data-testid="presenter-fdi-tooth-46"');
-		expect(html).toContain("В тарифе задействовано:");
-		expect(html).toContain("Э1");
+	it("renders clinical stages and FDI formula header with correct badges", () => {
+		const html = renderToString(
+			<TreatmentPlanStagesList
+				activeTier={standardTierSsot as any}
+				onToggleStage={() => {}}
+				showMicroConsumables={false}
+			/>
+		);
+		expect(html).toContain('data-testid="treatment-plan-fdi-formula"');
+		expect(html).toContain("Зубная формула плана:");
+		expect(html).toContain("FDI 11–48");
+		expect(html).toContain('data-testid="stages-accordion-section"');
+		expect(html).toContain("Клинические этапы плана");
 	});
 
-	it("renders 1-click stage booking button and lab order button", () => {
+	it("renders 1-click stage payment and acceptance footer actions", () => {
 		const html = renderToString(
-			<TreatmentPlanPresenterComparisonTab
-				allTiers={sampleTiersSsot}
+			<TreatmentPlanAcceptanceFooter
+				activeTier={standardTierSsot as any}
 				selectedTierId="standard"
-				onSelectTier={() => {}}
 				getTierLetter={(id) => `Тариф ${id}`}
-				formatRubles={(num) => `${num || 0} ₽`}
-				expandedStages={{ 1: true, 2: true, 3: true }}
-				onToggleStage={() => {}}
-				onToggleAllStages={() => {}}
-				showMicroConsumables={false}
-				onUpdateItemPrice={() => {}}
-				onConfirmPatientChoice={() => {}}
-				isChoiceConfirmed={false}
-				confirmedTierId={null}
-				teeth={sampleTeethSsot}
-				planId="PLAN-TEST-42"
-				patientId="PAT-101"
-				patientName="Кузнецов Петр"
+				onConfirmChoice={() => {}}
 			/>
 		);
 
-		expect(html).toContain('data-testid="stage-book-btn-1"');
-		expect(html).toContain("Записать 1-й этап");
-		expect(html).toContain('data-testid="stage-book-btn-2"');
-		expect(html).toContain('data-testid="stage-book-btn-3"');
-		expect(html).toContain('data-testid="stage-lab-order-btn-3"');
-		expect(html).toContain("Заказ ЗТЛ");
+		expect(html).toContain('data-testid="treatment-plan-acceptance-footer"');
+		expect(html).toContain('data-testid="confirm-patient-choice-btn"');
+		expect(html).toContain("Сумма к оплате:");
 	});
 
 	it("dispatches stage booking payload correctly to scheduleStore and uiSurfaceStore", () => {

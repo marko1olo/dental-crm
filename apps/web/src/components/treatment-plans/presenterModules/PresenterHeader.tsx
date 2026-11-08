@@ -13,6 +13,7 @@ export type PresenterModalTab = "comparison" | "stages" | "print" | "beforeAfter
 export interface PresenterHeaderProps {
 	readonly patientName: string;
 	readonly doctorFullName: string;
+	readonly clinicName?: string;
 	readonly activeTab: PresenterModalTab;
 	readonly onTabChange: (tab: PresenterModalTab) => void;
 	readonly isFullscreen: boolean;
@@ -151,6 +152,18 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 					</button>
 					<button
 						type="button"
+						onClick={() => onTabChange("stages")}
+						className={`min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+							activeTab === "stages"
+								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
+								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)]"
+						}`}
+						data-testid="tab-stages-selector"
+					>
+						Этапы лечения
+					</button>
+					<button
+						type="button"
 						onClick={() => onTabChange("print")}
 						className={`min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
 							activeTab === "print"
@@ -278,5 +291,8 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 		</header>
 	);
 };
+
+export const TreatmentPlanPresenterHeader = PresenterHeader;
+export type TreatmentPlanPresenterHeaderProps = PresenterHeaderProps;
 
 export default PresenterHeader;

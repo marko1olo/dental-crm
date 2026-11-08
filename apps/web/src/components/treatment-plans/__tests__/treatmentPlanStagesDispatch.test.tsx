@@ -3,26 +3,25 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { RoadmapStageCard } from "../roadmap/RoadmapStageCard";
-import { TreatmentPlanPresenterStagesTab } from "../TreatmentPlanPresenterStagesTab";
+import { TreatmentPlanStagesList } from "../presenterModules/TreatmentPlanStagesList";
 import { sampleRoadmapStage, sampleTier } from "./helpers/stagesDispatchAndPepTestHelpers";
 
 describe("TreatmentPlanStages — 1-Click Dispatch Actions", () => {
-	it("renders 1-click stage transfer buttons to visit and invoice in TreatmentPlanPresenterStagesTab", () => {
+	it("renders 1-click stage payment and work-order buttons in TreatmentPlanStagesList", () => {
 		const html = renderToString(
-			<TreatmentPlanPresenterStagesTab
-				selectedTier={sampleTier}
-				selectedTierId="standard"
-				allTiers={[sampleTier]}
-				onSelectTier={() => {}}
+			<TreatmentPlanStagesList
+				activeTier={sampleTier as any}
+				onToggleStage={() => {}}
+				onPayStage={() => {}}
+				onWorkOrder={() => {}}
 				showMicroConsumables={false}
-				onUpdateItemPrice={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="stage-send-to-visit-btn-1"'), "Must contain send to visit button");
-		assert.ok(html.includes("В приём"), "Must have text 'В приём'");
-		assert.ok(html.includes('data-testid="stage-send-to-invoice-btn-1"'), "Must contain send to invoice button");
-		assert.ok(html.includes("В счёт"), "Must have text 'В счёт'");
+		assert.ok(html.includes("presenter-pay-stage-btn-"), "Must contain pay stage button");
+		assert.ok(html.includes("Оплатить этап"), "Must have text 'Оплатить этап'");
+		assert.ok(html.includes("presenter-work-order-btn-"), "Must contain work order button");
+		assert.ok(html.includes("В заказ-наряд"), "Must have text 'В заказ-наряд'");
 	});
 
 	it("renders 1-click stage transfer buttons to visit and invoice in RoadmapStageCard", () => {

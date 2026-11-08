@@ -27,7 +27,8 @@ import {
 import { PresenterDoctorDiscountBar } from "./presenterModules/PresenterDoctorDiscountBar";
 import { Presenter3TierGrid } from "./presenterModules/Presenter3TierGrid";
 import { PresenterStagesSection } from "./presenterModules/PresenterStagesSection";
-import { CashRegisterCheckoutModal } from "../billing/CashRegisterCheckoutModal";
+import { TreatmentPlanAcceptanceFooter } from "./presenterModules/TreatmentPlanAcceptanceFooter";
+import { CashRegisterCheckoutModal } from "../cashbox/CashRegisterCheckoutModal";
 import { BeforeAfterSplitSlider } from "../photography/BeforeAfterSplitSlider";
 
 if (typeof window !== "undefined") {
@@ -70,14 +71,16 @@ export interface TreatmentPlanPresenterModalProps {
 
 export function getTierLetter(tierId: TreatmentPlanTierId): string {
 	if (tierId === "economy") return "Вариант А: Эконом";
-	if (tierId === "standard" || tierId === "optimum") return "Вариант Б: Оптимум";
-	return "Вариант В: Премиум";
+	if (tierId === "standard") return "Вариант Б: Оптимум";
+	if (tierId === "optimum" || tierId === "premium") return "Вариант В: Премиум";
+	return "Вариант Б: Оптимум";
 }
 
 export function getTierShortTitle(tierId: TreatmentPlanTierId): string {
 	if (tierId === "economy") return "Эконом";
-	if (tierId === "standard" || tierId === "optimum") return "Оптимум";
-	return "Премиум";
+	if (tierId === "standard") return "Оптимум";
+	if (tierId === "optimum" || tierId === "premium") return "Премиум";
+	return "Оптимум";
 }
 
 export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalProps> = ({
@@ -117,6 +120,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 				...tier,
 				totalRub: discountedRub,
 				totalKopecks: Number(BigInt(discountedRub) * 100n),
+				amountKopecks: BigInt(discountedRub) * 100n,
 				stages: tier.stages.map((stage): TreatmentPlanStage => {
 					const sRub = Math.round(stage.totalRub * multiplier);
 					return {
@@ -309,6 +313,17 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						</div>
 					)}
 
+					{activeTab === "stages" && (
+						<div className="space-y-6" data-testid="presenter-stages-tab-content">
+							<PresenterStagesSection
+								activeTier={activeTier}
+								expandedStageIndex={expandedStageIndex}
+								onToggleStage={(idx) => setExpandedStageIndex((prev) => (prev === idx ? null : idx))}
+								onPayStageClick={handleStagePayment}
+							/>
+						</div>
+					)}
+
 					{activeTab === "print" && (
 						<div className="space-y-4 p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)]">
 							<h3 className="text-base font-bold text-[var(--ink)] m-0">Сводный расчет для договора</h3>
@@ -343,69 +358,27 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					)}
 				</main>
 
-				{/* 3. ПОДВАЛ ПРЕЗЕНТАЦИИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA) */}
-				<footer className="treatment-presenter-footer sticky bottom-0 z-50 flex items-center justify-between flex-wrap gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-3.5 pb-[max(12px,env(safe-area-inset-bottom))] bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shrink-0">
-					<div className="treatment-footer-summary flex flex-col min-w-0">
-						<span className="treatment-footer-label text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">
-							Выбранный вариант:
-						</span>
-						<span className="treatment-footer-amount text-sm sm:text-lg font-black text-[var(--ink)] truncate">
-							«{activeTier?.title || "План"}» — {formatRubles(activeTier?.totalRub || 0)}
-						</span>
-					</div>
-
-					<div className="treatment-footer-actions flex items-center gap-2 w-full sm:w-auto">
-						<div className="treatment-footer-secondary-actions flex items-center gap-2 flex-1 sm:flex-initial">
-							<button
-								type="button"
-								onClick={() => typeof window !== "undefined" && window.print()}
-								className="btn-treatment-action secondary-button dente-btn dente-btn-secondary min-h-[44px] flex-1 px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-								data-testid="print-contract-btn"
-							>
-								<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
-								<span className="hidden sm:inline">Печать сметы плана</span>
-								<span className="sm:hidden">Печать</span>
-							</button>
-
-							<button
-								type="button"
-								onClick={handleSendToMessenger}
-								className="btn-treatment-action secondary-button dente-btn dente-btn-secondary min-h-[44px] flex-1 px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-								data-testid="send-to-messenger-btn"
-								title="Отправить смету пациенту (WhatsApp / Telegram / SMS)"
-							>
-								<Send className="w-4 h-4 text-[var(--muted)] shrink-0" />
-								<span className="hidden sm:inline">В мессенджер</span>
-								<span className="sm:hidden">Мессенджер</span>
-							</button>
-
-							{onApproveAndSign && (
-								<button
-									type="button"
-									onClick={() => activeTier && onApproveAndSign(activeTier)}
-									className="btn-treatment-action secondary-button dente-btn dente-btn-secondary min-h-[44px] flex-1 px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-									data-testid="approve-and-sign-btn"
-								>
-									<FileSignature className="w-4 h-4 text-[var(--muted)] shrink-0" />
-									<span className="hidden sm:inline">Подписать план лечения</span>
-									<span className="sm:hidden">Подписать</span>
-								</button>
-							)}
-						</div>
-
-						{/* ЕДИНСТВЕННЫЙ PRIMARY CTA КНОПКА (Мандат 8am: #0d9488, мобильная высота 52px по Apple HIG) */}
-						<button
-							type="button"
-							onClick={handleConfirmChoice}
-							className="btn-patient-choice primary-button min-h-[52px] sm:min-h-[48px] w-full sm:w-auto px-5 sm:px-7 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white"
-							data-testid="confirm-patient-choice-btn"
-						>
-							<CheckCircle2 className="w-4 h-4 shrink-0" />
-							<span className="hidden sm:inline">{`Пациент выбрал ${getTierLetter(selectedTierId)}`}</span>
-							<span className="sm:hidden">{`Выбрать «${getTierShortTitle(selectedTierId)}»`}</span>
-						</button>
-					</div>
-				</footer>
+				{/* 3. ПОДВАЛ ПРЕЗЕНТАЦИИ (ЕДИНЫЙ SSOT ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA) */}
+				<TreatmentPlanAcceptanceFooter
+					selectedTier={activeTier}
+					activeTier={activeTier}
+					selectedTierId={selectedTierId}
+					getTierLetter={getTierLetter}
+					onPrint={() => typeof window !== "undefined" && window.print()}
+					onPrintAppendix={() => typeof window !== "undefined" && window.print()}
+					onApproveAndSign={onApproveAndSign}
+					onConfirmPatientChoice={(tier) => {
+						if (onConfirmSelection) onConfirmSelection(tier);
+						if (onApproveAndSign) onApproveAndSign(tier);
+					}}
+					onConfirmChoice={handleConfirmChoice}
+					onSendToMessenger={handleSendToMessenger}
+					onTransferToWorkOrder={() => {
+						if (activeTier?.stages?.[0]) {
+							handleStagePayment(activeTier.stages[0]);
+						}
+					}}
+				/>
 			</div>
 
 			{/* Кассовый чекаут */}

@@ -18,7 +18,6 @@ import { fileURLToPath } from "node:url";
 
 import { CopilotContextTelemetryBar } from "../telemetry/CopilotContextTelemetryBar";
 import { CopilotStudioModal } from "../CopilotStudioModal";
-import { CopilotDrawer } from "../CopilotDrawer";
 import { useCopilotStore, getInitialCopilotState } from "../../../store/copilotStore";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 
@@ -102,28 +101,18 @@ describe("Clean Mounting into CopilotStudioModal & CopilotDrawer (Zero Mockup Le
 		assert.ok(!html.includes("Triage Agent"), "Внутренние промпт-архетипы субагентов не должны просачиваться врачу");
 	});
 
-	it("2. CopilotDrawer монтирует Context Telemetry Bar и чистые вкладки (chat, pending)", () => {
+	it("2. CopilotStudioModal монтирует вкладку быстрых действий и контекст телеметрии без моков", () => {
 		const html = renderToString(
-			<CopilotDrawer
+			<CopilotStudioModal
 				isOpen={true}
-				messages={[]}
-				busy={false}
-				phase={null}
-				pending={null}
-				nameCache={{}}
-				nudges={[]}
-				activeTab="chat"
-				onTabChange={() => {}}
 				onClose={() => {}}
-				onSend={() => {}}
-				onConfirm={() => {}}
-				onReset={() => {}}
-				onDismissNudge={() => {}}
+				activeTooth={36}
+				patientName="Смирнов А.П."
+				initialTab="actions"
 			/>
 		);
-		assert.ok(html.includes("data-testid=\"copilot-context-telemetry-bar\""), "Телеметрия контекста обязана присутствовать в дровере");
-		assert.ok(html.includes("Чат"), "Таб 'Чат' обязан отображаться в табах дровера");
-		assert.ok(html.includes("Задачи"), "Таб 'Задачи' обязан отображаться в табах дровера");
+		assert.ok(html.includes("data-testid=\"copilot-context-telemetry-bar\""), "Телеметрия контекста обязана присутствовать");
+		assert.ok(html.includes("Быстрые действия"), "Таб 'Быстрые действия' обязан отображаться");
 		assert.ok(!html.includes("Рой ИИ"), "Бутафорский таб 'Рой ИИ' обязан отсутствовать");
 	});
 });
@@ -175,9 +164,6 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 		const telemetryLines = fs.readFileSync(path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"), "utf-8").split("\n").length;
 		assert.ok(telemetryLines >= 80 && telemetryLines <= 200, `CopilotContextTelemetryBar.tsx: ${telemetryLines} строк (ожидалось 80–200)`);
 
-		const drawerLines = fs.readFileSync(path.join(__dirname, "../CopilotDrawer.tsx"), "utf-8").split("\n").length;
-		assert.ok(drawerLines <= 500, `CopilotDrawer.tsx: ${drawerLines} строк (ожидалось <= 500)`);
-
 		const storeLines = fs.readFileSync(path.join(__dirname, "../../../store/copilotStore.ts"), "utf-8").split("\n").length;
 		assert.ok(storeLines <= 450, `copilotStore.ts: ${storeLines} строк (ожидалось <= 450)`);
 
@@ -189,7 +175,6 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const filesToCheck = [
 			path.join(__dirname, "../CopilotStudioModal.tsx"),
-			path.join(__dirname, "../CopilotDrawer.tsx"),
 			path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"),
 			path.join(__dirname, "../telemetry/telemetryTypes.ts"),
 			path.join(__dirname, "../settings/CopilotSettingsIntelligenceTab.tsx"),

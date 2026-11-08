@@ -27,10 +27,12 @@ export {
 export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) => {
   const {
     initialOpen = true, initialDocked = false, initialCompact = false, activeTooth = 16,
-    patientName = "Иванов И.И.", patientAllergies = [], onClose, onApplyToothState,
+    patientName, patientAllergies = [], onClose, onApplyToothState,
     onUpdateToothStatus, onApplyServices, onAddBillingItem, onApplySoapNotes,
     onApplySoapDiary, onDisposeCarpule, onPrintInformedConsent, onApplyAll, className = "",
   } = props;
+
+  const displayPatientName = patientName?.trim() ? patientName : "Пациент не выбран";
 
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isDocked, setIsDocked] = useState(initialDocked);
@@ -250,7 +252,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
             <span className="chairside-hud-status-dot" />
             <span className="font-semibold text-xs text-[var(--ink)]">Копилот у кресла</span>
             <span className="chairside-hud-badge-chair">В кресле</span>
-            <span className="text-xs text-[var(--muted)]">{patientName}</span>
+            <span className="text-xs text-[var(--muted)]">{displayPatientName}</span>
           </div>
 
           {/* VU-meter Audio Microphone */}

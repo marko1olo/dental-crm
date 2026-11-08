@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import type { TreatmentPlanTier } from "../../types";
 import { formatWarrantyYearsText } from "../../types";
 import { showToast } from "../../../GlobalToast";
-import type { PresenterTabId } from "../../TreatmentPlanPresenterHeader";
+import type { PresenterTabId } from "../../presenterHeader/presenterTabTypes.js";
 import { getTierLetter } from "./presenterStateConstants";
 
 export interface PresenterNavigationParams {

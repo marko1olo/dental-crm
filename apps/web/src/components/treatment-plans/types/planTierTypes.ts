@@ -49,6 +49,7 @@ export interface TreatmentPlanTier {
 	readonly isRecommended: boolean;
 	readonly totalRub: number;
 	readonly totalKopecks: Kopecks;
+	readonly amountKopecks?: bigint | undefined;
 	readonly durationWeeks: number;
 	readonly durationVisits: number;
 	readonly warrantyYears: number | string;

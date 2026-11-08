@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, CreditCard, FileText } from "lucide-react";
 import { humanizeDentalText } from "@dental/shared";
 import type { TreatmentPlanStage } from "../treatmentPlanPresenterTypes.js";
 import { isMicroConsumable } from "../../treatmentPlanConsumables.js";
@@ -10,6 +10,8 @@ export interface TreatmentPlanStageCardItemProps {
 	readonly isExpanded: boolean;
 	readonly onToggleStage: (stageNum: number) => void;
 	readonly showMicroConsumables: boolean;
+	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly onWorkOrder?: ((stage: TreatmentPlanStage) => void) | undefined;
 }
 
 export const TreatmentPlanStageCardItem: React.FC<TreatmentPlanStageCardItemProps> = ({
@@ -17,6 +19,8 @@ export const TreatmentPlanStageCardItem: React.FC<TreatmentPlanStageCardItemProp
 	isExpanded,
 	onToggleStage,
 	showMicroConsumables,
+	onPayStage,
+	onWorkOrder,
 }) => {
 	const visibleItems = showMicroConsumables
 		? stage.items
@@ -54,7 +58,7 @@ export const TreatmentPlanStageCardItem: React.FC<TreatmentPlanStageCardItemProp
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2 flex-wrap">
 							<h4 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate">
-								{stage.title}
+								{stage.title?.toLowerCase().includes("этап") ? stage.title : `Этап ${stage.stageNumber}: ${stage.title}`}
 							</h4>
 							<span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${badgeBg}`}>
 								{isSurgery ? "Хирургия" : isProsthetics ? "Ортопедия" : "Терапия / Санация"}
@@ -66,7 +70,7 @@ export const TreatmentPlanStageCardItem: React.FC<TreatmentPlanStageCardItemProp
 					</div>
 				</div>
 
-				<div className="flex items-center gap-3 shrink-0">
+				<div className="flex items-center gap-2 sm:gap-3 shrink-0">
 					<div className="text-right">
 						<div className="text-sm sm:text-base font-extrabold text-[var(--ink)] font-mono">
 							{(stage.totalRub || 0).toLocaleString("ru-RU")} ₽
@@ -76,6 +80,40 @@ export const TreatmentPlanStageCardItem: React.FC<TreatmentPlanStageCardItemProp
 							<span>~{stage.estimatedWeeks} нед. ({stage.estimatedVisits} виз.)</span>
 						</div>
 					</div>
+
+					{onPayStage && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onPayStage(stage);
+							}}
+							className="secondary-button dente-btn dente-btn-secondary min-h-[38px] px-2.5 sm:px-3 rounded-xl text-xs font-semibold text-[var(--teal-dark,var(--teal))] bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 border border-[var(--teal)]/30 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98"
+							data-testid={`presenter-pay-stage-btn-${stage.id || stage.stageNumber}`}
+							title={`Оплатить этап №${stage.stageNumber} через кассовый чек`}
+						>
+							<CreditCard size={13} className="shrink-0" />
+							<span className="hidden sm:inline">Оплатить этап</span>
+							<span className="sm:hidden">Оплата</span>
+						</button>
+					)}
+
+					{onWorkOrder && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onWorkOrder(stage);
+							}}
+							className="secondary-button dente-btn dente-btn-secondary min-h-[38px] px-2.5 sm:px-3 rounded-xl text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] border border-[var(--line)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98"
+							data-testid={`presenter-work-order-btn-${stage.id || stage.stageNumber}`}
+							title={`Перевести этап №${stage.stageNumber} в заказ-наряд`}
+						>
+							<FileText size={13} className="shrink-0" />
+							<span className="hidden sm:inline">В заказ-наряд</span>
+							<span className="sm:hidden">Наряд</span>
+						</button>
+					)}
 
 					<div className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
 						{isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}

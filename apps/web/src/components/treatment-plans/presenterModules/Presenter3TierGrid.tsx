@@ -10,9 +10,11 @@ import type { TreatmentPlanTier, TreatmentPlanTierId } from "../treatmentPlanTyp
 import { formatRubles } from "../treatmentPlanTypes";
 
 export interface Presenter3TierGridProps {
-	readonly effectiveTiers: readonly TreatmentPlanTier[];
+	readonly effectiveTiers?: readonly TreatmentPlanTier[];
+	readonly tiers?: readonly TreatmentPlanTier[];
 	readonly selectedTierId: TreatmentPlanTierId;
-	readonly onSelectTierId: (tierId: TreatmentPlanTierId) => void;
+	readonly onSelectTierId?: ((tierId: TreatmentPlanTierId) => void) | undefined;
+	readonly onSelectTier?: ((tierId: TreatmentPlanTierId) => void) | undefined;
 }
 
 export function getTierSegmentLabel(tier: TreatmentPlanTier, index: number, all: readonly TreatmentPlanTier[]): string {
@@ -28,10 +30,14 @@ export function getTierSegmentLabel(tier: TreatmentPlanTier, index: number, all:
 
 export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 	effectiveTiers,
+	tiers,
 	selectedTierId,
 	onSelectTierId,
+	onSelectTier,
 }) => {
-	const tiersToDisplay = effectiveTiers.length > 0 ? effectiveTiers : [];
+	const rawTiers = effectiveTiers || tiers || [];
+	const handleSelect = onSelectTierId || onSelectTier || (() => {});
+	const tiersToDisplay = rawTiers.length > 0 ? rawTiers : [];
 
 	return (
 		<div className="space-y-6" data-testid="presenter-3tier-grid-wrap">
@@ -54,7 +60,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 							type="button"
 							role="tab"
 							aria-selected={isSelected}
-							onClick={() => onSelectTierId(tier.tierId)}
+							onClick={() => handleSelect(tier.tierId)}
 							className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 px-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center ${
 								isSelected
 									? "active is-selected bg-[var(--paper)] text-[var(--teal)] border border-[var(--line)] shadow-xs"
@@ -76,7 +82,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 
 			{/* 3-Tier Сетка вариантов смет: одинаковая высота h-full, items-stretch */}
 			<div className="treatment-3tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-				{effectiveTiers.map((tier, idx) => {
+				{tiersToDisplay.map((tier, idx) => {
 					const isDirectMatch = selectedTierId === tier.tierId;
 					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
 					const isSelected = isDirectMatch || isOptimumAlias;
@@ -96,7 +102,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 					return (
 						<div
 							key={tier.tierId}
-							onClick={() => onSelectTierId(tier.tierId)}
+							onClick={() => handleSelect(tier.tierId)}
 							className={`relative p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 h-full ${
 								isSelected ? "flex" : "hidden md:flex"
 							} ${
@@ -158,7 +164,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
-											onSelectTierId(tier.tierId);
+											handleSelect(tier.tierId);
 										}}
 										className="secondary-button dente-btn dente-btn-secondary w-full mt-1.5 py-1 text-[11px] font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 										data-testid={`calc-ndfl-btn-${tier.tierId}`}
@@ -178,7 +184,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
-											onSelectTierId(tier.tierId);
+											handleSelect(tier.tierId);
 										}}
 										className="secondary-button dente-btn dente-btn-secondary min-h-[36px] px-3.5 py-1.5 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer transition-colors"
 										data-testid={`apply-tier-btn-${tier.tierId}`}
@@ -194,3 +200,8 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 		</div>
 	);
 };
+
+export const Presenter3TierSelector = Presenter3TierGrid;
+export type Presenter3TierSelectorProps = Presenter3TierGridProps;
+
+export default Presenter3TierGrid;

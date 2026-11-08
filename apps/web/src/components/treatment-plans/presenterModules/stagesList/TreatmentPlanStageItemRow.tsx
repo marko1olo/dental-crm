@@ -27,11 +27,9 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 				</div>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2 flex-wrap">
-						{item.code804n && (
-							<span className="text-[10.5px] font-mono text-[var(--muted)] font-semibold">
-								{item.code804n}
-							</span>
-						)}
+						<span className="code-804n-badge text-[10.5px] font-mono text-[var(--muted)] font-semibold px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)]">
+							{item.code804n || item.serviceCode || "A16.07"}
+						</span>
 						{toothBadge}
 						<span className="text-xs sm:text-sm font-medium text-[var(--ink)] truncate">
 							{item.name}

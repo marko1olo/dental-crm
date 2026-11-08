@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { showToast } from "../GlobalToast";
 import type { CashierInvoiceExportData } from "./types";
-import { CashRegisterCheckoutModal } from "../billing/CashRegisterCheckoutModal";
+import { CashRegisterCheckoutModal } from "../cashbox/CashRegisterCheckoutModal";
 
 const LabWorkOrderModal = React.lazy(() =>
 	import("../lab/orders/LabWorkOrderModal").then((m) => ({ default: m.LabWorkOrderModal })),

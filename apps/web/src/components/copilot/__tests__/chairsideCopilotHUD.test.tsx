@@ -59,6 +59,20 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("btn-chairside-hud-dock-toggle");
     expect(html).toContain("btn-chairside-hud-minimize");
     expect(html).toContain("btn-chairside-hud-close");
+    expect(html).toContain("Иванов И.И.");
+  });
+
+  it("1b. renders 'Пациент не выбран' empty state when patientName is not provided (Zero Fake Ivanov)", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        initialDocked={false}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("Пациент не выбран");
+    assert.ok(!html.includes("Иванов И.И."), "Фейковый Иванов не должен рендериться при отсутствии пациента");
   });
 
   it("2. renders minimized pill when isMinimized is triggered", () => {

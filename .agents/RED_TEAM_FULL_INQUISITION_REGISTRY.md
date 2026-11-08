@@ -1339,6 +1339,31 @@
 - **Суть бага:** `payDate.setMonth(payDate.getMonth() + i)` без учета длины месяца перескакивал с 31 января на 3 марта. В феврале платеж пропадал, а в марте пациент получал два платежа.
 - **Статус исправления [ИСПРАВЛЕНО]:** В генераторе `generate0PercentInstallmentSchedule` внедрен расчет с учетом фактического количества дней в целевом месяце: `daysInTargetMonth = new Date(targetYear, targetMonthIndex + 1, 0).getDate(); const day = Math.min(targetDay, daysInTargetMonth);`. Платеж 31 января корректно прижимается к 28 (или 29) февраля без перескока на март, а 31 марта сохраняет 31 число. Проверено тестом `packages/shared/src/tests/familyDepositsAndInstallmentsInquisitor.test.ts` (тест 1.3).
 
+### [PLN-09] [SEV-2] [ИСПРАВЛЕНО] Пустой экран таба «Этапы лечения», недосягаемость тарифа «Премиум» и ликвидация 18 мертвых файлов-клонов
+- **Файлы:**
+  - [`TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
+  - [`TreatmentPlanPresenterDefaultStages.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanPresenterDefaultStages.ts)
+  - [`TreatmentPlanAcceptanceFooter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanAcceptanceFooter.tsx)
+  - [`types/planTierTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/types/planTierTypes.ts)
+- **Визуальные пруфы:**
+  - [`docs/proofs/treatment_plans_ssot/treatment_plan_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans_ssot/treatment_plan_pc_light_1440x900.png)
+  - [`docs/proofs/treatment_plans_ssot/treatment_plan_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans_ssot/treatment_plan_pc_dark_1440x900.png)
+  - [`docs/proofs/treatment_plans_ssot/treatment_plan_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans_ssot/treatment_plan_mobile_light_390x844.png)
+  - [`docs/proofs/treatment_plans_ssot/treatment_plan_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans_ssot/treatment_plan_mobile_dark_390x844.png)
+- **Суть бага:**
+  1. В табе «Этапы лечения» модального окна презентера планов лечения клик по кнопке `tab-stages-selector` переключал стейт, но в разметке контейнера `<main>` отсутствовала ветка `{activeTab === "stages" && ...}`, из-за чего рендерилась пустая дыра (Blank Void).
+  2. Семантическая ошибка в `getTierLetter` и `getTierShortTitle`: тариф «Премиум» с `tierId: "optimum"` перехватывался условием `if (tierId === "standard" || tierId === "optimum") return "Вариант Б: Оптимум"`, делая ветку «Вариант В: Премиум» недостижимой.
+  3. Отсутствие поля `amountKopecks: bigint` в дефолтных пресетах тарифов.
+  4. Наличие 18 устаревших файлов-клонов в `components/treatment-plans/` и `presenterModules/`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `<main>` модального окна `TreatmentPlanPresenterModal.tsx` смонтирована ветка `{activeTab === "stages" && <div className="space-y-6" data-testid="presenter-stages-tab-content"><PresenterStagesSection ... /></div>}`.
+  2. Исправлено определение тарифов: `tierId === "optimum" || tierId === "premium"` возвращает «Вариант В: Премиум» / «Премиум».
+  3. Во все пресеты и фолбеки тарифов внедрен расчет `amountKopecks: BigInt(...)`.
+  4. 18 файлов-клонов физически удалены через `git rm`.
+  5. Успешно пройдены 86 тест-сьютов (309/309 тестов Vitest PASS) и `npm run check:encoding`.
+  6. Все 4 скриншота высокого разрешения сняты, сохранены в `docs/proofs/treatment_plans_ssot/` и лично отсмотрены через `read_file`.
+
+
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ
 

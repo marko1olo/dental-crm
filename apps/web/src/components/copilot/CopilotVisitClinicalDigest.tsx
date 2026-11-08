@@ -17,7 +17,7 @@ import {
 	type FindingItem,
 	normalizeToothStateKey,
 	TOOTH_STATE_NAMES,
-} from "./drawer/clinicalDigestConstants";
+} from "./clinicalDigestConstants";
 
 export { normalizeToothStateKey, TOOTH_STATE_NAMES };
 export type { FindingItem };

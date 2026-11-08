@@ -213,6 +213,7 @@ export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 		isRecommended: false,
 		totalRub: 85500,
 		totalKopecks: 8550000,
+		amountKopecks: BigInt(8550000),
 		warrantyYears: 1,
 		keyAdvantages: [
 			"Базовая терапевтическая санация полости рта",
@@ -231,6 +232,7 @@ export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 		isRecommended: true,
 		totalRub: 132300,
 		totalKopecks: 13230000,
+		amountKopecks: BigInt(13230000),
 		warrantyYears: 3,
 		keyAdvantages: [
 			"Лечение каналов под операционным дентальным микроскопом",
@@ -249,6 +251,7 @@ export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 		isRecommended: false,
 		totalRub: 205000,
 		totalKopecks: 20500000,
+		amountKopecks: BigInt(20500000),
 		warrantyYears: 10,
 		keyAdvantages: [
 			"Швейцарская имплантация Straumann Roxolid SLActive",
@@ -434,6 +437,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 			isRecommended: false,
 			totalRub: 85500,
 			totalKopecks: 8550000,
+			amountKopecks: BigInt(8550000),
 			warrantyYears: 1,
 			keyAdvantages: [
 				"Базовая терапевтическая санация полости рта",
@@ -452,6 +456,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 			isRecommended: true,
 			totalRub: 132300,
 			totalKopecks: 13230000,
+			amountKopecks: BigInt(13230000),
 			warrantyYears: 3,
 			keyAdvantages: [
 				"Лечение каналов под операционным дентальным микроскопом",
@@ -470,6 +475,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 			isRecommended: false,
 			totalRub: 205000,
 			totalKopecks: 20500000,
+			amountKopecks: BigInt(20500000),
 			warrantyYears: 10,
 			keyAdvantages: [
 				"Швейцарская имплантация Straumann Roxolid SLActive",

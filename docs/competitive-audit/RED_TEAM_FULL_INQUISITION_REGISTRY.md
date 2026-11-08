@@ -111,7 +111,7 @@
 ### [FIN-08] [ИСПРАВЛЕНО] [SEV-1] Ликвидация зоопарка из 7 модалок оплаты в Единый Канонический Чекаут DENTE CRM
 - **Файлы:**
   - SSOT: [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
-  - Фасады: [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterCheckoutModal.tsx), [`CashCheckoutStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashCheckoutStudioModal.tsx), [`PaymentFiscalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentFiscalModal.tsx), [`PaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentModal.tsx), [`SplitPaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/SplitPaymentModal.tsx), [`CashRegisterDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterDrawer.tsx), [`CashRegisterPaymentPane.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterPaymentPane.tsx)
+  - Фасады: [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterCheckoutModal.tsx), [`CashCheckoutStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashCheckoutStudioModal.tsx), [`PaymentFiscalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentFiscalModal.tsx), [`PaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentModal.tsx), [`SplitPaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/SplitPaymentModal.tsx), [`CashRegisterDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterDrawer.tsx), [`CashRegisterPaymentPane.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterPaymentPane.tsx)
 - **Суть бага:** В `components/billing/` исторически расплодили 7 параллельных модалок с дублированием логики оплат, несовместимыми сигнатурами пропсов и риском расхождения финансовых проводок.
 - **Решение:**
   1. Консолидация в единый полиморфный чекаут на базе `CashRegisterStudioModal.tsx` с чистым API, проксирующими фасадами (<30 строк) для сохранения обратной совместимости call sites.
@@ -996,7 +996,7 @@
 - **Файлы:**
   - [`TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
   - [`apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts)
-  - [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterCheckoutModal.tsx)
+  - [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterCheckoutModal.tsx)
 - **Суть бага:** Ранее колбэк `onPaymentComplete` при оплате этапа закрывал модалку без формирования счета в БД.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
   1. Нажатие «Оплатить этап» бесшовно вызывает бэкенд `POST /api/invoices/generate-from-plan` для фиксации черновика счета в `patient_invoices` со всеми валидациями заморозки цен (Price Lock).
@@ -2256,7 +2256,7 @@
 ### [COP-16] [SEV-1] [ЗАКРЫТО] Полноценная история диалогов, мультисессионность и переключение контекста
 - **Файлы:**
   - [`apps/web/src/components/copilot/CopilotHistoryDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotHistoryDrawer.tsx)
-  - [`apps/web/src/components/copilot/CopilotDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotDrawer.tsx)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
   - [`apps/web/src/store/copilotStore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/copilotStore.ts)
   - [`apps/api/src/routes/agentSessionRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/agentSessionRoutes.ts)
   - [`apps/api/src/tests/ai/agentSessionRoutes.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/ai/agentSessionRoutes.test.ts)
@@ -2272,14 +2272,14 @@
 - **Файлы:**
   - [`apps/api/src/services/agent/dentalTools.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/dentalTools.ts)
   - [`apps/api/src/routes/agentRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/agentRoutes.ts)
-  - [`apps/web/src/components/copilot/CopilotDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotDrawer.tsx)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
 - **Суть проблемы:**
   Копилот на ПК должен уметь работать с файлами на диске, снимками КЛКТ/ОПТГ, запускать внешние программы Romexis/Ez3D/3Shape, а в браузере — безопасно ограничиваться веб-инструментами без крашей.
 - **Статус ликвидации [ЗАКРЫТО]:**
   1. В `dentalTools.ts` и `agentRoutes.ts` динамически формируется набор доступных тулов:
      - `web_browser`: 16 клинических веб-инструментов (расписание, зубная формула FDI, дневник SOAP, счета, прейскурант).
      - `desktop_native`: 31 инструмент с расширенными правами ОС (чтение снимков DICOM/STL на локальных дисках, запуск Romexis/Ez3D через CLI/URL схемы, системный буфер обмена Windows, кассовые протоколы по USB/COM).
-  2. В `CopilotDrawer.tsx` встроен переключатель сред `copilot-mode-switcher` («Веб-клиника» / «Рабочая станция (ПК)») с сохранением в `localStorage`.
+  2. В `CopilotStudioModal.tsx` встроен автоматический определитель среды (`desktop_native` vs `chairside_tablet` vs `web_browser`) без ручных переключателей.
   3. Прямая попытка вызова desktop-тулов в веб-окружении детерминированно блокируется валидатором с информативной клинической ошибкой.
 
 ### [COP-18] [SEV-1] [ЗАКРЫТО] 4-State Visual Proof и строгий визуальный аудит по 8 осям

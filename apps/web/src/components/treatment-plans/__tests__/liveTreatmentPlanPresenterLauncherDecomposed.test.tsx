@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { LiveTreatmentPlanPresenterLauncher } from "../../appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher";
 import { TreatmentPlanPresenterEmptyState } from "../../appLayout/modalsContainerModules/standalone/TreatmentPlanPresenterEmptyState";
 import { DEFAULT_SAMPLE_TEETH } from "../presenterModules/state/presenterStateConstants";
-import { TreatmentPlanPresenterStagesTab } from "../TreatmentPlanPresenterStagesTab";
+import { TreatmentPlanStagesList } from "../presenterModules/TreatmentPlanStagesList";
 import { generate3TierPlanComparison } from "../treatmentPlanStagesEngine";
 
 describe("LiveTreatmentPlanPresenterLauncher & Stage Payment Red Team Suite", () => {
@@ -36,7 +36,7 @@ describe("LiveTreatmentPlanPresenterLauncher & Stage Payment Red Team Suite", ()
 		);
 	});
 
-	it("renders TreatmentPlanPresenterStagesTab with 1-click 'Оплатить этап' (Stage Payment) button", () => {
+	it("renders TreatmentPlanStagesList with 1-click 'Оплатить этап' (Stage Payment) button", () => {
 		const tiers = generate3TierPlanComparison(
 			DEFAULT_SAMPLE_TEETH,
 			undefined,
@@ -47,29 +47,27 @@ describe("LiveTreatmentPlanPresenterLauncher & Stage Payment Red Team Suite", ()
 		const standardTier = tiers[1];
 
 		const html = renderToString(
-			<TreatmentPlanPresenterStagesTab
-				selectedTier={standardTier}
-				selectedTierId={standardTier.tierId}
-				allTiers={tiers}
-				onSelectTier={() => {}}
-				showMicroConsumables={false}
-				onUpdateItemPrice={() => {}}
+			<TreatmentPlanStagesList
+				activeTier={standardTier as any}
+				onToggleStage={() => {}}
 				onPayStage={() => {}}
-				patientId="pat-test-01"
-				patientName="Иванов Иван Иванович"
+				onWorkOrder={() => {}}
+				showMicroConsumables={false}
 			/>,
 		);
 
 		assert.ok(
-			html.includes("stage-pay-btn-1"),
-			"Must render stage payment button for Stage 1",
+			html.includes("presenter-pay-stage-btn-"),
+			"Must render stage payment button",
 		);
 		assert.ok(
 			html.includes("Оплатить этап"),
 			"Must contain button label 'Оплатить этап'",
 		);
-		assert.ok(html.includes("В счёт"), "Must contain button label 'В счёт'");
-		assert.ok(html.includes("В приём"), "Must contain button label 'В приём'");
+		assert.ok(
+			html.includes("В заказ-наряд"),
+			"Must contain button label 'В заказ-наряд'",
+		);
 	});
 
 	it("renders LiveTreatmentPlanPresenterLauncher cleanly in demo mode", () => {
