@@ -1,7 +1,7 @@
 import React from "react";
 import { money } from "../../../AppHelpers";
 import { Calendar, Sparkles, User } from "lucide-react";
-import type { DoctorPayoutRow } from "../../../pages/payoutDashboard/types.js";
+import type { DoctorPayoutRow } from "./types.js";
 
 export interface DoctorWalletBalanceHeaderProps {
 	readonly monthLabel: string;

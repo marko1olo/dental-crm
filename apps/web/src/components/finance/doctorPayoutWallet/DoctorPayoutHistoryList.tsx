@@ -6,8 +6,7 @@
 import React from "react";
 import { countLabel, money } from "../../../AppHelpers";
 import { Calendar, ChevronRight } from "lucide-react";
-import type { DoctorPayoutRow } from "../../../pages/payoutDashboard/types.js";
-import type { ShiftSummaryItem } from "./types.js";
+import type { DoctorPayoutRow, ShiftSummaryItem } from "./types.js";
 import { DoctorShiftDetailSheet } from "./DoctorShiftDetailSheet.js";
 
 export { computeDoctorShifts } from "./doctorShiftsComputer.js";

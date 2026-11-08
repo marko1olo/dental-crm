@@ -3,7 +3,7 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
-import type { DoctorPayoutVisit } from "../../../pages/payoutDashboard/types.js";
+import type { DoctorPayoutVisit } from "./types.js";
 
 export const DEMO_DOCTOR_VISITS: readonly DoctorPayoutVisit[] = [
 	{

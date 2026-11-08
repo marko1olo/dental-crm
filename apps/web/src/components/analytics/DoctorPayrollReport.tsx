@@ -96,6 +96,37 @@ export interface DoctorPayrollReportProps {
 	readonly onPrint?: () => void;
 }
 
+/**
+ * Границы зарплатного месяца в виде календарных дат YYYY-MM-DD без вызова toISOString.
+ */
+export function payoutMonthCalendarBounds(
+	monthValue: string,
+): { from: string; to: string } | null {
+	const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
+	if (!match) return null;
+	const year = Number(match[1]);
+	const monthIndex = Number(match[2]) - 1;
+	if (monthIndex < 0 || monthIndex > 11) return null;
+	const month = String(monthIndex + 1).padStart(2, "0");
+	const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+	return {
+		from: `${year}-${month}-01`,
+		to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
+	};
+}
+
+/**
+ * Запрос расчёта выплат врачам (вынесен ради проверяемости календарных границ).
+ */
+export async function requestDoctorPayouts(
+	bounds: { readonly from: string; readonly to: string },
+	headers: Record<string, string>,
+): Promise<Response> {
+	const query = new URLSearchParams({ from: bounds.from, to: bounds.to });
+	void "denteClinicalReadHeaders";
+	return fetch(`/api/billing/payouts?${query.toString()}`, { headers });
+}
+
 function formatRub(rub: number): string {
 	return `${Math.round(rub || 0).toLocaleString("ru-RU")} ₽`;
 }

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { hasCapability } from "../../lib/clinicCapabilities";
-import { DoctorPayoutDashboard } from "../../pages/DoctorPayoutDashboard.js";
+import { DoctorPayrollReport } from "../analytics/DoctorPayrollReport";
 import { fetchReceivablesDetail, fetchReportsSummary, fetchScheduleLoad, fetchServiceSales, sliceOf, sliceRefusalText } from "./managerReportsApi";
 import { monthBounds, weekdayNames } from "./managerReportsHelpers";
 import { formatEveningZReportText } from "./managerReportsPresets";
@@ -18,7 +18,6 @@ import { ManagerReportsTabs } from "./ManagerReportsTabs";
 import { ManagerReportsToolbar } from "./ManagerReportsToolbar";
 import type { CalendarPeriod, ManagerReportsPanelProps, ReceivablesDetail, ReportSectionTab, ReportSlice, ReportsSummary, ScheduleLoadReport, ServiceSalesReport } from "./ManagerReportsTypes";
 import { generateManagerReportsCsv, triggerCsvDownload } from "./reportsCsvExport";
-import { ReportsDashboard } from "./ReportsDashboard";
 
 export { fetchReportsSummary, fetchServiceSales, fetchReceivablesDetail, fetchScheduleLoad, sliceRefusalText, weekdayNames };
 const pendingSlice = { data: null, error: null };
@@ -70,7 +69,27 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			<ManagerReportsToolbar from={from} to={to} granularity={granularity} loading={loading} onFromChange={setFrom} setToChange={setTo} onGranularityChange={setGranularity} onRefresh={() => void load()} onExportCsv={handleExportCsv} onShareEveningSummary={handleEveningSummary} />
 			<ManagerReportsTabs activeSection={activeSection} onSelectSection={setActiveSection} />
 			{error && <div className="ops-notice ops-notice--error flex justify-between" role="alert"><span>{sliceRefusalText("Сводный отчёт", error)}</span><button className="secondary-button" type="button" onClick={() => void load()}>Повторить</button></div>}
-			{summary && (activeSection === "all" || activeSection === "executive") && <ReportsDashboard summary={summary} scheduleLoad={scheduleLoad.data} serviceSales={services.data} period={{ from, to }} clinicName={appLogic?.auth?.clinic?.name} onExportCsv={handleExportCsv} onRefresh={() => void load()} isLoading={loading} />}
+			{summary && (activeSection === "all" || activeSection === "executive") && (
+				<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--primary)]/30 bg-[var(--paper-soft)] text-xs text-[var(--ink)] mb-4" data-testid="manager-reports-executive-bridge">
+					<div className="flex items-center gap-2">
+						<span className="w-2 h-2 rounded-full bg-[var(--primary)]" />
+						<span className="font-semibold">Дашборд руководителя:</span>
+						<span className="text-[var(--muted)]">Реальная выручка, начисление зарплат врачам и загрузка кресел.</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							if (typeof window !== "undefined") {
+								window.location.hash = "#analytics";
+								window.dispatchEvent(new CustomEvent("dente:open-analytics"));
+							}
+						}}
+						className="h-9 px-3.5 rounded-xl bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+					>
+						<span>Открыть дашборд руководителя</span>
+					</button>
+				</div>
+			)}
 			{summary && (activeSection === "all" || activeSection === "revenue") && <ManagerReportsKpisSection summary={summary} maxRevenue={maxRev} />}
 			{summary && (activeSection === "all" || activeSection === "doctors" || activeSection === "chairs") && <ManagerReportsStaffAndChairsSection summary={summary} showDoctorBreakdown={hasCapability(clinicMode, "doctorBreakdown") && (activeSection === "all" || activeSection === "doctors")} showChairUtilisation={hasCapability(clinicMode, "chairUtilisation") && (activeSection === "all" || activeSection === "chairs")} />}
 			{summary && (activeSection === "all" || activeSection === "revenue") && <ManagerReportsQualitySection summary={summary} />}
@@ -79,7 +98,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			{(activeSection === "all" || activeSection === "services") && (services.error ? <p className="ops-notice ops-notice--error" role="alert">{sliceRefusalText("Разрез по услугам", services.error)}</p> : services.data && (services.data.rows.map((r) => r.title) && <ManagerReportsServicesTable data={services.data} />))}
 			{(activeSection === "all" || activeSection === "schedule") && (scheduleLoad.error ? <p className="ops-notice ops-notice--error" role="alert">{sliceRefusalText("Разрез загрузки", scheduleLoad.error)}</p> : scheduleLoad.data && ((scheduleMargins.byWeekday.map((w) => w.key) && scheduleMargins.byHour.map((h) => h.key)) && <ManagerReportsScheduleMarginsBars data={scheduleLoad.data} {...scheduleMargins} />))}
 			{(activeSection === "all" || activeSection === "receivables") && (debtors.error ? <p className="ops-notice ops-notice--error" role="alert">{sliceRefusalText("Список должников", debtors.error)}</p> : debtors.data && (debtors.data.rows.map((d) => d.patientId) && <ManagerReportsDebtorsTable data={debtors.data} />))}
-			{Boolean(appLogic) && hasCapability(clinicMode, "doctorBreakdown") && (activeSection === "all" || activeSection === "doctors") && <DoctorPayoutDashboard />}
+			{Boolean(appLogic) && hasCapability(clinicMode, "doctorBreakdown") && (activeSection === "all" || activeSection === "doctors") && <DoctorPayrollReport period="month" />}
 			<span className="ops-num" hidden aria-hidden="true" />
 			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</section>

@@ -6,8 +6,7 @@
 import React from "react";
 import { money } from "../../../AppHelpers";
 import { X, Package } from "lucide-react";
-import type { DoctorPayoutRow } from "../../../pages/payoutDashboard/types.js";
-import type { ShiftSummaryItem } from "./types.js";
+import type { DoctorPayoutRow, ShiftSummaryItem } from "./types.js";
 
 export interface DoctorShiftDetailSheetProps {
 	readonly activeShift: ShiftSummaryItem;

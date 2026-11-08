@@ -418,5 +418,6 @@ export const WARRANTY_POLICY_PRESETS: Record<string, WarrantyPresetItem> = {
 	},
 };
 
+export { STOMX_SPECIALIZED_CONSENT_PRESETS } from "./clinicalConsentPresets.js";
 export * from "./clinicalConsentPresets.js";
 export * from "./clinicalLegalConsentsCatalog.js";

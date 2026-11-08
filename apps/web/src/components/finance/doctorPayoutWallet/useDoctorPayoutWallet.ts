@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import type { DoctorPayoutRow, DoctorPayoutReport } from "../../../pages/payoutDashboard/types.js";
+import type { DoctorPayoutRow, DoctorPayoutReport } from "./types.js";
 import { DEMO_SHOWCASE_DOCTOR, DEMO_SHOWCASE_SOLO_DOCTOR } from "./demoShowcaseData.js";
 import { computeDoctorShifts } from "./doctorShiftsComputer.js";
 import { computeCategoryCards } from "./categoryCardComputer.js";

@@ -19,7 +19,6 @@ import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSso
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
 import { DirectCashierLauncher } from "./components/finance/DirectCashierLauncher";
-import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
 import { StandalonePatientCardHost } from "./components/appLayout/modalsContainerModules/standalone/clinical/StandalonePatientCardHost";
@@ -37,11 +36,9 @@ import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceL
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
-import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
-import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
@@ -345,7 +342,6 @@ export function AppShell() {
 			<DirectCashboxLauncher />
 			<DirectShiftLauncher />
 			<DirectCashierLauncher />
-			<DirectReportsLauncher />
 			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
@@ -361,11 +357,9 @@ export function AppShell() {
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />
 			<DirectRecallLauncher />
-			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
-			<DirectDoctorPayrollReportLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />

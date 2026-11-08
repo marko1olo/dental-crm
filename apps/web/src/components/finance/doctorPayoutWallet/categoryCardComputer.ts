@@ -3,9 +3,90 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
-import type { DoctorPayoutRow } from "../../../pages/payoutDashboard/types.js";
-import { mapRoleToSpecialtyId, inferServiceCategory } from "../../../pages/payoutDashboard/payoutHelpers.js";
-import type { CategoryCardItem } from "./types.js";
+import type { DoctorPayoutRow, CategoryCardItem } from "./types.js";
+
+export function mapRoleToSpecialtyId(role: string): string {
+	const r = role.toLowerCase().trim();
+	if (r.includes("orthoped") || r.includes("ортопед")) return "orthopedist";
+	if (r.includes("implant") || r.includes("имплант")) return "surgeon_implantologist";
+	if (r.includes("surg") || r.includes("хирург")) return "surgeon";
+	if (r.includes("orthodont") || r.includes("ортодонт")) return "orthodontist";
+	if (r.includes("hygien") || r.includes("гигиен")) return "hygienist";
+	if (r.includes("pediatr") || r.includes("детск")) return "pediatric_dentist";
+	if (r.includes("periodont") || r.includes("пародонт")) return "periodontist";
+	if (r.includes("general") || r.includes("общей")) return "general_dentist";
+	return "therapist";
+}
+
+export function inferServiceCategory(
+	serviceName: string,
+	doctorSpecialtyId: string,
+): "therapy" | "surgery" | "orthopedics" | "orthodontics" | "hygiene" | "retail_hygiene" {
+	const s = serviceName.toLowerCase();
+	if (
+		s.includes("щетк") ||
+		s.includes("паст") ||
+		s.includes("нить") ||
+		s.includes("ополаскивател") ||
+		s.includes("curaprox") ||
+		s.includes("товар") ||
+		s.includes("продаж")
+	) {
+		return "retail_hygiene";
+	}
+	if (
+		s.includes("коронк") ||
+		s.includes("винир") ||
+		s.includes("протез") ||
+		s.includes("вкладк") ||
+		s.includes("слепок") ||
+		s.includes("акриловый") ||
+		s.includes("бюгель") ||
+		s.includes("e.max") ||
+		s.includes("циркон") ||
+		s.includes("cad/cam")
+	) {
+		return "orthopedics";
+	}
+	if (
+		s.includes("удален") ||
+		s.includes("имплант") ||
+		s.includes("синус") ||
+		s.includes("резекци") ||
+		s.includes("пластик") ||
+		s.includes("швы") ||
+		s.includes("дренаж") ||
+		s.includes("аугментаци")
+	) {
+		return "surgery";
+	}
+	if (
+		s.includes("брекет") ||
+		s.includes("элайнер") ||
+		s.includes("активаци") ||
+		s.includes("дуг") ||
+		s.includes("ретейнер") ||
+		s.includes("капп")
+	) {
+		return "orthodontics";
+	}
+	if (
+		s.includes("гигиен") ||
+		s.includes("air flow") ||
+		s.includes("чистк") ||
+		s.includes("отбеливан") ||
+		s.includes("ультразвук") ||
+		s.includes("zoom")
+	) {
+		return "hygiene";
+	}
+
+	if (doctorSpecialtyId === "orthopedist") return "orthopedics";
+	if (doctorSpecialtyId === "surgeon" || doctorSpecialtyId === "surgeon_implantologist") return "surgery";
+	if (doctorSpecialtyId === "orthodontist") return "orthodontics";
+	if (doctorSpecialtyId === "hygienist") return "hygiene";
+	return "therapy";
+}
 
 export function classifyWalletServiceCategory(
 	serviceTitle: string,

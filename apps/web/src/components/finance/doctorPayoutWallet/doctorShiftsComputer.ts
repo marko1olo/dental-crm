@@ -3,9 +3,8 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
-import type { DoctorPayoutRow, DoctorPayoutVisit } from "../../../pages/payoutDashboard/types.js";
+import type { DoctorPayoutRow, DoctorPayoutVisit, ShiftSummaryItem } from "./types.js";
 import { formatShiftDate } from "./types.js";
-import type { ShiftSummaryItem } from "./types.js";
 
 export function computeDoctorShifts(
 	currentDoctor: DoctorPayoutRow | null,
