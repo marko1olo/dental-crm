@@ -3,13 +3,13 @@
  * Governed by Mandates 8b, 8c, 8d, 8e, 8n (Strict <= 120 lines UI facade).
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tag, Plus } from "lucide-react";
 import { MarketingPromosList } from "./components/marketing/MarketingPromosList";
 import { MarketingCampaignDetail } from "./components/marketing/MarketingCampaignDetail";
 import { MarketingNewPromoModal } from "./components/marketing/MarketingNewPromoModal";
 import { useMarketingPromos } from "./components/marketing/useMarketingPromos";
-import { MarketingRecallsHub } from "./components/marketing/MarketingRecallsHub";
+import { PatientRecallsHubModal } from "./components/recalls/PatientRecallsHubModal";
 import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
 import { MarketingDashboardView } from "./pages/MarketingDashboardView";
 import { MarketingViewHeader, type MarketingTab } from "./components/marketing/MarketingViewHeader";
@@ -30,6 +30,9 @@ export function MarketingView({
 	initialTab = "promos",
 }: MarketingViewProps) {
 	const [activeTab, setActiveTab] = useState<MarketingTab>(initialTab);
+	useEffect(() => {
+		setActiveTab(initialTab);
+	}, [initialTab]);
 	const {
 		promos, selectedPromo, setSelectedPromoId, isNewModalOpen, setIsNewModalOpen,
 		handleTogglePromoStatus, handleSaveNewPromo,
@@ -74,7 +77,11 @@ export function MarketingView({
 
 			{activeTab === "recalls" && (
 				<div className="marketing-recalls-container" data-testid="marketing-recalls-container">
-					<MarketingRecallsHub clinicName={clinicName} />
+					<PatientRecallsHubModal
+						isOpen={true}
+						onClose={() => setActiveTab("promos")}
+						clinicName={clinicName}
+					/>
 				</div>
 			)}
 

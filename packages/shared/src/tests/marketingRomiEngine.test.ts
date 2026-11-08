@@ -18,13 +18,13 @@ import {
 	calculateChannelRomi,
 	calculateMarketingRomiSummary,
 	DEFAULT_DENTAL_ADVERTISING_CHANNELS,
-	STOMX_DEFAULT_ADVERTISING_CHANNELS,
-	matchStomxMarketingChannel,
-	buildStomxDefaultAdvertisingChannels,
+	CANONICAL_DENTE_ADVERTISING_CHANNELS,
+	matchDenteMarketingChannel,
+	buildDenteDefaultAdvertisingChannels,
 	aggregateCrmMarketingMetrics,
 	type AdvertisingChannelInput,
 } from "../marketing/marketingRomiEngine.js";
-import { STOMX_MARKETING_SOURCES } from "../patients/stomxPatientTagsCatalog.js";
+import { DENTE_MARKETING_SOURCES } from "../patients/tagsModules/marketingSources.js";
 
 describe("Dental Marketing ROMI & Performance Engine", () => {
 	it("1. calculateChannelRomi computes exact positive ROMI, CAC, and average check", () => {
@@ -156,9 +156,9 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 		assert.throws(() => advertisingChannelInputSchema.parse(invalidNegative));
 	});
 
-	it("8. STOMX_MARKETING_SOURCES defines the 10 canonical Russian dental channels", () => {
-		assert.equal(STOMX_MARKETING_SOURCES.length, 10);
-		const keys = STOMX_MARKETING_SOURCES.map((s) => s.channelKey);
+	it("8. DENTE_MARKETING_SOURCES defines the 10 canonical Russian dental channels", () => {
+		assert.equal(DENTE_MARKETING_SOURCES.length, 10);
+		const keys = DENTE_MARKETING_SOURCES.map((s) => s.channelKey);
 		assert.deepEqual(keys, [
 			"gis2",
 			"yandex_maps",
@@ -172,12 +172,12 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 			"flyers",
 		]);
 
-		const defaults = buildStomxDefaultAdvertisingChannels();
+		const defaults = buildDenteDefaultAdvertisingChannels();
 		assert.equal(defaults.length, 10);
-		assert.equal(STOMX_DEFAULT_ADVERTISING_CHANNELS.length, 10);
+		assert.equal(CANONICAL_DENTE_ADVERTISING_CHANNELS.length, 10);
 
-		// Sarafanное радио has 0 budget (organic)
-		const sarafan = STOMX_DEFAULT_ADVERTISING_CHANNELS.find((c) => c.channelKey === "word_of_mouth");
+		// Сарафанное радио has 0 budget (organic)
+		const sarafan = CANONICAL_DENTE_ADVERTISING_CHANNELS.find((c) => c.channelKey === "word_of_mouth");
 		assert.ok(sarafan);
 		assert.equal(sarafan.spentKopecks, 0);
 	});
@@ -189,7 +189,7 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 		// CAC: 25,000 / 10 = 2,500 ₽
 		// ROMI: ((150,000 - 25,000) / 25,000) * 100 = +500.0%
 		const input: AdvertisingChannelInput = {
-			id: "ch_stomx_yandex_maps",
+			id: "ch_dente_yandex_maps",
 			channelKey: "yandex_maps",
 			nameRu: "Яндекс Карты",
 			categoryRu: "Гео-сервисы",
@@ -211,17 +211,17 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 		assert.equal(metric.romiFormatted, "+500.0%");
 	});
 
-	it("10. matchStomxMarketingChannel and aggregateCrmMarketingMetrics aggregate real CRM data", () => {
+	it("10. matchDenteMarketingChannel and aggregateCrmMarketingMetrics aggregate real CRM data", () => {
 		// Matcher tests
-		assert.equal(matchStomxMarketingChannel("2ГИС Карты"), "gis2");
-		assert.equal(matchStomxMarketingChannel("Яндекс.Карты"), "yandex_maps");
-		assert.equal(matchStomxMarketingChannel("СберЗдоровье онлайн"), "sberhealth");
-		assert.equal(matchStomxMarketingChannel("ВКонтакте таргет"), "vk");
-		assert.equal(matchStomxMarketingChannel("Рекомендация родственников"), "word_of_mouth");
-		assert.equal(matchStomxMarketingChannel("Официальный сайт клиники"), "website");
-		assert.equal(matchStomxMarketingChannel("Листовка у метро"), "flyers");
-		assert.equal(matchStomxMarketingChannel("Инстаграм кейсы"), "instagram");
-		assert.equal(matchStomxMarketingChannel(null), "word_of_mouth");
+		assert.equal(matchDenteMarketingChannel("2ГИС Карты"), "gis2");
+		assert.equal(matchDenteMarketingChannel("Яндекс.Карты"), "yandex_maps");
+		assert.equal(matchDenteMarketingChannel("СберЗдоровье онлайн"), "sberhealth");
+		assert.equal(matchDenteMarketingChannel("ВКонтакте таргет"), "vk");
+		assert.equal(matchDenteMarketingChannel("Рекомендация родственников"), "word_of_mouth");
+		assert.equal(matchDenteMarketingChannel("Официальный сайт клиники"), "website");
+		assert.equal(matchDenteMarketingChannel("Листовка у метро"), "flyers");
+		assert.equal(matchDenteMarketingChannel("Инстаграм кейсы"), "instagram");
+		assert.equal(matchDenteMarketingChannel(null), "word_of_mouth");
 
 		// Aggregator tests
 		const mockPatients = [
@@ -264,10 +264,10 @@ describe("Dental Marketing ROMI & Performance Engine", () => {
 	});
 
 	it("11. Handles Napopravku, friend recommendations, and zero-denominator safely", () => {
-		assert.equal(matchStomxMarketingChannel("НаПоправку запись онлайн"), "napopravku");
-		assert.equal(matchStomxMarketingChannel("Рекомендация друга"), "word_of_mouth");
-		assert.equal(matchStomxMarketingChannel("Фасадная вывеска"), "outdoor");
-		assert.equal(matchStomxMarketingChannel("Таргетинг VK"), "vk");
+		assert.equal(matchDenteMarketingChannel("НаПоправку запись онлайн"), "napopravku");
+		assert.equal(matchDenteMarketingChannel("Рекомендация друга"), "word_of_mouth");
+		assert.equal(matchDenteMarketingChannel("Фасадная вывеска"), "outdoor");
+		assert.equal(matchDenteMarketingChannel("Таргетинг VK"), "vk");
 
 		// Test Napopravku dynamic inclusion
 		const patientsWithNapopravku = [

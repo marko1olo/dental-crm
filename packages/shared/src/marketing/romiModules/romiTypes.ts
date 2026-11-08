@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STOMX_MARKETING_SOURCES, type StomxMarketingSourceItem } from "../../patients/stomxPatientTagsCatalog.js";
+import { DENTE_MARKETING_SOURCES, type MarketingSourceItem } from "../../patients/tagsModules/marketingSources.js";
 
 export type RomiPerformanceStatus = "super_profitable" | "profitable" | "break_even" | "loss" | "organic";
 
@@ -85,7 +85,7 @@ export interface PatientCohortMetric {
 }
 
 export function buildDenteDefaultAdvertisingChannels(): AdvertisingChannelInput[] {
-	return STOMX_MARKETING_SOURCES.map((source: StomxMarketingSourceItem) => ({
+	return DENTE_MARKETING_SOURCES.map((source: MarketingSourceItem) => ({
 		id: `ch_dente_${source.channelKey}`,
 		channelKey: source.channelKey,
 		nameRu: source.nameRu,
@@ -102,8 +102,6 @@ export function buildDenteDefaultAdvertisingChannels(): AdvertisingChannelInput[
 export const CANONICAL_DENTE_ADVERTISING_CHANNELS: readonly AdvertisingChannelInput[] =
 	Object.freeze(buildDenteDefaultAdvertisingChannels());
 export const DENTE_DEFAULT_ADVERTISING_CHANNELS = CANONICAL_DENTE_ADVERTISING_CHANNELS;
-export const buildStomxDefaultAdvertisingChannels = buildDenteDefaultAdvertisingChannels;
-export const STOMX_DEFAULT_ADVERTISING_CHANNELS = CANONICAL_DENTE_ADVERTISING_CHANNELS;
 
 export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInput[] = [
 	{ id: "ch_yandex_direct", channelKey: "yandex_direct", nameRu: "Яндекс.Директ (Контекстная реклама)", categoryRu: "Контекст", spentKopecks: 6500000, leadsCount: 30, primaryPatientsCount: 24, revenueKopecks: 34500000, notes: "Горячий спрос по имплантации и лечению кариеса" },

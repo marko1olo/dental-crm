@@ -7,9 +7,9 @@ import { RecallListPanel } from "../../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../../components/schedule/FreedSlotsPanel";
 import type { AnalyticsSubDashboardsProps } from "./types";
 
-const MarketingRoiModal = lazy(() =>
-	import("../../components/analytics/MarketingRoiModal").then((module) => ({
-		default: module.MarketingRoiModal,
+const MarketingDashboardView = lazy(() =>
+	import("../MarketingDashboardView").then((module) => ({
+		default: module.MarketingDashboardView,
 	})),
 );
 
@@ -101,10 +101,30 @@ export function AnalyticsSubDashboards({
 
 			{isMarketingRoiOpen && (
 				<Suspense fallback={null}>
-					<MarketingRoiModal
-						isOpen={isMarketingRoiOpen}
-						onClose={() => setIsMarketingRoiOpen(false)}
-					/>
+					<div
+						className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs p-2 sm:p-4 flex items-center justify-center animate-in fade-in"
+						data-testid="marketing-roi-modal-overlay"
+						role="dialog"
+						aria-modal="true"
+					>
+						<div className="w-full max-w-7xl h-[92vh] flex flex-col rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl overflow-hidden relative">
+							<div className="flex items-center justify-between p-4 border-b border-[var(--line)] bg-[var(--paper-soft)]">
+								<h3 className="font-semibold text-base">Сквозная аналитика маркетинга и воронки</h3>
+								<button
+									type="button"
+									onClick={() => setIsMarketingRoiOpen(false)}
+									className="p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+									aria-label="Закрыть"
+									data-testid="marketing-roi-close-btn"
+								>
+									✕
+								</button>
+							</div>
+							<div className="flex-1 overflow-y-auto p-4">
+								<MarketingDashboardView embedded={true} />
+							</div>
+						</div>
+					</div>
 				</Suspense>
 			)}
 

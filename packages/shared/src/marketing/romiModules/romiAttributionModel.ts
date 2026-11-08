@@ -1,4 +1,4 @@
-import { STOMX_MARKETING_SOURCES } from "../../patients/stomxPatientTagsCatalog.js";
+import { DENTE_MARKETING_SOURCES } from "../../patients/tagsModules/marketingSources.js";
 import type { AdvertisingChannelInput } from "./romiTypes.js";
 
 export type AttributionModelType = "first_touch" | "last_touch" | "linear";
@@ -45,8 +45,6 @@ export function matchDenteMarketingChannel(rawSource?: string | null): string {
 	return "word_of_mouth";
 }
 
-export const matchStomxMarketingChannel = matchDenteMarketingChannel;
-
 export function aggregateCrmMarketingMetrics(params: {
 	patients: ReadonlyArray<{ id: string; source?: string | null | undefined; administrativeProfile?: any; notes?: string | null | undefined }>;
 	appointments: ReadonlyArray<{ id: string; patientId: string; status: string; costRub?: number | undefined }>;
@@ -86,9 +84,9 @@ export function aggregateCrmMarketingMetrics(params: {
 			s.leads++;
 		}
 	}
-	const result: AdvertisingChannelInput[] = STOMX_MARKETING_SOURCES.map((src) => {
+	const result: AdvertisingChannelInput[] = DENTE_MARKETING_SOURCES.map((src) => {
 		const st = stats.get(src.channelKey) ?? { leads: 0, primary: 0, repeat: 0, rev: 0 };
-		const custom = params.customBudgetsKopecks?.[src.channelKey] ?? params.customBudgetsKopecks?.[`ch_dente_${src.channelKey}`] ?? params.customBudgetsKopecks?.[`ch_stomx_${src.channelKey}`];
+		const custom = params.customBudgetsKopecks?.[src.channelKey] ?? params.customBudgetsKopecks?.[`ch_dente_${src.channelKey}`];
 		return {
 			id: `ch_dente_${src.channelKey}`, channelKey: src.channelKey, nameRu: src.nameRu, categoryRu: src.categoryRu,
 			spentKopecks: custom !== undefined ? custom : (src.defaultSpendRub * 100),
@@ -97,12 +95,12 @@ export function aggregateCrmMarketingMetrics(params: {
 		};
 	});
 	for (const [key, st] of stats) {
-		if (STOMX_MARKETING_SOURCES.some((s) => s.channelKey === key)) continue;
+		if (DENTE_MARKETING_SOURCES.some((s) => s.channelKey === key)) continue;
 		if (st.primary > 0 || st.rev > 0 || st.leads > 0 || params.customBudgetsKopecks?.[key]) {
 			result.push({
 				id: `ch_custom_${key}`, channelKey: key, nameRu: key === "napopravku" ? "НаПоправку" : key,
 				categoryRu: key === "napopravku" ? "Мед-агрегаторы" : "Реклама",
-				spentKopecks: params.customBudgetsKopecks?.[key] ?? (key === "napopravku" ? 1200000 : 0),
+				spentKopecks: params.customBudgetsKopecks?.[key] ?? 0,
 				leadsCount: Math.max(st.leads, st.primary), primaryPatientsCount: st.primary, repeatVisitsCount: st.repeat,
 				revenueKopecks: st.rev, totalLtvRevenueKopecks: st.rev,
 				notes: key === "napopravku" ? "Медицинский портал и сервис онлайн-записи НаПоправку" : "Дополнительный канал",

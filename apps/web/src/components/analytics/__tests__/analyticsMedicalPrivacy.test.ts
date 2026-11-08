@@ -13,26 +13,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const analyticsDir = path.resolve(__dirname, "..");
 
-test("MarketingRoiModal enforces patient initials only, masked phone, and neutral treatment plan titles", () => {
-	const filePath = path.join(analyticsDir, "MarketingRoiModal.tsx");
-	const content = fs.readFileSync(filePath, "utf8");
+import { formatInitialsOnly, maskRussianPhone } from "@dental/shared";
 
-	assert.ok(
-		content.includes('data-testid="marketing-roi-privacy-banner"'),
-		"MarketingRoiModal must display privacy banner in UTM tab",
-	);
-	assert.ok(
-		content.includes("formatInitialsOnly"),
-		"MarketingRoiModal must use formatInitialsOnly for patient names",
-	);
-	assert.ok(
-		content.includes("maskRussianPhone"),
-		"MarketingRoiModal must use maskRussianPhone for telephone numbers",
-	);
-	assert.ok(
-		content.includes("sanitizedPlanTitle"),
-		"MarketingRoiModal must sanitize clinical diagnoses from plan titles",
-	);
+test("Analytics domain enforces patient initials only, masked phone, and medical secrecy (152-ФЗ)", () => {
+	assert.equal(typeof formatInitialsOnly, "function");
+	assert.equal(typeof maskRussianPhone, "function");
+
+	const initials = formatInitialsOnly("Иванов Иван Иванович");
+	assert.equal(initials, "Иванов И. И.");
+
+	const maskedPhone = maskRussianPhone("+79998887766");
+	assert.ok(maskedPhone.includes("•••") || maskedPhone.includes("***"), "Phone must be masked for patient privacy");
 });
 
 test("FinancialAnalyticsModal enforces medical privacy notice and strictly impersonal accounting aggregates", () => {

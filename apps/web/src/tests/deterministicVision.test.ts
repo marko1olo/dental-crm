@@ -91,10 +91,10 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ component: "ToothContextDrawer", selector: ".dente-row-del-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "primary_action" },
 				{ component: "PatientCabinetModal", selector: ".pc-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "LeadsKanbanView", selector: ".kanban-modal-close", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
-				{ component: "MarketingRoiModal", selector: ".marketing-roi-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
+				{ component: "MarketingView", selector: ".marketing-studio-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "AnesthesiaQuickBar", selector: ".anesthesia-quick-bar", minWidthPx: 44, minHeightPx: 44, targetCategory: "primary_action" },
 				{ component: "ShiftCloseZReportModal", selector: ".cash-shift-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
-				{ component: "SanpinRegistryPackageModal", selector: ".document-package-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
+				{ component: "ClinicalVisitPackageModal", selector: ".document-package-close-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "modal_close" },
 				{ component: "TreatmentPlan3TierComparison", selector: ".plan-tier-segment-btn", minWidthPx: 44, minHeightPx: 44, targetCategory: "tariff_segmented" },
 			];
 
@@ -153,7 +153,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "diagnostics/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
 				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
 				{ file: "emergency/emergencyRescue.css", classPattern: ".emergency-close-btn" },
-				{ file: "analytics/marketingRoi.css", classPattern: ".marketing-roi-close-btn" },
+				{ file: "marketing/marketing.css", classPattern: ".marketing-studio-close-btn" },
 				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
 				{ file: "emr/templates/clinicalDiaryTemplates.css", classPattern: ".cd-templates-close-btn" },
 				{ file: "documents/documentNavigation.css", classPattern: ".document-package-close-btn" },

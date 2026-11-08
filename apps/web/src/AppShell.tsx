@@ -25,7 +25,6 @@ import { StandalonePatientCardHost } from "./components/appLayout/modalsContaine
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
-import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
@@ -346,7 +345,6 @@ export function AppShell() {
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
 			<DirectMarketingLauncher />
-			<DirectMarketingRoiLauncher />
 			<DirectAnalyticsLauncher />
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />

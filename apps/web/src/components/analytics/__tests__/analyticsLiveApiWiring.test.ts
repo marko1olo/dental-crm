@@ -14,13 +14,13 @@ const __dirname = path.dirname(__filename);
 const analyticsDir = path.resolve(__dirname, "..");
 const leadsDir = path.resolve(__dirname, "../../leads");
 
-test("MarketingRoiModal fetches real /api/marketing/attribution", () => {
-	const filePath = path.join(analyticsDir, "MarketingRoiModal.tsx");
+test("useMarketingLiveSpends fetches real /api/marketing/attribution", () => {
+	const filePath = path.resolve(analyticsDir, "../../pages/marketingDashboardModules/useMarketingLiveSpends.ts");
 	const content = fs.readFileSync(filePath, "utf8");
 
 	assert.ok(
 		content.includes("/api/marketing/attribution"),
-		"MarketingRoiModal must fetch from /api/marketing/attribution",
+		"useMarketingLiveSpends must fetch from /api/marketing/attribution",
 	);
 	assert.ok(
 		content.includes("denteAdminSecretRequestHeaders"),

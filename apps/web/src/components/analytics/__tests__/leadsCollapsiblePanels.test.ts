@@ -35,13 +35,3 @@ test("LeadsFunnelAnalyticsModal implements collapsible panels for Waterfall and 
 	assert.ok(content.includes('data-testid="channels-compact-strip"'));
 	assert.ok(content.includes('data-testid="channels-table-expanded"'));
 });
-
-test("MarketingRoiModal implements collapsible 5-stage funnel breakdown", () => {
-	const filePath = path.join(analyticsDir, "MarketingRoiModal.tsx");
-	assert.ok(fs.existsSync(filePath), "MarketingRoiModal.tsx must exist");
-	const content = fs.readFileSync(filePath, "utf8");
-
-	assert.ok(content.includes('data-testid="toggle-funnel-stages-btn"'));
-	assert.ok(content.includes('data-testid="funnel-compact-summary"'));
-	assert.ok(content.includes('data-testid="funnel-stages-expanded"'));
-});

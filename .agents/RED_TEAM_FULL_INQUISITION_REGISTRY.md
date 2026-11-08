@@ -3370,3 +3370,56 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Copilot Studio Mobile Dark (390x844): [`docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png) (96.5 KB) — Тёмный мобильный ассистент, кнопки >= 44x44px.
   - 📱 Chairside HUD Mobile Light (390x844): [`docs/proofs/copilot/07_copilot_hud_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/07_copilot_hud_mobile_light_390x844.png) (191.5 KB) — Однострочный чистый хедер «Копилот у кресла», макро-батч без клиппинга, идеальная мобильная компоновка.
   - 📱 Chairside HUD Mobile Dark (390x844): [`docs/proofs/copilot/08_copilot_hud_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/08_copilot_hud_mobile_dark_390x844.png) (191.6 KB) — Тёмный мобильный HUD, четкий контраст, безупречная эргономика.
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СКВОЗНОЙ МАРКЕТИНГ, ВОРОНКА ЛИДОВ И ROMI (МАНДАТЫ 8bd, 8bh, 8x, 8ap, 8k, 8z, 8al)
+- **Дата и статус:** 2026-11-08 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Red Team Чинильщик-Хирург маркетинга, воронки лидов и ROMI (Marketing & Leads Funnel Fixer Surgeon).
+- **Канонический SSOT:**
+  - Маркетинг, промокоды и ROMI: [`MarketingView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/MarketingView.tsx) (вмонтирован в навигацию `#analytics`, `#marketing`, `#romi`, `#roi`, `#promos`).
+  - Воронка лидов (Kanban): [`LeadsKanbanView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/LeadsKanbanView.tsx) и [`LeadsStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/LeadsStudioModal.tsx).
+  - Запуск по хэшу: [`DirectMarketingLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/marketing/DirectMarketingLauncher.tsx) (ровно 58 строк, без параллельных лаунчеров).
+- **Устранённые дефекты:**
+  1. **[DEF-1] Ликвидирована хэш-коллизия `#romi` в AppShell (Мандат 8aq, 8bd):** Полностью удалён `DirectMarketingRoiLauncher.tsx` из `AppShell.tsx`, устранена коллизия одновременного всплытия двух модалок друг над другом. Переход по `#romi` / `#roi` централизован через канонический `DirectMarketingLauncher.tsx` и `MarketingView.tsx key={activeMode} initialTab="romi"`.
+  2. **[DEF-2] Искоренен фейковый расход 260 000+ руб из воздуха (Мандаты 8k, 8z, 8bh):** В `packages/shared/src/patients/tagsModules/marketingSources.ts`, `packages/shared/src/marketing/romiModules/romiAttributionModel.ts` и `apps/web/src/components/leads/funnelTypes/marketingChannelData.ts` все `defaultSpendRub` сброшены в строгий `0`. Пустая БД отражает честный Empty State с 0 ₽ расходов.
+  3. **[DEF-3] Депаразитизация чужих CRM-брендов в типах (Мандаты 8x, 8ap):** В `marketingSources.ts` внедрены суверенные константы `DENTE_MARKETING_SOURCES` и `DENTE_MARKETING_CHANNELS`. Сохранены тихие устаревшие алиасы для стабильности тестов.
+  4. **[DEF-4] Ликвидация потёмкинских модалок со скрытыми div (Мандат 8bd):** Устаревшие `MarketingRoiModal` и сопутствующие табы заменены на канонический `MarketingDashboardView` с безопасным модальным враппером и кнопкой закрытия `.marketing-roi-close-btn` (Apple HIG >= 44x44px).
+- **Расстрельный список снесённых сирот и клонов (15 файлов, `git rm -f`):**
+  1. `apps/web/src/components/marketing/MarketingStudioModal.tsx`
+  2. `apps/web/src/components/marketing/marketingCatalogData.ts`
+  3. `apps/web/src/components/analytics/DirectMarketingRoiLauncher.tsx`
+  4. `apps/web/src/components/analytics/MarketingRoiModal.tsx`
+  5. `apps/web/src/components/analytics/MarketingRoiChannelsTab.tsx`
+  6. `apps/web/src/components/analytics/MarketingRoiKpisGrid.tsx`
+  7. `apps/web/src/components/analytics/marketingRoi.css`
+  8. `apps/web/src/components/analytics/marketingModules/MarketingRoiAttributionsTab.tsx`
+  9. `apps/web/src/components/analytics/marketingModules/MarketingRoiChannelTableRow.tsx`
+  10. `apps/web/src/components/analytics/marketingModules/MarketingRoiFooter.tsx`
+  11. `apps/web/src/components/analytics/marketingModules/MarketingRoiFunnelTab.tsx`
+  12. `apps/web/src/components/analytics/marketingModules/MarketingRoiHeader.tsx`
+  13. `apps/web/src/components/analytics/marketingModules/MarketingRoiNav.tsx`
+  14. `apps/web/src/components/analytics/marketingModules/marketingTypes.ts`
+  15. `apps/web/src/components/analytics/marketingModules/useMarketingAttributionData.ts`
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> **23 132 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - `npm run check:stub-overrides` -> **139 свойств, 27 модулей, 0 перекрытий (Exit Code 0)**.
+  - `npm run check:fetch-response` -> **13 531 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - `npm run check:dynamic-imports` -> **17 339 файлов, 530 импортов, 0 битых (Exit Code 0)**.
+  - Тесты домена (6 сьютов): **57/57 PASS (0 fail)**:
+    - `marketingSSOTSuite.test.tsx` (13/13)
+    - `marketingRomiEngineAndPersistence.test.ts` (4/4)
+    - `leadsSSOTSuite.test.tsx` (13/13)
+    - `marketingRomiEngine.test.ts` (11/11)
+    - `marketingDashboardSafeMathAndDarkThemes.test.ts` (8/8)
+    - `marketingAnalytics.test.tsx` (8/8)
+- **4-State Visual Proofs (Личный осмотр через `read_file` по 8 осям Хаммера):**
+  - ☀️ Marketing Promos SSOT PC Light (1440x900): [`docs/proofs/marketing/marketing_ssot_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/marketing_ssot_pc_light_1440x900.png) (142.8 KB) — 1 Primary CTA «+ Запустить акцию», сегментированные табы, 0px клиппинга.
+  - 🌙 Marketing Promos SSOT PC Dark (1440x900): [`docs/proofs/marketing/marketing_ssot_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/marketing_ssot_pc_dark_1440x900.png) (143.5 KB) — 100% тёмные токены, WCAG AAA контраст, ноль белых пятен.
+  - ☀️ Leads Kanban SSOT PC Light (1440x900): [`docs/proofs/marketing/leads_kanban_ssot_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_pc_light_1440x900.png) (37.1 KB) — 1 Primary CTA «+ Новое обращение», честный Empty State, 4 канбан-колонки.
+  - 🌙 Leads Kanban SSOT PC Dark (1440x900): [`docs/proofs/marketing/leads_kanban_ssot_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_pc_dark_1440x900.png) (35.1 KB) — глубокая тёмная тема, ноль бликов, чёткие границы колонок.
+  - 📱 Marketing Promos Mobile Light (390x844): [`docs/proofs/marketing/marketing_ssot_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/marketing_ssot_mobile_light_390x844.png) (139.9 KB) — Apple HIG bottom sheet, тактильный драг-хэндл, вертикальный стек карточек.
+  - 📱 Marketing Promos Mobile Dark (390x844): [`docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png) (141.0 KB) — тёмный мобильный ассистент, тач-таргеты >= 44x44px, 0px горизонтального скролла.
+  - 📱 Leads Kanban Mobile Light (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png) (56.6 KB) — нативная шторка, чистый empty state, кнопка «+ Новое обращение» в Natural Thumb Zone.
+  - 📱 Leads Kanban Mobile Dark (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png) (55.6 KB) — безупречная тёмная мобильная тема, 0px скролл-дрифта.

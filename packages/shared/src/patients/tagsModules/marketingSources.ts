@@ -6,11 +6,8 @@ export const MARKETING_CHANNELS = [
 	"insurance_dms", "doctor_referral", "other",
 ] as const;
 
-export const STOMX_MARKETING_CHANNELS = MARKETING_CHANNELS;
 export const marketingChannelSchema = z.enum(MARKETING_CHANNELS);
-export const stomxMarketingChannelSchema = marketingChannelSchema;
 export type MarketingChannel = z.infer<typeof marketingChannelSchema>;
-export type StomxMarketingChannel = MarketingChannel;
 
 export interface MarketingSourceMeta {
 	readonly id?: number;
@@ -19,8 +16,6 @@ export interface MarketingSourceMeta {
 	readonly isSystem: boolean;
 	readonly sort: number;
 }
-
-export type StomxMarketingSourceMeta = MarketingSourceMeta;
 
 export const MARKETING_SOURCES_CATALOG: readonly MarketingSourceMeta[] = [
 	{ channel: "yandex", nameRu: "Яндекс (Карты, Поиск, Директ)", isSystem: false, sort: 1 },
@@ -38,15 +33,11 @@ export const MARKETING_SOURCES_CATALOG: readonly MarketingSourceMeta[] = [
 	{ channel: "other", nameRu: "Другой источник", isSystem: false, sort: 13 },
 ];
 
-export const STOMX_MARKETING_SOURCES_CATALOG = MARKETING_SOURCES_CATALOG;
-
 export const MARKETING_BY_CHANNEL = Object.freeze(
 	Object.fromEntries(
 		MARKETING_SOURCES_CATALOG.map((item) => [item.channel, item]),
 	) as Record<MarketingChannel, MarketingSourceMeta>,
 );
-
-export const STOMX_MARKETING_BY_CHANNEL = MARKETING_BY_CHANNEL;
 
 export interface MarketingSourceItem {
 	readonly id: number;
@@ -58,24 +49,32 @@ export interface MarketingSourceItem {
 	readonly descriptionRu: string;
 }
 
-export type StomxMarketingSourceItem = MarketingSourceItem;
 export type DenteMarketingSourceItem = MarketingSourceItem;
 
 export const MARKETING_SOURCES: readonly MarketingSourceItem[] = [
-	{ id: 201, channelKey: "gis2", nameRu: "2GIS", categoryRu: "Гео-сервисы", defaultSpendRub: 18000, isOrganic: false, descriptionRu: "Картографический справочник 2ГИС: гео-профиль клиники и кнопка онлайн-записи" },
-	{ id: 202, channelKey: "yandex_maps", nameRu: "Яндекс Карты", categoryRu: "Гео-сервисы", defaultSpendRub: 25000, isOrganic: false, descriptionRu: "Гео-приоритет клиники в Яндекс Картах и Навигаторе с синей меткой" },
-	{ id: 5, channelKey: "prodoctorov", nameRu: "ПроДокторов", categoryRu: "Мед-агрегаторы", defaultSpendRub: 15000, isOrganic: false, descriptionRu: "Профили ведущих врачей на медицинском портале отзывов ПроДокторов" },
+	{ id: 201, channelKey: "gis2", nameRu: "2GIS", categoryRu: "Гео-сервисы", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Картографический справочник 2ГИС: гео-профиль клиники и кнопка онлайн-записи" },
+	{ id: 202, channelKey: "yandex_maps", nameRu: "Яндекс Карты", categoryRu: "Гео-сервисы", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Гео-приоритет клиники в Яндекс Картах и Навигаторе с синей меткой" },
+	{ id: 5, channelKey: "prodoctorov", nameRu: "ПроДокторов", categoryRu: "Мед-агрегаторы", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Профили ведущих врачей на медицинском портале отзывов ПроДокторов" },
 	{ id: 3, channelKey: "word_of_mouth", nameRu: "Сарафанное радио", categoryRu: "Органика", defaultSpendRub: 0, isOrganic: true, descriptionRu: "Рекомендации постоянных пациентов, членов семьи и знакомых (0 ₽ бюджет)" },
-	{ id: 205, channelKey: "sberhealth", nameRu: "СберЗдоровье", categoryRu: "Мед-агрегаторы", defaultSpendRub: 12000, isOrganic: false, descriptionRu: "Записи пациентов через экосистему медицинских сервисов СберЗдоровье (DocDoc)" },
-	{ id: 206, channelKey: "vk", nameRu: "ВКонтакте", categoryRu: "Соцсети", defaultSpendRub: 20000, isOrganic: false, descriptionRu: "Таргетированная реклама и официальное сообщество клиники ВКонтакте" },
-	{ id: 2, channelKey: "outdoor", nameRu: "Наружная реклама", categoryRu: "Наружная реклама", defaultSpendRub: 15000, isOrganic: false, descriptionRu: "Фасадная световая вывеска, панель-кронштейн и указатели" },
-	{ id: 4, channelKey: "website", nameRu: "Сайт", categoryRu: "Сайт / SEO", defaultSpendRub: 30000, isOrganic: false, descriptionRu: "Официальный сайт стоматологии, поисковое SEO-продвижение и веб-виджет" },
-	{ id: 209, channelKey: "instagram", nameRu: "Инстаграм", categoryRu: "Соцсети", defaultSpendRub: 14000, isOrganic: false, descriptionRu: "Клинические кейсы до/после, сторис и запись через директ Инстаграм" },
-	{ id: 1, channelKey: "flyers", nameRu: "Листовки", categoryRu: "Полиграфия", defaultSpendRub: 8000, isOrganic: false, descriptionRu: "Печатные промо-листовки, буклеты в жилые комплексы и партнерские стойки" },
+	{ id: 205, channelKey: "sberhealth", nameRu: "СберЗдоровье", categoryRu: "Мед-агрегаторы", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Записи пациентов через экосистему медицинских сервисов СберЗдоровье (DocDoc)" },
+	{ id: 206, channelKey: "vk", nameRu: "ВКонтакте", categoryRu: "Соцсети", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Таргетированная реклама и официальное сообщество клиники ВКонтакте" },
+	{ id: 2, channelKey: "outdoor", nameRu: "Наружная реклама", categoryRu: "Наружная реклама", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Фасадная световая вывеска, панель-кронштейн и указатели" },
+	{ id: 4, channelKey: "website", nameRu: "Сайт", categoryRu: "Сайт / SEO", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Официальный сайт стоматологии, поисковое SEO-продвижение и веб-виджет" },
+	{ id: 209, channelKey: "instagram", nameRu: "Инстаграм", categoryRu: "Соцсети", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Клинические кейсы до/после, сторис и запись через директ Инстаграм" },
+	{ id: 1, channelKey: "flyers", nameRu: "Листовки", categoryRu: "Полиграфия", defaultSpendRub: 0, isOrganic: false, descriptionRu: "Печатные промо-листовки, буклеты в жилые комплексы и партнерские стойки" },
 ];
 
-export const STOMX_MARKETING_SOURCES = MARKETING_SOURCES;
 export const DENTE_MARKETING_SOURCES = MARKETING_SOURCES;
+export const DENTE_MARKETING_CHANNELS = MARKETING_CHANNELS;
+export const DENTE_MARKETING_SOURCES_CATALOG = MARKETING_SOURCES_CATALOG;
+export const DENTE_MARKETING_BY_CHANNEL = MARKETING_BY_CHANNEL;
+
+// Deprecated aliases for backward compatibility (Mandates 8x/8ap: use DENTE_* or MARKETING_*)
+export const STOMX_MARKETING_CHANNELS = MARKETING_CHANNELS;
+export const STOMX_MARKETING_SOURCES = MARKETING_SOURCES;
+export const STOMX_MARKETING_SOURCES_CATALOG = MARKETING_SOURCES_CATALOG;
+export const STOMX_MARKETING_BY_CHANNEL = MARKETING_BY_CHANNEL;
+export const stomxMarketingChannelSchema = marketingChannelSchema;
 
 export function getMarketingChannelLabel(channel: MarketingChannel | string): string {
 	return MARKETING_BY_CHANNEL[channel as MarketingChannel]?.nameRu ?? channel;
