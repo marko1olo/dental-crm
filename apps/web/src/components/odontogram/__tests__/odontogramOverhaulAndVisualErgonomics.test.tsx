@@ -278,7 +278,9 @@ describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d,
 			"../../../../src/components/odontogram/chart/ToothCardHud.tsx",
 		);
 		const content =
-			fs.readFileSync(svgOdontogramPath, "utf-8") +
+			(fs.existsSync(svgOdontogramPath)
+				? fs.readFileSync(svgOdontogramPath, "utf-8")
+				: "") +
 			(fs.existsSync(toothWrapperPath)
 				? fs.readFileSync(toothWrapperPath, "utf-8")
 				: "") +

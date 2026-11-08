@@ -4,7 +4,7 @@ import { installmentPaymentStatusSchema } from "./telegramAndReceiptSchemas.js";
 import { nonNegativeMoneyRubSchema, positiveMoneyRubSchema } from "../money.js";
 import { isDateLikeString } from "../datetime/index.js";
 import { legacyTaxDeductionCertificateMinYear, taxDeductionCertificateMinYear } from "../documents/index.js";
-import { CLINICAL_TOOTH_STATE_VALUES } from "../clinical/stomtDefectsCatalog.js";
+import { CLINICAL_TOOTH_STATE_VALUES } from "../clinical/clinicalDefectsCatalog.js";
 import {
 	CANONICAL_TOOTH_STATES,
 	LEGACY_CLINICAL_TOOTH_STATUSES,

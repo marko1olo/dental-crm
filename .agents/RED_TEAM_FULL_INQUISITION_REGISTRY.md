@@ -522,6 +522,41 @@
      - 📱 Mobile Light 390×844: `docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png` (251.4 KB)
      - 🌙 Mobile Dark 390×844: `docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png` (258.2 KB)
 
+### [CLN-07] [ИСПРАВЛЕНО] Ликвидация мертвого параллельного стека anatomicalSvg, стендов gate1/gate2, канонизация ToothRadialMenu SSOT и депаразитизация пакета clinical (Мандаты 8bd, 8ap, 8b)
+- **Файлы:**
+  - `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx` *(физически удален через git rm)*
+  - `apps/web/src/components/odontogram/AnatomicalDualArchView.tsx` *(физически удален через git rm)*
+  - `apps/web/src/components/odontogram/anatomicalSvg/*` *(11 файлов физически удалены)*
+  - `apps/web/src/components/odontogram/gate1/*` *(45 файлов физически удалены)*
+  - `apps/web/src/components/odontogram/gate2/*` *(36 файлов физически удалены)*
+  - [`apps/web/src/components/odontogram/toothClickHandlerTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/toothClickHandlerTypes.ts)
+  - [`apps/web/src/components/odontogram/useOdontogramApplyToothState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramApplyToothState.ts)
+  - [`apps/web/src/components/odontogram/useOdontogramToothClickHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramToothClickHandler.ts)
+  - [`apps/web/src/components/odontogram/OdontogramModuleModalsBridge.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramModuleModalsBridge.tsx)
+  - [`apps/web/src/components/odontogram/useOdontogramModuleModalsState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramModuleModalsState.ts)
+  - [`apps/web/src/components/odontogram/useOdontogramHotkeys.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramHotkeys.ts)
+  - [`packages/shared/src/clinical/clinicalDefectsCatalog.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalDefectsCatalog.ts)
+  - [`packages/shared/src/clinical/clinicalPricelistCatalog.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalPricelistCatalog.ts)
+  - [`packages/shared/src/clinical/clinicalPricelistCategories.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalPricelistCategories.ts)
+  - [`packages/shared/src/clinical/clinicalDefectsData.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalDefectsData.ts)
+  - [`packages/shared/src/clinical/clinicalAnomaliesData.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalAnomaliesData.ts)
+  - [`packages/shared/src/clinical/clinicalDefects/`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/clinicalDefects/)
+- **Суть бага:** 
+  1. В `apps/web/src/components/odontogram/` сохранялся мертвый параллельный графический стек (`anatomicalSvg/`, 13 файлов) и прототипные стенды (`gate1/` 45 файлов, `gate2/` 36 файлов), не используемые в `App.tsx` и создававшие риск рассинхронизации анатомических векторов Wheeler 2.5D.
+  2. При клике на зуб в `useOdontogramToothClickHandler.ts` параллельно поднимались два разных интерфейса действий: устаревший прямоугольный `menuConfig` (`ToothActionMenuPortal`) и канонический `radialMenuData` (`ToothRadialMenu`), конкурируя за DOM-фокус и z-index.
+  3. В `packages/shared/src/clinical/` файлы носили паразитные имена сторонней CRM (`stomt*`, `stomx*`), а в корне лежали однострочные прокладки `clinicalDefectsCatalog.ts` и `clinicalPricelistCatalog.ts`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Физический снос параллельных стеков (Мандат 8bd):** Физически удалены через `git rm` устаревший `anatomicalSvg/` (включая `AnatomicalSvgOdontogram.tsx`, `AnatomicalDualArchView.tsx`), а также экспериментальные стенды `gate1/` (45 файлов) и `gate2/` (36 файлов). Единственным каноническим движком Wheeler 2.5D является `apps/web/src/components/odontogram/gate0/` (`AnatomicalGate0FullArchView.tsx`, `WheelerToothArch.tsx`).
+  2. **Канонизация единого ToothRadialMenu SSOT:** В `useOdontogramToothClickHandler.ts`, `useOdontogramApplyToothState.ts`, `useOdontogramHotkeys.ts` и `useOdontogramModuleModalsState.ts` демонтированы вызовы и рендер устаревшего `ToothActionMenuPortal`. `ToothRadialMenu` (`OdontogramRadialMenuSlot`) утвержден как единственный SSOT интерфейса действий с зубом с поддержкой пакетного режима (×N зубов) и мобильного Apple HIG Bottom Sheet.
+  3. **Суверенная депаразитизация пакета clinical (Мандат 8ap):** Все файлы `stomt*` и `stomx*` в `packages/shared/src/clinical/` переименованы в суверенные `clinical*` (`clinicalDefectsCatalog.ts`, `clinicalPricelistCatalog.ts`, `clinicalPricelistCategories.ts`, `clinicalDefectsData.ts`, `clinicalAnomaliesData.ts`, `clinicalDefects/`), однострочные прокладки удалены, импорты переведены на канон.
+  4. **Сохранение неприкосновенности чистых блоков:** Подтверждена 100% чистота `AnatomicalGate0Cell.tsx`, `AnatomicalGate0Row.tsx`, `OdontogramBatchBar.tsx`, `OdontogramQuickTextInput.tsx` и `apps/api/src/routes/odontogram/statusRoutes.ts`.
+  5. **Тесты и компиляция:**
+     - `apps/web/src/components/odontogram`: 85 файлов тестов, 738/738 PASS (100% GREEN).
+     - `packages/shared`: `npx tsc --noEmit` — 0 ошибок (Exit Code 0).
+     - `packages/shared/src/tests/clinicalDefectsDecomposition.test.ts` — 5/5 PASS.
+     - `packages/shared/src/tests/stomxPricelist.test.ts` — 11/11 PASS.
+     - Все машинные гейты (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) — 100% GREEN.
+
 ---
 
 ## 5. 📅 РАСПИСАНИЕ И СЕТКА КРЕСЕЛ

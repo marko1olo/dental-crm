@@ -3,7 +3,6 @@ import { OdontogramModalsLayer } from "./OdontogramModalsLayer";
 import { OdontogramPrintA4 } from "./OdontogramPrintA4";
 import { OdontogramRadialMenuSlot } from "./OdontogramRadialMenuSlot";
 import type { OdontogramModuleModalsBridgeProps } from "./odontogramModuleModalsBridgeTypes";
-import { ToothActionMenuPortal } from "./ToothActionMenuPortal";
 
 export * from "./odontogramModuleModalsBridgeTypes";
 
@@ -26,20 +25,6 @@ export const OdontogramModuleModalsBridge: React.FC<
 
 	return (
 		<>
-			<ToothActionMenuPortal
-				menuConfig={modals.radialMenuData ? null : modals.menuConfig}
-				onClose={modals.clearMenu}
-				selectedTeeth={sync.selectedTeeth}
-				activeSurfaces={sync.activeSurfaces}
-				setActiveSurfaces={sync.setActiveSurfaces}
-				onApplyToothState={handleApplyToothState}
-				onOpenContextDrawer={(num) => modals.setContextDrawerTooth(num)}
-				onOpenHistory={(num) => modals.setHistoryTooth(num)}
-				onOpenEndo={(num) => modals.setEndoTooth(num)}
-				onOneClickLabOrder={quickActions.handleOneClickLabOrder}
-				teethData={sync.teethData}
-			/>
-
 			<OdontogramRadialMenuSlot
 				radialMenuData={modals.radialMenuData}
 				setRadialMenuData={modals.setRadialMenuData}

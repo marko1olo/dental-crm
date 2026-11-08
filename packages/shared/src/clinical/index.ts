@@ -10,8 +10,8 @@ export * from "./endo/index.js";
 export * from "./endoProtocolEngine.js";
 export * from "./restorationProtocolEngine.js";
 export * from "./therapyProtocolEngine.js";
-export * from "./stomtDefectsCatalog.js";
-export * from "./stomxPricelistCatalog.js";
+export * from "./clinicalDefectsCatalog.js";
+export * from "./clinicalPricelistCatalog.js";
 export * from "../emr/periodontogram.js";
 export {
 	type TimelineCategory,
@@ -97,6 +97,7 @@ export {
 export * from "./clinicalMarketMaterialsCatalog.js";
 export * from "./clinicalDiagnosesSsot.js";
 export * from "./bundles/index.js";
+export * from "./presets/index.js";
 export * from "./diagnosisServiceBundles.js";
 export * from "./pricelistBatchImport.js";
 export * from "./informedConsentEngine.js";
@@ -104,4 +105,17 @@ export * from "./prescriptionCatalog.js";
 export * from "./stenographer/index.js";
 export * from "./touchErgonomics.js";
 export * from "./dentalFormulaTextParser.js";
+export * from "./speech/toothSpeechGrammar.js";
 export * from "../anesthesia/index.js";
+
+// Explicit re-exports to resolve wildcard collision (TS2308)
+export type {
+	ClinicalAnestheticInfo,
+	ClinicalMaterialCategory,
+	ClinicalMaterialDeduction,
+	ClinicalMaterialUnit,
+	ClinicalPresetCategory,
+	ClinicalService804n,
+	ToothClinicalState,
+} from "./soap/soapTypes.js";
+export { isValidFdiToothNumber } from "./dentalFormulaSsot.js";

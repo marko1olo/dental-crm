@@ -28,7 +28,7 @@ import {
 	STOMX_SURGERY_PROCEDURES,
 	STOMX_THERAPY_PROCEDURES,
 	type StomxPricelistCategory,
-} from "../clinical/stomxPricelistCatalog.js";
+} from "../clinical/clinicalPricelistCatalog.js";
 
 describe("StomX Pricelist & 804n Harmonizer Catalog", () => {
 	describe("1. Category Structure & Specialty Parity", () => {

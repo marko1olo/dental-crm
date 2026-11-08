@@ -45,7 +45,7 @@ test("состояния, которые пишутся в карту, суще�
 		readFileSync(
 			path.join(
 				webSrcRoot,
-				"../../../packages/shared/src/clinical/stomtDefectsCatalog.ts",
+				"../../../packages/shared/src/clinical/clinicalDefectsCatalog.ts",
 			),
 			"utf8",
 		);

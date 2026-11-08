@@ -3,20 +3,24 @@ import type { ToothActionMenuConfig } from "./ToothActionMenuPortal";
 import type { ToothState } from "./ToothChart";
 
 export interface UseOdontogramHotkeysParams {
-	readonly menuConfig: ToothActionMenuConfig | null;
-	readonly setMenuConfig: React.Dispatch<
+	readonly menuConfig?: ToothActionMenuConfig | null;
+	readonly setMenuConfig?: React.Dispatch<
 		React.SetStateAction<ToothActionMenuConfig | null>
-	>;
+	> | undefined;
+	readonly radialMenuData?: any;
+	readonly setRadialMenuData?: ((data: any) => void) | undefined;
 	readonly handleApplyToothState: (state: ToothState) => void;
 }
 
 export function useOdontogramHotkeys({
 	menuConfig,
 	setMenuConfig,
+	radialMenuData,
+	setRadialMenuData,
 	handleApplyToothState,
 }: UseOdontogramHotkeysParams) {
 	useEffect(() => {
-		if (!menuConfig) return;
+		if (!menuConfig && !radialMenuData) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const target = e.target as HTMLElement | null;
 			if (
@@ -30,7 +34,8 @@ export function useOdontogramHotkeys({
 
 			if (e.key === "Escape") {
 				e.preventDefault();
-				setMenuConfig(null);
+				if (setMenuConfig) setMenuConfig(null);
+				if (setRadialMenuData) setRadialMenuData(null);
 				return;
 			}
 
@@ -64,5 +69,11 @@ export function useOdontogramHotkeys({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [menuConfig, setMenuConfig, handleApplyToothState]);
+	}, [
+		menuConfig,
+		setMenuConfig,
+		radialMenuData,
+		setRadialMenuData,
+		handleApplyToothState,
+	]);
 }

@@ -67,11 +67,7 @@ export function useOdontogramToothClickHandler({
 					const range = resolveTeethRange(lastTooth, toothNumber);
 					const combined = Array.from(new Set([...selectedTeeth, ...range]));
 					setSelectedTeeth(combined);
-					setMenuConfig({
-						toothNumber,
-						...coords,
-						surfaces: activeSurfaces,
-					});
+					if (setMenuConfig) setMenuConfig(null);
 					return;
 				}
 			}
@@ -81,15 +77,7 @@ export function useOdontogramToothClickHandler({
 					? selectedTeeth.filter((t) => t !== toothNumber)
 					: [...selectedTeeth, toothNumber];
 				setSelectedTeeth(next);
-				if (next.length > 0) {
-					setMenuConfig({
-						toothNumber,
-						...coords,
-						surfaces: activeSurfaces,
-					});
-				} else {
-					setMenuConfig(null);
-				}
+				if (setMenuConfig) setMenuConfig(null);
 			} else {
 				let currentSurfaces = !selectedTeeth.includes(toothNumber)
 					? []
@@ -103,11 +91,7 @@ export function useOdontogramToothClickHandler({
 				}
 				setSelectedTeeth([toothNumber]);
 				setActiveSurfaces(currentSurfaces);
-				setMenuConfig({
-					toothNumber,
-					...coords,
-					...(currentSurfaces.length > 0 ? { surfaces: currentSurfaces } : {}),
-				});
+				if (setMenuConfig) setMenuConfig(null);
 
 				const currentTooth = teethDataRef.current?.find(
 					(t: any) => t.toothNumber === toothNumber,
@@ -143,6 +127,7 @@ export function useOdontogramToothClickHandler({
 		activeSurfaces,
 		updateToothState,
 		patientId,
+		setRadialMenuData,
 		setMenuConfig,
 	});
 

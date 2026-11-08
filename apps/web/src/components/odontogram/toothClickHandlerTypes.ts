@@ -9,9 +9,9 @@ export interface UseOdontogramToothClickHandlerParams {
 	readonly setActiveSurfaces: React.Dispatch<React.SetStateAction<string[]>>;
 	readonly isMultiSelectMode: boolean;
 	readonly odontogramUseSurfaces?: boolean | undefined;
-	readonly setMenuConfig: React.Dispatch<
+	readonly setMenuConfig?: React.Dispatch<
 		React.SetStateAction<ToothActionMenuConfig | null>
-	>;
+	> | undefined;
 	readonly setRadialMenuData: (data: any) => void;
 	readonly teethDataRef: React.MutableRefObject<any>;
 	readonly updateToothState: (

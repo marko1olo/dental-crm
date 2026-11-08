@@ -57,6 +57,8 @@ export const OdontogramModule = React.memo(
 			});
 
 		useOdontogramHotkeys({
+			radialMenuData: modals.radialMenuData,
+			setRadialMenuData: modals.setRadialMenuData,
 			menuConfig: modals.menuConfig,
 			setMenuConfig: modals.setMenuConfig,
 			handleApplyToothState,

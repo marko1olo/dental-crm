@@ -21,7 +21,10 @@ export function useOdontogramModuleModalsState() {
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 	const [_aiPendingProposal, setAiPendingProposal] = useState<any>(null);
 
-	const clearMenu = useCallback(() => setMenuConfig(null), []);
+	const clearMenu = useCallback(() => {
+		setMenuConfig(null);
+		setRadialMenuData(null);
+	}, []);
 
 	return {
 		menuConfig,
