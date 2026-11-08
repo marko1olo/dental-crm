@@ -6,7 +6,7 @@
  */
 
 import type { ReceiptItem } from "../../../../billing/ReceiptPreview.js";
-import { enqueueOfflineReceipt } from "../../../../../services/billing/offlineFiscalQueue.js";
+import { enqueueOfflinePayment } from "../../../../../offline/offlinePaymentQueue.js";
 import type { PaymentApiInvoiceItem, PaymentApiRequestBody } from "./paymentExecutionTypes.js";
 
 export interface DispatchPaymentResult {
@@ -43,11 +43,19 @@ export async function dispatchPaymentApi(
 	// 1. If navigator is explicitly offline, buffer directly to offline queue
 	if (typeof navigator !== "undefined" && !navigator.onLine) {
 		try {
-			await enqueueOfflineReceipt({
-				paymentId: `pay-offline-${Date.now()}`,
+			await enqueueOfflinePayment({
+				patientId: payload.patientId,
+				patientName: "Пациент",
 				visitId: payload.visitId || undefined,
-				payload,
-				status: "pending_fiscal_sync",
+				invoiceId: payload.documentId || undefined,
+				totalKopecks: Math.round(payload.amountRub * 100),
+				paymentType: (payload.method === "cash" || payload.method === "card" || payload.method === "sbp" || payload.method === "deposit") ? payload.method : "mixed",
+				items: (payload.invoiceItems || []).map((it) => ({
+					name: it.name,
+					priceKopecks: Math.round(it.priceRub * 100),
+					quantity: it.quantity,
+					code804n: it.code804n,
+				})),
 			});
 			return {
 				success: true,
@@ -102,11 +110,19 @@ export async function dispatchPaymentApi(
 
 	// 3. If network failed across both endpoints, buffer into offline queue to preserve cashier flow
 	try {
-		await enqueueOfflineReceipt({
-			paymentId: `pay-offline-${Date.now()}`,
+		await enqueueOfflinePayment({
+			patientId: payload.patientId,
+			patientName: "Пациент",
 			visitId: payload.visitId || undefined,
-			payload,
-			status: "pending_fiscal_sync",
+			invoiceId: payload.documentId || undefined,
+			totalKopecks: Math.round(payload.amountRub * 100),
+			paymentType: (payload.method === "cash" || payload.method === "card" || payload.method === "sbp" || payload.method === "deposit") ? payload.method : "mixed",
+			items: (payload.invoiceItems || []).map((it) => ({
+				name: it.name,
+				priceKopecks: Math.round(it.priceRub * 100),
+				quantity: it.quantity,
+				code804n: it.code804n,
+			})),
 		});
 		return {
 			success: true,

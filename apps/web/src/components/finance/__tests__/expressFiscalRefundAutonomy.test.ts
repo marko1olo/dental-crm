@@ -319,7 +319,7 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 
 			// 1. Verify advance container rendered instead of empty items box
 			assert.equal(html.includes('data-testid="refund-advance-container"'), true);
-			assert.equal(html.includes("Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)"), true);
+			assert.equal(html.includes("Возврат аванса / денежных средств по чеку"), true);
 
 			// 2. Verify inputs exist
 			assert.equal(html.includes('data-testid="input-refund-advance-amount"'), true);

@@ -116,8 +116,9 @@ async function main() {
     console.log("Loading live app at /?checkout=1 (PC Light)...");
     await pcPage.goto(`${BASE_URL}/?checkout=1`, {
       waitUntil: "domcontentloaded",
-      timeout: 30000,
+      timeout: 120000,
     });
+    await pcPage.waitForSelector('.boot-state', { state: 'detached', timeout: 120000 }).catch(() => {});
     await pcPage.waitForTimeout(2000);
     await setLightTheme(pcPage);
     await saveProof(pcPage, "01_cashbox_studio_pc_light_1440x900.png");
@@ -165,8 +166,9 @@ async function main() {
     console.log("Loading live app at /?checkout=1 (Mobile Light)...");
     await mobilePage.goto(`${BASE_URL}/?checkout=1`, {
       waitUntil: "domcontentloaded",
-      timeout: 30000,
+      timeout: 120000,
     });
+    await mobilePage.waitForSelector('.boot-state', { state: 'detached', timeout: 120000 }).catch(() => {});
     await mobilePage.waitForTimeout(2000);
     await setLightTheme(mobilePage);
     await saveProof(mobilePage, "05_cashbox_studio_mobile_light_390x844.png");

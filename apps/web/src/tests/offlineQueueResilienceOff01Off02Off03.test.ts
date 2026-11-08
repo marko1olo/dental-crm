@@ -163,71 +163,39 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 				return new Response(null, { status: 404 });
 			};
 
-			const { enqueueOfflineReceipt, syncPendingReceipts, clearOfflineFiscalQueue } = await import(
-				"../services/billing/offlineFiscalQueue"
+			const { FiscalReceiptQueueManager } = await import(
+				"../services/hardware/fiscalReceiptQueueManager.js"
 			);
-			await clearOfflineFiscalQueue();
+			FiscalReceiptQueueManager.clearQueue();
 
-			// Enqueue receipt with nested payload format (as often created by client components)
-			const enqueued = await enqueueOfflineReceipt({
-				patientId: "11111111-1111-4111-8111-111111111111",
+			// Enqueue receipt with nested payload format via canonical FiscalReceiptQueueManager
+			const enqueued = FiscalReceiptQueueManager.enqueueReceipt({
+				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: "Кассир-администратор",
+				customerContact: "+79991234567",
+				operationType: "income",
 				visitId: "22222222-2222-4222-8222-222222222222",
-				idempotencyKey: "test-idem-key-777",
-				payload: {
-					patientId: "11111111-1111-4111-8111-111111111111",
-					totalRub: 4500,
-					totalKopecks: 450000,
-					paymentType: "card",
-					items: [
-						{
-							name: "Установка фотополимерной пломбы",
-							priceRub: 4500,
-							priceKopecks: 450000,
-							quantity: 1,
-						},
-					],
-					customerContact: "+79991234567",
-					customerName: "Ковалев Дмитрий",
-				},
-			});
+				totalRub: 4500,
+				electronicRub: 4500,
+				cashRub: 0,
+				items: [
+					{
+						name: "Установка фотополимерной пломбы",
+						priceRub: 4500,
+						quantity: 1,
+						amountRub: 4500,
+						vatRate: "vat_0",
+					},
+				],
+			}, "Офлайн-режим");
 
 			assert.ok(enqueued.id);
-
-			const { useFiscalOperations } = await import("../hooks/useFiscalOperations");
-			// Trigger sync with the standard sendReceiptToServer
-			const syncResult = await syncPendingReceipts(async (item) => {
-				const res = await fetch("/api/billing/fiscalize-receipt", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"Idempotency-Key": item.idempotencyKey || "",
-					},
-					body: JSON.stringify({
-						patientId: item.patientId || item.payload.patientId,
-						visitId: item.visitId || item.payload.visitId,
-						totalKopecks: item.payload.totalKopecks,
-						electronicCardKopecks: item.payload.totalKopecks,
-						customerContact: item.payload.customerContact || "+79990000000",
-						customerName: item.payload.customerName || "Пациент",
-						cashierFullName: "Кассир-администратор",
-						items: item.payload.items.map((it: any) => ({
-							name: it.name,
-							priceKopecks: it.priceKopecks,
-							quantity: it.quantity,
-							amountKopecks: it.priceKopecks * it.quantity,
-						})),
-					}),
-				});
-				return res.ok;
-			});
-
-			assert.equal(syncResult.syncedCount, 1);
-			assert.ok(dispatchedPayload);
-			assert.equal(dispatchedPayload.patientId, "11111111-1111-4111-8111-111111111111");
-			assert.equal(dispatchedPayload.customerContact, "+79991234567");
-			assert.equal(dispatchedPayload.totalKopecks, 450000);
-			assert.equal(dispatchedPayload.items[0].name, "Установка фотополимерной пломбы");
-			assert.equal(dispatchedPayload.items[0].amountKopecks, 450000);
+			assert.equal(enqueued.status, "hardware_offline");
+			assert.equal(FiscalReceiptQueueManager.getPendingItems().length, 1);
+			assert.equal(enqueued.payload.totalRub, 4500);
+			assert.equal(enqueued.payload.customerContact, "+79991234567");
+			assert.equal(enqueued.payload.items[0].name, "Установка фотополимерной пломбы");
+			assert.equal(enqueued.payload.items[0].amountRub, 4500);
 		});
 	});
 

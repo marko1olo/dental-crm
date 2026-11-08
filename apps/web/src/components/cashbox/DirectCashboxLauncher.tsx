@@ -25,11 +25,20 @@ function parseCashboxUrl(): { isOpen: boolean; view: "checkout" | "hub" } {
 	if (typeof window === "undefined") return { isOpen: false, view: "hub" };
 	const h = window.location.hash.toLowerCase();
 	const s = window.location.search.toLowerCase();
-	if (h.includes("cashbox_ssot") || s.includes("cashbox_ssot")) return { isOpen: false, view: "hub" };
 	if (h.includes("checkout") || h.includes("payment") || s.includes("checkout") || s.includes("payment")) {
 		return { isOpen: true, view: "checkout" };
 	}
-	if (h.includes("cashbox") || h.includes("cash-register") || h.includes("cash_register") || s.includes("cashbox")) {
+	if (
+		h.includes("cashbox") ||
+		h.includes("cashbox_ssot") ||
+		h.includes("cash-register") ||
+		h.includes("cash_register") ||
+		h.includes("shift_closing") ||
+		h.includes("shift_journal") ||
+		s.includes("cashbox") ||
+		s.includes("cashbox_ssot") ||
+		s.includes("cash_register")
+	) {
 		return { isOpen: true, view: "hub" };
 	}
 	return { isOpen: false, view: "hub" };
@@ -80,11 +89,15 @@ export const DirectCashboxLauncher: React.FC = () => {
 		setCustomData(null);
 		if (typeof window !== "undefined") {
 			const cleanHash = window.location.hash.replace(
-				/#cashbox|#checkout|#cash-register|#payment|#cashbox_ssot|#cash_register/g,
+				/#cashbox_ssot|#cashbox|#checkout|#cash-register|#cash_register|#shift_closing|#shift_journal|#payment/g,
 				"",
 			);
 			const url = new URL(window.location.href);
 			url.searchParams.delete("cashbox");
+			url.searchParams.delete("cashbox_ssot");
+			url.searchParams.delete("cash_register");
+			url.searchParams.delete("shift_closing");
+			url.searchParams.delete("shift_journal");
 			url.searchParams.delete("checkout");
 			url.searchParams.delete("payment");
 			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
@@ -97,11 +110,11 @@ export const DirectCashboxLauncher: React.FC = () => {
 			<CashRegisterCheckoutModal
 				isOpen={isOpen}
 				onClose={handleClose}
-				totalDueRub={customData?.amountRub ?? 6500}
-				patientId={customData?.patientId ?? "pat-walkin-01"}
-				patientName={customData?.patientName ?? "Пациент на приёме"}
+				totalDueRub={customData?.amountRub}
+				patientId={customData?.patientId}
+				patientName={customData?.patientName}
 				invoiceId={customData?.invoiceId}
-				cashierFullName={customData?.cashierFullName ?? "Администратор / Кассир"}
+				cashierFullName={customData?.cashierFullName ?? "Кассир"}
 				onSuccess={handleClose}
 			/>
 		);

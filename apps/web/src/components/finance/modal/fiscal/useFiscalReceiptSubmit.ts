@@ -4,7 +4,7 @@ import { showToast } from "../../../GlobalToast.js";
 import { generateFiscalReceipt54Fz } from "../../fiscalReceiptEngine.js";
 import { printThermalReceipt } from "../../../../lib/hardwarePrinting.js";
 import type { FiscalReceiptPrintPayload } from "../../../../services/hardware/hardwareTypes.js";
-import { enqueueOfflineReceipt } from "../../../../services/billing/offlineFiscalQueue.js";
+import { FiscalReceiptQueueManager } from "../../../../services/hardware/fiscalReceiptQueueManager.js";
 import { formatMoneyRu } from "./fiscalModalRefundLogic.js";
 import type { FiscalModalTab } from "./fiscalModalTypes.js";
 import type { useFiscalItemsAndDiscounts } from "./useFiscalItemsAndDiscounts.js";
@@ -138,12 +138,26 @@ export function useFiscalReceiptSubmit(p: FiscalReceiptSubmitProps) {
 			p.setActiveTab("preview");
 		} catch (err: unknown) {
 			const errMsg = err instanceof Error ? err.message : "Ошибка связи с фискальным регистратором ККТ";
-			void enqueueOfflineReceipt({
-				visitId: p.patientId,
-				payload: receiptToFiscalize,
-				lastError: errMsg,
-				idempotencyKey: `fiscal-modal-${receiptToFiscalize.receiptNumber || generateUuidV7()}`,
-			});
+			FiscalReceiptQueueManager.enqueueReceipt({
+				clinicName: p.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: p.cashierFullName || "Кассир",
+				customerContact: p.patientPhone || p.patientName,
+				operationType: p.activeTab === "refund" ? "income_return" : "income",
+				items: (receiptToFiscalize.items || []).map((it) => ({
+					name: it.name || "Стоматологическая услуга",
+					priceRub: it.unitPriceRub || 0,
+					quantity: it.quantity || 1,
+					amountRub: it.amountRub || 0,
+					vatRate: "vat_0",
+					medicalServiceCode804n: it.code804n,
+					markingCode: it.markingCode,
+				})),
+				totalRub: receiptToFiscalize.totalRub || 0,
+				electronicRub: receiptToFiscalize.payments?.cardRub || 0,
+				cashRub: receiptToFiscalize.payments?.cashRub || 0,
+				sbpRub: receiptToFiscalize.payments?.sbpRub || 0,
+				prepaidRub: (receiptToFiscalize.payments?.depositRub || 0) + (receiptToFiscalize.payments?.advanceOffsetRub || 0) + (receiptToFiscalize.payments?.familyWalletRub || 0),
+			}, errMsg);
 			showToast("Оплата зафиксирована, чек в очереди фискализации", "info", 5000);
 			p.onReceiptFiscalized?.(receiptToFiscalize.receiptNumber);
 			p.setInterruptedFiscalState({

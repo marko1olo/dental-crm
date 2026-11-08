@@ -181,7 +181,7 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 					<div className="flex items-center gap-2 text-rose-950 dark:text-rose-200 font-bold text-xs sm:text-sm">
 						<Wallet size={18} className="text-rose-600 shrink-0" />
 						<span>Возврат аванса / денежных средств по чеку</span>
-						<span className="sr-only">Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)</span>
+						<span className="sr-only">Возврат аванса / денежных средств по номеру кассового чека</span>
 					</div>
 					<p className="text-xs text-rose-800 dark:text-rose-300">
 						{activeItems.length === 0

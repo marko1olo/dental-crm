@@ -53,7 +53,7 @@
 - **Декомпозиция 4 монолитов по Мандату 8b ($\le 120$ строк, фасады $\le 15$ строк)**:
   - `useFiscalRefundAndAuxTabs.ts` (было 726 строк) -> декомпозирован в оркестратор (111 строк) и 11 модулей в `modal/fiscal/refund/` (все $\le 120$ строк).
   - `zReportAndDiscounts.ts` (было 679 строк) -> декомпозирован в фасад (12 строк) и 11 модулей в `fiscal/engine54fz/` (все $\le 120$ строк).
-  - `FiscalPaymentDiscountsAndRetail.tsx` (было 661 строка) -> декомпозирован в компактный контейнер (117 строк) и 9 компонентов в `modal/fiscal/discounts/` (все $\le 120$ строк).
+  - `FiscalPaymentDiscountsAndRetail.tsx` (было 661 строка) -> декомпозирован в компактный контейнер (117 строк) и компоненты в едином SSOT `modal/fiscal/discountsAndRetail/` (все $\le 120$ строк).
   - `TenderMethodList.tsx` (было 648 строк) -> декомпозирован в компонент (95 строк) и 11 модулей в `modal/fiscal/fiscalTender/` (все $\le 120$ строк).
   - **ИТОГО: 4 монолита (2 714 строк) распилены на 47 модулей, 100% файлов строго $\le 120$ строк**.
 - **Проверка CSS токенов (`node scripts/check-css-tokens.mjs`)**: 1498 CSS-файлов проверено, **0 неразрешенных `var()`**, Exit Code 0.

@@ -16,7 +16,7 @@ import { useAppStore } from "../../store/appStore";
 import { useDocumentStore } from "../../store/documentStore";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import { fetchWithHandling } from "../../utils/networkUtils";
-import { enqueueOfflineReceipt } from "../../services/billing/offlineFiscalQueue";
+import { enqueueOfflinePayment } from "../../offline/offlinePaymentQueue";
 
 export type UseFinanceLogicOptions = {
 	auth: {
@@ -305,14 +305,13 @@ export function useFinanceLogic({
 					note: "Оплата принята офлайн: чек добавлен в очередь фоновой фискализации",
 				};
 
-				void enqueueOfflineReceipt({
+				void enqueueOfflinePayment({
+					patientId: documentPatient.id,
+					patientName: documentPatient.fullName,
 					visitId: realActiveVisitId ?? undefined,
-					paymentId: paymentMutationIdRef.current || undefined,
-					payload: offlinePayload,
-					lastError:
-						paymentError instanceof Error
-							? paymentError.message
-							: "Сетевой сбой при фискализации чека",
+					totalKopecks: Math.round(amountRub * 100),
+					paymentType: (paymentMethod === "cash" || paymentMethod === "card" || paymentMethod === "sbp" || paymentMethod === "deposit") ? paymentMethod : "mixed",
+					items: [],
 				});
 
 				showToast(

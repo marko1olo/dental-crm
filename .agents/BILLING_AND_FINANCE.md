@@ -21,7 +21,10 @@
 
 Все финансовые операции, начисления, скидки, остатки счетов, кассовые чеки и расчеты вычетов в DENTE ведутся **строго в целочисленных копейках** (`integer` в TypeScript / `bigint` / `numeric` в PostgreSQL). Использование чисел с плавающей запятой (`float` / `double`) для хранения и сложения денег **категорически запрещено** (Мандат 8b, The Hammer Часть 8 п. 2).
 
-### 1.1. Базовые функции конвертации (`@dental/shared`):
+### 1.1. Базовые функции конвертации и финансовые контракты (`@dental/shared`):
+* `export type Kopecks = number` — фундаментальный тип целочисленных копеек (SSOT: `@dental/shared`, `@dental/shared/finance`). Любые локальные переобъявления запрещены (Мандат 8d, 8s).
+* `export type GeneratedDocument` — канонический Zod DTO контракт документов (SSOT: `@dental/shared`, `@dental/shared/documents`).
+* `export type ToothState / ToothClinicalState / ToothStatus` — канонический клинический контракт зубной формулы (SSOT: `@dental/shared`, `@dental/shared/clinical`).
 * `rubToKopecks(rub: number): number => Math.round(rub * 100)`
 * `kopecksToRub(kop: number): number => kop / 100`
 * `kopecksToNumericString(kop: number): string => (kop / 100).toFixed(2)`
@@ -207,8 +210,11 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 | Назначение | Frontend компонент | Backend маршрут |
 | :--- | :--- | :--- |
-| **Кассовый чек (54-ФЗ)** | [`FiscalReceipt54FzModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FiscalReceipt54FzModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
-| **Единый SSOT Кассы (Кассовая студия)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/fiscal/receipts`, `POST /api/cashbox/receipts` |
+| **Кассовый чек** | [`FiscalReceipt54FzModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FiscalReceipt54FzModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
+| **Единый SSOT Кассы (Кассовая студия)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/cashbox/payments`, `POST /api/fiscal/receipts` |
+| **Единый лаунчер кассы (Диплинки `#cashbox`, `#checkout`)** | [`DirectCashboxLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/DirectCashboxLauncher.tsx) | Единый перехват всех алиасов `#cashbox`, `#cashbox_ssot`, `#cash_register`, `#shift_closing` |
+| **Канонический менеджер очереди печати ККТ** | [`FiscalReceiptQueueManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/hardware/fiscalReceiptQueueManager.ts) | `fiscalReceiptQueue` в БД (PostgreSQL 18), ACID транзакции |
+| **Офлайн-очередь платежей** | [`offlinePaymentQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlinePaymentQueue.ts) | Сквозная синхронизация с `/api/cashbox/payments` |
 | **Прокси устаревшей модалки (Мандат 8aq)** | [`CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx) | Делегирует в `CashRegisterStudioModal` (<100 строк) |
 | **1-Клик касса / Split** | [`CashRegisterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashRegisterModal.tsx) | `POST /api/fiscal/receipts` |
 | **Fast Checkout Engine** | [`fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts) | `POST /api/billing/payments` |

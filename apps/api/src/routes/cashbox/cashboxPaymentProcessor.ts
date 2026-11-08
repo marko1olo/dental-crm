@@ -18,6 +18,7 @@ import {
 	cashBoxes,
 	cashOperations,
 	familyGroups,
+	fiscalReceiptQueue,
 	patientInvoices,
 	payments,
 	patients,
@@ -613,6 +614,40 @@ export async function processCashboxPayment(
 			});
 		}
 
+		// 5. Постановка чека в очередь фискализации (physical KKT printer spooler)
+		let enqueuedReceiptId: string | null = null;
+		if (!isWarrantyPayment && totalKopecks > 0n) {
+			const [enqueued] = await tx
+				.insert(fiscalReceiptQueue)
+				.values({
+					organizationId: orgId,
+					paymentId: newPayment.id,
+					visitId: effectiveVisitId,
+					receiptType: "income",
+					status: "pending_print",
+					payloadJson: {
+						clientMutationId: effectiveMutationId,
+						amountRub: amountRubNumber,
+						amountKopecks: Number(totalKopecks),
+						method: normalizePaymentMethod(body.method),
+						cashRub: kopecksToRub(resolvedCashKop),
+						electronicRub: kopecksToRub(resolvedElecKop),
+						advanceOffsetRub: kopecksToRub(Number(requiredDepositKopecks)),
+						fiscalReceiptNumber: receiptNumber,
+						patientId: resolvedPatientId,
+						patientName: patientRow.fullName,
+						cashierFullName: body.cashierFullName || "Кассир",
+						invoiceId: body.invoiceId || null,
+						note: newPayment.note,
+					},
+					retryCount: 0,
+				})
+				.returning({ id: fiscalReceiptQueue.id });
+			if (enqueued) {
+				enqueuedReceiptId = enqueued.id;
+			}
+		}
+
 		return {
 			id: newPayment.id,
 			amountKopecks: Number(totalKopecks),
@@ -620,6 +655,7 @@ export async function processCashboxPayment(
 			method: newPayment.method,
 			status: "paid",
 			fiscalReceiptNumber: receiptNumber,
+			fiscalReceiptQueueId: enqueuedReceiptId,
 			clientMutationId: effectiveMutationId,
 		};
 	});

@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { enqueueOfflinePayment } from "../../../offline/offlinePaymentQueue.js";
@@ -47,16 +48,16 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const {
 		initialTab = "checkout",
 		mode = "studio",
-		shiftNumber = 104,
-		cashierFullName = "Администратор / Кассир",
-		kktRegNumber = "0004829104058291",
-		ofdName = "АО «ПЕРВЫЙ ОФД»",
+		shiftNumber = 1,
+		cashierFullName = "Кассир",
+		kktRegNumber,
+		ofdName,
 		isShiftOpen: initialShiftOpen = true,
 		netRevenueRub: propNetRevenue,
-		cashInDrawerRub: initialCashDrawer = 15000,
-		cardSumRub: initialCardSum = 35000,
-		sbpSumRub: initialSbpSum = 7000,
-		advanceOffsetRub: initialAdvanceSum = 2000,
+		cashInDrawerRub: initialCashDrawer = 0,
+		cardSumRub: initialCardSum = 0,
+		sbpSumRub: initialSbpSum = 0,
+		advanceOffsetRub: initialAdvanceSum = 0,
 		totalDueRub: propTotalDueRub,
 		amountRub: propAmountRub,
 		totalDueKopecks: propTotalDueKopecks,
@@ -73,7 +74,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		if (propAmountRub !== undefined) return propAmountRub;
 		if (propTotalDueKopecks !== undefined) return kopecksToRub(BigInt(propTotalDueKopecks));
 		if (propAmountKopecks !== undefined) return kopecksToRub(BigInt(propAmountKopecks));
-		return 8500;
+		return 0;
 	}, [propTotalDueRub, propAmountRub, propTotalDueKopecks, propAmountKopecks]);
 
 	const normalizedTab: CashRegisterStudioTab =
@@ -200,7 +201,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		setErrorMessage(null);
 
 		const isWarrantyCaseFinal = isWarranty || effectiveTotalRub === 0;
-		const clientMutationId = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+		const clientMutationId = generateUuidV7();
 		const effectiveVisitId = propVisitId || props.visitId || undefined;
 
 		const payload: Record<string, unknown> = {
@@ -284,7 +285,10 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		}
 
 		try {
-			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
 			const res = await fetch("/api/cashbox/payments", {
 				method: "POST",
 				headers,

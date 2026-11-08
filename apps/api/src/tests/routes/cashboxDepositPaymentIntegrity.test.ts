@@ -14,6 +14,7 @@ import {
 	cashBoxes,
 	cashOperations,
 	familyGroups,
+	fiscalReceiptQueue,
 	organizations,
 	payments,
 	patients,
@@ -266,6 +267,55 @@ describe("FIN-05: Cashbox Deposit Integrity & Unauthorized Spend Blocking", () =
 			if (outcome.statusCode === 200) {
 				assert.equal(outcome.body.data.method, "warranty");
 				assert.equal(outcome.body.data.amountRub, 0);
+			}
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+
+	it("enqueues receipt to fiscalReceiptQueue with pending_print status on commercial payment", async () => {
+		const orgId = fixtureUuid("fin05Fiscal", 1);
+		const patientId = fixtureUuid("fin05Fiscal", 2);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Клиника Фискальной Очереди Тест",
+				});
+				await tx.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Петров Петр Петрович",
+					phone: "+79007778899",
+				});
+			});
+
+			const clientMutationId = `mut-fisc-${Date.now()}`;
+			const outcome = await processCashboxPayment(orgId, {
+				patientId,
+				amountRub: 5500,
+				method: "card",
+				clientMutationId,
+			});
+
+			assert.equal(outcome.statusCode, 200);
+			if (outcome.statusCode === 200) {
+				assert.equal(outcome.body.data.status, "paid");
+				assert.ok(outcome.body.data.fiscalReceiptQueueId, "Must return fiscalReceiptQueueId");
+
+				const [queueItem] = await db
+					.select()
+					.from(fiscalReceiptQueue)
+					.where(eq(fiscalReceiptQueue.id, String(outcome.body.data.fiscalReceiptQueueId)));
+
+				assert.ok(queueItem, "Receipt must be enqueued in database table fiscalReceiptQueue");
+				assert.equal(queueItem.status, "pending_print");
+				assert.equal(queueItem.receiptType, "income");
+				assert.equal(queueItem.organizationId, orgId);
+				assert.equal((queueItem.payloadJson as Record<string, unknown>).amountRub, 5500);
 			}
 		} finally {
 			await purgeFixtureOrganizations([orgId]);

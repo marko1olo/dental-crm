@@ -4,7 +4,7 @@ import { showToast } from "../../../GlobalToast.js";
 import { printThermalReceipt } from "../../../../lib/hardwarePrinting.js";
 import type { FiscalReceiptPrintPayload } from "../../../../services/hardware/hardwareTypes.js";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
-import { enqueueOfflineReceipt } from "../../../../services/billing/offlineFiscalQueue.js";
+import { FiscalReceiptQueueManager } from "../../../../services/hardware/fiscalReceiptQueueManager.js";
 import type { FiscalModalTab } from "./fiscalModalTypes.js";
 import type { useFiscalItemsAndDiscounts } from "./useFiscalItemsAndDiscounts.js";
 import type { useFiscalTenderAllocation } from "./useFiscalTenderAllocation.js";
@@ -69,12 +69,7 @@ export function useFiscalAcquiringRecovery(p: FiscalAcquiringRecoveryProps) {
 
 			const printRes = await printThermalReceipt(printPayload);
 			if (printRes && !printRes.success) {
-				void enqueueOfflineReceipt({
-					visitId: p.patientId,
-					payload: printPayload,
-					lastError: printRes.error || "Кассовое устройство недоступно",
-					idempotencyKey: `fiscal-retry-${generateUuidV7()}`,
-				});
+				FiscalReceiptQueueManager.enqueueReceipt(printPayload, printRes.error || "Кассовое устройство недоступно");
 				showToast("Оплата зафиксирована, чек в очереди фискализации", "info", 5000);
 			} else {
 				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);
@@ -84,12 +79,29 @@ export function useFiscalAcquiringRecovery(p: FiscalAcquiringRecoveryProps) {
 			}
 		} catch (err: unknown) {
 			const errMsg = err instanceof Error ? err.message : "Сбой повторной фискализации чека";
-			void enqueueOfflineReceipt({
-				visitId: p.patientId,
-				payload: { clinicName: p.clinicName, items: p.itemsHook.activeItems, totalRub: p.itemsHook.totalSumRub },
-				lastError: errMsg,
-				idempotencyKey: `fiscal-retry-err-${generateUuidV7()}`,
-			});
+			FiscalReceiptQueueManager.enqueueReceipt({
+				clinicName: p.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: p.cashierFullName || "Кассир",
+				customerContact: p.tenderHook.customerContact.trim() || p.patientPhone || p.patientName,
+				operationType: p.activeTab === "refund" ? "income_return" : "income",
+				items: (p.itemsHook.activeItems || []).map((it) => {
+					const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
+					const price = it.priceRub || 0;
+					const disc = it.discountRub || 0;
+					return {
+						name: it.name || "Стоматологическая услуга",
+						priceRub: price,
+						quantity: qty,
+						amountRub: Math.max(0, price * qty - disc),
+						vatRate: "vat_none" as const,
+						medicalServiceCode804n: it.code804n || undefined,
+					};
+				}),
+				totalRub: p.itemsHook.totalSumRub,
+				electronicRub: p.tenderHook.cardAmount + p.tenderHook.sbpAmount,
+				cashRub: p.tenderHook.cashAmount,
+				prepaidRub: p.tenderHook.depositAmount + p.tenderHook.certificateAmount,
+			}, errMsg);
 			showToast("Оплата зафиксирована, чек в очереди фискализации", "info", 5000);
 		} finally {
 			setIsFiscalizing(false);

@@ -15,7 +15,6 @@ import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyL
 import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
 import { DirectVisiographLauncher } from "./components/visiograph/DirectVisiographLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
-import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
 import { DirectCashierLauncher } from "./components/finance/DirectCashierLauncher";
@@ -337,7 +336,6 @@ export function AppShell() {
 			<DirectRvgCaptureLauncher />
 			<DirectVisiographLauncher />
 			<DirectFastCheckoutLauncher />
-			<DirectCashboxSsotLauncher />
 			<DirectCashboxLauncher />
 			<DirectShiftLauncher />
 			<DirectCashierLauncher />

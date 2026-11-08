@@ -73,13 +73,13 @@ export interface CashRegisterCheckoutSectionProps {
 }
 
 export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionProps> = ({
-	patientName = "Иванов Иван Иванович",
-	patientPhone = "+7 (999) 111-22-33",
+	patientName,
+	patientPhone,
 	patientAllergies,
-	doctorFullName = "Д-р Смирнов А. В.",
-	serviceTitle = "Лечение пульпита и реставрация",
-	patientDepositRub = 3000,
-	patientFamilyBalanceRub = 5000,
+	doctorFullName,
+	serviceTitle,
+	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 	effectiveTotalRub,
 	isWarranty,
 	setIsWarranty,
@@ -127,33 +127,57 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 
 	return (
 		<div className="space-y-4">
-			{/* Patient & Doctor Context Bar */}
-			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs">
-				<div>
-					<div className="font-semibold text-sm text-[var(--ink)] flex items-center gap-2">
-						<span>{patientName}</span>
-						{allergiesList.length > 0 && (
-							<span
-								className="text-amber-600 dark:text-amber-400 font-medium text-[11px] flex items-center gap-1"
-								title="Аллергостатус пациента"
-							>
-								⚠️ Аллергия: {allergiesList.join(", ")}
-							</span>
+			{/* Patient & Doctor Context Bar / Empty State */}
+			{patientName ? (
+				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs">
+					<div>
+						<div className="font-semibold text-sm text-[var(--ink)] flex items-center gap-2">
+							<span>{patientName}</span>
+							{allergiesList.length > 0 && (
+								<span
+									className="text-amber-600 dark:text-amber-400 font-medium text-[11px] flex items-center gap-1"
+									title="Аллергостатус пациента"
+								>
+									⚠️ Аллергия: {allergiesList.join(", ")}
+								</span>
+							)}
+						</div>
+						<div className="text-[var(--muted)]">
+							{patientPhone ? `${patientPhone} · ` : ""}Врач: {doctorFullName || "Не назначен"}
+						</div>
+					</div>
+					<div className="text-right">
+						<div className="text-[var(--muted)]">{serviceTitle || "Приём стоматолога"}</div>
+						{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
+							<div className="text-emerald-600 font-medium">
+								{patientDepositRub > 0 ? `Аванс: ${formatRubles(patientDepositRub)} ` : ""}
+								{patientFamilyBalanceRub > 0 ? `· Семья: ${formatRubles(patientFamilyBalanceRub)}` : ""}
+							</div>
 						)}
 					</div>
-					<div className="text-[var(--muted)]">
-						{patientPhone} · Врач: {doctorFullName}
+				</div>
+			) : (
+				<div
+					className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex items-center justify-between gap-3 text-xs"
+					data-testid="cashbox-empty-patient-state"
+				>
+					<div className="flex items-center gap-2.5 text-[var(--muted)]">
+						<span className="text-base">👤</span>
+						<span>Выберите пациента или счёт для расчёта (свободный чек кассы)</span>
 					</div>
+					<button
+						type="button"
+						onClick={() => {
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(new CustomEvent("dente:open-patient-search"));
+							}
+						}}
+						className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
+					>
+						Выбрать пациента
+					</button>
 				</div>
-				<div className="text-right">
-					<div className="text-[var(--muted)]">{serviceTitle}</div>
-					{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
-						<div className="text-emerald-600 font-medium">
-							Аванс: {formatRubles(patientDepositRub)} · Семья: {formatRubles(patientFamilyBalanceRub)}
-						</div>
-					)}
-				</div>
-			</div>
+			)}
 
 			{/* Total Due Prominent Display (36px bold centered, Mandate 8am & Universal Checkout) */}
 			<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
