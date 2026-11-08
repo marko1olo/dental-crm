@@ -104,7 +104,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 						title="Заполнить физиологическую норму: соматически здоров, интактные зубы"
 					>
 						<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span>✓ Норма (профосмотр / гигиена)</span>
+						<span>Норма (профосмотр / гигиена)</span>
 					</button>
 					<button
 						type="button"
@@ -118,7 +118,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 						title="Заполнить терапевтическую норму: зубы интактны, пломбы состоятельны"
 					>
 						<CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>✓ Норма терапии (интактно)</span>
+						<span>Норма терапии (интактно)</span>
 					</button>
 					<button
 						type="button"
@@ -132,7 +132,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 						title="Заполнить хирургическую норму: лунка под сгустком, заживление без осложнений"
 					>
 						<CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-						<span>✓ Норма хирургии (без осложнений)</span>
+						<span>Норма хирургии (без осложнений)</span>
 					</button>
 				</VisitDiaryHeaderMoreMenu>
 			</div>

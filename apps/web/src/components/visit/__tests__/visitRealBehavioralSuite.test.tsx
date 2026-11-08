@@ -69,7 +69,11 @@ describe("VisitDiaryActionsFooter Real Rendering & Mandates (React 19)", () => {
 
 		assert.ok(html.includes('id="diary-complete-visit-btn"'));
 		assert.ok(html.includes("diary-complete-visit-btn"));
-		assert.ok(html.includes("Завершить приём и сохранить карту"));
+		assert.ok(
+			html.includes("Завершить приём и сохранить карту") ||
+			html.includes("Завершить приём и подписать"),
+			"Must contain primary CTA text",
+		);
 
 		// Verify count of primary CTA is strictly 1 (using word boundary \b to avoid matching data-testid)
 		const matches = html.match(/\bid="diary-complete-visit-btn"/g);

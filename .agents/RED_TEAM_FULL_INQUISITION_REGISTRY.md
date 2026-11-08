@@ -111,7 +111,7 @@
 ### [FIN-08] [ИСПРАВЛЕНО] [SEV-1] Ликвидация зоопарка из 7 модалок оплаты в Единый Канонический Чекаут DENTE CRM
 - **Файлы:**
   - SSOT: [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
-  - Фасады: [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterCheckoutModal.tsx), [`CashCheckoutStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashCheckoutStudioModal.tsx), [`PaymentFiscalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentFiscalModal.tsx), [`PaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentModal.tsx), [`SplitPaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/SplitPaymentModal.tsx), [`CashRegisterDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterDrawer.tsx), [`CashRegisterPaymentPane.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterPaymentPane.tsx)
+  - Фасады: [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterCheckoutModal.tsx), [`CashCheckoutStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashCheckoutStudioModal.tsx), [`PaymentFiscalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentFiscalModal.tsx), [`PaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentModal.tsx), [`SplitPaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/SplitPaymentModal.tsx), [`CashRegisterDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterDrawer.tsx), [`CashRegisterPaymentPane.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterPaymentPane.tsx)
 - **Суть бага:** В `components/billing/` исторически расплодили 7 параллельных модалок с дублированием логики оплат, несовместимыми сигнатурами пропсов и риском расхождения финансовых проводок.
 - **Решение:**
   1. Консолидация в единый полиморфный чекаут на базе `CashRegisterStudioModal.tsx` с чистым API, проксирующими фасадами (<30 строк) для сохранения обратной совместимости call sites.
@@ -1255,7 +1255,7 @@
 - **Файлы:**
   - [`TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
   - [`apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts)
-  - [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterCheckoutModal.tsx)
+  - [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterCheckoutModal.tsx)
 - **Суть бага:** Ранее колбэк `onPaymentComplete` при оплате этапа закрывал модалку без формирования счета в БД.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
   1. Нажатие «Оплатить этап» бесшовно вызывает бэкенд `POST /api/invoices/generate-from-plan` для фиксации черновика счета в `patient_invoices` со всеми валидациями заморозки цен (Price Lock).
