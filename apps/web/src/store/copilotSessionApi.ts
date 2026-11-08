@@ -7,7 +7,7 @@
  */
 
 import { readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
-import type { CopilotThread } from "./copilotStore";
+import type { CopilotThread, AiMemoryFact } from "./copilotStore";
 
 export function generateSessionUuid(): string {
 	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -149,6 +149,33 @@ export async function appendRemoteMessage(sessionId: string, message: {
 			method: "POST",
 			headers: getAuthHeaders(),
 			body: JSON.stringify(message),
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}
+
+export async function fetchRemoteMemoryFacts(): Promise<AiMemoryFact[] | null> {
+	try {
+		const res = await fetch("/api/agent/memory", {
+			method: "GET",
+			headers: getAuthHeaders(),
+		});
+		if (!res.ok) return null;
+		const data = await res.json();
+		return Array.isArray(data?.memoryFacts) ? data.memoryFacts : null;
+	} catch {
+		return null;
+	}
+}
+
+export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promise<boolean> {
+	try {
+		const res = await fetch("/api/agent/memory", {
+			method: "PUT",
+			headers: getAuthHeaders(),
+			body: JSON.stringify({ memoryFacts }),
 		});
 		return res.ok;
 	} catch {

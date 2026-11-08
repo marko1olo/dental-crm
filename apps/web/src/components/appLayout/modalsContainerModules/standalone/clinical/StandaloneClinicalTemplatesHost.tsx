@@ -7,11 +7,13 @@ import React from "react";
 import { ClinicalDiaryTemplatesModal } from "../../../../emr/templates/ClinicalDiaryTemplatesModal";
 import { EmrProtocolGeneratorModal } from "../../../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 
 export const StandaloneClinicalTemplatesHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
 	const patientName = useLauncherPatientName(patientId);
 	const isGenerator = typeof window !== "undefined" && (window.location.search.includes("generator") || window.location.hash.includes("generator"));
+	const isDemo = isDemoShowcaseMode();
 
 	if (isGenerator) {
 		return (
@@ -22,9 +24,9 @@ export const StandaloneClinicalTemplatesHost: React.FC<{ onClose: () => void }> 
 				<EmrProtocolGeneratorModal
 					isOpen={true}
 					onClose={onClose}
-					patientFullName={patientName || "Смирнов Алексей Павлович"}
-					medicalCardNumber="043-7821"
-					doctorFullName="Д-р Воронов Алексей Владимирович"
+					patientFullName={patientName || (isDemo ? "Смирнов Алексей Павлович" : "")}
+					medicalCardNumber={isDemo ? "ЭМК-7821" : ""}
+					doctorFullName={isDemo ? "Д-р Воронов Алексей Владимирович" : ""}
 					doctorSpecialty="Врач-стоматолог-терапевт"
 					initialToothNumber={16}
 					initialIcd10Code="K02.1"
@@ -41,8 +43,8 @@ export const StandaloneClinicalTemplatesHost: React.FC<{ onClose: () => void }> 
 			<ClinicalDiaryTemplatesModal
 				isOpen={true}
 				onClose={onClose}
-				patientFullName={patientName || "Иванов Иван Иванович"}
-				doctorFullName="Д-р Воронов Алексей Владимирович"
+				patientFullName={patientName || (isDemo ? "Иванов Иван Иванович" : "")}
+				doctorFullName={isDemo ? "Д-р Воронов Алексей Владимирович" : ""}
 				doctorSpecialty="Врач-стоматолог-терапевт"
 				initialToothNumber={16}
 			/>

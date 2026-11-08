@@ -18,6 +18,10 @@ import {
 } from "../ai/agentRouterClient.js";
 import { registerAgentSessionRoutes } from "./agentSessionRoutes.js";
 import { defaultCopilotActionManager } from "../services/agent/index.js";
+import {
+	getDoctorPreferencesFromDb,
+	saveDoctorPreferencesInDb,
+} from "../db/doctorPreferencesQuery.js";
 
 const chatMessageSchema = z.object({
 	role: z.enum(["system", "user", "assistant", "tool"]),
@@ -58,6 +62,9 @@ const agentChatBodySchema = z.object({
 	byokProvider: z.string().optional(),
 	byokApiKey: z.string().optional(),
 	byokModel: z.string().optional(),
+	temperature: z.number().min(0).max(2).optional(),
+	contextLimitTokens: z.number().int().positive().optional(),
+	showTypingAnimation: z.boolean().optional(),
 });
 
 function formatSseMessage(event: string, data: unknown): string {
@@ -195,6 +202,10 @@ export async function handleAgentChat(
 				byokProvider: body.byokProvider,
 				byokApiKey: body.byokApiKey,
 				byokModel: body.byokModel,
+				sessionId: body.sessionId || body.conversationId,
+				temperature: body.temperature,
+				contextLimitTokens: body.contextLimitTokens,
+				showTypingAnimation: body.showTypingAnimation,
 				signal: abortController.signal,
 				onEvent: (event: AgentHarnessEvent) => {
 					if (!reply.raw.writableEnded) {
@@ -265,6 +276,10 @@ export async function handleAgentChat(
 			byokProvider: body.byokProvider,
 			byokApiKey: body.byokApiKey,
 			byokModel: body.byokModel,
+			sessionId: body.sessionId || body.conversationId,
+			temperature: body.temperature,
+			contextLimitTokens: body.contextLimitTokens,
+			showTypingAnimation: body.showTypingAnimation,
 			signal: abortController.signal,
 		});
 
@@ -356,6 +371,82 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			);
 
 			return reply.code(200).send(validation);
+		},
+	);
+
+	// ─── GET /api/agent/memory ──────────────────────────────────────────────────
+	server.get(
+		"/api/agent/memory",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"agent get memory",
+			);
+			if (!resolvedOrgId) return;
+
+			const identity = getRequestIdentity(request);
+			const record = await getDoctorPreferencesFromDb(
+				resolvedOrgId,
+				identity.userId || null,
+			);
+			const prefs = (record?.preferences || {}) as Record<string, unknown>;
+			const memoryFacts = Array.isArray(prefs.copilotMemoryFacts)
+				? prefs.copilotMemoryFacts
+				: [];
+
+			return reply.code(200).send({ memoryFacts });
+		},
+	);
+
+	// ─── PUT /api/agent/memory ──────────────────────────────────────────────────
+	server.put(
+		"/api/agent/memory",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"agent save memory",
+			);
+			if (!resolvedOrgId) return;
+
+			const bodySchema = z.object({
+				memoryFacts: z.array(z.any()),
+			});
+
+			const parseResult = bodySchema.safeParse(request.body ?? {});
+			if (!parseResult.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат фактов клинической памяти",
+					details: parseResult.error.format(),
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const current = await getDoctorPreferencesFromDb(
+				resolvedOrgId,
+				identity.userId || null,
+			);
+			const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
+			const nextPrefs = {
+				...existingPrefs,
+				copilotMemoryFacts: parseResult.data.memoryFacts,
+			};
+
+			await saveDoctorPreferencesInDb(
+				resolvedOrgId,
+				identity.userId || null,
+				nextPrefs,
+				current?.specialty || "therapist",
+			);
+
+			return reply.code(200).send({
+				success: true,
+				memoryFacts: parseResult.data.memoryFacts,
+			});
 		},
 	);
 

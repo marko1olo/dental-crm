@@ -12,9 +12,10 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { MedicalRecordStudioModal } from "./MedicalRecordStudioModal";
 import { MedicalCardPrintModal } from "./MedicalCardPrintModal";
-import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalRecordCatalogData";
+import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalCardCatalogData";
 import type { MedicalRecordData } from "./types/recordDataTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import type { Dashboard, Patient } from "@dental/shared";
 
 const EMR_URL_TOKENS = [
@@ -100,10 +101,13 @@ export const DirectEmrLauncher: React.FC = () => {
 			.then((data: Dashboard | null) => {
 				if (data) setDashboard(data);
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.warn("DirectEmrLauncher: ошибка загрузки дашборда", err);
+			});
 	}, [isOpen]);
 
 	const initialCardData: MedicalRecordData = useMemo(() => {
+		const isDemo = isDemoShowcaseMode();
 		const patient: Patient | undefined = dashboard?.patients?.[0];
 		const staff = dashboard?.clinicSettings?.staff?.[0];
 		const clinicProfile = dashboard?.clinicSettings?.profile;
@@ -122,18 +126,18 @@ export const DirectEmrLauncher: React.FC = () => {
 			},
 			passport: {
 				...DEFAULT_MEDICAL_CARD_DATA.passport,
-				medicalCardNumber: (patient as any)?.cardNumber || "МК-001",
-				cardOpenedDate: patient?.createdAt ? new Date(patient.createdAt).toLocaleDateString("ru-RU") : "01.09.2026",
-				patientFullName: patient?.fullName || "Смирнова Екатерина Васильевна",
-				patientBirthDate: patient?.birthDate || "1988-04-12",
+				medicalCardNumber: (patient as any)?.cardNumber || (isDemo ? "МК-001" : ""),
+				cardOpenedDate: patient?.createdAt ? new Date(patient.createdAt).toLocaleDateString("ru-RU") : (isDemo ? "01.09.2026" : ""),
+				patientFullName: patient?.fullName || (isDemo ? "Смирнова Екатерина Васильевна" : ""),
+				patientBirthDate: patient?.birthDate || (isDemo ? "1988-04-12" : ""),
 				patientSex: (patient?.gender === "female" ? "female" : "male") as "male" | "female",
-				patientPhone: patient?.phone || "+7 (926) 555-12-34",
-				patientAddressRegistration: "г. Москва, ул. Арбат, д. 24, кв. 12",
-				patientAddressResidence: "г. Москва, ул. Арбат, д. 24, кв. 12",
-				attendingDoctorFullName: staff?.fullName || "Д-р Соколов А. В.",
-				attendingDoctorSpecialty: (staff as any)?.specialty || "Врач-стоматолог-терапевт",
-				primaryDiagnosisText: "K02.1 Кариес дентина зуба 16",
-				primaryDiagnosisIcd10: "K02.1",
+				patientPhone: patient?.phone || (isDemo ? "+7 (926) 555-12-34" : ""),
+				patientAddressRegistration: isDemo ? "г. Москва, ул. Арбат, д. 24, кв. 12" : "",
+				patientAddressResidence: isDemo ? "г. Москва, ул. Арбат, д. 24, кв. 12" : "",
+				attendingDoctorFullName: staff?.fullName || (isDemo ? "Д-р Соколов А. В." : ""),
+				attendingDoctorSpecialty: (staff as any)?.specialty || (isDemo ? "Врач-стоматолог-терапевт" : ""),
+				primaryDiagnosisText: isDemo ? "K02.1 Кариес дентина зуба 16" : "",
+				primaryDiagnosisIcd10: isDemo ? "K02.1" : "",
 			},
 			...(customData || {}),
 		};
@@ -153,7 +157,9 @@ export const DirectEmrLauncher: React.FC = () => {
 					JSON.stringify(updated),
 				);
 			}
-		} catch {}
+		} catch (err) {
+			console.warn("DirectEmrLauncher: не удалось сохранить черновик в sessionStorage", err);
+		}
 	}, []);
 
 	if (!isOpen) return null;

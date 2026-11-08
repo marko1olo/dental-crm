@@ -2,7 +2,6 @@ import React from "react";
 import { FranklBehaviorBadge } from "../pediatric/FranklBehaviorBadge";
 import {
 	type ToothPediatricContextProps,
-	printPediatricParentMemo,
 	useToothPediatricState,
 	ToothPediatricHeader,
 	ToothPediatricResorptionGrid,
@@ -47,15 +46,11 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 			<ToothPediatricFooter
 				onInsertPsychologicalProtocol={handleInsertPsychologicalProtocol}
 				onPrintMemo={() => {
-					onOpenParentMemo?.();
-					printPediatricParentMemo({
-						patientName,
-						patientAgeYears,
-						doctorName,
-						franklRating,
-						toothNumber,
-						resorptionStage: selectedResorption,
-					});
+					if (onOpenParentMemo) {
+						onOpenParentMemo();
+					} else if (typeof window !== "undefined") {
+						window.print();
+					}
 				}}
 			/>
 		</div>

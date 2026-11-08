@@ -136,9 +136,9 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 					"Показаны будущие приёмы, которые отменили или на которые не пришли: время потеряно одинаково. " +
 					"Система никого не записывает сама — она подсказывает, кому позвонить.",
 			};
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			request.log.error({ error: msg }, "Ошибка при получении списка освободившихся окон расписания");
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Ошибка при получении списка освободившихся окон расписания.",
@@ -233,9 +233,9 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				});
 
 				return { appointmentId: appointment.id, ...report };
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			} catch (error: any) {
-				request.log.error(error);
+			} catch (error: unknown) {
+				const msg = error instanceof Error ? error.message : String(error);
+				request.log.error({ error: msg }, "Ошибка при подборе кандидатов из листа ожидания");
 				return reply.status(500).send({
 					error: "InternalServerError",
 					message: "Ошибка при подборе кандидатов из листа ожидания.",

@@ -24,6 +24,8 @@ import {
 	deleteRemoteSession,
 	fetchRemoteMessages,
 	fetchRemoteSessions,
+	fetchRemoteMemoryFacts,
+	saveRemoteMemoryFacts,
 	generateSessionUuid,
 	isSessionUuid,
 	updateRemoteSession,
@@ -226,6 +228,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		set((state) => {
 			const next = [newFact, ...state.memoryFacts];
 			safeLocalStorageSetJson("dente_copilot_memory", next);
+			if (!isDemoShowcaseMode()) void saveRemoteMemoryFacts(next);
 			return { memoryFacts: next };
 		});
 	},
@@ -234,6 +237,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		set((state) => {
 			const next = state.memoryFacts.map((f) => (f.id === id ? { ...f, fact: fact.trim(), ...(category ? { category } : {}) } : f));
 			safeLocalStorageSetJson("dente_copilot_memory", next);
+			if (!isDemoShowcaseMode()) void saveRemoteMemoryFacts(next);
 			return { memoryFacts: next };
 		});
 	},
@@ -242,6 +246,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		set((state) => {
 			const next = state.memoryFacts.filter((f) => f.id !== id);
 			safeLocalStorageSetJson("dente_copilot_memory", next);
+			if (!isDemoShowcaseMode()) void saveRemoteMemoryFacts(next);
 			return { memoryFacts: next };
 		});
 	},
@@ -249,6 +254,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	clearMemory: () => {
 		set(() => {
 			safeLocalStorageSetJson("dente_copilot_memory", []);
+			if (!isDemoShowcaseMode()) void saveRemoteMemoryFacts([]);
 			return { memoryFacts: [] };
 		});
 	},
@@ -352,6 +358,15 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 
 	hydrateSessionsFromBackend: async () => {
 		if (isDemoShowcaseMode()) return;
+		try {
+			const remoteFacts = await fetchRemoteMemoryFacts();
+			if (remoteFacts && Array.isArray(remoteFacts) && remoteFacts.length > 0) {
+				set({ memoryFacts: remoteFacts });
+				safeLocalStorageSetJson("dente_copilot_memory", remoteFacts);
+			}
+		} catch {
+			// Офлайн фоллбек на локальный кэш
+		}
 		try {
 			const remote = await fetchRemoteSessions();
 			if (!remote || remote.length === 0) return;

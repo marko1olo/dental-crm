@@ -133,6 +133,10 @@ export interface AgentHarnessParams {
 	byokProvider?: string | undefined;
 	byokApiKey?: string | undefined;
 	byokModel?: string | undefined;
+	sessionId?: string | undefined;
+	temperature?: number | undefined;
+	contextLimitTokens?: number | undefined;
+	showTypingAnimation?: boolean | undefined;
 }
 
 export interface AgentHarnessResult {

@@ -254,6 +254,14 @@ export const DOCTOR_SALARY_MODEL_NAMES_RU: Record<DoctorSalaryModel, string> = {
 	cash_basis: "По кассовому чеку (Cash Basis — по факту денег в кассе с учетом «Цены для ЗП»)",
 };
 
+export const IDENT_SALARY_MODEL_NAMES_RU = DOCTOR_SALARY_MODEL_NAMES_RU;
+
+export type IdentSalaryModel = DoctorSalaryModel;
+export type IdentDoctorSalaryCalculationParams = DoctorSalaryCalculationInput;
+export type IdentDoctorSalaryCalculationResult = DoctorSalaryCalculationResult;
+export type IdentSalaryPriceApplicationMode = DoctorSalaryPriceApplicationMode;
+export type IdentDiscountAllocationPolicy = DiscountAllocationPolicy;
+
 /**
  * Способ применения «Цены для ЗП» (salary_price):
  * - "flat_addition": фиксированная ставка/доплата за единицу услуги к сдельщине врача.

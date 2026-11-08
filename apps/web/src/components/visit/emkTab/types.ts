@@ -6,13 +6,19 @@ import type { VisitNoteFieldsPatch } from "../clinicalCatalog/clinicalProtocolsC
 
 export type { DentitionMode };
 
-export type ActivePatientRecord = any;
-export type VisitDashboardSlice = any;
-export type VisitNoteFormValues = Record<string, any>;
+export type ActivePatientRecord = Record<string, unknown>;
+export type VisitDashboardSlice = Record<string, unknown>;
+export type VisitNoteFormValues = Record<string, unknown>;
 export type VisitNoteSaveHandler = () => Promise<void>;
 export interface VisitEmkTabProps {
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (field: string, value: any) => void;
+	visitNoteForm?: Record<string, unknown>;
+	updateVisitNoteField?: (field: string, value: unknown) => void;
+	draft?: unknown;
+	patientHistory?: unknown;
+	activePatient?: any;
+	dashboard?: any;
+	openVisitId?: string;
+	isDraftAccepting?: boolean;
 	[key: string]: any;
 }
 
@@ -33,11 +39,11 @@ export interface VisitEmkOdontogramBarProps {
 		toothStates?: Record<string, string> | Array<{ toothNumber?: number | string; code?: string; state?: string }>;
 		teeth?: Array<{ toothNumber?: number | string; code?: string; state?: string }>;
 	} | Array<{ toothNumber?: number | string; code?: string; state?: string }> | null;
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (field: string, value: any) => void;
+	visitNoteForm: Record<string, unknown>;
+	updateVisitNoteField: (field: string, value: unknown) => void;
 	effectiveActiveTooth: number | null;
 	visitToothStateByCode?: Record<string, VisitToothUiState | undefined>;
-	draft?: any;
+	draft?: unknown;
 }
 
 export interface VisitEmkModalsProps {

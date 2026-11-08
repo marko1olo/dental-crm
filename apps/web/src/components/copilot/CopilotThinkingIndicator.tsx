@@ -20,11 +20,9 @@ export interface CopilotThinkingIndicatorProps {
 	phaseOverride?: string | null | undefined;
 }
 
-export function getClinicalThinkingPhase(elapsed: number, includeSeconds = false): string {
-	let p = "Синтез рекомендаций и сметы...";
-	if (elapsed < 0.8) p = "ИИ формирует клинический протокол...";
-	else if (elapsed < 1.8) p = "Дифференциальный диагноз по МКБ-10...";
-	else if (elapsed < 2.8) p = "Проверка противопоказаний и СтАР...";
+export function getClinicalThinkingPhase(elapsed: number, includeSeconds = false, toolName?: string | null): string {
+	if (toolName) return `Исполнение инструмента: ${toolName}`;
+	const p = "Клинический анализ контекста и синтез рекомендаций...";
 	return includeSeconds ? `${p} (${elapsed.toFixed(1)}с)` : p;
 }
 

@@ -75,8 +75,8 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 						setIsFormOpen(true);
 					}
 				}
-			} catch {
-				// Ignore storage errors
+			} catch (error) {
+				console.warn("[RecordDiariesTab] Не удалось восстановить черновик из sessionStorage:", error);
 			}
 		}, [draftStorageKey]);
 
@@ -98,8 +98,8 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 						if (typeof sessionStorage !== "undefined") {
 							sessionStorage.setItem(draftStorageKey, JSON.stringify(state));
 						}
-					} catch {
-						// Ignore storage errors
+					} catch (error) {
+						console.warn("[RecordDiariesTab] Ошибка сохранения черновика в sessionStorage:", error);
 					}
 				}, 600);
 			},
@@ -143,7 +143,9 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 			setMaterials("");
 			try {
 				if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(draftStorageKey);
-			} catch {}
+			} catch (error) {
+				console.warn("[RecordDiariesTab] Ошибка очистки черновика из sessionStorage:", error);
+			}
 		}, [draftStorageKey]);
 
 		const handleSaveNewDiary = useCallback(() => {
@@ -205,7 +207,9 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 				navigator.clipboard.writeText(text).then(() => {
 					setCopiedIndex(idx);
 					setTimeout(() => setCopiedIndex(null), 2000);
-				}).catch(() => {});
+				}).catch((error) => {
+					console.warn("[RecordDiariesTab] Ошибка копирования в буфер обмена:", error);
+				});
 			}
 		}, []);
 

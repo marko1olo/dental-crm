@@ -19,7 +19,7 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = "8dc3a61d-f5c6-4072-bd1e-86fa5f439064";
+const CONV_ID = "faf313ed-fd7a-4073-98cf-ccdf1b65c760";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/schedule");
 
@@ -156,7 +156,7 @@ async function waitForRealUI(page) {
     () => {
       const text = document.body.innerText || "";
       return (
-        !text.includes("Загрузка системы") &&
+        !text.includes("Загрузка") &&
         !text.includes("Подготовка модулей") &&
         (document.querySelector(".workspace-shell") ||
           document.querySelector('[data-testid="schedule-toolbar"]') ||
@@ -173,12 +173,18 @@ async function waitForRealUI(page) {
 
 async function saveProof(page, filename, description) {
   await suppressOverlays(page);
-  await sleep(500);
+  await sleep(600);
 
   const docsPath = path.join(OUT_DOCS, filename);
   const convPath = path.join(OUT_CONV, filename);
 
-  await page.screenshot({ path: docsPath, fullPage: false });
+  try {
+    await page.screenshot({ path: docsPath, fullPage: false, animations: "disabled" });
+  } catch (err) {
+    console.warn(`  [RETRY] Screenshot retry for ${filename}...`);
+    await sleep(1000);
+    await page.screenshot({ path: docsPath, fullPage: false, animations: "disabled" });
+  }
   copyFileSync(docsPath, convPath);
 
   const stats = statSync(docsPath);
@@ -232,43 +238,57 @@ async function main() {
 
     // 1. PC Light
     console.log("Capturing ☀️ PC Light (1440x900)...");
-    await setTheme(pcPage, "light");
-    await saveProof(pcPage, "schedule_pc_light_1440x900.png", "Desktop Schedule Grid Light Mode");
+    try {
+      await setTheme(pcPage, "light");
+      await saveProof(pcPage, "schedule_pc_light_1440x900.png", "Desktop Schedule Grid Light Mode");
+    } catch (e) { console.error("Error capturing PC Light:", e.message); }
 
     // 2. PC Dark
     console.log("Capturing 🌙 PC Dark (1440x900)...");
-    await setTheme(pcPage, "dark");
-    await saveProof(pcPage, "schedule_pc_dark_1440x900.png", "Desktop Schedule Grid Dark Mode");
+    try {
+      await setTheme(pcPage, "dark");
+      await saveProof(pcPage, "schedule_pc_dark_1440x900.png", "Desktop Schedule Grid Dark Mode");
+    } catch (e) { console.error("Error capturing PC Dark:", e.message); }
 
     // 3. Open Quick Booking Drawer on PC
     console.log("Opening Quick Booking Drawer on PC...");
-    await setTheme(pcPage, "light");
-    await pcPage.evaluate(() => {
-      window.dispatchEvent(
-        new CustomEvent("dente:open-quick-booking", {
-          detail: {
-            dateKey: "2026-11-05",
-            startTime: "11:30",
-            durationMinutes: 30,
-            chairId: "chair-1",
-            chairName: "Кресло 1 (Терапия)",
-            patientName: "Аллергиков Иван Петрович",
-            patientPhone: "+7 (999) 111-22-33",
-            allergies: "Лидокаин, Новокаин",
-          },
-        })
-      );
-    });
-    await sleep(1000);
+    try {
+      await setTheme(pcPage, "light");
+      const quickBtn = pcPage.locator('[data-testid="schedule-toolbar-primary-quick-booking-btn"], button:has-text("+ Запись"), button:has-text("Запись")').first();
+      if (await quickBtn.isVisible()) {
+        console.log("Clicking quick booking button in toolbar...");
+        await quickBtn.click();
+        await sleep(1200);
+      } else {
+        console.log("Dispatching fallback event for quick booking...");
+        await pcPage.evaluate(() => {
+          window.dispatchEvent(
+            new CustomEvent("dente:open-quick-booking", {
+              detail: {
+                dateKey: "2026-11-05",
+                startTime: "11:30",
+                durationMinutes: 30,
+                chairId: "chair-1",
+                chairName: "Кресло 1 (Терапия)",
+                patientName: "Аллергиков Иван Петрович",
+                patientPhone: "+7 (999) 111-22-33",
+                allergies: "Лидокаин, Новокаин",
+              },
+            })
+          );
+        });
+        await sleep(1200);
+      }
 
-    // 3.1 PC Quick Booking Drawer Light
-    console.log("Capturing ☀️ Quick Booking Drawer PC Light (1440x900)...");
-    await saveProof(pcPage, "schedule_quick_booking_pc_light_1440x900.png", "Quick Booking Drawer Desktop Light");
+      // 3.1 PC Quick Booking Drawer Light
+      console.log("Capturing ☀️ Quick Booking Drawer PC Light (1440x900)...");
+      await saveProof(pcPage, "schedule_quick_booking_pc_light_1440x900.png", "Quick Booking Drawer Desktop Light");
 
-    // 3.2 PC Quick Booking Drawer Dark
-    console.log("Capturing 🌙 Quick Booking Drawer PC Dark (1440x900)...");
-    await setTheme(pcPage, "dark");
-    await saveProof(pcPage, "schedule_quick_booking_pc_dark_1440x900.png", "Quick Booking Drawer Desktop Dark");
+      // 3.2 PC Quick Booking Drawer Dark
+      console.log("Capturing 🌙 Quick Booking Drawer PC Dark (1440x900)...");
+      await setTheme(pcPage, "dark");
+      await saveProof(pcPage, "schedule_quick_booking_pc_dark_1440x900.png", "Quick Booking Drawer Desktop Dark");
+    } catch (e) { console.error("Error capturing PC Quick Booking:", e.message); }
 
     await pcContext.close();
 
@@ -296,42 +316,56 @@ async function main() {
 
     // 5. Mobile Light
     console.log("Capturing 📱 Mobile Light (390x844)...");
-    await setTheme(mobilePage, "light");
-    await saveProof(mobilePage, "schedule_mobile_light_390x844.png", "Mobile Agenda View Light Mode");
+    try {
+      await setTheme(mobilePage, "light");
+      await saveProof(mobilePage, "schedule_mobile_light_390x844.png", "Mobile Agenda View Light Mode");
+    } catch (e) { console.error("Error capturing Mobile Light:", e.message); }
 
     // 6. Mobile Dark
     console.log("Capturing 🌙 Mobile Dark (390x844)...");
-    await setTheme(mobilePage, "dark");
-    await saveProof(mobilePage, "schedule_mobile_dark_390x844.png", "Mobile Agenda View Dark Mode");
+    try {
+      await setTheme(mobilePage, "dark");
+      await saveProof(mobilePage, "schedule_mobile_dark_390x844.png", "Mobile Agenda View Dark Mode");
+    } catch (e) { console.error("Error capturing Mobile Dark:", e.message); }
 
     // 7. Open Quick Booking Bottom Sheet on Mobile
     console.log("Opening Quick Booking Bottom Sheet on Mobile...");
-    await setTheme(mobilePage, "light");
-    await mobilePage.evaluate(() => {
-      window.dispatchEvent(
-        new CustomEvent("dente:open-quick-booking", {
-          detail: {
-            dateKey: "2026-11-05",
-            startTime: "12:00",
-            durationMinutes: 30,
-            chairId: "chair-1",
-            chairName: "Кресло 1 (Терапия)",
-            patientName: "Смирнова Анна Викторовна",
-            patientPhone: "+7 (925) 987-65-43",
-          },
-        })
-      );
-    });
-    await sleep(1000);
+    try {
+      await setTheme(mobilePage, "light");
+      const mobileQuickBtn = mobilePage.locator('button:has-text("Записать пациента"), button:has-text("+ Новая запись")').first();
+      if (await mobileQuickBtn.isVisible()) {
+        console.log("Clicking mobile quick booking button...");
+        await mobileQuickBtn.click();
+        await sleep(1200);
+      } else {
+        console.log("Dispatching fallback event for mobile quick booking...");
+        await mobilePage.evaluate(() => {
+          window.dispatchEvent(
+            new CustomEvent("dente:open-quick-booking", {
+              detail: {
+                dateKey: "2026-11-05",
+                startTime: "12:00",
+                durationMinutes: 30,
+                chairId: "chair-1",
+                chairName: "Кресло 1 (Терапия)",
+                patientName: "Смирнова Анна Викторовна",
+                patientPhone: "+7 (925) 987-65-43",
+              },
+            })
+          );
+        });
+        await sleep(1200);
+      }
 
-    // 7.1 Mobile Bottom Sheet Light
-    console.log("Capturing 📱 Mobile Bottom Sheet Light (390x844)...");
-    await saveProof(mobilePage, "schedule_mobile_quick_booking_bottom_sheet_390x844.png", "Mobile Quick Booking Bottom Sheet Light Mode");
+      // 7.1 Mobile Bottom Sheet Light
+      console.log("Capturing 📱 Mobile Bottom Sheet Light (390x844)...");
+      await saveProof(mobilePage, "schedule_mobile_quick_booking_bottom_sheet_390x844.png", "Mobile Quick Booking Bottom Sheet Light Mode");
 
-    // 7.2 Mobile Bottom Sheet Dark
-    console.log("Capturing 🌙 Mobile Bottom Sheet Dark (390x844)...");
-    await setTheme(mobilePage, "dark");
-    await saveProof(mobilePage, "schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png", "Mobile Quick Booking Bottom Sheet Dark Mode");
+      // 7.2 Mobile Bottom Sheet Dark
+      console.log("Capturing 🌙 Mobile Bottom Sheet Dark (390x844)...");
+      await setTheme(mobilePage, "dark");
+      await saveProof(mobilePage, "schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png", "Mobile Quick Booking Bottom Sheet Dark Mode");
+    } catch (e) { console.error("Error capturing Mobile Bottom Sheet:", e.message); }
 
     await mobileContext.close();
 

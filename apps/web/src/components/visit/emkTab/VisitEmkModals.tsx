@@ -2,7 +2,7 @@ import { generateQrCodeSvg, generateUuidV7 } from "@dental/shared";
 import { Check, X, Zap } from "lucide-react";
 import React from "react";
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
-import { Form043PrintModal } from "../../emr/Form043PrintModal";
+import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
 import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { showToast } from "../../GlobalToast";
 import { PerioStudioModal } from "../../perio/PerioStudioModal";
@@ -322,14 +322,23 @@ export function VisitEmkModals({
 			/>
 
 			{/* Интерактивное модальное окно медицинской карты */}
-			<Form043PrintModal
+			<MedicalRecordStudioModal
 				isOpen={isPrintModalOpen}
 				onClose={() => setIsPrintModalOpen(false)}
 				initialData={{
-					patient: activePatient,
-					diary: visitNoteForm,
-					// biome-ignore lint/suspicious/noExplicitAny: Form043 initialData duck-typing
-				} as any}
+					passport: activePatient
+						? {
+								patientFullName: activePatient.fullName || "",
+								patientBirthDate: activePatient.birthDate || "",
+								medicalCardNumber:
+									activePatient.medicalCardNumber ||
+									activePatient.cardNumber ||
+									activePatient.id ||
+									"",
+								patientPhone: activePatient.phone || "",
+							}
+						: undefined,
+				}}
 				isLocked={isSignedVisit}
 				status={isSignedVisit ? "signed" : "draft"}
 			/>

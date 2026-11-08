@@ -200,3 +200,4 @@ export function calculateDoctorSalary(
 }
 
 export const calculateStandardDoctorSalary = calculateDoctorSalary;
+export const calculateIdentDoctorSalary = calculateDoctorSalary;

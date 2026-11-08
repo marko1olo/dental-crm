@@ -107,6 +107,15 @@ export async function runAgentHarness(
 	};
 
 	const tools = getDentalTools(runtimeMode);
+	const normalizedTrustLevel: "confirm_all" | "balanced" | "autonomous" | undefined =
+		params.trustLevel === "autonomous"
+			? "autonomous"
+			: params.trustLevel === "confirm_all" || params.trustLevel === "supervised" || params.trustLevel === "cautious"
+				? "confirm_all"
+				: params.trustLevel === "balanced"
+					? "balanced"
+					: undefined;
+
 	const systemPrompt = buildAgentSystemPrompt(
 		runtimeMode,
 		effectiveToolContext,
@@ -118,7 +127,7 @@ export async function runAgentHarness(
 		effectiveActiveTooth,
 		effectiveToolContext.activeVisitId,
 		messages,
-		params.trustLevel,
+		normalizedTrustLevel,
 	);
 
 	// Working history for this ReAct execution turn
@@ -132,8 +141,8 @@ export async function runAgentHarness(
 	let lastRecordedUsage: AgentHarnessResult["tokenUsage"] | undefined;
 
 	const compactorOptions: TokenCompactorOptions = {
-		...(params.compactThresholdTokens !== undefined
-			? { thresholdTokens: params.compactThresholdTokens }
+		...(params.contextLimitTokens !== undefined || params.compactThresholdTokens !== undefined
+			? { thresholdTokens: params.contextLimitTokens ?? params.compactThresholdTokens }
 			: {}),
 		...(params.slidingWindowRetainedTurns !== undefined
 			? { retainedRecentTurns: params.slidingWindowRetainedTurns }
@@ -204,8 +213,8 @@ export async function runAgentHarness(
 		// Mid-execution compaction check if tool outputs swelled context during multi-step ReAct
 		if (params.enableAutoCompaction !== false && iteration > 1) {
 			const midCompactorOpts: TokenCompactorOptions = {
-				...(params.compactThresholdTokens !== undefined
-					? { thresholdTokens: params.compactThresholdTokens }
+				...(params.contextLimitTokens !== undefined || params.compactThresholdTokens !== undefined
+					? { thresholdTokens: params.contextLimitTokens ?? params.compactThresholdTokens }
 					: {}),
 				...(params.slidingWindowRetainedTurns !== undefined
 					? { retainedRecentTurns: params.slidingWindowRetainedTurns }
@@ -269,7 +278,7 @@ export async function runAgentHarness(
 						baseUrl: routing.baseUrl,
 						tools,
 						tool_choice: "auto",
-						temperature: 0.2,
+						temperature: params.temperature ?? 0.2,
 						signal,
 						timeoutMs: effectiveTimeoutMs,
 					},
@@ -291,7 +300,7 @@ export async function runAgentHarness(
 					baseUrl: routing.baseUrl,
 					tools,
 					tool_choice: "auto",
-					temperature: 0.2,
+					temperature: params.temperature ?? 0.2,
 					signal,
 					timeoutMs: effectiveTimeoutMs,
 				});

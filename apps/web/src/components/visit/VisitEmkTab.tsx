@@ -33,8 +33,8 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 	// diagnosis: "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)" / "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)"
 	// dente-apply-soap-protocol debounceMs: 600; visibilitychange, pagehide, beforeunload, dente-telephony-incoming-call
 	const { dashboard, activePatient, openVisitId, isDraftAccepting } = props;
-	const visitNoteForm: Record<string, any> = props.visitNoteForm ?? {};
-	const updateVisitNoteField: (field: string, value: any) => void =
+	const visitNoteForm: Record<string, unknown> = props.visitNoteForm ?? {};
+	const updateVisitNoteField: (field: string, value: unknown) => void =
 		props.updateVisitNoteField ?? (() => {});
 
 	const {
@@ -164,7 +164,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 					updateVisitNoteField={updateVisitNoteField}
 					effectiveActiveTooth={effectiveActiveTooth}
 					visitToothStateByCode={visitToothStateByCode}
-					draft={(props as any).draft}
+					draft={props.draft}
 				/>
 			</div>
 

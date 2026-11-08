@@ -93,7 +93,6 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"components/visit/emk/EmkObjectiveStatusSection.tsx",
 			"components/visit/emk/EmkDiaryProtocolSection.tsx",
 			"components/visit/emk/EmkServicesSection.tsx",
-			"components/visit/emk/EmkPrintableForm043.tsx",
 			"components/visit/emk/VisitClinicalDiaryPrintSheet.tsx",
 		];
 

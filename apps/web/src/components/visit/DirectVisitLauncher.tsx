@@ -13,6 +13,7 @@ import { hasUrlToken, clearUrlTokens } from "../appLayout/modalsContainerModules
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { AppLogicProvider } from "../../contexts/AppLogicContext";
 import { PrescriptionModal } from "../prescriptions/PrescriptionModal";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import type { Dashboard, Patient, Appointment } from "@dental/shared";
 
 const VISIT_URL_TOKENS = [
@@ -113,11 +114,16 @@ export const DirectVisitLauncher: React.FC = () => {
 					}
 				}
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.warn("DirectVisitLauncher: ошибка загрузки дашборда", err);
+			});
 	}, [isOpen, selectedPatientId]);
 
 	const activePatient: Patient | null = useMemo(() => {
 		if (!dashboard?.patients) {
+			if (!isDemoShowcaseMode()) {
+				return null;
+			}
 			return {
 				id: "01a00000-0000-0000-0000-000000000001",
 				organizationId: "01a00000-0000-0000-0000-000000000000",
@@ -141,15 +147,19 @@ export const DirectVisitLauncher: React.FC = () => {
 	}, [dashboard?.patients, selectedPatientId]);
 
 	const activeAppointment: Appointment | null = useMemo(() => {
+		const isDemo = isDemoShowcaseMode();
 		if (dashboard?.appointments && activePatient) {
 			const app = dashboard.appointments.find((a) => a.patientId === activePatient.id);
 			if (app) return app;
 		}
+		if (!activePatient && !isDemo) {
+			return null;
+		}
 		return {
 			id: "01a00000-0000-0003-0000-000000000001",
 			organizationId: "01a00000-0000-0000-0000-000000000000",
-			patientId: activePatient?.id || "01a00000-0000-0000-0000-000000000001",
-			patientName: activePatient?.fullName || "Смирнова Екатерина Васильевна",
+			patientId: activePatient?.id || (isDemo ? "01a00000-0000-0000-0000-000000000001" : ""),
+			patientName: activePatient?.fullName || (isDemo ? "Смирнова Екатерина Васильевна" : "Пациент не выбран"),
 			startsAt: new Date().toISOString(),
 			endsAt: new Date(Date.now() + 3600000).toISOString(),
 			status: "in_progress",

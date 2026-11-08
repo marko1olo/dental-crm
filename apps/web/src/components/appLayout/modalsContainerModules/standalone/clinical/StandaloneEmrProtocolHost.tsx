@@ -6,10 +6,12 @@
 import React from "react";
 import { EmrProtocolGeneratorModal } from "../../../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 
 export const StandaloneEmrProtocolHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
 	const patientName = useLauncherPatientName(patientId);
+	const isDemo = isDemoShowcaseMode();
 
 	return (
 		<div
@@ -19,9 +21,9 @@ export const StandaloneEmrProtocolHost: React.FC<{ onClose: () => void }> = ({ o
 			<EmrProtocolGeneratorModal
 				isOpen={true}
 				onClose={onClose}
-				patientFullName={patientName || "Смирнов Алексей Павлович"}
-				medicalCardNumber="043-7821"
-				doctorFullName="Д-р Воронов Алексей Владимирович"
+				patientFullName={patientName || (isDemo ? "Смирнов Алексей Павлович" : "")}
+				medicalCardNumber={isDemo ? "ЭМК-7821" : ""}
+				doctorFullName={isDemo ? "Д-р Воронов Алексей Владимирович" : ""}
 				doctorSpecialty="Врач-стоматолог-терапевт"
 				initialToothNumber={16}
 				initialIcd10Code="K02.1"

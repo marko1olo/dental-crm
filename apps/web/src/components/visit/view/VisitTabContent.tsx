@@ -8,6 +8,10 @@ import { VisitConsentsTab } from "../VisitConsentsTab";
 import { VisitDiagnosticsTab } from "../VisitDiagnosticsTab";
 import { VisitEmkTab } from "../VisitEmkTab";
 import { VisitOdontogramTab } from "../VisitOdontogramTab";
+import type {
+	VisitOdontogramTabPatient,
+	VisitOdontogramTabAppointment,
+} from "../odontogramTab/visitOdontogramTabTypes";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
 import type {
 	VisitAppointmentEntity,
@@ -62,8 +66,8 @@ export function VisitTabContent({
 				style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}
 			>
 				<VisitOdontogramTab
-					activePatient={activePatient as any}
-					activeAppointment={activeAppointment as any}
+					activePatient={activePatient ? (activePatient as unknown as VisitOdontogramTabPatient) : null}
+					activeAppointment={activeAppointment ? (activeAppointment as unknown as VisitOdontogramTabAppointment) : null}
 					dashboard={dashboard}
 				/>
 			</div>

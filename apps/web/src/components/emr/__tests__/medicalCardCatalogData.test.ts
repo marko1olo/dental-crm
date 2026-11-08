@@ -119,7 +119,7 @@ describe("Medical Card & SOAP Diary SSOT (Mandates 8e, 8n, 8x, 8ap, 8am)", () =>
 		assert.ok(modalCode.includes("disabled={false}"));
 	});
 
-	it("9. medicalRecordCatalogData.ts exists and adheres to Sweet Spot 280-350 lines (Mandates 8b, 8x)", () => {
+	it("9. medicalCardCatalogData.ts exists and adheres to Sweet Spot 280-350 lines (Mandates 8b, 8x)", () => {
 		const catalogPath = path.resolve(__dirname, "../medicalCardCatalogData.ts");
 		assert.ok(fs.existsSync(catalogPath), "medicalCardCatalogData.ts must exist");
 		const catalogCode = fs.readFileSync(catalogPath, "utf8");

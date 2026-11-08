@@ -100,7 +100,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 								viewMode === "grid"
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							data-testid="schedule-mobile-view-mode-grid"
 						>
@@ -115,7 +115,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 								viewMode === "agenda"
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							data-testid="schedule-mobile-view-mode-agenda"
 						>
@@ -138,7 +138,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 								effectiveDateKey === todayKey
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							data-testid="schedule-mobile-segment-today"
 						>
@@ -153,7 +153,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 								effectiveDateKey === tomorrowKey
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+									: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							data-testid="schedule-mobile-segment-tomorrow"
 						>
@@ -162,7 +162,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 						<button
 							type="button"
 							onClick={() => handleShiftDay(1)}
-							className="flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-[var(--ink)] hover:bg-[var(--paper)] active:scale-95 flex items-center justify-center gap-1"
+							className="flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer bg-transparent text-[var(--ink)] hover:bg-[var(--paper)] active:scale-95 flex items-center justify-center gap-1"
 							data-testid="schedule-mobile-segment-plus-day"
 							title="Сдвиг на +1 день вперед"
 						>

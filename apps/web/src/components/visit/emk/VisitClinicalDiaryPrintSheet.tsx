@@ -1,14 +1,50 @@
 import React from "react";
 import { AlertTriangle, Check } from "lucide-react";
 
+export interface VisitClinicalDiaryPrintPatient {
+	readonly id?: string | null | undefined;
+	readonly fullName?: string | null | undefined;
+	readonly birthDate?: string | null | undefined;
+	readonly gender?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+	readonly medicalCardNumber?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly omsPolis?: string | null | undefined;
+	readonly administrativeProfile?: {
+		readonly snils?: string | null | undefined;
+		readonly omsPolis?: string | null | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
+	[key: string]: unknown;
+}
+
+export interface VisitClinicalDiaryPrintClinicSettings {
+	readonly profile?: {
+		readonly brandName?: string | null | undefined;
+		readonly legalName?: string | null | undefined;
+		readonly medicalLicenseNumber?: string | null | undefined;
+		readonly address?: string | null | undefined;
+		readonly phone?: string | null | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
+	[key: string]: unknown;
+}
+
+export interface VisitClinicalDiaryPrintVisit {
+	readonly date?: string | null | undefined;
+	readonly time?: string | null | undefined;
+	[key: string]: unknown;
+}
+
 export interface VisitClinicalDiaryPrintSheetProps {
-	clinicSettings?: any;
-	activePatient?: any;
-	patient?: any;
-	activeVisit?: any;
+	clinicSettings?: VisitClinicalDiaryPrintClinicSettings | null | undefined;
+	activePatient?: VisitClinicalDiaryPrintPatient | null | undefined;
+	patient?: VisitClinicalDiaryPrintPatient | null | undefined;
+	activeVisit?: VisitClinicalDiaryPrintVisit | null | undefined;
 	isSignedVisit: boolean;
 	doctorName?: string | undefined;
-	visitNoteForm: Record<string, any>;
+	visitNoteForm?: Record<string, unknown> | null | undefined;
 }
 
 export type EmkPrintableForm043Props = VisitClinicalDiaryPrintSheetProps;

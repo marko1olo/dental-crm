@@ -5,7 +5,6 @@
  * Мандаты 8e (Автономия врача), 8n (Соло-врач), 8x/8ap (Чистый живой доменный язык).
  */
 
-export * from "./medicalRecordCatalogData";
 export * from "./medicalCardCatalogData";
 export * from "./MedicalRecordStudioModal";
 export * from "./MedicalCardPrintModal";

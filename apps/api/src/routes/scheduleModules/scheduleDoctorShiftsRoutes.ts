@@ -14,6 +14,10 @@ import {
 	requireScheduleMutationAccess,
 } from "../scheduleAuthGuard.js";
 
+const urgentRequestParamsSchema = z.object({
+	id: z.string().min(1),
+});
+
 const scheduleShiftsSchema = z.object({
 	shifts: z.array(
 		z
@@ -28,10 +32,13 @@ const scheduleShiftsSchema = z.object({
 				startTime: z.string().optional(),
 				endTime: z.string().optional(),
 				role: z.string().nullable().optional(),
+				doctorRole: z.string().nullable().optional(),
 				specialty: z.string().nullable().optional(),
 			})
 			.passthrough(),
 	),
+	dateIso: z.string().optional(),
+	replaceAll: z.boolean().optional(),
 });
 
 /**
@@ -64,14 +71,21 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			const orgId = await requireOrganizationContext(request, reply);
 			if (!orgId) return reply;
 
-			const params = request.params as { id: string };
+			const parsedParams = urgentRequestParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID экстренного запроса.",
+				});
+			}
+			const { id } = parsedParams.data;
 
 			await db
 				.update(urgentScheduleRequests)
 				.set({ isResolved: true })
 				.where(
 					and(
-						eq(urgentScheduleRequests.id, params.id),
+						eq(urgentScheduleRequests.id, id),
 						eq(urgentScheduleRequests.organizationId, orgId),
 					),
 				);
@@ -117,16 +131,15 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				message: "Некорректная структура смен врачей (поле shifts обязательно).",
 			});
 		}
-		const { shifts } = parsed.data;
-		const rawObj = (req.body && typeof req.body === "object" ? req.body : {}) as Record<string, unknown>;
-		const explicitDate = typeof rawObj.dateIso === "string" ? rawObj.dateIso.trim() : "";
+		const { shifts, dateIso, replaceAll } = parsed.data;
+		const explicitDate = typeof dateIso === "string" ? dateIso.trim() : "";
 		const targetDates = Array.from(
-			new Set([...shifts.map((s) => s.dateIso || (s as Record<string, unknown>).shiftDateIso || ""), explicitDate].filter(Boolean) as string[]),
+			new Set([...shifts.map((s) => s.dateIso || s.shiftDateIso || ""), explicitDate].filter((d): d is string => Boolean(d))),
 		);
 
 		await db.transaction(async (tx) => {
 			const deleteCond =
-				rawObj.replaceAll !== true && targetDates.length > 0
+				replaceAll !== true && targetDates.length > 0
 					? and(eq(doctorShiftRosters.organizationId, orgId), inArray(doctorShiftRosters.dateIso, targetDates))
 					: eq(doctorShiftRosters.organizationId, orgId);
 			await tx.delete(doctorShiftRosters).where(deleteCond);
@@ -135,7 +148,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				const now = new Date();
 				await tx.insert(doctorShiftRosters).values(
 					shifts.map((s) => {
-						const resolvedDate = s.dateIso || (s as Record<string, unknown>).shiftDateIso || now.toISOString().split("T")[0]!;
+						const resolvedDate = s.dateIso || s.shiftDateIso || now.toISOString().split("T")[0]!;
 						return {
 							id: s.id || randomUUID(),
 							organizationId: orgId,
@@ -146,8 +159,8 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 							dateIso: String(resolvedDate),
 							startTime: s.startTime || "08:00",
 							endTime: s.endTime || "20:00",
-							role: (s as Record<string, unknown>).role ? String((s as Record<string, unknown>).role) : (s as Record<string, unknown>).doctorRole ? String((s as Record<string, unknown>).doctorRole) : null,
-							specialty: (s as Record<string, unknown>).specialty ? String((s as Record<string, unknown>).specialty) : null,
+							role: s.role ? String(s.role) : s.doctorRole ? String(s.doctorRole) : null,
+							specialty: s.specialty ? String(s.specialty) : null,
 							updatedAt: now,
 						};
 					}),

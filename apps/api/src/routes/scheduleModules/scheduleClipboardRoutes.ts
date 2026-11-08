@@ -1,6 +1,7 @@
 import { dashboardSchema } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { db } from "../../db/client.js";
 import { getDashboardFromDb } from "../../db/dashboardQuery.js";
@@ -32,6 +33,20 @@ const clipboardCopyValidationMessage =
 	"В буфер не скопировано: выберите запись расписания.";
 const clipboardPasteResourcesMissingMessage =
 	"Вставка не выполнена: у исходной записи нет пациента, врача или кресла. Откройте карточку и заполните их, затем скопируйте снова.";
+
+const clipboardCopySchema = z.object({
+	appointmentId: z.string().uuid({ message: clipboardCopyValidationMessage }),
+});
+
+const clipboardParamsSchema = z.object({
+	id: z.string().min(1, clipboardItemMissingMessage),
+});
+
+const clipboardPasteSchema = z.object({
+	startsAt: z.string().min(1, clipboardPasteValidationMessage),
+	doctorUserId: z.string().uuid().optional().nullable(),
+	chairId: z.string().optional().nullable(),
+});
 
 /**
  * Операции с буфером обмена расписания (копирование, вставка приёма в 1 клик,
@@ -84,15 +99,14 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		if (!context) return reply;
 		const orgId = context.organizationId;
 
-		const body = (request.body ?? {}) as { appointmentId?: unknown };
-		const appointmentId =
-			typeof body.appointmentId === "string" ? body.appointmentId.trim() : "";
-		if (!appointmentId) {
+		const parsedBody = clipboardCopySchema.safeParse(request.body);
+		if (!parsedBody.success) {
 			return reply.code(400).send({
 				code: "ClipboardValidationError",
 				message: clipboardCopyValidationMessage,
 			});
 		}
+		const appointmentId = parsedBody.data.appointmentId.trim();
 
 		const [source] = await db
 			.select({
@@ -188,14 +202,14 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		if (!context) return reply;
 		const orgId = context.organizationId;
 
-		const params = request.params as { id?: string };
-		const itemId = typeof params.id === "string" ? params.id.trim() : "";
-		if (!itemId) {
+		const parsedParams = clipboardParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				code: "ClipboardRouteValidationError",
 				message: clipboardItemMissingMessage,
 			});
 		}
+		const itemId = parsedParams.data.id.trim();
 
 		const [updated] = await db
 			.update(scheduleClipboardItems)
@@ -230,24 +244,25 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 			if (!context) return reply;
 			const orgId = context.organizationId;
 
-			const params = request.params as { id?: string };
-			const itemId = typeof params.id === "string" ? params.id.trim() : "";
-			if (!itemId) {
+			const parsedParams = clipboardParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply.code(400).send({
 					code: "ClipboardRouteValidationError",
 					message: clipboardItemMissingMessage,
 				});
 			}
+			const itemId = parsedParams.data.id.trim();
 
-			const body = (request.body ?? {}) as {
-				startsAt?: unknown;
-				doctorUserId?: unknown;
-				chairId?: unknown;
-			};
-			const startsAtRaw =
-				typeof body.startsAt === "string" ? body.startsAt.trim() : "";
-			const startsMs = Date.parse(startsAtRaw);
-			if (!startsAtRaw || !Number.isFinite(startsMs)) {
+			const parsedBody = clipboardPasteSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					code: "ClipboardValidationError",
+					message: clipboardPasteValidationMessage,
+				});
+			}
+			const { startsAt: startsAtRaw, doctorUserId: rawDoctorUserId, chairId: rawChairId } = parsedBody.data;
+			const startsMs = Date.parse(startsAtRaw.trim());
+			if (!startsAtRaw.trim() || !Number.isFinite(startsMs)) {
 				return reply.code(400).send({
 					code: "ClipboardValidationError",
 					message: clipboardPasteValidationMessage,
@@ -305,12 +320,12 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 			}
 
 			const doctorUserId =
-				typeof body.doctorUserId === "string" && body.doctorUserId.trim()
-					? body.doctorUserId.trim()
+				typeof rawDoctorUserId === "string" && rawDoctorUserId.trim()
+					? rawDoctorUserId.trim()
 					: original.doctorUserId;
 			let chairId =
-				typeof body.chairId === "string" && body.chairId.trim()
-					? body.chairId.trim()
+				typeof rawChairId === "string" && rawChairId.trim()
+					? rawChairId.trim()
 					: original.chairId;
 
 			if ((!chairId || chairId === "default-chair") && orgId) {

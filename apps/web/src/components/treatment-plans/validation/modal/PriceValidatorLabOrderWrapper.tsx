@@ -1,5 +1,5 @@
 import React from "react";
-import { LabWorkOrderModal } from "../../../lab/orders/LabWorkOrderModal.js";
+import { DentalLabStudioModal as LabWorkOrderModal } from "../../../lab/DentalLabStudioModal";
 import type { TreatmentPlanValidationPayload } from "../planPriceValidationPresets.js";
 
 export interface PriceValidatorLabOrderWrapperProps {

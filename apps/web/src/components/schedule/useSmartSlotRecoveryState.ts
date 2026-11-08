@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
@@ -190,7 +190,7 @@ export function useSmartSlotRecoveryState(params: {
       if (slot.appointmentId) {
         const patchRes = await fetch(`/api/appointments/${encodeURIComponent(slot.appointmentId)}`, {
           method: "PATCH",
-          headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+          headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             patientId: match.patientId,
             status: "planned",
@@ -208,7 +208,7 @@ export function useSmartSlotRecoveryState(params: {
         if (entryId) {
           await fetch(`/api/waitlist/${encodeURIComponent(entryId)}`, {
             method: "PUT",
-            headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+            headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ status: "fulfilled" }),
           }).catch(() => {});
         }

@@ -1,30 +1,14 @@
-import type { FastifyInstance } from "fastify";
-import {
-	createAppointmentHandler,
-	createNextStageAppointmentHandler,
-	registerAppointmentsRoutes,
-	updateAppointmentHandler,
-} from "./appointments/appointmentsMutationRoutes.js";
+/**
+ * apps/api/src/routes/appointments.ts
+ * Thin facade re-exporting canonical routes/appointments/index.js (SSOT).
+ * Mandates: 8bd (Single Source of Truth), 8bh (Type Ratchet & Zero Duplicate Logic).
+ */
 
+export * from "./appointments/index.js";
+export { registerAppointmentsRoutes as default } from "./appointments/index.js";
 export {
 	findSuggestedAvailableSlots,
 	type AppointmentMutationCode,
 	type AppointmentRejectionReason,
 	type AppointmentRejectionResponse,
 } from "./appointmentErrors.js";
-
-export {
-	createAppointmentHandler,
-	createNextStageAppointmentHandler,
-	registerAppointmentsRoutes,
-	updateAppointmentHandler,
-};
-
-export * from "./appointments/types.js";
-export * from "./appointments/appointmentsSchemas.js";
-export * from "./appointments/appointmentsHelpers.js";
-export * from "./appointments/appointmentsQueryRoutes.js";
-export * from "./appointments/appointmentsStatusRoutes.js";
-export * from "./appointments/appointmentsMutationRoutes.js";
-
-export default registerAppointmentsRoutes;

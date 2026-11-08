@@ -4,26 +4,30 @@
  */
 
 import React, { useState } from "react";
-import { MedicalRecordPrintModal } from "../../../../emr/record/MedicalRecordPrintModal";
+import { MedicalRecordStudioModal } from "../../../../emr/MedicalRecordStudioModal";
 import { DEFAULT_MEDICAL_CARD_DATA } from "../../../../emr/medicalCardCatalogData";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 import type { MedicalRecordData } from "../../../../emr/types/recordDataTypes";
 
 export const StandaloneEmrMedicalRecordHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
-	const patientName = useLauncherPatientName(patientId) || "Смирнова Екатерина Андреевна";
+	const resolvedName = useLauncherPatientName(patientId);
+	const isDemo = isDemoShowcaseMode();
+	const patientName = resolvedName || (isDemo ? "Смирнова Екатерина Андреевна" : "");
+
 	const [data, setData] = useState<MedicalRecordData>(() => ({
 		...DEFAULT_MEDICAL_CARD_DATA,
 		passport: {
 			...DEFAULT_MEDICAL_CARD_DATA.passport,
 			patientFullName: patientName,
-			patientBirthDate: "1990-05-14",
-			patientPhone: "+7 (926) 555-12-34",
-			patientGender: "female",
-			patientAddress: "г. Москва, ул. Тверская, д. 12, кв. 45",
-			medicalCardNumber: "ЭМК-2026-043",
-			attendingDoctorFullName: "Д-р Воронов Алексей Владимирович",
-			attendingDoctorSpecialty: "Врач-стоматолог-терапевт",
+			patientBirthDate: isDemo ? "1990-05-14" : "",
+			patientPhone: isDemo ? "+7 (926) 555-12-34" : "",
+			patientGender: isDemo ? "female" : "unknown",
+			patientAddress: isDemo ? "г. Москва, ул. Тверская, д. 12, кв. 45" : "",
+			medicalCardNumber: isDemo ? "ЭМК-2026-043" : "",
+			attendingDoctorFullName: isDemo ? "Д-р Воронов Алексей Владимирович" : "",
+			attendingDoctorSpecialty: isDemo ? "Врач-стоматолог-терапевт" : "",
 		},
 	}));
 
@@ -32,7 +36,7 @@ export const StandaloneEmrMedicalRecordHost: React.FC<{ onClose: () => void }> =
 			className="w-full min-h-screen bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft,#0f172a)] flex items-center justify-center"
 			data-testid="emr-medical-record-standalone-root"
 		>
-			<MedicalRecordPrintModal
+			<MedicalRecordStudioModal
 				isOpen={true}
 				onClose={onClose}
 				initialData={data}

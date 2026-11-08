@@ -18,7 +18,7 @@ import {
 	DEFAULT_MEDICAL_CARD_DATA,
 	resolveClinicRequisites,
 	applyMedicalCardPhysiologicalNorm,
-} from "./medicalRecordCatalogData";
+} from "./medicalCardCatalogData";
 import {
 	validateMedicalRecordCompleteness,
 	formatPatientAge,
@@ -37,10 +37,15 @@ import "./emrStudioStyles.css";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 
+export interface ExtendedMedicalRecordInitialData extends Partial<MedicalRecordData> {
+	readonly isLocked?: boolean | undefined;
+	readonly status?: string | undefined;
+}
+
 export interface MedicalRecordStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialData?: Partial<MedicalRecordData> | undefined;
+	readonly initialData?: ExtendedMedicalRecordInitialData | undefined;
 	readonly onSave?: ((updated: MedicalRecordData) => void) | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly onOpenProtocolGenerator?: (() => void) | undefined;
@@ -66,10 +71,13 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const profile = dashboard?.clinicSettings?.profile;
 		const staff = dashboard?.clinicSettings?.staff;
 
+		const initialIsLocked = initialData?.isLocked;
+		const initialStatus = initialData?.status;
+
 		const effectiveIsDraft = Boolean(
 			isDraft || isLocked === false || status === "draft" ||
-			(initialData as any)?.isLocked === false || (initialData as any)?.status === "draft" ||
-			!(isLocked || (initialData as any)?.isLocked || status === "signed" || (initialData as any)?.status === "signed"),
+			initialIsLocked === false || initialStatus === "draft" ||
+			!(isLocked || initialIsLocked || status === "signed" || initialStatus === "signed"),
 		);
 
 		const resolvedClinic = useMemo(
@@ -113,7 +121,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						const draftKey = `dente:medical_card_autosave:${formData.passport.medicalCardNumber || "common"}`;
 						sessionStorage.setItem(draftKey, JSON.stringify(formData));
 					}
-				} catch {}
+				} catch (err) {
+					console.warn("MedicalRecordStudioModal: ошибка автосохранения в sessionStorage", err);
+				}
 			}, 600);
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
 		}, [formData]);

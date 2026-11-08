@@ -88,7 +88,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
 
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
-  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
+  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>(""), [activeToolName, setActiveToolName] = useState<string | null>(null);
   const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toValidUuid(patientId), visitId: toValidUuid(activeVisitId), autoFallback: true });
   const voice = { isListening: unifiedVoice.isRecording, fullText: unifiedVoice.fullTranscript, toggleListening: unifiedVoice.toggleDictation, stopListening: unifiedVoice.stopDictation, clearTranscript: unifiedVoice.clearTranscript };
 
@@ -150,7 +150,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const userMsgId = `msg-${Date.now()}`;
     setMessages((prev) => [...prev, { id: userMsgId, role: "user", text: query, timestamp: nowTime }]);
-    setInputText(""); baseDraftRef.current = ""; safeLocalStorageSetItem("dente_copilot_draft_text", ""); voice.clearTranscript(); setCurrentThought("");
+    setInputText(""); baseDraftRef.current = ""; safeLocalStorageSetItem("dente_copilot_draft_text", ""); voice.clearTranscript(); setCurrentThought(""); setActiveToolName(null);
     const assistantMsgId = `msg-${Date.now() + 1}`;
     setMessages((prev) => [...prev, { id: assistantMsgId, role: "assistant", text: "", timestamp: nowTime, applied: false }]);
     setIsStreaming(true);
@@ -170,6 +170,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           messages: outboundMessages, patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId), stream: true, runtimeMode: apiRuntimeMode,
+          sessionId: activeThreadId || undefined, temperature: settings.temperature ?? 0.2, contextLimitTokens: settings.contextLimitTokens, showTypingAnimation: settings.showTypingAnimation,
           trustLevel: settings.trustLevel, granularPermissions: settings.granularPermissions, customInstructions: settings.customDoctorInstructions,
           memoryFacts: memoryFacts.map((m) => m.fact), doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode,
           activeTooth: typeof activeTooth === "number" ? activeTooth : undefined, modelRoutingMode: settings.modelRoutingMode, byokProvider: settings.byokProvider, byokApiKey: settings.byokApiKey, byokModel: settings.byokModel,
@@ -186,15 +187,32 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             else if ((ev.type === "thought" || ev.type === "thinking" || ev.type === "reasoning") && typeof ev.text === "string") { accumulatedThought += ev.text; setCurrentThought(accumulatedThought); }
             else if (ev.type === "confirmation_required" || ev.type === "tool_call_started" || ev.type === "tool_start") {
               const callId = String(ev.callId || `act-${Date.now()}`), toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
+              setActiveToolName(toolName);
               const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
               const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
               pendingAction = { id: callId, toolName, description: desc, payload: args };
               addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
             } else if (ev.type === "tool_end" || ev.type === "tool_call_finished" || ev.type === "tool_result") {
+              setActiveToolName(null);
               pendingToolName = String(ev.name || ev.tool || pendingAction?.toolName || "");
               pendingToolResult = ev.result ?? ev.data ?? ev.payload;
+              const evArgs = ((ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object") ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+              if (evArgs.beforeText || evArgs.afterText || pendingToolName.includes("file") || pendingToolName.includes("workstation")) {
+                const targetFile = String(evArgs.targetEntity || evArgs.path || evArgs.file || "workstation_document.txt");
+                useCopilotStore.getState().setActiveDiff({
+                  id: `diff-${Date.now()}`,
+                  title: `Изменения файла: ${targetFile.split(/[/\\]/).pop() || targetFile}`,
+                  targetEntity: targetFile,
+                  beforeText: String(evArgs.beforeText || "(Исходное состояние файла)"),
+                  afterText: String(evArgs.afterText || evArgs.content || (typeof pendingToolResult === "string" ? pendingToolResult : JSON.stringify(pendingToolResult, null, 2)) || "(Обновлённое содержимое)"),
+                  applied: false,
+                });
+              }
               addToolLog({ toolName: pendingToolName, category: "clinical", status: "success", args: (ev.args as any) || {}, resultSummary: `Выполнен: ${pendingToolName}` });
-            } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) accumulatedText = ev.text;
+            } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) {
+              setActiveToolName(null);
+              accumulatedText = ev.text;
+            }
           }
           if (accumulatedText || pendingToolResult) {
             const { cleanText, suggestions } = extractSuggestions(accumulatedText);
@@ -362,7 +380,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                   </div>
                 ))}
 
-              <CopilotThinkingIndicator isThinking={isStreaming || Boolean(isThinking)} activeTooth={activeTooth} speedMode={speedMode} showThinkingProcess={showThinkingProcess} thoughtProcess={thoughtProcess || currentThought || undefined} />
+              <CopilotThinkingIndicator isThinking={isStreaming || Boolean(isThinking)} activeTooth={activeTooth} speedMode={speedMode} showThinkingProcess={showThinkingProcess} thoughtProcess={thoughtProcess || currentThought || undefined} currentToolName={activeToolName} />
               <div ref={messagesEndRef} />
             </div>
 

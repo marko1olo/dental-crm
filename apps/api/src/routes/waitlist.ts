@@ -9,6 +9,10 @@ import { db } from "../db/client.js";
 import { appointmentWaitlists, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
+const waitlistParamsSchema = z.object({
+	id: z.string().min(1),
+});
+
 const waitlistTimeRangeSchema = z.object({
 	day: z.string(),
 	slot: z.string(),
@@ -118,9 +122,9 @@ export async function registerWaitlistRoutes(
 					createdAt: item.createdAt,
 				};
 			});
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			request.log.error({ error: msg }, "Ошибка при получении записей листа ожидания");
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Ошибка при получении записей листа ожидания.",
@@ -266,9 +270,9 @@ export async function registerWaitlistRoutes(
 			});
 
 			return responseItem;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			request.log.error({ error: msg }, "Ошибка при добавлении пациента в лист ожидания");
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Ошибка при добавлении пациента в лист ожидания.",
@@ -289,7 +293,14 @@ export async function registerWaitlistRoutes(
 			);
 			if (!orgId) return;
 
-			const { id } = request.params as { id: string };
+			const parsedParams = waitlistParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID записи листа ожидания.",
+				});
+			}
+			const { id } = parsedParams.data;
 
 			const updateSchema = z.object({
 				preferredDoctorId: z.string().uuid().nullable().optional(),
@@ -343,9 +354,9 @@ export async function registerWaitlistRoutes(
 			});
 
 			return updated;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			request.log.error({ error: msg }, "Ошибка при обновлении записи листа ожидания");
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Ошибка при обновлении записи листа ожидания.",
@@ -366,7 +377,14 @@ export async function registerWaitlistRoutes(
 			);
 			if (!orgId) return;
 
-			const { id } = request.params as { id: string };
+			const parsedParams = waitlistParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID записи листа ожидания.",
+				});
+			}
+			const { id } = parsedParams.data;
 			const statusSchema = z.object({
 				status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]),
 			});
@@ -406,9 +424,9 @@ export async function registerWaitlistRoutes(
 			});
 
 			return updated;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			request.log.error({ error: msg }, "Ошибка при обновлении статуса листа ожидания");
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Ошибка при обновлении статуса листа ожидания.",
@@ -429,7 +447,14 @@ export async function registerWaitlistRoutes(
 			);
 			if (!orgId) return;
 
-			const { id } = request.params as { id: string };
+			const parsedParams = waitlistParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID записи листа ожидания.",
+				});
+			}
+			const { id } = parsedParams.data;
 
 			const [deleted] = await db
 				.delete(appointmentWaitlists)
@@ -455,9 +480,9 @@ export async function registerWaitlistRoutes(
 			});
 
 			return { success: true };
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
-			request.log.error(error);
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : String(error);
+			request.log.error({ error: msg }, "Ошибка при удалении записи листа ожидания");
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Ошибка при удалении записи листа ожидания.",
