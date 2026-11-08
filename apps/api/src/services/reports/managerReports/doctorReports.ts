@@ -46,7 +46,7 @@ export async function doctorPerformance(
 	const revenueRows = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
-			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
+			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)::numeric(12,2)`,
 		})
 		.from(payments)
 		.leftJoin(visits, eq(payments.visitId, visits.id))
@@ -54,7 +54,7 @@ export async function doctorPerformance(
 		.where(
 			and(
 				eq(payments.organizationId, scope.organizationId),
-				eq(payments.status, "paid"),
+				inArray(payments.status, ["paid", "refunded"]),
 				gte(paymentTimestamp, scope.from),
 				lte(paymentTimestamp, scope.to),
 				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,

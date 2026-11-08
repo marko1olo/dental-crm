@@ -16,14 +16,10 @@ export const DirectAnalyticsLauncher: React.FC = () => {
 		return (
 			h === "#executive-studio" ||
 			h.includes("executive-studio") ||
-			h.includes("clinic-analytics") ||
-			h === "#analytics" ||
-			h === "#dashboard" ||
-			s.includes("analytics=1") ||
-			s.includes("analytics=direct") ||
-			s.includes("dashboard=1") ||
-			s.includes("dashboard=direct") ||
-			s.includes("executive_studio")
+			h.includes("clinic-analytics-studio") ||
+			s.includes("analytics=studio") ||
+			s.includes("dashboard=studio") ||
+			s.includes("executive_studio=1")
 		);
 	});
 
@@ -35,30 +31,22 @@ export const DirectAnalyticsLauncher: React.FC = () => {
 			if (
 				h === "#executive-studio" ||
 				h.includes("executive-studio") ||
-				h.includes("clinic-analytics") ||
-				h === "#analytics" ||
-				h === "#dashboard" ||
-				s.includes("analytics=1") ||
-				s.includes("analytics=direct") ||
-				s.includes("dashboard=1") ||
-				s.includes("dashboard=direct") ||
-				s.includes("executive_studio")
+				h.includes("clinic-analytics-studio") ||
+				s.includes("analytics=studio") ||
+				s.includes("dashboard=studio") ||
+				s.includes("executive_studio=1")
 			) {
 				setIsOpen(true);
 			}
 		};
 
-		window.addEventListener("dente-open-analytics", handleOpen);
-		window.addEventListener("dente:open-analytics", handleOpen);
-		window.addEventListener("dente-open-dashboard", handleOpen);
-		window.addEventListener("dente:open-dashboard", handleOpen);
+		window.addEventListener("dente-open-executive-studio", handleOpen);
+		window.addEventListener("dente:open-executive-studio", handleOpen);
 		window.addEventListener("hashchange", handleHashChange);
 
 		return () => {
-			window.removeEventListener("dente-open-analytics", handleOpen);
-			window.removeEventListener("dente:open-analytics", handleOpen);
-			window.removeEventListener("dente-open-dashboard", handleOpen);
-			window.removeEventListener("dente:open-dashboard", handleOpen);
+			window.removeEventListener("dente-open-executive-studio", handleOpen);
+			window.removeEventListener("dente:open-executive-studio", handleOpen);
 			window.removeEventListener("hashchange", handleHashChange);
 		};
 	}, []);
@@ -69,11 +57,9 @@ export const DirectAnalyticsLauncher: React.FC = () => {
 		setIsOpen(false);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
-			url.searchParams.delete("analytics");
-			url.searchParams.delete("dashboard");
 			url.searchParams.delete("executive_studio");
 			const cleanHash = window.location.hash.replace(
-				/#analytics|#dashboard|#executive-studio|#clinic-analytics/g,
+				/#executive-studio|#clinic-analytics-studio/g,
 				"",
 			);
 			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;

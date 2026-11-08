@@ -233,6 +233,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					status: treatmentPlans.status,
 					totalPriceRub: treatmentPlans.totalPriceRub,
 					totalPrice: treatmentPlans.totalPrice,
+					alternativeTier: treatmentPlans.alternativeTier,
 				})
 				.from(treatmentPlans)
 				.where(
@@ -284,24 +285,23 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				},
 			};
 
+			// [ANL-05] Реляционная классификация по alternativeTier вместо строкового поиска подстрок в имени и цен
 			for (const plan of allPlans) {
 				const price = Number(plan.totalPriceRub || plan.totalPrice || 0);
-				const nameLower = (plan.name || "").toLowerCase();
+				const rawTier = (plan.alternativeTier || "").toLowerCase().trim();
 				let tier: TierKey = "optimum";
-				if (
-					nameLower.includes("премиум") ||
-					nameLower.includes("комплекс") ||
-					nameLower.includes("all-on") ||
-					price >= 150_000
-				) {
+				if (rawTier === "premium" || rawTier === "vip") {
 					tier = "premium";
 				} else if (
-					nameLower.includes("базов") ||
-					nameLower.includes("эконом") ||
-					nameLower.includes("терапевт") ||
-					price < 50_000
+					rawTier === "basic" ||
+					rawTier === "economy" ||
+					rawTier === "compromise"
 				) {
 					tier = "basic";
+				} else if (rawTier === "optimum" || rawTier === "standard") {
+					tier = "optimum";
+				} else {
+					tier = "optimum";
 				}
 
 				tierGroups[tier].totalPlans += 1;

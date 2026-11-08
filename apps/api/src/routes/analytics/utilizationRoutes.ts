@@ -393,7 +393,16 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const { range } = request.query as { range?: string };
+			const query = request.query as {
+				range?: string;
+				monthlyRentRub?: string | number;
+				monthlyUtilitiesRub?: string | number;
+				monthlyAdministrativePayrollRub?: string | number;
+				monthlyEquipmentDepreciationRub?: string | number;
+				monthlySanpinSterilizationRub?: string | number;
+				monthlyMarketingAndOtherRub?: string | number;
+			};
+			const { range } = query;
 			let startDate: Date | undefined;
 			const now = new Date();
 
@@ -416,17 +425,44 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			const chairData = await calculateChairUtilization(orgId, startDate, now);
 			const doctorProfitability = await calculateDoctorProfitability(orgId, startDate);
 
+			// [ANL-04] Честный график и себестоимость кресел без хардкода 360ч и 1М расходов (Мандат 8n)
+			const [orgRow] = await db
+				.select({ clinicSchedule: organizations.clinicSchedule })
+				.from(organizations)
+				.where(eq(organizations.id, orgId));
+			const clinicScheduleSpec = resolveClinicScheduleWorkHours((orgRow as any)?.clinicSchedule);
+
+			const hoursPerDay = Math.max(
+				4,
+				Math.min(
+					24,
+					Math.round(
+						(clinicScheduleSpec.workdayEndMinutes - clinicScheduleSpec.workdayStartMinutes) / 60,
+					) || 8,
+				),
+			);
+			const daysPerWeek = Math.max(1, Math.min(7, clinicScheduleSpec.workingDays.size || 5));
+			const workingDaysPerMonth = Math.min(31, Math.max(1, Math.round((daysPerWeek * 52) / 12)));
+			const activeChairsCount = Math.max(1, chairData.chairUtilizationJson.length);
+
+			const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : activeChairsCount * 90_000;
+			const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : activeChairsCount * 15_000;
+			const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : activeChairsCount * 70_000;
+			const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : activeChairsCount * 35_000;
+			const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : activeChairsCount * 15_000;
+			const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : activeChairsCount * 35_000;
+
 			const hourlyEconomics = calculateChairHourlyCost({
-				activeChairsCount: Math.max(1, chairData.chairUtilizationJson.length),
-				workingDaysPerMonth: 30,
-				workingHoursPerDay: 12,
+				activeChairsCount,
+				workingDaysPerMonth,
+				workingHoursPerDay: hoursPerDay,
 				chairUtilizationRate: Math.max(0.1, (chairData.chairOccupancyRate || 10) / 100),
-				monthlyRentRub: 350_000,
-				monthlyUtilitiesRub: 45_000,
-				monthlyAdministrativePayrollRub: 280_000,
-				monthlyEquipmentDepreciationRub: 120_000,
-				monthlySanpinSterilizationRub: 60_000,
-				monthlyMarketingAndOtherRub: 150_000,
+				monthlyRentRub: rentRub,
+				monthlyUtilitiesRub: utilitiesRub,
+				monthlyAdministrativePayrollRub: payrollRub,
+				monthlyEquipmentDepreciationRub: depreciationRub,
+				monthlySanpinSterilizationRub: sanpinRub,
+				monthlyMarketingAndOtherRub: marketingRub,
 			});
 
 			return {

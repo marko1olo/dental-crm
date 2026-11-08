@@ -59,6 +59,7 @@ export const inventoryItems = pgTable(
 			precision: 10,
 			scale: 3,
 		}).default("1.000"),
+		isOverhead: boolean("is_overhead").notNull().default(false),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

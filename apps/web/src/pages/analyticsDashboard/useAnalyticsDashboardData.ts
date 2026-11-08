@@ -158,12 +158,12 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 				["Всего пациентов", data?.kpis?.totalPatients ?? 0],
 				["Первичные пациенты", data?.kpis?.primaryPatientsCount ?? 0],
 				["Повторные пациенты", data?.kpis?.repeatPatientsCount ?? 0],
-				["Выручка кассы (₽)", (data?.kpis?.totalRevenue ?? 0) / 100],
-				["Наличная выручка (₽)", (data?.kpis?.cashRevenue ?? 0) / 100],
-				["Безналичная выручка / карты (₽)", (data?.kpis?.cardRevenue ?? 0) / 100],
+				["Выручка кассы (₽)", data?.kpis?.totalRevenue ?? 0],
+				["Наличная выручка (₽)", data?.kpis?.cashRevenue ?? 0],
+				["Безналичная выручка / карты (₽)", data?.kpis?.cardRevenue ?? 0],
 				["Всего приемов", data?.kpis?.totalAppointments ?? 0],
 				["Загрузка кресел (%)", `${data?.kpis?.chairOccupancyRatePercent ?? 0}%`],
-				["Средний чек (₽)", (data?.kpis?.averageCheck ?? 0) / 100],
+				["Средний чек (₽)", data?.kpis?.averageCheck ?? 0],
 			];
 
 			if (Array.isArray(data?.doctorProfitabilityJson) && data.doctorProfitabilityJson.length > 0) {
@@ -172,8 +172,8 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 				for (const doc of data.doctorProfitabilityJson) {
 					rows.push([
 						doc.name,
-						(doc.revenue ?? 0) / 100,
-						doc.clinicMarginRub ? doc.clinicMarginRub / 100 : "—",
+						doc.revenue ?? 0,
+						doc.clinicMarginRub ? doc.clinicMarginRub : "—",
 						doc.completionRate !== null && doc.completionRate !== undefined ? `${doc.completionRate}%` : "—",
 						doc.services804nCount ?? 0,
 						doc.labOrdersCount ?? 0,

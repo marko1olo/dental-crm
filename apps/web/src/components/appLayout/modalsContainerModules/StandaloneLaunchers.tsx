@@ -23,7 +23,7 @@ import { DirectAnalyticsLauncher } from "../../analytics/DirectAnalyticsLauncher
 
 // Канонический ре-экспорт для модулей и SSOT-тестов
 export { DirectLoyaltyLauncher } from "../../loyalty/DirectLoyaltyLauncher";
-export { DirectDentalLabLauncher, DirectLabLauncher } from "../../lab/DirectLabLauncher";
+export { DirectDentalLabLauncher, DirectLabLauncher } from "../../lab/DirectDentalLabLauncher";
 export { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
 export { DirectUkepSigningLauncher } from "../../documents/ukep/DirectUkepSigningLauncher";
 export { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
@@ -50,15 +50,14 @@ export function renderStandaloneLaunchers(
 		return null;
 	}
 
-	// 0. Прямой SSOT-роут аналитики (#analytics, #dashboard)
+	// 0. Автономная модальная студия аналитики руководителя (#executive-studio)
+	// Основные маршруты #analytics и #dashboard обрабатываются чисто через ManagementViewRouter
 	if (
 		typeof window !== "undefined" &&
-		(window.location.hash === "#analytics" ||
-			window.location.hash === "#dashboard" ||
-			window.location.hash.startsWith("#analytics") ||
-			window.location.hash.startsWith("#dashboard") ||
-			window.location.hash === '#analytics"' ||
-			window.location.hash === '#dashboard"')
+		(window.location.hash === "#executive-studio" ||
+			window.location.hash.startsWith("#executive-studio") ||
+			window.location.search.includes("executive_studio=1") ||
+			window.location.search.includes("analytics=studio"))
 	) {
 		return <DirectAnalyticsLauncher />;
 	}

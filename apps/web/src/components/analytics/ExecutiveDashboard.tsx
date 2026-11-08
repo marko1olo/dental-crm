@@ -25,11 +25,11 @@ import {
 import { ChairOccupancyReport } from "./ChairOccupancyReport";
 import { DoctorPayrollReport } from "./DoctorPayrollReport";
 import { ExecutiveFinancialSummary } from "./ExecutiveFinancialSummary";
-import { CANONICAL_PERIOD_OPTIONS } from "./executiveModules/ExecutiveCanonicalToolbar";
-import type {
-	ExecutiveDashboardProps,
-	MobileAnalyticsPeriod,
-} from "./executiveModules/executiveAnalyticsTypes";
+import {
+	CANONICAL_PERIOD_OPTIONS,
+	type ExecutiveDashboardProps,
+	type MobileAnalyticsPeriod,
+} from "./executiveTypes";
 
 const FinancialAnalyticsModal = lazy(() =>
 	import("./FinancialAnalyticsModal").then((m) => ({

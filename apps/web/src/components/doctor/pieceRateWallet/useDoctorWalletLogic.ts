@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { generateDoctorEarningsPayslipHtml } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
+import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
 import type { EarningsDataState } from "./types.js";
 
 export function useDoctorWalletLogic(
@@ -73,8 +74,9 @@ export function useDoctorWalletLogic(
 		if (!data) return;
 
 		try {
+			const clinicName = useDocumentBrandingStore.getState().clinicName || "Стоматологическая клиника";
 			const html = generateDoctorEarningsPayslipHtml({
-				organizationName: "ООО «ДЕНТЕ»",
+				organizationName: clinicName,
 				doctorName: data.doctorName,
 				specialtyTitle: data.doctorSpecialty,
 				periodFromIso: `${data.period.date || selectedDate}T08:00:00.000Z`,

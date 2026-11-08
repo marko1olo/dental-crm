@@ -154,7 +154,7 @@ export const pricelistDoctorPayrolls = pgTable(
 		serviceName: text("service_name").notNull(),
 		priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
 		doctorPayrollPercent: numeric("doctor_payroll_percent", {
-			precision: 4,
+			precision: 5,
 			scale: 2,
 		})
 			.default("25.00")

@@ -5,7 +5,7 @@
 > ⚠️ **СТАТУС (2026-11-02 / WAVES 301–369 / ВОЛНА 367.4 ВЕРХОВНАЯ RED TEAM ИНКВИЗИЦИЯ И SSOT МОДУЛЯ РАСПИСАНИЯ, ШАХМАТКИ ПРИЁМА И ЭКСПРЕСС-БРОНИРОВАНИЯ: ЛИКВИДАЦИЯ МИКРО-ШРЕДЕРА В APPOINTMENTSTUDIO/, ЕДИНЫЙ МОНОЛИТНЫЙ SSOT APPOINTMENTSTUDIOMODAL.TSX 418 СТРОК, APPOINTMENTCATALOGDATA.TS 341 СТРОКА, APPOINTMENTSTUDIO.CSS 296 СТРОК, DIRECTAPPOINTMENTSTUDIOLAUNCHER.TSX, АВТОНОМИЯ ВРАЧА БЕЗ БЛОКИРОВОК МАНДАТ 8E, ПРЕСЕТЫ В 1 КЛИК МАНДАТ 8N, ЗОЛОТОЙ СТАНДАРТ SWEET SPOT МАНДАТ 8B/8ZI, ЕДИНЫЙ ДИЗАЙН-КОД С ОДНОЙ PRIMARY CTA КНОПКОЙ #0d9488 МАНДАТ 8AM, НА ТИВНЫЙ APPLE HIG BOTTOM SHEET 390x844 С ТАКТИЛЬНЫМ DRAG HANDLE 36x5px, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 > Проведена тотальная декомпозиция всех монолитов кодовой базы и беспощадная ликвидация госпитального карго-культа (Мандаты 1..8n):
 > -54. Волна 367.5 (Верховная Red Team инквизиция сквозного цикла Core Clinical Loop, ликвидация синтетических моков и запуск канонического Playwright E2E-сьюта core-clinical-loop-live.spec.ts на живом кластере Fastify 4100 + Vite 5173 + PostgreSQL 18 на 5432, бронирование в 1 клик без ассистента Мандат 8n, норма в 1 тап Мандат 8e, одонтограмма Wheeler 2.5D зубы 16 и 36, 3-Tier презентер сметы, касса со сплитом 50/50 без ИНН физлиц, 4-состояный Red Team Visual Proof Gate / Мандаты 8e, 8n, 8al, 8am, 8ze, 8ar, Apple HIG):
->     1) Канонический боевой сьют сквозного клинического цикла `apps/web/tests/e2e/core-clinical-loop-live.spec.ts` (симлинк `apps/web/e2e/core-clinical-loop-live.spec.ts`): 100% реальных сетевых запросов против живого сервера Fastify и базы данных PostgreSQL 18 без перехвата `page.route` (Zero Mocks Law);
+>     1) Канонический боевой сьют сквозного клинического цикла `apps/web/tests/e2e/core-clinical-loop-live.spec.ts` (канонический путь `./tests/e2e`, паразитный дубликат apps/web/e2e ликвидирован): 100% реальных сетевых запросов против живого сервера Fastify и базы данных PostgreSQL 18 без перехвата `page.route` (Zero Mocks Law);
 >     2) Авторизация и гидратация сессии: динамическое получение JWT-токенов через `POST /api/auth/login` и зеркалирование в `localStorage` и глобальный объект `window`;
 >     3) Сквозной маршрут приёма (Core Clinical Loop): быстрое бронирование в расписании за 5 секунд (`quick-booking-popover`) без обязательного ассистента; открытие карты приёма (`visit-header-monolith`); отметка нормы в 1 клик (`btn-soap-norm-one-click`); автономия врача (кнопки действия никогда не `disabled`); одонтограмма Wheeler 2.5D (FDI 16 кариес, 36 пульпит) с защитой от перехвата клика соседними зубами; 3-Tier сравнение планов лечения; касса со сплит-чеком 50/50 («50% карта / 50% нал»), точная сходимость сумм в копейках (`amountKopecks`), бейдж пассивной безопасности `inn-physical-not-required-badge` (для физлиц ИНН не требуется по Мандату 8n);
 >     4) Сенсорная эргономика Apple HIG (390×844): `MobileChairsideVisitWorkspace` со сквозным циклом из 5 шагов (`1. Жалобы` -> `2. Осмотр` -> `3. Диагноз` -> `4. Лечение` -> `5. Итог и Чек`), норма в 1 тап, нативный кассовый Bottom Sheet drawer с тактильным Drag Handle 36×5px и кнопкой подтверждения высотой 52px в Natural Thumb Zone;
@@ -12246,5 +12246,37 @@
   - Юнит-тесты бэкенда: `apps/api/src/tests/routes/managerReportsRoutes.test.ts` — 2/2 PASS;
   - Юнит-тесты фронтенда: `apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx` (13 тестов), `doctorShiftCloseModalAndReportsDashboard.test.tsx` (6 тестов) — 19/19 PASS;
   - Машинные гейты: `check:encoding` (23 839 файлов), `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` — 0 ошибок (Exit Code 0).
+
+---
+
+### ВОЛНА 503: Зарплата Врачей и Ассистентов, Сдельная Оплата, Net Revenue, Вычеты ЗТЛ и Себестоимости Материалов, Хранение Ведомостей в Копейках (BIGINT), Ликвидация Регулярок и Физический Снос Клонов (Мандаты 8e, 8n, 8x, 8z, 8bd) — Fastify API, Apple HIG и 4-State Visual Proof
+
+- **1. Искоренение диких регулярок в пользу реляционной схемы (Мандаты 8z, 8e)**:
+  - В `apps/api/src/services/finance/doctorPayouts/queries.ts` ликвидирована SQL-регулярка на поиск салфеток/валиков/перчаток в названиях позиций списания. В таблицу `inventory_items` добавлено булево поле `is_overhead` (миграция PostgreSQL 18); накладные общеклинические расходы фильтруются строго по реляционному предикату `not coalesce(is_overhead, false)`.
+  - В `queries.ts` удален поиск подстроки `%гарант%` в заметках нарядов ЗТЛ; фильтрация нарядов выполняется строго по нативному реляционному флагу `lab_orders.is_warranty = false`.
+  - В `apps/api/src/services/reports/managerReports/assistantPayrollReports.ts` удалена регулярка на текст жалоб и анамнеза пациента (`/(снимок|рентген|хирург...)/`). Расчет надбавок ассистентов опирается строго на коды выполненных услуг по номенклатуре 804н (`A06` рентгенодиагностика, `A16` хирургические вмешательства).
+- **2. Снос хардкода ставок и расчет Net Revenue в Fastify API (`payroll.ts`)**:
+  - В роуте `GET /api/v1/doctors` процент комиссии врачей читается из таблицы `doctor_commissions` по организации, а не захардкоженные 25%.
+  - В роуте `GET /api/v1/payroll/calculations` устранены фиктивные категории `"therapy"`, 40% лимит себестоимости ЗТЛ и 0 руб материалов: категории определяются по каталогу услуг, себестоимость ЗТЛ рассчитывается по связанным негарантийным нарядам `lab_orders`, материалы — по реальным проводкам `inventory_transactions`. Расчет Net Revenue переведен на канонический калькулятор `calculateDoctorPeriodPayroll` из `@dental/shared`.
+- **3. Хранение ведомостей в целочисленных копейках BIGINT (Мандаты 8e, 8n)**:
+  - В схему `doctor_payroll_statements` добавлены колонки `gross_revenue_kopecks`, `materials_cost_kopecks`, `lab_cost_kopecks`, `net_payout_kopecks` типа `bigint` (`mode: number`). При закрытии расчетного периода данные сохраняются в целочисленных копейках с сохранением обратной совместимости.
+  - В таблице `pricelist_doctor_payrolls` тип поля `doctor_payroll_percent` расширен до `numeric(5, 2)` для поддержки ставок до 100.00%.
+- **4. Физический снос клонов и чистый бренд (Мандаты 8bd, 8x, 8ap)**:
+  - Физически удалены через `git rm` 4 неиспользуемых файла: `useDoctorPayrollModalActions.ts`, `useDoctorPayrollModalState.ts`, `demoDoctorData.ts`, `doctorProductionSalaryEngine.ts`.
+  - Искоренены зарубежные коммерческие товарные знаки (`Ident*`) в `packages/shared/src/finance/netSalary/`.
+  - Захардкоженные наименования клиник заменены на динамическое чтение из `useDocumentBrandingStore`.
+- **5. Сенсорная адаптивность Apple HIG (390×844) и 1 Primary CTA (Мандаты 8am, 8ze, 8al)**:
+  - Ровно 1 Primary CTA: кнопка «✓ Закрыть расчетный период» (`bg-[var(--primary)] text-white`).
+  - Сегментированный переключатель вкладок (`[ Сводная | Услуги и ЗТЛ | Архив ]`) и фильтра периодов (`[ Смена | Месяц | Прошлый ]`) без клиппинга и скролла.
+  - На смартфонах форма открывается нативным Bottom Sheet с тактильным Drag Handle 36×5px и тач-таргетами $\ge 44$px в Natural Thumb Zone.
+- **6. 4-состоятельный Red Team Visual Proof**:
+  - В `docs/proofs/payroll/` зафиксированы и лично осмотрены через `read_file` 4 скриншота на живом сервере (Vite 5173 + Fastify 4100 + PostgreSQL 18):
+    - `01_doctor_payroll_pc_light_1440x900.png` (1440×900 PC Light, 261 KB, 0px скролла, четкие показатели Net Base);
+    - `02_doctor_payroll_pc_dark_1440x900.png` (1440×900 PC Dark, 178 KB, темная тема без белых пятен);
+    - `03_doctor_payroll_mobile_light_390x844.png` (390×844 Mobile Light, 62 KB, Apple HIG Bottom Sheet);
+    - `04_doctor_payroll_mobile_dark_390x844.png` (390×844 Mobile Dark, 50 KB, Apple HIG Dark Mode).
+- **7. 100% Машинные гейты верификации**:
+  - Юнит-тесты: 33/33 PASS (Exit Code 0), включая `payrollReportsInquisition.test.ts`, `payrollStudioInquisition.test.ts`, `settlementPeriodCloseIntegration.test.ts`, `milestone3DataPurityInquisition.test.ts`, `consolidatedPayrollEngine.test.ts`, `doctorPieceworkEngine.test.ts`, `assistantAndAdminEngine.test.ts`, `doctorNetRevenueFormula.test.ts`, `kopeckExactArithmetic.test.ts`, `soloDoctorAutonomy.test.ts`.
+  - Машинные гейты: `check:encoding` (23 483 файла), `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` — 0 ошибок (Exit Code 0).
 
 

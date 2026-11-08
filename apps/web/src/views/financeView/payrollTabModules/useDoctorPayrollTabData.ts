@@ -4,6 +4,7 @@ import type { PayrollDoctorOption } from "./types";
 import { mapEarningsApiServices } from "./mapEarningsApiServices";
 import { exportDoctorPayrollCsv, printDoctorPayslipHtml } from "./payrollTabExportUtils";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
 
 export const DEFAULT_DOCTORS: readonly PayrollDoctorOption[] = [
 	{ id: "doc-1", name: "Д-р Смирнов А.В.", specialtyId: "general_dentist" },
@@ -41,10 +42,11 @@ export interface UseDoctorPayrollTabDataReturn {
 }
 
 export function useDoctorPayrollTabData({
-	clinicName = "ООО «Денте Стоматология»",
+	clinicName,
 	doctorsList,
 	services = [],
 }: UseDoctorPayrollTabDataParams): UseDoctorPayrollTabDataReturn {
+	const effectiveClinicName = clinicName || useDocumentBrandingStore((s) => s.clinicName) || "Клиника";
 	const isDemo = isDemoShowcaseMode();
 	const doctors = useMemo<readonly PayrollDoctorOption[]>(() => {
 		if (doctorsList && doctorsList.length > 0) return doctorsList;
@@ -116,7 +118,7 @@ export function useDoctorPayrollTabData({
 	);
 
 	const handleExportCsv = () => exportDoctorPayrollCsv(calculationResult, activeDoctor.name, periodStart, periodEnd);
-	const handlePrintPayslip = () => printDoctorPayslipHtml(calculationResult, clinicName);
+	const handlePrintPayslip = () => printDoctorPayslipHtml(calculationResult, effectiveClinicName);
 
 	return {
 		selectedDoctorId,

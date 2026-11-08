@@ -15,7 +15,7 @@ const crypto = require("node:crypto");
 
 const WEB_URL = "http://127.0.0.1:5173/?demo=true&reports=1#reports";
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/analytics");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/ba5c9d69-c5ca-47f6-8b2b-80a3bdaf338f");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/5d0abcc8-7a38-4ef3-a120-b3ea3b36e2b9");
 
 fs.mkdirSync(PROOFS_DIR, { recursive: true });
 if (fs.existsSync(BRAIN_DIR)) {
@@ -44,7 +44,7 @@ async function suppressOverlays(page) {
   } catch (_) {}
 }
 
-async function captureSingleProof(browser, { isDark, isMobile, fileName }) {
+async function captureSingleProof(browser, { isDark, isMobile, fileName, altName }) {
   const context = await browser.newContext({
     viewport: isMobile ? { width: 390, height: 844 } : { width: 1440, height: 900 },
     deviceScaleFactor: isMobile ? 2 : 1,
@@ -59,22 +59,23 @@ async function captureSingleProof(browser, { isDark, isMobile, fileName }) {
       localStorage.setItem("dente_theme", mode);
       localStorage.setItem("dente_demo_showcase", "true");
     } catch {}
-    document.documentElement.setAttribute("data-theme", mode);
-    if (dark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    if (document.documentElement) {
+      document.documentElement.setAttribute("data-theme", mode);
+      if (dark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
   }, isDark);
 
   const page = await context.newPage();
-  await page.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForTimeout(2500);
+  await page.goto(WEB_URL, { waitUntil: "commit", timeout: 45000 });
+  await page.waitForTimeout(3000);
 
-  // Wait for reports dashboard to be fully mounted and hydrated (not just outer shell)
-  await page.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-  await page.waitForSelector(".reports-dashboard, [data-testid='reports-dashboard']", { timeout: 25000 });
-  await page.waitForTimeout(1500);
+  // Wait for reports dashboard to be fully mounted and hydrated
+  await page.waitForSelector(".reports-dashboard, [data-testid='reports-dashboard']", { timeout: 45000 });
+  await page.waitForTimeout(2000);
 
   // Ensure theme DOM attributes are applied
   await page.evaluate((dark) => {
@@ -96,19 +97,26 @@ async function captureSingleProof(browser, { isDark, isMobile, fileName }) {
   }, isDark);
 
   await suppressOverlays(page);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1000);
 
   const targetPath = path.join(PROOFS_DIR, fileName);
   await page.screenshot({ path: targetPath, fullPage: false, animations: "disabled" });
 
+  if (altName) {
+    fs.copyFileSync(targetPath, path.join(PROOFS_DIR, altName));
+  }
+
   if (fs.existsSync(BRAIN_DIR)) {
     fs.copyFileSync(targetPath, path.join(BRAIN_DIR, fileName));
+    if (altName) {
+      fs.copyFileSync(targetPath, path.join(BRAIN_DIR, altName));
+    }
   }
 
   const stats = fs.statSync(targetPath);
   const hash = crypto.createHash("md5").update(fs.readFileSync(targetPath)).digest("hex");
   const sizeKb = (stats.size / 1024).toFixed(1);
-  console.log(`[CAPTURED] ${fileName}: ${stats.size} bytes (${sizeKb} KB) | MD5: ${hash}`);
+  console.log(`[CAPTURED] ${fileName} / ${altName}: ${stats.size} bytes (${sizeKb} KB) | MD5: ${hash}`);
 
   await context.close();
   return targetPath;
@@ -125,19 +133,39 @@ async function run() {
   try {
     // 1. PC Light
     console.log("[1/4] Capturing PC Light (1440x900)...");
-    await captureSingleProof(browser, { isDark: false, isMobile: false, fileName: "analytics_pc_light.png" });
+    await captureSingleProof(browser, {
+      isDark: false,
+      isMobile: false,
+      fileName: "analytics_pc_light.png",
+      altName: "01_executive_dashboard_pc_light_1440x900.png",
+    });
 
     // 2. PC Dark
     console.log("[2/4] Capturing PC Dark (1440x900)...");
-    await captureSingleProof(browser, { isDark: true, isMobile: false, fileName: "analytics_pc_dark.png" });
+    await captureSingleProof(browser, {
+      isDark: true,
+      isMobile: false,
+      fileName: "analytics_pc_dark.png",
+      altName: "02_executive_dashboard_pc_dark_1440x900.png",
+    });
 
     // 3. Mobile Light
     console.log("[3/4] Capturing Mobile Light (390x844)...");
-    await captureSingleProof(browser, { isDark: false, isMobile: true, fileName: "analytics_mobile_light.png" });
+    await captureSingleProof(browser, {
+      isDark: false,
+      isMobile: true,
+      fileName: "analytics_mobile_light.png",
+      altName: "03_executive_dashboard_mobile_light_390x844.png",
+    });
 
     // 4. Mobile Dark
     console.log("[4/4] Capturing Mobile Dark (390x844)...");
-    await captureSingleProof(browser, { isDark: true, isMobile: true, fileName: "analytics_mobile_dark.png" });
+    await captureSingleProof(browser, {
+      isDark: true,
+      isMobile: true,
+      fileName: "analytics_mobile_dark.png",
+      altName: "04_executive_dashboard_mobile_dark_390x844.png",
+    });
 
     console.log("[Playwright] All 4 canonical analytics proofs captured successfully!");
   } finally {

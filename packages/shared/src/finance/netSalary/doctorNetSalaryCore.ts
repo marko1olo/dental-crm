@@ -4,6 +4,5 @@
  */
 
 export * from "./doctorNetSalaryBase.js";
-export * from "./doctorProductionSalaryEngine.js";
 export * from "./servicesPayrollBreakdown.js";
 export * from "./payslip/doctorPayslipGenerator.js";

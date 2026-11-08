@@ -191,15 +191,14 @@ test("2.3. ExecutiveAnalyticsStudioModal: Сенсорный минимум за
 	assert.ok(code.includes('data-testid="studio-modal-close-btn"'), "Close button must have testid");
 });
 
-test("3.1. DirectAnalyticsLauncher: Реагирует на hash #analytics, #dashboard, #executive-studio", () => {
+test("3.1. DirectAnalyticsLauncher: Реагирует на hash #executive-studio и studio-параметры", () => {
 	const launcherPath = path.join(analyticsDir, "DirectAnalyticsLauncher.tsx");
 	const code = readFileSync(launcherPath, "utf8");
 
-	assert.ok(code.includes('h === "#analytics"'), "Listens for #analytics");
-	assert.ok(code.includes('h === "#dashboard"'), "Listens for #dashboard");
 	assert.ok(code.includes('h === "#executive-studio"'), "Listens for #executive-studio");
-	assert.ok(code.includes("dente-open-analytics"), "Listens for dente-open-analytics event");
-	assert.ok(code.includes("dente:open-analytics"), "Listens for dente:open-analytics event");
+	assert.ok(code.includes("executive_studio=1"), "Listens for executive_studio=1 query");
+	assert.ok(code.includes("dente-open-executive-studio"), "Listens for dente-open-executive-studio event");
+	assert.ok(code.includes("dente:open-executive-studio"), "Listens for dente:open-executive-studio event");
 });
 
 test("3.2. DirectAnalyticsLauncher смонтирован в StandaloneLaunchers.tsx (Мандат 8aq)", () => {
@@ -211,8 +210,7 @@ test("3.2. DirectAnalyticsLauncher смонтирован в StandaloneLaunchers
 
 	assert.ok(code.includes('from "../../analytics/DirectAnalyticsLauncher"'), "Must import DirectAnalyticsLauncher");
 	assert.ok(code.includes("<DirectAnalyticsLauncher />"), "Must render DirectAnalyticsLauncher");
-	assert.ok(code.includes('#analytics"'), "Must handle #analytics route");
-	assert.ok(code.includes('#dashboard"'), "Must handle #dashboard route");
+	assert.ok(code.includes('#executive-studio"'), "Must handle #executive-studio route");
 });
 
 test("3.3. DirectAnalyticsLauncher смонтирован в AppShell.tsx (Мандат 8aq)", () => {

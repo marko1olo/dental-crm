@@ -7,6 +7,7 @@
 
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -324,10 +325,19 @@ export const doctorPayrollStatements = pgTable(
 		grossRevenueRub: numeric("gross_revenue_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		grossRevenueKopecks: bigint("gross_revenue_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		labCostRub: numeric("lab_cost_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		labCostKopecks: bigint("lab_cost_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		materialsCostRub: numeric("materials_cost_rub", { precision: 14, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		materialsCostKopecks: bigint("materials_cost_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
 		netBaseRevenueRub: numeric("net_base_revenue_rub", { precision: 14, scale: 2, mode: "number" })
@@ -358,6 +368,9 @@ export const doctorPayrollStatements = pgTable(
 			.notNull()
 			.default(0),
 		netPayoutRub: numeric("net_payout_rub", { precision: 14, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		netPayoutKopecks: bigint("net_payout_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
 		isFinalized: boolean("is_finalized").notNull().default(false),

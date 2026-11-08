@@ -206,17 +206,10 @@ export async function assistantPayrollReport(
 				Math.round((appt.endsAt.getTime() - appt.startsAt.getTime()) / 60000),
 			);
 
-			// Первичный расчет: реляционные коды услуг 804н (A06 снимок, A16 операция)
+			// Строгий реляционный расчет: услуги прайс-листа (A06 снимок/рентген, A16 операция/хирургия)
 			const relCounts = apptServicesMap.get(appt.appointmentId);
-			let radCount = relCounts?.radiographs ?? 0;
-			let surgCount = relCounts?.surgeries ?? 0;
-
-			// Фолбек на клинический этап/причину, если услуги в наряд ещё не внесены
-			if (radCount === 0 && surgCount === 0) {
-				const textContext = `${appt.reason || ""} ${appt.clinicalStage || ""}`.toLowerCase();
-				if (/(снимок|рентген|визиограф|оптг|кт|клт|rvg)/i.test(textContext)) radCount = 1;
-				if (/(хирург|имплант|удален|синус|резекц|пластик)/i.test(textContext)) surgCount = 1;
-			}
+			const radCount = relCounts?.radiographs ?? 0;
+			const surgCount = relCounts?.surgeries ?? 0;
 
 			totalRadiographs += radCount;
 			totalSurgeries += surgCount;

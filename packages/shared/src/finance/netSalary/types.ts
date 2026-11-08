@@ -60,9 +60,6 @@ export type DiscountAllocationPolicy =
 	| "proportional"
 	| "gross_unconditional";
 
-/** @deprecated Use DiscountAllocationPolicy (Mandate 8ap) */
-export type IdentDiscountAllocationPolicy = DiscountAllocationPolicy;
-
 export interface DiscountSalaryBaseParams {
 	readonly grossRevenueKop: Kopecks;
 	readonly invoiceTotalKop: Kopecks;
@@ -71,9 +68,6 @@ export interface DiscountSalaryBaseParams {
 	readonly clinicCostsKop: Kopecks;
 	readonly policy: DiscountAllocationPolicy;
 }
-
-/** @deprecated Use DiscountSalaryBaseParams (Mandate 8ap) */
-export type IdentDiscountSalaryBaseParams = DiscountSalaryBaseParams;
 
 export interface DiscountSalaryBaseResult {
 	readonly doctorBaseKop: Kopecks;
@@ -86,11 +80,8 @@ export interface DiscountSalaryBaseResult {
 	readonly debtRub: number;
 }
 
-/** @deprecated Use DiscountSalaryBaseResult (Mandate 8ap) */
-export type IdentDiscountSalaryBaseResult = DiscountSalaryBaseResult;
-
 /**
- * Разовое удержание из процента врача (Dentaro: компенсация брака/переделок ЗТЛ).
+ * Разовое удержание из процента врача (компенсация брака/переделок ЗТЛ).
  */
 export interface DoctorOneTimeDeduction {
 	readonly id: string;
@@ -257,17 +248,11 @@ export interface ServiceSalaryItemBreakdown {
  */
 export type DoctorSalaryModel = "gross" | "net" | "cash_basis";
 
-/** @deprecated Use DoctorSalaryModel (Mandate 8ap) */
-export type IdentSalaryModel = DoctorSalaryModel;
-
 export const DOCTOR_SALARY_MODEL_NAMES_RU: Record<DoctorSalaryModel, string> = {
 	gross: "По валовой выручке (Gross — без вычета лаборатории и материалов)",
 	net: "По чистой выручке (Net — за вычетом прямых материалов и ЗТЛ)",
 	cash_basis: "По кассовому чеку (Cash Basis — по факту денег в кассе с учетом «Цены для ЗП»)",
 };
-
-/** @deprecated Use DOCTOR_SALARY_MODEL_NAMES_RU (Mandate 8ap) */
-export const IDENT_SALARY_MODEL_NAMES_RU = DOCTOR_SALARY_MODEL_NAMES_RU;
 
 /**
  * Способ применения «Цены для ЗП» (salary_price):
@@ -276,9 +261,6 @@ export const IDENT_SALARY_MODEL_NAMES_RU = DOCTOR_SALARY_MODEL_NAMES_RU;
  *   (актуально при маркетинговых акциях и дисконтных программах, чтобы врач не терял в доходе).
  */
 export type DoctorSalaryPriceApplicationMode = "flat_addition" | "replaces_gross_base";
-
-/** @deprecated Use DoctorSalaryPriceApplicationMode (Mandate 8ap) */
-export type IdentSalaryPriceApplicationMode = DoctorSalaryPriceApplicationMode;
 
 export interface DoctorSalaryCalculationInput {
 	readonly model: DoctorSalaryModel;
@@ -325,9 +307,6 @@ export interface DoctorSalaryCalculationInput {
 	/** Ставка НДФЛ (по умолчанию 13%) */
 	readonly ndflRatePercent?: number;
 }
-
-/** @deprecated Use DoctorSalaryCalculationInput (Mandate 8ap) */
-export type IdentDoctorSalaryCalculationParams = DoctorSalaryCalculationInput;
 
 export interface DoctorSalaryCalculationResult {
 	readonly model: DoctorSalaryModel;
@@ -383,9 +362,6 @@ export interface DoctorSalaryCalculationResult {
 	readonly coveredOverheadMaterialsKop: Kopecks;
 	readonly coveredOverheadMaterialsRub: number;
 }
-
-/** @deprecated Use DoctorSalaryCalculationResult (Mandate 8ap) */
-export type IdentDoctorSalaryCalculationResult = DoctorSalaryCalculationResult;
 
 export interface DoctorPayslipVisitItem {
 	readonly visitId: string;

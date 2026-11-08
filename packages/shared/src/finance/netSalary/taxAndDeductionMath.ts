@@ -8,8 +8,6 @@ import { kopecksToRub as kopecksToRubles } from "../../fiscal/kopecksArithmetic.
 import type {
 	DiscountSalaryBaseParams,
 	DiscountSalaryBaseResult,
-	IdentDiscountSalaryBaseParams,
-	IdentDiscountSalaryBaseResult,
 } from "./types.js";
 
 /**
@@ -78,5 +76,3 @@ export function calculateDiscountSalaryBase(
 	};
 }
 
-/** @deprecated Use calculateDiscountSalaryBase (Mandate 8ap) */
-export const calculateIdentDiscountSalaryBase = calculateDiscountSalaryBase;

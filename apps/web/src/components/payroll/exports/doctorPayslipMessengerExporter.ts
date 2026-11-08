@@ -6,7 +6,7 @@ import type { DoctorPayrollResult } from "@dental/shared/payroll";
  */
 export function generateDoctorPayslipMessengerText(
 	payrollResult: DoctorPayrollResult,
-	clinicName: string = "ООО «Денте Стоматология»"
+	clinicName: string = "Стоматологическая клиника"
 ): string {
 	const isChairRental = payrollResult.payoutModel === "chair_rental";
 	const grossRub = (payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });

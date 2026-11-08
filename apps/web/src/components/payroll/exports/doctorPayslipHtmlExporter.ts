@@ -4,7 +4,7 @@ import { renderDoctorPayslipServicesTableHtml } from "./doctorPayslipHtmlService
 
 export function generateDoctorPayslipHtml(
 	payrollResult: DoctorPayrollResult,
-	clinicName: string = "ООО «Денте Стоматология»",
+	clinicName: string = "Стоматологическая клиника",
 	services?: readonly DoctorCompletedServiceItem[]
 ): string {
 	const grossRub = (payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });

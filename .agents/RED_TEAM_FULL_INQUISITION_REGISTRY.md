@@ -257,29 +257,45 @@
 
 ### [LAB-07] [SEV-1] Консолидация модалок ЗТЛ в единый канонический SSOT DentalLabStudioModal.tsx и Apple HIG 4-State Visual Proof — [ЗАКРЫТО]
 - **Файлы:**
-  - [`DentalLabStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabStudioModal.tsx) (Канонический SSOT: 479 строк, Mandate 8b Sweet Spot)
-  - [`DirectDentalLabLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DirectDentalLabLauncher.tsx) (Шлюз запуска)
-  - [`DentalLabHubModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabHubModal.tsx) (Тонкий фасад)
-  - [`DentalLabCreateOrderModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabCreateOrderModal.tsx) (Тонкий фасад)
-  - [`DentalLabOrdersTrackerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabOrdersTrackerModal.tsx) (Тонкий фасад)
-  - [`dentalLabStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/styles/dentalLabStudio.css) (379 строк, Apple HIG, Zero-Clipping)
+  - [`DentalLabStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabStudioModal.tsx) (Канонический SSOT: 478 строк, Mandate 8b Sweet Spot)
+  - [`DirectDentalLabLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DirectDentalLabLauncher.tsx) (Шлюз запуска: 82 строки)
+  - [`dentalLabStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/styles/dentalLabStudio.css) (394 строки, Apple HIG, Zero-Clipping)
 - **Суть бага:** Исторический зоопарк параллельных модалок ЗТЛ (`DentalLabCreateOrderModal`, `DentalLabOrdersTrackerModal`, `DentalLabHubModal`), наезды кнопок в левой колонке экспресс-наряда, обрезанные даты ISO (`2026-11-07T20:00:21.274Z`), капслочные заголовки и отсутствие гарантированного мобильного адаптива Apple HIG.
 - **Статус ликвидации [ЗАКРЫТО]:**
-  1. Утвержден единственный SSOT компонент `DentalLabStudioModal.tsx` (479 строк, строго в диапазоне 400–480 строк по Мандату 8b). Все остальные модалки редуцированы до прозрачных фасадов без дублирования бизнес-логики.
+  1. Утвержден единственный SSOT компонент `DentalLabStudioModal.tsx` (478 строк, строго в диапазоне 400–480 строк по Мандату 8b). Все дубликаты физически удалены через `git rm`.
   2. Экспресс-наряд у кресла за 10 секунд: выбор зуба по формуле FDI (11–48), быстрые кнопки конструкции («Цирконий e.max», «Бюгельный протез», «Временная фрезерованная», «Металлокерамика»), 20 оттенков шкалы VITA Classical + Bleach, расчет срока сдачи с учетом производственных дней РФ.
   3. Финансовая точность: расчет себестоимости и прайса пациента строго в неделимых копейках (`amountKopecks`, BIGINT math) с наглядным отображением маржи клиники.
   4. Автономия врача (Мандат 8e): кнопка «✓ Создать заказ-наряд / ✓ Отправить заказ в лабораторию» никогда не блокируется (`disabled=false`).
   5. Ровно 1 Primary CTA `#0d9488` (Мандат 8am), нейтральные кнопки печати наряда А5 и бланка курьеру.
   6. Нативный мобильный слой Apple iOS HIG: Bottom Sheet с Drag Handle 36x5px, тач-таргеты $\ge 44\times 44$px, 0px паразитного горизонтального скролла.
   7. Ликвидирован технический жаргон и сырые таймстемпы: чистый вывод дат «Срок: 2026-11-07», Sentence case в заголовках.
-  8. Все 72 файла тестов (236 тестов) в `apps/web/src/components/lab/` проходят со 100% успехом (Exit Code 0).
-  9. 4-State Visual Proofs высокого разрешения ($\ge 20$KB) зафиксированы в `docs/proofs/lab/` и лично проверены через `read_file`:
-     * ☀️ PC Light: [`01_dental_lab_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/01_dental_lab_studio_pc_light_1440x900.png) (129.8 KB)
-     * 🌙 PC Dark: [`02_dental_lab_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/02_dental_lab_studio_pc_dark_1440x900.png) (129.7 KB)
-     * 📱 Mobile Light: [`03_dental_lab_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/03_dental_lab_studio_mobile_light_390x844.png) (135.8 KB)
-     * 🌙 Mobile Dark: [`04_dental_lab_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/04_dental_lab_studio_mobile_dark_390x844.png) (138.2 KB)
-     * 📱 Mobile Create Light: [`05_dental_lab_studio_mobile_create_order_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/05_dental_lab_studio_mobile_create_order_light_390x844.png) (122.3 KB)
-     * 🌙 Mobile Create Dark: [`06_dental_lab_studio_mobile_create_order_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/06_dental_lab_studio_mobile_create_order_dark_390x844.png) (121.0 KB)
+  8. 4-State Visual Proofs высокого разрешения ($\ge 20$KB) зафиксированы в `docs/proofs/lab/` и лично проверены через `read_file`:
+     * ☀️ PC Light: [`01_dental_lab_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/01_dental_lab_pc_light_1440x900.png) (131.7 KB)
+     * 🌙 PC Dark: [`02_dental_lab_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/02_dental_lab_pc_dark_1440x900.png) (131.6 KB)
+     * 📱 Mobile Light: [`03_dental_lab_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/03_dental_lab_mobile_light_390x844.png) (127.2 KB)
+     * 🌙 Mobile Dark: [`04_dental_lab_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/04_dental_lab_mobile_dark_390x844.png) (47.4 KB)
+
+### [LAB-08] [SEV-1] Искоренение зоопарка клонов ЗТЛ, ликвидация звонка пациенту вместо техника и фиксация SSOT — [ЗАКРЫТО]
+- **Файлы:**
+  - [`apps/web/src/components/lab/DentalLabStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabStudioModal.tsx)
+  - [`apps/web/src/components/lab/mobile/statusSheetModules/MobileSheetSummary.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/mobile/statusSheetModules/MobileSheetSummary.tsx)
+  - [`apps/web/src/components/lab/ordersView/useDentalLabOrders.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/ordersView/useDentalLabOrders.ts)
+  - [`apps/web/src/components/lab/dentalLabApiMapper.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/dentalLabApiMapper.ts)
+  - [`apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts)
+- **Суть бага:** В кодовой базе существовали:
+  1. [LAB-01] Тихий угон чужого пациента в `labOrderInsertDb.ts` при пустом `patientId` через `limit(1)`.
+  2. [LAB-03] Кнопка «Позвонить технику» звонила пациенту клиники (`(order as any).patientPhone || "+7 (999) 450-23-11"`).
+  3. [LAB-04] Повторная примерка конструкции клеймилась как брак/рекламация (`refitting`).
+  4. [LAB-06] Захардкоженная себестоимость 7000 ₽ и фейковые дедлайны в `dentalLabApiMapper.ts`.
+  5. Зоопарк модалок-дубликатов (`DentalLabOrdersHubModal`, `DentalLabOrderModal`, `DentalLabOrderDrawer`, `LaboratoryStudioModal`, `LabStudioModal`, `DentalLabHubModal`, `DentalLabOrdersModal`, `LabOrderModal`, `DirectLabLauncher`, `DirectDentalLabOrderLauncher`, `WorkOrdersList`).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. [LAB-01] В `labOrderInsertDb.ts` полностью удален `firstPatient` fallback (`limit(1)`). При отсутствии `patientId` сервер возвращает ошибку `{ kind: "patient_not_found" }`.
+  2. [LAB-03] В `MobileSheetSummary.tsx` ликвидирован фейковый телефон и fallback на телефон пациента при звонке зубному технику.
+  3. [LAB-04] В `useDentalLabOrders.ts` статус повторной примерки заменен на канонический `"fitting"`.
+  4. [LAB-06] В `dentalLabApiMapper.ts` удален хардкод `|| 7000`, себестоимость считается строго по реальным данным `order.labCostRub`, дедлайны проверяются через честный `checkLabDeadlineAndAlert`.
+  5. Физически удалены все дубликаты и клоны модалок через `git rm`. Единый SSOT — `DentalLabStudioModal.tsx`.
+  6. Все юнит- и интеграционные тесты проходят со 100% успехом (Exit Code 0), `npm run check:encoding` чист (23 372 файла).
+  7. 4-State Proof скриншоты лично проверены через `read_file` в `docs/proofs/lab/` (01..04).
 
 ---
 
@@ -984,6 +1000,88 @@
 - **Верификация и доказательства:**
   - Интеграционный тест `managerReportsConversion.test.ts` ("первичный считается по первому приёму за всю историю, а не в периоде", 100% PASS).
   - Дашборд KPI и воронка приемов отдают точную конверсию без ложных консультаций.
+
+### [ANL-06] [ИСПРАВЛЕНО] [SEV-1] Ложная выручка кассы: подмена ДДС суммой выставленных нарядов
+- **Файлы:**
+  - [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts)
+  - [`apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx)
+- **Суть бага:** Подмена реального кассового прихода ДДС суммой начисленных счетов (`totalRevenueRub = totalInvoicedRub > 0 ? totalInvoicedRub : cashInflowRub + depositRealizedRub`). При выписке нарядов на 5 млн ₽ и оплате 500 тыс. ₽ карточка «Выручка кассы. Фактически поступило за период» показывала 5 млн ₽, создавая 10-кратный финансовый рассинхрон с плитками способов оплат на том же экране.
+- **Инженерное решение (Ликвидация брака):**
+  1. Выручка кассы `totalRevenueRub` жестко привязана к фактическому ДДС: `cashInflowRub + depositRealizedRub` (фактические поступления за вычетом возвратов + зачет авансов).
+  2. Сумма начисленных планов вынесена в отдельное независимое поле `totalInvoicedRub`.
+  3. В `ExecutiveFinancialSummary.tsx` карточка отображает реальные поступления в кассу без подмены.
+- **Верификация и доказательства:**
+  - Тесты `payrollReportsInquisition.test.ts` (5/5 PASS) и `financialAnalyticsMoneyAndPnl.test.ts` (3/3 PASS).
+  - 4-State Proof скриншоты:
+    * ☀️ PC Light (1440x900): [`docs/proofs/analytics/01_executive_dashboard_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/01_executive_dashboard_pc_light_1440x900.png) (82.8 KB)
+    * 🌙 PC Dark (1440x900): [`docs/proofs/analytics/02_executive_dashboard_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/02_executive_dashboard_pc_dark_1440x900.png) (84.5 KB)
+    * 📱 Mobile Light (390x844): [`docs/proofs/analytics/03_executive_dashboard_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/03_executive_dashboard_mobile_light_390x844.png) (121.5 KB)
+    * 🌙 Mobile Dark (390x844): [`docs/proofs/analytics/04_executive_dashboard_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/04_executive_dashboard_mobile_dark_390x844.png) (122.6 KB)
+
+### [ANL-07] [ИСПРАВЛЕНО] [SEV-1] 100-кратное занижение финансовых показателей при экспорте в CSV (Excel)
+- **Файл:** [`apps/web/src/pages/analyticsDashboard/useAnalyticsDashboardData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/analyticsDashboard/useAnalyticsDashboardData.ts)
+- **Суть бага:** Эндпоинт `/api/analytics/dashboard` возвращает суммы в рублях (`summary.totalRevenueRub`). Функция `handleExportExecutiveCsv` повторно делила их на 100 (`(data?.kpis?.totalRevenue ?? 0) / 100`), превращая реальные 5 000 000 ₽ выручки в 50 000 ₽ в Excel-выгрузке руководителя.
+- **Инженерное решение (Ликвидация брака):**
+  1. Ликвидировано ошибочное деление на 100 для `totalRevenue`, `cashRevenue`, `cardRevenue`, `averageCheck`, `doc.revenue`, `clinicMarginRub`.
+  2. Все финансовые колонки CSV экспортируют рубли 1:1 в соответствии с API контрактом.
+- **Верификация и доказательства:**
+  - Тест экспорта в `analyticsSSOTSuite.test.tsx` (13/13 PASS). Руководитель получает точные рублевые отчеты в Excel.
+
+### [ANL-08] [ИСПРАВЛЕНО] [SEV-1] Игнорирование возвратов (`refunded`) в выработке врачей
+- **Файл:** [`apps/api/src/services/reports/managerReports/doctorReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts)
+- **Суть бага:** Фильтрация выработки врачей учитывала только `payments.status = 'paid'`. Если пациенту делали возврат (`refunded`), выработка врача не уменьшалась, что приводило к необоснованным выплатам процентов за аннулированные процедуры.
+- **Инженерное решение (Ликвидация брака):**
+  1. В `doctorReports.ts` включен статус `refunded`: `inArray(payments.status, ["paid", "refunded"])`.
+  2. Выработка врача суммируется с вычетом возвратов:
+     `coalesce(sum(case when payments.status = 'paid' then amountRub when payments.status = 'refunded' then -amountRub else 0 end), 0)`.
+- **Верификация и доказательства:**
+  - Тест `payrollReportsInquisition.test.ts` подтверждает корректный расчет чистой выработки с учетом сторнирования возвратов.
+
+### [ANL-09] [ИСПРАВЛЕНО] [SEV-2] Хардкод расходов (1 млн ₽) и 360-часового графика в экономике кресел
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts)
+  - [`apps/web/src/components/analytics/ChairOccupancyReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ChairOccupancyReport.tsx)
+- **Суть бага:** В эндпоинте `/api/analytics/chairs/economy` постоянные расходы клиники были жестко захардкожены константами: аренда 350 000 ₽, ФОТ 280 000 ₽, маркетинг 120 000 ₽, коммуналка 45 000 ₽ (итого 1 000 000 ₽), а фонд рабочего времени — фиктивными 360 часами в месяц.
+- **Инженерное решение (Ликвидация брака):**
+  1. Хардкод 360 часов заменен на вычисление по фактическому расписанию клиники: `resolveClinicScheduleWorkHours((orgRow)?.clinicSchedule)`.
+  2. Статьи расходов масштабируются пропорционально реальному числу активных кресел (Мандат 8n: суверенитет соло-клиники с 1–2 креслами), а также поддерживают передачу актуальных query-параметров от руководителя.
+- **Верификация и доказательства:**
+  - Тесты `chairEconomicsAndRental.test.ts` и `chairUtilizationSanpin.test.ts` (PASS).
+
+### [ANL-10] [ИСПРАВЛЕНО] [SEV-2] Нищие строковые регулярки и парсинг названий планов лечения
+- **Файл:** [`apps/api/src/routes/analytics/dashboardRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts)
+- **Суть бага:** Распределение планов по тарифам производилось строковым поиском: `plan.title.toLowerCase().includes("премиум")`. Если план назван «Комплексный», он не попадал в тариф или падал в эвристику по цене (> 500 000 ₽).
+- **Инженерное решение (Ликвидация брака):**
+  1. Выборка планов дополнена реляционной колонкой `alternativeTier: treatmentPlans.alternativeTier`.
+  2. Классификация тарифов планов (`basic`, `economy`, `optimum`, `premium`) переведена на явное enum-поле БД вместо строкового парсинга названий.
+- **Верификация и доказательства:**
+  - Тесты `analyticsPlanFunnelRoute.test.ts` и `curatorQueueBuilder.test.ts` (PASS).
+
+### [ANL-11] [ИСПРАВЛЕНО] [SEV-2] Конфликт роутов `#analytics` / `#dashboard` между автономными лаунчерами
+- **Файлы:**
+  - [`apps/web/src/components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx)
+  - [`apps/web/src/components/analytics/DirectAnalyticsLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DirectAnalyticsLauncher.tsx)
+  - [`apps/web/src/components/appLayout/viewRouterModules/ManagementViewRouter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/viewRouterModules/ManagementViewRouter.tsx)
+- **Суть бага:** `#analytics` и `#dashboard` перехватывались модальным окном лаунчера вместо канонического экрана `AnalyticsDashboardView` в `ManagementViewRouter`.
+- **Инженерное решение (Ликвидация брака):**
+  1. `DirectAnalyticsLauncher` переведен на изолированный роут `#executive-studio` и событие `dente:open-executive-studio`.
+  2. Роуты `#analytics` и `#dashboard` канонически обрабатываются `ManagementViewRouter`, монтируя `AnalyticsDashboardView`.
+- **Верификация и доказательства:**
+  - Тесты `analyticsSSOTSuite.test.tsx` (13/13 PASS).
+
+### [ANL-12] [ИСПРАВЛЕНО] [SEV-1] Физический снос 37 файлов-сирот и мертвых клонов в `executiveModules/`
+- **Файлы:**
+  - `apps/web/src/components/analytics/executiveModules/` (36 файлов)
+  - `apps/web/src/components/analytics/DirectorExecutiveDashboard.tsx`
+  - `apps/web/src/components/analytics/ExecutiveFunnelMetrics.tsx`
+  - `apps/web/src/components/analytics/ExecutivePnlWidget.tsx`
+- **Суть бага:** 37 файлов-сирот представляли собой заброшенные дубликаты витрин дашборда с собственными типами и хардкодом, нарушая Мандат 8aq (Запрет сирот) и Мандат 8bd (снос клонов).
+- **Инженерное решение (Ликвидация брака):**
+  1. Все 37 файлов удалены через `git rm`.
+  2. Создан канонический легковесный файл типов `apps/web/src/components/analytics/executiveTypes.ts`, куда перелинкован `ExecutiveDashboard.tsx`.
+  3. Устаревшие тесты, привязанные к сиротам, удалены, проверены все 20 тестовых файлов (62/62 PASS).
+- **Верификация и доказательства:**
+  - `npm run check:dynamic-imports` -> 0 битых импортов.
 
 
 ## 11. ⚖️ ДОКУМЕНТООБОРОТ, ИДС (1051н), ДОГОВОРЫ И НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156)
