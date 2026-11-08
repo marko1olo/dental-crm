@@ -25,42 +25,32 @@ export interface DentalLabStageMeta {
 
 /** 5 канонических стадий заказ-наряда зуботехнической лаборатории */
 export const CANONICAL_LAB_STAGES: readonly DentalLabStageMeta[] = Object.freeze([
-	{
-		id: "scan_sent", stepNumber: 1, labelRu: "Оттиск / Скан отправлен", shortLabel: "Отправлен",
-		descriptionRu: "1. Создан / В работе клиники: цифровой скан или слепок передан курьеру лаборатории",
-		colorClass: "text-[var(--teal,#0d9488)]", bgToken: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
-		borderToken: "var(--teal, #0d9488)", textToken: "var(--teal, #0d9488)",
-		badgeClass: "badge-teal", title: "Оттиск / Скан отправлен",
-	},
-	{
-		id: "in_production", stepNumber: 2, labelRu: "В работе у техника", shortLabel: "В лаборатории",
-		descriptionRu: "2. Отправлен в лабораторию / В производстве: CAD-моделировка, фрезеровка или спекание керамики",
-		colorClass: "text-[var(--amber,#f59e0b)]", bgToken: "var(--amber-surface, rgba(245, 158, 11, 0.12))",
-		borderToken: "var(--amber, #f59e0b)", textToken: "var(--amber-ink, #92400e)",
-		badgeClass: "badge-amber", title: "В работе у техника",
-	},
-	{
-		id: "fitting_ready", stepNumber: 3, labelRu: "Примерка каркаса", shortLabel: "Примерка",
-		descriptionRu: "3. Промежуточный этап: проверка прилегания каркаса и окклюзионных контактов в полости рта",
-		colorClass: "text-[var(--accent,#3b82f6)]", bgToken: "var(--paper-soft, rgba(59, 130, 246, 0.12))",
-		borderToken: "var(--accent, #3b82f6)", textToken: "var(--accent, #3b82f6)",
-		badgeClass: "badge-blue", title: "Примерка каркаса",
-	},
-	{
-		id: "in_clinic", stepNumber: 4, labelRu: "Готово в клинике", shortLabel: "В клинике",
-		descriptionRu: "4. Готов / Доставлен в клинику: конструкция проверена лабораторией и ожидает пациента",
-		colorClass: "text-[var(--emerald,#10b981)]", bgToken: "var(--emerald-surface, rgba(16, 185, 129, 0.14))",
-		borderToken: "var(--emerald, #10b981)", textToken: "var(--emerald-ink, #065f46)",
-		badgeClass: "badge-emerald", title: "Готово в клинике",
-	},
-	{
-		id: "seated", stepNumber: 5, labelRu: "Зафиксировано во рту", shortLabel: "Зафиксировано",
-		descriptionRu: "5. Припасован и зафиксирован: постоянная цементировка конструкции завершена, гарантия активирована",
-		colorClass: "text-[var(--muted,#64748b)]", bgToken: "var(--paper-strong, rgba(100, 116, 139, 0.12))",
-		borderToken: "var(--line, #cbd5e1)", textToken: "var(--ink-muted, #64748b)", isFinal: true,
-		badgeClass: "badge-muted", title: "Зафиксировано во рту",
-	},
+	{ id: "scan_sent", stepNumber: 1, labelRu: "Оттиск / Скан отправлен", shortLabel: "Отправлен", descriptionRu: "1. Создан / В работе клиники: цифровой скан или слепок передан курьеру лаборатории", colorClass: "text-[var(--teal,#0d9488)]", bgToken: "var(--teal-surface, rgba(13, 148, 136, 0.12))", borderToken: "var(--teal, #0d9488)", textToken: "var(--teal, #0d9488)", badgeClass: "badge-teal", title: "Оттиск / Скан отправлен" },
+	{ id: "in_production", stepNumber: 2, labelRu: "В работе у техника", shortLabel: "В лаборатории", descriptionRu: "2. Отправлен в лабораторию / В производстве: CAD-моделировка, фрезеровка или спекание керамики", colorClass: "text-[var(--amber,#f59e0b)]", bgToken: "var(--amber-surface, rgba(245, 158, 11, 0.12))", borderToken: "var(--amber, #f59e0b)", textToken: "var(--amber-ink, #92400e)", badgeClass: "badge-amber", title: "В работе у техника" },
+	{ id: "fitting_ready", stepNumber: 3, labelRu: "Примерка каркаса", shortLabel: "Примерка", descriptionRu: "3. Промежуточный этап: проверка прилегания каркаса и окклюзионных контактов в полости рта", colorClass: "text-[var(--accent,#3b82f6)]", bgToken: "var(--paper-soft, rgba(59, 130, 246, 0.12))", borderToken: "var(--accent, #3b82f6)", textToken: "var(--accent, #3b82f6)", badgeClass: "badge-blue", title: "Примерка каркаса" },
+	{ id: "in_clinic", stepNumber: 4, labelRu: "Готово в клинике", shortLabel: "В клинике", descriptionRu: "4. Готов / Доставлен в клинику: конструкция проверена лабораторией и ожидает пациента", colorClass: "text-[var(--emerald,#10b981)]", bgToken: "var(--emerald-surface, rgba(16, 185, 129, 0.14))", borderToken: "var(--emerald, #10b981)", textToken: "var(--emerald-ink, #065f46)", badgeClass: "badge-emerald", title: "Готово в клинике" },
+	{ id: "seated", stepNumber: 5, labelRu: "Зафиксировано во рту", shortLabel: "Зафиксировано", descriptionRu: "5. Припасован и зафиксирован: постоянная цементировка конструкции завершена, гарантия активирована", colorClass: "text-[var(--muted,#64748b)]", bgToken: "var(--paper-strong, rgba(100, 116, 139, 0.12))", borderToken: "var(--line, #cbd5e1)", textToken: "var(--ink-muted, #64748b)", isFinal: true, badgeClass: "badge-muted", title: "Зафиксировано во рту" },
 ]);
+
+export function mapDbStatusToStage(status: string | null | undefined): DentalLabStage {
+	switch (status) {
+		case "draft": case "sent": case "scan_sent": return "scan_sent";
+		case "in_progress": case "in_production": return "in_production";
+		case "shipped": case "fitting_ready": case "refitting": return "fitting_ready";
+		case "received": case "in_clinic": return "in_clinic";
+		case "completed": case "seated": return "seated";
+		default: return "scan_sent";
+	}
+}
+
+export const STAGE_TO_DB_STATUS: Record<DentalLabStage, string> = {
+	scan_sent: "sent",
+	in_production: "in_progress",
+	fitting_ready: "shipped",
+	in_clinic: "received",
+	seated: "completed",
+	created: "sent",
+};
 
 export interface OrthopedicMaterialMeta {
 	readonly id: string;
@@ -81,16 +71,16 @@ export interface OrthopedicMaterialMeta {
 /** 6 канонических ортопедических конструкций частной стоматологии РФ (Мандат 8n: 1-5 кресел) */
 export const CANONICAL_LAB_MATERIALS: readonly OrthopedicMaterialMeta[] = Object.freeze([
 	{
-		id: "zirconia_multilayer", titleRu: "Циркониевая коронка Multi-layer (Prettau / Katana)", shortTitle: "Цирконий (ZrO2)",
+		id: "zirconia_multilayer", titleRu: "Циркониевая коронка Multi-layer (многослойный диоксид циркония)", shortTitle: "Цирконий (ZrO2)",
 		categoryRu: "Несъемное протезирование", defaultDurationDays: 5, baseLabCostKopecks: 750000, defaultPatientPriceKopecks: 2400000,
 		descriptionRu: "Высокоэстетичный градиентный цирконий с естественной прозрачностью режущего края", requiresShade: true, allowsStumpShade: true,
 		standardWorkingDays: 5, defaultLabCostKopecks: 750000, material: "Диоксид циркония",
 	},
 	{
-		id: "emax_press", titleRu: "Пресс-кеработки E-max (вкладка / винир / коронка)", shortTitle: "Керамика E-max",
+		id: "emax_press", titleRu: "Пресс-керамика (дисиликат лития — вкладка / винир / коронка)", shortTitle: "Дисиликат лития",
 		categoryRu: "Несъемное протезирование", defaultDurationDays: 5, baseLabCostKopecks: 850000, defaultPatientPriceKopecks: 2600000,
 		descriptionRu: "Дисиликат лития высочайшей эстетики для виниров и коронок во фронтальной зоне", requiresShade: true, allowsStumpShade: true,
-		standardWorkingDays: 5, defaultLabCostKopecks: 850000, material: "Пресс-керамика E-max",
+		standardWorkingDays: 5, defaultLabCostKopecks: 850000, material: "Дисиликат лития",
 	},
 	{
 		id: "metal_ceramic_cocr", titleRu: "Металлокерамика на биосовместимом Co-Cr сплаве", shortTitle: "Металлокерамика",
@@ -335,3 +325,37 @@ export function calculateZtlPayrollNetRevenue(
 		doctorWageKopecks: Math.round((netRevenue * doctorPercent) / 100),
 	};
 }
+
+export function formatDateIso(date: Date = new Date()): string {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, "0");
+	const d = String(date.getDate()).padStart(2, "0");
+	return `${y}-${m}-${d}`;
+}
+
+export function formatRuDate(isoOrDate: string | Date): string {
+	if (!isoOrDate) return "—";
+	if (isoOrDate instanceof Date) {
+		const d = String(isoOrDate.getDate()).padStart(2, "0");
+		const m = String(isoOrDate.getMonth() + 1).padStart(2, "0");
+		const y = isoOrDate.getFullYear();
+		return `${d}.${m}.${y}`;
+	}
+	const p = isoOrDate.slice(0, 10).split("-");
+	return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : isoOrDate;
+}
+
+export type PartnerDentalLab = PartnerLaboratory;
+export interface DentalLabCatalogItem extends OrthopedicMaterialMeta {
+	readonly materialNameRu?: string;
+}
+export const DENTAL_LAB_CATALOG = CANONICAL_LAB_MATERIALS;
+export type VitaShadeItem = VitaShadeSSOT;
+export function getVitaHex(code: string): string {
+	const found = VITA_SHADES_SSOT.find((s) => s.code.toUpperCase() === code.toUpperCase());
+	return found?.approxHex || "#E7DCBF";
+}
+export type DentalLabOrder = DentalLabOrderEntry;
+export const SAMPLE_LAB_ORDERS = SEED_LAB_ORDERS;
+export type LabStageDef = DentalLabStageMeta;
+

@@ -61,11 +61,10 @@ describe("visitDentalLabOrder — Stage Extraction & Clinical Language", () => {
 		assert.equal(activeStage.stageNumber, 3);
 	});
 
-	it("Мандат 8y: Отсутствие бюрократического языка в DentalLabOrderModal и DentalLabRestorationTab", () => {
-		const modalPath = path.resolve(labDir, "DentalLabOrderModal.tsx");
+	it("Мандат 8y: Отсутствие бюрократического языка в DentalLabStudioModal и DentalLabRestorationTab", () => {
+		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
 		const content = fs.readFileSync(modalPath, "utf-8");
-		assert.match(content, /Заказ в лабораторию \(ЗТЛ\)/);
-		assert.match(content, /План лечения: Этап/);
+		assert.match(content, /Зуботехническая лаборатория и заказ-наряды/);
 
 		const tabPath = path.resolve(labDir, "DentalLabRestorationTab.tsx");
 		const tabContent = fs.readFileSync(tabPath, "utf-8");

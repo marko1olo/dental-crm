@@ -6,8 +6,8 @@ import {
 	EXPRESS_PRESET_EMAX_CROWN,
 	EXPRESS_PRESET_PMMA_TEMPORARY,
 	MODAL_EXPRESS_LAB_PRESETS,
-	addWorkingDays,
-} from "../DentalLabOrderModal";
+} from "../dentalLabModalPresets";
+import { addWorkingDays } from "../labMath";
 
 describe("Wave 43 Autonomy — Express Presets Invariants", () => {
 	it("Contains all 4 canonical 1-click express presets: ZrO2, PFM, e.max, PMMA", () => {

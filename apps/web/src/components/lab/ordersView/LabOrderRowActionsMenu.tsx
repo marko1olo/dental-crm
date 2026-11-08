@@ -3,7 +3,7 @@ import {
 	AlertOctagon, Box, Camera, CheckCircle2, DollarSign,
 	ExternalLink, Link, MessageSquare, MoreVertical, Printer, RotateCcw,
 } from "lucide-react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 import { is3DScanUrl } from "../LabAttachScanModal";
 
 export interface LabOrderRowActionsMenuProps {

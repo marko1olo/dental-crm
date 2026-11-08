@@ -210,6 +210,7 @@ export const draftLabWorkOrderTool: ToolDefinition<typeof draftLabWorkOrderSchem
 				patientId: args.patientId,
 				doctorId: targetDoctorId,
 				doctorName,
+				laboratoryName: args.laboratoryName ?? null,
 				secureToken,
 				toothFdi: toothFdiString,
 				material: args.material,

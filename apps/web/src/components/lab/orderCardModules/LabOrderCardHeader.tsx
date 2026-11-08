@@ -1,5 +1,5 @@
 import React from "react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../DentalLabStudioModal";
 import { formatLabOrderTeethOrJaw, isJawWideConstruction } from "../labMath";
 
 export interface LabOrderCardHeaderProps {

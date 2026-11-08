@@ -143,53 +143,66 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 	// =========================================================================
 	// 3. ЛИКВИДАЦИЯ ЗООПАРКА И АРБИТРАЖ МОДАЛОК-КЛОНОВ
 	// =========================================================================
-	describe("3. Elimination of Duplicate Modals & Thin Facade Consolidation", () => {
-		it("3.1. DentalLabCreateOrderModal is a thin facade delegating to DentalLabStudioModal", () => {
-			const file = path.resolve(labDir, "DentalLabCreateOrderModal.tsx");
-			assert.ok(fs.existsSync(file), "DentalLabCreateOrderModal.tsx must exist");
-			const content = fs.readFileSync(file, "utf-8");
-			assert.ok(content.includes("DentalLabStudioModal"), "Must delegate to DentalLabStudioModal");
-			assert.ok(content.split("\n").length <= 50, "Must be a thin facade <= 50 lines");
+	describe("3. Elimination of Duplicate Modals & Physical Eradication of Clones", () => {
+		it("3.1. Clones and thin facades are physically eradicated from disk via git rm", () => {
+			const deletedFiles = [
+				"DentalLabOrdersHubModal.tsx",
+				"DentalLabOrderModal.tsx",
+				"DentalLabOrderDrawer.tsx",
+				"LaboratoryStudioModal.tsx",
+				"LabStudioModal.tsx",
+				"DentalLabHubModal.tsx",
+				"DentalLabOrdersModal.tsx",
+				"LabOrderModal.tsx",
+				"DirectLabLauncher.tsx",
+				"DirectDentalLabOrderLauncher.tsx",
+				"WorkOrdersList.tsx",
+				"DentalLabCreateOrderModal.tsx",
+				"DentalLabShadeSelector.tsx",
+				"DentalLabOrderCard.tsx",
+				"DentalLabTrackerCard.tsx",
+				"DentalLabOrdersTrackerModal.tsx",
+				"dentalLabData.ts",
+				"labCatalogData.ts",
+				"hub/DentalLabHubAlerts.tsx",
+				"hub/DentalLabHubCreateSection.tsx",
+				"hub/DentalLabHubHeader.tsx",
+				"hub/dentalLabHubModalTypes.ts",
+				"hub/DentalLabHubOrderCard.tsx",
+				"hub/dentalLabHubSampleOrders.ts",
+				"hub/useDentalLabHubActions.ts",
+				"hub/useDentalLabHubData.ts",
+			];
+			for (const file of deletedFiles) {
+				assert.ok(!fs.existsSync(path.resolve(labDir, file)), `Clone ${file} must NOT exist on disk!`);
+			}
 		});
 
-		it("3.2. DentalLabHubModal is a thin re-export of DentalLabStudioModal", () => {
-			const file = path.resolve(labDir, "DentalLabHubModal.tsx");
-			assert.ok(fs.existsSync(file), "DentalLabHubModal.tsx must exist");
-			const content = fs.readFileSync(file, "utf-8");
-			assert.ok(content.includes('export * from "./DentalLabStudioModal"'), "Must re-export DentalLabStudioModal");
-			assert.ok(content.split("\n").length <= 25, "Must be <= 25 lines");
+		it("3.2. DentalLabStudioModal directly exports all canonical aliases for seamless typing", () => {
+			const ssotFile = path.resolve(labDir, "DentalLabStudioModal.tsx");
+			assert.ok(fs.existsSync(ssotFile));
+			const content = fs.readFileSync(ssotFile, "utf-8");
+			assert.ok(content.includes("export const DentalLabHubModal = DentalLabStudioModal;"));
+			assert.ok(content.includes("export const DentalLabOrdersHubModal = DentalLabStudioModal;"));
+			assert.ok(content.includes("export const DentalLabOrderDrawer = DentalLabStudioModal;"));
 		});
 
-		it("3.3. LaboratoryStudioModal is a thin re-export of DentalLabStudioModal", () => {
-			const file = path.resolve(labDir, "LaboratoryStudioModal.tsx");
-			assert.ok(fs.existsSync(file), "LaboratoryStudioModal.tsx must exist");
-			const content = fs.readFileSync(file, "utf-8");
-			assert.ok(content.includes('export * from "./DentalLabStudioModal"'), "Must re-export DentalLabStudioModal");
-			assert.ok(content.split("\n").length <= 25, "Must be <= 25 lines");
+		it("3.3. DirectDentalLabLauncher directly exports DirectLabLauncher and DirectDentalLabOrderLauncher", () => {
+			const launcherFile = path.resolve(labDir, "DirectDentalLabLauncher.tsx");
+			assert.ok(fs.existsSync(launcherFile));
+			const content = fs.readFileSync(launcherFile, "utf-8");
+			assert.ok(content.includes("export const DirectLabLauncher = DirectDentalLabLauncher;"));
+			assert.ok(content.includes("export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;"));
 		});
 
-		it("3.4. LabStudioModal is a thin re-export of DentalLabStudioModal", () => {
-			const file = path.resolve(labDir, "LabStudioModal.tsx");
-			assert.ok(fs.existsSync(file), "LabStudioModal.tsx must exist");
-			const content = fs.readFileSync(file, "utf-8");
-			assert.ok(content.includes('export * from "./DentalLabStudioModal"'), "Must re-export DentalLabStudioModal");
-			assert.ok(content.split("\n").length <= 25, "Must be <= 25 lines");
-		});
-
-		it("3.5. DirectDentalLabOrderLauncher & DirectLabLauncher are thin re-exports of DirectDentalLabLauncher", () => {
-			const f1 = path.resolve(labDir, "DirectDentalLabOrderLauncher.tsx");
-			const f2 = path.resolve(labDir, "DirectLabLauncher.tsx");
-			assert.ok(fs.existsSync(f1) && fs.existsSync(f2));
-			assert.ok(fs.readFileSync(f1, "utf-8").includes("DirectDentalLabLauncher"));
-			assert.ok(fs.readFileSync(f2, "utf-8").includes("DirectDentalLabLauncher"));
-		});
-
-		it("3.6. DentalLabShadeSelector is a thin re-export of DentalLabShadePicker", () => {
-			const selectorPath = path.resolve(labDir, "DentalLabShadeSelector.tsx");
-			assert.ok(fs.existsSync(selectorPath), "DentalLabShadeSelector.tsx must exist");
-			const content = fs.readFileSync(selectorPath, "utf-8");
-			assert.ok(content.includes('export * from "./DentalLabShadePicker"'), "Must re-export DentalLabShadePicker");
-			assert.ok(content.split("\n").length <= 25, "Must be <= 25 lines");
+		it("3.4. DentalLabShadePicker is canonical SSOT exporting DentalLabShadePicker and DentalLabShadeSelector", () => {
+			const pickerPath = path.resolve(labDir, "DentalLabShadePicker.tsx");
+			assert.ok(fs.existsSync(pickerPath), "DentalLabShadePicker.tsx must exist");
+			const content = fs.readFileSync(pickerPath, "utf-8");
+			assert.ok(content.includes("export function DentalLabShadePicker"), "Must export DentalLabShadePicker");
+			assert.ok(content.includes("export function DentalLabShadeSelector"), "Must export DentalLabShadeSelector");
+			assert.ok(content.includes("export interface DentalLabShadeSelectorProps"), "Must export DentalLabShadeSelectorProps");
+			assert.ok(!fs.existsSync(path.resolve(labDir, "DentalLabShadeSelector.tsx")), "DentalLabShadeSelector.tsx must NOT exist on disk!");
 		});
 	});
 
@@ -215,12 +228,16 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			assert.ok(content.includes("/api/dental-lab/orders"), "Must preserve /api/dental-lab/orders");
 		});
 
-		it("4.3. insertLabOrderInDb provides zero-block patient fallback for chairside speed", () => {
+		it("4.3. insertLabOrderInDb prevents quiet patient hijacking [LAB-01]", () => {
 			assert.ok(fs.existsSync(insertDbFile), "labOrderInsertDb.ts must exist");
 			const content = fs.readFileSync(insertDbFile, "utf-8");
 			assert.ok(
-				content.includes("firstPatient"),
-				"Must include fallback to first organization patient when patientId is generic",
+				!content.includes("firstPatient"),
+				"Must NEVER silently hijack arbitrary patient from database without explicit patientId",
+			);
+			assert.ok(
+				content.includes('kind: "patient_not_found"'),
+				"Must return patient_not_found when patientId is missing or invalid",
 			);
 		});
 	});

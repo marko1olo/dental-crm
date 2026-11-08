@@ -6,7 +6,7 @@ import {
 	setupMockDom,
 	findAllNodesByCondition,
 } from "./helpers/dentalLabTestDomHelper";
-import { DentalLabOrdersHubModal } from "../DentalLabOrdersHubModal";
+import { DentalLabOrdersFilterBar } from "../DentalLabOrdersFilterBar";
 import {
 	createDentalLabOrder,
 	type DentalLabWorkflowOrder,
@@ -39,10 +39,21 @@ describe("Wave 239 — Hub Toolbar Filters", () => {
 		await act(async () => {
 			root = createRoot(container as any);
 			root.render(
-				<DentalLabOrdersHubModal
-					isOpen={true}
-					onClose={() => {}}
-					initialOrders={[sampleOrder]}
+				<DentalLabOrdersFilterBar
+					searchQuery=""
+					setSearchQuery={() => {}}
+					selectedLab="ALL"
+					setSelectedLab={() => {}}
+					selectedWorkType="ALL"
+					setSelectedWorkType={() => {}}
+					selectedStage="ALL"
+					setSelectedStage={() => {}}
+					selectedDateRange="ALL"
+					setSelectedDateRange={() => {}}
+					onlyDelayedFilter={false}
+					setOnlyDelayedFilter={() => {}}
+					delayedCount={0}
+					sampleLabs={["Лаба 1", "Лаба 2"]}
 				/>,
 			);
 		});

@@ -5,7 +5,7 @@ import { LabAttachPathInput } from "./attachScanModules/LabAttachPathInput";
 import { LabAttachScanPresets } from "./attachScanModules/LabAttachScanPresets";
 import { is3DScanUrl } from "./attachScanModules/labScanUrlUtils";
 import { useLabAttachScanState } from "./attachScanModules/useLabAttachScanState";
-import type { DentalLabOrderData } from "./DentalLabOrderModal";
+import type { DentalLabOrderData } from "./labMath";
 
 export { is3DScanUrl };
 

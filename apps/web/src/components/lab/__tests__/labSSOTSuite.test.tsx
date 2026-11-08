@@ -28,8 +28,8 @@ import {
 	getStageMeta,
 	getMaterialMeta,
 	isOrderOverdue,
-} from "../labCatalogData";
-import { checkIsLabActive } from "../DirectLabLauncher";
+} from "../dentalLabCatalogData";
+import { checkIsLabActive } from "../DirectDentalLabLauncher";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -225,11 +225,9 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const targetFiles = [
 			path.resolve(labDir, "DentalLabStudioModal.tsx"),
-			path.resolve(labDir, "LabStudioModal.tsx"),
+			path.resolve(labDir, "DentalLabOrdersView.tsx"),
 			path.resolve(labDir, "dentalLabCatalogData.ts"),
-			path.resolve(labDir, "labCatalogData.ts"),
 			path.resolve(labDir, "DirectDentalLabLauncher.tsx"),
-			path.resolve(labDir, "DirectLabLauncher.tsx"),
 		];
 
 		for (const file of targetFiles) {

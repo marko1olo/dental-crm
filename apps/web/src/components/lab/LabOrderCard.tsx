@@ -1,5 +1,5 @@
 import React from "react";
-import type { DentalLabOrderData } from "./DentalLabOrderModal";
+import type { DentalLabOrderData } from "./labMath";
 import { LabOrderCardHeader } from "./orderCardModules/LabOrderCardHeader";
 import { LabOrderCardDetails } from "./orderCardModules/LabOrderCardDetails";
 import { LabOrderCardActions } from "./orderCardModules/LabOrderCardActions";

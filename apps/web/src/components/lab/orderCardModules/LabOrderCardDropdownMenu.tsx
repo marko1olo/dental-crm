@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, CalendarCheck, CheckCircle2, DollarSign, Layers, Link, MessageSquare, RotateCcw } from "lucide-react";
 import { DentalLabOrder } from "../../icons/DentalIcons";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../DentalLabStudioModal";
 import { is3DScanUrl } from "../LabAttachScanModal";
 
 export interface LabOrderCardDropdownMenuProps {

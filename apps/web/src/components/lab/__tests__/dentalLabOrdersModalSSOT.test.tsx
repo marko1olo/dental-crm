@@ -11,8 +11,8 @@ import {
 import {
 	DentalLabOrdersModal,
 	DentalLabOrderModal,
-	MODAL_EXPRESS_LAB_PRESETS,
-} from "../DentalLabOrdersModal";
+} from "../DentalLabStudioModal";
+import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabModalPresets";
 
 describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", () => {
 	it("1. DentalLabOrdersModal is canonical SSOT with identical interface and alias DentalLabOrderModal", () => {
@@ -40,7 +40,7 @@ describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", 
 				);
 			});
 
-			const primaryCta = findNodeByTestId(doc.body, "submit-lab-order-btn");
+			const primaryCta = findNodeByTestId(doc.body, "submit-lab-order-btn") || findNodeByTestId(doc.body, "submit-lab-order-button");
 			assert.notStrictEqual(primaryCta, null);
 			const className = primaryCta?.getAttribute("class") || "";
 			assert.ok(className.includes("var(--teal,#0d9488)") || className.includes("#0d9488"));

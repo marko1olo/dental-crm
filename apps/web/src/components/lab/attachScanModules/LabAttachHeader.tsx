@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, X } from "lucide-react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 
 export function LabAttachHeader({
 	order,

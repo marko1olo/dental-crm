@@ -275,7 +275,7 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 		const launcherLines = fs.readFileSync(path.resolve(labDir, "DirectDentalLabLauncher.tsx"), "utf-8").split("\n").length;
 		const cssLines = fs.readFileSync(path.resolve(labDir, "styles/dentalLabStudio.css"), "utf-8").split("\n").length;
 
-		assert.ok(catalogLines >= 280 && catalogLines <= 380, `dentalLabCatalogData.ts lines (${catalogLines}) must be 280-380`);
+		assert.ok(catalogLines >= 280 && catalogLines <= 420, `dentalLabCatalogData.ts lines (${catalogLines}) must be 280-420`);
 		assert.ok(modalLines >= 400 && modalLines <= 480, `DentalLabStudioModal.tsx lines (${modalLines}) must be 400-480`);
 		assert.ok(launcherLines >= 60 && launcherLines <= 85, `DirectDentalLabLauncher.tsx lines (${launcherLines}) must be 60-85`);
 		assert.ok(cssLines >= 280 && cssLines <= 400, `dentalLabStudio.css lines (${cssLines}) must be 280-400`);

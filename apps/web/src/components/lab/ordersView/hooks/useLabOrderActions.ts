@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
-import type { DentalLabOrderData } from "../../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../labMath";
 import { is3DScanUrl } from "../../LabAttachScanModal";
 import { copyLabPortalLink, executeLabPayFromCashbox } from "./labOrderActionHelpers";
 

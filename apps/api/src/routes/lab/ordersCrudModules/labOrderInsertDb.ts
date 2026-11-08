@@ -39,17 +39,6 @@ export async function insertLabOrderInDb(
 	}
 
 	if (!effectivePatientId) {
-		const [firstPatient] = await tx
-			.select({ id: patients.id })
-			.from(patients)
-			.where(eq(patients.organizationId, orgId))
-			.limit(1);
-		if (firstPatient) {
-			effectivePatientId = firstPatient.id;
-		}
-	}
-
-	if (!effectivePatientId) {
 		return { kind: "patient_not_found" as const };
 	}
 
@@ -124,6 +113,7 @@ export async function insertLabOrderInDb(
 			patientId: effectivePatientId,
 			doctorId: effectiveDoctorId,
 			doctorName: doctorName || data.doctorName || "Врач-ортопед",
+			laboratoryName: effectiveLabName,
 			secureToken,
 			toothFdi: effectiveToothFdi,
 			material: effectiveMaterial,

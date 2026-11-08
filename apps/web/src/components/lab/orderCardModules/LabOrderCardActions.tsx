@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2, Layers, MoreHorizontal, Printer } from "lucide-react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../DentalLabStudioModal";
 import { LabOrderCardDropdownMenu } from "./LabOrderCardDropdownMenu";
 
 export interface LabOrderCardActionsProps {

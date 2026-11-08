@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { MODAL_EXPRESS_LAB_PRESETS } from "../DentalLabOrderModal";
+import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabModalPresets";
 
 describe("dentalLabWave243Inquisitor — Core Smoke Facade", () => {
 	it("Wave 243 presets are defined and intact", () => {

@@ -3,6 +3,8 @@ import { Zap } from "lucide-react";
 import { DentalLabOrder } from "../../icons/DentalIcons.js";
 import type { TreatmentPlanStage } from "../types";
 import type { StageFooterActionFlags } from "./stageFooterHelpers";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export interface StageFooterLabOrderButtonsProps {
 	readonly stage: TreatmentPlanStage;
@@ -19,6 +21,10 @@ export const StageFooterLabOrderButtons: React.FC<StageFooterLabOrderButtonsProp
 	onOpenLabOrder,
 	onOneClickLabOrder,
 }) => {
+	const { hasDentalLab } = useWorkspaceProfile();
+	if (hasDentalLab === false && !isDemoShowcaseMode()) {
+		return null;
+	}
 	const stageTeeth = stage.items
 		.map((it) => it.toothNumber)
 		.filter((t): t is number => typeof t === "number" && t > 0);

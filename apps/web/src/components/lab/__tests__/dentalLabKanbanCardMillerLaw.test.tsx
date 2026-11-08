@@ -7,7 +7,7 @@ import {
 	findNodeByTestId,
 	clickNode,
 } from "./helpers/dentalLabTestDomHelper";
-import { DentalLabOrdersHubModal } from "../DentalLabOrdersHubModal";
+import { DentalLabOrdersKanbanBoard } from "../DentalLabOrdersKanbanBoard";
 import {
 	createDentalLabOrder,
 	type DentalLabWorkflowOrder,
@@ -40,10 +40,14 @@ describe("Wave 239 — Kanban Card Miller's Law", () => {
 		await act(async () => {
 			root = createRoot(container as any);
 			root.render(
-				<DentalLabOrdersHubModal
-					isOpen={true}
-					onClose={() => {}}
-					initialOrders={[sampleOrder]}
+				<DentalLabOrdersKanbanBoard
+					orders={[sampleOrder]}
+					onOpenOrder={() => {}}
+					onOpenStatusTimeline={() => {}}
+					onActionPrompt={() => {}}
+					onOpenScan3D={() => {}}
+					onOpenFittingModal={() => {}}
+					onRequestWarrantyRework={() => {}}
 				/>,
 			);
 		});

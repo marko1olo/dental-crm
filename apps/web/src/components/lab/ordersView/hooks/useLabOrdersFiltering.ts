@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { DentalLabOrderData } from "../../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../labMath";
 import type { DentalLabMetrics, LabOrdersViewMode } from "../types";
 import { CANONICAL_STAGE_FILTERS } from "../constants";
 import { mapRawApiOrderToWorkflowOrder } from "../../dentalLabApiMapper";

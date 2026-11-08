@@ -1,7 +1,7 @@
 import React from "react";
 import { AlertOctagon, Box, Calendar, CheckCircle2 } from "lucide-react";
 import { money } from "../../../AppHelpers";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../DentalLabStudioModal";
 import { formatLabConstructionTitle } from "../dentalLabDefinitions";
 import { is3DScanUrl } from "../LabAttachScanModal";
 

@@ -6,7 +6,7 @@ import {
 	setupMockDom,
 	findNodeByTestId,
 } from "./helpers/dentalLabTestDomHelper";
-import { DentalLabShadeSelector } from "../DentalLabShadeSelector";
+import { DentalLabShadeSelector } from "../DentalLabShadePicker";
 
 describe("Dental Lab 3D Shade — DOM Rendering", () => {
 	it("8. DentalLabShadeSelector component renders all VITA systems and 3-zone stratification in DOM", async () => {

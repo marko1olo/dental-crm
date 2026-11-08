@@ -42,12 +42,14 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 	switch (stage) {
 		case "sent_to_lab":
 		case "sent":
+		case "scan_sent":
 		case "impression_scan":
 		case "impression":
 		case "scan":
 		case "Слепок/Скан":
 			return "sent";
 		case "in_progress":
+		case "in_production":
 		case "model_cad_design":
 		case "cad_cam":
 		case "framework_wax_milling":
@@ -63,9 +65,11 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 			return "in_progress";
 		case "shipped":
 		case "shipped_to_clinic":
+		case "fitting_ready":
 			return "shipped";
 		case "delivered_to_clinic":
 		case "received":
+		case "in_clinic":
 		case "clinic_received":
 		case "ready_in_clinic":
 		case "ready":
@@ -86,6 +90,7 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 			return "refitting";
 		case "delivered_completed":
 		case "completed":
+		case "seated":
 		case "patient_fixation":
 		case "fixation":
 		case "Фиксация":

@@ -24,29 +24,30 @@ export {
 	formatDateIso,
 	formatRuDate,
 	formatKopecks,
-} from "./dentalLabData";
-export {
-	DentalLabHubModal,
-	DentalLabOrdersHubModal,
-	type DentalLabHubModalProps,
-} from "./DentalLabHubModal";
+} from "./dentalLabCatalogData";
 export {
 	DentalLabStudioModal,
 	type DentalLabStudioModalProps,
-} from "./DentalLabStudioModal";
-export {
+	DentalLabHubModal,
+	DentalLabOrdersHubModal,
+	type DentalLabHubModalProps,
+	type DentalLabOrdersHubModalProps,
 	LaboratoryStudioModal,
-} from "./LaboratoryStudioModal";
-export {
 	WorkOrdersList,
-} from "./WorkOrdersList";
-export {
 	LabStudioModal,
 	type LabStudioModalProps,
-} from "./LabStudioModal";
-export {
 	LabOrderModal,
-} from "./LabOrderModal";
+	DentalLabOrderModal,
+	DentalLabOrdersModal,
+	DentalLabOrderModal as DentalLabWorkOrderModal,
+	type DentalLabOrderModalProps,
+	type DentalLabOrderModalProps as DentalLabWorkOrderModalProps,
+	type ExtendedDentalLabOrderModalProps,
+	DentalLabOrderDrawer,
+	type DentalLabOrderDrawerProps,
+	buildLabOrderMessengerSummary,
+	type LabOrderMessengerParams,
+} from "./DentalLabStudioModal";
 export {
 	CANONICAL_LAB_STAGES,
 	CANONICAL_LAB_MATERIALS,
@@ -65,19 +66,10 @@ export {
 	calcNetRevenueKopecks,
 } from "./dentalLabCatalogData";
 export {
-	DentalLabOrderCard,
-	type DentalLabOrderCardProps,
-} from "./DentalLabOrderCard";
-export {
 	DirectDentalLabLauncher,
 	DirectDentalLabOrderLauncher,
+	DirectLabLauncher,
 } from "./DirectDentalLabLauncher";
-
-// SSOT 1: Order Creation, Editing & Specification Drawer
-export {
-	DentalLabOrderDrawer,
-	type DentalLabOrderDrawerProps,
-} from "./DentalLabOrderDrawer";
 
 // SSOT 2: Clinical Kanban Board (4 Lifecycle Stages) & Cards
 export {
@@ -110,24 +102,11 @@ export {
 } from "./LabOrderCard";
 
 export {
-	DentalLabTrackerCard,
-} from "./DentalLabTrackerCard";
-
-export {
 	DentalLabPriceMatrixModal,
 	CANONICAL_LAB_PRICE_MATRIX,
 	type DentalLabPriceMatrixModalProps,
 	type LabPriceMatrixItem,
 } from "./DentalLabPriceMatrixModal";
-
-export {
-	DentalLabOrdersModal,
-	DentalLabOrderModal,
-	DentalLabOrderModal as DentalLabWorkOrderModal,
-	type DentalLabOrderModalProps,
-	type DentalLabOrderModalProps as DentalLabWorkOrderModalProps,
-	type ExtendedDentalLabOrderModalProps,
-} from "./DentalLabOrdersModal";
 
 export {
 	DentalLabStageTrackingTimeline,
@@ -146,9 +125,11 @@ export {
 
 // Shading, Odontogram & Print Blanks
 export {
+	DentalLabShadePicker,
+	type DentalLabShadePickerProps,
 	DentalLabShadeSelector,
 	type DentalLabShadeSelectorProps,
-} from "./DentalLabShadeSelector";
+} from "./DentalLabShadePicker";
 
 export {
 	DentalLabFdiOdontogramPicker,

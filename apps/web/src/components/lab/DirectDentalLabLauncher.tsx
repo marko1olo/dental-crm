@@ -7,8 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { DentalLabStudioModal } from "./DentalLabStudioModal";
-import { DentalLabOrderModal } from "./DentalLabOrderModal";
+import { DentalLabStudioModal, DentalLabOrderModal } from "./DentalLabStudioModal";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 

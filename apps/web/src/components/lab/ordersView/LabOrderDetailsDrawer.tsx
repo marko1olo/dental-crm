@@ -1,7 +1,5 @@
 import React from "react";
-import { DentalLabOrderModal } from "../DentalLabOrderModal";
-import { DentalLabOrderDrawer } from "../DentalLabOrderDrawer";
-import { DentalLabOrdersHubModal } from "../DentalLabOrdersHubModal";
+import { DentalLabStudioModal } from "../DentalLabStudioModal";
 import type { DentalLabOrderData } from "../dentalLabDefinitions";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { DentalLabPriceMatrixModal } from "../DentalLabPriceMatrixModal";
@@ -54,10 +52,12 @@ export function LabOrderDetailsDrawer({
 
 	return (
 		<>
-			{isOrderDrawerOpen && (
-				<DentalLabOrderDrawer
-					isOpen={Boolean(isOrderDrawerOpen)} onClose={onCloseOrderDrawer || (() => {})}
-					initialOrder={selectedOrderForEdit} editingOrder={selectedOrderForEdit}
+			{(isOrderDrawerOpen || isWorkOrderModalOpen) && (
+				<DentalLabStudioModal
+					isOpen={Boolean(isOrderDrawerOpen || isWorkOrderModalOpen)}
+					onClose={isOrderDrawerOpen ? (onCloseOrderDrawer || (() => {})) : (onCloseWorkOrderModal || (() => {}))}
+					initialOrder={selectedOrderForEdit}
+					editingOrder={selectedOrderForEdit}
 					treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
 					stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
 					stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
@@ -69,23 +69,8 @@ export function LabOrderDetailsDrawer({
 					currentToothNumber={selectedOrderForEdit?.toothFdi ?? undefined}
 					initialToothFdi={selectedOrderForEdit?.toothFdi ?? undefined}
 					initialTeeth={selectedOrderForEdit?.selectedTeeth ?? (selectedOrderForEdit as { teeth?: number[] })?.teeth ?? undefined}
-					onSaveOrder={() => onOrderSaved()} onOrderSaved={onOrderSaved}
-				/>
-			)}
-
-			{isWorkOrderModalOpen && !isOrderDrawerOpen && (
-				<DentalLabOrderModal
-					isOpen={Boolean(isWorkOrderModalOpen)} onClose={onCloseWorkOrderModal || (() => {})}
-					initialOrder={selectedOrderForEdit} initialTab={modalInitialTab}
-					treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
-					stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
-					stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
-					stageId={selectedOrderForEdit?.stageId ?? undefined}
-					patientId={selectedOrderForEdit?.patientId ?? undefined}
-					patientName={selectedOrderForEdit?.patientName ?? undefined}
-					doctorId={selectedOrderForEdit?.doctorId ?? undefined}
-					doctorName={selectedOrderForEdit?.doctorName ?? undefined}
-					onSaveOrder={() => onOrderSaved()} onOrderSaved={onOrderSaved}
+					onSaveOrder={() => onOrderSaved()}
+					onOrderSaved={onOrderSaved}
 				/>
 			)}
 
@@ -103,7 +88,7 @@ export function LabOrderDetailsDrawer({
 				/>
 			)}
 			{isHubModalOpen && (
-				<DentalLabOrdersHubModal
+				<DentalLabStudioModal
 					isOpen={Boolean(isHubModalOpen)}
 					onClose={onCloseHubModal || (() => {})}
 					onSaveOrder={() => onOrderSaved()}

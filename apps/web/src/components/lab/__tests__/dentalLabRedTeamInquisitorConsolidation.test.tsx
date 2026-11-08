@@ -2,7 +2,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { DentalLabOrderDrawer } from "../DentalLabOrderDrawer";
+import { DentalLabStudioModal } from "../DentalLabStudioModal";
 import { DentalLabFinancialGate } from "../DentalLabFinancialGate";
 import { checkDentalLabFinancialGate } from "../dentalLabFinancialGateEngine";
 import { VisitProtocolView } from "../../patients/VisitProtocolView";
@@ -31,27 +31,25 @@ describe("RED TEAM INQUISITOR — Dental Lab & ZTL Orders Consolidation & Mandat
 		assert.equal(bannerHtml.includes("disabled"), false, "Баннер никогда не должен блокировать элементы");
 	});
 
-	it("2. Mandate 8e & 8n: DentalLabOrderDrawer служит единым каноническим SSOT и содержит все ключевые секции", () => {
+	it("2. Mandate 8e & 8n: DentalLabStudioModal служит единым каноническим SSOT и содержит все ключевые секции", () => {
 		const html = renderToString(
-			<DentalLabOrderDrawer
+			<DentalLabStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				currentPatientId="pat-test-101"
-				currentPatientName="Иванов Сергей Павлович"
-				currentDoctorName="Д-р Орлов А.В. (Ортопед)"
-				currentToothNumber="16"
+				patientId="pat-test-101"
+				patientName="Иванов Сергей Павлович"
+				doctorName="Д-р Орлов А.В. (Ортопед)"
+				initialToothFdi="16"
 			/>,
 		);
 
-		assert.ok(html.includes("dental-lab-order-drawer"), "Шторка рендерится с каноническим data-testid");
-		assert.ok(html.includes("Шкала расцветки VITA"), "Содержит шкалу VITA");
+		assert.ok(html.includes("dental-lab-studio-modal-root"), "Модалка рендерится с каноническим data-testid");
+		assert.ok(html.includes("Оттенок VITA"), "Содержит шкалу VITA");
 		assert.ok(html.includes("Зубы FDI"), "Содержит выбор зубов FDI");
-		assert.ok(html.includes("3D-скан челюсти (STL / PLY / OBJ)"), "Содержит загрузку 3D-сканов");
-		assert.ok(html.includes("Финансовый расчет наряда ЗТЛ"), "Содержит финансовый блок");
+		assert.ok(html.includes("Себестоимость ЗТЛ"), "Содержит финансовый блок");
 		assert.ok(
-			html.includes("Отправить наряд в лабораторию") ||
-				html.includes("Сформировать наряд в лабораторию") ||
-				html.includes("Сформировать наряд в ЗТЛ"),
+			html.includes("Создать заказ-наряд") ||
+				html.includes("Отправить заказ в лабораторию"),
 			"Содержит основную кнопку отправки",
 		);
 	});

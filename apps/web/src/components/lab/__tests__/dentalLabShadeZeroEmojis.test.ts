@@ -9,9 +9,8 @@ describe("Dental Lab — Mandate 8d Zero Emojis Compliance", () => {
 		const currentFile = fileURLToPath(import.meta.url);
 		const labDir = path.resolve(path.dirname(currentFile), "..");
 		const targetFiles = [
-			"DentalLabOrderModal.tsx",
-			"DentalLabOrdersHubModal.tsx",
-			"DentalLabShadeSelector.tsx",
+			"DentalLabOrdersView.tsx",
+			"DentalLabShadePicker.tsx",
 			"DentalLabPrintBlank.tsx",
 			"labMath.ts",
 			"dentalLabWorkflowEngine.ts",

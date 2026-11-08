@@ -1,4 +1,4 @@
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 
 export const CANONICAL_DEMO_LAB_ORDERS: readonly DentalLabOrderData[] = [
 	{

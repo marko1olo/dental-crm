@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, CalendarCheck, CheckCircle2, Layers, Printer, RotateCcw, Sparkles } from "lucide-react";
 import { is3DScanUrl } from "../LabAttachScanModal";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 import { LabOrderRowActionsMenu, type LabOrderRowActionsMenuProps } from "./LabOrderRowActionsMenu";
 
 export interface LabOrdersTableRowButtonsProps extends Omit<LabOrderRowActionsMenuProps, "isOpen" | "onToggle" | "onClose"> {

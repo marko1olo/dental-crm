@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertTriangle, Clock, Layers } from "lucide-react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 
 export interface TimelineHeaderProps {
 	order: DentalLabOrderData;

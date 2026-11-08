@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildLabOrderMessengerSummary } from "../DentalLabOrderModal";
+import { buildLabOrderMessengerSummary } from "../DentalLabStudioModal";
 
 describe("dentalLabAutonomyWave52 — Core Smoke Check", () => {
 	it("Messenger summary generator formats standard order correctly", () => {

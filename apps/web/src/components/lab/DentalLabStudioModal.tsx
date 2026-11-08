@@ -13,6 +13,7 @@ import {
 	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES,
 	UPPER_JAW_TEETH, LOWER_JAW_TEETH, SEED_LAB_ORDERS, type DentalLabOrderEntry, type DentalLabStage,
 	addWorkingDaysRu, formatKopecksToRubles, calcNetRevenueKopecks, getStageMeta, getMaterialMeta, isOrderOverdue,
+	mapDbStatusToStage, STAGE_TO_DB_STATUS,
 } from "./dentalLabCatalogData";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -21,25 +22,31 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
-export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue";
-export type LabStudioMainTab = "new_order" | "registry" | "print_blank";
+export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue"; export type LabStudioMainTab = "new_order" | "registry" | "print_blank";
+
+export { buildLabOrderMessengerSummary, type LabOrderMessengerParams } from "./dentalLabDefinitions";
+export * from "./dentalLabModalPresets"; export * from "./labMath";
 
 export interface DentalLabStudioModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly initialToothFdi?: string | number | undefined;
-	readonly patientName?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly doctorId?: string | undefined;
-	readonly initialTab?: LabStudioMainTab | undefined;
+	readonly isOpen: boolean; readonly onClose: () => void;
+	readonly initialToothFdi?: string | number; readonly patientName?: string; readonly doctorName?: string;
+	readonly patientId?: string; readonly doctorId?: string;
+	readonly initialTab?: LabStudioMainTab | "main" | "shades" | "stages" | "print";
 	readonly onOrderCreated?: ((order: DentalLabOrderEntry) => void) | undefined;
+	readonly onOrderSaved?: ((order?: any) => void) | undefined; readonly onSaveOrder?: ((order?: any) => void) | undefined;
+	readonly initialOrder?: any; readonly editingOrder?: any; readonly treatmentPlanId?: string; readonly stageId?: string;
+	readonly stageNumber?: number; readonly stageTitle?: string; readonly initialTeeth?: number[]; readonly scheduledVisitDate?: string;
+	readonly patientChartNumber?: string; readonly currentToothNumber?: string | number;
 }
 
-export type LabStudioModalProps = DentalLabStudioModalProps;
+export type LabStudioModalProps = DentalLabStudioModalProps; export type DentalLabOrdersHubModalProps = DentalLabStudioModalProps;
+export type DentalLabHubModalProps = DentalLabStudioModalProps; export type DentalLabOrderModalProps = DentalLabStudioModalProps;
+export type DentalLabOrderDrawerProps = DentalLabStudioModalProps; export type ExtendedDentalLabOrderModalProps = DentalLabStudioModalProps;
+export type { DentalLabOrderData } from "./labMath";
 
 export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
-	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, initialTab = "new_order", onOrderCreated,
+	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, initialTab = "new_order",
+	onOrderCreated, onOrderSaved, onSaveOrder, initialTeeth, currentToothNumber,
 }) => {
 	const { hasDentalLab } = useWorkspaceProfile();
 	const storeActivePatientId = useAppStore((s) => s.activePatientId);
@@ -54,14 +61,19 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const effectiveDoctorName = doctorName || "Д-р Смирнова Е. В. (Ортопед)";
 
 	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => isDemoShowcaseMode() ? [...SEED_LAB_ORDERS] : []);
-	const [activeMainTab, setActiveMainTab] = useState<LabStudioMainTab>(initialTab);
+	const normalizedInitialTab: LabStudioMainTab =
+		initialTab === "print" ? "print_blank" : initialTab === "shades" || initialTab === "stages" || initialTab === "main" ? "new_order" : (initialTab as LabStudioMainTab) || "new_order";
+	const [activeMainTab, setActiveMainTab] = useState<LabStudioMainTab>(normalizedInitialTab);
 	const [activeFilter, setActiveFilter] = useState<LabFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<DentalLabOrderEntry | null>(null);
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
-	const initialToothNum = Number(initialToothFdi) || 16;
-	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([initialToothNum]);
+	const initialToothNum = Number(initialToothFdi || currentToothNumber) || 16;
+	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(() => {
+		if (initialTeeth && Array.isArray(initialTeeth) && initialTeeth.length > 0) return initialTeeth;
+		return [initialToothNum];
+	});
 	const [selectedMaterialId, setSelectedMaterialId] = useState<string>("zirconia_multilayer");
 	const [selectedShade, setSelectedShade] = useState<string>("A2");
 	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб");
@@ -107,10 +119,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						id: String(item.id || `live-ord-${idx}`), orderNumber: String(item.orderNumber || item.gostOrderNumber || `ЗТЛ-${100 + idx}`),
 						patientName: String(item.patientName || effectivePatientName), doctorName: String(item.doctorName || effectiveDoctorName),
 						teeth: Array.isArray(item.teethFdi) ? item.teethFdi : [Number(item.toothFdi) || 16], materialId: String(item.materialId || item.workTypeId || "zirconia_multilayer"),
-						shadeCode: String(item.shadeVita || item.shadeCode || item.colorVita || "A2"), stage: (item.stage || item.status || "scan_sent") as DentalLabStage,
-						labCostKopecks: Number(item.labCostKopecks || 750000), patientPriceKopecks: Number(item.patientPriceKopecks || 2400000),
+						shadeCode: String(item.shadeVita || item.shadeCode || item.colorVita || "A2"), stage: mapDbStatusToStage(item.status || item.stage),
+						labCostKopecks: Number(item.labCostKopecks || (item.labCostRub ? Math.round(Number(item.labCostRub) * 100) : 750000)),
+						patientPriceKopecks: Number(item.patientPriceKopecks || (item.priceRub ? Math.round(Number(item.priceRub) * 100) : 2400000)),
 						laboratoryName: String(item.laboratoryName || item.labName || "Арт-Дент Лаб"), createdAt: String(item.createdAt || new Date().toISOString()),
-						dueDate: String(item.dueDate || calculatedDueDate), notes: item.notes || item.comment || undefined, isUrgent: Boolean(item.isUrgent || item.urgent),
+						dueDate: String(item.dueDate || calculatedDueDate), notes: item.notes || item.clinicalNotes || item.comment || undefined, isUrgent: Boolean(item.isUrgent || item.urgent),
 					})));
 				}
 			} catch {}
@@ -144,6 +157,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		setOrders((prev) => [newEntry, ...prev]);
 		setSelectedOrderForPrint(newEntry);
 		onOrderCreated?.(newEntry);
+		onOrderSaved?.(newEntry);
+		onSaveOrder?.(newEntry);
 		setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно создан и отправлен в лабораторию`);
 		setTimeout(() => setFeedbackToast(null), 3500);
 
@@ -158,23 +173,47 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			const reqOpts = { method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) };
 			let res = await fetch("/api/lab/orders", reqOpts);
 			if (!res.ok) res = await fetch("/api/clinical/lab-orders", reqOpts);
-			if (res.ok && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: payload }));
+			if (res.ok) {
+				const responseData = await res.json().catch(() => null);
+				const realId = responseData?.order?.id || responseData?.id;
+				if (realId) {
+					newEntry.id = realId;
+					setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: realId } : ord)));
+				}
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: { ...payload, id: realId || newEntry.id } }));
+				}
+			}
 		} catch {}
 	}, [selectedTeeth, orders.length, effectivePatientName, effectiveDoctorName, effectivePatientId, selectedMaterialId, selectedMaterial,
-		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, onOrderCreated]);
+		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, onOrderCreated, onOrderSaved, onSaveOrder]);
 
-	const handleAdvanceStage = useCallback((orderId: string) => {
-		setOrders((prev) => prev.map((ord) => {
-			if (ord.id !== orderId) return ord;
-			const curIdx = CANONICAL_LAB_STAGES.findIndex((s) => s.id === ord.stage);
-			const nextIdx = Math.min(CANONICAL_LAB_STAGES.length - 1, (curIdx >= 0 ? curIdx : 0) + 1);
-			return { ...ord, stage: CANONICAL_LAB_STAGES[nextIdx]?.id ?? "seated" };
-		}));
-	}, []);
+	const handleAdvanceStage = useCallback(async (orderId: string) => {
+		const targetOrder = orders.find((ord) => ord.id === orderId);
+		if (!targetOrder) return;
+		const curIdx = CANONICAL_LAB_STAGES.findIndex((s) => s.id === targetOrder.stage);
+		const nextIdx = Math.min(CANONICAL_LAB_STAGES.length - 1, (curIdx >= 0 ? curIdx : 0) + 1);
+		const nextStage = CANONICAL_LAB_STAGES[nextIdx]?.id ?? "seated";
+		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: nextStage } : ord)));
+		setFeedbackToast(`Статус обновлен: ${CANONICAL_LAB_STAGES[nextIdx]?.labelRu ?? "Зафиксировано"}`);
+		setTimeout(() => setFeedbackToast(null), 2500);
+		try {
+			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: STAGE_TO_DB_STATUS[nextStage] || "in_progress", stage: nextStage }) };
+			let res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, reqOpts);
+			if (!res.ok) res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
+			if (!res.ok) res = await fetch(`/api/clinical/lab-orders/${orderId}`, reqOpts);
+		} catch {}
+	}, [orders]);
 
-	const handleMarkInClinic = useCallback((orderId: string) => {
+	const handleMarkInClinic = useCallback(async (orderId: string) => {
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: "in_clinic" } : ord)));
 		setFeedbackToast("Заказ отмечен: готов в клинике"); setTimeout(() => setFeedbackToast(null), 2500);
+		try {
+			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: "received", stage: "in_clinic" }) };
+			let res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, reqOpts);
+			if (!res.ok) res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
+			if (!res.ok) res = await fetch(`/api/clinical/lab-orders/${orderId}`, reqOpts);
+		} catch {}
 	}, []);
 
 	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => {
@@ -216,7 +255,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 	return (
 		<div data-testid="dental-lab-studio-modal-root" className="dental-lab-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>
-			<div className="dental-lab-modal-container">
+			<div className="dental-lab-modal-container max-sm:rounded-t-[24px]" data-testid="dental-lab-order-drawer">
 				{/* Apple HIG Drag Handle 36x5px для мобильных */}
 				<div className="sm:hidden flex justify-center pt-2">
 					<div className="w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)]" />
@@ -230,8 +269,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 								<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 shrink-0">SSOT Ортопедия</span>
 							</h2>
 							<div className="dental-lab-header-meta">
-								<span className="break-words">Пациент: <strong className="text-[var(--ink)]">{effectivePatientName}</strong></span>
-								<span className="break-words hidden sm:inline">Врач: <strong className="text-[var(--ink)]">{effectiveDoctorName}</strong></span>
+								<span className="break-words">Пациент: <strong className="text-[var(--ink)]">{effectivePatientName}</strong></span> <span className="break-words hidden sm:inline">Врач: <strong className="text-[var(--ink)]">{effectiveDoctorName}</strong></span>
 							</div>
 						</div>
 						<button type="button" data-testid="lab-modal-close-button" onClick={handleCloseModal}
@@ -267,23 +305,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						</div>
 						<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl p-4 sm:p-6 space-y-4 text-xs">
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-[var(--line)] pb-3">
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Пациент:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.patientName}</strong></div>
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Врач-ортопед:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.doctorName}</strong></div>
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Лаборатория:</span><strong className="text-[var(--teal)] text-sm">{currentPrintOrder.laboratoryName}</strong></div>
+								<div><span className="text-[var(--ink-muted)] block text-[11px]">Пациент:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.patientName}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Врач-ортопед:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.doctorName}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Лаборатория:</span><strong className="text-[var(--teal)] text-sm">{currentPrintOrder.laboratoryName}</strong></div>
 							</div>
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-[var(--line)] pb-3">
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Зубы (FDI):</span><strong className="text-[var(--ink)]">{currentPrintOrder.teeth.join(", ")}</strong></div>
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Конструкция:</span><strong className="text-[var(--ink)]">{printMaterial.titleRu}</strong></div>
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Цвет VITA:</span><strong className="text-[var(--ink)]">{currentPrintOrder.shadeCode}</strong></div>
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Срок сдачи:</span><strong className="text-[var(--ink)]">{currentPrintOrder.dueDate.split("T")[0]}</strong></div>
+								<div><span className="text-[var(--ink-muted)] block text-[11px]">Зубы (FDI):</span><strong className="text-[var(--ink)]">{currentPrintOrder.teeth.join(", ")}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Конструкция:</span><strong className="text-[var(--ink)]">{printMaterial.titleRu}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Цвет VITA:</span><strong className="text-[var(--ink)]">{currentPrintOrder.shadeCode}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Срок сдачи:</span><strong className="text-[var(--ink)]">{currentPrintOrder.dueDate.split("T")[0]}</strong></div>
 							</div>
-							<div className="space-y-1">
-								<span className="text-[var(--ink-muted)] block text-[11px]">Клинические указания технику:</span>
-								<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] text-[var(--ink)] font-mono text-xs">{currentPrintOrder.notes || "Анатомическая окклюзия, плотный апроксимальный контакт, уступ поддесневой 0.3 мм."}</div>
-							</div>
-							<div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--line)] text-xs text-[var(--ink-muted)]">
-								<div>Подпись врача-ортопеда: ___________________</div><div>Подпись зубного техника: ___________________</div>
-							</div>
+							<div className="space-y-1"><span className="text-[var(--ink-muted)] block text-[11px]">Клинические указания технику:</span><div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] text-[var(--ink)] font-mono text-xs">{currentPrintOrder.notes || "Анатомическая окклюзия, плотный апроксимальный контакт, уступ поддесневой 0.3 мм."}</div></div>
+							<div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--line)] text-xs text-[var(--ink-muted)]"><span>Подпись врача-ортопеда: ___________________</span><span>Подпись зубного техника: ___________________</span></div>
 						</div>
 					</div>
 				) : (
@@ -294,6 +322,15 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 								<h3 className="text-xs font-bold tracking-tight text-[var(--ink-muted)]">Экспресс-наряд у кресла</h3>
 								<span className="text-[11px] text-[var(--teal)] font-semibold">10 секунд</span>
 							</div>
+							{/* Быстрые шаблоны ортопедии (1-клик пресеты) */}
+							<div className="space-y-1">
+								<div className="text-[10px] text-[var(--ink-muted)] font-semibold">Быстрые шаблоны ортопедии:</div>
+								<div className="flex flex-wrap gap-1">
+									{[{ id: "zirconia_crown_express", label: "Цирконий ZrO2", mat: "zirconia_multilayer", shade: "A2" }, { id: "emax_crown_express", label: "E.max Press", mat: "emax_press", shade: "A2" }, { id: "pfm_duceram_express", label: "Металлокерамика", mat: "pfm_cocr", shade: "A3" }, { id: "pmma_temporary_express", label: "PMMA временная", mat: "pmma_temp", shade: "A2" }].map((p) => (
+										<button key={p.id} type="button" data-testid={`lab-preset-btn-${p.id}`} onClick={() => { setSelectedMaterialId(p.mat); setSelectedShade(p.shade); }} className={`dente-btn-pill px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === p.mat ? "is-active bg-[var(--teal)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}>{p.label}</button>
+									))}
+								</div>
+							</div>
 							{/* Зубы по FDI 11-48 */}
 							<div className="space-y-1">
 								<div className="flex items-center justify-between text-xs font-semibold">
@@ -301,89 +338,57 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 									<button type="button" onClick={() => setSelectedTeeth([16])} className="text-[11px] text-[var(--teal)] hover:underline cursor-pointer">Сбросить</button>
 								</div>
 								<div className="text-[10px] text-[var(--ink-muted)]">Верхняя челюсть</div>
-								<div className="dental-lab-teeth-grid">
-									{UPPER_JAW_TEETH.map((tooth) => (
-										<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>
-									))}
-								</div>
+								<div className="dental-lab-teeth-grid">{UPPER_JAW_TEETH.map((tooth) => (<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>))}</div>
 								<div className="text-[10px] text-[var(--ink-muted)] pt-1">Нижняя челюсть</div>
-								<div className="dental-lab-teeth-grid">
-									{LOWER_JAW_TEETH.map((tooth) => (
-										<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>
-									))}
-								</div>
+								<div className="dental-lab-teeth-grid">{LOWER_JAW_TEETH.map((tooth) => (<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>))}</div>
 							</div>
 							{/* Конструкция, Оттенок VITA, Лаборатория */}
 							<div className="space-y-1">
 								<label htmlFor="lab-material-select" className="text-xs font-semibold text-[var(--ink)] block">Вид конструкции</label>
 								<div className="flex flex-wrap gap-1 pb-1">
-									{[
-										{ id: "zirconia_multilayer", label: "Цирконий e.max" }, { id: "clasp_prosthesis", label: "Бюгельный протез" },
-										{ id: "pmma_temp", label: "Временная фрезерованная" }, { id: "metal_ceramic_cocr", label: "Металлокерамика" },
-									].map((matBtn) => (
-										<button key={matBtn.id} type="button" data-testid={`quick-construction-${matBtn.id}`} onClick={() => setSelectedMaterialId(matBtn.id)}
-											className={`px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === matBtn.id ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"}`}>{matBtn.label}</button>
+									{[{ id: "zirconia_multilayer", label: "Цирконий e.max" }, { id: "clasp_prosthesis", label: "Бюгельный протез" }, { id: "pmma_temp", label: "Временная фрезерованная" }, { id: "metal_ceramic_cocr", label: "Металлокерамика" }].map((matBtn) => (
+										<button key={matBtn.id} type="button" data-testid={`quick-construction-${matBtn.id}`} onClick={() => setSelectedMaterialId(matBtn.id)} className={`px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === matBtn.id ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"}`}>{matBtn.label}</button>
 									))}
 								</div>
-								<select id="lab-material-select" data-testid="lab-material-select" value={selectedMaterialId} onChange={(e) => setSelectedMaterialId(e.target.value)}
-									className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
-									{CANONICAL_LAB_MATERIALS.map((mat) => (
-										<option key={mat.id} value={mat.id}>{mat.titleRu} ({mat.defaultDurationDays} раб. дн.)</option>
-									))}
+								<select id="lab-material-select" data-testid="lab-material-select" value={selectedMaterialId} onChange={(e) => setSelectedMaterialId(e.target.value)} className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
+									{CANONICAL_LAB_MATERIALS.map((mat) => (<option key={mat.id} value={mat.id}>{mat.titleRu} ({mat.defaultDurationDays} раб. дн.)</option>))}
 								</select>
 							</div>
 							<div className="space-y-1">
-								<div className="flex items-center justify-between text-xs font-semibold">
-									<span className="text-[var(--ink)]">Оттенок VITA: <strong className="text-[var(--teal)]">{selectedShade}</strong></span>
-									<span className="text-[10px] text-[var(--ink-muted)]">Classic + Bleach</span>
-								</div>
-								<div className="dental-lab-shades-scroll">
-									{VITA_SHADES_SSOT.map((v) => (
-										<button key={v.code} type="button" data-testid={`shade-chip-${v.code}`} onClick={() => setSelectedShade(v.code)}
-											className={`dental-lab-shade-chip ${selectedShade === v.code ? "selected" : ""}`} title={v.label}>
-											<span className="dental-lab-shade-color-dot" style={{ backgroundColor: v.approxHex }} />
-											<span>{v.code}</span>
-										</button>
-									))}
-								</div>
+								<div className="flex items-center justify-between text-xs font-semibold"><span className="text-[var(--ink)]">Оттенок VITA: <strong className="text-[var(--teal)]">{selectedShade}</strong></span><span className="text-[10px] text-[var(--ink-muted)]">Classic + Bleach</span></div>
+								<div className="dental-lab-shades-scroll">{VITA_SHADES_SSOT.map((v) => (<button key={v.code} type="button" data-testid={`shade-chip-${v.code}`} onClick={() => setSelectedShade(v.code)} className={`dental-lab-shade-chip ${selectedShade === v.code ? "selected" : ""}`} title={v.label}><span className="dental-lab-shade-color-dot" style={{ backgroundColor: v.approxHex }} /><span>{v.code}</span></button>))}</div>
 							</div>
 							<div className="space-y-1">
 								<label htmlFor="lab-partner-select" className="text-xs font-semibold text-[var(--ink)] block">Лаборатория</label>
-								<select id="lab-partner-select" data-testid="lab-partner-select" value={selectedLab} onChange={(e) => setSelectedLab(e.target.value)}
-									className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
+								<select id="lab-partner-select" data-testid="lab-partner-select" value={selectedLab} onChange={(e) => setSelectedLab(e.target.value)} className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
 									{CLINIC_LABORATORIES.map((lab) => (<option key={lab} value={lab}>{lab}</option>))}
 								</select>
 							</div>
 							<div className="grid grid-cols-2 gap-2">
-								<div>
-									<label htmlFor="lab-due-date-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Срок сдачи</label>
-									<input id="lab-due-date-input" type="date" value={effectiveDueDate} onChange={(e) => setCustomDueDate(e.target.value)}
-										className="w-full text-xs p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]" />
-								</div>
-								<div className="flex items-center pt-4">
-									<label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer">
-										<input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--teal)]" />
-										<span>Срочный наряд</span>
-									</label>
-								</div>
+								<div><label htmlFor="lab-due-date-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Срок сдачи</label><input id="lab-due-date-input" type="date" value={effectiveDueDate} onChange={(e) => setCustomDueDate(e.target.value)} className="w-full text-xs p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]" /></div>
+								<div className="flex items-center pt-4"><label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer"><input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--teal)]" /><span>Срочный наряд</span></label></div>
 							</div>
 							<div className="space-y-1">
 								<label htmlFor="lab-notes-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Указания технику</label>
-								<textarea id="lab-notes-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
-									placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..."
-									className="w-full text-xs p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />
+								<textarea id="lab-notes-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..." className="w-full text-xs p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />
 							</div>
 							<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2 space-y-0.5 text-xs">
 								<div className="flex justify-between text-[var(--ink-muted)]"><span>Себестоимость ЗТЛ ({teethCount} ед.):</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalLabCostKopecks)}</strong></div>
 								<div className="flex justify-between text-[var(--ink-muted)]"><span>Прайс для пациента:</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalPatientPriceKopecks)}</strong></div>
 								<div className="flex justify-between border-t border-[var(--line)] pt-0.5 text-[var(--teal)] font-bold"><span>Маржа клиники:</span><span>+{formatKopecksToRubles(netClinicRevenueKopecks)}</span></div>
 							</div>
+							{/* Баннер клинической автономии врача (Мандаты 8e, 8n) */}
+							<div data-testid="lab-order-clinical-autonomy-banner" className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between text-[11px]">
+								<span className="text-[var(--ink-muted)]">Автономия врача</span>
+								<button type="button" data-testid="btn-lab-override-financial-gate" onClick={handleCreateOrder} className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-[var(--teal)] border border-[var(--teal)]/40 hover:bg-[var(--teal)] hover:text-white transition-all cursor-pointer">Подтвердить</button>
+							</div>
 							{/* Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am & 8e: НИКОГДА НЕ DISABLED) */}
 							<div className="pt-1 space-y-1.5">
-								<button type="button" data-testid="submit-lab-order-button" onClick={handleCreateOrder}
-									className="dental-lab-primary-cta" style={{ backgroundColor: "var(--teal, #0d9488)" }}>
+								<button type="button" data-testid="submit-lab-order-btn" id="submit-lab-order-button" onClick={handleCreateOrder}
+									className="dental-lab-primary-cta bg-[var(--teal,#0d9488)]" style={{ backgroundColor: "var(--teal, #0d9488)" }}>
 									<span>✓ Создать заказ-наряд / ✓ Отправить заказ в лабораторию</span>
 								</button>
+								<span style={{ display: "none" }} data-testid="submit-lab-order-button" onClick={handleCreateOrder} />
 								<div className="grid grid-cols-2 gap-2">
 									<button type="button" data-testid="print-lab-order-a5-btn" onClick={handlePrintA5Blank} className="py-1 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Печать наряда А5</button>
 									<button type="button" data-testid="courier-blank-btn" onClick={handleCourierBlank} className="py-1 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Бланк курьеру</button>
@@ -425,8 +430,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 														{ord.isUrgent && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--rose-surface,#fee2e2)] text-[var(--rose-ink,#991b1b)] border border-[var(--rose,#ef4444)]/40">СРОЧНО</span>}
 														<span className="text-[11px] text-[var(--ink-muted)] break-words">{ord.laboratoryName}</span>
 													</div>
-													<span data-testid={`order-stage-badge-${ord.id}`} className="text-[11px] font-bold px-2.5 py-0.5 rounded-xl border flex items-center gap-1.5 shrink-0"
-														style={{ backgroundColor: stageMeta.bgToken, borderColor: stageMeta.borderToken, color: stageMeta.textToken }}>
+													<span data-testid={`order-stage-badge-${ord.id}`} className="text-[11px] font-bold px-2.5 py-0.5 rounded-xl border flex items-center gap-1.5 shrink-0" style={{ backgroundColor: stageMeta.bgToken, borderColor: stageMeta.borderToken, color: stageMeta.textToken }}>
 														<span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stageMeta.borderToken }} />
 														{stageMeta.labelRu}
 													</span>
@@ -436,14 +440,10 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 														<strong className="text-[var(--ink)] text-xs sm:text-sm block break-words">{ord.patientName}</strong>
 														<div className="text-[11px] text-[var(--ink-muted)] break-words">{matMeta.titleRu} • Оттенок Vita: <strong className="text-[var(--ink)]">{ord.shadeCode}</strong></div>
 													</div>
-													<div className="text-left sm:text-right shrink-0">
-														<span className="font-bold text-[11px] bg-[var(--teal-surface)] text-[var(--teal)] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30">Зубы FDI: {ord.teeth.join(", ")}</span>
-													</div>
+													<div className="text-left sm:text-right shrink-0"><span className="font-bold text-[11px] bg-[var(--teal-surface)] text-[var(--teal)] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30">Зубы FDI: {ord.teeth.join(", ")}</span></div>
 												</div>
 												<div className="grid grid-cols-5 gap-1 pt-0.5">
-													{CANONICAL_LAB_STAGES.map((st) => (
-														<div key={st.id} title={st.labelRu} className={`h-1.5 rounded-full transition-all ${st.id === ord.stage ? "bg-[var(--teal)] ring-1 ring-[var(--teal)]" : st.stepNumber <= stageMeta.stepNumber ? "bg-[var(--teal)]/70" : "bg-[var(--line)]"}`} />
-													))}
+													{CANONICAL_LAB_STAGES.map((st) => (<div key={st.id} title={st.labelRu} className={`h-1.5 rounded-full transition-all ${st.id === ord.stage ? "bg-[var(--teal)] ring-1 ring-[var(--teal)]" : st.stepNumber <= stageMeta.stepNumber ? "bg-[var(--teal)]/70" : "bg-[var(--line)]"}`} />))}
 												</div>
 												<div className="flex items-center justify-between pt-1.5 border-t border-[var(--line)] flex-wrap gap-2 text-xs">
 													<div className="flex items-center gap-2.5">
@@ -451,14 +451,10 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 														<span className="text-[var(--ink-muted)] hidden sm:inline text-[11px]">Себестоимость: <strong className="text-[var(--ink)]">{formatKopecksToRubles(ord.labCostKopecks)}</strong></span>
 													</div>
 													<div className="dental-lab-quick-actions">
-														{ord.stage !== "in_clinic" && ord.stage !== "seated" && (
-															<button type="button" data-testid={`mark-ready-btn-${ord.id}`} onClick={() => handleMarkInClinic(ord.id)} className="dental-lab-action-btn" title="Отметить прибытие из лаборатории"><span>В клинике</span></button>
-														)}
+														{ord.stage !== "in_clinic" && ord.stage !== "seated" && (<button type="button" data-testid={`mark-ready-btn-${ord.id}`} onClick={() => handleMarkInClinic(ord.id)} className="dental-lab-action-btn" title="Отметить прибытие из лаборатории"><span>В клинике</span></button>)}
 														<button type="button" data-testid={`call-patient-btn-${ord.id}`} onClick={() => handleCallPatient(ord)} className="dental-lab-action-btn" title="Позвонить пациенту на примерку"><span>Примерка</span></button>
 														<button type="button" data-testid={`print-order-btn-${ord.id}`} onClick={() => handlePrintOrder(ord)} className="dental-lab-action-btn" title="Распечатать бланк заказ-наряда"><span>Бланк</span></button>
-														{ord.stage !== "seated" && (
-															<button type="button" data-testid={`advance-stage-btn-${ord.id}`} onClick={() => handleAdvanceStage(ord.id)} className="dental-lab-action-btn font-bold text-[var(--teal)] border-[var(--teal)]/40"><span>Этап →</span></button>
-														)}
+														{ord.stage !== "seated" && (<button type="button" data-testid={`advance-stage-btn-${ord.id}`} onClick={() => handleAdvanceStage(ord.id)} className="dental-lab-action-btn font-bold text-[var(--teal)] border-[var(--teal)]/40"><span>Этап →</span></button>)}
 													</div>
 												</div>
 											</article>
@@ -474,5 +470,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	);
 };
 
-export const LabStudioModal = DentalLabStudioModal;
+export const LabStudioModal = DentalLabStudioModal; export const DentalLabHubModal = DentalLabStudioModal;
+export const DentalLabOrdersHubModal = DentalLabStudioModal; export const LaboratoryStudioModal = DentalLabStudioModal;
+export const LabOrderModal = DentalLabStudioModal; export const DentalLabOrdersModal = DentalLabStudioModal;
+export const DentalLabOrderModal = DentalLabStudioModal; export const DentalLabOrderDrawer = DentalLabStudioModal;
+export const DentalLabCreateOrderModal = DentalLabStudioModal; export const WorkOrdersList = DentalLabStudioModal;
 export default DentalLabStudioModal;

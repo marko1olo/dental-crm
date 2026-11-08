@@ -126,6 +126,7 @@ export const labOrders = pgTable(
 			.references(() => patients.id),
 		doctorId: uuid("doctor_id"),
 		doctorName: text("doctor_name"),
+		laboratoryName: text("laboratory_name"),
 		secureToken: text("secure_token").notNull().unique(),
 		toothFdi: text("tooth_fdi"),
 		material: text("material"),

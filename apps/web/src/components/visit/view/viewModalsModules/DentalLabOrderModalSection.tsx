@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { DentalLabOrderDrawer } from "../../../lab/DentalLabOrderDrawer";
+import { DentalLabStudioModal } from "../../../lab/DentalLabStudioModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visitStore";
 import { showToast } from "../../../GlobalToast";
@@ -49,7 +49,7 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 	if (!isOpen) return null;
 
 	return (
-		<DentalLabOrderDrawer
+		<DentalLabStudioModal
 			isOpen={isOpen}
 			onClose={() => {
 				onClose();

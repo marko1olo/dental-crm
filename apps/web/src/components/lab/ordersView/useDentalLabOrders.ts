@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { useLabOrdersData } from "./hooks/useLabOrdersData";
 import { useLabOrdersFiltering } from "./hooks/useLabOrdersFiltering";
@@ -93,7 +93,7 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 			modals.setOpenMenuOrderId(null);
 			if (!o.id) return;
 			modals.setPromptState(createRepeatFittingPrompt(o, async (reason) => {
-				await actions.handleStatusChange(o.id!, "refitting", reason.trim() || "Повторная примерка конструкции");
+				await actions.handleStatusChange(o.id!, "fitting", reason.trim() || "Повторная примерка конструкции");
 				modals.setPromptState(null);
 			}));
 		},

@@ -3,6 +3,7 @@
  */
 
 import type { DentalLabWorkflowOrder } from "./dentalLabWorkflowEngine";
+import { checkLabDeadlineAndAlert } from "./workflowEngine/workflowDeadlineAlerts";
 
 export function mapRawApiOrderToWorkflowOrder(
 	raw: any,
@@ -18,9 +19,24 @@ export function mapRawApiOrderToWorkflowOrder(
 				.filter((n: number) => !isNaN(n) && n >= 11 && n <= 48)
 		: [11];
 
-	const priceRub = raw.priceRub || 22000;
-	const costRub = raw.costRub || 7000;
+	const priceRub = raw.patientPriceRub ?? raw.priceRub ?? (raw.patientPriceKopecks != null ? Number(raw.patientPriceKopecks) / 100 : raw.priceKopecks != null ? Number(raw.priceKopecks) / 100 : 0);
+	const costRub = raw.labCostRub ?? raw.costRub ?? (raw.costKopecks != null ? Number(raw.costKopecks) / 100 : raw.labCostKopecks != null ? Number(raw.labCostKopecks) / 100 : 0);
 	const count = teethArr.length || 1;
+	const isCompleted = ["fitted", "completed", "installed", "fixed"].includes(String(raw.currentStage || raw.status || "").toLowerCase());
+
+	const delayAlert = checkLabDeadlineAndAlert({
+		expectedLabDate: raw.expectedLabDateIso || raw.dueDate || raw.orderDateIso || raw.createdAt || new Date().toISOString(),
+		scheduledVisitDate: raw.scheduledVisitDateIso || raw.scheduledVisitDate || null,
+		fittingDate: raw.fittingDateIso || raw.fittingDate || null,
+		appointmentId: raw.appointmentId || undefined,
+		isInstalledOrCompleted: isCompleted,
+		orderNumber: raw.orderNumber || raw.order_number || `ЗТЛ-${1000 + idx}`,
+		patientName: raw.patientName || raw.patient_name || defaultPatientName,
+		doctorName: raw.doctorName || raw.doctor_name || defaultDoctorName,
+		labName: raw.labName || raw.lab_name,
+	});
+
+	const marginPercent = priceRub > 0 ? Math.round(((priceRub - costRub) / priceRub) * 1000) / 10 : 0;
 
 	return {
 		id: raw.id || `live-ztl-${idx}`,
@@ -64,7 +80,7 @@ export function mapRawApiOrderToWorkflowOrder(
 			labCostKopecks: costRub * 100 * count,
 			labCostTotalKopecks: costRub * 100 * count,
 			clinicGrossMarginKopecks: (priceRub - costRub) * 100 * count,
-			grossMarginPercent: 68.2,
+			grossMarginPercent: marginPercent,
 			doctorPercent: 20,
 			doctorWageBaseKopecks: (priceRub - costRub) * 100 * count,
 			doctorWageKopecks: Math.round((priceRub - costRub) * 20 * count),
@@ -76,19 +92,8 @@ export function mapRawApiOrderToWorkflowOrder(
 			clinicNetProfitRub: Math.round((priceRub - costRub) * 0.8 * count),
 			isBalanced: true,
 		},
-		delayAlert: {
-			hasAlert: false,
-			isDelayedAlert: false,
-			lab_delay_alert: false,
-			status: "ON_TRACK",
-			severity: "OK",
-			daysDifference: 5,
-			expectedLabDateIso: (raw.expectedLabDateIso || raw.dueDate || new Date().toISOString()).slice(0, 10),
-			alertMessageRu: "В графике",
-			detailedReasonRu: "Заказ активен",
-			recommendedActionRu: "Действий не требуется",
-		},
-		isDelayedAlert: false,
+		delayAlert,
+		isDelayedAlert: delayAlert.isDelayedAlert,
 		createdAtIso: raw.createdAt || new Date().toISOString(),
 		updatedAtIso: raw.updatedAt || new Date().toISOString(),
 	};

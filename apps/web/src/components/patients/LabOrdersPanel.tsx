@@ -1,11 +1,13 @@
 import React from "react";
 import { AlertCircle, FlaskConical, Loader2, Plus, RefreshCw } from "lucide-react";
 import { DentalLabOrdersView } from "../lab/DentalLabOrdersView";
-import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
+import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
 import { LabTrackingDrawer } from "../lab/LabTrackingDrawer";
 import { useLabOrdersPanelLogic } from "./useLabOrdersPanelLogic";
 import { LabOrderCardItem } from "./LabOrderCardItem";
 import type { LabOrderFilterKey } from "./labOrdersTypes";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./LabOrdersPanel.css";
 
 export type { LabOrder } from "./labOrdersTypes";
@@ -30,7 +32,11 @@ const FILTER_LABELS: readonly { key: LabOrderFilterKey; label: string }[] = [
  * - Прямое монтирование DentalLabOrderModal и LabTrackingDrawer в боевой DOM.
  * - Полную мобильную адаптивность Apple HIG (0px паразитного горизонтального дрифта).
  */
-export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.Element {
+export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.Element | null {
+	const { hasDentalLab } = useWorkspaceProfile();
+	if (hasDentalLab === false && !isDemoShowcaseMode()) {
+		return null;
+	}
 	if (!patientId) return <DentalLabOrdersView />;
 
 	const logic = useLabOrdersPanelLogic(patientId);
@@ -194,16 +200,14 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 
 			{/* Живое монтирование модального окна создания/редактирования наряда ЗТЛ */}
 			{logic.isOrderModalOpen && (
-				<DentalLabOrderModal
+				<DentalLabStudioModal
 					isOpen={logic.isOrderModalOpen}
 					onClose={() => {
 						logic.setIsOrderModalOpen(false);
 						logic.setSelectedOrderForEdit(null);
 					}}
 					patientId={patientId}
-					editingOrder={logic.selectedOrderForEdit}
-					initialOrder={logic.selectedOrderForEdit}
-					initialTab={logic.modalInitialTab}
+					initialTab="new_order"
 					onOrderSaved={() => {
 						logic.setIsOrderModalOpen(false);
 						logic.setSelectedOrderForEdit(null);

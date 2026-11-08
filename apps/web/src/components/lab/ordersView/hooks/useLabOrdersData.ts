@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
-import type { DentalLabOrderData } from "../../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../labMath";
 import { useAppStore } from "../../../../store/appStore";
 import { CANONICAL_DEMO_LAB_ORDERS } from "../constants";
 

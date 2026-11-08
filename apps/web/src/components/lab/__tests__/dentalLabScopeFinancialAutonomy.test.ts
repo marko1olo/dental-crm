@@ -52,7 +52,7 @@ describe("dentalLabScopeFinancialAutonomy — Mandate 8e Autonomy & Module Bound
 	it("Изоляция модуля ЗТЛ в components/lab/", () => {
 		const files = fs.readdirSync(labDir);
 		assert.ok(files.includes("DentalLabOrdersView.tsx"));
-		assert.ok(files.includes("DentalLabOrderModal.tsx"));
+		assert.ok(files.includes("DentalLabStudioModal.tsx"));
 		assert.ok(files.includes("DentalLabPriceMatrixModal.tsx"));
 	});
 });

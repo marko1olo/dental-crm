@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 import type { DentalLabWorkflowOrder, LabWorkflowStatus } from "../dentalLabWorkflowEngine";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import type { ReadyInClinicLabOrder } from "../DentalLabReadyInClinicModal";

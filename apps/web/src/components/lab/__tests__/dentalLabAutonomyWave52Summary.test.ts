@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	buildLabOrderMessengerSummary,
 	type LabOrderMessengerParams,
-} from "../DentalLabOrderModal";
+} from "../DentalLabStudioModal";
 
 describe("Wave 52 — Dental Lab Messenger Summary", () => {
 	it("1. buildLabOrderMessengerSummary correctly formats order summary with all fields and zero emojis", () => {

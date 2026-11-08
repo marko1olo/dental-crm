@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertTriangle, Clock, Truck, CheckCircle2 } from "lucide-react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 
 export type LabDueStatus = "burning" | "today" | "in_transit" | "ready" | "normal";
 

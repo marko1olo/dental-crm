@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 import { uploadScanFile } from "./labScanUploadApi";
 
 export function useLabAttachScanState(

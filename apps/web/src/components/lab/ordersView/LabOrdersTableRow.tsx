@@ -3,7 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import { money } from "../../../AppHelpers";
 import { formatLabConstructionTitle, formatLabMaterial } from "../../../pages/LabOrdersPage";
 import { SHADE_SWATCH_MAP } from "../labMath";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 import { renderLabDueBadge } from "./labDueBadges";
 import type { LabOrderRowActionsMenuProps } from "./LabOrderRowActionsMenu";
 import { LabOrdersTableRowButtons } from "./LabOrdersTableRowButtons";

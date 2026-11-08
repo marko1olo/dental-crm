@@ -12,7 +12,7 @@ export type { ExpressLabPreset };
 export {
 	type LabOrderMessengerParams,
 	buildLabOrderMessengerSummary,
-} from "./orderModalModules/labOrderMessengerSummary";
+} from "./dentalLabDefinitions";
 
 export {
 	EXPRESS_PRESET_ZIRCONIA_CROWN,

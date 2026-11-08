@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	EXPRESS_PRESET_ZIRCONIA_CROWN,
 	EXPRESS_PRESET_PFM_DUCERAM,
-} from "../DentalLabOrderModal";
+} from "../dentalLabModalPresets";
 
 describe("dentalLabAutonomyWave43 — Core Smoke Check", () => {
 	it("Express presets are initialized with proper turnaround days", () => {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { DentalLabOrderData } from "../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../labMath";
 
 export interface TimelineTrialDatesCardsProps {
 	order: DentalLabOrderData;

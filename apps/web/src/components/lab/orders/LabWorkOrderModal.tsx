@@ -4,9 +4,9 @@ import React from "react";
  * Consolidates duplicate lab order logic into canonical DentalLabOrderModal.
  */
 import {
-	DentalLabOrderModal,
-	type DentalLabOrderModalProps,
-} from "../DentalLabOrderModal";
+	DentalLabStudioModal as DentalLabOrderModal,
+	type DentalLabStudioModalProps as DentalLabOrderModalProps,
+} from "../DentalLabStudioModal";
 
 export type LabWorkOrderModalProps = DentalLabOrderModalProps;
 export const LabWorkOrderModal = DentalLabOrderModal;

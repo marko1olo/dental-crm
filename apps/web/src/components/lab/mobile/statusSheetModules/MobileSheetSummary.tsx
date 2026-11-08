@@ -13,7 +13,7 @@ export function MobileSheetSummary({ order }: MobileSheetSummaryProps): React.JS
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
 	const labNameDisplay = (order as any).labName || "Центральная CAD/CAM ЗТЛ";
 	const techNameDisplay = (order as any).technicianName || "Дежурный зубной техник";
-	const labPhoneDisplay = (order as any).labPhone || (order as any).patientPhone || "+7 (999) 450-23-11";
+	const labPhoneDisplay = (order as any).labPhone || (order as any).technicianPhone || null;
 
 	return (
 		<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
@@ -32,14 +32,24 @@ export function MobileSheetSummary({ order }: MobileSheetSummaryProps): React.JS
 					<div className="text-xs font-bold text-[var(--ink)] truncate">{labNameDisplay}</div>
 					<div className="text-[11px] text-[var(--muted)] truncate">{techNameDisplay}</div>
 				</div>
-				<a
-					href={`tel:${labPhoneDisplay.replace(/[^\d+]/g, "")}`}
-					className="mobile-lab-call-btn"
-					title="Позвонить технику"
-					data-testid="mobile-sheet-call-technician-btn"
-				>
-					<Phone size={18} />
-				</a>
+				{labPhoneDisplay ? (
+					<a
+						href={`tel:${labPhoneDisplay.replace(/[^\d+]/g, "")}`}
+						className="mobile-lab-call-btn"
+						title="Позвонить технику"
+						data-testid="mobile-sheet-call-technician-btn"
+					>
+						<Phone size={18} />
+					</a>
+				) : (
+					<span
+						className="mobile-lab-call-btn opacity-40 cursor-not-allowed inline-flex items-center justify-center"
+						title="Телефон техника не указан"
+						data-testid="mobile-sheet-call-technician-btn"
+					>
+						<Phone size={18} />
+					</span>
+				)}
 			</div>
 		</div>
 	);

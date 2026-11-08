@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { DentalLabOrderData } from "../../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../labMath";
 import type { LabPromptDialogState } from "../../LabActionPromptModal";
 import type { ReadyInClinicLabOrder } from "../../DentalLabReadyInClinicModal";
 

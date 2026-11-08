@@ -4,6 +4,8 @@ import React from "react";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { AppointmentModalLabEmpty } from "./appointmentModalLab/AppointmentModalLabEmpty";
 import { AppointmentModalLabCard } from "./appointmentModalLab/AppointmentModalLabCard";
 import {
@@ -28,6 +30,10 @@ export function AppointmentModalLabSection({
   setEndsAtLocal,
   onClose,
 }: AppointmentModalLabSectionProps) {
+  const { hasDentalLab } = useWorkspaceProfile();
+  if (hasDentalLab === false && !isDemoShowcaseMode()) {
+    return null;
+  }
   const referenceDate = startsAtLocal ? new Date(startsAtLocal) : new Date();
   const items = normalizeAppointmentLabItems(appointment, activeLabOrders, referenceDate);
 

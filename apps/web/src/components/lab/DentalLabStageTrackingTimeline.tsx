@@ -1,5 +1,5 @@
 import React from "react";
-import type { DentalLabOrderData } from "./DentalLabOrderModal";
+import type { DentalLabOrderData } from "./labMath";
 import {
 	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
 	mapTo6StageOrthopedicLifecycle,

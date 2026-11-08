@@ -1,4 +1,4 @@
-import type { DentalLabOrderData } from "../../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../labMath";
 
 export function createTechnicianCommentPrompt(
 	order: DentalLabOrderData,

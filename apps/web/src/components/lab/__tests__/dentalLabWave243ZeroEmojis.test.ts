@@ -9,9 +9,9 @@ describe("Wave 243 — Zero Emojis Compliance", () => {
 		const currentFile = fileURLToPath(import.meta.url);
 		const labDir = path.resolve(path.dirname(currentFile), "..");
 		const targetFiles = [
-			"DentalLabOrderModal.tsx",
-			"DentalLabOrdersHubModal.tsx",
-			"DentalLabShadeSelector.tsx",
+			"DentalLabStudioModal.tsx",
+			"DentalLabOrdersView.tsx",
+			"DentalLabShadePicker.tsx",
 			"DentalLabPrintBlank.tsx",
 		];
 

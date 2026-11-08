@@ -1,6 +1,6 @@
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
-import type { DentalLabOrderData } from "../../DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../labMath";
 
 export function copyLabPortalLink(token?: string): void {
 	if (!token || typeof window === "undefined") return;
