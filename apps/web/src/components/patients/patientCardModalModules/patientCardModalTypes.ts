@@ -23,11 +23,15 @@ export const DEMO_SHOWCASE_MODAL_SAFETY: PatientClinicalSafetyProfile = {
 	customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания отрицает. Физиологическая норма.",
 };
 
+export const PATIENT_LEGAL_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
+export const CLINICAL_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
+export type LegalRepresentativeType = RepresentativeRelationshipType;
+export type LegalRepresentativeTypeMeta = RepresentativeRelationshipMeta;
+
 export {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	/** @deprecated Mandate 8ap: Sovereign DENTE catalog is DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG */
-	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
+	PATIENT_LEGAL_REPRESENTATIVE_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,

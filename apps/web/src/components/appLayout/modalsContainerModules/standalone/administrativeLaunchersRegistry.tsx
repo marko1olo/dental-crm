@@ -11,11 +11,9 @@ import { clearUrlTokens } from "./deepLinkUrl";
 import { DirectLoyaltyLauncher } from "../../../loyalty/DirectLoyaltyLauncher";
 import { DirectInsuranceLauncher } from "../../../insurance/DirectInsuranceLauncher";
 import { DirectPublicBookingLauncher } from "../../../booking/DirectPublicBookingLauncher";
-import { DirectAppointmentLauncher } from "../../../schedule/DirectAppointmentLauncher";
 import { DirectDentalLabLauncher } from "../../../lab/DirectDentalLabLauncher";
 import { DirectTelephonyLauncher } from "../../../telephony/DirectTelephonyLauncher";
 import { DirectRecallLauncher } from "../../../recalls/DirectRecallLauncher";
-import { DirectScheduleLauncher } from "../../../schedule/DirectScheduleLauncher";
 import { DirectTreatmentPlanLauncher } from "../../../treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectCashboxLauncher } from "../../../cashbox/DirectCashboxLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
@@ -26,8 +24,6 @@ import { PatientOmnichannelHubModal } from "../../../messaging/PatientOmnichanne
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectUkepSigningLauncher } from "../../../documents/ukep/DirectUkepSigningLauncher";
-import { DirectPatientLauncher } from "../../../patients/DirectPatientLauncher";
-import { DirectPatientStudioLauncher } from "../../../patients/DirectPatientStudioLauncher";
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
@@ -53,6 +49,29 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			hashPrefixes: ["#payroll?", "#doctor-payroll?", "#salary?", "#commissions?"],
 		},
 		render: () => <DirectPayrollLauncher />,
+	},
+	// 0b. Расчетный кошелек врача (SSOT)
+	{
+		id: "doctor-payout-wallet",
+		title: "Мобильный расчетный кошелек врача",
+		criteria: {
+			tokens: ["wallet", "doctor-wallet", "doctor_wallet"],
+			searchIncludes: ["wallet=1", "standalone=wallet", "payout_wallet=1"],
+			exactHashes: ["#wallet", "#doctor-wallet", "#doctor-payout-wallet"],
+			hashPrefixes: ["#wallet?", "#doctor-wallet?", "#doctor-payout-wallet?"],
+		},
+		render: () => {
+			const StandaloneDoctorWallet = React.lazy(() =>
+				import("./administrative/DoctorWalletLaunchers").then((m) => ({
+					default: () => m.renderDoctorWalletLaunchers() || <></>,
+				})),
+			);
+			return (
+				<React.Suspense fallback={<div className="p-4 text-center">Загрузка кошелька врача...</div>}>
+					<StandaloneDoctorWallet />
+				</React.Suspense>
+			);
+		},
 	},
 	// 0. Студия кассовой смены и Z-отчёт (SSOT)
 	{
@@ -126,18 +145,6 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		},
 		render: () => <DirectPublicBookingLauncher />,
 	},
-	// 3b. Карточка приёма и быстрое бронирование (SSOT)
-	{
-		id: "appointment-studio",
-		title: "Карточка приёма и быстрое бронирование слота",
-		criteria: {
-			tokens: ["appointment", "quick-book", "booking-modal", "appointment-studio"],
-			searchIncludes: ["appointment=1", "quick-book=1", "booking-modal=1", "standalone=appointment"],
-			exactHashes: ["#appointment", "#quick-book", "#booking-modal", "#appointment-studio"],
-			hashPrefixes: ["#appointment?", "#appointment/", "#quick-book?", "#booking-modal?"],
-		},
-		render: () => <DirectAppointmentLauncher />,
-	},
 	// 4. Зуботехническая лаборатория и наряды
 	{
 		id: "dental-lab",
@@ -171,16 +178,6 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			exclude: ["recalls", "recall-hub", "prophylaxis"],
 		},
 		render: () => <DirectTelephonyLauncher />,
-	},
-	// 6. Расписание приёмов и сетка кресел
-	{
-		id: "schedule-studio",
-		title: "Расписание приёмов и график врачей",
-		criteria: {
-			tokens: ["schedule_studio", "schedule-studio", "chair-schedule", "appointments"],
-			exactHashes: ["#schedule", "#appointments"],
-		},
-		render: () => <DirectScheduleLauncher />,
 	},
 	// 7. Планы лечения и комплексные сметы
 	{
@@ -302,7 +299,11 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		criteria: {
 			tokens: ["patients", "patient-studio", "patient_studio", "express-patient", "express_patient"],
 		},
-		render: () => <DirectPatientStudioLauncher />,
+		render: () => (
+			<StandalonePatientCardHost
+				onClose={() => clearUrlTokens(["patients", "patient-studio", "patient_studio", "express-patient", "express_patient"])}
+			/>
+		),
 	},
 	// 16. Карточка пациента 360
 	{

@@ -286,7 +286,19 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
             if (setIsPendingOnlineBookingsOpen) {
               setIsPendingOnlineBookingsOpen(false);
             }
-            setModalAppointment(app);
+            setQuickBookingSlot({
+              dateKey: (app as any).date || (app.startsAt ? app.startsAt.slice(0, 10) : undefined),
+              startTime: (app as any).startTime || (app.startsAt ? app.startsAt.slice(11, 16) : undefined),
+              startsAt: app.startsAt,
+              doctorUserId: app.doctorUserId || null,
+              chairId: app.chairId || null,
+              patientId: app.patientId || null,
+              patientName: (app as any).patientName,
+              durationMinutes: (app as any).durationMinutes || 30,
+              reason: app.reason,
+              editingAppointment: app,
+            });
+            setQuickBookingOpen(true);
           }}
         />
       )}

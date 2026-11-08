@@ -18,7 +18,6 @@ import { renderOmnichannelAndTelephonyLauncher } from "./administrative/Omnichan
 import { renderSanPinStandaloneLauncher } from "./administrative/SanPinStandaloneLauncher";
 import { renderLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
 import { renderRecallsStandaloneLauncher } from "./administrative/RecallsStandaloneLauncher";
-import { DirectAppointmentLauncher } from "../../../schedule/DirectAppointmentLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
@@ -98,19 +97,6 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.search.includes("assistant=1"))
 	) {
 		return <DirectCopilotLauncher />;
-	}
-
-	// 0. Карточка приёма и быстрое бронирование (?appointment=1, #appointment, #quick-book)
-	if (
-		typeof window !== "undefined" &&
-		(window.location.hash === "#appointment" ||
-			window.location.hash.startsWith("#appointment?") ||
-			window.location.hash === "#quick-book" ||
-			window.location.hash.startsWith("#quick-book?") ||
-			window.location.hash === "#booking-modal" ||
-			window.location.search.includes("appointment=1"))
-	) {
-		return <DirectAppointmentLauncher />;
 	}
 
 	// 0. Повторные вызовы и диспансеризация (?recalls=1, #recalls, #prophylaxis)

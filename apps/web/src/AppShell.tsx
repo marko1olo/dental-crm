@@ -22,6 +22,7 @@ import { DirectCashierLauncher } from "./components/finance/DirectCashierLaunche
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
+import { StandalonePatientCardHost } from "./components/appLayout/modalsContainerModules/standalone/clinical/StandalonePatientCardHost";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
@@ -41,6 +42,7 @@ import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLaunch
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
+import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
 import { DirectGate0InspectionLauncher } from "./components/odontogram/DirectGate0InspectionLauncher";
@@ -55,6 +57,7 @@ import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricL
 import { DirectLeadsLauncher } from "./components/leads/DirectLeadsLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
+import { useAppStore } from "./store/appStore";
 import { ThemeBackground } from "./components/theme";
 import "./theme.css";
 
@@ -214,8 +217,6 @@ function isStandaloneActive(): boolean {
 		h.includes("patient_card") ||
 		s.includes("patient-card") ||
 		h.includes("patient-card") ||
-		s.includes("patients") ||
-		h.includes("patients") ||
 		s.includes("patient-studio") ||
 		h.includes("patient-studio") ||
 		s.includes("express-patient") ||
@@ -283,6 +284,20 @@ function isStandaloneActive(): boolean {
 	);
 }
 
+function GlobalKeyboardShortcuts() {
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K" || e.key === "л" || e.key === "Л" || e.code === "KeyK")) {
+				e.preventDefault();
+				useAppStore.getState().setOmnibarOpen(true);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, []);
+	return null;
+}
+
 export function AppShell() {
 	const [standalone, setStandalone] = useState<boolean>(() => isStandaloneActive());
 
@@ -299,6 +314,7 @@ export function AppShell() {
 		<BootErrorBoundary audience="clinic">
 			<ThemeController />
 			<ThemeBackground />
+			<GlobalKeyboardShortcuts />
 			{!standalone && (
 				<Suspense
 					fallback={
@@ -350,6 +366,7 @@ export function AppShell() {
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
 			<DirectDoctorPayrollReportLauncher />
+			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />
 			<DirectGate0InspectionLauncher />
@@ -363,6 +380,9 @@ export function AppShell() {
 			<DirectPediatricLauncher />
 			<DirectLeadsLauncher />
 			<DirectSettingsLauncher />
+			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
+				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
+			)}
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
