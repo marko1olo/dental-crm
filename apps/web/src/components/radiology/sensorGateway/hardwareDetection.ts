@@ -228,3 +228,6 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 		nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
 	};
 }
+
+export const detectConnectedSensors = autoDetectConnectedSensor;
+

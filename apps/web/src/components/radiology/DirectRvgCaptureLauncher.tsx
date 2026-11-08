@@ -10,6 +10,8 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { usePatientStore } from "../../store/patientStore";
+import { useVisitStore } from "../../store/visitStore";
 import { DirectRvgCaptureModal } from "./DirectRvgCaptureModal";
 
 export const DirectRvgCaptureLauncher: React.FC = () => {
@@ -67,16 +69,26 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 		}
 	}, []);
 
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
+
+	const patientName =
+		patientCoreDraft.fullName?.trim() ||
+		(selectedPatientId ? `Пациент #${selectedPatientId}` : "Пациент не выбран");
+	const patientCardNumber = selectedPatientId ? `ЭМК №${selectedPatientId}` : "Карта не выбрана";
+	const initialToothFdi = activeToothNumber ? String(activeToothNumber) : undefined;
+
 	if (!isOpen) return null;
 
 	return (
 		<DirectRvgCaptureModal
 			isOpen={isOpen}
 			onClose={handleCloseModal}
-			patientName="Захаров Иван Дмитриевич"
-			patientCardNumber="ЭМК №2026/891"
-			doctorName="Д-р Захаров А. В."
-			initialToothFdi="16"
+			patientName={patientName}
+			patientCardNumber={patientCardNumber}
+			doctorName="Лечащий врач"
+			initialToothFdi={initialToothFdi}
 		/>
 	);
 };

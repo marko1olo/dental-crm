@@ -3,16 +3,25 @@
  * Монтируется в корневой AppShell, слушает хэш #radiology / #visiograph и custom event.
  */
 import React, { useEffect, useState } from "react";
+import { usePatientStore } from "../../store/patientStore";
+import { useVisitStore } from "../../store/visitStore";
 import { VisiographStudyViewer } from "./VisiographStudyViewer";
 import { VisiographHotFolderToast } from "./VisiographHotFolderToast";
 
-const DEMO_RADIOLOGY_PATIENT = {
-	id: "pat-walkin",
-	fullName: "Захаров Иван Дмитриевич",
-	tooth: "16",
-};
-
 export const DirectRadiologyLauncher: React.FC = () => {
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
+
+	const patientName =
+		patientCoreDraft.fullName?.trim() ||
+		(selectedPatientId ? `Пациент #${selectedPatientId}` : "Пациент не выбран");
+	const patientId = selectedPatientId || undefined;
+	const initialTooth = activeToothNumber ? String(activeToothNumber) : undefined;
+	const studyTitle = initialTooth
+		? `Прицельная радиовизиография RVG #${initialTooth}`
+		: "Прицельная радиовизиография RVG";
+
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
 		const s = window.location.search || "";
@@ -59,10 +68,10 @@ export const DirectRadiologyLauncher: React.FC = () => {
 				>
 					<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
 						<VisiographStudyViewer
-							studyTitle="Прицельная радиовизиография RVG #16"
-							patientName={DEMO_RADIOLOGY_PATIENT.fullName}
-							patientId={DEMO_RADIOLOGY_PATIENT.id}
-							initialTooth={DEMO_RADIOLOGY_PATIENT.tooth}
+							studyTitle={studyTitle}
+							patientName={patientName}
+							patientId={patientId}
+							initialTooth={initialTooth}
 							onClose={() => setIsOpen(false)}
 						/>
 					</div>

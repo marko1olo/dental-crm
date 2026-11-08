@@ -18,7 +18,7 @@ export interface ApplyNormaOptions {
 	readonly mutationHeaders: (extra?: Record<string, string>) => Record<string, string>;
 }
 
-export function applyNormaTo043({
+export function applyNormaToMedicalRecord({
 	targetToothCode,
 	currentScanId,
 	effectivePatientId,
@@ -73,13 +73,15 @@ export function applyNormaTo043({
 	}
 }
 
+export const applyNormaTo043 = applyNormaToMedicalRecord;
+
 export interface InsertReportOptions {
 	readonly reportText: string;
 	readonly targetToothCode: string | null;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
-export function insertReportTo043Protocol({
+export function insertReportToVisitProtocol({
 	reportText,
 	targetToothCode,
 	onInsertToProtocol,
@@ -114,5 +116,5 @@ export function insertReportTo043Protocol({
 	showToast(`Заключение лучевой диагностики внесено в медицинскую карту${toothPrefix ? ` (${toothPrefix.trim()})` : ""}`, "success");
 }
 
-export const applyNormaToMedicalRecord = applyNormaTo043;
-export const insertReportToMedicalProtocol = insertReportTo043Protocol;
+export const insertReportTo043Protocol = insertReportToVisitProtocol;
+export const insertReportToMedicalProtocol = insertReportToVisitProtocol;

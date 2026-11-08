@@ -3,6 +3,9 @@ import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProto
 import { DirectRvgCaptureModal } from "../../radiology/DirectRvgCaptureModal";
 import { VisiographStudyViewer } from "../../radiology/VisiographStudyViewer";
 import { showToast } from "../../GlobalToast";
+import { detectConnectedSensors } from "../../radiology/sensorGateway/hardwareDetection";
+import { usePatientStore } from "../../../store/patientStore";
+import { useVisitStore } from "../../../store/visitStore";
 import { DiagnosticImagingMetricsGrid } from "./DiagnosticImagingMetricsGrid";
 import { DiagnosticImagingSensorsList } from "./DiagnosticImagingSensorsList";
 
@@ -13,13 +16,31 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 	const [isCheckingSensors, setIsCheckingSensors] = useState(false);
 	const [sensorStatus, setSensorStatus] = useState<string>("Готов к захвату (Auto-Trigger)");
 
-	const handleCheckSensors = () => {
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
+
+	const patientName = patientCoreDraft.fullName?.trim() || (selectedPatientId ? `Пациент #${selectedPatientId}` : "Пациент не выбран");
+	const patientId = selectedPatientId || undefined;
+	const activeTooth = activeToothNumber ? String(activeToothNumber) : undefined;
+
+	const handleCheckSensors = async () => {
 		setIsCheckingSensors(true);
-		setTimeout(() => {
+		try {
+			const res = await detectConnectedSensors();
 			setIsCheckingSensors(false);
-			setSensorStatus("Vatech EzSensor Classic — Активен (USB 3.0 / Hot Folder)");
-			showToast("Датчики RVG и папка Hot Folder проверены: активно", "success", 3000);
-		}, 300);
+			if (res.isDetected) {
+				setSensorStatus(`${res.sensorModelName} — Активен (${res.calibratedResolution})`);
+				showToast(`Обнаружен датчик: ${res.sensorModelName}`, "success", 3000);
+			} else {
+				setSensorStatus("Датчик не обнаружен (USB / Hot Folder)");
+				showToast("Аппаратный датчик визиографа не обнаружен", "info", 3000);
+			}
+		} catch {
+			setIsCheckingSensors(false);
+			setSensorStatus("Датчик не обнаружен");
+			showToast("Ошибка опроса оборудования", "warning", 3000);
+		}
 	};
 
 	return (
@@ -56,8 +77,9 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 					<div className="w-full max-w-4xl h-[620px] max-h-[90vh]">
 						<VisiographStudyViewer
 							studyTitle="Прицельная радиовизиография"
-							patientName="Захаров Иван Дмитриевич"
-							initialTooth="16"
+							patientName={patientName}
+							patientId={patientId}
+							initialTooth={activeTooth || "11"}
 							modality="rvg"
 							onClose={() => setIsViewerOpen(false)}
 							onSaveToVisit={() => {
@@ -73,9 +95,9 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 				<ClinicalPhotoProtocolModal
 					isOpen={true}
 					onClose={() => setIsPhotoOpen(false)}
-					patientName="Захаров Иван Дмитриевич"
-					patientId="demo_patient_diag"
-					doctorName="Д-р Воронов Алексей Владимирович"
+					patientName={patientName}
+					patientId={patientId || "pat_walkin"}
+					doctorName="Лечащий врач"
 				/>
 			)}
 
@@ -83,10 +105,10 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 				<DirectRvgCaptureModal
 					isOpen={true}
 					onClose={() => setIsRvgOpen(false)}
-					patientName="Захаров Иван Дмитриевич"
-					patientId="demo_patient_diag"
-					initialToothFdi="16"
-					doctorName="Д-р Воронов Алексей Владимирович"
+					patientName={patientName}
+					patientId={patientId || "pat_walkin"}
+					initialToothFdi={activeTooth}
+					doctorName="Лечащий врач"
 				/>
 			)}
 		</div>

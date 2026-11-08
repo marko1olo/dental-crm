@@ -39,6 +39,7 @@ export const VisiographToolbarActions: React.FC<Props> = ({
 			<button
 				type="button"
 				data-testid="btn-visiograph-norma-043"
+				data-action-testid="btn-visiograph-norma-protocol"
 				onClick={onApplyNormaTo043}
 				className="secondary-button shrink-0"
 				style={getNormaButtonStyle(isNormaApplied)}
