@@ -28,7 +28,7 @@ import {
 	createQuickCarpuleWriteoffDocument,
 	createQuickVisitWriteoffDocument,
 } from "../../inventory/writeoff/clinicalWriteoffEngine.js";
-import { TelephonyFloatingWidget } from "../../telephony/TelephonyFloatingWidget.js";
+import { TelephonySoftphonePopover } from "../../telephony/headerCapsule/TelephonySoftphonePopover.js";
 import { validate54FzBuyerInn } from "../cashboxOperations.js";
 
 describe("Wave 46: 54-FZ Buyer INN Optionality for Citizens (Mandates 8e & 8n)", () => {
@@ -250,8 +250,9 @@ describe("Wave 46: Strict Zero Emojis (Mandate 8d Item 7)", () => {
 describe("Wave 46: Telephony Softphone Autonomy (Mandate 8e)", () => {
 	it("verifies dialer call button has testid and is never disabled", () => {
 		const html = renderToString(
-			React.createElement(TelephonyFloatingWidget, {
-				showDialerDefault: true,
+			React.createElement(TelephonySoftphonePopover, {
+				onClose: () => {},
+				isStandalone: true,
 			})
 		);
 

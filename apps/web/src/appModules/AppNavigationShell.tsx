@@ -13,7 +13,6 @@ import {
 	AppViewRouter,
 } from "../components/appLayout";
 import { TelephonyDrawer } from "../components/telephony/TelephonyDrawer";
-import { TelephonyToast } from "../components/telephony/TelephonyToast";
 import { preloadWorkspaceView } from "../workspacePreload";
 import { getFilteredAppViews } from "../workspaceShell";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
@@ -89,7 +88,6 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 				allowedViews={getFilteredAppViews(selectedWorkspaceRole)}
 			/>
 			<TelephonyDrawer />
-			<TelephonyToast />
 		</main>
 	);
 }

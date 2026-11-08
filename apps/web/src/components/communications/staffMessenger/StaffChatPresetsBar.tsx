@@ -1,4 +1,5 @@
 import type React from "react";
+import { AlertTriangle, Bell, Camera, Clock, DoorOpen, Sparkles, Stethoscope, User } from "lucide-react";
 import type { StaffChatPresetsBarProps } from "./types";
 
 export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onIntercomPing }) => {
@@ -18,7 +19,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong,#cbd5e1)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97]"
 				data-testid="intercom-btn-call-assistant" title="Срочно вызвать ассистента в кабинет"
 			>
-				<span>🪑</span><span>Нужен ассистент</span>
+				<User size={15} className="text-[var(--teal)] shrink-0" /><span>Нужен ассистент</span>
 			</button>
 
 			<button
@@ -26,7 +27,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong,#cbd5e1)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97]"
 				data-testid="intercom-btn-invite-next" title="Приём завершён: пригласите следующего пациента"
 			>
-				<span>🚪</span><span>Пригласите следующего</span>
+				<DoorOpen size={15} className="text-[var(--primary)] shrink-0" /><span>Пригласите следующего</span>
 			</button>
 
 			<button
@@ -34,7 +35,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong,#cbd5e1)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97]"
 				data-testid="intercom-btn-delay-10m" title="Предупредить о задержке приёма на 10 минут"
 			>
-				<span>⏳</span><span>Задержка 10 мин</span>
+				<Clock size={15} className="text-amber-500 shrink-0" /><span>Задержка 10 мин</span>
 			</button>
 
 			<button
@@ -42,7 +43,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong,#cbd5e1)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97]"
 				data-testid="intercom-btn-sterilization" title="Запрос в стерилизационную на подготовку набора"
 			>
-				<span>🧼</span><span>Стерилизация</span>
+				<Sparkles size={15} className="text-[var(--primary)] shrink-0" /><span>Стерилизация</span>
 			</button>
 
 			<button
@@ -50,7 +51,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97] hidden md:inline-flex"
 				data-testid="intercom-btn-patient-arrived" title="Пациент подошел и ожидает в холле"
 			>
-				<span>🛎️</span><span>В холле</span>
+				<Bell size={15} className="text-[var(--muted)] shrink-0" /><span>В холле</span>
 			</button>
 
 			<button
@@ -58,7 +59,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97] hidden lg:inline-flex"
 				data-testid="intercom-btn-xray-ready" title="Снимок КТ загружен в систему"
 			>
-				<span>📷</span><span>Снимок КТ</span>
+				<Camera size={15} className="text-[var(--muted)] shrink-0" /><span>Снимок КТ</span>
 			</button>
 
 			<button
@@ -66,7 +67,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="secondary-button shrink-0 min-h-[40px] px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97] hidden lg:inline-flex"
 				data-testid="intercom-btn-lab-ready" title="Ортопедическая работа поступила из лаборатории"
 			>
-				<span>🦷</span><span>ЗТЛ</span>
+				<Stethoscope size={15} className="text-[var(--muted)] shrink-0" /><span>ЗТЛ</span>
 			</button>
 
 			<button
@@ -74,7 +75,7 @@ export const StaffChatPresetsBar: React.FC<StaffChatPresetsBarProps> = ({ onInte
 				className="shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.97]"
 				data-testid="intercom-btn-urgent-doctor" title="Срочный вызов дежурного врача в кабинет!"
 			>
-				<span>🚨</span><span>SOS</span>
+				<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" /><span>SOS</span>
 			</button>
 		</div>
 	);

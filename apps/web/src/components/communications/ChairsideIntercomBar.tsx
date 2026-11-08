@@ -1,4 +1,4 @@
-import { Camera, ChevronDown, Clock, Radio, ShieldAlert, Sparkles, UserPlus } from "lucide-react";
+import { Camera, ChevronDown, Clock, Radio, ShieldAlert, Sparkles, Stethoscope, User, UserPlus } from "lucide-react";
 import React from "react";
 import { ChairsideAssistantReasonsDropdown } from "./ChairsideAssistantReasonsDropdown";
 import { useChairsideIntercomPing } from "./useChairsideIntercomPing";
@@ -38,7 +38,7 @@ export const ChairsideIntercomBar: React.FC<ChairsideIntercomBarProps> = ({
 						}`}
 						title="Срочно вызвать ассистента к установке в 1 тап" data-testid="chairside-call-assistant-btn"
 					>
-						<span className="text-base">🪑</span>
+						<User size={16} className="shrink-0" />
 						<span>Нужен ассистент</span>
 					</button>
 					<button
@@ -91,7 +91,7 @@ export const ChairsideIntercomBar: React.FC<ChairsideIntercomBarProps> = ({
 				type="button" disabled={pingState.isSending} onClick={() => pingState.handlePing("lab_work_ready")}
 				className="secondary-button h-11 min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer shadow-xs active:scale-[0.97] shrink-0 hidden lg:inline-flex"
 				title="Уточнить поступление конструкции из зуботехнической лаборатории"
-			><span className="text-sm">🦷</span><span>ЗТЛ</span></button>
+			><Stethoscope size={15} className="text-[var(--muted)] shrink-0" /><span>ЗТЛ</span></button>
 
 			<button
 				type="button" disabled={pingState.isSending} onClick={() => pingState.handlePing("urgent_doctor_call")}

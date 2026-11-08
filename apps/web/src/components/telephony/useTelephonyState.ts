@@ -8,15 +8,13 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "../../store/appStore";
 import { useTelephonyStore } from "../../store/telephonyStore";
-import { useTelephonyFloatingState } from "./telephonyFloatingWidget/useTelephonyFloatingState";
-import type { TelephonyFloatingWidgetProps } from "./telephonyFloatingWidget/types";
 
-export interface UseTelephonyStateOptions extends TelephonyFloatingWidgetProps {
+export interface UseTelephonyStateOptions {
 	suppressCallModal?: boolean;
 }
 
 export function useTelephonyState(options: UseTelephonyStateOptions = {}) {
-	const floatingState = useTelephonyFloatingState(options);
+	const tel = useTelephonyStore();
 	const currentView = useAppStore((s) => s.currentView);
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 
@@ -41,7 +39,7 @@ export function useTelephonyState(options: UseTelephonyStateOptions = {}) {
 		hash.includes("#periodontics");
 
 	return {
-		...floatingState,
+		...tel,
 		isSterileZone,
 		suppressCallModal: isSterileZone,
 		currentView,

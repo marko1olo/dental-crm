@@ -11,7 +11,6 @@ import {
 	IncomingCallPopup,
 	resolveTelephonyWsUrl,
 } from "../components/telephony/IncomingCallPopup";
-import { IncomingCallModal } from "../components/telephony/IncomingCallModal";
 import { useWebsocket } from "../hooks/useWebsocket";
 import { staffRoleChoices } from "../lib/clinicCapabilities";
 import { useAppStore } from "../store/appStore";
@@ -30,7 +29,6 @@ import {
 export {
 	formatDisplayClinicName,
 	IncomingCallPopup,
-	IncomingCallModal,
 	PerspectiveSwitcher,
 	resolveTelephonyWsUrl,
 };

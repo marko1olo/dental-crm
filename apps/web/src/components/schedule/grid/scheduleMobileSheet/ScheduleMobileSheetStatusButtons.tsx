@@ -6,7 +6,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import React, { type FC, useRef } from "react";
-import { isAppointmentInChair } from "../../GridAppointmentCard";
+import { isAppointmentInChair } from "../../AppointmentGridCard";
 
 export interface ScheduleMobileSheetStatusButtonsProps {
 	selectedMobileAppt: Appointment;

@@ -8,20 +8,16 @@ describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Appl
 		? path.resolve(process.cwd(), "apps/web/src")
 		: path.resolve(process.cwd(), "src");
 
-	const floatingCssPath = path.resolve(srcDir, "components/telephony/telephonyFloatingWidget.css");
 	const coexistenceCssPath = path.resolve(srcDir, "components/telephony/styles/telephonyCoexistence.css");
 	const drawerCssPath = path.resolve(srcDir, "components/telephony/styles/telephonyCapsuleAndDrawer.css");
-	const drawerFooterPath = path.resolve(srcDir, "components/telephony/incomingCallPatientDrawer/IncomingCallDrawerFooter.tsx");
 	const topBarActionsPath = path.resolve(srcDir, "workspaceShellModules/topBarModules/WorkspaceTopBarActions.tsx");
-	const widgetPath = path.resolve(srcDir, "components/telephony/TelephonyFloatingWidget.tsx");
+	const drawerPath = path.resolve(srcDir, "components/telephony/TelephonyDrawer.tsx");
 	const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
 
-	const floatingCss = fs.readFileSync(floatingCssPath, "utf-8");
 	const coexistenceCss = fs.readFileSync(coexistenceCssPath, "utf-8");
 	const drawerCss = fs.readFileSync(drawerCssPath, "utf-8");
-	const drawerFooter = fs.readFileSync(drawerFooterPath, "utf-8");
+	const drawerSource = fs.readFileSync(drawerPath, "utf-8");
 	const topBarActions = fs.readFileSync(topBarActionsPath, "utf-8");
-	const widgetSource = fs.readFileSync(widgetPath, "utf-8");
 	const popupSource = fs.readFileSync(popupPath, "utf-8");
 
 	it("1. Anti-Floating Trap: Relocates incoming call badge away from dialogs, visit view, and bottom CTAs", () => {
@@ -40,7 +36,7 @@ describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Appl
 	it("2. Mobile Ergonomics (Apple HIG): Zero horizontal drift & Bottom Sheet drawer standard", () => {
 		// Zero drift overflow-x clip in mobile badge
 		assert.ok(
-			floatingCss.includes("overflow-x: clip;"),
+			drawerCss.includes("overflow-x: clip;"),
 			"Mobile telephony containers must enforce overflow-x: clip to guarantee 0px horizontal drift",
 		);
 
@@ -51,10 +47,10 @@ describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Appl
 			"Mobile telephony drawer must render as an iOS Bottom Sheet with 24px top radius and max 85dvh",
 		);
 
-		// Safe-area inset protection in drawer footer
+		// Drawer incorporates close CTA with min-h-[44px]
 		assert.ok(
-			drawerFooter.includes("env(safe-area-inset-bottom"),
-			"IncomingCallDrawerFooter must account for env(safe-area-inset-bottom) to protect iOS Home Bar",
+			drawerSource.includes("min-h-[44px]"),
+			"TelephonyDrawer must enforce min-h-[44px] touch target for buttons",
 		);
 	});
 
@@ -67,10 +63,6 @@ describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Appl
 			topBarActions.includes("min-h-[32px]") && topBarActions.includes("h-8"),
 			"Chairside telephony button must use discreet 32px height to avoid distracting dentist",
 		);
-		assert.ok(
-			widgetSource.includes("isDoctorChairsideMode"),
-			"TelephonyFloatingWidget must identify doctor chairside mode and yield screen space",
-		);
 	});
 
 	it("4. Zero AudioContext / Oscillator Procedural Simulators (Mandates 8k, 8s)", () => {
@@ -79,8 +71,8 @@ describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Appl
 			"IncomingCallPopup must NOT use procedural AudioContext / oscillator simulations",
 		);
 		assert.ok(
-			!widgetSource.includes("AudioContext") && !widgetSource.includes("createOscillator"),
-			"TelephonyFloatingWidget must NOT use procedural AudioContext / oscillator simulations",
+			!drawerSource.includes("AudioContext") && !drawerSource.includes("createOscillator"),
+			"TelephonyDrawer must NOT use procedural AudioContext / oscillator simulations",
 		);
 	});
 

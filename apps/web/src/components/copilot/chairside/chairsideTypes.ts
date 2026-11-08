@@ -78,6 +78,13 @@ export interface ChairsideCopilotHUDProps {
   readonly patientName?: string | undefined;
   readonly patientAllergies?: readonly string[] | undefined;
   readonly patientSomaticHistory?: readonly string[] | undefined;
+  readonly initialThoughts?: readonly ChairsideThoughtStep[] | undefined;
+  readonly initialToothProposal?: ChairsideToothProposal | null | undefined;
+  readonly initialServicesProposal?: readonly ChairsideServiceProposal[] | undefined;
+  readonly initialSoapProposal?: ChairsideSoapProposal | undefined;
+  readonly initialAnestheticProposal?: ChairsideAnestheticProposal | null | undefined;
+  readonly initialSafetyAlert?: ChairsideSafetyAlert | null | undefined;
+  readonly initialPresetIndex?: number | undefined;
   readonly onApplyToothState?: ((toothNumber: number, state: string, surfaces?: string[]) => void) | undefined;
   readonly onUpdateToothStatus?: ((toothNumber: number, status: string, surfaces?: string[]) => void) | undefined;
   readonly onApplyServices?: ((services: ChairsideServiceProposal[]) => void) | undefined;

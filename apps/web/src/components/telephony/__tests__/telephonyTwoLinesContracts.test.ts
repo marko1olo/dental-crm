@@ -46,16 +46,16 @@ describe("Telephony Two-Line Contracts & Solo Doctor Sovereignty", () => {
 		assert.equal(formatPhoneDisplay("89161234567"), "+7 (916) 123-45-67");
 	});
 
-	it("5. Anti-Matryoshka two-line UI contracts in IncomingCallPopup and TelephonyWidgetHeader", () => {
+	it("5. Anti-Matryoshka two-line UI contracts in IncomingCallPopup", () => {
 		const contextCardSource = fs.readFileSync(path.join(telephonyDir, "incomingCallPopupModules/IncomingCallPatientContextCard.tsx"), "utf-8");
 		const headerBarSource = fs.readFileSync(path.join(telephonyDir, "incomingCallPopupModules/IncomingCallHeaderBar.tsx"), "utf-8");
-		const headerSource = fs.readFileSync(path.join(telephonyDir, "TelephonyWidgetHeader.tsx"), "utf-8");
+		const controllerSource = fs.readFileSync(path.join(telephonyDir, "incomingCallPopupModules/useIncomingCallPopupController.ts"), "utf-8");
 		const moreMenuSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallBadgeMoreMenu.tsx"), "utf-8");
 
 		assert.ok(contextCardSource.includes('data-testid="incoming-secondary-line-banner"'));
 		assert.ok(contextCardSource.includes('data-testid="answer-secondary-line-btn"'));
 		assert.ok(headerBarSource.includes('data-testid="capsule-switch-secondary-line-btn"'));
-		assert.ok(headerSource.includes("line1") && headerSource.includes("line2"));
+		assert.ok(controllerSource.includes("line1") && controllerSource.includes("line2"));
 		assert.ok(moreMenuSource.includes('data-testid="badge-action-callback-15m"'));
 	});
 

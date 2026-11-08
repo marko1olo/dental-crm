@@ -75,6 +75,20 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     assert.ok(!html.includes("Иванов И.И."), "Фейковый Иванов не должен рендериться при отсутствии пациента");
   });
 
+  it("1c. renders clean neutral empty state when no active tooth is selected (Zero Hallucinated Tooth 16)", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        initialDocked={false}
+      />
+    );
+
+    expect(html).toContain("Пациент не выбран");
+    expect(html).toContain("Готов к диктовке");
+    expect(html).toContain("chairside-empty-proposals");
+    assert.ok(!html.includes("Зуб 16:"), "Tooth 16 must NOT be hallucinated on empty initialization");
+  });
+
   it("2. renders minimized pill when isMinimized is triggered", () => {
     // We can test minimized representation
     const html = renderToString(
@@ -93,10 +107,17 @@ describe("ChairsideCopilotHUD Component Tests", () => {
   });
 
   it("3. renders Collapsible Thought Stream with 4 clinical ReAct reasoning steps", () => {
+    const initialThoughts = [
+      { id: "step-1", stepNumber: 1, title: "Проверка аллергического статуса и лекарственной безопасности DDI", status: "done" as const },
+      { id: "step-2", stepNumber: 2, title: "Сверка диагноза МКБ-10: K02.1 Кариес дентина", status: "done" as const },
+      { id: "step-3", stepNumber: 3, title: "Расчет стоимости услуг по прейскуранту", status: "done" as const },
+      { id: "step-4", stepNumber: 4, title: "Формирование клинического протокола приёма", status: "done" as const },
+    ];
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+        initialThoughts={initialThoughts}
       />
     );
 
@@ -110,6 +131,21 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("K02.1 Кариес дентина");
     expect(html).toContain("Расчет стоимости услуг по прейскуранту");
     expect(html).toContain("Формирование клинического протокола приёма");
+  });
+
+  it("3b. renders resting state without thoughts (Zero Fake Thoughts on mount)", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("chairside-thought-stream");
+    expect(html).toContain("готов к работе");
+    expect(html).toContain("Готов к работе. Ожидание команды или диктовки...");
+    assert.ok(!html.includes("step-1"), "Fake static step-1 must NOT be present on mount");
+    assert.ok(!html.includes("Проверка аллергического статуса"), "Unprompted allergy check must NOT be present on mount");
   });
 
   it("4. renders Odontogram action proposal card with tooth, state, and apply button", () => {
@@ -195,6 +231,19 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Сброс");
     expect(html).toContain("chairside-autonomy-note");
     expect(html).toContain("Полный контроль врача");
+  });
+
+  it("8b. renders 1-Click Macro-Batch Apply banner in proposals container", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("chairside-proposals-macro-banner");
+    expect(html).toContain("chairside-btn-macro-apply-all");
+    expect(html).toContain("Применить все предложения");
   });
 
   it("9. renders quick clinical presets chips (Caries, Pulpitis, Hygiene)", () => {

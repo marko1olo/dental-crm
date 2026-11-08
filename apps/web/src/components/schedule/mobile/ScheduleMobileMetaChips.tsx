@@ -1,6 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import React from "react";
-import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 
 export interface ScheduleMobileMetaChipsProps {
 	chair?: { name: string } | undefined;

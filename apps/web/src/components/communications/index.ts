@@ -1,4 +1,3 @@
-export * from "./CallPlayer";
 export * from "./CampaignPanel";
 export * from "./ChairsideIntercomBar";
 export * from "./MessageDeliveryConsole";

@@ -21,7 +21,7 @@ export function useMobileChatThread(
 		const takeoverMsg: MobileChatMessageItem = {
 			id: `mobile-takeover-${Date.now()}`,
 			patientId: selectedPatientId,
-			text: "👩‍💼 Оператор клиники подключился к диалогу. Бот переведён в спящий режим. Чем я могу вам помочь?",
+			text: "Оператор клиники подключился к диалогу. Бот переведён в спящий режим. Чем я могу вам помочь?",
 			direction: "outbound",
 			channel: activeChannel,
 			timestamp: new Date().toISOString(),

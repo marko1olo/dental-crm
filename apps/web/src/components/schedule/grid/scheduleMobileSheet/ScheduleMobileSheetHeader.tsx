@@ -4,7 +4,7 @@ import React from "react";
 import {
 	getNormalizedAppointmentStatusLabel,
 	isAppointmentInChair,
-} from "../../GridAppointmentCard";
+} from "../../AppointmentGridCard";
 
 export interface ScheduleMobileSheetHeaderProps {
 	selectedMobileAppt: Appointment;

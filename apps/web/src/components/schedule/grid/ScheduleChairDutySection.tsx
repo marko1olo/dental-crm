@@ -1,6 +1,6 @@
 import React from "react";
 import { Moon, Plus, Sun, Zap } from "lucide-react";
-import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 import { ScheduleChairMultiShiftCard } from "./ScheduleChairMultiShiftCard";
 import { ScheduleChairSingleShiftCard } from "./ScheduleChairSingleShiftCard";

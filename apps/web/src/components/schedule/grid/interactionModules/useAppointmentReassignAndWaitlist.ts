@@ -5,9 +5,9 @@
 import { useCallback, useState } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
-import { formatDoctorShortName } from "../../GridAppointmentCard";
+import { formatDoctorShortName } from "../../AppointmentGridCard";
 import { DEFAULT_SOLO_CHAIR } from "../gridConstants";
-import type { TargetSlotInfo } from "../../WaitlistDrawer";
+import type { TargetSlotInfo } from "../../waitlist/waitlistTypes";
 
 export function useAppointmentReassignAndWaitlist(
   dashboard: Dashboard,

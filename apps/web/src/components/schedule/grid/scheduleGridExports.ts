@@ -10,4 +10,4 @@ export type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtil
 export type { ChairDoctorSubShift, ChairDoctorShiftAssignment, ScheduleGridProps } from "./gridTypes";
 export { CHAIR_SHIFT_PRESETS, HOURS, DEFAULT_SOLO_CHAIR } from "./gridConstants";
 export { generateTimeSlots, safeBuildSlotIso, buildDoctorSlotAppointmentsMap } from "./gridSlotMath";
-export { formatDoctorShortName, isAppointmentInChair, getNormalizedAppointmentStatusLabel, GridAppointmentCard } from "../GridAppointmentCard";
+export { formatDoctorShortName, isAppointmentInChair, getNormalizedAppointmentStatusLabel, GridAppointmentCard } from "../AppointmentGridCard";

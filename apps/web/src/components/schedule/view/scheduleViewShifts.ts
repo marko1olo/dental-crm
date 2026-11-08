@@ -1,6 +1,6 @@
 import type { DoctorShift } from "../roster/DoctorShiftRosterModal";
 import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
-import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 
 export function buildChairDoctorAssignmentsFromShifts(
   shifts: DoctorShift[],

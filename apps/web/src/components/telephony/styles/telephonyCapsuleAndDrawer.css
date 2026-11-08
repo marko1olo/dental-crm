@@ -1,3 +1,20 @@
+/* Top Ambient Event Container (Apple HIG Non-blocking Island) */
+.dnt-incoming-call-badge-container {
+	position: fixed;
+	top: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 99990;
+	pointer-events: none;
+	width: auto;
+	max-width: calc(100vw - 32px);
+	overflow-x: clip;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Compact Incoming Call Capsule (Top Ambient Capsule Bar, Tier 1) */
 .dnt-incoming-call-capsule {
 	display: inline-flex;

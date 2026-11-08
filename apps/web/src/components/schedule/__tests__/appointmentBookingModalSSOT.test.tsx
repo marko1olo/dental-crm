@@ -18,8 +18,7 @@ import { describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Dashboard, Patient } from "@dental/shared";
-import { AppointmentBookingModal } from "../AppointmentBookingModal";
-import { QuickBookingDrawerHeader, formatSlotRange } from "../QuickBookingDrawer";
+import { AppointmentBookingModal, QuickBookingDrawerHeader, formatSlotRange } from "../QuickBookingDrawer";
 
 const mockPatients: Patient[] = [
   {

@@ -337,3 +337,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 		</div>
 	);
 }, areGridAppointmentCardPropsEqual);
+
+export { AppointmentGridCard as GridAppointmentCard };
+export default AppointmentGridCard;
+

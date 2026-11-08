@@ -3,20 +3,9 @@
  * Mandate 8b (<= 120 lines), Mandate 8e (Doctor Autonomy), Mandate 8aq (Mounted in UI Tree).
  */
 import React, { useEffect, useState } from "react";
-import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
-import { WaitlistDrawer } from "./WaitlistDrawer";
+import { WaitlistMatchesBlock } from "./waitlist/WaitlistMatchesBlock";
+import { WaitlistDrawer } from "./waitlist/WaitlistDrawer";
 import type { TargetSlotInfo } from "./waitlist/waitlistTypes";
-
-const DEMO_TARGET_SLOT: TargetSlotInfo = {
-	appointmentId: "demo-freed-slot-1",
-	startsAt: new Date(Date.now() + 3600000).toISOString(),
-	endsAt: new Date(Date.now() + 7200000).toISOString(),
-	doctorUserId: "01a00000-0000-0000-0003-000000000001",
-	doctorName: "Д-р Соколов А. В.",
-	chairId: "01a00000-0000-0000-0002-000000000001",
-	chairName: "Кабинет 1 (Терапия)",
-	freedBecause: "Отмена приёма пациентом (окно 60 мин)",
-};
 
 export const DirectWaitlistMatchesLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
@@ -32,7 +21,7 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 	});
 
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-	const [activeSlot, setActiveSlot] = useState<TargetSlotInfo | null>(DEMO_TARGET_SLOT);
+	const [activeSlot, setActiveSlot] = useState<TargetSlotInfo | null>(null);
 
 	useEffect(() => {
 		const handleHash = () => {
@@ -52,7 +41,7 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 	useEffect(() => {
 		const handleOpenSlot = (e: Event) => {
 			const customEvt = e as CustomEvent<TargetSlotInfo | null>;
-			setActiveSlot(customEvt.detail || DEMO_TARGET_SLOT);
+			setActiveSlot(customEvt.detail || null);
 			setIsDrawerOpen(true);
 		};
 		window.addEventListener("dente:open-waitlist-for-slot", handleOpenSlot);
@@ -84,9 +73,15 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 						<h2 className="text-base font-bold text-[var(--ink,#0f172a)]">
 							Подбор пациентов из листа ожидания в освободившееся окно
 						</h2>
-						<p className="text-xs text-[var(--text-muted,#64748b)] mt-0.5">
-							{activeSlot?.doctorName} • {activeSlot?.chairName} • {activeSlot?.freedBecause}
-						</p>
+						{activeSlot ? (
+							<p className="text-xs text-[var(--text-muted,#64748b)] mt-0.5">
+								{activeSlot.doctorName} • {activeSlot.chairName} • {activeSlot.freedBecause || "Освободившийся слот"}
+							</p>
+						) : (
+							<p className="text-xs text-[var(--text-muted,#64748b)] mt-0.5">
+								Слот не выбран
+							</p>
+						)}
 					</div>
 					<div className="flex items-center gap-2">
 						<button
@@ -106,15 +101,33 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 					</div>
 				</div>
 
-				<WaitlistMatchesBlock
-					appointmentId="demo-freed-slot-1"
-					initialSlot={activeSlot}
-					compact={false}
-					onOpenWaitlist={(slot) => {
-						setActiveSlot(slot || DEMO_TARGET_SLOT);
-						setIsDrawerOpen(true);
-					}}
-				/>
+				{activeSlot ? (
+					<WaitlistMatchesBlock
+						appointmentId={activeSlot.appointmentId || "freed-slot"}
+						initialSlot={activeSlot}
+						compact={false}
+						onOpenWaitlist={(slot) => {
+							setActiveSlot(slot || null);
+							setIsDrawerOpen(true);
+						}}
+					/>
+				) : (
+					<div className="p-8 text-center bg-[var(--paper)] rounded-2xl border border-[var(--line)] space-y-3">
+						<p className="text-sm font-semibold text-[var(--ink)]">
+							Нет выбранного освободившегося слота
+						</p>
+						<p className="text-xs text-[var(--text-muted)]">
+							Выберите слот в расписании или откройте общий лист ожидания клиники
+						</p>
+						<button
+							type="button"
+							onClick={() => setIsDrawerOpen(true)}
+							className="px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-hover,#0f766e)] cursor-pointer"
+						>
+							Открыть лист ожидания
+						</button>
+					</div>
+				)}
 
 				<WaitlistDrawer
 					isOpen={isDrawerOpen}

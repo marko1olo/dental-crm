@@ -3,7 +3,7 @@ import { test } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
-import { GridAppointmentCard } from "../GridAppointmentCard";
+import { AppointmentGridCard as GridAppointmentCard } from "../AppointmentGridCard";
 import { getNormalizedAppointmentStatusLabel } from "../appointmentCardHelpers";
 import { appointmentLabels } from "../../../workspaceUiLabels";
 

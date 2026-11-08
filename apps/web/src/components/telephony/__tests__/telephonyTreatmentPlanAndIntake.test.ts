@@ -13,7 +13,6 @@ describe("Telephony Treatment Plan Resolution & Fast Intake (Mandates 8b, 8e, 8n
 	const drawerPanelPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyActiveCallPanel.tsx");
 	const callerCardPath = path.resolve(srcDir, "components/telephony/IncomingCallerCard.tsx");
 	const quickActionsPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallQuickActions.ts");
-	const popupDrawerPath = path.resolve(srcDir, "components/telephony/IncomingCallPatientDrawer.tsx");
 
 	it("3. Existing Patient: Instant Active Treatment Plan Resolution & Progress Bar", () => {
 		const patientId = "pat-202";
@@ -82,14 +81,10 @@ describe("Telephony Treatment Plan Resolution & Fast Intake (Mandates 8b, 8e, 8n
 		assert.ok(quickActionsSource.includes("fullName: targetName,\n\t\t\t\t\tphone: currentCall.phone,"));
 
 		const drawerPanelSource = fs.readFileSync(drawerPanelPath, "utf-8");
-		const popupDrawerSource = fs.readFileSync(popupDrawerPath, "utf-8");
 
 		assert.ok(drawerPanelSource.includes('data-testid="drawer-quick-create-patient-btn"'));
 		assert.ok(drawerPanelSource.includes('data-testid="drawer-new-patient-name-input"'));
 		assert.ok(drawerPanelSource.includes("+ Создать пациента за 5 секунд"));
-
-		assert.ok(popupDrawerSource.includes('data-testid="popup-drawer-quick-create-patient-btn"'));
-		assert.ok(popupDrawerSource.includes('data-testid="popup-drawer-new-patient-name-input"'));
 	});
 
 	it("5. Empty State / No Plan Safe Handling", () => {

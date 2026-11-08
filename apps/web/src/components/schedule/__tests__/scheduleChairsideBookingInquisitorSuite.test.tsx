@@ -12,9 +12,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { DirectAppointmentBookingDrawer } from "../DirectAppointmentBookingDrawer";
-import { DirectBookingConfirmationModal } from "../DirectBookingConfirmationModal";
-import { ChairsideScheduleView } from "../ChairsideScheduleView";
+import { QuickBookingDrawer } from "../QuickBookingDrawer";
+import { ChairScheduleView } from "../ChairScheduleView";
 import { PlannedConfirmedActions } from "../appointmentCardActions/PlannedConfirmedActions";
 import { ArrivedInTreatmentActions } from "../appointmentCardActions/ArrivedInTreatmentActions";
 import { CompletedActions } from "../appointmentCardActions/CompletedActions";
@@ -50,9 +49,9 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 		patients: [mockPatient],
 	};
 
-	it("1. DirectAppointmentBookingDrawer renders when open without requiring assistant", () => {
+	it("1. QuickBookingDrawer renders when open without requiring assistant (Mandates 8e, 8n)", () => {
 		const html = renderToStaticMarkup(
-			React.createElement(DirectAppointmentBookingDrawer, {
+			React.createElement(QuickBookingDrawer, {
 				isOpen: true,
 				onClose: () => {},
 				dashboard: mockDashboard,
@@ -69,26 +68,25 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 		assert.ok(!html.includes('disabled=""'), "Buttons must not be disabled");
 	});
 
-	it("2. DirectBookingConfirmationModal renders full confirmation and 1-tap WhatsApp/Telegram sharing", () => {
+	it("2. QuickBookingDrawer renders emergency CITO booking and doctor autonomy without blocking", () => {
 		const html = renderToStaticMarkup(
-			React.createElement(DirectBookingConfirmationModal, {
+			React.createElement(QuickBookingDrawer, {
 				isOpen: true,
 				onClose: () => {},
-				patientName: "Пациент Тест Тестович",
-				patientPhone: "+7 (999) 000-11-22",
-				startsAtLocal: "2026-11-04T10:00",
-				durationMinutes: 30,
-				doctorName: "Д-р Иванов И.И.",
-				chairName: "Кресло 1",
-				onPrintTicket: () => {},
+				dashboard: mockDashboard,
+				initialSlot: {
+					dateKey: "2026-11-04",
+					startTime: "10:00",
+					durationMinutes: 30,
+					isCitoEmergency: true,
+					reason: "Острая боль",
+				},
 			}),
 		);
 
-		assert.ok(html.includes("Пациент успешно записан"), "Header must confirm booking");
-		assert.ok(html.includes("Пациент Тест Тестович"), "Patient name displayed");
-		assert.ok(html.includes("confirmation-copy-whatsapp-btn"), "WhatsApp sharing CTA exists");
-		assert.ok(html.includes("confirmation-print-ticket-btn"), "Print ticket CTA exists");
-		assert.ok(html.includes("confirmation-done-btn"), "Done CTA exists");
+		assert.ok(html.includes("quick-booking-drawer"), "Drawer must render");
+		assert.ok(html.includes("Срочная запись: острая боль"), "Emergency header must be present");
+		assert.ok(html.includes("quick-drawer-save-btn"), "Save button must exist");
 	});
 
 	it("3. Chairside Card Action Transitions: 'В кресло' -> 'В приём' -> 'Оплата' without barriers", () => {
@@ -152,9 +150,9 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 		assert.ok(htmlCompleted.includes("appointment-action-repeat-btn"), "Repeat appointment CTA rendered");
 	});
 
-	it("4. ChairsideScheduleView renders layout cleanly with 0 crashes", () => {
+	it("4. ChairScheduleView renders layout cleanly with 0 crashes", () => {
 		const html = renderToStaticMarkup(
-			React.createElement(ChairsideScheduleView, {
+			React.createElement(ChairScheduleView, {
 				dashboard: mockDashboard,
 				dateKey: "2026-11-04",
 				appointments: mockDashboard.appointments,
@@ -175,6 +173,6 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 			} as any),
 		);
 
-		assert.ok(html.length > 0, "ChairsideScheduleView must render HTML output");
+		assert.ok(html.length > 0, "ChairScheduleView must render HTML output");
 	});
 });

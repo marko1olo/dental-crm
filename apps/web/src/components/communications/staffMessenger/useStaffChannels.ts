@@ -29,9 +29,13 @@ export function useStaffChannels(cabinetNumber = "Каб. 1") {
 		} catch (e) {
 			console.error("Ошибка загрузки локаций:", e);
 		}
-		const fallback = getDemoLocations();
-		setLocations(fallback);
-		if (!selectedLocation && fallback[0]) setSelectedLocation(fallback[0].name);
+		if (isDemoShowcaseMode()) {
+			const fallback = getDemoLocations();
+			setLocations(fallback);
+			if (!selectedLocation && fallback[0]) setSelectedLocation(fallback[0].name);
+		} else {
+			setLocations([]);
+		}
 	}, [selectedLocation]);
 
 	const loadChannels = useCallback(async () => {

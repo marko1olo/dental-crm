@@ -1,7 +1,7 @@
 import React from "react";
 import { Clock, X } from "lucide-react";
 import type { Appointment } from "@dental/shared";
-import { GridAppointmentCard } from "../../GridAppointmentCard";
+import { GridAppointmentCard } from "../../AppointmentGridCard";
 import type { ChairMaintenanceBlock } from "../../../../utils/scheduleCollisionUtils";
 import type { ScheduleDensityMode } from "../../useScheduleState";
 import type { ScheduleAppointmentTrackProps } from "./types";

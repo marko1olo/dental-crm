@@ -1,4 +1,4 @@
-import { CalendarCheck, Check, ChevronDown, ChevronUp, Clock, PhoneCall, PhoneOff, UserCheck, X } from "lucide-react";
+import { CalendarCheck, Check, ChevronDown, ChevronUp, Clock, PhoneCall, PhoneOff, UserCheck, X, Zap } from "lucide-react";
 import React from "react";
 import { formatDurationTimer } from "../../../store/telephonyStore";
 import { formatShortCallerName } from "./incomingCallUtils";
@@ -39,7 +39,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 				</span>
 				{hasAcutePain && (
 					<span className="inline-flex items-center gap-1 text-[11px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 px-1.5 py-0.5 rounded-full shrink-0" data-testid="capsule-acute-pain-chip" title="Острая боль!">
-						<span>⚡</span><span className="hidden sm:inline">Острая боль</span>
+						<Zap size={11} className="shrink-0" /><span className="hidden sm:inline">Острая боль</span>
 					</span>
 				)}
 			</div>

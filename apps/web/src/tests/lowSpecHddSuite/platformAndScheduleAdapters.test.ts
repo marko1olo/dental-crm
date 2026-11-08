@@ -90,7 +90,7 @@ describe("GridAppointmentCard — Memoization & Content-Visibility Performance (
 	it("рендерит карточку приема со стилем contentVisibility auto и containment", async () => {
 		const React = await import("react");
 		const { renderToString } = await import("react-dom/server");
-		const { GridAppointmentCard } = await import("../../components/schedule/GridAppointmentCard");
+		const { GridAppointmentCard } = await import("../../components/schedule/AppointmentGridCard");
 
 		const mockAppointment: Appointment = {
 			id: "test-appt-1",

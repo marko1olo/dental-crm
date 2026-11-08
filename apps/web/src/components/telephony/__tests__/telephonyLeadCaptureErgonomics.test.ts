@@ -12,7 +12,7 @@ describe("Telephony Lead Capture Visual & Ergonomics Integrity (Miller's Law & T
 	const callerCardPath = path.resolve(srcDir, "components/telephony/IncomingCallerCard.tsx");
 	const badgeMoreMenuPath = path.resolve(srcDir, "components/telephony/IncomingCallBadgeMoreMenu.tsx");
 	const drawerPanelPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyActiveCallPanel.tsx");
-	const widgetMoreMenuPath = path.resolve(srcDir, "components/telephony/TelephonyWidgetMoreMenu.tsx");
+	const drawerMoreMenuPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyDrawerMoreMenu.tsx");
 
 	it("3.1. IncomingCallPopup provides 1-click lead capture and marketing attribution badge", () => {
 		const callerCardSource = fs.readFileSync(callerCardPath, "utf-8");
@@ -31,9 +31,9 @@ describe("Telephony Lead Capture Visual & Ergonomics Integrity (Miller's Law & T
 		assert.ok(drawerPanelSource.includes('data-testid="drawer-action-capture-lead"'));
 	});
 
-	it("3.3. TelephonyFloatingWidget provides 1-click lead capture in consolidated more menu", () => {
-		const widgetMoreMenuSource = fs.readFileSync(widgetMoreMenuPath, "utf-8");
-		assert.ok(widgetMoreMenuSource.includes('data-testid="widget-action-capture-lead"'));
+	it("3.3. TelephonyDrawer provides 1-click lead capture in consolidated more menu", () => {
+		const drawerMoreMenuSource = fs.readFileSync(drawerMoreMenuPath, "utf-8");
+		assert.ok(drawerMoreMenuSource.includes('data-testid="drawer-more-action-capture-lead"'));
 	});
 
 	it("3.4. All 8 canonical marketing channels have defined display names and tokens", () => {

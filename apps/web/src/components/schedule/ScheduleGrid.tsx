@@ -2,14 +2,10 @@ import React from "react";
 import {
   WORKPLACE_CHAIR_PALETTES,
   getWorkplaceChairPalette,
-  STOMX_WORKPLACE_PALETTES,
-  getStomxWorkplacePalette,
 } from "@dental/shared";
 export {
   WORKPLACE_CHAIR_PALETTES,
   getWorkplaceChairPalette,
-  STOMX_WORKPLACE_PALETTES,
-  getStomxWorkplacePalette,
 };
 export { resolveChairDutyDoctor, detectAppointmentCollisions, findAlternativeChairsForSlot, findShiftMinutesOptions } from "./chairRosterMath";
 export { getAppointmentDurationMinutes, calculateAppointmentSpan, calculateAppointmentCardHeight, validateQuickBookingFields } from "./appointmentCardHelpers";
@@ -18,23 +14,15 @@ export type { ChairDoctorSubShift, ChairDoctorShiftAssignment, ScheduleGridProps
 export { CHAIR_SHIFT_PRESETS, HOURS, DEFAULT_SOLO_CHAIR } from "./grid/gridConstants";
 import { generateTimeSlots, safeBuildSlotIso, buildDoctorSlotAppointmentsMap } from "./grid/gridSlotMath";
 export { generateTimeSlots, safeBuildSlotIso, buildDoctorSlotAppointmentsMap };
-import { formatDoctorShortName, isAppointmentInChair, getNormalizedAppointmentStatusLabel, GridAppointmentCard } from "./GridAppointmentCard";
+import { formatDoctorShortName, isAppointmentInChair, getNormalizedAppointmentStatusLabel, GridAppointmentCard } from "./AppointmentGridCard";
 export { formatDoctorShortName, isAppointmentInChair, getNormalizedAppointmentStatusLabel, GridAppointmentCard };
 
 import { ScheduleZeroChairsEmptyState } from "./grid/ScheduleZeroChairsEmptyState";
-import { ScheduleMobileAgendaView } from "./ScheduleMobileAgendaView";
+import { ScheduleMobileAgendaView } from "./mobile/ScheduleMobileAgendaView";
 import { ScheduleGridDesktopLayout } from "./grid/ScheduleGridDesktopLayout";
 import { useScheduleGridController } from "./grid/useScheduleGridController";
 import type { ScheduleGridProps } from "./grid/gridTypes";
 import { useIsMobile } from "../../hooks/useIsMobile";
-
-/**
- * Invariant test references for wave115ScheduleParity:
- * getStomxWorkplacePalette
- * data-chair-palette
- * chair-palette-badge-
- * STOMX_WORKPLACE_PALETTES
- */
 
 export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGridProps) {
   const ctrl = useScheduleGridController(props);

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Appointment, Patient } from "@dental/shared";
-import { GridAppointmentCard } from "../../schedule/GridAppointmentCard.js";
+import { GridAppointmentCard } from "../../schedule/AppointmentGridCard.js";
 import { GridAppointmentMenu } from "../../schedule/GridAppointmentMenu.js";
 
 const samplePatients: Patient[] = [{

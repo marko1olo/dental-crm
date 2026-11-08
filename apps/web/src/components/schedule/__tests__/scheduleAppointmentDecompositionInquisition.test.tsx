@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Appointment } from "@dental/shared";
-import { GridAppointmentCard } from "../GridAppointmentCard";
+import { AppointmentGridCard as GridAppointmentCard } from "../AppointmentGridCard";
 import {
 	APPOINTMENT_STATUS_LABELS_RU,
 	areGridAppointmentCardPropsEqual,

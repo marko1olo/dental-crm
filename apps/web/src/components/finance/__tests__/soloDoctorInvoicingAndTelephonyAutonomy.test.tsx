@@ -29,13 +29,14 @@ import { InvoicesView, type BillingInvoice } from "../../billing/InvoicesView.js
 
 describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8k, 8n)", () => {
 	describe("1. Telephony Autonomy (Mandate 8e: Non-blocking call button)", () => {
-		it("TelephonyFloatingWidget source has no disabled call button and wires dialInputRef focus", () => {
-			const filePath = fs.existsSync(
-				path.resolve(process.cwd(), "src/components/telephony/TelephonyFloatingWidget.tsx"),
-			)
-				? path.resolve(process.cwd(), "src/components/telephony/TelephonyFloatingWidget.tsx")
-				: path.resolve(process.cwd(), "apps/web/src/components/telephony/TelephonyFloatingWidget.tsx");
-			const code = fs.readFileSync(filePath, "utf-8");
+		it("TelephonySoftphonePopover and TelephonyPopoverDialer have no disabled call button and wire dialInputRef focus", () => {
+			const popoverPath = fs.existsSync(path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx"))
+				? path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx")
+				: path.resolve(process.cwd(), "apps/web/src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx");
+			const dialerPath = fs.existsSync(path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonyPopoverDialer.tsx"))
+				? path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonyPopoverDialer.tsx")
+				: path.resolve(process.cwd(), "apps/web/src/components/telephony/headerCapsule/TelephonyPopoverDialer.tsx");
+			const code = fs.readFileSync(popoverPath, "utf-8") + "\n" + fs.readFileSync(dialerPath, "utf-8");
 
 			// Verify dialInputRef is declared and attached
 			assert.ok(

@@ -1,5 +1,5 @@
 import React from "react";
-import { CallPlayer } from "../../communications/CallPlayer";
+import { CallAudioPlayer } from "../../telephony/CallAudioPlayer";
 import type { PatientCommunicationEntry } from "./timelineTypes";
 import { entryTitle, formatMoment, STATUS_VIEW, TONE_CLASSES } from "./timelineConstants";
 
@@ -22,7 +22,7 @@ export const CommunicationTimelineItem: React.FC<CommunicationTimelineItemProps>
 			</div>
 			<p className="mt-1 mb-0 text-[var(--ink)] break-words whitespace-pre-wrap">{entry.message}</p>
 			{entry.recordingUrl ? (
-				<CallPlayer recordingUrl={entry.recordingUrl} durationSeconds={entry.durationSeconds ?? null} />
+				<CallAudioPlayer recordingUrl={entry.recordingUrl} durationSeconds={entry.durationSeconds ?? null} />
 			) : null}
 			<p className="mt-1 mb-0 text-[var(--muted)]">
 				{entry.actorName ? `Сотрудник: ${entry.actorName}` : "Автоматически, без участия сотрудника"}

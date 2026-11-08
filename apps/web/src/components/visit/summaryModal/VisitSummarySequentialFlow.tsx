@@ -1,5 +1,5 @@
 import React from "react";
-import { AppointmentModal } from "../../schedule/AppointmentModal";
+import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
 import { EmrProtocolGeneratorModal, type ToothSurface } from "../../emr";
 import { PaymentModal } from "../../finance/PaymentModal.js";
 import type { VisitSummaryModalProps } from "./types";
@@ -47,33 +47,29 @@ export function VisitSummarySequentialFlow({
 
 	if (isNextStageModalOpen) {
 		return (
-			<AppointmentModal
+			<QuickBookingDrawer
 				isOpen={true}
-				appointment={state.nextVisitDraft}
-				dashboard={
-					appLogic?.dashboard || {
-						patients: [props.patient].filter(Boolean),
-						clinicSettings: { staff: [], chairs: [] },
-					}
-				}
 				onClose={() => state.setIsNextStageModalOpen(false)}
-				onSave={state.handleSaveNextStageAppointment}
-				patientName={(patients, pid) =>
-					(patients || []).find((p: any) => p.id === pid)?.fullName || state.patientName || "Пациент"
+				initialSlot={
+					state.nextVisitDraft
+						? {
+								patientId: state.nextVisitDraft.patientId || props.patient?.id,
+								patientName: state.patientName !== "—" ? state.patientName : undefined,
+								startsAt: state.nextVisitDraft.startsAt,
+								doctorUserId: state.nextVisitDraft.doctorUserId,
+								chairId: state.nextVisitDraft.chairId,
+								durationMinutes: 45,
+								reason: state.nextVisitDraft.reason || "Следующий этап лечения",
+								comment: state.nextVisitDraft.comment,
+						  }
+						: undefined
 				}
-				formatTime={(iso) => (iso ? iso.slice(11, 16) : "10:00")}
-				toDateTimeLocalValue={(iso) => (iso ? iso.slice(0, 16) : "")}
-				fromDateTimeLocalValue={(val) => (val ? new Date(val).toISOString() : new Date().toISOString())}
-				appointmentLabels={{
-					planned: "Запланирован",
-					confirmed: "Подтвержден",
-					arrived: "Пришел",
-					in_treatment: "В кресле",
-					completed: "Завершен",
-					cancelled: "Отменен",
-					no_show: "Не явился",
+				dashboard={appLogic?.dashboard}
+				auth={appLogic?.auth}
+				onAppointmentCreated={() => {
+					state.setIsNextStageModalOpen(false);
+					if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				}}
-				activeVisitLockedAppointmentStatuses={new Set()}
 			/>
 		);
 	}

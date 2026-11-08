@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
-import { GridAppointmentCard } from "../components/schedule/GridAppointmentCard";
+import { AppointmentGridCard as GridAppointmentCard } from "../components/schedule/AppointmentGridCard";
 import { AppointmentCard, extractTeethList, formatPatientDisplayFio } from "../components/schedule/AppointmentCard";
 import type { Appointment } from "@dental/shared";
 

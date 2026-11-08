@@ -114,13 +114,13 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(toolbarCode.includes("Экспорт снимка (JPEG, PNG, DICOM)"), "VisiographTopToolbar must use clean export title");
 	});
 
-	it("8. SanpinRegistryPackageModal: purged Soviet ministerial decrees and order numbers", () => {
-		const sanpinModalCode = readComponent("components/documents/SanpinRegistryPackageModal.tsx");
-		assert.ok(!sanpinModalCode.includes("1089н"), "Purged decree 1089н");
-		assert.ok(!sanpinModalCode.includes("366/у"), "Purged decree 366/у");
-		assert.ok(!sanpinModalCode.includes("257/у"), "Purged decree 257/у");
-		assert.ok(!sanpinModalCode.includes("Постановление Правительства РФ № 140"), "Purged government decree 140");
-		assert.ok(!sanpinModalCode.includes("СанПиН 2.6.1.1192-03"), "Purged SanPiN 2.6.1.1192-03 citation");
+	it("8. FnsTaxCertificateModal: purged Soviet ministerial decrees and order numbers", () => {
+		const fnsModalCode = readComponent("components/documents/FnsTaxCertificateModal.tsx");
+		assert.ok(!fnsModalCode.includes("1089н"), "Purged decree 1089н");
+		assert.ok(!fnsModalCode.includes("366/у"), "Purged decree 366/у");
+		assert.ok(!fnsModalCode.includes("257/у"), "Purged decree 257/у");
+		assert.ok(!fnsModalCode.includes("Постановление Правительства РФ № 140"), "Purged government decree 140");
+		assert.ok(!fnsModalCode.includes("СанПиН 2.6.1.1192-03"), "Purged SanPiN 2.6.1.1192-03 citation");
 	});
 
 	it("9. ChairsideDiagnosisPackageCard: purged 54-ФЗ and 804н from visible chairside UI", () => {
@@ -290,8 +290,8 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const telephonyPopupCode = readComponent("components/telephony/IncomingCallPopup.tsx");
 		assert.ok(!telephonyPopupCode.includes("043/у"), "IncomingCallPopup must not cite 043/у in toasts");
 
-		const telephonyDrawerCode = readComponent("components/telephony/IncomingCallPatientDrawer.tsx");
-		assert.ok(!telephonyDrawerCode.includes("043/у"), "IncomingCallPatientDrawer must not cite 043/у in badge");
+		const telephonyDrawerCode = readComponent("components/telephony/TelephonyDrawer.tsx");
+		assert.ok(!telephonyDrawerCode.includes("043/у"), "TelephonyDrawer must not cite 043/у in badge");
 	});
 
 	it("19. Orthopedics & Hygiene: purged 043/у and 804н from chairside banners & express strips (Mandates 8e, 8x)", () => {
@@ -308,10 +308,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("20. Fast Clinical Print, Cash Shift Templates & Outpatient Print: zero 043/у, USSR decrees, 54-ФЗ (Mandates 8e, 8x, 8ap)", () => {
-		const render043Code = readComponent("components/documents/fastClinicalPrint/RenderForm043u.tsx");
-		assert.ok(!render043Code.includes("Форма № 043/у"), "RenderForm043u must not cite 'Форма № 043/у'");
-		assert.ok(!render043Code.includes("Минздрава СССР"), "RenderForm043u must not cite 'Минздрава СССР'");
-		assert.ok(render043Code.includes("Медицинская карта приёма"), "RenderForm043u must label document 'Медицинская карта приёма'");
+		const render043Code = readComponent("components/documents/professionalA4/MedicalCardSheetPage1.tsx");
+		assert.ok(!render043Code.includes("Форма № 043/у"), "MedicalCardSheetPage1 must not cite 'Форма № 043/у'");
+		assert.ok(!render043Code.includes("Минздрава СССР"), "MedicalCardSheetPage1 must not cite 'Минздрава СССР'");
+		assert.ok(render043Code.includes("Медицинская карта"), "MedicalCardSheetPage1 must label document 'Медицинская карта'");
 
 		const cashPrintCode = readComponent("components/billing/cashShiftPrintTemplates.ts");
 		assert.ok(!cashPrintCode.includes("CRM DENTE • 54-ФЗ"), "cashShiftPrintTemplates must not cite '54-ФЗ'");

@@ -5,14 +5,8 @@
  * and telephony state hooks.
  */
 
-export * from "./TelephonyToast";
-export * from "./IncomingCallModal";
 export * from "./IncomingCallPopup";
-export * from "./TelephonyDialpadModal";
-export * from "./TelephonyDialerModal";
-export * from "./TelephonyFloatingDialer";
-export * from "./TelephonyFloatingWidget";
-export * from "./CallHistoryDrawer";
+export * from "./TelephonyDrawer";
 export * from "./CallAudioPlayer";
 export * from "./IncomingCallerCard";
 export * from "./useTelephonyState";

@@ -426,8 +426,16 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				},
 				body: JSON.stringify({ note: noteToSave, clinicalNote: noteToSave, patientId: selectedCall.patientId }),
 			})
-				.then((res) => { if (res.ok) showToast("Заметка к звонку сохранена", "info"); })
-				.catch(() => {});
+				.then((res) => {
+					if (res.ok) {
+						showToast("Заметка к звонку сохранена", "info");
+					} else {
+						showToast("Не удалось сохранить заметку к звонку", "error");
+					}
+				})
+				.catch(() => {
+					showToast("Ошибка сети при сохранении заметки", "error");
+				});
 		}
 
 		window.dispatchEvent(

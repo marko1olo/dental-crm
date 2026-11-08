@@ -39,7 +39,7 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 	const callId = `outbound-${Date.now()}`;
 	const patientName = req.patientName || "Пациент";
 
-	// 1. Immediately activate softphone floating HUD with active outgoing call
+	// 1. Immediately activate softphone floating HUD with active outgoing call in ringing state
 	store.triggerIncomingCall({
 		id: callId,
 		callId,
@@ -48,7 +48,7 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 		patientName,
 		provider: "mango",
 		timestamp: new Date().toISOString(),
-		status: "connected",
+		status: "ringing",
 		callStartedAt: Date.now(),
 	});
 
@@ -68,7 +68,7 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 		if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
 		if (staffToken) headers["x-dente-staff-token"] = staffToken;
 
-		await fetch("/api/telephony/outbound-call", {
+		const res = await fetch("/api/telephony/outbound-call", {
 			method: "POST",
 			headers,
 			body: JSON.stringify({
@@ -76,12 +76,26 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 				patientId: req.patientId || undefined,
 				patientName,
 			}),
-		}).catch(() => {
-			// Quiet fallback: softphone HUD is already active
 		});
-	} catch {
-		// Non-blocking catch
-	}
 
-	return true;
+		if (!res.ok) {
+			store.endCall();
+			showToast("АТС не настроена в клинике", "warning");
+			return false;
+		}
+
+		const data = (await res.json().catch(() => null)) as { error?: string; status?: string } | null;
+		if (data && (data.error || data.status === "failed" || data.status === "error")) {
+			store.endCall();
+			showToast("АТС не настроена в клинике", "warning");
+			return false;
+		}
+
+		store.connectCall();
+		return true;
+	} catch {
+		store.endCall();
+		showToast("АТС не настроена в клинике", "warning");
+		return false;
+	}
 }

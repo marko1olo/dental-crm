@@ -1,6 +1,6 @@
 import React from "react";
 import { Users, User, Armchair } from "lucide-react";
-import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 import { useScheduleStore } from "../../../store/scheduleStore";
 
 export interface ScheduleMobileFilterChipsProps {

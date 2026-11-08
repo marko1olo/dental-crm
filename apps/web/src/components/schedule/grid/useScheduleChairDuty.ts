@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import type { Dashboard } from "@dental/shared";
-import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 import { showToast } from "../../GlobalToast";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
 import { useScheduleChairShiftBulkOps } from "./useScheduleChairShiftBulkOps";

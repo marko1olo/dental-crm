@@ -1,5 +1,5 @@
 import React from "react";
-import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface ScheduleChairHeaderSelectsProps {

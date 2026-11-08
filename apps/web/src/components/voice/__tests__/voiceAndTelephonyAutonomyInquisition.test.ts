@@ -120,34 +120,33 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 			);
 		});
 
-		it("TelephonyFloatingWidget explicitly pauses and resets audio element on unmount", () => {
-			const widgetPath = path.join(telephonyDir, "TelephonyFloatingWidget.tsx");
-			const timerAudioHookPath = path.join(telephonyDir, "telephonyFloatingWidget", "useFloatingCallTimerAndAudio.ts");
-			const code = (fs.existsSync(timerAudioHookPath) ? fs.readFileSync(timerAudioHookPath, "utf-8") : "") + fs.readFileSync(widgetPath, "utf-8");
+		it("CallAudioPlayer explicitly pauses and resets audio element on unmount", () => {
+			const playerPath = path.join(telephonyDir, "CallAudioPlayer.tsx");
+			const code = fs.readFileSync(playerPath, "utf-8");
 
 			// Audio unmount cleanup
 			assert.ok(
-				code.includes("audioRef.current.pause()") &&
-				code.includes("audioRef.current.src = \"\"") &&
-				code.includes("audioRef.current.load()"),
-				"TelephonyFloatingWidget must clean up audioRef on unmount",
+				code.includes("p.audioRef.current.pause()") &&
+				code.includes("p.audioRef.current.src = \"\"") &&
+				code.includes("p.audioRef.current.load()"),
+				"CallAudioPlayer must clean up audioRef on unmount",
 			);
 
-			// audioDuration must initialize to 0, not a fake hardcoded 45s
+			// durationSeconds default must be 0, not a fake hardcoded 45s
 			assert.ok(
-				code.includes("const [audioDuration, setAudioDuration] = useState(0)"),
-				"audioDuration must initialize to 0 seconds",
+				code.includes("durationSeconds = 0"),
+				"durationSeconds must default to 0 seconds",
 			);
 			assert.ok(
-				!code.includes("const [audioDuration, setAudioDuration] = useState(45)"),
-				"Must eliminate fake useState(45) default",
+				!code.includes("durationSeconds = 45"),
+				"Must eliminate fake 45 default",
 			);
 		});
 
-		it("IncomingCallPopup CallAudioPlayer explicitly cleans up audio and eliminates fake 45s default", () => {
+		it("IncomingCallPopup and TelephonyDrawer eliminate fake 45s default", () => {
 			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
 			const playerPath = path.join(telephonyDir, "CallAudioPlayer.tsx");
-			const drawerPath = path.join(telephonyDir, "IncomingCallPatientDrawer.tsx");
+			const drawerPath = path.join(telephonyDir, "TelephonyDrawer.tsx");
 			const code = (fs.existsSync(playerPath) ? fs.readFileSync(playerPath, "utf-8") : "") +
 				(fs.existsSync(drawerPath) ? fs.readFileSync(drawerPath, "utf-8") : "") +
 				fs.readFileSync(popupPath, "utf-8");
@@ -215,10 +214,9 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 			);
 		});
 
-		it("Capsule pill buttons in TelephonyFloatingWidget and IncomingCallPopup use compact 32-34px density", () => {
-			const widgetPath = path.join(telephonyDir, "TelephonyFloatingWidget.tsx");
+		it("Capsule pill buttons in TelephonyHeaderCapsule and IncomingCallPopup use compact 32-34px density", () => {
 			const capsulePath = path.join(telephonyDir, "headerCapsule", "TelephonyHeaderCapsule.tsx");
-			const widgetCode = fs.readFileSync(widgetPath, "utf-8") + (fs.existsSync(capsulePath) ? fs.readFileSync(capsulePath, "utf-8") : "");
+			const widgetCode = fs.readFileSync(capsulePath, "utf-8");
 
 			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
 			const headerBarPath = path.join(telephonyDir, "incomingCallPopupModules", "IncomingCallHeaderBar.tsx");
@@ -268,7 +266,7 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 			path.join(voiceDir, "VoiceDictationAssistantModal.tsx"),
 			...fs.readdirSync(dictationDir).filter(f => f.endsWith(".ts") || f.endsWith(".tsx")).map(f => path.join(dictationDir, f)),
 			path.join(voiceDir, "voiceClinicalCommands.ts"),
-			path.join(telephonyDir, "TelephonyFloatingWidget.tsx"),
+			path.join(telephonyDir, "TelephonyStudioModal.tsx"),
 			path.join(telephonyDir, "IncomingCallPopup.tsx"),
 			path.join(componentsDir, "SmartMicrophoneButton.tsx"),
 			path.join(componentsDir, "VoiceAssistantUI.tsx"),

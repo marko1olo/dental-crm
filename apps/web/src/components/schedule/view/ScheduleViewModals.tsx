@@ -1,6 +1,5 @@
 import React from "react";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
-import { AppointmentModal } from "../AppointmentModal";
 import { WaitlistDrawer } from "../WaitlistDrawer";
 import type { WaitlistCandidateItem } from "../waitlist/waitlistTypes";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
@@ -113,54 +112,6 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         toDateTimeLocalValue={toDateTimeLocalValue}
         fromDateTimeLocalValue={fromDateTimeLocalValue}
         chairDoctorAssignments={computedChairDoctorAssignments}
-      />
-
-      <AppointmentModal
-        isOpen={modalAppointment !== null}
-        appointment={modalAppointment}
-        dashboard={dashboard as any}
-        onClose={() => {
-          setModalAppointment(null);
-          useUiSurfaceStore.getState().closePrimaryModal("appointment_modal");
-        }}
-        onSave={async (appointmentId, draft) => {
-          const allowOverbooking = Boolean((draft as any).allowOverbooking);
-          const allowEmergencyOverride = Boolean(
-            (draft as any).allowEmergencyOverride,
-          );
-          if (
-            appointmentId.startsWith("new") &&
-            typeof createAppointmentFromDraft === "function"
-          ) {
-            for (const [key, value] of Object.entries(draft)) {
-              updateNewAppointmentDraft(key, value);
-            }
-            return Boolean(
-              await createAppointmentFromDraft({
-                allowOverbooking,
-                allowEmergencyOverride,
-              }),
-            );
-          }
-          for (const [key, value] of Object.entries(draft)) {
-            updateAppointmentScheduleDraft(appointmentId, key, value);
-          }
-          return await saveAppointmentSchedule(appointmentId, {
-            allowOverbooking,
-            allowEmergencyOverride,
-          });
-        }}
-        repeatAppointment={repeatAppointment}
-        copyAppointmentToBuffer={copyAppointmentToBuffer}
-        patientName={patientName}
-        formatTime={formatTime}
-        toDateTimeLocalValue={toDateTimeLocalValue}
-        fromDateTimeLocalValue={fromDateTimeLocalValue}
-        appointmentLabels={appointmentLabels}
-        activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
-        appointmentReadinessById={appointmentReadinessById}
-        chairDoctorAssignments={computedChairDoctorAssignments}
-        onOpenWaitlistForSlot={handleOpenWaitlistForSlot}
       />
 
       <WaitlistDrawer

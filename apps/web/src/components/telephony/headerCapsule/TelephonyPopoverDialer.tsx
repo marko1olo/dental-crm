@@ -80,6 +80,7 @@ export function TelephonyPopoverDialer({
 
 			<button
 				type="submit"
+				data-testid="btn-start-outgoing-call"
 				className="primary-button min-h-[48px] sm:min-h-[40px] w-full rounded-xl flex items-center justify-center gap-2 text-xs font-bold shadow-md cursor-pointer mt-0.5"
 				title="Позвонить"
 			>

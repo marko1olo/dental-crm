@@ -10,7 +10,8 @@ import {
 	useIncomingCallPopupController,
 } from "./incomingCallPopupModules";
 if (typeof document !== "undefined") {
-	import("./telephonyFloatingWidget.css");
+	import("./styles/telephonyCapsuleAndDrawer.css");
+	import("./styles/telephonyCoexistence.css");
 }
 
 // 100% Transparent Re-exports (Zero-Downtime Contract & Mandate 8b)
@@ -20,8 +21,6 @@ export * from "./IncomingCallQuickBooking";
 export * from "./IncomingCallerCard";
 export * from "./IncomingCallPastHistory";
 export * from "./IncomingCallBadgeMoreMenu";
-export * from "./IncomingCallPatientDrawer";
-export * from "./IncomingCallEmptyDrawer";
 export * from "./useIncomingCallData";
 export * from "./initiateOutboundCall";
 export * from "./incomingCallPopupModules";

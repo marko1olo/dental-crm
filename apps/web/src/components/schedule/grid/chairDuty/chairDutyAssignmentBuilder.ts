@@ -1,6 +1,6 @@
 import type { DentalSpecialty, StaffMember } from "@dental/shared";
 import { specialtyLabels } from "../../../../workspaceUiLabels";
-import { formatDoctorShortName } from "../../GridAppointmentCard";
+import { formatDoctorShortName } from "../../AppointmentGridCard";
 import { CHAIR_SHIFT_PRESETS } from "../gridConstants";
 import type { ChairDoctorShiftAssignment, ChairDoctorSubShift } from "../gridTypes";
 

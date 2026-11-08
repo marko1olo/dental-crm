@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import React from "react";
 import { createPortal } from "react-dom";
-import { TelephonyDialerModal } from "./TelephonyDialerModal";
+import { TelephonyStudioModal } from "./TelephonyStudioModal";
 import { TelephonyDrawerHeader } from "./TelephonyDrawerHeader";
 import { TelephonyActiveCallPanel } from "./drawerModules/TelephonyActiveCallPanel";
 import { TelephonyCallLogList } from "./drawerModules/TelephonyCallLogList";
@@ -10,7 +10,7 @@ import { TelephonyDrawerTabs } from "./drawerModules/TelephonyDrawerTabs";
 import { useTelephonyDrawerController } from "./drawerModules/useTelephonyDrawerController";
 import type { TelephonyDrawerProps } from "./drawerModules/telephonyDrawerTypes";
 if (typeof document !== "undefined") {
-	import("./telephonyFloatingWidget.css");
+	import("./styles/telephonyCapsuleAndDrawer.css");
 }
 
 export type { TelephonyDrawerProps };
@@ -92,7 +92,7 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 				</div>
 			</section>
 
-			<TelephonyDialerModal isOpen={isDialerOpen} onClose={() => setIsDialerOpen(false)} />
+			<TelephonyStudioModal isOpen={isDialerOpen} onClose={() => setIsDialerOpen(false)} />
 		</>
 	);
 

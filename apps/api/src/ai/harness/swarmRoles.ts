@@ -1,7 +1,8 @@
 /**
- * swarmRoles.ts — Clinical Copilot Roles and Specialized Domain Directives
+ * swarmRoles.ts — Clinical Copilot Specializations and Domain Directives
  *
  * Implements clinical specialization profiles for Solo Chairside Copilot:
+ * - In-app invariant: EXACTLY ONE wise solo copilot operates inside the CRM (zero internal swarms!).
  * 1. Orchestrator (Solo Chairside Copilot, holistic session coordination)
  * 2. Triage Specialist (Socratic Triage, multi-channel routing)
  * 3. Odontogram & EMR Auditor (Clinical protocols, EMR diaries & consent audit)
@@ -9,25 +10,33 @@
  * 5. Vision / DICOM Specialist (RVG & CBCT MPR analysis, Hounsfield D1-D4, nerve tracing)
  */
 
-export type ClinicalSwarmRole =
+export type ClinicalCopilotSpecialization =
 	| "orchestrator"
 	| "triage"
 	| "odontogram_inquisitor"
 	| "billing_sentinel"
 	| "vision_specialist";
 
-export interface SwarmRoleDefinition {
-	id: ClinicalSwarmRole;
+export type ClinicalSwarmRole = ClinicalCopilotSpecialization;
+
+export interface ClinicalCopilotSpecializationDefinition {
+	id: ClinicalCopilotSpecialization;
 	titleRu: string;
 	directive: string;
 	recommendedTools: string[];
 }
 
-export const CLINICAL_SWARM_ROLES: Record<ClinicalSwarmRole, SwarmRoleDefinition> = {
+export type SwarmRoleDefinition = ClinicalCopilotSpecializationDefinition;
+
+export const CLINICAL_COPILOT_SPECIALIZATIONS: Record<
+	ClinicalCopilotSpecialization,
+	ClinicalCopilotSpecializationDefinition
+> = {
 	orchestrator: {
 		id: "orchestrator",
 		titleRu: "Единый клинический советник (Solo Chairside Copilot)",
 		directive: `Ты — Единый клинический советник и копайлот врача-стоматолога CRM DENTE (Solo Chairside Copilot).
+Внутри программы работает СТРОГО ОДИН МУДРЫЙ СОЛО-КОПАЙЛОТ (ноль внутренних роев внутри софта!).
 Твоя задача — целостное ведение клинического приёма, координация действий и инструментов, синтез дневников и мгновенная помощь врачу.
 Ты автономно вызываешь нужные инструменты через Function Calling без слэш-команд.`,
 		recommendedTools: [
@@ -47,7 +56,7 @@ export const CLINICAL_SWARM_ROLES: Record<ClinicalSwarmRole, SwarmRoleDefinition
 		id: "triage",
 		titleRu: "Маршрутизация и первичный триаж",
 		directive: `[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: МАРШРУТИЗАЦИЯ И ПЕРВИЧНЫЙ ТРИАЖ]
-Ты — специализированный клинический советник первичного триажа и маршрутизации пациентов.
+Ты — специализированный клинический советник первичного триажа и маршрутизации пациентов в роли Solo Copilot.
 Принципы:
 1. Socratic Triage: задавай не более 2–3 уточняющих клинических вопросов для выяснения локализации боли, характера и длительности.
 2. Ноль бюрократии: не требуй избыточных анкет при острой боли.
@@ -63,7 +72,7 @@ export const CLINICAL_SWARM_ROLES: Record<ClinicalSwarmRole, SwarmRoleDefinition
 		id: "odontogram_inquisitor",
 		titleRu: "Клинический аудит медицинской карты и одонтограммы",
 		directive: `[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: АУДИТ МЕДИЦИНСКОЙ КАРТЫ И ОДОНТОГРАММЫ]
-Ты — клинический аудитор медицинской карты и зубной формулы.
+Ты — клинический советник аудита медицинской карты и зубной формулы в роли Solo Copilot.
 Принципы:
 1. Контроль клинических протоколов СтАР (K02–K08): кариес, пульпит, периодонтит.
 2. Проверка заполнения медицинской карты приёма (SOAP) и наличия обязательных согласий.
@@ -83,7 +92,7 @@ export const CLINICAL_SWARM_ROLES: Record<ClinicalSwarmRole, SwarmRoleDefinition
 		id: "billing_sentinel",
 		titleRu: "Финансовый контроль и кассовая дисциплина",
 		directive: `[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: ФИНАНСОВЫЙ КОНТРОЛЬ И КАССОВАЯ ДИСЦИПЛИНА]
-Ты — финансовый советник клиники и кассовой дисциплины.
+Ты — финансовый советник клиники и кассовой дисциплины в роли Solo Copilot.
 Принципы:
 1. Целочисленные копейки (amountKopecks, BIGINT): абсолютная математическая точность без float-ошибок.
 2. Ноль бюрократии при оплате: запрещено требовать ИНН с физических лиц.
@@ -99,7 +108,7 @@ export const CLINICAL_SWARM_ROLES: Record<ClinicalSwarmRole, SwarmRoleDefinition
 		id: "vision_specialist",
 		titleRu: "Лучевая диагностика и анализ снимков",
 		directive: `[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: ЛУЧЕВАЯ ДИАГНОСТИКА И АНАЛИЗ СНИМКОВ]
-Ты — эксперт лучевой диагностики (2D RVG-визиография, 3D КЛКТ MPR).
+Ты — эксперт лучевой диагностики (2D RVG-визиография, 3D КЛКТ MPR) в роли Solo Copilot.
 Принципы:
 1. Анализ костной ткани по шкале Хаунсфилда (D1–D4).
 2. Безопасность: контроль близости корней и имплантатов к нижнеальвеолярному нерву (n. alveolaris inferior) и дну верхнечелюстной пазухи.
@@ -112,10 +121,16 @@ export const CLINICAL_SWARM_ROLES: Record<ClinicalSwarmRole, SwarmRoleDefinition
 	},
 };
 
-export function getSwarmRoleDirective(role?: ClinicalSwarmRole): string {
-	if (!role || role === "orchestrator") {
-		return CLINICAL_SWARM_ROLES.orchestrator.directive;
+export const CLINICAL_SWARM_ROLES = CLINICAL_COPILOT_SPECIALIZATIONS;
+
+export function getCopilotSpecializationDirective(
+	specialization?: ClinicalCopilotSpecialization,
+): string {
+	if (!specialization || specialization === "orchestrator") {
+		return CLINICAL_COPILOT_SPECIALIZATIONS.orchestrator.directive;
 	}
-	const roleDef = CLINICAL_SWARM_ROLES[role];
-	return roleDef ? roleDef.directive : CLINICAL_SWARM_ROLES.orchestrator.directive;
+	const roleDef = CLINICAL_COPILOT_SPECIALIZATIONS[specialization];
+	return roleDef ? roleDef.directive : CLINICAL_COPILOT_SPECIALIZATIONS.orchestrator.directive;
 }
+
+export const getSwarmRoleDirective = getCopilotSpecializationDirective;

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import type { Dashboard, DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../../workspaceUiLabels";
 import { showToast } from "../../GlobalToast";
-import { formatDoctorShortName } from ".././GridAppointmentCard";
+import { formatDoctorShortName } from "../AppointmentGridCard";
 import {
   getMondayOfWeekIso,
   addDaysToDateIso,

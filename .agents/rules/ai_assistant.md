@@ -36,9 +36,11 @@ trigger: always_on
 ## 3. КАРТА КОДА В РЕПОЗИТОРИИ
 
 - **Промпты и поведение**: `apps/api/src/ai/harness/systemPromptBuilder.ts`
+- **Специализации Соло-Копайлота**: `apps/api/src/ai/harness/swarmRoles.ts` (`ClinicalCopilotSpecialization`)
 - **Диспетчеризация тулов**: `apps/api/src/ai/harness/toolDispatcher.ts`
 - **Сессии и память**: `apps/api/src/ai/harness/sessionLifecycle.ts`
 - **API эндпоинты**: `apps/api/src/routes/agentRoutes.ts`
+- **Кресельный HUD (Tier 1 Cockpit)**: `apps/web/src/components/copilot/ChairsideCopilotHUD.tsx` и `apps/web/src/components/copilot/chairside/`
 - **Интерфейс студии / шторки**: `apps/web/src/components/copilot/CopilotStudioModal.tsx`
 - **Стейт копайлота**: `apps/web/src/store/copilotStore.ts`
 
@@ -67,4 +69,6 @@ trigger: always_on
 ## 6. ЗАПРЕТ СИМУЛЯЦИЙ И НАСТРОЙКИ ДОВЕРИЯ
 
 - **Тотальный запрет симуляций:** Никаких захардкоженных ответов, фейковых `setTimeout` и псевдо-вызовов тулов. Ассистент работает реально: промпт -> тул -> Fastify API -> PostgreSQL 18 -> результат в UI.
+- **Честный кресельный HUD и ReAct-мышление:** В состоянии покоя блок мыслей чист («готов к работе»), шаги размышлений отображаются ТОЛЬКО при реальном исполнении запроса через ReAct-поток. Ноль захардкоженных шагов со статусом `done`, ноль галлюцинаций пациента «Иванов И.И.» или навязанного зуба 16 при пустом старте. Честный 1-кликовый макро-батч оформления приёма.
+- **Единый Соло-Копайлот:** Внутренние клинические профили в API являются специализациями единого копайлота (`ClinicalCopilotSpecialization`), исключая любые внутренние рои внутри клиентского ПО.
 - **Настройки копайлота:** Уровень доверия (`confirm_all` / `balanced` / `autonomous`), анимация мышления, сквозной голос, долговременная память сессий.

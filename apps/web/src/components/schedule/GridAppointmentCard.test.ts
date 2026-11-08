@@ -4,7 +4,7 @@ import {
 	getDoctorSpecialtyTheme,
 	resolveAppointmentLabStatus,
 	resolveAppointmentClinicalBadges,
-} from "./GridAppointmentCard";
+} from "./AppointmentGridCard";
 
 describe("GridAppointmentCard — Doctor Specialty Color Coding (WCAG AAA)", () => {
 	it("resolves therapy specialty to blue/indigo pastel classes", () => {

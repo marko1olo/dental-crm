@@ -26,52 +26,78 @@ export {
 
 export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) => {
   const {
-    initialOpen = true, initialDocked = false, initialCompact = false, activeTooth = 16,
+    initialOpen = true, initialDocked = false, initialCompact = false, activeTooth,
     patientName, patientAllergies = [], onClose, onApplyToothState,
     onUpdateToothStatus, onApplyServices, onAddBillingItem, onApplySoapNotes,
     onApplySoapDiary, onDisposeCarpule, onPrintInformedConsent, onApplyAll, className = "",
+    initialThoughts, initialToothProposal, initialServicesProposal, initialSoapProposal,
+    initialAnestheticProposal, initialSafetyAlert, initialPresetIndex,
   } = props;
 
   const displayPatientName = patientName?.trim() ? patientName : "Пациент не выбран";
+  const hasActiveTooth = typeof activeTooth === "number";
 
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isDocked, setIsDocked] = useState(initialDocked);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(!initialCompact);
   const [promptInput, setPromptInput] = useState("");
-  const [activePresetIndex, setActivePresetIndex] = useState(0);
+  const [activePresetIndex, setActivePresetIndex] = useState(initialPresetIndex ?? 0);
 
   const activePreset = useMemo(() => CLINICAL_PRESETS[activePresetIndex] || defaultPreset, [activePresetIndex]);
 
-  const [toothProposal, setToothProposal] = useState<ChairsideToothProposal | null>({
-    toothNumber: activeTooth ?? 16,
-    state: activePreset.toothState || "C2",
-    stateLabel: activePreset.toothStateLabel || "Кариес дентина (C2)",
-    surfaces: activePreset.surfaces || ["O"],
-    applied: false,
+  const [toothProposal, setToothProposal] = useState<ChairsideToothProposal | null>(() => {
+    if (initialToothProposal !== undefined) return initialToothProposal;
+    if (!hasActiveTooth) return null;
+    return {
+      toothNumber: activeTooth,
+      state: activePreset.toothState || "C2",
+      stateLabel: activePreset.toothStateLabel || "Кариес дентина (C2)",
+      surfaces: activePreset.surfaces || ["O"],
+      applied: false,
+    };
   });
 
-  const [servicesProposal, setServicesProposal] = useState<ChairsideServiceProposal[]>(
-    activePreset.services.map((s) => ({ ...s, applied: false }))
-  );
-
-  const [soapProposal, setSoapProposal] = useState<ChairsideSoapProposal>({
-    ...activePreset.soap,
-    applied: false,
+  const [servicesProposal, setServicesProposal] = useState<ChairsideServiceProposal[]>(() => {
+    if (initialServicesProposal !== undefined) return initialServicesProposal;
+    if (!hasActiveTooth) return [];
+    return activePreset.services.map((s) => ({ ...s, applied: false }));
   });
 
-  const [anestheticProposal, setAnestheticProposal] = useState<ChairsideAnestheticProposal | null>(
-    activePreset.anesthetic ? { ...activePreset.anesthetic, applied: false } : null
-  );
+  const [soapProposal, setSoapProposal] = useState<ChairsideSoapProposal>(() => {
+    if (initialSoapProposal !== undefined) return initialSoapProposal;
+    if (!hasActiveTooth) {
+      return {
+        complaint: "",
+        anamnesis: "",
+        objectiveStatus: "",
+        diagnosis: "",
+        treatmentPlan: "",
+        recommendations: "",
+        applied: false,
+      };
+    }
+    return {
+      ...activePreset.soap,
+      applied: false,
+    };
+  });
 
-  const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert | null>(activePreset.safetyAlert);
+  const [anestheticProposal, setAnestheticProposal] = useState<ChairsideAnestheticProposal | null>(() => {
+    if (initialAnestheticProposal !== undefined) return initialAnestheticProposal;
+    if (!hasActiveTooth) return null;
+    return activePreset.anesthetic ? { ...activePreset.anesthetic, applied: false } : null;
+  });
 
-  const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>([
-    { id: "step-1", stepNumber: 1, title: "Проверка аллергического статуса и лекарственной безопасности DDI", status: "done" },
-    { id: "step-2", stepNumber: 2, title: "Сверка диагноза МКБ-10: K02.1 Кариес дентина", status: "done" },
-    { id: "step-3", stepNumber: 3, title: "Расчет стоимости услуг по прейскуранту", status: "done" },
-    { id: "step-4", stepNumber: 4, title: "Формирование клинического протокола приёма", status: "done" },
-  ]);
+  const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert | null>(() => {
+    if (initialSafetyAlert !== undefined) return initialSafetyAlert;
+    if (!hasActiveTooth) return null;
+    return activePreset.safetyAlert;
+  });
+
+  const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>(() => {
+    return initialThoughts ? [...initialThoughts] : [];
+  });
   const [isExecutingAgent, setIsExecutingAgent] = useState(false);
 
   const servicesTotalPrice = useMemo(
@@ -183,6 +209,15 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
   const handleDismissAll = useCallback(() => {
     setToothProposal(null);
     setServicesProposal([]);
+    setSoapProposal({
+      complaint: "",
+      anamnesis: "",
+      objectiveStatus: "",
+      diagnosis: "",
+      treatmentPlan: "",
+      recommendations: "",
+      applied: false,
+    });
     setSafetyAlert(null);
     setAnestheticProposal(null);
   }, []);
@@ -281,10 +316,12 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
                 <button type="button" onClick={() => setToothProposal(null)} className="btn-remove-pill-tooth" aria-label="Удалить зуб" data-testid="btn-remove-pill-tooth"><X size={10} /></button>
               </div>
             )}
-            <div className="chairside-live-pill chairside-live-pill--diagnosis live-pill-diagnosis" data-testid="live-pill-diagnosis">
-              <span className="chairside-live-pill-text">{soapProposal.diagnosis || "Кариес"}</span>
-              <button type="button" onClick={() => {}} className="btn-remove-pill-diagnosis" aria-label="Удалить диагноз" data-testid="btn-remove-pill-diagnosis"><X size={10} /></button>
-            </div>
+            {soapProposal.diagnosis ? (
+              <div className="chairside-live-pill chairside-live-pill--diagnosis live-pill-diagnosis" data-testid="live-pill-diagnosis">
+                <span className="chairside-live-pill-text">{soapProposal.diagnosis}</span>
+                <button type="button" onClick={() => setSoapProposal((p) => ({ ...p, diagnosis: "" }))} className="btn-remove-pill-diagnosis" aria-label="Удалить диагноз" data-testid="btn-remove-pill-diagnosis"><X size={10} /></button>
+              </div>
+            ) : null}
             {anestheticProposal && (
               <div className="chairside-live-pill chairside-live-pill--anesthetic live-pill-anesthetic" data-testid="live-pill-anesthetic">
                 <span className="chairside-live-pill-text">{anestheticProposal.drugName}</span>
@@ -295,6 +332,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               <div className="chairside-live-pill chairside-live-pill--services live-pill-services" data-testid="live-pill-services">
                 <span className="chairside-live-pill-text">{`${servicesTotalPrice} ₽`}</span>
                 <button type="button" onClick={() => setServicesProposal([])} className="btn-remove-pill-services" aria-label="Удалить услуги" data-testid="btn-remove-pill-services"><X size={10} /></button>
+              </div>
+            )}
+            {!toothProposal && !soapProposal.diagnosis && !anestheticProposal && servicesProposal.length === 0 && (
+              <div className="chairside-live-pill chairside-live-pill--ready text-xs text-[var(--muted)] flex items-center gap-1.5" data-testid="live-pill-ready">
+                <span>Готов к диктовке</span>
               </div>
             )}
           </div>
@@ -396,17 +438,21 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               <div className="flex items-center justify-between text-xs font-semibold text-[var(--ink)] mb-1.5">
                 <span className="flex items-center gap-1.5"><Sparkles size={13} className="text-[var(--teal)]" /> Размышления ИИ</span>
                 <span className="text-[10px] text-[var(--ok-fg,var(--teal))] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded">
-                  {isExecutingAgent ? "анализ..." : "завершено"}
+                  {isExecutingAgent ? "анализ..." : thoughts.length > 0 ? "завершено" : "готов к работе"}
                 </span>
               </div>
-              <ol className="chairside-thought-steps space-y-1 text-xs text-[var(--ink)]">
-                {thoughts.map((s) => (
-                  <li key={s.id}>
-                    {s.title.replace(/^\d+\.\s*/, "")}
-                    {s.detail ? <span className="text-[var(--muted)]"> — {s.detail}</span> : null}
-                  </li>
-                ))}
-              </ol>
+              {thoughts.length > 0 ? (
+                <ol className="chairside-thought-steps space-y-1 text-xs text-[var(--ink)]">
+                  {thoughts.map((s) => (
+                    <li key={s.id}>
+                      {s.title.replace(/^\d+\.\s*/, "")}
+                      {s.detail ? <span className="text-[var(--muted)]"> — {s.detail}</span> : null}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-xs text-[var(--muted)] italic m-0">Готов к работе. Ожидание команды или диктовки...</p>
+              )}
             </div>
 
             {/* Decomposed Proposal Cards: Odontogram, 804n, SOAP, Anesthetic, Consent, Safety Alert */}
@@ -420,6 +466,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               onApplyTooth={handleApplyTooth}
               onApplyServices={handleApplyServices}
               onApplySoap={handleApplySoap}
+              onApplyAll={handleApplyAllActions}
               onDisposeCarpule={onDisposeCarpule}
               onPrintInformedConsent={onPrintInformedConsent}
               onDismissSafetyAlert={() => setSafetyAlert(null)}

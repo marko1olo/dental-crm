@@ -14,7 +14,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QuickBookingServiceSection } from "../QuickBookingServiceSection";
 import { GridAppointmentHoverHud } from "../GridAppointmentHoverHud";
-import { GridAppointmentCard } from "../GridAppointmentCard";
+import { AppointmentGridCard as GridAppointmentCard } from "../AppointmentGridCard";
 import {
   resolveAppointmentClinicalBadges,
   type ClinicalBadgeItem,
