@@ -69,12 +69,26 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
   });
 
   it("3. Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 («Применить действие»)", () => {
+    const proposalMessages = [
+      {
+        id: "msg-action-1",
+        role: "assistant" as const,
+        text: "Рекомендуется лечение глубокого кариеса зуба 36.",
+        timestamp: "10:00",
+        actionProposal: {
+          id: "act-1",
+          toolName: "updateToothStatus",
+          description: "Кариес дентина (K02.1)",
+          payload: { tooth: 36, state: "caries" },
+        },
+      },
+    ];
     const html = renderToString(
       <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
         initialTab="dialog"
-        initialMessages={DEFAULT_INITIAL_MESSAGES}
+        initialMessages={proposalMessages}
       />
     );
     assert.ok(html.includes('data-testid="copilot-primary-apply-cta"'), "Primary CTA кнопка обязана иметь data-testid");
