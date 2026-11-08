@@ -3,7 +3,7 @@
  * Compliance: Mandate 8x & 8ap (Human Russian Language & Clean Domain Terms without Soviet Form Codes).
  */
 
-import type { ConsolidatedStaffPayrollSummary } from "../engine/staffPayrollAssistantAdminTypes";
+import type { ConsolidatedStaffPayrollSummary } from "../payrollStaffTypes";
 import type { DoctorPayrollResult } from "@dental/shared/payroll";
 
 export function generateDoctorPayrollCsv(results: readonly DoctorPayrollResult[]): string {

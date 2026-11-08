@@ -1271,6 +1271,34 @@
   3. В `DoctorPayrollReport.tsx` добавлен Apple Segmented Control `[ Врачи | Ассистенты ]`, сводные плитки ФОТ ассистентов, десктопная ведомость и мобильные Grouped Cards по Apple HIG.
   4. Сняты 4-State Proofs скриншоты (`01_doctor_payroll_pc_light_1440x900.png`, `02_doctor_payroll_pc_dark_1440x900.png`, `03_doctor_payroll_mobile_light_390x844.png`, `04_doctor_payroll_mobile_dark_390x844.png`) в `docs/proofs/payroll/`. Проверено тестами `payrollReportsInquisition.test.ts`.
 
+### [PAY-06] [SEV-1] [ИСПРАВЛЕНО] Ликвидация 29 файлов-сирот, хардкода вычета затрат и нативных реляционных расчетов выплат
+- **Файлы:**
+  - [`apps/api/src/routes/payroll.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/payroll.ts)
+  - [`apps/api/src/services/reports/managerReports/assistantPayrollReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/assistantPayrollReports.ts)
+  - [`apps/web/src/components/finance/doctorPayoutWallet/DoctorWalletBalanceHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/doctorPayoutWallet/DoctorWalletBalanceHeader.tsx)
+  - [`apps/web/src/components/payroll/DoctorPayrollModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/DoctorPayrollModal.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/DoctorWalletLaunchers.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/DoctorWalletLaunchers.tsx)
+  - [`packages/shared/src/finance/netSalary/doctorProductionSalaryEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/finance/netSalary/doctorProductionSalaryEngine.ts)
+  - [`apps/api/src/services/finance/doctorPayouts/queries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/queries.ts)
+  - [`apps/web/src/components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher.tsx)
+- **Суть бага:** В модуле зарплат существовало 4 конкурирующих контура, 29 файлов-сирот (17 файлов в `payrollModules/`, 9 файлов в `payroll/engine/`, `DoctorPayrollHubModal.tsx`, `DoctorPayrollModalContent.tsx`), захардкоженные нулями расходы лаборатории и материалов (`labKop = 0; matKop = 0;`), расчет доплат ассистенту через regex по тексту жалоб (`/(снимок|рентген)/i`), скрытая кнопка закрытия периода (`display: none`), и отсутствующий Primary CTA «Запросить выплату» в шапке мобильного кошелька врача.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Физический снос 29 файлов-сирот (`git rm`):** удалены все 17 компонентов `payrollModules/*`, 9 файлов `payroll/engine/*`, `DoctorPayrollHubModal.tsx`, `DoctorPayrollModalContent.tsx` и фасад `apps/web/src/components/finance/DoctorPayoutMobileWallet.tsx`. Канонический SSOT сфокусирован в `DoctorPayrollStudioModal.tsx`, `DoctorPayoutDashboard.tsx` и `doctorPayoutWallet/DoctorPayoutMobileWallet.tsx`.
+  2. **Реальный вычет себестоимости в Net Revenue:** в `apps/api/src/routes/payroll.ts` ликвидирован хардкод `labKop = 0; matKop = 0;`. Подключен реальный сбор себестоимости выполненных нарядов ЗТЛ (`lab_orders`) с вычетом из базы начисления комиссии врача.
+  3. **Реляционная проверка манипуляций ассистента:** в `assistantPayrollReports.ts` выжжен regex жалоб `/(снимок|рентген)/i`. Подключен реляционный запрос к `treatment_items` с сопоставлением кодов услуг прейскуранта (Номенклатура 804н: `A06*` — рентгенология, `A16*` — хирургия).
+  4. **Primary CTA «Запросить выплату»:** в `DoctorWalletBalanceHeader.tsx` смонтирован проп `onRequestPayout`, отображающий доступную кнопку «Запросить выплату» (`data-testid="doctor-wallet-request-payout-btn"`).
+  5. **Отображение закрытия периода:** в `DoctorPayrollModal.tsx` удален стиль `display: none` со скрытой кнопки закрытия расчетного периода.
+  6. **Ликвидация чужого бренда:** в `@dental/shared` функция экспортирована как `calculateStandardDoctorSalary = calculateDoctorSalary`.
+  7. **Поддержка ассистентов в выплатах:** в `queries.ts` и `permissionMatrix.ts` добавлена поддержка роли `assistant` и право `payroll.read.own`.
+  8. **Монтирование в UI Shell (Мандат 8aq):** создан `DirectDoctorWalletLauncher.tsx`, смонтирован в `AppShell.tsx` и `administrativeLaunchersRegistry.tsx` с поддержкой deep-link `#wallet`.
+  9. **4-State Visual Proofs:** сняты и отсмотрены через `read_file` 4 скриншота в `docs/proofs/payroll/`:
+     - `01_doctor_payout_dashboard_pc_light_1440x900.png` (54 993 байт) — PC Light Doctors Net Revenue.
+     - `02_doctor_payout_dashboard_pc_dark_1440x900.png` (46 677 байт) — PC Dark Assistants Wages.
+     - `03_doctor_payout_wallet_mobile_light_390x844.png` (53 129 байт) — Mobile Light Doctor Wallet с кнопкой «Запросить выплату».
+     - `04_doctor_payout_wallet_mobile_dark_390x844.png` (52 114 байт) — Mobile Dark Doctor Wallet Apple HIG.
+  10. **Тесты:** 36 web тестов + 8 API тестов = 44/44 PASS. 4 статических гейта DoD (кодировки UTF-8, стабы, fetch guards, динамические импорты) — Exit Code 0.
+
+
 
 ## 14. 📋 ПЛАНЫ ЛЕЧЕНИЯ, 3-УРОВНЕВЫЕ СМЕТЫ, КУРАТОРЫ И РАССРОЧКИ
 

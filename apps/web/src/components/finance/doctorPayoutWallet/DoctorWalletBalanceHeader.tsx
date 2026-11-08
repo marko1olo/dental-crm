@@ -105,6 +105,24 @@ export function DoctorWalletBalanceHeader({
 						</span>
 					</div>
 				</div>
+
+				{/* Primary CTA: Request Payout (RKO) */}
+				<div className="doctor-wallet-card-action pt-3 mt-3 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between">
+					<span className="text-xs text-[var(--muted,#64748b)]">К выдаче через РКО</span>
+					<button
+						type="button"
+						onClick={() => {
+							if (onRequestPayout) {
+								onRequestPayout(currentDoctor, Math.round(payoutAmountRub * 100));
+							}
+						}}
+						data-testid="doctor-wallet-request-payout-btn"
+						className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--primary,#0d9488)] text-white font-medium hover:brightness-110 active:scale-95 transition-all text-sm flex items-center gap-2 cursor-pointer shadow-sm"
+					>
+						<Sparkles size={16} />
+						<span>Запросить выплату</span>
+					</button>
+				</div>
 			</article>
 		</>
 	);

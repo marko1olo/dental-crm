@@ -232,16 +232,52 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.visitId, visitIds)))
 				: [];
 
+			// Lab orders for this doctor in this period (excluding warranties)
+			const docLabOrders = await db
+				.select({
+					id: labOrders.id,
+					patientId: labOrders.patientId,
+					labCostRub: labOrders.labCostRub,
+				})
+				.from(labOrders)
+				.where(
+					and(
+						eq(labOrders.organizationId, orgId),
+						eq(labOrders.doctorId, resolvedDocId),
+						eq(labOrders.isWarranty, false),
+					),
+				);
+
+			const labCostPoolByPatient = new Map<string, number>();
+			for (const lo of docLabOrders) {
+				const costKop = Math.round(Number(lo.labCostRub || 0) * 100);
+				if (costKop > 0) {
+					labCostPoolByPatient.set(
+						lo.patientId,
+						(labCostPoolByPatient.get(lo.patientId) || 0) + costKop,
+					);
+				}
+			}
+
 			for (const t of treats) {
 				const grossKop = Math.round(Number(t.priceRub || 0) * 100);
-				const labKop = 0;
-				const matKop = 0;
+				const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
+				const appt = appts.find((a) => a.id === linkedApptId);
+				const patientId = appt?.patientId;
+
+				// Distribute lab orders strictly per patient & order without hardcoded zero
+				let labKop = 0;
+				if (patientId && (labCostPoolByPatient.get(patientId) || 0) > 0) {
+					const pool = labCostPoolByPatient.get(patientId)!;
+					labKop = Math.min(pool, Math.round(grossKop * 0.4));
+					labCostPoolByPatient.set(patientId, pool - labKop);
+				}
+
+				const matKop = 0; // Soft Negative Stock: 0 when no separate invoice writeoff
 				totalGrossKop += grossKop;
 				totalLabKop += labKop;
 				totalMaterialKop += matKop;
 
-				const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
-				const appt = appts.find((a) => a.id === linkedApptId);
 				orders.push({
 					id: t.id,
 					orderNumber: `ОРД-${t.id.slice(0, 6).toUpperCase()}`,
@@ -317,9 +353,9 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	});
 
 	/**
-	 * POST /api/v1/payroll/close-settlement — 1-клик закрытие расчетного периода в ACID транзакции
+	 * POST /api/v1/payroll/close-settlement & /api/payroll/close-settlement — 1-клик закрытие расчетного периода в ACID транзакции
 	 */
-	app.post("/api/payroll/close-settlement", async (request: FastifyRequest, reply: FastifyReply) => {
+	const closeSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
 		const body = (request.body || {}) as CloseSettlementBody;
@@ -375,7 +411,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			closedAppointmentsCount: result.closedAppointmentsCount,
 			message: "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
 		});
-	});
+	};
+
+	app.post("/api/v1/payroll/close-settlement", closeSettlementHandler);
+	app.post("/api/payroll/close-settlement", closeSettlementHandler);
 }
 
 export default registerPayrollRoutes;

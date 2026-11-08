@@ -5,10 +5,11 @@
 import React, { Suspense } from "react";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 import { DEMO_SHOWCASE_DOCTOR } from "../../../../finance/doctorPayoutWallet/types";
 
 const DoctorPayoutMobileWallet = lazyWithRetry(() =>
-	import("../../../../finance/DoctorPayoutMobileWallet").then((m) => ({
+	import("../../../../finance/doctorPayoutWallet/DoctorPayoutMobileWallet").then((m) => ({
 		default: m.DoctorPayoutMobileWallet,
 	})),
 );
@@ -19,7 +20,9 @@ export function renderDoctorWalletLaunchers(): React.ReactElement | null {
 	const h = window.location.hash || "";
 
 	if (s.includes("wallet") || s.includes("payout") || h.includes("wallet") || h.includes("payout")) {
-		const dummyReport = {
+		const isDemo = isDemoShowcaseMode();
+		const activeMonth = isDemo ? "2026-10" : new Date().toISOString().slice(0, 7);
+		const initialReport = isDemo ? {
 			period: { from: "2026-10-01", to: "2026-10-31" },
 			rows: [DEMO_SHOWCASE_DOCTOR],
 			totals: {
@@ -32,7 +35,7 @@ export function renderDoctorWalletLaunchers(): React.ReactElement | null {
 				totalPaymentsCount: 3,
 				totalDoctorsCount: 1,
 			},
-		};
+		} : null;
 
 		return (
 			<Suspense fallback={<AppLoadingState message="Загрузка кошелька врача..." />}>
@@ -41,10 +44,12 @@ export function renderDoctorWalletLaunchers(): React.ReactElement | null {
 					data-testid="doctor-wallet-standalone-workspace"
 				>
 					<DoctorPayoutMobileWallet
-						report={dummyReport as any}
-						month="2026-10"
+						report={initialReport as any}
+						month={activeMonth}
 						onMonthChange={() => {}}
-						onRefresh={() => {}}
+						onRefresh={() => {
+							if (typeof window !== "undefined") window.location.reload();
+						}}
 						onOpenPayrollModal={() => {}}
 						canEditRates={false}
 						isLoading={false}

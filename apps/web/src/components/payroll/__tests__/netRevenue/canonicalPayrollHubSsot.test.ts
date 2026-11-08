@@ -21,7 +21,7 @@ import {
 	CANONICAL_PAYROLL_DOCTORS,
 	CANONICAL_DEMO_ORDERS,
 } from "../../payrollCatalogData";
-import { DoctorPayrollHubModal } from "../../DoctorPayrollHubModal";
+import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
 import { DirectPayrollLauncher } from "../../DirectPayrollLauncher";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -134,19 +134,19 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 	it("3.1 Verifies Sweet Spot line limits for the new SSOT architecture (Mandate 8b)", () => {
 		const baseDir = path.resolve(__dirname, "../..");
 		const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
-		const hubPath = path.join(baseDir, "DoctorPayrollHubModal.tsx");
+		const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
 		const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
 
 		assert.ok(fs.existsSync(catalogPath));
-		assert.ok(fs.existsSync(hubPath));
+		assert.ok(fs.existsSync(studioPath));
 		assert.ok(fs.existsSync(launcherPath));
 
 		const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
-		const hubLines = fs.readFileSync(hubPath, "utf8").split("\n").length;
+		const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
 		const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
 
 		assert.ok(catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (must be <= 350)`);
-		assert.ok(hubLines <= 450, `DoctorPayrollHubModal.tsx has ${hubLines} lines (must be <= 450)`);
+		assert.ok(studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (must be <= 480)`);
 		assert.ok(launcherLines <= 90, `DirectPayrollLauncher.tsx has ${launcherLines} lines (must be <= 90)`);
 	});
 
@@ -159,7 +159,7 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 	});
 
 	it("3.3 Components export cleanly without errors", () => {
-		assert.ok(DoctorPayrollHubModal);
+		assert.ok(DoctorPayrollStudioModal);
 		assert.ok(DirectPayrollLauncher);
 	});
 });

@@ -377,6 +377,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					 */
 					or(
 						eq(users.role, "doctor"),
+						eq(users.role, "assistant"),
 						isNotNull(revenue.doctorUserId),
 						isNotNull(materials.doctorUserId),
 						isNotNull(labOrdersCte.doctorUserId),

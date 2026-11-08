@@ -8,9 +8,9 @@ import { describe, it } from "node:test";
 import {
 	calculateDoctorStaffPayroll,
 	DOCTOR_SPECIALTY_CONFIGS,
+	calculateDoctorServicesMetrics,
 	type DoctorStaffPayrollInput,
 } from "../../staffPayrollEngine";
-import { calculateDoctorServicesMetrics } from "../../engine/doctorServicesCalculation";
 
 describe("Doctor Net Revenue: Formula & Deductions (Mandates 8e, 8n)", () => {
 	it("1. Net Revenue: Gross − Lab (ЗТЛ) − Materials (Импланты) = Net Base × Commission %", () => {

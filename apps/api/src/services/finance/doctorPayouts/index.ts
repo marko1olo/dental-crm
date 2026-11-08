@@ -48,6 +48,7 @@ export {
 	type IdentDiscountAllocationPolicy,
 	type DoctorOneTimeDeduction,
 	calculateDoctorSalary,
+	calculateStandardDoctorSalary,
 	calculateIdentDoctorSalary,
 	extractDeductibleMaterialsFromWriteoff,
 	DOCTOR_SALARY_MODEL_NAMES_RU,

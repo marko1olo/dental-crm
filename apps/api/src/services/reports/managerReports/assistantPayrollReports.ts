@@ -9,14 +9,14 @@
  * Соответствие Мандату 8b (Sweet Spot: 80–130 строк).
  */
 
-import { and, eq, gte, isNotNull, lte, ne } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, ne } from "drizzle-orm";
 import {
 	ASSISTANT_SHIFT_RULE,
 	type AssistantShiftLogItem,
 	calculateAssistantPeriodPayroll,
 } from "@dental/shared";
 import { db } from "../../../db/client.js";
-import { appointments, users } from "../../../db/schema.js";
+import { appointments, serviceCatalogItems, treatmentItems, users, visits } from "../../../db/schema.js";
 import type { ReportScope } from "./types.js";
 
 export type AssistantPayrollRow = {
@@ -124,6 +124,63 @@ export async function assistantPayrollReport(
 		apptsByAssistant.set(astId, list);
 	}
 
+	// Реляционная выборка услуг наряда по справочнику и кодам 804н
+	const allApptIds = assistantAppointments.map((a) => a.appointmentId);
+	const apptVisits = allApptIds.length > 0
+		? await db
+				.select({
+					id: visits.id,
+					appointmentId: visits.appointmentId,
+				})
+				.from(visits)
+				.where(
+					and(
+						eq(visits.organizationId, scope.organizationId),
+						inArray(visits.appointmentId, allApptIds),
+					),
+				)
+		: [];
+
+	const visitIds = apptVisits.map((v) => v.id);
+	const visitToAppt = new Map(apptVisits.map((v) => [v.id, v.appointmentId]));
+	const apptServicesMap = new Map<string, { radiographs: number; surgeries: number }>();
+
+	if (visitIds.length > 0) {
+		const items = await db
+			.select({
+				visitId: treatmentItems.visitId,
+				code: serviceCatalogItems.code,
+				order804nCode: serviceCatalogItems.order804nCode,
+				category: serviceCatalogItems.category,
+			})
+			.from(treatmentItems)
+			.leftJoin(
+				serviceCatalogItems,
+				eq(treatmentItems.serviceId, serviceCatalogItems.id),
+			)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, scope.organizationId),
+					inArray(treatmentItems.visitId, visitIds),
+				),
+			);
+
+		for (const it of items) {
+			const apptId = it.visitId ? visitToAppt.get(it.visitId) : undefined;
+			if (!apptId) continue;
+
+			const code = (it.order804nCode || it.code || "").toUpperCase();
+			const cat = String(it.category || "").toLowerCase();
+			const isRad = code.startsWith("A06") || cat === "xray" || cat === "radiology";
+			const isSurg = code.startsWith("A16") || cat === "surgery";
+
+			const cur = apptServicesMap.get(apptId) ?? { radiographs: 0, surgeries: 0 };
+			if (isRad) cur.radiographs += 1;
+			if (isSurg) cur.surgeries += 1;
+			apptServicesMap.set(apptId, cur);
+		}
+	}
+
 	const rows: AssistantPayrollRow[] = [];
 	let totalShiftsCount = 0;
 	let totalAppointmentsAssisted = 0;
@@ -148,17 +205,26 @@ export async function assistantPayrollReport(
 				15,
 				Math.round((appt.endsAt.getTime() - appt.startsAt.getTime()) / 60000),
 			);
-			const textContext = `${appt.reason || ""} ${appt.clinicalStage || ""}`.toLowerCase();
-			const isRadiograph = /(снимок|рентген|визиограф|оптг|кт|клт|rvg)/i.test(textContext);
-			const isSurgery = /(хирург|имплант|удален|синус|резекц|пластик)/i.test(textContext);
 
-			if (isRadiograph) totalRadiographs += 1;
-			if (isSurgery) totalSurgeries += 1;
+			// Первичный расчет: реляционные коды услуг 804н (A06 снимок, A16 операция)
+			const relCounts = apptServicesMap.get(appt.appointmentId);
+			let radCount = relCounts?.radiographs ?? 0;
+			let surgCount = relCounts?.surgeries ?? 0;
+
+			// Фолбек на клинический этап/причину, если услуги в наряд ещё не внесены
+			if (radCount === 0 && surgCount === 0) {
+				const textContext = `${appt.reason || ""} ${appt.clinicalStage || ""}`.toLowerCase();
+				if (/(снимок|рентген|визиограф|оптг|кт|клт|rvg)/i.test(textContext)) radCount = 1;
+				if (/(хирург|имплант|удален|синус|резекц|пластик)/i.test(textContext)) surgCount = 1;
+			}
+
+			totalRadiographs += radCount;
+			totalSurgeries += surgCount;
 
 			const dayData = dayMap.get(dayKey) ?? { minutes: 0, radiographs: 0, surgeries: 0 };
 			dayData.minutes += durationMin;
-			if (isRadiograph) dayData.radiographs += 1;
-			if (isSurgery) dayData.surgeries += 1;
+			dayData.radiographs += radCount;
+			dayData.surgeries += surgCount;
 			dayMap.set(dayKey, dayData);
 		}
 

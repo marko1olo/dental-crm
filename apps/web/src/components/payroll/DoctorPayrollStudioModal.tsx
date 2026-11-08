@@ -148,7 +148,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		if (!selectedDoctor) return;
 		if (navigator?.clipboard?.writeText) {
 			navigator.clipboard.writeText(generateDoctorPayslipMessengerText(calcCompat, selectedDoctor, clinicName));
-			setFeedbackMsg("✓ Расчетный листок скопирован для мессенджера");
+			setFeedbackMsg("Расчетный листок скопирован для мессенджера");
 			setTimeout(() => setFeedbackMsg(null), 3500);
 		}
 	};
@@ -161,12 +161,12 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		const a = document.createElement("a");
 		a.href = url; a.download = `Ведомость_зарплаты_${periodDates.startIso}_${periodDates.endIso}.csv`; a.click();
 		URL.revokeObjectURL(url);
-		setFeedbackMsg("✓ Экспорт в Excel (CSV) завершен"); setTimeout(() => setFeedbackMsg(null), 3500);
+		setFeedbackMsg("Экспорт в Excel (CSV) завершен"); setTimeout(() => setFeedbackMsg(null), 3500);
 	};
 
 	const handleCommitPayout = async () => {
 		if (!selectedDoctor) {
-			setFeedbackMsg("⚠️ Врачи не зарегистрированы"); setTimeout(() => setFeedbackMsg(null), 3500); return;
+			setFeedbackMsg("Врачи не зарегистрированы"); setTimeout(() => setFeedbackMsg(null), 3500); return;
 		}
 		setIsSaving(true); setFeedbackMsg(null);
 		try {
@@ -179,9 +179,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				totalAccruedKop: summary.doctorAccruedKopecks, ndflKop: summary.ndfl13TaxKopecks,
 				netPayoutKop: summary.payoutKopecks, markPaid: true,
 			});
-			setPayoutStatus("paid_rko"); setFeedbackMsg("✓ Выплата утверждена, выдан чек РКО");
+			setPayoutStatus("paid_rko"); setFeedbackMsg("Выплата утверждена, выдан чек РКО");
 		} catch {
-			setPayoutStatus("paid_rko"); setFeedbackMsg("✓ Ведомость закрыта и зафиксирована в РКО");
+			setPayoutStatus("paid_rko"); setFeedbackMsg("Ведомость закрыта и зафиксирована в РКО");
 		} finally {
 			setIsSaving(false); setTimeout(() => setFeedbackMsg(null), 4000);
 		}
@@ -357,7 +357,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									<div className="flex items-center gap-1.5 ml-1">
 										<span className="text-[var(--muted)]">Аванс:</span>
 										<input type="number" value={advanceRub || ""} placeholder="0 ₽" onChange={(e) => setAdvanceRub(Number(e.target.value) || 0)} className="w-20 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]" />
-										<button type="button" onClick={() => { setAdvanceRub((v) => v + 5000); setFeedbackMsg("✓ Аванс +5 000 ₽ начислен врачу"); setTimeout(() => setFeedbackMsg(null), 3000); }} className="min-h-[30px] px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" title="Выплатить аванс">Выплатить аванс</button>
+										<button type="button" onClick={() => { setAdvanceRub((v) => v + 5000); setFeedbackMsg("Аванс +5 000 ₽ начислен врачу"); setTimeout(() => setFeedbackMsg(null), 3000); }} className="min-h-[30px] px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" title="Выплатить аванс">Выплатить аванс</button>
 									</div>
 								</div>
 								<div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					<div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
 						<button type="button" onClick={onClose} className="hidden sm:inline-flex payroll-studio-secondary-btn">Закрыть</button>
 						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--teal,#0d9488)]" data-testid="payroll-studio-primary-cta">
-							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : "✓ Закрыть расчетный период"}</span>
+							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : "Закрыть расчетный период"}</span>
 						</button>
 					</div>
 				</div>

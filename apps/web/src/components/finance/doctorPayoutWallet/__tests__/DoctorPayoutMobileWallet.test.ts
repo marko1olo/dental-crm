@@ -21,14 +21,14 @@ import {
 describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 	const currentDir = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
 	const walletDir = path.resolve(currentDir, "..");
-	const facadePath = path.resolve(walletDir, "../DoctorPayoutMobileWallet.tsx");
+	const canonicalWalletPath = path.resolve(walletDir, "DoctorPayoutMobileWallet.tsx");
 
 	describe("1. Architectural Budget & File Limit Invariants", () => {
-		it("ensures canonical thin facade exists and is strictly <= 150 lines", () => {
-			assert.ok(fs.existsSync(facadePath), `Facade file must exist at ${facadePath}`);
-			const content = fs.readFileSync(facadePath, "utf-8");
+		it("ensures canonical mobile wallet component exists and is strictly <= 200 lines", () => {
+			assert.ok(fs.existsSync(canonicalWalletPath), `Canonical wallet must exist at ${canonicalWalletPath}`);
+			const content = fs.readFileSync(canonicalWalletPath, "utf-8");
 			const lines = content.split("\n").length;
-			assert.ok(lines <= 150, `Facade must be <= 150 lines, got ${lines}`);
+			assert.ok(lines <= 200, `Canonical wallet must be <= 200 lines, got ${lines}`);
 		});
 
 		it("ensures all decomposed files in doctorPayoutWallet/ are strictly <= 800 lines", () => {

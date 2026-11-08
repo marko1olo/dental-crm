@@ -4,7 +4,7 @@
  */
 
 import { escapeXml } from "./escapeXml";
-import type { ConsolidatedStaffPayrollSummary } from "../engine/staffPayrollAssistantAdminTypes";
+import type { ConsolidatedStaffPayrollSummary } from "../payrollStaffTypes";
 
 export function generateStaffPayrollLedgerHtml(summary: ConsolidatedStaffPayrollSummary): string {
 	const totalGrossRub = (summary.totalGrossPayoutKop / 100).toFixed(2);

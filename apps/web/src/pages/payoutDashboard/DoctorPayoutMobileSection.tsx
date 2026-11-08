@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { DoctorPayoutMobileWallet } from "../../components/finance/DoctorPayoutMobileWallet";
+import { DoctorPayoutMobileWallet } from "../../components/finance/doctorPayoutWallet/DoctorPayoutMobileWallet";
 import { DoctorPayrollModal } from "../../components/payroll/DoctorPayrollModal";
 import { DoctorSelectionNotice } from "./DoctorSelectionNotice.js";
 import { doctorServicesForPayrollModal, mapRoleToSpecialtyId } from "./payoutHelpers.js";

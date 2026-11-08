@@ -305,14 +305,14 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 		<div className="space-y-6" data-testid="doctor-payroll-report">
 			{/* Компактный тулбар (32-36px) с переключением периодов и ролей */}
 			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-				<div className="flex items-center gap-2 overflow-x-auto py-0.5 no-scrollbar flex-nowrap">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
 					{/* Apple Segmented Control: Врачи / Ассистенты */}
-					<div className="flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] shrink-0">
+					<div className="flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 w-full sm:w-auto">
 						<button
 							type="button"
 							data-testid="payroll-role-doctors"
 							onClick={() => setRoleTab("doctors")}
-							className={`h-8 sm:h-7 px-3 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+							className={`flex-1 sm:flex-initial h-8 sm:h-7 px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
 								roleTab === "doctors"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -324,7 +324,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							type="button"
 							data-testid="payroll-role-assistants"
 							onClick={() => setRoleTab("assistants")}
-							className={`h-8 sm:h-7 px-3 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+							className={`flex-1 sm:flex-initial h-8 sm:h-7 px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
 								roleTab === "assistants"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -337,14 +337,14 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					<div className="h-4 w-px bg-[var(--line)] shrink-0 hidden sm:block" />
 
 					{/* Периоды */}
-					<div className="flex items-center gap-1 overflow-x-auto py-0.5 no-scrollbar flex-nowrap">
+					<div className="flex items-center justify-between sm:justify-start gap-1 overflow-x-auto py-0.5 no-scrollbar flex-nowrap w-full sm:w-auto">
 						{(["day", "week", "month", "quarter", "year"] as const).map((p) => (
 							<button
 								key={p}
 								type="button"
 								data-testid={`payroll-period-${p}`}
 								onClick={() => handlePeriodSelect(p)}
-								className={`h-8 sm:h-7 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+								className={`flex-1 sm:flex-initial h-8 sm:h-7 px-2.5 sm:px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer shrink-0 text-center ${
 									activePeriod === p
 										? "bg-[var(--teal)] text-white font-semibold shadow-xs"
 										: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]"

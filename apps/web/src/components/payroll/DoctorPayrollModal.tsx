@@ -5,6 +5,7 @@
  */
 
 import React from "react";
+import { useDocumentBrandingStore } from "../../store/documentBrandingStore";
 import {
 	DoctorPayrollStudioModal,
 	type DoctorPayrollStudioModalProps,
@@ -43,24 +44,29 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	handleCloseSettlementPeriod,
 	isPeriodClosed,
 }) => {
+	const effectiveClinicName = clinicName || useDocumentBrandingStore.getState().clinicName;
+
 	// Canonical SSOT binding: wires handleCloseSettlementPeriod and isPeriodClosed
 	return (
 		<div data-testid="doctor-payroll-close-period-btn-wrapper" className="contents">
 			<DoctorPayrollStudioModal
 				isOpen={isOpen}
 				onClose={onClose}
-				clinicName={clinicName}
+				clinicName={effectiveClinicName}
 				doctorsList={doctorsList}
 				initialDoctorId={initialDoctorId}
 			/>
 			{handleCloseSettlementPeriod && !isPeriodClosed && (
-				<button
-					type="button"
-					onClick={handleCloseSettlementPeriod}
-					data-testid="doctor-payroll-close-period-btn"
-					style={{ display: "none" }}
-					aria-hidden="true"
-				/>
+				<div className="p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] flex justify-end">
+					<button
+						type="button"
+						onClick={handleCloseSettlementPeriod}
+						data-testid="doctor-payroll-close-period-btn"
+						className="min-h-[36px] px-4 py-2 rounded-lg bg-[var(--teal,#0d9488)] text-white font-medium hover:brightness-110 active:scale-95 transition-all text-xs"
+					>
+						Закрыть расчетный период
+					</button>
+				</div>
 			)}
 		</div>
 	);

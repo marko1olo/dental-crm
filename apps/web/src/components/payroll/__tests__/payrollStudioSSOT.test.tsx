@@ -29,7 +29,6 @@ import {
 } from "../payrollCatalogData";
 import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
 import { DoctorPayrollModal } from "../DoctorPayrollModal";
-import { DoctorPayrollHubModal } from "../DoctorPayrollHubModal";
 import { DirectPayrollLauncher } from "../DirectPayrollLauncher";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import { useDoctorPayrollTabData } from "../../../views/financeView/payrollTabModules/useDoctorPayrollTabData";
@@ -190,19 +189,16 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
 			const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
 			const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
-			const hubPath = path.join(baseDir, "DoctorPayrollHubModal.tsx");
 			const cssPath = path.join(baseDir, "styles/doctorPayrollStudio.css");
 
 			assert.ok(fs.existsSync(catalogPath));
 			assert.ok(fs.existsSync(studioPath));
 			assert.ok(fs.existsSync(launcherPath));
-			assert.ok(fs.existsSync(hubPath));
 			assert.ok(fs.existsSync(cssPath));
 
 			const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
 			const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
 			const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
-			const hubLines = fs.readFileSync(hubPath, "utf8").split("\n").length;
 			const cssLines = fs.readFileSync(cssPath, "utf8").split("\n").length;
 
 			// SSOT Catalog: Sweet Spot 300–380 lines (and <= 350 for old test compatibility)
@@ -211,8 +207,6 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			assert.ok(studioLines >= 380 && studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (target 400–480)`);
 			// Launcher: Sweet Spot 60–80 lines
 			assert.ok(launcherLines >= 55 && launcherLines <= 85, `DirectPayrollLauncher.tsx has ${launcherLines} lines (target 60–80)`);
-			// Hub Facade: <= 60 lines
-			assert.ok(hubLines <= 60, `DoctorPayrollHubModal.tsx has ${hubLines} lines (must be <= 60)`);
 			// Studio CSS: Sweet Spot 250–350 lines
 			assert.ok(cssLines >= 250 && cssLines <= 350, `doctorPayrollStudio.css has ${cssLines} lines (target 250–350)`);
 		});
@@ -257,7 +251,6 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 		it("3.5 Verifies clean exports of Studio, Facade Modals, and Launcher components", () => {
 			assert.ok(DoctorPayrollStudioModal);
 			assert.ok(DoctorPayrollModal);
-			assert.ok(DoctorPayrollHubModal);
 			assert.ok(DirectPayrollLauncher);
 		});
 	});

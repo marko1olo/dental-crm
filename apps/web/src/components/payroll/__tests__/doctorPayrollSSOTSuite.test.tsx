@@ -29,7 +29,6 @@ import {
 	type PayrollDoctorProfile,
 } from "../payrollCatalogData";
 import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
-import { DoctorPayrollHubModal } from "../DoctorPayrollHubModal";
 import { DirectPayrollLauncher } from "../DirectPayrollLauncher";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -180,17 +179,14 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
 			const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
 			const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
-			const hubPath = path.join(baseDir, "DoctorPayrollHubModal.tsx");
 
 			assert.ok(fs.existsSync(catalogPath));
 			assert.ok(fs.existsSync(studioPath));
 			assert.ok(fs.existsSync(launcherPath));
-			assert.ok(fs.existsSync(hubPath));
 
 			const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
 			const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
 			const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
-			const hubLines = fs.readFileSync(hubPath, "utf8").split("\n").length;
 
 			// SSOT Catalog: Sweet Spot 250–350 lines
 			assert.ok(catalogLines >= 200 && catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (target 250–350)`);
@@ -198,8 +194,6 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			assert.ok(studioLines >= 300 && studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (target 350–480)`);
 			// Launcher: <= 90 lines
 			assert.ok(launcherLines <= 90, `DirectPayrollLauncher.tsx has ${launcherLines} lines (must be <= 90)`);
-			// Hub Modal Facade: <= 450 lines
-			assert.ok(hubLines <= 450, `DoctorPayrollHubModal.tsx has ${hubLines} lines (must be <= 450)`);
 		});
 
 		it("4.2 Verifies DoctorPayrollStudioModal has exactly ONE Primary CTA button #0d9488 that is NEVER disabled (Mandate 8e, 8am)", () => {
@@ -230,9 +224,8 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			assert.ok(appShellContent.includes("<DirectPayrollLauncher />"), "AppShell.tsx must render <DirectPayrollLauncher />");
 		});
 
-		it("4.4 Verifies clean exports of Studio, Hub, and Launcher components", () => {
+		it("4.4 Verifies clean exports of Studio and Launcher components", () => {
 			assert.ok(DoctorPayrollStudioModal);
-			assert.ok(DoctorPayrollHubModal);
 			assert.ok(DirectPayrollLauncher);
 		});
 	});

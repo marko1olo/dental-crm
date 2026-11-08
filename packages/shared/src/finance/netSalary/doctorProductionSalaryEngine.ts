@@ -124,5 +124,8 @@ export function calculateDoctorSalary(
 	};
 }
 
-/** @deprecated Use calculateDoctorSalary (Mandate 8ap) */
+/** Standard Doctor Salary calculation engine (Mandates 8x, 8ap) */
+export const calculateStandardDoctorSalary = calculateDoctorSalary;
+
+/** @deprecated Use calculateStandardDoctorSalary or calculateDoctorSalary (Mandate 8x/8ap) */
 export const calculateIdentDoctorSalary = calculateDoctorSalary;

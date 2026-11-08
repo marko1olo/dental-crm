@@ -30,7 +30,7 @@ describe("Red Team: Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens (Mandates 
 	it("3.2 Zero cartoon emojis exist in DoctorPayrollModal.tsx, Content, or Engine", () => {
 		const files = [
 			path.resolve(__dirname, "../../DoctorPayrollModal.tsx"),
-			path.resolve(__dirname, "../../DoctorPayrollModalContent.tsx"),
+			path.resolve(__dirname, "../../DoctorPayrollStudioModal.tsx"),
 			path.resolve(__dirname, "../../staffPayrollEngine.ts"),
 		];
 

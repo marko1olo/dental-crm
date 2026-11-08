@@ -133,13 +133,14 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"workstation.write",
 	],
 
-	// Ассистент: видит приём и списывает материалы, ничего не решает.
+	// Ассистент: видит приём, списывает материалы, видит свои смены и начисления в кошельке.
 	assistant: [
 		"schedule.read",
 		"patients.read",
 		"clinical.read",
 		"inventory.read",
 		"inventory.write",
+		"payroll.read.own",
 		"communications.read",
 		"agent.read",
 	],

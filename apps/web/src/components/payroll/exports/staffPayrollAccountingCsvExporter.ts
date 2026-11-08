@@ -3,7 +3,7 @@
  * Compliance: Mandate 8x & 8ap (Clean Russian Clinical Terminology without Bureaucratic Codes).
  */
 
-import type { ConsolidatedStaffPayrollSummary } from "../engine/staffPayrollAssistantAdminTypes";
+import type { ConsolidatedStaffPayrollSummary } from "../payrollStaffTypes";
 
 /**
  * Generates accounting-compatible tabular CSV format with UTF-8 BOM.
