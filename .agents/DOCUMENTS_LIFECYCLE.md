@@ -157,10 +157,15 @@ graph LR
 1. **Тотальная ликвидация блокировок кнопок (Мандат 8e):**
    * Все кнопки в `apps/web/src/components/documents/` очищены от искусственного атрибута `disabled={...}` (включая печать, экспорт, подписание, сохранение, отправку SMS).
    * Защита от дублирующих нажатий реализована через неблокирующий debounced клик, атрибут `aria-busy` и тактильный индикатор `Loader2`.
-2. **Машинное покрытие тестами:**
-   * 210 из 210 тестов полного набора `apps/web/src/components/documents/__tests__/*.test.ts*` завершаются с Exit Code 0 (0 сбоев).
-   * Устранены ESM-несовместимости (`fileURLToPath(import.meta.url)`).
-3. **4-State Visual Proof (Live App Capture):**
+2. **Консолидация канонических SSOT и зачистка дубликатов (Мандаты 8s, 8bd):**
+   * Физически удалены (`git rm`) 35 мертвых файлов-клонов: устаревшие пакеты `clinicalPackageModal/`, `consentDrawer/`, `financeAndPediatricItems.ts`, `DocumentPrimaryIntakeBanner.tsx`, `taxAccounting/` + `TaxAccountingPackageModal.tsx`, `sanpinRegistry/` + `SanpinRegistryPackageModal.tsx`, `informedConsentViewer/` + `InformedConsentViewer.tsx`.
+   * Канонические эталоны (SSOT): `ConsentStudioModal.tsx`, `DocumentsStudioModal.tsx`, `ClinicalVisitPackageModal.tsx`, `FnsTaxCertificateModal.tsx`.
+   * Устранены 4 доказанных дефекта: ликвидировано тихое глотание ошибок сетевого сохранения согласий и серверной фиксации ПЭП, добавлен лог предупреждений при переполнении `localStorage` в автосохранении черновиков, вычищен синтетический хардкод ФИО/ИНН/паспорта в справках ФНС (моки строго изолированы за `isDemoShowcaseMode()`), убран безусловный фолбек на Иванова И.И. в боевом контуре.
+   * Искоренен советский канцелярит и шифры приказов (Мандат 8x): сырой код «КНД 1151156» заменен на профессиональный человеческий язык «Справка для налогового вычета (13% НДФЛ)».
+3. **Машинное покрытие тестами:**
+   * Все 84 точечных теста полного набора затронутых сьютов завершаются с Exit Code 0 (0 сбоев).
+   * `npm run check:encoding` подтверждает строгий UTF-8 без BOM для всех файлов проекта.
+4. **4-State Visual Proof (Live App Capture):**
    * Все 4 состояния сняты на живом Vite-сервере и лично отсмотрены через `read_file` по 8 осям контроля:
      - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (143 KB) — десктоп светлая тема, нулевой клиппинг, ровно 1 Primary CTA.
      - `docs/proofs/documents/02_documents_catalog_pc_dark_1440x900.png` (134 KB) — десктоп тёмная тема, 100% токены `var(--paper)`, WCAG AAA контраст.

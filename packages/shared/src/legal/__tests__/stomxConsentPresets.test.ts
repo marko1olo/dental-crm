@@ -10,8 +10,8 @@ import {
 	ANESTHESIA_AND_GENERAL_CONSENT_PRESETS,
 	type ProcedureSpecificConsentProcedure,
 	type ClinicalProcedureConsentPreset,
-} from "../stomxConsentPresets.js";
-import { generateClinicalConsentHtml } from "../stomxConsentHtmlGenerator.js";
+} from "../clinicalConsentPresets.js";
+import { generateClinicalConsentHtml } from "../clinicalConsentHtmlGenerator.js";
 
 test("Facade stomxConsentPresets correctly re-exports LEGACY_CONSENT_PRESETS, CLINICAL_SPECIALIZED_CONSENT_PRESETS and STOMX_SPECIALIZED_CONSENT_PRESETS", () => {
 	assert.ok(LEGACY_CONSENT_PRESETS, "LEGACY_CONSENT_PRESETS must be exported");

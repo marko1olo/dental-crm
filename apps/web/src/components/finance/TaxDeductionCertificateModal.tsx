@@ -37,7 +37,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 							<AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
 							<div>
 								<span className="font-semibold">Заполните реквизиты клиники в настройках:</span>{" "}
-								<span>ИНН и номер медицинской лицензии необходимы для корректного формирования справки об оплате медицинских услуг (КНД 1151156).</span>
+								<span>ИНН и номер медицинской лицензии необходимы для корректного формирования справки для налогового вычета (13% НДФЛ).</span>
 							</div>
 						</div>
 					)}

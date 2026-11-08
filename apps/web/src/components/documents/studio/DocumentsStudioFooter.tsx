@@ -63,7 +63,7 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 					onClick={onPrimarySignAndPrint}
 					className="dente-btn-primary-cta"
 					data-testid="primary-batch-print-cta"
-					title={isTax ? "Сформировать справку ФНС (КНД 1151156) для налогового вычета 13% НДФЛ" : "Распечатать комплект документов и утвердить"}
+					title={isTax ? "Сформировать справку для налогового вычета (13% НДФЛ)" : "Распечатать комплект документов и утвердить"}
 				>
 					{isTax ? <Zap size={16} /> : <Printer size={16} />}
 					<span className="hidden sm:inline">

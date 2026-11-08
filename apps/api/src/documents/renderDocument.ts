@@ -241,7 +241,13 @@ export function documentIssueBlockReasonRaw(
 		return "Документ должен быть связан с конкретным визитом перед выдачей.";
 	}
 
-	if (documentRequiresClinicLegalProfile(document.kind)) {
+	const isDraftOrBlank =
+		document.status === "draft" ||
+		Boolean(document.payload?.isDraft) ||
+		Boolean(document.payload?.isBlank) ||
+		Boolean((context as any)?.isDraft);
+
+	if (documentRequiresClinicLegalProfile(document.kind) && !isDraftOrBlank) {
 		const missingClinicFields = clinicLegalProfileMissingFields(
 			context.clinicProfile,
 		);
@@ -381,10 +387,17 @@ export function documentIssueBlockReasonRaw(
 		!document.payload?.informedConsent?.doctorFullName?.trim();
 
 	const html = renderDocumentHtml(document, patient, context);
+	const isDraftOrBlankDoc =
+		document.status === "draft" ||
+		Boolean(document.payload?.isDraft) ||
+		Boolean(document.payload?.isBlank) ||
+		Boolean((context as any)?.isDraft) ||
+		isBlankPaidContract ||
+		isBlankInformedConsent;
+
 	if (
 		documentHasUnresolvedPlaceholders(html) &&
-		!isBlankPaidContract &&
-		!isBlankInformedConsent
+		!isDraftOrBlankDoc
 	) {
 		return "В документе остались незаполненные поля; перед выдачей их нужно заполнить.";
 	}

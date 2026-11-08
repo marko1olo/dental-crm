@@ -252,15 +252,19 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 				.then((res) => {
 					if (res.ok) {
 						recordConsentLocally(currentConsentKey, nowIso);
+					} else {
+						console.warn("[DocumentsStudioModal] Ошибка сохранения согласия:", res.status);
+						showToast("⚠️ Ошибка сервера при сохранении согласия. Согласие сохранено локально.", "error");
 					}
 				})
-				.catch(() => {
-					/* offline fallback */
+				.catch((err) => {
+					console.warn("[DocumentsStudioModal] Сбой сети при сохранении согласия:", err);
+					showToast("⚠️ Ошибка сети при сохранении согласия. Сохранено локально. Повторите попытку.", "error");
 				});
 		}
 
 		if (activePackage === "tax_certificate") {
-			// Вызов официального генератора справки ФНС КНД 1151156 с QR-кодом и штампом (Мандат 8n)
+			// Вызов официального генератора справки ФНС для налогового вычета с QR-кодом и штампом (Мандат 8n)
 			printTaxCertificate(
 				buildTaxCertificateDocumentData({
 					documentNumber: legalContext.documentNumber,
@@ -277,7 +281,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 					totalAmountKopecks,
 				}),
 			);
-			showToast("✓ Справка ФНС (КНД 1151156) сформирована и отправлена на печать");
+			showToast("✓ Справка для налогового вычета сформирована и отправлена на печать");
 		} else {
 			window.print();
 			showToast("✓ Комплект документов утвержден и отправлен на печать");

@@ -447,20 +447,27 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// СТОМX И ПРОЦЕДУРНЫЕ СОГЛАСИЯ — ЕДИНЫЙ ВХОД (МАНДАТ 8za SSOT)
+// КЛИНИЧЕСКИЕ И ПРОЦЕДУРНЫЕ СОГЛАСИЯ — ЕДИНЫЙ ВХОД (МАНДАТ 8za SSOT)
 // ═══════════════════════════════════════════════════════════════════════════
 export {
+	generateClinicalConsentHtml,
 	generateStomxConsentHtml,
+	type GenerateClinicalConsentOptions,
 	type GenerateStomxConsentOptions,
-} from "../legal/stomxConsentHtmlGenerator.js";
+} from "../legal/clinicalConsentHtmlGenerator.js";
 export {
+	CLINICAL_SPECIALIZED_CONSENT_PRESETS,
 	STOMX_SPECIALIZED_CONSENT_PRESETS,
 	LEGACY_CONSENT_PRESETS,
-} from "../legal/stomxConsentPresets.js";
+} from "../legal/clinicalConsentPresets.js";
 export {
+	CLINICAL_LEGAL_CONSENTS_CATALOG,
 	STOMX_LEGAL_CONSENTS_CATALOG,
+	getClinicalTemplateMetadata,
 	getStomxTemplateMetadata,
+	type ClinicalLegalConsentTemplateMetadata,
 	type StomxLegalConsentTemplateMetadata,
+	type ClinicalVariableContext,
 	type StomxVariableContext,
-} from "../legal/stomxLegalConsentsCatalog.js";
+} from "../legal/clinicalLegalConsentsCatalog.js";
 

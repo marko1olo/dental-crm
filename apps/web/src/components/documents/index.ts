@@ -5,8 +5,7 @@
  */
 
 export * from "./OutpatientCardPrintModal";
-export * from "./InformedConsentViewer";
-export * from "./FnsTaxCertificateModal";
+export { TaxDeductionCertificateModal, TaxDeductionCertificateModal as FnsTaxCertificateModal } from "../finance/TaxDeductionCertificateModal";
 export * from "./PrescriptionBlankModal";
 export * from "./PatientContractsSection";
 export * from "./DocumentA4PrintPreviewModal";
@@ -14,8 +13,6 @@ export * from "./ProfessionalDocumentA4Sheet";
 export * from "./PrimaryIntakePackageModal";
 export * from "./ClinicalVisitPackageModal";
 export * from "./SurgicalPackageModal";
-export * from "./SanpinRegistryPackageModal";
-export * from "./TaxAccountingPackageModal";
 export * from "./DocumentsOutpatientArchive";
 export * from "./DocumentsCatalogView";
 export * from "./DigitalSignatureTabletModal";

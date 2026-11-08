@@ -1,6 +1,6 @@
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * CLINICAL LEGAL CONSENTS & PRINT ENGINE CATALOG (CANONICAL FACADE)
+ * CLINICAL LEGAL CONSENTS & PRINT ENGINE CATALOG (CANONICAL SSOT)
  *
  * Полный каталог 21 специализированного стоматологического документа DENTE:
  * 20 специализированных ИДС + Лист дозовых нагрузок (СанПиН 2.6.1.1192-03),
@@ -12,5 +12,5 @@
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./stomxConsents/index.js";
-export * from "./stomxConsentHtmlGenerator.js";
+export * from "./clinicalConsents/index.js";
+export * from "./clinicalConsentHtmlGenerator.js";

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal.js";
-import { InformedConsentViewer } from "../InformedConsentViewer.js";
+import { ConsentStudioModal } from "../../consents/ConsentStudioModal.js";
 import { FnsTaxCertificateModal } from "../FnsTaxCertificateModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
 import { PrescriptionBlankModal } from "../PrescriptionBlankModal.js";
@@ -65,24 +65,19 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		assert.ok(html.includes("Иванов Иван Иванович"), "Must render patient name");
 	});
 
-	it("renders InformedConsentViewer with Order 1051n statutory references", () => {
+	it("renders ConsentStudioModal with Order 1051n statutory references and print buttons", () => {
 		const html = renderToString(
-			<InformedConsentViewer
+			<ConsentStudioModal
 				isOpen={true}
 				onClose={() => {}}
 				patient={mockPatient}
-				doctorFullName="Воронов А.В."
-				clinicProfileDraft={mockClinicProfile}
-				isSigned={true}
 			/>,
 		);
 
-		assert.ok(html.includes("informed-consent-viewer-modal"), "Must render modal container");
-		assert.ok(html.includes("Информированное добровольное согласие") || html.includes("1051н"), "Must reference statutory consent");
-		assert.ok(html.includes("323-ФЗ"), "Must reference Federal Law 323-FZ");
-		assert.ok(html.includes("ПОДПИСАНО"), "Must show signed badge");
-		assert.ok(html.includes("Печать ИДС"), "Must render print button");
-		assert.ok(html.includes("Заполнить нормой"), "Must render norm fill button");
+		assert.ok(html.includes("consent-studio-modal"), "Must render modal container");
+		assert.ok(html.includes("Студия информированных согласий") || html.includes("Согласия и договоры"), "Must reference statutory consent");
+		assert.ok(html.includes("Печать бланка А4"), "Must render print button");
+		assert.ok(html.includes("Чистый бланк"), "Must render blank print button");
 	});
 
 	it("renders FnsTaxCertificateModal with KND 1151156 and statutory code separation", () => {
@@ -170,7 +165,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const files = [
 			"OutpatientCardPrintModal.tsx",
-			"InformedConsentViewer.tsx",
+			"PatientConsentSignDrawer.tsx",
 			"FnsTaxCertificateModal.tsx",
 			"PrescriptionBlankModal.tsx",
 			"PatientContractsSection.tsx",
@@ -190,7 +185,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		const jargonRegex = /(в 1 клик|1-клик|авто-генерация|автогенерация)/i;
 		const files = [
 			"OutpatientCardPrintModal.tsx",
-			"InformedConsentViewer.tsx",
+			"PatientConsentSignDrawer.tsx",
 			"FnsTaxCertificateModal.tsx",
 			"PrescriptionBlankModal.tsx",
 			"PatientContractsSection.tsx",

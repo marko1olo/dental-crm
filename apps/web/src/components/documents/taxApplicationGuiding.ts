@@ -86,7 +86,7 @@ function innHint(input: TaxApplicationGuideInput): string | null {
 		return isLegacy ? "для старой справки 2021-2023 ИНН обязателен (10 или 12 цифр)" : null;
 	}
 	if (input.form === "knd_1151156" && digits.length !== 12) {
-		return `в ИНН ${digits.length} цифр, для КНД 1151156 нужно ровно 12 цифр (или оставьте пустым)`;
+		return `в ИНН ${digits.length} цифр, для справки на вычет нужно ровно 12 цифр (или оставьте пустым)`;
 	}
 	if (digits.length !== 10 && digits.length !== 12) {
 		return `в ИНН ${digits.length} цифр, а нужно 12 у человека или 10 у организации`;

@@ -78,7 +78,6 @@ import "./styles/premium.css";
 import "./styles/dente-redesign.css";
 import "./styles/modules/header.css";
 import "./styles/modules/documents.css";
-import "./components/documents/fastClinicalPrint.css";
 import "./styles.css";
 // Псевдонимы необъявленных переменных и поверхности, зависящие от темы.
 import "./styles/token-aliases.css";

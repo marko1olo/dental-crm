@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STOMX_SPECIALIZED_CONSENT_PRESETS } from "./stomxConsentPresets.js";
+import { STOMX_SPECIALIZED_CONSENT_PRESETS } from "./clinicalConsentPresets.js";
 
 export const procedureSpecificConsentProcedureSchema = z.enum([
 	// Специализированные процедуры StomX
@@ -418,5 +418,5 @@ export const WARRANTY_POLICY_PRESETS: Record<string, WarrantyPresetItem> = {
 	},
 };
 
-export * from "./stomxConsentPresets.js";
-export * from "./stomxLegalConsentsCatalog.js";
+export * from "./clinicalConsentPresets.js";
+export * from "./clinicalLegalConsentsCatalog.js";

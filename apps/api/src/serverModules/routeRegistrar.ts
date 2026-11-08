@@ -23,7 +23,6 @@ import registerDiaryRoutes from "../routes/diary.js";
 import { registerDicomwebRoutes } from "../routes/dicomweb.js";
 import { registerDocumentRoutes } from "../routes/documents.js";
 import { registerConsentRoutes } from "../routes/consents.js";
-import { registerTaxCertificateRoutes } from "../routes/taxCertificates.js";
 import { registerDocumentTemplateRoutes } from "../routes/documentTemplates.js";
 import registerEgiszRoutes from "../routes/egisz.js";
 import { registerCryptoProNativeRoutes } from "../routes/cryptoProNativeRoutes.js";
@@ -149,7 +148,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerDemoRoutes(app);
 	await registerDocumentRoutes(app);
 	await registerConsentRoutes(app);
-	await registerTaxCertificateRoutes(app);
 	await registerDocumentTemplateRoutes(app);
 	await registerImagingRoutes(app);
 	await registerImagingPlanningRoutes(app);

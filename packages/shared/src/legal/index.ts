@@ -9,8 +9,3 @@ export * from "./legalContractsAndConsents.js";
 export * from "./clinicalConsentHtmlGenerator.js";
 export * from "./clinicalConsentPresets.js";
 export * from "./clinicalLegalConsentsCatalog.js";
-
-// Backward-compatible facades (Мандат 8ap)
-export * from "./stomxConsentHtmlGenerator.js";
-export * from "./stomxConsentPresets.js";
-export * from "./stomxLegalConsentsCatalog.js";

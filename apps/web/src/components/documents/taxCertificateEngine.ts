@@ -13,6 +13,7 @@
 import { generateTaxCertificateKnd1151156Html } from "./taxCertificate/htmlGenerator";
 import { printTaxCertificateHtml } from "./taxCertificate/printRunner";
 import type { TaxCertificateDocumentData } from "./taxCertificate/types";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export * from "./taxCertificate/types";
 export * from "./taxCertificate/aggregation";
@@ -67,9 +68,18 @@ export function buildTaxCertificateDocumentData(
 	params: BuildTaxCertificateQuickParams,
 ): TaxCertificateDocumentData {
 	const rub = Math.floor(params.totalAmountKopecks / 100);
+	const isDemo = isDemoShowcaseMode();
 	const passportParts = params.patient.passport ? params.patient.passport.split(" ") : [];
-	const series = passportParts.length >= 2 ? `${passportParts[0]} ${passportParts[1]}` : (params.patient.passport.slice(0, 4) || "45 12");
-	const number = passportParts.length >= 3 ? passportParts[2] : (params.patient.passport.slice(5, 11) || "654321");
+	const series = passportParts.length >= 2
+		? `${passportParts[0]} ${passportParts[1]}`
+		: (params.patient.passport?.slice(0, 4) || (isDemo ? "45 12" : "______"));
+	const number = passportParts.length >= 3
+		? passportParts[2]
+		: (params.patient.passport?.slice(5, 11) || (isDemo ? "654321" : "________"));
+
+	const defaultFullName = isDemo ? "Смирнов Алексей Петрович" : "___________";
+	const defaultBirthDate = isDemo ? "12.04.1988" : "___________";
+	const defaultInn = isDemo ? "770123456789" : "";
 
 	return {
 		certificateNumber: params.documentNumber,
@@ -78,25 +88,25 @@ export function buildTaxCertificateDocumentData(
 		clinic: {
 			legalName: params.clinicName,
 			inn: params.clinicInn,
-			kpp: "770101001",
+			kpp: isDemo ? "770101001" : "",
 			ogrn: params.clinicOgrn,
 			address: params.clinicAddress,
 			licenseNumber: params.clinicLicense,
-			licenseDate: "14.02.2021",
+			licenseDate: isDemo ? "14.02.2021" : "",
 			chiefDoctorOrDirector: params.doctorFullName,
 		},
 		taxpayer: {
-			fullName: params.patient.fullName || "Смирнов Алексей Петрович",
-			birthDate: params.patient.birthDate || "12.04.1988",
-			inn: params.patient.inn || "770123456789",
+			fullName: params.patient.fullName || defaultFullName,
+			birthDate: params.patient.birthDate || defaultBirthDate,
+			inn: params.patient.inn || defaultInn,
 			passportSeries: series,
 			passportNumber: number,
 			relationship: "patient",
 		},
 		patient: {
-			fullName: params.patient.fullName || "Смирнов Алексей Петрович",
-			birthDate: params.patient.birthDate || "12.04.1988",
-			inn: params.patient.inn,
+			fullName: params.patient.fullName || defaultFullName,
+			birthDate: params.patient.birthDate || defaultBirthDate,
+			inn: params.patient.inn || defaultInn,
 			passportSeries: series,
 			passportNumber: number,
 		},

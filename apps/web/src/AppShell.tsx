@@ -2,13 +2,11 @@ import { Stethoscope } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
-import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
 import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLauncher";
 import { DirectWarehouseLauncher } from "./components/inventory/DirectWarehouseLauncher";
 import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/WarehouseMdlpLaunchers";
 import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher";
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
-import { DirectDocumentsCatalogLauncher } from "./components/documents/DirectDocumentsCatalogLauncher";
 import { DirectDocumentsLauncher } from "./components/documents/DirectDocumentsLauncher";
 import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
@@ -26,8 +24,6 @@ import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLaunche
 import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
-import { DirectAppointmentLauncher } from "./components/schedule/DirectAppointmentLauncher";
-import { DirectScheduleLauncher } from "./components/schedule/DirectScheduleLauncher";
 import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
@@ -39,8 +35,6 @@ import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairside
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
-import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
-import { DirectPatientStudioLauncher } from "./components/patients/DirectPatientStudioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
@@ -234,17 +228,14 @@ function isStandaloneActive(): boolean {
 		h.includes("earnings") ||
 		s.includes("doctor-payout") ||
 		h.includes("doctor-payout") ||
+		s.includes("wallet") ||
+		h.includes("wallet") ||
 		s.includes("telephony") ||
 		h.includes("telephony") ||
 		s.includes("calls") ||
 		h.includes("calls") ||
 		s.includes("softphone") ||
 		h.includes("softphone") ||
-		s.includes("schedule") ||
-		h.includes("schedule") ||
-		s.includes("appointments") ||
-		h.includes("appointments") ||
-		h.includes("chair-schedule") ||
 		s.includes("presenter") ||
 		h.includes("presenter") ||
 		s.includes("treatment-plan") ||
@@ -321,14 +312,12 @@ export function AppShell() {
 					<DentalWorkspace />
 				</Suspense>
 			)}
-			<DirectMedicalInsertLauncher />
 			<DirectPricelistLauncher />
 			<DirectWarehouseLauncher />
 			<DirectWarehouseMdlpLauncher />
 			<DirectOmnichannelStandaloneLauncher />
 			<DirectPrescriptionLauncher />
 			<DirectSanpinLauncher />
-			<DirectDocumentsCatalogLauncher />
 			<DirectDocumentsLauncher />
 			<DirectImplantPassportLauncher />
 			<DirectSurgeryLauncher />
@@ -344,8 +333,6 @@ export function AppShell() {
 			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
-			<DirectAppointmentLauncher />
-			<DirectScheduleLauncher />
 			<DirectMarketingLauncher />
 			<DirectMarketingRoiLauncher />
 			<DirectAnalyticsLauncher />
@@ -357,8 +344,6 @@ export function AppShell() {
 			<DirectInsuranceLauncher />
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />
-			<DirectPatientCardLauncher />
-			<DirectPatientStudioLauncher />
 			<DirectRecallLauncher />
 			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />

@@ -101,9 +101,10 @@ export function usePrimaryIntakeModalState({
 			INTAKE_STATUTORY_ITEMS.some((item) => item.kind === d.kind),
 		);
 
+		let signErrors = 0;
 		for (const doc of docsToSign) {
 			try {
-				await fetch(`/api/documents/${doc.id}/signature`, {
+				const res = await fetch(`/api/documents/${doc.id}/signature`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
@@ -119,12 +120,21 @@ export function usePrimaryIntakeModalState({
 						},
 					}),
 				});
-			} catch (_e) {
-				// Фоновая устойчивость
+				if (!res.ok) {
+					console.warn(`[PrimaryIntakeModalState] Ошибка сохранения подписи документа ${doc.id}: HTTP ${res.status}`);
+					signErrors++;
+				}
+			} catch (err) {
+				console.warn(`[PrimaryIntakeModalState] Сбой сети при сохранении подписи документа ${doc.id}:`, err);
+				signErrors++;
 			}
 		}
 
-		showToast("Экспресс-пакет первичного визита утвержден и подписан ПЭП (63-ФЗ)", "success", 4500);
+		if (signErrors > 0) {
+			showToast(`⚠️ Экспресс-пакет подписан, но ${signErrors} бланков сохранено локально. Проверьте подключение и повторите попытку.`, "warning", 5000);
+		} else {
+			showToast("Экспресс-пакет первичного визита утвержден и подписан ПЭП (63-ФЗ)", "success", 4500);
+		}
 	};
 
 	return {

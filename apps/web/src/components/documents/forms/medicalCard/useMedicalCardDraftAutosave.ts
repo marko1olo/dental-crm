@@ -50,7 +50,11 @@ export function useMedicalCardDraftAutosave(
 	React.useEffect(() => {
 		if (effectiveDisabled) return;
 		const flushDraft = () => {
-			try { safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current)); } catch {}
+			try {
+				safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
+			} catch (err) {
+				console.warn("[useMedicalCardDraftAutosave] Ошибка автосохранения черновика в localStorage (возможно переполнение):", err);
+			}
 			if (onChange) onChange(latestPayloadRef.current);
 		};
 		if (isInitialMountRef.current) {
@@ -65,7 +69,11 @@ export function useMedicalCardDraftAutosave(
 	React.useEffect(() => {
 		return () => {
 			if (latestPayloadRef.current) {
-				try { safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current)); } catch {}
+				try {
+					safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
+				} catch (err) {
+					console.warn("[useMedicalCardDraftAutosave] Ошибка сохранения черновика при размонтировании:", err);
+				}
 			}
 		};
 	}, [form043DraftKey]);
@@ -78,7 +86,11 @@ export function useMedicalCardDraftAutosave(
 			);
 			if (hasModifiedTeeth) {
 				if (latestPayloadRef.current) {
-					try { safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current)); } catch {}
+					try {
+						safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
+					} catch (err) {
+						console.warn("[useMedicalCardDraftAutosave] Ошибка сохранения черновика перед выгрузкой страницы:", err);
+					}
 				}
 				e.preventDefault();
 				e.returnValue = "В медицинской карте есть несохраненные данные зубной формулы. Закрыть вкладку?";

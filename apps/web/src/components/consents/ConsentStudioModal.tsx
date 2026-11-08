@@ -212,11 +212,11 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 		// Сквозное сохранение в PostgreSQL через API DENTE CRM
 		if (effectivePatientId) {
-			for (const docId of targetDocs) {
+			const savePromises = targetDocs.map(async (docId) => {
 				const docItem = getConsentDocumentById(docId);
 				const hash = updated[docId]?.integrityHash || "DENTE-SSOT";
 				const mappedKind = mapCatalogIdToBackendKind(docId);
-				void fetch(`/api/patients/${encodeURIComponent(effectivePatientId)}/consents`, {
+				const res = await fetch(`/api/patients/${encodeURIComponent(effectivePatientId)}/consents`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
@@ -229,18 +229,32 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							? "Подписано пациентом на бумажном носителе (оригинал в архиве)"
 							: "Подписано пациентом на сенсорном планшете (ПЭП по 63-ФЗ)",
 					}),
-				}).catch(() => {
-					/* silent offline fallback */
 				});
-			}
-		}
+				if (!res.ok) {
+					throw new Error(`Ошибка сервера ${res.status}`);
+				}
+			});
 
-		setToastMsg(
-			status === "signed_paper"
-				? `✓ Пакет из ${targetDocs.length} бланков зафиксирован на бумаге`
-				: `✓ Пакет из ${targetDocs.length} бланков подписан электронной подписью`,
-		);
-		setTimeout(() => setToastMsg(null), 3500);
+			Promise.all(savePromises)
+				.then(() => {
+					setToastMsg(
+						status === "signed_paper"
+							? `✓ Пакет из ${targetDocs.length} бланков сохранен на сервере и в архиве`
+							: `✓ Пакет из ${targetDocs.length} бланков сохранен на сервере и подписан ПЭП`,
+					);
+				})
+				.catch((err) => {
+					console.warn("[ConsentStudioModal] Ошибка сохранения согласий на сервере:", err);
+					setToastMsg(`⚠️ Сохранено локально. Ошибка связи с сервером. Повторите попытку.`);
+				});
+		} else {
+			setToastMsg(
+				status === "signed_paper"
+					? `✓ Пакет из ${targetDocs.length} бланков зафиксирован на бумаге`
+					: `✓ Пакет из ${targetDocs.length} бланков подписан электронной подписью`,
+			);
+		}
+		setTimeout(() => setToastMsg(null), 4500);
 	};
 
 	const handlePaperConfirm = () => {
@@ -285,11 +299,11 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 		// Сквозное сохранение подтверждения на бумаге в PostgreSQL через API DENTE CRM
 		if (effectivePatientId) {
-			for (const docId of targetDocs) {
+			const savePromises = targetDocs.map(async (docId) => {
 				const docItem = getConsentDocumentById(docId);
 				const hash = updated[docId]?.integrityHash || "DENTE-SSOT-PAPER";
 				const mappedKind = mapCatalogIdToBackendKind(docId);
-				void fetch(`/api/patients/${encodeURIComponent(effectivePatientId)}/consents`, {
+				const res = await fetch(`/api/patients/${encodeURIComponent(effectivePatientId)}/consents`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
@@ -299,14 +313,24 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 						integrityHash: hash,
 						notes: "Подтверждено подписание на бумажном носителе (оригинал в архиве)",
 					}),
-				}).catch(() => {
-					/* silent offline fallback */
 				});
-			}
-		}
+				if (!res.ok) {
+					throw new Error(`Ошибка сервера ${res.status}`);
+				}
+			});
 
-		setToastMsg(`✓ Пакет из ${targetDocs.length} бланков подтвержден на бумаге`);
-		setTimeout(() => setToastMsg(null), 3500);
+			Promise.all(savePromises)
+				.then(() => {
+					setToastMsg(`✓ Пакет из ${targetDocs.length} бланков сохранен на сервере`);
+				})
+				.catch((err) => {
+					console.warn("[ConsentStudioModal] Ошибка сохранения подтверждения согласий:", err);
+					setToastMsg(`⚠️ Сохранено локально. Ошибка связи с сервером. Повторите попытку.`);
+				});
+		} else {
+			setToastMsg(`✓ Пакет из ${targetDocs.length} бланков подтвержден на бумаге`);
+		}
+		setTimeout(() => setToastMsg(null), 4500);
 	};
 
 	const handlePrintDoc = () => {
@@ -483,7 +507,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 				<footer className="sticky bottom-0 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 md:px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)]/95 backdrop-blur-md shrink-0">
 					<div className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block">
 						{toastMsg && (
-							<span className="text-emerald-600 dark:text-emerald-400 font-medium">{toastMsg}</span>
+							<span className={toastMsg.startsWith("⚠️") ? "text-amber-600 dark:text-amber-400 font-medium" : "text-emerald-600 dark:text-emerald-400 font-medium"}>{toastMsg}</span>
 						)}
 					</div>
 

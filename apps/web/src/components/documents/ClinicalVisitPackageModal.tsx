@@ -116,7 +116,7 @@ export function ClinicalVisitPackageModal(
 			patient: patient as any,
 			taxpayerFullName: patient?.fullName || "____________________",
 			// biome-ignore lint/suspicious/noExplicitAny: administrativeProfile
-			effectiveInn: (patient as any)?.administrativeProfile?.snils || "",
+			effectiveInn: (patient as any)?.inn || (patient as any)?.administrativeProfile?.inn || "",
 			relationship: "self",
 			selectedYear: selectedTaxYear,
 			aggregated: taxAggregated,

@@ -1,5 +1,4 @@
 import React from "react";
-import { FnsTaxCertificateModal } from "../../FnsTaxCertificateModal";
 import { AutoclaveSterilizationLogModal } from "../../../sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
 import { TaxDeductionCertificateModal } from "../../../finance/TaxDeductionCertificateModal";
 import { EgiszRemdHubModal } from "../../../egisz/EgiszRemdHubModal";
@@ -28,32 +27,18 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 			egiszInitialPayload,
 		} = props;
 
+		const isTaxModalVisible = isTaxAccountingOpen || isFnsNdflXmlOpen;
+		const handleCloseTaxModal = () => {
+			setIsTaxAccountingOpen?.(false);
+			setIsFnsNdflXmlOpen?.(false);
+		};
+
 		return (
 			<>
-				{isTaxAccountingOpen && (
-					<FnsTaxCertificateModal
-						isOpen={isTaxAccountingOpen}
-						onClose={() => setIsTaxAccountingOpen(false)}
-						patient={activePatient ?? null}
-						clinicProfileDraft={clinicProfileDraft}
-						initialYear={taxDocumentYear}
-					/>
-				)}
-
-				{(isAutoclaveLogOpen || isSanpinRegistryOpen) && (
-					<AutoclaveSterilizationLogModal
-						isOpen={isAutoclaveLogOpen || isSanpinRegistryOpen}
-						onClose={() => {
-							setIsAutoclaveLogOpen(false);
-							setIsSanpinRegistryOpen(false);
-						}}
-					/>
-				)}
-
-				{isFnsNdflXmlOpen && (
+				{isTaxModalVisible && (
 					<TaxDeductionCertificateModal
-						isOpen={isFnsNdflXmlOpen}
-						onClose={() => setIsFnsNdflXmlOpen(false)}
+						isOpen={isTaxModalVisible}
+						onClose={handleCloseTaxModal}
 						patientName={activePatient?.fullName ?? undefined}
 						patientBirthDate={activePatient?.birthDate ?? undefined}
 						patientInn={(activePatient as { inn?: string | null } | undefined)?.inn ?? undefined}
@@ -68,6 +53,16 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 						clinicAddress={clinicProfileDraft?.address}
 						chiefDoctorName={activeDoctor?.fullName}
 						selectedYear={taxDocumentYear}
+					/>
+				)}
+
+				{(isAutoclaveLogOpen || isSanpinRegistryOpen) && (
+					<AutoclaveSterilizationLogModal
+						isOpen={isAutoclaveLogOpen || isSanpinRegistryOpen}
+						onClose={() => {
+							setIsAutoclaveLogOpen(false);
+							setIsSanpinRegistryOpen(false);
+						}}
 					/>
 				)}
 
