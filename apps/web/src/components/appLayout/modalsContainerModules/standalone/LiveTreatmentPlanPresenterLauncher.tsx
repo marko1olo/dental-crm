@@ -10,7 +10,10 @@ import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHead
 import { logger } from "../../../../utils/logger";
 import { showToast } from "../../../GlobalToast";
 import { TreatmentPlanPresenterModal } from "../../../treatment-plans/TreatmentPlanPresenterModal";
-import type { LiveTreatmentPlanPresenterLauncherProps } from "./presenterLauncherTypes";
+import type {
+	LivePatientPlanInfo,
+	LiveTreatmentPlanPresenterLauncherProps,
+} from "./presenterLauncherTypes";
 import { TreatmentPlanPresenterEmptyState } from "./TreatmentPlanPresenterEmptyState";
 import { useClinicRequisitesLoader } from "./useClinicRequisitesLoader";
 import { useLivePatientPlanLoader } from "./useLivePatientPlanLoader";
@@ -36,28 +39,25 @@ export const LiveTreatmentPlanPresenterLauncher: React.FC<
 		);
 	}
 
-	const isPresenterRoute =
-		typeof window !== "undefined" &&
-		(window.location.hash.toLowerCase().includes("presenter") ||
-			window.location.search.toLowerCase().includes("presenter=1"));
+	const fallbackPlan: LivePatientPlanInfo | null = isDemo
+		? {
+				patientName: "Демо-пациент",
+				patientId: patientId || "00000000-0000-0000-0000-000000000001",
+				patientPhone: "+7 (999) 000-00-00",
+				patientBirthDate: "1990-01-01",
+				doctorFullName: "Дежурный врач",
+				doctorSpecialty: "Врач-стоматолог общей практики",
+				planId: planId || "plan-demo",
+				planCreatedAtIso: new Date().toISOString(),
+				teeth: [
+					{ toothNumber: 16, state: "Caries", diagnosis: "Кариес дентина (K02.1)" },
+					{ toothNumber: 46, state: "Missing", diagnosis: "Частичное отсутствие зубов (K08.1)" },
+					{ toothNumber: 25, state: "Pulpitis", diagnosis: "Хронический пульпит (K04.0)" },
+				],
+			}
+		: null;
 
-	const fallbackPlan: LivePatientPlanInfo = {
-		patientName: "Смирнова Екатерина Васильевна",
-		patientId: patientId || "pat-smirnova",
-		patientPhone: "+7 (999) 234-56-78",
-		patientBirthDate: "1988-04-12",
-		doctorFullName: "Д-р Орлов А.В. (Главный врач)",
-		doctorSpecialty: "Врач-стоматолог ортопед, хирург-имплантолог",
-		planId: planId || "plan-rehab-2026",
-		planCreatedAtIso: new Date().toISOString(),
-		teeth: [
-			{ toothNumber: 16, state: "Caries", diagnosis: "Кариес дентина (K02.1)" },
-			{ toothNumber: 46, state: "Missing", diagnosis: "Частичное отсутствие зубов (K08.1)" },
-			{ toothNumber: 25, state: "Pulpitis", diagnosis: "Хронический пульпит (K04.0)" },
-		],
-	};
-
-	const activePlan = patientPlan || ((isDemo || isPresenterRoute) ? fallbackPlan : null);
+	const activePlan = patientPlan || fallbackPlan;
 
 	if (!activePlan) {
 		return <TreatmentPlanPresenterEmptyState onClose={onClose} />;
@@ -69,14 +69,14 @@ export const LiveTreatmentPlanPresenterLauncher: React.FC<
 	}) => {
 		try {
 			const res = await fetch(
-				`/api/patients/${encodeURIComponent(activePlan.patientId)}/treatment-plans/${encodeURIComponent(activePlan.planId)}/approve-variant`,
+				`/api/treatment-plans/${encodeURIComponent(activePlan.planId)}/approve`,
 				{
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
-						reason: `Пациент ${activePlan.patientName} утвердил тариф «${tier.title || tier.id || "Основной"}» (ст. 20 323-ФЗ / ПП РФ №659)`,
+						selectedTier: tier.id || "optimum",
 					}),
 				},
 			);

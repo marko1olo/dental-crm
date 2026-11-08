@@ -1,4 +1,5 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
@@ -31,11 +32,26 @@ export * from "./treatmentPlan/treatmentPlanCrudHandlers.js";
 export * from "./treatmentPlan/pep/index.js";
 export * from "./treatmentPlan/patientTreatmentPlanHandlers.js";
 
+interface FastifyRouteChecker {
+	hasRoute?: (opts: { method: string; url: string }) => boolean;
+}
+
+function checkHasRoute(server: unknown, method: string, url: string): boolean {
+	const checker = server as FastifyRouteChecker;
+	return typeof checker?.hasRoute === "function" ? checker.hasRoute({ method, url }) : false;
+}
+
+export const dropoutPreventionRunBodySchema = z.object({
+	minDays: z.coerce.number().int().min(1).optional().default(14),
+});
+
+export const dropoutRecallBodySchema = z.object({
+	notes: z.string().trim().optional(),
+});
+
 export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	// 0a. GET /api/treatment-plans/:id — Получение плана лечения по ID со связями
-	const hasGetId = typeof (server as any).hasRoute === "function"
-		? (server as any).hasRoute({ method: "GET", url: "/api/treatment-plans/:id" })
-		: false;
+	const hasGetId = checkHasRoute(server, "GET", "/api/treatment-plans/:id");
 	if (!hasGetId) {
 		server.get("/api/treatment-plans/:id", handleGetTreatmentPlanById);
 		server.get("/api/treatment-plan/:id", handleGetTreatmentPlanById);
@@ -44,23 +60,19 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	}
 
 	// 0b. GET /api/patients/:patientId/treatment-plans — Список планов конкретного пациента
-	const hasGetPatientPlans = typeof (server as any).hasRoute === "function"
-		? (server as any).hasRoute({ method: "GET", url: "/api/patients/:patientId/treatment-plans" })
-		: false;
+	const hasGetPatientPlans = checkHasRoute(server, "GET", "/api/patients/:patientId/treatment-plans");
 	if (!hasGetPatientPlans) {
 		server.get("/api/patients/:patientId/treatment-plans", handleListPatientTreatmentPlans);
 	}
 
 	// 0c. POST /api/patients/:patientId/treatment-plans — Сохранение / создание ревизии плана лечения
-	const hasPostPatientPlans = typeof (server as any).hasRoute === "function"
-		? (server as any).hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans" })
-		: false;
+	const hasPostPatientPlans = checkHasRoute(server, "POST", "/api/patients/:patientId/treatment-plans");
 	if (!hasPostPatientPlans) {
 		server.post("/api/patients/:patientId/treatment-plans", handleUpsertPatientTreatmentPlan);
 	}
 
 	// 0. GET /api/treatment-plans — Список планов лечения клиники
-	const listPlansHandler = async (request: any, reply: any) => {
+	const listPlansHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalReadContext(request, reply, "list treatment plans");
 		if (!context) return;
 		return handleListTreatmentPlans(request, reply, context.organizationId);
@@ -99,7 +111,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	);
 
 	// 3. POST /api/treatment-plans — Создание плана лечения с этапами и процедурами
-	const createPlanHandler = async (request: any, reply: any) => {
+	const createPlanHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "create treatment plan");
 		if (!context) return;
 		return handleCreateTreatmentPlan(request, reply, context.organizationId);
@@ -110,7 +122,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	server.post("/api/v1/treatment-plan", createPlanHandler);
 
 	// 4. PATCH /api/treatment-plans/:id/stages/:stageId — Обновление этапа плана лечения
-	const updateStageHandler = async (request: any, reply: any) => {
+	const updateStageHandler = async (request: FastifyRequest<{ Params: { id: string; stageId: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "update treatment plan stage");
 		if (!context) return;
 		return handleUpdateTreatmentPlanStage(request, reply, context.organizationId);
@@ -125,7 +137,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	);
 
 	// 5. POST /api/treatment-plans/:id/sign-pep — Подписание плана через ПЭП (СМС / QR-код)
-	const signPepHandler = async (request: any, reply: any) => {
+	const signPepHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "sign treatment plan via PEP");
 		if (!context) return;
 		return handleSignTreatmentPlanPep(request, reply, context.organizationId);
@@ -134,7 +146,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/sign-pep", signPepHandler);
 
 	// 6. PATCH /api/treatment-plans/:id — Обновление плана лечения
-	const updatePlanHandler = async (request: any, reply: any) => {
+	const updatePlanHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "update treatment plan");
 		if (!context) return;
 		return handleUpdateTreatmentPlan(request, reply, context.organizationId);
@@ -143,7 +155,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id", updatePlanHandler);
 
 	// 6b. PATCH /api/treatment-plans/:id/status — Обновление статуса плана лечения
-	const updatePlanStatusHandler = async (request: any, reply: any) => {
+	const updatePlanStatusHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "update treatment plan status");
 		if (!context) return;
 		return handleUpdateTreatmentPlanStatus(request, reply, context.organizationId);
@@ -152,7 +164,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/status", updatePlanStatusHandler);
 
 	// 7. POST /api/treatment-plans/:id/approve — Утверждение плана лечения
-	const approvePlanHandler = async (request: any, reply: any) => {
+	const approvePlanHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "approve treatment plan");
 		if (!context) return;
 		return handleApproveTreatmentPlan(request, reply, context.organizationId);
@@ -161,7 +173,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/approve", approvePlanHandler);
 
 	// 8. POST /api/v1/treatment-plans/:id/transition-stage — Перемещение плана между этапами воронки
-	const stageTransitionHandler = async (request: any, reply: any) => {
+	const stageTransitionHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "transition treatment plan stage");
 		if (!context) return;
 		return handleStageTransition(request, reply, context.organizationId);
@@ -170,10 +182,11 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/transition-stage", stageTransitionHandler);
 
 	// 9. POST /api/v1/treatment-plans/dropout-prevention/run — Пакетная генерация задач куратора по анти-отвалу (14–21д)
-	server.post("/api/v1/treatment-plans/dropout-prevention/run", async (request, reply) => {
+	server.post("/api/v1/treatment-plans/dropout-prevention/run", async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "run treatment plan dropout prevention");
 		if (!context) return;
-		const minDays = (request.body as any)?.minDays || 14;
+		const parsed = dropoutPreventionRunBodySchema.safeParse(request.body ?? {});
+		const minDays = parsed.success ? parsed.data.minDays : 14;
 		const result = await checkAndGenerateDropoutRecalls(context.organizationId, minDays);
 		return reply.code(200).send({
 			success: true,
@@ -184,10 +197,11 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	// 10. POST /api/v1/treatment-plans/:id/create-dropout-recall — Одиночная задача куратору по анти-отвалу
 	server.post<{ Params: { id: string } }>(
 		"/api/v1/treatment-plans/:id/create-dropout-recall",
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			const context = await requireClinicalMutationContext(request, reply, "create dropout recall for plan");
 			if (!context) return;
-			const notes = (request.body as any)?.notes;
+			const parsed = dropoutRecallBodySchema.safeParse(request.body ?? {});
+			const notes = parsed.success ? parsed.data.notes : undefined;
 			const result = await createSinglePlanDropoutRecall(context.organizationId, request.params.id, notes);
 			const statusCode = result.success ? 200 : 400;
 			return reply.code(statusCode).send(result);

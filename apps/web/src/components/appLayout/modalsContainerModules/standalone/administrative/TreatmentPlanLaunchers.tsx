@@ -14,6 +14,7 @@ import {
 	StandaloneTreatmentEstimatorHost,
 	StandaloneTreatmentPlansWorkspaceHost,
 } from "./StandaloneTreatmentPlanLauncherHosts";
+import { DirectTreatmentPlanLauncher } from "../../../../treatment-plans/DirectTreatmentPlanLauncher";
 
 const LiveTreatmentPlanPresenterLauncher = lazyWithRetry(() =>
 	import("../LiveTreatmentPlanPresenterLauncher").then((m) => ({ default: m.LiveTreatmentPlanPresenterLauncher })),
@@ -51,6 +52,10 @@ export function renderTreatmentPlanLaunchers(props: StandaloneLaunchersProps): R
 				onClose={() => clearUrlTokens(["estimator"])}
 			/>
 		);
+	}
+
+	if (hasUrlToken(["treatment-studio", "treatment_studio"])) {
+		return <DirectTreatmentPlanLauncher />;
 	}
 
 	if (hasUrlToken(["treatment-plans", "treatment_plans"])) {

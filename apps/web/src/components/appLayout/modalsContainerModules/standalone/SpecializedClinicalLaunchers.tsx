@@ -11,8 +11,8 @@ import { renderImplantologyLaunchers } from "./clinical/ImplantologyLaunchers";
 import { renderOrthodonticsLaunchers } from "./clinical/OrthodonticsLaunchers";
 import { renderSurgeryLaunchers } from "./clinical/SurgeryLaunchers";
 import { renderOrthopedicsLaunchers } from "./clinical/OrthopedicsLaunchers";
-import { DirectPatientStudioLauncher } from "../../../patients/DirectPatientStudioLauncher";
-import { DirectTreatmentPlanLauncher } from "../../../treatment-plans/DirectTreatmentPlanLauncher";
+import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
+import { clearUrlTokens } from "./deepLinkUrl";
 
 export function renderSpecializedClinicalLaunchers(
 	props: StandaloneLaunchersProps,
@@ -41,27 +41,15 @@ export function renderSpecializedClinicalLaunchers(
 	const orthopedics = renderOrthopedicsLaunchers();
 	if (orthopedics) return orthopedics;
 
-	// 6. Планы лечения и 3-уровневые сметы у кресла (Мандаты 8e, 8n)
-	if (typeof window !== "undefined") {
-		const hash = window.location.hash.toLowerCase();
-		const search = window.location.search.toLowerCase();
-		if (
-			hash.includes("treatment-plan") ||
-			hash.includes("treatment-plans") ||
-			hash.includes("treatment-studio") ||
-			hash.includes("plan-presenter") ||
-			hash.includes("#plans") ||
-			search.includes("plans=1")
-		) {
-			return <DirectTreatmentPlanLauncher />;
-		}
-	}
-
-	// 7. Экспресс-запись и картотека пациентов
+	// 6. Экспресс-запись и картотека пациентов
 	if (typeof window !== "undefined") {
 		const hash = window.location.hash.toLowerCase();
 		if (hash.includes("patient-studio") || hash.includes("express-patient")) {
-			return <DirectPatientStudioLauncher />;
+			return (
+				<StandalonePatientCardHost
+					onClose={() => clearUrlTokens(["patient-studio", "express-patient"], ["#patient-studio", "#express-patient"])}
+				/>
+			);
 		}
 	}
 

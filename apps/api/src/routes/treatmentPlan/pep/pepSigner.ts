@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
-import { auditEvents, patients, treatmentPlans } from "../../../db/schema.js";
+import { auditEvents, patients, treatmentItems, treatmentPlans } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import { LEDGER_ID_PREFIX_LENGTH } from "../../odontogram/types.js";
 import { handleOtpRequest, verifyOtpCode } from "./pepOtpService.js";
 import { activeOtpCache, signTreatmentPlanPepSchema } from "./pepTypes.js";
 
@@ -43,10 +44,10 @@ export async function handleSignTreatmentPlanPep(
 	const targetPhone = data.phone || patient?.phone || "";
 
 	if (data.action === "request_code") {
-		return handleOtpRequest(planId, targetPhone, request, reply);
+		return handleOtpRequest(planId, targetPhone, request, reply, organizationId, plan.patientId);
 	}
 
-	if (data.method === "sms" && !verifyOtpCode(planId, data.code)) {
+	if (data.method === "sms" && !(await verifyOtpCode(planId, data.code, organizationId, plan.patientId))) {
 		return reply.code(400).send({
 			error: "InvalidVerificationCode",
 			message: "Неверный код подтверждения СМС или срок его действия истек.",
@@ -77,16 +78,35 @@ export async function handleSignTreatmentPlanPep(
 		verified: true,
 	};
 
-	const [signedPlan] = await db
-		.update(treatmentPlans)
-		.set({
-			patientSignature: JSON.stringify(pepRecord),
-			status: "Approved",
-			approvedAt: new Date(),
-			updatedAt: new Date(),
-		})
-		.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
-		.returning();
+	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
+	const signedPlan = await db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(treatmentPlans)
+			.set({
+				patientSignature: JSON.stringify(pepRecord),
+				status: "Approved",
+				approvedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.returning();
+
+		if (updated) {
+			await tx
+				.update(treatmentItems)
+				.set({ status: "approved" })
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.patientId, plan.patientId),
+						eq(treatmentItems.status, "proposed"),
+						sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+					),
+				);
+		}
+
+		return updated;
+	});
 
 	try {
 		await db.insert(auditEvents).values({

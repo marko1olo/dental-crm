@@ -87,7 +87,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	isOpen,
 	onClose,
 	patientName = "Пациент",
-	patientId = "pat-walkin",
+	patientId,
 	patientPhone = "",
 	doctorFullName = "Лечащий врач",
 	planId,
@@ -223,24 +223,28 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		if (onPayStage) {
 			onPayStage(stage);
 		}
-		if (typeof fetch !== "undefined") {
+		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+		if (typeof fetch !== "undefined" && isValidUuid) {
 			void fetch("/api/invoices/generate-from-plan", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					planId: planId || "plan-custom",
-					patientId: patientId || "pat-walkin",
-					documentType: "WorkOrder",
+					planId: planId || undefined,
+					patientId,
+					documentType: "work_order",
 					isSignedWithPatient: true,
-					items: stage.items.map((it) => ({
-						nameRu: it.name,
-						lineGrossRub: it.priceRub,
-						quantity: it.quantity,
-						serviceCode: it.serviceCode || it.code804n,
+					items: stage.items.map((it, idx) => ({
+						itemId: it.id || `stage-item-${idx}`,
+						nameRu: it.name || "Услуга",
+						unitPriceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
+						quantity: it.quantity || 1,
+						discountRub: it.discountRub || 0,
+						code804n: it.code804n || (it as any).serviceCode || undefined,
+						toothNumber: it.toothNumber ?? null,
 					})),
 				}),
-			}).catch(() => {
-				// graceful fallback
+			}).catch((err) => {
+				console.warn("[TreatmentPlanPresenterModal] Не удалось создать наряд из этапа:", err);
 			});
 		}
 	}, [onPayStage, planId, patientId]);

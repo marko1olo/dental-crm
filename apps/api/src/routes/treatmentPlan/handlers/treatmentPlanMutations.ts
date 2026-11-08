@@ -621,12 +621,12 @@ export async function handleCreateTreatmentPlan(
 		const createdItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
 		const allItemsFlat: Array<{
 			priceId: string;
-			name?: string;
-			toothNumber?: number | null;
+			name?: string | undefined;
+			toothNumber?: number | null | undefined;
 			quantity: number;
 			price: number;
 			discount: number;
-			doctorId?: string | null;
+			doctorId?: string | null | undefined;
 		}> = [];
 
 		for (const st of data.stages) {
@@ -672,8 +672,9 @@ export async function handleCreateTreatmentPlan(
 			const ledgerValues = allItemsFlat.map((item, index) => {
 				const id = ledgerRowId(newPlan.id, slot);
 				slot += 1;
-				const unitPriceRub = item.price.toFixed(2);
-				const lineTotalRub = Math.max(0, item.price * item.quantity - item.discount).toFixed(2);
+				const unitPriceRub = Number(item.price.toFixed(2));
+				const lineTotalRub = Number(Math.max(0, item.price * item.quantity - item.discount).toFixed(2));
+				const discountRub = Number(item.discount.toFixed(2));
 
 				return {
 					id,
@@ -686,7 +687,7 @@ export async function handleCreateTreatmentPlan(
 					quantity: String(item.quantity),
 					priceRub: lineTotalRub,
 					unitPriceRub,
-					discountRub: item.discount.toFixed(2),
+					discountRub,
 					status: "proposed" as const,
 					plannedDoctorUserId: item.doctorId || data.doctorId || null,
 					notes: null,
@@ -932,15 +933,34 @@ export async function handleApproveTreatmentPlan(
 		});
 	}
 
-	const [approvedPlan] = await db
-		.update(treatmentPlans)
-		.set({
-			status: "Approved",
-			approvedAt: new Date(),
-			updatedAt: new Date(),
-		})
-		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
-		.returning();
+	const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
+	const approvedPlan = await db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(treatmentPlans)
+			.set({
+				status: "Approved",
+				approvedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.returning();
+
+		if (updated) {
+			await tx
+				.update(treatmentItems)
+				.set({ status: "approved" })
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.patientId, existing.patientId),
+						eq(treatmentItems.status, "proposed"),
+						sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+					),
+				);
+		}
+
+		return updated;
+	});
 
 	if (!approvedPlan) {
 		return reply.code(500).send({

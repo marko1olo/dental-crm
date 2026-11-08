@@ -22,6 +22,7 @@ import {
 	applyDoctorDiscountToTiers, generateTreatmentPlanFromDiagnosis,
 } from "./treatmentPlanCatalogData";
 import { type ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { StudioTiersAndStagesTab } from "./studioTabs/StudioTiersAndStagesTab";
 import { StudioClinicalBundlesTab } from "./studioTabs/StudioClinicalBundlesTab";
 import { StudioCuratorAssignmentTab } from "./studioTabs/StudioCuratorAssignmentTab";
@@ -35,11 +36,11 @@ if (typeof window !== "undefined") {
 export interface TreatmentPlanStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly patientPhone?: string;
-	readonly doctorFullName?: string;
-	readonly doctorSpecialty?: string;
+	readonly patientName?: string | null;
+	readonly patientId?: string | null;
+	readonly patientPhone?: string | null;
+	readonly doctorFullName?: string | null;
+	readonly doctorSpecialty?: string | null;
 	readonly initialSelectedTierId?: TreatmentPlanTierId;
 	readonly initialDepthMode?: "express" | "expert";
 	readonly onApprovePlan?: (selectedTier: TreatmentPlanTier) => void;
@@ -58,9 +59,11 @@ export type StudioTab = "tiers" | "warranty" | "photo" | "bundles" | "curator";
 export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Смирнова Екатерина Васильевна",
-	patientId = "pat-walkin",
-	doctorFullName = "Д-р Орлов А.В. (Главный врач)",
+	patientName: propPatientName,
+	patientId: propPatientId,
+	patientPhone,
+	doctorFullName: propDoctorFullName,
+	doctorSpecialty,
 	initialSelectedTierId = "optimum",
 	initialDepthMode = "express",
 	onApprovePlan,
@@ -68,7 +71,13 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	onApproveAndSign,
 	onSaveDraft,
 	className = "",
+	teeth,
+	isDemoMode: explicitDemoMode,
 }) => {
+	const isDemo = explicitDemoMode ?? isDemoShowcaseMode();
+	const patientName = propPatientName ?? (isDemo ? "Демо-пациент" : "");
+	const patientId = propPatientId ?? (isDemo ? "00000000-0000-0000-0000-000000000001" : undefined);
+	const doctorFullName = propDoctorFullName ?? (isDemo ? "Дежурный врач" : "");
 	const [depthMode, setDepthMode] = useState<StudioDepthMode>(initialDepthMode);
 	const [activeTab, setActiveTab] = useState<StudioTab>("tiers");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
@@ -195,31 +204,39 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			window.dispatchEvent(new CustomEvent("dente:plan-status-changed", { detail: detailPayload }));
 			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
 
-			if (window.fetch) {
+			const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+			if (window.fetch && isValidUuid) {
 				try {
-					await fetch("/api/v1/treatment-plans", {
+					const res = await fetch("/api/v1/treatment-plans", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
-							patientId: patientId || "pat-walkin",
+							patientId,
 							name: `Комплексный план: ${activeTier.title}`,
 							title: `Комплексный план: ${activeTier.title}`,
-							selectedTier: activeTier.tierId,
 							totalPriceRub: activeTier.totalRub,
 							planDiscountPercent: doctorDiscountPercent,
-							stages: activeTier.stages.map((stg) => ({
-								stageNumber: stg.stageNumber,
-								title: stg.title,
-								stageKind: stg.stageKind || "stage_custom",
-								totalRub: stg.totalRub,
-								items: stg.items.map((it) => ({
-									name: it.name, price: it.priceRub, quantity: it.quantity || 1, discount: it.discountRub || 0, toothNumber: it.toothNumber,
+							stages: activeTier.stages.map((stg, stgIdx) => ({
+								stageOrder: stg.stageNumber || stgIdx + 1,
+								stageName: stg.title || `Этап ${stgIdx + 1}`,
+								completionPercentage: 0,
+								items: stg.items.map((it, itIdx) => ({
+									priceId: it.id || (it as any).code804n || `item-${stgIdx + 1}-${itIdx + 1}`,
+									name: it.name || "Услуга",
+									price: it.priceRub || 0,
+									quantity: it.quantity || 1,
+									discount: it.discountRub || 0,
+									toothNumber: it.toothNumber ?? null,
 								})),
 							})),
 						}),
-					}).catch(() => null);
-				} catch {
-					// graceful fallback
+					});
+					if (!res.ok) {
+						const errJson = await res.json().catch(() => ({}));
+						console.warn("[TreatmentPlanStudioModal] Ошибка сохранения плана лечения:", errJson);
+					}
+				} catch (networkErr) {
+					console.warn("[TreatmentPlanStudioModal] Сетевой сбой при сохранении плана лечения:", networkErr);
 				}
 			}
 		}
@@ -235,8 +252,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		if (onSaveDraft) onSaveDraft(stages, activeTier);
 		if (typeof window !== "undefined") {
 			try {
+				const draftStorageKey = patientId ? `dente_plan_draft_${patientId}` : "dente_plan_draft_current";
 				localStorage.setItem(
-					`dente_plan_draft_${patientId}`,
+					draftStorageKey,
 					JSON.stringify({ stages, selectedTierId, doctorDiscountPercent, updatedAt: new Date().toISOString() })
 				);
 			} catch {
@@ -293,9 +311,15 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								<span className="hidden sm:inline">Комплексный план лечения</span>
 							</h2>
 							<div className="flex items-center gap-1.5 sm:gap-2 text-xs text-[var(--muted)] truncate">
-								<span className="font-semibold text-[var(--ink)] truncate">{patientName}</span>
-								<span className="hidden sm:inline">·</span>
-								<span className="hidden sm:inline truncate">{doctorFullName}</span>
+								<span className="font-semibold text-[var(--ink)] truncate">
+									{patientName || "Пациент не выбран"}
+								</span>
+								{doctorFullName && (
+									<>
+										<span className="hidden sm:inline">·</span>
+										<span className="hidden sm:inline truncate">{doctorFullName}</span>
+									</>
+								)}
 							</div>
 						</div>
 					</div>
@@ -533,8 +557,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					{activeTab === "warranty" && (
 						<StudioWarrantyPassportTab
 							activeTier={activeTier}
-							patientName={patientName}
-							doctorFullName={doctorFullName}
+							patientName={patientName || undefined}
+							doctorFullName={doctorFullName || undefined}
 						/>
 					)}
 
@@ -550,7 +574,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 					{/* Вкладка: Куратор плана */}
 					{activeTab === "curator" && (
-						<StudioCuratorAssignmentTab doctorFullName={doctorFullName} />
+						<StudioCuratorAssignmentTab doctorFullName={doctorFullName || undefined} />
 					)}
 				</main>
 
