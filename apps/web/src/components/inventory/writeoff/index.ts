@@ -1,4 +1,8 @@
-export * from "./ClinicalWriteoffModal.js";
+export {
+	ClinicalWriteoffModal,
+	type ClinicalWriteoffModalProps,
+	DEFAULT_CLINICAL_SERVICES,
+} from "../ConsumablesBatchWriteoffModal.js";
 export * from "./ClinicalWriteoffQuickStrip.js";
 export * from "./clinicalWriteoffEngine.js";
 export * from "./clinicalWriteoffPresets.js";

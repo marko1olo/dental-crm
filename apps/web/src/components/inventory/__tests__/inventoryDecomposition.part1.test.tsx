@@ -62,9 +62,9 @@ describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit (Part 1)
 	it("1. Verifies Mandate 8b line count invariant (EVERY file <= 800 lines)", () => {
 		const filesToCheck = [
 			path.join(WEB_SRC, "components/InventoryView.tsx"),
-			path.join(WEB_SRC, "components/InventoryStockTable.tsx"),
+			path.join(WEB_SRC, "components/inventory/WarehouseStockTable.tsx"),
 			path.join(WEB_SRC, "components/InventoryBatchFefoPanel.tsx"),
-			path.join(WEB_SRC, "components/InventoryInboundInvoiceModal.tsx"),
+			path.join(WEB_SRC, "components/inventory/InboundWaybillModal.tsx"),
 			path.join(WEB_SRC, "components/InventoryServiceUsagePanel.tsx"),
 			path.join(WEB_SRC, "components/inventory/InventoryOperationsMenu.tsx"),
 			path.join(WEB_SRC, "components/inventory/InventoryItemFormModal.tsx"),

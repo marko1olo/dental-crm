@@ -12,36 +12,46 @@ import { InventoryViewMobileLayout } from "./inventory/viewModules/InventoryView
 import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryViewContentRouter.js";
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
 import { SterilizationBatchCycleModal } from "./inventory/sterilizationCycle/SterilizationBatchCycleModal.js";
-import { InboundWaybillModal } from "./inventory/InboundWaybillModal.js";
-import { WarehouseInboundInvoiceModal } from "./inventory/WarehouseInboundInvoiceModal.js";
-import { BatchWriteoffModal } from "./inventory/BatchWriteoffModal.js";
-import { ConsumablesBatchWriteoffModal } from "./inventory/ConsumablesBatchWriteoffModal.js";
-import { WarehouseBatchWriteoffModal } from "./inventory/WarehouseBatchWriteoffModal.js";
+import {
+	InboundWaybillModal,
+	WarehouseInboundInvoiceModal,
+	InventoryInboundInvoiceModal,
+} from "./inventory/InboundWaybillModal.js";
+import {
+	ConsumablesBatchWriteoffModal,
+	BatchWriteoffModal,
+	WarehouseBatchWriteoffModal,
+	ShiftBatchWriteoffModal,
+	ShiftBatchDeductionModal,
+} from "./inventory/ConsumablesBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal.js";
-import { WarehouseStockTable } from "./inventory/WarehouseStockTable.js";
-import { ShiftBatchWriteoffModal } from "./inventory/ShiftBatchWriteoffModal.js";
-import { InventoryStockTable } from "./InventoryStockTable.js";
+import {
+	WarehouseStockTable,
+	InventoryStockTable,
+	StockBalanceTable,
+} from "./inventory/WarehouseStockTable.js";
 
 export { INVENTORY_CATEGORIES, type InventoryCategoryFilter };
 export {
 	WarehouseStockTable,
+	InventoryStockTable,
+	StockBalanceTable,
 	WarehouseInboundInvoiceModal,
+	InventoryInboundInvoiceModal,
 	InboundWaybillModal,
 	ShiftBatchWriteoffModal,
+	ShiftBatchDeductionModal,
 	BatchWriteoffModal,
 	WarehouseBatchWriteoffModal,
 	ConsumablesBatchWriteoffModal,
 	WarehouseInventoryAuditModal,
 };
-export * from "./InventoryStockTable.js";
 export * from "./InventoryBatchFefoPanel.js";
-export * from "./InventoryInboundInvoiceModal.js";
 export * from "./InventoryServiceUsagePanel.js";
 export * from "./inventory/InventoryOperationsMenu.js";
 export * from "./inventory/InventoryItemFormModal.js";
 export * from "./inventory/InventoryStockAdjustModal.js";
 export * from "./inventory/InventoryExternalModals.js";
-export * from "./inventory/ShiftBatchDeductionModal.js";
 export * from "./inventory/MobileInventoryGroupedList.js";
 export * from "./inventory/InventoryTopToolbar.js";
 export * from "./inventory/WarehouseWaybillsTab.js";
@@ -286,5 +296,4 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 
 export const InventoryView = React.memo(InventoryViewInner);
 export const WarehouseView = InventoryView;
-export { InventoryStockTable as StockBalanceTable };
 export default InventoryView;

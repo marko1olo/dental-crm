@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { WarehouseBatchTrackingModal } from "../WarehouseBatchTrackingModal.js";
 import { WarehouseCatalogView } from "../WarehouseCatalogView.js";
-import { ConsumablesDeductionModal } from "../ConsumablesDeductionModal.js";
+import { ConsumablesBatchWriteoffModal as ConsumablesDeductionModal } from "../ConsumablesBatchWriteoffModal.js";
 import { AutoBomDeductionBanner } from "../AutoBomDeductionBanner.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 

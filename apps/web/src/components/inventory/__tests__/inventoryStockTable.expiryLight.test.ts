@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getExpiryTrafficLight } from "../InventoryStockTable.js";
+import { getExpiryTrafficLight } from "../WarehouseStockTable.js";
 
 describe("FEFO Smart Anesthesia & Expiry Traffic Light: Expiry Date Logic", () => {
 	const refDate = new Date("2026-09-24T00:00:00Z");

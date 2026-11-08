@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { InventoryStockTable, type WarehouseStockItem } from "../InventoryStockTable.js";
+import { InventoryStockTable, type WarehouseStockItem } from "../WarehouseStockTable.js";
 
 describe("FEFO Smart Anesthesia & Expiry Traffic Light: Table Rendering", () => {
 	const testItems: readonly WarehouseStockItem[] = [

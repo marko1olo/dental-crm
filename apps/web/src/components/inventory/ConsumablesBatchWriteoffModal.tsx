@@ -40,6 +40,8 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly activeTab?: string | undefined;
 	readonly onTabChange?: ((tab: string) => void) | undefined;
 	readonly procedureTitle?: string | undefined;
+	readonly serviceName?: string | undefined;
+	readonly initialTechMapCodes?: readonly string[] | undefined;
 	readonly serviceCode?: string | undefined;
 	readonly service804nCode?: string | undefined;
 	readonly doctorName?: string | undefined;
@@ -71,15 +73,22 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 	patientName,
 	initialServices,
 	procedureTitle,
+	serviceName,
+	initialTechMapCodes,
 	serviceCode,
 	service804nCode,
 	doctorName,
+	doctorFullName,
 	toothNumber,
 	stockBatches,
 	getHeaders,
 	confirmTestId,
 	confirmLabel,
 }) => {
+	const effectiveDoctor = doctorFullName || doctorName;
+	const firstService = Array.isArray(initialServices) && initialServices.length > 0 ? (initialServices[0] as any) : null;
+	const effectiveTooth = toothNumber ?? firstService?.toothNumber;
+	const effectiveTitle = procedureTitle || serviceName || firstService?.serviceTitle || firstService?.serviceName;
 	const effectiveConfirm = onConfirmWriteoff || onConfirmDeduction;
 	const effectiveDeductionComplete = onDeductionComplete || onConfirmDeduction;
 
@@ -107,7 +116,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 
 	if (!isOpen) return null;
 
-	const isClinicalMode = Boolean(patientName || initialServices || procedureTitle || serviceCode || service804nCode);
+	const isClinicalMode = Boolean(patientName || initialServices || effectiveTitle || serviceCode || service804nCode);
 	const isEmptyServices = Boolean(initialServices && initialServices.length === 0);
 
 	const content = (
@@ -146,10 +155,12 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)]">
-								{procedureTitle
-									? `${procedureTitle} • Расходные материалы приёма${toothNumber ? ` • Зуб ${toothNumber}` : ""}`
+								{effectiveTitle
+									? `${effectiveTitle} • Расходные материалы приёма${patientName ? ` • ${patientName}` : ""}${effectiveTooth ? ` • Зуб №${effectiveTooth}` : ""}${effectiveDoctor ? ` • Врач: ${effectiveDoctor}` : ""}`
 									: patientName
-									? `Пациент: ${patientName}${doctorName ? ` • Врач: ${doctorName}` : ""}`
+									? `Пациент: ${patientName}${effectiveDoctor ? ` • Врач: ${effectiveDoctor}` : ""}${effectiveTooth ? ` • Зуб №${effectiveTooth}` : ""}`
+									: effectiveDoctor
+									? `Врач: ${effectiveDoctor}${effectiveTooth ? ` • Зуб №${effectiveTooth}` : ""}`
 									: `Автоматический расчет по ${data.shiftStats.completedVisitsCount} завершенным приёмам`}
 							</p>
 						</div>
@@ -172,6 +183,25 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 						</div>
 					) : (
 						<>
+							{/* Выполненные клинические услуги приёма при наличии */}
+							{Array.isArray(initialServices) && initialServices.length > 0 && (
+								<div className="p-3 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#e2e8f0)] space-y-1.5 text-xs">
+									<div className="font-semibold text-[var(--ink,#0f172a)] flex items-center justify-between">
+										<span>Выполненные клинические услуги</span>
+										{effectiveDoctor && <span className="text-[var(--muted,#64748b)]">{effectiveDoctor}</span>}
+									</div>
+									{initialServices.map((srv: any, idx) => (
+										<div key={srv.id || idx} className="flex items-center justify-between text-[var(--ink,#0f172a)]">
+											<div className="flex items-center gap-1.5">
+												{srv.serviceCode && <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--line,#e2e8f0)]/50">{srv.serviceCode}</span>}
+												<span>{srv.serviceTitle || srv.serviceName || "Стоматологическая услуга"}</span>
+											</div>
+											{srv.toothNumber && <span className="font-semibold text-[var(--primary,#0d9488)]">Зуб №{srv.toothNumber}</span>}
+										</div>
+									))}
+								</div>
+							)}
+
 							{/* Экспресс-списание по техкартам и процедурам */}
 							<ClinicalWriteoffQuickStrip
 								onQuickCarpuleWriteoff={handleQuickCarpules}
@@ -202,8 +232,8 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 					onPrintAct={handlePrintAct}
 					onCancel={onClose}
 					onConfirm={handleConfirmWriteoff}
-					confirmTestId={confirmTestId || (isClinicalMode ? "btn-confirm-deduction" : "btn-confirm-shift-batch-deduction")}
-					confirmLabel={confirmLabel || (isClinicalMode ? "✓ Списать расходные материалы" : "✓ Списать расходники смены")}
+					confirmTestId={confirmTestId || (isClinicalMode ? "btn-confirm-deduction" : "batch-writeoff-submit-button")}
+					confirmLabel={confirmLabel || (isClinicalMode ? "Списать материалы в наряд" : "✓ Списать расходники смены")}
 				/>
 			</div>
 		</div>
@@ -217,11 +247,40 @@ export { ConsumablesBatchWriteoffModal as BatchWriteoffModal };
 export { ConsumablesBatchWriteoffModal as WarehouseBatchWriteoffModal };
 export { ConsumablesBatchWriteoffModal as ShiftBatchWriteoffModal };
 export { ConsumablesBatchWriteoffModal as ShiftBatchDeductionModal };
+export { ConsumablesBatchWriteoffModal as ConsumablesDeductionModal };
+export { ConsumablesBatchWriteoffModal as ProcedureMaterialDeductionModal };
 export type BatchWriteoffModalProps = ConsumablesBatchWriteoffModalProps;
 export type WarehouseBatchWriteoffModalProps = ConsumablesBatchWriteoffModalProps;
 export type ShiftBatchWriteoffModalProps = ConsumablesBatchWriteoffModalProps;
 export type ShiftBatchDeductionModalProps = ConsumablesBatchWriteoffModalProps;
+export type ConsumablesDeductionModalProps = ConsumablesBatchWriteoffModalProps;
+export type ProcedureMaterialDeductionModalProps = ConsumablesBatchWriteoffModalProps;
 export type ShiftBatchSummaryData = ShiftBatchWriteoffData;
 export type ShiftBatchSummaryItem = ShiftConsumableItem;
+
+export interface ConsumablesDeductionModalItem {
+	readonly id: string;
+	readonly inventoryItemId: string;
+	readonly itemName: string;
+	readonly category: string;
+	readonly unit: string;
+	readonly standardQty: number;
+	readonly deductedQty: number;
+	readonly currentStock: number;
+	readonly unitCostRub: number;
+	readonly isOverdraft: boolean;
+	readonly isMandatory: boolean;
+}
+
+export const formatCategoryRu = (cat?: string): string => cat || "Расходный";
+export const formatUnitRu = (unit?: string): string => unit || "шт.";
+
+export type ClinicalWriteoffModalProps = ConsumablesBatchWriteoffModalProps;
+export const ClinicalWriteoffModal = ConsumablesBatchWriteoffModal;
+
+export const DEFAULT_CLINICAL_SERVICES = [
+	{ id: "srv-01", serviceCode: "A16.07.002", serviceName: "Лечение кариеса", toothNumber: "16" },
+	{ id: "srv-02", serviceCode: "B01.003.004", serviceName: "Местная анестезия", toothNumber: "16" },
+];
 
 export default ConsumablesBatchWriteoffModal;

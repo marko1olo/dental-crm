@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { ShiftBatchDeductionModal } from "../ShiftBatchDeductionModal.js";
+import { ShiftBatchDeductionModal } from "../ConsumablesBatchWriteoffModal.js";
 
 describe("ShiftBatchDeductionModal SSR & Component Verification (Mandates 8e, 8n)", () => {
 	it("1. При isOpen = false возвращает пустую строку", () => {

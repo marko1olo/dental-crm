@@ -16,7 +16,7 @@ export const BatchWriteoffConsumablesTable: React.FC<BatchWriteoffConsumablesTab
 	consumables,
 }) => {
 	return (
-		<div className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden bg-[var(--paper,#ffffff)]">
+		<div data-testid="batch-writeoff-table" className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden bg-[var(--paper,#ffffff)]">
 			<div className="p-2.5 sm:p-3 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs font-semibold">
 				<span>Материалы по техкартам ({consumables.length})</span>
 				<span className="text-[var(--muted,#64748b)] font-normal">Списание ➔ Остаток</span>

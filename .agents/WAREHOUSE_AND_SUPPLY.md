@@ -205,6 +205,33 @@
 * **Очистка от дев-жаргона**:
   * Устранена утечка «(Мандат 8n)» в пользовательском интерфейсе (`BatchWriteoffShiftStats.tsx`) и аудит-логах транзакций БД (`useConsumablesBatchWriteoff.ts`, `shiftBatchExecution.ts`).
 
+---
+
+## 🚀 10. Тотальная хирургия дубликатов Склада и Расходников (34 файла-клона снесено через `git rm`)
+
+* **Ликвидировано 34 паразитных файла-клона через `git rm` (Мандаты 8bd, 8ap, 8x)**:
+  1. *Дубликаты студий*: `WarehouseHubModal.tsx`, `WarehouseHubStudioModal.tsx`, `WarehouseManagerModal.tsx`.
+  2. *Дубликаты списаний*: `ShiftBatchDeductionModal.tsx`, `ShiftBatchWriteoffModal.tsx`, `WarehouseBatchWriteoffModal.tsx`, `writeoff/ClinicalWriteoffModal.tsx`.
+  3. *Дубликаты накладных*: `AcceptanceWaybillsModal.tsx`, `WarehouseInboundInvoiceModal.tsx`, `InventoryInboundInvoiceModal.tsx`.
+  4. *Шимы каталога и таблиц*: `InventoryStockTable.tsx`, `components/InventoryStockTable.tsx`, `WarehouseItemsTable.ts`, `inventoryCatalogData.ts`.
+  5. *Мертвый кластер `warehouseManagerModules/` (9 файлов)*: `WarehouseManagerActPreview.tsx`, `WarehouseManagerFooter.tsx`, `WarehouseManagerHeader.tsx`, `WarehouseManagerTable.tsx`, `WarehouseManagerToolbar.tsx`, `index.ts`, `types.ts`, `useWarehouseManagerLogic.ts`, `warehouseManagerPresets.ts`.
+  6. *Мертвый кластер `deductionModalModules/` (9 файлов)*: `DeductionModalContextBar.tsx`, `DeductionModalFooter.tsx`, `DeductionModalHeader.tsx`, `DeductionModalItemRow.tsx`, `deductionCalculationUtils.ts`, `deductionModalTypes.ts`, `standardTherapistKit.ts`, `useConsumablesConfirmation.ts`, `useConsumablesDeductionLogic.ts`.
+  7. *Мертвый кластер `acceptanceWaybills/` (5 файлов)*: `acceptanceWaybillsPrintExport.ts`, `useAcceptanceWaybillsApiPoster.ts`, `useAcceptanceWaybillsItemsManager.ts`, `useAcceptanceWaybillsState.ts`, `waybillApiSender.ts`.
+* **Утвержденные единые канонические SSOT**:
+  * 🏛️ **Студия склада**: [`WarehouseStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseStudioModal.tsx) (476 строк, Sweet Spot 400–480 по Мандату 8b, FEFO, Soft Overdraft, Apple HIG).
+  * ⚡ **Списание расходников приёма и смены**: [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx) (270 строк, 1 клик по нормам техкарт, автономия врача, 0 блокировок).
+  * 📋 **Приходные накладные поставщиков**: [`InboundWaybillModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/InboundWaybillModal.tsx) (458 строк, партионный учет FEFO, сканер кодов, автоприход).
+  * 📊 **Таблица складских остатков**: [`WarehouseStockTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseStockTable.tsx) (калиброванные 7 колонок, подсветка сроков).
+  * 🖥️ **Экран склада**: [`InventoryView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/InventoryView.tsx) и лаунчер [`DirectWarehouseLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/DirectWarehouseLauncher.tsx).
+* **Искоренение советского канцелярита форм (Мандат 8x)**:
+  * Ликвидированы технические метки «ТОРГ-12», «М-11», «0504230» в кнопках и UI; внедрены живые медицинские термины («Приходная накладная», «Акт списания материалов»).
+* **4-State Visual Proof на живом приложении (100% личный осмотр через `read_file`)**:
+  * ☀️ PC Light (1440×900, 61 KB): `docs/proofs/warehouse/warehouse_pc_light_1440x900.png`
+  * 🌙 PC Dark (1440×900, 59 KB): `docs/proofs/warehouse/warehouse_pc_dark_1440x900.png`
+  * ☀️ Mobile Light (390×844 Apple HIG, 124 KB): `docs/proofs/warehouse/warehouse_mobile_light_390x844.png`
+  * 🌙 Mobile Dark (390×844 Apple HIG, 127 KB): `docs/proofs/warehouse/warehouse_mobile_dark_390x844.png`
+
+
 
 
 

@@ -20,7 +20,7 @@ import {
 	getExpiryTrafficLight,
 	type ExpiryTrafficLightInfo,
 	type ExpiryTrafficStatus,
-} from "./inventory/InventoryStockTable.js";
+} from "./inventory/WarehouseStockTable.js";
 import type { InventoryItem } from "./inventory/useInventoryLogic.js";
 
 export interface InventoryBatchFefoPanelProps {

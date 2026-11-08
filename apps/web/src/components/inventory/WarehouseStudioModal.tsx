@@ -450,4 +450,27 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 	);
 };
 
+export type { WarehouseCategoryKey, WarehouseStockItem };
+
+export interface WarehouseWriteoffItem {
+	readonly id: string; readonly name: string; readonly category: string; readonly unit: string;
+	readonly stockQuantity: number; readonly writeoffQuantity: number; readonly unitCostRub: string;
+	readonly isOverdraft: boolean; readonly lotNumber?: string | undefined; readonly expirationDate?: string | undefined;
+}
+
+export interface WarehouseManagerModalProps {
+	readonly isOpen: boolean; readonly onClose: () => void;
+	readonly onConfirmWriteoff?: ((items: readonly WarehouseWriteoffItem[]) => void | Promise<void>) | undefined;
+	readonly onOpenInventoryAudit?: (() => void) | undefined; readonly initialItems?: readonly any[] | undefined;
+	readonly organizationId?: string | undefined; readonly doctorName?: string | undefined;
+	readonly nurseName?: string | undefined; readonly cabinetName?: string | undefined;
+}
+
+export type WarehouseHubModalProps = WarehouseStudioModalProps;
+export type WarehouseHubStudioModalProps = WarehouseStudioModalProps;
+
+export const WarehouseManagerModal: React.FC<WarehouseManagerModalProps> = WarehouseStudioModal as any;
+export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = WarehouseStudioModal;
+export const WarehouseHubStudioModal: React.FC<WarehouseHubStudioModalProps> = WarehouseStudioModal;
+
 export default WarehouseStudioModal;

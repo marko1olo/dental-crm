@@ -103,7 +103,7 @@ export function createQuickCarpuleWriteoffDocument(
 		completedServices: [{ serviceCode: "A16.07.030.001", serviceTitle: "Утилизация использованных карпул/ампул анестетика", quantityMultiplier: count }],
 		lines: [line],
 		totals,
-		statutoryFormType: params.statutoryFormType || "0504230",
+		statutoryFormType: params.statutoryFormType || "material_writeoff",
 		status: "confirmed",
 		notes: params.notes || "Единоличное экспресс-списание использованных карпул анестетика старшей медсестрой без созыва комиссии",
 		confirmedAt: new Date().toISOString(),

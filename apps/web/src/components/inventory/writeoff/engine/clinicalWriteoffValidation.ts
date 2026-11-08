@@ -28,7 +28,7 @@ export function validateWriteoffDocument(
 				if (isDisposal) {
 					warnings.push(`Партия «${line.nameRu}» с истекшим сроком направлена на списание.`);
 				} else {
-					warnings.push(`Срок годности «${line.nameRu}» истек: оформляется акт списания материалов.`);
+					errors.push(`Срок годности партии «${line.nameRu}» истек: списание пациенту заблокировано.`);
 				}
 			} else if (line.isExpiringSoon) {
 				warnings.push(`Партия «${line.nameRu}» истекает в течение 30 дней (${line.expirationDate}).`);

@@ -55,7 +55,7 @@ export function generateMaterialWriteoffActHtml(
 </style></head><body>
 	<div class="header-flex">
 		<div><strong>Организация:</strong> ${info.clinicNameRu}<br><strong>Подразделение:</strong> ${doc.cabinetNameRu}<br><strong>Врач:</strong> ${doc.doctorFullName} (${doc.doctorSpecialty})<br><strong>Пациент:</strong> ${doc.patientName}</div>
-		<div style="text-align: right; font-size: 8.5pt; color: #475569;">ИНН ${info.inn} / КПП ${info.kpp}<br>ОКПО ${info.okpoCode}<br>Стоматологическая клиника DENTE</div>
+		<div style="text-align: right; font-size: 8.5pt; color: #475569;">ИНН ${info.inn} / КПП ${info.kpp}<br>ОКПО ${info.okpoCode}<br>Стоматологическая клиника DENTE<br><small style="color: #64748b;">(Форма по ОКУД 0504230: АКТ О СПИСАНИИ МАТЕРИАЛЬНЫХ ЗАПАСОВ, Приказ Минфина России № 52н)</small></div>
 	</div>
 	<div class="act-title">АКТ СПИСАНИЯ МАТЕРИАЛОВ № ${doc.actNumber}</div>
 	<div class="act-date">Дата: <strong>${doc.actDate} г.</strong></div>

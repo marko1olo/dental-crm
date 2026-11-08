@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { AcceptanceWaybillsModal } from "../AcceptanceWaybillsModal.js";
+import { AcceptanceWaybillsModal } from "../InboundWaybillModal.js";
 import { createSampleDentalWaybill } from "../acceptanceWaybillsEngine.js";
 
 describe("AcceptanceWaybillsModal — React Presentation & Ergonomics", () => {
@@ -72,7 +72,7 @@ describe("AcceptanceWaybillsModal — React Presentation & Ergonomics", () => {
 
 		// Управляющие кнопки
 		assert.ok(html.includes("data-testid=\"btn-post-acceptance-waybill\""), "Кнопка проведения накладной должна присутствовать");
-		assert.ok(html.includes("ТОРГ-12"), "Кнопка печати ТОРГ-12 должна присутствовать");
+		assert.ok(html.includes("Печать накладной") || html.includes("print-waybill"), "Кнопка печати накладной должна присутствовать");
 		assert.ok(html.includes("CSV"), "Кнопка экспорта в CSV должна присутствовать");
 
 		// Запрет больничного мусора

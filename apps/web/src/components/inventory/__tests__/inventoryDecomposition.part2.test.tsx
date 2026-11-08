@@ -3,8 +3,8 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
-import { InventoryStockTable } from "../InventoryStockTable.js";
-import { InventoryInboundInvoiceModal } from "../../InventoryInboundInvoiceModal.js";
+import { InventoryStockTable } from "../WarehouseStockTable.js";
+import { InventoryInboundInvoiceModal } from "../InboundWaybillModal.js";
 import { InventoryServiceUsagePanel } from "../../InventoryServiceUsagePanel.js";
 
 describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit (Part 2)", () => {
@@ -64,7 +64,7 @@ describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit (Part 2)
 		);
 
 		assert.ok(html.includes("Приходная накладная поставщика"), "Must render invoice title");
-		assert.ok(html.includes("ТОРГ-12"), "Must render TORG-12 designation");
+		assert.ok(html.includes("Печать накладной") || html.includes("print-waybill"), "Must render invoice print button");
 		assert.ok(html.includes("Оприходовать накладную"), "Must render post button");
 
 		const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}]/u;

@@ -15,8 +15,8 @@ const fs = require("node:fs");
 
 const WEB_URL = "http://127.0.0.1:5173/?demo=true&warehouse=1";
 const PROOF_DIR = path.resolve(__dirname, "../docs/proofs/warehouse");
-const CURRENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/407cb3a7-2dea-4b74-9a03-d708585b6e01");
-const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/07663fdc-eba5-48a1-bbb4-3c4b8f181006");
+const CURRENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/d8fc8f02-1c23-47b7-bbce-b330dba7f142");
+const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c93cc0eb-0cfe-4714-bf08-8f512d1d3f61");
 
 if (!fs.existsSync(PROOF_DIR)) fs.mkdirSync(PROOF_DIR, { recursive: true });
 if (!fs.existsSync(CURRENT_BRAIN_DIR)) fs.mkdirSync(CURRENT_BRAIN_DIR, { recursive: true });

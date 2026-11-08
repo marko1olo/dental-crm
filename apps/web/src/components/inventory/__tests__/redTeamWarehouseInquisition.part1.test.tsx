@@ -16,7 +16,7 @@ import {
 import {
 	ClinicalWriteoffModal,
 	DEFAULT_CLINICAL_SERVICES,
-} from "../writeoff/ClinicalWriteoffModal.js";
+} from "../ConsumablesBatchWriteoffModal.js";
 
 describe("Red Team: Warehouse & Procedure Catalog Write-off Invariants (Part 1)", () => {
 	it("1. PROCEDURE_CATALOG_SERVICE_NORMS и алиас ORDER_804N_SERVICE_NORMS ссылаются на канонический каталог норм", () => {

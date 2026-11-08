@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import {
 	ClinicalWriteoffModal,
 	DEFAULT_CLINICAL_SERVICES,
-} from "../writeoff/ClinicalWriteoffModal.js";
+} from "../ConsumablesBatchWriteoffModal.js";
 
 describe("SSR Rendering of ClinicalWriteoffModal", () => {
 	it("Рендерит модальное окно списания в статический HTML", () => {

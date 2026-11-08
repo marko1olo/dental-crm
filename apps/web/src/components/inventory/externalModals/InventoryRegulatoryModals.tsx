@@ -1,12 +1,12 @@
 import React, { lazy, Suspense } from "react";
-import { InventoryInboundInvoiceModal } from "../../InventoryInboundInvoiceModal.js";
+import { InboundWaybillModal } from "../InboundWaybillModal.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
-import type { WarehouseWriteoffItem } from "../warehouseManagerModules/types.js";
+import type { WarehouseWriteoffItem } from "../WarehouseStudioModal.js";
 
 const MdlpDisposalQueueModal = lazy(() => import("../mdlp/index.js").then((m) => ({ default: m.MdlpDisposalQueueModal })));
 const MdlpScanningModal = lazy(() => import("../../mdlp/MdlpScanningModal.js").then((m) => ({ default: m.MdlpScanningModal })));
-const WarehouseManagerModal = lazy(() => import("../WarehouseManagerModal.js").then((m) => ({ default: m.WarehouseManagerModal })));
-const AcceptanceWaybillsModal = lazy(() => import("../AcceptanceWaybillsModal.js").then((m) => ({ default: m.AcceptanceWaybillsModal })));
+const WarehouseManagerModal = lazy(() => import("../WarehouseStudioModal.js").then((m) => ({ default: m.WarehouseStudioModal })));
+const AcceptanceWaybillsModal = lazy(() => import("../InboundWaybillModal.js").then((m) => ({ default: m.InboundWaybillModal })));
 
 export interface InventoryRegulatoryModalsProps {
 	readonly organizationId: string;
@@ -36,7 +36,7 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 	return (
 		<>
 			{isInboundInvoiceModalOpen && (
-				<InventoryInboundInvoiceModal
+				<InboundWaybillModal
 					isOpen={isInboundInvoiceModalOpen}
 					onClose={onCloseInboundInvoiceModal}
 					organizationId={organizationId}

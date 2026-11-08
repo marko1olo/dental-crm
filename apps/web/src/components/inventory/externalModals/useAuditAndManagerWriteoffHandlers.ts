@@ -1,6 +1,6 @@
 import { showToast } from "../../GlobalToast.js";
 import type { WarehouseInventoryAuditDocument } from "../warehouseInventoryEngine.js";
-import type { WarehouseWriteoffItem } from "../warehouseManagerModules/types.js";
+import type { WarehouseWriteoffItem } from "../WarehouseStudioModal.js";
 
 export function useAuditAndManagerWriteoffHandlers(
 	organizationId: string,

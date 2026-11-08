@@ -35,7 +35,7 @@ export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProp
 					title="Печать акта списания материалов"
 				>
 					<Printer size={15} />
-					<span>Печать акта</span>
+					<span>Печать: Акт списания материалов</span>
 				</button>
 			</div>
 
@@ -55,9 +55,9 @@ export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProp
 						}
 					}}
 					aria-busy={isSubmitting}
-					className="primary-button btn-confirm-shift-batch-deduction btn-confirm-deduction px-5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] text-sm font-semibold rounded-xl flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-xs whitespace-nowrap cursor-pointer transition-opacity hover:opacity-95 text-white"
+					className="primary-button btn-confirm-shift-batch-deduction btn-confirm-deduction batch-writeoff-submit-button px-5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] text-sm font-semibold rounded-xl flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-xs whitespace-nowrap cursor-pointer transition-opacity hover:opacity-95 text-white"
 					style={{ background: "var(--teal, #0d9488)", color: "#ffffff" }}
-					data-testid={confirmTestId || "btn-confirm-shift-batch-deduction"}
+					data-testid={confirmTestId || "batch-writeoff-submit-button"}
 					data-cy="btn-confirm-deduction"
 				>
 					{isSubmitting ? (

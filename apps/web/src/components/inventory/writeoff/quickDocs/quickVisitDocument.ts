@@ -95,7 +95,7 @@ export function createQuickVisitWriteoffDocument(params: QuickVisitWriteoffParam
 		completedServices: [{ serviceCode: visitType === "surgery" ? "A16.07.001.001" : "A16.07.002.001", serviceTitle: "Клинический приём", quantityMultiplier: 1 }],
 		lines,
 		totals,
-		statutoryFormType: params.statutoryFormType || "0504230",
+		statutoryFormType: params.statutoryFormType || "material_writeoff",
 		status: "confirmed",
 		notes: params.notes || `Списание набора визита (${visitType === "surgery" ? "Хирургия" : "Терапия"}) без комиссии`,
 		confirmedAt: new Date().toISOString(),

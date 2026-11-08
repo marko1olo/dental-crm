@@ -6,7 +6,7 @@
 import React from "react";
 import { MdlpScanningModal } from "../../../../mdlp/MdlpScanningModal";
 import { MdlpDisposalQueueModal } from "../../../../inventory/mdlp/MdlpDisposalQueueModal";
-import { InventoryInboundInvoiceModal } from "../../../../InventoryInboundInvoiceModal";
+import { InboundWaybillModal } from "../../../../inventory/InboundWaybillModal";
 import { ConsumablesBatchWriteoffModal } from "../../../../inventory/ConsumablesBatchWriteoffModal";
 
 export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
@@ -101,7 +101,7 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 
 	if (isInboundInvoiceStandalone) {
 		return (
-			<InventoryInboundInvoiceModal
+			<InboundWaybillModal
 				isOpen={true}
 				organizationId={getEffectiveOrgId()}
 				inventoryItems={[]}

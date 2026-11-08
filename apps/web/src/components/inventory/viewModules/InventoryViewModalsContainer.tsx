@@ -2,7 +2,7 @@ import React from "react";
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryStockAdjustModal } from "../InventoryStockAdjustModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
-import { AcceptanceWaybillsModal } from "../AcceptanceWaybillsModal.js";
+import { InboundWaybillModal } from "../InboundWaybillModal.js";
 import { ConsumablesBatchWriteoffModal } from "../ConsumablesBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 import { InventoryExternalModals } from "../InventoryExternalModals.js";
@@ -49,7 +49,7 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 			)}
 
 			{isWaybillOpen && (
-				<AcceptanceWaybillsModal
+				<InboundWaybillModal
 					isOpen={isWaybillOpen}
 					onClose={handleCloseWaybill}
 					organizationId={organizationId}

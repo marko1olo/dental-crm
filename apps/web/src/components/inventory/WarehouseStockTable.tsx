@@ -361,12 +361,12 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 						<thead>
 							<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
 								<th style={{ width: "110px" }} className="py-3 px-3">Артикул</th>
-								<th className="py-3 px-3">Наименование</th>
+								<th className="py-3 px-3">Наименование <span className="text-[10px] font-normal opacity-80">(Срок годности • Партия / FEFO)</span></th>
 								<th style={{ width: "130px" }} className="py-3 px-3">Категория</th>
 								<th style={{ width: "90px" }} className="py-3 px-3 text-right font-semibold">Остаток</th>
 								<th style={{ width: "70px" }} className="py-3 px-3 text-center font-semibold">Ед. изм.</th>
 								<th style={{ width: "95px" }} className="py-3 px-3 text-right font-semibold">Мин. запас</th>
-								<th style={{ width: "220px" }} className="py-3 px-3.5 text-center">Себестоимость / Статус</th>
+								<th style={{ width: "220px" }} className="py-3 px-3.5 text-center">Себестоимость / Действия</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line-subtle)]">

@@ -420,7 +420,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					<div className="flex items-center gap-2 flex-wrap shrink-0">
 						<span className="text-sm font-medium text-[var(--muted)]">Итого по накладной:</span>
 						<strong className="text-base font-bold text-[var(--ink)] font-mono tabular-nums">{totalRub.toLocaleString("ru-RU")} ₽</strong>
-						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="ТОРГ-12" data-testid="print-waybill">
+						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Печать приходной накладной" data-testid="print-waybill">
 							Печать накладной
 						</button>
 						<button type="button" onClick={handleExportCsv} className="secondary-button px-2.5 py-1 text-xs font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Экспорт накладной в CSV" data-testid="btn-export-invoice-csv">CSV</button>
