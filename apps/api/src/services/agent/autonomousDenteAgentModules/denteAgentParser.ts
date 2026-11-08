@@ -81,8 +81,8 @@ export function parseClinicalPromptAndContext(input: AutonomousDenteAgentInput):
 		if (!resolvedTooth) {
 			resolvedTooth = parseFdiTooth(p);
 		}
-		if (!extractedComplaints && /боль|жалоб|ноет|болит|пульсир/i.test(p)) {
-			extractedComplaints = p;
+		if (!extractedComplaints && p.trim()) {
+			extractedComplaints = p.trim();
 		}
 		if (/пульпит|периодонтит|кариес/i.test(p) && extractedDiagnoses.length === 0) {
 			if (/пульпит/i.test(p)) extractedDiagnoses.push("Пульпит");

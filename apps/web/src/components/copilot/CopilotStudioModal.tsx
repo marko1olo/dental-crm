@@ -51,6 +51,8 @@ const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((
   return { id: m.id || m.callId || `msg-${i}`, role: m.role || (m.kind === "tool" ? "assistant" : "user"), text: cleanText, timestamp: m.timestamp || "10:00", applied: m.applied, citation: m.citation, actionProposal: m.actionProposal, suggestedReplies: m.suggestedReplies || suggestions, toolResult: m.toolResult, toolName: m.toolName };
 });
 
+const toValidUuid = (val?: string | null): string | undefined => typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
+
 export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   isOpen, onClose, activeTooth, patientId, patientName, activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess,
 }) => {
@@ -89,7 +91,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
   const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
-  const voice = useVoiceEngine({ lang: "ru-RU", continuous: true });
+  const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toValidUuid(patientId), visitId: toValidUuid(activeVisitId), autoFallback: true });
+  const voice = { isListening: unifiedVoice.isRecording, fullText: unifiedVoice.fullTranscript, toggleListening: unifiedVoice.toggleDictation, stopListening: unifiedVoice.stopDictation, clearTranscript: unifiedVoice.clearTranscript };
 
   // Автоматическое определение среды исполнения без ручных переключателей
   useEffect(() => {
@@ -128,7 +131,6 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     setInputText(val); if (!voice.isListening) baseDraftRef.current = val;
     safeLocalStorageSetItem("dente_copilot_draft_text", val);
   };
-  const toValidUuid = (val?: string | null): string | undefined => typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
 
   const parseSseEvents = (raw: string): Array<{ type: string; [k: string]: unknown }> => {
     const list: Array<{ type: string; [k: string]: unknown }> = [];
@@ -179,6 +181,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
       if (res.ok && res.body) {
         const reader = res.body.getReader(); const decoder = new TextDecoder("utf-8");
         let accumulatedText = ""; let accumulatedThought = ""; let pendingAction: CopilotChatMessage["actionProposal"] | undefined; let sseBuffer = "";
+        let pendingToolResult: unknown | undefined; let pendingToolName: string | undefined;
         const applySseEvents = (events: Array<{ type: string; [k: string]: unknown }>) => {
           for (const ev of events) {
             if (ev.type === "token" && typeof ev.text === "string") accumulatedText += ev.text;
@@ -189,12 +192,16 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
               pendingAction = { id: callId, toolName, description: desc, payload: args };
               addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
+            } else if (ev.type === "tool_end" || ev.type === "tool_call_finished" || ev.type === "tool_result") {
+              pendingToolName = String(ev.name || ev.tool || pendingAction?.toolName || "");
+              pendingToolResult = ev.result ?? ev.data ?? ev.payload;
+              addToolLog({ toolName: pendingToolName, category: "clinical", status: "success", args: (ev.args as any) || {}, resultSummary: `Выполнен: ${pendingToolName}` });
             } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) accumulatedText = ev.text;
           }
-          if (accumulatedText) {
+          if (accumulatedText || pendingToolResult) {
             const { cleanText, suggestions } = extractSuggestions(accumulatedText);
             const effectiveAction = pendingAction ?? (localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined);
-            setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: effectiveAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions } : m)));
+            setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: effectiveAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions, toolResult: pendingToolResult ?? m.toolResult, toolName: pendingToolName ?? m.toolName } : m)));
           }
         };
 
@@ -286,11 +293,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         </header>
 
         {/* Компактный Antigravity Context Telemetry Bar (DEF-FRONT-07: честный Empty State без вымышленных Ивановых в бою) */}
-        {(() => {
-          const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
-          const effectiveName = (patientName && patientName !== "Иванов Иван Иванович") ? patientName : (isDemo ? (patientName || "Кузнецов М.П.") : null);
-          return <CopilotContextTelemetryBar patientName={effectiveName} patientId={patientId || (isDemo ? "pat-36" : null)} activeTooth={typeof activeTooth === "number" ? activeTooth : (isDemo ? 36 : null)} compact />;
-        })()}
+        {(() => { const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId); const effectiveName = (patientName && patientName !== "Иванов Иван Иванович") ? patientName : (isDemo ? (patientName || "Кузнецов М.П.") : null); return <CopilotContextTelemetryBar patientName={effectiveName} patientId={patientId || (isDemo ? "pat-36" : null)} activeTooth={typeof activeTooth === "number" ? activeTooth : (isDemo ? 36 : null)} compact />; })()}
 
         {/* Apple HIG Segmented Control: 3 клинические вкладки */}
         <div className="copilot-tabs-segmented-wrapper px-4 py-2 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)] shrink-0">
@@ -345,10 +348,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                               <div className="flex items-center gap-2 text-[var(--ink)] font-medium"><span className="text-[11px] font-semibold text-[var(--teal,#0d9488)] w-14 shrink-0">Станет:</span><span className="text-[var(--teal,#0d9488)] font-semibold">{`Зуб ${proposalTooth}: ${m.actionProposal.description}`}</span></div>
                             </div>
                             {actionError && (
-                              <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center justify-between text-[11px] text-rose-700 dark:text-rose-300">
-                                <span>{actionError}</span>
-                                <button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-rose-600 text-white font-semibold hover:bg-rose-700 cursor-pointer text-[10px]">Повторить попытку</button>
-                              </div>
+                              <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center justify-between text-[11px] text-rose-700 dark:text-rose-300"><span>{actionError}</span><button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-rose-600 text-white font-semibold hover:bg-rose-700 cursor-pointer text-[10px]">Повторить попытку</button></div>
                             )}
                             <div className="flex items-center justify-end gap-2 pt-1">
                               <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
@@ -357,6 +357,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                           </div>
                         );
                       })()}
+                      {m.toolResult && <div className="mt-2.5"><CopilotResultCard name={m.toolName || m.actionProposal?.toolName} result={m.toolResult} /></div>}
                       {m.citation && (<div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium"><BookOpen size={11} /><span>{m.citation}</span></div>)}
                     </div>
                     <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
@@ -374,13 +375,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               if (!replies || replies.length === 0 || isStreaming) return null;
               return (
                 <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 snap-x" data-testid="copilot-smart-replies">
-                  <span className="text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 flex items-center gap-1">
-                    <Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" />
-                    <span className="hidden sm:inline">Подсказки:</span>
-                  </span>
-                  {replies.map((reply, i) => (
-                    <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs snap-start flex items-center">{reply}</button>
-                  ))}
+                  <span className="text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 flex items-center gap-1"><Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" /><span className="hidden sm:inline">Подсказки:</span></span>
+                  {replies.map((reply, i) => <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs snap-start flex items-center">{reply}</button>)}
                 </div>
               );
             })()}
@@ -420,7 +416,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                   { title: "Бронирование слота", badge: "Расписание", desc: "Резерв следующего этапа терапии через 7 дней без обязательных начмедов.", btn: "Забронировать окно приёма", icon: <Calendar size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot, { patientId, tooth: activeTooth, service: "Терапия" }) },
                   { title: "Зубная формула FDI", badge: "Одонтограмма", desc: `Фиксация кариеса дентина и пломбирования зуба ${activeTooth || 36}.`, btn: `Обновить статус зуба ${activeTooth || 36}`, icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, { tooth: activeTooth || 36, state: "C", diagnosis: "K02.1" }) },
                   { title: "Выставление счёта", badge: "Касса и чеки", desc: "Пречек на препарирование и нанокомпозитную реставрацию: 6 500 руб.", btn: "Сформировать счёт (6 500 руб.)", icon: <Receipt size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft, { patientId, amountKopecks: 650000, serviceTitle: "Лечение кариеса" }) },
-                  { title: "Протокол SOAP в карту", badge: "Медкарта", desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.", btn: "Сформировать протокол SOAP", icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, { patientId, tooth: activeTooth, diagnosis: "K02.1" }) },
+                  { title: "Протокол SOAP в карту", badge: "Медкарта", desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.", btn: "Сформировать протокол SOAP", icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, { toothNumber: Number(activeTooth || 36), diagnosisMkb: "K02.1", complaints: "Жалобы на кратковременные боли от холодного и сладкого", patientId }) },
                   ...(runtimeMode === "desktop_native" ? [{ title: "Захват визиографа (ROI)", badge: "Рабочая станция", desc: "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("capture_workstation_screen", { diagnosticReason: `Анализ визиографа зуба ${activeTooth || 36}`, targetScreenIndex: 0 }) }, { title: "Поиск КЛКТ на диске", badge: "Локальный диск", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("search_workstation_files", { query: "dicom", category: "xray_study" }) }] : []),
                 ].map((item, idx) => (
                   <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">

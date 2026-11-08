@@ -13,7 +13,6 @@ import {
 	recalculateTierTotals,
 } from "../treatmentPlanMath";
 import { TreatmentPlanPresenterModal } from "../TreatmentPlanPresenterModal";
-import { PlanScenarioComparisonModal } from "../PlanScenarioComparisonModal";
 import { sampleTeethSsot, standardTierSsot } from "./helpers/ssotTestHelpers";
 
 describe("Treatment Plan Presenter — Doctor Discounts & Modal Consolidation", () => {
@@ -46,11 +45,11 @@ describe("Treatment Plan Presenter — Doctor Discounts & Modal Consolidation", 
 		expect(recalculatedTier.totalRub).toBe(0);
 	});
 
-	it("renders PlanScenarioComparisonModal facade cleanly delegating to SSOT", () => {
+	it("renders TreatmentPlanPresenterModal cleanly as single SSOT presenter", () => {
 		const html = renderToString(
-			<PlanScenarioComparisonModal isOpen={true} patientName="Иванова Анна" doctorName="Д-р Орлов" isDemoMode={true} />
+			<TreatmentPlanPresenterModal isOpen={true} patientName="Иванова Анна" doctorFullName="Д-р Орлов" isDemoMode={true} onClose={() => {}} />
 		);
-		expect(html).toContain("Студия сравнения планов лечения");
+		expect(html).toContain('data-testid="treatment-plan-presenter-modal"');
 		expect(html).toContain("Иванова Анна");
 	});
 

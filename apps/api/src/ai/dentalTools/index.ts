@@ -138,20 +138,41 @@ export function normalizeToolName(toolName: string): string {
 		case "generate_clinical_protocol":
 		case "generate_soap_entry":
 		case "generate_form_043":
+		case "generate_form_043_entry":
+		case "generateSoapDiary":
+		case "crmClinicalDiaryTools.saveVisitDiary":
+		case "saveVisitDiary":
 			return "generate_form_043_entry";
 		case "updateToothState":
+		case "updateToothStatus":
 		case "crmClinicalOdontogramTools.updateToothState":
 		case "update_odontogram":
 			return "update_tooth_status";
 		case "createAppointment":
+		case "createAppointmentSlot":
 		case "crmScheduleTools.createAppointment":
 			return "create_appointment";
 		case "createInvoiceDraft":
 		case "crmBillingTools.createInvoiceDraft":
+		case "applyDoctorDiscount":
+		case "crmBillingTools.applyDoctorDiscount":
 			return "create_invoice_draft";
+		case "calcInvoiceKopecks":
+		case "crmBillingTools.calculateTreatmentEstimate":
+		case "search_services":
+			return "search_clinic_services_and_prices";
+		case "printConsentBlank":
+		case "crmDocumentTools.printDocument":
+		case "printDocument":
+			return "print_document";
 		case "captureScreen":
 		case "workstationTools.captureScreen":
+		case "desktop.captureVisigraphRoi":
 			return "capture_workstation_screen";
+		case "scanHotfolder":
+		case "workstationTools.scanHotfolder":
+		case "desktop.scanDicomDropzone":
+			return "search_workstation_files";
 		case "launchApp":
 		case "workstationTools.launchApp":
 			return "launch_workstation_app";

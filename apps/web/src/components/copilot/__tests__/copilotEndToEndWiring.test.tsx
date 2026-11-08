@@ -125,12 +125,19 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
   });
 
   it("2. renders ReAct thought stream and clinical cards (tooth, services estimate, SOAP diary)", () => {
+    const initialThoughts = [
+      { id: "t-1", stepNumber: 1, title: "Проверка аллергического статуса", status: "done" as const, detail: "Аллергоанамнез чист" },
+      { id: "t-2", stepNumber: 2, title: "Сверка диагноза МКБ-10", status: "done" as const, detail: "K02.1" },
+      { id: "t-3", stepNumber: 3, title: "Расчет стоимости услуг по прейскуранту", status: "done" as const, detail: "6500 RUB" },
+      { id: "t-4", stepNumber: 4, title: "Формирование клинического протокола приёма", status: "done" as const, detail: "SOAP" },
+    ];
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={36}
         patientId="pat-101"
         visitId="vis-202"
+        initialThoughts={initialThoughts}
       />
     );
 

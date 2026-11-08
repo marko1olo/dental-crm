@@ -30,9 +30,8 @@ export function handleOtpRequest(
 }
 
 export function verifyOtpCode(planId: string, code?: string): boolean {
-	if (!code) return true;
+	if (!code) return false;
 	const enteredCode = code.trim();
-	if (enteredCode === "123456") return true; // Master bypass для тестовых стендов
 	const cachedOtp = activeOtpCache.get(planId);
 	return Boolean(cachedOtp && cachedOtp.code === enteredCode && cachedOtp.expiresAt > Date.now());
 }

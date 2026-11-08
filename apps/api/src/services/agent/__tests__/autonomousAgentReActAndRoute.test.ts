@@ -106,11 +106,11 @@ describe("DENTE Autonomous AI Engine — ReAct Cycle & API Routes", () => {
 			expect(result.totalIterations).toBeLessThanOrEqual(5);
 			expect(result.steps.length).toBeGreaterThanOrEqual(4);
 
-			expect(result.thought).toContain("[ИТЕРАЦИЯ 1/5");
-			expect(result.thought).toContain("[ИТЕРАЦИЯ 2/5");
-			expect(result.thought).toContain("[ИТЕРАЦИЯ 3/5");
-			expect(result.thought).toContain("[ИТЕРАЦИЯ 4/5");
-			expect(result.thought).toContain("[ИТЕРАЦИЯ 5/5");
+			expect(result.thought).toContain("[ПЕРВИЧНЫЙ КЛИНИЧЕСКИЙ АНАЛИЗ");
+			expect(result.thought).toContain("[ЛОКАЛИЗАЦИЯ И ОБНОВЛЕНИЕ СТАТУСА ЗУБА FDI]");
+			expect(result.thought).toContain("[РАСЧЕТ СМЕТЫ В ТОЧНЫХ КОПЕЙКАХ]");
+			expect(result.thought).toContain("[ГЕНЕРАЦИЯ ПРОТОКОЛА ПРИЁМА SOAP");
+			expect(result.thought).toContain("[ВЫНЕСЕНИЕ ИТОГОВОГО КЛИНИЧЕСКОГО ВЕРДИКТА]");
 
 			expect(result.actions.length).toBeGreaterThanOrEqual(6);
 			const diaryCard = result.actions.find((a) => a.type === "apply_soap_diary");

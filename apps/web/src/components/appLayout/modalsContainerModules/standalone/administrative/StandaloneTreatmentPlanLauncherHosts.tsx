@@ -17,8 +17,8 @@ import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWor
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 import { loadStoredTeethData } from "../../../../odontogram/odontogramStorage";
 
-const PlanScenarioComparisonModal = lazyWithRetry(() =>
-	import("../../../../treatment-plans/PlanScenarioComparisonModal").then((m) => ({ default: m.PlanScenarioComparisonModal })),
+const TreatmentPlanPresenterModal = lazyWithRetry(() =>
+	import("../../../../treatment-plans/TreatmentPlanPresenterModal").then((m) => ({ default: m.TreatmentPlanPresenterModal })),
 );
 const TreatmentEstimator = lazyWithRetry(() =>
 	import("../../../../odontogram/TreatmentEstimator").then((m) => ({ default: m.TreatmentEstimator })),
@@ -42,16 +42,19 @@ export const StandaloneScenarioComparisonHost: React.FC<{ onClose: () => void }>
 	const patientId = useMemo(() => readPatientIdFromUrl(), []);
 	const patientName = useLauncherPatientName(patientId);
 	const profile = useAppStore((s) => s.clinicProfileDraft);
+	const teeth = useMemo(() => (patientId ? loadStoredTeethData(patientId) ?? [] : []), [patientId]);
 
 	if (!patientId) return <MissingPatientGuard testId="standalone-scenarios-missing-state" onClose={onClose} />;
 	if (patientName === null) return <AppLoadingState message="Загрузка карточки пациента..." />;
 
 	return (
-		<PlanScenarioComparisonModal
+		<TreatmentPlanPresenterModal
 			isOpen={true}
+			patientId={patientId}
 			patientName={patientName}
 			clinicName={profile?.legalName || profile?.clinicName || ""}
 			isDemoMode={isDemoShowcaseMode()}
+			teeth={teeth}
 			onClose={onClose}
 		/>
 	);

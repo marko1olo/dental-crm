@@ -1391,6 +1391,37 @@
   5. Успешно пройдены 86 тест-сьютов (309/309 тестов Vitest PASS) и `npm run check:encoding`.
   6. Все 4 скриншота высокого разрешения сняты, сохранены в `docs/proofs/treatment_plans_ssot/` и лично отсмотрены через `read_file`.
 
+### [PLN-10] [SEV-1] [ИСПРАВЛЕНО] Хирургическая зачистка дубликатов бэкенд-роутов, ликвидация 50+ мертвых файлов компаратора, разрыв связки с леджером treatment_items и снятие бюрократических барьеров скидок врача (Мандат 8e / Red Team Fixer)
+- **Файлы:**
+  - [`apps/api/src/routes/treatmentPlanRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentPlanRoutes.ts) (канонический SSOT шлюз)
+  - [`apps/api/src/routes/treatmentPlan/handlers/treatmentPlanMutations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentPlan/handlers/treatmentPlanMutations.ts) (единый сервис мутаций планов с записью в ledger `treatment_items`)
+  - [`apps/api/src/routes/treatmentPlan/pep/pepOtpService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentPlan/pep/pepOtpService.ts) (ликвидирован бэкдор `123456`)
+  - [`packages/shared/src/finance/planToInvoiceValidator.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/finance/planToInvoiceValidator.ts) (разблокирована роль doctor при архивных услугах — non-blocking warning вместо отказа)
+  - [`apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts) (автономия врача при генерации инвойсов из плана)
+  - [`apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanPresenterDefaultStages.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanPresenterDefaultStages.ts) (устранен хардкод зубов 16, 25, 46, подключена одонтограмма)
+  - [`apps/web/src/components/treatment-plans/validation/starProtocolValidationEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/validation/starProtocolValidationEngine.ts) (консолидация СтАР-валидации в 250 строк)
+  - [`apps/web/src/components/treatment-plans/validation/pricesTab/PriceValidatorPricesToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/validation/pricesTab/PriceValidatorPricesToolbar.tsx) (ликвидация ввода админ-PIN для скидок врача)
+- **Удалены через `git rm` (56 файлов дубликатов и потемкинских деревень):**
+  - `apps/api/src/routes/treatmentPlans.ts`
+  - `apps/api/src/routes/odontogram/planCrudRoutes.ts`
+  - `apps/api/src/routes/treatmentPlan/treatmentPlanPepHandler.ts`
+  - `apps/api/src/routes/treatmentPlan/crud/*` (7 файлов)
+  - `apps/web/src/components/treatment-plans/comparator/*` (38 файлов)
+  - `apps/web/src/components/treatment-plans/PlanScenarioComparisonModal.tsx`
+  - `apps/web/src/components/treatment-plans/validation/pricesTab/PriceValidatorAdminDrawer.tsx`
+  - `apps/web/src/components/treatment-plans/validation/starEngine/*` (9 файлов)
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file`):**
+  - [`docs/proofs/treatment_plan_presenter/01_treatment_plan_presenter_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plan_presenter/01_treatment_plan_presenter_pc_light_1440x900.png) (370 KB)
+  - [`docs/proofs/treatment_plan_presenter/02_treatment_plan_presenter_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plan_presenter/02_treatment_plan_presenter_pc_dark_1440x900.png) (371 KB)
+  - [`docs/proofs/treatment_plan_presenter/03_treatment_plan_presenter_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plan_presenter/03_treatment_plan_presenter_mobile_light_390x844.png) (124 KB)
+  - [`docs/proofs/treatment_plan_presenter/04_treatment_plan_presenter_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plan_presenter/04_treatment_plan_presenter_mobile_dark_390x844.png) (127 KB)
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Ликвидированы конкурирующие эндпоинты планов лечения (`treatmentPlans.ts`, `planCrudRoutes.ts`), все запросы перенаправлены на единый канонический SSOT `apps/api/src/routes/treatmentPlanRoutes.ts` с поддержкой финансового леджера `treatment_items`.
+  2. Удалены все 38 устаревших файлов компаратора (`comparator/*`) и `PlanScenarioComparisonModal.tsx`, перенаправлены на канонический презентер `TreatmentPlanPresenterModal.tsx`.
+  3. Ликвидирован бюрократический барьер `PriceValidatorAdminDrawer.tsx` (ввод админ-PIN для скидок врача) и распилен микро-шредер `starEngine/` в единый чистый валидатор СтАР `starProtocolValidationEngine.ts`.
+  4. Разблокировано создание заказ-нарядов и инвойсов по планам лечения для врачей (снята блокировка `BlockedArchivedServiceError` по Мандату 8e).
+  5. Пройдены 10 сьютов тестов (45/45 тестов PASS), 4 машинных гейта Definition of Done (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) и личный осмотр скриншотов 4-State Proof.
+
 
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ

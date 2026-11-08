@@ -36,8 +36,6 @@ export * from "./TreatmentPlanActSignatures";
 export * from "./TreatmentPlanStageItemRow";
 export * from "./TreatmentPlanStageFooter";
 export * from "./treatmentPlanMath";
-export * from "./PlanScenarioComparisonModal";
-export * from "./comparator";
 export * from "./TreatmentPlanPrintView";
 export * from "./TreatmentPlanStudioModal";
 export * from "./treatmentPlanCatalogData";

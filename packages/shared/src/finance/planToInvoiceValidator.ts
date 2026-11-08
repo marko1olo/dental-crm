@@ -151,6 +151,7 @@ export interface PlanToInvoiceValidationPayload {
 	readonly adminOverrideAuthorized?: boolean | undefined;
 	readonly adminOverrideStaffName?: string | undefined;
 	readonly adminOverrideReason?: string | undefined;
+	readonly isDoctorAutonomy?: boolean | undefined;
 }
 
 export interface PlanToInvoiceValidationReport {
@@ -379,10 +380,13 @@ export function validatePlanToInvoice(
 			suggested804nAnalogue = analogues[0] ?? null;
 		} else if (isArchived) {
 			discrepancyType = "SERVICE_ARCHIVED";
-			severity = "BLOCKED";
-			statusDesc = "Услуга выведена в архив и исключена из прейскуранта";
+			const doctorAutonomy = Boolean(payload.isDoctorAutonomy || payload.adminOverrideAuthorized);
+			severity = doctorAutonomy ? "WARNING" : "BLOCKED";
+			statusDesc = doctorAutonomy
+				? "Услуга выведена в архив, оформление по смете врача разрешено без блокировок (Мандат 8e)"
+				: "Услуга выведена в архив и исключена из прейскуранта";
 			suggestedResolution = "REPLACE_WITH_804N_ANALOGUE";
-			requiresAdminOverride = true;
+			requiresAdminOverride = !doctorAutonomy;
 			archivedItemsCount++;
 			const analogues = find804nAnalogues(item.code804n, item.nameRu, payload.catalog);
 			suggested804nAnalogue = analogues[0] ?? null;

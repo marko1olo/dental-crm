@@ -2320,6 +2320,45 @@
   4. Пройдены все тесты: `tests/appHelpersDecomposition.test.ts` (11/11 PASSED), `tests/shiftViewHumanText.test.ts` (7/7 PASSED), `patientBlankContractAndProfileAutonomyWave65.test.tsx` (9/9 PASSED), `documentPackages.test.ts` (9/9 PASSED).
   5. Машинные гейты пройдены: `npm run check:encoding` -> 24115 файлов, 0 замечаний (Exit Code 0); `npm run check:dynamic-imports` -> 18289 файлов, 0 ошибок (Exit Code 0).
 
+---
+
+## 31. 🧠 CLINICAL AI COPILOT FIXER SURGEON — COMPLETE RED TEAM ERADICATION OF FAKES & RESTORATION OF SSOT REACT (MANDATES 8e, 8ba, 8az, 8b, 8bd)
+
+- **Дата закрытия:** 08.11.2026
+- **Исполнитель:** AI Copilot Fixer Surgeon
+- **Затронутые файлы:**
+  - [`apps/api/src/services/agent/autonomousDenteAgentModules/denteAgentExecution.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/autonomousDenteAgentModules/denteAgentExecution.ts) — ликвидация искусственных строк `[ИТЕРАЦИЯ X/5]`.
+  - [`apps/api/src/services/agent/autonomousDenteAgentModules/denteAgentParser.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/autonomousDenteAgentModules/denteAgentParser.ts) — удаление примитивных регулярок угадывания жалоб и скидок.
+  - [`apps/api/src/services/agent/__tests__/autonomousAgentReActAndRoute.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/__tests__/autonomousAgentReActAndRoute.test.ts) — актуализация ассертов для чистых клинических шагов ReAct.
+  - [`apps/api/src/ai/dentalTools/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/index.ts) — расширение алиасов нормализации инструментов (`normalizeToolName`) для исключения ошибок 404/400.
+  - [`apps/web/src/components/copilot/copilotCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/copilotCatalogData.ts) — приведение `CRM_FASTIFY_TOOLS_REGISTRY` к каноническим именам тулов.
+  - [`apps/web/src/components/copilot/chairside/executor/agentSseChatClient.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/chairside/executor/agentSseChatClient.ts) — канонический клиент SSE ReAct потока `/api/agent/chat`.
+  - [`apps/web/src/components/copilot/chairside/chairsideAgentExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/chairside/chairsideAgentExecutor.ts) — сквозное подключение SSE потока к кресельному экзекутору.
+  - [`apps/web/src/components/copilot/ChairsideCopilotHUD.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/ChairsideCopilotHUD.tsx) — честный resting state без фейковых мыслей на старте (`готов к работе`), потоковая гидратация через `onThoughtChunk`.
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx) — переход с легаси `voiceEngine.ts` на `useUnifiedDictation` (Gemini Live WebSocket), внедрение генеративных карточек `CopilotResultCard`, синхронизация аргументов быстрых действий (`generate_form_043_entry`), сохранение строгого лимита 447 строк (Мандат 8b 380–450).
+  - [`apps/web/src/styles/main.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/main.css) & [`scripts/verify_copilot_css_lines.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/verify_copilot_css_lines.cjs) — отвязка удаленного фасада `CopilotDrawer.css`.
+  - Удалена директория: `apps/web/src/components/copilot/drawerStyles/` (все 21 устаревших CSS файла) и `CopilotDrawer.css` (`git rm`).
+- **Суть ликвидированных инцидентов:**
+  1. *Инцидент 1 (Фейковые мысли в HUD):* При монтировании у кресла отображались захардкоженные шаги `step-1`..`step-4` и вымышленные пациенты. Заменено на канонический SSE ReAct поток с честным состоянием покоя «готов к работе».
+  2. *Инцидент 2 (Примитивные регулярки и фейковые итерации):* В бэкенде удалены строки `[ИТЕРАЦИЯ X/5]` и жадные регулярки для жалоб. Рассуждения теперь формируются строго через LLM ReAct цикл и Zod-валидированные аргументы инструментов.
+  3. *Инцидент 3 (Рассинхрон реестра тулов):* Имена инструментов в каталоге и быстрых действиях (`generateSoapDiary` -> `generate_form_043_entry` с `{ toothNumber, diagnosisMkb, complaints }`) приведены к полной синхронизации с бэкендом, устранены 404/400 ошибки валидации.
+  4. *Инцидент 4 (Легаси речевой движок):* В студии Копайлота Web Speech API заменен на `useUnifiedDictation` с приоритетом `gemini_live` (WebSocket `/api/v1/speech/live`), Hands-Free VAD и шумоподавлением бормашины.
+  5. *Инцидент 5 (Генеративные карточки):* В сообщениях копайлота смонтирован компонент `CopilotResultCard` для наглядного интерактивного отображения результатов инструментов (одонтограмма, сметы, лекарства, расписание).
+  6. *Инцидент 6 (Физический снос мертвого CSS):* Полностью удалены через `git rm` 21 файл в `drawerStyles/` и фасад `CopilotDrawer.css`, удален импорт из `main.css`.
+- **Подтверждение Definition of Done (DoD):**
+  - Vitest: 25 тест-сьютов копайлота (201 тест) успешно пройдены (Exit Code 0).
+  - Vitest: `autonomousAgentReActAndRoute.test.ts` (5/5 tests) пройден (Exit Code 0).
+  - Encoding: `npm run check:encoding` -> 23534 файлов, 0 замечаний (Exit Code 0).
+  - CSS Audit: `node scripts/verify_copilot_css_lines.cjs` -> 40 модульных файлов, 0 нарушений (Exit Code 0).
+  - Visual Proofs: Сняты и лично отсмотрены через `read_file` 4-state скриншоты в `docs/proofs/copilot/`:
+    * ☀️ PC Light: `copilot_studio_pc_light_1440x900.png` (122.8 KB)
+    * 🌙 PC Dark: `copilot_studio_pc_dark_1440x900.png` (40.9 KB)
+    * 📱 Mobile Light: `copilot_studio_mobile_light_390x844.png` (33.4 KB)
+    * 🌙 Mobile Dark: `copilot_studio_mobile_dark_390x844.png` (33.5 KB)
+    * ☀️ PC Light Settings (Trust Tab): `copilot_settings_trust_tab_pc_light_1440x900.png` (76.8 KB)
+    * 🌙 PC Dark Settings: `copilot_settings_pc_dark_1440x900.png` (90.0 KB)
+
+
 
 
 

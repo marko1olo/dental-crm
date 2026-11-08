@@ -181,7 +181,7 @@ export async function executeAutonomousReActCycle(
 	let currentIteration = 1;
 	{
 		const thought1 = [
-			`[ИТЕРАЦИЯ 1/5: ПЕРВИЧНЫЙ КЛИНИЧЕСКИЙ АНАЛИЗ И ЛЕКАРСТВЕННАЯ СОВМЕСТИМОСТЬ]`,
+			`[ПЕРВИЧНЫЙ КЛИНИЧЕСКИЙ АНАЛИЗ И ЛЕКАРСТВЕННАЯ СОВМЕСТИМОСТЬ]`,
 			`Пациент ID: ${effectivePatientId}. Зуб FDI: ${fdiToothFormatted}.`,
 			`Жалобы: "${extractedComplaints || "Не указаны (физиологическая норма)"}".`,
 			`Анамнез: аллергии [${extractedAllergies.join(", ") || "отрицает"}], соматика [${extractedSomatic.join(", ") || "здоров"}].`,
@@ -250,7 +250,7 @@ export async function executeAutonomousReActCycle(
 						: "здоровый";
 
 		const thought2 = [
-			`[ИТЕРАЦИЯ 2/5: ЛОКАЛИЗАЦИЯ И ОБНОВЛЕНИЕ СТАТУСА ЗУБА FDI]`,
+			`[ЛОКАЛИЗАЦИЯ И ОБНОВЛЕНИЕ СТАТУСА ЗУБА FDI]`,
 			`Клинический диагноз: ${diagnosisName} (${primaryIcd10}) для зуба ${fdiToothFormatted}.`,
 			`Анатомические поверхности: жевательная (O) и контактная (M/D).`,
 			`ДЕЙСТВИЕ: Вызов update_tooth_status для внесения изменений в одонтограмму.`,
@@ -289,7 +289,7 @@ export async function executeAutonomousReActCycle(
 	currentIteration = 3;
 	if (currentIteration <= maxIterations) {
 		const thought3 = [
-			`[ИТЕРАЦИЯ 3/5: РАСЧЕТ СМЕТЫ В ТОЧНЫХ КОПЕЙКАХ]`,
+			`[РАСЧЕТ СМЕТЫ В ТОЧНЫХ КОПЕЙКАХ]`,
 			`Категория: ${clinicalCategory}. Скидка врача: ${resolvedDiscount}% (свобода скидок без блокировок).`,
 			`ДЕЙСТВИЕ: Вызов calculate_treatment_estimate для формирования калькуляции в точных целых копейках.`,
 		].join("\n");
@@ -326,7 +326,7 @@ export async function executeAutonomousReActCycle(
 	currentIteration = 4;
 	if (currentIteration <= maxIterations) {
 		const thought4 = [
-			`[ИТЕРАЦИЯ 4/5: ГЕНЕРАЦИЯ ПРОТОКОЛА ПРИЁМА SOAP И СМЕЖНЫХ ДОКУМЕНТОВ]`,
+			`[ГЕНЕРАЦИЯ ПРОТОКОЛА ПРИЁМА SOAP И СМЕЖНЫХ ДОКУМЕНТОВ]`,
 			`Формирование дневника SOAP по клиническим протоколам и МКБ-10 (${primaryIcd10}).`,
 			`Статус документа: ЧЕРНОВИК (печать и редактирование без замков).`,
 			labReq ? `Дополнительно: формирование черновика наряда ЗТЛ (${labReq.workType}, оттенок ${labReq.vitaShade}).` : "",
@@ -432,7 +432,7 @@ export async function executeAutonomousReActCycle(
 	});
 
 	const thought5 = [
-		`[ИТЕРАЦИЯ 5/5: ВЫНЕСЕНИЕ ИТОГОВОГО КЛИНИЧЕСКОГО ВЕРДИКТА]`,
+		`[ВЫНЕСЕНИЕ ИТОГОВОГО КЛИНИЧЕСКОГО ВЕРДИКТА]`,
 		`Все регламентные проверки завершены. Ошибок компиляции нет.`,
 		`Подготовлено ${actions.length} карточек действий для врача у кресла.`,
 		`Вердикт сформулирован в строгом стандарте T.A.R.S. 100%.`,

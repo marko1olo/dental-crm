@@ -72,15 +72,15 @@ export interface SpeechEngineHealthReport {
 
 /** Реестр боевых инструментов Fastify API (Zero Fake, Мандат 8e) */
 export const CRM_FASTIFY_TOOLS_REGISTRY = {
-  updateToothStatus: "crmClinicalOdontogramTools.updateToothState",
-  createAppointmentSlot: "crmScheduleTools.createAppointment",
-  generateSoapDiary: "crmClinicalDiaryTools.saveVisitDiary",
-  calcInvoiceKopecks: "crmBillingTools.calculateTreatmentEstimate",
-  createInvoiceDraft: "crmBillingTools.createInvoiceDraft",
-  applyDoctorDiscount: "crmBillingTools.applyDoctorDiscount",
-  printConsentBlank: "crmDocumentTools.printDocument",
-  captureScreen: "workstationTools.captureScreen",
-  scanHotfolder: "workstationTools.scanHotfolder",
+  updateToothStatus: "update_tooth_status",
+  createAppointmentSlot: "create_appointment",
+  generateSoapDiary: "generate_form_043_entry",
+  calcInvoiceKopecks: "search_clinic_services_and_prices",
+  createInvoiceDraft: "create_invoice_draft",
+  applyDoctorDiscount: "create_invoice_draft",
+  printConsentBlank: "print_document",
+  captureScreen: "capture_workstation_screen",
+  scanHotfolder: "search_workstation_files",
 } as const;
 
 /** Реестр быстрых клинических промптов в 1 клик (Мандат 8e & Voice-First) */

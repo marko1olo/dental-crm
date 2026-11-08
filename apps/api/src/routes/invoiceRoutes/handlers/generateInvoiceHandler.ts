@@ -54,6 +54,9 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	const effectiveInflationThreshold = freezeToken?.inflationThresholdPercent ?? 10;
 	const effectiveItemResolutionOverrides = buildEffectiveItemResolutionOverrides(data.items);
 
+	const staffRole = (context as any).role || (request as any).user?.role || "";
+	const isDoctor = staffRole === "doctor" || staffRole === "dentist";
+
 	const validationReport = validatePlanToInvoice({
 		planId: data.planId || targetPlan?.id || "PLAN-CUSTOM",
 		planNumber: data.planNumber,
@@ -68,12 +71,13 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 		items: planItemsForVal,
 		catalog: catalogLookup,
 		itemResolutionOverrides: effectiveItemResolutionOverrides,
-		adminOverrideAuthorized: isAdminOverrideVerified,
+		adminOverrideAuthorized: isAdminOverrideVerified || isDoctor,
 		adminOverrideStaffName: adminStaffName,
 		adminOverrideReason: data.adminOverrideReason,
+		isDoctorAutonomy: isDoctor,
 	});
 
-	if (!validationReport.canGenerateWorkOrder) {
+	if (!validationReport.canGenerateWorkOrder && !isDoctor) {
 		return reply.code(400).send({
 			error: "BlockedArchivedServiceError",
 			message: "Оформление наряда заблокировано: смета содержит архивные, исключенные из прайса услуги или недействительные цены.",

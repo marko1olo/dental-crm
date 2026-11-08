@@ -19,7 +19,7 @@ import {
 	handleListPatientTreatmentPlans,
 	handleUpsertPatientTreatmentPlan,
 } from "./treatmentPlan/patientTreatmentPlanHandlers.js";
-import { handleSignTreatmentPlanPep } from "./treatmentPlan/treatmentPlanPepHandler.js";
+import { handleSignTreatmentPlanPep } from "./treatmentPlan/pep/index.js";
 import { handleStageTransition } from "./treatmentPlan/stageTransitionHandler.js";
 import {
 	checkAndGenerateDropoutRecalls,
@@ -28,7 +28,7 @@ import {
 
 export * from "./treatmentPlan/pipelineTypes.js";
 export * from "./treatmentPlan/treatmentPlanCrudHandlers.js";
-export * from "./treatmentPlan/treatmentPlanPepHandler.js";
+export * from "./treatmentPlan/pep/index.js";
 export * from "./treatmentPlan/patientTreatmentPlanHandlers.js";
 
 export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
@@ -194,3 +194,5 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 		},
 	);
 };
+
+export default treatmentPlanRoutes;

@@ -20,9 +20,10 @@ for (const dir of dirs) {
   }
 }
 
-const facades = ['CopilotGenerativeCards.css', 'CopilotDrawer.css', 'ChairsideCopilotHUD.css'];
+const facades = ['CopilotGenerativeCards.css', 'ChairsideCopilotHUD.css'];
 for (const f of facades) {
   const fullPath = path.resolve(__dirname, '../apps/web/src/components/copilot', f);
+  if (!fs.existsSync(fullPath)) continue;
   const content = fs.readFileSync(fullPath, 'utf8');
   const lines = content.split('\n').length;
   console.log(`FACADE: ${f} -> ${lines} lines`);
