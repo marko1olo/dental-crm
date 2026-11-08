@@ -13,18 +13,18 @@
 
 .mobile-chairside-steps-scroll {
   display: flex; align-items: center; justify-content: flex-start;
-  gap: 5px; width: 100%; overflow-x: auto; overscroll-behavior-x: contain;
+  gap: 3px; width: 100%; overflow-x: auto; overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
-  scroll-snap-type: x mandatory; scroll-padding: 0 8px;
-  padding: 2px 2px; box-sizing: border-box;
+  scroll-snap-type: x mandatory; scroll-padding: 0 4px;
+  padding: 2px 4px; box-sizing: border-box;
 }
 .mobile-chairside-steps-scroll::-webkit-scrollbar { display: none; }
 
 .mobile-chairside-step-chip {
-  min-height: 34px; padding: 5px 8px; border-radius: 10px;
-  font-size: 11px; font-weight: 600; white-space: nowrap;
+  min-height: 32px; padding: 4px 6px; border-radius: 9px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 3px; border: 1px solid var(--line, #e2e8f0);
+  gap: 2px; border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff); color: var(--muted, #64748b);
   cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex: 0 0 auto; flex-shrink: 0; scroll-snap-align: start;

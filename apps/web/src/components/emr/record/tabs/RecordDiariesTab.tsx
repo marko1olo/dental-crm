@@ -323,7 +323,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 									<button
 										type="button"
 										onClick={() => setEditorMode((m) => (m === "standard" ? "compact" : "standard"))}
-										className="text-[11px] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] underline cursor-pointer"
+										className="px-2.5 py-1 rounded-md text-[11px] font-medium text-[var(--ink-secondary)] bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] hover:text-[var(--ink)] transition-colors cursor-pointer touch-manipulation min-h-[32px]"
 									>
 										{editorMode === "standard" ? "Компактная форма" : "Открыть полный редактор SOAP"}
 									</button>

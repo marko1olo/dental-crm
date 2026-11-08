@@ -5,7 +5,7 @@ import { VisitDiaryHeaderActions } from "./VisitDiaryHeaderActions";
 export interface VisitDiaryHeaderProps {
 	readonly logic: any;
 	readonly modals: any;
-	readonly onApplyNorm: () => void;
+	readonly onApplyNorm: (specialty?: "hygiene" | "therapy" | "surgery" | "pediatric" | "general") => void;
 }
 
 export const VisitDiaryHeader: React.FC<VisitDiaryHeaderProps> = ({

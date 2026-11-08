@@ -67,7 +67,7 @@ export const ChairsideBottomStickyActions: React.FC<ChairsideBottomStickyActions
           {currentStep === "checkout" ? (
             <>
               <CreditCard size={20} className="shrink-0" />
-              <span className="truncate">Завершить приём и сформировать счёт</span>
+              <span className="truncate">Завершить приём • В кассу</span>
             </>
           ) : (
             <>

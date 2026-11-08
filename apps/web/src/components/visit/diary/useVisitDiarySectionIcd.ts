@@ -26,7 +26,7 @@ export function useVisitDiarySectionIcd({
 		setDiary((prev) => {
 			if (prev.diagnosisIcd10 !== code) {
 				StaffActionAuditService.logDiagnosisChange({
-					patientId: (prev as any).patientId || "current_patient",
+					patientId: prev.patientId || "current_patient",
 					oldDiagnosis: { icdCode: prev.diagnosisIcd10 },
 					newDiagnosis: { icdCode: code },
 					reason: "Выбор диагноза по МКБ-10 в дневнике приёма",

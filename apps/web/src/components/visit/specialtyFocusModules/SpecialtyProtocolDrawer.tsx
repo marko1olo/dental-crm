@@ -58,9 +58,10 @@ export function SpecialtyProtocolDrawer({
 				<button
 					type="button"
 					onClick={() => setIsProtocolDrawerOpen(false)}
-					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-semibold text-xs cursor-pointer px-2 py-0.5 rounded-lg inline-flex items-center gap-1 shadow-2xs transition-colors"
+					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] font-semibold text-xs cursor-pointer px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 shadow-2xs transition-colors min-h-[32px] touch-manipulation"
+					aria-label="Свернуть специализированный клинический бланк"
 				>
-					<X size={12} className="shrink-0" aria-hidden="true" />
+					<X size={13} className="shrink-0" aria-hidden="true" />
 					<span>Свернуть</span>
 				</button>
 			</div>

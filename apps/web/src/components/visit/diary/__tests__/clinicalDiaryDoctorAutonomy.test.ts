@@ -8,7 +8,12 @@ import { renderToString } from "react-dom/server";
 
 import { VisitDiaryActionsFooter } from "../section/VisitDiaryActionsFooter";
 import { IcdMobileBottomSheet } from "../fields/IcdMobileBottomSheet";
-import { applyFullPhysiologicalNorm } from "../section/applyPhysiologicalNormHelper";
+import {
+	applyFullPhysiologicalNorm,
+	applyTherapyPhysiologicalNorm,
+	applySurgeryPhysiologicalNorm,
+	applyHygienePhysiologicalNorm,
+} from "../section/applyPhysiologicalNormHelper";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -95,7 +100,11 @@ describe("Clinical Diary & Doctor Autonomy Behavioral Suite (Mandates 8e, 8am, 8
 		// Single Primary CTA
 		const ctaMatches = html.match(/\bid="diary-complete-visit-btn"/g);
 		assert.equal(ctaMatches?.length, 1, "Must contain strictly ONE Primary CTA button");
-		assert.ok(html.includes("Завершить приём и сохранить карту"));
+		assert.ok(
+			html.includes("Завершить приём и подписать") ||
+			html.includes("Завершить приём и сохранить карту"),
+			"Primary CTA must include 'Завершить приём и подписать' or 'Завершить приём и сохранить карту'",
+		);
 
 		// 0 disabled buttons (autonomy)
 		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
@@ -123,5 +132,31 @@ describe("Clinical Diary & Doctor Autonomy Behavioral Suite (Mandates 8e, 8am, 8
 		// Touch targets >= 44x44px
 		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"));
 		assert.ok(html.includes("Кариес дентина"));
+	});
+
+	it("6. 1-click specialty physiological norms populate therapy and surgery correctly (Mandate 8e)", () => {
+		let updatedTherapy: any = null;
+		let therapyIcd = "";
+		applyTherapyPhysiologicalNorm(
+			() => {},
+			(fn) => { updatedTherapy = fn({}); },
+			(c) => { therapyIcd = c; },
+			() => {},
+		);
+		assert.equal(therapyIcd, "Z01.2");
+		assert.ok(updatedTherapy.statusLocalis.includes("Зубные ряды интактны"));
+		assert.ok(updatedTherapy.treatmentDescription.includes("плановый осмотр"));
+
+		let updatedSurgery: any = null;
+		let surgeryIcd = "";
+		applySurgeryPhysiologicalNorm(
+			() => {},
+			(fn) => { updatedSurgery = fn({}); },
+			(c) => { surgeryIcd = c; },
+			() => {},
+		);
+		assert.equal(surgeryIcd, "Z09.0");
+		assert.ok(updatedSurgery.statusLocalis.includes("первичным натяжением"));
+		assert.ok(updatedSurgery.treatmentDescription.includes("Контрольный осмотр после хирургического вмешательства"));
 	});
 });

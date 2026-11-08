@@ -85,6 +85,8 @@ export interface ClinicalVisitCompletionResult {
 	readonly sbpQrUrl: string;
 	readonly sbpQrPayload: string;
 	readonly form043uSaved: boolean;
+	readonly emkSaved?: boolean | undefined;
+	readonly medicalCardSaved?: boolean | undefined;
 	readonly completedAtIso: string;
 	readonly materialsDeduction?: AutoVisitBomDeductionResult | undefined;
 	readonly isAbortedOrRescheduled?: boolean | undefined;

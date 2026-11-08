@@ -106,7 +106,7 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 						placeholder={placeholder}
 						data-testid="odontogram-quick-input-field"
 						id="odontogram-quick-formula-input"
-						className="w-full h-9 sm:h-9 min-h-[36px] pl-9 pr-8 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-950 text-xs sm:text-sm font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-[var(--line,#e2e8f0)] dark:border-slate-800 focus:outline-hidden focus:border-teal-500 transition-all"
+						className="w-full h-9 sm:h-9 min-h-[36px] pl-10 pr-8 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-950 text-xs sm:text-sm font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-[var(--line,#e2e8f0)] dark:border-slate-800 focus:outline-hidden focus:border-teal-500 transition-all"
 					/>
 					{text && (
 						<button

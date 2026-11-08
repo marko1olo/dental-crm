@@ -76,7 +76,7 @@ export function generateOrthodonticDiaryNote(
 	const overbite = session.findings.overbiteMm ? `${session.findings.overbiteMm} мм` : "норма";
 	const smileArc = SMILE_ARC_LABELS_RU[session.findings.smileArc] || "консонантная";
 
-	return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)
+	return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)
 Дата приёма: ${effectiveDate}
 Пациент: ${session.patientName || "Пациент"}
 Врач: ${session.doctorName || "Врач-ортодонт"}

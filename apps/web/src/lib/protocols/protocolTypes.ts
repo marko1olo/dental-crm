@@ -4,6 +4,7 @@
  */
 
 export interface DiaryState {
+	patientId?: string | undefined;
 	anamnesis: string;
 	statusLocalis: string;
 	diagnosisIcd10: string;

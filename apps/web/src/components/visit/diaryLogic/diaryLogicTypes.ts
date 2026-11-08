@@ -2,6 +2,7 @@ import type { PanelSubject } from "../../../lib/panelStateText";
 import { ICD10_DICTIONARY } from "../../../lib/icd10";
 
 export interface DiaryState {
+	patientId?: string | undefined;
 	anamnesis: string;
 	statusLocalis: string;
 	diagnosisIcd10: string;

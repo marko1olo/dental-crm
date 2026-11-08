@@ -66,7 +66,7 @@ ${WARRANTY_CERTIFICATE_TABLE_CSS}
     </div>
     <div class="patient-card-strip">
       <div><div class="label">Пациент:</div><div class="val">${patientFullName}</div></div>
-      <div><div class="label">Медицинская карта:</div><div class="val">${patient?.cardNumber || "043/у"}</div></div>
+      <div><div class="label">Медицинская карта:</div><div class="val">${patient?.cardNumber || "ЭМК"}</div></div>
       <div><div class="label">Лечащий врач:</div><div class="val">${doctorFullName}</div></div>
     </div>
     <table class="items-table">

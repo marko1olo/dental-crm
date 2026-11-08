@@ -73,6 +73,8 @@ export function assembleClinicalVisitEstimate(
 		sbpQrUrl,
 		sbpQrPayload: sbpQrUrl,
 		form043uSaved: true,
+		emkSaved: true,
+		medicalCardSaved: true,
 		completedAtIso: now.toISOString(),
 		isAbortedOrRescheduled: isAborted || undefined,
 		interruptionReason: input.interruptionReason,

@@ -7,7 +7,7 @@ export interface VisitDiaryHeaderActionsProps {
 	readonly isLocked: boolean;
 	readonly isRevising: boolean;
 	readonly beginRevise: () => void;
-	readonly onApplyNorm: () => void;
+	readonly onApplyNorm: (specialty?: "hygiene" | "therapy" | "surgery" | "pediatric" | "general") => void;
 	readonly onOpenTemplates: () => void;
 	readonly onOpenPrintPreview: () => void;
 	readonly onOpenSummary: () => void;
@@ -103,8 +103,36 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 						className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-left cursor-pointer transition-colors"
 						title="Заполнить физиологическую норму: соматически здоров, интактные зубы"
 					>
-						<CheckCircle2 className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
-						<span>Норма (соматически здоров)</span>
+						<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span>✓ Норма (профосмотр / гигиена)</span>
+					</button>
+					<button
+						type="button"
+						id="diary-1click-norm-therapy-btn"
+						data-testid="diary-1click-norm-therapy-btn"
+						onClick={() => {
+							setIsOpen(false);
+							onApplyNorm("therapy");
+						}}
+						className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-left cursor-pointer transition-colors"
+						title="Заполнить терапевтическую норму: зубы интактны, пломбы состоятельны"
+					>
+						<CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>✓ Норма терапии (интактно)</span>
+					</button>
+					<button
+						type="button"
+						id="diary-1click-norm-surgery-btn"
+						data-testid="diary-1click-norm-surgery-btn"
+						onClick={() => {
+							setIsOpen(false);
+							onApplyNorm("surgery");
+						}}
+						className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-left cursor-pointer transition-colors"
+						title="Заполнить хирургическую норму: лунка под сгустком, заживление без осложнений"
+					>
+						<CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+						<span>✓ Норма хирургии (без осложнений)</span>
 					</button>
 				</VisitDiaryHeaderMoreMenu>
 			</div>

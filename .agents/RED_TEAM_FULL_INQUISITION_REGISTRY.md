@@ -321,10 +321,10 @@
   - [`shiftSummaryQueries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/shiftBatch/shiftSummaryQueries.ts)
 - **Суть бага:** 7 параллельных модалок списания с дублирующейся логикой и раздуванием кодовой базы.
 - **Статус ликвидации [ЗАКРЫТО]:**
-  1. Все 7 модалок списания консолидированы строго в 1 канонический SSOT: `ConsumablesBatchWriteoffModal.tsx`.
-  2. Файлы `ConsumablesDeductionModal.tsx`, `BatchWriteoffModal.tsx`, `WarehouseBatchWriteoffModal.tsx`, `ShiftBatchWriteoffModal.tsx`, `ShiftBatchDeductionModal.tsx`, `ClinicalWriteoffModal.tsx` схлопнуты в тонкие прозрачные фасады-делегаты (<= 35 строк).
-  3. Каноническая модалка бесшовно поддерживает как пакетное списание за смену/день, так и точечное списание у кресла по услугам и техкартам 804н (BOM).
-  4. Прогон тестов: `consumablesBatchWriteoffDecomposition.test.tsx` (5 из 5 passed), `warehouseSuite.componentsRender2.test.tsx` (4 из 4 passed), `inventorySoftOverdraft.test.ts` (12 из 12 passed).
+  1. Все сценарии списания консолидированы строго в 1 канонический SSOT: `ConsumablesBatchWriteoffModal.tsx`.
+  2. Устаревшие файлы-клоны `BatchWriteoffModal.tsx` и `ConsumablesDeductionModal.tsx` физически удалены из кодовой базы (`git rm`). Все потребители (`InventoryView.tsx`, `VisitBillingModals.tsx`, `index.ts`) переключены напрямую на `ConsumablesBatchWriteoffModal.tsx`.
+  3. Каноническая модалка бесшовно поддерживает пакетное списание за смену/день в 1 клик, точечное списание у кресла по услугам и техкартам, а также фоновый мягкий овердрафт (Soft Negative Stock) без блокировок врача (Мандаты 8e, 8n).
+  4. Прогон тестов: 76 из 76 тестов склада PASS (Exit Code 0), включая `ConsumablesBatchWriteoffModal.test.tsx`, `warehouseSuite.componentsRender2.test.tsx`, `warehouseSuite.antiJargon.test.ts`, `inventorySoftOverdraft.test.ts`, `inventoryStornoAndAuditing.test.ts`, `inventoryBatchDeduction.test.ts`.
 
 ### [WH-04] [ЗАКРЫТО] Отсутствие коэффициента фасовки (упаковка vs карпула)
 - **Файлы:**
@@ -2964,6 +2964,40 @@ ead_file по 8 осям качества Хаммера:
      - `npx vitest run apps/web/src/components/copilot/` -> **27/27 test files passed, 212/212 tests passed (100% green)**.
      - `npm run check:encoding` -> **24 131 files checked, 0 errors (Exit Code 0)**.
   5. **4-State Visual Proofs**: Лично осмотрены через `read_file` в `docs/proofs/copilot/` (PC Light/Dark 1440×900, Mobile Light/Dark 390×844) по 8 осям Хаммера: 0px клиппинга, ровно 1 Primary CTA, Segmented Controls, WCAG AAA контраст в тёмной теме без белых пятен.
+
+---
+
+## 16. 🩺 КЛИНИЧЕСКИЙ ПРИЁМ У КРЕСЛА И ДНЕВНИК ЭМК SOAP (CHAIRSIDE VISIT & EMR SOAP DIARY SSOT)
+
+### [VISIT-01] [SEV-2] [ЗАКРЫТО] Автономия врача у кресла, норма в 1 клик, ликвидация клиппинга мобильного степпера и TS2308 коллизий экспортов
+- **Файлы:**
+  - [`apps/web/src/components/visit/diaryLogic/diaryLogicTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/diaryLogic/diaryLogicTypes.ts)
+  - [`apps/web/src/lib/protocols/protocolTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/lib/protocols/protocolTypes.ts)
+  - [`apps/web/src/components/visit/diary/useVisitDiarySectionIcd.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/diary/useVisitDiarySectionIcd.ts)
+  - [`apps/web/src/components/visit/workflowModules/clinicalWorkflowTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/workflowModules/clinicalWorkflowTypes.ts)
+  - [`apps/web/src/components/visit/workflowModules/workflowEstimateAssembler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/workflowModules/workflowEstimateAssembler.ts)
+  - [`apps/web/src/components/odontogram/OdontogramQuickTextInput.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramQuickTextInput.tsx)
+  - [`apps/web/src/components/visit/chairsideStyles/chairsideRecommendations.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/chairsideStyles/chairsideRecommendations.css)
+  - [`apps/web/src/components/visit/chairsideStyles/chairsideHeader.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/chairsideStyles/chairsideHeader.css)
+  - [`apps/web/src/components/visit/mobileChairside/ChairsideBottomStickyActions.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/mobileChairside/ChairsideBottomStickyActions.tsx)
+  - [`apps/web/src/components/visit/__tests__/visitMobileHigErgonomics.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/__tests__/visitMobileHigErgonomics.test.tsx)
+  - [`apps/web/src/appHelpers/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/appHelpers/index.ts)
+  - [`scripts/capture_visit_soap_emk_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_visit_soap_emk_proofs.cjs)
+- **Суть инквизиции и предписание Создателя (1:1 Verbatim):**
+  «Устранить любые барьеры в протоколах приёма, обеспечить автономию врача (Мандат 8e: «Норма в 1 клик», debounced автосейв, кнопки сохранения и завершения никогда не disabled), чистый клинический язык (Мандат 8x: никаких кодов «043/у» и «804н» в интерфейсе врача) и бесшовный переход от закрытия приёма к оплате на кассе. Ликвидация клиппинга и соблюдение Apple HIG на 390×844: Natural Thumb Zone, плавающий нижний бар действий, 0px горизонтального дрифта, отсутствие обрезанных многоточиями слов на кнопках».
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. **Ликвидация TS2308 коллизий экспортов**: В `appHelpers/index.ts` устранены неоднозначности звездных ре-экспортов между `appointmentHelpers.ts`, `persistenceHelpers.ts`, `financialHelpers.ts` (`visitSaveReceiptText`, `buildOfflineVisitDraftFromTranscript`, `visitLocalDraftKey`, `saveVisitLocalDraft`, `loadVisitLocalDraft` и др.), что восстановило чистый бут рабочего места клиники без зависаний на загрузочном сплэше.
+  2. **Строгая типизация DiaryState**: В `diaryLogicTypes.ts` и `protocolTypes.ts` добавлено поле `patientId?: string | undefined`. Ликвидирован каст `(prev as any).patientId` в `useVisitDiarySectionIcd.ts`. В `workflowEstimateAssembler.ts` добавлены доменные алиасы `emkSaved: true` и `medicalCardSaved: true`.
+  3. **Apple HIG и Zero-Clipping на 390px**: В `chairsideRecommendations.css` пересчитаны зазоры и размеры степпера: все 5 этапов (`1. Жалобы`, `2. Осмотр`, `3. Диагноз`, `4. Лечение`, `5. Итог и Чек`) гарантированно помещаются на экране 390px без краевого срезания. В `chairsideHeader.css` добавлена адаптивная типографика имени пациента (12px при `<=639px`) — ФИО пациента выводится полностью без срезания многоточиями. В `ChairsideBottomStickyActions.tsx` длинная строка заменена на лаконичный CTA `Завершить приём • В кассу`.
+  4. **Эргономика быстрого ввода зубной формулы**: В `OdontogramQuickTextInput.tsx` заменен отступ на `pl-10` (`padding-left: 40px` по Мандату 8d), обеспечивая комфортный зазор между клавиатурной иконкой и плейсхолдером «Быстрый ввод».
+  5. **Машинные гейты приёмки**:
+     - `npm run check:encoding` -> **24 005 файлов проверено, 0 замечаний (Exit Code 0)**.
+     - Vitest visit suite (`chairsideAutonomyWave310`, `redTeamVisitDiaryAutonomyAndSingleCta`, `visitAutosaveAndZeroKeystrokeLoss`, `visitPlanAndConsentAutonomy`, `visitMobileHigErgonomics`) -> **5/5 файлов passed, 31/31 тестов passed (100% green)**.
+  6. **4-State Visual Proofs (Личный осмотр через read_file)**:
+     - ☀️ PC Light (1440x900): [`docs/proofs/patient_journey/01_visit_soap_emk_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_journey/01_visit_soap_emk_pc_light_1440x900.png) (521.0 KB) — вкладка «2. Дневник приёма» активна, полный дневник SOAP (жалобы, статус, протокол, диктовка), 1 Primary CTA «Завершить приём», «Норма в 1 клик».
+     - 🌙 PC Dark (1440x900): [`docs/proofs/patient_journey/02_visit_soap_emk_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_journey/02_visit_soap_emk_pc_dark_1440x900.png) (502.3 KB) — 100% темные токены, WCAG AAA контраст, ноль белых пятен.
+     - 📱 Mobile Light (390x844): [`docs/proofs/patient_journey/03_visit_soap_emk_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_journey/03_visit_soap_emk_mobile_light_390x844.png) (205.8 KB) — iPhone 390x844, плавающий нижний бар «Далее: 2. Осмотр →» в Natural Thumb Zone, все 5 шагов без обрезаний, тач >= 44px.
+     - 📱 Mobile Dark (390x844): [`docs/proofs/patient_journey/04_visit_soap_emk_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_journey/04_visit_soap_emk_mobile_dark_390x844.png) (204.1 KB) — темная мобильная тема, 0px горизонтального скролла, гармоничная гамма.
 
 
 

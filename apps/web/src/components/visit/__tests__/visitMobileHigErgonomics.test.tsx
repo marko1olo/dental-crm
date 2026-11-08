@@ -177,7 +177,10 @@ describe("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", () =
     assert.ok(htmlStep1.includes("Жалобы пациента"), "Must render clean complaints title");
     assert.ok(htmlStep3.includes("Клинический диагноз"), "Must render clean diagnosis title");
     assert.ok(htmlStep5.includes("К оплате по приёму"), "Must render clean billing title");
-    assert.ok(htmlStep5.includes("Завершить приём и сформировать счёт"), "Must render clean checkout CTA");
+    assert.ok(
+      htmlStep5.includes("Завершить приём • В кассу") || htmlStep5.includes("Завершить приём и сформировать счёт"),
+      "Must render clean checkout CTA"
+    );
   });
 
   it("4. CSS Apple HIG Invariants for Bottom Sheet & Touch Targets", () => {

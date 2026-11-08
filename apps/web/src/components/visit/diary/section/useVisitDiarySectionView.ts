@@ -68,12 +68,13 @@ export function useVisitDiarySectionView(
 		visitId,
 	);
 
-	const handleApplyNorm = () => {
+	const handleApplyNorm = (specialty?: "hygiene" | "therapy" | "surgery" | "pediatric" | "general") => {
 		applyFullPhysiologicalNorm(
 			ensureRevisingIfLocked,
 			logic.setDiary,
 			logic.setIcdSearch,
 			logic.scheduleDebouncedSave,
+			specialty,
 		);
 	};
 

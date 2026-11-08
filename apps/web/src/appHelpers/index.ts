@@ -29,11 +29,40 @@ export {
 	sensitiveLocalDraftRetentionMs,
 	loadImageFromDataUrl,
 	readFileAsDataUrl,
+	blobToBase64,
 } from "./uiFormatters.js";
 
 export {
 	onboardingStorageKey,
+	aiJobKindPreferenceValues,
+	aiJobKindLabels,
+	isAiJobKind,
+	isAiRecognitionTarget,
 } from "./preferenceHelpers.js";
+
+export {
+	visitSaveReceiptText,
+	visitLocalDraftKey,
+	loadVisitLocalDraft,
+	saveVisitLocalDraft,
+	buildOfflineVisitDraftFromTranscript,
+} from "./appointmentHelpers.js";
+
+export {
+	normalizedLocalOrganizationId,
+	localDraftString,
+	offlineDraftOrganizationKey,
+	localQueueOrganizationMatches,
+	createLocalQueueId,
+	localImagingFolderStorageKey,
+	pendingVisitSaveQueueKey,
+} from "./persistenceHelpers.js";
+
+export {
+	collectDicomWorkstationClientFacts,
+	isBrowserImagingScanAbortError,
+	localImagingFolderFingerprint,
+} from "../utils/browserScanUtils.js";
 
 export {
 	imagingViewerLocalStoragePrefix,

@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Check } from "lucide-react";
 import { SmartMicrophoneButton } from "../../../SmartMicrophoneButton";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
 
@@ -84,6 +84,30 @@ export const VisitDiaryComplicationsField: React.FC<VisitDiaryComplicationsField
 					}}
 					placeholder="Сопутствующие заболевания (если есть)..."
 				/>
+			</div>
+			<div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+				<button
+					type="button"
+					onClick={() => {
+						ensureRevisingIfLocked();
+						setDiary((p) => ({
+							...p,
+							complications: "Осложнений нет.",
+							comorbidities: p.comorbidities || "Соматически здоров, противопоказаний нет.",
+						}));
+						scheduleDebouncedSave();
+					}}
+					disabled={fieldsDisabled}
+					className={`dente-filter-chip shrink-0 ${
+						Boolean(diary.complications?.includes("Осложнений нет")) ? "active" : ""
+					}`}
+					data-active={Boolean(diary.complications?.includes("Осложнений нет"))}
+					data-testid="btn-quick-norm-complications"
+					title="Зафиксировать в 1 клик: Осложнений нет, соматически здоров"
+				>
+					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
+					<span>Осложнений нет (норма)</span>
+				</button>
 			</div>
 			{interimText && (
 				<div

@@ -49,7 +49,7 @@ function extractTeeth(toothInput: unknown, normalized: string, item: unknown): {
 }
 
 /**
- * Клиническая валидация выбранного кода МКБ-10 и привязки к зубу FDI перед подписанием 043/у.
+ * Клиническая валидация выбранного кода МКБ-10 и привязки к зубу FDI перед подписанием медицинской карты приёма.
  */
 export function validateSelection(code: unknown, toothInput?: unknown): Icd10ValidationResult {
 	const rawCodeStr = typeof code === "string" ? code.trim() : code != null ? String(code).trim() : "";
@@ -58,7 +58,7 @@ export function validateSelection(code: unknown, toothInput?: unknown): Icd10Val
 		return {
 			isValid: false,
 			errorCode: "Icd10Required",
-			errorMessage: "Укажите код диагноза по МКБ-10 для заполнения протокола 043/у.",
+			errorMessage: "Укажите код диагноза по МКБ-10 для заполнения медицинской карты приёма.",
 		};
 	}
 

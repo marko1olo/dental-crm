@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Plus, Sparkles } from "lucide-react";
+import { Check, FileText, Plus, Sparkles } from "lucide-react";
 import { SmartMicrophoneButton } from "../../../SmartMicrophoneButton";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
 import { ClinicalStenographerBar } from "../../emk/ClinicalStenographerBar";
@@ -122,6 +122,30 @@ export const VisitDiaryTreatmentField: React.FC<VisitDiaryTreatmentFieldProps> =
 				onKeyDown={steno.handleKeyDown}
 				placeholder="Протокол вмешательства: препарирование, медикаментозная обработка, пломбирование, материалы (Стенограф: Tab / Пробел)..."
 			/>
+			<div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+				<button
+					type="button"
+					onClick={() => {
+						ensureRevisingIfLocked();
+						const normTreatment = "Проведён плановый осмотр полости рта, онкоскрининг слизистой оболочки. Контролируемая гигиена полости рта, полировка пастой, глубокое фторирование. Индивидуальные рекомендации.";
+						setDiary((p) => ({
+							...p,
+							treatmentDescription: p.treatmentDescription ? `${p.treatmentDescription}\n${normTreatment}` : normTreatment,
+						}));
+						scheduleDebouncedSave();
+					}}
+					disabled={fieldsDisabled}
+					className={`dente-filter-chip shrink-0 ${
+						Boolean(diary.treatmentDescription?.includes("плановый осмотр") || diary.treatmentDescription?.includes("онкоскрининг")) ? "active" : ""
+					}`}
+					data-active={Boolean(diary.treatmentDescription?.includes("плановый осмотр") || diary.treatmentDescription?.includes("онкоскрининг"))}
+					data-testid="btn-quick-norm-treatment"
+					title="Зафиксировать норму лечения в 1 клик: плановый осмотр, гигиена и рекомендации"
+				>
+					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
+					<span>Осмотр и гигиена в норме</span>
+				</button>
+			</div>
 			{!fieldsDisabled && (
 				<ClinicalStenographerBar
 					snippets={steno.fieldSnippets}

@@ -6,7 +6,7 @@
 
 import React from "react";
 import { PaymentModal } from "../finance/PaymentModal.js";
-import { ConsumablesDeductionModal } from "../inventory/ConsumablesDeductionModal.js";
+import { ConsumablesBatchWriteoffModal } from "../inventory/ConsumablesBatchWriteoffModal.js";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal.js";
 import { PricelistStudioModal } from "../catalog/PricelistStudioModal.js";
 import type { PricelistClinicalBundle, PricelistStudioItem } from "../catalog/pricelistCatalogData.js";
@@ -139,7 +139,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 
 			{/* Chairside Consumables Deduction Modal (BOM per FEFO) */}
 			{selectedBomService && (
-				<ConsumablesDeductionModal
+				<ConsumablesBatchWriteoffModal
 					isOpen={Boolean(selectedBomService)}
 					onClose={onCloseBomModal}
 					procedureTitle={selectedBomService.title}
