@@ -113,34 +113,58 @@ export async function handleEndCall(
 			}
 		}
 
-		if (targetPatientId) {
-			await db.insert(communicationEvents).values({
-				organizationId: resolvedOrgId!,
-				patientId: targetPatientId,
-				channel: "phone",
-				direction: body.direction === "outbound" ? "outbound" : "inbound",
-				status: isCompleted ? "completed" : "needs_call",
-				message: body.notes
-					? `Звонок (${phoneStr}): ${body.notes} [call_id: ${callId}]`
-					: `Звонок (${phoneStr}) [call_id: ${callId}]`,
-				recordingUrl: body.recordingUrl || null,
-				durationSeconds,
-			});
-		} else if (callerPhone.isValid) {
-			// Если пациент не найден, обновляем или фиксируем активность по лиду
+		// Всегда производим запись в communicationEvents (Мандат 8ap, [TEL-04])
+		await db.insert(communicationEvents).values({
+			organizationId: resolvedOrgId!,
+			patientId: targetPatientId || null,
+			callerPhone: callerPhone.isValid ? callerPhone.e164 : (body.phone || null),
+			channel: "phone",
+			direction: body.direction === "outbound" ? "outbound" : "inbound",
+			status: isCompleted ? "completed" : "needs_call",
+			message: body.notes
+				? `Звонок (${phoneStr}): ${body.notes} [call_id: ${callId}]`
+				: `Звонок (${phoneStr}) [call_id: ${callId}]`,
+			recordingUrl: body.recordingUrl || null,
+			durationSeconds,
+		});
+
+		// Если пациент не найден и телефон валиден — параллельно обновляем или создаем crmLeads
+		if (!targetPatientId && callerPhone.isValid) {
 			try {
-				await db.update(crmLeads).set({
-					...(body.recordingUrl ? { audioRecordUrl: body.recordingUrl } : {}),
-					lastContactedAt: new Date(),
-				}).where(
-					and(
-						eq(crmLeads.organizationId, resolvedOrgId!),
-						or(
-							eq(crmLeads.phone, callerPhone.e164),
-							ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+				const existing = await db
+					.select({ id: crmLeads.id })
+					.from(crmLeads)
+					.where(
+						and(
+							eq(crmLeads.organizationId, resolvedOrgId!),
+							or(
+								eq(crmLeads.phone, callerPhone.e164),
+								ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+							),
 						),
-					),
-				);
+					)
+					.limit(1);
+
+				if (existing.length > 0 && existing[0]?.id) {
+					await db
+						.update(crmLeads)
+						.set({
+							lastContactedAt: new Date(),
+							...(body.notes ? { notes: body.notes } : {}),
+						})
+						.where(eq(crmLeads.id, existing[0].id));
+				} else {
+					await db.insert(crmLeads).values({
+						organizationId: resolvedOrgId!,
+						phone: callerPhone.e164,
+						patientName: "Новый лид",
+						name: "Новый лид",
+						source: "telephony",
+						status: "new",
+						lastContactedAt: new Date(),
+						...(body.notes ? { notes: body.notes } : {}),
+					});
+				}
 			} catch {}
 		}
 	});

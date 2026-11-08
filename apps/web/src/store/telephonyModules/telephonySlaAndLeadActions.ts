@@ -135,7 +135,7 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 	try {
 		const staffToken = readDenteStaffToken();
 		const clinicToken = readDenteClinicToken();
-		const res = await fetch("/api/communications/telephony/calls", {
+		const res = await fetch("/api/telephony/calls?limit=50", {
 			headers: {
 				...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
 				...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
@@ -146,7 +146,8 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 		if (data?.calls && Array.isArray(data.calls)) {
 			const existing = get().callHistory;
 			const mapped: CallHistoryItem[] = data.calls.map((c: any) => {
-				const digits = (c.patientPhone || "").replace(/\D/g, "").slice(-10);
+				const resolvedPhone = c.patientPhone || c.callerPhone || "";
+				const digits = resolvedPhone.replace(/\D/g, "").slice(-10);
 				let patientName = c.patientName && !c.patientName.startsWith("Входящий вызов")
 					? c.patientName
 					: c.patientName || "Неизвестный номер";
@@ -158,7 +159,7 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 				return {
 					id: c.id,
 					callId: c.id,
-					phone: c.patientPhone || "",
+					phone: resolvedPhone,
 					patientId: c.patientId || null,
 					patientName,
 					status:

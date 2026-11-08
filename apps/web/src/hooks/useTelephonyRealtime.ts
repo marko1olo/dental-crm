@@ -9,7 +9,7 @@ import {
 
 /**
  * useTelephonyRealtime: Connects the application to `/api/ws/telephony`
- * and hydrates call history from PostgreSQL 18 (`/api/communications/telephony/calls`).
+ * and hydrates call history from PostgreSQL 18 (`/api/telephony/calls`).
  * Respects Mandate 8e (Doctor Autonomy): stays silent during clinical visits.
  */
 export function useTelephonyRealtime() {

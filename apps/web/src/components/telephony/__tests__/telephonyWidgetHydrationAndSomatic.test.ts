@@ -41,7 +41,10 @@ test("Telephony - fetchCallHistory hydrates call log from backend endpoint", asy
 	try {
 		useTelephonyStore.getState().clearHistory();
 		globalThis.fetch = (async (input: RequestInfo | URL) => {
-			if (String(input).includes("/api/communications/telephony/calls")) {
+			if (
+				String(input).includes("/api/telephony/calls") ||
+				String(input).includes("/api/communications/telephony/calls")
+			) {
 				return {
 					ok: true,
 					json: async () => ({
