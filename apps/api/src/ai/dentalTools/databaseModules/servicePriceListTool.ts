@@ -6,7 +6,7 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
-import { serviceCatalogItems, services } from "../../../db/schema.js";
+import { serviceCatalogItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { STANDARD_SERVICE_CATALOG, standardServiceCatalog } from "./serviceCatalogData.js";
 
@@ -46,7 +46,17 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 	const clinicItems = await activeDb
 		.select()
 		.from(serviceCatalogItems)
-		.where(and(eq(serviceCatalogItems.organizationId, orgId), or(ilike(serviceCatalogItems.title, searchPattern), ilike(serviceCatalogItems.code, searchPattern), ilike(serviceCatalogItems.order804nCode, searchPattern))))
+		.where(
+			and(
+				eq(serviceCatalogItems.organizationId, orgId),
+				eq(serviceCatalogItems.isActive, true),
+				or(
+					ilike(serviceCatalogItems.title, searchPattern),
+					ilike(serviceCatalogItems.code, searchPattern),
+					ilike(serviceCatalogItems.order804nCode, searchPattern),
+				),
+			),
+		)
 		.limit(10);
 
 	if (clinicItems.length > 0) {
@@ -60,37 +70,13 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 				regulatoryCode: item.order804nCode || item.code,
 				title: item.title,
 				category: item.category,
-				priceRub: item.priceRub,
+				priceRub: item.basePriceRub ?? item.priceRub,
 				source: "clinic_pricelist" as const,
 			})),
 		};
 	}
 
-	// 2. Поиск в альтернативной таблице услуг (services)
-	const servicesItems = await activeDb
-		.select()
-		.from(services)
-		.where(and(eq(services.organizationId, orgId), or(ilike(services.title, searchPattern), ilike(services.code, searchPattern))))
-		.limit(10);
-
-	if (servicesItems.length > 0) {
-		return {
-			found: true,
-			query,
-			totalCount: servicesItems.length,
-			results: servicesItems.map((item) => ({
-				code: item.code || "A16.07.000",
-				serviceCode: item.code || "A16.07.000",
-				regulatoryCode: item.code || "A16.07.000",
-				title: item.title,
-				category: item.category,
-				priceRub: item.basePriceRub,
-				source: "clinic_pricelist" as const,
-			})),
-		};
-	}
-
-	// 3. Мягкий фолбек на нормативный справочник базовых стоматологических процедур (Мандат 8ap)
+	// 2. Мягкий фолбек на нормативный справочник базовых стоматологических процедур (Мандат 8ap)
 	const normQuery = query.toLowerCase();
 	const fallbackMatches = STANDARD_SERVICE_CATALOG.filter(
 		(s) => s.code.toLowerCase().includes(normQuery) || s.title.toLowerCase().includes(normQuery) || (s.regulatoryCode && s.regulatoryCode.toLowerCase().includes(normQuery)),

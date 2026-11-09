@@ -1,6 +1,0 @@
-/**
- * DENTE Dental CRM — Backward-Compatible Stylesheet Bridge
- * Points to canonical SSOT in ../catalog/mappingDiff/priceMappingDiff.css
- */
-
-@import "../catalog/mappingDiff/priceMappingDiff.css";

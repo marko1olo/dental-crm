@@ -454,7 +454,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     <div class="diary-header">
       <div class="diary-title">
         <span>Запись для медицинской карты:</span>
-        <span class="diary-badge">Приказ МЗ РФ № 804н / 043-у</span>
+        <span class="diary-badge">Дневник приёма</span>
       </div>
       <div style="font-size: 8.5px; color: #64748b;">Медицинский протокол</div>
     </div>

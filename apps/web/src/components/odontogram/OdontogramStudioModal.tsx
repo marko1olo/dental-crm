@@ -35,6 +35,7 @@ export interface OdontogramStudioModalProps {
 	readonly initialTeeth?: Record<number, OdontogramToothEntry>;
 	readonly onSaveTeeth?: (teeth: Record<number, OdontogramToothEntry>, addedEstimatesCount: number) => void;
 	readonly patientName?: string;
+	readonly patientId?: string;
 	readonly visitId?: string;
 }
 

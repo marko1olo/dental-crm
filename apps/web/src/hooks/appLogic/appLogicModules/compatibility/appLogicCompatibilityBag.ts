@@ -1,6 +1,7 @@
 import type { StaffRole } from "@dental/shared";
 import {
 	defaultUiLanguageOption, operatorWorkflowFailureMessage, patientName as patientNameHelper,
+	responseErrorMessage,
 	visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftSignalLabel,
 	visitNoteFieldDefinitions, visitSaveReceiptText,
 } from "../../../../AppHelpers";
@@ -102,6 +103,82 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 	const legacyPatient = buildLegacyPatientFields(documentPatient, dashboard);
 	const sortedCommunicationTasks = sortCommunicationTasks(dashboard?.communicationTasks);
 
+	const createServiceCatalogItem = async (data: any) => {
+		try {
+			const headers = auth?.settingsAccessHeaders
+				? auth.settingsAccessHeaders({ "Content-Type": "application/json" })
+				: { "Content-Type": "application/json" };
+			const response = await fetch("/api/settings/catalog", {
+				method: "POST",
+				headers,
+				body: JSON.stringify(data),
+			});
+			if (!response.ok) {
+				const errMsg = await responseErrorMessage(response, "Ошибка создания услуги");
+				appStore?.setError?.(errMsg);
+				return null;
+			}
+			const result = await response.json();
+			if (typeof params.loadDashboard === "function") {
+				await params.loadDashboard();
+			}
+			return result;
+		} catch {
+			appStore?.setError?.("Сбой сети при создании услуги");
+			return null;
+		}
+	};
+
+	const updateServiceCatalogItem = async (serviceId: string, updates: any) => {
+		try {
+			const headers = auth?.settingsAccessHeaders
+				? auth.settingsAccessHeaders({ "Content-Type": "application/json" })
+				: { "Content-Type": "application/json" };
+			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
+				method: "PUT",
+				headers,
+				body: JSON.stringify(updates),
+			});
+			if (!response.ok) {
+				const errMsg = await responseErrorMessage(response, "Ошибка обновления услуги");
+				appStore?.setError?.(errMsg);
+				return null;
+			}
+			const result = await response.json();
+			if (typeof params.loadDashboard === "function") {
+				await params.loadDashboard();
+			}
+			return result;
+		} catch {
+			appStore?.setError?.("Сбой сети при обновлении услуги");
+			return null;
+		}
+	};
+
+	const deleteServiceCatalogItem = async (serviceId: string) => {
+		try {
+			const headers = auth?.settingsAccessHeaders
+				? auth.settingsAccessHeaders()
+				: {};
+			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
+				method: "DELETE",
+				headers,
+			});
+			if (!response.ok) {
+				const errMsg = await responseErrorMessage(response, "Ошибка удаления услуги");
+				appStore?.setError?.(errMsg);
+				return false;
+			}
+			if (typeof params.loadDashboard === "function") {
+				await params.loadDashboard();
+			}
+			return true;
+		} catch {
+			appStore?.setError?.("Сбой сети при удалении услуги");
+			return false;
+		}
+	};
+
 	return {
 		...documentWorkflow,
 		...dicomWorkbenchModule,
@@ -152,6 +229,9 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 		completeCommunicationTask: settingsAndIntegrations.completeCommunicationTask,
 		createAppointmentFromDraft: scheduleLogic.createAppointmentFromDraft ?? (async () => {}),
 		createClinicalRuleFromSettings: settingsAndIntegrations.createClinicalRuleFromSettings,
+		createServiceCatalogItem,
+		updateServiceCatalogItem,
+		deleteServiceCatalogItem,
 		dashboard,
 		documentFactoryGroups: appLogicBag.documentFactoryGroups ?? [],
 		documentPatient,

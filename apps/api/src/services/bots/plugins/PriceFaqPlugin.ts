@@ -1,6 +1,6 @@
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import { services } from "../../../db/schema.js";
+import { serviceCatalogItems } from "../../../db/schema.js";
 import type {
 	BotInboundMessage,
 	BotPlugin,
@@ -85,36 +85,42 @@ export class PriceFaqPlugin implements BotPlugin {
 				}
 			}
 
-			// Выполняем поиск по реальной таблице `services` клиники
+			// Выполняем поиск по реальной таблице `serviceCatalogItems` клиники
 			const matchedServices = await tx
 				.select({
-					id: services.id,
-					title: services.title,
-					basePriceRub: services.basePriceRub,
-					code: services.code,
-					category: services.category,
+					id: serviceCatalogItems.id,
+					title: serviceCatalogItems.title,
+					basePriceRub: serviceCatalogItems.basePriceRub,
+					code: serviceCatalogItems.code,
+					category: serviceCatalogItems.category,
 				})
-				.from(services)
+				.from(serviceCatalogItems)
 				.where(
 					and(
-						eq(services.organizationId, orgId),
-						searchQuery ? ilike(services.title, `%${searchQuery}%`) : undefined,
+						eq(serviceCatalogItems.organizationId, orgId),
+						eq(serviceCatalogItems.isActive, true),
+						searchQuery ? ilike(serviceCatalogItems.title, `%${searchQuery}%`) : undefined,
 					),
 				)
-				.orderBy(desc(services.basePriceRub))
+				.orderBy(desc(serviceCatalogItems.basePriceRub))
 				.limit(6);
 
 			if (matchedServices.length === 0) {
 				// Если точных совпадений нет, выводим популярные базовые позиции
 				const defaultServices = await tx
 					.select({
-						id: services.id,
-						title: services.title,
-						basePriceRub: services.basePriceRub,
-						code: services.code,
+						id: serviceCatalogItems.id,
+						title: serviceCatalogItems.title,
+						basePriceRub: serviceCatalogItems.basePriceRub,
+						code: serviceCatalogItems.code,
 					})
-					.from(services)
-					.where(eq(services.organizationId, orgId))
+					.from(serviceCatalogItems)
+					.where(
+						and(
+							eq(serviceCatalogItems.organizationId, orgId),
+							eq(serviceCatalogItems.isActive, true),
+						),
+					)
 					.limit(5);
 
 				if (defaultServices.length === 0) {

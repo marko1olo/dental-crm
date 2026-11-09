@@ -29,7 +29,9 @@ export interface OrthodonticsStudioModalProps {
 	readonly initialProtocol?: OrthoProtocolState;
 	readonly onSaveProtocol?: (protocol: OrthoProtocolState, summarySoap: string) => void;
 	readonly patientName?: string;
+	readonly patientId?: string;
 	readonly doctorName?: string;
+	readonly clinicName?: string;
 	readonly visitId?: string;
 }
 

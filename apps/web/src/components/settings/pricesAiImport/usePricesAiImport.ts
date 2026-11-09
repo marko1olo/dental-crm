@@ -4,7 +4,7 @@ import type {
 	TabularImportAnalysis,
 } from "@dental/shared";
 import { useRef, useState } from "react";
-import type { IngestedMappingItem } from "../../pricing/PriceListMappingDiffView";
+import type { IngestedMappingItem } from "../../catalog/mappingDiff/PriceListMappingDiffView";
 import { staffMutationHeaders } from "../staffMutationRequest";
 import type {
 	ImportResultSummary,

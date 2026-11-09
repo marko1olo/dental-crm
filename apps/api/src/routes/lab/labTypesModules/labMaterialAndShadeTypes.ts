@@ -67,6 +67,7 @@ export const createLabOrderSchema = z.object({
 		.optional()
 		.nullable()
 		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null)),
+	patientName: z.string().trim().optional().nullable(),
 	treatmentPlanId: z.string().uuid().optional().nullable(),
 	appointmentId: z.string().uuid().optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),

@@ -6,7 +6,7 @@ import type {
 import type {
 	ExistingCatalogReference,
 	IngestedMappingItem,
-} from "../../pricing/PriceListMappingDiffView";
+} from "../../catalog/mappingDiff/PriceListMappingDiffView";
 import type { ServicePricelistItem } from "../../catalog/pricelist/servicePricelistPresets";
 
 export interface ServiceEditFormData {

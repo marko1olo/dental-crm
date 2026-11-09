@@ -22,6 +22,7 @@ export type {
 	DocumentPayloadDraftStore,
 	MedicalDocumentReleaseChannel,
 	MedicalRecordExtractDocumentDraftFields,
+	SettingsTabGroup,
 } from "./types.js";
 
 export {

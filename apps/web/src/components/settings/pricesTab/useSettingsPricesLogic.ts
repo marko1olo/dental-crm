@@ -24,7 +24,7 @@ import { showToast } from "../../GlobalToast";
 import {
 	type ExistingCatalogReference,
 	type IngestedMappingItem,
-} from "../../pricing/PriceListMappingDiffView";
+} from "../../catalog/mappingDiff/PriceListMappingDiffView";
 import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
 import {
 	NEW_SERVICE_TEMPLATE,

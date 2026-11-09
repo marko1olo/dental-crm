@@ -37,7 +37,7 @@ export function VisitActionFooter({
 	setIsStagePaymentModalOpen,
 }: VisitActionFooterProps) {
 	const [isFastPrintModalOpen, setIsFastPrintModalOpen] = useState(false);
-	const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("form043u");
+	const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("medical_card");
 
 	const recommendedKey = activeAppointment
 		? detectRecommendedProtocol({
@@ -182,7 +182,7 @@ export function VisitActionFooter({
 						type="button"
 						data-testid="visit-footer-fast-vector-print-btn"
 						onClick={() => {
-							setFastPrintDocType("form043u");
+							setFastPrintDocType("medical_card");
 							setIsFastPrintModalOpen(true);
 						}}
 						className="h-9 min-h-[36px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -241,7 +241,7 @@ export function VisitActionFooter({
 					data-testid="visit-more-action-print-043u"
 					onClick={() => {
 						if (handlePrintForm043uFast) handlePrintForm043uFast();
-						setFastPrintDocType("form043u");
+						setFastPrintDocType("medical_card");
 						setIsFastPrintModalOpen(true);
 					}}
 				>

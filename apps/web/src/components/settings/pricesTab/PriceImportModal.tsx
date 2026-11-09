@@ -8,7 +8,7 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { PriceListMappingDiffView } from "../../pricing/PriceListMappingDiffView";
+import { PriceListMappingDiffView } from "../../catalog/mappingDiff/PriceListMappingDiffView";
 import type { PriceImportModalProps } from "./types";
 
 export function PriceImportModal({
@@ -178,14 +178,14 @@ export function PriceImportModal({
 										<button
 											type="button"
 											data-testid="btn-flat-import-commit"
-											disabled={isScanningPricelist || isCommittingImport}
-											onClick={() =>
+											onClick={() => {
+												if (isScanningPricelist || isCommittingImport) return;
 												onDirectFlatImport?.({
 													fileBase64: scannerFile.base64,
 													filename: scannerFile.name,
-												})
-											}
-											className="primary-button h-8 px-3 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 flex-1 sm:flex-initial"
+												});
+											}}
+											className="primary-button h-8 px-3 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-initial"
 										>
 											<Sparkles size={13} />
 											<span>
@@ -197,14 +197,14 @@ export function PriceImportModal({
 										<button
 											type="button"
 											data-testid="btn-flat-import-preview"
-											disabled={isScanningPricelist || isCommittingImport}
-											onClick={() =>
+											onClick={() => {
+												if (isScanningPricelist || isCommittingImport) return;
 												onRunScannerRequest({
 													fileBase64: scannerFile.base64,
 													filename: scannerFile.name,
-												})
-											}
-											className="secondary-button h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+												});
+											}}
+											className="secondary-button h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center justify-center gap-1 cursor-pointer"
 										>
 											<span>Предпросмотр</span>
 										</button>
@@ -226,18 +226,14 @@ export function PriceImportModal({
 								<button
 									type="button"
 									data-testid="btn-flat-text-commit"
-									disabled={
-										isScanningPricelist ||
-										isCommittingImport ||
-										!scannerText.trim()
-									}
-									onClick={() =>
+									onClick={() => {
+										if (isScanningPricelist || isCommittingImport || !scannerText.trim()) return;
 										onDirectFlatImport?.({
 											rawContent: scannerText,
 											filename: "pricelist_text.csv",
-										})
-									}
-									className="primary-button h-8 px-3 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+										});
+									}}
+									className="primary-button h-8 px-3 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
 								>
 									<Sparkles size={13} />
 									<span>
@@ -248,15 +244,11 @@ export function PriceImportModal({
 								</button>
 								<button
 									type="button"
-									disabled={
-										isScanningPricelist ||
-										isCommittingImport ||
-										!scannerText.trim()
-									}
-									onClick={() =>
-										onRunScannerRequest({ rawContent: scannerText })
-									}
-									className="secondary-button h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+									onClick={() => {
+										if (isScanningPricelist || isCommittingImport || !scannerText.trim()) return;
+										onRunScannerRequest({ rawContent: scannerText });
+									}}
+									className="secondary-button h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 								>
 									<span>
 										{isScanningPricelist ? "Сканирование..." : "Предпросмотр"}

@@ -115,6 +115,8 @@ export const serviceCatalogItemFields = {
 	active: z.boolean(),
 	order804nCode: z.string().trim().max(60).optional().nullable(),
 	materialsCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	labCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	tierPrices: z.record(z.string(), z.number()).optional().nullable(),
 };
 
 /**
@@ -129,6 +131,8 @@ export const createServiceCatalogItemSchema = z.object({
 	active: serviceCatalogItemFields.active.default(true),
 	order804nCode: serviceCatalogItemFields.order804nCode.default(null),
 	materialsCostRub: serviceCatalogItemFields.materialsCostRub.default(0),
+	labCostRub: serviceCatalogItemFields.labCostRub.default(0),
+	tierPrices: serviceCatalogItemFields.tierPrices.default(null),
 });
 
 /** Правка услуги: интерфейс шлёт частичный набор полей. */
@@ -143,6 +147,8 @@ export const updateServiceCatalogItemSchema = z.object({
 	active: serviceCatalogItemFields.active.optional(),
 	order804nCode: serviceCatalogItemFields.order804nCode.optional(),
 	materialsCostRub: serviceCatalogItemFields.materialsCostRub.optional(),
+	labCostRub: serviceCatalogItemFields.labCostRub.optional(),
+	tierPrices: serviceCatalogItemFields.tierPrices.optional(),
 });
 
 /*

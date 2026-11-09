@@ -1,6 +1,6 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
-import { labItems, services } from "../../../db/schema.js";
+import { labItems, serviceCatalogItems } from "../../../db/schema.js";
 import { calculateBusinessDaysDueDate, CANONICAL_DENTAL_LAB_PRESETS } from "../types.js";
 import type {
 	LabOrderCostBreakdown,
@@ -39,44 +39,48 @@ export async function fetchLabPriceFromDb(
 ): Promise<{ costRub: number; priceRub: number }> {
 	const normalizedKey = materialOrConstruction.toLowerCase().replace(/[-\s]/g, "_");
 
-	// 1. Поиск в каталоге услуг клиники (services) по категории ортопедии или совпадению названия/материала
+	// 1. Поиск в каталоге услуг клиники (serviceCatalogItems) по категории ортопедии или совпадению названия/материала
 	try {
 		const foundServices = await tx
 			.select({
-				id: services.id,
-				title: services.title,
-				basePriceRub: services.basePriceRub,
-				materialsCostRub: services.materialsCostRub,
-				contractorId: services.contractorId,
+				id: serviceCatalogItems.id,
+				title: serviceCatalogItems.title,
+				basePriceRub: serviceCatalogItems.basePriceRub,
+				materialsCostRub: serviceCatalogItems.materialsCostRub,
+				labCostRub: serviceCatalogItems.labCostRub,
 			})
-			.from(services)
+			.from(serviceCatalogItems)
 			.where(
 				and(
-					eq(services.organizationId, orgId),
-					eq(services.active, true),
+					eq(serviceCatalogItems.organizationId, orgId),
+					eq(serviceCatalogItems.isActive, true),
 					or(
-						eq(services.category, "prosthetics"),
-						ilike(services.title, `%${materialOrConstruction}%`),
+						eq(serviceCatalogItems.category, "prosthetics"),
+						ilike(serviceCatalogItems.title, `%${materialOrConstruction}%`),
 					),
 				),
 			)
 			.limit(5);
 
 		if (foundServices.length > 0) {
-			const matched = laboratoryId
-				? foundServices.find((s) => s.contractorId === laboratoryId) ?? foundServices[0]!
-				: foundServices[0]!;
+			const matched = foundServices[0]!;
 
 			const basePrice = Number(matched.basePriceRub) || 0;
+			const labCost = Number(matched.labCostRub) || 0;
 			const materialsCost = Number(matched.materialsCostRub) || 0;
-			const resolvedCost = materialsCost > 0 ? materialsCost : Math.round(basePrice * 0.35);
+			const resolvedCost =
+				labCost > 0
+					? labCost
+					: materialsCost > 0
+						? materialsCost
+						: Math.round(basePrice * 0.35);
 
 			if (resolvedCost > 0 && basePrice > 0) {
 				return { costRub: resolvedCost, priceRub: basePrice };
 			}
 		}
 	} catch {
-		// При сбоях запроса к services переходим к lab_items
+		// При сбоях запроса к serviceCatalogItems переходим к lab_items
 	}
 
 	// 2. Поиск в исторических позициях lab_items по типу материала

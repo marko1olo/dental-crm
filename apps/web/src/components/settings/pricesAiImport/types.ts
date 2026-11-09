@@ -5,7 +5,7 @@ import type {
 	ServiceCategory,
 	TabularImportAnalysis,
 } from "@dental/shared";
-import type { IngestedMappingItem } from "../../pricing/PriceListMappingDiffView";
+import type { IngestedMappingItem } from "../../catalog/mappingDiff/PriceListMappingDiffView";
 import type { SettingsAccessHeaders } from "../staffMutationRequest";
 
 export type PricelistSourceMode = "excel_csv" | "text" | "photo" | "scan";

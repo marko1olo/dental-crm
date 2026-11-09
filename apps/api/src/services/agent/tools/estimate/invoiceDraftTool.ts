@@ -7,12 +7,12 @@
  * - Creates optional draft treatment plan with two-phase supervised confirmation.
  */
 
-import { and, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../../../db/client.js";
 import {
 	patients,
-	services,
+	serviceCatalogItems,
 	treatmentPlans,
 } from "../../../../db/schema.js";
 import type { ToolDefinition } from "../tool.js";
@@ -136,23 +136,26 @@ export const calculateTreatmentEstimateTool: ToolDefinition<
 			const resolvedServiceName = raw.serviceName;
 
 			if (resolvedBasePrice === undefined || resolvedBasePrice === null) {
-				// Attempt 1: Query clinic database services table
+				// Attempt 1: Query clinic database serviceCatalogItems table
 				if (targetDb) {
 					try {
 						if (resolvedNomCode) {
 							const [matchByCode] = await targetDb
 								.select({
-									basePriceRub: services.basePriceRub,
-									category: services.category,
-									title: services.title,
-									code: services.code,
+									basePriceRub: serviceCatalogItems.basePriceRub,
+									category: serviceCatalogItems.category,
+									title: serviceCatalogItems.title,
+									code: serviceCatalogItems.code,
 								})
-								.from(services)
+								.from(serviceCatalogItems)
 								.where(
 									and(
-										eq(services.organizationId, ctx.organizationId),
-										eq(services.code, resolvedNomCode),
-										eq(services.active, true),
+										eq(serviceCatalogItems.organizationId, ctx.organizationId),
+										or(
+											eq(serviceCatalogItems.code, resolvedNomCode),
+											eq(serviceCatalogItems.order804nCode, resolvedNomCode),
+										),
+										eq(serviceCatalogItems.isActive, true),
 									),
 								)
 								.limit(1);
@@ -166,17 +169,17 @@ export const calculateTreatmentEstimateTool: ToolDefinition<
 						if (resolvedBasePrice === undefined || resolvedBasePrice === null) {
 							const [matchByTitle] = await targetDb
 								.select({
-									basePriceRub: services.basePriceRub,
-									category: services.category,
-									title: services.title,
-									code: services.code,
+									basePriceRub: serviceCatalogItems.basePriceRub,
+									category: serviceCatalogItems.category,
+									title: serviceCatalogItems.title,
+									code: serviceCatalogItems.code,
 								})
-								.from(services)
+								.from(serviceCatalogItems)
 								.where(
 									and(
-										eq(services.organizationId, ctx.organizationId),
-										ilike(services.title, `%${resolvedServiceName}%`),
-										eq(services.active, true),
+										eq(serviceCatalogItems.organizationId, ctx.organizationId),
+										ilike(serviceCatalogItems.title, `%${resolvedServiceName}%`),
+										eq(serviceCatalogItems.isActive, true),
 									),
 								)
 								.limit(1);

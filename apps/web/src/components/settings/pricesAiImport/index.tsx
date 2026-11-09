@@ -1,6 +1,6 @@
 import { FileSpreadsheet, Sparkles, X } from "lucide-react";
 import React from "react";
-import { PriceListMappingDiffView } from "../../pricing/PriceListMappingDiffView";
+import { PriceListMappingDiffView } from "../../catalog/mappingDiff/PriceListMappingDiffView";
 import "../SettingsPricesTab.css";
 import { PricesImportActionToolbar } from "./PricesImportActionToolbar";
 import { PricesImportDropzone } from "./PricesImportDropzone";

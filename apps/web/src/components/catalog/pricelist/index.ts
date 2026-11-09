@@ -1,5 +1,5 @@
 /**
- * DENTE Dental CRM — Statutory Minzdrav Order № 804n Service Catalog & Pricelist Domain Module
+ * DENTE Dental CRM — Service Catalog & Clinical Pricelist Domain Module (SSOT, Mandate 8x)
  */
 
 export * from "../mappingDiff";

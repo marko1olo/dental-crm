@@ -14,7 +14,7 @@ import {
 	type ServicePricelistItem,
 } from "../../catalog/pricelist/servicePricelistPresets";
 import { showToast } from "../../GlobalToast";
-import type { ExistingCatalogReference } from "../../pricing/PriceListMappingDiffView";
+import type { ExistingCatalogReference } from "../../catalog/mappingDiff/PriceListMappingDiffView";
 
 export function buildExistingCatalogReferences(
 	catalog: readonly ServiceCatalogItem[],
@@ -173,7 +173,7 @@ export async function parseAndImportCsvText(
 export function mapScanItemsToDiffItems(
 	// biome-ignore lint/suspicious/noExplicitAny: scanner response payload
 	itemsList: any[],
-): import("../../pricing/PriceListMappingDiffView").IngestedMappingItem[] {
+): import("../../catalog/mappingDiff/PriceListMappingDiffView").IngestedMappingItem[] {
 	return itemsList.map((it: any, idx: number) => ({
 		id: it.id || `scan-${idx}-${Date.now()}`,
 		sourceLineNumber: it.sourceLineNumber || idx + 1,

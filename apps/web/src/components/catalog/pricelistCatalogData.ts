@@ -188,12 +188,25 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 ];
 
 /**
- * 0 float-ошибок: конвертация копеек в рубли и обратно
+ * 0 float-ошибок: конвертация копеек в рубли и обратно (DEF-PRICE-02)
  */
 export function formatKopecksToRubles(kopecks: number): string {
 	const safeKopecks = Math.round(Number.isFinite(kopecks) ? kopecks : 0);
-	const rubles = Math.floor(safeKopecks / 100);
-	return `${rubles.toLocaleString("ru-RU")}\u00A0₽`;
+	const rubles = safeKopecks / 100;
+	return (
+		new Intl.NumberFormat("ru-RU", {
+			minimumFractionDigits: safeKopecks % 100 === 0 ? 0 : 2,
+			maximumFractionDigits: 2,
+		}).format(rubles) + "\u00A0₽"
+	);
+}
+
+export function kopecksToRublesExact(kopecks: number): string {
+	const safeKopecks = Math.round(Number.isFinite(kopecks) ? kopecks : 0);
+	if (safeKopecks % 100 === 0) {
+		return String(safeKopecks / 100);
+	}
+	return (safeKopecks / 100).toFixed(2);
 }
 
 export function parseRublesToKopecks(rublesInput: string | number): number {
@@ -521,6 +534,153 @@ export function saveCanonicalPricelist(
 		window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
 	} catch (e) {
 		console.warn("Failed to persist pricelist to storage", e);
+	}
+}
+
+/**
+ * Реальная загрузка прейскуранта из базы данных PostgreSQL 18 через Fastify API (DEF-PRICE-01).
+ * Ликвидирует зависимость от Potemkin LocalStorage.
+ */
+export async function fetchPricelistFromBackend(
+	headers?: Record<string, string>,
+): Promise<readonly PricelistStudioItem[]> {
+	if (typeof window === "undefined") return CANONICAL_PRICELIST_PRESETS;
+	try {
+		const res = await fetch("/api/pricelist", {
+			method: "GET",
+			headers: {
+				Accept: "application/json",
+				...headers,
+			},
+		});
+		if (!res.ok) {
+			console.warn(`[pricelist] GET /api/pricelist status ${res.status}, using offline cache`);
+			return loadCanonicalPricelist();
+		}
+		const data = await res.json();
+		const rawItems: any[] = Array.isArray(data.items) ? data.items : [];
+		if (rawItems.length === 0) {
+			return loadCanonicalPricelist();
+		}
+		const mapped: PricelistStudioItem[] = rawItems.map((item, idx) => {
+			const rawPrice = item.basePriceRub ?? item.priceRub ?? 0;
+			const priceKopecks = Number.isFinite(item.priceKopecks)
+				? Math.round(item.priceKopecks)
+				: Math.round(Number(rawPrice) * 100);
+			const rawCost = item.materialsCostRub ?? item.materialCostRub ?? item.costRub ?? 0;
+			const costKopecks = Number.isFinite(item.costKopecks)
+				? Math.round(item.costKopecks)
+				: Math.round(Number(rawCost) * 100);
+			return {
+				id: item.id || `srv-${idx}`,
+				code: item.code || item.order804nCode || `ПОЗ-${idx + 1}`,
+				serviceCode: item.code || item.order804nCode || `ПОЗ-${idx + 1}`,
+				regulatoryCode: item.order804nCode || item.code,
+				title: item.title || "Стоматологическая услуга",
+				category: (item.category as PricelistCategoryKey) || "therapy",
+				priceKopecks,
+				costKopecks,
+				durationMin: item.durationMinutes || item.durationMin || 30,
+				isActive: item.active !== false && item.isActive !== false,
+				tags: item.tags || item.aliases || [],
+				isBundle: Boolean(item.isBundle),
+			};
+		});
+		saveCanonicalPricelist(mapped);
+		return mapped;
+	} catch (err) {
+		console.warn("[pricelist] fetch /api/pricelist failed:", err);
+		return loadCanonicalPricelist();
+	}
+}
+
+/**
+ * Реальная синхронизация отдельной позиции в базу данных PostgreSQL 18 через Fastify API (DEF-PRICE-01).
+ */
+export async function syncServiceItemToBackend(
+	item: Partial<PricelistStudioItem> & { id?: string; title: string; priceKopecks: number },
+	headers?: Record<string, string>,
+): Promise<{ success: boolean; id?: string }> {
+	if (typeof window === "undefined") return { success: false };
+	const basePriceRub = Math.round(item.priceKopecks) / 100;
+	const materialsCostRub = item.costKopecks ? Math.round(item.costKopecks) / 100 : 0;
+	const payload = {
+		code: item.code || "",
+		title: item.title,
+		category: item.category || "therapy",
+		specialty: "therapist",
+		basePriceRub,
+		durationMinutes: item.durationMin || 30,
+		taxDeductible: true,
+		active: item.isActive !== false,
+		materialsCostRub,
+		order804nCode: item.regulatoryCode || item.code || null,
+	};
+
+	const isExisting = item.id && !item.id.startsWith("srv-") && !item.id.startsWith("imp-") && !item.id.startsWith("bundle-");
+	const url = isExisting ? `/api/pricelist/${item.id}` : "/api/pricelist";
+	const method = isExisting ? "PUT" : "POST";
+
+	try {
+		const res = await fetch(url, {
+			method,
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				...headers,
+			},
+			body: JSON.stringify(payload),
+		});
+		if (!res.ok) {
+			console.warn(`[pricelist] ${method} ${url} failed with ${res.status}`);
+			return { success: false };
+		}
+		const data = await res.json();
+		return { success: true, id: data.id || item.id };
+	} catch (err) {
+		console.warn(`[pricelist] syncServiceItemToBackend error:`, err);
+		return { success: false };
+	}
+}
+
+/**
+ * Пакетная синхронизация прейскуранта в боевой PostgreSQL 18 (DEF-PRICE-01).
+ */
+export async function batchSyncPricelistToBackend(
+	items: readonly PricelistStudioItem[],
+	headers?: Record<string, string>,
+): Promise<boolean> {
+	if (typeof window === "undefined") return false;
+	try {
+		const batchItems = items.map((it) => ({
+			code: it.code,
+			order804nCode: it.regulatoryCode || it.code,
+			title: it.title,
+			category: it.category,
+			specialty: "therapist",
+			priceRub: Math.round(it.priceKopecks) / 100,
+			costRub: Math.round(it.costKopecks) / 100,
+			durationMinutes: it.durationMin,
+			suggestedAction: "update_existing",
+			matchedExistingServiceId: it.id && !it.id.startsWith("srv-") ? it.id : undefined,
+		}));
+
+		const res = await fetch("/api/pricelist/batch-import", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				...headers,
+			},
+			body: JSON.stringify({
+				items: batchItems,
+				collisionStrategy: "update_existing",
+			}),
+		});
+		return res.ok;
+	} catch (err) {
+		console.warn("[pricelist] batchSyncPricelistToBackend error:", err);
+		return false;
 	}
 }
 
