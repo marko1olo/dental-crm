@@ -63,6 +63,7 @@ export const FamilyWalletModalView: React.FC<FamilyWalletModalViewProps> =
 
 				<FamilyWalletModalFooterActions
 					activeTab={activeTab}
+					savingPermissions={logic.savingPermissions}
 					onNavigateTab={setActiveTab}
 					onSavePermissions={handleSavePermissions}
 					onClose={onClose}

@@ -4,12 +4,13 @@
  * Mandate 8b: strictly <= 120 lines.
  */
 
-import { Check, Plus, X } from "lucide-react";
+import { Check, Loader2, Plus, X } from "lucide-react";
 import React from "react";
 import type { FamilyWalletTab } from "./types";
 
 export interface FamilyWalletModalFooterActionsProps {
 	readonly activeTab: FamilyWalletTab;
+	readonly savingPermissions?: boolean | undefined;
 	readonly onNavigateTab: (tab: FamilyWalletTab) => void;
 	readonly onSavePermissions: () => void;
 	readonly onClose: () => void;
@@ -18,6 +19,7 @@ export interface FamilyWalletModalFooterActionsProps {
 export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterActionsProps> =
 	React.memo(function FamilyWalletModalFooterActions({
 		activeTab,
+		savingPermissions = false,
 		onNavigateTab,
 		onSavePermissions,
 		onClose,
@@ -34,10 +36,15 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 							<button
 								type="button"
 								onClick={onSavePermissions}
-								className="min-h-[44px] sm:min-h-[36px] h-9 px-3 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
+								disabled={savingPermissions}
+								className="min-h-[44px] sm:min-h-[36px] h-9 px-3 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] disabled:opacity-50 text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
 							>
-								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>Сохранить права</span>
+								{savingPermissions ? (
+									<Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+								) : (
+									<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+								)}
+								<span>{savingPermissions ? "Сохранение..." : "Сохранить права"}</span>
 							</button>
 
 							<button

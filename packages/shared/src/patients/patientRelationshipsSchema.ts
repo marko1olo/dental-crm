@@ -154,6 +154,7 @@ export const createPatientRelationshipDtoSchema = z
 		canViewMedicalRecord: z.boolean().optional().default(false),
 		canSignConsents: z.boolean().optional().default(false),
 		canSpendFamilyWallet: z.boolean().optional().default(false),
+		spendLimitKopecks: z.number().int().nonnegative().optional(),
 		documentProofNumber: z.string().max(255).optional().nullable(),
 		notes: z.string().max(2000).optional().nullable(),
 		// Backward compatibility aliases
@@ -182,6 +183,7 @@ export const patchPatientRelationshipDtoSchema = z
 		canViewMedicalRecord: z.boolean().optional(),
 		canSignConsents: z.boolean().optional(),
 		canSpendFamilyWallet: z.boolean().optional(),
+		spendLimitKopecks: z.number().int().nonnegative().optional(),
 		documentProofNumber: z.string().max(255).optional().nullable(),
 		notes: z.string().max(2000).optional().nullable(),
 		// Backward compatibility aliases
@@ -222,6 +224,7 @@ export const patientRelationshipItemSchema = z.object({
 	canViewMedicalRecord: z.boolean(),
 	canSignConsents: z.boolean(),
 	canSpendFamilyWallet: z.boolean(),
+	spendLimitKopecks: z.number().int().nonnegative().optional(),
 	documentProofNumber: z.string().nullable().optional(),
 	notes: z.string().nullable().optional(),
 	createdAt: z.string(),

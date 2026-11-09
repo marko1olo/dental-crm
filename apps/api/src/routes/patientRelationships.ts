@@ -266,7 +266,11 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 
 		// Verify both patients belong to this organization
 		const existingPatients = await db
-			.select({ id: patients.id, fullName: patients.fullName })
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				familyGroupId: patients.familyGroupId,
+			})
 			.from(patients)
 			.where(
 				and(
@@ -330,6 +334,35 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				error: "Internal Server Error",
 				message: "Не удалось сохранить связь родственников",
 			});
+		}
+
+		// Mandate 8bf: Synchronize familyGroupId between related patients
+		const p1 = existingPatients.find((p) => p.id === patientId);
+		const p2 = existingPatients.find((p) => p.id === relatedPatientId);
+		const sharedFamilyGroupId = p1?.familyGroupId || p2?.familyGroupId;
+		if (sharedFamilyGroupId) {
+			if (!p1?.familyGroupId) {
+				await db
+					.update(patients)
+					.set({ familyGroupId: sharedFamilyGroupId })
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							eq(patients.id, patientId),
+						),
+					);
+			}
+			if (!p2?.familyGroupId) {
+				await db
+					.update(patients)
+					.set({ familyGroupId: sharedFamilyGroupId })
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							eq(patients.id, relatedPatientId),
+						),
+					);
+			}
 		}
 
 		const relatedPatient = existingPatients.find(

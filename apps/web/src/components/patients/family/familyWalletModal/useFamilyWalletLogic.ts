@@ -32,6 +32,7 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 		activeTab,
 		setActiveTab,
 		loading: data.loading,
+		savingPermissions: data.savingPermissions,
 		submitting: mutations.submitting,
 		familyData: data.familyData,
 		familyBalanceNumeric: data.familyBalanceNumeric,
