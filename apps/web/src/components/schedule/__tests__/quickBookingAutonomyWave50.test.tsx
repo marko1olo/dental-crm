@@ -15,12 +15,32 @@
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { registerHooks } from "node:module";
 import path from "node:path";
 import { describe, it, beforeEach } from "node:test";
 import { fileURLToPath } from "node:url";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { Appointment, Dashboard, Patient } from "@dental/shared";
+
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Ignore if already registered
+	}
+}
 
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 

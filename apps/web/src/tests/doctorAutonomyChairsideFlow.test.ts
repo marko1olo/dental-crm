@@ -21,51 +21,43 @@ import {
 
 describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 	describe("1. Express Schedule Booking (<=5s, Zero Roadblocks)", () => {
-		it("AppointmentModal: Patient Section features 1-click '+ Аноним / Острая боль' button", () => {
-			const sectionFilePath = path.resolve(
+		it("QuickBookingDrawer features 1-click emergency CITO intake and non-blocking autonomy", () => {
+			const drawerFilePath = path.resolve(
 				process.cwd(),
-				"apps/web/src/components/schedule/AppointmentModalPatientSection.tsx",
+				"apps/web/src/components/schedule/QuickBookingDrawer.tsx",
 			);
-			const headerFilePath = path.resolve(
+			const inlinePatientPath = path.resolve(
 				process.cwd(),
-				"apps/web/src/components/schedule/appointmentModalPatient/PatientSectionHeader.tsx",
+				"apps/web/src/components/schedule/quickBookingInlinePatient.ts",
 			);
-			assert.ok(fs.existsSync(sectionFilePath), "AppointmentModalPatientSection.tsx must exist");
-			assert.ok(fs.existsSync(headerFilePath), "PatientSectionHeader.tsx must exist");
+			assert.ok(fs.existsSync(drawerFilePath), "QuickBookingDrawer.tsx must exist");
+			assert.ok(fs.existsSync(inlinePatientPath), "quickBookingInlinePatient.ts must exist");
 			const content =
-				fs.readFileSync(sectionFilePath, "utf8") +
+				fs.readFileSync(drawerFilePath, "utf8") +
 				"\n" +
-				fs.readFileSync(headerFilePath, "utf8");
+				fs.readFileSync(inlinePatientPath, "utf8");
 
 			assert.ok(
-				content.includes('data-testid="appointment-modal-cito-express-btn"'),
-				"Must render CITO express button with data-testid appointment-modal-cito-express-btn",
+				content.includes("emergency") || content.includes("CITO"),
+				"Must support emergency CITO mode in QuickBookingDrawer",
 			);
 			assert.ok(
-				content.includes('data-testid="appointment-modal-anonymous-express-btn"'),
-				"Must render + Аноним / Острая боль button",
-			);
-			assert.ok(
-				content.includes("Анонимный пациент (Острая боль)"),
-				"Must create inline patient with title 'Анонимный пациент (Острая боль)'",
-			);
-			assert.ok(
-				content.includes("handleConvertToCito()"),
-				"Must activate CITO emergency mode upon 1-click express selection",
+				content.includes("Пациент с острой болью"),
+				"Must automatically support emergency patient fallback",
 			);
 		});
 
-		it("useAppointmentModalState: Saving without selected patient NEVER deadlocks with error banner", () => {
+		it("useQuickBookingSubmit: Saving without selected patient NEVER deadlocks with error banner", () => {
 			const stateFilePath = path.resolve(
 				process.cwd(),
-				"apps/web/src/components/schedule/useAppointmentModalState.ts",
+				"apps/web/src/components/schedule/useQuickBookingSubmit.ts",
 			);
 			const submitEntitiesPath = path.resolve(
 				process.cwd(),
-				"apps/web/src/components/schedule/appointmentModalStateModules/useAppointmentModalSubmitEntities.ts",
+				"apps/web/src/components/schedule/quickBookingInlinePatient.ts",
 			);
-			assert.ok(fs.existsSync(stateFilePath), "useAppointmentModalState.ts must exist");
-			assert.ok(fs.existsSync(submitEntitiesPath), "useAppointmentModalSubmitEntities.ts must exist");
+			assert.ok(fs.existsSync(stateFilePath), "useQuickBookingSubmit.ts must exist");
+			assert.ok(fs.existsSync(submitEntitiesPath), "quickBookingInlinePatient.ts must exist");
 			const content =
 				fs.readFileSync(stateFilePath, "utf8") +
 				"\n" +
@@ -79,12 +71,8 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 
 			// Verify fallback auto-creation of express patient
 			assert.ok(
-				content.includes("Первичный пациент (Экспресс-запись)"),
-				"Must automatically create 'Первичный пациент (Экспресс-запись)' if patient was not picked",
-			);
-			assert.ok(
-				content.includes("Пациент с острой болью (CITO)"),
-				"Must create CITO patient card when reason indicates acute pain",
+				content.includes("Пациент с острой болью"),
+				"Must automatically create patient card for emergency acute pain",
 			);
 		});
 

@@ -17,6 +17,7 @@
  */
 
 import type { Appointment } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
   CLINIC_DAY_END_MINUTES,
   CLINIC_DAY_START_MINUTES,
@@ -324,7 +325,7 @@ export async function createSmartSequentialAppointment(
     const url = `${apiUrlPrefix}/api/appointments/${parentAppointment.id}/next-stage`;
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
 
@@ -357,7 +358,7 @@ export async function createSmartSequentialAppointment(
           const rollbackUrl = `${apiUrlPrefix}/api/appointments/${created.id}/status`;
           const undoRes = await fetch(rollbackUrl, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ status: "cancelled", reason: "Отмена врачом (Undo)" }),
           });
           if (undoRes.ok || isDemoOrOffline) {

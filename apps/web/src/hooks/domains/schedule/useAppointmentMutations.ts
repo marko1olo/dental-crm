@@ -114,11 +114,11 @@ export function useAppointmentMutations({
 			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c: any) => c.active);
 			draft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
-		if (!draft.doctorUserId && dashboard?.clinicSettings?.staff) {
-			const activeDocs = dashboard.clinicSettings.staff.filter(
+		if (!draft.doctorUserId) {
+			const activeDocs = (dashboard?.clinicSettings?.staff ?? []).filter(
 				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
-			if (activeDocs[0]) draft.doctorUserId = activeDocs[0].id;
+			draft.doctorUserId = activeDocs[0]?.id || auth?.user?.id || null;
 		}
 	}
 
@@ -149,13 +149,21 @@ export function useAppointmentMutations({
 		}
 		const draft: AppointmentScheduleDraft = { ...rawDraft };
 		fillDefaultResources(draft);
+		if (!draft.patientId && sourceAppointment?.patientId) {
+			draft.patientId = sourceAppointment.patientId;
+		}
 
 		const missing = appointmentScheduleMissingFields(
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
 			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
-		);
+		).filter((m) => {
+			// Mandate 8e: не блокируем сохранение, если не выбран врач/кресло при автодефолтах
+			if (m.includes("врач") && draft.doctorUserId) return false;
+			if (m.includes("кресл") && draft.chairId) return false;
+			return true;
+		});
 		if (missing.length) {
 			const message = `Перед сохранением записи: ${missing.join("; ")}.`;
 			setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: message }));
@@ -341,16 +349,18 @@ export function useAppointmentMutations({
 			);
 			activeNewDraft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
-		if (!activeNewDraft.doctorUserId && dashboard?.clinicSettings?.staff) {
-			const activeDocs = dashboard.clinicSettings.staff.filter(
+		if (!activeNewDraft.doctorUserId) {
+			const activeDocs = (dashboard?.clinicSettings?.staff ?? []).filter(
 				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
-			if (activeDocs.length > 0 && activeDocs[0]) {
-				activeNewDraft.doctorUserId = activeDocs[0].id;
-			}
+			activeNewDraft.doctorUserId = activeDocs[0]?.id || auth?.user?.id || null;
 		}
 
-		const missing = newAppointmentMissingFields(activeNewDraft);
+		const missing = newAppointmentMissingFields(activeNewDraft).filter((m) => {
+			if (m.includes("врач") && activeNewDraft.doctorUserId) return false;
+			if (m.includes("кресл") && activeNewDraft.chairId) return false;
+			return true;
+		});
 		if (missing.length) {
 			const message = `Перед созданием записи: ${missing.join("; ")}.`;
 			setNewAppointmentError(message);

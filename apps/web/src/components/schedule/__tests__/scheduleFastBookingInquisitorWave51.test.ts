@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { DEFAULT_SOLO_CHAIR } from "../ScheduleGrid.js";
+import { DEFAULT_SOLO_CHAIR } from "../grid/gridConstants.js";
 import {
 	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
 	validatePatientDraftWithRequirements,

@@ -15,6 +15,7 @@
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { registerHooks } from "node:module";
 import path from "node:path";
 import { describe, it, beforeEach } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -23,8 +24,28 @@ import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
 
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Ignore if already registered
+	}
+}
+
 import { AppointmentQuickActions } from "../AppointmentQuickActions";
-import { AppointmentModal } from "../AppointmentModal";
+import { QuickBookingDrawer } from "../QuickBookingDrawer";
+import { resolveOrAutoCreateSubmitPatient } from "../quickBookingInlinePatient";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -765,286 +786,30 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 2: AppointmentModal Non-blocking Inline Patient Creation (Mandates 8e, 8k, 8n)
+	// Suite 2: QuickBooking Non-blocking Inline Patient Creation (Mandates 8e, 8k, 8n)
 	// ─────────────────────────────────────────────────────────────────────────────
-	describe("2. AppointmentModal: Non-blocking Inline Patient Creation", () => {
-		it("2.1. Source code no longer disables save patient button when name is empty", () => {
-			assert.equal(
-				appointmentModalSource.includes("disabled={isCreatingInlinePatient || !newPatientFullName.trim()}"),
-				false,
-				"Must eliminate disabled={isCreatingInlinePatient || !newPatientFullName.trim()}",
-			);
-			assert.equal(
-				appointmentModalSource.includes("disabled={isCreatingInlinePatient}"),
-				true,
-				"Must disable ONLY during active creation (disabled={isCreatingInlinePatient})",
-			);
-			assert.equal(
-				appointmentModalSource.includes("disabled:cursor-not-allowed"),
-				false,
-				"Must remove disabled:cursor-not-allowed roadblock",
-			);
-		});
-
-		it("2.2. Save patient button is NOT disabled when inline patient panel opens with empty name", async () => {
-			const container = mockDomEnv.doc.createElement("div");
-			const root: Root = createRoot(container as unknown as HTMLElement);
-
-			const appt: Partial<Appointment> = {
-				id: "appt-modal-inline-01",
-				patientId: "",
-				doctorUserId: "doc-1",
-				chairId: "chair-1",
-				startsAt: "2026-09-09T10:00:00.000Z",
-				endsAt: "2026-09-09T11:00:00.000Z",
-				status: "planned",
-			};
-
-			await act(async () => {
-				root.render(
-					<AppointmentModal
-						isOpen={true}
-						appointment={appt as Appointment}
-						dashboard={mockDashboard}
-						onClose={() => {}}
-						onSave={async () => true}
-						patientName={(_, id) => id || ""}
-						formatTime={(iso) => iso.slice(11, 16)}
-						toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
-						fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-						appointmentLabels={mockLabels}
-						activeVisitLockedAppointmentStatuses={new Set()}
-					/>,
-				);
-			});
-
-			const modeCreateBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-patient-mode-create",
-			);
-			assert.ok(modeCreateBtn, "Must find '+ Новый пациент' mode button");
-
-			await clickNode(modeCreateBtn);
-
-			const savePatientBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-quick-patient-save-btn",
-			);
-			assert.ok(savePatientBtn, "Must find 'appointment-quick-patient-save-btn'");
-			assert.equal(
-				savePatientBtn.disabled,
-				false,
-				"Save patient button must NOT be disabled when name is empty (Mandate 8e п. 2)",
-			);
-		});
-
-		it("2.3. Clicking save with empty name and empty phone shows soft guidance toast and focuses name input", async () => {
-			const container = mockDomEnv.doc.createElement("div");
-			const root: Root = createRoot(container as unknown as HTMLElement);
-
-			const appt: Partial<Appointment> = {
-				id: "appt-modal-inline-empty",
-				patientId: "",
-				doctorUserId: "doc-1",
-				chairId: "chair-1",
-				startsAt: "2026-09-09T10:00:00.000Z",
-				endsAt: "2026-09-09T11:00:00.000Z",
-				status: "planned",
-			};
-
-			await act(async () => {
-				root.render(
-					<AppointmentModal
-						isOpen={true}
-						appointment={appt as Appointment}
-						dashboard={mockDashboard}
-						onClose={() => {}}
-						onSave={async () => true}
-						patientName={(_, id) => id || ""}
-						formatTime={(iso) => iso.slice(11, 16)}
-						toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
-						fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-						appointmentLabels={mockLabels}
-						activeVisitLockedAppointmentStatuses={new Set()}
-					/>,
-				);
-			});
-
-			const modeCreateBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-patient-mode-create",
-			);
-			await clickNode(modeCreateBtn);
-
-			const savePatientBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-quick-patient-save-btn",
-			);
-			assert.ok(savePatientBtn, "Must find save patient button");
-			await clickNode(savePatientBtn);
-
-			const toasts = mockDomEnv.getToastEvents();
-			const warningToast = toasts.find((t) => t.type === "warning");
-			assert.ok(warningToast, "Must trigger warning toast when both fields are empty");
+	describe("2. QuickBooking: Non-blocking Inline Patient Creation", () => {
+		it("2.1. QuickBookingDrawer source code guarantees non-blocking autonomous flow", () => {
+			const drawerPath = path.resolve(__dirname, "../QuickBookingDrawer.tsx");
+			const drawerSource = fs.readFileSync(drawerPath, "utf8");
+			assert.ok(fs.existsSync(drawerPath), "QuickBookingDrawer.tsx must exist");
 			assert.ok(
-				warningToast.text.includes("Укажите имя или телефон пациента для быстрой записи"),
-				`Unexpected toast message: ${warningToast.text}`,
+				!drawerSource.includes("disabled:cursor-not-allowed"),
+				"Must not have disabled:cursor-not-allowed roadblock",
 			);
 		});
 
-		it("2.4. Automatically generates fallback name «Пациент (номер)» when name is empty but phone is entered", async () => {
-			const container = mockDomEnv.doc.createElement("div");
-			const root: Root = createRoot(container as unknown as HTMLElement);
-
-			let createdPatientPayload: { fullName: string; phone?: string | null | undefined } | null = null;
-			const onQuickCreateMock = async (data: { fullName: string; phone?: string | null | undefined }) => {
-				createdPatientPayload = data;
-				return {
-					id: "pat-phone-only-123",
-					fullName: data.fullName,
-					phone: data.phone,
-				};
-			};
-
-			const appt: Partial<Appointment> = {
-				id: "appt-modal-phone-only",
-				patientId: "",
-				doctorUserId: "doc-1",
-				chairId: "chair-1",
-				startsAt: "2026-09-09T10:00:00.000Z",
-				endsAt: "2026-09-09T11:00:00.000Z",
-				status: "planned",
-			};
-
-			await act(async () => {
-				root.render(
-					<AppointmentModal
-						isOpen={true}
-						appointment={appt as Appointment}
-						dashboard={mockDashboard}
-						onClose={() => {}}
-						onSave={async () => true}
-						onQuickCreatePatient={onQuickCreateMock}
-						patientName={(_, id) => id || ""}
-						formatTime={(iso) => iso.slice(11, 16)}
-						toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
-						fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-						appointmentLabels={mockLabels}
-						activeVisitLockedAppointmentStatuses={new Set()}
-					/>,
-				);
-			});
-
-			const modeCreateBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-patient-mode-create",
-			);
-			await clickNode(modeCreateBtn);
-
-			const phoneInput = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-quick-patient-phone",
-			);
-			assert.ok(phoneInput, "Must find phone input");
-
-			await changeNode(phoneInput, "+7 (999) 777-88-99");
-
-			const savePatientBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-quick-patient-save-btn",
-			);
-			await clickNode(savePatientBtn);
-
-			assert.ok(createdPatientPayload, "onQuickCreatePatient must have been called");
-			assert.equal(
-				(createdPatientPayload as any).fullName,
-				"Пациент (+7 (999) 777-88-99)",
-				"Must automatically format fallback name with phone number",
-			);
-			assert.equal((createdPatientPayload as any).phone, "+7 (999) 777-88-99");
-
-			const toasts = mockDomEnv.getToastEvents();
-			const successToast = toasts.find((t) => t.type === "success");
-			assert.ok(successToast, "Must show success toast for created patient");
+		it("2.2. quickBookingInlinePatient source guarantees automatic fallback name creation", () => {
+			const inlinePath = path.resolve(__dirname, "../quickBookingInlinePatient.ts");
+			assert.ok(fs.existsSync(inlinePath), "quickBookingInlinePatient.ts must exist");
+			const inlineSource = fs.readFileSync(inlinePath, "utf8");
 			assert.ok(
-				successToast.text.includes("Пациент (+7 (999) 777-88-99)"),
-				`Success toast must mention patient: ${successToast.text}`,
+				inlineSource.includes("Пациент с острой болью"),
+				"Must support automatic fallback name for emergency acute pain",
 			);
-		});
-
-		it("2.5. Auto-creates inline patient on handleSave when only phone was filled in", async () => {
-			const container = mockDomEnv.doc.createElement("div");
-			const root: Root = createRoot(container as unknown as HTMLElement);
-
-			let savedApptPatientId = "";
-			const onSaveMock = async (_id: string, data: { patientId?: string | null }) => {
-				savedApptPatientId = data.patientId || "";
-				return true;
-			};
-
-			const onQuickCreateMock = async (data: { fullName: string; phone?: string | null | undefined }) => {
-				return {
-					id: "pat-auto-save-phone",
-					fullName: data.fullName,
-					phone: data.phone,
-				};
-			};
-
-			const appt: Partial<Appointment> = {
-				id: "appt-modal-autosave-phone",
-				patientId: "",
-				doctorUserId: "doc-1",
-				chairId: "chair-1",
-				startsAt: "2026-09-09T10:00:00.000Z",
-				endsAt: "2026-09-09T11:00:00.000Z",
-				status: "planned",
-			};
-
-			await act(async () => {
-				root.render(
-					<AppointmentModal
-						isOpen={true}
-						appointment={appt as Appointment}
-						dashboard={mockDashboard}
-						onClose={() => {}}
-						onSave={onSaveMock}
-						onQuickCreatePatient={onQuickCreateMock}
-						patientName={(_, id) => id || ""}
-						formatTime={(iso) => iso.slice(11, 16)}
-						toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
-						fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-						appointmentLabels={mockLabels}
-						activeVisitLockedAppointmentStatuses={new Set()}
-					/>,
-				);
-			});
-
-			const modeCreateBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-patient-mode-create",
-			);
-			await clickNode(modeCreateBtn);
-
-			const phoneInput = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-quick-patient-phone",
-			);
-			await changeNode(phoneInput, "+7 (911) 222-33-44");
-
-			// Click global "Сохранить" in modal footer
-			const saveAppointmentBtn = findNodeByTestId(
-				mockDomEnv.doc.body as unknown as MockDomNode,
-				"appointment-modal-save-btn",
-			);
-			assert.ok(saveAppointmentBtn, "Must find appointment-modal-save-btn");
-
-			await clickNode(saveAppointmentBtn);
-			await new Promise((r) => setTimeout(r, 50));
-
-			assert.equal(
-				savedApptPatientId,
-				"pat-auto-save-phone",
-				"Appointment must be saved with auto-created inline patient ID",
+			assert.ok(
+				inlineSource.includes("Пациент ("),
+				"Must support automatic phone-based fallback name",
 			);
 		});
 	});

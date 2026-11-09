@@ -10,7 +10,7 @@ import type {
   QuickBookingSlotInfo,
   QuickBookingStageService,
 } from "../QuickBookingDrawerTypes";
-import type { ChairDoctorShiftAssignment } from "../ScheduleGrid";
+import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
 
 export type {
   AppointmentTypePreset,

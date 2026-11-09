@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
+import type { ChairDoctorShiftAssignment } from "./grid/gridTypes";
 
 export interface QuickBookingStageService {
   id?: string | undefined;

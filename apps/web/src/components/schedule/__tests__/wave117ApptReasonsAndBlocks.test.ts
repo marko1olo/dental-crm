@@ -26,9 +26,29 @@
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { registerHooks } from "node:module";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Ignore if already registered
+	}
+}
 
 import {
 	// 1. Patient tags
@@ -66,9 +86,9 @@ import {
 } from "../AppointmentModal";
 
 import {
-	STOMX_REPRESENTATIVE_CATALOG as MODAL_REPRESENTATIVE_CATALOG,
 	getRepresentativeLegalStatus,
-} from "../../patients/PatientCardModal";
+} from "../../patients/patientCardModalModules/patientCardModalTypes";
+const MODAL_REPRESENTATIVE_CATALOG = STOMX_REPRESENTATIVE_CATALOG;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

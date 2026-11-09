@@ -83,43 +83,11 @@ export function UrgentScheduleRequestsWidget({
 	};
 
 	if (loading) {
-		return (
-			<div
-				className="rounded-xl border text-xs"
-				style={{
-					padding: "12px 16px",
-					borderColor: "var(--line)",
-					background: "var(--paper-soft)",
-					color: "var(--muted)",
-				}}
-			>
-				Загрузка срочных обращений...
-			</div>
-		);
+		return null;
 	}
 
 	if (error) {
-		return (
-			<div
-				className="rounded-xl border text-xs flex items-center justify-between gap-2"
-				style={{
-					padding: "12px 16px",
-					borderColor: "var(--bad-border, rgba(239, 68, 68, 0.3))",
-					background: "var(--bad-bg, rgba(239, 68, 68, 0.08))",
-					color: "var(--bad-fg, var(--bad))",
-				}}
-			>
-				<span>{error}</span>
-				<button
-					className="secondary-button min-h-[44px]"
-					type="button"
-					onClick={() => setReloadToken((t) => t + 1)}
-					style={{ padding: "4px 12px", fontSize: "12px" }}
-				>
-					Повторить
-				</button>
-			</div>
-		);
+		return null;
 	}
 
 	if (requests.length === 0) {

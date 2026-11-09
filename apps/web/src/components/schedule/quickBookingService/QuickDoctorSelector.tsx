@@ -1,7 +1,7 @@
 import { UserCheck } from "lucide-react";
 import React from "react";
 import { specialtyLabels } from "../../../workspaceUiLabels";
-import { formatDoctorShortName } from "../ScheduleGrid";
+import { formatDoctorShortName } from "../appointmentCardHelpers";
 
 export interface QuickDoctorSelectorProps {
   doctorUserId: string;

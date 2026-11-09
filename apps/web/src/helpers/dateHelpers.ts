@@ -312,50 +312,7 @@ export function isTechnicalBreakAppointment(
 	);
 }
 
-export function appointmentScheduleMissingFields(
-	draft: AppointmentScheduleDraft,
-	clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined,
-	staff: Dashboard["clinicSettings"]["staff"] | null | undefined,
-	resources?: {
-		chairs?: Dashboard["clinicSettings"]["chairs"] | null;
-		patients?: Dashboard["patients"] | null;
-	},
-): string[] {
-	const missing: string[] = [];
-	const activeStaff = (staff || []).filter((member) => member.active);
-	const hasDoctor = activeStaff.some(
-		(member) => member.role === "doctor" || member.role === "owner",
-	);
-	const activeChairs = resources?.chairs
-		? resources.chairs.filter((chair) => chair.active)
-		: null;
-	const patients = resources?.patients ?? null;
-
-	const isTechnicalBreak = isTechnicalBreakAppointment(draft);
-	if (!draft.patientId && !isTechnicalBreak) {
-		missing.push(
-			patients && patients.length === 0
-				? "в клинике ещё нет пациентов — создайте карточку в разделе «Пациенты»"
-				: "выберите пациента",
-		);
-	}
-	if (!draft.doctorUserId) {
-		missing.push(
-			staff && !hasDoctor
-				? "в клинике нет врача — добавьте сотрудника в настройках"
-				: "выберите врача",
-		);
-	}
-	if (!draft.chairId) {
-		missing.push(
-			activeChairs && activeChairs.length === 0
-				? "в клинике нет кресел — добавьте кресло в настройках"
-				: "выберите кресло",
-		);
-	}
-	missing.push(...appointmentScheduleDateMissingSteps(draft));
-	return missing;
-}
+export { appointmentScheduleMissingFields } from "../appHelpers/appointmentHelpers";
 
 export const appointmentReadinessLabels: Record<
 	Dashboard["appointmentReadiness"][number]["state"],

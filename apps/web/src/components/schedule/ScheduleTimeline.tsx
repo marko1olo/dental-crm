@@ -4,6 +4,7 @@ import {
 	TimelineEmptyState,
 	useTimelineNavigation,
 } from "./timelineModules";
+import { UrgentScheduleRequestsWidget } from "./UrgentScheduleRequestsWidget";
 
 export * from "./timelineModules";
 
@@ -96,6 +97,9 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 					/>
 				);
 			})}
+			<div className="schedule-widgets-container mt-4">
+				<UrgentScheduleRequestsWidget />
+			</div>
 		</div>
 	);
 }

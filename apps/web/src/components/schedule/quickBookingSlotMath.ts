@@ -1,5 +1,5 @@
 import type { Appointment } from "@dental/shared";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
+import { DEFAULT_SOLO_CHAIR } from "./grid/gridConstants";
 import { resolveChairDutyDoctor } from "./chairRosterMath";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 

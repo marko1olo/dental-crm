@@ -11,16 +11,34 @@
  */
 
 import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createAppointmentSchema, updateAppointmentSchema } from "@dental/shared";
+import { createAppointmentSchema } from "@dental/shared";
+
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Ignore if already registered
+	}
+}
+
 import { QuickAssistantSelector } from "../quickBookingService/QuickAssistantSelector";
-import { AssistantChairFields } from "../appointmentDoctorChair/AssistantChairFields";
+import { QuickResourceAllocationSection } from "../quickBookingService/QuickResourceAllocationSection";
 import { QuickBookingDrawerHeader, QuickBookingDrawerFooter } from "../QuickBookingDrawer";
-import { AppointmentModalHeaderTitle } from "../appointmentModalHeader/AppointmentModalHeaderTitle";
-import { AppointmentModalHeaderActions } from "../appointmentModalHeader/AppointmentModalHeaderActions";
-import { AppointmentModalFooter } from "../appointmentModalModules/AppointmentModalFooter";
 import { buildQuickBookingPayload } from "../quickBookingSubmitPayload";
 import { QUICK_SERVICE_PRESETS } from "../quickBookingService/quickServicePresets";
 
@@ -64,11 +82,10 @@ describe("Schedule Fast Booking & Solo Doctor Invariants (Mandates 8e, 8n, 8am)"
 			assert.ok(html.includes("Выбор ассистента строго опционален"), "Helper must emphasize non-blocking nature");
 		});
 
-		it("AssistantChairFields hides assistant completely when isSoloDoctor is true", () => {
+		it("QuickResourceAllocationSection hides assistant completely when isSoloClinic is true", () => {
 			const html = renderToStaticMarkup(
-				React.createElement(AssistantChairFields, {
-					hideAssistant: false,
-					isSoloDoctor: true,
+				React.createElement(QuickResourceAllocationSection, {
+					isSoloClinic: true,
 					assistantUserId: null,
 					setAssistantUserId: () => {},
 					assistants: [{ id: "asst-1", fullName: "Иванова А.И." }],
@@ -77,31 +94,14 @@ describe("Schedule Fast Booking & Solo Doctor Invariants (Mandates 8e, 8n, 8am)"
 					chairs: [{ id: "chair-1", name: "Кабинет 1" }],
 					startsAtLocal: "2026-11-06T10:00",
 					doctorUserId: "doc-1",
-					dutyDoctorId: "doc-1",
 					setDoctorUserId: () => {},
+					doctors: [{ id: "doc-1", fullName: "Д-р Тестов" }],
+					dutyDoc: { id: "doc-1", fullName: "Д-р Тестов" },
+					dutyDoctorHours: "09:00 - 15:00",
+					currentChair: { id: "chair-1", name: "Кабинет 1" },
 				}),
 			);
-			assert.equal(html.includes("select-appointment-assistant"), false, "Assistant select must not exist for solo doctor");
-		});
-
-		it("AssistantChairFields hides assistant when hideAssistant is true", () => {
-			const html = renderToStaticMarkup(
-				React.createElement(AssistantChairFields, {
-					hideAssistant: true,
-					isSoloDoctor: false,
-					assistantUserId: null,
-					setAssistantUserId: () => {},
-					assistants: [{ id: "asst-1", fullName: "Иванова А.И." }],
-					chairId: "chair-1",
-					setChairId: () => {},
-					chairs: [{ id: "chair-1", name: "Кабинет 1" }],
-					startsAtLocal: "2026-11-06T10:00",
-					doctorUserId: "doc-1",
-					dutyDoctorId: "doc-1",
-					setDoctorUserId: () => {},
-				}),
-			);
-			assert.equal(html.includes("select-appointment-assistant"), false, "Assistant select must be hidden when hideAssistant=true");
+			assert.equal(html.includes("select-booking-assistant"), false, "Assistant select must not exist for solo clinic");
 		});
 
 		it("createAppointmentSchema succeeds with null/undefined assistantUserId", () => {
@@ -181,39 +181,6 @@ describe("Schedule Fast Booking & Solo Doctor Invariants (Mandates 8e, 8n, 8am)"
 			assert.ok(html.includes("Острая боль"), "Must display acute pain badge text");
 		});
 
-		it("AppointmentModalHeaderTitle renders prominent CITO badge when isCito is true", () => {
-			const html = renderToStaticMarkup(
-				React.createElement(AppointmentModalHeaderTitle, {
-					headerTitle: "Приём: Иванов И.И.",
-					isNewAppointment: false,
-					currentPatientName: "Иванов И.И.",
-					isCito: true,
-					startsAtLocal: "2026-11-06T12:00",
-					endsAtLocal: "2026-11-06T12:30",
-				}),
-			);
-			assert.ok(html.includes("data-testid=\"appointment-cito-active-badge\""), "Must render cito active badge");
-			assert.ok(html.includes("СРОЧНО"), "Must display urgency label");
-		});
-
-		it("AppointmentModalHeaderActions offers 1-click 'Острая боль' conversion button", () => {
-			let converted = false;
-			const html = renderToStaticMarkup(
-				React.createElement(AppointmentModalHeaderActions, {
-					appointment: { id: "app-1", status: "planned" } as any,
-					dashboard: {} as any,
-					patientId: "pat-1",
-					currentPatientName: "Иванов И.И.",
-					isNewAppointment: false,
-					isCito: false,
-					onConvertToCito: () => { converted = true; },
-					onClose: () => {},
-				}),
-			);
-			assert.ok(html.includes("data-testid=\"convert-to-cito-btn\""), "Must render convert-to-cito button");
-			assert.ok(html.includes("Острая боль"), "Button must have clear clinical label 'Острая боль'");
-		});
-
 		it("buildQuickBookingPayload enables overbooking and emergency override for emergency mode", () => {
 			const payload = buildQuickBookingPayload({
 				params: {
@@ -273,35 +240,6 @@ describe("Schedule Fast Booking & Solo Doctor Invariants (Mandates 8e, 8n, 8am)"
 			assert.equal(html.includes("disabled"), false, "Save button must NEVER have disabled attribute (Mandate 8e)");
 			assert.ok(html.includes("min-h-[44px]"), "CTA must have minimum 44px touch height (Apple HIG)");
 			assert.ok(html.includes("bg-[var(--teal)]"), "CTA must use canonical primary accent color");
-		});
-
-		it("AppointmentModalFooter save and cancel buttons are NEVER disabled and follow button hierarchy", () => {
-			const html = renderToStaticMarkup(
-				React.createElement(AppointmentModalFooter, {
-					props: { onClose: () => {} } as any,
-					state: {
-						error: null,
-						patientId: "pat-1",
-						isInlineNewPatient: false,
-						patientSearchQuery: "",
-						newPatientFullName: "",
-						newPatientPhone: "",
-						isSoloDoctor: true,
-						isSaving: false,
-						collision: { hasCollision: false },
-						isCito: false,
-						reason: "Осмотр",
-						comment: "",
-						handleSave: () => {},
-					} as any,
-					isNewAppointment: true,
-				}),
-			);
-			assert.ok(html.includes("data-testid=\"appointment-modal-save-btn\""), "Save CTA button must render");
-			assert.equal(html.includes("disabled"), false, "Buttons must NEVER be disabled");
-			assert.ok(html.includes("min-h-[44px]"), "Save button must have >= 44px touch height");
-			assert.ok(html.includes("secondary-button"), "Cancel button must be secondary styled");
-			assert.ok(html.includes("primary-button"), "Save button must be primary styled");
 		});
 	});
 });

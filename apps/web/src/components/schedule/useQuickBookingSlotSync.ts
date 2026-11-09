@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Appointment, DentalSpecialty } from "@dental/shared";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
+import { DEFAULT_SOLO_CHAIR } from "./grid/gridConstants";
 import { resolveChairDutyDoctor } from "./chairRosterMath";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 import { resolveQuickBookingInitialValues } from "./quickBookingSlotMath";

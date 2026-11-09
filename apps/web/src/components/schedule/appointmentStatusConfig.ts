@@ -1,5 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import {
+	Ban,
 	CalendarCheck,
 	CheckCircle2,
 	PhoneCall,
@@ -50,6 +51,13 @@ export const APPOINTMENT_STATUS_CONFIG: StatusConfigItem[] = [
 		icon: CheckCircle2,
 		activeClass: "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] font-bold",
 		idleClass: "hover:bg-[var(--paper-soft)] text-[var(--ink)]",
+	},
+	{
+		status: "cancelled",
+		label: "Отменён",
+		icon: Ban,
+		activeClass: "bg-[var(--paper-soft)] text-[var(--muted)] font-bold border border-[var(--line)]",
+		idleClass: "hover:bg-[var(--paper-soft)] text-[var(--muted)]",
 	},
 	{
 		status: "no_show",

@@ -213,9 +213,15 @@ export function isTechnicalBreakAppointment(input: {
     combined.includes("служебный перерыв") ||
     combined.includes("технический перерыв") ||
     combined.includes("служебная бронь") ||
+    combined.includes("блокировка расписания") ||
+    combined.includes("технический интервал") ||
     combined.includes("обед") ||
+    combined.includes("перерыв") ||
     combined.includes("отпуск") ||
     combined.includes("консилиум") ||
+    combined.includes("учеба") ||
+    combined.includes("отсутствует") ||
+    combined.includes("другое") ||
     combined.includes("санитарная обработка")
   );
 }

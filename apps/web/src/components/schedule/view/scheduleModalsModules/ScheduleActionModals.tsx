@@ -2,7 +2,6 @@ import React from "react";
 import { DoctorFreeSlotsModal } from "../../DoctorFreeSlotsModal";
 import { PreventiveInspectionModal } from "../../PreventiveInspectionModal";
 import { SlotConflictModal } from "../../SlotConflictModal";
-import { UrgentScheduleRequestsWidget } from "../../UrgentScheduleRequestsWidget";
 import { PatientSearchModal } from "../../PatientSearchModal";
 import { TomorrowRemindersModal } from "../../TomorrowRemindersModal";
 import { PendingOnlineBookingsModal } from "../../PendingOnlineBookingsModal";
@@ -134,80 +133,6 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
           (logicContext as any)?.setSlotConflict?.(null);
         }}
       />
-
-      {/* Schedule Utilities & Widgets Panel */}
-      <div
-        className="schedule-widgets-container mt-6"
-        style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-      >
-        <UrgentScheduleRequestsWidget
-          onBookUrgentRequest={(request) => {
-            const targetDate =
-              scheduleDateFilter || clinicToday || todayScheduleDate();
-            const matchingDoc = (dashboard?.clinicSettings?.staff ?? []).find(
-              (s) =>
-                s.active &&
-                (s.role === "doctor" || s.role === "owner") &&
-                (s.fullName
-                  .toLowerCase()
-                  .includes(request.doctorName.toLowerCase()) ||
-                  request.doctorName
-                    .toLowerCase()
-                    .includes(s.fullName.toLowerCase())),
-            );
-            const dutyDoctor =
-              matchingDoc ||
-              (dashboard?.clinicSettings?.staff ?? []).find(
-                (s) =>
-                  s.active &&
-                  (s.role === "doctor" || s.role === "owner") &&
-                  (s.specialties?.includes("therapist") ||
-                    s.specialties?.includes("surgeon") ||
-                    s.specialties?.includes("universal")),
-              ) ||
-              (dashboard?.clinicSettings?.staff ?? []).find(
-                (s) => s.active && (s.role === "doctor" || s.role === "owner"),
-              );
-            const chairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
-              (c) => c.active,
-            );
-            const chair = chairs[0] || null;
-
-            const existingPatient = (dashboard?.patients ?? []).find(
-              (p) =>
-                p.status === "active" &&
-                p.fullName.toLowerCase() === request.patientName.toLowerCase(),
-            );
-
-            let startTime = request.preferredSlotTime || "";
-            if (!startTime || !/^\d{2}:\d{2}$/.test(startTime)) {
-              const now = new Date();
-              const roundedMins = Math.ceil(now.getMinutes() / 5) * 5;
-              now.setMinutes(roundedMins, 0, 0);
-              startTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-            }
-
-            setQuickBookingSlot({
-              dateKey: targetDate,
-              startTime,
-              startsAt: `${targetDate}T${startTime}:00.000Z`,
-              doctorUserId: dutyDoctor?.id || null,
-              chairId: chair?.id || null,
-              patientId: existingPatient?.id || null,
-              patientName: request.patientName,
-              durationMinutes: 20,
-              reason: `Срочно! ${request.requestType || "Острая боль"}`,
-              isCitoEmergency: true,
-            });
-            setQuickBookingOpen(true);
-            showToast(
-              `Срочная запись для «${request.patientName}»: проверьте время и подтвердите запись`,
-              "info",
-              4000,
-            );
-          }}
-        />
-      </div>
 
       <PatientSearchModal
         isOpen={isPatientSearchOpen}
