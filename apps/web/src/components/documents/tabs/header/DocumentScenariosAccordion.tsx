@@ -1,7 +1,7 @@
 import React from "react";
 import type { DocumentKind } from "@dental/shared";
 import { Zap } from "lucide-react";
-import { DocumentQuickRoleScenarios } from "../../DocumentQuickRoleScenarios";
+import { DocumentQuickRoleScenarios } from "../../roleScenarios";
 
 export interface DocumentScenariosAccordionProps {
 	setIsPrimaryIntakeOpen: (open: boolean) => void;

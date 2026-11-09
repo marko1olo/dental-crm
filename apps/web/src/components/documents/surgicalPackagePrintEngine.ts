@@ -14,7 +14,7 @@ import {
 	generateSurgicalOperationProtocolHtml,
 	printSurgicalOperationProtocol,
 	type SurgicalOperationProtocolPrintOptions,
-} from "./surgicalOperationProtocolPrintEngine";
+} from "./surgicalOperationProtocol";
 import { printHtmlViaIframe } from "./printHtmlViaIframe";
 
 export * from "./surgicalPackage/types";

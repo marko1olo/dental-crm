@@ -229,12 +229,12 @@ export function paidContractMismatchReason(
 	payload: PaidMedicalServicesContractPayload,
 	facts: DocumentCreationFacts,
 ): string | null {
-	if (!payload.customerFullName.trim()) {
-		return "Договор платных медицинских услуг: укажите заказчика. Для взрослого пациента это сам пациент, для ребенка или оплаты третьим лицом - законный представитель или плательщик.";
-	}
 	// Регистратор имеет право распечатать пустой договор со строками "_______" (0 руб.) до осмотра врача.
 	if (payload.estimatedTotalRub === 0) {
 		return null;
+	}
+	if (!payload.customerFullName.trim()) {
+		return "Договор платных медицинских услуг: укажите заказчика. Для взрослого пациента это сам пациент, для ребенка или оплаты третьим лицом - законный представитель или плательщик.";
 	}
 	return plannedFactsTotalMismatchReason(
 		payload.estimatedTotalRub,

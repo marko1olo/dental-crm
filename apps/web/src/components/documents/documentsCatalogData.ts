@@ -265,14 +265,15 @@ export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): strin
 			}
 		}
 	} else {
-		code01Kopecks = ctx.totalAmountKopecks;
+		code01Kopecks = Math.max(0, Math.round(ctx.totalAmountKopecks || 0));
+		code02Kopecks = 0;
 	}
 
-	const totalKopecks = code01Kopecks + code02Kopecks > 0 ? code01Kopecks + code02Kopecks : ctx.totalAmountKopecks;
+	const totalKopecks = code01Kopecks + code02Kopecks > 0 ? code01Kopecks + code02Kopecks : Math.max(0, Math.round(ctx.totalAmountKopecks || 0));
 	const eligibleCode01Kopecks = Math.min(code01Kopecks, 15000000);
 	const refund13Kopecks = Math.round((eligibleCode01Kopecks * 0.13) + (code02Kopecks * 0.13));
 
-	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ (ФОРМА ПО КНД 1151156)
+	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)
 Номер справки: ${ctx.documentNumber}
 Отчётный налоговый период: ${year} год
 Штрихкод формы: 1151156 | В соответствии с Приказом ФНС России от 08.11.2023 № ЕА-7-11/824@

@@ -142,7 +142,7 @@ describe("🏛️ Documents & Informed Consents SSOT: Catalog & Legal Packages",
 		};
 
 		const text = generateTaxCertificateTemplate(ctx);
-		assert.ok(text.includes("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ"));
+		assert.ok(text.includes("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)"));
 		assert.ok(text.includes("65 000 ₽"));
 		assert.ok(text.includes("ИНН: 7701234567"));
 		assert.ok(text.includes("ИНН налогоплательщика: 770198765432"));

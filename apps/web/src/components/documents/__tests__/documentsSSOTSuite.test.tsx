@@ -150,7 +150,7 @@ describe("🏛️ Documents SSOT Suite: Catalog Data, Legal Templates & Integer 
 		};
 
 		const text = generateTaxCertificateTemplate(ctx);
-		assert.ok(text.includes("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ"));
+		assert.ok(text.includes("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)"));
 		assert.ok(text.includes("2026 год"));
 		assert.ok(text.includes("ИНН: 7701234567"));
 		assert.ok(text.includes("45 000 ₽"));

@@ -288,7 +288,7 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 			"Must include btn-missing-fields-print-blank-contract",
 		);
 		assert.ok(
-			requiredFieldsPanelSource.includes('minHeight: "44px"'),
+			requiredFieldsPanelSource.includes("min-h-[44px]"),
 			"Must meet 44px touch target standard",
 		);
 		assert.ok(

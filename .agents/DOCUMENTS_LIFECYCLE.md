@@ -189,6 +189,27 @@ graph LR
 
 ---
 
+6. **Red Team Инквизиция Домена 3: Документооборот, ИДС, Договоры и Налоговые справки (Мандаты 8e, 8n, 8x, 8am, 8bd):**
+   * **Разблокировка 0 ₽ бланков договоров (`financialGuards.ts:232`):** Проверка `if (payload.estimatedTotalRub === 0) return null;` перенесена ДО проверки обязательности ФИО заказчика. Бланк с нулевой суммой пропускается сервером для ручного заполнения пациентом в регистратуре без 409/403 ошибок.
+   * **Искоренение советских шифров и нормативных актов из UI (Мандат 8x):**
+     - В `deepClinicalTypes.ts`: заменено `"Стандарт Минздрава 1051н"` на `"Информированное согласие на лечение"`.
+     - В `chairsideConsentEngine.ts`: заменено `"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)"` на `"ЛИЧНОЕ СОГЛАСИЕ ПАЦИЕНТА У КРЕСЛА"`.
+     - В `documentsCatalogData.ts`: заменено `"СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ (ФОРМА ПО КНД 1151156)"` на `"СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)"`.
+   * **Унификация геометрии кнопок по Мандату 8am и Apple HIG:**
+     - В `PaidContractRequiredFieldsPanel.tsx`: удален инлайн `style={{ minHeight: "44px" }}`, класс заменен на `min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 rounded-xl`.
+     - В `CatalogExpressBar.tsx`, `CatalogToolbarActions.tsx`, `CatalogCard.tsx`: кнопки приведены к стандарту `min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 rounded-xl` с единым Primary CTA.
+   * **Физический снос мертвых файлов (`git rm`):**
+     - `apps/web/src/components/documents/FnsTaxCertificateModal.tsx` (рудиментарный сиротский реэкспорт).
+     - `apps/web/src/components/documents/surgicalOperationProtocolPrintEngine.ts` (1-строчный сиротский реэкспорт).
+     - `apps/web/src/components/documents/DocumentQuickRoleScenarios.tsx` (сирота над `roleScenarios`).
+   * **4-State Visual Proof (Live App Домен 3):**
+     - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (139.6 KB) — ПК светлая тема, каталог пакетов, чистый клинический язык, 0px клиппинга.
+     - `docs/proofs/documents/02_documents_tax_deduction_pc_dark_1440x900.png` (143.6 KB) — ПК тёмная тема, справка для налогового вычета (13% НДФЛ), 100% тёмные токены.
+     - `docs/proofs/documents/03_documents_intake_mobile_light_390x844.png` (164.1 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, тач-таргеты $\ge 44$px.
+     - `docs/proofs/documents/04_documents_intake_mobile_dark_390x844.png` (141.1 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

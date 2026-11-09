@@ -18,7 +18,7 @@ export function CatalogToolbarActions({
 				<button
 					type="button"
 					onClick={onOpenAutoclaveLog}
-					className="secondary-button documents-open-autoclave-log-btn documents-open-autoclave-log-257-btn h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
+					className="secondary-button documents-open-autoclave-log-btn documents-open-autoclave-log-257-btn min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
 					data-testid="documents-open-autoclave-log-btn"
 					data-legacy-testid="documents-open-autoclave-log-257-btn"
 					title="Журнал автоклавирования"
@@ -30,7 +30,7 @@ export function CatalogToolbarActions({
 			<button
 				type="button"
 				onClick={handleOpenIntake}
-				className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
+				className="secondary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
 				data-testid="btn-catalog-primary-intake"
 				title="Открыть пакет приёма (Договор + Анкета здоровья + Согласие на лечение + Персданные)"
 			>
@@ -40,7 +40,7 @@ export function CatalogToolbarActions({
 			<button
 				type="button"
 				onClick={() => setIsDiplomaModalOpen(true)}
-				className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
+				className="secondary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
 				data-testid="btn-catalog-print-diploma"
 				title="Печать памятного диплома маленькому пациенту за смелость"
 			>

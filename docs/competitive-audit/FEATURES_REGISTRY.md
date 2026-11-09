@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-11-08 / RED TEAM INQUISITION: ВОЛНА 361 ОНЛАЙН-ЗАПИСЬ, ПУБЛИЧНЫЙ БУКИНГ-ВИДЖЕТ, ПАЦИЕНТСКИЙ ПОРТАЛ И TELEGRAM MINI APP [POR-01..10]: ЛИКВИДАЦИЯ ХАРДКОДА СЛОТОВ В TELEGRAM WEBAPP, УСТРАНЕНИЕ DOUBLE-BOOKING ГОНКИ, ПЕРСИСТЕНТНОСТЬ SMS OTP В POSTGRESQL 18 (portal_otp_codes), ФИЗИЧЕСКИЙ СНОС 23 ФАЙЛОВ-КЛОНОВ И МОКОВ ЧЕРЕЗ GIT RM, 4-STATE VISUAL PROOF GATE В DOCS/PROOFS/BOOKING/ — 515 ФИЧ, ВСЕ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-11-09 / RED TEAM INQUISITION ДОМЕН 3: ДОКУМЕНТООБОРОТ, ИДС, ДОГОВОРЫ И НАЛОГОВЫЕ СПРАВКИ ФНС [DOC-01..07]: РАЗБЛОКИРОВКА 0 ₽ БЛАНКОВ ДОГОВОРОВ В ФИНАНСОВЫХ ГАРДАХ, ИСКОРЕНЕНИЕ СОВЕТСКИХ ШИФРОВ («1051н», «КНД 1151156», «323-ФЗ») В ПОЛЬЗУ ЧИСТОГО КЛИНИЧЕСКОГО ЯЗЫКА, УНИФИКАЦИЯ ГЕОМЕТРИИ КНОПОК ПО МАНДАТУ 8am И APPLE HIG, СНОС 3 ДУБЛИКАТОВ И СИРОТ ЧЕРЕЗ GIT RM, 4-STATE VISUAL PROOF GATE В DOCS/PROOFS/DOCUMENTS/ — 515 ФИЧ, ВСЕ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |

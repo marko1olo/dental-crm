@@ -45,7 +45,7 @@ export const INFORMED_CONSENT_TEMPLATES: readonly InformedConsentTemplateOption[
 	},
 	{
 		key: "standard_1051n",
-		title: "Стандарт Минздрава 1051н",
+		title: "Информированное согласие на лечение",
 		desc: "Регламентное согласие на первичное медицинское вмешательство.",
 	},
 	{

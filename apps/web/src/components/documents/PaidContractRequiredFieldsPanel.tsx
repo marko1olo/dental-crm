@@ -54,8 +54,7 @@ export function PaidContractRequiredFieldsPanel({
 				<button
 					type="button"
 					data-testid="btn-missing-fields-print-blank-contract"
-					style={{ minHeight: "44px" }}
-					className="btn-missing-fields-print-blank-contract secondary-button inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-medium text-xs cursor-pointer hover:border-[var(--teal,#0d9488)] transition-colors"
+					className="btn-missing-fields-print-blank-contract secondary-button inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-medium text-xs cursor-pointer hover:border-[var(--teal,#0d9488)] transition-colors"
 					onClick={() => {
 						if (onPrintBlankContract) onPrintBlankContract();
 						else void printBlankMedicalContract(patient, { doctorName: doctorName ?? undefined });
