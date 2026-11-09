@@ -48,9 +48,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 	visitId,
 }) => {
 	const [dentitionMode, setDentitionMode] = useState<OdontogramDentitionMode>("adult");
-	const [teethData, setTeethData] = useState<Record<number, OdontogramToothEntry>>(() => {
-		return initialTeeth && Object.keys(initialTeeth).length > 0 ? { ...initialTeeth } : createIntactDentition("adult");
-	});
+	const [teethData, setTeethData] = useState<Record<number, OdontogramToothEntry>>(() => initialTeeth && Object.keys(initialTeeth).length > 0 ? { ...initialTeeth } : createIntactDentition("adult"));
 
 	const [activeStamp, setActiveStamp] = useState<string | null>("Caries");
 	const [selectedToothNum, setSelectedToothNum] = useState<number | null>(() => {
@@ -63,9 +61,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 	const [activeQuadrantMobile, setActiveQuadrantMobile] = useState<number>(1);
 	const [pendingEstimates, setPendingEstimates] = useState<Array<{ toothNum: number; serviceTitle: string; amountKopecks: number; code804n: string }>>([]);
 	const [saveNotification, setSaveNotification] = useState<string | null>(null);
-	const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-		return typeof document !== "undefined" && (document.documentElement.classList.contains("dark") || document.documentElement.getAttribute("data-theme") === "dark");
-	});
+	const [isDarkMode, setIsDarkMode] = useState<boolean>(() => typeof document !== "undefined" && (document.documentElement.classList.contains("dark") || document.documentElement.getAttribute("data-theme") === "dark"));
 
 	useEffect(() => {
 		if (typeof document === "undefined") return;
@@ -164,13 +160,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 	const activeTeethList = useMemo(() => (dentitionMode === "pediatric" ? PEDIATRIC_TEETH_SSOT : ADULT_TEETH_SSOT), [dentitionMode]);
 	const mobileQuadrantTeeth = useMemo(() => activeTeethList.filter((num) => Math.floor(num / 10) === activeQuadrantMobile), [activeTeethList, activeQuadrantMobile]);
 
-	const teethDataArray = useMemo((): ToothData[] => {
-		return Object.values(teethData).map((t) => ({
-			toothNumber: t.toothNumber,
-			state: t.state as ToothState,
-			surfaces: t.surfaces,
-		}));
-	}, [teethData]);
+	const teethDataArray = useMemo((): ToothData[] => Object.values(teethData).map((t) => ({ toothNumber: t.toothNumber, state: t.state as ToothState, surfaces: t.surfaces })), [teethData]);
 
 	const selectedTooth = selectedToothNum ? teethData[selectedToothNum] : null;
 	const selectedStatusDef = selectedTooth ? getStatusDefinition(selectedTooth.state) : null;
@@ -346,20 +336,14 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 						<div className="hidden sm:flex flex-col gap-2 w-full max-w-[1040px] items-center justify-center">
 							<AnatomicalGate0FullArchView
 								teethData={teethDataArray}
+								dentitionMode={dentitionMode}
 								selectedTeeth={selectedToothNum ? [selectedToothNum] : []}
 								onToothClick={(_, num) => handleApplyStampToTooth(num)}
 								onQuickStateChange={(targets, state, surfs) => {
 									if (targets.length > 0) {
 										const target = targets[0];
 										setSelectedToothNum(target);
-										setTeethData((prev) => ({
-											...prev,
-											[target]: {
-												toothNumber: target,
-												state,
-												surfaces: surfs ? [...surfs] : [],
-											},
-										}));
+										setTeethData((prev) => ({ ...prev, [target]: { toothNumber: target, state, surfaces: surfs ? [...surfs] : [] } }));
 									}
 								}}
 								activeStamp={activeStamp as ToothState | null}

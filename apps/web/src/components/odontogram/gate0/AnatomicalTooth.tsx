@@ -37,6 +37,10 @@ function getToothComponent(num: number): React.FC<any> | undefined {
 	if (num >= 21 && num <= 28) return UPPER[num - 20];
 	if (num >= 31 && num <= 38) return LOWER[num - 30];
 	if (num >= 41 && num <= 48) return LOWER[num - 40];
+	if (num >= 51 && num <= 55) return UPPER[num - 50];
+	if (num >= 61 && num <= 65) return UPPER[num - 60];
+	if (num >= 71 && num <= 75) return LOWER[num - 70];
+	if (num >= 81 && num <= 85) return LOWER[num - 80];
 	return undefined;
 }
 
@@ -58,7 +62,7 @@ export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props
 	const Component = getToothComponent(toothNumber);
 	if (!Component) return null;
 
-	const isFlipped = isFlippedProp ?? (toothNumber >= 21 && toothNumber <= 38);
+	const isFlipped = isFlippedProp ?? ((toothNumber >= 21 && toothNumber <= 38) || (toothNumber >= 61 && toothNumber <= 75));
 	const effectiveBadgeRadius = badgeRadius ?? 14;
 	const effectiveBadgeCy = badgeCy ?? (effectiveBadgeRadius > 14 ? 194.5 : (effectiveBadgeRadius > 10 ? 176.0 : 160));
 	const handleClick = onClick ? (e: React.MouseEvent<SVGSVGElement>) => onClick(e, toothNumber) : undefined;

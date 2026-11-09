@@ -106,7 +106,7 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 						placeholder={placeholder}
 						data-testid="odontogram-quick-input-field"
 						id="odontogram-quick-formula-input"
-						className="w-full h-9 sm:h-9 min-h-[36px] pl-10 pr-8 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-950 text-xs sm:text-sm font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-[var(--line,#e2e8f0)] dark:border-slate-800 focus:outline-hidden focus:border-teal-500 transition-all"
+						className="w-full h-9 sm:h-9 min-h-[36px] pl-12 pr-8 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-950 text-xs sm:text-sm font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-[var(--line,#e2e8f0)] dark:border-slate-800 focus:outline-hidden focus:border-teal-500 transition-all"
 					/>
 					{text && (
 						<button
@@ -123,17 +123,12 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 				<button
 					type="button"
 					onClick={handleApply}
-					disabled={parseResult.items.length === 0}
 					data-testid="odontogram-quick-input-apply-btn"
-					className={`h-9 min-h-[36px] px-3 sm:px-4 rounded-xl text-xs sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-						parseResult.items.length > 0
-							? "bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-strong,#0f766e)] text-white shadow-xs active:scale-98"
-							: "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200/60 dark:border-slate-700/60"
-					}`}
+					className="h-9 min-h-[36px] px-3 sm:px-4 rounded-xl text-xs sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-strong,#0f766e)] text-white shadow-xs active:scale-98"
 					title={
 						parseResult.items.length > 0
 							? `Применить ${parseResult.items.length} зубных статусов [Enter]`
-							: "Введите строку формулы"
+							: "Применить формулу (нажмите для подсказки)"
 					}
 				>
 					<Check className="w-3.5 h-3.5 shrink-0" />

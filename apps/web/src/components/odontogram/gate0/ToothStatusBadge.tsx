@@ -44,7 +44,7 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 
 	return (
 		<g
-			id="tooth46-status-badge"
+			id={toothNumber ? `tooth-${toothNumber}-status-badge` : undefined}
 			data-testid="tooth-status-badge"
 			data-tooth-number={toothNumber}
 			role="status"

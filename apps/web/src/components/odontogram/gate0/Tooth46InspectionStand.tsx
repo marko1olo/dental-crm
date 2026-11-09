@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AnatomicalGate0FullArchView } from "../AnatomicalGate0FullArchView";
-import { ToothMandibleFullArch } from "./mandible/ToothMandibleFullArch";
+import { AnatomicalGate0Row } from "../anatomicalDualArch/AnatomicalGate0Row";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46SingleView } from "./Tooth46SingleView";
 import { Tooth46StandHeader } from "./Tooth46StandHeader";
@@ -93,7 +93,14 @@ export const Tooth46InspectionStand: React.FC = () => {
 
 			{standMode === "mandible" ? (
 				<div className="w-full flex justify-center py-4">
-					<ToothMandibleFullArch isDark={isDark} zoom={0.74} badgeRadius={14} />
+					<AnatomicalGate0Row
+						isUpper={false}
+						leftTeeth={[48, 47, 46, 45, 44, 43, 42, 41]}
+						rightTeeth={[31, 32, 33, 34, 35, 36, 37, 38]}
+						isDark={isDark}
+						zoom={0.74}
+						archTitle="Нижняя челюсть"
+					/>
 				</div>
 			) : standMode === "arch32" ? (
 				<div className="w-full max-w-[1040px] flex justify-center py-4 bg-[var(--paper,#ffffff)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xs">

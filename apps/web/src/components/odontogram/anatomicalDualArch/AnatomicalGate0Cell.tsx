@@ -46,6 +46,7 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 }) => {
 	const flags = toothDataToGate0Flags(toothData ?? { toothNumber, state: "Healthy" });
 	const widthClass = getWheelerToothWidthClass(toothNumber);
+	const isUpper = toothNumber < 30 || (toothNumber >= 50 && toothNumber < 70);
 
 	const handleClick = useCallback(
 		(e: React.MouseEvent<HTMLElement>) => {
@@ -71,7 +72,7 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 				isDark={isDark}
 				zoom={zoom}
 				badgeRadius={14}
-				badgeCy={176}
+				badgeCy={isUpper ? 24 : 176}
 			/>
 		</div>
 	);

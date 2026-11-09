@@ -65,6 +65,9 @@ export const OdontogramActiveViewSlot: React.FC<
 						selectedTeeth={selectedTeeth}
 						onQuickStateChange={onQuickStateChange}
 						activeStamp={activeStampTool}
+						dentitionMode={isPediatric ? "pediatric" : isMixed ? "mixed" : undefined}
+						isPediatric={isPediatric}
+						isMixed={isMixed}
 					/>
 				)}
 				{activeMode === "compact_clinical" && (
@@ -81,7 +84,10 @@ export const OdontogramActiveViewSlot: React.FC<
 				)}
 
 				{onQuickStateChange && (
-					<>
+					<div
+						data-testid="odontogram-unified-console"
+						className="odontogram-unified-console w-full flex flex-col gap-2 p-2 sm:p-2.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/50 border border-[var(--line,#e2e8f0)] dark:border-slate-800/80 shadow-2xs"
+					>
 						<OdontogramBatchBar
 							selectedTeeth={selectedTeeth}
 							onSelectTeethGroup={onSelectTeethGroup ?? (sharedViewProps?.onSelectTeethGroup as any)}
@@ -90,15 +96,20 @@ export const OdontogramActiveViewSlot: React.FC<
 							onQuickStateChange={onQuickStateChange}
 							isPediatric={isPediatric ?? Boolean(sharedViewProps?.pediatricMode)}
 							isMixed={isMixed ?? Boolean(sharedViewProps?.mixedDentition)}
+							className="bg-transparent border-0 p-0 shadow-none"
 						/>
+						<div className="w-full h-px bg-[var(--line,#e2e8f0)]/60 dark:bg-slate-800/60" />
 						<OdontogramStampPalette
 							activeStampTool={activeStampTool}
 							setActiveStampTool={setActiveStampTool}
 							onQuickStateChange={onQuickStateChange}
 							handleQuickTriggerState={handleQuickTriggerState}
 							selectedTeeth={selectedTeeth}
+							className="bg-transparent border-0 p-0 shadow-none"
 						/>
+						<div className="w-full h-px bg-[var(--line,#e2e8f0)]/60 dark:bg-slate-800/60" />
 						<OdontogramQuickTextInput
+							className="bg-transparent border-0 p-0 shadow-none"
 							onApplyBatch={(batchOrTargets: any, maybeState?: any, maybeSurfaces?: any) => {
 								if (!onQuickStateChange) return;
 								if (Array.isArray(batchOrTargets) && batchOrTargets.length > 0 && typeof batchOrTargets[0] === "object") {
@@ -110,7 +121,7 @@ export const OdontogramActiveViewSlot: React.FC<
 								}
 							}}
 						/>
-					</>
+					</div>
 				)}
 			</div>
 

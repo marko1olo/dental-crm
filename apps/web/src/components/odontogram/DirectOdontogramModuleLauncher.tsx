@@ -8,8 +8,9 @@
  * Deep Links: ?stand=module, ?stand=odontogram, ?odontogram-module=1, #odontogram-module.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { OdontogramModule } from "./OdontogramModule";
+import { AppLogicProvider } from "../../contexts/AppLogicContext";
 
 export function checkIsOdontogramModuleActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -40,14 +41,33 @@ export const DirectOdontogramModuleLauncher: React.FC = () => {
 		};
 	}, []);
 
+	const fallbackAppLogic: any = useMemo(() => ({
+		odontogramUseSurfaces: true,
+		activePatient: {
+			id: "demo-patient-1",
+			fullName: "Иванов Сергей Павлович",
+			birthDate: "1990-05-15",
+			allergies: [],
+		},
+		activeDoctor: {
+			id: "doc-1",
+			fullName: "Д-р Соколов А. В.",
+			specialty: "Врач-стоматолог-терапевт",
+		},
+		auth: { role: "owner" },
+		money: (rub: number) => `${rub.toLocaleString("ru-RU")} ₽`,
+	}), []);
+
 	if (!isActive) return null;
 
 	return (
-		<main
-			data-testid="direct-odontogram-module-launcher"
-			className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col p-2 sm:p-4 box-border max-w-7xl mx-auto"
-		>
-			<OdontogramModule patientId="demo-patient-1" />
-		</main>
+		<AppLogicProvider value={fallbackAppLogic}>
+			<main
+				data-testid="direct-odontogram-module-launcher"
+				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col p-2 sm:p-4 box-border max-w-7xl mx-auto"
+			>
+				<OdontogramModule patientId="demo-patient-1" />
+			</main>
+		</AppLogicProvider>
 	);
 };
