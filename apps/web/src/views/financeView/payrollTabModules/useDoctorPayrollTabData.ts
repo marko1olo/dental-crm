@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { calculateDoctorPeriodPayroll, type DoctorCompletedServiceItem, type DoctorPayrollResult } from "@dental/shared/payroll";
 import type { PayrollDoctorOption } from "./types";
-import { mapEarningsApiServices } from "./mapEarningsApiServices";
+import { fetchDoctorEarningsApi } from "../../../components/payroll/fetchDoctorEarningsApi";
 import { exportDoctorPayrollCsv, printDoctorPayslipHtml } from "./payrollTabExportUtils";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
@@ -46,7 +46,8 @@ export function useDoctorPayrollTabData({
 	doctorsList,
 	services = [],
 }: UseDoctorPayrollTabDataParams): UseDoctorPayrollTabDataReturn {
-	const effectiveClinicName = clinicName || useDocumentBrandingStore((s) => s.clinicName) || "Клиника";
+	const brandingClinicName = useDocumentBrandingStore((s) => s.clinicName);
+	const effectiveClinicName = clinicName || brandingClinicName || "Клиника";
 	const isDemo = isDemoShowcaseMode();
 	const [apiDoctors, setApiDoctors] = useState<readonly PayrollDoctorOption[]>([]);
 
@@ -58,10 +59,10 @@ export function useDoctorPayrollTabData({
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
 				if (cancelled || !data?.doctors || !Array.isArray(data.doctors)) return;
-				const mapped: PayrollDoctorOption[] = data.doctors.map((d: any) => ({
-					id: String(d.id),
-					name: String(d.name || "Врач-стоматолог"),
-					specialtyId: String(d.specialtyId || "general_dentist"),
+				const mapped: PayrollDoctorOption[] = data.doctors.map((d: Record<string, unknown>) => ({
+					id: String(d["id"] ?? ""),
+					name: String(d["name"] || "Врач-стоматолог"),
+					specialtyId: String(d["specialtyId"] || "general_dentist"),
 				}));
 				if (mapped.length > 0) {
 					setApiDoctors(mapped);
@@ -111,12 +112,18 @@ export function useDoctorPayrollTabData({
 		let isCancelled = false;
 		setIsLoading(true);
 
-		const query = new URLSearchParams({ doctorId: activeDoctor.id, from: periodStart, to: periodEnd });
-		fetch(`/api/doctor/my-earnings?${query.toString()}`)
-			.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-			.then((data) => {
+		fetchDoctorEarningsApi({
+			doctorId: activeDoctor.id,
+			periodStart,
+			periodEnd,
+			payoutModel: "percentage",
+			chairRentalRub: 0,
+			advanceRub: 0,
+			taxRegime: "employee",
+		})
+			.then((items) => {
 				if (!isCancelled) {
-					setApiServices(mapEarningsApiServices(data, activeDoctor.id, periodStart));
+					setApiServices(items);
 					setIsLoading(false);
 				}
 			})

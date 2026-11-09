@@ -62,29 +62,40 @@ interface PayrollCalculationsQuery {
 	taxRegime?: "employee" | "self_employed";
 }
 
-interface CloseSettlementBody {
-	doctorId?: string;
-	periodStart?: string;
-	periodEnd?: string;
-	grossRevenueKop?: number;
-	grossRevenueRub?: number;
-	labCostKop?: number;
-	labCostRub?: number;
-	materialCostKop?: number;
-	materialsCostRub?: number;
-	netBaseKop?: number;
-	netBaseRevenueRub?: number;
-	netPayoutKop?: number;
-	netPayoutRub?: number;
-	totalAccruedKop?: number;
-	totalAccruedRub?: number;
-	payoutModel?: "percentage" | "chair_rental";
-	categoryPercent?: number;
-	chairRentalRub?: number;
-	ndflKop?: number;
-	ndfl13Rub?: number;
-	markPaid?: boolean;
-}
+const closeSettlementSchema = z.object({
+	doctorId: z.string().min(1),
+	periodStart: z.string().min(1),
+	periodEnd: z.string().min(1),
+	grossRevenueKop: z.number().optional(),
+	grossRevenueKopecks: z.number().int().optional(),
+	grossRevenueRub: z.number().optional(),
+	labCostKop: z.number().optional(),
+	labCostKopecks: z.number().int().optional(),
+	labCostRub: z.number().optional(),
+	materialCostKop: z.number().optional(),
+	materialsCostKop: z.number().optional(),
+	materialsCostKopecks: z.number().int().optional(),
+	materialsCostRub: z.number().optional(),
+	netBaseKop: z.number().optional(),
+	netBaseKopecks: z.number().int().optional(),
+	netBaseRevenueRub: z.number().optional(),
+	amountKopecks: z.number().int().optional(),
+	netPayoutKop: z.number().optional(),
+	netPayoutKopecks: z.number().int().optional(),
+	netPayoutRub: z.number().optional(),
+	totalAccruedKop: z.number().optional(),
+	totalAccruedKopecks: z.number().int().optional(),
+	totalAccruedRub: z.number().optional(),
+	payoutModel: z.enum(["percentage", "chair_rental"]).optional().default("percentage"),
+	categoryPercent: z.number().optional(),
+	chairRentalRub: z.number().optional(),
+	ndflKop: z.number().optional(),
+	ndflKopecks: z.number().int().optional(),
+	ndfl13Rub: z.number().optional(),
+	markPaid: z.boolean().optional().default(true),
+});
+
+type CloseSettlementBody = z.infer<typeof closeSettlementSchema>;
 
 const SPECIALTY_TITLES: Record<string, string> = {
 	therapy: "Врач-стоматолог-терапевт",
@@ -583,13 +594,18 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	 * POST /api/v1/payroll/close-settlement & /api/payroll/close-settlement — 1-клик закрытие расчетного периода в ACID транзакции
 	 */
 	const closeSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const parsed = closeSettlementSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры закрытия расчетного периода",
+				details: parsed.error.format(),
+			});
+		}
+
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const body = (request.body || {}) as CloseSettlementBody;
-
-		if (!body?.doctorId || !body?.periodStart || !body?.periodEnd) {
-			return reply.code(400).send({ error: "ValidationError", message: "Не указаны обязательные поля периода" });
-		}
+		const body = parsed.data;
 
 		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
 		if (!resolvedDocId) {
@@ -602,12 +618,26 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			? body.periodStart.slice(0, 7)
 			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
 
-		const grossRub = (body.grossRevenueKop !== undefined ? body.grossRevenueKop / 100 : body.grossRevenueRub) ?? 0;
-		const labRub = (body.labCostKop !== undefined ? body.labCostKop / 100 : body.labCostRub) ?? 0;
-		const matRub = (body.materialCostKop !== undefined ? body.materialCostKop / 100 : body.materialsCostRub) ?? 0;
-		const netBaseRub = (body.netBaseKop !== undefined ? body.netBaseKop / 100 : body.netBaseRevenueRub) ?? Math.max(0, grossRub - labRub - matRub);
-		const payoutRub = (body.netPayoutKop !== undefined ? body.netPayoutKop / 100 : body.netPayoutRub) ?? 0;
-		const accruedRub = (body.totalAccruedKop !== undefined ? body.totalAccruedKop / 100 : body.totalAccruedRub) ?? payoutRub;
+		const grossKop = body.grossRevenueKopecks ?? body.grossRevenueKop;
+		const grossRub = (grossKop !== undefined ? grossKop / 100 : body.grossRevenueRub) ?? 0;
+
+		const labKop = body.labCostKopecks ?? body.labCostKop;
+		const labRub = (labKop !== undefined ? labKop / 100 : body.labCostRub) ?? 0;
+
+		const matKop = body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop;
+		const matRub = (matKop !== undefined ? matKop / 100 : body.materialsCostRub) ?? 0;
+
+		const netBaseKop = body.netBaseKopecks ?? body.netBaseKop;
+		const netBaseRub = (netBaseKop !== undefined ? netBaseKop / 100 : body.netBaseRevenueRub) ?? Math.max(0, grossRub - labRub - matRub);
+
+		const payoutKop = body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop;
+		const payoutRub = (payoutKop !== undefined ? payoutKop / 100 : body.netPayoutRub) ?? 0;
+
+		const totalAccruedKop = body.totalAccruedKopecks ?? body.totalAccruedKop;
+		const accruedRub = (totalAccruedKop !== undefined ? totalAccruedKop / 100 : body.totalAccruedRub) ?? payoutRub;
+
+		const ndflKop = body.ndflKopecks ?? body.ndflKop;
+		const ndflRub = (ndflKop !== undefined ? ndflKop / 100 : body.ndfl13Rub) ?? 0;
 
 		const result = await closeSettlementPeriodInDb({
 			organizationId: orgId,
@@ -626,7 +656,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			bonusesTotalRub: 0,
 			penaltiesTotalRub: 0,
 			totalAccruedRub: Math.max(0, accruedRub),
-			ndfl13Rub: Math.max(0, (body.ndflKop !== undefined ? body.ndflKop / 100 : body.ndfl13Rub) ?? 0),
+			ndfl13Rub: Math.max(0, ndflRub),
 			netPayoutRub: Math.max(0, payoutRub),
 			markPaid: body.markPaid ?? true,
 		});

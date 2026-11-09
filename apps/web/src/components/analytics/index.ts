@@ -13,4 +13,3 @@ export * from "./DoctorPayrollReport";
 export * from "./ChairOccupancyReport";
 export * from "./ExecutiveDashboard";
 export * from "./FinancialAnalyticsModal";
-export * from "./DirectDoctorPayrollReportLauncher";

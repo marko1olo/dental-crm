@@ -15,5 +15,6 @@ export * from "./doctorServiceItemCalculator.js";
 export * from "./doctorRefundProcessor.js";
 export * from "./doctorRentalAndBonusEngine.js";
 export * from "./doctorPayrollCalculator.js";
+export * from "./doctorNetSalaryBridge.js";
 export * from "./assistantPayrollEngine.js";
 export * from "./payrollCsvFormatter.js";

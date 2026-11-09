@@ -4,7 +4,8 @@ import { after, before, describe, it } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
-import { patientPortalRoutes } from "../../routes/patientPortal.js";
+import { portalRoutes } from "../../routes/portal.js";
+import { bookingVerificationEngine } from "../../services/publicBookingQueue/bookingVerificationEngine.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -45,7 +46,7 @@ describe("Telegram WebApp BOLA / IDOR Protection & Verification Suite [POR-01]",
 		process.env.DENTE_AUTH_TOKEN_SECRET = "test-secret-for-portal-jwt-token-32chars";
 
 		app = Fastify({ logger: false });
-		await app.register(patientPortalRoutes, { prefix: "/api/portal" });
+		await app.register(portalRoutes, { prefix: "/api/portal" });
 		await app.ready();
 
 		await purgeFixtureOrganizations([ORG_ID]);
@@ -75,7 +76,7 @@ describe("Telegram WebApp BOLA / IDOR Protection & Verification Suite [POR-01]",
 				organizationId: ORG_ID,
 				fullName: "Боб Иванов",
 				phone: "+79004445566",
-				administrativeProfile: {},
+				administrativeProfile: null,
 			}).onConflictDoNothing();
 		});
 	});
@@ -129,12 +130,15 @@ describe("Telegram WebApp BOLA / IDOR Protection & Verification Suite [POR-01]",
 		assert.strictEqual(res.json().error, "VerificationRequired");
 	});
 
-	it("3. Successfully verifies and links Telegram with valid verification code (1234)", async () => {
+	it("3. Successfully verifies and links Telegram with valid verification code", async () => {
 		const userInitData = createValidInitData({
 			id: 222222222,
 			first_name: "Bob",
 			username: "bob_patient",
 		});
+
+		bookingVerificationEngine.requestPhoneVerification("+79004445566");
+		const verificationCode = bookingVerificationEngine.getActiveCodeForTesting("+79004445566") || "123456";
 
 		const res = await app.inject({
 			method: "POST",
@@ -143,7 +147,7 @@ describe("Telegram WebApp BOLA / IDOR Protection & Verification Suite [POR-01]",
 				initData: userInitData,
 				organizationId: ORG_ID,
 				phone: "+79004445566",
-				verificationCode: "1234",
+				verificationCode,
 			},
 		});
 

@@ -43,6 +43,8 @@ export async function fetchDoctorEarningsWithStatusApi(
 					const cat = ["therapy", "orthopedics", "surgery", "orthodontics", "hygiene", "retail_hygiene", "pediatric"].includes(srv.category)
 						? srv.category
 						: "therapy";
+					const isPaid = srv.isPaid !== false && apt.paymentStatus !== "unpaid";
+					const priceKop = srv.priceKop ?? Math.round((srv.priceRub || 0) * 100);
 					mapped.push({
 						id: srv.id || `srv-${apt.appointmentId}-${mapped.length}`,
 						dateIso,
@@ -50,14 +52,14 @@ export async function fetchDoctorEarningsWithStatusApi(
 						medicalCardNumber: apt.cardNumber || "—",
 						serviceNameRu: srv.nameRu || "Стоматологическая процедура",
 						category: cat as DoctorCompletedServiceItem["category"],
-						grossRevenueKop: srv.priceKop ?? Math.round((srv.priceRub || 0) * 100),
+						grossRevenueKop: priceKop,
 						labCostKop: srv.labCostKop ?? Math.round((srv.labCostRub || 0) * 100),
 						materialCostKop: srv.materialCostKop ?? Math.round((srv.materialCostRub || 0) * 100),
 						customCommissionPercent: srv.commissionPercent,
 						doctorId: params.doctorId,
 						performerId: params.doctorId,
-						isPaid: srv.isPaid,
-						paidAmountKop: srv.paidKop ?? (srv.isPaid ? (srv.priceKop ?? Math.round((srv.priceRub || 0) * 100)) : 0),
+						isPaid,
+						paidAmountKop: srv.paidKop ?? (isPaid ? priceKop : 0),
 					});
 				}
 			}

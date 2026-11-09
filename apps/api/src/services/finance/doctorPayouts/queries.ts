@@ -101,7 +101,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					coalesce(
 						sum(
 							case
-								when coalesce(${inventoryItems}."is_overhead", false)
+								when coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)'
 								then 0
 								else coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
 							end
@@ -113,7 +113,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					coalesce(
 						sum(
 							case
-								when coalesce(${inventoryItems}."is_overhead", false)
+								when coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)'
 								then coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
 								else 0
 							end
@@ -127,7 +127,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					   or ${inventoryTransactions}."unit_cost_rub" = 0
 					   or ${inventoryTransactions}."quantity_changed" is null
 					   or ${inventoryTransactions}."quantity_changed" = 0)
-					  and not coalesce(${inventoryItems}."is_overhead", false)
+					  and not (coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)')
 				)::int`.as("movements_unpriced"),
 			})
 			.from(inventoryTransactions)
@@ -169,7 +169,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			.select({
 				doctorUserId: labOrders.doctorId,
 				labCostRub:
-					sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)::numeric(12,2)`.as(
+					sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, ${labOrders.priceRub})), 0)::numeric(12,2)`.as(
 						"lab_cost_rub",
 					),
 				labOrdersCount: sql<number>`count(*)::int`.as("lab_orders_count"),
@@ -189,6 +189,17 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
 						to,
 					),
+					// Гарантийные заказы ЗТЛ (isWarranty / рекламации) относятся на рекламационный фонд клиники
+					// и НЕ удерживаются с врача!
+					sql`not (
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%гарант%' or
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%warranty%' or
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%переделк%' or
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%рекламац%' or
+						coalesce(${labOrders.labComments}, '') ilike '%гарант%' or
+						coalesce(${labOrders.labComments}, '') ilike '%warranty%' or
+						coalesce(${labOrders.labComments}, '') ilike '%переделк%'
+					)`,
 				),
 			)
 			.groupBy(labOrders.doctorId),
@@ -366,7 +377,6 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					 */
 					or(
 						eq(users.role, "doctor"),
-						eq(users.role, "assistant"),
 						isNotNull(revenue.doctorUserId),
 						isNotNull(materials.doctorUserId),
 						isNotNull(labOrdersCte.doctorUserId),

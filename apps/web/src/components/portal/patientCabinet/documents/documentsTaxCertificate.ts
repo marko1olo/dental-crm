@@ -46,23 +46,32 @@ export function generatePatientTaxCertificate1151156(
 		}
 	}
 
+	const clinicName = data.clinicInfo?.legalName || data.clinicInfo?.nameRu || "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicInn = data.clinicInfo?.inn || "7841098765";
+	const clinicOgrn = data.clinicInfo?.ogrn || "1217800012345";
+	const clinicLicense = data.clinicInfo?.licenseNumber || "ЛО-78-01-011842";
+	const clinicPhone = data.clinicInfo?.phone || "+7 (812) 400-20-20";
+
+	const payerInn = (data as { inn?: string }).inn || "781429810482";
+	const payerBirthDate = data.birthDate || data.birthDateIso || "1984-05-14";
+
 	const payload: FnsNdflXmlPayload = {
-		documentNumber: data.cardNumber || "10492",
+		documentNumber: data.cardNumber || data.cardNumberRu || "10492",
 		documentDate: new Date(),
 		taxYear,
 		clinic: {
-			name: "ООО «Стоматологическая клиника ДЕНТЕ»",
-			inn: "7841098765",
+			name: clinicName,
+			inn: clinicInn,
 			kpp: "784101001",
-			ogrn: "1217800012345",
-			license: { number: "ЛО-78-01-011842", date: "2021-06-15" },
-			phone: "+7 (812) 400-20-20",
-			directorName: "Смирнов А. В.",
+			ogrn: clinicOgrn,
+			license: { number: clinicLicense, date: "2021-06-15" },
+			phone: clinicPhone,
+			directorName: data.curatingDoctor || "Смирнов А. В.",
 		},
 		payer: {
 			fullName: { family, given, patronymic },
-			inn: (data as { inn?: string }).inn || "781429810482",
-			birthDate: data.birthDate || "1984-05-14",
+			inn: payerInn,
+			birthDate: payerBirthDate,
 			identityDocument: { docTypeCode: "21", seriesAndNumber: "4014 982310", issueDate: "2014-06-20" },
 		},
 		patient: { kinshipCode: "1" },
@@ -72,11 +81,29 @@ export function generatePatientTaxCertificate1151156(
 	return generateFnsNdflPrintHtml(payload);
 }
 
-export function downloadPatientTaxCertificate1151156(
+export async function downloadPatientTaxCertificate1151156(
 	data: PatientPersonalCabinetData,
 	taxYear = 2026,
-): void {
-	const html = generatePatientTaxCertificate1151156(data, taxYear);
+): Promise<void> {
 	const sanitizedName = data.fullName.replace(/\s+/g, "_");
-	downloadHtmlFile(html, `Spravka_FNS_KND_1151156_${sanitizedName}_${taxYear}.html`);
+	const filename = `Spravka_FNS_KND_1151156_${sanitizedName}_${taxYear}.html`;
+
+	// Попытка гидратации с канонического API бэкенда при наличии сессии
+	try {
+		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
+		const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+		const resp = await fetch(`/api/portal/tax-certificate/html?year=${taxYear}`, { headers });
+		if (resp.ok) {
+			const html = await resp.text();
+			if (html && html.includes("<!DOCTYPE html>")) {
+				downloadHtmlFile(html, filename);
+				return;
+			}
+		}
+	} catch {
+		// Офлайн или изолированный режим — фолбек на гидратированные данные
+	}
+
+	const html = generatePatientTaxCertificate1151156(data, taxYear);
+	downloadHtmlFile(html, filename);
 }

@@ -39,7 +39,7 @@ export const TreatmentPlanFloatingBar: React.FC<TreatmentPlanFloatingBarProps> =
 				<span style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>
 					Следующий этап
 				</span>
-				<strong style={{ fontSize: "14px", color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+				<strong style={{ fontSize: "13px", color: "var(--ink)", lineHeight: 1.2, wordBreak: "break-word" }}>
 					{nextStageTitle || "Курс завершён"}
 				</strong>
 			</div>

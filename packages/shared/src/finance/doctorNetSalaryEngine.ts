@@ -1,9 +1,9 @@
 /**
- * doctorNetSalaryEngine.ts — Clinical Doctor Net Revenue & Payslip Engine (Canonical Facade).
+ * doctorNetSalaryEngine.ts — Clinical Doctor Net Revenue & Payroll Engine (Canonical Facade).
  * 
- * Re-exports 100% of the public API from the decomposed netSalary domain module.
+ * Re-exports 100% of the public API from canonical payrollModules domain module.
  * Preserves 100% backward compatibility for all existing call sites.
- * Layer 5: Master Facade (<= 50 lines).
+ * Mandate 8b: Master Facade (<= 15 lines).
  */
 
-export * from "./netSalary/index.js";
+export * from "./payrollModules/index.js";

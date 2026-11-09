@@ -14,7 +14,7 @@ import {
 	TelegramTokenVaultError,
 } from "../services/telegram/TelegramTokenVault.js";
 import { TelegramStaffCockpitService } from "../services/telegram/TelegramStaffCockpitService.js";
-import { validateTelegramWebAppData } from "../routes/patientPortal.js";
+import { validateTelegramWebAppData } from "../routes/portal/index.js";
 import { withTenantCtx } from "../db/rls.js";
 
 /**

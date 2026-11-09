@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { describe, it, test } from "node:test";
 import Fastify from "fastify";
-import { patientPortalRoutes, validateTelegramWebAppData } from "../../routes/patientPortal.js";
+import { portalRoutes, portalRoutes as patientPortalRoutes, validateTelegramWebAppData } from "../../routes/portal/index.js";
 import { generateTaxCertificateQrSvg } from "@dental/shared";
 
 describe("Patient Portal API & Telemedicine Suite", () => {

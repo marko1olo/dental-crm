@@ -28,8 +28,9 @@ export * from "./doctorShiftEarnings.js";
 export * from "./doctorPayoutCalculator.js";
 export * from "./managerialPnlEngine.js";
 export * from "./cashFlowCatalogs.js";
-export * from "./stomxCashFlowCategories.js";
-export * from "./stomxCashFlowCatalogs.js";
+export * from "./cashFlowCategories.js";
+export * from "./clinicalCashFlowCatalogs.js";
+export * from "./clinicalCashFlowCategories.js";
 export * from "./treatmentBudgetEngine.js";
 export * from "./accountingExportEngine.js";
 export {

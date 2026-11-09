@@ -89,7 +89,6 @@ export type DoctorPayoutLabOrder = {
 	readonly status: string;
 	readonly completedAt: string | null;
 	readonly priceRub: number;
-	readonly labCostRub?: number;
 	readonly withheldRub: number;
 	readonly deductionPct: number;
 	readonly isWarranty?: boolean;
@@ -138,9 +137,7 @@ export type DoctorPayoutRow = {
 	/** Детализация начислений по категориям (терапия, ортопедия, хирургия, ортодонтия, гигиена). */
 	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[] | undefined;
 
-	/** Официальная печатная форма расчетного листка (ведомости) врача. */
-	readonly payslipHtml?: string | undefined;
-	/** @deprecated Use payslipHtml (Mandate 8x / 8ap). */
+	/** Печатная форма расчетного листка Т-51. */
 	readonly t51Html?: string | undefined;
 
 	/** Причина и действие человеческим языком — для показа как есть. */

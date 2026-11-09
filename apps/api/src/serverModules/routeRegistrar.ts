@@ -70,7 +70,6 @@ import { registerPatientDuplicateRoutes } from "../routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "../routes/patientRecall.js";
 import { registerPatientRoutes } from "../routes/patients.js";
 import { registerPhotoBridgeRoutes } from "../routes/photoBridgeRoutes.js";
-import { patientPortalRoutes } from "../routes/patientPortal.js";
 import { portalRoutes } from "../routes/portal.js";
 import { publicBudgetRoutes } from "../routes/publicBudgetRoutes.js";
 import { treatmentPlanRoutes } from "../routes/treatmentPlanRoutes.js";
@@ -268,7 +267,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 		prefix: "/api/v1/treatment-consumables",
 	});
 	await app.register(portalRoutes, { prefix: "/api/portal" });
-	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
 	await app.register(publicBudgetRoutes);
 	await app.register(treatmentPlanRoutes);
 	await app.register(clinicalBundlesRoutes);

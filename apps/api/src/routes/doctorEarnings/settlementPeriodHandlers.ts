@@ -41,12 +41,21 @@ const closePeriodBodySchema = z.object({
 	ndfl13Rub: z.number().optional(),
 	netPayoutRub: z.number().optional(),
 	grossRevenueKop: z.number().optional(),
+	grossRevenueKopecks: z.number().int().optional(),
 	labCostKop: z.number().optional(),
+	labCostKopecks: z.number().int().optional(),
 	materialCostKop: z.number().optional(),
+	materialsCostKop: z.number().optional(),
+	materialsCostKopecks: z.number().int().optional(),
 	netBaseKop: z.number().optional(),
+	netBaseKopecks: z.number().int().optional(),
 	totalAccruedKop: z.number().optional(),
+	totalAccruedKopecks: z.number().int().optional(),
+	amountKopecks: z.number().int().optional(),
 	netPayoutKop: z.number().optional(),
+	netPayoutKopecks: z.number().int().optional(),
 	ndflKop: z.number().optional(),
+	ndflKopecks: z.number().int().optional(),
 });
 
 function parsePeriodDates(startStr: string, endStr: string): { fromDate: Date; toDate: Date; periodKey: string } {
@@ -101,15 +110,32 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 
 		// Если клиент передал готовые расчетные суммы (в рублях или копейках), используем их.
 		// Иначе пересчитываем честно через движок базы данных.
-		let grossRevenueRub = body.grossRevenueRub ?? (body.grossRevenueKop !== undefined ? body.grossRevenueKop / 100 : undefined);
-		let labCostRub = body.labCostRub ?? (body.labCostKop !== undefined ? body.labCostKop / 100 : undefined);
-		let materialsCostRub = body.materialsCostRub ?? (body.materialCostKop !== undefined ? body.materialCostKop / 100 : undefined);
-		let netBaseRevenueRub = body.netBaseRevenueRub ?? (body.netBaseKop !== undefined ? body.netBaseKop / 100 : undefined);
+		const grossKop = body.grossRevenueKopecks ?? body.grossRevenueKop;
+		let grossRevenueRub = body.grossRevenueRub ?? (grossKop !== undefined ? grossKop / 100 : undefined);
+
+		const labKop = body.labCostKopecks ?? body.labCostKop;
+		let labCostRub = body.labCostRub ?? (labKop !== undefined ? labKop / 100 : undefined);
+
+		const matKop = body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop;
+		let materialsCostRub = body.materialsCostRub ?? (matKop !== undefined ? matKop / 100 : undefined);
+
+		const netBaseKop = body.netBaseKopecks ?? body.netBaseKop;
+		let netBaseRevenueRub = body.netBaseRevenueRub ?? (netBaseKop !== undefined ? netBaseKop / 100 : undefined);
+		if (netBaseRevenueRub === undefined && grossRevenueRub !== undefined && labCostRub !== undefined && materialsCostRub !== undefined) {
+			netBaseRevenueRub = Math.max(0, grossRevenueRub - labCostRub - materialsCostRub);
+		}
+
 		let categoryPercent = body.categoryPercent ?? 25;
 		let calculatedPieceworkRub = body.calculatedPieceworkRub;
-		let totalAccruedRub = body.totalAccruedRub ?? (body.totalAccruedKop !== undefined ? body.totalAccruedKop / 100 : undefined);
-		let ndfl13Rub = body.ndfl13Rub ?? (body.ndflKop !== undefined ? body.ndflKop / 100 : 0);
-		let netPayoutRub = body.netPayoutRub ?? (body.netPayoutKop !== undefined ? body.netPayoutKop / 100 : undefined);
+
+		const totalAccruedKop = body.totalAccruedKopecks ?? body.totalAccruedKop;
+		let totalAccruedRub = body.totalAccruedRub ?? (totalAccruedKop !== undefined ? totalAccruedKop / 100 : undefined);
+
+		const ndflKop = body.ndflKopecks ?? body.ndflKop;
+		let ndfl13Rub = body.ndfl13Rub ?? (ndflKop !== undefined ? ndflKop / 100 : 0);
+
+		const payoutKop = body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop;
+		let netPayoutRub = body.netPayoutRub ?? (payoutKop !== undefined ? payoutKop / 100 : undefined);
 
 		if (grossRevenueRub === undefined || netPayoutRub === undefined) {
 			const { categoryRates } = await fetchDoctorProfileAndRates(effectiveOrgId, resolvedDoctorId);

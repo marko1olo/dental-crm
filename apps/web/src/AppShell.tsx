@@ -28,8 +28,6 @@ import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsL
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
-import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
-import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairsideHudLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
@@ -37,7 +35,6 @@ import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher"
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
-import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
@@ -54,6 +51,7 @@ import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
 import { ThemeBackground } from "./components/theme";
+import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
 import "./theme.css";
 
 const DentalWorkspace = lazy(() =>
@@ -63,12 +61,6 @@ const DentalWorkspace = lazy(() =>
 const DiagnosticDrawer = lazy(() =>
 	import("./components/diagnostics/DiagnosticDrawer").then((module) => ({
 		default: module.DiagnosticDrawer,
-	})),
-);
-
-const CopilotGlobalHost = lazy(() =>
-	import("./components/copilot/CopilotGlobalHost").then((module) => ({
-		default: module.CopilotGlobalHost,
 	})),
 );
 
@@ -355,8 +347,6 @@ export function AppShell() {
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
 			<DirectEmrLauncher />
-			<DirectCopilotLauncher />
-			<DirectChairsideHudLauncher />
 			<DirectInsuranceLauncher />
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />
@@ -364,7 +354,6 @@ export function AppShell() {
 			<DirectOrthoLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
-			<DirectDoctorPayrollReportLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />
@@ -382,9 +371,9 @@ export function AppShell() {
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}
 			<GlobalToast />
+			<CopilotGlobalHost />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
-				<CopilotGlobalHost />
 				<DentalAgentCockpit />
 			</Suspense>
 		</BootErrorBoundary>

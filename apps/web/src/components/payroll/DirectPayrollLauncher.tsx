@@ -1,48 +1,44 @@
 /**
  * DirectPayrollLauncher.tsx — Standalone Direct Mount for Doctor Payroll Studio
  * Mandate 8b (60–80 lines), Mandate 8e (Doctor Autonomy), Mandate 8aq (Mounted in UI Tree).
- * Reacts to window hashes #payroll, #doctor-payroll, #salary, #commissions, and events dente:open-payroll.
+ * Reacts to window hashes #payroll, #doctor-payroll, #salary, #commissions, #executive-payroll, #doctor-payroll-report,
+ * query parameters doctor_payroll=1, executive_payroll=1, and events dente:open-payroll.
  */
 
 import React, { useEffect, useState } from "react";
 import { DoctorPayrollStudioModal } from "./DoctorPayrollStudioModal";
 
+const HASH_REGEX = /#(?:payroll|doctor-payroll|salary|commissions|executive-payroll|doctor-payroll-report)/;
+const QUERY_REGEX = /(?:payroll|doctor-payroll|doctor_payroll|executive_payroll|salary|commissions)=1/;
+
+const shouldOpen = (): boolean => {
+	if (typeof window === "undefined") return false;
+	const hash = window.location.hash || "";
+	const search = window.location.search || "";
+	return HASH_REGEX.test(hash) || QUERY_REGEX.test(search);
+};
+
 export const DirectPayrollLauncher: React.FC = () => {
-	const [isOpen, setIsOpen] = useState<boolean>(() => {
-		if (typeof window === "undefined") return false;
-		const s = window.location.search || "";
-		const h = window.location.hash || "";
-		return (
-			h.includes("#payroll") || h.includes("#doctor-payroll") ||
-			h.includes("#salary") || h.includes("#commissions") ||
-			s.includes("payroll=1") || s.includes("doctor-payroll=1") ||
-			s.includes("salary=1") || s.includes("commissions=1")
-		);
-	});
+	const [isOpen, setIsOpen] = useState<boolean>(shouldOpen);
 
 	useEffect(() => {
 		const handleOpen = () => setIsOpen(true);
-		window.addEventListener("dente-open-payroll", handleOpen);
-		window.addEventListener("dente:open-payroll", handleOpen);
-		window.addEventListener("dente:open-doctor-payroll", handleOpen);
+		const events = [
+			"dente-open-payroll",
+			"dente:open-payroll",
+			"dente:open-doctor-payroll",
+			"dente-open-doctor-payroll-report",
+			"dente:open-doctor-payroll-report",
+		];
+		events.forEach((eventName) => window.addEventListener(eventName, handleOpen));
 
 		const handleHashChange = () => {
-			const h = window.location.hash || "";
-			if (
-				h.includes("#payroll") || h.includes("#doctor-payroll") ||
-				h.includes("#salary") || h.includes("#commissions")
-			) {
-				setIsOpen(true);
-			} else {
-				setIsOpen(false);
-			}
+			setIsOpen(shouldOpen());
 		};
 		window.addEventListener("hashchange", handleHashChange);
 
 		return () => {
-			window.removeEventListener("dente-open-payroll", handleOpen);
-			window.removeEventListener("dente:open-payroll", handleOpen);
-			window.removeEventListener("dente:open-doctor-payroll", handleOpen);
+			events.forEach((eventName) => window.removeEventListener(eventName, handleOpen));
 			window.removeEventListener("hashchange", handleHashChange);
 		};
 	}, []);
@@ -53,15 +49,10 @@ export const DirectPayrollLauncher: React.FC = () => {
 		setIsOpen(false);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
-			url.searchParams.delete("payroll");
-			url.searchParams.delete("doctor-payroll");
-			url.searchParams.delete("salary");
-			url.searchParams.delete("commissions");
-			const cleanHash = window.location.hash.replace(
-				/#payroll|#doctor-payroll|#salary|#commissions/g,
-				"",
-			);
-			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
+			const params = ["payroll", "doctor-payroll", "doctor_payroll", "executive_payroll", "salary", "commissions"];
+			params.forEach((param) => url.searchParams.delete(param));
+			const cleanHash = window.location.hash.replace(HASH_REGEX, "");
+			const newUrl = url.pathname + (url.search || "") + cleanHash;
 			window.history.replaceState({}, "", newUrl);
 		}
 	};

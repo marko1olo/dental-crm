@@ -164,7 +164,6 @@ export async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope
 			material: labOrders.material,
 			status: labOrders.status,
 			priceRub: labOrders.priceRub,
-			labCostRub: labOrders.labCostRub,
 			clinicalNotes: labOrders.clinicalNotes,
 			dueDate: labOrders.dueDate,
 			completedAt: labOrders.completedAt,
@@ -236,7 +235,7 @@ export async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope
 		.where(eq(organizations.id, organizationId))
 		.limit(1);
 	const organizationName = orgRows[0]?.name ?? "Стоматологическая клиника";
-	const organizationInn = orgRows[0]?.inn ?? null;
+	const organizationInn = orgRows[0]?.inn ?? undefined;
 
 	const doctorSpecialtyRates = await db
 		.select({
