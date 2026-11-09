@@ -194,6 +194,44 @@
   - Полный прогон всех 5 сьютов конкурентности: 19/19 PASS in 4.8s.
   - `npm run check:encoding`: 24 096 файлов проверено, Exit Code 0.
 
+### [FIN-12] [ИСПРАВЛЕНО] [SEV-2] Дефекты Домена 2: глотание сетевых ошибок Z-отчета, тройная коллизия #checkout, зачистка мертвого кода и 18 прокси-файлов кассы
+- **Файлы:**
+  - [`apps/web/src/components/shift/CashShiftClosingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/shift/CashShiftClosingModal.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/CashierFinanceLaunchers.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/CashierFinanceLaunchers.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/CashierPaymentLauncherHosts.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/CashierPaymentLauncherHosts.tsx)
+  - [`apps/web/src/components/billing/GlobalPaymentModalLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/GlobalPaymentModalLauncher.tsx)
+  - [`apps/web/src/components/finance/paymentModalModules/PaymentBuyerRequisitesSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/paymentModalModules/PaymentBuyerRequisitesSection.tsx)
+  - [`.agents/BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)
+- **Устранённые дефекты Досье Разведчика:**
+  1. **Ликвидация глотания сетевых ошибок в `CashShiftClosingModal.tsx:145-165`**: При падении `fetch(/api/cash/cash-box-all-closing)` в блоке `catch` больше не выставляется фиктивный `setClosedSuccessData(payload)`. Ошибка честно перехватывается, выводится информативное сообщение об ошибке с кнопкой «Повторить», модалка не закрывается фальсифицированно.
+  2. **Устранение коллизии 3 модалок по `#checkout`**: URL-триггер `#checkout` консолидирован строго на каноническом лаунчере `DirectCashboxLauncher`. Из `CashierFinanceLaunchers.tsx` и `GlobalPaymentModalLauncher.tsx` удален дублирующий перехват `#checkout`.
+  3. **Снос мертвого импорта `FastCheckoutModal`**: удален неиспользуемый импорт в `CashierPaymentLauncherHosts.tsx`.
+  4. **Очистка UI от регуляторного птичьего языка**: В `PaymentBuyerRequisitesSection.tsx` надпись «54-ФЗ для физлиц не требуется» заменена на чистый клинический русский язык: «ИНН для физлиц не требуется».
+  5. **Синхронизация спецификации `.agents/BILLING_AND_FINANCE.md`**: Имя кассовой студии обновлено до актуального SSOT `CashRegisterStudioModal.tsx`.
+  6. **Физический снос через `git rm` (34 паразитных и мертвых файла)**:
+     - 10 файлов `apps/web/src/components/billing/paymentModalModules/`
+     - 8 прокси-файлов: `components/billing/CashShiftClosingModal.tsx`, `components/cashbox/CashShiftClosingModal.tsx`, `components/billing/CashShiftJournalView.tsx`, `components/cashbox/CashShiftJournalView.tsx`, `components/cashbox/CashboxView.tsx`, `components/billing/PaymentFiscalModal.tsx`, `components/finance/PaymentFiscalModal.tsx`, `components/billing/PaymentModal.tsx`
+     - Мертвый монолит и 16 модулей: `components/finance/CashRegisterView.tsx` и `components/finance/cashboxViewModules/`
+     - Дублирующий лаунчер: `components/billing/DirectCashRegisterLauncher.tsx`
+     - Все зависимые импорты в `apps/web/src/views/financeView/index.tsx`, `StandaloneCashboxSsotHost.tsx`, `cashboxSsotScreens.test.tsx` перелинкованы на канонические SSOT.
+- **Машинные пруфы и гейты DoD:**
+  - `npm run check:encoding`: 22 930 файлов, Exit Code 0.
+  - `npm run check:stub-overrides`: 0 перекрытий, Exit Code 0.
+  - `npm run check:fetch-response`: 13 332 файла, Exit Code 0.
+  - `npm run check:dynamic-imports`: 525 импортов, 0 висячих, Exit Code 0.
+  - Профильные unit-тесты Домена 2:
+    - `cashboxSsotScreens.test.tsx`: 10/10 PASS (5 suites, 52ms).
+    - `shiftStudioSSOT.test.tsx`: 18/18 PASS (6 suites, 71ms).
+    - `billingSSOTSuite.test.tsx`: 12/12 PASS (3 suites, 35ms).
+    - `paymentModalModulesDecomposition.test.tsx`: 4/4 PASS (1 suite, 36ms).
+    - `cashierSSOTSuite.test.tsx`: 18/18 PASS (1 suite, 3.5s).
+    - `splitPaymentEngine.test.ts`: 14/14 PASS (1 suite, 5ms).
+- **4-State Visual Proofs (Лично отсмотрены через `read_file` в `docs/proofs/billing/`):**
+  - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 81.4 KB)
+  - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 78.7 KB)
+  - 📱 Mobile Light 390x844 (`05_cashbox_studio_mobile_light_390x844.png` — 130.5 KB)
+  - 📱 Mobile Dark 390x844 (`06_cashbox_studio_mobile_dark_390x844.png` — 130.7 KB)
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ
@@ -3416,6 +3454,38 @@ ead_file по 8 осям качества Хаммера:
      - 📱 Recalls Registry Mobile Light (390x844): [`docs/proofs/recalls/recalls_registry_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/recalls/recalls_registry_mobile_light_390x844.png) (58.1 KB) — идеальный адаптив под 390px, омниканальные кнопки без наездов.
      - 📱 Recalls Registry Mobile Dark (390x844): [`docs/proofs/recalls/recalls_registry_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/recalls/recalls_registry_mobile_dark_390x844.png) (59.3 KB) — 0px горизонтального скролла, безупречная читаемость.
 
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 4 — КЛИНИЧЕСКИЙ ИИ-КОПАЙЛОТ, ГОЛОСОВОЕ УПРАВЛЕНИЕ И МЫШЛЕНИЕ (МАНДАТЫ 8bd, 8bh, 8e, 8ba)
+- **Дата и статус:** 2026-11-09 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Верховный Red Team Чинильщик-Хирург (Fixer Surgeon) Домена 4.
+- **Канонический SSOT:**
+  - Кресельный HUD: [`ChairsideCopilotHUD.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/ChairsideCopilotHUD.tsx) и `chairside/`
+  - Студия копайлота: [`CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
+  - Диспетчер ReAct: [`toolDispatcher.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/toolDispatcher.ts)
+  - Реестр тулов: [`dentalTools/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/dentalTools/index.ts) (29 тулов)
+  - Аудио-клиент: [`UnifiedAudioClient.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/voice/UnifiedAudioClient.ts)
+  - Грамматика зубов: [`toothGrammarSsot.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/ai/toothGrammarSsot.ts)
+  - Сессии и стейт: [`agentSessionRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/agentSessionRoutes.ts), [`copilotStore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/copilotStore.ts)
+- **Устранённые дефекты (Root Cause Remediation):**
+  1. **[DEF-COP-01] Ликвидация бутафорских выполненных шагов в ReAct-трекере:** В [`reactTrackerPresets.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/reactTrackerPresets.tsx) и [`CopilotReactTracker.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/CopilotReactTracker.tsx) устранены 4 захардкоженных шага со статусом "done" и вымышленным зубом 36. В состоянии покоя трекер переведен в честный нейтральный статус «Готов к приёму», статус шагов — `pending`, динамический расчет `Завершено (${completedCount}/${steps.length})` вместо захардкоженного `(4/4)`. При пустом списке шагов возвращается `null` (Мандат 8ba: 0px шума для нормы).
+  2. **[DEF-COP-02] Ликвидация слепого хардкода зуба 46 и фейкового UUID пациента в API:** В [`copilotService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/copilotService.ts) и [`copilotFallback/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/copilotFallback/types.ts) устранен принудительный фолбек `46` и `00000000-0000-7000-8000-000000000001`. При отсутствии контекста в запросе параметры остаются строго `undefined`, локализация отражается как «Локализация уточняется».
+  3. **[DEF-COP-03] Ликвидация мультяшных эмодзи в медицинских протоколах (Мандат 8d п. 7):** В [`copilotService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/copilotService.ts) удалены символы 🦷 и 💰, заменены на строгий профессиональный клинический текст `**Локализация:**` и `**Итого к согласованию:**`.
+  4. **[DEF-COP-04] Замена хардкода activeTooth || 36 на честный activeTooth ?? null в Студии:** В [`CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx) устранен слепой фолбек на зуб 36 при подтверждении действий и быстрых инструментах. Если зуб не выбран, интерфейс выводит кнопку «Выберите зуб на формуле» с мягким инфо-тостом «Выберите зуб на одонтограмме» без блокировок.
+  5. **[DEF-COP-05] Ликвидация глотания сетевых ошибок (Zero Silent Failures):** В [`CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx) и [`useCopilotStream.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts) устранены пустые блоки `catch`. Внедрен вывод понятных неблокирующих тостов с кнопкой «Повторить» (`showToast(..., { label: "Повторить", onAction: ... })`).
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> **22 924 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - Клинические калькуляторы (`apps/api/src/ai/dentalCalculators.test.ts`): **15/15 PASS (Exit Code 0)**.
+  - Реестр универсальных тулов (`apps/api/src/services/agent/tools/__tests__/crmUniversalRegistryAndSafety.test.ts`): **12/12 PASS (Exit Code 0)**.
+  - Оффлайн-роутер фолбеков (`apps/api/src/services/agent/copilotFallbackRouter.test.ts`): **15/15 PASS (Exit Code 0)**.
+  - ReAct Tracker и карточки (`apps/web/src/components/copilot/__tests__/CopilotReactTracker.test.tsx`, `CopilotClinicalCards.test.tsx`): **13/13 PASS (Exit Code 0)**.
+  - Кресельный HUD и Студия Копайлота (`apps/web/src/components/copilot/__tests__/chairsideCopilotHUD.test.tsx`, `copilotStudioSSOT.test.tsx`): **47/47 PASS (Exit Code 0)**.
+- **4-State Visual Proofs (Личный осмотр через `read_file` по 8 осям Хаммера, размер >= 20 KB):**
+  - ☀️ Copilot Studio PC Light (1440x900): [`docs/proofs/copilot/01_copilot_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/01_copilot_studio_pc_light_1440x900.png) (41 297 bytes) — Кабинет клинического копайлота, честный Empty State «Пациент не выбран», 0px шума.
+  - 🌙 Copilot Studio PC Dark (1440x900): [`docs/proofs/copilot/02_copilot_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/02_copilot_studio_pc_dark_1440x900.png) (40 759 bytes) — Тёмные токены `var(--paper)`, WCAG AAA контраст, ноль слепящих белых пятен.
+  - 📱 Copilot Studio Mobile Light (390x844): [`docs/proofs/copilot/03_copilot_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/03_copilot_studio_mobile_light_390x844.png) (33 528 bytes) — Apple HIG Bottom Sheet, drag handle 36x5px, Natural Thumb Zone, тач >= 44x44px.
+  - 📱 Copilot Studio Mobile Dark (390x844): [`docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png) (33 488 bytes) — Тёмный мобильный ассистент, 0px горизонтального скролла.
 
 ---
 

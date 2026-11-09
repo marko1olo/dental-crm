@@ -80,16 +80,17 @@ export function createDefaultLlmProvider(): LLMProvider {
 						if ((res as any).subjective || (res as any).assessment || (res as any).soapSection) {
 							const diag = (res as any).assessment?.diagnosisTitleRu || "Пульпит";
 							const code = (res as any).assessment?.icd10Code || "K04.0";
-							const tooth = (res as any).toothNumber || (res as any).assessment?.toothNumber || 46;
+							const tooth = (res as any).toothNumber || (res as any).assessment?.toothNumber || undefined;
 							const complaints = (res as any).subjective?.complaints?.join(", ") || "острая боль";
 							const anesthesia = (res as any).plan?.anesthesia?.drug || "Артикаин 1:100 000";
 							const procedures = (res as any).plan?.procedures?.map((p: string) => `  - ${p}`).join("\n") || "";
+							const toothPart = tooth ? `Зуб ${tooth}` : "Локализация уточняется";
 							
 							const formatted = `**Клинический протокол приёма (SOAP):**\n\n` +
-								`🦷 **Локализация:** Зуб ${tooth} | **Диагноз:** [${code}] ${diag}\n\n` +
+								`**Локализация:** ${toothPart} | **Диагноз:** [${code}] ${diag}\n\n` +
 								`**S (Жалобы):** ${complaints}\n\n` +
 								`**O (Объективно):** Глубокая кариозная полость, зондирование дна болезненно, перкуссия безболезненная.\n\n` +
-								`**A (Оценка):** [${code}] ${diag} зуба ${tooth}. Показано эндодонтическое лечение.\n\n` +
+								`**A (Оценка):** [${code}] ${diag}${tooth ? ` зуба ${tooth}` : ""}. Показано эндодонтическое лечение.\n\n` +
 								`**P (План лечения):**\n` +
 								`1. Анестезия: ${anesthesia} (с учётом соматического статуса и аллергоанамнеза)\n` +
 								`2. Изоляция: Коффердам (OptraDam)\n` +
@@ -109,7 +110,7 @@ export function createDefaultLlmProvider(): LLMProvider {
 							const itemsList = items.map((it: any) => `• ${it.title || it.name}: ${Math.round((it.priceKopecks ?? it.amountKopecks ?? 0) / 100)} ₽`).join("\n");
 							yield {
 								type: "text_delta",
-								text: `**Предварительный расчёт сметы лечения:**\n\n${itemsList}\n\n💰 **Итого к согласованию:** ${totalRub.toLocaleString("ru-RU")} ₽\n\n*Смета сформирована в 1 клик и готова к печати или утверждению пациентом.*`,
+								text: `**Предварительный расчёт сметы лечения:**\n\n${itemsList}\n\n**Итого к согласованию:** ${totalRub.toLocaleString("ru-RU")} ₽\n\n*Смета сформирована в 1 клик и готова к печати или утверждению пациентом.*`,
 							};
 							yield { type: "done", stopReason: "stop" };
 							return;
@@ -142,7 +143,7 @@ export function createDefaultLlmProvider(): LLMProvider {
 			const toothMatch =
 				systemStr.match(/Выбранный зуб \(FDI\):\s*#?([0-9]{2})/i) ||
 				userText.match(/(?:зуб[аеу]?|tooth)\s*#?\s*([1-48][1-8])/i);
-			const contextTooth = toothMatch?.[1] ? Number(toothMatch[1]) : 46;
+			const contextTooth = toothMatch?.[1] ? Number(toothMatch[1]) : undefined;
 
 			const patientMatch =
 				systemStr.match(/Активный пациент:[^()]*\(ID:\s*([a-f0-9-]+)\)/i) ||
@@ -152,7 +153,7 @@ export function createDefaultLlmProvider(): LLMProvider {
 			const contextPatientId =
 				patientMatch?.[1] && patientMatch[1] !== "null"
 					? patientMatch[1]
-					: "00000000-0000-7000-8000-000000000001";
+					: undefined;
 
 			yield* routeCopilotFallback({
 				userText,

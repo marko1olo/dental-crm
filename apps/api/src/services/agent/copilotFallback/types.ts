@@ -10,8 +10,8 @@ export type { LLMStreamEvent };
 export interface FallbackRouteContext {
 	readonly userText: string;
 	readonly lower: string;
-	readonly contextTooth: number;
-	readonly contextPatientId: string;
+	readonly contextTooth?: number | undefined;
+	readonly contextPatientId?: string | undefined;
 }
 
 export type LLMProviderType =

@@ -14,6 +14,7 @@ import type {
 import { readEventStream } from "./copilotStreamReader";
 import { createStreamEventHandler } from "./copilotStreamEventHandler";
 import { executeLocalFallback } from "../../../services/ai/assistant/localFallbackRouter";
+import { showToast } from "../../GlobalToast";
 
 interface UseCopilotStreamParams {
 	apiBaseUrl: string;
@@ -89,8 +90,12 @@ export function useCopilotStream({
 					}
 				}
 			}
-		} catch {
-			// Ignore network error
+		} catch (err: unknown) {
+			console.warn("[useCopilotStream] loadProactivePending network error:", err);
+			showToast("Сбой загрузки клинических предупреждений", "warning", 5000, {
+				label: "Повторить",
+				onAction: () => { void loadProactivePending(); },
+			});
 		}
 	}, [apiBaseUrl, setProactiveAlerts, setWhatsappHitLCards]);
 
@@ -231,8 +236,14 @@ export function useCopilotStream({
 				if (!res.ok || !res.body) return;
 
 				await readEventStream(res.body, handleEvent, controller.signal);
-			} catch (_err: unknown) {
-				// stream disconnected or aborted
+			} catch (err: unknown) {
+				if ((err as Error)?.name !== "AbortError") {
+					console.warn("[useCopilotStream] Background stream disconnected:", err);
+					showToast("Фоновый поток копайлота прерван", "warning", 5000, {
+						label: "Повторить",
+						onAction: () => { void startStream(); },
+					});
+				}
 			}
 		};
 

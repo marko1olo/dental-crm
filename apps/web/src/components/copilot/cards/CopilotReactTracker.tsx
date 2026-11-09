@@ -15,6 +15,8 @@ export const CopilotReactTracker: React.FC<CopilotReactTrackerProps> = ({
   const [expanded, setExpanded] = useState<boolean>(true);
 
   const completedCount = useMemo(() => steps.filter((s) => s.status === "done").length, [steps]);
+  const hasRunning = useMemo(() => steps.some((s) => s.status === "running"), [steps]);
+  const isIdle = completedCount === 0 && !hasRunning && !isComplete;
   const activeIndex = useMemo(() => {
     if (typeof currentStepIndex === "number") return currentStepIndex;
     const runningIdx = steps.findIndex((s) => s.status === "running");
@@ -23,12 +25,16 @@ export const CopilotReactTracker: React.FC<CopilotReactTrackerProps> = ({
     return completedCount;
   }, [currentStepIndex, steps, isComplete, completedCount]);
 
-  const allDone = isComplete || completedCount === steps.length;
+  const allDone = isComplete || (steps.length > 0 && completedCount === steps.length);
   const progressPercent = Math.round((completedCount / (steps.length || 1)) * 100);
+
+  if (steps.length === 0 && !isComplete) {
+    return null;
+  }
 
   return (
     <div
-      className={`copilot-gen-card copilot-react-tracker ${allDone ? "all-done" : "running"}`}
+      className={`copilot-gen-card copilot-react-tracker ${allDone ? "all-done" : isIdle ? "idle" : "running"}`}
       data-testid="copilot-react-tracker"
       role="region"
       aria-label="Живой пошаговый ReAct трекер ДЕНТЫ"
@@ -42,21 +48,27 @@ export const CopilotReactTracker: React.FC<CopilotReactTrackerProps> = ({
       >
         <div className="copilot-rt-title-block">
           <div className="copilot-rt-badge" aria-hidden="true">
-            {allDone ? <CheckCircle2 size={18} /> : <Brain size={18} className="animate-pulse" />}
+            {allDone ? <CheckCircle2 size={18} /> : <Brain size={18} className={isIdle ? "" : "animate-pulse"} />}
           </div>
           <div>
             <h4 className="copilot-rt-title">{title}</h4>
             <div className="copilot-rt-subtitle">
               {allDone
                 ? "Все шаги клинического рассуждения успешно завершены"
+                : isIdle
+                ? "Готов к приёму. Ожидание клинического контекста..."
                 : `Выполняется шаг ${Math.min(activeIndex + 1, steps.length)} из ${steps.length}...`}
             </div>
           </div>
         </div>
 
         <div className="copilot-rt-status-box">
-          <span className={`copilot-rt-status-pill ${allDone ? "done" : "active"}`}>
-            {allDone ? "Завершено (4/4)" : `Шаг ${Math.min(activeIndex + 1, steps.length)}/${steps.length}`}
+          <span className={`copilot-rt-status-pill ${allDone ? "done" : isIdle ? "idle" : "active"}`}>
+            {allDone
+              ? `Завершено (${completedCount || steps.length}/${steps.length || completedCount || 4})`
+              : isIdle
+              ? "Готов к приёму"
+              : `Шаг ${Math.min(activeIndex + 1, steps.length)}/${steps.length}`}
           </span>
         </div>
       </div>
