@@ -11,7 +11,7 @@ import { useInventoryViewAudit } from "./inventory/viewModules/useInventoryViewA
 import { InventoryViewMobileLayout } from "./inventory/viewModules/InventoryViewMobileLayout.js";
 import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryViewContentRouter.js";
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
-import { SterilizationBatchCycleModal } from "./inventory/sterilizationCycle/SterilizationBatchCycleModal.js";
+import { SterilizationHubModal } from "./sanpin/SterilizationHubModal.js";
 import {
 	InboundWaybillModal,
 	WarehouseInboundInvoiceModal,
@@ -284,10 +284,9 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsBatchWriteoffOpen={setIsBatchWriteoffOpen}
 			/>
 
-			<SterilizationBatchCycleModal
+			<SterilizationHubModal
 				isOpen={isSterilizationCycleOpen}
 				onClose={() => setIsSterilizationCycleOpen(false)}
-				organizationId={organizationId}
 				onCycleCompleted={() => fetchItems()}
 			/>
 		</div>

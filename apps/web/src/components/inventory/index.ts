@@ -34,8 +34,6 @@ export * from "./inventoryDataMappers.js";
 export * from "./inventoryMath.js";
 export * from "./MaterialBomsSettingsPanel.js";
 export * from "./mdlp/index.js";
-// Модули стерилизации, накладных, партий и складского учета (SSOT)
-export * from "./sterilizationCycle/index.js";
 export {
 	WarehouseTransferModal,
 	type WarehouseTransferModalProps,

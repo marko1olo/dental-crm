@@ -52,8 +52,8 @@
 > **Клинический инвариант (The Hammer Master Prompt Раздел VII п. 4, СанПиН 3.3686-21 п. 3630 & Мандат 8v)**:  
 > В частной стоматологии 90% пользователей — Врач и Администратор. Использованные ампулы, карпулы и одноразовые расходники утилизируются как медицинские отходы. Врач прямо из визита или Администратор на ресепшене списывает препараты **в 1 клик единолично БЕЗ бюрократических комиссий** и без прерывания приёма.
 
-### 2.1. Алгоритм списания (`NurseCarpuleDisposalModal.tsx`):
-1. Врач или Администратор открывает окно списания (`apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx` или через фоновую утилиту `executeSeniorNurseDisposalActInBackground`).
+### 2.1. Алгоритм списания (`ConsumablesBatchWriteoffModal.tsx`):
+1. Врач или Администратор открывает окно списания (`apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx` или через фоновую утилиту `executeSeniorNurseDisposalActInBackground`).
 2. Выбирает препарат из клинического справочника:
    * *Артикаин 4% с адреналином 1:100 000 (1.7 мл)*
    * *Артикаин 4% с адреналином 1:200 000 (1.7 мл)*
@@ -154,7 +154,7 @@
 | Назначение | Файл / Компонент | Маршрут API / Функция |
 | :--- | :--- | :--- |
 | **Пакетное списание расходников смены и кресла в 1 клик (SSOT)** | [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx) | `POST /api/inventory/:orgId/shift-batch-deduct` (`useConsumablesBatchWriteoff`, Soft Negative Stock) |
-| **Списание препаратов и медотходов (Врач / Админ)** | [`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx) | `POST /api/warehouse/:orgId/quick-carpule-disposal` (`executeSeniorNurseDisposalActInBackground`) |
+| **Списание препаратов и медотходов (Врач / Админ)** | [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx) | `POST /api/warehouse/:orgId/quick-carpule-disposal` (`executeSeniorNurseDisposalActInBackground`, `ClinicalWriteoffQuickStrip`) |
 | **Складской API & Овердрафт** | [`warehouse/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/warehouse/index.ts) | `POST /api/warehouse/:orgId/soft-overdraft-deduct` |
 | **Списание по техкартам (BOM)** | [`treatmentConsumables.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentConsumables.ts) | `POST /api/treatment-consumables/:visitId/deduct` |
 | **Складской каталог и остатки** | [`inventory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory.ts) | `GET /api/inventory/items` |

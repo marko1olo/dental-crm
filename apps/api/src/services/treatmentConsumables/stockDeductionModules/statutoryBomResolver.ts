@@ -6,7 +6,7 @@ import {
 	CANONICAL_PROCEDURE_RECIPES,
 	DEFAULT_804N_CONSUMABLE_LINKS,
 } from "@dental/shared";
-import { DEFAULT_804N_BOM_SEEDS } from "../../inventory/defaultBomSeeds.js";
+import { DEFAULT_SERVICE_BOM_SEEDS } from "../../inventory/defaultBomSeeds.js";
 import type { RawRequiredMaterial, ServiceDescriptor } from "./stockDeductionTypes.js";
 
 export function resolveStatutoryBomForService(
@@ -14,15 +14,17 @@ export function resolveStatutoryBomForService(
 	srvQty: number,
 ): RawRequiredMaterial[] {
 	const materials: RawRequiredMaterial[] = [];
+	const effectiveServiceCode = meta.serviceCode || (meta as any).statutoryCode || meta.order804nCode;
 
 	// 4a. CANONICAL_PROCEDURE_RECIPES (@dental/shared)
 	const canonicalRecipe = CANONICAL_PROCEDURE_RECIPES.find((rec) => {
 		return (
-			rec.code804n === meta.order804nCode ||
+			rec.code804n === effectiveServiceCode ||
 			rec.code804n === meta.serviceCode ||
+			rec.code804n === meta.order804nCode ||
 			rec.code804n === meta.rawToken ||
 			rec.aliases804n.includes(meta.rawToken) ||
-			(meta.order804nCode && rec.aliases804n.includes(meta.order804nCode)) ||
+			(effectiveServiceCode && rec.aliases804n.includes(effectiveServiceCode)) ||
 			(meta.title && rec.titleRu.toLowerCase().includes(meta.title.toLowerCase()))
 		);
 	});
@@ -40,9 +42,10 @@ export function resolveStatutoryBomForService(
 		return materials;
 	}
 
-	// 4b. DEFAULT_804N_BOM_SEEDS (defaultBomSeeds.ts)
-	const seed = DEFAULT_804N_BOM_SEEDS.find((s) => {
+	// 4b. DEFAULT_SERVICE_BOM_SEEDS (defaultBomSeeds.ts)
+	const seed = DEFAULT_SERVICE_BOM_SEEDS.find((s) => {
 		return (
+			s.serviceCode === effectiveServiceCode ||
 			s.serviceCode === meta.serviceCode ||
 			s.serviceCode === meta.order804nCode ||
 			s.serviceCode === meta.rawToken ||
@@ -65,10 +68,12 @@ export function resolveStatutoryBomForService(
 
 	// 4c. DEFAULT_804N_CONSUMABLE_LINKS (@dental/shared)
 	const links = DEFAULT_804N_CONSUMABLE_LINKS.filter((l) => {
+		const linkCode = (l as any).serviceCode || (l as any).statutoryCode || l.service804nCode;
 		return (
-			l.service804nCode === meta.serviceCode ||
-			l.service804nCode === meta.order804nCode ||
-			l.service804nCode === meta.rawToken
+			linkCode === effectiveServiceCode ||
+			linkCode === meta.serviceCode ||
+			linkCode === meta.order804nCode ||
+			linkCode === meta.rawToken
 		);
 	});
 

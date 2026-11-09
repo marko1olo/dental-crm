@@ -3,7 +3,7 @@ import { InventoryServiceUsagePanel } from "../../InventoryServiceUsagePanel.js"
 import { WarehouseWaybillsTab } from "../WarehouseWaybillsTab.js";
 import { WarehouseInventoryTab } from "../WarehouseInventoryTab.js";
 import { InventoryBatchFefoPanel } from "../../InventoryBatchFefoPanel.js";
-import { InventoryStockTable } from "../../InventoryStockTable.js";
+import { InventoryStockTable } from "../WarehouseStockTable.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 
 export interface InventoryViewContentRouterProps {

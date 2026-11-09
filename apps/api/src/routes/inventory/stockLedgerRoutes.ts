@@ -237,10 +237,7 @@ async function handleStockAdjustment(
 			return { updated: finalUpdated, isOverdraft: fefoResult.isOverdraft || isNegative, isNegativeStock: isNegative };
 		}
 
-		if (isOverdraft && !isAllowedOverdraft) {
-			return { insufficientStock: true as const, currentStock };
-		}
-
+		// Мандат 8n & Soft Negative Stock: списание всегда разрешено без блокировок.
 		const [updated] = await tx
 			.update(inventoryItems)
 			.set({ stockQuantity: String(newStock), updatedAt: new Date() })
@@ -280,11 +277,6 @@ async function handleStockAdjustment(
 			error: "ItemNotFound",
 			message:
 				"Этот материал на складе клиники не найден: возможно, его уже удалили из списка. Обновите список склада и повторите — если материал нужен, добавьте его заново.",
-		});
-	if ("insufficientStock" in result)
-		return reply.status(400).send({
-			error: "insufficientStock",
-			message: `Недостаточно остатка на складе (текущий остаток: ${result.currentStock}). Списание не может уводить остаток в минус.`,
 		});
 	if ("failed" in result)
 		return reply.status(500).send({

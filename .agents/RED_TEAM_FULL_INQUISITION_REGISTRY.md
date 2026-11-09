@@ -380,6 +380,29 @@
      - EMR: `docs/screenshots/emr/01_emr_studio_pc_light_1440x900.png`, `02_emr_studio_pc_dark_1440x900.png`, `03_emr_studio_mobile_light_390x844.png`, `04_emr_studio_mobile_dark_390x844.png`.
      - SanPiN: `docs/screenshots/sanpin/01_sanpin_studio_pc_light_1440x900.png`, `02_sanpin_studio_pc_dark_1440x900.png`, `03_sanpin_studio_mobile_light_390x844.png`, `04_sanpin_studio_mobile_dark_390x844.png`.
 
+### [WH-06] [ЗАКРЫТО] Ликвидация процедурного симулятора стерилизации, мертвых шлюзов и гарантированный Soft Negative Stock
+- **Файлы:**
+  - [`apps/api/src/routes/inventory/stockLedgerRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/stockLedgerRoutes.ts)
+  - [`apps/web/src/components/InventoryView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/InventoryView.tsx)
+  - [`apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx)
+  - [`apps/web/src/components/inventory/viewModules/InventoryViewContentRouter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/viewModules/InventoryViewContentRouter.tsx)
+  - [`apps/api/src/services/treatmentConsumables/stockDeductionModules/statutoryBomResolver.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/stockDeductionModules/statutoryBomResolver.ts)
+  - [`apps/api/src/services/inventory/defaultBomSeeds.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/inventory/defaultBomSeeds.ts)
+  - [`apps/api/src/services/inventory/bomSeeds/registry.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/inventory/bomSeeds/registry.ts)
+  - [`.agents/WAREHOUSE_AND_SUPPLY.md`](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)
+- **Суть дефектов:**
+  1. В `stockLedgerRoutes.ts:240-242, 284-288` находилась мертвая ветка `400 Bad Request` с проверкой `!isAllowedOverdraft` и ошибкой «Недостаточно остатка на складе... Списание не может уводить остаток в минус», противоречившая Мандату 8n и принципу 100% фонового Soft Negative Stock.
+  2. В `InventoryView.tsx:287` монтировался мертвый процедурный симулятор крафт-пакетов из `components/inventory/sterilizationCycle/` (8 файлов симуляции физического мира).
+  3. В кодовой базе оставались файлы-сироты и промежуточные тройные прокси-фасады (`InventoryInboundInvoiceModal.tsx`, `InventoryStockTable.tsx`, советские шифры `printAct0504230.ts`, `printFormM11.ts`, `printTorg16.ts`).
+  4. Присутствовал птичий язык «804н» в интерфейсах и модулях списания.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Из `stockLedgerRoutes.ts` полностью вычищена мертвая ветка `insufficientStock` и условие `!isAllowedOverdraft`, гарантируя 100% фоновый Soft Negative Stock без блокировок и отказов врачу у кресла.
+  2. В `InventoryView.tsx:287` смонтирован напрямую канонический `SterilizationHubModal` из `sanpin/`.
+  3. Физически удалены через `git rm` 13 файлов паразитных дубликатов и сирот: `InventoryInboundInvoiceModal.tsx`, `InventoryStockTable.tsx`, папка `sterilizationCycle/` (8 файлов), советские формы `printAct0504230.ts`, `printFormM11.ts`, `printTorg16.ts`.
+  4. В `ConsumablesBatchWriteoffModal.tsx`, `statutoryBomResolver.ts`, `defaultBomSeeds.ts` и `registry.ts` доменный код очищен от канцелярского «804н» в пользу `serviceCode` / `statutoryCode` / `DEFAULT_SERVICE_BOM_SEEDS`.
+  5. Спецификация `.agents/WAREHOUSE_AND_SUPPLY.md` синхронизирована с каноническим `ConsumablesBatchWriteoffModal.tsx`.
+  6. Пройдены все модульные и интеграционные тесты склада и списания расходников (Exit Code 0).
+
 ### [SANPIN-02] [ИСПРАВЛЕНО] Ликвидация академического симулятора поштучного сканирования крафт-пакетов и консолидация SanpinStudioModal SSOT
 - **Файлы:**
   - [`apps/api/src/routes/sanpin/sterilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationRoutes.ts)
@@ -733,6 +756,51 @@
   - `apps/web/src/tests/wave125ToothSetup.test.ts` (2/2 PASS, Exit Code 0).
   - `npm run check:encoding` (24115 файлов, 0 замечаний).
   - `npm run check:stub-overrides` (Exit Code 0).
+
+### [RAD-05] [SEV-1] [ИСПРАВЛЕНО] Ликвидация хардкода чужих пациентов, потёмкинских снимков RVG и расхождений схемы в рентгенологии и фотопротоколе
+- **Файлы:**
+  - [`apps/web/src/components/appLayout/modalsContainerModules/ClinicalImagingModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/ClinicalImagingModals.tsx)
+  - [`apps/web/src/components/visiograph/VisiographComparisonModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographComparisonModal.tsx)
+  - [`apps/web/src/components/radiology/ConsultationTopToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/ConsultationTopToolbar.tsx)
+  - [`apps/web/src/components/radiology/RadiologyReportStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/RadiologyReportStudioModal.tsx)
+  - [`apps/web/src/components/radiology/radiologyModule/RadiologyModuleModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/radiologyModule/RadiologyModuleModals.tsx)
+  - [`apps/web/src/components/radiology/ConsultationBottomDock.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/ConsultationBottomDock.tsx)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)
+  - [`apps/web/src/components/visiograph/DirectVisiographLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/DirectVisiographLauncher.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx)
+  - [`apps/api/src/db/schema/clinical/visitsSchema.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/visitsSchema.ts)
+  - [`apps/api/src/routes/fileModules/patientAttachmentsHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fileModules/patientAttachmentsHandlers.ts)
+  - [`apps/api/src/db/schema/imaging.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/imaging.ts)
+  - [`apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts)
+- **Суть бага:**
+  1. Глобальные модалки (`ClinicalImagingModals`, `VisiographComparisonModal`, `ConsultationTopToolbar`, `RadiologyReportStudioModal`, `clinicalLaunchersRegistry`) хардкодили фиктивных пациентов («Чухрова Лариса Павловна», «Захаров Иван Дмитриевич», «Ковалёв Роман Станиславович»), карты «20190621_101042», возраст «58Y», зубы 36/16.
+  2. Потёмкинские деревни: `ConsultationBottomDock` подсовывал фейковые RVG-исследования (`sample_rvg_pathology.jpg`, `sample_rvg_tooth16.jpg`) вместо честного пустого стейта при отсутствии снимков; `ClinicalPhotoProtocolModal` выводил синий мультяшный SVG смайл.
+  3. Расхождение типов схемы: `visitExaminationPhotoLinks.visitId` был объявлен как `text`, тогда как родительский `visits.id` — `uuid`.
+  4. HTTP 403 Forbidden в `patientAttachmentsHandlers.ts:110` при отсутствии пациента вместо канонического 404 Not Found.
+  5. Чужие бренды в схеме БД (`diagnocatAiFindings`, `diagnocatReports` в `imaging.ts`) без канонических алиасов `radiologyAiFindings`, `radiologyAiReports` (Мандат 8ap).
+  6. Тест-саботажник `digitalSmileDesignInquisition.test.ts` читал TSX-файлы через `fs.readFileSync` и проверял строковые литералы вместо рантайм-логики.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Хардкод полностью ликвидирован. Модалки принимают активного пациента из `usePatientStore` и `useVisitStore` либо рендерят чистый пустой стейт.
+  2. Фейковые снимки удалены; внедрен честный `Empty State` («Снимков визиографа по данному пациенту не найдено») с `data-testid="consultation-empty-patient-studies"`. В фотопротоколе синий смайл заменен на чистую клиническую рамку `data-testid="dsd-empty-prompt"`.
+  3. `visitExaminationPhotoLinks.visitId` приведен к `uuid("visit_id").references(() => visits.id, { onDelete: "cascade" })`.
+  4. В `patientAttachmentsHandlers.ts` возвращается `404 Not Found` (`PatientNotFound`).
+  5. В `imaging.ts` экспортированы канонические доменные алиасы `radiologyAiFindings` и `radiologyAiReports`.
+  6. Тест `digitalSmileDesignInquisition.test.ts` переписан на прямое тестирование рантайм-экспортов, Zod-схем и математических пропорций (7/7 passed).
+  7. 4-State Visual Proofs высокого разрешения зафиксированы в `docs/proofs/radiology/` и лично осмотрены через `read_file`:
+     - ☀️ PC Light (1440x900): [`docs/proofs/radiology/01_radiology_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/01_radiology_pc_light_1440x900.png) (517.6 KB)
+     - 🌙 PC Dark (1440x900): [`docs/proofs/radiology/02_radiology_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/02_radiology_pc_dark_1440x900.png) (511.2 KB)
+     - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_photo_protocol_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_photo_protocol_mobile_light_390x844.png) (48.6 KB)
+     - 📱 Mobile Dark (390x844): [`docs/proofs/radiology/04_photo_protocol_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_photo_protocol_mobile_dark_390x844.png) (48.4 KB)
+- **Тесты:**
+  - `digitalSmileDesignInquisition.test.ts` (7/7 PASS)
+  - `radiologyConsultationSplitModulesDecomposition.test.ts` (6/6 PASS)
+  - `radiologyAndPhotoMockPurity.test.ts` (4/4 PASS)
+  - `radiologyConsultationSplit.test.ts` (11/11 PASS)
+  - `radiologyReportStudioAndSilentDose.test.ts` (6/6 PASS)
+  - `photoProtocolSSOTAndEmptyStateInquisition.test.ts` (7/7 PASS)
+  - `dsdStudioIntegration.test.ts` (5/5 PASS)
+  - `apps/api/src/routes/imaging.test.ts` (3/3 PASS)
+  - Машинные гейты: `check:encoding` (0 errors), `check:mock-defaults` (PASS), `check:type-ratchet` (PASS).
 
 
 ---

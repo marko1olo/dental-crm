@@ -43,6 +43,8 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly serviceName?: string | undefined;
 	readonly initialTechMapCodes?: readonly string[] | undefined;
 	readonly serviceCode?: string | undefined;
+	readonly statutoryCode?: string | undefined;
+	/** @deprecated use serviceCode or statutoryCode (Мандат 8x) */
 	readonly service804nCode?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -76,6 +78,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 	serviceName,
 	initialTechMapCodes,
 	serviceCode,
+	statutoryCode,
 	service804nCode,
 	doctorName,
 	doctorFullName,
@@ -116,7 +119,8 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 
 	if (!isOpen) return null;
 
-	const isClinicalMode = Boolean(patientName || initialServices || effectiveTitle || serviceCode || service804nCode);
+	const effectiveServiceCode = serviceCode || statutoryCode || service804nCode;
+	const isClinicalMode = Boolean(patientName || initialServices || effectiveTitle || effectiveServiceCode);
 	const isEmptyServices = Boolean(initialServices && initialServices.length === 0);
 
 	const content = (
