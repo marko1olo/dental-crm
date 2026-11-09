@@ -220,6 +220,24 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					),
 				);
 
+			// [DEF-ANL-02] Честный подсчет повторных плативших пациентов: платившие пациенты, у которых patients.createdAt < startDate либо первый визит был до startDate
+			const [repeatPayingPatientRow] = await db
+				.select({ count: sql<number>`count(distinct ${payments.patientId})` })
+				.from(payments)
+				.innerJoin(patients, eq(payments.patientId, patients.id))
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
+						eq(payments.status, "paid"),
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+						startDate
+							? sql`(${patients.createdAt} < ${startDate} or exists (select 1 from appointments a where a.patient_id = ${payments.patientId} and a.starts_at < ${startDate}))`
+							: sql`false`,
+					),
+				);
+
 			const [apptCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(appointments)
@@ -365,8 +383,9 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			);
 
 			const totalPayingPatients = Number(payingPatientRow?.count ?? 0);
-			const primaryCount = Number(patientCountRow?.count ?? 0);
-			const repeatCount = Math.max(0, totalPayingPatients - primaryCount);
+			const repeatCount = Number(repeatPayingPatientRow?.count ?? 0);
+			const primaryCount = Math.max(0, totalPayingPatients - repeatCount);
+			const totalRegisteredPatients = Number(patientCountRow?.count ?? 0);
 			const avgChk =
 				totalPayingPatients > 0
 					? Math.round(Number(revenueRow?.total ?? 0) / totalPayingPatients)
@@ -374,7 +393,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 
 			const data = {
 				kpis: {
-					totalPatients: primaryCount,
+					totalPatients: totalRegisteredPatients,
 					totalRevenue: Number(revenueRow?.total ?? 0),
 					cashRevenue: Number(revenueRow?.cash ?? 0),
 					cardRevenue: Number(revenueRow?.card ?? 0),

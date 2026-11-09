@@ -1,3 +1,3 @@
-export * from "./callLineManagement";
-export * from "./callAudioStreamActions";
-export * from "./callTransferAndDtmf";
+export { createCallLineManagementActions } from "./callLineManagement";
+export { createCallAudioStreamActions } from "./callAudioStreamActions";
+export { createCallTransferAndDtmfActions } from "./callTransferAndDtmf";

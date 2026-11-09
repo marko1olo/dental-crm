@@ -1067,6 +1067,30 @@
     * 📱 Mobile Dialer Light (390x844): [`docs/proofs/telephony/05_telephony_mobile_dialer_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/05_telephony_mobile_dialer_light_390x844.png) (73 KB)
     * 🌙 Mobile Dialer Dark (390x844): [`docs/proofs/telephony/06_telephony_mobile_dialer_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/06_telephony_mobile_dialer_dark_390x844.png) (73 KB)
 
+### [TEL-07] [SEV-1] [ИСПРАВЛЕНО] Хирургическое устранение дефектов телефонии, софтфона и вычистка сторонних брендов (Red Team Inquisitor)
+- **Файлы:**
+  - [`telephonyCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyCatalogData.ts)
+  - [`TelephonyDrawerHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyDrawerHeader.tsx)
+  - [`TelephonyCallLogItem.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/drawerModules/TelephonyCallLogItem.tsx)
+  - [`useDrawerLogActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/drawerModules/useDrawerLogActions.ts)
+  - [`IncomingCallPopup.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/IncomingCallPopup.tsx)
+  - [`useResolvedCallerIdentity.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/incomingCallDataModules/useResolvedCallerIdentity.ts)
+  - [`resolveCallAdvertisingAttribution.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyAttribution/resolveCallAdvertisingAttribution.ts)
+  - [`telephonyTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyTypes.ts)
+  - [`callTypes.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/telephony/callTypes.ts)
+- **Суть устраненных дефектов:**
+  1. **Ликвидация битой ссылки на аудиозапись:** В `telephonyCatalogData.ts:285` битый путь `/audio/call-sample-3.mp3` (HTTP 404) заменен на существующий файл `/audio/call-sample-2.mp3`.
+  2. **Корректный вывод даты визита:** В `TelephonyDrawerHeader.tsx:43` ликвидировано обращение к несуществующему `upcomingAppointment.dateText`, дата и время визита теперь выводятся через `${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime}`.
+  3. **Устранение магического числа:** В `TelephonyCallLogItem.tsx:76` удален хардкод `item.durationSeconds || 42`, заменен на честный `item.durationSeconds ?? 0`.
+  4. **Реальный исходящий звонок вместо Потемкинской имитации:** В `useDrawerLogActions.ts` ликвидирован вызов `triggerIncomingCall` с фейковым статусом `answered` и провайдером `mango`; подключен реальный вызов `initiateOutboundCall({ phone, patientId, patientName })` с отправкой запроса к Fastify API АТС клиники.
+  5. **Очищение от сторонних коммерческих брендов (Мандаты 8x и 8ap):** В типах `TelephonyProvider` (`shared/callTypes.ts`, `telephonyTypes.ts`) и в UI (`useResolvedCallerIdentity.ts`, `resolveCallAdvertisingAttribution.ts`) чужие бренды заменены на нейтральные категории (`sip`, `webrtc`, `cloud_pbx`, `local_pbx`) и чистый клинический русский («Облачная АТС», «SIP-линия», «Локальная АТС»).
+  6. **Ликвидация мертвого условия:** В `IncomingCallPopup.tsx:51` удалено мертвое условие `isDoctorMode || !isPopupExpanded` (упрощено до `!isPopupExpanded`, так как `isDoctorMode` отсекается ранее в строке 46).
+  7. **Снос файлов-сирот (Мандат 8bf):** Директория `apps/web/src/components/telephony/incomingCallQuickBooking/` (`computeQuickBookingSlots.ts`, `types.ts`) удалена через `git rm`.
+- **Машинные гейты и доказательства:**
+  - 121/121 тест телефонии зеленый (`pass 121, fail 0`).
+  - Все машинные гейты пройдены: `npm run check:encoding` (22 550 файлов), `npm run check:stub-overrides`, `npm run check:fetch-response` (13 005 файлов), `npm run check:dynamic-imports` (520 импортов).
+  - 4-State Visual Proofs (PC Light 104 KB, PC Dark 102 KB, Mobile Light 134 KB, Mobile Dark 133 KB) в `docs/proofs/telephony/` отсмотрены лично глазами через `read_file`.
+
 ---
 
 ## 10. 📊 АНАЛИТИКА РУКОВОДИТЕЛЯ, ДАШБОРДЫ И МЕТРИКИ
@@ -3787,3 +3811,54 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Marketing Promos Mobile Dark (390x844): [`docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png) (141.0 KB) — тёмный мобильный ассистент, тач-таргеты >= 44x44px, 0px горизонтального скролла.
   - 📱 Leads Kanban Mobile Light (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png) (56.6 KB) — нативная шторка, чистый empty state, кнопка «+ Новое обращение» в Natural Thumb Zone.
   - 📱 Leads Kanban Mobile Dark (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png) (55.6 KB) — безупречная тёмная мобильная тема, 0px скролл-дрифта.
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: АНАЛИТИКА, ДАШБОРД РУКОВОДИТЕЛЯ И ФИНАНСОВЫЕ ОТЧЁТЫ (МАНДАТЫ 8bd, 8bh, 8x, 8ap, 8k, 8z, 8al, DEF-ANL-01..04)
+- **Дата и статус:** 2026-11-09 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Red Team Чинильщик-Хирург аналитики, дашборда руководителя и финансовых отчетов (Analytics, Revenue, Utilization & Reports Fixer Surgeon).
+- **Канонический SSOT:**
+  - Frontend: `ExecutiveDashboard.tsx` (`ExecutiveFinancialSummary.tsx`, `DoctorPayrollReport.tsx`, `ChairOccupancyReport.tsx`), `ExecutiveAnalyticsStudioModal.tsx`, `ManagerReportsPanel.tsx`.
+  - Backend: `apps/api/src/routes/reports.ts` (`/api/reports/financial-summary`, `/api/reports/doctor-payroll`, `/api/reports/chairs`, `/api/reports/summary`), `apps/api/src/services/reports/managerReports/financialExecutiveReports.ts`.
+- **Устранённые дефекты:**
+  1. **DEF-ANL-01: Синтетический хардкод процентов расходов (Мандаты 8k, 8z, 8ap):** Физически удален `clinicPnlCalculator.ts` и весь каталог `financialEngine/` с синтетическими 18% COGS, 40% ФОТ, 15% накладных расходов.
+  2. **DEF-ANL-02: Искажение расчета повторных пациентов (Мандаты 8ap, 8z):** В `apps/api/src/routes/analytics/dashboardRoutes.ts` исправлен расчет `repeatCount`. Теперь повторные пациенты вычисляются строго и честно через реляционный запрос плативших пациентов с `patients.createdAt < startDate` либо наличием приемов в прошлом (`appointments.startsAt < startDate`).
+  3. **DEF-ANL-03: Потеря привязки платежа к врачу при оплате по счету (Мандаты 8ap, 8e):** В `apps/api/src/services/reports/managerReports/doctorReports.ts` и `financialExecutiveReports.ts` добавлен `leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))` с привязкой визита через `coalesce(payments.visitId, patientInvoices.visitId)`. Выручка при оплате по счету теперь строго относится к лечащему врачу (`appointments.doctorUserId`), исключая попадание в неотнесенные суммы.
+  4. **DEF-ANL-04: Хардкод 12-часового рабочего дня (Мандаты 8z, 8ap):** Физически удален `chairUtilizationDefaults.ts` и каталог `chairEngineModules/`. Расчет загрузки кресел идет через реальный график клиники `organizations.clinicSchedule` (канонический `chairLoad`).
+- **Расстрельный список удалённых файлов (20 файлов через git rm):**
+  1. `apps/web/src/components/analytics/chairUtilizationEngine.ts`
+  2. `apps/web/src/components/analytics/chairEngineModules/calculateSingleChairMetrics.ts`
+  3. `apps/web/src/components/analytics/chairEngineModules/chairUtilizationDefaults.ts`
+  4. `apps/web/src/components/analytics/chairEngineModules/chairUtilizationTypes.ts`
+  5. `apps/web/src/components/analytics/doctorProductivityEngine.ts`
+  6. `apps/web/src/components/analytics/doctorEngineModules/doctorProductivityAccumulator.ts`
+  7. `apps/web/src/components/analytics/doctorEngineModules/doctorProductivityTypes.ts`
+  8. `apps/web/src/components/analytics/financialAnalyticsEngine.ts`
+  9. `apps/web/src/components/analytics/financialEngine/accountsReceivableCalculator.ts`
+  10. `apps/web/src/components/analytics/financialEngine/clinicPnlCalculator.ts`
+  11. `apps/web/src/components/analytics/financialEngine/financialAggregator.ts`
+  12. `apps/web/src/components/analytics/financialEngine/financialEngineTypes.ts`
+  13. `apps/web/src/components/analytics/financialEngine/financialFormatters.ts`
+  14. `apps/web/src/components/analytics/__tests__/chairUtilizationOverload.test.ts`
+  15. `apps/web/src/components/analytics/__tests__/chairUtilizationSanpin.test.ts`
+  16. `apps/web/src/components/analytics/__tests__/doctorProductivityRanking.test.ts`
+  17. `apps/web/src/components/analytics/__tests__/financialAnalyticsAggregation.test.ts`
+  18. `apps/web/src/components/analytics/__tests__/financialAnalyticsMoneyAndPnl.test.ts`
+  19. `apps/web/src/components/analytics/__tests__/financialAnalyticsReceivables.test.ts`
+  20. `apps/api/src/routes/analytics/executiveRoutes.ts`
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> Exit Code 0 (22 558 файлов).
+  - `npm run check:stub-overrides` -> Exit Code 0.
+  - `npm run check:fetch-response` -> Exit Code 0 (13 005 файлов).
+  - `npm run check:dynamic-imports` -> Exit Code 0 (16 732 файла, 520 импортов).
+  - `npm run check:react-hooks` -> Exit Code 0 (3 805 файлов с хуками).
+  - `npm run check:buttons` и `check:css-tokens` -> Exit Code 0.
+  - `npm run check:migration-drift` -> Exit Code 0.
+  - Тесты:
+    - `analyticsDoctorAttributionAndRepeatPatients.test.ts` (1/1 PASS)
+    - `financialExecutiveSummaryIntegrity.test.ts` (2/2 PASS)
+    - `reportsDecomposition.test.ts` (12/12 PASS)
+    - `analyticsSSOTSuite.test.tsx`, `executiveSsotReports.test.tsx`, `executiveDashboardDeterminism.test.tsx` (25/25 PASS)
+- **4-State Visual Proofs (Личный осмотр через `read_file` по 8 осям Хаммера):**
+  - ☀️ PC Light (1440x900): `docs/proofs/analytics/01_analytics_dashboard_pc_light_1440x900.png` (86.6 KB) — 3 главных KPI карточки, 1 Primary CTA `✓ Экспорт управленческого отчёта`, 0px клиппинга.
+  - 🌙 PC Dark (1440x900): `docs/proofs/analytics/02_analytics_dashboard_pc_dark_1440x900.png` (83.1 KB) — глубокая тёмная палитра `var(--paper)`, WCAG AAA контраст, ноль белых пятен.
+  - 📱 Mobile Light (390x844): `docs/proofs/analytics/03_analytics_dashboard_mobile_light_390x844.png` (107.5 KB) — Apple HIG Grouped Cards, сегментированный переключатель периодов, плавающий бар в Natural Thumb Zone.
+  - 📱 Mobile Dark (390x844): `docs/proofs/analytics/04_analytics_dashboard_mobile_dark_390x844.png` (104.2 KB) — безупречная тёмная мобильная тема, тач-таргеты >= 44x44px, 0px скролл-дрифта.

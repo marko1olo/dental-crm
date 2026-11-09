@@ -3,7 +3,6 @@ import { registerCohortRoutes } from "./cohortRoutes.js";
 import { registerCuratorRoutes } from "./curatorRoutes.js";
 import { registerDashboardRoutes } from "./dashboardRoutes.js";
 import { registerDiagnocatRoutes } from "./diagnocatRoutes.js";
-import { registerExecutiveRoutes } from "./executiveRoutes.js";
 import { registerRebookingRoutes } from "./rebookingRoutes.js";
 import { registerUtilizationRoutes } from "./utilizationRoutes.js";
 
@@ -14,7 +13,6 @@ import { registerUtilizationRoutes } from "./utilizationRoutes.js";
 export async function registerAnalyticsRoutes(app: FastifyInstance) {
 	await registerDashboardRoutes(app);
 	await registerCuratorRoutes(app);
-	await registerExecutiveRoutes(app);
 	await registerRebookingRoutes(app);
 	await registerDiagnocatRoutes(app);
 	await registerCohortRoutes(app);
@@ -34,6 +32,5 @@ export * from "./cohortRoutes.js";
 export * from "./curatorRoutes.js";
 export * from "./dashboardRoutes.js";
 export * from "./diagnocatRoutes.js";
-export * from "./executiveRoutes.js";
 export * from "./rebookingRoutes.js";
 export * from "./utilizationRoutes.js";

@@ -20,6 +20,5 @@ export * from "./analytics/cohortRoutes.js";
 export * from "./analytics/curatorRoutes.js";
 export * from "./analytics/dashboardRoutes.js";
 export * from "./analytics/diagnocatRoutes.js";
-export * from "./analytics/executiveRoutes.js";
 export * from "./analytics/rebookingRoutes.js";
 export * from "./analytics/utilizationRoutes.js";

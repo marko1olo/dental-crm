@@ -27,7 +27,8 @@ describe("Telephony Quiet UI & Dynamic Island (Mandates 8d, 8e, 8p)", () => {
 		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
 
 		assert.ok(controllerSource.includes('selectedWorkspaceRole === "doctor" || currentView === "visit"'));
-		assert.ok(popupSource.includes("const shouldShowCapsule = isDoctorMode || !isPopupExpanded;"));
+		assert.ok(popupSource.includes("if (isDoctorMode) return null;"));
+		assert.ok(popupSource.includes("const shouldShowCapsule = !isPopupExpanded;"));
 		assert.ok(popupSource.includes("<IncomingCallCapsuleBar ctrl={ctrl} />"));
 	});
 

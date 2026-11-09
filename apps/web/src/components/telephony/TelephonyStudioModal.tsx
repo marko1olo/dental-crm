@@ -11,7 +11,7 @@ import {
 	Phone, PhoneCall, X, Delete, User, MessageCircle, AlertTriangle, Calendar, Check,
 } from "lucide-react";
 import {
-	type TelephonyCatalogCall, type TelephonyFilterType, TELEPHONY_CATALOG_DATA,
+	type TelephonyCatalogCall, type TelephonyCallType, type TelephonyFilterType, TELEPHONY_CATALOG_DATA,
 	TELEPHONY_CALL_TYPES, DIALPAD_KEYS, formatPhoneRu, getWhatsAppUrl, playSafeWebAudioTone,
 	triggerOpenPatientCard, triggerBookAppointment, triggerCreatePatient,
 } from "./telephonyCatalogData";
@@ -235,20 +235,20 @@ export const TelephonyStudioFooter: React.FC<TelephonyStudioFooterProps> = ({
 }) => {
 	const primaryCtaLabel = hasDialed
 		? `Позвонить на ${formatPhoneRu(dialedNumber)}`
-		: isNoteSaved ? "✓ Заметка сохранена" : "✓ Сохранить заметку звонка";
+		: isNoteSaved ? "Заметка сохранена" : "Сохранить заметку звонка";
 
 	return (
-		<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-strong)] shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
-			<div className="flex items-center gap-2 w-full sm:w-auto">
-				<button type="button" onClick={onBookAction} data-testid="telephony-secondary-book-btn" className="dnt-telephony-secondary-btn flex-1 sm:flex-initial cursor-pointer">
+		<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-strong)] shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
+			<button type="button" onClick={onPrimaryAction} data-testid="telephony-primary-cta-btn" className="dnt-telephony-primary-cta w-full sm:w-auto order-1 sm:order-2 cursor-pointer font-bold shadow-xs">
+				{hasDialed ? <PhoneCall className="w-4 h-4" /> : isNoteSaved ? <Check className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+				<span>{primaryCtaLabel}</span>
+			</button>
+			<div className="flex items-center gap-2 w-full sm:w-auto order-2 sm:order-1">
+				<button type="button" onClick={onBookAction} data-testid="telephony-secondary-book-btn" className="dnt-telephony-secondary-btn w-full sm:w-auto cursor-pointer">
 					<Calendar className="w-3.5 h-3.5" />
 					<span>Записать на приём</span>
 				</button>
 			</div>
-			<button type="button" onClick={onPrimaryAction} data-testid="telephony-primary-cta-btn" className="dnt-telephony-primary-cta w-full sm:w-auto cursor-pointer">
-				{hasDialed ? <PhoneCall className="w-4 h-4" /> : isNoteSaved ? <Check className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
-				<span>{primaryCtaLabel}</span>
-			</button>
 		</div>
 	);
 };

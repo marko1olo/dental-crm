@@ -73,7 +73,7 @@ export function TelephonyCallLogItem({
 				<div className="pt-1" data-testid="call-log-audio-player-container">
 					<CallAudioPlayer
 						recordingUrl={item.recordingUrl}
-						durationSeconds={item.durationSeconds || 42}
+						durationSeconds={item.durationSeconds ?? 0}
 						seed={itemKey}
 						transcript={item.transcript}
 					/>

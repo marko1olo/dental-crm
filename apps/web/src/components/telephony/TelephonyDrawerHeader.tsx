@@ -36,12 +36,18 @@ export function TelephonyDrawerHeader({
 				<User className="text-[var(--teal)] shrink-0" size={18} />
 				<div>
 					<h2 className="text-sm font-bold text-[var(--ink)] leading-none">Карточка звонящего</h2>
-					<div className="flex items-center gap-1.5 mt-1">
-						<span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
-							<Check size={10} />Визит сохранён
-						</span>
-						<span className="text-[10px] text-[var(--muted)]">(без сброса формы)</span>
-					</div>
+					{upcomingAppointment ? (
+						<div className="flex items-center gap-1.5 mt-1">
+							<span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
+								<Check size={10} />
+								Запись: {upcomingAppointment.formattedDate ? `${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime}` : "Визит запланирован"}
+							</span>
+						</div>
+					) : (
+						<p className="text-[10px] text-[var(--ink-muted)] mt-0.5">
+							{isKnownPatient ? "Карта пациента найдена" : "Новый звонящий"}
+						</p>
+					)}
 				</div>
 			</div>
 

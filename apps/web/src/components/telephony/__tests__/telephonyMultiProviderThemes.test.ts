@@ -38,8 +38,8 @@ describe("Telephony: CRM Themes & Multi-Provider Invariants", () => {
 		}
 	});
 
-	test("supports all 5 PBX / VoIP provider configurations", () => {
-		const providers = ["mango", "uis", "asterisk", "zadarma", "unknown"] as const;
+	test("supports all PBX / VoIP provider configurations", () => {
+		const providers = ["sip", "webrtc", "cloud_pbx", "local_pbx", "mango", "uis", "asterisk", "zadarma", "unknown"] as const;
 		for (const p of providers) {
 			useTelephonyStore.getState().triggerIncomingCall({
 				phone: "+79031112233",

@@ -54,14 +54,14 @@ export function resolveCallAdvertisingAttribution(
 	const virtualNumberDisplay = rawTrunk ? formatPhoneDisplay(rawTrunk) : "";
 
 	const providerLabel =
-		call.provider === "mango"
-			? "Mango Telecom"
-			: call.provider === "uis"
-				? "UIS / CoMagic"
-				: call.provider === "asterisk"
-					? "Asterisk SIP"
-					: call.provider === "zadarma"
-						? "Zadarma PBX"
+		call.provider === "sip"
+			? "SIP-линия"
+			: call.provider === "webrtc"
+				? "WebRTC"
+				: call.provider === "local_pbx" || call.provider === "asterisk"
+					? "Локальная АТС"
+					: call.provider === "cloud_pbx" || call.provider === "mango" || call.provider === "uis" || call.provider === "zadarma"
+						? "Облачная АТС"
 						: "ВАТС";
 
 	const utmParts: string[] = [];

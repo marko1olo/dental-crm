@@ -13,8 +13,9 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 	} = ctrl;
 
 	const hasAcutePain = Boolean(ctrl.acutePainAlerts?.length) || Boolean((ctrl.currentCall as any)?.acutePain);
-	const lastVisitText = lastVisitSummary?.date
-		? `Визит: ${lastVisitSummary.date}`
+	const lastVisitDateVal = lastVisitSummary?.formattedLastVisit || lastVisitSummary?.lastVisitDate;
+	const lastVisitText = lastVisitDateVal
+		? `Визит: ${lastVisitDateVal}`
 		: isKnownPatient ? "Карта создана" : "Первичный";
 
 	return (

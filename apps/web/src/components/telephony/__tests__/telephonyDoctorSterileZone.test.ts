@@ -15,8 +15,12 @@ describe("Telephony Doctor Sterile Zone & Solo Doctor Autonomy (Mandates 8e, 8n,
 		const popupSource = fs.readFileSync(popupPath, "utf-8");
 
 		assert.ok(
-			popupSource.includes("const shouldShowCapsule = isDoctorMode || !isPopupExpanded;"),
-			"IncomingCallPopup must collapse into IncomingCallCapsuleBar in doctor mode",
+			popupSource.includes("if (isDoctorMode) return null;"),
+			"IncomingCallPopup must return null in doctor sterile zone",
+		);
+		assert.ok(
+			popupSource.includes("const shouldShowCapsule = !isPopupExpanded;"),
+			"IncomingCallPopup must use simplified capsule visibility condition",
 		);
 		assert.ok(
 			popupSource.includes("<IncomingCallCapsuleBar ctrl={ctrl} />"),

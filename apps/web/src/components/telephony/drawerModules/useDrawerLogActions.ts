@@ -1,12 +1,12 @@
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
-import { useTelephonyStore, type CallHistoryItem, type PatientRecord } from "../../../store/telephonyStore";
+import { type CallHistoryItem, type PatientRecord } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
+import { initiateOutboundCall } from "../initiateOutboundCall";
 
 export function useDrawerLogActions(params: { dashboard: any; handleClose: () => void }) {
 	const { dashboard, handleClose } = params;
-	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
@@ -14,17 +14,11 @@ export function useDrawerLogActions(params: { dashboard: any; handleClose: () =>
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const handleCallbackFromLog = (item: CallHistoryItem) => {
-		triggerIncomingCall({
+		void initiateOutboundCall({
 			phone: item.phone,
 			patientId: item.patientId || null,
-			patientName: item.patientName || "Исходящий вызов",
-			provider: item.provider || "mango",
-			timestamp: new Date().toISOString(),
-			status: "answered",
-			direction: "outbound",
-			callStartedAt: Date.now(),
+			patientName: item.patientName || undefined,
 		});
-		showToast(`Исходящий вызов на ${item.phone}`, "info");
 	};
 
 	const handleQuickBookFromLog = (item: CallHistoryItem, matched: PatientRecord | null) => {

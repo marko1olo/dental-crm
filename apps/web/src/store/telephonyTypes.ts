@@ -3,11 +3,14 @@ export type PatientRecord = TelephonyPatientLike;
 export type { DashboardResponse, TelephonyPatientLike };
 
 export type TelephonyProvider =
+	| "sip"
+	| "webrtc"
+	| "cloud_pbx"
+	| "local_pbx"
+	| "asterisk"
 	| "mango"
 	| "uis"
-	| "asterisk"
 	| "zadarma"
-	| "sip"
 	| "unknown";
 export type TelephonyCallStatus =
 	| "ringing"
@@ -245,6 +248,7 @@ export interface TelephonyStore {
 	unholdCall: () => void;
 	toggleHold: () => void;
 	triggerIncomingCall: (call: IncomingCallPayload) => void;
+	startOutboundCall: (call: IncomingCallPayload) => void;
 	answerCall: () => void;
 	connectCall: () => void;
 	acceptCall: () => void;

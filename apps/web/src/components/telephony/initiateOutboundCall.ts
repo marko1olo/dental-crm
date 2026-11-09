@@ -12,8 +12,8 @@ import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalSt
 
 export interface OutboundCallRequest {
 	phone: string;
-	patientId?: string | null;
-	patientName?: string | null;
+	patientId?: string | null | undefined;
+	patientName?: string | null | undefined;
 }
 
 export async function initiateOutboundCall(req: OutboundCallRequest): Promise<boolean> {

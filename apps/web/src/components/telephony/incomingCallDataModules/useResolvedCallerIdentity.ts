@@ -47,14 +47,14 @@ export function useResolvedCallerIdentity(
 	const isKnownPatient = Boolean(resolvedPatient);
 
 	const providerLabel =
-		currentCall?.provider === "mango"
-			? "Mango Telecom"
-			: currentCall?.provider === "uis"
-				? "UIS / CoMagic"
-				: currentCall?.provider === "asterisk"
-					? "Asterisk SIP"
-					: currentCall?.provider === "zadarma"
-						? "Zadarma PBX"
+		currentCall?.provider === "sip"
+			? "SIP-линия"
+			: currentCall?.provider === "webrtc"
+				? "WebRTC Софтфон"
+				: currentCall?.provider === "local_pbx" || currentCall?.provider === "asterisk"
+					? "Локальная АТС"
+					: currentCall?.provider === "cloud_pbx" || currentCall?.provider === "mango" || currentCall?.provider === "uis" || currentCall?.provider === "zadarma"
+						? "Облачная АТС"
 						: "IP-Телефония";
 
 	return {

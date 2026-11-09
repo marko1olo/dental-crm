@@ -1035,6 +1035,30 @@
     * 📱 Mobile Dialer Light (390x844): [`docs/proofs/telephony/05_telephony_mobile_dialer_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/05_telephony_mobile_dialer_light_390x844.png) (73 KB)
     * 🌙 Mobile Dialer Dark (390x844): [`docs/proofs/telephony/06_telephony_mobile_dialer_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/06_telephony_mobile_dialer_dark_390x844.png) (73 KB)
 
+### [TEL-07] [SEV-1] [ИСПРАВЛЕНО] Хирургическое устранение дефектов телефонии, софтфона и вычистка сторонних брендов (Red Team Inquisitor)
+- **Файлы:**
+  - [`telephonyCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyCatalogData.ts)
+  - [`TelephonyDrawerHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyDrawerHeader.tsx)
+  - [`TelephonyCallLogItem.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/drawerModules/TelephonyCallLogItem.tsx)
+  - [`useDrawerLogActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/drawerModules/useDrawerLogActions.ts)
+  - [`IncomingCallPopup.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/IncomingCallPopup.tsx)
+  - [`useResolvedCallerIdentity.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/incomingCallDataModules/useResolvedCallerIdentity.ts)
+  - [`resolveCallAdvertisingAttribution.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyAttribution/resolveCallAdvertisingAttribution.ts)
+  - [`telephonyTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyTypes.ts)
+  - [`callTypes.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/telephony/callTypes.ts)
+- **Суть устраненных дефектов:**
+  1. **Ликвидация битой ссылки на аудиозапись:** В `telephonyCatalogData.ts:285` битый путь `/audio/call-sample-3.mp3` (HTTP 404) заменен на существующий файл `/audio/call-sample-2.mp3`.
+  2. **Корректный вывод даты визита:** В `TelephonyDrawerHeader.tsx:43` ликвидировано обращение к несуществующему `upcomingAppointment.dateText`, дата и время визита теперь выводятся через `${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime}`.
+  3. **Устранение магического числа:** В `TelephonyCallLogItem.tsx:76` удален хардкод `item.durationSeconds || 42`, заменен на честный `item.durationSeconds ?? 0`.
+  4. **Реальный исходящий звонок вместо Потемкинской имитации:** В `useDrawerLogActions.ts` ликвидирован вызов `triggerIncomingCall` с фейковым статусом `answered` и провайдером `mango`; подключен реальный вызов `initiateOutboundCall({ phone, patientId, patientName })` с отправкой запроса к Fastify API АТС клиники.
+  5. **Очищение от сторонних коммерческих брендов (Мандаты 8x и 8ap):** В типах `TelephonyProvider` (`shared/callTypes.ts`, `telephonyTypes.ts`) и в UI (`useResolvedCallerIdentity.ts`, `resolveCallAdvertisingAttribution.ts`) чужие бренды заменены на нейтральные категории (`sip`, `webrtc`, `cloud_pbx`, `local_pbx`) и чистый клинический русский («Облачная АТС», «SIP-линия», «Локальная АТС»).
+  6. **Ликвидация мертвого условия:** В `IncomingCallPopup.tsx:51` удалено мертвое условие `isDoctorMode || !isPopupExpanded` (упрощено до `!isPopupExpanded`, так как `isDoctorMode` отсекается ранее в строке 46).
+  7. **Снос файлов-сирот (Мандат 8bf):** Директория `apps/web/src/components/telephony/incomingCallQuickBooking/` (`computeQuickBookingSlots.ts`, `types.ts`) удалена через `git rm`.
+- **Машинные гейты и доказательства:**
+  - 121/121 тест телефонии зеленый (`pass 121, fail 0`).
+  - Все машинные гейты пройдены: `npm run check:encoding` (22 550 файлов), `npm run check:stub-overrides`, `npm run check:fetch-response` (13 005 файлов), `npm run check:dynamic-imports` (520 импортов).
+  - 4-State Visual Proofs (PC Light 104 KB, PC Dark 102 KB, Mobile Light 134 KB, Mobile Dark 133 KB) в `docs/proofs/telephony/` отсмотрены лично глазами через `read_file`.
+
 ---
 
 ## 10. 📊 АНАЛИТИКА РУКОВОДИТЕЛЯ, ДАШБОРДЫ И МЕТРИКИ

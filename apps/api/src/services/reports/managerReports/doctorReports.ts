@@ -9,6 +9,7 @@ import {
 	chairs,
 	communicationOutbox,
 	organizations,
+	patientInvoices,
 	payments,
 	users,
 	visits,
@@ -49,7 +50,11 @@ export async function doctorPerformance(
 			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)::numeric(12,2)`,
 		})
 		.from(payments)
-		.leftJoin(visits, eq(payments.visitId, visits.id))
+		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
+		.leftJoin(
+			visits,
+			eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+		)
 		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.where(
 			and(

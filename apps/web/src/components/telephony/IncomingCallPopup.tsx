@@ -6,7 +6,6 @@ import {
 	IncomingCallPatientContextCard,
 	IncomingCallQuickBookingSection,
 	IncomingCallActionFooter,
-	IncomingCallDrawerPortal,
 	useIncomingCallPopupController,
 } from "./incomingCallPopupModules";
 if (typeof document !== "undefined") {
@@ -49,39 +48,35 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 	if (activeCall.direction === "outbound") return null;
 	if (typeof document === "undefined") return null;
 
-	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;
+	const shouldShowCapsule = !isPopupExpanded;
 
 	return createPortal(
-		<>
-			<div
-				className={`dnt-incoming-call-badge-container z-[99990] flex flex-col pointer-events-none ${!shouldShowCapsule ? "is-expanded" : ""}`}
-				style={{ zIndex: 99990 }}
-				data-testid="incoming-call-badge-container"
-			>
-				{shouldShowCapsule ? (
-					<IncomingCallCapsuleBar ctrl={ctrl} />
-				) : (
-					<section
-						className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-full max-w-[480px] box-border"
-						aria-label="Входящий звонок телефонии"
-						data-testid="incoming-call-popup"
-					>
-						{/* iOS Bottom Sheet Drag Handle (Apple HIG, Mandate 8am) */}
-						<div
-							className="w-9 h-1 rounded-full bg-[var(--line-strong,var(--line,#94a3b8))] mx-auto mb-1 hidden max-md:block shrink-0"
-							data-testid="bottom-sheet-drag-handle"
-							aria-hidden="true"
-						/>
-						<IncomingCallHeaderBar ctrl={ctrl} />
-						<IncomingCallPatientContextCard ctrl={ctrl} />
-						<IncomingCallQuickBookingSection ctrl={ctrl} />
-						<IncomingCallActionFooter ctrl={ctrl} />
-					</section>
-				)}
-			</div>
-
-			<IncomingCallDrawerPortal ctrl={ctrl} />
-		</>,
+		<div
+			className={`dnt-incoming-call-badge-container z-[99990] flex flex-col pointer-events-none ${!shouldShowCapsule ? "is-expanded" : ""}`}
+			style={{ zIndex: 99990 }}
+			data-testid="incoming-call-badge-container"
+		>
+			{shouldShowCapsule ? (
+				<IncomingCallCapsuleBar ctrl={ctrl} />
+			) : (
+				<section
+					className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-full max-w-[480px] box-border"
+					aria-label="Входящий звонок телефонии"
+					data-testid="incoming-call-popup"
+				>
+					{/* iOS Bottom Sheet Drag Handle (Apple HIG, Mandate 8am) */}
+					<div
+						className="w-9 h-1 rounded-full bg-[var(--line-strong,var(--line,#94a3b8))] mx-auto mb-1 hidden max-md:block shrink-0"
+						data-testid="bottom-sheet-drag-handle"
+						aria-hidden="true"
+					/>
+					<IncomingCallHeaderBar ctrl={ctrl} />
+					<IncomingCallPatientContextCard ctrl={ctrl} />
+					<IncomingCallQuickBookingSection ctrl={ctrl} />
+					<IncomingCallActionFooter ctrl={ctrl} />
+				</section>
+			)}
+		</div>,
 		document.body,
 	);
 }

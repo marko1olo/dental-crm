@@ -4,7 +4,7 @@ import type { CallOutcome } from "./outcomeTypes.js";
  * Telephony & WebRTC Softphone Call & Line Contracts
  */
 
-export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "unknown" | "sip";
+export type TelephonyProvider = "sip" | "webrtc" | "cloud_pbx" | "local_pbx" | "asterisk" | "mango" | "uis" | "zadarma" | "unknown";
 export type TelephonyCallStatus = "ringing" | "answered" | "connected" | "ended" | "rejected" | "missed";
 export type TelephonyAgentState = "online" | "dnd" | "pause" | "offline";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;

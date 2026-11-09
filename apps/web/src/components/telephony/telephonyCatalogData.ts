@@ -282,7 +282,7 @@ export const TELEPHONY_CATALOG_DATA: TelephonyCatalogCall[] = [
 		durationSeconds: 200,
 		timestampText: "Вчера, 14:10",
 		hasRecording: true,
-		recordingUrl: "/audio/call-sample-3.mp3",
+		recordingUrl: "/audio/call-sample-2.mp3",
 		transcriptSnippet: "Запись на плановую замену эластических лигатур на верхней челюсти.",
 	},
 	{

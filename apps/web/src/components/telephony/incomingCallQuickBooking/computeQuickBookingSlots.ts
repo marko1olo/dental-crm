@@ -1,1 +1,0 @@
-export { computeQuickBookingSlots } from "../IncomingCallQuickBooking";

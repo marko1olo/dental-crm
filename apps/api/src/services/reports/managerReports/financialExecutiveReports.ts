@@ -17,6 +17,7 @@ import {
 	doctorPayrollStatements,
 	inventoryTransactions,
 	invoices,
+	patientInvoices,
 	payments,
 	users,
 	visits,
@@ -198,9 +199,13 @@ export async function financialExecutiveSummary(
 	const depositRealizedRub = depositRub;
 	const depositRealizedKopecks = Math.round(depositRealizedRub * 100);
 
-	// (в) Итоговая выручка кассы за период (фактический приход ДДС + погашение депозитов за вычетом возвратов):
-	const totalRevenueRub = cashInflowRub + depositRealizedRub;
-	const totalRevenueKopecks = cashInflowKopecks + depositRealizedKopecks;
+	// (в) Итоговая выручка от реализации услуг за период:
+	// Рассчитывается по фактически выполненным нарядам и актам (invoicesSummary.invoicesTotalRub),
+	// либо (если наряды не выставлялись отдельно) как сумма прямых платежей за оказанные услуги плюс зачет депозита,
+	// исключая повторный учет внесенного ранее аванса!
+	const totalRevenueRub =
+		totalInvoicedRub > 0 ? totalInvoicedRub : cashInflowRub + depositRealizedRub;
+	const totalRevenueKopecks = Math.round(totalRevenueRub * 100);
 
 	// Общий объем платежных проводок за период (для долевого распределения в breakdown)
 	const paymentTurnoverRub = cashInflowRub + depositRealizedRub;
@@ -347,7 +352,11 @@ export async function doctorPayrollReport(
 			completedCount: sql<number>`count(distinct case when ${appointments.status} = 'completed' then ${appointments.id} end)::int`,
 		})
 		.from(payments)
-		.leftJoin(visits, eq(payments.visitId, visits.id))
+		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
+		.leftJoin(
+			visits,
+			eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+		)
 		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.where(
 			and(
