@@ -2,7 +2,7 @@
  * copilotSSOTSuite.test.tsx — Red Team SSOT сьют тестов канонического ИИ-копайлота DENTE CRM.
  * 
  * Проверка архитектурных инвариантов:
- * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 280–350, CopilotStudioModal 380–480, DirectCopilotLauncher 60–100).
+ * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 280–350, CopilotStudioModal 380–480, CopilotGlobalHost 100–160).
  * - Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 (var(--teal)).
  * - Мандат 8e: автономия врача, ноль disabled кнопок, Two-Phase Guard.
  * - Мандат 8wy: двухрежимный харнесс (Веб-ассистент vs Станция ОС).
@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CopilotStudioModal, DEFAULT_INITIAL_MESSAGES } from "../CopilotStudioModal";
-import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
+import { CopilotGlobalHost } from "../CopilotGlobalHost";
 import {
   COPILOT_CATALOG_CATEGORIES,
   CRM_FASTIFY_TOOLS_REGISTRY,
@@ -169,14 +169,14 @@ describe("Copilot Studio SSOT & Voice Suite", () => {
     assert.ok(lines >= 280 && lines <= 350, `copilotCatalogData.ts имеет ${lines} строк (ожидалось 280–350)`);
   });
 
-  it("12. Мандат 8b: размер файла DirectCopilotLauncher.tsx строго в Sweet Spot 60–100 строк", () => {
-    const filePath = path.join(__dirname, "../DirectCopilotLauncher.tsx");
+  it("12. Мандат 8b: размер файла CopilotGlobalHost.tsx строго в Sweet Spot <= 160 строк", () => {
+    const filePath = path.join(__dirname, "../CopilotGlobalHost.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 60 && lines <= 100, `DirectCopilotLauncher.tsx имеет ${lines} строк (ожидалось 60–100)`);
+    assert.ok(lines >= 100 && lines <= 160, `CopilotGlobalHost.tsx имеет ${lines} строк (ожидалось 100–160)`);
   });
 
-  it("13. DirectCopilotLauncher монтируется и не падает при SSR", () => {
-    const html = renderToString(<DirectCopilotLauncher />);
+  it("13. CopilotGlobalHost монтируется и не падает при SSR", () => {
+    const html = renderToString(<CopilotGlobalHost />);
     assert.equal(typeof html, "string");
   });
 });

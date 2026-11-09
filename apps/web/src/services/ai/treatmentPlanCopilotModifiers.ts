@@ -75,7 +75,7 @@ export function replaceImplantationWithBridge(
 	if (terminalTooth) {
 		return {
 			success: false,
-			commandType: "bridge_replace",
+			commandType: "implant_to_bridge",
 			commandTitle: "Заменить имплантацию на мостовидный протез",
 			explanation: `Концевой дефект зубного ряда в области зуба ${terminalTooth}: отсутствует дистальная опора для мостовидного протеза. Мостовидный протез невозможен, показана дентальная имплантация либо съемное протезирование.`,
 			stages,

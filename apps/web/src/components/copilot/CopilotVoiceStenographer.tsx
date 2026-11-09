@@ -201,7 +201,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         <div
           className={`copilot-stenographer-vu-meter ${isListening ? "copilot-stenographer-vu-meter--active" : ""}`}
           aria-label="Индикатор аудио-сигнала"
-          onClick={isListening ? stopListening : startListening}
+          onClick={() => { if (isListening) void stopListening(); else void startListening(); }}
           title={isListening ? "Остановить запись" : "Включить запись"}
           style={{ cursor: "pointer" }}
         >

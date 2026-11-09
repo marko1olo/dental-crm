@@ -6,35 +6,15 @@
  */
 
 import { create } from "zustand";
-import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../lib/safeLocalStorage";
+import { safeLocalStorageGetJson, safeLocalStorageSetJson, readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../lib/demoMode";
+import { type ContextTelemetryData, PRODUCTION_TELEMETRY, SHOWCASE_TELEMETRY } from "../components/copilot/telemetry/telemetryTypes";
+import { SHOWCASE_MEMORY_FACTS, SHOWCASE_THREADS, SHOWCASE_TOOL_LOGS } from "./copilotShowcaseData";
 import {
-	type ContextTelemetryData,
-	PRODUCTION_TELEMETRY,
-	SHOWCASE_TELEMETRY,
-} from "../components/copilot/telemetry/telemetryTypes";
-import {
-	SHOWCASE_MEMORY_FACTS,
-	SHOWCASE_THREADS,
-	SHOWCASE_TOOL_LOGS,
-} from "./copilotShowcaseData";
-import {
-	appendRemoteMessage,
-	createRemoteSession,
-	deleteRemoteSession,
-	fetchRemoteMessages,
-	fetchRemoteSessions,
-	fetchRemoteMemoryFacts,
-	saveRemoteMemoryFacts,
-	generateSessionUuid,
-	isSessionUuid,
-	updateRemoteSession,
+	appendRemoteMessage, createRemoteSession, deleteRemoteSession, fetchRemoteMessages,
+	fetchRemoteSessions, fetchRemoteMemoryFacts, saveRemoteMemoryFacts, generateSessionUuid, isSessionUuid, updateRemoteSession,
 } from "./copilotSessionApi";
-import {
-	DEFAULT_SETTINGS,
-	detectRuntimeEnvironment,
-	getInitialCopilotState,
-} from "./copilotStoreDefaults";
+import { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState } from "./copilotStoreDefaults";
 
 export { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState };
 
@@ -198,33 +178,13 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		});
 	},
 
-	setTrustLevel: (level) => {
-		get().updateSettings({ trustLevel: level });
-	},
-
-	setRuntimeMode: (mode) => {
-		get().updateSettings({ runtimeMode: mode });
-	},
-
-	refreshRuntimeEnvironment: () => {
-		const detected = detectRuntimeEnvironment();
-		get().updateSettings({ runtimeMode: detected });
-		return detected;
-	},
-
-	updateTelemetry: (patch) => {
-		set((state) => ({
-			telemetry: { ...state.telemetry, ...patch },
-		}));
-	},
+	setTrustLevel: (level) => { get().updateSettings({ trustLevel: level }); },
+	setRuntimeMode: (mode) => { get().updateSettings({ runtimeMode: mode }); },
+	refreshRuntimeEnvironment: () => { const detected = detectRuntimeEnvironment(); get().updateSettings({ runtimeMode: detected }); return detected; },
+	updateTelemetry: (patch) => { set((state) => ({ telemetry: { ...state.telemetry, ...patch } })); },
 
 	addMemoryFact: (category, fact) => {
-		const newFact: AiMemoryFact = {
-			id: `mem-${Date.now()}`,
-			category,
-			fact: fact.trim(),
-			createdAt: new Date().toISOString().slice(0, 10),
-		};
+		const newFact: AiMemoryFact = { id: `mem-${Date.now()}`, category, fact: fact.trim(), createdAt: new Date().toISOString().slice(0, 10) };
 		set((state) => {
 			const next = [newFact, ...state.memoryFacts];
 			safeLocalStorageSetJson("dente_copilot_memory", next);
@@ -267,7 +227,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
 			createdAt: new Date().toISOString(),
 			patientName,
-			patientId,
+			...(patientId ? { patientId } : {}),
 			messageCount: 0,
 		};
 		set((state) => {
@@ -430,7 +390,31 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	},
 
 	setActiveDiff: (diff) => set({ activeDiff: diff }),
-	applyActiveDiff: () => set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: true } : null })),
+	applyActiveDiff: async () => {
+		const diff = get().activeDiff;
+		if (!diff || diff.applied) return;
+		const token = readDenteClinicToken() || readDenteStaffToken() || "";
+		const runtime = get().settings.runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
+		const isReplace = Boolean(diff.beforeText && !diff.beforeText.startsWith("(") && diff.beforeText.trim().length > 0);
+		const toolName = isReplace ? "replace_file_content" : "write_clinical_file";
+		const args = isReplace
+			? { targetFile: diff.targetEntity, targetContent: diff.beforeText, replacementContent: diff.afterText }
+			: { filePath: diff.targetEntity, content: diff.afterText };
+		try {
+			const res = await fetch("/api/agent/action", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", "x-agent-runtime": runtime, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+				body: JSON.stringify({ toolName, args, sessionId: get().activeThreadId || undefined, runtimeMode: runtime }),
+			});
+			const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+			const ok = res.ok && data?.ok !== false;
+			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: ok } : null }));
+			get().addToolLog({ toolName, category: "workstation", status: ok ? "success" : "rejected", args, resultSummary: ok ? `Применен дифф: ${diff.targetEntity.split(/[/\\]/).pop() || diff.targetEntity}` : `Сбой диффа: ${data?.error || res.statusText}` });
+		} catch (err) {
+			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: false } : null }));
+			get().addToolLog({ toolName, category: "workstation", status: "rejected", args, resultSummary: `Ошибка сети при диффе: ${err instanceof Error ? err.message : String(err)}` });
+		}
+	},
 	rejectActiveDiff: () => set({ activeDiff: null }),
 	setSettingsOpen: (open) => set({ isSettingsOpen: open }),
 	setHistoryOpen: (open) => set({ isHistoryOpen: open }),

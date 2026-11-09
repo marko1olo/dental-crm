@@ -31,6 +31,9 @@ interface UseCopilotStreamParams {
 	cacheNames: (toolName: string, result: unknown) => void;
 }
 
+const mapAssistantPhase = (p: string): CopilotPhase =>
+	p === "thinking" || p === "working" || p === "writing" ? p : null;
+
 export function useCopilotStream({
 	apiBaseUrl,
 	isOpen,
@@ -82,9 +85,10 @@ export function useCopilotStream({
 							urgency: a.alertType === "drug_allergy_conflict" ? "CRITICAL" : "URGENT",
 							title: a.alertType === "drug_allergy_conflict" ? "Лекарственная несовместимость" : "Клиническое предостережение",
 							subtitle: "Chairside Sentinel Engine",
-							description: a.message,
-							created_at: new Date().toISOString(),
-							actions: a.safeAlternative ? [{ label: `Альтернатива: ${a.safeAlternative}`, type: "secondary" }] : [],
+							description: String(a.message || ""),
+							timestamp: new Date().toISOString(),
+							category: "clinical_alert",
+							actions: a.safeAlternative ? [{ id: `act-${idx}`, label: `Альтернатива: ${a.safeAlternative}`, kind: "secondary" as const }] : [],
 						}));
 						setProactiveAlerts((prev) => [...prev.filter((p) => !p.id.startsWith("sentinel-alert-")), ...mappedAlerts]);
 					}
@@ -154,14 +158,14 @@ export function useCopilotStream({
 						await executeLocalFallback(
 							queryText,
 							fallbackMsg,
-							(p) => setPhase(p),
+							(p) => setPhase(mapAssistantPhase(p)),
 							{
 								onMessageUpdated: (updated) => {
 									if (updated.content) {
 										handleEvent("text_chunk", { text: updated.content });
 									}
 								},
-								onPhaseChanged: (p) => setPhase(p),
+								onPhaseChanged: (p) => setPhase(mapAssistantPhase(p)),
 							},
 						);
 						handleEvent("done", {});
@@ -189,14 +193,14 @@ export function useCopilotStream({
 						await executeLocalFallback(
 							queryText,
 							fallbackMsg,
-							(p) => setPhase(p),
+							(p) => setPhase(mapAssistantPhase(p)),
 							{
 								onMessageUpdated: (updated) => {
 									if (updated.content) {
 										handleEvent("text_chunk", { text: updated.content });
 									}
 								},
-								onPhaseChanged: (p) => setPhase(p),
+								onPhaseChanged: (p) => setPhase(mapAssistantPhase(p)),
 							},
 						);
 						handleEvent("done", {});

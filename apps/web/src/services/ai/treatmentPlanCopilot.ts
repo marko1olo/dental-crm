@@ -93,7 +93,7 @@ export function optimizePlanForBudget(
 			// Оптимизация коронок: Цирконий / E.max (35 000 ₽) -> Металлокерамика / Композитная коронка (16 000 ₽)
 			if (
 				item.category === "Ортопедия" &&
-				(item.code804n.startsWith("A16.07.004") || /циркони|e\.max|керамич/i.test(item.name)) &&
+				(Boolean(item.code804n?.startsWith("A16.07.004")) || /циркони|e\.max|керамич/i.test(item.name)) &&
 				item.priceRub > 20000
 			) {
 				const qty = item.quantity || 1;
@@ -126,7 +126,7 @@ export function optimizePlanForBudget(
 			// Оптимизация имплантатов: Премиум (55 000 ₽) -> Стандарт Osstem/Dentium (32 000 ₽)
 			if (
 				item.category === "Хирургия" &&
-				item.code804n.startsWith("A16.07.054") &&
+				Boolean(item.code804n?.startsWith("A16.07.054")) &&
 				item.priceRub > 40000
 			) {
 				const qty = item.quantity || 1;
@@ -316,9 +316,9 @@ export async function requestTreatmentPlanAiValidationAndComment(
 		items: s.items.map((it) => ({
 			id: it.id,
 			toothNumber: it.toothNumber,
-			code804n: it.code804n,
+			code804n: it.code804n || "A16.07.001",
 			name: it.name,
-			category: it.category,
+			category: it.category || "Терапия",
 			priceRub: it.priceRub,
 			unitPriceRub: it.unitPriceRub,
 			quantity: it.quantity,

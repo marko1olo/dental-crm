@@ -57,7 +57,7 @@ export const CopilotClinicalProtocolCard: React.FC<
 					anamnesis: mergeField(prev.anamnesis, patch.anamnesis) ?? prev.anamnesis,
 					objectiveStatus: mergeField(prev.objectiveStatus, patch.objectiveStatus) ?? prev.objectiveStatus,
 					treatmentPlan: mergeField(prev.treatmentPlan, patch.treatmentPlan) ?? prev.treatmentPlan,
-					recommendations: mergeField(prev.recommendations, patch.recommendations) ?? prev.recommendations,
+					recommendations: (mergeField(prev.recommendations, patch.recommendations) ?? prev.recommendations) || "",
 					diagnosis: patch.diagnosis || prev.diagnosis,
 				}));
 			}

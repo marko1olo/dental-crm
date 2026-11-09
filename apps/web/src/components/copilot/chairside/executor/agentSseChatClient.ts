@@ -71,7 +71,8 @@ export async function requestAgentSseStream(
         const delta = String(data.text || data.thought || "");
         accumulatedThought += delta;
         onThoughtChunk?.(delta);
-        if (thoughts.length === 0 || thoughts[thoughts.length - 1].status === "done") {
+        const lastThought = thoughts[thoughts.length - 1];
+        if (thoughts.length === 0 || !lastThought || lastThought.status === "done") {
           stepCounter++;
           thoughts.push({
             id: `thought-${stepCounter}`,
@@ -81,7 +82,7 @@ export async function requestAgentSseStream(
             detail: delta.trim(),
           });
         } else {
-          thoughts[thoughts.length - 1].detail = (thoughts[thoughts.length - 1].detail || "") + delta;
+          lastThought.detail = (lastThought.detail || "") + delta;
         }
       } else if (event === "tool_start" || event === "tool_call_started") {
         const toolName = String(data.name || data.tool || "tool");
@@ -96,8 +97,9 @@ export async function requestAgentSseStream(
       } else if (event === "tool_end" || event === "tool_call_finished") {
         const toolName = String(data.name || data.tool || "");
         const result = data.result;
-        if (thoughts.length > 0 && thoughts[thoughts.length - 1].status === "running") {
-          thoughts[thoughts.length - 1].status = "done";
+        const lastThought = thoughts[thoughts.length - 1];
+        if (lastThought && lastThought.status === "running") {
+          lastThought.status = "done";
         }
         if (toolName === "update_tooth_status" && result) {
           const resolvedTooth = Number(result.tooth || activeTooth || 0);
@@ -172,7 +174,7 @@ export async function requestAgentSseStream(
     if (thoughts.length > 0 || finalVerdict || toothProposal || soapProposal) {
       return {
         thoughts,
-        verdict: finalVerdict || undefined,
+        ...(finalVerdict ? { verdict: finalVerdict } : {}),
         toothProposal,
         servicesProposal,
         soapProposal,

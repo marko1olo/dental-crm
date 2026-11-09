@@ -22,20 +22,16 @@ export interface CopilotThinkingIndicatorProps {
 
 export function getClinicalThinkingPhase(elapsed: number, includeSeconds = false, toolName?: string | null): string {
 	if (toolName) return `Исполнение инструмента: ${toolName}`;
-	const p = "Клинический анализ контекста и синтез рекомендаций...";
+	let p = "ИИ формирует клинический протокол...";
+	if (elapsed >= 3.0) p = "Синтез рекомендаций и сметы...";
+	else if (elapsed >= 2.0) p = "Проверка противопоказаний и СтАР...";
+	else if (elapsed >= 1.0) p = "Дифференциальный диагноз по МКБ-10...";
 	return includeSeconds ? `${p} (${elapsed.toFixed(1)}с)` : p;
 }
 
 export function CopilotThinkingIndicator({
-	isThinking,
-	activeTooth,
-	icd10Code,
-	thoughtProcess = "Анализ клинического контекста...",
-	thoughtLog,
-	speedMode = "turbo",
-	showThinkingProcess = true,
-	currentToolName,
-	phaseOverride,
+	isThinking, activeTooth, icd10Code, thoughtProcess = "Анализ клинического контекста...",
+	thoughtLog, speedMode = "turbo", showThinkingProcess = true, currentToolName, phaseOverride,
 }: CopilotThinkingIndicatorProps) {
 	const resolvedThought = thoughtLog || thoughtProcess;
 	const [elapsedMs, setElapsedMs] = useState(0);
@@ -88,24 +84,12 @@ export function CopilotThinkingIndicator({
 			</button>
 
 			<div className="px-2.5 py-1 border-t border-[var(--line)]/40 bg-[var(--paper)]/60 flex items-center gap-1.5 text-[10px]">
-				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "thinking" ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "text-emerald-600 dark:text-emerald-400 font-semibold"}`}>
-					{phaseType !== "thinking" ? <Check size={10} className="stroke-[2.5]" /> : <Brain size={10} />}
-					<span>Размышление</span>
-				</span>
+				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "thinking" ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "text-emerald-600 dark:text-emerald-400 font-semibold"}`}>{phaseType !== "thinking" ? <Check size={10} className="stroke-[2.5]" /> : <Brain size={10} />}<span>Размышление</span></span>
 				<span className="text-[var(--muted)]">›</span>
-				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "tool_call" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-emerald-600 dark:text-emerald-400 font-semibold"}`}>
-					<Wrench size={10} />
-					<span>Инструменты</span>
-				</span>
+				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "tool_call" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-emerald-600 dark:text-emerald-400 font-semibold"}`}><Wrench size={10} /><span>Инструменты</span></span>
 				<span className="text-[var(--muted)]">›</span>
-				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "synthesis" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-[var(--muted)]"}`}>
-					<Sparkles size={10} />
-					<span>Синтез</span>
-				</span>
-				<span className="ml-auto font-mono text-[9px] text-[var(--muted)] flex items-center gap-1">
-					<Terminal size={9} />
-					<span>{durationText}</span>
-				</span>
+				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "synthesis" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-[var(--muted)]"}`}><Sparkles size={10} /><span>Синтез</span></span>
+				<span className="ml-auto font-mono text-[9px] text-[var(--muted)] flex items-center gap-1"><Terminal size={9} /><span>{durationText}</span></span>
 			</div>
 
 			<div className="px-2.5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px] border-t border-[var(--line)]/30">

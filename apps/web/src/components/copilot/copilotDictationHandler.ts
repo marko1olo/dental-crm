@@ -112,14 +112,16 @@ export function handleClinicalSpeechOrText(
 			fallbackText: "Вся полость рта санирована. Все 32 зуба зафиксированы как интактные (норма). Дневник приёма обновлен.",
 			fallbackProposalTooth: 11,
 			appliedImmediately: shouldAutoApply,
-			pendingAction: shouldAutoApply ? undefined : {
-				id: `act-sanitation-${Date.now()}`,
-				title: "Санация полости рта",
-				toolName: "crm.sanitizeFullMouth",
-				description: "Фиксация нормы для 32 зубов и протокол Z01.2",
-				targetTeeth: [11],
-				execute: applySanitation,
-			},
+			...(shouldAutoApply ? {} : {
+				pendingAction: {
+					id: `act-sanitation-${Date.now()}`,
+					title: "Санация полости рта",
+					toolName: "crm.sanitizeFullMouth",
+					description: "Фиксация нормы для 32 зубов и протокол Z01.2",
+					targetTeeth: [11],
+					execute: applySanitation,
+				},
+			}),
 		};
 	}
 
@@ -190,7 +192,17 @@ export function handleClinicalSpeechOrText(
 				}
 
 				const firstTooth = targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : 36);
-				const billableServices = [];
+				interface BillableItem {
+					code: string;
+					code804n?: string;
+					name: string;
+					title: string;
+					price: number;
+					priceRub: number;
+					toothNumber: number;
+					toothCode: string;
+				}
+				const billableServices: BillableItem[] = [];
 				if (intent.procedures804n && intent.procedures804n.length > 0) {
 					for (const p of intent.procedures804n) {
 						billableServices.push({
@@ -253,7 +265,7 @@ export function handleClinicalSpeechOrText(
 		intent,
 		fallbackText,
 		fallbackProposalTooth,
-		pendingAction,
+		...(pendingAction ? { pendingAction } : {}),
 		appliedImmediately: shouldAutoApply,
 	};
 }

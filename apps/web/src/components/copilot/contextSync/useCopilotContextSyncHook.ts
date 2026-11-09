@@ -91,7 +91,7 @@ export function useCopilotContextSync() {
 		syncCopilotContextToWindow(context);
 		if (typeof window !== "undefined") {
 			window.__denteSetCopilotContext = (partial) => {
-				if (partial.activeTooth !== undefined) setActiveTooth(partial.activeTooth);
+				if (partial.activeTooth !== undefined) setActiveTooth(partial.activeTooth !== null ? Number(partial.activeTooth) || null : null);
 				if (partial.activeDoctor !== undefined) setActiveDoctorName(partial.activeDoctor);
 				if (partial.patientId !== undefined) {
 					setActivePatientId(partial.patientId);
@@ -106,7 +106,7 @@ export function useCopilotContextSync() {
 
 	const enrichMessage = useCallback((text: string) => enrichMessageWithUiContext(text, context), [context]);
 	const setContext = useCallback((partial: Partial<CopilotUiContext>) => {
-		if (partial.activeTooth !== undefined) setActiveTooth(partial.activeTooth);
+		if (partial.activeTooth !== undefined) setActiveTooth(partial.activeTooth !== null ? Number(partial.activeTooth) || null : null);
 		if (partial.activeDoctor !== undefined) setActiveDoctorName(partial.activeDoctor);
 		if (partial.patientId !== undefined) {
 			setActivePatientId(partial.patientId);

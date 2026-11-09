@@ -53,13 +53,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       toothNumber: activeTooth,
       state: activePreset.toothState || "C2",
       stateLabel: activePreset.toothStateLabel || "Кариес дентина (C2)",
-      surfaces: activePreset.surfaces || ["O"],
+      surfaces: [...(activePreset.surfaces || ["O"])],
       applied: false,
     };
   });
 
   const [servicesProposal, setServicesProposal] = useState<ChairsideServiceProposal[]>(() => {
-    if (initialServicesProposal !== undefined) return initialServicesProposal;
+    if (initialServicesProposal !== undefined) return [...initialServicesProposal];
     if (!hasActiveTooth) return [];
     return activePreset.services.map((s) => ({ ...s, applied: false }));
   });
@@ -85,14 +85,31 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const [anestheticProposal, setAnestheticProposal] = useState<ChairsideAnestheticProposal | null>(() => {
     if (initialAnestheticProposal !== undefined) return initialAnestheticProposal;
-    if (!hasActiveTooth) return null;
-    return activePreset.anesthetic ? { ...activePreset.anesthetic, applied: false } : null;
+    if (!hasActiveTooth || !activePreset.anesthetic) return null;
+    const a = activePreset.anesthetic;
+    return {
+      applied: false,
+      drugName: a.drugName,
+      carpulesCount: a.carpulesCount,
+      patientWeightKg: (a as any).patientWeightKg ?? 70,
+      maxCarpules: (a as any).maxCarpules ?? 4,
+      epinephrineMcg: (a as any).epinephrineMcg ?? 18,
+      isCardiovascularRisk: Boolean((a as any).isCardiovascularRisk),
+      ...(a.notes ? { notes: a.notes } : {}),
+    };
   });
 
   const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert | null>(() => {
     if (initialSafetyAlert !== undefined) return initialSafetyAlert;
-    if (!hasActiveTooth) return null;
-    return activePreset.safetyAlert;
+    if (!hasActiveTooth || !activePreset.safetyAlert) return null;
+    const sa = activePreset.safetyAlert;
+    return {
+      id: sa.id,
+      severity: (sa.severity === "danger" ? "critical" : sa.severity) as "critical" | "warning" | "info",
+      title: sa.title,
+      description: sa.description,
+      acknowledged: false,
+    };
   });
 
   const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>(() => {
@@ -133,9 +150,17 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
                 return [{ id: "stream-thought-1", stepNumber: 1, title: chunk.trim().split("\n")[0] || "Анализ модели", status: "running", detail: chunk.trim() }];
               }
               const updated = [...prev];
-              const last = { ...updated[updated.length - 1] };
-              last.detail = (last.detail || "") + chunk;
-              updated[updated.length - 1] = last;
+              const last = updated[updated.length - 1];
+              if (!last) return updated;
+              const updatedLast: ChairsideThoughtStep = {
+                id: last.id,
+                stepNumber: last.stepNumber,
+                title: last.title,
+                status: last.status,
+                detail: (last.detail || "") + chunk,
+                ...(last.durationMs !== undefined ? { durationMs: last.durationMs } : {}),
+              };
+              updated[updated.length - 1] = updatedLast;
               return updated;
             });
           },
@@ -241,13 +266,28 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       toothNumber: p.toothNumber,
       state: p.toothState || "C2",
       stateLabel: p.toothStateLabel || "",
-      surfaces: p.surfaces || [],
+      surfaces: [...(p.surfaces || [])],
       applied: false,
     } : null);
     setServicesProposal(p.services.map((s) => ({ ...s, applied: false })));
     setSoapProposal({ ...p.soap, applied: false });
-    setAnestheticProposal(p.anesthetic ? { ...p.anesthetic, applied: false } : null);
-    setSafetyAlert(p.safetyAlert ? { ...p.safetyAlert, acknowledged: false } : null);
+    setAnestheticProposal(p.anesthetic ? {
+      applied: false,
+      drugName: p.anesthetic.drugName,
+      carpulesCount: p.anesthetic.carpulesCount,
+      patientWeightKg: (p.anesthetic as any).patientWeightKg ?? 70,
+      maxCarpules: (p.anesthetic as any).maxCarpules ?? 4,
+      epinephrineMcg: (p.anesthetic as any).epinephrineMcg ?? 18,
+      isCardiovascularRisk: Boolean((p.anesthetic as any).isCardiovascularRisk),
+      ...(p.anesthetic.notes ? { notes: p.anesthetic.notes } : {}),
+    } : null);
+    setSafetyAlert(p.safetyAlert ? {
+      id: p.safetyAlert.id,
+      severity: (p.safetyAlert.severity === "danger" ? "critical" : p.safetyAlert.severity) as "critical" | "warning" | "info",
+      title: p.safetyAlert.title,
+      description: p.safetyAlert.description,
+      acknowledged: false,
+    } : null);
   }, []);
 
   const handleCloseHUD = () => {

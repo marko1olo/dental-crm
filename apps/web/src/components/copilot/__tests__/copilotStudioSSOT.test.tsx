@@ -2,7 +2,7 @@
  * copilotStudioSSOT.test.tsx — Строгий SSOT Vitest сьют для ИИ-Копайлота и голосового контура DENTE CRM.
  * 
  * Архитектурные инварианты:
- * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 300–380, CopilotStudioModal 380–450, DirectCopilotLauncher 60–80, copilotStudio.css 300–400).
+ * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 300–380, CopilotStudioModal 380–450, CopilotGlobalHost 100–160, copilotStudio.css 300–400).
  * - Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 (var(--teal)).
  * - Мандат 8e: автономия врача, ноль disabled кнопок у врача, Two-Phase Guard.
  * - Мандат 8wy: честный продакшн без моков vs изолированная витрина.
@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CopilotStudioModal, DEFAULT_INITIAL_MESSAGES } from "../CopilotStudioModal";
-import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
+import { CopilotGlobalHost } from "../CopilotGlobalHost";
 import { CopilotMemoryTab } from "../CopilotMemoryTab";
 import { CopilotHistoryDrawer } from "../CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "../CopilotThinkingIndicator";
@@ -174,10 +174,10 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.ok(lines >= 300 && lines <= 380, `copilotCatalogData.ts имеет ${lines} строк (ожидалось 300–380)`);
   });
 
-  it("12. Мандат 8b: размер файла DirectCopilotLauncher.tsx строго в Sweet Spot 60–80 строк", () => {
-    const filePath = path.join(__dirname, "../DirectCopilotLauncher.tsx");
+  it("12. Мандат 8b: размер файла CopilotGlobalHost.tsx строго в Sweet Spot <= 160 строк", () => {
+    const filePath = path.join(__dirname, "../CopilotGlobalHost.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 60 && lines <= 80, `DirectCopilotLauncher.tsx имеет ${lines} строк (ожидалось 60–80)`);
+    assert.ok(lines >= 100 && lines <= 160, `CopilotGlobalHost.tsx имеет ${lines} строк (ожидалось 100–160)`);
   });
 
   it("13. Мандат 8b: размер файла copilotStudio.css строго в Sweet Spot 300–400 строк", () => {
@@ -186,8 +186,8 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.ok(lines >= 300 && lines <= 400, `copilotStudio.css имеет ${lines} строк (ожидалось 300–400)`);
   });
 
-  it("14. DirectCopilotLauncher монтируется и рендерится без падений SSR", () => {
-    const html = renderToString(<DirectCopilotLauncher />);
+  it("14. CopilotGlobalHost монтируется и рендерится без падений SSR", () => {
+    const html = renderToString(<CopilotGlobalHost />);
     assert.equal(typeof html, "string");
   });
 

@@ -143,7 +143,6 @@ describe("Copilot ReAct Stream, Extended Thinking (CoT) & Two-Phase Diff Suite",
           isOpen={true}
           onClose={() => {}}
           activeTooth={36}
-        icd10Code="K02.1"
           initialTab="dialog"
         />
       )

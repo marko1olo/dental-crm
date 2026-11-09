@@ -27,17 +27,16 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
       procedureName: String(
         obj.procedureName || obj.procedure || 'Дентальная имплантация'
       ),
-      implantSystem: typeof obj.implantSystem === 'string' ? obj.implantSystem : undefined,
-      implantSize: typeof obj.implantSize === 'string' ? obj.implantSize : undefined,
-      torqueNcm: typeof obj.torqueNcm === 'number' ? obj.torqueNcm : undefined,
-      isqIndex: typeof obj.isqIndex === 'number' ? obj.isqIndex : undefined,
-      membrane: typeof obj.membrane === 'string' ? obj.membrane : undefined,
-      boneGraft: typeof obj.boneGraft === 'string' ? obj.boneGraft : undefined,
-      lotNumber: typeof obj.lotNumber === 'string' ? obj.lotNumber : undefined,
-      osteointegrationMonths:
-        typeof obj.osteointegrationMonths === 'number'
-          ? obj.osteointegrationMonths
-          : undefined,
+      ...(typeof obj.implantSystem === 'string' ? { implantSystem: obj.implantSystem } : {}),
+      ...(typeof obj.implantSize === 'string' ? { implantSize: obj.implantSize } : {}),
+      ...(typeof obj.torqueNcm === 'number' ? { torqueNcm: obj.torqueNcm } : {}),
+      ...(typeof obj.isqIndex === 'number' ? { isqIndex: obj.isqIndex } : {}),
+      ...(typeof obj.membrane === 'string' ? { membrane: obj.membrane } : {}),
+      ...(typeof obj.boneGraft === 'string' ? { boneGraft: obj.boneGraft } : {}),
+      ...(typeof obj.lotNumber === 'string' ? { lotNumber: obj.lotNumber } : {}),
+      ...(typeof obj.osteointegrationMonths === 'number'
+        ? { osteointegrationMonths: obj.osteointegrationMonths }
+        : {}),
       isApplied: Boolean(obj.isApplied || obj.applied),
     };
     return <CopilotSurgeryPassportCard data={passportData} />;

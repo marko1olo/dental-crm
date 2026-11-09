@@ -104,9 +104,9 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
         const tooth = customEvent.detail.activeTooth ?? customEvent.detail.tooth;
         if (tooth !== undefined || customEvent.detail.patientId !== undefined || customEvent.detail.patientName !== undefined) {
           optsRef.current.setCustomContext?.({
-            patientName: customEvent.detail.patientName,
-            patientId: customEvent.detail.patientId,
-            activeTooth: tooth,
+            ...(customEvent.detail.patientName !== undefined ? { patientName: customEvent.detail.patientName } : {}),
+            ...(customEvent.detail.patientId !== undefined ? { patientId: customEvent.detail.patientId } : {}),
+            ...(tooth !== undefined ? { activeTooth: tooth } : {}),
           });
         }
       }

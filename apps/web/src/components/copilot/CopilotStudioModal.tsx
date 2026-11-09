@@ -18,20 +18,18 @@ import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotH
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
 
 export interface CopilotStudioModalProps {
-  isOpen: boolean; onClose: () => void; activeTooth?: number | null | undefined;
-  patientId?: string | null | undefined; patientName?: string | null | undefined; activeVisitId?: string | null | undefined;
-  initialTab?: CopilotStudioTab | undefined; initialMessages?: CopilotChatMessage[] | undefined; isThinking?: boolean | undefined; thoughtProcess?: string | undefined;
+  isOpen: boolean; onClose: () => void; activeTooth?: number | null | undefined; patientId?: string | null | undefined;
+  patientName?: string | null | undefined; activeVisitId?: string | null | undefined; initialTab?: CopilotStudioTab | undefined;
+  initialMessages?: CopilotChatMessage[] | undefined; isThinking?: boolean | undefined; thoughtProcess?: string | undefined;
 }
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 export interface CopilotChatMessage {
-  id: string; role: "user" | "assistant"; text: string; citation?: string | undefined; timestamp: string; applied?: boolean | undefined;
-  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined; suggestedReplies?: string[] | undefined;
-  toolResult?: unknown | undefined; toolName?: string | undefined;
+  id: string; role: "user" | "assistant"; text: string; citation?: string | undefined; timestamp: string; applied?: boolean | undefined; actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined; suggestedReplies?: string[] | undefined; toolResult?: unknown | undefined; toolName?: string | undefined;
 }
 const extractSuggestions = (text: string) => {
   const m = text.match(/<<<SUGGESTIONS:\s*(\[[\s\S]*?\])\s*>>>/);
   let suggestions: string[] | undefined;
-  if (m) { try { const list = JSON.parse(m[1]); if (Array.isArray(list)) suggestions = list.filter((s): s is string => typeof s === "string"); } catch { /* skip */ } }
+  if (m && m[1]) { try { const list = JSON.parse(m[1]); if (Array.isArray(list)) suggestions = list.filter((s): s is string => typeof s === "string"); } catch { /* skip */ } }
   return { cleanText: text.replace(/<<<SUGGESTIONS:[\s\S]*?(?:>>>|$)/g, "").trim(), suggestions };
 };
 export const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [];
@@ -43,12 +41,10 @@ const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((
 });
 const toValidUuid = (val?: string | null): string | undefined => typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
 
-export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
-  isOpen, onClose, activeTooth, patientId, patientName, activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess,
-}) => {
+export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, onClose, activeTooth, patientId, patientName, activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess }) => {
   const [activeTab, setActiveTab] = useState<CopilotStudioTab>((initialTab as CopilotStudioTab) || "dialog");
   const [actionsSubTab, setActionsSubTab] = useState<"quick" | "logs">("quick");
-  const { settings, memoryFacts, activeThreadId, threadMessages, saveThreadMessages, setRuntimeMode, isSettingsOpen, setSettingsOpen, isHistoryOpen, setHistoryOpen, threads, selectThread, addToolLog, activeDiff, applyActiveDiff, rejectActiveDiff, toolExecutionLogs } = useCopilotStore();
+  const { settings, memoryFacts, activeThreadId, threadMessages, saveThreadMessages, setRuntimeMode, isSettingsOpen, setSettingsOpen, isHistoryOpen, setHistoryOpen, threads, selectThread, addToolLog, activeDiff, setActiveDiff, applyActiveDiff, rejectActiveDiff, toolExecutionLogs } = useCopilotStore();
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
   const threadKey = activeThreadId || "default-thread";
 
@@ -218,9 +214,13 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           sseBuffer += decoder.decode(value, { stream: true });
           const matches = [...sseBuffer.matchAll(/\r?\n\r?\n/g)];
           if (matches.length > 0) {
-            const lastMatch = matches[matches.length - 1]; const splitPos = lastMatch.index ?? 0;
-            const chunkToParse = sseBuffer.slice(0, splitPos); sseBuffer = sseBuffer.slice(splitPos + lastMatch[0].length);
-            applySseEvents(parseSseEvents(chunkToParse));
+            const lastMatch = matches[matches.length - 1];
+            if (lastMatch) {
+              const splitPos = lastMatch.index ?? 0;
+              const chunkToParse = sseBuffer.slice(0, splitPos);
+              sseBuffer = sseBuffer.slice(splitPos + lastMatch[0].length);
+              applySseEvents(parseSseEvents(chunkToParse));
+            }
           }
         }
         if (accumulatedText.trim()) { setIsStreaming(false); return; }
@@ -262,14 +262,19 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
 
   const executeApiTool = async (toolKey: string, payload: Record<string, unknown>) => {
     setIsExecuting(toolKey);
-    const startTime = Date.now();
+    const startTime = Date.now(), token = readDenteClinicToken() || readDenteStaffToken() || "", apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
     try {
-      const res = await fetch("/api/agent/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: `Выполни действие: ${toolKey}` }], patientId: patientId || undefined, stream: false }) });
-      addToolLog({ toolName: toolKey, category: "clinical", status: res.ok ? "success" : "error", durationMs: Date.now() - startTime, args: payload, resultSummary: res.ok ? `Выполнен инструмент ${toolKey}` : `Сбой инструмента ${toolKey}` });
-      showToast(res.ok ? "Действие успешно зарегистрировано в системе" : `Сбой выполнения инструмента ${toolKey}`, res.ok ? "success" : "error");
+      const res = await fetch("/api/agent/action", {
+        method: "POST", headers: { "Content-Type": "application/json", "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ toolName: toolKey, args: payload, patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      const ok = res.ok && data?.ok !== false;
+      addToolLog({ toolName: toolKey, category: "clinical", status: ok ? "success" : "rejected", durationMs: Date.now() - startTime, args: payload, resultSummary: ok ? `Выполнен инструмент ${toolKey}` : `Сбой инструмента ${toolKey}: ${data?.error || res.statusText}` });
+      showToast(ok ? "Действие успешно выполнено в системе" : `Сбой инструмента ${toolKey}: ${data?.error || ""}`, ok ? "success" : "error");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Ошибка сети";
-      addToolLog({ toolName: toolKey, category: "clinical", status: "error", durationMs: Date.now() - startTime, args: payload, resultSummary: `Сбой сети для ${toolKey}: ${msg}` });
+      addToolLog({ toolName: toolKey, category: "clinical", status: "rejected", durationMs: Date.now() - startTime, args: payload, resultSummary: `Сбой сети для ${toolKey}: ${msg}` });
       showToast(`Ошибка сети при вызове инструмента: ${msg}`, "error");
     } finally { setIsExecuting(null); }
   };
@@ -330,7 +335,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                     <div className={`copilot-message-bubble max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed ${m.role === "user" ? "copilot-message-user bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]" : "copilot-message-assistant bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"}`}>
                       <p className="whitespace-pre-wrap m-0">
                         {m.text || (isStreaming ? "Формирование ответа..." : "")}
-                        {isStreaming && m.role === "assistant" && !m.text && <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--teal,#0d9488)] animate-pulse ml-1 align-middle" />}
+                        {isStreaming && m.id === messages[messages.length - 1]?.id && m.role === "assistant" && <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--teal,#0d9488)] animate-pulse ml-1 align-middle" />}
                       </p>
                       {/* Агентная карточка инструмента и Contiguous Two-Phase Diff */}
                       {m.actionProposal && !m.applied && (() => {
@@ -357,7 +362,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                           </div>
                         );
                       })()}
-                      {m.toolResult && <div className="mt-2.5"><CopilotResultCard name={m.toolName || m.actionProposal?.toolName} result={m.toolResult} /></div>}
+                      {Boolean(m.toolResult) && <div className="mt-2.5"><CopilotResultCard name={m.toolName || m.actionProposal?.toolName} result={m.toolResult} /></div>}
                       {m.citation && <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium"><BookOpen size={11} /><span>{m.citation}</span></div>}
                     </div>
                     <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
@@ -413,7 +418,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                   ...(runtimeMode === "desktop_native" ? [
                     { title: "Захват визиографа (ROI)", badge: "Рабочая станция", desc: activeTooth ? `Локальный снимок активного окна визиографа для анализа рентгенограммы зуба ${activeTooth}.` : "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("capture_workstation_screen", { diagnosticReason: activeTooth ? `Анализ визиографа зуба ${activeTooth}` : "Анализ визиографа", targetScreenIndex: 0 }) },
                     { title: "Поиск КЛКТ на диске", badge: "Локальный диск", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("search_workstation_files", { query: "dicom", category: "xray_study" }) },
-                    { title: "Редактирование файла на ПК", badge: "Файлы и дифф", desc: "Замена фрагмента клинической выписки с формированием верифицированного диффа.", btn: "Сформировать дифф файла", icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => { setActiveDiff({ id: `diff-file-${Date.now()}`, title: "Редактирование: protocol_tooth_36.txt", targetEntity: "C:\\Radiology\\Export\\protocol_tooth_36.txt", beforeText: "Диагноз: Кариес дентина K02.1\nЛечение: Назначена терапия", afterText: "Диагноз: K02.1 Глубокий кариес дентина (Зуб 36)\nЛечение: Препарирование полости, нанокомпозитная реставрация Ceram.X Duo под анестезией Артикаин 1:200к", applied: false }); setActionsSubTab("logs"); showToast("Сформирован дифф изменений файла на ПК", "info"); } },
+                    { title: "Патчинг файла на ПК", badge: "Файлы и дифф", desc: "Точечное обновление протокола на ПК врача через инструмент replace_file_content.", btn: "Применить патч файла", icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("replace_file_content", { targetFile: "C:\\Radiology\\Export\\protocol_tooth_36.txt", targetContent: "Диагноз: первичный осмотр", replacementContent: activeTooth ? `Диагноз: Зуб ${activeTooth} K02.1 кариес дентина` : "Диагноз: Санация полости рта, норма СтАР" }) },
                   ] : []),
                 ].map((item, idx) => (
                   <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">
