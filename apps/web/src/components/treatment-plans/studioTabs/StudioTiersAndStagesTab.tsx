@@ -42,7 +42,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 	onGenerateFromTeeth,
 	onAddCustomStage,
 }) => {
-	const sanitizedActiveTitle = activeTier.title.replace("★ ", "");
+	const sanitizedActiveTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 	const [addingToStageId, setAddingToStageId] = useState<string | null>(null);
 	const [newItemName, setNewItemName] = useState<string>("");
 	const [newItemPriceRub, setNewItemPriceRub] = useState<number>(3500);
@@ -116,7 +116,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 								}`}
 								data-testid={`segmented-tab-${tier.tierId}`}
 							>
-								<span className="truncate w-full text-center">{tier.tierId === "economy" ? "Эконом" : tier.tierId === "optimum" ? "★ Оптимум" : "Премиум"}</span>
+								<span className="truncate w-full text-center">{tier.tierId === "economy" ? "Эконом" : tier.tierId === "optimum" ? "Оптимум" : "Премиум"}</span>
 								<span className="text-[10px] opacity-90 truncate w-full text-center">{formatRubles(tier.totalRub)}</span>
 							</button>
 						);
@@ -169,7 +169,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 			<div className="tp-tiers-grid hidden sm:grid sm:grid-cols-3 gap-4">
 				{computedTiers.map((tier) => {
 					const isSelected = tier.tierId === selectedTierId;
-					const tierTitleClean = tier.title.replace("★ ", "");
+					const tierTitleClean = tier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 					const monthlyInstallment = Math.round(tier.totalRub / 12);
 					const ndflRefund = Math.round(tier.totalRub * 0.13);
 

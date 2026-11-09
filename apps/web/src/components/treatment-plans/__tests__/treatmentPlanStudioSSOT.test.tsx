@@ -406,4 +406,45 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.ok(html.includes("Индивидуальный терапевтический этап"));
 		assert.ok(html.includes("Реставрация зуба 21 композитом Gradia Direct"));
 	});
+
+	it("22. Вкладка рассрочки 0% StudioInstallmentTab: выбор срока 3, 6, 12, 24 мес. и 0% переплат клинике", async () => {
+		const { StudioInstallmentTab } = await import("../studioTabs/StudioInstallmentTab");
+		const tiers = buildCanonical3TierPlans();
+		const html = renderToString(
+			<StudioInstallmentTab
+				activeTier={tiers[1]}
+				patientName="Пациент Тест"
+			/>
+		);
+
+		assert.ok(html.includes("data-testid=\"studio-installment-tab\""), "Должен монтироваться контейнер рассрочки");
+		assert.ok(html.includes("0% переплат клинике"));
+		assert.ok(html.includes("data-testid=\"installment-term-3-btn\""));
+		assert.ok(html.includes("data-testid=\"installment-term-6-btn\""));
+		assert.ok(html.includes("data-testid=\"installment-term-12-btn\""));
+		assert.ok(html.includes("data-testid=\"installment-term-24-btn\""));
+		assert.ok(html.includes("0% взнос"));
+	});
+
+	it("23. Налоговый вычет 13% НДФЛ в StudioInstallmentTab: расчет возврата и чистой стоимости лечения", async () => {
+		const { StudioInstallmentTab } = await import("../studioTabs/StudioInstallmentTab");
+		const tiers = buildCanonical3TierPlans();
+		const html = renderToString(
+			<StudioInstallmentTab
+				activeTier={tiers[1]}
+				patientName="Пациент Тест"
+			/>
+		);
+
+		assert.ok(html.includes("Налоговый вычет 13% НДФЛ"));
+		assert.ok(html.includes("Возврат пациенту:"));
+		assert.ok(html.includes("Фактическая стоимость лечения с учетом вычета:"));
+		assert.ok(html.includes("КНД 1151156"));
+	});
+
+	it("24. Обратная совместимость: экспорт канонического алиаса TreatmentPlanPresenterModal", async () => {
+		const mod = await import("../index");
+		assert.ok(mod.TreatmentPlanPresenterModal, "TreatmentPlanPresenterModal must be exported from index");
+		assert.equal(mod.TreatmentPlanPresenterModal, mod.TreatmentPlanStudioModal, "Presenter must be alias of StudioModal");
+	});
 });

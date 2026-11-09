@@ -8,7 +8,41 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { TreatmentPlansTab } from "../components/patients/tabs/TreatmentPlansTab";
+import {
+	TreatmentPlansTab,
+	type TreatmentTierOption,
+} from "../components/patients/tabs/TreatmentPlansTab";
+
+const sampleTiers: TreatmentTierOption[] = [
+	{
+		id: "economy",
+		title: "Эконом",
+		tagline: "Базовая функциональная реабилитация",
+		totalRub: 48000,
+		warrantyYears: 1,
+		accentClass: "border-slate-300 dark:border-slate-700 bg-slate-500/5",
+		badgeText: "Базовый",
+	},
+	{
+		id: "optimum",
+		title: "Оптимум",
+		tagline: "Стандарт клиники: биоинертный диоксид циркония и SLA имплантация",
+		totalRub: 86000,
+		warrantyYears: 3,
+		isRecommended: true,
+		accentClass: "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/5 ring-1 ring-[var(--teal)]/30",
+		badgeText: "Стандарт клиники",
+	},
+	{
+		id: "premium",
+		title: "Премиум",
+		tagline: "Максимальная эстетика: керамика E.max Press и цифровой протокол",
+		totalRub: 145000,
+		warrantyYears: 5,
+		accentClass: "border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30",
+		badgeText: "Премиум",
+	},
+];
 
 describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e, 8am, 8x)", () => {
 	it("1. Renders 3 distinct alternatives (Эконом, Оптимум, Премиум) with clinic recommendation badge", () => {
@@ -22,7 +56,7 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 					cardNumber: "K-1024",
 					patientBalanceRub: 5000,
 				} as any}
-				items={[]}
+				tiers={sampleTiers}
 			/>,
 		);
 
@@ -49,7 +83,7 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 					cardNumber: "K-1024",
 					patientBalanceRub: 0,
 				} as any}
-				items={[]}
+				tiers={sampleTiers}
 			/>,
 		);
 
@@ -76,7 +110,7 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 					phone: "+7 999 111-22-33",
 					cardNumber: "K-1024",
 				} as any}
-				items={[]}
+				tiers={sampleTiers}
 			/>,
 		);
 
@@ -96,7 +130,7 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 					phone: "+7 999 111-22-33",
 					cardNumber: "K-1024",
 				} as any}
-				items={[]}
+				tiers={sampleTiers}
 			/>,
 		);
 
@@ -116,10 +150,27 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 					phone: "+7 999 111-22-33",
 					cardNumber: "K-1024",
 				} as any}
-				items={[]}
+				tiers={sampleTiers}
 			/>,
 		);
 
 		assert.ok(html.includes("min-h-[44px]"), "Интерактивные кнопки соответствуют стандарту Apple HIG >= 44px");
+	});
+
+	it("6. Honest Empty State: Shows 'У пациента нет сохраненных планов лечения' and '+ Составить план лечения' CTA when patient has no plans", () => {
+		const html = renderToString(
+			<TreatmentPlansTab
+				patient={{
+					id: "pat-1",
+					fullName: "Смирнов Алексей Игоревич",
+				} as any}
+				items={[]}
+			/>,
+		);
+
+		assert.ok(html.includes("У пациента нет сохраненных планов лечения"));
+		assert.ok(html.includes('data-testid="btn-create-treatment-plan"'));
+		assert.ok(html.includes("+ Составить план лечения"));
+		assert.ok(!html.includes("48\u00A0000") && !html.includes("48 000"), "Моковые цены не должны появляться в пустом состоянии");
 	});
 });

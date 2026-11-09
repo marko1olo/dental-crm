@@ -1,6 +1,6 @@
 import React from "react";
 import type { TreatmentPlanStage } from "./types";
-import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+import { isMicroConsumable } from "./treatmentPlanConsumables";
 
 export interface TreatmentPlanContractServicesTableProps {
 	readonly activeStages: readonly TreatmentPlanStage[];

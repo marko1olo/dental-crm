@@ -9,7 +9,7 @@ import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { logger } from "../../../../utils/logger";
 import { showToast } from "../../../GlobalToast";
-import { TreatmentPlanPresenterModal } from "../../../treatment-plans/TreatmentPlanPresenterModal";
+import { TreatmentPlanStudioModal } from "../../../treatment-plans/TreatmentPlanStudioModal";
 import type {
 	LivePatientPlanInfo,
 	LiveTreatmentPlanPresenterLauncherProps,
@@ -97,7 +97,7 @@ export const LiveTreatmentPlanPresenterLauncher: React.FC<
 	};
 
 	return (
-		<TreatmentPlanPresenterModal
+		<TreatmentPlanStudioModal
 			isOpen={true}
 			onClose={onClose}
 			patientName={activePlan.patientName}
@@ -107,18 +107,10 @@ export const LiveTreatmentPlanPresenterLauncher: React.FC<
 			doctorFullName={activePlan.doctorFullName}
 			doctorSpecialty={activePlan.doctorSpecialty}
 			clinicName={clinicRequisites.clinicName}
-			clinicLegalName={clinicRequisites.clinicLegalName}
-			clinicInn={clinicRequisites.clinicInn}
-			clinicOgrn={clinicRequisites.clinicOgrn}
 			clinicAddress={clinicRequisites.clinicAddress}
-			clinicPhone={clinicRequisites.clinicPhone}
-			clinicLicense={clinicRequisites.clinicLicense}
 			planId={activePlan.planId}
-			planCreatedAtIso={activePlan.planCreatedAtIso}
-			teeth={activePlan.teeth}
 			onConfirmSelection={handleSaveApprovalToServer}
 			onApproveAndSign={handleSaveApprovalToServer}
-			isDemoMode={isDemo}
 		/>
 	);
 };

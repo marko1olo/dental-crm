@@ -2,7 +2,7 @@ import type { Dashboard } from "@dental/shared";
 import { Calculator, Tablet } from "lucide-react";
 import { useState } from "react";
 import { ClinicalErrorBoundary } from "../../common/ClinicalErrorBoundary";
-import { TreatmentPlanPresenterModal } from "../../treatment-plans/TreatmentPlanPresenterModal";
+import { TreatmentPlanStudioModal } from "../../treatment-plans/TreatmentPlanStudioModal";
 import { VisitAnamnesisTab } from "../VisitAnamnesisTab";
 import { VisitConsentsTab } from "../VisitConsentsTab";
 import { VisitDiagnosticsTab } from "../VisitDiagnosticsTab";
@@ -139,7 +139,7 @@ export function VisitTabContent({
 					/>
 				</div>
 				{isPresenterModalOpen && (
-					<TreatmentPlanPresenterModal
+					<TreatmentPlanStudioModal
 						isOpen={isPresenterModalOpen}
 						onClose={() => setIsPresenterModalOpen(false)}
 						patientId={activePatient?.id}
@@ -183,6 +183,7 @@ export function VisitTabContent({
 					selectedToothForMenu={selectedToothForMenu}
 					onOpenInformedConsentModal={() => setIsInformedConsentModalOpen(true)}
 					onOpenWarrantyModal={() => setIsWarrantyModalOpen(true)}
+					onFastPrintMedicalCard={handlePrintForm043uFast}
 					onFastPrint043u={handlePrintForm043uFast}
 					onFastPrintInformedConsent={handlePrintInformedConsentFast}
 					/* data-testid="btn-visit-fast-print-consent-1051n" data-testid="btn-visit-consents-print-043u" */

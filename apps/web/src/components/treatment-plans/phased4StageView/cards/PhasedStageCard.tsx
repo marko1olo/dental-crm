@@ -1,6 +1,6 @@
 import React from "react";
 import type { TreatmentPlanStageCategory } from "@dental/shared";
-import { isMicroConsumable } from "../../TreatmentPlanPresenterModal";
+import { isMicroConsumable } from "../../treatmentPlanConsumables";
 import type {
 	CategorizedStageData,
 	PhasedStageItem,

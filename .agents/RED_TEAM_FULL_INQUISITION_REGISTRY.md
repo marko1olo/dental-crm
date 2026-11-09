@@ -1632,6 +1632,77 @@
   4. Разблокировано создание заказ-нарядов и инвойсов по планам лечения для врачей (снята блокировка `BlockedArchivedServiceError` по Мандату 8e).
   5. Пройдены 10 сьютов тестов (45/45 тестов PASS), 4 машинных гейта Definition of Done (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) и личный осмотр скриншотов 4-State Proof.
 
+### [PLN-11] [SEV-1] [ИСПРАВЛЕНО] Хирургическое устранение дефектов DEF-PLAN-01...05 и ликвидация 28 сиротских файлов презентера планов лечения (Red Team Fixer 5)
+- **Файлы:**
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
+  - [`apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx)
+  - [`apps/web/src/components/treatment-plans/styles/treatmentPlanStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/styles/treatmentPlanStudio.css)
+  - [`apps/web/src/tests/demoModeIsolationInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/demoModeIsolationInquisition.test.ts)
+  - [`apps/web/src/components/treatment-plans/__tests__/liveTreatmentPlanPresenterLauncherDecomposed.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/__tests__/liveTreatmentPlanPresenterLauncherDecomposed.test.tsx)
+- **Физически снесены 28 сиротских файлов через `git rm`:**
+  - *Группа A (6 файлов)*: `apps/web/src/components/treatment-plans/presenterModules/comparison/` (`PresenterMobileTierBar.tsx`, `PresenterTierCard.tsx`, `PresenterTiersGrid.tsx`, `TierCardAdvantagesAndStages.tsx`, `TierCardPriceAndFinance.tsx`, `usePresenterComparisonHandlers.ts`).
+  - *Группа B (5 файлов)*: `apps/web/src/components/treatment-plans/presenterModules/accordion/` (`AccordionEmptyState.tsx`, `AccordionHeaderBar.tsx`, `StageAccordionHeader.tsx`, `StageDesktopTable.tsx`, `StageMobileCards.tsx`).
+  - *Группа C (3 файла)*: `apps/web/src/components/treatment-plans/presenterHeader/` (`PresenterHeaderActions.tsx`, `PresenterHeaderNavRow.tsx`, `PresenterHeaderTitleGroup.tsx`).
+  - *Группа D (4 файла)*: `apps/web/src/components/treatment-plans/presenterTools/` (`PresenterCopilotPanel.tsx`, `PresenterDiscountModeHeader.tsx`, `PresenterDoctorDiscountPanel.tsx`, `PresenterToolsButtonsBar.tsx`).
+  - *Группа E (2 файла)*: `apps/web/src/components/treatment-plans/presenterFinance/` (`PresenterInstallment0PercentCard.tsx`, `PresenterNdfl13Card.tsx`).
+  - *Группа F (8 файлов)*: `apps/web/src/components/treatment-plans/presenterModules/useTreatmentPlanPresenterState.ts` и 7 файлов в `apps/web/src/components/treatment-plans/presenterModules/state/` (`presenterStateConstants.ts`, `syncDiscountModeToServer.ts`, `usePresenterAiAudit.ts`, `usePresenterModalEffects.ts`, `usePresenterNavigationState.ts`, `usePresenterPatientSelection.ts`, `usePresenterToolsState.ts`).
+- **Суть дефектов DEF-PLAN-01...05:**
+  - **DEF-PLAN-01 & DEF-PLAN-02:** В `TreatmentPlanPresenterModal.tsx` вызывался несуществующий бэкенд-роут `/api/invoices/generate-from-plan`, а ошибки тихо глушились через `console.warn` без уведомления врача.
+  - **DEF-PLAN-03:** В `treatmentPlanCatalogData.ts:713-725` использовались фиктивные множители (0.65, 0.7, 1.5, 1.8) и нищие регулярки в названиях тарифов.
+  - **DEF-PLAN-04 & DEF-PLAN-05:** В `TreatmentPlanStudioModal.tsx` использовался устаревший путь `/api/v1/treatment-plans`, а при утверждении создавался новый дубликат черновика плана вместо утверждения текущего через `POST /api/treatment-plans/:id/approve`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Вызов несуществующего `/api/invoices/generate-from-plan` заменен на канонический `POST /api/invoices` со счетом по позициям выбранного этапа, точными копейками (`amountKopecks`, `BIGINT`) и человеческим тостом (`showToast("Счет на этап успешно сформирован и передан в кассу", "success")`, Мандат 8d).
+  2. В `treatmentPlanCatalogData.ts` ликвидированы скалярные коэффициенты и регулярки — позиции и цены берутся строго из каталога и этапов без искажений.
+  3. В `TreatmentPlanStudioModal.tsx` роут выровнен на канонический `/api/treatment-plans`, а при клике «Утвердить выбранный план» вызывается `POST /api/treatment-plans/:id/approve` с телом `{ selectedTier: activeTier.tierId }` с фиксацией тарифа и без размножения планов-клонов.
+  4. Устранены визуальные дефекты: увеличен `max-width` диалога до `76rem` в CSS и оптимизированы отступы табов (0 клиппинга на 6 табах), на смартфонах кнопка сохранения сокращена до компактного вида «Черновик» (44px тач-хитбокс), а Primary CTA «Утвердить · 132 300 ₽» обеспечен свободный ход без срезания знака рубля.
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file`):**
+  - [`docs/proofs/treatment_plans/01_treatment_plan_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/01_treatment_plan_pc_light_1440x900.png) (116.7 KB)
+  - [`docs/proofs/treatment_plans/02_treatment_plan_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/02_treatment_plan_pc_dark_1440x900.png) (116.4 KB)
+  - [`docs/proofs/treatment_plans/03_treatment_plan_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/03_treatment_plan_mobile_light_390x844.png) (148.3 KB)
+  - [`docs/proofs/treatment_plans/04_treatment_plan_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/04_treatment_plan_mobile_dark_390x844.png) (149.1 KB)
+- **Машинные гейты (Definition of Done):**
+  - `npm run check:encoding` -> Exit Code 0 (0 ошибок моджибаке).
+  - `npm run check:dynamic-imports` -> Exit Code 0 (518 динамических импортов проверено, 0 битых путей).
+  - Сьют тестов `apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts` (10/10 PASS).
+  - Сьют тестов `apps/api/src/services/treatmentPlan/__tests__/treatmentPlanMultiTierAndSigning.test.ts` (6/6 PASS).
+
+### [PLN-12] [SEV-1] [ИСПРАВЛЕНО] Полная консолидация на SSOT TreatmentPlanStudioModal, физический снос зомби-презентера TreatmentPlanPresenterModal, интеграция рассрочки 0% и вычета 13% НДФЛ, починка внешнего ключа service_id в PostgreSQL
+- **Файлы:**
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx) (канонический SSOT с обратной совместимостью)
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioInstallmentTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioInstallmentTab.tsx) (рассрочка 0% 3/6/12/24 мес и налоговый вычет 13% НДФЛ)
+  - [`apps/web/src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx) (консолидация всех хэшей на Студию)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanClinicalModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanClinicalModals.tsx)
+  - [`apps/web/src/components/patients/tabs/TreatmentPlansTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/tabs/TreatmentPlansTab.tsx) (честный Empty State без моковых 105 000 ₽ / 48 000 ₽)
+  - [`apps/api/src/routes/treatmentPlan/handlers/treatmentPlanMutations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentPlan/handlers/treatmentPlanMutations.ts) (Smart Service Resolver для внешних ключей `service_id` в `treatment_items`)
+  - [`apps/web/src/components/treatment-plans/styles/treatmentPlanStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/styles/treatmentPlanStudio.css) (расширение до 76rem / 1216px без клиппинга)
+  - [`apps/web/src/components/treatment-plans/__tests__/treatmentPlanStudioSSOT.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/__tests__/treatmentPlanStudioSSOT.test.tsx) (24/24 PASS)
+  - [`apps/web/src/__tests__/treatmentPlans3TierAutonomy.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/__tests__/treatmentPlans3TierAutonomy.test.tsx) (6/6 PASS)
+  - [`apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts) (10/10 PASS)
+  - [`apps/web/src/tests/treatmentPlanCopilotAutopilotInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/treatmentPlanCopilotAutopilotInquisition.test.ts) (4/4 PASS)
+- **Физически снесены через `git rm`:**
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`
+  - `apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanStagesList.tsx`
+  - `apps/web/src/components/treatment-plans/presenterModules/PresenterStagesSection.tsx`
+  - Устаревшие тесты старого презентера
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file`):**
+  - [`docs/proofs/treatment_plans/01_treatment_plan_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/01_treatment_plan_studio_pc_light_1440x900.png) (348 KB)
+  - [`docs/proofs/treatment_plans/02_treatment_plan_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/02_treatment_plan_studio_pc_dark_1440x900.png) (355 KB)
+  - [`docs/proofs/treatment_plans/03_treatment_plan_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/03_treatment_plan_studio_mobile_light_390x844.png) (155 KB)
+  - [`docs/proofs/treatment_plans/04_treatment_plan_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/04_treatment_plan_studio_mobile_dark_390x844.png) (160 KB)
+- **Суть бага и результаты исправления:**
+  1. Ликвидирован рассинхрон двух параллельных модалок: легаси `TreatmentPlanPresenterModal.tsx` и новой `TreatmentPlanStudioModal.tsx`. Старый презентер с сиротскими модулями физически удален, а канонический алиас экспортирован из Студии.
+  2. Все точки входа (`DirectTreatmentPlanLauncher`, `TreatmentPlanClinicalModals`, `LiveTreatmentPlanPresenterLauncher`, `StandaloneTreatmentPlanLauncherHosts`, `VisitTabContent`) перенаправлены на единый SSOT `TreatmentPlanStudioModal`.
+  3. Создан и интегрирован `StudioInstallmentTab.tsx`: беспроцентная рассрочка 0% клиники на 3, 6, 12, 24 месяца с разбивкой платежей копейка в копейку (`splitKopecks`), а также калькулятор налогового вычета 13% НДФЛ по ст. 219 НК РФ.
+  4. В `treatmentPlanMutations.ts` внедрен `serviceLookup` (Smart Service Resolver): сопоставление позиций плана со справочником `serviceCatalogItems` по UUID, коду 804н и названию, гарантируя сохранение валидного внешнего ключа `service_id` в PostgreSQL 18 таблице `treatment_items`.
+  5. Искоренен хардкод 105 000 ₽ и зуба 16: новые планы создаются с честным нулем (0 ₽), а в карточке пациента отображается честный Empty State («У пациента нет сохраненных планов лечения») с Primary CTA «+ Составить план лечения».
+- **Машинные гейты (Definition of Done):**
+  - `npm run check:encoding` -> Exit Code 0 (22632 файла проверено).
+  - `npm run check:stub-overrides` -> Exit Code 0.
+  - `npm run check:fetch-response` -> Exit Code 0.
+  - `npm run check:dynamic-imports` -> Exit Code 0.
+  - 44/44 целевых тестов PASS.
+
 
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ

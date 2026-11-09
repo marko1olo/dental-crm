@@ -8,7 +8,7 @@
 import React from "react";
 import { Clock } from "lucide-react";
 import type { TreatmentPlanTier } from "./types";
-import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+import { isMicroConsumable } from "./treatmentPlanConsumables";
 
 export interface TreatmentPlanRoadmapGridProps {
 	readonly activeTier: TreatmentPlanTier;

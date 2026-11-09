@@ -1,12 +1,13 @@
 /**
  * scripts/capture_treatment_plans_4state_proofs.cjs
  *
- * 4-STATE VISUAL PROOF CAPTURE: TREATMENT PLAN PRESENTER & STUDIO
+ * 4-STATE VISUAL PROOF CAPTURE: TREATMENT PLAN STUDIO SSOT
+ * Mandates 8al, 8am, 8e, Apple HIG (390x844 & 1440x900).
  * Captures 4 canonical states:
- * 1. docs/proofs/treatment_plan_presenter/01_treatment_plan_presenter_pc_light_1440x900.png
- * 2. docs/proofs/treatment_plan_presenter/02_treatment_plan_presenter_pc_dark_1440x900.png
- * 3. docs/proofs/treatment_plan_presenter/03_treatment_plan_presenter_mobile_light_390x844.png
- * 4. docs/proofs/treatment_plan_presenter/04_treatment_plan_presenter_mobile_dark_390x844.png
+ * 1. docs/proofs/treatment_plans/01_treatment_plan_studio_pc_light_1440x900.png
+ * 2. docs/proofs/treatment_plans/02_treatment_plan_studio_pc_dark_1440x900.png
+ * 3. docs/proofs/treatment_plans/03_treatment_plan_studio_mobile_light_390x844.png
+ * 4. docs/proofs/treatment_plans/04_treatment_plan_studio_mobile_dark_390x844.png
  */
 
 const { chromium } = require("playwright");
@@ -14,10 +15,15 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 const BASE_URL = "http://127.0.0.1:5173";
-const OUT_DIR = path.resolve(__dirname, "../docs/proofs/treatment_plan_presenter");
+const OUT_DIRS = [
+  path.resolve(__dirname, "../docs/proofs/treatment_plans"),
+  path.resolve(__dirname, "../docs/proofs/treatment_plan_presenter"),
+];
 
-if (!fs.existsSync(OUT_DIR)) {
-  fs.mkdirSync(OUT_DIR, { recursive: true });
+for (const dir of OUT_DIRS) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 }
 
 const browserCandidates = [
@@ -35,7 +41,7 @@ if (!executablePath) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  console.log("🚀 Starting Treatment Plan 4-State Proof Capture...");
+  console.log("🚀 Starting Treatment Plan Studio 4-State Proof Capture...");
   console.log("Browser:", executablePath);
 
   const browser = await chromium.launch({
@@ -46,34 +52,38 @@ async function main() {
 
   const targets = [
     {
-      name: "01_treatment_plan_presenter_pc_light_1440x900.png",
+      name: "01_treatment_plan_studio_pc_light_1440x900.png",
+      legacyName: "01_treatment_plan_presenter_pc_light_1440x900.png",
       viewport: { width: 1440, height: 900 },
       isMobile: false,
       theme: "light",
-      url: `${BASE_URL}/#presenter`,
+      url: `${BASE_URL}/#treatment-plans`,
     },
     {
-      name: "02_treatment_plan_presenter_pc_dark_1440x900.png",
+      name: "02_treatment_plan_studio_pc_dark_1440x900.png",
+      legacyName: "02_treatment_plan_presenter_pc_dark_1440x900.png",
       viewport: { width: 1440, height: 900 },
       isMobile: false,
       theme: "dark",
-      url: `${BASE_URL}/#presenter`,
+      url: `${BASE_URL}/#treatment-plans`,
     },
     {
-      name: "03_treatment_plan_presenter_mobile_light_390x844.png",
+      name: "03_treatment_plan_studio_mobile_light_390x844.png",
+      legacyName: "03_treatment_plan_presenter_mobile_light_390x844.png",
       viewport: { width: 390, height: 844 },
       isMobile: true,
       hasTouch: true,
       theme: "light",
-      url: `${BASE_URL}/#presenter`,
+      url: `${BASE_URL}/#treatment-plans`,
     },
     {
-      name: "04_treatment_plan_presenter_mobile_dark_390x844.png",
+      name: "04_treatment_plan_studio_mobile_dark_390x844.png",
+      legacyName: "04_treatment_plan_presenter_mobile_dark_390x844.png",
       viewport: { width: 390, height: 844 },
       isMobile: true,
       hasTouch: true,
       theme: "dark",
-      url: `${BASE_URL}/#presenter`,
+      url: `${BASE_URL}/#treatment-plans`,
     },
   ];
 
@@ -101,19 +111,29 @@ async function main() {
       localStorage.setItem("dente_theme_mode", theme);
     }, { isDark, theme: t.theme });
 
-    await sleep(400);
+    await sleep(500);
 
-    // Wait for presenter container to be visible
+    // Wait for studio modal container to be visible
     try {
-      await page.waitForSelector('[data-testid="treatment-plan-presenter-modal"]', { timeout: 4000 });
+      await page.waitForSelector('[data-testid="treatment-plan-studio-modal"]', { timeout: 6000 });
+      console.log("Found [data-testid=\"treatment-plan-studio-modal\"]!");
     } catch {
-      console.warn("Presenter selector not found immediately, capturing current screen");
+      console.warn("Studio selector not found, capturing current screen state");
     }
 
-    const outPath = path.join(OUT_DIR, t.name);
-    await page.screenshot({ path: outPath, fullPage: false });
-    const stats = fs.statSync(outPath);
-    console.log(`✅ Captured: ${t.name} (${Math.round(stats.size / 1024)} KB)`);
+    await sleep(500);
+
+    for (const dir of OUT_DIRS) {
+      const outPath = path.join(dir, t.name);
+      await page.screenshot({ path: outPath, fullPage: false });
+      const stats = fs.statSync(outPath);
+      console.log(`✅ Captured: ${outPath} (${Math.round(stats.size / 1024)} KB)`);
+
+      if (t.legacyName) {
+        const legacyPath = path.join(dir, t.legacyName);
+        fs.copyFileSync(outPath, legacyPath);
+      }
+    }
 
     await context.close();
   }

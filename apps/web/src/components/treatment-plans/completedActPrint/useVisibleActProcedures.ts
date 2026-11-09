@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { isMicroConsumable } from "../TreatmentPlanPresenterModal";
+import { isMicroConsumable } from "../treatmentPlanConsumables";
 import type { TreatmentPlanItem } from "../types";
 
 export function useVisibleActProcedures(

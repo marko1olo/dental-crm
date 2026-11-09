@@ -75,29 +75,36 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of 'Смирнов Алексей Петрович' in TreatmentPlanPresenterModal.tsx", () => {
-		const presenterPath = path.join(webSrcRoot, "components/treatment-plans/TreatmentPlanPresenterModal.tsx");
-		const presenterContent = fs.readFileSync(presenterPath, "utf8");
+	it("verifies canonical SSOT TreatmentPlanStudioModal.tsx purity and eradication of duplicate TreatmentPlanPresenterModal.tsx (Wave 199)", () => {
+		const canonicalStudioPath = path.join(webSrcRoot, "components/treatment-plans/TreatmentPlanStudioModal.tsx");
+		const studioContent = fs.readFileSync(canonicalStudioPath, "utf8");
 
 		assert.strictEqual(
-			presenterContent.includes("Смирнов Алексей Петрович"),
+			studioContent.includes("Смирнов Алексей Петрович"),
 			false,
-			"TreatmentPlanPresenterModal.tsx must not contain 'Смирнов Алексей Петрович'",
+			"TreatmentPlanStudioModal.tsx must not contain 'Смирнов Алексей Петрович'",
 		);
 		assert.strictEqual(
-			presenterContent.includes("Смирнова Екатерина Васильевна"),
+			studioContent.includes("Смирнова Екатерина Васильевна"),
 			false,
-			"TreatmentPlanPresenterModal.tsx must not contain 'Смирнова Екатерина Васильевна'",
+			"TreatmentPlanStudioModal.tsx must not contain 'Смирнова Екатерина Васильевна'",
 		);
 		assert.strictEqual(
-			presenterContent.includes("Иванов Иван Иванович"),
+			studioContent.includes("Иванов Иван Иванович"),
 			false,
-			"TreatmentPlanPresenterModal.tsx must not contain 'Иванов Иван Иванович'",
+			"TreatmentPlanStudioModal.tsx must not contain 'Иванов Иван Иванович'",
 		);
 		assert.strictEqual(
-			presenterContent.includes("Д-р Смирнов А. В."),
+			studioContent.includes("Д-р Смирнов А. В."),
 			false,
-			"TreatmentPlanPresenterModal.tsx must not contain 'Д-р Смирнов А. В.'",
+			"TreatmentPlanStudioModal.tsx must not contain 'Д-р Смирнов А. В.'",
+		);
+
+		const duplicatePresenterPath = path.join(webSrcRoot, "components/treatment-plans/TreatmentPlanPresenterModal.tsx");
+		assert.strictEqual(
+			fs.existsSync(duplicatePresenterPath),
+			false,
+			"TreatmentPlanPresenterModal.tsx must be eradicated as duplicate SSOT",
 		);
 	});
 

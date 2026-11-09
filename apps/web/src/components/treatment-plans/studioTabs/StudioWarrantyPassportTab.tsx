@@ -19,7 +19,7 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 	patientName = "Пациент",
 	doctorFullName = "Лечащий врач",
 }) => {
-	const sanitizedTitle = activeTier.title.replace("★ ", "");
+	const sanitizedTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 
 	// Определение сервисных сроков по тарифу
 	const serviceLifeYears = activeTier.tierId === "premium" ? 25 : activeTier.tierId === "optimum" ? 10 : 5;

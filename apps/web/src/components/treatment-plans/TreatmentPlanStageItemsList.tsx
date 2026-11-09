@@ -1,7 +1,7 @@
 import React from "react";
 import { Package, Plus } from "lucide-react";
 import type { TreatmentPlanDoctorOption, TreatmentPlanItem, TreatmentPlanStage } from "./types";
-import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+import { isMicroConsumable } from "./treatmentPlanConsumables";
 import { TreatmentPlanStageItemRow } from "./TreatmentPlanStageItemRow";
 
 export interface TreatmentPlanStageItemsListProps {

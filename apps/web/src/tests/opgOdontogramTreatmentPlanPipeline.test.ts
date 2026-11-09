@@ -194,7 +194,7 @@ describe("OPG -> Odontogram -> Treatment Plan (3 Tiers) -> Form 043/U Pipeline",
 		assert.ok(wizardModule.PlanWizardModal, "PlanWizardModal must be exported");
 		assert.equal(wizardModule.PlanWizardModal, wizardModule.TreatmentPlanWizard);
 
-		const presenterModule = await import("../components/treatment-plans/TreatmentPlanPresenterModal");
+		const presenterModule = await import("../components/treatment-plans/TreatmentPlanStudioModal");
 		assert.ok(presenterModule.TreatmentPlanPresenterModal, "TreatmentPlanPresenterModal must be exported");
 	});
 });

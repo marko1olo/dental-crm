@@ -1,0 +1,25 @@
+{
+  "task": "Treatment Plans & 3-Tier Multi-Pricing Red Team Fixer (Domain 2)",
+  "status": "COMPLETED",
+  "defects_fixed": [
+    "Defect 1 (Mandate 8aq Sev 1): Mounted TreatmentPlansTab into PatientCardModal.tsx under 'treatmentPlans' tab with ClipboardList icon, ending component orphaned status",
+    "Defect 2: Backend selectedTier saved to treatment_plans.alternative_tier in treatmentPlanMutations.ts upon approval and status update",
+    "Defect 3: Removed hardcoded mock prices (48k/86k/145k) in TreatmentPlansTab.tsx, added honest empty state with '+ Составить план лечения' Primary CTA",
+    "Defect 4: Standardized tier IDs to 'economy', 'optimum', 'premium', eliminated isOptimumAlias hack, updated getTierLetter/getTierShortTitle in TreatmentPlanPresenterModal.tsx and presenterStateConstants.ts",
+    "Defect 5: Dead code deletion (git rm) of TreatmentPlanEditor.tsx and removed export from treatment-plans/index.ts",
+    "Defect 6: Visual proof personal inspection via read_file: fixed chosen tier text truncation in TreatmentPlanAcceptanceFooter.tsx, tightened card spacing in Presenter3TierGrid.tsx, shortened tablet signature button text"
+  ],
+  "gates": {
+    "encoding": "PASS (Exit 0, 22969 files checked)",
+    "unit_tests": "PASS (20/20 frontend, 8/8 backend/shared = 28/28 tests)",
+    "visual_proofs": {
+      "pc_light_express": "docs/proofs/treatment_plans/01_treatment_plan_express_pc_light_1440x900.png (126277 bytes)",
+      "pc_dark_expert": "docs/proofs/treatment_plans/02_treatment_plan_expert_pc_dark_1440x900.png (129265 bytes)",
+      "mobile_light": "docs/proofs/treatment_plans/05_treatment_plan_mobile_light_390x844.png (147085 bytes)",
+      "mobile_dark": "docs/proofs/treatment_plans/06_treatment_plan_mobile_dark_390x844.png (171177 bytes)",
+      "presenter_pc_light": "docs/proofs/treatment_plans/07_treatment_plan_presenter_pc_light_1440x900.png (119029 bytes)",
+      "presenter_pc_dark": "docs/proofs/treatment_plans/08_treatment_plan_presenter_pc_dark_1440x900.png (118439 bytes)"
+    },
+    "red_team_axes": "All 8 axes personally inspected via read_file (0px text clipping, 1 Primary CTA, Apple Segmented Control, 0px horizontal scroll, WCAG AAA contrast, dark theme tokens var(--paper)/var(--ink))"
+  }
+}

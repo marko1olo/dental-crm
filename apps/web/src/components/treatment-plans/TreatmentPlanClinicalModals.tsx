@@ -4,8 +4,8 @@ import type { ToothData } from "./types";
 import { TreatmentPlanAddServiceModal } from "./TreatmentPlanAddServiceModal";
 import { TreatmentPlanCreateStageModal } from "./TreatmentPlanCreateStageModal";
 
-const TreatmentPlanPresenterModal = React.lazy(() =>
-	import("./TreatmentPlanPresenterModal").then((m) => ({ default: m.TreatmentPlanPresenterModal })),
+const TreatmentPlanStudioModal = React.lazy(() =>
+	import("./TreatmentPlanStudioModal").then((m) => ({ default: m.TreatmentPlanStudioModal })),
 );
 const TreatmentPlanSignatureModal = React.lazy(() =>
 	import("./TreatmentPlanSignatureModal").then((m) => ({ default: m.TreatmentPlanSignatureModal })),
@@ -27,21 +27,21 @@ export const TreatmentPlanClinicalModals: React.FC<TreatmentPlanClinicalModalsPr
 		<>
 			{logic.isPresenterModalOpen && (
 				<Suspense fallback={null}>
-					<TreatmentPlanPresenterModal
+					<TreatmentPlanStudioModal
 						isOpen={logic.isPresenterModalOpen}
 						onClose={() => logic.setIsPresenterModalOpen(false)}
 						patientId={logic.patientId}
 						patientName={logic.patientName}
 						patientPhone={logic.patientPhone}
 						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
-						teeth={teethData}
+						initialTiers={logic.planTiers}
 						tiers={logic.planTiers}
 						initialSelectedTierId={logic.selectedTierId}
 						contractNumber={logic.contractNumber}
-						onSelectPlan={(p) => { logic.setSelectedTierId(p.tierId); showToast(`Выбран план: ${p.title} (${p.totalRub.toLocaleString("ru-RU")} ₽)`, "success"); }}
-						onConfirmSelection={(p) => { logic.setSelectedTierId(p.tierId); logic.setPlanStatus("agreed"); showToast(`Пациент подтвердил выбор: ${p.title}`, "success"); }}
-						onApproveAndSign={(p) => { logic.setSelectedTierId(p.tierId); logic.setIsPresenterModalOpen(false); logic.setIsSignModalOpen(true); }}
-						onPrintContract={(p) => { logic.setSelectedTierId(p.tierId); logic.setIsPresenterModalOpen(false); logic.setIsContractPrintOpen(true); }}
+						onSelectPlan={(p: any) => { logic.setSelectedTierId(p.tierId); showToast(`Выбран план: ${p.title} (${p.totalRub.toLocaleString("ru-RU")} ₽)`, "success"); }}
+						onConfirmSelection={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setPlanStatus("agreed"); showToast(`Пациент подтвердил выбор: ${p.title}`, "success"); }}
+						onApproveAndSign={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setIsPresenterModalOpen(false); logic.setIsSignModalOpen(true); }}
+						onPrintContract={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setIsPresenterModalOpen(false); logic.setIsContractPrintOpen(true); }}
 					/>
 				</Suspense>
 			)}

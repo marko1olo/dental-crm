@@ -1,0 +1,62 @@
+fix(treatment-plans): eliminate legacy presenter duplicates, integrate 0% installments, and consolidate on Studio SSOT
+
+WHY / ARCHITECTURAL CONTEXT:
+Resolves SEV-1 duplicate presenter divergence and broken imports (Mandates 8e, 8n, 8am, 8ap, 8aq, 8ar, 8ak, 8az).
+Previously, TreatmentPlanPresenterDefaultStages.ts was removed while legacy TreatmentPlanPresenterModal.tsx,
+TreatmentPlanStagesList.tsx, and PresenterStagesSection.tsx continued to reference it.
+Furthermore, two parallel modals coexisted (TreatmentPlanPresenterModal and TreatmentPlanStudioModal),
+forcing disparate entry points, causing hardcoded 105 000 ₽ and tooth 16 defaults, and leaving service_id
+as null in PostgreSQL 18 treatment_items.
+
+WHAT & WHERE:
+1. Physical removal via git rm:
+   - apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx
+   - apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanStagesList.tsx
+   - apps/web/src/components/treatment-plans/presenterModules/PresenterStagesSection.tsx
+2. Consolidation on TreatmentPlanStudioModal SSOT:
+   - Export backwards-compatible TreatmentPlanPresenterModal alias from TreatmentPlanStudioModal.tsx
+   - Consolidate entry points: DirectTreatmentPlanLauncher.tsx, TreatmentPlanClinicalModals.tsx,
+     LiveTreatmentPlanPresenterLauncher.tsx, StandaloneTreatmentPlanLauncherHosts.tsx,
+     VisitTabContent.tsx, and index.ts
+3. Chairside 0% Installments & 13% NDFL Tax Deduction:
+   - Implement StudioInstallmentTab.tsx with 3, 6, 12, 24 mo terms (kopeck-exact via splitKopecks)
+   - 13% NDFL deduction refund and net cost calculation per Art. 219 Tax Code of RF
+   - Mount as 'installment' tab inside TreatmentPlanStudioModal.tsx
+4. PostgreSQL 18 Foreign Key Integrity (treatment_items):
+   - In treatmentPlanMutations.ts, implement Smart Service Resolver (serviceLookup) matching
+     serviceCatalogItems by id (UUID), code804n, order804nCode, and title
+5. Honest Empty State & 3-Tier Dynamic Tiers:
+   - In TreatmentPlansTab.tsx, render honest empty state ('У пациента нет сохраненных планов лечения')
+     with single Primary CTA ('+ Составить план лечения') and dynamic tiers without hardcoded prices
+6. Ergonomics & Styling:
+   - Expand treatmentPlanStudio.css max-width to 76rem (1216px) for comfortable 1440x900 viewport
+   - Fix isMicroConsumable import paths across TreatmentPlanContractServicesTable.tsx,
+     TreatmentPlanRoadmapGrid.tsx, TreatmentPlanStageItemsList.tsx, useVisibleActProcedures.ts,
+     and PhasedStageCard.tsx
+
+PROOF & MACHINE GATES:
+- npm run check:encoding -> Exit Code 0 (22606 files verified)
+- npm run check:stub-overrides -> Exit Code 0 (142 properties, 27 modules, 0 overlaps)
+- npm run check:fetch-response -> Exit Code 0 (13084 files verified, 0 unhandled)
+- npm run check:dynamic-imports -> Exit Code 0 (16817 files, 520 imports, 0 broken)
+- Tests 44/44 PASS:
+  * treatmentPlanStudioSSOT.test.tsx (24/24)
+  * treatmentPlans3TierAutonomy.test.tsx (6/6)
+  * treatmentPlanRedTeamInquisition.test.ts (10/10)
+  * treatmentPlanCopilotAutopilotInquisition.test.ts (4/4)
+  * opgOdontogramTreatmentPlanPipeline.test.ts (6/6)
+  * photoProtocolSSOTAndEmptyStateInquisition.test.ts (7/7)
+  * wave117RadiologyAndTreatmentPlanMocks.test.ts (9/9)
+- 4-State Visual Proofs captured and verified via read_file:
+  * docs/proofs/treatment_plans/01_treatment_plan_studio_pc_light_1440x900.png (348 KB)
+  * docs/proofs/treatment_plans/02_treatment_plan_studio_pc_dark_1440x900.png (355 KB)
+  * docs/proofs/treatment_plans/03_treatment_plan_studio_mobile_light_390x844.png (155 KB)
+  * docs/proofs/treatment_plans/04_treatment_plan_studio_mobile_dark_390x844.png (160 KB)
+  * docs/proofs/treatment_plan_presenter/01_treatment_plan_studio_pc_light_1440x900.png
+  * docs/proofs/treatment_plan_presenter/02_treatment_plan_studio_pc_dark_1440x900.png
+  * docs/proofs/treatment_plan_presenter/03_treatment_plan_studio_mobile_light_390x844.png
+  * docs/proofs/treatment_plan_presenter/04_treatment_plan_studio_mobile_dark_390x844.png
+
+DOCUMENTATION SYNC:
+- .agents/RED_TEAM_FULL_INQUISITION_REGISTRY.md: added entry [PLN-12]
+- docs/competitive-audit/RED_TEAM_FULL_INQUISITION_REGISTRY.md: added entry [PLN-12]

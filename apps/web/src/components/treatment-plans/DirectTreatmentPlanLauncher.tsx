@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TreatmentPlanStudioModal } from "./TreatmentPlanStudioModal";
-import { LiveTreatmentPlanPresenterLauncher } from "../appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher";
 import { usePatientStore } from "../../store/patientStore";
 import { useAppStore } from "../../store/appStore";
 
@@ -102,21 +101,6 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 	}, []);
 
 	if (!isOpen) return null;
-
-	const hash = typeof window !== "undefined" ? window.location.hash.toLowerCase() : "";
-	const search = typeof window !== "undefined" ? window.location.search.toLowerCase() : "";
-	const isPresenterMode = hash.includes("presenter") || search.includes("presenter=1");
-
-	if (isPresenterMode) {
-		return (
-			<LiveTreatmentPlanPresenterLauncher
-				isOpen={isOpen}
-				onClose={handleClose}
-				patientId={resolvedPatientId}
-				planId="plan-active"
-			/>
-		);
-	}
 
 	return (
 		<TreatmentPlanStudioModal

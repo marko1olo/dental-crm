@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db } from "../../../db/client.js";
@@ -390,24 +390,59 @@ export async function handleUpsertPatientTreatmentPlan(
 							.filter((priceId) => UUID_SHAPE.test(priceId)),
 					),
 				];
-				const knownServiceIds = new Set<string>(
-					priceIdCandidates.length === 0
-						? []
-						: (
-								await tx
-									.select({ id: serviceCatalogItems.id })
-									.from(serviceCatalogItems)
-									.where(
-										and(
-											eq(
-												serviceCatalogItems.organizationId,
-												organizationId,
-											),
-											inArray(serviceCatalogItems.id, priceIdCandidates),
-										),
-									)
-							).map((row) => row.id),
-				);
+				const codeCandidates = [
+					...new Set(
+						input.items
+							.map((item) => item.priceId)
+							.filter((id) => !UUID_SHAPE.test(id) && id && id.length > 0),
+					),
+				];
+				const titleCandidates = [
+					...new Set(
+						input.items
+							.map((item) => item.name?.trim())
+							.filter((t): t is string => Boolean(t && t.length > 0)),
+					),
+				];
+
+				const orConditions = [];
+				if (priceIdCandidates.length > 0) {
+					orConditions.push(inArray(serviceCatalogItems.id, priceIdCandidates));
+				}
+				if (codeCandidates.length > 0) {
+					orConditions.push(inArray(serviceCatalogItems.code, codeCandidates));
+					orConditions.push(inArray(serviceCatalogItems.order804nCode, codeCandidates));
+				}
+				if (titleCandidates.length > 0) {
+					orConditions.push(inArray(serviceCatalogItems.title, titleCandidates));
+				}
+
+				const matchedServices = orConditions.length > 0
+					? await tx
+							.select({
+								id: serviceCatalogItems.id,
+								code: serviceCatalogItems.code,
+								order804nCode: serviceCatalogItems.order804nCode,
+								title: serviceCatalogItems.title,
+							})
+							.from(serviceCatalogItems)
+							.where(
+								and(
+									eq(serviceCatalogItems.organizationId, organizationId),
+									or(...orConditions),
+								),
+							)
+					: [];
+
+				const serviceLookup = new Map<string, string>();
+				for (const svc of matchedServices) {
+					serviceLookup.set(svc.id.toLowerCase(), svc.id);
+					if (svc.code) serviceLookup.set(svc.code.toLowerCase(), svc.id);
+					if (svc.order804nCode) serviceLookup.set(svc.order804nCode.toLowerCase(), svc.id);
+					if (svc.title) serviceLookup.set(svc.title.toLowerCase().trim(), svc.id);
+				}
+
+				const knownServiceIds = new Set<string>(matchedServices.map((row) => row.id));
 
 				const completedItems = await tx
 					.select({ serviceId: treatmentItems.serviceId })
@@ -491,14 +526,17 @@ export async function handleUpsertPatientTreatmentPlan(
 							discountRub: 0,
 						}),
 					);
+					const resolvedServiceId =
+						serviceLookup.get(item.priceId?.toLowerCase()) ||
+						(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
+						(knownServiceIds.has(item.priceId) ? item.priceId : null);
+
 					return {
 						id,
 						organizationId,
 						patientId,
 						visitId: null,
-						serviceId: knownServiceIds.has(item.priceId)
-							? item.priceId
-							: null,
+						serviceId: resolvedServiceId,
 						toothCode:
 							item.toothNumber === null || item.toothNumber === undefined
 								? null
@@ -669,6 +707,53 @@ export async function handleCreateTreatmentPlan(
 
 		// Синхронизация с книгой лечения (treatment_items)
 		if (allItemsFlat.length > 0) {
+			const uuidCandidates = allItemsFlat
+				.map((i) => i.priceId)
+				.filter((id) => UUID_SHAPE.test(id));
+			const codeCandidates = allItemsFlat
+				.map((i) => i.priceId)
+				.filter((id) => !UUID_SHAPE.test(id) && id && id.length > 0);
+			const titleCandidates = allItemsFlat
+				.map((i) => i.name?.trim())
+				.filter((t): t is string => Boolean(t && t.length > 0));
+
+			const orConditions = [];
+			if (uuidCandidates.length > 0) {
+				orConditions.push(inArray(serviceCatalogItems.id, uuidCandidates));
+			}
+			if (codeCandidates.length > 0) {
+				orConditions.push(inArray(serviceCatalogItems.code, codeCandidates));
+				orConditions.push(inArray(serviceCatalogItems.order804nCode, codeCandidates));
+			}
+			if (titleCandidates.length > 0) {
+				orConditions.push(inArray(serviceCatalogItems.title, titleCandidates));
+			}
+
+			const matchedServices = orConditions.length > 0
+				? await tx
+						.select({
+							id: serviceCatalogItems.id,
+							code: serviceCatalogItems.code,
+							order804nCode: serviceCatalogItems.order804nCode,
+							title: serviceCatalogItems.title,
+						})
+						.from(serviceCatalogItems)
+						.where(
+							and(
+								eq(serviceCatalogItems.organizationId, organizationId),
+								or(...orConditions),
+							),
+						)
+				: [];
+
+			const serviceLookup = new Map<string, string>();
+			for (const svc of matchedServices) {
+				serviceLookup.set(svc.id.toLowerCase(), svc.id);
+				if (svc.code) serviceLookup.set(svc.code.toLowerCase(), svc.id);
+				if (svc.order804nCode) serviceLookup.set(svc.order804nCode.toLowerCase(), svc.id);
+				if (svc.title) serviceLookup.set(svc.title.toLowerCase().trim(), svc.id);
+			}
+
 			let slot = 0;
 			const ledgerValues = allItemsFlat.map((item, index) => {
 				const id = ledgerRowId(newPlan.id, slot);
@@ -676,13 +761,17 @@ export async function handleCreateTreatmentPlan(
 				const unitPriceRub = Number(item.price.toFixed(2));
 				const lineTotalRub = Number(Math.max(0, item.price * item.quantity - item.discount).toFixed(2));
 				const discountRub = Number(item.discount.toFixed(2));
+				const resolvedServiceId =
+					serviceLookup.get(item.priceId?.toLowerCase()) ||
+					(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
+					(UUID_SHAPE.test(item.priceId) ? item.priceId : null);
 
 				return {
 					id,
 					organizationId,
 					patientId: data.patientId,
 					visitId: null,
-					serviceId: UUID_SHAPE.test(item.priceId) ? item.priceId : null,
+					serviceId: resolvedServiceId,
 					toothCode: item.toothNumber ? String(item.toothNumber) : null,
 					title: item.name?.trim() || item.priceId,
 					quantity: String(item.quantity),

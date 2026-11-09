@@ -16,7 +16,7 @@ export interface StudioPhotoProtocolTabProps {
 export type PhotoProtocolCategory = "intraoral" | "portrait" | "occlusal";
 
 export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({ activeTier }) => {
-	const sanitizedTitle = activeTier.title.replace("★ ", "");
+	const sanitizedTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 	const [activeCategory, setActiveCategory] = useState<PhotoProtocolCategory>("intraoral");
 
 	const categories = [

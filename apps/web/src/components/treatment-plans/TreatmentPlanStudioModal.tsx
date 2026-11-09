@@ -13,7 +13,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	Stethoscope, Percent, Printer, X, CheckCircle2,
 	FileText, BarChart3, Package, UserCheck, Zap,
-	ShieldCheck, Camera, Save,
+	ShieldCheck, Camera, Save, CreditCard,
 } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage, TreatmentPlanItem } from "./treatmentPlanTypes";
 import { formatRubles } from "./treatmentPlanTypes";
@@ -25,6 +25,7 @@ import {
 import { type ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { StudioTiersAndStagesTab } from "./studioTabs/StudioTiersAndStagesTab";
+import { StudioInstallmentTab } from "./studioTabs/StudioInstallmentTab";
 import { StudioClinicalBundlesTab } from "./studioTabs/StudioClinicalBundlesTab";
 import { StudioCuratorAssignmentTab } from "./studioTabs/StudioCuratorAssignmentTab";
 import { StudioWarrantyPassportTab } from "./studioTabs/StudioWarrantyPassportTab";
@@ -56,7 +57,7 @@ export interface TreatmentPlanStudioModalProps {
 
 const DISCOUNT_PRESETS = [0, 5, 10, 15, 20, 50, 100] as const;
 export type StudioDepthMode = "express" | "expert";
-export type StudioTab = "tiers" | "warranty" | "photo" | "bundles" | "curator";
+export type StudioTab = "tiers" | "installment" | "warranty" | "photo" | "bundles" | "curator";
 
 export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> = ({
 	isOpen,
@@ -233,7 +234,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		return computedTiers.find((t) => t.tierId === selectedTierId) || computedTiers.find((t) => t.tierId === "optimum") || computedTiers[0]!;
 	}, [computedTiers, selectedTierId]);
 
-	const sanitizedActiveTitle = activeTier.title.replace("★ ", "");
+	const sanitizedActiveTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 
 	// 3. Быстрый выбор типового плана по коду диагноза МКБ-10 (Мандат 8n)
 	const handleSelectDiagnosisPreset = useCallback((diagCode: string) => {
@@ -499,7 +500,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			aria-modal="true"
 			aria-labelledby="treatment-studio-title"
 		>
-			<div className="tp-studio-dialog flex flex-col w-full max-w-5xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden h-[94dvh] sm:h-auto sm:max-h-[92vh] mt-auto sm:my-auto">
+			<div className="tp-studio-dialog flex flex-col w-full max-w-6xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden h-[94dvh] sm:h-auto sm:max-h-[92vh] mt-auto sm:my-auto">
 				{/* 0. Тактильный Drag Handle для смартфонов по Apple HIG */}
 				<div className="tp-studio-drag-handle-wrap sm:hidden flex justify-center pt-2.5 pb-1">
 					<div className="tp-studio-drag-handle w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)] opacity-60" />
@@ -608,21 +609,37 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				</header>
 
 				{/* 1.1. Вкладки студии (в режиме Эксперт — полная палитра; в Экспресс — всегда доступно) */}
-				<div className="flex items-center gap-1 p-1 bg-[var(--paper-soft)] border-b border-[var(--line)] px-4 sm:px-6 shrink-0 overflow-x-auto no-scrollbar" role="tablist">
+				<div className="flex items-center gap-1.5 p-1 bg-[var(--paper-soft)] border-b border-[var(--line)] px-3 sm:px-6 shrink-0 overflow-x-auto no-scrollbar" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "tiers"}
 						onClick={() => setActiveTab("tiers")}
-						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 							activeTab === "tiers"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="tab-tiers-stages"
 					>
-						<BarChart3 className="w-4 h-4 shrink-0" />
+						<BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
 						<span>Тарифы и этапы</span>
+					</button>
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "installment"}
+						onClick={() => setActiveTab("installment")}
+						className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+							activeTab === "installment"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="tab-installment-calculator"
+					>
+						<CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<span>Рассрочка 0% и вычет</span>
 					</button>
 
 					{depthMode === "expert" && (
@@ -632,14 +649,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={activeTab === "warranty"}
 								onClick={() => setActiveTab("warranty")}
-								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+								className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 									activeTab === "warranty"
 										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								data-testid="tab-warranty-passport"
 							>
-								<ShieldCheck className="w-4 h-4 shrink-0" />
+								<ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
 								<span>Гарантийный паспорт</span>
 							</button>
 
@@ -648,14 +665,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={activeTab === "photo"}
 								onClick={() => setActiveTab("photo")}
-								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+								className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 									activeTab === "photo"
 										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								data-testid="tab-photo-protocol"
 							>
-								<Camera className="w-4 h-4 shrink-0" />
+								<Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
 								<span>Фотопротокол До/После</span>
 							</button>
 						</>
@@ -666,14 +683,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						role="tab"
 						aria-selected={activeTab === "bundles"}
 						onClick={() => setActiveTab("bundles")}
-						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 							activeTab === "bundles"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="tab-clinical-bundles"
 					>
-						<Package className="w-4 h-4 shrink-0" />
+						<Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
 						<span>Клинические пакеты</span>
 					</button>
 
@@ -682,15 +699,16 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						role="tab"
 						aria-selected={activeTab === "curator"}
 						onClick={() => setActiveTab("curator")}
-						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 							activeTab === "curator"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="tab-curator-assignment"
 					>
-						<UserCheck className="w-4 h-4 shrink-0" />
-						<span>Куратор плана</span>
+						<UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<span className="hidden sm:inline">Куратор плана</span>
+						<span className="sm:hidden">Куратор</span>
 					</button>
 				</div>
 
@@ -761,6 +779,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						/>
 					)}
 
+					{/* Вкладка 2: Рассрочка 0% и налоговый вычет 13% НДФЛ */}
+					{activeTab === "installment" && (
+						<StudioInstallmentTab
+							activeTier={activeTier}
+							patientName={patientName || undefined}
+						/>
+					)}
+
 					{/* Вкладка: Гарантийный паспорт (в режиме Эксперт) */}
 					{activeTab === "warranty" && (
 						<StudioWarrantyPassportTab
@@ -793,17 +819,18 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<span className="text-sm sm:text-lg font-black text-[var(--ink)] truncate">«{sanitizedActiveTitle}» — {formatRubles(activeTier.totalRub)}</span>
 					</div>
 
-					<div className="flex items-center gap-2.5 w-full sm:w-auto">
+					<div className="flex items-center gap-2 w-full sm:w-auto">
 						{/* Сохранить черновик в любой момент без блокировок (Мандат 8e) */}
 						<button
 							type="button"
 							onClick={handleSaveDraft}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer inline-flex"
+							className="min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer inline-flex shrink-0"
 							title="Сохранить черновик плана в карту пациента"
 							data-testid="save-draft-btn"
 						>
 							<Save className="w-4 h-4 text-[var(--muted)] shrink-0" />
-							<span>Сохранить черновик</span>
+							<span className="hidden sm:inline">Сохранить черновик</span>
+							<span className="sm:hidden">Черновик</span>
 						</button>
 
 						{/* Печать сметы и договора */}
@@ -822,12 +849,12 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={handleApprove}
-							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] w-full sm:w-auto px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white whitespace-nowrap"
+							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] flex-1 sm:flex-initial w-full sm:w-auto px-3 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white whitespace-nowrap overflow-hidden"
 							data-testid="approve-treatment-plan-btn"
 						>
 							<CheckCircle2 className="w-5 h-5 shrink-0" />
 							<span className="hidden sm:inline">{`Утвердить выбранный план («${sanitizedActiveTitle}»)`}</span>
-							<span className="sm:hidden whitespace-nowrap">{`Утвердить план · ${formatRubles(activeTier.totalRub).replace(" ", "\u00A0")}`}</span>
+							<span className="sm:hidden whitespace-nowrap">{`Утвердить · ${formatRubles(activeTier.totalRub)}`}</span>
 						</button>
 					</div>
 				</footer>
@@ -835,5 +862,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		</div>
 	);
 };
+
+export type TreatmentPlanPresenterModalProps = TreatmentPlanStudioModalProps;
+export const TreatmentPlanPresenterModal = TreatmentPlanStudioModal;
 
 export default TreatmentPlanStudioModal;

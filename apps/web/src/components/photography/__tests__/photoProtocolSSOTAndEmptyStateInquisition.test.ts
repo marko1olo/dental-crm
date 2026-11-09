@@ -43,13 +43,13 @@ describe('Photo Protocol SSOT, Empty State & Persistence Inquisition Suite', () 
 	});
 
 	it('[PHO-05] Treatment plan presenter integrates Before/After split comparison', () => {
-		const headerFile = fs.readFileSync(path.join(presenterDir, 'presenterModules/PresenterHeader.tsx'), 'utf-8');
-		const modalFile = fs.readFileSync(path.join(presenterDir, 'TreatmentPlanPresenterModal.tsx'), 'utf-8');
+		const photoTabFile = fs.readFileSync(path.join(presenterDir, 'studioTabs/StudioPhotoProtocolTab.tsx'), 'utf-8');
+		const studioFile = fs.readFileSync(path.join(presenterDir, 'TreatmentPlanStudioModal.tsx'), 'utf-8');
 
-		assert.ok(headerFile.includes('"beforeAfter"'), 'PresenterModalTab must include "beforeAfter" tab');
-		assert.ok(headerFile.includes('data-testid="tab-before-after"'), 'Header must contain button for tab-before-after');
-		assert.ok(modalFile.includes('BeforeAfterSplitSlider'), 'TreatmentPlanPresenterModal must mount BeforeAfterSplitSlider');
-		assert.ok(modalFile.includes('data-testid="presenter-before-after-tab-content"'), 'Modal must render before/after tab content');
+		assert.ok(studioFile.includes('"photo"'), 'StudioTab must include "photo" tab');
+		assert.ok(studioFile.includes('data-testid="tab-photo-protocol"'), 'Studio must contain button for tab-photo-protocol');
+		assert.ok(photoTabFile.includes('BeforeAfterSplitSlider'), 'StudioPhotoProtocolTab must mount BeforeAfterSplitSlider');
+		assert.ok(photoTabFile.includes('data-testid="studio-photo-protocol-tab"'), 'StudioPhotoProtocolTab must render before/after tab content');
 	});
 
 	it('[PHO-06] Elimination of cartoon yellow smile SVG, honest empty state indicator', () => {

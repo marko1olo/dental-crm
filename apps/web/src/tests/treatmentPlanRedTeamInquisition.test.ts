@@ -175,6 +175,7 @@ describe("Treatment Plan Red Team Inquisition (8c, 8e, 8k, 8n)", () => {
 					items: [
 						{
 							id: "item-1",
+							serviceCode: "A16.07.002",
 							name: "Пломба",
 							category: "Терапия",
 							code804n: "A16.07.002",
@@ -208,7 +209,7 @@ describe("Treatment Plan Red Team Inquisition (8c, 8e, 8k, 8n)", () => {
 	describe("3. Zero Cartoon Emojis In Medical & Print Forms (UI Sanity)", () => {
 		it("ensures critical treatment-plans UI files do not contain forbidden cartoon emojis", () => {
 			const targetFiles = [
-				"TreatmentPlanPresenterModal.tsx",
+				"TreatmentPlanStudioModal.tsx",
 				"TreatmentPlanPresenterPrintView.tsx",
 				"TreatmentPlan3TierComparison.tsx",
 				"TreatmentPlan3TierToolbar.tsx",

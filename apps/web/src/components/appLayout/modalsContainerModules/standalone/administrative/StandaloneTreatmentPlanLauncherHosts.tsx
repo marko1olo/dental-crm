@@ -17,8 +17,8 @@ import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWor
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 import { loadStoredTeethData } from "../../../../odontogram/odontogramStorage";
 
-const TreatmentPlanPresenterModal = lazyWithRetry(() =>
-	import("../../../../treatment-plans/TreatmentPlanPresenterModal").then((m) => ({ default: m.TreatmentPlanPresenterModal })),
+const TreatmentPlanStudioModal = lazyWithRetry(() =>
+	import("../../../../treatment-plans/TreatmentPlanStudioModal").then((m) => ({ default: m.TreatmentPlanStudioModal })),
 );
 const TreatmentEstimator = lazyWithRetry(() =>
 	import("../../../../odontogram/TreatmentEstimator").then((m) => ({ default: m.TreatmentEstimator })),
@@ -48,13 +48,11 @@ export const StandaloneScenarioComparisonHost: React.FC<{ onClose: () => void }>
 	if (patientName === null) return <AppLoadingState message="Загрузка карточки пациента..." />;
 
 	return (
-		<TreatmentPlanPresenterModal
+		<TreatmentPlanStudioModal
 			isOpen={true}
 			patientId={patientId}
 			patientName={patientName}
 			clinicName={profile?.legalName || profile?.clinicName || ""}
-			isDemoMode={isDemoShowcaseMode()}
-			teeth={teeth}
 			onClose={onClose}
 		/>
 	);

@@ -202,6 +202,7 @@ describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 				items: [
 					{
 						id: "t1",
+						serviceCode: "A16.07.002.001",
 						toothNumber: 11,
 						code804n: "A16.07.002.001",
 						name: "Пломба",
@@ -230,6 +231,7 @@ describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 				items: [
 					{
 						id: "imp-generic",
+						serviceCode: "A16.07.054",
 						toothNumber: 16,
 						code804n: "A16.07.054", // Generic code without .001
 						name: "Внутрикостная дентальная имплантация",
@@ -258,6 +260,7 @@ describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 				items: [
 					{
 						id: "cr1",
+						serviceCode: "A16.07.004",
 						toothNumber: 16,
 						code804n: "A16.07.004",
 						name: "Коронка",
