@@ -4,12 +4,14 @@ import type { TaxCertificateRegistryItem } from "./taxRegistryPresets";
 
 export interface TaxDeductionRegistryTableProps {
 	readonly filteredItems: readonly TaxCertificateRegistryItem[];
+	readonly isLoading?: boolean;
 	readonly onPrintItem: (item: TaxCertificateRegistryItem) => void;
 	readonly onDownloadXmlItem: (item: TaxCertificateRegistryItem) => void;
 }
 
 export const TaxDeductionRegistryTable: React.FC<TaxDeductionRegistryTableProps> = ({
 	filteredItems,
+	isLoading = false,
 	onPrintItem,
 	onDownloadXmlItem,
 }) => {
@@ -31,7 +33,14 @@ export const TaxDeductionRegistryTable: React.FC<TaxDeductionRegistryTableProps>
 					</tr>
 				</thead>
 				<tbody className="divide-y divide-[var(--line)] font-medium">
-					{filteredItems.map((item) => {
+					{filteredItems.length === 0 ? (
+						<tr>
+							<td colSpan={10} className="p-8 text-center text-xs text-[var(--muted)]" data-testid="tax-registry-table-empty">
+								{isLoading ? "Загрузка справок из реестра..." : "Справки об оплате медицинских услуг не найдены"}
+							</td>
+						</tr>
+					) : (
+						filteredItems.map((item) => {
 						const isIssued = item.status === "ISSUED";
 						const isSent = item.status === "SENT_TO_FNS";
 						return (
@@ -84,7 +93,7 @@ export const TaxDeductionRegistryTable: React.FC<TaxDeductionRegistryTableProps>
 								</td>
 							</tr>
 						);
-					})}
+					}))}
 				</tbody>
 			</table>
 		</div>

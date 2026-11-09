@@ -4,18 +4,25 @@ import type { TaxCertificateRegistryItem } from "./taxRegistryPresets";
 
 export interface TaxDeductionRegistryMobileCardsProps {
 	readonly filteredItems: readonly TaxCertificateRegistryItem[];
+	readonly isLoading?: boolean;
 	readonly onPrintItem: (item: TaxCertificateRegistryItem) => void;
 	readonly onDownloadXmlItem: (item: TaxCertificateRegistryItem) => void;
 }
 
 export const TaxDeductionRegistryMobileCards: React.FC<TaxDeductionRegistryMobileCardsProps> = ({
 	filteredItems,
+	isLoading = false,
 	onPrintItem,
 	onDownloadXmlItem,
 }) => {
 	return (
 		<div className="block md:hidden space-y-3">
-			{filteredItems.map((item) => {
+			{filteredItems.length === 0 ? (
+				<div className="p-6 text-center text-xs text-[var(--muted)] rounded-2xl border border-[var(--line)] bg-[var(--paper)]" data-testid="mobile-tax-registry-empty">
+					{isLoading ? "Загрузка справок из реестра..." : "Справки об оплате медицинских услуг не найдены"}
+				</div>
+			) : (
+				filteredItems.map((item) => {
 				const isIssued = item.status === "ISSUED";
 				const isSent = item.status === "SENT_TO_FNS";
 				return (
@@ -133,7 +140,7 @@ export const TaxDeductionRegistryMobileCards: React.FC<TaxDeductionRegistryMobil
 						</div>
 					</article>
 				);
-			})}
+			}))}
 		</div>
 	);
 };

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { FamilyMemberPayerConfig, TaxDeductionPaymentItem, TaxDeductionRelationship } from "../taxDeductionEngine";
 import { extractTaxYearFromDate } from "../taxDeductionEngine";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import type { TaxDeductionCertificateModalProps } from "./types";
 
 export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateModalProps, appLogic: any, selectedYear: number) {
@@ -50,7 +51,7 @@ export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateM
 	const effectivePayments = useMemo(() => {
 		if (payments.length > 0) return payments;
 		if (fetchedPayments.length > 0) return fetchedPayments;
-		if (typeof window !== "undefined" && (window.location.search.includes("demo=true") || window.location.hash.includes("demo=true"))) {
+		if (isDemoShowcaseMode()) {
 			return [
 				{ id: "demo-pmt-1", receiptNumber: "ЧЕК-00104", fiscalDocumentNumber: "98124", fiscalSign: "384910291", serviceName: "Лечение кариеса", dateIso: `${selectedYear}-03-15T10:30:00Z`, amountRub: 14500, taxCode: "1" as const },
 				{ id: "demo-pmt-2", receiptNumber: "ЧЕК-00142", fiscalDocumentNumber: "98205", fiscalSign: "384910402", serviceName: "Имплантация (код 02)", dateIso: `${selectedYear}-06-20T14:00:00Z`, amountRub: 85000, taxCode: "2" as const },
@@ -62,8 +63,7 @@ export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateM
 	const familyMembers = useMemo<FamilyMemberPayerConfig[]>(() => {
 		if (props.familyMembers?.length) return props.familyMembers as FamilyMemberPayerConfig[];
 		if (fetchedFamilyMembers.length > 0) return fetchedFamilyMembers;
-		const isDemo = typeof window !== "undefined" && (window.location.search.includes("demo=true") || window.location.hash.includes("demo=true"));
-		if (isDemo || !patientId) {
+		if (isDemoShowcaseMode()) {
 			return [
 				{ id: "demo-fam-spouse", relationship: "spouse", person: { fullName: "Иванова Анна Петровна", inn: "772345678901", birthDate: "1988-04-12", identityDocumentSeries: "4512", identityDocumentNumber: "876543" } },
 			];

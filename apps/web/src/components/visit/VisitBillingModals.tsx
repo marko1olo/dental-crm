@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { PaymentModal } from "../finance/PaymentModal.js";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 import { ConsumablesBatchWriteoffModal } from "../inventory/ConsumablesBatchWriteoffModal.js";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal.js";
 import { PricelistStudioModal } from "../catalog/PricelistStudioModal.js";
@@ -83,9 +83,9 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 }) => {
 	return (
 		<>
-			{/* Universal Payment Modal 54-FZ (Sber POS, Cash, SBP, Split) */}
+			{/* Canonical Unified SSOT Cash Register Studio & 54-FZ (Cash, Card, SBP, Split, Deposit) */}
 			{isPaymentModalOpen && (
-				<PaymentModal
+				<CashRegisterStudioModal
 					isOpen={isPaymentModalOpen}
 					onClose={onClosePaymentModal}
 					patientId={patientId}
@@ -95,28 +95,11 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 					amountRub={totals.totalDueRub}
 					patientDepositRub={patientDepositRub}
 					patientFamilyBalanceRub={patientFamilyBalanceRub}
-					cashierName={cashierName || doctorName}
-					doctorName={doctorName}
+					cashierFullName={cashierName || doctorName}
+					doctorFullName={doctorName}
 					clinicLegalName={clinicLegalName}
-					initialDiscountPercent={globalDiscountPercent}
 					initialWarranty100={totals.isWarranty100}
-					initialDiscountReason={globalDiscountReason}
-					dmsGuaranteeLetterId={effectiveDmsId}
-					dmsGuaranteeLetterNumber={effectiveDmsNumber}
-					dmsInsurerName={effectiveDmsInsurer}
-					availableDmsCoverageRub={effectiveDmsCoverage > 0 ? effectiveDmsCoverage : undefined}
-					initialSplitDmsRub={initialSplitDmsRub}
-					items={services.map((s, idx) => ({
-						id: s.id || `bill-${idx}`,
-						name: s.title,
-						code804n: s.code804n || "A16.07.002.001",
-						quantity: s.quantity || 1,
-						priceRub: s.unitPriceRub || 0,
-						discountRub: s.discountRub,
-						amountRub: Math.max(0, (s.unitPriceRub || 0) * (s.quantity || 1) - (s.discountRub || 0)),
-						toothNumber: s.toothCode ? (Number(s.toothCode) || s.toothCode) : undefined,
-					}))}
-					toothNumber={services[0]?.toothCode ? (Number(services[0].toothCode) || services[0].toothCode) : undefined}
+					serviceTitle={services[0]?.title || "Стоматологические услуги"}
 					onSuccess={(res) => {
 						onClosePaymentModal();
 						showToast("Оплата успешно принята в кассу!", "success", 3000);

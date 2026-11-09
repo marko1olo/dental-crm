@@ -1,7 +1,8 @@
 import React from "react";
 import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
 import { EmrProtocolGeneratorModal, type ToothSurface } from "../../emr";
-import { PaymentModal } from "../../finance/PaymentModal.js";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
+import type { CashboxTenderType } from "../../cashbox/cashRegisterCatalogData.js";
 import type { VisitSummaryModalProps } from "./types";
 import type { useVisitSummaryModalState } from "./useVisitSummaryModalState";
 import { buildEnrichedReceiptItems } from "./summaryReceiptEnricher";
@@ -82,9 +83,21 @@ export function VisitSummarySequentialFlow({
 				: undefined;
 
 		const enrichedItems = buildEnrichedReceiptItems(state.effectiveChairsideServices, effectiveTooth);
+		const defaultMethod: CashboxTenderType =
+			state.selectedPaymentMethod === "sbp_qr" || state.selectedPaymentMethod === "sbp"
+				? "sbp"
+				: state.selectedPaymentMethod === "cash"
+					? "cash"
+					: state.selectedPaymentMethod === "split"
+						? "split"
+						: state.selectedPaymentMethod === "deposit"
+							? "deposit"
+							: state.selectedPaymentMethod === "warranty"
+								? "warranty"
+								: "card";
 
 		return (
-			<PaymentModal
+			<CashRegisterStudioModal
 				isOpen={true}
 				onClose={() => state.setIsPaymentModalOpen(false)}
 				patientId={props.patient?.id || appLogic?.activePatientId || "pat-walkin"}
@@ -92,14 +105,13 @@ export function VisitSummarySequentialFlow({
 				patientPhone={props.patient?.phone || ""}
 				visitId={appLogic?.activeVisitId}
 				amountRub={state.effectiveTotalDueRub}
-				defaultMethod={state.selectedPaymentMethod}
+				defaultMethod={defaultMethod}
 				patientDepositRub={state.effectiveDepositRub}
 				patientFamilyBalanceRub={state.effectiveFamilyBalanceRub}
-				cashierName={props.doctorName || "Врач-стоматолог"}
-				doctorName={props.doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
+				cashierFullName={props.doctorName || "Врач-стоматолог"}
+				doctorFullName={props.doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
 				clinicLegalName={appLogic?.dashboard?.clinicSettings?.legalName || "ООО «ДЕНТЕ»"}
-				items={enrichedItems as any}
-				toothNumber={effectiveTooth}
+				serviceTitle={enrichedItems[0]?.name || "Стоматологические услуги"}
 				onSuccess={state.handlePaymentSuccessCallback}
 			/>
 		);

@@ -59,7 +59,7 @@ const shortageKopecks = Math.max(0, requiredCashKopecks - receivedCashKopecks);
 * Вместо «Постановление 659» -> **«Освобождение от НДС по медицинским услугам»**
 
 ### 2.0. Канонические компоненты Единого чекаута и кассы:
-1. **`CashierStudioModal.tsx` & `DirectCashierLauncher.tsx`**: Каноническая Студия кассы, чеков и смены DENTE CRM (Cashier Studio SSOT). Sweet Spot 400–480 строк (`CashierStudioModal.tsx`) + 70–90 строк (`DirectCashierLauncher.tsx`). Полноценный тест-сьют `cashierSSOTSuite.test.tsx` на нативном `node:test` (18/18 тестов зеленые).
+1. **`CashRegisterStudioModal.tsx` & `DirectCashierLauncher.tsx`**: Каноническая Студия кассы, чеков и смены DENTE CRM (Cashier Studio SSOT). Sweet Spot 400–480 строк (`CashRegisterStudioModal.tsx`) + 70–90 строк (`DirectCashierLauncher.tsx`). Полноценный тест-сьют `cashierSSOTSuite.test.tsx` на нативном `node:test` (18/18 тестов зеленые).
 2. **`CashReceiptModal.tsx`**: Каноническое модальное окно кассового чека, фискализации и приема платежей (ранее `FiscalReceipt54FzModal.tsx`).
 3. **`ServiceReceiptPrintDocument.tsx`**: Товарный чек / Акт оказанных стоматологических услуг и печать фискального чека (ранее `Order804nFiscalReceiptPrint.tsx`).
 4. **`TaxExemptionBanner.tsx`**: Информационный баннер освобождения от НДС медицинских услуг и согласования манипуляций у кресла (ранее `InvoiceDecree659Banner.tsx` / `InvoiceTaxDecreeBanner.tsx`).
@@ -210,7 +210,7 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 | Назначение | Frontend компонент | Backend маршрут |
 | :--- | :--- | :--- |
-| **Кассовый чек** | [`FiscalReceipt54FzModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FiscalReceipt54FzModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
+| **Кассовый чек** | [`CashReceiptModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashReceiptModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
 | **Единый SSOT Кассы (Кассовая студия)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/cashbox/payments`, `POST /api/fiscal/receipts` |
 | **Единый лаунчер кассы (Диплинки `#cashbox`, `#checkout`)** | [`DirectCashboxLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/DirectCashboxLauncher.tsx) | Единый перехват всех алиасов `#cashbox`, `#cashbox_ssot`, `#cash_register`, `#shift_closing` |
 | **Журнал счетов (UI SSOT)** | [`InvoicesView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/InvoicesView.tsx) | `GET /api/invoices`, `POST /api/invoices` (UUIDv7 в `patient_invoices`) |

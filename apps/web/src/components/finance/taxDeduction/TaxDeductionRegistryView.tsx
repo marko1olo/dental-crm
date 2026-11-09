@@ -13,6 +13,7 @@ import {
 	type TaxCertificateRegistryItem,
 	type TaxCertificateStatus,
 } from "./taxRegistryPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { TaxDeductionRegistryTable } from "./TaxDeductionRegistryTable";
 import { TaxDeductionRegistryMobileCards } from "./TaxDeductionRegistryMobileCards";
 
@@ -34,7 +35,9 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 	const [searchQuery, setSearchQuery] = useState("");
 	const [yearFilter, setYearFilter] = useState<number | "ALL">("ALL");
 	const [statusFilter, setStatusFilter] = useState<TaxCertificateStatus | "ALL">("ALL");
-	const [items, setItems] = useState<readonly TaxCertificateRegistryItem[]>(DEMO_REGISTRY_ITEMS);
+	const [items, setItems] = useState<readonly TaxCertificateRegistryItem[]>(() =>
+		isDemoShowcaseMode() ? DEMO_REGISTRY_ITEMS : []
+	);
 	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
@@ -45,39 +48,47 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 		})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
-				if (isMounted && Array.isArray(data) && data.length > 0) {
-					const mapped: TaxCertificateRegistryItem[] = data.map((d: any) => {
-						const year = d.taxYear || new Date().getFullYear();
-						const total = Number(d.totalAmountRub) || 0;
-						const c1 = Math.min(total, year >= 2024 ? 150000 : 120000);
-						const c2 = Math.max(0, total - c1);
-						const status: TaxCertificateStatus =
-							d.status === "issued" ? "ISSUED" : d.status === "sent_to_fns" ? "SENT_TO_FNS" : "DRAFT";
-						return {
-							id: d.id,
-							certificateNumber: String(d.payload?.certificateNumber || d.id.slice(0, 6).toUpperCase()),
-							issueDateIso: d.issuedAt || d.createdAt || new Date().toISOString(),
-							taxYear: year,
-							patientName: d.patientName || "Пациент клиники",
-							patientInn: d.taxPayerInn || undefined,
-							taxpayerName: d.payload?.taxpayerName || d.patientName || "Налогоплательщик",
-							taxpayerInn: d.taxPayerInn || undefined,
-							relationshipRu: d.payload?.relationshipRu || "Пациент (лично)",
-							relationshipCode: d.payload?.relationshipCode || "1",
-							code01Rub: c1,
-							code02Rub: c2,
-							totalRub: total,
-							refund13Rub: Math.round(total * 0.13),
-							status,
-							receiptsCount: Array.isArray(d.payload?.taxPaymentSelection?.selectedPaymentIds)
-								? d.payload.taxPaymentSelection.selectedPaymentIds.length
-								: 1,
-						};
-					});
-					setItems(mapped);
+				if (isMounted) {
+					if (Array.isArray(data) && data.length > 0) {
+						const mapped: TaxCertificateRegistryItem[] = data.map((d: any) => {
+							const year = d.taxYear || new Date().getFullYear();
+							const total = Number(d.totalAmountRub) || 0;
+							const c1 = Math.min(total, year >= 2024 ? 150000 : 120000);
+							const c2 = Math.max(0, total - c1);
+							const status: TaxCertificateStatus =
+								d.status === "issued" ? "ISSUED" : d.status === "sent_to_fns" ? "SENT_TO_FNS" : "DRAFT";
+							return {
+								id: d.id,
+								certificateNumber: String(d.payload?.certificateNumber || d.id.slice(0, 6).toUpperCase()),
+								issueDateIso: d.issuedAt || d.createdAt || new Date().toISOString(),
+								taxYear: year,
+								patientName: d.patientName || "Пациент клиники",
+								patientInn: d.taxPayerInn || undefined,
+								taxpayerName: d.payload?.taxpayerName || d.patientName || "Налогоплательщик",
+								taxpayerInn: d.taxPayerInn || undefined,
+								relationshipRu: d.payload?.relationshipRu || "Пациент (лично)",
+								relationshipCode: d.payload?.relationshipCode || "1",
+								code01Rub: c1,
+								code02Rub: c2,
+								totalRub: total,
+								refund13Rub: Math.round(total * 0.13),
+								status,
+								receiptsCount: Array.isArray(d.payload?.taxPaymentSelection?.selectedPaymentIds)
+									? d.payload.taxPaymentSelection.selectedPaymentIds.length
+									: 1,
+							};
+						});
+						setItems(mapped);
+					} else {
+						setItems(isDemoShowcaseMode() ? DEMO_REGISTRY_ITEMS : []);
+					}
 				}
 			})
-			.catch(() => {})
+			.catch(() => {
+				if (isMounted) {
+					setItems(isDemoShowcaseMode() ? DEMO_REGISTRY_ITEMS : []);
+				}
+			})
 			.finally(() => {
 				if (isMounted) setIsLoading(false);
 			});
@@ -361,6 +372,7 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 			{/* Desktop Table View (>= 768px) */}
 			<TaxDeductionRegistryTable
 				filteredItems={filteredItems}
+				isLoading={isLoading}
 				onPrintItem={(it) => void handlePrintItem(it)}
 				onDownloadXmlItem={handleDownloadXmlItem}
 			/>
@@ -368,6 +380,7 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 			{/* Mobile Grouped Cards View (< 768px, Apple HIG) */}
 			<TaxDeductionRegistryMobileCards
 				filteredItems={filteredItems}
+				isLoading={isLoading}
 				onPrintItem={(it) => void handlePrintItem(it)}
 				onDownloadXmlItem={handleDownloadXmlItem}
 			/>
