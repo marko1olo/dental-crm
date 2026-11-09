@@ -11,6 +11,7 @@ export {
 
 export {
 	type CrossSectionRidgeWidthsResult,
+	type CrossSectionRidgeWidthsResult as RidgeMorphometryResult,
 	measureCrossSectionRidgeWidths2_4_6,
 } from "./cbctRidgeWidthsExtractor";
 

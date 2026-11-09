@@ -15,8 +15,8 @@ export interface ImplantWorkspaceViewportLayoutProps {
 	readonly onChangeCrossSectionStepMm?: ((step: number) => void) | undefined;
 	readonly clinicalImplant: ClinicalImplantSpec;
 	readonly clinicalPose: ClinicalImplantPose;
-	readonly jawType?: string | undefined;
-	readonly handleSelectTooth?: ((toothNumber: number) => void) | undefined;
+	readonly jawType?: "mandible" | "maxilla" | undefined;
+	readonly handleSelectTooth?: ((toothFdi: number | string) => void) | undefined;
 	readonly resolvedPatient: string;
 	readonly windowWidth?: number | undefined;
 	readonly windowLevel?: number | undefined;

@@ -13,7 +13,7 @@ export interface StudyViewerHeaderProps {
 	readonly selectedTooth: string;
 	readonly doseMsv: number;
 	readonly modality: "rvg" | "opg" | "cbct_slice";
-	readonly onClose?: () => void;
+	readonly onClose?: (() => void) | undefined;
 }
 
 export const StudyViewerHeader: React.FC<StudyViewerHeaderProps> = ({

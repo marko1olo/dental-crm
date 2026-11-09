@@ -15,7 +15,7 @@ import { CbctHeaderBar } from "./mpr/CbctHeaderBar";
 import { CbctRightSidebar } from "./mpr/CbctRightSidebar";
 import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
-import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
+import { DentalLabOrderModal } from "../lab/DentalLabStudioModal";
 import type { CbctVoxelVolume } from "./cbctMprMath";
 import { useCbctStudioModalState } from "./studioModal/useCbctStudioModalState";
 import { useCbctStudioController } from "./studioModal/useCbctStudioController";
@@ -244,9 +244,9 @@ export const CbctMprImplantStudioModal: React.FC<
 						selectedLengthMm={state.selectedLengthMm}
 						onSelectLengthMm={state.setSelectedLengthMm}
 						displayBoneClass={state.displayBoneClass}
-						displayMeanHU={state.displayMeanHU ?? undefined}
+						displayMeanHU={state.displayMeanHU ?? null}
 						displayTorque={state.displayTorque}
-						displayNerveClearanceMm={state.displayNerveClearanceMm ?? undefined}
+						displayNerveClearanceMm={state.displayNerveClearanceMm ?? null}
 						displayDrillingProtocol={state.displayDrillingProtocol}
 						nerveSafetyStatus={state.nerveAuditResult.safetyStatus === "danger" ? "danger" : state.nerveAuditResult.safetyStatus === "warning" ? "warning" : "safe"}
 						nervePoints={state.nervePoints}
@@ -315,9 +315,9 @@ export const CbctMprImplantStudioModal: React.FC<
 						activeNerveSide={state.activeNerveSide}
 						onSwitchNerveSide={state.setActiveNerveSide}
 						displayBoneClass={state.displayBoneClass}
-						displayMeanHU={state.displayMeanHU ?? undefined}
+						displayMeanHU={state.displayMeanHU ?? null}
 						displayTorque={state.displayTorque}
-						displayNerveClearanceMm={state.displayNerveClearanceMm ?? undefined}
+						displayNerveClearanceMm={state.displayNerveClearanceMm ?? null}
 						displayDrillingProtocol={state.displayDrillingProtocol}
 						selectedBrand={state.selectedBrand}
 						setSelectedBrand={state.setSelectedBrand}

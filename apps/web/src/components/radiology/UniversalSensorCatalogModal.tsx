@@ -21,7 +21,8 @@ import { showToast } from "../GlobalToast";
 export interface UniversalSensorCatalogModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly selectedSensorId?: string;
+	readonly selectedSensorId?: string | undefined;
+	readonly activeSensorId?: string | undefined;
 	readonly onSelectSensor: (sensor: UniversalSensorModel) => void;
 }
 
@@ -45,8 +46,10 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 	isOpen,
 	onClose,
 	selectedSensorId,
+	activeSensorId,
 	onSelectSensor,
 }) => {
+	const effectiveSelectedId = selectedSensorId || activeSensorId;
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeBrand, setActiveBrand] = useState<SensorBrandId | "all">("all");
 	const [activeSize, setActiveSize] = useState<string>("all");
@@ -178,7 +181,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 						</div>
 					) : (
 						filteredSensors.map((sensor) => {
-							const isSelected = selectedSensorId === sensor.id;
+							const isSelected = effectiveSelectedId === sensor.id;
 							const isTesting = testingSensorId === sensor.id;
 							return (
 								<div

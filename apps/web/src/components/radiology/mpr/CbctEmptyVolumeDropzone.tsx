@@ -8,22 +8,31 @@ import React from "react";
 import { Box, FolderOpen, RotateCcw, Sparkles, UploadCloud } from "lucide-react";
 
 export interface CbctEmptyVolumeDropzoneProps {
-	readonly dicomLoadingStatus: string | null;
-	readonly dicomProgress: number;
+	readonly dicomLoadingStatus?: string | null | undefined;
+	readonly loadingStatus?: string | null | undefined;
+	readonly dicomProgress?: number | undefined;
+	readonly progress?: number | undefined;
 	readonly folderInputRef: React.RefObject<HTMLInputElement | null>;
 	readonly zipInputRef: React.RefObject<HTMLInputElement | null>;
-	readonly handleDicomFilesChange: (files: FileList | File[]) => void;
+	readonly handleDicomFilesChange?: ((files: FileList | File[]) => void) | undefined;
+	readonly onFilesChange?: ((files: FileList | File[]) => void) | undefined;
 	readonly onLoadDemoVolume?: (() => void) | undefined;
 }
 
 export const CbctEmptyVolumeDropzone: React.FC<CbctEmptyVolumeDropzoneProps> = ({
 	dicomLoadingStatus,
+	loadingStatus,
 	dicomProgress,
+	progress,
 	folderInputRef,
 	zipInputRef,
 	handleDicomFilesChange,
+	onFilesChange,
 	onLoadDemoVolume,
 }) => {
+	const effectiveStatus = loadingStatus !== undefined ? loadingStatus : (dicomLoadingStatus ?? null);
+	const effectiveProgress = progress !== undefined ? progress : (dicomProgress ?? 0);
+	const onFiles = onFilesChange ?? handleDicomFilesChange ?? (() => {});
 	return (
 		<div
 			className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950 border border-dashed border-zinc-800 rounded-lg m-1 select-none"
@@ -32,25 +41,25 @@ export const CbctEmptyVolumeDropzone: React.FC<CbctEmptyVolumeDropzoneProps> = (
 			onDrop={(e) => {
 				e.preventDefault();
 				if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-					handleDicomFilesChange(e.dataTransfer.files);
+					onFiles(e.dataTransfer.files);
 				}
 			}}
 		>
-			{dicomLoadingStatus ? (
+			{effectiveStatus ? (
 				<div className="flex flex-col items-center justify-center gap-3">
 					<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shadow-inner">
 						<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
 					</div>
 					<h3 className="text-sm font-bold text-zinc-200 mb-1">
-						{dicomLoadingStatus}
+						{effectiveStatus}
 					</h3>
 					<div className="w-64 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
 						<div
 							className="h-full bg-cyan-500 transition-all duration-200"
-							style={{ width: `${Math.max(5, Math.min(100, dicomProgress))}%` }}
+							style={{ width: `${Math.max(5, Math.min(100, effectiveProgress))}%` }}
 						/>
 					</div>
-					<span className="text-xs font-mono text-zinc-400">{dicomProgress}%</span>
+					<span className="text-xs font-mono text-zinc-400">{effectiveProgress}%</span>
 				</div>
 			) : (
 				<>

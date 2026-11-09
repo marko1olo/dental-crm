@@ -1,4 +1,7 @@
+import type { DesktopCtDownloadItem } from "../../../native/desktop/types";
+
 export type CtLaunchMode = "crm_window" | "standalone_window" | "external_app";
+export type CtDownloadItem = DesktopCtDownloadItem;
 
 export interface CtSelectorModalProps {
 	readonly isOpen: boolean;

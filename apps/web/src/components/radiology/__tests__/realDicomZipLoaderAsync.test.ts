@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import * as fflate from "fflate";
 import { buildVolumeFromDicomZip, buildVolumeFromDicomFiles } from "../dicomLoader/realDicomZipLoader";
 
@@ -54,15 +55,15 @@ describe("RAD-02: Real DICOM Zip Loader Async Non-Freezing Inquisition", () => {
 
 		const volume = await buildVolumeFromDicomZip(zipBuffer, onProgress);
 
-		expect(volume).toBeDefined();
-		expect(volume.dimensions.depth).toBe(6);
-		expect(volume.dimensions.width).toBe(2);
-		expect(volume.dimensions.height).toBe(2);
+		assert.ok(volume !== undefined);
+		assert.strictEqual(volume.dimensions.depth, 6);
+		assert.strictEqual(volume.dimensions.width, 2);
+		assert.strictEqual(volume.dimensions.height, 2);
 
 		// Verify that progress log tracked unpacking and building
-		expect(progressLog.length).toBeGreaterThan(3);
-		expect(progressLog.some((p) => p.pct <= 35 && p.msg.includes("Распаковка архива КТ"))).toBe(true);
-		expect(progressLog[progressLog.length - 1]?.pct).toBe(100);
+		assert.ok(progressLog.length > 3);
+		assert.ok(progressLog.some((p) => p.pct <= 35 && p.msg.includes("Распаковка архива КТ")));
+		assert.strictEqual(progressLog[progressLog.length - 1]?.pct, 100);
 	});
 
 	it("throws clear error when ZIP has no valid DICOM slices", async () => {
@@ -72,14 +73,16 @@ describe("RAD-02: Real DICOM Zip Loader Async Non-Freezing Inquisition", () => {
 		};
 		const zipBuffer = fflate.zipSync(zipFiles).buffer;
 
-		await expect(buildVolumeFromDicomZip(zipBuffer)).rejects.toThrow(
-			"В переданном ZIP-архиве не найдено файлов DICOM (.dcm)",
+		await assert.rejects(
+			async () => buildVolumeFromDicomZip(zipBuffer),
+			/В переданном ZIP-архиве не найдено файлов DICOM/,
 		);
 	});
 
 	it("throws clear error when empty file array is passed to buildVolumeFromDicomFiles", async () => {
-		await expect(buildVolumeFromDicomFiles([])).rejects.toThrow(
-			"Не передано ни одного файла DICOM для загрузки",
+		await assert.rejects(
+			async () => buildVolumeFromDicomFiles([]),
+			/Не передано ни одного файла DICOM для загрузки/,
 		);
 	});
 });

@@ -1,12 +1,12 @@
 import React from "react";
 import { ChevronRight, FileArchive, FolderDown, FolderSearch, RefreshCw } from "lucide-react";
-import type { CtDownloadItem } from "./types";
+import type { CtDownloadItem } from "../types";
 
 export interface CtSelectorDownloadsSectionProps {
 	readonly downloads: CtDownloadItem[];
 	readonly isScanningDownloads: boolean;
 	readonly refreshDownloads: () => void;
-	readonly launchStudy: (study: any, studyId?: string, filePath?: string) => void;
+	readonly launchStudy: (study: any, imageIds?: string[] | undefined, filePath?: string | undefined) => void | Promise<void>;
 }
 
 export const CtSelectorDownloadsSection: React.FC<CtSelectorDownloadsSectionProps> = ({

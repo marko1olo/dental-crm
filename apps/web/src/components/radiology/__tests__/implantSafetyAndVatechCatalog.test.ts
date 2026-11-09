@@ -12,7 +12,7 @@ import {
 	calculateDrillDepth,
 	type CanonicalImplantBrandKey,
 	type CanonicalImplantFixture,
-} from "../implantCatalog.js";
+} from "../implantCatalog";
 
 import {
 	VATECH_NERVE_SAFE_THRESHOLD_MM,

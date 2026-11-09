@@ -19,11 +19,11 @@ import {
 import type { RvgSensorDeviceOption } from "./types";
 
 export interface UseDirectRvgSensorAcquisitionProps {
-	readonly initialImageUrl?: string;
+	readonly initialImageUrl?: string | undefined;
 	readonly isDemo: boolean;
-	readonly onCaptureReady?: (imageUrl: string) => void;
-	readonly onTeethDetected?: (teeth: string[], projection?: ProjectionAngleType) => void;
-	readonly onClinicalNoteDetected?: (note: string) => void;
+	readonly onCaptureReady?: ((imageUrl: string) => void) | undefined;
+	readonly onTeethDetected?: ((teeth: string[], projection?: ProjectionAngleType | undefined) => void) | undefined;
+	readonly onClinicalNoteDetected?: ((note: string) => void) | undefined;
 }
 
 export function useDirectRvgSensorAcquisition({

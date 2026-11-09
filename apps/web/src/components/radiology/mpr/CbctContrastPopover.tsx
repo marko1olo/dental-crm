@@ -6,9 +6,10 @@ import {
 } from "../cbctMprMath";
 
 export interface CbctContrastPopoverProps {
-	readonly isOpen: boolean;
+	readonly isOpen?: boolean | undefined;
 	readonly activePresetId?: string | undefined;
 	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined;
+	readonly onSelectPreset?: ((presetId: string) => void) | undefined;
 	readonly windowWidth: number;
 	readonly onChangeWindowWidth?: ((w: number) => void) | undefined;
 	readonly windowLevel: number;
@@ -17,14 +18,17 @@ export interface CbctContrastPopoverProps {
 	readonly onChangeSlabThicknessMm?: ((th: number) => void) | undefined;
 	readonly slabMode: SlabProjectionMode;
 	readonly onChangeSlabMode?: ((mode: SlabProjectionMode) => void) | undefined;
-	readonly panoThicknessMm: number;
+	readonly panoThicknessMm?: number | undefined;
 	readonly onChangePanoThicknessMm?: ((th: number) => void) | undefined;
+	readonly isUnsharpActive?: boolean | undefined;
+	readonly onToggleUnsharp?: (() => void) | undefined;
 }
 
 export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
-	isOpen,
+	isOpen = true,
 	activePresetId,
 	onSelectClinicalPreset,
+	onSelectPreset,
 	windowWidth,
 	onChangeWindowWidth,
 	windowLevel,
@@ -33,10 +37,13 @@ export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
 	onChangeSlabThicknessMm,
 	slabMode,
 	onChangeSlabMode,
-	panoThicknessMm,
+	panoThicknessMm = 1.0,
 	onChangePanoThicknessMm,
+	isUnsharpActive: _isUnsharpActive,
+	onToggleUnsharp: _onToggleUnsharp,
 }) => {
 	if (!isOpen) return null;
+	const handleSelectPreset = onSelectPreset ?? onSelectClinicalPreset;
 
 	return (
 		<div

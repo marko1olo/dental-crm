@@ -50,7 +50,7 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 		if (typeof fetch === "function") {
 			const resp = await fetch("/api/hardware/sensor-status", {
 				headers: { Accept: "application/json" },
-				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(500) : undefined,
+				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(500) : null,
 			});
 			if (resp.ok) {
 				const data = await resp.json();
@@ -177,7 +177,7 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 		if (typeof fetch === "function") {
 			const resp = await fetch(`/api/hardware/sensor-status?modelId=${encodeURIComponent(sensor.id)}`, {
 				headers: { Accept: "application/json" },
-				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(500) : undefined,
+				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(500) : null,
 			});
 			if (resp.ok) {
 				const data = await resp.json();

@@ -91,8 +91,8 @@ export function CephLandmarkCanvas({
 			<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
 				<CephalometricCanvas
 					landmarks={landmarks}
-					onLandmarkChange={onLandmarkChange}
-					onRemoveLandmark={onRemoveLandmark}
+					onLandmarkChange={(id, pt) => onLandmarkChange(id as LandmarkKey, pt)}
+					onRemoveLandmark={(id) => onRemoveLandmark(id as LandmarkKey)}
 					activeTargetKey={activeTargetKey}
 					onSelectTargetKey={setActiveTargetKey}
 					imageUrl={imageUrl}

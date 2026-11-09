@@ -24,9 +24,15 @@ export function buildVisiographyVisitsList(
 	}
 	return Array.from(groups.entries()).map(([d, stList]) => {
 		const leadStudy = stList[0];
+		const doctorCandidate = leadStudy as
+			| (ImagingStudy & {
+					readonly doctorName?: string | null | undefined;
+					readonly prescribedByName?: string | null | undefined;
+			  })
+			| undefined;
 		const resolvedDoctor =
-			leadStudy?.doctorName ||
-			leadStudy?.prescribedByName ||
+			doctorCandidate?.doctorName ||
+			doctorCandidate?.prescribedByName ||
 			(leadStudy?.patientFullName ? "Лечащий врач" : "Врач-рентгенолог");
 		return {
 			id: `visit-${d}`,

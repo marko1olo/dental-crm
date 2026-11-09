@@ -209,6 +209,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 		const implantItem: TreatmentPlanItem = {
 			id: "plan-implant-46",
 			toothNumber: 46,
+			serviceCode: "A16.07.054",
 			code804n: "A16.07.054",
 			name: "Внутрикостная дентальная имплантация Osstem TS III (Ø4.0 × 10.0 мм)",
 			category: "Хирургия",

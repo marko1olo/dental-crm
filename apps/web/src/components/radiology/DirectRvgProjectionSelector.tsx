@@ -7,20 +7,20 @@ export type PatientCategory = "adult" | "child";
 
 export interface DirectRvgProjectionSelectorProps {
 	projectionType: ProjectionAngleType;
-	onSelectProjectionType: (projId: ProjectionAngleType, typicalExposureSec?: number) => void;
-	patientCategory?: PatientCategory;
-	onChangePatientCategory?: (category: PatientCategory) => void;
-	anatomicalZone?: AnatomicalZone;
-	onChangeAnatomicalZone?: (zone: AnatomicalZone) => void;
-	sensorStatus?: SensorCaptureStatus;
-	isSensorDetected?: boolean;
+	onSelectProjectionType: (projId: ProjectionAngleType, typicalExposureSec?: number | undefined) => void;
+	patientCategory?: PatientCategory | undefined;
+	onChangePatientCategory?: ((category: PatientCategory) => void) | undefined;
+	anatomicalZone?: AnatomicalZone | undefined;
+	onChangeAnatomicalZone?: ((zone: AnatomicalZone) => void) | undefined;
+	sensorStatus?: SensorCaptureStatus | undefined;
+	isSensorDetected?: boolean | undefined;
 	// Backward-compatibility props (no longer used in UI)
-	voltageKv?: number;
-	onChangeVoltageKv?: (val: number) => void;
-	currentMa?: number;
-	onChangeCurrentMa?: (val: number) => void;
-	exposureSec?: number;
-	onChangeExposureSec?: (val: number) => void;
+	voltageKv?: number | undefined;
+	onChangeVoltageKv?: ((val: number) => void) | undefined;
+	currentMa?: number | undefined;
+	onChangeCurrentMa?: ((val: number) => void) | undefined;
+	exposureSec?: number | undefined;
+	onChangeExposureSec?: ((val: number) => void) | undefined;
 }
 
 const ANATOMICAL_ZONES: Array<{ id: AnatomicalZone; label: string; hint: string }> = [

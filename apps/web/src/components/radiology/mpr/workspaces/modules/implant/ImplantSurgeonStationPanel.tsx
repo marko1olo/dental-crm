@@ -39,7 +39,7 @@ export interface ImplantSurgeonStationPanelProps {
 	readonly ridgeWidths: { w2: number; w4: number; w6: number; h: number; isAdequate: boolean; isDetected: boolean };
 	readonly edentulousTooth: ZakharovEdentulousToothFdi;
 	readonly setEdentulousTooth: (tooth: ZakharovEdentulousToothFdi) => void;
-	readonly activeCrossSection?: { nearestToothFdi?: string | null } | undefined;
+	readonly activeCrossSection?: { nearestToothFdi?: string | null } | null | undefined;
 	readonly isEditing043: boolean;
 	readonly setIsEditing043: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly edited043Text: string;

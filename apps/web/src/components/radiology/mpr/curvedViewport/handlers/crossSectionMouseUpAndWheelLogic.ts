@@ -3,6 +3,7 @@
  */
 
 import type React from "react";
+import { DEFAULT_VIEWPORT_TRANSFORM } from "../../../cbctMprMath";
 import type { UseCbctCurvedViewportHandlersParams } from "../types";
 import { applyZoomClick } from "../viewportInteractionHandlers";
 import { finalizeCrossSectionRuler } from "./crossSectionHitTesting";
@@ -11,16 +12,16 @@ export function executeCrossSectionMouseUp(params: UseCbctCurvedViewportHandlers
 	const {
 		setIsDraggingWL, setIsPanning, isDraggingZoom, setIsDraggingZoom, hasDraggedZoomRef,
 		activeTool, setTransforms, activeRuler, setActiveRuler, setRulers, setSelectedMeasurement,
-		setDraggingMeasurementHandle, setDragImplantPart, setCrossSectionDragStart,
+		setDraggingMeasurementHandle, setDragImplantPart, setCrossSectionDragStart, transforms,
 	} = params;
 
 	setIsDraggingWL(null);
 	setIsPanning(null);
 	if (isDraggingZoom) {
-		setIsDraggingZoom(null);
 		if (activeTool === "zoom" && !hasDraggedZoomRef.current) {
-			applyZoomClick(1.25, "cross_section", setTransforms);
+			applyZoomClick(isDraggingZoom, hasDraggedZoomRef, "cross_section", transforms, setTransforms);
 		}
+		setIsDraggingZoom(null);
 		hasDraggedZoomRef.current = false;
 	}
 
@@ -46,12 +47,12 @@ export function executeCrossSectionWheel(
 	const delta = Math.sign(e.deltaY);
 	const factor = delta > 0 ? 0.9 : 1.1;
 	params.setTransforms((prev) => {
-		const curr = prev.cross_section;
+		const curr = prev.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
 		return {
 			...prev,
 			cross_section: {
 				...curr,
-				scale: Math.max(0.2, Math.min(10.0, curr.scale * factor)),
+				zoom: Math.max(0.2, Math.min(10.0, curr.zoom * factor)),
 			},
 		};
 	});

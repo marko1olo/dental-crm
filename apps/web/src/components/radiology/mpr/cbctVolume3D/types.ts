@@ -10,17 +10,17 @@ import type { Volume3DClippingBox, Volume3DPresetId } from "../cbctVolume3DMath"
 
 export interface CbctVolume3DViewportProps {
 	readonly volume: CbctVoxelVolume | null;
-	readonly extraClassName?: string;
-	readonly isActive?: boolean;
-	readonly onPointerDownCapture?: () => void;
-	readonly onMouseEnter?: () => void;
-	readonly onMouseLeave?: () => void;
-	readonly onDoubleClick?: () => void;
-	readonly switcherSlot?: React.ReactNode;
-	readonly isMaximized?: boolean;
-	readonly onToggleMaximize?: () => void;
-	readonly initialClipping?: Partial<Volume3DClippingBox>;
-	readonly onClippingChange?: (clipping: Volume3DClippingBox) => void;
+	readonly extraClassName?: string | undefined;
+	readonly isActive?: boolean | undefined;
+	readonly onPointerDownCapture?: (() => void) | undefined;
+	readonly onMouseEnter?: (() => void) | undefined;
+	readonly onMouseLeave?: (() => void) | undefined;
+	readonly onDoubleClick?: (() => void) | undefined;
+	readonly switcherSlot?: React.ReactNode | undefined;
+	readonly isMaximized?: boolean | undefined;
+	readonly onToggleMaximize?: (() => void) | undefined;
+	readonly initialClipping?: Partial<Volume3DClippingBox> | undefined;
+	readonly onClippingChange?: ((clipping: Volume3DClippingBox) => void) | undefined;
 	readonly nervePoints?: readonly Point3D[] | undefined;
 	readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
 	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined;

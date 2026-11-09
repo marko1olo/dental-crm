@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { UploadCloud } from "lucide-react";
-import { DicomArchiveUploader } from "./DicomArchiveUploader";
+import { DicomArchiveUploader } from "../radiology/DicomArchiveUploader";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { ImagingMprSliders } from "./ImagingMprSliders";
 import { ImagingMprHeaderSummary } from "./imagingMprPanel/ImagingMprHeaderSummary";

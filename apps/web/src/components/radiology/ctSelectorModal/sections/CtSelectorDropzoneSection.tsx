@@ -54,7 +54,6 @@ export const CtSelectorDropzoneSection: React.FC<CtSelectorDropzoneSectionProps>
 				ref={folderInputRef}
 				type="file"
 				multiple
-				// @ts-expect-error standard directory picker attribute
 				webkitdirectory=""
 				className="hidden"
 				data-testid="input-pick-dicom-folder"

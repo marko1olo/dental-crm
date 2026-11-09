@@ -89,8 +89,8 @@ export interface CbctMprViewportsGridProps {
 	readonly selectedBrand?: ImplantBrandKey | undefined; readonly onSelectBrand?: ((b: ImplantBrandKey) => void) | undefined;
 	readonly selectedDiameterMm?: number | undefined; readonly onSelectDiameterMm?: ((d: number) => void) | undefined;
 	readonly selectedLengthMm?: number | undefined; readonly onSelectLengthMm?: ((l: number) => void) | undefined;
-	readonly displayBoneClass?: string | undefined; readonly displayMeanHU?: number | undefined; readonly displayTorque?: string | undefined;
-	readonly displayNerveClearanceMm?: number | undefined; readonly displayDrillingProtocol?: string | undefined;
+	readonly displayBoneClass?: string | undefined; readonly displayMeanHU?: number | null | undefined; readonly displayTorque?: string | undefined;
+	readonly displayNerveClearanceMm?: number | null | undefined; readonly displayDrillingProtocol?: string | undefined;
 	readonly nerveSafetyStatus?: string | undefined; readonly nervePoints?: any; readonly interpolatedNerve3D?: any;
 	readonly implant3DWorld?: any; readonly nerveAuditResult?: any;
 	readonly handleExportToEmr?: (() => void) | undefined; readonly handleExportToPlan?: (() => void) | undefined;

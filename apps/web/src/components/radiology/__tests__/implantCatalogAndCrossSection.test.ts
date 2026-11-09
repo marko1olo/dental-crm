@@ -11,7 +11,7 @@ import {
 	calculateImplantCrossSectionGeometry,
 	evaluateImplantObstacleClearance,
 	type ClinicalImplantBrandKey,
-} from "../mpr/workspaces/implant/implantCatalog";
+} from "../../implants/implantCatalog";
 import {
 	measureCrossSectionRidgeWidths2_4_6,
 } from "../cbctRidgeCaliperMath";

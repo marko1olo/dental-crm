@@ -1,6 +1,6 @@
 import React from "react";
 import { Activity, ExternalLink, MonitorUp, Sparkles } from "lucide-react";
-import type { CtLaunchMode } from "./types";
+import type { CtLaunchMode } from "../types";
 
 export interface CtSelectorLaunchModesProps {
 	readonly launchMode: CtLaunchMode;

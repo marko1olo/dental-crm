@@ -101,9 +101,9 @@ export const DirectRvgToothAssigner: React.FC<DirectRvgToothAssignerProps> = ({
 					</span>
 				</div>
 				<div className="flex items-center justify-between text-xs text-[var(--muted,#94a3b8)] bg-[var(--paper-strong,#0f172a)] p-2 rounded-lg border border-[var(--line,#1e293b)]">
-					<span className="truncate pr-2">{boneAssessment.boneType}</span>
+					<span className="truncate pr-2">{boneAssessment.classNameRu}</span>
 					<span className="font-mono text-[11px] text-[var(--ink,#e2e8f0)] font-semibold shrink-0">
-						{boneAssessment.typicalLocation}
+						{boneAssessment.anatomicalLocationRu}
 					</span>
 				</div>
 			</div>

@@ -25,7 +25,7 @@ export {
 export * from './implantNerveSafetyAudit.js';
 export * from './implantBoneDensityMath.js';
 export * from './fastMarchingNerve.js';
-export * from './implantCatalog.js';
+export * from './implant/canonicalCatalog/index.js';
 export * from './implantCorticalAndSleeveEngine.js';
 
 import type { Point3D, CbctVoxelVolume } from './cbctMprMath.js';
@@ -35,7 +35,7 @@ import {
   type ImplantBrandKey,
   calculateApexCoordinates,
 } from './implantNerveSafetyAudit.js';
-import { CANONICAL_IMPLANT_CATALOG } from './implantCatalog.js';
+import { CANONICAL_IMPLANT_CATALOG } from './implant/canonicalCatalog/index.js';
 
 // ─── STANDARD VIRTUAL IMPLANT FIXTURE CATALOG ────────────────────────────────
 

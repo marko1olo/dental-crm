@@ -14,14 +14,14 @@ export interface CrossSectionRenderOptions {
 	morphometry: RidgeMorphometryResult | null;
 	showMorphometry: boolean;
 	showGrid: boolean;
-	selectedImplant?: ClinicalImplantSpec;
-	implantPose?: ClinicalImplantPose;
+	selectedImplant?: ClinicalImplantSpec | undefined;
+	implantPose?: ClinicalImplantPose | undefined;
 	isActive: boolean;
-	windowWidth?: number;
-	windowLevel?: number;
-	gamma?: number;
-	airCutoffHU?: number;
-	softKnee?: boolean;
+	windowWidth?: number | undefined;
+	windowLevel?: number | undefined;
+	gamma?: number | undefined;
+	airCutoffHU?: number | undefined;
+	softKnee?: boolean | undefined;
 }
 
 export function renderCrossSectionToCanvas(canvas: HTMLCanvasElement, opts: CrossSectionRenderOptions) {

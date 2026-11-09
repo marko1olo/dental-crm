@@ -15,7 +15,7 @@ import {
 	SURGICAL_KITS,
 	type GuidedSurgeryKitSpec,
 	type CanonicalImplantBrandKey,
-} from "./implantCatalog.js";
+} from "./implant/canonicalCatalog";
 
 // ─── 1. VATECH 3-ZONE MANDIBULAR NERVE CLEARANCE CLASSIFICATION ─────────────
 

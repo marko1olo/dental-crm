@@ -14,8 +14,8 @@ export interface ReportA4PrintableSheetProps {
 	viewZoom: number;
 	patientName: string;
 	patientCardNumber: string;
-	patientAge: string | number;
-	patientGender: string;
+	patientAge?: string | number | undefined;
+	patientGender?: string | undefined;
 	doctorName: string;
 	clinicName: string;
 	clinicPhone: string;

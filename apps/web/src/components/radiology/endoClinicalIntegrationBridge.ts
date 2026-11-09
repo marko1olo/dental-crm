@@ -154,6 +154,7 @@ export function buildEndoTreatmentPlanSuite(
 	items.push({
 		id: `plan-endo-coff-${toothFdi}-${timestamp}-0`,
 		toothNumber: toothFdi,
+		serviceCode: "A16.07.051",
 		code804n: "A16.07.051",
 		name: `Наложение коффердама (раббердама) при лечении зуба #${toothFdi}`,
 		category: "Терапия",
@@ -173,6 +174,7 @@ export function buildEndoTreatmentPlanSuite(
 	items.push({
 		id: `plan-endo-prep-${toothFdi}-${timestamp}-1`,
 		toothNumber: toothFdi,
+		serviceCode: "A16.07.030.001",
 		code804n: "A16.07.030.001",
 		name: `Инструментальная и медикаментозная обработка корневого канала (${canalCount} к., зуб #${toothFdi})`,
 		category: "Терапия",
@@ -192,6 +194,7 @@ export function buildEndoTreatmentPlanSuite(
 	items.push({
 		id: `plan-endo-obt-${toothFdi}-${timestamp}-2`,
 		toothNumber: toothFdi,
+		serviceCode: "A16.07.008.002",
 		code804n: "A16.07.008.002",
 		name: `Пломбирование корневого канала зуба гуттаперчей с силером (${canalCount} к., зуб #${toothFdi})`,
 		category: "Терапия",
@@ -210,6 +213,7 @@ export function buildEndoTreatmentPlanSuite(
 	items.push({
 		id: `plan-endo-buildup-${toothFdi}-${timestamp}-3`,
 		toothNumber: toothFdi,
+		serviceCode: "A16.07.002.001",
 		code804n: "A16.07.002.001",
 		name: `Восстановление зуба пломбой (билдинг-ап полости доступа композитом, зуб #${toothFdi})`,
 		category: "Терапия",
@@ -392,15 +396,15 @@ export function exportEndoToDiary(
 						toothNumbers: [params.toothFdi],
 						state: "Endo_Treated",
 						canalMeasurements: endoCanals.map((c) => ({
-							canalName: c.name,
-							workingLengthMm: c.lengthMm,
-							referencePoint: c.refPoint || "Режущий край / бугор",
-							apexLocatorReading: c.apexLocator || "0.0 (Apex)",
-							masterFile: c.masterFile || "",
-							masterCone: c.masterCone || "",
+							canalName: c.canalName,
+							workingLengthMm: c.workingLengthMm,
+							referencePoint: c.referencePoint || "Режущий край / бугор",
+							apexLocatorReading: "0.0 (Apex)",
+							masterFile: c.masterApicalFile || "",
+							masterCone: "",
 							taper: c.taper || ".04",
-							sealer: "AH Plus",
-							obturationTechnique: "Латеральная компакция",
+							sealer: c.sealer || "AH Plus",
+							obturationTechnique: c.obturationTechnique || "Латеральная компакция",
 						})),
 					}),
 				}).catch(() => {

@@ -227,6 +227,20 @@ export function validateTreatmentPlanStarProtocols(
 		}
 	}
 
+	if (hasCTDiagnostics) {
+		checks.push({
+			ruleId: "star-diag-ct-pass",
+			protocolCode: "K08_IMPLANT_ORTHO",
+			protocolTitleRu: "Клинический протокол СтАР: Диагностика и планирование",
+			toothNumber: undefined,
+			ruleDescriptionRu: "Наличие компьютерной томографии 3D КЛКТ перед инвазивным лечением",
+			status: "pass",
+			messageRu: "3D КЛКТ диагностика челюстно-лицевой области (A06.07.012 / A06.07.004) включена в план",
+			normativeRefRu: "Клинические рекомендации СтАР «Диагностика в стоматологии»",
+			order804nCodesRelated: ["A06.07.012", "A06.07.004"],
+		});
+	}
+
 	// 3. Взаимоисключающие манипуляции
 	const exclusiveConflicts = detectMutuallyExclusiveToothProcedures(allItems);
 	for (const conflict of exclusiveConflicts) {
@@ -240,7 +254,7 @@ export function validateTreatmentPlanStarProtocols(
 			messageRu: `Клиническая заметка (зуб №${conflict.toothNumber}): совмещение процедур («${conflict.procedureA.name}» и «${conflict.procedureB.name}»).`,
 			recommendationRu: `Врач автономно определяет последовательность и необходимость этапов лечения зуба №${conflict.toothNumber}. Сохранение плана не блокируется.`,
 			normativeRefRu: "Клинические стандарты и врачебная автономия DENTE CRM",
-			order804nCodesRelated: [conflict.procedureA.code804n, conflict.procedureB.code804n],
+			order804nCodesRelated: [conflict.procedureA.code804n, conflict.procedureB.code804n].filter((c): c is string => Boolean(c)),
 		});
 	}
 

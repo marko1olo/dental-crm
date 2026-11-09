@@ -93,6 +93,8 @@ export interface CbctVoxelVolume {
 	readonly lodLevel?: number | undefined;
 	readonly imageOrientationPatient?: readonly number[] | undefined;
 	readonly patientName?: string | undefined;
+	readonly isFlippedX?: boolean | undefined;
+	readonly isFlippedY?: boolean | undefined;
 }
 
 export interface HounsfieldPreset {

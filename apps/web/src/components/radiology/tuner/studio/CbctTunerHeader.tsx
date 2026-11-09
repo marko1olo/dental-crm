@@ -27,7 +27,7 @@ export interface CbctTunerHeaderProps {
 	readonly copiedFeedback: boolean;
 	readonly onAttachToVisit: () => void;
 	readonly attachFeedback: boolean;
-	readonly onClose?: () => void;
+	readonly onClose?: (() => void) | undefined;
 }
 
 export const CbctTunerHeader: React.FC<CbctTunerHeaderProps> = ({

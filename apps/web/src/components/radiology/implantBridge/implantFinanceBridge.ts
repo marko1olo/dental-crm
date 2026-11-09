@@ -99,6 +99,7 @@ export function addCbctServiceToTreatmentPlan(params: AddCbctToFinanceParams = {
 	const planItem: TreatmentPlanItem = {
 		id: `plan-cbct-${Date.now()}`,
 		toothNumber: params.toothFdi,
+		serviceCode: STATUTORY_CBCT_804N.code804n,
 		code804n: STATUTORY_CBCT_804N.code804n,
 		name: `${STATUTORY_CBCT_804N.statutoryTitle804n}${toothSuffix}`,
 		category: "Диагностика",

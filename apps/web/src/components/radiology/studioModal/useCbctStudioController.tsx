@@ -21,7 +21,7 @@ import { useCbctInteractionHandlers } from "../mpr/useCbctInteractionHandlers";
 import { useCbctDicomLoader } from "../mpr/useCbctDicomLoader";
 import { useCbctClipboardSnapshot } from "../mpr/useCbctClipboardSnapshot";
 import { CLINICAL_RADIOLOGY_PRESETS } from "../cbctLutMath";
-import type { DentalLabOrderData } from "../../lab/DentalLabOrderModal";
+import type { DentalLabOrderData } from "../../lab/DentalLabStudioModal";
 import type { useCbctStudioModalState } from "./useCbctStudioModalState";
 import type { RadiologyStudy } from "../types";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";

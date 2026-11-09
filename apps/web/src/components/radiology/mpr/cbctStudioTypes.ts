@@ -3,7 +3,7 @@ import { DEFAULT_VIEWPORT_TRANSFORM } from "../cbctMprMath";
 import type { RadiologyStudy } from "../types";
 
 export type StudioMode = "diagnostic" | "panoramic" | "volume3d" | "implant" | "tmj" | "endo";
-export type ViewLayoutMode = "mpr_3_view" | "quad_view" | "layout_1_plus_3";
+export type ViewLayoutMode = "mpr_3_view" | "quad_view" | "layout_1_plus_3" | "axial_primary" | "pano_cross";
 
 export type CbctWorkspaceTabId = "diagnostic" | "panoramic" | "endo" | "implant" | "tmj";
 

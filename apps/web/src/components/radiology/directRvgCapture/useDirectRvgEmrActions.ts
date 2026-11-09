@@ -21,7 +21,7 @@ export interface UseDirectRvgEmrActionsProps {
 	readonly canvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly onSaveToEmr?: ((study: RadiologyStudy) => void) | undefined;
 	readonly onSendToLab?: ((data: any) => void) | undefined;
-	readonly onExportDicom?: ((blob: Blob, filename: string) => void) | undefined;
+	readonly onExportDicom?: ((study: RadiologyStudy) => void) | undefined;
 	readonly onClose: () => void;
 }
 

@@ -3,7 +3,7 @@ import { Smartphone } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";
 import { CbctHotkeysStatusBar } from "../CbctHotkeysStatusBar.js";
 import { RadiologyConsultationSplit } from "../RadiologyConsultationSplit.js";
-import { DentalLabOrderModal } from "../../lab/DentalLabOrderModal.js";
+import { DentalLabOrderModal } from "../../lab/DentalLabStudioModal.js";
 import { useCbctStandaloneStudio } from "./useCbctStandaloneStudio.js";
 import { StudioTopToolbar } from "./StudioTopToolbar.js";
 import { StudioViewportGrid } from "./StudioViewportGrid.js";
@@ -261,7 +261,17 @@ export const CbctStandaloneStudioView: React.FC<CbctStandaloneStudioViewProps> =
 				/>
 
 				<StudioSidebarControls
-					{...(studio as any)}
+					{...studio}
+					handleCrossSectionMouseDown={studio.interactions.handleCrossSectionMouseDown}
+					handleCrossSectionMouseMove={studio.interactions.handleCrossSectionMouseMove}
+					handleCrossSectionMouseUp={studio.interactions.handleCrossSectionMouseUp}
+					handleFullResetViewport={() => studio.handleResetAll()}
+					handleSelectTooth={studio.interactions.handleSelectTooth}
+					handleExportToPlan={() => studio.handleBroadcastImplantPlaced()}
+					handleExportToFinance={() => {
+						studio.handleBroadcastImplantPlaced();
+						showToast("Операция имплантации и КЛКТ добавлены в смету приёма", "success");
+					}}
 					handleExportToSchedule={() => {
 						showToast("Запись на имплантацию отправлена в расписание", "info");
 					}}

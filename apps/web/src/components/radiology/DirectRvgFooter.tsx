@@ -3,14 +3,14 @@ import { CheckCircle2, ClipboardList, Download, Printer, RotateCcw, Truck } from
 
 export interface DirectRvgFooterProps {
 	selectedTeeth: string[];
-	calculatedDoseMicrosv?: number;
+	calculatedDoseMicrosv?: number | undefined;
 	isSaving: boolean;
 	onExportDicom: () => void;
 	onSendToLab: () => void;
 	onSaveToEmr: () => void;
-	onSendToPlan?: () => void;
-	onRetake?: () => void;
-	onPrintReport?: () => void;
+	onSendToPlan?: (() => void) | undefined;
+	onRetake?: (() => void) | undefined;
+	onPrintReport?: (() => void) | undefined;
 }
 
 /**

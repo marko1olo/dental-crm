@@ -25,19 +25,19 @@ import {
 } from "./studyViewer/index.js";
 
 export interface VisiographStudyViewerProps {
-	readonly imageUrl?: string;
-	readonly studyTitle?: string;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly initialTooth?: string;
-	readonly modality?: "rvg" | "opg" | "cbct_slice";
-	readonly onClose?: () => void;
-	readonly onSaveToVisit?: (details: {
+	readonly imageUrl?: string | undefined;
+	readonly studyTitle?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly initialTooth?: string | undefined;
+	readonly modality?: ("rvg" | "opg" | "cbct_slice") | undefined;
+	readonly onClose?: (() => void) | undefined;
+	readonly onSaveToVisit?: ((details: {
 		tooth: string;
 		doseMsv: number;
 		measurementsMm: number[];
-	}) => void;
-	readonly onAddToInvoice?: (serviceTitle: string, priceRub: number) => void;
+	}) => void) | undefined;
+	readonly onAddToInvoice?: ((serviceTitle: string, priceRub: number) => void) | undefined;
 }
 
 export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({

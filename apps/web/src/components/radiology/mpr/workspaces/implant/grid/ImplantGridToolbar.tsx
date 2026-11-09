@@ -12,20 +12,20 @@ export const GRID_SIZE_OPTIONS = [4, 6, 8] as const;
 export interface ImplantGridToolbarProps {
 	readonly totalSlices: number;
 	readonly activeCrossSectionIdx: number;
-	readonly nearestToothFdi?: string | null;
+	readonly nearestToothFdi?: string | null | undefined;
 	readonly windowWidth: number;
 	readonly windowLevel: number;
 	readonly gamma: number;
 	readonly slabThicknessMm: number;
 	readonly crossSectionStepMm: number;
-	readonly onChangeCrossSectionStepMm?: (step: number) => void;
+	readonly onChangeCrossSectionStepMm?: ((step: number) => void) | undefined;
 	readonly showMorphometryLines: boolean;
 	readonly onToggleMorphometry: () => void;
 	readonly onNavigate: (delta: number) => void;
 	readonly gridCount: number;
 	readonly onSetGridCount: (count: number) => void;
-	readonly onToggleMaximize?: () => void;
-	readonly isMaximized?: boolean;
+	readonly onToggleMaximize?: (() => void) | undefined;
+	readonly isMaximized?: boolean | undefined;
 }
 
 export const ImplantGridToolbar: React.FC<ImplantGridToolbarProps> = ({

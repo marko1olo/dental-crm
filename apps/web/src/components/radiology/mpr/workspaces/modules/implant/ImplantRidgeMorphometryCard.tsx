@@ -10,7 +10,7 @@ export interface ImplantRidgeMorphometryCardProps {
 	readonly selectedLengthMm: number;
 	readonly edentulousTooth: ZakharovEdentulousToothFdi;
 	readonly setEdentulousTooth: (tooth: ZakharovEdentulousToothFdi) => void;
-	readonly activeCrossSection?: { nearestToothFdi?: string | null } | undefined;
+	readonly activeCrossSection?: { nearestToothFdi?: string | null } | null | undefined;
 	readonly isEditing043: boolean;
 	readonly setIsEditing043: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly edited043Text: string;

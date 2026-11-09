@@ -48,8 +48,20 @@ export function executeCrossSectionMouseMove(
 
 	if (studioMode === "implant") {
 		if (dragImplantPart && crossSectionDragStart) {
-			const deltaPx = { x: e.clientX - crossSectionDragStart.clientX, y: e.clientY - crossSectionDragStart.clientY };
-			calculateImplantDragDelta(dragImplantPart, deltaPx, currentImplantSpec, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg);
+			const delta = calculateImplantDragDelta(
+				dragImplantPart,
+				crossSectionDragStart,
+				e.clientX,
+				e.clientY,
+				activeCrossSection.pixelSpacingMm || 0.25,
+				canvas,
+				activeCrossSection,
+				currentImplantSpec,
+				pointerPx,
+			);
+			if (delta.newXOffset !== undefined) setImplantEntryXOffsetMm(delta.newXOffset);
+			if (delta.newDepth !== undefined) setImplantEntryDepthMm(delta.newDepth);
+			if (delta.newAngulation !== undefined) setImplantAngulationDeg(delta.newAngulation);
 			setCrossSectionDragStart({
 				clientX: e.clientX,
 				clientY: e.clientY,

@@ -28,7 +28,7 @@ import type {
 	ViewLayoutMode,
 	NerveCanalSide,
 } from "../mpr/cbctStudioTypes.js";
-import type { DentalLabOrderData } from "../../lab/DentalLabOrderModal.js";
+import type { DentalLabOrderData } from "../../lab/DentalLabStudioModal.js";
 
 export type { StudioMode, ViewLayoutMode, NerveCanalSide };
 

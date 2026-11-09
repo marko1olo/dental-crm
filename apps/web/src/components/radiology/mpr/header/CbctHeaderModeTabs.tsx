@@ -17,20 +17,20 @@ export const CbctHeaderModeTabs: React.FC<CbctHeaderModeTabsProps> = ({
 	return (
 		<div className="hidden lg:flex items-center gap-1 bg-[var(--paper)] p-1 rounded-lg border border-[var(--line)]">
 			{CBCT_WORKSPACE_TABS.map((tab) => {
-				const isActive = studioMode === tab.key;
+				const isActive = studioMode === tab.studioMode;
 				return (
 					<button
-						key={tab.key}
+						key={tab.id}
 						type="button"
-						onClick={() => onSelectStudioMode(tab.key)}
+						onClick={() => onSelectStudioMode(tab.studioMode)}
 						className={`px-2 sm:px-2.5 py-1 rounded text-[11px] font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors cursor-pointer border ${
 							isActive
 								? "bg-zinc-800/90 text-zinc-200 border-zinc-700/80 shadow-xs"
 								: "bg-transparent border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
 						}`}
-						title={tab.descriptionRu}
+						title={tab.description}
 					>
-						<span>{tab.labelRu}</span>
+						<span>{tab.label}</span>
 					</button>
 				);
 			})}

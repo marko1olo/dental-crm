@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./DicomArchiveUploader";
+export * from "../radiology/DicomArchiveUploader";
 export * from "./DicomViewerModal";
 export * from "./DicomViewport";
 export * from "./ClinicalImageViewer";

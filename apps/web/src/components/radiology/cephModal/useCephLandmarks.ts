@@ -104,9 +104,9 @@ export function useCephLandmarks({
 	const [aiStats, setAiStats] = useState<CephAiStats | null>(() => {
 		if (latestSavedStudy?.isCalibratedFallback !== undefined) {
 			return {
-				latencyMs: (latestSavedStudy as { latencyMs?: number })?.latencyMs ?? 15,
-				placedCount: latestSavedStudy.placedCount,
-				isCalibratedFallback: latestSavedStudy.isCalibratedFallback,
+				latencyMs: latestSavedStudy.latencyMs ?? 15,
+				placedCount: latestSavedStudy.placedCount ?? 0,
+				isCalibratedFallback: Boolean(latestSavedStudy.isCalibratedFallback),
 			};
 		}
 		return null;

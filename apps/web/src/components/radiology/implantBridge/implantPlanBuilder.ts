@@ -41,6 +41,7 @@ export function buildImplantTreatmentPlanItem(params: CtImplantBridgeParams): Tr
 	return {
 		id: `plan-implant-${params.toothFdi}-${Date.now()}`,
 		toothNumber: params.toothFdi,
+		serviceCode: "A16.07.054",
 		code804n: "A16.07.054",
 		name: `Внутрикостная дентальная имплантация: ${brandTitle} (Ø${diameterStr} × ${lengthStr} мм)`,
 		category: "Хирургия",

@@ -1,7 +1,7 @@
 import React from "react";
 import { CbctRightSidebar } from "../mpr/CbctRightSidebar.js";
-import type { StudioSidebarControlsProps } from "./types.js";
+import type { CbctRightSidebarProps } from "../mpr/sidebar/CbctSidebarTypes.js";
 
-export const StudioSidebarControls: React.FC<StudioSidebarControlsProps> = (props) => {
-	return <CbctRightSidebar {...(props as any)} />;
+export const StudioSidebarControls: React.FC<CbctRightSidebarProps> = (props) => {
+	return <CbctRightSidebar {...props} />;
 };
