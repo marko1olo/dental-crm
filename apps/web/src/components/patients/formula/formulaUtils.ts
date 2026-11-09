@@ -24,12 +24,49 @@ export function getBaselineTeeth(dentitionMode: DentitionMode): ToothData[] {
 
 export function calculateKpuStats(teethData: readonly ToothData[]): KpuStats {
 	let c = 0, p = 0, u = 0;
+	let primaryC = 0, primaryP = 0;
+	let hasPermanent = false;
+	let hasPrimary = false;
+
 	for (const t of teethData) {
-		if (t.state === "Caries" || t.state === "Pulpitis" || t.state === "Periodontitis") c++;
-		else if (t.state === "Filled") p++;
-		else if (t.state === "Missing" || t.state === "Root") u++;
+		const isPrimary = t.toothNumber >= 51 && t.toothNumber <= 85;
+		if (isPrimary) {
+			hasPrimary = true;
+			if (t.state === "Caries" || t.state === "Pulpitis" || t.state === "Periodontitis") {
+				c++;
+				primaryC++;
+			} else if (t.state === "Filled") {
+				p++;
+				primaryP++;
+			}
+			// Физиологическая смена/выпадение молочных зубов ("Missing"/"Root") не приписывается к 1У
+		} else {
+			hasPermanent = true;
+			if (t.state === "Caries" || t.state === "Pulpitis" || t.state === "Periodontitis") {
+				c++;
+			} else if (t.state === "Filled") {
+				p++;
+			} else if (t.state === "Missing" || t.state === "Root") {
+				u++;
+			}
+		}
 	}
-	return { c, p, u, total: c + p + u };
+
+	const isPediatricOnly = hasPrimary && !hasPermanent;
+	const isMixed = hasPrimary && hasPermanent;
+	const primaryTotal = primaryC + primaryP;
+
+	return {
+		c,
+		p,
+		u,
+		total: isPediatricOnly ? primaryTotal : c + p + u,
+		primaryC,
+		primaryP,
+		primaryTotal,
+		isPediatricOnly,
+		isMixed,
+	};
 }
 
 export function mergeServerTeeth(prev: readonly ToothData[], server: readonly ToothData[]): ToothData[] {

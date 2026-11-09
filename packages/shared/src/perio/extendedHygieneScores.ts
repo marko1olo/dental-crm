@@ -5,7 +5,7 @@
  * Mandate 8b: File <= 120 lines.
  */
 
-import { HYGIENE_INDEX_TEETH_CONFIG } from "./hygieneConfig.js";
+import { FEDOROV_VOLODKINA_TEETH_NUMBERS, HYGIENE_INDEX_TEETH_CONFIG } from "./hygieneConfig.js";
 import type {
 	ExtendedToothAssessment,
 	FedorovVolodkinaResult,
@@ -52,8 +52,8 @@ export function calculateFedorovVolodkinaScore(
 
 	let total = 0;
 	let count = 0;
-	for (const cfg of HYGIENE_INDEX_TEETH_CONFIG) {
-		const item = map.get(cfg.toothNumber);
+	for (const toothNum of FEDOROV_VOLODKINA_TEETH_NUMBERS) {
+		const item = map.get(toothNum);
 		if (item) {
 			const rawDebris = item.debrisScore ?? 0;
 			const score = item.fedorovScore ?? (rawDebris === 0 ? 1 : Math.min(5, rawDebris + 1));

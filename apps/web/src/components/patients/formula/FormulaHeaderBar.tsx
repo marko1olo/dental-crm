@@ -70,16 +70,35 @@ export const FormulaHeaderBar: React.FC<FormulaHeaderBarProps> = React.memo(
 				<div className="flex items-center gap-2 flex-wrap">
 					<div
 						className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle,var(--glass-border))] text-xs font-bold"
-						title={`Индекс КПУ (Кариес: ${kpuStats.c}, Пломбировано: ${kpuStats.p}, Удалено: ${kpuStats.u})`}
+						title={
+							dentitionMode === "pediatric" || kpuStats.isPediatricOnly
+								? `Индекс кп (Кариес: ${kpuStats.primaryC ?? kpuStats.c}, Пломбировано: ${kpuStats.primaryP ?? kpuStats.p})`
+								: kpuStats.isMixed
+									? `Индекс КПУ+кп (Кариес: ${kpuStats.c}, Пломбировано: ${kpuStats.p}, Удалено: ${kpuStats.u})`
+									: `Индекс КПУ (Кариес: ${kpuStats.c}, Пломбировано: ${kpuStats.p}, Удалено: ${kpuStats.u})`
+						}
 					>
-						<span className="text-[var(--muted)]">КПУ:</span>
-						<span className="font-mono text-rose-500 font-extrabold">{kpuStats.c}К</span>
-						<span className="text-[var(--glass-border)]">•</span>
-						<span className="font-mono text-teal-600 font-extrabold">{kpuStats.p}П</span>
-						<span className="text-[var(--glass-border)]">•</span>
-						<span className="font-mono text-slate-500 font-extrabold">{kpuStats.u}У</span>
-						<span className="text-[var(--glass-border)]">=</span>
-						<span className="font-mono font-black text-[var(--ink)]">{kpuStats.total}</span>
+						{dentitionMode === "pediatric" || kpuStats.isPediatricOnly ? (
+							<>
+								<span className="text-[var(--muted)]">кп:</span>
+								<span className="font-mono text-rose-500 font-extrabold">{kpuStats.primaryC ?? kpuStats.c}к</span>
+								<span className="text-[var(--glass-border)]">•</span>
+								<span className="font-mono text-teal-600 font-extrabold">{kpuStats.primaryP ?? kpuStats.p}п</span>
+								<span className="text-[var(--glass-border)]">=</span>
+								<span className="font-mono font-black text-[var(--ink)]">{kpuStats.primaryTotal ?? (kpuStats.c + kpuStats.p)}</span>
+							</>
+						) : (
+							<>
+								<span className="text-[var(--muted)]">{kpuStats.isMixed ? "КПУ+кп:" : "КПУ:"}</span>
+								<span className="font-mono text-rose-500 font-extrabold">{kpuStats.c}К</span>
+								<span className="text-[var(--glass-border)]">•</span>
+								<span className="font-mono text-teal-600 font-extrabold">{kpuStats.p}П</span>
+								<span className="text-[var(--glass-border)]">•</span>
+								<span className="font-mono text-slate-500 font-extrabold">{kpuStats.u}У</span>
+								<span className="text-[var(--glass-border)]">=</span>
+								<span className="font-mono font-black text-[var(--ink)]">{kpuStats.total}</span>
+							</>
+						)}
 					</div>
 
 					<button

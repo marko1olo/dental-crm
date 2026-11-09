@@ -197,12 +197,12 @@ describe("Dental Hygiene Indices Engine (OHI-S, PMA, KPI Leus)", () => {
 		assert.equal(healthy.isOptimal, true);
 
 		const poor = calculateFedorovVolodkinaScore([
-			{ toothNumber: 16, fedorovScore: 2 },
-			{ toothNumber: 11, fedorovScore: 3 },
-			{ toothNumber: 26, fedorovScore: 2 },
-			{ toothNumber: 36, fedorovScore: 3 },
-			{ toothNumber: 31, fedorovScore: 2 },
-			{ toothNumber: 46, fedorovScore: 2 },
+			{ toothNumber: 43, fedorovScore: 2 },
+			{ toothNumber: 42, fedorovScore: 3 },
+			{ toothNumber: 41, fedorovScore: 2 },
+			{ toothNumber: 31, fedorovScore: 3 },
+			{ toothNumber: 32, fedorovScore: 2 },
+			{ toothNumber: 33, fedorovScore: 2 },
 		]);
 		// avg = (2+3+2+3+2+2)/6 = 14/6 = 2.3
 		assert.equal(poor.score, 2.3);

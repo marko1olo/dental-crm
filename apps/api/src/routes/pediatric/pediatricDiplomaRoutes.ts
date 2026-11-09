@@ -57,7 +57,7 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 						createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
 					};
 				});
-				return reply.send({ success: true, diplomas: [...mappedFromDb, ...inMemList] });
+				return reply.send({ success: true, diplomas: mappedFromDb });
 			}
 		} catch { /* fallback to in-memory */ }
 

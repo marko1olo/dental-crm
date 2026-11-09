@@ -74,9 +74,9 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 	patientName: propPatientName,
 	patientAgeYears: propPatientAgeYears,
 	patientWeightKg: propPatientWeightKg,
-	doctorName = "Д-р Смирнова Е.В.",
-	clinicName = "Клиника DENTE",
-	initialToothNumber = 54,
+	doctorName = "Врач-стоматолог",
+	clinicName = "Стоматологическая клиника",
+	initialToothNumber = 51,
 	initialDentitionMode = "mixed",
 	onSaved,
 }) => {
@@ -129,20 +129,11 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 	const [franklRating, setFranklRating] = useState<FranklRating>(3);
 	const [selectedTooth, setSelectedTooth] = useState<number>(initialToothNumber);
 
-	const [teethConditions, setTeethConditions] = useState<Record<number, PrimaryToothCondition>>({
-		54: "caries",
-		64: "healthy",
-		74: "healthy",
-		84: "healthy",
-		16: "healthy",
-		26: "healthy",
-		36: "healthy",
-		46: "healthy",
-	});
+	const [teethConditions, setTeethConditions] = useState<Record<number, PrimaryToothCondition>>({});
 
 	const [anestheticId, setAnestheticId] = useState<PediatricAnestheticId>("articaine_4");
 	const [carpules, setCarpules] = useState<number>(0.5);
-	const [customNotes] = useState<string>("Контакт установлен, осмотр проведен в игровой форме.");
+	const [customNotes, setCustomNotes] = useState<string>("Контакт установлен, осмотр проведен в игровой форме.");
 
 	const activeFrankl = useMemo(
 		() => FRANKL_BEHAVIOR_PRESETS.find((f) => f.rating === franklRating) || FRANKL_BEHAVIOR_PRESETS[2],
@@ -266,6 +257,8 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 					store.setToothState(toothStr, "treatment");
 				} else if (cond === "healthy" || cond === "sealed") {
 					store.setToothState(toothStr, "healthy");
+				} else if (cond === "resorption") {
+					store.setToothState(toothStr, "watch");
 				} else if (cond === "extracted") {
 					store.setToothState(toothStr, "missing");
 				}
@@ -286,9 +279,11 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 								? "Root_Canal_Treated"
 								: cond === "sealed"
 									? "Filled"
-									: cond === "extracted"
-										? "Extracted"
-										: "Healthy";
+									: cond === "resorption"
+										? "Healthy"
+										: cond === "extracted"
+											? "Extracted"
+											: "Healthy";
 
 					const idx = updatedTeeth.findIndex((t) => t.toothNumber === toothNum);
 					if (idx >= 0 && updatedTeeth[idx]) {
@@ -317,6 +312,9 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 				const healthyTeeth = Object.entries(teethConditions)
 					.filter(([_, c]) => c === "healthy" || c === "sealed")
 					.map(([t]) => parseInt(t, 10));
+				const resorptionTeeth = Object.entries(teethConditions)
+					.filter(([_, c]) => c === "resorption")
+					.map(([t]) => parseInt(t, 10));
 				const pulpotomyTeeth = Object.entries(teethConditions)
 					.filter(([_, c]) => c === "pulpotomy")
 					.map(([t]) => parseInt(t, 10));
@@ -329,6 +327,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 					{ teeth: pulpotomyTeeth, state: "Root_Canal_Treated" },
 					{ teeth: extractedTeeth, state: "Extracted" },
 					{ teeth: healthyTeeth, state: "Healthy" },
+					{ teeth: resorptionTeeth, state: "Healthy" },
 				].filter((g) => g.teeth.length > 0);
 
 				for (const update of batchUpdates) {
@@ -493,6 +492,30 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							</button>
 						</div>
 
+						{/* Document Secondary Print Buttons (Mobile HIG >= 44x44px) */}
+						<div className="flex sm:hidden items-center gap-1">
+							<button
+								type="button"
+								onClick={handlePrintDiploma}
+								className="min-h-[44px] min-w-[44px] h-11 w-11 flex items-center justify-center rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 cursor-pointer"
+								title="Диплом героя"
+								aria-label="Диплом героя"
+								data-testid="btn-print-hero-diploma-mobile"
+							>
+								<Award className="w-5 h-5 text-amber-500" />
+							</button>
+							<button
+								type="button"
+								onClick={handlePrintMemo}
+								className="min-h-[44px] min-w-[44px] h-11 w-11 flex items-center justify-center rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 cursor-pointer"
+								title="Памятка родителям"
+								aria-label="Памятка родителям"
+								data-testid="btn-print-parent-memo-mobile"
+							>
+								<FileText className="w-5 h-5 text-sky-500" />
+							</button>
+						</div>
+
 						<button
 							type="button"
 							onClick={onClose}
@@ -505,8 +528,8 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 					</div>
 				</div>
 
-				{/* Body */}
-				<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 space-y-3.5 bg-[var(--paper,#ffffff)] dark:bg-slate-900">
+				{/* Body with comfortable bottom padding eliminating desktop notes clipping */}
+				<div className="flex-1 overflow-y-auto px-4 sm:px-6 pt-3.5 pb-28 sm:pb-8 space-y-3.5 bg-[var(--paper,#ffffff)] dark:bg-slate-900">
 					{/* Mobile Segmented Mode Selector */}
 					<div className="sm:hidden flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700">
 						<button
@@ -710,7 +733,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										key={condKey}
 										type="button"
 										onClick={() => handleSetCondition(condKey)}
-										className={`min-h-[38px] px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
+										className={`min-h-[44px] sm:min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border flex items-center justify-center ${
 											isActive
 												? `${info.badgeClass} ring-2 ring-teal-500`
 												: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700"
@@ -789,6 +812,22 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							)}
 							<span className="truncate">{anesthesiaSafety.statusMessageRu}</span>
 						</div>
+					</div>
+
+					{/* Clinical Notes / Doctor Remarks */}
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/50 space-y-1.5">
+						<label htmlFor="pediatric-custom-notes" className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)] dark:text-slate-400">
+							Клинические заметки и адаптация ребёнка:
+						</label>
+						<input
+							id="pediatric-custom-notes"
+							type="text"
+							value={customNotes}
+							onChange={(e) => setCustomNotes(e.target.value)}
+							placeholder="Контакт установлен, осмотр проведен в игровой форме..."
+							className="w-full min-h-[38px] px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-[var(--muted,#64748b)] focus:outline-none focus:ring-2 focus:ring-teal-500"
+							data-testid="input-pediatric-custom-notes"
+						/>
 					</div>
 
 					{/* Mobile 1-Click Document Actions */}

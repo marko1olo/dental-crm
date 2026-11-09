@@ -3,8 +3,8 @@ import path from "node:path";
 import { chromium, devices } from "playwright";
 
 const PROOF_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/pediatric";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/b1c12c2f-83a0-496c-8bd4-7a30128cf00f";
-const PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/07663fdc-eba5-48a1-bbb4-3c4b8f181006";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/60dc8f56-26f3-4bc4-a754-de8fffe214fb";
+const PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/c93cc0eb-0cfe-4714-bf08-8f512d1d3f61";
 
 for (const d of [PROOF_DIR, BRAIN_DIR, PARENT_BRAIN_DIR]) {
   if (!existsSync(d)) {

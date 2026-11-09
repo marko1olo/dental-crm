@@ -8,6 +8,9 @@
 export const HYGIENE_INDEX_TEETH_NUMBERS = [16, 11, 26, 36, 31, 46] as const;
 export type HygieneIndexToothNumber = (typeof HYGIENE_INDEX_TEETH_NUMBERS)[number];
 
+export const FEDOROV_VOLODKINA_TEETH_NUMBERS = [43, 42, 41, 31, 32, 33] as const;
+export type FedorovVolodkinaToothNumber = (typeof FEDOROV_VOLODKINA_TEETH_NUMBERS)[number];
+
 export interface HygieneIndexToothDefinition {
 	readonly toothNumber: HygieneIndexToothNumber;
 	readonly surfaceAspect: "vestibular" | "oral";

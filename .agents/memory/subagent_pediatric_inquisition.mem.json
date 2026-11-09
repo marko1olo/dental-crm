@@ -1,25 +1,47 @@
 {
-  "subagent": "pediatric_hygiene_inquisition",
+  "agent": "Pediatric & Mixed Dentition Surgeon (Domain 4)",
   "status": "COMPLETED",
-  "defects_closed": ["PED-02", "PED-03", "PED-04", "PED-05", "PED-06"],
-  "tests": {
-    "pediatricInquisitionPed02Ped06.test.ts": "5/5 PASS",
-    "pediatricToothChart.test.ts": "33/33 PASS",
-    "check_encoding": "24001 files PASS (Exit Code 0)"
+  "timestamp": "2026-11-09T11:50:00Z",
+  "grounding": "THE_HAMMER_MASTER_PROMPT.md, MOBILE_DESIGN_APPLE_HIG.md, core.md",
+  "purged_dead_clones_git_rm": [
+    "apps/api/src/routes/odontogram/pediatricRoutes.ts",
+    "apps/web/src/components/odontogram/pediatricResorptionConstants.ts",
+    "apps/web/src/components/odontogram/PediatricTimelineTab.tsx",
+    "apps/web/src/components/odontogram/pediatricModal/PediatricCariogramSection.tsx",
+    "apps/web/src/components/odontogram/pediatricMixedDentitionEngine.ts",
+    "apps/web/src/components/diagnostics/pediatric/pediatricMemoPrinter.ts",
+    "apps/web/src/components/diagnostics/pediatric/pediatricMemoHtml.ts",
+    "apps/web/src/components/diagnostics/pediatric/pediatricMemoStyles.ts",
+    "apps/web/src/features/pediatric/DirectPediatricLauncher.tsx",
+    "apps/web/src/features/pediatric/PediatricStudioModal.tsx",
+    "apps/web/src/features/pediatric/pediatricCatalogData.ts",
+    "apps/web/src/features/pediatric/__tests__/pediatricSSOTSuite.test.tsx"
+  ],
+  "cures_applied": [
+    "Replaced erroneous adult molar iteration with canonical lower front teeth [43, 42, 41, 31, 32, 33] in calculateFedorovVolodkinaScore (packages/shared/src/perio/extendedHygieneScores.ts)",
+    "Rewrote test in packages/shared/src/perio/__tests__/hygieneIndices.test.ts to test canonical pediatric teeth 43..33",
+    "Eliminated diploma duplication in apps/api/src/routes/pediatric/pediatricDiplomaRoutes.ts: mappedFromDb returned strictly when docs found in PostgreSQL",
+    "Persisted resorption state in PediatricStudioModal: updated visitStore setToothState to 'watch', localStorage, and Fastify batch updates",
+    "Separated formula kpu calculation for deciduous teeth (51..85) into 'кп' (c+p) without false '1У' extraction in formulaUtils.ts and FormulaHeaderBar.tsx",
+    "Physically purged parasite clone folder apps/web/src/features/pediatric/ via git rm",
+    "Fixed desktop notes clipping with pb-28 sm:pb-8 and touch targets in PediatricStudioModal",
+    "Added quick header access to Hero Diploma and Parent Memo on mobile with >= 44x44px touch targets",
+    "Enlarged PediatricParentMemoModal close button touch target to h-11 w-11 (>= 44x44px) per Apple HIG"
+  ],
+  "machine_gates": {
+    "encoding": "PASSED (22909 files UTF-8 clean)",
+    "stub_overrides": "PASSED (0 overrides)",
+    "fetch_response_guard": "PASSED (13313 files)",
+    "dynamic_imports": "PASSED (17095 files)",
+    "tests_hygiene_indices": "13/13 PASSED",
+    "tests_pediatric_inquisition": "5/5 PASSED",
+    "tests_pediatric_protocols": "4/4 PASSED",
+    "tests_pediatric_autonomy": "4/4 PASSED"
   },
-  "proofs": {
-    "pediatric": [
-      "docs/proofs/pediatric/01_pediatric_teeth_chart_pc_light_1440x900.png",
-      "docs/proofs/pediatric/02_pediatric_teeth_chart_pc_dark_1440x900.png",
-      "docs/proofs/pediatric/03_pediatric_teeth_chart_mobile_light_390x844.png",
-      "docs/proofs/pediatric/04_pediatric_teeth_chart_mobile_dark_390x844.png"
-    ],
-    "hygiene": [
-      "docs/proofs/hygiene/01_hygiene_indices_panel_pc_light_1440x900.png",
-      "docs/proofs/hygiene/02_hygiene_indices_panel_pc_dark_1440x900.png",
-      "docs/proofs/hygiene/03_hygiene_indices_panel_mobile_light_390x844.png",
-      "docs/proofs/hygiene/04_hygiene_indices_panel_mobile_dark_390x844.png"
-    ]
-  },
-  "verified_at": "2026-11-06T13:12:45Z"
+  "visual_proofs": {
+    "pc_light": "docs/proofs/pediatric/01_pediatric_studio_pc_light_1440x900.png (87779 bytes)",
+    "pc_dark": "docs/proofs/pediatric/02_pediatric_studio_pc_dark_1440x900.png (88017 bytes)",
+    "mobile_light": "docs/proofs/pediatric/03_pediatric_studio_mobile_light_390x844.png (227431 bytes)",
+    "mobile_dark": "docs/proofs/pediatric/04_pediatric_studio_mobile_dark_390x844.png (229130 bytes)"
+  }
 }

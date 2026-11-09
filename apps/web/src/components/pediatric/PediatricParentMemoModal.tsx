@@ -36,7 +36,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	patientPhone,
 	patientAgeYears = 7,
 	doctorName = "Врач-стоматолог детский",
-	clinicName = "Детское отделение DENTE",
+	clinicName = "Стоматологическая клиника",
 	initialFrankl = 3,
 	initialSilvering,
 	initialFissureSealing,
@@ -46,7 +46,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	const [frankl, setFrankl] = useState<FranklRating>(initialFrankl);
 	const [hasAnesthesia, setHasAnesthesia] = useState<boolean>(true);
 	const [hasPulpotomy, setHasPulpotomy] = useState<boolean>(Boolean(initialPulpotomy));
-	const [pulpotomyTooth, setPulpotomyTooth] = useState<number>(initialPulpotomy?.toothNumber ?? 54);
+	const [pulpotomyTooth, setPulpotomyTooth] = useState<number>(initialPulpotomy?.toothNumber ?? 51);
 	const [hasFissureSealing, setHasFissureSealing] = useState<boolean>(Boolean(initialFissureSealing));
 	const [fissureTeeth, setFissureTeeth] = useState<string>((initialFissureSealing?.teethNumbers ?? [16, 26, 36, 46]).join(", "));
 	const [hasSilvering, setHasSilvering] = useState<boolean>(Boolean(initialSilvering));
@@ -101,7 +101,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							<Printer className="h-4 w-4 text-[var(--muted,#64748b)]" />
 							<span>Печать</span>
 						</button>
-						<button type="button" onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer" aria-label="Закрыть">
+						<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] h-11 w-11 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer" aria-label="Закрыть">
 							<X className="h-5 w-5" />
 						</button>
 					</div>

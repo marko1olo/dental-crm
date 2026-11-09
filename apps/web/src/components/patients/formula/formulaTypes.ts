@@ -13,6 +13,11 @@ export interface KpuStats {
 	readonly p: number;
 	readonly u: number;
 	readonly total: number;
+	readonly primaryC?: number;
+	readonly primaryP?: number;
+	readonly primaryTotal?: number;
+	readonly isPediatricOnly?: boolean;
+	readonly isMixed?: boolean;
 }
 
 export interface StampOption {
