@@ -4,6 +4,10 @@ import type { DentalLabOrderData } from "../dentalLabDefinitions";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { DentalLabPriceMatrixModal } from "../DentalLabPriceMatrixModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
+import { LabTrackingDrawer } from "../LabTrackingDrawer";
+import { LabAttachScanModal } from "../LabAttachScanModal";
+import { DentalLabReadyInClinicModal } from "../DentalLabReadyInClinicModal";
+import { LabActionPromptModal } from "../LabActionPromptModal";
 
 export interface LabOrderDetailsDrawerProps {
 	readonly isWorkOrderModalOpen?: boolean;
@@ -39,10 +43,36 @@ export interface LabOrderDetailsDrawerProps {
 }
 
 export function LabOrderDetailsDrawer({
-	isWorkOrderModalOpen, onCloseWorkOrderModal, selectedOrderForEdit,
-	modalInitialTab, onOrderSaved, isPriceMatrixModalOpen, onClosePriceMatrixModal,
-	onSelectWorkType, isOrderDrawerOpen, onCloseOrderDrawer, view3DScanOrder, onClose3DScanViewer,
-	isHubModalOpen, onCloseHubModal,
+	isWorkOrderModalOpen,
+	onCloseWorkOrderModal,
+	selectedOrderForEdit,
+	modalInitialTab,
+	onOrderSaved,
+	isPriceMatrixModalOpen,
+	onClosePriceMatrixModal,
+	onSelectWorkType,
+	isOrderDrawerOpen,
+	onCloseOrderDrawer,
+	view3DScanOrder,
+	onClose3DScanViewer,
+	isHubModalOpen,
+	onCloseHubModal,
+	isTrackingDrawerOpen,
+	onCloseTrackingDrawer,
+	selectedOrderForTracking,
+	onStageUpdate,
+	promptState,
+	onClosePromptState,
+	isScanModalOpen,
+	onCloseScanModal,
+	scanAttachOrder,
+	scanAttachType,
+	onSaveAttachedFile,
+	isTrackerModalOpen,
+	onCloseTrackerModal,
+	isReadyInClinicModalOpen,
+	onCloseReadyInClinicModal,
+	readyInClinicOrder,
 }: LabOrderDetailsDrawerProps): React.JSX.Element {
 	const scanModelFormat = view3DScanOrder?.attachedImageUrl && /\.ply($|[?#])/i.test(view3DScanOrder.attachedImageUrl)
 		? "ply"
@@ -87,11 +117,46 @@ export function LabOrderDetailsDrawer({
 					toothCode={view3DScanOrder.toothFdi ?? undefined} orderId={view3DScanOrder.id}
 				/>
 			)}
+
 			{isHubModalOpen && (
 				<DentalLabStudioModal
 					isOpen={Boolean(isHubModalOpen)}
 					onClose={onCloseHubModal || (() => {})}
 					onSaveOrder={() => onOrderSaved()}
+				/>
+			)}
+
+			{(isTrackingDrawerOpen || isTrackerModalOpen) && selectedOrderForTracking && (
+				<LabTrackingDrawer
+					isOpen={Boolean(isTrackingDrawerOpen || isTrackerModalOpen)}
+					onClose={onCloseTrackingDrawer || onCloseTrackerModal || (() => {})}
+					order={selectedOrderForTracking}
+					onStageUpdate={onStageUpdate}
+				/>
+			)}
+
+			{isScanModalOpen && scanAttachOrder && (
+				<LabAttachScanModal
+					isOpen={Boolean(isScanModalOpen)}
+					onClose={onCloseScanModal || (() => {})}
+					order={scanAttachOrder}
+					initialType={scanAttachType}
+					onSave={onSaveAttachedFile || (async () => {})}
+				/>
+			)}
+
+			{isReadyInClinicModalOpen && readyInClinicOrder && (
+				<DentalLabReadyInClinicModal
+					isOpen={Boolean(isReadyInClinicModalOpen)}
+					onClose={onCloseReadyInClinicModal || (() => {})}
+					order={readyInClinicOrder}
+				/>
+			)}
+
+			{promptState && (
+				<LabActionPromptModal
+					state={promptState}
+					onClose={onClosePromptState || (() => {})}
 				/>
 			)}
 		</>

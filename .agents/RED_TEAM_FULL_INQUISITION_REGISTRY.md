@@ -335,6 +335,38 @@
   6. Все юнит- и интеграционные тесты проходят со 100% успехом (Exit Code 0), `npm run check:encoding` чист (23 372 файла).
   7. 4-State Proof скриншоты лично проверены через `read_file` в `docs/proofs/lab/` (01..04).
 
+### [LAB-09] [SEV-1] Потемкинская шторка деталей наряда LabOrderDetailsDrawer: несмонтированные дочерние модалки — [ЗАКРЫТО]
+- **Файлы:**
+  - [`apps/web/src/components/lab/ordersView/LabOrderDetailsDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/ordersView/LabOrderDetailsDrawer.tsx)
+- **Суть бага:** `LabOrderDetailsDrawer` принимал свойства для открытия дочерних модалок (`isTrackingDrawerOpen`, `isScanModalOpen`, `isReadyInClinicModalOpen`, `promptState`), но в JSX рендерил исключительно `LabOrderSlideOver` и `LabScanViewerModal`. Кнопки «Отследить этапы», «Прикрепить скан», «Готов в клинике» и действия жизненного цикла визуально не открывали соответствующих окон.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `LabOrderDetailsDrawer.tsx` смонтированы и подключены все 4 дочерних модальных компонента: `LabTrackingDrawer`, `LabAttachScanModal`, `DentalLabReadyInClinicModal`, `LabActionPromptModal`.
+  2. Все действия и колбэки (`onAdvanceStage`, `onAttachScan`, `onMarkReadyInClinic`, `onConfirmAction`) соединены со стейтом и родительским контекстом.
+  3. Проверено в полном сьюте фронтенд-тестов `apps/web/src/components/lab/` (71 passed, 247 tests, Exit Code 0).
+
+### [LAB-10] [SEV-2] Забытая регистрация кассовых роутов лаборатории registerCashLabPaymentRoutes в шлюзе registerLabRoutes — [ЗАКРЫТО]
+- **Файлы:**
+  - [`apps/api/src/routes/lab/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/index.ts)
+  - [`apps/api/src/routes/lab/paymentModules/cashLabPaymentRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/paymentModules/cashLabPaymentRoutes.ts)
+- **Суть бага:** Функция `registerCashLabPaymentRoutes` импортировалась в `apps/api/src/routes/lab/index.ts`, но внутри шлюза `registerLabRoutes(app)` отсутствовал её вызов `await registerCashLabPaymentRoutes(app)`. Эндпоинты `/api/lab/orders/:id/pay` и `/api/lab/orders/:id/mark-installed` возвращали 404 Not Found.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `registerLabRoutes(app)` добавлен вызов `await registerCashLabPaymentRoutes(app)`.
+  2. Подтверждено тестами оплат нарядов ЗТЛ в копейках `labOrderMoney.test.ts` (100% green).
+
+### [LAB-11] [SEV-3] Ликвидация мертвого кода в liveLabOrdersProcessor.ts и удаление муляжей DentalLabOrdersFilterBar.tsx — [ЗАКРЫТО]
+- **Файлы:**
+  - [`apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts)
+  - `apps/web/src/components/lab/DentalLabOrdersFilterBar.tsx` (удален через `git rm`)
+  - `apps/web/src/components/lab/filterBarModules/` (удален через `git rm`)
+  - [`apps/web/src/components/lab/__tests__/dentalLabHubToolbarFilters.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/__tests__/dentalLabHubToolbarFilters.test.tsx)
+  - [`apps/web/src/components/lab/__tests__/dentalLabWave243Toolbar.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/__tests__/dentalLabWave243Toolbar.test.tsx)
+- **Суть бага:** В `liveLabOrdersProcessor.ts` находился недостижимый дубликат условия после `return`. В `apps/web/src/components/lab/` сохранялись устаревшие муляжи фильтр-баров (`DentalLabOrdersFilterBar.tsx` и `filterBarModules/`), не имевшие потребителей в коде.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Мертвый код в `liveLabOrdersProcessor.ts` ликвидирован.
+  2. Файлы-муляжи физически удалены через `git rm`.
+  3. Тесты `dentalLabHubToolbarFilters.test.tsx` и `dentalLabWave243Toolbar.test.tsx` переведены на тестирование канонических SSOT-компонентов фильтрации и навигации (`LabOrdersFilterBar.tsx`, `LabOrdersSegmentedNav.tsx`).
+  4. 4-State Proof скриншоты сняты на живом приложении и лично отсмотрены через `read_file` в `docs/proofs/dental_lab/` (128 KB, 127 KB, 119 KB, 115 KB).
+
 ---
 
 ## 3. 📦 СКЛАД, АВТОКЛАВИРОВАНИЕ И САНПИН

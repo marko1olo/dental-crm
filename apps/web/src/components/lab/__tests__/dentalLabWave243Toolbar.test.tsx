@@ -6,68 +6,43 @@ import {
 	setupMockDom,
 	findNodeByTestId,
 } from "./helpers/dentalLabTestDomHelper";
-import { DentalLabOrdersFilterBar } from "../DentalLabOrdersFilterBar";
-import { createDentalLabOrder } from "../dentalLabWorkflowEngine";
+import { LabOrdersSegmentedNav } from "../ordersView/LabOrdersSegmentedNav";
+import { CANONICAL_STAGE_FILTERS } from "../ordersView/constants";
 
-describe("Wave 243 — Hub Toolbar Segmented Filters", () => {
-	it("2. Toolbar has segmented status filters («Все», «Отправлен», «В работе», «Принят», «Готов», «Припасован»)", async () => {
+describe("Wave 243 — Hub Toolbar Segmented Filters (SSOT)", () => {
+	it("1. LabOrdersSegmentedNav has segmented status filters («Все заказы», «В работе», «Примерка», «В клинике», «Сдано»)", async () => {
 		const { doc } = setupMockDom();
 		const container = doc.createElement("div");
 		doc.body.appendChild(container);
-
-		const sampleOrder = createDentalLabOrder({
-			patientId: "pat-1",
-			doctorId: "doc-1",
-			orderNumber: "ЗТЛ-243-01",
-			patientName: "Сидоров Алексей Петрович",
-			doctorName: "Д-р Смирнов В. А.",
-			labName: "CAD/CAM Центр Дентал-Мастер",
-			workTypeId: "crown_zirconia",
-			selectedTeeth: [14],
-			shadeCode: "A2",
-			expectedLabDate: "2026-09-25",
-			pricePerUnitRub: 24000,
-			costPerUnitRub: 7500,
-			doctorPercent: 20,
-			initialStatus: "sent_to_lab",
-		});
 
 		let root: Root | null = null;
 		await act(async () => {
 			root = createRoot(container as any);
 			root.render(
-				<DentalLabOrdersFilterBar
-					searchQuery=""
-					setSearchQuery={() => {}}
-					selectedLab="ALL"
-					setSelectedLab={() => {}}
-					selectedWorkType="ALL"
-					setSelectedWorkType={() => {}}
-					selectedStage="ALL"
-					setSelectedStage={() => {}}
-					selectedDateRange="ALL"
-					setSelectedDateRange={() => {}}
-					onlyDelayedFilter={false}
-					setOnlyDelayedFilter={() => {}}
-					delayedCount={0}
-					sampleLabs={["Лаба 1", "Лаба 2"]}
+				<LabOrdersSegmentedNav
+					canonicalFilters={CANONICAL_STAGE_FILTERS}
+					statusFilter="all"
+					onStatusFilterChange={() => {}}
+					stageCounts={{ all: 15, in_progress: 5, fitting: 3, in_clinic: 4, completed: 3 }}
+					viewMode="table"
+					onViewModeChange={() => {}}
 				/>,
 			);
 		});
 
-		const requiredStatusChipIds = [
-			"ALL",
-			"sent_to_lab",
-			"in_work",
-			"draft",
-			"fitting_scheduled",
-			"installed_completed",
-		];
-
-		for (const chipId of requiredStatusChipIds) {
-			const chip = findNodeByTestId(container, `ztl-filter-stage-${chipId}`);
-			assert.ok(chip);
+		for (const filter of CANONICAL_STAGE_FILTERS) {
+			const chip = findNodeByTestId(container, `lab-status-filter-${filter.id}`);
+			assert.ok(chip, `Filter chip lab-status-filter-${filter.id} must exist`);
 		}
+
+		const tableBtn = findNodeByTestId(container, "lab-orders-view-table-btn");
+		assert.ok(tableBtn, "Table view toggle must exist");
+
+		const cardsBtn = findNodeByTestId(container, "lab-orders-view-cards-btn");
+		assert.ok(cardsBtn, "Cards view toggle must exist");
+
+		const kanbanBtn = findNodeByTestId(container, "lab-orders-view-kanban-btn");
+		assert.ok(kanbanBtn, "Kanban view toggle must exist");
 
 		if (root) {
 			await act(async () => {

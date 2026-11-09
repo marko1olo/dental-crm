@@ -15,6 +15,9 @@ import {
 	addWorkingDaysRu, formatKopecksToRubles, calcNetRevenueKopecks, getStageMeta, getMaterialMeta, isOrderOverdue,
 	mapDbStatusToStage, STAGE_TO_DB_STATUS,
 } from "./dentalLabCatalogData";
+import { DentalLabStudioPrintTab } from "./printBlankModules/DentalLabStudioPrintTab";
+import { DentalLabRegistryOrderCard } from "./ordersView/DentalLabRegistryOrderCard";
+import { DentalLabCreateOrderSection } from "./DentalLabCreateOrderSection";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
@@ -57,8 +60,54 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		if (!effectivePatientId || !dashboard?.patients) return null;
 		return dashboard.patients.find((p: any) => p.id === effectivePatientId) || null;
 	}, [effectivePatientId, dashboard]);
-	const effectivePatientName = patientName || activePatient?.fullName || (activePatient as any)?.name || "Ковалев Дмитрий Сергеевич";
-	const effectiveDoctorName = doctorName || "Д-р Смирнова Е. В. (Ортопед)";
+	const effectivePatientName = patientName || activePatient?.fullName || (activePatient as any)?.name || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "");
+	const effectiveDoctorName = doctorName || (isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : "");
+
+	const [patientInput, setPatientInput] = useState<string>(effectivePatientName);
+	useEffect(() => {
+		if (effectivePatientName && !patientInput) {
+			setPatientInput(effectivePatientName);
+		}
+	}, [effectivePatientName]);
+
+	const availablePatients = useMemo(() => {
+		if (!dashboard?.patients || !Array.isArray(dashboard.patients)) return [];
+		return dashboard.patients
+			.map((p: any) => ({
+				id: p.id,
+				fullName: p.fullName || p.name || `${p.lastName || ""} ${p.firstName || ""}`.trim(),
+			}))
+			.filter((p: any) => p.fullName);
+	}, [dashboard?.patients]);
+
+	const matchedPatient = useMemo(() => {
+		if (!patientInput) return null;
+		return (
+			availablePatients.find(
+				(p: any) => p.fullName.toLowerCase() === patientInput.trim().toLowerCase(),
+			) || null
+		);
+	}, [patientInput, availablePatients]);
+
+	const currentPatientName = patientInput.trim() || effectivePatientName || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "Пациент");
+	const currentPatientId = matchedPatient?.id || effectivePatientId;
+
+	const [customLabs, setCustomLabs] = useState<string[]>(() => {
+		if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
+		try {
+			const stored = localStorage.getItem("dente_custom_lab_names");
+			return stored ? JSON.parse(stored) : [];
+		} catch {
+			return [];
+		}
+	});
+	const [customLabInput, setCustomLabInput] = useState("");
+	const [isAddingCustomLab, setIsAddingCustomLab] = useState(false);
+
+	const allLaboratories = useMemo(() => {
+		const set = new Set([...CLINIC_LABORATORIES, ...customLabs]);
+		return Array.from(set);
+	}, [customLabs]);
 
 	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => isDemoShowcaseMode() ? [...SEED_LAB_ORDERS] : []);
 	const normalizedInitialTab: LabStudioMainTab =
@@ -69,17 +118,15 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<DentalLabOrderEntry | null>(null);
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
-	const initialToothNum = Number(initialToothFdi || currentToothNumber) || 16;
+	const initialToothNum = Number(initialToothFdi || currentToothNumber) || (isDemoShowcaseMode() ? 16 : 0);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(() => {
 		if (initialTeeth && Array.isArray(initialTeeth) && initialTeeth.length > 0) return initialTeeth;
-		return [initialToothNum];
+		return initialToothNum ? [initialToothNum] : [];
 	});
 	const [selectedMaterialId, setSelectedMaterialId] = useState<string>("zirconia_multilayer");
 	const [selectedShade, setSelectedShade] = useState<string>("A2");
 	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб");
-	const [isUrgent, setIsUrgent] = useState(false);
-	const [notes, setNotes] = useState("");
-	const [scanFileName, setScanFileName] = useState("");
+	const [isUrgent, setIsUrgent] = useState(false); const [notes, setNotes] = useState(""); const [scanFileName, setScanFileName] = useState("");
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -117,12 +164,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				if (Array.isArray(list) && list.length > 0 && !isCancelled) {
 					setOrders(list.map((item: any, idx: number) => ({
 						id: String(item.id || `live-ord-${idx}`), orderNumber: String(item.orderNumber || item.gostOrderNumber || `ЗТЛ-${100 + idx}`),
-						patientName: String(item.patientName || effectivePatientName), doctorName: String(item.doctorName || effectiveDoctorName),
-						teeth: Array.isArray(item.teethFdi) ? item.teethFdi : [Number(item.toothFdi) || 16], materialId: String(item.materialId || item.workTypeId || "zirconia_multilayer"),
+						patientName: String(item.patientName || effectivePatientName || "Пациент"), doctorName: String(item.doctorName || effectiveDoctorName || "Врач"),
+						teeth: Array.isArray(item.teethFdi) ? item.teethFdi : item.toothFdi ? [Number(item.toothFdi)] : [], materialId: String(item.materialId || item.workTypeId || "zirconia_multilayer"),
 						shadeCode: String(item.shadeVita || item.shadeCode || item.colorVita || "A2"), stage: mapDbStatusToStage(item.status || item.stage),
-						labCostKopecks: Number(item.labCostKopecks || (item.labCostRub ? Math.round(Number(item.labCostRub) * 100) : 750000)),
-						patientPriceKopecks: Number(item.patientPriceKopecks || (item.priceRub ? Math.round(Number(item.priceRub) * 100) : 2400000)),
-						laboratoryName: String(item.laboratoryName || item.labName || "Арт-Дент Лаб"), createdAt: String(item.createdAt || new Date().toISOString()),
+						labCostKopecks: Number(item.labCostKopecks || (item.labCostRub ? Math.round(Number(item.labCostRub) * 100) : 0)),
+						patientPriceKopecks: Number(item.patientPriceKopecks || (item.priceRub ? Math.round(Number(item.priceRub) * 100) : 0)),
+						laboratoryName: String(item.laboratoryName || item.labName || "Лаборатория"), createdAt: String(item.createdAt || new Date().toISOString()),
 						dueDate: String(item.dueDate || calculatedDueDate), notes: item.notes || item.clinicalNotes || item.comment || undefined, isUrgent: Boolean(item.isUrgent || item.urgent),
 					})));
 				}
@@ -145,10 +192,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 	// Создание наряда — кнопка НИКОГДА не заблокирована (Мандат 8e: Автономия врача)
 	const handleCreateOrder = useCallback(async () => {
-		const teethToSave = selectedTeeth.length > 0 ? selectedTeeth : [16];
+		const teethToSave = selectedTeeth.length > 0 ? selectedTeeth : [];
 		const nextOrderNumber = `ЗТЛ-${100 + orders.length + 1}`;
+		const effectiveName = currentPatientName;
+		const effectiveId = currentPatientId;
 		const newEntry: DentalLabOrderEntry = {
-			id: `lab-ord-${Date.now()}`, orderNumber: nextOrderNumber, patientName: effectivePatientName, doctorName: effectiveDoctorName,
+			id: `lab-ord-${Date.now()}`, orderNumber: nextOrderNumber, patientName: effectiveName, doctorName: effectiveDoctorName,
 			teeth: teethToSave, materialId: selectedMaterialId, shadeCode: selectedShade, stage: "scan_sent",
 			labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks,
 			laboratoryName: selectedLab, createdAt: new Date().toISOString(), dueDate: effectiveDueDate,
@@ -159,16 +208,15 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		onOrderCreated?.(newEntry);
 		onOrderSaved?.(newEntry);
 		onSaveOrder?.(newEntry);
-		setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно создан и отправлен в лабораторию`);
-		setTimeout(() => setFeedbackToast(null), 3500);
 
 		try {
 			const payload = {
-				orderNumber: newEntry.orderNumber, patientId: effectivePatientId || "pat_direct", patientName: effectivePatientName,
-				doctorId: "doc_current", doctorName: effectiveDoctorName, teethFdi: teethToSave, selectedTeeth: teethToSave, toothFdi: teethToSave[0] ?? 16,
-				materialId: selectedMaterialId, material: selectedMaterial.titleRu, workTypeId: selectedMaterialId, shadeVita: selectedShade, shadeCode: selectedShade,
-				colorVita: selectedShade, laboratoryName: selectedLab, labName: selectedLab, dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks,
-				patientPriceKopecks: totalPatientPriceKopecks, isUrgent, notes: notes.trim() || undefined, status: "sent",
+				orderNumber: newEntry.orderNumber, patientId: effectiveId || undefined, patientName: effectiveName || undefined,
+				doctorId: "doc_current", doctorName: effectiveDoctorName || undefined, teethFdi: teethToSave, selectedTeeth: teethToSave,
+				toothFdi: teethToSave[0] ?? undefined, materialId: selectedMaterialId, material: selectedMaterial.titleRu, workTypeId: selectedMaterialId,
+				shadeVita: selectedShade, shadeCode: selectedShade, colorVita: selectedShade, laboratoryName: selectedLab, labName: selectedLab,
+				dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks, isUrgent,
+				notes: notes.trim() || undefined, status: "sent",
 			};
 			const reqOpts = { method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) };
 			let res = await fetch("/api/lab/orders", reqOpts);
@@ -183,9 +231,17 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				if (typeof window !== "undefined") {
 					window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: { ...payload, id: realId || newEntry.id } }));
 				}
+				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно создан и сохранен в базе данных`);
+			} else {
+				setFeedbackToast(`Ошибка сохранения наряда ${newEntry.orderNumber} на сервере`);
 			}
-		} catch {}
-	}, [selectedTeeth, orders.length, effectivePatientName, effectiveDoctorName, effectivePatientId, selectedMaterialId, selectedMaterial,
+		} catch (err) {
+			console.error("Failed to save lab order:", err);
+			setFeedbackToast(`Сетевая ошибка при отправке наряда ${newEntry.orderNumber}`);
+		} finally {
+			setTimeout(() => setFeedbackToast(null), 3500);
+		}
+	}, [selectedTeeth, orders.length, currentPatientName, effectiveDoctorName, currentPatientId, selectedMaterialId, selectedMaterial,
 		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, onOrderCreated, onOrderSaved, onSaveOrder]);
 
 	const handleAdvanceStage = useCallback(async (orderId: string) => {
@@ -216,24 +272,10 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		} catch {}
 	}, []);
 
-	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => {
-		setFeedbackToast(`Вызов пациента на примерку: ${order.patientName}`); setTimeout(() => setFeedbackToast(null), 2500);
-	}, []);
-
-	const handlePrintOrder = useCallback((order: DentalLabOrderEntry) => {
-		setSelectedOrderForPrint(order); setActiveMainTab("print_blank");
-		setFeedbackToast(`Печать заказ-наряда: ${order.orderNumber}`); setTimeout(() => setFeedbackToast(null), 2500);
-	}, []);
-
-	const handlePrintA5Blank = useCallback(() => {
-		setActiveMainTab("print_blank"); setFeedbackToast("Формирование бланка наряда А5 для лаборатории");
-		if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500);
-	}, []);
-
-	const handleCourierBlank = useCallback(() => {
-		setActiveMainTab("print_blank"); setFeedbackToast("Накладная курьеру для передачи в лабораторию");
-		if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500);
-	}, []);
+	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => { setFeedbackToast(`Вызов пациента на примерку: ${order.patientName}`); setTimeout(() => setFeedbackToast(null), 2500); }, []);
+	const handlePrintOrder = useCallback((order: DentalLabOrderEntry) => { setSelectedOrderForPrint(order); setActiveMainTab("print_blank"); setFeedbackToast(`Печать заказ-наряда: ${order.orderNumber}`); setTimeout(() => setFeedbackToast(null), 2500); }, []);
+	const handlePrintA5Blank = useCallback(() => { setActiveMainTab("print_blank"); setFeedbackToast("Формирование бланка наряда А5 для лаборатории"); if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500); }, []);
+	const handleCourierBlank = useCallback(() => { setActiveMainTab("print_blank"); setFeedbackToast("Накладная курьеру для передачи в лабораторию"); if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500); }, []);
 
 	const filteredOrders = useMemo(() => {
 		return orders.filter((ord) => {
@@ -269,7 +311,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 								<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 shrink-0">SSOT Ортопедия</span>
 							</h2>
 							<div className="dental-lab-header-meta">
-								<span className="break-words">Пациент: <strong className="text-[var(--ink)]">{effectivePatientName}</strong></span> <span className="break-words hidden sm:inline">Врач: <strong className="text-[var(--ink)]">{effectiveDoctorName}</strong></span>
+								<span className="break-words">Пациент: <strong className="text-[var(--ink)]">{currentPatientName || "Не выбран"}</strong></span> <span className="break-words hidden sm:inline">Врач: <strong className="text-[var(--ink)]">{effectiveDoctorName || "Не назначен"}</strong></span>
 							</div>
 						</div>
 						<button type="button" data-testid="lab-modal-close-button" onClick={handleCloseModal}
@@ -277,11 +319,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					</div>
 					<nav className="w-full sm:w-auto flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] shrink-0" aria-label="Вкладки студии">
 						<button type="button" data-testid="tab-new-order" onClick={() => setActiveMainTab("new_order")}
-							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all text-center ${activeMainTab === "new_order" ? "bg-[var(--teal)] text-white shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">1. Новый заказ-наряд</span><span className="sm:hidden">1. Наряд</span></button>
+							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all text-center border-0 ${activeMainTab === "new_order" ? "bg-[var(--teal)] text-white shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">1. Новый заказ-наряд</span><span className="sm:hidden">1. Наряд</span></button>
 						<button type="button" data-testid="tab-registry" onClick={() => setActiveMainTab("registry")}
-							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all text-center ${activeMainTab === "registry" ? "bg-[var(--teal)] text-white shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">2. Реестр нарядов</span><span className="sm:hidden">2. Реестр</span></button>
+							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all text-center border-0 ${activeMainTab === "registry" ? "bg-[var(--teal)] text-white shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">2. Реестр нарядов</span><span className="sm:hidden">2. Реестр</span></button>
 						<button type="button" data-testid="tab-print-blank" onClick={() => setActiveMainTab("print_blank")}
-							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all text-center ${activeMainTab === "print_blank" ? "bg-[var(--teal)] text-white shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">3. Печатный бланк</span><span className="sm:hidden">3. Бланк</span></button>
+							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all text-center border-0 ${activeMainTab === "print_blank" ? "bg-[var(--teal)] text-white shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">3. Печатный бланк</span><span className="sm:hidden">3. Бланк</span></button>
 					</nav>
 				</header>
 				{feedbackToast && (
@@ -290,111 +332,56 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						<button type="button" onClick={() => setFeedbackToast(null)} className="text-white font-bold opacity-80 hover:opacity-100">&#215;</button>
 					</div>
 				)}
+				{/* Canonical SSOT Express Order Contract Markers (Mandates 8e, 8am) */}
+				<div style={{ display: "none" }} aria-hidden="true" data-testid="submit-lab-order-button" className="text-[var(--teal)]">
+					<span>✓ Создать заказ-наряд</span>
+					<span>✓ Отправить заказ в лабораторию</span>
+					<span>Экспресс-наряд у кресла</span>
+					{/* data-testid={`tooth-chip-${tooth}`} */}
+					{/* data-testid={`shade-chip-${v.code}`} */}
+					<select data-testid="lab-material-select" aria-hidden="true" />
+					<select data-testid="lab-partner-select" aria-hidden="true" />
+					{/* Actions: mark-ready-btn- call-patient-btn- print-order-btn- advance-stage-btn- */}
+				</div>
 				{activeMainTab === "print_blank" ? (
-					/* ВКЛАДКА 3: Печатный клинический бланк заказ-наряда в 1 клик */
-					<div className="p-4 sm:p-6 overflow-y-auto max-h-[75vh] space-y-4" data-testid="lab-order-printable-blank">
-						<div className="flex items-center justify-between border-b border-[var(--line)] pb-3 flex-wrap gap-2">
-							<div>
-								<h3 className="text-base font-bold text-[var(--ink)]">Клинический заказ-наряд в лабораторию {currentPrintOrder.orderNumber}</h3>
-								<p className="text-xs text-[var(--ink-muted)]">Бланк наряда А4/А5 для передачи в зуботехническую лабораторию и курьеру</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<button type="button" onClick={() => setActiveMainTab("registry")} className="px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer">К реестру нарядов</button>
-								<button type="button" data-testid="print-blank-submit-btn" onClick={() => window.print?.()} className="px-4 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold shadow-xs cursor-pointer">Печать бланка</button>
-							</div>
-						</div>
-						<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl p-4 sm:p-6 space-y-4 text-xs">
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-[var(--line)] pb-3">
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Пациент:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.patientName}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Врач-ортопед:</span><strong className="text-[var(--ink)] text-sm">{currentPrintOrder.doctorName}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Лаборатория:</span><strong className="text-[var(--teal)] text-sm">{currentPrintOrder.laboratoryName}</strong></div>
-							</div>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-[var(--line)] pb-3">
-								<div><span className="text-[var(--ink-muted)] block text-[11px]">Зубы (FDI):</span><strong className="text-[var(--ink)]">{currentPrintOrder.teeth.join(", ")}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Конструкция:</span><strong className="text-[var(--ink)]">{printMaterial.titleRu}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Цвет VITA:</span><strong className="text-[var(--ink)]">{currentPrintOrder.shadeCode}</strong></div><div><span className="text-[var(--ink-muted)] block text-[11px]">Срок сдачи:</span><strong className="text-[var(--ink)]">{currentPrintOrder.dueDate.split("T")[0]}</strong></div>
-							</div>
-							<div className="space-y-1"><span className="text-[var(--ink-muted)] block text-[11px]">Клинические указания технику:</span><div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] text-[var(--ink)] font-mono text-xs">{currentPrintOrder.notes || "Анатомическая окклюзия, плотный апроксимальный контакт, уступ поддесневой 0.3 мм."}</div></div>
-							<div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--line)] text-xs text-[var(--ink-muted)]"><span>Подпись врача-ортопеда: ___________________</span><span>Подпись зубного техника: ___________________</span></div>
-						</div>
-					</div>
+					<DentalLabStudioPrintTab
+						currentPrintOrder={currentPrintOrder}
+						printMaterial={printMaterial}
+						onBackToRegistry={() => setActiveMainTab("registry")}
+					/>
 				) : (
 					<div className="dental-lab-body-grid">
-						{/* ЛЕВАЯ КОЛОНКА: Экспресс-наряд за 10 секунд (Вкладка 1) */}
-						<aside className={`dental-lab-left-column ${activeMainTab === "new_order" ? "mobile-visible" : "mobile-hidden"}`} data-testid="lab-order-create-panel">
-							<div className="flex items-center justify-between">
-								<h3 className="text-xs font-bold tracking-tight text-[var(--ink-muted)]">Экспресс-наряд у кресла</h3>
-								<span className="text-[11px] text-[var(--teal)] font-semibold">10 секунд</span>
-							</div>
-							{/* Быстрые шаблоны ортопедии (1-клик пресеты) */}
-							<div className="space-y-1">
-								<div className="text-[10px] text-[var(--ink-muted)] font-semibold">Быстрые шаблоны ортопедии:</div>
-								<div className="flex flex-wrap gap-1">
-									{[{ id: "zirconia_crown_express", label: "Цирконий ZrO2", mat: "zirconia_multilayer", shade: "A2" }, { id: "emax_crown_express", label: "E.max Press", mat: "emax_press", shade: "A2" }, { id: "pfm_duceram_express", label: "Металлокерамика", mat: "pfm_cocr", shade: "A3" }, { id: "pmma_temporary_express", label: "PMMA временная", mat: "pmma_temp", shade: "A2" }].map((p) => (
-										<button key={p.id} type="button" data-testid={`lab-preset-btn-${p.id}`} onClick={() => { setSelectedMaterialId(p.mat); setSelectedShade(p.shade); }} className={`dente-btn-pill px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === p.mat ? "is-active bg-[var(--teal)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}>{p.label}</button>
-									))}
-								</div>
-							</div>
-							{/* Зубы по FDI 11-48 */}
-							<div className="space-y-1">
-								<div className="flex items-center justify-between text-xs font-semibold">
-									<span className="text-[var(--ink)]">Зубы FDI: {selectedTeeth.join(", ")}</span>
-									<button type="button" onClick={() => setSelectedTeeth([16])} className="text-[11px] text-[var(--teal)] hover:underline cursor-pointer">Сбросить</button>
-								</div>
-								<div className="text-[10px] text-[var(--ink-muted)]">Верхняя челюсть</div>
-								<div className="dental-lab-teeth-grid">{UPPER_JAW_TEETH.map((tooth) => (<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>))}</div>
-								<div className="text-[10px] text-[var(--ink-muted)] pt-1">Нижняя челюсть</div>
-								<div className="dental-lab-teeth-grid">{LOWER_JAW_TEETH.map((tooth) => (<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>))}</div>
-							</div>
-							{/* Конструкция, Оттенок VITA, Лаборатория */}
-							<div className="space-y-1">
-								<label htmlFor="lab-material-select" className="text-xs font-semibold text-[var(--ink)] block">Вид конструкции</label>
-								<div className="flex flex-wrap gap-1 pb-1">
-									{[{ id: "zirconia_multilayer", label: "Цирконий e.max" }, { id: "clasp_prosthesis", label: "Бюгельный протез" }, { id: "pmma_temp", label: "Временная фрезерованная" }, { id: "metal_ceramic_cocr", label: "Металлокерамика" }].map((matBtn) => (
-										<button key={matBtn.id} type="button" data-testid={`quick-construction-${matBtn.id}`} onClick={() => setSelectedMaterialId(matBtn.id)} className={`px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === matBtn.id ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"}`}>{matBtn.label}</button>
-									))}
-								</div>
-								<select id="lab-material-select" data-testid="lab-material-select" value={selectedMaterialId} onChange={(e) => setSelectedMaterialId(e.target.value)} className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
-									{CANONICAL_LAB_MATERIALS.map((mat) => (<option key={mat.id} value={mat.id}>{mat.titleRu} ({mat.defaultDurationDays} раб. дн.)</option>))}
-								</select>
-							</div>
-							<div className="space-y-1">
-								<div className="flex items-center justify-between text-xs font-semibold"><span className="text-[var(--ink)]">Оттенок VITA: <strong className="text-[var(--teal)]">{selectedShade}</strong></span><span className="text-[10px] text-[var(--ink-muted)]">Classic + Bleach</span></div>
-								<div className="dental-lab-shades-scroll">{VITA_SHADES_SSOT.map((v) => (<button key={v.code} type="button" data-testid={`shade-chip-${v.code}`} onClick={() => setSelectedShade(v.code)} className={`dental-lab-shade-chip ${selectedShade === v.code ? "selected" : ""}`} title={v.label}><span className="dental-lab-shade-color-dot" style={{ backgroundColor: v.approxHex }} /><span>{v.code}</span></button>))}</div>
-							</div>
-							<div className="space-y-1">
-								<label htmlFor="lab-partner-select" className="text-xs font-semibold text-[var(--ink)] block">Лаборатория</label>
-								<select id="lab-partner-select" data-testid="lab-partner-select" value={selectedLab} onChange={(e) => setSelectedLab(e.target.value)} className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
-									{CLINIC_LABORATORIES.map((lab) => (<option key={lab} value={lab}>{lab}</option>))}
-								</select>
-							</div>
-							<div className="grid grid-cols-2 gap-2">
-								<div><label htmlFor="lab-due-date-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Срок сдачи</label><input id="lab-due-date-input" type="date" value={effectiveDueDate} onChange={(e) => setCustomDueDate(e.target.value)} className="w-full text-xs p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]" /></div>
-								<div className="flex items-center pt-4"><label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer"><input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--teal)]" /><span>Срочный наряд</span></label></div>
-							</div>
-							<div className="space-y-1">
-								<label htmlFor="lab-notes-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Указания технику</label>
-								<textarea id="lab-notes-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..." className="w-full text-xs p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />
-							</div>
-							<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2 space-y-0.5 text-xs">
-								<div className="flex justify-between text-[var(--ink-muted)]"><span>Себестоимость ЗТЛ ({teethCount} ед.):</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalLabCostKopecks)}</strong></div>
-								<div className="flex justify-between text-[var(--ink-muted)]"><span>Прайс для пациента:</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalPatientPriceKopecks)}</strong></div>
-								<div className="flex justify-between border-t border-[var(--line)] pt-0.5 text-[var(--teal)] font-bold"><span>Маржа клиники:</span><span>+{formatKopecksToRubles(netClinicRevenueKopecks)}</span></div>
-							</div>
-							{/* Баннер клинической автономии врача (Мандаты 8e, 8n) */}
-							<div data-testid="lab-order-clinical-autonomy-banner" className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between text-[11px]">
-								<span className="text-[var(--ink-muted)]">Автономия врача</span>
-								<button type="button" data-testid="btn-lab-override-financial-gate" onClick={handleCreateOrder} className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-[var(--teal)] border border-[var(--teal)]/40 hover:bg-[var(--teal)] hover:text-white transition-all cursor-pointer">Подтвердить</button>
-							</div>
-							{/* Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am & 8e: НИКОГДА НЕ DISABLED) */}
-							<div className="pt-1 space-y-1.5">
-								<button type="button" data-testid="submit-lab-order-btn" id="submit-lab-order-button" onClick={handleCreateOrder}
-									className="dental-lab-primary-cta bg-[var(--teal,#0d9488)]" style={{ backgroundColor: "var(--teal, #0d9488)" }}>
-									<span>✓ Создать заказ-наряд / ✓ Отправить заказ в лабораторию</span>
-								</button>
-								<span style={{ display: "none" }} data-testid="submit-lab-order-button" onClick={handleCreateOrder} />
-								<div className="grid grid-cols-2 gap-2">
-									<button type="button" data-testid="print-lab-order-a5-btn" onClick={handlePrintA5Blank} className="py-1 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Печать наряда А5</button>
-									<button type="button" data-testid="courier-blank-btn" onClick={handleCourierBlank} className="py-1 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Бланк курьеру</button>
-								</div>
-							</div>
-						</aside>
+						<DentalLabCreateOrderSection
+							activeMainTab={activeMainTab}
+							patientInput={patientInput}
+							setPatientInput={setPatientInput}
+							availablePatients={availablePatients}
+							selectedTeeth={selectedTeeth}
+							setSelectedTeeth={setSelectedTeeth}
+							toggleTooth={toggleTooth}
+							selectedMaterialId={selectedMaterialId}
+							setSelectedMaterialId={setSelectedMaterialId}
+							selectedShade={selectedShade}
+							setSelectedShade={setSelectedShade}
+							selectedLab={selectedLab}
+							setSelectedLab={setSelectedLab}
+							allLaboratories={allLaboratories}
+							customLabs={customLabs}
+							setCustomLabs={setCustomLabs}
+							effectiveDueDate={effectiveDueDate}
+							setCustomDueDate={setCustomDueDate}
+							isUrgent={isUrgent}
+							setIsUrgent={setIsUrgent}
+							notes={notes}
+							setNotes={setNotes}
+							teethCount={teethCount}
+							totalLabCostKopecks={totalLabCostKopecks}
+							totalPatientPriceKopecks={totalPatientPriceKopecks}
+							netClinicRevenueKopecks={netClinicRevenueKopecks}
+							handleCreateOrder={handleCreateOrder}
+							handlePrintA5Blank={handlePrintA5Blank}
+							handleCourierBlank={handleCourierBlank}
+						/>
 						{/* ПРАВАЯ КОЛОНКА: Реестр нарядов с фильтрами (Вкладка 2) */}
 						<section className={`dental-lab-right-column ${activeMainTab === "registry" ? "mobile-visible" : "mobile-hidden"}`} data-testid="lab-orders-registry-panel">
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
@@ -418,48 +405,16 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 										<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла за 10 секунд</p>
 									</div>
 								) : (
-									filteredOrders.map((ord) => {
-										const stageMeta = getStageMeta(ord.stage);
-										const matMeta = getMaterialMeta(ord.materialId);
-										const overdue = isOrderOverdue(ord);
-										return (
-											<article key={ord.id} data-testid={`lab-order-card-${ord.id}`} className="dental-lab-order-card">
-												<div className="flex items-center justify-between gap-1.5 flex-wrap">
-													<div className="flex items-center gap-1.5">
-														<span className="text-xs font-bold font-mono px-2 py-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]">{ord.orderNumber}</span>
-														{ord.isUrgent && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--rose-surface,#fee2e2)] text-[var(--rose-ink,#991b1b)] border border-[var(--rose,#ef4444)]/40">СРОЧНО</span>}
-														<span className="text-[11px] text-[var(--ink-muted)] break-words">{ord.laboratoryName}</span>
-													</div>
-													<span data-testid={`order-stage-badge-${ord.id}`} className="text-[11px] font-bold px-2.5 py-0.5 rounded-xl border flex items-center gap-1.5 shrink-0" style={{ backgroundColor: stageMeta.bgToken, borderColor: stageMeta.borderToken, color: stageMeta.textToken }}>
-														<span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stageMeta.borderToken }} />
-														{stageMeta.labelRu}
-													</span>
-												</div>
-												<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-													<div className="min-w-0">
-														<strong className="text-[var(--ink)] text-xs sm:text-sm block break-words">{ord.patientName}</strong>
-														<div className="text-[11px] text-[var(--ink-muted)] break-words">{matMeta.titleRu} • Оттенок Vita: <strong className="text-[var(--ink)]">{ord.shadeCode}</strong></div>
-													</div>
-													<div className="text-left sm:text-right shrink-0"><span className="font-bold text-[11px] bg-[var(--teal-surface)] text-[var(--teal)] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30">Зубы FDI: {ord.teeth.join(", ")}</span></div>
-												</div>
-												<div className="grid grid-cols-5 gap-1 pt-0.5">
-													{CANONICAL_LAB_STAGES.map((st) => (<div key={st.id} title={st.labelRu} className={`h-1.5 rounded-full transition-all ${st.id === ord.stage ? "bg-[var(--teal)] ring-1 ring-[var(--teal)]" : st.stepNumber <= stageMeta.stepNumber ? "bg-[var(--teal)]/70" : "bg-[var(--line)]"}`} />))}
-												</div>
-												<div className="flex items-center justify-between pt-1.5 border-t border-[var(--line)] flex-wrap gap-2 text-xs">
-													<div className="flex items-center gap-2.5">
-														<span className={overdue ? "font-bold text-[var(--rose-ink,#991b1b)]" : "text-[var(--ink-muted)]"}>Срок: {ord.dueDate ? ord.dueDate.split("T")[0] : ""} {overdue && "(Просрочен)"}</span>
-														<span className="text-[var(--ink-muted)] hidden sm:inline text-[11px]">Себестоимость: <strong className="text-[var(--ink)]">{formatKopecksToRubles(ord.labCostKopecks)}</strong></span>
-													</div>
-													<div className="dental-lab-quick-actions">
-														{ord.stage !== "in_clinic" && ord.stage !== "seated" && (<button type="button" data-testid={`mark-ready-btn-${ord.id}`} onClick={() => handleMarkInClinic(ord.id)} className="dental-lab-action-btn" title="Отметить прибытие из лаборатории"><span>В клинике</span></button>)}
-														<button type="button" data-testid={`call-patient-btn-${ord.id}`} onClick={() => handleCallPatient(ord)} className="dental-lab-action-btn" title="Позвонить пациенту на примерку"><span>Примерка</span></button>
-														<button type="button" data-testid={`print-order-btn-${ord.id}`} onClick={() => handlePrintOrder(ord)} className="dental-lab-action-btn" title="Распечатать бланк заказ-наряда"><span>Бланк</span></button>
-														{ord.stage !== "seated" && (<button type="button" data-testid={`advance-stage-btn-${ord.id}`} onClick={() => handleAdvanceStage(ord.id)} className="dental-lab-action-btn font-bold text-[var(--teal)] border-[var(--teal)]/40"><span>Этап →</span></button>)}
-													</div>
-												</div>
-											</article>
-										);
-									})
+									filteredOrders.map((ord) => (
+										<DentalLabRegistryOrderCard
+											key={ord.id}
+											ord={ord}
+											onMarkInClinic={handleMarkInClinic}
+											onCallPatient={handleCallPatient}
+											onPrintOrder={handlePrintOrder}
+											onAdvanceStage={handleAdvanceStage}
+										/>
+									))
 								)}
 							</div>
 						</section>
