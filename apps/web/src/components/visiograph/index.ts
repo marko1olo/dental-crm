@@ -1,6 +1,6 @@
 export * from "./visiographCatalogData";
-export * from "./VisiographStudioModal";
-export * from "./DirectVisiographLauncher";
+export { VisiographStudyViewer } from "../radiology/VisiographStudyViewer";
+export { DirectRadiologyLauncher as DirectVisiographLauncher } from "../radiology/DirectRadiologyLauncher";
 export * from "./VisiographWindowPresets";
 export * from "./VisiographExportService";
 export * from "./VisiographImageProcessor";

@@ -177,6 +177,9 @@ for (const state of states) {
 	}, { theme: state.theme });
 
 	await page.waitForTimeout(800);
+	await page.waitForSelector(".boot-state", { state: "detached", timeout: 10000 }).catch(() => {});
+	await page.waitForSelector('[data-testid="ortho-visit-protocol-widget"], [data-testid="orthodontic-visit-protocol-widget"]', { state: "visible", timeout: 10000 }).catch(() => {});
+	await page.waitForTimeout(500);
 
 	const filePath = path.join(PROOFS_DIR, state.filename);
 	const buffer = await page.screenshot({ fullPage: false });

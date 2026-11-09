@@ -163,29 +163,27 @@ describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СН�
 		});
 	});
 
-	describe("5. Facade Integrity (Mandate 8s: Single Canonical Domain Authority)", () => {
-		it("confirms components/imaging/DirectRvgCaptureModal.tsx exists and re-exports canonical component", () => {
-			const facadePath = "components/imaging/DirectRvgCaptureModal.tsx";
-			expect(existsSync(path.join(webSrcRoot, facadePath))).toBeTruthy();
-			const facadeSrc = readSource(facadePath);
-			expect(facadeSrc).toContain('export * from "../radiology/DirectRvgCaptureModal"');
-			expect(facadeSrc).toContain('export { default } from "../radiology/DirectRvgCaptureModal"');
+	describe("5. Canonical SSOT Integrity (Mandate 8s: Single Canonical Domain Authority)", () => {
+		it("confirms components/radiology/DirectRvgCaptureModal.tsx exists as canonical component", () => {
+			const ssotPath = "components/radiology/DirectRvgCaptureModal.tsx";
+			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
+			const ssotSrc = readSource(ssotPath);
+			expect(ssotSrc).toContain("DirectRvgCaptureModal");
+			expect(ssotSrc).toContain("DirectRvgViewport");
 		});
 
-		it("confirms components/imaging/HotFolderImageCanvas.tsx exists and re-exports canonical component", () => {
-			const facadePath = "components/imaging/HotFolderImageCanvas.tsx";
-			expect(existsSync(path.join(webSrcRoot, facadePath))).toBeTruthy();
-			const facadeSrc = readSource(facadePath);
-			expect(facadeSrc).toContain('export * from "../radiology/HotFolderImageCanvas"');
-			expect(facadeSrc).toContain('export { default } from "../radiology/HotFolderImageCanvas"');
+		it("confirms components/radiology/HotFolderImageCanvas.tsx exists as canonical component", () => {
+			const ssotPath = "components/radiology/HotFolderImageCanvas.tsx";
+			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
+			const ssotSrc = readSource(ssotPath);
+			expect(ssotSrc).toContain("HotFolderImageCanvas");
 		});
 
-		it("confirms components/visiograph/VisiographCapture.tsx exists and re-exports canonical component", () => {
-			const facadePath = "components/visiograph/VisiographCapture.tsx";
-			expect(existsSync(path.join(webSrcRoot, facadePath))).toBeTruthy();
-			const facadeSrc = readSource(facadePath);
-			expect(facadeSrc).toContain('export * from "../radiology/DirectRvgCaptureModal"');
-			expect(facadeSrc).toContain('export { default } from "../radiology/DirectRvgCaptureModal"');
+		it("confirms components/radiology/VisiographStudyViewer.tsx exists as canonical 2D viewer", () => {
+			const ssotPath = "components/radiology/VisiographStudyViewer.tsx";
+			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
+			const ssotSrc = readSource(ssotPath);
+			expect(ssotSrc).toContain("VisiographStudyViewer");
 		});
 
 		it("confirms components/hardware/HardwareSettingsModal.tsx exists and renders HardwareSettingsTab", () => {

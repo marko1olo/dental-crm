@@ -12,7 +12,6 @@ import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
-import { DirectVisiographLauncher } from "./components/visiograph/DirectVisiographLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
@@ -331,7 +330,6 @@ export function AppShell() {
 			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
 			<DirectRvgCaptureLauncher />
-			<DirectVisiographLauncher />
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxLauncher />
 			<DirectShiftLauncher />

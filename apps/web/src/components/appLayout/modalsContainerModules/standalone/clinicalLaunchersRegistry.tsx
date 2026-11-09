@@ -17,7 +17,7 @@ import { StandaloneClinicalTemplatesHost } from "./clinical/StandaloneClinicalTe
 import { DirectOdontogramLauncher } from "../../../odontogram/DirectOdontogramLauncher";
 import { DirectOdontogramModuleLauncher } from "../../../odontogram/DirectOdontogramModuleLauncher";
 import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46InspectionStand";
-import { DirectVisiographLauncher } from "../../../visiograph/DirectVisiographLauncher";
+import { DirectRadiologyLauncher } from "../../../radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureModal } from "../../../radiology/DirectRvgCaptureModal";
 import { DirectEndodonticsLauncher } from "../../../endo/DirectEndodonticsLauncher";
 import { DirectOrthopedicsLauncher } from "../../../orthopedics/DirectOrthopedicsLauncher";
@@ -25,6 +25,7 @@ import { DirectOrthodonticsLauncher } from "../../../orthodontics/DirectOrthodon
 import { DirectSurgeryLauncher } from "../../../surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "../../../hygiene/DirectHygieneLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
+import { DirectPediatricLauncher } from "../../../pediatric/DirectPediatricLauncher";
 import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
 import { DemoCaseViewerModal } from "../../../demo/DemoCaseViewerModal";
 import { renderSpecializedClinicalLaunchers } from "./SpecializedClinicalLaunchers";
@@ -172,7 +173,7 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				tokens: ["visiograph", "rvg", "rvg-studio"],
 				exclude: ["rvg-capture", "direct-rvg", "rvg-hardware"],
 			},
-			render: () => <DirectVisiographLauncher />,
+			render: () => <DirectRadiologyLauncher />,
 		},
 
 		// 8. Эндодонтия и лечение корневых каналов
@@ -359,6 +360,19 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 					/>
 				</div>
 			),
+		},
+
+		// 16. Детская стоматология и сменный прикус FDI 51–85 (SSOT)
+		{
+			id: "pediatric-studio",
+			title: "Детская стоматология и сменный прикус",
+			criteria: {
+				tokens: ["pediatric", "children", "pedodontics", "pediatric-studio"],
+				searchIncludes: ["pediatric=1", "children=1", "standalone=pediatric"],
+				exactHashes: ["#pediatric", "#children", "#pedodontics", "#pediatric-studio"],
+				hashPrefixes: ["#pediatric?", "#pediatric/", "#children?"],
+			},
+			render: () => <DirectPediatricLauncher />,
 		},
 	];
 

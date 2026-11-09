@@ -3,7 +3,11 @@ import { showToast } from "../../GlobalToast";
 import { SoundFeedbackService } from "../../../services/audio/SoundFeedbackService";
 import { globalDentalVoiceEngine } from "../../../services/voice";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
-import { loadLatestCephalometricStudy, saveCephalometricAnalysisToEmr } from "../../orthodontics/cephalometricPersistence";
+import {
+	loadLatestCephalometricStudy,
+	saveCephalometricAnalysisToEmr,
+	fetchPatientCephalometricStudyFromApi,
+} from "../../orthodontics/cephalometricPersistence";
 import { subscribeCephSyncChannel } from "../../orthodontics/cephStudioSyncChannel";
 import {
 	SAMPLE_TRG_CEPHALOGRAM_URL,
@@ -98,6 +102,27 @@ export function useCephLandmarks({
 			}
 		};
 	}, []);
+
+	// Реактивная гидратация ТРГ-исследования из PostgreSQL 18
+	useEffect(() => {
+		if (!patientId || !isOpen) return;
+		let isCancelled = false;
+		void fetchPatientCephalometricStudyFromApi(patientId).then((serverStudy) => {
+			if (isCancelled || !serverStudy) return;
+			if (serverStudy.imageUrl && !imageUrl) {
+				setImageUrl(serverStudy.imageUrl);
+			}
+			if (serverStudy.landmarks && Object.keys(serverStudy.landmarks).length > 0) {
+				setLandmarks((prev) => (Object.keys(prev).length === 0 ? serverStudy.landmarks! : prev));
+			}
+			if (serverStudy.scaleMmPerPixel) {
+				setScaleMmPerPixel(serverStudy.scaleMmPerPixel);
+			}
+		});
+		return () => {
+			isCancelled = true;
+		};
+	}, [patientId, isOpen, imageUrl]);
 
 	const [aiBackendPref, setAiBackendPref] = useState<CephAiBackendPreference>("auto");
 	const [isAiInferring, setIsAiInferring] = useState<boolean>(false);

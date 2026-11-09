@@ -4,6 +4,7 @@
  */
 
 import { type Point2D, distance2D } from "./VisiographMathGeometry";
+import { UNIVERSAL_SENSOR_CATALOG } from "../radiology/sensorGateway/sensorCatalogs";
 
 export type CalibrationReferenceType =
 	| "sphere_5mm"
@@ -93,6 +94,10 @@ export const DENTAL_SENSOR_PRESETS: readonly DentalSensorPreset[] = [
 export function resolveVisiographPixelScaleMm(deviceOrPresetId?: string | null): number {
 	if (!deviceOrPresetId) return DEFAULT_PIXEL_SCALE_MM;
 	const norm = deviceOrPresetId.toLowerCase().trim();
+	const universalMatch = UNIVERSAL_SENSOR_CATALOG.find(
+		(s) => s.id === norm || norm.includes(s.id) || s.name.toLowerCase().includes(norm),
+	);
+	if (universalMatch) return universalMatch.pixelSpacing;
 	const found = DENTAL_SENSOR_PRESETS.find(
 		(p) => p.id === norm || norm.includes(p.id) || p.label.toLowerCase().includes(norm),
 	);

@@ -55,8 +55,24 @@ const CbctStandaloneStudioView = React.lazy(() =>
 	})),
 );
 const CephStandaloneStudioView = React.lazy(() =>
-	import("./components/orthodontics/OrthodonticsStudioModal").then((m) => ({
-		default: m.OrthodonticsStudioModal,
+	import("./components/radiology/CephalometricAnalysisModal").then((m) => ({
+		default: (props: {
+			patientId?: string;
+			patientName?: string;
+			initialImageUrl?: string;
+			initialStudioMode?: string;
+			autoLoadDemo?: boolean;
+		}) => (
+			<m.CephalometricAnalysisModal
+				isOpen={true}
+				onClose={() => {
+					if (typeof window !== "undefined") window.close();
+				}}
+				patientId={props.patientId}
+				patientName={props.patientName}
+				initialImageUrl={props.initialImageUrl}
+			/>
+		),
 	})),
 );
 const PatientPresentationStandaloneView = React.lazy(() =>

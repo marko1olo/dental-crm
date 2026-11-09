@@ -208,7 +208,8 @@ export function runExportHtmlAndDiaryTests() {
 
 		assert.ok(!html.includes("font-family: monospace; font-size: 8px;"));
 
-		assert.ok(html.includes("Приказ МЗ РФ № 804н / 043-у"));
+		assert.ok(html.includes("Дневник приёма"));
+		assert.ok(html.includes("Запись для медицинской карты:"));
 		assert.ok(html.includes("1. ВЫБОР И ХАРАКТЕРИСТИКИ ИМПЛАНТАТА:"));
 		assert.ok(html.includes("2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ НЕРВА (IAN):"));
 		assert.ok(html.includes("Система: Osstem (TS III SA)"));

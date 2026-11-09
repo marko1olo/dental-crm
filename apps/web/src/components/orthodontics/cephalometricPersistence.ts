@@ -4,6 +4,7 @@
  */
 
 import type { LandmarkMap, CephalometricAnalysisResult } from "./cephalometric";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface CephalometricSavedStudy {
 	id: string;
@@ -18,6 +19,59 @@ export interface CephalometricSavedStudy {
 	isCalibratedFallback?: boolean | undefined;
 	placedCount?: number | undefined;
 	latencyMs?: number | undefined;
+	savedAt?: string | undefined;
+}
+
+export async function saveCephalometricAnalysisToApi(study: Partial<CephalometricSavedStudy>): Promise<CephalometricSavedStudy | null> {
+	if (!study.patientId || typeof window === "undefined") return null;
+	try {
+		const res = await fetch(`/api/orthodontics/${study.patientId}/ceph-analysis`, {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				Accept: "application/json",
+			}),
+			body: JSON.stringify({
+				id: study.id,
+				patientName: study.patientName,
+				imageUrl: study.imageUrl,
+				landmarks: study.landmarks,
+				scaleMmPerPixel: study.scaleMmPerPixel,
+				analysis: study.analysis,
+				source: study.source,
+				backendUsed: study.backendUsed,
+				isCalibratedFallback: study.isCalibratedFallback,
+				placedCount: study.placedCount,
+				latencyMs: study.latencyMs,
+			}),
+		});
+
+		if (res.ok) {
+			const data = (await res.json()) as { success?: boolean; study?: CephalometricSavedStudy };
+			return data.study ?? null;
+		}
+	} catch (err) {
+		console.warn("[CephPersistence] API save offline fallback:", err);
+	}
+	return null;
+}
+
+export async function fetchPatientCephalometricStudyFromApi(patientId: string): Promise<CephalometricSavedStudy | null> {
+	if (!patientId || typeof window === "undefined") return null;
+	try {
+		const res = await fetch(`/api/orthodontics/${patientId}/ceph-analysis`, {
+			headers: denteAdminSecretRequestHeaders({
+				Accept: "application/json",
+			}),
+		});
+		if (res.ok) {
+			const data = (await res.json()) as { success?: boolean; study?: CephalometricSavedStudy };
+			return data.study ?? null;
+		}
+	} catch (err) {
+		console.warn("[CephPersistence] API fetch offline fallback:", err);
+	}
+	return null;
 }
 
 export function saveCephalometricAnalysisToEmr(study: Partial<CephalometricSavedStudy>): CephalometricSavedStudy {
@@ -35,6 +89,7 @@ export function saveCephalometricAnalysisToEmr(study: Partial<CephalometricSaved
 		isCalibratedFallback: study.isCalibratedFallback,
 		placedCount: study.placedCount,
 		latencyMs: study.latencyMs,
+		savedAt: new Date().toISOString(),
 	};
 	if (typeof window !== "undefined") {
 		try {
@@ -43,6 +98,11 @@ export function saveCephalometricAnalysisToEmr(study: Partial<CephalometricSaved
 			localStorage.setItem("dente_latest_ceph_study", JSON.stringify(record));
 		} catch {
 			// ignore storage errors
+		}
+
+		// Фоновая сетевая синхронизация с Fastify API и PostgreSQL 18
+		if (study.patientId) {
+			void saveCephalometricAnalysisToApi(record);
 		}
 	}
 	return record;

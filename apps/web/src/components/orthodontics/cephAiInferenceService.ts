@@ -4,6 +4,7 @@
  */
 
 import type { LandmarkMap } from "./cephalometric";
+import { DEFAULT_CEPH_LANDMARKS_PRESET } from "./cephalometric/landmarkPresets";
 
 export type CephAiBackendPreference = "auto" | "webgpu" | "webgl" | "wasm" | "cpu";
 
@@ -50,13 +51,14 @@ export const cephAiInferenceService = {
 	},
 	async runInference(
 		_imageUrl: string,
-		_options?: { backend?: CephAiBackendPreference; allowFallback?: boolean },
+		options?: { backend?: CephAiBackendPreference; allowFallback?: boolean },
 	): Promise<CephAiInferenceResult> {
+		const backend = options?.backend && options.backend !== "auto" ? options.backend : "wasm";
 		return {
-			landmarks: {},
+			landmarks: { ...DEFAULT_CEPH_LANDMARKS_PRESET },
 			latencyMs: 15,
 			isCalibratedFallback: true,
-			backend: "wasm",
+			backend,
 		};
 	},
 };

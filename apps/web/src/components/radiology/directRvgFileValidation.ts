@@ -16,6 +16,7 @@ export {
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { parseDicomSliceHeader } from "./realDicomVolumeLoader";
 import type { RadiologyStudy } from "./types";
+import { UNIVERSAL_SENSOR_CATALOG } from "./sensorGateway/sensorCatalogs.js";
 
 export interface SensorModelSpec {
 	id: string;
@@ -40,90 +41,15 @@ export const POPULAR_RVG_SENSORS: readonly SensorModelSpec[] = [
 		resolution: "24.0 lp/mm (True Res)",
 		pixelSpacing: 0.042,
 	},
-	{
-		id: "kavo_gxs_700",
-		name: "KaVo Gendex GXS-700",
-		brand: "kavo",
-		resolution: "25.0 lp/mm (Direct USB)",
-		pixelSpacing: 0.04,
-	},
-	{
-		id: "fona_cdrelite",
-		name: "FONA CDRelite / Schick",
-		brand: "fona",
-		resolution: "28.0 lp/mm (Active CMOS)",
-		pixelSpacing: 0.038,
-	},
-	{
-		id: "woodpecker_isensor",
-		name: "Woodpecker i-Sensor H1 / H2",
-		brand: "woodpecker",
-		resolution: "25.0 lp/mm (CsI CMOS)",
-		pixelSpacing: 0.04,
-	},
-	{
-		id: "planmeca_prosensor",
-		name: "Planmeca ProSensor HD",
-		brand: "planmeca",
-		resolution: "33.7 lp/mm (Fiber-Optic)",
-		pixelSpacing: 0.03,
-	},
-	{
-		id: "sirona_xios_xg",
-		name: "Dentsply Sirona XIOS XG Supreme",
-		brand: "sirona",
-		resolution: "33.3 lp/mm (WiFi / USB)",
-		pixelSpacing: 0.04,
-	},
-	{
-		id: "dexis_titanium",
-		name: "Dexis Titanium / Platinum",
-		brand: "dexis",
-		resolution: "25.0 lp/mm (TrueCapture)",
-		pixelSpacing: 0.02,
-	},
-	{
-		id: "acteon_sopix2",
-		name: "Acteon / Sopro Sopix2 / PSPIX",
-		brand: "acteon",
-		resolution: "25.0 lp/mm (ACE)",
-		pixelSpacing: 0.022,
-	},
-	{
-		id: "handy_hdr_600",
-		name: "Handy HDR-500 / HDR-600",
-		brand: "handy",
-		resolution: "26.3 lp/mm (Direct USB)",
-		pixelSpacing: 0.019,
-	},
-	{
-		id: "myray_zen_x",
-		name: "MyRay Zen-X",
-		brand: "myray",
-		resolution: "25.0 lp/mm (HD CMOS)",
-		pixelSpacing: 0.02,
-	},
-	{
-		id: "owandy_opteo",
-		name: "Owandy Opteo / One",
-		brand: "owandy",
-		resolution: "25.0 lp/mm (Direct USB)",
-		pixelSpacing: 0.02,
-	},
-	{
-		id: "eighteeth_nanopix",
-		name: "Eighteeth NanoPix 1 / 2",
-		brand: "eighteeth",
-		resolution: "25.0 lp/mm (Ultra-Slim)",
-		pixelSpacing: 0.02,
-	},
-	{
-		id: "xpect_vision_photon",
-		name: "Xpect Vision Photon-Counting",
-		brand: "xpect_vision",
-		resolution: "33.0 lp/mm (Direct Conversion)",
-		pixelSpacing: 0.015,
-	},
+	...UNIVERSAL_SENSOR_CATALOG
+		.filter((s) => s.id !== "vatech_ezsensor_hd" && s.id !== "carestream_rvg_6200")
+		.map((s) => ({
+			id: s.id,
+			name: s.name,
+			brand: (s.brand === "duerr" ? "generic" : s.brand) as SensorModelSpec["brand"],
+			resolution: s.resolution,
+			pixelSpacing: s.pixelSpacing,
+		})),
 ];
 
 export function validateRadiologyUploadFile(file: { name: string; type?: string }): {

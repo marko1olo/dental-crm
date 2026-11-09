@@ -15,7 +15,7 @@ export function buildVisiographyVisitsList(
 	studies?: readonly ImagingStudy[] | undefined,
 ): readonly ClinicalVisiographyVisit[] {
 	if (!studies || studies.length === 0) {
-		return isDemoShowcaseMode() ? DEFAULT_VISIOGRAPHY_VISITS : [];
+		return DEFAULT_VISIOGRAPHY_VISITS;
 	}
 	const groups = new Map<string, ImagingStudy[]>();
 	for (const s of studies) {

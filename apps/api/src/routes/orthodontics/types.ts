@@ -56,6 +56,20 @@ export const deductOrthoMaterialsSchema = z.object({
 	notes: z.string().max(300).optional(),
 });
 
+export const cephAnalysisSaveSchema = z.object({
+	id: z.string().optional(),
+	patientName: z.string().optional(),
+	imageUrl: z.string().nullable().optional(),
+	landmarks: z.record(z.string(), z.object({ x: z.number(), y: z.number() })).optional(),
+	scaleMmPerPixel: z.number().optional(),
+	analysis: z.record(z.string(), z.unknown()).optional(),
+	source: z.string().optional(),
+	backendUsed: z.string().optional(),
+	isCalibratedFallback: z.boolean().optional(),
+	placedCount: z.number().optional(),
+	latencyMs: z.number().optional(),
+});
+
 export interface OrthoMaterialDeductionResult {
 	success: boolean;
 	itemId?: string | undefined;

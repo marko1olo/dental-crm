@@ -19,8 +19,8 @@ import {
 	getClinicalFilterCss,
 	detectLatestHotfolderStudy,
 } from "../visiographCatalogData";
-import { VisiographStudioModal } from "../VisiographStudioModal";
-import { DirectVisiographLauncher } from "../DirectVisiographLauncher";
+import { VisiographStudyViewer } from "../../radiology/VisiographStudyViewer";
+import { DirectRadiologyLauncher } from "../../radiology/DirectRadiologyLauncher";
 
 describe("Канонический SSOT визиографа и лучевой диагностики", () => {
 	describe("1. Три типа рентгеновских снимков (RVG 2D, ОПТГ, КЛКТ)", () => {
@@ -99,63 +99,44 @@ describe("Канонический SSOT визиографа и лучевой �
 		});
 	});
 
-	describe("5. Монолитная студия VisiographStudioModal и Мандат 8e (Автономия)", () => {
-		it("рендерит модальное окно студии визиографа без сбоев (SSR check)", () => {
+	describe("5. Канонический 2D просмотрщик VisiographStudyViewer и Мандат 8e (Автономия)", () => {
+		it("рендерит просмотрщик снимков визиографа без сбоев (SSR check)", () => {
 			const html = renderToString(
-				<VisiographStudioModal
-					isOpen={true}
-					onClose={() => {}}
+				<VisiographStudyViewer
 					patientName="Иванов Пётр Сергеевич"
-					initialToothCode="36"
-					initialModality="rvg"
+					initialTooth="36"
+					modality="rvg"
 				/>,
 			);
 
 			assert.ok(html.includes("Иванов Пётр Сергеевич"), "Имя пациента отображается");
-			assert.ok(html.includes("Зуб #36"), "Активный зуб отображается");
-			assert.ok(html.includes("filter-btn-normal"), "Кнопка фильтра Норма");
-			assert.ok(html.includes("filter-btn-contrast"), "Кнопка фильтра Контраст");
-			assert.ok(html.includes("filter-btn-invert"), "Кнопка фильтра Негатив");
-			assert.ok(html.includes("filter-btn-sharpness"), "Кнопка фильтра Резкость");
+			assert.ok(html.includes("36"), "Активный зуб отображается");
+			assert.ok(html.includes("btn-primary-attach"), "Кнопка Primary CTA присутствует");
+			assert.ok(html.includes("btn-quick-bill"), "Кнопка биллинга присутствует");
 		});
 
 		it("содержит ровно ОДНУ Primary CTA кнопку цвета Teal #0d9488, и она НИКОГДА НЕ DISABLED (Мандат 8e)", () => {
 			const html = renderToString(
-				<VisiographStudioModal
-					isOpen={true}
-					onClose={() => {}}
+				<VisiographStudyViewer
 					patientName="Иванов Пётр Сергеевич"
-					initialToothCode="36"
+					initialTooth="36"
 				/>,
 			);
 
 			// Проверка наличия Primary CTA кнопки
-			assert.ok(html.includes("btn-primary-save-visiograph"), "Primary CTA кнопка присутствует");
-			assert.ok(html.includes("Привязать снимок к приёму"), "Текст Primary CTA кнопки");
+			assert.ok(html.includes("btn-primary-attach"), "Primary CTA кнопка присутствует");
+			assert.ok(html.includes("Привязать к зубу 36"), "Текст Primary CTA кнопки");
 			assert.ok(html.includes("var(--teal,#0d9488)"), "Кнопка имеет цвет Teal #0d9488 по Мандату 8am");
 
 			// Мандат 8e: Кнопка сохранения НИКОГДА не заблокирована
 			assert.ok(
-				!html.includes('disabled="" data-testid="btn-primary-save-visiograph"'),
+				!html.includes('disabled="" data-testid="btn-primary-attach"'),
 				"Primary CTA кнопка НИКОГДА не disabled",
 			);
 		});
 
-		it("соответствует Apple HIG мобильной эргономике (Bottom Sheet, Drag Handle 36x5px)", () => {
-			const html = renderToString(
-				<VisiographStudioModal
-					isOpen={true}
-					onClose={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("ios-drag-handle"), "На мобильных устройствах присутствует тактильный Drag Handle");
-			assert.ok(html.includes("rounded-t-[24px]"), "Скругление верхних углов шторки по Apple HIG 24px");
-			assert.ok(html.includes("overflow-x-clip"), "0px паразитного горизонтального скролла");
-		});
-
-		it("проверяет корректность рендеринга лаунчера DirectVisiographLauncher", () => {
-			const html = renderToString(<DirectVisiographLauncher />);
+		it("проверяет корректность рендеринга лаунчера DirectRadiologyLauncher", () => {
+			const html = renderToString(<DirectRadiologyLauncher />);
 			assert.equal(typeof html, "string");
 		});
 	});

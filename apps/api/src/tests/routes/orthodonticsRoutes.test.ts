@@ -261,4 +261,72 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(body.deduction.deductedQty, 1);
 		assert.equal(body.progress.lastActionSummary, body.actionSummary);
 	});
+
+	it("9. POST /api/orthodontics/:patientId/ceph-analysis persists 16 landmarks and calculated metrics in PostgreSQL 18", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/ceph-analysis`,
+			headers: ORG_HEADERS,
+			payload: {
+				patientName: "Смирнова Екатерина Васильевна",
+				imageUrl: "/uploads/imaging/ceph-test.jpg",
+				landmarks: {
+					S: { x: 280, y: 190 },
+					N: { x: 440, y: 155 },
+					Or: { x: 415, y: 230 },
+					Po: { x: 245, y: 245 },
+					ANS: { x: 475, y: 310 },
+					PNS: { x: 305, y: 325 },
+					A: { x: 462, y: 342 },
+					B: { x: 446, y: 440 },
+					Pog: { x: 452, y: 490 },
+					Gn: { x: 442, y: 520 },
+					Me: { x: 420, y: 540 },
+					Go: { x: 250, y: 435 },
+					U1t: { x: 494, y: 395 },
+					U1a: { x: 456, y: 325 },
+					L1t: { x: 471, y: 400 },
+					L1a: { x: 428, y: 495 },
+				},
+				scaleMmPerPixel: 0.15,
+				analysis: {
+					sna: 82.5,
+					snb: 80.0,
+					anb: 2.5,
+					witsMm: -0.5,
+					skeletalClass: "I",
+				},
+				source: "manual",
+				backendUsed: "Цефалометрический модуль ТРГ",
+				isCalibratedFallback: false,
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.ok(body.id);
+		assert.equal(body.study.placedCount, 16);
+		assert.equal(body.study.analysis.anb, 2.5);
+	});
+
+	it("10. GET /api/orthodontics/:patientId/ceph-analysis returns persisted ceph analysis from PostgreSQL 18", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/orthodontics/${PATIENT_ID}/ceph-analysis`,
+			headers: ORG_HEADERS,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.success, true);
+		assert.ok(body.study);
+		assert.equal(body.study.placedCount, 16);
+		assert.equal(body.study.landmarks.S.x, 280);
+		assert.equal(body.study.analysis.sna, 82.5);
+	});
 });

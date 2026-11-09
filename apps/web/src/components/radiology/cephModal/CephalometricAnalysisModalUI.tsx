@@ -28,7 +28,7 @@ import {
 import type { CephalometricAnalysisModalProps } from "./types";
 
 if (typeof document !== "undefined") {
-	import("../../orthodontics/CephalometricAnalysisModal.css");
+	import("./CephalometricAnalysisModal.css");
 }
 
 export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProps) {

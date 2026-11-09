@@ -31,6 +31,8 @@ export interface VisiographStudyViewerProps {
 	readonly patientId?: string | undefined;
 	readonly initialTooth?: string | undefined;
 	readonly modality?: ("rvg" | "opg" | "cbct_slice") | undefined;
+	readonly priceRub?: number | undefined;
+	readonly serviceTitle?: string | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly onSaveToVisit?: ((details: {
 		tooth: string;
@@ -47,6 +49,8 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 	patientId = "pat-walkin",
 	initialTooth = "16",
 	modality = "rvg",
+	priceRub,
+	serviceTitle,
 	onClose,
 	onSaveToVisit,
 	onAddToInvoice,
@@ -186,27 +190,48 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 	// 1-Клик мгновенный биллинг в кассу (Мандат 8e: 0 блокировок)
 	const handleQuickBill = () => {
 		setIsBilled(true);
-		const serviceTitle =
+		const defaultTitle =
 			modality === "opg"
 				? "Ортопантомография (ОПТГ)"
 				: `Прицельный снимок визиографа (зуб ${selectedTooth})`;
-		const priceRub = modality === "opg" ? 1200 : 450;
+		const effectiveTitle = serviceTitle || defaultTitle;
+
+		// Разрешение цены: 1) явно переданный prop priceRub, 2) из прайс-листа visitStore.services, 3) мягкий клинический фолбек
+		let resolvedPriceRub = priceRub;
+		if (typeof resolvedPriceRub !== "number" || resolvedPriceRub <= 0) {
+			try {
+				const visitServices = useVisitStore.getState().services || [];
+				const queryTerm = modality === "opg" ? "оптг" : "визиограф";
+				const found = visitServices.find((s) => {
+					const name = s.name?.toLowerCase() || "";
+					return name.includes(queryTerm) || name.includes("рентген");
+				});
+				if (found && typeof found.price === "number" && found.price > 0) {
+					resolvedPriceRub = found.price;
+				}
+			} catch (_) {}
+		}
+
+		const effectivePriceRub = (typeof resolvedPriceRub === "number" && resolvedPriceRub > 0)
+			? resolvedPriceRub
+			: (modality === "opg" ? 1200 : 450);
+
 		if (onAddToInvoice) {
-			onAddToInvoice(serviceTitle, priceRub);
+			onAddToInvoice(effectiveTitle, effectivePriceRub);
 		}
 		showToast(
 			isBilled
 				? "Снимок уже добавлен в кассовый чек"
-				: `✓ Добавлено в чек: ${serviceTitle} (${priceRub} ₽)`,
+				: `✓ Добавлено в чек: ${effectiveTitle} (${effectivePriceRub} ₽)`,
 			"info",
 		);
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente:add-service-to-cashbox", {
 					detail: {
-						title: serviceTitle,
-						amountRub: priceRub,
-						amountKopecks: priceRub * 100,
+						title: effectiveTitle,
+						amountRub: effectivePriceRub,
+						amountKopecks: effectivePriceRub * 100,
 						tooth: selectedTooth,
 						modality,
 					},

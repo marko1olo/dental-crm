@@ -19,13 +19,10 @@ import {
 	sortDicomEntries,
 } from "../components/dicom/dicomArchiveFilter";
 import { CtSelectorModal } from "../components/radiology/CtSelectorModal";
-import { CtSelectorModal as ImagingCtSelectorModal } from "../components/imaging/CtSelectorModal";
 
 describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () => {
-	test("exports CtSelectorModal from both radiology and imaging domains", () => {
+	test("exports canonical CtSelectorModal from radiology domain", () => {
 		assert.equal(typeof CtSelectorModal, "function");
-		assert.equal(typeof ImagingCtSelectorModal, "function");
-		assert.equal(CtSelectorModal, ImagingCtSelectorModal);
 	});
 
 	test("scanDownloadsForCt respects Zero Mocks invariant and returns empty array in web environment", async () => {
@@ -158,11 +155,16 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 			? path.resolve(process.cwd(), "apps/web/src")
 			: path.resolve(process.cwd(), "src");
 
-		// 1. ImagingHeader.tsx: CTA button exists
-		const imagingHeaderContent = fs.readFileSync(
+		// 1. ImagingHeader.tsx & header submodules: CTA button exists
+		const headerFiles = [
 			path.join(webRoot, "components/imaging/ImagingHeader.tsx"),
-			"utf-8"
-		);
+			path.join(webRoot, "components/imaging/header/ImagingHeaderActions.tsx"),
+			path.join(webRoot, "components/imaging/header/ImagingHeaderMoreMenu.tsx"),
+		];
+		const imagingHeaderContent = headerFiles
+			.filter((p) => fs.existsSync(p))
+			.map((p) => fs.readFileSync(p, "utf-8"))
+			.join("\n");
 		assert.ok(
 			imagingHeaderContent.includes('data-testid="btn-open-ct-selector"'),
 			"ImagingHeader must contain data-testid='btn-open-ct-selector'"
@@ -172,11 +174,16 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 			"ImagingHeader must accept onOpenCtSelector callback"
 		);
 
-		// 2. ImagingView.tsx: mounts CtSelectorModal
-		const imagingViewContent = fs.readFileSync(
+		// 2. ImagingView.tsx & view modules: mounts CtSelectorModal
+		const imagingViewFiles = [
 			path.join(webRoot, "ImagingView.tsx"),
-			"utf-8"
-		);
+			path.join(webRoot, "views/imagingViewModules/ImagingViewModals.tsx"),
+			path.join(webRoot, "views/imagingViewModules/useImagingViewController.ts"),
+		];
+		const imagingViewContent = imagingViewFiles
+			.filter((p) => fs.existsSync(p))
+			.map((p) => fs.readFileSync(p, "utf-8"))
+			.join("\n");
 		assert.ok(
 			imagingViewContent.includes("<CtSelectorModal"),
 			"ImagingView must mount CtSelectorModal"
@@ -186,11 +193,17 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 			"ImagingView must manage isCtSelectorOpen state"
 		);
 
-		// 3. PatientRadiologyTab.tsx: CTA button & modal mount
-		const patientTabContent = fs.readFileSync(
+		// 3. PatientRadiologyTab.tsx & tabs modules: CTA button & modal mount
+		const patientTabFiles = [
 			path.join(webRoot, "components/patients/tabs/PatientRadiologyTab.tsx"),
-			"utf-8"
-		);
+			path.join(webRoot, "components/patients/tabs/radiology/PatientRadiologyModals.tsx"),
+			path.join(webRoot, "components/patients/tabs/radiology/PatientRadiologyToolbar.tsx"),
+			path.join(webRoot, "components/patients/tabs/radiology/PatientRadiologyHeader.tsx"),
+		];
+		const patientTabContent = patientTabFiles
+			.filter((p) => fs.existsSync(p))
+			.map((p) => fs.readFileSync(p, "utf-8"))
+			.join("\n");
 		assert.ok(
 			patientTabContent.includes('data-testid="btn-patient-open-ct-selector"'),
 			"PatientRadiologyTab must contain data-testid='btn-patient-open-ct-selector'"
@@ -217,11 +230,17 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 			"VisitDiagnosticsTab must mount CtSelectorModal"
 		);
 
-		// 5. RadiologyModule.tsx: CTA button & modal mount
-		const radiologyModuleContent = fs.readFileSync(
+		// 5. RadiologyModule.tsx & module submodules: CTA button & modal mount
+		const radModuleFiles = [
 			path.join(webRoot, "components/radiology/RadiologyModule.tsx"),
-			"utf-8"
-		);
+			path.join(webRoot, "components/radiology/radiologyModule/RadiologyModuleModals.tsx"),
+			path.join(webRoot, "components/radiology/radiologyModule/RadiologyModuleToolbar.tsx"),
+			path.join(webRoot, "components/radiology/radiologyModule/RadiologyModuleHeader.tsx"),
+		];
+		const radiologyModuleContent = radModuleFiles
+			.filter((p) => fs.existsSync(p))
+			.map((p) => fs.readFileSync(p, "utf-8"))
+			.join("\n");
 		assert.ok(
 			radiologyModuleContent.includes('data-testid="btn-open-radiology-ct-selector"'),
 			"RadiologyModule must contain data-testid='btn-open-radiology-ct-selector'"
@@ -236,10 +255,12 @@ describe("CtSelectorModal - Clinical Intake & Viewer Selector Integration", () =
 		const webRoot = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
 			? path.resolve(process.cwd(), "apps/web/src")
 			: path.resolve(process.cwd(), "src");
-		const modalContent = fs.readFileSync(
-			path.join(webRoot, "components/radiology/ctSelectorModal/CtSelectorModalUI.tsx"),
-			"utf-8"
-		);
+		const modalDir = path.join(webRoot, "components/radiology/ctSelectorModal");
+		const modalFiles = fs.readdirSync(modalDir, { recursive: true }) as string[];
+		const modalContent = modalFiles
+			.filter((f) => typeof f === "string" && (f.endsWith(".tsx") || f.endsWith(".ts")))
+			.map((f) => fs.readFileSync(path.join(modalDir, f), "utf-8"))
+			.join("\n");
 
 		// No developer jargon
 		assert.equal(modalContent.includes("lorem ipsum"), false, "No lorem ipsum allowed");

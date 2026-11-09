@@ -58,11 +58,14 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 
 	if (!isActive || !isOpen) return null;
 
+	const queryPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
+	const activePatientId = queryPatientId || "pat-ortho-studio";
+
 	return (
 		<OrthodonticVisitProtocolWidget
 			isOpen={isOpen}
 			onClose={handleClose}
-			patientId="pat-ortho-studio"
+			patientId={activePatientId}
 			patientName="Смирнова Екатерина Андреевна"
 			doctorName="Д-р Соколов А. В."
 		/>

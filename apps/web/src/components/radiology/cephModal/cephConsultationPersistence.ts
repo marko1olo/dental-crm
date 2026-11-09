@@ -45,8 +45,8 @@ export function executeSaveConsultationWithoutCeph(params: SaveConsultationParam
 
 	try {
 		saveCephalometricAnalysisToEmr({
-			patientId: patientId || "PAT-001",
-			patientName: patientName || "Пациент",
+			patientId: patientId || undefined,
+			patientName: patientName || undefined,
 			imageUrl: imageUrl ?? null,
 			landmarks,
 			scaleMmPerPixel,
