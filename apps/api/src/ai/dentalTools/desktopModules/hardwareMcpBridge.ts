@@ -6,7 +6,11 @@
 import type { LocalMcpToolInfo } from "./desktopTypes.js";
 import { handleAtolCall, handleShtrihCall } from "./mcpFiscalHandlers.js";
 import { ALL_LOCAL_MCP_TOOLS } from "./mcpRegistry.js";
-import { handleScannerCall, handleTwainCall } from "./mcpSensorHandlers.js";
+import {
+	getLastScannedBarcode,
+	handleScannerCall,
+	handleTwainCall,
+} from "./mcpSensorHandlers.js";
 
 export class LocalMcpBridgeManager {
 	private static instance: LocalMcpBridgeManager;
@@ -36,11 +40,11 @@ export class LocalMcpBridgeManager {
 	): Promise<{ success: boolean; data?: unknown; error?: string }> {
 		const name = serverName.toLowerCase();
 		if (name === "kkt_atol") {
-			const res = handleAtolCall(toolName, args);
+			const res = await handleAtolCall(toolName, args);
 			if (res) return res;
 		}
 		if (name === "shtrih_m") {
-			const res = handleShtrihCall(toolName, args);
+			const res = await handleShtrihCall(toolName, args);
 			if (res) return res;
 		}
 		if (name === "datamatrix_scanner") {
@@ -71,7 +75,17 @@ export class LocalMcpBridgeManager {
 			};
 		}
 		if (name === "datamatrix_scanner" && uri.includes("buffer")) {
-			return { success: true, uri, mimeType: "text/plain", content: "010460123456789021AB1234XYZ" };
+			const last = getLastScannedBarcode();
+			if (!last) {
+				return {
+					success: false,
+					uri,
+					mimeType: "text/plain",
+					content: "",
+					error: "Буфер сканера пуст (NO_BARCODE_SCANNED).",
+				};
+			}
+			return { success: true, uri, mimeType: "text/plain", content: last.barcode };
 		}
 		return { success: false, uri, mimeType: "text/plain", content: "", error: `Ресурс '${uri}' на сервере '${serverName}' не найден.` };
 	}

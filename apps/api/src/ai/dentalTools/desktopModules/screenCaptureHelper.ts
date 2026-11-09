@@ -1,12 +1,7 @@
 /**
  * @file screenCaptureHelper.ts
- * @description Вспомогательные скрипты PowerShell и буферы для захвата экрана и ROI.
+ * @description Вспомогательные скрипты PowerShell для оптического захвата экрана и ROI визиографа.
  */
-
-export const MINIMAL_FALLBACK_PNG = Buffer.from(
-	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-	"base64",
-);
 
 export function buildCaptureScript(
 	savePathPs: string,

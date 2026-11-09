@@ -60,9 +60,11 @@ async function run() {
 		// 1. Студия Копайлота PC Light & Dark
 		await setTheme(pcPage, "light");
 		await saveProof(pcPage, "copilot_studio_pc_light_1440x900.png");
+		await saveProof(pcPage, "01_copilot_studio_pc_light_1440x900.png");
 
 		await setTheme(pcPage, "dark");
 		await saveProof(pcPage, "copilot_studio_pc_dark_1440x900.png");
+		await saveProof(pcPage, "02_copilot_studio_pc_dark_1440x900.png");
 
 		// Открываем Настройки Копайлота
 		const settingsBtn = pcPage.locator('[data-testid="copilot-settings-trigger"]').first();
@@ -130,9 +132,11 @@ async function run() {
 		// Mobile Studio Light & Dark
 		await setTheme(mobPage, "light");
 		await saveProof(mobPage, "copilot_studio_mobile_light_390x844.png");
+		await saveProof(mobPage, "03_copilot_studio_mobile_light_390x844.png");
 
 		await setTheme(mobPage, "dark");
 		await saveProof(mobPage, "copilot_studio_mobile_dark_390x844.png");
+		await saveProof(mobPage, "04_copilot_studio_mobile_dark_390x844.png");
 
 		// Mobile Settings
 		const mobSettingsBtn = mobPage.locator('[data-testid="copilot-settings-trigger"]').first();

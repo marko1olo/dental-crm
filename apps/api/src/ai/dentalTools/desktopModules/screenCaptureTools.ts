@@ -20,7 +20,6 @@ import {
 } from "./desktopSecurity.js";
 import {
 	buildCaptureScript,
-	MINIMAL_FALLBACK_PNG,
 } from "./screenCaptureHelper.js";
 
 const execAsync = promisify(exec);
@@ -72,7 +71,11 @@ export async function handleCaptureWorkstationScreen(
 		}
 
 		if (!fs.existsSync(savePath)) {
-			await fs.promises.writeFile(savePath, MINIMAL_FALLBACK_PNG);
+			return {
+				success: false,
+				error: "SCREEN_CAPTURE_FAILED",
+				message: "Не удалось выполнить захват экрана: файл снимка не был создан.",
+			};
 		}
 
 		const exists = fs.existsSync(savePath);

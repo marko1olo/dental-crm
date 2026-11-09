@@ -5,6 +5,24 @@
 
 import { parseChestnyZnakDataMatrix } from "@dental/shared";
 
+export interface ScannedBarcodeRecord {
+	barcode: string;
+	timestamp: string;
+	symbology: string;
+	gtin?: string | undefined;
+	serial?: string | undefined;
+}
+
+let lastScannedBarcode: ScannedBarcodeRecord | null = null;
+
+export function setLastScannedBarcode(record: ScannedBarcodeRecord | null): void {
+	lastScannedBarcode = record;
+}
+
+export function getLastScannedBarcode(): ScannedBarcodeRecord | null {
+	return lastScannedBarcode;
+}
+
 export function handleScannerCall(toolName: string, args: Record<string, unknown>) {
 	if (toolName === "parse_chestny_znak") {
 		const barcode = String(args.rawBarcode || "").trim();
@@ -18,12 +36,23 @@ export function handleScannerCall(toolName: string, args: Record<string, unknown
 			const gtinMatch = barcode.match(/(?:01|\(01\))(\d{14})/);
 			if (gtinMatch) gtin = gtinMatch[1];
 		}
+
+		if (parsed.isValid || gtin || serial) {
+			lastScannedBarcode = {
+				barcode,
+				timestamp: new Date().toISOString(),
+				symbology: "GS1 DataMatrix",
+				gtin: gtin || undefined,
+				serial: serial || undefined,
+			};
+		}
+
 		return {
 			success: true,
 			data: {
 				raw: barcode,
-				gtin: gtin || "04601234567890",
-				serial: serial || "AB1234XYZ",
+				gtin: gtin || undefined,
+				serial: serial || undefined,
 				cryptoKey: parsed.cryptoKey,
 				cryptoTail: parsed.cryptoTail,
 				matchedTradeName: parsed.matchedTradeName,
@@ -35,13 +64,16 @@ export function handleScannerCall(toolName: string, args: Record<string, unknown
 		};
 	}
 	if (toolName === "get_last_scanned_barcode") {
+		if (!lastScannedBarcode) {
+			return {
+				success: false,
+				status: "NO_BARCODE_SCANNED",
+				error: "Буфер 2D-сканера пуст: штрихкод еще не был отсканирован (NO_BARCODE_SCANNED).",
+			};
+		}
 		return {
 			success: true,
-			data: {
-				barcode: "010460123456789021AB1234XYZ91EE0692dGVzdA==",
-				timestamp: new Date().toISOString(),
-				symbology: "GS1 DataMatrix",
-			},
+			data: { ...lastScannedBarcode },
 		};
 	}
 	return null;

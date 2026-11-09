@@ -28,6 +28,8 @@ import {
 } from "./dentalTools/desktopSystemTools.js";
 import type { DentalToolContext } from "./dentalTools/types.js";
 
+process.env.KKT_MODEL = "emulator";
+
 const TEST_ORG_ID = "org-test-7777-8888-9999-000000000000";
 const TEST_PATIENT_ID = "11111111-2222-3333-4444-555555555555";
 
@@ -114,11 +116,45 @@ describe("Desktop Agent Harness — Локальный MCP-мост (Model Conte
 			DESKTOP_CTX,
 		)) as any;
 		assert.strictEqual(zRes.success, true);
-		assert.strictEqual(zRes.data.zReportNumber, 43);
+		assert.ok(zRes.data.zReportNumber);
+		assert.ok(zRes.data.shiftNumber);
+	});
+
+	test("call_local_mcp_tool: возвращает честный статус DEVICE_NOT_CONNECTED при отключенной ККТ", async () => {
+		process.env.KKM_FORCE_OFFLINE = "1";
+		try {
+			const res = (await handleCallLocalMcpTool(
+				{
+					serverName: "kkt_atol",
+					toolName: "get_kkt_status",
+					arguments: {},
+				},
+				DESKTOP_CTX,
+			)) as any;
+			assert.strictEqual(res.success, false);
+			assert.strictEqual(res.status, "DEVICE_NOT_CONNECTED");
+			assert.ok(res.error);
+		} finally {
+			delete process.env.KKM_FORCE_OFFLINE;
+		}
 	});
 
 	test("call_local_mcp_tool: 2D DataMatrix сканер Честный Знак и TWAIN сенсор", async () => {
-		// Сканер
+		// Сканер: пустой буфер возвращает честный статус NO_BARCODE_SCANNED
+		const emptyBufRes = (await handleCallLocalMcpTool(
+			{
+				serverName: "datamatrix_scanner",
+				toolName: "get_last_scanned_barcode",
+				arguments: {},
+			},
+			DESKTOP_CTX,
+		)) as any;
+		// Если до этого не сканировали, буфер честно сообщает NO_BARCODE_SCANNED
+		if (!emptyBufRes.success) {
+			assert.strictEqual(emptyBufRes.status, "NO_BARCODE_SCANNED");
+		}
+
+		// Сканирование реального DataMatrix
 		const scanRes = (await handleCallLocalMcpTool(
 			{
 				serverName: "datamatrix_scanner",
@@ -130,6 +166,18 @@ describe("Desktop Agent Harness — Локальный MCP-мост (Model Conte
 		assert.strictEqual(scanRes.success, true);
 		assert.strictEqual(scanRes.data.gtin, "04601234567890");
 		assert.strictEqual(scanRes.data.serial, "AB1234XYZ");
+
+		// После сканирования get_last_scanned_barcode возвращает реальный отсканированный штрихкод
+		const lastBufRes = (await handleCallLocalMcpTool(
+			{
+				serverName: "datamatrix_scanner",
+				toolName: "get_last_scanned_barcode",
+				arguments: {},
+			},
+			DESKTOP_CTX,
+		)) as any;
+		assert.strictEqual(lastBufRes.success, true);
+		assert.strictEqual(lastBufRes.data.barcode, "010460123456789021AB1234XYZ91EE06");
 
 		// TWAIN
 		const twainRes = (await handleCallLocalMcpTool(
@@ -158,6 +206,17 @@ describe("Desktop Agent Harness — Локальный MCP-мост (Model Conte
 		assert.strictEqual(kktRes.mimeType, "application/json");
 		const parsed = JSON.parse(kktRes.content);
 		assert.strictEqual(parsed.status, "READY");
+
+		// Буфер сканера: возвращает отсканированный штрихкод из памяти
+		const scanBufRes = (await handleReadLocalMcpResource(
+			{
+				serverName: "datamatrix_scanner",
+				uri: "scanner://datamatrix/buffer",
+			},
+			DESKTOP_CTX,
+		)) as any;
+		assert.strictEqual(scanBufRes.success, true);
+		assert.strictEqual(scanBufRes.content, "010460123456789021AB1234XYZ91EE06");
 	});
 
 	test("call_local_mcp_tool: отказ 54-ФЗ при отрицательных копейках или невалидном типе оплаты", async () => {

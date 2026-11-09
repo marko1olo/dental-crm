@@ -5,6 +5,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
+import { executeDentalTool, type DentalToolContext } from "../../../ai/dentalTools.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { copilotPendingActions } from "../../../db/schema/copilot.js";
 import type { AgentContext } from "../context.js";
@@ -177,13 +178,90 @@ export class CopilotActionManager {
 			}).catch(() => {});
 		}
 
+		const startTime = Date.now();
 		// Execute with guardrail config overriding supervised requirement for this approved action
 		const approvedCtx: AgentContext = {
 			...ctx,
 			mode: "autonomous",
 		};
 
-		return await ctx.tools.call(approvedCtx, action.toolName, effectiveArgs);
+		// 1. Canonical Dental Tools SSOT execution (Mandates 8e, 8s, 8wy)
+		const dentalContext: DentalToolContext = {
+			organizationId: ctx.organizationId,
+			userId: ctx.userId,
+			doctorId: ctx.userId,
+			patientId:
+				(effectiveArgs.patientId as string) ||
+				(ctx.metadata?.patientId as string) ||
+				undefined,
+			activeVisitId:
+				(effectiveArgs.visitId as string) ||
+				(ctx.metadata?.activeVisitId as string) ||
+				undefined,
+			activeTooth:
+				typeof effectiveArgs.toothNumber === "number"
+					? effectiveArgs.toothNumber
+					: typeof effectiveArgs.tooth === "number"
+						? effectiveArgs.tooth
+						: undefined,
+			runtimeMode:
+				(ctx.metadata?.runtimeMode as "web_browser" | "desktop_native") ||
+				"web_browser",
+			db: ctx.db,
+			allowLocalExecution: true,
+		};
+
+		try {
+			const res = (await executeDentalTool(
+				action.toolName,
+				effectiveArgs,
+				dentalContext,
+			)) as any;
+			const executionTimeMs = Date.now() - startTime;
+			if (res && typeof res === "object" && res.success === false) {
+				// Fallback to legacy registry if tool not found in dentalTools
+				if (
+					res.code === "TOOL_NOT_FOUND" &&
+					ctx.tools?.has?.(action.toolName)
+				) {
+					return await ctx.tools.call(
+						approvedCtx,
+						action.toolName,
+						effectiveArgs,
+					);
+				}
+				return {
+					ok: false,
+					error: res.error || "Ошибка выполнения действия",
+					data: res,
+					executionTimeMs,
+				};
+			}
+			return {
+				ok: true,
+				data: res,
+				executionTimeMs,
+			};
+		} catch (err: unknown) {
+			const executionTimeMs = Date.now() - startTime;
+			// Fallback to legacy registry if error
+			if (ctx.tools?.has?.(action.toolName)) {
+				try {
+					return await ctx.tools.call(
+						approvedCtx,
+						action.toolName,
+						effectiveArgs,
+					);
+				} catch {
+					// Fall through to error return below
+				}
+			}
+			return {
+				ok: false,
+				error: err instanceof Error ? err.message : String(err),
+				executionTimeMs,
+			};
+		}
 	}
 
 	public rejectAction(

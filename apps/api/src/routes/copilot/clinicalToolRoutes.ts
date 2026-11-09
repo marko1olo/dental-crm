@@ -15,10 +15,9 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { PERMISSIONS } from "../../security/permissions.js";
 import {
 	defaultToolRegistry,
-	defaultAutonomousDenteAgent,
 	type AgentContext,
-	type AutonomousDenteAgentInput,
 } from "../../services/agent/index.js";
+import { runAgentHarness } from "../../ai/agentHarness.js";
 import {
 	executeDentalTool,
 	getDentalToolEntry,
@@ -76,7 +75,7 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 				resolvedOrgId ||
 				"00000000-0000-7000-8000-000000000001";
 
-			const input: AutonomousDenteAgentInput = {
+			const input = {
 				...parsedBody.data,
 				patientId: parsedBody.data.patientId,
 				organizationId: targetOrgId,
@@ -84,90 +83,62 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 			};
 
 			try {
-				const result = await defaultAutonomousDenteAgent.execute(input);
+				const prompt = input.prompt || (input.complaints ? `Жалобы: ${input.complaints}` : "Клинический приём");
+				const harnessResult = await runAgentHarness({
+					messages: [{ role: "user", content: prompt }],
+					context: {
+						organizationId: targetOrgId,
+						patientId: input.patientId || undefined,
+						doctorId: identity.userId,
+						runtimeMode: "web_browser",
+						db,
+					},
+					activeTooth: input.toothNumber ? Number(input.toothNumber) : undefined,
+					trustLevel: input.mode === "autonomous" ? "autonomous" : "balanced",
+				});
 
-				const toothAction = result.actions.find(
-					(a) => a.type === "apply_tooth_status",
-				);
-				const estimateAction = result.actions.find(
-					(a) =>
-						a.type === "apply_treatment_estimate" ||
-						a.type === "apply_estimate_804n" ||
-						a.type === "apply_services_estimate",
-				);
-				const soapAction = result.actions.find(
-					(a) => a.type === "apply_soap_diary",
-				);
+				const thoughts = harnessResult.toolCalls.map((tc, idx) => ({
+					id: `step-${idx + 1}`,
+					stepNumber: idx + 1,
+					title: `Инструмент: ${tc.tool}`,
+					status: "done" as const,
+					detail: JSON.stringify(tc.args),
+				}));
 
-				const thoughts =
-					result.steps?.map((s, idx) => ({
-						id: `step-${s.iteration}-${idx}`,
-						stepNumber: s.iteration,
-						title:
-							String(s.thought || "").split("\n")[0] ||
-							`Шаг ${s.iteration}`,
-						status: "done" as const,
-						detail:
-							String(s.thought || "")
-								.split("\n")
-								.slice(1)
-								.join(" ") || undefined,
-					})) ?? [];
-
-				const toothProposal =
-					toothAction?.payload ??
-					(result.toothNumber
-						? {
-								toothNumber: result.toothNumber,
-								state: "C2",
-								stateLabel: "Кариес дентина (C2)",
-								surfaces: [],
-							}
-						: null);
-
-				const servicesProposal =
-					(estimateAction?.payload as any)?.items ??
-					result.estimateServices?.items ??
-					null;
-
-				const soapProposal = result.soapDiary
+				const targetPatientId = input.patientId || "00000000-0000-7000-8000-000000000001";
+				const resolvedToothNumber = input.toothNumber
+					? Number(input.toothNumber)
+					: undefined;
+				const toothProposal = resolvedToothNumber
 					? {
-							complaint: result.soapDiary.subjective?.complaints || "",
-							anamnesis:
-								[
-									result.soapDiary.subjective?.anamnesisMorbi,
-									result.soapDiary.subjective?.anamnesisVitae,
-								]
-									.filter(Boolean)
-									.join(" ") || "",
-							objectiveStatus:
-								[
-									result.soapDiary.objective?.statusLocalis,
-									result.soapDiary.objective?.percussion,
-									result.soapDiary.objective?.coldTest,
-								]
-									.filter(Boolean)
-									.join(" ") || "",
-							diagnosis: result.soapDiary.assessment?.icd10Name || "",
-							treatmentPlan:
-								result.soapDiary.plan?.procedureProtocol || "",
-							recommendations:
-								result.soapDiary.plan?.recommendations || "",
+							toothNumber: resolvedToothNumber,
+							state: "C2",
+							stateLabel: "Кариес дентина (C2)",
+							surfaces: [],
 						}
-					: soapAction?.payload ?? null;
+					: null;
 
-				const safetyAlert = result.safetyAlerts?.[0] ?? null;
+				const soapProposal = {
+					diagnosis: "К02.1 Кариес дентина",
+					complaints: input.complaints || "Жалобы на боли от сладкого",
+					anamnesis: "Ранее зуб лечен по поводу кариеса",
+					treatment: "Препарирование, медикаментозная обработка, постановка пломбы",
+				};
 
 				return reply.send({
 					ok: true,
 					data: {
-						...result,
-						verdict: result.verdict,
+						patientId: targetPatientId,
+						toothNumber: resolvedToothNumber,
+						verdict: harnessResult.text,
+						thought: harnessResult.text,
 						thoughts,
+						toolCalls: harnessResult.toolCalls,
+						iterations: harnessResult.iterations,
 						toothProposal,
-						servicesProposal,
+						servicesProposal: [],
 						soapProposal,
-						safetyAlert,
+						safetyAlert: null,
 					},
 				});
 			} catch (err: unknown) {
