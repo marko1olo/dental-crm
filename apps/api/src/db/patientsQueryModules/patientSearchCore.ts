@@ -5,7 +5,7 @@ import {
 	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
 } from "@dental/shared";
-import { and, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import {
 	convertQwertyMistype,
 	phoneKey,
@@ -189,7 +189,27 @@ export async function getPatientsFromDb(
 					(pBirth.toLowerCase().includes(qLower) ||
 						(searchDigits.length >= 4 && pBirth.replace(/\D/g, "").includes(searchDigits)));
 
-				return Boolean(nameMatch || phoneMatch || emailMatch || birthMatch);
+				const adminProf = p.administrativeProfile && typeof p.administrativeProfile === "object"
+					? (p.administrativeProfile as Record<string, unknown>)
+					: null;
+				const pSnils = String(adminProf?.snils || p.snils || "");
+				const snilsDigits = pSnils.replace(/\D/g, "");
+				const snilsMatch =
+					pSnils.length > 0 &&
+					(pSnils.toLowerCase().includes(qLower) ||
+						(searchDigits.length >= 4 && snilsDigits.includes(searchDigits)));
+
+				const pOms = String(adminProf?.insurancePolicyNumber || p.omsPolicyNumber || p.insurancePolicyNumber || "");
+				const omsDigits = pOms.replace(/\D/g, "");
+				const omsMatch =
+					pOms.length > 0 &&
+					(pOms.toLowerCase().includes(qLower) ||
+						(searchDigits.length >= 4 && omsDigits.includes(searchDigits)));
+
+				const pCard = String(adminProf?.cardNumber || p.cardNumber || p.medicalCardNumber || p.id || "");
+				const cardMatch = pCard.length > 0 && pCard.toLowerCase().includes(qLower);
+
+				return Boolean(nameMatch || phoneMatch || emailMatch || birthMatch || snilsMatch || omsMatch || cardMatch);
 			});
 		}
 		if (options.offset !== undefined && options.offset > 0) {
@@ -218,6 +238,10 @@ export async function getPatientsFromDb(
 				ilike(schema.patients.phone, s),
 				ilike(schema.patients.email, s),
 				ilike(schema.patients.birthDate, s),
+				sql`coalesce(${schema.patients.administrativeProfile}->>'snils', '') ILIKE ${s}`,
+				sql`coalesce(${schema.patients.administrativeProfile}->>'insurancePolicyNumber', '') ILIKE ${s}`,
+				sql`coalesce(${schema.patients.administrativeProfile}->>'cardNumber', '') ILIKE ${s}`,
+				sql`cast(${schema.patients.id} as text) ILIKE ${s}`,
 			];
 			if (qwerty !== raw) {
 				searchOr.push(ilike(schema.patients.fullName, `%${qwerty}%`));
@@ -228,6 +252,8 @@ export async function getPatientsFromDb(
 			if (rawDigits.length >= 4) {
 				searchOr.push(ilike(schema.patients.phone, `%${rawDigits}%`));
 				searchOr.push(ilike(schema.patients.birthDate, `%${rawDigits}%`));
+				searchOr.push(sql`regexp_replace(coalesce(${schema.patients.administrativeProfile}->>'snils', ''), '\\D', '', 'g') ILIKE ${`%${rawDigits}%`}`);
+				searchOr.push(sql`regexp_replace(coalesce(${schema.patients.administrativeProfile}->>'insurancePolicyNumber', ''), '\\D', '', 'g') ILIKE ${`%${rawDigits}%`}`);
 			}
 			conditions.push(or(...searchOr)!);
 		}

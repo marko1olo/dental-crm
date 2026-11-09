@@ -6,4 +6,3 @@ export * from "./PatientInsuranceSection";
 export * from "./PatientTagsMarketingSection";
 export * from "./PatientSafetyBanner";
 export * from "./PatientDemographicsBasicCard";
-export * from "./PatientVisitsOverviewSection";

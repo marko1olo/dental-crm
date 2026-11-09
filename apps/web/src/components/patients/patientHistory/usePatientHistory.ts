@@ -1,8 +1,11 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type { ClinicalSpecialty, ClinicalVisitItem } from "./types";
-import { mapDashboardAppointmentsToVisits } from "./patientVisitsDashboardMapper";
+import { DEFAULT_CLINICAL_VISITS } from "./types";
+import { mapApiRecordsToClinicalVisits, type ApiVisitRow, type ApiDiaryRow } from "./patientRecordsApiMapper";
 import { filterVisits, groupVisitsByMonth, calculateHistoryFinancialSummary } from "./patientHistoryTimelineCalc";
 
 export interface UsePatientHistoryParams {
@@ -17,18 +20,78 @@ export interface UsePatientHistoryParams {
 }
 
 export function usePatientHistory({
-	patientId, initialVisits, dashboard,
-	onPrintProtocol, onExtractVisitSummary, onExtractRecord, onExtract043, onAddToTreatmentPlan,
+	patientId,
+	initialVisits,
+	dashboard,
+	onPrintProtocol,
+	onExtractVisitSummary,
+	onExtractRecord,
+	onExtract043,
+	onAddToTreatmentPlan,
 }: UsePatientHistoryParams) {
 	const [selectedSpecialty, setSelectedSpecialty] = useState<ClinicalSpecialty>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [expandedVisitIds, setExpandedVisitIds] = useState<Set<string>>(new Set(["vis-101"]));
+	// Без захардкоженного vis-101 (Мандат 8a / 8s): честный пустой набор
+	const [expandedVisitIds, setExpandedVisitIds] = useState<Set<string>>(new Set());
 	const [selectedDetailVisit, setSelectedDetailVisit] = useState<ClinicalVisitItem | null>(null);
+	const [serverVisits, setServerVisits] = useState<ClinicalVisitItem[]>([]);
+	const [isLoadingRecords, setIsLoadingRecords] = useState<boolean>(false);
 
-	const rawVisitsList = useMemo<ClinicalVisitItem[]>(
-		() => mapDashboardAppointmentsToVisits(initialVisits, dashboard, patientId),
-		[initialVisits, dashboard, patientId],
-	);
+	// Загрузка реальных клинических записей из PostgreSQL (/api/patients/:id/records)
+	useEffect(() => {
+		const cleanId = (patientId ?? "").trim();
+		if (!cleanId) {
+			setServerVisits([]);
+			return;
+		}
+
+		let isMounted = true;
+		setIsLoadingRecords(true);
+
+		async function fetchRecords() {
+			try {
+				const res = await fetch(`/api/patients/${encodeURIComponent(cleanId)}/records`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) {
+					if (isMounted) setServerVisits([]);
+					return;
+				}
+				const data = (await res.json()) as {
+					visits?: ApiVisitRow[];
+					diaries?: ApiDiaryRow[];
+				};
+				if (!isMounted) return;
+
+				const mapped = mapApiRecordsToClinicalVisits(data.visits ?? [], data.diaries ?? []);
+				setServerVisits(mapped);
+			} catch (e) {
+				console.warn("[usePatientHistory] Failed to fetch patient records from DB:", e);
+				if (isMounted) setServerVisits([]);
+			} finally {
+				if (isMounted) setIsLoadingRecords(false);
+			}
+		}
+
+		void fetchRecords();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [patientId]);
+
+	const rawVisitsList = useMemo<ClinicalVisitItem[]>(() => {
+		if (initialVisits && initialVisits.length > 0) {
+			return initialVisits;
+		}
+		if (serverVisits.length > 0) {
+			return serverVisits;
+		}
+		if (isDemoShowcaseMode() && !patientId) {
+			return DEFAULT_CLINICAL_VISITS;
+		}
+		return [];
+	}, [initialVisits, serverVisits, patientId]);
 
 	const filteredVisits = useMemo(
 		() => filterVisits(rawVisitsList, selectedSpecialty, searchQuery),
@@ -108,13 +171,27 @@ export function usePatientHistory({
 	const handleCloseDetailDrawer = useCallback(() => { setSelectedDetailVisit(null); }, []);
 
 	return {
-		selectedSpecialty, setSelectedSpecialty, searchQuery, setSearchQuery,
-		expandedVisitIds, selectedDetailVisit, rawVisitsList, filteredVisits,
-		groupedByMonth, financialSummary, getSpecialtyCount, toggleAccordion,
-		handleExpandAll, handleCollapseAll, handlePrint,
+		selectedSpecialty,
+		setSelectedSpecialty,
+		searchQuery,
+		setSearchQuery,
+		expandedVisitIds,
+		selectedDetailVisit,
+		rawVisitsList,
+		filteredVisits,
+		groupedByMonth,
+		financialSummary,
+		isLoadingRecords,
+		getSpecialtyCount,
+		toggleAccordion,
+		handleExpandAll,
+		handleCollapseAll,
+		handlePrint,
 		handleExtractRecord: handleExtract,
 		handleExtract043: handleExtract,
 		handleExtractVisitSummary: handleExtract,
-		handleAddToTreatmentPlan, handleOpenDetailDrawer, handleCloseDetailDrawer,
+		handleAddToTreatmentPlan,
+		handleOpenDetailDrawer,
+		handleCloseDetailDrawer,
 	};
 }

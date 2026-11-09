@@ -93,7 +93,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 		{
 			regex:
 				/(?:^|[^а-яёa-z0-9])(сложный\s*пациент|конфликтный)(?:[^а-яёa-z0-9]|$)/i,
-			tag: "Сложный пациент",
+			tag: "Особый контроль сервиса",
 		},
 		{
 			regex:

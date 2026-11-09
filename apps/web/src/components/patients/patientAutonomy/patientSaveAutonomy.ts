@@ -1,7 +1,7 @@
 import type { Patient } from "@dental/shared";
 import { applySomaticNormToText } from "../../../utils/somaticNorm";
 import { showToast } from "../../GlobalToast";
-import type { PatientCoreDraft } from "../PatientCoreEditorForm";
+import type { PatientCoreDraft } from "../coreEditor/usePatientCoreDraftDebounce";
 
 export async function executePatientCoreSaveAutonomy({
 	selectedPatient,

@@ -2906,6 +2906,40 @@
      - 🌙 Mobile Dark (390×844): [`docs/proofs/patient_studio/patient_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patient_studio/patient_studio_mobile_dark_390x844.png) (121 KB)
      Дефектов клиппинга, наездов текста и белых пятен нет. Полноценный Bottom Sheet, drag handle, 0px горизонтального скролла.
 
+### [PAT-03] [SEV-1] [ЗАКРЫТО] Ликвидация симуляции визитов, матрёшки вкладок, монтирование фотопротокола и вложений в карточке пациента
+- **Файлы:**
+  - SSOT Карточка пациента: [`apps/web/src/components/patients/PatientCardModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientCardModal.tsx)
+  - История визитов: [`apps/web/src/components/patients/patientHistory/usePatientHistory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/patientHistory/usePatientHistory.ts), [`apps/web/src/components/patients/patientHistory/patientRecordsApiMapper.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/patientHistory/patientRecordsApiMapper.ts)
+  - Вкладка общей информации: [`apps/web/src/components/patients/tabs/PatientGeneralInfoTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/tabs/PatientGeneralInfoTab.tsx)
+  - Документы и вложения: [`apps/web/src/components/patients/tabs/PatientDocumentsTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/tabs/PatientDocumentsTab.tsx)
+  - Шапка карточки: [`apps/web/src/components/patients/header/PatientTopHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/header/PatientTopHeader.tsx)
+  - Клинический фотопротокол: [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx), [`apps/web/src/PatientsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/PatientsView.tsx)
+  - Поиск пациентов: [`apps/api/src/db/patientsQueryModules/patientSearchCore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/patientsQueryModules/patientSearchCore.ts), [`apps/api/src/routes/patients/patientSearchFilter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/patientSearchFilter.ts)
+- **Суть ликвидированных дефектов:**
+  1. В `usePatientHistory.ts` игнорировался бэкенд `GET /api/patients/:id/records` и вызывался муляж `patientVisitsDashboardMapper.ts`, парсивший зубы регулярками из комментариев и генерировавший фальшивые протоколы СтАР. Аккордеон визитов хардкодил `vis-101`.
+  2. Во вкладке «Общая информация» (`PatientGeneralInfoTab.tsx`) присутствовала опасная архитектурная «матрёшка»: внутри паспортной формы рендерились тяжелые секции визитов (`PatientVisitsOverviewSection`) и семейный баланс (`PatientFamilyCard`), дублируя соседние вкладки.
+  3. В `PatientTopHeader.tsx` был зашит хардкод «Карта № К-101» для любого пациента вне зависимости от реального номера. В `smartPatientParser.ts` использовался оскорбительный статус «Сложный пациент».
+  4. Полноценный компонент фотопротокола `ClinicalPhotoProtocolModal.tsx` оставался сиротой и не был смонтирован в табы карточки пациента.
+  5. Панель файлов и вложений `PatientAttachmentsPanel.tsx` не была смонтирована во вкладке документов (`PatientDocumentsTab.tsx`).
+  6. Поиск пациентов по СНИЛС, полису ОМС/ДМС и номеру медкарты отсутствовал в `patientSearchCore.ts` и `patientSearchFilter.ts`.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. **Реальная история и SOAP-дневники:** Создан канонический маппер `patientRecordsApiMapper.ts`, преобразующий данные из таблиц `visits` и `visit_diaries`. В `usePatientHistory.ts` подключен реальный вызов `/api/patients/${patientId}/records` с заголовками авторизации `denteAdminSecretRequestHeaders()`. Хардкод `vis-101` удален.
+  2. **Физический снос муляжей и сирот (`git rm`):** Полностью удален `patientVisitsDashboardMapper.ts`, удалены компоненты-сироты `PatientVisitsOverviewSection.tsx`, `PatientCoreEditorForm.tsx`, `PatientHeaderCard.tsx`, легаси-воркспейс `workspace/PatientTreatmentPlanDrawerModal.tsx` и `workspace/index.ts`.
+  3. **Ликвидация «матрёшки»:** Из `PatientGeneralInfoTab.tsx` устранены дублирующие секции визитов и баланса. Паспортная вкладка содержит только чистые паспортные данные, соматику, представителей и адреса.
+  4. **Клинический язык и динамический номер:** Захардкоженный номер «К-101» заменен на динамический `cardNumber` пациента. Неуважительный статус «Сложный пациент» заменен на профессиональный клинический статус «Особый контроль сервиса» (Мандат 8p).
+  5. **Монтирование фотопротокола и вложений:** В `PatientCardModal.tsx` добавлены таб «Снимки и КТ / Фото», кнопка быстрого вызова камеры в тулбаре и монтирование `ClinicalPhotoProtocolModal`. В `PatientDocumentsTab.tsx` смонтирован `PatientAttachmentsPanel`.
+  6. **Поиск по СНИЛС, полису и номеру карты:** В `patientSearchCore.ts` и `patientSearchFilter.ts` реализован поиск по СНИЛС, номеру полиса и номеру карты как в PostgreSQL (JSONB-извлечение и regex), так и в in-memory fallback.
+  7. **Финансовые копейки и валидный UUID:** В `useFamilySpendMutation.ts` передача суммы скорректирована в целочисленные копейки `amountKopecks`. В `useDepositOperations.ts` генерация `idempotencyKey` переведена на криптографический `crypto.randomUUID()`.
+  8. **Машинные пруфы и 4-State Visual Proof:**
+     - 37/37 тестов в сьютах `patientAnamnesisRedTeamInquisition.test.ts`, `patientHeaderCardErgonomics.test.tsx`, `patientStudioSSOT.test.tsx` пройдены со статусом PASS 100%.
+     - `check:encoding` -> 22 641 файлов, 0 ошибок (Exit Code 0).
+     - `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` -> Exit Code 0.
+     - Лично проинспектированы 4 обязательных скриншота через `read_file` в `docs/proofs/patient_card/`:
+       * ☀️ PC Light (1440×900): `docs/proofs/patient_card/patient_card_pc_light_1440x900.png` (267 KB)
+       * 🌙 PC Dark (1440×900): `docs/proofs/patient_card/patient_card_pc_dark_1440x900.png` (246 KB)
+       * 📱 Mobile Light (390×844): `docs/proofs/patient_card/patient_card_mobile_light_390x844.png` (144 KB)
+       * 🌙 Mobile Dark (390×844): `docs/proofs/patient_card/patient_card_mobile_dark_390x844.png` (146 KB)
+
 ---
 
 ## 26. 🔄 СКВОЗНОЙ КЛИНИЧЕСКИЙ ПУТЬ ПАЦИЕНТА И E2E ИНКВИЗИЦИЯ (CORE CLINICAL PATIENT JOURNEY)
@@ -3290,6 +3324,43 @@ ead_file по 8 осям качества Хаммера:
      - 🌙 PC Dark (1440x900): [`docs/proofs/schedule/02_schedule_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/02_schedule_pc_dark_1440x900.png) (121.9 KB)
      - 📱 Mobile Light (390x844): [`docs/proofs/schedule/03_schedule_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/03_schedule_mobile_light_390x844.png) (126.9 KB)
      - 🌙 Mobile Dark (390x844): [`docs/proofs/schedule/04_schedule_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/04_schedule_mobile_dark_390x844.png) (128.4 KB)
+
+### [SCHED-05] [SEV-2] [ЗАКРЫТО] Red Team консолидация Домена 1: снос сирот, устранение хардкода UUID/токенов в листе ожидания и монтаж ЗТЛ
+- **Файлы:**
+  - Ликвидированные сироты (`git rm`):
+    - `apps/web/src/components/schedule/quickBookingDrawer/QuickBookingDrawerSurface.tsx`
+    - `apps/web/src/components/schedule/quickBookingDrawer/QuickBookingDrawerBody.tsx`
+    - `apps/web/src/components/schedule/ToolbarActions.tsx`
+    - `apps/web/src/components/schedule/ToolbarChairsSelector.tsx`
+    - `apps/web/src/components/schedule/ToolbarViewsSegment.tsx`
+    - `apps/web/src/components/schedule/appointmentClinicalBadges.ts`
+  - Канонические SSOT-компоненты:
+    - [`apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx)
+    - [`apps/web/src/components/schedule/QuickBookingDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/QuickBookingDrawer.tsx)
+    - [`apps/web/src/components/schedule/TomorrowRemindersModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/TomorrowRemindersModal.tsx)
+    - [`apps/web/src/components/schedule/tomorrowRemindersEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/tomorrowRemindersEngine.ts)
+    - [`apps/web/src/components/schedule/tomorrowRemindersModules/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/tomorrowRemindersModules/)
+    - [`apps/web/src/components/schedule/__tests__/scheduleSSOTSuite.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/__tests__/scheduleSSOTSuite.test.tsx)
+- **Суть багов и дефектов:**
+  1. В `scheduleSSOTSuite.test.tsx` вызывались несуществующие галлюцинированные модули `ChairScheduleStudioModal` и `DirectScheduleLauncher`.
+  2. В `WaitlistDrawer.tsx` присутствовал хардкод doctorUserId: `"01a00000-0000-0000-0003-000000000001"`, вызывающий Foreign Key Violation в реальной БД, а также fallback демо-токена в боевом вызове мутации.
+  3. В `WaitlistDrawer.tsx` использовался мультяшный эмодзи `📭` и хардкодные стили `bg-red-50 text-red-700` вместо дизайн-токенов темы.
+  4. Компонент `AppointmentModalLabSection.tsx` не был смонтирован в `QuickBookingDrawer.tsx`, оставаясь неполноценным сиротой без привязки к быстрой записи приёма.
+  5. Моджибаке в комментариях `tomorrowRemindersEngine.ts` и пропуски `import React from "react"` в подмодулях напоминаний, ломавшие серверный рендер в тестах.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. 6 брошенных файлов-сирот полностью удалены из репозитория через `git rm`.
+  2. В `WaitlistDrawer.tsx` внедрена каскадная динамическая резолюция врача из контекста, слота и стора, устранен хардкод UUID и токенов (используются `denteClinicalMutationHeaders`), эмодзи заменен на Lucide `Inbox`, плашка ошибок переведена на токены `var(--danger-soft)`, `var(--danger)`, `var(--danger-border)`.
+  3. В `scheduleSSOTSuite.test.tsx` внедрено тестирование канонических SSOT-экспортов `DoctorChairScheduleModal` и `DirectWaitlistMatchesLauncher` (все тесты зеленые).
+  4. `AppointmentModalLabSection.tsx` смонтирован в `QuickBookingDrawerBody` под сворачиваемым блоком `quick-booking-lab-collapsible` с автоматическим раскрытием при наличии наряда ЗТЛ.
+  5. Нормализована кодировка UTF-8 и добавлены React-импорты во все модули напоминаний.
+  6. Машинная верификация:
+     - Юнит-тесты расписания: **33/33 passed (100% green)**.
+     - `npm run check:encoding` -> **22 909 файлов проверено, 0 замечаний (Exit Code 0)**.
+  7. 4-State Visual Proofs зафиксированы в `docs/proofs/schedule/` и лично отсмотрены через `read_file` по 8 осям Хаммера:
+     - ☀️ PC Light (1440x900): [`docs/proofs/schedule/01_schedule_grid_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/01_schedule_grid_pc_light_1440x900.png) (134 KB)
+     - 🌙 PC Dark (1440x900): [`docs/proofs/schedule/02_schedule_grid_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/02_schedule_grid_pc_dark_1440x900.png) (173 KB)
+     - 📱 Mobile Light (390x844): [`docs/proofs/schedule/03_schedule_agenda_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/03_schedule_agenda_mobile_light_390x844.png) (126 KB)
+     - 🌙 Mobile Dark (390x844): [`docs/proofs/schedule/04_schedule_agenda_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/04_schedule_agenda_mobile_dark_390x844.png) (144 KB)
 
 ---
 

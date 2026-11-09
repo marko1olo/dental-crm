@@ -6,7 +6,7 @@ import {
 	type PatientClinicalSafetyProfile,
 } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
-import type { PatientCoreDraft } from "../PatientCoreEditorForm";
+import type { PatientCoreDraft } from "../coreEditor/usePatientCoreDraftDebounce";
 
 export async function persistPatientCardModalToApi(
 	patientData: PatientGeneralInfo,
@@ -18,7 +18,7 @@ export async function persistPatientCardModalToApi(
 	const covLimitRub = typeof patientData.dmsCoverageLimitRub === "number" ? patientData.dmsCoverageLimitRub : (patientData.dmsCoverageLimitRub ? Number(patientData.dmsCoverageLimitRub) : null);
 	const covLimitKop = patientData.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? Math.round(covLimitRub * 100) : null);
 	try {
-		await fetch(`/api/patients/${patientData.id}`, {
+		const resCore = await fetch(`/api/patients/${patientData.id}`, {
 			method: "PUT",
 			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 			body: JSON.stringify({
@@ -29,7 +29,11 @@ export async function persistPatientCardModalToApi(
 				notes: diaryNotes || null,
 			}),
 		});
-		await fetch(`/api/patients/${patientData.id}/administrative-profile`, {
+		if (!resCore.ok) {
+			const errBody = await resCore.text().catch(() => "");
+			throw new Error(`[PatientPersistence] Ошибка сохранения данных пациента: статус ${resCore.status} ${errBody}`);
+		}
+		const resAdmin = await fetch(`/api/patients/${patientData.id}/administrative-profile`, {
 			method: "PUT",
 			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 			body: JSON.stringify({
@@ -46,6 +50,10 @@ export async function persistPatientCardModalToApi(
 				clinicalSafetyProfile: safetyProfile,
 			}),
 		});
+		if (!resAdmin.ok) {
+			const errBody = await resAdmin.text().catch(() => "");
+			throw new Error(`[PatientPersistence] Ошибка сохранения административного профиля: статус ${resAdmin.status} ${errBody}`);
+		}
 	} catch (err: any) {
 		console.error("[PatientPersistence] Failed to persist patient card to API:", err);
 		throw err;

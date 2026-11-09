@@ -6,6 +6,7 @@ import { usePatientDocumentsLogic } from "./documents/usePatientDocumentsLogic";
 import { PatientDocumentsHeader } from "./documents/PatientDocumentsHeader";
 import { PatientDocumentItemCard } from "./documents/PatientDocumentItemCard";
 import { PatientDocumentsModalsWrapper } from "./documents/PatientDocumentsModalsWrapper";
+import { PatientAttachmentsPanel } from "../PatientAttachmentsPanel";
 
 export interface PatientDocumentsTabProps {
 	patient: Patient;
@@ -75,6 +76,9 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 						</p>
 					</div>
 				)}
+
+				{/* Панель прикрепления документов, сканов и полисов в 1 клик (Мандат 8aq) */}
+				<PatientAttachmentsPanel patientId={patient.id} patientName={patient.fullName} />
 
 				<PatientDocumentsModalsWrapper
 					patient={patient}

@@ -1,8 +1,8 @@
+import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
-import type {
-	PatientCoreDraft,
-	TextFieldChangeEvent,
-} from "../PatientCoreEditorForm";
+import type { PatientCoreDraft } from "../coreEditor/usePatientCoreDraftDebounce";
+
+export type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 export type PatientInsight = Dashboard["patientInsights"][number];
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";

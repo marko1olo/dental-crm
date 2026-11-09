@@ -33,7 +33,7 @@ export function useDepositOperations(
 			}
 
 			setIsSubmitting(true);
-			const mutationId = `dep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+			const mutationId = `dep-${Date.now()}-${crypto.randomUUID()}`;
 			const isTopup = mode === "topup";
 			const delta = isTopup ? amount : -amount;
 

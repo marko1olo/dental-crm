@@ -52,9 +52,11 @@ export function PatientTopHeader({
 		? `Карта № ${selectedPatient.cardNumber}`
 		: selectedPatient.medicalCardNumber
 			? `Карта № ${selectedPatient.medicalCardNumber}`
-			: selectedPatient.id && !selectedPatient.id.includes("-")
-				? `Карта № ${selectedPatient.id}`
-				: "Карта № К-101";
+			: selectedPatient.id
+				? (selectedPatient.id.includes("-")
+					? `Карта № ${selectedPatient.id.slice(0, 8).toUpperCase()}`
+					: `Карта № ${selectedPatient.id}`)
+				: "Карта";
 
 	const allergyText = useMemo(() => {
 		const raw = selectedPatient.allergies || selectedPatient.anamnesis?.allergies || "";

@@ -16,6 +16,7 @@ import {
 	AlertOctagon,
 	Award,
 	Calendar,
+	Camera,
 	ClipboardList,
 	ExternalLink,
 	FileCheck,
@@ -38,6 +39,7 @@ import { usePatientStore } from "../../store/patientStore";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { PerioStudioModal } from "../perio/PerioStudioModal";
+import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { PatientCardFloatingSaveBar } from "./patientCardSavePill";
 import { PatientGeneralInfoTab } from "./tabs/PatientGeneralInfoTab";
 import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
@@ -98,6 +100,7 @@ const TABS = [
 	{ id: "visits", testId: "tab-patient-visits", label: "Визиты и файлы", Icon: History },
 	{ id: "finance", testId: "tab-patient-finance", label: "Счета и баланс", Icon: Wallet },
 	{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
+	{ id: "photos", testId: "tab-patient-photos", label: "Фотопротокол", Icon: Camera },
 	{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
 	{ id: "perio", testId: "tab-patient-perio", label: "Пародонтология", Icon: Activity },
 	{ id: "documents", testId: "tab-patient-documents", label: "Документы", Icon: FileCheck },
@@ -135,6 +138,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		isTaxDeductionModalOpen, setIsTaxDeductionModalOpen,
 		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave,
 	} = cardState;
+
+	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
 
 	// Состояние для режима создания пациента
 	const creationForm = usePatientCreationForm(props as any);
@@ -256,6 +261,19 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							>
 								<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 								<span>Диплом за храбрость</span>
+							</button>
+						)}
+
+						{!isCreateMode && (
+							<button
+								type="button"
+								data-testid="btn-patient-photo-protocol"
+								onClick={() => setIsPhotoModalOpen(true)}
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								title="Клинический фотопротокол (12 ракурсов, QR-мост)"
+							>
+								<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Фотопротокол</span>
 							</button>
 						)}
 
@@ -459,6 +477,25 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						/>
 					) : activeTab === "documents" ? (
 						<PatientDocumentsTab patient={patientData as any} onPrintOutpatientCard={handlePrint} />
+					) : activeTab === "photos" ? (
+						<div className="p-6 flex flex-col items-center justify-center gap-3 text-center min-h-[320px] bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)]" data-testid="patient-photos-panel">
+							<Camera className="w-12 h-12 text-[var(--teal)] opacity-80" />
+							<div>
+								<h3 className="text-base font-bold text-[var(--ink)] m-0">Клинический фотопротокол</h3>
+								<p className="text-xs text-[var(--muted)] max-w-md mt-1 mb-4">
+									12 стандартных проекций (анфас, окклюзия, макро 1:1), DSD эстетика и QR-мост для съёмки со смартфона врача
+								</p>
+								<button
+									type="button"
+									onClick={() => setIsPhotoModalOpen(true)}
+									className="px-4 py-2.5 bg-[var(--teal)] text-[var(--on-teal,white)] font-bold rounded-xl text-xs hover:opacity-95 transition-opacity inline-flex items-center gap-2 shadow-xs cursor-pointer"
+									data-testid="open-photo-protocol-modal-btn"
+								>
+									<Camera className="w-4 h-4" />
+									<span>Открыть студию фотопротокола</span>
+								</button>
+							</div>
+						</div>
 					) : activeTab === "perio" ? (
 						<PerioStudioModal isModal={false} patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
 					) : activeTab === "formula" ? (
@@ -605,16 +642,25 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 				{/* ── САБМОДАЛКИ ── */}
 				{!isCreateMode && (
-					<PatientCardModalSubModals
-						isDiplomaModalOpen={isDiplomaModalOpen}
-						setIsDiplomaModalOpen={setIsDiplomaModalOpen}
-						isDmsLetterModalOpen={isDmsLetterModalOpen}
-						setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
-						isTaxDeductionModalOpen={isTaxDeductionModalOpen}
-						setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
-						patientData={patientData}
-						onUpdatePatientField={handleUpdatePatientField}
-					/>
+					<>
+						<PatientCardModalSubModals
+							isDiplomaModalOpen={isDiplomaModalOpen}
+							setIsDiplomaModalOpen={setIsDiplomaModalOpen}
+							isDmsLetterModalOpen={isDmsLetterModalOpen}
+							setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
+							isTaxDeductionModalOpen={isTaxDeductionModalOpen}
+							setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
+							patientData={patientData}
+							onUpdatePatientField={handleUpdatePatientField}
+						/>
+						<ClinicalPhotoProtocolModal
+							isOpen={isPhotoModalOpen}
+							onClose={() => setIsPhotoModalOpen(false)}
+							patientId={patientData.id ?? undefined}
+							patientName={patientData.fullName ?? undefined}
+							patientCardNumber={patientData.cardNumber || patientData.medicalCardNumber || undefined}
+						/>
+					</>
 				)}
 				</div>
 			</div>

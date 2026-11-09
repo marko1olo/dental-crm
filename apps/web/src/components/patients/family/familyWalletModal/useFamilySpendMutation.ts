@@ -66,6 +66,7 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 					patientId: targetPatientId,
 					payerPatientId: payerId,
 					amountRub: num,
+					amountKopecks: Math.round(num * 100),
 					clientMutationId,
 				}),
 			});

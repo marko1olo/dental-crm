@@ -6,14 +6,29 @@ import {
 
 /**
  * Фильтрация массива пациентов по поисковому запросу с учетом опечаток QWERTY,
- * транслитерации и нормализации телефонных номеров.
+ * транслитерации, нормализации телефонных номеров, СНИЛС, полиса ОМС и номера карты.
  */
-export function filterPatientsBySearchQuery<T extends { fullName?: unknown; phone?: unknown; email?: unknown; birthDate?: unknown }>(
+export function filterPatientsBySearchQuery<
+	T extends {
+		fullName?: unknown;
+		phone?: unknown;
+		email?: unknown;
+		birthDate?: unknown;
+		id?: unknown;
+		cardNumber?: unknown;
+		medicalCardNumber?: unknown;
+		snils?: unknown;
+		omsPolicyNumber?: unknown;
+		administrativeProfile?: unknown;
+	},
+>(
 	patients: T[],
-	searchRaw: string
+	searchRaw: string,
 ): T[] {
 	if (!searchRaw) return patients;
-	const qLower = searchRaw.toLowerCase();
+	const qLower = searchRaw.toLowerCase().trim();
+	if (!qLower) return patients;
+
 	const qwertySearch = convertQwertyMistype(qLower);
 	const translitSearch = transliterateLatinToCyrillic(qLower);
 	const searchDigits = qLower.replace(/\D/g, "");
@@ -44,6 +59,58 @@ export function filterPatientsBySearchQuery<T extends { fullName?: unknown; phon
 			(pBirth.toLowerCase().includes(qLower) ||
 				(searchDigits.length >= 4 && pBirth.replace(/\D/g, "").includes(searchDigits)));
 
-		return Boolean(nameMatch || phoneMatch || emailMatch || birthMatch);
+		const adminProf =
+			p.administrativeProfile && typeof p.administrativeProfile === "object"
+				? (p.administrativeProfile as Record<string, unknown>)
+				: null;
+
+		// Поиск по СНИЛС
+		const snilsRaw =
+			typeof p.snils === "string"
+				? p.snils
+				: typeof adminProf?.snils === "string"
+					? adminProf.snils
+					: "";
+		const snilsDigits = snilsRaw.replace(/\D/g, "");
+		const snilsMatch =
+			snilsRaw.length > 0 &&
+			(snilsRaw.toLowerCase().includes(qLower) ||
+				(searchDigits.length >= 4 && snilsDigits.includes(searchDigits)));
+
+		// Поиск по полису ОМС
+		const omsRaw =
+			typeof p.omsPolicyNumber === "string"
+				? p.omsPolicyNumber
+				: typeof adminProf?.insurancePolicyNumber === "string"
+					? adminProf.insurancePolicyNumber
+					: "";
+		const omsDigits = omsRaw.replace(/\D/g, "");
+		const omsMatch =
+			omsRaw.length > 0 &&
+			(omsRaw.toLowerCase().includes(qLower) ||
+				(searchDigits.length >= 4 && omsDigits.includes(searchDigits)));
+
+		// Поиск по номеру карты или идентификатору
+		const cardRaw =
+			typeof p.cardNumber === "string"
+				? p.cardNumber
+				: typeof p.medicalCardNumber === "string"
+					? p.medicalCardNumber
+					: typeof adminProf?.cardNumber === "string"
+						? adminProf.cardNumber
+						: typeof p.id === "string"
+							? p.id
+							: "";
+		const cardMatch = cardRaw.length > 0 && cardRaw.toLowerCase().includes(qLower);
+
+		return Boolean(
+			nameMatch ||
+			phoneMatch ||
+			emailMatch ||
+			birthMatch ||
+			snilsMatch ||
+			omsMatch ||
+			cardMatch,
+		);
 	});
 }

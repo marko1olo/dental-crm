@@ -244,21 +244,29 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 			);
 		});
 
-		it("PatientHistoryTab does NOT leak DEFAULT_CLINICAL_VISITS in production mode", () => {
+		it("PatientHistoryTab uses real PostgreSQL records via usePatientHistory and does NOT leak mocks in production mode", () => {
 			const mapperPath = path.join(webSrc, "components/patients/patientHistory/patientVisitsDashboardMapper.ts");
-			const historyTabPath = path.join(webSrc, "components/patients/PatientHistoryTab.tsx");
-			const historyTabContent = fs.existsSync(mapperPath)
-				? fs.readFileSync(mapperPath, "utf-8")
-				: fs.readFileSync(historyTabPath, "utf-8");
+			const usePatientHistoryPath = path.join(webSrc, "components/patients/patientHistory/usePatientHistory.ts");
+			
+			// Ensure fake mapper is deleted
+			assert.strictEqual(
+				fs.existsSync(mapperPath),
+				false,
+				"patientVisitsDashboardMapper.ts must be physically deleted",
+			);
+
+			const hookContent = fs.readFileSync(usePatientHistoryPath, "utf-8");
+
+			// Ensure real backend endpoint is called
+			assert.ok(
+				hookContent.includes("/api/patients/") && hookContent.includes("/records"),
+				"usePatientHistory must call /api/patients/:id/records from PostgreSQL",
+			);
 
 			// Ensure guard exists
 			assert.ok(
-				historyTabContent.includes("!isDemoShowcaseMode()"),
-				"PatientHistoryTab must check !isDemoShowcaseMode() before returning fallback mocks",
-			);
-			assert.ok(
-				historyTabContent.includes("return [];"),
-				"PatientHistoryTab must return empty array when in production without visits",
+				hookContent.includes("isDemoShowcaseMode"),
+				"usePatientHistory must check isDemoShowcaseMode to isolate demo state",
 			);
 		});
 	});

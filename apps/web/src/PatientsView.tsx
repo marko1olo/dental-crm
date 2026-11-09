@@ -62,6 +62,11 @@ const PatientRecallsHubModal = lazy(() =>
 		default: module.PatientRecallsHubModal,
 	})),
 );
+const ClinicalPhotoProtocolModal = lazy(() =>
+	import("./components/photography/ClinicalPhotoProtocolModal").then((module) => ({
+		default: module.ClinicalPhotoProtocolModal,
+	})),
+);
 
 export type {
 	PatientInsight,
@@ -210,6 +215,24 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		setIsPatientCardModalOpen,
 		handleSelectPatient,
 	});
+
+	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
+
+	useEffect(() => {
+		const handleOpenPhotoProtocol = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			if (detail?.patientId) {
+				handleSelectPatient(detail.patientId);
+			}
+			setIsPhotoProtocolOpen(true);
+		};
+		window.addEventListener("dente-open-photo-protocol", handleOpenPhotoProtocol);
+		window.addEventListener("dente:open-photo-protocol", handleOpenPhotoProtocol);
+		return () => {
+			window.removeEventListener("dente-open-photo-protocol", handleOpenPhotoProtocol);
+			window.removeEventListener("dente:open-photo-protocol", handleOpenPhotoProtocol);
+		};
+	}, [handleSelectPatient]);
 
 	const featureSalience = useMemo(
 		() =>
@@ -486,6 +509,18 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					initialFilters={tactileFilters}
 					onApply={(filters) => setTactileFilters(filters)}
 				/>
+			)}
+
+			{isPhotoProtocolOpen && selectedPatient && (
+				<Suspense fallback={null}>
+					<ClinicalPhotoProtocolModal
+						isOpen={isPhotoProtocolOpen}
+						onClose={() => setIsPhotoProtocolOpen(false)}
+						patientId={selectedPatient.id}
+						patientName={selectedPatient.fullName}
+						patientCardNumber={selectedPatient.cardNumber || selectedPatient.medicalCardNumber}
+					/>
+				</Suspense>
 			)}
 		</div>
 	);

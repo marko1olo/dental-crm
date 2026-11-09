@@ -1,5 +1,5 @@
 import type { Dashboard, Patient } from "@dental/shared";
-import type { PatientCoreDraft } from "../PatientCoreEditorForm";
+import type { PatientCoreDraft } from "../coreEditor/usePatientCoreDraftDebounce";
 import type {
 	PatientAdministrativeProfileDraft,
 	PatientAdministrativeProfileSaveState,

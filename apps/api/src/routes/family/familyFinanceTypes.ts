@@ -14,6 +14,7 @@ export const familyPaymentSchema = z.object({
 	discountRub: nonNegativeMoneyRubSchema.optional(),
 	discountPercent: z.number().min(0).max(100).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).optional(),
 	amountRub: positiveMoneyRubSchema,
+	amountKopecks: z.number().int().positive().optional(),
 	documentId: z.string().uuid().optional(),
 	visitId: z.string().uuid().optional(),
 	clientMutationId: z.string().min(1).max(128).optional(),
@@ -22,6 +23,7 @@ export const familyPaymentSchema = z.object({
 export const familyRefundSchema = z.object({
 	familyGroupId: z.string().uuid(),
 	amountRub: positiveMoneyRubSchema,
+	amountKopecks: z.number().int().positive().optional(),
 	patientId: z.string().uuid().optional(),
 	cashBoxId: z.string().uuid().optional(),
 	operatorId: z.string().uuid().optional(),

@@ -1,7 +1,6 @@
 import React from "react";
 import type { PatientClinicalSafetyProfile } from "../../safetyMath";
 import type { PatientGeneralInfo } from "./types";
-import type { ClinicalVisitItem } from "../../PatientHistoryTab";
 
 export interface PatientIdentitySectionProps {
 	patient?: PatientGeneralInfo | null | undefined;
@@ -62,14 +61,4 @@ export interface PatientDemographicsBasicCardProps {
 	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;
 	onApplySomaticNorm?: (() => void) | undefined;
 	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
-}
-
-export interface PatientVisitsOverviewSectionProps {
-	patient?: PatientGeneralInfo | null | undefined;
-	disabled?: boolean | undefined;
-	clinicalTimelineVisits: ClinicalVisitItem[];
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
-	onNavigateToVisit?: ((visitId: string) => void) | undefined;
-	onNewAppointment?: ((patientId?: string) => void) | undefined;
-	onOpenTaxCertificate?: (() => void) | undefined;
 }
