@@ -58,7 +58,7 @@ export const LeadsKanbanBoardGrid: React.FC<LeadsKanbanBoardGridProps> = ({
 		>
 			{activeColumns.map((col) => {
 				const columnLeads = filteredLeads.filter((l) =>
-					isLeadInKanbanColumn(l.status, col.id),
+					isLeadInKanbanColumn(l.status, col.id, activeColumns),
 				);
 				return (
 					<LeadKanbanColumn

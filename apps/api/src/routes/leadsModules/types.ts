@@ -10,6 +10,7 @@ export { DEMO_SHOWCASE_SEED_LEADS } from "./demoSeedLeads.js";
 export const leadSchema = z.object({
 	name: z.string().min(1),
 	patientName: z.string().optional().nullable(),
+	patientId: z.string().uuid().optional().nullable(),
 	phone: z.string().optional().nullable(),
 	source: z.string().optional().nullable(),
 	expectedRevenue: z.string().optional().nullable(),
@@ -20,6 +21,7 @@ export const leadSchema = z.object({
 	clinicalTags: z.array(z.string()).optional(),
 	audioRecordUrl: z.string().optional().nullable(),
 	transcriptionSnippet: z.string().optional().nullable(),
+	metadata: z.record(z.unknown()).optional().nullable(),
 });
 
 export type LeadInput = z.infer<typeof leadSchema>;
@@ -27,6 +29,7 @@ export type LeadInput = z.infer<typeof leadSchema>;
 export const patchLeadSchema = z.object({
 	name: z.string().min(1).optional(),
 	patientName: z.string().optional().nullable(),
+	patientId: z.string().uuid().optional().nullable(),
 	phone: z.string().optional().nullable(),
 	source: z.string().optional().nullable(),
 	expectedRevenue: z.string().optional().nullable(),
@@ -38,6 +41,7 @@ export const patchLeadSchema = z.object({
 	clinicalTags: z.array(z.string()).optional(),
 	audioRecordUrl: z.string().optional().nullable(),
 	transcriptionSnippet: z.string().optional().nullable(),
+	metadata: z.record(z.unknown()).optional().nullable(),
 });
 
 export type PatchLeadInput = z.infer<typeof patchLeadSchema>;

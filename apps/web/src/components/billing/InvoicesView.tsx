@@ -100,7 +100,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			id: generatedId,
 			number: generatedNumber,
 			invoiceNumber: generatedNumber,
-			patientId: patientId || `pat-${Date.now().toString().slice(-4)}`,
+			patientId: patientId || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : ""),
 			patientName: p.patientName,
 			doctorName: currentDoctorName,
 			date: new Date().toLocaleDateString("ru-RU"),

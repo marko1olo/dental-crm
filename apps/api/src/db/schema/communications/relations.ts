@@ -122,6 +122,10 @@ export const crmLeadsRelations = relations(crmLeads, ({ one, many }) => ({
 		fields: [crmLeads.organizationId],
 		references: [organizations.id],
 	}),
+	patient: one(patients, {
+		fields: [crmLeads.patientId],
+		references: [patients.id],
+	}),
 	assignedDoctor: one(users, {
 		fields: [crmLeads.assignedDoctorId],
 		references: [users.id],

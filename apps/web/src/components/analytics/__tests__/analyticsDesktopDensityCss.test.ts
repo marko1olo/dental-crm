@@ -13,21 +13,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const analyticsDir = path.resolve(__dirname, "..");
 
-test("marketingRoi.css enforces 32-36px button heights on pointer devices", () => {
-	const cssPath = path.join(analyticsDir, "marketingRoi.css");
+test("execToolbar.css enforces 36px toolbar and button heights on desktop", () => {
+	const cssPath = path.join(analyticsDir, "executiveStyles", "execToolbar.css");
 	const content = fs.readFileSync(cssPath, "utf8");
 
 	assert.ok(
-		content.includes(".marketing-roi-toggle-btn"),
-		"marketingRoi.css must define .marketing-roi-toggle-btn",
+		content.includes(".executive-canonical-toolbar"),
+		"execToolbar.css must define .executive-canonical-toolbar",
 	);
 	assert.ok(
-		content.includes("height: 32px"),
-		"marketingRoi.css must use 32px height for toggle button",
+		content.includes("height: 36px"),
+		"execToolbar.css must use 36px height for canonical toolbar",
 	);
 	assert.ok(
-		content.includes("--paper"),
-		"Must use design tokens --paper",
+		content.includes("--line"),
+		"Must use design tokens --line",
 	);
 });
 

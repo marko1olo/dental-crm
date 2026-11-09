@@ -146,6 +146,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 				organizationId,
 				name: data.name,
 				patientName: data.patientName,
+				patientId: data.patientId,
 				phone: cleanPhone,
 				source: data.source,
 				expectedRevenue: data.expectedRevenue,
@@ -156,6 +157,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 				clinicalTags: data.clinicalTags ?? [],
 				audioRecordUrl: data.audioRecordUrl,
 				transcriptionSnippet: data.transcriptionSnippet,
+				metadata: data.metadata ?? null,
 				stageEnteredAt: now,
 				status: "new",
 			};
@@ -451,6 +453,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			const updatePayload: Partial<typeof crmLeads.$inferInsert> = {};
 			if (data.name !== undefined) updatePayload.name = data.name;
 			if (data.patientName !== undefined) updatePayload.patientName = data.patientName;
+			if (data.patientId !== undefined) updatePayload.patientId = data.patientId;
 			if (data.phone !== undefined) {
 				updatePayload.phone = data.phone
 					? normalizePhone(data.phone) ?? data.phone.trim()
@@ -466,6 +469,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			if (data.clinicalTags !== undefined) updatePayload.clinicalTags = data.clinicalTags;
 			if (data.audioRecordUrl !== undefined) updatePayload.audioRecordUrl = data.audioRecordUrl;
 			if (data.transcriptionSnippet !== undefined) updatePayload.transcriptionSnippet = data.transcriptionSnippet;
+			if (data.metadata !== undefined) updatePayload.metadata = data.metadata;
 
 			if (data.status && data.status !== current.status) {
 				const fromStage = current.status;

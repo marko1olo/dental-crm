@@ -10,7 +10,7 @@ import { showToast } from "../../GlobalToast";
 export function useLeadPatientCreator(
 	createPatientFromLead: (
 		leadId: string,
-	) => Promise<{ alreadyExisted?: boolean; message?: string }>,
+	) => Promise<{ alreadyExisted?: boolean; patient?: any; patientId?: string; message?: string }>,
 	fetchLeads: () => Promise<void> | void,
 	handleOpenPatientCard: (id: string) => void,
 ) {
@@ -35,6 +35,7 @@ export function useLeadPatientCreator(
 		setCreatingPatientLeadId(lead.id);
 		try {
 			const res = await createPatientFromLead(lead.id);
+			const targetPatientId = res.patientId || (res.patient as any)?.id;
 			if (res.alreadyExisted) {
 				showToast(
 					res.message || "Пациент с таким номером уже есть в базе клиники",
@@ -45,6 +46,13 @@ export function useLeadPatientCreator(
 					res.message || `Создана амбулаторная карта: ${lead.name}`,
 					"success",
 				);
+			}
+			if (targetPatientId) {
+				try {
+					handleOpenPatientCard(targetPatientId);
+				} catch {
+					// safe fallback
+				}
 			}
 			fetchLeads();
 		} catch (err: unknown) {

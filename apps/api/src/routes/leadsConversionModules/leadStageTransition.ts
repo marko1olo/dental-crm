@@ -8,8 +8,13 @@ import { crmLeads, crmLeadStageHistory } from "../../db/schema.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
 import type { DbExecutor } from "./patientCreationBridge.js";
 
+export interface StageTransitionDbExecutor {
+	insert: (table: any) => { values: (vals: Record<string, unknown>) => Promise<unknown> | void };
+	update: (table: any) => { set: (vals: Record<string, unknown>) => { where: (clause?: unknown) => Promise<unknown> | void } };
+}
+
 export interface RecordStageTransitionParams {
-	tx: DbExecutor;
+	tx: DbExecutor | StageTransitionDbExecutor;
 	organizationId: string;
 	leadId: string;
 	fromStage: string | null;

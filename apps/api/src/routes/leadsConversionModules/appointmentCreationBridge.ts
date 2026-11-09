@@ -14,6 +14,7 @@ import type { wsBroker } from "../../services/websocketBroker.js";
 import type { ConvertLeadPayload } from "./conversionValidator.js";
 import { extractUtmAttribution } from "./conversionValidator.js";
 import { broadcastLeadConversion, recordLeadStageTransition } from "./leadStageTransition.js";
+import { saveLeadCommunicationConsents } from "./leadConsentBridge.js";
 import { resolveOrCreatePatientFromLead } from "./patientCreationBridge.js";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -74,6 +75,14 @@ export async function convertLeadToAppointment(params: {
 		const { patient } = await resolveOrCreatePatientFromLead(tx, organizationId, lead, payload.comment);
 		const identity = getRequestIdentity(req);
 		const changedByUserId = identity?.userId && z.string().uuid().safeParse(identity.userId).success ? identity.userId : null;
+
+		await saveLeadCommunicationConsents(tx, {
+			organizationId,
+			patientId: patient.id,
+			consentMedical: payload.consentMedical,
+			consentMarketing: payload.consentMarketing,
+			decidedByUserId: changedByUserId,
+		});
 
 		let appointment: unknown = null;
 		if (hasDates && doctor) {

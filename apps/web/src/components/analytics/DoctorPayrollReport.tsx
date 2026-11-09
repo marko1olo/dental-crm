@@ -29,7 +29,7 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
 
 export interface DoctorPayrollItem {
 	readonly doctorId: string;
@@ -115,17 +115,7 @@ export function payoutMonthCalendarBounds(
 	};
 }
 
-/**
- * Запрос расчёта выплат врачам (вынесен ради проверяемости календарных границ).
- */
-export async function requestDoctorPayouts(
-	bounds: { readonly from: string; readonly to: string },
-	headers: Record<string, string>,
-): Promise<Response> {
-	const query = new URLSearchParams({ from: bounds.from, to: bounds.to });
-	void "denteClinicalReadHeaders";
-	return fetch(`/api/billing/payouts?${query.toString()}`, { headers });
-}
+
 
 function formatRub(rub: number): string {
 	return `${Math.round(rub || 0).toLocaleString("ru-RU")} ₽`;
@@ -150,6 +140,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 	const [rows, setRows] = useState<DoctorPayrollItem[]>([]);
 	const [assistantRows, setAssistantRows] = useState<AssistantPayrollItem[]>([]);
 	const [totals, setTotals] = useState<DoctorPayrollTotals | null>(null);
+	const [isStudioOpen, setIsStudioOpen] = useState<boolean>(false);
 
 	const handlePeriodSelect = useCallback(
 		(p: string) => {
@@ -177,148 +168,26 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				asstData = await asstRes.value.json();
 			}
 
-			const hasRealActivePayroll =
-				((docData?.totals?.totalPayoutRub ?? 0) > 0 && (docData?.rows?.length ?? 0) > 0) ||
-				((asstData?.totals?.totalPayoutRub ?? 0) > 0 && (asstData?.rows?.length ?? 0) > 0);
-
-			if (hasRealActivePayroll || (!isDemoShowcaseMode() && (docData || asstData))) {
-				setRows(docData?.rows || []);
-				setAssistantRows(asstData?.rows || docData?.assistantRows || []);
+			if (docData || asstData) {
+				setRows(Array.isArray(docData?.rows) ? docData.rows : []);
+				setAssistantRows(
+					Array.isArray(asstData?.rows)
+						? asstData.rows
+						: (Array.isArray(docData?.assistantRows) ? docData.assistantRows : []),
+				);
 				setTotals(docData?.totals || null);
-				setLoading(false);
-				return;
+			} else {
+				setRows([]);
+				setAssistantRows([]);
+				setTotals(null);
 			}
 		} catch {
-			// fallback
-		}
-
-		if (isDemoShowcaseMode()) {
-			const demoRows: DoctorPayrollItem[] = [
-				{
-					doctorId: "doc-1",
-					doctorName: "Д-р Смирнова Е.В.",
-					specialty: "Стоматолог-терапевт",
-					servicesRenderedRub: 580000,
-					servicesRenderedKopecks: 58000000,
-					materialsCostRub: 58000,
-					materialsCostKopecks: 5800000,
-					labCostRub: 0,
-					labCostKopecks: 0,
-					netRevenueRub: 522000,
-					netRevenueKopecks: 52200000,
-					commissionPercent: 28.0,
-					payoutRub: 146160,
-					payoutKopecks: 14616000,
-					appointmentsCompleted: 42,
-				},
-				{
-					doctorId: "doc-2",
-					doctorName: "Д-р Иванов Д.С.",
-					specialty: "Стоматолог-ортопед",
-					servicesRenderedRub: 520000,
-					servicesRenderedKopecks: 52000000,
-					materialsCostRub: 52000,
-					materialsCostKopecks: 5200000,
-					labCostRub: 68000,
-					labCostKopecks: 6800000,
-					netRevenueRub: 400000,
-					netRevenueKopecks: 40000000,
-					commissionPercent: 25.0,
-					payoutRub: 100000,
-					payoutKopecks: 10000000,
-					appointmentsCompleted: 28,
-				},
-				{
-					doctorId: "doc-3",
-					doctorName: "Д-р Воронов М.И.",
-					specialty: "Стоматолог-хирург / имплантолог",
-					servicesRenderedRub: 350000,
-					servicesRenderedKopecks: 35000000,
-					materialsCostRub: 35000,
-					materialsCostKopecks: 3500000,
-					labCostRub: 25000,
-					labCostKopecks: 2500000,
-					netRevenueRub: 290000,
-					netRevenueKopecks: 29000000,
-					commissionPercent: 30.0,
-					payoutRub: 87000,
-					payoutKopecks: 8700000,
-					appointmentsCompleted: 19,
-				},
-			];
-
-			const demoAssistants: AssistantPayrollItem[] = [
-				{
-					assistantId: "ast-1",
-					assistantName: "Ковалева А.С.",
-					role: "Ассистент стоматолога",
-					appointmentsAssisted: 38,
-					shiftsCount: 18,
-					hoursWorked: 110,
-					radiographCount: 34,
-					surgeryCount: 8,
-					baseShiftPayoutRub: 45000,
-					baseShiftPayoutKopecks: 4500000,
-					radiographPayoutRub: 3400,
-					radiographPayoutKopecks: 340000,
-					surgeryPayoutRub: 4000,
-					surgeryPayoutKopecks: 400000,
-					grossPayoutRub: 52400,
-					grossPayoutKopecks: 5240000,
-					ndflTaxRub: 6812,
-					ndflTaxKopecks: 681200,
-					payoutRub: 45588,
-					payoutKopecks: 4558800,
-				},
-				{
-					assistantId: "ast-2",
-					assistantName: "Морозова Е.П.",
-					role: "Ассистент стоматолога",
-					appointmentsAssisted: 30,
-					shiftsCount: 15,
-					hoursWorked: 92,
-					radiographCount: 22,
-					surgeryCount: 4,
-					baseShiftPayoutRub: 37500,
-					baseShiftPayoutKopecks: 3750000,
-					radiographPayoutRub: 2200,
-					radiographPayoutKopecks: 220000,
-					surgeryPayoutRub: 2000,
-					surgeryPayoutKopecks: 200000,
-					grossPayoutRub: 41700,
-					grossPayoutKopecks: 4170000,
-					ndflTaxRub: 5421,
-					ndflTaxKopecks: 542100,
-					payoutRub: 36279,
-					payoutKopecks: 3627900,
-				},
-			];
-
-			setRows(demoRows);
-			setAssistantRows(demoAssistants);
-			setTotals({
-				totalServicesRenderedRub: 1450000,
-				totalServicesRenderedKopecks: 145000000,
-				totalMaterialsCostRub: 145000,
-				totalMaterialsCostKopecks: 14500000,
-				totalLabCostRub: 93000,
-				totalLabCostKopecks: 9300000,
-				totalNetRevenueRub: 1212000,
-				totalNetRevenueKopecks: 121200000,
-				totalPayoutRub: 333160,
-				totalPayoutKopecks: 33316000,
-				totalAppointmentsCompleted: 89,
-				totalAssistantPayoutRub: 81867,
-				totalAssistantPayoutKopecks: 8186700,
-				totalClinicPayrollRub: 415027,
-				totalClinicPayrollKopecks: 41502700,
-			});
-		} else {
 			setRows([]);
 			setAssistantRows([]);
 			setTotals(null);
+		} finally {
+			setLoading(false);
 		}
-		setLoading(false);
 	}, []);
 
 	useEffect(() => {
@@ -405,6 +274,17 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					>
 						<Printer size={14} aria-hidden="true" />
 						<span>Печать ведомости</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsStudioOpen(true)}
+						data-testid="payroll-open-studio-cta"
+						className="min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+					>
+						<Calculator size={14} aria-hidden="true" />
+						<span className="hidden sm:inline">Открыть ведомость / закрыть период</span>
+						<span className="sm:hidden">Ведомость</span>
 					</button>
 				</div>
 			</div>
@@ -548,8 +428,26 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
 								{rows.length === 0 ? (
 									<tr>
-										<td colSpan={8} className="py-8 text-center text-[var(--muted)]">
-											{loading ? "Формирование ведомости..." : "Нет данных о начислениях за выбранный период"}
+										<td colSpan={8} className="py-10 text-center">
+											<div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto text-[var(--muted)]">
+												<Calculator className="w-8 h-8 opacity-50" />
+												<div className="font-semibold text-sm text-[var(--ink)]">
+													{loading ? "Формирование ведомости..." : "Начислений за выбранный период не найдено"}
+												</div>
+												<div className="text-xs">
+													Проведите приёмы в расписании или откройте расчетную ведомость в Студии зарплат.
+												</div>
+												{!loading && (
+													<button
+														type="button"
+														onClick={() => setIsStudioOpen(true)}
+														className="mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
+													>
+														<Calculator size={14} />
+														<span>Открыть ведомость / закрыть период</span>
+													</button>
+												)}
+											</div>
 										</td>
 									</tr>
 								) : (
@@ -651,8 +549,20 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 			<div className="sm:hidden space-y-3 overflow-x-clip max-w-full">
 				{roleTab === "doctors" ? (
 					rows.length === 0 ? (
-						<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)]">
-							{loading ? "Загрузка..." : "Нет данных за период"}
+						<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)] flex flex-col items-center gap-2">
+							<Calculator className="w-6 h-6 opacity-60 text-[var(--muted)]" />
+							<span className="font-medium text-[var(--ink)]">
+								{loading ? "Загрузка..." : "Начислений за выбранный период не найдено. Проведите приёмы в расписании"}
+							</span>
+							{!loading && (
+								<button
+									type="button"
+									onClick={() => setIsStudioOpen(true)}
+									className="mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+								>
+									Открыть ведомость
+								</button>
+							)}
 						</div>
 					) : (
 						rows.map((row) => (
@@ -755,6 +665,16 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					)
 				)}
 			</div>
+
+			{isStudioOpen && (
+				<DoctorPayrollStudioModal
+					isOpen={isStudioOpen}
+					onClose={() => {
+						setIsStudioOpen(false);
+						void fetchPayroll(activePeriod);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

@@ -118,6 +118,9 @@ export const crmLeads = pgTable(
 		// alias — some routes call it name, some patientName
 		name: text("name"),
 		patientName: text("patient_name"),
+		patientId: uuid("patient_id").references(() => patients.id, {
+			onDelete: "set null",
+		}),
 		phone: text("phone"),
 		source: text("source"),
 		status: text("status").notNull().default("new"),
@@ -151,6 +154,7 @@ export const crmLeads = pgTable(
 			.default(sql`'[]'::jsonb`),
 		audioRecordUrl: text("audio_record_url"),
 		transcriptionSnippet: text("transcription_snippet"),
+		metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -159,6 +163,7 @@ export const crmLeads = pgTable(
 		organizationIdIdx: index("crm_leads_organizationId_idx").on(
 			t.organizationId,
 		),
+		patientIdIdx: index("crm_leads_patient_id_idx").on(t.patientId),
 		statusIdx: index("crm_leads_status_idx").on(t.status),
 		stageEnteredAtIdx: index("crm_leads_stage_entered_at_idx").on(
 			t.stageEnteredAt,

@@ -4,6 +4,11 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+@import "./financialStyles/finModalShell.css";
+@import "./financialStyles/finModalControls.css";
+@import "./financialStyles/finModalKpiAndPanels.css";
+@import "./financialStyles/finModalTablesAndFooter.css";
+
 .fin-analytics-tab-btn {
 	height: 32px;
 }
@@ -12,7 +17,3 @@
 	min-width: 44px;
 }
 
-@import "./financialStyles/finModalShell.css";
-@import "./financialStyles/finModalControls.css";
-@import "./financialStyles/finModalKpiAndPanels.css";
-@import "./financialStyles/finModalTablesAndFooter.css";

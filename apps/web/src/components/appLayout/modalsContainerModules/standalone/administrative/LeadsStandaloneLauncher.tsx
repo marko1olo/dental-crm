@@ -6,11 +6,25 @@
  */
 
 import React from "react";
-import { DirectLeadsLauncher, evaluateLeadsDeepLink } from "../../../../leads/DirectLeadsLauncher";
+import { LeadsKanbanView } from "../../../../leads/LeadsKanbanView";
+
+export function evaluateLeadsDeepLink(): boolean {
+	if (typeof window === "undefined") return false;
+	const h = window.location.hash.toLowerCase();
+	const s = window.location.search.toLowerCase();
+	return (
+		h.includes("leads") || h.includes("crm-leads") || h.includes("kanban") ||
+		s.includes("leads=1") || s.includes("crm_leads=1") || s.includes("standalone=leads")
+	);
+}
 
 export function renderLeadsStandaloneLauncher(): React.ReactElement | null {
 	if (!evaluateLeadsDeepLink()) return null;
-	return <DirectLeadsLauncher />;
+	return (
+		<div className="fixed inset-0 z-50 bg-[var(--paper)] flex flex-col overflow-hidden">
+			<LeadsKanbanView />
+		</div>
+	);
 }
 
 export const DirectLeadsStandaloneLauncher: React.FC = () => {

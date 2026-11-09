@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 
 import {
 	ANALYTICS_PERIOD_OPTIONS,
-	createDeterministicAnalyticsFallback,
+	createEmptyAnalyticsState,
 	exportAnalyticsToCsv,
 	fetchClinicAnalyticsSSOT,
 	formatKopecksToRubles,
@@ -58,32 +58,23 @@ test("1.3. getRebookingStatus соблюдает целевой уровень �
 	assert.equal(getRebookingStatus(85), "healthy");
 });
 
-test("1.4. createDeterministicAnalyticsFallback обеспечивает строгий баланс кассы и детерминизм", () => {
+test("1.4. createEmptyAnalyticsState возвращает честные нули без синтетических фальсификаций", () => {
 	for (const opt of ANALYTICS_PERIOD_OPTIONS) {
-		const data = createDeterministicAnalyticsFallback(opt.key);
+		const data = createEmptyAnalyticsState(opt.key);
 		assert.equal(data.period, opt.key);
-		assert.ok(data.revenueKopecks > 0, "Revenue must be > 0");
-		assert.ok(data.averageCheckKopecks > 0, "Average check must be > 0");
-		assert.ok(data.completedVisitsCount > 0, "Visits must be > 0");
-		assert.equal(data.totalChairsCount, 2, "Small clinic chairs must be 2");
+		assert.equal(data.revenueKopecks, 0, "Empty state revenue must be exactly 0");
+		assert.equal(data.averageCheckKopecks, 0, "Empty state average check must be 0");
+		assert.equal(data.completedVisitsCount, 0, "Empty state visits must be 0");
+		assert.equal(data.isEmpty, true, "Must flag isEmpty = true");
 
-		// Проверка кассового баланса: сумма способов оплат равна общей выручке
+		// Проверка кассового баланса: сумма способов оплат равна общей выручке (0)
 		const pb = data.paymentBreakdown;
 		const sumMethods = pb.cashKopecks + pb.cardDmsKopecks + pb.sbpKopecks + pb.depositKopecks;
-		assert.equal(sumMethods, data.revenueKopecks, "Payment methods sum must strictly equal total revenue");
-
-		// Проверка процентов
-		const sumPct = pb.methods.reduce((acc, m) => acc + m.percent, 0);
-		assert.equal(sumPct, 100, "Payment percentages must sum to 100%");
-
-		// Проверка детерминизма: два последовательных вызова возвращают одинаковые цифры
-		const repeatData = createDeterministicAnalyticsFallback(opt.key);
-		assert.equal(repeatData.revenueKopecks, data.revenueKopecks);
-		assert.equal(repeatData.chairOccupancyPercent, data.chairOccupancyPercent);
+		assert.equal(sumMethods, 0, "Payment methods sum must strictly equal 0");
 	}
 });
 
-test("1.5. [ANL-01] fetchClinicAnalyticsSSOT: ошибка сети выбрасывает исключение в проде и fallback в демо", async () => {
+test("1.5. [ANL-01] fetchClinicAnalyticsSSOT: ошибка сети выбрасывает исключение в проде и честный пустой стейт в демо", async () => {
 	const originalFetch = globalThis.fetch;
 	(globalThis as any).fetch = () => Promise.reject(new Error("Network offline"));
 
@@ -98,12 +89,12 @@ test("1.5. [ANL-01] fetchClinicAnalyticsSSOT: ошибка сети выбрас
 			"In production mode, network error must throw to show retry banner",
 		);
 
-		// В демо-витринном режиме: безопасный возврат детерминированного fallback
+		// В демо-витринном режиме: безопасный возврат честного пустого стейта без фальсификаций
 		setRuntimeDemoMode(true);
 		const demoData = await fetchClinicAnalyticsSSOT("month");
 		assert.ok(demoData, "Data must be returned in demo mode");
-		assert.ok(demoData.revenueKopecks > 0, "Fallback revenue must be positive");
-		assert.equal(demoData.isLiveApi, false, "Fallback must flag isLiveApi = false");
+		assert.equal(demoData.isEmpty, true, "Empty state must be flagged isEmpty = true");
+		assert.equal(demoData.revenueKopecks, 0, "Empty state revenue must be 0");
 	} finally {
 		setRuntimeDemoMode(null);
 		globalThis.fetch = originalFetch;
@@ -143,8 +134,8 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 	};
 
 	try {
-		const fallback = createDeterministicAnalyticsFallback("month");
-		exportAnalyticsToCsv(fallback);
+		const emptyState = createEmptyAnalyticsState("month");
+		exportAnalyticsToCsv(emptyState);
 
 		assert.ok(blobContent.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM");
 		assert.ok(blobContent.includes("DENTE CRM — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА"), "Must contain header");

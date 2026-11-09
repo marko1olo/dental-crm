@@ -27,7 +27,7 @@ import { DirectUkepSigningLauncher } from "../../../documents/ukep/DirectUkepSig
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
-import { DirectLeadsLauncher } from "../../../leads/DirectLeadsLauncher";
+import { DirectLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
@@ -338,7 +338,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			exactHashes: ["#leads", "#crm-leads", "#kanban", "#leads-studio"],
 			hashPrefixes: ["#leads?", "#leads/", "#crm-leads?", "#kanban?"],
 		},
-		render: () => <DirectLeadsLauncher />,
+		render: () => <DirectLeadsStandaloneLauncher />,
 	},
 	// 19. Маркетинг, акции и ROMI
 	{

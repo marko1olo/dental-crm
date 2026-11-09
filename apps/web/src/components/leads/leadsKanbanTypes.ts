@@ -22,10 +22,16 @@ export type { Lead, LeadStatus };
  * Проверяет принадлежность статуса лида к колонке клинического канбана:
  * 4 канонические стадии:
  * [ Новые ] -> [ Квалифицированы ] -> [ Консультация ] -> [ Дошли ]
+ * 6-колоночный расширенный режим:
+ * [ Новые ] -> [ Квалифицированы ] -> [ Консультация ] -> [ Дошли ] -> [ Недозвон ] -> [ Отказ/Архив ]
+ *
+ * DEF-PAT-01: Лид со статусом "no_answer" принадлежит строго колонке "no_answer",
+ * исключая дублирование в колонку "trash" при наличии обеих колонок.
  */
 export function isLeadInKanbanColumn(
 	leadStatus: LeadStatus | string | null | undefined,
 	columnId: LeadStatus,
+	activeColumns?: readonly (ColumnConfig | LeadStatus | string)[],
 ): boolean {
 	if (!leadStatus || leadStatus === "new") {
 		return columnId === "new";
@@ -40,7 +46,16 @@ export function isLeadInKanbanColumn(
 		return columnId === "showed_up";
 	}
 	if (leadStatus === "no_answer") {
-		return columnId === "no_answer" || columnId === "trash";
+		if (activeColumns && activeColumns.length > 0) {
+			const hasNoAnswerCol = activeColumns.some((c) =>
+				typeof c === "string" ? c === "no_answer" : c.id === "no_answer",
+			);
+			if (hasNoAnswerCol) {
+				return columnId === "no_answer";
+			}
+			return columnId === "trash";
+		}
+		return columnId === "no_answer";
 	}
 	if (leadStatus === "trash") {
 		return columnId === "trash";

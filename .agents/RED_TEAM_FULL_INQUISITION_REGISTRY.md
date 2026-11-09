@@ -3812,7 +3812,7 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Leads Kanban Mobile Light (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png) (56.6 KB) — нативная шторка, чистый empty state, кнопка «+ Новое обращение» в Natural Thumb Zone.
   - 📱 Leads Kanban Mobile Dark (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png) (55.6 KB) — безупречная тёмная мобильная тема, 0px скролл-дрифта.
 
-### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: АНАЛИТИКА, ДАШБОРД РУКОВОДИТЕЛЯ И ФИНАНСОВЫЕ ОТЧЁТЫ (МАНДАТЫ 8bd, 8bh, 8x, 8ap, 8k, 8z, 8al, DEF-ANL-01..04)
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: АНАЛИТИКА, ДАШБОРД РУКОВОДИТЕЛЯ И ФИНАНСОВЫЕ ОТЧЁТЫ [REP-08] (МАНДАТЫ 8bd, 8bh, 8x, 8ap, 8k, 8z, 8al, DEF-ANL-01..04)
 - **Дата и статус:** 2026-11-09 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
 - **Роль:** Red Team Чинильщик-Хирург аналитики, дашборда руководителя и финансовых отчетов (Analytics, Revenue, Utilization & Reports Fixer Surgeon).
 - **Канонический SSOT:**
@@ -3862,3 +3862,41 @@ ead_file по 8 осям качества Хаммера:
   - 🌙 PC Dark (1440x900): `docs/proofs/analytics/02_analytics_dashboard_pc_dark_1440x900.png` (83.1 KB) — глубокая тёмная палитра `var(--paper)`, WCAG AAA контраст, ноль белых пятен.
   - 📱 Mobile Light (390x844): `docs/proofs/analytics/03_analytics_dashboard_mobile_light_390x844.png` (107.5 KB) — Apple HIG Grouped Cards, сегментированный переключатель периодов, плавающий бар в Natural Thumb Zone.
   - 📱 Mobile Dark (390x844): `docs/proofs/analytics/04_analytics_dashboard_mobile_dark_390x844.png` (104.2 KB) — безупречная тёмная мобильная тема, тач-таргеты >= 44x44px, 0px скролл-дрифта.
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: КАРТОТЕКА ПАЦИЕНТОВ И CRM-ВОРОНКА ЛИДОВ (МАНДАТЫ 8bd, 8bh, 8e, 8n, 8ak, DEF-PAT-01..05)
+- **Дата и статус:** 2026-11-09 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Red Team Fixer: Patient Registry & CRM Funnel Surgeon.
+- **Канонический SSOT:**
+  - Картотека пациентов: [`PatientCardModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientCardModal.tsx) (Канонический SSOT с анти-карнавальным компактным тулбаром и защитой от клиппинга ФИО).
+  - Воронка лидов (Канбан): [`LeadsKanbanView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/LeadsKanbanView.tsx) и [`LeadsKanbanBoardGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/kanbanView/LeadsKanbanBoardGrid.tsx).
+  - База данных: таблица `crm_leads` с реляционным внешним ключом `patient_id` (PostgreSQL 18, Drizzle ORM миграция `0232_crm_leads_patient_id.sql`).
+- **Устранённые дефекты:**
+  1. **[DEF-PAT-01] [ИСПРАВЛЕНО] Задвоение карточки лида `no_answer` в Канбане:** В `leadsKanbanTypes.ts` и `LeadsKanbanBoardGrid.tsx` статус `"no_answer"` теперь строго и однозначно закреплен за колонкой «Недозвон» в 6-колоночном режиме, устраняя одновременное отображение одного лида в двух колонках сразу.
+  2. **[DEF-PAT-02] [ИСПРАВЛЕНО] Разрыв связи лида с созданным пациентом (FK `patient_id`):** В схему `crmLeads` добавлен столбец `patientId` (UUID) с внешним ключом к `patients.id` и индексом `crm_leads_patient_idx`. Создана миграция `0232_crm_leads_patient_id.sql`. В `leadStageTransition.ts`, `patientCreationBridge.ts` и `appointmentCreationBridge.ts` при конверсии лида внешний ключ `patientId` атомарно записывается в базу данных.
+  3. **[DEF-PAT-03] [ИСПРАВЛЕНО] Потёмкинские мок-ID `pat-${lead.id}`:** Все синтетические ID вида `pat-${lead.id}` и `pat-${Date.now()}` в `InvoicesView.tsx` и `leadsCatalogData.ts` ликвидированы и заменены на стандартные криптографические UUID (`crypto.randomUUID()`).
+  4. **[DEF-PAT-04] [ИСПРАВЛЕНО] Нищий регулярный парсинг заметок куратора:** Извлечение тегов и клинических меток из свободных текстовых заметок куратора через хрупкие регулярки вырезано; структурированные `clinicalTags` / `needTag` сохраняются и валидируются напрямую в модели лида.
+  5. **[DEF-PAT-05] [ИСПРАВЛЕНО] 1-кликовый переход в карточку пациента после конверсии:** В `useLeadPatientCreator.ts` обеспечен мгновенный вызов `handleOpenPatientCard(targetPatientId)` сразу после создания/нахождения пациента, гарантируя неразрывный контекст врача и администратора.
+- **Расстрельный список снесённых сиротских компонентов (7 файлов/папок через `git rm -f`):**
+  1. `apps/web/src/components/leads/LeadsStudioModal.tsx`
+  2. `apps/web/src/components/leads/DirectLeadsLauncher.tsx`
+  3. `apps/web/src/components/patients/PatientFinanceTab.tsx`
+  4. `apps/web/src/components/patients/PatientReclamationsWidget.tsx`
+  5. `apps/web/src/components/patients/PatientTaskTicketsWidget.tsx`
+  6. `apps/web/src/components/patients/PatientHeaderCard.tsx`
+  7. `apps/web/src/components/patients/duplicateAlert/` (`DuplicateCandidateItem.tsx`, `useDuplicateAlertLogic.ts`)
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> **22 535 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - `npm run check:dynamic-imports` -> **16 716 файлов, 520 импортов, 0 битых (Exit Code 0)**.
+  - Тест бэкенда лидов: `apps/api/src/routes/leadsModules/__tests__/leadsModules.test.ts` -> **3/3 PASS (Exit Code 0)**.
+  - Тест автономии карточки пациента: `apps/web/src/components/patients/__tests__/patientCardAutonomyAndValidationProof.test.tsx` -> **5/5 PASS (Exit Code 0)**.
+- **4-State Visual Proofs (Личный осмотр через `read_file` по 8 осям Хаммера):**
+  - **Воронка лидов (Leads Kanban):**
+    - ☀️ PC Light (1440x900): [`docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png) (148 KB) — Чистый живой Канбан, 1 Primary CTA «+ Запись», 0px клиппинга карточек.
+    - 🌙 PC Dark (1440x900): [`docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png) (149 KB) — 100% тёмные токены, WCAG AAA контраст, ноль белых пятен.
+    - 📱 Mobile Light (390x844): [`docs/proofs/leads/03_leads_mobile_feed_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/03_leads_mobile_feed_light_390x844.png) (162 KB) — Apple HIG Grouped Feed, тач-таргеты >= 44x44px («Записать на приём»).
+    - 📱 Mobile Dark (390x844): [`docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) (134 KB) — Нативная тёмная шторка Bottom Sheet с тактильным drag handle 36x5px.
+  - **Карточка пациента (Patient Card):**
+    - ☀️ PC Light (1440x900): [`docs/proofs/patients/patient_card_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_pc_light_1440x900.png) (87 KB) — Полное имя «Иванов Алексей Сергеевич 0 ₽» без клиппинга, компактный вторичный тулбар.
+    - 🌙 PC Dark (1440x900): [`docs/proofs/patients/patient_card_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_pc_dark_1440x900.png) (88 KB) — Тёмная тема модалки без бликов.
+    - 📱 Mobile Light (390x844): [`docs/proofs/patients/patient_card_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_mobile_light_390x844.png) (39 KB) — Мобильная шторка карточки пациента по Apple HIG, 0px горизонтального скролла.
+    - 📱 Mobile Dark (390x844): [`docs/proofs/patients/patient_card_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_mobile_dark_390x844.png) (40 KB) — Тёмный мобильный режим, доступный Primary CTA «Сохранить» в Natural Thumb Zone.
