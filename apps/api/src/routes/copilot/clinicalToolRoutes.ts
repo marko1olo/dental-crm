@@ -89,7 +89,7 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 					context: {
 						organizationId: targetOrgId,
 						patientId: input.patientId || undefined,
-						doctorId: identity.userId,
+						doctorId: identity.userId || undefined,
 						runtimeMode: "web_browser",
 						db,
 					},

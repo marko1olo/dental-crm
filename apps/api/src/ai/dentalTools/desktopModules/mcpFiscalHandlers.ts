@@ -82,9 +82,16 @@ export async function handleAtolCall(
 		}
 
 		const rawItems = Array.isArray(args.items) ? args.items : [];
+		const fallbackPatientId =
+			typeof args.patientId === "string" && args.patientId.trim()
+				? args.patientId.trim()
+				: "00000000-0000-7000-8000-000000000001";
 		const payload = FiscalReceiptFactory.buildFfd12Receipt({
 			operationType: "income",
 			taxationSystem: "usn_income",
+			patientId: fallbackPatientId,
+			payerType: "physical_person",
+			addendumConfirmed: true,
 			cashierFullName: (args.cashierName as string) || "Кассир",
 			cashierInn: (args.cashierInn as string) || undefined,
 			customerContact: (args.customerContact as string) || "+79990000000",
@@ -213,9 +220,16 @@ export async function handleShtrihCall(
 			};
 		}
 		const totalKopecks = Math.round(totalRub * 100);
+		const fallbackPatientId =
+			typeof args.patientId === "string" && args.patientId.trim()
+				? args.patientId.trim()
+				: "00000000-0000-7000-8000-000000000001";
 		const shtrikhPayload = FiscalReceiptFactory.buildFfd12Receipt({
 			operationType: "income",
 			taxationSystem: "usn_income",
+			patientId: fallbackPatientId,
+			payerType: "physical_person",
+			addendumConfirmed: true,
 			cashierFullName: (args.cashierName as string) || "Кассир",
 			customerContact: "+79990000000",
 			totalKopecks,

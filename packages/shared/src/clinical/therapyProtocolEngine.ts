@@ -142,7 +142,7 @@ export interface TherapyProtocolApplyParams {
 	readonly includeFluoridation?: boolean | undefined;
 }
 
-/** Сформированный структурированный результат SOAP для Формы 043/у */
+/** Сформированный структурированный результат SOAP для медицинской карты приёма */
 export interface TherapySoapResult {
 	readonly toothNumber: number;
 	readonly toothTitleRu: string;
@@ -156,7 +156,11 @@ export interface TherapySoapResult {
 	readonly warrantyMonths: number;
 	readonly warrantyRationaleRu: string;
 	readonly blackClass: BlackCavityClass;
+	readonly catalogServices: readonly Order804nServiceRef[];
+	/** Алиас для обратной совместимости */
 	readonly services804n: readonly Order804nServiceRef[];
+	readonly fullProtocolText: string;
+	/** Алиас для обратной совместимости */
 	readonly fullProtocolText043: string;
 }
 
@@ -254,7 +258,7 @@ export function generateTherapySoapProtocol(params: TherapyProtocolApplyParams):
 		`7. Гарантийные обязательства: ${warranty.rationaleRu} (гарантия ${warranty.warrantyMonths} мес., срок службы ${warranty.serviceLifeYears} лет).`,
 	].join("\n");
 
-	const fullProtocolText043 = [
+	const fullProtocolText = [
 		`ДНЕВНИК ПРИЁМА — ${toothTitleRu}:`,
 		`Диагноз (МКБ-10): ${preset.icd10Default} — ${preset.titleRu}`,
 		`Жалобы: ${subjectiveComplaints}`,
@@ -279,8 +283,10 @@ export function generateTherapySoapProtocol(params: TherapyProtocolApplyParams):
 		warrantyMonths: warranty.warrantyMonths,
 		warrantyRationaleRu: warranty.rationaleRu,
 		blackClass,
+		catalogServices: services804n,
 		services804n,
-		fullProtocolText043,
+		fullProtocolText,
+		fullProtocolText043: fullProtocolText,
 	};
 }
 
@@ -293,7 +299,7 @@ export const generateTherapySoap043 = generateTherapySoapProtocol;
  * 1-Клик генерация консолидированного текста для дневника приёма
  */
 export function generateTherapyProtocolTextProtocol(params: TherapyProtocolApplyParams): string {
-	return generateTherapySoapProtocol(params).fullProtocolText043;
+	return generateTherapySoapProtocol(params).fullProtocolText;
 }
 
 export const generateTherapyProtocolText043 = generateTherapyProtocolTextProtocol;
