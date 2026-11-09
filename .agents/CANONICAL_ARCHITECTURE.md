@@ -1585,17 +1585,28 @@ Use these exclusively. Blind terminal navigation is banned.
 
 ---
 
-### 🛑 МАНДАТ 8bi: ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ, УДЕРЖАНИЕ СЕБЕСТОИМОСТИ ИЗ ЗАРПЛАТЫ И ЛИКВИДАЦИЯ СИМУЛЯТОРОВ (DENTAL LAB ORDERS & DOCTOR PAYROLL WITHHOLDING SSOT)
+### 🛑 МАНДАТ 8bj: ПРЕЙСКУРАНТ, КАТАЛОГ УСЛУГ И ЛИКВИДАЦИЯ 65 СИРОТСКИХ ФАЙЛОВ (PRICELIST & SERVICE CATALOG SSOT)
 
-> 🦷 **ЕДИНЫЙ ЭТАЛОН ЗТЛ И РАСЧЕТА ЗАРПЛАТЫ ВРАЧЕЙ-ОРТОПЕДОВ:**  
-> Зуботехническая лаборатория (ЗТЛ), наряды Form ZTL-1, расцветка VITA и удержание стоимости изготовленных конструкций из зарплатной базы врача работают строго как единый комплекс.  
-> 1. **База данных PostgreSQL 18:** Таблицы `lab_orders` и `lab_items` в `apps/api/src/db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.ts:118`. Канонические статусы: `draft`, `sent`, `in_progress`, `shipped`, `received`, `ready`, `ready_in_clinic`, `refitting`, `fitted`, `completed`, `cancelled`, `rejected_remake`.  
-> 2. **Канонический контракт в `@dental/shared`:** `packages/shared/src/lab/labOrders.ts`, палитра VITA Classical/3D-Master/Bleach (`vitaPalette.ts`), нумерация FDI 11–48.  
-> 3. **Ликвидация мертвого симулятора реальности (`git rm`):** Физически удален псевдонаучный симулятор `packages/shared/src/lab/autonomousLabTrackerEngine.ts` (478 строк с мопедными курьерами, GPS-трекингом и HMAC QR-кодами) и его юнит-тест `autonomousLabTrackerEngine.test.ts`. Зачищен экспорт в `packages/shared/src/lab/index.ts` и `labOrderValidation.ts`.  
-> 4. **Удержание стоимости ЗТЛ из зарплаты врача (Doctor Payroll Lab Withholding):**  
->    - В `apps/api/src/services/finance/doctorPayouts/queries.ts:182` и `apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts:20` расширен массив учитываемых статусов готовых работ: включены канонические статусы `ready_in_clinic`, `ready` и `fitted`.  
->    - Готовые и установленные ортопедические конструкции честно удерживаются из базы начисления сдельной оплаты врача, исключая искажение чистой прибыли клиники.  
-> 5. **Тестовая верификация:** 61/61 payroll тестов PASS (`doctorPayoutsBasic.test.ts`, `doctorPayoutsAdvanced.test.ts`, `doctorPayouts.test.ts`, `payoutNegativeExplain.test.ts`), 52/52 shared lab тестов PASS, машинные гейты кодировки, stub-overrides и dynamic-imports Exit Code 0.
+> 💎 **ЕДИНЫЙ ЭТАЛОН ПРЕЙСКУРАНТА И КАТАЛОГА УСЛУГ КЛИНИКИ:**  
+> Прейскурант, номенклатурные позиции, пакеты услуг «Под ключ», расчет маржинальности и экспорт/печать работают строго как единый комплекс на реальном PostgreSQL 18.  
+> 1. **Канонический Frontend SSOT:** `apps/web/src/components/catalog/PricelistStudioModal.tsx`, `PricelistItemDrawer.tsx`, `DirectPricelistLauncher.tsx` и данные `pricelistCatalogData.ts`.  
+> 2. **Математическое ядро и пресеты:** `apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts` и `servicePricelistPresets.ts`.  
+> 3. **Физический снос 65 сиротских файлов (`git rm`):**  
+>    - Удалены все устаревшие файлы старой модалки `ServicePricelistManagerModal` в `apps/web/src/components/catalog/pricelist/` (включая мертвый CSS `serviceCatalog.css` на 36.7 KB).  
+>    - Удален пустой фасад-пустышка `apps/web/src/components/catalog/ServicePriceListStudioModal.tsx`.  
+>    - В `apps/web/src/components/catalog/pricelist/` сохранены строго живые модули: `servicePricelistPresets.ts`, `servicePricelistEngine.ts`, `servicePricelist.css`, папки `presets/` и `servicePricelist/`.  
+> 4. **Ликвидация 400 Bad Request и синхронизация категорий (DEF-PRICE-01):**  
+>    - Реализован двусторонний маппинг `normalizeCategoryToBackend` и `normalizeCategoryFromBackend` (`orthopedics` <-> `prosthetics`, `diagnostics` <-> `imaging`, `implantology` <-> `surgery`, `pediatric` <-> `therapy`).  
+>    - В `apps/web/src/components/settings/pricesTab/useSettingsPricesLogic.ts` фильтрация каталога поддерживает синонимы («Ортопедия» находит и `orthopedics` и `prosthetics`, «Рентген / КТ» находит и `radiology` и `imaging`/`diagnostics`).  
+> 5. **Динамическая специальность вместо хардкода (DEF-PRICE-04):**  
+>    - Ликвидирован хардкод `specialty: "therapist"` для 100% услуг. Функция `getSpecialtyForCategory` вычисляет специальность по клинической категории (хирург, ортопед, ортодонт, гигиенист, рентгенолог).  
+> 6. **Устранение бага нулевой цены (DEF-PRICE-05):**  
+>    - В `PricelistStudioModal.tsx` нестрогие тернарники заменены на явную проверку типов и конечности чисел (`typeof item.priceRub === "number"`). Бесплатные услуги 0 ₽ остаются 0 ₽ и не мутируют в 3500 ₽.  
+> 7. **Чистота клинического языка (Мандат 8x / DEF-PRICE-03):**  
+>    - Функция `getCategoryDisplayLabel` исключает утечку английских энумов в UI («Ортопедия», «Диагностика», «Консультация»).  
+>    - Запрещены номера приказов («804н») в заголовках и кнопках для пользователя — строго «Прейскурант услуг клиники».  
+> 8. **Тестовая верификация:** 20/20 PASS в `pricelistStudioSSOT.test.tsx`, 12/12 PASS в `statutoryCatalogCache.test.ts`, 38/38 PASS в `servicePricelist.test.ts`, 23/23 PASS в `pricelist.test.ts`, 8/8 PASS в `pricelistCatalogInquisition.test.ts`. Машинные гейты `encoding`, `buttons`, `react-hooks`, `stub-overrides`, `dynamic-imports` и `css-tokens` Exit Code 0.
+
 
 
 

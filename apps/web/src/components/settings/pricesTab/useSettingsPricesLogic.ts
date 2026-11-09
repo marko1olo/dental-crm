@@ -13,6 +13,10 @@ import {
 	type ServicePricelistItem,
 } from "../../catalog/pricelist/servicePricelistPresets";
 import {
+	normalizeCategoryToBackend,
+	getSpecialtyForCategory,
+} from "../../catalog/pricelistCatalogData";
+import {
 	buildExistingCatalogReferences,
 	buildModalInitialItems,
 	exportCatalogToCsvDownload,
@@ -110,7 +114,16 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	const filteredCatalog = useMemo(() => {
 		let items = [...typedServiceCatalog];
 		if (selectedCategoryFilter !== "all") {
-			items = items.filter((s) => (s.category || "other") === selectedCategoryFilter);
+			items = items.filter((s) => {
+				const cat = s.category || "other";
+				if (cat === selectedCategoryFilter) return true;
+				if (selectedCategoryFilter === "orthopedics" && (cat === "prosthetics" || cat === "orthopedics")) return true;
+				if (selectedCategoryFilter === "radiology" && (cat === "imaging" || cat === "diagnostics" || cat === "radiology")) return true;
+				if (selectedCategoryFilter === "surgery" && (cat === "implantology" || cat === "surgery")) return true;
+				if (selectedCategoryFilter === "therapy" && (cat === "pediatric" || cat === "therapy")) return true;
+				if (selectedCategoryFilter === "hygiene" && (cat === "periodontology" || cat === "hygiene")) return true;
+				return false;
+			});
 		}
 		if (searchQuery.trim()) {
 			const q = searchQuery.toLowerCase().trim();
@@ -150,8 +163,13 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				...staffMutationHeaders((accessHeaders as SettingsAccessHeaders | undefined) ?? (mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ?? (appLogic?.accessHeaders as SettingsAccessHeaders | undefined)),
 			};
 			const statutoryCode = editServiceForm.standardCode || editServiceForm.catalogCode || editServiceForm.order804nCode || editServiceForm.code || null;
+			const normalizedCategory = normalizeCategoryToBackend(editServiceForm.category || "therapy");
+			const normalizedSpecialty = editServiceForm.specialty || getSpecialtyForCategory(editServiceForm.category || "therapy");
 			const servicePayload = {
-				...editServiceForm, basePriceRub,
+				...editServiceForm,
+				category: normalizedCategory,
+				specialty: normalizedSpecialty,
+				basePriceRub,
 				materialsCostRub: Number(editServiceForm.materialsCostRub) || 0,
 				order804nCode: statutoryCode, catalogCode: statutoryCode, standardCode: statutoryCode,
 			};

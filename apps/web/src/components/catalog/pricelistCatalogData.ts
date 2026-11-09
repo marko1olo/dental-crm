@@ -11,6 +11,8 @@
  * 4. 6 канонических клинических категорий: Терапия, Хирургия, Ортопедия, Ортодонтия, Гигиена, Диагностика.
  */
 
+import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
+
 export type PricelistCategoryKey =
 	| "therapy"
 	| "surgery"
@@ -20,6 +22,118 @@ export type PricelistCategoryKey =
 	| "pediatric"
 	| "hygiene"
 	| "diagnostics";
+
+/**
+ * Двусторонний маппинг категорий фронтенда со схемой serviceCategorySchema бэкенда (DEF-PRICE-01).
+ * Предотвращает 400 Bad Request при отправке данных в Fastify API /api/pricelist.
+ */
+export function normalizeCategoryToBackend(category: string): ServiceCategory {
+	switch (category) {
+		case "orthopedics":
+			return "prosthetics";
+		case "diagnostics":
+			return "imaging";
+		case "implantology":
+			return "surgery";
+		case "pediatric":
+			return "therapy";
+		case "consultation":
+		case "therapy":
+		case "surgery":
+		case "prosthetics":
+		case "orthodontics":
+		case "periodontology":
+		case "hygiene":
+		case "imaging":
+		case "documents":
+		case "other":
+			return category;
+		default:
+			return "other";
+	}
+}
+
+/**
+ * Нормализация категории бэкенда в категорию студии прейскуранта фронтенда (DEF-PRICE-01).
+ */
+export function normalizeCategoryFromBackend(category: string | null | undefined): PricelistCategoryKey {
+	switch (category) {
+		case "prosthetics":
+			return "orthopedics";
+		case "imaging":
+		case "consultation":
+		case "documents":
+			return "diagnostics";
+		case "surgery":
+			return "surgery";
+		case "orthodontics":
+			return "orthodontics";
+		case "hygiene":
+		case "periodontology":
+			return "hygiene";
+		case "pediatric":
+			return "pediatric";
+		case "implantology":
+			return "implantology";
+		case "therapy":
+		default:
+			return "therapy";
+	}
+}
+
+/**
+ * Динамическое определение специальности врача по категории услуги (DEF-PRICE-04).
+ * Исключает хардкод therapist для 100% услуг прейскуранта.
+ */
+export function getSpecialtyForCategory(category: string): DentalSpecialty {
+	switch (category) {
+		case "surgery":
+		case "implantology":
+			return "surgeon";
+		case "orthopedics":
+		case "prosthetics":
+			return "orthopedist";
+		case "orthodontics":
+			return "orthodontist";
+		case "hygiene":
+			return "hygienist";
+		case "pediatric":
+			return "pediatric";
+		case "diagnostics":
+		case "imaging":
+			return "radiologist";
+		case "periodontology":
+			return "periodontist";
+		case "therapy":
+		case "consultation":
+		default:
+			return "therapist";
+	}
+}
+
+/**
+ * Получение человекочитаемого названия категории для UI без утечки английских энумов (DEF-PRICE-03).
+ */
+export function getCategoryDisplayLabel(category: string): string {
+	const found = CANONICAL_CLINICAL_CATEGORIES.find((c) => c.key === category);
+	if (found) return found.shortTitle;
+	switch (category) {
+		case "prosthetics":
+			return "Ортопедия";
+		case "imaging":
+			return "Диагностика";
+		case "consultation":
+			return "Консультация";
+		case "periodontology":
+			return "Пародонтология";
+		case "documents":
+			return "Документы";
+		case "other":
+			return "Прочее";
+		default:
+			return category;
+	}
+}
 
 export interface PricelistCategoryMeta {
 	readonly key: PricelistCategoryKey;
@@ -116,7 +230,7 @@ export interface PricelistClinicalBundle {
 
 export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 	{
-		id: "bundle-caries",
+		id: "caries_turnkey",
 		title: "Кариес под ключ (анестезия + коффердам + пломба Estelite)",
 		shortTitle: "Кариес под ключ",
 		description: "Анестезия + коффердам + препарирование + бондинг + пломба световая Estelite",
@@ -126,7 +240,7 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 		items: ["Анестезия инфильтрационная", "Коффердам", "Препарирование полости", "Бондинг эмали и дентина", "Пломба световая Estelite", "Шлифовка и полировка"],
 	},
 	{
-		id: "bundle-endo",
+		id: "endo_1canal_turnkey",
 		title: "Пульпит 3 канала под ключ",
 		shortTitle: "Пульпит 3 канала под ключ",
 		description: "Анестезия + мехобработка + медикаментозная обработка + пломбирование гуттаперчей",
@@ -136,7 +250,7 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 		items: ["Анестезия проводниковая", "Коффердам", "Мехобработка 3 каналов", "Медикаментозная обработка", "Пломбирование гуттаперчей", "Световая пломба"],
 	},
 	{
-		id: "bundle-hygiene",
+		id: "hygiene_turnkey",
 		title: "Комплексная гигиена AirFlow + ультразвук",
 		shortTitle: "Профгигиена под ключ",
 		description: "Ультразвуковой скейлинг + AirFlow + полировка + глубокое фторирование",
@@ -146,7 +260,7 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 		items: ["Ультразвуковой скейлинг", "AirFlow полировка налета", "Полировка пастами", "Глубокое фторирование эмали"],
 	},
 	{
-		id: "bundle-ext-complex",
+		id: "complex_extraction",
 		title: "Удаление зуба сложное с анестезией и швами",
 		shortTitle: "Сложное удаление под ключ",
 		description: "Проводниковая анестезия + сепарация корней + удаление + швы Vicryl",
@@ -156,7 +270,7 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 		items: ["Проводниковая анестезия", "Сепарация корней", "Кюретаж лунки", "Местный гемостаз", "Наложение швов Vicryl"],
 	},
 	{
-		id: "bundle-ext-simple",
+		id: "extraction_turnkey",
 		title: "Удаление зуба простое с анестезией под ключ",
 		shortTitle: "Удаление простое под ключ",
 		description: "Анестезия + атравматичное удаление + кюретаж + гемостаз + Альвожиль",
@@ -166,7 +280,7 @@ export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
 		items: ["Анестезия Ультракаин", "Атравматичное удаление", "Кюретаж лунки", "Первичный гемостаз", "Паста Альвожиль"],
 	},
 	{
-		id: "bundle-implant",
+		id: "implant_turnkey",
 		title: "Дентальная имплантация под ключ",
 		shortTitle: "Имплантация под ключ",
 		description: "Анестезия + ложе + имплантат титановый + формирователь десны + снимок",
@@ -577,7 +691,7 @@ export async function fetchPricelistFromBackend(
 				serviceCode: item.code || item.order804nCode || `ПОЗ-${idx + 1}`,
 				regulatoryCode: item.order804nCode || item.code,
 				title: item.title || "Стоматологическая услуга",
-				category: (item.category as PricelistCategoryKey) || "therapy",
+				category: normalizeCategoryFromBackend(item.category),
 				priceKopecks,
 				costKopecks,
 				durationMin: item.durationMinutes || item.durationMin || 30,
@@ -604,11 +718,12 @@ export async function syncServiceItemToBackend(
 	if (typeof window === "undefined") return { success: false };
 	const basePriceRub = Math.round(item.priceKopecks) / 100;
 	const materialsCostRub = item.costKopecks ? Math.round(item.costKopecks) / 100 : 0;
+	const rawCat = item.category || "therapy";
 	const payload = {
 		code: item.code || "",
 		title: item.title,
-		category: item.category || "therapy",
-		specialty: "therapist",
+		category: normalizeCategoryToBackend(rawCat),
+		specialty: getSpecialtyForCategory(rawCat),
 		basePriceRub,
 		durationMinutes: item.durationMin || 30,
 		taxDeductible: true,
@@ -656,8 +771,8 @@ export async function batchSyncPricelistToBackend(
 			code: it.code,
 			order804nCode: it.regulatoryCode || it.code,
 			title: it.title,
-			category: it.category,
-			specialty: "therapist",
+			category: normalizeCategoryToBackend(it.category),
+			specialty: getSpecialtyForCategory(it.category),
 			priceRub: Math.round(it.priceKopecks) / 100,
 			costRub: Math.round(it.costKopecks) / 100,
 			durationMinutes: it.durationMin,

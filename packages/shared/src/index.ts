@@ -26,6 +26,7 @@ export {
 	treatmentPlanItemSchema,
 	labOrderStatusSchema,
 	vitaShadeSchema,
+	isValidVitaShade,
 	type AsaClassification,
 	type VasoconstrictorRatio,
 	type DmsGuaranteeLetter,
@@ -84,6 +85,12 @@ export {
 } from "./consents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
+export {
+	UPPER_PRIMARY_TEETH,
+	LOWER_PRIMARY_TEETH,
+	PRIMARY_UPPER_TEETH,
+	PRIMARY_LOWER_TEETH,
+} from "./clinical/pediatric/constants.js";
 export { PATHOLOGY_STAMPS, type PathologyStampItem } from "./clinical/dentalFormulaStates.js";
 export {
 	DENTAL_ICD10_FULL_CATALOG,
@@ -128,8 +135,9 @@ export {
 export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./finance/cashFlowCatalogs.js";
+export * from "./finance/cashFlowCategories.js";
 export * from "./finance/clinicalCashFlowCatalogs.js";
-export * from "./finance/stomxCashFlowCatalogs.js";
+export * from "./finance/clinicalCashFlowCategories.js";
 export * from "./finance/treatmentBudgetEngine.js";
 export * from "./finance/accountingExportEngine.js";
 export * from "./imaging/index.js";
@@ -240,8 +248,12 @@ export * from "./lab/index.js";
 export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
 export * from "./ai/index.js";
-export * from "./ai/tokenCompactor.js";
+export {
+	estimateConversationTokens,
+	estimateMessageTokens,
+} from "./ai/index.js";
 export * from "./types/ai.js";
 export * from "./marketing/index.js";
 export * from "./fuzzing/index.js";
+export * from "./finance/doctorPayoutCalculator.js";
 export { generateUuidV7 } from "./sync/hashing.js";

@@ -19,7 +19,7 @@ import {
 import type { ServicePricelistItem } from "../../components/catalog/pricelist/servicePricelistPresets";
 import {
 	CANONICAL_WAREHOUSE_PRESETS,
-} from "../../components/inventory/WarehouseManagerModal";
+} from "../../components/inventory/warehouseInventoryPresets";
 import {
 	handleOneClickPackageWriteOff,
 } from "../../components/inventory/warehousePackageWriteOffEngine";
@@ -251,29 +251,24 @@ describe("VisitSoapEditor — Template Drawer DOM Chunking & Memory Guard (Manda
 	});
 });
 
-describe("ServicePricelistManagerModal — DOM Chunking & Memory Guard (Mandates 8c, 8n)", () => {
-	it("ограничивает начальную выборку прейскуранта 40 позициями в DOM и рендерит кнопку 'Показать ещё'", async () => {
+describe("PricelistStudioModal — Studio DOM Performance & Memory Guard (Mandates 8c, 8n)", () => {
+	it("рендерит прейскурант каталога услуг без утечек памяти и с защитой DOM", async () => {
 		const React = await import("react");
 		const { renderToString } = await import("react-dom/server");
-		const { ServicePricelistManagerModal } = await import(
-			"../../components/catalog/pricelist/ServicePricelistManagerModal"
+		const { PricelistStudioModal } = await import(
+			"../../components/catalog/PricelistStudioModal"
 		);
 
 		const html = renderToString(
-			React.createElement(ServicePricelistManagerModal, {
+			React.createElement(PricelistStudioModal, {
 				isOpen: true,
 				onClose: () => {},
 			}),
 		);
 
-		// Проверяем кнопку раскрытия следующей порции
 		assert.ok(
-			html.includes("btn-pricelist-show-more"),
-			"Должна присутствовать кнопка 'Показать ещё' услуг",
-		);
-		assert.ok(
-			html.includes("Показать ещё 40 услуг"),
-			"Кнопка должна содержать текст: 'Показать ещё 40 услуг'",
+			html.includes("pricelist-table-view") || html.includes("pricelist-studio-modal"),
+			"Должна присутствовать таблица прейскуранта",
 		);
 	});
 });

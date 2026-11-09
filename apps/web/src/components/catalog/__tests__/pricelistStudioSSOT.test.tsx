@@ -21,8 +21,12 @@ import {
 	formatKopecksToRubles,
 	parseRublesToKopecks,
 	loadCanonicalPricelist,
+	normalizeCategoryToBackend,
+	normalizeCategoryFromBackend,
+	getSpecialtyForCategory,
+	getCategoryDisplayLabel,
 } from "../pricelistCatalogData";
-import { ServicePriceListStudioModal, PricelistStudioModal } from "../ServicePriceListStudioModal";
+import { PricelistStudioModal, ServicePriceListStudioModal } from "../PricelistStudioModal";
 import { PricelistItemDrawer } from "../PricelistItemDrawer";
 import { DirectPricelistLauncher } from "../DirectPricelistLauncher";
 
@@ -194,6 +198,71 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 		it("не рендерит модалку если URL не содержит прейскурантных токенов", () => {
 			const html = renderToString(<DirectPricelistLauncher />);
 			assert.equal(html, "");
+		});
+	});
+
+	describe("6. Red Team инквизиция дефектов (DEF-PRICE-01..05)", () => {
+		it("нормализует категории фронтенда в бэкендовую схему serviceCategorySchema (DEF-PRICE-01)", () => {
+			assert.equal(normalizeCategoryToBackend("orthopedics"), "prosthetics");
+			assert.equal(normalizeCategoryToBackend("diagnostics"), "imaging");
+			assert.equal(normalizeCategoryToBackend("implantology"), "surgery");
+			assert.equal(normalizeCategoryToBackend("pediatric"), "therapy");
+			assert.equal(normalizeCategoryToBackend("therapy"), "therapy");
+			assert.equal(normalizeCategoryToBackend("surgery"), "surgery");
+			assert.equal(normalizeCategoryToBackend("hygiene"), "hygiene");
+		});
+
+		it("нормализует категории бэкенда в студийные категории прейскуранта (DEF-PRICE-01)", () => {
+			assert.equal(normalizeCategoryFromBackend("prosthetics"), "orthopedics");
+			assert.equal(normalizeCategoryFromBackend("imaging"), "diagnostics");
+			assert.equal(normalizeCategoryFromBackend("consultation"), "diagnostics");
+			assert.equal(normalizeCategoryFromBackend("documents"), "diagnostics");
+			assert.equal(normalizeCategoryFromBackend("surgery"), "surgery");
+			assert.equal(normalizeCategoryFromBackend("therapy"), "therapy");
+		});
+
+		it("динамически определяет специальность врача без тотального хардкода therapist (DEF-PRICE-04)", () => {
+			assert.equal(getSpecialtyForCategory("surgery"), "surgeon");
+			assert.equal(getSpecialtyForCategory("implantology"), "surgeon");
+			assert.equal(getSpecialtyForCategory("orthopedics"), "orthopedist");
+			assert.equal(getSpecialtyForCategory("prosthetics"), "orthopedist");
+			assert.equal(getSpecialtyForCategory("orthodontics"), "orthodontist");
+			assert.equal(getSpecialtyForCategory("hygiene"), "hygienist");
+			assert.equal(getSpecialtyForCategory("pediatric"), "pediatric");
+			assert.equal(getSpecialtyForCategory("diagnostics"), "radiologist");
+			assert.equal(getSpecialtyForCategory("imaging"), "radiologist");
+			assert.equal(getSpecialtyForCategory("therapy"), "therapist");
+		});
+
+		it("преобразует категории в человекочитаемые русские названия без утечки английских энумов (DEF-PRICE-03)", () => {
+			assert.equal(getCategoryDisplayLabel("prosthetics"), "Ортопедия");
+			assert.equal(getCategoryDisplayLabel("imaging"), "Диагностика");
+			assert.equal(getCategoryDisplayLabel("consultation"), "Консультация");
+			assert.equal(getCategoryDisplayLabel("orthopedics"), "Ортопедия");
+			assert.equal(getCategoryDisplayLabel("surgery"), "Хирургия");
+			assert.equal(getCategoryDisplayLabel("therapy"), "Терапия");
+		});
+
+		it("корректно сохраняет нулевую цену (0 ₽) и не превращает её в 3500 ₽ (DEF-PRICE-05)", () => {
+			const freeItem = {
+				id: "srv-free",
+				title: "Бесплатный профилактический осмотр",
+				category: "therapy",
+				priceRub: 0,
+				basePriceRub: 0,
+				durationMin: 15,
+			};
+
+			const html = renderToString(
+				<PricelistStudioModal
+					isOpen={true}
+					onClose={() => {}}
+					initialItems={[freeItem]}
+				/>,
+			);
+
+			assert.ok(html.includes("0\u00A0₽"), "Цена должна быть строго 0 ₽");
+			assert.ok(!html.includes("3\u00A0500\u00A0₽"), "0 ₽ не должно мутировать в 3500 ₽");
 		});
 	});
 });

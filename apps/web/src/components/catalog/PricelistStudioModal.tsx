@@ -32,9 +32,11 @@ import {
 	calculatePricelistStats,
 	filterPricelist,
 	formatKopecksToRubles,
+	getCategoryDisplayLabel,
 	getMatchedTag,
 	kopecksToRublesExact,
 	loadCanonicalPricelist,
+	normalizeCategoryFromBackend,
 	parseRublesToKopecks,
 	saveCanonicalPricelist,
 	fetchPricelistFromBackend,
@@ -102,19 +104,25 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 				serviceCode: item.serviceCode || item.code || `ПОЗ-${idx + 1}`,
 				regulatoryCode: item.regulatoryCode || item.code,
 				title: item.title || item.commercialTitle || "Стоматологическая услуга",
-				category: (item.category as PricelistCategoryKey) || "therapy",
+				category: normalizeCategoryFromBackend(item.category),
 				priceKopecks:
-					item.priceKopecks ||
-					(item.priceRub
-						? item.priceRub * 100
-						: item.basePriceRub
-							? item.basePriceRub * 100
-							: 350000),
+					typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)
+						? Math.round(item.priceKopecks)
+						: typeof item.priceRub === "number" && Number.isFinite(item.priceRub)
+							? Math.round(item.priceRub * 100)
+							: typeof item.basePriceRub === "number" && Number.isFinite(item.basePriceRub)
+								? Math.round(item.basePriceRub * 100)
+								: 350000,
 				costKopecks:
-					item.costKopecks ||
-					(item.materialCostRub
-						? item.materialCostRub * 100
-						: 50000),
+					typeof item.costKopecks === "number" && Number.isFinite(item.costKopecks)
+						? Math.round(item.costKopecks)
+						: typeof item.materialCostRub === "number" && Number.isFinite(item.materialCostRub)
+							? Math.round(item.materialCostRub * 100)
+							: typeof item.materialsCostRub === "number" && Number.isFinite(item.materialsCostRub)
+								? Math.round(item.materialsCostRub * 100)
+								: typeof item.costRub === "number" && Number.isFinite(item.costRub)
+									? Math.round(item.costRub * 100)
+									: 50000,
 				durationMin: item.durationMin || item.estimatedDurationMin || 30,
 				isActive: (item as any).active !== false && item.isActive !== false,
 				tags: item.tags || [],
@@ -346,7 +354,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 						serviceCode: code,
 						title,
 						category: "therapy",
-						priceKopecks: priceKopecks > 0 ? priceKopecks : 350000,
+						priceKopecks: priceKopecks >= 0 ? priceKopecks : 350000,
 						costKopecks: Math.round(priceKopecks * 0.2),
 						durationMin: 30,
 						isActive: true,
@@ -591,7 +599,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 											</td>
 											<td>
 												<span className="text-xs text-[var(--muted)]">
-													{CANONICAL_CLINICAL_CATEGORIES.find((c) => c.key === item.category)?.shortTitle || item.category}
+													{getCategoryDisplayLabel(item.category)}
 												</span>
 											</td>
 											<td style={{ textAlign: "right" }} className="text-xs text-[var(--muted)]">
@@ -705,7 +713,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 									</div>
 									<div className="flex items-center justify-between pt-2.5 border-t border-[var(--line)] text-xs text-[var(--muted)]">
 										<span className="truncate pr-2">
-											{CANONICAL_CLINICAL_CATEGORIES.find((c) => c.key === item.category)?.shortTitle || item.category} · {item.durationMin} мин
+											{getCategoryDisplayLabel(item.category)} · {item.durationMin} мин
 										</span>
 										<div className="flex items-center gap-1.5 shrink-0">
 											<button
@@ -795,5 +803,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 
 	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
+
+export const ServicePriceListStudioModal = PricelistStudioModal;
+export const ServicePricelistManagerModal = PricelistStudioModal;
 
 export default PricelistStudioModal;

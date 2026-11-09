@@ -114,14 +114,18 @@ export function normalizeToolName(toolName: string): string {
 	switch (toolName) {
 		case "read_file":
 		case "view_file":
+		case "read_local_file":
 			return "read_clinical_file";
 		case "write_file":
+		case "write_local_file":
 			return "write_clinical_file";
 		case "edit_file":
+		case "patch_local_file":
 			return "replace_file_content";
 		case "run_command":
 			return "run_workstation_command";
 		case "launch_app":
+		case "launch_imaging_app":
 			return "launch_workstation_app";
 		case "capture_screen":
 			return "capture_workstation_screen";
