@@ -20,7 +20,7 @@ import { organizations, users } from "../../auth.js";
 import { patients } from "../../patients.js";
 import { chairs } from "../../schedule.js";
 import { visits } from "../visitsSchema.js";
-import { treatmentPlans } from "./treatmentPlansTable.js";
+import { treatmentPlans, treatmentPlanStages } from "./treatmentPlansTable.js";
 
 /**
  * treatmentPlanItemsTable.ts — Позиции смет планов лечения, каталог услуг
@@ -174,6 +174,9 @@ export const treatmentPlanItemsNew = pgTable(
 			.notNull()
 			.references(() => organizations.id),
 		planId: uuid("plan_id").notNull(),
+		stageId: uuid("stage_id").references(() => treatmentPlanStages.id, {
+			onDelete: "set null",
+		}),
 		toothNumber: integer("tooth_number"),
 		priceId: text("price_id").notNull(),
 		quantity: integer("quantity").notNull().default(1),
@@ -196,6 +199,7 @@ export const treatmentPlanItemsNew = pgTable(
 			t.organizationId,
 		),
 		planIdIdx: index("treatment_plan_items_new_plan_id_idx").on(t.planId),
+		stageIdIdx: index("treatment_plan_items_new_stage_id_idx").on(t.stageId),
 		doctorIdIdx: index("treatment_plan_items_new_doctor_id_idx").on(t.doctorId),
 		orgPlanIdx: index("treatment_plan_items_new_org_plan_idx").on(
 			t.organizationId,

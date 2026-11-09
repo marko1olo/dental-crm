@@ -647,8 +647,7 @@ describe("RED TEAM: PostgreSQL 18 ACID Concurrency, Deadlock Immunity & Rollback
 				// Step 2: Insert treatment plan stage
 				await tx.insert(treatmentPlanStages).values({
 					organizationId: ORG_ID,
-					patientName: "Иванова Мария Пациент Член Семьи",
-					planTitle: "План лечения №999",
+					planId: testPlanId,
 					stageName: "Хирургический этап: синус-лифтинг и установка 2 имплантатов",
 					stageOrder: 1,
 				});
@@ -699,7 +698,7 @@ describe("RED TEAM: PostgreSQL 18 ACID Concurrency, Deadlock Immunity & Rollback
 			.from(treatmentPlanStages)
 			.where(
 				and(
-					eq(treatmentPlanStages.planTitle, "План лечения №999"),
+					eq(treatmentPlanStages.planId, testPlanId),
 					eq(treatmentPlanStages.organizationId, ORG_ID),
 				),
 			);

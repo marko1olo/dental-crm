@@ -3,7 +3,6 @@
  */
 
 export * from "./treatmentPlanTypes";
-export * from "./TreatmentPlanEditor";
 export * from "./TreatmentPlanTierSelector";
 export type { TreatmentPlanStatus } from "./types";
 export * from "./types";

@@ -23,13 +23,14 @@ import {
 	DEFAULT_PRESENTER_STAGES,
 	DEFAULT_PRESENTER_TIERS,
 	buildPresenterTiersFromTeeth,
-} from "./presenterModules/TreatmentPlanPresenterDefaultStages";
+} from "./treatmentPlanCatalogData";
 import { PresenterDoctorDiscountBar } from "./presenterModules/PresenterDoctorDiscountBar";
 import { Presenter3TierGrid } from "./presenterModules/Presenter3TierGrid";
 import { PresenterStagesSection } from "./presenterModules/PresenterStagesSection";
 import { TreatmentPlanAcceptanceFooter } from "./presenterModules/TreatmentPlanAcceptanceFooter";
-import { CashRegisterCheckoutModal } from "../cashbox/CashRegisterCheckoutModal";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 import { BeforeAfterSplitSlider } from "../photography/BeforeAfterSplitSlider";
+import { showToast } from "../GlobalToast";
 
 if (typeof window !== "undefined") {
 	void import("./treatmentPlans.css");
@@ -71,15 +72,15 @@ export interface TreatmentPlanPresenterModalProps {
 
 export function getTierLetter(tierId: TreatmentPlanTierId): string {
 	if (tierId === "economy") return "Вариант А: Эконом";
-	if (tierId === "standard") return "Вариант Б: Оптимум";
-	if (tierId === "optimum" || tierId === "premium") return "Вариант В: Премиум";
+	if (tierId === "standard" || tierId === "optimum") return "Вариант Б: Оптимум";
+	if (tierId === "premium") return "Вариант В: Премиум";
 	return "Вариант Б: Оптимум";
 }
 
 export function getTierShortTitle(tierId: TreatmentPlanTierId): string {
 	if (tierId === "economy") return "Эконом";
-	if (tierId === "standard") return "Оптимум";
-	if (tierId === "optimum" || tierId === "premium") return "Премиум";
+	if (tierId === "standard" || tierId === "optimum") return "Оптимум";
+	if (tierId === "premium") return "Премиум";
 	return "Оптимум";
 }
 
@@ -92,7 +93,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	doctorFullName = "Лечащий врач",
 	planId,
 	tiers: propTiers,
-	initialSelectedTierId = "standard",
+	initialSelectedTierId = "optimum",
 	onApproveAndSign,
 	onConfirmSelection,
 	onPayStage,
@@ -225,27 +226,39 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		}
 		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
 		if (typeof fetch !== "undefined" && isValidUuid) {
-			void fetch("/api/invoices/generate-from-plan", {
+			void fetch("/api/invoices", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					planId: planId || undefined,
 					patientId,
 					documentType: "work_order",
-					isSignedWithPatient: true,
-					items: stage.items.map((it, idx) => ({
-						itemId: it.id || `stage-item-${idx}`,
+					status: "issued",
+					notes: `Счёт по этапу «${stage.title}»${planId ? ` (План: ${planId.slice(0, 8)})` : ""}`,
+					items: stage.items.map((it) => ({
 						nameRu: it.name || "Услуга",
-						unitPriceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
-						quantity: it.quantity || 1,
-						discountRub: it.discountRub || 0,
+						title: it.name || "Услуга",
 						code804n: it.code804n || (it as any).serviceCode || undefined,
 						toothNumber: it.toothNumber ?? null,
+						unitPriceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
+						priceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
+						quantity: it.quantity || 1,
+						discountRub: it.discountRub || 0,
+						totalRub: it.priceRub * (it.quantity || 1) - (it.discountRub || 0),
 					})),
 				}),
-			}).catch((err) => {
-				console.warn("[TreatmentPlanPresenterModal] Не удалось создать наряд из этапа:", err);
-			});
+			})
+				.then(async (res) => {
+					if (!res.ok) {
+						const errJson = await res.json().catch(() => ({}));
+						const errMsg = errJson.message || `Ошибка сервера (HTTP ${res.status})`;
+						showToast(`Не удалось создать счёт по этапу: ${errMsg}`, "error");
+						return;
+					}
+					showToast(`Счёт по этапу «${stage.title}» успешно сформирован`, "success");
+				})
+				.catch((err) => {
+					showToast(`Ошибка сети при создании счёта: ${err instanceof Error ? err.message : String(err)}`, "error");
+				});
 		}
 	}, [onPayStage, planId, patientId]);
 
@@ -387,8 +400,12 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 			{/* Кассовый чекаут */}
 			{isCheckoutOpen && (
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={isCheckoutOpen}
+					mode="checkout"
+					initialTab="checkout"
+					containerTestId="cash-register-checkout-modal"
+					submitButtonTestId="btn-confirm-checkout-payment"
 					onClose={() => {
 						setIsCheckoutOpen(false);
 						setCheckoutStage(null);
@@ -396,6 +413,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					patientId={patientId}
 					patientName={patientName}
 					patientPhone={patientPhone}
+					totalDueRub={checkoutStage?.totalRub || activeTier?.totalRub || 0}
 					amountRub={checkoutStage?.totalRub || activeTier?.totalRub || 0}
 					amountKopecks={
 						checkoutStage?.totalKopecks ??

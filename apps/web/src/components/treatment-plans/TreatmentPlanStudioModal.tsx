@@ -9,7 +9,7 @@
  * Apple HIG: Сенсорная зона >= 44x44px, Drag Handle 36x5px, нативный Segmented Switcher на смартфонах (390x844).
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	Stethoscope, Percent, Printer, X, CheckCircle2,
 	FileText, BarChart3, Package, UserCheck, Zap,
@@ -20,6 +20,7 @@ import { formatRubles } from "./treatmentPlanTypes";
 import {
 	CANONICAL_CLINICAL_STAGES, buildCanonical3TierPlans,
 	applyDoctorDiscountToTiers, generateTreatmentPlanFromDiagnosis,
+	buildPresenterTiersFromTeeth,
 } from "./treatmentPlanCatalogData";
 import { type ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
@@ -43,6 +44,7 @@ export interface TreatmentPlanStudioModalProps {
 	readonly doctorSpecialty?: string | null;
 	readonly initialSelectedTierId?: TreatmentPlanTierId;
 	readonly initialDepthMode?: "express" | "expert";
+	readonly initialStages?: readonly TreatmentPlanStage[];
 	readonly onApprovePlan?: (selectedTier: TreatmentPlanTier) => void;
 	readonly onConfirmSelection?: (selectedTier: TreatmentPlanTier) => void;
 	readonly onApproveAndSign?: (selectedTier: TreatmentPlanTier) => void;
@@ -66,6 +68,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	doctorSpecialty,
 	initialSelectedTierId = "optimum",
 	initialDepthMode = "express",
+	initialStages,
 	onApprovePlan,
 	onConfirmSelection,
 	onApproveAndSign,
@@ -81,13 +84,143 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	const [depthMode, setDepthMode] = useState<StudioDepthMode>(initialDepthMode);
 	const [activeTab, setActiveTab] = useState<StudioTab>("tiers");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
-	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(CANONICAL_CLINICAL_STAGES);
+	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(() => {
+		if (initialStages && initialStages.length > 0) return initialStages;
+		return [];
+	});
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
 	const [isDiscountBarOpen, setIsDiscountBarOpen] = useState<boolean>(false);
-	const [expandedStageId, setExpandedStageId] = useState<string | null>("stage-1-hygiene");
+	const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+	const [expandedStageId, setExpandedStageId] = useState<string | null>(() => {
+		if (initialStages && initialStages.length > 0 && initialStages[0]?.id) {
+			return initialStages[0].id;
+		}
+		return "stage-1-hygiene";
+	});
 	const [approvedSuccessMessage, setApprovedSuccessMessage] = useState<string | null>(null);
 	const [draftSavedNotice, setDraftSavedNotice] = useState<string | null>(null);
 	const [exportSuccessNotice, setExportSuccessNotice] = useState<string | null>(null);
+
+	// 0. Реактивная гидратация планов лечения пациента без F5 (Мандаты 8d, 8zq)
+	useEffect(() => {
+		if (!isOpen || !patientId) return;
+		let isCancelled = false;
+
+		const fetchPatientPlans = async () => {
+			try {
+				const res = await fetch(`/api/patients/${patientId}/treatment-plans`);
+				if (!res.ok) return;
+				const data = await res.json();
+				if (isCancelled) return;
+
+				if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+					// Находим активный, в процессе или самый свежий план лечения
+					const activePlan = data.plans.find((p: any) => p.status === "Approved" || p.status === "InProgress") || data.plans[0];
+					if (activePlan && Array.isArray(activePlan.items) && activePlan.items.length > 0) {
+						const phaseMap = new Map<number, TreatmentPlanItem[]>();
+						for (const it of activePlan.items) {
+							const phase = it.phase || 1;
+							if (!phaseMap.has(phase)) phaseMap.set(phase, []);
+							phaseMap.get(phase)!.push({
+								id: it.id || `plan-item-${phase}-${Date.now()}`,
+								toothNumber: it.toothNumber,
+								code804n: it.priceId || it.serviceCode || "",
+								name: it.name || "Услуга",
+								priceRub: Number(it.price || 0),
+								unitPriceRub: Number(it.price || 0),
+								discountRub: Number(it.discount || 0),
+								quantity: it.quantity || 1,
+								stageKind: phase === 1 ? "stage_1_therapy" : phase === 2 ? "stage_2_surgery" : "stage_3_orthopedics",
+								isCompleted: Boolean(it.isCompleted),
+							});
+						}
+
+						const hydrated: TreatmentPlanStage[] = [];
+						const sortedPhases = Array.from(phaseMap.keys()).sort((a, b) => a - b);
+						for (const ph of sortedPhases) {
+							const groupItems = phaseMap.get(ph)!;
+							const sRub = groupItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
+							const title = ph === 1
+								? "Этап 1: Неотложная помощь и терапия"
+								: ph === 2
+								? "Этап 2: Хирургия и имплантация"
+								: ph === 3
+								? "Этап 3: Ортопедия и протезирование"
+								: `Этап ${ph}: Клинический этап`;
+
+							hydrated.push({
+								id: `stage-${ph}-${activePlan.id || "hydrated"}`,
+								stageNumber: ph,
+								stageKind: ph === 1 ? "stage_1_therapy" : ph === 2 ? "stage_2_surgery" : "stage_3_orthopedics",
+								title,
+								subtitle: `Процедур в этапе: ${groupItems.length}`,
+								clinicalGoal: "Комплексная санация полости рта",
+								totalRub: sRub,
+								totalKopecks: sRub * 100,
+								estimatedVisits: groupItems.length,
+								estimatedWeeks: ph * 2,
+								status: activePlan.status === "Approved" ? "approved" : "draft",
+								items: groupItems,
+							});
+						}
+
+						if (hydrated.length > 0) {
+							if (activePlan?.id) setCurrentPlanId(activePlan.id);
+							setStages(hydrated);
+							setExpandedStageId(hydrated[0].id);
+							return;
+						}
+					}
+				}
+
+				// Если планов в БД нет, проверяем сохранённый черновик в localStorage
+				if (typeof window !== "undefined") {
+					const draftStorageKey = `dente_plan_draft_${patientId}`;
+					const localDraft = localStorage.getItem(draftStorageKey);
+					if (localDraft) {
+						try {
+							const parsed = JSON.parse(localDraft);
+							if (Array.isArray(parsed.stages) && parsed.stages.length > 0) {
+								setStages(parsed.stages);
+								if (parsed.selectedTierId) setSelectedTierId(parsed.selectedTierId);
+								if (typeof parsed.doctorDiscountPercent === "number") setDoctorDiscountPercent(parsed.doctorDiscountPercent);
+								return;
+							}
+						} catch {
+							// ignore
+						}
+					}
+				}
+
+				// Если данных нет и демо-режим отключен — оставляем чистый Empty State
+				if (!isDemo) {
+					setStages([]);
+				}
+			} catch (err) {
+				console.warn("[TreatmentPlanStudioModal] Ошибка реактивной гидратации планов лечения:", err);
+			}
+		};
+
+		void fetchPatientPlans();
+
+		// Реактивная подписка на события обновления планов без перезагрузки страницы F5 (Мандат 8zq)
+		const handlePlanChanged = () => {
+			void fetchPatientPlans();
+		};
+
+		if (typeof window !== "undefined") {
+			window.addEventListener("dente:plan-status-changed", handlePlanChanged);
+			window.addEventListener("dente:plan-updated", handlePlanChanged);
+		}
+
+		return () => {
+			isCancelled = true;
+			if (typeof window !== "undefined") {
+				window.removeEventListener("dente:plan-status-changed", handlePlanChanged);
+				window.removeEventListener("dente:plan-updated", handlePlanChanged);
+			}
+		};
+	}, [isOpen, patientId, isDemo]);
 
 	// 1. Расчет 3 канонических тарифов с учетом текущих этапов и скидки врача
 	const computedTiers = useMemo(() => {
@@ -108,6 +241,52 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		setStages(newStages);
 		if (newStages.length > 0 && newStages[0]?.id) setExpandedStageId(newStages[0].id);
 	}, []);
+
+	// 3.1. Генерация плана из реальной зубной формулы пациента
+	const handleGenerateFromTeeth = useCallback(() => {
+		const tiersFromTeeth = buildPresenterTiersFromTeeth(teeth);
+		const optTier = tiersFromTeeth.find((t) => t.tierId === "optimum") || tiersFromTeeth[0];
+		if (optTier && optTier.stages.length > 0) {
+			setStages(optTier.stages);
+			if (optTier.stages[0]?.id) setExpandedStageId(optTier.stages[0].id);
+		} else {
+			setStages(CANONICAL_CLINICAL_STAGES);
+			setExpandedStageId(CANONICAL_CLINICAL_STAGES[0].id);
+		}
+	}, [teeth]);
+
+	// 3.2. Добавление кастомного клинического этапа
+	const handleAddCustomStage = useCallback(() => {
+		const newStageNumber = stages.length + 1;
+		const newStageId = `stage-custom-${Date.now()}`;
+		const defaultItem: TreatmentPlanItem = {
+			id: `item-custom-${Date.now()}-1`,
+			name: "Первичный клинический осмотр и диагностика",
+			code804n: "B01.065.001",
+			priceRub: 2500,
+			unitPriceRub: 2500,
+			discountRub: 0,
+			quantity: 1,
+			stageKind: "stage_custom",
+			isCompleted: false,
+		};
+		const newStage: TreatmentPlanStage = {
+			id: newStageId,
+			stageNumber: newStageNumber,
+			stageKind: "stage_custom",
+			title: `Этап ${newStageNumber}: Клинический этап`,
+			subtitle: "Диагностика и план реабилитации",
+			clinicalGoal: "Санация полости рта",
+			items: [defaultItem],
+			totalRub: 2500,
+			totalKopecks: 250000,
+			estimatedVisits: 1,
+			estimatedWeeks: 1,
+			status: "draft",
+		};
+		setStages((prev) => [...prev, newStage]);
+		setExpandedStageId(newStageId);
+	}, [stages.length]);
 
 	// 4. Добавление клинического пакета в этапы плана в 1 клик
 	const handleAddBundleToStages = useCallback((bundle: ClinicalBundleDefinition, toothNumber?: number) => {
@@ -207,36 +386,63 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
 			if (window.fetch && isValidUuid) {
 				try {
-					const res = await fetch("/api/v1/treatment-plans", {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							patientId,
-							name: `Комплексный план: ${activeTier.title}`,
-							title: `Комплексный план: ${activeTier.title}`,
-							totalPriceRub: activeTier.totalRub,
-							planDiscountPercent: doctorDiscountPercent,
-							stages: activeTier.stages.map((stg, stgIdx) => ({
-								stageOrder: stg.stageNumber || stgIdx + 1,
-								stageName: stg.title || `Этап ${stgIdx + 1}`,
-								completionPercentage: 0,
-								items: stg.items.map((it, itIdx) => ({
-									priceId: it.id || (it as any).code804n || `item-${stgIdx + 1}-${itIdx + 1}`,
-									name: it.name || "Услуга",
-									price: it.priceRub || 0,
-									quantity: it.quantity || 1,
-									discount: it.discountRub || 0,
-									toothNumber: it.toothNumber ?? null,
+					let planIdToApprove = currentPlanId;
+
+					// Если плана еще нет в базе — создаем его через канонический POST /api/treatment-plans (без /v1/)
+					if (!planIdToApprove) {
+						const createRes = await fetch("/api/treatment-plans", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								patientId,
+								name: `Комплексный план: ${activeTier.title}`,
+								title: `Комплексный план: ${activeTier.title}`,
+								totalPriceRub: activeTier.totalRub,
+								planDiscountPercent: doctorDiscountPercent,
+								stages: activeTier.stages.map((stg, stgIdx) => ({
+									stageOrder: stg.stageNumber || stgIdx + 1,
+									stageName: stg.title || `Этап ${stgIdx + 1}`,
+									completionPercentage: 0,
+									items: stg.items.map((it, itIdx) => ({
+										priceId: it.id || (it as any).code804n || `item-${stgIdx + 1}-${itIdx + 1}`,
+										name: it.name || "Услуга",
+										price: it.priceRub || 0,
+										quantity: it.quantity || 1,
+										discount: it.discountRub || 0,
+										toothNumber: it.toothNumber ?? null,
+									})),
 								})),
-							})),
-						}),
-					});
-					if (!res.ok) {
-						const errJson = await res.json().catch(() => ({}));
-						console.warn("[TreatmentPlanStudioModal] Ошибка сохранения плана лечения:", errJson);
+							}),
+						});
+						if (createRes.ok) {
+							const createdJson = await createRes.json().catch(() => ({}));
+							const createdId = createdJson?.plan?.id || createdJson?.id;
+							if (createdId) {
+								planIdToApprove = createdId;
+								setCurrentPlanId(createdId);
+							}
+						} else {
+							const errJson = await createRes.json().catch(() => ({}));
+							console.warn("[TreatmentPlanStudioModal] Ошибка сохранения плана лечения:", errJson);
+						}
+					}
+
+					// Канонический вызов утверждения плана POST /api/treatment-plans/:id/approve без создания дубликата
+					if (planIdToApprove) {
+						const approveRes = await fetch(`/api/treatment-plans/${planIdToApprove}/approve`, {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								selectedTier: activeTier.tierId,
+							}),
+						});
+						if (!approveRes.ok) {
+							const errJson = await approveRes.json().catch(() => ({}));
+							console.warn("[TreatmentPlanStudioModal] Ошибка утверждения плана лечения:", errJson);
+						}
 					}
 				} catch (networkErr) {
-					console.warn("[TreatmentPlanStudioModal] Сетевой сбой при сохранении плана лечения:", networkErr);
+					console.warn("[TreatmentPlanStudioModal] Сетевой сбой при утверждении плана лечения:", networkErr);
 				}
 			}
 		}
@@ -245,7 +451,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			setApprovedSuccessMessage(null);
 			onClose();
 		}, 1400);
-	}, [activeTier, doctorDiscountPercent, onApprovePlan, onConfirmSelection, onApproveAndSign, onClose, patientId, patientName, doctorFullName]);
+	}, [activeTier, currentPlanId, doctorDiscountPercent, onApprovePlan, onConfirmSelection, onApproveAndSign, onClose, patientId, patientName, doctorFullName]);
 
 	// 6. Сохранение черновика (Мандат 8e: врач может сохранить план в любой момент)
 	const handleSaveDraft = useCallback(() => {
@@ -550,6 +756,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							isExpressMode={depthMode === "express"}
 							onAddItemToStage={handleAddItemToStage}
 							onRemoveItemFromStage={handleRemoveItemFromStage}
+							onGenerateFromTeeth={handleGenerateFromTeeth}
+							onAddCustomStage={handleAddCustomStage}
 						/>
 					)}
 
@@ -614,12 +822,12 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={handleApprove}
-							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] w-full sm:w-auto px-6 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white"
+							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] w-full sm:w-auto px-5 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white whitespace-nowrap"
 							data-testid="approve-treatment-plan-btn"
 						>
 							<CheckCircle2 className="w-5 h-5 shrink-0" />
 							<span className="hidden sm:inline">{`Утвердить выбранный план («${sanitizedActiveTitle}»)`}</span>
-							<span className="sm:hidden">{`Утвердить план (${formatRubles(activeTier.totalRub)})`}</span>
+							<span className="sm:hidden whitespace-nowrap">{`Утвердить план · ${formatRubles(activeTier.totalRub).replace(" ", "\u00A0")}`}</span>
 						</button>
 					</div>
 				</footer>

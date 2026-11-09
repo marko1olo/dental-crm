@@ -60,8 +60,8 @@
 	.tp-studio-dialog {
 		border: 1px solid var(--line, #e2e8f0);
 		border-radius: 1rem;
-		height: auto;
-		max-height: 90vh;
+		height: 88vh;
+		max-height: 92vh;
 		margin: auto;
 	}
 }

@@ -333,12 +333,77 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 
 	it("19. DirectTreatmentPlanLauncher: ликвидация захардкоженных ФИО и реактивная гидратация", async () => {
 		const fs = await import("node:fs");
-		const launcherPath = "apps/web/src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx";
-		const code = fs.readFileSync(launcherPath, "utf-8");
+		const path = await import("node:path");
+		const relPath = "src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx";
+		const fullPath = fs.existsSync(relPath) ? relPath : path.resolve(process.cwd(), "apps/web", relPath);
+		const code = fs.readFileSync(fullPath, "utf-8");
 
 		assert.ok(!code.includes('"Смирнова Екатерина Васильевна"'), "Захардкоженное имя Смирновой должно быть вырезано");
 		assert.ok(!code.includes('"Д-р Орлов А.В. (Главный врач)"'), "Захардкоженное имя врача должно быть вырезано");
 		assert.ok(code.includes("usePatientStore"), "Должен использовать usePatientStore");
 		assert.ok(code.includes("useAppStore"), "Должен использовать useAppStore");
+	});
+
+	it("20. Честный пустой стейт студии: отображение карточки «План лечения ещё не сформирован» и 3 кнопок старта", () => {
+		const html = renderToString(
+			<TreatmentPlanStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				patientName="Тестовый Пациент"
+				doctorFullName="Д-р Тестов"
+				initialStages={[]}
+			/>
+		);
+
+		assert.ok(html.includes("data-testid=\"treatment-plan-empty-state\""), "Должна быть карточка пустого стейта");
+		assert.ok(html.includes("План лечения ещё не сформирован"));
+		assert.ok(html.includes("data-testid=\"btn-generate-from-formula\""), "Кнопка «Сформировать из зубной формулы»");
+		assert.ok(html.includes("data-testid=\"btn-canonical-protocol\""), "Кнопка «Полный клинический протокол»");
+		assert.ok(html.includes("data-testid=\"btn-add-procedure-empty\""), "Кнопка «Добавить процедуру»");
+	});
+
+	it("21. Гидратация этапов через initialStages: рендеринг переданных этапов и сумм", () => {
+		const customStages: TreatmentPlanStage[] = [
+			{
+				id: "stage-custom-test",
+				stageNumber: 1,
+				stageKind: "stage_1_therapy",
+				title: "Индивидуальный терапевтический этап",
+				subtitle: "Лечение кариеса",
+				clinicalGoal: "Восстановление анатомической формы",
+				totalRub: 8000,
+				totalKopecks: 800000,
+				estimatedVisits: 1,
+				estimatedWeeks: 1,
+				status: "draft",
+				items: [
+					{
+						id: "item-custom-test-1",
+						name: "Реставрация зуба 21 композитом Gradia Direct",
+						toothNumber: 21,
+						priceRub: 8000,
+						unitPriceRub: 8000,
+						discountRub: 0,
+						quantity: 1,
+						stageKind: "stage_1_therapy",
+						isCompleted: false,
+					},
+				],
+			},
+		];
+
+		const html = renderToString(
+			<TreatmentPlanStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				patientName="Тестовый Пациент"
+				doctorFullName="Д-р Тестов"
+				initialStages={customStages}
+			/>
+		);
+
+		assert.ok(!html.includes("data-testid=\"treatment-plan-empty-state\""), "Пустой стейт не должен отображаться при наличии этапов");
+		assert.ok(html.includes("Индивидуальный терапевтический этап"));
+		assert.ok(html.includes("Реставрация зуба 21 композитом Gradia Direct"));
 	});
 });

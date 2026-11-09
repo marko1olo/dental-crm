@@ -65,9 +65,9 @@ describe("Treatment Plan Domain: 3-Tier Math, 13% Tax Deduction, Consumables Hid
 		// В смете для пациента остаются только клинически значимые позиции:
 		// 1) Пломбирование 26, 2) Имплантация Straumann, 3) Мембрана Bio-Gide
 		assert.equal(patientFacingItems.length, 3);
-		assert.equal(patientFacingItems[0].name, "Препарирование и пломбирование зуба 26 нанокомпозитом");
-		assert.equal(patientFacingItems[1].name, "Дентальная имплантация Straumann SLActive");
-		assert.equal(patientFacingItems[2].name, "Коллагеновая мембрана Geistlich Bio-Gide 25x25");
+		assert.equal(patientFacingItems[0]?.name, "Препарирование и пломбирование зуба 26 нанокомпозитом");
+		assert.equal(patientFacingItems[1]?.name, "Дентальная имплантация Straumann SLActive");
+		assert.equal(patientFacingItems[2]?.name, "Коллагеновая мембрана Geistlich Bio-Gide 25x25");
 
 		// В складской ведомости (BOM) сохранены все 7 позиций для тихого списания
 		assert.equal(warehouseBOMItems.length, 7);
@@ -141,6 +141,8 @@ describe("Treatment Plan Domain: 3-Tier Math, 13% Tax Deduction, Consumables Hid
 				address: "г. Москва, ул. Профсоюзная, д. 24",
 				phone: "+7 (495) 777-88-99",
 				ogrn: "1157746123456",
+				inn: "7701234567",
+				licenseNumber: "ЛО41-01137-77/00123456",
 			},
 			patient: {
 				fullName: "Смирнова Екатерина Васильевна",

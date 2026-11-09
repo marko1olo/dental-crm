@@ -476,7 +476,7 @@ export class VisitWorkOrderService {
 				.where(
 					and(
 						eq(treatmentPlanStages.organizationId, organizationId),
-						eq(treatmentPlanStages.planTitle, plan.name),
+						eq(treatmentPlanStages.planId, plan.id),
 					),
 				);
 

@@ -33,8 +33,9 @@ export const treatmentPlanStages = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
-		planTitle: text("plan_title").notNull(),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => treatmentPlans.id, { onDelete: "cascade" }),
 		stageOrder: integer("stage_order").default(1).notNull(),
 		stageName: text("stage_name").notNull(),
 		completionPercentage: integer("completion_percentage").default(0).notNull(),
@@ -48,6 +49,7 @@ export const treatmentPlanStages = pgTable(
 		organizationIdIdx: index("treatment_plan_stages_organizationId_idx").on(
 			t.organizationId,
 		),
+		planIdIdx: index("treatment_plan_stages_plan_id_idx").on(t.planId),
 	}),
 );
 
@@ -247,57 +249,6 @@ export const treatmentPlanLockTokens = pgTable(
 	(t) => ({
 		organizationIdIdx: index(
 			"treatment_plan_lock_tokens_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
-// #43 — план_лечения::альтернативные_планы_лечения
-export const alternativeTreatmentPlans = pgTable(
-	"alternative_treatment_plans",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
-		variantName: text("variant_name").notNull(),
-		totalCostRub: numeric("total_cost_rub", {
-			precision: 12,
-			scale: 2,
-		}).notNull(),
-		isSelectedVariant: boolean("is_selected_variant").default(false).notNull(),
-		autoArchived: boolean("auto_archived").default(false).notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"alternative_treatment_plans_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
-// #41 — документы::печать_одонтограммы_в_плане_лечения
-export const treatmentPlanPrintOdontograms = pgTable(
-	"treatment_plan_print_odontograms",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
-		planTitle: text("plan_title").notNull(),
-		odontogramIncluded: boolean("odontogram_included").default(true).notNull(),
-		toothFormulaSnippet: text("tooth_formula_snippet").notNull(),
-		printLayoutReady: boolean("print_layout_ready").default(true).notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"treatment_plan_print_odontograms_organizationId_idx",
 		).on(t.organizationId),
 	}),
 );

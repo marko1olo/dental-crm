@@ -8,7 +8,7 @@
 
 import React from "react";
 import { showToast } from "../GlobalToast.js";
-import { PaymentModal } from "./PaymentModal.js";
+import { PaymentModal } from "../finance/PaymentModal.js";
 import type { BillingInvoice } from "./invoiceTypes.js";
 import { InvoicesPrimaryModals } from "./invoices/InvoicesPrimaryModals.js";
 import { InvoicesSecondaryModals } from "./invoices/InvoicesSecondaryModals.js";

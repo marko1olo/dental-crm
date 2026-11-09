@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { showToast } from "../GlobalToast";
 import type { CashierInvoiceExportData } from "./types";
-import { CashRegisterCheckoutModal } from "../cashbox/CashRegisterCheckoutModal";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 
 const LabWorkOrderModal = React.lazy(() =>
 	import("../lab/DentalLabStudioModal").then((m) => ({ default: m.DentalLabStudioModal })),
@@ -67,8 +67,12 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 		<>
 			{/* Прямой финансовый мост в Кассу: чекаут этапа плана без ручного перенабора */}
 			{logic.isFiscalModalOpen && (
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={logic.isFiscalModalOpen}
+					mode="checkout"
+					initialTab="checkout"
+					containerTestId="cash-register-checkout-modal"
+					submitButtonTestId="btn-confirm-checkout-payment"
 					onClose={() => {
 						logic.setIsFiscalModalOpen(false);
 						if (logic.setSelectedInstallmentStage) {
@@ -79,6 +83,7 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 					patientName={logic.patientName}
 					patientPhone={logic.patientPhone}
 					amountRub={targetDueRub}
+					totalDueRub={targetDueRub}
 					amountKopecks={Math.round(targetDueRub * 100)}
 					doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
 					title={

@@ -21,8 +21,8 @@ export function getTierSegmentLabel(tier: TreatmentPlanTier, index: number, all:
 	const t = (tier.title || "").toLowerCase();
 	const id = tier.tierId;
 	if (id === "economy" || t.includes("эконом") || t.includes("базов")) return "Эконом";
-	if (id === "premium" || t.includes("премиум") || (id === "optimum" && all.length === 3 && index === 2)) return "Премиум";
-	if (id === "standard" || t.includes("стандарт") || t.includes("оптим")) return "★ Оптимум";
+	if (id === "premium" || t.includes("премиум")) return "Премиум";
+	if (id === "optimum" || id === "standard" || t.includes("стандарт") || t.includes("оптим")) return "★ Оптимум";
 	if (index === 0) return "Эконом";
 	if (index === 1) return "★ Оптимум";
 	return "Премиум";
@@ -50,9 +50,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 			>
 				{tiersToDisplay.map((tier, idx) => {
 					const label = getTierSegmentLabel(tier, idx, tiersToDisplay);
-					const isDirectMatch = selectedTierId === tier.tierId;
-					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
-					const isSelected = isDirectMatch || isOptimumAlias;
+					const isSelected = selectedTierId === tier.tierId || (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum");
 
 					return (
 						<button
@@ -82,18 +80,18 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 
 			{/* 3-Tier Сетка вариантов смет: одинаковая высота h-full, items-stretch */}
 			<div className="treatment-3tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-				{tiersToDisplay.map((tier, idx) => {
-					const isDirectMatch = selectedTierId === tier.tierId;
-					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
-					const isSelected = isDirectMatch || isOptimumAlias;
+				{tiersToDisplay.map((tier) => {
+					const isSelected = selectedTierId === tier.tierId || (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum");
 					const testId =
 						tier.tierId === "economy"
 							? "tier-card-economy"
-							: tier.tierId === "standard"
-								? "tier-card-standard"
-								: tier.tierId === "optimum"
-									? "tier-card-optimum"
-									: `tier-card-${tier.tierId}`;
+							: tier.tierId === "optimum"
+								? "tier-card-optimum"
+								: tier.tierId === "standard"
+									? "tier-card-standard"
+									: tier.tierId === "premium"
+										? "tier-card-premium"
+										: `tier-card-${tier.tierId}`;
 					const ndflRefund = Math.round((tier.totalRub || 0) * 0.13);
 					const totalWithNdfl = (tier.totalRub || 0) - ndflRefund;
 					const installmentMonths = 3;
@@ -103,7 +101,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 						<div
 							key={tier.tierId}
 							onClick={() => handleSelect(tier.tierId)}
-							className={`relative p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 h-full ${
+							className={`relative p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 h-full ${
 								isSelected ? "flex" : "hidden md:flex"
 							} ${
 								isSelected
@@ -112,9 +110,9 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 							}`}
 							data-testid={testId}
 						>
-							<div className="space-y-3">
+							<div className="space-y-2">
 								<div>
-									<div className="flex items-center justify-between gap-2 mb-1.5">
+									<div className="flex items-center justify-between gap-2 mb-1">
 										<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
 											{tier.badge || "Тариф"}
 										</span>
@@ -124,11 +122,11 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 											</span>
 										)}
 									</div>
-									<h3 className="text-xl font-black text-[var(--ink)] m-0">{tier.title}</h3>
-									<p className="text-xs text-[var(--muted)] m-0 mt-1 leading-relaxed">{tier.subtitle}</p>
+									<h3 className="text-lg sm:text-xl font-black text-[var(--ink)] m-0">{tier.title}</h3>
+									<p className="text-xs text-[var(--muted)] m-0 mt-0.5 leading-relaxed">{tier.subtitle}</p>
 								</div>
 
-								<div className="space-y-1.5 pt-3 border-t border-[var(--line)]/60 text-xs">
+								<div className="space-y-1 pt-2 border-t border-[var(--line)]/60 text-xs">
 									{tier.keyAdvantages?.map((adv, idx) => (
 										<div key={idx} className="flex items-center gap-2 text-[var(--ink)]">
 											<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -138,9 +136,9 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 								</div>
 							</div>
 
-							<div className="space-y-3 pt-3">
+							<div className="space-y-2 pt-2">
 								{/* Расчет 13% НДФЛ и Рассрочка 0% */}
-								<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]/50 text-xs space-y-1.5">
+								<div className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]/50 text-xs space-y-1">
 									<div className="flex items-center justify-between">
 										<span className="text-[var(--muted)]">Вычет 13% НДФЛ:</span>
 										<strong className="text-emerald-600 dark:text-emerald-400 font-bold">
@@ -151,7 +149,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 										<span className="text-[var(--muted)]">Итого с вычетом:</span>
 										<strong className="text-[var(--ink)] font-black">{formatRubles(totalWithNdfl)}</strong>
 									</div>
-									<div className="pt-1.5 border-t border-[var(--line)]/40 flex items-center justify-between">
+									<div className="pt-1 border-t border-[var(--line)]/40 flex items-center justify-between">
 										<span className="text-[var(--muted)] flex items-center gap-1">
 											<CalendarClock className="w-3 h-3 text-[var(--teal)]" />
 											Рассрочка 0%:
@@ -166,19 +164,19 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 											e.stopPropagation();
 											handleSelect(tier.tierId);
 										}}
-										className="secondary-button dente-btn dente-btn-secondary w-full mt-1.5 py-1 text-[11px] font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+										className="secondary-button dente-btn dente-btn-secondary w-full mt-1 py-1 text-[11px] font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 										data-testid={`calc-ndfl-btn-${tier.tierId}`}
 									>
 										Рассчитать вычет
 									</button>
 								</div>
 
-								<div className="pt-3 border-t border-[var(--line)] flex items-end justify-between gap-2">
+								<div className="pt-2 border-t border-[var(--line)] flex items-end justify-between gap-2">
 									<div>
 										<span className="text-[10px] uppercase font-bold text-[var(--muted)] block">
 											Стоимость под ключ
 										</span>
-										<span className="text-2xl font-black text-[var(--ink)]">{formatRubles(tier.totalRub)}</span>
+										<span className="text-xl sm:text-2xl font-black text-[var(--ink)]">{formatRubles(tier.totalRub)}</span>
 									</div>
 									<button
 										type="button"

@@ -15,7 +15,7 @@ import { PipelineKpiSummary } from "./pipeline/PipelineKpiSummary";
 import { TreatmentPipelineMobileStages } from "./pipeline/TreatmentPipelineMobileStages";
 import { TreatmentPipelineMobileFloatingBar } from "./pipeline/TreatmentPipelineMobileFloatingBar";
 import { PipelineBoard } from "./pipeline/PipelineBoard";
-import { TreatmentPlanPresenterModal } from "../../components/treatment-plans/TreatmentPlanPresenterModal";
+import { TreatmentPlanStudioModal } from "../../components/treatment-plans/TreatmentPlanStudioModal";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useDocumentBrandingStore } from "../../store/documentBrandingStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -170,7 +170,7 @@ export const TreatmentPipeline: React.FC = () => {
 						</div>
 					)}
 
-					<TreatmentPlanPresenterModal
+					<TreatmentPlanStudioModal
 						isOpen={Boolean(state.selectedCardForPresenter)}
 						onClose={() => {
 							state.setSelectedCardForPresenter(null);
@@ -182,12 +182,8 @@ export const TreatmentPipeline: React.FC = () => {
 						doctorFullName={effectiveDoctorName}
 						doctorSpecialty={appLogic?.dashboard?.activeDoctor?.specialty || ""}
 						clinicName={clinicName}
-						clinicLegalName={clinicLegalName}
-						clinicInn={clinicInn}
-						clinicOgrn={clinicOgrn}
 						clinicAddress={clinicAddress}
 						planId={state.selectedCardForPresenter.id}
-						planCreatedAtIso={state.selectedCardForPresenter.createdAt}
 						onConfirmSelection={async () => {
 							await state.fetchPipeline();
 						}}

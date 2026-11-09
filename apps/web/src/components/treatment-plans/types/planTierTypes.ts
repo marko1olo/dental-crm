@@ -7,7 +7,7 @@
 import type { Kopecks, StagedPaymentScheduleBreakdown } from "@dental/shared";
 import type { TreatmentPlanStage, TreatmentPlanWorkflowStatus } from "./planStageTypes";
 
-export type TreatmentPlanTierId = "economy" | "standard" | "optimum";
+export type TreatmentPlanTierId = "economy" | "standard" | "optimum" | "premium";
 
 export interface TierInstallmentPlan {
 	readonly months: 3 | 6 | 12 | 24;

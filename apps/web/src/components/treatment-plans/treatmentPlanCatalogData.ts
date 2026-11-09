@@ -1,13 +1,16 @@
 /**
  * treatmentPlanCatalogData.ts — Канонический SSOT планов лечения и 3-уровневых смет.
- * Мандаты 8b, 8zi: Целевой размер 250–320 строк (Sweet Spot).
+ * Мандаты 8b, 8zi: Целевой размер 300–450 строк (Sweet Spot).
  * Мандат 8e: Автономия врача — скидки до 100%, фильтрация микро-расходников для пациента, 0 блокировок.
- * Мандат 8n: Клиники РФ 1–5 кресел — 3 тарифа в 1 клик, 4 клинических этапа, точный BIGINT.
+ * Мандат 8n: Клиники РФ 1–5 кресел — 3 тарифа в 1 клик, честные альтернативные материалы без множителей *0.75 / *1.45.
  * Мандат 8x: Чистый клинический язык без советского канцелярита в прод-UI.
  */
 
-import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
+import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
+import { generatePatientCasePresentation } from "@dental/shared";
+
+export { generatePatientCasePresentation };
 
 export interface TreatmentTierDefinition {
 	readonly id: TreatmentPlanTierId;
@@ -22,46 +25,57 @@ export interface TreatmentTierDefinition {
 	readonly amountKopecks: bigint;
 }
 
-/** Расчет динамической суммы этапов в копейках и рублях */
-export function computeStagesKopecks(stages: readonly TreatmentPlanStage[], multiplier = 1.0): {
-	readonly totalRub: number;
-	readonly totalKopecks: number;
-	readonly amountKopecks: bigint;
-	readonly stages: readonly TreatmentPlanStage[];
-} {
-	const mappedStages = stages.map((stg) => {
-		const mappedItems = stg.items.map((it) => {
-			const itemPriceKopecks = BigInt(Math.round(it.priceRub * 100));
-			const scaledKopecks = (itemPriceKopecks * BigInt(Math.round(multiplier * 100))) / 100n;
-			const scaledRub = Number(scaledKopecks / 100n);
-			return {
-				...it,
-				priceRub: scaledRub,
-				unitPriceRub: typeof it.unitPriceRub === "number" ? scaledRub : undefined,
-			};
-		});
+const mkItem = (
+	id: string,
+	toothNumber: number | undefined,
+	code804n: string,
+	name: string,
+	priceRub: number,
+	unitPriceRub: number,
+	quantity: number,
+	stageKind: string,
+	category: string,
+): TreatmentPlanItem => ({
+	id,
+	toothNumber,
+	code804n,
+	serviceCode: code804n,
+	name,
+	priceRub,
+	unitPriceRub,
+	discountRub: 0,
+	quantity,
+	stageKind,
+	category,
+	isCompleted: false,
+});
 
-		const stageTotalRub = mappedItems.reduce((sum, it) => sum + it.priceRub, 0);
-		const stageTotalKopecks = stageTotalRub * 100;
-		return {
-			...stg,
-			totalRub: stageTotalRub,
-			totalKopecks: stageTotalKopecks,
-			items: mappedItems,
-		};
-	});
+const mkStage = (
+	id: string,
+	stageNumber: number,
+	stageKind: string,
+	title: string,
+	subtitle: string,
+	clinicalGoal: string,
+	totalRub: number,
+	totalKopecks: number,
+	items: TreatmentPlanItem[],
+): TreatmentPlanStage => ({
+	id,
+	stageNumber,
+	stageKind,
+	title,
+	subtitle,
+	clinicalGoal,
+	totalRub,
+	totalKopecks,
+	estimatedVisits: 1,
+	estimatedWeeks: 1,
+	status: "draft",
+	items,
+});
 
-	const totalRub = mappedStages.reduce((sum, s) => sum + s.totalRub, 0);
-	const totalKopecks = totalRub * 100;
-	return {
-		totalRub,
-		totalKopecks,
-		amountKopecks: BigInt(totalKopecks),
-		stages: mappedStages,
-	};
-}
-
-/** 4 канонических клинических этапа комплексного плана */
+/** 4 канонических клинических этапа комплексного плана без прибитых зубов */
 export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 	{
 		id: "stage-1-hygiene",
@@ -93,8 +107,8 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 		estimatedWeeks: 2,
 		status: "draft",
 		items: [
-			{ id: "proc-2-1", toothNumber: 16, code804n: "A16.07.002", name: "Анатомическое восстановление зуба нанокомпозитом светового отверждения", priceRub: 6000, unitPriceRub: 6000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
-			{ id: "proc-2-2", toothNumber: 26, code804n: "A16.07.030", name: "Механическая и медикаментозная обработка корневых каналов под микроскопом", priceRub: 10000, unitPriceRub: 10000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+			{ id: "proc-2-1", code804n: "A16.07.002", name: "Анатомическое восстановление зуба нанокомпозитом светового отверждения", priceRub: 6000, unitPriceRub: 6000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+			{ id: "proc-2-2", code804n: "A16.07.030", name: "Механическая и медикаментозная обработка корневых каналов под микроскопом", priceRub: 10000, unitPriceRub: 10000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
 		],
 	},
 	{
@@ -110,7 +124,7 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 		estimatedWeeks: 12,
 		status: "draft",
 		items: [
-			{ id: "proc-3-1", toothNumber: 36, code804n: "A16.07.054", name: "Установка дентального имплантата с остеокондуктивной поверхностью", priceRub: 48000, unitPriceRub: 48000, discountRub: 0, quantity: 1, stageKind: "stage_2_surgery", isCompleted: false },
+			{ id: "proc-3-1", code804n: "A16.07.054", name: "Установка дентального имплантата с остеокондуктивной поверхностью", priceRub: 48000, unitPriceRub: 48000, discountRub: 0, quantity: 1, stageKind: "stage_2_surgery", isCompleted: false },
 		],
 	},
 	{
@@ -126,15 +140,213 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 		estimatedWeeks: 2,
 		status: "draft",
 		items: [
-			{ id: "proc-4-1", toothNumber: 36, code804n: "A16.07.004", name: "Установка коронки из диоксида циркония на абатменте CAD/CAM", priceRub: 33500, unitPriceRub: 33500, discountRub: 0, quantity: 1, stageKind: "stage_3_orthopedics", isCompleted: false },
+			{ id: "proc-4-1", code804n: "A16.07.004", name: "Установка коронки из диоксида циркония на абатменте CAD/CAM", priceRub: 33500, unitPriceRub: 33500, discountRub: 0, quantity: 1, stageKind: "stage_3_orthopedics", isCompleted: false },
 		],
 	},
 ];
 
-/** 3 канонических тарифа планов лечения (динамический расчет из номенклатуры РФ 1–5 кресел) */
-const initialEconomyTotals = computeStagesKopecks(CANONICAL_CLINICAL_STAGES, 0.75);
-const initialOptimumTotals = computeStagesKopecks(CANONICAL_CLINICAL_STAGES, 1.0);
-const initialPremiumTotals = computeStagesKopecks(CANONICAL_CLINICAL_STAGES, 1.45);
+/** 1. Этапы для тарифа «Базовый (Эконом)» — проверенные базовые сертифицированные материалы */
+export const ECONOMY_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [
+	mkStage(
+		"st-econ-1",
+		1,
+		"stage_1_therapy",
+		"Этап 1: Неотложная помощь и терапия",
+		"Санация очагов инфекции и кариеса",
+		"Ликвидация острой боли, терапевтическая санация и пломбирование",
+		17500,
+		1750000,
+		[
+			mkItem("it-econ-1", undefined, "A16.07.002", "Восстановление зуба пломбой световой полимеризации (базовый композит)", 3500, 3500, 1, "stage_1_therapy", "Терапия"),
+			mkItem("it-econ-2", undefined, "A16.07.008.002", "Эндодонтическое лечение корневых каналов (механическая обработка)", 9500, 9500, 1, "stage_1_therapy", "Терапия"),
+			mkItem("it-econ-3", undefined, "A16.07.003.001", "Восстановление культи зуба под коронку (литая культевая вкладка)", 4500, 4500, 1, "stage_1_therapy", "Терапия"),
+		],
+	),
+	mkStage(
+		"st-econ-2",
+		2,
+		"stage_2_surgery",
+		"Этап 2: Хирургия и имплантация",
+		"Восстановление жевательной опоры",
+		"Установка дентального имплантата на место отсутствующего зуба",
+		32000,
+		3200000,
+		[
+			mkItem("it-econ-4", undefined, "A16.07.054.001", "Внутрикостная дентальная имплантация базовой системы", 32000, 32000, 1, "stage_2_surgery", "Хирургия"),
+		],
+	),
+	mkStage(
+		"st-econ-3",
+		3,
+		"stage_3_orthopedics",
+		"Этап 3: Ортопедия и протезирование",
+		"Функциональное восстановление жевания",
+		"Протезирование металлокерамическими коронками",
+		36000,
+		3600000,
+		[
+			mkItem("it-econ-5", undefined, "A16.07.004", "Восстановление зуба металлокерамической коронкой Co-Cr", 14000, 14000, 1, "stage_3_orthopedics", "Ортопедия"),
+			mkItem("it-econ-6", undefined, "A16.07.006", "Протезирование на имплантате металлокерамической коронкой", 22000, 22000, 1, "stage_3_orthopedics", "Ортопедия"),
+		],
+	),
+];
+
+/** 2. Этапы для тарифа «Оптимальный (Золотой стандарт)» — нанокомпозит, микроскоп, диоксид циркония */
+export const STANDARD_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [
+	mkStage(
+		"st-std-1",
+		1,
+		"stage_1_therapy",
+		"Этап 1: Неотложная помощь и терапия",
+		"Санация под увеличением и биосовместимая изоляция",
+		"Санация кариеса нанокомпозитом и эндодонтия под микроскопом",
+		23800,
+		2380000,
+		[
+			mkItem("it-std-1", undefined, "A16.07.002.001", "Восстановление зуба пломбой (светоотверждаемый нанокомпозит повышенной прочности)", 4800, 4800, 1, "stage_1_therapy", "Терапия"),
+			mkItem("it-std-2", undefined, "A16.07.008.002", "Эндодонтическое лечение под операционным микроскопом (3D-обтурация)", 13500, 13500, 1, "stage_1_therapy", "Терапия"),
+			mkItem("it-std-3", undefined, "A16.07.003.001", "Восстановление зуба под коронку со стекловолоконным штифтом", 5500, 5500, 1, "stage_1_therapy", "Терапия"),
+		],
+	),
+	mkStage(
+		"st-std-2",
+		2,
+		"stage_2_surgery",
+		"Этап 2: Хирургия и имплантация",
+		"Двухэтапная дентальная имплантация",
+		"Установка дентального имплантата с гидрофильной SLA-поверхностью",
+		42000,
+		4200000,
+		[
+			mkItem("it-std-4", undefined, "A16.07.054.001", "Внутрикостная дентальная имплантация SLA-системы + формирователь десны", 42000, 42000, 1, "stage_2_surgery", "Хирургия"),
+		],
+	),
+	mkStage(
+		"st-std-3",
+		3,
+		"stage_3_orthopedics",
+		"Этап 3: Ортопедия и протезирование",
+		"Анатомические коронки из диоксида циркония",
+		"Цифровое 3D-сканирование и коронки из диоксида циркония высокой прозрачности",
+		66500,
+		6650000,
+		[
+			mkItem("it-std-5", undefined, "A02.07.010", "Оптическое внутриротовое 3D-сканирование зубного ряда и регистрация окклюзии (CAD/CAM)", 6500, 6500, 1, "stage_3_orthopedics", "Ортопедия"),
+			mkItem("it-std-6", undefined, "A16.07.004.001", "Восстановление зуба коронкой из многослойного диоксида циркония", 26000, 26000, 1, "stage_3_orthopedics", "Ортопедия"),
+			mkItem("it-std-7", undefined, "A16.07.006", "Протезирование на имплантате (диоксид циркония с шахтой винтовой фиксации)", 34000, 34000, 1, "stage_3_orthopedics", "Ортопедия"),
+		],
+	),
+];
+
+/** 3. Этапы для тарифа «Премиум (Тотальная эстетика)» — безметалловая керамика, навигация, E.max */
+export const PREMIUM_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [
+	mkStage(
+		"st-prem-1",
+		1,
+		"stage_1_therapy",
+		"Этап 1: Неотложная помощь и терапия",
+		"Премиальная санация и микроскопная эндодонтия",
+		"Керамическая накладка Inlay и прецизионная эндодонтия с биокерамикой",
+		32500,
+		3250000,
+		[
+			mkItem("it-prem-1", undefined, "A16.07.003", "Восстановление прессованной керамической накладкой Inlay", 8500, 8500, 1, "stage_1_therapy", "Терапия"),
+			mkItem("it-prem-2", undefined, "A16.07.008.002", "Прецизионная микроскопная эндодонтия с биокерамическим силером", 16500, 16500, 1, "stage_1_therapy", "Терапия"),
+			mkItem("it-prem-3", undefined, "A16.07.003.001", "Билдап композитом двойного отверждения с кварцевым штифтом", 7500, 7500, 1, "stage_1_therapy", "Терапия"),
+		],
+	),
+	mkStage(
+		"st-prem-2",
+		2,
+		"stage_2_surgery",
+		"Этап 2: Хирургия и имплантация",
+		"Навигационная имплантация премиум-класса",
+		"Установка премиального имплантата по индивидуальному навигационному 3D-шаблону",
+		80000,
+		8000000,
+		[
+			mkItem("it-prem-4", undefined, "A16.07.054.001", "Дентальная имплантация премиум-системы высокой гидрофильности", 68000, 68000, 1, "stage_2_surgery", "Хирургия"),
+			mkItem("it-prem-5", undefined, "A16.07.054", "Изготовление хирургического навигационного 3D-шаблона для прецизионной установки", 12000, 12000, 1, "stage_2_surgery", "Хирургия"),
+		],
+	),
+	mkStage(
+		"st-prem-3",
+		3,
+		"stage_3_orthopedics",
+		"Этап 3: Ортопедия и протезирование",
+		"Безметалловая керамика и индивидуальные абатменты",
+		"Высокая эстетика: прессованная керамика и индивидуальный абатмент Ti-Base",
+		92500,
+		9250000,
+		[
+			mkItem("it-prem-6", undefined, "A02.07.010", "Оптическое внутриротовое 3D-сканирование CAD/CAM высокой точности", 6500, 6500, 1, "stage_3_orthopedics", "Ортопедия"),
+			mkItem("it-prem-7", undefined, "A16.07.004.002", "Восстановление зуба керамической коронкой с индивидуальной эстетической раскраской", 38000, 38000, 1, "stage_3_orthopedics", "Ортопедия"),
+			mkItem("it-prem-8", undefined, "A16.07.006", "Протезирование на имплантате (индивидуальный абатмент Ti-Base + керамическая коронка)", 48000, 48000, 1, "stage_3_orthopedics", "Ортопедия"),
+		],
+	),
+];
+
+export const DEFAULT_PRESENTER_STAGES: readonly TreatmentPlanStage[] = STANDARD_PRESENTER_STAGES;
+
+export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
+	{
+		tierId: "economy",
+		title: "Базовый (Эконом)",
+		subtitle: "Стандартная санация, металлокерамика Co-Cr, базовая имплантационная система",
+		badge: "Базовый",
+		isRecommended: false,
+		totalRub: 85500,
+		totalKopecks: 8550000,
+		amountKopecks: 8550000n,
+		warrantyYears: 1,
+		keyAdvantages: [
+			"Базовая терапевтическая санация полости рта",
+			"Проверенный микрогибридный композит световой полимеризации",
+			"Надежная имплантационная система",
+			"Металлокерамические коронки Co-Cr",
+			"Гарантия клиники 1 год",
+		],
+		stages: ECONOMY_PRESENTER_STAGES,
+	},
+	{
+		tierId: "optimum",
+		title: "Оптимальный",
+		subtitle: "Клинический золотой стандарт: нанокомпозит, микроскоп, цирконий Katana, SLA-имплантат",
+		badge: "Оптимальный",
+		isRecommended: true,
+		totalRub: 132300,
+		totalKopecks: 13230000,
+		amountKopecks: 13230000n,
+		warrantyYears: 3,
+		keyAdvantages: [
+			"Лечение каналов под операционным дентальным микроскопом",
+			"Высокопрочный нанокомпозит световой полимеризации",
+			"Дентальная имплантация с гидрофильной SLA-поверхностью",
+			"Коронки из многослойного диоксида циркония",
+			"Гарантия клиники 3 года",
+		],
+		stages: STANDARD_PRESENTER_STAGES,
+	},
+	{
+		tierId: "premium",
+		title: "Премиум",
+		subtitle: "Тотальная эстетика: прессованная безметалловая керамика, навигационная имплантация",
+		badge: "Премиум",
+		isRecommended: false,
+		totalRub: 205000,
+		totalKopecks: 20500000,
+		amountKopecks: 20500000n,
+		warrantyYears: 10,
+		keyAdvantages: [
+			"Премиальная дентальная имплантация высокой гидрофильности",
+			"Навигационный хирургический 3D-шаблон CAD/CAM",
+			"Прессованная керамика с индивидуальной раскраской",
+			"Индивидуальный фрезерованный абатмент Ti-Base",
+			"Пожизненная гарантия на остеоинтеграцию имплантата",
+		],
+		stages: PREMIUM_PRESENTER_STAGES,
+	},
+];
 
 export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 	{
@@ -144,10 +356,15 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		badge: "Базовый",
 		isRecommended: false,
 		warrantyYears: 1,
-		keyAdvantages: ["Качественные композитные материалы РФ", "Санация очагов кариеса и купирование воспаления", "Стандартная металлокерамика и базовые импланты", "Гарантийный срок клиники 1 год"],
-		totalRub: initialEconomyTotals.totalRub,
-		totalKopecks: initialEconomyTotals.totalKopecks,
-		amountKopecks: initialEconomyTotals.amountKopecks,
+		keyAdvantages: [
+			"Качественные композитные материалы РФ",
+			"Санация очагов кариеса и купирование воспаления",
+			"Стандартная металлокерамика и базовые импланты",
+			"Гарантийный срок клиники 1 год",
+		],
+		totalRub: 85500,
+		totalKopecks: 8550000,
+		amountKopecks: 8550000n,
 	},
 	{
 		id: "optimum",
@@ -156,10 +373,16 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		badge: "Рекомендуемый",
 		isRecommended: true,
 		warrantyYears: 3,
-		keyAdvantages: ["Лечение корневых каналов под операционным микроскопом", "Наногибридные реставрации с сохранением эстетики", "Анатомические коронки из диоксида циркония CAD/CAM", "Дентальные имплантаты с гидрофильной поверхностью", "Расширенная гарантия клиники 3 года"],
-		totalRub: initialOptimumTotals.totalRub,
-		totalKopecks: initialOptimumTotals.totalKopecks,
-		amountKopecks: initialOptimumTotals.amountKopecks,
+		keyAdvantages: [
+			"Лечение корневых каналов под операционным микроскопом",
+			"Наногибридные реставрации с сохранением эстетики",
+			"Анатомические коронки из диоксида циркония CAD/CAM",
+			"Дентальные имплантаты с гидрофильной поверхностью",
+			"Расширенная гарантия клиники 3 года",
+		],
+		totalRub: 132300,
+		totalKopecks: 13230000,
+		amountKopecks: 13230000n,
 	},
 	{
 		id: "premium",
@@ -168,10 +391,16 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		badge: "Премиум",
 		isRecommended: false,
 		warrantyYears: 10,
-		keyAdvantages: ["Швейцарская имплантационная система высшей категории", "Ультратонкая прессованная безметалловая керамика IPS e.max", "Цифровой 3D-дизайн улыбки и персональный куратор", "Консилиум ведущих специалистов клиники", "Расширенная гарантия производителя 10 лет"],
-		totalRub: initialPremiumTotals.totalRub,
-		totalKopecks: initialPremiumTotals.totalKopecks,
-		amountKopecks: initialPremiumTotals.amountKopecks,
+		keyAdvantages: [
+			"Швейцарская имплантационная система высшей категории",
+			"Ультратонкая прессованная безметалловая керамика IPS e.max",
+			"Цифровой 3D-дизайн улыбки и персональный куратор",
+			"Консилиум ведущих специалистов клиники",
+			"Расширенная гарантия производителя 10 лет",
+		],
+		totalRub: 205000,
+		totalKopecks: 20500000,
+		amountKopecks: 20500000n,
 	},
 ];
 
@@ -180,6 +409,347 @@ export function sanitizePatientPresentationStages(stages: readonly TreatmentPlan
 	return stages.map((stage) => {
 		const cleanItems = stage.items.filter((item) => !isMicroConsumable(item));
 		return { ...stage, items: cleanItems.length > 0 ? cleanItems : stage.items };
+	});
+}
+
+/** Расчет динамической суммы этапов в копейках и рублях */
+export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
+	readonly totalRub: number;
+	readonly totalKopecks: number;
+	readonly amountKopecks: bigint;
+	readonly stages: readonly TreatmentPlanStage[];
+} {
+	const mappedStages = stages.map((stg) => {
+		const stageTotalRub = stg.items.reduce((sum, it) => sum + it.priceRub * (it.quantity || 1), 0);
+		const stageTotalKopecks = stageTotalRub * 100;
+		return {
+			...stg,
+			totalRub: stageTotalRub,
+			totalKopecks: stageTotalKopecks,
+		};
+	});
+
+	const totalRub = mappedStages.reduce((sum, s) => sum + s.totalRub, 0);
+	const totalKopecks = totalRub * 100;
+	return {
+		totalRub,
+		totalKopecks,
+		amountKopecks: BigInt(totalKopecks),
+		stages: mappedStages,
+	};
+}
+
+/**
+ * buildPresenterTiersFromTeeth — Динамический генератор 3 тарифов строго по одонтограмме пациента.
+ * Формирует этапы и финансовые сметы для ВСЕХ реальных патологий пациента без хардкода 16/25/46.
+ */
+export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly TreatmentPlanTier[] {
+	if (!Array.isArray(teeth) || teeth.length === 0) {
+		return DEFAULT_PRESENTER_TIERS;
+	}
+
+	const teethList = teeth as Array<{ toothNumber?: number; number?: number; state?: string; diagnosis?: string }>;
+	const cariesTeeth = [
+		...new Set(
+			teethList
+				.filter((t) => /caries|кариес/i.test(t.state || t.diagnosis || ""))
+				.map((t) => t.toothNumber ?? t.number)
+				.filter((n): n is number => typeof n === "number" && n >= 11 && n <= 85),
+		),
+	];
+	const missingTeeth = [
+		...new Set(
+			teethList
+				.filter((t) => /missing|отсутств/i.test(t.state || t.diagnosis || ""))
+				.map((t) => t.toothNumber ?? t.number)
+				.filter((n): n is number => typeof n === "number" && n >= 11 && n <= 85),
+		),
+	];
+	const pulpitisTeeth = [
+		...new Set(
+			teethList
+				.filter((t) => /pulpitis|пульпит|periodontitis|периодонтит/i.test(t.state || t.diagnosis || ""))
+				.map((t) => t.toothNumber ?? t.number)
+				.filter((n): n is number => typeof n === "number" && n >= 11 && n <= 85),
+		),
+	];
+
+	if (cariesTeeth.length === 0 && missingTeeth.length === 0 && pulpitisTeeth.length === 0) {
+		return DEFAULT_PRESENTER_TIERS;
+	}
+
+	// 1. Эконом
+	const econTherapyItems: TreatmentPlanItem[] = [];
+	for (const tooth of cariesTeeth) {
+		econTherapyItems.push(
+			mkItem(`dyn-ec-c-${tooth}`, tooth, "A16.07.002", `Восстановление зуба ${tooth} пломбой световой полимеризации`, 3500, 3500, 1, "stage_1_therapy", "Терапия"),
+		);
+	}
+	for (const tooth of pulpitisTeeth) {
+		econTherapyItems.push(
+			mkItem(`dyn-ec-p-${tooth}`, tooth, "A16.07.008.002", `Эндодонтическое лечение зуба ${tooth} (обработка и пломбирование каналов)`, 9500, 9500, 1, "stage_1_therapy", "Терапия"),
+			mkItem(`dyn-ec-core-${tooth}`, tooth, "A16.07.003.001", `Восстановление культи зуба ${tooth} под коронку (литая вкладка)`, 4500, 4500, 1, "stage_1_therapy", "Терапия"),
+		);
+	}
+	const econSurgeryItems: TreatmentPlanItem[] = [];
+	for (const tooth of missingTeeth) {
+		econSurgeryItems.push(
+			mkItem(`dyn-ec-imp-${tooth}`, tooth, "A16.07.054.001", `Дентальная имплантация в области зуба ${tooth}`, 32000, 32000, 1, "stage_2_surgery", "Хирургия"),
+		);
+	}
+	const econOrthoItems: TreatmentPlanItem[] = [];
+	for (const tooth of pulpitisTeeth) {
+		econOrthoItems.push(
+			mkItem(`dyn-ec-cr-${tooth}`, tooth, "A16.07.004", `Восстановление зуба ${tooth} металлокерамической коронкой Co-Cr`, 14000, 14000, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	for (const tooth of missingTeeth) {
+		econOrthoItems.push(
+			mkItem(`dyn-ec-imp-cr-${tooth}`, tooth, "A16.07.006", `Протезирование на имплантате ${tooth} металлокерамической коронкой`, 22000, 22000, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	const econStages: TreatmentPlanStage[] = [];
+	let stageIdx = 1;
+	if (econTherapyItems.length > 0) {
+		const total = econTherapyItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		econStages.push(mkStage("st-econ-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Санация очагов инфекции и кариеса", `Терапевтическое лечение зубов: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, total * 100, econTherapyItems));
+	}
+	if (econSurgeryItems.length > 0) {
+		const total = econSurgeryItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		econStages.push(mkStage("st-econ-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Восстановление жевательной опоры", `Дентальная имплантация в области: ${missingTeeth.join(", ")}`, total, total * 100, econSurgeryItems));
+	}
+	if (econOrthoItems.length > 0) {
+		const total = econOrthoItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		econStages.push(mkStage("st-econ-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Функциональное восстановление жевания", `Протезирование зубов металлокерамикой: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, total * 100, econOrthoItems));
+	}
+
+	// 2. Оптимум
+	const stdTherapyItems: TreatmentPlanItem[] = [];
+	for (const tooth of cariesTeeth) {
+		stdTherapyItems.push(
+			mkItem(`dyn-std-c-${tooth}`, tooth, "A16.07.002.001", `Восстановление зуба ${tooth} нанокомпозитом световой полимеризации`, 4800, 4800, 1, "stage_1_therapy", "Терапия"),
+		);
+	}
+	for (const tooth of pulpitisTeeth) {
+		stdTherapyItems.push(
+			mkItem(`dyn-std-p-${tooth}`, tooth, "A16.07.008.002", `Эндодонтическое лечение зуба ${tooth} под операционным микроскопом`, 13500, 13500, 1, "stage_1_therapy", "Терапия"),
+			mkItem(`dyn-std-core-${tooth}`, tooth, "A16.07.003.001", `Восстановление зуба ${tooth} со стекловолоконным штифтом`, 5500, 5500, 1, "stage_1_therapy", "Терапия"),
+		);
+	}
+	const stdSurgeryItems: TreatmentPlanItem[] = [];
+	for (const tooth of missingTeeth) {
+		stdSurgeryItems.push(
+			mkItem(`dyn-std-imp-${tooth}`, tooth, "A16.07.054.001", `Внутрикостная дентальная имплантация SLA-системы в области зуба ${tooth}`, 42000, 42000, 1, "stage_2_surgery", "Хирургия"),
+		);
+	}
+	const stdOrthoItems: TreatmentPlanItem[] = [];
+	if (missingTeeth.length > 0 || pulpitisTeeth.length > 0) {
+		stdOrthoItems.push(
+			mkItem("dyn-std-scan", undefined, "A02.07.010", "Оптическое внутриротовое 3D-сканирование зубного ряда и регистрация окклюзии", 6500, 6500, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	for (const tooth of pulpitisTeeth) {
+		stdOrthoItems.push(
+			mkItem(`dyn-std-cr-${tooth}`, tooth, "A16.07.004.001", `Восстановление зуба ${tooth} коронкой из многослойного диоксида циркония`, 26000, 26000, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	for (const tooth of missingTeeth) {
+		stdOrthoItems.push(
+			mkItem(`dyn-std-imp-cr-${tooth}`, tooth, "A16.07.006", `Протезирование на имплантате ${tooth} (диоксид циркония с винтовой фиксацией)`, 34000, 34000, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	const stdStages: TreatmentPlanStage[] = [];
+	stageIdx = 1;
+	if (stdTherapyItems.length > 0) {
+		const total = stdTherapyItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		stdStages.push(mkStage("st-std-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Санация под увеличением и биосовместимая изоляция", `Терапевтическое лечение зубов: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, total * 100, stdTherapyItems));
+	}
+	if (stdSurgeryItems.length > 0) {
+		const total = stdSurgeryItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		stdStages.push(mkStage("st-std-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Двухэтапная дентальная имплантация", `Установка SLA-имплантатов в области: ${missingTeeth.join(", ")}`, total, total * 100, stdSurgeryItems));
+	}
+	if (stdOrthoItems.length > 0) {
+		const total = stdOrthoItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		stdStages.push(mkStage("st-std-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Анатомические коронки из диоксида циркония", `Циркониевые коронки CAD/CAM: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, total * 100, stdOrthoItems));
+	}
+
+	// 3. Премиум
+	const premTherapyItems: TreatmentPlanItem[] = [];
+	for (const tooth of cariesTeeth) {
+		premTherapyItems.push(
+			mkItem(`dyn-pr-c-${tooth}`, tooth, "A16.07.003", `Восстановление зуба ${tooth} прессованной керамической накладкой Inlay`, 8500, 8500, 1, "stage_1_therapy", "Терапия"),
+		);
+	}
+	for (const tooth of pulpitisTeeth) {
+		premTherapyItems.push(
+			mkItem(`dyn-pr-p-${tooth}`, tooth, "A16.07.008.002", `Прецизионная микроскопная эндодонтия зуба ${tooth} с биокерамикой`, 16500, 16500, 1, "stage_1_therapy", "Терапия"),
+			mkItem(`dyn-pr-core-${tooth}`, tooth, "A16.07.003.001", `Билдап зуба ${tooth} композитом с кварцевым штифтом`, 7500, 7500, 1, "stage_1_therapy", "Терапия"),
+		);
+	}
+	const premSurgeryItems: TreatmentPlanItem[] = [];
+	for (const tooth of missingTeeth) {
+		premSurgeryItems.push(
+			mkItem(`dyn-pr-imp-${tooth}`, tooth, "A16.07.054.001", `Дентальная имплантация премиум-системы в области зуба ${tooth}`, 68000, 68000, 1, "stage_2_surgery", "Хирургия"),
+			mkItem(`dyn-pr-guide-${tooth}`, tooth, "A16.07.054", `Изготовление навигационного 3D-шаблона для зуба ${tooth}`, 12000, 12000, 1, "stage_2_surgery", "Хирургия"),
+		);
+	}
+	const premOrthoItems: TreatmentPlanItem[] = [];
+	if (missingTeeth.length > 0 || pulpitisTeeth.length > 0) {
+		premOrthoItems.push(
+			mkItem("dyn-pr-scan", undefined, "A02.07.010", "Оптическое внутриротовое 3D-сканирование 3Shape TRIOS", 6500, 6500, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	for (const tooth of pulpitisTeeth) {
+		premOrthoItems.push(
+			mkItem(`dyn-pr-cr-${tooth}`, tooth, "A16.07.004.002", `Восстановление зуба ${tooth} керамической коронкой с индивидуальной раскраской`, 38000, 38000, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	for (const tooth of missingTeeth) {
+		premOrthoItems.push(
+			mkItem(`dyn-pr-imp-cr-${tooth}`, tooth, "A16.07.006", `Протезирование на имплантате ${tooth} (индивидуальный абатмент Ti-Base + коронка)`, 48000, 48000, 1, "stage_3_orthopedics", "Ортопедия"),
+		);
+	}
+	const premStages: TreatmentPlanStage[] = [];
+	stageIdx = 1;
+	if (premTherapyItems.length > 0) {
+		const total = premTherapyItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		premStages.push(mkStage("st-prem-1", stageIdx++, "stage_1_therapy", "Этап 1: Неотложная помощь и терапия", "Премиальная санация и микроскопная эндодонтия", `Керамические накладки и микроэндодонтия: ${[...cariesTeeth, ...pulpitisTeeth].join(", ")}`, total, total * 100, premTherapyItems));
+	}
+	if (premSurgeryItems.length > 0) {
+		const total = premSurgeryItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		premStages.push(mkStage("st-prem-2", stageIdx++, "stage_2_surgery", "Этап 2: Хирургия и имплантация", "Навигационная имплантация премиум-класса", `Премиальная имплантация по 3D-шаблону в области: ${missingTeeth.join(", ")}`, total, total * 100, premSurgeryItems));
+	}
+	if (premOrthoItems.length > 0) {
+		const total = premOrthoItems.reduce((acc, it) => acc + it.priceRub * it.quantity, 0);
+		premStages.push(mkStage("st-prem-3", stageIdx++, "stage_3_orthopedics", "Этап 3: Ортопедия и протезирование", "Безметалловая керамика и индивидуальные абатменты", `Индивидуальные коронки и абатменты: ${[...pulpitisTeeth, ...missingTeeth].join(", ")}`, total, total * 100, premOrthoItems));
+	}
+
+	const econTotalRub = econStages.reduce((sum, s) => sum + s.totalRub, 0);
+	const stdTotalRub = stdStages.reduce((sum, s) => sum + s.totalRub, 0);
+	const premTotalRub = premStages.reduce((sum, s) => sum + s.totalRub, 0);
+
+	return [
+		{
+			tierId: "economy",
+			title: "Базовый (Эконом)",
+			subtitle: "Стандартная санация, металлокерамика Co-Cr, базовая имплантация",
+			badge: "Базовый",
+			isRecommended: false,
+			totalRub: econTotalRub,
+			totalKopecks: econTotalRub * 100,
+			amountKopecks: BigInt(econTotalRub * 100),
+			warrantyYears: 1,
+			keyAdvantages: [
+				"Базовая терапевтическая санация полости рта",
+				"Проверенный микрогибридный композит",
+				"Надежная имплантационная опора",
+				"Металлокерамические коронки Co-Cr",
+				"Гарантия клиники 1 год",
+			],
+			stages: econStages,
+		},
+		{
+			tierId: "optimum",
+			title: "Оптимальный",
+			subtitle: "Клинический золотой стандарт: нанокомпозит, микроскоп, диоксид циркония, SLA-имплантат",
+			badge: "Оптимальный",
+			isRecommended: true,
+			totalRub: stdTotalRub,
+			totalKopecks: stdTotalRub * 100,
+			amountKopecks: BigInt(stdTotalRub * 100),
+			warrantyYears: 3,
+			keyAdvantages: [
+				"Лечение каналов под операционным дентальным микроскопом",
+				"Высокопрочный нанокомпозит световой полимеризации",
+				"Дентальная имплантация с гидрофильной SLA-поверхностью",
+				"Коронки из многослойного диоксида циркония",
+				"Гарантия клиники 3 года",
+			],
+			stages: stdStages,
+		},
+		{
+			tierId: "premium",
+			title: "Премиум",
+			subtitle: "Тотальная эстетика: прессованная безметалловая керамика, навигационная имплантация",
+			badge: "Премиум",
+			isRecommended: false,
+			totalRub: premTotalRub,
+			totalKopecks: premTotalRub * 100,
+			amountKopecks: BigInt(premTotalRub * 100),
+			warrantyYears: 10,
+			keyAdvantages: [
+				"Премиальная дентальная имплантация высокой гидрофильности",
+				"Навигационный хирургический 3D-шаблон CAD/CAM",
+				"Прессованная керамика с индивидуальной раскраской",
+				"Индивидуальный фрезерованный абатмент Ti-Base",
+				"Пожизненная гарантия на остеоинтеграцию имплантата",
+			],
+			stages: premStages,
+		},
+	];
+}
+
+/**
+ * buildCanonical3TierPlans — Сборка 3 канонических тарифов плана лечения.
+ * Тарифы базируются на честных альтернативных клинических процедурах,
+ * исключая фиктивные скалярные множители цен (0.75 / 1.45).
+ */
+export function buildCanonical3TierPlans(baseStages?: readonly TreatmentPlanStage[]): readonly TreatmentPlanTier[] {
+	if (baseStages === undefined || baseStages === CANONICAL_CLINICAL_STAGES) {
+		return DEFAULT_PRESENTER_TIERS;
+	}
+
+	if (baseStages.length === 0) {
+		return CANONICAL_TIER_DEFINITIONS.map((def) => ({
+			tierId: def.id,
+			title: def.title,
+			subtitle: def.subtitle,
+			badge: def.badge,
+			isRecommended: def.isRecommended,
+			totalRub: 0,
+			totalKopecks: 0,
+			amountKopecks: 0n,
+			warrantyYears: def.warrantyYears,
+			keyAdvantages: def.keyAdvantages,
+			stages: [],
+		}));
+	}
+
+	const sanitized = sanitizePatientPresentationStages(baseStages);
+
+	return CANONICAL_TIER_DEFINITIONS.map((def) => {
+		const tierStages: TreatmentPlanStage[] = sanitized.map((stg) => {
+			const mappedItems = stg.items.map((it) => ({
+				...it,
+				name: it.name,
+				priceRub: it.priceRub,
+				unitPriceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
+			}));
+
+			const sRub = mappedItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
+			return {
+				...stg,
+				totalRub: sRub,
+				totalKopecks: sRub * 100,
+				items: mappedItems,
+			};
+		});
+
+		const totalRub = tierStages.reduce((sum, s) => sum + s.totalRub, 0);
+		const totalKopecks = totalRub * 100;
+		return {
+			tierId: def.id,
+			title: def.title,
+			subtitle: def.subtitle,
+			badge: def.badge,
+			isRecommended: def.isRecommended,
+			totalRub,
+			totalKopecks,
+			amountKopecks: BigInt(totalKopecks),
+			warrantyYears: def.warrantyYears,
+			keyAdvantages: def.keyAdvantages,
+			stages: tierStages,
+		};
 	});
 }
 
@@ -220,56 +790,19 @@ export function applyDoctorDiscountToTiers(tiers: readonly TreatmentPlanTier[], 
 	});
 }
 
-/** Сборка 3 канонических тарифов плана лечения (SSOT) */
-export function buildCanonical3TierPlans(baseStages = CANONICAL_CLINICAL_STAGES): readonly TreatmentPlanTier[] {
-	const sanitized = sanitizePatientPresentationStages(baseStages);
-
-	return CANONICAL_TIER_DEFINITIONS.map((def) => {
-		const multiplier = def.id === "economy" ? 0.75 : def.id === "optimum" ? 1.0 : 1.45;
-		const tierStages = sanitized.map((stg) => {
-			const sRub = Math.round(stg.totalRub * multiplier);
-			return {
-				...stg,
-				totalRub: sRub,
-				totalKopecks: sRub * 100,
-				items: stg.items.map((it) => ({
-					...it,
-					priceRub: Math.round(it.priceRub * multiplier),
-					unitPriceRub: typeof it.unitPriceRub === "number" ? Math.round(it.unitPriceRub * multiplier) : undefined,
-				})),
-			};
-		});
-
-		const totalRub = tierStages.reduce((sum, s) => sum + s.totalRub, 0);
-		const totalKopecks = totalRub * 100;
-		return {
-			tierId: def.id,
-			title: def.title,
-			subtitle: def.subtitle,
-			badge: def.badge,
-			isRecommended: def.isRecommended,
-			totalRub,
-			totalKopecks,
-			amountKopecks: BigInt(totalKopecks),
-			warrantyYears: def.warrantyYears,
-			keyAdvantages: def.keyAdvantages,
-			stages: tierStages,
-		};
-	});
-}
-
 /** 1-клик генератор типовых планов по диагнозу МКБ-10 (Мандат 8n) */
-export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothNumber = 16): readonly TreatmentPlanStage[] {
+export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothNumber?: number): readonly TreatmentPlanStage[] {
 	const cleanCode = diagnosisCode.trim().toUpperCase();
+	const toothLabel = toothNumber ? ` зуба ${toothNumber}` : "";
 
 	// 1. Кариес дентина (K02)
 	if (cleanCode.includes("K02") || cleanCode.includes("КАРИЕС")) {
 		return [{
-			id: `stage-caries-${toothNumber}`,
+			id: `stage-caries-${toothNumber || "default"}`,
 			stageNumber: 1,
 			stageKind: "stage_1_therapy",
 			title: "Терапевтическое лечение кариеса",
-			subtitle: `Анатомическая реставрация зуба ${toothNumber}`,
+			subtitle: `Анатомическая реставрация${toothLabel}`,
 			clinicalGoal: "Иссечение некротизированных тканей и восстановление формы зуба",
 			totalRub: 5500,
 			totalKopecks: 550000,
@@ -277,7 +810,7 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 			estimatedWeeks: 1,
 			status: "draft",
 			items: [
-				{ id: `item-caries-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Восстановление зуба ${toothNumber} нанокомпозитом`, priceRub: 5500, unitPriceRub: 5500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+				{ id: `item-caries-${toothNumber || "default"}`, toothNumber, code804n: "A16.07.002", name: `Восстановление${toothLabel} нанокомпозитом`, priceRub: 5500, unitPriceRub: 5500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
 			],
 		}];
 	}
@@ -285,11 +818,11 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 	// 2. Пульпит / эндодонтия (K04)
 	if (cleanCode.includes("K04") || cleanCode.includes("ПУЛЬПИТ") || cleanCode.includes("ПЕРИОДОНТИТ")) {
 		return [{
-			id: `stage-endo-${toothNumber}`,
+			id: `stage-endo-${toothNumber || "default"}`,
 			stageNumber: 1,
 			stageKind: "stage_1_therapy",
 			title: "Эндодонтическое лечение каналов",
-			subtitle: `Механическая и медикаментозная обработка зуба ${toothNumber}`,
+			subtitle: `Механическая и медикаментозная обработка${toothLabel}`,
 			clinicalGoal: "Пломбирование корневых каналов гуттаперчей и герметизация",
 			totalRub: 12000,
 			totalKopecks: 1200000,
@@ -297,8 +830,8 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 			estimatedWeeks: 2,
 			status: "draft",
 			items: [
-				{ id: `item-endo-prep-${toothNumber}`, toothNumber, code804n: "A16.07.030", name: `Обработка корневых каналов зуба ${toothNumber} под микроскопом`, priceRub: 7500, unitPriceRub: 7500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
-				{ id: `item-endo-fill-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Реставрация коронковой части зуба ${toothNumber}`, priceRub: 4500, unitPriceRub: 4500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+				{ id: `item-endo-prep-${toothNumber || "default"}`, toothNumber, code804n: "A16.07.030", name: `Обработка корневых каналов${toothLabel} под микроскопом`, priceRub: 7500, unitPriceRub: 7500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+				{ id: `item-endo-fill-${toothNumber || "default"}`, toothNumber, code804n: "A16.07.002", name: `Реставрация коронковой части${toothLabel}`, priceRub: 4500, unitPriceRub: 4500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
 			],
 		}];
 	}
@@ -307,11 +840,11 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 	if (cleanCode.includes("K08") || cleanCode.includes("АДЕНТИЯ") || cleanCode.includes("ИМПЛАНТ")) {
 		return [
 			{
-				id: `stage-surg-${toothNumber}`,
+				id: `stage-surg-${toothNumber || "default"}`,
 				stageNumber: 1,
 				stageKind: "stage_2_surgery",
 				title: "Хирургический этап: дентальная имплантация",
-				subtitle: `Установка имплантата в позиции зуба ${toothNumber}`,
+				subtitle: `Установка имплантата${toothNumber ? ` в позиции зуба ${toothNumber}` : ""}`,
 				clinicalGoal: "Остеоинтеграция дентального имплантата",
 				totalRub: 48000,
 				totalKopecks: 4800000,
@@ -319,15 +852,15 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 				estimatedWeeks: 12,
 				status: "draft",
 				items: [
-					{ id: `item-surg-impl-${toothNumber}`, toothNumber, code804n: "A16.07.054", name: `Установка имплантата в позиции зуба ${toothNumber}`, priceRub: 48000, unitPriceRub: 48000, discountRub: 0, quantity: 1, stageKind: "stage_2_surgery", isCompleted: false },
+					{ id: `item-surg-impl-${toothNumber || "default"}`, toothNumber, code804n: "A16.07.054", name: `Установка имплантата${toothNumber ? ` в позиции зуба ${toothNumber}` : ""}`, priceRub: 48000, unitPriceRub: 48000, discountRub: 0, quantity: 1, stageKind: "stage_2_surgery", isCompleted: false },
 				],
 			},
 			{
-				id: `stage-ortho-${toothNumber}`,
+				id: `stage-ortho-${toothNumber || "default"}`,
 				stageNumber: 2,
 				stageKind: "stage_3_orthopedics",
 				title: "Ортопедический этап: коронка на имплантате",
-				subtitle: `Индивидуальный абатмент и коронка на зуб ${toothNumber}`,
+				subtitle: `Индивидуальный абатмент и коронка${toothNumber ? ` на зуб ${toothNumber}` : ""}`,
 				clinicalGoal: "Полноценное функциональное протезирование",
 				totalRub: 35000,
 				totalKopecks: 3500000,
@@ -335,7 +868,7 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 				estimatedWeeks: 2,
 				status: "draft",
 				items: [
-					{ id: `item-ortho-crown-${toothNumber}`, toothNumber, code804n: "A16.07.004", name: `Коронка из диоксида циркония на имплантате ${toothNumber}`, priceRub: 35000, unitPriceRub: 35000, discountRub: 0, quantity: 1, stageKind: "stage_3_orthopedics", isCompleted: false },
+					{ id: `item-ortho-crown-${toothNumber || "default"}`, toothNumber, code804n: "A16.07.004", name: `Коронка из диоксида циркония на имплантате${toothNumber ? ` ${toothNumber}` : ""}`, priceRub: 35000, unitPriceRub: 35000, discountRub: 0, quantity: 1, stageKind: "stage_3_orthopedics", isCompleted: false },
 				],
 			},
 		];

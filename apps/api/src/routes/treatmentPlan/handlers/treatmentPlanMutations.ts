@@ -98,6 +98,7 @@ export const updateTreatmentPlanSchema = z.object({
 export const updateTreatmentPlanStatusSchema = z.object({
 	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected"]).default("Approved"),
 	selectedTier: z.string().optional(),
+	alternativeTier: z.string().optional(),
 });
 
 /**
@@ -634,8 +635,7 @@ export async function handleCreateTreatmentPlan(
 				.insert(treatmentPlanStages)
 				.values({
 					organizationId,
-					patientName: patient.fullName || "Пациент",
-					planTitle: newPlan.title || newPlan.name,
+					planId: newPlan.id,
 					stageOrder: st.stageOrder,
 					stageName: st.stageName,
 					completionPercentage: st.completionPercentage,
@@ -650,6 +650,7 @@ export async function handleCreateTreatmentPlan(
 					.values({
 						organizationId,
 						planId: newPlan.id,
+						stageId: createdStage?.id ?? null,
 						toothNumber: item.toothNumber ?? null,
 						priceId: item.priceId,
 						quantity: item.quantity,
@@ -920,6 +921,11 @@ export async function handleApproveTreatmentPlan(
 	organizationId: string,
 ) {
 	const { id } = request.params;
+	const rawBody = (request.body && typeof request.body === "object") ? (request.body as Record<string, unknown>) : {};
+	const selectedTier = (typeof rawBody.selectedTier === "string" && rawBody.selectedTier.trim())
+		|| (typeof rawBody.alternativeTier === "string" && rawBody.alternativeTier.trim())
+		|| "optimum";
+
 	const [existing] = await db
 		.select()
 		.from(treatmentPlans)
@@ -940,6 +946,7 @@ export async function handleApproveTreatmentPlan(
 			.set({
 				status: "Approved",
 				approvedAt: new Date(),
+				alternativeTier: selectedTier,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
@@ -1018,11 +1025,13 @@ export async function handleUpdateTreatmentPlanStatus(
 	}
 
 	const isApproved = status.toLowerCase() === "approved";
+	const selectedTier = parsed.data.selectedTier || parsed.data.alternativeTier;
 	const [updatedPlan] = await db
 		.update(treatmentPlans)
 		.set({
 			status,
 			...(isApproved ? { approvedAt: new Date() } : {}),
+			...(selectedTier ? { alternativeTier: selectedTier } : {}),
 			updatedAt: new Date(),
 		})
 		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))

@@ -374,10 +374,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							and(
 								eq(treatmentPlanStages.organizationId, organizationId),
 								eq(treatmentPlanStages.stageOrder, phaseNum),
-								or(
-									eq(treatmentPlanStages.planTitle, plan.name),
-									sql`${treatmentPlanStages.planTitle} ILIKE ${`%${plan.name}%`}`,
-								),
+								eq(treatmentPlanStages.planId, planId),
 							),
 						);
 				}

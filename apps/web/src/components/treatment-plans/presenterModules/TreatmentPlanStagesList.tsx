@@ -9,7 +9,7 @@ import React, { useMemo } from "react";
 import type { TreatmentPlanTier, TreatmentPlanStage } from "./treatmentPlanPresenterTypes.js";
 import { TreatmentPlanStagesListControls } from "./stagesList/TreatmentPlanStagesListControls.js";
 import { TreatmentPlanStageCardItem } from "./stagesList/TreatmentPlanStageCardItem.js";
-import { DEFAULT_PRESENTER_STAGES } from "./TreatmentPlanPresenterDefaultStages.js";
+import { DEFAULT_PRESENTER_STAGES } from "../treatmentPlanCatalogData.js";
 
 export interface TreatmentPlanStagesListProps {
 	readonly tier?: TreatmentPlanTier | null;

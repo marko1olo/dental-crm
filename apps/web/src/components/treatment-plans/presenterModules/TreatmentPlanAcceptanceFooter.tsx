@@ -109,21 +109,21 @@ export const TreatmentPlanAcceptanceFooter: React.FC<TreatmentPlanAcceptanceFoot
 		>
 			<div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
 				{/* Левая часть: информация о тарифе и сумме в рублях и копейках */}
-				<div className="treatment-footer-summary flex items-center gap-3 w-full sm:w-auto">
-					<div className="text-left min-w-0">
+				<div className="treatment-footer-summary flex items-center gap-3 w-full sm:w-auto shrink-0">
+					<div className="text-left shrink-0">
 						<span className="treatment-footer-label text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">
 							Выбранный вариант:
 						</span>
-						<span className="treatment-footer-amount text-sm sm:text-base font-black text-[var(--ink)] truncate block">
-							«{effectiveTier.title}» ({tierLetter})
+						<span className="treatment-footer-amount text-sm sm:text-base font-black text-[var(--ink)] block whitespace-nowrap">
+							«{effectiveTier.title}»
 						</span>
 					</div>
-					<div className="h-7 w-px bg-[var(--line)] hidden sm:block" />
+					<div className="h-7 w-px bg-[var(--line)] hidden sm:block shrink-0" />
 					<div className="text-left shrink-0">
 						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">
 							Сумма к оплате:
 						</span>
-						<span className="text-base sm:text-lg font-black text-[var(--teal)] font-mono">
+						<span className="text-base sm:text-lg font-black text-[var(--teal)] font-mono whitespace-nowrap">
 							{totalRub.toLocaleString("ru-RU")} ₽
 						</span>
 					</div>

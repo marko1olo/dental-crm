@@ -87,10 +87,10 @@ export const AcceptanceFooterActions: React.FC<AcceptanceFooterActionsProps> = (
 				}}
 				className="btn-treatment-action secondary-button dente-btn dente-btn-secondary min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-semibold text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer transition-all active:scale-98 shadow-2xs"
 				data-testid="approve-and-sign-btn"
-				title="Подписание информированного согласия на план лечения"
+				title="Подписать план лечения"
 			>
 				<PenTool size={16} className="text-[var(--muted)] shrink-0" />
-				<span className="hidden sm:inline">{hasSigned ? "Подписано пациентом" : "Подписать план лечения (Подпись на планшете)"}</span>
+				<span className="hidden sm:inline">{hasSigned ? "Подписано" : "Подпись на планшете"}</span>
 				<span className="sm:hidden">{hasSigned ? "Подписано" : "Подписать"}</span>
 			</button>
 

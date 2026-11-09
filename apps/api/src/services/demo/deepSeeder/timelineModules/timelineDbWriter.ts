@@ -205,10 +205,9 @@ export async function writePatientTreatmentPlan(
 			.insert(treatmentPlanStages)
 			.values({
 				organizationId,
-				patientName: p0.fullName,
-				planTitle: createdPlan.title,
+				planId: createdPlan.id,
 				stageOrder: 1,
-				stageName: "Терапевтическая санация (лечение кариеса 1.6 и пульпита 3.6)",
+				stageName: "Терапевтическая санация (лечение кариеса и пульпита)",
 				completionPercentage: 50,
 				autoArchived: false,
 			})

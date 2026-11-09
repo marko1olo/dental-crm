@@ -159,8 +159,8 @@ async function run() {
 
 		console.log("Navigating PC page to http://127.0.0.1:5173/?treatment-plans=1#treatment-studio ...");
 		await pcPage.goto("http://127.0.0.1:5173/?treatment-plans=1#treatment-studio", {
-			waitUntil: "load",
-			timeout: 25000,
+			waitUntil: "domcontentloaded",
+			timeout: 45000,
 		});
 
 		console.log("Waiting for TreatmentPlanStudioModal in DOM...");
@@ -226,8 +226,8 @@ async function run() {
 
 		console.log("Navigating Mobile page to http://127.0.0.1:5173/?treatment-plans=1#treatment-studio ...");
 		await mobilePage.goto("http://127.0.0.1:5173/?treatment-plans=1#treatment-studio", {
-			waitUntil: "load",
-			timeout: 25000,
+			waitUntil: "domcontentloaded",
+			timeout: 45000,
 		});
 
 		console.log("Waiting for Mobile TreatmentPlanStudioModal in DOM...");

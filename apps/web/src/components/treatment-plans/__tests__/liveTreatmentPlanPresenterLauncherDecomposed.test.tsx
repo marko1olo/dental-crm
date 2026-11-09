@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import { LiveTreatmentPlanPresenterLauncher } from "../../appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher";
 import { TreatmentPlanPresenterEmptyState } from "../../appLayout/modalsContainerModules/standalone/TreatmentPlanPresenterEmptyState";
-import { DEFAULT_SAMPLE_TEETH } from "../presenterModules/state/presenterStateConstants";
+import { sampleTeethPresentation } from "./helpers/presentationTestHelpers";
 import { TreatmentPlanStagesList } from "../presenterModules/TreatmentPlanStagesList";
 import { generate3TierPlanComparison } from "../treatmentPlanStagesEngine";
 
@@ -38,7 +38,7 @@ describe("LiveTreatmentPlanPresenterLauncher & Stage Payment Red Team Suite", ()
 
 	it("renders TreatmentPlanStagesList with 1-click 'Оплатить этап' (Stage Payment) button", () => {
 		const tiers = generate3TierPlanComparison(
-			DEFAULT_SAMPLE_TEETH,
+			sampleTeethPresentation,
 			undefined,
 			0,
 			0,
