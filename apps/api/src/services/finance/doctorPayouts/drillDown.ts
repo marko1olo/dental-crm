@@ -164,6 +164,7 @@ export async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope
 			material: labOrders.material,
 			status: labOrders.status,
 			priceRub: labOrders.priceRub,
+			labCostRub: labOrders.labCostRub,
 			clinicalNotes: labOrders.clinicalNotes,
 			dueDate: labOrders.dueDate,
 			completedAt: labOrders.completedAt,

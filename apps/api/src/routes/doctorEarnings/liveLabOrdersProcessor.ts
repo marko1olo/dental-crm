@@ -22,12 +22,19 @@ const PAID_LAB_STATUSES = new Set(["sent", "in_progress", "shipped", "received",
 export function processAptLabOrders(
 	aptPatientId: string | null,
 	dbLabOrders: LiveCalculationInput["dbLabOrders"],
+	aptId?: string | null,
 ): { aptLabItems: DoctorEarningsLabOrderItem[]; aptLabKop: number } {
-	const aptLabOrdersList = dbLabOrders.filter((lo) => lo.patientId === aptPatientId && PAID_LAB_STATUSES.has(String(lo.status)));
+	const aptLabOrdersList = dbLabOrders.filter((lo) => {
+		if (!PAID_LAB_STATUSES.has(String(lo.status))) return false;
+		if (aptId && lo.appointmentId) {
+			return lo.appointmentId === aptId;
+		}
+		return lo.patientId === aptPatientId;
+	});
 	let aptLabKop = 0;
 
 	const aptLabItems: DoctorEarningsLabOrderItem[] = aptLabOrdersList.map((lo) => {
-		const loCostRub = lo.isWarranty ? 0 : (parseFloat(String(lo.labCostRub ?? lo.priceRub)) || 0);
+		const loCostRub = lo.isWarranty ? 0 : (parseFloat(String(lo.labCostRub ?? 0)) || 0);
 		const loCostKop = Math.round(loCostRub * 100);
 		aptLabKop += loCostKop;
 		return {

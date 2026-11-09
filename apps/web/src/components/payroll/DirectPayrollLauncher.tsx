@@ -33,6 +33,8 @@ export const DirectPayrollLauncher: React.FC = () => {
 				h.includes("#salary") || h.includes("#commissions")
 			) {
 				setIsOpen(true);
+			} else {
+				setIsOpen(false);
 			}
 		};
 		window.addEventListener("hashchange", handleHashChange);

@@ -37,10 +37,11 @@ import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher"
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
+import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
-import { DirectGate0InspectionLauncher } from "./components/odontogram/DirectGate0InspectionLauncher";
+import { DirectOdontogramModuleLauncher } from "./components/odontogram/DirectOdontogramModuleLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
@@ -49,7 +50,6 @@ import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLa
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
-import { DirectLeadsLauncher } from "./components/leads/DirectLeadsLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
@@ -131,6 +131,8 @@ function isStandaloneActive(): boolean {
 		h.includes("odontogram-mandible") ||
 		h.includes("arch32") ||
 		s.includes("stand=arch32") ||
+		s.includes("stand=module") ||
+		s.includes("stand=odontogram") ||
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
 		h.includes("appointment") ||
@@ -256,6 +258,12 @@ function isStandaloneActive(): boolean {
 		s.includes("assistant_payroll") ||
 		s.includes("leads") ||
 		h.includes("leads") ||
+		s.includes("recalls") ||
+		h.includes("recalls") ||
+		s.includes("prophylaxis") ||
+		h.includes("prophylaxis") ||
+		s.includes("recall-hub") ||
+		h.includes("recall-hub") ||
 		h.includes("photo") ||
 		s.includes("photo") ||
 		h.includes("dsd") ||
@@ -356,10 +364,11 @@ export function AppShell() {
 			<DirectOrthoLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
+			<DirectDoctorPayrollReportLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />
-			<DirectGate0InspectionLauncher />
+			<DirectOdontogramModuleLauncher />
 			<DirectTelephonyLauncher />
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />
@@ -368,7 +377,6 @@ export function AppShell() {
 			<DirectOrthopedicsLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
-			<DirectLeadsLauncher />
 			<DirectSettingsLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />

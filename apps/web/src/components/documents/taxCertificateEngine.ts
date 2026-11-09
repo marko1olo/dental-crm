@@ -14,6 +14,7 @@ import { generateTaxCertificateKnd1151156Html } from "./taxCertificate/htmlGener
 import { printTaxCertificateHtml } from "./taxCertificate/printRunner";
 import type { TaxCertificateDocumentData } from "./taxCertificate/types";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+export { renderSignatureElementHtml } from "./studio/useCanvasSigner";
 
 export * from "./taxCertificate/types";
 export * from "./taxCertificate/aggregation";
@@ -59,6 +60,8 @@ export interface BuildTaxCertificateQuickParams {
 	};
 	readonly receiptsCount: number;
 	readonly totalAmountKopecks: number;
+	readonly code01Kopecks?: number;
+	readonly code02Kopecks?: number;
 }
 
 /**
@@ -67,7 +70,28 @@ export interface BuildTaxCertificateQuickParams {
 export function buildTaxCertificateDocumentData(
 	params: BuildTaxCertificateQuickParams,
 ): TaxCertificateDocumentData {
-	const rub = Math.floor(params.totalAmountKopecks / 100);
+	const code02Kopecks = params.code02Kopecks ?? 0;
+	const code01Kopecks =
+		params.code01Kopecks !== undefined
+			? params.code01Kopecks
+			: params.code02Kopecks !== undefined
+				? Math.max(0, params.totalAmountKopecks - code02Kopecks)
+				: params.totalAmountKopecks;
+	const totalKopecks =
+		params.totalAmountKopecks > 0
+			? params.totalAmountKopecks
+			: code01Kopecks + code02Kopecks;
+	const code01Rub = Math.floor(code01Kopecks / 100);
+	const code02Rub = Math.floor(code02Kopecks / 100);
+	const totalNetRub = Math.floor(totalKopecks / 100);
+	const statutoryLimitKopecks = (params.taxYear >= 2024 ? 150000 : 120000) * 100;
+	const eligibleCode01Kopecks = Math.min(statutoryLimitKopecks, code01Kopecks);
+	const eligibleCode01Rub = Math.floor(eligibleCode01Kopecks / 100);
+	const estimatedRefund13Kopecks =
+		Math.round(eligibleCode01Kopecks * 0.13) + Math.round(code02Kopecks * 0.13);
+	const estimatedRefund13Rub =
+		Math.round(eligibleCode01Rub * 0.13) + Math.round(code02Rub * 0.13);
+
 	const isDemo = isDemoShowcaseMode();
 	const passportParts = params.patient.passport ? params.patient.passport.split(" ") : [];
 	const series = passportParts.length >= 2
@@ -113,18 +137,18 @@ export function buildTaxCertificateDocumentData(
 		aggregation: {
 			taxYear: params.taxYear,
 			receiptsCount: params.receiptsCount || 1,
-			code01Kopecks: params.totalAmountKopecks,
-			code02Kopecks: 0,
-			code01Rub: rub,
-			code02Rub: 0,
-			eligibleCode01Kopecks: Math.min(15000000, params.totalAmountKopecks),
-			eligibleCode01Rub: Math.min(150000, rub),
-			totalNetRub: rub,
-			totalNetKopecks: params.totalAmountKopecks,
-			totalGrossKopecks: params.totalAmountKopecks,
+			code01Kopecks,
+			code02Kopecks,
+			code01Rub,
+			code02Rub,
+			eligibleCode01Kopecks,
+			eligibleCode01Rub,
+			totalNetRub,
+			totalNetKopecks: totalKopecks,
+			totalGrossKopecks: totalKopecks,
 			refundedKopecks: 0,
-			estimatedRefund13Kopecks: Math.round(params.totalAmountKopecks * 0.13),
-			estimatedRefund13Rub: Math.round(rub * 0.13),
+			estimatedRefund13Kopecks,
+			estimatedRefund13Rub,
 			payments: [],
 		},
 	};

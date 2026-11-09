@@ -10,8 +10,10 @@ export function resolveAmountToPayKopecks(
 ): number {
 	if (input.amountKopecks !== undefined) return Number(input.amountKopecks);
 	if (input.amountRub !== undefined) return rubToKopecks(input.amountRub);
-	if (order.labCostRub !== null && order.labCostRub !== undefined) return rubToKopecks(order.labCostRub);
-	if (order.priceRub !== null && order.priceRub !== undefined) return rubToKopecks(order.priceRub);
+	// Себестоимость работы техника ЗТЛ (Мандаты 8e, 8n) — розница пациента priceRub неприкосновенна!
+	if (order.labCostRub !== null && order.labCostRub !== undefined && Number(order.labCostRub) > 0) {
+		return rubToKopecks(order.labCostRub);
+	}
 	return 0;
 }
 

@@ -89,6 +89,7 @@ export type DoctorPayoutLabOrder = {
 	readonly status: string;
 	readonly completedAt: string | null;
 	readonly priceRub: number;
+	readonly labCostRub?: number;
 	readonly withheldRub: number;
 	readonly deductionPct: number;
 	readonly isWarranty?: boolean;

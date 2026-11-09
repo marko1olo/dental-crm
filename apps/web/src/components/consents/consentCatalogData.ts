@@ -345,7 +345,11 @@ export function generateConsentPrintHtml(
 	if (status === "signed_paper") {
 		stampHtml = `<div class="stamp paper"><strong>✓ ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</strong><div>Оригинал подписан пациентом собственноручно и хранится в архиве.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Врач: ${docName}</div></div><div class="sig-lines"><div>Подпись пациента: ________________ / ${signerName} /</div><div>Подпись врача: ________________ / ${docName} /</div></div>`;
 	} else if (status === "signed_digital" && signature?.signatureSvg) {
-		stampHtml = `<div class="stamp digital"><strong>✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><div>Подписано на планшете клиники. Юридическая сила подтверждена.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Пациент: ${signerName}</div></div><div class="sig-svg">${signature.signatureSvg}</div><div class="sig-lines"><div>ЭЦП врача: ________________ / ${docName} /</div></div>`;
+		const rawSig = signature.signatureSvg.trim();
+		const sigRender = rawSig.startsWith("<svg")
+			? rawSig
+			: `<img src="${signature.signatureSvg}" alt="Подпись" style="max-height: 48px; max-width: 240px; object-fit: contain; display: block;" />`;
+		stampHtml = `<div class="stamp digital"><strong>✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><div>Подписано на планшете клиники. Юридическая сила подтверждена.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Пациент: ${signerName}</div></div><div class="sig-svg">${sigRender}</div><div class="sig-lines"><div>ЭЦП врача: ________________ / ${docName} /</div></div>`;
 	}
 
 	const guardianHtml = context?.guardianName
@@ -375,7 +379,7 @@ h1 { font-size: 13pt; font-weight: 700; margin: 6px 0 2px; color: #0f172a; }
 .stamp.digital { background: #f0fdfa; border: 1px solid #5eead4; color: #115e59; }
 .stamp .meta { margin-top: 2px; font-size: 8pt; opacity: 0.85; }
 .sig-lines { margin-top: 14px; font-size: 9.5pt; display: flex; flex-direction: column; gap: 8px; }
-.sig-svg { max-width: 260px; height: 60px; border-bottom: 1px solid #94a3b8; margin-bottom: 8px; } .sig-svg svg { width: 100%; height: 100%; }
+.sig-svg { max-width: 260px; height: 60px; border-bottom: 1px solid #94a3b8; margin-bottom: 8px; display: flex; align-items: center; } .sig-svg svg, .sig-svg img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .date-row { margin-top: 10px; font-size: 9pt; color: #475569; }
 </style></head><body>
 <header class="header"><div class="c-info">${cName} • Медицинская документация</div><h1>${doc.title}</h1><div class="subtitle">${doc.subtitle}</div></header>

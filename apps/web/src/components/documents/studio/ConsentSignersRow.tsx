@@ -22,6 +22,7 @@ export interface ConsentSignersRowProps {
 	readonly clinicLicense: string;
 	readonly doctorFullName: string;
 	readonly toastNotice?: string | null;
+	readonly toastType?: "success" | "error" | "info";
 }
 
 export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
@@ -38,6 +39,7 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 	clinicLicense,
 	doctorFullName,
 	toastNotice,
+	toastType = "info",
 }) => {
 	const currentStatusLabel = signedStatusText || (hasSigned ? "✓ Подписано" : "Ожидает росписи");
 
@@ -108,7 +110,15 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 					<span>Врач: {doctorFullName}</span>
 				</div>
 				{toastNotice && (
-					<div className="text-xs text-teal-700 bg-teal-50 dark:bg-teal-950/40 p-2 rounded-lg font-medium animate-pulse">
+					<div
+						className={`text-xs p-2 rounded-lg font-medium animate-pulse border ${
+							toastType === "error"
+								? "text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900"
+								: toastType === "success"
+									? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900"
+									: "text-teal-700 bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-900"
+						}`}
+					>
 						{toastNotice}
 					</div>
 				)}

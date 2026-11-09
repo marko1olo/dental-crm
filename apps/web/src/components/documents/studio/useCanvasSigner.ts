@@ -70,3 +70,16 @@ export function useCanvasSigner(onClear?: () => void) {
 		getSignatureDataUrl,
 	};
 }
+
+/**
+ * Хелпер безопасного рендеринга подписи: если строка начинается с data:image/ или base64 —
+ * возвращает тег img, если начинается с <svg — возвращает сырой векторный SVG.
+ */
+export function renderSignatureElementHtml(sigStr: string | undefined, alt = "Подпись"): string {
+	if (!sigStr) return "";
+	const trimmed = sigStr.trim();
+	if (trimmed.startsWith("<svg")) {
+		return trimmed;
+	}
+	return `<img src="${trimmed}" alt="${alt}" style="max-height: 48px; max-width: 240px; object-fit: contain; display: block;" />`;
+}

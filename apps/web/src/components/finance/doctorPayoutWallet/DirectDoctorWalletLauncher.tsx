@@ -103,7 +103,7 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 						}
 					>
 						<DoctorPayoutMobileWallet
-							report={DEMO_SHOWCASE_REPORT}
+							report={isDemo ? DEMO_SHOWCASE_REPORT : null}
 							month={activeMonth}
 							onMonthChange={() => {}}
 							onRefresh={() => {

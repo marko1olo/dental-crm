@@ -12,7 +12,11 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { printTaxCertificate, buildTaxCertificateDocumentData } from "./taxCertificateEngine";
+import {
+	printTaxCertificate,
+	buildTaxCertificateDocumentData,
+	resolveTaxDeductionCategory,
+} from "./taxCertificateEngine";
 import {
 	DEFAULT_CLINIC_REQUISITES,
 	DEMO_SAMPLE_PATIENT,
@@ -95,6 +99,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	const [isSignPadOpen, setIsSignPadOpen] = useState<boolean>(false);
 	const [hasSigned, setHasSigned] = useState<boolean>(false);
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
+	const [toastType, setToastType] = useState<"success" | "error" | "info">("info");
 
 	const {
 		canvasRef,
@@ -189,9 +194,13 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		}
 	}, [isDemo, patient.fullName, activePackage, legalContext, activeConsentSubKind]);
 
-	const showToast = useCallback((msg: string) => {
+	const showToast = useCallback((msg: string, type: "success" | "error" | "info" = "info") => {
 		setToastNotice(msg);
-		setTimeout(() => setToastNotice(null), 3200);
+		setToastType(type);
+		setTimeout(() => {
+			setToastNotice(null);
+			setToastType("info");
+		}, 3200);
 	}, []);
 
 	const handleDownloadTxt = useCallback(() => {
@@ -267,6 +276,21 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 		if (activePackage === "tax_certificate") {
 			// Вызов официального генератора справки ФНС для налогового вычета с QR-кодом и штампом (Мандат 8n)
+			let code01Kopecks = 0;
+			let code02Kopecks = 0;
+			for (const s of effectiveServices) {
+				const cat = resolveTaxDeductionCategory(s.code, s.title);
+				const amt = s.amountKopecks || (s.priceKopecks * (s.quantity || 1)) || 0;
+				if (cat === "2") {
+					code02Kopecks += amt;
+				} else {
+					code01Kopecks += amt;
+				}
+			}
+			if (code01Kopecks === 0 && code02Kopecks === 0) {
+				code01Kopecks = totalAmountKopecks;
+			}
+
 			printTaxCertificate(
 				buildTaxCertificateDocumentData({
 					documentNumber: legalContext.documentNumber,
@@ -281,12 +305,14 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 					patient,
 					receiptsCount: effectiveServices.length || 1,
 					totalAmountKopecks,
+					code01Kopecks,
+					code02Kopecks,
 				}),
 			);
-			showToast("✓ Справка для налогового вычета сформирована и отправлена на печать");
+			showToast("✓ Справка для налогового вычета сформирована и отправлена на печать", "success");
 		} else {
 			window.print();
-			showToast("✓ Комплект документов утвержден и отправлен на печать");
+			showToast("✓ Комплект документов утвержден и отправлен на печать", "success");
 		}
 	}, [
 		activePackage,
@@ -361,6 +387,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 							clinicLicense={DEFAULT_CLINIC_REQUISITES.license}
 							doctorFullName={doctorFullName}
 							toastNotice={toastNotice}
+							toastType={toastType}
 						/>
 					</aside>
 

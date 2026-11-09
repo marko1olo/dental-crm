@@ -11,28 +11,41 @@ import { LAB_DEDUCTED_CATEGORIES } from "./constants.js";
 const PAID_LAB_STATUSES = new Set(["sent", "in_progress", "shipped", "received", "refitting", "completed"]);
 
 /**
- * Распределяет счета ЗТЛ пациентов между приемами врача один раз: доля каждого
- * приема пропорциональна его ортопедической выручке. Суммарный вычет за период
- * строго равен сумме живых счетов лаборатории — без задвоения между приемами.
+ * Распределяет счета ЗТЛ пациентов между приемами врача один раз:
+ * 1. Наряды с явным appointment_id списываются СТРОГО с того приема, к которому они привязаны.
+ * 2. Непривязанные наряды распределяются между ортопедическими приемами пациента пропорционально выручке.
+ * Суммарный вычет за период строго равен сумме живых счетов лаборатории — без задвоения между приемами.
  */
 export function buildAppointmentLabBudget(input: LiveCalculationInput): Map<string, number> {
 	const budget = new Map<string, number>();
 	if (input.dbLabOrders.length === 0 || input.rawAppointments.length === 0) return budget;
 
-	// Счет ЗТЛ каждого пациента за период (только живые наряды, без гарантии).
-	const patientLabTotal = new Map<string, number>();
+	const allAptIds = new Set(input.rawAppointments.map((a) => a.id));
+	const unassignedPatientLabTotal = new Map<string, number>();
+
 	for (const lo of input.dbLabOrders) {
 		if (!lo.patientId || lo.isWarranty || !PAID_LAB_STATUSES.has(String(lo.status))) continue;
-		const costKop = Math.round((parseFloat(String(lo.labCostRub ?? lo.priceRub)) || 0) * 100);
+		const costKop = Math.round((parseFloat(String(lo.labCostRub ?? 0)) || 0) * 100);
 		if (costKop <= 0) continue;
-		patientLabTotal.set(lo.patientId, (patientLabTotal.get(lo.patientId) ?? 0) + costKop);
+
+		if (lo.appointmentId && allAptIds.has(lo.appointmentId)) {
+			// Наряд явно привязан к конкретному приему: относим вычет строго на него
+			budget.set(lo.appointmentId, (budget.get(lo.appointmentId) ?? 0) + costKop);
+		} else if (!lo.appointmentId) {
+			// Непривязанный наряд (легаси): накапливаем для распределения по пациенту
+			unassignedPatientLabTotal.set(
+				lo.patientId,
+				(unassignedPatientLabTotal.get(lo.patientId) ?? 0) + costKop,
+			);
+		}
 	}
-	if (patientLabTotal.size === 0) return budget;
+
+	if (unassignedPatientLabTotal.size === 0) return budget;
 
 	// Ортопедическая выручка каждого приема: база распределения счета пациента.
 	const aptOrthoGross = new Map<string, number>();
 	for (const apt of input.rawAppointments) {
-		if (!apt.patientId || !patientLabTotal.has(apt.patientId)) continue;
+		if (!apt.patientId || !unassignedPatientLabTotal.has(apt.patientId)) continue;
 		const visitId = input.appointmentToVisitMap.get(apt.id) || null;
 		const treatments = visitId ? input.dbTreatmentItems.filter((t) => t.visitId === visitId) : [];
 		const orthoGross = treatments
@@ -41,7 +54,7 @@ export function buildAppointmentLabBudget(input: LiveCalculationInput): Map<stri
 		aptOrthoGross.set(apt.id, orthoGross);
 	}
 
-	for (const [patientId, labKopTotal] of patientLabTotal) {
+	for (const [patientId, labKopTotal] of unassignedPatientLabTotal) {
 		const patientAptIds = input.rawAppointments.filter((a) => a.patientId === patientId).map((a) => a.id);
 		if (patientAptIds.length === 0) continue;
 
@@ -50,12 +63,15 @@ export function buildAppointmentLabBudget(input: LiveCalculationInput): Map<stri
 		const orthoSum = patientAptIds.reduce((sum, id) => sum + (aptOrthoGross.get(id) ?? 0), 0);
 		if (orthoSum <= 0) {
 			// Нет ортопедической выручки в приемах этого врача: наряд ЗТЛ НЕ списывается с терапевтических манипуляций ([LAB-03]).
-			for (const aptId of patientAptIds) budget.set(aptId, 0);
+			for (const aptId of patientAptIds) {
+				if (!budget.has(aptId)) budget.set(aptId, 0);
+			}
 			continue;
 		}
 		if (patientAptIds.length === 1) {
 			// Один прием и у него есть ортопедическая выручка: счет относится к нему.
-			budget.set(patientAptIds[0]!, (budget.get(patientAptIds[0]!) ?? 0) + labKopTotal);
+			const aid = patientAptIds[0]!;
+			budget.set(aid, (budget.get(aid) ?? 0) + labKopTotal);
 			continue;
 		}
 		let remaining = labKopTotal;

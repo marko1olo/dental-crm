@@ -58,6 +58,7 @@ export interface DrillDownDetailsInput {
 		readonly status: string;
 		readonly completedAt: Date | string | null;
 		readonly priceRub: unknown;
+		readonly labCostRub?: unknown;
 		readonly clinicalNotes?: string | null;
 		readonly isWarranty?: boolean;
 	}>;
@@ -182,6 +183,9 @@ export function buildDoctorLabOrdersRegistry(
 			(item) => item.labOrderId === order.id,
 		);
 		const price = moneyFromDb(order.priceRub, "стоимость наряда ЗТЛ");
+		const labCost = (order.labCostRub !== null && order.labCostRub !== undefined)
+			? moneyFromDb(order.labCostRub, "себестоимость наряда ЗТЛ")
+			: 0;
 		const notesLower = ((order.clinicalNotes || "") + " " + (order.status || "")).toLowerCase();
 		const isWarranty =
 			Boolean(order.isWarranty) ||
@@ -190,8 +194,9 @@ export function buildDoctorLabOrdersRegistry(
 			notesLower.includes("переделк") ||
 			notesLower.includes("рекламац");
 
+		// Себестоимость техника удерживается СТРОГО от labCostRub (не от розницы пациента). Если labCostRub null/0 — удержание 0 ₽.
 		// Гарантийные переделки НЕ удерживаются с врача (0 ₽), а относятся на рекламационный фонд клиники
-		const withheld = isWarranty ? 0 : percentOfMoney(price, labPct);
+		const withheld = isWarranty ? 0 : percentOfMoney(labCost, labPct);
 		const tooth = itemsForOrder.length > 0
 			? itemsForOrder.map((item) => String(item.toothFdi)).join(", ")
 			: (order.toothFdi || "—");
@@ -211,10 +216,11 @@ export function buildDoctorLabOrdersRegistry(
 			status: order.status,
 			completedAt: order.completedAt ? new Date(order.completedAt).toISOString() : null,
 			priceRub: price,
+			labCostRub: labCost,
 			withheldRub: withheld,
 			deductionPct: isWarranty ? 0 : labPct,
 			isWarranty,
-			warrantyCoveredByClinicRub: isWarranty ? price : 0,
+			warrantyCoveredByClinicRub: isWarranty ? labCost : 0,
 		};
 	});
 }

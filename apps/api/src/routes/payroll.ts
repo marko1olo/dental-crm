@@ -19,6 +19,7 @@ import {
 	inventoryTransactions,
 	labOrders,
 	patients,
+	payments,
 	serviceCatalogItems,
 	treatmentItems,
 	users,
@@ -310,6 +311,35 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			const visitIds = clinicVisits.map((v) => v.id);
 			const visitToAppt = new Map(clinicVisits.map((v) => [v.id, v.appointmentId]));
 
+			// Реальные фактические оплаты из таблицы payments (проверяя status = 'paid')
+			const paidVisitRows = visitIds.length > 0
+				? await db
+					.select({
+						visitId: payments.visitId,
+						amountRub: payments.amountRub,
+						fiscalReceiptNumber: payments.fiscalReceiptNumber,
+					})
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							inArray(payments.visitId, visitIds),
+							eq(payments.status, "paid"),
+						),
+					)
+				: [];
+
+			const paidKopByVisit = new Map<string, number>();
+			const fiscalReceiptByVisit = new Map<string, string>();
+			for (const p of paidVisitRows) {
+				if (!p.visitId) continue;
+				const amtKop = Math.round(Number(p.amountRub || 0) * 100);
+				paidKopByVisit.set(p.visitId, (paidKopByVisit.get(p.visitId) || 0) + amtKop);
+				if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.visitId)) {
+					fiscalReceiptByVisit.set(p.visitId, p.fiscalReceiptNumber);
+				}
+			}
+
 			// Услуги с категориями из каталога
 			const treats = visitIds.length > 0
 				? await db
@@ -326,6 +356,16 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
 					.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.visitId, visitIds)))
 				: [];
+
+			// Суммарная стоимость услуг по визитам для пропорционального распределения фактических оплат
+			const totalGrossByVisit = new Map<string, number>();
+			for (const t of treats) {
+				if (t.visitId) {
+					const gKop = Math.round(Number(t.priceRub || 0) * 100);
+					totalGrossByVisit.set(t.visitId, (totalGrossByVisit.get(t.visitId) || 0) + gKop);
+				}
+			}
+			const remainingPaidKopByVisit = new Map<string, number>(paidKopByVisit);
 
 			// Заказы ЗТЛ для доктора за период (исключая гарантии)
 			const docLabOrders = await db
@@ -392,6 +432,32 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 			for (const t of treats) {
 				const grossKop = Math.round(Number(t.priceRub || 0) * 100);
+				const visitId = t.visitId;
+				const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
+				const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
+
+				let actuallyPaidGrossKop = 0;
+				if (visitId && visitTotalGross > 0 && visitPaidTotal > 0) {
+					if (visitPaidTotal >= visitTotalGross) {
+						actuallyPaidGrossKop = grossKop;
+					} else {
+						const remaining = remainingPaidKopByVisit.get(visitId) || 0;
+						actuallyPaidGrossKop = Math.min(grossKop, remaining);
+						remainingPaidKopByVisit.set(visitId, Math.max(0, remaining - actuallyPaidGrossKop));
+					}
+				}
+
+				const isPaid = actuallyPaidGrossKop > 0 && (visitPaidTotal >= visitTotalGross || actuallyPaidGrossKop >= grossKop);
+				const isPartiallyPaid = actuallyPaidGrossKop > 0 && !isPaid;
+				const isDebt = actuallyPaidGrossKop < grossKop;
+				const invoiceStatus: "paid" | "partially_paid" | "unpaid" = isPaid
+					? "paid"
+					: isPartiallyPaid
+						? "partially_paid"
+						: "unpaid";
+				const receiptNum = visitId ? fiscalReceiptByVisit.get(visitId) : undefined;
+				const isPaid54Fz = Boolean(receiptNum) || isPaid || isPartiallyPaid;
+
 				const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
 				const appt = appts.find((a) => a.id === linkedApptId);
 				const patientId = appt?.patientId;
@@ -426,10 +492,12 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					doctorId: resolvedDocId,
 					order804nCode: t.order804nCode ?? undefined,
 					serviceCode: t.code ?? undefined,
-					isPaid: true,
-					invoiceStatus: "paid",
-					paidAmountKop: grossKop,
-					actuallyPaidGrossKop: grossKop,
+					isPaid,
+					isDebt,
+					invoiceStatus,
+					paidAmountKop: actuallyPaidGrossKop,
+					actuallyPaidGrossKop,
+					fiscalReceiptNumber: receiptNum,
 				});
 
 				orders.push({
@@ -445,7 +513,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					labCostKopecks: labKop,
 					materialCostKopecks: matKop,
 					doctorId: resolvedDocId,
-					isPaid54Fz: true,
+					isPaid54Fz,
 				});
 			}
 		}

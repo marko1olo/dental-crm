@@ -208,6 +208,23 @@ graph LR
      - `docs/proofs/documents/03_documents_intake_mobile_light_390x844.png` (164.1 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, тач-таргеты $\ge 44$px.
      - `docs/proofs/documents/04_documents_intake_mobile_dark_390x844.png` (141.1 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
 
+
+7. **Хирургическое устранение дефектов документооборота и согласий (DEF-DOC-01...05, Мандаты 8e, 8n, 8am, 8ap):**
+   * **DEF-DOC-01 (`DirectConsentLauncher.tsx`):** Мокап пациента («Иванов Иван Иванович») изолирован строго под `isDemoShowcaseMode()`. В стандартном боевом режиме поля остаются чистыми либо гидрируются из активного контекста URL и CustomEvent `dente:open-consent` / `dente:open-consents`.
+   * **DEF-DOC-02 (`ConsentStudioModal.tsx`):** При пакетном подписании (`handleBatchSign` и `handlePaperConfirm`) в тело POST-запросов к `/api/patients/:patientId/consents` передается точный `consentType: docId`. В бэкенде `effectiveKind` фиксирует реальный тип (терапия, эндодонтия, хирургия, имплантация, анестезия и др.), исключая взаимное перезатирание статусов согласий под generic-пакетом.
+   * **DEF-DOC-03 (`taxCertificateEngine.ts`):** Функция `buildTaxCertificateDocumentData` теперь принимает и разделяет `code01Kopecks` и `code02Kopecks`, динамически вычисляя суммы обычного и дорогостоящего лечения (имплантация, остеопластика по ПП РФ № 458), ликвидировав захардкоженный ноль по Коду 2.
+   * **DEF-DOC-04 (`useCanvasSigner.ts`, `consentCatalogData.ts`):** Внедрена валидация формата подписи `renderSignatureElementHtml`. Строки формата `data:image/` или Base64 рендерятся в тег `<img src="..." alt="Подпись" />`, а `<svg` — как векторный SVG, полностью ликвидировав вывод буквенного мусора вместо подписи.
+   * **DEF-DOC-05 (`DocumentsStudioModal.tsx`, `ConsentSignersRow.tsx`):** Сигнатура `showToast` расширена до `(message: string, type?: "success" | "error" | "info") => void` с семантической дифференциацией цветов тостов (успех — изумрудный, ошибка — розовый, инфо — бирюзовый).
+   * **4-State Visual Proof (Live App Capture):**
+     - `docs/proofs/documents/01_consent_studio_pc_light_1440x900.png` (95 KB) — ПК светлая тема, 0px клиппинга, ровно 1 Primary CTA.
+     - `docs/proofs/documents/02_consent_studio_pc_dark_1440x900.png` (96 KB) — ПК тёмная тема, 100% тёмные токены, WCAG AAA контраст.
+     - `docs/proofs/documents/03_consent_studio_mobile_light_390x844.png` (121 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, Natural Thumb Zone.
+     - `docs/proofs/documents/04_consent_studio_mobile_dark_390x844.png` (122 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
+     - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (140 KB) — ПК светлая тема студии документов, бланк А4.
+     - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (132 KB) — ПК тёмная тема студии документов.
+     - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (164 KB) — iPhone 390×844 светлая тема студии документов.
+     - `docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png` (141 KB) — iPhone 390×844 тёмная тема студии документов.
+
 ---
 
 ## 🔗 6. Перекрестные ссылки на архитектурные документы

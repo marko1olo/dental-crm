@@ -220,6 +220,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
+						consentType: docId,
 						kind: mappedKind,
 						title: docItem.title,
 						verificationMethod: status === "signed_paper" ? "paper_signed" : "tablet_stylus",
@@ -307,6 +308,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
+						consentType: docId,
 						kind: mappedKind,
 						title: docItem.title,
 						verificationMethod: "paper_signed",

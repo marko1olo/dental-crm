@@ -1508,6 +1508,31 @@
      - `04_doctor_payout_wallet_mobile_dark_390x844.png` (52 114 байт) — Mobile Dark Doctor Wallet Apple HIG.
   10. **Тесты:** 36 web тестов + 8 API тестов = 44/44 PASS. 4 статических гейта DoD (кодировки UTF-8, стабы, fetch guards, динамические импорты) — Exit Code 0.
 
+### [PAY-07] [SEV-1] [ИСПРАВЛЕНО] Утечка розничной цены пациента ЗТЛ вместо себестоимости наряда и фейковая оплаченность визитов
+- **Файлы:**
+  - [`apps/api/src/services/finance/doctorPayouts/queries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/queries.ts)
+  - [`apps/api/src/services/finance/doctorPayouts/drillDown.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/drillDown.ts)
+  - [`apps/api/src/services/finance/doctorPayouts/drillDownRegistry.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/drillDownRegistry.ts)
+  - [`apps/api/src/services/finance/doctorPayouts/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/types.ts)
+  - [`apps/api/src/routes/doctorEarnings/appointmentLabBudget.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/appointmentLabBudget.ts)
+  - [`apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts)
+  - [`apps/api/src/routes/lab/paymentModules/labOrderCashBoxFinder.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/paymentModules/labOrderCashBoxFinder.ts)
+  - [`apps/api/src/routes/payroll.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/payroll.ts)
+  - [`apps/web/src/components/payroll/DoctorPayrollModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/DoctorPayrollModal.tsx)
+  - [`apps/web/src/components/payroll/DirectPayrollLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/DirectPayrollLauncher.tsx)
+  - [`apps/web/src/components/analytics/DirectDoctorPayrollReportLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DirectDoctorPayrollReportLauncher.tsx)
+- **Суть бага:**
+  1. Грабительская утечка розничной цены пациента: вместо себестоимости ЗТЛ (`lab_orders.labCostRub` 7 500–8 500 ₽) с врача удерживалась полная розничная цена (`lab_orders.priceRub` 25 000–35 000 ₽) через конструкции `coalesce(${labOrders.labCostRub}, ${labOrders.priceRub})` и `lo.labCostRub ?? lo.priceRub`.
+  2. В `routes/payroll.ts:429-448` слепо хардкодились `isPaid: true`, `invoiceStatus: "paid"`, `isPaid54Fz: true`, начисляя сдельную зарплату за неоплаченные долги пациентов.
+  3. Клон `DoctorPayrollModal.tsx` дублировал студию `DoctorPayrollStudioModal.tsx`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Себестоимость ЗТЛ строго от labCostRub (Мандаты 8e, 8n):** во всех запросах и калькуляторах (`queries.ts:172`, `drillDown.ts:166`, `drillDownRegistry.ts:184-219`, `appointmentLabBudget.ts:28`, `liveLabOrdersProcessor.ts:40`, `labOrderCashBoxFinder.ts:17`) удержание с врача и расходник технику рассчитываются строго от себестоимости `labCostRub`. При `labCostRub = null/0` удержание строго 0 ₽ (никаких `?? priceRub`). Гарантийные переделки не удерживаются с врача (0 ₽), а клиника компенсирует себестоимость `labCost`.
+  2. **Реальная привязка к оплатам 54-ФЗ:** в `routes/payroll.ts` подключена таблица `payments` со статусом `payments.status = 'paid'`, рассчитываются `actuallyPaidGrossKop`, `isPaid`, `isDebt`, `invoiceStatus`, `isPaid54Fz`. Зарплата за долги не начисляется.
+  3. **Снос клона:** компонент `DoctorPayrollModal.tsx` физически удален через `git rm`.
+  4. **Direct Launcher для DoctorPayrollReport:** смонтирован `DirectDoctorPayrollReportLauncher.tsx` в `AppShell.tsx` для мгновенного переключения `#executive-payroll`.
+  5. **4-State Visual Proofs:** сняты 8 скриншотов в `docs/proofs/payroll/` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 для Studio и Report) и лично отсмотрены через `read_file`.
+  6. **Тесты:** 34/34 тестов PASS в 7 сьютах. Машинные гейты (UTF-8, стабы, fetch guards, динамические импорты) — Exit Code 0.
+
 
 
 ## 14. 📋 ПЛАНЫ ЛЕЧЕНИЯ, 3-УРОВНЕВЫЕ СМЕТЫ, КУРАТОРЫ И РАССРОЧКИ
