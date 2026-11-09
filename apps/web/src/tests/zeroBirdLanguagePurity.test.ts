@@ -200,15 +200,11 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const orthoWidgetCode =
 			readComponent("components/orthodontics/OrthodonticVisitProtocolWidget.tsx") +
 			"\n" +
-			readComponent("components/orthodontics/OrthoProtocolModalHeader.tsx") +
-			"\n" +
-			readComponent("components/orthodontics/OrthoProtocolPreviewSection.tsx") +
-			"\n" +
-			readComponent("components/orthodontics/previewSection/ProtocolPreviewHeader.tsx");
+			readComponent("components/orthodontics/OrthodonticsStudioModal.tsx");
 		assert.ok(!orthoWidgetCode.includes('"Печать 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Печать 043/у'");
 		assert.ok(!orthoWidgetCode.includes('"Внести в дневник 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Внести в дневник 043/у'");
-		assert.ok(!orthoWidgetCode.includes("Дневник приёма (Форма 043/у)"), "Preview header must not have '(Форма 043/у)'");
-		assert.ok(orthoWidgetCode.includes("Дневник приёма"), "Preview header must be clean 'Дневник приёма'");
+		assert.ok(!orthoWidgetCode.includes("Форма 043/у"), "Ortho components must not cite 'Форма 043/у'");
+		assert.ok(orthoWidgetCode.includes("Дневник приёма"), "Ortho components must feature clean 'Дневник приёма'");
 	});
 
 	it("16. Doctor Chairside & EMK: purged 54-FZ, 804n, CDA R2, EGISZ, and cartoon emojis (Mandate 8x & 8d)", () => {

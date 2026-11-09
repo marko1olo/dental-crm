@@ -75,7 +75,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		await app.close();
 	});
 
-	it("1. GET /api/orthodontics/:patientId/progress returns default orthodontic progress", async (t) => {
+	it("1. GET /api/orthodontics/:patientId/progress returns 404 when no active ortho treatment exists (DEF-ORTHO-02)", async (t) => {
 		if (!databaseAvailable) return t.skip("Database is unavailable");
 
 		const res = await app.inject({
@@ -84,14 +84,9 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 			headers: ORG_HEADERS,
 		});
 
-		assert.equal(res.statusCode, 200);
+		assert.equal(res.statusCode, 404);
 		const body = JSON.parse(res.body);
-		assert.equal(body.patientId, PATIENT_ID);
-		assert.equal(body.patientName, "Смирнова Екатерина Васильевна");
-		assert.equal(body.currentAligner, 1);
-		assert.equal(body.totalAligners, 36);
-		assert.equal(body.currentStage, 1);
-		assert.ok(body.startDate);
+		assert.equal(body.error, "OrthoTreatmentNotFound");
 	});
 
 	it("2. POST /api/orthodontics/:patientId/aligners/issue-set issues aligner set in 1 click (Mandate 8e)", async (t) => {
@@ -116,6 +111,18 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.ok(body.nextVisitRecommendedDate);
 		assert.ok(body.actionSummary.includes("Выдан сет элайнеров №1–3"));
 		assert.equal(body.progress.currentAligner, 3);
+
+		// Проверяем гидратацию: теперь GET возвращает 200 и актуальный прогресс
+		const progressRes = await app.inject({
+			method: "GET",
+			url: `/api/orthodontics/${PATIENT_ID}/progress`,
+			headers: ORG_HEADERS,
+		});
+		assert.equal(progressRes.statusCode, 200);
+		const progressBody = JSON.parse(progressRes.body);
+		assert.equal(progressBody.patientId, PATIENT_ID);
+		assert.equal(progressBody.patientName, "Смирнова Екатерина Васильевна");
+		assert.equal(progressBody.currentAligner, 3);
 	});
 
 	it("3. POST /api/orthodontics/:patientId/archwire-change records archwire change in 1 click", async (t) => {

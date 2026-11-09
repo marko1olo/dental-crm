@@ -451,8 +451,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						<Activity className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 						<span>Ортодонтический приём: дуги, элайнеры, тяги и окклюзия</span>
 					</div>
-					<div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-						<button type="button" onClick={onClose} className="ortho-secondary-btn">
+					<div className="flex flex-col-reverse sm:flex-row items-center gap-2.5 w-full sm:w-auto justify-end">
+						<button type="button" onClick={onClose} className="ortho-secondary-btn w-full sm:w-auto">
 							Отмена
 						</button>
 						<button

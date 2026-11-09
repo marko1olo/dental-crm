@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
+import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget";
 
 function checkIsOrthoActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -59,13 +59,10 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 	if (!isActive || !isOpen) return null;
 
 	return (
-		<OrthodonticsStudioModal
+		<OrthodonticVisitProtocolWidget
 			isOpen={isOpen}
 			onClose={handleClose}
-			onSaveProtocol={() => {
-				setIsOpen(false);
-				setIsActive(false);
-			}}
+			patientId="pat-ortho-studio"
 			patientName="Смирнова Екатерина Андреевна"
 			doctorName="Д-р Соколов А. В."
 		/>

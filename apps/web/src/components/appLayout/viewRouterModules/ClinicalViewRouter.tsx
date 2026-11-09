@@ -28,9 +28,9 @@ const TreatmentPlanModule = lazyWithRetry(() =>
 		default: m.TreatmentPlanModule,
 	})),
 );
-const OrthodonticPerspectiveView = lazyWithRetry(() =>
-	import("../../orthodontics/OrthodonticPerspectiveView").then((m) => ({
-		default: m.OrthodonticPerspectiveView,
+const OrthodonticsStudioModal = lazyWithRetry(() =>
+	import("../../orthodontics/OrthodonticsStudioModal").then((m) => ({
+		default: m.OrthodonticsStudioModal,
 	})),
 );
 
@@ -86,7 +86,7 @@ export function ClinicalViewRouter({
 			<WorkspaceRouteErrorBoundary view="visit" label={viewLabels.visit} panelClassName="panel visit-panel" panelId="visit">
 				<Suspense fallback={<AppLoadingState message="Загрузка клинического приёма..." />}>
 					{perspective === "orthodontic" ? (
-						<OrthodonticPerspectiveView />
+						<OrthodonticsStudioModal isOpen={true} onClose={() => {}} />
 					) : perspective === "presentation" ? (
 						<TreatmentPlanModule
 							patientId={patientId || "anonymous"}

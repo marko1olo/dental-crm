@@ -17,7 +17,17 @@ import { LAB_DEDUCTED_CATEGORIES } from "./constants.js";
 import type { LiveCalculationInput } from "./liveEarningsTypes.js";
 
 /** Статусы нарядов, которые дают реальный счет ЗТЛ. Черновик и отмена — не счет. */
-const PAID_LAB_STATUSES = new Set(["sent", "in_progress", "shipped", "received", "refitting", "completed"]);
+const PAID_LAB_STATUSES = new Set([
+	"sent",
+	"in_progress",
+	"shipped",
+	"received",
+	"ready",
+	"ready_in_clinic",
+	"refitting",
+	"fitted",
+	"completed",
+]);
 
 export function processAptLabOrders(
 	aptPatientId: string | null,

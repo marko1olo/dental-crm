@@ -179,7 +179,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				and(
 					eq(labOrders.organizationId, organizationId),
 					isNotNull(labOrders.doctorId),
-					inArray(labOrders.status, ["received", "completed"]),
+					inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed"]),
 					eq(labOrders.isWarranty, false),
 					gte(
 						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,

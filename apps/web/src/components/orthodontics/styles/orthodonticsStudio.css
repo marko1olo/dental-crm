@@ -151,6 +151,7 @@
 	color: var(--ink-muted, #64748b);
 	cursor: pointer;
 	white-space: nowrap;
+	flex-shrink: 0;
 	transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 .ortho-tab-btn:hover {

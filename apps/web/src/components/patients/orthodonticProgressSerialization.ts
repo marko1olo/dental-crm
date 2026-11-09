@@ -49,38 +49,16 @@ export function parseOrthoProgress(raw: unknown): OrthoData | null {
 	};
 }
 
+/**
+ * DEF-ORTHO-03 / Мандат 8ap: Ликвидирован парсинг заметок через разделитель ===ORTHO===.
+ * Заметки пациента не подменяют реляционную модель.
+ */
 export function parseLegacyOrthoNotes(notesText: string | null | undefined): {
 	cleanNotes: string;
 	legacyOrtho: OrthoData | null;
 } {
 	const text = notesText || "";
-	const separator = "\n\n===ORTHO===\n";
-	const parts = text.split(separator);
-
-	if (parts.length < 2) {
-		return { cleanNotes: text, legacyOrtho: null };
-	}
-
-	try {
-		const orthoData = JSON.parse(parts[1] || "{}");
-		return {
-			cleanNotes: parts[0] || "",
-			legacyOrtho: {
-				currentAligner: Number(orthoData.current) || 1,
-				totalAligners: Number(orthoData.total) || 40,
-				startDate: orthoData.start || getTodayString(),
-			},
-		};
-	} catch (_e) {
-		showToast(
-			actionFailureToast(
-				"Ошибка выполнения операции",
-				(_e as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
-		return { cleanNotes: text, legacyOrtho: null };
-	}
+	return { cleanNotes: text, legacyOrtho: null };
 }
 
 export function formatOrthoDate(dateStr: string): string {

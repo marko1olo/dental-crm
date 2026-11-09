@@ -9,7 +9,6 @@ import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/moda
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { DirectDocumentsLauncher } from "./components/documents/DirectDocumentsLauncher";
 import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
-import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
@@ -32,7 +31,6 @@ import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceL
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
-import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
@@ -330,7 +328,6 @@ export function AppShell() {
 			<DirectPrescriptionLauncher />
 			<DirectSanpinLauncher />
 			<DirectDocumentsLauncher />
-			<DirectImplantPassportLauncher />
 			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
 			<DirectRvgCaptureLauncher />
@@ -351,7 +348,6 @@ export function AppShell() {
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />
 			<DirectRecallLauncher />
-			<DirectOrthoLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
 			<DirectDoctorWalletLauncher />

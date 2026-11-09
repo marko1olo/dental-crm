@@ -32,7 +32,7 @@ import {
 	formatOrthoProtocolSoapEntry,
 	getOrthoPatientMemoText,
 } from "../orthodonticsCatalogData";
-import { OrthodonticStudioModal } from "../OrthodonticStudioModal";
+import { OrthodonticsStudioModal } from "../OrthodonticsStudioModal";
 import { DirectOrthodonticsLauncher } from "../DirectOrthodonticsLauncher";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -257,9 +257,9 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		);
 	});
 
-	it("16. Verifies SSR rendering of OrthodonticStudioModal without DOM errors", () => {
+	it("16. Verifies SSR rendering of OrthodonticsStudioModal without DOM errors", () => {
 		const html = renderToString(
-			<OrthodonticStudioModal
+			<OrthodonticsStudioModal
 				isOpen={true}
 				onClose={() => {}}
 				patientName="Тестовый Пациент"

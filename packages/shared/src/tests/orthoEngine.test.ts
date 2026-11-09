@@ -177,10 +177,10 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 				notes: "Плановый визит. Дуги сохранны. Выполнена замена дуг ВЧ и НЧ на Cu-NiTi .016\".",
 			});
 
-			assert.ok(note.includes("ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)"));
+			assert.ok(note.includes("Медицинская карта приёма — Ортодонтический дневник"));
 			assert.ok(note.includes("06.09.2026"));
 			assert.ok(note.includes("Смирнова Анна Павловна"));
-			assert.ok(note.includes("Номенклатура 804н: A16.07.048"));
+			assert.ok(note.includes("Каталог процедур: A16.07.048"));
 			assert.ok(note.includes("1. ЖАЛОБЫ:"));
 			assert.ok(note.includes("2. ОБЪЕКТИВНЫЙ СТАТУС:"));
 			assert.ok(note.includes("3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:"));

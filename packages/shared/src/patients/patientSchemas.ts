@@ -114,7 +114,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	preferredAppointmentEnd: clockTimeSchema.nullable().default(null),
 	preferredAppointmentNote: patientAdministrativeTextSchema,
 	dataProcessingBasisNote: patientAdministrativeTextSchema,
-	orthodonticProgress: patientAdministrativeTextSchema,
+	orthodonticProgress: z.union([z.string().trim().max(10000), z.record(z.unknown())]).nullable().optional().default(null),
 	/*
 	 * Уровень лояльности (ручной выбор администратором).
 	 */
@@ -233,6 +233,8 @@ export const patientSchema = z.object({
 	 */
 	balanceRub: moneyRubSchema.default(0),
 	balanceKopecks: z.number().int().default(0),
+	debtRub: moneyRubSchema.optional(),
+	debtKopecks: z.number().int().optional(),
 	/*
 	 * Привязка пациента к семейной группе (общий кошелёк).
 	 */

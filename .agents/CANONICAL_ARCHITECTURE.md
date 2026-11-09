@@ -1583,6 +1583,21 @@ Use these exclusively. Blind terminal navigation is banned.
 >    - Канбан лидов: `01_leads_kanban_pc_light_1440x900.png` (129 КБ), `02_leads_kanban_pc_dark_1440x900.png` (112 КБ), `03_leads_mobile_feed_light_390x844.png` (149 КБ), `04_leads_mobile_feed_dark_390x844.png` (143 КБ).  
 >    - Студия маркетинга и акций: `01_marketing_studio_pc_light_1440x900.png` (122 КБ), `02_marketing_studio_pc_dark_1440x900.png` (122 КБ), `03_marketing_studio_mobile_light_390x844.png` (206 КБ), `04_marketing_studio_mobile_dark_390x844.png` (203 КБ).
 
+---
+
+### 🛑 МАНДАТ 8bi: ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ, УДЕРЖАНИЕ СЕБЕСТОИМОСТИ ИЗ ЗАРПЛАТЫ И ЛИКВИДАЦИЯ СИМУЛЯТОРОВ (DENTAL LAB ORDERS & DOCTOR PAYROLL WITHHOLDING SSOT)
+
+> 🦷 **ЕДИНЫЙ ЭТАЛОН ЗТЛ И РАСЧЕТА ЗАРПЛАТЫ ВРАЧЕЙ-ОРТОПЕДОВ:**  
+> Зуботехническая лаборатория (ЗТЛ), наряды Form ZTL-1, расцветка VITA и удержание стоимости изготовленных конструкций из зарплатной базы врача работают строго как единый комплекс.  
+> 1. **База данных PostgreSQL 18:** Таблицы `lab_orders` и `lab_items` в `apps/api/src/db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.ts:118`. Канонические статусы: `draft`, `sent`, `in_progress`, `shipped`, `received`, `ready`, `ready_in_clinic`, `refitting`, `fitted`, `completed`, `cancelled`, `rejected_remake`.  
+> 2. **Канонический контракт в `@dental/shared`:** `packages/shared/src/lab/labOrders.ts`, палитра VITA Classical/3D-Master/Bleach (`vitaPalette.ts`), нумерация FDI 11–48.  
+> 3. **Ликвидация мертвого симулятора реальности (`git rm`):** Физически удален псевдонаучный симулятор `packages/shared/src/lab/autonomousLabTrackerEngine.ts` (478 строк с мопедными курьерами, GPS-трекингом и HMAC QR-кодами) и его юнит-тест `autonomousLabTrackerEngine.test.ts`. Зачищен экспорт в `packages/shared/src/lab/index.ts` и `labOrderValidation.ts`.  
+> 4. **Удержание стоимости ЗТЛ из зарплаты врача (Doctor Payroll Lab Withholding):**  
+>    - В `apps/api/src/services/finance/doctorPayouts/queries.ts:182` и `apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts:20` расширен массив учитываемых статусов готовых работ: включены канонические статусы `ready_in_clinic`, `ready` и `fitted`.  
+>    - Готовые и установленные ортопедические конструкции честно удерживаются из базы начисления сдельной оплаты врача, исключая искажение чистой прибыли клиники.  
+> 5. **Тестовая верификация:** 61/61 payroll тестов PASS (`doctorPayoutsBasic.test.ts`, `doctorPayoutsAdvanced.test.ts`, `doctorPayouts.test.ts`, `payoutNegativeExplain.test.ts`), 52/52 shared lab тестов PASS, машинные гейты кодировки, stub-overrides и dynamic-imports Exit Code 0.
+
+
 
 
 

@@ -55,8 +55,8 @@ const CbctStandaloneStudioView = React.lazy(() =>
 	})),
 );
 const CephStandaloneStudioView = React.lazy(() =>
-	import("./components/orthodontics/CephStandaloneStudioView").then((m) => ({
-		default: m.CephStandaloneStudioView,
+	import("./components/orthodontics/OrthodonticsStudioModal").then((m) => ({
+		default: m.OrthodonticsStudioModal,
 	})),
 );
 const PatientPresentationStandaloneView = React.lazy(() =>

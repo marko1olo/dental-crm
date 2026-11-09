@@ -155,7 +155,7 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		const preset1 = ORTHODONTIC_CLINICAL_PRESETS.find((p) => p.id === "aligner_bonding_steps_1_5")!;
 		assert.ok(preset1, "Preset 1 must exist");
 		const note1 = generateOrthodonticDiaryNote(preset1, session, "04.09.2026");
-		assert.ok(note1.includes("ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)"));
+		assert.ok(note1.includes("ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)"));
 		assert.ok(note1.includes("Кузнецова Анна Сергеевна"));
 		assert.ok(note1.includes("Элайнеры шаги 1–5 выданы, аттачменты фиксированы, сепарация выполнена"));
 		assert.ok(note1.includes("37% ортофосфорной кислотой"));
@@ -210,7 +210,7 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 			}),
 		);
 		assert.ok(html.includes("Смирнова Екатерина"));
-		assert.ok(html.includes("Ортодонтический протокол приёма"));
+		assert.ok(html.includes("Ортодонтическая студия"));
 	});
 });
 

@@ -65,9 +65,9 @@
 6. **Стоп-линия по браку (Defect Logging)**: техник видит на скане/слепке нечеткий уступ? Фотографирует в бот и жмет «Брак оттиска». Врач получает тревогу за 2 часа, а не через 5 дней на примерке!
 
 #### Инженерная реализация в репозитории:
-- Движок стейт-машины и SLA: `packages/shared/src/lab/autonomousLabTrackerEngine.ts` (478 строк, 100% покрытие тестами).
-- Fastify REST API: `apps/api/src/routes/lab/autonomousTrackerRoutes.ts` (318 строк).
-- Юнит-тесты: `packages/shared/src/lab/autonomousLabTrackerEngine.test.ts`, `apps/api/src/tests/routes/autonomousLabRoutes.test.ts`.
+- Канонический контракт ЗТЛ: `packages/shared/src/lab/labOrders.ts` (12 статусов жизненного цикла, палитра VITA, расчет SLA и копеечный клиринг).
+- Fastify REST API: `apps/api/src/routes/lab/ordersCrudRoutes.ts` и `technicianPortalRoutes.ts`.
+- Юнит-тесты: `packages/shared/src/lab/labOrders.test.ts`, `apps/api/src/routes/lab/ordersCrudModules/labRedTeamConsolidation.test.ts`. Мертвый псевдонаучный симулятор `autonomousLabTrackerEngine.ts` утилизирован по Мандатам 8k, 8s, 8bd.
 
 ---
 
