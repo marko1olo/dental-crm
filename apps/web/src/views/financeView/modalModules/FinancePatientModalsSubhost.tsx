@@ -2,7 +2,7 @@ import type React from "react";
 import { FamilyCombinedBillingModal } from "../../../components/finance/FamilyCombinedBillingModal";
 import { PatientBillingModal } from "../../../components/finance/PatientBillingModal";
 import { TaxDeductionCertificateModal } from "../../../components/finance/TaxDeductionCertificateModal";
-import { DoctorPayrollModal } from "../../../components/payroll/DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../../../components/payroll/DoctorPayrollStudioModal";
 
 export interface FinancePatientModalsSubhostProps {
 	readonly s: any;
@@ -60,10 +60,16 @@ export const FinancePatientModalsSubhost: React.FC<
 				/>
 			)}
 
-			{s.isTimesheetT13Open && (
-				<DoctorPayrollModal
-					isOpen={s.isTimesheetT13Open}
-					onClose={() => s.setIsTimesheetT13Open(false)}
+			{/* Табель рабочего времени и Ведомость начисления зарплаты (канонический SSOT) */}
+			{(isDoctorPayrollOpen || s.isTimesheetT13Open) && (
+				<DoctorPayrollStudioModal
+					isOpen={Boolean(isDoctorPayrollOpen || s.isTimesheetT13Open)}
+					onClose={() => {
+						if (onCloseDoctorPayroll) {
+							onCloseDoctorPayroll();
+						}
+						s.setIsTimesheetT13Open?.(false);
+					}}
 					clinicName={
 						s.dashboard?.clinicSettings?.name || s.dashboard?.clinicName
 					}
@@ -87,14 +93,6 @@ export const FinancePatientModalsSubhost: React.FC<
 						void s.loadDashboard?.();
 						s.setIsFamilyBillingOpen(false);
 					}}
-				/>
-			)}
-
-			{isDoctorPayrollOpen && onCloseDoctorPayroll && (
-				<DoctorPayrollModal
-					isOpen={isDoctorPayrollOpen}
-					onClose={onCloseDoctorPayroll}
-					clinicName={s.dashboard?.clinicSettings?.name}
 				/>
 			)}
 		</>

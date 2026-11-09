@@ -417,7 +417,7 @@ export const getDoctorEarningsTool: ToolDefinition<
 > = {
 	name: "get_doctor_earnings",
 	description:
-		"Запрос выручки и сдельного заработка врача за смену, день или месяц с расчетом по форме Т-51 и сдельному проценту.",
+		"Запрос выручки и сдельного заработка врача за смену, день или месяц с расчетом ведомости начисления зарплаты и сдельному проценту.",
 	parameters: getDoctorEarningsSchema,
 	permissions: ["finance.read", "billing.read"],
 	category: "read",
@@ -542,7 +542,7 @@ export const getDoctorEarningsTool: ToolDefinition<
 			`• Сдельная ставка врача: ${pieceworkPercent}%`,
 			`• Начисленная сдельщина (к выплате): ${formatKopecksRu(calculatedPieceworkKopecks)}`,
 			formT51Ready
-				? `• Статус ведомости: Расчетный лист по форме Т-51 сформирован и доступен в бухгалтерии.`
+				? `• Статус ведомости: Расчетный лист ведомости начисления зарплаты сформирован и доступен в бухгалтерии.`
 				: `• Статус ведомости: Предварительный оперативный расчет за день.`,
 		].join("\n");
 

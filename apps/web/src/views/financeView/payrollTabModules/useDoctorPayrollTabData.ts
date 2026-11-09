@@ -48,11 +48,38 @@ export function useDoctorPayrollTabData({
 }: UseDoctorPayrollTabDataParams): UseDoctorPayrollTabDataReturn {
 	const effectiveClinicName = clinicName || useDocumentBrandingStore((s) => s.clinicName) || "Клиника";
 	const isDemo = isDemoShowcaseMode();
+	const [apiDoctors, setApiDoctors] = useState<readonly PayrollDoctorOption[]>([]);
+
+	useEffect(() => {
+		if (isDemo) return;
+		if (doctorsList && doctorsList.length > 0) return;
+		let cancelled = false;
+		fetch("/api/v1/doctors")
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (cancelled || !data?.doctors || !Array.isArray(data.doctors)) return;
+				const mapped: PayrollDoctorOption[] = data.doctors.map((d: any) => ({
+					id: String(d.id),
+					name: String(d.name || "Врач-стоматолог"),
+					specialtyId: String(d.specialtyId || "general_dentist"),
+				}));
+				if (mapped.length > 0) {
+					setApiDoctors(mapped);
+					setSelectedDoctorId((prev) => (prev && mapped.some((m) => m.id === prev) ? prev : mapped[0].id));
+				}
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [isDemo, doctorsList]);
+
 	const doctors = useMemo<readonly PayrollDoctorOption[]>(() => {
 		if (doctorsList && doctorsList.length > 0) return doctorsList;
+		if (apiDoctors.length > 0) return apiDoctors;
 		if (doctorsList && doctorsList.length === 0) return [];
 		return isDemo ? DEFAULT_DOCTORS : [];
-	}, [doctorsList, isDemo]);
+	}, [doctorsList, apiDoctors, isDemo]);
 
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => doctors[0]?.id || "");
 	const [periodStart, setPeriodStart] = useState<string>(() => {

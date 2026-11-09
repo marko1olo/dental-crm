@@ -26,6 +26,7 @@ import {
 	assistantPayrollReport,
 	type AssistantPayrollRow,
 } from "./assistantPayrollReports.js";
+import { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "@dental/shared";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -359,7 +360,7 @@ export async function doctorPayrollReport(
 		)
 		.groupBy(appointments.doctorUserId);
 
-	// 4. Зафиксированные ведомости Т-51 из doctorPayrollStatements (если были созданы)
+	// 4. Зафиксированные расчетные ведомости из doctorPayrollStatements (если были созданы)
 	const fromKey = scope.from.toISOString().slice(0, 7);
 	const toKey = scope.to.toISOString().slice(0, 7);
 
@@ -480,9 +481,9 @@ export async function doctorPayrollReport(
 		const directCostsRub = materialsCostRub + labCostRub;
 		const netRevenueRub = Math.max(0, revRub - directCostsRub);
 
-		// Процентная ставка: doctorCommissions -> statements -> дефолт 25%
+		// Процентная ставка: doctorCommissions -> statements -> дефолтная ставка из канонического doctorPayrollEngine (25%)
 		const commissionPercent =
-			commissionRateMap.get(docId) ?? (st?.percent && st.percent > 0 ? st.percent : 25.0);
+			commissionRateMap.get(docId) ?? (st?.percent && st.percent > 0 ? st.percent : (DEFAULT_CATEGORY_COMMISSION_PERCENT.orthodontics ?? 25.0));
 
 		// Расчёты в целочисленных копейках
 		const servicesRenderedKopecks = Math.round(revRub * 100);

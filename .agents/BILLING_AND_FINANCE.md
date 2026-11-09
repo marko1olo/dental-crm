@@ -253,7 +253,22 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 ---
 
-## 🔗 7. Связанные документы архитектуры
+## 💼 8. Реестр устранённых дефектов расчета зарплаты и смен врачей (DEF-PAYROLL-01...04)
+
+1. **DEF-PAYROLL-01 [ЗАКРЫТО]**: Паралич экрана начислений в продакшене устранен. В `useDoctorPayrollTabData.ts` добавлена автоматическая гидратация списка врачей клиники через `GET /api/v1/doctors` при отсутствии входного пропса `doctorsList`. Исключен ложный пустой стейт «Врачи не зарегистрированы».
+2. **DEF-PAYROLL-02 [ЗАКРЫТО]**: Ликвидировано двойное монтирование модалки в `FinancePatientModalsSubhost.tsx` (ранее рендерилась дважды под `s.isTimesheetT13Open` и `isDoctorPayrollOpen`).
+3. **DEF-PAYROLL-03 [ЗАКРЫТО]**: Искоренен советский птичий язык и канцелярит Т-51 / Т-13 в пользовательском UI. Заменены на естественные клинические термины: **«Ведомость начисления зарплаты»** и **«Табель рабочего времени»** (Мандат 8x).
+4. **DEF-PAYROLL-04 [ЗАКРЫТО]**: Консолидирован расчет процентов и комиссий вокруг канонического `doctorPayrollEngine.ts` из `@dental/shared`. Устранен тройной раскол логики, обеспечена формула Net Revenue = Услуги - ЗТЛ - Материалы.
+5. **4-State Visual Proof [ЗАКРЫТО]**:
+   - ☀️ PC Light 1440x900 (`01_doctor_payroll_pc_light_1440x900.png` — 151.1 KB)
+   - 🌙 PC Dark 1440x900 (`02_doctor_payroll_pc_dark_1440x900.png` — 187.5 KB)
+   - 📱 Mobile Light 390x844 (`03_doctor_payroll_mobile_light_390x844.png` — 148.0 KB)
+   - 📱 Mobile Dark 390x844 (`04_doctor_payroll_mobile_dark_390x844.png` — 143.1 KB)
+   - Лично осмотрены через `read_file`: Zero-Clipping, 1 Primary CTA #0d9488, Segmented Control, 0px горизонтального скролла.
+
+---
+
+## 🔗 9. Связанные документы архитектуры
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральный реестр документации проекта.
 * **[AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Главная конституция и операционный мандат.
