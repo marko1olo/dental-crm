@@ -26,16 +26,16 @@ import {
 	getSessionFromDb,
 	listSessionsFromDb,
 	updateSessionInDb,
-} from "../services/agent/session/copilotSessionDb.js";
+} from "../ai/session/copilotSessionDb.js";
 import {
 	addMessageToDb,
 	getMessagesFromDb,
-} from "../services/agent/session/copilotMessageDb.js";
+} from "../ai/session/copilotMessageDb.js";
 import {
 	ensureValidUuid,
 	UUID_REGEX,
 	type CopilotRole,
-} from "../services/agent/session/copilotSessionTypes.js";
+} from "../ai/session/copilotSessionTypes.js";
 
 // Resilient in-memory fallback store when PostgreSQL constraint fails or during synthetic unit testing
 interface MemorySession {

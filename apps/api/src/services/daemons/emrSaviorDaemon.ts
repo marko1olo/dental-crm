@@ -27,7 +27,7 @@ import {
 import {
 	type SoapNoteStructure,
 	renderForm043Diary,
-} from "../agent/tools/clinicalNotesTool.js";
+} from "../../ai/clinicalNotes/soapDiaryRenderer.js";
 
 export interface EmrSaviorDraftAlert {
 	readonly id: string;

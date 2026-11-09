@@ -8,7 +8,7 @@ import { Buffer } from "node:buffer";
 import { EventEmitter } from "node:events";
 import { URL } from "node:url";
 import WebSocket, { type ClientOptions, type Data } from "ws";
-import { getNetworkShieldWsAgent } from "../../services/agent/networkShield.js";
+import { getNetworkShieldWsAgent } from "../../ai/network/networkShield.js";
 import {
 	keyRetryLimit,
 	recordProviderKeyFailure,

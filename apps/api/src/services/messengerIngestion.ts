@@ -47,7 +47,7 @@ import {
 	patientCommunicationConsents,
 	patients,
 } from "../db/schema.js";
-import { defaultWhatsAppBridge } from "./agent/whatsappBridge.js";
+import { defaultWhatsAppBridge } from "./messaging/whatsappBridge.js";
 import type { CommunicationChannelCode } from "./communications/channelRouter.js";
 import { enqueueMessage } from "./communications/dispatcher.js";
 import {

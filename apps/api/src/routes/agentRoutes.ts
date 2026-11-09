@@ -17,7 +17,7 @@ import {
 	type AgentRouterChatMessage,
 } from "../ai/agentRouterClient.js";
 import { registerAgentSessionRoutes } from "./agentSessionRoutes.js";
-import { defaultCopilotActionManager } from "../services/agent/index.js";
+import { defaultCopilotActionManager } from "../ai/copilotActionManager.js";
 import {
 	getDoctorPreferencesFromDb,
 	saveDoctorPreferencesInDb,
@@ -449,6 +449,81 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			});
 		},
 	);
+
+	// ─── ACTION CONFIRMATION ENDPOINTS (TWO-PHASE GUARD & HITL) ───────────────
+	const actionEndpoints = [
+		"/api/agent/action",
+		"/api/copilot/action",
+		"/api/v1/copilot/confirm",
+		"/api/copilot/confirm",
+	];
+
+	for (const endpoint of actionEndpoints) {
+		server.post(
+			endpoint,
+			{ config: { tenantTxSelfManaged: true } },
+			async (request: FastifyRequest, reply: FastifyReply) => {
+				const resolvedOrgId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"copilot action confirmation",
+				);
+				if (!resolvedOrgId) return;
+
+				const body = (request.body ?? {}) as {
+					sessionId?: string;
+					callId?: string;
+					decision?: "confirm" | "reject";
+					reason?: string;
+					modifiedArgs?: Record<string, unknown>;
+					confirmed?: boolean;
+				};
+
+				const callId = body.callId;
+				if (!callId) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат: укажите callId",
+					});
+				}
+
+				const identity = getRequestIdentity(request);
+				const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
+				const sessionId = body.sessionId ?? "default-session";
+				const decision = body.decision ?? (body.confirmed !== false ? "confirm" : "reject");
+
+				if (decision === "confirm") {
+					const result = await defaultCopilotActionManager.confirmAction(
+						{
+							organizationId: resolvedOrgId,
+							clinicId: resolvedOrgId,
+							userId,
+							sessionId,
+							mode: "autonomous",
+						},
+						callId,
+						body.modifiedArgs,
+					);
+					return reply.code(200).send({
+						ok: result.ok,
+						result: result.ok ? result.data : undefined,
+						error: result.error,
+					});
+				}
+
+				const rejection = await defaultCopilotActionManager.rejectActionAsync(
+					callId,
+					body.reason ?? "Отклонено пользователем",
+					resolvedOrgId,
+				);
+				return reply.code(200).send({
+					ok: true,
+					rejected: true,
+					reason: rejection.reason,
+				});
+			},
+		);
+	}
 
 	// ─── REGISTER SESSION & DIALOGUE HISTORY ROUTES ────────────────────────────
 	await registerAgentSessionRoutes(server);

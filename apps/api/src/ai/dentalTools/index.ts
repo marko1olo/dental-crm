@@ -8,7 +8,7 @@ import {
 	chairsideEmergencyTool,
 	checkSomaticRisksTool,
 	compareDentalMaterialsTool,
-	generateForm043Tool,
+	generateClinicalProtocolEntryTool,
 	multidisciplinaryConciliumTool,
 	translatePatientComplaintTool,
 } from "./clinicalCalculators.js";
@@ -64,7 +64,7 @@ export const dentalToolsRegistry: readonly AnyDentalToolEntry[] = [
 	checkSomaticRisksTool,
 	getPatientEmrTool,
 	searchServicesTool,
-	generateForm043Tool,
+	generateClinicalProtocolEntryTool,
 	multidisciplinaryConciliumTool,
 	chairsideEmergencyTool,
 	translatePatientComplaintTool,
@@ -136,13 +136,14 @@ export function normalizeToolName(toolName: string): string {
 			return "check_somatic_risks_and_contraindications";
 		case "clinical_protocol":
 		case "generate_clinical_protocol":
+		case "generate_clinical_protocol_entry":
 		case "generate_soap_entry":
 		case "generate_form_043":
 		case "generate_form_043_entry":
 		case "generateSoapDiary":
 		case "crmClinicalDiaryTools.saveVisitDiary":
 		case "saveVisitDiary":
-			return "generate_form_043_entry";
+			return "generate_clinical_protocol_entry";
 		case "updateToothState":
 		case "updateToothStatus":
 		case "crmClinicalOdontogramTools.updateToothState":

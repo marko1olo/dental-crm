@@ -8,6 +8,8 @@ import {
 	FileText,
 	Keyboard,
 	MessageSquare,
+	Mic,
+	MicOff,
 	Search,
 	Settings,
 	Sliders,
@@ -19,6 +21,7 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "../store/appStore";
+import { useUnifiedDictation } from "../hooks/useUnifiedDictation";
 import { searchPatientsQuick } from "./patients/patientSearchFuzzy";
 import { WorkspaceActionsSlot } from "./workspaceActions/WorkspaceActions";
 import { workspaceActionsLabels } from "./workspaceActions/workspaceActionsLabels";
@@ -29,6 +32,26 @@ export function Omnibar() {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [remotePatients, setRemotePatients] = useState<any[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
+
+	const {
+		isRecording,
+		toggleDictation,
+		stopDictation,
+	} = useUnifiedDictation({
+		context: "general",
+		onResult: (text) => {
+			if (text && text.trim()) {
+				setQuery(text.trim());
+				setSelectedIndex(0);
+			}
+		},
+		onInterim: (interim) => {
+			if (interim && interim.trim()) {
+				setQuery(interim.trim());
+				setSelectedIndex(0);
+			}
+		},
+	});
 
 	useEffect(() => {
 		const handleOpenHud = (e: Event) => {
@@ -279,6 +302,9 @@ export function Omnibar() {
 
 	useEffect(() => {
 		if (!isOmnibarOpen) {
+			if (isRecording) {
+				void stopDictation();
+			}
 			setQuery("");
 			setSelectedIndex(0);
 			return;
@@ -403,14 +429,14 @@ export function Omnibar() {
 								className="relative w-full max-w-2xl bg-[var(--paper)] shadow-2xl rounded-2xl overflow-hidden border border-[var(--line)] flex flex-col text-[var(--ink)]"
 								style={{ maxHeight: "60vh" }}
 							>
-								{/* Header/Input with canonical Dente Search System */}
-								<div className="dente-search-wrap omnibar-search-wrap omnibar-header border-b border-[var(--line)]">
+								{/* Header/Input with canonical Dente Search System and Voice Dictation */}
+								<div className="dente-search-wrap omnibar-search-wrap omnibar-header border-b border-[var(--line)] relative flex items-center">
 									<Search className="dente-search-icon omnibar-icon-search text-[var(--muted)]" aria-hidden="true" />
 									<input
 										ref={inputRef}
 										type="text"
-										className="dente-search-input omnibar-search-input omnibar-input !h-14 !min-h-[56px] !max-h-[56px] !pl-12 !pr-12 !bg-transparent !border-none !outline-none !text-lg !text-[var(--ink)] placeholder:!text-[var(--muted)]"
-										placeholder="Поиск по разделам или действиям..."
+										className="dente-search-input omnibar-search-input omnibar-input !h-14 !min-h-[56px] !max-h-[56px] !pl-12 !pr-24 !bg-transparent !border-none !outline-none !text-lg !text-[var(--ink)] placeholder:!text-[var(--muted)]"
+										placeholder={isRecording ? "Слушаю вас..." : "Поиск по разделам или действиям..."}
 										value={query}
 										id="omnibar-input"
 										data-tour="global-search-input"
@@ -419,14 +445,48 @@ export function Omnibar() {
 											setSelectedIndex(0);
 										}}
 									/>
-									<button
-										type="button"
-										onClick={() => setOmnibarOpen(false)}
-										className="dente-search-clear omnibar-close-btn !right-3 !w-9 !h-9 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)]"
-										aria-label="Закрыть омнибар"
-									>
-										<X className="w-5 h-5" />
-									</button>
+									<div className="absolute right-3 flex items-center gap-1.5 z-10">
+										<button
+											type="button"
+											onClick={async () => {
+												try {
+													await toggleDictation();
+												} catch (err) {
+													console.warn("[Omnibar] Dictation toggle error:", err);
+												}
+											}}
+											className={`w-9 h-9 min-h-[36px] min-w-[36px] rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
+												isRecording
+													? "bg-rose-500/15 border-rose-500/40 text-rose-600 animate-pulse"
+													: "border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+											}`}
+											title={isRecording ? "Остановить запись" : "Голосовой поиск (Диктовка)"}
+											aria-label={isRecording ? "Остановить запись" : "Голосовой поиск"}
+											data-testid="omnibar-voice-dictation-btn"
+										>
+											{isRecording ? (
+												<span className="relative flex items-center justify-center">
+													<span className="absolute w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+													<MicOff className="w-4 h-4 text-rose-600 relative" />
+												</span>
+											) : (
+												<Mic className="w-4 h-4" />
+											)}
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												if (isRecording) {
+													void stopDictation();
+												}
+												setOmnibarOpen(false);
+											}}
+											className="w-9 h-9 min-h-[36px] min-w-[36px] flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+											aria-label="Закрыть омнибар"
+										>
+											<X className="w-5 h-5" />
+										</button>
+									</div>
 								</div>
 
 								{/* Results */}

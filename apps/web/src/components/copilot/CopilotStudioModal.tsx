@@ -264,7 +264,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     setIsExecuting(toolKey);
     const startTime = Date.now();
     try {
-      const res = await fetch("/api/v1/copilot/tools/execute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ toolName: toolKey, arguments: payload }) });
+      const res = await fetch("/api/agent/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: `Выполни действие: ${toolKey}` }], patientId: patientId || undefined, stream: false }) });
       addToolLog({ toolName: toolKey, category: "clinical", status: res.ok ? "success" : "error", durationMs: Date.now() - startTime, args: payload, resultSummary: res.ok ? `Выполнен инструмент ${toolKey}` : `Сбой инструмента ${toolKey}` });
       showToast(res.ok ? "Действие успешно зарегистрировано в системе" : `Сбой выполнения инструмента ${toolKey}`, res.ok ? "success" : "error");
     } catch (err) {

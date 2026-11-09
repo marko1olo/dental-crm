@@ -1,5 +1,5 @@
-import { omniLlmGateway } from "../../agent/omniGateway.js";
-import type { ChatOptions } from "../../agent/omniGatewayTypes.js";
+import { omniLlmGateway } from "../../../ai/omniGateway.js";
+import type { ChatOptions } from "../../../ai/omniGatewayTypes.js";
 import {
 	calculateAge,
 	isAnesthesiaIndicatedAppointment,

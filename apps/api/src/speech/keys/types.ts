@@ -1,5 +1,5 @@
 import type { SpeechGatewayProvider } from "@dental/shared";
-import type { LlmProviderId } from "../../services/agent/omniGatewayTypes.js";
+import type { LlmProviderId } from "../../ai/omniGatewayTypes.js";
 
 export type KeyPoolProviderId = SpeechGatewayProvider | LlmProviderId | string;
 

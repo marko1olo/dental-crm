@@ -20,7 +20,7 @@ import {
 	getNetworkShieldStatus,
 	isNetworkShieldEnabled,
 	resolveNetworkShieldProxyUrl,
-} from "../services/agent/networkShield.js";
+} from "../ai/network/networkShield.js";
 import {
 	GeminiBidiBridge,
 	MANDATORY_DENTAL_BIDI_TERMS,

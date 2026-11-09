@@ -110,13 +110,13 @@ export async function requestAgentSseStream(
               applied: false,
             };
           }
-        } else if (toolName === "generate_form_043_entry" && result) {
+        } else if ((toolName === "generate_clinical_protocol_entry" || toolName === "generate_form_043_entry") && result) {
           soapProposal = {
-            complaint: result.complaints || "",
+            complaint: result.complaints || result.complaint || "",
             anamnesis: result.anamnesis || "",
-            objectiveStatus: result.statusLocalis || "",
-            diagnosis: result.diagnosisMkb || "",
-            treatmentPlan: result.treatmentProtocol || "",
+            objectiveStatus: result.statusLocalis || result.objectiveStatus || "",
+            diagnosis: result.diagnosisMkb || result.diagnosis || "",
+            treatmentPlan: result.treatmentProtocol || result.treatmentPlan || "",
             recommendations: result.recommendations || "",
             applied: false,
           };

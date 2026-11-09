@@ -107,7 +107,6 @@ import { registerTelegramReferralLoyaltyRoutes } from "../routes/telegramReferra
 import { registerTasksRoutes } from "../routes/tasks.js";
 import { telephonyRoutes } from "../routes/telephony.js";
 import registerTemplateRoutes from "../routes/templates.js";
-import { copilotRoutes } from "../routes/copilot.js";
 import { treatmentConsumablesRoutes } from "../routes/treatmentConsumables.js";
 import { registerVisitRoutes } from "../routes/visits.js";
 import { registerVkRoutes } from "../routes/vk.js";
@@ -268,7 +267,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await app.register(treatmentConsumablesRoutes, {
 		prefix: "/api/v1/treatment-consumables",
 	});
-	await app.register(copilotRoutes);
 	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
 	await app.register(publicBudgetRoutes);

@@ -22,7 +22,7 @@ import {
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
-import { copilotRoutes, extractDoctorScreenContext } from "../../routes/copilot.js";
+import { extractDoctorScreenContext } from "../../ai/contextExtractor.js";
 import { organizations, users, patients } from "../../db/schema.js";
 
 const FIXTURE = "redTeamPatientsSwallowed";
@@ -122,7 +122,6 @@ describe("RED TEAM PENTEST: PATIENT SEARCH SQLi, CROSS-TENANT ISOLATION & SWALLO
 
 		app = createTenantTestApp();
 		await registerPatientRoutes(app);
-		await app.register(copilotRoutes);
 	});
 
 	// =========================================================================

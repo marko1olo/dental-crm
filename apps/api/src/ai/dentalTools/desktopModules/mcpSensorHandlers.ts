@@ -81,17 +81,27 @@ export function handleScannerCall(toolName: string, args: Record<string, unknown
 
 export function handleTwainCall(toolName: string, args: Record<string, unknown>) {
 	if (toolName === "list_devices") {
+		const isHardwareAttached = process.env.TWAIN_DEVICE_CONNECTED === "1";
 		return {
 			success: true,
 			data: {
 				devices: [
-					{ id: "vatech_ezsensor_15", name: "Vatech EzSensor 1.5", type: "sensor", connected: true },
+					{ id: "vatech_ezsensor_15", name: "Vatech EzSensor 1.5", type: "sensor", connected: isHardwareAttached },
 					{ id: "planmeca_prosensor", name: "Planmeca ProSensor HD", type: "sensor", connected: false },
 				],
 			},
 		};
 	}
 	if (toolName === "acquire_frame") {
+		const isHardwareAttached = process.env.TWAIN_DEVICE_CONNECTED === "1";
+		if (!isHardwareAttached) {
+			return {
+				success: false,
+				status: "device_offline",
+				message: "Визиограф не обнаружен",
+				error: "TWAIN-датчик не подключен к USB-порту или драйвер сенсора не установлен (device_offline)",
+			};
+		}
 		return {
 			success: true,
 			data: {
