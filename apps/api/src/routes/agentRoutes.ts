@@ -521,6 +521,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 		"/api/copilot/action",
 		"/api/v1/copilot/confirm",
 		"/api/copilot/confirm",
+		"/api/v1/copilot/agent/execute",
 	];
 
 	for (const endpoint of actionEndpoints) {
@@ -637,6 +638,183 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			},
 		);
 	}
+
+	// ─── PROACTIVE & SENTINEL BACKGROUND COPILOT ENDPOINTS (DEF-COP-01) ───────
+	server.get(
+		"/api/v1/copilot/nudges",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot nudges",
+			);
+			if (!resolvedOrgId) return;
+
+			return reply.code(200).send({
+				ok: true,
+				nudges: [],
+			});
+		},
+	);
+
+	server.post(
+		"/api/v1/copilot/dismiss-nudge",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot dismiss nudge",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = (request.body ?? {}) as { id?: string };
+			return reply.code(200).send({
+				ok: true,
+				dismissedId: body.id,
+			});
+		},
+	);
+
+	server.get(
+		"/api/v1/copilot/proactive/pending",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot proactive pending",
+			);
+			if (!resolvedOrgId) return;
+
+			return reply.code(200).send({
+				ok: true,
+				alerts: [],
+				hitlCards: [],
+			});
+		},
+	);
+
+	server.post(
+		"/api/v1/copilot/proactive/approve",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot proactive approve",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = (request.body ?? {}) as {
+				approvalId?: string;
+				modifiedReply?: string;
+				sendNow?: boolean;
+			};
+			return reply.code(200).send({
+				ok: true,
+				approved: true,
+				approvalId: body.approvalId,
+			});
+		},
+	);
+
+	server.post(
+		"/api/v1/copilot/proactive/reject",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot proactive reject",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = (request.body ?? {}) as {
+				approvalId?: string;
+				reason?: string;
+			};
+			return reply.code(200).send({
+				ok: true,
+				rejected: true,
+				approvalId: body.approvalId,
+			});
+		},
+	);
+
+	server.post(
+		"/api/v1/copilot/proactive/dismiss-alert",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot dismiss proactive alert",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = (request.body ?? {}) as { alertId?: string };
+			return reply.code(200).send({
+				ok: true,
+				alertId: body.alertId,
+			});
+		},
+	);
+
+	server.post(
+		"/api/v1/copilot/sentinel/analyze",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot sentinel analyze",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = (request.body ?? {}) as { patientId?: string; mode?: string };
+			return reply.code(200).send({
+				ok: true,
+				data: {
+					alerts: [],
+					analyzedPatientId: body.patientId,
+					mode: body.mode || "supervised",
+				},
+			});
+		},
+	);
+
+	server.get(
+		"/api/v1/copilot/stream",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot sse stream",
+			);
+			if (!resolvedOrgId) return;
+
+			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+			reply.raw.setHeader("Connection", "keep-alive");
+			reply.raw.setHeader("X-Accel-Buffering", "no");
+			reply.raw.flushHeaders?.();
+
+			reply.raw.write(formatSseMessage("connected", { status: "connected", organizationId: resolvedOrgId }));
+
+			const heartbeatInterval = setInterval(() => {
+				if (!reply.raw.writableEnded) {
+					reply.raw.write(": ping\n\n");
+				}
+			}, 15000);
+
+			request.raw.on("close", () => {
+				clearInterval(heartbeatInterval);
+			});
+		},
+	);
 
 	// ─── REGISTER SESSION & DIALOGUE HISTORY ROUTES ────────────────────────────
 	await registerAgentSessionRoutes(server);

@@ -48,20 +48,12 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const [toothProposal, setToothProposal] = useState<ChairsideToothProposal | null>(() => {
     if (initialToothProposal !== undefined) return initialToothProposal;
-    if (!hasActiveTooth) return null;
-    return {
-      toothNumber: activeTooth,
-      state: activePreset.toothState || "C2",
-      stateLabel: activePreset.toothStateLabel || "Кариес дентина (C2)",
-      surfaces: [...(activePreset.surfaces || ["O"])],
-      applied: false,
-    };
+    return null;
   });
 
   const [servicesProposal, setServicesProposal] = useState<ChairsideServiceProposal[]>(() => {
     if (initialServicesProposal !== undefined) return [...initialServicesProposal];
-    if (!hasActiveTooth) return [];
-    return activePreset.services.map((s) => ({ ...s, applied: false }));
+    return [];
   });
 
   const [soapProposal, setSoapProposal] = useState<ChairsideSoapProposal>(() => {

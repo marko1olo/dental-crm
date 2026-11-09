@@ -324,8 +324,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				set({ memoryFacts: remoteFacts });
 				safeLocalStorageSetJson("dente_copilot_memory", remoteFacts);
 			}
-		} catch {
-			// Офлайн фоллбек на локальный кэш
+		} catch (err) {
+			console.info("[copilotStore] Offline fallback for memory facts:", err);
 		}
 		try {
 			const remote = await fetchRemoteSessions();
@@ -346,8 +346,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				const activeId = state.activeThreadId || (merged[0]?.id || "");
 				return { threads: merged, activeThreadId: activeId };
 			});
-		} catch {
-			// Офлайн фоллбек на локальный кэш
+		} catch (err) {
+			console.info("[copilotStore] Offline fallback for remote sessions:", err);
 		}
 	},
 
@@ -372,8 +372,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				});
 				return parsed;
 			}
-		} catch {
-			// Офлайн фоллбек
+		} catch (err) {
+			console.info("[copilotStore] Offline fallback for thread messages:", err);
 		}
 		return cached || [];
 	},

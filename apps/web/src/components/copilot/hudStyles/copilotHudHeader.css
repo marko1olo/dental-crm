@@ -29,6 +29,19 @@
   justify-content: space-between;
   gap: 8px;
   box-sizing: border-box;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.chairside-hud-capsule-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .chairside-hud-header-brand {

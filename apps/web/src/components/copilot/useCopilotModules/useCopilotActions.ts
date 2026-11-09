@@ -74,15 +74,25 @@ export function useCopilotActions({
 			if (!conversationId) setConversationId(sessId);
 
 			const settings = useCopilotStore.getState().settings;
-			await streamRequest("/api/v1/copilot/chat", {
+			const currentTrust = settings.trustLevel;
+			const normalizedTrust = (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious"
+				? "confirm_all"
+				: currentTrust === "autonomous"
+				? "autonomous"
+				: "balanced";
+
+			await streamRequest("/api/agent/chat", {
 				conversationId: sessId,
+				sessionId: sessId,
 				message: text,
+				messages: [{ role: "user", content: text }],
+				stream: true,
 				modelRoutingMode: settings.modelRoutingMode,
 				byokProvider: settings.byokProvider,
 				byokApiKey: settings.byokApiKey,
 				byokModel: settings.byokModel,
 				speedMode: settings.speedMode,
-				trustLevel: settings.trustLevel,
+				trustLevel: normalizedTrust,
 				runtimeMode: settings.runtimeMode,
 			});
 			setBusy(false);
@@ -134,7 +144,8 @@ export function useCopilotActions({
 			if (decision === "confirm") {
 				copilotActionRunner
 					.confirmAction(callId, actionArgs, apiBaseUrl)
-					.catch(() => {
+					.catch((err) => {
+						console.warn("[useCopilotActions] confirmAction failed, attempting fallback:", err);
 						dispatchCrmAction(
 							{
 								callId,
@@ -143,12 +154,16 @@ export function useCopilotActions({
 								confirmed: true,
 							},
 							apiBaseUrl,
-						).catch(() => {});
+						).catch((dispatchErr) => {
+							console.warn("[useCopilotActions] dispatchCrmAction fallback failed:", dispatchErr);
+						});
 					});
 			} else {
 				copilotActionRunner
 					.rejectAction(callId, reason, apiBaseUrl)
-					.catch(() => {});
+					.catch((err) => {
+						console.warn("[useCopilotActions] rejectAction failed:", err);
+					});
 			}
 
 			const sessId = conversationId || "default-session";
@@ -227,7 +242,8 @@ export function useCopilotActions({
 				const json = await res.json();
 				setNudges(json.nudges || json.data || json || []);
 			}
-		} catch {
+		} catch (err) {
+			console.info("[useCopilotActions] Load nudges offline fallback:", err);
 			setNudges([]);
 		}
 	}, [apiBaseUrl, setNudges]);
@@ -245,8 +261,8 @@ export function useCopilotActions({
 					},
 					body: JSON.stringify({ id }),
 				});
-			} catch {
-				// Ignore network error on dismissal
+			} catch (err) {
+				console.info("[useCopilotActions] Dismiss nudge offline fallback:", err);
 			}
 		},
 		[apiBaseUrl, setNudges],
@@ -329,8 +345,8 @@ export function useCopilotActions({
 					},
 					body: JSON.stringify({ alertId }),
 				});
-			} catch {
-				// Ignore network error on dismissal
+			} catch (err) {
+				console.info("[useCopilotActions] Dismiss proactive alert offline fallback:", err);
 			}
 		},
 		[apiBaseUrl, setProactiveAlerts],

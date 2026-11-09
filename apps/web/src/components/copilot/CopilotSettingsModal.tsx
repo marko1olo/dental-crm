@@ -178,7 +178,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				</div>
 
 				{/* Логические навигационные вкладки настроек */}
-				<div className="flex border-b border-[var(--line)] px-5 pr-8 gap-3 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
+				<div className="flex border-b border-[var(--line)] px-3 sm:px-5 gap-1.5 sm:gap-2.5 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
 					<button
 						type="button"
 						onClick={() => setActiveTab("intelligence")}
@@ -239,7 +239,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						<Table size={13} />
 						<span>Матрица возможностей</span>
 					</button>
-					<div className="w-4 shrink-0" aria-hidden="true" />
+					<div className="w-6 shrink-0" aria-hidden="true" />
 				</div>
 
 				{/* Контент активной вкладки со скроллом */}

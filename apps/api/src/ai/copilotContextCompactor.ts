@@ -4,7 +4,7 @@
  * Invariants:
  * 1. Automatic compaction when dialogue exceeds threshold (> 15 messages).
  * 2. Compresses early turns into a structured clinical summary stored in session.summary.
- * 3. Preserves clinical entities (FDI teeth 11-48/51-85, МКБ-10, 043/у complaints, 54-ФЗ payments).
+ * 3. Preserves clinical entities (FDI teeth 11-48/51-85, МКБ-10, clinical protocol complaints, payments).
  * 4. Ensures zero loss of clinical context while keeping token usage within LLM budget limits.
  * 5. Guarantees clean turn boundaries (never leaves orphaned tool calls or broken response chains).
  */
@@ -84,9 +84,9 @@ export function extractClinicalHighlights(text: string): string[] {
 		highlights.push(`МКБ-10: ${Array.from(new Set(icdMatches)).join(", ")}`);
 	}
 
-	// Clinical 043/у record keywords (complaints, anesthesia, treatment status)
+	// Clinical record keywords (complaints, anesthesia, treatment status)
 	if (/043|анамнез|жалоб|осмотр|диагноз|пульпит|кариес|периодонтит|пломб/i.test(text)) {
-		highlights.push("Медкарта 043/у");
+		highlights.push("Медицинская карта приёма");
 	}
 
 	// 54-FZ and billing monetary amounts (RUB / руб / коп / счет / чек)
@@ -287,6 +287,15 @@ export interface DoctorScreenContext {
 	readonly activeDoctor?: string | null;
 	readonly toothFormula?: Record<string, string> | null;
 	readonly diagnosesByTooth?: Record<string, string> | null;
+	readonly clinicalEmrContext?: {
+		readonly complaints?: string | null;
+		readonly anamnesis?: string | null;
+		readonly objectiveStatus?: string | null;
+		readonly diagnosis?: string | null;
+		readonly treatmentPlan?: string | null;
+		readonly recommendations?: string | null;
+	} | null;
+	/** @deprecated По Мандату 8x использовать clinicalEmrContext */
 	readonly clinical043Context?: {
 		readonly complaints?: string | null;
 		readonly anamnesis?: string | null;
@@ -339,8 +348,9 @@ export function formatDoctorScreenContextPrompt(
 			.join("; ");
 		lines.push(`• Диагнозы по зубам: ${diagStr}`);
 	}
-	if (ctx.clinical043Context) {
-		const c = ctx.clinical043Context;
+	const emr = ctx.clinicalEmrContext || ctx.clinical043Context;
+	if (emr) {
+		const c = emr;
 		const cLines: string[] = [];
 		if (c.complaints) cLines.push(`  - Жалобы: ${c.complaints}`);
 		if (c.anamnesis) cLines.push(`  - Анамнез: ${c.anamnesis}`);
@@ -349,7 +359,7 @@ export function formatDoctorScreenContextPrompt(
 		if (c.treatmentPlan) cLines.push(`  - Лечение / План: ${c.treatmentPlan}`);
 		if (c.recommendations) cLines.push(`  - Рекомендации: ${c.recommendations}`);
 		if (cLines.length > 0) {
-			lines.push(`• Активный дневник 043/у:\n${cLines.join("\n")}`);
+			lines.push(`• Медицинская карта приёма (ЭМК):\n${cLines.join("\n")}`);
 		}
 	}
 
