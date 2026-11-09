@@ -22,25 +22,49 @@ export interface AnatomicalToothProps extends Tooth46ContainerProps {
 	onClick?: (e: React.MouseEvent<SVGSVGElement>, toothNumber: number) => void;
 }
 
-const UPPER: readonly (React.FC<any> | undefined)[] = [
+type ToothComponentType = React.FC<Tooth46ContainerProps & { toothNumber?: number; isFlipped?: boolean }>;
+
+const UPPER: readonly (ToothComponentType | undefined)[] = [
 	undefined, Tooth11Container, Tooth12Container, Tooth13Container,
 	Tooth14Container, Tooth15Container, Tooth16Container, Tooth17Container, Tooth18Container,
 ];
 
-const LOWER: readonly (React.FC<any> | undefined)[] = [
+const LOWER: readonly (ToothComponentType | undefined)[] = [
 	undefined, Tooth41Container, Tooth42Container, Tooth43Container,
 	Tooth44Container, Tooth45Container, Tooth46Container, Tooth47Container, Tooth48Container,
 ];
 
-function getToothComponent(num: number): React.FC<any> | undefined {
+// Молочные зубы (квадранты 5, 6, 7, 8):
+// Резцы (51, 52, 61, 62, 71, 72, 81, 82) и клыки (53, 63, 73, 83)
+// Верхние молочные моляры (54, 55, 64, 65) обязаны иметь 3 корня (MB, DB, Palatal) — Tooth16/17Container!
+// Нижние молочные моляры (74, 75, 84, 85) обязаны иметь 2 корня (M, D) — Tooth46/47Container!
+const UPPER_PED: readonly (ToothComponentType | undefined)[] = [
+	undefined,
+	Tooth11Container, // 51, 61: центральный молочный резец
+	Tooth12Container, // 52, 62: боковой молочный резец
+	Tooth13Container, // 53, 63: молочный клык
+	Tooth16Container, // 54, 64: первый верхний молочный моляр (3 корня)
+	Tooth17Container, // 55, 65: второй верхний молочный моляр (3 корня)
+];
+
+const LOWER_PED: readonly (ToothComponentType | undefined)[] = [
+	undefined,
+	Tooth41Container, // 71, 81: центральный молочный резец
+	Tooth42Container, // 72, 82: боковой молочный резец
+	Tooth43Container, // 73, 83: молочный клык
+	Tooth46Container, // 74, 84: первый нижний молочный моляр (2 корня)
+	Tooth47Container, // 75, 85: второй нижний молочный моляр (2 корня)
+];
+
+function getToothComponent(num: number): ToothComponentType | undefined {
 	if (num >= 11 && num <= 18) return UPPER[num - 10];
 	if (num >= 21 && num <= 28) return UPPER[num - 20];
 	if (num >= 31 && num <= 38) return LOWER[num - 30];
 	if (num >= 41 && num <= 48) return LOWER[num - 40];
-	if (num >= 51 && num <= 55) return UPPER[num - 50];
-	if (num >= 61 && num <= 65) return UPPER[num - 60];
-	if (num >= 71 && num <= 75) return LOWER[num - 70];
-	if (num >= 81 && num <= 85) return LOWER[num - 80];
+	if (num >= 51 && num <= 55) return UPPER_PED[num - 50];
+	if (num >= 61 && num <= 65) return UPPER_PED[num - 60];
+	if (num >= 71 && num <= 75) return LOWER_PED[num - 70];
+	if (num >= 81 && num <= 85) return LOWER_PED[num - 80];
 	return undefined;
 }
 
@@ -76,7 +100,7 @@ export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props
 	});
 
 	if (handleClick && React.isValidElement(element)) {
-		return React.cloneElement(element as React.ReactElement<{ onClick?: any }>, { onClick: handleClick });
+		return React.cloneElement(element as React.ReactElement<{ onClick?: (e: React.MouseEvent<SVGSVGElement>) => void }>, { onClick: handleClick });
 	}
 	return element;
 }, areAnatomicalToothPropsEqual);
