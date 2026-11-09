@@ -57,34 +57,36 @@ async function setTheme(page, theme) {
 }
 
 async function loginAndMountWorkspace(page) {
-	console.log("Navigating to http://127.0.0.1:5173/?demo=true ...");
-	await page.goto("http://127.0.0.1:5173/?demo=true", { waitUntil: "domcontentloaded", timeout: 35000 });
-
-	const demoBtn = page.locator("button:has-text('Быстрый вход в Демо-тур'), button.auth-demo-btn");
-	if (await demoBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-		console.log("Found Demo button! Clicking...");
-		await demoBtn.first().click();
-		const roleCard = page.locator(".auth-demo-role-card").first();
-		await roleCard.waitFor({ state: "visible", timeout: 15000 });
-		console.log("Double clicking first role card (Therapist)...");
-		await roleCard.dblclick();
-		await page.waitForTimeout(2000);
-	}
-	await page.waitForSelector(".app-layout, .app-sidebar, .app-header, main", { timeout: 25000 }).catch(() => {});
-	console.log("Workspace mounted! Now opening Copilot Studio...");
-	await page.evaluate(() => {
-		window.location.hash = "#copilot";
-		window.dispatchEvent(new HashChangeEvent("hashchange"));
-		window.dispatchEvent(new CustomEvent("dente:open-copilot", {
-			detail: {
-				tooth: 36,
-				activeTooth: 36,
-				patientName: "Кузнецов Михаил Павлович",
-				patientId: "pat-36"
+	console.log("Navigating to http://127.0.0.1:5173/?demo=true&copilot=1#copilot ...");
+	await page.goto("http://127.0.0.1:5173/?demo=true&copilot=1#copilot", { waitUntil: "domcontentloaded", timeout: 35000 });
+	await page.waitForTimeout(1000);
+	const rootSelector = '[data-testid="chairside-copilot-studio-root"]';
+	let isRootVisible = await page.locator(rootSelector).isVisible().catch(() => false);
+	if (!isRootVisible) {
+		console.log("Studio root not immediately visible, dispatching open-copilot event...");
+		await page.evaluate(() => {
+			if (window.__denteCopilot?.open) {
+				window.__denteCopilot.open();
 			}
-		}));
-	});
-	await page.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 15000 });
+			window.location.hash = "#copilot";
+			window.dispatchEvent(new HashChangeEvent("hashchange"));
+			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
+				detail: {
+					tooth: 36,
+					activeTooth: 36,
+					patientName: "Кузнецов Михаил Павлович",
+					patientId: "pat-36"
+				}
+			}));
+		});
+		const triggerBtn = page.locator('[data-testid="copilot-floating-trigger"], button:has-text("ИИ Ассистент")').first();
+		if (await triggerBtn.isVisible().catch(() => false)) {
+			console.log("Clicking copilot-floating-trigger...");
+			await triggerBtn.click({ force: true });
+		}
+	}
+	await page.waitForSelector(rootSelector, { state: "visible", timeout: 15000 });
+	console.log("Copilot Studio successfully mounted!");
 	await page.waitForTimeout(600);
 }
 

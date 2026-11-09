@@ -11,13 +11,20 @@ import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { runAgentHarness, type AgentHarnessEvent } from "../ai/agentHarness.js";
-import { getDentalTools, type AgentRuntimeMode } from "../ai/dentalTools.js";
+import {
+	getDentalTools,
+	executeDentalTool,
+	normalizeToolName,
+	type AgentRuntimeMode,
+	type DentalToolContext,
+} from "../ai/dentalTools.js";
 import {
 	validateUniversalApiKeyLive,
 	type AgentRouterChatMessage,
 } from "../ai/agentRouterClient.js";
 import { registerAgentSessionRoutes } from "./agentSessionRoutes.js";
 import { defaultCopilotActionManager } from "../ai/copilotActionManager.js";
+import { addMessageToDb } from "../ai/session/copilotMessageDb.js";
 import {
 	getDoctorPreferencesFromDb,
 	saveDoctorPreferencesInDb,
@@ -175,7 +182,7 @@ export async function handleAgentChat(
 		reply.raw.flushHeaders?.();
 
 		try {
-			await runAgentHarness({
+			const harnessResult = await runAgentHarness({
 				messages: body.messages as AgentRouterChatMessage[],
 				context: {
 					organizationId: resolvedOrgId,
@@ -234,6 +241,35 @@ export async function handleAgentChat(
 					}
 				},
 			});
+
+			// Persistent Dialogue Memory: save user message and assistant answer into copilot_messages
+			const targetSessionId = body.sessionId || body.conversationId;
+			if (targetSessionId) {
+				try {
+					const lastUserPrompt = [...body.messages].reverse().find((m) => m.role === "user")?.content;
+					if (lastUserPrompt && typeof lastUserPrompt === "string" && lastUserPrompt.trim().length > 0) {
+						await addMessageToDb({
+							sessionId: targetSessionId,
+							organizationId: resolvedOrgId,
+							role: "user",
+							content: lastUserPrompt.trim(),
+							autoCompact: false,
+						});
+					}
+					if (harnessResult?.text && typeof harnessResult.text === "string" && harnessResult.text.trim().length > 0) {
+						await addMessageToDb({
+							sessionId: targetSessionId,
+							organizationId: resolvedOrgId,
+							role: "assistant",
+							content: harnessResult.text.trim(),
+							toolCalls: harnessResult.toolCalls?.length ? (harnessResult.toolCalls as any) : null,
+							autoCompact: body.enableAutoCompaction ?? true,
+						});
+					}
+				} catch (persistErr) {
+					request.log.warn({ err: persistErr, targetSessionId }, "[agentRoutes] Failed to persist SSE copilot messages to PostgreSQL");
+				}
+			}
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			if (!reply.raw.writableEnded) {
@@ -282,6 +318,35 @@ export async function handleAgentChat(
 			showTypingAnimation: body.showTypingAnimation,
 			signal: abortController.signal,
 		});
+
+		// Persistent Dialogue Memory: save user message and assistant answer into copilot_messages
+		const targetSessionId = body.sessionId || body.conversationId;
+		if (targetSessionId) {
+			try {
+				const lastUserPrompt = [...body.messages].reverse().find((m) => m.role === "user")?.content;
+				if (lastUserPrompt && typeof lastUserPrompt === "string" && lastUserPrompt.trim().length > 0) {
+					await addMessageToDb({
+						sessionId: targetSessionId,
+						organizationId: resolvedOrgId,
+						role: "user",
+						content: lastUserPrompt.trim(),
+						autoCompact: false,
+					});
+				}
+				if (result?.text && typeof result.text === "string" && result.text.trim().length > 0) {
+					await addMessageToDb({
+						sessionId: targetSessionId,
+						organizationId: resolvedOrgId,
+						role: "assistant",
+						content: result.text.trim(),
+						toolCalls: result.toolCalls?.length ? (result.toolCalls as any) : null,
+						autoCompact: body.enableAutoCompaction ?? true,
+					});
+				}
+			} catch (persistErr) {
+				request.log.warn({ err: persistErr, targetSessionId }, "[agentRoutes] Failed to persist JSON copilot messages to PostgreSQL");
+			}
+		}
 
 		return reply.code(200).send({
 			text: result.text,
@@ -477,19 +542,63 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 					reason?: string;
 					modifiedArgs?: Record<string, unknown>;
 					confirmed?: boolean;
+					toolName?: string;
+					tool?: string;
+					args?: Record<string, unknown>;
+					arguments?: Record<string, unknown>;
+					runtimeMode?: string;
 				};
+
+				const identity = getRequestIdentity(request);
+				const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
+				const sessionId = body.sessionId ?? "default-session";
+				const runtimeMode = resolveRuntimeMode(request, body.runtimeMode);
+				const directToolName = body.toolName || body.tool;
+
+				// 1. Direct tool execution via Canonical SSOT executeDentalTool
+				if (directToolName) {
+					const effectiveArgs = (body.args || body.arguments || body.modifiedArgs || {}) as Record<string, unknown>;
+					const dentalContext: DentalToolContext = {
+						organizationId: resolvedOrgId,
+						userId,
+						doctorId: userId,
+						patientId: (effectiveArgs.patientId as string) || (body as any).patientId || undefined,
+						activeVisitId: (effectiveArgs.visitId as string) || (body as any).visitId || undefined,
+						activeTooth: typeof effectiveArgs.toothNumber === "number"
+							? effectiveArgs.toothNumber
+							: typeof effectiveArgs.tooth === "number"
+								? effectiveArgs.tooth
+								: undefined,
+						runtimeMode,
+						allowLocalExecution: true,
+					};
+
+					try {
+						const canonicalTool = normalizeToolName(directToolName);
+						const toolResult = (await executeDentalTool(canonicalTool, effectiveArgs, dentalContext)) as any;
+						const isSuccess = toolResult && typeof toolResult === "object" ? toolResult.success !== false : true;
+						return reply.code(200).send({
+							ok: isSuccess,
+							result: toolResult,
+							data: toolResult,
+							error: toolResult?.error || undefined,
+						});
+					} catch (err: unknown) {
+						return reply.code(200).send({
+							ok: false,
+							error: err instanceof Error ? err.message : String(err),
+						});
+					}
+				}
 
 				const callId = body.callId;
 				if (!callId) {
 					return reply.code(400).send({
 						error: "ValidationError",
-						message: "Некорректный формат: укажите callId",
+						message: "Некорректный формат: укажите callId или toolName",
 					});
 				}
 
-				const identity = getRequestIdentity(request);
-				const userId = identity.userId ?? "00000000-0000-7000-8000-000000000001";
-				const sessionId = body.sessionId ?? "default-session";
 				const decision = body.decision ?? (body.confirmed !== false ? "confirm" : "reject");
 
 				if (decision === "confirm") {
@@ -500,6 +609,10 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 							userId,
 							sessionId,
 							mode: "autonomous",
+							metadata: {
+								runtimeMode,
+								patientId: (body as any).patientId,
+							},
 						},
 						callId,
 						body.modifiedArgs,
