@@ -16,16 +16,18 @@ import { fileURLToPath } from "node:url";
  */
 
 describe("Leads Existing Patient Deduplication & UI Invariants", () => {
-	const leadCardSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"components",
-			"leads",
-			"LeadCard.tsx",
-		),
-		"utf8",
-	);
+	const baseDir = dirname(fileURLToPath(import.meta.url));
+	const leadCardDir = join(baseDir, "..", "components", "leads");
+	const leadCardSubDir = join(leadCardDir, "card");
+
+	const leadCardSource = [
+		readFileSync(join(leadCardDir, "LeadCard.tsx"), "utf8"),
+		readFileSync(join(leadCardSubDir, "LeadCardBadges.tsx"), "utf8"),
+		readFileSync(join(leadCardSubDir, "LeadCardActionButtons.tsx"), "utf8"),
+		readFileSync(join(leadCardSubDir, "LeadCardHeader.tsx"), "utf8"),
+		readFileSync(join(leadCardSubDir, "LeadCardContactBar.tsx"), "utf8"),
+		readFileSync(join(leadCardSubDir, "LeadCardStageSelect.tsx"), "utf8"),
+	].join("\n");
 
 	const convertModalSource = [
 		readFileSync(

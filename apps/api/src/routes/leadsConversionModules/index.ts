@@ -6,4 +6,5 @@
 export * from "./conversionValidator.js";
 export * from "./appointmentCreationBridge.js";
 export * from "./patientCreationBridge.js";
+export * from "./leadConsentBridge.js";
 export * from "./leadStageTransition.js";

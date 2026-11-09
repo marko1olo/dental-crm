@@ -13,6 +13,8 @@ export const convertLeadSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 	reason: z.string().optional().nullable(),
 	comment: z.string().optional().nullable(),
+	consentMedical: z.boolean().optional().nullable(),
+	consentMarketing: z.boolean().optional().nullable(),
 });
 
 export type ConvertLeadPayload = z.infer<typeof convertLeadSchema>;
@@ -40,11 +42,11 @@ export function resolveStructuredLeadAttribution(input?: {
 	utmContent?: string | null | undefined;
 	utmTerm?: string | null | undefined;
 }): StructuredLeadAttribution {
-	const utmSource = input?.utmSource || (input?.metadata?.utm_source as string | undefined);
-	const utmMedium = input?.utmMedium || (input?.metadata?.utm_medium as string | undefined);
-	const utmCampaign = input?.utmCampaign || (input?.metadata?.utm_campaign as string | undefined);
-	const utmContent = input?.utmContent || (input?.metadata?.utm_content as string | undefined);
-	const utmTerm = input?.utmTerm || (input?.metadata?.utm_term as string | undefined);
+	const utmSource = (input?.metadata?.utm_source as string | undefined) || input?.utmSource;
+	const utmMedium = (input?.metadata?.utm_medium as string | undefined) || input?.utmMedium;
+	const utmCampaign = (input?.metadata?.utm_campaign as string | undefined) || input?.utmCampaign;
+	const utmContent = (input?.metadata?.utm_content as string | undefined) || input?.utmContent;
+	const utmTerm = (input?.metadata?.utm_term as string | undefined) || input?.utmTerm;
 
 	const parts: string[] = [];
 	if (utmSource) parts.push(`source=${utmSource}`);
@@ -106,20 +108,19 @@ export function extractUtmAttribution(
 		return resolveStructuredLeadAttribution({ source, ...structured });
 	}
 
-	if (metadataOrNotes && typeof metadataOrNotes === "object" && !Array.isArray(metadataOrNotes)) {
-		return resolveStructuredLeadAttribution({
-			source,
-			metadata: metadataOrNotes as Record<string, unknown>,
-		});
-	}
+	const metaObj =
+		metadataOrNotes &&
+		typeof metadataOrNotes === "object" &&
+		!Array.isArray(metadataOrNotes)
+			? (metadataOrNotes as Record<string, unknown>)
+			: undefined;
 
-	if (source && source.trim()) {
-		const parsedFromSource = parseUtmFromSource(source.trim());
-		return resolveStructuredLeadAttribution({
-			source: source.trim(),
-			...parsedFromSource,
-		});
-	}
+	const parsedFromSource =
+		source && source.trim() ? parseUtmFromSource(source.trim()) : {};
 
-	return {};
+	return resolveStructuredLeadAttribution({
+		source: source?.trim() || undefined,
+		metadata: metaObj,
+		...parsedFromSource,
+	});
 }

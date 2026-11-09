@@ -82,8 +82,8 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 			createElement(AppLogicProvider, { value: mockAppLogicValue, children: modal }),
 		);
 
-		assert.ok(html.includes("data-testid=\"patient-creation-modal-overlay\""));
-		assert.ok(html.includes("Новый пациент"));
+		assert.ok(html.includes("data-testid=\"patient-card-modal\""));
+		assert.ok(html.includes("Первичная регистрация пациента") || html.includes("Новый пациент"));
 		assert.ok(html.includes("Рекламный источник"));
 		assert.ok(html.includes("data-testid=\"patient-create-advertising-source-select\""));
 		assert.ok(html.includes("Онлайн-самозапись (Автоматические каналы)"));

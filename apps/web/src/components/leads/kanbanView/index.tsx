@@ -11,7 +11,7 @@ import { useLeadsKanbanMasterController } from "./useLeadsKanbanMasterController
 import "../leadsKanban.css";
 
 export * from "../leadsKanbanTypes";
-export * from "./LeadKanbanCard";
+export { LeadCard, type LeadCardProps } from "../LeadCard";
 export * from "./LeadKanbanColumn";
 export * from "./LeadsKanbanHeaderToolbar";
 export * from "./types";

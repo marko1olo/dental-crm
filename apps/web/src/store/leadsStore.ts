@@ -61,6 +61,8 @@ export interface ConvertLeadToAppointmentPayload {
 	organizationId?: string | undefined;
 	reason?: string | null | undefined;
 	comment?: string | null | undefined;
+	consentMedical?: boolean | null | undefined;
+	consentMarketing?: boolean | null | undefined;
 }
 
 export interface ConvertLeadResult {
@@ -232,9 +234,6 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 							status,
 							...(dropReason
 								? {
-										notes: l.notes
-											? `${l.notes}\n[Причина срыва]: ${dropReason}`
-											: `[Причина срыва]: ${dropReason}`,
 										dropReason,
 								  }
 								: {}),

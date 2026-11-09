@@ -25,6 +25,8 @@ export async function submitPatientOnlyConversion(params: PatientOnlyConvertPara
 	try {
 		const res = await params.convertLeadToAppointment(params.convertingLeadId, {
 			comment: params.options?.comment,
+			consentMedical: params.options?.consentMedical,
+			consentMarketing: params.options?.consentMarketing,
 		});
 		const activeLead = params.leads.find((l) => l.id === params.convertingLeadId);
 		const src = activeLead?.source ? ` (источник: ${activeLead.source})` : "";

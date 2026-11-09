@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { clinics, crmLeads, organizations, users } from "../../db/schema.js";
+import { clinics, crmLeads, organizations, patientCommunicationConsents, users } from "../../db/schema.js";
 import { registerLeadsRoutes } from "../../routes/leads.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {
@@ -37,6 +37,7 @@ const LEAD_1_ID = fixtureUuid(NAMESPACE, 10);
 const LEAD_2_ID = fixtureUuid(NAMESPACE, 11);
 const LEAD_3_ID = fixtureUuid(NAMESPACE, 12);
 const LEAD_4_ID = fixtureUuid(NAMESPACE, 13);
+const LEAD_5_ID = fixtureUuid(NAMESPACE, 14);
 
 describe("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", () => {
 	let app: FastifyInstance;
@@ -141,6 +142,16 @@ describe("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", 
 				source: "vk_target [utm_source=vk&utm_medium=target&utm_campaign=spring_smile]",
 				status: "new",
 				notes: "Установка виниров E-max",
+			});
+
+			await tx.insert(crmLeads).values({
+				id: LEAD_5_ID,
+				organizationId: ORG_ID,
+				name: "Анна Согласина (Лид 5)",
+				phone: "+79990001122",
+				source: "yandex_maps",
+				status: "new",
+				notes: "Согласие на рассылки",
 			});
 		});
 	});
@@ -374,6 +385,54 @@ describe("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", 
 					.where(eq(crmLeads.id, LEAD_4_ID))
 					.limit(1);
 				assert.equal(updatedLead?.status, "converted");
+			});
+		},
+	);
+
+	it(
+		"Persists patientCommunicationConsents in PostgreSQL upon lead conversion with consentMedical and consentMarketing flags",
+		async () => {
+			const startIso = "2026-09-15T14:00:00.000Z";
+			const endIso = "2026-09-15T14:30:00.000Z";
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/leads/${LEAD_5_ID}/convert`,
+				headers: {
+					"content-type": "application/json",
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+				},
+				payload: {
+					appointmentStart: startIso,
+					appointmentEnd: endIso,
+					consentMedical: true,
+					consentMarketing: false,
+					reason: "Первичный приём",
+				},
+			});
+
+			assert.equal(response.statusCode, 200, response.body);
+			const result = JSON.parse(response.body);
+			const patientId = result.patient.id;
+
+			await withFixtureTenant(ORG_ID, async (tx) => {
+				const consents = await tx
+					.select()
+					.from(patientCommunicationConsents)
+					.where(eq(patientCommunicationConsents.patientId, patientId));
+
+				assert.ok(consents.length >= 2, "Consents should be recorded in database");
+				const serviceConsent = consents.find((c) => c.scope === "service" && c.channel === "sms");
+				const marketingConsent = consents.find((c) => c.scope === "marketing" && c.channel === "sms");
+
+				assert.ok(serviceConsent, "Service SMS consent should exist");
+				assert.equal(serviceConsent.state, "granted");
+				assert.equal(serviceConsent.source, "lead_conversion");
+
+				assert.ok(marketingConsent, "Marketing SMS consent should exist");
+				assert.equal(marketingConsent.state, "revoked");
+				assert.equal(marketingConsent.source, "lead_conversion");
 			});
 		},
 	);

@@ -6,7 +6,7 @@
 import { AnimatePresence } from "framer-motion";
 import React from "react";
 import { getLeadSlaStatus } from "../leadsKanbanTypes";
-import { LeadKanbanCard } from "./LeadKanbanCard";
+import { LeadCard } from "../LeadCard";
 import { LeadKanbanColumnHeader } from "./LeadKanbanColumnHeader";
 import type { LeadKanbanColumnProps } from "./types";
 
@@ -55,7 +55,7 @@ export const LeadKanbanColumn: React.FC<LeadKanbanColumnProps> = ({
 			<div className="leads-kanban-column-cards">
 				<AnimatePresence>
 					{columnLeads.map((lead) => (
-						<LeadKanbanCard
+						<LeadCard
 							key={lead.id}
 							lead={lead}
 							isDragged={draggedLeadId === lead.id}

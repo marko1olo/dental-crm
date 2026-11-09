@@ -61,6 +61,8 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 				doctorId: doctorIdToBook,
 				reason: options?.reason,
 				comment: options?.comment,
+				consentMedical: options?.consentMedical,
+				consentMarketing: options?.consentMarketing,
 			});
 			const activeLead = opts.leads.find((l) => l.id === opts.convertingLeadId);
 			const src = activeLead?.source ? ` (источник: ${activeLead.source})` : "";
