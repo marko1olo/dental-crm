@@ -7,6 +7,9 @@ import {
 	formatPatientAge,
 	validateForm043uCompleteness,
 	generateMedicalRecordPrintHtml,
+	generateMedicalRecordXmlCda,
+	generateMedicalRecordJsonExport,
+	generateMedicalRecordPlainText,
 	generate043XmlCda,
 	generate043JsonExport,
 	generate043PlainText,
@@ -304,7 +307,7 @@ describe("Form 043/u Document Generators", () => {
 	});
 
 	it("generates valid HL7 CDA R2 XML for EGISZ", () => {
-		const xml = generate043XmlCda(MOCK_CARD_DATA);
+		const xml = generateMedicalRecordXmlCda(MOCK_CARD_DATA);
 		assert.ok(xml.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"), "Has XML header");
 		assert.ok(xml.includes("<ClinicalDocument"), "Has ClinicalDocument root");
 		assert.ok(xml.includes("<templateId root=\"1.2.643.5.1.13.100.1.1.834.43\"/>"), "Has 834n templateId");
@@ -315,25 +318,31 @@ describe("Form 043/u Document Generators", () => {
 		assert.ok(xml.includes("<code code=\"DENTAL_STATUS\""), "Contains DENTAL_STATUS section");
 		assert.ok(xml.includes("<code code=\"VISIT_DIARIES\""), "Contains VISIT_DIARIES section");
 		assert.ok(xml.includes("<code code=\"EPICRISIS\""), "Contains EPICRISIS section");
+		// Backward compatibility alias test
+		assert.equal(generate043XmlCda(MOCK_CARD_DATA), xml);
 	});
 
 	it("generates structured JSON export and parses back without loss", () => {
-		const jsonStr = generate043JsonExport(MOCK_CARD_DATA);
+		const jsonStr = generateMedicalRecordJsonExport(MOCK_CARD_DATA);
 		const parsed = JSON.parse(jsonStr);
 		assert.equal(parsed.formNumber, "043/у");
 		assert.equal(parsed.exportSchemaVersion, "1.0.0");
 		assert.equal(parsed.passport.medicalCardNumber, "СТ-2026-0843");
 		assert.equal(parsed.visitDiaries.length, 1);
+		// Backward compatibility alias test
+		assert.equal(generate043JsonExport(MOCK_CARD_DATA), jsonStr);
 	});
 
 	it("generates structured plain text transcript for clipboard copy", () => {
-		const text = generate043PlainText(MOCK_CARD_DATA);
-		assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (МЕДИЦИНСКАЯ КАРТА ПРИЁМА)"));
+		const text = generateMedicalRecordPlainText(MOCK_CARD_DATA);
+		assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"));
 		assert.ok(text.includes("1. ПАСПОРТНАЯ ЧАСТЬ"));
 		assert.ok(text.includes("2. АНАМНЕЗ ЖИЗНИ И ЗАБОЛЕВАНИЯ"));
 		assert.ok(text.includes("3. СТОМАТОЛОГИЧЕСКИЙ СТАТУС"));
 		assert.ok(text.includes("4. ДНЕВНИКИ ПОСЕЩЕНИЙ И ПРОТОКОЛЫ ПРИЁМА"));
 		assert.ok(text.includes("5. ЭПИКРИЗ И КОНТРОЛЬНОЕ НАБЛЮДЕНИЕ"));
+		// Backward compatibility alias test
+		assert.equal(generate043PlainText(MOCK_CARD_DATA), text);
 	});
 
 	it("escapes HTML and XML special characters safely", () => {

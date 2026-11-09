@@ -208,6 +208,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						<div className="emr-studio-title-group">
 							<span
 								data-testid="badge-emr-draft-status"
+								data-legacy-testid="badge-043-draft-status"
 								className={`px-2 py-0.5 rounded border text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 shrink-0 ${
 									effectiveIsDraft
 										? "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
@@ -215,7 +216,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								}`}
 							>
 								{effectiveIsDraft ? <FileText className="w-3 h-3 text-amber-600" /> : <Check className="w-3 h-3 text-emerald-600" />}
-								{effectiveIsDraft ? "ЧЕРНОВИК" : "ПОДПИСАНО ВРАЧОМ"}
+								{effectiveIsDraft ? "ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)" : "ПОДПИСАНО ВРАЧОМ"}
 							</span>
 							<div className="min-w-0 w-full">
 								<h2 className="emr-studio-title truncate">
@@ -277,6 +278,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								onClick={handlePrint}
 								disabled={false}
 								data-testid="btn-emr-print-card"
+								data-legacy-testid="btn-print-043-card"
 								title="Печать или экспорт в PDF (A4)"
 							>
 								<Printer className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" />
@@ -450,5 +452,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		);
 	},
 );
+
+export const DEFAULT_043_DATA = DEFAULT_MEDICAL_CARD_DATA;
+export type Form043PrintModalProps = MedicalRecordStudioModalProps;
+export const Form043PrintModal = MedicalRecordStudioModal;
 
 export default MedicalRecordStudioModal;

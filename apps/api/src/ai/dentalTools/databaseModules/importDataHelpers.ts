@@ -3,7 +3,7 @@
  * Мандаты: 8b (<= 120 строк), 8n (соло-врач), 8x (живой клинический язык).
  */
 
-import { patients, serviceCatalogItems, services } from "../../../db/schema.js";
+import { patients, serviceCatalogItems } from "../../../db/schema.js";
 
 type DbClient = any;
 
@@ -38,7 +38,6 @@ export async function importPricelistRows(activeDb: DbClient, orgId: string, rec
 		if (!dryRun) {
 			try {
 				await activeDb.insert(serviceCatalogItems).values({ organizationId: orgId, code, title, category: validCategory, specialty: "universal", basePriceRub: priceNum, priceRub: priceNum, durationMinutes: 30, order804nCode: code.startsWith("A") || code.startsWith("B") ? code : null, isActive: true });
-				await activeDb.insert(services).values({ organizationId: orgId, code, title, category: validCategory, specialty: "universal", basePriceRub: priceNum, durationMinutes: 30 });
 			} catch (dbErr) {
 				skippedCount++;
 				errors.push(`Строка ${rIdx + 1} ('${title}'): ошибка записи: ${(dbErr as Error).message}`);

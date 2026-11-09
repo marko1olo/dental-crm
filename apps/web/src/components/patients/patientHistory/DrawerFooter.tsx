@@ -5,18 +5,20 @@ import type { ClinicalVisitItem } from "./types";
 
 interface DrawerFooterProps {
 	visit: ClinicalVisitItem;
-	onExtract043: (visit: ClinicalVisitItem) => void;
+	onExtractRecord?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onAddToTreatmentPlan: (visit: ClinicalVisitItem) => void;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 }
 
 export const DrawerFooter: React.FC<DrawerFooterProps> = ({
-	visit, onExtract043, onAddToTreatmentPlan, onNavigateToVisit,
+	visit, onExtractRecord, onExtract043, onAddToTreatmentPlan, onNavigateToVisit,
 }) => {
+	const handleExtract = onExtractRecord || onExtract043;
 	return (
 		<div className="p-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2">
 			<button
-				type="button" onClick={() => onExtract043(visit)} className="clinical-btn-print"
+				type="button" onClick={() => handleExtract?.(visit)} className="clinical-btn-print"
 				title="Сформировать медицинскую выписку из карты"
 			>
 				<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />

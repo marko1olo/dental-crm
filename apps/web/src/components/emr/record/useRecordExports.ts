@@ -2,9 +2,9 @@ import { useCallback } from "react";
 import type { MedicalRecordData } from "../types/recordDataTypes";
 import {
 	generateMedicalRecordPrintHtml,
-	generate043XmlCda,
-	generate043JsonExport,
-	generate043PlainText,
+	generateMedicalRecordXmlCda,
+	generateMedicalRecordJsonExport,
+	generateMedicalRecordPlainText,
 } from "../clinicalDiaryMath";
 
 interface UseRecordExportsParams {
@@ -38,7 +38,7 @@ export function useRecordExports({ formData, effectiveIsDraft, setCopiedToast }:
 	}, [formData, effectiveIsDraft]);
 
 	const handleExportXml = useCallback(() => {
-		const blob = new Blob([generate043XmlCda(formData)], { type: "application/xml;charset=utf-8" });
+		const blob = new Blob([generateMedicalRecordXmlCda(formData)], { type: "application/xml;charset=utf-8" });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
@@ -50,7 +50,7 @@ export function useRecordExports({ formData, effectiveIsDraft, setCopiedToast }:
 	}, [formData]);
 
 	const handleExportJson = useCallback(() => {
-		const blob = new Blob([generate043JsonExport(formData)], { type: "application/json;charset=utf-8" });
+		const blob = new Blob([generateMedicalRecordJsonExport(formData)], { type: "application/json;charset=utf-8" });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
@@ -62,7 +62,7 @@ export function useRecordExports({ formData, effectiveIsDraft, setCopiedToast }:
 	}, [formData]);
 
 	const handleCopyText = useCallback(() => {
-		navigator.clipboard.writeText(generate043PlainText(formData)).then(() => {
+		navigator.clipboard.writeText(generateMedicalRecordPlainText(formData)).then(() => {
 			setCopiedToast(true);
 			setTimeout(() => setCopiedToast(false), 2500);
 		}).catch(() => {});

@@ -12,7 +12,8 @@ interface PatientTimelineScrollerProps {
 	readonly groupedByMonth: readonly HistoryTimelineGroup[];
 	readonly expandedVisitIds: ReadonlySet<string>;
 	readonly onToggleAccordion: (id: string) => void;
-	readonly onExtract043: (v: ClinicalVisitItem) => void;
+	readonly onExtractRecord?: ((v: ClinicalVisitItem) => void) | undefined;
+	readonly onExtract043?: ((v: ClinicalVisitItem) => void) | undefined;
 	readonly onAddToTreatmentPlan: (v: ClinicalVisitItem) => void;
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	readonly onOpenDetailDrawer: (v: ClinicalVisitItem) => void;
@@ -22,6 +23,7 @@ export function PatientTimelineScroller({
 	groupedByMonth,
 	expandedVisitIds,
 	onToggleAccordion,
+	onExtractRecord,
 	onExtract043,
 	onAddToTreatmentPlan,
 	onNavigateToVisit,
@@ -72,6 +74,7 @@ export function PatientTimelineScroller({
 							visit={entry.visit}
 							isExpanded={expandedVisitIds.has(entry.visit.id)}
 							onToggle={() => onToggleAccordion(entry.visit.id)}
+							onExtractRecord={onExtractRecord}
 							onExtract043={onExtract043}
 							onAddToTreatmentPlan={onAddToTreatmentPlan}
 							onNavigateToVisit={onNavigateToVisit}

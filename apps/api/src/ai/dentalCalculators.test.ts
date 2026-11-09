@@ -16,11 +16,14 @@ import {
 	chairsideEmergencyTool,
 	checkSomaticRisksTool,
 	compareDentalMaterialsTool,
+	generateClinicalProtocolTool,
+	generateClinicalProtocolEntryTool,
 	generateForm043Tool,
 	handleCalculateAnesthesia,
 	handleChairsideEmergency,
 	handleCheckSomaticRisks,
 	handleCompareDentalMaterials,
+	handleGenerateClinicalProtocolEntry,
 	handleGenerateForm043,
 	handleMultidisciplinaryConcilium,
 	handleTranslatePatientComplaint,
@@ -164,6 +167,30 @@ describe("Dental Tool Arsenal — Клинические калькулятор�
 
 		assert.ok(res.contraindications.some((c) => c.includes("пенициллинового")));
 		assert.ok(res.recommendations.some((r) => r.includes("Клиндамицин")));
+	});
+
+	test("generate_clinical_protocol_entry (канонический EBM инструмент протокола SOAP)", async () => {
+		const res = await handleGenerateClinicalProtocolEntry(
+			{
+				toothNumber: 16,
+				diagnosisMkb: "K02.1",
+				anestheticTradeName: "Ультракаин Д-С",
+				anestheticVolumeMl: 1.7,
+				anesthesiaTechnique: "infiltration",
+				fillingMaterial: "Estelite Asteria A2",
+				useCofferdam: true,
+			},
+			{ organizationId: TEST_ORG_ID },
+		);
+
+		assert.strictEqual(res.toothNumber, 16);
+		assert.strictEqual(res.diagnosisMkb, "K02.1");
+		assert.ok(res.complaints.includes("сладкого"));
+		assert.ok(res.statusLocalis.includes("кариозная полость"));
+		assert.ok(res.treatmentProtocol.includes("коффердама"));
+		assert.ok(res.treatmentProtocol.includes("Estelite Asteria A2"));
+		assert.strictEqual(generateClinicalProtocolTool.name, "generate_clinical_protocol");
+		assert.strictEqual(generateClinicalProtocolEntryTool.name, "generate_clinical_protocol_entry");
 	});
 
 	test("generate_form_043_entry: протокол лечения кариеса K02.1 для зуба 16", async () => {

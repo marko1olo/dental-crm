@@ -204,8 +204,10 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		const clientMutationId = generateUuidV7();
 		const effectiveVisitId = propVisitId || props.visitId || undefined;
 
+		const isRetailSale = !props.patientId || props.patientId === "pat-walkin";
 		const payload: Record<string, unknown> = {
-			patientId: props.patientId && props.patientId !== "pat-walkin" ? props.patientId : undefined,
+			patientId: !isRetailSale ? props.patientId : undefined,
+			isRetailSale,
 			visitId: effectiveVisitId,
 			invoiceId: props.invoiceId || undefined,
 			amountKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),

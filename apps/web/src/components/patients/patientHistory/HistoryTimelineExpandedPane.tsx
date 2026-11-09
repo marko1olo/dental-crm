@@ -7,15 +7,17 @@ import { TimelineAttachmentsSection } from "./TimelineAttachmentsSection";
 
 interface HistoryTimelineExpandedPaneProps {
 	visit: ClinicalVisitItem;
-	onExtract043: (visit: ClinicalVisitItem) => void;
+	onExtractRecord?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onAddToTreatmentPlan: (visit: ClinicalVisitItem) => void;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onOpenDetailDrawer?: ((visit: ClinicalVisitItem) => void) | undefined;
 }
 
 export const HistoryTimelineExpandedPane: React.FC<HistoryTimelineExpandedPaneProps> = ({
-	visit, onExtract043, onAddToTreatmentPlan, onNavigateToVisit, onOpenDetailDrawer,
+	visit, onExtractRecord, onExtract043, onAddToTreatmentPlan, onNavigateToVisit, onOpenDetailDrawer,
 }) => {
+	const handleExtract = onExtractRecord || onExtract043;
 	return (
 		<div className="clinical-visit-details-pane" data-testid={`timeline-visit-details-${visit.id}`}>
 			<TimelineSoapGrid visit={visit} />
@@ -36,7 +38,7 @@ export const HistoryTimelineExpandedPane: React.FC<HistoryTimelineExpandedPanePr
 							<span>Шторка протокола</span>
 						</button>
 					)}
-					<button type="button" onClick={() => onExtract043(visit)} className="clinical-btn-print" data-testid={`btn-extract-043-${visit.id}`} title="Сформировать медицинскую выписку из карты">
+					<button type="button" onClick={() => handleExtract?.(visit)} className="clinical-btn-print" data-testid={`btn-extract-record-${visit.id}`} title="Сформировать медицинскую выписку из карты">
 						<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Выписка из карты</span>
 					</button>

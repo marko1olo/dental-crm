@@ -58,10 +58,40 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 		.orderBy(desc(patientInvoices.createdAt))
 		.limit(limit);
 
+	const rawItems = await db
+		.select()
+		.from(treatmentItems)
+		.where(and(eq(treatmentItems.organizationId, orgId), patientId ? eq(treatmentItems.patientId, patientId) : sql`TRUE`))
+		.orderBy(desc(treatmentItems.id))
+		.limit(limit * 5);
+
+	const items = rawItems.map((item) => ({
+		...item,
+		totalAmountRub: resolveInvoiceTotalAmountRub({ totalRub: item.priceRub }),
+	}));
+
 	const invoices = invoiceRows.map((inv) => {
 		const totalAmount = resolveInvoiceTotalAmountRub({ totalAmountRub: inv.totalAmountRub, totalRub: inv.totalRub });
 		const year = inv.createdAt ? new Date(inv.createdAt).getFullYear() : new Date().getFullYear();
 		const invoiceNumber = `СЧ-${year}-${inv.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+
+		const matchingItems = rawItems
+			.filter((it) => (inv.visitId && it.visitId === inv.visitId) || (it.notes && it.notes.includes(inv.id)))
+			.map((it) => ({
+				id: it.id,
+				serviceId: it.serviceId,
+				serviceCode: it.serviceId || undefined,
+				code: it.serviceId || undefined,
+				toothCode: it.toothCode,
+				toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
+				title: it.title,
+				name: it.title,
+				quantity: Number(it.quantity) || 1,
+				unitPriceRub: Number(it.unitPriceRub) || Number(it.priceRub) || 0,
+				priceRub: Number(it.priceRub) || 0,
+				discountRub: Number(it.discountRub) || 0,
+				totalAmountRub: Number(it.priceRub) || 0,
+			}));
 
 		return {
 			id: inv.id,
@@ -79,20 +109,9 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			paidAt: inv.paidAt?.toISOString() || null,
 			createdAt: inv.createdAt?.toISOString() || new Date().toISOString(),
 			date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
+			items: matchingItems,
 		};
 	});
-
-	const rawItems = await db
-		.select()
-		.from(treatmentItems)
-		.where(and(eq(treatmentItems.organizationId, orgId), patientId ? eq(treatmentItems.patientId, patientId) : sql`TRUE`))
-		.orderBy(desc(treatmentItems.id))
-		.limit(limit);
-
-	const items = rawItems.map((item) => ({
-		...item,
-		totalAmountRub: resolveInvoiceTotalAmountRub({ totalRub: item.priceRub }),
-	}));
 
 	return reply.code(200).send({ success: true, data: invoices, invoices, items });
 }

@@ -249,3 +249,23 @@ export function enrichDiaryFrom804nServices(
 	};
 }
 
+/** ═══════════════════════════════════════════════════════════════════════════
+ * КАНОНИЧЕСКИЕ ЧИСТЫЕ ДОМЕННЫЕ АЛИАСЫ (МАНДАТ 8x — ЧИСТЫЙ КЛИНИЧЕСКИЙ ЯЗЫК)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Канонический интерфейс протокола клинической услуги (Мандат 8x) */
+export type ClinicalServiceProtocolDefinition = Order804nProtocolDefinition;
+
+/** Канонический реестр протоколов клинических услуг (Мандат 8x) */
+export const clinicalServiceProtocols = ORDER_804N_PROTOCOL_DEFINITIONS;
+
+/** Опции обогащения дневниковой записи клиническими услугами */
+export type EnrichDiaryFromClinicalServicesOptions = EnrichDiaryFrom804nOptions;
+
+/** Синтезирует структурированный клинический протокол на основе выбранной услуги */
+export const synthesizeProtocolFromClinicalService = synthesizeProtocolFromOrder804nService;
+
+/** Неразрушающее обогащение дневника на основе оказанных услуг */
+export const enrichDiaryFromClinicalServices = enrichDiaryFrom804nServices;
+
+

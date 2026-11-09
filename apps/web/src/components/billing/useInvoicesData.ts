@@ -129,18 +129,20 @@ export function useInvoicesData({
 						items:
 							Array.isArray(raw.items) && raw.items.length > 0
 								? (raw.items as InvoiceLineItem[])
-								: [
-										{
-											id: `li-${String(raw.id || idx)}`,
-											code: String(raw.code || raw.serviceCode || "A16.07.002"),
-											name: String(
-												raw.title || raw.name || "Стоматологический прием",
-											),
-											quantity: Number(raw.quantity) || 1,
-											priceRub: total,
-											totalAmountRub: total,
-										},
-									],
+								: total > 0
+									? [
+											{
+												id: `li-${String(raw.id || idx)}`,
+												code: String(raw.code || raw.serviceCode || ""),
+												name: String(
+													raw.title || raw.name || "Стоматологические услуги",
+												),
+												quantity: Number(raw.quantity) || 1,
+												priceRub: total,
+												totalAmountRub: total,
+											},
+										]
+									: [],
 						createdAt:
 							typeof raw.createdAt === "string"
 								? raw.createdAt
@@ -158,11 +160,11 @@ export function useInvoicesData({
 
 				setInvoices((prev) => {
 					const map = new Map<string, BillingInvoice>();
-					for (const inv of mapped) {
+					for (const inv of prev) {
 						map.set(inv.id, inv);
 						if (inv.number) map.set(inv.number, inv);
 					}
-					for (const inv of prev) {
+					for (const inv of mapped) {
 						map.set(inv.id, inv);
 						if (inv.number) map.set(inv.number, inv);
 					}

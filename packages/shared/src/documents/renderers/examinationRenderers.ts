@@ -15,7 +15,7 @@ import type {
 import { escapeHtml, CLINICAL_DOCUMENT_PRINT_STYLES } from "./sharedStyles.js";
 import { renderGraphicalDentalFormulaHtml } from "../dentalFormulaRenderer.js";
 
-/** 1. Рендерер Формы № 043/у — Медицинская карта стоматологического больного */
+/** 1. Рендерер — Медицинская карта стоматологического пациента */
 export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
 	const clinicAddress = payload.organization?.address || payload.clinicAddress || "";
@@ -68,16 +68,8 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
       </div>
     `).join("")
 		: `
-      <div style="border:1px solid #cbd5e1; padding:8px 10px; margin-bottom:10px; border-radius:4px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">
-          <strong>Первичный приём от ${escapeHtml(cardOpened)}</strong>
-          <span>Врач: <strong>${escapeHtml(doctorName)}</strong></span>
-        </div>
-        <p style="margin:3px 0;"><strong>Диагноз (A):</strong> <span style="color:#0369a1; font-weight:bold;">K02.1 Кариес дентина (зуб 1.6)</span></p>
-        <p style="margin:3px 0;"><strong>Жалобы (S):</strong> ${escapeHtml(complaints)}</p>
-        <p style="margin:3px 0;"><strong>Объективно (O):</strong> Кариозная полость в пределах дентина на зубе 1.6. Зондирование безболезненное, перкуссия отрицательная.</p>
-        <p style="margin:3px 0;"><strong>Протокол лечения (P):</strong> Анестезия инфильтрационная 1.7 мл. Препарирование полости, пломбирование композитом светового отверждения. Рекомендации даны.</p>
-        <div style="text-align:right; font-size:7.5pt; color:#64748b; margin-top:4px;">Подпись врача: _________________ / ${escapeHtml(doctorName)} /</div>
+      <div style="border:1px dashed #cbd5e1; padding:16px; margin-bottom:10px; border-radius:4px; text-align:center; color:#64748b; font-size:8.5pt;">
+        Записи дневников клинического приёма отсутствуют (приём в процессе оформления).
       </div>
     `;
 
@@ -88,7 +80,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 <html lang="ru">
 <head>
   <meta charset="utf-8"/>
-  <title>Медицинская карта № ${escapeHtml(cardNum)} (Форма 043/у)</title>
+  <title>Медицинская карта стоматологического пациента № ${escapeHtml(cardNum)}</title>
   ${CLINICAL_DOCUMENT_PRINT_STYLES}
 </head>
 <body>
@@ -176,7 +168,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
     </tr>
   </table>
 
-  <div class="section-title">4. Дневники клинического приёма (Форма 043/у)</div>
+  <div class="section-title">4. Дневники клинического приёма</div>
   ${diariesHtml}
 
   <div class="signature-row" style="margin-top:16px;">

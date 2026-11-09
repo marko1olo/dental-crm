@@ -42,7 +42,6 @@ function createMockClinicDb(initialData: {
 		users: [] as any[],
 		doctorShiftRosters: [] as any[],
 		serviceCatalogItems: [...(initialData.serviceCatalogItems || [])],
-		services: [] as any[],
 		cashBoxes: [...(initialData.cashBoxes || [])],
 		patients: [] as any[],
 	};
@@ -94,7 +93,6 @@ function createMockClinicDb(initialData: {
 				else if (tableName === "users") store.users.push(...inserted);
 				else if (tableName === "doctor_shift_rosters") store.doctorShiftRosters.push(...inserted);
 				else if (tableName === "service_catalog_items") store.serviceCatalogItems.push(...inserted);
-				else if (tableName === "services") store.services.push(...inserted);
 				else if (tableName === "cash_boxes") store.cashBoxes.push(...inserted);
 				else if (tableName === "patients") store.patients.push(...inserted);
 
@@ -332,7 +330,6 @@ describe("Инструмент import_clinic_data_file — Пакетный им
 		assert.strictEqual(res.importedCount, 3);
 		assert.strictEqual(res.skippedCount, 0);
 		assert.strictEqual(mockDb.store.serviceCatalogItems.length, 3);
-		assert.strictEqual(mockDb.store.services.length, 3);
 		assert.strictEqual(mockDb.store.serviceCatalogItems[0].code, "A16.07.002");
 		assert.strictEqual(mockDb.store.serviceCatalogItems[0].priceRub, 3800);
 		assert.strictEqual(mockDb.store.serviceCatalogItems[0].category, "therapy");
@@ -429,7 +426,6 @@ describe("Инструмент import_clinic_data_file — Пакетный им
 		assert.strictEqual(res.dryRun, true);
 		assert.strictEqual(res.importedCount, 3);
 		assert.strictEqual(mockDb.store.serviceCatalogItems.length, 0);
-		assert.strictEqual(mockDb.store.services.length, 0);
 	});
 
 	test("Блокирует попытку доступа к защищенным системным путям (Red Team Path Guard)", async () => {

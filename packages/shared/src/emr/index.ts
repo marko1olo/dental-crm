@@ -6,6 +6,7 @@
 
 export * from "./emrProtocolEngine.js";
 export * from "./emrProtocolPresets.js";
+export * from "./emrOrder804nProtocols.js";
 export * from "./medicationCatalog.js";
 export * from "./periodontogram.js";
 export * from "./patientTimeline.js";

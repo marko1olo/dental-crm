@@ -88,79 +88,11 @@ export const serviceCatalogItems = pgTable(
 	}),
 );
 
-// services (clinic price list / service catalog)
-export const services = pgTable(
-	"services",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		title: text("title").notNull(),
-		code: text("code"),
-		category: serviceCategory("category").notNull().default("therapy"),
-		specialty: dentalSpecialty("specialty").notNull().default("universal"),
-		basePriceRub: numeric("base_price_rub", {
-			precision: 10,
-			scale: 2,
-			mode: "number",
-		})
-			.notNull()
-			.default(0),
-		durationMinutes: integer("duration_minutes").notNull().default(30),
-		taxDeductible: boolean("tax_deductible").notNull().default(true),
-		/**
-		 * Признак дорогостоящего лечения (Код 2 vs Код 1 для справки ФНС)
-		 * false = Код 1 (обычное лечение)
-		 * true = Код 2 (дорогостоящее лечение: имплантация, костная пластика)
-		 */
-		isExpensive: boolean("is_expensive").notNull().default(false),
-		/** Фиксированная оплата врачу за данную процедуру */
-		salaryPriceRub: numeric("salary_price_rub", {
-			precision: 10,
-			scale: 2,
-			mode: "number",
-		})
-			.notNull()
-			.default(0),
-		/** Себестоимость списания материалов по умолчанию */
-		materialsCostRub: numeric("materials_cost_rub", {
-			precision: 10,
-			scale: 2,
-			mode: "number",
-		})
-			.notNull()
-			.default(0),
-		/** Идентификатор внешнего контрагента / лаборатории */
-		contractorId: text("contractor_id"),
-		/** Доза облучения в миллизивертах (мЗв) для рентген-процедур */
-		doseMsv: numeric("dose_msv", {
-			precision: 8,
-			scale: 4,
-			mode: "number",
-		})
-			.notNull()
-			.default(0),
-		active: boolean("active").notNull().default(true),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("services_organizationId_idx").on(
-			t.organizationId,
-		),
-		orgCategoryIdx: index("services_org_category_idx").on(
-			t.organizationId,
-			t.category,
-		),
-		orgActiveIdx: index("services_org_active_idx").on(
-			t.organizationId,
-			t.active,
-		),
-		orgCodeIdx: index("services_org_code_idx").on(t.organizationId, t.code),
-	}),
-);
+/**
+ * Канонический алиас SSOT: таблица `services` ликвидирована в пользу `service_catalog_items`.
+ * Экспорт сохранён как алиас на `serviceCatalogItems` для предотвращения дублирования схемы.
+ */
+export const services = serviceCatalogItems;
 
 export const treatmentItems = pgTable(
 	"treatment_items",

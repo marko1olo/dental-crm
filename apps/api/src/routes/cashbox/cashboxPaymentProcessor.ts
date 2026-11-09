@@ -27,6 +27,7 @@ import {
 } from "../../db/schema.js";
 import { buildPatientLedger, clinicOwesPatientKopecks } from "../../money/patientDebt.js";
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
+import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
 export type CashboxPaymentOutcome =
@@ -124,19 +125,19 @@ export async function processCashboxPayment(
 		requiredDepositKopecks = BigInt(body.depositAmountKopecks);
 	}
 
-	// Честная атрибуция: платеж проводится строго на выбранного пациента.
-	// Молчаливое списание на «первого попавшегося» пациента клиники запрещено.
-	if (!body.patientId) {
+	// Честная атрибуция: при розничной продаже (Walk-In payment) по ст. 1.2 и 4.7 54-ФЗ
+	// кассовый чек для физлица не требует обязательного заведения карты пациента или ИНН.
+	if (!body.patientId && requiredDepositKopecks > 0n && !isWarrantyPayment) {
 		return {
 			statusCode: 400,
 			body: {
-				error: "PatientRequired",
+				error: "DepositRequiresPatient",
 				message:
-					"Укажите пациента для проведения платежа. Безличные продажи регистрируйте через внесение в кассу.",
+					"Списание с депозита или семейного баланса возможно только для зарегистрированного пациента.",
 			},
 		};
 	}
-	const requestedPatientId: string = body.patientId;
+	const requestedPatientId: string | undefined = body.patientId ?? undefined;
 	const amountRubNumber = Number(totalKopecks) / 100;
 
 	const result = await withTenantCtx(orgId, async (tx) => {
@@ -172,30 +173,75 @@ export async function processCashboxPayment(
 			};
 		}
 
-		// Проверка существования пациента в этой клинике: при отсутствии — честный 400
-		const [patientRow] = await tx
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				familyGroupId: patients.familyGroupId,
-			})
-			.from(patients)
-			.where(and(eq(patients.id, requestedPatientId), eq(patients.organizationId, orgId)))
-			.limit(1);
+		// Проверка существования пациента или обеспечение системного розничного покупателя (54-ФЗ ст. 1.2, 4.7)
+		let resolvedPatientId = "";
+		let patientName = "Розничный покупатель";
+		let patientRow: { id: string; fullName: string | null; familyGroupId: string | null } | null = null;
 
-		if (!patientRow) {
-			return {
-				kind: "patient_not_found" as const,
-			};
+		if (requestedPatientId) {
+			const [found] = await tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					familyGroupId: patients.familyGroupId,
+				})
+				.from(patients)
+				.where(and(eq(patients.id, requestedPatientId), eq(patients.organizationId, orgId)))
+				.limit(1);
+
+			if (!found) {
+				return {
+					kind: "patient_not_found" as const,
+				};
+			}
+			patientRow = found;
+			resolvedPatientId = found.id;
+			patientName = found.fullName || "Пациент клиники";
+		} else {
+			// Розничная продажа / свободный чек (Walk-In payment) по ст. 1.2 и 4.7 54-ФЗ.
+			// По закону кассовый чек для физлица при розничной продаже не требует ФИО/ИНН.
+			// Обеспечиваем системную запись покупателя для внешнего ключа payments.patientId.
+			const [existingRetail] = await tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					familyGroupId: patients.familyGroupId,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						eq(patients.fullName, "Розничный покупатель"),
+					),
+				)
+				.limit(1);
+
+			if (existingRetail) {
+				resolvedPatientId = existingRetail.id;
+				patientName = existingRetail.fullName || "Розничный покупатель";
+				patientRow = existingRetail;
+			} else {
+				const [createdRetail] = await tx
+					.insert(patients)
+					.values({
+						organizationId: orgId,
+						fullName: "Розничный покупатель",
+						notes: "Системная запись для свободных кассовых чеков и розничных продаж (54-ФЗ ст. 1.2, 4.7)",
+						administrativeProfile: normalizePatientAdministrativeProfile({ isAnonymous: true }),
+					})
+					.returning({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId });
+				resolvedPatientId = createdRetail?.id ?? "";
+				patientName = createdRetail?.fullName || "Розничный покупатель";
+				patientRow = createdRetail ?? null;
+			}
 		}
-		const resolvedPatientId = patientRow.id;
 
 		// [FIN-05] Проверка и блокировка несанкционированного списания с несуществующего депозита
 		let lockedFamilyGroup: typeof familyGroups.$inferSelect | null = null;
 		let advanceRows: (typeof advanceDepositTaggings.$inferSelect)[] = [];
 		let familyBalanceKop = 0n;
 
-		if (requiredDepositKopecks > 0n && !isWarrantyPayment) {
+		if (requiredDepositKopecks > 0n && !isWarrantyPayment && patientRow) {
 			// 1. Поиск и блокировка семейного баланса familyGroups
 			let targetFamilyGroupId = patientRow.familyGroupId || null;
 			if (!targetFamilyGroupId) {
@@ -239,7 +285,7 @@ export async function processCashboxPayment(
 				.where(
 					and(
 						eq(advanceDepositTaggings.organizationId, orgId),
-						eq(advanceDepositTaggings.patientName, patientRow.fullName),
+						eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
 						inArray(advanceDepositTaggings.allocationStatus, [
 							"unallocated",
 							"pinned",
@@ -635,7 +681,7 @@ export async function processCashboxPayment(
 						advanceOffsetRub: kopecksToRub(Number(requiredDepositKopecks)),
 						fiscalReceiptNumber: receiptNumber,
 						patientId: resolvedPatientId,
-						patientName: patientRow.fullName,
+						patientName: patientRow?.fullName || patientName,
 						cashierFullName: body.cashierFullName || "Кассир",
 						invoiceId: body.invoiceId || null,
 						note: newPayment.note,

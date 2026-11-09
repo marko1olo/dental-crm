@@ -1,4 +1,4 @@
-import type { MedicalRecordValidationResult, MedicalRecordData } from "../types/recordDataTypes";
+import type { MedicalRecordValidationResult, MedicalRecordData } from "../types/recordDataTypes.js";
 
 /**
  * Каноническая валидация полноты медицинской карты приёма DENTE CRM.

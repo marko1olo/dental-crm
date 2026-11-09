@@ -89,7 +89,11 @@ export const retryFiscalizeParamsSchema = z.object({
 });
 
 export const cashboxPaymentRequestSchema = z.object({
-	patientId: z.string().uuid().optional(),
+	patientId: z.preprocess(
+		(val) => (typeof val === "string" && (val.trim() === "" || val === "pat-walkin" || !val.includes("-")) ? undefined : val),
+		z.string().uuid().optional().nullable(),
+	),
+	isRetailSale: z.boolean().optional(),
 	visitId: z.string().uuid().optional(),
 	invoiceId: z.string().optional(),
 	orderId: z.string().trim().max(128).optional(),

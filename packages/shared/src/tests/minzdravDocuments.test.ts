@@ -146,8 +146,34 @@ describe("Унифицированные медицинские бланки М�
 			assert.ok(html.includes(MOCK_PATIENT.fullName), "Содержит ФИО пациента");
 			assert.ok(html.includes("М.П."), "Содержит место печати М.П.");
 			assert.ok(html.includes("A16.07.002.001"), "Содержит код номенклатуры 804н в дневнике");
-			assert.ok(html.includes("4. Дневники клинического приёма (Форма 043/у)"), "Содержит официальный заголовок дневников Формы 043/у");
+			assert.ok(html.includes("4. Дневники клинического приёма"), "Содержит официальный заголовок дневников");
 			assert.ok(!html.includes("4. Дневники клинического приёма (SOAP)"), "Не содержит западного акронима SOAP в официальном бланке 043/у");
+		});
+
+		test("рендерит честный пустой стейт дневников без синтетических галлюцинаций зуба 1.6 (DEF-EMR-02)", () => {
+			const payload = {
+				organization: {
+					fullName: MOCK_CLINIC.legalName,
+					address: MOCK_CLINIC.address,
+					ogrn: MOCK_CLINIC.ogrn,
+					inn: MOCK_CLINIC.inn,
+					medicalLicenseNumber: DEFAULT_CLINIC_LICENSE_NUMBER,
+				},
+				patient: {
+					fullName: MOCK_PATIENT.fullName,
+					birthDate: MOCK_PATIENT.birthDate,
+					gender: "male",
+					phone: MOCK_PATIENT.phone,
+					address: MOCK_PATIENT.address,
+					snils: MOCK_PATIENT.snils,
+					medicalCardNumber: MOCK_PATIENT.medicalCardNumber,
+				},
+				diaries: [],
+			};
+
+			const html = renderForm043uHtml(payload);
+			assert.ok(html.includes("Записи дневников клинического приёма отсутствуют (приём в процессе оформления)."));
+			assert.ok(!html.includes("Кариозная полость в пределах дентина на зубе 1.6"), "Ноль мок-галлюцинаций зуба 1.6");
 		});
 	});
 

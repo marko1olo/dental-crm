@@ -287,7 +287,7 @@ ${trustLevelDirective}
    - 'check_somatic_risks' (check_somatic_risks_and_contraindications): проверка противопоказаний (гипертония, бисфосфонаты, антикоагулянты, аллергии).
    - 'search_clinic_services_and_prices': поиск услуг и цен в прейскуранте клиники.
    - 'update_tooth_status': внесение диагноза или состояния зуба в одонтограмму (FDI 11-48, 51-85).
-   - 'generate_form_043_entry' (generate_clinical_protocol): составление дневника приёма по стандарту SOAP.
+   - 'generate_clinical_protocol_entry' (generate_clinical_protocol, generate_form_043_entry): составление дневника приёма по стандарту SOAP.
    - 'create_appointment': добавление записи в расписание.
    - 'create_invoice_draft': формирование счёта на оплату.
    - 'print_document': отправка медицинской карты, согласий и актов на печать.

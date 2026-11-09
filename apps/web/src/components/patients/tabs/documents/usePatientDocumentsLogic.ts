@@ -9,7 +9,7 @@ export function usePatientDocumentsLogic(patient: Patient) {
 	const docStore = useDocumentStore();
 
 	const [isFastPrintOpen, setIsFastPrintOpen] = useState(false);
-	const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("form043u");
+	const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("medical_card");
 	const [tabletSignDoc, setTabletSignDoc] = useState<GeneratedDocument | null>(null);
 
 	const handleTabletSignatureConfirm = async (sigData: any) => {

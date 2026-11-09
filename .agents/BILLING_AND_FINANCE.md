@@ -239,17 +239,18 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 5. **DEF-FIN-05 [ЗАКРЫТО]**: Вымышленное «Постановление №659» и блокирующий `Decree659Error` полностью удалены. Заменены на пассивные информационные разъяснения по ст. 149 НК РФ (освобождение медицинских услуг от НДС). Тесты-саботажники `decree659*.test.ts` физически удалены через `git rm`.
 6. **DEF-FIN-06 [ЗАКРЫТО]**: Сигнатуры роутов получения счетов `GET /api/invoices` и `GET /api/billing/invoices` взаимно унифицированы (`{ success: true, data, invoices, items }`).
 7. **DEF-FIN-07 [ЗАКРЫТО]**: Канцелярит и сырые регуляторные теги («ФФД 1.2», теги 1214/1054) полностью устранены из пользовательского UI в пользу чистого клинического русского языка.
-8. **Сироты и дубликаты [ЗАКРЫТО]**: Физически удалены через `git rm`:
-   - 13 файлов в `apps/web/src/components/finance/cashRegisterModalModules/`
-   - 14 файлов в `apps/web/src/components/cashbox/cashboxViewModules/`
-   - `InvoiceDecree659Banner.tsx` и `InvoiceTaxDecreeBanner.tsx`
-9. **4-State Visual Proof [ЗАКРЫТО]**: Сняты реальные скриншоты живого приложения на `http://127.0.0.1:5173/?checkout=1` и лично отсмотрены через `read_file`:
-   - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 81.3 KB)
-   - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 78.6 KB)
-   - 🌙 PC Shift Dark 1440x900 (`03_cashbox_shift_pc_dark_1440x900.png` — 42.6 KB)
-   - ☀️ PC Tape Light 1440x900 (`04_cashbox_tape_pc_light_1440x900.png` — 39.0 KB)
-   - 📱 Mobile Light 390x844 (`05_cashbox_studio_mobile_light_390x844.png` — 130.5 KB)
-   - 📱 Mobile Dark 390x844 (`06_cashbox_studio_mobile_dark_390x844.png` — 147.2 KB)
+8. **DEF-FIN-08 [ЗАКРЫТО]**: Свободный чек (Walk-In payment) и розничная продажа без карты пациента (ст. 1.2 и 4.7 54-ФЗ). В `useCashRegisterStudioState.ts` разрешена продажа физлицам без `patientId` (`isRetailSale: true`), а в `cashboxPaymentProcessor.ts` снята блокировка `400 PatientRequired` — операция фискализируется и связывается с системным розничным покупателем в PostgreSQL 18.
+9. **DEF-FIN-09 [ЗАКРЫТО]**: Восстановление позиций услуг в счетах (`createInvoiceHandler.ts`, `getInvoiceByIdHandler.ts`, `listInvoicesHandler.ts`). Позиции сохраняются в `treatment_items` с привязкой к счёту и возвращаются в `invoice.items`. В `useInvoicesData.ts` исправлен порядок слияния кэша: свежие данные сервера перезаписывают устаревший `localStorage`, устранены заглушки «A16.07.002».
+10. **Сироты и дубликаты [ЗАКРЫТО]**: Физически удалены через `git rm`:
+   - 9 файлов мёртвой папки `apps/web/src/components/cashbox/checkout/`
+   - 5 фасадов-пустышек (`CashCheckoutStudioModal.tsx`, `CashRegisterCheckoutModal.tsx` и др.)
+   - 10 тестов к Постановлению №659 и файл `decree659Audit.ts`
+   - Тесты и каталоги бренда StomX
+11. **4-State Visual Proof [ЗАКРЫТО]**: Сняты реальные скриншоты живого приложения и лично отсмотрены через `read_file`:
+   - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 80.5 KB)
+   - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 79.9 KB)
+   - 📱 Mobile Light 390x844 (`03_cashbox_studio_mobile_light_390x844.png` — 128.7 KB)
+   - 📱 Mobile Dark 390x844 (`04_cashbox_studio_mobile_dark_390x844.png` — 130.4 KB)
 
 ---
 

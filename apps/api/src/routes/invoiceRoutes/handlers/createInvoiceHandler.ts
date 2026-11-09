@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
@@ -92,6 +92,35 @@ export async function handleCreateInvoice(
 				: new Date().getFullYear();
 			const invoiceNumber = `СЧ-${year}-${existingInvoice.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
+			const existingTreatmentItems = await db
+				.select()
+				.from(treatmentItems)
+				.where(
+					and(
+						eq(treatmentItems.organizationId, orgId),
+						or(
+							effectiveVisitId ? eq(treatmentItems.visitId, effectiveVisitId) : sql`FALSE`,
+							sql`${treatmentItems.notes} LIKE ${`%${existingInvoice.id}%`}`,
+						),
+					),
+				);
+
+			const existingItems = existingTreatmentItems.map((it) => ({
+				id: it.id,
+				serviceId: it.serviceId,
+				serviceCode: it.serviceId || undefined,
+				code: it.serviceId || undefined,
+				toothCode: it.toothCode,
+				toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
+				title: it.title,
+				name: it.title,
+				quantity: Number(it.quantity) || 1,
+				unitPriceRub: Number(it.unitPriceRub) || Number(it.priceRub) || 0,
+				priceRub: Number(it.priceRub) || 0,
+				discountRub: Number(it.discountRub) || 0,
+				totalAmountRub: Number(it.priceRub) || 0,
+			}));
+
 			return reply.code(200).send({
 				success: true,
 				idempotent: true,
@@ -106,7 +135,10 @@ export async function handleCreateInvoice(
 					status: existingInvoice.status,
 					issuedAt: existingInvoice.issuedAt?.toISOString() || null,
 					createdAt: existingInvoice.createdAt.toISOString(),
+					items: existingItems,
 				},
+				items: existingItems,
+				itemsCount: existingItems.length,
 			});
 		}
 	}
@@ -199,6 +231,9 @@ export async function handleCreateInvoice(
 
 		if (preparedItems.length > 0) {
 			for (const it of preparedItems) {
+				const itemNotes = data.notes
+					? `${data.notes} | Счёт ${invoiceId}`
+					: `Счёт ${invoiceId}`;
 				await tx.insert(treatmentItems).values({
 					organizationId: orgId,
 					patientId: data.patientId,
@@ -212,7 +247,7 @@ export async function handleCreateInvoice(
 					discountRub: it.discountRub,
 					status: "completed",
 					plannedDoctorUserId: data.doctorId ?? null,
-					notes: data.notes ?? null,
+					notes: itemNotes,
 				});
 			}
 		}
@@ -221,6 +256,22 @@ export async function handleCreateInvoice(
 	const year = now.getFullYear();
 	const generatedNumber = formatInvoiceNumber(data.documentType ?? "invoice", data.patientId);
 	const invoiceNumber = generatedNumber || `СЧ-${year}-${invoiceId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+
+	const returnedItems = preparedItems.map((it, idx) => ({
+		id: `inv-item-${invoiceId.slice(0, 8)}-${idx + 1}`,
+		serviceId: it.serviceId,
+		serviceCode: it.serviceId || undefined,
+		code: it.serviceId || undefined,
+		toothCode: it.toothCode,
+		toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
+		title: it.title,
+		name: it.title,
+		quantity: it.quantity,
+		unitPriceRub: it.unitPriceRub,
+		priceRub: it.priceRub,
+		discountRub: it.discountRub,
+		totalAmountRub: it.priceRub,
+	}));
 
 	try {
 		wsBroker.broadcastToOrganization(orgId, {
@@ -252,7 +303,9 @@ export async function handleCreateInvoice(
 			status: invoiceStatus,
 			issuedAt: now.toISOString(),
 			createdAt: now.toISOString(),
+			items: returnedItems,
 		},
-		itemsCount: preparedItems.length,
+		items: returnedItems,
+		itemsCount: returnedItems.length,
 	});
 }

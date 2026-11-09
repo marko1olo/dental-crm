@@ -107,6 +107,7 @@ export interface PatientHistoryTabProps {
 	onNewAppointment?: ((patientId?: string) => void) | undefined;
 	onPrintProtocol?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onExtractVisitSummary?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtractRecord?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onAddToTreatmentPlan?: ((visit: ClinicalVisitItem) => void) | undefined;
 	className?: string | undefined;

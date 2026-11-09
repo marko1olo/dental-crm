@@ -58,7 +58,7 @@ export class ToolDispatcher {
 				isAutoApprovedByGranular = true;
 			} else if (this.granularPermissions.autoApproveFileWrites && ["write_clinical_file", "replace_file_content"].includes(toolName)) {
 				isAutoApprovedByGranular = true;
-			} else if (this.granularPermissions.autoApproveClinicalMutations && ["update_tooth_status", "generate_form_043_entry"].includes(toolName)) {
+			} else if (this.granularPermissions.autoApproveClinicalMutations && ["update_tooth_status", "generate_form_043_entry", "generate_clinical_protocol_entry", "generate_clinical_protocol"].includes(toolName)) {
 				isAutoApprovedByGranular = true;
 			} else if (this.granularPermissions.autoApproveFinancialDrafts && toolName === "create_invoice_draft") {
 				isAutoApprovedByGranular = true;

@@ -1,9 +1,9 @@
-import type { MedicalRecordData } from "../types/recordDataTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes.js";
 import { dentalBiteTypeLabels } from "@dental/shared";
-import { calculateDmftIndex, calculateCpitnIndex } from "../clinicalDiaryMath";
+import { calculateDmftIndex, calculateCpitnIndex } from "../clinicalDiaryMath.js";
 
-/** Генератор структурированного JSON экспорта */
-export function generate043JsonExport(data: MedicalRecordData): string {
+/** Генератор структурированного JSON экспорта медицинской карты */
+export function generateMedicalRecordJsonExport(data: MedicalRecordData): string {
 	const payload = {
 		exportSchemaVersion: "1.0.0",
 		standardOrder: "Медицинская карта стоматологического пациента",
@@ -13,8 +13,11 @@ export function generate043JsonExport(data: MedicalRecordData): string {
 	return JSON.stringify(payload, null, 2);
 }
 
+/** Алиас обратной совместимости */
+export const generate043JsonExport = generateMedicalRecordJsonExport;
+
 /** Генератор чистого текстового представления карты для буфера обмена */
-export function generate043PlainText(data: MedicalRecordData): string {
+export function generateMedicalRecordPlainText(data: MedicalRecordData): string {
 	const p = data.passport;
 	const a = data.anamnesis;
 	const d = data.dentalStatus;
@@ -22,7 +25,7 @@ export function generate043PlainText(data: MedicalRecordData): string {
 	const cpitn = calculateCpitnIndex(d.cpitnIndex);
 
 	const lines: string[] = [
-		`МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (МЕДИЦИНСКАЯ КАРТА ПРИЁМА)`,
+		`МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА`,
 		`Номер карты: ${p.medicalCardNumber} | Дата открытия: ${p.cardOpenedDate}`,
 		`Клиника: ${data.clinic.clinicLegalName} (Лицензия № ${data.clinic.licenseNumber})`,
 		`--------------------------------------------------------------------------------`,
@@ -71,3 +74,6 @@ export function generate043PlainText(data: MedicalRecordData): string {
 
 	return lines.join("\n");
 }
+
+/** Алиас обратной совместимости */
+export const generate043PlainText = generateMedicalRecordPlainText;

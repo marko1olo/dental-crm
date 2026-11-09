@@ -2635,6 +2635,27 @@
   - `02_pricelist_editor_mobile_dark.png` (390x844 Mobile Dark) — мобильный редактор Bottom Sheet в тёмной теме.
   Все 8 скриншотов лично открыты через `read_file` и проверены на отсутствие 8 визуальных грехов.
 
+### [PRC-10] [ЗАКРЫТО] [SEV-1] Ликвидация разорванной таблицы services в пользу service_catalog_items, зачистка дубликатов и сквозная Fastify API гидратация
+- **Файлы:**
+  - [`apps/api/src/db/schema/clinical/treatmentPlans/treatmentPlanItemsTable.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/treatmentPlans/treatmentPlanItemsTable.ts)
+  - [`apps/api/src/routes/pricelistRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pricelistRoutes.ts)
+  - [`apps/web/src/components/catalog/PricelistStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/PricelistStudioModal.tsx)
+  - [`apps/web/src/components/settings/owner/OwnerPriceListSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/settings/owner/OwnerPriceListSection.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx)
+- **Суть бага:** 
+  1. В схеме PostgreSQL сосуществовала устаревшая параллельная таблица `services`, в то время как каноническим SSOT прейскуранта являлась `service_catalog_items`.
+  2. В модулях настроек владельца существовала дублирующая папка `priceListModules/` (9 файлов-клонов), не связанная с канонической вкладкой прейскуранта.
+  3. В `PricelistStandaloneLauncher.tsx` использовался деструктивный `window.location.reload()`, ломающий SPA-навигацию.
+  4. В `PricelistStudioModal.tsx` присутствовал баг воскрешения архивированных позиций при сохранении в localStorage.
+  5. Тест `servicePricelist.test.ts` блокировал произвольные артикулы клиники (например, `SERVICE_01`), нарушая Мандат 8e (Автономия врача).
+- **Инженерное решение (Ликвидация брака):**
+  1. Таблица `services` физически ликвидирована из Drizzle схемы PostgreSQL; экспорт `services` перенаправлен на канонический SSOT `serviceCatalogItems`.
+  2. Физически удалены через `git rm`: фасад `apps/api/src/routes/pricelistRoutes.ts`, модуль `apps/web/src/components/settings/owner/priceListModules/` (9 файлов) и `PricelistStandaloneLauncher.tsx`.
+  3. В `OwnerPriceListSection.tsx` смонтирован канонический `SettingsPricesTab`.
+  4. В `PricelistStudioModal.tsx` исправлен баг воскрешения `isActive: (item as any).active !== false && item.isActive !== false` и обеспечена прямая гидратация через Fastify API `/api/pricelist`.
+  5. В `servicePricelist.test.ts` разрешены произвольные артикулы частной клиники.
+  6. Сняты и верифицированы 4-State Visual Proofs (PC Light/Dark 1440x900, Mobile Light/Dark 390x844, New Service Drawer) в `docs/proofs/pricelist/`.
+
 
 ## 24. 🏛️ ЕГИСЗ (РЭМД / ФРМР / ФРМО), МДЛП ЧЕСТНЫЙ ЗНАК И УКЭП (63-ФЗ)
 

@@ -4,7 +4,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { cashBoxes, chairs, doctorShiftRosters, serviceCatalogItems, services, users } from "../../../db/schema.js";
+import { cashBoxes, chairs, doctorShiftRosters, serviceCatalogItems, users } from "../../../db/schema.js";
 import { STANDARD_INITIAL_SERVICES } from "./clinicSetupServices.js";
 import type { ConfigureClinicSetupInput } from "./clinicSetupTypes.js";
 
@@ -54,7 +54,6 @@ export async function provisionInitialServices(activeDb: DbClient, orgId: string
 		const existing = await activeDb.select().from(serviceCatalogItems).where(and(eq(serviceCatalogItems.organizationId, orgId), eq(serviceCatalogItems.code, s.code))).limit(1);
 		if (existing.length === 0) {
 			await activeDb.insert(serviceCatalogItems).values({ organizationId: orgId, code: s.code, title: s.title, category: s.category, specialty: s.specialty, basePriceRub: s.priceRub, priceRub: s.priceRub, durationMinutes: s.durationMinutes, order804nCode: s.code, taxDeductible: true, isActive: true });
-			await activeDb.insert(services).values({ organizationId: orgId, code: s.code, title: s.title, category: s.category, specialty: s.specialty, basePriceRub: s.priceRub, durationMinutes: s.durationMinutes, taxDeductible: true });
 			count++;
 		}
 	}

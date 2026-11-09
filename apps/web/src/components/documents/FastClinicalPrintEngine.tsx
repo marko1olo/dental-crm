@@ -12,6 +12,7 @@ import { DocumentA4PrintPreviewModal } from "./DocumentA4PrintPreviewModal";
 import type { ProfessionalA4DocumentTab } from "./professionalA4/types";
 
 export type FastPrintDocType =
+	| "medical_card"
 	| "partisan_insert_043u"
 	| "form043u"
 	| "act_and_receipt"
@@ -58,6 +59,7 @@ function mapDocTypeToA4Tab(docType?: string): ProfessionalA4DocumentTab {
 			return "act";
 		case "treatment_estimate":
 			return "treatment_plan";
+		case "medical_card":
 		case "partisan_insert_043u":
 		case "form043u":
 		default:
@@ -88,8 +90,8 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 			patient={
 				patient
 					? ({
-							id: patient.id || "temp-patient-id",
-							organizationId: "11111111-1111-4111-8111-111111111111",
+							id: patient.id || "",
+							organizationId: (patient as any).organizationId || "",
 							fullName: patient.fullName || "Пациент",
 							birthDate: patient.birthDate || "",
 							phone: patient.phone || "",
@@ -102,7 +104,7 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 					: null
 			}
 			medicalCardData={{
-				cardNumber: patient?.cardNumber || "МК-2026-01",
+				cardNumber: patient?.cardNumber || "",
 				patientFullName: patient?.fullName || "Пациент",
 				patientBirthDate: patient?.birthDate || "",
 				patientPhone: patient?.phone || "",
@@ -110,7 +112,7 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 				visitDateRu: visitData?.date || new Date().toLocaleDateString("ru-RU"),
 				doctorFullName: doctor?.fullName || "Врач-стоматолог",
 				doctorSpecialtyRu: doctor?.specialty || "Стоматолог-терапевт",
-				diagnosisMkb10: visitData?.diagnosis || "K02.1 Кариес дентина",
+				diagnosisMkb10: visitData?.diagnosis || "",
 				complaintsRu: visitData?.complaints || "",
 				objectiveRu: visitData?.objective || "",
 				treatmentRu: visitData?.treatment || "",

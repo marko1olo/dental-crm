@@ -1,5 +1,5 @@
 import { type FdiToothRecord, toothStatusCodeShortMap } from "@dental/shared";
-import { escapeHtml } from "../../math/recordMathFormatting";
+import { escapeHtml } from "../../math/recordMathFormatting.js";
 
 function resolvePrintIndex(code: string): { symbol: string; isMissing: boolean; isCrown: boolean; isImplant: boolean } {
 	const c = (code || "healthy").toLowerCase();

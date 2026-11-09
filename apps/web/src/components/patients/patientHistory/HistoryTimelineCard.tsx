@@ -8,7 +8,8 @@ export interface HistoryTimelineCardProps {
 	visit: ClinicalVisitItem;
 	isExpanded: boolean;
 	onToggle: () => void;
-	onExtract043: (visit: ClinicalVisitItem) => void;
+	onExtractRecord?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onAddToTreatmentPlan: (visit: ClinicalVisitItem) => void;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onOpenDetailDrawer?: ((visit: ClinicalVisitItem) => void) | undefined;
@@ -19,6 +20,7 @@ export const HistoryTimelineCard: React.FC<HistoryTimelineCardProps> = React.mem
 		visit,
 		isExpanded,
 		onToggle,
+		onExtractRecord,
 		onExtract043,
 		onAddToTreatmentPlan,
 		onNavigateToVisit,
@@ -56,6 +58,7 @@ export const HistoryTimelineCard: React.FC<HistoryTimelineCardProps> = React.mem
 				{isExpanded && (
 					<HistoryTimelineExpandedPane
 						visit={visit}
+						onExtractRecord={onExtractRecord}
 						onExtract043={onExtract043}
 						onAddToTreatmentPlan={onAddToTreatmentPlan}
 						onNavigateToVisit={onNavigateToVisit}

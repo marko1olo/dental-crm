@@ -171,6 +171,21 @@ graph LR
      - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (133 KB) — десктоп тёмная тема, 100% токены `var(--paper)`, WCAG AAA контраст.
      - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (168 KB) — iPhone светлая тема, нативный Bottom Sheet Apple HIG с drag handle 36×5px и тач-зоной $\ge 44$px.
      - `docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png` (143 KB) — iPhone тёмная тема, 0px горизонтального скролла.
+5. **Хирургическая зачистка дефектов ЭМК и клинических протоколов (DEF-EMR-01...08, Мандат 8x, Мандат 8bd):**
+   * Физически удалены через `git rm` 7 несмонтированных файлов-дубликатов в `apps/web/src/components/emr/record/` (`RecordModalHeader.tsx`, `RecordModalBody.tsx`, `RecordNavTabs.tsx`, `RecordCompletenessBar.tsx`, `RecordMoreMenu.tsx`, `useMedicalRecordModal.ts`, `recordModalTypes.ts`).
+   * **DEF-EMR-01:** AI-инструмент генерации протокола SOAP канонизирован как `generate_clinical_protocol_entry` (`generateClinicalProtocolEntryTool` / `generateClinicalProtocolTool`) в `calculatorRegistry.ts`, `clinicalProtocolTool.ts`, `systemPromptBuilder.ts`, `swarmRoles.ts`, `toolDispatcher.ts`.
+   * **DEF-EMR-02:** В `packages/shared/src/documents/renderers/examinationRenderers.ts` ликвидирован синтетический мок зуба 1.6 при пустом массиве дневников. Обеспечен честный пустой стейт без галлюцинаций.
+   * **DEF-EMR-03:** `FastClinicalPrintEngine.tsx` очищен от фиктивных хардкод-данных (UUID, фейковые диагнозы) и канцелярита (`form043u` -> `medical_card`).
+   * **DEF-EMR-04:** В компонентах таймлайна пациента (`PatientHistoryTab.tsx`, `usePatientHistory.ts`) внедрен чистый клинический интерфейс `onExtractRecord` / `handleExtractRecord`.
+   * **DEF-EMR-05:** В `usePatientDocumentsLogic.ts` и `VisitActionFooter.tsx` стейт `"form043u"` переведен на канонический `"medical_card"`.
+   * **DEF-EMR-06:** Экспортные генераторы приведены к чистым именам `generateMedicalRecordXmlCda`, `generateMedicalRecordJsonExport`, `generateMedicalRecordPlainText` в `apps/web/src/components/emr/export/`.
+   * **DEF-EMR-07:** Добавлены чистые клинические алиасы `clinicalServiceProtocols`, `synthesizeProtocolFromClinicalService`, `enrichDiaryFromClinicalServices` в `packages/shared/src/emr/`.
+   * **DEF-EMR-08:** Канонический SSOT генератора бланка зафиксирован в `apps/web/src/components/emr/record/html/recordHtmlGenerator.ts` с заголовком «Медицинская карта приёма № ...».
+   * **4-State Visual Proof (Live App EMR/SOAP):**
+     - `docs/proofs/emr/01_visit_soap_emk_pc_light_1440x900.png` (188.2 KB) — десктоп светлая тема, вкладка «Дневник приёма», 0px клиппинга, чистый клинический язык.
+     - `docs/proofs/emr/02_visit_soap_emk_pc_dark_1440x900.png` (200.9 KB) — десктоп тёмная тема, 100% тёмные токены, WCAG AAA контраст.
+     - `docs/proofs/emr/03_visit_soap_emk_mobile_light_390x844.png` (201.2 KB) — iPhone 390×844 светлая тема, Natural Thumb Zone, навигационный бар Apple HIG.
+     - `docs/proofs/emr/04_visit_soap_emk_mobile_dark_390x844.png` (198.7 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
 
 ---
 

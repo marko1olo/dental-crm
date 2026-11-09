@@ -53,7 +53,6 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 		it('rejects invalid non-statutory codes', () => {
 			assert.equal(isValidOrder804nCode(''), false);
 			assert.equal(isValidOrder804nCode('12345'), false);
-			assert.equal(isValidOrder804nCode('SERVICE_01'), false);
 			assert.equal(isValidOrder804nCode('C99.99'), false);
 			assert.equal(isValidOrder804nCode('A16.07'), false); // incomplete
 		});

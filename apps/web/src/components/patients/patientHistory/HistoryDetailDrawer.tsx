@@ -11,14 +11,15 @@ export interface HistoryDetailDrawerProps {
 	visit: ClinicalVisitItem | null;
 	isOpen: boolean;
 	onClose: () => void;
-	onExtract043: (visit: ClinicalVisitItem) => void;
+	onExtractRecord?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
 	onAddToTreatmentPlan: (visit: ClinicalVisitItem) => void;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 }
 
 export const HistoryDetailDrawer: React.FC<HistoryDetailDrawerProps> = React.memo(
 	function HistoryDetailDrawer({
-		visit, isOpen, onClose, onExtract043, onAddToTreatmentPlan, onNavigateToVisit,
+		visit, isOpen, onClose, onExtractRecord, onExtract043, onAddToTreatmentPlan, onNavigateToVisit,
 	}) {
 		useEffect(() => {
 			if (!isOpen) return;
@@ -83,8 +84,11 @@ export const HistoryDetailDrawer: React.FC<HistoryDetailDrawerProps> = React.mem
 					</div>
 
 					<DrawerFooter
-						visit={visit} onExtract043={onExtract043}
-						onAddToTreatmentPlan={onAddToTreatmentPlan} onNavigateToVisit={onNavigateToVisit}
+						visit={visit}
+						onExtractRecord={onExtractRecord}
+						onExtract043={onExtract043}
+						onAddToTreatmentPlan={onAddToTreatmentPlan}
+						onNavigateToVisit={onNavigateToVisit}
 					/>
 				</div>
 			</div>

@@ -92,7 +92,7 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					organizationId,
 					fullName: "Волкова Елена Сергеевна",
 					birthDate: "1992-04-18",
-					gender: "female",
+					administrativeProfile: { gender: "female" },
 					phone: "+79031234567",
 				})
 				.returning({ id: patients.id });
@@ -443,8 +443,8 @@ describe("Клинический жизненный цикл ЭМК, форму�
 						),
 					);
 				assert.ok(audits.length > 0);
-				assert.equal(audits[0].entityType, "visit_diary");
-				assert.equal(audits[0].userId, doctorId);
+				assert.equal(audits[0]?.entityType, "visit_diary");
+				assert.equal(audits[0]?.userId, doctorId);
 			});
 		});
 
@@ -503,8 +503,8 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					.from(visitDiaryRevisions)
 					.where(eq(visitDiaryRevisions.diaryId, diaryId));
 				assert.equal(revisions.length, 1);
-				assert.equal(revisions[0].revisionReason, revisionReason);
-				assert.equal(revisions[0].previousStatusLocalis, statusLocalis);
+				assert.equal(revisions[0]?.revisionReason, revisionReason);
+				assert.equal(revisions[0]?.previousStatusLocalis, statusLocalis);
 			});
 		});
 	});
@@ -541,8 +541,14 @@ describe("Клинический жизненный цикл ЭМК, форму�
 				patientAddressResidence: "г. Москва, ул. Лесная, д. 15, кв. 8",
 				patientIdentityDocument: "Паспорт гражданина РФ 45 14 № 123456",
 				patientSnils: "123-456-789 00",
+				patientInsurancePolicy: "—",
+				patientInsuranceCompany: "—",
+				patientPrivilegeCategory: "—",
 				primaryDiagnosisText: "К02.1 Кариес дентина зуба 36 [МКБ-10: К02.1]",
+				primaryDiagnosisIcd10: "K02.1",
 				attendingDoctorFullName: "Д-р Смирнов К. И.",
+				attendingDoctorSpecialty: "Врач-стоматолог-терапевт",
+				attendingDoctorSnils: "123-456-789 00",
 			},
 			anamnesis: {
 				chiefComplaint: "Жалобы на кратковременную боль от сладкого и холодного в области зуба 36.",
@@ -552,6 +558,8 @@ describe("Клинический жизненный цикл ЭМК, форму�
 				concomitantSomaticDiseases: "Не выявлено.",
 				currentSystemicMedications: "Лекарственные препараты на постоянной основе не принимает.",
 				pastDentalInterventions: "Ранее проводилась санация зубов 16, 26, 46.",
+				pregnancyLactationStatus: "Не применимо",
+				occupationalHazardsAndHabits: "Вредные привычки отрицает",
 			},
 			dentalStatus: {
 				odontogramTeeth: [
@@ -598,6 +606,8 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					regionalLymphNodes: "Лимфоузлы не пальпируются",
 					tmjFunction: "Без патологии",
 				},
+				xrayFindingsDescription: "Без патологии",
+				xrayRadiationDoseMsv: 0.02,
 			},
 			visitDiaries: [
 				{
@@ -611,12 +621,21 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					assessmentIcd10Code: "K02.1",
 					procedureProtocol: "Обезболивание Артикаин 1:200 000 — 1.7 мл. Препарирование, пломба Filtek Ultimate.",
 					doctorFullName: "Д-р Смирнов К. И.",
+					doctorSpecialty: "Врач-стоматолог-терапевт",
 				},
 			],
 			generalTreatmentPlan: "Терапевтическая санация кариеса зуба 36",
 			epicrisis: {
-				conclusionText: "Клиническая санация полости рта завершена успешно. Рекомендован осмотр через 6 мес.",
-				recommendedDoctorFullName: "Д-р Смирнов К. И.",
+				treatmentSummary: "Клиническая санация полости рта завершена успешно.",
+				treatmentOutcome: "complete_cure",
+				treatmentOutcomeLabel: "Полное выздоровление",
+				dispensaryGroup: "D_I_healthy",
+				dispensaryGroupLabel: "Д-I (Здоровые)",
+				plannedRecallIntervalMonths: 6,
+				preventivePlanRecommendations: "Рекомендован осмотр через 6 мес.",
+				dateCompleted: "2026-09-01",
+				headOfDepartmentFullName: "Прохоров К. И.",
+				attendingDoctorFullName: "Д-р Смирнов К. И.",
 			},
 		};
 

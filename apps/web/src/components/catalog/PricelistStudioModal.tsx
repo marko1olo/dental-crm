@@ -6,7 +6,7 @@
  * 8x (живой русский язык без канцелярита и приказов 804н), 8am (ровно 1 Primary CTA), Apple HIG.
  */
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	Check,
@@ -33,9 +33,13 @@ import {
 	filterPricelist,
 	formatKopecksToRubles,
 	getMatchedTag,
+	kopecksToRublesExact,
 	loadCanonicalPricelist,
 	parseRublesToKopecks,
 	saveCanonicalPricelist,
+	fetchPricelistFromBackend,
+	syncServiceItemToBackend,
+	batchSyncPricelistToBackend,
 } from "./pricelistCatalogData";
 import { PricelistItemDrawer } from "./PricelistItemDrawer";
 
@@ -112,13 +116,25 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 						? item.materialCostRub * 100
 						: 50000),
 				durationMin: item.durationMin || item.estimatedDurationMin || 30,
-				isActive: item.isActive !== false,
+				isActive: (item as any).active !== false && item.isActive !== false,
 				tags: item.tags || [],
 				isBundle: item.isBundle || false,
 			}));
 		}
 		return loadCanonicalPricelist();
 	});
+
+	useEffect(() => {
+		if (isOpen && (!initialItems || initialItems.length === 0)) {
+			fetchPricelistFromBackend().then((backendItems) => {
+				if (backendItems && backendItems.length > 0) {
+					setItems(backendItems);
+				}
+			}).catch((err) => {
+				console.warn("[PricelistStudioModal] Failed to fetch pricelist from backend:", err);
+			});
+		}
+	}, [isOpen, initialItems]);
 
 	const [selectedCategory, setSelectedCategory] = useState<PricelistCategoryKey | "all">("all");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -149,9 +165,14 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 	);
 	const stats = useMemo(() => calculatePricelistStats(items), [items]);
 
-	const commitItemsUpdate = (newItems: readonly PricelistStudioItem[]) => {
+	const commitItemsUpdate = (newItems: readonly PricelistStudioItem[], itemToSync?: PricelistStudioItem) => {
 		setItems(newItems);
 		saveCanonicalPricelist(newItems);
+		if (itemToSync) {
+			syncServiceItemToBackend(itemToSync).catch((err) => {
+				console.warn("[PricelistStudioModal] Failed to sync item to backend:", err);
+			});
+		}
 		if (onSaveCatalog) onSaveCatalog(newItems);
 	};
 
@@ -171,8 +192,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 		setFormCode(item.code);
 		setFormTitle(item.title);
 		setFormCategory(item.category);
-		setFormPriceRub(String(Math.floor(item.priceKopecks / 100)));
-		setFormCostRub(String(Math.floor(item.costKopecks / 100)));
+		setFormPriceRub(kopecksToRublesExact(item.priceKopecks));
+		setFormCostRub(kopecksToRublesExact(item.costKopecks));
 		setFormDuration(String(item.durationMin));
 		setIsDrawerOpen(true);
 	};
@@ -185,21 +206,18 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 		const durMin = parseInt(formDuration, 10) || 30;
 
 		if (editingItem) {
-			const updated = items.map((i) =>
-				i.id === editingItem.id
-					? {
-							...i,
-							code: formCode.trim() || i.code,
-							serviceCode: formCode.trim() || i.serviceCode,
-							title: finalTitle,
-							category: formCategory,
-							priceKopecks: priceKop,
-							costKopecks: costKop,
-							durationMin: durMin,
-						}
-					: i,
-			);
-			commitItemsUpdate(updated);
+			const updatedItem: PricelistStudioItem = {
+				...editingItem,
+				code: formCode.trim() || editingItem.code,
+				serviceCode: formCode.trim() || editingItem.serviceCode,
+				title: finalTitle,
+				category: formCategory,
+				priceKopecks: priceKop,
+				costKopecks: costKop,
+				durationMin: durMin,
+			};
+			const updated = items.map((i) => (i.id === editingItem.id ? updatedItem : i));
+			commitItemsUpdate(updated, updatedItem);
 			showToast(`Услуга «${finalTitle}» сохранена`);
 		} else {
 			const newItem: PricelistStudioItem = {
@@ -213,7 +231,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 				durationMin: durMin,
 				isActive: true,
 			};
-			commitItemsUpdate([newItem, ...items]);
+			commitItemsUpdate([newItem, ...items], newItem);
 			showToast(`Услуга «${finalTitle}» добавлена`);
 		}
 		setIsDrawerOpen(false);
@@ -221,19 +239,29 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 
 	const handleInlinePriceSave = (itemId: string) => {
 		const parsedKopecks = parseRublesToKopecks(inlinePriceInput);
-		const updated = items.map((i) =>
-			i.id === itemId ? { ...i, priceKopecks: parsedKopecks } : i,
-		);
-		commitItemsUpdate(updated);
+		let updatedItem: PricelistStudioItem | undefined;
+		const updated = items.map((i) => {
+			if (i.id === itemId) {
+				updatedItem = { ...i, priceKopecks: parsedKopecks };
+				return updatedItem;
+			}
+			return i;
+		});
+		commitItemsUpdate(updated, updatedItem);
 		setEditingPriceId(null);
 		showToast("Цена обновлена");
 	};
 
 	const handleToggleActive = (itemId: string) => {
-		const updated = items.map((i) =>
-			i.id === itemId ? { ...i, isActive: !i.isActive } : i,
-		);
-		commitItemsUpdate(updated);
+		let updatedItem: PricelistStudioItem | undefined;
+		const updated = items.map((i) => {
+			if (i.id === itemId) {
+				updatedItem = { ...i, isActive: !i.isActive };
+				return updatedItem;
+			}
+			return i;
+		});
+		commitItemsUpdate(updated, updatedItem);
 		showToast("Статус услуги изменен");
 	};
 
@@ -260,7 +288,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 			tags: ["пакет", "комплекс", "под ключ", ...bundle.items],
 		};
 
-		commitItemsUpdate([newBundleItem, ...items]);
+		commitItemsUpdate([newBundleItem, ...items], newBundleItem);
 		showToast(`Клинический комплекс «${bundle.shortTitle}» добавлен в прейскурант`);
 		if (onApplyBundleToVisit) onApplyBundleToVisit(bundle);
 		if (onAddServiceToInvoice) onAddServiceToInvoice(newBundleItem);
@@ -274,8 +302,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 					i.code,
 					i.category,
 					`"${i.title.replace(/"/g, '""')}"`,
-					Math.floor(i.priceKopecks / 100),
-					Math.floor(i.costKopecks / 100),
+					kopecksToRublesExact(i.priceKopecks),
+					kopecksToRublesExact(i.costKopecks),
 					i.durationMin,
 					i.isActive ? "Да" : "Нет",
 				].join(";"),
@@ -329,6 +357,9 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 			if (importedItems.length > 0) {
 				const merged = [...importedItems, ...items];
 				commitItemsUpdate(merged);
+				batchSyncPricelistToBackend(importedItems).catch((err) => {
+					console.warn("[PricelistStudioModal] Failed to batch sync imported items:", err);
+				});
 				showToast(`Импортировано ${importedItems.length} позиций из CSV`);
 			}
 		};
@@ -355,7 +386,9 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 						<div>
 							<h2 className="pricelist-header-title">Прейскурант услуг клиники</h2>
 							<div className="pricelist-header-subtitle">
-								{clinicName} · {stats.activeItems} активных позиций · Средняя маржа {stats.avgMarginPercent}%
+								<span className="hidden sm:inline">{clinicName} · </span>
+								{stats.activeItems} активных позиций
+								<span className="hidden sm:inline"> · Средняя маржа {stats.avgMarginPercent}%</span>
 							</div>
 						</div>
 					</div>
@@ -583,7 +616,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 														className="pricelist-price-cell"
 														onClick={() => {
 															setEditingPriceId(item.id);
-															setInlinePriceInput(String(Math.floor(item.priceKopecks / 100)));
+															setInlinePriceInput(kopecksToRublesExact(item.priceKopecks));
 														}}
 														title="Нажмите для мгновенного изменения цены"
 													>

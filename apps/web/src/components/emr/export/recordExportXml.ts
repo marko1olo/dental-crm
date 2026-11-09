@@ -1,6 +1,6 @@
-import type { MedicalRecordData } from "../types/recordDataTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes.js";
 import { dentalBiteTypeLabels } from "@dental/shared";
-import { calculateDmftIndex } from "../clinicalDiaryMath";
+import { calculateDmftIndex } from "../clinicalDiaryMath.js";
 
 /** Экранирование специальных символов XML */
 export function escapeXml(str: unknown): string {
@@ -8,8 +8,8 @@ export function escapeXml(str: unknown): string {
 	return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-/** Генератор официального HL7 CDA R2 (СЭМД 834н) XML для интеграции с ЕГИСЗ */
-export function generate043XmlCda(data: MedicalRecordData): string {
+/** Генератор официального HL7 CDA R2 (СЭМД) XML для интеграции с ЕГИСЗ */
+export function generateMedicalRecordXmlCda(data: MedicalRecordData): string {
 	const p = data.passport;
 	const c = data.clinic;
 	const d = data.dentalStatus;
@@ -23,7 +23,7 @@ export function generate043XmlCda(data: MedicalRecordData): string {
   <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
   <templateId root="1.2.643.5.1.13.100.1.1.834.43"/>
   <id root="1.2.643.5.1.13" extension="${escapeXml(p.medicalCardNumber)}"/>
-  <code code="834" codeSystem="1.2.643.5.1.13.100.1.1" displayName="Медицинская карта стоматологического пациента (Медицинская карта приёма)"/>
+  <code code="834" codeSystem="1.2.643.5.1.13.100.1.1" displayName="Медицинская карта стоматологического пациента"/>
   <title>МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА № ${escapeXml(p.medicalCardNumber)}</title>
   <effectiveTime value="${createdIso.replace(/[-:T]/g, "").slice(0, 14)}"/>
   <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="normal"/>
@@ -92,3 +92,6 @@ export function generate043XmlCda(data: MedicalRecordData): string {
   </component>
 </ClinicalDocument>`;
 }
+
+/** Алиас обратной совместимости */
+export const generate043XmlCda = generateMedicalRecordXmlCda;

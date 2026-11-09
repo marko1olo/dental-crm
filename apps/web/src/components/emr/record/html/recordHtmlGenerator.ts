@@ -1,11 +1,11 @@
-import type { MedicalRecordData, MedicalRecordPrintConfig } from "../../types/recordDataTypes";
-import { escapeHtml } from "../../math/recordMathFormatting";
-import { getMedicalRecordPrintStyles } from "./recordHtmlStyles";
-import { renderClinicHeaderHtml, renderCardTitleBlockHtml, renderPassportSectionHtml } from "./recordPassportHtml";
-import { renderAnamnesisSectionHtml } from "./recordAnamnesisHtml";
-import { renderOdontogramSectionHtml } from "./recordOdontogramHtml";
-import { renderDiariesSectionHtml } from "./recordDiariesHtml";
-import { renderEpicrisisAndSignaturesHtml } from "./recordEpicrisisHtml";
+import type { MedicalRecordData, MedicalRecordPrintConfig } from "../../types/recordDataTypes.js";
+import { escapeHtml } from "../../math/recordMathFormatting.js";
+import { getMedicalRecordPrintStyles } from "./recordHtmlStyles.js";
+import { renderClinicHeaderHtml, renderCardTitleBlockHtml, renderPassportSectionHtml } from "./recordPassportHtml.js";
+import { renderAnamnesisSectionHtml } from "./recordAnamnesisHtml.js";
+import { renderOdontogramSectionHtml } from "./recordOdontogramHtml.js";
+import { renderDiariesSectionHtml } from "./recordDiariesHtml.js";
+import { renderEpicrisisAndSignaturesHtml } from "./recordEpicrisisHtml.js";
 
 /** Главный сборщик HTML документа медицинской карты для печати на А4 */
 export function generateMedicalRecordPrintHtml(data: MedicalRecordData, config?: Partial<MedicalRecordPrintConfig>): string {

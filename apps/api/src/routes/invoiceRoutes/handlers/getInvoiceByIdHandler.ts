@@ -1,9 +1,10 @@
 import { resolveInvoiceTotalAmountRub } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { patientInvoices, payments } from "../../../db/schema/billing.js";
+import { treatmentItems } from "../../../db/schema/clinical.js";
 import { lookupSberTransactionInvoice } from "./sberInvoiceLookupHelper.js";
 
 /** GET /api/invoices/:id & /api/v1/billing/invoices/:id */
@@ -70,6 +71,35 @@ export async function handleGetInvoiceById(
 			actualFiscalReceiptNumber = linkedPayment?.fiscalReceiptNumber || null;
 		}
 
+		const itemRows = await db
+			.select()
+			.from(treatmentItems)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, orgId),
+					or(
+						invoiceRow.visitId ? eq(treatmentItems.visitId, invoiceRow.visitId) : sql`FALSE`,
+						sql`${treatmentItems.notes} LIKE ${`%${invoiceRow.id}%`}`,
+					),
+				),
+			);
+
+		const items = itemRows.map((it) => ({
+			id: it.id,
+			serviceId: it.serviceId,
+			serviceCode: it.serviceId || undefined,
+			code: it.serviceId || undefined,
+			toothCode: it.toothCode,
+			toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
+			title: it.title,
+			name: it.title,
+			quantity: Number(it.quantity) || 1,
+			unitPriceRub: Number(it.unitPriceRub) || Number(it.priceRub) || 0,
+			priceRub: Number(it.priceRub) || 0,
+			discountRub: Number(it.discountRub) || 0,
+			totalAmountRub: Number(it.priceRub) || 0,
+		}));
+
 		return reply.code(200).send({
 			id: invoiceRow.id,
 			organizationId: invoiceRow.organizationId,
@@ -84,6 +114,7 @@ export async function handleGetInvoiceById(
 			patientId: invoiceRow.patientId,
 			visitId: invoiceRow.visitId,
 			createdAt: invoiceRow.createdAt.toISOString(),
+			items,
 		});
 	}
 
