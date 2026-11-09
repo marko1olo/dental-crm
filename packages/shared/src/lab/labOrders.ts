@@ -57,8 +57,11 @@ export const labOrderStatusSchema = z.enum([
 	"draft",
 	"sent",
 	"in_progress",
-	"ready",
+	"shipped",
 	"received",
+	"ready",
+	"ready_in_clinic",
+	"refitting",
 	"fitted",
 	"completed",
 	"cancelled",
@@ -296,7 +299,14 @@ export function calculateExpectedDeliveryDate(
  * Evaluates whether a lab order is delayed based on current date.
  */
 export function isLabOrderDelayed(order: LabOrder, now: Date = new Date()): boolean {
-	if (order.status === "received" || order.status === "fitted" || order.status === "completed" || order.status === "cancelled") {
+	if (
+		order.status === "received" ||
+		order.status === "ready" ||
+		order.status === "ready_in_clinic" ||
+		order.status === "fitted" ||
+		order.status === "completed" ||
+		order.status === "cancelled"
+	) {
 		return false;
 	}
 	if (!order.expectedDate) return false;
@@ -315,12 +325,15 @@ export function canTransitionLabOrderStatus(
 
 	const transitions: Record<LabOrderStatus, LabOrderStatus[]> = {
 		draft: ["sent", "cancelled"],
-		sent: ["in_progress", "ready", "received", "cancelled"],
-		in_progress: ["ready", "received", "cancelled", "rejected_remake"],
-		ready: ["received", "cancelled", "rejected_remake"],
-		received: ["fitted", "completed", "rejected_remake"],
-		fitted: ["completed", "rejected_remake"],
-		completed: ["rejected_remake"],
+		sent: ["in_progress", "ready", "ready_in_clinic", "shipped", "received", "cancelled"],
+		in_progress: ["ready", "ready_in_clinic", "shipped", "received", "cancelled", "rejected_remake", "refitting"],
+		shipped: ["received", "ready", "ready_in_clinic", "cancelled", "rejected_remake", "refitting"],
+		ready: ["received", "ready_in_clinic", "fitted", "completed", "cancelled", "rejected_remake"],
+		ready_in_clinic: ["received", "ready", "fitted", "completed", "cancelled", "rejected_remake", "refitting"],
+		received: ["fitted", "ready", "ready_in_clinic", "completed", "rejected_remake", "refitting", "cancelled"],
+		refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
+		fitted: ["completed", "rejected_remake", "refitting", "cancelled"],
+		completed: ["rejected_remake", "refitting"],
 		cancelled: ["draft", "sent"],
 		rejected_remake: ["draft", "sent", "cancelled"],
 	};

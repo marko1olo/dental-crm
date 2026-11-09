@@ -10,3 +10,4 @@ export * from "./CashRegisterCheckoutSection.js";
 export * from "./CashRegisterShiftSection.js";
 export * from "./CashRegisterTapeSection.js";
 export * from "./CashRegisterStudioFooter.js";
+export * from "./checkout/index.js";

@@ -58,6 +58,21 @@ export function getVitaShadeHex(shadeCode: string | null | undefined): string | 
 	return VITA_SHADE_HEX_MAP[normalized];
 }
 
+// ─── ВАЛИДАЦИЯ ОТТЕНКОВ VITA ──────────────────────────────────────────────────
+
+// Допустимые классические (A1-D4), отбеливающие (BL1-4, OM1-3, 0M1-3) и 3D-Master (1M1-5M3) оттенки VITA
+export const VALID_VITA_SHADE_REGEX = /^([A-D][1-4](\.5)?|BL[1-4]|0?M[1-3]|[1-5][MLR][1-3](\.5)?)$/i;
+
+/**
+ * Проверка валидности кода оттенка VITA (Classical, Bleach, 3D-Master).
+ */
+export function isValidVitaShade(shade?: string | null): boolean {
+	if (!shade) return false;
+	const trimmed = shade.trim();
+	if (trimmed.length < 2) return false;
+	return VALID_VITA_SHADE_REGEX.test(trimmed);
+}
+
 // ─── 17 ЭТАЛОННЫХ ИЗДЕЛИЙ ЗУБОТЕХНИЧЕСКОЙ ЛАБОРАТОРИИ ──────────────────────────
 
 export interface LabWorkTypeCatalogItem {
