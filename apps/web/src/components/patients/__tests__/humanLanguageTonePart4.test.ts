@@ -9,11 +9,13 @@ const __dirname = path.dirname(__filename);
 const webSrcRoot = path.resolve(__dirname, "../../..");
 
 describe("Red Team Inquisition: Human Clinical Language (Part 4: EMR, Protocols, Consents)", () => {
-	it("16. Form043PrintModal.tsx: export options use human language instead of 'ЕГИСЗ СЭМД'", () => {
-		const filePath = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
+	it("16. MedicalRecordStudioModal.tsx: export options use human language instead of 'ЕГИСЗ СЭМД'", () => {
+		const studioPath = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
+		const form043Path = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
 		const recordDir = path.join(webSrcRoot, "components/emr/record");
 		const content = [
-			fs.readFileSync(filePath, "utf-8"),
+			fs.existsSync(studioPath) ? fs.readFileSync(studioPath, "utf-8") : "",
+			fs.existsSync(form043Path) ? fs.readFileSync(form043Path, "utf-8") : "",
 			...(fs.existsSync(recordDir)
 				? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
 				: []),
@@ -38,7 +40,7 @@ describe("Red Team Inquisition: Human Clinical Language (Part 4: EMR, Protocols,
 		assert.ok(configContent.includes("СНИЛС обязателен для электронной медкарты и Госуслуг"));
 	});
 
-	it("18. VisitView.tsx, VisitEmkTab.tsx, VisitSoapEditor.tsx: treatment plan defaults free of bare 'Санация'", () => {
+	it("18. VisitView.tsx, VisitEmkTab.tsx, RecordDiariesTab.tsx: treatment plan defaults free of bare 'Санация'", () => {
 		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
 		const headerModulesDir = path.join(webSrcRoot, "components/visit/view/visitHeaderModules");
 		const headerModulesSource = fs.existsSync(headerModulesDir)
@@ -62,14 +64,12 @@ describe("Red Team Inquisition: Human Clinical Language (Part 4: EMR, Protocols,
 		assert.ok(!emkContent.includes('treatmentPlan || "Санация полости рта"'));
 		assert.ok(emkContent.includes("Проведена профессиональная гигиена и профилактика."));
 
-		const soapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
-		const soapEditorDir = path.join(webSrcRoot, "components/visit/soapEditor");
-		const soapEditorFiles = fs.existsSync(soapEditorDir)
-			? fs.readdirSync(soapEditorDir).map((f) => fs.readFileSync(path.join(soapEditorDir, f), "utf-8")).join("\n")
-			: "";
-		const soapContent = fs.readFileSync(soapPath, "utf-8") + "\n" + soapEditorFiles;
-		assert.ok(!soapContent.includes('values.treatmentPlan || "Санация"'));
-		assert.ok(soapContent.includes('values.treatmentPlan || "Лечение и гигиена"'));
+		const diariesTabPath = path.join(webSrcRoot, "components/emr/record/tabs/RecordDiariesTab.tsx");
+		const inlineFormPath = path.join(webSrcRoot, "components/emr/record/tabs/RecordNewDiaryInlineForm.tsx");
+		const diariesContent = fs.readFileSync(diariesTabPath, "utf-8") + "\n" + fs.readFileSync(inlineFormPath, "utf-8");
+		assert.ok(!diariesContent.includes('treatmentPlan || "Санация"'));
+		assert.ok(!diariesContent.includes('protocol: "Санация"'));
+		assert.ok(diariesContent.includes("Стоматологическое обследование и физиологическая норма"));
 	});
 
 	it("19. clinicalProtocols.ts: memo badges and presets use clinical protocol language instead of 043/у", () => {

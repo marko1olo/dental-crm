@@ -335,16 +335,24 @@ describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d,
 });
 
 describe("CLIN-08: Form 043/u Templates and Studio Mac HIG Density (Mandates 8d, 8e)", () => {
-	it("verifies VisitSoapEditor template cards have 32px buttons and no microfonts on actions", () => {
-		const soapEditorPath = path.resolve(
+	it("verifies RecordDiariesTab and RecordNewDiaryInlineForm have min-h-[36px] buttons and no microfonts on actions", () => {
+		const diariesTabPath = path.resolve(
 			__dirname,
-			"../../../../src/components/visit/VisitSoapEditor.tsx",
+			"../../../../src/components/emr/record/tabs/RecordDiariesTab.tsx",
 		);
-		const content = fs.readFileSync(soapEditorPath, "utf-8");
+		const inlineFormPath = path.resolve(
+			__dirname,
+			"../../../../src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx",
+		);
+		const content = `${fs.readFileSync(diariesTabPath, "utf-8")}\n${fs.readFileSync(inlineFormPath, "utf-8")}`;
 
 		assert.ok(
-			content.includes("sm:min-h-[32px] sm:h-8 text-xs font-bold"),
-			"Template card buttons must be sm:h-8 (32px) on desktop",
+			content.includes("min-h-[36px]"),
+			"Diary action buttons must be at least min-h-[36px] on desktop",
+		);
+		assert.ok(
+			!content.includes("text-[10px]") && !content.includes("text-[9px]"),
+			"No microfonts below 11px on actions",
 		);
 	});
 

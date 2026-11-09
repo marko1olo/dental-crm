@@ -243,6 +243,20 @@ graph LR
 
 ---
 
+9. **Хирургическая ликвидация легаси-редактора визитов и консолидация SSOT ЭМК (DEF-EMR-01...04, Мандаты 8bd, 8be, 8bf, 8e, 8am):**
+   * **DEF-EMR-01 (Физический снос устаревшего `VisitSoapEditor`):** Удален устаревший компонент `apps/web/src/components/visit/VisitSoapEditor.tsx` и весь каталог `apps/web/src/components/visit/soapEditor/` (39 файлов) через `git rm`. Единым каноническим инлайн-редактором дневников визита в ЭМК утвержден `RecordNewDiaryInlineForm.tsx` в связке с `RecordDiariesTab.tsx`.
+   * **DEF-EMR-02 (1-кликовый шлюз ЭМК в карточке пациента):** В тулбар шапки `PatientCardModal.tsx` добавлена нативная кнопка быстрого перехода `[ЭМК]` (`data-testid="btn-patient-open-emr-studio"`), открывающая `MedicalRecordStudioModal` с полной гидратацией данных пациента.
+   * **DEF-EMR-03 (Зачистка госпитального балласта в схеме БД):** Из `visitsSchema.ts` удалены нестоматологические рудименты ЛОР/стационара (`custom_examination_form_catalogs` с `FORM_043U` и `non_dental_examination_forms`). Оформлена миграция `0237_purge_hospital_examination_catalogs.sql`, `check:migration-drift` подтверждает 100% паритет.
+   * **DEF-EMR-04 (4-State Visual Proof):** Сняты и верифицированы реальные скриншоты на живом приложении:
+     - `docs/proofs/emr/01_patient_card_emr_button_pc_light_1440x900.png` (85.9 KB) — ПК светлая тема карточки пациента с кнопкой [ЭМК]
+     - `docs/proofs/emr/02_patient_card_emr_button_pc_dark_1440x900.png` (86.4 KB) — ПК тёмная тема карточки пациента с кнопкой [ЭМК]
+     - `docs/proofs/emr/03_emr_studio_inline_diaries_pc_dark_1440x900.png` (96.7 KB) — ПК тёмная тема студии ЭМК с инлайн-формой SOAP
+     - `docs/proofs/emr/04_emr_studio_inline_diaries_pc_light_1440x900.png` (95.1 KB) — ПК светлая тема студии ЭМК с инлайн-формой SOAP
+     - `docs/proofs/emr/05_emr_studio_mobile_light_390x844.png` (136.2 KB) — iPhone 390×844 светлая тема студии ЭМК (Apple HIG)
+     - `docs/proofs/emr/06_emr_studio_mobile_dark_390x844.png` (138.2 KB) — iPhone 390×844 тёмная тема студии ЭМК (Apple HIG)
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

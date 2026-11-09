@@ -20,12 +20,6 @@ export interface DeclaredUnmountedItem {
  */
 export const DECLARED_UNMOUNTED: ReadonlyArray<DeclaredUnmountedItem> = [
 	{
-		file: "components/visit/VisitSoapEditor.tsx",
-		name: "VisitSoapEditor",
-		reason:
-			"Устаревший монолитный редактор дневника приёма (900 строк), заменённый модульной системой EMK (VisitEmkTab, EmkToolbar, SoapNoteCard, EmkEndoSection). Сохранён исключительно для обратной совместимости со старыми тестами (VisitSoapEditorIntegration.test.tsx, diaryDraftResilience.test.ts).",
-	},
-	{
 		file: "components/visit/view/visitHeader/index.tsx",
 		name: "VisitHeaderMonolith",
 		reason:

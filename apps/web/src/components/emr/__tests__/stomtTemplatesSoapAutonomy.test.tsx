@@ -9,10 +9,10 @@ import {
 	populateOutpatientTemplateText,
 	searchAll448Templates,
 } from "@dental/shared";
-import {
-	VisitSoapEditor,
-	resolveProtocolFromTemplate,
-} from "../../visit/VisitSoapEditor";
+import { resolveProtocolFromTemplate } from "../clinicalDiaryMath.js";
+import { RecordNewDiaryInlineForm } from "../record/tabs/RecordNewDiaryInlineForm.js";
+import { RecordDiariesTab } from "../record/tabs/RecordDiariesTab.js";
+import { DEFAULT_MEDICAL_RECORD_DATA } from "../defaults/recordDefaultSchema.js";
 
 describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 	it("1. Verifies completeness of STOMX_ALL_448_TEMPLATES_INDEX (exactly 448 clinical templates)", () => {
@@ -89,84 +89,111 @@ describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 		assert.ok(mkbK04.length > 0, "Поиск по коду МКБ K04 находит шаблоны пульпита/периодонтита");
 	});
 
-	it("5. VisitSoapEditor renders with 1-click button [Клинические протоколы (448)], norm button and FDI tooth selector", () => {
+	it("5. RecordNewDiaryInlineForm renders with 1-click norm button, FDI tooth selector, and SOAP fields", () => {
 		const html = renderToStaticMarkup(
-			createElement(VisitSoapEditor, {
-				activeTooth: 46,
-				initialValues: {
-					complaint: "Боль при накусывании на зуб 46",
-					anamnesis: "Соматически здоров",
-					objectiveStatus: "Зуб 46: кариозная полость",
-					diagnosis: "K04.4 Острый апикальный периодонтит",
-					treatmentPlan: "Механическая и медикаментозная обработка корневых каналов",
-					recommendations: "Покой, контрольный рентген-снимок",
-					icd10: "K04.4",
-				},
-				isTemplatesOpen: false,
+			createElement(RecordNewDiaryInlineForm, {
+				selectedTooth: "46",
+				setSelectedTooth: () => {},
+				commonTeeth: [16, 26, 36, 46, 11, 21, 14, 24],
+				subjective: "Боль при накусывании на зуб 46",
+				setSubjective: () => {},
+				objective: "Зуб 46: кариозная полость",
+				setObjective: () => {},
+				diagnosisText: "K04.4 Острый апикальный периодонтит",
+				setDiagnosisText: () => {},
+				icd10Code: "K04.4",
+				setIcd10Code: () => {},
+				protocol: "Механическая и медикаментозная обработка корневых каналов",
+				setProtocol: () => {},
+				onApplyNorm: () => {},
+				onClear: () => {},
+				onSave: () => {},
 			}),
 		);
 
 		// Заголовок и селектор
-		assert.ok(html.includes("Медицинская карта • Дневник приёма"), "Рендерится заголовок");
-		assert.ok(html.includes("soap-select-tooth"), "Рендерится селектор зуба");
-		assert.ok(html.includes("46 зуб"), "Выбран 46 зуб");
-
-		// Кнопка шаблонов 448
-		assert.ok(html.includes("btn-open-stomt-templates"), "Присутствует data-testid='btn-open-stomt-templates'");
-		assert.ok(html.includes("Клинические шаблоны (448)"), "Кнопка содержит текст 'Клинические шаблоны (448)'");
+		assert.ok(html.includes("input-inline-diary-tooth"), "Рендерится селектор зуба");
+		assert.ok(html.includes('value="46"'), "Выбран 46 зуб");
 
 		// Норма в 1 клик (Мандат 8e)
-		assert.ok(html.includes("btn-soap-physio-norm"), "Присутствует кнопка 1-клик нормы");
+		assert.ok(html.includes("btn-inline-diary-norm"), "Присутствует кнопка 1-клик нормы");
 		assert.ok(html.includes("Норма"), "Кнопка содержит текст 'Норма'");
 
 		// Значения полей
 		assert.ok(html.includes("Боль при накусывании на зуб 46"), "Отображаются жалобы");
 		assert.ok(html.includes("K04.4"), "Отображается код МКБ-10");
+		assert.ok(html.includes("btn-save-inline-diary"), "Присутствует Primary CTA кнопка сохранения");
 	});
 
-	it("6. VisitSoapEditor renders drawer with all 5 specialties, 448 count and search bar", () => {
+	it("6. RecordDiariesTab renders header, quick add toggle, StAR protocol synthesizer button and diary list", () => {
+		const defaultData = {
+			...DEFAULT_MEDICAL_RECORD_DATA,
+			visitDiaries: [
+				{
+					id: "diary_1",
+					entryDate: "2026-11-10",
+					entryTime: "10:00",
+					toothNumber: "16",
+					doctorFullName: "Тестов Т.Т.",
+					doctorSpecialty: "Стоматолог-терапевт",
+					subjectiveComplaints: "Жалоб нет",
+					objectiveStatusLocalis: "Слизистая бледно-розовая",
+					assessmentDiagnosisText: "Клинический осмотр",
+					assessmentIcd10Code: "Z01.2",
+					procedureProtocol: "Проведен осмотр",
+				},
+			],
+		};
+
 		const html = renderToStaticMarkup(
-			createElement(VisitSoapEditor, {
-				activeTooth: 16,
-				isTemplatesOpen: true,
+			createElement(RecordDiariesTab, {
+				formData: defaultData,
+				onOpenInternalProtocolGenerator: () => {},
 			}),
 		);
 
-		// Заголовок панели
-		assert.ok(
-			html.includes("Клинические протоколы (448 шаблонов)"),
-			"Заголовок панели отражает 448 шаблонов",
-		);
+		// Заголовок
+		assert.ok(html.includes("4. Дневники визитов (Медицинская карта приёма)"), "Рендерится заголовок");
 
-		// Фильтр 'Все протоколы (448)'
-		assert.ok(html.includes("Все протоколы (448)"), "Присутствует кнопка 'Все протоколы (448)'");
+		// Быстрая форма и генератор СтАР
+		assert.ok(html.includes("btn-toggle-inline-diary-form"), "Присутствует кнопка быстрого переключения формы");
+		assert.ok(html.includes("btn-emr-synthesize-diary"), "Присутствует кнопка протоколов СтАР");
 
-		// 5 специальностей
-		assert.ok(html.includes("Терапия"), "Фильтр Терапия присутствует");
-		assert.ok(html.includes("Ортопедия"), "Фильтр Ортопедия присутствует");
-		assert.ok(html.includes("Хирургия"), "Фильтр Хирургия присутствует");
-		assert.ok(html.includes("Имплантация"), "Фильтр Имплантация присутствует");
-		assert.ok(html.includes("Пародонтология"), "Фильтр Пародонтология присутствует");
-
-		// Действия
-		assert.ok(html.includes("Заполнить"), "Присутствует кнопка 'Заполнить'");
-		assert.ok(!html.includes("Заполнить (1 клик)"), "Исключен дев-текст 'Заполнить (1 клик)'");
-		assert.ok(html.includes("+ Добавить"), "Присутствует кнопка '+ Добавить'");
-		assert.ok(html.includes("Поиск по диагнозу, протоколу"), "Присутствует поисковая строка");
+		// Запись визита
+		assert.ok(html.includes("Зуб FDI № 16"), "Отображается номер зуба FDI");
+		assert.ok(html.includes("btn-revise-diary-0"), "Присутствует кнопка внесения исправления («Исправить»)");
 	});
 
-	it("7. Mandate 8e & Ergonomics: no disabled buttons when locked, revision audit button present, zero raw emojis", () => {
+	it("7. Mandate 8e & Ergonomics: no disabled buttons, revision audit button present, zero raw emojis", () => {
+		const defaultData = {
+			...DEFAULT_MEDICAL_RECORD_DATA,
+			visitDiaries: [
+				{
+					id: "diary_2",
+					entryDate: "2026-11-10",
+					entryTime: "11:00",
+					toothNumber: "21",
+					doctorFullName: "Тестов Т.Т.",
+					doctorSpecialty: "Стоматолог-терапевт",
+					subjectiveComplaints: "Жалоб нет",
+					objectiveStatusLocalis: "Status Localis без патологии",
+					assessmentDiagnosisText: "Осмотр",
+					assessmentIcd10Code: "Z01.2",
+					procedureProtocol: "Проведен осмотр",
+				},
+			],
+		};
+
 		const html = renderToStaticMarkup(
-			createElement(VisitSoapEditor, {
-				activeTooth: 21,
-				isLocked: true,
-				isTemplatesOpen: false,
+			createElement(RecordDiariesTab, {
+				formData: defaultData,
+				onOpenInternalProtocolGenerator: () => {},
 			}),
 		);
 
 		// Мандат 8e: кнопки никогда не disabled
 		assert.ok(!html.includes('disabled=""') && !html.includes("disabled "), "Кнопки не заблокированы disabled");
-		assert.ok(html.includes("btn-soap-enable-correction"), "Присутствует кнопка внесения исправления ('Исправленному верить')");
+		assert.ok(html.includes("btn-revise-diary-0"), "Присутствует кнопка внесения исправления ('Исправить')");
 
 		// Ноль эмодзи (строго векторная графика Lucide)
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;

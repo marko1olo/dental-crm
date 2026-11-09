@@ -234,6 +234,7 @@ export type CreateSurgicalProtocolInput = z.infer<typeof createSurgicalProtocolS
 export const surgicalQuickDeductSchema = z.object({
 	visitId: z.string().uuid().optional().nullable(),
 	bundleType: z.enum([
+		"surgery",
 		"implant",
 		"sinus_gbr",
 		"surgery_extraction",

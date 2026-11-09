@@ -302,7 +302,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { handleApplyNorm(); setIsMoreMenuOpen(false); }}>
 											<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /><span>Физиологическая норма</span>
 										</button>
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
+										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
 											<Download className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" /><span>Электронная медкарта (XML)</span>
 										</button>
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { handleExportJson(); setIsMoreMenuOpen(false); }}>
@@ -426,25 +426,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 					{/* Мобильная нижняя плашка в Natural Thumb Zone (Apple HIG) */}
 					<footer className="emr-studio-bottom-bar sm:hidden">
-						<button
-							type="button"
-							className="emr-studio-btn emr-studio-btn-secondary flex-1"
-							onClick={handleApplyNorm}
-							disabled={false}
-							title="Норма в 1 клик"
-						>
-							<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-							<span>Норма</span>
+						<button type="button" className="emr-studio-btn emr-studio-btn-secondary flex-1" onClick={handleApplyNorm} disabled={false} title="Норма в 1 клик">
+							<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" /><span>Норма</span>
 						</button>
-						<button
-							type="button"
-							className="emr-studio-btn emr-studio-btn-primary flex-[2]"
-							onClick={handleSaveForm}
-							disabled={false}
-							title="Сохранить и подписать карту приёма"
-						>
-							<Check className="w-4 h-4 shrink-0" />
-							<span>Подписать карту</span>
+						<button type="button" className="emr-studio-btn emr-studio-btn-primary flex-[2]" onClick={handleSaveForm} disabled={false} title="Сохранить и подписать карту приёма">
+							<Check className="w-4 h-4 shrink-0" /><span>Подписать карту</span>
 						</button>
 					</footer>
 				</div>

@@ -12,26 +12,9 @@
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity,
-	AlertOctagon,
-	Award,
-	Calendar,
-	Camera,
-	ClipboardList,
-	ExternalLink,
-	FileCheck,
-	FileText,
-	HeartPulse,
-	History,
-	Plus,
-	Printer,
-	Scan,
-	ShieldCheck,
-	Stethoscope,
-	User,
-	Users,
-	Wallet,
-	X,
+	Activity, AlertOctagon, Award, Calendar, Camera, ClipboardList, ExternalLink,
+	FileCheck, FileText, HeartPulse, History, Plus, Printer, Scan, ShieldCheck,
+	Stethoscope, User, Users, Wallet, X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useAppStore } from "../../store/appStore";
@@ -40,12 +23,14 @@ import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { PerioStudioModal } from "../perio/PerioStudioModal";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
+import { MedicalRecordStudioModal } from "../emr/MedicalRecordStudioModal";
 import { PatientCardFloatingSaveBar } from "./patientCardSavePill";
 import { PatientGeneralInfoTab } from "./tabs/PatientGeneralInfoTab";
 import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { PatientDocumentsTab } from "./tabs/PatientDocumentsTab";
+import { PatientPhotosTab } from "./tabs/PatientPhotosTab";
 import { TreatmentPlansTab } from "./tabs/TreatmentPlansTab";
 import { PatientHistoryTab, DEFAULT_CLINICAL_VISITS } from "./PatientHistoryTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
@@ -53,45 +38,8 @@ import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCard
 import { usePatientCardModalState } from "./patientCardModalModules/usePatientCardModalState";
 import { usePatientCreationForm } from "./patientCreation/usePatientCreationForm";
 import { PatientCreationModalBody } from "./patientCreation/PatientCreationModalBody";
-import {
-	DEMO_SHOWCASE_MODAL_PATIENT,
-	DEMO_SHOWCASE_MODAL_SAFETY,
-	getRepresentativeLegalStatus,
-	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	PATIENT_LEGAL_REPRESENTATIVE_CATALOG,
-	DENTE_REPRESENTATIVE_CATALOG,
-	isStatutoryLegalRepresentative,
-	type RepresentativeRelationshipType,
-	type RepresentativeRelationshipMeta,
-	type LegalRepresentativeType,
-	type LegalRepresentativeTypeMeta,
-	type DenteRepresentativeType,
-	type DenteRepresentativeTypeMeta,
-	type PatientCardTab,
-	type PatientModalMode,
-	type PatientCardModalProps,
-} from "./patientCardModalModules/patientCardModalTypes";
-
-export {
-	DEMO_SHOWCASE_MODAL_PATIENT,
-	DEMO_SHOWCASE_MODAL_SAFETY,
-	getRepresentativeLegalStatus,
-	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	PATIENT_LEGAL_REPRESENTATIVE_CATALOG,
-	DENTE_REPRESENTATIVE_CATALOG,
-	isStatutoryLegalRepresentative,
-	type RepresentativeRelationshipType,
-	type RepresentativeRelationshipMeta,
-	type LegalRepresentativeType,
-	type LegalRepresentativeTypeMeta,
-	type DenteRepresentativeType,
-	type DenteRepresentativeTypeMeta,
-	type PatientCardTab,
-	type PatientModalMode,
-	type PatientCardModalProps,
-};
+export * from "./patientCardModalModules/patientCardModalTypes";
+import type { PatientCardTab, PatientModalMode, PatientCardModalProps } from "./patientCardModalModules/patientCardModalTypes";
 
 const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
@@ -140,6 +88,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	} = cardState;
 
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
+	const [isMedicalRecordStudioOpen, setIsMedicalRecordStudioOpen] = React.useState(false);
 
 	// Состояние для режима создания пациента
 	const creationForm = usePatientCreationForm(props as any);
@@ -291,6 +240,19 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								title="Справка об оплате медицинских услуг для налогового вычета (13%)"
 							>
 								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							</button>
+						)}
+
+						{!isCreateMode && (
+							<button
+								type="button"
+								data-testid="btn-patient-open-emr-studio"
+								onClick={() => setIsMedicalRecordStudioOpen(true)}
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								title="Открыть электронную карту (ЭМК)"
+							>
+								<ClipboardList className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>ЭМК</span>
 							</button>
 						)}
 
@@ -475,24 +437,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 					) : activeTab === "documents" ? (
 						<PatientDocumentsTab patient={patientData as any} onPrintOutpatientCard={handlePrint} />
 					) : activeTab === "photos" ? (
-						<div className="p-6 flex flex-col items-center justify-center gap-3 text-center min-h-[320px] bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)]" data-testid="patient-photos-panel">
-							<Camera className="w-12 h-12 text-[var(--teal)] opacity-80" />
-							<div>
-								<h3 className="text-base font-bold text-[var(--ink)] m-0">Клинический фотопротокол</h3>
-								<p className="text-xs text-[var(--muted)] max-w-md mt-1 mb-4">
-									12 стандартных проекций (анфас, окклюзия, макро 1:1), DSD эстетика и QR-мост для съёмки со смартфона врача
-								</p>
-								<button
-									type="button"
-									onClick={() => setIsPhotoModalOpen(true)}
-									className="px-4 py-2.5 bg-[var(--teal)] text-[var(--on-teal,white)] font-bold rounded-xl text-xs hover:opacity-95 transition-opacity inline-flex items-center gap-2 shadow-xs cursor-pointer"
-									data-testid="open-photo-protocol-modal-btn"
-								>
-									<Camera className="w-4 h-4" />
-									<span>Открыть студию фотопротокола</span>
-								</button>
-							</div>
-						</div>
+						<PatientPhotosTab
+							patientId={patientData.id}
+							patientName={patientData.fullName}
+							cardNumber={patientData.cardNumber || patientData.medicalCardNumber}
+							onOpenPhotoStudio={() => setIsPhotoModalOpen(true)}
+						/>
 					) : activeTab === "perio" ? (
 						<PerioStudioModal isModal={false} patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
 					) : activeTab === "formula" ? (
@@ -656,6 +606,22 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							patientId={patientData.id ?? undefined}
 							patientName={patientData.fullName ?? undefined}
 							patientCardNumber={patientData.cardNumber || patientData.medicalCardNumber || undefined}
+						/>
+						<MedicalRecordStudioModal
+							isOpen={isMedicalRecordStudioOpen}
+							onClose={() => setIsMedicalRecordStudioOpen(false)}
+							initialData={{
+								passport: {
+									patientFullName: patientData.fullName || "",
+									patientBirthDate: patientData.birthDate || "",
+									patientPhone: patientData.phone || "",
+									patientSex: patientData.gender === "female" ? "female" : "male",
+									patientAddressRegistration: patientData.address || "",
+									patientAddressResidence: patientData.address || "",
+									medicalCardNumber: patientData.cardNumber || patientData.medicalCardNumber || "",
+									cardOpenedDate: patientData.createdAt ? String(patientData.createdAt).slice(0, 10) : "",
+								} as any,
+							}}
 						/>
 					</>
 				)}

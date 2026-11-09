@@ -21,3 +21,28 @@ export {
 	generate043JsonExport,
 	generate043PlainText,
 } from "./export/recordExportJsonText.js";
+
+import {
+	type OutpatientProtocolTemplate,
+	type StomxOutpatientTemplateMetadata,
+	buildAuthenticProtocolTemplate,
+} from "@dental/shared";
+
+export const resolvedProtocolsCache = new Map<number, OutpatientProtocolTemplate>();
+
+/**
+ * Преобразует шаблон из каталога 448 клинических шаблонов в протокол медицинской карты (SOAP).
+ * Результат кэшируется в RAM для мгновенного доступа без нагрузки на CPU.
+ */
+export function resolveProtocolFromTemplate(
+	tpl: StomxOutpatientTemplateMetadata,
+): OutpatientProtocolTemplate {
+	const cached = resolvedProtocolsCache.get(tpl.id);
+	if (cached) {
+		return cached;
+	}
+
+	const resolved = buildAuthenticProtocolTemplate(tpl);
+	resolvedProtocolsCache.set(tpl.id, resolved);
+	return resolved;
+}

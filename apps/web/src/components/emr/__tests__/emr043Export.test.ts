@@ -330,7 +330,10 @@ describe("Form 043/u Document Generators", () => {
 		assert.equal(parsed.passport.medicalCardNumber, "СТ-2026-0843");
 		assert.equal(parsed.visitDiaries.length, 1);
 		// Backward compatibility alias test
-		assert.equal(generate043JsonExport(MOCK_CARD_DATA), jsonStr);
+		assert.equal(generate043JsonExport, generateMedicalRecordJsonExport);
+		const aliasParsed = JSON.parse(generate043JsonExport(MOCK_CARD_DATA));
+		assert.equal(aliasParsed.formNumber, parsed.formNumber);
+		assert.equal(aliasParsed.exportSchemaVersion, parsed.exportSchemaVersion);
 	});
 
 	it("generates structured plain text transcript for clipboard copy", () => {

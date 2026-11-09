@@ -80,30 +80,6 @@ export const visits = pgTable(
 	},
 );
 
-// #35 — прием::пользовательские_справочники_бланков_осмотра
-export const customExaminationFormCatalogs = pgTable(
-	"custom_examination_form_catalogs",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		formCode: text("form_code").default("FORM_043U").notNull(),
-		formTitle: text("form_title").notNull(),
-		customFieldCount: integer("custom_field_count").default(12).notNull(),
-		egiszUnified: boolean("egisz_unified").default(true).notNull(),
-		status: text("status").default("active").notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"custom_examination_form_catalogs_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
 // #36 — прием::несколько_диагнозов_егисз
 export const egiszMultipleDiagnoses = pgTable(
 	"egisz_multiple_diagnoses",
@@ -133,32 +109,6 @@ export const egiszMultipleDiagnoses = pgTable(
 		patientIdIdx: index("egisz_multiple_diagnoses_patient_id_idx").on(
 			t.patientId,
 		),
-	}),
-);
-
-// #38 — прием::формы_осмотра_без_зубной_формулы
-export const nonDentalExaminationForms = pgTable(
-	"non_dental_examination_forms",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		specialtyType: text("specialty_type").default("ENT").notNull(),
-		formName: text("form_name").notNull(),
-		patientName: text("patient_name").notNull(),
-		complaints: text("complaints").notNull(),
-		objectiveStatus: text("objective_status").notNull(),
-		diagnosisMkb: text("diagnosis_mkb").notNull(),
-		recommendations: text("recommendations").notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"non_dental_examination_forms_organizationId_idx",
-		).on(t.organizationId),
 	}),
 );
 

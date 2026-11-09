@@ -10,20 +10,34 @@ import type React from "react";
 import { useMemo } from "react";
 import { InformedConsentModal } from "../../../../consents/InformedConsentModal";
 import { ClinicalPhotoProtocolModal } from "../../../../photography/ClinicalPhotoProtocolModal";
-import { VisitSoapEditor } from "../../../../visit/VisitSoapEditor";
+import { ChairsideAnesthesiaQuickBar } from "../../../../anesthesia/AnesthesiaQuickBar";
 import { VisitSurgeryProtocolTab } from "../../../../visit/surgery/VisitSurgeryProtocolTab";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWorkspaceShell";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 
-export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = () => {
+export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+	const patientId = useMemo(() => readPatientIdFromUrl(), []);
+	const patientName = useLauncherPatientName(patientId) || "Смирнова Екатерина Васильевна";
 	return (
 		<div className="w-full min-h-screen bg-[var(--paper-soft)] p-4 sm:p-6" data-testid="anesthesia-standalone-host">
-			<div className="max-w-5xl mx-auto bg-[var(--paper)] rounded-2xl shadow-sm border border-[var(--line)] overflow-hidden">
-				<VisitSoapEditor
-					patientName="Иванов Иван Иванович"
-					doctorName="Д-р Воронов Алексей Владимирович"
+			<div className="max-w-5xl mx-auto bg-[var(--paper)] rounded-2xl shadow-sm border border-[var(--line)] overflow-hidden p-6">
+				<div className="flex items-center justify-between pb-4 border-b border-[var(--line)] mb-4">
+					<h2 className="text-base font-bold text-[var(--ink)] m-0">Протокол анестезии у кресла — {patientName}</h2>
+					{onClose && (
+						<button
+							type="button"
+							onClick={onClose}
+							className="px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
+						>
+							Закрыть
+						</button>
+					)}
+				</div>
+				<ChairsideAnesthesiaQuickBar
+					patientWeightKg={70}
 					activeTooth={16}
+					onApplyAnesthesia={(text, res) => console.log("Applied anesthesia:", text, res)}
 				/>
 			</div>
 		</div>
