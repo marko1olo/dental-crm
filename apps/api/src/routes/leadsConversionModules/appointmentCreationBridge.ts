@@ -16,8 +16,9 @@ import { extractUtmAttribution } from "./conversionValidator.js";
 import { broadcastLeadConversion, recordLeadStageTransition } from "./leadStageTransition.js";
 import { resolveOrCreatePatientFromLead } from "./patientCreationBridge.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction
-export async function resolveDoctorAndChair(tx: any, orgId: string, payload: ConvertLeadPayload) {
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export async function resolveDoctorAndChair(tx: DbTransaction, orgId: string, payload: ConvertLeadPayload) {
 	let doctor: { id: string } | undefined;
 	const candDoc = payload.doctorId;
 	if (candDoc && candDoc !== "default-doctor" && z.string().uuid().safeParse(candDoc).success) {
@@ -76,7 +77,7 @@ export async function convertLeadToAppointment(params: {
 
 		let appointment: unknown = null;
 		if (hasDates && doctor) {
-			const utm = extractUtmAttribution(lead.source, (lead as any).metadata ?? null);
+			const utm = extractUtmAttribution(lead.source, (lead.metadata as Record<string, unknown> | null) ?? null);
 			const reason = payload.reason || (Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Первичная консультация: ${lead.clinicalTags.join(", ")}` : (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
 			const commentParts = [payload.comment, lead.notes ? `Жалоба: ${lead.notes}` : null, lead.source ? `Канал: ${lead.source}` : null, utm.formattedUtm, Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Теги: ${lead.clinicalTags.join(", ")}` : null, lead.audioRecordUrl ? `Аудио: ${lead.audioRecordUrl}` : null, lead.transcriptionSnippet ? `Транскрипт: ${lead.transcriptionSnippet}` : null].filter(Boolean);
 

@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -37,8 +37,10 @@ export async function registerLeadConversionRoutes(app: FastifyInstance): Promis
 		});
 	});
 
-	// biome-ignore lint/suspicious/noExplicitAny: Fastify request and reply handler
-	const createPatientFromLeadHandler = async (req: any, reply: any) => {
+	const createPatientFromLeadHandler = async (
+		req: FastifyRequest<{ Params: { id: string } }>,
+		reply: FastifyReply,
+	) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			req,
 			reply,

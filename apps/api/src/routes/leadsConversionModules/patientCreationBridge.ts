@@ -13,9 +13,11 @@ import { normalizePatientAdministrativeProfile } from "../../utils/patientAdmini
 import { extractUtmAttribution } from "./conversionValidator.js";
 import { broadcastLeadConversion, recordLeadStageTransition } from "./leadStageTransition.js";
 
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbExecutor = typeof db | DbTransaction;
+
 export async function resolveOrCreatePatientFromLead(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	tx: any,
+	tx: DbExecutor,
 	organizationId: string,
 	lead: typeof crmLeads.$inferSelect,
 	comment?: string | null,
@@ -34,7 +36,7 @@ export async function resolveOrCreatePatientFromLead(
 		if (existing) return { patient: existing, alreadyExisted: true };
 	}
 
-	const utmInfo = extractUtmAttribution(lead.source, (lead as any).metadata ?? null);
+	const utmInfo = extractUtmAttribution(lead.source, (lead.metadata as Record<string, unknown> | null) ?? null);
 	const notesParts = [
 		lead.notes ? `Жалобы: ${lead.notes}` : null,
 		leadSource ? `Источник: ${leadSource}` : null,
@@ -89,6 +91,7 @@ export async function createPatientFromLead(params: {
 		toStage: "converted",
 		stageEnteredAt: lead.stageEnteredAt || lead.createdAt,
 		changedByUserId: null,
+		patientId: patient.id,
 	});
 
 	broadcastLeadConversion({ wsBroker, organizationId, leadId, toStage: "converted", patient });

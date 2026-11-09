@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { DEFAULT_MARKETING_PROMOS } from "./marketingPresets";
@@ -31,13 +32,19 @@ export function useMarketingPromos() {
 				const res = await fetch("/api/marketing/promos", {
 					headers: denteAdminSecretRequestHeaders(),
 				});
-				if (!res.ok) return;
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
 				const data = await res.json();
 				if (cancelled || !Array.isArray(data?.promos) || data.promos.length === 0) return;
 				setPromos(data.promos as MarketingPromo[]);
 				setSelectedPromoId((prev) => prev || data.promos[0]?.id || "");
-			} catch {
-				// При офлайне сохраняются канонические пресеты клиники
+			} catch (err) {
+				console.error("[useMarketingPromos] Ошибка загрузки акций клиники:", err);
+				showToast("Не удалось загрузить акции клиники", "error", 6000, {
+					label: "Повторить",
+					onAction: () => { void loadPromosFromServer(); },
+				});
 			}
 		}
 		void loadPromosFromServer();
@@ -58,28 +65,48 @@ export function useMarketingPromos() {
 			}),
 		);
 
-		void fetch(`/api/marketing/promos/${encodeURIComponent(promoId)}/status`, {
+		fetch(`/api/marketing/promos/${encodeURIComponent(promoId)}/status`, {
 			method: "PATCH",
 			headers: {
 				"Content-Type": "application/json",
 				...denteAdminSecretRequestHeaders(),
 			},
 			body: JSON.stringify({ status: targetNextStatus }),
-		}).catch(() => {});
+		})
+			.then((res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			})
+			.catch((err) => {
+				console.error("[useMarketingPromos] Ошибка смены статуса акции:", err);
+				showToast("Не удалось обновить статус акции", "error", 6000, {
+					label: "Повторить",
+					onAction: () => handleTogglePromoStatus(promoId),
+				});
+			});
 	}, []);
 
 	const handleSaveNewPromo = useCallback((newPromo: MarketingPromo) => {
 		setPromos((prev) => [newPromo, ...prev.filter((p) => p.id !== newPromo.id)]);
 		setSelectedPromoId(newPromo.id);
 
-		void fetch("/api/marketing/promos", {
+		fetch("/api/marketing/promos", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				...denteAdminSecretRequestHeaders(),
 			},
 			body: JSON.stringify(newPromo),
-		}).catch(() => {});
+		})
+			.then((res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			})
+			.catch((err) => {
+				console.error("[useMarketingPromos] Ошибка сохранения новой акции:", err);
+				showToast("Не удалось сохранить акцию в базе", "error", 6000, {
+					label: "Повторить",
+					onAction: () => handleSaveNewPromo(newPromo),
+				});
+			});
 	}, []);
 
 	return {

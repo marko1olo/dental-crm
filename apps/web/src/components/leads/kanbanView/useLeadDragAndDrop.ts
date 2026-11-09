@@ -12,8 +12,8 @@ export function useLeadDragAndDrop(
 	updateLeadStatus: (
 		leadId: string,
 		nextStatus: Lead["status"],
-		options?: any,
-	) => Promise<any>,
+		options?: { reason?: string; dropReason?: string },
+	) => Promise<void>,
 ) {
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 

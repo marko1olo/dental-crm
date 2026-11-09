@@ -3,8 +3,13 @@
  * Mandate 8b (<= 120 lines)
  */
 
-import type { Lead } from "../../../store/leadsStore";
+import type {
+	ConvertLeadResult,
+	ConvertLeadToAppointmentPayload,
+	Lead,
+} from "../../../store/leadsStore";
 import type { BookableChair, BookableDoctor } from "../leadsKanbanTypes";
+import type { PendingBookingInfo } from "./convertSubmitTypes";
 import { useLeadConvertModalSubmit } from "./useLeadConvertModalSubmit";
 import { useLeadScheduleHandlers } from "./useLeadScheduleHandlers";
 import type { useLeadsKanbanViewState } from "./useLeadsKanbanViewState";
@@ -18,9 +23,12 @@ interface UseLeadAppointmentConversionBridgeProps {
 	v: ReturnType<typeof useLeadsKanbanViewState>;
 	visitMinutes: number | null | undefined;
 	clinicTimeZone: string | null | undefined;
-	convertLeadToAppointment: (id: string, payload: any) => Promise<any>;
+	convertLeadToAppointment: (
+		id: string,
+		payload: ConvertLeadToAppointmentPayload,
+	) => Promise<ConvertLeadResult>;
 	fetchLeads: () => void | Promise<void>;
-	navigateToScheduleWithBooking: (data: any) => void;
+	navigateToScheduleWithBooking: (data: PendingBookingInfo) => void;
 }
 
 export function useLeadAppointmentConversionBridge({

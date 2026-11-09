@@ -24,40 +24,56 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
-const SCHEMA_FILE = "apps/api/src/db/schema.ts";
+const SCHEMA_DIR = "apps/api/src/db/schema";
 const MIGRATIONS_DIR = "apps/api/drizzle";
 const SOURCE_DIR = "apps/api/src";
 
 /** Таблицы, которые сознательно не сверяются (нет DDL в репозитории вообще). */
 const NOT_CHECKED = new Set();
 
-/** db/schema.ts → { таблица: Set<колонка> } */
+function getAllSchemaFiles(dir) {
+	const files = [];
+	for (const entry of readdirSync(dir)) {
+		const full = path.join(dir, entry);
+		if (statSync(full).isDirectory()) {
+			files.push(...getAllSchemaFiles(full));
+		} else if (entry.endsWith(".ts") && !entry.endsWith(".test.ts")) {
+			files.push(full);
+		}
+	}
+	return files;
+}
+
+// db/schema/**/*.ts -> { таблица: Set<колонка> }
 function columnsDeclaredInSchema() {
-	const source = readFileSync(SCHEMA_FILE, "utf8");
+	const files = getAllSchemaFiles(SCHEMA_DIR);
 	const tables = new Map();
 
-	const tableStart = /export const \w+ = pgTable\(\s*"([a-z0-9_]+)"\s*,\s*\{/g;
-	let match;
-	while ((match = tableStart.exec(source)) !== null) {
-		const table = match[1].toLowerCase();
-		// Тело объявления — от открывающей скобки объекта до парной закрывающей.
-		let depth = 1;
-		let index = tableStart.lastIndex;
-		while (index < source.length && depth > 0) {
-			const char = source[index];
-			if (char === "{") depth += 1;
-			else if (char === "}") depth -= 1;
-			index += 1;
-		}
-		const body = source.slice(tableStart.lastIndex, index - 1);
+	for (const file of files) {
+		const source = readFileSync(file, "utf8");
+		const tableStart = /export\s+const\s+\w+\s*=\s*pgTable\s*\(\s*["']([a-z0-9_]+)["']\s*,\s*\{/g;
+		let match;
+		while ((match = tableStart.exec(source)) !== null) {
+			const table = match[1].toLowerCase();
+			// Тело объявления — от открывающей скобки объекта до парной закрывающей.
+			let depth = 1;
+			let index = tableStart.lastIndex;
+			while (index < source.length && depth > 0) {
+				const char = source[index];
+				if (char === "{") depth += 1;
+				else if (char === "}") depth -= 1;
+				index += 1;
+			}
+			const body = source.slice(tableStart.lastIndex, index - 1);
 
-		const columns = new Set();
-		// Одна колонка — одна строка вида `имяПоля: тип("имя_колонки"...`.
-		for (const line of body.split("\n")) {
-			const column = /^\s*\w+\s*:\s*\w+\(\s*"([a-z0-9_]+)"/.exec(line);
-			if (column) columns.add(column[1].toLowerCase());
+			const columns = tables.get(table) ?? new Set();
+			// Одна колонка — одна строка вида `имяПоля: тип("имя_колонки"...`.
+			for (const line of body.split("\n")) {
+				const column = /^\s*\w+\s*:\s*\w+\(\s*["']([a-z0-9_]+)["']/.exec(line);
+				if (column) columns.add(column[1].toLowerCase());
+			}
+			tables.set(table, columns);
 		}
-		tables.set(table, columns);
 	}
 	return tables;
 }

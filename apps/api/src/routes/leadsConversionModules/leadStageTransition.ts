@@ -6,24 +6,25 @@
 import { and, eq } from "drizzle-orm";
 import { crmLeads, crmLeadStageHistory } from "../../db/schema.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
+import type { DbExecutor } from "./patientCreationBridge.js";
 
 export interface RecordStageTransitionParams {
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	tx: any;
+	tx: DbExecutor;
 	organizationId: string;
 	leadId: string;
 	fromStage: string | null;
 	toStage: string;
 	stageEnteredAt: Date | null;
 	changedByUserId: string | null;
+	patientId?: string | null;
 }
 
 /**
  * Records an immutable lead stage transition audit entry in crmLeadStageHistory
- * and updates stageEnteredAt and status in crmLeads.
+ * and updates stageEnteredAt and status in crmLeads (persisting patientId on conversion).
  */
 export async function recordLeadStageTransition(params: RecordStageTransitionParams): Promise<Date> {
-	const { tx, organizationId, leadId, fromStage, toStage, stageEnteredAt, changedByUserId } = params;
+	const { tx, organizationId, leadId, fromStage, toStage, stageEnteredAt, changedByUserId, patientId } = params;
 	const now = new Date();
 	const stageStart = stageEnteredAt || now;
 	const durationSeconds = Math.max(0, Math.floor((now.getTime() - stageStart.getTime()) / 1000));
@@ -38,9 +39,14 @@ export async function recordLeadStageTransition(params: RecordStageTransitionPar
 		createdAt: now,
 	});
 
+	const updateValues: Record<string, unknown> = { status: toStage, stageEnteredAt: now };
+	if (patientId) {
+		updateValues.patientId = patientId;
+	}
+
 	await tx
 		.update(crmLeads)
-		.set({ status: toStage, stageEnteredAt: now })
+		.set(updateValues)
 		.where(and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)));
 
 	return now;

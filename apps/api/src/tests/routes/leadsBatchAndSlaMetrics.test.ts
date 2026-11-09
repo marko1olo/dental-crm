@@ -11,7 +11,7 @@
  */
 
 import assert from "node:assert/strict";
-import test, { after, before } from "node:test";
+import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
@@ -52,7 +52,7 @@ const LEAD_3_ID = fixtureUuid(NAMESPACE, 12);
 const LEAD_SLA_BREACH_ID = fixtureUuid(NAMESPACE, 13);
 const LEAD_CONSULT_ID = fixtureUuid(NAMESPACE, 14);
 
-test("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", async (suite) => {
+describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", () => {
 	let app: FastifyInstance;
 	let clinicToken1: string;
 	let staffToken1: string;
@@ -248,7 +248,7 @@ test("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", a
 		}
 	});
 
-	await suite.test(
+	it(
 		"1. POST /api/leads/batch-stage: Transactional batch update transitions leads and writes audit history",
 		async () => {
 			const res = await app.inject({
@@ -313,7 +313,7 @@ test("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", a
 		},
 	);
 
-	await suite.test(
+	it(
 		"2. PATCH /api/leads/:id/stage: Single stage transition resets stageEnteredAt, sets tags and records audit",
 		async () => {
 			const res = await app.inject({
@@ -361,7 +361,7 @@ test("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", a
 		},
 	);
 
-	await suite.test(
+	it(
 		"3. GET /api/leads/pipeline-metrics: Computes accurate conversion rates, SLA breach counter, and revenue",
 		async () => {
 			const res = await app.inject({
@@ -399,7 +399,7 @@ test("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", a
 		},
 	);
 
-	await suite.test(
+	it(
 		"4. Telephony Webhook Binding: Incoming PBX call attaches audioRecordUrl and transcription to CRM lead",
 		async () => {
 			const callerPhone = "+79998887766";
@@ -447,7 +447,7 @@ test("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", a
 		},
 	);
 
-	await suite.test(
+	it(
 		"5. Tenant Isolation: Another organization cannot batch update or access leads from Org 1",
 		async () => {
 			const res = await app.inject({

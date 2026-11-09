@@ -230,14 +230,14 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "save marketing campaigns");
 		if (!orgId) return;
 
-		const body = request.body as any;
+		const body = request.body as Record<string, unknown> | unknown[] | null | undefined;
 		const rawList = Array.isArray(body)
 			? body
-			: Array.isArray(body?.campaigns)
-				? body.campaigns
-				: Array.isArray(body?.channels)
-					? body.channels
-					: body && typeof body === "object" && body.channelKey
+			: Array.isArray((body as Record<string, unknown> | null)?.campaigns)
+				? (body as Record<string, unknown>).campaigns
+				: Array.isArray((body as Record<string, unknown> | null)?.channels)
+					? (body as Record<string, unknown>).channels
+					: body && typeof body === "object" && "channelKey" in body
 						? [body]
 						: null;
 
@@ -307,11 +307,11 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "save marketing romi channels");
 		if (!orgId) return;
 
-		const body = request.body as any;
+		const body = request.body as Record<string, unknown> | unknown[] | null | undefined;
 		const rawList = Array.isArray(body)
 			? body
-			: Array.isArray(body?.channels)
-				? body.channels
+			: Array.isArray((body as Record<string, unknown> | null)?.channels)
+				? (body as Record<string, unknown>).channels
 				: null;
 
 		if (!rawList) {
