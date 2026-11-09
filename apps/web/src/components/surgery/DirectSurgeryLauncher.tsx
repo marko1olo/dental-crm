@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { ChairsideSurgeryHubModal } from "./ChairsideSurgeryHubModal";
+import { ChairsideSurgeryHubModal, type SurgeryHubTab } from "./ChairsideSurgeryHubModal";
 import type { SurgeryScenarioType } from "./surgeryCatalogData";
 import { useAppStore } from "../../store/appStore";
 
@@ -14,9 +14,16 @@ export const DirectSurgeryLauncher: React.FC = () => {
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
 		return (
-			(s.includes("surgery") && !s.includes("surgery-implant")) ||
-			(h.includes("surgery") && !h.includes("surgery-implant")) ||
-			h.includes("extraction") || s.includes("extraction")
+			s.includes("surgery") ||
+			h.includes("surgery") ||
+			s.includes("implant") ||
+			h.includes("implant") ||
+			h.includes("extraction") ||
+			s.includes("extraction") ||
+			h.includes("resection") ||
+			s.includes("resection") ||
+			h.includes("sinus") ||
+			s.includes("sinus")
 		);
 	};
 
@@ -30,6 +37,14 @@ export const DirectSurgeryLauncher: React.FC = () => {
 			if (h.includes("sinus") || s.includes("sinus")) return "sinus_gbr";
 		}
 		return "implant";
+	});
+	const [initialTab, setInitialTab] = useState<SurgeryHubTab>(() => {
+		if (typeof window !== "undefined") {
+			const h = window.location.hash || "";
+			const s = window.location.search || "";
+			if (h.includes("implant-passport") || s.includes("implant-passport")) return "passport";
+		}
+		return "protocol";
 	});
 	const [initialTooth, setInitialTooth] = useState<number>(46);
 
@@ -60,24 +75,56 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	}, [storeActivePatient, storeDoctorName]);
 
 	const handleOpenEvent = useCallback((e: Event) => {
-		const detail = (e as CustomEvent<{ scenario?: SurgeryScenarioType; toothFdi?: number }>).detail;
+		const detail = (e as CustomEvent<{ scenario?: SurgeryScenarioType; toothFdi?: number; tab?: SurgeryHubTab }>).detail;
 		if (detail?.scenario) setInitialScenario(detail.scenario);
 		if (detail?.toothFdi) setInitialTooth(detail.toothFdi);
+		if (detail?.tab) setInitialTab(detail.tab);
+		setIsOpen(true);
+	}, []);
+
+	const handleOpenImplantPassport = useCallback((e?: Event) => {
+		const detail = (e as CustomEvent<{ tooth?: number; toothFdi?: number; tab?: string }>)?.detail;
+		setInitialScenario("implant");
+		setInitialTab("passport");
+		if (detail?.tooth || detail?.toothFdi) setInitialTooth(detail.tooth || detail.toothFdi || 46);
+		setIsOpen(true);
+	}, []);
+
+	const handleOpenImplantStudio = useCallback((e?: Event) => {
+		const detail = (e as CustomEvent<{ tooth?: number; toothFdi?: number; tab?: string }>)?.detail;
+		setInitialScenario("implant");
+		setInitialTab((detail?.tab === "passport" ? "passport" : "protocol") as SurgeryHubTab);
+		if (detail?.tooth || detail?.toothFdi) setInitialTooth(detail.tooth || detail.toothFdi || 46);
 		setIsOpen(true);
 	}, []);
 
 	useEffect(() => {
 		window.addEventListener("dente:open-surgery", handleOpenEvent);
 		window.addEventListener("dente-open-surgery", handleOpenEvent);
+		window.addEventListener("dente:open-implant-passport", handleOpenImplantPassport);
+		window.addEventListener("dente-open-implant-passport", handleOpenImplantPassport);
+		window.addEventListener("dente:open-implant-studio", handleOpenImplantStudio);
 
 		const handleHash = () => {
 			if (checkUrlMatches()) {
 				const h = window.location.hash || "";
 				const s = window.location.search || "";
-				if (h.includes("extraction") || s.includes("extraction")) setInitialScenario("extraction");
-				else if (h.includes("resection") || s.includes("resection")) setInitialScenario("resection_periostotomy");
-				else if (h.includes("sinus") || s.includes("sinus")) setInitialScenario("sinus_gbr");
-				else setInitialScenario("implant");
+				if (h.includes("implant-passport") || s.includes("implant-passport")) {
+					setInitialScenario("implant");
+					setInitialTab("passport");
+				} else if (h.includes("extraction") || s.includes("extraction")) {
+					setInitialScenario("extraction");
+					setInitialTab("protocol");
+				} else if (h.includes("resection") || s.includes("resection")) {
+					setInitialScenario("resection_periostotomy");
+					setInitialTab("protocol");
+				} else if (h.includes("sinus") || s.includes("sinus")) {
+					setInitialScenario("sinus_gbr");
+					setInitialTab("protocol");
+				} else {
+					setInitialScenario("implant");
+					setInitialTab("protocol");
+				}
 				setIsOpen(true);
 			}
 		};
@@ -87,10 +134,13 @@ export const DirectSurgeryLauncher: React.FC = () => {
 		return () => {
 			window.removeEventListener("dente:open-surgery", handleOpenEvent);
 			window.removeEventListener("dente-open-surgery", handleOpenEvent);
+			window.removeEventListener("dente:open-implant-passport", handleOpenImplantPassport);
+			window.removeEventListener("dente-open-implant-passport", handleOpenImplantPassport);
+			window.removeEventListener("dente:open-implant-studio", handleOpenImplantStudio);
 			window.removeEventListener("hashchange", handleHash);
 			window.removeEventListener("popstate", handleHash);
 		};
-	}, [handleOpenEvent]);
+	}, [handleOpenEvent, handleOpenImplantPassport, handleOpenImplantStudio]);
 
 	if (!isOpen) return null;
 
@@ -103,6 +153,7 @@ export const DirectSurgeryLauncher: React.FC = () => {
 			doctorName={effectivePatient.doctorName}
 			initialTooth={initialTooth}
 			initialScenario={initialScenario}
+			initialTab={initialTab}
 			inventoryOverdraftActive={true}
 		/>
 	);

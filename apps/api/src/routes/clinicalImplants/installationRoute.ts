@@ -53,28 +53,10 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			.limit(1);
 
 		if (!patient) {
-			const [existingAny] = await db
-				.select({ id: patients.id })
-				.from(patients)
-				.where(eq(patients.organizationId, orgId))
-				.limit(1);
-			if (existingAny) {
-				targetPatientId = existingAny.id;
-			} else {
-				const [autoPatient] = await db
-					.insert(patients)
-					.values({
-						organizationId: orgId,
-						fullName: "Пациент хирургического кабинета",
-						phone: "+79990000000",
-					})
-					.returning({ id: patients.id });
-				if (autoPatient) {
-					targetPatientId = autoPatient.id;
-				} else {
-					return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в вашей клинике." });
-				}
-			}
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в вашей клинике.",
+			});
 		}
 
 		const effectiveInput = { ...input, patientId: targetPatientId };

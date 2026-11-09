@@ -1,4 +1,4 @@
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { createImplantInstallationSchema } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
@@ -24,21 +24,6 @@ export async function deductImplantScrew(
 			)[0]
 		: null;
 
-	if (!invItem) {
-		const brandRegex = `%${input.implantBrand}%`;
-		const sizeRegex = `%${input.implantDiameterMm}%`;
-		const matching = await tx
-			.select()
-			.from(inventoryItems)
-			.where(
-				and(
-					eq(inventoryItems.organizationId, orgId),
-					or(ilike(inventoryItems.name, brandRegex), ilike(inventoryItems.name, sizeRegex)),
-				),
-			)
-			.limit(1);
-		if (matching[0]) invItem = matching[0];
-	}
 
 	if (!invItem) {
 		const [created] = await tx

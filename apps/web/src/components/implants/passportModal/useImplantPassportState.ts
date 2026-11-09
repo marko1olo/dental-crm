@@ -21,6 +21,7 @@ import {
 	DEFAULT_CANONICAL_CONSUMABLES,
 } from "../implantQuickPresets";
 import { findImplantSystem } from "../implantCatalogData";
+import { resolveEffectiveSurgeryPatientId } from "../../surgery/resolveSurgeryPatient";
 
 export type ImplantModalTab = "protocol" | "diary" | "memo" | "passport";
 
@@ -270,7 +271,12 @@ export function useImplantPassportState({
 
 		try {
 			const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientId);
-			const targetPatientId = isValidUuid ? patientId : "00000000-0000-0000-0000-000000000001";
+			const targetPatientId = isValidUuid ? patientId : await resolveEffectiveSurgeryPatientId(patientId, patientName);
+
+			if (!targetPatientId) {
+				showToast("Пациент не найден в клинике", "error");
+				return;
+			}
 
 			const res = await fetch("/api/clinical/implants/installations", {
 				method: "POST",
@@ -297,17 +303,16 @@ export function useImplantPassportState({
 			});
 
 			if (!res.ok) {
-				showToast("Протокол имплантации зафиксирован и внесен в дневник приёма", "success");
-				onClose?.();
+				const errBody = await res.json().catch(() => null);
+				showToast(errBody?.message || "Ошибка сохранения протокола имплантации на сервере", "error");
 				return;
 			}
 			showToast(`Паспорт имплантата #${toothFdi} зафиксирован и внесен в дневник`, "success");
 			onClose?.();
 		} catch {
-			showToast("Протокол зафиксирован локально и внесен в дневник приёма", "success");
-			onClose?.();
+			showToast("Сетевая ошибка при отправке протокола на сервер", "error");
 		}
-	}, [assembledData, generateDiaryText, onSavePassport, onInsertIntoDiary, onClose, patientId, toothFdi, selectedStockItemId, selectedBrand, diameterMm, lengthMm, lotNumber, serialNumber, expirationDate, boneDensity, torqueNcm, isGbrPerformed, activeGraft, activeMembrane, activeSuture, operationPriceRub, capType]);
+	}, [assembledData, generateDiaryText, onSavePassport, onInsertIntoDiary, onClose, patientId, patientName, toothFdi, selectedStockItemId, selectedBrand, diameterMm, lengthMm, lotNumber, serialNumber, expirationDate, boneDensity, torqueNcm, isGbrPerformed, activeGraft, activeMembrane, activeSuture, operationPriceRub, capType]);
 
 	const handlePrintPassport = useCallback(() => {
 		setActiveTab("passport");

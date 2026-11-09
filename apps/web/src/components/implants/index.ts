@@ -5,22 +5,6 @@
  */
 
 export * from "./implantologyCatalogData";
-export * from "./ImplantologyStudioModal";
-export {
-	useImplantologyStudioState,
-	ImplantStudioHeader,
-	ImplantPassportTab,
-	ImplantMemoTab,
-	ImplantProtocolTab as ImplantStudioProtocolTab,
-	ImplantDiaryTab as ImplantStudioDiaryTab,
-	type ImplantStudioTab,
-	type ImplantStudioHeaderProps,
-	type ImplantPassportTabProps,
-	type ImplantMemoTabProps,
-	type ImplantProtocolTabProps as ImplantStudioProtocolTabProps,
-	type ImplantDiaryTabProps as ImplantStudioDiaryTabProps,
-} from "./studio";
-export * from "./DirectImplantologyLauncher";
 export {
 	NORMALIZED_IMPLANT_SYSTEMS,
 	TI_BASE_CATALOG_SSOT,
@@ -41,7 +25,7 @@ export * from "./ImplantWarehouseSelector";
 export * from "./ImplantDiaryTab";
 export * from "./implantCatalog";
 export * from "./implantTorqueCatalog";
-export * from "./DirectImplantPassportLauncher";
+
 
 import {
 	IMPLANT_BRANDS_METADATA,
@@ -68,8 +52,7 @@ export {
 export type {
 	ImplantPassportModalProps as ImplantSurgeryProtocolModalProps,
 } from "./ImplantPassportModal";
-export { ImplantBatchSelector } from "./ImplantBatchSelector";
-export type { ImplantBatchSelectorProps } from "./ImplantBatchSelector";
+export { ImplantBatchSelector, type ImplantBatchSelectorProps } from "./ImplantWarehouseSelector";
 export type {
 	FastImplantPassportData as ImplantSurgicalPassportData,
 } from "./implantQuickPresets";

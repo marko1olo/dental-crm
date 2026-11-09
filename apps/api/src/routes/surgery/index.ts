@@ -95,34 +95,22 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			.limit(1);
 
 		if (!patient) {
-			const [existingAny] = await db
-				.select({ id: patients.id, fullName: patients.fullName })
-				.from(patients)
-				.where(eq(patients.organizationId, orgId))
-				.limit(1);
-			if (existingAny) {
-				targetPatientId = existingAny.id;
-			} else {
-				const [autoPatient] = await db
-					.insert(patients)
-					.values({
-						organizationId: orgId,
-						fullName: "Пациент хирургического кабинета",
-						phone: "+79990000000",
-					})
-					.returning({ id: patients.id, fullName: patients.fullName });
-				if (autoPatient) {
-					targetPatientId = autoPatient.id;
-				} else {
-					return reply.code(404).send({
-						error: "PatientNotFound",
-						message: "Пациент не найден в текущей клинике.",
-					});
-				}
-			}
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в текущей клинике.",
+			});
 		}
 
-		const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === input.normId);
+		const SCENARIO_NORM_ALIASES: Record<string, string> = {
+			"scen-extraction": "surgery_extraction_simple",
+			"scen-resection": "surgery_periostotomy",
+			"scen-sinus-gbr": "surgery_sinus_lift_gbr",
+			"scen-implant": "surgery_implant_standard",
+		};
+		const effectiveNormId = SCENARIO_NORM_ALIASES[input.normId] || input.normId;
+		const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find(
+			(n) => n.id === effectiveNormId || n.id === input.normId,
+		);
 
 		const result = await db.transaction(async (tx) => {
 			let visitUpdated = false;
@@ -148,7 +136,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 				if (visit) {
 					const existingObj = visit.objectiveStatus || "";
-					const formattedEntry = `[ПРОТОКОЛ ОПЕРАЦИИ: ${norm?.title || input.normId}${input.toothNumberFdi ? ` (FDI #${input.toothNumberFdi})` : ""}]\n${input.protocolText}`;
+					const formattedEntry = `[ПРОТОКОЛ ОПЕРАЦИИ: ${norm?.title || effectiveNormId}${input.toothNumberFdi ? ` (FDI #${input.toothNumberFdi})` : ""}]\n${input.protocolText}`;
 					const updatedObj = existingObj ? `${existingObj}\n\n${formattedEntry}` : formattedEntry;
 
 					await tx
@@ -165,18 +153,33 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 			// Если указан номер зуба, фиксируем факт вмешательства в состоянии зуба
 			if (input.toothNumberFdi) {
-				const isImplant = input.normId.toLowerCase().includes("implant");
-				const newState = isImplant ? "Implant" : "Extracted";
-				const newSurfaces = [isImplant ? "implant_site" : "extracted_socket"];
+				const isImplant =
+					effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
+				const isExtraction =
+					effectiveNormId.toLowerCase().includes("extract") || norm?.category === "extraction";
+				const newState = isImplant ? "Implant" : isExtraction ? "Extracted" : "Treated";
+				const newSurfaces = isImplant
+					? ["implant_site"]
+					: isExtraction
+						? ["extracted_socket"]
+						: ["cured_apical"];
 
-				await tx.delete(toothStates).where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, targetPatientId), eq(toothStates.toothNumber, input.toothNumberFdi)));
+				await tx
+					.delete(toothStates)
+					.where(
+						and(
+							eq(toothStates.organizationId, orgId),
+							eq(toothStates.patientId, targetPatientId),
+							eq(toothStates.toothNumber, input.toothNumberFdi),
+						),
+					);
 				await tx.insert(toothStates).values({
 					organizationId: orgId,
 					patientId: targetPatientId,
 					toothNumber: input.toothNumberFdi,
 					state: newState,
 					surfaces: newSurfaces,
-					notes: `Хирургическая операция: ${norm?.title || input.normId}`,
+					notes: `Хирургическая операция: ${norm?.title || effectiveNormId}`,
 				});
 
 				await tx.insert(toothStateHistory).values({
@@ -185,7 +188,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					toothNumber: input.toothNumberFdi,
 					newState,
 					newSurfaces,
-					reason: `Хирургическая операция: ${norm?.title || input.normId}`,
+					reason: `Хирургическая операция: ${norm?.title || effectiveNormId}`,
 				});
 			}
 
@@ -251,7 +254,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			organizationId: orgId,
 			patientId: targetPatientId,
 			action: "RECORD_SURGICAL_OPERATION_PROTOCOL",
-			diagnosis: norm?.title || input.normId,
+			diagnosis: norm?.title || effectiveNormId,
 		});
 
 		wsBroker.broadcastToOrganization(orgId, {

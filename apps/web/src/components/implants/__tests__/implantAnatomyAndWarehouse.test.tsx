@@ -10,8 +10,7 @@ import {
 import { ImplantPassportCard, AnatomicalJawArchSchema } from "../ImplantPassportCard";
 import { ImplantEconomicsSection } from "../ImplantEconomicsSection";
 import { ImplantConsumablesSelector } from "../ImplantConsumablesSelector";
-import { ImplantWarehouseSelector } from "../ImplantWarehouseSelector";
-import { ImplantBatchSelector } from "../ImplantBatchSelector";
+import { ImplantWarehouseSelector, ImplantBatchSelector } from "../ImplantWarehouseSelector";
 
 describe("Implant Anatomy, Warehouse & Consumables", () => {
 	it("23. AnatomicalJawArchSchema renders full 32 teeth dental formula", () => {

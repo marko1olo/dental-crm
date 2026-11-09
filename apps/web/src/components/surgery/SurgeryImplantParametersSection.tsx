@@ -53,7 +53,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 						key={sys.id}
 						type="button"
 						onClick={() => onSelectBrand(sys.brandName)}
-						className={`min-h-[44px] px-3.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center whitespace-nowrap ${
 							selectedBrand === sys.brandName
 								? "bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]/80"
@@ -65,7 +65,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 				))}
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 				<div className="flex flex-col gap-1">
 					<span className="text-[11px] font-semibold text-[var(--muted)]">Диаметр (мм):</span>
 					<div className="flex items-center gap-1">
@@ -74,10 +74,10 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								key={d}
 								type="button"
 								onClick={() => onSelectDiameter(d)}
-								className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${
+								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									diameterMm === d
 										? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								Ø {d}
@@ -93,10 +93,10 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								key={l}
 								type="button"
 								onClick={() => onSelectLength(l)}
-								className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${
+								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									lengthMm === l
 										? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								{l}
@@ -112,10 +112,10 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 								key={t}
 								type="button"
 								onClick={() => onSelectTorque(t)}
-								className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${
+								className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 text-xs font-bold rounded-xl border whitespace-nowrap overflow-hidden transition-all flex items-center justify-center cursor-pointer ${
 									torqueNcm === t
 										? "bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`torque-${t}`}
 							>
@@ -131,10 +131,10 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 				<button
 					type="button"
 					onClick={() => onSelectCapType("fdm")}
-					className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${
+					className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 text-xs font-bold rounded-xl border whitespace-nowrap flex items-center justify-center cursor-pointer transition-all ${
 						capType === "fdm"
 							? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
-							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="cap-fdm"
 				>
@@ -143,10 +143,10 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 				<button
 					type="button"
 					onClick={() => onSelectCapType("plug")}
-					className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${
+					className={`flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 text-xs font-bold rounded-xl border whitespace-nowrap flex items-center justify-center cursor-pointer transition-all ${
 						capType === "plug"
 							? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
-							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
+							: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 					data-testid="cap-plug"
 				>

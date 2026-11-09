@@ -113,6 +113,15 @@ describe("Outpatient Surgery & Implantology Engine (Mandates 8e, 8i, 8s, 8n)", (
 		};
 		const parsedImplant = surgicalQuickDeductSchema.safeParse(validImplantBundle);
 		assert.equal(parsedImplant.success, true);
+
+		// DEF-SURG-02: bundleType "surgery" must be accepted without 400
+		const validSurgeryBundle = {
+			bundleType: "surgery" as const,
+			toothNumberFdi: 36,
+			notes: "Списание под хирургическую операцию",
+		};
+		const parsedSurgery = surgicalQuickDeductSchema.safeParse(validSurgeryBundle);
+		assert.equal(parsedSurgery.success, true, "Must accept 'surgery' bundleType enum");
 	});
 
 	it("5. Mandate 8e: Validates surgical protocol creation schema (Form 043/u)", () => {
@@ -149,5 +158,108 @@ describe("Outpatient Surgery & Implantology Engine (Mandates 8e, 8i, 8s, 8n)", (
 
 		const parsed = fastImplantPassportDataSchema.safeParse(validPassport);
 		assert.equal(parsed.success, true);
+	});
+
+	it("7. Mandate 8s & DEF-SURG-01: Prohibits patient substitution and phantom creation on invalid patient", () => {
+		const invalidProtocol = {
+			patientId: "not-a-valid-uuid",
+			normId: "surgery_implant_standard",
+			toothNumberFdi: 46,
+			protocolText: "Тест протокола",
+		};
+		const parsed = createSurgicalProtocolSchema.safeParse(invalidProtocol);
+		assert.equal(parsed.success, false, "Must reject non-UUID patient ID");
+	});
+
+	it("8. DEF-SURG-03: Tooth state preserves teeth as 'Treated' for resection and periostotomy, 'Extracted' for extractions", () => {
+		const SCENARIO_NORM_ALIASES: Record<string, string> = {
+			"scen-extraction": "surgery_extraction_simple",
+			"scen-resection": "surgery_periostotomy",
+			"scen-sinus-gbr": "surgery_sinus_lift_gbr",
+			"scen-implant": "surgery_implant_standard",
+		};
+
+		// 1. Resection / Periostotomy: MUST NOT BE "Extracted" -> MUST BE "Treated"
+		for (const normId of ["scen-resection", "surgery_periostotomy", "surgery_apicoectomy"]) {
+			const effectiveNormId = SCENARIO_NORM_ALIASES[normId] || normId;
+			const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find(
+				(n) => n.id === effectiveNormId || n.id === normId,
+			);
+			const isImplant =
+				effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
+			const isExtraction =
+				effectiveNormId.toLowerCase().includes("extract") || norm?.category === "extraction";
+			const newState = isImplant ? "Implant" : isExtraction ? "Extracted" : "Treated";
+			const newSurfaces = isImplant
+				? ["implant_site"]
+				: isExtraction
+					? ["extracted_socket"]
+					: ["cured_apical"];
+
+			assert.equal(newState, "Treated", `Tooth for ${normId} must remain Treated, not Extracted`);
+			assert.deepEqual(newSurfaces, ["cured_apical"]);
+		}
+
+		// 2. Extraction: MUST BE "Extracted"
+		for (const normId of ["scen-extraction", "surgery_extraction_simple", "surgery_extraction_atypical"]) {
+			const effectiveNormId = SCENARIO_NORM_ALIASES[normId] || normId;
+			const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find(
+				(n) => n.id === effectiveNormId || n.id === normId,
+			);
+			const isImplant =
+				effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
+			const isExtraction =
+				effectiveNormId.toLowerCase().includes("extract") || norm?.category === "extraction";
+			const newState = isImplant ? "Implant" : isExtraction ? "Extracted" : "Treated";
+			const newSurfaces = isImplant
+				? ["implant_site"]
+				: isExtraction
+					? ["extracted_socket"]
+					: ["cured_apical"];
+
+			assert.equal(newState, "Extracted", `Tooth for ${normId} must be Extracted`);
+			assert.deepEqual(newSurfaces, ["extracted_socket"]);
+		}
+
+		// 3. Implant: MUST BE "Implant"
+		for (const normId of ["scen-implant", "surgery_implant_standard"]) {
+			const effectiveNormId = SCENARIO_NORM_ALIASES[normId] || normId;
+			const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find(
+				(n) => n.id === effectiveNormId || n.id === normId,
+			);
+			const isImplant =
+				effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
+			const isExtraction =
+				effectiveNormId.toLowerCase().includes("extract") || norm?.category === "extraction";
+			const newState = isImplant ? "Implant" : isExtraction ? "Extracted" : "Treated";
+			const newSurfaces = isImplant
+				? ["implant_site"]
+				: isExtraction
+					? ["extracted_socket"]
+					: ["cured_apical"];
+
+			assert.equal(newState, "Implant", `Tooth for ${normId} must be Implant`);
+			assert.deepEqual(newSurfaces, ["implant_site"]);
+		}
+	});
+
+	it("9. DEF-SURG-04: Resolves scenario aliases to canonical norms and titles", () => {
+		const SCENARIO_NORM_ALIASES: Record<string, string> = {
+			"scen-extraction": "surgery_extraction_simple",
+			"scen-resection": "surgery_periostotomy",
+			"scen-sinus-gbr": "surgery_sinus_lift_gbr",
+			"scen-implant": "surgery_implant_standard",
+		};
+
+		assert.equal(SCENARIO_NORM_ALIASES["scen-extraction"], "surgery_extraction_simple");
+		assert.equal(SCENARIO_NORM_ALIASES["scen-resection"], "surgery_periostotomy");
+		assert.equal(SCENARIO_NORM_ALIASES["scen-sinus-gbr"], "surgery_sinus_lift_gbr");
+		assert.equal(SCENARIO_NORM_ALIASES["scen-implant"], "surgery_implant_standard");
+
+		for (const [alias, canonicalId] of Object.entries(SCENARIO_NORM_ALIASES)) {
+			const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === canonicalId);
+			assert.ok(norm, `Canonical norm ${canonicalId} for alias ${alias} must exist in registry`);
+			assert.ok(norm.title.length > 0);
+		}
 	});
 });

@@ -28,8 +28,8 @@
 	border-radius: var(--radius-xl, 20px);
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
 	width: 100%;
-	max-width: 880px;
-	max-height: calc(100vh - 40px);
+	max-width: 980px;
+	max-height: calc(100vh - 24px);
 	display: flex;
 	flex-direction: column;
 	min-height: 0;

@@ -71,3 +71,7 @@ export const ImplantWarehouseSelector: React.FC<ImplantWarehouseSelectorProps> =
 		</div>
 	);
 };
+
+export const ImplantBatchSelector = ImplantWarehouseSelector;
+export type ImplantBatchSelectorProps = ImplantWarehouseSelectorProps;
+
