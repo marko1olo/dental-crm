@@ -3900,3 +3900,41 @@ ead_file по 8 осям качества Хаммера:
     - 🌙 PC Dark (1440x900): [`docs/proofs/patients/patient_card_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_pc_dark_1440x900.png) (88 KB) — Тёмная тема модалки без бликов.
     - 📱 Mobile Light (390x844): [`docs/proofs/patients/patient_card_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_mobile_light_390x844.png) (39 KB) — Мобильная шторка карточки пациента по Apple HIG, 0px горизонтального скролла.
     - 📱 Mobile Dark (390x844): [`docs/proofs/patients/patient_card_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/patient_card_mobile_dark_390x844.png) (40 KB) — Тёмный мобильный режим, доступный Primary CTA «Сохранить» в Natural Thumb Zone.
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ЛИДЫ, ПЕРВИЧНЫЕ ОБРАЩЕНИЯ И МАРКЕТИНГ [LEAD-07] (МАНДАТЫ 8bd, 8e, 8n, 8an, 8x, 8ap, DEF-LEAD-01..04)
+- **Дата и статус:** 2026-11-09 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Supreme Red Team Fixer Surgeon: Leads & Marketing Surgeon [LEAD-07].
+- **Канонический SSOT:**
+  - База данных: таблицы `crm_leads`, `crm_lead_stage_history`, `patient_communication_consents`.
+  - API: `apps/api/src/routes/leadsConversionModules/` (`appointmentCreationBridge.ts`, `patientCreationBridge.ts`, `conversionValidator.ts`, `leadConsentBridge.ts`).
+  - Web: `apps/web/src/store/leadsStore.ts`, `apps/web/src/components/leads/kanbanView/` (`LeadKanbanColumn.tsx`, `useLeadConvertModalSubmit.ts`, `submitPatientOnlyConversion.ts`), `LeadCard.tsx`, `MarketingView.tsx`.
+- **Устранённые дефекты:**
+  1. **[DEF-LEAD-01] [ИСПРАВЛЕНО] Потеря согласий пациента на рассылки при конверсии лида:** Восстановлена сквозная передача полей `consentMedical` и `consentMarketing` из модалки `LeadConvertModal.tsx` через `useLeadConvertModalSubmit.ts` / `submitPatientOnlyConversion.ts` в `leadsStore.ts` и `convertLeadSchema`. Создан модуль `leadConsentBridge.ts`, который атомарно в транзакции сохраняет согласия в `patientCommunicationConsents` (`service` и `marketing` скоупы для каналов `sms`, `phone`, `whatsapp`) со статусом `granted`/`revoked` через `onConflictDoUpdate`.
+  2. **[DEF-LEAD-02] [ИСПРАВЛЕНО] Адаптация тестов под декомпозированную архитектуру карточки лида:** В тесте `leadsExistingPatientDeduplicationAndConversion.test.ts` агрегированы подкомпоненты из `apps/web/src/components/leads/card/` (`LeadCardBadges`, `LeadCardActionButtons`, `LeadCardStageSelect`), исключив ложные падения теста при анализе декомпозированного `LeadCard.tsx`.
+  3. **[DEF-LEAD-03] [ИСПРАВЛЕНО] Истребление фейковых каталожных моков со статусом "rejected":** Полностью удалён `leadsCatalogData.ts` (399 строк псевдо-данных), нарушавший канонический жизненный цикл лида.
+  4. **[DEF-LEAD-04] [ИСПРАВЛЕНО] Адаптация теста сквозной атрибуции маркетинга:** В `marketingAttributionSeparation.test.tsx` селектор оверлея обновлен на канонический `patient-card-modal`, а проверка заголовка расширена до `Первичная регистрация пациента`, отражая реальный канонический UI модалки карточки пациента.
+- **Расстрельный список снесённых сирот и дубликатов (10 файлов через `git rm -f`):**
+  1. `apps/web/src/components/leads/leadsCatalogData.ts`
+  2. `apps/web/src/components/leads/LeadsKanbanHeader.tsx`
+  3. `apps/web/src/components/leads/leadConvertModules/LeadConvertDialogForm.tsx`
+  4. `apps/web/src/components/leads/leadConvertModules/useLeadConvertModalState.ts`
+  5. `apps/web/src/components/leads/leadConvertModules/useLeadConvertDefaults.ts`
+  6. `apps/web/src/components/leads/leadConvertModules/LeadConvertModalHeader.tsx`
+  7. `apps/web/src/components/leads/kanbanView/LeadKanbanCard.tsx`
+  8. `apps/web/src/components/leads/DirectLeadsLauncher.tsx`
+  9. `apps/web/src/components/leads/LeadsStudioModal.tsx`
+  10. `apps/web/src/components/leads/__tests__/leadsSSOTSuite.test.tsx`
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> **22 551 файл проверен, 0 замечаний (Exit Code 0)**.
+  - `npm run check:stub-overrides` -> **Exit Code 0**.
+  - `npm run check:fetch-response` -> **Exit Code 0**.
+  - `npm run check:dynamic-imports` -> **Exit Code 0**.
+  - `leadsExistingPatientDeduplicationAndConversion.test.ts` -> **8/8 PASS (Exit Code 0)**.
+  - `marketingAttributionSeparation.test.tsx` -> **6/6 PASS (Exit Code 0)**.
+  - `leadsConversionAutonomy.test.ts` -> **6/6 PASS (Exit Code 0)**.
+  - `leads` unit suite (`apps/web/src/components/leads/__tests__/`) -> **179/179 PASS (Exit Code 0)**.
+- **4-State Visual Proofs (Личный осмотр через `read_file` по 8 осям Хаммера):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png) (232.6 KB) — Чистый светлый Канбан, 1 Primary CTA «+ Запись», карточки лидов без клиппинга.
+  - 🌙 PC Dark (1440x900): [`docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png) (224.8 KB) — 100% тёмные токены `var(--paper)`, контраст WCAG AAA, отсутствие белых пятен.
+  - 📱 Mobile Light (390x844): [`docs/proofs/leads/03_leads_mobile_feed_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/03_leads_mobile_feed_light_390x844.png) (139.0 KB) — Нативный мобильный фид по Apple HIG, кнопки действий >= 44x44px.
+  - 📱 Mobile Dark (390x844): [`docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) (134.7 KB) — Тёмный мобильный режим, 0px горизонтального скролла.
