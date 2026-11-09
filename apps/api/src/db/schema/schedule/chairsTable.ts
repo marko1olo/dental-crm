@@ -35,29 +35,6 @@ export const chairs = pgTable(
 	}),
 );
 
-// clinic chairs (treatment chairs / workstations)
-export const clinicChairs = pgTable(
-	"clinic_chairs",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		name: text("name").notNull(),
-		color: text("color"),
-		isActive: boolean("is_active").notNull().default(true),
-		sortOrder: integer("sort_order").notNull().default(0),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("clinic_chairs_organizationId_idx").on(
-			t.organizationId,
-		),
-	}),
-);
-
 export const chairsRelations = relations(chairs, ({ one, many }) => ({
 	organization: one(organizations, {
 		fields: [chairs.organizationId],

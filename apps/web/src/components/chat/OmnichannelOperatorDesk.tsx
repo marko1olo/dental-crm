@@ -9,10 +9,11 @@ export * from "./operatorDesk/ChannelConversationList";
 export * from "./operatorDesk/OperatorMessageStream";
 export * from "./operatorDesk/QuickRepliesDrawer";
 export * from "./operatorDesk/OperatorInputBar";
-export * from "./operatorDesk/QuickBookingModal";
+export { QuickBookingDrawer as QuickBookingModal } from "../schedule/QuickBookingDrawer";
 export * from "./operatorDesk/LinkPatientModal";
 export * from "./operatorDesk/useOmnichannelOperatorDesk";
 export * from "./operatorDesk/OmnichannelOperatorDeskView";
+export * from "./operatorDesk/omnichannelChatTemplates";
 
 /**
  * OmnichannelOperatorDesk

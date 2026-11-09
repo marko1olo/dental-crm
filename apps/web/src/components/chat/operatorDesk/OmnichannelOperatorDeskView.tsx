@@ -4,7 +4,8 @@ import { ChannelConversationList } from "./ChannelConversationList";
 import { LinkPatientModal } from "./LinkPatientModal";
 import { OperatorInputBar } from "./OperatorInputBar";
 import { OperatorMessageStream } from "./OperatorMessageStream";
-import { QuickBookingModal } from "./QuickBookingModal";
+import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
+import { showToast } from "../../GlobalToast";
 import { QuickRepliesDrawer } from "./QuickRepliesDrawer";
 import type { OmnichannelOperatorDeskProps } from "./types";
 import type { UseOmnichannelOperatorDeskReturn } from "./useOmnichannelOperatorDesk";
@@ -150,24 +151,27 @@ export function OmnichannelOperatorDeskView({
 				)}
 			</div>
 
-			{/* ════════════ MODAL: QUICK APPOINTMENT BOOKING (MANDATE 8e) ════════════ */}
-			<QuickBookingModal
+			{/* ════════════ CANONICAL SSOT: QUICK APPOINTMENT BOOKING DRAWER (MANDATE 8e / 8aq) ════════════ */}
+			<QuickBookingDrawer
 				isOpen={isQuickBookingOpen}
-				activeConv={activeConv}
-				bookingDate={bookingDate}
-				bookingTime={bookingTime}
-				bookingReason={bookingReason}
-				bookingDoctorId={bookingDoctorId}
-				bookingSendConfirmation={bookingSendConfirmation}
-				isBookingSubmitting={isBookingSubmitting}
-				doctorsList={doctorsList}
 				onClose={() => setIsQuickBookingOpen(false)}
-				onDateChange={setBookingDate}
-				onTimeChange={setBookingTime}
-				onReasonChange={setBookingReason}
-				onDoctorIdChange={setBookingDoctorId}
-				onSendConfirmationChange={setBookingSendConfirmation}
-				onSubmit={handleQuickBookingSubmit}
+				initialSlot={activeConv ? {
+					patientId: activeConv.patientId,
+					patientName: activeConv.patientName || activeConv.senderName,
+					patientPhone: activeConv.phone || (activeConv.senderId.startsWith("79") ? `+${activeConv.senderId}` : null),
+					doctorUserId: bookingDoctorId || null,
+					reason: bookingReason || "Запись из чата",
+				} : null}
+				onAppointmentCreated={(appt) => {
+					setIsQuickBookingOpen(false);
+					const dateFormatted = new Date(appt.startsAt).toLocaleString("ru-RU", {
+						day: "numeric",
+						month: "long",
+						hour: "2-digit",
+						minute: "2-digit",
+					});
+					showToast(`✓ Запись на приём оформлена на ${dateFormatted}!`, "success");
+				}}
 			/>
 
 			{/* ════════════ MODAL: LINK / CREATE PATIENT (MANDATE 8e) ════════════ */}

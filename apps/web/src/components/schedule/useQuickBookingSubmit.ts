@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { generateUuidV7, type Appointment, type Dashboard } from "@dental/shared";
+import { useScheduleStore } from "../../store/scheduleStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
@@ -74,9 +75,15 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
         return;
       }
 
-      const result = (await res.json()) as { appointment?: Appointment; appointments?: Appointment[]; dashboard?: Dashboard };
-      const nextDashboard = result?.dashboard ?? (Array.isArray(result?.appointments) ? (result as unknown as Dashboard) : undefined);
-      if (nextDashboard && typeof setDashboard === "function") setDashboard(nextDashboard);
+      const result = (await res.json()) as { success?: boolean; appointment?: Appointment; dashboard?: Dashboard };
+      const scheduleStore = useScheduleStore.getState();
+      if (result?.appointment) {
+        scheduleStore.upsertAppointment(result.appointment);
+      }
+      if (result?.dashboard) {
+        scheduleStore.setDashboard(result.dashboard);
+        if (typeof setDashboard === "function") setDashboard(result.dashboard);
+      }
       if (typeof loadDashboard === "function") await loadDashboard();
 
       const patientName = patientSearch.selectedPatient?.fullName || patientSearch.newPatientFullName.trim() || "Пациент";
@@ -85,7 +92,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
         if (result?.appointment && typeof onAppointmentUpdated === "function") onAppointmentUpdated(result.appointment);
       } else {
         showToast(`Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`, "success", 5000);
-        const createdAppt = nextDashboard?.appointments?.find((a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso);
+        const createdAppt = result?.appointment || result?.dashboard?.appointments?.find((a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso);
         if (createdAppt && typeof onAppointmentCreated === "function") onAppointmentCreated(createdAppt);
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("dente-stage-appointment-booked", { detail: { appointmentId: result?.appointment?.id || createdAppt?.id || null, startsAt: startsAtIso } }));

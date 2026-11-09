@@ -79,15 +79,17 @@ export async function fetchTargetIntercomChannels(
 }
 
 /**
- * Отправляет ответ с актуальной сводкой дашборда после создания приёма.
+ * Отправляет ответ со стандартизированной структурой после создания приёма:
+ * { success: true, appointment: createdRecord, dashboard: updatedDashboard }
  */
 export async function sendDashboardResponseAfterCreate(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	orgId: string,
 	appointmentId: string,
+	createdRecord?: unknown,
 ) {
-	let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>>;
+	let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>> | null = null;
 	try {
 		dashboard = await getDashboardFromDb(orgId);
 	} catch (dashErr) {
@@ -95,16 +97,10 @@ export async function sendDashboardResponseAfterCreate(
 			{ err: dashErr, appointmentId, orgId },
 			"[Schedule] Запись создана, но сводку прочитать не удалось",
 		);
-		return reply.code(201).send({
-			success: true,
-			appointmentId,
-			message:
-				"Запись создана. Сводка не обновлена — перезагрузите страницу.",
-		});
 	}
 
-	const parsed = dashboardSchema.safeParse(dashboard);
-	if (!parsed.success) {
+	const parsed = dashboard ? dashboardSchema.safeParse(dashboard) : null;
+	if (parsed && !parsed.success) {
 		request.log.warn(
 			{
 				appointmentId,
@@ -113,14 +109,15 @@ export async function sendDashboardResponseAfterCreate(
 			},
 			"[Schedule] Запись создана, сводка прочиталась, но не прошла контракт",
 		);
-		return reply.code(201).send({
-			success: true,
-			appointmentId,
-			message:
-				"Запись создана. Сводка не обновлена — перезагрузите страницу.",
-		});
 	}
-	return reply.code(201).send(parsed.data);
+
+	const updatedDashboard = parsed?.success ? parsed.data : (dashboard ?? undefined);
+
+	return reply.code(201).send({
+		success: true,
+		appointment: createdRecord ?? { id: appointmentId },
+		dashboard: updatedDashboard,
+	});
 }
 
 /**

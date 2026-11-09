@@ -228,7 +228,7 @@ export function useQuickBookingPatientSearch({
 
       if (!createdPatient || !createdPatient.id) {
         createdPatient = {
-          id: `pat-${Date.now()}`,
+          id: crypto.randomUUID(),
           fullName: nameCandidate,
           phone: cleanPhone || newPatientPhone.trim() || null,
           birthDate: newPatientBirthDate.trim() || null,

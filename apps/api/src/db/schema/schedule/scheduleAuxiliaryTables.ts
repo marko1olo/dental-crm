@@ -173,7 +173,7 @@ export const singleSessionEnforcements = pgTable(
 	}),
 );
 
-// external schedule action logs (Zabota2.0 / LoyalMed AI booking)
+// external schedule action logs (external booking integration)
 export const externalScheduleActionLogs = pgTable(
 	"external_schedule_action_logs",
 	{

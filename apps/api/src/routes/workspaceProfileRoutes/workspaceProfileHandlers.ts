@@ -49,9 +49,9 @@ export async function seedDemoDataForPreset(
 	if (existing.length > 0) return; // don't double-seed
 
 	const existingChairs = await db
-		.select({ id: schema.clinicChairs.id })
-		.from(schema.clinicChairs)
-		.where(eq(schema.clinicChairs.organizationId, organizationId))
+		.select({ id: schema.chairs.id })
+		.from(schema.chairs)
+		.where(eq(schema.chairs.organizationId, organizationId))
 		.limit(1);
 	if (existingChairs.length === 0) {
 		const flags = WORKSPACE_PRESETS[preset as Exclude<PresetName, "custom">];
@@ -70,10 +70,10 @@ export async function seedDemoDataForPreset(
 				organizationId,
 				clinicId: clinic.id,
 				name: chairCount === 1 ? "Главный кабинет" : `Кресло ${i + 1}`,
-				status: "active",
+				isActive: true,
 			}));
 			if (chairsToInsert.length > 0) {
-				await db.insert(schema.clinicChairs).values(chairsToInsert);
+				await db.insert(schema.chairs).values(chairsToInsert);
 			}
 		}
 	}

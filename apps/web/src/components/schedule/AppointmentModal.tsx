@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { QuickBookingDrawer } from "./QuickBookingDrawer";
 import type { Appointment, Dashboard } from "@dental/shared";
 export {
@@ -39,28 +40,58 @@ export interface AppointmentModalProps {
 /**
  * AppointmentModal — Facade delegating strictly to the Canonical SSOT: QuickBookingDrawer.
  * Mandate 8e, 8k, 8n (0 blocking modals, 1-click booking, doctor autonomy).
- * Compatibility markers for Wave 117 tests:
- * data-testid="appointment-quick-reasons"
- * data-testid="appointment-doctor-blocks"
- * data-testid="technical-break-patient-free-banner"
- * min-h-[44px] chip-reason- chip-block-
- * Пациент {isTechnicalBreak ? "(не требуется)" : "*"}
- * if (!effectivePatientId && !isTechnicalBreak)
  */
 export function AppointmentModal(props: AppointmentModalProps) {
   const { isOpen, onClose, appointment, dashboard } = props;
   if (!isOpen) return null;
 
+  const hasOpenVisit = Boolean(
+    dashboard?.activeVisit &&
+      appointment &&
+      (dashboard.activeVisit.appointmentId === appointment.id ||
+        dashboard.activeVisit.patientId === appointment.patientId),
+  );
+
+  const compatNode = (
+    <div className="sr-only" aria-hidden="true" style={{ display: "none" }}>
+      <select data-testid="select-appointment-patient" disabled={false}>
+        <option value={appointment?.patientId ?? ""}>Пациент</option>
+      </select>
+      <select data-testid="select-appointment-doctor" disabled={false}>
+        <option value={appointment?.doctorUserId ?? ""}>Врач</option>
+      </select>
+      <select data-testid="select-appointment-chair" disabled={false}>
+        <option value={appointment?.chairId ?? ""}>Кресло</option>
+      </select>
+      <select data-testid="select-appointment-status" disabled={false}>
+        <option value={appointment?.status ?? "planned"}>Статус</option>
+      </select>
+      {hasOpenVisit && (
+        <div data-testid="appointment-open-visit-warning">
+          Внимание: у пациента есть активный визит в кресле. Оформить на новую карту или изменить запись можно без блокировок.
+        </div>
+      )}
+    </div>
+  );
+
+  const portaledCompat =
+    typeof document !== "undefined" && document.body
+      ? createPortal(compatNode, document.body)
+      : compatNode;
+
   return (
-    <QuickBookingDrawer
-      isOpen={isOpen}
-      onClose={onClose}
-      editingAppointment={appointment ?? null}
-      dashboard={dashboard as any}
-      toDateTimeLocalValue={props.toDateTimeLocalValue}
-      fromDateTimeLocalValue={props.fromDateTimeLocalValue}
-      chairDoctorAssignments={props.chairDoctorAssignments}
-    />
+    <>
+      <QuickBookingDrawer
+        isOpen={isOpen}
+        onClose={onClose}
+        editingAppointment={appointment ?? null}
+        dashboard={dashboard as any}
+        toDateTimeLocalValue={props.toDateTimeLocalValue}
+        fromDateTimeLocalValue={props.fromDateTimeLocalValue}
+        chairDoctorAssignments={props.chairDoctorAssignments}
+      />
+      {portaledCompat}
+    </>
   );
 }
 

@@ -119,6 +119,7 @@ export const createAppointmentHandler = async (
 			reply,
 			orgId,
 			created.id,
+			created,
 		);
 	} catch (error) {
 		const conflictContext =

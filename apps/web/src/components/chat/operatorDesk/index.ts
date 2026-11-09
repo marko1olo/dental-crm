@@ -4,7 +4,7 @@ export * from "./ChannelConversationList";
 export * from "./OperatorMessageStream";
 export * from "./QuickRepliesDrawer";
 export * from "./OperatorInputBar";
-export * from "./QuickBookingModal";
+export { QuickBookingDrawer as QuickBookingModal } from "../../schedule/QuickBookingDrawer";
 export * from "./LinkPatientModal";
 export * from "./useOmnichannelOperatorDesk";
 export * from "./OmnichannelOperatorDeskView";

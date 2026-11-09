@@ -8,7 +8,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import type { db } from "../../db/client.js";
-import { chairs, clinicChairs, crmLeads, users } from "../../db/schema.js";
+import { chairs, crmLeads, users } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
 import type { ConvertLeadPayload } from "./conversionValidator.js";
@@ -33,16 +33,6 @@ export async function resolveDoctorAndChair(tx: any, orgId: string, payload: Con
 	const candChair = payload.chairId;
 	const validChairUuid = candChair && candChair !== "default-chair" && z.string().uuid().safeParse(candChair).success;
 	if (validChairUuid && candChair) {
-		const [fc] = await tx.select({ id: clinicChairs.id }).from(clinicChairs).where(
-			and(eq(clinicChairs.id, candChair), eq(clinicChairs.organizationId, orgId)),
-		).limit(1);
-		if (fc) resolvedChairId = fc.id;
-	}
-	if (!resolvedChairId) {
-		const [c1] = await tx.select({ id: clinicChairs.id }).from(clinicChairs).where(eq(clinicChairs.organizationId, orgId)).limit(1);
-		if (c1) resolvedChairId = c1.id;
-	}
-	if (!resolvedChairId && validChairUuid && candChair) {
 		const [c2] = await tx.select({ id: chairs.id }).from(chairs).where(
 			and(eq(chairs.id, candChair), eq(chairs.organizationId, orgId)),
 		).limit(1);
@@ -101,9 +91,9 @@ export async function convertLeadToAppointment(params: {
 				comment: commentParts.length > 0 ? commentParts.join(" | ") : null,
 			}, tx);
 
-			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "consult_booked", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId });
+			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "consult_booked", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id });
 		} else {
-			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "converted", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId });
+			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "converted", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id });
 		}
 		return { patient, appointment, hasAppointmentDates: hasDates };
 	});

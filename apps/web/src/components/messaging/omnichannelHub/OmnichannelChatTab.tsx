@@ -7,7 +7,7 @@ import React, { useState } from "react";
 import { OmnichannelContactsSidebar } from "./chat/OmnichannelContactsSidebar.js";
 import { OmnichannelChatHeader } from "./chat/OmnichannelChatHeader.js";
 import { OmnichannelMessageFeed } from "./chat/OmnichannelMessageFeed.js";
-import { OmnichannelQuickBookingDrawer } from "./chat/OmnichannelQuickBookingDrawer.js";
+import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
 import { OmnichannelChatComposer } from "./OmnichannelChatComposer.js";
 import type { OmnichannelChatTabProps } from "./types.js";
 
@@ -61,10 +61,27 @@ export const OmnichannelChatTab: React.FC<OmnichannelChatTabProps> = ({ hub }) =
 				/>
 
 				{isBookingOpen && (
-					<OmnichannelQuickBookingDrawer
-						contact={hub.selectedContact}
+					<QuickBookingDrawer
+						isOpen={isBookingOpen}
 						onClose={() => setIsBookingOpen(false)}
-						onApplySlotToChat={(text) => hub.setMessageText(text)}
+						initialSlot={{
+							patientId: hub.selectedContact.id,
+							patientName: hub.selectedContact.fullName,
+							patientPhone: hub.selectedContact.phone,
+							reason: "Запись из чата",
+						}}
+						onAppointmentCreated={(appt) => {
+							setIsBookingOpen(false);
+							const dateFormatted = new Date(appt.startsAt).toLocaleString("ru-RU", {
+								day: "numeric",
+								month: "long",
+								hour: "2-digit",
+								minute: "2-digit",
+							});
+							hub.setMessageText(
+								`Запись подтверждена на ${dateFormatted}. Ждём вас!`,
+							);
+						}}
 					/>
 				)}
 			</section>

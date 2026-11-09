@@ -54,7 +54,7 @@ export function computeQuickBookingSlots(
 	const todayIso = dashboard?.todayIso || new Date().toISOString().slice(0, 10);
 	const appointments = dashboard?.appointments || [];
 	const activeStaff = dashboard?.clinicSettings?.staff?.filter((s) => s.active && (s.role === "doctor" || s.role === "owner")) || [];
-	const defaultDoctorId = activeStaff[0]?.id || dashboard?.clinicSettings?.staff?.[0]?.id || "doc-1";
+	const defaultDoctorId = activeStaff[0]?.id || dashboard?.clinicSettings?.staff?.[0]?.id || null;
 	const activeChairs = dashboard?.clinicSettings?.chairs?.filter((c) => c.active) || [];
 	const defaultChairId = activeChairs[0]?.id || dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 	const ctx = { staff: dashboard?.clinicSettings?.staff, chairs: dashboard?.clinicSettings?.chairs };

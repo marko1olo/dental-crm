@@ -1,5 +1,6 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import { create } from "zustand";
+import { useAppStore } from "./appStore";
 import type {
 	AppointmentScheduleDraft,
 	AppointmentScheduleSaveState,
@@ -149,6 +150,8 @@ export interface ScheduleStore {
 			| null
 			| ((prev: QuickBookingSlotInfo | null) => QuickBookingSlotInfo | null),
 	) => void;
+	upsertAppointment: (appt: Appointment) => void;
+	setDashboard: (dashboard: Dashboard) => void;
 }
 
 export const useScheduleStore = create<ScheduleStore>((set) => ({
@@ -298,4 +301,18 @@ export const useScheduleStore = create<ScheduleStore>((set) => ({
 		set((state) => ({
 			pendingStageBooking: resolveUpdater(val, state.pendingStageBooking),
 		})),
+	upsertAppointment: (appt: Appointment) => {
+		useAppStore.getState().setDashboard((current) => {
+			if (!current) return current;
+			const appts = current.appointments || [];
+			const exists = appts.some((a) => a.id === appt.id);
+			const updated = exists
+				? appts.map((a) => (a.id === appt.id ? appt : a))
+				: [appt, ...appts];
+			return { ...current, appointments: updated };
+		});
+	},
+	setDashboard: (dashboard: Dashboard) => {
+		useAppStore.getState().setDashboard(dashboard);
+	},
 }));
