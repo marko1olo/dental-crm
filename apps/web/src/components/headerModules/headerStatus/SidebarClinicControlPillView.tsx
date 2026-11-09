@@ -48,7 +48,7 @@ export function SidebarClinicControlPillView({
 			className={`sidebar-control-pill flex items-center justify-between w-full h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.03))] hover:bg-[var(--line)] hover:border-[var(--teal)] transition-all cursor-pointer text-xs select-none ${isOpen ? "ring-2 ring-[var(--teal)]" : ""} ${className}`}
 			aria-expanded={isOpen}
 			aria-label="Пульт управления клиникой"
-			title={`Центр управления: ${isOnline ? "Онлайн" : "Офлайн"} • ${isShiftOpen ? "Смена открыта" : "Смена закрыта"} • Mango PBX`}
+			title={`Центр управления: ${isOnline ? "Онлайн" : "Офлайн"} • ${isShiftOpen ? "Смена открыта" : "Смена закрыта"} • АТС подключена`}
 			data-testid="clinic-control-center-trigger"
 		>
 			<div className="sidebar-pill-info flex items-center gap-2 min-w-0">

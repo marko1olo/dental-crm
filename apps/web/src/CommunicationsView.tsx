@@ -19,9 +19,9 @@ const PatientOmnichannelHubModal = lazy(() =>
 	})),
 );
 
-const OmnichannelChatView = lazy(() =>
-	import("./components/omnichannel_chat/OmnichannelChatView").then((module) => ({
-		default: module.OmnichannelChatView,
+const OmnichannelOperatorDesk = lazy(() =>
+	import("./components/chat/OmnichannelOperatorDesk").then((module) => ({
+		default: module.OmnichannelOperatorDesk,
 	})),
 );
 
@@ -48,7 +48,7 @@ export function CommunicationsView(
 					</div>
 					<div className="flex-1 min-h-0 overflow-hidden">
 						<Suspense fallback={null}>
-							<OmnichannelChatView />
+							<OmnichannelOperatorDesk />
 						</Suspense>
 					</div>
 				</div>

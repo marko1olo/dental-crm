@@ -31,7 +31,7 @@ export function ClinicControlPillView({
 			{/* 1. PBX / Telephony indicator */}
 			<span
 				className="dnt-pill-segment"
-				title={`АТС: Mango PBX — ${activeCall ? "Идет разговор" : `Статус: ${agentStateLabel}`}`}
+				title={`АТС телефония — ${activeCall ? "Идет разговор" : `Статус: ${agentStateLabel}`}`}
 			>
 				{activeCall ? (
 					<PhoneCall size={12} className="text-emerald-500 animate-bounce" />

@@ -2,12 +2,12 @@ import React from "react";
 import {
 	Bot,
 	MessageSquare,
-	Plus,
 	RefreshCw,
 	Search,
 	UserCheck,
 	X,
 } from "lucide-react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { formatPatientInitials, formatPhoneDisplay, getAvatarColor } from "../../../store/telephonyStore";
 import { CHANNEL_CONFIGS, getSourceBadgeInfo } from "./constants";
 import type { BotChannel, InboxConversation } from "./types";
@@ -71,16 +71,6 @@ export function ChannelConversationList({
 							title="Обновить список диалогов"
 						>
 							<RefreshCw size={14} className={isLoadingList ? "animate-spin" : ""} />
-						</button>
-						<button
-							type="button"
-							onClick={onSimulateIncoming}
-							className="secondary-button h-7 min-h-[28px] max-h-7 px-2.5 rounded-lg text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer"
-							title="Симулировать входящее сообщение от пациента"
-							data-testid="simulate-incoming-btn"
-						>
-							<Plus size={13} />
-							<span>Тест-бот</span>
 						</button>
 					</div>
 				</div>
@@ -169,13 +159,15 @@ export function ChannelConversationList({
 					<div className="p-8 text-center text-[var(--muted,#64748b)] flex flex-col items-center justify-center gap-2">
 						<Bot size={32} className="text-slate-300 dark:text-slate-600" />
 						<p className="text-xs">Диалогов не найдено</p>
-						<button
-							type="button"
-							onClick={onSimulateIncoming}
-							className="mt-2 text-xs font-semibold text-teal-600 hover:underline"
-						>
-							Создать тестовое обращение
-						</button>
+						{isDemoShowcaseMode() && (
+							<button
+								type="button"
+								onClick={onSimulateIncoming}
+								className="mt-2 text-xs font-semibold text-teal-600 hover:underline"
+							>
+								Создать тестовое обращение
+							</button>
+						)}
 					</div>
 				) : (
 					filteredConversations.map((conv) => {

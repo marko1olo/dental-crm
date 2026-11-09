@@ -41,7 +41,7 @@ describe("Telephony Ambient Header Capsule & Dynamic Island Suite (Mandates 8e, 
 	it("3. TelephonySoftphonePopover provides line controls, dialpad, and recent calls", () => {
 		useTelephonyStore.setState({ activeCall: null, agentState: "online", activeLineId: 1, callHistory: [] });
 		const html = renderToString(<TelephonySoftphonePopover onClose={() => {}} isMobile={false} />);
-		assert.ok(html.includes("Mango PBX"), "Must display PBX connection info");
+		assert.ok(html.includes("АТС · Л1"), "Must display PBX connection info");
 		assert.ok(html.includes("Онлайн") && html.includes("Занят") && html.includes("Пауза"), "Must offer agent state pills");
 		assert.ok(html.includes("Вызов"), "Must provide call action button");
 		assert.ok(html.includes("Набор") && html.includes("Журнал"), "Must provide softphone tabs");

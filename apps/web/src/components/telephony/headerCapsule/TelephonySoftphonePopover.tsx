@@ -58,7 +58,7 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 			<div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[var(--line)]">
 				<div className="flex items-center gap-1.5">
 					<Headphones size={15} className="text-[var(--teal)]" />
-					<span className="text-xs font-bold text-[var(--ink)]">Mango PBX · Л{tel.activeLineId}</span>
+					<span className="text-xs font-bold text-[var(--ink)]">{`АТС · Л${tel.activeLineId}`}</span>
 				</div>
 				<div className="flex items-center gap-1">
 					<button type="button" onClick={() => tel.switchLine(tel.activeLineId === 1 ? 2 : 1)} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] px-2 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] font-mono hover:bg-[var(--paper-subtle)] cursor-pointer" title="Переключить линию">

@@ -11,18 +11,19 @@ const OmnichannelOperatorDesk = lazy(() => import("../../chat/OmnichannelOperato
 const StaffMessengerPanel = lazy(() => import("../StaffMessengerPanel").then((m) => ({ default: m.StaffMessengerPanel })));
 const WhatsAppChatPanel = lazy(() => import("../../chat/WhatsAppChatPanel").then((m) => ({ default: m.WhatsAppChatPanel })));
 const PatientNotificationCenter = lazy(() => import("../../notifications/PatientNotificationCenter").then((m) => ({ default: m.PatientNotificationCenter })));
-const OmnichannelChatView = lazy(() => import("../../omnichannel_chat/OmnichannelChatView").then((m) => ({ default: m.OmnichannelChatView })));
 
 export function CommunicationsActiveChatPane({ ctrl }: CommunicationsActiveChatPaneProps) {
 	return (
 		<>
 			{ctrl.activeSection === "omnichannel" && (
 				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5 w-full">
-					<Suspense fallback={null}><OmnichannelChatView /></Suspense>
+					<Suspense fallback={null}><OmnichannelOperatorDesk /></Suspense>
 				</div>
 			)}
 			{ctrl.activeSection === "bot_inbox" && (
-				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5"><Suspense fallback={null}><OmnichannelOperatorDesk /></Suspense></div>
+				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5 w-full">
+					<Suspense fallback={null}><OmnichannelOperatorDesk /></Suspense>
+				</div>
 			)}
 			{ctrl.activeSection === "staff_chat" && (
 				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5 w-full max-w-full"><Suspense fallback={null}><StaffMessengerPanel /></Suspense></div>

@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { OmnichannelChatView } from "../../../../omnichannel_chat/OmnichannelChatView";
+import { OmnichannelOperatorDesk } from "../../../../chat/OmnichannelOperatorDesk";
 import { PatientOmnichannelHubModal } from "../../../../messaging/PatientOmnichannelHubModal";
 
 export function renderOmnichannelAndTelephonyLauncher(): React.ReactElement | null {
@@ -34,7 +34,7 @@ export function renderOmnichannelAndTelephonyLauncher(): React.ReactElement | nu
 	if (isOmnichannel) {
 		return (
 			<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen p-2 sm:p-4 bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
-				<OmnichannelChatView className="flex-1 w-full h-full" />
+				<OmnichannelOperatorDesk className="flex-1 w-full h-full" />
 			</div>
 		);
 	}

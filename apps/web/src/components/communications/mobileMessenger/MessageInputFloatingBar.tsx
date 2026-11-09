@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Paperclip, Send, X } from "lucide-react";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 import type { ChatChannel } from "./types";
@@ -14,17 +14,41 @@ export interface MessageInputFloatingBarProps {
 	onSendMessage: () => void | Promise<void>;
 	isSendingMessage: boolean;
 	textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+	fileInputRef?: React.RefObject<HTMLInputElement | null>;
+	onFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const MessageInputFloatingBar: React.FC<MessageInputFloatingBarProps> = ({
 	inputText, setInputText, activeChannel, onToggleChannel, attachedFileName,
 	onAttachFile, onRemoveAttachedFile, onSendMessage, isSendingMessage, textareaRef,
+	fileInputRef, onFileChange,
 }) => {
+	const localFileInputRef = useRef<HTMLInputElement | null>(null);
+	const resolvedFileInputRef = fileInputRef || localFileInputRef;
 	const channelColor = activeChannel === "whatsapp" ? "text-emerald-600" : activeChannel === "telegram" ? "text-sky-600" : "text-blue-600";
 	const channelText = activeChannel === "whatsapp" ? "WA" : activeChannel === "telegram" ? "TG" : "SMS";
 
+	const handleDefaultFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (onFileChange) {
+			onFileChange(e);
+			return;
+		}
+		e.target.value = "";
+	};
+
 	return (
 		<>
+			<input
+				ref={resolvedFileInputRef}
+				id="mobile-chat-file-input"
+				type="file"
+				accept="image/*,.pdf,.dcm,application/dicom"
+				className="hidden"
+				style={{ display: "none" }}
+				aria-hidden="true"
+				tabIndex={-1}
+				onChange={handleDefaultFileChange}
+			/>
 			{attachedFileName && (
 				<div className="px-4 py-1.5 bg-teal-500/10 border-t border-teal-500/20 flex items-center justify-between text-xs text-teal-700 dark:text-teal-300">
 					<span className="flex items-center gap-1.5 truncate">

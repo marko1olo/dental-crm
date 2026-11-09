@@ -52,11 +52,11 @@ describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 			assert.equal(dispatchedBody?.phone, "+79995554433", "Must normalize phone to E.164");
 			assert.equal(dispatchedBody?.patientName, "Иванов Иван");
 
-			// Verify softphone state was activated
+			// Verify softphone state was activated in ringing state (awaiting call_answered event)
 			const updatedStore = useTelephonyStore.getState();
 			assert.ok(updatedStore.activeCall, "Active call must be set in softphone store");
 			assert.equal(updatedStore.activeCall?.phone, "+79995554433");
-			assert.equal(updatedStore.activeCall?.status, "connected");
+			assert.equal(updatedStore.activeCall?.status, "ringing");
 		} finally {
 			globalThis.fetch = originalFetch;
 		}

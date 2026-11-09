@@ -91,7 +91,7 @@ export function TelephonyHeaderCapsule({
 				data-testid="topbar-chairside-telephony-btn"
 				data-telephony-header-capsule="true"
 				className={`compact-top-button h-8 min-h-[32px] px-2.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-all border select-none ${buttonStyle} ${className || ""}`}
-				title={activeCall ? `Телефония: ${activeCall.patientName || activeCall.phone}` : `Телефония Mango PBX (Л${activeLineId})`}
+				title={activeCall ? `Телефония: ${activeCall.patientName || activeCall.phone}` : `Телефония: АТС · Л${activeLineId}`}
 			>
 				<button
 					type="button"

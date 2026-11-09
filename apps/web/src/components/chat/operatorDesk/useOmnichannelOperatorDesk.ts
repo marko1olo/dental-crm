@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type {
@@ -37,12 +38,27 @@ export function useOmnichannelOperatorDesk({
 	const [newPatientPhone, setNewPatientPhone] = useState("");
 	const [isLinkingSubmitting, setIsLinkingSubmitting] = useState(false);
 
-	// Список врачей для назначения
-	const [doctorsList] = useState<DoctorOption[]>([
-		{ id: "doc-1", fullName: "Смирнова Елена Александровна (Терапевт)" },
-		{ id: "doc-2", fullName: "Ковалев Дмитрий Сергеевич (Хирург-имплантолог)" },
-		{ id: "doc-3", fullName: "Иванова Ольга Петровна (Ортодонт)" },
-	]);
+	// Список врачей для назначения (Мандат 8z / 8e - динамически из staff)
+	const appLogic = useOptionalAppLogicContext();
+	const staffList = appLogic?.dashboard?.clinicSettings?.staff ?? [];
+
+	const doctorsList: DoctorOption[] = useMemo(() => {
+		const filtered = staffList.filter(
+			(s: any) => s.role === "doctor" || s.role === "owner" || (s.active && !s.role),
+		);
+		if (filtered.length > 0) {
+			return filtered.map((s: any) => ({
+				id: s.id,
+				fullName: s.specialty || s.specialization
+					? `${s.fullName} (${s.specialty || s.specialization})`
+					: s.fullName,
+			}));
+		}
+		return staffList.map((s: any) => ({
+			id: s.id,
+			fullName: s.fullName,
+		}));
+	}, [staffList]);
 
 	// Filters & Search
 	const [channelFilter, setChannelFilter] = useState<"all" | BotChannel>("all");

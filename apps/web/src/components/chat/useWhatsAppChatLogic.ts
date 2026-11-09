@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { initiateOutboundCall } from "../telephony/initiateOutboundCall";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
@@ -194,10 +195,12 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	};
 
 	const handleCallPatient = () => {
-		const cleanDigits = effectivePhone.replace(/[^\d+]/g, "");
-		if (cleanDigits) {
-			window.open(`tel:${cleanDigits}`, "_self");
-			showToast(`Набор номера: ${formattedPhone || effectivePhone}`, "info");
+		if (effectivePhone?.trim()) {
+			void initiateOutboundCall({
+				phone: effectivePhone,
+				patientName: effectiveName,
+				patientId: effectivePatientId,
+			});
 		} else {
 			showToast("Номер телефона пациента не указан", "warning");
 		}

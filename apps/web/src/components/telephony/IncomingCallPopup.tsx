@@ -46,6 +46,7 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 	// Chairside silence: doctor screen is 100% sterile from floating blobs and popups
 	if (isDoctorMode) return null;
 	if (!activeCall || isDndActive || isFullScreenStudioActive || !currentCall) return null;
+	if (activeCall.direction === "outbound") return null;
 	if (typeof document === "undefined") return null;
 
 	const shouldShowCapsule = isDoctorMode || !isPopupExpanded;

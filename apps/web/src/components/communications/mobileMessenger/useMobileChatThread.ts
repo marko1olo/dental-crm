@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import type { ChatChannel, MobileChatMessageItem, MobileCommunicationsMessengerProps } from "./types";
@@ -15,8 +16,22 @@ export function useMobileChatThread(
 
 	const isCurrentMobileIntercepted = Boolean(selectedPatientId && interceptedDialogs[selectedPatientId]);
 
-	const handleMobileTakeoverChat = useCallback(() => {
+	const handleMobileTakeoverChat = useCallback(async () => {
 		if (!selectedPatientId) return;
+		try {
+			await fetch(`/api/bots/chats/${encodeURIComponent(selectedPatientId)}/takeover`, {
+				method: "POST",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					channel: activeChannel,
+					operatorName: "Оператор клиники",
+				}),
+			}).catch(() => {});
+		} catch {}
+
 		setInterceptedDialogs((prev) => ({ ...prev, [selectedPatientId]: true }));
 		const takeoverMsg: MobileChatMessageItem = {
 			id: `mobile-takeover-${Date.now()}`,
@@ -62,7 +77,7 @@ export function useMobileChatThread(
 				direction: ev.direction === "inbound" ? "inbound" : "outbound", channel: (ev.channel as any) || "whatsapp",
 				timestamp: ev.createdAt, status: ev.status === "failed" ? "failed" : "read",
 			})));
-		} else {
+		} else if (isDemoShowcaseMode()) {
 			const now = Date.now();
 			setChatMessages([
 				{ id: `seed-1-${pId}`, patientId: pId, text: "Здравствуйте! Напоминаем о вашей записи на приём завтра в 11:30 к доктору Смирновой Е.А.", direction: "outbound", channel: "whatsapp", timestamp: new Date(now - 14400000).toISOString(), status: "read" },
@@ -70,6 +85,8 @@ export function useMobileChatThread(
 				{ id: `seed-3-${pId}`, patientId: pId, text: "Если снимок на диске или флешке — обязательно возьмите! Также у нас в клинике работает цифровой томограф, сможем сделать прицельный снимок на месте.", direction: "outbound", channel: "whatsapp", timestamp: new Date(now - 7200000).toISOString(), status: "read" },
 				{ id: `seed-4-${pId}`, patientId: pId, text: "Отлично, диск взяла! До встречи завтра.", direction: "inbound", channel: "whatsapp", timestamp: new Date(now - 1800000).toISOString() },
 			]);
+		} else {
+			setChatMessages([]);
 		}
 		setIsFetchingChat(false);
 	}, [dashboard?.communicationEvents]);

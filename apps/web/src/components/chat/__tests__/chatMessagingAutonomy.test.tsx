@@ -17,7 +17,6 @@ import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/Ap
 import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHubModal";
 import { TelegramBotIntegrationModal } from "../TelegramBotIntegrationModal";
 import { WhatsAppChatPanel } from "../WhatsAppChatPanel";
-import { WhatsAppChatView } from "../WhatsAppChatView";
 import { OperatorInputBar } from "../operatorDesk/OperatorInputBar";
 
 const mockAppLogicContext = {
@@ -157,22 +156,21 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 		});
 	});
 
-	describe("3. WhatsAppChatView Canonical Reception Desk Layout", () => {
-		it("renders standalone reception view with patient threads list and chat panel", () => {
+	describe("3. WhatsAppChatPanel Canonical Reception & Patient Chat Layout", () => {
+		it("renders patient context and chat panel with formatted phone", () => {
 			const html = renderToString(
 				<AppLogicProvider value={mockAppLogicContext}>
-					<WhatsAppChatView
+					<WhatsAppChatPanel
 						patientId="pat-101"
 						patientName="Смирнов Алексей Викторович"
 						patientPhone="+7 (999) 111-22-33"
-						mode="standalone"
 					/>
 				</AppLogicProvider>,
 			);
 
-			assert.ok(html.includes('data-testid="whatsapp-chat-view"'), "Must render canonical WhatsApp chat view container");
-			assert.ok(html.includes("Диалоги пациентов"), "Standalone mode must list patient conversation threads");
+			assert.ok(html.includes('data-testid="whatsapp-chat-panel"'), "Must render canonical WhatsApp chat panel container");
 			assert.ok(html.includes("Смирнов Алексей Викторович"), "Must display active patient name");
+			assert.ok(html.includes("+7 (999) 111-22-33"), "Must display patient phone");
 		});
 	});
 

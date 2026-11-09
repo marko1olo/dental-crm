@@ -60,7 +60,7 @@ export const MobileMessengerView: React.FC<MobileMessengerViewProps> = ({ props,
 					onToggleChannel={logic.handleToggleChannel} attachedFileName={logic.attachedFileName}
 					onAttachFile={logic.handleAttachFile} onRemoveAttachedFile={logic.handleRemoveAttachedFile}
 					onSendMessage={logic.handleSendMessage} isSendingMessage={logic.isSendingMessage}
-					textareaRef={logic.textareaRef}
+					textareaRef={logic.textareaRef} fileInputRef={logic.fileInputRef} onFileChange={logic.handleFileChange}
 				/>
 			)}
 		</div>

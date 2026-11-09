@@ -26,6 +26,8 @@ export interface FullscreenChatViewProps {
 	onSendMessage: () => void | Promise<void>;
 	isSendingMessage: boolean;
 	textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+	fileInputRef?: React.RefObject<HTMLInputElement | null>;
+	onFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const FullscreenChatView: React.FC<FullscreenChatViewProps> = ({
@@ -48,6 +50,8 @@ export const FullscreenChatView: React.FC<FullscreenChatViewProps> = ({
 	onSendMessage,
 	isSendingMessage,
 	textareaRef,
+	fileInputRef,
+	onFileChange,
 }) => {
 	return (
 		<div
@@ -86,6 +90,8 @@ export const FullscreenChatView: React.FC<FullscreenChatViewProps> = ({
 				onSendMessage={onSendMessage}
 				isSendingMessage={isSendingMessage}
 				textareaRef={textareaRef}
+				fileInputRef={fileInputRef}
+				onFileChange={onFileChange}
 			/>
 		</div>
 	);

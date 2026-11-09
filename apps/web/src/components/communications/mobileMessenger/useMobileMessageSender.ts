@@ -73,38 +73,38 @@ export function useMobileMessageSender(
 		showToast(`Канал переключен на ${activeChannel === "whatsapp" ? "Telegram" : activeChannel === "telegram" ? "SMS" : "WhatsApp"}`, "info");
 	}, [activeChannel]);
 
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+	const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+		const target = e.target;
+		const file = target.files?.[0];
+		if (file) {
+			setAttachedFileName(file.name);
+			const sizeKb = Math.round(file.size / 1024);
+			showToast(
+				`Файл «${file.name}» (${sizeKb} КБ) прикреплен к сообщению`,
+				"info",
+			);
+		}
+		target.value = "";
+	}, []);
+
 	const handleAttachFile = useCallback(() => {
-		let input = document.getElementById(
+		if (fileInputRef.current) {
+			fileInputRef.current.click();
+			return;
+		}
+		const input = document.getElementById(
 			"mobile-chat-file-input",
 		) as HTMLInputElement | null;
-		if (!input) {
-			input = document.createElement("input");
-			input.id = "mobile-chat-file-input";
-			input.type = "file";
-			input.accept = "image/*,.pdf,.dcm,application/dicom";
-			input.style.display = "none";
-			document.body.appendChild(input);
-		}
-		input.onchange = (e) => {
-			const target = e.target as HTMLInputElement;
-			const file = target.files?.[0];
-			if (file) {
-				setAttachedFileName(file.name);
-				const sizeKb = Math.round(file.size / 1024);
-				showToast(
-					`Файл «${file.name}» (${sizeKb} КБ) прикреплен к сообщению`,
-					"info",
-				);
-			}
-		};
-		input.value = "";
-		input.click();
+		input?.click();
 	}, []);
 
 	return {
 		inputText, setInputText, activeChannel, setActiveChannel,
 		attachedFileName, setAttachedFileName, isSendingMessage,
 		handleSendMessage, handleToggleChannel, handleAttachFile,
+		handleFileChange, fileInputRef,
 		handleRemoveAttachedFile: () => setAttachedFileName(null),
 		handleApplyTemplate, textareaRef,
 	};

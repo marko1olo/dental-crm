@@ -196,7 +196,7 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 				</div>
 			)}
 			{selectedCall.hasRecording && selectedCall.recordingUrl && (
-				<div className="pt-1"><CallAudioPlayer audioUrl={selectedCall.recordingUrl} /></div>
+				<div className="pt-1"><CallAudioPlayer recordingUrl={selectedCall.recordingUrl} /></div>
 			)}
 			<div className="space-y-1.5 pt-1">
 				<label className="text-xs font-semibold text-[var(--ink-muted)]">Заметка к звонку:</label>
@@ -235,7 +235,7 @@ export const TelephonyStudioFooter: React.FC<TelephonyStudioFooterProps> = ({
 }) => {
 	const primaryCtaLabel = hasDialed
 		? `Позвонить на ${formatPhoneRu(dialedNumber)}`
-		: isNoteSaved ? "Заметка сохранена" : "Сохранить заметку звонка";
+		: isNoteSaved ? "✓ Заметка сохранена" : "✓ Сохранить заметку звонка";
 
 	return (
 		<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-strong)] shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -290,10 +290,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		const clinicToken = readDenteClinicToken();
 
 		fetch("/api/telephony/calls", {
-			headers: {
-				...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-				...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-			},
+			headers: { ...(staffToken ? { "x-dente-staff-token": staffToken } : {}), ...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}) },
 		})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data: { success?: boolean; calls?: any[] } | null) => {
@@ -312,14 +309,10 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 							day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
 						});
 						return {
-							id: String(c.id), callType, phone, callerName,
-							patientId: c.patientId ? String(c.patientId) : null,
-							patientCategory: c.patientId ? "Постоянный" : "Первичный",
-							balanceRub: 0, lastVisitDate: null, attendingDoctor: null,
-							clinicalNote: c.message || undefined, somaticAlert: null,
-							durationSeconds: c.durationSeconds || 0, timestampText,
-							hasRecording: Boolean(c.recordingUrl), recordingUrl: c.recordingUrl || undefined,
-							transcriptSnippet: undefined,
+							id: String(c.id), callType, phone, callerName, patientId: c.patientId ? String(c.patientId) : null,
+							patientCategory: c.patientId ? "Постоянный" : "Первичный", balanceRub: 0, lastVisitDate: null, attendingDoctor: null,
+							clinicalNote: c.message || undefined, somaticAlert: null, durationSeconds: c.durationSeconds || 0, timestampText,
+							hasRecording: Boolean(c.recordingUrl), recordingUrl: c.recordingUrl || undefined, transcriptSnippet: undefined,
 						};
 					});
 					setDbCalls(mapped);
@@ -351,9 +344,8 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 			if (!searchQuery.trim()) return true;
 			const q = searchQuery.toLowerCase();
 			return (
-				call.callerName.toLowerCase().includes(q) ||
-				call.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
-				(call.attendingDoctor && call.attendingDoctor.toLowerCase().includes(q))
+				call.callerName.toLowerCase().includes(q) || call.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+				Boolean(call.attendingDoctor && call.attendingDoctor.toLowerCase().includes(q))
 			);
 		});
 	}, [baseCalls, activeFilter, searchQuery]);

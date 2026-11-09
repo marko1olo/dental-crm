@@ -9,7 +9,7 @@ import { useAppStore } from "../../../store/appStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { executeBookAppointmentFromChat } from "../bookFromChatAutonomy";
-import { OMNICHANNEL_TEMPLATES } from "../../omnichannel_chat/omnichannelChatTemplates";
+import { OMNICHANNEL_TEMPLATES } from "../../chat/OmnichannelOperatorDesk";
 
 describe("Communications & Chat 1-Click Booking Autonomy (Mandates 8e, 8n & 8b)", () => {
 	it("1. executeBookAppointmentFromChat immediately populates schedule draft and opens quick booking drawer", () => {

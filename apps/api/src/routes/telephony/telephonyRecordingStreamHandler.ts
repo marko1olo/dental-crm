@@ -14,15 +14,20 @@ import {
 	validateSsrfSafeRecordingUrl,
 } from "../../services/telephony/telephonySecurity.js";
 
+export type StreamRecordingRouteGeneric = {
+	Params: { eventId?: string; id?: string; organizationId?: string };
+	Querystring: { eventId?: string; id?: string; url?: string };
+};
+
 export async function handleStreamRecording(
-	request: FastifyRequest<{ Params: { eventId?: string; organizationId?: string } }>,
+	request: FastifyRequest<StreamRecordingRouteGeneric>,
 	reply: FastifyReply,
 ) {
 	if (!(await requireClinicalReadAccess(request, reply, "stream call recording"))) return;
 	const orgId = await requireResolvedOrganizationId(request, reply, "stream call recording");
 	if (!orgId) return;
 
-	const eventId = request.params.eventId;
+	const eventId = request.params.eventId || request.params.id || request.query?.eventId || request.query?.id;
 	if (!eventId || !UUID_REGEX.test(eventId)) {
 		return reply.status(400).send({ error: "InvalidEventId", message: "Invalid event ID format" });
 	}
@@ -49,20 +54,34 @@ export async function handleStreamRecording(
 	const targetUrl = ssrf.parsedUrl;
 	return new Promise<void>((resolve) => {
 		const client = targetUrl.protocol === "https:" ? https : http;
-		const proxyReq = client.get(targetUrl.href, { timeout: 10000, headers: { "User-Agent": "DenteDentalCRM-AudioProxy/1.0" } }, (proxyRes) => {
+		const reqHeaders: Record<string, string> = {
+			"User-Agent": "DenteDentalCRM-AudioProxy/1.0",
+		};
+		if (request.headers.range) {
+			reqHeaders.range = request.headers.range;
+		}
+
+		const proxyReq = client.get(targetUrl.href, { timeout: 10000, headers: reqHeaders }, (proxyRes) => {
 			const statusCode = proxyRes.statusCode || 500;
 			if (statusCode < 200 || statusCode >= 300) {
 				reply.status(502).send({ error: "BadGateway", message: `PBX audio server returned status ${statusCode}` });
 				return resolve();
 			}
 			const contentType = proxyRes.headers["content-type"] || eventRow.audioFormat || "audio/mpeg";
-			reply.raw.writeHead(200, {
+			const responseHeaders: Record<string, string> = {
 				"Content-Type": contentType,
-				"Content-Length": proxyRes.headers["content-length"] || "",
 				"Accept-Ranges": "bytes",
 				"Cache-Control": "private, no-cache, no-store, must-revalidate",
 				"X-Content-Type-Options": "nosniff",
-			});
+			};
+			if (proxyRes.headers["content-length"]) {
+				responseHeaders["Content-Length"] = proxyRes.headers["content-length"];
+			}
+			if (proxyRes.headers["content-range"]) {
+				responseHeaders["Content-Range"] = proxyRes.headers["content-range"];
+			}
+
+			reply.raw.writeHead(statusCode === 206 ? 206 : 200, responseHeaders);
 			proxyRes.pipe(reply.raw);
 			proxyRes.on("end", () => resolve());
 			proxyRes.on("error", () => {
@@ -85,8 +104,8 @@ export async function handleStreamRecording(
 export const telephonyRecordingStreamHandler = handleStreamRecording;
 
 export const telephonyRecordingStreamRoutes: FastifyPluginAsync = async (server) => {
-	server.get<{ Params: { eventId: string } }>("/recordings/:eventId/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
-	server.get<{ Params: { eventId: string } }>("/recordings/:eventId", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
-	server.get<{ Params: { organizationId: string; eventId: string } }>("/:organizationId/recordings/:eventId/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
-	server.get<{ Params: { organizationId: string; eventId: string } }>("/:organizationId/recordings/:eventId", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
+	server.get<StreamRecordingRouteGeneric>("/recordings/:eventId/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
+	server.get<StreamRecordingRouteGeneric>("/recordings/:eventId", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
+	server.get<StreamRecordingRouteGeneric>("/:organizationId/recordings/:eventId/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
+	server.get<StreamRecordingRouteGeneric>("/:organizationId/recordings/:eventId", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
 };

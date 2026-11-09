@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { ChannelFilter, MobileCommunicationsMessengerProps, MobilePatientDialogSummary } from "./types";
 
@@ -51,7 +52,7 @@ export function useMobileDialogsFeed(dashboard: MobileCommunicationsMessengerPro
 			}
 		});
 
-		if (dialogsMap.size < 3 && (dashboard?.patients ?? []).length > 0) {
+		if (isDemoShowcaseMode() && dialogsMap.size < 3 && (dashboard?.patients ?? []).length > 0) {
 			const samplePresets = [
 				{ msg: "Здравствуйте! Подтверждаю визит на завтра в 11:30.", channel: "whatsapp" as const, unread: 1, offsetMins: 15 },
 				{ msg: "Спасибо большое доктору за безболезненное лечение!", channel: "telegram" as const, unread: 0, offsetMins: 120 },

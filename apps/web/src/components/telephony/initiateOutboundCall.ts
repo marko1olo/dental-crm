@@ -39,14 +39,15 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 	const callId = `outbound-${Date.now()}`;
 	const patientName = req.patientName || "Пациент";
 
-	// 1. Immediately activate softphone floating HUD with active outgoing call in ringing state
-	store.triggerIncomingCall({
+	// 1. Immediately activate softphone floating HUD with active outgoing call in ringing state (without popup)
+	store.startOutboundCall({
 		id: callId,
 		callId,
 		phone: e164,
 		patientId: req.patientId || null,
 		patientName,
-		provider: "mango",
+		provider: "sip",
+		direction: "outbound",
 		timestamp: new Date().toISOString(),
 		status: "ringing",
 		callStartedAt: Date.now(),
@@ -91,7 +92,8 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 			return false;
 		}
 
-		store.connectCall();
+		// Call remains in dialing/ringing state until remote party answers
+		showToast(`Вызов направлен на ${formatPhoneDisplay(e164)}. Ожидание ответа абонента...`, "info");
 		return true;
 	} catch {
 		store.endCall();

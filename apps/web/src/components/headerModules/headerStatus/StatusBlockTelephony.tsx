@@ -25,7 +25,7 @@ export function StatusBlockTelephony({ status, onClose }: StatusBlockTelephonyPr
 					<span>SIP Телефония (АТС)</span>
 				</span>
 				<span className="text-[10px] font-mono text-[var(--muted,#475569)]">
-					Mango PBX · Л{activeLineId}
+					{`АТС · Л${activeLineId}`}
 				</span>
 			</div>
 
@@ -75,10 +75,10 @@ export function StatusBlockTelephony({ status, onClose }: StatusBlockTelephonyPr
 					type="button"
 					onClick={() => {
 						onClose();
-						showToast("Телефония Mango PBX активна и готова к приему вызовов", "info");
+						showToast("Телефония АТС активна и готова к приему вызовов", "info");
 					}}
 					className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] text-xs"
-					title="Телефония: Mango PBX подключена"
+					title="Телефония: АТС подключена"
 				>
 					<PhoneCall size={14} className="text-emerald-500 shrink-0" />
 					<span>Вызовы</span>
