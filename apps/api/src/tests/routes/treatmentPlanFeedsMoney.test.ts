@@ -254,13 +254,13 @@ describe("сохранённый план лечения виден деньга
 			await db.insert(organizations).values({
 				id: ORGANIZATION_ID,
 				name: "Клиника сторожа шва план→деньги",
-			});
+			}).onConflictDoNothing();
 			await db.insert(users).values({
 				id: DOCTOR_ID,
 				organizationId: ORGANIZATION_ID,
 				fullName: "Врач сторожа шва план→деньги",
 				role: "doctor",
-			});
+			}).onConflictDoNothing();
 			for (const [patientId, fullName] of [
 				[PATIENT_MONEY, "Пациент основного шва"],
 				[PATIENT_KOPECKS, "Пациент проверки копеек"],
@@ -272,7 +272,7 @@ describe("сохранённый план лечения виден деньга
 					organizationId: ORGANIZATION_ID,
 					fullName,
 					status: "active",
-				});
+				}).onConflictDoNothing();
 			}
 			/*
 			 * Прайс с копейками: позиция плана обязана уметь ссылаться на услугу
@@ -296,7 +296,7 @@ describe("сохранённый план лечения виден деньга
 					basePriceRub: PRICE_TWO,
 					priceRub: PRICE_TWO,
 				},
-			]);
+			]).onConflictDoNothing();
 		});
 
 		staffToken = signToken(
