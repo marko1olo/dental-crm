@@ -157,7 +157,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 							Налоговый вычет 13% НДФЛ: возврат до {formatRubles(estimatedTaxRefundRub)}
 						</strong>
 						<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--pc-text-muted, #64748b)" }}>
-							Справка по форме КНД 1151156 с QR-кодом для ФНС формируется в 1 клик
+							Справка об оплате медицинских услуг с QR-кодом для ФНС формируется в 1 клик
 						</p>
 					</div>
 				</div>
@@ -167,7 +167,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 					data-testid="pc-plan-tax-1click-btn"
 					onClick={() => {
 						downloadPatientTaxCertificate1151156(data, 2026);
-						if (onShowToast) onShowToast("Справка для налогового вычета (13% НДФЛ, КНД 1151156) сформирована в 1 клик!");
+						if (onShowToast) onShowToast("Справка для налогового вычета (13% НДФЛ) сформирована!");
 					}}
 					style={{ minHeight: "44px", touchAction: "manipulation", display: "inline-flex", alignItems: "center", gap: "6px" }}
 				>

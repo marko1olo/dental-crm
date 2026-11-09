@@ -254,7 +254,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 								}}
 							>
 								<CheckCircle2 size={18} />
-								<span>Сформировать справку КНД 1151156</span>
+								<span>Сформировать справку для налогового вычета (13% НДФЛ)</span>
 							</button>
 						</>
 					) : (
@@ -267,11 +267,11 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 								</div>
 
 								<div className="text-center my-2">
-									<div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono">
-										ФОРМА ПО КНД 1151156
+									<div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+										Справка для налогового вычета (13% НДФЛ)
 									</div>
 									<div className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-										СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ
+										Справка об оплате медицинских услуг
 									</div>
 									<div className="text-[11px] text-slate-500 dark:text-slate-400">
 										№ ФНС-2026/043-9821 от {new Date().toLocaleDateString("ru-RU")}
@@ -350,7 +350,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 
 							{taxCopiedNotice && (
 								<div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 text-xs font-bold text-center">
-									✓ Справка КНД 1151156 сформирована и готова к отправке в ФНС!
+									✓ Справка для налогового вычета (13% НДФЛ) сформирована и готова к отправке в ФНС!
 								</div>
 							)}
 						</div>

@@ -61,23 +61,23 @@ export function RadiologyModuleModals(p: RadiologyModuleModalsProps) {
 				</div>
 			)}
 			{modals.showRvgCapture && (
-				<DirectRvgCaptureModal isOpen={modals.showRvgCapture} onClose={() => modals.setShowRvgCapture(false)} patientId={patient?.id || undefined} patientName={patientName} patientCardNumber={cardNum} doctorName={docName} initialToothFdi={activeToothFdi ? String(activeToothFdi) : "16"} />
+				<DirectRvgCaptureModal isOpen={modals.showRvgCapture} onClose={() => modals.setShowRvgCapture(false)} patientId={patient?.id || undefined} patientName={patientName} patientCardNumber={cardNum} doctorName={docName} initialToothFdi={activeToothFdi ? String(activeToothFdi) : undefined} />
 			)}
 			{modals.showDoseSheet && (
 				<RadiationSafetyRegistryModal isOpen={modals.showDoseSheet} onClose={() => modals.setShowDoseSheet(false)} patientName={patientName} patientCardNumber={cardNum} patientBirthDate={patient?.birthDate || undefined} />
 			)}
 			{modals.showReportStudio && (
-				<RadiologyReportStudioModal isOpen={modals.showReportStudio} onClose={() => modals.setShowReportStudio(false)} patientName={patientName} patientCardNumber={cardNum} patientAge={patient?.birthDate ? undefined : "58Y"} patientGender={patient?.gender === "female" ? "Жен." : "Муж."} clinicName={clinicName || "Стоматологическая клиника DENTE"} />
+				<RadiologyReportStudioModal isOpen={modals.showReportStudio} onClose={() => modals.setShowReportStudio(false)} patientName={patientName} patientCardNumber={cardNum} patientAge={undefined} patientGender={patient?.gender === "female" ? "Жен." : patient?.gender === "male" ? "Муж." : undefined} clinicName={clinicName || "Стоматологическая клиника DENTE"} />
 			)}
 			{modals.showHotFolder && (
 				<HotFolderIntakeModal isOpen={modals.showHotFolder} onClose={() => modals.setShowHotFolder(false)} patientId={patient?.id || undefined} patientName={patient?.fullName || undefined} patientCardNumber={patient?.medicalCardNumber || patient?.cardNumber || undefined} patientBirthDate={patient?.birthDate || undefined} />
 			)}
 			{modals.showImplant && (
-				<CbctImplantModal isOpen={modals.showImplant} onClose={() => modals.setShowImplant(false)} patientId={patient?.id || undefined} patientName={patientName} toothFdi={activeToothFdi ? Number(activeToothFdi) : 46} />
+				<CbctImplantModal isOpen={modals.showImplant} onClose={() => modals.setShowImplant(false)} patientId={patient?.id || undefined} patientName={patientName} toothFdi={activeToothFdi ? Number(activeToothFdi) : undefined} />
 			)}
 			{modals.showConsultation && typeof document !== "undefined" && createPortal(
 				<div className="fixed inset-0 z-50 bg-[#020617] flex flex-col" data-testid="radiology-consultation-modal-portal">
-					<RadiologyConsultationSplit patientName={patientName} patientCardNumber={cardNum} patientAge={patient?.birthDate ? undefined : "58Y"} patientGender="Жен." activeToothFdi={activeToothFdi || undefined} initialLeftStudy={p.selectedStudyForViewer ? convertImagingStudyToRadiologyStudy(p.selectedStudyForViewer) : undefined} onInsertProtocol={(note) => applyRadiologyProtocolToForm043({ protocol: { id: "consultation-note", titleRu: "Консультация сплит", shortLabel: "Консультация", text: note, category: "norma" }, options: { toothFdi: activeToothFdi ? String(activeToothFdi) : undefined, modalityLabel: "Консультация (Сплит)" }, showNotification: true, copyToClipboard: true })} onClose={() => modals.setShowConsultation(false)} />
+					<RadiologyConsultationSplit patientName={patientName} patientCardNumber={cardNum} patientAge={undefined} patientGender={patient?.gender === "female" ? "Жен." : patient?.gender === "male" ? "Муж." : undefined} activeToothFdi={activeToothFdi || undefined} initialLeftStudy={p.selectedStudyForViewer ? convertImagingStudyToRadiologyStudy(p.selectedStudyForViewer) : undefined} onInsertProtocol={(note) => applyRadiologyProtocolToForm043({ protocol: { id: "consultation-note", titleRu: "Консультация сплит", shortLabel: "Консультация", text: note, category: "norma" }, options: { toothFdi: activeToothFdi ? String(activeToothFdi) : undefined, modalityLabel: "Консультация (Сплит)" }, showNotification: true, copyToClipboard: true })} onClose={() => modals.setShowConsultation(false)} />
 				</div>,
 				document.body
 			)}

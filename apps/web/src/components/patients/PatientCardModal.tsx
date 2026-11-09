@@ -16,6 +16,7 @@ import {
 	AlertOctagon,
 	Award,
 	Calendar,
+	ClipboardList,
 	ExternalLink,
 	FileCheck,
 	FileText,
@@ -43,6 +44,7 @@ import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { PatientDocumentsTab } from "./tabs/PatientDocumentsTab";
+import { TreatmentPlansTab } from "./tabs/TreatmentPlansTab";
 import { PatientHistoryTab, DEFAULT_CLINICAL_VISITS } from "./PatientHistoryTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
 import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
@@ -92,6 +94,7 @@ export {
 const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
 	{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Анамнез", Icon: HeartPulse },
+	{ id: "treatmentPlans", testId: "tab-patient-treatment-plans", label: "План лечения", Icon: ClipboardList },
 	{ id: "visits", testId: "tab-patient-visits", label: "Визиты и файлы", Icon: History },
 	{ id: "finance", testId: "tab-patient-finance", label: "Счета и баланс", Icon: Wallet },
 	{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
@@ -275,16 +278,29 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							</button>
 						)}
 
-						<button
-							type="button"
-							data-testid={isCreateMode ? "patient-creation-print-blank-contract-btn" : "btn-print-patient-card"}
-							onClick={isCreateMode ? creationForm.handlePrintBlankContract : handlePrint}
-							className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
-							title={isCreateMode ? "Распечатать чистый бланк договора" : "Печать карты пациента"}
-						>
-							<Printer className="w-4 h-4 shrink-0" />
-							<span>{isCreateMode ? "Печать бланка договора" : "Печать"}</span>
-						</button>
+						{isCreateMode ? (
+							<button
+								type="button"
+								data-testid="patient-creation-print-blank-contract-btn"
+								onClick={creationForm.handlePrintBlankContract}
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
+								title="Распечатать чистый бланк договора"
+							>
+								<Printer className="w-4 h-4 shrink-0" />
+								<span>Печать бланка договора</span>
+							</button>
+						) : (
+							<button
+								type="button"
+								data-testid="btn-print-patient-card"
+								onClick={handlePrint}
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
+								title="Печать карты пациента"
+							>
+								<Printer className="w-4 h-4 shrink-0" />
+								<span>Печать</span>
+							</button>
+						)}
 
 						{!isCreateMode && patientData.id && (
 							<button
@@ -335,8 +351,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								}`}
 							/>
 							<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-								<span className="text-[11px] font-bold shrink-0 uppercase tracking-wide">
-									{safetyEvaluation.hasCriticalStopFlags ? "КРИТИЧЕСКИЙ СТОП-ФАКТОР:" : "КЛИНИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ:"}
+								<span className="text-[11px] font-bold shrink-0 tracking-wide">
+									{safetyEvaluation.hasCriticalStopFlags ? "Критический стоп-фактор:" : "Клиническое предупреждение:"}
 								</span>
 								<div className="flex items-center gap-1.5 flex-wrap">
 									{safetyEvaluation.activeFlags.map((flag) => (
@@ -415,6 +431,22 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							form={creationForm}
 							updatePatientCoreDraft={updatePatientCoreDraft}
 							onClose={onClose}
+						/>
+					) : activeTab === "treatmentPlans" ? (
+						<TreatmentPlansTab
+							patient={patientData}
+							patientId={patientData.id ?? undefined}
+							onOpenPlanPresenter={(planId) => {
+								if (typeof window !== "undefined") {
+									window.location.hash = planId ? `#treatment-plan?id=${planId}` : "#treatment-plan";
+								}
+							}}
+							onSendToCheckout={(tierId, amountRub) => {
+								if (typeof window !== "undefined") {
+									window.location.hash = `#checkout?amount=${amountRub}&tier=${tierId}&patientId=${patientData.id || ""}`;
+								}
+							}}
+							onPrintPlan={handlePrint}
 						/>
 					) : activeTab === "finance" ? (
 						<PatientFinanceTab

@@ -60,10 +60,10 @@ export interface ConsultationTopToolbarProps {
 }
 
 export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
-	patientName = "Чухрова Лариса",
-	patientCardNumber = "20190621_101042",
-	patientAge = "58Y",
-	patientGender = "Жен.",
+	patientName = "",
+	patientCardNumber = "",
+	patientAge,
+	patientGender,
 	activeSlot,
 	onSelectSlot,
 	splitMode = "comparison",
@@ -128,10 +128,17 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 				)}
 
 				{/* Patient Telemetry (Screenshot 25 banner) */}
-				<span className="text-[11px] text-slate-300 font-mono hidden 2xl:inline whitespace-nowrap truncate max-w-[260px]">
-					{patientCardNumber} <strong className="text-white font-sans">{patientName}</strong>{" "}
-					{patientAge} ({patientGender})
-				</span>
+				{(patientName || patientCardNumber) && (
+					<span className="text-[11px] text-slate-300 font-mono hidden 2xl:inline whitespace-nowrap truncate max-w-[260px]">
+						{patientCardNumber && <>{patientCardNumber} </>}
+						{patientName && <strong className="text-white font-sans">{patientName}</strong>}
+						{(patientAge || patientGender) && (
+							<span className="ml-1 text-slate-400">
+								{[patientAge, patientGender].filter(Boolean).join(" ")}
+							</span>
+						)}
+					</span>
+				)}
 
 				{/* Active Window Focus Indicator */}
 				<div className="flex items-center gap-1 bg-[#0f172a] p-0.5 rounded border border-[#334155] ml-1 shrink-0">

@@ -107,10 +107,9 @@ export const postPatientAttachmentsHandler = async (
 			.limit(1);
 
 		if (!patient) {
-			return reply.code(403).send({
-				error: "Forbidden",
-				message:
-					"Пациент не найден в этой клинике или относится к другой организации.",
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
 			});
 		}
 

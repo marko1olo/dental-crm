@@ -14,7 +14,7 @@ import { openPatientPresentationWindow } from './presentationSyncProtocol';
 import { ChairsidePhotoQrBridgeModal } from './ChairsidePhotoQrBridgeModal';
 import { DsdCanvasOverlay, type DsdCanvasGuideFlags, type DsdFacialLandmarks, type DsdCalibrationState } from './dsd/DsdCanvasOverlay';
 import { DsdMetricsSidebar } from './dsd/DsdMetricsSidebar';
-import type { DsdAnalysisData } from '@dental/shared';
+import { type DsdAnalysisData, matchPhotoProtocolSlot } from '@dental/shared';
 
 if (typeof document !== 'undefined') import('./clinicalPhotography.css');
 
@@ -154,26 +154,19 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 			.filter((id) => !slotsData[id]?.imageUrl);
 
 		files.forEach((file) => {
-			const lower = file.name.toLowerCase();
+			const matched = matchPhotoProtocolSlot(file.name);
 			let matchedSlotId: string | undefined;
 
-			if (lower.includes('smile') || lower.includes('улыб') || lower.includes('портрет')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('smile') || s.id.includes('portrait'))?.id;
-			} else if (lower.includes('profile') || lower.includes('профиль')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('profile'))?.id;
-			} else if (lower.includes('upper') || lower.includes('верхн') || lower.includes('maxill')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('upper') || s.id.includes('maxill'))?.id;
-			} else if (lower.includes('lower') || lower.includes('нижн') || lower.includes('mandib')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('lower') || s.id.includes('mandib'))?.id;
-			} else if (lower.includes('right') || lower.includes('прав')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('right'))?.id;
-			} else if (lower.includes('left') || lower.includes('лев')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('left'))?.id;
-			} else if (lower.includes('front') || lower.includes('фронт') || lower.includes('occlus') || lower.includes('окклюз')) {
-				matchedSlotId = activePreset.slots.find((s) => s.id.includes('front') || s.id.includes('occlus'))?.id;
+			if (matched) {
+				const foundSlot = activePreset.slots.find(
+					(s) => s.id === matched.id || s.id.includes(matched.id) || matched.id.includes(s.id),
+				);
+				if (foundSlot && !slotsData[foundSlot.id]?.imageUrl) {
+					matchedSlotId = foundSlot.id;
+				}
 			}
 
-			const targetId = (matchedSlotId && !slotsData[matchedSlotId]?.imageUrl)
+			const targetId = matchedSlotId
 				? matchedSlotId
 				: (emptySlotIds.shift() || activePreset.slots[0]?.id || 'slot');
 
@@ -293,20 +286,50 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					{activeViewMode === 'dsd' && (
 						<div className="w-full h-full min-h-[500px] flex max-sm:flex-col overflow-hidden bg-slate-950">
 							<div className="flex-1 relative flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-								<DsdCanvasOverlay
-									imageUrl={
+								{(() => {
+									const effectiveDsdImage =
 										slotsData['portrait_smile']?.imageUrl ||
 										slotsData['intraoral_frontal_occlusion']?.imageUrl ||
-										Object.values(slotsData).find((s) => s.imageUrl)?.imageUrl ||
-										'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000"><rect width="1000" height="1000" fill="%230f172a"/><circle cx="500" cy="500" r="380" fill="%231e293b"/><circle cx="340" cy="380" r="30" fill="%23334155"/><circle cx="660" cy="380" r="30" fill="%23334155"/><circle cx="340" cy="380" r="12" fill="%2306b6d4"/><circle cx="660" cy="380" r="12" fill="%2306b6d4"/><ellipse cx="500" cy="520" rx="35" ry="20" fill="%23334155"/><path d="M 280 620 Q 500 740 720 620" stroke="%23e2e8f0" stroke-width="24" stroke-linecap="round" fill="none"/><path d="M 290 625 Q 500 730 710 625" stroke="%230f172a" stroke-width="12" fill="none"/><text x="500" y="860" font-family="sans-serif" font-size="20" fill="%2394a3b8" text-anchor="middle" font-weight="bold">Клинический фотопротокол DSD: анфас с улыбкой</text></svg>'
+										Object.values(slotsData).find((s) => s.imageUrl)?.imageUrl;
+
+									if (!effectiveDsdImage) {
+										return (
+											<div
+												data-testid="dsd-empty-prompt"
+												className="flex flex-col items-center justify-center w-full h-full text-slate-400 gap-3 p-6 text-center"
+											>
+												<div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-cyan-400">
+													<Camera size={32} />
+												</div>
+												<div className="text-base font-semibold text-slate-200">
+													Фотография улыбки не загружена
+												</div>
+												<div className="text-xs text-slate-400 max-w-sm">
+													Загрузите портретное фото пациента с улыбкой в ячейку «Портрет с улыбкой» для построения эстетических ориентиров DSD.
+												</div>
+												<button
+													type="button"
+													onClick={() => setActiveViewMode('grid')}
+													className="mt-2 px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors"
+												>
+													Перейти к загрузке фото
+												</button>
+											</div>
+										);
 									}
-									guides={dsdGuides}
-									landmarks={dsdLandmarks}
-									calibration={dsdCalibration}
-									rotationDegrees={dsdRotation}
-									onLandmarksChange={setDsdLandmarks}
-									onCalibrationChange={setDsdCalibration}
-								/>
+
+									return (
+										<DsdCanvasOverlay
+											imageUrl={effectiveDsdImage}
+											guides={dsdGuides}
+											landmarks={dsdLandmarks}
+											calibration={dsdCalibration}
+											rotationDegrees={dsdRotation}
+											onLandmarksChange={setDsdLandmarks}
+											onCalibrationChange={setDsdCalibration}
+										/>
+									);
+								})()}
 							</div>
 							<div className="w-full sm:w-[360px] lg:w-[400px] shrink-0 h-full border-l border-[var(--line,#cbd5e1)] dark:border-slate-800">
 								<DsdMetricsSidebar

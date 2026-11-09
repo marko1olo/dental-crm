@@ -11,8 +11,14 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { VisiographStudioModal } from "./VisiographStudioModal";
+import { usePatientStore } from "../../store/patientStore";
+import { useVisitStore } from "../../store/visitStore";
 
 export const DirectVisiographLauncher: React.FC = () => {
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
+
 	const checkShouldOpen = useCallback((): boolean => {
 		if (typeof window === "undefined") return false;
 		const s = (window.location.search || "").toLowerCase();
@@ -74,13 +80,18 @@ export const DirectVisiographLauncher: React.FC = () => {
 
 	if (!isOpen) return null;
 
+	const effectivePatientName =
+		patientCoreDraft?.fullName?.trim() ||
+		(selectedPatientId ? `Пациент #${selectedPatientId.slice(0, 8)}` : undefined);
+	const effectiveToothCode = activeToothNumber ? String(activeToothNumber) : undefined;
+
 	return (
 		<VisiographStudioModal
 			isOpen={isOpen}
 			onClose={handleCloseModal}
-			patientName="Захаров Иван Дмитриевич"
-			patientId="pat_walkin"
-			initialToothCode="16"
+			patientName={effectivePatientName}
+			patientId={selectedPatientId || undefined}
+			initialToothCode={effectiveToothCode}
 			initialModality="rvg"
 		/>
 	);

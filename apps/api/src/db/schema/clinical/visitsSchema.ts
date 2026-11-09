@@ -321,7 +321,9 @@ export const visitExaminationPhotoLinks = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		visitId: text("visit_id").notNull(),
+		visitId: uuid("visit_id")
+			.notNull()
+			.references(() => visits.id, { onDelete: "cascade" }),
 		patientId: uuid("patient_id"),
 		photoUrl: text("photo_url").notNull(),
 		caption: text("caption"),

@@ -28,6 +28,9 @@ import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
 import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
 import { DemoCaseViewerModal } from "../../../demo/DemoCaseViewerModal";
 import { renderSpecializedClinicalLaunchers } from "./SpecializedClinicalLaunchers";
+import { usePatientStore } from "../../../../store/patientStore";
+import { useVisitStore } from "../../../../store/visitStore";
+import { useAppStore } from "../../../../store/appStore";
 
 export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] =
 	[
@@ -139,16 +142,26 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				exactHashes: ["#rvg-capture", "#direct-rvg", "#rvg-hardware"],
 				searchIncludes: ["rvg-capture=1", "standalone=rvg-capture", "direct-rvg=1"],
 			},
-			render: () => (
-				<DirectRvgCaptureModal
-					isOpen={true}
-					onClose={() => clearUrlTokens(["direct-rvg", "rvg-capture", "rvg-hardware"])}
-					patientName="Захаров Иван Дмитриевич"
-					patientCardNumber="ЭМК №2026/891"
-					doctorName="Д-р Захаров А. В."
-					initialToothFdi="16"
-				/>
-			),
+			render: () => {
+				const patientState = usePatientStore.getState();
+				const visitState = useVisitStore.getState();
+				const appState = useAppStore.getState();
+				const patientName =
+					patientState.patientCoreDraft?.fullName?.trim() ||
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : undefined);
+				const toothFdi = visitState.activeToothNumber ? String(visitState.activeToothNumber) : undefined;
+				return (
+					<DirectRvgCaptureModal
+						isOpen={true}
+						onClose={() => clearUrlTokens(["direct-rvg", "rvg-capture", "rvg-hardware"])}
+						patientId={patientState.selectedPatientId || undefined}
+						patientName={patientName}
+						patientCardNumber={patientState.selectedPatientId ? `ЭМК #${patientState.selectedPatientId.slice(0, 8)}` : undefined}
+						doctorName={appState.activeDoctorName || undefined}
+						initialToothFdi={toothFdi}
+					/>
+				);
+			},
 		},
 
 		// 7b. Радиовизиограф и снимки RVG (Студия)
@@ -310,13 +323,21 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				searchIncludes: ["hud=open", "chairside-hud=1"],
 				exactHashes: ["#chairside-hud", "#hud"],
 			},
-			render: () => (
-				<ChairsideCopilotHUD
-					initialOpen={true}
-					patientName="Иванов И.И."
-					activeTooth={16}
-				/>
-			),
+			render: () => {
+				const patientState = usePatientStore.getState();
+				const visitState = useVisitStore.getState();
+				const patientName =
+					patientState.patientCoreDraft?.fullName?.trim() ||
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : undefined);
+				return (
+					<ChairsideCopilotHUD
+						initialOpen={true}
+						patientId={patientState.selectedPatientId || undefined}
+						patientName={patientName}
+						activeTooth={visitState.activeToothNumber ?? undefined}
+					/>
+				);
+			},
 		},
 
 		// 15. Клиническая демонстрационная витрина кейсов (Мандаты 8aq & 8wy)

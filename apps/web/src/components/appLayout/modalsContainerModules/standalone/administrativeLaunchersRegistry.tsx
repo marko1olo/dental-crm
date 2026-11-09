@@ -258,6 +258,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		title: "Студия документов и договоров",
 		criteria: {
 			tokens: ["documents", "docs-studio", "docs_studio", "documents-studio"],
+			exclude: ["documents_catalog", "documents-catalog"],
 			searchIncludes: ["documents=1", "docs=1", "standalone=documents"],
 			exactHashes: ["#documents", "#docs-studio", "#documents-studio", "#contract", "#tax-certificate"],
 			hashPrefixes: ["#documents?", "#docs-studio?", "#documents-studio?"],

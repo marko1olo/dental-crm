@@ -10,7 +10,6 @@ import { ConsentStudioModal } from "../../consents/ConsentStudioModal.js";
 import { FnsTaxCertificateModal } from "../../finance/TaxDeductionCertificateModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
 import { PrescriptionBlankModal } from "../PrescriptionBlankModal.js";
-import { PatientContractsSection } from "../PatientContractsSection.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,43 +130,12 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		assert.ok(html.includes("Печать рецепта"), "Must render print button");
 	});
 
-	it("renders PatientContractsSection with Decree 736 and blank contract print", () => {
-		const html = renderToString(
-			<PatientContractsSection
-				patient={mockPatient}
-				clinicProfileDraft={mockClinicProfile}
-				contracts={[
-					{
-						id: "c1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-						organizationId: "b1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-						patientId: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-						visitId: null,
-						kind: "paid_medical_services_contract",
-						title: "Договор на оказание медицинских услуг",
-						status: "issued",
-						issuedAt: "2026-02-15T10:00:00.000Z",
-						totalAmountRub: 15000,
-						payload: {
-							contractNumber: "Д-2026/0418",
-						},
-					} as GeneratedDocument,
-				]}
-			/>,
-		);
-
-		assert.ok(html.includes("patient-contracts-section"), "Must render section container");
-		assert.ok(html.includes("ПП РФ № 736"), "Must reference Government Decree No. 736");
-		assert.ok(html.includes("Бланк со строками «________»"), "Must render Mandate 8e registration blank print button");
-		assert.ok(html.includes("Д-2026/0418"), "Must list existing contract");
-	});
-
-	it("guarantees zero raw emojis in all 4 canonical components", () => {
+	it("guarantees zero raw emojis in all 3 canonical components", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const files = [
 			"OutpatientCardPrintModal.tsx",
 			"PatientConsentSignDrawer.tsx",
 			"PrescriptionBlankModal.tsx",
-			"PatientContractsSection.tsx",
 		];
 
 		for (const file of files) {
@@ -180,13 +148,12 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		}
 	});
 
-	it("guarantees zero dev jargon ('в 1 клик', 'авто-генерация') in all 4 canonical components", () => {
+	it("guarantees zero dev jargon ('в 1 клик', 'авто-генерация') in all 3 canonical components", () => {
 		const jargonRegex = /(в 1 клик|1-клик|авто-генерация|автогенерация)/i;
 		const files = [
 			"OutpatientCardPrintModal.tsx",
 			"PatientConsentSignDrawer.tsx",
 			"PrescriptionBlankModal.tsx",
-			"PatientContractsSection.tsx",
 		];
 
 		for (const file of files) {

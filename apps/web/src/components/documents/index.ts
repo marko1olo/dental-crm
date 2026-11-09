@@ -7,7 +7,6 @@
 export * from "./OutpatientCardPrintModal";
 export { TaxDeductionCertificateModal, TaxDeductionCertificateModal as FnsTaxCertificateModal } from "../finance/TaxDeductionCertificateModal";
 export * from "./PrescriptionBlankModal";
-export * from "./PatientContractsSection";
 export * from "./DocumentA4PrintPreviewModal";
 export * from "./ProfessionalDocumentA4Sheet";
 export * from "./PrimaryIntakePackageModal";

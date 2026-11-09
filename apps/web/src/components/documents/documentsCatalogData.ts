@@ -6,7 +6,7 @@
  * Целевой размер: 280–350 строк (Sweet Spot Mandate 8b). 0 float-ошибок (Мандат 8wy).
  */
 
-import type { DocumentKind } from "@dental/shared";
+import { type DocumentKind, resolveTaxDeductionCategoryShared } from "@dental/shared";
 import type React from "react";
 import {
 	ClipboardList,
@@ -251,7 +251,26 @@ ${itemsRows}
 
 export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): string {
 	const year = ctx.taxYear || new Date().getFullYear();
-	const refund13Kopecks = Math.round(ctx.totalAmountKopecks * 0.13);
+
+	let code01Kopecks = 0;
+	let code02Kopecks = 0;
+
+	if (ctx.services && ctx.services.length > 0) {
+		for (const s of ctx.services) {
+			const cat = resolveTaxDeductionCategoryShared(s.code, s.title);
+			if (cat === "2") {
+				code02Kopecks += s.amountKopecks || 0;
+			} else {
+				code01Kopecks += s.amountKopecks || 0;
+			}
+		}
+	} else {
+		code01Kopecks = ctx.totalAmountKopecks;
+	}
+
+	const totalKopecks = code01Kopecks + code02Kopecks > 0 ? code01Kopecks + code02Kopecks : ctx.totalAmountKopecks;
+	const eligibleCode01Kopecks = Math.min(code01Kopecks, 15000000);
+	const refund13Kopecks = Math.round((eligibleCode01Kopecks * 0.13) + (code02Kopecks * 0.13));
 
 	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ (ФОРМА ПО КНД 1151156)
 Номер справки: ${ctx.documentNumber}
@@ -269,12 +288,12 @@ export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): strin
 ${ctx.patient.inn ? `ИНН налогоплательщика: ${ctx.patient.inn}` : "ИНН налогоплательщика: не указан (для физических лиц не обязателен)"}
 
 3. Сведения об оплате стоматологических услуг за ${year} год:
-Код услуги 1 (обычное лечение): ${formatKopecksToRubles(ctx.totalAmountKopecks)}
-Код услуги 2 (дорогостоящее лечение): 0 ₽
-ИТОГО подтверждённая сумма расходов: ${formatKopecksToRubles(ctx.totalAmountKopecks)}
+Код услуги 1 (обычное лечение): ${formatKopecksToRubles(code01Kopecks)}
+Код услуги 2 (дорогостоящее лечение): ${formatKopecksToRubles(code02Kopecks)}
+ИТОГО подтверждённая сумма расходов: ${formatKopecksToRubles(totalKopecks)}
 Расчетная сумма социального налогового вычета (13% НДФЛ к возврату): ${formatKopecksToRubles(refund13Kopecks)}
 
-[QR-код верификации ФНС: https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&year=${year}&inn=${ctx.clinic.inn}&sum=${(ctx.totalAmountKopecks / 100).toFixed(2)}]
+[QR-код верификации ФНС: https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&year=${year}&inn=${ctx.clinic.inn}&sum=${(totalKopecks / 100).toFixed(2)}]
 
 Справка выдана для предоставления в налоговые органы РФ с целью получения социального налогового вычета.
 Уполномоченное лицо клиники: _________________ / Главный врач / М.П.

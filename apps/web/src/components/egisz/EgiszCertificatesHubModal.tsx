@@ -109,7 +109,7 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 					data-testid="open-full-tax-modal-btn"
 					style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", fontSize: "0.8125rem" }}
 				>
-					<span>Открыть полную форму справки (КНД 1151156)</span>
+					<span>Открыть полную форму справки (13% НДФЛ)</span>
 				</button>
 			</div>
 

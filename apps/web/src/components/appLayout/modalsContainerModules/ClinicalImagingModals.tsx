@@ -6,6 +6,9 @@ import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 import { VisiographComparisonModal } from "../../visiograph/VisiographComparisonModal";
 import { ImagingExportModal } from "../../imaging/ImagingExportModal";
+import { usePatientStore } from "../../../store/patientStore";
+import { useVisitStore } from "../../../store/visitStore";
+import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
 
 const CbctTunerPlayground = lazyWithRetry(() =>
 	import("../../radiology/tuner/CbctTunerPlayground").then((m) => ({ default: m.CbctTunerPlayground })),
@@ -37,16 +40,24 @@ export function ClinicalImagingModals({
 	setIsCbctDirectModalOpen,
 	activeStaffUser,
 }: ClinicalImagingModalsProps) {
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
+	const clinicName = useDocumentBrandingStore((s) => s.clinicName) || "Стоматологическая клиника";
+
+	const effectivePatientName = patientCoreDraft?.fullName?.trim() || (selectedPatientId ? `Пациент #${selectedPatientId.slice(0, 8)}` : "");
+	const effectiveCardNumber = (patientCoreDraft as any)?.cardNumber || (patientCoreDraft as any)?.medicalCardNumber || "";
+	const effectiveToothFdi = activeToothNumber ? String(activeToothNumber) : undefined;
+
 	return (
 		<>
 			{isGlobalVisiographOpen && (
 				<VisiographComparisonModal
 					isOpen={isGlobalVisiographOpen}
 					onClose={() => setIsGlobalVisiographOpen(false)}
-					patientName="Чухрова Лариса Павловна"
-					patientCardNumber="20190621_101042"
-					patientAge="58Y"
-					activeToothFdi="36"
+					patientName={effectivePatientName || undefined}
+					patientCardNumber={effectiveCardNumber || undefined}
+					activeToothFdi={effectiveToothFdi}
 				/>
 			)}
 
@@ -55,15 +66,18 @@ export function ClinicalImagingModals({
 					isOpen={isGlobalImagingExportOpen}
 					onClose={() => setIsGlobalImagingExportOpen(false)}
 					study={{
-						id: "study-rvg-36",
-						title: "Прицельный снимок визиографа (зуб 36, эндодонтия)",
+						id: effectiveToothFdi ? `study-rvg-${effectiveToothFdi}` : "study-rvg-current",
+						title: effectiveToothFdi ? `Прицельный снимок визиографа (зуб ${effectiveToothFdi})` : "Прицельный снимок визиографа",
 						capturedAt: new Date().toISOString(),
 						date: new Date().toISOString(),
 						kind: "rvg",
 					} as any}
-					patient={{ fullName: "Чухрова Лариса Павловна", medicalCardNumber: "20190621_101042" }}
-					doctorName={activeStaffUser?.name || "Д-р Барабаш С. В."}
-					clinicName="Клиника Инновационной Стоматологии ДЕНТЕ"
+					patient={{
+						fullName: effectivePatientName || "Пациент не выбран",
+						medicalCardNumber: effectiveCardNumber,
+					}}
+					doctorName={activeStaffUser?.name || "Лечащий врач"}
+					clinicName={clinicName}
 				/>
 			)}
 
@@ -91,9 +105,9 @@ export function ClinicalImagingModals({
 							u.searchParams.delete("cbct");
 							window.history.replaceState({}, "", u.pathname + (u.search || "") + (u.hash.includes("cbct") ? "" : u.hash));
 						}}
-						patientName="Захаров Иван Дмитриевич (Демо 3D КЛКТ 312 срезов)"
-						patientId="demo_cbct_patient"
-						autoLoadDemo={true}
+						patientName={effectivePatientName || undefined}
+						patientId={selectedPatientId || undefined}
+						autoLoadDemo={false}
 					/>
 				</Suspense>
 			)}

@@ -14,7 +14,7 @@ export const TaxDeduction13Banner: React.FC<TaxDeduction13BannerProps> = ({ dedu
 				</div>
 				<div>
 					<div className="text-xs sm:text-sm font-bold text-[var(--ink)]">
-						Возврат 13% НДФЛ через ФНС (Справка КНД 1151156)
+						Возврат 13% НДФЛ через ФНС (Справка об оплате медицинских услуг)
 					</div>
 					<div className="text-xs text-[var(--muted)]">
 						Клиника подготовит полный пакет документов для налоговой в 1 клик

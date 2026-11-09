@@ -12,8 +12,7 @@ import { renderFamilyBillingLaunchers } from "./administrative/FamilyBillingLaun
 import { renderCashierFinanceLaunchers } from "./administrative/CashierFinanceLaunchers";
 import { renderDoctorWalletLaunchers } from "./administrative/DoctorWalletLaunchers";
 import { renderWarehouseMdlpLaunchers } from "./administrative/WarehouseMdlpLaunchers";
-import { renderDocumentsStandaloneLauncher } from "./administrative/DocumentsStandaloneLauncher";
-import { renderPricelistStandaloneLauncher } from "./administrative/PricelistStandaloneLauncher";
+import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLauncher";
 import { renderOmnichannelAndTelephonyLauncher } from "./administrative/OmnichannelAndTelephonyStandaloneLauncher";
 import { renderSanPinStandaloneLauncher } from "./administrative/SanPinStandaloneLauncher";
 import { renderLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
@@ -107,13 +106,20 @@ export function renderSpecializedAdministrativeLaunchers(
 	const sanpin = renderSanPinStandaloneLauncher();
 	if (sanpin) return sanpin;
 
-	// 0. Прейскурант и каталог услуг (?pricelist=1, ?catalog=1)
-	const pricelist = renderPricelistStandaloneLauncher();
-	if (pricelist) return pricelist;
-
-	// 0. Реестр документов и бланков (?documents=1, ?docs=1)
-	const docs = renderDocumentsStandaloneLauncher();
-	if (docs) return docs;
+	// 0. Прейскурант и каталог процедур SSOT (#pricelist, #prices, #catalog, ?pricelist=1, ?prices=1, ?catalog=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash.includes("pricelist") ||
+			window.location.hash.includes("prices") ||
+			window.location.hash.includes("catalog") ||
+			window.location.hash.includes("services-catalog") ||
+			window.location.search.includes("pricelist=1") ||
+			window.location.search.includes("prices=1") ||
+			window.location.search.includes("catalog=1") ||
+			window.location.search.includes("services-catalog=1"))
+	) {
+		return <DirectPricelistLauncher />;
+	}
 
 	// 0. Каноническая студия склада материалов SSOT (#warehouse, #inventory, #stock, ?warehouse=1, ?inventory=1)
 	if (

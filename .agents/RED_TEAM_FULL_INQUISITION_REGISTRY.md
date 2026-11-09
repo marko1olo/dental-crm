@@ -768,31 +768,37 @@
   - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)
   - [`apps/web/src/components/visiograph/DirectVisiographLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/DirectVisiographLauncher.tsx)
   - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx)
+  - [`apps/api/src/routes/imaging/modules/studiesBindingHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging/modules/studiesBindingHandler.ts)
   - [`apps/api/src/db/schema/clinical/visitsSchema.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/visitsSchema.ts)
   - [`apps/api/src/routes/fileModules/patientAttachmentsHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fileModules/patientAttachmentsHandlers.ts)
   - [`apps/api/src/db/schema/imaging.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/imaging.ts)
   - [`apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/__tests__/digitalSmileDesignInquisition.test.ts)
+  - [`apps/api/src/tests/routes/imagingStudiesBindingAndFdi.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/imagingStudiesBindingAndFdi.test.ts)
 - **Суть бага:**
   1. Глобальные модалки (`ClinicalImagingModals`, `VisiographComparisonModal`, `ConsultationTopToolbar`, `RadiologyReportStudioModal`, `clinicalLaunchersRegistry`) хардкодили фиктивных пациентов («Чухрова Лариса Павловна», «Захаров Иван Дмитриевич», «Ковалёв Роман Станиславович»), карты «20190621_101042», возраст «58Y», зубы 36/16.
-  2. Потёмкинские деревни: `ConsultationBottomDock` подсовывал фейковые RVG-исследования (`sample_rvg_pathology.jpg`, `sample_rvg_tooth16.jpg`) вместо честного пустого стейта при отсутствии снимков; `ClinicalPhotoProtocolModal` выводил синий мультяшный SVG смайл.
+  2. Потёмкинские деревни: `ConsultationBottomDock` подсовывал фейковые RVG-исследования (`sample_rvg_pathology.jpg`, `sample_rvg_tooth16.jpg`) вместо честного пустого стейта при отсутствии снимков; `ClinicalPhotoProtocolModal` выводил синий мультяшный SVG смайл. В `studiesBindingHandler.ts` роуты `cbctTunerPatientsHandler` и `cbctTunerVolumeHandler` возвращали фиктивного "Демо Пациента" и фейковый объем в прод-окружении без проверки демо-изоляции. Роут `bindToothHandler` не валидировал стандарт FDI (ISO 3950).
   3. Расхождение типов схемы: `visitExaminationPhotoLinks.visitId` был объявлен как `text`, тогда как родительский `visits.id` — `uuid`.
   4. HTTP 403 Forbidden в `patientAttachmentsHandlers.ts:110` при отсутствии пациента вместо канонического 404 Not Found.
   5. Чужие бренды в схеме БД (`diagnocatAiFindings`, `diagnocatReports` в `imaging.ts`) без канонических алиасов `radiologyAiFindings`, `radiologyAiReports` (Мандат 8ap).
   6. Тест-саботажник `digitalSmileDesignInquisition.test.ts` читал TSX-файлы через `fs.readFileSync` и проверял строковые литералы вместо рантайм-логики.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
   1. Хардкод полностью ликвидирован. Модалки принимают активного пациента из `usePatientStore` и `useVisitStore` либо рендерят чистый пустой стейт.
-  2. Фейковые снимки удалены; внедрен честный `Empty State` («Снимков визиографа по данному пациенту не найдено») с `data-testid="consultation-empty-patient-studies"`. В фотопротоколе синий смайл заменен на чистую клиническую рамку `data-testid="dsd-empty-prompt"`.
+  2. Фейковые снимки удалены; внедрен честный `Empty State` («Снимков визиографа по данному пациенту не найдено») с `data-testid="consultation-empty-patient-studies"`. В фотопротоколе синий смайл заменен на чистую клиническую рамку `data-testid="dsd-empty-prompt"`. В `studiesBindingHandler.ts` внедрена строгая валидация зубов FDI (11–48, 51–85) через `isValidToothFdi` с возвратом `400 ValidationError` при невалидных кодах, а выдача демо-пациентов и демо-объемов заизолирована за флагом `demo=true` / `DENTE_DEMO_MODE=true` (Мандаты 8wy, 8z).
   3. `visitExaminationPhotoLinks.visitId` приведен к `uuid("visit_id").references(() => visits.id, { onDelete: "cascade" })`.
   4. В `patientAttachmentsHandlers.ts` возвращается `404 Not Found` (`PatientNotFound`).
   5. В `imaging.ts` экспортированы канонические доменные алиасы `radiologyAiFindings` и `radiologyAiReports`.
   6. Тест `digitalSmileDesignInquisition.test.ts` переписан на прямое тестирование рантайм-экспортов, Zod-схем и математических пропорций (7/7 passed).
-  7. 4-State Visual Proofs высокого разрешения зафиксированы в `docs/proofs/radiology/` и лично осмотрены через `read_file`:
+  7. Добавлен интеграционный тест `imagingStudiesBindingAndFdi.test.ts` (5/5 passed), проверяющий валидацию зубов FDI и изоляцию CBCT Tuner.
+  8. 4-State Visual Proofs высокого разрешения зафиксированы в `docs/proofs/radiology/` и лично осмотрены через `read_file`:
      - ☀️ PC Light (1440x900): [`docs/proofs/radiology/01_radiology_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/01_radiology_pc_light_1440x900.png) (517.6 KB)
      - 🌙 PC Dark (1440x900): [`docs/proofs/radiology/02_radiology_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/02_radiology_pc_dark_1440x900.png) (511.2 KB)
      - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_photo_protocol_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_photo_protocol_mobile_light_390x844.png) (48.6 KB)
      - 📱 Mobile Dark (390x844): [`docs/proofs/radiology/04_photo_protocol_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_photo_protocol_mobile_dark_390x844.png) (48.4 KB)
 - **Тесты:**
   - `digitalSmileDesignInquisition.test.ts` (7/7 PASS)
+  - `imagingStudiesBindingAndFdi.test.ts` (5/5 PASS)
+  - `photoProtocolChairsideAutonomyAndLabBridge.test.ts` (5/5 PASS)
+  - `radiologyAndLabOrdersLifecycle.test.ts` (14/14 PASS)
   - `radiologyConsultationSplitModulesDecomposition.test.ts` (6/6 PASS)
   - `radiologyAndPhotoMockPurity.test.ts` (4/4 PASS)
   - `radiologyConsultationSplit.test.ts` (11/11 PASS)

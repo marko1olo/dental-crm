@@ -77,30 +77,9 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 		return getPathologiesByDiscipline(selectedDiscipline);
 	}, [selectedDiscipline]);
 
-	// Guaranteed studies array for patient captured tape
+	// Patient studies tape (honest empty state when no studies recorded)
 	const effectivePatientStudies = useMemo(() => {
-		if (patientStudiesHistory.length > 0) return patientStudiesHistory;
-		// Clinical default studies if patient record was opened without history array
-		return [
-			{
-				id: "sample-study-baseline-pathology",
-				imageUrl: "/radiology/sample_rvg_pathology.jpg",
-				thumbnailUrl: "/radiology/sample_rvg_pathology.jpg",
-				title: "Снимок ДО лечения (Кариес / Очаг)",
-				studyDate: "2024-01-12T09:15:00.000Z",
-				modality: "IO_SENSOR",
-				teethFdi: ["16"],
-			},
-			{
-				id: "sample-study-followup-obturation",
-				imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-				thumbnailUrl: "/radiology/sample_rvg_tooth16.jpg",
-				title: "Контроль ПОСЛЕ лечения (Обтурация каналов)",
-				studyDate: "2024-05-16T10:45:00.000Z",
-				modality: "IO_SENSOR",
-				teethFdi: ["16"],
-			},
-		] as (RadiologyStudy | RadiologyFilmstripItem)[];
+		return (patientStudiesHistory || []) as (RadiologyStudy | RadiologyFilmstripItem)[];
 	}, [patientStudiesHistory]);
 
 	return (
@@ -124,50 +103,62 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 					</span>
 				</div>
 
-				{/* Horizontal Scroll of Patient Images */}
+				{/* Horizontal Scroll of Patient Images or Honest Empty State */}
 				<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[#334155] flex-1">
-					{effectivePatientStudies.map((st) => {
-						const { dateStr } = formatFilmstripDateTime(st.studyDate);
-						const badge = getModalityBadge(st.modality || "rvg");
-						const tooth = st.teethFdi?.[0];
-						const src = st.thumbnailUrl || st.imageUrl || "";
-						const isCurrentlyActive = Boolean(activeStudySrc && src && activeStudySrc === src);
+					{effectivePatientStudies.length === 0 ? (
+						<div
+							data-testid="consultation-empty-patient-studies"
+							className="flex flex-col items-center justify-center w-full h-full text-slate-500 text-[11px] gap-1 px-4 text-center"
+						>
+							<Scan size={18} className="text-slate-600 mb-0.5" />
+							<span>Снимков визиографа по данному пациенту не найдено</span>
+							<span className="text-[10px] text-slate-600">
+								Загрузите снимок или захватите кадр с датчика визиографа
+							</span>
+						</div>
+					) : (
+						effectivePatientStudies.map((st) => {
+							const { dateStr } = formatFilmstripDateTime(st.studyDate);
+							const badge = getModalityBadge(st.modality || "rvg");
+							const tooth = st.teethFdi?.[0];
+							const src = st.thumbnailUrl || st.imageUrl || "";
+							const isCurrentlyActive = Boolean(activeStudySrc && src && activeStudySrc === src);
 
-						return (
-							<div
-								key={st.id}
-								data-testid={`captured-study-item-${st.id}`}
-								onClick={() => onSelectCapturedStudy(st)}
-								style={{
-									width: "105px",
-									minWidth: "105px",
-									border: isCurrentlyActive ? "2px solid #00C853" : "1px solid #334155",
-									boxShadow: isCurrentlyActive ? "0 0 10px rgba(0, 200, 83, 0.4)" : "none",
-								}}
-								className="group flex flex-col rounded bg-[#0c1322] cursor-pointer overflow-hidden shrink-0 transition-all hover:border-[#00C853] relative"
-							>
-								<div className="h-16 bg-black flex items-center justify-center overflow-hidden relative">
-									{src ? (
-										<img
-											src={src}
-											alt={(st as any).title || (st as any).studyDescription || dateStr}
-											className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-										/>
-									) : (
-										<Scan size={18} className="text-slate-600" />
-									)}
-									<span
-										style={{ backgroundColor: badge.bg, color: badge.color }}
-										className="absolute top-0.5 left-0.5 px-1 rounded text-[8px] font-bold uppercase"
-									>
-										{badge.label}
-									</span>
+							return (
+								<div
+									key={st.id}
+									data-testid={`captured-study-item-${st.id}`}
+									onClick={() => onSelectCapturedStudy(st)}
+									style={{
+										width: "105px",
+										minWidth: "105px",
+										border: isCurrentlyActive ? "2px solid #00C853" : "1px solid #334155",
+										boxShadow: isCurrentlyActive ? "0 0 10px rgba(0, 200, 83, 0.4)" : "none",
+									}}
+									className="group flex flex-col rounded bg-[#0c1322] cursor-pointer overflow-hidden shrink-0 transition-all hover:border-[#00C853] relative"
+								>
+									<div className="h-16 bg-black flex items-center justify-center overflow-hidden relative">
+										{src ? (
+											<img
+												src={src}
+												alt={(st as any).title || (st as any).studyDescription || dateStr}
+												className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+											/>
+										) : (
+											<Scan size={18} className="text-slate-600" />
+										)}
+										<span
+											style={{ backgroundColor: badge.bg, color: badge.color }}
+											className="absolute top-0.5 left-0.5 px-1 rounded text-[8px] font-bold uppercase"
+										>
+											{badge.label}
+										</span>
 
-									{/* Quick Slot Assign Overlay Buttons */}
-									{onAssignStudyToSlot && (
-										<div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
-											<button
-												type="button"
+										{/* Quick Slot Assign Overlay Buttons */}
+										{onAssignStudyToSlot && (
+											<div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
+												<button
+													type="button"
 												onClick={(e) => {
 													e.stopPropagation();
 													onAssignStudyToSlot(st, "left");
@@ -217,7 +208,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 								</div>
 							</div>
 						);
-					})}
+					}))}
 				</div>
 			</div>
 

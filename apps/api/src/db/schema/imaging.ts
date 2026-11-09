@@ -586,3 +586,8 @@ export const diagnocatReports = pgTable(
 		),
 	}),
 );
+
+// Mandate 8ap canonical domain aliases (neutral clinic AI findings & reports)
+export const radiologyAiFindings = diagnocatAiFindings;
+export const radiologyAiReports = diagnocatReports;
+

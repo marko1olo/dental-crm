@@ -158,19 +158,19 @@ graph LR
    * Все кнопки в `apps/web/src/components/documents/` очищены от искусственного атрибута `disabled={...}` (включая печать, экспорт, подписание, сохранение, отправку SMS).
    * Защита от дублирующих нажатий реализована через неблокирующий debounced клик, атрибут `aria-busy` и тактильный индикатор `Loader2`.
 2. **Консолидация канонических SSOT и зачистка дубликатов (Мандаты 8s, 8bd):**
-   * Физически удалены (`git rm`) 35 мертвых файлов-клонов: устаревшие пакеты `clinicalPackageModal/`, `consentDrawer/`, `financeAndPediatricItems.ts`, `DocumentPrimaryIntakeBanner.tsx`, `taxAccounting/` + `TaxAccountingPackageModal.tsx`, `sanpinRegistry/` + `SanpinRegistryPackageModal.tsx`, `informedConsentViewer/` + `InformedConsentViewer.tsx`.
-   * Канонические эталоны (SSOT): `ConsentStudioModal.tsx`, `DocumentsStudioModal.tsx`, `ClinicalVisitPackageModal.tsx`, `FnsTaxCertificateModal.tsx`.
-   * Устранены 4 доказанных дефекта: ликвидировано тихое глотание ошибок сетевого сохранения согласий и серверной фиксации ПЭП, добавлен лог предупреждений при переполнении `localStorage` в автосохранении черновиков, вычищен синтетический хардкод ФИО/ИНН/паспорта в справках ФНС (моки строго изолированы за `isDemoShowcaseMode()`), убран безусловный фолбек на Иванова И.И. в боевом контуре.
-   * Искоренен советский канцелярит и шифры приказов (Мандат 8x): сырой код «КНД 1151156» заменен на профессиональный человеческий язык «Справка для налогового вычета (13% НДФЛ)».
+   * Физически удалены (`git rm`) мертвые дубликаты и сироты: `DocumentsStandaloneLauncher.tsx` (77 строк), `LauncherDocumentsContractsSection.tsx` (101 строка), несмонтированный компонент `PatientContractsSection.tsx` и папка `patientContracts/` (содержавшие птичий язык «ПП РФ № 736»).
+   * Канонические эталоны (SSOT): `ConsentStudioModal.tsx`, `DocumentsStudioModal.tsx`, `DirectDocumentsLauncher.tsx`, `FnsTaxCertificateModal.tsx`, `DocumentsView.tsx`.
+   * Ликвидирован захардкоженный `0 ₽` по Коду 2 в шаблоне `documentsCatalogData.ts`: суммы Кода 1 и Кода 2 рассчитываются динамически из реальных услуг пациента на основе канонического классификатора `@dental/shared/resolveTaxDeductionCategoryShared`.
+   * Искоренен советский канцелярит и птичий язык (Мандат 8x, Мандат 8ap): шифр «КНД 1151156» заменен на человеческий клинический язык «Справка для налогового вычета (13% НДФЛ)» и «Справка об оплате медицинских услуг» в `EgiszCertificatesHubModal.tsx`, `CabinetTaxSheet.tsx`, `TreatmentPlanTab.tsx`, `TaxDeductionHeader.tsx`, `TaxDeduction13Banner.tsx`.
 3. **Машинное покрытие тестами:**
-   * Все 84 точечных теста полного набора затронутых сьютов завершаются с Exit Code 0 (0 сбоев).
-   * `npm run check:encoding` подтверждает строгий UTF-8 без BOM для всех файлов проекта.
+   * Все 22 тестовых файла в `apps/web/src/components/documents/__tests__/` (199 тестов) и бэкенд-тесты `ndflTaxService.test.ts` завершаются с Exit Code 0 (0 сбоев).
+   * Машинные гейты: `npm run check:encoding`, `npm run check:stub-overrides`, `npm run check:fetch-response`, `npm run check:dynamic-imports` — Exit Code 0.
 4. **4-State Visual Proof (Live App Capture):**
    * Все 4 состояния сняты на живом Vite-сервере и лично отсмотрены через `read_file` по 8 осям контроля:
-     - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (143 KB) — десктоп светлая тема, нулевой клиппинг, ровно 1 Primary CTA.
-     - `docs/proofs/documents/02_documents_catalog_pc_dark_1440x900.png` (134 KB) — десктоп тёмная тема, 100% токены `var(--paper)`, WCAG AAA контраст.
-     - `docs/proofs/documents/03_documents_catalog_mobile_light_390x844.png` (54 KB) — iPhone светлая тема, нативный Bottom Sheet Apple HIG с drag handle 36×5px и тач-зоной $\ge 44$px.
-     - `docs/proofs/documents/04_documents_catalog_mobile_dark_390x844.png` (50 KB) — iPhone тёмная тема, 0px горизонтального скролла.
+     - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (143 KB) — десктоп светлая тема, нулевой клиппинг, ровно 1 Primary CTA.
+     - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (133 KB) — десктоп тёмная тема, 100% токены `var(--paper)`, WCAG AAA контраст.
+     - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (168 KB) — iPhone светлая тема, нативный Bottom Sheet Apple HIG с drag handle 36×5px и тач-зоной $\ge 44$px.
+     - `docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png` (143 KB) — iPhone тёмная тема, 0px горизонтального скролла.
 
 ---
 
