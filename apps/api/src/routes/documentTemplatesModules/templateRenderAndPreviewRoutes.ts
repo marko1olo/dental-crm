@@ -106,7 +106,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				templateConditions.push(eq(documentTemplates.id, identifier));
 			} else if (/^\d+$/.test(identifier)) {
 				templateConditions.push(
-					eq(documentTemplates.stomxId, Number.parseInt(identifier, 10)),
+					eq(documentTemplates.externalTemplateId, Number.parseInt(identifier, 10)),
 				);
 			} else {
 				templateConditions.push(eq(documentTemplates.systemAlias, identifier));
@@ -484,8 +484,8 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				ok: true,
 				template: {
 					id: templateRecord?.id ?? null,
-					externalTemplateId: templateRecord?.stomxId ?? null,
-					stomxId: templateRecord?.stomxId ?? null,
+					externalTemplateId: templateRecord?.externalTemplateId ?? null,
+					stomxId: templateRecord?.externalTemplateId ?? null,
 					name: templateName,
 					systemAlias,
 					categoryId: templateRecord?.categoryId ?? 1,

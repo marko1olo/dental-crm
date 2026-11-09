@@ -133,12 +133,31 @@ export async function executeCopilotAgentRequest(
     return sseResult;
   }
 
-  // 2. Secondary fallback via Fastify copilot agent route
+  // 2. Secondary fallback via canonical Fastify copilot agent route (POST /api/agent/chat)
   try {
-    const response = await fetch("/api/v1/copilot/agent/execute", {
+    const chatPayload = {
+      message: text,
+      messages: [{ role: "user" as const, content: text }],
+      patientId: patientId?.trim() || undefined,
+      activeVisitId: visitId || undefined,
+      activeTooth: effectiveTooth,
+      toothNumber: effectiveTooth,
+      allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
+      stream: false,
+      trustLevel: (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious" ? "confirm_all" : currentTrust === "autonomous" ? "autonomous" : "balanced",
+      context: {
+        activeTooth: effectiveTooth,
+        patientId: patientId?.trim() || undefined,
+        visitId,
+        allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
+        somaticHistory: patientSomaticHistory,
+      },
+    };
+
+    const response = await fetch("/api/agent/chat", {
       method: "POST",
       headers,
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(chatPayload),
     });
 
     if (!response.ok) {
@@ -146,10 +165,57 @@ export async function executeCopilotAgentRequest(
     }
 
     const json = await response.json();
-    const data = json?.data;
+    const data = json?.data || json;
 
     if (data) {
-      return parseAgentApiResponse(data, effectiveTooth || null, matchedProtocol);
+      const normalizedData = {
+        ...data,
+        verdict: data.verdict || data.text || undefined,
+        actions: Array.isArray(data.actions) ? data.actions : [],
+      };
+      if (Array.isArray(data.toolCalls)) {
+        for (const tc of data.toolCalls) {
+          const name = tc.name || tc.tool;
+          const res = tc.result;
+          if (name === "update_tooth_status" && res) {
+            normalizedData.actions.push({
+              type: "apply_tooth_status",
+              payload: {
+                tooth: res.tooth || effectiveTooth,
+                statusCode: res.status,
+                newStatus: res.statusLabel,
+                surfaces: res.surfaces,
+              },
+            });
+          } else if ((name === "generate_clinical_protocol_entry" || name === "generate_form_043_entry") && res) {
+            normalizedData.actions.push({
+              type: "apply_soap_diary",
+              payload: {
+                complaint: res.complaints || res.complaint,
+                anamnesis: res.anamnesis,
+                objectiveStatus: res.statusLocalis || res.objectiveStatus,
+                diagnosis: res.diagnosisMkb || res.diagnosis,
+                treatmentPlan: res.treatmentProtocol || res.treatmentPlan,
+                recommendations: res.recommendations,
+              },
+            });
+          } else if (name === "calculate_anesthesia" && res) {
+            normalizedData.actions.push({
+              type: "apply_anesthetic_dosage",
+              payload: {
+                drugName: res.drugName,
+                carpulesCount: res.carpulesCount,
+                patientWeightKg: res.patientWeightKg,
+                maxCarpules: res.maxCarpules,
+                epinephrineMcg: res.epinephrineMcg,
+                isCardiovascularRisk: res.isCardiovascularRisk,
+                notes: res.warning,
+              },
+            });
+          }
+        }
+      }
+      return parseAgentApiResponse(normalizedData, effectiveTooth || null, matchedProtocol);
     }
   } catch (err) {
     console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);

@@ -14,7 +14,7 @@ import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 
 const CephalometricAnalysisModal = lazyWithRetry(() =>
-	import("../../../../orthodontics/CephalometricAnalysisModal").then((m) => ({ default: m.CephalometricAnalysisModal })),
+	import("../../../../radiology/CephalometricAnalysisModal").then((m) => ({ default: m.CephalometricAnalysisModal })),
 );
 const SmartOpgViewerModal = lazyWithRetry(() =>
 	import("../../../../orthodontics/SmartOpgViewerModal").then((m) => ({ default: m.SmartOpgViewerModal })),

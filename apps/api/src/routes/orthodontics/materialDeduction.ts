@@ -4,13 +4,47 @@ import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import type { OrthoMaterialDeductionResult } from "./types.js";
 
 export interface DeductOrthoMaterialParams {
-	organizationId: string; patientId: string; itemNamePattern: string; defaultItemName: string;
-	category: string; quantity: number; unit: string; notes: string;
-	unitCostRub?: number | undefined; visitId?: string | null | undefined; userId?: string | null | undefined;
+	organizationId: string;
+	patientId: string;
+	itemNamePattern: string;
+	defaultItemName: string;
+	category: string;
+	quantity: number;
+	unit: string;
+	notes: string;
+	/** Стоимость единицы в копейках (DEF-ORTHO-06: Мандат целочисленных копеек BIGINT) */
+	unitCostKopecks?: bigint | number | undefined;
+	/** Обратная совместимость с рублями */
+	unitCostRub?: number | undefined;
+	visitId?: string | null | undefined;
+	userId?: string | null | undefined;
 }
 
 export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParams): Promise<OrthoMaterialDeductionResult> {
-	const { organizationId, patientId, itemNamePattern, defaultItemName, category, quantity, unit, notes, unitCostRub = 1200, visitId = null, userId = null } = params;
+	const {
+		organizationId,
+		patientId,
+		itemNamePattern,
+		defaultItemName,
+		category,
+		quantity,
+		unit,
+		notes,
+		unitCostKopecks,
+		unitCostRub,
+		visitId = null,
+		userId = null,
+	} = params;
+
+	// DEF-ORTHO-06: Канонический расчет стоимости в копейках (BIGINT)
+	const effectiveKopecks: bigint =
+		unitCostKopecks !== undefined
+			? BigInt(unitCostKopecks)
+			: unitCostRub !== undefined
+				? BigInt(Math.round(unitCostRub * 100))
+				: 120_000n; // 1200 руб = 120000 коп
+	const costRubFormatted = (Number(effectiveKopecks) / 100).toFixed(2);
+
 	try {
 		return await db.transaction(async (tx) => {
 			const found = await tx.select().from(inventoryItems).where(and(
@@ -20,8 +54,14 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 			let targetItem = found[0];
 			if (!targetItem) {
 				const [created] = await tx.insert(inventoryItems).values({
-					organizationId, name: defaultItemName, category, unit, unitCostRub: String(unitCostRub),
-					stockQuantity: "0", currentQty: "0", criticalThreshold: "5",
+					organizationId,
+					name: defaultItemName,
+					category,
+					unit,
+					unitCostRub: costRubFormatted,
+					stockQuantity: "0",
+					currentQty: "0",
+					criticalThreshold: "5",
 				}).returning();
 				targetItem = created;
 			}
@@ -33,17 +73,36 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 			const isOverdraft = newStock < 0;
 
 			await tx.update(inventoryItems).set({
-				stockQuantity: String(newStock), currentQty: String(newStock), updatedAt: new Date(),
+				stockQuantity: String(newStock),
+				currentQty: String(newStock),
+				updatedAt: new Date(),
 			}).where(and(eq(inventoryItems.id, targetItem.id), eq(inventoryItems.organizationId, organizationId)));
 
 			await tx.insert(inventoryTransactions).values({
-				organizationId, visitId, userId, itemId: targetItem.id, inventoryItemId: targetItem.id,
-				quantityChanged: String(-quantity), qty: String(-quantity), unitCostRub: targetItem.unitCostRub ?? String(unitCostRub),
-				transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct", isOverdraft,
-				notes: isOverdraft ? `Списано под ортодонтический прием (мягкий овердрафт): пациент ${patientId}, остаток ${newStock} ${targetItem.unit}` : `${notes} (пациент ${patientId})`,
+				organizationId,
+				visitId,
+				userId,
+				itemId: targetItem.id,
+				inventoryItemId: targetItem.id,
+				quantityChanged: String(-quantity),
+				qty: String(-quantity),
+				unitCostRub: targetItem.unitCostRub ?? costRubFormatted,
+				transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
+				isOverdraft,
+				notes: isOverdraft
+					? `Списано под ортодонтический прием (мягкий овердрафт): пациент ${patientId}, остаток ${newStock} ${targetItem.unit}`
+					: `${notes} (пациент ${patientId})`,
 			});
 
-			return { success: true, itemId: targetItem.id, itemName: targetItem.name, deductedQty: quantity, remainingStock: newStock, isOverdraft };
+			return {
+				success: true,
+				itemId: targetItem.id,
+				itemName: targetItem.name,
+				deductedQty: quantity,
+				remainingStock: newStock,
+				isOverdraft,
+				unitCostKopecks: Number(effectiveKopecks),
+			};
 		});
 	} catch (err) {
 		console.warn("[Orthodontics] Soft overdraft deduction failed gracefully:", err);

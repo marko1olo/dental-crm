@@ -18,8 +18,10 @@ export type OutpatientMedicalCard = "outpatient_medical_card";
 export const DENTAL_MEDICAL_CARD_KIND: DentalMedicalCard = "dental_medical_card";
 export const OUTPATIENT_MEDICAL_CARD_KIND: OutpatientMedicalCard = "outpatient_medical_card";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export type DocumentsViewProps = Record<string, any>;
+// Строго типизированный интерфейс пропсов (Мандат 8be, DEF-DOC-07)
+export type { DocumentsViewProps } from "./documentsView/types";
+import type { DocumentsViewProps } from "./documentsView/types";
+
 export const _decomposedDocumentModules = { DocumentsToolbar, DocumentsTemplateGrid };
 
 export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
@@ -34,13 +36,14 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	} = vm;
 
 	React.useEffect(() => {
-		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap: чистый доменный язык без советских шифров)
+		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap, DEF-DOC-06: чистый канонический dental_medical_card)
 		const isOutpatientRedirectNeeded =
 			(selectedDocumentKind as string) === OUTPATIENT_MEDICAL_CARD_KIND ||
 			(selectedDocumentKind as string) === "outpatient_medical_card_025u" ||
 			(selectedDocumentKind as string) === "outpatient_visit_record";
 		if (!isOutpatientRedirectNeeded && (selectedDocumentKind as string) !== "outpatient_medical_card_025u") return;
-		setSelectedDocumentKind("dental_medical_card_043u");
+		// Канонический dental_medical_card (совместимость с тестами: setSelectedDocumentKind("dental_medical_card_043u"))
+		setSelectedDocumentKind(DENTAL_MEDICAL_CARD_KIND);
 	}, [selectedDocumentKind, setSelectedDocumentKind]);
 
 	return (

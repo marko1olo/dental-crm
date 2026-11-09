@@ -153,6 +153,13 @@ describe("ChairsideCopilotHUD Component Tests", () => {
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+        initialToothProposal={{
+          toothNumber: 16,
+          state: "C2",
+          stateLabel: "Кариес дентина (C2)",
+          surfaces: ["O"],
+          applied: false,
+        }}
       />
     );
 
@@ -163,11 +170,56 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Применить к зубу");
   });
 
+  it("4b. does NOT hallucinate tooth proposals or caries C2 on simple tooth selection (Mandate 8z Honest Empty State)", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).not.toMatch(/chairside-card-odontogram/);
+    expect(html).not.toMatch(/chairside-card-services/);
+    expect(html).not.toMatch(/Кариес дентина \(C2\)/);
+  });
+
   it("5. renders Services & Billing proposal card with codes, prices in rubles, and add button", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+        initialServicesProposal={[
+          {
+            id: "srv-1",
+            serviceCode: "A16.07.002.010",
+            code804n: "A16.07.002.010",
+            title: "Препарирование и медикаментозная обработка кариозной полости",
+            toothNumber: 16,
+            quantity: 1,
+            priceRub: 2500,
+            applied: false,
+          },
+          {
+            id: "srv-2",
+            serviceCode: "A16.07.002.011",
+            code804n: "A16.07.002.011",
+            title: "Восстановление зуба пломбой светового отверждения",
+            toothNumber: 16,
+            quantity: 1,
+            priceRub: 4500,
+            applied: false,
+          },
+          {
+            id: "srv-3",
+            serviceCode: "A25.07.001",
+            code804n: "A25.07.001",
+            title: "Местная анестезия",
+            toothNumber: 16,
+            quantity: 1,
+            priceRub: 500,
+            applied: false,
+          },
+        ]}
       />
     );
 
@@ -345,6 +397,40 @@ describe("ChairsideCopilotHUD Component Tests", () => {
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+        initialToothProposal={{
+          toothNumber: 16,
+          state: "C2",
+          stateLabel: "Кариес дентина (C2)",
+          surfaces: ["O"],
+          applied: false,
+        }}
+        initialServicesProposal={[
+          {
+            id: "srv-1",
+            serviceCode: "A16.07.002.010",
+            code804n: "A16.07.002.010",
+            title: "Препарирование кариозной полости",
+            toothNumber: 16,
+            quantity: 1,
+            priceRub: 2500,
+            applied: false,
+          },
+        ]}
+        initialAnestheticProposal={{
+          drugName: "Убистезин",
+          carpulesCount: 1,
+          maxCarpules: 4,
+          applied: false,
+        }}
+        initialSoapProposal={{
+          complaint: "Боль",
+          anamnesis: "Анамнез",
+          objectiveStatus: "Статус",
+          diagnosis: "K02.1 Кариес",
+          treatmentPlan: "План",
+          recommendations: "Рекомендации",
+          applied: false,
+        }}
       />
     );
 
@@ -399,7 +485,7 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     let capturedBody: any = null;
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
-      if (String(url).includes("/api/v1/copilot/agent/execute")) {
+      if (String(url).includes("/api/agent/chat") || String(url).includes("/api/v1/copilot/agent/execute")) {
         capturedBody = JSON.parse(String(init?.body || "{}"));
         return {
           ok: true,

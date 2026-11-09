@@ -110,7 +110,10 @@ export function normalizePatientAdministrativeProfile(
 		preferredAppointmentEnd,
 		preferredAppointmentNote: nullableTrimmed(input?.preferredAppointmentNote),
 		dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
-		orthodonticProgress: nullableTrimmed(input?.orthodonticProgress),
+		orthodonticProgress:
+			typeof input?.orthodonticProgress === "object" && input?.orthodonticProgress !== null
+				? input.orthodonticProgress
+				: nullableTrimmed(typeof input?.orthodonticProgress === "string" ? input.orthodonticProgress : undefined),
 		loyaltyTier,
 		curatorId: nullableTrimmed(input?.curatorId),
 		curatorFullName: nullableTrimmed(input?.curatorFullName),

@@ -13,8 +13,6 @@ import type {
 } from "./types";
 import { readEventStream } from "./copilotStreamReader";
 import { createStreamEventHandler } from "./copilotStreamEventHandler";
-import { executeLocalFallback } from "../../../services/ai/assistant/localFallbackRouter";
-import { showToast } from "../../GlobalToast";
 
 interface UseCopilotStreamParams {
 	apiBaseUrl: string;
@@ -50,58 +48,58 @@ export function useCopilotStream({
 	const loadProactivePending = useCallback(async () => {
 		try {
 			const token = readDenteClinicToken() || readDenteStaffToken() || "";
-			const res = await fetch(
-				`${apiBaseUrl}/api/v1/copilot/proactive/pending`,
-				{
-					headers: { Authorization: token ? `Bearer ${token}` : "" },
-				},
-			);
-			if (res.ok) {
-				const json = await res.json();
-				if (Array.isArray(json.alerts)) setProactiveAlerts(json.alerts);
-				if (Array.isArray(json.hitlCards)) setWhatsappHitLCards(json.hitlCards);
-			}
-
-			// COP-05: Сквозной вызов Chairside Sentinel analyze при открытии шторки
 			const patientId = safeLocalStorageGetItem("dente_active_patient_id") || undefined;
 			if (patientId) {
-				const sentinelRes = await fetch(`${apiBaseUrl}/api/v1/copilot/sentinel/analyze`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token ? `Bearer ${token}` : "",
-					},
-					body: JSON.stringify({
-						patientId,
-						mode: "supervised",
-					}),
+				const res = await fetch(`${apiBaseUrl}/api/patients/${encodeURIComponent(patientId)}`, {
+					headers: { Authorization: token ? `Bearer ${token}` : "" },
 				});
-				if (sentinelRes.ok) {
-					const sentinelJson = await sentinelRes.json();
-					const alerts = sentinelJson?.data?.alerts;
-					if (Array.isArray(alerts) && alerts.length > 0) {
-						const mappedAlerts: ProactiveAlertCardData[] = alerts.map((a: any, idx: number) => ({
-							id: `sentinel-alert-${idx}-${Date.now()}`,
-							urgency: a.alertType === "drug_allergy_conflict" ? "CRITICAL" : "URGENT",
-							title: a.alertType === "drug_allergy_conflict" ? "Лекарственная несовместимость" : "Клиническое предостережение",
-							subtitle: "Chairside Sentinel Engine",
-							description: String(a.message || ""),
-							timestamp: new Date().toISOString(),
-							category: "clinical_alert",
-							actions: a.safeAlternative ? [{ id: `act-${idx}`, label: `Альтернатива: ${a.safeAlternative}`, kind: "secondary" as const }] : [],
-						}));
-						setProactiveAlerts((prev) => [...prev.filter((p) => !p.id.startsWith("sentinel-alert-")), ...mappedAlerts]);
+				if (res.ok) {
+					const patient = await res.json();
+					const alerts: ProactiveAlertCardData[] = [];
+					if (Array.isArray(patient?.allergies) && patient.allergies.length > 0) {
+						for (let i = 0; i < patient.allergies.length; i++) {
+							const allergy = String(patient.allergies[i] || "").trim();
+							if (allergy) {
+								alerts.push({
+									id: `patient-allergy-${i}-${patientId}`,
+									urgency: "CRITICAL",
+									title: "Аллергический статус",
+									subtitle: "Электронная медицинская карта",
+									description: `Аллергия на препарат: ${allergy}`,
+									timestamp: new Date().toISOString(),
+									category: "clinical_alert",
+									actions: [],
+								});
+							}
+						}
 					}
+					if (Array.isArray(patient?.somaticAlerts) && patient.somaticAlerts.length > 0) {
+						for (let i = 0; i < patient.somaticAlerts.length; i++) {
+							const som = patient.somaticAlerts[i];
+							const desc = typeof som === "string" ? som : som?.message || som?.description || som?.label || "";
+							if (desc) {
+								alerts.push({
+									id: `patient-somatic-${i}-${patientId}`,
+									urgency: "URGENT",
+									title: "Соматическое предостережение",
+									subtitle: "Электронная медицинская карта",
+									description: desc,
+									timestamp: new Date().toISOString(),
+									category: "clinical_alert",
+									actions: [],
+								});
+							}
+						}
+					}
+					setProactiveAlerts(alerts);
 				}
+			} else {
+				setProactiveAlerts([]);
 			}
 		} catch (err: unknown) {
-			console.warn("[useCopilotStream] loadProactivePending network error:", err);
-			showToast("Сбой загрузки клинических предупреждений", "warning", 5000, {
-				label: "Повторить",
-				onAction: () => { void loadProactivePending(); },
-			});
+			console.warn("[useCopilotStream] loadProactivePending error:", err);
 		}
-	}, [apiBaseUrl, setProactiveAlerts, setWhatsappHitLCards]);
+	}, [apiBaseUrl, setProactiveAlerts]);
 
 	const handleEvent = useMemo(
 		() =>
@@ -146,32 +144,6 @@ export function useCopilotStream({
 				});
 
 				if (!res.ok || !res.body) {
-					// COP-06: Детерминированный оффлайн-фолбек при 429 или сбое шлюза
-					if (typeof body === "object" && body && "message" in body && typeof (body as any).message === "string") {
-						const queryText = (body as any).message;
-						const fallbackMsg: any = {
-							id: `msg-fallback-${Date.now()}`,
-							role: "assistant",
-							content: "",
-							timestamp: Date.now(),
-						};
-						await executeLocalFallback(
-							queryText,
-							fallbackMsg,
-							(p) => setPhase(mapAssistantPhase(p)),
-							{
-								onMessageUpdated: (updated) => {
-									if (updated.content) {
-										handleEvent("text_chunk", { text: updated.content });
-									}
-								},
-								onPhaseChanged: (p) => setPhase(mapAssistantPhase(p)),
-							},
-						);
-						handleEvent("done", {});
-						return;
-					}
-
 					handleEvent("error", {
 						detail: `HTTP ${res.status}: ${res.statusText}`,
 					});
@@ -181,32 +153,6 @@ export function useCopilotStream({
 				await readEventStream(res.body, handleEvent, controller.signal);
 			} catch (err: unknown) {
 				if ((err as Error).name !== "AbortError") {
-					// COP-06: Локальный фолбек при сетевом сбое (Failed to fetch)
-					if (typeof body === "object" && body && "message" in body && typeof (body as any).message === "string") {
-						const queryText = (body as any).message;
-						const fallbackMsg: any = {
-							id: `msg-fallback-${Date.now()}`,
-							role: "assistant",
-							content: "",
-							timestamp: Date.now(),
-						};
-						await executeLocalFallback(
-							queryText,
-							fallbackMsg,
-							(p) => setPhase(mapAssistantPhase(p)),
-							{
-								onMessageUpdated: (updated) => {
-									if (updated.content) {
-										handleEvent("text_chunk", { text: updated.content });
-									}
-								},
-								onPhaseChanged: (p) => setPhase(mapAssistantPhase(p)),
-							},
-						);
-						handleEvent("done", {});
-						return;
-					}
-
 					handleEvent("error", { detail: String(err) });
 				}
 			} finally {
@@ -215,50 +161,14 @@ export function useCopilotStream({
 				}
 			}
 		},
-		[apiBaseUrl, handleEvent, setPhase],
+		[apiBaseUrl, handleEvent],
 	);
 
-	// Background SSE Stream Subscription for Proactive Alerts
+	// Clinical alerts sync on drawer open (Mandate 8v: quiet background sync, zero phantom stream)
 	useEffect(() => {
 		if (!isOpen) return;
-
-		loadProactivePending();
-		const token = readDenteClinicToken() || readDenteStaffToken() || "";
-		const controller = new AbortController();
-		streamAbortRef.current = controller;
-
-		const startStream = async () => {
-			try {
-				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/stream`, {
-					headers: {
-						Authorization: token ? `Bearer ${token}` : "",
-						Accept: "text/event-stream",
-					},
-					signal: controller.signal,
-				});
-
-				if (!res.ok || !res.body) return;
-
-				await readEventStream(res.body, handleEvent, controller.signal);
-			} catch (err: unknown) {
-				if ((err as Error)?.name !== "AbortError") {
-					console.warn("[useCopilotStream] Background stream disconnected:", err);
-					showToast("Фоновый поток копайлота прерван", "warning", 5000, {
-						label: "Повторить",
-						onAction: () => { void startStream(); },
-					});
-				}
-			}
-		};
-
-		startStream();
-
-		return () => {
-			if (streamAbortRef.current) {
-				streamAbortRef.current.abort();
-			}
-		};
-	}, [isOpen, apiBaseUrl, loadProactivePending, handleEvent]);
+		void loadProactivePending();
+	}, [isOpen, loadProactivePending]);
 
 	// Cleanup on unmount (Rotten Seeds invariant)
 	useEffect(() => {

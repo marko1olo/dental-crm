@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
-import { parseOrthoData } from "./helpers.js";
+import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
 import { deductOrthoMaterialsSchema, patientParamsSchema, rebracketSchema, stageAdvanceSchema, type OrthodonticProgressRecord } from "./types.js";
 
@@ -19,7 +19,8 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		const resolved = resolveMaterialParams(body);
 		const deduction = await deductOrthoMaterialSafely({
 			organizationId: orgId, patientId, itemNamePattern: resolved.pattern, defaultItemName: resolved.defaultName,
-			category: resolved.category, quantity: body.quantity, unit: resolved.unit, unitCostRub: resolved.unitCostRub,
+			category: resolved.category, quantity: body.quantity, unit: resolved.unit,
+			unitCostKopecks: resolved.unitCostKopecks, unitCostRub: resolved.unitCostRub,
 			visitId: body.visitId ?? null, notes: body.notes || `Ортодонтическое списание [${body.action}]`,
 		});
 
@@ -38,14 +39,15 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
 		const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress);
+		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 		const actionSummary = `Переход на этап ${body.nextStage}${body.stageTitle ? `: ${body.stageTitle}` : ""}`;
 		const updatedProgress: OrthodonticProgressRecord = {
 			...currentProgress, currentStage: body.nextStage, stageTitle: body.stageTitle || currentProgress.stageTitle,
 			lastActionDate: new Date().toISOString(), lastActionSummary: actionSummary,
 		};
 
-		await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: JSON.stringify(updatedProgress) });
+		// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+		await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
 		return reply.send({ success: true, currentStage: body.nextStage, actionSummary, progress: updatedProgress });
 	});
 
@@ -58,17 +60,18 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
 		const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress);
+		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 		const toothLabel = body.toothNumber ? ` на зубе ${body.toothNumber}` : "";
 		const actionSummary = `Повторная фиксация брекета (1 шт.)${toothLabel} · ${body.bracketType}${body.note ? ` (${body.note})` : ""}`;
 		const updatedProgress: OrthodonticProgressRecord = {
 			...currentProgress, lastActionDate: new Date().toISOString(), lastActionSummary: actionSummary,
 		};
 
-		await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: JSON.stringify(updatedProgress) });
+		// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+		await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
 		const deduction = await deductOrthoMaterialSafely({
 			organizationId: orgId, patientId, itemNamePattern: "брекет", defaultItemName: `Брекет ортодонтический ${body.bracketType}`,
-			category: "ortho_bracket", quantity: 1, unit: "шт.", unitCostRub: 1200, notes: actionSummary,
+			category: "ortho_bracket", quantity: 1, unit: "шт.", unitCostKopecks: 120_000n, unitCostRub: 1200, notes: actionSummary,
 		});
 
 		return reply.send({ success: true, actionSummary, toothNumber: body.toothNumber, progress: updatedProgress, deduction });

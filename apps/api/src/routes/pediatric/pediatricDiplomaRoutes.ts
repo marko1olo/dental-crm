@@ -10,11 +10,9 @@ const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 export interface BraveryDiplomaRecord {
 	id: string; patientId: string; diplomaNumber: string; patientName: string;
-	patientAgeYears?: number; doctorName: string; clinicName: string;
+	patientAgeYears?: number | undefined; doctorName: string; clinicName: string;
 	awardReasonRu: string; awardedDateIso: string; issueDateRu: string; createdAt: string;
 }
-
-export const inMemoryDiplomaAudit = new Map<string, BraveryDiplomaRecord[]>();
 
 const issueDiplomaSchema = z.object({
 	patientName: z.string().min(1).default("Юный пациент"),
@@ -33,35 +31,33 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		const { patientId } = request.params as { patientId: string };
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		const inMemList = inMemoryDiplomaAudit.get(patientId) || [];
 		try {
 			const dbDocs = await db.select().from(generatedDocuments)
 				.where(and(eq(generatedDocuments.organizationId, organizationId), eq(generatedDocuments.patientId, patientId), eq(generatedDocuments.title, "Диплом за храбрость")))
 				.orderBy(desc(generatedDocuments.createdAt));
 
-			if (dbDocs.length > 0) {
-				const mappedFromDb = dbDocs.map((doc) => {
-					let payload: Partial<BraveryDiplomaRecord> = {};
-					try { payload = doc.payloadJson ? JSON.parse(doc.payloadJson) : {}; } catch { payload = {}; }
-					return {
-						id: doc.id,
-						patientId: doc.patientId,
-						diplomaNumber: payload.diplomaNumber || `ДИПЛОМ-ГЕРОЙ-${doc.id.slice(0, 8).toUpperCase()}`,
-						patientName: payload.patientName || "Юный пациент",
-						patientAgeYears: payload.patientAgeYears,
-						doctorName: payload.doctorName || "Врач-стоматолог",
-						clinicName: payload.clinicName || "DENTE",
-						awardReasonRu: payload.awardReasonRu || "За выдающееся мужество в кресле стоматолога!",
-						awardedDateIso: payload.awardedDateIso || doc.createdAt?.toISOString() || new Date().toISOString(),
-						issueDateRu: payload.issueDateRu || new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }),
-						createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
-					};
-				});
-				return reply.send({ success: true, diplomas: mappedFromDb });
-			}
-		} catch { /* fallback to in-memory */ }
-
-		return reply.send({ success: true, diplomas: inMemList });
+			const mappedFromDb: BraveryDiplomaRecord[] = dbDocs.map((doc) => {
+				let payload: Partial<BraveryDiplomaRecord> = {};
+				try { payload = doc.payloadJson ? JSON.parse(doc.payloadJson) : {}; } catch { payload = {}; }
+				return {
+					id: doc.id,
+					patientId: doc.patientId,
+					diplomaNumber: payload.diplomaNumber || `ДИПЛОМ-ГЕРОЙ-${doc.id.slice(0, 8).toUpperCase()}`,
+					patientName: payload.patientName || "Юный пациент",
+					patientAgeYears: payload.patientAgeYears,
+					doctorName: payload.doctorName || "Врач-стоматолог",
+					clinicName: payload.clinicName || "DENTE",
+					awardReasonRu: payload.awardReasonRu || "За выдающееся мужество в кресле стоматолога!",
+					awardedDateIso: payload.awardedDateIso || doc.createdAt?.toISOString() || new Date().toISOString(),
+					issueDateRu: payload.issueDateRu || new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }),
+					createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
+				};
+			});
+			return reply.send({ success: true, diplomas: mappedFromDb });
+		} catch (error) {
+			request.log.error({ error, patientId }, "Failed to fetch bravery diplomas from PostgreSQL 18");
+			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось получить список дипломов за храбрость" });
+		}
 	});
 
 	app.post("/api/patients/:patientId/pediatric/bravery-diploma", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -93,9 +89,6 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			createdAt: now.toISOString(),
 		};
 
-		const currentList = inMemoryDiplomaAudit.get(patientId) || [];
-		inMemoryDiplomaAudit.set(patientId, [diplomaRecord, ...currentList]);
-
 		try {
 			await db.insert(generatedDocuments).values({
 				id: diplomaRecord.id,
@@ -106,8 +99,10 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 				title: "Диплом за храбрость",
 				payloadJson: JSON.stringify(diplomaRecord),
 			});
-		} catch { /* in-memory fallback */ }
-
-		return reply.code(201).send({ success: true, diploma: diplomaRecord });
+			return reply.code(201).send({ success: true, diploma: diplomaRecord });
+		} catch (error) {
+			request.log.error({ error, patientId, diplomaRecord }, "Failed to persist bravery diploma into PostgreSQL 18");
+			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить диплом за храбрость в базу данных" });
+		}
 	});
 }

@@ -8,11 +8,27 @@ import type {
 	UseCopilotOptions,
 	WhatsAppApprovalCard,
 } from "./types";
+import { useCopilotStore } from "../../../store/copilotStore";
 
 export function useCopilotState(options: UseCopilotOptions = {}) {
+	const activeThreadId = useCopilotStore((s) => s.activeThreadId);
+	const selectThread = useCopilotStore((s) => s.selectThread);
+	const saveThreadMessages = useCopilotStore((s) => s.saveThreadMessages);
+
 	const [isOpen, setIsOpen] = useState(options.initialOpen || false);
-	const [conversationId, setConversationId] = useState<string | null>(null);
-	const [messages, setMessages] = useState<CopilotUiMessage[]>([]);
+	const [localConversationId, setLocalConversationId] = useState<string | null>(
+		options.conversationId || activeThreadId || null,
+	);
+	const [messages, setLocalMessages] = useState<CopilotUiMessage[]>(() => {
+		const threadId = options.conversationId || activeThreadId;
+		if (threadId) {
+			const saved = useCopilotStore.getState().threadMessages[threadId];
+			if (Array.isArray(saved) && saved.length > 0) {
+				return saved as CopilotUiMessage[];
+			}
+		}
+		return [];
+	});
 	const [busy, setBusy] = useState(false);
 	const [pending, setPending] = useState<PendingConfirmation | null>(null);
 	const [phase, setPhase] = useState<CopilotPhase>(null);
@@ -25,6 +41,43 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 	const [whatsappHitLCards, setWhatsappHitLCards] = useState<
 		WhatsAppApprovalCard[]
 	>([]);
+
+	const conversationId = activeThreadId || localConversationId;
+
+	const setConversationId = useCallback(
+		(id: string | null) => {
+			setLocalConversationId(id);
+			if (id) {
+				selectThread(id);
+			}
+		},
+		[selectThread],
+	);
+
+	// Sync messages when active thread changes in SSOT store
+	useEffect(() => {
+		if (activeThreadId) {
+			setLocalConversationId(activeThreadId);
+			const saved = useCopilotStore.getState().threadMessages[activeThreadId];
+			if (Array.isArray(saved)) {
+				setLocalMessages(saved as CopilotUiMessage[]);
+			}
+		}
+	}, [activeThreadId]);
+
+	const setMessages: React.Dispatch<React.SetStateAction<CopilotUiMessage[]>> = useCallback(
+		(action) => {
+			setLocalMessages((prev) => {
+				const next = typeof action === "function" ? action(prev) : action;
+				const currentThreadId = useCopilotStore.getState().activeThreadId || localConversationId;
+				if (currentThreadId) {
+					saveThreadMessages(currentThreadId, next);
+				}
+				return next;
+			});
+		},
+		[localConversationId, saveThreadMessages],
+	);
 
 	const toggle = useCallback(() => {
 		setIsOpen((prev) => !prev);
@@ -59,7 +112,7 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 				delete (window as any).__denteCopilot;
 			}
 		};
-	}, []);
+	}, [setMessages]);
 
 	const cacheNames = useCallback((toolName: string, result: unknown) => {
 		if (!result || typeof result !== "object") return;
@@ -93,12 +146,16 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 	}, []);
 
 	const resetState = useCallback(() => {
-		setConversationId(null);
-		setMessages([]);
+		const currentThreadId = useCopilotStore.getState().activeThreadId || localConversationId;
+		if (currentThreadId) {
+			saveThreadMessages(currentThreadId, []);
+		}
+		setLocalConversationId(null);
+		setLocalMessages([]);
 		setPending(null);
 		setPhase(null);
 		setBusy(false);
-	}, []);
+	}, [localConversationId, saveThreadMessages]);
 
 	return {
 		isOpen, setIsOpen, conversationId, setConversationId, messages, setMessages,

@@ -138,6 +138,25 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         patientId="pat-101"
         visitId="vis-202"
         initialThoughts={initialThoughts}
+        initialToothProposal={{
+          toothNumber: 36,
+          state: "C2",
+          stateLabel: "Кариес дентина (C2)",
+          surfaces: ["O"],
+          applied: false,
+        }}
+        initialServicesProposal={[
+          {
+            id: "srv-1",
+            serviceCode: "A16.07.002.010",
+            code804n: "A16.07.002.010",
+            title: "Препарирование полости",
+            toothNumber: 36,
+            quantity: 1,
+            priceRub: 2500,
+            applied: false,
+          },
+        ]}
       />
     );
 
@@ -396,6 +415,31 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         patientId="pat-101"
         visitId="vis-202"
         patientName="Петрова А.В."
+        initialToothProposal={{
+          toothNumber: 16,
+          state: "C2",
+          stateLabel: "Кариес дентина (C2)",
+          surfaces: ["O"],
+          applied: false,
+        }}
+        initialServicesProposal={[
+          {
+            id: "srv-1",
+            serviceCode: "A16.07.002.010",
+            code804n: "A16.07.002.010",
+            title: "Препарирование кариозной полости",
+            toothNumber: 16,
+            quantity: 1,
+            priceRub: 2500,
+            applied: false,
+          },
+        ]}
+        initialAnestheticProposal={{
+          drugName: "Убистезин (Артикаин 4% + эпинефрин 1:200 000)",
+          carpulesCount: 1,
+          maxCarpules: 4,
+          applied: false,
+        }}
       />
     );
 

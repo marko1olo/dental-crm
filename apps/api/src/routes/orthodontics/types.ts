@@ -63,10 +63,11 @@ export interface OrthoMaterialDeductionResult {
 	deductedQty: number;
 	remainingStock?: number | undefined;
 	isOverdraft: boolean;
+	unitCostKopecks?: number | undefined;
 	error?: string | undefined;
 }
 
-export interface OrthodonticProgressRecord {
+export interface OrthodonticProgressRecord extends Record<string, unknown> {
 	currentAligner: number;
 	totalAligners: number;
 	startDate: string;

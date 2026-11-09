@@ -227,6 +227,22 @@ graph LR
 
 ---
 
+8. **Хирургическая ликвидация дефектов документооборота и зачистка сирот (DEF-DOC-06...11, Мандаты 8bd, 8be, 8bf, 8ap):**
+   * **DEF-DOC-06 (`DocumentsView.tsx`):** Загрязнение советскими номерами приказов `dental_medical_card_043u` устранено в пользу канонического `DENTAL_MEDICAL_CARD_KIND` (`"dental_medical_card"`).
+   * **DEF-DOC-07 (`DocumentsView.tsx`, `documentsView/types.ts`):** `Record<string, any>` заменен на строго типизированный интерфейс `DocumentsViewProps` (Мандат 8be).
+   * **DEF-DOC-08 (`useDigitalSignature.ts`):** Ликвидирован захардкоженный пустой SHA-256 хеш (`e3b0c442...`). Реализовано честное вычисление дайджеста содержимого документа через `crypto.subtle`.
+   * **DEF-DOC-09 (`useDigitalSignature.ts`):** Искоренен фиктивный ID пациента `"patient"`. Внедрен строгий guard-check `if (!patientId) ...` с уведомлением через `GlobalToast`.
+   * **DEF-DOC-10 (`FastClinicalPrintEngine.tsx`):** Ликвидирована россыпь кастов `any`. Внедрены доменные типизированные структуры: `ClinicSummary`, `PrintServiceItem[]`, `ToothNumber[]`, `ClinicalDiagnosis[]`, `PlanStageSummary[]`, `FiscalDataSummary`.
+   * **DEF-DOC-11 (`apps/api/src/db/schema/documents.ts`):** Токсичный заголовок `(STOMX REVERSE)` и поле `stomxId` канонизированы в нейтральный `externalTemplateId` с сохранением обратной совместимости по Мандату 8ap.
+   * **Физический снос 11 файлов/каталогов (`git rm`):** `partisanMedicalInsertTemplate.tsx`, `partisanInsert/` (6 файлов), сиротский реэкспорт `components/documents/OrthodonticVisitProtocolWidget.tsx`, скрипты генерации `generate_contract_pp736_docx.py`, `generate_act_acceptance_docx.py`, `generate_egisz_refusal_docx.py`, `generate_official_ids_docx.py`, `inspect_docx.cjs`, `probe_docs_nav.cjs`, `_probe_docs.mjs`, `lab_docs_commit_msg.txt`.
+   * **4-State Visual Proof (Live App Каталог Документов):**
+     - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (133 KB) — ПК светлая тема, 1 Primary CTA «✓ Распечатать пакет приёма и подписать», 0px клиппинга.
+     - `docs/proofs/documents/02_documents_catalog_pc_dark_1440x900.png` (137 KB) — ПК тёмная тема, 100% тёмные токены `var(--paper)`, WCAG AAA контраст.
+     - `docs/proofs/documents/03_documents_catalog_mobile_light_390x844.png` (153 KB) — iPhone 390×844 светлая тема, Apple HIG Bottom Sheet с drag handle, тач-таргеты $\ge 44$px.
+     - `docs/proofs/documents/04_documents_catalog_mobile_dark_390x844.png` (147 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

@@ -5,6 +5,7 @@
 
 import type { PaidContractServiceItem } from "./contractDataTypes";
 import { numberToWordsRu } from "./numberToWordsRu";
+import { rublesToKopecks } from "@dental/shared";
 
 export function formatKopecksToRubAndKop(kopecks: number): {
 	wholeRub: number;
@@ -32,7 +33,7 @@ export function parseRublesToKopecks(rublesOrText: number | string | null | unde
 	if (rublesOrText === null || rublesOrText === undefined) return 0;
 	if (typeof rublesOrText === "number") {
 		if (!Number.isFinite(rublesOrText) || rublesOrText < 0) return 0;
-		return Math.round(rublesOrText * 100);
+		return rublesToKopecks(rublesOrText);
 	}
 	const cleaned = rublesOrText
 		.trim()
@@ -41,7 +42,7 @@ export function parseRublesToKopecks(rublesOrText: number | string | null | unde
 		.replace(/,/g, ".");
 	const val = parseFloat(cleaned);
 	if (!Number.isFinite(val) || val < 0) return 0;
-	return Math.round(val * 100);
+	return rublesToKopecks(val);
 }
 
 export function calculatePaidContractServiceTotalKopecks(

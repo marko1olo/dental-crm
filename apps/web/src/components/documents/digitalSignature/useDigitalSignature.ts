@@ -2,6 +2,33 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import type { DigitalSignatureTabletModalProps, SignatureModeTab } from "./types";
 import { showToast } from "../../GlobalToast";
 
+async function computeDocumentSha256(
+	doc: DigitalSignatureTabletModalProps["document"],
+	patientId?: string,
+): Promise<string> {
+	if (doc?.issuedSnapshotSha256) {
+		return doc.issuedSnapshotSha256;
+	}
+	const content = JSON.stringify({
+		id: doc?.id ?? "doc-pending",
+		kind: doc?.documentKind ?? "general_consent",
+		patientId: patientId ?? "unknown",
+		issuedAt: doc?.issuedAt ?? doc?.createdAt ?? "",
+	});
+	if (typeof window !== "undefined" && window.crypto?.subtle) {
+		const hashBuf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+		return Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+	}
+	let hash1 = 0x811c9dc5;
+	let hash2 = 0x9e3779b9;
+	for (let i = 0; i < content.length; i++) {
+		const code = content.charCodeAt(i);
+		hash1 = (hash1 ^ code) * 0x01000193 >>> 0;
+		hash2 = (hash2 ^ (code << 5)) * 0x5bd1e995 >>> 0;
+	}
+	return (hash1.toString(16).padStart(8, "0") + hash2.toString(16).padStart(8, "0")).repeat(4);
+}
+
 export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 	const { isOpen, onClose, document: doc, patient, onConfirmSignature } = props;
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -13,8 +40,8 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [paperSigned, setPaperSigned] = useState(true);
 	const [expectedOtp, setExpectedOtp] = useState("");
-	const [docFingerprint, setDocFingerprint] = useState(
-		() => doc?.issuedSnapshotSha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	const [docFingerprint, setDocFingerprint] = useState<string>(
+		() => doc?.issuedSnapshotSha256 || "",
 	);
 
 	const patientName = patient?.fullName || "Пациент";
@@ -25,15 +52,14 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 			return;
 		}
 		let cancelled = false;
-		const seed = `${doc?.id ?? "package"}-${patient?.id ?? "patient"}-${Date.now()}`;
-		if (typeof window !== "undefined" && window.crypto?.subtle) {
-			window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(seed)).then((hash) => {
-				if (!cancelled) {
-					setDocFingerprint(Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join(""));
-				}
-			});
-		}
-		return () => { cancelled = true; };
+		computeDocumentSha256(doc, patient?.id).then((computedHash) => {
+			if (!cancelled && computedHash) {
+				setDocFingerprint(computedHash);
+			}
+		});
+		return () => {
+			cancelled = true;
+		};
 	}, [doc, patient]);
 
 	const clearCanvas = useCallback(() => {
@@ -45,6 +71,11 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 	}, []);
 
 	const handleSendSmsCode = useCallback(async () => {
+		const patientId = patient?.id?.trim();
+		if (!patientId) {
+			showToast("Не выбран пациент или отсутствует идентификатор пациента для отправки СМС", "error", 4000);
+			return;
+		}
 		const rawPhone = (patient?.phone || "").trim();
 		if (!rawPhone) {
 			showToast("У пациента не указан номер телефона в карте для отправки СМС-кода", "error", 4000);
@@ -55,7 +86,7 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					patientId: patient?.id || "patient",
+					patientId,
 					phone: rawPhone,
 					documentId: doc?.id,
 				}),
@@ -99,6 +130,11 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 				showToast("Введите код подтверждения", "error", 4000);
 				return;
 			}
+			const patientId = patient?.id?.trim();
+			if (!patientId) {
+				showToast("Не выбран пациент или отсутствует идентификатор пациента для верификации СМС", "error", 4000);
+				return;
+			}
 			const rawPhone = (patient?.phone || "").trim();
 			if (!rawPhone) {
 				showToast("У пациента не указан номер телефона в карте для проверки СМС-кода", "error", 4000);
@@ -109,7 +145,7 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
-						patientId: patient?.id || "patient",
+						patientId,
 						phone: rawPhone,
 						code: entered,
 					}),
@@ -141,8 +177,9 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 			});
 			showToast("Документ успешно утвержден", "success", 4000);
 			onClose();
-		} catch (err: any) {
-			showToast(err?.message || "Ошибка при сохранении подписи", "error", 5000);
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Ошибка при сохранении подписи";
+			showToast(message, "error", 5000);
 		} finally {
 			setIsSubmitting(false);
 		}

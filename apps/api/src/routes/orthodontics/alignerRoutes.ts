@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
-import { calculateNextDate, parseOrthoData } from "./helpers.js";
+import { calculateNextDate, createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { issueAlignerSetSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
 
 export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
@@ -19,6 +19,12 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
 			const orthoProgress = parseOrthoData(adminProfile.orthodonticProgress);
+			if (!orthoProgress) {
+				return reply.code(404).send({
+					error: "OrthoTreatmentNotFound",
+					message: "У пациента нет активного курса ортодонтического лечения",
+				});
+			}
 
 			return reply.send({
 				patientId,
@@ -43,7 +49,10 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 			}
 
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress);
+			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord({
+				totalAligners: body.totalAligners,
+				wearDaysPerAligner: body.wearDaysPerAligner,
+			});
 
 			const effectiveTotal = body.totalAligners || currentProgress.totalAligners;
 			const fromAligner = currentProgress.currentAligner;
@@ -62,10 +71,10 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				nextVisitRecommendedDate: nextDate,
 			};
 
-			const serialized = JSON.stringify(updatedProgress);
+			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
 			await updatePatientAdministrativeProfileInDb(orgId, patientId, {
 				...adminProfile,
-				orthodonticProgress: serialized,
+				orthodonticProgress: updatedProgress,
 			});
 
 			return reply.send({

@@ -20,8 +20,35 @@ import type {
 	DocumentStatusFilter,
 } from "../components/documents/DocumentRegistryFilterBar";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated backward-compatible contract
-export type DocumentsViewProps = Record<string, any>;
+export interface DocumentsViewProps {
+	readonly activePatient?: Patient | null | undefined;
+	readonly activeDoctor?: { readonly fullName?: string; readonly id?: string; readonly specialty?: string } | null | undefined;
+	readonly activeDocuments?: readonly GeneratedDocument[] | undefined;
+	readonly activeUsableDocuments?: readonly GeneratedDocument[] | undefined;
+	readonly clinicProfileDraft?: Record<string, unknown> | undefined;
+	readonly dashboard?: unknown;
+	readonly patientName?: string | undefined;
+	readonly selectedEligibleTaxPayments?: readonly Payment[] | undefined;
+	readonly taxDocumentPayerOptions?: ReadonlyArray<{ readonly id: string; readonly label: string }> | undefined;
+	readonly documentActionLabels?: Record<string, string> | undefined;
+	readonly documentLabels?: Record<string, string> | undefined;
+	readonly documentStatusLabels?: Record<string, string> | undefined;
+	readonly documentSourceStatusClassNames?: Record<string, string> | undefined;
+	readonly documentIssueSignatureModeLabels?: Record<string, string> | undefined;
+	readonly documentVoidReasonLabels?: Record<string, string> | undefined;
+	readonly confirmDocumentIssue?: () => Promise<void> | void;
+	readonly confirmDocumentVoid?: () => Promise<void> | void;
+	readonly createDocument?: (kind: DocumentKind | string) => Promise<void> | void;
+	readonly downloadIssuedDocumentHtml?: (id: string) => void;
+	readonly downloadIssuedDocumentPdf?: (id: string) => void;
+	readonly downloadTaxDocumentXml?: (id: string) => void;
+	readonly loadDocumentAuditFacts?: (id: string) => Promise<void> | void;
+	readonly openIssuedDocumentHtml?: (id: string) => void;
+	readonly requestDocumentIssue?: (id: string) => void;
+	readonly requestDocumentVoid?: (id: string) => void;
+	readonly updateDocumentStatus?: (id: string, status: DocumentStatus) => Promise<void> | void;
+	readonly className?: string | undefined;
+}
 
 export type { DocumentCategoryTab, DocumentEdsFilter, DocumentStatusFilter };
 

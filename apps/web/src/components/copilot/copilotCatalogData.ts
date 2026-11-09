@@ -76,7 +76,7 @@ export interface SpeechEngineHealthReport {
 export const CRM_FASTIFY_TOOLS_REGISTRY = {
   updateToothStatus: "update_tooth_status",
   createAppointmentSlot: "create_appointment",
-  generateSoapDiary: "generate_form_043_entry",
+  generateSoapDiary: "generate_clinical_protocol_entry",
   calcInvoiceKopecks: "search_clinic_services_and_prices",
   createInvoiceDraft: "create_invoice_draft",
   applyDoctorDiscount: "create_invoice_draft",

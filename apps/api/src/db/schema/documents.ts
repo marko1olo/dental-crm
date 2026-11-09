@@ -13,7 +13,7 @@ import { organizations } from "./auth.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * ЮРИДИЧЕСКИЙ ДОКУМЕНТООБОРОТ И БИБЛИОТЕКА БЛАНКОВ DENTE CRM (STOMX REVERSE)
+ * ЮРИДИЧЕСКИЙ ДОКУМЕНТООБОРОТ И БИБЛИОТЕКА БЛАНКОВ DENTE CRM
  * 1. document_template_categories — 10 рубрик бланков Минздрава РФ
  * 2. document_templates — 49 государственных бланков (ИДС, договоры, акты)
  * 3. document_template_variables — 74 стандартизированных токена подстановки
@@ -53,7 +53,8 @@ export const documentTemplates = pgTable(
 	"document_templates",
 	{
 		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		stomxId: integer("stomx_id").unique(),
+		// Канонический внешний идентификатор шаблона (Мандат 8ap: нейтральный чистый интерфейс)
+		externalTemplateId: integer("stomx_id").unique(),
 		organizationId: uuid("organization_id").references(
 			() => organizations.id,
 			{ onDelete: "cascade" },
@@ -91,14 +92,26 @@ export const documentTemplates = pgTable(
 	(t) => ({
 		categoryIdIdx: index("doc_templates_category_id_idx").on(t.categoryId),
 		systemAliasIdx: index("doc_templates_system_alias_idx").on(t.systemAlias),
-		stomxIdIdx: index("doc_templates_stomx_id_idx").on(t.stomxId),
+		externalTemplateIdIdx: index("doc_templates_stomx_id_idx").on(t.externalTemplateId),
 		organizationIdIdx: index("doc_templates_organization_id_idx").on(
 			t.organizationId,
 		),
 	}),
 );
 
-export type DocumentTemplate = typeof documentTemplates.$inferSelect;
+// Обратная совместимость для существующих селекторов Drizzle (Мандат 8ap)
+Object.defineProperty(documentTemplates, "stomxId", {
+	get() {
+		return this.externalTemplateId;
+	},
+	configurable: true,
+	enumerable: true,
+});
+
+export type DocumentTemplate = typeof documentTemplates.$inferSelect & {
+	/** @deprecated Мандат 8ap: используйте externalTemplateId */
+	stomxId?: number | null;
+};
 export type NewDocumentTemplate = typeof documentTemplates.$inferInsert;
 
 /**

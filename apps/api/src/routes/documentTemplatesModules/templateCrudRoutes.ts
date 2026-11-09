@@ -183,7 +183,7 @@ export async function registerTemplateCrudRoutes(
 				conditions.push(eq(documentTemplates.id, identifier));
 			} else if (/^\d+$/.test(identifier)) {
 				conditions.push(
-					eq(documentTemplates.stomxId, Number.parseInt(identifier, 10)),
+					eq(documentTemplates.externalTemplateId, Number.parseInt(identifier, 10)),
 				);
 			} else {
 				conditions.push(eq(documentTemplates.systemAlias, identifier));
@@ -234,6 +234,8 @@ export async function registerTemplateCrudRoutes(
 				ok: true,
 				template: {
 					...template,
+					externalTemplateId: template.externalTemplateId ?? null,
+					stomxId: template.externalTemplateId ?? null,
 					categoryName,
 				},
 			});

@@ -48,5 +48,7 @@ export function resolveMaterialParams(body: import("zod").infer<typeof deductOrt
 		unitCostRub = 450;
 	}
 
-	return { defaultName, pattern, category, unit, unitCostRub };
+	const unitCostKopecks = BigInt(Math.round(unitCostRub * 100));
+
+	return { defaultName, pattern, category, unit, unitCostRub, unitCostKopecks };
 }

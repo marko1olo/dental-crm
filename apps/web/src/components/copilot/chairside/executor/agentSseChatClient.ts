@@ -12,6 +12,7 @@ import type {
   ChairsideSafetyAlert,
 } from "../chairsideTypes";
 import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
+import { showToast } from "../../../GlobalToast";
 
 export interface StreamAgentChatParams {
   promptText: string;
@@ -183,7 +184,11 @@ export async function requestAgentSseStream(
       };
     }
     return null;
-  } catch {
+  } catch (err: unknown) {
+    if ((err as Error)?.name !== "AbortError") {
+      console.error("[agentSseChatClient] SSE stream connection failed:", err);
+      showToast("Сбой потокового соединения с клиническим ассистентом", "warning", 5000);
+    }
     return null;
   }
 }

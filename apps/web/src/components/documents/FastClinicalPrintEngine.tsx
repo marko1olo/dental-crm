@@ -8,6 +8,7 @@
  */
 
 import React from "react";
+import type { Patient } from "@dental/shared";
 import { DocumentA4PrintPreviewModal } from "./DocumentA4PrintPreviewModal";
 import type { ProfessionalA4DocumentTab } from "./professionalA4/types";
 
@@ -18,12 +19,58 @@ export type FastPrintDocType =
 	| "act_and_receipt"
 	| "treatment_estimate";
 
+export interface ClinicSummary {
+	readonly id?: string;
+	readonly name?: string;
+	readonly legalName?: string;
+	readonly inn?: string;
+	readonly ogrn?: string;
+	readonly address?: string;
+	readonly phone?: string;
+	readonly email?: string;
+	readonly licenseNumber?: string;
+	readonly chiefDoctorFullName?: string;
+}
+
+export type ToothNumber = number | string;
+
+export interface ClinicalDiagnosis {
+	readonly code: string;
+	readonly titleRu: string;
+	readonly toothNumber?: ToothNumber | null;
+}
+
+export interface PrintServiceItem {
+	readonly code?: string;
+	readonly name: string;
+	readonly quantity: number;
+	readonly priceRub: number;
+	readonly totalRub: number;
+	readonly toothNumber?: ToothNumber | null;
+}
+
+export interface PlanStageSummary {
+	readonly stageNumber: number;
+	readonly title: string;
+	readonly services: readonly PrintServiceItem[];
+	readonly totalRub: number;
+}
+
+export interface FiscalDataSummary {
+	readonly cashboxNumber?: string;
+	readonly receiptNumber?: string;
+	readonly shiftNumber?: number;
+	readonly fiscalSign?: string;
+	readonly totalKopecks?: bigint | number;
+}
+
 export interface FastClinicalPrintEngineProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly initialDocType?: FastPrintDocType | string;
 	readonly patient?: {
 		readonly id?: string;
+		readonly organizationId?: string;
 		readonly fullName?: string;
 		readonly birthDate?: string;
 		readonly phone?: string;
@@ -31,8 +78,8 @@ export interface FastClinicalPrintEngineProps {
 		readonly cardNumber?: string;
 		readonly allergies?: string;
 		readonly somaticNotes?: string;
-	} | null;
-	readonly clinic?: any;
+	} | Patient | null;
+	readonly clinic?: ClinicSummary | null;
 	readonly doctor?: {
 		readonly fullName?: string;
 		readonly specialty?: string;
@@ -40,16 +87,16 @@ export interface FastClinicalPrintEngineProps {
 	readonly visitData?: {
 		readonly date?: string;
 		readonly time?: string;
-		readonly toothNumber?: string;
-		readonly diagnosis?: string;
+		readonly toothNumber?: ToothNumber;
+		readonly diagnosis?: string | ClinicalDiagnosis;
 		readonly complaints?: string;
 		readonly objective?: string;
 		readonly treatment?: string;
 		readonly recommendations?: string;
 	} | null;
-	readonly services?: readonly any[];
-	readonly planStages?: readonly any[];
-	readonly fiscalData?: any;
+	readonly services?: readonly PrintServiceItem[];
+	readonly planStages?: readonly PlanStageSummary[];
+	readonly fiscalData?: FiscalDataSummary | null;
 	readonly onAfterPrint?: () => void;
 }
 
@@ -86,12 +133,15 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 			onClose={onClose}
 			initialTab={mappedTab}
 			doctorFullName={doctor?.fullName}
-			clinicProfileDraft={clinic}
+			clinicProfileDraft={clinic ?? undefined}
 			patient={
 				patient
-					? ({
+					? {
 							id: patient.id || "",
-							organizationId: (patient as any).organizationId || "",
+							organizationId:
+								"organizationId" in patient && typeof patient.organizationId === "string"
+									? patient.organizationId
+									: "",
 							fullName: patient.fullName || "Пациент",
 							birthDate: patient.birthDate || "",
 							phone: patient.phone || "",
@@ -100,7 +150,7 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 							gender: "other",
 							createdAt: new Date().toISOString(),
 							updatedAt: new Date().toISOString(),
-						} as any)
+						}
 					: null
 			}
 			medicalCardData={{
@@ -112,7 +162,10 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 				visitDateRu: visitData?.date || new Date().toLocaleDateString("ru-RU"),
 				doctorFullName: doctor?.fullName || "Врач-стоматолог",
 				doctorSpecialtyRu: doctor?.specialty || "Стоматолог-терапевт",
-				diagnosisMkb10: visitData?.diagnosis || "",
+				diagnosisMkb10:
+					typeof visitData?.diagnosis === "object" && visitData?.diagnosis !== null
+						? visitData.diagnosis.code
+						: visitData?.diagnosis || "",
 				complaintsRu: visitData?.complaints || "",
 				objectiveRu: visitData?.objective || "",
 				treatmentRu: visitData?.treatment || "",
