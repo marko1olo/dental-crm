@@ -1,16 +1,11 @@
-import { and, eq, gte, ilike, lte } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import {
-	appointments,
-	chairs,
-	clinics,
-	crmLeads,
-	patients,
-	services,
-	users,
-} from "../../../db/schema.js";
+import { clinics, users } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
+import { calculateAvailableSlots } from "../../../routes/publicBooking/bookingModules/publicBookingSlotEngine.js";
+import { DEFAULT_TIMEZONE } from "../../../routes/publicBooking/bookingModules/publicBookingSchemas.js";
+import { localWallTimeToUtc } from "../../../routes/publicBooking/slotAvailabilityEngine.js";
+import { executeBookingTransaction } from "../../../routes/publicBooking/bookingMutationService.js";
 import type {
 	BotInboundMessage,
 	BotPlugin,
@@ -58,84 +53,117 @@ export class OnlineBookingPlugin implements BotPlugin {
 		const payload = msg.payload || "";
 
 		return await withTenantCtx(orgId, async (tx) => {
+			// Resolve clinic timezone
+			const [clinicRow] = await tx
+				.select({ timezone: clinics.timezone })
+				.from(clinics)
+				.where(eq(clinics.organizationId, orgId))
+				.limit(1);
+			const clinicTimeZone = clinicRow?.timezone || DEFAULT_TIMEZONE;
+
 			// 1. Шаг: подтверждение слота (booking:confirm:DATE:TIME:DOCTOR_ID)
 			if (payload.startsWith("booking:confirm:")) {
 				const parts = payload.split(":");
-				const dateStr = parts[2]; // YYYY-MM-DD
-				const timeStr = parts[3]; // HH:mm
-				const doctorId = parts[4] || null;
+				let dateStr = "";
+				let timeStr = "";
+				let doctorId: string | null = null;
+
+				if (parts.length >= 6) {
+					dateStr = parts[2] || "";
+					timeStr = `${parts[3]}:${parts[4]}`;
+					doctorId = parts[5] || null;
+				} else if (parts.length === 5) {
+					dateStr = parts[2] || "";
+					timeStr = parts[3] || "";
+					doctorId = parts[4] || null;
+				}
+
+				if (doctorId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorId)) {
+					doctorId = null;
+				}
 
 				if (dateStr && timeStr) {
-					const startDateTime = new Date(`${dateStr}T${timeStr}:00.000Z`);
-					const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 час
+					const [hStr, mStr] = timeStr.split(":");
+					const hour = Number.parseInt(hStr || "0", 10);
+					const min = Number.parseInt(mStr || "0", 10);
+					const minuteOfDay = hour * 60 + min;
+					const startDateTime = localWallTimeToUtc(dateStr, minuteOfDay, clinicTimeZone);
+					const endDateTime = localWallTimeToUtc(dateStr, minuteOfDay + 60, clinicTimeZone);
 
-					// Поиск или создание пациента
-					let patientId: string | null = null;
-					const phoneDigits = msg.senderId.replace(/\D/g, "");
-					const phoneSearch = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+					const senderLabel = msg.senderName || `Пациент ${msg.channel.toUpperCase()}`;
+					const rawPhone = msg.senderId.replace(/\D/g, "");
+					const senderPhone = rawPhone.length >= 10 ? `+${rawPhone}` : "+79990000000";
 
-					if (phoneSearch) {
-						const existingPatients = await tx
-							.select({ id: patients.id, fullName: patients.fullName })
-							.from(patients)
+					// If doctorId is not provided, pick first active doctor
+					let targetDoctorId = doctorId;
+					if (!targetDoctorId) {
+						const [firstDoctor] = await tx
+							.select({ id: users.id })
+							.from(users)
 							.where(
 								and(
-									eq(patients.organizationId, orgId),
-									ilike(patients.phone, `%${phoneSearch}%`),
+									eq(users.organizationId, orgId),
+									eq(users.isActive, true),
+									eq(users.role, "doctor"),
 								),
 							)
 							.limit(1);
-
-						if (existingPatients.length > 0) {
-							patientId = existingPatients[0]!.id;
-						}
+						targetDoctorId = firstDoctor?.id || null;
 					}
 
-					if (!patientId) {
-						const senderLabel = msg.senderName || `Пациент ${msg.channel.toUpperCase()}`;
-						const [newPatient] = await tx
-							.insert(patients)
-							.values({
-								organizationId: orgId,
-								fullName: senderLabel,
-								phone: phoneDigits ? `+${phoneDigits}` : null,
-								status: "active",
-								notes: `Создан ботом ${msg.channel.toUpperCase()} через онлайн-запись. ID чата: ${msg.senderId}`,
-							})
-							.returning({ id: patients.id });
-						patientId = newPatient!.id;
+					if (!targetDoctorId) {
+						return {
+							text: "⚠️ В клинике нет доступных врачей для записи. Обратитесь к администратору.",
+							actionExecuted: "booking_failed_no_doctor",
+						};
 					}
 
-					// Резервируем кресло клиники
-					const availableChairs = await tx
-						.select({ id: chairs.id })
-						.from(chairs)
-						.where(eq(chairs.organizationId, orgId))
-						.limit(1);
+					// Каноническая транзакция с иерархией блокировок (Кресло -> Врач -> Пациент)
+					const bookingResult = await executeBookingTransaction(tx, {
+						organizationId: orgId,
+						doctorId: targetDoctorId,
+						startDate: startDateTime,
+						endDate: endDateTime,
+						patientName: senderLabel,
+						patientPhone: senderPhone,
+						comment: `Онлайн-запись через ${msg.channel.toUpperCase()} бот. Контакт: ${msg.senderId}`,
+						source: `bot_${msg.channel}`,
+					});
 
-					const chairId = availableChairs[0]?.id || null;
+					if (bookingResult.conflict) {
+						return {
+							text: [
+								"⚠️ <b>Выбранное время только что заняли</b>",
+								"",
+								`К сожалению, время ${timeStr} на ${dateStr} уже занято другим пациентом.`,
+								"Пожалуйста, выберите другое свободное окно:",
+							].join("\n"),
+							keyboard: {
+								inline: true,
+								buttons: [
+									[{ text: "🔄 Обновить свободные окна", callbackData: "booking:start" }],
+									[{ text: "📞 Связаться с администратором", callbackData: "triage:human_request" }],
+								],
+							},
+							actionExecuted: "booking_conflict",
+						};
+					}
 
-					// Создаем запись в расписании CRM
-					const [appointment] = await tx
-						.insert(appointments)
-						.values({
-							organizationId: orgId,
-							patientId,
-							doctorUserId: doctorId,
-							chairId,
-							startsAt: startDateTime,
-							endsAt: endDateTime,
-							status: "planned",
-							comment: `Онлайн-запись через ${msg.channel.toUpperCase()} бот. Контакт: ${msg.senderId}`,
-						})
-						.returning({ id: appointments.id });
+					if ("blocked" in bookingResult && bookingResult.blocked) {
+						return {
+							text: `⚠️ ${bookingResult.message}`,
+							actionExecuted: "booking_blocked",
+						};
+					}
+
+					const appointment = bookingResult.appointment;
 
 					// Оповещаем ресепшен через WebSocket
 					wsBroker.broadcastToOrganization(orgId, {
 						type: "APPOINTMENT_CREATED",
 						payload: {
-							appointmentId: appointment!.id,
-							patientId,
+							appointmentId: appointment.id,
+							patientId: appointment.patientId,
 							startTime: startDateTime.toISOString(),
 							source: `bot_${msg.channel}`,
 						},
@@ -174,7 +202,7 @@ export class OnlineBookingPlugin implements BotPlugin {
 							],
 						},
 						actionExecuted: "appointment_booked",
-						metadata: { appointmentId: appointment!.id, dateStr, timeStr },
+						metadata: { appointmentId: appointment.id, dateStr, timeStr },
 					};
 				}
 			}
@@ -192,6 +220,7 @@ export class OnlineBookingPlugin implements BotPlugin {
 					and(
 						eq(users.organizationId, orgId),
 						eq(users.isActive, true),
+						eq(users.role, "doctor"),
 					),
 				)
 				.limit(3);
@@ -199,13 +228,39 @@ export class OnlineBookingPlugin implements BotPlugin {
 			const doctorId = activeDoctors[0]?.id || null;
 			const doctorName = activeDoctors[0]?.fullName || "Дежурный стоматолог";
 
-			// Генерируем доступные слоты на завтра (10:00, 12:00, 14:00, 16:00, 18:00)
-			const candidateTimes = ["10:00", "12:00", "14:00", "16:00", "18:00"];
+			// Рассчитываем реальные доступные слоты через канонический calculateAvailableSlots
+			const slotsResult = await calculateAvailableSlots(tx, {
+				organizationId: orgId,
+				date: dateIso,
+				requestedDoctorId: doctorId || undefined,
+			});
 
-			const buttons = candidateTimes.map((time) => [
+			const availableSlots = slotsResult.success ? slotsResult.slots : [];
+
+			if (availableSlots.length === 0) {
+				return {
+					text: [
+						"📅 <b>Онлайн-запись на приём к врачу</b>",
+						"",
+						`На завтра (${targetDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}) свободных окон у врача <b>${doctorName}</b> не осталось.`,
+						"",
+						"Вы можете выбрать другую дату или обратиться к администратору:",
+					].join("\n"),
+					keyboard: {
+						inline: true,
+						buttons: [
+							[{ text: "🗓️ Выбрать другую дату", callbackData: "booking:choose_date" }],
+							[{ text: "💬 Задать вопрос администратору", callbackData: "triage:human_request" }],
+						],
+					},
+					actionExecuted: "booking_slots_presented",
+				};
+			}
+
+			const buttons = availableSlots.slice(0, 6).map((slot) => [
 				{
-					text: `🕒 ${time} — ${doctorName}`,
-					callbackData: `booking:confirm:${dateIso}:${time}:${doctorId || ""}`,
+					text: `🕒 ${slot.time} — ${doctorName}`,
+					callbackData: `booking:confirm:${dateIso}:${slot.time}:${doctorId || ""}`,
 				},
 			]);
 

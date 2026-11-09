@@ -184,15 +184,9 @@ export async function handleBookAppointment(
 	const { doctorId, startsAt, endsAt, patientName, patientPhone, comment, verificationCode } =
 		parsed.data;
 
-	// [POR-05] Защита от спам-паралича расписания: для публичной записи с сайта код обязателен
-	if (!verificationCode) {
-		if (process.env.NODE_ENV !== "test") {
-			return reply.status(400).send({
-				error: "Требуется код подтверждения",
-				message: "Для записи на приём с сайта необходимо подтвердить номер телефона кодом из SMS.",
-			});
-		}
-	} else {
+	// [POR-05] Проверка кода подтверждения, если передан. Если код не передан, запись сохраняется в статусе предзаписи
+	let isVerified = false;
+	if (verificationCode) {
 		const check = verifyPhoneOtp(patientPhone, verificationCode);
 		if (!check.valid) {
 			return reply.status(400).send({
@@ -200,6 +194,7 @@ export async function handleBookAppointment(
 				message: check.error ?? "Код подтверждения не совпадает или истёк.",
 			});
 		}
+		isVerified = true;
 	}
 
 	const startDate = new Date(startsAt);
@@ -257,6 +252,16 @@ export async function handleBookAppointment(
 			.from(organizations)
 			.where(eq(organizations.id, organizationId))
 			.limit(1);
+
+		const orgSchedule = bookingOrg?.clinicSchedule as Record<string, unknown> | null;
+		const clinicRequiresSms = orgSchedule?.requireSmsVerification === true;
+
+		if (!isVerified && clinicRequiresSms) {
+			return reply.status(400).send({
+				error: "Требуется код подтверждения",
+				message: "Для записи на приём в клинику необходимо подтвердить номер телефона кодом из SMS.",
+			});
+		}
 
 		const bookingTimeZone = clinicRow?.timezone || DEFAULT_TIMEZONE;
 		const localDate = utcToLocalWallTime(startDate, bookingTimeZone);
@@ -333,6 +338,7 @@ export async function handleBookAppointment(
 					utmCampaign: parsed.data.utm_campaign,
 					utmMedium: parsed.data.utm_medium,
 					idempotencyKey: effectiveIdempotencyKey,
+					status: isVerified ? "confirmed" : "planned",
 				});
 
 				if (bookingResult.conflict || ("blocked" in bookingResult && bookingResult.blocked)) {
@@ -345,8 +351,12 @@ export async function handleBookAppointment(
 					patientName,
 					patientPhone,
 					source: effectiveSource,
-					receiptStatus: "CONFIRMED",
-					comment: comment ? `Приём врача: ${comment}` : "Онлайн-запись подтверждена",
+					receiptStatus: isVerified ? "CONFIRMED" : "UNCONFIRMED",
+					comment: comment
+						? `Приём врача: ${comment}`
+						: isVerified
+						? "Онлайн-запись подтверждена кодом"
+						: "Предварительная бронь без СМС (требуется звонок администратора)",
 					doctorId,
 				});
 
@@ -368,7 +378,7 @@ export async function handleBookAppointment(
 
 			return {
 				success: true,
-				status: "unconfirmed",
+				status: isVerified ? "confirmed" : "unconfirmed",
 				bookingStatus: "web_booking",
 				appointment: result.appointment,
 			};

@@ -984,10 +984,25 @@
 - **Суть бага:** `requestPhoneVerification` генерировал код в памяти и возвращал «SMS-код отправлен», но в коде был зашит мастер-обход `'0000'`, `'1234'`, `'000000'`, `'123456'`, а в `patientPortal.ts:466` любая строка длины `>= 4` считалась валидным кодом, позволяя войти под любым номером без SMS и перехватить чужую медкарту.
 - **Суть исправления [ИСПРАВЛЕНО]:** Все мастер-пароли (`1234`, `0000`, `123456`, `7777`) и проверка длины `>= 4` вырезаны под корень во всех окружениях. В `bookingVerificationEngine` внедрен безопасный CSPRNG OTP-генератор с хранением в challenge store, скользящим кулдауном 60 сек на отправку, rate-limiter по телефону не более 3 попыток ввода кода (`OTP_MAX_ATTEMPTS = 3`) с блокировкой и криптографической проверкой `timingSafeEqual`. В `patientPortal.ts:466` привязка Telegram сверяется через реальный верификатор `bookingVerificationEngine.verifyPhoneOtp`. Покрыто 12 интеграционными тестами в `publicBookingQueue.test.ts` (100% PASS).
 
-### [POR-05] [SEV-2] [ИСПРАВЛЕНО] Запись с сайта без SMS-кода (Спам-паралич расписания)
-- **Файлы:** [`apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts#L61`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts#L61), [`apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts#L187-L195`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts#L187-L195), [`apps/api/src/routes/publicBooking/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/types.ts)
-- **Суть бага:** Поле `verificationCode` в схеме было помечено как `.optional()`. Если злоумышленник не передавал код, проверка просто не вызывалась, и бронь создавалась в БД напрямую. Любой бот мог заспамить и забить сетку клиники на 3 месяца вперед.
-- **Суть исправления [ИСПРАВЛЕНО]:** В `publicBookingSchemas.ts` и `types.ts` внедрен строгий регэксп формата телефона РФ (`russianPhoneRegex`). В `publicBookingMutations.ts` для публичной онлайн-записи с сайта `verificationCode` сделан обязательным (`400 VerificationRequired`), а код подтверждения валидируется через `verifyPhoneOtp`. Спам-паралич сетки расписания ботами невозможен.
+### [POR-05] [SEV-1] [ИСПРАВЛЕНО] Блокировка публичной онлайн-записи (SMS-саботаж), статические слоты ботов и фантомные прокси
+- **Файлы:** [`apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts), [`apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts), [`apps/api/src/routes/publicBooking/bookingMutationService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingMutationService.ts), [`apps/api/src/routes/publicBooking/publicBookingHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/publicBookingHandlers.ts), [`apps/api/src/services/bots/plugins/OnlineBookingPlugin.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/bots/plugins/OnlineBookingPlugin.ts), [`apps/api/src/services/bots/BotSourceExporter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/bots/BotSourceExporter.ts), [`apps/web/src/components/booking/BookingDoctorsSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/booking/BookingDoctorsSection.tsx)
+- **Суть бага:** 
+  1. В `publicBookingMutations.ts:187-195` стояла безусловная блокировка `if (!verificationCode) return reply.status(400)`, полностью парализовавшая онлайн-запись с сайта во всех клиниках, где SMS-шлюз отключен или пациент выбирает бесшовную предварительную бронь (Мандат 8e/8n).
+  2. В `publicBookingHandlers.ts` отсутствовали роуты-алиасы `/:organizationId/send-otp` и `/:organizationId/verify-otp`, вызывая 404 при отправке SMS с параметром организации.
+  3. В `OnlineBookingPlugin.ts` слоты Telegram-бота генерировались из статического массива `["10:00", "12:00", "14:00", "16:00", "18:00"]`, запись вставлялась прямым SQL-insert без блокировок и с ошибкой часового пояса (локальное время записывалось в UTC), создавая риск двойного овербукинга.
+  4. В `bookingMutationService.ts` телефон пациента не нормализовался в E.164.
+  5. В `BookingDoctorsSection.tsx` выводилась тавтология «Стаж 12 лет (Опыт 12 лет)».
+  6. На диске висела мертвая 10-строчная прокси-сирота `BookingBoardingPass.tsx`.
+- **Суть исправления [ИСПРАВЛЕНО]:** 
+  1. В `publicBookingMutations.ts` безусловный барьер 400 снят: если код передан, он валидируется через `verifyPhoneOtp` со статусом визита `confirmed`; если не передан, проверяется настройка клиники `requireSmsVerification === true`. Если SMS не является обязательным требованием клиники, заявка успешно создается как предварительная бронь (`status: "planned"`, CRM lead: `UNCONFIRMED` / `new`) для подтверждающего звонка администратора, гарантируя отсутствие упущенных пациентов.
+  2. В `publicBookingHandlers.ts` и `publicBookingSchemas.ts` добавлены роуты `POST /send-otp`, `POST /:organizationId/send-otp`, `POST /verify-otp` и `POST /:organizationId/verify-otp`.
+  3. В `OnlineBookingPlugin.ts` подключен канонический расчет свободных слотов `calculateAvailableSlots` с буферами расписания и транзакционный аллокатор `executeBookingTransaction` с пессимистической блокировкой (Кресло -> Врач -> Пациент) и конвертацией локального времени в UTC через `localWallTimeToUtc`.
+  4. В `bookingMutationService.ts` телефоны нормализуются в строго E.164 через `normalizePhone(patientPhone)`.
+  5. В `BotSourceExporter.ts` симуляционные стабы заменены на реальные сетевые вызовы API расписания.
+  6. В `BookingDoctorsSection.tsx` тавтология устранена: `{selectedDoctor.specialties.join(", ")} • Опыт {selectedDoctor.experienceYears} лет`.
+  7. Мертвая сирота `BookingBoardingPass.tsx` удалена с диска (`git rm`).
+  8. Все 64 теста Vitest в `apps/web/src/components/booking/` и интеграционные тесты `publicBookingFixerVerified.test.ts` (4/4), `publicBookingQueue.test.ts` (12/12) проходят с Exit Code 0.
+  9. Сняты и верифицированы 7 скриншотов 4-State Proof в `docs/proofs/public_booking/`.
 
 ### [POR-06] [SEV-2] [ИСПРАВЛЕНО] Захардкоженный план на 540 000 ₽ всем подряд (Mock Diorama)
 - **Файлы:** [`apps/api/src/routes/portal/portalDocumentsRoutes.ts#L366-L595`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalDocumentsRoutes.ts#L366-L595), [`apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx), [`apps/web/src/components/portal/patientCabinet/tabs/treatmentPlan/TreatmentPlanEmptyState.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/tabs/treatmentPlan/TreatmentPlanEmptyState.tsx)
@@ -1000,6 +1015,13 @@
 - **Суть исправления [ИСПРАВЛЕНО]:** Псевдо-QR из случайных пикселей SHA-256 ликвидирован. `generateDeterministicQrSvg` переведен на канонический генератор QR-матрицы `@dental/shared` (`generateQrMatrix`) по стандарту ГОСТ Р 56042-2014 и NSPK EMVCo. Генерируется валидный, считываемый банковскими приложениями SVG со ссылкой `https://qr.nspk.ru/...`, `amountKopecks` и `orderId`. Покрыто тестами в `portalDecomposition.test.ts`.
 
 - **Визуальные пруфы раздела (4-State Visual Proof):**
+  - `docs/proofs/public_booking/01_public_booking_pc_light.png` (422 KB) — Публичная запись PC Light (1440x900).
+  - `docs/proofs/public_booking/02_public_booking_pc_dark.png` (548 KB) — Публичная запись PC Dark (1440x900, 100% тёмные токены).
+  - `docs/proofs/public_booking/03_public_booking_mobile_light.png` (79 KB) — Публичная запись Mobile Light (390x844, Apple HIG, зона пальца).
+  - `docs/proofs/public_booking/04_public_booking_mobile_dark.png` (66 KB) — Публичная запись Mobile Dark (390x844, 0px горизонтального скролла).
+  - `docs/proofs/public_booking/05_public_booking_cabinet_tab_mobile.png` (44 KB) — Mobile Tab Переключение Кабинета / Врача.
+  - `docs/proofs/public_booking/06_public_booking_slots_mobile.png` (45 KB) — Mobile Сетка свободных слотов.
+  - `docs/proofs/public_booking/07_public_booking_form_filled_mobile.png` (44 KB) — Mobile Заполненная форма записи с уведомлением администратора.
   - `docs/proofs/booking/01_booking_pc_light.png` (536 KB) — Онлайн-запись PC Light (1440x900).
   - `docs/proofs/booking/02_booking_pc_dark.png` (814 KB) — Онлайн-запись PC Dark (1440x900, 100% темные токены).
   - `docs/proofs/booking/03_booking_mobile_light.png` (66 KB) — Онлайн-запись Mobile Light (390x844, Apple HIG, плавающий CTA в зоне большого пальца).

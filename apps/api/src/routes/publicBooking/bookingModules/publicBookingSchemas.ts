@@ -88,6 +88,12 @@ export const sendOtpSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 });
 
+export const verifyOtpSchema = z.object({
+	phone: z.string().trim().min(7).max(25),
+	code: z.string().trim().min(4).max(8),
+	organizationId: z.string().uuid().optional(),
+});
+
 export const cloudIntakeSchema = z.object({
 	organizationId: z.string().uuid("Некорректный ID клиники"),
 	doctorId: z.string().uuid("Некорректный ID врача"),

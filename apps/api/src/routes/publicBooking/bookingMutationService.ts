@@ -12,6 +12,7 @@ import {
 	nameKey,
 } from "../../services/patients/duplicateDetection.js";
 import { FREED_APPOINTMENT_STATUSES } from "../../services/schedule/scheduleConflictService.js";
+import { normalizePhone } from "@dental/shared";
 import { normalizePhoneDigits } from "./slotAvailabilityEngine.js";
 
 export interface BookingMutationParams {
@@ -27,6 +28,7 @@ export interface BookingMutationParams {
 	utmCampaign?: string | undefined;
 	utmMedium?: string | undefined;
 	idempotencyKey?: string | undefined;
+	status?: "planned" | "confirmed" | undefined;
 }
 
 export type BookingMutationResult =
@@ -50,7 +52,9 @@ export type BookingMutationResult =
  * Chair (Level 1) -> Doctor (Level 2) -> Patient (Level 3)
  */
 export async function executeBookingTransaction(
-	tx: Parameters<Parameters<typeof import("../../db/client.js").db.transaction>[0]>[0],
+	tx:
+		| Parameters<Parameters<typeof import("../../db/client.js").db.transaction>[0]>[0]
+		| import("../../db/rls.js").TenantDb,
 	params: BookingMutationParams,
 ): Promise<BookingMutationResult> {
 	const {
@@ -238,53 +242,8 @@ export async function executeBookingTransaction(
 		};
 	}
 
-	if (!patientId) {
-		const effectiveSource = params.utmSource || params.source || "online_booking";
-		const [createdPatient] = await tx
-			.insert(patients)
-			.values({
-				organizationId,
-				fullName: patientName,
-				phone: patientPhone,
-				status: "active",
-				administrativeProfile: {
-					leadSource: effectiveSource,
-					utmSource: params.utmSource || null,
-					utmCampaign: params.utmCampaign || null,
-					utmMedium: params.utmMedium || null,
-				} as any,
-			})
-			.returning({ id: patients.id });
-		if (!createdPatient) throw new Error("patient_insert_failed");
-		patientId = createdPatient.id;
-	} else if (params.utmSource || params.source) {
-		// Update patient's marketing attributes if not already set
-		const [existingPatient] = await tx
-			.select({ administrativeProfile: patients.administrativeProfile })
-			.from(patients)
-			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
-			.limit(1);
-
-		const adminProf = existingPatient?.administrativeProfile as Record<string, any> | null;
-		if (existingPatient && !adminProf?.utmSource) {
-			const existingProfile = adminProf || {};
-			await tx
-				.update(patients)
-				.set({
-					administrativeProfile: {
-						...existingProfile,
-						leadSource: existingProfile.leadSource || params.utmSource || params.source || "online_booking",
-						utmSource: existingProfile.utmSource || params.utmSource || null,
-						utmCampaign: existingProfile.utmCampaign || params.utmCampaign || null,
-						utmMedium: existingProfile.utmMedium || params.utmMedium || null,
-					} as any,
-					updatedAt: new Date(),
-				})
-				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)));
-		}
-	}
-
 	// 3. Acquire locks in STRICT CANONICAL ORDER: Chair (Level 1) -> Doctor (Level 2) -> Patient (Level 3)
+	// (Mandates 8d, 8e: Prevents PostgreSQL 40P01 deadlocks with clinic CRM appointments)
 	if (selectedChairId) {
 		await tx
 			.select({ id: chairs.id })
@@ -325,7 +284,54 @@ export async function executeBookingTransaction(
 			.for("update");
 	}
 
-	// 4. Overlap checks across Doctor, Patient, and Chair
+	// 4. Create or update patient entity (strictly AFTER resource locks are acquired)
+	if (!patientId) {
+		const effectiveSource = params.utmSource || params.source || "online_booking";
+		const [createdPatient] = await tx
+			.insert(patients)
+			.values({
+				organizationId,
+				fullName: patientName,
+				phone: normalizePhone(patientPhone) ?? patientPhone,
+				status: "active",
+				administrativeProfile: {
+					leadSource: effectiveSource,
+					utmSource: params.utmSource || null,
+					utmCampaign: params.utmCampaign || null,
+					utmMedium: params.utmMedium || null,
+				} as any,
+			})
+			.returning({ id: patients.id });
+		if (!createdPatient) throw new Error("patient_insert_failed");
+		patientId = createdPatient.id;
+	} else if (params.utmSource || params.source) {
+		// Update patient's marketing attributes if not already set
+		const [existingPatient] = await tx
+			.select({ administrativeProfile: patients.administrativeProfile })
+			.from(patients)
+			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+			.limit(1);
+
+		const adminProf = existingPatient?.administrativeProfile as Record<string, any> | null;
+		if (existingPatient && !adminProf?.utmSource) {
+			const existingProfile = adminProf || {};
+			await tx
+				.update(patients)
+				.set({
+					administrativeProfile: {
+						...existingProfile,
+						leadSource: existingProfile.leadSource || params.utmSource || params.source || "online_booking",
+						utmSource: existingProfile.utmSource || params.utmSource || null,
+						utmCampaign: existingProfile.utmCampaign || params.utmCampaign || null,
+						utmMedium: existingProfile.utmMedium || params.utmMedium || null,
+					} as any,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)));
+		}
+	}
+
+	// 5. Overlap checks across Doctor, Patient, and Chair
 	const resourceMatchConditions = [
 		eq(appointments.doctorUserId, doctorId),
 	];
@@ -384,7 +390,7 @@ export async function executeBookingTransaction(
 			patientId,
 			doctorUserId: doctorId,
 			chairId: selectedChairId ?? null,
-			status: "planned",
+			status: params.status || "planned",
 			startsAt: startDate,
 			endsAt: endDate,
 			reason: "Онлайн-запись через сайт",

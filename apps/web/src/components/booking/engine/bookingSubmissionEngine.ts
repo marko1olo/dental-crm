@@ -16,6 +16,7 @@ export interface BookingSubmissionParams {
 	bookingStatus: "confirmed" | "unconfirmed";
 	isPreBookingMode: boolean;
 	referenceNumber: string;
+	verificationCode?: string | undefined;
 }
 
 export async function submitBookingRequest(params: BookingSubmissionParams): Promise<BookingConfirmationData> {
@@ -69,6 +70,7 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		patientName: patientName.trim(),
 		patientPhone: patientPhone.trim(),
 		comment: patientComment || undefined,
+		verificationCode: params.verificationCode || undefined,
 		status: bookingStatus,
 		idempotencyKey,
 		utm_source: parsedUtm.utm_source || undefined,

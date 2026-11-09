@@ -9,6 +9,7 @@ import {
 	cloudIntakeSchema,
 	optionalDoctorIdSchema,
 	sendOtpSchema,
+	verifyOtpSchema,
 } from "./bookingModules/publicBookingSchemas.js";
 import {
 	handleDoctorList,
@@ -21,6 +22,7 @@ import {
 import {
 	isRateLimited,
 	requestPhoneVerification,
+	verifyPhoneOtp,
 } from "./smsVerificationAndSpamGate.js";
 
 export { handleSlotsQuery };
@@ -31,8 +33,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		return reply.send({ status: "ok", service: "public_booking" });
 	});
 
-	// Rate-limited OTP send endpoint (SMS / Flash call)
-	server.post("/send-otp", async (request, reply) => {
+	// Rate-limited OTP send handler (SMS / Flash call)
+	const sendOtpHandler = async (
+		request: FastifyRequest<{
+			Params?: { organizationId?: string };
+			Body: { phone: string; method?: "sms" | "flash_call"; organizationId?: string };
+		}>,
+		reply: FastifyReply,
+	) => {
 		const parsed = sendOtpSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -42,11 +50,12 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		}
 
 		const clientIp = request.ip || "unknown";
+		const effectiveOrgId = parsed.data.organizationId || request.params?.organizationId;
 		const result = requestPhoneVerification(
 			parsed.data.phone,
 			parsed.data.method,
 			clientIp,
-			parsed.data.organizationId,
+			effectiveOrgId,
 		);
 
 		if (!result.allowed) {
@@ -62,7 +71,47 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			cooldownSeconds: result.cooldownSeconds,
 			challengeId: result.challengeId,
 		});
-	});
+	};
+
+	server.post("/send-otp", sendOtpHandler);
+	server.post<{ Params: { organizationId: string } }>("/:organizationId/send-otp", sendOtpHandler);
+
+	// Rate-limited OTP verify handler
+	const verifyOtpHandler = async (
+		request: FastifyRequest<{
+			Params?: { organizationId?: string };
+			Body: { phone: string; code: string; organizationId?: string };
+		}>,
+		reply: FastifyReply,
+	) => {
+		if (isRateLimited(request.ip ?? "unknown")) {
+			return reply.status(429).send({ error: "Слишком много запросов." });
+		}
+		const parsed = verifyOtpSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "Некорректные данные подтверждения",
+				details: parsed.error.issues,
+			});
+		}
+
+		const check = verifyPhoneOtp(parsed.data.phone, parsed.data.code);
+		if (!check.valid) {
+			return reply.status(400).send({
+				error: "Неверный код подтверждения",
+				message: check.error ?? "Код подтверждения не совпадает или истёк.",
+			});
+		}
+
+		return reply.send({
+			success: true,
+			verified: true,
+			message: "Номер телефона успешно подтверждён",
+		});
+	};
+
+	server.post("/verify-otp", verifyOtpHandler);
+	server.post<{ Params: { organizationId: string } }>("/:organizationId/verify-otp", verifyOtpHandler);
 
 	// Cloud Relay / 24/7 intake endpoint (supports daytime direct or nighttime soft-hold queue)
 	server.post("/cloud-intake", async (request, reply) => {

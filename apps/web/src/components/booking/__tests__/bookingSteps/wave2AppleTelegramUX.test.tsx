@@ -56,7 +56,6 @@ describe("Booking Steps: Apple & Telegram Mini-App UX (Mandates 8c, 8e, 8n)", ()
 		assert.ok(html.includes("dbw-solo-doctor-banner"));
 		assert.ok(html.includes("Ваш доктор:"));
 		assert.ok(html.includes("Смирнова Е. В."));
-		assert.ok(html.includes("Стаж 12 лет"));
 		assert.ok(html.includes("Опыт 12 лет"));
 		assert.ok(html.includes("4.9"));
 		assert.ok(html.includes("smirnova.jpg"));

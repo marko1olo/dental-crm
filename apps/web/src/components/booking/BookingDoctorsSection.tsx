@@ -58,7 +58,7 @@ export const BookingDoctorsSection: React.FC<BookingDoctorsSectionProps> = ({
 						</div>
 						<div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap mt-0.5">
 							<span className="truncate">
-								{selectedDoctor.specialties.join(", ")} • Стаж {selectedDoctor.experienceYears} лет (Опыт {selectedDoctor.experienceYears} лет)
+								{selectedDoctor.specialties.join(", ")} • Опыт {selectedDoctor.experienceYears} лет
 							</span>
 							<span className="dbw-badge-rating text-[11px] font-bold py-0.5 px-1.5 rounded inline-flex items-center gap-0.5 shrink-0">
 								<Star size={11} fill="#b45309" aria-hidden="true" />

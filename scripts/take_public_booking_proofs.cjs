@@ -2,10 +2,20 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const WEB_BASE = "http://127.0.0.1:5173";
+let WEB_BASE = "http://127.0.0.1:5174";
+
+async function getLiveBase() {
+  for (const u of ["http://127.0.0.1:5174", "http://127.0.0.1:5173"]) {
+    try {
+      const res = await fetch(u);
+      if (res.ok) return u;
+    } catch {}
+  }
+  return "http://127.0.0.1:5174";
+}
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/public_booking");
-const SUBAGENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/16ca20a2-1891-411d-b57c-82f2e9c26d51/proofs");
-const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/da920fe7-8cf1-4af3-83bf-33b629e2b869/proofs");
+const SUBAGENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/ab2394bd-71d8-4dd3-8110-f230cfafdc39/proofs");
+const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/07663fdc-eba5-48a1-bbb4-3c4b8f181006/proofs");
 
 fs.mkdirSync(PROOFS_DIR, { recursive: true });
 fs.mkdirSync(SUBAGENT_BRAIN_DIR, { recursive: true });
@@ -27,6 +37,8 @@ async function saveProof(page, fileName) {
 }
 
 async function main() {
+  WEB_BASE = await getLiveBase();
+  console.log("Using WEB_BASE:", WEB_BASE);
   const possibleBrowserPaths = [
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",

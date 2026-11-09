@@ -53,7 +53,7 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 		if (sms.showSmsVerification && !sms.isSmsVerified && !sms.isSmsFallbackActive) { sms.setIsSmsFallbackActive(true); showToast?.("Заявка оформлена как предварительная бронь. Администратор свяжется с вами для подтверждения.", "info"); }
 
 		const isPreBookingMode = Boolean(sms.isSmsFallbackActive || (sms.showSmsVerification && !sms.isSmsVerified));
-		const activeSlot = avail.selectedSlot || avail.slots[0] || (!organizationId ? { time: "10:00", startsAt: new Date(cal.selectedDate).toISOString(), endsAt: new Date(new Date(cal.selectedDate).getTime() + 30 * 60_000).toISOString(), period: "morning" as const } : null);
+		const activeSlot = avail.selectedSlot || avail.slots[0] || null;
 		if (!activeSlot) { setSubmitError("На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания."); showToast?.("На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания.", "warning"); return; }
 		if (!avail.selectedSlot && activeSlot) avail.setSelectedSlot(activeSlot);
 
@@ -61,7 +61,7 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 		setSubmitError(null);
 		try {
 			const refNumber = generateBookingReference();
-			const finalData = await submitBookingRequest({ organizationId, apiBaseUrl, patientName: form.patientName, patientPhone: form.patientPhone, patientComment: [form.patientComment.trim(), isPreBookingMode ? "[Предварительная бронь без СМС / Звонок администратора]" : ""].filter(Boolean).join(" "), patientId, selectedDate: cal.selectedDate, selectedSlot: activeSlot, selectedDoctor, selectedBranch, bookingStatus: isPreBookingMode ? "unconfirmed" : "confirmed", isPreBookingMode, referenceNumber: refNumber });
+			const finalData = await submitBookingRequest({ organizationId, apiBaseUrl, patientName: form.patientName, patientPhone: form.patientPhone, patientComment: [form.patientComment.trim(), isPreBookingMode ? "[Предварительная бронь без СМС / Звонок администратора]" : ""].filter(Boolean).join(" "), patientId, selectedDate: cal.selectedDate, selectedSlot: activeSlot, selectedDoctor, selectedBranch, bookingStatus: isPreBookingMode ? "unconfirmed" : "confirmed", isPreBookingMode, referenceNumber: refNumber, verificationCode: sms.enteredSmsCode.trim() || undefined });
 			setConfirmationData(finalData);
 			setIsSubmitting(false);
 			if (typeof window !== "undefined") {
