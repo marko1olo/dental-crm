@@ -5,10 +5,10 @@ import React from "react";
 export interface AppointmentStatusBadgeSelectorProps {
 	appointmentId: string;
 	displayStatus: Appointment["status"];
-	appointmentLabels: Record<Appointment["status"], string>;
+	appointmentLabels?: Record<Appointment["status"], string> | undefined;
 	isQuickStatusUpdating: boolean;
 	isLocked: boolean;
-	compactMicro?: boolean;
+	compactMicro?: boolean | undefined;
 	onStatusChange: (newStatus: Appointment["status"]) => void;
 }
 

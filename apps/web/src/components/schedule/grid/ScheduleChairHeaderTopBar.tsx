@@ -13,8 +13,8 @@ export interface ScheduleChairHeaderTopBarProps {
   assignment?: any;
   setActiveHeaderMaintenanceChairId?: ((id: string | null | ((prev: string | null) => string | null)) => void) | undefined;
   setActiveHeaderDoctorPopoverChairId: (id: string | null) => void;
-  onEditChair?: (chairData: QuickAddChairData) => void;
-  handleConfirmAssignDoctor?: (chairId: string, docId: string, shiftPreset: any) => void;
+  onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
+  handleConfirmAssignDoctor?: ((chairId: string, docId: string, shiftPreset: any) => void) | undefined;
 }
 
 export const ScheduleChairHeaderTopBar: React.FC<ScheduleChairHeaderTopBarProps> = (props) => {

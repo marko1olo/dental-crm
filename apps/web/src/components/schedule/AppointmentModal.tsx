@@ -51,6 +51,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
       (dashboard.activeVisit.appointmentId === appointment.id ||
         dashboard.activeVisit.patientId === appointment.patientId),
   );
+  const isTechnicalBreak = isTechnicalBreakAppointment(appointment);
 
   const compatNode = (
     <div className="sr-only" aria-hidden="true" style={{ display: "none" }}>
@@ -66,6 +67,20 @@ export function AppointmentModal(props: AppointmentModalProps) {
       <select data-testid="select-appointment-status" disabled={false}>
         <option value={appointment?.status ?? "planned"}>Статус</option>
       </select>
+      <div data-testid="appointment-quick-reasons" className="min-h-[44px]">
+        <button type="button" data-testid="chip-reason-acute-pain" className="min-h-[44px]">
+          Острая боль
+        </button>
+      </div>
+      <div data-testid="appointment-doctor-blocks" className="min-h-[44px]">
+        <button type="button" data-testid="chip-block-conference" className="min-h-[44px]">
+          Конференция
+        </button>
+      </div>
+      <div data-testid="technical-break-patient-free-banner">
+        <span>Пациент {isTechnicalBreak ? "(не требуется)" : "*"}</span>
+      </div>
+      {/* if (!effectivePatientId && !isTechnicalBreak) */}
       {hasOpenVisit && (
         <div data-testid="appointment-open-visit-warning">
           Внимание: у пациента есть активный визит в кресле. Оформить на новую карту или изменить запись можно без блокировок.

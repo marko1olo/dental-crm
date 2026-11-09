@@ -6,7 +6,7 @@ export function ShiftTimeMenuSection({
 	onClose,
 }: {
 	isQuickStatusUpdating: boolean;
-	handleShiftAppointmentTime: (minutes: number) => Promise<void>;
+	handleShiftAppointmentTime: (minutes: number) => Promise<void> | void;
 	onClose: () => void;
 }) {
 	return (

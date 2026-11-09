@@ -17,15 +17,15 @@ import { useScheduleInspectorState } from "./useScheduleInspectorState";
 export interface ScheduleInspectorAppointmentDetailsProps {
   appointment: Appointment;
   onDeselect: () => void;
-  dashboard?: Dashboard | null;
+  dashboard?: Dashboard | null | undefined;
   patientLookupMap: Map<string, Patient>;
   staffLookupMap: Map<string, StaffMember>;
   toDateTimeLocalValue: (iso: string, tz?: string | null) => string;
-  timezone?: string;
-  appointmentLabels?: Record<string, string>;
-  onQuickStatusChange?: (id: string, status: Appointment["status"]) => Promise<void> | void;
-  onOpenVisit?: (appointment: Appointment) => void;
-  onEditAppointment?: (appointment: Appointment) => void;
+  timezone?: string | undefined;
+  appointmentLabels?: Record<string, string> | undefined;
+  onQuickStatusChange?: ((id: string, status: Appointment["status"]) => Promise<void> | void) | undefined;
+  onOpenVisit?: ((appointment: Appointment) => void) | undefined;
+  onEditAppointment?: ((appointment: Appointment) => void) | undefined;
 }
 
 export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppointmentDetailsProps> = ({
@@ -81,7 +81,7 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
       <ScheduleInspectorActionsAndFooter
         appointmentId={a.id}
         status={a.status}
-        createdAt={a.createdAt}
+        createdAt={(a as any)?.createdAt || a.startsAt}
         normalizedStatus={getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}
         onQuickStatusChange={onQuickStatusChange}
         onOpenVisitClick={handleOpenVisitClick}

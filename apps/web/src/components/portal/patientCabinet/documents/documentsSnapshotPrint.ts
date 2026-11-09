@@ -6,11 +6,11 @@ export function generateDocumentSnapshotHtml(
 	doc: GeneratedDocumentSummary,
 	data: PatientPersonalCabinetData,
 ): string {
-	if (doc.kind === "medical_card_extract_043" || doc.kind.includes("043")) {
+	if (doc.kind === "medical_card_extract_043" || doc.kind?.includes("043")) {
 		return generateExtract043Html(doc, data);
 	}
 	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
-	const docDate = formatRussianDateIso(doc.dateIso);
+	const docDate = formatRussianDateIso(doc.dateIso || doc.issueDateIso || new Date().toISOString().slice(0, 10));
 
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>${doc.title} — ${clinicName}</title>
 <style>

@@ -49,7 +49,7 @@ export interface PatientCabinetModalProps {
 	readonly token?: string | undefined;
 	readonly onInvoicePaid?: ((invoice: PatientInvoiceItem) => void) | undefined;
 	readonly onConsentSigned?: ((consent: PatientStatutoryConsent) => void) | undefined;
-	readonly onAppointmentBooked?: ((appointmentReq: { specialty: string; preferredDate: string; note: string }) => void) | undefined;
+	readonly onAppointmentBooked?: ((appointmentReq: { specialty: string; preferredDate: string; note?: string | undefined }) => void) | undefined;
 }
 
 export interface AvailableDoctorItem {

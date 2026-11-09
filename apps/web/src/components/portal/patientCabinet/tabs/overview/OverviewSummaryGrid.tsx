@@ -36,7 +36,7 @@ export const OverviewSummaryGrid: React.FC<OverviewSummaryGridProps> = ({ summar
 				</div>
 				<div className="pc-metric-content">
 					<span className="pc-metric-label">Бонусный счет</span>
-					<span className="pc-metric-value">{summary.loyaltyBonusBalance.toLocaleString("ru-RU")} ₽</span>
+					<span className="pc-metric-value">{(summary.loyaltyBonusBalance ?? 0).toLocaleString("ru-RU")} ₽</span>
 				</div>
 			</div>
 
@@ -46,7 +46,7 @@ export const OverviewSummaryGrid: React.FC<OverviewSummaryGridProps> = ({ summar
 				</div>
 				<div className="pc-metric-content">
 					<span className="pc-metric-label">Визиты</span>
-					<span className="pc-metric-value">{summary.upcomingAppointmentsCount} запланировано</span>
+					<span className="pc-metric-value">{summary.upcomingAppointmentsCount ?? 0} запланировано</span>
 				</div>
 			</div>
 		</div>

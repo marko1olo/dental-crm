@@ -45,7 +45,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
   const effectiveDashboard = props.dashboard;
 
   const gridNav = useScheduleGridNavigation({
-    scheduleDateFilter: scheduleStore.scheduleDateFilter,
+    scheduleDateFilter: scheduleStore.scheduleDateFilter || clinicToday,
     setScheduleDateFilter: scheduleStore.setScheduleDateFilter,
     clinicToday,
     todayScheduleDate,
@@ -127,7 +127,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     dashboard: effectiveDashboard,
     scheduleDoctorFilterId: scheduleStore.scheduleDoctorFilterId,
     scheduleChairFilterId: scheduleStore.scheduleChairFilterId,
-    scheduleDateFilter: scheduleStore.scheduleDateFilter,
+    scheduleDateFilter: scheduleStore.scheduleDateFilter || clinicToday,
     clinicToday,
     todayScheduleDate,
     auth: props.auth,
@@ -176,7 +176,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
     );
 
   const filterSummary = useScheduleFilterSummary({
-    scheduleDateFilter: scheduleStore.scheduleDateFilter,
+    scheduleDateFilter: scheduleStore.scheduleDateFilter || clinicToday,
     clinicToday,
     scheduleStatusFilter: scheduleStore.scheduleStatusFilter,
     scheduleDoctorFilterId: scheduleStore.scheduleDoctorFilterId,

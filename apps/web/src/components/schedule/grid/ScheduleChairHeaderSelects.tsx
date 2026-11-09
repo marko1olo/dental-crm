@@ -5,7 +5,7 @@ import type { ChairDoctorShiftAssignment } from "./gridTypes";
 export interface ScheduleChairHeaderSelectsProps {
   chair: any;
   doctors: Array<any>;
-  assignment?: ChairDoctorShiftAssignment;
+  assignment?: ChairDoctorShiftAssignment | undefined;
   openAssignModal: (chairId: string) => void;
   handleBindDoctorToChair: (chairId: string, doctorId: string) => void;
   handleConfirmAssignDoctor: (chairId: string, docId: string, shiftPreset: any) => void;

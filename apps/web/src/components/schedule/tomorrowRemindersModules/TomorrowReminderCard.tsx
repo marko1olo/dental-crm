@@ -1,3 +1,4 @@
+import React from "react";
 import { Check, Copy, MessageCircle, Send } from "lucide-react";
 import type { TomorrowReminderItem } from "../tomorrowRemindersEngine";
 

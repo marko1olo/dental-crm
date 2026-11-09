@@ -6,7 +6,7 @@ export interface CardStyleParams {
 	patientBalance: number | null;
 	isCito: boolean;
 	displayStatus: string;
-	readinessState?: string;
+	readinessState?: string | undefined;
 	proportionalHeight: number;
 }
 

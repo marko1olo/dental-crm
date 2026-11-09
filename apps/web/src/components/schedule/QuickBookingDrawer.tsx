@@ -1,8 +1,11 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import type { Appointment } from "@dental/shared";
 import {
+  ChevronDown,
   Copy,
   Flame,
+  FlaskConical,
   Plus,
   Sparkles,
   X,
@@ -20,6 +23,7 @@ import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { QuickBookingDrawerPatientPart } from "./quickBookingDrawer/QuickBookingDrawerPatientPart";
 import { QuickBookingServiceSection } from "./QuickBookingServiceSection";
+import { AppointmentModalLabSection } from "./AppointmentModalLabSection";
 
 // Anti-Matryoshka Law (Mandate 8d): <SlotConflictModal inline={true} /> renders non-blocking conflict options inside QuickBookingServiceSection.
 
@@ -247,6 +251,45 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     handleSubmitBooking,
   } = state;
 
+  const [isLabSectionOpen, setIsLabSectionOpen] = React.useState<boolean>(() => {
+    const rawAppt = initialSlot?.appointment || initialSlot?.editingAppointment;
+    return Boolean(
+      initialSlot?.labOrderId ||
+      (rawAppt as any)?.labOrderId ||
+      ((dashboard as any)?.labOrders || []).some(
+        (lo: any) => selectedPatient?.id && lo.patientId === selectedPatient.id && lo.status !== "delivered",
+      )
+    );
+  });
+
+  const appointmentForLab: Appointment = React.useMemo(() => {
+    const rawAppt = initialSlot?.appointment || initialSlot?.editingAppointment;
+    if (rawAppt) {
+      return rawAppt;
+    }
+    return {
+      id: initialSlot?.appointmentId || "draft-booking-lab",
+      patientId: selectedPatient?.id || "",
+      doctorUserId: doctorUserId || "",
+      chairId: chairId || undefined,
+      startsAt: startsAtLocal ? new Date(startsAtLocal).toISOString() : new Date().toISOString(),
+      endsAt: startsAtLocal
+        ? new Date(new Date(startsAtLocal).getTime() + (durationMinutes || 30) * 60000).toISOString()
+        : new Date(Date.now() + 1800000).toISOString(),
+      status: status || "planned",
+      reason: reason || "",
+      comment: comment || "",
+      organizationId: "org-1",
+    } as Appointment;
+  }, [initialSlot, selectedPatient?.id, doctorUserId, chairId, startsAtLocal, durationMinutes, status, reason, comment]);
+
+  const activeLabOrders = React.useMemo(() => {
+    const allLab = (dashboard as any)?.labOrders || [];
+    if (!selectedPatient?.id) return allLab;
+    const patientLab = allLab.filter((lo: any) => lo.patientId === selectedPatient.id);
+    return patientLab.length > 0 ? patientLab : allLab;
+  }, [dashboard, selectedPatient?.id]);
+
   return (
     <div className="flex-1 overflow-y-auto p-5 pb-8 space-y-4" data-testid="quick-booking-scroll-body">
       <QuickBookingDrawerPatientPart state={state} props={props} />
@@ -286,6 +329,48 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
         dashboard={dashboard}
         initialSlot={initialSlot}
       />
+
+      {/* Сворачиваемый блок «Зуботехническая лаборатория (ЗТЛ)» (Мандат 8aq — исключение компонентов-сирот) */}
+      <div
+        className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 space-y-2 shadow-2xs"
+        data-testid="quick-booking-lab-collapsible"
+      >
+        <button
+          type="button"
+          onClick={() => setIsLabSectionOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between text-xs font-bold text-[var(--ink)] hover:text-[var(--teal)] transition-colors cursor-pointer py-0.5 select-none"
+          data-testid="btn-toggle-quick-booking-lab-section"
+        >
+          <span className="flex items-center gap-2">
+            <FlaskConical size={14} className="text-[var(--teal)]" />
+            <span>Зуботехническая лаборатория (ЗТЛ)</span>
+          </span>
+          <span className="text-[11px] text-[var(--muted)] font-normal flex items-center gap-1">
+            <span>{isLabSectionOpen ? "Свернуть" : "Развернуть"}</span>
+            <ChevronDown size={14} className={`transform transition-transform ${isLabSectionOpen ? "rotate-180" : ""}`} />
+          </span>
+        </button>
+
+        {isLabSectionOpen && (
+          <div className="pt-2 border-t border-[var(--line-subtle)]">
+            <AppointmentModalLabSection
+              appointment={appointmentForLab}
+              activeLabOrders={activeLabOrders}
+              startsAtLocal={startsAtLocal}
+              setStartsAtLocal={setStartsAtLocal}
+              setEndsAtLocal={(val) => {
+                if (startsAtLocal && val) {
+                  const diffMin = Math.round((new Date(val).getTime() - new Date(startsAtLocal).getTime()) / 60000);
+                  if (diffMin > 0) {
+                    handleSelectDuration(diffMin);
+                  }
+                }
+              }}
+              onClose={props.onClose}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

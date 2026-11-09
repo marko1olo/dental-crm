@@ -87,8 +87,12 @@ export const ScheduleCurrentTimeIndicator: React.FC<ScheduleCurrentTimeIndicator
   const indicatorLayout = useMemo(() => {
     if (!timeInfo.isToday || timeSlots.length === 0) return null;
 
-    const firstSlotMinutes = parseSlotMinutes(timeSlots[0]);
-    const lastSlotMinutes = parseSlotMinutes(timeSlots[timeSlots.length - 1]);
+    const firstSlot = timeSlots[0];
+    const lastSlot = timeSlots[timeSlots.length - 1];
+    if (!firstSlot || !lastSlot) return null;
+
+    const firstSlotMinutes = parseSlotMinutes(firstSlot);
+    const lastSlotMinutes = parseSlotMinutes(lastSlot);
     const totalSlotRangeEnd = lastSlotMinutes + gridStep;
 
     const currentMinutes = timeInfo.currentTotalMinutes;

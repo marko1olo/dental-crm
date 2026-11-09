@@ -1,15 +1,15 @@
 import React from "react";
 import { Calendar, Check, Clock, MapPin } from "lucide-react";
-import type { PatientAppointmentItem } from "../../patientCabinetEngine";
+import type { PatientAppointment } from "../../patientCabinetEngine";
 import { OverviewCalendarButtons } from "./OverviewCalendarButtons";
 import { OverviewNextAppointmentActions } from "./OverviewNextAppointmentActions";
 
 export interface OverviewNextAppointmentCardProps {
-	readonly appt: PatientAppointmentItem;
+	readonly appt: PatientAppointment;
 	readonly countdown: string | null;
 	readonly onOpenSelfCheckin: () => void;
 	readonly onOpenReceptionQr: () => void;
-	readonly onOpenReschedule?: () => void;
+	readonly onOpenReschedule?: (() => void) | undefined;
 }
 
 export const OverviewNextAppointmentCard: React.FC<OverviewNextAppointmentCardProps> = ({

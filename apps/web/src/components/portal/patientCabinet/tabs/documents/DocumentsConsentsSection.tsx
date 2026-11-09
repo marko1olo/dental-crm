@@ -31,7 +31,7 @@ export const DocumentsConsentsSection: React.FC<DocumentsConsentsSectionProps> =
 				<span className="pc-section-hint">Юридическая сила по 63-ФЗ ст. 6</span>
 			</div>
 			<div className="pc-consents-list">
-				{consents.map((consent) => {
+				{(consents || []).map((consent) => {
 					const isSigned = consent.status === "signed";
 					return (
 						<div

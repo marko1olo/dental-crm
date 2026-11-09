@@ -10,17 +10,6 @@
  *    терапия/лечение -> перекус до анестезии, ортодонтия -> кейсы/каппы).
  */
 
-export interface AppointmentWhatsAppMessageParams {
-	patientName: string;
-	doctorName?: string | null | undefined;
-	doctorSpecialty?: string | null | undefined;
-	appointmentStartsAt: string;
-	clinicName?: string | null | undefined;
-	clinicAddress?: string | null | undefined;
-	clinicPhone?: string | null | undefined;
-	treatmentReason?: string | null | undefined;
-}
-
 /**
  * Определяет клиническую рекомендацию по подготовке на основе повода приёма / диагноза.
  */
@@ -147,7 +136,8 @@ export interface AppointmentWhatsAppMessageParams {
 	patientName: string;
 	doctorName?: string | null | undefined;
 	doctorSpecialty?: string | null | undefined;
-	appointmentStartsAt: string;
+	appointmentStartsAt?: string | undefined;
+	startsAt?: string | null | undefined;
 	clinicName?: string | null | undefined;
 	clinicAddress?: string | null | undefined;
 	clinicPhone?: string | null | undefined;
@@ -224,9 +214,10 @@ export function getAppointmentMessageTokens(
 		newStartsAt,
 	} = params;
 
-	const dateObj = new Date(appointmentStartsAt);
+	const startIso = appointmentStartsAt || params.startsAt || "";
+	const dateObj = new Date(startIso);
 	const formattedDate = Number.isNaN(dateObj.getTime())
-		? appointmentStartsAt
+		? startIso
 		: dateObj.toLocaleDateString("ru-RU", {
 				day: "numeric",
 				month: "long",
@@ -323,7 +314,8 @@ export function generateAppointmentSmsMessage(
 		cabinetName,
 	} = params;
 
-	const dateObj = new Date(appointmentStartsAt);
+	const startIso = appointmentStartsAt || params.startsAt || "";
+	const dateObj = new Date(startIso || Date.now());
 	const formattedDate = dateObj.toLocaleDateString("ru-RU", {
 		day: "numeric",
 		month: "numeric",

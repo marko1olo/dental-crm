@@ -1,3 +1,4 @@
+import React from "react";
 import { Copy, MessageSquare, X } from "lucide-react";
 import type { TomorrowRemindersSummary } from "../tomorrowRemindersEngine";
 

@@ -3,12 +3,12 @@ import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface ScheduleChairHeaderHiddenButtonsProps {
   chair: any;
-  assignment?: ChairDoctorShiftAssignment;
+  assignment?: ChairDoctorShiftAssignment | undefined;
   suggestedDoctor: any | null;
   activeHeaderDoctorPopoverChairId: string | null;
   setActiveHeaderDoctorPopoverChairId: (id: string | null) => void;
   openAssignModal: (chairId: string) => void;
-  onEditChair?: (chairData: any) => void;
+  onEditChair?: ((chairData: any) => void) | undefined;
   handleUnassignDoctor: (chairId: string) => void;
   handleAssignDoctorWeek: (chairId: string, docId: string, fullWeek?: boolean) => void;
   handleAssignDoctorMonth: (chairId: string, docId: string) => void;

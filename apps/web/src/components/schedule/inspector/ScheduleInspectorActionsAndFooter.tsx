@@ -7,11 +7,11 @@ import { ScheduleInspectorStatusGrid } from "./ScheduleInspectorStatusGrid";
 export interface ScheduleInspectorActionsAndFooterProps {
   appointmentId: string;
   status: Appointment["status"];
-  createdAt?: string;
+  createdAt?: string | undefined;
   normalizedStatus: string;
-  onQuickStatusChange?: (id: string, status: Appointment["status"]) => Promise<void> | void;
+  onQuickStatusChange?: ((id: string, status: Appointment["status"]) => Promise<void> | void) | undefined;
   onOpenVisitClick: () => void;
-  onEditAppointment?: () => void;
+  onEditAppointment?: (() => void) | undefined;
 }
 
 export const ScheduleInspectorActionsAndFooter: React.FC<ScheduleInspectorActionsAndFooterProps> = ({

@@ -119,8 +119,8 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 						doctorName: booking.doctor?.fullName || "Врач клиники",
 						doctorRole: booking.doctor?.specialties?.[0] || "Врач-стоматолог",
 						cabinet: booking.cabinetNumber || "Кабинет клиники",
-						procedureTitle: booking.category?.title || "Стоматологический приём",
-						durationMinutes: booking.category?.durationMinutes || 30,
+						procedureTitle: booking.service?.title || booking.category?.title || "Стоматологический приём",
+						durationMinutes: booking.service?.durationMinutes || booking.category?.popularServices?.[0]?.durationMinutes || 30,
 						isConfirmed: booking.status === "confirmed",
 						isPast: false,
 					});

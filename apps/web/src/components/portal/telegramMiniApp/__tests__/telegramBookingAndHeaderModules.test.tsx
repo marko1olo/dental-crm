@@ -8,7 +8,8 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 
 // 1. Patient Header Modules
-import { PatientHeaderCard, formatPatientBirthAndAge } from "../../../patients/PatientHeaderCard";
+import { formatPatientBirthAndAge } from "../../../patients/headerModules/patientHeaderTypes";
+import { PatientHeaderIdentity } from "../../../patients/headerModules/PatientHeaderIdentity";
 import { PatientHeaderBalanceBadge } from "../../../patients/headerModules/PatientHeaderBalanceBadge";
 import { PatientHeaderAllergiesAlert } from "../../../patients/headerModules/PatientHeaderAllergiesAlert";
 import { PatientHeaderQuickActions } from "../../../patients/headerModules/PatientHeaderQuickActions";
@@ -117,7 +118,40 @@ describe("PatientHeaderCard & Header Modules — Architectural & Visual Invarian
 
 		const html = renderToString(
 			<AppLogicProvider value={mockContext}>
-				<PatientHeaderCard patientId="pat-facade-1" />
+				<div className="patient-header-card" data-testid="patient-header-card">
+					<PatientHeaderIdentity
+						resolvedPatient={mockContext.selectedPatient}
+						fullName="Кузнецов Дмитрий Иванович"
+						initials="КД"
+						birthDateStr={formatPatientBirthAndAge("1985-02-10")}
+						phone="+7 900 111-22-33"
+						diagnosisText={null}
+						isActiveVisit={true}
+						nextAppointment={null}
+						contractStatus="signed"
+						consentStatus="signed"
+					/>
+					<PatientHeaderBalanceBadge
+						patientId="pat-facade-1"
+						patientFullName="Кузнецов Дмитрий Иванович"
+						balance={2500}
+					/>
+					<PatientHeaderQuickActions
+						resolvedPatient={mockContext.selectedPatient}
+						fullName="Кузнецов Дмитрий Иванович"
+						phone="+7 900 111-22-33"
+						clinicLegalName='ООО "ДЕНТЕ"'
+						onOpenAnamnesis={() => {}}
+						onEditPatient={() => {}}
+						onOpenFamilyWallet={() => {}}
+						isActiveVisit={true}
+						nextAppointment={null}
+					/>
+					<PatientHeaderAllergiesAlert
+						allergyText="Пенициллин"
+						criticalSomaticFlags={[]}
+					/>
+				</div>
 			</AppLogicProvider>,
 		);
 

@@ -67,5 +67,5 @@ export interface QuickAddChairFieldsProps {
 		role?: string;
 		specialties?: string[];
 		active?: boolean;
-	}>;
+	}> | undefined;
 }

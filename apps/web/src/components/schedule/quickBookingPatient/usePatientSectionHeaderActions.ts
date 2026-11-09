@@ -44,7 +44,7 @@ export function usePatientSectionHeaderActions(p: HeaderActionsParams) {
           : null);
     void printBlankMedicalContract(candidate, {
       doctorName: p.doctors.find((d) => d.id === p.doctorUserId)?.fullName,
-      clinicName: p.dashboard?.clinicSettings?.profile?.legalName,
+      clinicName: p.dashboard?.clinicSettings?.profile?.legalName ?? undefined,
     });
   };
 

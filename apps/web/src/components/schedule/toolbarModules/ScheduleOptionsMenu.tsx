@@ -15,30 +15,30 @@ export interface ScheduleOptionsMenuProps {
 	onToggle: () => void;
 	onClose: () => void;
 	menuRef: React.RefObject<HTMLDivElement | null>;
-	onQuickBooking?: () => void;
+	onQuickBooking?: (() => void) | undefined;
 	onSetDate: (date: string) => void;
 	localNow: Date;
-	onSelectWholeWeek?: () => void;
-	statusFilter?: string;
+	onSelectWholeWeek?: (() => void) | undefined;
+	statusFilter?: string | null | undefined;
 	onSetStatusFilter: (status: any) => void;
 	queueCounts?: {
 		all?: number;
 		arrived?: number;
 		inTreatment?: number;
 		awaitingPayment?: number;
-	};
+	} | undefined;
 	onOpenAddChair: () => void;
-	onOpenWaitlist?: () => void;
-	waitlistCount?: number;
-	onOpenPendingOnlineBookings?: () => void;
-	pendingOnlineBookingsCount?: number;
-	onToggleShiftAnalytics?: () => void;
-	onOpenCalendarSync?: () => void;
-	onOpenPatientSearch?: () => void;
-	onEmergencyCitoBooking?: () => void;
-	onOpenTomorrowReminders?: () => void;
-	onGridStepChange?: (step: 15 | 30 | 60) => void;
-	gridStepMinutes?: number;
+	onOpenWaitlist?: (() => void) | undefined;
+	waitlistCount?: number | undefined;
+	onOpenPendingOnlineBookings?: (() => void) | undefined;
+	pendingOnlineBookingsCount?: number | undefined;
+	onToggleShiftAnalytics?: (() => void) | undefined;
+	onOpenCalendarSync?: (() => void) | undefined;
+	onOpenPatientSearch?: (() => void) | undefined;
+	onEmergencyCitoBooking?: (() => void) | undefined;
+	onOpenTomorrowReminders?: (() => void) | undefined;
+	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
+	gridStepMinutes?: number | undefined;
 }
 
 export function ScheduleOptionsMenu({

@@ -16,7 +16,7 @@ interface GridAppointmentHudClinicalActionsProps {
 	patObj?: any;
 	pName: string;
 	onMouseLeave: () => void;
-	onFreeSlotToWaitlist?: (appt: Appointment) => void;
+	onFreeSlotToWaitlist?: ((appt: Appointment) => void) | undefined;
 }
 
 export function GridAppointmentHudClinicalActions({

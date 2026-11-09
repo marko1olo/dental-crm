@@ -25,7 +25,7 @@ export const PlanThreeTierBenefits: React.FC<PlanThreeTierBenefitsProps> = ({ cu
 					marginBottom: "4px",
 				}}
 			>
-				Ключевые преимущества плана ({curTier.tierNameRu}):
+				Ключевые преимущества плана ({curTier.tierNameRu || curTier.titleRu || "План"}):
 			</strong>
 			<ul
 				style={{
@@ -37,7 +37,7 @@ export const PlanThreeTierBenefits: React.FC<PlanThreeTierBenefitsProps> = ({ cu
 					gap: "3px",
 				}}
 			>
-				{curTier.benefits.map((b, bIdx) => (
+				{(curTier.benefits || curTier.advantagesRu || []).map((b, bIdx) => (
 					<li key={bIdx}>{b}</li>
 				))}
 			</ul>

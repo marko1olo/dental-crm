@@ -6,7 +6,7 @@ import type { PatientCabinetTab } from "../../modal/types.js";
 export interface OverviewQuickActionsProps {
 	readonly summary: PatientCabinetSummary;
 	readonly firstUnpaid: PatientInvoiceItem | undefined;
-	readonly onOpenBooking?: () => void;
+	readonly onOpenBooking?: (() => void) | undefined;
 	readonly onOpenSbpForInvoice: (inv: PatientInvoiceItem) => void;
 	readonly onOpenTab: (tab: PatientCabinetTab) => void;
 	readonly onOpenCareMemo: () => void;
@@ -48,7 +48,7 @@ export const OverviewQuickActions: React.FC<OverviewQuickActionsProps> = ({
 			>
 				<CreditCard size={18} />
 				<span>Оплатить счет</span>
-				{summary.unpaidInvoicesCount > 0 && (
+				{(summary.unpaidInvoicesCount ?? 0) > 0 && (
 					<span className="pc-tab-counter">{summary.unpaidInvoicesCount}</span>
 				)}
 			</button>

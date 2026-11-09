@@ -264,12 +264,24 @@ export function useScheduleShortcuts({
       }
     };
 
-    const handleOpenQuickBookingEvent = () => {
+    const handleOpenQuickBookingEvent = (e?: Event) => {
+      let draft: any = (e as CustomEvent)?.detail;
+      if (!draft && typeof window !== "undefined") {
+        try {
+          const raw = window.localStorage.getItem("dente_schedule_quick_booking_draft");
+          if (raw) draft = JSON.parse(raw);
+        } catch {}
+      }
+
       setQuickBookingSlot({
         dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-        doctorUserId: scheduleDoctorFilterId || null,
+        doctorUserId: draft?.doctorId || draft?.doctorUserId || scheduleDoctorFilterId || null,
+        doctorName: draft?.doctorName || null,
         chairId: scheduleChairFilterId || null,
-        durationMinutes: 30,
+        durationMinutes: draft?.durationMinutes || 45,
+        patientId: draft?.patientId || null,
+        patientName: draft?.patientName || null,
+        reason: draft?.title || draft?.reason || "Примерка ортопедии",
       });
       setQuickBookingOpen(true);
     };

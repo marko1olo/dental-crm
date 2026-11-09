@@ -12,6 +12,27 @@ import {
 	type TelegramCabinetTab,
 } from "./types";
 
+declare global {
+	interface Window {
+		Telegram?: {
+			readonly WebApp?: {
+				readonly initData?: string | undefined;
+				readonly HapticFeedback?: {
+					readonly impactOccurred?: (style: "light" | "medium" | "heavy") => void;
+				} | undefined;
+				readonly openTelegramLink?: (url: string) => void;
+			} | undefined;
+		} | undefined;
+	}
+}
+
+interface RawApiFamilyMember {
+	readonly patientId?: string | undefined;
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly relation?: string | undefined;
+}
+
 export interface UseTelegramPortalCabinetOptions {
 	readonly organizationId?: string | null | undefined;
 	readonly patientId?: string | null | undefined;
@@ -202,7 +223,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 				}
 
 				if (data.family?.members && Array.isArray(data.family.members) && data.family.members.length > 0) {
-					const mappedFamily: FamilyMember[] = data.family.members.map((m: any) => ({
+					const mappedFamily: FamilyMember[] = data.family.members.map((m: RawApiFamilyMember) => ({
 						id: String(m.patientId || m.id || "self"),
 						name: String(m.fullName || "Член семьи"),
 						relation: String(m.relation || "self"),

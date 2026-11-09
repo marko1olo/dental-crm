@@ -3,9 +3,9 @@ import type { AppointmentCardContextMenuProps } from "./types";
 
 interface ScheduleOpsProps {
 	readonly appointment: AppointmentCardContextMenuProps["appointment"];
-	readonly repeatAppointment: AppointmentCardContextMenuProps["repeatAppointment"];
-	readonly copyAppointmentToBuffer?: AppointmentCardContextMenuProps["copyAppointmentToBuffer"];
-	readonly openAppointmentEditor: AppointmentCardContextMenuProps["openAppointmentEditor"];
+	readonly repeatAppointment?: AppointmentCardContextMenuProps["repeatAppointment"] | undefined;
+	readonly copyAppointmentToBuffer?: AppointmentCardContextMenuProps["copyAppointmentToBuffer"] | undefined;
+	readonly openAppointmentEditor?: AppointmentCardContextMenuProps["openAppointmentEditor"] | undefined;
 	readonly onClose: () => void;
 }
 
@@ -27,7 +27,7 @@ export const AppointmentScheduleOpsButtons: React.FC<ScheduleOpsProps> = ({
 				role="menuitem"
 				onClick={() => {
 					onClose();
-					repeatAppointment(appointment);
+					repeatAppointment?.(appointment);
 				}}
 				title="Повторить запись (Клавиша R)"
 			>
@@ -55,7 +55,7 @@ export const AppointmentScheduleOpsButtons: React.FC<ScheduleOpsProps> = ({
 				role="menuitem"
 				onClick={() => {
 					onClose();
-					openAppointmentEditor(appointment);
+					openAppointmentEditor?.(appointment);
 				}}
 				title="Настроить запись в редакторе (Клавиша Enter)"
 			>

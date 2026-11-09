@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus, MessageSquare, FileText, Plus, UserPlus, Phone } from "lucide-react";
-import type { Patient } from "@dental/shared";
+import { generateUuidV7, type Patient } from "@dental/shared";
 import { parseSearchQueryForQuickPatient, searchPatientsQuick } from "./patientSearchEngine";
 import { showToast } from "../GlobalToast";
 import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
@@ -62,12 +62,37 @@ export function PatientSearchModal({
 		const trimmedName = quickFullName.trim() || rawQuery.trim() || "Новый пациент";
 		const trimmedPhone = quickPhone.trim() || null;
 		const now = new Date().toISOString();
+		const generatedId = generateUuidV7();
 		const newPatient: Patient = {
-			id: `quick-${Date.now()}`, organizationId: "00000000-0000-0000-0000-000000000000",
-			status: "active", fullName: trimmedName, phone: trimmedPhone, birthDate: null,
-			gender: null, email: null, notes: null, administrativeProfile: null,
-			balanceRub: 0, createdAt: now, updatedAt: now,
+			id: generatedId,
+			organizationId: "00000000-0000-0000-0000-000000000000",
+			status: "active",
+			fullName: trimmedName,
+			phone: trimmedPhone,
+			birthDate: null,
+			gender: null,
+			email: null,
+			notes: null,
+			administrativeProfile: null,
+			balanceRub: 0,
+			balanceKopecks: 0,
+			createdAt: now,
+			updatedAt: now,
 		};
+
+		// Background asynchronous persistence to Fastify PostgreSQL
+		fetch("/api/patients", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				id: generatedId,
+				fullName: trimmedName,
+				phone: trimmedPhone,
+			}),
+		}).catch((err) => {
+			console.warn("[PatientSearchModal] Background patient creation failed, using local UUIDv7:", err);
+		});
+
 		if (onSelectPatientForBooking) onSelectPatientForBooking(newPatient);
 		else if (onQuickBookNewPatient) onQuickBookNewPatient(newPatient);
 		onQuickCreatePatient?.({ fullName: trimmedName, phone: trimmedPhone || "" });

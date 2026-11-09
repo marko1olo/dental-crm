@@ -1,3 +1,4 @@
+import React from "react";
 import { Moon, Zap } from "lucide-react";
 import type { TomorrowRemindersSummary } from "../tomorrowRemindersEngine";
 

@@ -17,8 +17,8 @@ import {
   formatMinutesToTime,
   getStatusMeta,
 } from "../scheduleCatalogData";
-import { ChairScheduleStudioModal } from "../ChairScheduleStudioModal";
-import { DirectScheduleLauncher } from "../DirectScheduleLauncher";
+import { DoctorChairScheduleModal } from "../DoctorChairScheduleModal";
+import { DirectWaitlistMatchesLauncher } from "../DirectWaitlistMatchesLauncher";
 
 describe("SSOT Schedule & Chair Grid Inquisition (Mandates 8e, 8n, 8am)", () => {
   it("verifies chair presets conform to Mandate 8n (Solo practitioner & 1-3 chairs sovereign scale)", () => {
@@ -86,18 +86,30 @@ describe("SSOT Schedule & Chair Grid Inquisition (Mandates 8e, 8n, 8am)", () => 
     assert.deepStrictEqual(slots, ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"]);
   });
 
-  it("renders ChairScheduleStudioModal with non-blocking Mandate 8e/8n controls", () => {
+  it("renders DoctorChairScheduleModal with non-blocking Mandate 8e/8n controls", () => {
     const html = renderToString(
-      <ChairScheduleStudioModal isOpen={true} onClose={() => {}} />,
+      <DoctorChairScheduleModal
+        isOpen={true}
+        onClose={() => {}}
+        onAssign={() => {}}
+        dateKey="2026-11-09"
+        doctors={[]}
+        chairs={CHAIR_PRESETS.map((c) => ({
+          id: c.id,
+          name: c.name,
+          roomNumber: c.roomNumber,
+          specialty: c.specialty,
+          isActive: c.isActive,
+        }))}
+      />,
     );
 
     // Dialog root must render
-    assert.ok(html.includes('data-testid="chair-schedule-studio-modal"'));
-    assert.ok(html.includes("Расписание приёмов"));
-    assert.ok(html.includes("Все кресла"));
+    assert.ok(html.includes('data-testid="chair-doctor-assignment-modal"'));
+    assert.ok(html.includes("Закрепление врача за установкой"));
     assert.ok(html.includes("Кресло 1"));
-    assert.ok(html.includes("Кресло 2"));
-    assert.ok(html.includes("Кресло 3"));
+    assert.ok(html.includes("На выбранный день"));
+    assert.ok(html.includes("На диапазон дат"));
 
     // Mandate 8n: zero requirement for assistant or chief medical officer
     assert.ok(!html.includes("Обязательный ассистент"));
@@ -107,9 +119,9 @@ describe("SSOT Schedule & Chair Grid Inquisition (Mandates 8e, 8n, 8am)", () => 
     assert.ok(!html.includes('disabled=""'), "No disabled buttons permitted in schedule");
   });
 
-  it("verifies DirectScheduleLauncher renders when active or returns null cleanly", () => {
+  it("verifies DirectWaitlistMatchesLauncher renders when active or returns null cleanly", () => {
     // In server environment without active hash, launcher returns null
-    const html = renderToString(<DirectScheduleLauncher />);
+    const html = renderToString(<DirectWaitlistMatchesLauncher />);
     assert.strictEqual(html, "");
   });
 });

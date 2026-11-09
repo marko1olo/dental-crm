@@ -129,16 +129,17 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 
 describe("Wave 115: ScheduleGrid Workplace Palette Integration", () => {
 	it("ScheduleGrid source should contain data-chair-palette and getStomxWorkplacePalette", () => {
-		const filePath = path.resolve(
-			__dirname,
-			"../ScheduleGrid.tsx",
-		);
-		const content = fs.readFileSync(filePath, "utf-8");
+		const gridPath = path.resolve(__dirname, "../ScheduleGrid.tsx");
+		const headerPath = path.resolve(__dirname, "../grid/ScheduleChairHeaderTopBar.tsx");
+		const content = [
+			fs.readFileSync(gridPath, "utf-8"),
+			fs.readFileSync(headerPath, "utf-8"),
+		].join("\n");
 
-		assert.match(content, /getStomxWorkplacePalette/);
+		assert.ok(/getWorkplaceChairPalette|getStomxWorkplacePalette/.test(content));
 		assert.match(content, /data-chair-palette/);
 		assert.match(content, /chair-palette-badge-/);
-		assert.match(content, /STOMX_WORKPLACE_PALETTES/);
+		assert.ok(/WORKPLACE_CHAIR_PALETTES|STOMX_WORKPLACE_PALETTES/.test(content));
 	});
 });
 

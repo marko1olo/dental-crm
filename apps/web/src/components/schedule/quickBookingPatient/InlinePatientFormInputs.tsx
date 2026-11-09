@@ -41,7 +41,7 @@ export function InlinePatientFormInputs({
         : null,
       {
         doctorName: doctors.find((d) => d.id === doctorUserId)?.fullName,
-        clinicName: dashboard?.clinicSettings?.profile?.legalName,
+        clinicName: dashboard?.clinicSettings?.profile?.legalName ?? undefined,
       },
     );
   };

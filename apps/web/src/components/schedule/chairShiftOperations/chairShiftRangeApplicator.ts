@@ -15,9 +15,9 @@ export function performApplyDateRange(
     rangePreset: DateRangeShiftPreset;
     doctors: Array<{ id: string; fullName: string }>;
     chairs: ScheduleChair[];
-    dashboard?: Dashboard | null;
+    dashboard?: Dashboard | null | undefined;
     dateKey: string;
-    onAssignChairDoctor?: (chairId: string, assignment: ChairDoctorShiftAssignment | null) => void;
+    onAssignChairDoctor?: ((chairId: string, assignment: ChairDoctorShiftAssignment | null) => void) | undefined;
     setIsDateRangeModalOpen: (open: boolean) => void;
   },
 ) {

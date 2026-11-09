@@ -7,21 +7,21 @@ import { ScheduleInspectorEmptyState } from "./ScheduleInspectorEmptyState";
 export interface ScheduleAppointmentInspectorProps {
   selectedAppointment: Appointment | null;
   onDeselect: () => void;
-  dashboard?: Dashboard | null;
-  appointments?: Appointment[];
+  dashboard?: Dashboard | null | undefined;
+  appointments?: Appointment[] | undefined;
   dateKey: string;
   onDateChange: (newDateKey: string) => void;
   patientLookupMap: Map<string, Patient>;
   staffLookupMap: Map<string, StaffMember>;
   toDateTimeLocalValue: (iso: string, tz?: string | null) => string;
-  timezone?: string;
-  appointmentLabels?: Record<string, string>;
-  onQuickStatusChange?: (id: string, status: Appointment["status"]) => Promise<void> | void;
-  onOpenVisit?: (appointment: Appointment) => void;
-  onEditAppointment?: (appointment: Appointment) => void;
+  timezone?: string | undefined;
+  appointmentLabels?: Record<string, string> | undefined;
+  onQuickStatusChange?: ((id: string, status: Appointment["status"]) => Promise<void> | void) | undefined;
+  onOpenVisit?: ((appointment: Appointment) => void) | undefined;
+  onEditAppointment?: ((appointment: Appointment) => void) | undefined;
   onSelectAppointment: (appointment: Appointment) => void;
-  isOpen?: boolean;
-  onToggleOpen?: () => void;
+  isOpen?: boolean | undefined;
+  onToggleOpen?: (() => void) | undefined;
 }
 
 /**

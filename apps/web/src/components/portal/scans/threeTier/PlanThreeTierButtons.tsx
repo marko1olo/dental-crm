@@ -25,10 +25,11 @@ export const PlanThreeTierButtons: React.FC<PlanThreeTierButtonsProps> = ({
 			{tiers.map((tier) => {
 				const isSelected = selectedTierId === tier.tierId;
 				const isDoctorChoice = tier.tierId === "standard";
+				const rawName = tier.tierNameRu || tier.titleRu || tier.nameRu || "План";
 				const tierDisplayName =
-					tier.tierId === "standard" && !tier.tierNameRu.includes("Оптимум")
+					tier.tierId === "standard" && !rawName.includes("Оптимум")
 						? "Оптимум (Выбор врача)"
-						: tier.tierNameRu;
+						: rawName;
 
 				return (
 					<button

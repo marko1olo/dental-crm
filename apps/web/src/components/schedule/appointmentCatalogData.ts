@@ -103,15 +103,25 @@ export const CANONICAL_APPOINTMENT_STATUSES: readonly AppointmentStatusMeta[] = 
 export function getAppointmentStatusMeta(
   status: string | undefined | null,
 ): AppointmentStatusMeta {
-  if (!status) return CANONICAL_APPOINTMENT_STATUSES[0];
+  const fallback = CANONICAL_APPOINTMENT_STATUSES[0] ?? {
+    code: "planned",
+    label: "Запланирован",
+    shortLabel: "План",
+    dotColor: "#94a3b8",
+    badgeBg: "rgba(148, 163, 184, 0.12)",
+    badgeText: "#475569",
+    borderTone: "#cbd5e1",
+    description: "Запись зафиксирована в расписании",
+  };
+  if (!status) return fallback;
   const normalized = status.toLowerCase();
   if (normalized === "arrived" || normalized === "in_treatment") {
-    return CANONICAL_APPOINTMENT_STATUSES[2]; // in_progress
+    return CANONICAL_APPOINTMENT_STATUSES[2] ?? fallback; // in_progress
   }
   if (normalized === "no_show") {
-    return CANONICAL_APPOINTMENT_STATUSES[4]; // cancelled
+    return CANONICAL_APPOINTMENT_STATUSES[4] ?? fallback; // cancelled
   }
-  return CANONICAL_APPOINTMENT_STATUSES.find((s) => s.code === normalized) ?? CANONICAL_APPOINTMENT_STATUSES[0];
+  return CANONICAL_APPOINTMENT_STATUSES.find((s) => s.code === normalized) ?? fallback;
 }
 
 // ─── 2. ИНТЕРВАЛЫ ВРЕМЕНИ (СЕГМЕНТНЫЙ ПЕРЕКЛЮЧАТЕЛЬ) ─────────────────────────

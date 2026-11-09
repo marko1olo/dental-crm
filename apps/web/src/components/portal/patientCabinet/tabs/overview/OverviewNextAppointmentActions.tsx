@@ -1,12 +1,12 @@
 import React from "react";
 import { CheckCircle2, Clock, MapPin, Phone, QrCode } from "lucide-react";
-import type { PatientAppointmentItem } from "../../patientCabinetEngine";
+import type { PatientAppointment } from "../../patientCabinetEngine";
 
 export interface OverviewNextAppointmentActionsProps {
-	readonly appt: PatientAppointmentItem;
+	readonly appt: PatientAppointment;
 	readonly onOpenSelfCheckin: () => void;
 	readonly onOpenReceptionQr: () => void;
-	readonly onOpenReschedule?: () => void;
+	readonly onOpenReschedule?: (() => void) | undefined;
 }
 
 export const OverviewNextAppointmentActions: React.FC<OverviewNextAppointmentActionsProps> = ({

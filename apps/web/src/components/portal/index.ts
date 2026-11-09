@@ -15,8 +15,6 @@ export * from "./patientPortalEngine";
 export * from "./patientPortalPresets";
 export * from "./patientPortalTypes";
 export { generateQrCodeSvg, generateSha256 } from "./patientCabinet";
-export * from "./PatientBudgetSignView";
-export * from "../booking/BookingConfirmationView";
 export * from "./PatientFriendlyOdontogram.js";
 export * from "./patientFriendlyOdontogramEngine.js";
 export * from "./patientOdontogram";

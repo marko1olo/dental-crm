@@ -11,21 +11,21 @@ export interface ScheduleFilterChipsProps {
 		arrived?: number;
 		inTreatment?: number;
 		awaitingPayment?: number;
-	};
+	} | undefined;
 	displayChairs: readonly ScheduleChair[];
 	chairFilterId: string | null;
 	onSelectChair: (chairId: string | null) => void;
 	hasMultipleDoctors: boolean;
-	activeDoctors: Array<{ id: string; fullName: string }>;
+	activeDoctors: Array<{ id: string; fullName?: string | undefined }>;
 	doctorFilterId: string | null;
 	onSelectDoctor: (doctorId: string | null) => void;
 	hasMultipleChairs: boolean;
 	myChair: ScheduleChair | null;
 	isMyChairActive: boolean;
 	onSelectMyChair: () => void;
-	onToggleConfirmations?: () => void;
+	onToggleConfirmations?: (() => void) | undefined;
 	onOpenAddChair: () => void;
-	activeFilterSummary?: React.ReactNode;
+	activeFilterSummary?: React.ReactNode | undefined;
 }
 
 export function ScheduleFilterChips({

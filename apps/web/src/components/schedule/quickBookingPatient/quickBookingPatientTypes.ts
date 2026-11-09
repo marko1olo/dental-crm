@@ -17,7 +17,7 @@ export interface QuickBookingPatientSectionProps {
   setHighlightedIndex: React.Dispatch<React.SetStateAction<number>>;
   selectPatient: (p: Patient) => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
-  focusTimerRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  focusTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   showInlineNewPatient: boolean;
   setShowInlineNewPatient: (show: boolean) => void;
   newPatientFullName: string;

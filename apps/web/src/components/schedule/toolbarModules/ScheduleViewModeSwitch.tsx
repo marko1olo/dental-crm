@@ -2,8 +2,8 @@ import React from "react";
 import { Armchair, LayoutGrid, List } from "lucide-react";
 
 export interface ScheduleViewModeSwitchProps {
-	viewMode?: "grid" | "timeline" | "chairs";
-	onViewModeChange?: (mode: "grid" | "timeline" | "chairs") => void;
+	viewMode?: "grid" | "timeline" | "chairs" | undefined;
+	onViewModeChange?: ((mode: "grid" | "timeline" | "chairs") => void) | undefined;
 }
 
 export function ScheduleViewModeSwitch({

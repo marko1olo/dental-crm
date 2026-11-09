@@ -6,12 +6,12 @@ import { formatPatientDisplayFio } from "./AppointmentCardTeethList";
 
 export interface CardPatientMetadataProps {
 	patientName: string;
-	patientId?: string | null;
-	doctorName?: string | null;
-	chairName?: string | null;
+	patientId?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	chairName?: string | null | undefined;
 	appointment: any;
-	sizeVariant?: "micro" | "two-line" | "expanded";
-	onOpenVisit?: (() => void) | null;
+	sizeVariant?: "micro" | "two-line" | "expanded" | undefined;
+	onOpenVisit?: (() => void) | null | undefined;
 	openAppointmentEditor: (appt: any) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
 }

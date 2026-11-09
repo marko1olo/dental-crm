@@ -31,7 +31,7 @@ export function useScheduleInspectorState(
   const durationMin = (Number.isFinite(diffMs) && diffMs > 0 ? Math.round(diffMs / 60000) : 0) || (a as any).durationMinutes || 30;
 
   const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
-  const doctorSpecialty = docObj?.specialty || (Array.isArray(docObj?.specialties) ? docObj?.specialties[0] : undefined) || docObj?.role;
+  const doctorSpecialty = docObj?.specialties?.[0] || docObj?.role;
   const docTheme = getDoctorSpecialtyTheme(doctorSpecialty);
   const docName = docObj?.fullName || a.doctorUserId || "Врач не назначен";
 

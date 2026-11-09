@@ -10,7 +10,7 @@ interface Props {
 	onToggleOpen: () => void;
 	called: Set<string>;
 	onMarkCalled: (key: string) => void;
-	onSelectPatientId?: (id: string) => void;
+	onSelectPatientId?: ((id: string) => void) | undefined;
 }
 
 export const FreedSlotCandidateDispatcher: React.FC<Props> = ({

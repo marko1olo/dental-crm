@@ -64,7 +64,7 @@ export function AppointmentCardContextMenu(props: AppointmentCardContextMenuProp
 						suggestions={props.appointmentSuggestions}
 						onSelect={(sec) => {
 							closeMenu();
-							props.openScheduleSuggestion(sec);
+							props.openScheduleSuggestion?.(sec);
 						}}
 					/>
 					<CommunicationMenuSection {...props} onClose={closeMenu} />

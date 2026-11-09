@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2, Clock, Eye, FileCheck, FileText, Printer } from "lucide-react";
-import type { PatientPersonalCabinetData } from "../../patientCabinetEngine";
+import type { PatientPersonalCabinetData, GeneratedDocumentSummary } from "../../patientCabinetEngine";
 import {
 	formatRussianDateIso,
 	formatRubles,
@@ -21,12 +21,12 @@ export const DocumentsClinicalDocsSection: React.FC<DocumentsClinicalDocsSection
 	data,
 	onShowToast,
 }) => {
-	const handlePrintExtract = (doc: PatientPersonalCabinetData["documents"][number]) => {
+	const handlePrintExtract = (doc: GeneratedDocumentSummary) => {
 		openPrintWindow(generateMedicalCardExtractHtml(doc, data));
 		onShowToast("Выписка из медицинской карты приёма готова к печати!");
 	};
 
-	const handleViewDoc = (doc: PatientPersonalCabinetData["documents"][number]) => {
+	const handleViewDoc = (doc: GeneratedDocumentSummary) => {
 		openPrintWindow(generateDocumentSnapshotHtml(doc, data));
 		onShowToast(`Документ «${doc.title}» готов к просмотру`);
 	};
@@ -51,18 +51,20 @@ export const DocumentsClinicalDocsSection: React.FC<DocumentsClinicalDocsSection
 			) : (
 				<div className="pc-clinical-docs-list" data-testid="clinical-documents-list">
 					{documents.map((doc) => {
-						const isIssued = doc.status === "issued";
-						const isExtract = doc.kind === "medical_card_extract_043" || doc.kind === "medical_card_extract" || doc.kind.includes("043");
+						const isIssued = doc.status === "issued" || doc.status === "ready";
+						const isExtract = doc.kind === "medical_card_extract_043" || doc.kind === "medical_card_extract" || Boolean(doc.kind?.includes("043"));
+						const title = doc.title || doc.titleRu || "Медицинский документ";
+						const dateStr = doc.dateIso || doc.issueDateIso || "";
 						return (
 							<div key={doc.id} className={`pc-consent-card ${isIssued ? "signed" : "pending"}`} data-testid={`clinical-doc-${doc.id}`}>
 								<div className="pc-consent-head">
 									<div>
 										<div className="pc-consent-code-row">
-											<span className="pc-consent-code-badge">{getDocumentKindLabel(doc.kind)}</span>
-											<strong className="pc-consent-title">{doc.title}</strong>
+											<span className="pc-consent-code-badge">{getDocumentKindLabel(doc.kind || doc.category || "")}</span>
+											<strong className="pc-consent-title">{title}</strong>
 										</div>
 										<p className="pc-consent-summary">
-											Оформлен: {formatRussianDateIso(doc.dateIso)}
+											Оформлен: {formatRussianDateIso(dateStr)}
 											{doc.totalAmountRub !== undefined && doc.totalAmountRub > 0 && (
 												<> &bull; Сумма: <strong>{formatRubles(doc.totalAmountRub)}</strong></>
 											)}

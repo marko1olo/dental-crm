@@ -18,18 +18,18 @@ export interface CardMicroDensityRowProps {
 	isQuickStatusUpdating: boolean;
 	isLockedStatus: boolean;
 	formatTime: (iso: string) => string;
-	onOpenVisit?: (() => void) | null;
+	onOpenVisit?: (() => void) | null | undefined;
 	openAppointmentEditor: (appt: any) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
 	handleQuickStatusChange: (status: any) => Promise<void> | void;
 	handleShiftAppointmentTime: (mins: number) => Promise<void> | void;
-	appointmentLabels?: Record<string, string>;
+	appointmentLabels?: Record<string, string> | undefined;
 	dashboard: any;
-	appointmentSuggestions?: any[];
-	openScheduleSuggestion: (s: any) => void;
-	repeatAppointment: (appt: any) => void;
-	copyAppointmentToBuffer: (appt: any) => void;
-	effectiveOnFreeSlotToWaitlist?: (appt: any) => void;
+	appointmentSuggestions?: any[] | undefined;
+	openScheduleSuggestion?: ((s: any) => void) | undefined;
+	repeatAppointment?: ((appt: any) => void) | undefined;
+	copyAppointmentToBuffer?: ((appt: any) => void) | undefined;
+	effectiveOnFreeSlotToWaitlist?: ((appt: any) => void) | undefined;
 }
 
 export function CardMicroDensityRow(props: CardMicroDensityRowProps) {

@@ -15,13 +15,21 @@ import { Camera, Contrast, Scan, X, ZoomIn, ZoomOut } from "lucide-react";
 export interface PatientDiagnosticScan {
 	readonly id: string;
 	readonly titleRu: string;
-	readonly modality: "rvg" | "optg" | "cbct" | "trg";
-	readonly modalityRu: string;
-	readonly dateRu: string;
+	readonly modality: "rvg" | "optg" | "cbct" | "trg" | "panoramic" | "intraoral_photo";
+	readonly modalityRu?: string | undefined;
+	readonly dateRu?: string | undefined;
+	readonly dateIso?: string | undefined;
 	readonly toothFdi?: string | undefined;
-	readonly doseMicroSv: number;
-	readonly previewUrl: string;
-	readonly conclusionRu: string;
+	readonly doseMicroSv?: number | undefined;
+	readonly previewUrl?: string | undefined;
+	readonly conclusionRu?: string | undefined;
+	readonly fileUrl?: string | undefined;
+	readonly studyInstanceUid?: string | undefined;
+	readonly dicomStudyUid?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly sliceCount?: number | undefined;
+	readonly thumbnailBase64?: string | undefined;
 }
 
 export const DEFAULT_PATIENT_SCANS: readonly PatientDiagnosticScan[] = [

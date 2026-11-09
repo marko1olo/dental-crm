@@ -25,7 +25,7 @@ import {
 	formatAllRemindersClipboardBuffer,
 	dispatchBatchReminders,
 } from "../tomorrowRemindersEngine";
-import { CashRegisterModal } from "../../finance/CashRegisterModal";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { CashShiftWidget } from "../../finance/CashShiftWidget";
 import { ShiftCloseZReportModal } from "../../finance/fiscal/ShiftCloseZReportModal";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
@@ -203,12 +203,14 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 	/* -------------------------------------------------------------------------- */
 	/* 2. 1-Click 54-FZ Cash Shift Open / Close & Kopeck-Exact Reconciliation    */
 	/* -------------------------------------------------------------------------- */
-	describe("2. CashRegisterModal 1-Click 54-FZ Shift Flow & Strict Kopeck Reconciliation", () => {
+	describe("2. CashRegisterStudioModal 1-Click 54-FZ Shift Flow & Strict Kopeck Reconciliation", () => {
 		it("renders closed state with 1-click open button and 0 disabled buttons", () => {
 			const html = renderToStaticMarkup(
-				React.createElement(CashRegisterModal, {
+				React.createElement(CashRegisterStudioModal, {
 					isOpen: true,
 					onClose: () => {},
+					mode: "shift",
+					containerTestId: "cash-register-modal",
 					isShiftOpen: false,
 					shiftNumber: 12,
 					cashierFullName: "Иванова Елена Петровна",
@@ -241,9 +243,11 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 			const expectedTotalRub = cashRub + cardRub + sbpRub + advanceRub; // 58000.75
 
 			const html = renderToStaticMarkup(
-				React.createElement(CashRegisterModal, {
+				React.createElement(CashRegisterStudioModal, {
 					isOpen: true,
 					onClose: () => {},
+					mode: "shift",
+					containerTestId: "cash-register-modal",
 					isShiftOpen: true,
 					shiftNumber: 14,
 					cashierFullName: "Администратор Смирнова",
@@ -280,9 +284,11 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 		it("verifies 1-click drawer cash match button and status calculation in CashRegisterModal", () => {
 			const cashRub = 12500;
 			const html = renderToStaticMarkup(
-				React.createElement(CashRegisterModal, {
+				React.createElement(CashRegisterStudioModal, {
 					isOpen: true,
 					onClose: () => {},
+					mode: "shift",
+					containerTestId: "cash-register-modal",
 					isShiftOpen: true,
 					shiftNumber: 15,
 					cashInDrawerRub: cashRub,

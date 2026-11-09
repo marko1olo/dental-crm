@@ -41,7 +41,7 @@ export function calculateCabinetSummary(data: PatientPersonalCabinetData): Patie
 	const nextAppointment = upcomingAppointments.sort((a, b) => a.dateIso.localeCompare(b.dateIso))[0];
 
 	const activePlans = data.treatmentPlans.filter((p) => p.status === "in_progress");
-	const pendingConsents = data.consents.filter((c) => c.status === "pending_signature");
+	const pendingConsents = (data.consents || data.statutoryConsents || []).filter((c) => c.status === "pending_signature" || c.status === "pending");
 	const activeWarranties = data.warranties.filter((w) => w.status === "active" || w.status === "at_risk");
 
 	let nearestCheckupDate: string | undefined;

@@ -6,10 +6,10 @@ export function SuggestionsMenuSection({
 	suggestions,
 	onSelect,
 }: {
-	suggestions: ScheduleSuggestion[];
+	suggestions?: readonly ScheduleSuggestion[] | any[] | undefined;
 	onSelect: (section: string) => void;
 }) {
-	if (suggestions.length === 0) return null;
+	if (!suggestions || suggestions.length === 0) return null;
 
 	return (
 		<>

@@ -12,7 +12,7 @@ export function useAppointmentHoverAndMenu() {
   const [selectedMobileAppt, setSelectedMobileAppt] = useState<Appointment | null>(null);
   const [chairDoctorDropdownId, setChairDoctorDropdownId] = useState<string | null>(null);
 
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

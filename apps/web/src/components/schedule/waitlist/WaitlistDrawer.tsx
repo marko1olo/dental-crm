@@ -5,8 +5,11 @@
 
 import React, { useId } from "react";
 import { createPortal } from "react-dom";
+import { Inbox } from "lucide-react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { useScheduleStore } from "../../../store/scheduleStore";
 import type { TargetSlotInfo, WaitlistCandidateItem } from "./waitlistTypes";
 import { useWaitlistState } from "./useWaitlistState";
 
@@ -55,13 +58,10 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         "Content-Type": "application/json",
         Accept: "application/json",
       };
-      if (auth?.denteClinicalMutationHeaders) {
+      if (typeof auth?.denteClinicalMutationHeaders === "function") {
         Object.assign(headers, auth.denteClinicalMutationHeaders());
-      } else if (typeof window !== "undefined") {
-        const cTok = localStorage.getItem("dente_clinic_token") || "demo-showcase-clinic-token-owner";
-        const sTok = localStorage.getItem("dente_staff_token") || "demo-showcase-staff-token-owner";
-        if (cTok) headers["x-dente-clinic-token"] = cTok;
-        if (sTok) headers["x-dente-staff-token"] = sTok;
+      } else {
+        Object.assign(headers, denteClinicalMutationHeaders());
       }
 
       let appointmentConfirmed = false;
@@ -91,16 +91,28 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
       }
 
       if (!appointmentConfirmed) {
-        const doctorUserId =
-          (slot.doctorUserId &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slot.doctorUserId)
-            ? slot.doctorUserId
-            : null) ||
-          candidate.preferredDoctorId ||
-          (dashboard?.clinicSettings?.staff || []).find(
-            (s: any) => s.role === "doctor" || s.role === "dentist",
-          )?.id ||
-          "01a00000-0000-0000-0003-000000000001";
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const defaultDocFromStore = useScheduleStore.getState().scheduleDefaultDoctorUserId;
+        const filterDocFromStore = useScheduleStore.getState().scheduleDoctorFilterId;
+        const staffList = (dashboard?.clinicSettings?.staff || dashboard?.staff || []);
+        const staffDoctor = staffList.find((s: any) => s.role === "doctor" || s.role === "dentist")?.id;
+        const firstDoctor = (dashboard?.doctors || [])[0]?.id;
+        const authUserId = auth?.user?.id;
+
+        const candidateDoctor =
+          (slot.doctorUserId && uuidRegex.test(slot.doctorUserId) ? slot.doctorUserId : null) ||
+          (candidate.preferredDoctorId && uuidRegex.test(candidate.preferredDoctorId) ? candidate.preferredDoctorId : null) ||
+          (defaultDocFromStore && uuidRegex.test(defaultDocFromStore) ? defaultDocFromStore : null) ||
+          (filterDocFromStore && uuidRegex.test(filterDocFromStore) ? filterDocFromStore : null) ||
+          (staffDoctor && uuidRegex.test(staffDoctor) ? staffDoctor : null) ||
+          (firstDoctor && uuidRegex.test(firstDoctor) ? firstDoctor : null) ||
+          (authUserId && uuidRegex.test(authUserId) ? authUserId : null);
+
+        if (!candidateDoctor) {
+          throw new Error("Не удалось определить врача для записи. Пожалуйста, укажите врача в расписании.");
+        }
+
+        const doctorUserId = candidateDoctor;
 
         const payload: Record<string, any> = {
           patientId: candidate.patientId,
@@ -314,9 +326,9 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         {/* ТЕЛО: СПИСКИ ИЛИ ФОРМА */}
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
           {state.error && (
-            <div className="p-3 rounded-lg bg-red-50 text-red-700 text-xs flex justify-between items-center border border-red-200">
+            <div className="p-3 rounded-xl bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] text-xs flex justify-between items-center border border-[var(--danger-border,rgba(239,68,68,0.2))]">
               <span>{state.error}</span>
-              <button type="button" onClick={() => state.setError(null)} className="text-red-500 font-bold ml-2 cursor-pointer">✕</button>
+              <button type="button" onClick={() => state.setError(null)} className="text-[var(--danger,#ef4444)] font-bold ml-2 cursor-pointer hover:opacity-80">✕</button>
             </div>
           )}
 
@@ -338,7 +350,9 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               {/* СПИСОК КАНДИДАТОВ ПО APPLE HIG GROUPED CARDS */}
               {state.rankedCandidates.length === 0 ? (
                 <div className="text-center py-12 text-[var(--text-muted,#64748b)]">
-                  <span className="text-3xl block mb-2">📭</span>
+                  <div className="flex justify-center mb-2">
+                    <Inbox className="w-9 h-9 text-[var(--text-muted,#64748b)] stroke-[1.5]" />
+                  </div>
                   <p className="text-sm font-medium">Кандидаты не найдены</p>
                   <p className="text-xs mt-1">Добавьте пациента в лист ожидания через кнопку «+ Добавить»</p>
                 </div>

@@ -8,7 +8,7 @@ import { usePatientStore } from "../../../store/patientStore";
 export async function openVisitWithBackendSync(
 	appointment: Appointment,
 	appointmentPatient: any,
-	onOpenVisit?: () => void,
+	onOpenVisit?: (() => void) | null | undefined,
 ): Promise<void> {
 	const pid = appointmentPatient?.id || appointment.patientId;
 	if (pid) {
@@ -50,8 +50,8 @@ export async function openVisitWithBackendSync(
 export async function handleStartTreatmentAndOpenVisit(
 	appointment: Appointment,
 	appointmentPatient: any,
-	handleQuickStatusChange: (status: Appointment["status"]) => Promise<void>,
-	onOpenVisit?: () => void,
+	handleQuickStatusChange: (status: Appointment["status"]) => Promise<void> | void,
+	onOpenVisit?: (() => void) | null | undefined,
 ): Promise<void> {
 	playIntercomChime("normal");
 	void handleQuickStatusChange("in_treatment");

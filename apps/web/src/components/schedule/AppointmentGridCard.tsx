@@ -115,7 +115,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 	const handle1ClickTransition = useCallback((e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (a.status === "in_treatment") {
-			onQuickStatusChange(a.id, "completed");
+			onQuickStatusChange?.(a.id, "completed");
 			showToast(`Приём «${pName}» завершён. Ожидает оплаты`, "success");
 		} else if (a.status === "completed") {
 			const pid = patObj?.id || a.patientId;
@@ -126,7 +126,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 				}),
 			);
 		} else {
-			onQuickStatusChange(a.id, "in_treatment");
+			onQuickStatusChange?.(a.id, "in_treatment");
 			showToast(`Пациент «${pName}» в кресле`, "success");
 		}
 	}, [a.id, a.status, a.patientId, patObj?.id, pName, onQuickStatusChange]);

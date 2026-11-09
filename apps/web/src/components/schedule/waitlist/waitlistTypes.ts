@@ -26,12 +26,15 @@ export interface TargetSlotInfo {
   appointmentId: string;
   startsAt: string;
   endsAt: string;
-  doctorUserId?: string | null;
-  doctorName?: string | null;
-  chairId?: string | null;
-  chairName?: string | null;
-  freedBecause?: string | null;
-  treatmentCategory?: string | null;
+  doctorUserId?: string | null | undefined;
+  doctorName?: string | null | undefined;
+  chairId?: string | null | undefined;
+  chairName?: string | null | undefined;
+  patientId?: string | null | undefined;
+  patientName?: string | null | undefined;
+  reason?: string | null | undefined;
+  freedBecause?: string | null | undefined;
+  treatmentCategory?: string | null | undefined;
 }
 
 export interface WaitlistTimeRange {

@@ -49,15 +49,15 @@ export function AppointmentAlertBadges({
 }
 
 export function AppointmentMedicalBadges({
-	cardTeeth,
-	allergyAlert,
-	somaticAlert,
-	labReadinessAlert,
+	cardTeeth = [],
+	allergyAlert = null,
+	somaticAlert = null,
+	labReadinessAlert = null,
 }: {
-	cardTeeth: string[];
-	allergyAlert: string | null;
-	somaticAlert: string | null;
-	labReadinessAlert?: string | null;
+	cardTeeth?: string[] | undefined;
+	allergyAlert?: string | null | undefined;
+	somaticAlert?: string | null | undefined;
+	labReadinessAlert?: string | null | undefined;
 }) {
 	return (
 		<>

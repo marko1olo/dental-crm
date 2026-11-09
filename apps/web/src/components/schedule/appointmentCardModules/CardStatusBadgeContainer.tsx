@@ -9,16 +9,16 @@ import {
 export interface CardStatusBadgeContainerProps {
 	appointmentId: string;
 	displayStatus: Appointment["status"];
-	appointmentLabels?: Record<string, string>;
+	appointmentLabels?: Record<string, string> | undefined;
 	isQuickStatusUpdating: boolean;
 	isLocked: boolean;
-	compactMicro?: boolean;
+	compactMicro?: boolean | undefined;
 	onStatusChange: (status: Appointment["status"]) => void;
 	patientBalance: number | null;
 	isCito: boolean;
-	collisionMessage?: string | null;
-	hasOpenVisit?: boolean;
-	showSelector?: boolean;
+	collisionMessage?: string | null | undefined;
+	hasOpenVisit?: boolean | undefined;
+	showSelector?: boolean | undefined;
 }
 
 export function CardStatusBadgeContainer({

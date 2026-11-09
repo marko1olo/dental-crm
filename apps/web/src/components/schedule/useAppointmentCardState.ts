@@ -95,7 +95,7 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 
 	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
 	const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const handleCardMouseEnter = () => {
 		if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);

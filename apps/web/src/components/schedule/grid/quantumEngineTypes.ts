@@ -17,19 +17,19 @@ export interface QuantumSlotAlternative {
 }
 
 export interface QuantumCollisionParams {
-  chairId?: string | null;
-  doctorUserId?: string | null;
-  patientId?: string | null;
-  slotHour?: string;
-  startsAt?: string | null;
-  endsAt?: string | null;
-  durationMinutes?: number;
-  excludeAppointmentId?: string | null;
-  isCito?: boolean;
-  allowCitoOverbooking?: boolean;
-  doctorName?: string;
-  chairName?: string;
-  patientName?: string;
+  chairId?: string | null | undefined;
+  doctorUserId?: string | null | undefined;
+  patientId?: string | null | undefined;
+  slotHour?: string | undefined;
+  startsAt?: string | null | undefined;
+  endsAt?: string | null | undefined;
+  durationMinutes?: number | undefined;
+  excludeAppointmentId?: string | null | undefined;
+  isCito?: boolean | undefined;
+  allowCitoOverbooking?: boolean | undefined;
+  doctorName?: string | undefined;
+  chairName?: string | undefined;
+  patientName?: string | undefined;
 }
 
 export function isMaintenanceBlock(entity: any): entity is ChairMaintenanceBlock {

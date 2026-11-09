@@ -292,7 +292,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 			if (upcoming) {
 				return {
 					id: upcoming.id,
-					dateRu: (upcoming as any).appointmentDateRu || upcoming.dateIso || (upcoming as any).date || "",
+					dateRu: upcoming.dateRu || upcoming.dateIso || "",
 					dateIso: upcoming.dateIso,
 					timeRu: upcoming.timeRu,
 					doctorName: upcoming.doctorName,
@@ -374,7 +374,11 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				appointments: [],
 				treatmentPlans: plan ? [plan] : [],
 				warranties: [],
-				consents: [],
+				documents: [],
+				prescriptions: [],
+				familyMembers: [],
+				diagnosticScans: [],
+				statutoryConsents: [],
 			};
 			downloadPatientTaxCertificate1151156(fallbackData, 2026);
 		}

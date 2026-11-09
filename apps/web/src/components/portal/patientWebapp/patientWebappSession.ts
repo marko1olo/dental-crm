@@ -7,6 +7,32 @@ import type {
 
 const DEFAULT_SECRET_SALT = "DENTE_PATIENT_WEBAPP_HMAC_SALT_2026";
 
+function encodeBase64Url(str: string): string {
+	if (typeof globalThis !== "undefined" && "Buffer" in globalThis) {
+		const buf = (globalThis as unknown as { Buffer: { from: (s: string, enc: string) => { toString: (enc: string) => string } } }).Buffer;
+		return buf.from(str, "utf8").toString("base64url");
+	}
+	const base64 = btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
+	return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function decodeBase64Url(str: string): string {
+	if (typeof globalThis !== "undefined" && "Buffer" in globalThis) {
+		const buf = (globalThis as unknown as { Buffer: { from: (s: string, enc: string) => { toString: (enc: string) => string } } }).Buffer;
+		return buf.from(str, "base64url").toString("utf8");
+	}
+	let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+	while (base64.length % 4 !== 0) {
+		base64 += "=";
+	}
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return new TextDecoder().decode(bytes);
+}
+
 export function generatePatientWebappSession(params: PatientWebappSessionParams): {
 	session: PatientWebappSessionToken;
 	encodedToken: string;
@@ -50,9 +76,7 @@ export function generatePatientWebappSession(params: PatientWebappSessionParams)
 	};
 
 	const rawJson = JSON.stringify(session);
-	const encodedToken = typeof Buffer !== "undefined"
-		? Buffer.from(rawJson, "utf8").toString("base64url")
-		: btoa(encodeURIComponent(rawJson));
+	const encodedToken = encodeBase64Url(rawJson);
 
 	return { session, encodedToken };
 }
@@ -65,9 +89,7 @@ export function validatePatientWebappSession(
 		return { isValid: false, error: "Токен сессии отсутствует или пуст." };
 	}
 	try {
-		const decodedJson = typeof Buffer !== "undefined"
-			? Buffer.from(encodedToken, "base64url").toString("utf8")
-			: decodeURIComponent(atob(encodedToken));
+		const decodedJson = decodeBase64Url(encodedToken);
 
 		const session = JSON.parse(decodedJson) as PatientWebappSessionToken;
 		if (!session.sessionId || !session.patientId || !session.signature) {
@@ -97,8 +119,9 @@ export function validatePatientWebappSession(
 			return { isValid: false, error: `У сессии нет разрешения на операцию: ${options.requiredScope}` };
 		}
 		return { isValid: true, session };
-	} catch (err: any) {
-		return { isValid: false, error: `Ошибка разбора токена сессии: ${err.message || "Неверный формат"}` };
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Неверный формат";
+		return { isValid: false, error: `Ошибка разбора токена сессии: ${message}` };
 	}
 }
 

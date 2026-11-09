@@ -1,10 +1,10 @@
 import React from "react";
 import { CalendarPlus, ExternalLink } from "lucide-react";
-import type { PatientAppointmentItem } from "../../patientCabinetEngine";
+import type { PatientAppointment } from "../../patientCabinetEngine";
 import { getAppointmentCalendarDates } from "./overviewDates";
 
 export interface OverviewCalendarButtonsProps {
-	readonly appt: PatientAppointmentItem;
+	readonly appt: PatientAppointment;
 }
 
 export const OverviewCalendarButtons: React.FC<OverviewCalendarButtonsProps> = ({ appt }) => {

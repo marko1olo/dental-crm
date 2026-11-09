@@ -28,7 +28,7 @@ export interface QuickBookingSlotInfo {
   chairId?: string | null | undefined;
   chairName?: string | null | undefined;
   durationMinutes?: number | undefined;
-  reason?: string | undefined;
+  reason?: string | null | undefined;
   isCitoEmergency?: boolean | undefined;
   patientId?: string | null | undefined;
   patientName?: string | null | undefined;
@@ -44,6 +44,8 @@ export interface QuickBookingSlotInfo {
   estimatedDurationMinutes?: number | undefined;
   appointmentId?: string | null | undefined;
   editingAppointment?: Appointment | null | undefined;
+  appointment?: Appointment | null | undefined;
+  labOrderId?: string | null | undefined;
   comment?: string | undefined;
   status?: string | undefined;
 }

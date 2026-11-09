@@ -57,6 +57,7 @@ export interface PatientInvoiceItem {
 export interface PatientAppointment {
 	readonly id: string;
 	readonly dateIso: string;
+	readonly dateRu?: string | undefined;
 	readonly timeRu: string;
 	readonly doctorId: string;
 	readonly doctorName: string;

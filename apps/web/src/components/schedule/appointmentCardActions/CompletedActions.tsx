@@ -39,7 +39,7 @@ export function CompletedActions({
 				type="button"
 				onClick={(e) => {
 					e.stopPropagation();
-					repeatAppointment(appointment);
+					repeatAppointment?.(appointment);
 				}}
 				className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
 				title="Повторить запись (Клавиша R)"

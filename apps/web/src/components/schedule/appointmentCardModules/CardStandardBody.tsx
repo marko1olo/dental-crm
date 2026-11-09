@@ -17,24 +17,24 @@ export interface CardStandardBodyProps {
 	isQuickStatusUpdating: boolean;
 	isLockedStatus: boolean;
 	formatTime: (iso: string) => string;
-	onOpenVisit?: (() => void) | null;
+	onOpenVisit?: (() => void) | null | undefined;
 	openAppointmentEditor: (appt: any) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
 	handleQuickStatusChange: (status: any) => Promise<void> | void;
 	handleShiftAppointmentTime: (mins: number) => Promise<void> | void;
-	appointmentLabels?: Record<string, string>;
+	appointmentLabels?: Record<string, string> | undefined;
 	dashboard: any;
-	appointmentSuggestions?: any[];
-	openScheduleSuggestion: (s: any) => void;
-	repeatAppointment: (appt: any) => void;
-	copyAppointmentToBuffer: (appt: any) => void;
-	effectiveOnFreeSlotToWaitlist?: (appt: any) => void;
+	appointmentSuggestions?: any[] | undefined;
+	openScheduleSuggestion?: ((s: any) => void) | undefined;
+	repeatAppointment?: ((appt: any) => void) | undefined;
+	copyAppointmentToBuffer?: ((appt: any) => void) | undefined;
+	effectiveOnFreeSlotToWaitlist?: ((appt: any) => void) | undefined;
 	activeScheduleCollision?: any;
-	appointmentHasOpenVisit?: boolean;
-	appointmentEditing?: boolean;
-	cardTeeth?: string[];
-	allergyAlert?: string | null;
-	somaticAlert?: string | null;
+	appointmentHasOpenVisit?: boolean | undefined;
+	appointmentEditing?: boolean | undefined;
+	cardTeeth?: string[] | undefined;
+	allergyAlert?: string | null | undefined;
+	somaticAlert?: string | null | undefined;
 	labReadinessAlert?: any;
 }
 
@@ -78,7 +78,7 @@ export function CardStandardBody({
 					<span className="font-normal text-[var(--muted)] whitespace-nowrap">{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}</span>
 				</div>
 				<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-					<CardStatusBadgeContainer appointmentId={appointment.id} displayStatus={displayStatus} appointmentLabels={appointmentLabels} isQuickStatusUpdating={isQuickStatusUpdating} isLocked={isLockedStatus} showSelector={!appointmentEditing} onStatusChange={(st) => void handleQuickStatusChange(st)} patientBalance={patientBalance} isCito={isCito} collisionMessage={activeScheduleCollision?.message ?? null} hasOpenVisit={appointmentHasOpenVisit} />
+					<CardStatusBadgeContainer appointmentId={appointment.id} displayStatus={displayStatus} appointmentLabels={appointmentLabels} isQuickStatusUpdating={isQuickStatusUpdating} isLocked={isLockedStatus} showSelector={!appointmentEditing} onStatusChange={(st) => { void handleQuickStatusChange(st); }} patientBalance={patientBalance} isCito={isCito} collisionMessage={activeScheduleCollision?.message ?? null} hasOpenVisit={appointmentHasOpenVisit} />
 					<AppointmentCardPrimaryActions appointment={appointment} displayStatus={displayStatus} appointmentEditing={appointmentEditing} isQuickStatusUpdating={isQuickStatusUpdating} appointmentPatient={appointmentPatient} appointmentPatientName={appointmentPatientName} onOpenVisit={onOpenVisit} handleQuickStatusChange={handleQuickStatusChange} handleShiftAppointmentTime={handleShiftAppointmentTime} repeatAppointment={repeatAppointment} openAppointmentEditor={openAppointmentEditor} />
 					<AppointmentCardContextMenu appointment={appointment} dashboard={dashboard} appointmentSuggestions={appointmentSuggestions} appointmentPatient={appointmentPatient} appointmentPatientName={appointmentPatientName} appointmentDoctor={appointmentDoctor} isQuickStatusUpdating={isQuickStatusUpdating} openScheduleSuggestion={openScheduleSuggestion} handleShiftAppointmentTime={handleShiftAppointmentTime} handleQuickStatusChange={handleQuickStatusChange} repeatAppointment={repeatAppointment} copyAppointmentToBuffer={copyAppointmentToBuffer} openAppointmentEditor={openAppointmentEditor} onFreeSlotToWaitlist={effectiveOnFreeSlotToWaitlist} />
 				</div>

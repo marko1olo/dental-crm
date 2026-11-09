@@ -59,7 +59,7 @@ export function useQuickBookingPatientSearch({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const newPatientFullNameInputRef = useRef<HTMLInputElement>(null);
-  const focusTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Synchronize patient state on initialSlot or open change
   useEffect(() => {

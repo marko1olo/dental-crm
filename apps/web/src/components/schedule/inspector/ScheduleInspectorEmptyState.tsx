@@ -9,13 +9,13 @@ import {
 } from "../appointmentCardHelpers";
 
 export interface ScheduleInspectorEmptyStateProps {
-  appointments?: Appointment[];
+  appointments?: Appointment[] | undefined;
   dateKey: string;
   patientLookupMap: Map<string, Patient>;
   staffLookupMap: Map<string, StaffMember>;
   toDateTimeLocalValue: (iso: string, tz?: string | null) => string;
-  timezone?: string;
-  appointmentLabels?: Record<string, string>;
+  timezone?: string | undefined;
+  appointmentLabels?: Record<string, string> | undefined;
   onSelectAppointment: (appointment: Appointment) => void;
 }
 
@@ -39,7 +39,7 @@ export const ScheduleInspectorEmptyState: React.FC<ScheduleInspectorEmptyStatePr
   const totalCount = dayAppointments.length;
   const confirmedCount = dayAppointments.filter((a) => a.status === "confirmed").length;
   const inTreatmentCount = dayAppointments.filter(
-    (a) => a.status === "in_treatment" || a.status === "in_progress" || a.status === "arrived",
+    (a) => a.status === "in_treatment" || a.status === "arrived",
   ).length;
   const completedCount = dayAppointments.filter((a) => a.status === "completed").length;
 

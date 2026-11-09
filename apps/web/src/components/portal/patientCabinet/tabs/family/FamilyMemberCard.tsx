@@ -8,9 +8,9 @@ import { FamilyMemberBalanceRow } from "./FamilyMemberBalanceRow";
 export interface FamilyMemberCardProps {
 	readonly member: PatientCabinetFamilyMember;
 	readonly onToggleBalancePermission: (id: string) => void;
-	readonly onOpenBookingForMember?: (member: PatientCabinetFamilyMember) => void;
-	readonly onOpenBooking?: () => void;
-	readonly onShowToast?: (message: string) => void;
+	readonly onOpenBookingForMember?: ((member: PatientCabinetFamilyMember) => void) | undefined;
+	readonly onOpenBooking?: (() => void) | undefined;
+	readonly onShowToast?: ((message: string) => void) | undefined;
 }
 
 export const FamilyMemberCard: React.FC<FamilyMemberCardProps> = ({

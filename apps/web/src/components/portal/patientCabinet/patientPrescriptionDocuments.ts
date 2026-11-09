@@ -23,7 +23,7 @@ export function generatePrescription107PrintHtml(
 	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
 	const clinicAddress = "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А";
 	const clinicPhone = "+7 (812) 345-67-89";
-	const rxDate = formatRussianDateIso(rx.dateIso);
+	const rxDate = formatRussianDateIso(rx.dateIso || new Date().toISOString().slice(0, 10));
 	const doctor = rx.doctorName || data.curatingDoctor || "Д-р Смирнов А. В.";
 	const validity = rx.validityDays ? `${rx.validityDays} дней` : "60 дней";
 	const patientBirth = data.birthDate ? formatRussianDateIso(data.birthDate) : "14 мая 1984 г.";

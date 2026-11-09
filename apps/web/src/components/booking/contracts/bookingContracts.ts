@@ -89,7 +89,7 @@ export interface BookingConfirmationData {
 }
 
 export interface PublicOnlineBookingWidgetProps {
-	readonly organizationId?: string | null;
+	readonly organizationId?: string | null | undefined;
 	readonly title?: string | undefined;
 	readonly subtitle?: string | undefined;
 	readonly theme?: "light" | "dark" | "night" | "calm_teal" | "contrast" | "auto" | undefined;

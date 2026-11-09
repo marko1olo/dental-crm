@@ -81,7 +81,7 @@ export function useCabinetConsentSigning(
 		const signed = signConsentWithPep(signingConsent, data.phone, code, data.fullName);
 		setData((prev) => ({
 			...prev,
-			consents: prev.consents.map((c) => (c.id === signed.id ? signed : c)),
+			consents: (prev.consents || []).map((c) => (c.id === signed.id ? signed : c)),
 		}));
 		onConsentSigned?.(signed);
 		setSigningConsent(null);
@@ -92,7 +92,7 @@ export function useCabinetConsentSigning(
 		const signed = signConsentWithPep(signingConsent, data.phone, "CABINET_PEP", data.fullName);
 		setData((prev) => ({
 			...prev,
-			consents: prev.consents.map((c) => (c.id === signed.id ? signed : c)),
+			consents: (prev.consents || []).map((c) => (c.id === signed.id ? signed : c)),
 		}));
 		onConsentSigned?.(signed);
 		setSigningConsent(null);

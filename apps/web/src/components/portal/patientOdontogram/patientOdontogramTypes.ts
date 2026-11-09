@@ -17,7 +17,7 @@ export interface PatientAnatomicalToothProps {
 
 export function resolveToothAnatomicalVisual(tooth: PatientToothInfo): {
 	state: ToothState;
-	material?: RestorativeMaterialKey;
+	material?: RestorativeMaterialKey | undefined;
 } {
 	if (tooth.canonicalState) {
 		const mat: RestorativeMaterialKey | undefined =

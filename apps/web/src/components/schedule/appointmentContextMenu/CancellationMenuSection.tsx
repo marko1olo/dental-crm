@@ -11,7 +11,7 @@ export function CancellationMenuSection({
 }: {
 	appointment: Appointment;
 	isQuickStatusUpdating: boolean;
-	handleQuickStatusChange: (status: Appointment["status"], noteAppend?: string) => Promise<void>;
+	handleQuickStatusChange: (status: Appointment["status"], noteAppend?: string) => Promise<void> | void;
 	onFreeSlotToWaitlist?: ((appointment: Appointment) => void) | undefined;
 	onClose: () => void;
 }) {

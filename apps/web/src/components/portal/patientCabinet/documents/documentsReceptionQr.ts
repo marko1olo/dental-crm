@@ -29,7 +29,7 @@ export function generateReceptionCheckinQrPayload(
 		qrPayload: payload,
 		qrCodeSvg,
 		patientId: data.patientId,
-		cardNumber: data.cardNumber,
+		cardNumber: data.cardNumber || "—",
 		fullName: data.fullName,
 		nextAppointment: nextAppt,
 		receptionInstructionsRu: "Покажите данный QR-код администратору клиники или поднесите к 2D-сканеру на стойке ресепшена для мгновенной регистрации прибытия на прием.",

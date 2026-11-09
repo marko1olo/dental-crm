@@ -76,8 +76,8 @@ export class ScheduleQuantumCollisionIndex {
   }
 
   public findNearestFreeWindow(params: {
-    chairId?: string | null; doctorUserId?: string | null; patientId?: string | null;
-    startingHour: string; durationMinutes: number; excludeAppointmentId?: string | null;
+    chairId?: string | null | undefined; doctorUserId?: string | null | undefined; patientId?: string | null | undefined;
+    startingHour: string; durationMinutes: number; excludeAppointmentId?: string | null | undefined;
   }): QuantumSlotAlternative | null {
     return findQuantumFreeWindow(
       this.dateKey,
@@ -88,8 +88,8 @@ export class ScheduleQuantumCollisionIndex {
   }
 
   public findNextFreeSlot(params: {
-    chairId?: string | null; doctorUserId?: string | null; patientId?: string | null;
-    preferredStartHour?: string; durationMinutes?: number; excludeAppointmentId?: string | null;
+    chairId?: string | null | undefined; doctorUserId?: string | null | undefined; patientId?: string | null | undefined;
+    preferredStartHour?: string | undefined; durationMinutes?: number | undefined; excludeAppointmentId?: string | null | undefined;
   }): QuantumSlotAlternative | null {
     return this.findNearestFreeWindow({
       chairId: params.chairId, doctorUserId: params.doctorUserId, patientId: params.patientId,

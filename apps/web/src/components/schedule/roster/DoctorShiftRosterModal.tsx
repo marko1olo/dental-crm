@@ -6,7 +6,7 @@
 
 import React from "react";
 import { Check } from "lucide-react";
-import { DoctorPayrollModal } from "../../payroll/DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../../payroll/DoctorPayrollStudioModal";
 import {
 	type CabinetDefinition,
 	CLINIC_CABINETS_CATALOG,
@@ -161,7 +161,7 @@ export function DoctorShiftRosterModal(props: DoctorShiftRosterModalProps) {
 	// Anti-Matryoshka (Sin 6, Mandate 8d): Render DoctorPayrollModal sequentially (depth strictly 1)
 	if (isT13ModalOpen) {
 		return (
-			<DoctorPayrollModal
+			<DoctorPayrollStudioModal
 				isOpen={true}
 				onClose={() => setIsT13ModalOpen(false)}
 				clinicName={clinicName}

@@ -26,7 +26,7 @@ export const OverviewAlertsAndHealth: React.FC<OverviewAlertsAndHealthProps> = (
 		<>
 			<OverviewReceptionQrBanner onOpenReceptionQr={onOpenReceptionQr} />
 
-			{summary.unpaidInvoicesCount > 0 && (
+			{(summary.unpaidInvoicesCount ?? 0) > 0 && (
 				<div className="pc-alert-banner warning" data-testid="unpaid-invoices-alert">
 					<div className="pc-alert-body">
 						<AlertCircle size={22} className="pc-icon-warning flex-shrink-0" />

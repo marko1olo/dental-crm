@@ -12,7 +12,7 @@ interface Props {
 	onQuickCreate: () => void;
 	onQuickSubmit: (e?: React.FormEvent) => void;
 	onSelectPatient: (patient: Patient) => void;
-	onOpenPatientCard?: (id: string) => void;
+	onOpenPatientCard?: ((id: string) => void) | undefined;
 	notify: (msg: string, type: "info" | "warning" | "error" | "success") => void;
 }
 

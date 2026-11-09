@@ -21,7 +21,6 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"PatientPlanView.tsx",
 				"PatientPortalTreatmentStageCard.tsx",
 				"patientWebappEngine.ts",
-				"PatientBudgetSignView.tsx",
 				"patientPortalEngine.ts",
 				"patientPortalPresets.ts",
 				"patientPortalTypes.ts",
@@ -117,7 +116,6 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				path.join(portalDir, "PatientFriendlyOdontogram.tsx"),
 				path.join(portalDir, "PatientPlanView.tsx"),
 				path.join(portalDir, "PatientPortalTreatmentStageCard.tsx"),
-				path.join(portalDir, "PatientBudgetSignView.tsx"),
 				path.join(portalDir, "index.ts"),
 			];
 

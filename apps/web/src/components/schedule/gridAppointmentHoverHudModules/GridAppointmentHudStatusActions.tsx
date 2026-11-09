@@ -3,7 +3,7 @@ import { CheckCircle2, User, UserCheck, UserX } from "lucide-react";
 
 interface GridAppointmentHudStatusActionsProps {
 	appointment: Appointment;
-	onQuickStatusChange?: (id: string, status: any) => void;
+	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
 }
 
 export function GridAppointmentHudStatusActions({

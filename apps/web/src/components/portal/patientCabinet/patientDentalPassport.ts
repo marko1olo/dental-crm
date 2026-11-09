@@ -321,7 +321,7 @@ export function generatePatientDentalPassport(
 
 	return {
 		patientName: data.fullName,
-		cardNumber: data.cardNumber,
+		cardNumber: data.cardNumber || "—",
 		totalTreatedTeethCount: entries.length,
 		activeGuaranteesCount,
 		entries,

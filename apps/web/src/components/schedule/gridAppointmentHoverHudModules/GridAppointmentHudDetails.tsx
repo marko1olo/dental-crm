@@ -23,7 +23,8 @@ export function GridAppointmentHudDetails({
 	dashboard,
 }: GridAppointmentHudDetailsProps) {
 	const teeth = extractTeethList(a);
-	const labStatus = resolveAppointmentLabStatus(a, dashboard?.labOrders ?? []);
+	const labOrders = (dashboard as any)?.labOrders ?? [];
+	const labStatus = resolveAppointmentLabStatus(a, labOrders);
 
 	return (
 		<div className="space-y-1.5 text-xs text-[var(--ink)]">
@@ -67,7 +68,7 @@ export function GridAppointmentHudDetails({
 						<span
 							className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${labStatus.badgeClass}`}
 						>
-							{labStatus.label}
+							{labStatus.labelRu}
 						</span>
 					)}
 				</div>

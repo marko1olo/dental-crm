@@ -12,7 +12,7 @@ interface DoctorPopoverExtendedShiftsProps {
 	chair: ScheduleChairDoctorPopoverProps["chair"];
 	targetDocId: string;
 	doctors: ScheduleChairDoctorPopoverProps["doctors"];
-	currentDocId?: string;
+	currentDocId?: string | undefined;
 	dateKey: string;
 	dashboard: ScheduleChairDoctorPopoverProps["dashboard"];
 	handleAssignDoctorWeek: ScheduleChairDoctorPopoverProps["handleAssignDoctorWeek"];

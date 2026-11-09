@@ -238,7 +238,7 @@ export function resolveChairDutyDoctor(
 export async function syncShiftsWithServer(
 	targetDateKey: string,
 	currentAssignments: Record<string, ChairDoctorShiftAssignment>,
-	chairsList?: readonly { id: string; name?: string; roomNumber?: string; room?: string }[],
+	chairsList?: readonly { id: string; name?: string | undefined; roomNumber?: string | undefined; room?: string | null | undefined }[] | undefined,
 ): Promise<boolean> {
 	if (!targetDateKey || !currentAssignments) return false;
 
@@ -248,8 +248,8 @@ export async function syncShiftsWithServer(
 		if (!assignment) continue;
 		const chairObj = chairsList?.find((c) => c.id === chairId);
 		const cabinetId =
-			(chairObj as any)?.roomNumber ||
-			(chairObj as any)?.room ||
+			chairObj?.roomNumber ||
+			(chairObj?.room ?? undefined) ||
 			"cab-1";
 
 		if (assignment.subShifts && assignment.subShifts.length > 0) {

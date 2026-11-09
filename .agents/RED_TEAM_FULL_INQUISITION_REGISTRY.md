@@ -4016,3 +4016,34 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light (390x844): [`docs/proofs/copilot/03_copilot_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/03_copilot_studio_mobile_light_390x844.png) (35.6 KB) — Нативный Apple HIG Bottom Sheet со скруглением `rounded-t-[24px]`, тактильный Drag Handle 36x5px по центру, тач-таргеты $\ge 44\times 44$px, Natural Thumb Zone в нижней панели.
   - 📱 Mobile Dark (390x844): [`docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png) (35.5 KB) — Тёмный мобильный режим, 0px горизонтального скролла (`overflow-x: clip; max-width: 100vw;`), отсутствие слепящих белых пятен.
 
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СТРОГАЯ ТИПИЗАЦИЯ РАСПИСАНИЯ И ПАЦИЕНТСКОГО ПОРТАЛА [SCHED-PORTAL-09] (МАНДАТЫ 8be, 8bf, 8e, 8al, 8an)
+- **Дата и статус:** 2026-11-10 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ОШИБОК]**.
+- **Роль:** Supreme Red Team Inquisitor: Schedule Grid & Patient Portal Typing Architect [SCHED-PORTAL-09].
+- **Канонический скоуп:**
+  - Расписание (`apps/web/src/components/schedule`): 625 боевых файлов production кода.
+  - Портал пациента (`apps/web/src/components/portal`): 120 боевых файлов production кода.
+- **Ликвидированные дефекты типизации (100% устранение):**
+  1. **`exactOptionalPropertyTypes: true` по всей иерархии расписания:**
+     - Добавлены `| undefined` для всех опциональных полей (`doctors`, `onAssignChairDoctor`, `chairDoctorAssignments`, `dashboard`, `onSelectPatientId`, `quantumCollisionParams`).
+     - Устранены ошибки в `quickAddChairModalModules/types.ts`, `chairShiftOperations/chairShiftTypes.ts`, `chairShiftRangeApplicator.ts`, `grid/scheduleQuantumEngine.ts`, `grid/quantumEngineTypes.ts`.
+  2. **`noUncheckedIndexedAccess: true` и типизация аккумуляторов:**
+     - Устранены небезопасные обращения по индексу без guard-проверок в `scheduleQuantumEngine.ts`, `ScheduleCurrentTimeIndicator.tsx`, `patientSearchEngine.ts`.
+     - Ликвидированы конфликты локальных объявлений и реэкспортов в `patientSearchEngine.ts` (`QuickPatientPrefill`).
+  3. **Инварианты браузерного окружения (ликвидация `NodeJS.Timeout`):**
+     - Заменены зависимости от пространства имен `NodeJS` на браузерно-совместимый `ReturnType<typeof setTimeout>` в `useAppointmentCardState.ts`, `useQuickBookingPatientSearch.ts`, `useAppointmentHoverAndMenu.ts`, `quickBookingPatientTypes.ts`.
+  4. **Консолидация SSOT диагностических снимков (`PatientDiagnosticScan`):**
+     - Устранено дублирование интерфейса в `patientCabinetConsentAndDocTypes.ts` и `PlanScanViewerModal.tsx` (Мандат 8bf). Создан единый SSOT с полной поддержкой всех стоматологических модальностей (`rvg`, `optg`, `cbct`, `trg`, `panoramic`, `intraoral_photo`).
+  5. **Типизация трехуровневых планов (`ThreeTierOption`):**
+     - Реэкспортирован канонический тип `ThreeTierOption = TreatmentPlanTier` и `ThreeTierTreatmentPlanModel` для всех модулей (`PlanThreeTierBenefits.tsx`, `PlanThreeTierButtons.tsx`, `alexeyThreeTierPlan.ts`).
+  6. **Инварианты личного кабинета и саморегистрации:**
+     - Устранена несовместимость `somaticRiskProfile` с `SomaticHealthProfile` в `PatientPersonalCabinetData`.
+     - Устранены обращения к возможно `undefined` свойствам (`summary.unpaidInvoicesCount`, `summary.loyaltyBonusBalance`, `prev.consents`).
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - Изолированная диагностика TypeScript Schedule (625 файлов): **0 ошибок (Exit Code 0)**.
+  - Изолированная диагностика TypeScript Portal (120 файлов): **0 ошибок (Exit Code 0)**.
+  - `npm run check:encoding` -> **22 331 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - `npm run check:buttons` -> **5 529 TSX файлов, 0 нарушений (Exit Code 0)**.
+  - `npm run check:react-hooks` -> **3 730 файлов, 0 нарушений правил хуков React 19 (Exit Code 0)**.
+  - `npm run check:css-tokens` -> **1 446 файлов, все токены разрешаются (Exit Code 0)**.
+  - Профильные тесты: `wave117ApptReasonsAndBlocks.test.ts` (13/13 PASS), `patientSearchEngine.test.ts` (10/10 PASS), `scheduleSoloDoctorAssistantAutonomy.test.tsx` (4/4 PASS).
+

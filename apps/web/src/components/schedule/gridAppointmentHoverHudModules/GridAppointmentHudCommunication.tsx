@@ -12,7 +12,7 @@ interface GridAppointmentHudCommunicationProps {
 	chair: { id: string; name: string };
 	aStart: string;
 	dashboard: Dashboard;
-	onFreeSlotToWaitlist?: (appt: Appointment) => void;
+	onFreeSlotToWaitlist?: ((appt: Appointment) => void) | undefined;
 }
 
 export function GridAppointmentHudCommunication({
@@ -32,10 +32,10 @@ export function GridAppointmentHudCommunication({
 			showToast("У пациента не указан номер телефона", "error");
 			return;
 		}
-		const clinicName = dashboard?.clinicSettings?.profile?.name || "Клиника";
+		const clinicName = dashboard?.clinicSettings?.profile?.clinicName || "Клиника";
 		const text = generateAppointmentWhatsAppMessage({
 			patientName: patObj?.fullName || "Пациент",
-			startsAt: a.startsAt || aStart,
+			appointmentStartsAt: a.startsAt || aStart,
 			doctorName: docObj?.fullName || docObj?.name,
 			clinicName,
 		});

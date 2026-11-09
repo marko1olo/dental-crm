@@ -9,7 +9,7 @@ interface Props {
 	isSelected: boolean;
 	onSelect: () => void;
 	onHover: () => void;
-	onOpenCard?: (id: string) => void;
+	onOpenCard?: ((id: string) => void) | undefined;
 	notify: (msg: string, type: "info" | "warning" | "error" | "success") => void;
 }
 

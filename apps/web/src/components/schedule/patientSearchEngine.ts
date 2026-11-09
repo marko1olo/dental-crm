@@ -3,10 +3,8 @@
  * fuzzy Levenshtein scoring, match highlighting, and 150ms debounce scoring for Reception and Schedule.
  */
 
-import type {
-	QuickPatientPrefill,
-} from "./patientSearchEngine/searchEngineTypes";
 import { parseSearchQueryForQuickPatient as parseSearchQueryImpl } from "./patientSearchEngine/quickPatientPrefill";
+import type { QuickPatientPrefill } from "./patientSearchEngine/searchEngineTypes";
 
 export type {
 	SearchablePatient,
@@ -15,12 +13,10 @@ export type {
 	FindPotentialDuplicatesCriteria,
 	PotentialDuplicateItem,
 	PatientWithSearchableData,
+	QuickPatientPrefill,
 } from "./patientSearchEngine/searchEngineTypes";
 
-export interface QuickPatientPrefill {
-	readonly fullName: string;
-	readonly phone: string;
-}
+export type QuickPatientSearchResult = import("./patientSearchEngine/searchEngineTypes").PatientSearchResultItem;
 
 export { highlightSearchMatches } from "./patientSearchEngine/searchMatchHighlighter";
 export { searchPatientsQuick } from "./patientSearchEngine/patientQuickSearcher";
