@@ -92,6 +92,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 			organizationId: orgId,
 			patientId,
 			visitId: args.visitId ?? null,
+			totalRub: String(totalAmountRub),
 			totalAmountRub,
 			discountAmountRub: discountRub,
 			paidAmountRub: 0,

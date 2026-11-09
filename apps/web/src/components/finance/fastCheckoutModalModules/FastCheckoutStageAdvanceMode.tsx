@@ -26,7 +26,7 @@ export const FastCheckoutStageAdvanceMode: React.FC<
 		<div className="flex items-center justify-between flex-wrap gap-1">
 			<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 				<Sparkles size={14} className="text-teal-600" />
-				Режим чека для этапа:
+				Режим оплаты этапа:
 			</span>
 			<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
 				{ffdTag1214NameRu}

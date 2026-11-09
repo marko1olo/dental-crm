@@ -16,7 +16,7 @@ import {
 	loadStoredInvoices,
 	saveStoredInvoices,
 } from "../billing/InvoicesView";
-import type { InvoiceUnapprovedItem } from "./InvoiceTaxDecreeBanner";
+import type { InvoiceUnapprovedItem } from "./TaxExemptionBanner.js";
 
 export interface SubmitInvoiceParams {
 	readonly patientId: string;

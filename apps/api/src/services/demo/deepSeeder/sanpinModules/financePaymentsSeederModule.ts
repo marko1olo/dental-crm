@@ -7,7 +7,6 @@ import {
 	cashBoxes,
 	cashBoxShifts,
 	cashOperations,
-	cashShifts,
 	doctorCommissions,
 	patientInvoices,
 	payments,
@@ -268,31 +267,6 @@ export async function seedDemoFinanceAndPayments(
 				})
 				.returning({ id: cashBoxShifts.id });
 			shiftId = newShift?.id;
-		}
-
-		// Также открываем смену в cashShifts
-		const existingCashShift = await tx
-			.select()
-			.from(cashShifts)
-			.where(
-				and(
-					eq(cashShifts.organizationId, organizationId),
-					eq(cashShifts.status, "open"),
-				),
-			)
-			.limit(1);
-
-		if (existingCashShift.length === 0) {
-			await tx
-				.insert(cashShifts)
-				.values({
-					organizationId,
-					openedByUserId: doctorUserId,
-					openedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-					startingBalance: "5000.00",
-					status: "open",
-				})
-				.onConflictDoNothing();
 		}
 
 		// Проводка кассовой операции

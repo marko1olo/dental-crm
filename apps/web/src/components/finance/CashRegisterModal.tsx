@@ -10,9 +10,8 @@ import {
 	CashRegisterStudioModal,
 	type CashRegisterStudioModalProps,
 } from "../cashbox/CashRegisterStudioModal.js";
-import type { CashRegisterModalProps } from "./cashRegisterModalModules/types.js";
 
-export type { CashRegisterModalProps };
+export type CashRegisterModalProps = CashRegisterStudioModalProps;
 
 export const CashRegisterModal: React.FC<CashRegisterModalProps> = (props) => {
 	return (

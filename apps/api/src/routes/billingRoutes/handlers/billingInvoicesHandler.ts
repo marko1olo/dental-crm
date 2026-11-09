@@ -68,5 +68,5 @@ export async function handleGetBillingInvoices(
 		};
 	});
 
-	return reply.send({ success: true, data });
+	return reply.send({ success: true, data, invoices: data });
 }

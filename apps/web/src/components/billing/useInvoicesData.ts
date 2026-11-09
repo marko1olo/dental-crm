@@ -54,12 +54,12 @@ export function useInvoicesData({
 				});
 				if (!res.ok) return;
 				const data = (await res.json()) as unknown;
-				const rawList: Record<string, unknown>[] = Array.isArray(data)
-					? (data as Record<string, unknown>[])
-					: Array.isArray((data as { items?: unknown[] })?.items)
-						? (data as { items: Record<string, unknown>[] }).items
-						: Array.isArray((data as { invoices?: unknown[] })?.invoices)
-							? (data as { invoices: Record<string, unknown>[] }).invoices
+				const rawList: Record<string, unknown>[] = Array.isArray((data as { invoices?: unknown[] })?.invoices)
+					? (data as { invoices: Record<string, unknown>[] }).invoices
+					: Array.isArray(data)
+						? (data as Record<string, unknown>[])
+						: Array.isArray((data as { items?: unknown[] })?.items)
+							? (data as { items: Record<string, unknown>[] }).items
 							: [];
 
 				if (rawList.length === 0) return;

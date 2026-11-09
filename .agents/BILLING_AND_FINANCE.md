@@ -213,9 +213,11 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 | **Кассовый чек** | [`FiscalReceipt54FzModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FiscalReceipt54FzModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
 | **Единый SSOT Кассы (Кассовая студия)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/cashbox/payments`, `POST /api/fiscal/receipts` |
 | **Единый лаунчер кассы (Диплинки `#cashbox`, `#checkout`)** | [`DirectCashboxLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/DirectCashboxLauncher.tsx) | Единый перехват всех алиасов `#cashbox`, `#cashbox_ssot`, `#cash_register`, `#shift_closing` |
+| **Журнал счетов (UI SSOT)** | [`InvoicesView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/InvoicesView.tsx) | `GET /api/invoices`, `POST /api/invoices` (UUIDv7 в `patient_invoices`) |
 | **Канонический менеджер очереди печати ККТ** | [`FiscalReceiptQueueManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/hardware/fiscalReceiptQueueManager.ts) | `fiscalReceiptQueue` в БД (PostgreSQL 18), ACID транзакции |
 | **Офлайн-очередь платежей** | [`offlinePaymentQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlinePaymentQueue.ts) | Сквозная синхронизация с `/api/cashbox/payments` |
-| **Прокси устаревшей модалки (Мандат 8aq)** | [`CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx) | Делегирует в `CashRegisterStudioModal` (<100 строк) |
+| **Кассовая смена и Z-отчёт SSOT** | [`CashShiftClosingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/shift/CashShiftClosingModal.tsx) | `POST /api/cashbox/shifts/close`, `POST /api/cash/cash-box-all-closing` |
+| **Журнал кассовых смен SSOT** | [`CashShiftJournalView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/shift/CashShiftJournalView.tsx) | `GET /api/cashbox/shifts` |
 | **1-Клик касса / Split** | [`CashRegisterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashRegisterModal.tsx) | `POST /api/fiscal/receipts` |
 | **Fast Checkout Engine** | [`fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts) | `POST /api/billing/payments` |
 | **Семейный кошелек** | [`FamilyWalletModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FamilyWalletModal.tsx) | [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts) |
@@ -225,6 +227,29 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 | **Ведомость зарплат Net Revenue** | [`DoctorPayrollReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DoctorPayrollReport.tsx) | `GET /api/reports/doctor-payroll` |
 | **Загрузка кресел (Норма 65–85%)** | [`ChairOccupancyReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ChairOccupancyReport.tsx) | `GET /api/reports/chairs` |
 | **Лаунчер аналитики клиники** | [`DirectAnalyticsLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DirectAnalyticsLauncher.tsx) | Диплинки `#analytics`, `#dashboard`, `#executive-studio` |
+
+---
+
+## 🛡️ 7. Реестр устранённых дефектов кассово-финансового контура (DEF-FIN-01...07)
+
+1. **DEF-FIN-01 [ЗАКРЫТО]**: Мокап счетов в LocalStorage в обход БД в `InvoicesView.tsx` полностью заменен на реальное взаимодействие с `POST /api/invoices` и `GET /api/invoices`. Создание счета генерирует UUIDv7 в PostgreSQL (`patient_invoices`), исключая ошибку `BillingValidationError: invalid uuid` при последующей оплате.
+2. **DEF-FIN-02 [ЗАКРЫТО]**: В `useInvoicesData.ts` исправлен приоритет разбора ответа сервера (`data.invoices ?? (Array.isArray(data) ? data : data.items ?? [])`), что гарантирует корректную загрузку счетов, а не позиций услуг.
+3. **DEF-FIN-03 [ЗАКРЫТО]**: Полная синхронизация колонок `total_rub` и `total_amount_rub` в `createInvoiceDraftTool.ts` и роутах счетов.
+4. **DEF-FIN-04 [ЗАКРЫТО]**: Раздвоение кассовых смен устранено: паразитная таблица `cash_shifts` удалена из сидеров, все кассовые смены и операции ведутся строго через `cash_box_shifts` и `cash_operations`.
+5. **DEF-FIN-05 [ЗАКРЫТО]**: Вымышленное «Постановление №659» и блокирующий `Decree659Error` полностью удалены. Заменены на пассивные информационные разъяснения по ст. 149 НК РФ (освобождение медицинских услуг от НДС). Тесты-саботажники `decree659*.test.ts` физически удалены через `git rm`.
+6. **DEF-FIN-06 [ЗАКРЫТО]**: Сигнатуры роутов получения счетов `GET /api/invoices` и `GET /api/billing/invoices` взаимно унифицированы (`{ success: true, data, invoices, items }`).
+7. **DEF-FIN-07 [ЗАКРЫТО]**: Канцелярит и сырые регуляторные теги («ФФД 1.2», теги 1214/1054) полностью устранены из пользовательского UI в пользу чистого клинического русского языка.
+8. **Сироты и дубликаты [ЗАКРЫТО]**: Физически удалены через `git rm`:
+   - 13 файлов в `apps/web/src/components/finance/cashRegisterModalModules/`
+   - 14 файлов в `apps/web/src/components/cashbox/cashboxViewModules/`
+   - `InvoiceDecree659Banner.tsx` и `InvoiceTaxDecreeBanner.tsx`
+9. **4-State Visual Proof [ЗАКРЫТО]**: Сняты реальные скриншоты живого приложения на `http://127.0.0.1:5173/?checkout=1` и лично отсмотрены через `read_file`:
+   - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 81.3 KB)
+   - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 78.6 KB)
+   - 🌙 PC Shift Dark 1440x900 (`03_cashbox_shift_pc_dark_1440x900.png` — 42.6 KB)
+   - ☀️ PC Tape Light 1440x900 (`04_cashbox_tape_pc_light_1440x900.png` — 39.0 KB)
+   - 📱 Mobile Light 390x844 (`05_cashbox_studio_mobile_light_390x844.png` — 130.5 KB)
+   - 📱 Mobile Dark 390x844 (`06_cashbox_studio_mobile_dark_390x844.png` — 147.2 KB)
 
 ---
 

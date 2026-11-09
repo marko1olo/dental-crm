@@ -94,5 +94,5 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 		totalAmountRub: resolveInvoiceTotalAmountRub({ totalRub: item.priceRub }),
 	}));
 
-	return reply.code(200).send({ invoices, items });
+	return reply.code(200).send({ success: true, data: invoices, invoices, items });
 }

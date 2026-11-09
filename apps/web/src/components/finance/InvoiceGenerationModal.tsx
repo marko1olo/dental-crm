@@ -7,7 +7,7 @@ import { InvoiceGenerationFooter } from "./InvoiceGenerationFooter";
 import { useInvoiceGenerationState } from "./useInvoiceGenerationState";
 
 export { TaxExemptionBanner } from "./TaxExemptionBanner.js";
-export { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./InvoiceTaxDecreeBanner";
+export { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./TaxExemptionBanner.js";
 export { InvoiceItemsTable } from "./InvoiceItemsTable";
 export { submitInvoiceFromPlan, createTaxAddendum, createDecree659Addendum } from "./invoiceGenerationOperations";
 export { InvoiceGenerationHeader } from "./InvoiceGenerationHeader";

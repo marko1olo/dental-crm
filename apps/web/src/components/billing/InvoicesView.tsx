@@ -16,6 +16,7 @@ import { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices } from "./
 import { DEFAULT_DOM_CHUNK_STEP, DEFAULT_DOM_PAGE_SIZE } from "../../utils/domVirtualizationHelper.js";
 import { useInvoicesData } from "./useInvoicesData.js";
 import { useInvoicesViewLogic, InvoicesToolbar, InvoicesList, InvoicesEmptyState } from "./invoices/index.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
 export { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices };
 export type { InvoiceLineItem, BillingInvoice, InvoicesViewProps, InvoiceFilterTab };
@@ -53,19 +54,81 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	const [refundInvoice, setRefundInvoice] = useState<BillingInvoice | null>(null);
 	const [bankInstallmentInvoice, setBankInstallmentInvoice] = useState<BillingInvoice | null>(null);
 
-	const handleCreateInvoice = (p: { patientName: string; serviceName: string; servicePriceRub: number; isWarranty100: boolean }) => {
+	const handleCreateInvoice = async (p: { patientName: string; serviceName: string; servicePriceRub: number; isWarranty100: boolean }) => {
 		const invoiceNumber = `СЧ-${Date.now().toString().slice(-6)}`;
 		const finalAmount = p.isWarranty100 ? 0 : Math.max(0, p.servicePriceRub);
+		const isUuid = Boolean(patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId));
+		let generatedId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `01930000-0000-7000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+		let generatedNumber = invoiceNumber;
+
+		if (isUuid) {
+			try {
+				const res = await fetch("/api/invoices", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						patientId,
+						totalAmountRub: finalAmount,
+						status: "issued",
+						items: [
+							{
+								title: p.serviceName || "Стоматологический прием",
+								priceRub: finalAmount,
+								quantity: 1,
+							},
+						],
+					}),
+				});
+				if (res.ok) {
+					const payload = (await res.json()) as { invoice?: { id?: string; number?: string; invoiceNumber?: string } };
+					if (payload?.invoice?.id) {
+						generatedId = payload.invoice.id;
+					}
+					if (payload?.invoice?.number || payload?.invoice?.invoiceNumber) {
+						generatedNumber = payload.invoice.number || payload.invoice.invoiceNumber || invoiceNumber;
+					}
+				}
+			} catch {
+				// Офлайн/фоллбек режим: валидный UUIDv7/v4
+			}
+		}
+
 		const newInv: BillingInvoice = {
-			id: `inv-${Date.now()}`, number: invoiceNumber, patientId: patientId || `pat-${Date.now().toString().slice(-4)}`,
-			patientName: p.patientName, doctorName: currentDoctorName, date: new Date().toLocaleDateString("ru-RU"),
-			totalAmountRub: finalAmount, paidAmountRub: 0, status: p.isWarranty100 ? "warranty_100" : "issued",
-			items: [{ id: `li-${Date.now()}`, code: "A16.07.002", name: p.serviceName || "Стоматологический прием", quantity: 1, priceRub: finalAmount }],
-			createdAt: new Date().toISOString(), paymentMethod: p.isWarranty100 ? "warranty_discount_100" : undefined,
+			id: generatedId,
+			number: generatedNumber,
+			invoiceNumber: generatedNumber,
+			patientId: patientId || `pat-${Date.now().toString().slice(-4)}`,
+			patientName: p.patientName,
+			doctorName: currentDoctorName,
+			date: new Date().toLocaleDateString("ru-RU"),
+			totalAmountRub: finalAmount,
+			paidAmountRub: 0,
+			status: p.isWarranty100 ? "warranty_100" : "issued",
+			items: [
+				{
+					id: `li-${Date.now()}`,
+					code: "A16.07.002",
+					name: p.serviceName || "Стоматологический прием",
+					quantity: 1,
+					priceRub: finalAmount,
+				},
+			],
+			createdAt: new Date().toISOString(),
+			paymentMethod: p.isWarranty100 ? "warranty_discount_100" : undefined,
 		};
-		setInvoices((prev) => { const updated = [newInv, ...prev]; saveStoredInvoices(updated); return updated; });
+		setInvoices((prev) => {
+			const updated = [newInv, ...prev];
+			saveStoredInvoices(updated);
+			return updated;
+		});
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente-invoices-updated", { detail: newInv }));
+		}
 		setIsCreateModalOpen(false);
-		showToast(`Счет ${invoiceNumber} успешно сформирован`, "success");
+		showToast(`Счет ${generatedNumber} успешно сформирован`, "success");
 	};
 
 	return (

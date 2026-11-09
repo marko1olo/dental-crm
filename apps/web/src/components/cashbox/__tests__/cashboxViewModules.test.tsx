@@ -16,13 +16,13 @@ import {
 	formatCurrencyRub,
 	getOperationTypeLabel,
 	getPaymentMethodName,
-} from "../cashboxViewModules/cashboxConstants.js";
-import { CashboxShiftStatusCard } from "../cashboxViewModules/CashboxShiftStatusCard.js";
-import { CashboxQuickActionsBar } from "../cashboxViewModules/CashboxQuickActionsBar.js";
-import { UnpaidInvoicesQueue } from "../cashboxViewModules/UnpaidInvoicesQueue.js";
-import { CashboxOperationsTable } from "../cashboxViewModules/CashboxOperationsTable.js";
+} from "../../finance/cashboxViewModules/cashboxConstants.js";
+import { CashboxShiftStatusCard } from "../../finance/cashboxViewModules/CashboxShiftStatusCard.js";
+import { CashboxQuickActionsBar } from "../../finance/cashboxViewModules/CashboxQuickActionsBar.js";
+import { UnpaidInvoicesQueue } from "../../finance/cashboxViewModules/UnpaidInvoicesQueue.js";
+import { CashboxOperationsTable } from "../../finance/cashboxViewModules/CashboxOperationsTable.js";
 import { CashboxView } from "../CashboxView.js";
-import type { CashboxOperationItem, CashBoxSummary } from "../cashboxViewModules/types.js";
+import type { CashboxOperationItem, CashBoxSummary } from "../../finance/cashboxViewModules/types.js";
 
 describe("CashboxView Modular Decomposition Architecture", () => {
 	it("Layer 1 Constants & Formatters: deterministic pure helpers", () => {
