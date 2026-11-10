@@ -366,7 +366,7 @@ describe("checkAppointmentResourceCollision", () => {
 		assert.equal(result.suggestedSlot?.label, "Ближайшее окно сегодня в 11:00");
 	});
 
-	it("respects chair maintenance window when calculating suggested slot", () => {
+	it("does not block booking for chair maintenance or sanitation windows (Mandate 8e)", () => {
 		const result = checkAppointmentResourceCollision(
 			{
 				startsAt: "2026-08-21T10:00:00.000Z",
@@ -389,12 +389,8 @@ describe("checkAppointmentResourceCollision", () => {
 			},
 		);
 
-		assert.equal(result.hasCollision, true);
-		assert.equal(result.conflictType, "chair");
-		assert.ok(result.message?.includes("санитарная обработка"));
-		assert.ok(result.suggestedSlot, "Suggested slot must be present");
-		assert.equal(result.suggestedSlot?.timeDisplay, "11:30");
-		assert.equal(result.suggestedSlot?.label, "Ближайшее окно сегодня в 11:30");
+		assert.equal(result.hasCollision, false);
+		assert.equal(result.conflictType, null);
 	});
 
 	it("findNearestAvailableSlot returns direct slot recommendation", () => {

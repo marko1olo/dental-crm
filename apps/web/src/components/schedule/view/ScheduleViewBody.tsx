@@ -1,15 +1,14 @@
 import React, { useRef, useCallback } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
-import { ChairScheduleView } from "../ChairScheduleView";
 import { ScheduleGrid } from "../ScheduleGrid";
 import { ScheduleTimeline } from "../ScheduleTimeline";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
-import type { TargetSlotInfo } from "../WaitlistDrawer";
+import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { AppointmentScheduleDraft } from "./scheduleViewTypes";
 import { useIsMobile } from "../../../hooks/useIsMobile";
-import { ScheduleMobileAgendaView } from "../ScheduleMobileAgendaView";
+import { ScheduleMobileAgendaView } from "../mobile/ScheduleMobileAgendaView";
 import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";
 
 export interface ScheduleViewBodyProps {
@@ -304,45 +303,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     );
   }
 
-  if (scheduleViewMode === "chairs") {
-    if (!dashboard) return null;
-    return (
-      <ChairScheduleView
-        hideToolbar={true}
-        gridStepMinutes={scheduleGridStep}
-        onGridStepChange={setScheduleGridStep}
-        dashboard={dashboard}
-        dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
-        appointments={dashboard?.appointments ?? []}
-        chairDoctorAssignments={
-          savedDoctorShifts.length > 0 ||
-          Object.keys(computedChairDoctorAssignments).length > 0
-            ? computedChairDoctorAssignments
-            : undefined
-        }
-        onAssignChairDoctor={handleAssignChairDoctor}
-        onAddChair={handleAddChairFromSchedule}
-        onAddDoctor={handleAddDoctorFromSchedule}
-        onOpenRosterModal={() => setIsRosterModalOpen(true)}
-        onSelectChair={(chairId) => setScheduleChairFilterId(chairId)}
-        onSlotClick={(slot) => {
-          setQuickBookingSlot(slot);
-          setQuickBookingOpen(true);
-        }}
-        onAppointmentClick={handleOpenAppointmentInQuickBooking}
-        onAppointmentMove={handleAppointmentMove}
-        onQuickStatusChange={handleQuickStatusChangeWithWaitlistAutoFill}
-        patientName={patientName}
-        formatTime={formatTime}
-        toDateTimeLocalValue={toDateTimeLocalValue}
-        appointmentLabels={appointmentLabels}
-        selectedChairId={scheduleChairFilterId}
-        selectedDoctorId={scheduleDoctorFilterId}
-      />
-    );
-  }
-
-  if (scheduleViewMode === "grid") {
+  if (scheduleViewMode === "grid" || (scheduleViewMode as string) === "chairs") {
     return (
       <ScheduleGrid
         dashboard={dashboard as any}

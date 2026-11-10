@@ -94,27 +94,7 @@ export function findNearestAvailableSlot(
 	});
 
 	const isIntervalFree = (startMs: number, endMs: number): boolean => {
-		// 1. Chair maintenance blocks (Mandate 8e & Core Law: sanitation and maintenance never block clinical appointments)
-		if (draft.chairId && options.chairMaintenanceBlocks?.length) {
-			for (const block of options.chairMaintenanceBlocks) {
-				if (block.chairId !== draft.chairId) continue;
-				// Mandate 8e & [SCH-01]: sanitation, disinfection, tech_break and maintenance never block booking slots
-				if (
-					block.reason === "sanitation" ||
-					block.reason === "disinfection" ||
-					block.reason === "maintenance" ||
-					block.reason === "tech_break"
-				) {
-					continue;
-				}
-				const bStart = Date.parse(block.startsAt);
-				const bEnd = Date.parse(block.endsAt);
-				if (!Number.isFinite(bStart) || !Number.isFinite(bEnd)) continue;
-				if (areIntervalsOverlapping(startMs, endMs, bStart, bEnd)) return false;
-			}
-		}
-
-		// 2. Active appointments
+		// Active appointments check (clinical autonomy: maintenance/sanitation never block clinical visits)
 		for (const a of activeAppointments) {
 			const aStart = Date.parse(a.startsAt);
 			const aEnd = Date.parse(a.endsAt);
@@ -296,7 +276,7 @@ export function checkAppointmentResourceCollision(
 
 	const format = options.formatTimeFn ?? ((iso: string) => iso.slice(11, 16));
 
-	// 1. Check if chair is marked inactive (global maintenance / offline)
+	// 1. Check if chair is marked inactive in clinic settings (active: false)
 	if (draft.chairId && options.chairs?.length) {
 		const chairObj = options.chairs.find((c) => c.id === draft.chairId);
 		if (chairObj && chairObj.active === false) {
@@ -305,49 +285,8 @@ export function checkAppointmentResourceCollision(
 				hasCollision: true,
 				conflictType: "chair",
 				conflictingAppointment: null,
-				message: `Кресло «${name}» временно заблокировано (техобслуживание / санитарная обработка).`,
+				message: `Кресло «${name}» временно заблокировано (деактивировано).`,
 			};
-		}
-	}
-
-	// 2. Check scheduled maintenance time windows (Mandate 8e & Core Law: sanitation/maintenance never block booking)
-	if (draft.chairId && options.chairMaintenanceBlocks?.length) {
-		for (const block of options.chairMaintenanceBlocks) {
-			if (block.chairId !== draft.chairId) continue;
-			// Mandate 8e & [SCH-01]: sanitation, disinfection, tech_break and maintenance never block clinical appointments
-			if (
-				block.reason === "sanitation" ||
-				block.reason === "disinfection" ||
-				block.reason === "maintenance" ||
-				block.reason === "tech_break"
-			) {
-				continue;
-			}
-			const blockStart = Date.parse(block.startsAt);
-			const blockEnd = Date.parse(block.endsAt);
-			if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd)) continue;
-			if (areIntervalsOverlapping(draftStart, draftEnd, blockStart, blockEnd)) {
-				const chairObj = options.chairs?.find((c) => c.id === draft.chairId);
-				const name = chairObj?.name ?? "Кресло";
-				const blockTimeStr = `${format(block.startsAt)}–${format(block.endsAt)}`;
-				const reasonRu =
-					block.reason === "sanitation"
-						? "санитарная обработка"
-						: block.reason === "maintenance"
-							? "техобслуживание"
-							: block.reason === "disinfection"
-								? "дезинфекция"
-								: block.reason === "tech_break"
-									? "технический перерыв"
-									: block.reason;
-				return {
-					hasCollision: true,
-					conflictType: "chair",
-					conflictingAppointment: null,
-					message: `Кресло «${name}» заблокировано на ${reasonRu} (${blockTimeStr}).`,
-					suggestedSlot: findNearestAvailableSlot(draft, appointments, options),
-				};
-			}
 		}
 	}
 

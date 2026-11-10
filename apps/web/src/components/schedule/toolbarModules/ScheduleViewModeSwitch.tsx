@@ -1,9 +1,9 @@
 import React from "react";
-import { Armchair, LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 
 export interface ScheduleViewModeSwitchProps {
 	viewMode?: "grid" | "timeline" | "chairs" | undefined;
-	onViewModeChange?: ((mode: "grid" | "timeline" | "chairs") => void) | undefined;
+	onViewModeChange?: ((mode: "grid" | "timeline") => void) | undefined;
 }
 
 export function ScheduleViewModeSwitch({
@@ -12,7 +12,7 @@ export function ScheduleViewModeSwitch({
 }: ScheduleViewModeSwitchProps) {
 	if (!onViewModeChange) return null;
 
-	const isGridActive = viewMode === "grid" || (!viewMode && viewMode !== "chairs" && viewMode !== "timeline");
+	const isGridActive = viewMode === "grid" || viewMode === "chairs" || !viewMode;
 
 	return (
 		<div
@@ -51,22 +51,6 @@ export function ScheduleViewModeSwitch({
 			>
 				<LayoutGrid size={13} className="shrink-0 opacity-80" aria-hidden="true" />
 				<span className="hidden xl:inline">Сетка</span>
-			</button>
-			<button
-				type="button"
-				onClick={() => onViewModeChange("chairs")}
-				className={`schedule-view-mode-btn dente-segmented-item h-7 min-h-[26px] max-h-7 sm:h-8 sm:min-h-[32px] sm:max-h-8 rounded-md px-2 text-[12px] font-medium inline-flex items-center gap-1.5 ${
-					viewMode === "chairs"
-						? "active font-semibold bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
-						: "text-[var(--muted)]"
-				}`}
-				title="По креслам и установкам"
-				aria-label="По креслам"
-				aria-pressed={viewMode === "chairs"}
-				data-testid="schedule-view-mode-chairs"
-			>
-				<Armchair size={13} className="shrink-0 opacity-80" aria-hidden="true" />
-				<span className="hidden xl:inline">Кресла</span>
 			</button>
 		</div>
 	);

@@ -1,5 +1,5 @@
 import { type SanpinClinicalSpecialty, type SanpinAppointmentSource, SANPIN_VISIT_CONSUMPTION_STANDARDS, type SanpinAppointmentLoadItem, type SanpinChairDailyLoad, type SanpinProposedAutoclaveCycle, type SanpinDailyLoad, type SanpinScheduleDailyLoadReport, type SanpinDateRangeInput, type SanpinSyncOptions } from './types.js';
-import { classifyAppointmentSpecialty, extractIsoDateString, generateDateSequence } from './quartzVentilationEngine.js';
+import { classifyAppointmentSpecialty, extractIsoDateString, generateDateSequence } from './specialtyClassifier.js';
 import { calculatePsoSampleRequirements, type SterilizationRegimeId } from '../sanpinRegistryEngine.js';
 
 const RU_DAY_NAMES = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
