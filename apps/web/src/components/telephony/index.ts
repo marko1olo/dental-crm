@@ -9,7 +9,6 @@ export * from "./IncomingCallPopup";
 export * from "./TelephonyDrawer";
 export * from "./CallAudioPlayer";
 export * from "./IncomingCallerCard";
-export * from "./useTelephonyState";
 export * from "./useIncomingCallData";
 export * from "./initiateOutboundCall";
 export * from "./telephonyAttribution";

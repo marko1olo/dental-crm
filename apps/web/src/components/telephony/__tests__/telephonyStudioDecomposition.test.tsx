@@ -24,7 +24,7 @@ import {
 	TelephonyCallHistoryList,
 	TelephonyStudioFooter,
 	QUICK_NOTE_PRESETS,
-} from "../studio";
+} from "../TelephonyStudioModal";
 import { TELEPHONY_CATALOG_DATA, formatPhoneRu } from "../telephonyCatalogData";
 
 describe("Telephony Studio Decomposed Architecture (Wave 26)", () => {
@@ -116,7 +116,7 @@ describe("Telephony Studio Decomposed Architecture (Wave 26)", () => {
 
 			expect(html).toContain('data-testid="telephony-primary-cta-btn"');
 			expect(html).toContain("dnt-telephony-primary-cta");
-			expect(html).toContain("✓ Сохранить заметку звонка");
+			expect(html).toContain("Сохранить заметку звонка");
 			expect(html).toContain('data-testid="telephony-secondary-book-btn"');
 
 			// Zero disabled buttons

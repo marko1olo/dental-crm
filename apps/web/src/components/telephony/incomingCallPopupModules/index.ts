@@ -7,4 +7,3 @@ export * from "./IncomingCallHeaderBar";
 export * from "./IncomingCallPatientContextCard";
 export * from "./IncomingCallQuickBookingSection";
 export * from "./IncomingCallActionFooter";
-export * from "./IncomingCallDrawerPortal";

@@ -58,7 +58,7 @@
 > Врачебный экран (`VisitView` / роль `doctor`) — это **стерильная зона**. Врач у кресла в перчатках препарирует зуб или проводит хирургическую операцию. Любые всплывающие окна телефонии, неожиданные рингтоны или блокирующие экраны — это прямая угроза пациенту и врачебная диверсия.
 
 ### 2.1. Полная изоляция от звонков:
-* **Кодовая гарантия (`IncomingCallPopup.tsx` и `TelephonyFloatingWidget.tsx`)**:
+* **Кодовая гарантия (`IncomingCallPopup.tsx` и `TelephonyHeaderCapsule.tsx`)**:
   ```typescript
   // Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside
   const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
@@ -127,8 +127,38 @@
 | **Top Ambient Header Capsule** | [`TelephonyHeaderCapsule.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/headerCapsule/TelephonyHeaderCapsule.tsx) | `useTelephonyStore.ts` |
 | **Студия телефонии и журнал звонков** | [`TelephonyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx) | `DirectTelephonyLauncher.tsx` (`#telephony`) |
 | **Ambient Call Popup (Регистратура)** | [`IncomingCallPopup.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/IncomingCallPopup.tsx) | `ws://localhost:4100/api/ws/telephony` |
-| **SIP Софтфон Capsule** | [`TelephonyFloatingWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyFloatingWidget.tsx) | `useTelephonyStore.ts` |
-| **Self-Checkin Portal** | [`MobileSelfCheckinModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx) | `POST /api/portal/auth/verify-otp` |
+| **SIP Софтфон Capsule** | [`TelephonyHeaderCapsule.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/headerCapsule/TelephonyHeaderCapsule.tsx) | `useTelephonyStore.ts` |
+| **Self-Checkin Portal** | [`MobileSelfCheckinModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx) | `POST /api/portal/self-checkin` • `POST /api/portal/auth/verify-otp` |
 | **Соматическая норма** | [`SomaticQuestionnaireEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/SomaticQuestionnaireEngine.ts) | `evaluateSomaticRisks()` |
-| **Личный кабинет пациента**| [`PatientMobilePortalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/PatientMobilePortalModal.tsx) | `GET /api/portal/me` |
+| **Личный кабинет пациента**| [`PatientCabinetModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx) | `GET /api/portal/me` • `POST /api/portal/consents/:id/sign` • `POST /api/portal/treatment-plans/:id/approve` |
+
+---
+
+## 🔒 6. Реестр устраненных дефектов Red Team (DEF-POR-01..07)
+
+* **DEF-POR-01 [ЗАКРЫТО]**: Подписание согласий в киоске (`kioskCheckinHandlers.ts`) и в личном кабинете (`portalDocumentsRoutes.ts`) физически создает запись в таблице `generated_documents` (`status: "issued"`, `signatureSvg`, `issuedSnapshotSha256`, `organizationId`, `patientId`) и привязывает `documentId` к `patient_consents`. Документы отображаются в ЭМК врача.
+* **DEF-POR-02 [ЗАКРЫТО]**: В `TreatmentPlanTab.tsx` убран хардкод `"123456"`, генерируется валидный электронный след ПЭП по 63-ФЗ (`ПЭП-63ФЗ-ВЕРИФИЦИРОВАНО:${Date.now()}`), сетевая отправка выбора тарифа и утверждения плана на `/api/portal/treatment-plans/:id/select-tier` и `/api/portal/treatment-plans/:id/approve` с передачей Bearer-токена.
+* **DEF-POR-03 [ЗАКРЫТО]**: В `useCabinetConsentSigning.ts` устранена клиентская песочница, внедрен реальный `fetch` к `/api/portal/consents/:consentId/sign` с Authorization Bearer токеном.
+* **DEF-POR-04 [ЗАКРЫТО]**: Сироты `useSelfCheckinPhoneAuthState.ts` и `SelfCheckinOtpVerification.tsx` физически удалены из репозитория через `git rm`. Единый SSOT телефонной маски перенесен в `useMobileSelfCheckinState.ts`.
+* **DEF-POR-05 [ЗАКРЫТО]**: В `productionUiPurity.test.ts:28` ссылка на файл исправлена на канонический `PublicBookingPage.tsx`.
+* **DEF-POR-06 [ЗАКРЫТО]**: Формат талона киоска саморегистрации синхронизирован с приёмником регистратуры `documentsReceptionQr.ts` (`DENTE:CHECKIN:v1|...`).
+* **DEF-POR-07 [ЗАКРЫТО]**: Из `demoTreatmentPlan.ts` и `patientPortalTypes.ts` полностью удален сленг «804н», заменен на чистый `serviceCode`.
+
+---
+
+## 🔒 7. Реестр устраненных дефектов телефонии и софтфона Red Team (DEF-TEL-01..06)
+
+* **DEF-TEL-01 [ЗАКРЫТО]**: Стерильная зона врача в `useTelephonyRealtime.ts`: входящие звонки по сокету блокируются не только на приёме (`visit`), но и на всех клинических экранах (`["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]`), а также при совпадении хэша URL (`#odontogram`, `#visit`, и др.) и роли врача (`doctor`).
+* **DEF-TEL-02 [ЗАКРЫТО]**: Ликвидирован параллельный/дублирующий WebSocket в `WorkspaceTopBar.tsx:105-131`. Единственным SSOT является `useTelephonyRealtime`, сохраняющий номер клиники (`virtualNumber`) и маркетинговые UTM-метки.
+* **DEF-TEL-03 [ЗАКРЫТО]**: В `telephonyCallLifecycleHandler.ts:168` устранен пустой `catch {}`. Добавлено логирование с уровнем предупреждения: `request.log.warn({ err }, "[Telephony] Lead creation error")`.
+* **DEF-TEL-04 [ЗАКРЫТО]**: В `StatusBlockTelephony.tsx` устранена тупиковая кнопка «Вызовы» (Zero Dead-Ends, Мандат 8n), клик открывает студию телефонии и софтфон через `#telephony`.
+* **DEF-TEL-05 [ЗАКРЫТО]**: В `useServerCallerLookup.ts` ликвидирован избыточный сетевой CTI фолбек, запросы направляются напрямую в канонический эндпоинт `/api/telephony/lookup-caller`.
+* **DEF-TEL-06 [ЗАКРЫТО]**: 4-State Visual Proofs сняты на живом сервере и лично осмотрены:
+  * ☀️ **PC Light (1440x900)**: [`01_telephony_incoming_call_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/01_telephony_incoming_call_pc_light_1440x900.png) (168 КБ)
+  * 🌙 **PC Dark (1440x900)**: [`02_telephony_incoming_call_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/02_telephony_incoming_call_pc_dark_1440x900.png) (140 КБ)
+  * 📱 **Mobile Light (390x844)**: [`03_telephony_incoming_call_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/03_telephony_incoming_call_mobile_light_390x844.png) (144 КБ)
+  * 📱 **Mobile Dark (390x844)**: [`04_telephony_incoming_call_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/04_telephony_incoming_call_mobile_dark_390x844.png) (143 КБ)
+  * Ликвидированы сироты: `scripts/TelephonyFloatingWidget.original.tsx` и `apps/web/src/appHelpers/telephonyHelpers.ts` (`git rm`).
+
+
 

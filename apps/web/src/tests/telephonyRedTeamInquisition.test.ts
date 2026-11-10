@@ -25,7 +25,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, test as it, beforeEach, afterEach } from "node:test";
 import {
 	useTelephonyStore,
 	assertNoSyntheticCallsInProduction,
@@ -60,15 +60,14 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 
 	afterEach(() => {
 		disableDemoShowcaseMode();
-		vi.restoreAllMocks();
 	});
 
 	// ── 1. PRODUCTION PURITY & ZERO SYNTHETIC LEAKS ───────────────────────────
 	describe("1. Production Purity & Anti-Synthetic Invariants (Mandates 8c, 8k, 8y)", () => {
 		it("assertNoSyntheticCallsInProduction returns true when demo mode is disabled", () => {
 			disableDemoShowcaseMode();
-			expect(isDemoShowcaseMode()).toBe(false);
-			expect(assertNoSyntheticCallsInProduction()).toBe(true);
+			assert.strictEqual(isDemoShowcaseMode(), false);
+			assert.strictEqual(assertNoSyntheticCallsInProduction(), true);
 		});
 
 		it("production mode blocks triggerIncomingCall with empty, whitespace or stub numbers", () => {
@@ -82,8 +81,8 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 				provider: "mango",
 				status: "ringing",
 			});
-			expect(useTelephonyStore.getState().activeCall).toBeNull();
-			expect(useTelephonyStore.getState().callHistory).toHaveLength(0);
+			assert.strictEqual(useTelephonyStore.getState().activeCall, null);
+			assert.strictEqual(useTelephonyStore.getState().callHistory.length, 0);
 
 			store.triggerIncomingCall({
 				phone: "    ",
@@ -92,7 +91,7 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 				provider: "mango",
 				status: "ringing",
 			});
-			expect(useTelephonyStore.getState().activeCall).toBeNull();
+			assert.strictEqual(useTelephonyStore.getState().activeCall, null);
 		});
 
 		it("production mode does not invent synthetic patient names for unknown caller", () => {
@@ -108,15 +107,15 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			});
 
 			const active = useTelephonyStore.getState().activeCall;
-			expect(active).not.toBeNull();
-			expect(active?.phone).toBe("+79991112233");
-			expect(active?.patientName).toBe("");
-			expect(active?.patientId).toBeNull();
+			assert.notStrictEqual(active, null);
+			assert.strictEqual(active?.phone, "+79991112233");
+			assert.strictEqual(active?.patientName, "");
+			assert.strictEqual(active?.patientId, null);
 		});
 
 		it("demo showcase mode canonically binds to Smirnova Anna Sergeevna", () => {
 			enableDemoShowcaseMode();
-			expect(isDemoShowcaseMode()).toBe(true);
+			assert.strictEqual(isDemoShowcaseMode(), true);
 
 			const store = useTelephonyStore.getState();
 			store.triggerIncomingCall({
@@ -128,9 +127,9 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			});
 
 			const active = useTelephonyStore.getState().activeCall;
-			expect(active).not.toBeNull();
-			expect(active?.patientName).toBe("Смирнова Анна Сергеевна");
-			expect(active?.phone).toBe("+79162345678");
+			assert.notStrictEqual(active, null);
+			assert.strictEqual(active?.patientName, "Смирнова Анна Сергеевна");
+			assert.strictEqual(active?.phone, "+79162345678");
 		});
 	});
 
@@ -159,12 +158,12 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			});
 
 			const draft = useScheduleStore.getState().newAppointmentDraft;
-			expect(draft).not.toBeNull();
-			expect(draft?.patientId).toBe("");
-			expect(draft?.reason).toBe("Острая боль / Экстренный приём");
-			expect(draft?.startsAt).toBe(`${todayIso}T10:00:00`);
-			expect(draft?.endsAt).toBe(`${todayIso}T10:30:00`);
-			expect(draft?.comment).toContain(callerPhone);
+			assert.notStrictEqual(draft, null);
+			assert.strictEqual(draft?.patientId, "");
+			assert.strictEqual(draft?.reason, "Острая боль / Экстренный приём");
+			assert.strictEqual(draft?.startsAt, `${todayIso}T10:00:00`);
+			assert.strictEqual(draft?.endsAt, `${todayIso}T10:30:00`);
+			assert.ok(draft?.comment?.includes(callerPhone));
 		});
 
 		it("chairside doctor immunity suppresses incoming call popups during clinical procedures", () => {
@@ -178,14 +177,14 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			};
 
 			// Active clinical visit view protects user from disruption
-			expect(isDisruptionSuppressed("doctor", "schedule")).toBe(true);
-			expect(isDisruptionSuppressed("administrator", "visit")).toBe(true);
-			expect(isDisruptionSuppressed("assistant", "odontogram")).toBe(true);
-			expect(isDisruptionSuppressed("hygienist", "periodontics")).toBe(true);
+			assert.strictEqual(isDisruptionSuppressed("doctor", "schedule"), true);
+			assert.strictEqual(isDisruptionSuppressed("administrator", "visit"), true);
+			assert.strictEqual(isDisruptionSuppressed("assistant", "odontogram"), true);
+			assert.strictEqual(isDisruptionSuppressed("hygienist", "periodontics"), true);
 
 			// Administrator in reception/schedule view receives call popups
-			expect(isDisruptionSuppressed("administrator", "schedule")).toBe(false);
-			expect(isDisruptionSuppressed("registrar", "finances")).toBe(false);
+			assert.strictEqual(isDisruptionSuppressed("administrator", "schedule"), false);
+			assert.strictEqual(isDisruptionSuppressed("registrar", "finances"), false);
 		});
 	});
 
@@ -193,7 +192,7 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 	describe("3. Safe Transcript Rendering & STT Invariants", () => {
 		it("handles empty and undefined transcripts without throwing", () => {
 			const emptyUtterances = [] as const;
-			expect(emptyUtterances.length).toBe(0);
+			assert.strictEqual(emptyUtterances.length, 0);
 
 			const formatTranscript = (utterances: any[] | undefined) => {
 				const list = Array.isArray(utterances) ? utterances : [];
@@ -208,8 +207,8 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 				}));
 			};
 
-			expect(formatTranscript(undefined)).toEqual([]);
-			expect(formatTranscript([])).toEqual([]);
+			assert.deepStrictEqual(formatTranscript(undefined), []);
+			assert.deepStrictEqual(formatTranscript([]), []);
 
 			const rawData = [
 				{
@@ -236,22 +235,22 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			];
 
 			const formatted = formatTranscript(rawData);
-			expect(formatted).toHaveLength(3);
-			expect(formatted[0]?.confidenceDisplay).toBe("98% уверенность");
+			assert.strictEqual(formatted.length, 3);
+			assert.strictEqual(formatted[0]?.confidenceDisplay, "98% уверенность");
 			// Must never display 'NaN%' or throw error
-			expect(formatted[1]?.confidenceDisplay).toBe("");
-			expect(formatted[2]?.confidenceDisplay).toBe("");
+			assert.strictEqual(formatted[1]?.confidenceDisplay, "");
+			assert.strictEqual(formatted[2]?.confidenceDisplay, "");
 		});
 
 		it("formatDurationTimer formats duration seconds safely across edge cases", () => {
-			expect(formatDurationTimer(0)).toBe("00:00");
-			expect(formatDurationTimer(45)).toBe("00:45");
-			expect(formatDurationTimer(65)).toBe("01:05");
-			expect(formatDurationTimer(3665)).toBe("01:01:05");
+			assert.strictEqual(formatDurationTimer(0), "00:00");
+			assert.strictEqual(formatDurationTimer(45), "00:45");
+			assert.strictEqual(formatDurationTimer(65), "01:05");
+			assert.strictEqual(formatDurationTimer(3665), "01:01:05");
 			// Non-finite / negative guard
-			expect(formatDurationTimer(-10)).toBe("00:00");
-			expect(formatDurationTimer(Number.NaN)).toBe("00:00");
-			expect(formatDurationTimer(Number.POSITIVE_INFINITY)).toBe("00:00");
+			assert.strictEqual(formatDurationTimer(-10), "00:00");
+			assert.strictEqual(formatDurationTimer(Number.NaN), "00:00");
+			assert.strictEqual(formatDurationTimer(Number.POSITIVE_INFINITY), "00:00");
 		});
 	});
 
@@ -259,23 +258,23 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 	describe("4. Audio Player Lifecycle & Memory Safety", () => {
 		it("generateWaveformBars produces bounded, non-empty amplitudes", () => {
 			const bars1 = generateWaveformBars("rec-test-call-1", 44);
-			expect(bars1).toHaveLength(44);
+			assert.strictEqual(bars1.length, 44);
 			bars1.forEach((val) => {
-				expect(val).toBeGreaterThanOrEqual(0.1);
-				expect(val).toBeLessThanOrEqual(1.0);
+				assert.ok(val >= 0.1);
+				assert.ok(val <= 1.0);
 			});
 
 			// Deterministic for same seed
 			const bars2 = generateWaveformBars("rec-test-call-1", 44);
-			expect(bars1).toEqual(bars2);
+			assert.deepStrictEqual(bars1, bars2);
 		});
 
 		it("URL.revokeObjectURL is invoked when blob URLs are cleaned up", () => {
 			const revokedUrls: string[] = [];
 			const origRevoke = URL.revokeObjectURL;
-			URL.revokeObjectURL = vi.fn((url: string) => {
+			URL.revokeObjectURL = (url: string) => {
 				revokedUrls.push(url);
-			});
+			};
 
 			try {
 				const blobUrl = "blob:http://localhost:3000/1234-call-audio";
@@ -283,7 +282,7 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 				if (blobUrl.startsWith("blob:")) {
 					URL.revokeObjectURL(blobUrl);
 				}
-				expect(revokedUrls).toContain(blobUrl);
+				assert.ok(revokedUrls.includes(blobUrl));
 			} finally {
 				URL.revokeObjectURL = origRevoke;
 			}
@@ -291,15 +290,15 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 
 		it("audio player controls respect playback speeds and mute toggle", () => {
 			const store = useTelephonyStore.getState();
-			expect(store.playbackSpeed).toBe(1);
+			assert.strictEqual(store.playbackSpeed, 1);
 
 			store.setPlaybackSpeed(1.5);
-			expect(useTelephonyStore.getState().playbackSpeed).toBe(1.5);
+			assert.strictEqual(useTelephonyStore.getState().playbackSpeed, 1.5);
 
 			store.toggleMute();
-			expect(useTelephonyStore.getState().isMuted).toBe(true);
+			assert.strictEqual(useTelephonyStore.getState().isMuted, true);
 			store.toggleMute();
-			expect(useTelephonyStore.getState().isMuted).toBe(false);
+			assert.strictEqual(useTelephonyStore.getState().isMuted, false);
 		});
 	});
 
@@ -333,7 +332,7 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 				});
 			});
 
-			expect(violations).toHaveLength(0);
+			assert.strictEqual(violations.length, 0);
 		});
 	});
 });

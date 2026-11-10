@@ -15,8 +15,11 @@ import {
 export function useTelephonyRealtime() {
 	const currentView = useAppStore((s) => s.currentView);
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const hash = typeof window !== "undefined" ? window.location.hash : "";
 	const isDoctorMode =
-		selectedWorkspaceRole === "doctor" || currentView === "visit";
+		selectedWorkspaceRole === "doctor" ||
+		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(currentView as string) ||
+		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
 
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
@@ -61,9 +64,16 @@ export function useTelephonyRealtime() {
 				advertisingChannel: p.advertisingChannel,
 				leadId: p.leadId,
 			});
+		} else if (lastMessage.type === "TELEPHONY_CALL_STATUS") {
+			const status = lastMessage.payload?.status;
+			if (status === "connected" || status === "answered") {
+				useTelephonyStore.getState().connectCall();
+			} else if (status === "ended" || status === "hangup" || status === "rejected") {
+				useTelephonyStore.getState().endCall();
+			}
+			void fetchCallHistory();
 		} else if (
 			lastMessage.type === "TELEPHONY_MISSED_CALL" ||
-			lastMessage.type === "TELEPHONY_CALL_STATUS" ||
 			lastMessage.type === "TELEPHONY_CALL_TRANSFERRED"
 		) {
 			void fetchCallHistory();

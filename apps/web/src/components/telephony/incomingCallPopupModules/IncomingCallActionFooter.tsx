@@ -57,8 +57,8 @@ export function IncomingCallActionFooter({
 					className="primary-button flex-1 min-h-[44px] sm:min-h-[38px] px-3 sm:px-3.5 text-xs sm:text-sm font-bold whitespace-nowrap inline-flex items-center justify-center gap-1.5 rounded-xl cursor-pointer transition-all active:scale-95 bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)] shadow-sm"
 					title={
 						isKnownPatient
-							? "Записать пациента на приём (1 клик)"
-							: "Создать пациента и записать (1 клик)"
+							? "Записать пациента на приём"
+							: "Создать пациента и записать"
 					}
 					data-testid="badge-action-book"
 				>
@@ -71,7 +71,7 @@ export function IncomingCallActionFooter({
 					type="button"
 					onClick={handleCallback}
 					className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-[38px] px-2.5 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1 rounded-xl cursor-pointer transition-all active:scale-95 shrink-0"
-					title="Перезвонить пациенту (1 клик)"
+					title="Перезвонить пациенту"
 					data-testid="badge-action-callback"
 				>
 					<PhoneForwarded

@@ -165,7 +165,9 @@ export async function handleEndCall(
 						...(body.notes ? { notes: body.notes } : {}),
 					});
 				}
-			} catch {}
+			} catch (err) {
+				request.log.warn({ err }, "[Telephony] Lead creation error");
+			}
 		}
 	});
 

@@ -34,10 +34,10 @@ export function TelephonyCallLogItemActions({
 				onClick={() => onQuickBook(item, matchedPatient)}
 				className="dnt-telephony-primary-btn flex-1 min-h-[36px] px-3 py-1.5 rounded-lg text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
 				data-testid="call-log-quick-book-btn"
-				title="Быстрая запись на приём в 1 клик"
+				title="Быстрая запись на приём"
 			>
 				<CalendarCheck size={13} />
-				<span>Записать в 1 клик</span>
+				<span>Записать на приём</span>
 			</button>
 
 			{item.recordingUrl && !isAudioOpen ? (

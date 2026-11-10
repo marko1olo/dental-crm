@@ -11,7 +11,6 @@ import {
 	IncomingCallPopup,
 	resolveTelephonyWsUrl,
 } from "../components/telephony/IncomingCallPopup";
-import { useWebsocket } from "../hooks/useWebsocket";
 import { staffRoleChoices } from "../lib/clinicCapabilities";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
@@ -73,8 +72,6 @@ export function WorkspaceTopbar({
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 	const isCallDrawerOpen = useTelephonyStore((s) => s.isCallDrawerOpen);
 	const agentState = useTelephonyStore((s) => s.agentState);
-	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
-	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
 	const storeCurrentView = useAppStore((s) => s.currentView);
 	const effectiveView = propCurrentView ?? storeCurrentView;
 	const isFullScreenStudioActive = useUiSurfaceStore(
@@ -94,41 +91,13 @@ export function WorkspaceTopbar({
 		selectedWorkspaceRole === "doctor" ||
 		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(effectiveView as string) ||
 		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
-	const isDoctorMode = isSterileZone;
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
-		(activeCall || isCallDrawerOpen) &&
+		!isSterileZone &&
+			(activeCall || isCallDrawerOpen) &&
 			!isDndActive &&
 			!isFullScreenStudioActive,
 	);
-
-	const telephonyWsUrl = !isDoctorMode ? resolveTelephonyWsUrl() : "";
-	const { lastMessage, isConnected } = useWebsocket(telephonyWsUrl);
-
-	useEffect(() => {
-		setWsConnected(isConnected);
-	}, [isConnected, setWsConnected]);
-
-	useEffect(() => {
-		if (
-			!isDoctorMode &&
-			lastMessage?.type === "TELEPHONY_INCOMING_CALL" &&
-			lastMessage.payload
-		) {
-			const p = lastMessage.payload;
-			triggerIncomingCall({
-				phone: p.phone || "",
-				patientId: p.patientId || null,
-				patientName: p.patientName || "Неизвестный номер",
-				callId: p.callId,
-				provider: p.provider || "mango",
-				timestamp: p.timestamp || new Date().toISOString(),
-				status: "ringing",
-				recordingUrl: p.recordingUrl,
-				callStartedAt: Date.now(),
-			});
-		}
-	}, [lastMessage, triggerIncomingCall, isDoctorMode]);
 
 	return (
 		<header className="topbar h-11 min-h-[44px] max-h-[44px] px-2 sm:px-4 flex items-center justify-between gap-3 overflow-visible border-b border-[var(--line)] bg-[var(--glass-bg)] backdrop-blur-md sticky top-0 z-25">

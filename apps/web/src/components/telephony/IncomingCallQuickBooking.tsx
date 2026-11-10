@@ -161,7 +161,7 @@ export function IncomingCallQuickBooking({
 			<div className="flex items-center justify-between text-xs font-bold text-[var(--teal)] uppercase tracking-wider mb-1">
 				<div className="flex items-center gap-1.5">
 					<Calendar size={13} />
-					<span>Быстрая запись в 1 клик</span>
+					<span>Быстрая запись</span>
 				</div>
 				{onClose && (
 					<button

@@ -5,7 +5,6 @@
 
 import React from "react";
 import { Headphones, PhoneCall, Volume2, VolumeX } from "lucide-react";
-import { showToast } from "../../GlobalToast.js";
 import type { StatusBlockTelephonyProps } from "./headerStatusTypes.js";
 
 const AGENT_STATES = [
@@ -75,10 +74,12 @@ export function StatusBlockTelephony({ status, onClose }: StatusBlockTelephonyPr
 					type="button"
 					onClick={() => {
 						onClose();
-						showToast("Телефония АТС активна и готова к приему вызовов", "info");
+						if (typeof window !== "undefined") {
+							window.location.hash = "#telephony";
+						}
 					}}
 					className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] text-xs"
-					title="Телефония: АТС подключена"
+					title="Открыть журнал вызовов"
 				>
 					<PhoneCall size={14} className="text-emerald-500 shrink-0" />
 					<span>Вызовы</span>

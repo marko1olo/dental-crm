@@ -127,7 +127,7 @@ export function BadgeMenuTelephonyActions({
 
 			{!isKnownPatient && (
 				<button type="button" onClick={() => { onQuickCreatePatient(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer">
-					<UserCheck size={13} className="text-emerald-600" /><span>+ Новый пациент (1-Click)</span>
+					<UserCheck size={13} className="text-emerald-600" /><span>+ Новый пациент</span>
 				</button>
 			)}
 

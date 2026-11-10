@@ -44,7 +44,7 @@ export function TelephonyDrawerMoreMenu({
 			{upcomingAppointment && (
 				<>
 					<button type="button" onClick={() => { onSendWhatsApp(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer">
-						<Send size={13} className="text-emerald-600" /><span>1-Click WhatsApp</span>
+						<Send size={13} className="text-emerald-600" /><span>WhatsApp</span>
 					</button>
 					<button type="button" onClick={() => { onCopySms(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
 						{smsCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} className="text-[var(--muted)]" />}

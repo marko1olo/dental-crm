@@ -98,7 +98,7 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 							<p className="text-xs font-bold text-[var(--ink)] truncate">{tel.activeCall.patientName || tel.activeCall.phone}</p>
 							<p className="text-[11px] font-mono text-[var(--teal)] font-bold">{formatDurationTimer(Math.floor((Date.now() - (tel.activeCall.callStartedAt || Date.now())) / 1000))}</p>
 						</div>
-						<button type="button" onClick={() => { tel.rejectCall(); showToast("Вызов завершен", "info"); }} className="min-h-[44px] sm:min-h-[32px] px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0" title="Завершить звонок" aria-label="Завершить звонок">
+						<button type="button" onClick={() => { tel.rejectCall(); showToast("Вызов завершен", "info"); }} className="min-h-[44px] sm:min-h-[32px] px-3 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0" title="Завершить звонок" aria-label="Завершить звонок">
 							<PhoneOff size={13} /><span>Завершить звонок</span>
 						</button>
 					</div>

@@ -169,7 +169,7 @@ export function useIncomingCallPopupController(
 		useTelephonyStore.getState().recordCallOutcome("booked");
 		const targetSlot = quickSlots.find((s) => s.type === slotType);
 		const slotLabel = targetSlot?.title || QUICK_BOOKING_TOAST_LABEL_BY_SLOT[slotType] || "Слот зарезервирован";
-		showToast(`Запись подтверждена в 1 клик: ${slotLabel}. Слот зарезервирован в расписании.`, "success");
+		showToast(`Запись подтверждена: ${slotLabel}. Слот зарезервирован в расписании.`, "success");
 	};
 
 	// Fast Patient Registration

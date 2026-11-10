@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, test as it } from "node:test";
 import {
 	createTelephonyCallActions,
 	createCallLineManagementActions,
@@ -13,8 +14,9 @@ import {
 
 describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Mandate 8e)", () => {
 	it("1.1. Telephony Call Actions Facade exports and binds all submodules correctly", () => {
-		const mockSet = vi.fn();
-		const mockGet = vi.fn().mockReturnValue({
+		const mockSetCalls: any[] = [];
+		const mockSet = (...args: any[]) => mockSetCalls.push(args);
+		const mockGet = () => ({
 			activeLineId: 1,
 			line1: { lineId: 1, state: "idle", call: null, durationSeconds: 0, isMuted: false },
 			line2: { lineId: 2, state: "idle", call: null, durationSeconds: 0, isMuted: false },
@@ -28,27 +30,27 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 		const actions = createTelephonyCallActions(mockSet as any, mockGet as any);
 
 		// Проверяем наличие всех контрактов Линий и Удержания (callLineManagement)
-		expect(typeof actions.switchLine).toBe("function");
-		expect(typeof actions.holdCall).toBe("function");
-		expect(typeof actions.unholdCall).toBe("function");
-		expect(typeof actions.toggleHold).toBe("function");
-		expect(typeof actions.triggerIncomingCall).toBe("function");
+		assert.strictEqual(typeof actions.switchLine, "function");
+		assert.strictEqual(typeof actions.holdCall, "function");
+		assert.strictEqual(typeof actions.unholdCall, "function");
+		assert.strictEqual(typeof actions.toggleHold, "function");
+		assert.strictEqual(typeof actions.triggerIncomingCall, "function");
 
 		// Проверяем наличие всех контрактов Аудио и Ответа (callAudioStreamActions)
-		expect(typeof actions.answerCall).toBe("function");
-		expect(typeof actions.connectCall).toBe("function");
-		expect(typeof actions.acceptCall).toBe("function");
-		expect(typeof actions.rejectCall).toBe("function");
-		expect(typeof actions.dismissCall).toBe("function");
+		assert.strictEqual(typeof actions.answerCall, "function");
+		assert.strictEqual(typeof actions.connectCall, "function");
+		assert.strictEqual(typeof actions.acceptCall, "function");
+		assert.strictEqual(typeof actions.rejectCall, "function");
+		assert.strictEqual(typeof actions.dismissCall, "function");
 
 		// Проверяем наличие всех контрактов Трансфера и Завершения (callTransferAndDtmf)
-		expect(typeof actions.endCall).toBe("function");
-		expect(typeof actions.recordCallOutcome).toBe("function");
-		expect(typeof actions.logAcutePainCall).toBe("function");
-		expect(typeof actions.startCallTransfer).toBe("function");
-		expect(typeof actions.completeCallTransfer).toBe("function");
-		expect(typeof actions.cancelCallTransfer).toBe("function");
-		expect(typeof actions.fetchCallHistory).toBe("function");
+		assert.strictEqual(typeof actions.endCall, "function");
+		assert.strictEqual(typeof actions.recordCallOutcome, "function");
+		assert.strictEqual(typeof actions.logAcutePainCall, "function");
+		assert.strictEqual(typeof actions.startCallTransfer, "function");
+		assert.strictEqual(typeof actions.completeCallTransfer, "function");
+		assert.strictEqual(typeof actions.cancelCallTransfer, "function");
+		assert.strictEqual(typeof actions.fetchCallHistory, "function");
 	});
 
 	it("1.2. Call Line Management switches lines and updates hold states cleanly", () => {
@@ -60,44 +62,46 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 			isHeld: false,
 			isMuted: false,
 		};
-		const mockSet = vi.fn().mockImplementation((update) => {
+		let setCalled = false;
+		const mockSet = (update: any) => {
+			setCalled = true;
 			state = { ...state, ...update };
-		});
-		const mockGet = vi.fn().mockImplementation(() => state);
+		};
+		const mockGet = () => state;
 
 		const lineActions = createCallLineManagementActions(mockSet as any, mockGet as any);
 		lineActions.switchLine(2);
 
-		expect(mockSet).toHaveBeenCalled();
-		expect(state.activeLineId).toBe(2);
-		expect(state.line1.state).toBe("held");
+		assert.strictEqual(setCalled, true);
+		assert.strictEqual(state.activeLineId, 2);
+		assert.strictEqual(state.line1.state, "held");
 	});
 
 	it("1.3. Acute Pain Call registration is instantaneous without blocking UI (Mandate 8e)", () => {
 		let state: any = {
 			callHistory: [],
 		};
-		const mockSet = vi.fn().mockImplementation((updater) => {
+		const mockSet = (updater: any) => {
 			if (typeof updater === "function") {
 				state = updater(state);
 			} else {
 				state = { ...state, ...updater };
 			}
-		});
-		const mockGet = vi.fn().mockImplementation(() => state);
+		};
+		const mockGet = () => state;
 
 		const transferActions = createCallTransferAndDtmfActions(mockSet as any, mockGet as any);
 		transferActions.logAcutePainCall("+79995554433", "Срочный Пациент", "Пульпит 26 зуба, острая боль");
 
-		expect(state.callHistory.length).toBe(1);
-		expect(state.callHistory[0].acutePain).toBe(true);
-		expect(state.callHistory[0].phone).toBe("+79995554433");
-		expect(state.callHistory[0].status).toBe("answered");
+		assert.strictEqual(state.callHistory.length, 1);
+		assert.strictEqual(state.callHistory[0].acutePain, true);
+		assert.strictEqual(state.callHistory[0].phone, "+79995554433");
+		assert.strictEqual(state.callHistory[0].status, "answered");
 	});
 
 	it("2.1. Patient Mutations Facade and modules export correctly", () => {
-		expect(typeof usePatientMutations).toBe("function");
-		expect(typeof usePatientCoreSave).toBe("function");
-		expect(typeof usePatientAdministrativeSave).toBe("function");
+		assert.strictEqual(typeof usePatientMutations, "function");
+		assert.strictEqual(typeof usePatientCoreSave, "function");
+		assert.strictEqual(typeof usePatientAdministrativeSave, "function");
 	});
 });
