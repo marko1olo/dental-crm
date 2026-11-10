@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { EmergencyRescueModal } from "../../emergency/EmergencyRescueModal";
-import { OrthodonticVisitProtocolWidget } from "../../orthodontics/OrthodonticVisitProtocolWidget";
+import { OrthodonticsStudioModal } from "../../orthodontics/OrthodonticsStudioModal";
 import { AnesthesiaQuickBar } from "../AnesthesiaQuickBar";
 import { STANDARD_ANESTHESIA_PRESETS } from "../anesthesiaCatalog";
 
@@ -95,9 +95,9 @@ describe("Wave 40: Doctor Autonomy & Dead-Ends Elimination (Mandates 8e, 8i, 8k,
 	});
 
 	describe("2. Orthodontics Dead-Ends Elimination", () => {
-		it("OrthodonticVisitProtocolWidget elastic size select is not disabled when scheme is none", () => {
+		it("OrthodonticsStudioModal elastic size select is not disabled when scheme is none", () => {
 			const html = renderToString(
-				<OrthodonticVisitProtocolWidget
+				<OrthodonticsStudioModal
 					isOpen={true}
 					onClose={() => {}}
 					patientId="pat-101"

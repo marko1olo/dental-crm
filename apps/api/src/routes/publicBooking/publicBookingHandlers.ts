@@ -73,8 +73,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		});
 	};
 
-	server.post("/send-otp", sendOtpHandler);
-	server.post<{ Params: { organizationId: string } }>("/:organizationId/send-otp", sendOtpHandler);
+	server.post<{
+		Params?: { organizationId?: string };
+		Body: { phone: string; method?: "sms" | "flash_call"; organizationId?: string };
+	}>("/send-otp", sendOtpHandler);
+	server.post<{
+		Params: { organizationId: string };
+		Body: { phone: string; method?: "sms" | "flash_call"; organizationId?: string };
+	}>("/:organizationId/send-otp", sendOtpHandler);
 
 	// Rate-limited OTP verify handler
 	const verifyOtpHandler = async (
@@ -110,8 +116,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		});
 	};
 
-	server.post("/verify-otp", verifyOtpHandler);
-	server.post<{ Params: { organizationId: string } }>("/:organizationId/verify-otp", verifyOtpHandler);
+	server.post<{
+		Params?: { organizationId?: string };
+		Body: { phone: string; code: string; organizationId?: string };
+	}>("/verify-otp", verifyOtpHandler);
+	server.post<{
+		Params: { organizationId: string };
+		Body: { phone: string; code: string; organizationId?: string };
+	}>("/:organizationId/verify-otp", verifyOtpHandler);
 
 	// Cloud Relay / 24/7 intake endpoint (supports daytime direct or nighttime soft-hold queue)
 	server.post("/cloud-intake", async (request, reply) => {

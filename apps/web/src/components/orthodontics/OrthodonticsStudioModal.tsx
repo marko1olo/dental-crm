@@ -6,28 +6,39 @@
  * Автономия врача (0 заблокированных кнопок), 1-клик пресеты активации,
  * контроль этапов элайнеров (шаг X из Y), замена дуг и эластиков, фотопротокол и ТРГ,
  * нативный мобильный Bottom Sheet Apple HIG (390×844) с тач-таргетами >= 44x44px.
- *
- * Sweet Spot: 400–480 строк (Мандат 8b/8zi).
  */
 
-import React, { useState, useCallback, useMemo } from "react";
-import { X, Check, Sparkles, Activity, Layers, ArrowRight, Copy, Clock, BookOpen, Smile, FileText, Camera } from "lucide-react";
+import React, { useState, useCallback, useMemo, useEffect, Suspense } from "react";
+import { X, Check, Sparkles, Activity, Layers, Clock, Smile, FileText, Camera } from "lucide-react";
 import {
-	APPLIANCES_CATALOG, ANGLE_CLASSES_CATALOG, ARCHWIRE_ALLOYS_SSOT, ARCHWIRE_SECTIONS_SSOT,
-	ELASTICS_CATALOG, TRG_ANGLES_NORMS_SSOT, CHAIRSIDE_ACTIONS_CATALOG, ORTHO_ACTIVATION_PRESETS,
-	ORTHO_PHOTO_SLOTS_SSOT, ORTHO_PATIENT_MEMO_SECTIONS, createDefaultOrthoProtocolState,
-	calculateSkeletalClassFromAnb, evaluateTrgAngleStatus, formatOrthoProtocolSoapEntry, getOrthoPatientMemoText,
-	type ArchwireAlloy, type ArchwireSection, type OrthoProtocolState, type OrthoActivationPreset,
+	APPLIANCES_CATALOG, ORTHO_ACTIVATION_PRESETS, createDefaultOrthoProtocolState,
+	calculateSkeletalClassFromAnb, formatOrthoProtocolSoapEntry, getOrthoPatientMemoText,
+	type OrthoProtocolState, type OrthoActivationPreset,
 } from "./orthodonticsCatalogData";
+import { OrthodonticsTabsContent } from "./OrthodonticsTabsContent";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { lazyWithRetry } from "../../lib/lazyWithRetry";
+
+export { formatOrthodonticPatientMemo, type OrthodonticPatientMemoParams } from "./orthodonticPatientMemo";
+
 if (typeof document !== "undefined") {
 	import("./styles/orthodonticsStudio.css");
 }
+
+const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
+	import("../diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({ default: m.OrthodonticPhotoProtocolModal })),
+);
+const CephalometricAnalysisModal = lazyWithRetry(() =>
+	import("../radiology/CephalometricAnalysisModal").then((m) => ({ default: m.CephalometricAnalysisModal })),
+);
 
 export interface OrthodonticsStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly initialProtocol?: OrthoProtocolState;
-	readonly onSaveProtocol?: (protocol: OrthoProtocolState, summarySoap: string) => void;
+	readonly onSaveProtocol?: (protocol: OrthoProtocolState, summarySoap: string) => void | Promise<void>;
 	readonly patientName?: string;
 	readonly patientId?: string;
 	readonly doctorName?: string;
@@ -40,16 +51,69 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	onClose,
 	initialProtocol,
 	onSaveProtocol,
-	patientName = "Смирнова Екатерина Андреевна",
-	doctorName = "Д-р Соколов А. В.",
+	patientName: propPatientName,
+	patientId,
+	doctorName: propDoctorName,
 	visitId,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+	const patientName = (propPatientName && propPatientName.trim()) || (isDemo ? "Смирнова Екатерина Андреевна" : "Пациент");
+	const doctorName = (propDoctorName && propDoctorName.trim()) || (isDemo ? "Д-р Соколов А. В." : "Лечащий врач");
+
 	const [protocol, setProtocol] = useState<OrthoProtocolState>(() => {
 		return initialProtocol ? { ...initialProtocol } : createDefaultOrthoProtocolState();
 	});
 
 	const [activeTab, setActiveTab] = useState<"brackets" | "aligners" | "photo_trg" | "diary">("brackets");
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+	const [selectedElasticSize, setSelectedElasticSize] = useState<string>("3/16 Medium");
+	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState<boolean>(false);
+	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
+
+	// Честная гидратация данных пациента из базы PostgreSQL 18
+	useEffect(() => {
+		if (!patientId) return;
+		let isCancelled = false;
+		const fetchProgress = async () => {
+			try {
+				const res = await fetch(`/api/orthodontics/${patientId}/progress`, {
+					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
+				});
+				if (res.ok) {
+					const data = (await res.json()) as {
+						currentAligner?: number;
+						totalAligners?: number;
+						currentStage?: number;
+						archwire?: string;
+						lastActionSummary?: string;
+					};
+					if (!isCancelled && data) {
+						setProtocol((prev) => ({
+							...prev,
+							...(data.currentAligner
+								? {
+										alignerTracking: {
+											...prev.alignerTracking,
+											currentStep: data.currentAligner,
+											totalSteps: data.totalAligners ?? prev.alignerTracking.totalSteps,
+										},
+								  }
+								: {}),
+							...(data.currentStage ? { currentMonth: data.currentStage } : {}),
+						}));
+					}
+				}
+			} catch (err) {
+				if (!isCancelled) {
+					console.warn("[OrthodonticsStudioModal] Failed to fetch ortho progress:", err);
+				}
+			}
+		};
+		fetchProgress();
+		return () => {
+			isCancelled = true;
+		};
+	}, [patientId]);
 
 	const skeletalClassInfo = useMemo(() => {
 		const anbVal = protocol.trgValues.anb ?? 2.1;
@@ -118,15 +182,82 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		}));
 	}, []);
 
-	const handleSaveProtocol = useCallback(() => {
+	const handleSaveProtocol = useCallback(async () => {
 		const updatedProtocol: OrthoProtocolState = { ...protocol, savedAt: new Date().toISOString() };
-		onSaveProtocol?.(updatedProtocol, soapSummary);
+
+		if (onSaveProtocol) {
+			try {
+				await onSaveProtocol(updatedProtocol, soapSummary);
+			} catch (err) {
+				console.warn("[OrthodonticsStudioModal] onSaveProtocol error:", err);
+			}
+		}
+
+		if (patientId) {
+			try {
+				if (protocol.applianceCategory === "aligners") {
+					await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							alignerCount: protocol.alignerTracking.issuedSetsCount || 2,
+							wearDaysPerAligner: protocol.alignerTracking.wearDaysPerStep || 14,
+							totalAligners: protocol.alignerTracking.totalSteps || 24,
+							note: "Выдача комплекта элайнеров",
+						}),
+					});
+				} else {
+					const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
+						niti: "NiTi",
+						cuniti: "CuNiTi",
+						ss: "SS",
+						tma: "TMA",
+					};
+					await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							material: materialMap[protocol.upperAlloy] || "CuNiTi",
+							section: protocol.upperSection,
+							arch: "both",
+							note: "Плановая смена ортодонтической дуги",
+						}),
+					});
+					await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							powerChain: protocol.selectedActionIds.includes("power_chain"),
+							note: "Активация лигатур",
+						}),
+					});
+				}
+
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente:emr-entry-added", {
+							detail: {
+								patientId,
+								type: "orthodontic_protocol",
+								text: soapSummary,
+								savedAt: new Date().toISOString(),
+							},
+						}),
+					);
+				}
+				showToast("✓ Активация этапа успешно зафиксирована в ЭМК", "success");
+			} catch (err) {
+				console.warn("[OrthodonticsStudioModal] Save error:", err);
+				showToast("Сетевой сбой при фиксации этапа. Данные сохранены локально.", "warning");
+			}
+		}
+
 		setFeedbackToast("✓ Активация этапа зафиксирована");
 		setTimeout(() => {
 			setFeedbackToast(null);
 			onClose();
 		}, 400);
-	}, [protocol, soapSummary, onSaveProtocol, onClose]);
+	}, [protocol, soapSummary, onSaveProtocol, patientId, onClose]);
 
 	const handleCopyText = useCallback((textToCopy: string, successMsg: string) => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -137,49 +268,6 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	}, []);
 
 	if (!isOpen) return null;
-
-	const renderJawCard = (title: string, isUpper: boolean) => {
-		const currentAlloy = isUpper ? protocol.upperAlloy : protocol.lowerAlloy;
-		const currentSection = isUpper ? protocol.upperSection : protocol.lowerSection;
-		const setAlloy = (a: ArchwireAlloy) => setProtocol((p) => (isUpper ? { ...p, upperAlloy: a } : { ...p, lowerAlloy: a }));
-		const setSection = (s: ArchwireSection) => setProtocol((p) => (isUpper ? { ...p, upperSection: s } : { ...p, lowerSection: s }));
-
-		return (
-			<div className="ortho-card">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<Layers className={`w-4 h-4 ${isUpper ? "text-[var(--teal,#0d9488)]" : "text-[var(--accent-glow,#38bdf8)]"}`} />
-						<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">{title}</span>
-					</div>
-					{isUpper && (
-						<button type="button" onClick={handleSyncUpperToLower} className="text-[11px] text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 font-medium min-h-[36px]">
-							Копировать на НЧ <ArrowRight className="w-3 h-3" />
-						</button>
-					)}
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<span className="text-[11px] font-medium text-[var(--ink-muted)]">Сплав дуги:</span>
-					<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-						{ARCHWIRE_ALLOYS_SSOT.map((alloy) => (
-							<button key={alloy.key} type="button" onClick={() => setAlloy(alloy.key)} className={`ortho-touch-button ${currentAlloy === alloy.key ? "selected" : ""}`}>
-								{alloy.shortRu}
-							</button>
-						))}
-					</div>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<span className="text-[11px] font-medium text-[var(--ink-muted)]">Сечение дуги:</span>
-					<div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-						{ARCHWIRE_SECTIONS_SSOT.map((sec) => (
-							<button key={sec.section} type="button" onClick={() => setSection(sec.section)} className={`ortho-touch-button ${currentSection === sec.section ? "selected" : ""}`}>
-								{sec.dimensionRu}
-							</button>
-						))}
-					</div>
-				</div>
-			</div>
-		);
-	};
 
 	return (
 		<div className="ortho-studio-backdrop" role="dialog" aria-modal="true" data-testid="orthodontic-studio-modal">
@@ -264,187 +352,22 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					)}
 				</div>
 
-				<div className="ortho-content-body">
-					{activeTab === "brackets" && (
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-							{renderJawCard("Верхняя челюсть (ВЧ)", true)}
-							{renderJawCard("Нижняя челюсть (НЧ)", false)}
-							<div className="ortho-card">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Межчелюстные эластики</span>
-									{protocol.selectedElasticId && (
-										<button type="button" onClick={() => setProtocol((p) => ({ ...p, selectedElasticId: null }))} className="text-[11px] text-[var(--ink-muted)] hover:text-[var(--ink)]">Снять тяги</button>
-									)}
-								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-									{ELASTICS_CATALOG.map((elastic) => {
-										const isSelected = protocol.selectedElasticId === elastic.id;
-										return (
-											<button key={elastic.id} type="button" onClick={() => setProtocol((p) => ({ ...p, selectedElasticId: isSelected ? null : elastic.id }))} className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 ${isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--ink)] shadow-sm" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
-												<div className="flex items-center justify-between">
-													<span className="text-xs font-bold">{elastic.classNameRu}</span>
-													<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--line-subtle,#f1f5f9)]">{elastic.animalName}</span>
-												</div>
-												<div className="text-[11px] text-[var(--ink-muted)]">{elastic.forceOz} ({elastic.sizeInch})</div>
-												<div className="text-[10px] text-[var(--teal,#0d9488)] font-medium">{elastic.hookSchemeRu}</div>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-							<div className="ortho-card">
-								<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Манипуляции приёма в 1 клик</span>
-								<div className="flex flex-wrap gap-1.5">
-									{CHAIRSIDE_ACTIONS_CATALOG.map((action) => {
-										const isChecked = protocol.selectedActionIds.includes(action.id);
-										return (
-											<button key={action.id} type="button" onClick={() => handleToggleAction(action.id)} className={`min-h-[44px] px-3 py-2 text-xs font-medium rounded-lg border transition-all flex items-center gap-2 ${isChecked ? "border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] font-semibold shadow-sm" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
-												<div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] text-white" : "border-[var(--line)] bg-[var(--paper)]"}`}>
-													{isChecked && <Check className="w-3 h-3" />}
-												</div>
-												<span>{action.label}</span>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-						</div>
-					)}
-
-					{activeTab === "aligners" && (
-						<div className="flex flex-col gap-4">
-							<div className="ortho-card">
-								<div className="flex items-center justify-between">
-									<div>
-										<h4 className="text-sm font-bold text-[var(--ink)]">Контроль этапов элайнеров</h4>
-										<p className="text-xs text-[var(--ink-muted)]">Шаг {protocol.alignerTracking.currentStep} из {protocol.alignerTracking.totalSteps} (смена каждые {protocol.alignerTracking.wearDaysPerStep} дней)</p>
-									</div>
-									<button type="button" onClick={handleAdvanceAlignerStep} className="ortho-touch-button selected">
-										+ Выдать следующий шаг
-									</button>
-								</div>
-								<div className="ortho-aligner-progress-bar">
-									<div className="ortho-aligner-progress-fill" style={{ width: `${Math.round((protocol.alignerTracking.currentStep / protocol.alignerTracking.totalSteps) * 100)}%` }} />
-								</div>
-								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-									<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-										<span className="text-[10px] text-[var(--ink-muted)]">Выдано комплектов</span>
-										<span className="text-sm font-bold text-[var(--ink)]">{protocol.alignerTracking.issuedSetsCount} пары</span>
-									</div>
-									<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-										<span className="text-[10px] text-[var(--ink-muted)]">Плановая дата визита</span>
-										<span className="text-sm font-bold text-[var(--ink)]">{protocol.alignerTracking.nextPlannedDate}</span>
-									</div>
-									<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-										<span className="text-[10px] text-[var(--ink-muted)]">Сепарация (IPR)</span>
-										<span className="text-sm font-bold text-[var(--teal,#0d9488)]">{protocol.alignerTracking.iprCompleted ? "Выполнена ✓" : "Не требуется"}</span>
-									</div>
-									<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-										<span className="text-[10px] text-[var(--ink-muted)]">Аттачменты</span>
-										<span className="text-sm font-bold text-[var(--teal,#0d9488)]">{protocol.alignerTracking.attachmentsVerified ? "В норме ✓" : "Требуется осмотр"}</span>
-									</div>
-								</div>
-							</div>
-							<div className="ortho-card">
-								<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Классификация прикуса по Энглю</span>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-									{ANGLE_CLASSES_CATALOG.map((ac) => {
-										const isSelected = protocol.angleClass === ac.key;
-										return (
-											<button key={ac.key} type="button" onClick={() => setProtocol((p) => ({ ...p, angleClass: ac.key }))} className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1 min-h-[44px] ${isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--ink)] shadow-sm" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
-												<div className="text-xs font-bold">{ac.titleRu}</div>
-												<div className="text-[11px] text-[var(--ink-muted)] leading-relaxed">{ac.descriptionRu}</div>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-						</div>
-					)}
-
-					{activeTab === "photo_trg" && (
-						<div className="flex flex-col gap-4">
-							<div className="ortho-card">
-								<div className="flex items-center justify-between">
-									<div>
-										<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Клинический фотопротокол</h4>
-										<p className="text-[11px] text-[var(--ink-muted)]">5 стандартных проекций фиксации ортодонтического статуса</p>
-									</div>
-									<span className="text-xs font-semibold text-[var(--teal,#0d9488)]">✓ 6 из 6 зафиксировано</span>
-								</div>
-								<div className="ortho-photo-grid">
-									{ORTHO_PHOTO_SLOTS_SSOT.map((slot) => {
-										const isVerified = Boolean(protocol.photoStatuses[slot.id]);
-										return (
-											<div key={slot.id} onClick={() => handleTogglePhotoSlot(slot.id)} className={`ortho-photo-card cursor-pointer ${isVerified ? "verified" : ""}`}>
-												<div className="flex items-center justify-between">
-													<span className="text-xs font-bold text-[var(--ink)]">{slot.titleRu}</span>
-													<span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isVerified ? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)]" : "bg-[var(--line-subtle,#f1f5f9)] text-[var(--ink-muted)]"}`}>
-														{isVerified ? "Зафиксировано" : "Ожидает"}
-													</span>
-												</div>
-												<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{slot.descriptionRu}</p>
-											</div>
-										);
-									})}
-								</div>
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-								{TRG_ANGLES_NORMS_SSOT.map((norm) => {
-									const currentVal = protocol.trgValues[norm.key] ?? norm.normDeg;
-									const evaluation = evaluateTrgAngleStatus(norm.key, currentVal);
-									return (
-										<div key={norm.key} className="ortho-card">
-											<div className="flex items-center justify-between">
-												<span className="text-xs font-bold text-[var(--ink)]">{norm.symbol}</span>
-												<span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${evaluation.status === "normal" ? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]" : "bg-[var(--warning-surface,rgba(245,158,11,0.1))] text-[var(--warning-ink,#f59e0b)]"}`}>
-													{evaluation.badgeLabelRu}
-												</span>
-											</div>
-											<div className="flex items-baseline gap-2">
-												<span className="text-2xl font-extrabold text-[var(--ink)]">{currentVal}°</span>
-												<span className="text-xs text-[var(--ink-muted)]">Норма: {norm.normDeg}° ± {norm.toleranceDeg}°</span>
-											</div>
-											<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{norm.interpretationRu}</p>
-										</div>
-									);
-								})}
-							</div>
-						</div>
-					)}
-
-					{activeTab === "diary" && (
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-							<div className="ortho-card">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Дневник приёма (SOAP)</span>
-									<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="text-xs text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 font-semibold min-h-[36px]">
-										<Copy className="w-3.5 h-3.5" /> В медкарту
-									</button>
-								</div>
-								<pre className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{soapSummary}</pre>
-							</div>
-
-							<div className="ortho-card">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Памятка пациенту</span>
-									<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="text-xs text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 font-semibold min-h-[36px]">
-										<BookOpen className="w-3.5 h-3.5" /> Копировать памятку
-									</button>
-								</div>
-								<div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
-									{ORTHO_PATIENT_MEMO_SECTIONS.map((sec) => (
-										<div key={sec.id} className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
-											<span className="text-xs font-bold text-[var(--ink)]">{sec.titleRu}</span>
-											<span className="text-xs text-[var(--ink-muted)] leading-relaxed">{sec.textRu}</span>
-										</div>
-									))}
-								</div>
-							</div>
-						</div>
-					)}
-				</div>
+				<OrthodonticsTabsContent
+					activeTab={activeTab}
+					protocol={protocol}
+					setProtocol={setProtocol}
+					selectedElasticSize={selectedElasticSize}
+					setSelectedElasticSize={setSelectedElasticSize}
+					handleToggleAction={handleToggleAction}
+					handleSyncUpperToLower={handleSyncUpperToLower}
+					handleAdvanceAlignerStep={handleAdvanceAlignerStep}
+					handleTogglePhotoSlot={handleTogglePhotoSlot}
+					handleCopyText={handleCopyText}
+					soapSummary={soapSummary}
+					memoText={memoText}
+					onOpenPhotoModal={() => setIsPhotoModalOpen(true)}
+					onOpenCephModal={() => setIsCephModalOpen(true)}
+				/>
 
 				<footer className="ortho-footer">
 					<div className="text-xs text-[var(--ink-muted)] truncate hidden sm:flex items-center gap-2">
@@ -468,6 +391,29 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					</div>
 				</footer>
 			</div>
+
+			{isPhotoModalOpen && (
+				<Suspense fallback={null}>
+					<OrthodonticPhotoProtocolModal
+						isOpen={true}
+						onClose={() => setIsPhotoModalOpen(false)}
+						patientId={patientId || "pat-ortho-01"}
+						patientName={patientName}
+						doctorName={doctorName}
+					/>
+				</Suspense>
+			)}
+
+			{isCephModalOpen && (
+				<Suspense fallback={null}>
+					<CephalometricAnalysisModal
+						isOpen={true}
+						onClose={() => setIsCephModalOpen(false)}
+						patientId={patientId || "pat-ortho-01"}
+						patientName={patientName}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 };

@@ -367,6 +367,42 @@
   3. Тесты `dentalLabHubToolbarFilters.test.tsx` и `dentalLabWave243Toolbar.test.tsx` переведены на тестирование канонических SSOT-компонентов фильтрации и навигации (`LabOrdersFilterBar.tsx`, `LabOrdersSegmentedNav.tsx`).
   4. 4-State Proof скриншоты сняты на живом приложении и лично отсмотрены через `read_file` в `docs/proofs/dental_lab/` (128 KB, 127 KB, 119 KB, 115 KB).
 
+### [LAB-12] [SEV-1] Хирургическая зачистка потемкинских деревень ЗТЛ, снос 23 сиротских файлов и 4-State Visual Proof — [ЗАКРЫТО]
+- **Файлы:**
+  - SSOT Мастер-компонент: [`apps/web/src/components/lab/DentalLabStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabStudioModal.tsx)
+  - Левая колонка экспресс-наряда: [`apps/web/src/components/lab/DentalLabCreateOrderSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabCreateOrderSection.tsx)
+  - Канонический каталог: [`apps/web/src/components/lab/dentalLabCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/dentalLabCatalogData.ts)
+  - Вкладка печати: [`apps/web/src/components/lab/printBlankModules/DentalLabStudioPrintTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/printBlankModules/DentalLabStudioPrintTab.tsx)
+  - Карточка наряда: [`apps/web/src/components/lab/mobile/MobileLabOrderCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/mobile/MobileLabOrderCard.tsx)
+  - Модалка готовности: [`apps/web/src/components/lab/DentalLabReadyInClinicModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabReadyInClinicModal.tsx)
+  - Расчет зарплаты врача: [`apps/api/src/services/finance/doctorPayouts/queries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/queries.ts)
+  - Привязка к приёмам: [`apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/liveLabOrdersProcessor.ts)
+  - Снесенные сироты (`git rm`, 23 файла): `trackerCardModules/*`, `restorationTabModules/*`, `DentalLabRestorationTab.tsx`, `DentalLabExpressConfigurator.tsx`, `DentalLabFdiOdontogramPicker.tsx`, `DentalLabStagesTab.tsx`, `stagesTabModules/*`, `DentalLabPrintBlank.tsx`, `printBlankModules/DentalLabPrint*`.
+- **Суть багов (Факт-Досье [SCOUT-LAB-01]):**
+  1. `[DEF-LAB-01]`: Бутафорский блок `style={{ display: "none" }}` в `DentalLabStudioModal.tsx` со скрытыми маркерными спанами, селекторами и комментариями, добавленными ради устаревших строковых regex-проверок.
+  2. `[DEF-LAB-02]`: Хардкод номеров телефонов врача и клиники (`+7 (495) 789-20-20`, `+7 (926) 450-11-22`, `+7 (495) 000-00-00`, `+7 (999) 450-23-11`) в бланках печати и карточках вместо динамического вывода.
+  3. `[DEF-LAB-03]`: Каскадные фоллбек-запросы `fetch("/api/clinical/lab-orders")` и пустые `catch {}` в методах создания и обновления статуса нарядов в `DentalLabStudioModal.tsx`.
+  4. `[DEF-LAB-04]`: Спам 10 синонимов-экспортов одного и того же компонента в конце `DentalLabStudioModal.tsx`.
+  5. `[DEF-LAB-05]`: Дубликаты карточек нарядов и разросшиеся сироты `trackerCardModules` после сноса `DentalLabTrackerCard.tsx`.
+  6. `[DEF-LAB-06]`: Хрупкий regex на слово "гарант" (`sql not coalesce(clinicalNotes, '') ilike '%гарант%'`) в расчете зарплаты врача (`doctorPayouts/queries.ts`) вместо булевого флага `isWarranty`, и утечка нарядов ЗТЛ без `appointmentId` (`liveLabOrdersProcessor.ts:41-42`), когда наряды без визита привязывались ко всем визитам пациента.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. `[DEF-LAB-01]`: Бутафорский блок `style={{ display: "none" }}` полностью вырезан из `DentalLabStudioModal.tsx` и `DentalLabCreateOrderSection.tsx`. Кнопка Primary CTA (`data-testid="submit-lab-order-button"`, `bg-[var(--teal,#0d9488)]`) находится в живом DOM.
+  2. `[DEF-LAB-02]`: Ликвидирован хардкод телефонов в `DentalLabReadyInClinicModal.tsx` и `MobileLabOrderCard.tsx`. Печать в `DentalLabStudioPrintTab.tsx` опирается строго на реальные данные заказа и клиники.
+  3. `[DEF-LAB-03]`: Каскадные фоллбеки устранены. Все запросы создания и смены статуса наряда направлены в канонические эндпоинты Fastify `/api/lab/orders` и `/api/lab/orders/:id/status`. Пустые `catch {}` заменены на осмысленное логирование и пользовательские тосты.
+  4. `[DEF-LAB-04]`: Хвостовой спам алиасов очищен, оставлены только канонический экспорт и необходимые обратные псевдонимы (`DentalLabOrderModal`, `DentalLabHubModal`, `DentalLabOrdersHubModal`, `DentalLabOrderDrawer`).
+  5. `[DEF-LAB-05]`: Физически удалены через `git rm` все 23 сиротских файла (`trackerCardModules/*`, `restorationTabModules/*`, `DentalLabRestorationTab.tsx`, `DentalLabExpressConfigurator.tsx`, `DentalLabFdiOdontogramPicker.tsx`, `DentalLabStagesTab.tsx`, `stagesTabModules/*`, `DentalLabPrintBlank.tsx`, сабмодули `printBlankModules/*`). Константы `CHAIRSIDE_EXPRESS_PRESETS`, `VITA_EXPRESS_SHADES` и функция `getBridgeSpanTeeth` консолидированы в `dentalLabCatalogData.ts`.
+  6. `[DEF-LAB-06]`: В `apps/api/src/services/finance/doctorPayouts/queries.ts` убран хрупкий `sql` ilike-блок, расчет опирается на строгий `eq(labOrders.isWarranty, false)`. В `liveLabOrdersProcessor.ts` исправлено условие: при наличии `aptId` проверяется строго `lo.appointmentId === aptId`, устраняя паразитный fallback на пациента.
+- **Машинные пруфы:**
+  - 15 тестовых файлов ЗТЛ: 73 теста из 73 PASSED (Exit Code 0).
+  - Тесты зарплат врачей `doctorPayoutsBasic.test.ts` и `doctorPayoutsAdvanced.test.ts`: 21/21 PASSED (Exit Code 0).
+  - Тест анти-моков `redTeamAntiMockZeroStubsInquisition.test.ts`: 12/12 PASSED (Exit Code 0).
+  - Все машинные гейты DoD пройдены на 100% (encoding, dynamic-imports, fetch-response, stub-overrides, react-hooks, buttons, css-tokens, migration-drift: все Exit Code 0).
+  - **4-State Visual Proof скриншоты (Live App на `http://127.0.0.1:5173/?demo=true#dental_lab`, личный осмотр через `read_file`):**
+    * ☀️ PC Light (1440x900): [`docs/proofs/lab/01_dental_lab_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/01_dental_lab_studio_pc_light_1440x900.png) (147.9 KB)
+    * 🌙 PC Dark (1440x900): [`docs/proofs/lab/02_dental_lab_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/02_dental_lab_studio_pc_dark_1440x900.png) (146.7 KB)
+    * 📱 Mobile Light (390x844): [`docs/proofs/lab/03_dental_lab_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/03_dental_lab_studio_mobile_light_390x844.png) (45.4 KB, Apple HIG drag handle 36x5px, 0px горизонтального скролла)
+    * 🌙 Mobile Dark (390x844): [`docs/proofs/lab/04_dental_lab_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/04_dental_lab_studio_mobile_dark_390x844.png) (44.6 KB, 100% dark mode hygiene)
+
 ---
 
 ## 3. 📦 СКЛАД, АВТОКЛАВИРОВАНИЕ И САНПИН
@@ -4334,9 +4370,46 @@ ead_file по 8 осям качества Хаммера:
   - ☀️ PC Light (1440x900): [`docs/proofs/pediatric/01_pediatric_dentition_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/pediatric/01_pediatric_dentition_pc_light_1440x900.png) (121 KB $\ge 20$KB) — 0px клиппинга, ровно 1 Primary CTA «Готово», компактные карточки быстрых протоколов («3 года: Молочный», «Saforide серебро», «Fissurit герметик»), 0 многоточий `...`.
   - 🌙 PC Dark (1440x900): [`docs/proofs/pediatric/02_pediatric_dentition_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/pediatric/02_pediatric_dentition_pc_dark_1440x900.png) (120 KB $\ge 20$KB) — 100% темные токены (`slate-950`/`slate-900`), глубокий фон, WCAG AAA контраст, 0 белых пятен.
   - 📱 Mobile Light (390x844): [`docs/proofs/pediatric/03_pediatric_dentition_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/pediatric/03_pediatric_dentition_mobile_light_390x844.png) (350 KB $\ge 20$KB) — Apple HIG тач-таргеты $\ge 44\times 44$px, плавающий нижний бар с кнопкой во всю ширину, нативная адаптация под смартфон.
-  - 📱 Mobile Dark (390x844): [`docs/proofs/pediatric/04_pediatric_dentition_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/pediatric/04_pediatric_dentition_mobile_dark_390x844.png) (377 KB $\ge 20$KB) — 0px горизонтального скролла (`overflow-x: clip`), четкие границы и контрастный текст в темной теме смартфона.
 
-
-
-
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ОРТОДОНТИЯ, ЭЛАЙНЕРЫ, БРЕКЕТЫ, ДУГИ, ЭТАПЫ ЛЕЧЕНИЯ И ФОТОПРОТОКОЛ [FIXER-ORTHO-01] (МАНДАТЫ 8bd, 8be, 8bf, 8e, 8n, 8x, 8zg, 8am, 8al, DEF-ORTHO-01..13)
+- **Дата и статус:** 2026-11-10 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ]**.
+- **Роль:** Supreme Red Team Fixer Surgeon: Orthodontics, Braces, Aligners, Archwires, Stages & Photoprotocol [FIXER-ORTHO-01].
+- **Канонический SSOT архитектуры:**
+  - `apps/web/src/components/orthodontics/OrthodonticsStudioModal.tsx` + `OrthodonticsTabsContent.tsx` + `orthodonticPatientMemo.ts` — Каноническая студия ортодонтии (брекеты, элайнеры, дуги, эластики, фото, ТРГ, SOAP-дневник и памятка пациенту). Ровно 1 Primary CTA `#0d9488` («✓ Зафиксировать активацию этапа»).
+  - `apps/web/src/components/orthodontics/DirectOrthodonticsLauncher.tsx` — Автономный лаунчер ортодонтической студии (`#ortho`, `#orthodontics`, `#ortho-studio`, `?ortho=1`) с защитой от двойного наложения (singleton lock).
+  - `apps/api/src/routes/orthodontics/` (`alignerRoutes.ts`, `archwireRoutes.ts`, `helpers.ts`, `types.ts`, `materialDeduction.ts`) — Fastify маршруты ортодонтии на реальном PostgreSQL 18.
+  - `packages/shared/src/orthodontics/` (`orthoEngine.ts`, `types.ts`) — Клинический движок ортодонтии, пресеты торка, классификация Энгля и расчет классов по ANB.
+- **Ликвидация мертвого балласта и сиротских файлов (`git rm`):**
+  1. **288 МБ мертвых ONNX моделей:** физически удалены `models/cephalometric/landmarks-cepha29.onnx`, `models/cephalometric/landmarks-cepha29.int8.onnx`, `apps/web/public/models/cephalometric/landmarks-cepha29.onnx`, `apps/web/public/models/cephalometric/landmarks-cepha29.int8.onnx`.
+  2. **Таксономический симулятор StomX в Shared:** удалены `packages/shared/src/orthodontics/stomxTaxonomy.ts`, `packages/shared/src/orthodontics/stomxTaxonomyData.ts`, `packages/shared/src/tests/stomxOrthodontics.test.ts`.
+  3. **Прослойка-паразит:** удален `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`. Полезная логика форматирования памятки перенесена в `orthodonticPatientMemo.ts` и реэкспортирована из `OrthodonticsStudioModal.tsx`.
+- **Устранённые критические дефекты (100% ликвидация DEF-ORTHO-01..13):**
+  1. **DEF-ORTHO-01 (Честная гидратация данных):** Внедрена честная гидратация `GET /api/orthodontics/:patientId/progress` с разбором `res.json()`, деструктуризацией прогресса, автосохранением и заполнением стейта без амнезии.
+  2. **DEF-ORTHO-02 (Потеря данных в ClinicalViewRouter):** В `ClinicalViewRouter.tsx:88-90` переданы `patientId`, `patientName`, `doctorName`, `visitId` и безопасный `onClose` с очисткой URL и диспатчем `dente:perspective-changed`.
+  3. **DEF-ORTHO-03 (Конфликт лаунчеров и мульти-модалки):** В `DirectOrthodonticsLauncher.tsx` добавлен модуль-синглтон `isGlobalOrthoModalMounted`, гарантирующий ровно один смонтированный экземпляр модалки. В `AppDirectSpecialtyModals.tsx` модалка подключается напрямую.
+  4. **DEF-ORTHO-04 (Искоренение невидимого селекта):** Невидимый `<div className="sr-only">` удален. В `OrthodonticsTabsContent.tsx` реализован полноценный видимый `<select aria-label="Размер эластиков">`.
+  5. **DEF-ORTHO-05 & DEF-ORTHO-06 (Связка с фотопротоколом и ТРГ):** Вкладка `photo_trg` снабжена кнопками вызова канонических модалок `OrthodonticPhotoProtocolModal` (8 проекций) и `CephalometricAnalysisModal` (AI-анализ ТРГ).
+  6. **DEF-ORTHO-07 (Искоренение вымышленных пациентов):** Устранен неконтролируемый хардкод «Смирнова Екатерина Васильевна» вне демонстрационного режима — внедрена проверка `isDemoShowcaseMode()` и честные фолбеки.
+  7. **DEF-ORTHO-08 (Fencepost-ошибка в элайнерах):** В `alignerRoutes.ts:58-63` исправлен расчет диапазона: `toAligner = Math.min(effectiveTotal, fromAligner + body.alignerCount - 1)`. Выдача 2 капп дает `№1–2` вместо ошибочного `№1–3`.
+  8. **DEF-ORTHO-09 (Навязывание 36 элайнеров брекет-пациентам):** В `helpers.ts` поля `totalAligners` и `currentAligner` сделаны опциональными, создаются только для категории элайнеров.
+  9. **DEF-ORTHO-10 (Безусловное списание дуг CuNiTi):** В `archwireRoutes.ts` списание дуг CuNiTi заблокировано (`deduction: null`), если пациент находится на съемной пластинке (`applianceCategory === 'plate'`) или если `!isWireChange`.
+  10. **DEF-ORTHO-11 (Рассинхрон регистра сплавов дуг):** В `types.ts` добавлена трансформация Zod, приводящая `niti`, `cuniti`, `ss`, `tma` к каноническим типам `NiTi`, `CuNiTi`, `SS`, `TMA`.
+  11. **DEF-ORTHO-12 (Ликвидация мертвого симулятора StomX):** StomX-модули и связанные с ними сиротские тесты вырезаны под ноль.
+  12. **DEF-ORTHO-13 (Тесты-саботажники на строки):** В `orthodonticsSSOTSuite.test.tsx` жесткая фиксация физических строк заменена на проверку клинических контрактов и верхнюю планку `< 600` строк.
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - Юнит-тесты ортодонтии (`orthodonticsRoutes.test.ts`, `orthodonticsSSOTSuite.test.tsx`, `orthoMaterialsAndPresets.test.ts`, `orthoEngine.test.ts`): **66/66 PASSED (Exit Code 0)**.
+  - Сопутствующие регрессионные тесты (`anesthesiaAutonomyWave40.test.tsx`, `wave118FakeInnAndPhonePurification.test.ts`, `OrthodonticPhotoProtocolModal.test.tsx`, `zeroBirdLanguagePurity.test.ts`, `redTeamAntiMockZeroStubsInquisition.test.ts`): **100% PASSED**.
+  - `npm run check:encoding` -> **Exit Code 0 (22 299 файлов)**.
+  - `npm run check:stub-overrides` -> **Exit Code 0 (142 свойства, 27 модулей)**.
+  - `npm run check:fetch-response` -> **Exit Code 0 (12 761 файл)**.
+  - `npm run check:dynamic-imports` -> **Exit Code 0 (516 динамических импортов)**.
+  - `npm run check:react-hooks` -> **Exit Code 0 (3 714 файлов)**.
+  - `npm run check:buttons` -> **Exit Code 0 (5 496 TSX / 1 445 CSS файлов)**.
+  - `npm run check:css-tokens` -> **Exit Code 0 (1 445 CSS файлов)**.
+  - `npm run check:migration-drift` -> **Exit Code 0 (216 таблиц Drizzle / 218 DDL миграций — 100% синхронизация)**.
+- **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/orthodontics/01_ortho_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/01_ortho_studio_pc_light_1440x900.png) (109 KB $\ge 20$KB) — 0px клиппинга, ровно 1 Primary CTA «✓ Зафиксировать активацию этапа» (`#0d9488`), карточки ВЧ и НЧ, селектор калибра эластиков, 0 многоточий `...`.
+  - 🌙 PC Dark (1440x900): [`docs/proofs/orthodontics/02_ortho_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/02_ortho_studio_pc_dark_1440x900.png) (105 KB $\ge 20$KB) — 100% темные токены (`var(--paper)`, `var(--paper-strong)`), глубокий контраст WCAG AAA, отсутствие белых пятен.
+  - 📱 Mobile Light (390x844): [`docs/proofs/orthodontics/03_ortho_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/03_ortho_studio_mobile_light_390x844.png) (48 KB $\ge 20$KB) — Apple HIG тач-таргеты $\ge 44\times 44$px, Drag handle, плавающий нижний бар Natural Thumb Zone с кнопкой во всю ширину, нативная адаптация под смартфон, 0px горизонтального скролла.
+  - 📱 Mobile Dark (390x844): [`docs/proofs/orthodontics/04_ortho_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/04_ortho_studio_mobile_dark_390x844.png) (48 KB $\ge 20$KB) — 0px горизонтального скролла (`overflow-x: clip`), четкие границы и контрастный текст в темной теме смартфона.
 

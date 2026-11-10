@@ -4,4 +4,3 @@
 
 export * from "./types.js";
 export * from "./orthoEngine.js";
-export * from "./stomxTaxonomy.js";

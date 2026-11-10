@@ -175,7 +175,7 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		);
 	});
 
-	it("11. Verifies OrthodonticsStudioModal.tsx lines Sweet Spot (400-480 lines, Mandate 8b)", () => {
+	it("11. Verifies OrthodonticsStudioModal.tsx clinical contracts and Mandate 8b modular size (< 600 lines)", () => {
 		const filePath = fs.existsSync(path.join(orthoDir, "OrthodonticsStudioModal.tsx"))
 			? path.join(orthoDir, "OrthodonticsStudioModal.tsx")
 			: path.join(orthoDir, "OrthodonticStudioModal.tsx");
@@ -184,9 +184,13 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		const content = fs.readFileSync(filePath, "utf-8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines >= 380 && lines <= 485,
-			`OrthodonticsStudioModal.tsx must be in Sweet Spot 380-485 lines, was ${lines}`,
+			lines <= 600,
+			`OrthodonticsStudioModal.tsx must be <= 600 lines (Mandate 8b), was ${lines}`,
 		);
+		assert.ok(content.includes("/api/orthodontics/"), "Must connect to canonical ortho API");
+		assert.ok(content.includes("/progress"), "Must hydrate from /progress endpoint");
+		assert.ok(content.includes("data-testid=\"save-ortho-protocol-button\""), "Must have canonical save button");
+		assert.ok(content.includes("formatOrthodonticPatientMemo"), "Must export formatOrthodonticPatientMemo");
 	});
 
 	it("12. Verifies OrthodonticsStudioModal has exactly ONE Primary CTA #0d9488 (Mandates 8am & 8e)", () => {

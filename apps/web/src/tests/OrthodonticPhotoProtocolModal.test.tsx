@@ -11,7 +11,7 @@ import {
 	ORTHODONTIC_CLINICAL_PRESETS,
 	generateOrthodonticDiaryNote,
 } from "../components/diagnostics/OrthodonticPhotoProtocolModal";
-import { OrthodonticVisitProtocolWidget } from "../components/orthodontics/OrthodonticVisitProtocolWidget";
+import { OrthodonticsStudioModal } from "../components/orthodontics/OrthodonticsStudioModal";
 import {
 	createEmptyOrthodonticSession,
 	updateSlotPhoto,
@@ -199,9 +199,9 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		assert.ok(!html.includes("ООО «Денте Стоматология»"));
 	});
 
-	it("renders OrthodonticVisitProtocolWidget without error", () => {
+	it("renders OrthodonticsStudioModal without error", () => {
 		const html = renderToStaticMarkup(
-			createElement(OrthodonticVisitProtocolWidget, {
+			createElement(OrthodonticsStudioModal, {
 				isOpen: true,
 				onClose: () => {},
 				patientId: "pat-ortho-studio-test",

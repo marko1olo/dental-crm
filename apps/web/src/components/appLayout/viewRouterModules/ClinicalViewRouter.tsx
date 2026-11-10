@@ -86,7 +86,21 @@ export function ClinicalViewRouter({
 			<WorkspaceRouteErrorBoundary view="visit" label={viewLabels.visit} panelClassName="panel visit-panel" panelId="visit">
 				<Suspense fallback={<AppLoadingState message="Загрузка клинического приёма..." />}>
 					{perspective === "orthodontic" ? (
-						<OrthodonticsStudioModal isOpen={true} onClose={() => {}} />
+						<OrthodonticsStudioModal
+							isOpen={true}
+							onClose={() => {
+								if (typeof window !== "undefined") {
+									const url = new URL(window.location.href);
+									url.searchParams.delete("perspective");
+									window.history.replaceState({}, "", url.pathname + url.search);
+									window.dispatchEvent(new CustomEvent("dente:perspective-changed", { detail: { perspective: "default" } }));
+								}
+							}}
+							patientId={patientId || activeVisitPatient?.id || activePatient?.id}
+							patientName={activeVisitPatient?.fullName || activePatient?.fullName}
+							doctorName={dashboard?.activeVisit?.doctorName}
+							visitId={dashboard?.activeVisit?.id}
+						/>
 					) : perspective === "presentation" ? (
 						<TreatmentPlanModule
 							patientId={patientId || "anonymous"}

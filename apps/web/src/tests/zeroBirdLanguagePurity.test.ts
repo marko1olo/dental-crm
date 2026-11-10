@@ -197,14 +197,13 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(cephReportCode.includes("Вставить в ортодонтическую карту"), "CephalometricReportTab must have clean 'Вставить в ортодонтическую карту'");
 		assert.ok(!cephReportCode.includes("Формы 043/у"), "CephalometricReportTab must not cite 'Формы 043/у'");
 
-		const orthoWidgetCode =
-			readComponent("components/orthodontics/OrthodonticVisitProtocolWidget.tsx") +
-			"\n" +
-			readComponent("components/orthodontics/OrthodonticsStudioModal.tsx");
-		assert.ok(!orthoWidgetCode.includes('"Печать 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Печать 043/у'");
-		assert.ok(!orthoWidgetCode.includes('"Внести в дневник 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Внести в дневник 043/у'");
-		assert.ok(!orthoWidgetCode.includes("Форма 043/у"), "Ortho components must not cite 'Форма 043/у'");
-		assert.ok(orthoWidgetCode.includes("Дневник приёма"), "Ortho components must feature clean 'Дневник приёма'");
+		const orthoStudioCode =
+			readComponent("components/orthodontics/OrthodonticsStudioModal.tsx") +
+			readComponent("components/orthodontics/OrthodonticsTabsContent.tsx");
+		assert.ok(!orthoStudioCode.includes('"Печать 043/у"'), "OrthodonticsStudioModal must not have 'Печать 043/у'");
+		assert.ok(!orthoStudioCode.includes('"Внести в дневник 043/у"'), "OrthodonticsStudioModal must not have 'Внести в дневник 043/у'");
+		assert.ok(!orthoStudioCode.includes("Форма 043/у"), "Ortho components must not cite 'Форма 043/у'");
+		assert.ok(orthoStudioCode.includes("Дневник приёма"), "Ortho components must feature clean 'Дневник приёма'");
 	});
 
 	it("16. Doctor Chairside & EMK: purged 54-FZ, 804n, CDA R2, EGISZ, and cartoon emojis (Mandate 8x & 8d)", () => {

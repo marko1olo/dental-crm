@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildLabOrderMessengerSummary } from "../../lab/DentalLabOrderModal";
-import { formatOrthodonticPatientMemo } from "../../orthodontics/OrthodonticVisitProtocolWidget";
+import { buildLabOrderMessengerSummary } from "../../lab/DentalLabStudioModal";
+import { formatOrthodonticPatientMemo } from "../../orthodontics/OrthodonticsStudioModal";
 
 function resolveRepoPath(relPathFromRepoRoot: string): string {
 	const cwd = process.cwd();
@@ -48,8 +48,8 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 			"apps/web/src/components/finance/OneCExportButton.tsx",
 			"apps/web/src/components/visit/PrescriptionModal.tsx",
 			"apps/web/src/components/emergency/EmergencyRescueModal.tsx",
-			"apps/web/src/components/lab/DentalLabOrderModal.tsx",
-			"apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx",
+			"apps/web/src/components/lab/DentalLabStudioModal.tsx",
+			"apps/web/src/components/orthodontics/OrthodonticsStudioModal.tsx",
 		];
 
 		for (const relPath of filesToCheckForPhone) {

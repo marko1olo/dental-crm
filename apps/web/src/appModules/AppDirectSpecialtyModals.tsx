@@ -57,68 +57,10 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<OrthodonticsStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)}
-						patientName={patient?.fullName || patient?.name || "Смирнова Екатерина Андреевна"}
-						patientId={patient?.id || "pat-demo-ortho-01"}
-						doctorName={staffUser?.name || activeDoctor?.fullName || activeDoctor?.name || "Д-р Соколов А. В."}
+						patientName={patient?.fullName || patient?.name}
+						patientId={patient?.id}
+						doctorName={staffUser?.name || activeDoctor?.fullName || activeDoctor?.name}
 						clinicName="DENTE Clinic"
-						onSaveProtocol={async (state, summarySoap) => {
-							const targetPatientId = patient?.id || "pat-demo-ortho-01";
-							try {
-								if (state.applianceCategory === "aligners") {
-									await fetch(`/api/orthodontics/${targetPatientId}/aligners/issue-set`, {
-										method: "POST",
-										headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-										body: JSON.stringify({
-											alignerCount: state.alignerTracking.issuedSetsCount || 2,
-											wearDaysPerAligner: state.alignerTracking.wearDaysPerStep || 14,
-											totalAligners: state.alignerTracking.totalSteps || 24,
-											note: "Выдача комплекта элайнеров",
-										}),
-									});
-								} else {
-									const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
-										niti: "NiTi",
-										cuniti: "CuNiTi",
-										ss: "SS",
-										tma: "TMA",
-									};
-									await fetch(`/api/orthodontics/${targetPatientId}/archwire-change`, {
-										method: "POST",
-										headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-										body: JSON.stringify({
-											material: materialMap[state.upperAlloy] || "CuNiTi",
-											section: state.upperSection,
-											arch: "both",
-											note: "Плановая смена ортодонтической дуги",
-										}),
-									});
-									await fetch(`/api/orthodontics/${targetPatientId}/ligatures-activate`, {
-										method: "POST",
-										headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-										body: JSON.stringify({
-											powerChain: state.selectedActionIds.includes("power_chain"),
-											note: "Активация лигатур",
-										}),
-									});
-								}
-								if (typeof window !== "undefined" && summarySoap) {
-									window.dispatchEvent(
-										new CustomEvent("dente:emr-entry-added", {
-											detail: {
-												patientId: targetPatientId,
-												type: "orthodontic_protocol",
-												text: summarySoap,
-												savedAt: new Date().toISOString(),
-											},
-										}),
-									);
-								}
-								showToast("✓ Активация этапа успешно зафиксирована в ЭМК", "success");
-							} catch (err) {
-								console.warn("[AppDirectSpecialtyModals] Save ortho protocol error:", err);
-								showToast("Сетевой сбой при фиксации этапа", "warning");
-							}
-						}}
 					/>
 				</Suspense>
 			)}

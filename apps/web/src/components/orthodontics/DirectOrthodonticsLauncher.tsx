@@ -1,11 +1,13 @@
 /**
  * @dental/web/components/orthodontics/DirectOrthodonticsLauncher.tsx
- * DENTE Dental CRM — Автономный лаунчер ортодонтической студии (Мандаты 8b 60–80 строк, 8aq).
+ * DENTE Dental CRM — Автономный лаунчер ортодонтической студии (Мандаты 8b 70–90 строк, 8aq).
  * Deep Link Mount: #ortho, #orthodontics, #ortho-studio, ?ortho=1, ?orthodontics=1.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
+
+let isGlobalOrthoModalMounted = false;
 
 function checkIsOrthoActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -19,6 +21,7 @@ function checkIsOrthoActive(): boolean {
 export const DirectOrthodonticsLauncher: React.FC = () => {
 	const [isActive, setIsActive] = useState<boolean>(checkIsOrthoActive);
 	const [isOpen, setIsOpen] = useState<boolean>(true);
+	const instanceClaimedRef = useRef(false);
 
 	useEffect(() => {
 		const handleLocationChange = () => {
@@ -26,10 +29,7 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 			setIsActive(active);
 			if (active) setIsOpen(true);
 		};
-		const handleOpenEvent = () => {
-			setIsActive(true);
-			setIsOpen(true);
-		};
+		const handleOpenEvent = () => { setIsActive(true); setIsOpen(true); };
 
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
@@ -41,12 +41,20 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 			window.removeEventListener("popstate", handleLocationChange);
 			window.removeEventListener("dente:open-orthodontics", handleOpenEvent);
 			window.removeEventListener("dente:open-ortho", handleOpenEvent);
+			if (instanceClaimedRef.current) {
+				isGlobalOrthoModalMounted = false;
+				instanceClaimedRef.current = false;
+			}
 		};
 	}, []);
 
 	const handleClose = useCallback(() => {
 		setIsOpen(false);
 		setIsActive(false);
+		if (instanceClaimedRef.current) {
+			isGlobalOrthoModalMounted = false;
+			instanceClaimedRef.current = false;
+		}
 		if (typeof window !== "undefined") {
 			const cleanHash = window.location.hash.replace(/#(orthodontics|ortho-protocol|ortho-studio|ortho)/gi, "");
 			const url = new URL(window.location.href);
@@ -57,12 +65,16 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 	}, []);
 
 	if (!isActive || !isOpen) return null;
+	if (isGlobalOrthoModalMounted && !instanceClaimedRef.current) return null;
+
+	isGlobalOrthoModalMounted = true;
+	instanceClaimedRef.current = true;
 
 	const queryPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
 	const activePatientId = queryPatientId || "pat-ortho-studio";
 
 	return (
-		<OrthodonticVisitProtocolWidget
+		<OrthodonticsStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientId={activePatientId}

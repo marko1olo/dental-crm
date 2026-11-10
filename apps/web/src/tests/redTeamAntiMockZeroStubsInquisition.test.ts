@@ -77,50 +77,46 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 	// 2. ORTHODONTICS: REAL CLINICAL API INTEGRATION
 	// =========================================================================
 	describe("2. Orthodontics Real Clinical API Integration", () => {
-		const orthoWidgetPath = path.join(
+		const orthoStudioPath = path.join(
 			webSrcDir,
-			"components/orthodontics/OrthodonticVisitProtocolWidget.tsx",
+			"components/orthodontics/OrthodonticsStudioModal.tsx",
 		);
 
-		it("OrthodonticVisitProtocolWidget.tsx must physically exist on disk", () => {
-			assert.ok(fs.existsSync(orthoWidgetPath), "OrthodonticVisitProtocolWidget.tsx not found");
+		it("OrthodonticsStudioModal.tsx must physically exist on disk", () => {
+			assert.ok(fs.existsSync(orthoStudioPath), "OrthodonticsStudioModal.tsx not found");
 		});
 
-		it("OrthodonticVisitProtocolWidget must synchronize progress and persist clinical actions", () => {
-			const content =
-				fs.readFileSync(orthoWidgetPath, "utf-8") +
-				(fs.existsSync(path.join(webSrcDir, "components/orthodontics/orthodonticVisitProtocol/useOrthodonticVisitProtocol.ts"))
-					? fs.readFileSync(path.join(webSrcDir, "components/orthodontics/orthodonticVisitProtocol/useOrthodonticVisitProtocol.ts"), "utf-8")
-					: "");
+		it("OrthodonticsStudioModal must synchronize progress and persist clinical actions", () => {
+			const content = fs.readFileSync(orthoStudioPath, "utf-8");
 
 			// Must fetch live progress
 			assert.ok(
 				content.includes("/api/orthodontics/") && content.includes("/progress"),
-				"OrthodonticVisitProtocolWidget missing live GET /api/orthodontics/:patientId/progress call",
+				"OrthodonticsStudioModal missing live GET /api/orthodontics/:patientId/progress call",
 			);
 
 			// Must persist aligner issuance
 			assert.ok(
 				content.includes("/aligners/issue-set"),
-				"OrthodonticVisitProtocolWidget missing live POST /api/orthodontics/:patientId/aligners/issue-set call",
+				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/aligners/issue-set call",
 			);
 
 			// Must persist archwire changes
 			assert.ok(
 				content.includes("/archwire-change"),
-				"OrthodonticVisitProtocolWidget missing live POST /api/orthodontics/:patientId/archwire-change call",
+				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/archwire-change call",
 			);
 
 			// Must persist ligature/power chain activations
 			assert.ok(
 				content.includes("/ligatures-activate"),
-				"OrthodonticVisitProtocolWidget missing live POST /api/orthodontics/:patientId/ligatures-activate call",
+				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/ligatures-activate call",
 			);
 
 			// Must include authorization headers
 			assert.ok(
 				content.includes("denteAdminSecretRequestHeaders"),
-				"OrthodonticVisitProtocolWidget missing denteAdminSecretRequestHeaders authorization",
+				"OrthodonticsStudioModal missing denteAdminSecretRequestHeaders authorization",
 			);
 		});
 	});
@@ -128,45 +124,41 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 	// =========================================================================
 	// 3. DENTAL LAB (ЗТЛ): REAL LAB ORDERS API INTEGRATION
 	// =========================================================================
-	describe("3. Dental Lab Hub Real Lab Orders API Integration", () => {
-		const labHubPath = path.join(
+	describe("3. Dental Lab Studio Real Lab Orders API Integration", () => {
+		const labStudioPath = path.join(
 			webSrcDir,
-			"components/lab/DentalLabOrdersHubModal.tsx",
+			"components/lab/DentalLabStudioModal.tsx",
 		);
 
-		it("DentalLabOrdersHubModal.tsx must physically exist on disk", () => {
-			assert.ok(fs.existsSync(labHubPath), "DentalLabOrdersHubModal.tsx not found");
+		it("DentalLabStudioModal.tsx must physically exist on disk", () => {
+			assert.ok(fs.existsSync(labStudioPath), "DentalLabStudioModal.tsx not found");
 		});
 
-		it("DentalLabOrdersHubModal must synchronize and persist lab orders to backend", () => {
-			const content =
-				fs.readFileSync(labHubPath, "utf-8") +
-				(fs.existsSync(path.join(webSrcDir, "components/lab/hub/useDentalLabHubActions.ts"))
-					? fs.readFileSync(path.join(webSrcDir, "components/lab/hub/useDentalLabHubActions.ts"), "utf-8")
-					: "");
+		it("DentalLabStudioModal must synchronize and persist lab orders to backend", () => {
+			const content = fs.readFileSync(labStudioPath, "utf-8");
 
-			// Must fetch live orders from /api/clinical/lab-orders
+			// Must fetch live orders from /api/lab/orders
 			assert.ok(
-				content.includes("/api/clinical/lab-orders"),
-				"DentalLabOrdersHubModal missing live GET /api/clinical/lab-orders call",
+				content.includes("/api/lab/orders"),
+				"DentalLabStudioModal missing live GET /api/lab/orders call",
 			);
 
-			// Must persist new order creation via POST /api/clinical/lab-orders
+			// Must persist new order creation via POST /api/lab/orders
 			assert.ok(
-				content.includes('method: "POST"') && content.includes("/api/clinical/lab-orders"),
-				"DentalLabOrdersHubModal missing live POST /api/clinical/lab-orders persistence",
+				content.includes('method: "POST"') && content.includes("/api/lab/orders"),
+				"DentalLabStudioModal missing live POST /api/lab/orders persistence",
 			);
 
 			// Must dispatch reactive event
 			assert.ok(
 				content.includes("dente-lab-order-created"),
-				"DentalLabOrdersHubModal missing dente-lab-order-created reactive event dispatch",
+				"DentalLabStudioModal missing dente-lab-order-created reactive event dispatch",
 			);
 
 			// Must include authorization headers
 			assert.ok(
 				content.includes("denteAdminSecretRequestHeaders"),
-				"DentalLabOrdersHubModal missing denteAdminSecretRequestHeaders authorization",
+				"DentalLabStudioModal missing denteAdminSecretRequestHeaders authorization",
 			);
 		});
 	});
