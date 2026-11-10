@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import React, { useId, useMemo } from "react";
 import { useOrthopedicsChairsideState } from "./chairside/useOrthopedicsChairsideState";
 import { useOrthopedicsChairsideActions } from "./chairside/useOrthopedicsChairsideActions";
 import type { OrthopedicsChairsidePanelProps } from "./chairside/orthopedicsChairsideTypes";
@@ -7,7 +7,7 @@ import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid";
 import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker";
 import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors";
 import { OrthopedicPassportA4Modal } from "./OrthopedicPassportA4Modal";
-import { DentalLabReadyInClinicModal } from "../lab/DentalLabReadyInClinicModal";
+import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "../lab/DentalLabReadyInClinicModal";
 import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets";
 
 export { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets";
@@ -21,6 +21,37 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 	const effectiveOrderNum = props.initialLabOrder?.orderNumber || state.labOrderSentNumber || "ЗТЛ-402";
 	const effectiveHeadline = `Работа из ЗТЛ доставлена: ${props.initialLabOrder?.workType || "Коронка"} зуб ${props.initialLabOrder?.toothFdi || state.activeTeethInput}`;
 	const activePreset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === state.activeZtlPresetId) ?? STANDARD_ZTL_ORDER_PRESETS[0];
+
+	const readyOrder = useMemo<ReadyInClinicLabOrder>(() => ({
+		id: props.initialLabOrder?.id || state.activeOrderId || undefined,
+		orderNumber: effectiveOrderNum,
+		patientId: props.patientId,
+		patientName: props.patientName || "Пациент",
+		patientPhone: props.patientPhone,
+		doctorName: props.doctorName,
+		doctorId: props.doctorId,
+		toothFdi: props.initialLabOrder?.toothFdi || state.activeTeethInput,
+		material: state.selectedMaterial,
+		colorVita: state.selectedShade,
+		constructionType: activePreset?.name ?? "Коронка",
+		priceRub: state.grossPriceRub,
+		isWarrantyRework: state.isWarrantyRework,
+	}), [
+		props.initialLabOrder,
+		state.activeOrderId,
+		effectiveOrderNum,
+		props.patientId,
+		props.patientName,
+		props.patientPhone,
+		props.doctorName,
+		props.doctorId,
+		state.activeTeethInput,
+		state.selectedMaterial,
+		state.selectedShade,
+		activePreset,
+		state.grossPriceRub,
+		state.isWarrantyRework,
+	]);
 
 	return (
 		<div className={`orthopedics-chairside-panel p-2.5 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs max-w-full overflow-x-clip ${props.className || ""}`} data-testid="orthopedics-chairside-panel">
@@ -69,7 +100,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 			    - disabled={isLocked && !overrideActive}
 			    - data-testid="direct-send-lab-order-btn" (provided in OrthopedicsChairsideFooterBar)
 			    - data-testid="vita-3d-master-tab" (provided in OrthopedicsVitaShadePicker) */}
-			<DentalLabReadyInClinicModal isOpen={state.isReadyInClinicModalOpen} onClose={() => state.setIsReadyInClinicModalOpen(false)} order={null} />
+			<DentalLabReadyInClinicModal isOpen={state.isReadyInClinicModalOpen} onClose={() => state.setIsReadyInClinicModalOpen(false)} order={readyOrder} />
 			<OrthopedicPassportA4Modal
 				isOpen={state.isPassportModalOpen} onClose={() => state.setIsPassportModalOpen(false)}
 				passport={{

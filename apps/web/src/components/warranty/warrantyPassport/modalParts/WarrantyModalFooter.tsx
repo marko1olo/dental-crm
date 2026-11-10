@@ -38,20 +38,19 @@ export const WarrantyModalFooter: React.FC<WarrantyModalFooterProps> = ({
 				{onIssueStandardOneClick && (
 					<button
 						type="button"
-						className="warranty-btn-primary"
+						className="warranty-btn-primary dente-btn-primary"
 						onClick={onIssueStandardOneClick}
 						data-testid="btn-standard-warranty-1click"
-						title="1-Click: Терапия 1 год, Ортопедия 2 года, Импланты 5 лет — сохранение и печать"
-						style={{ backgroundColor: "#0d9488", color: "#ffffff", borderColor: "#0d9488" }}
+						title="Стандартная гарантия: Терапия 1 год, Ортопедия 2 года, Импланты 5 лет — сохранение и печать"
 					>
 						<Zap size={16} />
-						Выдать стандартную гарантию в 1 клик
+						Выдать стандартную гарантию
 					</button>
 				)}
 
 				<button
 					type="button"
-					className="warranty-btn-secondary"
+					className="warranty-btn-secondary dente-btn-secondary"
 					onClick={onPrint}
 					title="Распечатать сертификат"
 				>
@@ -60,7 +59,7 @@ export const WarrantyModalFooter: React.FC<WarrantyModalFooterProps> = ({
 
 				<button
 					type="button"
-					className="warranty-btn-secondary"
+					className="warranty-btn-secondary dente-btn-secondary"
 					onClick={onAttachTo043u}
 					title="Сохранить гарантийный паспорт в медицинскую карту"
 				>

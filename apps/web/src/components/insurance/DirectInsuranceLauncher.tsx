@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { DmsStudioModal } from "./DmsStudioModal.js";
 
 const DEMO_INSURANCE_PATIENT = {

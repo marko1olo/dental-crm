@@ -1,6 +1,0 @@
-/* ============================================================================
-   APPLE MOBILE HIG SHIM (Redirects to warrantyStyles/warrantyMobileCards.css)
-   Mandate 8b: Micro-module <= 120 lines
-   ============================================================================ */
-
-@import "./warrantyStyles/warrantyMobileCards.css";

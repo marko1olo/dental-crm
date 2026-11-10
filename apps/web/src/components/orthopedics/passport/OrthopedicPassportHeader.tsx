@@ -1,5 +1,6 @@
 import React from "react";
 import { Building2 } from "lucide-react";
+import { buildWarrantyPortalUrl } from "../../../lib/publicPortalRoute.js";
 import { generateQrCodeSvg } from "../../lab/labBarcodeQr.js";
 
 export interface OrthopedicPassportHeaderProps {
@@ -17,8 +18,9 @@ export function OrthopedicPassportHeader({
 	batchLot,
 	toothFdi,
 }: OrthopedicPassportHeaderProps) {
+	const qrVerificationUrl = buildWarrantyPortalUrl(passportNumber);
 	const qrCodeSvg = generateQrCodeSvg(
-		`https://dente.clinic/verify/passport?no=${encodeURIComponent(passportNumber)}&lot=${encodeURIComponent(batchLot)}&fdi=${encodeURIComponent(toothFdi)}`,
+		qrVerificationUrl,
 		{ size: 72, margin: 1 },
 	);
 

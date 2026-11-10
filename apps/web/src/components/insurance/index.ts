@@ -4,9 +4,8 @@
  * Mandates: 8b (Healthy sweet spot <= 120 lines), 8e, 8n.
  */
 
-export * from "./insuranceData.js";
-export * from "./InsuranceWorkspaceModal.js";
+export * from "./dmsCatalogData.js";
+export * from "./DmsStudioModal.js";
 export * from "./InsuranceBillSplitCard.js";
 export * from "./DirectInsuranceLauncher.js";
-export { InsuranceWorkspaceModal as DmsGuaranteeLetterModal } from "./InsuranceWorkspaceModal.js";
-export { InsuranceBillSplitCard as DmsBillSplitCalculatorSection } from "./InsuranceBillSplitCard.js";
+export { DmsGuaranteeLetterModal } from "./DmsGuaranteeLetterModal.js";

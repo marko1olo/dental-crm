@@ -31,7 +31,7 @@ export const WarrantyRemediationHeader: React.FC<WarrantyRemediationHeaderProps>
 					</div>
 					<div className="statutory-feat-pill">
 						<Check size={14} style={{ color: "var(--ok-fg)" }} />
-						<span>Решение врача: <strong>В 1 клик без блокировки счёта</strong></span>
+						<span>Решение врача: <strong>Гарантийный протокол без блокировки счёта</strong></span>
 					</div>
 				</div>
 			</div>

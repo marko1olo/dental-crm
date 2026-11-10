@@ -7,10 +7,10 @@
  * - 8am (Exactly ONE Primary CTA button #0d9488 var(--teal) per visible context)
  * - 8ze / Apple HIG (Touch targets >= 44x44px, native Bottom Sheet on mobile, 0px horizontal scroll)
  * - 8x / 8ap (Human Russian clinical language, zero raw law numbers)
- * - 8b (Healthy sweet spot: 380-480 lines)
+ * - 8b (Healthy sweet spot: 350-450 lines)
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Building2,
 	Check,
@@ -28,22 +28,22 @@ import {
 	Layers,
 } from "lucide-react";
 import {
-	calculateDmsCoPaymentSplit,
-	exportRegistryToCsv,
-	formatCurrencyKopecks,
+	calculateDmsGuaranteeSplit,
 	formatCurrencyRub,
-	generateBilateralAcceptanceActHtml,
-	kopecksToRub,
-	rubToKopecks,
-	RUSSIAN_DMS_INSURERS,
-	TOP_6_DMS_INSURER_CHIPS,
-	STANDARD_DMS_LIMITS_RUB,
-	type DmsBillableItem,
+	DMS_INSURANCE_COMPANIES_CATALOG,
 	type DmsGuaranteeLetter,
-	type DmsPolicy,
+	type DmsSplitCalculationItem,
+} from "@dental/shared";
+import {
+	exportRegistryToCsv,
+	generateBilateralAcceptanceActHtml,
+	type DmsBillableItem,
 	type DmsRegistryServiceRecord,
 	type PatientPaymentMethod,
 } from "./dmsCatalogData.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { showToast } from "../GlobalToast.js";
 
 export interface DmsStudioModalProps {
 	readonly isOpen: boolean;
@@ -56,6 +56,7 @@ export interface DmsStudioModalProps {
 		cardNumber?: string;
 	};
 	readonly initialTab?: "split" | "policies" | "registry";
+	readonly billItems?: readonly DmsBillableItem[];
 	readonly onApplySplitToCashbox?: (splitData: {
 		totalDueRub: number;
 		dmsRub: number;
@@ -69,100 +70,220 @@ export interface DmsStudioModalProps {
 	}) => void;
 }
 
-const DEFAULT_BILL_ITEMS: readonly DmsBillableItem[] = [
+const DEFAULT_DEMO_SERVICES: readonly DmsBillableItem[] = [
 	{ id: "b-1", serviceCode: "A16.07.002.001", serviceName: "Восстановление зуба пломбой (световой композит)", toothNumber: "16", quantity: 1, unitPriceKopecks: 450000 },
 	{ id: "b-2", serviceCode: "A16.07.030.002", serviceName: "Эндодонтическое лечение (2 канала)", toothNumber: "16", quantity: 1, unitPriceKopecks: 580000 },
 	{ id: "b-3", serviceCode: "A11.07.010", serviceName: "Анестезия проводниковая артикаин", toothNumber: "16", quantity: 2, unitPriceKopecks: 95000 },
 	{ id: "b-4", serviceCode: "A06.07.012", serviceName: "Прицельная контрольная радиовизиография", toothNumber: "16", quantity: 1, unitPriceKopecks: 80000 },
-	{ id: "b-5", serviceCode: "A16.07.051", serviceName: "Профессиональная гигиена Air-Flow", quantity: 1, unitPriceKopecks: 650000, isExcluded: false },
+	{ id: "b-5", serviceCode: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", quantity: 1, unitPriceKopecks: 650000, isExcluded: false },
 ];
 
 export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	isOpen,
 	onClose,
-	patient = { id: "pat-1", fullName: "Соколова Анна Викторовна", birthDate: "15.04.1990", policyNumber: "СГЗ-2026-998811" },
+	patient: propPatient,
 	initialTab = "split",
+	billItems,
 	onApplySplitToCashbox,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+	const patient = propPatient || (isDemo ? { id: "pat-1", fullName: "Соколова Анна Викторовна", birthDate: "15.04.1990", policyNumber: "СГЗ-2026-998811" } : { id: "", fullName: "Пациент", birthDate: "", policyNumber: "" });
+
 	const [activeTab, setActiveTab] = useState<"split" | "policies" | "registry">(initialTab);
 	const [selectedInsurerId, setSelectedInsurerId] = useState<string>("sogaz");
 	const [franchisePercent, setFranchisePercent] = useState<number>(0);
 	const [paymentMethod, setPaymentMethod] = useState<PatientPaymentMethod>("card");
 	const [mixedCashRubInput, setMixedCashRubInput] = useState<string>("0");
 	const [isSplitApproved, setIsSplitApproved] = useState<boolean>(false);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
-	const [letters, setLetters] = useState<DmsGuaranteeLetter[]>([
-		{
-			id: "g-let-1",
-			letterNumber: "ГП-СОГАЗ-88412",
-			patientFullName: patient.fullName,
-			insurerId: "sogaz",
-			insurerName: "АО «СОГАЗ»",
-			issueDate: "12.08.2026",
-			validUntil: "31.12.2026",
-			maxApprovedAmountKopecks: 5000000,
-			maxCoverageKopecks: 5000000,
-			usedAmountKopecks: 840000,
-			franchisePercent: 0,
-			status: "active",
-			notes: "Согласовано терапевтическое лечение зуба 16 и визиография",
-			curatorPhone: "+7 (495) 739-21-40",
-		},
-	]);
+	const initialLetters: DmsGuaranteeLetter[] = useMemo(() => {
+		if (!isDemo || !patient.fullName || patient.fullName === "Пациент") return [];
+		return [
+			{
+				id: "g-let-1",
+				letterNumber: "ГП-СОГАЗ-88412",
+				patientId: patient.id || "pat-1",
+				patientFullName: patient.fullName,
+				policyNumber: patient.policyNumber || "СГЗ-2026-998811",
+				insurerKey: "sogaz",
+				insurerName: "АО «СОГАЗ»",
+				issueDate: "2026-08-12",
+				validFrom: "2026-08-12",
+				validUntil: "2026-12-31",
+				patientBirthDate: patient.birthDate || "1990-04-15",
+				maxCoverageRub: 50000,
+				usedAmountRub: 8400,
+				franchisePct: 0,
+				franchiseType: "none",
+				franchiseFixedRub: 0,
+				programExclusions: [],
+				approvedServiceCodes: ["A16.07.002.001", "A16.07.030.002", "A11.07.010", "A06.07.012"],
+				approvedTeethFdi: ["16"],
+				approvedDiagnosisCodes: ["K02.1", "K04.0"],
+				status: "active",
+				notes: "Согласовано терапевтическое лечение зуба 16 и визиография",
+			},
+		];
+	}, [isDemo, patient]);
 
-	const [activeLetterId, setActiveLetterId] = useState<string>(letters[0]?.id || "g-let-1");
+	const [letters, setLetters] = useState<DmsGuaranteeLetter[]>(initialLetters);
+	const [activeLetterId, setActiveLetterId] = useState<string>(initialLetters[0]?.id || "g-let-1");
 	const selectedLetter = letters.find((l) => l.id === activeLetterId) || letters[0];
 
 	const [newLetterNumber, setNewLetterNumber] = useState<string>("ГП-2026-002");
 	const [newLetterLimitRub, setNewLetterLimitRub] = useState<number>(50000);
 
-	const registryRecords: readonly DmsRegistryServiceRecord[] = useMemo(() => [
-		{ id: "r-1", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.insurerName || "АО «СОГАЗ»", serviceCode804n: "A16.07.002.001", serviceName: "Восстановление зуба пломбой светового отверждения", toothNumber: "16", diagnosisCodeMkb10: "K02.1", quantity: 1, unitPriceRub: 4500, totalPriceRub: 4500, dmsCoveredRub: 4500, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: selectedLetter?.letterNumber },
-		{ id: "r-2", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.insurerName || "АО «СОГАЗ»", serviceCode804n: "A16.07.030.002", serviceName: "Эндодонтическая обработка 2 корневых каналов", toothNumber: "16", diagnosisCodeMkb10: "K04.0", quantity: 1, unitPriceRub: 5800, totalPriceRub: 5800, dmsCoveredRub: 5800, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: selectedLetter?.letterNumber },
-		{ id: "r-3", visitId: "v-2", visitDate: "20.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.insurerName || "АО «СОГАЗ»", serviceCode804n: "A16.07.051", serviceName: "Профессиональная гигиена Air-Flow", diagnosisCodeMkb10: "K05.0", quantity: 1, unitPriceRub: 6500, totalPriceRub: 6500, dmsCoveredRub: 5200, patientPaidRub: 1300, doctorFullName: "Д-р Смирнова Е.П.", isExcluded: false, exclusionReason: "Франшиза 20%", letterNumber: selectedLetter?.letterNumber },
-	], [patient, selectedLetter]);
+	// Fastify API Live Query for Patient Guarantee Letters
+	useEffect(() => {
+		if (!isOpen) return;
+		let isMounted = true;
+		setIsLoading(true);
 
-	// Расчет сплита чека в целочисленных копейках
+		const query = patient?.id ? `?patientId=${encodeURIComponent(patient.id)}` : "";
+		fetch(`/api/insurance/guarantee-letters${query}`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data: any[]) => {
+				if (!isMounted) return;
+				if (Array.isArray(data) && data.length > 0) {
+					setLetters(data);
+					if (data[0]?.id) setActiveLetterId(data[0].id);
+				} else if (isDemo && initialLetters.length > 0) {
+					setLetters(initialLetters);
+				} else {
+					setLetters([]);
+				}
+			})
+			.catch(() => {
+				if (isMounted && isDemo) setLetters(initialLetters);
+			})
+			.finally(() => {
+				if (isMounted) setIsLoading(false);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, patient?.id, isDemo, initialLetters]);
+
+	// Billable items: honest visit items or demo fallback
+	const effectiveBillItems = useMemo<readonly DmsBillableItem[]>(() => {
+		if (billItems && billItems.length > 0) return billItems;
+		if (isDemoShowcaseMode()) return DEFAULT_DEMO_SERVICES;
+		return [];
+	}, [billItems]);
+
+	const calcItems: DmsSplitCalculationItem[] = useMemo(() => {
+		return effectiveBillItems.map((item) => ({
+			serviceId: item.id,
+			serviceCode: item.serviceCode,
+			serviceName: item.serviceName,
+			toothNumber: item.toothNumber,
+			quantity: item.quantity,
+			priceRub: item.unitPriceKopecks ? Math.round(item.unitPriceKopecks / 100) : (item as any).priceRub || 0,
+			discountRub: 0,
+			category: "therapy",
+		}));
+	}, [effectiveBillItems]);
+
 	const splitResult = useMemo(() => {
-		return calculateDmsCoPaymentSplit(DEFAULT_BILL_ITEMS, {
-			guaranteeLetter: selectedLetter,
-			franchisePercent,
+		const letterForCalc = selectedLetter
+			? { ...selectedLetter, franchisePct: franchisePercent }
+			: null;
+		return calculateDmsGuaranteeSplit(letterForCalc, calcItems, {
+			visitDate: new Date().toISOString().slice(0, 10),
 		});
-	}, [selectedLetter, franchisePercent]);
+	}, [selectedLetter, calcItems, franchisePercent]);
 
-	const { totalBillKopecks, totalInsuranceCoveredKopecks, totalPatientOutOfPocketKopecks, lineItems, remainingLimitKopecks } = splitResult;
-	const patientDueRub = kopecksToRub(totalPatientOutOfPocketKopecks);
+	const {
+		totalBillRub,
+		totalDmsCoveredRub,
+		totalPatientCoPayRub,
+		lineItems,
+		letterRemainingLimitRub,
+	} = splitResult;
+	const patientDueRub = totalPatientCoPayRub;
 	const mixedCashRub = Math.max(0, Math.min(patientDueRub, Number(mixedCashRubInput) || 0));
 	const mixedCardRub = Math.max(0, patientDueRub - mixedCashRub);
 
+	const registryRecords: readonly DmsRegistryServiceRecord[] = useMemo(() => {
+		if (!isDemo) return [];
+		return [
+			{ id: "r-1", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.companyName || "АО «СОГАЗ»", serviceCode804n: "A16.07.002.001", serviceName: "Восстановление зуба пломбой светового отверждения", toothNumber: "16", diagnosisCodeMkb10: "K02.1", quantity: 1, unitPriceRub: 4500, totalPriceRub: 4500, dmsCoveredRub: 4500, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: selectedLetter?.letterNumber },
+			{ id: "r-2", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.companyName || "АО «СОГАЗ»", serviceCode804n: "A16.07.030.002", serviceName: "Эндодонтическая обработка 2 корневых каналов", toothNumber: "16", diagnosisCodeMkb10: "K04.0", quantity: 1, unitPriceRub: 5800, totalPriceRub: 5800, dmsCoveredRub: 5800, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: selectedLetter?.letterNumber },
+			{ id: "r-3", visitId: "v-2", visitDate: "20.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.companyName || "АО «СОГАЗ»", serviceCode804n: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", diagnosisCodeMkb10: "K05.0", quantity: 1, unitPriceRub: 6500, totalPriceRub: 6500, dmsCoveredRub: 5200, patientPaidRub: 1300, doctorFullName: "Д-р Смирнова Е.П.", isExcluded: false, exclusionReason: "Франшиза 20%", letterNumber: selectedLetter?.letterNumber },
+		];
+	}, [isDemo, patient, selectedLetter]);
+
 	if (!isOpen) return null;
 
-	const handleAddLetter = () => {
-		const insurer = RUSSIAN_DMS_INSURERS.find((i) => i.id === selectedInsurerId) || RUSSIAN_DMS_INSURERS[0];
-		const limitKop = rubToKopecks(newLetterLimitRub || 50000);
-		const letItem: DmsGuaranteeLetter = {
+	const handleAddLetter = async () => {
+		const company = DMS_INSURANCE_COMPANIES_CATALOG.find((i) => i.id === selectedInsurerId) || DMS_INSURANCE_COMPANIES_CATALOG[0]!;
+		const limitRub = Number(newLetterLimitRub || 50000);
+		const letNum = newLetterNumber.trim() || `ГП-${Date.now().toString().slice(-5)}`;
+
+		const newLetterItem: DmsGuaranteeLetter = {
 			id: `let-${Date.now()}`,
-			letterNumber: newLetterNumber.trim() || `ГП-${Date.now().toString().slice(-5)}`,
+			letterNumber: letNum,
+			patientId: patient.id || "00000000-0000-0000-0000-000000000001",
 			patientFullName: patient.fullName,
-			insurerId: insurer.id,
-			insurerName: insurer.name,
-			issueDate: new Date().toLocaleDateString("ru-RU"),
-			validUntil: "31.12.2026",
-			maxApprovedAmountKopecks: limitKop,
-			maxCoverageKopecks: limitKop,
-			usedAmountKopecks: 0,
-			franchisePercent,
+			policyNumber: patient.policyNumber || "СГЗ-2026",
+			insurerKey: company.id,
+			insurerName: company.shortNameRu,
+			issueDate: new Date().toISOString().slice(0, 10),
+			validFrom: new Date().toISOString().slice(0, 10),
+			validUntil: "2026-12-31",
+			patientBirthDate: patient.birthDate || "1990-01-01",
+			maxCoverageRub: limitRub,
+			usedAmountRub: 0,
+			franchisePct: franchisePercent,
+			franchiseType: "percent",
+			franchiseFixedRub: 0,
+			programExclusions: [],
+			approvedServiceCodes: ["A16.07.002.001", "A16.07.030.002", "A11.07.010", "A06.07.012"],
+			approvedTeethFdi: ["16"],
+			approvedDiagnosisCodes: ["K02.1", "K04.0"],
 			status: "active",
 			notes: "Согласовано стоматологическое лечение",
-			curatorPhone: insurer.curatorPhone,
 		};
-		setLetters((prev) => [letItem, ...prev]);
-		setActiveLetterId(letItem.id);
+
+		setLetters((prev) => [newLetterItem, ...prev]);
+		setActiveLetterId(newLetterItem.id);
 		setNewLetterNumber(`ГП-${Date.now().toString().slice(-4)}`);
+
+		// Persist via Fastify API
+		try {
+			await fetch("/api/insurance/guarantee-letters", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					patientId: patient.id || "00000000-0000-0000-0000-000000000001",
+					patientFullName: patient.fullName,
+					patientBirthDate: patient.birthDate || "1990-01-01",
+					policyNumber: patient.policyNumber || "СГЗ-2026",
+					insurerKey: company.id,
+					insurerName: company.shortNameRu,
+					letterNumber: letNum,
+					issueDate: new Date().toISOString().slice(0, 10),
+					validFrom: new Date().toISOString().slice(0, 10),
+					validUntil: "2026-12-31",
+					maxCoverageRub: limitRub,
+					usedAmountRub: 0,
+					franchisePct: franchisePercent,
+					notes: "Согласовано стоматологическое лечение",
+					status: "active",
+				}),
+			});
+			showToast("Гарантийное письмо сохранено в системе", "success");
+		} catch {
+			showToast("Гарантийное письмо прикреплено локально", "info");
+		}
 	};
 
 	const handleExportCsv = () => {
-		const csv = exportRegistryToCsv(registryRecords, { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701234567" }, selectedLetter?.insurerName || "АО «СОГАЗ»", "Август 2026");
+		const csv = exportRegistryToCsv(registryRecords, { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701234567" }, selectedLetter?.insurerName || (selectedLetter as any)?.companyName || "АО «СОГАЗ»", "Август 2026");
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
@@ -173,11 +294,12 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	};
 
 	const handlePrintAct = () => {
+		const insurerTitle = selectedLetter?.insurerName || (selectedLetter as any)?.companyName || "АО «СОГАЗ»";
 		const html = generateBilateralAcceptanceActHtml({
 			records: registryRecords,
-			summary: { totalServicesCount: registryRecords.length, uniquePatientsCount: 1, totalAmountRub: 16800, totalDmsCoveredRub: 15500, totalPatientPaidRub: 1300, isBalanced: true, insurerName: selectedLetter?.insurerName || "АО «СОГАЗ»", periodStart: "01.08.2026", periodEnd: "31.08.2026" },
+			summary: { totalServicesCount: registryRecords.length, uniquePatientsCount: 1, totalAmountRub: 16800, totalDmsCoveredRub: 15500, totalPatientPaidRub: 1300, isBalanced: true, insurerName: insurerTitle, periodStart: "01.08.2026", periodEnd: "31.08.2026" },
 			clinicInfo: { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701234567", ogrn: "1027700123456", address: "г. Москва, ул. Клиническая, д. 10", chiefDoctor: "Смирнов В.А." },
-			insurerInfo: { name: selectedLetter?.insurerName || "АО «СОГАЗ»", representative: "Куратор ДМС", contractNumber: "ДМС-2026/01", contractDate: "10.01.2026" },
+			insurerInfo: { name: insurerTitle, representative: "Куратор ДМС", contractNumber: "ДМС-2026/01", contractDate: "10.01.2026" },
 			actNumber: "АКТ-2026/08",
 			actDate: new Date().toLocaleDateString("ru-RU"),
 		});
@@ -189,24 +311,22 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 		setIsSplitApproved(true);
 		if (onApplySplitToCashbox) {
 			onApplySplitToCashbox({
-				totalDueRub: kopecksToRub(totalBillKopecks),
-				dmsRub: kopecksToRub(totalInsuranceCoveredKopecks),
+				totalDueRub: totalBillRub,
+				dmsRub: totalDmsCoveredRub,
 				patientRub: patientDueRub,
 				patientMethod: paymentMethod,
 				patientCashRub: paymentMethod === "cash" ? patientDueRub : paymentMethod === "mixed" ? mixedCashRub : 0,
 				patientCardRub: paymentMethod === "card" ? patientDueRub : paymentMethod === "mixed" ? mixedCardRub : 0,
 				letterId: selectedLetter?.id,
 				letterNumber: selectedLetter?.letterNumber,
-				insurerName: selectedLetter?.insurerName,
+				insurerName: selectedLetter?.insurerName || (selectedLetter as any)?.companyName,
 			});
 		}
-		window.dispatchEvent(new CustomEvent("dente:cashbox-apply-split", {
-			detail: { totalKopecks: totalBillKopecks, dmsCoveredKopecks: totalInsuranceCoveredKopecks, patientKopecks: totalPatientOutOfPocketKopecks, insurerName: selectedLetter?.insurerName },
-		}));
+		showToast("ДМС-сплит успешно утвержден", "success");
 	};
 
 	return (
-		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 10060, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", backdropFilter: "blur(4px)" }}>
+		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 100060, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", backdropFilter: "blur(4px)" }}>
 			<div className="dms-modal-window" onClick={(e) => e.stopPropagation()} style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderRadius: "20px", width: "100%", maxWidth: "1020px", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
 				{/* Apple HIG Drag Handle for mobile */}
 				<div className="dms-bottom-sheet-handle" style={{ width: "36px", height: "5px", background: "var(--line, #cbd5e1)", borderRadius: "3px", margin: "10px auto 2px" }} />
@@ -231,8 +351,8 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 					</button>
 				</div>
 
-				{/* Navigation Tabs (Apple HIG mobile touch & scroll compliant) */}
-				<div style={{ display: "flex", gap: "8px", padding: "10px 16px", borderBottom: "1px solid var(--line, #e2e8f0)", background: "var(--paper-subtle, #f8fafc)", overflowX: "auto", scrollbarWidth: "none" }}>
+				{/* Navigation Tabs */}
+				<div style={{ display: "flex", gap: "8px", padding: "10px 16px", borderBottom: "1px solid var(--line, #e2e8f0)", background: "var(--paper-soft, #f8fafc)", overflowX: "auto", scrollbarWidth: "none" }}>
 					<button type="button" onClick={() => setActiveTab("split")} style={{ flexShrink: 0, whiteSpace: "nowrap", minHeight: "44px", padding: "0 14px", borderRadius: "10px", border: "1px solid", borderColor: activeTab === "split" ? "var(--teal, #0d9488)" : "transparent", background: activeTab === "split" ? "rgba(13,148,136,0.1)" : "transparent", color: activeTab === "split" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)", fontWeight: 600, fontSize: "13px", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
 						<Split size={16} /> Сплит оплаты
 					</button>
@@ -248,22 +368,22 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				<div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
 					{activeTab === "split" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-							{/* Top 6 Insurers Bar */}
+							{/* Top Insurers Bar */}
 							<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", fontSize: "12px", color: "var(--muted, #64748b)" }}>
 								<span style={{ fontWeight: 600 }}>Страховые компании:</span>
-								{TOP_6_DMS_INSURER_CHIPS.map((ins) => (
-									<button key={ins.id} type="button" onClick={() => setSelectedInsurerId(ins.id)} style={{ minHeight: "32px", padding: "0 10px", borderRadius: "8px", border: "1px solid", borderColor: selectedInsurerId === ins.id ? "var(--teal, #0d9488)" : "var(--line, #cbd5e1)", background: selectedInsurerId === ins.id ? "rgba(13,148,136,0.1)" : "transparent", color: selectedInsurerId === ins.id ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
-										{ins.name}
+								{DMS_INSURANCE_COMPANIES_CATALOG.slice(0, 6).map((ins) => (
+									<button key={ins.id} type="button" onClick={() => setSelectedInsurerId(ins.id)} style={{ minHeight: "36px", padding: "0 12px", borderRadius: "8px", border: "1px solid", borderColor: selectedInsurerId === ins.id ? "var(--teal, #0d9488)" : "var(--line, #cbd5e1)", background: selectedInsurerId === ins.id ? "rgba(13,148,136,0.1)" : "transparent", color: selectedInsurerId === ins.id ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+										{ins.shortNameRu}
 									</button>
 								))}
 							</div>
 
 							{/* Franchise and Letter Limit bar */}
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", background: "var(--paper-subtle, #f8fafc)", padding: "12px 16px", borderRadius: "14px", border: "1px solid var(--line, #e2e8f0)" }}>
+							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", background: "var(--paper-soft, #f8fafc)", padding: "12px 16px", borderRadius: "14px", border: "1px solid var(--line, #e2e8f0)" }}>
 								<div>
 									<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", textTransform: "uppercase", fontWeight: 700 }}>Остаток гарантийного письма</div>
 									<div style={{ fontSize: "18px", fontWeight: 700, color: "var(--ink, #0f172a)", marginTop: "2px" }}>
-										{formatCurrencyKopecks(remainingLimitKopecks)}
+										{letterRemainingLimitRub !== null ? formatCurrencyRub(letterRemainingLimitRub) : "Не ограничен"}
 									</div>
 								</div>
 								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -280,7 +400,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 							<div style={{ border: "1px solid var(--line, #e2e8f0)", borderRadius: "14px", overflow: "hidden" }}>
 								<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
 									<thead>
-										<tr style={{ background: "var(--paper-subtle, #f8fafc)", borderBottom: "1px solid var(--line, #e2e8f0)", color: "var(--muted, #64748b)", textAlign: "left" }}>
+										<tr style={{ background: "var(--paper-soft, #f8fafc)", borderBottom: "1px solid var(--line, #e2e8f0)", color: "var(--muted, #64748b)", textAlign: "left" }}>
 											<th style={{ padding: "10px 14px", fontWeight: 600 }}>Услуга</th>
 											<th style={{ padding: "10px 14px", fontWeight: 600, width: "60px" }}>Зуб</th>
 											<th style={{ padding: "10px 14px", fontWeight: 600, width: "70px" }}>Кол-во</th>
@@ -290,19 +410,27 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 										</tr>
 									</thead>
 									<tbody>
-										{lineItems.map((item) => (
-											<tr key={item.lineItemId} style={{ borderBottom: "1px solid var(--line, #f1f5f9)" }}>
-												<td style={{ padding: "10px 14px" }}>
-													<div style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>{item.serviceName}</div>
-													<div style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>{item.splitReason}</div>
+										{lineItems.length === 0 ? (
+											<tr>
+												<td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "var(--muted, #64748b)" }}>
+													Нет услуг в счёте текущего визита
 												</td>
-												<td style={{ padding: "10px 14px", color: "var(--muted, #64748b)" }}>{item.toothNumber || "—"}</td>
-												<td style={{ padding: "10px 14px" }}>{item.quantity}</td>
-												<td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>{formatCurrencyKopecks(item.totalKopecks)}</td>
-												<td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "var(--teal, #0d9488)" }}>{formatCurrencyKopecks(item.insuranceCoveredKopecks)}</td>
-												<td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: item.patientOutOfPocketKopecks > 0 ? "var(--amber-ink, #b45309)" : "var(--muted, #64748b)" }}>{formatCurrencyKopecks(item.patientOutOfPocketKopecks)}</td>
 											</tr>
-										))}
+										) : (
+											lineItems.map((item) => (
+												<tr key={item.serviceId} style={{ borderBottom: "1px solid var(--line, #f1f5f9)" }}>
+													<td style={{ padding: "10px 14px" }}>
+														<div style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>{item.serviceName}</div>
+														<div style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>{item.splitReason}</div>
+													</td>
+													<td style={{ padding: "10px 14px", color: "var(--muted, #64748b)" }}>{item.toothNumber || "—"}</td>
+													<td style={{ padding: "10px 14px" }}>{item.quantity}</td>
+													<td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>{formatCurrencyRub(item.totalPriceRub)}</td>
+													<td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "var(--teal, #0d9488)" }}>{formatCurrencyRub(item.dmsCoveredRub)}</td>
+													<td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: item.patientCoPayRub > 0 ? "var(--amber-ink, #b45309)" : "var(--muted, #64748b)" }}>{formatCurrencyRub(item.patientCoPayRub)}</td>
+												</tr>
+											))
+										)}
 									</tbody>
 								</table>
 							</div>
@@ -312,15 +440,15 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 								<div style={{ background: "rgba(13,148,136,0.06)", border: "1px solid rgba(13,148,136,0.2)", borderRadius: "14px", padding: "14px" }}>
 									<div style={{ fontSize: "12px", color: "var(--teal, #0d9488)", fontWeight: 700 }}>ПОКРЫВАЕТСЯ СТРАХОВКОЙ</div>
 									<div style={{ fontSize: "24px", fontWeight: 800, color: "var(--teal, #0d9488)", marginTop: "4px" }}>
-										{formatCurrencyKopecks(totalInsuranceCoveredKopecks)}
+										{formatCurrencyRub(totalDmsCoveredRub)}
 									</div>
-									<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "4px" }}>Безналичное перечисление от {selectedLetter?.insurerName}</div>
+									<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "4px" }}>Безналичное перечисление от {selectedLetter?.insurerName || (selectedLetter as any)?.companyName || "страховой компании"}</div>
 								</div>
 
 								<div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: "14px", padding: "14px" }}>
 									<div style={{ fontSize: "12px", color: "var(--amber-ink, #b45309)", fontWeight: 700 }}>ДОПЛАТА ПАЦИЕНТА НА КАССЕ</div>
 									<div style={{ fontSize: "24px", fontWeight: 800, color: "var(--amber-ink, #b45309)", marginTop: "4px" }}>
-										{formatCurrencyKopecks(totalPatientOutOfPocketKopecks)}
+										{formatCurrencyRub(totalPatientCoPayRub)}
 									</div>
 									<div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
 										{(["card", "cash", "mixed"] as const).map((m) => (
@@ -338,14 +466,14 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 							<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>Выберите страховую компанию РФ:</div>
 							<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-								{TOP_6_DMS_INSURER_CHIPS.map((ins) => (
+								{DMS_INSURANCE_COMPANIES_CATALOG.slice(0, 6).map((ins) => (
 									<button key={ins.id} type="button" onClick={() => setSelectedInsurerId(ins.id)} style={{ minHeight: "44px", padding: "0 14px", borderRadius: "10px", border: "1px solid", borderColor: selectedInsurerId === ins.id ? "var(--teal, #0d9488)" : "var(--line, #cbd5e1)", background: selectedInsurerId === ins.id ? "rgba(13,148,136,0.1)" : "var(--paper, #fff)", color: selectedInsurerId === ins.id ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
-										{ins.name}
+										{ins.shortNameRu}
 									</button>
 								))}
 							</div>
 
-							<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "16px", borderRadius: "14px", border: "1px solid var(--line, #e2e8f0)", display: "flex", flexDirection: "column", gap: "12px" }}>
+							<div style={{ background: "var(--paper-soft, #f8fafc)", padding: "16px", borderRadius: "14px", border: "1px solid var(--line, #e2e8f0)", display: "flex", flexDirection: "column", gap: "12px" }}>
 								<div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>Прикрепить новое гарантийное письмо</div>
 								<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
 									<div>
@@ -381,7 +509,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 							<div style={{ border: "1px solid var(--line, #e2e8f0)", borderRadius: "14px", overflow: "hidden" }}>
 								<table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
 									<thead>
-										<tr style={{ background: "var(--paper-subtle, #f8fafc)", borderBottom: "1px solid var(--line, #e2e8f0)", color: "var(--muted, #64748b)", textAlign: "left" }}>
+										<tr style={{ background: "var(--paper-soft, #f8fafc)", borderBottom: "1px solid var(--line, #e2e8f0)", color: "var(--muted, #64748b)", textAlign: "left" }}>
 											<th style={{ padding: "8px 12px" }}>Дата</th>
 											<th style={{ padding: "8px 12px" }}>Пациент</th>
 											<th style={{ padding: "8px 12px" }}>Услуга</th>
@@ -409,15 +537,15 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				</div>
 
 				{/* Footer with EXACTLY ONE PRIMARY CTA BUTTON */}
-				<div style={{ padding: "14px 20px", borderTop: "1px solid var(--line, #e2e8f0)", background: "var(--paper-subtle, #f8fafc)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+				<div style={{ padding: "14px 20px", borderTop: "1px solid var(--line, #e2e8f0)", background: "var(--paper-soft, #f8fafc)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
 					<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-						Итого к сплиту: <strong>{formatCurrencyKopecks(totalBillKopecks)}</strong> (Страховая: {formatCurrencyKopecks(totalInsuranceCoveredKopecks)} • Пациент: {formatCurrencyKopecks(totalPatientOutOfPocketKopecks)})
+						Итого к сплиту: <strong>{formatCurrencyRub(totalBillRub)}</strong> (Страховая: {formatCurrencyRub(totalDmsCoveredRub)} • Пациент: {formatCurrencyRub(totalPatientCoPayRub)})
 					</div>
 					<div style={{ display: "flex", gap: "10px" }}>
 						<button type="button" onClick={onClose} style={{ minHeight: "44px", padding: "0 18px", borderRadius: "10px", border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)", color: "var(--ink, #0f172a)", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>
 							Закрыть
 						</button>
-						{/* EXACTLY ONE PRIMARY CTA: Мандат 8am & 8e (never disabled) */}
+						{/* EXACTLY ONE PRIMARY CTA: Mandate 8am & 8e (never disabled) */}
 						<button type="button" onClick={handleApplySplit} style={{ minHeight: "44px", padding: "0 22px", borderRadius: "10px", border: "none", background: "var(--teal, #0d9488)", color: "#ffffff", fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 4px 12px rgba(13,148,136,0.25)" }}>
 							<Check size={18} /> {isSplitApproved ? "✓ Сплит утвержден в кассе" : "✓ Утвердить ДМС-сплит"}
 						</button>

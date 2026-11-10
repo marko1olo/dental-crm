@@ -22,7 +22,7 @@ export function ZtlManufacturingStageTracker({
 				<div className="flex items-center gap-1.5 min-w-0">
 					<Clock size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-						Этапы изготовления ЗТЛ (1 клик):
+						Этапы изготовления ЗТЛ:
 					</span>
 				</div>
 				<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">

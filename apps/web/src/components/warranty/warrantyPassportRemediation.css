@@ -1,6 +1,0 @@
-/* ============================================================================
-   WARRANTY REMEDIATION SHIM (Redirects to warrantyStyles/warrantyRemediation.css)
-   Mandate 8b: Micro-module <= 120 lines
-   ============================================================================ */
-
-@import "./warrantyStyles/warrantyRemediation.css";

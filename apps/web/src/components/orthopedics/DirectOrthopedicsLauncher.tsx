@@ -5,7 +5,9 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { OrthopedicsStudioModal } from "./OrthopedicsStudioModal";
+import { X } from "lucide-react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { OrthopedicsChairsidePanel } from "./OrthopedicsChairsidePanel.js";
 
 function checkIsOrthopedicsActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -78,10 +80,44 @@ export const DirectOrthopedicsLauncher: React.FC = () => {
 	if (!isActive || !isOpen) return null;
 
 	return (
-		<OrthopedicsStudioModal
-			isOpen={isOpen} onClose={handleClose} initialToothFdi={toothFdi}
-			patientName="Ковалев Дмитрий Сергеевич" doctorName="Д-р Смирнова Е. В. (Ортопед)" clinicName="Стоматологическая клиника DENTE"
-		/>
+		<div
+			className="fixed inset-0 z-[10060] flex items-center justify-center p-2 sm:p-4 bg-black/55 backdrop-blur-sm"
+			role="dialog"
+			aria-modal="true"
+			data-testid="direct-orthopedics-launcher-modal"
+			onClick={handleClose}
+		>
+			<div
+				className="relative w-full max-w-5xl max-h-[94vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl shadow-2xl overflow-hidden border border-[var(--line,#e2e8f0)]"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,#f8fafc)]">
+					<div>
+						<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)]">
+							Ортопедия и зуботехническая лаборатория (ЗТЛ)
+						</h2>
+						<p className="text-xs text-[var(--muted,#64748b)]">
+							Кресельный протокол ортопеда, заказ-наряды и гарантийный паспорт изделия
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={handleClose}
+						className="w-11 h-11 flex items-center justify-center rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+						aria-label="Закрыть"
+					>
+						<X size={18} />
+					</button>
+				</div>
+				<div className="flex-1 overflow-y-auto p-3 sm:p-5">
+					<OrthopedicsChairsidePanel
+						patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
+						doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
+						activeToothFdi={toothFdi}
+					/>
+				</div>
+			</div>
+		</div>
 	);
 };
 

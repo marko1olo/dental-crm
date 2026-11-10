@@ -10,9 +10,9 @@ import {
 	kopecksToRub,
 	rubToKopecks,
 	RUSSIAN_DMS_INSURERS,
-} from "./insuranceData.js";
+} from "./dmsCatalogData.js";
 
-export * from "./insuranceData.js";
+export * from "./dmsCatalogData.js";
 
 export const DEFAULT_CLINIC_PROFILE = {
 	legalName: "ООО «Стоматологический Центр «ДЕНТЕ»",

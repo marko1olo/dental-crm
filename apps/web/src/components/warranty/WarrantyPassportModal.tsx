@@ -2,8 +2,6 @@ import { ShieldCheck, X } from "lucide-react";
 import type React from "react";
 import { createPortal } from "react-dom";
 import "./warrantyPassport.css";
-import "./warrantyPassportRemediation.css";
-import "./warrantyPassportMobile.css";
 import type { CompletedTreatmentStage, WarrantyPassportModalProps } from "./warrantyPassport";
 import {
 	detectCategoryFromServiceTitle,
@@ -38,12 +36,12 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 			...prev,
 			hygieneScore: 1.0,
 			bruxism: false,
+			nightGuardPrescribed: false,
 			nightGuardUsed: false,
-			smoking: false,
-			periodontitisHistory: false,
-			highCariesActivity: false,
-			uncontrolledDiabetes: false,
-			complianceRegularCheckups: true,
+			malocclusion: false,
+			smoking: "none",
+			diabetes: "none",
+			periodontitis: "none",
 		}));
 		s.handleAttachTo043u();
 		s.handlePrint();

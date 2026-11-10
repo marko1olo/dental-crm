@@ -14,7 +14,7 @@ export function ZtlPresetsGrid({ activeZtlPresetId, onSelectZtlPreset }: ZtlPres
 				<div className="flex items-center gap-1.5 min-w-0">
 					<Zap size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-						Стандарты ЗТЛ и гарантия (1 клик):
+						Стандарты ЗТЛ и гарантия:
 					</span>
 				</div>
 				<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">

@@ -13,7 +13,7 @@ import {
 	type DmsBillableItem,
 	type DmsGuaranteeLetter,
 	type PatientPaymentMethod,
-} from "./dmsCatalogData.js";
+} from "@dental/shared";
 
 export interface InsuranceBillSplitCardProps {
 	readonly letter?: DmsGuaranteeLetter;
