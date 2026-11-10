@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { MoveHorizontal, MoveVertical, RefreshCw, Camera, Upload, X, RotateCcw } from 'lucide-react';
+import { MoveHorizontal, MoveVertical, RefreshCw, Camera, Upload, X, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
 import { calculateSplitClipPath, calculateWiperWheelDelta, calculateKeyboardWiperDelta } from './photoProtocolMath';
 import { DEMO_BEFORE_SMILE_SVG, DEMO_AFTER_SMILE_SVG } from './patientPresentationDemoData';
 
@@ -75,6 +75,7 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 }) => {
 	const [internalSplit, setInternalSplit] = useState<number>(50);
 	const [orientation, setOrientation] = useState<'vertical' | 'horizontal'>('vertical');
+	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [showDemoFallback, setShowDemoFallback] = useState<boolean>(false);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -99,6 +100,21 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 	const effectiveBefore = rawBefore || (showDemoFallback ? DEMO_BEFORE_SMILE_SVG : null);
 	const effectiveAfter = rawAfter || (showDemoFallback ? DEMO_AFTER_SMILE_SVG : null);
 
+	const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+		try {
+			e.currentTarget.setPointerCapture(e.pointerId);
+		} catch {
+			// ignore in test / non-supporting environments
+		}
+		if (containerRef.current) {
+			const rect = containerRef.current.getBoundingClientRect();
+			const pct = orientation === 'vertical'
+				? ((e.clientX - rect.left) / rect.width) * 100
+				: ((e.clientY - rect.top) / rect.height) * 100;
+			updateSplit(pct);
+		}
+	}, [orientation, updateSplit]);
+
 	const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
 		if (e.buttons !== 1 || !containerRef.current) return;
 		const rect = containerRef.current.getBoundingClientRect();
@@ -107,6 +123,22 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 			: ((e.clientY - rect.top) / rect.height) * 100;
 		updateSplit(pct);
 	}, [orientation, updateSplit]);
+
+	const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+		try {
+			if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+				e.currentTarget.releasePointerCapture(e.pointerId);
+			}
+		} catch {
+			// ignore
+		}
+	}, []);
+
+	const handleSwap = useCallback(() => {
+		if (onSwap) {
+			onSwap();
+		}
+	}, [onSwap]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'].includes(e.key)) {
@@ -173,13 +205,22 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 							<button
 								type="button"
 								className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)] inline-flex items-center justify-center"
-								onClick={onSwap}
+								onClick={handleSwap}
 								title="Поменять местами До и После"
 								aria-label="Поменять местами"
 							>
 								<RefreshCw size={14} />
 							</button>
 						)}
+						<button
+							type="button"
+							className="photo-touch-btn min-h-[36px] min-w-[44px] px-2 py-1 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)] inline-flex items-center justify-center"
+							onClick={() => setIsFullscreen((prev) => !prev)}
+							title={isFullscreen ? 'Свернуть' : 'На весь экран'}
+							aria-label="Режим презентации"
+						>
+							{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+						</button>
 						{onClose && (
 							<button
 								type="button"
@@ -224,14 +265,6 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 								Загрузить снимки в протокол
 							</button>
 						)}
-						<button
-							type="button"
-							onClick={() => setShowDemoFallback(true)}
-							className="photo-touch-btn min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,#f1f5f9)]"
-							data-testid="btn-show-demo-slider"
-						>
-							Показать демо-пример сопоставления
-						</button>
 					</div>
 				</div>
 			) : (
@@ -242,11 +275,13 @@ export const BeforeAfterSplitSlider: React.FC<BeforeAfterSplitSliderProps> = ({
 					role="slider"
 					aria-valuenow={effectiveSplit}
 					aria-label="Шторка сравнения снимков До и После"
+					onPointerDown={handlePointerDown}
 					onPointerMove={handlePointerMove}
+					onPointerUp={handlePointerUp}
 					onWheel={(e) => updateSplit(calculateWiperWheelDelta(effectiveSplit, e.deltaY))}
 					onKeyDown={handleKeyDown}
 					style={{
-						height: compact ? '280px' : '460px',
+						height: compact ? '280px' : isFullscreen ? '70vh' : '460px',
 						cursor: orientation === 'vertical' ? 'ew-resize' : 'ns-resize',
 						userSelect: 'none',
 						touchAction: 'none',

@@ -6,15 +6,11 @@ import { clamp } from '../photoProtocolMath';
 
 describe('Photo Protocol Chairside Autonomy & Dental Lab (ZTL) Bridge', () => {
 	const photographyDir = path.resolve(process.cwd(), 'apps/web/src/components/photography');
-	const labOrderDir = path.resolve(process.cwd(), 'apps/web/src/components/lab/orderCreateModules');
+	const labDir = path.resolve(process.cwd(), 'apps/web/src/components/lab');
 
 	test('1. VITA Shade to ZTL Bridge: dente-apply-lab-shade contract and storage key', () => {
 		const vitaSelectorFile = fs.readFileSync(path.join(photographyDir, 'VitaShadeSelector.tsx'), 'utf-8');
-		const chairsideSyncPath = path.join(labOrderDir, 'useChairsideSync.ts');
-		const useLabOrderFile = [
-			fs.readFileSync(path.join(labOrderDir, 'useLabOrderCreateForm.ts'), 'utf-8'),
-			fs.existsSync(chairsideSyncPath) ? fs.readFileSync(chairsideSyncPath, 'utf-8') : '',
-		].join('\n');
+		const useLabOrderFile = fs.readFileSync(path.join(labDir, 'DentalLabStudioModal.tsx'), 'utf-8');
 
 		// Proves VitaShadeSelector dispatches dente-apply-lab-shade and writes to localStorage
 		assert.ok(

@@ -46,6 +46,11 @@ export interface TreatmentPlanStudioModalProps {
 	readonly initialSelectedTierId?: TreatmentPlanTierId;
 	readonly initialDepthMode?: "express" | "expert";
 	readonly initialStages?: readonly TreatmentPlanStage[];
+	readonly initialTiers?: readonly TreatmentPlanTier[] | undefined;
+	readonly tiers?: readonly TreatmentPlanTier[] | undefined;
+	readonly contractNumber?: string | undefined;
+	readonly onSelectPlan?: ((plan: TreatmentPlanTier) => void) | undefined;
+	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
 	readonly onApprovePlan?: (selectedTier: TreatmentPlanTier) => void;
 	readonly onConfirmSelection?: (selectedTier: TreatmentPlanTier) => void;
 	readonly onApproveAndSign?: (selectedTier: TreatmentPlanTier) => void;
@@ -126,7 +131,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								id: it.id || `plan-item-${phase}-${Date.now()}`,
 								toothNumber: it.toothNumber,
 								code804n: it.priceId || it.serviceCode || "",
+								serviceCode: it.serviceCode || it.priceId || "",
 								name: it.name || "Услуга",
+								category: it.category || "Общие",
 								priceRub: Number(it.price || 0),
 								unitPriceRub: Number(it.price || 0),
 								discountRub: Number(it.discount || 0),
@@ -160,7 +167,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								totalKopecks: sRub * 100,
 								estimatedVisits: groupItems.length,
 								estimatedWeeks: ph * 2,
-								status: activePlan.status === "Approved" ? "approved" : "draft",
+								status: activePlan.status === "Approved" ? "agreed" : "draft",
 								items: groupItems,
 							});
 						}
@@ -168,7 +175,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						if (hydrated.length > 0) {
 							if (activePlan?.id) setCurrentPlanId(activePlan.id);
 							setStages(hydrated);
-							setExpandedStageId(hydrated[0].id);
+							if (hydrated[0]?.id) setExpandedStageId(hydrated[0].id);
 							return;
 						}
 					}
@@ -252,7 +259,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			if (optTier.stages[0]?.id) setExpandedStageId(optTier.stages[0].id);
 		} else {
 			setStages(CANONICAL_CLINICAL_STAGES);
-			setExpandedStageId(CANONICAL_CLINICAL_STAGES[0].id);
+			if (CANONICAL_CLINICAL_STAGES[0]?.id) setExpandedStageId(CANONICAL_CLINICAL_STAGES[0].id);
 		}
 	}, [teeth]);
 
@@ -263,7 +270,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		const defaultItem: TreatmentPlanItem = {
 			id: `item-custom-${Date.now()}-1`,
 			name: "Первичный клинический осмотр и диагностика",
+			category: "Диагностика",
 			code804n: "B01.065.001",
+			serviceCode: "B01.065.001",
 			priceRub: 2500,
 			unitPriceRub: 2500,
 			discountRub: 0,
@@ -295,9 +304,11 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			const newItems: TreatmentPlanItem[] = bundle.items.map((it, idx) => ({
 				id: `bundle-item-${Date.now()}-${idx}`,
 				name: it.name,
+				category: it.category || "Общие",
 				code804n: it.code804n || "",
-				priceRub: it.priceRub,
-				unitPriceRub: it.priceRub,
+				serviceCode: it.serviceCode || it.code804n || "",
+				priceRub: it.priceRub ?? it.defaultPriceRub ?? 0,
+				unitPriceRub: it.unitPriceRub ?? it.defaultPriceRub ?? 0,
 				discountRub: 0,
 				quantity: 1,
 				stageKind: "stage_custom",
@@ -316,7 +327,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				items: newItems,
 				totalRub: newItems.reduce((acc, it) => acc + it.priceRub, 0),
 				totalKopecks: newItems.reduce((acc, it) => acc + it.priceRub, 0) * 100,
-				estimatedVisits: bundle.estimatedVisits,
+				estimatedVisits: bundle.estimatedVisits ?? 1,
 				estimatedWeeks: 1,
 				status: "draft",
 			};
@@ -385,7 +396,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
 
 			const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
-			if (window.fetch && isValidUuid) {
+			if (typeof window.fetch === "function" && isValidUuid) {
 				try {
 					let planIdToApprove = currentPlanId;
 
@@ -798,7 +809,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 					{/* Вкладка: Фотопротокол До/После (в режиме Эксперт) */}
 					{activeTab === "photo" && (
-						<StudioPhotoProtocolTab activeTier={activeTier} />
+						<StudioPhotoProtocolTab activeTier={activeTier} patientId={patientId} />
 					)}
 
 					{/* Вкладка: Клинические пакеты */}

@@ -16,7 +16,7 @@ import { DsdCanvasOverlay, type DsdCanvasGuideFlags, type DsdFacialLandmarks, ty
 import { DsdMetricsSidebar } from './dsd/DsdMetricsSidebar';
 import { type DsdAnalysisData, matchPhotoProtocolSlot } from '@dental/shared';
 
-if (typeof document !== 'undefined') import('./clinicalPhotography.css');
+import './clinicalPhotography.css';
 
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;

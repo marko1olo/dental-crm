@@ -63,7 +63,7 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 		if (urlPatientId) {
 			return {
 				id: urlPatientId,
-				fullName: urlPatientName || storeActivePatient?.fullName || "Морозова Елена Дмитриевна",
+				fullName: urlPatientName || storeActivePatient?.fullName || "Пациент",
 			};
 		}
 
@@ -75,8 +75,8 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 		}
 
 		return {
-			id: "01a00000-0000-0000-0000-000000000001",
-			fullName: "Морозова Елена Дмитриевна",
+			id: "",
+			fullName: "Пациент",
 		};
 	}, [storeActivePatient]);
 

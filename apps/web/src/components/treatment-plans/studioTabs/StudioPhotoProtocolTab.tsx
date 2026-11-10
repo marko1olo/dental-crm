@@ -4,41 +4,124 @@
  * Клинический стандарт: Интраоральный, Портретный и Окклюзионный фотопротокол.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Camera, Sparkles, CheckCircle2, Image as ImageIcon } from "lucide-react";
-import { BeforeAfterSplitSlider } from "../../photography/BeforeAfterSplitSlider";
+import { BeforeAfterSplitSlider, type BeforeAfterPhotoItem } from "../../photography/BeforeAfterSplitSlider";
 import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 
 export interface StudioPhotoProtocolTabProps {
 	readonly activeTier: TreatmentPlanTier;
+	readonly patientId?: string | null | undefined;
+	readonly beforeImageUrl?: string | null | undefined;
+	readonly afterImageUrl?: string | null | undefined;
+	readonly photos?: readonly BeforeAfterPhotoItem[] | undefined;
 }
 
 export type PhotoProtocolCategory = "intraoral" | "portrait" | "occlusal";
 
-export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({ activeTier }) => {
+export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
+	activeTier,
+	patientId,
+	beforeImageUrl: propBeforeUrl,
+	afterImageUrl: propAfterUrl,
+	photos: propPhotos,
+}) => {
 	const sanitizedTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 	const [activeCategory, setActiveCategory] = useState<PhotoProtocolCategory>("intraoral");
+	const [fetchedPhotos, setFetchedPhotos] = useState<readonly BeforeAfterPhotoItem[]>([]);
+
+	useEffect(() => {
+		if (propPhotos && propPhotos.length > 0) return;
+		if (!patientId) {
+			setFetchedPhotos([]);
+			return;
+		}
+
+		let isCancelled = false;
+		fetch(`/api/patients/${patientId}/photos`, {
+			headers: { Accept: "application/json" },
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (isCancelled || !data) return;
+				const items: BeforeAfterPhotoItem[] = [];
+
+				if (data.protocol?.slots && typeof data.protocol.slots === "object") {
+					for (const [slotId, slotVal] of Object.entries(data.protocol.slots)) {
+						if (typeof slotVal === "string" && slotVal.trim()) {
+							items.push({ id: slotId, url: slotVal, label: slotId });
+						} else if (slotVal && typeof slotVal === "object") {
+							const s = slotVal as { url?: string; imageUrl?: string; label?: string };
+							const u = s.url || s.imageUrl;
+							if (u) items.push({ id: slotId, url: u, label: s.label || slotId });
+						}
+					}
+				}
+
+				if (Array.isArray(data.photos)) {
+					for (const p of data.photos) {
+						if (p.url && !items.some((it) => it.url === p.url)) {
+							items.push({ id: p.id, url: p.url, label: p.name || "Снимок" });
+						}
+					}
+				}
+
+				setFetchedPhotos(items);
+			})
+			.catch(() => {
+				if (!isCancelled) setFetchedPhotos([]);
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [patientId, propPhotos]);
+
+	const allPhotos = propPhotos ?? fetchedPhotos;
+
+	const categorizedPhotos = useMemo(() => {
+		const intraoral: BeforeAfterPhotoItem[] = [];
+		const portrait: BeforeAfterPhotoItem[] = [];
+		const occlusal: BeforeAfterPhotoItem[] = [];
+
+		for (const p of allPhotos) {
+			const text = `${p.id} ${p.label || ""}`.toLowerCase();
+			if (text.includes("smile") || text.includes("portrait") || text.includes("face") || text.includes("портрет") || text.includes("улыбк") || text.includes("профиль")) {
+				portrait.push(p);
+			} else if (text.includes("occlus") || text.includes("arch") || text.includes("окклюз") || text.includes("дуга") || text.includes("верх") || text.includes("нижн")) {
+				occlusal.push(p);
+			} else {
+				intraoral.push(p);
+			}
+		}
+
+		return { intraoral, portrait, occlusal };
+	}, [allPhotos]);
 
 	const categories = [
 		{
 			id: "intraoral" as const,
 			title: "Интраоральный фотопротокол",
 			description: "Фронтальная окклюзия, боковые контакты справа/слева",
-			count: 3,
+			count: categorizedPhotos.intraoral.length,
 		},
 		{
 			id: "portrait" as const,
 			title: "Портретный фотопротокол",
 			description: "Покой губ, широкая улыбка в анфас, эстетический профиль",
-			count: 3,
+			count: categorizedPhotos.portrait.length,
 		},
 		{
 			id: "occlusal" as const,
 			title: "Окклюзионный фотопротокол",
 			description: "Зубная дуга верхней челюсти, зубная дуга нижней челюсти",
-			count: 2,
+			count: categorizedPhotos.occlusal.length,
 		},
 	];
+
+	const activePhotos = categorizedPhotos[activeCategory] ?? [];
+	const effectiveBeforeUrl = propBeforeUrl || activePhotos[0]?.url || null;
+	const effectiveAfterUrl = propAfterUrl || activePhotos[1]?.url || (activePhotos.length === 1 ? activePhotos[0]?.url : null);
 
 	return (
 		<div className="space-y-4 max-w-4xl mx-auto" data-testid="studio-photo-protocol-tab">
@@ -101,8 +184,11 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({ 
 			{/* 3. Интерактивный интерактивный сплиттер До / После */}
 			<div className="p-2 sm:p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xs space-y-3">
 				<BeforeAfterSplitSlider
+					beforeImageUrl={effectiveBeforeUrl}
+					afterImageUrl={effectiveAfterUrl}
 					beforeLabel="До лечения"
 					afterLabel={`План: ${sanitizedTitle}`}
+					photos={activePhotos.length > 0 ? activePhotos : undefined}
 					showControls={true}
 				/>
 

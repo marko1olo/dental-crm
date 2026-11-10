@@ -17,7 +17,6 @@ export * from './BeforeAfterComparisonView';
 export * from './PhotoCalibrationDrawer';
 export * from './PhotoCollageExportSheet';
 export * from './ClinicalPhotoProtocolModal';
-export * from './ClinicalPhotoProtocolGrid';
 export * from './photoProtocolEngine';
 export * from './chairsidePhotoCompressor';
 export * from './useClipboardPhotoPaste';

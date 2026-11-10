@@ -2558,6 +2558,38 @@
   2. Внедрен семантический маппинг по ключевым словам в имени файла (`smile`/`улыб` -> портрет, `profile`/`профиль` -> профиль, `upper`/`верхн` -> верхняя дуга, `lower`/`нижн` -> нижняя дуга, `front`/`фронт`/`occlus` -> окклюзия).
   3. Для файлов без ключевых слов последовательно заполняются только фактически пустые слоты `emptySlotIds.shift()`, исключая затирание уже отснятых ракурсов.
 
+### [PHO-09] [ИСПРАВЛЕНО] Потеря EXIF-ориентации снимков, истребление сирот сеток/сплиттеров, интеграция вкладки фото пациента и студии планов лечения
+- **Файлы:**
+  - [`apps/web/src/components/photography/compressor/canvasCompress.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/compressor/canvasCompress.ts) (Нормализация EXIF-ориентации 1–8 через Canvas матрицу трансформаций)
+  - [`apps/web/src/components/patients/tabs/PatientPhotosTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/tabs/PatientPhotosTab.tsx) (Каноническая вкладка фотоархива пациента с API-гидратацией и честным Empty State)
+  - [`apps/web/src/components/patients/PatientCardModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientCardModal.tsx) (Монтирование `PatientPhotosTab`, удержание размера файла <= 650 строк)
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioPhotoProtocolTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioPhotoProtocolTab.tsx) (Подключение реальных снимков, категорий и динамических счетчиков в студию планов)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx) (Проброс `patientId` в таб фотопротокола)
+  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx) (Pointer capture для тачскринов, fullscreen презентационный режим, swap)
+  - [`apps/web/src/components/portal/patientCabinet/patientCabinetAppointments.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/patientCabinetAppointments.ts) (Ликвидация стоковых Unsplash URL, замена на клинические эндпоинты)
+- **Суть архитектурных дефектов:**
+  1. *Потеря EXIF:* Снимки с DSLR камер и смартфонов загружались повернутыми на 90°/180° или зеркально отраженными из-за игнорирования EXIF Orientation тега при рендере в Canvas.
+  2. *Мертвые дубликаты-сироты:* В кодовой базе существовали параллельные немонтируемые реализации фотосеток и сплиттеров (`ClinicalPhotoProtocolGrid.tsx`, `grid/`, `BeforeAfterPhotoDrawer.tsx`, `BeforeAfterViewport.tsx`, `useBeforeAfterSplitter.ts`), создававшие риск рассинхронизации.
+  3. *Заглушка фото в карте пациента:* Вкладка фото в `PatientCardModal.tsx` содержала псевдо-заглушку вместо полноценного просмотра галереи клинических фото и слотов протокола.
+  4. *Изолированный фотопротокол в планах:* `StudioPhotoProtocolTab.tsx` использовал хардкодные счетчики `count: 3` и не передавал реальные фотографии пациента в `BeforeAfterSplitSlider`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `canvasCompress.ts` внедрены `extractImageBinaryMetadata`, `getOrientedDimensions` и `applyOrientationTransform(ctx, orientation, width, height)`: все 8 значений EXIF-ориентации нормализуются до сжатия в WebP/JPEG.
+  2. Физически удалены (`git rm`) все мертвые сироты: `ClinicalPhotoProtocolGrid.tsx`, `grid/*`, `BeforeAfterPhotoDrawer.tsx`, `BeforeAfterViewport.tsx`, `useBeforeAfterSplitter.ts`. Мертвые реэкспорты очищены.
+  3. Создан компонент `PatientPhotosTab.tsx`: загружает слоты и прикрепленные фото из `/api/patients/:patientId/photos`, отображает бейджи категорий, таймстампы и быстрый переход в клинический фотопротокол. В `PatientCardModal.tsx` монтирован без превышения лимита строк (636 <= 650).
+  4. В `StudioPhotoProtocolTab.tsx` добавлена авто-категоризация фото по ключевым признакам (интраоральные, портретные, окклюзионные), динамический подсчет и передача реальных снимков в слайдер.
+  5. В `BeforeAfterSplitSlider.tsx` добавлены `setPointerCapture` / `releasePointerCapture` для мультитача, кнопка разворота в кресельный fullscreen монитор кабинета (`isFullscreen`) и коллбек `handleSwap`.
+  6. Все 10 целевых визуальных пруфов зафиксированы в `docs/proofs/photography/`:
+     * ☀️ PC Light (1440x900): [`01_photo_protocol_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/01_photo_protocol_pc_light_1440x900.png) (92 KB)
+     * 🌙 PC Dark (1440x900): [`02_photo_protocol_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/02_photo_protocol_pc_dark_1440x900.png) (93 KB)
+     * 📱 Mobile Light (390x844): [`03_photo_protocol_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/03_photo_protocol_mobile_light_390x844.png) (46 KB)
+     * 🌙 Mobile Dark (390x844): [`04_photo_protocol_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/04_photo_protocol_mobile_dark_390x844.png) (47 KB)
+     * ☀️ Splitter PC Light (1440x900): [`05_before_after_slider_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/05_before_after_slider_pc_light_1440x900.png) (80 KB)
+     * 🌙 Splitter PC Dark (1440x900): [`06_before_after_slider_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/06_before_after_slider_pc_dark_1440x900.png) (79 KB)
+     * ☀️ Photos Tab PC Light (1440x900): [`07_patient_photos_tab_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/07_patient_photos_tab_pc_light_1440x900.png) (57 KB)
+     * 🌙 Photos Tab PC Dark (1440x900): [`08_patient_photos_tab_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/08_patient_photos_tab_pc_dark_1440x900.png) (55 KB)
+     * 📱 Photos Tab Mobile Light (390x844): [`09_patient_photos_tab_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/09_patient_photos_tab_mobile_light_390x844.png) (36 KB)
+     * 🌙 Photos Tab Mobile Dark (390x844): [`10_patient_photos_tab_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/10_patient_photos_tab_mobile_dark_390x844.png) (37 KB)
+
 
 ## 21. 🎁 ПРОГРАММА ЛОЯЛЬНОСТИ, БОНУСЫ, СЕМЕЙНЫЕ КОШЕЛЬКИ И RFM-МАРКЕТИНГ
 

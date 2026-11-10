@@ -13,18 +13,6 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import {
-	Sparkles,
-	X,
-	Upload,
-	RotateCw,
-	Sliders,
-	Camera,
-	FileText,
-	Layers,
-	ChevronRight,
-	Image as ImageIcon,
-} from 'lucide-react';
 import type { DsdAnalysisData } from '@dental/shared';
 import {
 	DsdCanvasOverlay,
@@ -33,12 +21,13 @@ import {
 	type DsdCalibrationState,
 } from './DsdCanvasOverlay';
 import { DsdMetricsSidebar } from './DsdMetricsSidebar';
+import { DsdStudioHeader } from './DsdStudioHeader';
+import { DsdEmptyState } from './DsdEmptyState';
 import { showToast } from '../../GlobalToast';
 import { compressChairsidePhotoToBlobUrl } from '../chairsidePhotoCompressor';
 
-// Каноническое эталонное клиническое фото портрета улыбки для демонстрации и калибровки
-export const DEFAULT_CLINICAL_SMILE_PHOTO =
-	'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000"><rect width="1000" height="1000" fill="%230f172a"/><circle cx="500" cy="500" r="380" fill="%231e293b"/><circle cx="340" cy="380" r="30" fill="%23334155"/><circle cx="660" cy="380" r="30" fill="%23334155"/><circle cx="340" cy="380" r="12" fill="%2306b6d4"/><circle cx="660" cy="380" r="12" fill="%2306b6d4"/><ellipse cx="500" cy="520" rx="35" ry="20" fill="%23334155"/><path d="M 280 620 Q 500 740 720 620" stroke="%23e2e8f0" stroke-width="24" stroke-linecap="round" fill="none"/><path d="M 290 625 Q 500 730 710 625" stroke="%230f172a" stroke-width="12" fill="none"/><text x="500" y="860" font-family="sans-serif" font-size="20" fill="%2394a3b8" text-anchor="middle" font-weight="bold">Клинический фотопротокол DSD: анфас с улыбкой</text></svg>';
+// Канонический экспорт константы фото-слота (без карикатурных моков)
+export const DEFAULT_CLINICAL_SMILE_PHOTO = '';
 
 export interface DsdPatientPhotoOption {
 	id: string;
@@ -88,7 +77,6 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 	patientId = 'chairside',
 	patientName = 'Пациент',
 	doctorName = 'Лечащий врач',
-	clinicName = 'DENTE CLINIC',
 	visitId,
 	initialPhotoUrl,
 	patientPhotos = [],
@@ -108,14 +96,11 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				list.push(p);
 			}
 		}
-		if (list.length === 0) {
-			list.push({ id: 'default_template', url: DEFAULT_CLINICAL_SMILE_PHOTO, label: 'Клинический эталон' });
-		}
 		return list;
 	}, [initialPhotoUrl, patientPhotos]);
 
 	const [activePhotoUrl, setActivePhotoUrl] = useState<string>(
-		() => initialPhotoUrl || effectivePhotos[0]?.url || DEFAULT_CLINICAL_SMILE_PHOTO,
+		() => initialPhotoUrl || effectivePhotos[0]?.url || '',
 	);
 
 	useEffect(() => {
@@ -124,7 +109,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 		} else if (effectivePhotos.length > 0 && !activePhotoUrl) {
 			setActivePhotoUrl(effectivePhotos[0]!.url);
 		}
-	}, [initialPhotoUrl, effectivePhotos]);
+	}, [initialPhotoUrl, effectivePhotos, activePhotoUrl]);
 
 	const [rotationDegrees, setRotationDegrees] = useState<number>(0);
 	const [activeMobileTab, setActiveMobileTab] = useState<'canvas' | 'metrics'>('canvas');
@@ -358,79 +343,17 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 					aria-hidden="true"
 				/>
 
-				{/* 1. Шапка студии DSD */}
-				<header className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-between shrink-0">
-					<div className="flex items-center gap-2 sm:gap-3">
-						<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-teal-500/20">
-							<Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
-						</div>
-						<div>
-							<div className="flex items-center gap-2">
-								<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)]">
-									Digital Smile Design (DSD)
-								</h2>
-								<span className="hidden sm:inline-flex text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-									Wheeler 2.5D
-								</span>
-							</div>
-							<div className="text-xs text-[var(--muted,#64748b)] truncate">
-								Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong> • Врач: {doctorName}
-							</div>
-						</div>
-					</div>
-
-					{/* Выбор снимков пациента при наличии нескольких ракурсов */}
-					{effectivePhotos.length > 1 && (
-						<div className="hidden md:flex items-center gap-1 bg-[var(--paper-soft,#f8fafc)] p-1 rounded-xl border border-[var(--line,#cbd5e1)]">
-							{effectivePhotos.slice(0, 3).map((photo, idx) => (
-								<button
-									key={photo.id || idx}
-									type="button"
-									onClick={() => setActivePhotoUrl(photo.url)}
-									className={`px-2.5 py-1 text-xs rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
-										activePhotoUrl === photo.url
-											? 'bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-xs font-bold'
-											: 'text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]'
-									}`}
-								>
-									<ImageIcon className="w-3 h-3" />
-									<span>{photo.label || `Снимок ${idx + 1}`}</span>
-								</button>
-							))}
-						</div>
-					)}
-
-					{/* Тулбар действий шапки */}
-					<div className="flex items-center gap-1.5 sm:gap-2">
-						<button
-							type="button"
-							onClick={() => fileInputRef.current?.click()}
-							className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,#f1f5f9)] text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer min-h-[36px]"
-							title="Загрузить другое фото"
-							data-testid="btn-dsd-upload-photo"
-						>
-							<Upload className="w-3.5 h-3.5" />
-							<span className="hidden sm:inline">Загрузить фото</span>
-						</button>
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept="image/*"
-							className="hidden"
-							onChange={handleFileChange}
-						/>
-
-						<button
-							type="button"
-							onClick={onClose}
-							className="p-1.5 sm:p-2 rounded-lg border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
-							title="Закрыть студию DSD"
-							data-testid="btn-close-dsd-modal"
-						>
-							<X className="w-5 h-5" />
-						</button>
-					</div>
-				</header>
+				{/* 1. Шапка студии DSD (декомпозирована) */}
+				<DsdStudioHeader
+					patientName={patientName}
+					doctorName={doctorName}
+					effectivePhotos={effectivePhotos}
+					activePhotoUrl={activePhotoUrl}
+					setActivePhotoUrl={setActivePhotoUrl}
+					fileInputRef={fileInputRef}
+					handleFileChange={handleFileChange}
+					onClose={onClose}
+				/>
 
 				{/* Переключатель мобильных вкладок (Apple Segmented Control на смартфонах) */}
 				<div className="sm:hidden px-3 py-1.5 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex shrink-0">
@@ -462,21 +385,27 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 
 				{/* 2. Основная рабочая область: Сплит-экран */}
 				<div className="flex-1 flex overflow-hidden">
-					{/* Интерактивный холст (слева) */}
+					{/* Интерактивный холст (слева) или честный Empty State */}
 					<div
 						className={`flex-1 relative flex items-center justify-center p-2 sm:p-4 bg-slate-950 overflow-hidden ${
 							activeMobileTab === 'canvas' ? 'flex' : 'max-sm:hidden'
 						}`}
 					>
-						<DsdCanvasOverlay
-							imageUrl={activePhotoUrl}
-							guides={guides}
-							landmarks={landmarks}
-							calibration={calibration}
-							rotationDegrees={rotationDegrees}
-							onLandmarksChange={handleLandmarksChange}
-							onCalibrationChange={handleCalibrationChange}
-						/>
+						{!activePhotoUrl ? (
+							<DsdEmptyState
+								onUploadClick={() => fileInputRef.current?.click()}
+							/>
+						) : (
+							<DsdCanvasOverlay
+								imageUrl={activePhotoUrl}
+								guides={guides}
+								landmarks={landmarks}
+								calibration={calibration}
+								rotationDegrees={rotationDegrees}
+								onLandmarksChange={handleLandmarksChange}
+								onCalibrationChange={handleCalibrationChange}
+							/>
+						)}
 					</div>
 
 					{/* Правая панель метрик и ЗТЛ спецификации (360-400px) */}

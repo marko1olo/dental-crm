@@ -53,7 +53,6 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 		const canvasFile = path.join(dsdDir, 'DsdCanvasOverlay.tsx');
 		const sidebarFile = path.join(dsdDir, 'DsdMetricsSidebar.tsx');
 		const studioModalFile = path.join(dsdDir, 'DsdAestheticStudioModal.tsx');
-		const photoGridFile = path.join(photographyDir, 'ClinicalPhotoProtocolGrid.tsx');
 		const photoModalFile = path.join(photographyDir, 'ClinicalPhotoProtocolModal.tsx');
 		const legacyModalFile = path.join(photographyDir, 'DigitalSmileDesignModal.tsx');
 		const indexExportFile = path.join(photographyDir, 'index.ts');
@@ -61,29 +60,14 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 		assert.ok(fs.existsSync(canvasFile), 'DsdCanvasOverlay.tsx must exist');
 		assert.ok(fs.existsSync(sidebarFile), 'DsdMetricsSidebar.tsx must exist');
 		assert.ok(fs.existsSync(studioModalFile), 'DsdAestheticStudioModal.tsx must exist');
-		assert.ok(fs.existsSync(photoGridFile), 'ClinicalPhotoProtocolGrid.tsx must exist');
+		assert.ok(fs.existsSync(photoModalFile), 'ClinicalPhotoProtocolModal.tsx must exist');
 
-		const photoGridContent = fs.readFileSync(photoGridFile, 'utf-8');
 		const photoModalContent = fs.readFileSync(photoModalFile, 'utf-8');
 		const studioModalContent = fs.readFileSync(studioModalFile, 'utf-8');
 		const legacyModalContent = fs.readFileSync(legacyModalFile, 'utf-8');
 		const indexExportContent = fs.readFileSync(indexExportFile, 'utf-8');
 
-		// 1. ClinicalPhotoProtocolGrid mounts DsdCanvasOverlay & DsdMetricsSidebar
-		assert.ok(
-			photoGridContent.includes("from './dsd/DsdCanvasOverlay'") || photoGridContent.includes('from "./dsd/DsdCanvasOverlay"'),
-			'ClinicalPhotoProtocolGrid must import DsdCanvasOverlay',
-		);
-		assert.ok(
-			photoGridContent.includes("from './dsd/DsdMetricsSidebar'") || photoGridContent.includes('from "./dsd/DsdMetricsSidebar"'),
-			'ClinicalPhotoProtocolGrid must import DsdMetricsSidebar',
-		);
-		assert.ok(
-			photoGridContent.includes('viewMode === "dsd"') || photoGridContent.includes("viewMode === 'dsd'"),
-			'ClinicalPhotoProtocolGrid must support viewMode="dsd"',
-		);
-
-		// 2. ClinicalPhotoProtocolModal mounts DsdCanvasOverlay & DsdMetricsSidebar
+		// 1. ClinicalPhotoProtocolModal mounts DsdCanvasOverlay & DsdMetricsSidebar
 		assert.ok(
 			photoModalContent.includes("from './dsd/DsdCanvasOverlay'"),
 			'ClinicalPhotoProtocolModal must import DsdCanvasOverlay',
@@ -93,11 +77,23 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 			'ClinicalPhotoProtocolModal must import DsdMetricsSidebar',
 		);
 
-		// 3. DsdAestheticStudioModal mounts DsdCanvasOverlay & DsdMetricsSidebar
+		// 2. DsdAestheticStudioModal mounts DsdCanvasOverlay & DsdMetricsSidebar
 		assert.ok(
 			studioModalContent.includes("from './DsdCanvasOverlay'"),
 			'DsdAestheticStudioModal must import DsdCanvasOverlay',
 		);
+		assert.ok(
+			studioModalContent.includes("from './DsdMetricsSidebar'"),
+			'DsdAestheticStudioModal must import DsdMetricsSidebar',
+		);
+
+		// 3. DigitalSmileDesignModal mounts DsdCanvasOverlay & DsdMetricsSidebar
+		assert.ok(
+			legacyModalContent.includes("from './dsd/DsdCanvasOverlay'") || legacyModalContent.includes("from './dsd/DsdAestheticStudioModal'"),
+			'DigitalSmileDesignModal must import DsdCanvasOverlay or delegate to DsdAestheticStudioModal',
+		);
+
+		// 4. Index exports all DSD artifacts
 		assert.ok(
 			studioModalContent.includes("from './DsdMetricsSidebar'"),
 			'DsdAestheticStudioModal must import DsdMetricsSidebar',
@@ -170,7 +166,7 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 
 	test('4. Memory Leak Protection (PHO-04) & URL.revokeObjectURL cleanup', () => {
 		const studioModalContent = fs.readFileSync(path.join(dsdDir, 'DsdAestheticStudioModal.tsx'), 'utf-8');
-		const photoGridContent = fs.readFileSync(path.join(photographyDir, 'ClinicalPhotoProtocolGrid.tsx'), 'utf-8');
+		const photoModalContent = fs.readFileSync(path.join(photographyDir, 'ClinicalPhotoProtocolModal.tsx'), 'utf-8');
 		const legacyModalContent = fs.readFileSync(path.join(photographyDir, 'DigitalSmileDesignModal.tsx'), 'utf-8');
 
 		assert.ok(
@@ -178,12 +174,12 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 			'DsdAestheticStudioModal must explicitly revoke Blob URLs to prevent memory leaks',
 		);
 		assert.ok(
-			photoGridContent.includes('URL.revokeObjectURL'),
-			'ClinicalPhotoProtocolGrid must explicitly revoke Blob URLs to prevent memory leaks',
+			photoModalContent.includes('URL.revokeObjectURL'),
+			'ClinicalPhotoProtocolModal must explicitly revoke Blob URLs to prevent memory leaks',
 		);
 		assert.ok(
-			legacyModalContent.includes('URL.revokeObjectURL'),
-			'DigitalSmileDesignModal must explicitly revoke Blob URLs to prevent memory leaks',
+			legacyModalContent.includes('URL.revokeObjectURL') || legacyModalContent.includes('DsdAestheticStudioModal'),
+			'DigitalSmileDesignModal must delegate to DsdAestheticStudioModal or explicitly revoke Blob URLs to prevent memory leaks',
 		);
 	});
 

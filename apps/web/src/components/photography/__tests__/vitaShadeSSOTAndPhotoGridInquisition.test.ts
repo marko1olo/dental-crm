@@ -115,7 +115,7 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 			"components/photography/photoGridPresets.ts",
 			"components/photography/PhotoSlotCard.tsx",
 			"components/diagnostics/OrthodonticPhotoProtocolModal.tsx",
-			"components/patients/PatientWorkspaceModals.tsx",
+			"components/patients/PatientCardModal.tsx",
 		];
 
 		for (const rel of filesToCheck) {
@@ -179,24 +179,22 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		}
 	});
 
-	it("7. Patient Card Integration: Photo Protocol Modals wired into PatientWorkspaceModals", () => {
-		const modalsPath = path.resolve(webSrc, "components/patients/PatientWorkspaceModals.tsx");
-		const modalsViewPath = path.resolve(webSrc, "components/patients/workspaceModals/PatientWorkspaceModalsView.tsx");
-		const clinicalModalsPath = path.resolve(webSrc, "components/patients/workspaceModals/PatientClinicalPhotoModals.tsx");
+	it("7. Clinical Integration: Photo Protocol Modals wired into StandaloneSurgeryHosts & OrthodonticsLaunchers", () => {
+		const surgeryHostPath = path.resolve(webSrc, "components/appLayout/modalsContainerModules/standalone/clinical/StandaloneSurgeryHosts.tsx");
+		const orthoLauncherPath = path.resolve(webSrc, "components/appLayout/modalsContainerModules/standalone/clinical/OrthodonticsLaunchers.tsx");
 		const modalsContent = [
-			fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf-8") : "",
-			fs.existsSync(modalsViewPath) ? fs.readFileSync(modalsViewPath, "utf-8") : "",
-			fs.existsSync(clinicalModalsPath) ? fs.readFileSync(clinicalModalsPath, "utf-8") : "",
+			fs.existsSync(surgeryHostPath) ? fs.readFileSync(surgeryHostPath, "utf-8") : "",
+			fs.existsSync(orthoLauncherPath) ? fs.readFileSync(orthoLauncherPath, "utf-8") : "",
 		].join("\n");
 
-		// Proves PatientWorkspaceModals imports and renders ClinicalPhotoProtocolModal & OrthodonticPhotoProtocolModal
+		// Proves clinical surgery hosts and orthodontic launchers import and render ClinicalPhotoProtocolModal & OrthodonticPhotoProtocolModal
 		assert.ok(
 			modalsContent.includes("ClinicalPhotoProtocolModal"),
-			"PatientWorkspaceModals must import ClinicalPhotoProtocolModal",
+			"StandaloneSurgeryHosts must import ClinicalPhotoProtocolModal",
 		);
 		assert.ok(
 			modalsContent.includes("OrthodonticPhotoProtocolModal"),
-			"PatientWorkspaceModals must import OrthodonticPhotoProtocolModal",
+			"OrthodonticsLaunchers must import OrthodonticPhotoProtocolModal",
 		);
 	});
 });
