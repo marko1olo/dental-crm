@@ -22,7 +22,7 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 				error: "PermissionDenied",
 				permission: "clinical.pediatric.read",
 				role: staffRole,
-				message: `Отказ в расчете клинических индексов (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Доступ к медицинской информации ограничен клинической ролью сотрудника: ${evalAccess.reason}`,
 			});
 		}
 
@@ -33,8 +33,9 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 		try {
 			teeth = await db.select({ toothNumber: toothStates.toothNumber, state: toothStates.state, surfaces: toothStates.surfaces })
 				.from(toothStates).where(and(eq(toothStates.organizationId, organizationId), eq(toothStates.patientId, patientId)));
-		} catch {
-			teeth = [];
+		} catch (error) {
+			request.log.error({ error, patientId }, "Failed to fetch tooth states for pediatric indices from PostgreSQL 18");
+			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось загрузить состояния зубов для расчета детских индексов КПУ/кп" });
 		}
 
 		let permanentC = 0; let permanentP = 0; let permanentU = 0;

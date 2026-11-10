@@ -16,9 +16,9 @@ export function useToothPediatricState(
 	const [franklRating, setFranklRating] = useState<FranklRating>(initialFrankl);
 
 	const initialResorption: RootResorptionStage | undefined =
-		(toothData?.rootResorptionStage && toothData.rootResorptionStage > 0)
+		typeof toothData?.rootResorptionStage === "number"
 			? toothData.rootResorptionStage
-			: (toothData?.rootResorption && toothData.rootResorption > 0)
+			: typeof toothData?.rootResorption === "number"
 				? toothData.rootResorption
 				: undefined;
 
@@ -26,9 +26,9 @@ export function useToothPediatricState(
 
 	useEffect(() => {
 		const currentResorption =
-			(toothData?.rootResorptionStage && toothData.rootResorptionStage > 0)
+			typeof toothData?.rootResorptionStage === "number"
 				? toothData.rootResorptionStage
-				: (toothData?.rootResorption && toothData.rootResorption > 0)
+				: typeof toothData?.rootResorption === "number"
 					? toothData.rootResorption
 					: undefined;
 		setSelectedResorption(currentResorption);
@@ -45,16 +45,27 @@ export function useToothPediatricState(
 	const handleResorptionChange = (stage: RootResorptionStage) => {
 		const next: RootResorptionStage | undefined = selectedResorption === stage ? undefined : stage;
 		setSelectedResorption(next);
-		onUpdateTooth?.({ rootResorptionStage: next as RootResorptionStage });
-		const stageItem = next ? RESORPTION_STAGES.find((s) => s.stage === next) : undefined;
-		showToast(next ? `Физиологическая резорбция зуба #${toothNumber}: ${stageItem?.label || `${next}%`}` : `Физиологическая резорбция зуба #${toothNumber} сброшена`, "info");
+		const mobilityDegree: 0 | 1 | 2 | 3 =
+			next === 100 ? 3 : next === 75 ? 2 : next === 50 ? 1 : 0;
+		onUpdateTooth?.({
+			rootResorptionStage: next as RootResorptionStage,
+			rootResorption: next as RootResorptionStage,
+			mobility: mobilityDegree,
+		});
+		const stageItem = next !== undefined ? RESORPTION_STAGES.find((s) => s.stage === next) : undefined;
+		showToast(
+			next !== undefined
+				? `Физиологическая резорбция зуба #${toothNumber}: ${stageItem?.label || `${next}%`}`
+				: `Физиологическая резорбция зуба #${toothNumber} сброшена`,
+			"info",
+		);
 	};
 
 	const handleInsertResorptionProtocol = () => {
-		const currentStageItem = selectedResorption ? RESORPTION_STAGES.find((s) => s.stage === selectedResorption) : undefined;
+		const currentStageItem = selectedResorption !== undefined ? RESORPTION_STAGES.find((s) => s.stage === selectedResorption) : undefined;
 		const stageName = currentStageItem?.stageName || "Физиологическая резорбция корней";
-		const percent = currentStageItem?.percent ?? (selectedResorption ?? 25);
-		const text = currentStageItem
+		const percent = currentStageItem?.percent ?? (selectedResorption ?? 0);
+		const text = currentStageItem && currentStageItem.stage > 0
 			? `Физиологическая резорбция корней зуба #${toothNumber}: ${stageName} (${percent}%). Физиологическая смена прикуса.`
 			: `Физиологическая резорбция корней зуба #${toothNumber}: признаки резорбции корней отсутствуют (0%). Физиологическая норма.`;
 

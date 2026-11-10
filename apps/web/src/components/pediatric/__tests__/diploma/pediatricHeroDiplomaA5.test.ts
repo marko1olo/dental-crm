@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { PediatricBraveryDiplomaModal as PediatricHeroDiplomaModal } from "../../PediatricBraveryDiplomaModal";
-import { generateHeroDiplomaHtml } from "../../pediatricHeroDiplomaPrint";
+import { generateHeroDiplomaHtml } from "../../diploma/diplomaPrint";
 import { calculatePediatricAnesthesia, PEDIATRIC_ANESTHETIC_SPECS } from "../../PediatricAnesthesiaCalculator";
 
 describe("1-Click Hero Diploma Generation (A5 Landscape)", () => {

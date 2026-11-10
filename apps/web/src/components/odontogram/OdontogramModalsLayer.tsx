@@ -370,12 +370,35 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 								: 7.5
 						}
 						onUpdateToothResorption={(toothNumber, resorptionStage) => {
+							const mobility: 0 | 1 | 2 | 3 =
+								resorptionStage === 100 ? 3 : resorptionStage === 75 ? 2 : resorptionStage === 50 ? 1 : 0;
 							setTeethData((prev) =>
 								prev.map((t) =>
 									t.toothNumber === toothNumber
-										? { ...t, resorptionStage }
+										? {
+												...t,
+												rootResorptionStage: resorptionStage,
+												rootResorption: resorptionStage,
+												mobility,
+											}
 										: t,
 								),
+							);
+						}}
+						onBatchUpdateResorption={(updates) => {
+							setTeethData((prev) =>
+								prev.map((t) => {
+									const item = updates.find((u) => u.toothNumber === t.toothNumber);
+									if (!item) return t;
+									const mobility: 0 | 1 | 2 | 3 =
+										item.resorptionStage === 100 ? 3 : item.resorptionStage === 75 ? 2 : item.resorptionStage === 50 ? 1 : 0;
+									return {
+										...t,
+										rootResorptionStage: item.resorptionStage,
+										rootResorption: item.resorptionStage,
+										mobility,
+									};
+								}),
 							);
 						}}
 					/>

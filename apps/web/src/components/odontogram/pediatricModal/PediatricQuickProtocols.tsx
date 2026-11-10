@@ -14,8 +14,6 @@ export interface PediatricQuickProtocolsProps {
 	onApplyPermanentNorm: () => void;
 	onApplyProcedurePreset: (presetId: "saforide" | "fissurit" | "pulpotec") => void;
 	onInsertCariogramToClinicalNote?: (() => void) | undefined;
-	/** @deprecated Использовать onInsertCariogramToClinicalNote */
-	onInsertCariogramTo043?: (() => void) | undefined;
 }
 
 export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = ({
@@ -25,16 +23,15 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 	onApplyPermanentNorm,
 	onApplyProcedurePreset,
 	onInsertCariogramToClinicalNote,
-	onInsertCariogramTo043,
 }) => {
-	const handleInsertToCard = onInsertCariogramToClinicalNote || onInsertCariogramTo043 || (() => {});
+	const handleInsertToCard = onInsertCariogramToClinicalNote || (() => {});
 	return (
 		<div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 space-y-2.5 shadow-xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
 					<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
-						Клинические Протоколы &amp; Физиологическая Норма
+					<span className="text-xs font-black text-teal-700 dark:text-teal-300">
+						Клинические протоколы и физиологическая норма
 					</span>
 				</div>
 				<span className="text-[11px] font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -53,11 +50,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-3y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-emerald-700 dark:text-emerald-400 truncate">
-							3 года: Молочный прикус
+						<div className="font-extrabold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
+							3 года: Молочный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							51–85 интактны, 0% резорбция
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							51–85 интактны
 						</div>
 					</div>
 					<Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -72,11 +69,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-6y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-cyan-700 dark:text-cyan-400 truncate">
-							6 лет: Первый моляр
+						<div className="font-extrabold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
+							6 лет: 1-й моляр
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							16, 26, 36, 46 + 20 молочных
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							16, 26, 36, 46 интактны
 						</div>
 					</div>
 					<Check className="w-4 h-4 text-cyan-600 shrink-0" />
@@ -91,11 +88,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-9y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-teal-700 dark:text-teal-400 truncate">
-							9 лет: Сменный прикус
+						<div className="font-extrabold text-teal-700 dark:text-teal-400 whitespace-nowrap">
+							9 лет: Сменный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							Резцы 11..42, 1-е мол., мол. 53..85
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							11..42, моляры 16..46
 						</div>
 					</div>
 					<Check className="w-4 h-4 text-teal-600 shrink-0" />
@@ -110,11 +107,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-12y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-[var(--teal-dark,var(--teal))] truncate">
-							12 лет: Постоянный прикус
+						<div className="font-extrabold text-[var(--teal-dark,var(--teal))] whitespace-nowrap">
+							12 лет: Постоянный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							28 зубов (17..27, 47..37)
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							28 зубов без 8-ок
 						</div>
 					</div>
 					<Check className="w-4 h-4 text-[var(--teal)] shrink-0" />
@@ -129,11 +126,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-saforide-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-amber-700 dark:text-amber-400 truncate">
-							Saforide (серебрение)
+						<div className="font-extrabold text-amber-700 dark:text-amber-400 whitespace-nowrap">
+							Saforide серебро
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							Серебрение резцов 51, 52, 61, 62
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							Резцы 51, 52, 61, 62
 						</div>
 					</div>
 					<Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
@@ -148,11 +145,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-fissurit-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-sky-700 dark:text-sky-400 truncate">
-							Fissurit FX (герметизация)
+						<div className="font-extrabold text-sky-700 dark:text-sky-400 whitespace-nowrap">
+							Fissurit герметик
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							Герметизация моляров 16, 26, 36, 46
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							Моляры 16, 26, 36, 46
 						</div>
 					</div>
 					<ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
@@ -167,11 +164,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-testid="pediatric-preset-pulpotec-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-rose-700 dark:text-rose-400 truncate">
-							Pulpotec (пульпотомия)
+						<div className="font-extrabold text-rose-700 dark:text-rose-400 whitespace-nowrap">
+							Pulpotec витальный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-							Пульпотомия мол. моляра 54
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+							Моляр 54 витальный
 						</div>
 					</div>
 					<Activity className="w-4 h-4 text-rose-600 shrink-0" />
@@ -187,11 +184,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 					data-legacy-testid="pediatric-preset-insert-043-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold truncate">
+						<div className="font-extrabold whitespace-nowrap">
 							В карту
 						</div>
-						<div className="text-[10px] text-teal-100 truncate">
-							Перенос протокола и статуса
+						<div className="text-[10px] text-teal-100 whitespace-nowrap">
+							Перенос в дневник
 						</div>
 					</div>
 					<Zap className="w-4 h-4 text-amber-300 shrink-0" />

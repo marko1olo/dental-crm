@@ -30,8 +30,8 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 				</h4>
 			</div>
 
-			<div className="w-full overflow-x-auto touch-pan-x snap-x pb-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-				<div className="min-w-[640px] space-y-4">
+			<div className="w-full overflow-x-clip max-w-full pb-2">
+				<div className="w-full space-y-4">
 					{/* Upper Arch */}
 					<div className="space-y-2">
 						<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
@@ -39,14 +39,14 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 								? "Верхняя челюсть (12 зубов, включая 1-е моляры):"
 								: "Верхняя челюсть (10 молочных зубов):"}
 						</div>
-						<div className={`grid gap-2 ${hasFirstPermanentMolars ? "grid-cols-12" : "grid-cols-10"}`}>
+						<div className={`grid gap-1 sm:gap-2 ${hasFirstPermanentMolars ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"}`}>
 							{upperRow.map((num) => {
 								const isPrim = isPrimaryTooth(num);
 								const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
 								return (
 									<span
 										key={num}
-										className={`min-h-[52px] min-w-[48px] px-1 py-1.5 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-1 shadow-xs select-none transition-all shrink-0 snap-start ${
+										className={`min-h-[44px] sm:min-h-[52px] min-w-[36px] sm:min-w-[48px] px-1 py-1 rounded-xl text-xs sm:text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 sm:gap-1 shadow-xs select-none transition-all ${
 											isErupting
 												? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 												: isPrim
@@ -55,8 +55,8 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 										}`}
 										title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 									>
-										<span className="text-sm font-bold font-mono leading-none">{num}</span>
-										<span className="text-[10px] font-semibold font-sans opacity-90 leading-none">
+										<span className="text-xs sm:text-sm font-bold font-mono leading-none">{num}</span>
+										<span className="text-[9px] sm:text-[10px] font-semibold font-sans opacity-90 leading-none">
 											{isPrim ? "Мол." : "Пост."}
 										</span>
 									</span>
@@ -72,14 +72,14 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 								? "Нижняя челюсть (12 зубов, включая 1-е моляры):"
 								: "Нижняя челюсть (10 молочных зубов):"}
 						</div>
-						<div className={`grid gap-2 ${hasFirstPermanentMolars ? "grid-cols-12" : "grid-cols-10"}`}>
+						<div className={`grid gap-1 sm:gap-2 ${hasFirstPermanentMolars ? "grid-cols-6 sm:grid-cols-12" : "grid-cols-5 sm:grid-cols-10"}`}>
 							{lowerRow.map((num) => {
 								const isPrim = isPrimaryTooth(num);
 								const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
 								return (
 									<span
 										key={num}
-										className={`min-h-[52px] min-w-[48px] px-1 py-1.5 rounded-xl text-sm font-mono font-bold border flex flex-col items-center justify-center gap-1 shadow-xs select-none transition-all shrink-0 snap-start ${
+										className={`min-h-[44px] sm:min-h-[52px] min-w-[36px] sm:min-w-[48px] px-1 py-1 rounded-xl text-xs sm:text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 sm:gap-1 shadow-xs select-none transition-all ${
 											isErupting
 												? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
 												: isPrim
@@ -88,8 +88,8 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 										}`}
 										title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 									>
-										<span className="text-sm font-bold font-mono leading-none">{num}</span>
-										<span className="text-[10px] font-semibold font-sans opacity-90 leading-none">
+										<span className="text-xs sm:text-sm font-bold font-mono leading-none">{num}</span>
+										<span className="text-[9px] sm:text-[10px] font-semibold font-sans opacity-90 leading-none">
 											{isPrim ? "Мол." : "Пост."}
 										</span>
 									</span>

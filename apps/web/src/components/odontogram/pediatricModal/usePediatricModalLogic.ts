@@ -139,7 +139,7 @@ export function usePediatricModalLogic({
 		);
 	};
 
-	const handleInsertCariogramTo043 = handleInsertCariogramToClinicalNote;
+	const handleInsertCariogramToMedicalCard = handleInsertCariogramToClinicalNote;
 
 	const handleApplyPrimaryNorm = () => {
 		const norm = calculatePediatricPhysiologicalNorm("primary");
@@ -388,7 +388,7 @@ export function usePediatricModalLogic({
 		selectedResorptionStage,
 		setSelectedResorptionStage,
 		handleInsertCariogramToClinicalNote,
-		handleInsertCariogramTo043,
+		handleInsertCariogramToMedicalCard,
 		handleApplyPrimaryNorm,
 		handleApplyFirstMolarNorm,
 		handleApplyEarlyMixedNorm,

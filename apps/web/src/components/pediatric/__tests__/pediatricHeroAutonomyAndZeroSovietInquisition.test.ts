@@ -23,7 +23,7 @@ import {
 
 import {
 	generateHeroDiplomaHtml,
-} from "../pediatricHeroDiplomaPrint";
+} from "../diploma/diplomaPrint";
 
 import {
 	PediatricWeightQuickChips,
@@ -33,10 +33,6 @@ import {
 import {
 	PediatricAnesthesiaQuickSelector,
 } from "../PediatricAnesthesiaQuickSelector";
-
-import {
-	usePediatricVisitLogic,
-} from "../usePediatricVisitLogic";
 
 describe("Red Team Inquisition: Pediatric Doctor Autonomy & Hero Diploma", () => {
 	describe("1. Pediatric Doctor Autonomy (Mandate 8e: Zero Disabled Buttons)", () => {

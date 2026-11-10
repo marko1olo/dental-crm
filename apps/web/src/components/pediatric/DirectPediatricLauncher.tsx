@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { PediatricStudioModal } from "./PediatricStudioModal";
+import { PediatricMixedDentitionModal } from "../odontogram/PediatricMixedDentitionModal";
 
 export const DirectPediatricLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
@@ -58,12 +58,10 @@ export const DirectPediatricLauncher: React.FC = () => {
 	}, []);
 
 	return (
-		<PediatricStudioModal
+		<PediatricMixedDentitionModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			initialToothNumber={54}
-			doctorName="Д-р Смирнова Е.В."
-			clinicName="Клиника DENTE"
+			initialAge={6.5}
 		/>
 	);
 };

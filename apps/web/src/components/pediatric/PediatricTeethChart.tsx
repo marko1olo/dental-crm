@@ -30,7 +30,7 @@ import { PediatricActiveToothToolbar } from "./teethChart/PediatricActiveToothTo
 export * from "./teethChart/pediatricTeethTypes";
 
 export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
-	activeTooth = 54,
+	activeTooth = 51,
 	onSelectTooth,
 	mode = "primary",
 	onModeChange,

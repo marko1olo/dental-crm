@@ -25,6 +25,14 @@ export interface PediatricResorptionStageOption {
 
 export const RESORPTION_STAGES: readonly PediatricResorptionStageOption[] = [
 	{
+		id: 0,
+		stage: 0,
+		percent: 0,
+		label: "Норма (0%)",
+		sub: "Интактный корень (резорбция отсутствует)",
+		stageName: "Интактный корень — физиологическая норма",
+	},
+	{
 		id: 25,
 		stage: 25,
 		percent: 25,

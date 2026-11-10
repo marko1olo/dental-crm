@@ -12,7 +12,6 @@ import {
 import { showToast } from "../../GlobalToast";
 import { PEDIATRIC_AGE_PRESETS } from "./types";
 import { PediatricArchVisualizer } from "./PediatricArchVisualizer";
-import { PediatricTimelineTab } from "../PediatricTimelineTab";
 
 export interface PediatricResorptionTimelineProps {
 	selectedAge: number;
@@ -261,19 +260,6 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 						</tbody>
 					</table>
 				</div>
-				<details className="mt-4 p-3 rounded-xl bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
-					<summary className="text-xs font-bold text-[var(--muted)] cursor-pointer">
-						Компактный таймлайн смены зубов (экспресс-виджет)
-					</summary>
-					<div className="pt-2">
-						<PediatricTimelineTab
-							selectedAge={selectedAge}
-							onAgeChange={onSelectAge}
-							timelineAnalysis={timelineAnalysis}
-							onApplyAgeArch={onApplyAgeArch}
-						/>
-					</div>
-				</details>
 			</div>
 		</div>
 	);

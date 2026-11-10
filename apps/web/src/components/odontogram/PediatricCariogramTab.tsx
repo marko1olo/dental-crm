@@ -12,13 +12,19 @@ export interface PediatricCariogramTabProps {
 	cariogramInput: CariogramInput;
 	onCariogramInputChange: (input: CariogramInput) => void;
 	cariogramResult: CariogramResult;
+	onInsertCariogramToMedicalCard?: (() => void) | undefined;
+	/** @deprecated Использовать onInsertCariogramToMedicalCard */
+	onInsertCariogramToClinicalNote?: (() => void) | undefined;
 }
 
 export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 	cariogramInput,
 	onCariogramInputChange,
 	cariogramResult,
+	onInsertCariogramToMedicalCard,
+	onInsertCariogramToClinicalNote,
 }) => {
+	const handleInsert = onInsertCariogramToMedicalCard || onInsertCariogramToClinicalNote;
 	const currentLevel: CariogramRiskLevel = (cariogramInput.cariesRiskLevel as CariogramRiskLevel) || "low";
 
 	const handleSelectRiskLevel = (level: CariogramRiskLevel) => {
@@ -181,6 +187,19 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						</div>
 					</div>
 				</div>
+
+				{handleInsert && (
+					<div className="flex items-center justify-end pt-3">
+						<button
+							type="button"
+							onClick={handleInsert}
+							className="min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+						>
+							<Check className="w-4 h-4" />
+							<span>Вставить протокол Cariogram в карту</span>
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -10,9 +10,9 @@ import {
 	PediatricModalHeader,
 	PediatricQuickProtocols,
 	PediatricResorptionTimeline,
-	PediatricCariogramSection,
 	PediatricFranklSection,
 } from "./pediatricModal";
+import { PediatricCariogramTab } from "./PediatricCariogramTab";
 import "./odontogram.css";
 import "./pediatricMixedDentition.css";
 
@@ -63,7 +63,6 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 						onApplyPermanentNorm={logic.handleApplyPermanentNorm}
 						onApplyProcedurePreset={logic.handleApplyProcedurePreset}
 						onInsertCariogramToClinicalNote={logic.handleInsertCariogramToClinicalNote}
-						onInsertCariogramTo043={logic.handleInsertCariogramTo043}
 					/>
 
 					{logic.activeTab === "timeline" && (
@@ -79,12 +78,11 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					)}
 
 					{logic.activeTab === "cariogram" && (
-						<PediatricCariogramSection
+						<PediatricCariogramTab
 							cariogramInput={logic.cariogramInput}
 							onCariogramInputChange={logic.setCariogramInput}
 							cariogramResult={logic.cariogramResult}
-							onInsertCariogramToClinicalNote={logic.handleInsertCariogramToClinicalNote}
-							onInsertCariogramTo043={logic.handleInsertCariogramTo043}
+							onInsertCariogramToMedicalCard={logic.handleInsertCariogramToMedicalCard}
 						/>
 					)}
 

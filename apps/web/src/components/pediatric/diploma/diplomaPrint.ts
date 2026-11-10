@@ -62,3 +62,7 @@ export function printBraveryDiploma(options: PrintBraveryDiplomaOptions): void {
 	printWindow.document.write(generateBraveryDiplomaHtml(options));
 	printWindow.document.close();
 }
+
+export type HeroDiplomaPrintOptions = PrintBraveryDiplomaOptions;
+export const generateHeroDiplomaHtml = generateBraveryDiplomaHtml;
+export const printHeroDiploma = printBraveryDiploma;
