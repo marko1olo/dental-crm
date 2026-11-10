@@ -878,6 +878,53 @@
   - `apps/api/src/routes/imaging.test.ts` (3/3 PASS)
   - Машинные гейты: `check:encoding` (0 errors), `check:mock-defaults` (PASS), `check:type-ratchet` (PASS).
 
+### [RAD-06] [SEV-1] [ИСПРАВЛЕНО] Ликвидация хардкода цен в VisiographStudyViewer, коллизий хэшей #rvg/#radiology и снос 13 мертвых файлов бутафории и прокси
+- **Файлы:**
+  - [`apps/web/src/components/radiology/VisiographStudyViewer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/VisiographStudyViewer.tsx)
+  - [`apps/web/src/components/radiology/DirectRadiologyLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRadiologyLauncher.tsx)
+  - [`apps/web/src/components/radiology/DirectRvgCaptureLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureLauncher.tsx)
+  - [`apps/web/src/AppShell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/AppShell.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx)
+  - [`apps/web/src/components/radiology/directRvgFileValidation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/directRvgFileValidation.ts)
+  - [`apps/web/src/components/visiograph/VisiographMathCalibration.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographMathCalibration.ts)
+  - [`apps/web/src/components/imaging/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/imaging/index.ts)
+  - [`apps/web/src/components/visiograph/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/index.ts)
+- **Суть дефектов:**
+  1. **Хардкод цен:** `VisiographStudyViewer.tsx:193` содержал жесткий расчет цены (`priceRub = modality === "opg" ? 1200 : 450`) в обход актуального прейскуранта и номенклатуры клиники.
+  2. **Коллизия URL-хэшей и лаунчеров:** `DirectVisiographLauncher.tsx` перехватывал хэши `#radiology`, `#xray`, `#rvg`, `#visiograph` и открывал устаревший модал `VisiographStudioModal.tsx`, блокируя открытие канонического `VisiographStudyViewer` и `DirectRvgCaptureModal`.
+  3. **Бутафорский просмотрщик и мертвые прокси:** В `components/imaging/` присутствовала папка `ctPopout/` с фейковыми CSS-кружками вместо реального MPR, а также пустые прокси-фасады и устаревший `VisiographStudioModal` с амнезией сохранения.
+  4. **Раздробленность каталогов сенсоров:** Пресеты сенсоров были продублированы в нескольких файлах вместо единого SSOT.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Динамический прейскурант:** В `VisiographStudyViewer.tsx` добавлены пропсы `priceRub` и `serviceTitle`, расчет в `handleQuickBill` динамически разрешает стоимость из номенклатуры приёма (`visitStore.services`), с мягким клиническим фолбеком.
+  2. **Единая чистая маршрутизация лаунчеров:** Устаревший `DirectVisiographLauncher` удален из `AppShell.tsx` и `clinicalLaunchersRegistry.tsx`. Вход `#radiology`, `#visiograph`, `#xray-viewer` направлен на канонический `DirectRadiologyLauncher` (`VisiographStudyViewer`), а `#rvg`, `#xray`, `#rvg-capture` — на аппаратный `DirectRvgCaptureLauncher` (`DirectRvgCaptureModal`).
+  3. **Физический снос 13 мертвых файлов (`git rm`):**
+     - `apps/web/src/components/imaging/CtPopoutStudio.tsx`
+     - `apps/web/src/components/imaging/CtPopoutStudio.css`
+     - `apps/web/src/components/imaging/ctPopout/CtPopoutHeader.tsx`
+     - `apps/web/src/components/imaging/ctPopout/CtPopoutQuadrants.tsx`
+     - `apps/web/src/components/imaging/ctPopout/CtPopoutFooter.tsx`
+     - `apps/web/src/components/visiograph/VisiographStudioModal.tsx`
+     - `apps/web/src/components/imaging/CtSelectorModal.tsx`
+     - `apps/web/src/components/imaging/DirectRvgCaptureModal.tsx`
+     - `apps/web/src/components/imaging/CbctColormapFlyout.tsx`
+     - `apps/web/src/components/imaging/CbctDicomFlyout.tsx`
+     - `apps/web/src/components/imaging/HotFolderImageCanvas.tsx`
+     - `apps/web/src/components/visiograph/VisiographCapture.tsx`
+     - `apps/web/src/components/visiograph/DirectVisiographLauncher.tsx`
+  4. **Консолидация на `UNIVERSAL_SENSOR_CATALOG`:** `POPULAR_RVG_SENSORS` (`directRvgFileValidation.ts`) и `resolveVisiographPixelScaleMm` (`VisiographMathCalibration.ts`) переведены на единый SSOT `sensorGateway/sensorCatalogs.ts`.
+  5. **Тестовое покрытие:** Успешно пройдены 6 целевых сьютов (89/89 PASS, Exit Code 0):
+     - `captureConsoleAndHardwareGateways.test.ts` (21/21 PASS)
+     - `ctSelectorModalIntegration.test.ts` (8/8 PASS)
+     - `cbctExportEngine.test.ts` (24/24 PASS)
+     - `hotFolderIntake.test.ts` (14/14 PASS)
+     - `visiographSSOTSuite.test.tsx` (11/11 PASS)
+     - `radiologyPatientSearchAndTimeline.test.tsx` (11/11 PASS)
+  6. **4-State Visual Proofs (Личный осмотр через `read_file`):**
+     - ☀️ PC Light (1440x900): `docs/proofs/radiology/01_radiology_pc_light_1440x900.png` (44.8 KB)
+     - 🌙 PC Dark (1440x900): `docs/proofs/radiology/02_radiology_pc_dark_1440x900.png` (43.0 KB)
+     - 📱 Mobile Light (390x844): `docs/proofs/radiology/03_rvg_capture_mobile_light_390x844.png` (99.4 KB)
+     - 📱 Mobile Dark (390x844): `docs/proofs/radiology/04_rvg_capture_mobile_dark_390x844.png` (97.7 KB)
+
 
 ---
 
