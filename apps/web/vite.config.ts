@@ -425,10 +425,6 @@ export default defineConfig({
 						normalizedId.includes("/apps/web/src/components/odontogram/")
 					)
 						return "odontogram";
-					if (
-						normalizedId.includes("/apps/web/src/components/VoiceAssistantUI")
-					)
-						return "voice-assistant-ui";
 					if (normalizedId.endsWith("/apps/web/src/DictationHints.tsx"))
 						return "dictation-hints";
 					if (normalizedId.endsWith("/apps/web/src/AppHelpers.tsx"))
@@ -608,6 +604,8 @@ export default defineConfig({
 				"**/playwright-report/**",
 				"**/test-results/**",
 				"**/docs/screenshots/**",
+				"**/docs/proofs/**",
+				"**/docs/**",
 				"**/screenshots/**",
 				"**/uploads/**",
 				"**/.agents/**",

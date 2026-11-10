@@ -39,6 +39,7 @@ import {
 
 export * from './protocols12';
 export * from './protocolsExpress';
+export { SLOT_CANONICAL_ALIASES, normalizeSlotId, isSlotMatching } from '@dental/shared';
 
 export const DENTAL_PHOTO_SLOTS: Record<StandardSlotId, PhotoProtocolSlotDefinition> = {
 	portrait_rest,

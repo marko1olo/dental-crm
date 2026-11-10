@@ -9,6 +9,8 @@ import { db } from "../db/client.js";
 import { attachments, patients, visits } from "../db/schema.js";
 import { UPLOADS_DIR } from "./fileModules/common.js";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface PhotoBridgeUploadedItem {
 	id: string;
 	slotId: string;
@@ -141,38 +143,54 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 
 		const { patientId, visitId, presetId } = parseResult.data;
 
-		// Проверка пациента в организации (Tenant Isolation)
-		const [patient] = await db
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-			.limit(1);
+		let patientFullName: string | null | undefined;
 
-		let patientFullName = patient?.fullName;
-		if (!patient) {
-			// Мандат 8wy: в демо-режиме и тестовых стендах разрешаем демо-пациента без 404 ошибки
-			if (orgId.startsWith("demo-") || patientId.startsWith("01a00000") || patientId === "chairside" || patientId === "test") {
-				patientFullName = "Морозова Елена Дмитриевна";
-			} else {
+		// Мандат 8wy: в демо-режиме и тестовых стендах разрешаем демо-пациента без 404 ошибки и без падения 22P02
+		if (orgId.startsWith("demo-") || patientId.startsWith("01a00000") || patientId === "chairside" || patientId === "test") {
+			patientFullName = "Демо Пациент";
+		} else if (!UUID_REGEX.test(patientId)) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в текущей организации.",
+			});
+		} else {
+			// Проверка пациента в организации (Tenant Isolation)
+			const [patient] = await db
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.limit(1);
+
+			if (!patient) {
 				return reply.code(404).send({
 					error: "PatientNotFound",
 					message: "Пациент не найден в текущей организации.",
 				});
 			}
+			patientFullName = patient.fullName;
 		}
 
-		// Если передан visitId, проверяем его принадлежность
+		// Если передан visitId, проверяем его принадлежность без сбоев 22P02
 		if (visitId) {
-			const [visitRow] = await db
-				.select({ id: visits.id })
-				.from(visits)
-				.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-				.limit(1);
-			if (!visitRow && !orgId.startsWith("demo-")) {
-				return reply.code(404).send({
-					error: "VisitNotFound",
-					message: "Приём не найден в текущей клинике.",
-				});
+			if (!UUID_REGEX.test(visitId)) {
+				if (!orgId.startsWith("demo-") && visitId !== "chairside" && visitId !== "test") {
+					return reply.code(404).send({
+						error: "VisitNotFound",
+						message: "Приём не найден в текущей клинике.",
+					});
+				}
+			} else {
+				const [visitRow] = await db
+					.select({ id: visits.id })
+					.from(visits)
+					.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+					.limit(1);
+				if (!visitRow && !orgId.startsWith("demo-")) {
+					return reply.code(404).send({
+						error: "VisitNotFound",
+						message: "Приём не найден в текущей клинике.",
+					});
+				}
 			}
 		}
 
@@ -339,8 +357,8 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			.insert(attachments)
 			.values({
 				organizationId: session.organizationId,
-				patientId: session.patientId,
-				visitId: session.visitId || null,
+				patientId: UUID_REGEX.test(session.patientId) ? session.patientId : null,
+				visitId: session.visitId && UUID_REGEX.test(session.visitId) ? session.visitId : null,
 				fileName: filename,
 				mimeType,
 				storagePath: storageFilename,

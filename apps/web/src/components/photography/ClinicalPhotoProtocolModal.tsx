@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { Camera } from 'lucide-react';
 import { PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
 import { PhotoGridSixSlots } from './PhotoGridSixSlots';
 import { BeforeAfterComparisonView } from './BeforeAfterComparisonView';
@@ -15,7 +16,7 @@ import { ChairsidePhotoQrBridgeModal } from './ChairsidePhotoQrBridgeModal';
 import { DsdCanvasOverlay, type DsdCanvasGuideFlags, type DsdFacialLandmarks, type DsdCalibrationState } from './dsd/DsdCanvasOverlay';
 import { DsdMetricsSidebar } from './dsd/DsdMetricsSidebar';
 import { DEFAULT_DSD_LANDMARKS, DEFAULT_DSD_CALIBRATION } from './dsd/DsdAestheticStudioModal';
-import { type DsdAnalysisData, matchPhotoProtocolSlot } from '@dental/shared';
+import { type DsdAnalysisData, matchPhotoProtocolSlot, isSlotMatching } from '@dental/shared';
 
 import './clinicalPhotography.css';
 
@@ -79,6 +80,9 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		updateSlotRecord, uploadPhotoToBackend, handleUpload, handleSaveProtocol,
 	} = usePhotoProtocolUpload(props, createdBlobUrlsRef);
 
+	const [comparisonBeforeSlotId, setComparisonBeforeSlotId] = useState<string>(() => activePreset.slots[0]?.id || 'slot_1');
+	const [comparisonAfterSlotId, setComparisonAfterSlotId] = useState<string>(() => activePreset.slots[1]?.id || 'slot_2');
+
 	const handleApplyDsdFromProtocol = useCallback(
 		(analysis: Partial<DsdAnalysisData>) => {
 			const targetSlotId = 'portrait_smile';
@@ -113,7 +117,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		onPhotoReceived: async (blob, fileName) => {
 			const targetId = selectedSlotForEdit || activePreset.slots.find((s) => !slotsData[s.id]?.imageUrl)?.id || activePreset.slots[0]?.id || 'portrait_smile';
 			const compressed = await compressChairsidePhotoToBlobUrl(blob);
-			const blobUrl = compressed.url;
+			const blobUrl = compressed.blobUrl;
 			createdBlobUrlsRef.current.add(blobUrl);
 			updateSlotRecord(targetId, { imageUrl: blobUrl, uploadedAt: new Date().toISOString(), ...(toothCode ? { toothCode } : {}) });
 			showToast(`Вставлен снимок из буфера (Ctrl+V) в ракурс «${getSlotDefinitionById(targetId)?.shortLabelRu || targetId}»`, 'success', 3500);
@@ -144,7 +148,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 			if (matched) {
 				const foundSlot = activePreset.slots.find(
-					(s) => s.id === matched.id || s.id.includes(matched.id) || matched.id.includes(s.id),
+					(s) => s.id === matched.id || isSlotMatching(s.id, matched.id),
 				);
 				if (foundSlot && !slotsData[foundSlot.id]?.imageUrl) {
 					matchedSlotId = foundSlot.id;
@@ -252,8 +256,10 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 						<BeforeAfterComparisonView
 							preset={activePreset}
 							slotsData={slotsData}
-							beforeSlotId={activePreset.slots[0]?.id || 'slot_1'}
-							afterSlotId={activePreset.slots[1]?.id || 'slot_2'}
+							beforeSlotId={comparisonBeforeSlotId}
+							afterSlotId={comparisonAfterSlotId}
+							onBeforeSlotChange={setComparisonBeforeSlotId}
+							onAfterSlotChange={setComparisonAfterSlotId}
 							clinicName={clinicName}
 							patientName={patientName}
 						/>

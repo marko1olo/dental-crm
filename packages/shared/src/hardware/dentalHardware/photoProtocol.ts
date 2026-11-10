@@ -45,7 +45,19 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Фронт в окклюзии",
 		descriptionRu: "Внутриротовой снимок передних зубов в привычном прикусе с ретракторами",
 		category: "intraoral",
-		matchPatterns: ["anterior_occlusion", "front_occlusion", "front_bite", "фронт_окклюзия", "фронт_прикус", "slot5", "slot_5", "05_"],
+		matchPatterns: [
+			"anterior_occlusion",
+			"front_occlusion",
+			"front_bite",
+			"frontal_occlusion",
+			"intraoral_frontal_occlusion",
+			"фронтальная_окклюзия",
+			"фронт_окклюзия",
+			"фронт_прикус",
+			"slot5",
+			"slot_5",
+			"05_",
+		],
 	},
 	{
 		index: 6,
@@ -53,7 +65,20 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Фронт с разомкнутыми зубами",
 		descriptionRu: "Разомкнутые резцовые края для оценки истираемости и анатомии",
 		category: "intraoral",
-		matchPatterns: ["anterior_open", "front_open", "open_bite", "фронт_разомкнут", "разомкнутый_фронт", "slot6", "slot_6", "06_"],
+		matchPatterns: [
+			"anterior_open",
+			"front_open",
+			"open_bite",
+			"frontal_disclusion",
+			"intraoral_frontal_disclusion",
+			"дизокклюзия",
+			"разобщение",
+			"фронт_разомкнут",
+			"разомкнутый_фронт",
+			"slot6",
+			"slot_6",
+			"06_",
+		],
 	},
 	{
 		index: 7,
@@ -61,7 +86,19 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Боковой вид справа (окклюзия)",
 		descriptionRu: "Смыкание клыков и моляров справа по I/II/III классу Энгля",
 		category: "intraoral",
-		matchPatterns: ["buccal_right", "lateral_right", "right_bite", "боковой_справа", "бок_справа", "slot7", "slot_7", "07_"],
+		matchPatterns: [
+			"buccal_right",
+			"lateral_right",
+			"right_bite",
+			"right_buccal",
+			"intraoral_right_buccal",
+			"боковой_справа",
+			"бок_справа",
+			"правый_бок",
+			"slot7",
+			"slot_7",
+			"07_",
+		],
 	},
 	{
 		index: 8,
@@ -69,7 +106,19 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Боковой вид слева (окклюзия)",
 		descriptionRu: "Смыкание клыков и моляров слева по I/II/III классу Энгля",
 		category: "intraoral",
-		matchPatterns: ["buccal_left", "lateral_left", "left_bite", "боковой_слева", "бок_слева", "slot8", "slot_8", "08_"],
+		matchPatterns: [
+			"buccal_left",
+			"lateral_left",
+			"left_bite",
+			"left_buccal",
+			"intraoral_left_buccal",
+			"боковой_слева",
+			"бок_слева",
+			"левый_бок",
+			"slot8",
+			"slot_8",
+			"08_",
+		],
 	},
 	{
 		index: 9,
@@ -77,7 +126,19 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Окклюзия верхней челюсти",
 		descriptionRu: "Зеркальный снимок зубного ряда верхней челюсти от 17 до 27",
 		category: "intraoral",
-		matchPatterns: ["occlusal_maxillary", "occlusal_upper", "upper_arch", "окклюзия_верх", "вч_зеркало", "slot9", "slot_9", "09_"],
+		matchPatterns: [
+			"occlusal_maxillary",
+			"occlusal_upper",
+			"upper_arch",
+			"maxillary_occlusal",
+			"intraoral_maxillary_occlusal",
+			"окклюзия_верх",
+			"верхняя_челюсть",
+			"вч_зеркало",
+			"slot9",
+			"slot_9",
+			"09_",
+		],
 	},
 	{
 		index: 10,
@@ -85,7 +146,19 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Окклюзия нижней челюсти",
 		descriptionRu: "Зеркальный снимок зубного ряда нижней челюсти от 37 до 47",
 		category: "intraoral",
-		matchPatterns: ["occlusal_mandibular", "occlusal_lower", "lower_arch", "окклюзия_низ", "нч_зеркало", "slot10", "slot_10", "10_"],
+		matchPatterns: [
+			"occlusal_mandibular",
+			"occlusal_lower",
+			"lower_arch",
+			"mandibular_occlusal",
+			"intraoral_mandibular_occlusal",
+			"окклюзия_низ",
+			"нижняя_челюсть",
+			"нч_зеркало",
+			"slot10",
+			"slot_10",
+			"10_",
+		],
 	},
 	{
 		index: 11,
@@ -93,7 +166,18 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Резцовое перекрытие (Overjet / Overbite)",
 		descriptionRu: "Крупный план сагиттальной щели и вертикального резцового перекрытия",
 		category: "intraoral",
-		matchPatterns: ["anterior_overjet", "overbite", "overjet", "сагиттальная_щель", "оверджет", "перекрытие", "slot11", "slot_11", "11_"],
+		matchPatterns: [
+			"anterior_overjet",
+			"overbite",
+			"overjet",
+			"intraoral_overjet",
+			"сагиттальная_щель",
+			"оверджет",
+			"перекрытие",
+			"slot11",
+			"slot_11",
+			"11_",
+		],
 	},
 	{
 		index: 12,
@@ -101,7 +185,19 @@ export const DENTAL_PHOTO_PROTOCOL_12: readonly PhotoProtocolSlot[] = [
 		titleRu: "Эстетика улыбки (макро без ретракторов)",
 		descriptionRu: "Губной коридор, линия улыбки, резцовый край и десневые зениты",
 		category: "intraoral",
-		matchPatterns: ["smile_aesthetic", "macro_smile", "aesthetic_smile", "эстетика_улыбки", "макро_улыбка", "slot12", "slot_12", "12_"],
+		matchPatterns: [
+			"smile_aesthetic",
+			"macro_smile",
+			"aesthetic_smile",
+			"intraoral_enamel_macro",
+			"enamel_macro",
+			"эстетика_улыбки",
+			"макро_улыбка",
+			"макро_эмаль",
+			"slot12",
+			"slot_12",
+			"12_",
+		],
 	},
 ];
 
@@ -142,3 +238,145 @@ export function matchPhotoProtocolSlot(fileName: string): PhotoProtocolSlot | un
 	}
 	return undefined;
 }
+
+/**
+ * Канонический словарь синонимов слотов фотопротокола (Мандаты 8bf, 8e).
+ * Нормализует расхождения между каталогами (shared vs presets):
+ * - frontal ↔ anterior
+ * - right_buccal ↔ buccal_right ↔ right_lateral
+ * - left_buccal ↔ buccal_left ↔ left_lateral
+ * - maxillary_occlusal ↔ occlusal_maxillary ↔ upper_arch
+ * - mandibular_occlusal ↔ occlusal_mandibular ↔ lower_arch
+ * - overjet ↔ anterior_overjet
+ * - enamel_macro ↔ smile_aesthetic
+ * - portrait_rest ↔ extraoral_portrait_rest
+ * - portrait_smile ↔ extraoral_portrait_smile
+ */
+export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
+	// Extraoral / Портрет
+	extraoral_portrait_rest: "portrait_rest",
+	portrait_rest: "portrait_rest",
+	face_rest: "portrait_rest",
+	rest: "portrait_rest",
+
+	extraoral_portrait_smile: "portrait_smile",
+	portrait_smile: "portrait_smile",
+	face_smile: "portrait_smile",
+	smile: "portrait_smile",
+
+	extraoral_portrait_smile_wide: "portrait_smile_wide",
+	portrait_smile_wide: "portrait_smile_wide",
+	smile_wide: "portrait_smile_wide",
+
+	extraoral_profile_right: "profile_90_rest",
+	profile_90_rest: "profile_90_rest",
+	profile_90_smile: "profile_90_smile",
+	profile_90: "profile_90_rest",
+	profile_right: "profile_90_rest",
+
+	extraoral_profile_45: "portrait_45_smile",
+	portrait_45_smile: "portrait_45_smile",
+	profile_45: "portrait_45_smile",
+	semi_profile: "portrait_45_smile",
+	three_quarter: "portrait_45_smile",
+
+	// Intraoral Frontal
+	intraoral_anterior_occlusion: "intraoral_frontal_occlusion",
+	intraoral_frontal_occlusion: "intraoral_frontal_occlusion",
+	anterior_occlusion: "intraoral_frontal_occlusion",
+	frontal_occlusion: "intraoral_frontal_occlusion",
+	front_occlusion: "intraoral_frontal_occlusion",
+	front_bite: "intraoral_frontal_occlusion",
+
+	intraoral_anterior_open: "intraoral_frontal_disclusion",
+	intraoral_frontal_disclusion: "intraoral_frontal_disclusion",
+	intraoral_frontal_open: "intraoral_frontal_disclusion",
+	anterior_open: "intraoral_frontal_disclusion",
+	frontal_disclusion: "intraoral_frontal_disclusion",
+	frontal_open: "intraoral_frontal_disclusion",
+	open_bite: "intraoral_frontal_disclusion",
+
+	// Intraoral Buccal / Lateral
+	intraoral_buccal_right: "intraoral_right_buccal",
+	intraoral_right_buccal: "intraoral_right_buccal",
+	intraoral_right_lateral: "intraoral_right_buccal",
+	buccal_right: "intraoral_right_buccal",
+	right_buccal: "intraoral_right_buccal",
+	lateral_right: "intraoral_right_buccal",
+	right_bite: "intraoral_right_buccal",
+
+	intraoral_buccal_left: "intraoral_left_buccal",
+	intraoral_left_buccal: "intraoral_left_buccal",
+	intraoral_left_lateral: "intraoral_left_buccal",
+	buccal_left: "intraoral_left_buccal",
+	left_buccal: "intraoral_left_buccal",
+	lateral_left: "intraoral_left_buccal",
+	left_bite: "intraoral_left_buccal",
+
+	// Intraoral Occlusal
+	intraoral_occlusal_maxillary: "intraoral_maxillary_occlusal",
+	intraoral_maxillary_occlusal: "intraoral_maxillary_occlusal",
+	intraoral_upper_occlusal: "intraoral_maxillary_occlusal",
+	intraoral_upper_arch: "intraoral_maxillary_occlusal",
+	occlusal_maxillary: "intraoral_maxillary_occlusal",
+	maxillary_occlusal: "intraoral_maxillary_occlusal",
+	upper_arch: "intraoral_maxillary_occlusal",
+	occlusal_upper: "intraoral_maxillary_occlusal",
+	upper_occlusal: "intraoral_maxillary_occlusal",
+
+	intraoral_occlusal_mandibular: "intraoral_mandibular_occlusal",
+	intraoral_mandibular_occlusal: "intraoral_mandibular_occlusal",
+	intraoral_lower_occlusal: "intraoral_mandibular_occlusal",
+	intraoral_lower_arch: "intraoral_mandibular_occlusal",
+	occlusal_mandibular: "intraoral_mandibular_occlusal",
+	mandibular_occlusal: "intraoral_mandibular_occlusal",
+	lower_arch: "intraoral_mandibular_occlusal",
+	occlusal_lower: "intraoral_mandibular_occlusal",
+	lower_occlusal: "intraoral_mandibular_occlusal",
+
+	// Intraoral Overjet
+	intraoral_anterior_overjet: "intraoral_overjet",
+	intraoral_overjet: "intraoral_overjet",
+	anterior_overjet: "intraoral_overjet",
+	overjet: "intraoral_overjet",
+	overbite: "intraoral_overjet",
+
+	// Intraoral Enamel / Aesthetic Macro
+	intraoral_smile_aesthetic: "intraoral_enamel_macro",
+	intraoral_enamel_macro: "intraoral_enamel_macro",
+	smile_aesthetic: "intraoral_enamel_macro",
+	enamel_macro: "intraoral_enamel_macro",
+	macro_smile: "intraoral_enamel_macro",
+	aesthetic_smile: "intraoral_enamel_macro",
+};
+
+/**
+ * Нормализует идентификатор слота к единому каноническому виду.
+ */
+export function normalizeSlotId(slotId: string): string {
+	if (!slotId || typeof slotId !== "string") return "";
+	const cleaned = slotId.toLowerCase().trim().replace(/[\s-]+/g, "_");
+	if (SLOT_CANONICAL_ALIASES[cleaned]) {
+		return SLOT_CANONICAL_ALIASES[cleaned]!;
+	}
+	const stripped = cleaned.replace(/^(?:extraoral_|intraoral_)/, "");
+	if (SLOT_CANONICAL_ALIASES[stripped]) {
+		return SLOT_CANONICAL_ALIASES[stripped]!;
+	}
+	return cleaned;
+}
+
+/**
+ * Проверяет эквивалентность двух идентификаторов слотов с учетом словаря синонимов.
+ */
+export function isSlotMatching(slotIdA: string, slotIdB: string): boolean {
+	if (!slotIdA || !slotIdB) return false;
+	const normA = normalizeSlotId(slotIdA);
+	const normB = normalizeSlotId(slotIdB);
+	if (normA === normB) return true;
+
+	const strippedA = normA.replace(/^(?:extraoral_|intraoral_)/, "");
+	const strippedB = normB.replace(/^(?:extraoral_|intraoral_)/, "");
+	return strippedA === strippedB;
+}
+

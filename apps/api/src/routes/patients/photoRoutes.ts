@@ -10,14 +10,29 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { requireClinicOrganizationId, sendPatientNotFound } from "./helpers.js";
+import { dsdAnalysisDataSchema } from "@dental/shared";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const photoSlotItemSchema = z.union([
+	z.string(),
+	z.object({
+		imageUrl: z.string().optional(),
+		url: z.string().optional(),
+		slotId: z.string().optional(),
+		label: z.string().optional(),
+		timestamp: z.string().optional(),
+		dsdAnalysis: dsdAnalysisDataSchema.optional().nullable(),
+	}).passthrough(),
+]);
 
 const photoProtocolPayloadSchema = z.object({
 	presetId: z.string().min(1).default("express_6_slots"),
-	slots: z.record(z.string(), z.any()),
+	slots: z.record(z.string(), photoSlotItemSchema),
 	visitId: z.string().uuid().optional().nullable(),
 	stage: z.string().optional().default("before"),
 	notes: z.string().optional().nullable(),
-	dsdAnalysis: z.any().optional().nullable(),
+	dsdAnalysis: dsdAnalysisDataSchema.optional().nullable(),
 });
 
 export function registerPatientPhotoRoutes(app: FastifyInstance) {
@@ -34,6 +49,18 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		if (!orgId) return reply;
 
 		const { patientId } = request.params as { patientId: string };
+
+		// Защита от краха PostgreSQL 22P02: валидация UUID перед запросом в БД (Мандат 8e / Дефект 2)
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			if (patientId === "chairside" || patientId === "test" || orgId.startsWith("demo-")) {
+				return reply.send({
+					success: true,
+					protocol: null,
+					photos: [],
+				});
+			}
+			return sendPatientNotFound(reply);
+		}
 
 		// Проверка существования пациента в организации (Tenant Isolation)
 		const [patient] = await db
@@ -165,6 +192,14 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 
 		const { patientId } = request.params as { patientId: string };
 
+		// Защита от краха PostgreSQL 22P02: валидация UUID перед запросом в БД
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается формат UUID).",
+			});
+		}
+
 		// Проверка существования пациента
 		const [patient] = await db
 			.select({ id: patients.id })
@@ -201,16 +236,21 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			// Проверяем наличие существующего протокола для обновления или создания
+			// Проверяем наличие существующего протокола той же стадии (stage) и визита для версионности (Мандат 8aq, D-12)
+			const effectiveStage = stage || "before";
+			const conditions = [
+				eq(patientPhotoProtocols.patientId, patientId),
+				eq(patientPhotoProtocols.organizationId, orgId),
+				eq(patientPhotoProtocols.stage, effectiveStage),
+			];
+			if (visitId) {
+				conditions.push(eq(patientPhotoProtocols.visitId, visitId));
+			}
+
 			const [existing] = await db
 				.select({ id: patientPhotoProtocols.id })
 				.from(patientPhotoProtocols)
-				.where(
-					and(
-						eq(patientPhotoProtocols.patientId, patientId),
-						eq(patientPhotoProtocols.organizationId, orgId),
-					),
-				)
+				.where(and(...conditions))
 				.orderBy(desc(patientPhotoProtocols.updatedAt))
 				.limit(1);
 
@@ -221,7 +261,6 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 					.set({
 						presetId,
 						slots: effectiveSlots,
-						stage: stage || "before",
 						notes: notes || null,
 						visitId: visitId || null,
 						updatedAt: new Date(),
@@ -238,7 +277,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 						visitId: visitId || null,
 						presetId,
 						slots: effectiveSlots,
-						stage: stage || "before",
+						stage: effectiveStage,
 						notes: notes || null,
 					})
 					.returning();
@@ -269,6 +308,10 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		if (!orgId) return reply;
 		const { visitId } = request.params as { visitId: string };
 
+		if (!visitId || !UUID_REGEX.test(visitId)) {
+			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
+		}
+
 		const [visit] = await db
 			.select({ id: visits.id, patientId: visits.patientId })
 			.from(visits)
@@ -298,6 +341,10 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 		const { visitId } = request.params as { visitId: string };
+
+		if (!visitId || !UUID_REGEX.test(visitId)) {
+			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
+		}
 
 		const [visit] = await db
 			.select({ id: visits.id, patientId: visits.patientId })
