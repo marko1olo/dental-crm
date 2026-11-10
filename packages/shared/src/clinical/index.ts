@@ -48,6 +48,7 @@ export * from "./patientRelationshipsEngine.js";
 export * from "./dentalFormulaSsot.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./pediatricDentition.js";
+export * from "./pediatric/constants.js";
 export * from "./playbooks/index.js";
 export * from "./smartClinicalPlaybooksEngine.js";
 export {
@@ -78,8 +79,9 @@ export {
   type PreAppointmentSummary,
 } from "./clinicalPlaybooksEngine.js";
 export * from "../warehouse/treatmentConsumablesEngine.js";
-export * from "../warehouse/default804nBomCatalog.js";
+export * from "../warehouse/defaultServiceBomCatalog.js";
 export * from "../warehouse/autoVisitBomEngine.js";
+export { CLASS_B_WEIGHT_ESTIMATES, calculateClassBWasteWeightKg } from "../warehouse/autoVisitBomEngine.js";
 export * from "./photoProtocol.js";
 export * from "./soap/index.js";
 export * from "./somaticCatalog.js";

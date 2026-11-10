@@ -21,7 +21,6 @@ import {
 	applyExpressIncomingInvoice,
 	formatKopecksToRubles,
 } from "../warehouseCatalogData.js";
-import { WarehouseStudioModal } from "../WarehouseStudioModal.js";
 import { DirectWarehouseLauncher } from "../DirectWarehouseLauncher.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -124,52 +123,6 @@ describe("Warehouse SSOT: Soft Negative Stock & Catalog (warehouseCatalogData.ts
 	it("7. formatKopecksToRubles: форматирует целочисленные копейки в человеческие рубли", () => {
 		const formatted = formatKopecksToRubles(14500);
 		assert.ok(formatted.includes("145") || formatted.includes("145,00"));
-	});
-});
-
-describe("Warehouse Studio Modal (WarehouseStudioModal.tsx)", () => {
-	it("8. Проверяет соблюдение лимита строк WarehouseStudioModal.tsx (380–480 строк по Мандату 8b, Sweet Spot)", () => {
-		const filePath = path.join(inventoryDir, "WarehouseStudioModal.tsx");
-		assert.ok(fs.existsSync(filePath), "WarehouseStudioModal.tsx должен существовать");
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(lines >= 380, `WarehouseStudioModal.tsx имеет ${lines} строк, ожидается >= 380`);
-		assert.ok(lines <= 480, `WarehouseStudioModal.tsx имеет ${lines} строк, превышает лимит 480`);
-	});
-
-	it("9. Рендерит пустоту, когда isOpen === false", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={false} onClose={() => {}} />);
-		assert.equal(html, "");
-	});
-
-	it("10. Рендерит шапку, сводку KPI, вкладки и таблицу при isOpen === true", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(html.includes("Склад и пакетное списание расходных материалов"));
-		assert.ok(html.includes("Всего позиций"));
-		assert.ok(html.includes("В дефиците"));
-		assert.ok(html.includes("data-testid=\"warehouse-studio-modal\""));
-		assert.ok(html.includes("data-testid=\"btn-express-inbound\""));
-		assert.ok(html.includes("data-testid=\"btn-batch-deduct\""));
-	});
-
-	it("11. Отображает статус дефицита и овердрафта без блокировок кнопок (Мандат 8e)", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(html.includes("В дефиците"));
-		assert.ok(!html.includes("disabled"));
-	});
-
-	it("12. Мандат 8am: содержит ровно ОДНУ Primary CTA кнопку в цвете #0d9488", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(html.includes("data-testid=\"btn-primary-commit-warehouse\""));
-		assert.ok(html.includes("#0d9488"));
-		assert.ok(html.includes("bg-[#0d9488]"));
-		const count = (html.match(/data-testid="btn-primary-commit-warehouse"/g) || []).length;
-		assert.equal(count, 1);
-	});
-
-	it("13. Apple HIG (Мандат 8ze): тач-таргеты >= 44x44px и мобильный drag handle 36x5px", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(html.includes("data-testid=\"mobile-drag-handle\""));
-		assert.ok(html.includes("min-h-[44px]"));
 	});
 });
 

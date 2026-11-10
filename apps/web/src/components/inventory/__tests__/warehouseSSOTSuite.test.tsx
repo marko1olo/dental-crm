@@ -25,7 +25,6 @@ import {
 	formatKopecksToRubles,
 	type WarehouseStockItem,
 } from "../warehouseCatalogData.js";
-import { WarehouseStudioModal } from "../WarehouseStudioModal.js";
 import { DirectWarehouseLauncher } from "../DirectWarehouseLauncher.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -59,14 +58,6 @@ describe("1. Sweet Spot File Sizes & Architecture (Мандат 8b/8zi)", () => 
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		expect(lines).toBeGreaterThanOrEqual(300);
 		expect(lines).toBeLessThanOrEqual(350);
-	});
-
-	it("проверяет размер WarehouseStudioModal.tsx (строго 380–480 строк, Sweet Spot)", () => {
-		const filePath = path.join(inventoryDir, "WarehouseStudioModal.tsx");
-		expect(fs.existsSync(filePath)).toBe(true);
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		expect(lines).toBeGreaterThanOrEqual(380);
-		expect(lines).toBeLessThanOrEqual(480);
 	});
 
 	it("проверяет размер DirectWarehouseLauncher.tsx (строго 70–90 строк)", () => {
@@ -257,56 +248,7 @@ describe("4. Warehouse KPIs, Badges & Currency Formatting", () => {
 	});
 });
 
-describe("5. WarehouseStudioModal: UI Static Markup & Apple HIG Mandates", () => {
-	it("рендерит модальное окно с шапкой, KPI, вкладками и таблицей", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		expect(html).toContain("Склад и пакетное списание расходных материалов");
-		expect(html).toContain("Всего позиций");
-		expect(html).toContain("В дефиците");
-		expect(html).toContain("Требуют заказа");
-		expect(html).toContain("Стоимость запасов");
-		expect(html).toContain("Остатки на складе");
-		expect(html).toContain("Списание за смену");
-		expect(html).toContain("Поступление на склад");
-	});
-
-	it("содержит ровно 1 Primary CTA кнопку цвета #0d9488 (Мандат 8am)", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		expect(html).toContain("data-testid=\"btn-primary-commit-warehouse\"");
-		expect(html).toContain("bg-[#0d9488]");
-
-		// Проверяем, что в разметке ровно ОДНА кнопка с testid Primary CTA
-		const matches = html.match(/data-testid="btn-primary-commit-warehouse"/g);
-		expect(matches?.length).toBe(1);
-	});
-
-	it("содержит 0 заблокированных disabled кнопок (Мандат 8e: Автономия врача)", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		// Ни одна кнопка не имеет атрибута disabled
-		expect(html).not.toMatch(/<button[^>]*disabled/i);
-	});
-
-	it("содержит Apple HIG сенсорные элементы: drag handle 36x5px и touch target >= 44x44px", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		expect(html).toContain("data-testid=\"mobile-drag-handle\"");
-		expect(html).toContain("min-h-[44px]");
-	});
-
-	it("содержит живой русский клинический язык без советских приказов (Мандат 8x)", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		expect(html).not.toContain("804н");
-		expect(html).not.toContain("043/у");
-		expect(html).not.toContain("54-ФЗ");
-		expect(html).not.toContain("ФФД 1.2");
-	});
-
-	it("не рендерит ничего при isOpen=false", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={false} onClose={() => {}} />);
-		expect(html).toBe("");
-	});
-});
-
-describe("6. DirectWarehouseLauncher Integration", () => {
+describe("5. DirectWarehouseLauncher Integration", () => {
 	it("компонент DirectWarehouseLauncher корректно экспортирован и монтируется без крашей", () => {
 		expect(typeof DirectWarehouseLauncher).toBe("function");
 		const html = renderToStaticMarkup(<DirectWarehouseLauncher />);

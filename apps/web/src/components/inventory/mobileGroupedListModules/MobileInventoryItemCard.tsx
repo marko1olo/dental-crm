@@ -2,7 +2,7 @@ import {
 	AlertTriangle, CheckCircle2, Clock, Layers, Minus, Package, ShieldCheck, Sparkles, Syringe, Target,
 } from "lucide-react";
 import React from "react";
-import { getExpiryTrafficLight } from "../InventoryStockTable.js";
+import { getExpiryTrafficLight } from "../WarehouseStockTable.js";
 import { getCategoryBadge } from "../inventoryCategoryBadges.js";
 import type { InventoryItem } from "../inventoryDataMappers.js";
 import { getItemCategoryType } from "./types.js";

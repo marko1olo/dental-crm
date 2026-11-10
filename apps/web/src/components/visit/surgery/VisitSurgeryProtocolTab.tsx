@@ -4,7 +4,6 @@ import { SURGICAL_OPERATION_NORMS, COMMON_SURGERY_TEETH } from "../../surgery/su
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
 import { useVisitSurgeryState } from "./modules/useVisitSurgeryState";
 import { VisitSurgeryHeader } from "./modules/VisitSurgeryHeader";
-import { VisitSurgeryOverdraftBanner } from "./modules/VisitSurgeryOverdraftBanner";
 import { VisitSurgeryToothSelector } from "./modules/VisitSurgeryToothSelector";
 import { VisitSurgeryNormsGrid } from "./modules/VisitSurgeryNormsGrid";
 import { VisitSurgeryCategoryCockpit } from "./modules/VisitSurgeryCategoryCockpit";
@@ -35,7 +34,6 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				onToggleSterileMode={() => s.setIsSterileGloveMode(!s.isSterileGloveMode)}
 				onOpenImplantModal={() => s.setIsImplantModalOpen(true)}
 			/>
-			<VisitSurgeryOverdraftBanner overdraftStatus={s.overdraftStatus} onDismiss={() => s.setHasWarehouseDelay(false)} />
 			<VisitSurgeryToothSelector effectiveTooth={s.effectiveTooth} commonTeeth={COMMON_SURGERY_TEETH} onSelectTooth={s.handleToothSelect} />
 			<VisitSurgeryNormsGrid norms={SURGICAL_OPERATION_NORMS} selectedNormId={s.selectedNormId} onSelectNorm={s.handleNormClick} />
 			<VisitSurgeryCategoryCockpit s={s} patientName={patientName} doctorName={doctorName} onAddToInvoice={onAddToInvoice} />

@@ -23,8 +23,6 @@ import {
 	type ConsumableItemLink,
 	type PlannedServiceConsumable,
 	type RenderedServiceItem,
-	CLASS_B_WEIGHT_ESTIMATES,
-	calculateClassBWasteWeightKg,
 	calculateServiceConsumables,
 	consumableDeductedItemSchema,
 	consumableDeductionResultSchema,
@@ -34,7 +32,30 @@ import {
 	renderedServiceItemSchema,
 	roundQuantity,
 } from "./treatmentConsumablesEngine.js";
+export const CLASS_B_WEIGHT_ESTIMATES = {
+	carpuleGlassKg: 0.005,
+	sharpsNeedleKg: 0.002,
+	contaminatedPpeKg: 0.015,
+	standardPunctureContainerTareKg: 0.15,
+} as const;
+
+export function calculateClassBWasteWeightKg(
+	carpulesCount: number,
+	sharpsCount: number,
+	contaminatedCount: number,
+): number {
+	const safeCarpules = Math.max(0, carpulesCount);
+	const safeSharps = Math.max(0, sharpsCount);
+	const safeContaminated = Math.max(0, contaminatedCount);
+
+	const carpulesWeight = safeCarpules * CLASS_B_WEIGHT_ESTIMATES.carpuleGlassKg;
+	const sharpsWeight = safeSharps * CLASS_B_WEIGHT_ESTIMATES.sharpsNeedleKg;
+	const contaminatedWeight = Math.max(0.05, safeContaminated * CLASS_B_WEIGHT_ESTIMATES.contaminatedPpeKg);
+
+	return roundQuantity(carpulesWeight + sharpsWeight + contaminatedWeight, 3);
+}
 import { DEFAULT_804N_CONSUMABLE_LINKS } from "./defaultServiceBomCatalog.js";
+
 
 // ─── 1. CLASS B MEDICAL WASTE TYPES & SCHEMAS (САНПИН 2.1.3684-21) ───────────
 

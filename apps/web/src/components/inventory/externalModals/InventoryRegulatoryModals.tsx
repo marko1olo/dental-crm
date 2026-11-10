@@ -1,11 +1,11 @@
 import React, { lazy, Suspense } from "react";
 import { InboundWaybillModal } from "../InboundWaybillModal.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
-import type { WarehouseWriteoffItem } from "../WarehouseStudioModal.js";
+import type { WarehouseWriteoffItem } from "./useAuditAndManagerWriteoffHandlers.js";
 
 const MdlpDisposalQueueModal = lazy(() => import("../mdlp/index.js").then((m) => ({ default: m.MdlpDisposalQueueModal })));
 const MdlpScanningModal = lazy(() => import("../../mdlp/MdlpScanningModal.js").then((m) => ({ default: m.MdlpScanningModal })));
-const WarehouseManagerModal = lazy(() => import("../WarehouseStudioModal.js").then((m) => ({ default: m.WarehouseStudioModal })));
+const WarehouseManagerModal = lazy(() => import("../ConsumablesBatchWriteoffModal.js").then((m) => ({ default: m.ConsumablesBatchWriteoffModal })));
 const AcceptanceWaybillsModal = lazy(() => import("../InboundWaybillModal.js").then((m) => ({ default: m.InboundWaybillModal })));
 
 export interface InventoryRegulatoryModalsProps {
@@ -64,12 +64,6 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 					<WarehouseManagerModal
 						isOpen={isWarehouseManagerOpen}
 						onClose={onCloseWarehouseManager}
-						onOpenInventoryAudit={() => {
-							onCloseWarehouseManager();
-							onOpenInventoryAudit?.();
-						}}
-						initialItems={items}
-						onConfirmWriteoff={onConfirmManagerWriteoff}
 					/>
 				</Suspense>
 			)}

@@ -4,7 +4,7 @@
  *
  * Verifies that production UI components contain zero dev leaks, test SMS codes,
  * or interactive debug test buttons:
- * 1. pages/PublicBookingWidget.tsx: No "Тестовый код: 7788", placeholder 7788, or test code error hints.
+ * 1. pages/PublicBookingPage.tsx: No "Тестовый код: 7788", placeholder 7788, or test code error hints.
  * 2. PatientCabinetModal.tsx: No dev leaks or test hints.
  * 3. ImplantPassportModal.tsx: No "Тест задержки накладной" button.
  * 4. MdlpScanningModal.tsx: No "Тест связи" button or "Тестовые образцы" strip.
@@ -25,22 +25,21 @@ const __dirname = path.dirname(__filename);
 const SRC_DIR = path.resolve(__dirname, "../../..");
 
 const TARGET_FILES = {
-	publicBooking: path.join(SRC_DIR, "pages/PublicBookingWidget.tsx"),
+	publicBooking: path.join(SRC_DIR, "pages/PublicBookingPage.tsx"),
 	patientCabinet: path.join(SRC_DIR, "components/portal/patientCabinet/PatientCabinetModal.tsx"),
 	implantPassport: path.join(SRC_DIR, "components/implants/ImplantPassportModal.tsx"),
 	mdlpScanning: path.join(SRC_DIR, "components/mdlp/MdlpScanningModal.tsx"),
 	mdlpDisposalQueue: path.join(SRC_DIR, "components/inventory/mdlp/MdlpDisposalQueueModal.tsx"),
-	kraftBarcode: path.join(SRC_DIR, "components/sanpin/kraft/KraftPackageBarcodeModal.tsx"),
 } as const;
 
 describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", () => {
-	it("all 6 target component files exist on disk", () => {
+	it("all 5 target component files exist on disk", () => {
 		for (const [key, filePath] of Object.entries(TARGET_FILES)) {
 			assert.ok(fs.existsSync(filePath), `Target file for ${key} must exist: ${filePath}`);
 		}
 	});
 
-	it("1. PublicBookingWidget contains no dev leaks or 7788 test code exposures", () => {
+	it("1. PublicBookingPage contains no dev leaks or 7788 test code exposures", () => {
 		const content = fs.readFileSync(TARGET_FILES.publicBooking, "utf8");
 
 		assert.ok(!content.includes("Тестовый код: 7788"), "Must not expose 'Тестовый код: 7788'");
@@ -90,15 +89,7 @@ describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", ()
 		assert.ok(content.includes("Отсканируйте DataMatrix код"), "Must contain clean 2D scanner instruction");
 	});
 
-	it("6. KraftPackageBarcodeModal contains no 'Тестовые образцы' sample chips", () => {
-		const content = fs.readFileSync(TARGET_FILES.kraftBarcode, "utf8");
-
-		assert.ok(!content.includes("Тестовые образцы:"), "Must not contain 'Тестовые образцы:' label");
-		assert.ok(!content.includes("Azov Свежий (50 сут)"), "Must not contain Azov demo package button");
-		assert.ok(!content.includes("Просроченный пакет"), "Must not contain expired demo package button");
-	});
-
-	it("7. Universal check: zero forbidden debug substrings in all 6 files", () => {
+	it("6. Universal check: zero forbidden debug substrings in all 5 files", () => {
 		const forbiddenPhrases = [
 			"Тестовый код: 7788",
 			"Тест задержки накладной",

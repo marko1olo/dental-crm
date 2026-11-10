@@ -25,15 +25,6 @@ import {
 	type SterilizationRegimeId,
 } from "@dental/shared";
 import {
-	CHEMICAL_INTEGRATORS_CATALOG,
-	evaluateChemicalIntegratorColorMatch,
-	getAllChemicalIntegrators,
-	getChemicalIntegratorById,
-	getChemicalIntegratorsByClass,
-	getChemicalIntegratorsByRegime,
-	getRecommendedIntegrator,
-} from "../components/sanpin/kraft/chemicalIntegratorsCatalog";
-import {
 	formatKraftDataMatrixPayload,
 	generate1DBarcodeString,
 	generateCode128Svg,
@@ -238,71 +229,9 @@ describe("SanPiN 3.3686-21 Sterilization Kraft-Bag & Chemical Integrator Suite",
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 4. CHEMICAL INTEGRATORS CATALOG (GOST ISO 11140-1)
+	// 4. VECTOR BARCODES & DATA MATRIX PAYLOADS
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("4. Chemical Integrators Catalog & Classes 4/5/6", () => {
-		it("catalog contains verified indicators for Classes 4, 5, and 6", () => {
-			const all = getAllChemicalIntegrators();
-			assert.ok(all.length >= 8);
-
-			const class4 = getChemicalIntegratorsByClass("class_4");
-			assert.ok(class4.length >= 3);
-
-			const class5 = getChemicalIntegratorsByClass("class_5");
-			assert.ok(class5.length >= 2);
-
-			const class6 = getChemicalIntegratorsByClass("class_6");
-			assert.ok(class6.length >= 2);
-		});
-
-		it("filters chemical integrators by sterilization regime", () => {
-			const steam134 = getChemicalIntegratorsByRegime("steam_134_5min");
-			assert.ok(steam134.length >= 5);
-			steam134.forEach((i) => assert.equal(i.regimeId, "steam_134_5min"));
-
-			const dryHeat = getChemicalIntegratorsByRegime("dry_heat_180_60min");
-			assert.ok(dryHeat.length >= 2);
-			dryHeat.forEach((i) => assert.equal(i.regimeId, "dry_heat_180_60min"));
-		});
-
-		it("recommends Class 5 or Class 6 indicator for critical surgery", () => {
-			const recSurgery = getRecommendedIntegrator("steam_134_5min", { forCriticalSurgery: true });
-			assert.ok(recSurgery.classType === "class_5" || recSurgery.classType === "class_6");
-			assert.equal(recSurgery.isCriticalSurgeryRecommended, true);
-		});
-
-		it("evaluates chemical indicator color matching correctly", () => {
-			const indId = "vinar_steritest_4_134";
-
-			// Exact match -> OK
-			const match = evaluateChemicalIntegratorColorMatch(indId, "match_reference");
-			assert.equal(match.isValid, true);
-			assert.equal(match.allowsClinicalUse, true);
-			assert.equal(match.statusColorHex, "#10b981");
-
-			// Darker -> OK (excess lethal dose)
-			const darker = evaluateChemicalIntegratorColorMatch(indId, "darker_than_reference");
-			assert.equal(darker.isValid, true);
-			assert.equal(darker.allowsClinicalUse, true);
-
-			// Lighter -> FAIL (under-sterilization)
-			const lighter = evaluateChemicalIntegratorColorMatch(indId, "lighter_than_reference");
-			assert.equal(lighter.isValid, false);
-			assert.equal(lighter.allowsClinicalUse, false);
-			assert.ok(lighter.verdictRu.includes("БРАК"));
-
-			// Unchanged -> CRITICAL FAIL
-			const unchanged = evaluateChemicalIntegratorColorMatch(indId, "unchanged_initial");
-			assert.equal(unchanged.isValid, false);
-			assert.equal(unchanged.allowsClinicalUse, false);
-			assert.ok(unchanged.verdictRu.includes("КРИТИЧЕСКИЙ БРАК"));
-		});
-	});
-
-	// ─────────────────────────────────────────────────────────────────────────
-	// 5. VECTOR BARCODES & DATA MATRIX PAYLOADS
-	// ─────────────────────────────────────────────────────────────────────────
-	describe("5. Barcode & Thermal Sticker Generation", () => {
+	describe("4. Barcode & Thermal Sticker Generation", () => {
 		it("generates standardized 1D barcode string", () => {
 			const bc = generate1DBarcodeString("KB-20260826-01", 5);
 			assert.equal(bc, "KB0826010005");

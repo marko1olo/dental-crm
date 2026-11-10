@@ -23,7 +23,6 @@ import {
 	quickOneClickInventoryAudit,
 	formatKopecksToRubles,
 } from "../warehouseCatalogData.js";
-import { WarehouseStudioModal } from "../WarehouseStudioModal.js";
 import { DirectWarehouseLauncher } from "../DirectWarehouseLauncher.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -136,17 +135,8 @@ describe("Warehouse & Consumables SSOT Inquisitor Suite (Mandates 8e, 8n, 8am, 8
 		assert.equal(anesthDeduct?.quantity, 5, "На 5 пациентов должно списаться 5 карпул");
 	});
 
-	// ТЕСТ 9: Sweet Spot строк WarehouseStudioModal.tsx (400–480 строк)
-	it("9. WarehouseStudioModal.tsx укладывается в Sweet Spot (строго 400–480 строк по Мандату 8b)", () => {
-		const filePath = path.join(inventoryDir, "WarehouseStudioModal.tsx");
-		assert.ok(fs.existsSync(filePath), "WarehouseStudioModal.tsx должен существовать");
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(lines >= 400, `WarehouseStudioModal.tsx имеет ${lines} строк, ожидается >= 400`);
-		assert.ok(lines <= 480, `WarehouseStudioModal.tsx имеет ${lines} строк, превышает лимит 480`);
-	});
-
-	// ТЕСТ 10: Sweet Spot строк DirectWarehouseLauncher.tsx (60–80 строк)
-	it("10. DirectWarehouseLauncher.tsx укладывается в Sweet Spot (строго 60–80 строк по Мандату 8b)", () => {
+	// ТЕСТ 9: Sweet Spot строк DirectWarehouseLauncher.tsx (60–80 строк)
+	it("9. DirectWarehouseLauncher.tsx укладывается в Sweet Spot (строго 60–80 строк по Мандату 8b)", () => {
 		const filePath = path.join(inventoryDir, "DirectWarehouseLauncher.tsx");
 		assert.ok(fs.existsSync(filePath), "DirectWarehouseLauncher.tsx должен существовать");
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
@@ -154,8 +144,8 @@ describe("Warehouse & Consumables SSOT Inquisitor Suite (Mandates 8e, 8n, 8am, 8
 		assert.ok(lines <= 80, `DirectWarehouseLauncher.tsx имеет ${lines} строк, превышает лимит 80`);
 	});
 
-	// ТЕСТ 11: Sweet Spot строк warehouseStudio.css (250–350 строк)
-	it("11. warehouseStudio.css укладывается в Sweet Spot (строго 250–350 строк по Мандату 8b)", () => {
+	// ТЕСТ 10: Sweet Spot строк warehouseStudio.css (250–350 строк)
+	it("10. warehouseStudio.css укладывается в Sweet Spot (строго 250–350 строк по Мандату 8b)", () => {
 		const filePath = path.join(inventoryDir, "styles", "warehouseStudio.css");
 		assert.ok(fs.existsSync(filePath), "warehouseStudio.css должен существовать");
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
@@ -163,31 +153,8 @@ describe("Warehouse & Consumables SSOT Inquisitor Suite (Mandates 8e, 8n, 8am, 8
 		assert.ok(lines <= 350, `warehouseStudio.css имеет ${lines} строк, превышает лимит 350`);
 	});
 
-	// ТЕСТ 12: Мандат 8e — 0 заблокированных кнопок (disabled={true})
-	it("12. Мандат 8e: в интерфейсе студии склада строго 0 заблокированных (disabled) кнопок", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(!html.includes("disabled"), "Кнопки склада НИКОГДА не должны иметь атрибут disabled (Мандат 8e)");
-	});
-
-	// ТЕСТ 13: Мандат 8am — Ровно 1 Primary CTA кнопка #0d9488
-	it("13. Мандат 8am: на видимый экран ровно ОДНА Primary CTA кнопка с цветом #0d9488", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(html.includes("data-testid=\"btn-primary-commit-warehouse\""));
-		assert.ok(html.includes("warehouse-primary-btn"));
-		const count = (html.match(/data-testid="btn-primary-commit-warehouse"/g) || []).length;
-		assert.equal(count, 1, "Должна быть ровно 1 Primary CTA кнопка на видимый экран");
-	});
-
-	// ТЕСТ 14: Apple HIG — Drag Handle 36x5px и touch targets >= 44x44px
-	it("14. Мандат 8ze (Apple HIG): наличествует тактильный Drag Handle 36x5px и touch targets >= 44x44px", () => {
-		const html = renderToStaticMarkup(<WarehouseStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(html.includes("data-testid=\"mobile-drag-handle\""), "Должен быть мобильный drag handle");
-		assert.ok(html.includes("min-h-[44px]"), "Интерактивные элементы должны иметь min-height 44px");
-		assert.ok(html.includes("warehouse-drag-handle"), "Класс драг-хэндла должен присутствовать");
-	});
-
-	// ТЕСТ 15: DirectWarehouseLauncher SSR & статический рендеринг
-	it("15. DirectWarehouseLauncher монтируется в SSR без исключений", () => {
+	// ТЕСТ 11: DirectWarehouseLauncher SSR & статический рендеринг
+	it("11. DirectWarehouseLauncher монтируется в SSR без исключений", () => {
 		const html = renderToStaticMarkup(<DirectWarehouseLauncher />);
 		assert.equal(typeof html, "string");
 	});

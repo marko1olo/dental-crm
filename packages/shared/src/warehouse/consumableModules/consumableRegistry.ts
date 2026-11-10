@@ -1,7 +1,6 @@
 import { formatQuantityRu, calculateServiceConsumables, toConsumableItemLink, toTreatmentConsumableLink } from "./consumableLinkManager.js";
 import { processConsumablesStockDeduction } from "./consumableSoftOverdraft.js";
 import { executeBatchConsumablesDeduction } from "./consumableAutoDeduction.js";
-import { CLASS_B_WEIGHT_ESTIMATES, calculateClassBWasteWeightKg } from "./consumableClassBWaste.js";
 import {
 	consumableCategorySchema, consumableUnitSchema, consumableItemLinkSchema, renderedServiceItemSchema,
 	consumableDeductionRequestSchema, consumableDeductedItemSchema, consumableDeductionResultSchema,
@@ -109,6 +108,6 @@ export const treatmentConsumablesEngine = {
 	calculateServiceConsumables, executeBatchConsumablesDeduction, formatConsumablesWriteOffA4Report,
 	consumableCategorySchema, consumableUnitSchema, consumableItemLinkSchema, renderedServiceItemSchema,
 	consumableDeductionRequestSchema, consumableDeductedItemSchema, consumableDeductionResultSchema,
-	CONSUMABLE_CATEGORY_LABELS, CONSUMABLE_UNIT_LABELS, CLASS_B_WEIGHT_ESTIMATES, calculateClassBWasteWeightKg,
+	CONSUMABLE_CATEGORY_LABELS, CONSUMABLE_UNIT_LABELS,
 	processConsumablesStockDeduction, toConsumableItemLink, toTreatmentConsumableLink,
 } as const;

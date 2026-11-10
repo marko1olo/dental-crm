@@ -5,7 +5,6 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { WarehouseBatchTrackingModal } from "../WarehouseBatchTrackingModal.js";
-import { WarehouseCatalogView } from "../WarehouseCatalogView.js";
 import { ConsumablesBatchWriteoffModal as ConsumablesDeductionModal } from "../ConsumablesBatchWriteoffModal.js";
 import { AutoBomDeductionBanner } from "../AutoBomDeductionBanner.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
@@ -40,17 +39,6 @@ describe("Warehouse Suite: Components Rendering (Part 2)", () => {
 		);
 		assert.ok(html.includes("warehouse-batch-tracking-modal"));
 		assert.ok(html.includes("Партионный учёт"));
-	});
-
-	it("WarehouseCatalogView рендерит каталог и тулбар в 1 строку", () => {
-		const html = renderToStaticMarkup(
-			<WarehouseCatalogView
-				organizationId="test-org-1"
-				items={SAMPLE_ITEMS}
-			/>,
-		);
-		assert.ok(html.includes("warehouse-catalog-view"));
-		assert.ok(html.includes("Позиций в клинике:"));
 	});
 
 	it("ConsumablesDeductionModal рендерит списание у кресла и мягкий овердрафт", () => {

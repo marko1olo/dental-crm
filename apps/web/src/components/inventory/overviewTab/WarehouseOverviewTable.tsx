@@ -1,7 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import type React from "react";
 import type { InventoryItem } from "../useInventoryLogic.js";
-import { formatCategoryRu } from "../WarehouseCatalogView.js";
+import { formatCategoryRu } from "../catalog/warehouseCatalogTypes.js";
 
 export interface WarehouseOverviewTableProps {
 	readonly filtered: readonly InventoryItem[];

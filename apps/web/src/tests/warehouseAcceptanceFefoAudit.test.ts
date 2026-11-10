@@ -40,7 +40,7 @@ import {
 
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { WarehouseItemsTable } from "../components/inventory/WarehouseItemsTable";
+import { WarehouseItemsTable } from "../components/inventory/WarehouseStockTable";
 import { generateFormM11Html } from "../components/inventory/writeoff/clinicalWriteoffPrintForms";
 import {
 	createSampleDentalWaybill,
@@ -64,19 +64,19 @@ describe("Warehouse & Dental Lab Inquisitor Audit (Mandates 8k, 8n, 8s)", () => 
 		it("канонические модули ЗТЛ находятся в apps/web/src/components/lab/", () => {
 			const labDir = path.join(webSrcDir, "components", "lab");
 			assert.ok(fs.existsSync(path.join(labDir, "dentalLabOrderEngine.ts")), "dentalLabOrderEngine.ts must exist in lab/");
-			assert.ok(fs.existsSync(path.join(labDir, "DentalLabOrdersTrackerModal.tsx")), "DentalLabOrdersTrackerModal.tsx must exist in lab/");
-			assert.ok(fs.existsSync(path.join(labDir, "DentalLabOrderDrawer.tsx")), "DentalLabOrderDrawer.tsx must exist in lab/");
+			assert.ok(fs.existsSync(path.join(labDir, "DentalLabStudioModal.tsx")), "DentalLabStudioModal.tsx must exist in lab/");
+			assert.ok(fs.existsSync(path.join(labDir, "LabTrackingDrawer.tsx")), "LabTrackingDrawer.tsx must exist in lab/");
 			assert.ok(fs.existsSync(path.join(labDir, "__tests__", "dentalLabOrderEngine.test.ts")), "dentalLabOrderEngine.test.ts must exist in lab/__tests__/");
 		});
 
 		it("новые и модифицированные файлы ЗТЛ строго укладываются в лимит <800 строк", () => {
 			const labDir = path.join(webSrcDir, "components", "lab");
-			const trackerLines = fs.readFileSync(path.join(labDir, "DentalLabOrdersTrackerModal.tsx"), "utf8").split("\n").length;
-			const drawerLines = fs.readFileSync(path.join(labDir, "DentalLabOrderDrawer.tsx"), "utf8").split("\n").length;
+			const studioLines = fs.readFileSync(path.join(labDir, "DentalLabStudioModal.tsx"), "utf8").split("\n").length;
+			const drawerLines = fs.readFileSync(path.join(labDir, "LabTrackingDrawer.tsx"), "utf8").split("\n").length;
 			const engineLines = fs.readFileSync(path.join(labDir, "dentalLabOrderEngine.ts"), "utf8").split("\n").length;
 
-			assert.ok(trackerLines < 800, `DentalLabOrdersTrackerModal.tsx имеет ${trackerLines} строк (лимит < 800)`);
-			assert.ok(drawerLines < 800, `DentalLabOrderDrawer.tsx имеет ${drawerLines} строк (лимит < 800)`);
+			assert.ok(studioLines < 800, `DentalLabStudioModal.tsx имеет ${studioLines} строк (лимит < 800)`);
+			assert.ok(drawerLines < 800, `LabTrackingDrawer.tsx имеет ${drawerLines} строк (лимит < 800)`);
 			assert.ok(engineLines < 800, `dentalLabOrderEngine.ts имеет ${engineLines} строк (лимит < 800)`);
 		});
 	});

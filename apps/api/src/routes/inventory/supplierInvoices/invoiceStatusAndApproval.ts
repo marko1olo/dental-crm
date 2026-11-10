@@ -13,29 +13,19 @@ import {
 	getDefaultExpirationDate,
 	normalizeDateToIso,
 } from "../../../services/inventory/fefoStockService.js";
+import {
+	normalizeInventoryUnit,
+	INVENTORY_UNITS_METADATA,
+} from "@dental/shared";
 import { acceptanceWaybillBodySchema } from "../types.js";
 
 // =========================================================================
 // ACCEPTANCE WAYBILLS & SUPPLIER BATCH RECEIPT (Мандаты 8e, 8k, 8n, 8s)
 // =========================================================================
 
-export function detectPackageMultiplier(name: string, unit?: string | null): number {
-	const n = (name || "").toLowerCase();
-	const u = (unit || "").toLowerCase();
-
-	const carpuleMatch = n.match(/(\d+)\s*(?:карпул|карп|ампул|доз|шт)/i);
-	if (carpuleMatch && carpuleMatch[1]) {
-		const parsed = parseInt(carpuleMatch[1], 10);
-		if (Number.isFinite(parsed) && parsed > 0) return parsed;
-	}
-
-	if (n.includes("септанест") && (u.includes("уп") || u.includes("пач") || u.includes("box") || u.includes("pack"))) {
-		return 50;
-	}
-	if ((n.includes("ультракаин") || n.includes("артикаин") || n.includes("убистезин")) && (u.includes("уп") || u.includes("пач") || u.includes("box") || u.includes("pack"))) {
-		return 100;
-	}
-	return 1;
+export function detectPackageMultiplier(_name: string, unit?: string | null): number {
+	const canonical = normalizeInventoryUnit(unit);
+	return INVENTORY_UNITS_METADATA[canonical]?.standardPackConversionFactor ?? 1;
 }
 
 export const handleAcceptanceWaybillRequest = async (

@@ -10,7 +10,6 @@ describe("Warehouse Suite: Anti-Jargon & Zero Emojis", () => {
 		"WarehouseWaybillsTab.tsx",
 		"WarehouseInventoryTab.tsx",
 		"WarehouseBatchTrackingModal.tsx",
-		"WarehouseCatalogView.tsx",
 		"ConsumablesBatchWriteoffModal.tsx",
 		"AutoBomDeductionBanner.tsx",
 	];

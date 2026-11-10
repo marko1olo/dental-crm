@@ -8,7 +8,6 @@
 
 import React, { useState, useEffect } from "react";
 import { AutoclaveSterilizationLogModal } from "./components/sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
-import { KraftPackageBarcodeModal } from "./components/sanpin/kraft/KraftPackageBarcodeModal";
 import { SanpinRegisters, SanpinRegisters as SanpinRegistersView } from "./components/sanpin/SanpinRegisters";
 import { DocumentCameraScannerModal } from "./components/scanner/DocumentCameraScannerModal";
 import { ScannerHeaderBar } from "./components/scanner/ScannerHeaderBar";
@@ -81,7 +80,6 @@ export function ScannerView() {
 export {
 	SanpinRegisters,
 	SanpinRegistersView,
-	KraftPackageBarcodeModal,
 	AutoclaveSterilizationLogModal,
 	AutoclaveSterilizationLogModal as AutoclaveLog257Modal,
 	DocumentCameraScannerModal,

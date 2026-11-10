@@ -9,7 +9,7 @@ export function validateTransferDraft(
 	targetBranchId: WarehouseBranchId,
 	items: readonly WarehouseTransferLineItem[],
 	stockByBranch?: Record<WarehouseBranchId, Record<string, number>> | undefined,
-	allowOverdraft = false,
+	allowOverdraft = true,
 ): {
 	isValid: boolean;
 	errors: string[];

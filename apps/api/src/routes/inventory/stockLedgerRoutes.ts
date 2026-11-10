@@ -171,10 +171,7 @@ async function handleStockAdjustment(
 			item.category === "Хирургия";
 		const hasClinicalReason = Boolean(
 			parsedStock.data.isClinicalOperation === true ||
-				(parsedStock.data.reason &&
-					/(операци|лечени|при[её]м|визит|дефицит|экстрен|карпул|анесте|расход|списан)/i.test(
-						parsedStock.data.reason,
-					)),
+				parsedStock.data.visitId,
 		);
 		// Мандат 8n & Soft Negative Stock: овердрафт разрешен всегда
 		// во всех списаниях склада, чтобы никогда не блокировать работу врача у кресла (Мандат 8e).
