@@ -38,6 +38,41 @@ export async function insertLabOrderInDb(
 		}
 	}
 
+	// Если patientId не указан или не найден, ищем по ФИО в текущей клинике
+	if (!effectivePatientId && data.patientName && data.patientName.trim()) {
+		const trimmedName = data.patientName.trim();
+		const [existingPatient] = await tx
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.fullName, trimmedName),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.limit(1);
+		if (existingPatient) {
+			effectivePatientId = existingPatient.id;
+		}
+	}
+
+	// Автономия врача (Мандаты 8e, 8n): если наряд создается соло-врачом без предварительно
+	// заведенного пациента, регистрируем карточку пациента в базе без блокировок и 404!
+	if (!effectivePatientId) {
+		const rawName = data.patientName?.trim() || "Ортопедический пациент";
+		const [newPatient] = await tx
+			.insert(patients)
+			.values({
+				organizationId: orgId,
+				fullName: rawName,
+				notes: "Автоматически создан при оформлении заказ-наряда ЗТЛ",
+			})
+			.returning({ id: patients.id });
+		if (newPatient) {
+			effectivePatientId = newPatient.id;
+		}
+	}
+
 	if (!effectivePatientId) {
 		return { kind: "patient_not_found" as const };
 	}
@@ -68,12 +103,12 @@ export async function insertLabOrderInDb(
 			? new Date(data.expectedLabDate)
 			: calculateBusinessDaysDueDate(new Date(), 5);
 
-	const effectiveToothFdi = data.toothFdi || data.teethFdi || "16";
-	const effectiveMaterial = data.material || data.materialName || data.construction || "Диоксид циркония Multi-Layer";
+	const effectiveToothFdi = data.toothFdi || data.teethFdi || null;
+	const effectiveMaterial = data.material || data.materialName || data.construction || null;
 	const effectiveNotes = data.clinicalNotes || data.doctorNotes || null;
 	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? "draft";
 
-	const effectiveLabName = data.laboratoryName || data.labName || "Основная лаборатория";
+	const effectiveLabName = data.laboratoryName || data.labName || null;
 	const effectiveLabCost = data.labCostRub != null
 		? data.labCostRub
 		: data.costRub != null
@@ -82,7 +117,7 @@ export async function insertLabOrderInDb(
 				? Math.round(Number(data.labCostKopecks)) / 100
 				: data.costKopecks != null
 					? Math.round(Number(data.costKopecks)) / 100
-					: 7500;
+					: 0;
 
 	const effectivePriceRub = data.priceRub != null
 		? data.priceRub
@@ -90,20 +125,11 @@ export async function insertLabOrderInDb(
 			? Math.round(Number(data.amountKopecks)) / 100
 			: data.priceKopecks != null
 				? Math.round(Number(data.priceKopecks)) / 100
-				: 24000;
+				: 0;
 
 	let structuredNotes = effectiveNotes || "";
-	if (data.treatmentPlanId && !structuredNotes.includes("План лечения:")) {
-		structuredNotes = `* План лечения: ${data.treatmentPlanId}\n${structuredNotes}`;
-	}
-	if (data.appointmentId && !structuredNotes.includes("Прием:")) {
-		structuredNotes = `* Прием: ${data.appointmentId}\n${structuredNotes}`;
-	}
 	if (data.visitId && !structuredNotes.includes("Визит:")) {
 		structuredNotes = `* Визит: ${data.visitId}\n${structuredNotes}`;
-	}
-	if (!structuredNotes.includes("Лаборатория:")) {
-		structuredNotes = `* Лаборатория: ${effectiveLabName}\n${structuredNotes}`;
 	}
 
 	const [createdOrder] = await tx
@@ -111,11 +137,17 @@ export async function insertLabOrderInDb(
 		.values({
 			organizationId: orgId,
 			patientId: effectivePatientId,
+			treatmentPlanId: data.treatmentPlanId ?? null,
+			appointmentId: data.appointmentId ?? null,
 			doctorId: effectiveDoctorId,
-			doctorName: doctorName || data.doctorName || "Врач-ортопед",
+			doctorName: doctorName || data.doctorName || null,
 			laboratoryName: effectiveLabName,
 			secureToken,
-			toothFdi: effectiveToothFdi,
+			toothFdi: Array.isArray(effectiveToothFdi)
+				? effectiveToothFdi.join(",")
+				: effectiveToothFdi != null
+					? String(effectiveToothFdi)
+					: null,
 			material: effectiveMaterial,
 			colorVita: normalizedColor,
 			dueDate: parsedDueDate,
@@ -154,8 +186,9 @@ export async function insertLabOrderInDb(
 				priceRub: item.priceRub ? String(item.priceRub) : null,
 			});
 		}
-	} else if (effectiveToothFdi) {
-		const parts = effectiveToothFdi.split(/[\s,;-]+/).filter(Boolean);
+	} else if (effectiveToothFdi != null) {
+		const rawStr = Array.isArray(effectiveToothFdi) ? effectiveToothFdi.join(",") : String(effectiveToothFdi);
+		const parts = rawStr.split(/[\s,;-]+/).filter(Boolean);
 		const validTeeth = parts
 			.map((p) => Number.parseInt(p, 10))
 			.filter((num) => !Number.isNaN(num) && VALID_FDI_TOOTH_NUMBERS.has(num));
@@ -168,7 +201,7 @@ export async function insertLabOrderInDb(
 					labOrderId: createdOrder.id,
 					toothFdi: toothNum,
 					restorationType: "crown_monolithic",
-					material: effectiveMaterial,
+					material: effectiveMaterial || "zirconia_multilayer_gradient",
 					shadeSystem: "VITA_CLASSICAL",
 					shadeFinal: normalizedColor,
 					priceRub: String(pricePerTooth.toFixed(2)),

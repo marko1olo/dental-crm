@@ -138,7 +138,9 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 	it("2.1. Validates DentalLabStudioModal single primary CTA #0d9488 and Doctor Autonomy (Mandates 8e, 8am)", () => {
 		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
 		assert.ok(fs.existsSync(modalPath), "DentalLabStudioModal.tsx must exist");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const content =
+			fs.readFileSync(modalPath, "utf-8") +
+			fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
 
 		// Заголовок студии
 		assert.ok(content.includes("Зуботехническая лаборатория и заказ-наряды"), "Must include domain header");
@@ -158,7 +160,10 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 	// =========================================================================
 	it("2.2. Validates chairside 10-second express form and quick doctor actions", () => {
 		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const content =
+			fs.readFileSync(modalPath, "utf-8") +
+			fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8") +
+			fs.readFileSync(path.resolve(labDir, "ordersView/DentalLabRegistryOrderCard.tsx"), "utf-8");
 
 		// Экспресс-наряд
 		assert.ok(content.includes("Экспресс-наряд у кресла"), "Must feature express order section");

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	CHAIRSIDE_EXPRESS_PRESETS,
 	VITA_EXPRESS_SHADES,
-} from "../DentalLabExpressConfigurator";
+} from "../dentalLabCatalogData";
 
 describe("Chairside Express Presets & 1-Click VITA Shades (Мандаты 8e, 8b)", () => {
 	it("1. Содержит 6 канонических пресетов у кресла ортопеда", () => {

@@ -49,6 +49,10 @@ export interface DentalLabOrderData {
 	labComments?: string | null;
 	attachedImageUrl?: string | null;
 	priceRub?: number | null;
+	labCostRub?: number | null;
+	costRub?: number | null;
+	costKopecks?: number | null;
+	labCostKopecks?: number | null;
 	clinicSharePct?: number;
 	doctorSharePct?: number;
 	doctorDeductionRub?: number | null;

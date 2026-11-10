@@ -12,7 +12,6 @@ describe("Wave 243 — Zero Emojis Compliance", () => {
 			"DentalLabStudioModal.tsx",
 			"DentalLabOrdersView.tsx",
 			"DentalLabShadePicker.tsx",
-			"DentalLabPrintBlank.tsx",
 		];
 
 		const emojiRegex = /\p{Extended_Pictographic}/u;

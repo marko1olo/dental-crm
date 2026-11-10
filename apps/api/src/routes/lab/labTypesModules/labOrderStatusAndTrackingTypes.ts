@@ -75,16 +75,19 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "ready":
 		case "ready_work":
 		case "Готовая работа":
+			return "ready_in_clinic";
 		case "fitting":
 		case "fitting_scheduled":
 		case "fitting_in_mouth":
 		case "Примерка":
 		case "Примерка во рту":
-			return "received";
+		case "fitted":
+			return "fitted";
 		case "correction_remake":
 		case "warranty_rework":
 		case "refitting":
 		case "rework":
+		case "rejected_remake":
 		case "Переделка":
 		case "Рекламация":
 			return "refitting";

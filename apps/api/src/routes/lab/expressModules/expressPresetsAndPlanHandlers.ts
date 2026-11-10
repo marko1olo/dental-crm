@@ -18,7 +18,6 @@ export async function handleGetExpressPresets(request: FastifyRequest, reply: Fa
 	return reply.status(200).send({
 		presets: CANONICAL_DENTAL_LAB_PRESETS,
 		autonomyInfo: presetInfo,
-		mandate8eInfo: presetInfo,
 	});
 }
 
@@ -46,7 +45,6 @@ export async function handleCheckPlanContinuity(request: FastifyRequest, reply: 
 		requiresChiefPhysicianApproval: false,
 		requiresSeniorTechnicianApproval: false,
 		autonomyCompliant: true,
-		mandate8eCompliant: true,
 		noticeRu: isPlanExpired
 			? `План лечения составлен ${planAgeDays} дн. назад (>30 дней). Наряды ЗТЛ, оказание услуг и оплата продолжаются в штатном режиме без блокировок.`
 			: "План лечения активен. Ограничений на создание нарядов ЗТЛ нет.",

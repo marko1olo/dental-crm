@@ -37,8 +37,8 @@ export function mapDbStatusToStage(status: string | null | undefined): DentalLab
 		case "draft": case "sent": case "scan_sent": return "scan_sent";
 		case "in_progress": case "in_production": return "in_production";
 		case "shipped": case "fitting_ready": case "refitting": return "fitting_ready";
-		case "received": case "in_clinic": return "in_clinic";
-		case "completed": case "seated": return "seated";
+		case "received": case "in_clinic": case "ready": case "ready_in_clinic": return "in_clinic";
+		case "completed": case "seated": case "fitted": return "seated";
 		default: return "scan_sent";
 	}
 }
@@ -47,7 +47,7 @@ export const STAGE_TO_DB_STATUS: Record<DentalLabStage, string> = {
 	scan_sent: "sent",
 	in_production: "in_progress",
 	fitting_ready: "shipped",
-	in_clinic: "received",
+	in_clinic: "ready_in_clinic",
 	seated: "completed",
 	created: "sent",
 };
@@ -358,4 +358,18 @@ export function getVitaHex(code: string): string {
 export type DentalLabOrder = DentalLabOrderEntry;
 export const SAMPLE_LAB_ORDERS = SEED_LAB_ORDERS;
 export type LabStageDef = DentalLabStageMeta;
+
+export const CHAIRSIDE_EXPRESS_PRESETS = [
+	{ id: "zirconia_prettau", title: "Коронка диоксид циркония (Katana STML)", shortTitle: "Коронка Katana STML (ZrO2)", mat: "zirconia_multilayer", type: "single_crown", days: 5, shade: "A2" },
+	{ id: "emax_press", title: "Коронка E.max прессованная", shortTitle: "Коронка E.max прессованная", mat: "emax_lithium_disilicate", type: "single_crown", days: 5, shade: "A2" },
+	{ id: "pfm_cocr", title: "Металлокерамика", shortTitle: "Металлокерамика CoCr", mat: "pfm_cocr", type: "single_crown", days: 5, shade: "A3" },
+	{ id: "pmma_cadcam", title: "Временная PMMA CAD/CAM", shortTitle: "Временная PMMA CAD/CAM", mat: "pmma_temporary", type: "single_crown", days: 2, shade: "A2" },
+	{ id: "buegel_clasp", title: "Съемный бюгельный протез", shortTitle: "Съемный бюгельный протез", mat: "buegel_cocr_clasp", type: "clasp_denture", days: 7, shade: "A3" },
+	{ id: "aligners_set", title: "Элайнеры (набор капп)", shortTitle: "Элайнеры (набор капп)", mat: "biocompatible_3d_resin", type: "aligners", days: 7, shade: "BL2" },
+] as const;
+
+export const VITA_EXPRESS_SHADES = ["A1", "A2", "A3", "A3.5", "B1", "Bleach"] as const;
+
+export { getBridgeSpanTeeth } from "./fdiPickerModules/fdiBridgeSpanHelper";
+
 

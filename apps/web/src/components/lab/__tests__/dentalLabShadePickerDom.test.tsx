@@ -3,7 +3,7 @@ import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { DentalLabFdiOdontogramPicker } from "../DentalLabFdiOdontogramPicker";
+import { getBridgeSpanTeeth } from "../dentalLabCatalogData";
 import { DentalLabShadePicker } from "../DentalLabShadePicker";
 
 describe("dentalLabShadePickerDom — Shade & Odontogram Controls", () => {
@@ -55,29 +55,9 @@ describe("dentalLabShadePickerDom — Shade & Odontogram Controls", () => {
 		assert.ok(htmlWith.includes('data-testid="stump-shade-ND1"'));
 	});
 
-	it("рендерит кнопку «Соединить мост» для >= 2 зубов и скрывает для 1 зуба", () => {
-		const htmlBridge = renderToString(
-			<DentalLabFdiOdontogramPicker
-				selectedTeeth={[14, 16]}
-				setSelectedTeeth={() => {}}
-				toggleTooth={() => {}}
-				selectQuadrant={() => {}}
-				constructionType="bridge"
-			/>,
-		);
-		assert.ok(htmlBridge.includes('data-testid="bridge-connect-span-btn"'));
-		assert.ok(htmlBridge.includes("Соединить мост"));
-
-		const htmlSingle = renderToString(
-			<DentalLabFdiOdontogramPicker
-				selectedTeeth={[16]}
-				setSelectedTeeth={() => {}}
-				toggleTooth={() => {}}
-				selectQuadrant={() => {}}
-				constructionType="crown_zirconia"
-			/>,
-		);
-		assert.strictEqual(htmlSingle.includes('data-testid="bridge-connect-span-btn"'), false);
+	it("алгоритм getBridgeSpanTeeth расширяет мостовидный пролет для >= 2 зубов", () => {
+		assert.deepStrictEqual(getBridgeSpanTeeth([14, 16]), [14, 15, 16]);
+		assert.deepStrictEqual(getBridgeSpanTeeth([16]), [16]);
 	});
 
 	it("компоненты свободны от эмодзи", () => {

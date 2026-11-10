@@ -240,6 +240,8 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		// 1. Request slots via message text "записаться"
 		const slotsReply = await plugin.handle(
 			{
+				botConfigId: "cfg_test_123",
+				timestamp: Date.now(),
 				organizationId: ORG_ID,
 				senderId: "tg_user_12345",
 				senderName: "Иван Телеграмов",
@@ -254,18 +256,20 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		assert.ok(slotsReply.keyboard?.buttons);
 		// Buttons should contain calculated slots
 		const hasSlots = slotsReply.keyboard.buttons.some((row) =>
-			row.some((b) => b.callbackData.startsWith("booking:confirm:")),
+			row.some((b) => b.callbackData?.startsWith("booking:confirm:") ?? false),
 		);
 		assert.ok(hasSlots, "Must contain dynamic booking:confirm slots");
 
 		// 2. Confirm booking via callback payload
 		const firstSlotBtn = slotsReply.keyboard.buttons
 			.flat()
-			.find((b) => b.callbackData.startsWith("booking:confirm:"));
-		assert.ok(firstSlotBtn);
+			.find((b) => b.callbackData?.startsWith("booking:confirm:") ?? false);
+		assert.ok(firstSlotBtn && firstSlotBtn.callbackData);
 
 		const confirmReply = await plugin.handle(
 			{
+				botConfigId: "cfg_test_123",
+				timestamp: Date.now(),
 				organizationId: ORG_ID,
 				senderId: "79998881122",
 				senderName: "Иван Телеграмов",
@@ -284,6 +288,8 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		// Double booking collision check: same payload must report conflict
 		const duplicateReply = await plugin.handle(
 			{
+				botConfigId: "cfg_test_123",
+				timestamp: Date.now(),
 				organizationId: ORG_ID,
 				senderId: "79997770000",
 				senderName: "Другой Пациент",

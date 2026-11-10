@@ -32,14 +32,14 @@ export * from "./dentalLabModalPresets"; export * from "./labMath";
 
 export interface DentalLabStudioModalProps {
 	readonly isOpen: boolean; readonly onClose: () => void;
-	readonly initialToothFdi?: string | number; readonly patientName?: string; readonly doctorName?: string;
-	readonly patientId?: string; readonly doctorId?: string;
-	readonly initialTab?: LabStudioMainTab | "main" | "shades" | "stages" | "print";
+	readonly initialToothFdi?: string | number | undefined; readonly patientName?: string | undefined; readonly doctorName?: string | undefined;
+	readonly patientId?: string | undefined; readonly doctorId?: string | undefined;
+	readonly initialTab?: LabStudioMainTab | "main" | "shades" | "stages" | "print" | undefined;
 	readonly onOrderCreated?: ((order: DentalLabOrderEntry) => void) | undefined;
 	readonly onOrderSaved?: ((order?: any) => void) | undefined; readonly onSaveOrder?: ((order?: any) => void) | undefined;
-	readonly initialOrder?: any; readonly editingOrder?: any; readonly treatmentPlanId?: string; readonly stageId?: string;
-	readonly stageNumber?: number; readonly stageTitle?: string; readonly initialTeeth?: number[]; readonly scheduledVisitDate?: string;
-	readonly patientChartNumber?: string; readonly currentToothNumber?: string | number;
+	readonly initialOrder?: any; readonly editingOrder?: any; readonly treatmentPlanId?: string | undefined; readonly stageId?: string | undefined;
+	readonly stageNumber?: number | undefined; readonly stageTitle?: string | undefined; readonly stageTotalRub?: number | undefined; readonly initialTeeth?: number[] | undefined; readonly scheduledVisitDate?: string | undefined;
+	readonly patientChartNumber?: string | undefined; readonly currentToothNumber?: string | number | undefined;
 }
 
 export type LabStudioModalProps = DentalLabStudioModalProps; export type DentalLabOrdersHubModalProps = DentalLabStudioModalProps;
@@ -156,8 +156,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		let isCancelled = false;
 		async function loadLiveOrders() {
 			try {
-				let res = await fetch("/api/lab/orders", { headers: denteAdminSecretRequestHeaders() });
-				if (!res.ok) res = await fetch("/api/clinical/lab-orders", { headers: denteAdminSecretRequestHeaders() });
+				const res = await fetch("/api/lab/orders", { headers: denteAdminSecretRequestHeaders() });
 				if (!res.ok) return;
 				const data = await res.json();
 				const list = Array.isArray(data) ? data : data?.orders;
@@ -173,7 +172,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						dueDate: String(item.dueDate || calculatedDueDate), notes: item.notes || item.clinicalNotes || item.comment || undefined, isUrgent: Boolean(item.isUrgent || item.urgent),
 					})));
 				}
-			} catch {}
+			} catch (err) {
+				console.error("Failed to load live lab orders:", err);
+			}
 		}
 		void loadLiveOrders();
 		return () => { isCancelled = true; };
@@ -219,8 +220,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				notes: notes.trim() || undefined, status: "sent",
 			};
 			const reqOpts = { method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) };
-			let res = await fetch("/api/lab/orders", reqOpts);
-			if (!res.ok) res = await fetch("/api/clinical/lab-orders", reqOpts);
+			const res = await fetch("/api/lab/orders", reqOpts);
 			if (res.ok) {
 				const responseData = await res.json().catch(() => null);
 				const realId = responseData?.order?.id || responseData?.id;
@@ -255,10 +255,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		setTimeout(() => setFeedbackToast(null), 2500);
 		try {
 			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: STAGE_TO_DB_STATUS[nextStage] || "in_progress", stage: nextStage }) };
-			let res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, reqOpts);
-			if (!res.ok) res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
-			if (!res.ok) res = await fetch(`/api/clinical/lab-orders/${orderId}`, reqOpts);
-		} catch {}
+			const res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
+			if (!res.ok) {
+				console.warn(`Failed to advance lab order status on server: ${res.status}`);
+			}
+		} catch (err) {
+			console.error("Error advancing stage:", err);
+		}
 	}, [orders]);
 
 	const handleMarkInClinic = useCallback(async (orderId: string) => {
@@ -266,10 +269,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		setFeedbackToast("Заказ отмечен: готов в клинике"); setTimeout(() => setFeedbackToast(null), 2500);
 		try {
 			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: "received", stage: "in_clinic" }) };
-			let res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, reqOpts);
-			if (!res.ok) res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
-			if (!res.ok) res = await fetch(`/api/clinical/lab-orders/${orderId}`, reqOpts);
-		} catch {}
+			const res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
+			if (!res.ok) {
+				console.warn(`Failed to mark lab order in clinic on server: ${res.status}`);
+			}
+		} catch (err) {
+			console.error("Error marking in clinic:", err);
+		}
 	}, []);
 
 	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => { setFeedbackToast(`Вызов пациента на примерку: ${order.patientName}`); setTimeout(() => setFeedbackToast(null), 2500); }, []);
@@ -332,17 +338,6 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						<button type="button" onClick={() => setFeedbackToast(null)} className="text-white font-bold opacity-80 hover:opacity-100">&#215;</button>
 					</div>
 				)}
-				{/* Canonical SSOT Express Order Contract Markers (Mandates 8e, 8am) */}
-				<div style={{ display: "none" }} aria-hidden="true" data-testid="submit-lab-order-button" className="text-[var(--teal)]">
-					<span>✓ Создать заказ-наряд</span>
-					<span>✓ Отправить заказ в лабораторию</span>
-					<span>Экспресс-наряд у кресла</span>
-					{/* data-testid={`tooth-chip-${tooth}`} */}
-					{/* data-testid={`shade-chip-${v.code}`} */}
-					<select data-testid="lab-material-select" aria-hidden="true" />
-					<select data-testid="lab-partner-select" aria-hidden="true" />
-					{/* Actions: mark-ready-btn- call-patient-btn- print-order-btn- advance-stage-btn- */}
-				</div>
 				{activeMainTab === "print_blank" ? (
 					<DentalLabStudioPrintTab
 						currentPrintOrder={currentPrintOrder}
@@ -425,9 +420,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	);
 };
 
-export const LabStudioModal = DentalLabStudioModal; export const DentalLabHubModal = DentalLabStudioModal;
-export const DentalLabOrdersHubModal = DentalLabStudioModal; export const LaboratoryStudioModal = DentalLabStudioModal;
-export const LabOrderModal = DentalLabStudioModal; export const DentalLabOrdersModal = DentalLabStudioModal;
-export const DentalLabOrderModal = DentalLabStudioModal; export const DentalLabOrderDrawer = DentalLabStudioModal;
-export const DentalLabCreateOrderModal = DentalLabStudioModal; export const WorkOrdersList = DentalLabStudioModal;
+export const DentalLabOrderModal = DentalLabStudioModal;
+export const DentalLabHubModal = DentalLabStudioModal;
+export const DentalLabOrdersHubModal = DentalLabStudioModal;
+export const DentalLabOrderDrawer = DentalLabStudioModal;
 export default DentalLabStudioModal;

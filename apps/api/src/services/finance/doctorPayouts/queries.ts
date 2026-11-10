@@ -189,17 +189,6 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
 						to,
 					),
-					// Гарантийные заказы ЗТЛ (isWarranty / рекламации) относятся на рекламационный фонд клиники
-					// и НЕ удерживаются с врача!
-					sql`not (
-						coalesce(${labOrders.clinicalNotes}, '') ilike '%гарант%' or
-						coalesce(${labOrders.clinicalNotes}, '') ilike '%warranty%' or
-						coalesce(${labOrders.clinicalNotes}, '') ilike '%переделк%' or
-						coalesce(${labOrders.clinicalNotes}, '') ilike '%рекламац%' or
-						coalesce(${labOrders.labComments}, '') ilike '%гарант%' or
-						coalesce(${labOrders.labComments}, '') ilike '%warranty%' or
-						coalesce(${labOrders.labComments}, '') ilike '%переделк%'
-					)`,
 				),
 			)
 			.groupBy(labOrders.doctorId),

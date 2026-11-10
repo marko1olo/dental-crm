@@ -13,8 +13,8 @@ import {
 	mapConstructionTypeToRestorationType,
 	mapMaterialToRestorationMaterial,
 	type BuildLabOrderPayloadParams,
-} from "../orderSaveModules/labOrderPayloadBuilder";
-import { formatDisplayDate } from "../orderSaveModules/labOrderProtocolExporter";
+	formatDisplayDate,
+} from "@dental/shared";
 
 describe("dentalLabOrderPayloadBuilder", () => {
 	it("maps construction types to canonical restoration types", () => {

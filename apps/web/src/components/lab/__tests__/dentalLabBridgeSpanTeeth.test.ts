@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { getBridgeSpanTeeth } from "../DentalLabFdiOdontogramPicker";
+import { getBridgeSpanTeeth } from "../dentalLabCatalogData";
 
 describe("dentalLabBridgeSpanTeeth — Bridge Span Expansion Algorithm", () => {
 	it("расширяет мостовидный пролет в пределах одного квадранта В/Ч (14 и 16 -> 14, 15, 16)", () => {

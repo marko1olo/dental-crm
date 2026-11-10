@@ -1,6 +1,8 @@
 import { relations } from "drizzle-orm";
 import { organizations, users } from "./auth.js";
+import { treatmentPlans } from "./clinical/treatmentPlansSchema.js";
 import { patients } from "./patients.js";
+import { appointments } from "./schedule/appointmentsTable.js";
 import {
 	labItems,
 	labOrders,
@@ -19,6 +21,14 @@ export const labOrdersRelations = relations(labOrders, ({ one, many }) => ({
 	patient: one(patients, {
 		fields: [labOrders.patientId],
 		references: [patients.id],
+	}),
+	treatmentPlan: one(treatmentPlans, {
+		fields: [labOrders.treatmentPlanId],
+		references: [treatmentPlans.id],
+	}),
+	appointment: one(appointments, {
+		fields: [labOrders.appointmentId],
+		references: [appointments.id],
 	}),
 	doctor: one(users, {
 		fields: [labOrders.doctorId],

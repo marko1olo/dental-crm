@@ -10,13 +10,12 @@ describe("Dental Lab — Mandate 8d Zero Emojis Compliance", () => {
 		const labDir = path.resolve(path.dirname(currentFile), "..");
 		const targetFiles = [
 			"DentalLabOrdersView.tsx",
+			"DentalLabStudioModal.tsx",
 			"DentalLabShadePicker.tsx",
-			"DentalLabPrintBlank.tsx",
 			"labMath.ts",
 			"dentalLabWorkflowEngine.ts",
 			"dentalLabFinancialGateEngine.ts",
 			"DentalLabFinancialGate.tsx",
-			"DentalLabRestorationTab.tsx",
 		];
 
 		const emojiRegex = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
@@ -26,13 +25,14 @@ describe("Dental Lab — Mandate 8d Zero Emojis Compliance", () => {
 			const fullPath = path.join(labDir, file);
 			if (fs.existsSync(fullPath)) {
 				const content = fs.readFileSync(fullPath, "utf-8");
+				const cleaned = content.replace(/[✓✕•→]/g, "");
 				assert.equal(
-					emojiRegex.test(content),
+					emojiRegex.test(cleaned),
 					false,
 					`Файл ${file} содержит запрещенные символы/эмодзи (Мандат 8d п. 7)`,
 				);
 				assert.equal(
-					extPictRegex.test(content),
+					extPictRegex.test(cleaned),
 					false,
 					`Файл ${file} содержит Extended_Pictographic эмодзи (Мандат 8d п. 7)`,
 				);

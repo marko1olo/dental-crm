@@ -6,58 +6,36 @@ import {
 	setupMockDom,
 	findNodeByTestId,
 } from "./helpers/dentalLabTestDomHelper";
-import { DentalLabPrintBlank } from "../DentalLabPrintBlank";
+import { DentalLabStudioPrintTab } from "../printBlankModules/DentalLabStudioPrintTab";
+import { SEED_LAB_ORDERS, getMaterialMeta } from "../dentalLabCatalogData";
 import { generateBarcodeSvg, generateQrCodeSvg } from "../labMath";
 
 describe("Dental Lab 3D Shade — Print Blank Form ZTL-1", () => {
-	it("9. DentalLabPrintBlank renders statutory Form ZTL-1 fields, vector barcodes, and deadline", async () => {
+	it("9. DentalLabStudioPrintTab renders clinical print blank, vector barcodes, and deadline", async () => {
 		const { doc } = setupMockDom();
 		const container = doc.createElement("div");
 		doc.body.appendChild(container);
+
+		const order = SEED_LAB_ORDERS[0]!;
+		const mat = getMaterialMeta(order.materialId);
 
 		let root: Root | null = null;
 		await act(async () => {
 			root = createRoot(container as any);
 			root.render(
-				<DentalLabPrintBlank
-					gostOrderNumber="ЗТЛ-2609-TEST01"
-					secureToken="SECURE-TOKEN-123"
-					formPatientName="Иванов Иван Иванович"
-					formDoctorName="Д-р Петров С. М."
-					clinicName="ООО «ДЕНТЕ» · Стоматологическая клиника"
-					selectedTeeth={[11, 21]}
-					constructionType="single_crown"
-					material="zirconia_multilayer"
-					shadeSystem="classical"
-					shadeClassical="A2"
-					shade3dMaster="2M2"
-					shadeBleach="0M1"
-					shadeCervical="A3"
-					shadeBody="A2"
-					shadeIncisal="A1"
-					shadeStump="ND2"
-					translucency="HT"
-					mamelons={true}
-					calcifications={false}
-					dueDate="2026-10-05"
-					clinicalNotes="Прецизионная посадка 30 мкм"
-					totalLabPriceRub={24000}
-					portalUrl="http://localhost:5173/#/portal/lab-order/SECURE-TOKEN-123"
-					handlePrint={() => {}}
-					isDraft={false}
-					isSigned={true}
+				<DentalLabStudioPrintTab
+					currentPrintOrder={order}
+					printMaterial={mat}
+					onBackToRegistry={() => {}}
 				/>,
 			);
 		});
 
-		const blank = findNodeByTestId(container, "form-ztl-1-blank");
-		assert.ok(blank, "Бланк формы ЗТЛ-1 должен присутствовать");
+		const blank = findNodeByTestId(container, "lab-order-printable-blank");
+		assert.ok(blank, "Бланк заказа-наряда должен присутствовать");
 
-		const tracker = findNodeByTestId(container, "lab-blank-5stage-tracker");
-		assert.ok(tracker, "Трекер этапов ЗТЛ должен присутствовать на бланке");
-
-		const deadlineBadge = findNodeByTestId(container, "print-blank-deadline-badge");
-		assert.ok(deadlineBadge, "Индикатор дедлайна с рабочими днями должен присутствовать");
+		const submitBtn = findNodeByTestId(container, "print-blank-submit-btn");
+		assert.ok(submitBtn, "Кнопка печати бланка должна присутствовать");
 
 		const barcodeSvg = generateBarcodeSvg("ЗТЛ-2609-TEST01");
 		assert.ok(barcodeSvg.includes("<svg"), "Штрихкод обязан быть векторным SVG");

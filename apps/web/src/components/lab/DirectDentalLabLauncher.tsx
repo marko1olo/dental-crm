@@ -14,19 +14,16 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 export function checkIsLabActive(): boolean {
 	if (typeof window === "undefined") return false;
 	const s = window.location.search || "", h = (window.location.hash || "").toLowerCase();
-	return (
-		s.includes("standalone=dental_lab") || s.includes("standalone=lab_order") || s.includes("standalone=lab_hub") ||
+	return s.includes("standalone=dental_lab") || s.includes("standalone=lab_order") || s.includes("standalone=lab_hub") ||
 		s.includes("tab=lab") || s.includes("lab=1") || s.includes("dental-lab=1") ||
 		h === "#lab" || h === "#ztl" || h === "#dental-lab" || h === "#lab-studio" || h === "#lab-orders" ||
-		h.includes("dental-lab") || h.includes("dental_lab") || h.includes("lab_order")
-	);
+		h.includes("dental-lab") || h.includes("dental_lab") || h.includes("lab_order");
 }
 
 export const DirectDentalLabLauncher: React.FC = () => {
 	const { hasDentalLab } = useWorkspaceProfile();
 	const [isActive, setIsActive] = useState<boolean>(() => checkIsLabActive());
-	const [isOpen, setIsOpen] = useState<boolean>(true);
-	const [initialToothFdi, setInitialToothFdi] = useState<string>("16");
+	const [isOpen, setIsOpen] = useState<boolean>(true); const [initialToothFdi, setInitialToothFdi] = useState<string>("16");
 
 	const handleOpen = useCallback((e?: Event) => {
 		const detail = (e as CustomEvent)?.detail;
@@ -69,7 +66,12 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
 			{isOrderModal ? (
-				<DentalLabOrderModal isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi} patientName="Ковалев Дмитрий Сергеевич" doctorName="Д-р Смирнова Е. В. (Ортопед)" stageNumber={2} stageTitle="Ортопедический этап" />
+				<DentalLabOrderModal
+					isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi}
+					patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
+					doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
+					stageNumber={2} stageTitle="Ортопедический этап"
+				/>
 			) : (
 				<DentalLabStudioModal isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi} />
 			)}
@@ -77,6 +79,5 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	);
 };
 
-export const DirectLabLauncher = DirectDentalLabLauncher;
-export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;
+export const DirectLabLauncher = DirectDentalLabLauncher; export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;
 export default DirectDentalLabLauncher;

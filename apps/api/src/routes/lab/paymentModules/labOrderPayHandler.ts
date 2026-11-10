@@ -1,4 +1,4 @@
-import { positiveMoneyRubSchema } from "@dental/shared";
+import { kopecksToRub, positiveMoneyRubSchema } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
@@ -56,6 +56,14 @@ export async function labOrderPayHandler(
 		return reply.code(400).send({
 			error: "InvalidAmount",
 			message: "Сумма оплаты заказ-наряда ЗТЛ должна быть больше нуля.",
+		});
+	}
+	if (result.kind === "amount_exceeds_cost") {
+		const maxRub = kopecksToRub(result.maxAllowedKopecks);
+		return reply.code(400).send({
+			error: "AmountExceedsCost",
+			message: `Сумма списания технику не может превышать себестоимость наряда ЗТЛ (${maxRub} ₽). Розница пациента неприкосновенна!`,
+			maxAllowedRub: maxRub,
 		});
 	}
 	if (result.kind === "no_cash_box") {

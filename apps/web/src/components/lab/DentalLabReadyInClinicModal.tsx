@@ -29,7 +29,7 @@ export interface ReadyInClinicLabOrder {
 export function generateReadyInClinicSmsTemplate(
 	order: ReadyInClinicLabOrder,
 	clinicName = "DENTE",
-	clinicPhone = "+7 (495) 000-00-00",
+	clinicPhone = order.clinicPhone || "",
 ): string {
 	return generateOrthopedicReadyMessage({
 		patientName: order.patientName,
@@ -46,7 +46,7 @@ export function generateReadyInClinicSmsTemplate(
 export function generateReadyInClinicWhatsAppTemplate(
 	order: ReadyInClinicLabOrder,
 	clinicName = "DENTE",
-	clinicPhone = "+7 (495) 000-00-00",
+	clinicPhone = order.clinicPhone || "",
 	bookingUrl = "https://dente.ru/book",
 ): string {
 	return generateOrthopedicReadyMessage({

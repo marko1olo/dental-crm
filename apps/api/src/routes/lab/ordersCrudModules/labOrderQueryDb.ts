@@ -15,6 +15,8 @@ export async function selectLabOrdersQuery(
 			id: labOrders.id,
 			patientId: labOrders.patientId,
 			patientName: patients.fullName,
+			treatmentPlanId: labOrders.treatmentPlanId,
+			appointmentId: labOrders.appointmentId,
 			doctorId: labOrders.doctorId,
 			doctorName: sql<string | null>`coalesce(${users.fullName}, ${labOrders.doctorName})`,
 			laboratoryName: labOrders.laboratoryName,
@@ -52,7 +54,7 @@ export async function selectLabOrdersQuery(
 
 	return rows.map((r) => ({
 		...r,
-		laboratoryName: r.laboratoryName || "Арт-Дент Лаб (CAD/CAM центр)",
+		laboratoryName: r.laboratoryName || null,
 		priceKopecks: Math.round(Number(r.priceRub ?? 0) * 100),
 		amountKopecks: Math.round(Number(r.priceRub ?? 0) * 100),
 		labCostKopecks: Math.round(Number(r.labCostRub ?? 0) * 100),

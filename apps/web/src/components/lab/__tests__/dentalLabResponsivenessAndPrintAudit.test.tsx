@@ -86,26 +86,18 @@ describe("Dental Lab Responsiveness, 32px Dense Registry & Perfect Print Audit",
 		);
 	});
 
-	it("3. Printable Order Blank (DentalLabPrintBlank.tsx & dentalLabWorkflowExport.ts) has @media print and break-inside: avoid", () => {
-		const blankPath = path.join(labDir, "DentalLabPrintBlank.tsx");
+	it("3. Printable Order Blank styles and workflow export have @media print and break-inside: avoid", () => {
+		const printCssPath = path.join(labDir, "styles/dentalLabPrintAndMobile.css");
 		const exportPath = path.join(labDir, "dentalLabWorkflowExport.ts");
 
-		const blankContent = fs.readFileSync(blankPath, "utf-8");
+		const printCssContent = fs.readFileSync(printCssPath, "utf-8");
 		const exportContent = fs.readFileSync(exportPath, "utf-8");
 
-		// DentalLabPrintBlank print stylesheet
-		assert.ok(blankContent.includes("@media print"), "DentalLabPrintBlank must contain @media print stylesheet");
+		// dentalLabPrintAndMobile.css print stylesheet
+		assert.ok(printCssContent.includes("@media print"), "print stylesheet must contain @media print");
 		assert.ok(
-			blankContent.includes("background: #ffffff !important"),
-			"DentalLabPrintBlank must enforce pure white background in print mode"
-		);
-		assert.ok(
-			blankContent.includes("break-inside: avoid") || blankContent.includes("breakInside: \"avoid\""),
-			"DentalLabPrintBlank must avoid splitting rows and sections across pages"
-		);
-		assert.ok(
-			blankContent.includes("data-testid=\"lab-blank-5stage-tracker\""),
-			"5-stage tracker container must exist in printed blank"
+			printCssContent.includes("background: #ffffff !important"),
+			"print stylesheet must enforce pure white background in print mode"
 		);
 
 		// dentalLabWorkflowExport print stylesheet

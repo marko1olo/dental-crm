@@ -123,7 +123,7 @@ export {
 	type DentalLabFinancialGateResult,
 } from "./dentalLabFinancialGateEngine";
 
-// Shading, Odontogram & Print Blanks
+// Shading, Odontogram & Catalogs
 export {
 	DentalLabShadePicker,
 	type DentalLabShadePickerProps,
@@ -132,20 +132,10 @@ export {
 } from "./DentalLabShadePicker";
 
 export {
-	DentalLabFdiOdontogramPicker,
-} from "./DentalLabFdiOdontogramPicker";
-
-export {
-	DentalLabRestorationTab,
-} from "./DentalLabRestorationTab";
-
-export {
-	DentalLabStagesTab,
-} from "./DentalLabStagesTab";
-
-export {
-	DentalLabPrintBlank,
-} from "./DentalLabPrintBlank";
+	CHAIRSIDE_EXPRESS_PRESETS,
+	VITA_EXPRESS_SHADES,
+	getBridgeSpanTeeth,
+} from "./dentalLabCatalogData";
 
 // Helper utilities & Domain Types
 export {

@@ -131,7 +131,9 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 	it("2.1. Validates LabStudioModal structure and Mandate 8am (Single Primary CTA #0d9488)", () => {
 		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
 		assert.ok(fs.existsSync(modalPath), "DentalLabStudioModal.tsx must exist");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const content =
+			fs.readFileSync(modalPath, "utf-8") +
+			fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
 
 		// Заголовок и клиническая терминология (Мандат 8x)
 		assert.ok(
@@ -166,7 +168,9 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 
 	it("2.2. Validates Doctor Autonomy & Express Order 1-Click Form (Mandate 8e)", () => {
 		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const content =
+			fs.readFileSync(modalPath, "utf-8") +
+			fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
 
 		// Экспресс-создание наряда у кресла
 		assert.ok(

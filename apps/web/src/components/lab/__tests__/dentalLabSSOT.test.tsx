@@ -63,7 +63,9 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 		});
 
 		it("1.3. Enforces Doctor Autonomy (Mandate 8e) & Single Primary CTA #0d9488 (Mandate 8am)", () => {
-			const content = fs.readFileSync(studioPath, "utf-8");
+			const content =
+				fs.readFileSync(studioPath, "utf-8") +
+				fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
 			assert.ok(content.includes('data-testid="submit-lab-order-button"'), "Must have submit button");
 			assert.ok(content.includes("✓ Создать заказ-наряд"), "Must feature action caption");
 			assert.ok(content.includes("var(--teal"), "Primary CTA must use teal #0d9488");
@@ -172,6 +174,11 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 				"hub/dentalLabHubSampleOrders.ts",
 				"hub/useDentalLabHubActions.ts",
 				"hub/useDentalLabHubData.ts",
+				"DentalLabExpressConfigurator.tsx",
+				"DentalLabFdiOdontogramPicker.tsx",
+				"DentalLabStagesTab.tsx",
+				"DentalLabRestorationTab.tsx",
+				"DentalLabPrintBlank.tsx",
 			];
 			for (const file of deletedFiles) {
 				assert.ok(!fs.existsSync(path.resolve(labDir, file)), `Clone ${file} must NOT exist on disk!`);

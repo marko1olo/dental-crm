@@ -10,7 +10,7 @@ import {
 	validateLabOrderInput,
 	isValidVitaShade,
 	type LabOrderValidationInput,
-} from "../orderSaveModules/labOrderValidator";
+} from "@dental/shared";
 
 describe("dentalLabOrderValidator", () => {
 	it("validates VITA shades correctly (Classical, Bleach, 3D-Master)", () => {

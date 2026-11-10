@@ -16,6 +16,7 @@ export type LabOrderPayResult =
 	| { readonly kind: "order_not_found" }
 	| { readonly kind: "already_paid" }
 	| { readonly kind: "invalid_amount" }
+	| { readonly kind: "amount_exceeds_cost"; readonly maxAllowedKopecks: number }
 	| { readonly kind: "no_cash_box" }
 	| {
 			readonly kind: "ok";
@@ -42,6 +43,15 @@ export async function executeLabOrderPayment(
 
 		const amountToPayKopecks = resolveAmountToPayKopecks(input, order);
 		if (amountToPayKopecks <= 0) return { kind: "invalid_amount" as const };
+
+		// Защита розницы клиники (Мандат 8e / Кассовая безопасность):
+		// Списание технику из кассы не может превышать себестоимость наряда ЗТЛ!
+		if (order.labCostRub != null && Number(order.labCostRub) > 0) {
+			const maxAllowedKopecks = rubToKopecks(order.labCostRub);
+			if (amountToPayKopecks > maxAllowedKopecks) {
+				return { kind: "amount_exceeds_cost" as const, maxAllowedKopecks };
+			}
+		}
 
 		const targetBox = await resolveTargetCashBox(tx, orgId, input.cashBoxId);
 		if (!targetBox) return { kind: "no_cash_box" as const };

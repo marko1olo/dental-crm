@@ -27,7 +27,7 @@ export async function handleCreateExpressOrder(request: FastifyRequest, reply: F
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.write",
 			role: staffRole,
-			message: `Отказ в доступе к созданию наряда ЗТЛ (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+			message: `Недостаточно прав доступа для создания наряда лаборатории: ${evalAccess.reason}`,
 		});
 	}
 

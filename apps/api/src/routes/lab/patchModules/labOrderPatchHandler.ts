@@ -28,7 +28,7 @@ export async function patchLabOrderHandler(request: FastifyRequest, reply: Fasti
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.write",
 			role: staffRole,
-			message: `Отказ в обновлении наряда ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Недостаточно прав доступа для обновления наряда лаборатории: ${evalAccess.reason}`,
 		});
 	}
 

@@ -37,21 +37,17 @@ describe("Wave 243 — Presets & Form ZTL-1", () => {
 		assert.ok(presetIds.includes("emax_crown_express"));
 	});
 
-	it("4. Form ZTL-1 (ГОСТ Р 51087-97) 5-stage tracker and Mandate 8e/8s invariants", () => {
+	it("4. Form ZTL-1 5-stage tracker and Mandate 8e/8s invariants", () => {
 		const currentFile = fileURLToPath(import.meta.url);
 		const labDir = path.resolve(path.dirname(currentFile), "..");
-		const blankPath = path.join(labDir, "DentalLabPrintBlank.tsx");
-		const content = fs.readFileSync(blankPath, "utf-8");
+		const catalogPath = path.join(labDir, "dentalLabCatalogData.ts");
+		const content = fs.readFileSync(catalogPath, "utf-8");
 
-		assert.ok(content.includes('data-testid="lab-blank-5stage-tracker"'));
-		assert.ok(
-			content.includes("CANONICAL_5_CLINICAL_LAB_STATUSES") &&
-				content.includes("ztl-blank-stage-"),
-		);
-		assert.ok(
-			content.includes("Срок плана лечения (>30 дн.) не блокирует наряды ЗТЛ") ||
-				content.includes("Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ"),
-		);
-		assert.ok(content.includes("ГОСТ Р 51087-97"));
+		assert.ok(content.includes("CANONICAL_LAB_STAGES"));
+		assert.ok(content.includes("scan_sent"));
+		assert.ok(content.includes("in_production"));
+		assert.ok(content.includes("fitting_ready"));
+		assert.ok(content.includes("in_clinic"));
+		assert.ok(content.includes("seated"));
 	});
 });

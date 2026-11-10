@@ -36,7 +36,7 @@ export function processAptLabOrders(
 ): { aptLabItems: DoctorEarningsLabOrderItem[]; aptLabKop: number } {
 	const aptLabOrdersList = dbLabOrders.filter((lo) => {
 		if (!PAID_LAB_STATUSES.has(String(lo.status))) return false;
-		if (aptId && lo.appointmentId) {
+		if (aptId) {
 			return lo.appointmentId === aptId;
 		}
 		return lo.patientId === aptPatientId;

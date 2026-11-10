@@ -6,13 +6,13 @@ import type { LiveCalculationInput } from "../../doctorEarnings/liveEarningsType
 import { calculateLabOrderCostAndMarkup } from "./labOrderCostCalculator.js";
 
 describe("Red Team Inquisition: LAB-01..05 Subsystem Consolidation & Defense", () => {
-	it("[LAB-05]: mapStageToLabOrderStatus maps routine clinic fitting to 'received', NOT 'refitting'", () => {
-		// Рутинная примерка во рту в клинике обязана мапиться в received
-		assert.equal(mapStageToLabOrderStatus("fitting"), "received");
-		assert.equal(mapStageToLabOrderStatus("fitting_scheduled"), "received");
-		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "received");
-		assert.equal(mapStageToLabOrderStatus("Примерка"), "received");
-		assert.equal(mapStageToLabOrderStatus("Примерка во рту"), "received");
+	it("[LAB-05]: mapStageToLabOrderStatus maps routine clinic fitting to 'fitted', NOT 'refitting'", () => {
+		// Рутинная примерка во рту в клинике обязана мапиться в fitted (канонический статус 0231)
+		assert.equal(mapStageToLabOrderStatus("fitting"), "fitted");
+		assert.equal(mapStageToLabOrderStatus("fitting_scheduled"), "fitted");
+		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "fitted");
+		assert.equal(mapStageToLabOrderStatus("Примерка"), "fitted");
+		assert.equal(mapStageToLabOrderStatus("Примерка во рту"), "fitted");
 
 		// Только реальный брак и рекламации мапятся в refitting
 		assert.equal(mapStageToLabOrderStatus("correction_remake"), "refitting");

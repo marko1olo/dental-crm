@@ -18,7 +18,6 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
 	const labName = (order as any).labName || "Центральная CAD/CAM лаборатория";
 	const techName = (order as any).technicianName || "Дежурный техник";
-	const labPhone = (order as any).labPhone || (order as any).patientPhone || "+7 (999) 450-23-11";
 	const stageIdx = getOrderStageIndex(order);
 	const deadline = formatMobileDeadlineAndTimer(order);
 	const isWarranty = (order as any).isWarrantyRework || order.status === "refitting" || order.priceRub === 0;

@@ -66,7 +66,8 @@ export const createLabOrderSchema = z.object({
 		.string()
 		.optional()
 		.nullable()
-		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null)),
+		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null))
+		.optional(),
 	patientName: z.string().trim().optional().nullable(),
 	treatmentPlanId: z.string().uuid().optional().nullable(),
 	appointmentId: z.string().uuid().optional().nullable(),
@@ -76,7 +77,8 @@ export const createLabOrderSchema = z.object({
 		.string()
 		.optional()
 		.nullable()
-		.transform((val) => (val && val !== "doc-current" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null)),
+		.transform((val) => (val && val !== "doc-current" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null))
+		.optional(),
 	doctorName: z.string().trim().optional().nullable(),
 	toothFdi: toothFdiSchema.optional().nullable(),
 	teethFdi: toothFdiSchema.optional().nullable(),
