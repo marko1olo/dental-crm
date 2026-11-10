@@ -2,7 +2,7 @@ import type { OrthodonticProgressRecord } from "./types.js";
 
 /**
  * Парсит ортодонтические данные из профиля пациента.
- * DEF-ORTHO-02: Запрещена автоматическая подстановка 36 элайнеров здоровым людям.
+ * DEF-ORTHO-09: Запрещена автоматическая подстановка 36 элайнеров брекет-пациентам и здоровым людям.
  * Если у пациента нет активного ортодонтического лечения, возвращает null.
  */
 export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
@@ -25,13 +25,19 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		return null;
 	}
 
-	const currentAligner = Number(parsed.currentAligner ?? parsed.current);
-	const totalAligners = Number(parsed.totalAligners ?? parsed.total);
+	const currentAlignerNum = Number(parsed.currentAligner ?? parsed.current);
+	const totalAlignersNum = Number(parsed.totalAligners ?? parsed.total);
 	const currentStage = Number(parsed.currentStage ?? parsed.stage);
 
+	const hasAlignerSignals =
+		(Number.isFinite(currentAlignerNum) && currentAlignerNum > 0) ||
+		(Number.isFinite(totalAlignersNum) && totalAlignersNum > 0) ||
+		String(parsed.applianceCategory || "").includes("aligner") ||
+		String(parsed.lastActionSummary || "").includes("элайнер") ||
+		String(parsed.lastActionSummary || "").includes("кап");
+
 	const hasOrthoSignals =
-		(Number.isFinite(currentAligner) && currentAligner > 0) ||
-		(Number.isFinite(totalAligners) && totalAligners > 0) ||
+		hasAlignerSignals ||
 		(Number.isFinite(currentStage) && currentStage > 0) ||
 		Boolean(parsed.archwire) ||
 		Boolean(parsed.elastics) ||
@@ -43,8 +49,12 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 	}
 
 	return {
-		currentAligner: Number.isFinite(currentAligner) && currentAligner > 0 ? currentAligner : 1,
-		totalAligners: Number.isFinite(totalAligners) && totalAligners > 0 ? totalAligners : 36,
+		currentAligner: hasAlignerSignals
+			? (Number.isFinite(currentAlignerNum) && currentAlignerNum > 0 ? currentAlignerNum : 1)
+			: undefined,
+		totalAligners: hasAlignerSignals
+			? (Number.isFinite(totalAlignersNum) && totalAlignersNum > 0 ? totalAlignersNum : 24)
+			: undefined,
 		startDate: String(parsed.startDate ?? parsed.start ?? (new Date().toISOString().split("T")[0] ?? "")),
 		currentStage: Number.isFinite(currentStage) && currentStage > 0 ? currentStage : 1,
 		stageTitle: parsed.stageTitle ? String(parsed.stageTitle) : "Диагностика и начало нивелирования",
@@ -52,22 +62,24 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		elastics: parsed.elastics ? String(parsed.elastics) : undefined,
 		lastActionDate: parsed.lastActionDate ? String(parsed.lastActionDate) : undefined,
 		lastActionSummary: parsed.lastActionSummary ? String(parsed.lastActionSummary) : undefined,
-		wearDaysPerAligner: Number(parsed.wearDaysPerAligner) || 14,
+		wearDaysPerAligner: hasAlignerSignals ? (Number(parsed.wearDaysPerAligner) || 14) : undefined,
 		nextVisitRecommendedDate: parsed.nextVisitRecommendedDate ? String(parsed.nextVisitRecommendedDate) : undefined,
 	};
 }
 
 export function createInitialOrthoRecord(params?: {
+	applianceCategory?: "brackets" | "aligners" | "plate" | undefined;
 	totalAligners?: number | undefined;
 	wearDaysPerAligner?: number | undefined;
 }): OrthodonticProgressRecord {
+	const isAligners = params?.applianceCategory === "aligners" || Boolean(params?.totalAligners);
 	return {
-		currentAligner: 1,
-		totalAligners: params?.totalAligners || 36,
+		currentAligner: isAligners ? 1 : undefined,
+		totalAligners: isAligners ? (params?.totalAligners || 24) : undefined,
 		startDate: new Date().toISOString().split("T")[0] || "",
 		currentStage: 1,
 		stageTitle: "Диагностика и начало нивелирования",
-		wearDaysPerAligner: params?.wearDaysPerAligner || 14,
+		wearDaysPerAligner: isAligners ? (params?.wearDaysPerAligner || 14) : undefined,
 	};
 }
 

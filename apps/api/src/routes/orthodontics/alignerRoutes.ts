@@ -50,13 +50,15 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
 			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord({
+				applianceCategory: "aligners",
 				totalAligners: body.totalAligners,
 				wearDaysPerAligner: body.wearDaysPerAligner,
 			});
 
-			const effectiveTotal = body.totalAligners || currentProgress.totalAligners;
-			const fromAligner = currentProgress.currentAligner;
-			const toAligner = Math.min(effectiveTotal, fromAligner + body.alignerCount);
+			const effectiveTotal = body.totalAligners || currentProgress.totalAligners || 24;
+			const fromAligner = currentProgress.currentAligner || 1;
+			// DEF-ORTHO-08: Устранение fencepost-ошибки: диапазон выдачи строго from .. from + count - 1
+			const toAligner = Math.min(effectiveTotal, fromAligner + body.alignerCount - 1);
 			const totalDays = body.alignerCount * body.wearDaysPerAligner;
 			const nextDate = calculateNextDate(totalDays);
 			const actionSummary = `Выдан сет элайнеров №${fromAligner}–${toAligner} (+${totalDays} дн. до ${nextDate})`;

@@ -12,9 +12,23 @@ export const issueAlignerSetSchema = z.object({
 });
 
 export const archwireChangeSchema = z.object({
-	material: z.enum(["NiTi", "CuNiTi", "SS", "TMA"]),
+	material: z.enum(["NiTi", "CuNiTi", "SS", "TMA", "niti", "cuniti", "ss", "tma"]).transform((m) => {
+		const map: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
+			niti: "NiTi",
+			cuniti: "CuNiTi",
+			ss: "SS",
+			tma: "TMA",
+			NiTi: "NiTi",
+			CuNiTi: "CuNiTi",
+			SS: "SS",
+			TMA: "TMA",
+		};
+		return map[m] || "NiTi";
+	}),
 	section: z.string().min(1).max(30),
 	arch: z.enum(["upper", "lower", "both"]).default("both"),
+	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
+	isWireChange: z.boolean().default(true),
 	note: z.string().max(300).optional(),
 });
 
@@ -82,8 +96,8 @@ export interface OrthoMaterialDeductionResult {
 }
 
 export interface OrthodonticProgressRecord extends Record<string, unknown> {
-	currentAligner: number;
-	totalAligners: number;
+	currentAligner?: number | undefined;
+	totalAligners?: number | undefined;
 	startDate: string;
 	currentStage: number;
 	stageTitle?: string | undefined;

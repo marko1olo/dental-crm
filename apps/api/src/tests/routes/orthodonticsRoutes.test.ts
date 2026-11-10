@@ -100,17 +100,17 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 				alignerCount: 2,
 				wearDaysPerAligner: 14,
 				totalAligners: 36,
-				note: "Сдача капп №1-3",
+				note: "Сдача капп №1-2",
 			},
 		});
 
 		assert.equal(res.statusCode, 200);
 		const body = JSON.parse(res.body);
 		assert.equal(body.success, true);
-		assert.equal(body.issuedRange, "№1–3");
+		assert.equal(body.issuedRange, "№1–2");
 		assert.ok(body.nextVisitRecommendedDate);
-		assert.ok(body.actionSummary.includes("Выдан сет элайнеров №1–3"));
-		assert.equal(body.progress.currentAligner, 3);
+		assert.ok(body.actionSummary.includes("Выдан сет элайнеров №1–2"));
+		assert.equal(body.progress.currentAligner, 2);
 
 		// Проверяем гидратацию: теперь GET возвращает 200 и актуальный прогресс
 		const progressRes = await app.inject({
@@ -122,7 +122,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const progressBody = JSON.parse(progressRes.body);
 		assert.equal(progressBody.patientId, PATIENT_ID);
 		assert.equal(progressBody.patientName, "Смирнова Екатерина Васильевна");
-		assert.equal(progressBody.currentAligner, 3);
+		assert.equal(progressBody.currentAligner, 2);
 	});
 
 	it("3. POST /api/orthodontics/:patientId/archwire-change records archwire change in 1 click", async (t) => {
@@ -146,6 +146,28 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(body.archwire, 'CuNiTi .016" (ВЧ + НЧ)');
 		assert.ok(body.actionSummary.includes("Смена дуги: CuNiTi .016\" (ВЧ + НЧ)"));
 		assert.equal(body.progress.archwire, 'CuNiTi .016" (ВЧ + НЧ)');
+		assert.ok(body.deduction);
+		assert.equal(body.deduction.success, true);
+
+		// DEF-ORTHO-10: Для съемных пластинок или без смены дуги расходник не списывается (deduction: null)
+		const plateRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: ORG_HEADERS,
+			payload: {
+				material: "niti", // DEF-ORTHO-11: lowercase normalisation
+				section: ".014",
+				arch: "upper",
+				applianceCategory: "plate",
+				isWireChange: false,
+				note: "Контроль пластинки без смены дуги",
+			},
+		});
+		assert.equal(plateRes.statusCode, 200);
+		const plateBody = JSON.parse(plateRes.body);
+		assert.equal(plateBody.success, true);
+		assert.equal(plateBody.archwire, 'NiTi .014" (ВЧ)');
+		assert.equal(plateBody.deduction, null);
 	});
 
 	it("4. POST /api/orthodontics/:patientId/ligatures-activate records activation & Power Chain", async (t) => {

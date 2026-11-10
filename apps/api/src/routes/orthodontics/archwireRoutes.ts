@@ -36,20 +36,25 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				orthodonticProgress: updatedProgress,
 			});
 
+			const isPlate = body.applianceCategory === "plate";
+			const shouldDeductWire = Boolean(body.isWireChange && !isPlate);
+
 			const archwireQty = body.arch === "both" ? 2 : 1;
-			// DEF-ORTHO-06: Расчет стоимости в копейках BIGINT (120 000 коп = 1 200 руб)
-			const deduction = await deductOrthoMaterialSafely({
-				organizationId: orgId,
-				patientId,
-				itemNamePattern: body.material,
-				defaultItemName: `Дуга ортодонтическая ${body.material} ${body.section}"`,
-				category: "ortho_archwire",
-				quantity: archwireQty,
-				unit: "шт.",
-				unitCostKopecks: 120_000n,
-				unitCostRub: 1200,
-				notes: `Смена дуги: ${archwireStr}`,
-			});
+			// DEF-ORTHO-06 / DEF-ORTHO-10: Расчет стоимости в копейках BIGINT, списание только если не съемная пластинка и isWireChange === true
+			const deduction = shouldDeductWire
+				? await deductOrthoMaterialSafely({
+						organizationId: orgId,
+						patientId,
+						itemNamePattern: body.material,
+						defaultItemName: `Дуга ортодонтическая ${body.material} ${body.section}"`,
+						category: "ortho_archwire",
+						quantity: archwireQty,
+						unit: "шт.",
+						unitCostKopecks: 120_000n,
+						unitCostRub: 1200,
+						notes: `Смена дуги: ${archwireStr}`,
+				  })
+				: null;
 
 			return reply.send({ success: true, archwire: archwireStr, actionSummary, progress: updatedProgress, deduction });
 		},
