@@ -9,17 +9,18 @@ import { Check, Cpu, Eye, EyeOff, KeyRound, Loader2, Server, Sparkles, Zap, Hard
 import type { AiProvider, ModelRoutingMode } from "../../../store/copilotStore";
 
 export const MODERN_BYOK_MODELS: Array<{ id: string; provider: AiProvider; label: string; note: string }> = [
-	{ id: "gemini-2.5-flash", provider: "gemini", label: "Gemini 2.5 Flash", note: "Основная рабочая модель" },
-	{ id: "gemini-2.0-flash-lite", provider: "gemini", label: "Gemini 2.0 Flash-Lite", note: "Сверхбыстрый chairside-отклик (<300 мс)" },
-	{ id: "gemini-2.5-pro", provider: "gemini", label: "Gemini 2.5 Pro", note: "Сбалансированный клинический анализ" },
+	{ id: "gemini-3.6-flash", provider: "gemini", label: "Gemini 3.6 Flash", note: "Основной интеллект (SOTA Flash)" },
+	{ id: "gemini-3.5-flash-lite", provider: "gemini", label: "Gemini 3.5 Flash-Lite", note: "Сверхбыстрый chairside-отклик (<300 мс)" },
+	{ id: "gemini-3.8-flash", provider: "gemini", label: "Gemini 3.8 Flash", note: "Глубокий клинический анализ и КЛКТ" },
+	{ id: "gemini-3.5-flash", provider: "gemini", label: "Gemini 3.5 Flash", note: "Сбалансированный клинический анализ" },
 	{ id: "claude-3-5-sonnet", provider: "anthropic", label: "Claude 3.5 Sonnet", note: "Флагман Anthropic (CoT Reasoner)" },
 	{ id: "gpt-4o", provider: "openai", label: "OpenAI GPT-4o", note: "Мультимодальный клинический разбор" },
 	{ id: "deepseek-r1", provider: "deepseek", label: "DeepSeek R1", note: "Глубокая цепочка рассуждений" },
 ];
 
 export const SERVER_MANAGED_TIERS = [
-	{ id: "smart_flash", title: "Smart Flash Tier (Gemini 2.5 Flash)", badge: "Основной", note: "Максимальный интеллект, томография КЛКТ, дифдиагноз, протоколы.", icon: Sparkles },
-	{ id: "chairside_lite", title: "Lite Fast Tier (Gemini 2.0 Flash-Lite)", badge: "<300 мс", note: "Сверхбыстрый отклик у кресла врача для разметки зубной формулы FDI и заметок.", icon: Zap },
+	{ id: "smart_flash", title: "Smart Flash Tier (Gemini 3.6 Flash)", badge: "Основной", note: "Максимальный интеллект, томография КЛКТ, дифдиагноз, хирургия, протоколы.", icon: Sparkles },
+	{ id: "chairside_lite", title: "Lite Fast Tier (Gemini 3.5 Flash-Lite)", badge: "<300 мс", note: "Сверхбыстрый отклик у кресла врача для разметки зубной формулы FDI и заметок (квота 500 RPD).", icon: Zap },
 	{ id: "local_fallback", title: "Локальный детерминированный роутер", badge: "Офлайн 100%", note: "Автономная работа без интернета и облака на базе стандартов СтАР.", icon: HardDrive },
 ];
 

@@ -59,7 +59,7 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		assert.ok(SERVER_MANAGED_TIERS.some((t) => t.id === "chairside_lite"));
 		assert.ok(SERVER_MANAGED_TIERS.some((t) => t.id === "local_fallback"));
 
-		assert.ok(MODERN_BYOK_MODELS.some((m) => m.id === "gemini-2.5-flash"));
+		assert.ok(MODERN_BYOK_MODELS.some((m) => m.id === "gemini-3.6-flash"));
 		assert.ok(MODERN_BYOK_MODELS.some((m) => m.id === "claude-3-5-sonnet"));
 		assert.ok(MODERN_BYOK_MODELS.some((m) => m.id === "gpt-4o"));
 

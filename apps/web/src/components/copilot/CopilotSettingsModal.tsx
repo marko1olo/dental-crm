@@ -50,7 +50,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [modelRoutingMode, setModelRoutingMode] = useState<ModelRoutingMode>(settings.modelRoutingMode || "server_managed");
 	const [byokProvider, setByokProvider] = useState<AiProvider>(settings.byokProvider || "gemini");
 	const [byokApiKey, setByokApiKey] = useState<string>(settings.byokApiKey || "");
-	const [byokModel, setByokModel] = useState<string>(settings.byokModel || "gemini-2.5-flash");
+	const [byokModel, setByokModel] = useState<string>(settings.byokModel || "gemini-3.6-flash");
 	const [speedMode, setSpeedModeState] = useState<AiSpeedMode>(settings.speedMode);
 	const [showThinkingProcess, setShowThinkingState] = useState<boolean>(settings.showThinkingProcess);
 	const [showTypingAnimation, setShowTypingAnimation] = useState<boolean>(settings.showTypingAnimation ?? true);
