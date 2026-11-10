@@ -86,5 +86,4 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 }
 
 export { DEFAULT_VOID_REASON_TEXT, DEFAULT_VOID_STAFF_NAME, DEFAULT_VOID_STAFF_ROLE, executeDocumentVoidAutonomy, executeOpenLatestDocumentAutonomy } from "./components/documents/documentAutonomy";
-export { DocumentsOutpatientArchive } from "./components/documents/DocumentsOutpatientArchive";
 export default DocumentsView;

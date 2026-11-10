@@ -438,6 +438,9 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
           drugName: "Убистезин (Артикаин 4% + эпинефрин 1:200 000)",
           carpulesCount: 1,
           maxCarpules: 4,
+          patientWeightKg: 70,
+          epinephrineMcg: 17,
+          isCardiovascularRisk: false,
           applied: false,
         }}
       />

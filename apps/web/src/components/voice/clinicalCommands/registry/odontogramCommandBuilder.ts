@@ -29,7 +29,7 @@ export function buildOdontogramCommands(
 				category: "soap",
 				confidence: 0.98,
 				confidenceLevel: "high",
-				summary: "Соматический статус: Соматически здоров (норма в 1 клик)",
+				summary: "Соматический статус: Соматически здоров",
 				soapSection: "objective",
 				soapText: "Соматически здоров, сопутствующих соматических патологий не выявлено",
 			});

@@ -50,6 +50,16 @@ function clearEmrDeepLink(): void {
 	}
 }
 
+function getInitialEmrTab(): "overview" | "diaries" {
+	if (typeof window === "undefined") return "overview";
+	const h = (window.location.hash || "").toLowerCase();
+	const s = (window.location.search || "").toLowerCase();
+	if (h.includes("diary") || s.includes("diary") || h.includes("diaries") || s.includes("diaries")) {
+		return "diaries";
+	}
+	return "overview";
+}
+
 export const DirectEmrLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => checkEmrDeepLink());
 	const [customData, setCustomData] = useState<Partial<MedicalRecordData> | null>(null);
@@ -171,6 +181,7 @@ export const DirectEmrLauncher: React.FC = () => {
 			initialData={initialCardData}
 			onSave={handleSave}
 			isDraft={true}
+			initialTab={getInitialEmrTab()}
 		/>
 	);
 };

@@ -1,6 +1,8 @@
 /* Scrollable Content Body */
-.chairside-hud-body {
+.chairside-hud-body,
+.chairside-hud-expanded-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 10px;
   display: flex;

@@ -3,13 +3,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import "../../../../testCssStub.mjs";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal.js";
+import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal.js";
 import { ConsentStudioModal } from "../../consents/ConsentStudioModal.js";
 import { FnsTaxCertificateModal } from "../../finance/TaxDeductionCertificateModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
-import { PrescriptionBlankModal } from "../PrescriptionBlankModal.js";
+import { PrescriptionModal } from "../../prescriptions/PrescriptionModal.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,23 +45,27 @@ const mockClinicProfile = {
 };
 
 describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () => {
-	it("renders OutpatientCardPrintModal with 043/u layout and print buttons", () => {
+	it("renders MedicalRecordStudioModal with canonical layout and print buttons", () => {
 		const html = renderToString(
-			<OutpatientCardPrintModal
+			<MedicalRecordStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				patient={mockPatient}
-				doctorFullName="Воронов А.В."
-				clinicProfileDraft={mockClinicProfile}
-				isClosedOrSigned={false}
+				initialData={{
+					passport: {
+						patientFullName: mockPatient.fullName,
+						patientBirthDate: mockPatient.birthDate || "",
+						medicalCardNumber: "K-123456",
+						attendingDoctorFullName: "Воронов А.В.",
+					},
+				}}
+				isDraft={true}
 			/>,
 		);
 
-		assert.ok(html.includes("outpatient-card-print-modal"), "Must render modal container");
-		assert.ok(html.includes("Медицинская карта пациента"), "Must reference medical card in title");
+		assert.ok(html.includes("emr-studio-modal"), "Must render modal container");
+		assert.ok(html.includes("Медицинская карта приёма"), "Must reference medical card in title");
 		assert.ok(html.includes("ЧЕРНОВИК"), "Must show draft badge when not signed");
-		assert.ok(html.includes("Печать карты"), "Must render print button");
-		assert.ok(html.includes("Экспорт PDF"), "Must render PDF button");
+		assert.ok(html.includes("btn-emr-print-card"), "Must render print button");
 		assert.ok(html.includes("Иванов Иван Иванович"), "Must render patient name");
 	});
 
@@ -113,14 +118,13 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		assert.ok(html.includes("Печать справки"), "Must render print button");
 	});
 
-	it("renders PrescriptionBlankModal with human clinical header and Latin Recipe", () => {
+	it("renders PrescriptionModal with human clinical header and Latin Recipe", () => {
 		const html = renderToString(
-			<PrescriptionBlankModal
+			<PrescriptionModal
 				isOpen={true}
 				onClose={() => {}}
 				patient={mockPatient}
 				doctorName="Воронов А.В."
-				clinicProfileDraft={mockClinicProfile}
 			/>,
 		);
 
@@ -133,9 +137,9 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 	it("guarantees zero raw emojis in all 3 canonical components", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const files = [
-			"OutpatientCardPrintModal.tsx",
-			"PatientConsentSignDrawer.tsx",
-			"PrescriptionBlankModal.tsx",
+			"DocumentA4PrintPreviewModal.tsx",
+			"DirectDocumentsLauncher.tsx",
+			"ProfessionalDocumentA4Sheet.tsx",
 		];
 
 		for (const file of files) {
@@ -151,9 +155,9 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 	it("guarantees zero dev jargon ('в 1 клик', 'авто-генерация') in all 3 canonical components", () => {
 		const jargonRegex = /(в 1 клик|1-клик|авто-генерация|автогенерация)/i;
 		const files = [
-			"OutpatientCardPrintModal.tsx",
-			"PatientConsentSignDrawer.tsx",
-			"PrescriptionBlankModal.tsx",
+			"DocumentA4PrintPreviewModal.tsx",
+			"DirectDocumentsLauncher.tsx",
+			"ProfessionalDocumentA4Sheet.tsx",
 		];
 
 		for (const file of files) {

@@ -49,7 +49,7 @@ export function parseAgentApiResponse(
       title: String(s.thought || "").split("\n")[0] || `Итерация ${s.iteration}`,
       status: "done" as const,
       detail: String(s.thought || "").split("\n").slice(1).filter(Boolean).join(" • ") || undefined,
-      durationMs: 75,
+      ...(typeof s.durationMs === "number" ? { durationMs: s.durationMs } : {}),
     }));
   } else if (data.thought) {
     const lines = String(data.thought).split("\n\n").filter(Boolean);
@@ -59,7 +59,6 @@ export function parseAgentApiResponse(
       title: l.split("\n")[0] || `Шаг ${idx + 1}`,
       status: "done" as const,
       detail: l.split("\n").slice(1).join(" ") || undefined,
-      durationMs: 75,
     }));
   }
 

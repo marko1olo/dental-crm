@@ -9,7 +9,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { DocumentsStudioModal, type DocumentTemplateKey } from "./DocumentsStudioModal";
-import { OutpatientCardPrintModal } from "./OutpatientCardPrintModal";
+import { MedicalRecordStudioModal } from "../emr/MedicalRecordStudioModal";
 
 export const isDocumentsOrConsentsTarget = (): boolean => {
 	if (typeof window === "undefined") return false;
@@ -111,11 +111,12 @@ export const DirectDocumentsLauncher: React.FC = () => {
 	if (isOutpatientCard) {
 		const isSigned = typeof window !== "undefined" && (window.location.hash.includes("signed") || window.location.search.includes("signed=1"));
 		return (
-			<OutpatientCardPrintModal
+			<MedicalRecordStudioModal
 				key={isSigned ? "signed-card" : "draft-card"}
 				isOpen={isOpen}
 				onClose={handleClose}
-				isClosedOrSigned={isSigned}
+				isLocked={isSigned}
+				isDraft={!isSigned}
 			/>
 		);
 	}

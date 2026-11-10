@@ -5,7 +5,9 @@
 
 import { z } from "zod";
 import type { Ffd12VatRate } from "./ffd12Types.js";
-import { kopecksToNumericString, parseKopecks } from "../utils/money.js";
+import { kopecksToNumericString, parseKopecks } from "../money.js";
+export { kopecksToNumericString, parseKopecks };
+
 
 /**
  * Converts rubles to integer kopecks safely without floating-point drift.
@@ -46,7 +48,7 @@ export function roundHalfEven(value: number): number {
 	return Math.round(value);
 }
 
-export { kopecksToNumericString };
+// kopecksToNumericString is canonical in money.ts and re-exported via @dental/shared from money.
 export const formatKopecksToRubString = kopecksToNumericString;
 
 export interface MultiTenderSplitInput {

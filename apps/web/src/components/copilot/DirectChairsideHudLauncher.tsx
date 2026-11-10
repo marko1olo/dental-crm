@@ -47,13 +47,13 @@ export const DirectChairsideHudLauncher: React.FC = () => {
 
   const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const toothFromQuery = searchParams?.get("tooth") ? Number(searchParams.get("tooth")) : undefined;
-  const effectiveTooth = toothFromQuery ?? visitState.activeToothNumber ?? 16;
+  const effectiveTooth = toothFromQuery ?? visitState.activeToothNumber ?? null;
 
   const patientNameFromQuery = searchParams?.get("patient");
   const effectivePatientName =
     patientNameFromQuery ||
     patientState.patientCoreDraft?.fullName?.trim() ||
-    (patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Воронов Алексей Владимирович");
+    (patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Пациент не выбран");
 
   return (
     <div

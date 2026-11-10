@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { FnsTaxCertificateModal } from "../../finance/TaxDeductionCertificateModal.js";
-import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal.js";
+import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal.js";
 import { DocumentNavTabs } from "../DocumentNavTabs.js";
 import {
 	informedConsentGuidanceReview,
@@ -87,19 +87,23 @@ describe("Documents & FNS Tax Inquisitor Verification Suite", () => {
 		assert.ok(html.includes("Нет подтвержденных фискальных оплат"), "Displays empty blank mode message");
 	});
 
-	it("5. OutpatientCardPrintModal displays 'Медицинская карта приёма' and enabled print button", () => {
+	it("5. MedicalRecordStudioModal displays 'Медицинская карта приёма' and enabled print button", () => {
 		const html = renderToString(
-			<OutpatientCardPrintModal
+			<MedicalRecordStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				patient={mockPatient as any}
-				doctorFullName="Воронов А.В."
-				clinicProfileDraft={mockClinic}
+				initialData={{
+					passport: {
+						patientFullName: mockPatient.fullName,
+						attendingDoctorFullName: "Воронов А.В.",
+						medicalCardNumber: "101",
+					},
+				}}
 			/>,
 		);
 
 		assert.ok(html.includes("Медицинская карта приёма"), "Must present medical card as 'карта приёма'");
-		assert.ok(html.includes("data-testid=\"outpatient-card-print-btn\""), "Must have print button");
+		assert.ok(html.includes("btn-emr-print-card"), "Must have print button");
 	});
 
 	it("6. DocumentNavTabs contains clear human tabs per Mandate 8x", () => {

@@ -24,15 +24,18 @@ export const CopilotGlobalHost: React.FC = () => {
   const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
   const [catalogSpecialty, setCatalogSpecialty] = useState<SpecialtyCategoryKey>('all');
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
-  const [, setIsTreatmentPlanCopilotOpen] = useState(false);
 
   const openHud = useCallback(() => setIsHudOpen(true), []);
   const closeHud = useCallback(() => setIsHudOpen(false), []);
   const toggleHud = useCallback(() => setIsHudOpen((prev) => !prev), []);
   const openVoiceModal = useCallback(() => setIsVoiceModalOpen(true), []);
   const closeVoiceModal = useCallback(() => setIsVoiceModalOpen(false), []);
-  const openTreatmentPlanCopilot = useCallback(() => setIsTreatmentPlanCopilotOpen(true), []);
-  const closeTreatmentPlanCopilot = useCallback(() => setIsTreatmentPlanCopilotOpen(false), []);
+  const openTreatmentPlanCopilot = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('dente:open-treatment-plans'));
+    }
+  }, []);
+  const closeTreatmentPlanCopilot = useCallback(() => {}, []);
 
   const handleOpenCatalog = useCallback((tooth?: number, category?: SpecialtyCategoryKey) => {
     if (tooth) setCatalogTooth(tooth);
@@ -109,7 +112,7 @@ export const CopilotGlobalHost: React.FC = () => {
         patientId={effectivePatientId}
         patientName={effectivePatientName}
         initialTab={copilot.activeTab === 'pending' ? 'actions' : 'dialog'}
-        initialMessages={effectiveMessages && effectiveMessages.length > 0 ? (effectiveMessages as any) : undefined}
+        initialMessages={effectiveMessages && effectiveMessages.length > 0 ? effectiveMessages : undefined}
         isThinking={customBusy || copilot.busy}
         thoughtProcess={customPhase || copilot.phase || undefined}
       />

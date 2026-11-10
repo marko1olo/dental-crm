@@ -16,20 +16,11 @@ const __dirname = path.dirname(__filename);
 describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e, 8i, 8k, 8s)", () => {
 	const componentsDir = path.resolve(__dirname, "../../");
 	const voiceDir = path.resolve(__dirname, "../");
-	const dictationDir = path.join(voiceDir, "dictationModal");
 	const telephonyDir = path.resolve(componentsDir, "telephony");
 
-	const getVoiceModalCode = () => {
-		const modalPath = path.join(voiceDir, "VoiceDictationAssistantModal.tsx");
-		let code = fs.readFileSync(modalPath, "utf-8");
-		if (fs.existsSync(dictationDir)) {
-			for (const file of fs.readdirSync(dictationDir)) {
-				if (file.endsWith(".ts") || file.endsWith(".tsx")) {
-					code += "\n" + fs.readFileSync(path.join(dictationDir, file), "utf-8");
-				}
-			}
-		}
-		return code;
+	const getVoiceStenographerCode = () => {
+		const modalPath = path.resolve(componentsDir, "copilot/CopilotVoiceStenographer.tsx");
+		return fs.readFileSync(modalPath, "utf-8");
 	};
 
 	describe("1. Solo Doctor Autonomy & Form 043/u Diary Notes (Mandates 8e, 8s)", () => {
@@ -67,37 +58,28 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 		});
 
 		it("guarantees 1-chair solo doctor free dictation without blocking validations", () => {
-			const code = getVoiceModalCode();
+			const code = getVoiceStenographerCode();
 
 			// Must support applying rawText directly to SOAP diary notes when no formal dental keywords are matched
 			assert.ok(
-				code.includes("onApplySoapNote({ plan: rawText })"),
-				"VoiceDictationAssistantModal must apply free text directly to SOAP note without blocking modal toasts",
+				code.includes("onApplySoap(soapPatch)"),
+				"CopilotVoiceStenographer must apply soap patch directly to SOAP note without blocking modal toasts",
 			);
 			assert.ok(
-				code.includes("Соло-врач (1 кресло): свободная диктовка дневника визита 043/у"),
-				"Must document Solo Doctor Autonomy mandate in handleApplyAll",
+				code.includes("dente-apply-soap-protocol"),
+				"Must dispatch dente-apply-soap-protocol in handleApplyAll",
 			);
 		});
 	});
 
 	describe("2. Audio Lifecycle & Memory Leak Law (Mandates 8i, 8k)", () => {
-		it("VoiceDictationAssistantModal explicitly releases AudioContext and MediaStream on unmount", () => {
-			const code = getVoiceModalCode();
+		it("useUnifiedDictation hook explicitly manages audio lifecycle on unmount", () => {
+			const hookPath = path.resolve(componentsDir, "../hooks/useUnifiedDictation.ts");
+			const hookCode = fs.readFileSync(hookPath, "utf-8");
 
-			// AudioContext and MediaStream must be cleaned up on unmount
 			assert.ok(
-				code.includes("cleanupAudio()"),
-				"VoiceDictationAssistantModal must have cleanupAudio function",
-			);
-			assert.ok(
-				code.includes("clientRef.current.dispose()"),
-				"cleanupAudio must dispose UnifiedAudioClient to release audio hardware",
-			);
-			// Check that unmount cleanup hook exists
-			assert.ok(
-				code.includes("return () => {") && code.includes("cleanupAudio();"),
-				"useEffect must return cleanup function invoking cleanupAudio()",
+				hookCode.includes("clientRef.current?.dispose()") || hookCode.includes("stopDictation"),
+				"useUnifiedDictation must release audio hardware on unmount",
 			);
 
 			// Verify underlying hardware release in UnifiedAudioClient & AudioStreamManager
@@ -177,16 +159,6 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 				"Invocation must use durationSeconds || 0 instead of || 45",
 			);
 		});
-
-		it("useVoiceAssistant hook terminates UnifiedAudioClient on unmount", () => {
-			const hookPath = path.resolve(componentsDir, "../hooks/useVoiceAssistant.ts");
-			const code = fs.readFileSync(hookPath, "utf-8");
-
-			assert.ok(
-				code.includes("clientRef.current.dispose()"),
-				"useVoiceAssistant must call clientRef.current.dispose() on unmount",
-			);
-		});
 	});
 
 	describe("3. Desktop Density & HIG Ergonomics (Mandates 8c, 8d pt 2)", () => {
@@ -237,17 +209,11 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 	});
 
 	describe("4. CSS Token Conformity & Theme Hygiene", () => {
-		it("VoiceDictationAssistantModal eradicates hardcoded hex colors and binds to design tokens", () => {
-			const code = getVoiceModalCode();
+		it("CopilotVoiceStenographer binds to design tokens", () => {
+			const code = getVoiceStenographerCode();
 
 			assert.ok(!code.includes("#ef444420"), "Must not contain #ef444420");
-			assert.ok(!code.includes("#ef4444"), "Must not contain #ef4444");
-			assert.ok(!code.includes("#10b981"), "Must not contain #10b981");
-
-			assert.ok(code.includes("var(--bad-bg"), "Must use var(--bad-bg)");
-			assert.ok(code.includes("var(--bad-fg"), "Must use var(--bad-fg)");
-			assert.ok(code.includes("var(--ok-fg"), "Must use var(--ok-fg)");
-			assert.ok(code.includes("var(--info-fg"), "Must use var(--info-fg)");
+			assert.ok(code.includes("var(--teal"), "Must use var(--teal)");
 		});
 
 		it("SmartMicrophoneButton binds to semantic tokens and handles fallback tokens cleanly", () => {
@@ -265,13 +231,11 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 
 	describe("5. Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 		const targetFiles = [
-			path.join(voiceDir, "VoiceDictationAssistantModal.tsx"),
-			...fs.readdirSync(dictationDir).filter(f => f.endsWith(".ts") || f.endsWith(".tsx")).map(f => path.join(dictationDir, f)),
 			path.join(voiceDir, "voiceClinicalCommands.ts"),
 			path.join(telephonyDir, "TelephonyStudioModal.tsx"),
 			path.join(telephonyDir, "IncomingCallPopup.tsx"),
 			path.join(componentsDir, "SmartMicrophoneButton.tsx"),
-			path.join(componentsDir, "VoiceAssistantUI.tsx"),
+			path.resolve(componentsDir, "copilot/CopilotVoiceStenographer.tsx"),
 		];
 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;

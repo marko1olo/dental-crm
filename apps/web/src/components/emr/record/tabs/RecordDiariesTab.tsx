@@ -49,7 +49,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 		const [protocol, setProtocol] = useState<string>("");
 		const [anesthesia, setAnesthesia] = useState<string>("");
 		const [materials, setMaterials] = useState<string>("");
-		const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
+		const [isFormOpen, setIsFormOpen] = useState<boolean>(() => formData.visitDiaries.length === 0);
 		const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 		const [editingDiaryIndex, setEditingDiaryIndex] = useState<number | null>(null);
 

@@ -61,8 +61,31 @@ export function Omnibar() {
 				setQuery(customEvent.detail.query);
 			}
 		};
+		window.addEventListener("dente:open-omnibar", handleOpenHud);
 		window.addEventListener("dente:open-command-hud", handleOpenHud);
-		return () => window.removeEventListener("dente:open-command-hud", handleOpenHud);
+		return () => {
+			window.removeEventListener("dente:open-omnibar", handleOpenHud);
+			window.removeEventListener("dente:open-command-hud", handleOpenHud);
+		};
+	}, [setOmnibarOpen]);
+
+	useEffect(() => {
+		const checkUrl = () => {
+			if (typeof window !== "undefined") {
+				const s = (window.location.search || "").toLowerCase();
+				const h = (window.location.hash || "").toLowerCase();
+				if (s.includes("omnibar") || h.includes("omnibar") || s.includes("spotlight") || h.includes("spotlight")) {
+					setOmnibarOpen(true);
+				}
+			}
+		};
+		checkUrl();
+		window.addEventListener("hashchange", checkUrl);
+		window.addEventListener("popstate", checkUrl);
+		return () => {
+			window.removeEventListener("hashchange", checkUrl);
+			window.removeEventListener("popstate", checkUrl);
+		};
 	}, [setOmnibarOpen]);
 
 	useEffect(() => {
@@ -227,7 +250,7 @@ export function Omnibar() {
 		},
 		{
 			id: "action-cbct-tuner",
-			title: "🧪 Тюнер контраста и срезов КЛКТ (Ползунки W/L, Gamma, ОПТГ)",
+			title: "Тюнер контраста и срезов КЛКТ (Ползунки W/L, Gamma, ОПТГ)",
 			icon: <Sliders className="text-[var(--teal)]" />,
 			category: "Быстрые действия",
 			action: () => {
@@ -335,9 +358,6 @@ export function Omnibar() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOmnibarOpen, filteredCommands, selectedIndex, setOmnibarOpen]);
 
-	useEffect(() => {
-		// Делегировано омни-командному HUD врача у кресла (DoctorCommandHud)
-	}, []);
 
 	/* Кнопка поиска живёт в слоте `search` группы действий рабочей области, в
      обычном потоке страницы, и НИЧЕГО не перекрывает. Раньше она портировалась

@@ -14,12 +14,39 @@ export function matchPresetFallback(
   activeTooth: number | null = null,
   matchedProtocol: MatchedProtocolInfo | null = null,
 ): CopilotExecutionResult {
-  const presetIdx =
-    /пульпит|26|канал/i.test(text) ? 1 :
-    /гигиен|чистк|налет|скейлинг/i.test(text) ? 2 :
-    /пациент|сегодня|кто след/i.test(text) ? 3 :
-    /смен|график|четверг|табель/i.test(text) ? 4 :
-    /выручк|касс|деньг|доход/i.test(text) ? 5 : 0;
+  const isCaries = /кариес|пломб|полост|c2|c3|реставрац/i.test(text);
+  const isPulpitis = /пульпит|эндодонт|канал|депульп/i.test(text);
+  const isHygiene = /гигиен|чистк|налет|скейлинг|air[- ]?flow|ультразвук/i.test(text);
+  const isPatient = /пациент|сегодня|кто след|очеред|прием|приём/i.test(text);
+  const isShift = /смен|график|четверг|табель|дежур/i.test(text);
+  const isFinance = /выручк|касс|деньг|доход|финанс|оплат/i.test(text);
+
+  let presetIdx: number | null = null;
+  if (isPulpitis) presetIdx = 1;
+  else if (isHygiene) presetIdx = 2;
+  else if (isPatient) presetIdx = 3;
+  else if (isShift) presetIdx = 4;
+  else if (isFinance) presetIdx = 5;
+  else if (isCaries) presetIdx = 0;
+
+  if (presetIdx === null) {
+    return {
+      activePresetIndex: undefined,
+      thoughts: [],
+      verdict: "Команда не распознана. Назовите зуб и диагноз (например, '16 кариес'), процедуру ('профгигиена') или действие ('расписание на сегодня').",
+      toothProposal: null,
+      servicesProposal: [],
+      soapProposal: null,
+      anestheticProposal: null,
+      consentProposal: null,
+      safetyAlert: null,
+      matchedProtocol,
+      toastMessage: {
+        text: "Команда не распознана. Уточните клинический запрос.",
+        type: "warning",
+      },
+    };
+  }
 
   const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
   const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || (preset.toothNumber || null);

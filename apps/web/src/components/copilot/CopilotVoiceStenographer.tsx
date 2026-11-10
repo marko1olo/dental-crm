@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } from "lucide-react";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
-import { extractClinicalTerms, type ParsedClinicalSpeech } from "../voice/voiceEngine";
+import { extractClinicalTerms, type ParsedClinicalSpeech } from "../../services/voice/clinicalTermsExtractor";
 import "./CopilotVoiceStenographer.css";
 
 export interface ParsedClinicalCommand {
@@ -120,9 +120,10 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
       if (onApplyTooth) onApplyTooth(lastToothCommand.toothNumber, lastToothCommand.toothState);
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("dente:apply-tooth-state", {
+          new CustomEvent("dente-odontogram-update", {
             detail: {
               toothNumber: lastToothCommand.toothNumber,
+              status: lastToothCommand.toothState,
               toothState: lastToothCommand.toothState,
               diagnosis: lastToothCommand.diagnosis,
             },
@@ -159,8 +160,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
   const handleSendToSearch = () => {
     const text = (isEditingManually ? manualDraft : (fullText || manualDraft)).trim();
     if (!text || typeof window === "undefined") return;
-    window.dispatchEvent(new CustomEvent("dente:open-global-search", { detail: { query: text } }));
-    window.dispatchEvent(new CustomEvent("dente:global-search", { detail: { query: text } }));
+    window.dispatchEvent(new CustomEvent("dente:open-command-hub", { detail: { query: text } }));
   };
 
   const handleSendToChat = () => {
@@ -168,6 +168,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     if (!text || typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("dente:fill-copilot-input", { detail: { prompt: text } }));
     window.dispatchEvent(new CustomEvent("dente:open-copilot"));
+    window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
   };
 
   const displayDraft = isEditingManually ? manualDraft : (fullText || manualDraft);

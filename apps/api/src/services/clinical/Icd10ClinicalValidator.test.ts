@@ -234,7 +234,10 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			assert.equal(res1.isValid, false);
 			if (!res1.isValid) {
 				assert.equal(res1.errorCode, "Icd10Required");
-				assert.match(res1.errorMessage, /укажите код диагноза по МКБ-10/i);
+				assert.equal(
+					res1.errorMessage,
+					"Перед подписанием дневника приёма укажите код диагноза по МКБ-10. Сохраните черновик с кодом и повторите подписание.",
+				);
 			}
 
 			const res2 = Icd10ClinicalValidator.validate(null);

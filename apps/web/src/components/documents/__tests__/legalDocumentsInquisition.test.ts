@@ -15,14 +15,13 @@ import {
 	PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS,
 	resolvePhotoVideoConsentSafeDefaults,
 } from "../photoVideoConsentBlockers";
-import { PrescriptionBlankModal } from "../PrescriptionBlankModal";
+import { PrescriptionModal } from "../../prescriptions/PrescriptionModal";
 import { getIntakeAndClinicalItems } from "../catalog/intakeAndClinicalItems";
 import type { ProfessionalA4DocumentTab } from "../professionalA4/types";
 
 describe("Legal Documents, Consents & Anti-Blockers Red Team Inquisition", () => {
-	it("1. Verifies that PrescriptionBlankModal is the canonical prescription blank component without bureaucratic titles", () => {
-		assert.ok(PrescriptionBlankModal);
-		assert.strictEqual(PrescriptionBlankModal.displayName, "PrescriptionBlankModal");
+	it("1. Verifies that PrescriptionModal is the canonical prescription component without bureaucratic titles", () => {
+		assert.ok(PrescriptionModal);
 	});
 
 	it("2. Verifies that informedConsentBlockers never blocks printing (canPrint: true, soft guiding only)", () => {

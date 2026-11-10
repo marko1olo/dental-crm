@@ -1,7 +1,7 @@
 import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal";
-import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal";
+import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
 import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
 import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
 
@@ -65,12 +65,17 @@ export function CatalogPrimaryModals({
 				/>
 			)}
 			{isOutpatientCardModalOpen && (
-				<OutpatientCardPrintModal
+				<MedicalRecordStudioModal
 					isOpen={isOutpatientCardModalOpen}
 					onClose={() => setIsOutpatientCardModalOpen(false)}
-					patient={patient ?? null}
-					doctorFullName={doctorName ?? null}
-					clinicProfileDraft={clinicProfileDraft}
+					initialData={{
+						passport: {
+							patientFullName: patient?.fullName || "",
+							patientBirthDate: patient?.birthDate || "",
+							medicalCardNumber: patient?.id ? `K-${patient.id.slice(0, 6)}` : "",
+							attendingDoctorFullName: doctorName || "",
+						},
+					}}
 				/>
 			)}
 			{(selectedA4Tab || isContractModalOpen) && (

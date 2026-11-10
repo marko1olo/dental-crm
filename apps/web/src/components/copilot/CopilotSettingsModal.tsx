@@ -77,9 +77,6 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 
 	// Рабочая станция и сенсорная эргономика
 	const [localDropzonePath, setLocalDropzonePath] = useState<string>(settings.localDropzonePath || "C:\\Radiology\\Export");
-	const [gloveModeTouchTarget] = useState<boolean>(settings.gloveModeTouchTarget ?? true);
-	const [screenWakeLock] = useState<boolean>(settings.screenWakeLock ?? true);
-	const [hapticFeedbackEnabled] = useState<boolean>(settings.hapticFeedbackEnabled ?? true);
 
 	const runtimeMode: CopilotRuntimeEnvironment = settings.runtimeMode;
 	const isChairside = runtimeMode === "chairside_tablet" || runtimeMode === "mobile_tablet";
@@ -120,9 +117,9 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			maskPhiData,
 			globalDictationHotkey,
 			localDropzonePath,
-			gloveModeTouchTarget,
-			screenWakeLock,
-			hapticFeedbackEnabled,
+			gloveModeTouchTarget: settings.gloveModeTouchTarget ?? true,
+			screenWakeLock: settings.screenWakeLock ?? true,
+			hapticFeedbackEnabled: settings.hapticFeedbackEnabled ?? true,
 			autoMicOnAppointmentOpen,
 		});
 		showToast("Настройки ИИ успешно сохранены", "success");

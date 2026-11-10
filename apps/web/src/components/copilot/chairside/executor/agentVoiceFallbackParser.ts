@@ -141,13 +141,12 @@ export function tryParseVoiceFallback(
       id: "step-voice-1",
       stepNumber: 1,
       title: catalogMatch
-        ? "Клинический протокол из каталога 1 142 (<2мс)"
+        ? "Клинический протокол из каталога 1 142"
         : "Голосовой парсер речи за креслом",
       status: "done",
       detail: catalogMatch
         ? `Найдена процедура: ${catalogMatch.procedureName} [МКБ-10: ${catalogMatch.matchedIcd10 || "н/д"}], зуб ${targetTooth}`
         : `Распознан зуб ${targetTooth}, статус: ${toothStateLabel}`,
-      durationMs: 2,
     },
     {
       id: "step-voice-2",
@@ -155,7 +154,6 @@ export function tryParseVoiceFallback(
       title: "Формирование дневника приёма и плана лечения",
       status: "done",
       detail: `Услуг: ${servicesProposal.length}, Анестезия: ${voiceIntent.anesthesia ? voiceIntent.anesthesia.displayName : "не требовалась"}`,
-      durationMs: 15,
     },
   ];
 

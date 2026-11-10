@@ -113,22 +113,30 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       optsRef.current.openDrawer();
     };
 
+    const handleCloseDrawer = () => optsRef.current.closeDrawer();
+    const handleOpenHud = () => optsRef.current.openHud();
+    const handleCloseHud = () => optsRef.current.closeHud();
+    const handleOpenVoiceModal = () => optsRef.current.openVoiceModal();
+    const handleCloseVoiceModal = () => optsRef.current.closeVoiceModal();
+    const handleOpenTreatmentPlan = () => optsRef.current.openTreatmentPlanCopilot();
+    const handleCloseTreatmentPlan = () => optsRef.current.closeTreatmentPlanCopilot();
+
     window.addEventListener('hashchange', checkAndTrigger);
     window.addEventListener('popstate', checkAndTrigger);
 
     window.addEventListener('dente:toggle-copilot', handleCustomToggle);
     window.addEventListener('dente:open-copilot', handleOpenCopilot);
     window.addEventListener('dente-open-copilot', handleOpenCopilot);
-    window.addEventListener('dente:close-copilot', () => optsRef.current.closeDrawer());
-    window.addEventListener('dente-close-copilot', () => optsRef.current.closeDrawer());
+    window.addEventListener('dente:close-copilot', handleCloseDrawer);
+    window.addEventListener('dente-close-copilot', handleCloseDrawer);
     window.addEventListener('dente:open-agent-cockpit', handleOpenCopilot);
     window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
-    window.addEventListener('dente:open-chairside-hud', () => optsRef.current.openHud());
-    window.addEventListener('dente:close-chairside-hud', () => optsRef.current.closeHud());
-    window.addEventListener('dente:open-voice-dictation', () => optsRef.current.openVoiceModal());
-    window.addEventListener('dente:close-voice-dictation', () => optsRef.current.closeVoiceModal());
-    window.addEventListener('dente:open-treatment-plan-copilot', () => optsRef.current.openTreatmentPlanCopilot());
-    window.addEventListener('dente:close-treatment-plan-copilot', () => optsRef.current.closeTreatmentPlanCopilot());
+    window.addEventListener('dente:open-chairside-hud', handleOpenHud);
+    window.addEventListener('dente:close-chairside-hud', handleCloseHud);
+    window.addEventListener('dente:open-voice-dictation', handleOpenVoiceModal);
+    window.addEventListener('dente:close-voice-dictation', handleCloseVoiceModal);
+    window.addEventListener('dente:open-treatment-plan-copilot', handleOpenTreatmentPlan);
+    window.addEventListener('dente:close-treatment-plan-copilot', handleCloseTreatmentPlan);
     window.addEventListener('dente:open-protocols-catalog', handleOpenCatalog);
     window.addEventListener('keydown', handleKeyDown);
 
@@ -138,16 +146,16 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       window.removeEventListener('dente:toggle-copilot', handleCustomToggle);
       window.removeEventListener('dente:open-copilot', handleOpenCopilot);
       window.removeEventListener('dente-open-copilot', handleOpenCopilot);
-      window.removeEventListener('dente:close-copilot', () => optsRef.current.closeDrawer());
-      window.removeEventListener('dente-close-copilot', () => optsRef.current.closeDrawer());
+      window.removeEventListener('dente:close-copilot', handleCloseDrawer);
+      window.removeEventListener('dente-close-copilot', handleCloseDrawer);
       window.removeEventListener('dente:open-agent-cockpit', handleOpenCopilot);
       window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
-      window.removeEventListener('dente:open-chairside-hud', () => optsRef.current.openHud());
-      window.removeEventListener('dente:close-chairside-hud', () => optsRef.current.closeHud());
-      window.removeEventListener('dente:open-voice-dictation', () => optsRef.current.openVoiceModal());
-      window.removeEventListener('dente:close-voice-dictation', () => optsRef.current.closeVoiceModal());
-      window.removeEventListener('dente:open-treatment-plan-copilot', () => optsRef.current.openTreatmentPlanCopilot());
-      window.removeEventListener('dente:close-treatment-plan-copilot', () => optsRef.current.closeTreatmentPlanCopilot());
+      window.removeEventListener('dente:open-chairside-hud', handleOpenHud);
+      window.removeEventListener('dente:close-chairside-hud', handleCloseHud);
+      window.removeEventListener('dente:open-voice-dictation', handleOpenVoiceModal);
+      window.removeEventListener('dente:close-voice-dictation', handleCloseVoiceModal);
+      window.removeEventListener('dente:open-treatment-plan-copilot', handleOpenTreatmentPlan);
+      window.removeEventListener('dente:close-treatment-plan-copilot', handleCloseTreatmentPlan);
       window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);
       window.removeEventListener('keydown', handleKeyDown);
       delete (window as any).__denteCopilot;

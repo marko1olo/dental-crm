@@ -20,13 +20,21 @@ export interface CopilotThinkingIndicatorProps {
 	phaseOverride?: string | null | undefined;
 }
 
-export function getClinicalThinkingPhase(elapsed: number, includeSeconds = false, toolName?: string | null): string {
+export function getClinicalThinkingPhase(
+	elapsed: number,
+	includeSeconds = false,
+	toolName?: string | null,
+	phaseOverride?: string | null,
+	thoughtProcess?: string | null,
+): string {
 	if (toolName) return `Исполнение инструмента: ${toolName}`;
-	let p = "ИИ формирует клинический протокол...";
-	if (elapsed >= 3.0) p = "Синтез рекомендаций и сметы...";
-	else if (elapsed >= 2.0) p = "Проверка противопоказаний и СтАР...";
-	else if (elapsed >= 1.0) p = "Дифференциальный диагноз по МКБ-10...";
-	return includeSeconds ? `${p} (${elapsed.toFixed(1)}с)` : p;
+	if (phaseOverride) return phaseOverride;
+	if (thoughtProcess && thoughtProcess.trim().length > 0) {
+		const firstLine = thoughtProcess.trim().split("\n")[0];
+		return firstLine || thoughtProcess.trim();
+	}
+	const p = "Формирование клинического протокола и расчет сметы...";
+	return includeSeconds && elapsed > 0 ? `${p} (${elapsed.toFixed(1)}с)` : p;
 }
 
 export function CopilotThinkingIndicator({
@@ -48,10 +56,12 @@ export function CopilotThinkingIndicator({
 
 	const elapsedSec = Number((elapsedMs / 1000).toFixed(1));
 	const durationText = elapsedMs < 1000 ? `${elapsedMs} мс` : `${elapsedSec} с`;
-	const phaseType: ClinicalPhaseType = currentToolName || (phaseOverride && phaseOverride.includes("инструмент"))
+	const phaseType: ClinicalPhaseType = currentToolName || (phaseOverride && phaseOverride.toLowerCase().includes("инструмент"))
 		? "tool_call"
-		: elapsedMs < 800 ? "thinking" : "synthesis";
-	const phaseLabel = phaseOverride || (currentToolName ? `Вызов инструмента: ${currentToolName}` : getClinicalThinkingPhase(elapsedSec, true));
+		: phaseOverride?.toLowerCase().includes("синтез")
+			? "synthesis"
+			: "thinking";
+	const phaseLabel = phaseOverride || (currentToolName ? `Вызов инструмента: ${currentToolName}` : getClinicalThinkingPhase(elapsedSec, true, currentToolName, phaseOverride, thoughtProcess));
 
 	return (
 		<div className="copilot-thinking-card my-2 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] text-xs overflow-hidden shadow-xs" data-testid="copilot-thinking-indicator">

@@ -181,17 +181,18 @@ export function handleClinicalSpeechOrText(
 					}));
 				}
 				if (targetNumbers.length === 0) {
-					const fallbackTooth = typeof activeTooth === "number" ? activeTooth : 36;
+					const fallbackTooth = typeof activeTooth === "number" ? activeTooth : null;
 					window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 						detail: {
-							tooth: fallbackTooth, toothNumber: fallbackTooth, state: intent.teethUpdates[0]?.state || "caries",
+							...(fallbackTooth !== null ? { tooth: fallbackTooth, toothNumber: fallbackTooth } : {}),
+							state: intent.teethUpdates[0]?.state || "caries",
 							diagnosis: intent.teethUpdates[0]?.icd10Title || "Кариес дентина (K02.1)", diagnosisIcd10: intent.teethUpdates[0]?.icd10Code || "K02.1",
 							treatmentPlan: intent.summary || "Лечение по стандартам СтАР", soapNotes: intent.soapNotes, anesthesia: intent.anesthesia,
 						},
 					}));
 				}
 
-				const firstTooth = targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : 36);
+				const firstTooth = targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : undefined);
 				interface BillableItem {
 					code: string;
 					code804n?: string;
@@ -199,24 +200,27 @@ export function handleClinicalSpeechOrText(
 					title: string;
 					price: number;
 					priceRub: number;
-					toothNumber: number;
-					toothCode: string;
+					toothNumber?: number | undefined;
+					toothCode?: string | undefined;
 				}
 				const billableServices: BillableItem[] = [];
 				if (intent.procedures804n && intent.procedures804n.length > 0) {
 					for (const p of intent.procedures804n) {
+						const resolvedPrice = Number(p.priceRub ?? (p as any).price ?? 0);
+						const resolvedTooth = p.toothNumber || firstTooth;
 						billableServices.push({
 							code: p.code804n, code804n: p.code804n, name: p.name, title: p.name,
-							price: p.priceRub || 1500, priceRub: p.priceRub || 1500,
-							toothNumber: p.toothNumber || firstTooth, toothCode: String(p.toothNumber || firstTooth),
+							price: resolvedPrice, priceRub: resolvedPrice,
+							...(resolvedTooth ? { toothNumber: resolvedTooth, toothCode: String(resolvedTooth) } : {}),
 						});
 					}
 				}
 				if (intent.anesthesia) {
+					const resolvedAnesthesiaPrice = Number((intent.anesthesia as any).priceRub ?? (intent.anesthesia as any).price ?? 0);
 					billableServices.push({
 						code: intent.anesthesia.code804n || "A11.07.012", name: `Анестезия: ${intent.anesthesia.displayName}`,
-						title: `Анестезия: ${intent.anesthesia.displayName}`, price: 900, priceRub: 900,
-						toothNumber: firstTooth, toothCode: String(firstTooth),
+						title: `Анестезия: ${intent.anesthesia.displayName}`, price: resolvedAnesthesiaPrice, priceRub: resolvedAnesthesiaPrice,
+						...(firstTooth ? { toothNumber: firstTooth, toothCode: String(firstTooth) } : {}),
 					});
 				}
 				if (billableServices.length > 0) {
@@ -233,20 +237,20 @@ export function handleClinicalSpeechOrText(
 			const prevStored = patientId ? loadStoredTeethData(patientId) : null;
 			applyMutations();
 			if (isAutonomous) {
-				const summaryLabel = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth || 36);
+				const summaryLabel = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth ? String(activeTooth) : "Полость рта");
 				showRollbackToast(`Диктовка применена: зубы ${summaryLabel}`, () => restoreVisitAndOdontogram(prevStates, prevRecords, patientId, prevStored), 5000, "Отменить");
 			}
 		} else {
-			const summaryLabel = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth || 36);
+			const summaryLabel = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth ? String(activeTooth) : "Полость рта");
 			pendingAction = {
 				id: `act-dictation-${Date.now()}`,
-				title: `Обновление карты (Зуб ${summaryLabel})`,
+				title: `Обновление карты (${summaryLabel})`,
 				toolName: "crm.updateToothStatus",
-				description: `Фиксация статуса зуба ${summaryLabel} и расчет сметы`,
-				targetTeeth: targetNumbers.length > 0 ? targetNumbers : [Number(activeTooth || 36)],
+				description: `Фиксация статуса (${summaryLabel}) и расчет сметы`,
+				targetTeeth: targetNumbers.length > 0 ? targetNumbers : (activeTooth ? [Number(activeTooth)] : []),
 				payload: {
 					teeth: targetNumbers,
-					tooth: targetNumbers[0] || activeTooth || 36,
+					...(activeTooth || targetNumbers[0] ? { tooth: targetNumbers[0] || activeTooth } : {}),
 					diagnosis: intent.teethUpdates[0]?.icd10Title || "Кариес дентина (K02.1)",
 					diagnosisIcd10: intent.teethUpdates[0]?.icd10Code || "K02.1",
 				},
@@ -255,11 +259,13 @@ export function handleClinicalSpeechOrText(
 		}
 	}
 
-	const targetSummaryTeeth = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth || 36);
+	const targetSummaryTeeth = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth ? String(activeTooth) : "Полость рта");
 	const fallbackText = targetNumbers.length > 0
 		? `Клиническая диктовка принята (${query}). Зафиксированы зубы: ${targetSummaryTeeth}. Сформирован проект дневника приёма SOAP и расчет сметы по протоколам СтАР.`
-		: `Клинический протокол для зуба ${activeTooth || 36}: проведена оценка статуса, сформирован проект протокола приёма и сметы по стандартам СтАР.`;
-	const fallbackProposalTooth = targetNumbers[0] || Number(activeTooth || 36);
+		: activeTooth
+			? `Клинический протокол для зуба ${activeTooth}: проведена оценка статуса, сформирован проект протокола приёма и сметы по стандартам СтАР.`
+			: `Клиническая диктовка принята (${query}). Сформирован проект дневника приёма SOAP и расчет сметы по стандартам СтАР.`;
+	const fallbackProposalTooth = targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : 0);
 
 	return {
 		intent,

@@ -53,6 +53,7 @@ export interface MedicalRecordStudioModalProps {
 	readonly isLocked?: boolean | undefined;
 	readonly isDraft?: boolean | undefined;
 	readonly status?: string | undefined;
+	readonly initialTab?: RecordTabType | undefined;
 }
 
 const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ className?: string }> }> = [
@@ -66,7 +67,7 @@ const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ cl
 
 export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> = React.memo(
 	function MedicalRecordStudioModal({
-		isOpen, onClose, initialData, onSave, onOpenProtocolGenerator, isLocked, isDraft, status,
+		isOpen, onClose, initialData, onSave, onOpenProtocolGenerator, isLocked, isDraft, status, initialTab,
 	}) {
 		const dashboard = useAppStore((s) => s.dashboard);
 		const profile = dashboard?.clinicSettings?.profile;
@@ -96,7 +97,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			epicrisis: { ...DEFAULT_MEDICAL_CARD_DATA.epicrisis, ...(initialData?.epicrisis || {}) },
 		}));
 
-		const [activeTab, setActiveTab] = useState<RecordTabType>("overview");
+		const [activeTab, setActiveTab] = useState<RecordTabType>(initialTab || "overview");
 		const [zoomScale, setZoomScale] = useState<number>(1.0);
 		const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
@@ -199,7 +200,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			<div className="emr-studio-backdrop emr043-modal-backdrop" role="dialog" aria-modal="true">
 				<div
 					className="emr-studio-modal emr-studio-window emr043-modal-window"
-					style={{ maxWidth: isFullscreen ? "100%" : "1240px", height: isFullscreen ? "98vh" : "94vh" }}
+					style={{ maxWidth: isFullscreen ? "100%" : "1380px", height: isFullscreen ? "98vh" : "94vh" }}
 				>
 					{/* Нативный Drag Handle для шторки смартфона (Apple HIG) */}
 					<div className="emr-studio-drag-handle sm:hidden" aria-hidden="true" />

@@ -10,6 +10,16 @@ import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPati
 import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 import type { MedicalRecordData } from "../../../../emr/types/recordDataTypes";
 
+function getInitialEmrTab(): "overview" | "diaries" {
+	if (typeof window === "undefined") return "overview";
+	const h = (window.location.hash || "").toLowerCase();
+	const s = (window.location.search || "").toLowerCase();
+	if (h.includes("diary") || s.includes("diary") || h.includes("diaries") || s.includes("diaries")) {
+		return "diaries";
+	}
+	return "overview";
+}
+
 export const StandaloneEmrMedicalRecordHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
 	const resolvedName = useLauncherPatientName(patientId);
@@ -43,6 +53,7 @@ export const StandaloneEmrMedicalRecordHost: React.FC<{ onClose: () => void }> =
 				onSave={setData}
 				isLocked={false}
 				isDraft={true}
+				initialTab={getInitialEmrTab()}
 			/>
 		</div>
 	);

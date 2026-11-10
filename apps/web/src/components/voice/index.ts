@@ -3,5 +3,3 @@
  */
 
 export * from "./voiceClinicalCommands";
-export * from "./VoiceDictationAssistantModal";
-export * from "./voiceEngine";

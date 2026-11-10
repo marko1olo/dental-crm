@@ -297,6 +297,7 @@ export class AudioStreamTransport {
 					mimeType: "audio/wav" as const,
 					audioBase64,
 					durationMs,
+					source: opts.source || (opts.visitId ? "visit" : "copilot"),
 					organizationId: opts.organizationId,
 					patientId: opts.patientId,
 					visitId: opts.visitId,
@@ -307,7 +308,8 @@ export class AudioStreamTransport {
 
 			if (!response.ok) throw new Error(`Server Whisper returned status ${response.status}`);
 			const data = await response.json();
-			if (data?.text?.trim()) this.host.onFinalSegment(data.text.trim());
+			const text = (data?.chunk?.transcript ?? data?.text ?? "").trim();
+			if (text) this.host.onFinalSegment(text);
 		} catch (error) {
 			console.warn("Server Whisper transcription error:", error);
 			try {

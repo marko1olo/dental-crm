@@ -91,9 +91,9 @@ body.copilot-studio-open .chairside-copilot-hud--floating {
 
 /* Expanded Main Panel */
 .chairside-hud-panel {
-  width: 600px;
-  max-width: calc(100% - 32px);
-  max-height: min(85vh, 720px);
+  width: 720px;
+  max-width: calc(100vw - 32px);
+  max-height: min(90vh, 760px);
   display: flex;
   flex-direction: column;
   border-radius: 12px;
@@ -103,6 +103,11 @@ body.copilot-studio-open .chairside-copilot-hud--floating {
   overflow: hidden;
   box-sizing: border-box;
   transition: all 0.2s ease-in-out;
+}
+
+.chairside-copilot-hud--docked .chairside-hud-panel {
+  width: 100%;
+  max-width: 100%;
 }
 
 .chairside-hud-panel--compact {
