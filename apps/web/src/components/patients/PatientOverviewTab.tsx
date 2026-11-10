@@ -2,10 +2,9 @@ import { History } from "lucide-react";
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
-import { PatientFamilyCard } from "./PatientFamilyCard";
+import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientWhatsappSendPanel } from "./PatientWhatsappSendPanel";
-import { usePatientFamilyLoader } from "./overview/usePatientFamilyLoader";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
@@ -18,7 +17,6 @@ export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
 	const appLogic = useAppLogicContext();
 	const { selectedPatientId } = usePatientStore();
 	const { selectedPatient } = appLogic;
-	const { familyData, familyLoadFailure, loadFamily } = usePatientFamilyLoader(selectedPatientId, appLogic);
 
 	if (!selectedPatientId) return null;
 
@@ -26,13 +24,11 @@ export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
 		<div data-testid="patient-overview-tab" className="flex flex-col gap-3">
 			<div className="patient-clinical-grid grid grid-cols-1 lg:grid-cols-2 gap-3">
 				<div className="flex flex-col gap-3">
-					<PatientFamilyCard
-						patientId={selectedPatientId}
-						patientName={selectedPatient?.fullName || null}
-						familyData={familyData}
-						loadFailure={familyLoadFailure}
-						onRetryLoad={loadFamily}
-						onFamilyDataChanged={loadFamily}
+					<PatientFamilyAndInsuranceWidget
+						patient={selectedPatient as any}
+						patientBalance={Number(selectedPatient?.patientBalanceRub ?? 0) || 0}
+						insurancePolicyNumber={selectedPatient?.omsPolicyNumber || undefined}
+						onUpdateInsurancePolicy={(policy) => appLogic?.updatePatient?.(selectedPatientId, { omsPolicyNumber: policy })}
 					/>
 					<PatientNoShowRisk patientId={selectedPatientId} />
 				</div>

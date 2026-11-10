@@ -25,7 +25,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs fns-tax-certificate-modal"
+			className="fixed inset-0 z-[10060] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs fns-tax-certificate-modal"
 			data-testid="tax-deduction-modal fns-tax-certificate-modal"
 		>
 			<div

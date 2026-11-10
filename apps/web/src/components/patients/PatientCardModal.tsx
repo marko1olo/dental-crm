@@ -97,7 +97,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static overflow-x-clip"
+			className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static overflow-x-clip"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="patient-card-modal-title"

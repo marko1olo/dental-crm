@@ -42,14 +42,14 @@ describe("Family Wallet SSOT & Pooled Deposit Architecture", () => {
 		);
 	});
 
-	it("verifies patientFamilyCard imports FamilyWalletModal from canonical ./family/", () => {
-		const cardPath = path.resolve(familyDir, "../PatientFamilyCard.tsx");
-		assert.ok(fs.existsSync(cardPath), "PatientFamilyCard.tsx must exist");
+	it("verifies PatientFamilyAndInsuranceWidget imports FamilyWalletModal from canonical ./family/", () => {
+		const widgetPath = path.resolve(familyDir, "../PatientFamilyAndInsuranceWidget.tsx");
+		assert.ok(fs.existsSync(widgetPath), "PatientFamilyAndInsuranceWidget.tsx must exist");
 
-		const content = fs.readFileSync(cardPath, "utf-8");
+		const content = fs.readFileSync(widgetPath, "utf-8");
 		assert.ok(
 			content.includes('from "./family/FamilyWalletModal"'),
-			"PatientFamilyCard must import FamilyWalletModal from ./family/FamilyWalletModal instead of ../patient/",
+			"PatientFamilyAndInsuranceWidget must import FamilyWalletModal from ./family/FamilyWalletModal instead of ../patient/",
 		);
 	});
 

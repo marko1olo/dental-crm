@@ -4,7 +4,7 @@
  */
 
 .emr-studio-backdrop, .emr043-modal-backdrop {
-  position: fixed; inset: 0; z-index: 10050;
+  position: fixed; inset: 0; z-index: 10060;
   background: var(--paper-backdrop, rgba(6, 10, 20, 0.98)); backdrop-filter: blur(16px);
   display: flex; align-items: flex-start; justify-content: center;
   padding: 16px; overflow-y: auto;

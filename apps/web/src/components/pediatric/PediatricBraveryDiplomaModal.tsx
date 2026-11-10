@@ -113,7 +113,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 
 	const content = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-[10060] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			data-testid="pediatric-bravery-diploma-modal"
 		>
 			<div

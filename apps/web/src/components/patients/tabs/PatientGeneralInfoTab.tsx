@@ -1,7 +1,6 @@
 import React from "react";
 import { VisitProtocolView } from "../VisitProtocolView";
-import { PatientFamilyCard } from "../PatientFamilyCard";
-import { usePatientFamilyLoader } from "../overview/usePatientFamilyLoader";
+import { PatientFamilyAndInsuranceWidget } from "../PatientFamilyAndInsuranceWidget";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
 import type { PatientGeneralInfoTabProps } from "./generalInfoTabTypes";
 import { PatientSafetyBanner } from "./generalInfo/PatientSafetyBanner";
@@ -34,11 +33,6 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 			onUpdatePatient,
 			onUpdateSafetyProfile,
 		});
-
-		const { familyData, familyLoadFailure, loadFamily } = usePatientFamilyLoader(
-			patient?.id,
-			null,
-		);
 
 		return (
 			<div className="patient-general-info-tab flex flex-col gap-6 text-[var(--ink)]">
@@ -80,13 +74,11 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 
 				{(activeSection === "all" || activeSection === "family") && (
 					<div className="flex flex-col gap-4">
-						<PatientFamilyCard
-							patientId={patient?.id || null}
-							patientName={patient?.fullName || null}
-							familyData={familyData}
-							loadFailure={familyLoadFailure}
-							onRetryLoad={loadFamily}
-							onFamilyDataChanged={loadFamily}
+						<PatientFamilyAndInsuranceWidget
+							patient={patient as any}
+							patientBalance={Number(patient?.patientBalanceRub ?? 0) || 0}
+							insurancePolicyNumber={patient?.omsPolicyNumber || undefined}
+							onUpdateInsurancePolicy={(policy) => onUpdatePatient?.("omsPolicyNumber", policy)}
 						/>
 						<PatientRepresentativesSection
 							patient={patient}

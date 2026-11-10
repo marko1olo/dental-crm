@@ -257,6 +257,20 @@ graph LR
 
 ---
 
+10. **Хирургическая ликвидация дефектов картотеки пациентов, справок ФНС, семейного баланса и реколлов (DEF-PAT-01...05, Мандаты 8bd, 8be, 8bf, 8ap, 8am):**
+   * **DEF-PAT-01 (Честные справки ФНС КНД 1151156 без синтетического хардкода):** В `TaxDeductionRegistryView.tsx` полностью ликвидированы захардкоженные фиктивные даты (`"1985-05-15"`, `"1990-08-20"`) и чеки (`"109823"`, `"389210921"`). Внедрен асинхронный резолвер `resolveParamsForItem(item)` с реальной загрузкой из API (`/api/documents/${item.id}`) и четким предупреждением врача при отсутствии подтвержденных оплат. В `taxRegistryPresets.ts` демо-данные синхронизированы с реалистичными структурами платежей.
+   * **DEF-PAT-02 (Суверенный бренд DENTE в тегах пациентов):** Создан канонический файл `packages/shared/src/patients/dentePatientTagsCatalog.ts` с типом `DentePatientTagPreset` и `DENTE_PATIENT_TAG_PRESETS`. Рудимент `stomxPatientTagsCatalog.ts` с токсичным брендом удален с диска (`git rm`).
+   * **DEF-PAT-03 (Единый SSOT семейного баланса):** Ликвидирован устаревший компонент-дубль `PatientFamilyCard.tsx` и весь каталог `apps/web/src/components/patients/patientFamilyModules/` (9 файлов). Отображение семейных связей и лимитов в `PatientGeneralInfoTab.tsx` и `PatientOverviewTab.tsx` консолидировано вокруг канонического `PatientFamilyAndInsuranceWidget.tsx` и `FamilyWalletModal.tsx`.
+   * **DEF-PAT-04 (Физический снос 10 файлов-сирот реколлов):** Удалены неиспользуемые компоненты: `DirectRecallsLauncher.tsx`, `PatientRecallsDropdownMenu.tsx`, `PatientRecallsFastPresets.tsx`, `PatientRecallsStatusChips.tsx`, `PatientRecallsTableActions.tsx`, `PatientRecallsTableRow.tsx`, `PatientRecallsTableView.tsx`, `PatientRecallsToolbar.tsx`, `PatientRecallsViewToggle.tsx`, `RecallStudioModal.tsx`.
+   * **DEF-PAT-05 (Канонический Stacking Context и Zero-Clipping):** Модалка карточки пациента `PatientCardModal.tsx` переведена на `z-[10050]`, а дочерние окна (`FamilyWalletModal`, `TaxDeductionCertificateModal`, `PediatricBraveryDiplomaModal`, `DmsStudioModal`, `ClinicalPhotoProtocolModal`, `MedicalRecordStudioModal`) — на `z-[10060]`. Это полностью устранило наслоение плавающей кнопки Копайлота (`z-index: 9998`) на кнопку «Сохранить» в мобильном интерфейсе (Zero-Clipping).
+   * **4-State Visual Proof (Live App Карточка Пациента):**
+     - `docs/proofs/patients/01_patient_card_modal_pc_light_1440x900.png` (88.0 KB) — ПК светлая тема карточки пациента, 1 Primary CTA «Сохранить» (`var(--teal)`), представители семьи с бейджами согласий.
+     - `docs/proofs/patients/02_patient_card_modal_pc_dark_1440x900.png` (88.3 KB) — ПК тёмная тема, 100% тёмные токены `var(--paper-strong)`, WCAG AAA контраст.
+     - `docs/proofs/patients/03_patient_card_mobile_light_390x844.png` (116.9 KB) — iPhone 390×844 светлая тема (Apple HIG Bottom Sheet), кнопка «Сохранить» без обрезаний.
+     - `docs/proofs/patients/04_patient_card_mobile_dark_390x844.png` (118.9 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

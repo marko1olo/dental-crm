@@ -206,7 +206,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	};
 
 	return (
-		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", backdropFilter: "blur(4px)" }}>
+		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 10060, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", backdropFilter: "blur(4px)" }}>
 			<div className="dms-modal-window" onClick={(e) => e.stopPropagation()} style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderRadius: "20px", width: "100%", maxWidth: "1020px", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
 				{/* Apple HIG Drag Handle for mobile */}
 				<div className="dms-bottom-sheet-handle" style={{ width: "36px", height: "5px", background: "var(--line, #cbd5e1)", borderRadius: "3px", margin: "10px auto 2px" }} />

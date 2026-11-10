@@ -76,6 +76,7 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 								receiptsCount: Array.isArray(d.payload?.taxPaymentSelection?.selectedPaymentIds)
 									? d.payload.taxPaymentSelection.selectedPaymentIds.length
 									: 1,
+								rawParams: d.payload?.taxParams || d.payload?.certificateParams || d.payload?.params || undefined,
 							};
 						});
 						setItems(mapped);
@@ -128,43 +129,52 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 		return { count: filteredItems.length, totalCode01, totalCode02, totalSum, totalRefund };
 	}, [filteredItems]);
 
+	const resolveParamsForItem = async (
+		item: TaxCertificateRegistryItem,
+	): Promise<TaxDeductionCertificateParams | null> => {
+		if (item.rawParams && Array.isArray(item.rawParams.payments) && item.rawParams.payments.length > 0) {
+			return item.rawParams;
+		}
+
+		// Если это реальный документ, пробуем подтянуть данные через API
+		if (item.id && !item.id.startsWith("tax-reg-")) {
+			try {
+				const res = await fetch(`/api/documents/${item.id}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (res.ok) {
+					const json = await res.json();
+					const doc = json.document || json;
+					const docParams =
+						doc?.payload?.taxParams ||
+						doc?.payload?.certificateParams ||
+						doc?.payload?.params;
+					if (docParams && Array.isArray(docParams.payments) && docParams.payments.length > 0) {
+						return docParams;
+					}
+				}
+			} catch (err) {
+				console.warn("Не удалось загрузить параметры справки из API:", err);
+			}
+		}
+
+		// Если это демо-режим, берем безопасные демо-параметры
+		if (isDemoShowcaseMode() && item.rawParams) {
+			return item.rawParams;
+		}
+
+		return null;
+	};
+
 	const handlePrintItem = async (item: TaxCertificateRegistryItem) => {
-		const params: TaxDeductionCertificateParams = item.rawParams || {
-			certificateNumber: item.certificateNumber,
-			issueDateIso: item.issueDateIso,
-			taxYear: item.taxYear,
-			taxOfficeCode: "7701",
-			clinic: {
-				legalName: clinicName,
-				inn: clinicInn,
-				address: "г. Москва, ул. Клиническая, д. 10",
-				licenseNumber: "ЛО41-01137-77/00368421",
-				licenseDate: "12.10.2021",
-			},
-			payer: {
-				fullName: item.taxpayerName,
-				inn: item.taxpayerInn,
-				birthDate: "1985-05-15",
-				relationship: item.relationshipCode === "2" ? "spouse" : item.relationshipCode === "3" ? "parent" : item.relationshipCode === "4" ? "child" : "patient",
-			},
-			patient: {
-				fullName: item.patientName,
-				inn: item.patientInn,
-				birthDate: "1990-08-20",
-			},
-			payments: [
-				{
-					id: "p1",
-					dateIso: item.issueDateIso,
-					receiptNumber: `ЧЕК-${item.certificateNumber}`,
-					fiscalDocumentNumber: "109823",
-					fiscalSign: "389210921",
-					serviceName: item.code02Rub > 0 ? "Дентальная имплантация (Код 02)" : "Терапевтическое лечение зубов (Код 01)",
-					amountRub: item.totalRub,
-					taxCode: item.code02Rub > 0 ? "2" : "1",
-				},
-			],
-		};
+		const params = await resolveParamsForItem(item);
+		if (!params || !params.payments || params.payments.length === 0) {
+			showToast(
+				"Для печати справки сформируйте её на основе реальных подтвержденных платежей пациента",
+				"warning",
+			);
+			return;
+		}
 
 		const html = renderOfficialTaxCertificateKnd1151156Html(params);
 		try {
@@ -184,41 +194,15 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 		}
 	};
 
-	const handleDownloadXmlItem = (item: TaxCertificateRegistryItem) => {
-		const params: TaxDeductionCertificateParams = item.rawParams || {
-			certificateNumber: item.certificateNumber,
-			issueDateIso: item.issueDateIso,
-			taxYear: item.taxYear,
-			taxOfficeCode: "7701",
-			clinic: {
-				legalName: clinicName,
-				inn: clinicInn,
-				address: "г. Москва, ул. Клиническая, д. 10",
-			},
-			payer: {
-				fullName: item.taxpayerName,
-				inn: item.taxpayerInn,
-				birthDate: "1985-05-15",
-				relationship: item.relationshipCode === "2" ? "spouse" : item.relationshipCode === "3" ? "parent" : item.relationshipCode === "4" ? "child" : "patient",
-			},
-			patient: {
-				fullName: item.patientName,
-				inn: item.patientInn,
-				birthDate: "1990-08-20",
-			},
-			payments: [
-				{
-					id: "p1",
-					dateIso: item.issueDateIso,
-					receiptNumber: `ЧЕК-${item.certificateNumber}`,
-					fiscalDocumentNumber: "109823",
-					fiscalSign: "389210921",
-					serviceName: "Стоматологические медицинские услуги",
-					amountRub: item.totalRub,
-					taxCode: item.code02Rub > 0 ? "2" : "1",
-				},
-			],
-		};
+	const handleDownloadXmlItem = async (item: TaxCertificateRegistryItem) => {
+		const params = await resolveParamsForItem(item);
+		if (!params || !params.payments || params.payments.length === 0) {
+			showToast(
+				"Для выгрузки XML сформируйте справку на основе реальных подтвержденных платежей пациента",
+				"warning",
+			);
+			return;
+		}
 		downloadFnsTaxXmlFile(params);
 		showToast(`XML для налоговой № ${item.certificateNumber} выгружен`, "success");
 	};
@@ -374,7 +358,7 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 				filteredItems={filteredItems}
 				isLoading={isLoading}
 				onPrintItem={(it) => void handlePrintItem(it)}
-				onDownloadXmlItem={handleDownloadXmlItem}
+				onDownloadXmlItem={(it) => void handleDownloadXmlItem(it)}
 			/>
 
 			{/* Mobile Grouped Cards View (< 768px, Apple HIG) */}
@@ -382,7 +366,7 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 				filteredItems={filteredItems}
 				isLoading={isLoading}
 				onPrintItem={(it) => void handlePrintItem(it)}
-				onDownloadXmlItem={handleDownloadXmlItem}
+				onDownloadXmlItem={(it) => void handleDownloadXmlItem(it)}
 			/>
 		</div>
 	);

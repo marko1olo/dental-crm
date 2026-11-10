@@ -39,12 +39,11 @@ describe("Red Team Inquisitor: Family Deposit & Representatives", () => {
 		assert.ok(!html.includes('data-testid="btn-pay-family-full" disabled'));
 	});
 
-	it("2. PatientGeneralInfoTab embeds both PatientFamilyCard and PatientRepresentativesSection in family section", () => {
+	it("2. PatientGeneralInfoTab embeds both PatientFamilyAndInsuranceWidget and PatientRepresentativesSection in family section", () => {
 		const tabPath = path.resolve(patientsDir, "tabs/PatientGeneralInfoTab.tsx");
 		const content = fs.readFileSync(tabPath, "utf-8");
 
-		assert.ok(content.includes("<PatientFamilyCard"));
+		assert.ok(content.includes("<PatientFamilyAndInsuranceWidget"));
 		assert.ok(content.includes("<PatientRepresentativesSection"));
-		assert.ok(content.includes("usePatientFamilyLoader"));
 	});
 });

@@ -44,7 +44,7 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = React.memo(
 
 		const modalContent = (
 			<div
-				className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs"
+				className="fixed inset-0 z-[10060] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs"
 				style={{
 					backgroundColor: "rgba(15, 23, 42, 0.45)",
 					backdropFilter: "blur(3px)",
