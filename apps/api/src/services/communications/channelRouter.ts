@@ -189,6 +189,7 @@ export type ChannelSendRequest = {
 	readonly idempotencyKey: string | null;
 	readonly intent?: string | null;
 	readonly templateName?: string | null;
+	readonly languageCode?: string | null;
 	readonly templateParameters?: readonly string[] | null;
 };
 
@@ -258,7 +259,7 @@ export async function sendThroughChannel(
 			let templateConfig = request.templateName
 				? {
 						name: request.templateName,
-						language: "ru",
+						language: request.languageCode?.trim() || "ru",
 						...(request.templateParameters
 							? { parameters: [...request.templateParameters] }
 							: {}),
@@ -278,7 +279,7 @@ export async function sendThroughChannel(
 				if (mappedName) {
 					templateConfig = {
 						name: mappedName,
-						language: "ru",
+						language: request.languageCode?.trim() || "ru",
 						...(request.templateParameters
 							? { parameters: [...request.templateParameters] }
 							: {}),

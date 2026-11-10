@@ -5,6 +5,7 @@ import {
 	denteTelegramOutboxSendResponseSchema,
 	denteTelegramOutboxSendDueResponseSchema,
 } from "@dental/shared";
+import { hydrateDomainStateFromDb } from "../../db/domainStateHydration.js";
 import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
 	buildDenteTelegramOutbox,
@@ -62,11 +63,24 @@ export async function executeDenteTelegramOutboxDueBatch(
 			],
 		});
 	}
+	let effectiveDomainState = domainState;
+	const orgId = runtimeResult.runtime?.context?.organizationId;
+	if (!effectiveDomainState && orgId) {
+		try {
+			const hydrated = await hydrateDomainStateFromDb(orgId);
+			if (hydrated?.state) {
+				effectiveDomainState = hydrated.state;
+			}
+		} catch {
+			// Fallback: тихий возврат к domainState для изоляции тестов без физической БД
+		}
+	}
+
 	const requestedLimit = input.limit ?? 50;
 	const outbox = buildDenteTelegramOutbox(
 		{ limit: Math.max(requestedLimit, 50), status: "due" },
 		runtimeResult.runtime.runtimeScope,
-		domainState,
+		effectiveDomainState,
 	);
 	const nowMs = Date.now();
 	const readyItems = outbox.items.filter(
@@ -115,7 +129,7 @@ export async function executeDenteTelegramOutboxDueBatch(
 							: dueOutboxClientMutationId(item.id, item.scheduledAt),
 					},
 					runtimeResult.runtime,
-					domainState,
+					effectiveDomainState,
 				);
 				return {
 					itemId: item.id,

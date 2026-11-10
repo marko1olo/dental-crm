@@ -33,7 +33,7 @@ import {
 	markSuppressed,
 	releaseStuckLocks,
 } from "./outboxRetryQueue.js";
-import { resolveCommunicationSettings } from "./templateRenderer.js";
+import { resolveCommunicationSettings } from "./channelDispatchConfig.js";
 import type {
 	DispatchOptions,
 	DispatchReport,

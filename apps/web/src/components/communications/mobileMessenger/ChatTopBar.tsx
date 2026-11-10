@@ -75,7 +75,7 @@ export const ChatTopBar: React.FC<ChatTopBarProps> = ({
 						className="mobile-touch-btn text-teal-600 dark:text-teal-400"
 						onClick={onQuickBook}
 						aria-label="Записать на приём"
-						title="Записать на приём в 1 клик"
+						title="Записать на приём"
 						data-testid="btn-mobile-chat-quick-book"
 					>
 						<CalendarCheck size={18} />

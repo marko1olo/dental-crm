@@ -1,16 +1,15 @@
-import { Bell, Bot, MessageSquare, MoreHorizontal, Radio, Send } from "lucide-react";
+import { Bell, Bot, MessageSquare, MoreHorizontal, Radio } from "lucide-react";
 import { CommunicationsMoreMenu } from "./CommunicationsMoreMenu";
 import type { CommunicationActiveSection, CommunicationsChannelFilterBarProps } from "./types";
 
 const SECTIONS: { id: CommunicationActiveSection; label: string; icon: any; testId?: string; title?: string }[] = [
 	{ id: "tasks", label: "Очередь и рассылки", icon: MessageSquare },
-	{ id: "omnichannel", label: "Омниканальный чат", icon: MessageSquare, testId: "communications-tab-omnichannel", title: "Омниканальный чат с пациентами (WhatsApp / Telegram / SMS)" },
-	{ id: "chat", label: "WhatsApp Чат", icon: Send },
+	{ id: "omnichannel", label: "Диалоги с пациентами", icon: MessageSquare, testId: "communications-tab-omnichannel", title: "Диалоги с пациентами (WhatsApp / Telegram / SMS)" },
 	// data-testid="communications-tab-bot-inbox"
 	{ id: "bot_inbox", label: "Пульт ботов", icon: Bot, testId: "communications-tab-bot-inbox", title: "Пульт ботов (TG/VK/WA/MAX)" },
 	{ id: "notifications", label: "Уведомления", icon: Bell },
 	// data-testid="communications-tab-staff-chat"
-	{ id: "staff_chat", label: "Интерком", icon: Radio, testId: "communications-tab-staff-chat", title: "Чат клиники / Интерком" },
+	{ id: "staff_chat", label: "Интерком", icon: Radio, testId: "communications-tab-staff-chat", title: "Внутренний чат клиники / Интерком" },
 ];
 
 export function CommunicationsChannelFilterBar({
@@ -50,17 +49,15 @@ export function CommunicationsChannelFilterBar({
 			</div>
 
 			<div className="flex items-center gap-1.5 shrink-0 relative">
-				{/* Один Primary CTA на экран (Мандат 8am): когда активна вкладка
-				    «Омниканальный чат», акцентная кнопка-дубль скрыта — она дублировала
-				    таб и спорила за фокус с Primary самой секции. */}
+				{/* Единый Primary CTA (Мандат 8am): вспомогательная кнопка запуска диалога оформлена как спокойный secondary control */}
 				{activeSection !== "omnichannel" && (
 					<button
 						type="button" onClick={onOpenOmnichannelHub}
-						className="primary-button h-9 min-h-[36px] max-h-[36px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs whitespace-nowrap cursor-pointer transition-all select-none shrink-0"
-						data-testid="communications-omnichannel-hub-btn" title="Омниканальный чат с пациентом (WhatsApp / Telegram / SMS)"
+						className="secondary-button h-9 min-h-[36px] max-h-[36px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs whitespace-nowrap cursor-pointer transition-all select-none shrink-0"
+						data-testid="communications-omnichannel-hub-btn" title="Диалог с пациентом (WhatsApp / Telegram / SMS)"
 					>
-						<MessageSquare size={14} className="shrink-0 text-white" aria-hidden="true" />
-						<span>Омниканальный чат</span>
+						<MessageSquare size={14} className="shrink-0 text-[var(--primary)]" aria-hidden="true" />
+						<span>Диалог с пациентом</span>
 					</button>
 				)}
 				<button

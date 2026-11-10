@@ -13,12 +13,6 @@ const PatientRecallsHubModal = lazy(() =>
 	})),
 );
 
-const PatientOmnichannelHubModal = lazy(() =>
-	import("./components/messaging/PatientOmnichannelHubModal").then((module) => ({
-		default: module.PatientOmnichannelHubModal,
-	})),
-);
-
 const OmnichannelOperatorDesk = lazy(() =>
 	import("./components/chat/OmnichannelOperatorDesk").then((module) => ({
 		default: module.OmnichannelOperatorDesk,
@@ -72,7 +66,7 @@ export function CommunicationsView(
 				}}
 				onOpenOmnichannelHub={() => {
 					ctrl.setIsRecallsHubOpen(false);
-					ctrl.setIsOmnichannelHubOpen(true);
+					ctrl.setActiveSection("omnichannel");
 				}}
 				onGoToSchedule={ctrl.onGoToSchedule}
 				isMoreMenuOpen={ctrl.isMoreMenuOpen}
@@ -87,16 +81,6 @@ export function CommunicationsView(
 					<PatientRecallsHubModal
 						isOpen={ctrl.isRecallsHubOpen}
 						onClose={() => ctrl.setIsRecallsHubOpen(false)}
-					/>
-				</Suspense>
-			)}
-
-			{ctrl.isOmnichannelHubOpen && (
-				<Suspense fallback={null}>
-					<PatientOmnichannelHubModal
-						isOpen={ctrl.isOmnichannelHubOpen}
-						onClose={() => ctrl.setIsOmnichannelHubOpen(false)}
-						portal={true}
 					/>
 				</Suspense>
 			)}

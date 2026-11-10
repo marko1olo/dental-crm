@@ -4,7 +4,7 @@
  */
 
 export * from "./types.js";
-export * from "./templateRenderer.js";
+export * from "./channelDispatchConfig.js";
 export * from "./channelAdapters.js";
 export * from "./outboxRetryQueue.js";
 export * from "./dispatcherCore.js";

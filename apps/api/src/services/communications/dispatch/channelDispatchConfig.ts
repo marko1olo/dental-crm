@@ -1,5 +1,5 @@
 /**
- * @file templateRenderer.ts
+ * @file channelDispatchConfig.ts
  * @description Layer 1: Communication settings resolution, reminder lead hours parsing,
  * and template variable configuration.
  */

@@ -8,12 +8,6 @@ const PatientRecallsHubModal = lazy(() =>
 	})),
 );
 
-const PatientOmnichannelHubModal = lazy(() =>
-	import("../../messaging/PatientOmnichannelHubModal").then((module) => ({
-		default: module.PatientOmnichannelHubModal,
-	})),
-);
-
 export function CommunicationsMobilePane({
 	ctrl,
 }: {
@@ -62,15 +56,6 @@ export function CommunicationsMobilePane({
 					<PatientRecallsHubModal
 						isOpen={ctrl.isRecallsHubOpen}
 						onClose={() => ctrl.setIsRecallsHubOpen(false)}
-					/>
-				</Suspense>
-			)}
-			{ctrl.isOmnichannelHubOpen && (
-				<Suspense fallback={null}>
-					<PatientOmnichannelHubModal
-						isOpen={ctrl.isOmnichannelHubOpen}
-						onClose={() => ctrl.setIsOmnichannelHubOpen(false)}
-						portal={true}
 					/>
 				</Suspense>
 			)}

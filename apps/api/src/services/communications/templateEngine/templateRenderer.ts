@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { messageTemplateCatalogs } from "../../../db/schema.js";
+import { communicationTemplates } from "../../../db/schema.js";
 import { calculateSmsSegments, checkChannelLimits } from "./channelLimits.js";
 import { MACRO_KEY_ALIASES } from "./macroAliases.js";
 import { detectMedicalSecrecyLeaks, sanitizeMedicalSecrecy } from "./secrecyDetector.js";
@@ -27,11 +27,11 @@ export async function renderTemplate(organizationId: string, options: RenderTemp
 	let channel = options.channel ?? "telegram";
 
 	if (options.templateId) {
-		const [existing] = await db.select().from(messageTemplateCatalogs)
-			.where(and(eq(messageTemplateCatalogs.id, options.templateId), eq(messageTemplateCatalogs.organizationId, organizationId)))
+		const [existing] = await db.select().from(communicationTemplates)
+			.where(and(eq(communicationTemplates.id, options.templateId), eq(communicationTemplates.organizationId, organizationId)))
 			.limit(1);
 		if (existing) {
-			rawText = existing.templateText;
+			rawText = existing.body;
 			channel = options.channel || existing.channel;
 		}
 	}

@@ -9,9 +9,14 @@ import {
 } from "@dental/shared";
 import type { DomainState } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
-	claimDenteTelegramOutboxDeliveryReceipt, denteTelegramOutboxDeliveryReceipts,
-	findDenteTelegramOutboxDeliveryReceipt, prepareDenteTelegramOutboxDelivery,
+	claimDenteTelegramOutboxDeliveryReceipt,
+	claimDenteTelegramOutboxDeliveryReceiptDb,
+	denteTelegramOutboxDeliveryReceipts,
+	findDenteTelegramOutboxDeliveryReceipt,
+	findDenteTelegramOutboxDeliveryReceiptDb,
+	prepareDenteTelegramOutboxDelivery,
 	recordDenteTelegramOutboxDelivery,
+	recordDenteTelegramOutboxDeliveryDb,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
 import {
 	sendTelegramPhotoMessage, sendTelegramTextMessage,
@@ -196,10 +201,12 @@ export async function executeTelegramOutboxSend(
 	domainState?: DomainState,
 ): Promise<TelegramOutboxSendExecutionResult> {
 	const clientMutationId = input.clientMutationId?.trim() || null;
-	const replay = findDenteTelegramOutboxDeliveryReceipt(
-		outboxItemId,
-		clientMutationId,
-	);
+	const replay =
+		(await findDenteTelegramOutboxDeliveryReceiptDb(
+			runtime?.context?.organizationId,
+			outboxItemId,
+			clientMutationId,
+		)) || findDenteTelegramOutboxDeliveryReceipt(outboxItemId, clientMutationId);
 	if (
 		replay &&
 		!(replay.status === "failed" && clientMutationId?.startsWith("due-"))
@@ -380,11 +387,18 @@ export async function executeTelegramOutboxSend(
 		prepared.item.id,
 		deliveryClientMutationId,
 	);
-	const durableReplay = claimDenteTelegramOutboxDeliveryReceipt(
-		prepared.item,
-		deliveryClientMutationId,
-		prepared.warnings,
-	);
+	const durableReplay =
+		(await claimDenteTelegramOutboxDeliveryReceiptDb(
+			runtimeResult.runtime.context.organizationId,
+			prepared.item,
+			deliveryClientMutationId,
+			prepared.warnings,
+		)) ||
+		claimDenteTelegramOutboxDeliveryReceipt(
+			prepared.item,
+			deliveryClientMutationId,
+			prepared.warnings,
+		);
 	if (durableReplay) {
 		const body = denteTelegramOutboxSendResponseSchema.parse({
 			...durableReplay,
@@ -451,10 +465,11 @@ export async function executeTelegramOutboxSend(
 		const deliveredPhotoMessageId = photoAlreadyWithPatient
 			? partDelivery.delivered.photoMessageId
 			: null;
-		const delivery = recordDenteTelegramOutboxDelivery({
+		const delivery = await recordDenteTelegramOutboxDeliveryDb({
 			item: prepared.item,
 			status: "failed",
 			message: transportWarning,
+			organizationId: runtimeResult.runtime.context.organizationId,
 			telegramMessageId: deliveredPhotoMessageId,
 			clientMutationId: deliveryClientMutationId,
 			warnings,
@@ -476,9 +491,10 @@ export async function executeTelegramOutboxSend(
 		};
 	}
 
-	const delivery = recordDenteTelegramOutboxDelivery({
+	const delivery = await recordDenteTelegramOutboxDeliveryDb({
 		item: prepared.item,
 		status: "sent",
+		organizationId: runtimeResult.runtime.context.organizationId,
 		telegramMessageId: transport.telegramMessageId,
 		message: `Telegram safe template sent: ${prepared.item.templateKind}`,
 		clientMutationId: deliveryClientMutationId,
