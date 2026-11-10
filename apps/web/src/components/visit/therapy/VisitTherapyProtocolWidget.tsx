@@ -37,6 +37,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 		>
 			<TherapyWidgetHeader
 				effectiveTooth={s.effectiveTooth}
+				isToothSelected={s.isToothSelected}
 				selectedSurfaces={s.selectedSurfaces}
 				blackClass={s.blackClass}
 				warranty={s.warranty}

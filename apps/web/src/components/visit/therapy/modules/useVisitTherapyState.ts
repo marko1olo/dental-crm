@@ -18,7 +18,8 @@ export interface UseVisitTherapyStateParams {
 export function useVisitTherapyState({
 	activeTooth = 16, activeSurfaces, onSelectSurfaces, onApplyProtocolText, onAddToInvoice,
 }: UseVisitTherapyStateParams) {
-	const effectiveTooth = activeTooth && activeTooth >= 11 && activeTooth <= 85 ? activeTooth : 16;
+	const isToothSelected = Boolean(activeTooth && activeTooth >= 11 && activeTooth <= 85);
+	const effectiveTooth = isToothSelected ? (activeTooth as number) : 16;
 	const isAnterior = (effectiveTooth % 10) >= 1 && (effectiveTooth % 10) <= 3;
 
 	const [activePresetId, setActivePresetId] = useState<TherapyPresetId>(() => isAnterior ? "frontal_aesthetic_restoration" : "caries_composite");
@@ -74,6 +75,10 @@ export function useVisitTherapyState({
 	const soapResult = useMemo(() => generateTherapySoapProtocol({ toothNumber: effectiveTooth, surfaces: selectedSurfaces, presetId: activePresetId, compositeBrand: selectedComposite, adhesiveBrand: selectedAdhesive, shadeDentin: activePresetId === "frontal_aesthetic_restoration" ? shadeDentin : undefined, shadeEnamel: activePresetId === "frontal_aesthetic_restoration" ? shadeEnamel : undefined, isBruxismRisk, includeFluoridation }), [effectiveTooth, selectedSurfaces, activePresetId, selectedComposite, selectedAdhesive, shadeDentin, shadeEnamel, isBruxismRisk, includeFluoridation]);
 
 	const handleInsertToClinicalDiary = useCallback(() => {
+		if (!isToothSelected && (activeTooth === null || activeTooth === 0)) {
+			showToast("Выберите зуб на зубной формуле перед фиксацией протокола", "warning", 3000);
+			return;
+		}
 		const text = soapResult.fullProtocolText043;
 		onApplyProtocolText?.(text);
 		try {
@@ -91,19 +96,23 @@ export function useVisitTherapyState({
 			}));
 		} catch { /* fallback */ }
 		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в дневник приёма`, "success", 3000);
-	}, [soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);
+	}, [isToothSelected, activeTooth, soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);
 
 	const handleAddServicesToInvoice = useCallback(() => {
+		if (!isToothSelected && (activeTooth === null || activeTooth === 0)) {
+			showToast("Выберите зуб на зубной формуле для добавления услуг в смету", "warning", 3000);
+			return;
+		}
 		onAddToInvoice?.(services804n);
 		try {
 			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { toothNumber: effectiveTooth, services: services804n } }));
 		} catch { /* fallback */ }
 		const codesList = services804n.map((s) => s.code).join(", ");
 		showToast(`Услуги (${codesList}) добавлены в смету зуба ${effectiveTooth}`, "success", 3500);
-	}, [services804n, effectiveTooth, onAddToInvoice]);
+	}, [isToothSelected, activeTooth, services804n, effectiveTooth, onAddToInvoice]);
 
 	return {
-		effectiveTooth, isAnterior, activePresetId, selectedSurfaces, selectedComposite, setSelectedComposite,
+		effectiveTooth, isToothSelected, isAnterior, activePresetId, selectedSurfaces, selectedComposite, setSelectedComposite,
 		selectedAdhesive, setSelectedAdhesive, shadeDentin, setShadeDentin, shadeEnamel, setShadeEnamel,
 		showDetailsAccordion, setShowDetailsAccordion, blackClass, warranty, services804n, soapResult,
 		toggleSurface, handleApplySurfacePreset, handleSelectPreset, handleInsertToClinicalDiary, handleAddServicesToInvoice,

@@ -8,6 +8,7 @@ import type { WarmAccordionSection } from "./toothDrawerTypes";
 interface ToothDrawerSurfacesAccordionProps {
 	toothNumber: number;
 	toothData?: ToothData | undefined;
+	patientId?: string | undefined;
 	activeSection: WarmAccordionSection;
 	toggleSection: (section: WarmAccordionSection) => void;
 	onUpdateTooth?: ((num: number, updates: Partial<ToothData>) => void) | undefined;
@@ -17,6 +18,7 @@ interface ToothDrawerSurfacesAccordionProps {
 export const ToothDrawerSurfacesAccordion: React.FC<ToothDrawerSurfacesAccordionProps> = ({
 	toothNumber,
 	toothData,
+	patientId,
 	activeSection,
 	toggleSection,
 	onUpdateTooth,
@@ -50,6 +52,7 @@ export const ToothDrawerSurfacesAccordion: React.FC<ToothDrawerSurfacesAccordion
 					<ToothSurfacesAndEndoMatrix
 						toothNumber={toothNumber}
 						toothData={toothData}
+						patientId={patientId}
 						onUpdateTooth={(updates) => onUpdateTooth?.(toothNumber, updates)}
 						onInsertToProtocol={onInsertToProtocol}
 					/>

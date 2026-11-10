@@ -254,12 +254,15 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 		});
 	});
 
-	describe("7. Live UI Mounting & Deep Links (Mandate 8aq)", () => {
-		it("DirectEndodonticsLauncher mounts in AppShell.tsx", () => {
+	describe("7. Live UI Mounting & Deep Links (Mandate 8aq & DEF-THER-02 Single SSOT)", () => {
+		it("Endodontics launcher is registered in canonical clinicalLaunchersRegistry.tsx and absent from duplicate AppShell root", () => {
 			const appShellPath = path.join(webSrc, "AppShell.tsx");
-			const content = fs.readFileSync(appShellPath, "utf-8");
-			assert.ok(content.includes("DirectEndodonticsLauncher"), "AppShell must import DirectEndodonticsLauncher");
-			assert.ok(content.includes("<DirectEndodonticsLauncher />"), "AppShell must render <DirectEndodonticsLauncher />");
+			const appShellContent = fs.readFileSync(appShellPath, "utf-8");
+			assert.ok(!appShellContent.includes("<DirectEndodonticsLauncher />"), "DEF-THER-02: AppShell must NOT duplicate mount <DirectEndodonticsLauncher /> in root DOM");
+
+			const registryPath = path.join(webSrc, "components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx");
+			const registryContent = fs.readFileSync(registryPath, "utf-8");
+			assert.ok(registryContent.includes("endodontics-studio") || registryContent.includes("DirectEndodonticsLauncher"), "clinicalLaunchersRegistry must handle endodontics deep link");
 		});
 
 		it("DirectEndodonticsLauncher mounts in StandaloneLaunchers.tsx under deep links", () => {

@@ -14,14 +14,10 @@ import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
-	calculateEndoBillingAndMaterialsEstimate,
-	getChairsideDefaultCanals,
-	QUICK_LENGTH_CHIPS,
-	QUICK_MAF_OPTIONS,
-	type ChairsideEndoQuickBarProps,
-	type EndoStageStamp,
-	type QuickCanalState,
+	calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, QUICK_LENGTH_CHIPS, QUICK_MAF_OPTIONS,
+	type ChairsideEndoQuickBarProps, type EndoStageStamp, type QuickCanalState,
 } from "./endoCanalData";
+import { getAnatomicalWorkingLength } from "./endodonticsCatalogData";
 
 export * from "./endoCanalData";
 
@@ -33,8 +29,8 @@ export function generateSoapEndoProtocol({
 }): string {
 	const toothNum = activeTooth ?? toothNumber ?? 46;
 	const canals = Array.isArray(currentCanals) && currentCanals.length > 0 ? currentCanals : [
-		{ name: "Дистальный", workingLengthMm: 21, masterApicalFile: "25", taper: "06", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
-		{ name: "Медиальный", workingLengthMm: 21, masterApicalFile: "25", taper: "04", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
+		{ name: "Дистальный", workingLengthMm: getAnatomicalWorkingLength(toothNum, "Дистальный"), masterApicalFile: "25", taper: "06", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
+		{ name: "Медиальный", workingLengthMm: getAnatomicalWorkingLength(toothNum, "Медиальный"), masterApicalFile: "25", taper: "04", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
 	];
 	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
 	const isBio = canals.some((c) => c.obturationType === "bioceramic");
@@ -47,7 +43,7 @@ export function generateSoapEndoProtocol({
 			: c.obturationType === "bioceramic"
 				? `постоянная обтурация гуттаперчей + биокерамика (${c.sealer || "BioRoot"})`
 				: `обтурация гуттаперчей с ${c.sealer || "AH Plus"} методом латеральной компакции`;
-		const len = c.workingLengthMm > 0 ? c.workingLengthMm.toFixed(1) : "21.0";
+		const len = c.workingLengthMm > 0 ? c.workingLengthMm.toFixed(1) : getAnatomicalWorkingLength(toothNum, c.name).toFixed(1);
 		const apexStr = c.apexLocatorReading ? c.apexLocatorReading : "0.0 Apex";
 		return `• Канал ${c.name}: пройден, WL = ${len} мм (Apex: ${apexStr}), MAF = ${c.masterApicalFile}/${c.taper}, ${obt}`;
 	}).join("\n");
@@ -99,7 +95,8 @@ export function executeChairsideTransferToDiary({
 	} catch { /* safe */ }
 
 	const sharedCanals: EndoCanalData[] = canals.map((c) => ({
-		id: c.id, canalName: c.name, referencePoint: "Бугор", workingLengthMm: c.isObliterated ? 0 : (c.workingLengthMm || 21.0),
+		id: c.id, canalName: c.name, referencePoint: "Бугор",
+		workingLengthMm: c.isObliterated ? 0 : (c.workingLengthMm || getAnatomicalWorkingLength(activeTooth, c.name)),
 		masterApicalFile: c.masterApicalFile || "#25", taper: c.taper || ".04", isObliterated: Boolean(c.isObliterated),
 		apexLocatorReading: c.apexLocatorReading || "0.0 (Apex)", masterFile: c.masterFile || c.masterApicalFile || "#25",
 		masterCone: c.masterCone || "Гуттаперча 0.04",
@@ -167,10 +164,11 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 	const adjustLength = useCallback((id: string, delta: number) => {
 		setCanals((prev) => prev.map((c) => {
 			if (c.id !== id) return c;
-			const next = Math.max(10, Math.min(35, Math.round(((c.workingLengthMm || 21) + delta) * 2) / 2));
+			const curLen = c.workingLengthMm || getAnatomicalWorkingLength(activeTooth, c.name);
+			const next = Math.max(10, Math.min(35, Math.round((curLen + delta) * 2) / 2));
 			return { ...c, workingLengthMm: next, isObliterated: false };
 		}));
-	}, []);
+	}, [activeTooth]);
 
 	const applyPulpitis1Visit = useCallback(() => {
 		setExplicitProtocolType("pulpitis");
@@ -213,7 +211,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 			else if (!existingNames.has("MM")) suggestedName = "MM";
 			else if (!existingNames.has("Radix")) suggestedName = "Radix";
 		}
-		setCanals((prev) => [...prev, { id: `c-add-${Date.now()}-${nextIdx}`, name: suggestedName, workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
+		setCanals((prev) => [...prev, { id: `c-add-${Date.now()}-${nextIdx}`, name: suggestedName, workingLengthMm: getAnatomicalWorkingLength(activeTooth, suggestedName), masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
 	}, [activeTooth, canals]);
 
 	const removeCanal = useCallback((id: string) => {
@@ -231,7 +229,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 							<span className="text-xs sm:text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white truncate">Зуб #{activeTooth}: {toothAnatomicalName}</span>
 							{props.toothState && <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 truncate">{props.toothState}</span>}
 						</div>
-						<p className="text-[11px] text-[var(--muted,#64748b)] hidden sm:block truncate">Протокол эндодонтии у кресла (автономия врача, 1-клик нормы)</p>
+						<p className="text-[11px] text-[var(--muted,#64748b)] hidden sm:block truncate">Протокол эндодонтии у кресла (автономия врача, физиологическая норма)</p>
 					</div>
 				</div>
 				<div className="flex items-center gap-1.5 flex-wrap">
@@ -274,7 +272,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 								</div>
 								<div className="flex items-center gap-1.5">
 									<label className="flex items-center gap-1 text-[11px] text-[var(--muted,#64748b)] cursor-pointer">
-										<input type="checkbox" checked={Boolean(c.isObliterated)} onChange={(e) => updateCanal(c.id, { isObliterated: e.target.checked, workingLengthMm: e.target.checked ? 0 : 21 })} className="rounded text-[var(--teal,#0d9488)]" />
+										<input type="checkbox" checked={Boolean(c.isObliterated)} onChange={(e) => updateCanal(c.id, { isObliterated: e.target.checked, workingLengthMm: e.target.checked ? 0 : getAnatomicalWorkingLength(activeTooth, c.name) })} className="rounded text-[var(--teal,#0d9488)]" />
 										<span>Склероз</span>
 									</label>
 									{canals.length > 1 && (

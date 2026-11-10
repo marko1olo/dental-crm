@@ -4,6 +4,7 @@ import type { BlackCavityClass } from "@dental/shared";
 
 interface TherapyWidgetHeaderProps {
 	effectiveTooth: number;
+	isToothSelected?: boolean;
 	selectedSurfaces: string[];
 	blackClass: BlackCavityClass;
 	warranty: { warrantyMonths: number; rationaleRu: string };
@@ -13,6 +14,7 @@ interface TherapyWidgetHeaderProps {
 
 export const TherapyWidgetHeader: React.FC<TherapyWidgetHeaderProps> = ({
 	effectiveTooth,
+	isToothSelected = true,
 	selectedSurfaces,
 	blackClass,
 	warranty,
@@ -34,7 +36,9 @@ export const TherapyWidgetHeader: React.FC<TherapyWidgetHeaderProps> = ({
 				<div>
 					<div className="flex items-center gap-2">
 						<h3 className="text-sm font-semibold text-[var(--ink)]">
-							Терапевтический протокол: Зуб {effectiveTooth}
+							{isToothSelected
+								? `Терапевтический протокол: Зуб ${effectiveTooth}`
+								: `Терапевтический протокол: Зуб #${effectiveTooth} (не выбран)`}
 						</h3>
 						<span className="rounded bg-teal-100 px-2 py-0.5 text-xs font-mono font-bold text-teal-800 dark:bg-teal-900/60 dark:text-teal-300">
 							{selectedSurfaces.join("") || "O"}

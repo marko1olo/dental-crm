@@ -12,6 +12,7 @@ export * from "./toothSurfacesConstants";
 export interface ToothSurfacesAndEndoMatrixProps {
 	toothNumber: number;
 	toothData?: ToothData | undefined;
+	patientId?: string | undefined;
 	onUpdateTooth?: ((updates: Partial<ToothData>) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
 }
@@ -19,6 +20,7 @@ export interface ToothSurfacesAndEndoMatrixProps {
 export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProps> = ({
 	toothNumber,
 	toothData,
+	patientId,
 	onUpdateTooth,
 	onInsertToProtocol,
 }) => {
@@ -61,6 +63,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 			<ChairsideEndoQuickBar
 				activeTooth={toothNumber}
 				toothState={toothData?.state}
+				patientId={patientId}
 				onInsertToDiary={(soapText) => {
 					onInsertToProtocol?.(soapText);
 				}}

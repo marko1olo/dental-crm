@@ -42,6 +42,7 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 			<ToothDrawerSurfacesAccordion
 				toothNumber={toothNumber}
 				toothData={toothData}
+				patientId={patient?.id}
 				activeSection={activeSection}
 				toggleSection={toggleSection}
 				onUpdateTooth={onUpdateTooth}

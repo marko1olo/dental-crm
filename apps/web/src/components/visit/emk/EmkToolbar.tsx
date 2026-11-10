@@ -31,6 +31,7 @@ export function EmkToolbar({
 	onScheduleNext,
 	onOpenConsent: propOnOpenConsent,
 	onOpenConsentModal,
+	onPrintMedicalCard: propOnPrintMedicalCard,
 	onPrint043: propOnPrint043,
 	onOpenPrintModal,
 	hasUnsavedChanges = false,
@@ -40,7 +41,7 @@ export function EmkToolbar({
 	onUndo,
 	onRedo,
 }: EmkToolbarProps) {
-	const onPrint043 = propOnPrint043 ?? onOpenPrintModal;
+	const onPrint043 = propOnPrintMedicalCard ?? propOnPrint043 ?? onOpenPrintModal;
 	const onOpenConsent = propOnOpenConsent ?? onOpenConsentModal;
 	const storeUndoVisit = useVisitStore((s) => s.undoVisit);
 	const storeRedoVisit = useVisitStore((s) => s.redoVisit);

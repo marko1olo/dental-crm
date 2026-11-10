@@ -27,37 +27,37 @@ export function EndoStudioToolbar(props: EndoStudioToolbarProps) {
 					type="button"
 					data-testid="btn-endo-1click-obturation-norm"
 					onClick={props.onApplyOneClickObturationNorm}
-					className="btn-endo-1click-obturation-norm min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white border border-emerald-600 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+					className="btn-endo-1click-obturation-norm secondary-button min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 					title="Мгновенно обтурировать каналы анатомической нормой: длина по FDI, МАФ 25.04, AH Plus, NaOCl 3%, латеральная компакция"
 				>
-					<Check size={14} className="stroke-[2.5]" />
-					<span>Каналы запломбированы в 1 клик (норма)</span>
+					<Check size={14} className="stroke-[2.5] text-[var(--teal,#0d9488)]" />
+					<span>Каналы запломбированы (физиологическая норма)</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("pulpitis_1visit")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "pulpitis_1visit" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "pulpitis_1visit" ? "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-700" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
 				>
 					Пульпит (1 визит)
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("periodontitis_temp")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "periodontitis_temp" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "periodontitis_temp" ? "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-700" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
 				>
 					Периодонтит (Ca(OH)2)
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("periodontitis_permanent_ahplus")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-700" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
 				>
 					Периодонтит (AH Plus)
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("retreatment_unsealing")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "retreatment_unsealing" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${props.activeProtocolId === "retreatment_unsealing" ? "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-700" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}
 				>
 					Распломбировка
 				</button>

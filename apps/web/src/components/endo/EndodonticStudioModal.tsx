@@ -98,20 +98,22 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			if (c.isObliterated) return { ...c, workingLengthMm: 0 };
 			const num = typeof rawVal === "number" ? rawVal : Number.parseFloat(String(rawVal || ""));
 			if (Number.isNaN(num) || !Number.isFinite(num)) {
-				return { ...c, workingLengthMm: 21.0 };
+				return { ...c, workingLengthMm: getAnatomicalWorkingLength(activeTooth, c.canalName) };
 			}
 			const safeWl = Math.max(10, Math.min(35, Math.round(num * 2) / 2));
 			return { ...c, workingLengthMm: safeWl };
 		}));
-	}, []);
+	}, [activeTooth]);
 
 	const adjustLength = useCallback((id: string, delta: number) => {
 		setCanals((prev) => prev.map((c) => {
 			if (c.id !== id) return c;
-			const cur = typeof c.workingLengthMm === "number" && !Number.isNaN(c.workingLengthMm) && c.workingLengthMm > 0 ? c.workingLengthMm : 21.0;
+			const cur = typeof c.workingLengthMm === "number" && !Number.isNaN(c.workingLengthMm) && c.workingLengthMm > 0
+				? c.workingLengthMm
+				: getAnatomicalWorkingLength(activeTooth, c.canalName);
 			return { ...c, workingLengthMm: Math.max(10, Math.min(35, Math.round((cur + delta) * 2) / 2)), isObliterated: false };
 		}));
-	}, []);
+	}, [activeTooth]);
 
 	const toggleObliteration = useCallback((id: string) => {
 		setCanals((prev) => prev.map((c) => {
@@ -123,12 +125,13 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 	const addCanal = useCallback(() => {
 		const nextNum = canals.length + 1;
+		const canalName = `К${nextNum}`;
 		setCanals((prev) => [...prev, {
-			id: `canal-${Date.now()}-${nextNum}`, canalName: `К${nextNum}`, referencePoint: "Бугор зуба",
-			workingLengthMm: 21.0, masterApicalFile: "#25.04", taper: ".04 (Конусность 4%)",
+			id: `canal-${Date.now()}-${nextNum}`, canalName, referencePoint: "Бугор зуба",
+			workingLengthMm: getAnatomicalWorkingLength(activeTooth, canalName), masterApicalFile: "#25.04", taper: ".04 (Конусность 4%)",
 			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально", sealer: "AH Plus (эпоксидный герметик)",
 		}]);
-	}, [canals.length]);
+	}, [activeTooth, canals.length]);
 
 	const removeCanal = useCallback((id: string) => {
 		if (canals.length > 1) setCanals((prev) => prev.filter((c) => c.id !== id));
@@ -160,7 +163,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		const updated: EndoCanalData[] = defaultAnatomicalCanals.map((c) => ({
 			...c,
 			isObliterated: false,
-			workingLengthMm: Math.max(10, Math.min(35, Math.round((Number(c.workingLengthMm) || getAnatomicalWorkingLength(activeTooth, c.canalName) || 21.0) * 2) / 2)),
+			workingLengthMm: Math.max(10, Math.min(35, Math.round((Number(c.workingLengthMm) || getAnatomicalWorkingLength(activeTooth, c.canalName)) * 2) / 2)),
 			masterApicalFile: "#25.04",
 			taper: ".04 (Конусность 4%)",
 			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
@@ -173,7 +176,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		setIrrigation("NaOCl 3% + EDTA 17% (УЗ-активация)");
 		setRotarySystem("WaveOne Gold / ProTaper Next (Dentsply)");
 		setActiveProtocolId("pulpitis_1visit");
-		showToast(`Каналы зуба #${activeTooth} запломбированы в 1 клик (норма)!`, "success", 2000);
+		showToast(`Каналы зуба #${activeTooth} запломбированы (физиологическая норма)!`, "success", 2000);
 	}, [activeTooth]);
 
 	const applyAllCanalsApex00 = useCallback(() => {
@@ -182,12 +185,15 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	}, []);
 
 	const quickCanalsState: QuickCanalState[] = useMemo(() => canals.map((c) => ({
-		id: c.id, name: c.canalName, workingLengthMm: typeof c.workingLengthMm === "number" ? c.workingLengthMm : 21.0,
+		id: c.id, name: c.canalName,
+		workingLengthMm: typeof c.workingLengthMm === "number" && !Number.isNaN(c.workingLengthMm) && c.workingLengthMm > 0
+			? c.workingLengthMm
+			: getAnatomicalWorkingLength(activeTooth, c.canalName),
 		masterApicalFile: c.masterApicalFile || "#25.04", taper: c.taper || ".04",
 		obturationType: stageStamp === "TEMP_CAOH2" ? "temp_caoh2" : "gutta_sealer",
 		sealer: c.sealer || "AH Plus", isObliterated: Boolean(c.isObliterated),
 		apexLocatorReading: c.apexLocatorReading || "0.0 (Apex)",
-	})), [canals, stageStamp]);
+	})), [canals, stageStamp, activeTooth]);
 
 	const generatedProtocolText = useMemo(() => {
 		const protoDef = CANONICAL_ENDO_PROTOCOLS[activeProtocolId];

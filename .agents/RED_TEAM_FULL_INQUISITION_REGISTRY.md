@@ -2516,6 +2516,36 @@
   2. В `ToothSurfacesAndEndoMatrix.tsx` устаревший `ToothEndoCanalsSection` заменен на канонический `ChairsideEndoQuickBar` с апекслокатором «Все 0.0 (Apex)», протоколами «Пульпит (1 визит)», «Периодонтит (AH Plus)», «Ca(OH)2», «Норма» и 1-кликовым переносом в дневник приёма.
   3. Устаревший дублирующий кластер из 12 файлов полностью удален из репозитория через `git rm`. Тесты Fastify (`endoRoutesInquisition.test.ts`), Vitest (`chairsideEndoQuickBar.test.tsx`, `ToothContextDrawer.test.tsx`, `endodonticsSSOTSuite.test.tsx`) и 5 машинных гейтов проходят со 100% успехом (Exit Code 0). Проверены 4-State visual proofs (`01_endo_studio_pc_light_1440x900.png`, `02_endo_studio_pc_dark_1440x900.png`, `03_endo_studio_mobile_light_390x844.png`, `04_endo_studio_mobile_dark_390x844.png`).
 
+### [END-11] [SEV-1] [ИСПРАВЛЕНО] Ликвидация DEF-THER-01..06: анатомия длин Гесса/Уилера, динамический patientId, тройная коллизия роутов #endo и 4-State Proof
+- **Файлы:**
+  - [`packages/shared/src/clinical/endo/canalAnatomyRules.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/endo/canalAnatomyRules.ts)
+  - [`packages/shared/src/clinical/toothCanalsBilling/toothCanalAnatomyMap.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/toothCanalsBilling/toothCanalAnatomyMap.ts)
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx)
+  - [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx)
+  - [`apps/web/src/components/endo/DirectEndodonticsLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/DirectEndodonticsLauncher.tsx)
+  - [`apps/web/src/components/endo/studioModules/EndoStudioToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/studioModules/EndoStudioToolbar.tsx)
+  - [`apps/web/src/components/diagnostics/ToothSurfacesAndEndoMatrix.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/ToothSurfacesAndEndoMatrix.tsx)
+  - [`apps/web/src/components/visit/therapy/modules/useVisitTherapyState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/therapy/modules/useVisitTherapyState.ts)
+  - [`apps/web/src/components/visit/emk/EmkToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/emk/EmkToolbar.tsx)
+  - [`apps/web/src/main.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/main.tsx)
+- **Суть багов (Fact-Dossier DEF-THER-01..06):**
+  1. **DEF-THER-01:** В `DirectEndodonticsLauncher.tsx` захардкожен пациент «Смирнова Елена Сергеевна» без реального `patientId`, из-за чего в БД при сохранении не приходили реальные параметры пациента; кроме того, `pStore.patients.find` без `?.` падал при инициализации до загрузки списка пациентов.
+  2. **DEF-THER-02:** Тройная коллизия роутов на `#endo` в `AppShell.tsx` / `StandaloneLaunchers.tsx` / `clinicalLaunchersRegistry.tsx` и отсутствие прямой ветки `?stand=endo` в `main.tsx`.
+  3. **DEF-THER-03:** В `EndodonticStudioModal.tsx` и `ChairsideEndoQuickBar.tsx` присутствовал хардкод длины каналов `21.0 мм` вне зависимости от зуба и анатомического типа канала (MB1, MB2, DB, P).
+  4. **DEF-THER-04:** Отсутствовал сквозной проброс `patientId` через `ToothDrawerAccordionsBody.tsx` -> `ToothDrawerSurfacesAccordion.tsx` -> `ToothSurfacesAndEndoMatrix.tsx` в `ChairsideEndoQuickBar`.
+  5. **DEF-THER-05/06:** Конфликт иерархии Primary CTA в `EndoStudioToolbar.tsx` (активные пресеты с твёрдой заливкой `#0d9488 text-white` конкурировали с основной кнопкой фиксации) и синтаксическая опечатка `onOpenConsent?:` в `EmkToolbar.tsx`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Все рабочие длины приведены к анатомическому канону Гесса/Уилера через SSOT-функцию `getAnatomicalWorkingLength(activeTooth, canalName)` (например, для #16: MB1 = 21 мм, MB2 = 20 мм, DB = 20 мм, P = 22 мм).
+  2. В `DirectEndodonticsLauncher.tsx` внедрено динамическое разрешение `patientId` (URL search/hash -> store -> fallback), безопасный доступ `pStore.patients?.find(...)`, поддержка параметров `?stand=endo` и сквозной проброс `patientId` во всю иерархию `ToothSurfacesAndEndoMatrix`.
+  3. Дублирующий монтируемый тег `<DirectEndodonticsLauncher />` удален из `AppShell.tsx` (сохранен единый SSOT в `StandaloneLaunchers.tsx` и `clinicalLaunchersRegistry.tsx`), а для прямого автономного открытия добавлена ленивая ветка `EndodonticStudioStandaloneView` в `main.tsx`.
+  4. Восстановлена строгая иерархия ровно 1 Primary CTA `#0d9488` («Зафиксировать протокол каналов», Мандат 8am). Добавлен guard невыбранного зуба в `useVisitTherapyState.ts` и `TherapyWidgetHeader.tsx`.
+  5. Сняты и лично проверены через `read_file` все 4 живых скриншота:
+     - `docs/proofs/endo/01_endo_studio_pc_light_1440x900.png` (95.3 KB)
+     - `docs/proofs/endo/02_endo_studio_pc_dark_1440x900.png` (95.3 KB)
+     - `docs/proofs/endo/03_endo_studio_mobile_light_390x844.png` (45.4 KB)
+     - `docs/proofs/endo/04_endo_studio_mobile_dark_390x844.png` (46.7 KB)
+  6. Все целевые тесты пройдены (`10 files / 72 tests PASS`, `23 clinical shared files / 358 tests PASS`), все машинные гейты (`check:encoding`, `check:buttons`, `check:css-tokens`, `check:react-hooks`, `check:dynamic-imports`, `check:stub-overrides`, `check:fetch-response`, `check:migration-drift`) — Exit Code 0.
+
 
 ## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN), 3D СКАНИРОВАНИЕ (STL/PLY/OBJ) И МЕДИА-АРХИВ
 

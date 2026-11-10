@@ -20,6 +20,7 @@ import { StandalonePatientCardHost } from "./components/appLayout/modalsContaine
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
+import { DirectLeadsStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/LeadsStandaloneLauncher";
 import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
@@ -39,7 +40,6 @@ import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBo
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { DirectPhotoProtocolLauncher } from "./components/photography/DirectPhotoProtocolLauncher";
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
-import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
 import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairsideHudLauncher";
@@ -338,6 +338,7 @@ export function AppShell() {
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
 			<DirectMarketingLauncher />
+			<DirectLeadsStandaloneLauncher />
 			<DirectAnalyticsLauncher />
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
@@ -357,7 +358,6 @@ export function AppShell() {
 			<DirectConsentLauncher />
 			<DirectPhotoProtocolLauncher />
 			<DirectOrthopedicsLauncher />
-			<DirectEndodonticsLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
 			<DirectSettingsLauncher />

@@ -52,7 +52,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 						onClick={onApplyAllCanalsApex00}
 						data-testid="btn-endo-all-apex-00"
 						className="btn-endo-all-apex-00 min-h-[36px] sm:min-h-[28px] h-8 sm:h-7 px-2.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
-						title="Выставить 0.0 Apex на все каналы в 1 клик"
+						title="Выставить 0.0 Apex на все каналы"
 					>
 						<Check size={13} className="text-emerald-600 dark:text-emerald-400" />
 						<span>Все 0.0 (Apex)</span>
