@@ -74,8 +74,23 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 }) => {
 	const effectiveTitle = title || scanTitle;
 	const [isFullscreen, setIsFullscreen] = React.useState(false);
+	const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+
+	const sendTeardown = () => {
+		try {
+			iframeRef.current?.contentWindow?.postMessage("dente:teardown", "*");
+		} catch {
+			// ignore
+		}
+	};
+
+	const handleClose = () => {
+		sendTeardown();
+		onClose();
+	};
 
 	const handlePopout = () => {
+		sendTeardown();
 		openScan3dPopoutWindow({
 			modelFormat,
 			scanTitle,
@@ -94,11 +109,14 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape" && isOpen) {
-				onClose();
+				handleClose();
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			sendTeardown();
+		};
 	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
@@ -230,7 +248,7 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 						<button
 							type="button"
 							data-testid="btn-close-3d-scan-modal"
-							onClick={onClose}
+							onClick={handleClose}
 							title="Закрыть (Esc)"
 							style={{
 								background: "transparent",
@@ -251,6 +269,7 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 				{/* 3D WebGL Canvas iframe */}
 				<div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
 					<iframe
+						ref={iframeRef}
 						src={iframeSrc}
 						title="3D Scan View"
 						style={{

@@ -19,6 +19,7 @@ import { DirectOdontogramModuleLauncher } from "../../../odontogram/DirectOdonto
 import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46InspectionStand";
 import { DirectRadiologyLauncher } from "../../../radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureModal } from "../../../radiology/DirectRvgCaptureModal";
+import { IntraoralScan3DViewerModal } from "../../../radiology/IntraoralScan3DViewerModal";
 import { DirectEndodonticsLauncher } from "../../../endo/DirectEndodonticsLauncher";
 import { DirectOrthopedicsLauncher } from "../../../orthopedics/DirectOrthopedicsLauncher";
 import { DirectOrthodonticsLauncher } from "../../../orthodontics/DirectOrthodonticsLauncher";
@@ -176,6 +177,33 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			render: () => <DirectRadiologyLauncher />,
 		},
 
+		// 7c. 3D Интраоральный скан челюсти (STL / PLY / OBJ)
+		{
+			id: "scan-3d-viewer",
+			title: "3D Интраоральный скан челюсти (STL / PLY / OBJ)",
+			criteria: {
+				tokens: ["scan-3d", "scan3d", "viewer3d", "intraoral-scan"],
+				exactHashes: ["#scan-3d", "#scan3d", "#viewer3d"],
+				searchIncludes: ["stand=scan-3d", "stand=3d-scan", "scan3d=1", "viewer3d=1"],
+			},
+			render: () => {
+				const patientState = usePatientStore.getState();
+				const appState = useAppStore.getState();
+				const patientName =
+					patientState.patientCoreDraft?.fullName?.trim() ||
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Воронов Алексей Владимирович");
+				return (
+					<IntraoralScan3DViewerModal
+						isOpen={true}
+						onClose={() => clearUrlTokens(["scan-3d", "scan3d", "viewer3d", "intraoral-scan"])}
+						patientName={patientName}
+						toothCode="16"
+						scanTitle="Интраоральный 3D-скан челюсти (STL / PLY)"
+					/>
+				);
+			},
+		},
+
 		// 8. Эндодонтия и лечение корневых каналов
 		{
 			id: "endodontics-studio",
@@ -320,9 +348,9 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			id: "chairside-hud",
 			title: "Кресельный ИИ-Копилот HUD",
 			criteria: {
-				tokens: ["chairside-hud", "hud"],
-				searchIncludes: ["hud=open", "chairside-hud=1"],
-				exactHashes: ["#chairside-hud", "#hud"],
+				tokens: ["chairside-hud", "hud", "copilot-hud"],
+				searchIncludes: ["hud=open", "chairside-hud=1", "copilot-hud=1"],
+				exactHashes: ["#chairside-hud", "#hud", "#copilot-hud"],
 			},
 			render: () => {
 				const patientState = usePatientStore.getState();

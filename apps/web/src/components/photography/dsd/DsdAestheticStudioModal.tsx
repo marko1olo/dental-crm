@@ -51,7 +51,7 @@ export interface DsdAestheticStudioModalProps {
 	onApplySuccess?: (analysis: Partial<DsdAnalysisData>) => void;
 }
 
-const DEFAULT_LANDMARKS: DsdFacialLandmarks = {
+export const DEFAULT_DSD_LANDMARKS: DsdFacialLandmarks = {
 	leftPupil: { x: 340, y: 380 },
 	rightPupil: { x: 660, y: 380 },
 	midlineTop: { x: 500, y: 150 },
@@ -65,11 +65,14 @@ const DEFAULT_LANDMARKS: DsdFacialLandmarks = {
 	teethArchHeight: 110,
 };
 
-const DEFAULT_CALIBRATION: DsdCalibrationState = {
+export const DEFAULT_DSD_CALIBRATION: DsdCalibrationState = {
 	p1: { x: 450, y: 540 },
 	p2: { x: 550, y: 540 },
 	knownMm: 10,
 };
+
+const DEFAULT_LANDMARKS = DEFAULT_DSD_LANDMARKS;
+const DEFAULT_CALIBRATION = DEFAULT_DSD_CALIBRATION;
 
 export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = ({
 	isOpen,

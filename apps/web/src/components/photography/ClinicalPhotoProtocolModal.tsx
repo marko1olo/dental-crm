@@ -14,6 +14,7 @@ import { openPatientPresentationWindow } from './presentationSyncProtocol';
 import { ChairsidePhotoQrBridgeModal } from './ChairsidePhotoQrBridgeModal';
 import { DsdCanvasOverlay, type DsdCanvasGuideFlags, type DsdFacialLandmarks, type DsdCalibrationState } from './dsd/DsdCanvasOverlay';
 import { DsdMetricsSidebar } from './dsd/DsdMetricsSidebar';
+import { DEFAULT_DSD_LANDMARKS, DEFAULT_DSD_CALIBRATION } from './dsd/DsdAestheticStudioModal';
 import { type DsdAnalysisData, matchPhotoProtocolSlot } from '@dental/shared';
 
 import './clinicalPhotography.css';
@@ -59,7 +60,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 	const [isQrBridgeOpen, setIsQrBridgeOpen] = useState(false);
 
-	// DSD Состояние
+	// DSD Состояние (единый SSOT Мандат 8bf)
 	const [dsdGuides, setDsdGuides] = useState<DsdCanvasGuideFlags>({
 		bipupillary: true,
 		midline: true,
@@ -67,24 +68,8 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		goldenRatio: true,
 		calibration: true,
 	});
-	const [dsdLandmarks, setDsdLandmarks] = useState<DsdFacialLandmarks>({
-		leftPupil: { x: 340, y: 380 },
-		rightPupil: { x: 660, y: 380 },
-		midlineTop: { x: 500, y: 150 },
-		midlineBottom: { x: 500, y: 850 },
-		commissureLeft: { x: 280, y: 620 },
-		commissureRight: { x: 720, y: 620 },
-		smileArcCenter: { x: 500, y: 690 },
-		incisalCenter: { x: 500, y: 670 },
-		teethArchOrigin: { x: 500, y: 580 },
-		teethArchWidth: 380,
-		teethArchHeight: 110,
-	});
-	const [dsdCalibration, setDsdCalibration] = useState<DsdCalibrationState>({
-		p1: { x: 450, y: 540 },
-		p2: { x: 550, y: 540 },
-		knownMm: 10,
-	});
+	const [dsdLandmarks, setDsdLandmarks] = useState<DsdFacialLandmarks>(DEFAULT_DSD_LANDMARKS);
+	const [dsdCalibration, setDsdCalibration] = useState<DsdCalibrationState>(DEFAULT_DSD_CALIBRATION);
 	const [dsdRotation, setDsdRotation] = useState<number>(0);
 
 	const {
@@ -200,7 +185,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					if (fileInputRef.current) fileInputRef.current.value = '';
 				}}
 			/>
-			<div className="photo-protocol-modal">
+			<div className="photo-protocol-modal" data-testid="clinical-photo-protocol-modal">
 				<div className="photo-mobile-drag-handle" aria-hidden="true" />
 				<button
 					type="button"
@@ -347,19 +332,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 									}}
 									onApplyToTreatmentPlanAndLab={handleApplyDsdFromProtocol}
 									onResetToNorm={() => {
-										setDsdLandmarks({
-											leftPupil: { x: 340, y: 380 },
-											rightPupil: { x: 660, y: 380 },
-											midlineTop: { x: 500, y: 150 },
-											midlineBottom: { x: 500, y: 850 },
-											commissureLeft: { x: 280, y: 620 },
-											commissureRight: { x: 720, y: 620 },
-											smileArcCenter: { x: 500, y: 690 },
-											incisalCenter: { x: 500, y: 670 },
-											teethArchOrigin: { x: 500, y: 580 },
-											teethArchWidth: 380,
-											teethArchHeight: 110,
-										});
+										setDsdLandmarks(DEFAULT_DSD_LANDMARKS);
 										setDsdRotation(0);
 									}}
 								/>

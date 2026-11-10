@@ -2491,7 +2491,7 @@
   3. Устаревший дублирующий кластер из 12 файлов полностью удален из репозитория через `git rm`. Тесты Fastify (`endoRoutesInquisition.test.ts`), Vitest (`chairsideEndoQuickBar.test.tsx`, `ToothContextDrawer.test.tsx`, `endodonticsSSOTSuite.test.tsx`) и 5 машинных гейтов проходят со 100% успехом (Exit Code 0). Проверены 4-State visual proofs (`01_endo_studio_pc_light_1440x900.png`, `02_endo_studio_pc_dark_1440x900.png`, `03_endo_studio_mobile_light_390x844.png`, `04_endo_studio_mobile_dark_390x844.png`).
 
 
-## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN) И МЕДИА-АРХИВ
+## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN), 3D СКАНИРОВАНИЕ (STL/PLY/OBJ) И МЕДИА-АРХИВ
 
 ### [PHO-01] [ИСПРАВЛЕНО] Мобильный QR-мост быстрой загрузки снимков со смартфона врача у кресла
 - **Файлы:**
@@ -2639,6 +2639,61 @@
      * 🌙 Photos Tab PC Dark (1440x900): [`08_patient_photos_tab_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/08_patient_photos_tab_pc_dark_1440x900.png) (55 KB)
      * 📱 Photos Tab Mobile Light (390x844): [`09_patient_photos_tab_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/09_patient_photos_tab_mobile_light_390x844.png) (36 KB)
      * 🌙 Photos Tab Mobile Dark (390x844): [`10_patient_photos_tab_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/photography/10_patient_photos_tab_mobile_dark_390x844.png) (37 KB)
+
+### [SCAN-01] [ИСПРАВЛЕНО] Локальный вендоринг Three.js и библиотек загрузчиков (STL, OBJ, PLY) для 100% автономной работы клиники офлайн
+- **Файлы:**
+  - [`apps/web/public/vendor/three/three.module.js`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/vendor/three/three.module.js) (Three.js v0.170.0 офлайн-библиотека)
+  - [`apps/web/public/vendor/three/addons/controls/OrbitControls.js`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/vendor/three/addons/controls/OrbitControls.js)
+  - [`apps/web/public/vendor/three/addons/loaders/STLLoader.js`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/vendor/three/addons/loaders/STLLoader.js)
+  - [`apps/web/public/vendor/three/addons/loaders/OBJLoader.js`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/vendor/three/addons/loaders/OBJLoader.js)
+  - [`apps/web/public/vendor/three/addons/loaders/PLYLoader.js`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/vendor/three/addons/loaders/PLYLoader.js)
+  - [`apps/web/public/viewer3d.html`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/viewer3d.html)
+- **Суть бага:** В `viewer3d.html` импорты Three.js и аддонов (OrbitControls, STLLoader, OBJLoader, PLYLoader) грузились с внешнего CDN `https://cdn.jsdelivr.net`. При обрыве внешнего интернета, работе в изолированной закрытой клинике или блокировке CDN просмотр интраоральных сканов челюсти падал с ошибкой сети.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Three.js v0.170.0 и все аддоны загрузчиков завендорены локально в `apps/web/public/vendor/three/`.
+  2. В `viewer3d.html` importmap настроен на локальные модули: `"three": "/vendor/three/three.module.js"`, `"three/addons/": "/vendor/three/addons/"`.
+  3. 100% автономная работа без единого внешнего сетевого запроса к CDN.
+
+### [SCAN-02] [ИСПРАВЛЕНО] Утечка памяти WebGL GPU при закрытии 3D просмотрщика интраоральных сканов
+- **Файлы:**
+  - [`apps/web/src/components/radiology/IntraoralScan3DViewerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/IntraoralScan3DViewerModal.tsx)
+  - [`apps/web/public/viewer3d.html`](file:///C:/Clinic_MVP/dental-crm/apps/web/public/viewer3d.html)
+- **Суть бага:** При открытии и последующем закрытии `IntraoralScan3DViewerModal` iframe с 3D сценой Three.js просто размонтировался без освобождения WebGL-буферов, геометрий, материалов и текстур. Контекст WebGL продолжал висеть в памяти GPU видеокарты, приводя к деградации FPS и крешу браузера при повторных открытиях тяжелых STL/PLY сканов.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `IntraoralScan3DViewerModal.tsx` добавлен ref на iframe и отправка сигнала `postMessage("dente:teardown", "*")` при закрытии модалки (`handleClose`, `handlePopout` и в `useEffect` cleanup hook).
+  2. В `viewer3d.html` реализован полноценный деструктор: рекурсивный обход сцены, `mesh.geometry.dispose()`, `material.dispose()`, отписка от событий мыши и анимации, `renderer.forceContextLoss()` и удаление canvas из DOM.
+
+### [SCAN-03] [ИСПРАВЛЕНО] Муляж toast при просмотре скана в истории пациента вместо реального 3D просмотрщика
+- **Файлы:**
+  - [`apps/web/src/components/patients/patientHistory/DrawerScansAndMaterialsSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/patientHistory/DrawerScansAndMaterialsSection.tsx)
+  - [`apps/web/src/components/radiology/IntraoralScan3DViewerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/IntraoralScan3DViewerModal.tsx)
+  - [`apps/web/src/components/imaging/PlanScanViewerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/imaging/PlanScanViewerModal.tsx)
+- **Суть бага:** В карточке пациента (раздел «Снимки и материалы») клик по прикрепленному скану вызывал `showToast('Просмотр снимка: ...', 'info')`. Реальный просмотрщик не открывался.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Заглушка `showToast` выкошена.
+  2. Внедрено разделение модальностей: 3D сканы (STL/PLY/OBJ) открываются в боевом `IntraoralScan3DViewerModal`, а 2D рентгенограммы (RVG/OPTG/TRG) открываются в каноническом `PlanScanViewerModal`.
+
+### [SCAN-04] [ИСПРАВЛЕНО] Дублирование координат DSD анатомических ориентиров и калибровки вне канонического SSOT
+- **Файлы:**
+  - [`apps/web/src/components/photography/dsd/DsdAestheticStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/dsd/DsdAestheticStudioModal.tsx)
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)
+- **Суть бага:** В `ClinicalPhotoProtocolModal.tsx` были продублированы координаты ориентиров лица (`leftPupil`, `rightPupil`, `midlineTop`, `midlineBottom`, `smileArcCenter`) и калибровочные точки (Мандат 8bf). При изменении эталонов в DSD студии фотопротокол рассинхронизировался.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Константы `DEFAULT_DSD_LANDMARKS` и `DEFAULT_DSD_CALIBRATION` экспортированы из канонической студии `DsdAestheticStudioModal.tsx`.
+  2. В `ClinicalPhotoProtocolModal.tsx` жесткий хардкод заменен на импорт канонических констант SSOT.
+
+### [SCAN-05] [ИСПРАВЛЕНО] Ликвидация мертвого дубликата роутов хранилища сканов labScanStorageRoutes.ts (git rm)
+- **Файлы:**
+  - [`apps/api/src/routes/lab/labScanStorageRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/labScanStorageRoutes.ts) (Удален)
+  - [`apps/api/src/routes/lab/labScansRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/labScansRoutes.ts) (Канонический SSOT)
+- **Суть бага:** Мертвый файл-клон `labScanStorageRoutes.ts` висел в репозитории несмонтированным, дублируя логику `labScansRoutes.ts`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Файл `apps/api/src/routes/lab/labScanStorageRoutes.ts` физически удален через `git rm`.
+  2. 4-State Visual Proofs зафиксированы в `docs/proofs/scans/` и лично верифицированы через `read_file`:
+     * ☀️ PC Light (1440x900): [`01_scan_3d_viewer_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/scans/01_scan_3d_viewer_pc_light_1440x900.png) (32.4 KB)
+     * 🌙 PC Dark (1440x900): [`02_scan_3d_viewer_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/scans/02_scan_3d_viewer_pc_dark_1440x900.png) (30.2 KB)
+     * 📱 Mobile Light (390x844): [`03_scan_3d_viewer_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/scans/03_scan_3d_viewer_mobile_light_390x844.png) (24.1 KB)
+     * 🌙 Mobile Dark (390x844): [`04_scan_3d_viewer_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/scans/04_scan_3d_viewer_mobile_dark_390x844.png) (21.5 KB)
 
 
 ## 21. 🎁 ПРОГРАММА ЛОЯЛЬНОСТИ, БОНУСЫ, СЕМЕЙНЫЕ КОШЕЛЬКИ И RFM-МАРКЕТИНГ

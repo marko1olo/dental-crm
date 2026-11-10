@@ -155,6 +155,78 @@ html[data-theme="light"] #info {
   color: #475569;
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
+html[data-theme="light"] #dropzone {
+  background: rgba(241, 245, 249, 0.94);
+}
+html[data-theme="light"] .drop-box {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+}
+html[data-theme="light"] .drop-title {
+  color: #0f172a;
+}
+html[data-theme="light"] .drop-sub {
+  color: #64748b;
+}
+
+/* ─── АДАПТИВНОСТЬ ДЛЯ СМАРТФОНОВ (APPLE HIG 390x844) ─── */
+@media (max-width: 640px) {
+  #popout-header {
+    height: 44px;
+    padding: 0 8px;
+    gap: 6px;
+  }
+  .popout-left {
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+  .popout-title {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
+  }
+  .popout-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+  body.has-popout-header #top-controls {
+    top: 48px;
+    left: 8px;
+    gap: 4px;
+  }
+  body.has-popout-header #materials {
+    top: 86px;
+    left: 8px;
+    right: 8px;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+  .ctrl-btn, .mat-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  .ctrl-btn.danger {
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .drop-box {
+    margin: 16px;
+    padding: 24px 16px;
+  }
+  .drop-title {
+    font-size: 14px;
+  }
+  .drop-sub {
+    font-size: 11px;
+  }
+}
 
 </style>
 </head>
@@ -170,7 +242,7 @@ html[data-theme="light"] #info {
     <span id="popout-tooth-badge" class="popout-badge tooth-badge" style="display: none;"></span>
   </div>
   <div class="popout-right">
-    <button class="ctrl-btn danger" type="button" onclick="window.close()" title="Закрыть отдельное окно">✕ Закрыть окно</button>
+    <button class="ctrl-btn danger" id="popout-close-btn" type="button" onclick="window.close()" title="Закрыть отдельное окно">✕ Закрыть окно</button>
   </div>
 </header>
 
@@ -206,8 +278,8 @@ html[data-theme="light"] #info {
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    "three": "/vendor/three/three.module.js",
+    "three/addons/": "/vendor/three/addons/"
   }
 }
 </script>
@@ -577,16 +649,26 @@ function checkUrlParams() {
     if (popoutHeader) {
       popoutHeader.classList.remove('hidden');
       document.body.classList.add('has-popout-header');
-      if (title) document.getElementById('popout-title').textContent = title;
+      const isMobile = window.innerWidth <= 640;
+      let displayTitle = title || '3D Интраоральный скан челюсти';
+      if (isMobile) {
+        displayTitle = '3D-скан';
+      }
+      document.getElementById('popout-title').textContent = displayTitle;
+
       if (patient) {
         const pBadge = document.getElementById('popout-patient-badge');
-        pBadge.textContent = 'Пациент: ' + patient;
+        pBadge.textContent = isMobile ? patient : ('Пациент: ' + patient);
         pBadge.style.display = 'inline-block';
       }
       if (tooth) {
         const tBadge = document.getElementById('popout-tooth-badge');
-        tBadge.textContent = 'Зуб № ' + tooth;
+        tBadge.textContent = isMobile ? ('Зуб ' + tooth) : ('Зуб № ' + tooth);
         tBadge.style.display = 'inline-block';
+      }
+      const closeBtn = document.getElementById('popout-close-btn');
+      if (closeBtn && isMobile) {
+        closeBtn.textContent = '✕ Закрыть';
       }
     }
   }
