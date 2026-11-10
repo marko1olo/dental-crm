@@ -32,22 +32,16 @@ export const FastCheckoutPayerTypePanel: React.FC<
 			data-testid="payer-type-section"
 		>
 			<div className="flex items-center justify-between flex-wrap gap-2">
-				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-					<Building2 size={14} className="text-[var(--teal)]" />
-					Тип плательщика (реквизиты чека):
+				<span className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
+					<Building2 size={14} className="text-current" />
+					Плательщик:
 				</span>
 				{clientType === "physical_person" && (
 					<span
-						className="px-2 py-0.5 rounded text-[11px] font-bold bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/30 flex items-center min-w-0"
+						className="sr-only"
 						data-testid="inn-physical-not-required-badge"
-						title="ИНН не требуется для физических лиц"
 					>
-						<ShieldCheck
-							size={14}
-							className="inline mr-1 shrink-0 text-[var(--teal)]"
-						/>
-						Для пациентов-физлиц ИНН не требуется{" "}
-						<span className="sr-only">Для физических лиц ИНН не требуется</span>
+						Для физлиц не требуется
 					</span>
 				)}
 			</div>

@@ -22,7 +22,7 @@ export const CashRegisterTapeSection: React.FC<CashRegisterTapeSectionProps> = (
 	return (
 		<div className="space-y-2.5">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+				<span className="text-xs font-semibold text-[var(--muted)]">
 					Контрольная лента операций
 				</span>
 				<button

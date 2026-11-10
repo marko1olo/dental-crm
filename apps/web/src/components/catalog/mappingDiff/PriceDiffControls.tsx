@@ -188,7 +188,7 @@ export const PriceDiffSearchActions: React.FC<{
 				type="button"
 				className="pricelist-diff-btn pricelist-diff-btn-success"
 				onClick={onAcceptAll}
-				title="Принять все сопоставления в один клик"
+				title="Принять все сопоставления прейскуранта"
 				data-testid="btn-select-all"
 			>
 				<CheckCheck size={13} />

@@ -127,7 +127,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 					className="w-4 h-4 rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] border-[var(--line,#cbd5e1)] cursor-pointer"
 				/>
 				<span className="text-xs md:text-sm text-[var(--ink,#0f172a)] font-medium">
-					✓ Подписано пациентом на бумажном носителе (оригинал хранится в архиве)
+					Подписано пациентом на бумажном носителе (оригинал хранится в архиве)
 				</span>
 			</label>
 
@@ -139,10 +139,10 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 							type="button"
 							data-testid="btn-clear-signature"
 							onClick={handleClear}
-							className="inline-flex items-center gap-1 text-xs text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[36px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer"
+							className="dente-btn dente-btn-secondary inline-flex items-center gap-1 text-xs text-[var(--ink,#0f172a)] min-h-[36px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer"
 							title="Очистить холст"
 						>
-							<RotateCcw size={13} />
+							<RotateCcw size={13} className="text-current shrink-0" />
 							<span>Очистить подпись</span>
 						</button>
 					</div>

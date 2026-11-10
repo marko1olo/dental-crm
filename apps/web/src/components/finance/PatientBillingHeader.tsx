@@ -37,7 +37,7 @@ export const PatientBillingHeader: React.FC<PatientBillingHeaderProps> = ({
 								<span className="hidden sm:inline">Акт выполненных работ и Гарантийный талон (А4)</span>
 								<span className="sm:hidden">Акт выполненных работ</span>
 							</h3>
-							<span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 uppercase shrink-0 whitespace-nowrap">
+							<span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 shrink-0 whitespace-nowrap">
 								Бланк А4
 							</span>
 						</div>

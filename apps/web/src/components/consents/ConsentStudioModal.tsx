@@ -414,30 +414,30 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							type="button"
 							data-testid="btn-print-blank-consent"
 							onClick={handlePrintBlankDoc}
-							className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors shadow-2xs min-h-[44px] md:min-h-[36px] cursor-pointer"
+							className="dente-btn dente-btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors shadow-2xs min-h-[44px] md:min-h-[36px] cursor-pointer"
 							title="Распечатать чистый бланк А4 без подписи (для физической ручки)"
 						>
-							<FileText size={15} aria-hidden="true" />
+							<FileText size={15} className="text-current shrink-0" aria-hidden="true" />
 							<span className="hidden sm:inline">Чистый бланк</span>
 						</button>
 						<button
 							type="button"
 							data-testid="btn-print-consent"
 							onClick={handlePrintDoc}
-							className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors shadow-2xs min-h-[44px] md:min-h-[36px] cursor-pointer"
+							className="dente-btn dente-btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors shadow-2xs min-h-[44px] md:min-h-[36px] cursor-pointer"
 							title="Распечатать бланк А4"
 						>
-							<Printer size={15} aria-hidden="true" />
+							<Printer size={15} className="text-current shrink-0" aria-hidden="true" />
 							<span className="hidden sm:inline">Печать бланка А4</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex items-center justify-center w-9 h-9 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors min-h-[44px] min-w-[44px] md:min-h-[36px] md:min-w-[36px] cursor-pointer"
+							className="dente-btn dente-btn-ghost flex items-center justify-center w-9 h-9 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors min-h-[44px] min-w-[44px] md:min-h-[36px] md:min-w-[36px] cursor-pointer"
 							title="Закрыть студию"
 							aria-label="Закрыть"
 						>
-							<X size={18} aria-hidden="true" />
+							<X size={18} className="text-current shrink-0" aria-hidden="true" />
 						</button>
 					</div>
 				</header>
@@ -472,7 +472,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 										: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
 								}`}
 							>
-								{isCurrentSigned ? "✓ Подписан" : "Ожидает"}
+								{isCurrentSigned ? "Подписан" : "Ожидает"}
 							</span>
 						</div>
 
@@ -519,10 +519,10 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							type="button"
 							data-testid="btn-confirm-paper-signed"
 							onClick={handlePaperConfirm}
-							className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+							className="dente-btn dente-btn-secondary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
 							title="Зафиксировать подписание на бумаге в медкарте"
 						>
-							<FileText size={16} aria-hidden="true" />
+							<FileText size={16} className="text-current shrink-0" aria-hidden="true" />
 							<span>Подтвердить подписание на бумаге</span>
 						</button>
 
@@ -531,10 +531,10 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							type="button"
 							data-testid="btn-batch-sign-consents"
 							onClick={handleBatchSign}
-							className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white shadow-sm transition-all active:scale-[0.99] cursor-pointer border-0"
+							className="dente-btn dente-btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white shadow-sm transition-all active:scale-[0.99] cursor-pointer border-0"
 							title="Утвердить и подписать выбранный пакет документов"
 						>
-							<UserCheck size={18} aria-hidden="true" />
+							<UserCheck size={18} className="text-current shrink-0" aria-hidden="true" />
 							<span>Подписать пакет согласий</span>
 						</button>
 					</div>

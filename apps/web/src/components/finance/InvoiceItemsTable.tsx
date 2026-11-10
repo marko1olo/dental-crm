@@ -48,7 +48,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 
 			<table className="w-full text-left text-xs border-collapse">
 				<thead>
-					<tr className="border-b border-[var(--line)] text-[var(--ink-muted)] uppercase tracking-wider font-semibold">
+					<tr className="border-b border-[var(--line)] text-[var(--ink-muted)] font-semibold">
 						<th className="pb-2 pl-2">Зуб / Услуга</th>
 						<th className="pb-2 text-center">Код услуги</th>
 						<th className="pb-2 text-right">Цена в плане</th>

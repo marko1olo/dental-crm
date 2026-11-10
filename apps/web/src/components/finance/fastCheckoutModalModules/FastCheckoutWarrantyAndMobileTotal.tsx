@@ -48,7 +48,7 @@ export const FastCheckoutWarrantyAndMobileTotal: React.FC<FastCheckoutWarrantyAn
 				</div>
 			)}
 			<div className="sm:hidden p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] text-center shadow-xs space-y-1">
-				<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">
+				<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] block">
 					Итого к оплате
 				</span>
 				<div className="text-[36px] font-black font-mono tracking-tight text-[var(--ink,#0f172a)] leading-tight">

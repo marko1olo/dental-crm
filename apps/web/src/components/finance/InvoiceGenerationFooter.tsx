@@ -34,14 +34,14 @@ export const InvoiceGenerationFooter: React.FC<InvoiceGenerationFooterProps> = (
 					</div>
 				)}
 				<div>
-					<div className="text-[11px] text-[var(--ink-muted)] uppercase tracking-wider font-semibold">Итого к списанию:</div>
+					<div className="text-[11px] text-[var(--ink-muted)] font-semibold">Итого к списанию:</div>
 					<div className="text-xl font-black text-teal-600 dark:text-teal-400">{formatKopecksRu(report.effectiveInvoiceNetKopecks)}</div>
 				</div>
 			</div>
 			<div className="flex items-center gap-3">
 				{!adminOverrideAuthorized ? (
-					<button type="button" onClick={onDoctorClinicalOverride} data-testid="doctor-override-footer-btn" className="px-3.5 py-2 min-h-[36px] sm:min-h-[44px] rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" title="Согласовать цены под личную клиническую ответственность врача (Мандат 8e)">
-						<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400" /> Согласовать врачом (1 клик)
+					<button type="button" onClick={onDoctorClinicalOverride} data-testid="doctor-override-footer-btn" className="px-3.5 py-2 min-h-[36px] sm:min-h-[44px] rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" title="Согласовать цены под личную ответственность врача">
+						<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400" /> Согласовать врачом
 					</button>
 				) : (
 					<span data-testid="override-authorized-badge" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold">

@@ -153,7 +153,7 @@ export const PriceDiffToolbar: React.FC<PriceDiffPanesToolbarProps> = ({
 						type="button"
 						className="pricelist-diff-btn pricelist-diff-btn-success"
 						onClick={onAcceptAll}
-						title="Принять все сопоставления прейскуранта в 1 клик"
+						title="Принять все сопоставления прейскуранта"
 						data-testid="panes-btn-accept-all"
 					>
 						<CheckCheck size={13} />

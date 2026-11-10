@@ -41,7 +41,7 @@ export const FastCheckoutFamilyBalance: React.FC<FastCheckoutFamilyBalanceProps>
 			<button
 				type="button"
 				onClick={handleToggle}
-				className="w-full p-3 flex items-center justify-between text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+				className="w-full p-3 flex items-center justify-between text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 				aria-expanded={isOpen}
 				data-testid="toggle-family-balance-btn"
 			>

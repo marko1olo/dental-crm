@@ -13,8 +13,8 @@ export const FastCheckoutStageSelector: React.FC<
 > = ({ stages, selectedStageId, onSelectStage }) => (
 	<div className="space-y-2">
 		<div className="flex items-center justify-between">
-			<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-				<Layers size={14} className="text-teal-600" />
+			<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+				<Layers size={14} className="text-current" />
 				Выбор этапа сметы / плана лечения:
 			</span>
 			<span className="text-xs text-[var(--muted,#64748b)]">

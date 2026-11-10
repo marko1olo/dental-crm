@@ -24,8 +24,8 @@ export const FastCheckoutStageAdvanceMode: React.FC<
 }) => (
 	<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col gap-2">
 		<div className="flex items-center justify-between flex-wrap gap-1">
-			<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-				<Sparkles size={14} className="text-teal-600" />
+			<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+				<Sparkles size={14} className="text-current" />
 				Режим оплаты этапа:
 			</span>
 			<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">

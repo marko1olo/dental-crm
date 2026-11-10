@@ -141,7 +141,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						className="sr-only"
 						data-testid="inn-physical-not-required-badge"
 					>
-						Для физлиц не требуется
+						Пациент (физлицо)
 					</span>
 				</div>
 

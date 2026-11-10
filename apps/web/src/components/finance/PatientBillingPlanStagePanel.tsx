@@ -39,7 +39,7 @@ export const PatientBillingPlanStagePanel: React.FC<PatientBillingPlanStagePanel
 				<div className="flex items-center gap-2">
 					<Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
 					<div>
-						<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)] m-0 uppercase tracking-wider">
+						<h4 className="text-xs sm:text-sm font-semibold text-[var(--ink)] m-0">
 							Оплата этапа плана лечения {activeTreatmentPlan?.planNumber ? `№ ${activeTreatmentPlan.planNumber}` : ""}
 						</h4>
 						{activeTreatmentPlan?.title && (

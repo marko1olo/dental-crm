@@ -410,66 +410,66 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 						/>
 						<button
 							type="button"
-							className="pricelist-btn"
+							className="pricelist-btn dente-btn dente-btn-secondary"
 							onClick={() => fileInputRef.current?.click()}
 							title="Импорт из CSV"
 						>
-							<Upload size={16} />
+							<Upload size={16} className="text-current shrink-0" />
 							<span className="hidden sm:inline">Импорт</span>
 						</button>
 						<button
 							type="button"
-							className="pricelist-btn"
+							className="pricelist-btn dente-btn dente-btn-secondary"
 							onClick={() => window.print()}
 							title="Печать прейскуранта"
 						>
-							<Printer size={16} />
+							<Printer size={16} className="text-current shrink-0" />
 							<span className="hidden sm:inline">Печать A4</span>
 						</button>
 						<button
 							type="button"
-							className="pricelist-btn"
+							className="pricelist-btn dente-btn dente-btn-secondary"
 							onClick={handleExportCsv}
 							title="Экспорт в CSV"
 						>
-							<Download size={16} />
+							<Download size={16} className="text-current shrink-0" />
 							<span className="hidden sm:inline">Экспорт</span>
 						</button>
 						<button
 							type="button"
-							className="pricelist-btn pricelist-btn-primary"
+							className="pricelist-btn pricelist-btn-primary dente-btn dente-btn-primary"
 							onClick={handleOpenCreate}
 						>
-							<Plus size={16} />
+							<Plus size={16} className="text-current shrink-0" />
 							<span>Добавить услугу</span>
 						</button>
 						<button
 							type="button"
-							className="pricelist-btn pricelist-btn-icon"
+							className="pricelist-btn pricelist-btn-icon dente-btn dente-btn-ghost"
 							onClick={onClose}
 							aria-label="Закрыть"
 						>
-							<X size={18} />
+							<X size={18} className="text-current shrink-0" />
 						</button>
 					</div>
 				</header>
 
-				{/* Лента быстрых клинических комплексов в 1 клик (Мандаты 8e, 8n) */}
+				{/* Лента готовых клинических комплексов (Мандаты 8e, 8n, 8zg) */}
 				<div className="pricelist-quick-bundles-strip">
 					<div className="pricelist-quick-bundles-title">
-						<Sparkles size={14} className="text-[var(--teal)]" />
-						<span>Пакеты «Под ключ» в 1 клик:</span>
+						<Sparkles size={14} className="text-current" />
+						<span>Готовые комплексы:</span>
 					</div>
 					<div className="pricelist-quick-bundles-scroll">
 						{CANONICAL_CLINICAL_BUNDLES.map((bundle) => (
 							<button
 								key={bundle.id}
 								type="button"
-								className="pricelist-quick-bundle-chip"
+								className="pricelist-quick-bundle-chip dente-btn-pill"
 								onClick={() => handleApplyQuickBundle(bundle)}
 								title={`${bundle.description} · Нажмите для добавления`}
 							>
-								<Package size={13} className="text-[var(--teal)]" />
+								<Package size={13} className="text-current shrink-0" />
 								<span className="font-medium">{bundle.shortTitle}</span>
 								<span className="pricelist-quick-bundle-price">
 									{formatKopecksToRubles(bundle.priceKopecks)}
@@ -704,7 +704,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 										</div>
 										<button
 											type="button"
-											className="pricelist-price-cell text-base font-bold text-[var(--teal)] font-mono tabular-nums shrink-0 min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] cursor-pointer whitespace-nowrap"
+											className="pricelist-price-cell text-base font-bold text-[var(--ink)] font-mono tabular-nums shrink-0 min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] cursor-pointer whitespace-nowrap"
 											onClick={() => handleOpenEdit(item)}
 											title="Нажмите для редактирования"
 										>
@@ -718,15 +718,15 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 										<div className="flex items-center gap-1.5 shrink-0">
 											<button
 												type="button"
-												className="pricelist-btn text-xs px-3.5 min-h-[44px] h-11 rounded-xl font-medium inline-flex items-center justify-center cursor-pointer"
+												className="pricelist-btn dente-btn-secondary text-xs px-3.5 min-h-[44px] h-11 rounded-xl font-medium inline-flex items-center justify-center cursor-pointer"
 												onClick={() => handleOpenEdit(item)}
 											>
-												<Edit2 size={13} className="mr-1 inline" />
+												<Edit2 size={13} className="mr-1 text-current inline" />
 												<span>Изменить</span>
 											</button>
 											<button
 												type="button"
-												className="pricelist-btn pricelist-btn-icon min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl cursor-pointer"
+												className="pricelist-btn pricelist-btn-icon dente-btn-secondary min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl cursor-pointer"
 												style={{
 													color: item.isActive ? "var(--teal)" : "var(--muted)",
 												}}
@@ -734,7 +734,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 												title={item.isActive ? "Выключить услугу" : "Включить услугу"}
 												aria-label={item.isActive ? "Выключить услугу" : "Включить услугу"}
 											>
-												<Check size={16} />
+												<Check size={16} className="text-current" />
 											</button>
 										</div>
 									</div>

@@ -122,8 +122,8 @@ export const ConsentBatchSignActions: React.FC<ConsentBatchSignActionsProps> = (
 
 			{/* Юридический статус ЭЦП */}
 			<div className="mt-auto hidden md:flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-xs text-[var(--ink-muted,#64748b)]">
-				<FileSignature size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
-				<span>Юридическая сила ЭЦП по ст. 5 63-ФЗ. Пакетная подпись в 1 клик.</span>
+				<FileSignature size={16} className="text-current shrink-0" />
+				<span>Юридическая сила ЭЦП по ст. 5 63-ФЗ. Пакетное подписание всех бланков.</span>
 			</div>
 		</aside>
 	);

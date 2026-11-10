@@ -54,9 +54,9 @@ export const ConsentDocumentViewer: React.FC<ConsentDocumentViewerProps> = ({
 						}`}
 					>
 						{record.status === "signed_digital"
-							? "✓ Подписано на планшете"
+							? "Подписано на планшете"
 							: record.status === "signed_paper"
-								? "✓ Подписано на бумаге"
+								? "Подписано на бумаге"
 								: "Ожидает подписания"}
 					</span>
 				</div>

@@ -21,14 +21,13 @@ export const PatientBillingExpressBar: React.FC<PatientBillingExpressBarProps> =
 		<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-2">
-					<Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-					<span className="text-xs font-black text-[var(--ink)] uppercase tracking-wider">
-						Экспресс-оплата (мгновенная фискализация чека):
+					<Zap className="w-4 h-4 text-current" />
+					<span className="text-xs font-semibold text-[var(--ink)]">
+						Экспресс-оплата:
 					</span>
 				</div>
-				<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
-					<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-					<span>Для пациентов-физлиц не требуется</span>
+				<span className="sr-only" data-testid="inn-physical-not-required-badge">
+					Для пациентов-физлиц не требуется
 				</span>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -96,8 +95,8 @@ export const PatientBillingTenderButtons: React.FC<PatientBillingTenderButtonsPr
 		<>
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-2">
-					<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-					<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)] m-0 uppercase tracking-wider">
+					<CreditCard className="w-4 h-4 text-current" />
+					<h4 className="text-xs sm:text-sm font-semibold text-[var(--ink)] m-0">
 						Способ оплаты:
 					</h4>
 				</div>
