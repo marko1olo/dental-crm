@@ -17,6 +17,7 @@ export interface WaitingLoungeSignageProps {
 	readonly clinicName?: string;
 	readonly initialItems?: readonly WaitingLoungeQueueItem[];
 	readonly onExit?: () => void;
+	readonly onClose?: () => void;
 }
 
 /** Реалистичные демонстрационные данные табло клиники (только для showcase) */

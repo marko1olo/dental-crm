@@ -13,6 +13,7 @@ export function WaitingLoungeSignage({
 	clinicName = "DENTE CLINIC",
 	initialItems,
 	onExit,
+	onClose,
 }: WaitingLoungeSignageProps) {
 	const {
 		currentTime, isFullscreen, isSoundEnabled,
@@ -21,6 +22,7 @@ export function WaitingLoungeSignage({
 
 	const handleExit = () => {
 		if (onExit) onExit();
+		else if (onClose) onClose();
 		else if (typeof window !== "undefined") window.location.hash = "#schedule";
 	};
 

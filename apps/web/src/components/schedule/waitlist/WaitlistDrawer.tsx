@@ -5,7 +5,7 @@
 
 import React, { useId } from "react";
 import { createPortal } from "react-dom";
-import { Inbox } from "lucide-react";
+import { Inbox, X } from "lucide-react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
@@ -263,11 +263,11 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           <button
             type="button"
             onClick={onClose}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-subtle,#f1f5f9)] active:scale-95 text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)] transition-all text-lg font-light cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-subtle,#f1f5f9)] active:scale-95 text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)] transition-all cursor-pointer"
             style={{ border: "none", background: "transparent" }}
             aria-label="Закрыть лист ожидания"
           >
-            ✕
+            <X size={20} className="shrink-0" />
           </button>
         </header>
 
@@ -328,7 +328,9 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           {state.error && (
             <div className="p-3 rounded-xl bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] text-xs flex justify-between items-center border border-[var(--danger-border,rgba(239,68,68,0.2))]">
               <span>{state.error}</span>
-              <button type="button" onClick={() => state.setError(null)} className="text-[var(--danger,#ef4444)] font-bold ml-2 cursor-pointer hover:opacity-80">✕</button>
+              <button type="button" onClick={() => state.setError(null)} className="text-[var(--danger,#ef4444)] ml-2 cursor-pointer hover:opacity-80 p-1 rounded">
+                <X size={16} className="shrink-0" />
+              </button>
             </div>
           )}
 

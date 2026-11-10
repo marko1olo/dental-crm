@@ -47,11 +47,6 @@ const WaitingLoungeSignage = React.lazy(() =>
 		default: m.WaitingLoungeSignage,
 	})),
 );
-const QueueBillboardView = React.lazy(() =>
-	import("./components/queue/QueueBillboardView").then((m) => ({
-		default: m.QueueBillboardView,
-	})),
-);
 const TelegramMiniAppView = React.lazy(() =>
 	import("./components/portal/telegramMiniApp/TelegramMiniAppView").then((m) => ({
 		default: m.TelegramMiniAppView,
@@ -382,38 +377,16 @@ if (publicPortalRoute) {
 	typeof window !== "undefined" &&
 	(window.location.pathname === "/lounge-display" ||
 		window.location.pathname === "/lounge" ||
+		window.location.pathname === "/lobby" ||
 		window.location.pathname.startsWith("/lounge-display/") ||
+		window.location.pathname.startsWith("/lobby/") ||
 		window.location.hash === "#/lounge-display" ||
 		window.location.hash === "#lounge-display" ||
 		window.location.hash === "#/lounge" ||
 		window.location.hash === "#lounge" ||
-		new URLSearchParams(window.location.search).has("lounge"))
-) {
-	applyThemeToRoot(
-		document.documentElement,
-		resolveTheme(
-			"auto",
-			window.matchMedia("(prefers-color-scheme: dark)").matches,
-		),
-	);
-	installApiAuthFetch();
-
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="public">
-				<React.Suspense fallback={null}>
-					<WaitingLoungeSignage />
-				</React.Suspense>
-				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
-	);
-} else if (
-	typeof window !== "undefined" &&
-	(window.location.pathname === "/lobby" ||
-		window.location.pathname.startsWith("/lobby/") ||
 		window.location.hash === "#/lobby" ||
 		window.location.hash === "#lobby" ||
+		new URLSearchParams(window.location.search).has("lounge") ||
 		new URLSearchParams(window.location.search).has("lobby"))
 ) {
 	applyThemeToRoot(
@@ -435,7 +408,7 @@ if (publicPortalRoute) {
 						</div>
 					}
 				>
-					<QueueBillboardView onClose={() => { window.location.hash = "shift"; }} />
+					<WaitingLoungeSignage onExit={() => { window.location.hash = "shift"; }} />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

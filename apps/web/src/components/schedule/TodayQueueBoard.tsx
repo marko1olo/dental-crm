@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock } from "lucide-react";
-import { QueueBillboardView } from "../queue/QueueBillboardView";
+import { WaitingLoungeSignage } from "../lounge/WaitingLoungeSignage";
 import { TodayQueueHeader } from "./todayQueue/TodayQueueHeader";
 import { TodayQueueToolbar } from "./todayQueue/TodayQueueToolbar";
 import { TodayQueueItemCard } from "./todayQueue/TodayQueueItemCard";
@@ -69,10 +69,11 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = (props) => {
         )}
       </div>
       {showLobbyBillboard && (
-        <QueueBillboardView
-          appointments={appointments}
-          onClose={() => setShowLobbyBillboard(false)}
-        />
+        <div className="fixed inset-0 z-[1200] overflow-hidden bg-[var(--paper)]">
+          <WaitingLoungeSignage
+            onExit={() => setShowLobbyBillboard(false)}
+          />
+        </div>
       )}
     </section>
   );

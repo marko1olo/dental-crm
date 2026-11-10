@@ -1,4 +1,5 @@
 import React from "react";
+import { Check, ClipboardList } from "lucide-react";
 import type { TargetSlotInfo, WaitlistCandidateItem, WaitlistCandidateScoring } from "../waitlistTypes";
 import {
 	generateWaitlistOfferMessage,
@@ -75,9 +76,10 @@ export function WaitlistCandidateCard({
 					{scoring.matchReasons.map((reason, idx) => (
 						<span
 							key={idx}
-							className="px-2 py-0.5 rounded bg-[var(--paper-subtle,#f1f5f9)] text-[var(--text-muted,#64748b)]"
+							className="px-2 py-0.5 rounded bg-[var(--paper-subtle,#f1f5f9)] text-[var(--text-muted,#64748b)] inline-flex items-center gap-1"
 						>
-							✓ {reason}
+							<Check size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
+							<span>{reason}</span>
 						</span>
 					))}
 				</div>
@@ -117,9 +119,19 @@ export function WaitlistCandidateCard({
 						type="button"
 						title="Скопировать вежливый текст предложения"
 						onClick={() => onCopyOfferMessage(candidate)}
-						className="h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] transition-colors cursor-pointer"
+						className="h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
-						{copiedId === candidate.id ? "Скопировано!" : "📋 Текст"}
+						{copiedId === candidate.id ? (
+							<>
+								<Check size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span>Скопировано!</span>
+							</>
+						) : (
+							<>
+								<ClipboardList size={14} className="shrink-0" />
+								<span>Текст</span>
+							</>
+						)}
 					</button>
 				</div>
 

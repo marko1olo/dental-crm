@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { Check, ClipboardList, Loader2, Zap } from "lucide-react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import type { WaitlistCandidateItem, TargetSlotInfo } from "./waitlistTypes";
 import {
@@ -102,7 +103,7 @@ export function WaitlistMatchesBlock({
   if (loading) {
     return (
       <div className={`p-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,#f8fafc)] text-xs text-[var(--text-muted,#64748b)] flex items-center gap-2 ${className}`}>
-        <span className="animate-spin text-sm">⏳</span>
+        <Loader2 size={16} className="animate-spin text-[var(--teal,#0d9488)] shrink-0" />
         <span>Поиск кандидатов в листе ожидания...</span>
       </div>
     );
@@ -129,7 +130,7 @@ export function WaitlistMatchesBlock({
     <div className={`space-y-2 p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-sm ${className}`}>
       <div className="flex items-center justify-between text-xs">
         <span className="font-semibold text-[var(--teal,#0d9488)] flex items-center gap-1.5">
-          <span>⚡</span>
+          <Zap size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
           <span>Подходящие пациенты из очереди ({ranked.length})</span>
         </span>
         <button
@@ -185,9 +186,9 @@ export function WaitlistMatchesBlock({
                       setTimeout(() => setCopiedId(null), 2000);
                     }
                   }}
-                  className="h-7 px-2 rounded border border-[var(--line,#e2e8f0)] text-[var(--text-muted,#64748b)] text-[11px]"
+                  className="h-7 px-2 rounded border border-[var(--line,#e2e8f0)] text-[var(--text-muted,#64748b)] text-[11px] inline-flex items-center justify-center cursor-pointer"
                 >
-                  {copiedId === candidate.id ? "✓" : "📋"}
+                  {copiedId === candidate.id ? <Check size={14} className="text-[var(--teal,#0d9488)]" /> : <ClipboardList size={14} />}
                 </button>
                 <button
                   type="button"

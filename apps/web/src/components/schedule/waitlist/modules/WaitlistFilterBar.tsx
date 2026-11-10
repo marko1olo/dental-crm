@@ -1,4 +1,5 @@
 import React from "react";
+import { Search } from "lucide-react";
 import type { TargetSlotInfo } from "../waitlistTypes";
 
 export interface WaitlistFilterBarProps {
@@ -24,16 +25,16 @@ export function WaitlistFilterBar({
 }: WaitlistFilterBarProps) {
 	return (
 		<div className="space-y-2 pb-1">
-			<div className="relative">
+			<div className="relative flex items-center">
+				<Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted,#64748b)] pointer-events-none" />
 				<input
 					type="text"
 					value={searchQuery}
 					onChange={(e) => onSearchChange(e.target.value)}
 					placeholder="Поиск по пациенту, телефону, врачу..."
-					className="w-full h-10 pl-9 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-					style={{ paddingLeft: "36px" }}
+					className="w-full h-10 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+					style={{ paddingLeft: "38px" }}
 				/>
-				<span className="absolute left-3 top-2.5 text-xs text-[var(--text-muted,#64748b)]">🔍</span>
 			</div>
 
 			<div className="flex items-center gap-2 flex-wrap text-xs">

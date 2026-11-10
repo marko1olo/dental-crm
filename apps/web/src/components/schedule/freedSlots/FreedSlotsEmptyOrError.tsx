@@ -33,7 +33,12 @@ export const FreedSlotsErrorNotice: React.FC<ErrorNoticeProps> = ({ error, loadi
 				Пока список не открылся, время таких приёмов считайте свободным и сверяйтесь с расписанием дня вручную,
 				иначе час кресла простоит зря.
 			</p>
-			<button className="secondary-button" type="button" onClick={onRetry} disabled={loading}>
+			<button
+				className="secondary-button border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors"
+				type="button"
+				onClick={onRetry}
+				disabled={false}
+			>
 				{loading ? "Загружаю…" : "Попробовать снова"}
 			</button>
 		</div>
