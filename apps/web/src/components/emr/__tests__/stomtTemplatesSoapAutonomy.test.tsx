@@ -115,14 +115,14 @@ describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 		assert.ok(html.includes("input-inline-diary-tooth"), "Рендерится селектор зуба");
 		assert.ok(html.includes('value="46"'), "Выбран 46 зуб");
 
-		// Норма в 1 клик (Мандат 8e)
-		assert.ok(html.includes("btn-inline-diary-norm"), "Присутствует кнопка 1-клик нормы");
-		assert.ok(html.includes("Норма"), "Кнопка содержит текст 'Норма'");
+		// Физиологическая норма / Интактные зубы (Мандаты 8e, 8zg)
+		assert.ok(html.includes("btn-inline-diary-norm"), "Присутствует кнопка нормы");
+		assert.ok(html.includes("Интактный ряд") || html.includes("Интактные зубы"), "Кнопка содержит текст 'Интактный ряд'");
 
 		// Значения полей
 		assert.ok(html.includes("Боль при накусывании на зуб 46"), "Отображаются жалобы");
 		assert.ok(html.includes("K04.4"), "Отображается код МКБ-10");
-		assert.ok(html.includes("btn-save-inline-diary"), "Присутствует Primary CTA кнопка сохранения");
+		assert.ok(html.includes("btn-save-inline-diary"), "Присутствует вторичная кнопка сохранения дневника");
 	});
 
 	it("6. RecordDiariesTab renders header, quick add toggle, StAR protocol synthesizer button and diary list", () => {

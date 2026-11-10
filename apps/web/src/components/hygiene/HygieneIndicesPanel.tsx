@@ -84,8 +84,10 @@ export interface HygieneIndicesPanelProps {
 export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 	onInsertToProtocol,
 	patientName = "Пациент приёма",
-	doctorName = "Д-р Смирнова А.В.",
-	previousOhiS = 2.4,
+	doctorName,
+	patientId,
+	visitId,
+	previousOhiS,
 }) => {
 	const [activeTab, setActiveTab] = useState<ActiveHygieneTab>("ohis");
 	const [isStudioOpen, setIsStudioOpen] = useState<boolean>(false);
@@ -153,14 +155,14 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						Индексы гигиены полости рта (OHI-S, Федорова-Володкиной, PMA)
 					</h3>
 					<p className="text-xs text-[var(--ink-muted)]">
-						Честный расчет индексов без заглушек • 1-клик физиологическая норма
+						Расчет индексов гигиены • Физиологическая норма
 					</p>
 				</div>
 
 				<button
 					type="button"
 					onClick={() => setIsStudioOpen(true)}
-					className="px-3 py-1.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors min-h-[36px] cursor-pointer"
+					className="px-3 py-1.5 text-xs font-bold text-[var(--primary-foreground)] bg-[var(--primary)] hover:bg-[var(--primary-strong)] rounded-lg transition-colors min-h-[36px] cursor-pointer"
 				>
 					Открыть студию гигиены
 				</button>
@@ -458,9 +460,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				{/* Primary CTA (Мандат 8e: НИКОГДА не disabled) */}
 				<button
 					type="button"
-					data-testid="hygiene-insert-to-043-btn"
+					data-testid="hygiene-insert-to-protocol-btn"
+					data-legacy-testid="hygiene-insert-to-043-btn"
 					onClick={handleInsertCurrentToProtocol}
-					className="ml-auto px-3.5 py-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all cursor-pointer min-h-[36px]"
+					className="ml-auto px-3.5 py-1.5 text-xs font-bold rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-[var(--primary-foreground)] shadow-xs transition-all cursor-pointer min-h-[36px]"
 				>
 					В дневник приёма
 				</button>
@@ -469,6 +472,8 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			<HygieneStudioModal
 				isOpen={isStudioOpen}
 				onClose={() => setIsStudioOpen(false)}
+				patientId={patientId}
+				visitId={visitId}
 				patientName={patientName}
 				doctorName={doctorName}
 				previousOhiS={previousOhiS}

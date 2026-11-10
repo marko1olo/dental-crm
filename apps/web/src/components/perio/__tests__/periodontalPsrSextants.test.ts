@@ -10,7 +10,7 @@ import {
 	applyHealthyPeriodontiumPreset,
 	applyPsrSextantCode,
 	getPsrMaxCode,
-} from "../perioMath";
+} from "../perioCatalogData";
 
 describe("7. Per-Sextant PSR Screening & Asterisk Marking", () => {
 	const initialTeeth = createDefaultPerioTeeth();

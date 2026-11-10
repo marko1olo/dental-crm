@@ -76,10 +76,11 @@ describe("ctImplantIntegrationBridge — Безопасность канала, 
 			const stageSumKopecks = sumKopecks(tier.stages.map((s) => s.totalKopecks));
 			assert.equal(tier.totalKopecks, stageSumKopecks);
 			assert.ok(tier.stagedSchedule?.isBalanced);
+			assert.ok(tier.installments && tier.installments[12]);
 			const inst12 = tier.installments[12]!;
 			assert.ok(inst12.monthlyPaymentRub > 0);
-			assert.ok(tier.ndflRefundRub > 0);
-			assert.equal(tier.ndflDetails.isHighCostCode02, true);
+			assert.ok((tier.ndflRefundRub ?? 0) > 0);
+			assert.equal(tier.ndflDetails?.isHighCostCode02, true);
 		}
 	});
 

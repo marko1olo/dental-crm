@@ -12,6 +12,7 @@ import { sampleCbctInput } from "./helpers/cbctTestHelpers";
 describe("cbctAutoPlanIntegrationBridge — 1-клик генерация 3 сценариев на 4 этапа", () => {
 	test("генерирует ровно 3 тарифных сценария: economy, standard, optimum", () => {
 		const [econ, opt, prem] = generateCbctAutoPlanScenarios(sampleCbctInput);
+		assert.ok(econ && opt && prem);
 		assert.equal(econ.tierId, "economy");
 		assert.equal(opt.tierId, "standard");
 		assert.equal(prem.tierId, "optimum");
@@ -47,25 +48,28 @@ describe("cbctAutoPlanIntegrationBridge — 1-клик генерация 3 сц
 
 	test("ценовая субординация: Эконом < Оптимум < Премиум", () => {
 		const [econ, opt, prem] = generateCbctAutoPlanScenarios(sampleCbctInput);
+		assert.ok(econ && opt && prem);
 		assert.ok(econ.totalKopecks < opt.totalKopecks);
 		assert.ok(opt.totalKopecks < prem.totalKopecks);
 	});
 
 	test("расчет рассрочки 0% без переплат (3, 6, 12, 24 мес.) для каждого тарифа", () => {
 		const [econ, opt, prem] = generateCbctAutoPlanScenarios(sampleCbctInput);
+		assert.ok(econ && opt && prem);
 		for (const tier of [econ, opt, prem]) {
-			assert.ok(tier.installments[3].monthlyPaymentRub > 0);
-			assert.ok(tier.installments[6].monthlyPaymentRub > 0);
-			assert.ok(tier.installments[12].monthlyPaymentRub > 0);
-			assert.ok(tier.installments[24].monthlyPaymentRub > 0);
-			assert.ok(Math.abs(tier.installments[12].monthlyPaymentRub * 12 - tier.totalRub) <= 12);
+			assert.ok(tier.installments && tier.installments[3].monthlyPaymentRub > 0);
+			assert.ok(tier.installments && tier.installments[6].monthlyPaymentRub > 0);
+			assert.ok(tier.installments && tier.installments[12].monthlyPaymentRub > 0);
+			assert.ok(tier.installments && tier.installments[24].monthlyPaymentRub > 0);
+			assert.ok(tier.installments && Math.abs(tier.installments[12].monthlyPaymentRub * 12 - tier.totalRub) <= 12);
 		}
 	});
 
 	test("налоговый вычет 13% НДФЛ и график 30/40/30 формируются корректно", () => {
 		const [econ, opt, prem] = generateCbctAutoPlanScenarios(sampleCbctInput);
+		assert.ok(econ && opt && prem);
 		for (const tier of [econ, opt, prem]) {
-			assert.ok(tier.ndflRefundRub > 0);
+			assert.ok((tier.ndflRefundRub ?? 0) > 0);
 			assert.ok(tier.ndflDetails?.isHighCostCode02);
 			assert.ok(tier.stagedSchedule);
 			const totalSched =

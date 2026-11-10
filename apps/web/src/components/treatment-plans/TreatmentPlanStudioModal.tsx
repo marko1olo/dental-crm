@@ -58,6 +58,10 @@ export interface TreatmentPlanStudioModalProps {
 	readonly className?: string;
 	readonly teeth?: unknown;
 	readonly isDemoMode?: boolean;
+	readonly planId?: string | null;
+	readonly clinicName?: string | null;
+	readonly clinicAddress?: string | null;
+	readonly patientBirthDate?: string | null;
 }
 
 const DISCOUNT_PRESETS = [0, 5, 10, 15, 20, 50, 100] as const;
@@ -82,6 +86,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	className = "",
 	teeth,
 	isDemoMode: explicitDemoMode,
+	planId: propPlanId,
+	clinicName: propClinicName,
+	clinicAddress: propClinicAddress,
+	patientBirthDate: propPatientBirthDate,
 }) => {
 	const isDemo = explicitDemoMode ?? isDemoShowcaseMode();
 	const patientName = propPatientName ?? (isDemo ? "Демо-пациент" : "");
@@ -96,7 +104,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	});
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
 	const [isDiscountBarOpen, setIsDiscountBarOpen] = useState<boolean>(false);
-	const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+	const [currentPlanId, setCurrentPlanId] = useState<string | null>(propPlanId || null);
 	const [expandedStageId, setExpandedStageId] = useState<string | null>(() => {
 		if (initialStages && initialStages.length > 0 && initialStages[0]?.id) {
 			return initialStages[0].id;
@@ -544,15 +552,15 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 					<div className="flex items-center gap-2 shrink-0">
 						{/* Переключатель глубины: Экспресс vs Эксперт (Apple Segmented Control) */}
-						<div className="tp-depth-switch flex items-center p-0.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl" role="tablist">
+						<div className="tp-depth-switch flex items-center p-0.5 bg-[var(--paper-soft)] border border-[var(--line-subtle)] rounded-xl" role="tablist">
 							<button
 								type="button"
 								role="tab"
 								aria-selected={depthMode === "express"}
 								onClick={() => setDepthMode("express")}
-								className={`min-h-[38px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
 									depthMode === "express"
-										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)] font-bold"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								data-testid="depth-mode-express-btn"
@@ -567,9 +575,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={depthMode === "expert"}
 								onClick={() => setDepthMode("expert")}
-								className={`min-h-[38px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
 									depthMode === "expert"
-										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)] font-bold"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								data-testid="depth-mode-expert-btn"
@@ -594,16 +602,17 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							<span className="hidden sm:inline">{doctorDiscountPercent > 0 ? `Скидка ${doctorDiscountPercent}%` : "Скидка врача"}</span>
 						</button>
 
-						{/* Печать плана и договора (Мандат 8e) */}
+						{/* Печать плана (Мандат 8e: ровно одна лаконичная кнопка в шапке) */}
 						<button
 							type="button"
-							onClick={handlePrint}
-							className="tp-studio-header-btn !hidden sm:!inline-flex min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
+							onClick={handleExportPdf}
+							className="dente-btn dente-btn-secondary !hidden sm:!inline-flex min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
 							title="Печать плана и договора"
 							data-testid="print-plan-btn"
+							id="print-plan-btn"
 						>
-							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
-							<span>Печать плана и договора</span>
+							<Printer className="w-4 h-4 text-current shrink-0" />
+							<span>Печать плана</span>
 						</button>
 
 						{/* Закрытие модалки */}
@@ -826,7 +835,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				{/* 3. ПОДВАЛ СТУДИИ (Мандат 8am: РОВНО ОДНА Primary CTA КНОПКА #0d9488, ВСЕГДА КЛИКАБЕЛЬНАЯ ПО МАНДАТУ 8e) */}
 				<footer className="tp-studio-footer sticky bottom-0 z-10 flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-3 pb-[max(14px,env(safe-area-inset-bottom))] bg-[var(--paper)] text-[var(--ink)] border-t border-[var(--line)] shrink-0">
 					<div className="flex flex-col min-w-0">
-						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">Выбранный вариант:</span>
+						<span className="text-[11px] font-semibold text-[var(--muted)] block">Выбранный вариант:</span>
 						<span className="text-sm sm:text-lg font-black text-[var(--ink)] truncate">«{sanitizedActiveTitle}» — {formatRubles(activeTier.totalRub)}</span>
 					</div>
 
@@ -835,7 +844,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={handleSaveDraft}
-							className="min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer inline-flex shrink-0"
+							className="dente-btn dente-btn-secondary min-h-[44px] px-2.5 sm:px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer inline-flex shrink-0"
 							title="Сохранить черновик плана в карту пациента"
 							data-testid="save-draft-btn"
 						>
@@ -844,17 +853,6 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							<span className="sm:hidden">Черновик</span>
 						</button>
 
-						{/* Печать сметы и договора */}
-						<button
-							type="button"
-							onClick={handleExportPdf}
-							className="!hidden sm:!inline-flex min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer"
-							title="Печать плана и договора"
-							data-testid="print-plan-and-contract-btn"
-						>
-							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
-							<span>Печать плана и договора</span>
-						</button>
 
 						{/* ЕДИНСТВЕННЫЙ PRIMARY CTA КНОПКА ПО МАНДАТУ 8am (ВСЕГДА АКТИВНА, ДИЗАБЛИТЬ ЗАПРЕЩЕНО) */}
 						<button

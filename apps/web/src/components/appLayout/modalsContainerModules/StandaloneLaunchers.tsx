@@ -12,6 +12,8 @@
  * - #booking, #online-booking: DirectPublicBookingLauncher
  * - #analytics", #dashboard": DirectAnalyticsLauncher
  * - #endo, ?endo=1, #root-canals: DirectEndodonticsLauncher
+ * - #hygiene, #cleaning, ?hygiene=1, ?cleaning=1: DirectHygieneLauncher
+ * - #perio, #psr, ?perio=1, ?psr=1: DirectPerioLauncher
  */
 
 import type React from "react";
@@ -32,6 +34,8 @@ export { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher
 export { DirectOdontogramLauncher } from "../../odontogram/DirectOdontogramLauncher";
 export { DirectEndodonticsLauncher } from "../../endo/DirectEndodonticsLauncher";
 export { DirectSettingsLauncher } from "../../settings/DirectSettingsLauncher";
+export { DirectHygieneLauncher } from "../../hygiene/DirectHygieneLauncher";
+export { DirectPerioLauncher } from "../../perio/DirectPerioLauncher";
 export { DirectAnalyticsLauncher };
 
 export function renderStandaloneLaunchers(

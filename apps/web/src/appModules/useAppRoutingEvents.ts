@@ -62,6 +62,7 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["doctor-portal", "mobile-shift"])) openDoctorRef.current?.();
 			if (hasLocationToken(s, h, ["chairside-auth"])) setPinPadRef.current?.(true);
 			if (hasLocationToken(s, h, ["tasks", "clinical-tasks"])) st.setIsClinicalTasksOpen(true);
+			if (hasLocationToken(s, h, ["emr", "medical-card", "form043", "card043"])) st.setIsEmrCardDirectModalOpen(true);
 		};
 		handleHashChange();
 		window.addEventListener("hashchange", handleHashChange);
@@ -82,6 +83,11 @@ export function useAppRoutingEvents(
 		const onTasks = (e?: Event) => {
 			stateRef.current.setIsClinicalTasksOpen(true);
 		};
+		const onEmrCard = () => {
+			stateRef.current.setIsEmrCardDirectModalOpen(true);
+		};
+		window.addEventListener("dente-open-medical-card", onEmrCard);
+		window.addEventListener("dente:open-medical-card", onEmrCard);
 		window.addEventListener("dente:open-prescriptions", onRx);
 		window.addEventListener("dente-open-cbct", () => stateRef.current.setIsCbctDirectModalOpen(true));
 		window.addEventListener("dente-open-tuner", () => stateRef.current.setIsCbctTunerOpen(true));
@@ -120,6 +126,8 @@ export function useAppRoutingEvents(
 			window.removeEventListener("dente:open-prescriptions", onRx);
 			window.removeEventListener("dente-open-implant-passport", onPassport);
 			window.removeEventListener("dente:open-implant-passport", onPassport);
+			window.removeEventListener("dente-open-medical-card", onEmrCard);
+			window.removeEventListener("dente:open-medical-card", onEmrCard);
 		};
 	}, []);
 }

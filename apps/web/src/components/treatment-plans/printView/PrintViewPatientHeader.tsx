@@ -55,7 +55,7 @@ export const PrintViewPatientHeader: React.FC<PrintViewPatientHeaderProps> = ({
 				<strong className="text-teal-800 text-sm">{selectedTier.title} ({getTierLetter(selectedTier.tierId)})</strong>
 				<div className="text-emerald-700 font-bold text-[10.5px] mt-0.5 inline-flex items-center gap-1">
 					<ShieldCheck size={12} className="shrink-0 text-emerald-600" />
-					<span>Гарантия клиники: {formatWarrantyYearsText(selectedTier.warrantyYears)}</span>
+					<span>Гарантия клиники: {formatWarrantyYearsText(selectedTier.warrantyYears || 1)}</span>
 				</div>
 			</div>
 		</div>

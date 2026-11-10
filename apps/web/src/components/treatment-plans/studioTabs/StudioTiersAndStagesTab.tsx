@@ -155,7 +155,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 					<p className="text-xs text-[var(--muted)] m-0 leading-relaxed">{activeTier.subtitle}</p>
 
 					<ul className="space-y-1.5 text-xs text-[var(--muted)] pt-1 border-t border-[var(--line)]">
-						{activeTier.keyAdvantages.slice(0, 4).map((adv, idx) => (
+						{(activeTier.keyAdvantages ?? []).slice(0, 4).map((adv, idx) => (
 							<li key={idx} className="flex items-start gap-1.5">
 								<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
 								<span className="leading-tight">{adv}</span>
@@ -219,7 +219,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 								</div>
 
 								<ul className="mt-2 space-y-1.5 text-xs text-[var(--muted)] pt-2 border-t border-[var(--line-subtle)]">
-									{tier.keyAdvantages.slice(0, 4).map((adv, idx) => (
+									{(tier.keyAdvantages ?? []).slice(0, 4).map((adv, idx) => (
 										<li key={idx} className="flex items-start gap-1.5">
 											<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
 											<span className="leading-tight text-xs">{adv}</span>

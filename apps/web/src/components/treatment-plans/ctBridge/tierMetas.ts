@@ -81,4 +81,27 @@ export const TIER_METAS: Record<TreatmentPlanTierId, TierMeta> = {
 			"Максимальный налоговый вычет 13% со всей суммы без лимита (Код 02)",
 		],
 	},
+	premium: {
+		title: "Премиум (Топовые системы и эстетика высшего класса)",
+		subtitle: "Швейцарские имплантаты Straumann Roxolid SLActive / Nobel Biocare, индивидуальные абатменты и керамика E.max",
+		badge: "Премиум — Превосходство",
+		badgeClass: "bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border-emerald-400/60 font-bold",
+		borderClass: "border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl shadow-emerald-500/10",
+		isRecommended: false,
+		warrantyYears: "Пожизненная (5 лет клиника)",
+		materialsHeadline: "Имплантаты Straumann Roxolid SLActive / Nobel Biocare, индивидуальный Ti-Base абатмент, керамика IPS e.max Press",
+		materialsList: [
+			"Премиальные швейцарские имплантаты Straumann SLActive (ускоренное приживление за 3-4 нед)",
+			"Индивидуальный титано-циркониевый абатмент для безупречного десневого края",
+			"Высокоэстетичные цельнокерамические коронки IPS e.max Press / Katana UTML",
+			"Интраоральное цифровое 3D-сканирование 3Shape TRIOS без снятия слепков",
+			"Пожизненная международная гарантия производителя на имплантаты",
+		],
+		keyAdvantages: [
+			"Бескомпромиссная надежность при минимальной толщине кости",
+			"Естественная эстетика живого зуба со светопроницаемостью",
+			"Индивидуальное сопровождение куратора лечения",
+			"Максимальный налоговый вычет 13% со всей суммы без лимита (Код 02)",
+		],
+	},
 };

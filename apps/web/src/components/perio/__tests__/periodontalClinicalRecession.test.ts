@@ -9,7 +9,7 @@ import { describe, it } from "node:test";
 import {
 	applyGingivalRecessionPreset,
 	PERIO_EXPRESS_PRESETS,
-} from "../perioMath";
+} from "../perioCatalogData";
 
 describe("10. Clinical Recession (K06.0) & CAL Measurement", () => {
 	it("recession_express preset exists with ICD-10 K06.0 and protocol text", () => {

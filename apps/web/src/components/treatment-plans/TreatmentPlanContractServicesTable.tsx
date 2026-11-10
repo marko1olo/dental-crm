@@ -63,7 +63,7 @@ export const TreatmentPlanContractServicesTable: React.FC<TreatmentPlanContractS
 											<td className="border border-slate-300 p-1 text-center font-bold">{it.toothNumber ? `№${it.toothNumber}` : <span className="text-slate-400 font-normal">—</span>}</td>
 											<td className="border border-slate-300 p-1 text-slate-800"><div className="font-medium text-slate-900">{it.name}</div>{it.materials && <div className="text-[9px] text-slate-500 mt-0.5">Материал: {it.materials}</div>}</td>
 											<td className="border border-slate-300 p-1 text-center font-mono">{it.quantity}</td>
-											<td className="border border-slate-300 p-1 text-right font-mono">{it.unitPriceRub.toLocaleString("ru-RU")}</td>
+											<td className="border border-slate-300 p-1 text-right font-mono">{(it.unitPriceRub ?? it.priceRub ?? 0).toLocaleString("ru-RU")}</td>
 											<td className="border border-slate-300 p-1 text-right font-mono text-slate-500">{it.discountRub > 0 ? <span className="text-emerald-700">-{it.discountRub.toLocaleString("ru-RU")}</span> : <span className="text-slate-400">—</span>}</td>
 											<td className="border border-slate-300 p-1 text-right font-mono font-semibold text-slate-900">{it.priceRub.toLocaleString("ru-RU")}</td>
 										</tr>

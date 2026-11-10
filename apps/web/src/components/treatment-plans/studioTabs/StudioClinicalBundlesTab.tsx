@@ -13,13 +13,14 @@ export interface StudioClinicalBundlesTabProps {
 	readonly selectedToothNumber?: number;
 }
 
-const CATEGORY_LABELS: Record<ClinicalBundleCategory | "all", string> = {
+const CATEGORY_LABELS: Record<string, string> = {
 	all: "Все пакеты",
 	therapy: "Терапия",
 	surgery: "Хирургия",
 	orthopedics: "Ортопедия",
 	periodontics: "Пародонтология",
 	prevention: "Профилактика",
+	implantation: "Имплантация",
 	implantology: "Имплантация",
 };
 
@@ -122,7 +123,7 @@ export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> =
 									</div>
 								</div>
 								<div className="text-right shrink-0">
-									<div className="text-xs sm:text-sm font-black text-[var(--ink)]">{formatRubles(bundle.totalRub)}</div>
+									<div className="text-xs sm:text-sm font-black text-[var(--ink)]">{formatRubles(bundle.totalRub || 0)}</div>
 									<div className="text-[10px] text-[var(--muted)]">{bundle.estimatedVisits} визит</div>
 								</div>
 							</div>
@@ -137,7 +138,7 @@ export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> =
 									{bundle.items.map((item) => (
 										<div key={item.id} className="flex items-center justify-between gap-2 text-[11px]">
 											<span className="text-[var(--ink)] line-clamp-1">· {item.name}</span>
-											<span className="font-semibold text-[var(--muted)] shrink-0">{formatRubles(item.priceRub)}</span>
+											<span className="font-semibold text-[var(--muted)] shrink-0">{formatRubles(item.priceRub || item.unitPriceRub || 0)}</span>
 										</div>
 									))}
 								</div>

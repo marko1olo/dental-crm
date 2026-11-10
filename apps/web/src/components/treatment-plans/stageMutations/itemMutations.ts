@@ -16,9 +16,10 @@ export function updateItemQuantityInStages(
 		const updatedItems = st.items.map((it) => {
 			if (it.id === itemId) {
 				modified = true;
+				const itemUnitRub = typeof it.unitPriceRub === "number" ? it.unitPriceRub : 0;
 				const unitPriceRub =
-					it.unitPriceRub > 0
-						? it.unitPriceRub
+					itemUnitRub > 0
+						? itemUnitRub
 						: Math.round((it.priceRub + (it.discountRub || 0)) / Math.max(1, it.quantity || 1));
 				const unitKop = parseKopecks(unitPriceRub);
 				const discountPct = discountPercent || 0;
@@ -84,9 +85,10 @@ export function updateItemInStages(
 			if (it.id === updatedItem.id) {
 				modified = true;
 				const safeQty = Math.max(1, updatedItem.quantity || 1);
+				const updatedUnitRub = typeof updatedItem.unitPriceRub === "number" ? updatedItem.unitPriceRub : 0;
 				const unitPriceRub =
-					updatedItem.unitPriceRub > 0
-						? updatedItem.unitPriceRub
+					updatedUnitRub > 0
+						? updatedUnitRub
 						: Math.round((updatedItem.priceRub + (updatedItem.discountRub || 0)) / safeQty);
 				const unitKop = parseKopecks(unitPriceRub);
 				const discountPct = discountPercent || 0;

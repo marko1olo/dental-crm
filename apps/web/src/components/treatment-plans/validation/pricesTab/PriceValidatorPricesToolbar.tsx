@@ -71,7 +71,7 @@ export const PriceValidatorPricesToolbar: React.FC<ToolbarProps> = ({
 					type="button"
 					className={`price-validator-btn-secondary ${adminOverride.isAuthorized ? "pv-badge-ok" : ""}`}
 					onClick={adminOverride.isAuthorized ? onRevokeAdminOverride : onAuthorizeDoctorAutonomy}
-					title="Подтверждение цен плана лечащим врачом (Мандат 8e: автономия без PIN-кодов)"
+					title="Подтверждение цен плана лечащим врачом"
 					data-testid="btn-doctor-autonomy-approve"
 				>
 					{adminOverride.isAuthorized ? <Check size={15} /> : <ShieldCheck size={15} />}{" "}

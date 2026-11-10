@@ -32,12 +32,12 @@ export const RecordAnamnesisTab: React.FC<RecordAnamnesisTabProps> = React.memo(
 							onClick={onApplyNorm}
 							disabled={false}
 							data-testid="btn-emr-anamnesis-norm"
-							className="emr-studio-btn emr-studio-btn-secondary"
-							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
+							className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary"
+							style={{ fontSize: "11px", padding: "4px 10px", height: "30px" }}
 							title="Заполнить незаполненные графы анамнеза физиологической нормой"
 						>
-							<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-							<span>Норма в 1 клик</span>
+							<Sparkles className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+							<span>Физиологическая норма</span>
 						</button>
 					</div>
 					<div className="emr-studio-grid-2">

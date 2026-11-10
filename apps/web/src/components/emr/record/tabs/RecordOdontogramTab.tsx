@@ -70,11 +70,11 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 							onClick={onApplyNorm}
 							disabled={false}
 							data-testid="btn-emr-status-norm"
-							className="emr-studio-btn emr-studio-btn-secondary"
-							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
+							className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary"
+							style={{ fontSize: "11px", padding: "4px 10px", height: "30px" }}
 							title="Зафиксировать физиологическую норму слизистой оболочки и прикуса"
 						>
-							<Sparkles className="w-3.5 h-3.5 text-amber-500" />
+							<Sparkles className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
 							<span>Норма статуса</span>
 						</button>
 					</div>

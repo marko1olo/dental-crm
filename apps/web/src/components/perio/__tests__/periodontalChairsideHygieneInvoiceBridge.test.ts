@@ -11,7 +11,7 @@ import {
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildPeriodontalTreatmentPlanJustification } from "../perioCatalogData";
-import { applyHealthyPeriodontiumPreset } from "../perioMath";
+import { applyHealthyPeriodontiumPreset } from "../perioCatalogData";
 
 describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {
 	it("proposes prophy and curettage for tooth 46 with pocket 5 mm and BOP", () => {

@@ -20,34 +20,34 @@ export type MaterialUnitOfMeasure =
 export interface ProcedureMaterialNorm {
 	readonly id: string;
 	readonly materialName: string;
-	readonly sku?: string;
+	readonly sku?: string | undefined;
 	readonly category: string;
 	readonly quantityPerProcedure: number;
 	readonly unitOfMeasure: MaterialUnitOfMeasure;
 	readonly defaultUnitCostRub: number;
 	readonly mandatory: boolean;
-	readonly lotTrackingRequired?: boolean;
-	readonly hideInPatientPresentation?: boolean;
+	readonly lotTrackingRequired?: boolean | undefined;
+	readonly hideInPatientPresentation?: boolean | undefined;
 }
 
 export interface PlanStageMaterialRequirement {
 	readonly id: string;
 	readonly materialName: string;
-	readonly serviceCode?: string;
+	readonly serviceCode?: string | undefined;
 	readonly order804nCode: string;
 	readonly procedureName: string;
-	readonly toothNumber?: number;
+	readonly toothNumber?: number | undefined;
 	readonly quantityRequired: number;
 	readonly unitOfMeasure: MaterialUnitOfMeasure;
 	readonly unitCostRub: number;
 	readonly unitCostKopecks: Kopecks;
 	readonly totalCostRub: number;
 	readonly totalCostKopecks: Kopecks;
-	readonly inventoryItemId?: string;
-	readonly inStockQuantity?: number;
+	readonly inventoryItemId?: string | undefined;
+	readonly inStockQuantity?: number | undefined;
 	readonly isDeficit: boolean;
 	readonly deficitQuantity: number;
-	readonly hideInPatientPresentation?: boolean;
+	readonly hideInPatientPresentation?: boolean | undefined;
 }
 
 export interface StageMaterialCostSummary {

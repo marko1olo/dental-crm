@@ -25,6 +25,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.equal(CANONICAL_TIER_DEFINITIONS.length, 3, "Должно быть ровно 3 канонических тарифа");
 
 		const [economy, optimum, premium] = CANONICAL_TIER_DEFINITIONS;
+		assert.ok(economy && optimum && premium);
 		assert.equal(economy.id, "economy");
 		assert.equal(economy.title, "Эконом");
 		assert.equal(economy.warrantyYears, 1);
@@ -45,6 +46,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.equal(CANONICAL_CLINICAL_STAGES.length, 4, "Комплексный план обязан содержать 4 базовых этапа");
 
 		const [hygiene, therapy, surgery, orthopedics] = CANONICAL_CLINICAL_STAGES;
+		assert.ok(hygiene && therapy && surgery && orthopedics);
 		assert.equal(hygiene.stageNumber, 1);
 		assert.match(hygiene.title, /Санация и гигиена/);
 
@@ -81,24 +83,31 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 
 		// 0%
 		const t0 = applyDoctorDiscountToTiers(baseTiers, 0);
+		assert.ok(t0[0] && baseTiers[0]);
 		assert.equal(t0[0].totalRub, baseTiers[0].totalRub);
 
 		// 20%
 		const t20 = applyDoctorDiscountToTiers(baseTiers, 20);
 		for (let i = 0; i < baseTiers.length; i++) {
-			const sumStages = t20[i].stages.reduce((acc, s) => acc + s.totalRub, 0);
-			assert.equal(t20[i].totalRub, sumStages);
-			assert.equal(t20[i].totalKopecks, sumStages * 100);
-			assert.ok(Math.abs(t20[i].totalRub - Math.round(baseTiers[i].totalRub * 0.8)) <= baseTiers[i].stages.length);
+			const b = baseTiers[i];
+			const t = t20[i];
+			assert.ok(b && t);
+			const sumStages = t.stages.reduce((acc, s) => acc + s.totalRub, 0);
+			assert.equal(t.totalRub, sumStages);
+			assert.equal(t.totalKopecks, sumStages * 100);
+			assert.ok(Math.abs(t.totalRub - Math.round(b.totalRub * 0.8)) <= b.stages.length);
 		}
 
 		// 50%
 		const t50 = applyDoctorDiscountToTiers(baseTiers, 50);
 		for (let i = 0; i < baseTiers.length; i++) {
-			const sumStages = t50[i].stages.reduce((acc, s) => acc + s.totalRub, 0);
-			assert.equal(t50[i].totalRub, sumStages);
-			assert.equal(t50[i].totalKopecks, sumStages * 100);
-			assert.ok(Math.abs(t50[i].totalRub - Math.round(baseTiers[i].totalRub * 0.5)) <= baseTiers[i].stages.length);
+			const b = baseTiers[i];
+			const t = t50[i];
+			assert.ok(b && t);
+			const sumStages = t.stages.reduce((acc, s) => acc + s.totalRub, 0);
+			assert.equal(t.totalRub, sumStages);
+			assert.equal(t.totalKopecks, sumStages * 100);
+			assert.ok(Math.abs(t.totalRub - Math.round(b.totalRub * 0.5)) <= b.stages.length);
 		}
 	});
 
@@ -184,6 +193,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		];
 
 		const sanitized = sanitizePatientPresentationStages(dirtyStages);
+		assert.ok(sanitized[0] && sanitized[0].items[0]);
 		assert.equal(sanitized[0].items.length, 1, "Все микро-расходники обязаны быть отфильтрованы");
 		assert.equal(sanitized[0].items[0].id, "proc-1");
 		assert.match(sanitized[0].items[0].name, /Пломбирование зуба 16/);
@@ -192,6 +202,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 	it("7. 1-клик генератор плана по диагнозу K02 (Кариес дентина)", () => {
 		const cariesPlan = generateTreatmentPlanFromDiagnosis("K02.1", 16);
 		assert.equal(cariesPlan.length, 1);
+		assert.ok(cariesPlan[0] && cariesPlan[0].items[0]);
 		assert.equal(cariesPlan[0].stageKind, "stage_1_therapy");
 		assert.match(cariesPlan[0].items[0].name, /Восстановление зуба 16/);
 		assert.equal(cariesPlan[0].items[0].toothNumber, 16);
@@ -200,6 +211,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 	it("8. 1-клик генератор плана по диагнозу K04 (Пульпит / Эндодонтия)", () => {
 		const endoPlan = generateTreatmentPlanFromDiagnosis("K04.0", 26);
 		assert.equal(endoPlan.length, 1);
+		assert.ok(endoPlan[0] && endoPlan[0].items[0]);
 		assert.equal(endoPlan[0].items.length, 2);
 		assert.match(endoPlan[0].items[0].name, /Обработка корневых каналов зуба 26/);
 		assert.equal(endoPlan[0].items[0].toothNumber, 26);
@@ -208,6 +220,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 	it("9. 1-клик генератор плана по диагнозу K08 (Имплантация и ортопедия)", () => {
 		const implPlan = generateTreatmentPlanFromDiagnosis("K08.1", 36);
 		assert.equal(implPlan.length, 2);
+		assert.ok(implPlan[0] && implPlan[1] && implPlan[0].items[0] && implPlan[1].items[0]);
 		assert.equal(implPlan[0].stageKind, "stage_2_surgery");
 		assert.equal(implPlan[1].stageKind, "stage_3_orthopedics");
 		assert.match(implPlan[0].items[0].name, /Установка имплантата/);
@@ -410,6 +423,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 	it("22. Вкладка рассрочки 0% StudioInstallmentTab: выбор срока 3, 6, 12, 24 мес. и 0% переплат клинике", async () => {
 		const { StudioInstallmentTab } = await import("../studioTabs/StudioInstallmentTab");
 		const tiers = buildCanonical3TierPlans();
+		assert.ok(tiers[1]);
 		const html = renderToString(
 			<StudioInstallmentTab
 				activeTier={tiers[1]}
@@ -429,6 +443,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 	it("23. Налоговый вычет 13% НДФЛ в StudioInstallmentTab: расчет возврата и чистой стоимости лечения", async () => {
 		const { StudioInstallmentTab } = await import("../studioTabs/StudioInstallmentTab");
 		const tiers = buildCanonical3TierPlans();
+		assert.ok(tiers[1]);
 		const html = renderToString(
 			<StudioInstallmentTab
 				activeTier={tiers[1]}

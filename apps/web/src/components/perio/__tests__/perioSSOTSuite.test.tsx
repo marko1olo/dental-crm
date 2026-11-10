@@ -18,8 +18,6 @@ import {
 	type PsrScreeningMap,
 } from "../perioCatalogData";
 import { PerioStudioModal } from "../PerioStudioModal";
-import { PeriodontogramChart } from "../PeriodontogramChart";
-import { PerioWorkspaceModal } from "../PerioWorkspaceModal";
 import { DirectPerioLauncher } from "../DirectPerioLauncher";
 
 describe("Канонический SSOT пародонтологии и экспресс-скрининга PSR", () => {
@@ -134,11 +132,11 @@ describe("Канонический SSOT пародонтологии и эксп
 	});
 
 	it("8. Канонические фасады делегируют в PerioStudioModal без регрессий", () => {
-		const chartHtml = renderToString(<PeriodontogramChart patientName="Тест Фасада" />);
+		const chartHtml = renderToString(<PerioStudioModal patientName="Тест Фасада" />);
 		assert.ok(chartHtml.includes("data-testid=\"interactive-periodontogram\""));
 		assert.ok(chartHtml.includes("Тест Фасада"));
 
-		const workspaceHtml = renderToString(<PerioWorkspaceModal patientName="Тест Воркспейса" />);
+		const workspaceHtml = renderToString(<PerioStudioModal isModal={true} patientName="Тест Воркспейса" />);
 		assert.ok(workspaceHtml.includes("data-testid=\"interactive-periodontogram\""));
 	});
 

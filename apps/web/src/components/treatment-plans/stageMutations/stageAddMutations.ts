@@ -81,8 +81,8 @@ export function addItemToPlanStages(
 		totalKopecks: netKopecks as Kopecks,
 		estimatedVisits: 1,
 		estimatedWeeks: 2,
-		serviceCatalogCodes: [newItem.code804n],
-		order804nCodes: [newItem.code804n],
+		serviceCatalogCodes: [newItem.code804n || ""],
+		order804nCodes: [newItem.code804n || ""],
 		status: "agreed",
 	};
 	return [...stages, newStage].sort((a, b) => a.stageNumber - b.stageNumber);

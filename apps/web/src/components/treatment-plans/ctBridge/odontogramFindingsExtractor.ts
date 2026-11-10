@@ -6,7 +6,7 @@ import type { CbctAutoPlanFindingsInput, CbctBoneDefectFinding, CbctImplantFindi
 function extractFromSavedItems(patientId: string, implants: CbctImplantFinding[]) {
 	const savedItems = loadPersistedCustomPlanItems(patientId);
 	for (const it of savedItems) {
-		if (it.toothNumber && it.code804n.startsWith("A16.07.054")) {
+		if (it.toothNumber && it.code804n && it.code804n.startsWith("A16.07.054")) {
 			implants.push({
 				toothFdi: it.toothNumber,
 				brand: "dentium",

@@ -8,8 +8,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { generatePsrDiaryProtocol } from "../perioMath";
-import { PeriodontogramChart } from "../PeriodontogramChart";
+import { generatePsrDiaryProtocol } from "../perioCatalogData";
+import { PerioStudioModal } from "../PerioStudioModal";
 
 describe("8. Prophy Protocol & PSR Screening Invariants (Mandates 8e, 8k)", () => {
 	it("pro_hygiene_express generates clinical hygiene protocol", () => {
@@ -22,7 +22,7 @@ describe("8. Prophy Protocol & PSR Screening Invariants (Mandates 8e, 8k)", () =
 
 	it("PeriodontogramChart renders PSR 6-sextant screening and hygiene actions cleanly", () => {
 		const html = renderToString(
-			React.createElement(PeriodontogramChart, {
+			React.createElement(PerioStudioModal, {
 				patientId: "patient-keyboard-test",
 				patientName: "Кузнецов Петр Сергеевич",
 			}),
@@ -40,7 +40,7 @@ describe("8. Prophy Protocol & PSR Screening Invariants (Mandates 8e, 8k)", () =
 
 	it("detailed chart tier 3 expands cleanly on request", () => {
 		const htmlTier3 = renderToString(
-			React.createElement(PeriodontogramChart, {
+			React.createElement(PerioStudioModal, {
 				patientId: "patient-tier3-test",
 				patientName: "Кузнецов Петр Сергеевич",
 				initialTier3Expanded: true,

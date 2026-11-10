@@ -142,7 +142,7 @@ export function EmkPerioSummary({
 						onClick={handleApplyHealthyNorm}
 						className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
 							perioStatus === "healthy"
-								? "bg-teal-600 text-white hover:bg-teal-700"
+								? "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-strong)]"
 								: "bg-[var(--paper)] border border-teal-500/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/15"
 						}`}
 						data-testid="emk-perio-norm-btn"

@@ -26,7 +26,7 @@ export const TreatmentPlan3TierMobileSegmented: React.FC<TreatmentPlan3TierMobil
 				const hasExplicitRecommendation = tiers.some((t) => t.isRecommended);
 				const isRecommended = hasExplicitRecommendation
 					? Boolean(tier.isRecommended)
-					: tier.tierId === "standard";
+					: tier.tierId === "optimum" || tier.tierId === "standard";
 				return (
 					<button
 						key={tier.tierId}

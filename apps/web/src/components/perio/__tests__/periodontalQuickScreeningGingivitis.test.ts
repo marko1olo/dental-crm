@@ -15,7 +15,7 @@ import {
 	generatePsrDiaryProtocol,
 	getPsrMaxCode,
 	hasPsrAsterisk,
-} from "../perioMath";
+} from "../perioCatalogData";
 
 describe("5. Periodontal Quick Screening: Gingivitis Preset (K05.1)", () => {
 	const initialTeeth = createDefaultPerioTeeth();

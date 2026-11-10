@@ -46,7 +46,7 @@ describe("treatmentPlanMath — Пересчет тарифов и финанс�
 
 		const updated = recalculateTierTotals(sampleBaseTier, stagesWithImplant);
 		assert.equal(updated.totalRub, 80000);
-		assert.equal(updated.ndflDetails.code, "02");
+		assert.equal(updated.ndflDetails?.code, "02");
 		assert.equal(updated.ndflRefundRub, 10400);
 		assert.equal(updated.monthlyInstallment12Rub, Math.round(80000 / 12));
 		assert.ok(updated.stagedSchedule);

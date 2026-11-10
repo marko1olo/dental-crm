@@ -7,12 +7,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import {
-	computePsrSummary,
-	PerioPsrExpressScreening,
-} from "../PerioPsrExpressScreening";
-import { PeriodontalDetailedChart, createDefaultToothRecord } from "../PeriodontalDetailedChart";
-import { PeriodontogramChart } from "../PeriodontogramChart";
+import { computePsrSummary } from "../perioCatalogData";
+import { PerioStudioModal } from "../PerioStudioModal";
 import type { PsrScreeningMap } from "../perioTypes";
 
 describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
@@ -84,14 +80,9 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 		};
 
 		const html = renderToString(
-			<PerioPsrExpressScreening
-				screeningMap={screeningMap}
-				onUpdateSextant={() => {}}
-				onSetAllIntact={() => {}}
-				onApplyHygienePreset={() => {}}
-				onApplyPeriodontitisPreset={() => {}}
-				isDetailedExpanded={false}
-				onToggleDetailed={() => {}}
+			<PerioStudioModal
+				patientName="Иванов И.И."
+				initialTier3Expanded={false}
 			/>,
 		);
 
@@ -103,12 +94,10 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 	});
 
 	it("5. PeriodontalDetailedChart renders teeth arch and 6 probing sites cleanly via SSR", () => {
-		const initialTooth = createDefaultToothRecord(16);
 		const html = renderToString(
-			<PeriodontalDetailedChart
-				teeth={[initialTooth]}
-				onUpdateTooth={() => {}}
-				defaultSelectedTooth={16}
+			<PerioStudioModal
+				initialTier3Expanded={true}
+				initialSelectedTooth={16}
 			/>,
 		);
 
@@ -120,7 +109,7 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 
 	it("6. PeriodontogramChart integrates PSR Express & Detailed Chart with 1 Primary CTA", () => {
 		const html = renderToString(
-			<PeriodontogramChart
+			<PerioStudioModal
 				patientName="Иванов И.И."
 				readOnly={false}
 			/>,

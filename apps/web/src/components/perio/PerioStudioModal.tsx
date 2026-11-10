@@ -301,7 +301,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				<div className="flex flex-wrap items-center gap-2">
 					<button type="button" onClick={handleSetAllIntact} data-testid="perio-toolbar-norm-1click-btn" data-preset-card="perio-preset-norm-card" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer transition-colors">
 						<span data-testid="psr-all-intact-btn" className="flex items-center gap-1.5">
-							<Check className="w-3.5 h-3.5" /> 1-клик: Здоровый пародонт (Норма)
+							<Check className="w-3.5 h-3.5" /> Здоровый пародонт (Норма)
 							<span className="sr-only">Норма (PSR 0) Пародонт в норме</span>
 						</span>
 					</button>
@@ -313,7 +313,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					<button type="button" onClick={() => handleApplyPreset("periodontitis_severe_express")} data-testid="perio-preset-severe-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-rose-600 dark:text-rose-400 font-semibold text-xs border border-[var(--line)] hover:border-rose-500 flex items-center gap-1.5 cursor-pointer transition-colors">Пародонтит тяжелый (6-8 мм)</button>
 				</div>
 				<div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/60 text-xs">
-					<span className="text-[11px] text-[var(--muted)] font-bold shrink-0">Макро-батч:</span>
+					<span className="text-[11px] text-[var(--muted)] font-bold shrink-0">Быстрый выбор:</span>
 					<button type="button" onClick={handleApplyUpperJawNorm} data-testid="perio-macro-upper-jaw-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[#0d9488] font-medium cursor-pointer transition-colors">✓ ВЧ 1–2 мм</button>
 					<button type="button" onClick={handleApplyLowerJawNorm} data-testid="perio-macro-lower-jaw-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[#0d9488] font-medium cursor-pointer transition-colors">✓ НЧ 1–2 мм</button>
 					<button type="button" onClick={handleApplyZeroBop} data-testid="perio-macro-zero-bop-btn" className="min-h-[30px] px-2 rounded-md bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 border border-[var(--line)] hover:border-emerald-500 font-medium cursor-pointer transition-colors">✓ BOP 0%</button>
@@ -344,7 +344,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 									</button>
 								))}
 							</div>
-							<div className="text-[11px] text-[var(--muted)] leading-tight pt-0.5 truncate" title={meta.criteriaRu}>{meta.labelRu}</div>
+							<div className="text-[11px] text-[var(--muted)] leading-tight pt-0.5" title={meta.criteriaRu}>{meta.labelRu}</div>
 						</div>
 					);
 				})}
@@ -353,8 +353,8 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			{/* 4 канонических протокола гигиены */}
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold text-[var(--ink)]">1-клик протоколы профгигиены и пародонтологии:</span>
-					<span className="text-[11px] text-[var(--muted)]">Пакетное списание расходников (Soft Negative Stock)</span>
+					<span className="text-xs font-bold text-[var(--ink)]">Клинические комплексы:</span>
+					<span className="text-[11px] text-[var(--muted)]">Пакетное списание расходников</span>
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
 					{PERIO_TREATMENT_PROTOCOLS.map((proto) => {
@@ -362,8 +362,8 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 						return (
 							<button key={proto.id} type="button" onClick={() => handleSelectProtocol(proto)} className={`p-2.5 rounded-lg text-left text-xs border cursor-pointer transition-all flex flex-col justify-between gap-1.5 ${isSelected ? "bg-[#0d9488]/10 text-[var(--ink)] border-[#0d9488] ring-1 ring-[#0d9488]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"}`}>
 								<div>
-									<div className="font-bold text-xs leading-tight line-clamp-2 min-h-[30px]">{proto.titleRu}</div>
-									<div className="text-[11px] text-[var(--muted)] line-clamp-2 pt-0.5">{proto.descriptionRu}</div>
+									<div className="font-bold text-xs leading-tight min-h-[30px] break-words">{proto.titleRu}</div>
+									<div className="text-[11px] text-[var(--muted)] pt-0.5 break-words">{proto.descriptionRu}</div>
 								</div>
 								<div className="flex items-center justify-between pt-1 border-t border-[var(--line)]">
 									<span className="text-[11px] font-semibold text-[#0d9488]">{proto.defaultPriceRub} ₽</span>
@@ -468,7 +468,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			</div>
 
 			{/* Мобильная плавающая нижняя плашка Primary CTA (Natural Thumb Zone) */}
-			<div className="perio-mobile-floating-bar fixed bottom-0 left-0 right-0 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] z-50 flex sm:hidden">
+			<div className="perio-mobile-floating-bar fixed bottom-0 left-0 right-0 p-3 pb-safe bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] z-[110] flex sm:hidden">
 				<button type="button" onClick={handleSave} aria-busy={syncStatus === "saving"} data-testid="perio-save-mobile-btn" className="w-full min-h-[48px] h-12 rounded-xl bg-[#0d9488] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-[0.99] transition-all">
 					<Check className="w-4 h-4" />
 					{syncStatus === "saving" ? "Сохранение..." : "Сохранить пародонтограмму"}
@@ -479,8 +479,8 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 	if (isModal) {
 		return (
-			<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto" data-testid="perio-chart-modal">
-				<div className="w-full max-w-5xl my-0 sm:my-auto max-h-[92vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl">
+			<div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto" data-testid="perio-chart-modal">
+				<div className="w-full max-w-5xl my-0 sm:my-auto max-h-[92vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl pb-20 sm:pb-0">
 					{content}
 				</div>
 			</div>

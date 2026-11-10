@@ -10,8 +10,8 @@ import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 
 export interface StudioWarrantyPassportTabProps {
 	readonly activeTier: TreatmentPlanTier;
-	readonly patientName?: string;
-	readonly doctorFullName?: string;
+	readonly patientName?: string | undefined;
+	readonly doctorFullName?: string | undefined;
 }
 
 export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps> = ({

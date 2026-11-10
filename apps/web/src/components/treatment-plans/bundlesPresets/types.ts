@@ -17,28 +17,34 @@ export type ClinicalBundleId =
 	| "implant_turnkey"
 	| "crown_metalloceramic_turnkey"
 	| "crown_zirconia_turnkey"
-	| "impression_asilicone_2jaws";
+	| "impression_asilicone_2jaws"
+	| string;
 
 export type ClinicalBundleCategory =
 	| "therapy"
 	| "surgery"
 	| "hygiene"
 	| "orthopedics"
-	| "implantation";
+	| "implantation"
+	| "periodontics"
+	| "prevention";
 
 export interface ClinicalBundleItemTemplate {
 	readonly id: string;
 	readonly serviceCode: string;
-	readonly code804n?: string;
+	readonly code804n?: string | undefined;
 	readonly name: string;
 	readonly category: string;
 	readonly defaultPriceRub: number;
 	readonly defaultPriceKopecks: Kopecks;
+	readonly priceRub?: number | undefined;
+	readonly unitPriceRub?: number | undefined;
+	readonly toothNumber?: number | undefined;
 	readonly materials: string;
 	readonly clinicalRationale: string;
-	readonly optional?: boolean;
-	readonly defaultSelected?: boolean;
-	readonly hideInPatientPresentation?: boolean;
+	readonly optional?: boolean | undefined;
+	readonly defaultSelected?: boolean | undefined;
+	readonly hideInPatientPresentation?: boolean | undefined;
 }
 
 export interface ClinicalBundleDefinition {
@@ -49,12 +55,15 @@ export interface ClinicalBundleDefinition {
 	readonly category: ClinicalBundleCategory;
 	readonly categoryLabel: string;
 	readonly categoryName: string;
-	readonly stageKind: TreatmentPlanStageKind;
-	readonly stageNumber: 1 | 2 | 3;
+	readonly stageKind: TreatmentPlanStageKind | string;
+	readonly stageNumber: 1 | 2 | 3 | number;
 	readonly totalPriceRub: number;
 	readonly totalPriceKopecks: Kopecks;
 	readonly basePriceRub: number;
 	readonly basePriceKopecks: Kopecks;
+	readonly totalRub?: number | undefined;
+	readonly totalKopecks?: Kopecks | undefined;
+	readonly estimatedVisits?: number | undefined;
 	readonly requiresTooth: boolean;
 	readonly defaultTooth: number;
 	readonly items: readonly ClinicalBundleItemTemplate[];
@@ -78,6 +87,8 @@ export function item(
 		name,
 		category,
 		defaultPriceRub,
+		priceRub: defaultPriceRub,
+		unitPriceRub: defaultPriceRub,
 		defaultPriceKopecks: parseKopecks(defaultPriceRub),
 		materials,
 		clinicalRationale,
@@ -108,6 +119,9 @@ export function bundle(def: {
 		totalPriceKopecks: parseKopecks(def.totalPriceRub),
 		basePriceRub: def.totalPriceRub,
 		basePriceKopecks: parseKopecks(def.totalPriceRub),
+		totalRub: def.totalPriceRub,
+		totalKopecks: parseKopecks(def.totalPriceRub),
+		estimatedVisits: 1,
 	};
 }
 

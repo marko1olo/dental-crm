@@ -28,7 +28,8 @@ describe("treatmentPlanBundlesEngine — Применение к тарифу и
 		assert.equal(updatedTier.ndflRefundRub, expectedRefund13);
 		assert.equal(updatedTier.priceWithNdflRefundRub, 41500 - expectedRefund13);
 
-		assert.ok(updatedTier.monthlyInstallment12Rub > 0);
+		assert.ok((updatedTier.monthlyInstallment12Rub ?? 0) > 0);
+		assert.ok(updatedTier.installments);
 		assert.equal(updatedTier.installments[12].monthlyPaymentRub, Math.round(41500 / 12));
 		const sumParts12 = updatedTier.installments[12].partsKopecks.reduce((acc, p) => acc + p, 0);
 		assert.equal(sumParts12, updatedTier.totalKopecks);

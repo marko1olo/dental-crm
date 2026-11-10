@@ -54,7 +54,9 @@ export function dispatchRoadmapBooking(params: RoadmapBookingParams) {
 
 	try {
 		window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(bookingDetail));
-	} catch {}
+	} catch (e) {
+		console.warn("[RoadmapBooking] Ошибка сохранения черновика быстрой записи в localStorage:", e);
+	}
 
 	window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: bookingDetail }));
 	window.dispatchEvent(new CustomEvent("dente-quick-appointment-draft", { detail: bookingDetail }));

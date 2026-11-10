@@ -8,14 +8,14 @@ import { UserCheck, Calendar, FileText, CheckCircle2 } from "lucide-react";
 import { useAppStore } from "../../../store/appStore";
 
 export interface StudioCuratorAssignmentTabProps {
-	readonly doctorFullName?: string;
-	readonly onSaveCuratorSettings?: (settings: {
+	readonly doctorFullName?: string | undefined;
+	readonly onSaveCuratorSettings?: ((settings: {
 		curatorId: string;
 		curatorName: string;
 		funnelStage: string;
 		nextContactDate: string;
 		notes: string;
-	}) => void;
+	}) => void) | undefined;
 }
 
 export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProps> = ({
@@ -23,7 +23,11 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 	onSaveCuratorSettings,
 }) => {
 	const dashboard = useAppStore((s) => s.dashboard);
-	const staffList = (dashboard?.clinicSettings?.staff ?? []) as Array<{ id: string; name: string; role: string }>;
+	const staffList = (dashboard?.clinicSettings?.staff ?? []).map((s) => ({
+		id: s.id,
+		name: s.fullName || (s as { name?: string }).name || "Сотрудник",
+		role: s.role,
+	}));
 
 	const [selectedCuratorId, setSelectedCuratorId] = useState<string>("doctor_self");
 	const [funnelStage, setFunnelStage] = useState<string>("decision_making");

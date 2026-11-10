@@ -9,7 +9,9 @@ export function checkEndoToothProtocol(
 	const checks: StarProtocolRuleCheck[] = [];
 	const isDeciduous = isDeciduousTooth(toothNum);
 	const expectedCanals = getAnatomicalRootCanalCount(toothNum);
-	const codes = toothItems.map((i) => i.code804n.trim().toUpperCase());
+	const codes = toothItems
+		.map((i) => (i.code804n || "").trim().toUpperCase())
+		.filter(Boolean);
 
 	const hasEndoPrep = codes.some((c) => c.startsWith("A16.07.030"));
 	const hasEndoObturation = codes.some((c) => c.startsWith("A16.07.008"));

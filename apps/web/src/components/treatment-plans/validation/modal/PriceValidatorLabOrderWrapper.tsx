@@ -27,7 +27,7 @@ export const PriceValidatorLabOrderWrapper: React.FC<PriceValidatorLabOrderWrapp
 			}
 			doctorId={planPayload?.doctorId || undefined}
 			doctorName={planPayload?.doctorFullName || undefined}
-			initialTeeth={labTeeth}
+			initialTeeth={[...labTeeth]}
 		/>
 	);
 };

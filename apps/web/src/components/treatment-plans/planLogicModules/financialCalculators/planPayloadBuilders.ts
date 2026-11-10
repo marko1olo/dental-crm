@@ -42,15 +42,15 @@ export function buildTreatmentPlanValidationPayload({
 		items: allItems.map((it) => ({
 			itemId: it.id,
 			...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
-			code804n: it.code804n,
+			code804n: it.code804n || "",
 			serviceTitle: it.name,
-			category: it.category,
-			planUnitPriceRub: it.unitPriceRub,
+			category: it.category || "",
+			planUnitPriceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
 			planDiscountPercent: discountPercent,
 			planDiscountRub: it.discountRub,
 			quantity: it.quantity,
 			planLineTotalRub:
-				(Math.max(0, Math.round((it.unitPriceRub || 0) * 100) - Math.round((it.discountRub || 0) * 100)) *
+				(Math.max(0, Math.round(((typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub) || 0) * 100) - Math.round((it.discountRub || 0) * 100)) *
 					(it.quantity || 1)) /
 				100,
 		})),

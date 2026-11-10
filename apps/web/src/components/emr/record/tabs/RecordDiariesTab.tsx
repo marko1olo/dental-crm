@@ -27,7 +27,7 @@ export interface RecordDiariesTabProps {
 	readonly onDeleteDiary?: ((index: number) => void) | undefined;
 }
 
-export type Form043DiariesTabProps = RecordDiariesTabProps;
+export type MedicalRecordDiariesTabProps = RecordDiariesTabProps;
 
 const COMMON_TEETH = [16, 26, 36, 46, 11, 21, 14, 24] as const;
 
@@ -264,22 +264,22 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 						<div className="flex items-center gap-2 flex-wrap">
 							<button
 								type="button"
-								className="emr-studio-btn emr-studio-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+								className="dente-btn dente-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
 								onClick={() => setIsFormOpen((prev) => !prev)}
 								data-testid="btn-toggle-inline-diary-form"
 							>
-								<Plus className="w-4 h-4 text-teal-600" />
+								<Plus className="w-4 h-4 text-slate-600 dark:text-slate-300" />
 								<span>{isFormOpen ? "Свернуть форму" : "+ Быстрая запись"}</span>
 							</button>
 
 							<button
 								type="button"
-								className="emr-studio-btn emr-studio-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+								className="dente-btn dente-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
 								onClick={() => (onOpenProtocolGenerator ? onOpenProtocolGenerator() : onOpenInternalProtocolGenerator())}
 								data-testid="btn-emr-synthesize-diary"
 								title="Сформировать дневник по МКБ-10 и шаблонам СтАР"
 							>
-								<Sparkles className="w-4 h-4 text-amber-500" />
+								<Sparkles className="w-4 h-4 text-slate-600 dark:text-slate-300" />
 								<span>Шаблоны протоколов СтАР</span>
 							</button>
 						</div>
@@ -421,4 +421,4 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 	},
 );
 
-export const Form043DiariesTab = RecordDiariesTab;
+export const MedicalRecordDiariesTab = RecordDiariesTab;

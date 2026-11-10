@@ -1889,6 +1889,32 @@
   - `npm run check:dynamic-imports` -> Exit Code 0.
   - 44/44 целевых тестов PASS.
 
+### [PLN-13] [SEV-1] [ИСПРАВЛЕНО] Ликвидация глухих действий тулбара (DEF-TP-01), инверсии маппинга тарифов (DEF-TP-02), рассинхрона пропсов лаунчера (DEF-TP-03), устаревшего CSS-класса кнопок (DEF-TP-04), пустого catch (DEF-TP-05) и физический снос 18 зомби-файлов
+- **Файлы:**
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanClinicalModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanClinicalModals.tsx) (DEF-TP-01: монтирование `TreatmentPlanStudioModal`, `StagePaymentPlanModal`, `TreatmentPlanPriceValidatorModal`, `CuratorPlanAssignmentModal`)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx) (DEF-TP-02: исправление маппинга в `getTierShortLabel`: `optimum` || `standard` -> «Оптимум», `premium` -> «Премиум»)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlan3TierMobileSegmented.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierMobileSegmented.tsx) (DEF-TP-02: проверка `optimum` || `standard` для рекомендованного тарифа)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx) (DEF-TP-03: добавлены пропсы `planId`, `clinicName`, `clinicAddress`, `patientBirthDate`, инициализация `currentPlanId`)
+  - [`apps/web/src/components/patients/TreatmentPlansList.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/TreatmentPlansList.tsx) (DEF-TP-04: замена `primary-button` на токены Dente `dente-btn dente-btn-primary bg-[var(--teal,#0d9488)] text-white`)
+  - [`apps/web/src/components/treatment-plans/roadmap/card/roadmapBookingHelper.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/roadmap/card/roadmapBookingHelper.ts) (DEF-TP-05: логирование `console.warn(e)` без глотания ошибок по Мандату 8d / 8zr)
+- **Физически снесены 18 зомби-файлов через `git rm`:**
+  - `apps/web/src/components/treatment-plans/presenterHeader/presenterTabTypes.ts`
+  - 17 файлов в `apps/web/src/components/treatment-plans/presenterModules/` (`Presenter3TierGrid.tsx`, `PresenterDoctorDiscountBar.tsx`, `PresenterHeader.tsx`, `PresenterInstallment0PercentCard.tsx`, `PresenterNdfl13Card.tsx`, `TreatmentPlanAcceptanceFooter.tsx`, `TreatmentPlanPaymentSchedule.tsx`, `acceptanceFooter/AcceptanceFooterActions.tsx`, `acceptanceFooter/AcceptanceSignatureDrawer.tsx`, `paymentSchedule/Installment0PercentCard.tsx`, `paymentSchedule/StagedPayment304030Section.tsx`, `paymentSchedule/TaxDeduction13Banner.tsx`, `stagesList/TreatmentPlanStageCardItem.tsx`, `stagesList/TreatmentPlanStageItemRow.tsx`, `stagesList/TreatmentPlanStagesListControls.tsx`, `treatmentPlanPresenterTypes.ts`, `types/presenterTierAndScheduleTypes.ts`)
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file`):**
+  - [`docs/proofs/treatment-plans/01_treatment_plan_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/01_treatment_plan_pc_light_1440x900.png) (112 KB)
+  - [`docs/proofs/treatment-plans/02_treatment_plan_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/02_treatment_plan_pc_dark_1440x900.png) (113 KB)
+  - [`docs/proofs/treatment-plans/03_treatment_plan_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/03_treatment_plan_mobile_light_390x844.png) (149 KB)
+  - [`docs/proofs/treatment-plans/04_treatment_plan_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/04_treatment_plan_mobile_dark_390x844.png) (149 KB)
+- **Тесты и гейты (Definition of Done):**
+  - `npx tsx --test apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts` -> 10/10 PASS
+  - `apps/web/src/components/treatment-plans/__tests__/treatmentPlan3TierComparisonView.test.tsx` -> 5/5 PASS
+  - `apps/web/src/components/treatment-plans/__tests__/stagePaymentAutonomy.test.tsx` -> 1/1 PASS
+  - `npm run check:encoding` -> Exit Code 0 (22114 файлов проверено)
+  - `npm run check:buttons` -> Exit Code 0 (0 circus color violations)
+  - `npm run check:stub-overrides` -> Exit Code 0
+  - `npm run check:dynamic-imports` -> Exit Code 0
+  - `npm run check:css-tokens` -> Exit Code 0
+
 ### [PLN-12] [SEV-2] [ИСПРАВЛЕНО] Декомпозиция монолита treatmentPlanMutations.ts (1 154 строки) на модули mutations/ и устранение блокировки NOT NULL в treatment_plan_stages
 - **Файлы:**
   - [`apps/api/src/routes/treatmentPlan/handlers/treatmentPlanMutations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentPlan/handlers/treatmentPlanMutations.ts) (фасад-агрегатор, 19 строк, 100% backward compatibility)
@@ -4414,25 +4440,28 @@ ead_file по 8 осям качества Хаммера:
   8. **DEF-ORTHO-09 (Защита от загрязнения прогресса 36 элайнерами):** В `helpers.ts` в `parseOrthoData` и `createInitialOrthoRecord` элайнерные поля выставляются СТРОГО при наличии элайнерных сигналов или категории `aligners`. Пациенты на брекетах не получают навязанных 36 капп.
   9. **DEF-ORTHO-10 (Списание расходников строго при смене дуги):** В `archwireRoutes.ts` списание расходников не вызывается при манипуляциях без смены дуги (`isWireChange: false`) или контроле пластинки (`applianceCategory: "plate"`).
   10. **DEF-ORTHO-11 (Нормализация сплавов дуг):** В `types.ts` `archwireChangeSchema` поддерживает нормализацию строчных литералов (`niti`, `cuniti`, `ss`, `tma`) в канонические `NiTi`, `CuNiTi`, `SS`, `TMA`.
+  11. **Физический снос 38 дублирующих файлов орто-фотопротокола (`git rm`):** Полностью ликвидирована потемкинская папка `apps/web/src/components/diagnostics/orthoModal/` (33 файла), модалка-клон `OrthodonticPhotoProtocolModal.tsx`, `OrthoBeforeAfterComparison.tsx`, `OrthoFindingsAccordion.tsx`, `OrthoPhotoSlotCard.tsx`, `photoProtocol.css` и тест-клон `OrthodonticPhotoProtocolModal.test.tsx`. Ортодонтический фотопротокол консолидирован в единый SSOT `ClinicalPhotoProtocolModal` с пресетом `orthodontic_8` (8 канонических проекций с сохранением в PostgreSQL 18 без утечек transient blob: URL).
+  12. **Ликвидация псевдо-WebGPU/WebGL в цефалометрии (DEF-ORTHO-01):** В `cephAiInferenceService.ts` и `useCephLandmarks.ts` устранены симуляция задержки 15 мс и фейковые заявления о WebGPU нейросети. Установлен честный клинический статус «Калиброванный анатомический шаблон (норма)» (`template_norm`).
+  13. **Десоветизация и реактивный биндинг формы карты (DEF-ORTHO-02):** Компонент `OrthodonticCard043_1uForm.tsx` удален (`git rm`) и заменен на канонический `OrthodonticPatientCardForm.tsx` с чистым русским языком («Медицинская карта ортодонтического пациента»), двусторонней привязкой всех полей ввода к `onChange(payload)` и обратной совместимостью через alias-экспорт.
+  14. **Искоренение канцелярского сленга и дубликата `cephalometricMath` (DEF-ORTHO-03, DEF-ORTHO-04):** Удалена устаревшая функция `generateForm043OrthodonticProtocolText` (заменена на `generateOrthodonticProtocolText`). Удален фасад `radiology/cephalometricMath.ts`, все импорты переведены на единый SSOT `components/orthodontics/cephalometricMath`.
 - **Машинные гейты Definition of Done (100% Exit Code 0):**
   - Ортодонтические веб-тесты: `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` -> **16/16 PASSED (Exit Code 0)**.
   - ТРГ трекер тесты: `apps/web/src/tests/orthoCephTracker.test.tsx` -> **6/6 PASSED (Exit Code 0)**.
-  - API бэкенд-тесты ортодонтии: `apps/api/src/tests/routes/orthodonticsRoutes.test.ts` -> **10/10 PASSED (Exit Code 0)** (включая сохранение и чтение ТРГ анализов).
+  - Фотопротокол SSOT тесты: `photoProtocolSSOTAndEmptyStateInquisition.test.ts` & `vitaShadeSSOTAndPhotoGridInquisition.test.ts` -> **14/14 PASSED (Exit Code 0)**.
+  - Радиология и цефалометрия тесты: `radiologyViewerProtocols.test.ts` -> **16/16 PASSED (Exit Code 0)**.
+  - API бэкенд-тесты ортодонтии: `apps/api/src/tests/routes/orthodonticsRoutes.test.ts` -> **10/10 PASSED (Exit Code 0)**.
   - Shared ортодонтические тесты: `orthoMaterialsAndPresets.test.ts` и `orthoEngine.test.ts` -> **40/40 PASSED (Exit Code 0)**.
-  - `npm run check:encoding` -> **22 363 файлов, 0 замечаний (Exit Code 0)**.
-  - `npm run check:buttons` -> **5 537 TSX, 0 нарушений дизайн-токенов (Exit Code 0)**.
-  - `npm run check:css-tokens` -> **1 445 CSS файлов, 0 неразрешенных переменных (Exit Code 0)**.
-  - `npm run check:react-hooks` -> **3 744 файлов, 0 нарушений правил хуков React 19 (Exit Code 0)**.
-  - `npm run check:dynamic-imports` -> **519 импортов, 0 битых путей (Exit Code 0)**.
-  - `npm run check:stub-overrides` -> **0 перекрытий (Exit Code 0)**.
-  - `npm run check:fetch-response` -> **12 782 файлов проверено (Exit Code 0)**.
-  - `npm run check:migration-drift` -> **216 таблиц Drizzle / 218 DDL миграций — 100% синхронизация (Exit Code 0)**.
+  - Всего подтверждено тестами в Домене 23: **102/102 PASSED (100% зелёные)**.
+  - `npm run check:encoding` -> **Exit Code 0**.
+  - `npm run check:buttons` -> **Exit Code 0 (0 circus color violations)**.
+  - `npm run check:css-tokens` -> **Exit Code 0**.
+  - `npm run check:react-hooks` -> **Exit Code 0 (3 663 файла чисты)**.
 - **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
   - Ортодонтическая студия:
-    - ☀️ PC Light (1440x900): [`docs/proofs/orthodontics/pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/pc_light_1440x900.png) (134 KB) — 0px клиппинга, ровно 1 Primary CTA «✓ Зафиксировать активацию этапа» (`#0d9488`), селекторы дуг NiTi/CuNiTi/SS/TMA, эластики, 1-клик шаблоны.
-    - 🌙 PC Dark (1440x900): [`docs/proofs/orthodontics/pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/pc_dark_1440x900.png) (141 KB) — 100% темные токены, глубокий фон `#0b131a`, WCAG AAA контраст, 0 белых пятен.
-    - 📱 Mobile Light (390x844): [`docs/proofs/orthodontics/mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/mobile_light_390x844.png) (85 KB) — Apple HIG Bottom Bar, тач-таргеты $\ge 44\times 44$px, Primary CTA во всю ширину внизу.
-    - 📱 Mobile Dark (390x844): [`docs/proofs/orthodontics/mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/mobile_dark_390x844.png) (49 KB) — 0px горизонтального скролла, безупречная темная тема на смартфонах.
+    - ☀️ PC Light (1440x900): [`docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png) (101 KB) — 0px клиппинга, ровно 1 Primary CTA «✓ Зафиксировать активацию этапа» (`#0d9488`), селекторы дуг NiTi/CuNiTi/SS/TMA, эластики, клинические шаблоны без сленга «1-клик».
+    - 🌙 PC Dark (1440x900): [`docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png) (98 KB) — 100% темные токены, глубокий фон `#0f172a`, WCAG AAA контраст, 0 белых пятен.
+    - 📱 Mobile Light (390x844): [`docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png) (46 KB) — Apple HIG Bottom Bar, тач-таргеты $\ge 44\times 44$px, Primary CTA во всю ширину внизу.
+    - 📱 Mobile Dark (390x844): [`docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png) (45 KB) — 0px горизонтального скролла, безупречная темная тема на смартфонах.
   - Цефалометрический анализ боковой ТРГ:
     - ☀️ PC Light (1440x900): [`docs/proofs/orthodontics/ceph_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ceph_pc_light_1440x900.png) (104 KB) — Расчет ключевых углов Штейнера (SNA 84.4°, SNB 81.7°, ANB 2.7°), клиническое резюме, вкладки ориентиров и медицинской карты.
     - 🌙 PC Dark (1440x900): [`docs/proofs/orthodontics/ceph_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ceph_pc_dark_1440x900.png) (104 KB) — 100% темный фон холста `#020617`, неоновая разметка углов и ориентиров.

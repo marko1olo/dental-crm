@@ -16,6 +16,15 @@ const TreatmentPlanContractPrint = React.lazy(() =>
 const TreatmentPlanCompletedActPrint = React.lazy(() =>
 	import("./TreatmentPlanCompletedActPrint").then((m) => ({ default: m.TreatmentPlanCompletedActPrint })),
 );
+const StagePaymentPlanModal = React.lazy(() =>
+	import("./stagePayment/StagePaymentPlanModal").then((m) => ({ default: m.StagePaymentPlanModal })),
+);
+const TreatmentPlanPriceValidatorModal = React.lazy(() =>
+	import("./validation/TreatmentPlanPriceValidatorModal").then((m) => ({ default: m.TreatmentPlanPriceValidatorModal })),
+);
+const CuratorPlanAssignmentModal = React.lazy(() =>
+	import("./CuratorPlanAssignmentModal").then((m) => ({ default: m.CuratorPlanAssignmentModal })),
+);
 
 export interface TreatmentPlanClinicalModalsProps {
 	readonly logic: any;
@@ -25,11 +34,14 @@ export interface TreatmentPlanClinicalModalsProps {
 export const TreatmentPlanClinicalModals: React.FC<TreatmentPlanClinicalModalsProps> = ({ logic, teethData }) => {
 	return (
 		<>
-			{logic.isPresenterModalOpen && (
+			{(logic.isPresenterModalOpen || logic.isComparatorModalOpen) && (
 				<Suspense fallback={null}>
 					<TreatmentPlanStudioModal
-						isOpen={logic.isPresenterModalOpen}
-						onClose={() => logic.setIsPresenterModalOpen(false)}
+						isOpen={logic.isPresenterModalOpen || logic.isComparatorModalOpen}
+						onClose={() => {
+							logic.setIsPresenterModalOpen(false);
+							logic.setIsComparatorModalOpen(false);
+						}}
 						patientId={logic.patientId}
 						patientName={logic.patientName}
 						patientPhone={logic.patientPhone}
@@ -40,8 +52,18 @@ export const TreatmentPlanClinicalModals: React.FC<TreatmentPlanClinicalModalsPr
 						contractNumber={logic.contractNumber}
 						onSelectPlan={(p: any) => { logic.setSelectedTierId(p.tierId); showToast(`Выбран план: ${p.title} (${p.totalRub.toLocaleString("ru-RU")} ₽)`, "success"); }}
 						onConfirmSelection={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setPlanStatus("agreed"); showToast(`Пациент подтвердил выбор: ${p.title}`, "success"); }}
-						onApproveAndSign={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setIsPresenterModalOpen(false); logic.setIsSignModalOpen(true); }}
-						onPrintContract={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setIsPresenterModalOpen(false); logic.setIsContractPrintOpen(true); }}
+						onApproveAndSign={(p: any) => {
+							logic.setSelectedTierId(p.tierId);
+							logic.setIsPresenterModalOpen(false);
+							logic.setIsComparatorModalOpen(false);
+							logic.setIsSignModalOpen(true);
+						}}
+						onPrintContract={(p: any) => {
+							logic.setSelectedTierId(p.tierId);
+							logic.setIsPresenterModalOpen(false);
+							logic.setIsComparatorModalOpen(false);
+							logic.setIsContractPrintOpen(true);
+						}}
 					/>
 				</Suspense>
 			)}
@@ -112,6 +134,51 @@ export const TreatmentPlanClinicalModals: React.FC<TreatmentPlanClinicalModalsPr
 				onClose={() => logic.setIsCreateStageModalOpen(false)}
 				onCreateStage={logic.handleCreateNewStage}
 			/>
+
+			{(logic.isStagePaymentModalOpen || logic.isInstallmentModalOpen) && (
+				<Suspense fallback={null}>
+					<StagePaymentPlanModal
+						isOpen={logic.isStagePaymentModalOpen || logic.isInstallmentModalOpen}
+						onClose={() => {
+							logic.setIsStagePaymentModalOpen(false);
+							logic.setIsInstallmentModalOpen(false);
+							logic.setSelectedInstallmentStage?.(null);
+						}}
+						planTitle={logic.currentTier?.title || "Комплексный план лечения"}
+						patientName={logic.patientName}
+						patientId={logic.patientId}
+						clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						initialStages={logic.selectedInstallmentStage ? [logic.selectedInstallmentStage] : logic.stages}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isPriceValidatorModalOpen && (
+				<Suspense fallback={null}>
+					<TreatmentPlanPriceValidatorModal
+						isOpen={logic.isPriceValidatorModalOpen}
+						onClose={() => logic.setIsPriceValidatorModalOpen(false)}
+						planId={logic.currentPlanId || logic.validationPayload?.planId}
+						stages={logic.stages}
+						catalogPricelist={logic.catalog}
+					/>
+				</Suspense>
+			)}
+
+			{logic.isCuratorModalOpen && (
+				<Suspense fallback={null}>
+					<CuratorPlanAssignmentModal
+						isOpen={logic.isCuratorModalOpen}
+						patientId={logic.patientId}
+						patientName={logic.patientName}
+						treatmentPlanId={logic.currentPlanId || undefined}
+						treatmentPlanTitle={logic.currentTier?.title || "Комплексный план лечения"}
+						currentCuratorId={logic.patient?.administrativeProfile?.curatorId}
+						onClose={() => logic.setIsCuratorModalOpen(false)}
+					/>
+				</Suspense>
+			)}
 		</>
 	);
 };

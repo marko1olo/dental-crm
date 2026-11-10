@@ -10,7 +10,9 @@ export function validateTreatmentPlanStarProtocols(
 	const allItems: TreatmentPlanItem[] = stages.flatMap((s) => s.items);
 	const checks: StarProtocolRuleCheck[] = [];
 
-	const codesPresent = new Set(allItems.map((i) => i.code804n.trim().toUpperCase()));
+	const codesPresent = new Set(
+		allItems.map((i) => (i.code804n || "").trim().toUpperCase()).filter(Boolean),
+	);
 	const hasCTDiagnostics = codesPresent.has("A06.07.012") || codesPresent.has("A06.07.004") || codesPresent.has("A06.07.003");
 	const hasHygiene = codesPresent.has("A16.07.050") || codesPresent.has("A16.07.051");
 
@@ -41,7 +43,7 @@ export function validateTreatmentPlanStarProtocols(
 			messageRu: `Клиническая заметка (зуб №${conflict.toothNumber}): совмещение процедур («${conflict.procedureA.name}» и «${conflict.procedureB.name}»).`,
 			recommendationRu: `Врач автономно определяет последовательность и необходимость этапов лечения зуба №${conflict.toothNumber} (сохранение или удаление). Сохранение плана не блокируется.`,
 			normativeRefRu: "Клинические стандарты и врачебная автономия DENTE CRM",
-			order804nCodesRelated: [conflict.procedureA.code804n, conflict.procedureB.code804n],
+			order804nCodesRelated: [conflict.procedureA.code804n, conflict.procedureB.code804n].filter((c): c is string => Boolean(c)),
 		});
 	}
 

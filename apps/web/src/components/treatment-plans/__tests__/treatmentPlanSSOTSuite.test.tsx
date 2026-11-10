@@ -23,6 +23,7 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 		assert.equal(CANONICAL_TIER_DEFINITIONS.length, 3, "Должно быть ровно 3 канонических тарифа");
 
 		const [economy, optimum, premium] = CANONICAL_TIER_DEFINITIONS;
+		assert.ok(economy && optimum && premium);
 		assert.equal(economy.id, "economy");
 		assert.equal(economy.title, "Эконом");
 		assert.equal(economy.warrantyYears, 1);
@@ -43,6 +44,7 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 		assert.equal(CANONICAL_CLINICAL_STAGES.length, 4, "Комплексный план обязан содержать 4 базовых этапа");
 
 		const [hygiene, therapy, surgery, orthopedics] = CANONICAL_CLINICAL_STAGES;
+		assert.ok(hygiene && therapy && surgery && orthopedics);
 		assert.equal(hygiene.stageNumber, 1);
 		assert.match(hygiene.title, /Санация и гигиена/);
 
@@ -79,14 +81,18 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 
 		// Скидка 0%
 		const noDiscount = applyDoctorDiscountToTiers(baseTiers, 0);
+		assert.ok(noDiscount[0] && baseTiers[0]);
 		assert.equal(noDiscount[0].totalRub, baseTiers[0].totalRub);
 
 		// Скидка 20%
 		const discount20 = applyDoctorDiscountToTiers(baseTiers, 20);
 		for (let i = 0; i < baseTiers.length; i++) {
-			const expectedRub = Math.round(baseTiers[i].totalRub * 0.8);
-			assert.equal(discount20[i].totalRub, expectedRub);
-			assert.equal(discount20[i].totalKopecks, expectedRub * 100);
+			const bTier = baseTiers[i];
+			const dTier = discount20[i];
+			assert.ok(bTier && dTier);
+			const expectedRub = Math.round(bTier.totalRub * 0.8);
+			assert.equal(dTier.totalRub, expectedRub);
+			assert.equal(dTier.totalKopecks, expectedRub * 100);
 		}
 
 		// Скидка 100% (гарантийный случай)
@@ -101,18 +107,21 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 		// Кариес K02
 		const cariesPlan = generateTreatmentPlanFromDiagnosis("K02.1", 16);
 		assert.equal(cariesPlan.length, 1);
+		assert.ok(cariesPlan[0] && cariesPlan[0].items[0]);
 		assert.equal(cariesPlan[0].stageKind, "stage_1_therapy");
 		assert.match(cariesPlan[0].items[0].name, /Восстановление зуба 16/);
 
 		// Пульпит K04
 		const endoPlan = generateTreatmentPlanFromDiagnosis("K04.0", 26);
 		assert.equal(endoPlan.length, 1);
+		assert.ok(endoPlan[0] && endoPlan[0].items[0]);
 		assert.equal(endoPlan[0].items.length, 2);
 		assert.match(endoPlan[0].items[0].name, /Обработка корневых каналов зуба 26/);
 
 		// Имплантация K08
 		const implPlan = generateTreatmentPlanFromDiagnosis("K08.1", 36);
 		assert.equal(implPlan.length, 2);
+		assert.ok(implPlan[0] && implPlan[1]);
 		assert.equal(implPlan[0].stageKind, "stage_2_surgery");
 		assert.equal(implPlan[1].stageKind, "stage_3_orthopedics");
 	});

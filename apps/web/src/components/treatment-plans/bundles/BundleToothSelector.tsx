@@ -44,7 +44,7 @@ export const BundleToothSelector: React.FC<BundleToothSelectorProps> = ({
 						onClick={() => setIsOpen(!isOpen)}
 						data-testid="tooth-quick-select"
 						className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)] hover:text-[var(--teal)] transition-colors cursor-pointer"
-						title="Выбрать анатомический зуб (1-клик FDI)"
+						title="Выбрать анатомический зуб (FDI)"
 					>
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
 							<AnatomicalToothSVG number={selectedTooth || 11} state="Healthy" scale={0.24} onClick={() => {}} />

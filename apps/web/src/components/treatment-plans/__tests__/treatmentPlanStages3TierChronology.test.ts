@@ -40,32 +40,33 @@ describe("treatmentPlanStagesEngine: 3-Option Comparison (Эконом, Стан
 		assert.equal(tiers.length, 3);
 
 		const [econ, std, opt] = tiers;
+		assert.ok(econ && std && opt);
 
-		assert.equal(econ?.tierId, "economy");
-		assert.equal(std?.tierId, "standard");
-		assert.equal(opt?.tierId, "optimum");
+		assert.equal(econ.tierId, "economy");
+		assert.equal(std.tierId, "standard");
+		assert.equal(opt.tierId, "optimum");
 
-		assert.equal(opt?.isRecommended, true);
-		assert.equal(std?.isRecommended, false);
-		assert.equal(econ?.isRecommended, false);
+		assert.equal(opt.isRecommended, true);
+		assert.equal(std.isRecommended, false);
+		assert.equal(econ.isRecommended, false);
 
-		assert.ok(econ!.totalRub < std!.totalRub, "Эконом должен быть < Стандарт");
-		assert.ok(std!.totalRub < opt!.totalRub, "Стандарт должен быть < Оптимальный");
+		assert.ok(econ.totalRub < std.totalRub, "Эконом должен быть < Стандарт");
+		assert.ok(std.totalRub < opt.totalRub, "Стандарт должен быть < Оптимальный");
 
-		assert.equal(econ?.warrantyYears, 1);
-		assert.equal(std?.warrantyYears, 2);
+		assert.equal(econ.warrantyYears, 1);
+		assert.equal(std.warrantyYears, 2);
 
-		assert.ok(econ!.materialsList.length >= 3);
-		assert.ok(std!.materialsList.length >= 3);
-		assert.ok(opt!.materialsList.length >= 3);
-		assert.ok(opt!.keyAdvantages.length >= 3);
+		assert.ok(econ.materialsList && econ.materialsList.length >= 3);
+		assert.ok(std.materialsList && std.materialsList.length >= 3);
+		assert.ok(opt.materialsList && opt.materialsList.length >= 3);
+		assert.ok(opt.keyAdvantages && opt.keyAdvantages.length >= 3);
 
-		assert.ok(econ!.monthlyInstallment12Rub > 0);
-		assert.ok(std!.monthlyInstallment12Rub > 0);
-		assert.ok(opt!.monthlyInstallment12Rub > 0);
+		assert.ok((econ.monthlyInstallment12Rub ?? 0) > 0);
+		assert.ok((std.monthlyInstallment12Rub ?? 0) > 0);
+		assert.ok((opt.monthlyInstallment12Rub ?? 0) > 0);
 
-		assert.ok(econ!.ndflRefundRub > 0);
-		assert.ok(std!.ndflRefundRub > 0);
-		assert.ok(opt!.ndflRefundRub > 0);
+		assert.ok((econ.ndflRefundRub ?? 0) > 0);
+		assert.ok((std.ndflRefundRub ?? 0) > 0);
+		assert.ok((opt.ndflRefundRub ?? 0) > 0);
 	});
 });

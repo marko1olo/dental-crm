@@ -60,7 +60,7 @@ export const MissingPriceInlineAlert: React.FC<MissingPriceInlineAlertProps> = (
 						onClick={() => setIsEditing(true)}
 						className="secondary-button dente-btn dente-btn-secondary h-7 px-2.5 rounded-lg text-[11px] font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] border border-[var(--line)] cursor-pointer transition-colors inline-flex items-center gap-1 shadow-2xs"
 						data-testid={`inline-price-edit-btn-${item.id}`}
-						title="Ввести цену вручную в 1 клик"
+						title="Ввести цену вручную"
 					>
 						<Edit3 size={11} className="text-[var(--teal,#0d9488)]" />
 						<span>Указать цену</span>

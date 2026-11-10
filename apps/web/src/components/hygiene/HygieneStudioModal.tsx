@@ -20,23 +20,60 @@ import {
 	printHygieneHomeCareMemo,
 } from "./hygieneCatalogData";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface HygieneStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string;
-	readonly doctorName?: string;
-	readonly previousOhiS?: { ohi_s: number; date?: string } | number | null;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly previousOhiS?: { ohi_s: number; date?: string } | number | null | undefined;
 }
 
 export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 	isOpen,
 	onClose,
+	patientId,
+	visitId,
 	patientName = "Пациент приёма",
-	doctorName = "Д-р Смирнова А.В.",
-	previousOhiS = 2.4,
+	doctorName,
+	previousOhiS,
 }) => {
-	const [ohisTeeth, setOhisTeeth] = useState<Record<number, { debris: number; calculus: number }>>(createIdealOhiSTeethScores);
+	const [dynamicPreviousOhiS, setDynamicPreviousOhiS] = useState<{ ohi_s: number; date?: string } | number | null>(null);
+
+	useEffect(() => {
+		if (!patientId?.trim() || previousOhiS !== undefined) return;
+		let isCancelled = false;
+		async function loadLatest() {
+			try {
+				const res = await fetch(`/api/patients/${encodeURIComponent(patientId!)}/hygiene-indices/latest`, {
+					headers: { ...denteAdminSecretRequestHeaders() },
+				});
+				if (!res.ok) return;
+				const json = await res.json();
+				if (!isCancelled && json?.latest?.ohi_s != null) {
+					setDynamicPreviousOhiS(json.latest);
+				}
+			} catch {
+				// Офлайн
+			}
+		}
+		void loadLatest();
+		return () => { isCancelled = true; };
+	}, [patientId, previousOhiS]);
+
+	const effectivePreviousOhiS = previousOhiS !== undefined ? previousOhiS : dynamicPreviousOhiS;
+
+	// Начальный расчет OHI-S
+	const [ohisTeeth, setOhisTeeth] = useState<Record<number, { debris: number; calculus: number }>>(() => {
+		// Если передан previousOhiS, стартуем с 0.8 для демонстрации динамики
+		if (previousOhiS !== undefined && previousOhiS !== null) {
+			return { 16: { debris: 1, calculus: 0 }, 11: { debris: 1, calculus: 0 }, 26: { debris: 1, calculus: 0 }, 31: { debris: 1, calculus: 0 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 0, calculus: 0 } };
+		}
+		return createIdealOhiSTeethScores();
+	});
 	const calculatedOhiS = useMemo(() => computeCanonicalOhiS(ohisTeeth), [ohisTeeth]);
 	const [selectedOhiS, setSelectedOhiS] = useState<OhiSPreset>(calculatedOhiS);
 
@@ -50,10 +87,10 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 	const previousScore = useMemo<number | null>(() => {
-		if (previousOhiS === null || previousOhiS === undefined) return null;
-		if (typeof previousOhiS === "number") return previousOhiS;
-		return typeof previousOhiS.ohi_s === "number" ? previousOhiS.ohi_s : null;
-	}, [previousOhiS]);
+		if (effectivePreviousOhiS === null || effectivePreviousOhiS === undefined) return null;
+		if (typeof effectivePreviousOhiS === "number") return effectivePreviousOhiS;
+		return typeof effectivePreviousOhiS.ohi_s === "number" ? effectivePreviousOhiS.ohi_s : null;
+	}, [effectivePreviousOhiS]);
 
 	const dynamicsInfo = useMemo(() => {
 		if (previousScore === null) return null;
@@ -68,7 +105,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 		return { text: `Было: ${previousScore} ➔ Стало: ${selectedOhiS.score} (Без изменений)`, isPositive: true };
 	}, [previousScore, selectedOhiS.score]);
 
-	const handleCommit = useCallback(() => {
+	const handleCommit = useCallback(async () => {
 		setIsSubmitting(true);
 		try {
 			commitHygieneVisitProtocol({
@@ -78,11 +115,31 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				patientName,
 				doctorName,
 			});
+
+			if (visitId?.trim()) {
+				try {
+					await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+						body: JSON.stringify({
+							ohi_s: selectedOhiS.score,
+							debris: selectedOhiS.debris,
+							calculus: selectedOhiS.calculus,
+							date: new Date().toISOString(),
+							rating: selectedOhiS.id,
+							protocolId: selectedProtocol.id,
+							carePlanId: selectedCarePlan.id,
+						}),
+					});
+				} catch {
+					// Офлайн
+				}
+			}
 			onClose();
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [selectedOhiS, selectedProtocol, selectedCarePlan, patientName, doctorName, onClose]);
+	}, [selectedOhiS, selectedProtocol, selectedCarePlan, patientName, doctorName, visitId, onClose]);
 
 	const handlePrint = useCallback(() => {
 		printHygieneHomeCareMemo({
@@ -115,7 +172,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
 			data-testid="hygiene-studio-modal"
 			role="dialog"
 			aria-modal="true"
@@ -134,11 +191,11 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 					<div className="min-w-0 pr-3">
 						<div className="flex items-center gap-2">
 							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
-							<h2 className="text-base sm:text-lg font-bold text-[var(--ink)] truncate">
+							<h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
 								Профессиональная гигиена и профилактика
 							</h2>
 						</div>
-						<p className="text-xs text-[var(--ink-muted)] truncate">
+						<p className="text-xs text-[var(--ink-muted)]">
 							Индекс OHI-S • Экспресс-протоколы чистки • Памятка домашнего ухода • {patientName}
 						</p>
 					</div>
@@ -236,7 +293,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 													type="button"
 													onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], debris: val } }))}
 													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
-														current.debris === val ? "bg-teal-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+														current.debris === val ? "bg-teal-700 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
 													}`}
 												>
 													{val}
@@ -339,7 +396,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							{/* Consumables Summary */}
 							<div className="p-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs space-y-1">
 								<div className="font-semibold text-[var(--ink)] flex items-center justify-between">
-									<span>Пакетное списание расходников (Soft Negative Stock):</span>
+									<span>Пакетное списание расходников:</span>
 									<span className="text-emerald-700 dark:text-emerald-400 font-medium">100% автономия</span>
 								</div>
 								<div className="flex flex-wrap gap-1.5 pt-1">
@@ -382,7 +439,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 												<div className="font-bold text-xs sm:text-sm text-[var(--ink)]">
 													{plan.label}
 												</div>
-												<p className="text-[11px] text-[var(--ink-muted)] mt-1 line-clamp-2">
+												<p className="text-[11px] text-[var(--ink-muted)] mt-1">
 													{plan.description}
 												</p>
 											</button>
@@ -462,9 +519,16 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							type="button"
 							data-testid="hygiene-commit-protocol-btn"
 							onClick={handleCommit}
-							className="flex-1 sm:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-1.5"
+							className="flex-1 sm:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-1.5 whitespace-nowrap"
 						>
-							{isSubmitting ? "Фиксация..." : "✓ Зафиксировать протокол гигиены"}
+							{isSubmitting ? (
+								"Фиксация..."
+							) : (
+								<>
+									<span className="hidden sm:inline">✓ Зафиксировать протокол гигиены</span>
+									<span className="sm:hidden">✓ Зафиксировать протокол</span>
+								</>
+							)}
 						</button>
 					</div>
 				</div>

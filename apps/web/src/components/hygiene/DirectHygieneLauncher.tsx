@@ -1,9 +1,7 @@
 /**
  * @dental/web/components/hygiene/DirectHygieneLauncher.tsx
- *
  * DENTE Dental CRM — Автономный лаунчер студии профессиональной гигиены и индекса OHI-S (Мандаты 8b 60–100 строк, 8aq).
  * Deep Link Mount: #hygiene, #cleaning, #prophy, #hygiene-studio, ?hygiene=1, ?cleaning=1.
- * Монтируется в AppShell.tsx и StandaloneLaunchers.tsx (Мандат 8aq).
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -20,14 +18,16 @@ function checkIsHygieneActive(): boolean {
 		h.includes("prophy") ||
 		params.get("hygiene") === "1" ||
 		params.get("cleaning") === "1" ||
-		params.get("standalone") === "hygiene"
+		params.get("standalone") === "hygiene" ||
+		params.get("stand") === "hygiene" ||
+		s.includes("hygiene")
 	);
 }
 
 function readPatientNameFromUrl(): string {
 	if (typeof window === "undefined") return "Пациент приёма";
 	const params = new URLSearchParams(window.location.search || "");
-	return params.get("patientName") || "Кузнецова Елена Павловна";
+	return params.get("patientName") || "Пациент приёма";
 }
 
 export const DirectHygieneLauncher: React.FC = () => {
@@ -49,25 +49,19 @@ export const DirectHygieneLauncher: React.FC = () => {
 			setIsActive(true);
 			setIsOpen(true);
 			const custom = e as CustomEvent<{ patientName?: string }>;
-			if (custom.detail?.patientName) {
-				setPatientName(custom.detail.patientName);
-			}
+			if (custom.detail?.patientName) setPatientName(custom.detail.patientName);
 		};
 
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
 		window.addEventListener("dente:open-hygiene", handleOpenEvent);
 		window.addEventListener("dente:open-cleaning", handleOpenEvent);
-		window.addEventListener("dente-open-hygiene", handleOpenEvent);
-		window.addEventListener("dente-open-cleaning", handleOpenEvent);
 
 		return () => {
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
 			window.removeEventListener("dente:open-hygiene", handleOpenEvent);
 			window.removeEventListener("dente:open-cleaning", handleOpenEvent);
-			window.removeEventListener("dente-open-hygiene", handleOpenEvent);
-			window.removeEventListener("dente-open-cleaning", handleOpenEvent);
 		};
 	}, []);
 
@@ -88,13 +82,14 @@ export const DirectHygieneLauncher: React.FC = () => {
 
 	if (!isActive || !isOpen) return null;
 
+	const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 	return (
 		<HygieneStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
+			patientId={search?.get("patientId") || undefined}
+			visitId={search?.get("visitId") || undefined}
 			patientName={patientName}
-			doctorName="Д-р Смирнова А.В."
-			previousOhiS={2.4}
 		/>
 	);
 };

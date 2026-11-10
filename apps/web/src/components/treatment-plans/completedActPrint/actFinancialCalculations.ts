@@ -10,7 +10,7 @@ import { numberToWordsRu } from "../treatmentPlanActFormatters";
 
 export function calculateActFinancials(actData: CompletedWorksActAndWriteOffData) {
 	const grossServicesRub = actData.completedProcedures.reduce(
-		(acc, it) => acc + it.unitPriceRub * it.quantity,
+		(acc, it) => acc + (it.unitPriceRub ?? it.priceRub ?? 0) * it.quantity,
 		0,
 	);
 	const discountTotalRub = actData.completedProcedures.reduce(

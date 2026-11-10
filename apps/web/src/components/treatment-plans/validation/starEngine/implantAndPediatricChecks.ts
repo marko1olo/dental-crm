@@ -9,7 +9,9 @@ export function checkImplantAndPediatricProtocols(
 ): StarProtocolRuleCheck[] {
 	const checks: StarProtocolRuleCheck[] = [];
 	const isDeciduous = isDeciduousTooth(toothNum);
-	const codes = toothItems.map((i) => i.code804n.trim().toUpperCase());
+	const codes = toothItems
+		.map((i) => (i.code804n || "").trim().toUpperCase())
+		.filter(Boolean);
 
 	const hasImplant = codes.includes("A16.07.054.001") || codes.includes("A16.07.054");
 	const hasGuide = codes.includes("A16.07.054") && !codes.includes("A16.07.054.001");

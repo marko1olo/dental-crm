@@ -33,8 +33,8 @@ export interface TreatmentPlan3TierComparisonProps {
 
 export function getTierShortLabel(tier: TreatmentPlanTier): string {
 	if (tier.tierId === "economy") return "Эконом";
-	if (tier.tierId === "standard") return "Оптимум";
-	if (tier.tierId === "optimum") return "Премиум";
+	if (tier.tierId === "optimum" || tier.tierId === "standard") return "Оптимум";
+	if (tier.tierId === "premium") return "Премиум";
 	const lower = (tier.title || "").toLowerCase();
 	if (lower.includes("эконом") || lower.includes("базов")) return "Эконом";
 	if (lower.includes("стандарт") || lower.includes("оптимал")) return "Оптимум";
@@ -65,7 +65,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 	const handleCopyEstimateToMessenger = (e: React.MouseEvent, t: TreatmentPlanTier) => {
 		e.stopPropagation();
-		const lines = [`[План лечения] «${t.title}»`, `[Стоимость]: ${formatPlanPriceRub(t.totalRub)}`, `[Рассрочка 0% клиники]: от ${formatPlanPriceRub(t.installments?.[12]?.monthlyPaymentRub ?? Math.round(t.totalRub / 12))}/мес на 12 мес.`, `[Гарантия]: ${formatWarrantyYearsText(t.warrantyYears)} | [Срок службы]: ${formatServiceLifeYearsText(t.serviceLifeYears, t.tierId)}`, `[Сроки]: ~${t.durationWeeks} нед. (${t.durationVisits} виз.)`, t.materialsHeadline ? `[Материалы]: ${t.materialsHeadline}` : "", t.ndflRefundRub ? `[Налоговый вычет 13%]: до +${formatPlanPriceRub(t.ndflRefundRub)} к возврату` : "", `Подготовлено в DENTE CRM. Соответствует клиническим протоколам СтАР.`].filter(Boolean).join("\n");
+		const lines = [`[План лечения] «${t.title}»`, `[Стоимость]: ${formatPlanPriceRub(t.totalRub)}`, `[Рассрочка 0% клиники]: от ${formatPlanPriceRub(t.installments?.[12]?.monthlyPaymentRub ?? Math.round(t.totalRub / 12))}/мес на 12 мес.`, `[Гарантия]: ${formatWarrantyYearsText(t.warrantyYears || 1)} | [Срок службы]: ${formatServiceLifeYearsText(t.serviceLifeYears, t.tierId)}`, `[Сроки]: ~${t.durationWeeks} нед. (${t.durationVisits} виз.)`, t.materialsHeadline ? `[Материалы]: ${t.materialsHeadline}` : "", t.ndflRefundRub ? `[Налоговый вычет 13%]: до +${formatPlanPriceRub(t.ndflRefundRub)} к возврату` : "", `Подготовлено в DENTE CRM. Соответствует клиническим протоколам СтАР.`].filter(Boolean).join("\n");
 		if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(lines).catch(() => {});
 		setCopiedMessengerTierId(t.tierId);
 		setTimeout(() => setCopiedMessengerTierId(null), 2500);

@@ -29,7 +29,7 @@ export const StageServicesTable: React.FC<StageServicesTableProps> = ({
 					<Package size={24} className="stage-empty-icon" />
 					<div className="stage-empty-title">В этом этапе пока нет назначенных услуг</div>
 					<div className="stage-empty-desc">
-						Выберите услугу из каталога слева для мгновенного добавления в 1 клик или примените клинический пакет
+						Выберите услугу из каталога слева для добавления в смету или примените клинический пакет
 					</div>
 					{onAddItemToStage && (
 						<button

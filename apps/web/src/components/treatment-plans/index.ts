@@ -2,11 +2,19 @@
  * index.ts — публичный интерфейс модуля планов лечения и финансовой оценки DENTE CRM.
  */
 
-export * from "./treatmentPlanTypes";
-export * from "./TreatmentPlanTierSelector";
-export type { TreatmentPlanStatus } from "./types";
 export * from "./types";
-export type { PlanPriceCatalogItem } from "./treatmentPlanPricingEngine";
+export * from "./TreatmentPlanTierSelector";
+export {
+	treatmentPlanItemSchema,
+	treatmentPlanStageSchema,
+	treatmentPlanSchema,
+	type TreatmentPlan,
+	type PlanPriceCatalogItem,
+	kopecksToRub,
+	rubToKopecks,
+	formatRubles,
+	isPlanPriceImmutable,
+} from "./treatmentPlanTypes";
 export { calculateChairsideInstallments } from "./treatmentPlanMath";
 export * from "./treatmentPlanStagesEngine";
 export * from "./treatmentPlanMaterialEngine";

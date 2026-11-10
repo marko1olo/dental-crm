@@ -3,13 +3,13 @@
  * Мандат 8b: <= 120 строк.
  */
 
-import type { PerioToothRecord } from "@dental/shared";
+import { createDefaultPerioTeeth, type PerioToothRecord } from "@dental/shared";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { applyHealthyPeriodontiumPreset, createDefaultPerioTeeth } from "../perioMath";
-import { PeriodontogramChart } from "../PeriodontogramChart";
+import { applyHealthyPeriodontiumPreset } from "../perioCatalogData";
+import { PerioStudioModal } from "../PerioStudioModal";
 
 describe("3. 1-Click Healthy Gingiva Norm Autonomy (Mandates 8e, 8k)", () => {
 	it("applyHealthyPeriodontiumPreset sets all 32 teeth (192 sites) to physiological norm", () => {
@@ -47,7 +47,7 @@ describe("3. 1-Click Healthy Gingiva Norm Autonomy (Mandates 8e, 8k)", () => {
 	});
 
 	it("PeriodontogramChart renders 1-click norm buttons with touch target >= 44px", () => {
-		const html = renderToString(<PeriodontogramChart />);
+		const html = renderToString(<PerioStudioModal isModal={false} />);
 		const cleanHtml = html.replace(/<!-- -->/g, "");
 
 		assert.ok(

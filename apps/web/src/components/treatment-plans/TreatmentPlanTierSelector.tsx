@@ -29,6 +29,7 @@ const CANONICAL_DEFAULT_TIERS: TreatmentPlanTier[] = [
 		isRecommended: false,
 		totalRub: 48000,
 		totalKopecks: 4800000,
+		amountKopecks: BigInt(4800000),
 		warrantyYears: 1,
 		keyAdvantages: ["Качественные композитные материалы", "Устранение очагов инфекции", "Гарантия 1 год"],
 		stages: [],
@@ -41,6 +42,7 @@ const CANONICAL_DEFAULT_TIERS: TreatmentPlanTier[] = [
 		isRecommended: true,
 		totalRub: 86000,
 		totalKopecks: 8600000,
+		amountKopecks: BigInt(8600000),
 		warrantyYears: 3,
 		keyAdvantages: [
 			"Коронки из диоксида циркония Prettau",
@@ -57,6 +59,7 @@ const CANONICAL_DEFAULT_TIERS: TreatmentPlanTier[] = [
 		isRecommended: false,
 		totalRub: 145000,
 		totalKopecks: 14500000,
+		amountKopecks: BigInt(14500000),
 		warrantyYears: 5,
 		keyAdvantages: [
 			"Безупречная эстетика E.max CAD/CAM",
@@ -104,7 +107,7 @@ export const TreatmentPlanTierSelector: React.FC<TreatmentPlanTierSelectorProps>
 			doctorDiscountPercent > 0 ? `(Учтена персональная скидка врача ${doctorDiscountPercent}%)` : "",
 			`Срок гарантии: ${activeTier.warrantyYears} ${activeTier.warrantyYears === 1 ? "год" : "года"}`,
 			`Преимущества:`,
-			...activeTier.keyAdvantages.map((a) => `• ${a}`),
+			...(activeTier.keyAdvantages ?? []).map((a) => `• ${a}`),
 		]
 			.filter(Boolean)
 			.join("\n");
@@ -201,7 +204,7 @@ export const TreatmentPlanTierSelector: React.FC<TreatmentPlanTierSelectorProps>
 
 							{/* Преимущества */}
 							<div className="space-y-1.5 pt-2 border-t border-[var(--line)]/60 text-xs">
-								{tier.keyAdvantages.map((adv, idx) => (
+								{(tier.keyAdvantages ?? []).map((adv, idx) => (
 									<div key={idx} className="flex items-center gap-2 text-[var(--ink)]">
 										<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 										<span className="truncate">{adv}</span>

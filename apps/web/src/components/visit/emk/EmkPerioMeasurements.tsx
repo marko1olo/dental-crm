@@ -188,7 +188,7 @@ export function EmkPerioMeasurements({
 							onClick={() => toggleToothSelection(toothNum)}
 							className={`min-h-[36px] min-w-[36px] px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 								isSel
-									? "bg-teal-600 text-white shadow-2xs"
+									? "bg-[var(--primary)] text-white shadow-2xs"
 									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-teal-500"
 							}`}
 						>
@@ -261,7 +261,7 @@ export function EmkPerioMeasurements({
 				<button
 					type="button"
 					onClick={handleApplyPathologyJustification}
-					className="min-h-[38px] px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all ml-auto"
+					className="min-h-[38px] px-4 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-[var(--primary-foreground)] text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all ml-auto"
 					data-testid="emk-perio-apply-treatment-plan-btn"
 					title="Автоматически сформировать план лечения, назначить закрытый кюретаж и внести в смету"
 				>

@@ -58,7 +58,7 @@ export const PrintViewOfficialTable: React.FC<PrintViewOfficialTableProps> = ({
 											)}
 										</td>
 										<td style={{ textAlign: "center" }}>{it.quantity}</td>
-										<td style={{ textAlign: "right" }}>{it.unitPriceRub.toLocaleString("ru-RU")}</td>
+										<td style={{ textAlign: "right" }}>{(it.unitPriceRub ?? it.priceRub ?? 0).toLocaleString("ru-RU")}</td>
 										<td style={{ textAlign: "right" }}>{it.discountRub.toLocaleString("ru-RU")}</td>
 										<td style={{ textAlign: "right", fontWeight: "bold" }}>
 											{it.priceRub.toLocaleString("ru-RU")}

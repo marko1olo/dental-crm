@@ -17,7 +17,7 @@ import {
 	applyHealthyPeriodontiumPreset,
 	applyPeriodontitisModeratePreset,
 	applyPeriodontitisSeverePreset,
-} from "../perioMath";
+} from "../perioCatalogData";
 
 describe("12. Detailed Probing & 043 Protocol Synthesis", () => {
 	it("isolated pathology on tooth 16 does not require entering all 192 points", () => {

@@ -74,7 +74,7 @@ export function EmkPerioSection({
 							Пародонтологический скрининг и гигиена полости рта
 						</h4>
 						<p className="text-[11px] text-[var(--muted)] m-0 hidden sm:block">
-							1-клик физиологическая норма, индексы OHI-S и скрининг пародонтита
+							физиологическая норма, индексы OHI-S и скрининг пародонтита
 						</p>
 					</div>
 				</div>
@@ -84,7 +84,7 @@ export function EmkPerioSection({
 						type="button"
 						onClick={handleOpenModal}
 						className="secondary-button min-h-[32px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[12px] font-semibold text-[var(--ink)] flex items-center gap-1.5 cursor-pointer transition-colors"
-						title="Открыть подробную пародонтограмму (Florida Probe, 6 точек на зуб)"
+						title="Открыть подробную пародонтограмму (6 точек на зуб)"
 						data-testid="emk-perio-open-chart-btn"
 					>
 						<BarChart2 size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />

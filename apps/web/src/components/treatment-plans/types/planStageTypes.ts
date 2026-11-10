@@ -13,7 +13,8 @@ export type TreatmentPlanStageKind =
 	| "stage_3_orthopedics"
 	| "stage_4_orthodontics"
 	| "stage_5_periodontics"
-	| "stage_custom";
+	| "stage_custom"
+	| string;
 
 export function romanizeStageNumber(num: number): string {
 	const romanMap: Record<number, string> = {
@@ -84,8 +85,8 @@ export interface TreatmentPlanStage {
 	readonly totalKopecks: Kopecks;
 	readonly estimatedVisits: number;
 	readonly estimatedWeeks: number;
-	readonly serviceCatalogCodes?: readonly string[] | undefined;
-	readonly order804nCodes?: readonly string[] | undefined;
+	readonly serviceCatalogCodes?: readonly (string | undefined)[] | undefined;
+	readonly order804nCodes?: readonly (string | undefined)[] | undefined;
 	readonly status?: TreatmentPlanStageStatus | undefined;
 	readonly doctorId?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;

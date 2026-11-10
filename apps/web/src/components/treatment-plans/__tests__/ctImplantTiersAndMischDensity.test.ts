@@ -34,9 +34,9 @@ describe("ctImplantIntegrationBridge — Тарифы, ортопедия и п�
 		assert.ok(optSurg.name.toLowerCase().includes("dentium"));
 		assert.ok(premSurg.name.toLowerCase().includes("straumann"));
 
-		const econOrtho = econ.stages[3]!.items.find((i) => i.code804n.startsWith("A16.07.004"))!;
-		const optOrtho = opt.stages[3]!.items.find((i) => i.code804n.startsWith("A16.07.004"))!;
-		const premOrtho = prem.stages[3]!.items.find((i) => i.code804n.startsWith("A16.07.004"))!;
+		const econOrtho = econ.stages[3]!.items.find((i) => i.code804n?.startsWith("A16.07.004"))!;
+		const optOrtho = opt.stages[3]!.items.find((i) => i.code804n?.startsWith("A16.07.004"))!;
+		const premOrtho = prem.stages[3]!.items.find((i) => i.code804n?.startsWith("A16.07.004"))!;
 
 		assert.ok(econOrtho.name.toLowerCase().includes("металлокерамическ"));
 		assert.ok(optOrtho.name.toLowerCase().includes("zro2") || optOrtho.name.toLowerCase().includes("циркони"));

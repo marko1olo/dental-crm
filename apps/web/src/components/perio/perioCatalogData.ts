@@ -363,7 +363,7 @@ export function applyExpressPerioPreset(teeth: readonly PerioToothRecord[], pres
 		return {
 			updatedTeeth: applyHealthyPeriodontiumPreset(teeth),
 			protocolText: preset?.defaultProtocolRu ?? "Пародонт интактен: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, BOP 0%, PSR 0 во всех 6 секстантах. Диагноз: Здоров (Z01.2).",
-			title: "1-клик: Здоровый пародонт (Норма)",
+			title: "Здоровый пародонт (Физиологическая норма)",
 		};
 	}
 	if (presetId === "pro_hygiene_express" || presetId === "prophy_airflow_ultrasound") {

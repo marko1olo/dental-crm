@@ -11,7 +11,7 @@ import {
 import type { TreatmentPlanStageKind } from "../types";
 
 export function resolvePhasedItemCategory(
-	item: { name: string; category?: string; code804n?: string },
+	item: { name: string; category?: string | undefined; code804n?: string | undefined },
 	stageKind: TreatmentPlanStageKind,
 ): TreatmentPlanStageCategory {
 	const lowerName = item.name.toLowerCase();

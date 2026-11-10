@@ -15,8 +15,8 @@ export const TierCardDetails: React.FC<TierCardDetailsProps> = ({ tier }) => {
 					<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Shield size={11} /> Гарантия
 					</span>
-					<strong className="text-[11px] text-[var(--ink,#0f172a)] leading-tight break-words mt-0.5" title={formatWarrantyYearsText(tier.warrantyYears)}>
-						{formatWarrantyYearsText(tier.warrantyYears)}
+					<strong className="text-[11px] text-[var(--ink,#0f172a)] leading-tight break-words mt-0.5" title={formatWarrantyYearsText(tier.warrantyYears || 1)}>
+						{formatWarrantyYearsText(tier.warrantyYears || 1)}
 					</strong>
 				</div>
 
@@ -69,7 +69,7 @@ export const TierCardDetails: React.FC<TierCardDetailsProps> = ({ tier }) => {
 					<span>Преимущества для пациента</span>
 				</h4>
 				<ul className="space-y-0.5 text-[11px] text-[var(--muted,#64748b)] m-0 list-none p-0">
-					{tier.keyAdvantages.map((adv, idx) => (
+					{(tier.keyAdvantages ?? []).map((adv, idx) => (
 						<li key={idx} className="flex items-start gap-1.5">
 							<span className="text-amber-500 font-bold">•</span>
 							<span>{adv}</span>

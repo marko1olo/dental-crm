@@ -25,6 +25,7 @@ import { DirectOrthopedicsLauncher } from "../../../orthopedics/DirectOrthopedic
 import { DirectOrthodonticsLauncher } from "../../../orthodontics/DirectOrthodonticsLauncher";
 import { DirectSurgeryLauncher } from "../../../surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "../../../hygiene/DirectHygieneLauncher";
+import { DirectPerioLauncher } from "../../../perio/DirectPerioLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
 import { DirectPediatricLauncher } from "../../../pediatric/DirectPediatricLauncher";
 import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
@@ -328,6 +329,19 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				hashPrefixes: ["#hygiene?", "#hygiene/", "#cleaning?", "#prophy?"],
 			},
 			render: () => <DirectHygieneLauncher />,
+		},
+
+		// 12b. Пародонтология и экспресс-скрининг PSR (SSOT, Мандат 8aq)
+		{
+			id: "perio-studio",
+			title: "Студия пародонтологии и экспресс-скрининга PSR",
+			criteria: {
+				tokens: ["perio", "psr", "periodontics", "periodontology", "perio-studio"],
+				searchIncludes: ["perio=1", "psr=1", "standalone=perio", "standalone=psr"],
+				exactHashes: ["#perio", "#psr", "#periodontics", "#perio-studio"],
+				hashPrefixes: ["#perio?", "#perio/", "#psr?", "#periodontics?"],
+			},
+			render: () => <DirectPerioLauncher />,
 		},
 
 		// 13. Информированные согласия и медицинские договоры (SSOT)

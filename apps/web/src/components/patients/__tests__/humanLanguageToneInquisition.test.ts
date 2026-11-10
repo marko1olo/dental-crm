@@ -36,7 +36,7 @@ describe("Red Team Inquisition: Human Clinical Language (Part 1: Visits, Forms, 
 		assert.ok(content.includes("A (Диагноз)"));
 		assert.ok(content.includes("P (Протокол лечения и манипуляции)") || content.includes("P (Лечение)"));
 		assert.ok(content.includes("Дневники визитов (Медицинская карта приёма)"));
-		assert.ok(content.includes("Норма в 1 клик / Интактные зубы"));
+		assert.ok(content.includes("Интактный ряд") || content.includes("Интактные зубы") || content.includes("Физиологическая норма"));
 	});
 
 	it("3. VisitSummaryDiarySections.tsx: Section II uses human clinical Russian without Status Localis", () => {

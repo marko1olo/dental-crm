@@ -30,7 +30,7 @@ export function executeRemovePlanItem(
 	StaffActionAuditService.logServiceRemove({
 		patientId,
 		planId: currentPlanId || "default_plan",
-		serviceCode: targetItem.code804n,
+		serviceCode: targetItem.serviceCode || targetItem.code804n || "",
 		serviceName: targetItem.name,
 		amountKopecks: Math.round((targetItem.priceRub || 0) * 100),
 	});

@@ -16,7 +16,7 @@ import {
 	generatePsrDiaryProtocol,
 	getPsrMaxCode,
 	hasPsrAsterisk,
-} from "../perioMath";
+} from "../perioCatalogData";
 
 describe("4. Periodontal Quick Screening: Healthy Norm Preset (PSR 0)", () => {
 	const initialTeeth = createDefaultPerioTeeth();

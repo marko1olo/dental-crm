@@ -1,3 +1,4 @@
+import { parseKopecks } from "@dental/shared";
 import { StaffActionAuditService } from "../../../../services/audit/staffActionAuditService.js";
 import { showToast } from "../../../GlobalToast.js";
 import {
@@ -47,9 +48,9 @@ export function createPlanBundleHandlers(ctx: PlanStageMutationContext) {
 				grossTotalRub: grossRub,
 				discountRub: 0,
 				bonusPointsUsedRub: 0,
-				bonusPointsUsedKopecks: 0 as any,
+				bonusPointsUsedKopecks: parseKopecks(0),
 				netTotalRub: grossRub,
-				netTotalKopecks: Math.round(grossRub * 100) as any,
+				netTotalKopecks: parseKopecks(grossRub),
 				notes: `Клинический пакет «${bundle.shortTitle}» у кресла`,
 				createdAtIso: new Date().toISOString(),
 			};

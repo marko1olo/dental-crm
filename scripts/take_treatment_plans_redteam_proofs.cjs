@@ -2,20 +2,42 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "693c1740-eb4e-4289-b421-09fc9899cce0";
+const CONV_ID = process.env.CONV_ID || "6005e194-3b84-4951-9e6d-d0b164f0e0d6";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/treatment_plans");
+const OUT_DOCS_DASH = path.resolve(__dirname, "../docs/proofs/treatment-plans");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
-[OUT_DOCS, OUT_BRAIN].forEach((dir) => {
+[OUT_DOCS, OUT_DOCS_DASH, OUT_BRAIN].forEach((dir) => {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 async function saveProof(page, filename) {
 	await page.waitForTimeout(600);
 	const pDocs = path.join(OUT_DOCS, filename);
+	const pDocsDash = path.join(OUT_DOCS_DASH, filename);
 	const pBrain = path.join(OUT_BRAIN, filename);
 	await page.screenshot({ path: pDocs, fullPage: false, animations: "disabled" });
+	fs.copyFileSync(pDocs, pDocsDash);
 	fs.copyFileSync(pDocs, pBrain);
+
+	// Канонические 4-State имена
+	if (filename.includes("01_") || filename.includes("pc_light")) {
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "01_treatment_plan_pc_light_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "01_treatment_plan_pc_light_1440x900.png"));
+	}
+	if (filename.includes("02_") || filename.includes("pc_dark")) {
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "02_treatment_plan_pc_dark_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "02_treatment_plan_pc_dark_1440x900.png"));
+	}
+	if (filename.includes("05_") || filename.includes("mobile_light")) {
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "03_treatment_plan_mobile_light_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "03_treatment_plan_mobile_light_390x844.png"));
+	}
+	if (filename.includes("06_") || filename.includes("mobile_dark")) {
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "04_treatment_plan_mobile_dark_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "04_treatment_plan_mobile_dark_390x844.png"));
+	}
+
 	const size = fs.statSync(pDocs).size;
 	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
 }

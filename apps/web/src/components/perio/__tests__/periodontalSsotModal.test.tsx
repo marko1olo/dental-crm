@@ -7,14 +7,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { PerioChartModal } from "../PerioChartModal";
-import { PeriodontalPocketDepthModal } from "../PeriodontalPocketDepthModal";
-import { PeriodontogramChart } from "../PeriodontogramChart";
+import { PerioStudioModal } from "../PerioStudioModal";
 
 describe("9. SSOT Modal Consolidation & Mandate 8am (1 Primary CTA)", () => {
-	it("PerioChartModal delegates cleanly to PeriodontogramChart in modal mode", () => {
+	it("PerioStudioModal renders in modal mode with patient name", () => {
 		const html = renderToString(
-			<PerioChartModal
+			<PerioStudioModal
+				isModal={true}
 				isOpen={true}
 				onClose={() => {}}
 				patientName="Иванов И. И."
@@ -26,12 +25,13 @@ describe("9. SSOT Modal Consolidation & Mandate 8am (1 Primary CTA)", () => {
 		assert.ok(html.includes("Иванов И. И."));
 	});
 
-	it("PeriodontalPocketDepthModal delegates cleanly with focused tooth", () => {
+	it("PerioStudioModal delegates cleanly with focused tooth", () => {
 		const html = renderToString(
-			<PeriodontalPocketDepthModal
+			<PerioStudioModal
+				isModal={true}
 				isOpen={true}
 				onClose={() => {}}
-				toothNumber={16}
+				initialSelectedTooth={16}
 			/>,
 		);
 
@@ -39,9 +39,9 @@ describe("9. SSOT Modal Consolidation & Mandate 8am (1 Primary CTA)", () => {
 		assert.ok(html.includes("data-testid=\"interactive-periodontogram\""));
 	});
 
-	it("PeriodontogramChart has exactly 1 Primary CTA save button and 0 3rd party brands", () => {
+	it("PerioStudioModal has exactly 1 Primary CTA save button and 0 3rd party brands", () => {
 		const html = renderToString(
-			<PeriodontogramChart readOnly={false} initialTier3Expanded={false} />,
+			<PerioStudioModal isModal={false} readOnly={false} initialTier3Expanded={false} />,
 		);
 
 		assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
@@ -52,7 +52,7 @@ describe("9. SSOT Modal Consolidation & Mandate 8am (1 Primary CTA)", () => {
 
 	it("provides print and BOP calculation actions without disabled attribute (Mandate 8e)", () => {
 		const html = renderToString(
-			<PeriodontogramChart readOnly={false} />,
+			<PerioStudioModal isModal={false} readOnly={false} />,
 		);
 
 		assert.ok(html.includes("data-testid=\"perio-print-protocol-btn\""), "Print button must be present");

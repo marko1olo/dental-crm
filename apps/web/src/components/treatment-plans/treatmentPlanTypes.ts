@@ -5,27 +5,25 @@
 
 import { z } from "zod";
 import type { Kopecks } from "@dental/shared";
+import type {
+	TreatmentPlanStatus,
+	TreatmentPlanStageKind,
+	TreatmentPlanStageStatus,
+	TreatmentPlanTierId,
+	TreatmentPlanItem,
+	TreatmentPlanStage,
+	TreatmentPlanTier,
+} from "./types";
 
-export type TreatmentPlanStatus =
-	| "draft"
-	| "presented"
-	| "approved"
-	| "in_progress"
-	| "active"
-	| "completed"
-	| "rejected";
-
-export type TreatmentPlanStageKind =
-	| "stage_1_therapy"
-	| "stage_2_surgery"
-	| "stage_3_orthopedics"
-	| "stage_4_orthodontics"
-	| "stage_5_periodontics"
-	| "stage_custom";
-
-export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";
-
-export type TreatmentPlanTierId = "economy" | "optimum" | "premium" | "standard";
+export type {
+	TreatmentPlanStatus,
+	TreatmentPlanStageKind,
+	TreatmentPlanStageStatus,
+	TreatmentPlanTierId,
+	TreatmentPlanItem,
+	TreatmentPlanStage,
+	TreatmentPlanTier,
+};
 
 export interface PlanPriceCatalogItem {
 	readonly id: string;
@@ -57,8 +55,6 @@ export const treatmentPlanItemSchema = z.object({
 	doctorSpecialty: z.string().nullable().optional(),
 });
 
-export type TreatmentPlanItem = z.infer<typeof treatmentPlanItemSchema>;
-
 export const treatmentPlanStageSchema = z.object({
 	id: z.string().optional(),
 	stageNumber: z.number().int().positive(),
@@ -76,22 +72,6 @@ export const treatmentPlanStageSchema = z.object({
 	doctorName: z.string().nullable().optional(),
 	doctorSpecialty: z.string().nullable().optional(),
 });
-
-export type TreatmentPlanStage = z.infer<typeof treatmentPlanStageSchema>;
-
-export interface TreatmentPlanTier {
-	readonly tierId: TreatmentPlanTierId;
-	readonly title: string;
-	readonly subtitle: string;
-	readonly badge: string;
-	readonly isRecommended: boolean;
-	readonly totalRub: number;
-	readonly totalKopecks: Kopecks;
-	readonly amountKopecks: bigint;
-	readonly warrantyYears: number;
-	readonly keyAdvantages: readonly string[];
-	readonly stages: readonly TreatmentPlanStage[];
-}
 
 export const treatmentPlanSchema = z.object({
 	id: z.string().optional(),

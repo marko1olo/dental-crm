@@ -1692,6 +1692,32 @@
   - `npm run check:dynamic-imports` -> Exit Code 0.
   - 44/44 целевых тестов PASS.
 
+### [PLN-13] [SEV-1] [ИСПРАВЛЕНО] Ликвидация глухих действий тулбара (DEF-TP-01), инверсии маппинга тарифов (DEF-TP-02), рассинхрона пропсов лаунчера (DEF-TP-03), устаревшего CSS-класса кнопок (DEF-TP-04), пустого catch (DEF-TP-05) и физический снос 18 зомби-файлов
+- **Файлы:**
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanClinicalModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanClinicalModals.tsx) (DEF-TP-01: монтирование `TreatmentPlanStudioModal`, `StagePaymentPlanModal`, `TreatmentPlanPriceValidatorModal`, `CuratorPlanAssignmentModal`)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx) (DEF-TP-02: исправление маппинга в `getTierShortLabel`: `optimum` || `standard` -> «Оптимум», `premium` -> «Премиум»)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlan3TierMobileSegmented.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierMobileSegmented.tsx) (DEF-TP-02: проверка `optimum` || `standard` для рекомендованного тарифа)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx) (DEF-TP-03: добавлены пропсы `planId`, `clinicName`, `clinicAddress`, `patientBirthDate`, инициализация `currentPlanId`)
+  - [`apps/web/src/components/patients/TreatmentPlansList.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/TreatmentPlansList.tsx) (DEF-TP-04: замена `primary-button` на токены Dente `dente-btn dente-btn-primary bg-[var(--teal,#0d9488)] text-white`)
+  - [`apps/web/src/components/treatment-plans/roadmap/card/roadmapBookingHelper.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/roadmap/card/roadmapBookingHelper.ts) (DEF-TP-05: логирование `console.warn(e)` без глотания ошибок по Мандату 8d / 8zr)
+- **Физически снесены 18 зомби-файлов через `git rm`:**
+  - `apps/web/src/components/treatment-plans/presenterHeader/presenterTabTypes.ts`
+  - 17 файлов в `apps/web/src/components/treatment-plans/presenterModules/` (`Presenter3TierGrid.tsx`, `PresenterDoctorDiscountBar.tsx`, `PresenterHeader.tsx`, `PresenterInstallment0PercentCard.tsx`, `PresenterNdfl13Card.tsx`, `TreatmentPlanAcceptanceFooter.tsx`, `TreatmentPlanPaymentSchedule.tsx`, `acceptanceFooter/AcceptanceFooterActions.tsx`, `acceptanceFooter/AcceptanceSignatureDrawer.tsx`, `paymentSchedule/Installment0PercentCard.tsx`, `paymentSchedule/StagedPayment304030Section.tsx`, `paymentSchedule/TaxDeduction13Banner.tsx`, `stagesList/TreatmentPlanStageCardItem.tsx`, `stagesList/TreatmentPlanStageItemRow.tsx`, `stagesList/TreatmentPlanStagesListControls.tsx`, `treatmentPlanPresenterTypes.ts`, `types/presenterTierAndScheduleTypes.ts`)
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file`):**
+  - [`docs/proofs/treatment-plans/01_treatment_plan_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/01_treatment_plan_pc_light_1440x900.png) (112 KB)
+  - [`docs/proofs/treatment-plans/02_treatment_plan_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/02_treatment_plan_pc_dark_1440x900.png) (113 KB)
+  - [`docs/proofs/treatment-plans/03_treatment_plan_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/03_treatment_plan_mobile_light_390x844.png) (149 KB)
+  - [`docs/proofs/treatment-plans/04_treatment_plan_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment-plans/04_treatment_plan_mobile_dark_390x844.png) (149 KB)
+- **Тесты и гейты (Definition of Done):**
+  - `npx tsx --test apps/web/src/tests/treatmentPlanRedTeamInquisition.test.ts` -> 10/10 PASS
+  - `apps/web/src/components/treatment-plans/__tests__/treatmentPlan3TierComparisonView.test.tsx` -> 5/5 PASS
+  - `apps/web/src/components/treatment-plans/__tests__/stagePaymentAutonomy.test.tsx` -> 1/1 PASS
+  - `npm run check:encoding` -> Exit Code 0 (22114 файлов проверено)
+  - `npm run check:buttons` -> Exit Code 0 (0 circus color violations)
+  - `npm run check:stub-overrides` -> Exit Code 0
+  - `npm run check:dynamic-imports` -> Exit Code 0
+  - `npm run check:css-tokens` -> Exit Code 0
+
 
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ

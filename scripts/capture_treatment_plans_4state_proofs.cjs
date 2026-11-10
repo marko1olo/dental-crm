@@ -16,6 +16,7 @@ const fs = require("node:fs");
 
 const BASE_URL = "http://127.0.0.1:5173";
 const OUT_DIRS = [
+  path.resolve(__dirname, "../docs/proofs/treatment-plans"),
   path.resolve(__dirname, "../docs/proofs/treatment_plans"),
   path.resolve(__dirname, "../docs/proofs/treatment_plan_presenter"),
 ];
@@ -132,6 +133,10 @@ async function main() {
       if (t.legacyName) {
         const legacyPath = path.join(dir, t.legacyName);
         fs.copyFileSync(outPath, legacyPath);
+      }
+      const canonicalName = t.name.replace("_studio_", "_");
+      if (canonicalName !== t.name) {
+        fs.copyFileSync(outPath, path.join(dir, canonicalName));
       }
     }
 

@@ -1,9 +1,13 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { AppShell } from "./AppShell";
+const AppShell = React.lazy(() =>
+	import("./AppShell").then((m) => ({ default: m.AppShell })),
+);
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
-import { GuestLabPortal } from "./GuestLabPortal";
+const GuestLabPortal = React.lazy(() =>
+	import("./GuestLabPortal").then((m) => ({ default: m.GuestLabPortal })),
+);
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
 import { publicPortalRouteFromHash } from "./lib/publicPortalRoute";
 import {
@@ -38,7 +42,11 @@ const MobilePhotoUploadPage = React.lazy(() =>
 		default: m.MobilePhotoUploadPage,
 	})),
 );
-import { WaitingLoungeSignage } from "./components/lounge/WaitingLoungeSignage";
+const WaitingLoungeSignage = React.lazy(() =>
+	import("./components/lounge/WaitingLoungeSignage").then((m) => ({
+		default: m.WaitingLoungeSignage,
+	})),
+);
 const QueueBillboardView = React.lazy(() =>
 	import("./components/queue/QueueBillboardView").then((m) => ({
 		default: m.QueueBillboardView,
@@ -78,6 +86,21 @@ const CephStandaloneStudioView = React.lazy(() =>
 const PatientPresentationStandaloneView = React.lazy(() =>
 	import("./components/photography/PatientPresentationStandaloneView").then((m) => ({
 		default: m.PatientPresentationStandaloneView,
+	})),
+);
+const EndodonticStudioStandaloneView = React.lazy(() =>
+	import("./components/endo/DirectEndodonticsLauncher").then((m) => ({
+		default: m.DirectEndodonticsLauncher,
+	})),
+);
+const PerioStudioStandaloneView = React.lazy(() =>
+	import("./components/perio/DirectPerioLauncher").then((m) => ({
+		default: m.DirectPerioLauncher,
+	})),
+);
+const HygieneStudioStandaloneView = React.lazy(() =>
+	import("./components/hygiene/DirectHygieneLauncher").then((m) => ({
+		default: m.DirectHygieneLauncher,
 	})),
 );
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
@@ -378,7 +401,9 @@ if (publicPortalRoute) {
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="public">
-				<WaitingLoungeSignage />
+				<React.Suspense fallback={null}>
+					<WaitingLoungeSignage />
+				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,
@@ -416,6 +441,114 @@ if (publicPortalRoute) {
 			</BootErrorBoundary>
 		</React.StrictMode>,
 	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=endo") ||
+		window.location.search.includes("standalone=endo") ||
+		window.location.search.includes("endo=1") ||
+		window.location.hash === "#endo" ||
+		window.location.hash === "#endodontics" ||
+		window.location.hash === "#root-canals" ||
+		window.location.hash.startsWith("#endo?") ||
+		window.location.hash.startsWith("#endo/"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка эндодонтии...
+						</div>
+					}
+				>
+					<EndodonticStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=perio") ||
+		window.location.search.includes("standalone=perio") ||
+		window.location.search.includes("perio=1") ||
+		window.location.search.includes("psr=1") ||
+		window.location.hash === "#perio" ||
+		window.location.hash === "#psr" ||
+		window.location.hash.startsWith("#perio?") ||
+		window.location.hash.startsWith("#perio/"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка пародонтологии...
+						</div>
+					}
+				>
+					<PerioStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=hygiene") ||
+		window.location.search.includes("standalone=hygiene") ||
+		window.location.search.includes("hygiene=1") ||
+		window.location.search.includes("cleaning=1") ||
+		window.location.hash === "#hygiene" ||
+		window.location.hash === "#cleaning" ||
+		window.location.hash.startsWith("#hygiene?") ||
+		window.location.hash.startsWith("#hygiene/"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка кабинета гигиены...
+						</div>
+					}
+				>
+					<HygieneStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
 } else {
 	// Подставляет токены кабинета и сотрудника во все запросы к /api/.
 	// Должно выполниться ДО первого рендера: часть экранов запрашивает данные
@@ -425,7 +558,9 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<AppShell />
+			<React.Suspense fallback={null}>
+				<AppShell />
+			</React.Suspense>
 		</React.StrictMode>,
 	);
 }

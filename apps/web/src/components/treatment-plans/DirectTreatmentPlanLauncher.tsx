@@ -49,20 +49,17 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 	const resolvedPatientName = useMemo(() => {
 		if (customPatientName?.trim()) return customPatientName.trim();
 		if (storePatientCore?.fullName?.trim()) return storePatientCore.fullName.trim();
-		const found = dashboard?.patients?.find((p) => p.id === resolvedPatientId);
-		if (found?.fullName?.trim()) return found.fullName.trim();
-		if (dashboard?.activeVisit?.patientName?.trim()) return dashboard.activeVisit.patientName.trim();
 		return "Пациент первичного приёма";
-	}, [customPatientName, storePatientCore?.fullName, dashboard?.patients, dashboard?.activeVisit?.patientName, resolvedPatientId]);
+	}, [customPatientName, storePatientCore?.fullName]);
 
 	const resolvedDoctorFullName = useMemo(() => {
 		if (customDoctorFullName?.trim()) return customDoctorFullName.trim();
 		if (storeActiveDoctorName?.trim()) return storeActiveDoctorName.trim();
-		const found = dashboard?.doctors?.find((d) => d.name === storeActiveDoctorName || d.id === dashboard?.activeVisit?.doctorId);
-		if (found?.name?.trim()) return found.name.trim();
-		if (dashboard?.activeVisit?.doctorName?.trim()) return dashboard.activeVisit.doctorName.trim();
+		const staff = dashboard?.clinicSettings?.staff ?? [];
+		const found = staff.find((d) => d.fullName === storeActiveDoctorName || d.role === "doctor");
+		if (found?.fullName?.trim()) return found.fullName.trim();
 		return "Лечащий врач";
-	}, [customDoctorFullName, storeActiveDoctorName, dashboard?.doctors, dashboard?.activeVisit?.doctorId, dashboard?.activeVisit?.doctorName]);
+	}, [customDoctorFullName, storeActiveDoctorName, dashboard?.clinicSettings?.staff]);
 
 	useEffect(() => {
 		const handleHashOrPop = () => {

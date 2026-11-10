@@ -33,7 +33,7 @@ export const EmrProtocolActionFooter: React.FC<EmrProtocolActionFooterProps> = R
 					<button
 						type="button"
 						onClick={onApply}
-						className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98 whitespace-nowrap"
+						className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs sm:text-sm font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98 whitespace-nowrap"
 						data-testid="apply-emr-protocol-btn"
 					>
 						<Sparkles className="w-4 h-4 shrink-0" />

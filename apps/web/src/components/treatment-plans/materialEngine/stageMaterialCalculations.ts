@@ -25,7 +25,7 @@ export function calculateStageMaterialRequirements(
 	const stageTotalRequiredByMaterial = new Map<string, number>();
 	for (const proc of stage.items) {
 		const code = proc.code804n;
-		const norms = ORDER_804N_MATERIAL_NORMS_MAP[code] ?? [];
+		const norms = (code ? ORDER_804N_MATERIAL_NORMS_MAP[code] : undefined) ?? [];
 		const qty = Math.max(1, proc.quantity || 1);
 		for (const norm of norms) {
 			const reqQty = Number((norm.quantityPerProcedure * qty).toFixed(2));
@@ -36,7 +36,7 @@ export function calculateStageMaterialRequirements(
 
 	for (const proc of stage.items) {
 		const code = proc.code804n;
-		const norms = ORDER_804N_MATERIAL_NORMS_MAP[code] ?? [];
+		const norms = (code ? ORDER_804N_MATERIAL_NORMS_MAP[code] : undefined) ?? [];
 		const qty = Math.max(1, proc.quantity || 1);
 
 		for (const norm of norms) {
@@ -63,7 +63,7 @@ export function calculateStageMaterialRequirements(
 				id: `${stage.stageNumber}-${proc.id}-${norm.id}`,
 				materialName: norm.materialName,
 				serviceCode: proc.serviceCode || code,
-				order804nCode: code,
+				order804nCode: code ?? "",
 				procedureName: proc.name,
 				quantityRequired: reqQty,
 				unitOfMeasure: norm.unitOfMeasure,

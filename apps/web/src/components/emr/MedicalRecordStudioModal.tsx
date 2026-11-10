@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
 	Printer, Check, FileText, X, Maximize2, Minimize2, Sparkles, ZoomIn, ZoomOut, RotateCcw,
 	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy,
@@ -194,7 +195,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			);
 		}
 
-		return (
+		const modalElement = (
 			<div className="emr-studio-backdrop emr043-modal-backdrop" role="dialog" aria-modal="true">
 				<div
 					className="emr-studio-modal emr-studio-window emr043-modal-window"
@@ -262,19 +263,20 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 							<button
 								type="button"
-								className="emr-studio-btn emr-studio-btn-secondary"
+								className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary"
 								onClick={handleApplyNorm}
 								disabled={false}
 								data-testid="btn-emr-apply-norm"
 								title="Заполнить физиологической нормой / Интактные зубы"
 							>
-								<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-								<span>Норма в 1 клик</span>
+								<Sparkles className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" />
+								<span className="hidden sm:inline">Физиологическая норма</span>
+								<span className="sm:hidden">Норма</span>
 							</button>
 
 							<button
 								type="button"
-								className="emr-studio-btn emr-studio-btn-secondary"
+								className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary"
 								onClick={handlePrint}
 								disabled={false}
 								data-testid="btn-emr-print-card"
@@ -290,7 +292,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							<div className="relative inline-flex items-center" ref={moreMenuRef}>
 								<button
 									type="button"
-									className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only"
+									className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only"
 									onClick={() => setIsMoreMenuOpen((v) => !v)}
 									title="Дополнительные действия"
 									data-testid="btn-emr-more-actions"
@@ -300,13 +302,13 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								{isMoreMenuOpen && (
 									<div className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong,#ffffff)] dark:bg-slate-900 border border-[var(--glass-border,#cbd5e1)] dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink,#0f172a)] dark:text-slate-100 min-w-[210px]">
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { handleApplyNorm(); setIsMoreMenuOpen(false); }}>
-											<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /><span>Физиологическая норма</span>
+											<Sparkles className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" /><span>Физиологическая норма</span>
 										</button>
 										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
 											<Download className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" /><span>Электронная медкарта (XML)</span>
 										</button>
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { handleExportJson(); setIsMoreMenuOpen(false); }}>
-											<Download className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" /><span>Экспорт в JSON</span>
+											<Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" /><span>Экспорт в JSON</span>
 										</button>
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleCopyText(); setIsMoreMenuOpen(false); }}>
 											{copiedToast ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />}
@@ -319,7 +321,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							{/* Ровно ОДНА Primary CTA кнопка (#0d9488, var(--teal), НИКОГДА не disabled) */}
 							<button
 								type="button"
-								className="emr-studio-btn emr-studio-btn-primary"
+								className="dente-btn dente-btn-primary emr-studio-btn emr-studio-btn-primary"
 								onClick={handleSaveForm}
 								disabled={false}
 								data-testid="btn-emr-save-card"
@@ -376,16 +378,6 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								<span className="text-[11px] text-[var(--muted,#64748b)]">
 									Рекомендации: {validation.missingFields.map((m) => m.label).join(", ")}
 								</span>
-								<button
-									type="button"
-									onClick={handleApplyNorm}
-									disabled={false}
-									data-testid="btn-emr-completeness-norm"
-									className="text-[11px] text-[var(--teal,#0d9488)] bg-transparent border-none underline cursor-pointer font-semibold p-0"
-									title="Заполнить незаполненные показатели физиологической нормой"
-								>
-									Норма в 1 клик
-								</button>
 							</div>
 						)}
 					</div>
@@ -426,16 +418,18 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 					{/* Мобильная нижняя плашка в Natural Thumb Zone (Apple HIG) */}
 					<footer className="emr-studio-bottom-bar sm:hidden">
-						<button type="button" className="emr-studio-btn emr-studio-btn-secondary flex-1" onClick={handleApplyNorm} disabled={false} title="Норма в 1 клик">
-							<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" /><span>Норма</span>
+						<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary flex-1" onClick={handleApplyNorm} disabled={false} title="Физиологическая норма">
+							<Sparkles className="w-4 h-4 shrink-0" /><span>Норма</span>
 						</button>
-						<button type="button" className="emr-studio-btn emr-studio-btn-primary flex-[2]" onClick={handleSaveForm} disabled={false} title="Сохранить и подписать карту приёма">
+						<button type="button" className="dente-btn dente-btn-primary emr-studio-btn emr-studio-btn-primary flex-[2]" onClick={handleSaveForm} disabled={false} title="Сохранить и подписать карту приёма">
 							<Check className="w-4 h-4 shrink-0" /><span>Подписать карту</span>
 						</button>
 					</footer>
 				</div>
 			</div>
 		);
+
+		return typeof document !== "undefined" ? createPortal(modalElement, document.body) : modalElement;
 	},
 );
 

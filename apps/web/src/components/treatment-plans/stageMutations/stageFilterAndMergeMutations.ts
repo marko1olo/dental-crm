@@ -22,7 +22,7 @@ export function filterStagesBySearch(stages: readonly TreatmentPlanStage[], quer
 		.map((s) => {
 			if (s.title.toLowerCase().includes(clean)) return s;
 			const matching = s.items.filter((i) =>
-				i.name.toLowerCase().includes(clean) || i.code804n.toLowerCase().includes(clean) ||
+				i.name.toLowerCase().includes(clean) || (i.code804n ? i.code804n.toLowerCase().includes(clean) : false) ||
 				(i.toothNumber !== undefined && i.toothNumber.toString().includes(clean)));
 			return matching.length > 0 ? { ...s, items: matching } : null;
 		})

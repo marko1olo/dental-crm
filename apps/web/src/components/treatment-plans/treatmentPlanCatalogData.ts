@@ -881,7 +881,7 @@ export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothN
 export function isTreatmentPlanExpired(createdAtIso?: string): {
 	readonly isExpired: boolean;
 	readonly daysElapsed: number;
-	readonly warningNotice?: string;
+	readonly warningNotice?: string | undefined;
 } {
 	if (!createdAtIso) return { isExpired: false, daysElapsed: 0 };
 	const created = new Date(createdAtIso).getTime();

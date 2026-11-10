@@ -240,6 +240,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								title="Справка об оплате медицинских услуг для налогового вычета (13%)"
 							>
 								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="sr-only">Справка для вычета (13%)</span>
 							</button>
 						)}
 
@@ -500,7 +501,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				)}
 
 				{/* ── ФУТЕР МОДАЛКИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA КНОПКА) ── */}
-				<div className="flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2.5 print:hidden">
+				<div className={`flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2.5 print:hidden ${
+					isMedicalRecordStudioOpen ? "hidden" : ""
+				}`}>
 					<span className="hidden sm:inline text-xs text-[var(--muted)] whitespace-normal">
 						{isCreateMode
 							? "DENTE CRM • Создание карты пациента без обязательных бюрократических полей"

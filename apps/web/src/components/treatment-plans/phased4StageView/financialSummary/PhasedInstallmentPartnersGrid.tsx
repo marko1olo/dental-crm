@@ -30,7 +30,7 @@ export const PhasedInstallmentPartnersGrid: React.FC<PhasedInstallmentPartnersGr
 					{installmentMonthlyRub.toLocaleString("ru-RU")} ₽ / мес
 				</div>
 				<div className="text-[10px] text-[var(--ink-muted)] mt-0.5">
-					Одобрение в СберБанк Онлайн в 1 клик
+					Одобрение в СберБанк Онлайн
 				</div>
 			</div>
 			<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-2.5">

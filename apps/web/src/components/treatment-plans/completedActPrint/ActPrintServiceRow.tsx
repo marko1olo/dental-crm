@@ -49,7 +49,7 @@ export const ActPrintServiceRow: React.FC<ActPrintServiceRowProps> = ({ item, in
 				{item.quantity}
 			</td>
 			<td className="border border-slate-300 p-2 text-right font-mono text-slate-700">
-				{formatMoneyExact(item.unitPriceRub)}
+				{formatMoneyExact(item.unitPriceRub ?? item.priceRub ?? 0)}
 			</td>
 			<td className="border border-slate-300 p-2 text-right font-mono text-slate-500">
 				{item.discountRub > 0 ? `-${formatMoneyExact(item.discountRub)}` : "0,00 ₽"}
