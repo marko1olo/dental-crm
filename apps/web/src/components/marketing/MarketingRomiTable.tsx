@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { CheckCircle2, HelpCircle } from "lucide-react";
+import { CheckCircle2, HelpCircle, X } from "lucide-react";
 import { MarketingDashboardView } from "../../pages/MarketingDashboardView.js";
 import { MarketingRomiKpiStrip } from "./MarketingRomiKpiStrip.js";
 import { MarketingRomiAddChannelForm } from "./MarketingRomiAddChannelForm.js";
@@ -119,7 +119,7 @@ export function MarketingRomiTable() {
 								aria-label="Закрыть"
 								data-testid="marketing-roi-close-btn"
 							>
-								✕
+								<X className="w-4 h-4" />
 							</button>
 						</div>
 						<div className="flex-1 overflow-y-auto p-4">

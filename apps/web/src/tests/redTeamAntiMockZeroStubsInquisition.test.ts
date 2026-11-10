@@ -31,44 +31,44 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 	describe("1. Loyalty Program Real ACID API Integration", () => {
 		const loyaltyModalPath = path.join(
 			webSrcDir,
-			"components/loyalty/program/LoyaltyProgramModal.tsx",
+			"components/loyalty/LoyaltyStudioModal.tsx",
 		);
 
-		it("LoyaltyProgramModal.tsx must physically exist on disk", () => {
-			assert.ok(fs.existsSync(loyaltyModalPath), "LoyaltyProgramModal.tsx not found");
+		it("LoyaltyStudioModal.tsx must physically exist on disk", () => {
+			assert.ok(fs.existsSync(loyaltyModalPath), "LoyaltyStudioModal.tsx not found");
 		});
 
-		it("LoyaltyProgramModal must synchronize live balance and transactions via fetch", () => {
+		it("LoyaltyStudioModal must synchronize live balance and transactions via fetch", () => {
 			const content = fs.readFileSync(loyaltyModalPath, "utf-8");
 
 			// Must fetch live balance
 			assert.ok(
 				content.includes("/api/loyalty/balance/"),
-				"LoyaltyProgramModal missing live GET /api/loyalty/balance/ endpoint call",
+				"LoyaltyStudioModal missing live GET /api/loyalty/balance/ endpoint call",
 			);
 
 			// Must fetch live transactions ledger
 			assert.ok(
 				content.includes("/api/loyalty/transactions/"),
-				"LoyaltyProgramModal missing live GET /api/loyalty/transactions/ endpoint call",
+				"LoyaltyStudioModal missing live GET /api/loyalty/transactions/ endpoint call",
 			);
 
 			// Must persist redemptions to ACID endpoint
 			assert.ok(
 				content.includes("/api/loyalty/redeem"),
-				"LoyaltyProgramModal missing live POST /api/loyalty/redeem persistence",
+				"LoyaltyStudioModal missing live POST /api/loyalty/redeem persistence",
 			);
 
 			// Must persist referral bonuses to ACID endpoint
 			assert.ok(
 				content.includes("/api/loyalty/accrue"),
-				"LoyaltyProgramModal missing live POST /api/loyalty/accrue persistence",
+				"LoyaltyStudioModal missing live POST /api/loyalty/accrue persistence",
 			);
 
 			// Must include authorization headers
 			assert.ok(
 				content.includes("denteAdminSecretRequestHeaders"),
-				"LoyaltyProgramModal missing denteAdminSecretRequestHeaders authorization",
+				"LoyaltyStudioModal missing denteAdminSecretRequestHeaders authorization",
 			);
 		});
 	});

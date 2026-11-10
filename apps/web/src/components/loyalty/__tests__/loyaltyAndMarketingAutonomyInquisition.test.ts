@@ -21,12 +21,10 @@ import {
 	creditReferralBonus,
 	type PatientReferralRecord,
 	type FamilyMember,
-} from "../program/loyaltyEngine";
-import {
 	DEFAULT_REFERRAL_PRESET,
 	LOYALTY_TIER_PRESETS,
 	REFERRAL_PROGRAM_PRESETS,
-} from "../program/loyaltyPresets";
+} from "../loyaltyCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -306,7 +304,7 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 
 		it("should verify loyalty presets do NOT contain corporate 'куратор 24/7' slogans", () => {
 			const presetFiles = [
-				path.resolve(__dirname, "../program/loyaltyPresets.ts"),
+				path.resolve(__dirname, "../loyaltyCatalogData.ts"),
 				path.resolve(__dirname, "../program/presets/tierPresets.ts"),
 			];
 			const combinedContent = presetFiles

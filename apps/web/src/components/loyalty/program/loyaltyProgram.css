@@ -1,8 +1,0 @@
-/**
- * DENTE Dental CRM — Modular Loyalty & Bonus Studio Stylesheet Facade
- * Mandate 8b Decomposition: Base + Tabs/Cards + Ledger/Print
- */
-
-@import "./loyaltyBase.css";
-@import "./loyaltyTabs.css";
-@import "./loyaltyLedger.css";

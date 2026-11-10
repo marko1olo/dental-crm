@@ -18,8 +18,8 @@ const PatientRecallsHubModal = lazyWithRetry(() =>
 const WarrantyPassportModal = lazyWithRetry(() =>
 	import("../components/warranty/WarrantyPassportModal").then((m) => ({ default: m.WarrantyPassportModal })),
 );
-const LoyaltyProgramModal = lazyWithRetry(() =>
-	import("../components/loyalty/program/LoyaltyProgramModal").then((m) => ({ default: m.LoyaltyProgramModal })),
+const LoyaltyStudioModal = lazyWithRetry(() =>
+	import("../components/loyalty/LoyaltyStudioModal").then((m) => ({ default: m.LoyaltyStudioModal })),
 );
 const FastCheckoutModal = lazyWithRetry(() =>
 	import("../components/finance/FastCheckoutModal").then((m) => ({ default: m.FastCheckoutModal })),
@@ -90,7 +90,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 			)}
 			{routing.isLoyaltyProgramOpen && (
 				<Suspense fallback={null}>
-					<LoyaltyProgramModal
+					<LoyaltyStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsLoyaltyProgramOpen(false)}
 						patientId={patient?.id || "pat-demo-01"}

@@ -5,9 +5,9 @@ import { GlobalPaymentModalLauncher } from "../../billing/GlobalPaymentModalLaun
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
 import type { AdministrativeModalsSubcontainerProps } from "./modalsContainerTypes";
 
-const LoyaltyProgramModal = React.lazy(() =>
-	import("../../loyalty/program/LoyaltyProgramModal").then((m) => ({
-		default: m.LoyaltyProgramModal,
+const LoyaltyStudioModal = React.lazy(() =>
+	import("../../loyalty/LoyaltyStudioModal").then((m) => ({
+		default: m.LoyaltyStudioModal,
 	})),
 );
 
@@ -49,7 +49,7 @@ export function AdministrativeModalsSubcontainer({
 			    Без patientId модалка не открывается — никаких подставных карт и ФИО. */}
 			{isGlobalLoyaltyOpen && loyaltyModalContext?.patientId && (
 				<React.Suspense fallback={null}>
-					<LoyaltyProgramModal
+					<LoyaltyStudioModal
 						isOpen={isGlobalLoyaltyOpen}
 						onClose={() => setIsGlobalLoyaltyOpen?.(false)}
 						patientId={loyaltyModalContext.patientId}

@@ -17,13 +17,11 @@ import {
 	type GiftCertificate,
 	type FamilyMember,
 	type LoyaltyLedgerEntry,
-} from "../components/loyalty/program/loyaltyEngine";
-import {
 	LOYALTY_TIER_PRESETS,
 	GIFT_CERTIFICATE_CATALOG,
 	PROMO_CODE_PRESETS,
 	LOYALTY_EXCLUSION_RULES,
-} from "../components/loyalty/program/loyaltyPresets";
+} from "../components/loyalty/loyaltyCatalogData";
 
 describe("Statutory Dental Loyalty Math Engine", () => {
 	describe("1. calculateLoyaltyAccrual — Kopeck-Exact Cashback Calculation", () => {

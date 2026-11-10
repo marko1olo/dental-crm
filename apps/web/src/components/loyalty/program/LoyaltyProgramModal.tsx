@@ -1,30 +1,8 @@
 /**
- * DENTE Dental CRM — Loyalty Program Modal Facade (SSOT Canonical Redirection)
- * Re-exports and wraps LoyaltyStudioModal with live API endpoints:
- * /api/loyalty/balance/
- * /api/loyalty/transactions/
- * /api/loyalty/redeem
- * /api/loyalty/accrue
- * Uses denteAdminSecretRequestHeaders for authorized ACID mutations.
+ * LoyaltyProgramModal.tsx — Canonical Alias for LoyaltyStudioModal.
+ * Governed by Mandate 8bf (Single SSOT) & Mandate 8b.
  */
 
-import React from "react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import { LoyaltyStudioModal, type LoyaltyStudioModalProps } from "../LoyaltyStudioModal";
-
-export type LoyaltyProgramModalProps = LoyaltyStudioModalProps;
-
-export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = (props) => {
-	// Live persistence endpoints audit compliance marker
-	const _endpoints = [
-		"/api/loyalty/balance/",
-		"/api/loyalty/transactions/",
-		"/api/loyalty/redeem",
-		"/api/loyalty/accrue",
-	];
-	const _auth = typeof denteAdminSecretRequestHeaders === "function";
-	if (!_auth || _endpoints.length === 0) return null;
-	return <LoyaltyStudioModal {...props} />;
-};
-
-export default LoyaltyProgramModal;
+export { LoyaltyStudioModal as LoyaltyProgramModal } from "../LoyaltyStudioModal";
+export type { LoyaltyStudioModalProps as LoyaltyProgramModalProps } from "../LoyaltyStudioModal";
+export { default } from "../LoyaltyStudioModal";

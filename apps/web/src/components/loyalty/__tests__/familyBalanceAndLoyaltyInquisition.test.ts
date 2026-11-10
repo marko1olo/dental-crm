@@ -21,12 +21,10 @@ import {
 	calculateLoyaltyRedemption,
 	type DebitFamilySharedBalanceInput,
 	type CreditFamilySharedBalanceInput,
-} from "../program/loyaltyEngine.js";
-import {
 	REFERRAL_HYGIENE_1000_PRESET,
 	REFERRAL_PROGRAM_PRESETS,
 	DENTAL_LOYALTY_STANDARDS,
-} from "../program/loyaltyPresets.js";
+} from "../loyaltyCatalogData.js";
 import {
 	EXPRESS_GUARANTEE_LETTER_PRESETS,
 } from "../../insurance/dmsInsurancePresets.js";

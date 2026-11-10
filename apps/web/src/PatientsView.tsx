@@ -1,4 +1,5 @@
 import React, {
+	useEffect,
 	lazy,
 	Suspense,
 	useMemo,
@@ -41,9 +42,9 @@ import {
 	type WeekdayOption,
 } from "./components/patients/patientsViewModules";
 
-const LoyaltyProgramModal = lazy(() =>
-	import("./components/loyalty/program/LoyaltyProgramModal").then((module) => ({
-		default: module.LoyaltyProgramModal,
+const LoyaltyStudioModal = lazy(() =>
+	import("./components/loyalty/LoyaltyStudioModal").then((module) => ({
+		default: module.LoyaltyStudioModal,
 	})),
 );
 const PatientCardModal = lazy(() =>
@@ -479,7 +480,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{isLoyaltyModalOpen && (
 				<Suspense fallback={null}>
-					<LoyaltyProgramModal
+					<LoyaltyStudioModal
 						isOpen={isLoyaltyModalOpen}
 						onClose={() => setIsLoyaltyModalOpen(false)}
 						patientId={selectedPatient?.id}

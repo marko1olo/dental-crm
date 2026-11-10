@@ -2804,6 +2804,47 @@
      - 🌙 Mobile Dark 390×844: `04_loyalty_studio_mobile_dark_390x844.png` (139 KB)
   6. Все тесты 100% PASS: `loyaltySSOTSuite.test.tsx` (23/23), `familyBalanceAndLoyaltyInquisition.test.ts` (13/13), `loyaltyAndMarketingAutonomyInquisition.test.ts` (12/12), `loyaltyCertificates.test.ts` (5/5).
 
+### [LOY-13] [SEV-2] [ИСПРАВЛЕНО] Потёмкинский фасад и тест-саботажник в LoyaltyProgramModal.tsx [DEF-LOY-01]
+- **Файлы:**
+  - [`apps/web/src/components/loyalty/program/LoyaltyProgramModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/program/LoyaltyProgramModal.tsx)
+  - [`apps/web/src/tests/redTeamAntiMockZeroStubsInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/redTeamAntiMockZeroStubsInquisition.test.ts)
+  - [`apps/web/src/PatientsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/PatientsView.tsx)
+  - [`apps/web/src/appModules/AppDirectModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/appModules/AppDirectModals.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/AdministrativeModalsSubcontainer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/AdministrativeModalsSubcontainer.tsx)
+  - [`apps/web/src/views/financeView/FinanceCashboxSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/views/financeView/FinanceCashboxSection.tsx)
+- **Суть бага:** В `LoyaltyProgramModal.tsx` находился фиктивный блок `const _endpoints = ...` и `const _auth = ...`, созданный исключительно ради прохождения теста в вакууме. Реальные потребители монтировали фасад вместо канонической Студии.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `PatientsView.tsx`, `AppDirectModals.tsx`, `AdministrativeModalsSubcontainer.tsx` и `FinanceCashboxSection.tsx` импорты переведены напрямую на канонический SSOT `LoyaltyStudioModal`.
+  2. В `LoyaltyProgramModal.tsx` фиктивный блок ликвидирован, сделан чистый прозрачный алиас: `export { LoyaltyStudioModal as LoyaltyProgramModal } from "../LoyaltyStudioModal";`.
+  3. В `redTeamAntiMockZeroStubsInquisition.test.ts` путь переключен на `components/loyalty/LoyaltyStudioModal.tsx`, гарантируя проверку боевого компонента.
+
+### [LOY-14] [SEV-2] [ИСПРАВЛЕНО] Ликвидация дублирующих движков и устаревших CSS-файлов [DEF-LOY-02, DEF-LOY-03]
+- **Файлы:**
+  - Удалены (`git rm`):
+    - `apps/web/src/components/finance/fiscal/engine/installmentPlanSchedule.ts` (дубликат `engine54fz/installmentSchedule.ts`)
+    - `apps/web/src/components/loyalty/program/loyaltyProgram.css`
+    - `apps/web/src/components/loyalty/program/loyaltyBase.css`
+    - `apps/web/src/components/loyalty/program/loyaltyTabs.css`
+    - `apps/web/src/components/loyalty/program/loyaltyLedger.css`
+    - `apps/web/src/components/loyalty/program/loyaltyEngine.ts`
+    - `apps/web/src/components/loyalty/program/loyaltyPresets.ts`
+  - Обновлены:
+    - [`apps/web/src/components/finance/fiscal/engine/zReportAndDiscounts.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscal/engine/zReportAndDiscounts.ts)
+    - [`apps/web/src/components/loyalty/program/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/program/index.ts)
+    - [`apps/web/src/components/loyalty/__tests__/familyBalanceAndLoyaltyInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/__tests__/familyBalanceAndLoyaltyInquisition.test.ts)
+    - [`apps/web/src/components/loyalty/__tests__/loyaltyAndMarketingAutonomyInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/__tests__/loyaltyAndMarketingAutonomyInquisition.test.ts)
+    - [`apps/web/src/tests/loyaltyEngine.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/loyaltyEngine.test.ts)
+    - [`apps/web/src/components/analytics/__tests__/executiveDashboardDeterminism.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/__tests__/executiveDashboardDeterminism.test.tsx)
+- **Суть бага:** Наличие мёртвых стилей, параллельных фасадов и дублирующего расчета графиков рассрочки нарушало Мандат 8bf (Single SSOT) и Мандат 8s.
+- **Статус исправления [ИСПРАВЛЕНО]:** Все дубликаты и сироты физически удалены из репозитория (`git rm`). Все импорты переведены на канонические модули `loyaltyCatalogData.ts` и `engine54fz/installmentSchedule.ts`.
+
+### [LOY-15] [SEV-2] [ИСПРАВЛЕНО] Запрещенный мультяшный эмодзи ✕ в MarketingRomiTable.tsx [DEF-LOY-05]
+- **Файлы:**
+  - [`apps/web/src/components/marketing/MarketingRomiTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/marketing/MarketingRomiTable.tsx)
+  - [`apps/web/src/components/loyalty/__tests__/loyaltyAndMarketingAutonomyInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/__tests__/loyaltyAndMarketingAutonomyInquisition.test.ts)
+- **Суть бага:** Символ `✕` на кнопке закрытия модалки нарушал строгий запрет Мандата 8d п. 7 на эмодзи и ломал тест `loyaltyAndMarketingAutonomyInquisition.test.ts`.
+- **Статус исправления [ИСПРАВЛЕНО]:** Символ `✕` заменен на строгую векторную иконку Lucide `<X className="w-4 h-4" />`. Тест 100% PASS.
+
 
 ## 22. 👶 ДЕТСКАЯ СТОМАТОЛОГИЯ, МОЛОЧНЫЙ ПРИКУС (51–85) И ИНДЕКСЫ ГИГИЕНЫ
 

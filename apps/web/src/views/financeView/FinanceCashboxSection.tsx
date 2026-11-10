@@ -1,8 +1,8 @@
 import type React from "react";
 import { useState } from "react";
 import { PaymentCapture } from "../../PaymentCapture";
-import { CashRegisterCheckoutModal } from "../../components/billing/CashRegisterCheckoutModal";
-import { LoyaltyProgramModal } from "../../components/loyalty/program/LoyaltyProgramModal";
+import { CashRegisterStudioModal } from "../../components/cashbox/CashRegisterStudioModal";
+import { LoyaltyStudioModal } from "../../components/loyalty/LoyaltyStudioModal";
 import { showToast } from "../../components/GlobalToast";
 import { CashboxQuickCard } from "./CashboxQuickCard";
 
@@ -48,7 +48,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 			/>
 
 			{isLoyaltyModalOpen && patient?.id && (
-				<LoyaltyProgramModal
+				<LoyaltyStudioModal
 					isOpen={isLoyaltyModalOpen}
 					onClose={() => setIsLoyaltyModalOpen(false)}
 					clinicName={s.dashboard?.clinicSettings?.name}
@@ -66,8 +66,13 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 			)}
 
 			{isPaymentModalOpen && patient && (
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={isPaymentModalOpen}
+					mode="checkout"
+					initialTab="checkout"
+					containerTestId="cash-register-checkout-modal"
+					submitButtonTestId="btn-confirm-checkout-payment"
+					title="Касса · Оплата приёма"
 					totalDueRub={summaryAmount}
 					amountRub={summaryAmount}
 					amountKopecks={Math.round(summaryAmount * 100)}

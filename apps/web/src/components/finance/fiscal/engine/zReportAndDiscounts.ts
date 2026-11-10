@@ -5,7 +5,7 @@
 
 export * from "./shiftCloseZReport.js";
 export * from "./incomeReturnDraft.js";
-export * from "./installmentPlanSchedule.js";
+export * from "../engine54fz/installmentSchedule.js";
 export * from "./fnsReceiptQrString.js";
 export * from "./zReportReceiptTape.js";
 export * from "./loyaltyDiscountsDistributor.js";
