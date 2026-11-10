@@ -20,6 +20,7 @@ import {
 	importClinicDataFileTool,
 	printDocumentTool,
 	searchServicesTool,
+	treatmentRecordTool,
 	updateToothStatusTool,
 } from "./crmDatabaseTools.js";
 import { manageTaskPlanTool } from "./taskPlanTools.js";
@@ -71,6 +72,7 @@ export const dentalToolsRegistry: readonly AnyDentalToolEntry[] = [
 	compareDentalMaterialsTool,
 	// CRM уровень (везде)
 	updateToothStatusTool,
+	treatmentRecordTool,
 	createAppointmentTool,
 	createInvoiceDraftTool,
 	printDocumentTool,
@@ -153,6 +155,10 @@ export function normalizeToolName(toolName: string): string {
 		case "crmClinicalOdontogramTools.updateToothState":
 		case "update_odontogram":
 			return "update_tooth_status";
+		case "recordTreatment":
+		case "record_treatment_item":
+		case "crmTreatmentTools.recordTreatment":
+			return "record_treatment";
 		case "createAppointment":
 		case "createAppointmentSlot":
 		case "crmScheduleTools.createAppointment":
@@ -247,6 +253,7 @@ export async function executeDentalTool(
  */
 export const DESTRUCTIVE_TOOL_NAMES: readonly string[] = Object.freeze([
 	"update_tooth_status",
+	"record_treatment",
 	"create_appointment",
 	"create_invoice_draft",
 	"print_document",
@@ -292,6 +299,8 @@ export function getToolDescriptionRu(toolName: string): string {
 			return "Управление планом действий";
 		case "update_tooth_status":
 			return "Обновление статуса зуба в одонтограмме";
+		case "record_treatment":
+			return "Внесение выполненной процедуры в карту";
 		case "create_appointment":
 			return "Создание записи на приём в расписании";
 		case "create_invoice_draft":

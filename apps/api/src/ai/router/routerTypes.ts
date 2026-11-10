@@ -3,19 +3,17 @@
  */
 
 export const DEFAULT_AGENTROUTER_BASE_URL = "https://agentrouter.org/v1";
-export const DEFAULT_AGENTROUTER_MODEL = "gemini-3.6-flash";
+export const DEFAULT_AGENTROUTER_MODEL = "gemini-2.5-flash";
 export const DEFAULT_GEMINI_BASE_URL =
 	"https://generativelanguage.googleapis.com/v1beta/openai";
-export const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
+export const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 export const SUPPORTED_GEMINI_MODELS = [
-	"gemini-3.8-flash",
-	"gemini-3.6-flash",
-	"gemini-3.5-flash",
 	"gemini-2.5-flash",
-	"gemini-3.5-flash-lite",
-	"gemini-3.1-flash-lite",
-	"gemini-2.5-flash-lite",
-	"gemini-3.1-pro",
+	"gemini-2.5-pro",
+	"gemini-2.0-flash",
+	"gemini-2.0-flash-lite",
+	"gemini-1.5-flash",
+	"gemini-1.5-pro",
 	"gemini-live",
 ] as const;
 export type SupportedGeminiModel = (typeof SUPPORTED_GEMINI_MODELS)[number];

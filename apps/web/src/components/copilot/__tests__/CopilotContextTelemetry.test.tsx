@@ -3,7 +3,7 @@
  * @description Vitest/Node test suite for DENTE Context Telemetry Bar (Antigravity Language Server Standard).
  * Verifies:
  * 1. Context Telemetry Bar: patient info, model badge, response latency, token budget progress & soft compression markers (70% Pruning, 85% Sliding Window), gateway status.
- * 2. Mount in CopilotStudioModal (tabs: dialog, actions, memory) and CopilotDrawer (tabs: chat, pending).
+ * 2. Mount in CopilotStudioModal (tabs: dialog, actions, memory) with context telemetry and clean tabs.
  * 3. Mandate 8wy: Strict Production vs Showcase isolation (no fake mockups in production).
  * 4. Architectural invariants: file limits (Mandate 8b), strictly 0 cartoon emojis (Mandate 8d pt 7).
  */
@@ -82,7 +82,7 @@ describe("DENTE Context Telemetry Bar (Antigravity Language Server Standard)", (
 	});
 });
 
-describe("Clean Mounting into CopilotStudioModal & CopilotDrawer (Zero Mockup Leaks)", () => {
+describe("Clean Mounting into CopilotStudioModal (Zero Mockup Leaks)", () => {
 	it("1. CopilotStudioModal монтирует Context Telemetry Bar и чистые клинические вкладки (dialog, actions, memory)", () => {
 		const html = renderToString(
 			<CopilotStudioModal

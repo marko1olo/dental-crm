@@ -16,16 +16,14 @@ import {
 import { agentRouterClient } from "./agentRouterClient.js";
 
 export const SOTA_SMART_CASCADE: readonly string[] = [
-	"gemini-3.6-flash",
-	"gemini-3.5-flash",
-	"gemini-3.8-flash",
+	"gemini-2.5-flash",
+	"gemini-2.0-flash",
 	"llama-3.3-70b-versatile",
 	"qwen/qwen3.6-27b",
 ];
 
 export const SOTA_FAST_CASCADE: readonly string[] = [
-	"gemini-3.5-flash-lite",
-	"gemini-3.1-flash-lite",
+	"gemini-2.0-flash-lite",
 	"gemini-2.5-flash-lite",
 	"llama-3.3-70b-versatile",
 ];
@@ -124,7 +122,7 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 	// 1. Custom BYOK Routing (Advanced doctor mode)
 	if (modelRoutingMode === "custom_byok" && byokApiKey && byokApiKey.trim().length > 0) {
 		const provider = (byokProvider || "gemini").toLowerCase();
-		let effectiveModel = byokModel || "gemini-3.6-flash";
+		let effectiveModel = byokModel || "gemini-2.5-flash";
 		let effectiveBaseUrl = byokBaseUrl;
 
 		if (provider === "anthropic") {
@@ -139,7 +137,7 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 			effectiveModel = byokModel || "deepseek-r1";
 			effectiveBaseUrl = byokBaseUrl || "https://api.deepseek.com/v1";
 		} else if (provider === "gemini") {
-			effectiveModel = byokModel || "gemini-3.6-flash";
+			effectiveModel = byokModel || "gemini-2.5-flash";
 		}
 
 		return {

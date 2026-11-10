@@ -18,7 +18,7 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "chairside_fast");
-		assert.equal(result.model, "gemini-3.5-flash-lite");
+		assert.equal(result.model, "gemini-2.0-flash-lite");
 		assert.ok(result.rationale.includes("chairside"));
 	});
 
@@ -34,7 +34,7 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "clinical_reasoning");
-		assert.equal(result.model, "gemini-3.6-flash");
+		assert.equal(result.model, "gemini-2.5-flash");
 		assert.ok(result.rationale.includes("мышление"));
 	});
 
@@ -46,7 +46,7 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "clinical_vision");
-		assert.equal(result.model, "gemini-3.6-flash");
+		assert.equal(result.model, "gemini-2.5-flash");
 		assert.ok(result.rationale.includes("рентгенологических"));
 	});
 
@@ -94,8 +94,8 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		assert.ok(result.latencyMs >= 0);
 	});
 
-	test("7. SOTA Cascade: cascades gemini-3.6-flash -> gemini-3.5-flash when primary model is banned/cooldown", () => {
-		const bannedSet = new Set(["gemini-3.6-flash"]);
+	test("7. SOTA Cascade: cascades gemini-2.5-flash -> gemini-2.0-flash when primary model is banned/cooldown", () => {
+		const bannedSet = new Set(["gemini-2.5-flash"]);
 		const result = routeClinicalTask({
 			messages: [
 				{
@@ -107,15 +107,14 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "clinical_reasoning");
-		assert.equal(result.model, "gemini-3.5-flash");
+		assert.equal(result.model, "gemini-2.0-flash");
 		assert.ok(result.rationale.includes("Каскад SOTA"));
 	});
 
 	test("8. SOTA Cascade: cascades to Groq llama-3.3-70b-versatile when all Gemini models are on cooldown", () => {
 		const bannedSet = new Set([
-			"gemini-3.6-flash",
-			"gemini-3.5-flash",
-			"gemini-3.8-flash",
+			"gemini-2.5-flash",
+			"gemini-2.0-flash",
 		]);
 		const result = routeClinicalTask({
 			messages: [

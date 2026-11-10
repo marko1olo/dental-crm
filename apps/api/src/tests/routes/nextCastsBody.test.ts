@@ -10,7 +10,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
-import { registerAiRoutes } from "../../routes/ai.js";
 import { registerClinicalRoutes } from "../../routes/clinical.js";
 import registerCommunicationReceiptRoutes from "../../routes/communicationReceipts.js";
 import registerCommunicationOutboxRoutes from "../../routes/communicationsOutbox.js";
@@ -100,7 +99,6 @@ describe("next bare casts — Zod body (AUTH-first; empty → 400 ≠ 500)", () 
 		);
 
 		app = Fastify({ logger: false });
-		await registerAiRoutes(app);
 		await registerClinicalRoutes(app);
 		await registerDiaryRoutes(app);
 		await registerTemplateRoutes(app);
@@ -113,32 +111,6 @@ describe("next bare casts — Zod body (AUTH-first; empty → 400 ≠ 500)", () 
 		await app?.close();
 		process.env = originalEnv;
 		resetAuthSecretCacheForTests();
-	});
-
-	// ── AI predict-no-show ─────────────────────────────────────────────
-
-	test("POST /api/ai/predict-no-show без токена → 401 AuthRequired", async () => {
-		const r = await inject("POST", "/api/ai/predict-no-show", {
-			body: { patientId: ORG_ID },
-			withClinic: false,
-		});
-		assert.equal(r.statusCode, 401, r.body);
-		assert.equal(r.json.error, "AuthRequired");
-	});
-
-	test("POST /api/ai/predict-no-show {} → 400 ValidationError ≠ 500", async () => {
-		const r = await inject("POST", "/api/ai/predict-no-show", { body: {} });
-		assert.equal(r.statusCode, 400, r.body);
-		assert.notEqual(r.statusCode, 500);
-		assert.equal(r.json.error, "ValidationError");
-		assert.match(String(r.json.message), /пациент|неявк/i);
-	});
-
-	test("POST /api/ai/predict-no-show array body → 400 ≠ 500", async () => {
-		const r = await inject("POST", "/api/ai/predict-no-show", { body: [] });
-		assert.equal(r.statusCode, 400, r.body);
-		assert.notEqual(r.statusCode, 500);
-		assert.equal(r.json.error, "ValidationError");
 	});
 
 	// ── clinical recent-patients ───────────────────────────────────────

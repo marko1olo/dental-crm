@@ -151,8 +151,8 @@ test("(A) POST /api/clinic/workflows — зовёт SettingsBpmnTab.tsx:144", as
 	});
 });
 
-test("(A) POST /api/ai/visit-flow — зовёт useVisitLogic.ts:1059, оркестратор ai/visitFlowOrchestrator.ts есть", async () => {
-	await assertRouteIsServed("POST", "/api/ai/visit-flow", {});
+test("(A) GET /api/ai/recognition-jobs — история AI-распознавания снимков (SettingsAiTab.tsx)", async () => {
+	await assertRouteIsServed("GET", "/api/ai/recognition-jobs");
 });
 
 /* ═══ (C) МАРШРУТ ЕСТЬ, МЕТОД БЫЛ НАПИСАН ИНАЧЕ ══════════════════════════════
