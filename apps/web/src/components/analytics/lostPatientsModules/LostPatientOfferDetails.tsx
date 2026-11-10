@@ -40,7 +40,7 @@ export function LostPatientOfferDetails({
 					htmlFor="offer-message-textarea"
 					className="block text-xs font-semibold text-[var(--ink)] mb-1.5"
 				>
-					Текст сообщения (соответствует 38-ФЗ и согласию пациента):
+					Текст сообщения (по согласию пациента):
 				</label>
 				<textarea
 					id="offer-message-textarea"

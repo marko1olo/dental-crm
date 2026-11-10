@@ -38,22 +38,77 @@ export async function ensureDefaultMessageTemplatesSeeded(
 		.where(eq(schema.messageTemplateCatalogs.organizationId, organizationId))
 		.limit(1);
 
-	if (existing.length > 0) {
-		return 0;
+	let insertedCount = 0;
+	if (existing.length === 0) {
+		for (const seed of DEFAULT_MESSAGE_TEMPLATES) {
+			await db.insert(schema.messageTemplateCatalogs).values({
+				organizationId,
+				title: seed.title,
+				channel: seed.channel,
+				intent: seed.intent,
+				templateText: seed.templateText,
+				variables: seed.variables as any,
+				isActive: true,
+			});
+			insertedCount++;
+		}
 	}
 
-	let insertedCount = 0;
-	for (const seed of DEFAULT_MESSAGE_TEMPLATES) {
-		await db.insert(schema.messageTemplateCatalogs).values({
-			organizationId,
-			title: seed.title,
-			channel: seed.channel,
-			intent: seed.intent,
-			templateText: seed.templateText,
-			variables: seed.variables as any,
-			isActive: true,
-		});
-		insertedCount++;
+	// SSOT: Каноническая таблица communication_templates для очередей и напоминаний
+	const existingCanonical = await db
+		.select({ id: schema.communicationTemplates.id })
+		.from(schema.communicationTemplates)
+		.where(eq(schema.communicationTemplates.organizationId, organizationId))
+		.limit(1);
+
+	if (existingCanonical.length === 0) {
+		const canonicalTemplates = [
+			{
+				organizationId,
+				title: "Подтверждение приёма (WhatsApp)",
+				channel: "whatsapp" as const,
+				intent: "appointment_confirmation" as const,
+				audienceRole: "patient",
+				body: "Здравствуйте, {patient}! Напоминаем о вашей записи в клинику {clinic} на {date} в {time}. Пожалуйста, подтвердите визит.",
+				variablesJson: JSON.stringify(["patient", "clinic", "date", "time"]),
+				isActive: true,
+			},
+			{
+				organizationId,
+				title: "Подтверждение приёма (Telegram)",
+				channel: "telegram" as const,
+				intent: "appointment_confirmation" as const,
+				audienceRole: "patient",
+				body: "Здравствуйте, {patient}! Напоминаем о вашей записи в клинику {clinic} на {date} в {time}. Ждём вас!",
+				variablesJson: JSON.stringify(["patient", "clinic", "date", "time"]),
+				isActive: true,
+			},
+			{
+				organizationId,
+				title: "Подтверждение приёма (SMS)",
+				channel: "sms" as const,
+				intent: "appointment_confirmation" as const,
+				audienceRole: "patient",
+				body: "{clinic}: запись на завтра {date} в {time}. Ждем вас! Тел: {clinicPhone}",
+				variablesJson: JSON.stringify(["clinic", "date", "time", "clinicPhone"]),
+				isActive: true,
+			},
+			{
+				organizationId,
+				title: "Рекомендации после приёма",
+				channel: "whatsapp" as const,
+				intent: "post_visit_instruction" as const,
+				audienceRole: "patient",
+				body: "Здравствуйте, {patient}! Благодарим за визит в {clinic}. Соблюдайте рекомендации лечащего врача. При возникновении вопросов звоните: {clinicPhone}.",
+				variablesJson: JSON.stringify(["patient", "clinic", "clinicPhone"]),
+				isActive: true,
+			},
+		];
+
+		for (const ct of canonicalTemplates) {
+			await db.insert(schema.communicationTemplates).values(ct);
+			insertedCount++;
+		}
 	}
 
 	return insertedCount;
@@ -263,11 +318,13 @@ async function resolveTemplateContextVariables(
 			context.patient_name = patient.fullName;
 			const parts = patient.fullName.trim().split(/\s+/);
 			context.patient_first_name = parts[1] || parts[0] || "";
-			if (!context.clinic_phone && patient.phone) {
+			if (patient.phone) {
 				context.patient_phone = patient.phone;
 			}
-			context.portal_link = `https://dente.clinic/portal/${patient.id.slice(0, 8)}`;
-			context.sbp_payment_link = `https://sbp.nspk.ru/pay?id=dente-${patient.id.slice(0, 8)}`;
+			const portalBase = (process.env.APP_PORTAL_URL || process.env.VITE_PORTAL_URL || "").replace(/\/$/, "");
+			context.portal_link = portalBase ? `${portalBase}/portal/${patient.id.slice(0, 8)}` : `/portal/${patient.id.slice(0, 8)}`;
+			const sbpBase = process.env.SBP_PAYMENT_URL || "https://sbp.nspk.ru/pay";
+			context.sbp_payment_link = `${sbpBase}?id=dente-${patient.id.slice(0, 8)}`;
 		}
 	}
 
@@ -341,7 +398,8 @@ async function resolveTemplateContextVariables(
 				context.chair_number = "Кабинет №1, Кресло №1";
 			}
 			if (!context.portal_link) {
-				context.portal_link = `https://dente.clinic/portal/c-${appointment.id.slice(0, 8)}`;
+				const portalBase = (process.env.APP_PORTAL_URL || process.env.VITE_PORTAL_URL || "").replace(/\/$/, "");
+				context.portal_link = portalBase ? `${portalBase}/portal/c-${appointment.id.slice(0, 8)}` : `/portal/c-${appointment.id.slice(0, 8)}`;
 			}
 		}
 	}

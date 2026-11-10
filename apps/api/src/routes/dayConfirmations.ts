@@ -28,6 +28,7 @@ import {
 } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
+import { decryptTelegramChatId } from "../utils/telegramChatRef.js";
 
 const querySchema = z.object({
 	/** Дата в виде ГГГГ-ММ-ДД. По умолчанию — завтра: обзвон делают накануне. */
@@ -540,13 +541,18 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 					)),
 			]);
 			for (const p of foundPatients) patientMap.set(p.id, p);
-			for (const l of foundTgLinks) { if (l.chatTransportRef) telegramChatMap.set(l.subjectId, l.chatTransportRef); }
+			for (const l of foundTgLinks) {
+				if (l.chatTransportRef) {
+					const decrypted = decryptTelegramChatId(l.chatTransportRef);
+					const raw = decrypted || (!l.chatTransportRef.startsWith("v1.") && !l.chatTransportRef.includes("aes256") ? l.chatTransportRef : null);
+					if (raw) telegramChatMap.set(l.subjectId, raw);
+				}
+			}
 		}
 
-		let dispatched = 0;
 		let skippedQuietHours = 0;
 		let skippedNoContact = 0;
-		const results: Array<{
+		const prefilteredResults: Array<{
 			appointmentId: string;
 			patientName: string;
 			channel: string;
@@ -555,6 +561,12 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		}> = [];
 
 		const outboxInserts: Array<typeof communicationOutbox.$inferInsert> = [];
+		const outboxCandidates: Array<{
+			appointmentId: string;
+			patientName: string;
+			channel: string;
+			dedupeKey: string;
+		}> = [];
 
 		for (const appt of targetAppointments) {
 			const pat = appt.patientId ? patientMap.get(appt.patientId) : null;
@@ -565,7 +577,7 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 
 			if (!phone && !telegram) {
 				skippedNoContact++;
-				results.push({
+				prefilteredResults.push({
 					appointmentId: appt.id,
 					patientName: patName,
 					channel: "none",
@@ -577,12 +589,12 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 
 			if (isQuietHours && !parsed.allowQuietHoursOverride) {
 				skippedQuietHours++;
-				results.push({
+				prefilteredResults.push({
 					appointmentId: appt.id,
 					patientName: patName,
 					channel: telegram ? "telegram" : "whatsapp",
 					status: "skipped_quiet_hours",
-					details: "Тихий час (21:00–08:00 по 38-ФЗ). Отправка отложена.",
+					details: "Тихий час (21:00–08:00). Отправка отложена до утра, чтобы не беспокоить пациента.",
 				});
 				continue;
 			}
@@ -597,10 +609,17 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			}
 
 			const dedupeKey = `reminder:${appt.id}:${date}:${preferredChannel}`;
-			const recipientAddress =
-				preferredChannel === "telegram"
-					? (telegram?.startsWith("@") ? telegram : `@${telegram}`)
-					: (phone || "");
+			let recipientAddress = phone || "";
+			if (preferredChannel === "telegram") {
+				if (telegram) {
+					if (/^-?\d+$/.test(telegram.trim())) {
+						recipientAddress = telegram.trim();
+					} else {
+						const cleanUsername = telegram.replace(/^@+/, "").trim();
+						recipientAddress = cleanUsername ? `@${cleanUsername}` : "";
+					}
+				}
+			}
 
 			const timeStr = appt.startsAt.toLocaleTimeString("ru-RU", {
 				timeZone,
@@ -626,21 +645,48 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				nextAttemptAt: new Date(),
 			});
 
-			dispatched++;
-			results.push({
+			outboxCandidates.push({
 				appointmentId: appt.id,
 				patientName: patName,
 				channel: preferredChannel,
-				status: "dispatched",
+				dedupeKey,
 			});
 		}
 
+		let insertedDedupeKeys = new Set<string>();
 		if (outboxInserts.length > 0) {
-			await db
+			const insertedRows = await db
 				.insert(communicationOutbox)
 				.values(outboxInserts)
-				.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] });
+				.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] })
+				.returning({ id: communicationOutbox.id, dedupeKey: communicationOutbox.dedupeKey });
+			insertedDedupeKeys = new Set(insertedRows.map((r) => r.dedupeKey));
 		}
+
+		let dispatched = 0;
+		let alreadyQueued = 0;
+		const queueResults = outboxCandidates.map((c) => {
+			if (insertedDedupeKeys.has(c.dedupeKey)) {
+				dispatched++;
+				return {
+					appointmentId: c.appointmentId,
+					patientName: c.patientName,
+					channel: c.channel,
+					status: "dispatched" as const,
+					details: "Успешно поставлено в очередь рассылки",
+				};
+			}
+			alreadyQueued++;
+			return {
+				appointmentId: c.appointmentId,
+				patientName: c.patientName,
+				channel: c.channel,
+				status: "already_queued" as const,
+				details: "Напоминание уже сформировано и находится в очереди",
+			};
+		});
+
+		const results = [...prefilteredResults, ...queueResults];
 
 		return reply.send({
 			success: true,
@@ -648,11 +694,12 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			timeZone,
 			totalAppointments: targetAppointments.length,
 			dispatched,
+			alreadyQueued,
 			skippedQuietHours,
 			skippedNoContact,
 			isQuietHours,
 			results,
-			message: `Пакетная обработка напоминаний завершена: отправлено/в очереди ${dispatched}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
+			message: `Пакетная обработка напоминаний завершена: новых в очереди ${dispatched}, ранее создано ${alreadyQueued}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
 		});
 	} catch (err: any) {
 		request.log.error(err, "Ошибка пакетной отправки напоминаний на завтра");

@@ -18,7 +18,7 @@ export async function fetchTemplateList(organizationId: string) {
 		.from(communicationTemplates)
 		.where(eq(communicationTemplates.organizationId, organizationId));
 
-	if (organizationId === DEMO_SHOWCASE_ORG_ID && rows.length === 0) {
+	if (rows.length === 0) {
 		try {
 			await db.insert(communicationTemplates).values([
 				{

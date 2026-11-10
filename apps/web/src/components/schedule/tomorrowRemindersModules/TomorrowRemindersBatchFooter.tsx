@@ -28,7 +28,7 @@ export function TomorrowRemindersBatchFooter({
 					<div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
 						<Moon className="w-4 h-4 shrink-0" />
 						<span>
-							Сейчас тихие часы (21:00–09:00). Массовая отправка ограничена.
+							Сейчас тихие часы (21:00–08:00). Массовая отправка ограничена.
 						</span>
 					</div>
 				)}

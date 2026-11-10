@@ -64,9 +64,9 @@ export function TomorrowReminderCard({
 					<button
 						type="button"
 						onClick={() => onSendWhatsApp(reminder)}
-						className="min-h-[36px] px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+						className="min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
-						<MessageCircle className="w-3.5 h-3.5" />
+						<MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
 						<span>WhatsApp</span>
 					</button>
 				)}
@@ -74,9 +74,9 @@ export function TomorrowReminderCard({
 					<button
 						type="button"
 						onClick={() => onSendTelegram(reminder)}
-						className="min-h-[36px] px-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+						className="min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
-						<Send className="w-3.5 h-3.5" />
+						<Send className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
 						<span>Telegram</span>
 					</button>
 				)}
@@ -84,9 +84,9 @@ export function TomorrowReminderCard({
 					<button
 						type="button"
 						onClick={() => onSendSms(reminder)}
-						className="min-h-[36px] px-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer"
+						className="min-h-[36px] px-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
-						SMS
+						<span>SMS</span>
 					</button>
 				)}
 			</div>

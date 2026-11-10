@@ -15,6 +15,16 @@ export function WhatsAppEmptyStatePresets({
 	quickTemplates,
 	onApplyTemplate,
 }: WhatsAppEmptyStatePresetsProps) {
+	const reminderTemplate =
+		quickTemplates.find((t) => t.id === "appt_reminder") || quickTemplates[0];
+	const surgeryTemplate =
+		quickTemplates.find((t) => t.id === "surgery_memo") ||
+		quickTemplates.find((t) => t.id === "treatment_plan");
+	const confirmTemplate =
+		quickTemplates.find((t) => t.id === "appt_confirm") ||
+		quickTemplates.find((t) => t.id === "appt_confirmed") ||
+		quickTemplates[0];
+
 	return (
 		<div className="my-auto flex flex-col items-center justify-center text-center p-4 sm:p-6 max-w-md mx-auto w-full animate-fade-in">
 			<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-3 shadow-inner">
@@ -30,7 +40,7 @@ export function WhatsAppEmptyStatePresets({
 				{/* Preset 1: Напоминание о приёме */}
 				<button
 					type="button"
-					onClick={() => onApplyTemplate(quickTemplates[0])}
+					onClick={() => onApplyTemplate(reminderTemplate)}
 					className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-50 dark:hover:bg-teal-950/40 text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line,#334155)] hover:border-teal-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
 				>
 					<span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:bg-teal-500/20">
@@ -47,7 +57,7 @@ export function WhatsAppEmptyStatePresets({
 				{/* Preset 2: Рекомендации после удаления */}
 				<button
 					type="button"
-					onClick={() => onApplyTemplate(quickTemplates[1])}
+					onClick={() => onApplyTemplate(surgeryTemplate)}
 					className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[var(--ink)] hover:text-amber-700 dark:hover:text-amber-300 border border-[var(--line,#334155)] hover:border-amber-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
 				>
 					<span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20">
@@ -64,7 +74,7 @@ export function WhatsAppEmptyStatePresets({
 				{/* Preset 3: Подтверждение визита */}
 				<button
 					type="button"
-					onClick={() => onApplyTemplate(quickTemplates[2])}
+					onClick={() => onApplyTemplate(confirmTemplate)}
 					className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[var(--ink)] hover:text-emerald-700 dark:hover:text-emerald-300 border border-[var(--line,#334155)] hover:border-emerald-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
 				>
 					<span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20">
