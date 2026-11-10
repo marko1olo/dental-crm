@@ -199,6 +199,10 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 			};
 		}
 
+		const rawUa = request.headers["user-agent"];
+		const userAgent = (Array.isArray(rawUa) ? rawUa[0] : rawUa) || "DENTE Clinic Workstation";
+		const ipAddress = request.ip || "127.0.0.1";
+
 		return {
 			staffId: user.id,
 			fullName: user.fullName,
@@ -207,8 +211,8 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 				? [
 						{
 							sessionId: user.currentSessionId,
-							ipAddress: "127.0.0.1",
-							userAgent: "DENTE Desktop Client (Windows 11 x64)",
+							ipAddress,
+							userAgent,
 							status: "online",
 							connectedAt: new Date().toISOString(),
 							lastActivityAt: new Date().toISOString(),

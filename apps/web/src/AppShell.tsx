@@ -6,10 +6,10 @@ import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLau
 import { DirectWarehouseLauncher } from "./components/inventory/DirectWarehouseLauncher";
 import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/WarehouseMdlpLaunchers";
 import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher";
+import { DirectTomorrowRemindersLauncher } from "./components/schedule/DirectTomorrowRemindersLauncher";
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { DirectDocumentsLauncher } from "./components/documents/DirectDocumentsLauncher";
 import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
-import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
@@ -49,6 +49,7 @@ import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
 import { ThemeBackground } from "./components/theme";
 import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
+import { Omnibar } from "./components/Omnibar";
 import "./theme.css";
 
 const DentalWorkspace = lazy(() =>
@@ -131,6 +132,7 @@ function isStandaloneActive(): boolean {
 		h.includes("ztl") ||
 		s.includes("lab") ||
 		s.includes("ztl") ||
+		s.includes("waitlist") ||
 		h.includes("waitlist") ||
 		h.includes("visit_standalone") ||
 		s.includes("visit_standalone") ||
@@ -267,8 +269,6 @@ function isStandaloneActive(): boolean {
 		h.includes("prices") ||
 		s.includes("services-catalog") ||
 		h.includes("services-catalog") ||
-		s.includes("clinic-setup") ||
-		h.includes("clinic-setup") ||
 		s.includes("endo") ||
 		h.includes("endo") ||
 		s.includes("endodontics") ||
@@ -277,8 +277,28 @@ function isStandaloneActive(): boolean {
 		h.includes("root-canals") ||
 		s.includes("rootcanal") ||
 		h.includes("rootcanal") ||
-		s.includes("clinic-requisites") ||
-		h.includes("clinic-requisites")
+		s.includes("insurance") ||
+		h.includes("insurance") ||
+		s.includes("dms") ||
+		h.includes("dms") ||
+		s.includes("waitlist-matches") ||
+		h.includes("waitlist-matches") ||
+		s.includes("waitlist_matches") ||
+		h.includes("waitlist_matches") ||
+		s.includes("tomorrow-reminders") ||
+		h.includes("tomorrow-reminders") ||
+		s.includes("tomorrow_reminders") ||
+		h.includes("tomorrow_reminders") ||
+		s.includes("reminders") ||
+		h.includes("reminders") ||
+		s.includes("omnichannel") ||
+		h.includes("omnichannel") ||
+		s.includes("omnichannel_hub") ||
+		h.includes("omnichannel_hub") ||
+		s.includes("messaging_hub") ||
+		h.includes("messaging_hub") ||
+		s.includes("communications") ||
+		h.includes("communications")
 	);
 }
 
@@ -330,10 +350,10 @@ export function AppShell() {
 			<DirectWarehouseLauncher />
 			<DirectWarehouseMdlpLauncher />
 			<DirectOmnichannelStandaloneLauncher />
+			<DirectTomorrowRemindersLauncher />
 			<DirectPrescriptionLauncher />
 			<DirectSanpinLauncher />
 			<DirectDocumentsLauncher />
-			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
 			<DirectRvgCaptureLauncher />
 			<DirectCashboxLauncher />
@@ -372,6 +392,7 @@ export function AppShell() {
 			)}
 			<GlobalToast />
 			<CopilotGlobalHost />
+			<Omnibar />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
 			</Suspense>

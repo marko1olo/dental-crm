@@ -277,7 +277,10 @@
 }
 
 /* Red Team CSS Token Invariants */
-.settings-studio-modal-dark {
+.settings-studio-modal-dark,
+[data-theme="dark"] .settings-studio-backdrop,
+html.dark .settings-studio-backdrop,
+[data-theme="night"] .settings-studio-backdrop {
 	--paper: #0f172a;
 	--paper-soft: #1e293b;
 	--paper-strong: #334155;

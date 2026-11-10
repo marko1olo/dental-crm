@@ -18,13 +18,14 @@ export const StaffSecurityStatusAndSessions: React.FC<Props> = ({ staffMember, o
 		const nextState = !isActive;
 		setIsToggling(true);
 		try {
-			const res = await fetch(`/api/settings/staff/${staffMember.id}`, {
+			const res = await fetch(`/api/staff/${staffMember.id}/profile`, {
 				method: "PUT",
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ active: nextState }),
 			});
 			if (!res.ok) {
-				showToast("Не удалось изменить статус сотрудника", "error");
+				const errJson = (await res.json().catch(() => ({}))) as { message?: string };
+				showToast(errJson.message || "Не удалось изменить статус сотрудника", "error");
 				return;
 			}
 			setIsActive(nextState);
@@ -40,8 +41,19 @@ export const StaffSecurityStatusAndSessions: React.FC<Props> = ({ staffMember, o
 	const handleTerminateSessions = async () => {
 		setIsLoggingOut(true);
 		try {
+			const res = await fetch(`/api/staff/${staffMember.id}/terminate-session`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			});
+			if (!res.ok) {
+				const errJson = (await res.json().catch(() => ({}))) as { message?: string };
+				showToast(errJson.message || "Не удалось завершить сессию сотрудника", "error");
+				return;
+			}
 			showToast("Все активные сессии сотрудника завершены", "success");
 			onSaved?.();
+		} catch {
+			showToast("Ошибка связи с сервером при сбросе сессий", "error");
 		} finally {
 			setIsLoggingOut(false);
 		}

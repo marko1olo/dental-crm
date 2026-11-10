@@ -360,7 +360,39 @@ export const useOnboardingStore = create<OnboardingState>()(
 					// 1. Seed pricelist if not already seeded
 					await seedStarterPricelist();
 
-					// 2. Persist workspace profile to PostgreSQL via /api/workspace/profile
+					// 2. Commit full onboarding payload to PostgreSQL via /api/onboarding/complete
+					try {
+						await fetch("/api/onboarding/complete", {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({
+								"Content-Type": "application/json",
+							}),
+							body: JSON.stringify({
+								profile: {
+									clinicName: profile.clinicName,
+									phone: profile.phone,
+									timezone: profile.timezone,
+									mode: profile.mode,
+								},
+								chairs: chairs.map((c) => ({
+									name: c.name,
+									specialty: c.specialty,
+									isDefault: c.isDefault,
+								})),
+								schedule: {
+									workdayStart: schedule.workdayStart,
+									workdayEnd: schedule.workdayEnd,
+									workingDays: schedule.workingDays,
+									defaultVisitMinutes: Number(schedule.defaultVisitMinutes) || 30,
+								},
+								preset: profile.mode,
+							}),
+						});
+					} catch (onboardingApiErr) {
+						logger.warn("Non-blocking onboarding complete API sync notice:", onboardingApiErr);
+					}
+
+					// 3. Persist workspace profile flags
 					const isSolo = profile.mode === "solo_doctor";
 					const isOneChair = profile.mode === "one_chair";
 
@@ -370,55 +402,62 @@ export const useOnboardingStore = create<OnboardingState>()(
 						hasMultipleChairs: chairs.length > 1,
 						hasAssistants: !isSolo,
 						hasDentalLab: !isSolo && !isOneChair,
+						hasInsuranceCoPay: !isSolo,
 						hasPayrollModule: !isSolo,
 						hasMarketingModule: !isSolo,
 						hasAnalyticsModule: !isSolo,
 						hasInventoryModule: true,
 					});
 
-					// 3. Save clinic profile details if possible
-					try {
-						await fetch("/api/settings/clinic/profile", {
-							method: "POST",
-							headers: denteAdminSecretRequestHeaders({
-								"Content-Type": "application/json",
-							}),
-							body: JSON.stringify({
-								clinicName: profile.clinicName,
-								phone: profile.phone,
-								timezone: profile.timezone,
+					// 4. Save clinic profile details into PostgreSQL 18
+					const profileRes = await fetch("/api/settings/clinic/profile", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							clinicName: profile.clinicName,
+							phone: profile.phone,
+							timezone: profile.timezone,
+							defaultVisitMinutes: Number(schedule.defaultVisitMinutes) || 30,
+							scheduleDefaults: {
 								workdayStart: schedule.workdayStart,
 								workdayEnd: schedule.workdayEnd,
 								workingDays: schedule.workingDays,
-								defaultVisitMinutes: String(schedule.defaultVisitMinutes),
-							}),
-						});
-					} catch (profileErr) {
-						logger.warn("Non-blocking profile endpoint sync notice:", profileErr);
+								appointmentBufferMinutes: Number(schedule.appointmentBufferMinutes) || 5,
+							},
+						}),
+					});
+
+					if (!profileRes.ok) {
+						const errBody = await profileRes.text();
+						throw new Error(`Ошибка сохранения профиля клиники (HTTP ${profileRes.status}): ${errBody.slice(0, 160)}`);
 					}
 
-					// 4. Mark completed
+					// 5. Mark completed
 					const nowIso = new Date().toISOString();
 					set({
 						isCompleted: true,
 						isSkipped: false,
 						completedAt: nowIso,
 						isSubmitting: false,
+						submitError: null,
 					});
 
 					showToast("Клиника успешно запущена! Добро пожаловать в DENTE CRM.", "success", 4000);
 					return true;
 				} catch (error) {
+					const errorMsg = error instanceof Error ? error.message : "Не удалось сохранить настройки";
 					logger.error("Onboarding finish error:", error);
-					// Doctor autonomy: never block on failures, save locally
+					// Doctor autonomy: never block on failures, save locally with explicit error toast
 					set({
 						isCompleted: true,
 						isSkipped: false,
 						completedAt: new Date().toISOString(),
 						isSubmitting: false,
-						submitError: null,
+						submitError: errorMsg,
 					});
-					showToast("Настройки сохранены локально. Приём готов к работе!", "success", 4000);
+					showToast(`Настройки сохранены локально (${errorMsg})`, "info", 5000);
 					return true;
 				}
 			},

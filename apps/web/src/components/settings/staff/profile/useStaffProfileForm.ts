@@ -41,43 +41,46 @@ export function useStaffProfileForm(
 		}
 		setIsSaving(true);
 		try {
+			const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 			const payload: Partial<StaffProfileExtended> = {
 				fullName: fullName.trim(),
 				role,
 				phone: phone.trim() || null,
 				email: email.trim() || null,
 				color,
-				specialties: specialties as StaffProfileExtended["specialties"],
+				specialties: (specialties?.length ? specialties : ["universal"]) as StaffProfileExtended["specialties"],
 				snils: snils.trim() || null,
 				inn: inn.trim() || null,
 				medicalBookNumber: medicalBookNumber.trim() || null,
-				medicalBookCheckupDate: medicalBookCheckupDate || null,
-				minzdravAccreditationDate: minzdravAccreditationDate || null,
+				medicalBookCheckupDate: medicalBookCheckupDate.trim() || null,
+				minzdravAccreditationDate: minzdravAccreditationDate.trim() || null,
 				minzdravAccreditationSpecialty: minzdravAccreditationSpecialty.trim() || null,
 				clinicalNotes: clinicalNotes.trim() || null,
 				managementNotes: managementNotes.trim() || null,
-				assignedBranches,
-				assignedChairIds,
+				assignedBranches: assignedBranches.filter((id) => uuidPattern.test(id)),
+				assignedChairIds: assignedChairIds.filter((id) => uuidPattern.test(id)),
 				priceCategory,
-				baseSalaryRub,
-				commissionPct,
-				materialCostDeductionPct,
-				labCostDeductionPct,
+				baseSalaryRub: Number(baseSalaryRub) || 0,
+				commissionPct: Math.min(100, Math.max(0, Number(commissionPct) || 0)),
+				materialCostDeductionPct: Math.min(100, Math.max(0, Number(materialCostDeductionPct) || 0)),
+				labCostDeductionPct: Math.min(100, Math.max(0, Number(labCostDeductionPct) || 0)),
 				canSignMedicalRecords,
 				canManageMoney,
 				canManageImports,
 			};
-			const res = await fetch(`/api/settings/staff/${staffMember.id}`, {
+			const res = await fetch(`/api/staff/${staffMember.id}/profile`, {
 				method: "PUT",
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				showToast("Не удалось сохранить профиль", "error");
+				const errorJson = (await res.json().catch(() => ({}))) as { message?: string };
+				showToast(errorJson.message || "Не удалось сохранить профиль", "error");
 				return;
 			}
+			const savedProfile = (await res.json()) as StaffProfileExtended;
 			showToast("Карточка сотрудника сохранена", "success");
-			onSaved({ ...staffMember, ...payload });
+			onSaved(savedProfile || { ...staffMember, ...payload });
 			onClose();
 		} catch {
 			showToast("Ошибка связи с сервером", "error");
