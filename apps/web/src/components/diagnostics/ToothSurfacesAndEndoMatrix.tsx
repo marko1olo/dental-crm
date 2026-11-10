@@ -1,6 +1,6 @@
 import React from "react";
 import type { ToothData } from "../odontogram/ToothChart";
-import { ToothEndoCanalsSection } from "./ToothEndoCanalsSection";
+import { ChairsideEndoQuickBar } from "../endo/ChairsideEndoQuickBar";
 import { ToothSurfacesHeader } from "./surfaces/ToothSurfacesHeader";
 import { ToothStateChipsRow } from "./surfaces/ToothStateChipsRow";
 import { ToothSurfacesCrossDiagram } from "./surfaces/ToothSurfacesCrossDiagram";
@@ -24,8 +24,6 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 }) => {
 	const {
 		currentSurfaces,
-		showEndoTable,
-		setShowEndoTable,
 		iropzCalculated,
 		handleToggleSurface,
 		handleSetSurfaces,
@@ -60,13 +58,12 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 				onMaterialChange={handleMaterialChange}
 			/>
 
-			<ToothEndoCanalsSection
-				toothNumber={toothNumber}
-				toothData={toothData}
-				showEndoTable={showEndoTable}
-				onToggleShowEndoTable={() => setShowEndoTable((prev) => !prev)}
-				onUpdateTooth={onUpdateTooth}
-				onInsertToProtocol={onInsertToProtocol}
+			<ChairsideEndoQuickBar
+				activeTooth={toothNumber}
+				toothState={toothData?.state}
+				onInsertToDiary={(soapText) => {
+					onInsertToProtocol?.(soapText);
+				}}
 			/>
 		</div>
 	);

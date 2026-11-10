@@ -2476,6 +2476,20 @@
 - **Суть бага:** В разметке кнопки «Каналы запломбированы в 1 клик (норма)» и в тостах присутствовал символ `✓` (Unicode 0x2713), который попадал под регулярное выражение запрета мультяшных эмодзи `emojiRegex`, приводя к падению теста `Zero cartoon emojis in modal markup`.
 - **Статус исправления:** [ИСПРАВЛЕНО] Символы эмодзи и дингбаты полностью выкошены из разметки и текстов. Вся визуальная индикация заменена на строгие векторные иконки Lucide (`Check`, `SlidersHorizontal`, `FileText`, `Printer`, `Copy`, `Plus`, `Trash2`). Ровно 1 Primary CTA кнопка `#0d9488` («Зафиксировать протокол каналов»). Проверено инструментально через `renderToString` и личный мультимодальный осмотр 4-State скриншотов.
 
+### [END-10] [SEV-2] [ИСПРАВЛЕНО] Ликвидация дублирующего кластера diagnostics/endo и защита UUID в журнале аудита и истории зуба
+- **Файлы:**
+  - [`apps/api/src/security/medicalAuditTrail.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/security/medicalAuditTrail.ts)
+  - [`apps/api/src/routes/odontogram/endoRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/endoRoutes.ts)
+  - [`apps/web/src/components/diagnostics/ToothSurfacesAndEndoMatrix.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/ToothSurfacesAndEndoMatrix.tsx)
+  - [`apps/web/src/components/diagnostics/__tests__/ToothContextDrawer.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/__tests__/ToothContextDrawer.test.tsx)
+- **Суть бага:**
+  1. При не-UUID идентификаторе актора (например, "marketer-1" или "admin") вызов `insert(clinicalAuditLogs)` и `insert(toothStateHistory)` вызывал ошибку PostgreSQL 22P02 (`invalid input syntax for type uuid`).
+  2. В `components/diagnostics/` параллельно существовал устаревший кластер из 12 файлов (`ToothEndoCanalsSection.tsx` и папка `endo/`), где присутствовало захардкоженное срезание текста `{obt.slice(0, 18)}...`, сырое многоточие `"Развернуть..."`, иконка `DentalForm043` и отсутствовала интеграция с апекслокатором.
+- **Статус исправления:** [ИСПРАВЛЕНО]
+  1. В `medicalAuditTrail.ts` и `endoRoutes.ts` внедрена валидация идентификатора актора через `UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` — если `actorUserId` не является валидным UUID, в поля `actor_user_id`, `user_id` и `changed_by_user_id` передается `null`.
+  2. В `ToothSurfacesAndEndoMatrix.tsx` устаревший `ToothEndoCanalsSection` заменен на канонический `ChairsideEndoQuickBar` с апекслокатором «Все 0.0 (Apex)», протоколами «Пульпит (1 визит)», «Периодонтит (AH Plus)», «Ca(OH)2», «Норма» и 1-кликовым переносом в дневник приёма.
+  3. Устаревший дублирующий кластер из 12 файлов полностью удален из репозитория через `git rm`. Тесты Fastify (`endoRoutesInquisition.test.ts`), Vitest (`chairsideEndoQuickBar.test.tsx`, `ToothContextDrawer.test.tsx`, `endodonticsSSOTSuite.test.tsx`) и 5 машинных гейтов проходят со 100% успехом (Exit Code 0). Проверены 4-State visual proofs (`01_endo_studio_pc_light_1440x900.png`, `02_endo_studio_pc_dark_1440x900.png`, `03_endo_studio_mobile_light_390x844.png`, `04_endo_studio_mobile_dark_390x844.png`).
+
 
 ## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN) И МЕДИА-АРХИВ
 

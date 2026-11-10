@@ -85,12 +85,11 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("endo-presets-bar"), "Endo presets bar should render when endo table is open");
-		assert.ok(html.includes("endo-preset-protaper"), "Express ProTaper preset button should be present");
-		assert.ok(html.includes("endo-preset-calasept"), "Calasept Ca(OH)2 preset button should be present");
-		assert.ok(html.includes("endo-preset-revision"), "Retreatment/Revision preset button should be present");
+		assert.ok(html.includes("chairside-endo-quickbar"), "Chairside endo quickbar should render");
+		assert.ok(html.includes("btn-quick-pulpitis-1visit") || html.includes("Пульпит (1 визит)"), "Express pulpitis preset button should be present");
+		assert.ok(html.includes("btn-quick-caoh2") || html.includes("Ca(OH)2"), "Calasept Ca(OH)2 preset button should be present");
 		assert.ok(html.includes("dente-surface-quick-combo-btn"), "Quick combo buttons (MOD/MO/OD) should be present");
-		assert.ok(html.includes("Вставить протокол эндодонтии в медкарту") || html.includes("Вставить протокол эндодонтии в карту 043/у"), "Endo protocol export action should be present");
+		assert.ok(html.includes("btn-endo-transfer-to-diary") || html.includes("Перенести в дневник"), "Endo protocol transfer to diary action should be present");
 	});
 
 	it("AnesthesiaQuickBar offers 1-click chairside drugs without dose-calculator simulations", () => {
@@ -232,10 +231,10 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("endo-preset-obturation"), "Permanent obturation preset button should render");
-		assert.ok(html.includes("Обтурация до апекса (AH Plus)"), "Permanent obturation label should be present");
-		assert.ok(html.includes("btn-endo-anatomical-lengths"), "Anatomical length button should render");
-		assert.ok(html.includes("Авто-длина по FDI"), "Anatomical length label should be present");
+		assert.ok(html.includes("chairside-endo-quickbar"), "Chairside endo quickbar should render");
+		assert.ok(html.includes("btn-quick-periodontitis-ahplus") || html.includes("Периодонтит (AH Plus)"), "Permanent obturation label should be present");
+		assert.ok(html.includes("btn-quick-norm") || html.includes("Норма"), "Anatomical norm button should render");
+		assert.ok(html.includes("Apex 0.0"), "Apex locator reading should be present");
 	});
 });
 

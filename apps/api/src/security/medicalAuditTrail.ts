@@ -126,6 +126,8 @@ export async function recordMedicalRecordAccessAudit(
 			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 		const validPatientUuid =
 			input.patientId && UUID_SHAPE.test(input.patientId) ? input.patientId : null;
+		const validActorUuid =
+			input.actorUserId && UUID_SHAPE.test(input.actorUserId) ? input.actorUserId : null;
 
 		await db.transaction(async (tx) => {
 			await tx.execute(
@@ -136,8 +138,8 @@ export async function recordMedicalRecordAccessAudit(
 				id: auditId,
 				organizationId: input.organizationId,
 				patientId: validPatientUuid,
-				actorUserId: input.actorUserId ?? null,
-				userId: input.actorUserId ?? null,
+				actorUserId: validActorUuid,
+				userId: validActorUuid,
 				actorLogin: input.actorLogin ?? null,
 				eventType: eventType,
 				action: eventAction,
@@ -156,11 +158,11 @@ export async function recordMedicalRecordAccessAudit(
 			});
 			// Проверяем существование пользователя в таблице users для соблюдения FK audit_events_actor_user_id_users_id_fk
 			let validActorUserId: string | null = null;
-			if (input.actorUserId) {
+			if (validActorUuid) {
 				const [existingUser] = await tx
 					.select({ id: users.id })
 					.from(users)
-					.where(eq(users.id, input.actorUserId))
+					.where(eq(users.id, validActorUuid))
 					.limit(1);
 				if (existingUser) {
 					validActorUserId = existingUser.id;

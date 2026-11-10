@@ -408,7 +408,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					previousSurfaces: existing?.surfaces ?? null,
 					newSurfaces: targetSurfaces,
 					canalMeasurements: sanitizedCanals,
-					changedByUserId: actorUserId,
+					changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
 					reason: endoReason,
 					changedAt: now,
 				});
