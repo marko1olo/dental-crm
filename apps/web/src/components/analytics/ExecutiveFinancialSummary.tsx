@@ -93,10 +93,14 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 	const fetchSummary = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/reports/financial-summary?period=${p}`);
+			let res = await fetch(`/api/reports/financial-summary?period=${p}`);
+			if (!res.ok) {
+				res = await fetch(`/api/v1/manager/reports/financial?period=${p}`);
+			}
 			if (res.ok) {
 				const json = await res.json();
-				setSummary(json);
+				const payload = (json && typeof json === "object" && "data" in json && json.data) ? json.data : json;
+				setSummary(payload);
 				setLoading(false);
 				return;
 			}

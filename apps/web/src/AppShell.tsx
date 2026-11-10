@@ -22,6 +22,7 @@ import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitl
 import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
 import { DirectLeadsStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/LeadsStandaloneLauncher";
 import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
+import { DirectReportsLauncher } from "./components/appLayout/modalsContainerModules/standalone/ReportsStandaloneLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
@@ -231,6 +232,9 @@ function isStandaloneActive(): boolean {
 		h.includes("executive-studio") ||
 		s.includes("analytics=direct") ||
 		s.includes("dashboard=direct") ||
+		s.includes("analytics=1") ||
+		h === "#analytics" ||
+		h.startsWith("#analytics?") ||
 		s.includes("reports") ||
 		h.includes("reports") ||
 		s.includes("doctor_payroll") ||
@@ -255,8 +259,8 @@ function isStandaloneActive(): boolean {
 		s.includes("smile-design") ||
 		h.includes("crm-leads") ||
 		h.includes("kanban") ||
-		s.includes("settings") ||
-		h.includes("settings") ||
+		s.includes("standalone=settings") ||
+		h.includes("settings-studio") ||
 		s.includes("pricelist") ||
 		h.includes("pricelist") ||
 		s.includes("prices") ||
@@ -340,6 +344,7 @@ export function AppShell() {
 			<DirectMarketingLauncher />
 			<DirectLeadsStandaloneLauncher />
 			<DirectAnalyticsLauncher />
+			<DirectReportsLauncher />
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
 			<DirectEmrLauncher />

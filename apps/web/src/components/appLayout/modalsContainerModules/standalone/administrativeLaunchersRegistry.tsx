@@ -19,7 +19,6 @@ import { DirectCashboxLauncher } from "../../../cashbox/DirectCashboxLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 import { DirectSanpinLauncher } from "../../../sanpin/DirectSanpinLauncher";
 import { DirectSterilizationLauncher } from "../../../sanpin/DirectSterilizationLauncher";
-import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { PatientOmnichannelHubModal } from "../../../messaging/PatientOmnichannelHubModal";
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
@@ -237,7 +236,12 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		criteria: {
 			tokens: ["copilot", "ai=1", "ai-assistant", "chairside-copilot", "copilot_standalone", "copilot-standalone", "copilot_drawer", "copilot-drawer", "copilot_proof", "copilot-proof"],
 		},
-		render: () => <DirectCopilotLauncher />,
+		render: () => {
+			if (typeof window !== "undefined" && (window as any).__denteCopilot) {
+				(window as any).__denteCopilot.open();
+			}
+			return null;
+		},
 	},
 	// 13. Омниканальный центр сообщений
 	{
@@ -322,9 +326,9 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		id: "analytics-studio",
 		title: "Аналитика и дашборд руководителя",
 		criteria: {
-			exactHashes: ["#analytics", "#dashboard", "#executive-studio"],
-			hashIncludes: ["executive-studio"],
-			searchIncludes: ["executive_studio", "analytics=direct", "dashboard=direct"],
+			exactHashes: ["#executive-studio", "#clinic-analytics-studio"],
+			hashIncludes: ["executive-studio", "clinic-analytics-studio"],
+			searchIncludes: ["executive_studio=1", "analytics=studio", "dashboard=studio"],
 		},
 		render: () => <DirectAnalyticsLauncher />,
 	},

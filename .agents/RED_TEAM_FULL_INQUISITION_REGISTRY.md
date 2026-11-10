@@ -1356,6 +1356,64 @@
 - **Верификация и доказательства:**
   - `npm run check:dynamic-imports` -> 0 битых импортов.
 
+### [ANL-13] [ИСПРАВЛЕНО] [SEV-1] Ликвидация дублирующей ветки FinancialAnalyticsModal (16 файлов) и консолидация на каноническом SSOT ManagerialPnlDashboardModal
+- **Файлы:**
+  - `apps/web/src/components/analytics/FinancialAnalyticsModal.tsx` (удален via `git rm`)
+  - `apps/web/src/components/analytics/financialModalModules/*` (11 файлов удалены via `git rm`)
+  - `apps/web/src/components/analytics/financialAnalytics.css` (удален via `git rm`)
+  - `apps/web/src/components/analytics/__tests__/financialCollapsiblePanels.test.ts` (удален via `git rm`)
+  - [`apps/web/src/components/finance/pnl/ManagerialPnlDashboardModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/pnl/ManagerialPnlDashboardModal.tsx) (канонический SSOT)
+  - [`apps/web/src/components/analytics/ExecutiveDashboard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveDashboard.tsx)
+  - [`apps/web/src/pages/analyticsDashboard/AnalyticsSubDashboards.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/analyticsDashboard/AnalyticsSubDashboards.tsx)
+  - [`apps/web/src/components/analytics/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/index.ts)
+- **Суть бага:** Существование параллельной ветки `FinancialAnalyticsModal.tsx` с фейковыми умножителями (`x1.15`, `x0.88`), обращением к мертвому 404 эндпоинту `/api/analytics/executive` и дублированием управленческого P&L. Нарушение Мандатов 8bf (Единый SSOT и Истребление Сирот) и 8bd.
+- **Инженерное решение (Ликвидация брака):**
+  1. Физически удалены через `git rm` все 16 файлов дублирующей ветки и сопутствующих невалидных тестов.
+  2. Все потребители (`ExecutiveDashboard`, `AnalyticsSubDashboards`, `components/analytics/index.ts`) переведены на единый канонический `ManagerialPnlDashboardModal.tsx`, построенный на сертифицированном движке `managerialPnlEngine.ts` и Fastify-эндпоинтах `/api/v1/manager/reports/financial` / `/api/reports/financial-summary`.
+  3. В футер канонического P&L внедрена защита врачебной тайны (152-ФЗ / 323-ФЗ): финансовый учет оперирует строго обезличенными агрегатами.
+- **Верификация и доказательства:**
+  - Тесты `managerialPnlEngine.test.ts` (5/5 PASS), `managerialPnlDecomposition.test.ts` (5/5 PASS), `analyticsSSOTSuite.test.tsx` (26/26 PASS).
+  - 4-State Proof скриншоты канонического P&L в `docs/proofs/analytics/`:
+    * ☀️ PC Light (1440x900): `01_managerial_pnl_pc_light_1440x900.png` (131.8 KB)
+    * 🌙 PC Dark (1440x900): `02_managerial_pnl_pc_dark_1440x900.png` (121.0 KB)
+    * 📱 Mobile Light (390x844): `03_managerial_pnl_mobile_light_390x844.png` (168.7 KB)
+    * 🌙 Mobile Dark (390x844): `04_managerial_pnl_mobile_dark_390x844.png` (147.5 KB)
+
+### [ANL-14] [ИСПРАВЛЕНО] [SEV-1] Устранение сбоя монтирования и BootErrorBoundary при автономном открытии #reports / #analytics (DirectReportsLauncher & Optional AppLogic)
+- **Файлы:**
+  - [`apps/web/src/AppShell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/AppShell.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/ReportsStandaloneLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/ReportsStandaloneLauncher.tsx)
+  - [`apps/web/src/components/appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx)
+  - [`apps/web/src/pages/analyticsDashboard/useAnalyticsDashboardData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/analyticsDashboard/useAnalyticsDashboardData.ts)
+- **Суть бага:**
+  1. При прямом переходе на `#reports` / `?reports=1` флаг `isStandaloneActive()` блокировал рендер `App.tsx`, но в `AppShell.tsx` отсутствовал `DirectReportsLauncher`, из-за чего экран был белым листом.
+  2. Запись `analytics-studio` в `administrativeLaunchersRegistry.tsx` ошибочно перехватывала хэши `#analytics` и `#dashboard`, возвращая `DirectAnalyticsLauncher` (который предназначен только для модалки `#executive-studio` и возвращал `null`), блокируя переход в аналитику.
+  3. `useAnalyticsDashboardData` использовал жесткий `useAppLogicContext()`, выбрасывавший фатальное исключение в `BootErrorBoundary` при рендере вне провайдера.
+- **Инженерное решение (Ликвидация брака):**
+  1. Создан и смонтирован в `AppShell.tsx` автономный компонент `DirectReportsLauncher`, чисто поднимающий `AnalyticsDashboardView` при автономных адресах (`#reports`, `?reports=1`, `?analytics=1`, `?analytics=direct`).
+  2. В `administrativeLaunchersRegistry.tsx` исключен ложный перехват `#analytics` и `#dashboard` в пользу канонического `ManagementViewRouter`.
+  3. `useAnalyticsDashboardData` переведен на безопасный `useOptionalAppLogicContext()`, обеспечивающий 100% гидратацию в автономном и демонстрационном режимах.
+- **Верификация и доказательства:**
+  - 4-State Proof скриншоты живого гидратированного экрана аналитики и отчетов руководителя:
+    * ☀️ PC Light (1440x900): `01_executive_dashboard_pc_light_1440x900.png` (125.3 KB)
+    * 🌙 PC Dark (1440x900): `02_executive_dashboard_pc_dark_1440x900.png` (111.6 KB)
+    * 📱 Mobile Light (390x844): `03_executive_dashboard_mobile_light_390x844.png` (211.7 KB)
+    * 🌙 Mobile Dark (390x844): `04_executive_dashboard_mobile_dark_390x844.png` (175.3 KB)
+
+### [ANL-15] [ИСПРАВЛЕНО] [SEV-2] Учет себестоимости материалов по списаниям (inventoryTransactions) в маржинальности врачей (Net Revenue)
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts)
+  - [`apps/api/src/routes/reports/revenueAndDebtReportsRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/reports/revenueAndDebtReportsRoutes.ts)
+  - [`apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx)
+- **Суть бага:** В расчете маржинальности врача (`clinicMarginRub`) вычитались только ЗТЛ и ФОТ врача, но игнорировалась себестоимость фактически списанных стоматологических материалов, что приводило к завышению маржи врача на 15–30% по сравнению с P&L отчетом.
+- **Инженерное решение (Ликвидация брака):**
+  1. В `utilizationRoutes.ts` добавлен запрос к `inventoryTransactions` по визитам врача за период, вычисляющий реальную себестоимость потраченных материалов `materialsCostRub`.
+  2. Формула маржи синхронизирована с P&L: `clinicMarginRub = Math.max(0, revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub)`.
+  3. Интерфейс `DoctorProfitabilityItem` дополнен полем `materialsCostRub?: number`.
+  4. Синхронизированы ответы эндпоинтов `/api/reports/financial-summary` и `/api/v1/manager/reports/financial`.
+- **Верификация и доказательства:**
+  - Тесты `managerReportsRoutes.test.ts` (2/2 PASS) и `analyticsLiveApiWiring.test.ts` (PASS).
+
 
 ## 11. ⚖️ ДОКУМЕНТООБОРОТ, ИДС (1051н), ДОГОВОРЫ И НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156)
 

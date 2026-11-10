@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { showToast } from "../../components/GlobalToast";
 import { buildRfc4180Csv, triggerCsvDownload } from "../../components/reports/reportsCsvExport";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { isDemoShowcaseMode, getDemoDashboardAnalytics } from "../../lib/demoMode";
 import {
 	type AnalyticsDashboardData,
@@ -11,7 +11,7 @@ import {
 import { REFRESH_INTERVAL_MS } from "./constants";
 
 export function useAnalyticsDashboardData(dateRange: string, branchFilter: string) {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const authContext = appLogic?.auth;
 	const getReadHeaders = useCallback(
 		() =>

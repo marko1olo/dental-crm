@@ -1,7 +1,6 @@
 import type React from "react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useManagerialPnl } from "../useManagerialPnl";
-import { QuickExpenseModal } from "../../QuickExpenseModal";
 import { PnlHeader } from "./PnlHeader";
 import { PnlSummaryCards } from "./PnlSummaryCards";
 import { PnlRevenueSection } from "./PnlRevenueSection";
@@ -10,6 +9,12 @@ import { PnlIndirectCostsSection } from "./PnlIndirectCostsSection";
 import { PnlMobileCards } from "./PnlMobileCards";
 import { PnlActionFooter } from "./PnlActionFooter";
 import { PnlModalContainer } from "./PnlModalContainer";
+
+const QuickExpenseModal = lazy(() =>
+	import("../../QuickExpenseModal").then((m) => ({
+		default: m.QuickExpenseModal,
+	})),
+);
 
 export interface ManagerialPnlDashboardModalProps {
 	readonly isOpen: boolean;
@@ -63,11 +68,13 @@ export const ManagerialPnlModalAssembler: React.FC<ManagerialPnlDashboardModalPr
 			/>
 
 			{isQuickExpenseOpen && (
-				<QuickExpenseModal
-					isOpen={isQuickExpenseOpen}
-					onClose={() => setIsQuickExpenseOpen(false)}
-					onSuccess={() => void loadPnl()}
-				/>
+				<Suspense fallback={null}>
+					<QuickExpenseModal
+						isOpen={isQuickExpenseOpen}
+						onClose={() => setIsQuickExpenseOpen(false)}
+						onSuccess={() => void loadPnl()}
+					/>
+				</Suspense>
 			)}
 		</>
 	);

@@ -31,9 +31,9 @@ import {
 	type MobileAnalyticsPeriod,
 } from "./executiveTypes";
 
-const FinancialAnalyticsModal = lazy(() =>
-	import("./FinancialAnalyticsModal").then((m) => ({
-		default: m.FinancialAnalyticsModal,
+const ManagerialPnlDashboardModal = lazy(() =>
+	import("../finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
+		default: m.ManagerialPnlDashboardModal,
 	})),
 );
 
@@ -82,7 +82,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 	const handlePeriodSelect = useCallback(
 		(p: string) => {
 			setCurrentPeriod(p);
-			if (onPeriodChange) onPeriodChange(p as any);
+			if (onPeriodChange) onPeriodChange(p as MobileAnalyticsPeriod);
 		},
 		[onPeriodChange],
 	);
@@ -176,7 +176,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						className="primary-button h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
 					>
 						<Calculator size={13} aria-hidden="true" />
-						<span>Калькулятор P&amp;L</span>
+						<span>Управленческий P&amp;L</span>
 					</button>
 				</div>
 			</div>
@@ -210,14 +210,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 
 			{isPnlModalOpen && (
 				<Suspense fallback={null}>
-					<FinancialAnalyticsModal
+					<ManagerialPnlDashboardModal
 						isOpen={isPnlModalOpen}
 						onClose={() => setIsPnlModalOpen(false)}
-						initialPeriod={
-							currentPeriod === "quarter" || currentPeriod === "year"
-								? (currentPeriod as any)
-								: "month"
-						}
 					/>
 				</Suspense>
 			)}

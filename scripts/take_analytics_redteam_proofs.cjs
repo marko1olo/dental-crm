@@ -70,12 +70,12 @@ async function captureSingleProof(browser, { isDark, isMobile, fileName, altName
   }, isDark);
 
   const page = await context.newPage();
-  await page.goto(WEB_URL, { waitUntil: "commit", timeout: 45000 });
+  await page.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 45000 });
   await page.waitForTimeout(3000);
 
   // Wait for reports dashboard to be fully mounted and hydrated
-  await page.waitForSelector(".reports-dashboard, [data-testid='reports-dashboard']", { timeout: 45000 });
-  await page.waitForTimeout(2000);
+  await page.waitForSelector("[data-testid='manager-reports-panel'], [data-testid='analytics-dashboard-view'], #standalone-analytics-root, #analytics", { timeout: 45000 });
+  await page.waitForTimeout(4000);
 
   // Ensure theme DOM attributes are applied
   await page.evaluate((dark) => {

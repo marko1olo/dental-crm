@@ -1,5 +1,5 @@
 import type React from "react";
-import { Download, PlusCircle, Printer } from "lucide-react";
+import { Download, PlusCircle, Printer, ShieldCheck } from "lucide-react";
 import type { ManagerialPnlReport } from "@dental/shared";
 
 export interface PnlActionFooterProps {
@@ -57,7 +57,10 @@ export const PnlActionFooter: React.FC<PnlActionFooterProps> = ({
 	return (
 		<div className="pnl-footer">
 			<div className="pnl-footer-meta">
-				<span className="pnl-footer-status">✓ Данные синхронизированы в реальном времени</span>
+				<div className="pnl-privacy-note" data-testid="financial-privacy-note">
+					<ShieldCheck size={14} style={{ color: "var(--teal)", flexShrink: 0 }} />
+					<span>Защита персональных данных и врачебной тайны: финансовый учёт оперирует исключительно агрегированными кассовыми суммами.</span>
+				</div>
 			</div>
 			<div className="pnl-footer-actions">
 				<button

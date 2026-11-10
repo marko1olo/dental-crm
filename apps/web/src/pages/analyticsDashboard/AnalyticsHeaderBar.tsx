@@ -281,7 +281,7 @@ export function AnalyticsHeaderBar({
 										setIsSectionMoreOpen(false);
 									}}
 									data-testid="btn-open-executive-analytics-studio"
-									title="Открыть управленческую аналитику и SSOT кассы 54-ФЗ"
+									title="Открыть управленческую аналитику и кассу"
 								>
 									<TrendingUp size={14} className="text-[var(--teal)]" />
 									<span>Управленческая студия (SSOT)</span>

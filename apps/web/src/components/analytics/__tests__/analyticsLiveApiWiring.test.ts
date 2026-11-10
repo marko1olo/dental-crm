@@ -41,21 +41,3 @@ test("LeadsFunnelAnalyticsModal fetches live marketing spends from /api/marketin
 		"Must pass denteAdminSecretRequestHeaders",
 	);
 });
-
-test("FinancialAnalyticsModal connects to /api/analytics/executive, /api/cash/cash-box, and /api/cash/expense-reasons", () => {
-	const filePath = path.join(analyticsDir, "FinancialAnalyticsModal.tsx");
-	const content = fs.readFileSync(filePath, "utf8");
-
-	assert.ok(
-		content.includes("/api/analytics/executive"),
-		"FinancialAnalyticsModal must query /api/analytics/executive",
-	);
-	assert.ok(
-		content.includes("/api/cash/cash-box"),
-		"FinancialAnalyticsModal must query /api/cash/cash-box",
-	);
-	assert.ok(
-		content.includes("/api/cash/expense-reasons"),
-		"FinancialAnalyticsModal must query /api/cash/expense-reasons",
-	);
-});

@@ -2,9 +2,8 @@
  * ReportsStandaloneLauncher — Автономный запуск аналитики и отчётов руководителя (Мандат 8b, <= 120 строк).
  */
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { AppLoadingState } from "../../../../AppBootState";
-import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
 
 const AnalyticsDashboardView = lazyWithRetry(() =>
@@ -13,19 +12,45 @@ const AnalyticsDashboardView = lazyWithRetry(() =>
 	})),
 );
 
-export function renderReportsStandaloneLauncher(): React.ReactElement | null {
-	if (typeof window === "undefined") return null;
-	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+export const shouldOpenReports = (): boolean => {
+	if (typeof window === "undefined") return false;
+	const s = window.location.search || "";
+	const h = window.location.hash || "";
+	return (
+		s.includes("reports") ||
+		h.includes("reports") ||
+		s.includes("analytics=direct") ||
+		s.includes("dashboard=direct") ||
+		s.includes("analytics=1") ||
+		h === "#analytics" ||
+		h.startsWith("#analytics?") ||
+		h.startsWith("#reports")
+	);
+};
 
-	const search = window.location.search || "";
-	const hash = window.location.hash || "";
-	const isReportsRoute =
-		search.includes("reports") ||
-		hash.includes("reports") ||
-		search.includes("analytics") ||
-		hash.includes("analytics");
+export const DirectReportsLauncher: React.FC = () => {
+	const [isOpen, setIsOpen] = useState<boolean>(shouldOpenReports);
 
-	if (!isReportsRoute) return null;
+	useEffect(() => {
+		const handleOpen = () => setIsOpen(true);
+		const handleHashChange = () => setIsOpen(shouldOpenReports());
+
+		window.addEventListener("dente:open-analytics", handleOpen);
+		window.addEventListener("dente-open-analytics", handleOpen);
+		window.addEventListener("dente:open-reports", handleOpen);
+		window.addEventListener("hashchange", handleHashChange);
+		window.addEventListener("popstate", handleHashChange);
+
+		return () => {
+			window.removeEventListener("dente:open-analytics", handleOpen);
+			window.removeEventListener("dente-open-analytics", handleOpen);
+			window.removeEventListener("dente:open-reports", handleOpen);
+			window.removeEventListener("hashchange", handleHashChange);
+			window.removeEventListener("popstate", handleHashChange);
+		};
+	}, []);
+
+	if (!isOpen) return null;
 
 	return (
 		<main
@@ -39,4 +64,9 @@ export function renderReportsStandaloneLauncher(): React.ReactElement | null {
 			</Suspense>
 		</main>
 	);
+};
+
+export function renderReportsStandaloneLauncher(): React.ReactElement | null {
+	if (!shouldOpenReports()) return null;
+	return <DirectReportsLauncher />;
 }

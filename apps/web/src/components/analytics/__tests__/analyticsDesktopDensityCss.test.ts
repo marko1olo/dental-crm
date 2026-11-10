@@ -31,24 +31,20 @@ test("execToolbar.css enforces 36px toolbar and button heights on desktop", () =
 	);
 });
 
-test("financialAnalytics.css enforces 32-36px desktop density with mobile touch >= 44px", () => {
-	const cssPath = path.join(analyticsDir, "financialAnalytics.css");
+test("pnlFooter.css enforces 36px desktop density with mobile touch >= 44px", () => {
+	const cssPath = path.resolve(analyticsDir, "../finance/pnl/pnlStyles/pnlFooter.css");
 	const content = fs.readFileSync(cssPath, "utf8");
 
 	assert.ok(
-		content.includes(".fin-analytics-tab-btn"),
-		"financialAnalytics.css must define .fin-analytics-tab-btn",
+		content.includes(".pnl-footer-btn-primary"),
+		"pnlFooter.css must define .pnl-footer-btn-primary",
 	);
 	assert.ok(
-		content.includes("height: 32px"),
-		"financialAnalytics.css must use 32px height for desktop tabs",
+		content.includes("height: 36px"),
+		"pnlFooter.css must use 36px height on desktop",
 	);
 	assert.ok(
-		content.includes(".fin-analytics-close-btn"),
-		"financialAnalytics.css must define .fin-analytics-close-btn",
-	);
-	assert.ok(
-		content.includes("min-width: 44px;"),
-		"Close button must maintain 44px hit target",
+		content.includes("height: 44px"),
+		"pnlFooter.css must maintain 44px touch target on mobile",
 	);
 });

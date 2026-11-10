@@ -17,7 +17,7 @@
  * Sweet Spot: 300–380 строк.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import {
 	Calculator,
 	ChevronRight,
@@ -29,7 +29,12 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
-import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
+
+const DoctorPayrollStudioModal = lazy(() =>
+	import("../payroll/DoctorPayrollStudioModal").then((m) => ({
+		default: m.DoctorPayrollStudioModal,
+	})),
+);
 
 export interface DoctorPayrollItem {
 	readonly doctorId: string;
@@ -667,13 +672,15 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 			</div>
 
 			{isStudioOpen && (
-				<DoctorPayrollStudioModal
-					isOpen={isStudioOpen}
-					onClose={() => {
-						setIsStudioOpen(false);
-						void fetchPayroll(activePeriod);
-					}}
-				/>
+				<Suspense fallback={null}>
+					<DoctorPayrollStudioModal
+						isOpen={isStudioOpen}
+						onClose={() => {
+							setIsStudioOpen(false);
+							void fetchPayroll(activePeriod);
+						}}
+					/>
+				</Suspense>
 			)}
 		</div>
 	);

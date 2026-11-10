@@ -10,6 +10,7 @@ import {
 	appointments,
 	chairs,
 	doctorPayrollStatements,
+	inventoryTransactions,
 	labOrders,
 	organizations,
 	payments,
@@ -46,6 +47,7 @@ export interface DoctorProfitabilityItem {
 	services804nCount: number;
 	labOrdersCount: number;
 	labOrdersCostRub: number;
+	materialsCostRub?: number;
 	doctorPayrollRub: number;
 	clinicMarginRub: number;
 }
@@ -296,6 +298,27 @@ export async function calculateDoctorProfitability(
 		docPayrollRes.map((p) => [p.doctorId, Number(p.payrollRub || 0)]),
 	);
 
+	// 2d. Себестоимость списанных материалов по врачам (складские проводки inventoryTransactions по визитам)
+	const docMaterialsRes = await db
+		.select({
+			doctorId: appointments.doctorUserId,
+			materialsCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)`,
+		})
+		.from(inventoryTransactions)
+		.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
+		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.where(
+			and(
+				eq(inventoryTransactions.organizationId, orgId),
+				inArray(inventoryTransactions.transactionType, ["usage", "write_off"]),
+				startDate ? gte(inventoryTransactions.createdAt, startDate) : sql`true`,
+			),
+		)
+		.groupBy(appointments.doctorUserId);
+	const docMaterialsMap = new Map(
+		docMaterialsRes.map((m) => [m.doctorId ?? "unassigned", Number(m.materialsCostRub || 0)]),
+	);
+
 	const allDoctorIds = Array.from(
 		new Set([
 			...docProfRes.map((r) => r.doctorId),
@@ -303,6 +326,7 @@ export async function calculateDoctorProfitability(
 			...docServicesRes.map((r) => r.doctorId),
 			...docLabRes.map((r) => r.doctorId),
 			...docPayrollRes.map((r) => r.doctorId),
+			...docMaterialsRes.map((r) => r.doctorId),
 		]),
 	);
 
@@ -334,10 +358,12 @@ export async function calculateDoctorProfitability(
 			const services804nCount = docServicesMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCostRub = docLabCostMap.get(docId ?? "unassigned") || 0;
+			const materialsCostRub = docMaterialsMap.get(docId ?? "unassigned") || 0;
 			const recordedPayroll = docId ? (docPayrollMap.get(docId) || 0) : 0;
 			const doctorPayrollRub = recordedPayroll;
+			// Канонический паритет с P&L: Выручка минус ЗТЛ, материалы со склада и ФОТ врача
 			const clinicMarginRub = revenue > 0
-				? revenue - labOrdersCostRub - doctorPayrollRub
+				? Math.max(0, revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub)
 				: 0;
 			const margin = revenue > 0
 				? Math.round((clinicMarginRub / revenue) * 100)
@@ -359,6 +385,7 @@ export async function calculateDoctorProfitability(
 				services804nCount,
 				labOrdersCount,
 				labOrdersCostRub,
+				materialsCostRub,
 				doctorPayrollRub,
 				clinicMarginRub,
 			};

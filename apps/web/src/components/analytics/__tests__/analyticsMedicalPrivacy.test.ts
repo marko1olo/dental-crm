@@ -26,13 +26,13 @@ test("Analytics domain enforces patient initials only, masked phone, and medical
 	assert.ok(maskedPhone.includes("•••") || maskedPhone.includes("***"), "Phone must be masked for patient privacy");
 });
 
-test("FinancialAnalyticsModal enforces medical privacy notice and strictly impersonal accounting aggregates", () => {
-	const filePath = path.join(analyticsDir, "FinancialAnalyticsModal.tsx");
+test("ManagerialPnlDashboardModal enforces medical privacy notice and strictly impersonal accounting aggregates", () => {
+	const filePath = path.resolve(analyticsDir, "../finance/pnl/dashboardModules/PnlActionFooter.tsx");
 	const content = fs.readFileSync(filePath, "utf8");
 
 	assert.ok(
 		content.includes('data-testid="financial-privacy-note"'),
-		"FinancialAnalyticsModal must display medical secrecy compliance notice",
+		"ManagerialPnlDashboardModal must display medical secrecy compliance notice",
 	);
 	assert.ok(
 		content.includes("врачебной тайны"),

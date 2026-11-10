@@ -131,7 +131,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 				</div>
 			</div>
 
-			{/* 3 Секция: Когорты удержания пациентов Recall (3/6/12 мес) и 1-клик WhatsApp */}
+			{/* 3 Секция: Когорты удержания пациентов Recall (3/6/12 мес) и WhatsApp */}
 			<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<div className="flex items-center justify-between">
 					<h2 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
@@ -139,7 +139,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 						Удержание пациентов по когортам визитов (Recall ≥ 70%)
 					</h2>
 					<span className="text-xs text-[var(--muted)] hidden sm:inline">
-						1-клик генерация сообщения WhatsApp
+						Генерация сообщения WhatsApp
 					</span>
 				</div>
 

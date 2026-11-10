@@ -13,9 +13,9 @@ const MarketingDashboardView = lazy(() =>
 	})),
 );
 
-const FinancialAnalyticsModal = lazy(() =>
-	import("../../components/analytics/FinancialAnalyticsModal").then((module) => ({
-		default: module.FinancialAnalyticsModal,
+const ManagerialPnlDashboardModal = lazy(() =>
+	import("../../components/finance/pnl/ManagerialPnlDashboardModal").then((module) => ({
+		default: module.ManagerialPnlDashboardModal,
 	})),
 );
 
@@ -130,16 +130,9 @@ export function AnalyticsSubDashboards({
 
 			{isFinancialAnalyticsOpen && (
 				<Suspense fallback={null}>
-					<FinancialAnalyticsModal
+					<ManagerialPnlDashboardModal
 						isOpen={isFinancialAnalyticsOpen}
 						onClose={() => setIsFinancialAnalyticsOpen(false)}
-						initialPeriod={
-							dateRange === "quarter"
-								? "quarter"
-								: dateRange === "year"
-									? "year"
-									: "month"
-						}
 					/>
 				</Suspense>
 			)}

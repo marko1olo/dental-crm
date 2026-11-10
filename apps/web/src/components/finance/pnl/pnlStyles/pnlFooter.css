@@ -19,6 +19,15 @@
 	color: var(--muted, #64748b);
 }
 
+.pnl-privacy-note {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	color: var(--muted, #64748b);
+	line-height: 1.35;
+}
+
 .pnl-footer-status {
 	font-weight: 500;
 }
