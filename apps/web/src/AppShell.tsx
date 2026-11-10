@@ -12,10 +12,8 @@ import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
-import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
-import { DirectCashierLauncher } from "./components/finance/DirectCashierLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
 import { StandalonePatientCardHost } from "./components/appLayout/modalsContainerModules/standalone/clinical/StandalonePatientCardHost";
@@ -40,7 +38,6 @@ import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyL
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { DirectPhotoProtocolLauncher } from "./components/photography/DirectPhotoProtocolLauncher";
-import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLauncher";
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
@@ -61,11 +58,6 @@ const DiagnosticDrawer = lazy(() =>
 	})),
 );
 
-const DentalAgentCockpit = lazy(() =>
-	import("./components/ai/DentalAgentCockpit").then((module) => ({
-		default: module.DentalAgentCockpit,
-	})),
-);
 
 function ThemeController() {
 	const themeMode = useThemeStore((state) => state.themeMode);
@@ -271,6 +263,14 @@ function isStandaloneActive(): boolean {
 		h.includes("services-catalog") ||
 		s.includes("clinic-setup") ||
 		h.includes("clinic-setup") ||
+		s.includes("endo") ||
+		h.includes("endo") ||
+		s.includes("endodontics") ||
+		h.includes("endodontics") ||
+		s.includes("root-canals") ||
+		h.includes("root-canals") ||
+		s.includes("rootcanal") ||
+		h.includes("rootcanal") ||
 		s.includes("clinic-requisites") ||
 		h.includes("clinic-requisites")
 	);
@@ -330,10 +330,8 @@ export function AppShell() {
 			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
 			<DirectRvgCaptureLauncher />
-			<DirectFastCheckoutLauncher />
 			<DirectCashboxLauncher />
 			<DirectShiftLauncher />
-			<DirectCashierLauncher />
 			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
@@ -356,7 +354,6 @@ export function AppShell() {
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />
 			<DirectPhotoProtocolLauncher />
-			<DirectEndodonticsLauncher />
 			<DirectOrthopedicsLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
@@ -368,7 +365,6 @@ export function AppShell() {
 			<CopilotGlobalHost />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
-				<DentalAgentCockpit />
 			</Suspense>
 		</BootErrorBoundary>
 	);

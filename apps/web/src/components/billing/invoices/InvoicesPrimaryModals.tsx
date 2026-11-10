@@ -9,8 +9,7 @@ import React from "react";
 import { showToast } from "../../GlobalToast.js";
 import { QuickCreateInvoiceModal } from "../QuickCreateInvoiceModal.js";
 import { PatientInstallmentsModal } from "../PatientInstallmentsModal.js";
-import { CashboxShiftModal } from "../../finance/CashboxShiftModal.js";
-import { CashRegisterDrawer } from "../CashRegisterDrawer.js";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import type { BillingInvoice } from "../invoiceTypes.js";
 
 interface InvoicesPrimaryModalsProps {
@@ -63,31 +62,41 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 			)}
 
 			{isShiftModalOpen && (
-				<CashboxShiftModal
-					isOpen={isShiftModalOpen} onClose={() => setIsShiftModalOpen(false)}
-					clinicLegalName={clinicLegalName} cashierFullName={currentDoctorName}
+				<CashRegisterStudioModal
+					isOpen={isShiftModalOpen}
+					onClose={() => setIsShiftModalOpen(false)}
+					mode="shift"
+					initialTab="reconciliation"
+					clinicLegalName={clinicLegalName}
+					cashierFullName={currentDoctorName}
+					containerTestId="cash-register-modal"
+					submitButtonTestId="btn-confirm-close-shift-z-report"
+					title="Касса и чеки · Управление сменой и Z-отчёт"
 				/>
 			)}
 
 			{isRegisterDrawerOpen && (
-				<CashRegisterDrawer
-					isOpen={isRegisterDrawerOpen} onClose={() => setIsRegisterDrawerOpen(false)}
-					cashierFullName={currentDoctorName} clinicLegalName={clinicLegalName} invoices={invoices}
-					onPaymentSuccess={(inv, receipt) => {
-						if (inv && onUpdateInvoice) {
+				<CashRegisterStudioModal
+					isOpen={isRegisterDrawerOpen}
+					onClose={() => setIsRegisterDrawerOpen(false)}
+					mode="studio"
+					initialTab="checkout"
+					cashierFullName={currentDoctorName}
+					clinicLegalName={clinicLegalName}
+					patientName={invoices[0]?.patientName}
+					patientId={invoices[0]?.patientId}
+					totalDueRub={invoices[0]?.totalAmountRub}
+					invoiceId={invoices[0]?.id}
+					onSuccess={() => {
+						if (invoices[0] && onUpdateInvoice) {
 							onUpdateInvoice({
-								...inv,
-								status: (receipt.method === "warranty_100" || receipt.totalRub === 0 ? "warranty_100" : "paid") as any,
-								paidAmountRub: receipt.totalRub,
+								...invoices[0],
+								status: "paid" as any,
+								paidAmountRub: invoices[0].totalAmountRub,
 								paidAt: new Date().toISOString(),
-								paymentMethod: receipt.method,
 							});
 						}
-						showToast(`Оплата по счёту ${inv?.number || ""} (${receipt.totalRub} ₽) успешно зафиксирована, чек сформирован`, "success");
-					}}
-					onOpenPaymentModal={() => {
-						if (invoices.length > 0 && invoices[0]) setActivePaymentInvoice(invoices[0]);
-						else setIsCreateModalOpen(true);
+						showToast(`Оплата по счёту ${invoices[0]?.number || ""} успешно зафиксирована в кассе 54-ФЗ`, "success");
 					}}
 				/>
 			)}

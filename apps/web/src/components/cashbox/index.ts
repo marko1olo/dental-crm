@@ -9,19 +9,7 @@ export * from "./cashRegisterCatalogData.js";
 export * from "./cashboxCatalogData.js";
 
 export * from "./CashRegisterStudioModal.js";
-export { CashRegisterStudioModal } from "./CashRegisterStudioModal.js";
-
-export * from "./CashRegisterCheckoutModal.js";
-export { CashRegisterCheckoutModal as default } from "./CashRegisterCheckoutModal.js";
-
-export * from "./CashShiftClosingModal.js";
-export { CashShiftClosingModal } from "./CashShiftClosingModal.js";
-
-export * from "./CashShiftJournalView.js";
-export { CashShiftJournalView } from "./CashShiftJournalView.js";
-
-export * from "./CashboxView.js";
-export { CashboxView } from "./CashboxView.js";
+export { CashRegisterStudioModal as default } from "./CashRegisterStudioModal.js";
 
 export * from "./DirectCashboxLauncher.js";
 export { DirectCashboxLauncher } from "./DirectCashboxLauncher.js";

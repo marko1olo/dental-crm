@@ -13,9 +13,9 @@ import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { CashRegisterCheckoutModal } from "../CashRegisterCheckoutModal";
-import { CashShiftClosingModal } from "../CashShiftClosingModal";
-import { CashShiftJournalView } from "../CashShiftJournalView";
+import { CashRegisterStudioModal } from "../CashRegisterStudioModal";
+import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
+import { CashShiftJournalView } from "../../shift/CashShiftJournalView";
 import { DirectCashboxLauncher } from "../DirectCashboxLauncher";
 import {
 	CASHBOX_TENDER_PRESETS,
@@ -30,9 +30,13 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 	describe("1. CashRegisterCheckoutModal (SSOT Checkout)", () => {
 		it("renders prominent 32px total amount, method tiles, and exactly 1 Primary CTA", () => {
 			const html = renderToString(
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={true}
 					onClose={() => {}}
+					mode="checkout"
+					containerTestId="cash-register-checkout-modal"
+					submitButtonTestId="btn-confirm-checkout-payment"
+					title="Касса · Оплата приёма"
 					totalDueRub={8500}
 					patientId="pat-1"
 					patientName="Иванов Иван Иванович"
@@ -74,9 +78,13 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 
 		it("renders 100% doctor warranty mode with 0 ₽ total and warranty CTA without blockers", () => {
 			const html = renderToString(
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={true}
 					onClose={() => {}}
+					mode="checkout"
+					containerTestId="cash-register-checkout-modal"
+					submitButtonTestId="btn-confirm-checkout-payment"
+					title="Касса · Оплата приёма"
 					totalDueRub={0}
 					initialWarranty100={true}
 					patientId="pat-1"
@@ -93,9 +101,10 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 
 		it("renders null when closed", () => {
 			const html = renderToString(
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={false}
 					onClose={() => {}}
+					mode="checkout"
 					totalDueRub={5000}
 					patientId="pat-1"
 					patientName="Иванов Иван"

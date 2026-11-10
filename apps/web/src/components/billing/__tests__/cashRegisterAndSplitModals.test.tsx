@@ -9,8 +9,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { CashRegisterCheckoutModal } from "../CashRegisterCheckoutModal.js";
-import { SplitPaymentModal } from "../SplitPaymentModal.js";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
+import { FastCheckoutModal } from "../../finance/FastCheckoutModal.js";
 import { DepositTopupModal } from "../DepositTopupModal.js";
 import {
 	calculateCashChange,
@@ -20,12 +20,16 @@ import {
 	CASH_QUICK_BILLS_RUB,
 } from "@dental/shared";
 
-describe("Subagent 4 Inquisitor: CashRegisterCheckoutModal 54-FZ Operations", () => {
+describe("Subagent 4 Inquisitor: CashRegisterStudioModal 54-FZ Operations", () => {
 	it("renders large total due, fast tender tiles, and 54-FZ requisites cleanly", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterCheckoutModal, {
+			React.createElement(CashRegisterStudioModal, {
 				isOpen: true,
 				onClose: () => {},
+				mode: "checkout",
+				containerTestId: "cash-register-checkout-modal",
+				submitButtonTestId: "btn-submit-checkout-54fz",
+				title: "Касса · Оплата приёма",
 				totalDueRub: 12500,
 				patientId: "pat-1",
 				patientName: "Ковалёв Роман Станиславович",
@@ -60,9 +64,12 @@ describe("Subagent 4 Inquisitor: CashRegisterCheckoutModal 54-FZ Operations", ()
 
 	it("contains zero cartoon emojis and zero forced citizen INN requirement (Mandates 8d, 8e)", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterCheckoutModal, {
+			React.createElement(CashRegisterStudioModal, {
 				isOpen: true,
 				onClose: () => {},
+				mode: "checkout",
+				containerTestId: "cash-register-checkout-modal",
+				submitButtonTestId: "btn-submit-checkout-54fz",
 				totalDueRub: 7500,
 				patientId: "pat-2",
 				patientName: "Иванова Мария Петровна",
@@ -78,10 +85,13 @@ describe("Subagent 4 Inquisitor: CashRegisterCheckoutModal 54-FZ Operations", ()
 describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculation", () => {
 	it("renders split modal, live balance card, and tender inputs", () => {
 		const html = renderToString(
-			React.createElement(SplitPaymentModal, {
+			React.createElement(FastCheckoutModal, {
 				isOpen: true,
 				onClose: () => {},
-				totalDueRub: 20000,
+				defaultMethod: "split",
+				containerTestId: "split-payment-modal",
+				totalBillRub: 20000,
+				totalBillKop: 2000000,
 				patientId: "pat-3",
 				patientName: "Сидоров Иван Васильевич",
 				patientDepositRub: 8000,
@@ -131,12 +141,15 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 	});
 
 	it("renders authentic dynamic SBP QR SVG preview when SBP portion is entered in split", () => {
-		// When SplitPaymentModal renders with sbp tender > 0, it dynamically generates an authentic SVG QR
+		// When FastCheckoutModal renders with sbp tender > 0, it dynamically generates an authentic SVG QR
 		const html = renderToString(
-			React.createElement(SplitPaymentModal, {
+			React.createElement(FastCheckoutModal, {
 				isOpen: true,
 				onClose: () => {},
-				totalDueRub: 15000,
+				defaultMethod: "split",
+				containerTestId: "split-payment-modal",
+				totalBillRub: 15000,
+				totalBillKop: 1500000,
 				patientId: "pat-sbp-split",
 				patientName: "Васильев Игорь Олегович",
 			})
@@ -147,11 +160,14 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 		assert.ok(html.includes('data-testid="split-input-sbp"'));
 	});
 
-	it("renders dynamic SBP QR SVG when SBP method is selected in CashRegisterCheckoutModal", () => {
+	it("renders dynamic SBP QR SVG when SBP method is selected in CashRegisterStudioModal", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterCheckoutModal, {
+			React.createElement(CashRegisterStudioModal, {
 				isOpen: true,
 				onClose: () => {},
+				mode: "checkout",
+				containerTestId: "cash-register-checkout-modal",
+				submitButtonTestId: "btn-submit-checkout-54fz",
 				totalDueRub: 8500,
 				patientId: "pat-sbp-cashier",
 				patientName: "Семенова Ольга Павловна",

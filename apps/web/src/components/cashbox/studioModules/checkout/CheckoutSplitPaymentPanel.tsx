@@ -100,7 +100,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitSbpRub(0);
 						setSplitDepositRub(0);
 					}}
-					className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					50% карта / 50% нал
 				</button>
@@ -113,7 +113,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitSbpRub(0);
 						setSplitDepositRub(0);
 					}}
-					className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					100% карта
 				</button>
@@ -127,7 +127,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitSbpRub(0);
 						setSplitDepositRub(0);
 					}}
-					className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					100% нал
 				</button>
@@ -140,7 +140,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						setSplitCashRub(0);
 						setSplitDepositRub(0);
 					}}
-					className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+					className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
 					100% СБП
 				</button>
@@ -157,7 +157,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						<button
 							type="button"
 							onClick={() => handleBalanceSplit("card")}
-							className="px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -182,7 +182,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						<button
 							type="button"
 							onClick={() => handleBalanceSplit("cash")}
-							className="px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -211,7 +211,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						<button
 							type="button"
 							onClick={() => handleBalanceSplit("sbp")}
-							className="px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -242,7 +242,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 								);
 								setSplitDepositRub(Math.max(0, maxAllowed));
 							}}
-							className="px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Макс
 						</button>

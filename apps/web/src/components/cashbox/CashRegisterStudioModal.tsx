@@ -68,6 +68,7 @@ export interface CashRegisterStudioModalProps {
 	readonly doctorFullName?: string | undefined;
 	readonly serviceTitle?: string | undefined;
 	readonly defaultMethod?: CashboxTenderType | undefined;
+	readonly initialPaymentMethod?: CashboxTenderType | undefined;
 	readonly printFormat?: string | undefined;
 	readonly onOpenSplitPayment?: (() => void) | undefined;
 	readonly onSuccess?: ((result?: unknown) => void) | undefined;
@@ -99,7 +100,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 		patientFamilyBalanceRub = 0,
 		containerTestId = "cash-register-studio-modal",
 		submitButtonTestId = "btn-confirm-checkout-payment",
-		title = "Касса и чеки · Студия расчётов",
+		title = "Студия кассы и чеков",
 	} = props;
 
 	const modalTitleId = useId();

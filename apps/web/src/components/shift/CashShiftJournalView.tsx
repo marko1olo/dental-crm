@@ -153,11 +153,12 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
 		try {
-			const res = await fetch("/api/cash/cash-shifts-history").catch(() => null);
+			const res = await fetch("/api/cash/shifts").catch(() => null);
 			if (res && res.ok) {
 				const json = await res.json().catch(() => null);
-				if (json?.shifts) {
-					setShifts(json.shifts);
+				const list = json?.data ?? json?.shifts;
+				if (Array.isArray(list) && list.length > 0) {
+					setShifts(list);
 				}
 			}
 		} catch {
@@ -166,6 +167,10 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 			setTimeout(() => setIsRefreshing(false), 300);
 		}
 	};
+
+	useEffect(() => {
+		void handleRefresh();
+	}, []);
 
 	const handlePrintReport = (shift: CashShiftItem, type: "Z" | "X") => {
 		setActiveShiftForPrint(shift);

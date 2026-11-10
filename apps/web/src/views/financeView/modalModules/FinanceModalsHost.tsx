@@ -1,6 +1,6 @@
 import type React from "react";
 import { lazy, Suspense } from "react";
-import { FinanceCashboxModal } from "../../../components/finance/FinanceCashboxModal";
+import { CashRegisterStudioModal } from "../../../components/cashbox/CashRegisterStudioModal";
 import { FinanceInvoicesModal } from "../../../components/finance/FinanceInvoicesModal";
 import { PaymentModal } from "../../../components/finance/PaymentModal";
 import { QuickExpenseModal } from "../../../components/finance/QuickExpenseModal";
@@ -61,13 +61,15 @@ export function FinanceModalsHost({
 				patientName={docPat?.fullName}
 			/>
 
-			<FinanceCashboxModal
+			<CashRegisterStudioModal
 				isOpen={s.isCashboxOpen}
 				onClose={() => s.setIsCashboxOpen(false)}
+				mode="studio"
 				isShiftOpen={s.isShiftOpen}
-				cashierName={s.paymentFiscalCashierName || "Врач-стоматолог / Кассир"}
+				cashierFullName={s.paymentFiscalCashierName || "Врач-стоматолог / Кассир"}
 				clinicName={clinicName}
-				clinicInn={clinic?.inn}
+				clinicLegalName={clinicName}
+				cashierInn={clinic?.inn}
 				patientId={docPat?.id}
 				patientName={docPat?.fullName}
 				patientPhone={docPat?.phone ?? undefined}
@@ -76,6 +78,8 @@ export function FinanceModalsHost({
 					void s.loadDashboard?.();
 					s.setIsCashboxOpen(false);
 				}}
+				containerTestId="modal-finance-cashbox"
+				title="Касса клиники · Приём оплаты"
 			/>
 
 			{s.isQuickExpenseOpen && (

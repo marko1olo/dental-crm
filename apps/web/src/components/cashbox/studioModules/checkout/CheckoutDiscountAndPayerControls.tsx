@@ -47,12 +47,24 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 }) => {
 	return (
 		<>
-			{/* Doctor Discounts Strip (No neon carnival, clean secondary chips) */}
-			<div className="space-y-1" data-testid="payment-modal-presets-bar">
-				<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
-					Скидки врача:
-				</span>
-				<div className="flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap scrollbar-none snap-x">
+			{/* Doctor Discounts Strip (No neon carnival, clean secondary chips, zero-clipping) */}
+			<div className="space-y-1.5" data-testid="payment-modal-presets-bar">
+				<div className="flex items-center justify-between">
+					<span className="text-xs font-semibold text-[var(--muted)]">
+						Скидки врача:
+					</span>
+					{discountPercent > 0 && !isWarranty && (
+						<span className="text-xs font-semibold text-[var(--teal,#0d9488)]" data-testid="badge-discount-active">
+							Применена скидка {discountPercent}%
+						</span>
+					)}
+					{isWarranty && (
+						<span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+							100% Гарантия врача
+						</span>
+					)}
+				</div>
+				<div className="flex flex-wrap gap-1.5">
 					{DOCTOR_DISCOUNT_PRESETS.map((d) => (
 						<button
 							key={d.label}
@@ -68,7 +80,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 									setMethod("warranty");
 								}
 							}}
-							className={`px-3 py-1.5 rounded-lg text-xs font-semibold border min-h-[36px] shrink-0 snap-start cursor-pointer transition-colors ${
+							className={`px-3 py-1.5 rounded-xl text-xs font-semibold border min-h-[36px] cursor-pointer transition-colors ${
 								discountPercent === d.percent
 									? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] font-bold shadow-xs"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
@@ -76,16 +88,11 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						>
 							<span className="hidden sm:inline">{d.label}</span>
 							<span className="sm:hidden">
-								{d.percent === 0 ? "0%" : d.isWarranty ? "Гарантия" : `${d.percent}%`}
+								{d.percent === 0 ? "0%" : d.isWarranty ? "100% Гарантия" : `${d.percent}%`}
 							</span>
 						</button>
 					))}
 				</div>
-				{discountPercent > 0 && !isWarranty && (
-					<div className="text-[11px] font-semibold text-[var(--teal,#0d9488)] pt-0.5" data-testid="badge-discount-active">
-						Применена скидка {discountPercent}%
-					</div>
-				)}
 				<input
 					type="hidden"
 					data-testid="input-discount-custom-percent"
@@ -94,64 +101,102 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 				/>
 			</div>
 
-			{/* Payer Type Selection (Zero-Barrier: Citizens NEVER forced to provide INN) */}
-			<div className="space-y-1">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
-						Плательщик (для чека физлицам ИНН не требуется):
-					</span>
+			{/* Payer Type Selection (0px noise for 99% normal physical patients: Mandates 8bi & 8n) */}
+			<div className="space-y-1.5" data-testid="payer-selection-section">
+				<div className="flex items-center justify-between min-h-[32px]">
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-semibold text-[var(--muted)]">
+							Плательщик:
+						</span>
+						<span className="text-xs font-semibold text-[var(--ink)]">
+							{payerType === "physical_person"
+								? "Пациент (физлицо)"
+								: payerType === "legal_entity"
+									? "Юридическое лицо"
+									: "Индивидуальный предприниматель"}
+						</span>
+					</div>
+
+					{payerType === "physical_person" ? (
+						<button
+							type="button"
+							onClick={() => setPayerType("legal_entity")}
+							className="text-xs text-[var(--teal,#0d9488)] hover:underline font-medium cursor-pointer"
+							data-testid="toggle-corporate-payer"
+						>
+							Организация / ИП &rarr;
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={() => setPayerType("physical_person")}
+							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:underline font-medium cursor-pointer"
+							data-testid="toggle-physical-payer"
+						>
+							&larr; Пациент (физлицо)
+						</button>
+					)}
+
 					<span
-						className="text-[11px] text-[var(--teal,#0d9488)] font-semibold"
+						className="sr-only"
 						data-testid="inn-physical-not-required-badge"
 					>
 						Для физлиц не требуется
 					</span>
 				</div>
-				<div className="grid grid-cols-3 gap-2">
-					{PAYER_TYPE_PRESETS.map((p) => (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => setPayerType(p.id)}
-							className={`flex flex-col items-start justify-center p-2.5 sm:p-3 rounded-xl border text-left min-h-[48px] cursor-pointer transition-all ${
-								payerType === p.id
-									? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-semibold shadow-2xs"
-									: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							<div className="text-xs font-bold text-[var(--ink)] leading-snug">
-								<span className="hidden sm:inline">{p.label}</span>
-								<span className="sm:hidden">
-									{p.id === "physical_person" ? "Физлицо" : p.id === "legal_entity" ? "Юрлицо" : "ИП"}
-								</span>
-							</div>
-							<div className="text-[11px] text-[var(--muted)] mt-0.5 leading-snug hidden sm:block">
-								{p.id === "physical_person"
-									? "ИНН не требуется. Чек формируется автоматически."
-									: p.id === "legal_entity"
-										? "ИНН 10 цифр (безналичный расчёт организации)"
-										: "ИНН 12 цифр (для чека ИП)"}
-							</div>
-							<div className="text-[10px] text-[var(--muted)] mt-0.5 sm:hidden leading-none">
-								{p.id === "physical_person" ? "Без ИНН" : p.id === "legal_entity" ? "ИНН 10 цифр" : "ИНН 12 цифр"}
-							</div>
-						</button>
-					))}
-				</div>
-				{payerType === "physical_person" ? (
+
+				{/* Corporate / Sole Proprietor Mode: Compact Segmented Switch + INN Input */}
+				{payerType !== "physical_person" ? (
+					<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+						<div className="p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] grid grid-cols-2 gap-1 max-w-xs">
+							<button
+								type="button"
+								onClick={() => setPayerType("legal_entity")}
+								className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+									payerType === "legal_entity"
+										? "bg-[var(--teal-subtle,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] shadow-xs font-bold"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Юрлицо (10 цифр)
+							</button>
+							<button
+								type="button"
+								onClick={() => setPayerType("sole_proprietor")}
+								className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+									payerType === "sole_proprietor"
+										? "bg-[var(--teal-subtle,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] shadow-xs font-bold"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								ИП (12 цифр)
+							</button>
+						</div>
+
+						<div>
+							<label className="text-[11px] font-medium text-[var(--muted)] mb-1 block">
+								{payerType === "legal_entity"
+									? "ИНН организации (10 цифр для безналичного расчёта):"
+									: "ИНН индивидуального предпринимателя (12 цифр):"}
+							</label>
+							<input
+								type="text"
+								inputMode="numeric"
+								value={buyerInn}
+								onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
+								maxLength={payerType === "legal_entity" ? 10 : 12}
+								placeholder={payerType === "legal_entity" ? "Введите 10 цифр ИНН" : "Введите 12 цифр ИНН"}
+								className="w-full px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm min-h-[44px] outline-none focus:border-[var(--teal,#0d9488)] focus:ring-1 focus:ring-[var(--teal,#0d9488)] transition-all font-mono"
+								autoFocus
+							/>
+						</div>
+					</div>
+				) : (
 					<input
 						type="hidden"
 						data-testid="input-buyer-inn-physical"
 						value=""
 						readOnly
-					/>
-				) : (
-					<input
-						type="text"
-						value={buyerInn}
-						onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
-						placeholder={payerType === "legal_entity" ? "ИНН организации (10 цифр)" : "ИНН ИП (12 цифр)"}
-						className="w-full mt-1.5 px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm min-h-[44px] outline-none"
 					/>
 				)}
 			</div>

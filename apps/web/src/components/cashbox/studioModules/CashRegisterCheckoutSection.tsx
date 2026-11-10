@@ -182,7 +182,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 
 			{/* Total Due Prominent Display (36px bold centered, Mandate 8am & Universal Checkout) */}
 			<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
-				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+				<span className="text-xs font-semibold text-[var(--muted)]">
 					Сумма счёта к оплате
 				</span>
 				<div
@@ -194,6 +194,10 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				{isWarranty ? (
 					<div className="mt-2.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold">
 						100% Гарантийный расчёт врача (0 ₽) · Чек не фискализируется
+					</div>
+				) : effectiveTotalRub === 0 ? (
+					<div className="text-[11px] text-[var(--muted)] mt-1.5">
+						Свободный чек кассы · Без скрытых комиссий
 					</div>
 				) : (
 					<div className="text-[11px] text-[var(--muted)] mt-1.5">

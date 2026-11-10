@@ -70,7 +70,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 			{/* Payment Method Selector */}
 			<div className="space-y-1">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+					<span className="text-xs font-semibold text-[var(--muted)]">
 						Способ оплаты:
 					</span>
 					{onOpenSplitPayment && (
@@ -201,7 +201,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 								<button
 									type="button"
 									data-testid="btn-check-sbp-status"
-									className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
+									className="dente-btn dente-btn-secondary px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
 								>
 									Проверить статус
 								</button>
@@ -209,7 +209,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 									type="button"
 									data-testid="btn-manual-confirm-sbp"
 									onClick={onExecutePayment}
-									className="px-3 py-1.5 rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] text-xs font-bold hover:bg-[var(--teal-subtle)] cursor-pointer"
+									className="dente-btn dente-btn-secondary px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
 								>
 									Подтвердить вручную
 								</button>
@@ -302,7 +302,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 									type="button"
 									data-testid={`btn-cash-${nom}`}
 									onClick={() => setCashReceivedRub(nom)}
-									className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
+									className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
 								>
 									+{nom} ₽
 								</button>
@@ -311,7 +311,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 								type="button"
 								data-testid="btn-cash-exact"
 								onClick={() => setCashReceivedRub(effectiveTotalRub)}
-								className="px-2.5 py-1 rounded-lg text-xs font-bold border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] min-h-[36px] cursor-pointer"
+								className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
 							>
 								Без сдачи
 							</button>

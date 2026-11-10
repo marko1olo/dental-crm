@@ -14,14 +14,8 @@ import { showToast } from "../../../../GlobalToast";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import { readPatientIdFromUrl, useLauncherPatientDebt } from "../useLauncherPatientDebt";
 
-const CashRegisterCheckoutModal = lazyWithRetry(() =>
-	import("../../../../billing/CashRegisterCheckoutModal").then((m) => ({ default: m.CashRegisterCheckoutModal })),
-);
-const FastCheckoutModal = lazyWithRetry(() =>
-	import("../../../../finance/FastCheckoutModal").then((m) => ({ default: m.FastCheckoutModal })),
-);
-const PaymentModal = lazyWithRetry(() =>
-	import("../../../../billing/PaymentModal").then((m) => ({ default: m.PaymentModal })),
+const CashRegisterStudioModal = lazyWithRetry(() =>
+	import("../../../../cashbox/CashRegisterStudioModal").then((m) => ({ default: m.CashRegisterStudioModal })),
 );
 
 function useHonestDebtGuard(
@@ -58,8 +52,13 @@ export const StandaloneFastCheckoutHost: React.FC<{ onClose: () => void }> = ({ 
 		return <AppLoadingState message="Загрузка данных кассы из базы..." />;
 	}
 	return (
-		<CashRegisterCheckoutModal
+		<CashRegisterStudioModal
 			isOpen={true}
+			mode="checkout"
+			initialTab="checkout"
+			containerTestId="cash-register-checkout-modal"
+			submitButtonTestId="btn-confirm-checkout-payment"
+			title="Касса · Оплата приёма"
 			totalDueRub={debtRub}
 			amountRub={debtRub}
 			patientId={patient.id}
@@ -91,14 +90,22 @@ export const StandaloneSbpPaymentHost: React.FC<{ onClose: () => void }> = ({ on
 		return <AppLoadingState message="Загрузка данных оплаты из базы..." />;
 	}
 	return (
-		<PaymentModal
+		<CashRegisterStudioModal
 			isOpen={true}
+			mode="checkout"
+			initialTab="checkout"
+			title="Касса · Оплата СБП"
+			containerTestId="standalone-sbp-modal"
+			submitButtonTestId="btn-confirm-checkout-payment"
+			totalDueRub={debtRub}
 			amountRub={debtRub}
 			amountKopecks={Math.round(debtRub * 100)}
-			defaultMethod={isSplit ? "split" : "sbp_qr"}
+			defaultMethod={isSplit ? "split" : "sbp"}
+			initialPaymentMethod={isSplit ? "split" : "sbp"}
 			patientId={patient.id}
 			patientName={patient.fullName}
 			patientPhone={patient.phone}
+			patientDepositRub={family?.balanceRub ?? 0}
 			patientFamilyBalanceRub={family?.balanceRub ?? 0}
 			onClose={onClose}
 		/>

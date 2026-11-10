@@ -59,7 +59,7 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 						type="button"
 						data-testid="btn-print-x-report-footer"
 						onClick={onPrintXReport}
-						className="secondary-button px-3 sm:px-4 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs min-h-[44px] cursor-pointer shrink-0"
+						className="dente-btn dente-btn-secondary secondary-button px-3 sm:px-4 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs min-h-[44px] cursor-pointer shrink-0"
 					>
 						X-отчёт
 					</button>
@@ -68,7 +68,7 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 				<button
 					type="button"
 					onClick={onClose}
-					className="secondary-button px-4 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs min-h-[44px] cursor-pointer shrink-0"
+					className="dente-btn dente-btn-secondary secondary-button px-4 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs min-h-[44px] cursor-pointer shrink-0"
 				>
 					Отмена
 				</button>
@@ -87,6 +87,8 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 						<span className="whitespace-nowrap">
 							{isWarranty ? (
 								"Оформить по гарантии (0 ₽)"
+							) : effectiveTotalRub === 0 ? (
+								"Принять оплату"
 							) : (
 								`Принять оплату ${formatRubles(effectiveTotalRub)}`
 							)}

@@ -9,8 +9,10 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { CashRegisterCheckoutModal } from "./CashRegisterCheckoutModal.js";
+import { CashRegisterStudioModal } from "./CashRegisterStudioModal.js";
 import { StandaloneCashboxSsotHost } from "../appLayout/modalsContainerModules/standalone/administrative/StandaloneCashboxSsotHost.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { getDemoUnpaidInvoices } from "./cashRegisterCatalogData.js";
 
 interface CashboxLauncherDetail {
 	readonly mode?: "checkout" | "hub";
@@ -25,7 +27,20 @@ function parseCashboxUrl(): { isOpen: boolean; view: "checkout" | "hub" } {
 	if (typeof window === "undefined") return { isOpen: false, view: "hub" };
 	const h = window.location.hash.toLowerCase();
 	const s = window.location.search.toLowerCase();
-	if (h.includes("checkout") || h.includes("payment") || s.includes("checkout") || s.includes("payment")) {
+	if (
+		h.includes("checkout") ||
+		h.includes("payment") ||
+		h.includes("fast-checkout") ||
+		h.includes("quick-checkout") ||
+		h.includes("cashbox-pay") ||
+		h.includes("bonus-payment") ||
+		s.includes("checkout") ||
+		s.includes("payment") ||
+		s.includes("fast-checkout") ||
+		s.includes("quick-checkout") ||
+		s.includes("cashbox-pay") ||
+		s.includes("bonus-payment")
+	) {
 		return { isOpen: true, view: "checkout" };
 	}
 	if (
@@ -35,9 +50,14 @@ function parseCashboxUrl(): { isOpen: boolean; view: "checkout" | "hub" } {
 		h.includes("cash_register") ||
 		h.includes("shift_closing") ||
 		h.includes("shift_journal") ||
+		h.includes("cashier") ||
+		h.includes("receipt") ||
+		h.includes("kassa") ||
 		s.includes("cashbox") ||
 		s.includes("cashbox_ssot") ||
-		s.includes("cash_register")
+		s.includes("cash_register") ||
+		s.includes("cashier") ||
+		s.includes("kassa")
 	) {
 		return { isOpen: true, view: "hub" };
 	}
@@ -73,12 +93,20 @@ export const DirectCashboxLauncher: React.FC = () => {
 
 		window.addEventListener("dente:open-cashbox", handleCustomOpen);
 		window.addEventListener("dente-open-cashbox", handleCustomOpen);
+		window.addEventListener("dente:open-cashier", handleCustomOpen);
+		window.addEventListener("dente-open-cashier", handleCustomOpen);
+		window.addEventListener("dente:open-fast-checkout", handleCustomOpen);
+		window.addEventListener("dente-open-fast-checkout", handleCustomOpen);
 
 		return () => {
 			window.removeEventListener("hashchange", checkUrl);
 			window.removeEventListener("popstate", checkUrl);
 			window.removeEventListener("dente:open-cashbox", handleCustomOpen);
 			window.removeEventListener("dente-open-cashbox", handleCustomOpen);
+			window.removeEventListener("dente:open-cashier", handleCustomOpen);
+			window.removeEventListener("dente-open-cashier", handleCustomOpen);
+			window.removeEventListener("dente:open-fast-checkout", handleCustomOpen);
+			window.removeEventListener("dente-open-fast-checkout", handleCustomOpen);
 		};
 	}, [checkUrl]);
 
@@ -89,31 +117,50 @@ export const DirectCashboxLauncher: React.FC = () => {
 		setCustomData(null);
 		if (typeof window !== "undefined") {
 			const cleanHash = window.location.hash.replace(
-				/#cashbox_ssot|#cashbox|#checkout|#cash-register|#cash_register|#shift_closing|#shift_journal|#payment/g,
+				/#(cashbox_ssot|cashbox|checkout|cash-register|cash_register|shift_closing|shift_journal|payment|cashier|receipt|kassa|fast-checkout|quick-checkout|bonus-payment|cashbox-pay)[^&]*/g,
 				"",
 			);
 			const url = new URL(window.location.href);
-			url.searchParams.delete("cashbox");
-			url.searchParams.delete("cashbox_ssot");
-			url.searchParams.delete("cash_register");
-			url.searchParams.delete("shift_closing");
-			url.searchParams.delete("shift_journal");
-			url.searchParams.delete("checkout");
-			url.searchParams.delete("payment");
+			[
+				"cashbox", "cashbox_ssot", "cash_register", "shift_closing", "shift_journal",
+				"checkout", "payment", "cashier", "kassa", "fast-checkout", "quick-checkout",
+				"bonus-payment", "cashbox-pay",
+			].forEach((k) => url.searchParams.delete(k));
 			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
 			window.history.replaceState({}, "", newUrl);
 		}
 	};
 
 	if (activeView === "checkout") {
+		const demoFallback = isDemoShowcaseMode() ? getDemoUnpaidInvoices()[0] : undefined;
+		const effectiveAmountRub = customData?.amountRub ?? demoFallback?.amountRub;
+		const effectivePatientId = customData?.patientId ?? demoFallback?.patientId;
+		const effectivePatientName = customData?.patientName ?? demoFallback?.patientName;
+		const effectivePatientPhone = demoFallback?.patientPhone;
+		const effectiveDoctorFullName = demoFallback?.doctorName;
+		const effectiveServiceTitle = demoFallback?.serviceTitle;
+		const effectiveDepositRub = demoFallback?.depositRub;
+		const effectiveFamilyBalanceRub = demoFallback?.familyBalanceRub;
+		const effectiveInvoiceId = customData?.invoiceId ?? demoFallback?.id;
+
 		return (
-			<CashRegisterCheckoutModal
+			<CashRegisterStudioModal
 				isOpen={isOpen}
 				onClose={handleClose}
-				totalDueRub={customData?.amountRub}
-				patientId={customData?.patientId}
-				patientName={customData?.patientName}
-				invoiceId={customData?.invoiceId}
+				mode="checkout"
+				initialTab="checkout"
+				containerTestId="cash-register-checkout-modal"
+				submitButtonTestId="btn-confirm-checkout-payment"
+				title="Касса · Оплата приёма"
+				totalDueRub={effectiveAmountRub}
+				patientId={effectivePatientId}
+				patientName={effectivePatientName}
+				patientPhone={effectivePatientPhone}
+				doctorFullName={effectiveDoctorFullName}
+				serviceTitle={effectiveServiceTitle}
+				patientDepositRub={effectiveDepositRub}
+				patientFamilyBalanceRub={effectiveFamilyBalanceRub}
+				invoiceId={effectiveInvoiceId}
 				cashierFullName={customData?.cashierFullName ?? "Кассир"}
 				onSuccess={handleClose}
 			/>

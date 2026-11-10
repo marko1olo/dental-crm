@@ -53,7 +53,7 @@ export const CashRegisterShiftSection: React.FC<CashRegisterShiftSectionProps> =
 			{/* Shift Info Header Card */}
 			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
 				<div>
-					<div className="text-xs uppercase font-bold text-[var(--muted)]">Кассовая смена</div>
+					<div className="text-xs font-semibold text-[var(--muted)]">Кассовая смена</div>
 					<div className="text-xl font-bold text-[var(--ink)] mt-0.5">Смена №{shiftNumber}</div>
 					<div className="text-xs text-[var(--muted)] mt-1">
 						Касса: {kktRegNumber} · Чек онлайн: {ofdName}
@@ -66,26 +66,22 @@ export const CashRegisterShiftSection: React.FC<CashRegisterShiftSectionProps> =
 			</div>
 
 			{!isShiftActive ? (
-				/* Closed Shift State */
-				<div className="p-6 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-center space-y-3">
-					<div className="text-sm font-semibold text-[var(--muted)]">Смена закрыта</div>
-					<button
-						type="button"
-						data-testid="btn-1click-open-shift"
-						onClick={onToggleShift}
-						aria-busy={isSubmitting}
-						className="primary-button px-6 py-3 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold text-sm min-h-[44px] inline-flex items-center justify-center gap-2 cursor-pointer shadow-md dente-btn-primary"
-					>
-						<ShieldCheck className="w-4 h-4" />
-						<span>Открыть кассовую смену</span>
-					</button>
+				/* Closed Shift State (Single Primary CTA is in CashRegisterStudioFooter) */
+				<div className="p-6 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-center space-y-2">
+					<div className="w-12 h-12 mx-auto rounded-full bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center">
+						<ShieldCheck className="w-6 h-6" />
+					</div>
+					<div className="text-base font-bold text-[var(--ink)]">Кассовая смена закрыта</div>
+					<p className="text-xs text-[var(--muted)] max-w-sm mx-auto">
+						Для начала фискализации чеков, приёма оплат и расчётов с пациентами откройте смену.
+					</p>
 				</div>
 			) : (
 				/* Active Shift Revenue & Reconciliation */
 				<>
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+							<span className="text-xs font-semibold text-[var(--muted)]">
 								Выручка смены:
 							</span>
 							<span
@@ -156,7 +152,7 @@ export const CashRegisterShiftSection: React.FC<CashRegisterShiftSectionProps> =
 								type="button"
 								data-testid="btn-match-drawer-cash"
 								onClick={() => setCountedCashInput(String(initialCashDrawer))}
-								className="px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] min-h-[44px] cursor-pointer"
+								className="dente-btn dente-btn-secondary px-3 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] min-h-[44px] cursor-pointer"
 							>
 								Совпадает с кассой
 							</button>

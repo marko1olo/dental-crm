@@ -26,9 +26,7 @@ import {
 	copySbpUrlToClipboard,
 } from "../sbpQrEngine.js";
 import { SbpDynamicQrCard } from "../SbpDynamicQrCard.js";
-import { CashRegisterPaymentPane } from "../CashRegisterPaymentPane.js";
-import { CashRegisterDrawer } from "../CashRegisterDrawer.js";
-import { SplitPaymentModal } from "../SplitPaymentModal.js";
+import { FastCheckoutModal } from "../../finance/FastCheckoutModal.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -99,57 +97,18 @@ describe("Honest SBP QR contour", () => {
 		});
 	});
 
-	describe("3. CashRegisterPaymentPane Component (Anti-Accordion Grid)", () => {
-		it("renders prominent amount, fast split chips, and 36px segmented switcher", () => {
-			const html = renderToString(
-				React.createElement(CashRegisterPaymentPane, {
-					defaultAmountRub: 15000,
-					cashierFullName: "Д-р Смирнов А.И.",
-				})
-			);
 
-			assert.ok(html.includes('data-testid="cash-register-payment-pane"'), "Renders payment pane");
-			assert.ok(html.includes('data-testid="cashier-display-total-amount"'), "Renders prominent amount");
-			assert.ok(html.includes("15 000"), "Amount is displayed");
-
-			assert.ok(html.includes('data-testid="chip-preset-50-50-sbp"'), "Renders 50/50 Нал+СБП chip");
-			assert.ok(html.includes('data-testid="chip-preset-all-sbp"'), "Renders Вся сумма в СБП chip");
-			assert.ok(html.includes('data-testid="chip-preset-round-hundreds"'), "Renders Округлить до сотен chip");
-
-			assert.ok(html.includes('data-testid="cashier-method-switcher"'), "Renders segmented switcher");
-			assert.ok(html.includes('data-testid="btn-method-tab-sbp"'), "Renders SBP tab");
-			assert.ok(html.includes('data-testid="btn-method-tab-card"'), "Renders Card tab");
-			assert.ok(html.includes('data-testid="btn-method-tab-cash"'), "Renders Cash tab");
-			assert.ok(html.includes('data-testid="btn-method-tab-split"'), "Renders Split tab");
-
-			assert.ok(html.includes('data-testid="sbp-dynamic-qr-card"'), "SBP widget is active by default");
-		});
-	});
-
-	describe("4. CashRegisterDrawer Integration", () => {
-		it("renders payment navigation tab and mounts payment pane", () => {
-			const html = renderToString(
-				React.createElement(CashRegisterDrawer, {
-					isOpen: true,
-					onClose: () => {},
-					cashierFullName: "Врач-стоматолог",
-				})
-			);
-
-			assert.ok(html.includes('data-testid="cash-register-drawer"'), "Renders drawer");
-			assert.ok(html.includes('data-testid="tab-register-payment"'), "Renders payment tab");
-			assert.ok(html.includes("Касса") && html.includes("СБП"), "Contains payment label");
-			assert.ok(html.includes('data-testid="cash-register-payment-pane"'), "Mounts frictionless payment pane");
-		});
-	});
 
 	describe("5. SplitPaymentModal Integration", () => {
 		it("renders quick split chips, 36px segmented switcher, and SBP widget when allocated", () => {
 			const html = renderToString(
-				React.createElement(SplitPaymentModal, {
+				React.createElement(FastCheckoutModal, {
 					isOpen: true,
 					onClose: () => {},
-					totalDueRub: 18000,
+					defaultMethod: "split",
+					containerTestId: "split-payment-modal",
+					totalBillRub: 18000,
+					totalBillKop: 1800000,
 					patientId: "pat-101",
 					patientName: "Козлова Мария",
 				})

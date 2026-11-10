@@ -65,6 +65,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		initialWarranty100 = false,
 		visitId: propVisitId,
 		defaultMethod = "card",
+		initialPaymentMethod,
 		printFormat: initialPrintFormat = "tape_80mm",
 		onClose,
 	} = props;
@@ -90,7 +91,8 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 
-	const [method, setMethod] = useState<CashboxTenderType>(defaultMethod);
+	const initialMethod = initialPaymentMethod ?? defaultMethod;
+	const [method, setMethod] = useState<CashboxTenderType>(initialMethod);
 	const [isWarranty, setIsWarranty] = useState<boolean>(initialWarranty100);
 	const [discountPercent, setDiscountPercent] = useState<number>(initialWarranty100 ? 100 : 0);
 	const [payerType, setPayerType] = useState<ClientPayerType>("physical_person");
