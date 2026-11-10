@@ -2,7 +2,9 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "d2b0c89e-8ca0-4f0c-9986-9fb713a44427";
+const CONV_ID = process.env.CONV_ID || "13e59011-6736-4b27-825a-088e16a45d73";
+const PORT = process.env.PORT || "5175";
+const BASE_URL = process.env.BASE_URL || `http://127.0.0.1:${PORT}`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
@@ -47,9 +49,10 @@ async function setupPageAuth(context) {
 		localStorage.setItem("dente_clinic_token", "demo-clinic-token");
 		localStorage.setItem("dente_staff_token", "demo-staff-token");
 		localStorage.setItem("dente_active_user_id", "user-1");
-		localStorage.setItem("dente_active_role", "owner");
+		localStorage.setItem("dente_active_role", "doctor");
 		localStorage.setItem("dente_active_mode", "clinic");
 		localStorage.setItem("dente_active_org_id", "org-1");
+		localStorage.setItem("dente_demo_showcase", "true");
 		sessionStorage.setItem("dente_unlocked", "true");
 		localStorage.setItem("dente_tour_completed", "true");
 		localStorage.setItem("dente_tour_dismissed", "true");
@@ -63,8 +66,10 @@ async function setupPageAuth(context) {
 
 async function run() {
 	console.log("[HUD & Mobile Proof Runner] Launching Playwright...");
+	const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 	const browser = await chromium.launch({
 		headless: true,
+		executablePath: fs.existsSync(chromePath) ? chromePath : undefined,
 		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 	});
 
@@ -76,8 +81,20 @@ async function run() {
 		await setupPageAuth(hudContext);
 
 		const hudPage = await hudContext.newPage();
-		console.log("Navigating to http://127.0.0.1:5173/?hud=open...");
-		await hudPage.goto("http://127.0.0.1:5173/?hud=open", { waitUntil: "domcontentloaded", timeout: 30000 });
+		console.log(`Navigating to ${BASE_URL}/?demo=true&hud=open...`);
+		await hudPage.goto(`${BASE_URL}/?demo=true&hud=open`, { waitUntil: "commit", timeout: 30000 });
+		await hudPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+		await hudPage.waitForTimeout(2000);
+
+		await hudPage.evaluate(() => {
+			if (window.__denteCopilot?.openHud) {
+				window.__denteCopilot.openHud();
+			}
+			window.dispatchEvent(new CustomEvent("dente:open-copilot-hud", {
+				detail: { activeTooth: 16 }
+			}));
+		});
+
 		await hudPage.waitForSelector('[data-testid="chairside-copilot-hud"]', { state: "visible", timeout: 20000 });
 		await hudPage.waitForTimeout(1000);
 
@@ -91,36 +108,22 @@ async function run() {
 		await setTheme(hudPage, "dark");
 		await saveProof(hudPage, "05_copilot_chairside_hud_pc_dark_1440x900.png");
 
+		// ==========================================
+		// 2. MOBILE HUD (390x844)
+		// ==========================================
+		console.log("Capturing Mobile Chairside HUD (390x844)...");
+		await hudPage.setViewportSize({ width: 390, height: 844 });
+		await hudPage.waitForTimeout(800);
+
+		console.log("Capturing 06_copilot_chairside_hud_mobile_light_390x844.png...");
+		await setTheme(hudPage, "light");
+		await saveProof(hudPage, "06_copilot_chairside_hud_mobile_light_390x844.png");
+
+		console.log("Capturing 07_copilot_chairside_hud_mobile_dark_390x844.png...");
+		await setTheme(hudPage, "dark");
+		await saveProof(hudPage, "07_copilot_chairside_hud_mobile_dark_390x844.png");
+
 		await hudContext.close();
-
-		// ==========================================
-		// 2. MOBILE VIEWPORT (390x844)
-		// ==========================================
-		const mobileContext = await browser.newContext({
-			viewport: { width: 390, height: 844 },
-			isMobile: true,
-			hasTouch: true,
-			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-		});
-		await setupPageAuth(mobileContext);
-
-		const mobilePage = await mobileContext.newPage();
-		console.log("Navigating to http://127.0.0.1:5173/?copilot=1 (Mobile)...");
-		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1", { waitUntil: "domcontentloaded", timeout: 30000 });
-		await mobilePage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
-		await mobilePage.waitForTimeout(1000);
-
-		// Mobile Light
-		console.log("Capturing 08_copilot_studio_mobile_light_390x844.png...");
-		await setTheme(mobilePage, "light");
-		await saveProof(mobilePage, "08_copilot_studio_mobile_light_390x844.png");
-
-		// Mobile Dark
-		console.log("Capturing 09_copilot_studio_mobile_dark_390x844.png...");
-		await setTheme(mobilePage, "dark");
-		await saveProof(mobilePage, "09_copilot_studio_mobile_dark_390x844.png");
-
-		await mobileContext.close();
 
 		console.log("[HUD & Mobile Proof Runner] Completed successfully!");
 	} finally {

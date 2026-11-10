@@ -42,7 +42,7 @@ export const CopilotSoapDiaryActions: React.FC<CopilotSoapDiaryActionsProps> = (
             type="button"
             className="copilot-043-save-btn"
             onClick={onSave}
-            title="Внести дневник приёма в медицинскую карту в 1 клик"
+            title="Внести дневник приёма в медицинскую карту"
             style={{ flex: 1, minWidth: "180px" }}
           >
             <Check size={16} />

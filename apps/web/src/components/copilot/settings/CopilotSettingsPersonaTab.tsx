@@ -110,7 +110,7 @@ export function CopilotSettingsPersonaTab({
 				<div className="space-y-1.5">
 					<span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1">
 						<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
-						<span>Быстрые пресеты клинического стиля в 1 клик:</span>
+						<span>Клинический стиль копайлота:</span>
 					</span>
 					<div className="flex flex-wrap gap-1.5">
 						{CLINICAL_PRESETS.map((p) => (

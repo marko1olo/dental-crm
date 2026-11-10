@@ -29,6 +29,10 @@ import {
 	getDoctorPreferencesFromDb,
 	saveDoctorPreferencesInDb,
 } from "../db/doctorPreferencesQuery.js";
+import { db } from "../db/client.js";
+import { copilotHitlCards } from "../db/schema/copilot.js";
+import { patients } from "../db/schema/patients.js";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 const chatMessageSchema = z.object({
 	role: z.enum(["system", "user", "assistant", "tool"]),
@@ -639,7 +643,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 		);
 	}
 
-	// ─── PROACTIVE & SENTINEL BACKGROUND COPILOT ENDPOINTS (DEF-COP-01) ───────
+	// ─── PROACTIVE & SENTINEL BACKGROUND COPILOT ENDPOINTS (DEF-COP-04) ───────
 	server.get(
 		"/api/v1/copilot/nudges",
 		{ config: { tenantTxSelfManaged: true } },
@@ -688,11 +692,49 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			);
 			if (!resolvedOrgId) return;
 
-			return reply.code(200).send({
-				ok: true,
-				alerts: [],
-				hitlCards: [],
-			});
+			try {
+				const cards = await db
+					.select()
+					.from(copilotHitlCards)
+					.where(
+						and(
+							eq(copilotHitlCards.organizationId, resolvedOrgId),
+							eq(copilotHitlCards.status, "pending"),
+						),
+					)
+					.orderBy(desc(copilotHitlCards.createdAt))
+					.limit(20);
+
+				const hitlCards = cards.map((c) => ({
+					approvalId: c.id,
+					patientId: c.patientId,
+					patientName: c.patientName,
+					phone: c.phone,
+					intent: c.intent,
+					urgency: c.urgency,
+					incomingSnippet: c.incomingSnippet,
+					draftReply: c.draftReply,
+					channel: c.channel,
+					confidenceScore: c.confidenceScore ? Number(c.confidenceScore) : 0.95,
+					actionPrompt: c.actionPrompt || undefined,
+					category: c.category || "chairside_triage",
+					metadata: (c.metadata as Record<string, unknown>) || {},
+					createdAt: c.createdAt.toISOString(),
+				}));
+
+				return reply.code(200).send({
+					ok: true,
+					alerts: [],
+					hitlCards,
+				});
+			} catch (err: unknown) {
+				request.log.warn({ err }, "[agentRoutes] Error fetching copilotHitlCards from DB");
+				return reply.code(200).send({
+					ok: true,
+					alerts: [],
+					hitlCards: [],
+				});
+			}
 		},
 	);
 
@@ -712,6 +754,27 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 				modifiedReply?: string;
 				sendNow?: boolean;
 			};
+
+			if (body.approvalId) {
+				try {
+					await db
+						.update(copilotHitlCards)
+						.set({
+							status: "approved",
+							draftReply: body.modifiedReply ? body.modifiedReply : sql`draft_reply`,
+							resolvedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(copilotHitlCards.id, body.approvalId),
+								eq(copilotHitlCards.organizationId, resolvedOrgId),
+							),
+						);
+				} catch (err: unknown) {
+					request.log.warn({ err, approvalId: body.approvalId }, "[agentRoutes] Failed to update approved status in copilotHitlCards");
+				}
+			}
+
 			return reply.code(200).send({
 				ok: true,
 				approved: true,
@@ -735,6 +798,27 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 				approvalId?: string;
 				reason?: string;
 			};
+
+			if (body.approvalId) {
+				try {
+					await db
+						.update(copilotHitlCards)
+						.set({
+							status: "rejected",
+							rejectionReason: body.reason || "Отклонено пользователем",
+							resolvedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(copilotHitlCards.id, body.approvalId),
+								eq(copilotHitlCards.organizationId, resolvedOrgId),
+							),
+						);
+				} catch (err: unknown) {
+					request.log.warn({ err, approvalId: body.approvalId }, "[agentRoutes] Failed to update rejected status in copilotHitlCards");
+				}
+			}
+
 			return reply.code(200).send({
 				ok: true,
 				rejected: true,
@@ -774,10 +858,33 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			if (!resolvedOrgId) return;
 
 			const body = (request.body ?? {}) as { patientId?: string; mode?: string };
+			const alerts: Array<{ id: string; severity: "critical" | "warning" | "info"; title: string; description: string }> = [];
+
+			if (body.patientId) {
+				try {
+					const patientRows = await db
+						.select({ allergies: patients.allergies })
+						.from(patients)
+						.where(and(eq(patients.id, body.patientId), eq(patients.organizationId, resolvedOrgId)))
+						.limit(1);
+
+					if (patientRows[0]?.allergies && Array.isArray(patientRows[0].allergies) && patientRows[0].allergies.length > 0) {
+						alerts.push({
+							id: `alert_allergy_${body.patientId}`,
+							severity: "warning",
+							title: "Аллергоанамнез пациента",
+							description: `Зафиксированы аллергии: ${patientRows[0].allergies.join(", ")}`,
+						});
+					}
+				} catch (err: unknown) {
+					request.log.warn({ err, patientId: body.patientId }, "[agentRoutes] Error analyzing patient in sentinel");
+				}
+			}
+
 			return reply.code(200).send({
 				ok: true,
 				data: {
-					alerts: [],
+					alerts,
 					analyzedPatientId: body.patientId,
 					mode: body.mode || "supervised",
 				},

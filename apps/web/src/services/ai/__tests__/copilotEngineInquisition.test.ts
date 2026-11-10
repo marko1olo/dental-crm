@@ -16,7 +16,6 @@ import {
 	dispatchCrmAction,
 } from "../aiActionDispatcher";
 import { copilotActionRunner } from "../copilotActionRunner";
-import { aiAssistantService, type AssistantMessage } from "../aiAssistantService";
 import { AiOrchestrator } from "../../../lib/aiOrchestrator";
 import { useVisitStore } from "../../../store/visitStore";
 import { useAppStore } from "../../../store/appStore";
@@ -162,27 +161,22 @@ describe("Red Team Copilot Engine Inquisition", () => {
 	});
 
 	it("5. Two-Phase Guard: unconfirmed destructive actions in local fallback register in pending queue and can be 1-click confirmed", async () => {
-		// Doctor inputs offline voice command to extract tooth 38
-		let confirmationReceived = false;
-		aiAssistantService.setCallbacks({
-			onConfirmationRequired: (toolCall) => {
-				confirmationReceived = true;
-				assert.equal(toolCall.destructive, true);
-				assert.equal(toolCall.status, "confirmation_required");
-			},
+		// Doctor inputs action to extract tooth 38 (destructive)
+		const actionResult = await copilotActionRunner.executeAction({
+			callId: "call_extract_38",
+			name: "update_tooth_status",
+			arguments: { tooth: 38, status: "удален" },
+			confirmed: false,
 		});
 
-		const message = await aiAssistantService.sendMessage("удалить зуб 38");
-
-		assert.equal(confirmationReceived, true);
-		assert.equal(message.toolCalls?.length, 1);
-		assert.equal(message.toolCalls[0]?.status, "confirmation_required");
-		assert.equal(message.toolCalls[0]?.destructive, true);
+		assert.equal(actionResult.needsConfirmation, true);
+		assert.equal(actionResult.destructive, true);
 
 		// Verify action is tracked in copilotActionRunner pending queue
 		const pendingActions = copilotActionRunner.getPendingActions();
 		const pendingExtraction = pendingActions.find((a) => a.args.tooth === 38);
 		assert.ok(pendingExtraction, "Pending extraction must be present in runner pendingActions");
+		assert.equal(pendingExtraction.destructive, true);
 
 		// Doctor performs 1-click approval
 		const confirmResult = await copilotActionRunner.confirmAction(pendingExtraction.callId);

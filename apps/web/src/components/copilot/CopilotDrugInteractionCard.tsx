@@ -45,7 +45,7 @@ export const CopilotDrugInteractionCard: React.FC<CopilotDrugInteractionCardProp
           type="button"
           onClick={handleApprove}
           className="copilot-btn-primary px-3 py-1 rounded text-xs font-semibold text-white bg-[var(--primary)] flex items-center gap-1"
-          title="Утвердить назначение врача в 1 клик"
+          title="Утвердить назначение врача"
         >
           <Check size={13} />
           <span>{approved ? 'Утверждено врачом' : 'Утвердить'}</span>

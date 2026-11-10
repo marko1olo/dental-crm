@@ -87,7 +87,7 @@ export const CRM_FASTIFY_TOOLS_REGISTRY = {
 
 /** Реестр быстрых клинических промптов в 1 клик (Мандат 8e & Voice-First) */
 export const CLINICAL_QUICK_PRESETS: ClinicalQuickPreset[] = [
-  { id: "preset-phys-norm", label: "Протокол осмотра (норма)", prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы", actionBadge: "0-клик норма", category: "soap" },
+  { id: "preset-phys-norm", label: "Протокол осмотра (норма)", prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы", actionBadge: "Норма", category: "soap" },
   { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
   { id: "preset-caries-16-full", label: "Лечение кариеса 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
   { id: "preset-extraction-38", label: "Удаление дистопированного 38", prompt: "Протокол операции: атипичное удаление ретинированного дистопированного зуба 38", actionBadge: "Хирургия", category: "soap" },
@@ -129,9 +129,9 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         shortVoiceTrigger: "анестезия артикаин",
       },
       {
-        id: "chairside-norm", label: "Физиологическая норма в 1 клик",
+        id: "chairside-norm", label: "Физиологическая норма",
         prompt: "Установи норму: соматически здоров, интактные зубы без патологий",
-        description: "0-клик заполнение физиологической нормы без излишней бюрократии",
+        description: "Заполнение физиологической нормы без излишней бюрократии",
         category: "Клинический приём у кресла", icon: "ShieldCheck", mode: "both",
         requiresConfirmation: false, targetTool: "crmClinicalOdontogramTools.setPhysiologicalNorm",
         shortVoiceTrigger: "интактная норма",
@@ -250,7 +250,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       {
         id: "knowledge-consent-forms", label: "Печать информированного согласия",
         prompt: "Подготовь информированное согласие на эндодонтическое лечение для подписи",
-        description: "Печать бланка согласия в 1 клик с предзаполненными рисками и диагнозом",
+        description: "Печать бланка согласия с предзаполненными рисками и диагнозом",
         category: "Стандарты и клинические протоколы", icon: "FileText", mode: "both",
         requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.printConsentBlank,
         shortVoiceTrigger: "согласие на приём",

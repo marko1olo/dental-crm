@@ -42,66 +42,117 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
   const [isMinimized, setIsMinimized] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(!initialCompact);
   const [promptInput, setPromptInput] = useState("");
-  const [activePresetIndex, setActivePresetIndex] = useState(initialPresetIndex ?? 0);
-
-  const activePreset = useMemo(() => CLINICAL_PRESETS[activePresetIndex] || defaultPreset, [activePresetIndex]);
+  const [activePresetIndex, setActivePresetIndex] = useState<number | null>(initialPresetIndex ?? null);
 
   const [toothProposal, setToothProposal] = useState<ChairsideToothProposal | null>(() => {
     if (initialToothProposal !== undefined) return initialToothProposal;
+    if (initialPresetIndex !== undefined && initialPresetIndex !== null) {
+      const p = CLINICAL_PRESETS[initialPresetIndex];
+      if (p?.toothNumber || hasActiveTooth) {
+        const num = (hasActiveTooth && typeof activeTooth === "number") ? activeTooth : p?.toothNumber;
+        if (num) {
+          return {
+            toothNumber: num,
+            state: p?.toothState || "C2",
+            stateLabel: p?.toothStateLabel || "",
+            surfaces: [...(p?.surfaces || [])],
+            applied: false,
+          };
+        }
+      }
+    }
     return null;
   });
 
   const [servicesProposal, setServicesProposal] = useState<ChairsideServiceProposal[]>(() => {
     if (initialServicesProposal !== undefined) return [...initialServicesProposal];
+    if (initialPresetIndex !== undefined && initialPresetIndex !== null) {
+      const p = CLINICAL_PRESETS[initialPresetIndex];
+      if (p?.services) {
+        const effectiveTooth = (hasActiveTooth && typeof activeTooth === "number") ? activeTooth : p.toothNumber;
+        return p.services.map((s) => ({
+          ...s,
+          toothNumber: effectiveTooth ?? s.toothNumber,
+          applied: false,
+        }));
+      }
+    }
     return [];
   });
 
   const [soapProposal, setSoapProposal] = useState<ChairsideSoapProposal>(() => {
     if (initialSoapProposal !== undefined) return initialSoapProposal;
-    if (!hasActiveTooth) {
+    if (initialPresetIndex !== undefined && initialPresetIndex !== null) {
+      const preset = CLINICAL_PRESETS[initialPresetIndex];
+      if (preset?.soap) {
+        return {
+          ...preset.soap,
+          applied: false,
+        };
+      }
+    }
+    if (initialToothProposal) {
+      const toothNum = initialToothProposal.toothNumber;
+      const stateLabel = initialToothProposal.stateLabel || "Кариес дентина";
+      const code = initialToothProposal.state === "C2" ? "K02.1" : initialToothProposal.state === "P" ? "K04.0" : "K02.1";
       return {
-        complaint: "",
-        anamnesis: "",
-        objectiveStatus: "",
-        diagnosis: "",
-        treatmentPlan: "",
-        recommendations: "",
+        complaint: "Жалобы на кратковременные боли от сладкого и холодного.",
+        anamnesis: "Ранее зуб не лечен, полость появилась около 2 месяцев назад.",
+        objectiveStatus: "Зондирование дна полости болезненно по эмалево-дентинной границе. Перкуссия отрицательна.",
+        diagnosis: `${code} ${stateLabel} (зуб ${toothNum})`,
+        treatmentPlan: "Препарирование и медикаментозная обработка, постановка пломбы светового отверждения.",
+        recommendations: "Щадящая диета 2 часа, повторный осмотр через 6 месяцев.",
         applied: false,
       };
     }
     return {
-      ...activePreset.soap,
+      complaint: "",
+      anamnesis: "",
+      objectiveStatus: "",
+      diagnosis: "",
+      treatmentPlan: "",
+      recommendations: "",
       applied: false,
     };
   });
 
   const [anestheticProposal, setAnestheticProposal] = useState<ChairsideAnestheticProposal | null>(() => {
     if (initialAnestheticProposal !== undefined) return initialAnestheticProposal;
-    if (!hasActiveTooth || !activePreset.anesthetic) return null;
-    const a = activePreset.anesthetic;
-    return {
-      applied: false,
-      drugName: a.drugName,
-      carpulesCount: a.carpulesCount,
-      patientWeightKg: (a as any).patientWeightKg ?? 70,
-      maxCarpules: (a as any).maxCarpules ?? 4,
-      epinephrineMcg: (a as any).epinephrineMcg ?? 18,
-      isCardiovascularRisk: Boolean((a as any).isCardiovascularRisk),
-      ...(a.notes ? { notes: a.notes } : {}),
-    };
+    if (initialPresetIndex !== undefined && initialPresetIndex !== null) {
+      const preset = CLINICAL_PRESETS[initialPresetIndex];
+      if (preset?.anesthetic) {
+        const a = preset.anesthetic;
+        return {
+          applied: false,
+          drugName: a.drugName,
+          carpulesCount: a.carpulesCount,
+          patientWeightKg: (a as any).patientWeightKg ?? 70,
+          maxCarpules: (a as any).maxCarpules ?? 4,
+          epinephrineMcg: (a as any).epinephrineMcg ?? 18,
+          isCardiovascularRisk: Boolean((a as any).isCardiovascularRisk),
+          ...(a.notes ? { notes: a.notes } : {}),
+        };
+      }
+    }
+    return null;
   });
 
   const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert | null>(() => {
     if (initialSafetyAlert !== undefined) return initialSafetyAlert;
-    if (!hasActiveTooth || !activePreset.safetyAlert) return null;
-    const sa = activePreset.safetyAlert;
-    return {
-      id: sa.id,
-      severity: (sa.severity === "danger" ? "critical" : sa.severity) as "critical" | "warning" | "info",
-      title: sa.title,
-      description: sa.description,
-      acknowledged: false,
-    };
+    if (initialPresetIndex !== undefined && initialPresetIndex !== null) {
+      const preset = CLINICAL_PRESETS[initialPresetIndex];
+      if (preset?.safetyAlert) {
+        const sa = preset.safetyAlert;
+        return {
+          id: sa.id,
+          severity: (sa.severity === "danger" ? "critical" : sa.severity) as "critical" | "warning" | "info",
+          title: sa.title,
+          description: sa.description,
+          acknowledged: false,
+        };
+      }
+    }
+    return null;
   });
 
   const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>(() => {
@@ -249,20 +300,29 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     });
     setSafetyAlert(null);
     setAnestheticProposal(null);
+    setActivePresetIndex(null);
   }, []);
 
   const handleSelectPreset = useCallback((index: number) => {
     setActivePresetIndex(index);
     const p = CLINICAL_PRESETS[index] || defaultPreset;
-    setToothProposal(p.toothNumber ? {
-      toothNumber: p.toothNumber,
+    const effectiveTooth = (hasActiveTooth && typeof activeTooth === "number") ? activeTooth : p.toothNumber;
+    setToothProposal(effectiveTooth ? {
+      toothNumber: effectiveTooth,
       state: p.toothState || "C2",
       stateLabel: p.toothStateLabel || "",
       surfaces: [...(p.surfaces || [])],
       applied: false,
     } : null);
-    setServicesProposal(p.services.map((s) => ({ ...s, applied: false })));
-    setSoapProposal({ ...p.soap, applied: false });
+    setServicesProposal(p.services.map((s) => ({
+      ...s,
+      toothNumber: effectiveTooth ?? s.toothNumber,
+      applied: false,
+    })));
+    const diagnosis = (effectiveTooth && p.soap.diagnosis)
+      ? (p.toothNumber ? p.soap.diagnosis.replace(new RegExp(`зуб\\s*${p.toothNumber}`, "i"), `зуб ${effectiveTooth}`) : p.soap.diagnosis)
+      : p.soap.diagnosis;
+    setSoapProposal({ ...p.soap, diagnosis, applied: false });
     setAnestheticProposal(p.anesthetic ? {
       applied: false,
       drugName: p.anesthetic.drugName,
@@ -280,7 +340,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       description: p.safetyAlert.description,
       acknowledged: false,
     } : null);
-  }, []);
+  }, [hasActiveTooth, activeTooth]);
 
   const handleCloseHUD = () => {
     setIsOpen(false);

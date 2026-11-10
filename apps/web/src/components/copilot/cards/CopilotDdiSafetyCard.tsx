@@ -104,7 +104,7 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
               type="button"
               className="copilot-btn-secondary"
               onClick={handleOverride}
-              title="Утвердить назначение врача без замены (1 клик)"
+              title="Утвердить назначение врача без замены"
               style={{ minHeight: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
               <Check size={16} />

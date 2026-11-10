@@ -16,6 +16,7 @@ import type {
 export interface UseCopilotOptions {
 	apiBaseUrl?: string | undefined;
 	initialOpen?: boolean | undefined;
+	conversationId?: string | null | undefined;
 }
 
 export interface CopilotMessage {

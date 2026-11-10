@@ -39,8 +39,10 @@ import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBo
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { DirectPhotoProtocolLauncher } from "./components/photography/DirectPhotoProtocolLauncher";
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
+import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
+import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairsideHudLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
@@ -355,9 +357,11 @@ export function AppShell() {
 			<DirectConsentLauncher />
 			<DirectPhotoProtocolLauncher />
 			<DirectOrthopedicsLauncher />
+			<DirectEndodonticsLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
 			<DirectSettingsLauncher />
+			<DirectChairsideHudLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}

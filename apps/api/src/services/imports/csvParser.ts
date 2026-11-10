@@ -198,7 +198,9 @@ export function parseCsv<T = Record<string, string>>(
 		const obj = {} as Record<string, string>;
 		headers.forEach((h, colIdx) => {
 			const cell = rawRow[colIdx] ?? "";
-			obj[h] = options.trimValues ? cell.trim() : cell;
+			const val = options.trimValues ? cell.trim() : cell;
+			obj[h] = val;
+			obj[h.toLowerCase()] = val;
 		});
 		rows.push(obj as unknown as T);
 	}
@@ -211,4 +213,23 @@ export function parseCsv<T = Record<string, string>>(
 		totalRows: rows.length,
 		warnings,
 	};
+}
+
+/**
+ * Convenience method returning normalized headers and key-value row records.
+ * Direct SSOT provider for dental tools and migration pipelines.
+ */
+export function parseCsvTable(
+	content: string,
+	explicitDelimiter?: string,
+): { headers: string[]; rows: Record<string, string>[] } {
+	const parseOpts: CsvParseOptions = {
+		trimValues: true,
+		skipEmptyLines: true,
+	};
+	if (explicitDelimiter !== undefined) {
+		parseOpts.delimiter = explicitDelimiter;
+	}
+	const parsed = parseCsv<Record<string, string>>(content, parseOpts);
+	return { headers: parsed.headers, rows: parsed.rows };
 }

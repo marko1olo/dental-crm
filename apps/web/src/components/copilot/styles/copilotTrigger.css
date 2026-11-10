@@ -1,0 +1,53 @@
+/**
+ * copilotTrigger.css — Канонические стили плавающей кнопки вызова ИИ-Копайлота DENTE.
+ * Соответствие: Мандат 8am (1 Primary Noble Teal), Apple HIG (сенсорный минимум 44–48px).
+ */
+
+.copilot-trigger-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9998;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  border: 1px solid var(--teal, #0d9488);
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.copilot-trigger-btn:hover {
+  background-color: var(--teal-dark, #0f766e);
+  border-color: var(--teal-dark, #0f766e);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
+}
+
+.copilot-trigger-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  .copilot-trigger-btn {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    height: 48px;
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0 20px;
+    font-size: 14px;
+  }
+}

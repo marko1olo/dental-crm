@@ -8,6 +8,7 @@ import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../visit/clinic
 import { useVisitStore } from '../../store/visitStore';
 import { useCopilotGlobalEvents } from './host/useCopilotGlobalEvents';
 import { CopilotGlobalModals } from './host/CopilotGlobalModals';
+import './styles/copilotTrigger.css';
 
 export const CopilotGlobalHost: React.FC = () => {
   const copilot = useCopilot();

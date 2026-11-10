@@ -204,6 +204,55 @@
 Вся активность ИИ персистируется в PostgreSQL 18 для обеспечения прозрачного клинического и финансового аудита:
 
 ```sql
+-- Таблица сессий ИИ-Копайлота
+CREATE TABLE copilot_sessions (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    doctor_id UUID REFERENCES staff(id),
+    patient_id UUID REFERENCES patients(id),
+    title VARCHAR(255) NOT NULL DEFAULT 'Сессия приёма',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Таблица сообщений диалога и ReAct-трейсов
+CREATE TABLE copilot_messages (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    session_id UUID NOT NULL REFERENCES copilot_sessions(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL, -- 'user', 'assistant', 'system'
+    content TEXT NOT NULL,
+    thoughts JSONB,
+    tool_calls JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Таблица Human-in-the-Loop (HitL) карточек проактивных предложений
+CREATE TABLE copilot_hitl_cards (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    patient_id UUID REFERENCES patients(id),
+    visit_id UUID REFERENCES visits(id),
+    doctor_id UUID REFERENCES staff(id),
+    category VARCHAR(50) NOT NULL, -- 'clinical_soap', 'sanpin_kraft', 'billing_anomaly', 'recall_gap'
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status VARCHAR(30) NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
+-- Таблица отложенных действий и двухфазного подтверждения
+CREATE TABLE copilot_pending_actions (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    session_id UUID REFERENCES copilot_sessions(id) ON DELETE CASCADE,
+    tool_name VARCHAR(100) NOT NULL,
+    payload JSONB NOT NULL,
+    requires_confirmation BOOLEAN NOT NULL DEFAULT TRUE,
+    status VARCHAR(30) NOT NULL DEFAULT 'pending', -- 'pending', 'confirmed', 'cancelled'
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Таблица заданий распознавания ИИ
 CREATE TABLE ai_recognition_jobs (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
@@ -236,12 +285,13 @@ CREATE TABLE ai_telemetry_logs (
 
 ---
 
-## 🧭 8.1. КАНОНИЧЕСКИЙ SSOT КЛИНИЧЕСКОГО КОПАЙЛОТА И КОКПИТА (MANDATES 8b, 8e, 8al)
+## 🧭 8.1. КАНОНИЧЕСКИЙ SSOT КЛИНИЧЕСКОГО КОПАЙЛОТА И КОКПИТА (MANDATES 8b, 8e, 8al, 8bf)
 
-1. **Единый SSOT кресла врача (`CopilotDrawer`):**
-   - Устранен раскол между дублирующими интерфейсами копайлота (`DentalAgentCockpit` и `CopilotDrawer`).
-   - `CopilotDrawer.tsx` является каноническим единым окном ассистента в веб-интерфейсе: Split-View док на десктопе, нативный Apple Bottom Sheet на мобильных (390×844) со скруглением 24px, тактильным Drag Handle 36×5px и тач-таргетами $\ge 44$px.
-   - `DentalAgentCockpit.tsx` сведен к тонкому реактивному фасаду, перенаправляющему события (`dente:open-agent-cockpit`, вызовы `window.denteAgentCockpit`) в канонический копайлот без дублирования состояния и API.
+1. **Единый канонический SSOT хоста и шторки (`CopilotGlobalHost`, `CopilotStudioModal`, `ChairsideCopilotHUD`):**
+   - Устранен архитектурный дубликат: устаревший каталог `apps/web/src/components/ai/` (включая `DentalAgentCockpit.tsx` и `dentalAgentCockpitLogic.ts`) и легаси-сервисы `apps/web/src/services/ai/assistant/` физически искоренены из репозитория (`git rm`).
+   - `CopilotGlobalHost.tsx` (в `AppShell.tsx:368`) является единственной точкой входа и плавающей кнопкой вызова ассистента в клинической системе.
+   - Студия копайлота (`CopilotStudioModal.tsx`) и кресельный кокпит (`ChairsideCopilotHUD.tsx`) реализуют суверенный интерфейс solo-ассистента: эргономичные Bottom Sheets на смартфонах (390×844) со скруглением 24px, тактильным Drag Handle 36×5px и тач-таргетами $\ge 44$px по Apple HIG.
+   - Стили триггера вынесены в чистый модуль `styles/copilotTrigger.css` без деструктивных перезаписей.
 
 2. **Сужение 2-фазного Guard (`CopilotActionConfirm`) по Мандату 8e:**
    - 2-фазный барьер подтверждения ограничен СТРОГО деструктивными операциями (удаление зуба, списание кассы, аннулирование чека).

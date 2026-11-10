@@ -155,6 +155,8 @@ export function getActionTitleRu(toolName: string): string {
 			return "Расходные материалы (автосписание)";
 		case "analyze_radiograph_vision":
 			return "Анализ дентального снимка";
+		case "verify_kraft_pack":
+			return "Контроль стерилизации СанПиН";
 		default:
 			return "Клиническое действие";
 	}

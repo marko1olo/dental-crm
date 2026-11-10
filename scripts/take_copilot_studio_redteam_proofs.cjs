@@ -2,7 +2,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "94fdd0cf-c71a-4cea-8738-53c01dc29f47";
+const CONV_ID = process.env.CONV_ID || "13e59011-6736-4b27-825a-088e16a45d73";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
@@ -56,10 +56,45 @@ async function setTheme(page, theme) {
 	await page.waitForTimeout(500);
 }
 
+const PORT = process.env.PORT || "5173";
+const BASE_URL = process.env.BASE_URL || `http://127.0.0.1:${PORT}`;
+
 async function loginAndMountWorkspace(page) {
-	console.log("Navigating to http://127.0.0.1:5173/?demo=true&copilot=1#copilot ...");
-	await page.goto("http://127.0.0.1:5173/?demo=true&copilot=1#copilot", { waitUntil: "domcontentloaded", timeout: 35000 });
+	console.log(`Navigating to ${BASE_URL}/?demo=true&copilot=1#copilot ...`);
+	await page.goto(`${BASE_URL}/?demo=true&copilot=1#copilot`, { waitUntil: "commit", timeout: 45000 });
+	await page.waitForLoadState("domcontentloaded", { timeout: 45000 }).catch(() => {});
 	await page.waitForTimeout(1000);
+
+	await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+	for (let i = 0; i < 30; i++) {
+		await page.waitForTimeout(300);
+		const hasBoot = await page.evaluate(() => Boolean(document.querySelector(".boot-state, [data-splash]"))).catch(() => true);
+		const text = await page.evaluate(() => document.body?.innerText || "").catch(() => "");
+		if (!hasBoot && text.length > 50 && !text.includes("Загрузка")) {
+			console.log(`[Hydrated] Workspace loaded in ${(i + 1) * 300}ms!`);
+			break;
+		}
+	}
+
+	await page.addStyleTag({
+		content: `
+			.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone,
+			.coachmark-tooltip-container, .guide-tour-floating-launcher, .clinical-quest-modal,
+			[data-testid="interactive-guide-tour-card"], [data-testid="clinical-quest-banner"],
+			.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay {
+				display: none !important;
+				pointer-events: none !important;
+			}
+		`,
+	}).catch(() => {});
+
+	const loginBtn = page.locator('button:has-text("Войти в систему"), button:has-text("Войти"), button:has-text("Демо")').first();
+	if (await loginBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+		console.log("Login button visible, clicking...");
+		await loginBtn.click({ force: true });
+		await page.waitForTimeout(1500);
+	}
+
 	const rootSelector = '[data-testid="chairside-copilot-studio-root"]';
 	let isRootVisible = await page.locator(rootSelector).isVisible().catch(() => false);
 	if (!isRootVisible) {
@@ -79,13 +114,14 @@ async function loginAndMountWorkspace(page) {
 				}
 			}));
 		});
+		await page.waitForTimeout(600);
 		const triggerBtn = page.locator('[data-testid="copilot-floating-trigger"], button:has-text("ИИ Ассистент")').first();
 		if (await triggerBtn.isVisible().catch(() => false)) {
 			console.log("Clicking copilot-floating-trigger...");
 			await triggerBtn.click({ force: true });
 		}
 	}
-	await page.waitForSelector(rootSelector, { state: "visible", timeout: 15000 });
+	await page.waitForSelector(rootSelector, { state: "visible", timeout: 45000 });
 	console.log("Copilot Studio successfully mounted!");
 	await page.waitForTimeout(600);
 }
@@ -98,6 +134,16 @@ async function setupPageAuth(context) {
 		localStorage.setItem("dente_active_session_token", "mock-session-token");
 		localStorage.setItem("dente_user_role", "doctor");
 		localStorage.setItem("dente_user_name", "Д-р Воронов Алексей Владимирович");
+		localStorage.setItem("dente_active_user", JSON.stringify({
+			id: "user-1",
+			orgId: "org-1",
+			name: "Д-р Воронов Алексей Владимирович",
+			fullName: "Д-р Воронов Алексей Владимирович",
+			role: "doctor",
+			email: "doctor@dente.ru",
+			active: true,
+			pin: null,
+		}));
 		localStorage.setItem("dente_offline_mode", "true");
 		localStorage.setItem("dente_offline_readiness_banner_dismissed_v1", "true");
 		localStorage.setItem("dente_theme_mode", "light");
@@ -107,6 +153,8 @@ async function setupPageAuth(context) {
 		localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
 		localStorage.setItem("dente_demo_banner_dismissed", "true");
 		localStorage.setItem("dente_demo_mode", "true");
+		localStorage.setItem("dente_demo_showcase", "true");
+		sessionStorage.setItem("dente_unlocked", "true");
 		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true, step: "done" }));
 		localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
 			theme: "light",
@@ -120,8 +168,10 @@ async function setupPageAuth(context) {
 async function run() {
 	console.log("[Studio Proof Runner] Launching Playwright Chrome for Copilot Studio Proofs...");
 
+	const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 	const browser = await chromium.launch({
 		headless: true,
+		executablePath: fs.existsSync(chromePath) ? chromePath : undefined,
 		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 	});
 

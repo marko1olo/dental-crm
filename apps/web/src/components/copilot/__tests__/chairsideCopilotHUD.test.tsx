@@ -235,11 +235,12 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Добавить в смету");
   });
 
-  it("6. renders Medical Card SOAP Diary card with structured clinical sections", () => {
+  it("6. renders Medical Card SOAP Diary card with structured clinical sections when preset is selected", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+        initialPresetIndex={0}
       />
     );
 
@@ -254,11 +255,26 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Применить в визит");
   });
 
-  it("7. renders Safety Alert card with DDI / allergy status and acknowledge button", () => {
+  it("6b. does NOT hallucinate SOAP diary or diagnosis on simple tooth selection (Zero Unprompted Caries)", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+      />
+    );
+
+    expect(html).not.toMatch(/chairside-card-soap/);
+    expect(html).not.toMatch(/K02\.1/);
+    expect(html).toContain("Нет активных клинических предложений");
+    expect(html).toContain("Готов к диктовке");
+  });
+
+  it("7. renders Safety Alert card with DDI / allergy status and acknowledge button when preset is selected", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+        initialPresetIndex={0}
       />
     );
 
@@ -267,6 +283,19 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Аллергия на пенициллины зафиксирована в карте");
     expect(html).toContain("btn-acknowledge-safety-alert");
     expect(html).toContain("Принять к сведению");
+  });
+
+  it("7b. does NOT hallucinate safety alerts or anesthetic proposal on simple tooth selection (Honest Waiting State)", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).not.toMatch(/chairside-card-safety-alert/);
+    expect(html).not.toMatch(/chairside-card-anesthetic/);
+    expect(html).not.toMatch(/Ультракаин/);
   });
 
   it("8. renders 1-Click Apply All control bar with doctor autonomy note (Mandates 8e & 8k)", () => {
@@ -285,11 +314,12 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Полный контроль врача");
   });
 
-  it("8b. renders 1-Click Macro-Batch Apply banner in proposals container", () => {
+  it("8b. renders 1-Click Macro-Batch Apply banner in proposals container when proposals exist", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={16}
+        initialPresetIndex={0}
       />
     );
 

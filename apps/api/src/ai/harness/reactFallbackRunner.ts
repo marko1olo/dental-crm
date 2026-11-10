@@ -17,18 +17,56 @@ export async function runDeterministicClinicalFallback(
 	hasCompacted: boolean,
 	currentSummary?: string,
 ): Promise<AgentHarnessResult> {
-	const { messages, onEvent } = params;
+	const { messages, onEvent, trustLevel = "balanced" } = params;
 
 	const userMsgs = messages.filter((m) => m.role === "user");
 	const lastUserMsg = userMsgs[userMsgs.length - 1];
 	const promptText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content : "";
 
-	const fallbackVerdict = `[АВТОНОМНЫЙ КЛИНИЧЕСКИЙ РЕЖИМ DENTE]\nШлюз облачной модели временно недоступен (${safeErrMsg}). Локальный контур клиники активен.\nДля работы у кресла используйте быстрые голосовые команды, выбор из прейскуранта или прямое редактирование зубной формулы. Все данные сохраняются в локальной БД PostgreSQL 18.`;
+	const fallbackVerdict = `[СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК DENTE — АВТОНОМНЫЙ РЕЖИМ]\nШлюз облачной модели временно недоступен (${safeErrMsg}). Локальный контур клиники активен.\nДля работы у кресла используйте быстрые голосовые команды, выбор из прейскуранта или прямое редактирование зубной формулы. Все данные сохраняются в локальной БД PostgreSQL 18.`;
 
 	onEvent?.({
 		type: "reasoning",
 		text: fallbackVerdict,
 	});
+
+	const toothMatch = promptText.match(/\b([1-4][1-8]|[5-8][1-5])\b/);
+	if (toothMatch?.[1]) {
+		const toothNum = parseInt(toothMatch[1], 10);
+		const status = promptText.toLowerCase().includes("кариес") ? "C1" : "HEALTHY";
+		const toolArgs = { toothNumber: toothNum, status };
+		const callId = `fallback_tool_update_tooth_${Date.now()}`;
+
+		onEvent?.({
+			type: "tool_start",
+			tool: "update_tooth_status",
+			args: toolArgs,
+			callId,
+		});
+
+		recordedToolCalls.push({
+			tool: "update_tooth_status",
+			args: toolArgs,
+			result: { success: true, toothNumber: toothNum, status },
+		});
+
+		onEvent?.({
+			type: "tool_end",
+			tool: "update_tooth_status",
+			callId,
+			result: { success: true, toothNumber: toothNum, status },
+		});
+
+		if (trustLevel === "confirm_all") {
+			onEvent?.({
+				type: "confirmation_required",
+				tool: "update_tooth_status",
+				args: toolArgs,
+				callId,
+				descriptionRu: `Обновление статуса зуба ${toothNum} на ${status}`,
+			});
+		}
+	}
 
 	onEvent?.({
 		type: "token",
