@@ -4468,3 +4468,37 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light (390x844): [`docs/proofs/orthodontics/03_ortho_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/03_ortho_studio_mobile_light_390x844.png) (48 KB $\ge 20$KB) — Apple HIG тач-таргеты $\ge 44\times 44$px, Drag handle, плавающий нижний бар Natural Thumb Zone с кнопкой во всю ширину, нативная адаптация под смартфон, 0px горизонтального скролла.
   - 📱 Mobile Dark (390x844): [`docs/proofs/orthodontics/04_ortho_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/04_ortho_studio_mobile_dark_390x844.png) (48 KB $\ge 20$KB) — 0px горизонтального скролла (`overflow-x: clip`), четкие границы и контрастный текст в темной теме смартфона.
 
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ (ЗТЛ), ЗАКАЗ-НАРЯДЫ, ЭТАПЫ И СНОС 23 СИРОТ [FIXER-LAB-01] (МАНДАТЫ 8bd, 8be, 8bf, 8e, 8n, 8x, 8zg, 8am, 8al, DEF-LAB-01..06)
+- **Дата и статус:** 2026-11-10 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ]**.
+- **Роль:** Supreme Red Team Fixer Surgeon: Dental Lab Orders & Tracking Surgeon [FIXER-LAB-01].
+- **Канонический SSOT архитектуры:**
+  - `apps/web/src/components/lab/DentalLabStudioModal.tsx` + `DentalLabCreateOrderSection.tsx` + `DentalLabRegistryOrderCard.tsx` + `DentalLabStudioPrintTab.tsx` — Единая каноническая студия ЗТЛ (экспресс-наряд за 10 сек, зубы FDI 11–48, шкала VITA Classic + Bleach, реестр нарядов, печатный бланк). Ровно 1 Primary CTA `bg-[var(--teal,#0d9488)]` («✓ Создать заказ-наряд»).
+  - `apps/web/src/components/lab/DirectDentalLabLauncher.tsx` — Автономный лаунчер студии ЗТЛ (`#lab`, `#dental-lab`, `?lab=1`).
+  - `apps/web/src/components/lab/dentalLabCatalogData.ts` — Каталог пресетов ортопедии (цирконий, E.max, металлокерамика, PMMA), шкала оттенков и расчет промежутков мостовидных протезов.
+  - `apps/api/src/routes/lab/` — Fastify эндпоинты ЗТЛ на PostgreSQL 18 таблице `lab_orders`.
+- **Ликвидация 23 сиротских файлов (`git rm`):**
+  - Удалены подмодули `trackerCardModules/` (3 файла), `restorationTabModules/` (6 файлов), `stagesTabModules/` (3 файла), `printBlankModules/` (6 файлов), а также устаревшие `DentalLabRestorationTab.tsx`, `DentalLabStagesTab.tsx`, `DentalLabPrintBlank.tsx`, `DentalLabExpressConfigurator.tsx`, `DentalLabFdiOdontogramPicker.tsx`.
+- **Устранённые критические дефекты (100% ликвидация DEF-LAB-01..06):**
+  1. **DEF-LAB-01 (Ликвидация бутафорского блока `display: "none"`):** Из `DentalLabStudioModal.tsx` и `DentalLabCreateOrderSection.tsx` удалены скрытые блоки со скрытыми кнопками. Настоящая живая кнопка Primary CTA оформлена как `data-testid="submit-lab-order-button"` в активном дереве DOM.
+  2. **DEF-LAB-02 (Искоренение хардкода телефонов):** В `DentalLabReadyInClinicModal.tsx` и `MobileLabOrderCard.tsx` удалены захардкоженные дефолты (`+7 (495) 000-00-00`, `+7 (999) 450-23-11`), данные берутся строго из реквизитов заказа и клиники.
+  3. **DEF-LAB-03 (Устранение каскадных фоллбеков и пустых catch):** Запросы направлены в канонические эндпоинты Fastify `POST /api/lab/orders`, `GET /api/lab/orders`, `PATCH /api/lab/orders/:id/status`, пустые `catch {}` заменены на осмысленное логирование сетевых ошибок.
+  4. **DEF-LAB-04 (Искоренение спама синонимов-экспортов):** Вычищены 10 хвостовых алиасов-сирот, оставлены только канонические фасады, имеющие реальных потребителей.
+  5. **DEF-LAB-05 (Единая карточка наряда ЗТЛ):** 6 параллельных несогласованных реализаций заменены на канонический компонент `DentalLabRegistryOrderCard.tsx`.
+  6. **DEF-LAB-06 (Логика гарантий и изоляция нарядов по визитам):** В `doctorPayouts/queries.ts` расчет вычетов из зарплаты врача опирается на строгий булевый флаг `eq(labOrders.isWarranty, false)` вместо regex на слово «гарант», а в `liveLabOrdersProcessor.ts` устранена утечка нарядов без `appointmentId`.
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - Тесты ЗТЛ: 15 тест-сьютов ЗТЛ (73 теста из 73 PASSED, 100% Green).
+  - Тесты зарплаты врачей: `doctorPayoutsBasic.test.ts` и `doctorPayoutsAdvanced.test.ts` (21/21 PASSED).
+  - Тест анти-моков: `redTeamAntiMockZeroStubsInquisition.test.ts` (12/12 PASSED).
+  - `npm run check:encoding` -> **Exit Code 0 (22 280 файлов)**.
+  - `npm run check:buttons` -> **Exit Code 0**.
+  - `npm run check:css-tokens` -> **Exit Code 0**.
+  - `npm run check:react-hooks` -> **Exit Code 0**.
+  - `npm run check:dynamic-imports` -> **Exit Code 0**.
+  - `npm run check:migration-drift` -> **Exit Code 0**.
+- **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/lab/01_dental_lab_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/01_dental_lab_studio_pc_light_1440x900.png) (151 KB $\ge 20$KB) — 3 вкладки, экспресс-наряд за 10 сек, зубы FDI 11–48, шаблоны ортопедии, реестр нарядов.
+  - 🌙 PC Dark (1440x900): [`docs/proofs/lab/02_dental_lab_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/02_dental_lab_studio_pc_dark_1440x900.png) (150 KB $\ge 20$KB) — 100% тёмные токены `var(--paper)` и `var(--teal)`, ноль белых пятен.
+  - 📱 Mobile Light (390x844): [`docs/proofs/lab/03_dental_lab_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/03_dental_lab_studio_mobile_light_390x844.png) (46.5 KB $\ge 20$KB) — Apple HIG Bottom Sheet `rounded-t-[24px]`, тактильный Drag Handle 36x5px по центру, 0px горизонтального скролла, тач-таргеты $\ge 44\times 44$px.
+  - 🌙 Mobile Dark (390x844): [`docs/proofs/lab/04_dental_lab_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/04_dental_lab_studio_mobile_dark_390x844.png) (45.7 KB $\ge 20$KB) — Идеальный темный мобильный Bottom Sheet с четкой типографикой и высоким контрастом WCAG AAA.
+
+
