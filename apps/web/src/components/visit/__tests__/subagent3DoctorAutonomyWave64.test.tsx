@@ -48,26 +48,11 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 	);
 	const commConsentsSource = fs.readFileSync(commConsentsPath, "utf8");
 
-	const fastCheckoutModalPath = path.resolve(
+	const cashRegisterControlsPath = path.resolve(
 		__dirname,
-		"../../finance/FastCheckoutModal.tsx",
+		"../../cashbox/studioModules/checkout/CheckoutDiscountAndPayerControls.tsx",
 	);
-	const fastCheckoutPresetsPath = path.resolve(
-		__dirname,
-		"../../finance/FastCheckoutPresetsAndDiscounts.tsx",
-	);
-	const fastCheckoutPayerPanelPath = path.resolve(
-		__dirname,
-		"../../finance/fastCheckoutModalModules/FastCheckoutPayerTypePanel.tsx",
-	);
-	const fastCheckoutModalSource =
-		fs.readFileSync(fastCheckoutModalPath, "utf8") +
-		(fs.existsSync(fastCheckoutPresetsPath)
-			? fs.readFileSync(fastCheckoutPresetsPath, "utf8")
-			: "") +
-		(fs.existsSync(fastCheckoutPayerPanelPath)
-			? fs.readFileSync(fastCheckoutPayerPanelPath, "utf8")
-			: "");
+	const cashRegisterControlsSource = fs.readFileSync(cashRegisterControlsPath, "utf8");
 
 	it("1. guarantees VisitEmkTab Save button is NOT disabled by foreign note text (Mandate 8e)", () => {
 		assert.ok(
@@ -143,14 +128,14 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 		assert.strictEqual(warrantyResult.paymentStatus, "Оплачено (скидка 100%)");
 		assert.strictEqual(warrantyResult.bypassKktZeroReceipt, true);
 
-		// Verify FastCheckoutModal contains physical person non-requirement badge and warranty preset
+		// Verify CashRegisterStudioModal contains physical person non-requirement badge and warranty preset
 		assert.ok(
-			fastCheckoutModalSource.includes("data-testid=\"inn-physical-not-required-badge\""),
-			"FastCheckoutModal must display 54-FZ badge that INN is not required for physical persons",
+			cashRegisterControlsSource.includes("data-testid=\"inn-physical-not-required-badge\""),
+			"CashRegisterStudioModal must display 54-FZ badge that INN is not required for physical persons",
 		);
 		assert.ok(
-			fastCheckoutModalSource.includes("data-testid=\"btn-discount-warranty\""),
-			"FastCheckoutModal must have 1-tap 100% warranty rework button",
+			cashRegisterControlsSource.includes("preset-warranty-100"),
+			"CashRegisterStudioModal must have 1-tap 100% warranty rework button",
 		);
 	});
 

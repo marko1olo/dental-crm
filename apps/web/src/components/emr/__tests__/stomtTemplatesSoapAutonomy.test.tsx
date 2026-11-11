@@ -12,7 +12,7 @@ import {
 import { resolveProtocolFromTemplate } from "../clinicalDiaryMath.js";
 import { RecordNewDiaryInlineForm } from "../record/tabs/RecordNewDiaryInlineForm.js";
 import { RecordDiariesTab } from "../record/tabs/RecordDiariesTab.js";
-import { DEFAULT_MEDICAL_RECORD_DATA } from "../defaults/recordDefaultSchema.js";
+import { DEFAULT_MEDICAL_CARD_DATA as DEFAULT_MEDICAL_RECORD_DATA } from "../medicalCardCatalogData.js";
 
 describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 	it("1. Verifies completeness of STOMX_ALL_448_TEMPLATES_INDEX (exactly 448 clinical templates)", () => {

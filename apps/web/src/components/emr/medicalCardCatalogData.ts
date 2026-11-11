@@ -191,6 +191,7 @@ export const CLINICAL_SOAP_PRESETS = [
 /** Алиасы обратной совместимости (Мандат 8ap) */
 export const DEFAULT_043_DATA = DEFAULT_MEDICAL_CARD_DATA;
 export const DEFAULT_CLINICAL_DIARY_DATA = DEFAULT_MEDICAL_CARD_DATA;
+export const DEFAULT_MEDICAL_RECORD_DATA = DEFAULT_MEDICAL_CARD_DATA;
 
 /** Резолвер реквизитов клиники из настроек и профиля */
 export function resolveClinicRequisites(
@@ -308,3 +309,4 @@ export function applyMedicalCardPhysiologicalNorm(prev: MedicalRecordData): Medi
 /** Алиасы обратной совместимости (Мандат 8ap) */
 export const applyForm043PhysiologicalNorm = applyMedicalCardPhysiologicalNorm;
 export const applyClinicalDiaryPhysiologicalNorm = applyMedicalCardPhysiologicalNorm;
+export const applyMedicalRecordPhysiologicalNorm = applyMedicalCardPhysiologicalNorm;

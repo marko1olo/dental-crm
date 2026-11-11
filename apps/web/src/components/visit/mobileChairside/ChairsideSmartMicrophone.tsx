@@ -26,7 +26,7 @@ export const ChairsideSmartMicrophone: React.FC<ChairsideSmartMicrophoneProps> =
           data-testid={`${testId}-mic-toggle-btn`}
         >
           {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-          <span>{isRecording ? "Идет запись диктовки..." : "Голосовая диктовка SmartMic"}</span>
+          <span>{isRecording ? "Идет запись диктовки..." : "Голосовая диктовка"}</span>
         </button>
       </div>
 

@@ -82,6 +82,15 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 						<MessageSquare size={14} className="text-[var(--teal,#0d9488)]" />
 						<span>Памятка пациенту (WhatsApp)</span>
 					</button>
+					<button
+						type="button"
+						onClick={state.handleAddServicesToInvoice}
+						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer touch-manipulation"
+						data-testid="btn-extraction-bar-add-to-invoice"
+						title="Добавить хирургические услуги в смету визита"
+					>
+						<span>В смету</span>
+					</button>
 				</div>
 			</div>
 			{renderControls()}

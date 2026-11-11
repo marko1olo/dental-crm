@@ -20,8 +20,8 @@
   display: inline-flex; align-items: center; justify-content: center;
   gap: 10px; font-size: 16px; font-weight: 700; border: none; cursor: pointer;
   transition: transform 0.15s ease, filter 0.15s ease;
-  background: linear-gradient(135deg, var(--teal, #0d9488) 0%, #059669 100%);
-  color: #ffffff; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+  background: var(--teal, #0d9488);
+  color: #ffffff; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
   -webkit-tap-highlight-color: transparent;
 }
 .mobile-chairside-primary-cta:active { transform: scale(0.97); filter: brightness(0.95); }

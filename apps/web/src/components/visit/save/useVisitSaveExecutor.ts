@@ -8,6 +8,9 @@ import { fetchWithHandling } from "../../../utils/networkUtils";
 import { logger } from "../../../utils/logger";
 import type { SaveSyncState } from "./visitSaveTypes.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface UseVisitSaveExecutorParams {
 	canSave: boolean;
 	computeSignature: (form?: VisitNoteForm, tr?: string) => string;
@@ -53,6 +56,8 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 			if (!effectiveVisitId || effectiveVisitId === "no-active-visit") return { success: true };
 
 			const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+			const hasValidVisitUuid = typeof effectiveVisitId === "string" && UUID_PATTERN.test(effectiveVisitId.trim());
+			const hasValidPatientUuid = typeof effectivePatientId === "string" && UUID_PATTERN.test(effectivePatientId.trim());
 			const clientSavedAt = new Date().toISOString();
 			const draftPayload = form ? visitNoteDraftFromForm(form, ["Автосохранение врача solo. Дневник приёма зафиксирован."]) : null;
 
@@ -74,7 +79,7 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 				if (isMountedRef.current) setHasUnsavedChanges(computeSignature(currentFormRef.current, currentTranscriptRef.current) !== signature);
 			};
 
-			if (!isOnline) {
+			if (!isOnline || !hasValidPatientUuid || !hasValidVisitUuid) {
 				try { await queueSave(); return { success: true }; }
 				catch (e) { setSaveState("error"); setServerDraftSyncState("error"); return { success: false, error: "Не удалось сохранить локально" }; }
 			}
@@ -82,7 +87,15 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 			try {
 				const response = await fetchWithHandling(`/api/visits/${effectiveVisitId}/draft/autosave`, {
 					method: "PUT", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-					body: JSON.stringify({ patientId: effectivePatientId, selectedSpecialty, transcript: tr, draft: draftPayload, baseRevision: activeVisit?.revision ?? null, clientDraftId: `visit-draft-${effectiveVisitId}`, clientSavedAt }),
+					body: JSON.stringify({
+						patientId: effectivePatientId,
+						selectedSpecialty: (selectedSpecialty as DentalSpecialty) || "universal",
+						transcript: tr,
+						draft: draftPayload,
+						baseRevision: activeVisit?.revision ?? null,
+						clientDraftId: `visit-draft-${effectiveVisitId}`,
+						clientSavedAt,
+					}),
 				});
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 

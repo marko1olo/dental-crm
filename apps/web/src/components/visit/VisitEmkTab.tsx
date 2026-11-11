@@ -105,7 +105,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 				<div className="flex flex-wrap items-center justify-between gap-1.5">
 					<div className="flex items-center gap-1.5 min-w-0 shrink-0">
 						<h3
-							className="text-xs font-bold text-[var(--ink)] m-0 uppercase tracking-wider"
+							className="text-xs font-bold text-[var(--ink)] m-0 tracking-wide"
 							data-testid="emk-section-title"
 						>
 							Дневник приёма
@@ -138,7 +138,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 								context="visit"
 								sterileMode={false}
 								className="h-[28px] px-2 rounded-lg"
-								title="Голосовая диктовка SmartMic: надиктуйте жалобы, осмотр или лечение"
+								title="Голосовая диктовка: надиктуйте жалобы, осмотр или лечение"
 								onResult={handleVoiceResult}
 							/>
 						}

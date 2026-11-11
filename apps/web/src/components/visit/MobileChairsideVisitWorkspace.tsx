@@ -67,12 +67,12 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
               data-testid={`${testId}-norm-btn`}
             >
               <div className="flex items-center gap-2.5">
-                <CheckCircle2 size={22} className="shrink-0" />
+                <CheckCircle2 size={22} className="shrink-0 text-[var(--teal,#0d9488)]" />
                 <span className="text-[15px] font-bold">
                   {ws.isNormApplied ? "Норма внесена" : "Соматически здоров / Норма"}
                 </span>
               </div>
-              <span className="text-[12px] opacity-90 font-medium">1 тап</span>
+              <span className="text-[12px] text-[var(--muted,#64748b)] font-medium">Внести в карту</span>
             </button>
 
             <ChairsideSmartMicrophone
@@ -166,12 +166,12 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             data-testid={`${testId}-diary-sheet-norm-btn`}
           >
             <div className="flex items-center gap-2.5">
-              <CheckCircle2 size={20} className="shrink-0" />
+              <CheckCircle2 size={20} className="shrink-0 text-[var(--teal,#0d9488)]" />
               <span className="text-[14px] font-bold">
                 {ws.isNormApplied ? "Норма внесена" : "Соматически здоров / Норма"}
               </span>
             </div>
-            <span className="text-[11px] opacity-90 font-medium">1 тап</span>
+            <span className="text-[11px] text-[var(--muted,#64748b)] font-medium">Внести в карту</span>
           </button>
 
           {/* Passive Non-blocking Allergy Warning (Mandates 8e, 8y) */}

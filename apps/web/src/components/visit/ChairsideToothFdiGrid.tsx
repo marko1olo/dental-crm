@@ -7,7 +7,8 @@
 import React from "react";
 import { FDI_LOWER_TEETH, FDI_UPPER_TEETH } from "./completedServicesPlan.js";
 import { getToothBadgeColor, toAnatomicalToothState } from "./chairsideToothColors.js";
-import { AnatomicalToothSVG } from "../odontogram/AnatomicalToothSVG";
+import { AnatomicalTooth } from "../odontogram/AnatomicalTooth";
+import { toothDataToGate0Flags } from "../odontogram/gate0/gate0ToothFlagsConverter";
 import type { ToothState } from "../../store/visitStore";
 
 interface ChairsideToothFdiGridProps {
@@ -42,14 +43,11 @@ export const ChairsideToothFdiGrid: React.FC<ChairsideToothFdiGridProps> = ({
 					>
 						<span className="text-[11px] leading-none">{t}</span>
 						<div className="w-6 h-7 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG
-								number={t}
-								state={anatomicalState}
-								scale={0.32}
-								showPeriodontalBoneLoss={false}
-								showPulpAndCanals={state === "treatment" || state === "pulpitis"}
-								showPeriapicalHalos={false}
-								onClick={() => onToothClick(t)}
+							<AnatomicalTooth
+								toothNumber={t}
+								layers={toothDataToGate0Flags({ toothNumber: t, state: anatomicalState as any })}
+								zoom={0.32}
+								showBadge={false}
 							/>
 						</div>
 						<div className="h-1 flex items-center justify-center">

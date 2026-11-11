@@ -11,10 +11,11 @@ import { MobileChairsideVisitWorkspace } from "./MobileChairsideVisitWorkspace";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { hasUrlToken, clearUrlTokens } from "../appLayout/modalsContainerModules/standalone/deepLinkUrl";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import { AppLogicProvider } from "../../contexts/AppLogicContext";
+import { AppLogicProvider, type AppLogicContextType } from "../../contexts/AppLogicContext";
 import { PrescriptionModal } from "../prescriptions/PrescriptionModal";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import type { Dashboard, Patient, Appointment } from "@dental/shared";
+import type { VisitNoteFormExtended } from "./view/VisitViewProps";
 
 const VISIT_URL_TOKENS = [
 	"visit_standalone",
@@ -46,13 +47,13 @@ export const DirectVisitLauncher: React.FC = () => {
 		const p = new URLSearchParams(window.location.search);
 		return p.get("subtab") || p.get("tab") || "emk";
 	});
-	const [visitNoteForm, setVisitNoteForm] = useState<Record<string, any>>({
-		complaints: "Жалобы на кратковременные боли от сладкого и холодного в области зуба 16.",
+	const [visitNoteForm, setVisitNoteForm] = useState<VisitNoteFormExtended>({
+		complaint: "Жалобы на кратковременные боли от сладкого и холодного в области зуба 16.",
 		anamnesis: "Анамнез без особенностей. Аллергологический анамнез не отягощен. Соматически здоров.",
-		objective: "При осмотре: зуб 16 интактен по окклюзионной поверхности, на медиальной поверхности кариозная полость в пределах средних слоев дентина. Зондирование слабо болезненно по эмалево-дентинной границе. Перкуссия безболезненна. ЭОД 6 мкА.",
-		assessment: "K02.1 Кариес дентина (средний кариес зуба 16).",
-		treatment: "Под инфильтрационной анестезией Sol. Ultracaini D-S 1:200000 1.7 ml проведено препарирование кариозной полости зуба 16. Медикаментозная обработка 2% р-ром хлоргексидина. Адгезивный протокол Single Bond Universal. Пломба светоотверждаемым композитом Filtek Ultimate A3. Шлифовка, полировка дисками Sof-Lex и пастой Prisma Gloss. Окклюзионные контакты выверены.",
-		complications: "Осложнений в ходе лечения не возникло. Рекомендации даны.",
+		objectiveStatus: "При осмотре: зуб 16 интактен по окклюзионной поверхности, на медиальной поверхности кариозная полость в пределах средних слоев дентина. Зондирование слабо болезненно по эмалево-дентинной границе. Перкуссия безболезненна. ЭОД 6 мкА.",
+		diagnosis: "K02.1 Кариес дентина (средний кариес зуба 16).",
+		treatmentPlan: "Под инфильтрационной анестезией Sol. Ultracaini D-S 1:200000 1.7 ml проведено препарирование кариозной полости зуба 16. Медикаментозная обработка 2% р-ром хлоргексидина. Адгезивный протокол Single Bond Universal. Пломба светоотверждаемым композитом Filtek Ultimate A3. Шлифовка, полировка дисками Sof-Lex и пастой Prisma Gloss. Окклюзионные контакты выверены.",
+		recommendations: "Осложнений в ходе лечения не возникло. Рекомендации даны.",
 	});
 
 	const isMobile = useIsMobile(768);
@@ -177,14 +178,14 @@ export const DirectVisitLauncher: React.FC = () => {
 		};
 	}, [dashboard?.clinicSettings?.staff]);
 
-	const fallbackAppLogic: any = useMemo(() => ({
+	const fallbackAppLogic = useMemo(() => ({
 		dashboard,
 		activePatient,
 		activeDoctor,
 		odontogramUseSurfaces: true,
 		auth: { role: "owner" },
 		money: (rub: number) => `${rub.toLocaleString("ru-RU")} ₽`,
-	}), [dashboard, activePatient, activeDoctor]);
+	} as unknown as AppLogicContextType), [dashboard, activePatient, activeDoctor]);
 
 	if (!isOpen) return null;
 
@@ -207,6 +208,31 @@ export const DirectVisitLauncher: React.FC = () => {
 		}));
 	};
 
+	const resolvedAllergyChip = useMemo(() => {
+		const list = activePatient?.allergies;
+		if (Array.isArray(list) && list.length > 0) {
+			return `Аллергия: ${list.join(", ")}`;
+		}
+		if (typeof list === "string" && list.trim() && !/нет|отсутств|не отягощ/i.test(list)) {
+			return `Аллергия: ${list.trim()}`;
+		}
+		return null;
+	}, [activePatient?.allergies]);
+
+	const resolvedPatientAge = useMemo(() => {
+		if (activePatient?.birthDate) {
+			const birth = new Date(activePatient.birthDate);
+			if (!Number.isNaN(birth.getTime())) {
+				const now = new Date();
+				let age = now.getFullYear() - birth.getFullYear();
+				const m = now.getMonth() - birth.getMonth();
+				if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+				return `${age} лет`;
+			}
+		}
+		return "38 лет";
+	}, [activePatient?.birthDate]);
+
 	return (
 		<AppLogicProvider value={fallbackAppLogic}>
 			<div className="fixed inset-0 z-[99999] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] overflow-y-auto">
@@ -222,8 +248,8 @@ export const DirectVisitLauncher: React.FC = () => {
 						handleFinishVisitAction={handleClose}
 						handlePrintForm043uFast={() => {}}
 						handleOpenPrescription={() => setIsPrescriptionModalOpen(true)}
-						consolidatedAllergyChip="Нет аллергий"
-						patientAge={38}
+						consolidatedAllergyChip={resolvedAllergyChip}
+						patientAge={resolvedPatientAge}
 						toothStateByCode={{ 16: "caries", 24: "filled", 36: "pulpitis" }}
 						setToothState={() => {}}
 						onClose={handleClose}
@@ -236,8 +262,8 @@ export const DirectVisitLauncher: React.FC = () => {
 							activePatient={activePatient}
 							activeAppointment={activeAppointment}
 							activeDoctor={activeDoctor}
-							visitSubViewTab={visitSubViewTab as any}
-							setVisitSubViewTab={setVisitSubViewTab as any}
+							visitSubViewTab={visitSubViewTab}
+							setVisitSubViewTab={setVisitSubViewTab}
 							visitNoteForm={visitNoteForm}
 							updateVisitNoteField={updateVisitNoteField}
 							handleApplySomaticNormQuick={handleApplySomaticNormQuick}
@@ -261,8 +287,8 @@ export const DirectVisitLauncher: React.FC = () => {
 						allergies={activePatient?.allergies && activePatient.allergies.length > 0 ? activePatient.allergies : ["Пенициллины", "Аспирин"]}
 						onInsertToDiary={(rxText) => {
 							updateVisitNoteField(
-								"treatment",
-								`${visitNoteForm.treatment ? `${visitNoteForm.treatment}\n\n` : ""}Назначения: ${rxText}`
+								"treatmentPlan",
+								`${visitNoteForm.treatmentPlan ? `${visitNoteForm.treatmentPlan}\n\n` : ""}Назначения: ${rxText}`
 							);
 						}}
 					/>

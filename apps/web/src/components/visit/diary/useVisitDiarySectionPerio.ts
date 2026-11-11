@@ -34,7 +34,7 @@ export function useVisitDiarySectionPerio(params: UseVisitDiarySectionPerioParam
 	const handleInsertPerioStatus = () => {
 		ensureRevisingIfLocked();
 		const perioText = buildPerioStatusText(doctorName);
-		const icd10Code = "K05.0";
+		const icd10Code = "Z01.2";
 
 		setDiary((prev) => ({
 			...prev,

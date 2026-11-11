@@ -44,7 +44,7 @@ export function SpecialtyFocusBar({
 			aria-label="Фокус специальности приема"
 		>
 			<div className="flex items-center gap-1.5 min-w-0">
-				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">Фокус:</span>
+				<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0 hidden sm:inline">Фокус:</span>
 				<strong className="font-semibold text-xs text-[var(--ink)] whitespace-nowrap shrink-0">{currentSpecialtyLabel}</strong>
 				<span className="text-xs text-[var(--muted)] hidden lg:inline shrink-0">
 					({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})

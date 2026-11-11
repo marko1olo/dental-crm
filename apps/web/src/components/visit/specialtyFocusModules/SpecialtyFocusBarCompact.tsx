@@ -20,7 +20,7 @@ export function SpecialtyFocusBarCompact({
 			className="specialty-focus-bar-compact flex flex-nowrap items-center justify-between gap-1.5 px-2.5 py-1 mb-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs min-h-[30px] h-[30px] overflow-x-auto scrollbar-none"
 		>
 			<div className="flex items-center gap-1.5 shrink-0">
-				<span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider shrink-0 hidden sm:inline">
+				<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0 hidden sm:inline">
 					Фокус:
 				</span>
 				<span className="text-xs font-semibold text-[var(--ink)] shrink-0">

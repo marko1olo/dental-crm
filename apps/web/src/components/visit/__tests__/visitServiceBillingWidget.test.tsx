@@ -30,11 +30,8 @@ import {
 	createDepositAndCardComboTenders,
 	allocateRemainderToTender,
 	process100PercentDiscountCheckout,
-} from "../../finance/cashboxOperations.js";
-import {
 	calculatePaymentDiscount,
-	PaymentModal,
-} from "../../finance/PaymentModal.js";
+} from "../../finance/cashboxOperations.js";
 import {
 	applyQuickCheckoutPreset,
 	paymentsToSplitState,

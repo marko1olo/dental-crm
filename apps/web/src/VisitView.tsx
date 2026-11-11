@@ -25,7 +25,12 @@ export {
 };
 export { AnesthesiaQuickBar } from "./components/anesthesia/AnesthesiaQuickBar";
 export * from "./components/visit/visitPlanStageHandoff";
-export { handlePrintMedicalCardFast, handlePrintClinicalDiaryFast, handlePrintForm043uFast } from "./components/visit/view";
+export {
+	handlePrintMedicalCardFast,
+	handlePrintClinicalDiaryFast,
+	/** @deprecated Канонический вызов: handlePrintMedicalCardFast («Медицинская карта приёма», Мандаты 8x/8ap) */
+	handlePrintForm043uFast,
+} from "./components/visit/view";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const s = useVisitViewState(rawProps);
@@ -69,7 +74,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				data-testid="btn-complete-visit-header"
 				data-testid="btn-somatic-norm-one-click"
 				handleApplySomaticNormQuick
+				data-testid="btn-visit-fast-print-medical-card"
 				data-testid="btn-visit-fast-print-043u"
+				btn-visit-fast-print-medical-card
 				btn-visit-fast-print-043u
 				btn-visit-fast-print-consent-1051n
 				visit-more-action-print-consent

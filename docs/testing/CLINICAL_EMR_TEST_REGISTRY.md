@@ -11,9 +11,9 @@
 | Машинный гейт | Команда верификации | Время выполнения | Результат | Статус |
 | :--- | :--- | :--- | :--- | :--- |
 | **Кодировка UTF-8 (Без BOM)** | `npm run check:encoding` | ~2.5 с (23 964 файла) | Замечаний нет | ✅ **PASS (Code 0)** |
-| **Комплексный сьют ЭМК** | `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` | **4.1 с** ($\le 10$ с) | **20 тестов, 6 сьютов** | ✅ **PASS (Code 0)** |
-| **Интеграция с PostgreSQL 18** | Live DB (`127.0.0.1:5432`) + `withFixtureTenant` | < 500 мс | 0 моков в боевом контуре | ✅ **PASS (Code 0)** |
-| **Визуальный пруф (4-State Proof)** | `docs/proofs/emr/` (PC/Mobile Light/Dark) | Осмотр через `read_file` | Ноль клиппинга, Apple HIG | ✅ **PASS (100%)** |
+| **Комплексный сьют ЭМК (API & Web)** | `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` & web-сьюты EMR/SOAP | **9.5 с** ($\le 10$ с) | **32 теста, 5 сьютов** | ✅ **PASS (Code 0)** |
+| **Интеграция с PostgreSQL 18** | Live DB (`127.0.0.1:5432`) + Fastify (`127.0.0.1:4100`) | < 500 мс | 0 моков в боевом контуре | ✅ **PASS (Code 0)** |
+| **Визуальный пруф (4-State Proof)** | `docs/proofs/emr/01..04_visit_soap_emk_*.png` (PC/Mobile Light/Dark) | Осмотр через `read_file` | Ноль клиппинга, Apple HIG | ✅ **PASS (100%)** |
 
 ---
 
@@ -53,16 +53,16 @@
 
 ## 3. 4-STATE VISUAL PROOF (РЕД ТИМ СКРИНШОТ-ГЕЙТ)
 
-Все скриншоты сняты на живом приложении, лично проверены через `read_file` и сохранены в `docs/proofs/emr/`:
+Все скриншоты сняты на живом приложении против реального Fastify API :4100 и PostgreSQL 18 на 127.0.0.1:5432, лично проверены через `read_file` и сохранены в `docs/proofs/emr/`:
 
-1. ☀️ **PC Light (1440×900)**: `docs/proofs/emr/01_medical_record_pc_light_1440x900.png` (120 KB)
-   - Чистый журнальный A4-лист, четкая сетка паспортной части, зубная формула FDI 18–48, нулевой клиппинг.
-2. 🌙 **PC Dark (1440×900)**: `docs/proofs/emr/02_medical_record_pc_dark_1440x900.png` (121 KB)
-   - 100% тёмные токены оболочки студии (`var(--paper)`), контрастный белый лист бланка, отсутствие слепящих белых пятен.
-3. 📱 **Mobile Light (390×844)**: `docs/proofs/emr/03_medical_record_mobile_light_390x844.png` (62 KB)
-   - Apple HIG Bottom Floating Bar в нижней трети экрана, Primary CTA «Подписать карту» (зеленый акцент) + Secondary «Норма», 0px горизонтального скролла.
-4. 📱 **Mobile Dark (390×844)**: `docs/proofs/emr/04_medical_record_mobile_dark_390x844.png` (63 KB)
-   - Глубокая тёмная тема для мобильного интерфейса, естественный Thumb Zone, безопасные отступы под Home Bar.
+1. ☀️ **PC Light (1440×900)**: `docs/proofs/emr/01_visit_soap_emk_pc_light_1440x900.png` (108.1 KB, Hash: `0853dd06e5fb`)
+   - Чистый экран приёма, Sentence case заголовки («Дневник приёма», «Жалобы пациента»), пассивная плашка аллергии «⚠️ Аллергия: Лидокаин», ровно 1 Primary CTA «Завершить приём» (`#0d9488`), ноль свалки из 15 кнопок-шорткодов (только компактная кнопка «Диктовать» и ненавязчивый индикатор «Стенограф: Tab / Space»).
+2. 🌙 **PC Dark (1440×900)**: `docs/proofs/emr/02_visit_soap_emk_pc_dark_1440x900.png` (108.4 KB, Hash: `d6b5a7446fae`)
+   - 100% тёмные токены оболочки (`var(--paper)`, deep teal `#0b1219` / `#0f1b26`), отсутствие белых пятен и слепящих рамок, WCAG AAA контраст текста.
+3. 📱 **Mobile Light (390×844)**: `docs/proofs/emr/03_visit_soap_emk_mobile_light_390x844.png` (142.7 KB, Hash: `fa461268d8b1`)
+   - Apple HIG Segmented Bar шагов: «5. Итог и Чек» умещается целиком без клиппинга на 390px. Кнопка «Соматически здоров / Норма» оформлена как вторичная карточка (Secondary), Primary CTA «Далее: 2. Осмотр ->» в Natural Thumb Zone (`#0d9488`, h=52px). Ноль дев-сленга («1 тап» искоренен). Спокойный бейдж «Аллергии не выявлены».
+4. 📱 **Mobile Dark (390×844)**: `docs/proofs/emr/04_visit_soap_emk_mobile_dark_390x844.png` (142.2 KB, Hash: `06dfec25f763`)
+   - Глубокая тёмная тема iOS, 0px горизонтального скролл-дрифта (`overflow-x: clip; max-width: 100vw`), чистый клик-таргет $\ge 44\times 44$px, безопасные зоны Dynamic Island и Home Bar.
 
 ---
 

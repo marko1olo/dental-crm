@@ -78,13 +78,9 @@ export function buildDiagnosisProtocolFromSsot(
 		complaints: protocol?.complaints || entry.soapTemplate?.complaints || "",
 		anamnesis: protocol?.anamnesis || entry.soapTemplate?.anamnesis || "",
 		objectiveStatus: protocol?.objective || entry.soapTemplate?.objective || "",
-		treatmentPlan:
-			(protocol as any)?.treatmentPlan ||
-			(protocol as any)?.treatmentDone ||
-			entry.soapTemplate?.treatmentPlan ||
-			"",
+		treatmentPlan: protocol?.treatmentPlan || entry.soapTemplate?.treatmentPlan || "",
 		recommendations: protocol?.recommendations || entry.soapTemplate?.recommendations || "",
-		order804nServices: (entry as any).recommendedServices || (entry as any).recommendedServices804n || [],
+		order804nServices: entry.recommendedServices || [],
 	};
 }
 
@@ -138,7 +134,7 @@ export function EmkDiagnosisAndProtocolSection(
 			{/* Компактная полоса справочника клинических диагнозов МКБ-10 (SSOT) */}
 			<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
 				<div className="flex items-center gap-2 min-w-0">
-					<Stethoscope size={15} className="text-[var(--brand)] shrink-0" />
+					<Stethoscope size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)]">
 						Справочник диагнозов (МКБ-10):
 					</span>
@@ -158,7 +154,7 @@ export function EmkDiagnosisAndProtocolSection(
 								onClick={() => handleSelectSsotDiagnosis(entry)}
 								className={`min-h-[32px] px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer inline-flex items-center gap-1 ${
 									isSelected
-										? "bg-[var(--brand)] text-white border-[var(--brand)]"
+										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
 										: "bg-[var(--paper)] hover:bg-[var(--surface-hover)] text-[var(--ink)] border-[var(--line)]"
 								}`}
 								data-testid={`emk-ssot-diag-${entry.id}`}
@@ -176,7 +172,7 @@ export function EmkDiagnosisAndProtocolSection(
 						<button
 							type="button"
 							onClick={onOpenTemplatesModal}
-							className="min-h-[32px] px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--paper)] hover:bg-[var(--surface-hover)] text-[var(--brand)] border border-[var(--line)] transition-colors cursor-pointer inline-flex items-center gap-1"
+							className="min-h-[32px] px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--paper)] hover:bg-[var(--surface-hover)] text-[var(--teal,#0d9488)] border border-[var(--line)] transition-colors cursor-pointer inline-flex items-center gap-1"
 							data-testid="btn-open-ssot-protocols-catalog"
 						>
 							<BookOpen size={12} className="shrink-0" />

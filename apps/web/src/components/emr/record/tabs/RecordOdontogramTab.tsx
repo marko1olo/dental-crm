@@ -10,7 +10,7 @@ import { Activity, Sparkles } from "lucide-react";
 import type { MedicalRecordData } from "../../types/recordDataTypes";
 import type { calculateDmftIndex, calculateCpitnIndex } from "../../clinicalDiaryMath";
 import { dentalBiteTypeLabels } from "@dental/shared";
-import { AnatomicalGate0FullArchView } from "../../../odontogram/AnatomicalGate0FullArchView";
+import { WheelerToothArch } from "../../../odontogram/WheelerToothArch";
 import type { ToothData, ToothState } from "../../../odontogram/ToothChart";
 
 export interface RecordOdontogramTabProps {
@@ -83,9 +83,10 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 						Зубная формула постоянного прикуса (FDI 11–48) · Wheeler 2.5D:
 					</div>
 					<div className="w-full bg-[var(--paper-strong,#f8fafc)] dark:bg-[var(--paper-subtle,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] rounded-2xl p-2 sm:p-4 my-2 overflow-x-auto flex justify-center">
-						<AnatomicalGate0FullArchView
+						<WheelerToothArch
 							teethData={teethData}
 							zoom={0.44}
+							mode="interactive"
 						/>
 					</div>
 

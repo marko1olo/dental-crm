@@ -90,8 +90,8 @@ test("Sovereign Mobile Chairside Visit Workspace Suite (Apple HIG)", async (t) =
     );
 
     assert.ok(html.includes("mobile-chairside-norm-btn"), "Must render 52px norm button class");
-    assert.ok(html.includes("✓ Соматически здоров / Норма"), "Must render standard norm CTA");
-    assert.ok(html.includes("1 тап"), "Must indicate 1-tap simplicity");
+    assert.ok(html.includes("Соматически здоров / Норма"), "Must render standard norm CTA");
+    assert.ok(html.includes("Внести в карту"), "Must indicate apply to card action");
   });
 
   await t.test("4. Full-Width SmartMicrophone voice dictation card is rendered", () => {
@@ -105,7 +105,7 @@ test("Sovereign Mobile Chairside Visit Workspace Suite (Apple HIG)", async (t) =
     );
 
     assert.ok(html.includes("mobile-smart-mic-card"), "Must render smart microphone card");
-    assert.ok(html.includes("Голосовая диктовка SmartMic"), "Must offer voice dictation CTA");
+    assert.ok(html.includes("Голосовая диктовка"), "Must offer voice dictation CTA");
     assert.ok(html.includes("+ Перкуссия норм"), "Must render quick dental phrases");
     assert.ok(html.includes("+ Анестезия 1.7мл"), "Must render quick anesthesia phrase");
   });

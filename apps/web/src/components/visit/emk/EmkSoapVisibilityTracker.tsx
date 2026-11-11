@@ -80,9 +80,12 @@ export const EmkSoapVisibilityTracker: React.FC<
 	const hasComplaint = Boolean(visitNoteForm?.complaint?.trim());
 	const hasObjective = Boolean(visitNoteForm?.objectiveStatus?.trim());
 	const hasDiagnosis = Boolean(visitNoteForm?.diagnosis?.trim());
+	const treatmentDesc =
+		visitNoteForm && "treatmentDescription" in visitNoteForm && typeof (visitNoteForm as Record<string, unknown>).treatmentDescription === "string"
+			? (visitNoteForm as Record<string, unknown>).treatmentDescription as string
+			: undefined;
 	const hasTreatment = Boolean(
-		visitNoteForm?.treatmentPlan?.trim() ||
-			(visitNoteForm as any)?.treatmentDescription?.trim(),
+		visitNoteForm?.treatmentPlan?.trim() || treatmentDesc?.trim(),
 	);
 
 	const filledCount =
@@ -102,7 +105,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 
 	const diagnosisText = extractDiagnosisLabel(visitNoteForm?.diagnosis);
 	const treatmentText = extractTreatmentLabel(
-		(visitNoteForm as any)?.treatmentDescription || visitNoteForm?.treatmentPlan,
+		treatmentDesc || visitNoteForm?.treatmentPlan,
 	);
 
 	return (

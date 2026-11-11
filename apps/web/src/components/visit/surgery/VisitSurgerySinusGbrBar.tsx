@@ -81,6 +81,15 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 						<Zap size={14} className="text-amber-300" />
 						<span>Норма НКР: мембрана Шнайдера интактна, графт внесен, гемостаз устойчивый</span>
 					</button>
+					<button
+						type="button"
+						onClick={state.handleAddServicesToInvoice}
+						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer touch-manipulation"
+						data-testid="btn-sinus-bar-add-to-invoice"
+						title="Добавить хирургические услуги в смету визита"
+					>
+						<span>В смету</span>
+					</button>
 				</div>
 			</div>
 

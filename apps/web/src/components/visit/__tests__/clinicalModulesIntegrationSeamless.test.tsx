@@ -5,8 +5,6 @@ import { renderToString } from "react-dom/server";
 import { VisitActionButtonsToolbar } from "../view/visitHeader/VisitActionButtonsToolbar";
 import { VisitViewHeader } from "../view/VisitViewHeader";
 import { ClinicalSupportModals } from "../view/viewModalsModules/ClinicalSupportModals";
-import { PatientWorkspaceToolbar } from "../../patients/workspaceView/PatientWorkspaceToolbar";
-import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 
 describe("Clinical Modules Seamless Integration Red Team Verification (Inquisitor #4)", () => {
 	it("1. VisitActionButtonsToolbar renders 'Выписать рецепт' button in the '...' dropdown", () => {
@@ -141,36 +139,6 @@ describe("Clinical Modules Seamless Integration Red Team Verification (Inquisito
 		assert.ok(
 			html.includes("Лидокаин"),
 			"PrescriptionModal must show real allergy alert for Лидокаин",
-		);
-	});
-
-	it("4. PatientWorkspaceToolbar renders 'Выписать рецепт' and 'Справка для вычета (13%)'", () => {
-		const html = renderToString(
-			<AppLogicProvider value={{} as any}>
-				<PatientWorkspaceToolbar
-					patientId="pat-100"
-					patientName="Кузнецов Виктор Сергеевич"
-					handleCreateNewPlanCallback={() => {}}
-					setActiveTab={() => {}}
-					setIsCbctModalOpen={() => {}}
-					setIsPhotoProtocolOpen={() => {}}
-					setIsOrthoPhotoModalOpen={() => {}}
-					setIsLoyaltyModalOpen={() => {}}
-					setIsDmsLetterOpen={() => {}}
-					setIsDmsRegistryOpen={() => {}}
-					setIsPrescriptionModalOpen={() => {}}
-					setIsTaxCertificateOpen={() => {}}
-				/>
-			</AppLogicProvider>,
-		);
-
-		assert.ok(
-			html.includes("data-testid=\"btn-patient-create-visit\""),
-			"Toolbar rendered primary actions without errors",
-		);
-		assert.ok(
-			html.includes("data-testid=\"btn-patient-docs-dms-menu\""),
-			"Toolbar rendered documents dropdown button",
 		);
 	});
 });

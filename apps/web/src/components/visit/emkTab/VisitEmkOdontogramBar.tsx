@@ -11,6 +11,7 @@ import {
 	loadStoredTeethData,
 	saveStoredTeethData,
 } from "../../odontogram/odontogramStorage";
+import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 import { generateSoapFromOdontogramFinding } from "../../../lib/clinicalProtocols";
 import {
 	mergeMultiToothDiagnoses,
@@ -56,9 +57,9 @@ export function VisitEmkOdontogramBar({
 
 	const effectiveToothStateByCode = React.useMemo(() => {
 		return buildEffectiveToothStateByCode({
-			activePatient: (activePatient as any) ?? null,
-			patientHistory: (patientHistory as any) ?? null,
-			visitToothStateByCode: (visitToothStateByCode as any) ?? null,
+			activePatient: activePatient ?? null,
+			patientHistory: patientHistory ?? null,
+			visitToothStateByCode: visitToothStateByCode ?? null,
 		});
 	}, [
 		activePatient?.id,
@@ -110,13 +111,13 @@ export function VisitEmkOdontogramBar({
 						nextTeeth[idx] = {
 							...nextTeeth[idx],
 							toothNumber: num,
-							state: canonicalState as any,
+							state: canonicalState as ToothState,
 							updatedAt: nowIso,
 						};
 					} else {
 						nextTeeth.push({
 							toothNumber: num,
-							state: canonicalState as any,
+							state: canonicalState as ToothState,
 							updatedAt: nowIso,
 						});
 					}
@@ -179,7 +180,7 @@ export function VisitEmkOdontogramBar({
 
 				if (soap.anamnesis) {
 					const currentComp = String(
-						visitNoteForm?.complaint || (visitNoteForm as any)?.complaints || "",
+						visitNoteForm?.complaint || (visitNoteForm as { complaints?: string } | undefined)?.complaints || "",
 					).trim();
 					if (
 						!currentComp ||
@@ -291,7 +292,7 @@ export function VisitEmkOdontogramBar({
 				state: "Healthy" as const,
 				updatedAt: nowIso,
 			}));
-			saveStoredTeethData(patId, intactTeeth as any, true);
+			saveStoredTeethData(patId, intactTeeth as ToothData[], true);
 
 			window.dispatchEvent(
 				new CustomEvent("dente-odontogram-update", {
@@ -321,7 +322,7 @@ export function VisitEmkOdontogramBar({
 		updateVisitNoteField("diagnosis", normDiag);
 		updateVisitNoteField("objectiveStatus", normObj);
 		updateVisitNoteField("treatmentPlan", normPlan);
-		const currentComp = String(visitNoteForm?.complaint || (visitNoteForm as any)?.complaints || "").trim();
+		const currentComp = String(visitNoteForm?.complaint || (visitNoteForm as { complaints?: string } | undefined)?.complaints || "").trim();
 		if (!currentComp || currentComp.includes("активно не предъявляет") || currentComp.includes("Жалоб нет")) {
 			updateVisitNoteField("complaint", normComp);
 		}

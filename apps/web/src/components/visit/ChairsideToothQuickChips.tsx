@@ -6,7 +6,8 @@
 
 import React from "react";
 import { getToothBadgeColor, toAnatomicalToothState } from "./chairsideToothColors.js";
-import { AnatomicalToothSVG } from "../odontogram/AnatomicalToothSVG";
+import { AnatomicalTooth } from "../odontogram/AnatomicalTooth";
+import { toothDataToGate0Flags } from "../odontogram/gate0/gate0ToothFlagsConverter";
 import type { ToothState } from "../../store/visitStore";
 
 interface ChairsideToothQuickChipsProps {
@@ -53,14 +54,11 @@ export const ChairsideToothQuickChips: React.FC<ChairsideToothQuickChipsProps> =
 						title={state ? `Зуб ${t} (${state})` : `Зуб ${t}`}
 					>
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG
-								number={t}
-								state={anatomicalState}
-								scale={0.24}
-								showPeriodontalBoneLoss={false}
-								showPulpAndCanals={state === "treatment" || state === "pulpitis"}
-								showPeriapicalHalos={false}
-								onClick={() => {}}
+							<AnatomicalTooth
+								toothNumber={t}
+								layers={toothDataToGate0Flags({ toothNumber: t, state: anatomicalState as any })}
+								zoom={0.24}
+								showBadge={false}
 							/>
 						</div>
 						<span>{t}</span>

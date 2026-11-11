@@ -4,6 +4,56 @@ import { VisitSurgeryProtocolTab } from "../surgery/VisitSurgeryProtocolTab";
 import { VisitTherapyProtocolWidget } from "../therapy/VisitTherapyProtocolWidget";
 import { VisitPediatricProtocolWidget } from "../../pediatric/VisitPediatricProtocolWidget";
 
+export interface InvoiceItemDraft {
+	readonly code804n?: string | undefined;
+	readonly code?: string | undefined;
+	readonly title?: string | undefined;
+	readonly name?: string | undefined;
+	readonly nameRu?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly price?: number | undefined;
+	readonly quantity?: number | undefined;
+	readonly toothCode?: string | undefined;
+}
+
+export interface PatientSummary {
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly phone?: string | null | undefined;
+	readonly birthDate?: string | Date | null | undefined;
+	readonly age?: number | undefined;
+	readonly weight?: number | undefined;
+	readonly weightKg?: number | null | undefined;
+	readonly allergies?: string | null | undefined;
+	readonly representativeFullName?: string | undefined;
+	readonly representativePhone?: string | undefined;
+	readonly representativeRole?: string | undefined;
+	readonly parentName?: string | undefined;
+	readonly parentPhone?: string | undefined;
+	readonly parentRole?: string | undefined;
+	readonly representative?: {
+		readonly fullName?: string | undefined;
+		readonly phone?: string | undefined;
+		readonly role?: string | undefined;
+	} | undefined;
+}
+
+export interface User {
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly role?: string | undefined;
+}
+
+export interface SpecialtyDrawerContext {
+	readonly dashboard?: {
+		readonly organization?: {
+			readonly name?: string | null | undefined;
+		} | null | undefined;
+	} | null | undefined;
+}
+
 export interface SpecialtyProtocolDrawerProps {
 	isProtocolDrawerOpen: boolean;
 	setIsProtocolDrawerOpen: (val: boolean) => void;
@@ -14,13 +64,13 @@ export interface SpecialtyProtocolDrawerProps {
 	activeSurfaces: string[];
 	setActiveSurfaces: React.Dispatch<React.SetStateAction<string[]>>;
 	handleApplyProtocolText: (text: string) => void;
-	handleAddToInvoice: (services: any) => void;
+	handleAddToInvoice: (services: InvoiceItemDraft[] | readonly InvoiceItemDraft[] | InvoiceItemDraft) => void;
 	franklRating: 1 | 2 | 3 | 4;
 	setFranklRating: React.Dispatch<React.SetStateAction<1 | 2 | 3 | 4>>;
-	activePatient?: any;
-	activeDoctor?: any;
+	activePatient?: PatientSummary | null | undefined;
+	activeDoctor?: User | null | undefined;
 	patientAgeYears?: number | undefined;
-	context?: any;
+	context?: SpecialtyDrawerContext | null | undefined;
 	setActiveTooth: (tooth: number | null) => void;
 }
 
@@ -77,15 +127,15 @@ export function SpecialtyProtocolDrawer({
 					initialFranklRating={franklRating}
 					onFranklChange={setFranklRating}
 					patientName={activePatient?.fullName || activePatient?.name}
-					patientPhone={activePatient?.phone}
+					patientPhone={activePatient?.phone ?? undefined}
 					patientAgeYears={patientAgeYears}
-					patientWeightKg={activePatient?.weight || activePatient?.weightKg}
+					patientWeightKg={activePatient?.weight || activePatient?.weightKg || undefined}
 					representativeFullName={activePatient?.representativeFullName || activePatient?.representative?.fullName || activePatient?.parentName}
-					representativePhone={activePatient?.representativePhone || activePatient?.representative?.phone || activePatient?.parentPhone || activePatient?.phone}
+					representativePhone={activePatient?.representativePhone || activePatient?.representative?.phone || activePatient?.parentPhone || activePatient?.phone || undefined}
 					representativeRole={activePatient?.representativeRole || activePatient?.representative?.role || activePatient?.parentRole}
-					allergies={activePatient?.allergies}
+					allergies={activePatient?.allergies ?? undefined}
 					doctorName={activeDoctor?.fullName}
-					clinicName={context?.dashboard?.organization?.name}
+					clinicName={context?.dashboard?.organization?.name ?? undefined}
 				/>
 			) : isSurgery ? (
 				<VisitSurgeryProtocolTab

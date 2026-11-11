@@ -193,8 +193,14 @@ export function SmartMicrophoneButton({
 						pointerEvents: "none",
 					}}
 				>
-					{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-					<DictationHints isVisible={true} type={context as any} />
+					<DictationHints
+						isVisible={true}
+						type={
+							context === "schedule" || context === "patient" || context === "payment"
+								? context
+								: "visit"
+						}
+					/>
 				</div>
 			)}
 		</div>
