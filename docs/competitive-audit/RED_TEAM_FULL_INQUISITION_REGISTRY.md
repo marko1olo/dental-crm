@@ -3784,3 +3784,49 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Marketing Promos Mobile Dark (390x844): [`docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png) (141.0 KB) — тёмный мобильный ассистент, тач-таргеты >= 44x44px, 0px горизонтального скролла.
   - 📱 Leads Kanban Mobile Light (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png) (56.6 KB) — нативная шторка, чистый empty state, кнопка «+ Новое обращение» в Natural Thumb Zone.
   - 📱 Leads Kanban Mobile Dark (390x844): [`docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png) (55.6 KB) — безупречная тёмная мобильная тема, 0px скролл-дрифта.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 8 — ПАРОДОНТОЛОГИЯ, ГИГИЕНИЧЕСКАЯ КАРТА И PSR/CPITN ИНДЕКСЫ (МАНДАТЫ 8b, 8d, 8e, 8n, 8zg, 8ze, 8al, 8am, ADR 0013)
+- **Дата и статус:** 2026-11-11 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Роль:** Red Team Чинильщик-Хирург пародонтологии, гигиенической карты и PSR-индексов (Periodontics & Hygiene Fixer Surgeon).
+- **Канонический SSOT:**
+  - Фронтенд студии пародонтологии: [`PerioStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/perio/PerioStudioModal.tsx) (декомпозирован: 486 строк, норматив < 500 строк).
+  - Выделенные секции зондирования и пресетов: [`PerioDetailedProbeSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/perio/PerioDetailedProbeSection.tsx) (151 строка) и [`PerioPresetActions.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/perio/PerioPresetActions.tsx) (115 строк).
+  - Секстанты CPITN/PSR в ЭМК: [`CpitnSextantsGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/forms/medicalCardIndices/CpitnSextantsGrid.tsx) (чипы Apple HIG >= 44x44px, разблокированная автономия врача без `disabled`).
+  - Бэкенд-сервисы и роуты приёмов: [`periodontogramService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/periodontogramService.ts), [`periodontogramIndices.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/periodontogramIndices.ts), [`visitPerioRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits/visitPerioRoutes.ts).
+- **Устранённые дефекты (Fact-Dossier DEF-PERIO-01..05):**
+  1. **[DEF-PERIO-01] Декомпозиция монолита PerioStudioModal.tsx (Мандат 8b):**
+     - Размер файла сокращен с 555 строк до 486 строк (< 500 строк, соблюден диапазон).
+     - Вынесены автономные компоненты `PerioPresetActions.tsx` (быстрый выбор, макро-батчи пресетов нормы/гингивита/пародонтита) и `PerioDetailedProbeSection.tsx` (панель детального зондирования 6 поверхностей зуба, глубина кармана, CAL, рецессия десны, подвижность I-III, фуркация I-III, кератинизированная десна).
+     - Все компоненты зарегистрированы в `apps/web/src/components/perio/index.ts`.
+     - Тест архитектурных гейтов `periodontalMandateSizeAndGate.test.ts` сдан на 100% (2/2 PASS).
+  2. **[DEF-PERIO-02] Исключение двойного контура мутаций БД (Мандат 8bf, ADR 0013):**
+     - В `apps/api/src/routes/visits/visitPerioRoutes.ts` и `periodontogramService.ts` полностью исключена параллельная запись в устаревшую таблицу `perio_charts`.
+     - Единым SSOT для пародонтограммы визита является реляционная схема ADR 0013: `periodontogram_snapshots`, `periodontogram_teeth`, `periodontogram_sites`.
+  3. **[DEF-PERIO-03] Канонический расчет индексов OHI-S и PMA из @dental/shared (Мандат 8e, 8bf):**
+     - В `apps/api/src/services/periodontogramIndices.ts` грубая самодельная эвристика заменена на прямой вызов канонических функций `calculateOhiSScore` и `calculatePmaScore` из пакета `@dental/shared/perio` (клинический стандарт Грин-Вермиллиона для индексных зубов 16, 11, 26, 36, 31, 46 и формула Парма).
+  4. **[DEF-PERIO-04] Искоренение проглатывания ошибок БД с синтетическим объектом (Мандат 8zr, 8a):**
+     - В `apps/api/src/services/periodontogramService.ts` полностью ликвидирован блок с генерацией синтетического объекта `deterministicUuid(...)` при сбоях FK (23503).
+     - При отсутствии сущности возвращается честная структурированная ошибка Fastify 404 (`PatientNotFound`) без тихого подлога данных. В тестах настроена чистая изоляция тенантов через `withFixtureTenant` и `purgeFixtureOrganizations`.
+  5. **[DEF-PERIO-05] Apple HIG тач-чипы и автономия врача в CPITN/PSR сетке (Мандаты 8e, 8zg, 8ze, 8al):**
+     - В `apps/web/src/components/documents/forms/medicalCardIndices/CpitnSextantsGrid.tsx` архаичные HTML `<select>` с инлайн-стилями заменены на чистые тач-чипы Segmented Control (коды 0–4 и X) с тач-таргетами $\ge 44\times 44$px и клинической цветовой дифференциацией.
+     - Снята искусственная блокировка `disabled={effectiveDisabled}` — врач всегда свободен скорректировать данные осмотра в 1 клик без бюрократических преград.
+     - Полный запрет сленга «1 клик» в UI.
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> **21 827 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - `npm run check:buttons` -> **5 268 TSX/JSX, 1 391 CSS, 0 нарушений (Exit Code 0)**.
+  - `npm run check:css-tokens` -> **0 неразрешенных var(), 0 светлых запасов (Exit Code 0)**.
+  - `npm run check:react-hooks` -> **3 587 файлов с хуками, 0 нарушений правил React 19 (Exit Code 0)**.
+  - Тесты домена пародонтологии и гигиены (100% PASS):
+    - `periodontalMandateSizeAndGate.test.ts` (2/2 PASS)
+    - `periodontalDetailedProbeInquisition.test.ts` (3/3 PASS)
+    - `periodontogramSnapshots.test.ts` (16/16 PASS)
+    - `visitPerioRoutes.test.ts` (4/4 PASS)
+    - `clinicalMedicalForms.test.ts` (10/10 PASS)
+- **4-State Visual Proofs (Личный осмотр через `read_file` по 8 осям Хаммера):**
+  - ☀️ Perio Studio PC Light (1440x900): [`docs/proofs/perio/01_perio_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/perio/01_perio_studio_pc_light_1440x900.png) (94.4 KB) — 1 Primary CTA «✓ Сохранить пародонтограмму», чипы пресетов, секстанты S1–S6, 0px клиппинга.
+  - 🌙 Perio Studio PC Dark (1440x900): [`docs/proofs/perio/02_perio_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/perio/02_perio_studio_pc_dark_1440x900.png) (84.4 KB) — 100% тёмные токены `var(--paper)`, WCAG AAA контраст, ноль белых пятен.
+  - 📱 Perio Studio Mobile Light (390x844): [`docs/proofs/perio/03_perio_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/perio/03_perio_studio_mobile_light_390x844.png) (145.9 KB) — Apple HIG нативный Bottom Sheet, тактильный drag handle, CTA в Natural Thumb Zone.
+  - 📱 Perio Studio Mobile Dark (390x844): [`docs/proofs/perio/04_perio_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/perio/04_perio_studio_mobile_dark_390x844.png) (164.5 KB) — тёмный мобильный адаптив, тач-таргеты >= 44x44px, 0px горизонтального скролла.
+
