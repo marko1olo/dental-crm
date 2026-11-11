@@ -1,12 +1,13 @@
 import type { InventoryItemLookup } from "./treatmentPlanMaterialEngine";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
 import type { TreatmentPlanDoctorOption, TreatmentPlanItem, TreatmentPlanStage } from "./types";
+import type { ClinicalBundleId } from "./bundlesPresets/types";
 
 export interface TreatmentPlanStagesListSectionProps {
 	readonly visibleStages: readonly TreatmentPlanStage[];
 	readonly specialtyFilter: string;
 	readonly onSetSpecialtyFilter: (filter: any) => void;
-	readonly onApplyClinicalBundle: (bundleId: any, toothNumber?: number) => void;
+	readonly onApplyClinicalBundle: (bundleId: ClinicalBundleId, toothNumber?: number) => void;
 	readonly onOpenCreateStageModal: () => void;
 	readonly dashboard?: any;
 	readonly doctorOptions?: readonly TreatmentPlanDoctorOption[];

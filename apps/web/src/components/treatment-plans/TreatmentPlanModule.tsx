@@ -10,18 +10,19 @@ import type {
 	TreatmentPlanStatus,
 } from "./types";
 import { showToast } from "../GlobalToast";
-import { TreatmentPlanToolbar } from "./TreatmentPlanToolbar";
-import { TreatmentPlanScenarioSelector } from "./TreatmentPlanScenarioSelector";
+import { TreatmentPlanToolbar } from "./toolbar/TreatmentPlanToolbar";
+import { TreatmentPlanScenarioSelector } from "./scenarioSelector/TreatmentPlanScenarioSelector";
 import { TreatmentPlanSpecialtyFilterBar } from "./TreatmentPlanSpecialtyFilterBar";
 import { TreatmentPlanStagesListSection } from "./TreatmentPlanStagesListSection";
 import { TreatmentPlanClinicalModals } from "./TreatmentPlanClinicalModals";
 import { TreatmentPlanExportModals } from "./TreatmentPlanExportModals";
+import { TreatmentPlanDiscountsModal } from "./TreatmentPlanDiscountsModal";
 import { useTreatmentPlanLogic } from "./useTreatmentPlanLogic";
 
 // Прозрачный реэкспорт подкомпонентов и хука (Мандат 8b: обратная совместимость)
 export * from "./useTreatmentPlanLogic";
-export * from "./TreatmentPlanToolbar";
-export * from "./TreatmentPlanScenarioSelector";
+export * from "./toolbar/TreatmentPlanToolbar";
+export * from "./scenarioSelector/TreatmentPlanScenarioSelector";
 export * from "./TreatmentPlanAddServiceModal";
 export * from "./TreatmentPlanCreateStageModal";
 export * from "./splitCatalog/TreatmentPlanSplitView";
@@ -48,6 +49,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = (props) =
 	const { patientId, patientName = "Пациент", teethData, onExportToCashier, onPlanSaved, className = "", planCreatedAtIso, initialOptionsMenuOpen = false, initialStatus, onStatusChange, initialPlanId, initialViewTab } = props;
 	const logic = useTreatmentPlanLogic({ patientId, patientName, teethData, onExportToCashier, onPlanSaved, planCreatedAtIso, initialStatus, onStatusChange, initialPlanId, initialViewTab });
 	const [isSplitMode, setIsSplitMode] = React.useState(true);
+	const [isDiscountsOpen, setIsDiscountsOpen] = React.useState(false);
 
 	return (
 		<div className={`treatment-plan-module flex flex-col gap-3.5 w-full bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] p-3.5 shadow-lg ${className}`.trim()} data-testid="treatment-plan-module">
@@ -70,12 +72,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = (props) =
 			>
 				<div className="flex flex-col gap-4">
 					<TreatmentPlanSpecialtyFilterBar stages={logic.stages} visibleStages={logic.visibleStages} specialtyFilter={logic.specialtyFilter} onSetSpecialtyFilter={logic.setSpecialtyFilter} onOpenAddCatalogService={() => { logic.setTargetStageForAdd(logic.visibleStages[0] || logic.stages[0] || null); logic.setIsAddServiceModalOpen(true); }} onOpenCreateStageModal={() => logic.setIsCreateStageModalOpen(true)} isSplitMode={isSplitMode} onToggleSplitMode={() => setIsSplitMode((p) => !p)} />
-					<TreatmentPlanStagesListSection visibleStages={logic.visibleStages} specialtyFilter={logic.specialtyFilter} onSetSpecialtyFilter={logic.setSpecialtyFilter} onApplyClinicalBundle={(bundleId, toothNumber) => logic.handleApplyClinicalBundle(bundleId as any, toothNumber)} onOpenCreateStageModal={() => logic.setIsCreateStageModalOpen(true)} dashboard={logic.dashboard} doctorOptions={logic.doctorOptions} onAssignDoctorToStage={logic.handleAssignDoctorToStage} onAssignDoctorToItem={logic.handleAssignDoctorToItem} onUpdateItemQuantity={logic.handleUpdateItemQuantity} onUpdateItemPrice={logic.handleUpdateItemPrice} onUpdateItem={logic.handleUpdateItem} onRemoveItem={logic.handleRemoveItem} onAddItemToStage={(st) => { logic.setTargetStageForAdd(st); logic.setIsAddServiceModalOpen(true); }} onDeleteStage={logic.handleDeleteStage} onExecuteWriteOffStage={logic.handleExecuteWriteOffStage} onStartStage={logic.handleStartStage} onChangeStageStatus={logic.handleChangeStageStatus} onPayStage={(st) => { logic.setSelectedInstallmentStage(st); if (typeof window !== "undefined") { window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { patientId: logic.patientId, patientName: logic.patientName, stageNumber: st.stageNumber, stageTitle: st.title, services: st.items, items: st.items, target: "invoice" } })); } logic.setIsFiscalModalOpen(true); }} onApplyStageDiscount={() => { logic.setDiscountPercent(10); showToast("Применена скидка врача 10% на план лечения", "success"); }} onOpenLabOrder={logic.handleOpenLabOrder} onOneClickLabOrder={logic.handleOneClickLabOrder} onOpenInstallment={(st) => { logic.setSelectedInstallmentStage(st); logic.setIsInstallmentModalOpen(true); }} onQuickAddService={logic.handleAddItemToStage} isSplitMode={isSplitMode} onExecuteCopilot={() => logic.handleExecuteCopilot("optimize_sequence")} isCopilotExecuting={logic.isCopilotExecuting} onApplyDoctorDiscount={(pct) => logic.setDiscountPercent(pct)} />
+					<TreatmentPlanStagesListSection visibleStages={logic.visibleStages} specialtyFilter={logic.specialtyFilter} onSetSpecialtyFilter={logic.setSpecialtyFilter} onApplyClinicalBundle={(bundleId, toothNumber) => logic.handleApplyClinicalBundle(bundleId, toothNumber)} onOpenCreateStageModal={() => logic.setIsCreateStageModalOpen(true)} dashboard={logic.dashboard} doctorOptions={logic.doctorOptions} onAssignDoctorToStage={logic.handleAssignDoctorToStage} onAssignDoctorToItem={logic.handleAssignDoctorToItem} onUpdateItemQuantity={logic.handleUpdateItemQuantity} onUpdateItemPrice={logic.handleUpdateItemPrice} onUpdateItem={logic.handleUpdateItem} onRemoveItem={logic.handleRemoveItem} onAddItemToStage={(st) => { logic.setTargetStageForAdd(st); logic.setIsAddServiceModalOpen(true); }} onDeleteStage={logic.handleDeleteStage} onExecuteWriteOffStage={logic.handleExecuteWriteOffStage} onStartStage={logic.handleStartStage} onChangeStageStatus={logic.handleChangeStageStatus} onPayStage={(st) => { logic.setSelectedInstallmentStage(st); if (typeof window !== "undefined") { window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { patientId: logic.patientId, patientName: logic.patientName, stageNumber: st.stageNumber, stageTitle: st.title, services: st.items, items: st.items, target: "invoice" } })); } logic.setIsFiscalModalOpen(true); }} onApplyStageDiscount={() => setIsDiscountsOpen(true)} onOpenLabOrder={logic.handleOpenLabOrder} onOneClickLabOrder={logic.handleOneClickLabOrder} onOpenInstallment={(st) => { logic.setSelectedInstallmentStage(st); logic.setIsInstallmentModalOpen(true); }} onQuickAddService={logic.handleAddItemToStage} isSplitMode={isSplitMode} onExecuteCopilot={() => logic.handleExecuteCopilot("optimize_sequence")} isCopilotExecuting={logic.isCopilotExecuting} onApplyDoctorDiscount={(pct) => logic.setDiscountPercent(pct)} />
 				</div>
 			</TreatmentPlanScenarioSelector>
 
 			<TreatmentPlanClinicalModals logic={logic} teethData={teethData} />
 			<TreatmentPlanExportModals logic={logic} onExportToCashier={onExportToCashier} />
+			<TreatmentPlanDiscountsModal isOpen={isDiscountsOpen} onClose={() => setIsDiscountsOpen(false)} discountPercent={logic.discountPercent} setDiscountPercent={logic.setDiscountPercent} bonusPointsToUseRub={logic.bonusPointsToUseRub} setBonusPointsToUseRub={logic.setBonusPointsToUseRub} patientBalanceRub={logic.patientBalanceRub} planGrossKopecks={logic.effectiveSignTier.totalKopecks} />
 		</div>
 	);
 };

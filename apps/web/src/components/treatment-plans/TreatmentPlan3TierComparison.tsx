@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from "react";
 import { formatWarrantyYearsText, type TreatmentPlanTier, type TreatmentPlanTierId } from "./types";
 import { formatPlanPriceRub } from "./planPricing";
-import { formatServiceLifeYearsText, TreatmentPlanTierCard } from "./TreatmentPlanTierCard";
+import { formatServiceLifeYearsText, TreatmentPlanTierCard } from "./tierCard";
 import { TreatmentPlan3TierToolbar } from "./TreatmentPlan3TierToolbar";
 import { TreatmentPlanRoadmapGrid } from "./TreatmentPlanRoadmapGrid";
 import { TreatmentPlan3TierAgeWarning } from "./TreatmentPlan3TierAgeWarning";
@@ -15,7 +15,7 @@ import { TreatmentPlan3TierMobileThumbBar } from "./TreatmentPlan3TierMobileThum
 import { TreatmentPlan3TierEmptyState } from "./TreatmentPlan3TierEmptyState";
 import { createAndSharePlanBudgetLink } from "./treatmentPlanMessengerHelper";
 
-export { formatServiceLifeYearsText } from "./TreatmentPlanTierCard";
+export { formatServiceLifeYearsText } from "./tierCard";
 
 export interface TreatmentPlan3TierComparisonProps {
 	readonly tiers: readonly TreatmentPlanTier[];

@@ -1,5 +1,5 @@
 import React from "react";
-import { AnatomicalToothSVG } from "../../odontogram/AnatomicalToothSVG";
+import { AnatomicalTooth } from "../../odontogram/AnatomicalTooth";
 
 export interface AddServiceToothSelectorProps {
 	readonly selectedTooth: number | null;
@@ -33,13 +33,13 @@ export const AddServiceToothSelector: React.FC<AddServiceToothSelectorProps> = (
 					<>
 						<span className="text-[10px] sm:text-[11px] font-mono font-bold leading-none">{t}</span>
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG number={t} state="Healthy" scale={0.24} onClick={() => onSelectTooth(isCurrent ? null : t)} />
+							<AnatomicalTooth toothNumber={t} zoom={0.24} showBadge={false} />
 						</div>
 					</>
 				) : (
 					<>
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG number={t} state="Healthy" scale={0.24} onClick={() => onSelectTooth(isCurrent ? null : t)} />
+							<AnatomicalTooth toothNumber={t} zoom={0.24} showBadge={false} />
 						</div>
 						<span className="text-[10px] sm:text-[11px] font-mono font-bold leading-none">{t}</span>
 					</>

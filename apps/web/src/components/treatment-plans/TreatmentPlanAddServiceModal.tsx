@@ -106,8 +106,8 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 				</div>
 
 				<div className="p-4 border-t border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)] pb-[max(1rem,env(safe-area-inset-bottom))]">
-					<button type="button" onClick={() => { onClose(); setSelectedItem(null); }} className="secondary-button min-h-[44px] sm:min-h-[38px] px-4 font-semibold touch-manipulation">Отмена</button>
-					<button type="button" onClick={handleConfirm} data-testid="confirm-add-service-to-stage-btn" className="primary-button min-h-[44px] sm:min-h-[38px] px-5 font-bold touch-manipulation active:scale-98">
+					<button type="button" onClick={() => { onClose(); setSelectedItem(null); }} className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[38px] px-4 font-semibold touch-manipulation">Отмена</button>
+					<button type="button" onClick={handleConfirm} data-testid="confirm-add-service-to-stage-btn" className="dente-btn dente-btn-primary min-h-[44px] sm:min-h-[38px] px-5 font-bold touch-manipulation active:scale-98 inline-flex items-center gap-1.5">
 						<Plus size={16} /><span>Добавить в этап</span>
 					</button>
 				</div>

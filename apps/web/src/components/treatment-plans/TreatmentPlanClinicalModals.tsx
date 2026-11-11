@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { showToast } from "../GlobalToast";
-import type { ToothData } from "./types";
+import type { ToothData, TreatmentPlanTier } from "./types";
+import type { TreatmentPlanLogicReturn } from "./useTreatmentPlanLogic";
 import { TreatmentPlanAddServiceModal } from "./TreatmentPlanAddServiceModal";
 import { TreatmentPlanCreateStageModal } from "./TreatmentPlanCreateStageModal";
 
@@ -27,7 +28,7 @@ const CuratorPlanAssignmentModal = React.lazy(() =>
 );
 
 export interface TreatmentPlanClinicalModalsProps {
-	readonly logic: any;
+	readonly logic: TreatmentPlanLogicReturn;
 	readonly teethData: readonly ToothData[];
 }
 
@@ -50,15 +51,15 @@ export const TreatmentPlanClinicalModals: React.FC<TreatmentPlanClinicalModalsPr
 						tiers={logic.planTiers}
 						initialSelectedTierId={logic.selectedTierId}
 						contractNumber={logic.contractNumber}
-						onSelectPlan={(p: any) => { logic.setSelectedTierId(p.tierId); showToast(`Выбран план: ${p.title} (${p.totalRub.toLocaleString("ru-RU")} ₽)`, "success"); }}
-						onConfirmSelection={(p: any) => { logic.setSelectedTierId(p.tierId); logic.setPlanStatus("agreed"); showToast(`Пациент подтвердил выбор: ${p.title}`, "success"); }}
-						onApproveAndSign={(p: any) => {
+						onSelectPlan={(p: TreatmentPlanTier) => { logic.setSelectedTierId(p.tierId); showToast(`Выбран план: ${p.title} (${p.totalRub.toLocaleString("ru-RU")} ₽)`, "success"); }}
+						onConfirmSelection={(p: TreatmentPlanTier) => { logic.setSelectedTierId(p.tierId); logic.setPlanStatus("agreed"); showToast(`Пациент подтвердил выбор: ${p.title}`, "success"); }}
+						onApproveAndSign={(p: TreatmentPlanTier) => {
 							logic.setSelectedTierId(p.tierId);
 							logic.setIsPresenterModalOpen(false);
 							logic.setIsComparatorModalOpen(false);
 							logic.setIsSignModalOpen(true);
 						}}
-						onPrintContract={(p: any) => {
+						onPrintContract={(p: TreatmentPlanTier) => {
 							logic.setSelectedTierId(p.tierId);
 							logic.setIsPresenterModalOpen(false);
 							logic.setIsComparatorModalOpen(false);

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
-import { AnatomicalToothSVG } from "../../odontogram/AnatomicalToothSVG";
+import { AnatomicalTooth } from "../../odontogram/AnatomicalTooth";
 
 export interface BundleToothSelectorProps {
 	readonly selectedTooth: number;
@@ -46,10 +46,12 @@ export const BundleToothSelector: React.FC<BundleToothSelectorProps> = ({
 						className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)] hover:text-[var(--teal)] transition-colors cursor-pointer"
 						title="Выбрать анатомический зуб (FDI)"
 					>
-						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
-							<AnatomicalToothSVG number={selectedTooth || 11} state="Healthy" scale={0.24} onClick={() => {}} />
-						</div>
-						<span className="font-mono">#{selectedTooth}</span>
+						{selectedTooth > 0 ? (
+							<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
+								<AnatomicalTooth toothNumber={selectedTooth} zoom={0.24} showBadge={false} />
+							</div>
+						) : null}
+						<span className="font-mono">{selectedTooth > 0 ? `#${selectedTooth}` : "Зуб..."}</span>
 						<ChevronDown size={13} className="text-[var(--muted)]" />
 					</button>
 
@@ -73,7 +75,7 @@ export const BundleToothSelector: React.FC<BundleToothSelectorProps> = ({
 								<button key={t} type="button" onClick={() => { onToothChange(t); setIsOpen(false); }} className={`p-1 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${selectedTooth === t ? "bg-teal-500/20 border-teal-500 text-teal-700 dark:text-teal-300 font-bold" : "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500"}`}>
 									<span className="text-[10px] font-mono leading-none">{t}</span>
 									<div className="w-3.5 h-4 flex items-center justify-center overflow-hidden pointer-events-none">
-										<AnatomicalToothSVG number={t} state="Healthy" scale={0.18} onClick={() => {}} />
+										<AnatomicalTooth toothNumber={t} zoom={0.18} showBadge={false} />
 									</div>
 								</button>
 							))}
@@ -82,7 +84,7 @@ export const BundleToothSelector: React.FC<BundleToothSelectorProps> = ({
 							{LOWER_ARCH.map((t) => (
 								<button key={t} type="button" onClick={() => { onToothChange(t); setIsOpen(false); }} className={`p-1 rounded-lg border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${selectedTooth === t ? "bg-teal-500/20 border-teal-500 text-teal-700 dark:text-teal-300 font-bold" : "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500"}`}>
 									<div className="w-3.5 h-4 flex items-center justify-center overflow-hidden pointer-events-none">
-										<AnatomicalToothSVG number={t} state="Healthy" scale={0.18} onClick={() => {}} />
+										<AnatomicalTooth toothNumber={t} zoom={0.18} showBadge={false} />
 									</div>
 									<span className="text-[10px] font-mono leading-none">{t}</span>
 								</button>

@@ -853,11 +853,10 @@ export function differentiateStagesForTier(
 					};
 				}
 				const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
-				const discountedPrice = Math.max(500, Math.round((basePrice * 0.85) / 100) * 100);
 				return {
 					...it,
-					priceRub: discountedPrice,
-					unitPriceRub: discountedPrice,
+					priceRub: basePrice,
+					unitPriceRub: basePrice,
 				};
 			}
 
@@ -911,11 +910,10 @@ export function differentiateStagesForTier(
 					};
 				}
 				const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
-				const premiumPrice = Math.round((basePrice * 1.35) / 100) * 100;
 				return {
 					...it,
-					priceRub: premiumPrice,
-					unitPriceRub: premiumPrice,
+					priceRub: basePrice,
+					unitPriceRub: basePrice,
 				};
 			}
 

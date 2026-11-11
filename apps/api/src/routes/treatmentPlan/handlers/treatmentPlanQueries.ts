@@ -6,6 +6,7 @@ import {
 	patients,
 	treatmentItems,
 	treatmentPlanItemsNew,
+	treatmentPlanStages,
 	treatmentPlans,
 	users,
 } from "../../../db/schema.js";
@@ -154,11 +155,23 @@ export async function handleGetTreatmentPlanById(
 		ledgerMap.set(lr.id.toLowerCase(), { status: lr.status, visitId: lr.visitId });
 	}
 
+	const stagesRows = await db
+		.select()
+		.from(treatmentPlanStages)
+		.where(
+			and(
+				eq(treatmentPlanStages.planId, plan.id),
+				eq(treatmentPlanStages.organizationId, organizationId),
+			),
+		)
+		.orderBy(treatmentPlanStages.stageOrder);
+
 	const serialized = serializeTreatmentPlan(
 		plan,
 		items,
 		doctorsById,
 		ledgerMap,
+		stagesRows,
 	);
 
 	const primaryDoctorId = doctorIds[0] ?? "";

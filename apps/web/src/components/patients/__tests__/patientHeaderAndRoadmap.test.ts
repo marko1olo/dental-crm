@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { formatPatientBirthAndAge } from "../headerModules/patientHeaderTypes";
-import { CANONICAL_ROADMAP_META } from "../../treatment-plans/TreatmentPlanRoadmap";
+import { CANONICAL_ROADMAP_META } from "../../treatment-plans/roadmap/roadmapMeta";
 
 describe("PatientHeaderCard & TreatmentPlanRoadmap — Ergonomics & Roadmaps", () => {
 	it("1. Formats patient birth date and Russian age correctly", () => {

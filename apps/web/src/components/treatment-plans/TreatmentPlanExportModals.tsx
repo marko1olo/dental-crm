@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { showToast } from "../GlobalToast";
-import type { CashierInvoiceExportData } from "./types";
+import type { CashierInvoiceExportData, TreatmentPlanStage, TreatmentPlanItem } from "./types";
+import type { TreatmentPlanLogicReturn } from "./useTreatmentPlanLogic";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 
 const LabWorkOrderModal = React.lazy(() =>
@@ -14,7 +15,7 @@ const ClinicalServiceBundlesModal = React.lazy(() =>
 );
 
 export interface TreatmentPlanExportModalsProps {
-	readonly logic: any;
+	readonly logic: TreatmentPlanLogicReturn;
 	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
 }
 
@@ -22,14 +23,14 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 	logic,
 	onExportToCashier,
 }) => {
-	const handleInvoiceCreated = (inv: any) => {
-		const allItems = logic.stages.flatMap((s: any) => s.items);
+	const handleInvoiceCreated = (inv: { invoiceId?: string; invoiceNumber?: string; totalNetRub?: number }) => {
+		const allItems = logic.stages.flatMap((s: TreatmentPlanStage) => s.items);
 		const grossTotalRub = allItems.reduce(
-			(acc: number, it: any) => acc + (it.unitPriceRub || it.priceRub || 0) * (it.quantity || 1),
+			(acc: number, it: TreatmentPlanItem) => acc + (it.unitPriceRub || it.priceRub || 0) * (it.quantity || 1),
 			0,
 		);
 		const discountRub = allItems.reduce(
-			(acc: number, it: any) => acc + (it.discountRub || 0),
+			(acc: number, it: TreatmentPlanItem) => acc + (it.discountRub || 0),
 			0,
 		);
 		const netTotalRub = inv.totalNetRub ?? logic.loyaltyDeduction?.netPayableRub ?? grossTotalRub;
@@ -43,12 +44,12 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 			grossTotalRub,
 			discountRub,
 			netTotalRub,
-			netTotalKopecks: Math.round(netTotalRub * 100) as any,
+			netTotalKopecks: Math.round(netTotalRub * 100),
 			notes: `Сформирован счет №${inv.invoiceNumber || ""} по плану «${logic.currentTier?.title || "План"}»`,
 			createdAtIso: new Date().toISOString(),
 		};
 		if (onExportToCashier) onExportToCashier(exportData);
-		showToast(`Документ ${inv.invoiceNumber} успешно сформирован и передан в кассу!`, "success", 4000);
+		showToast(`Документ ${inv.invoiceNumber || ""} успешно сформирован и передан в кассу!`, "success", 4000);
 	};
 
 	const initialTeeth =
@@ -153,7 +154,7 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 						isSignedWithPatient={Boolean(logic.signedAgreement)}
 						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
 						doctorUserId={logic.auth?.currentUser?.id || "doc-01"}
-						planItems={logic.stages.flatMap((s: any) => s.items)}
+						planItems={logic.stages.flatMap((s: TreatmentPlanStage) => s.items)}
 						onInvoiceCreated={handleInvoiceCreated}
 					/>
 				</Suspense>

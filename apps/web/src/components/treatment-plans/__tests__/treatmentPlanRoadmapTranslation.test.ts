@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { translate804nToPatientDescription } from "../TreatmentPlanRoadmap";
+import { translate804nToPatientDescription } from "../roadmap";
 
 describe("TreatmentPlanRoadmap — Nomenclature Translation to Patient Language", () => {
 	it("1. Translates emergency codes to Stage 1 patient-friendly language", () => {

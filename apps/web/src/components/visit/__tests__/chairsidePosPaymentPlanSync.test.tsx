@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { VisitSummaryModal } from "../VisitSummaryModal";
-import { TreatmentPlanRoadmap, type RoadmapStageData } from "../../treatment-plans/TreatmentPlanRoadmap";
+import { TreatmentPlanRoadmap, type RoadmapStageData } from "../../treatment-plans/roadmap";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 
 describe("Chairside POS Checkout & Cashier Plan Sync Inquisitor", () => {

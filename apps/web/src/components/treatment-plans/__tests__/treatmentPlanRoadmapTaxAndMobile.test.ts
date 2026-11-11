@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { calculatePlanTaxDeductionBreakdown } from "@dental/shared";
-import { formatKopecksToRubExact } from "../TreatmentPlanRoadmap";
+import { formatKopecksToRubExact } from "../roadmap";
 
 describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 	it("6. Calculates 13% Tax Deduction correctly for mixed Code 01 and Code 02 services", () => {

@@ -213,7 +213,7 @@ describe("Treatment Plan Red Team Inquisition (8c, 8e, 8k, 8n)", () => {
 				"TreatmentPlanPresenterPrintView.tsx",
 				"TreatmentPlan3TierComparison.tsx",
 				"TreatmentPlan3TierToolbar.tsx",
-				"TreatmentPlanRoadmap.tsx",
+				"roadmap/index.tsx",
 			];
 
 			const basePath = path.resolve(__dirname, "../components/treatment-plans");

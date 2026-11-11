@@ -8,5 +8,6 @@ export {
 	useTreatmentPlanLogic,
 	type LabOrderPrefillContext,
 	type UseTreatmentPlanLogicProps,
+	type TreatmentPlanLogicReturn,
 } from "./planLogicModules";
 export * from "./planLogicModules";

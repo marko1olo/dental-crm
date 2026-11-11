@@ -4,6 +4,7 @@ import {
 	patients,
 	treatmentItems,
 	treatmentPlanItemsNew,
+	treatmentPlanStages,
 	treatmentPlans,
 	users,
 } from "../../db/schema.js";
@@ -56,6 +57,7 @@ export function serializeTreatmentPlan(
 	items: TreatmentPlanItemRow[],
 	doctorsById?: Map<string, { fullName: string; specialty: string | null }>,
 	ledgerMap?: Map<string, { status: string; visitId: string | null }>,
+	stages?: Array<typeof treatmentPlanStages.$inferSelect>,
 ) {
 	return {
 		id: plan.id,
@@ -81,6 +83,12 @@ export function serializeTreatmentPlan(
 		approvedAt: plan.approvedAt ? plan.approvedAt.toISOString() : null,
 		createdAt: plan.createdAt.toISOString(),
 		updatedAt: (plan.updatedAt ?? plan.createdAt).toISOString(),
+		stages: (stages ?? []).map((s) => ({
+			id: s.id,
+			stageOrder: s.stageOrder,
+			stageName: s.stageName,
+			completionPercentage: s.completionPercentage,
+		})),
 		items: items.map((item, index) => {
 			const { priceId, name } = splitStoredPriceId(item.priceId);
 			const docInfo =
@@ -145,6 +153,24 @@ export async function loadTreatmentPlansForPatient(
 		const group = itemsByPlanId.get(item.planId) ?? [];
 		group.push(item);
 		itemsByPlanId.set(item.planId, group);
+	}
+
+	const stagesRows = await db
+		.select()
+		.from(treatmentPlanStages)
+		.where(
+			and(
+				inArray(treatmentPlanStages.planId, planIds),
+				eq(treatmentPlanStages.organizationId, organizationId),
+			),
+		)
+		.orderBy(treatmentPlanStages.stageOrder);
+
+	const stagesByPlanId = new Map<string, Array<typeof treatmentPlanStages.$inferSelect>>();
+	for (const stg of stagesRows) {
+		const group = stagesByPlanId.get(stg.planId) ?? [];
+		group.push(stg);
+		stagesByPlanId.set(stg.planId, group);
 	}
 
 	const doctorIds = [
@@ -212,6 +238,7 @@ export async function loadTreatmentPlansForPatient(
 			itemsByPlanId.get(plan.id) ?? [],
 			doctorsById,
 			ledgerMap,
+			stagesByPlanId.get(plan.id) ?? [],
 		),
 	);
 }

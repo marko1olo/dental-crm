@@ -112,3 +112,5 @@ export function useTreatmentPlanLogic(props: UseTreatmentPlanLogicProps) {
 		...stageMutations, ...persistenceHandlers,
 	};
 }
+
+export type TreatmentPlanLogicReturn = ReturnType<typeof useTreatmentPlanLogic>;

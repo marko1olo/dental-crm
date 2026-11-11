@@ -131,6 +131,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					// Находим активный, в процессе или самый свежий план лечения
 					const activePlan = data.plans.find((p: any) => p.status === "Approved" || p.status === "InProgress") || data.plans[0];
 					if (activePlan && Array.isArray(activePlan.items) && activePlan.items.length > 0) {
+						const stageDefs = Array.isArray(activePlan.stages) ? activePlan.stages : [];
+						const stageDefMap = new Map<number, { id: string; stageName: string; stageOrder: number }>();
+						for (const sd of stageDefs) {
+							if (typeof sd.stageOrder === "number") {
+								stageDefMap.set(sd.stageOrder, sd);
+							}
+						}
+
 						const phaseMap = new Map<number, TreatmentPlanItem[]>();
 						for (const it of activePlan.items) {
 							const phase = it.phase || 1;
@@ -152,11 +160,13 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						}
 
 						const hydrated: TreatmentPlanStage[] = [];
-						const sortedPhases = Array.from(phaseMap.keys()).sort((a, b) => a - b);
+						const allOrders = new Set([...phaseMap.keys(), ...stageDefMap.keys()]);
+						const sortedPhases = Array.from(allOrders).sort((a, b) => a - b);
 						for (const ph of sortedPhases) {
-							const groupItems = phaseMap.get(ph)!;
+							const groupItems = phaseMap.get(ph) || [];
 							const sRub = groupItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
-							const title = ph === 1
+							const stageDef = stageDefMap.get(ph);
+							const defaultTitle = ph === 1
 								? "Этап 1: Неотложная помощь и терапия"
 								: ph === 2
 								? "Этап 2: Хирургия и имплантация"
@@ -164,8 +174,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								? "Этап 3: Ортопедия и протезирование"
 								: `Этап ${ph}: Клинический этап`;
 
+							const title = stageDef?.stageName || defaultTitle;
+
 							hydrated.push({
-								id: `stage-${ph}-${activePlan.id || "hydrated"}`,
+								id: stageDef?.id || `stage-${ph}-${activePlan.id || "hydrated"}`,
 								stageNumber: ph,
 								stageKind: ph === 1 ? "stage_1_therapy" : ph === 2 ? "stage_2_surgery" : "stage_3_orthopedics",
 								title,
@@ -173,7 +185,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								clinicalGoal: "Комплексная санация полости рта",
 								totalRub: sRub,
 								totalKopecks: sRub * 100,
-								estimatedVisits: groupItems.length,
+								estimatedVisits: groupItems.length || 1,
 								estimatedWeeks: ph * 2,
 								status: activePlan.status === "Approved" ? "agreed" : "draft",
 								items: groupItems,
@@ -436,7 +448,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						});
 						if (createRes.ok) {
 							const createdJson = await createRes.json().catch(() => ({}));
-							const createdId = createdJson?.plan?.id || createdJson?.id;
+							const createdId = createdJson?.treatmentPlan?.id || createdJson?.plan?.id || createdJson?.id;
 							if (createdId) {
 								planIdToApprove = createdId;
 								setCurrentPlanId(createdId);
