@@ -134,7 +134,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	curatorNotes: z.string().trim().max(2000).nullable().optional().default(null),
 	curatorNextContactDate: z.string().nullable().optional().default(null),
 	/*
-	 * Режим «Анонимный пациент» (ПП РФ №659 от 30.05.2026, Rules of 2026).
+	 * Режим «Анонимный пациент»
 	 */
 	isAnonymous: z.boolean().nullable().optional(),
 	anonymousCode: z.string().trim().max(80).nullable().optional(),
@@ -308,3 +308,9 @@ export const updatePatientSchema = z.object({
 });
 
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
+
+export function generateAnonymousPatientCode(): string {
+	const rand = Math.floor(100000 + Math.random() * 900000);
+	return `АНОНИМ-${rand}`;
+}
+

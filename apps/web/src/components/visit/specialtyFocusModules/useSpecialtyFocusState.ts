@@ -8,7 +8,7 @@ export function useSpecialtyFocusState(props: VisitSpecialtyFocusProps = {}) {
 	const { isDrawerOpen: propIsDrawerOpen, onToggleDrawer: propOnToggleDrawer, activePatient: propActivePatient, activeDoctor: propActiveDoctor, selectedSpecialty: propSelectedSpecialty, setSelectedSpecialty: propSetSelectedSpecialty } = props;
 	const storeSpecialty = useVisitStore((s) => s.selectedSpecialty);
 	const storeSetSpecialty = useVisitStore((s) => s.setSelectedSpecialty);
-	const context = (useOptionalAppLogicContext() || {}) as any;
+	const context = useOptionalAppLogicContext() ?? ({} as Partial<NonNullable<ReturnType<typeof useOptionalAppLogicContext>>>);
 	const activeDoctor = propActiveDoctor ?? context.activeDoctor;
 	const activeChair = context.activeChair;
 	const activePatient = propActivePatient ?? context.activePatient;
@@ -20,7 +20,7 @@ export function useSpecialtyFocusState(props: VisitSpecialtyFocusProps = {}) {
 
 	const [localIsProtocolDrawerOpen, setLocalIsProtocolDrawerOpen] = useState(false);
 	const isProtocolDrawerOpen = propIsDrawerOpen !== undefined ? propIsDrawerOpen : localIsProtocolDrawerOpen;
-	const setIsProtocolDrawerOpen = (valOrFn: any) => {
+	const setIsProtocolDrawerOpen = (valOrFn: boolean | ((prev: boolean) => boolean)) => {
 		const next = typeof valOrFn === "function" ? valOrFn(isProtocolDrawerOpen) : valOrFn;
 		if (propOnToggleDrawer) propOnToggleDrawer(next);
 		else setLocalIsProtocolDrawerOpen(next);
@@ -54,7 +54,7 @@ export function useSpecialtyFocusState(props: VisitSpecialtyFocusProps = {}) {
 		} catch { /* ignore */ }
 	};
 
-	const handleAddToInvoice = (services: any) => {
+	const handleAddToInvoice = (services: unknown) => {
 		try {
 			if (typeof window === "undefined") return;
 			const formatted = formatInvoiceServices(services, activeTooth);

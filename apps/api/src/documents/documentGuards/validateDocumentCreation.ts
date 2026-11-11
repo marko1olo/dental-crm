@@ -4,7 +4,7 @@ import {
 	documentPayloadDisallowedKeys,
 } from "@dental/shared";
 import {
-	checkDecree659TaxDeductionRestriction,
+	checkTaxDeductionIdentificationRestriction,
 	checkPatientAndVisitAccess,
 } from "./accessControlGuards.js";
 import {
@@ -103,8 +103,8 @@ export function validateDocumentCreation(
 
 	const metadata = documentKindMetadata[input.kind];
 
-	const decree659Error = checkDecree659TaxDeductionRestriction(input, facts);
-	if (decree659Error) return decree659Error;
+	const taxRestrictionError = checkTaxDeductionIdentificationRestriction(input, facts);
+	if (taxRestrictionError) return taxRestrictionError;
 
 	const taxScopeError = checkTaxDocumentYearAndScopeErrors(input);
 	if (taxScopeError) return taxScopeError;

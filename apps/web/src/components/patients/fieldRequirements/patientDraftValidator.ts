@@ -1,1 +1,0 @@
-export { validatePatientDraftWithRequirements } from "../patientFieldRequirementsConfig";

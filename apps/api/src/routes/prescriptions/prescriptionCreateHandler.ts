@@ -59,7 +59,7 @@ export async function handleCreatePrescription(request: FastifyRequest, reply: F
 
 	if (isAnonymousOmsPatient(patient, input.patientOmsPolicy, input.preferentialBenefitCode)) {
 		return reply.code(422).send({
-			error: "Decree659OmsForbiddenError",
+			error: "OmsIdentificationRequiredError",
 			message: "Отказ: выписка льготных рецептов и привязка полиса ОМС для анонимных пациентов запрещена.",
 		});
 	}

@@ -47,13 +47,14 @@ export async function register(app: FastifyInstance) {
 				err &&
 				typeof err === "object" &&
 				"code" in err &&
-				(err as { code?: string }).code === "Decree659TaxDeductionForbiddenError"
+				((err as { code?: string }).code === "TaxPayerRequisitesRequiredError" ||
+				 (err as { code?: string }).code === "TaxDeductionIdentificationRequiredError")
 			) {
 				return reply.code(422).send({
-					error: "Decree659TaxDeductionForbiddenError",
+					error: "TaxPayerRequisitesRequiredError",
 					message:
 						(err as { message?: string }).message ??
-						"Отказ по Постановлению Правительства РФ №659 от 30.05.2026: формирование справки для анонимных карт запрещено.",
+						"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 				});
 			}
 			const msg = err instanceof Error ? err.message : "Ошибка расчета вычета";
@@ -90,9 +91,9 @@ export async function register(app: FastifyInstance) {
 
 		if (isAnon) {
 			return reply.code(422).send({
-				error: "Decree659TaxDeductionForbiddenError",
+				error: "TaxDeductionIdentificationRequiredError",
 				message:
-					"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справок для налогового вычета по форме КНД 1151156 для анонимных пациентов категорически запрещено.",
+					"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 			});
 		}
 
@@ -113,13 +114,14 @@ export async function register(app: FastifyInstance) {
 				err &&
 				typeof err === "object" &&
 				"code" in err &&
-				(err as { code?: string }).code === "Decree659TaxDeductionForbiddenError"
+				((err as { code?: string }).code === "TaxPayerRequisitesRequiredError" ||
+				 (err as { code?: string }).code === "TaxDeductionIdentificationRequiredError")
 			) {
 				return reply.code(422).send({
-					error: "Decree659TaxDeductionForbiddenError",
+					error: "TaxPayerRequisitesRequiredError",
 					message:
 						(err as { message?: string }).message ??
-						"Отказ по Постановлению Правительства РФ №659: оформление налогового вычета (справки об оплате медицинских услуг для ФНС КНД 1151156) на анонимных пациентов категорически запрещено Налоговым кодексом РФ.",
+						"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 				});
 			}
 			const msg = err instanceof Error ? err.message : "Ошибка генерации XML ФНС";

@@ -17,6 +17,7 @@ import { postQuickCarpuleWriteoff } from "../../../anesthesia/anesthesiaEngine";
 import { OrthopedicsChairsidePanel } from "../../../orthopedics/OrthopedicsChairsidePanel";
 import { VisitEmkServicesBilling } from "../VisitEmkServicesBilling";
 import type { VisitEmkInteractiveStageProps } from "./visitEmkCanvasTypes";
+import type { DiaryState } from "../../../../lib/protocols/protocolTypes";
 
 export function VisitEmkInteractiveStage({
 	activeEmkTab,
@@ -79,7 +80,7 @@ export function VisitEmkInteractiveStage({
 				<VisitDiaryAnesthesiaBar
 					fieldsDisabled={isLocked}
 					activePatient={activePatient}
-					diary={visitNoteForm as any}
+					diary={visitNoteForm as unknown as DiaryState}
 					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
 					isLocked={isLocked}
 					isRevising={Boolean(visitNoteForm?.isRevising)}
@@ -87,7 +88,7 @@ export function VisitEmkInteractiveStage({
 						updateVisitNoteField("isRevising", true);
 					}}
 					applyAnesthesiaPreset={(preset) => {
-						const curr = visitNoteForm?.treatmentPlan || "";
+						const curr = (visitNoteForm?.treatmentPlan as string) || "";
 						updateVisitNoteField(
 							"treatmentPlan",
 							appendClinicalText(curr, preset, "\n\n"),
@@ -113,7 +114,7 @@ export function VisitEmkInteractiveStage({
 				/>
 
 				<EmkPerioSection
-					visitNoteForm={visitNoteForm as any}
+					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
 					isLocked={isLocked}
 					activeTooth={effectiveActiveTooth}
@@ -247,7 +248,7 @@ export function VisitEmkInteractiveStage({
 						activeTooth={effectiveActiveTooth}
 					/>
 					<EmkPerioSection
-						visitNoteForm={visitNoteForm as any}
+						visitNoteForm={visitNoteForm}
 						updateVisitNoteField={updateVisitNoteField}
 						isLocked={isLocked}
 						activeTooth={effectiveActiveTooth}
@@ -263,7 +264,7 @@ export function VisitEmkInteractiveStage({
 				activeEmkTab === "periodontics") && (
 				<div className="space-y-4 w-full min-w-0">
 					<EmkPerioSection
-						visitNoteForm={visitNoteForm as any}
+						visitNoteForm={visitNoteForm}
 						updateVisitNoteField={updateVisitNoteField}
 						isLocked={isLocked}
 						activeTooth={effectiveActiveTooth}
@@ -376,7 +377,7 @@ export function VisitEmkInteractiveStage({
 							<VisitDiaryAnesthesiaBar
 								fieldsDisabled={isLocked}
 								activePatient={activePatient}
-								diary={visitNoteForm as any}
+								diary={visitNoteForm as unknown as DiaryState}
 								doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
 								isLocked={isLocked}
 								isRevising={Boolean(visitNoteForm?.isRevising)}
@@ -384,7 +385,7 @@ export function VisitEmkInteractiveStage({
 									updateVisitNoteField("isRevising", true);
 								}}
 								applyAnesthesiaPreset={(preset) => {
-									const curr = visitNoteForm?.treatmentPlan || "";
+									const curr = (visitNoteForm?.treatmentPlan as string) || "";
 									updateVisitNoteField(
 										"treatmentPlan",
 										appendClinicalText(curr, preset, "\n\n"),

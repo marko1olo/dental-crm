@@ -86,8 +86,8 @@ describe("Red Team Inquisition: Human Clinical Language (Part 4: EMR, Protocols,
 		assert.ok(content.includes("Полное лечение и гигиена. Плановый профосмотр через 6 месяцев."));
 	});
 
-	it("20. Consent1ClickBatchBanner.tsx & useVisitConsentsLogic.ts: user-facing strings use 'согласия на лечение'", () => {
-		const bannerPath = path.join(webSrcRoot, "components/visit/consents/Consent1ClickBatchBanner.tsx");
+	it("20. ConsentPackageBatchBanner.tsx & useVisitConsentsLogic.ts: user-facing strings use 'согласия на лечение'", () => {
+		const bannerPath = path.join(webSrcRoot, "components/visit/consents/ConsentPackageBatchBanner.tsx");
 		const bannerContent = fs.readFileSync(bannerPath, "utf-8");
 		assert.ok(!bannerContent.includes("каталог бланков ИДС"));
 		assert.ok(bannerContent.includes("каталог согласий на лечение"));

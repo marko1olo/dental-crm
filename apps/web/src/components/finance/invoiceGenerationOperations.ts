@@ -1,7 +1,7 @@
 /**
  * invoiceGenerationOperations.ts — Сетевые и локальные операции выписки счетов и нарядов-заказов:
  * 1. Отправка на бэкенд и офлайн-сохранение (fallback) счетов (InvoicesView / localStorage).
- * 2. Генерация Дополнительного соглашения по ПП РФ №659.
+ * 2. Генерация Дополнительного соглашения к плану лечения (ст. 149 НК РФ / ИДС).
  * 3. Авторизация PIN-кода администратора.
  */
 
@@ -17,6 +17,26 @@ import {
 	saveStoredInvoices,
 } from "../billing/InvoicesView";
 import type { InvoiceUnapprovedItem } from "./TaxExemptionBanner.js";
+
+export interface CreatedInvoicePayload {
+	readonly success?: boolean;
+	readonly invoiceId?: string;
+	readonly invoiceNumber?: string;
+	readonly totalNetRub?: number;
+	readonly validationReport?: PlanToInvoiceValidationReport;
+	readonly issuedAt?: string;
+	readonly [key: string]: unknown;
+}
+
+export interface TaxAddendumDocument {
+	readonly id: string;
+	readonly patientId: string;
+	readonly kind: string;
+	readonly title: string;
+	readonly status: string;
+	readonly totalAmountRub: number;
+	readonly [key: string]: unknown;
+}
 
 export interface SubmitInvoiceParams {
 	readonly patientId: string;
@@ -36,7 +56,7 @@ export interface SubmitInvoiceParams {
 	readonly adminPinInput?: string | undefined;
 	readonly adminReasonInput?: string | undefined;
 	readonly effectiveStaffName?: string | undefined;
-	readonly onInvoiceCreated?: ((data: any) => void) | undefined;
+	readonly onInvoiceCreated?: ((data: CreatedInvoicePayload) => void) | undefined;
 	readonly onClose: () => void;
 }
 
@@ -88,7 +108,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 				discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
 				resolutionPolicy: it.selectedResolution,
 				serviceId:
-					it.suggested804nAnalogue?.serviceId || (it as any).serviceId,
+					it.suggested804nAnalogue?.serviceId || ("serviceId" in it && typeof (it as { serviceId?: unknown }).serviceId === "string" ? (it as { serviceId: string }).serviceId : undefined),
 			})),
 			adminOverridePin: isAuthorized ? (adminPinInput?.trim() || undefined) : undefined,
 			adminOverrideReason: adminReasonInput?.trim() || (isAuthorized ? effectiveStaffName : undefined),
@@ -236,7 +256,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 export async function createTaxAddendum(
 	patientId: string,
 	unapprovedItems: readonly InvoiceUnapprovedItem[],
-): Promise<any> {
+): Promise<TaxAddendumDocument> {
 	const totalAmountRub = unapprovedItems.reduce(
 		(sum, it) => sum + (it.effectiveUnitPriceKopecks / 100) * it.quantity,
 		0,
@@ -249,7 +269,6 @@ export async function createTaxAddendum(
 		status: "issued",
 		payloadJson: {
 			taxConsentCompliant: true,
-			decree659Compliant: true,
 			unapprovedItems: unapprovedItems.map((it) => ({
 				itemId: it.itemId,
 				nameRu: it.nameRu,
@@ -281,5 +300,3 @@ export async function createTaxAddendum(
 	);
 	return doc;
 }
-
-export const createDecree659Addendum = createTaxAddendum;

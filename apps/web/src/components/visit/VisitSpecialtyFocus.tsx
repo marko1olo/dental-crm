@@ -1,4 +1,5 @@
 import React from "react";
+import type { VisitDoctorEntity, VisitPatientEntity } from "./view/VisitViewProps";
 import { useSpecialtyFocusState } from "./specialtyFocusModules/useSpecialtyFocusState";
 import { SpecialtyFocusBar } from "./specialtyFocusModules/SpecialtyFocusBar";
 import { SpecialtyProtocolDrawer } from "./specialtyFocusModules/SpecialtyProtocolDrawer";
@@ -9,11 +10,11 @@ export interface VisitSpecialtyFocusProps {
 	onToggleDrawer?: (open: boolean) => void;
 	renderBarOnly?: boolean;
 	renderDrawerOnly?: boolean;
-	activePatient?: any;
-	activeDoctor?: any;
-	selectedSpecialty?: string;
-	setSelectedSpecialty?: (spec: string) => void;
-	[key: string]: any;
+	activePatient?: VisitPatientEntity | null | undefined;
+	activeDoctor?: VisitDoctorEntity | null | undefined;
+	selectedSpecialty?: string | undefined;
+	setSelectedSpecialty?: ((spec: string) => void) | undefined;
+	[key: string]: unknown;
 }
 
 export function VisitSpecialtyFocus(props: VisitSpecialtyFocusProps = {}) {

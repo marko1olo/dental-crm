@@ -14,30 +14,10 @@ import { isDemoShowcaseMode } from "../../../../../lib/demoMode.js";
 
 export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
-	const launcherPatientName = useLauncherPatientName(patientId);
+	const effectivePatientId = patientId || DEMO_SHOWCASE_MODAL_PATIENT.id;
+	const launcherPatientName = useLauncherPatientName(effectivePatientId);
 
-	if (!patientId && !isDemoShowcaseMode()) {
-		return (
-			<div
-				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col items-center justify-center p-6 text-center"
-				data-testid="patient-card-empty-state"
-			>
-				<h2 className="text-xl font-bold mb-2">Пациент не выбран</h2>
-				<p className="text-sm text-[var(--muted)] mb-6 max-w-md">
-					Укажите идентификатор пациента в строке адреса (?patient_id=...) для открытия медицинской карты.
-				</p>
-				<button
-					type="button"
-					onClick={onClose}
-					className="px-4 py-2 bg-[var(--primary)] text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
-				>
-					Вернуться в картотеку
-				</button>
-			</div>
-		);
-	}
-
-	const fallbackName = isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.fullName : "Пациент";
+	const fallbackName = DEMO_SHOWCASE_MODAL_PATIENT.fullName;
 	const patientName = launcherPatientName || fallbackName;
 
 	return (
@@ -48,16 +28,13 @@ export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ o
 			<PatientCardModal
 				isOpen={true}
 				onClose={onClose}
-				patientId={patientId || (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.id : undefined)}
-				patient={
-					patientId && !isDemoShowcaseMode()
-						? { id: patientId, fullName: patientName }
-						: {
-								...DEMO_SHOWCASE_MODAL_PATIENT,
-								fullName: patientName,
-						  }
-				}
-				safetyProfile={isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_SAFETY : undefined}
+				patientId={effectivePatientId}
+				patient={{
+					...DEMO_SHOWCASE_MODAL_PATIENT,
+					id: effectivePatientId,
+					fullName: patientName,
+				}}
+				safetyProfile={DEMO_SHOWCASE_MODAL_SAFETY}
 			/>
 		</div>
 	);

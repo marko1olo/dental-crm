@@ -100,9 +100,12 @@ const mockDashboard = {
 };
 
 const outputDir = path.resolve(__dirname, "../docs/proofs/odontogram");
-const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/14a5f909-295a-4a0f-ad83-a3550a8f1348");
+const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/f2c31f40-e4c0-4586-871d-fe7f3683e62d");
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
+}
+if (!fs.existsSync(brainDir)) {
+  fs.mkdirSync(brainDir, { recursive: true });
 }
 
 function addInitStorage(context) {

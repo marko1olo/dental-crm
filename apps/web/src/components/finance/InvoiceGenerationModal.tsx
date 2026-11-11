@@ -5,11 +5,12 @@ import { InvoiceItemsTable } from "./InvoiceItemsTable";
 import { InvoiceGenerationHeader } from "./InvoiceGenerationHeader";
 import { InvoiceGenerationFooter } from "./InvoiceGenerationFooter";
 import { useInvoiceGenerationState } from "./useInvoiceGenerationState";
+import type { CreatedInvoicePayload } from "./invoiceGenerationOperations";
 
 export { TaxExemptionBanner } from "./TaxExemptionBanner.js";
-export { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./TaxExemptionBanner.js";
+export { InvoiceTaxDecreeBanner } from "./TaxExemptionBanner.js";
 export { InvoiceItemsTable } from "./InvoiceItemsTable";
-export { submitInvoiceFromPlan, createTaxAddendum, createDecree659Addendum } from "./invoiceGenerationOperations";
+export { submitInvoiceFromPlan, createTaxAddendum, type CreatedInvoicePayload, type TaxAddendumDocument } from "./invoiceGenerationOperations";
 export { InvoiceGenerationHeader } from "./InvoiceGenerationHeader";
 export { InvoiceGenerationFooter } from "./InvoiceGenerationFooter";
 export { useInvoiceGenerationState } from "./useInvoiceGenerationState";
@@ -30,7 +31,7 @@ export interface InvoiceGenerationModalProps {
 	readonly doctorFullName?: string | undefined;
 	readonly doctorUserId?: string | undefined;
 	readonly planItems: readonly TreatmentPlanItem[];
-	readonly onInvoiceCreated?: ((data: any) => void) | undefined;
+	readonly onInvoiceCreated?: ((data: CreatedInvoicePayload) => void) | undefined;
 	readonly className?: string | undefined;
 	readonly initialShowAdminPinDrawer?: boolean | undefined;
 }

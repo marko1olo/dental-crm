@@ -24,7 +24,6 @@ export interface TaxExemptionBannerProps {
 }
 
 export type InvoiceTaxDecreeBannerProps = TaxExemptionBannerProps;
-export type InvoiceDecree659BannerProps = TaxExemptionBannerProps;
 
 export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 	unapprovedItems,
@@ -93,5 +92,5 @@ export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 	);
 };
 
-export { TaxExemptionBanner as InvoiceTaxDecreeBanner, TaxExemptionBanner as InvoiceDecree659Banner };
+export { TaxExemptionBanner as InvoiceTaxDecreeBanner };
 export default TaxExemptionBanner;

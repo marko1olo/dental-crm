@@ -42,14 +42,18 @@ import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getDocumentsByPatientId } from "../../db/documentQuery.js";
 import { alreadyRefundedKopecksForPayment } from "../../documents/documentGuards/index.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-export class Decree659TaxDeductionForbiddenError extends Error {
+export class TaxPayerRequisitesRequiredError extends Error {
 	readonly statusCode = 422;
-	readonly code = "Decree659TaxDeductionForbiddenError";
-	constructor(message: string) {
+	readonly code = "TaxPayerRequisitesRequiredError";
+	constructor(
+		message = "Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
+	) {
 		super(message);
-		this.name = "Decree659TaxDeductionForbiddenError";
+		this.name = "TaxPayerRequisitesRequiredError";
 	}
 }
+export const TaxDeductionIdentificationRequiredError = TaxPayerRequisitesRequiredError;
+export type TaxDeductionIdentificationRequiredError = TaxPayerRequisitesRequiredError;
 
 export interface NdflTaxPreviewOptions {
 	taxYear?: number | undefined;
@@ -121,8 +125,8 @@ export class NdflTaxService {
 			);
 
 		if (isPatientAnonymous) {
-			throw new Decree659TaxDeductionForbiddenError(
-				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справки для налогового вычета (КНД 1151156 / 3-НДФЛ) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
+			throw new TaxDeductionIdentificationRequiredError(
+				"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 			);
 		}
 
@@ -549,8 +553,8 @@ export class NdflTaxService {
 			);
 
 		if (isAnonymous) {
-			throw new Decree659TaxDeductionForbiddenError(
-				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справок для налогового вычета по форме КНД 1151156 (и XML КНД 1184043) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
+			throw new TaxDeductionIdentificationRequiredError(
+				"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 			);
 		}
 

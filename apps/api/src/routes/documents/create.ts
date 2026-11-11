@@ -142,9 +142,12 @@ export async function register(app: FastifyInstance) {
 				),
 		});
 		if (!validation.ok) {
-			if (validation.code === "Decree659TaxDeductionForbiddenError") {
+			if (
+				validation.code === "TaxPayerRequisitesRequiredError" ||
+				validation.code === "TaxDeductionIdentificationRequiredError"
+			) {
 				return reply.code(422).send({
-					error: "Decree659TaxDeductionForbiddenError",
+					error: "TaxPayerRequisitesRequiredError",
 					message: validation.error,
 				});
 			}

@@ -2,12 +2,14 @@ import React from "react";
 import { AlertTriangle, CheckCircle2, Printer, FileText } from "lucide-react";
 import type { ClinicalConsentConfig } from "./visitConsentTypes";
 
-export interface Consent1ClickBatchBannerProps {
+export interface ConsentPackageBatchBannerProps {
 	readonly unsignedRequiredItems: readonly ClinicalConsentConfig[];
 	readonly onPrintTodayPackage: () => void;
 	readonly onMarkAllRequiredTodaySigned: () => void;
 	readonly onOpenInformedConsentModal?: (() => void) | undefined;
 }
+
+export type Consent1ClickBatchBannerProps = ConsentPackageBatchBannerProps;
 
 function formatConsentsCount(count: number): string {
 	const mod10 = count % 10;
@@ -18,12 +20,12 @@ function formatConsentsCount(count: number): string {
 	return `${count} согласий`;
 }
 
-export function Consent1ClickBatchBanner({
+export function ConsentPackageBatchBanner({
 	unsignedRequiredItems,
 	onPrintTodayPackage,
 	onMarkAllRequiredTodaySigned,
 	onOpenInformedConsentModal,
-}: Consent1ClickBatchBannerProps) {
+}: ConsentPackageBatchBannerProps) {
 	if (unsignedRequiredItems.length > 0) {
 		return (
 			<div className="vct-package-banner required">
@@ -103,3 +105,5 @@ export function Consent1ClickBatchBanner({
 		</div>
 	);
 }
+
+export const Consent1ClickBatchBanner = ConsentPackageBatchBanner;

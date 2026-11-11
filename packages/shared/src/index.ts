@@ -220,7 +220,6 @@ export * from "./warehouse/index.js";
 export * as inventory from "./inventory/index.js";
 export * from "./curator/index.js";
 export * from "./outpatient/index.js";
-export * from "./compliance/decree659Engine.js";
 export {
 	calculateEmployeeTimesheetT13, aggregateTimesheetDays, generateTimesheetT13Csv, getDaysInMonth,
 	renderFormT13Html, TIMESHEET_STATUTORY_CODES, timesheetCodeSchema, timesheetDayRecordSchema,

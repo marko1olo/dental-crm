@@ -48,7 +48,7 @@ export async function verifyGenerateInvoiceCompliance(params: {
 	const { isOmsInvoice, isAnonPatient, hasValidOmsIdentity } = evaluateOmsCompliance(data, patient);
 	if (isOmsInvoice && (isAnonPatient || !hasValidOmsIdentity)) {
 		reply.code(422).send({
-			error: "Decree659OmsForbiddenError",
+			error: "OmsIdentificationRequiredError",
 			message: "Для формирования счетов по программе обязательного страхования (ОМС) требуется идентификация пациента (паспортные данные, СНИЛС и номер полиса).",
 		});
 		return null;

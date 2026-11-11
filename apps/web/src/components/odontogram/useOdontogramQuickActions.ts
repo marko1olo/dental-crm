@@ -23,9 +23,18 @@ import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService"
 import { showToast } from "../GlobalToast";
 import { generateSoapFromOdontogramStates } from "../../lib/clinicalProtocols";
 
+export interface QuickActionDoctor {
+	id?: string | null | undefined;
+	userId?: string | null | undefined;
+	fullName?: string | null | undefined;
+	name?: string | null | undefined;
+	role?: string | null | undefined;
+	specialty?: string | null | undefined;
+}
+
 export interface UseOdontogramQuickActionsProps {
 	patientId: string;
-	activeDoctor?: any;
+	activeDoctor?: QuickActionDoctor | null | undefined;
 	isPediatricMode: boolean;
 	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
 	teethData: ToothData[];
@@ -214,36 +223,11 @@ export function useOdontogramQuickActions({
 			});
 
 			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
+				const err = (await res.json().catch(() => ({}))) as { message?: string };
 				throw new Error(err.message || "Ошибка создания наряда ЗТЛ");
 			}
 
 			const savedOrder = await res.json();
-
-			if (savedOrder?.id) {
-				for (const tooth of targetTeeth) {
-					try {
-						await fetch(`/api/clinical/lab-orders/${savedOrder.id}/items`, {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
-							body: JSON.stringify({
-								toothFdi: tooth,
-								restorationType: construction,
-								material: ONE_CLICK_LAB_DEFAULTS.materialId,
-								shadeFinal: ONE_CLICK_LAB_DEFAULTS.colorVita,
-								translucencyLevel: ONE_CLICK_LAB_DEFAULTS.translucency,
-								cementGapMicrons: ONE_CLICK_LAB_DEFAULTS.cementGapMicrons,
-								priceRub: priceRub / targetTeeth.length,
-							}),
-						});
-					} catch {
-						// Non-blocking item fallback
-					}
-				}
-			}
 
 			showToast(
 				`Наряд ЗТЛ успешно оформлен для зубов ${toothFdiStr} (Цирконий A2, сдача: ${dueDateFormatted})!`,
@@ -253,8 +237,12 @@ export function useOdontogramQuickActions({
 			window.dispatchEvent(
 				new CustomEvent("dente-lab-order-created", { detail: { order: savedOrder } }),
 			);
-		} catch (err: any) {
-			showToast(err.message || "Не удалось оформить наряд в ЗТЛ", "error");
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: "Не удалось оформить наряд в ЗТЛ";
+			showToast(message, "error");
 		}
 	}, [patientId, activeDoctor]);
 

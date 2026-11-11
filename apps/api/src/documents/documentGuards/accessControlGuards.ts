@@ -49,9 +49,9 @@ export function checkPatientAndVisitAccess(
 }
 
 /**
- * Гард проверки запрета выдачи налоговых справок анонимным пациентам по Постановлению Правительства РФ №659.
+ * Гард проверки запрета выдачи налоговых справок анонимным пациентам без паспортных данных и ИНН по ст. 219 НК РФ.
  */
-export function checkDecree659TaxDeductionRestriction(
+export function checkTaxDeductionIdentificationRestriction(
 	input: CreateDocumentInput,
 	facts: DocumentCreationFacts,
 ): DocumentCreationGuardResult | null {
@@ -81,11 +81,12 @@ export function checkDecree659TaxDeductionRestriction(
 		return {
 			ok: false,
 			statusCode: 422,
-			code: "Decree659TaxDeductionForbiddenError",
+			code: "TaxPayerRequisitesRequiredError",
 			error:
-				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справки для налогового вычета (КНД 1151156 / 3-НДФЛ) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
+				"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 		};
 	}
 
 	return null;
 }
+export { checkTaxDeductionIdentificationRestriction as checkTaxPayerRequisitesRestriction };

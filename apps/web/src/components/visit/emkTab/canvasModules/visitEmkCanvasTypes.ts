@@ -5,8 +5,8 @@ export type { VisitEmkCanvasProps };
 
 export interface VisitEmkInteractiveStageProps {
 	activeEmkTab: string;
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (field: string, value: any) => void;
+	visitNoteForm: Record<string, unknown>;
+	updateVisitNoteField: (field: string, value: unknown) => void;
 	isLocked: boolean;
 	effectiveActiveTooth: number | null;
 	activePatient?: any;

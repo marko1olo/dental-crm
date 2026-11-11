@@ -14,6 +14,7 @@ import { useVisitStore } from "../../store/visitStore";
 import { EmkComplaintsAndAnamnesisSection } from "./emkTabModules/EmkComplaintsAndAnamnesisSection";
 import { EmkDiagnosisAndProtocolSection } from "./emkTabModules/EmkDiagnosisAndProtocolSection";
 import type { VisitEmkTabProps } from "./emkTabModules/emkTabTypes";
+import type { VisitDoctorEntity, VisitPatientEntity } from "./view/VisitViewProps";
 import { useVisitEmkTabController } from "./emkTabModules/useVisitEmkTabController";
 
 export * from "./emkTab";
@@ -32,7 +33,9 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 	// objectiveStatus: "Слизистая оболочка полости рта физиологической окраски" / "Слизистая оболочка полости рта бледно-розовая, влажная."
 	// diagnosis: "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)" / "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)"
 	// dente-apply-soap-protocol debounceMs: 600; visibilitychange, pagehide, beforeunload, dente-telephony-incoming-call
-	const { dashboard, activePatient, openVisitId, isDraftAccepting } = props;
+	const { dashboard, openVisitId, isDraftAccepting } = props;
+	const activePatient: VisitPatientEntity | null | undefined = props.activePatient;
+	const activeDoctor: VisitDoctorEntity | null | undefined = props.activeDoctor;
 	const visitNoteForm: Record<string, unknown> = props.visitNoteForm ?? {};
 	const updateVisitNoteField: (field: string, value: unknown) => void =
 		props.updateVisitNoteField ?? (() => {});
@@ -151,6 +154,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 			<VisitSpecialtyFocus
 				compact
 				activePatient={activePatient}
+				activeDoctor={activeDoctor}
 				isDrawerOpen={!isSpecialtyCollapsed}
 				onToggleDrawer={(open: boolean) => setIsSpecialtyCollapsed(!open)}
 			/>

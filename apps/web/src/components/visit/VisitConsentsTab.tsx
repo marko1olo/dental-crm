@@ -30,7 +30,7 @@ export * from "./consents/visitConsentTypes";
 import { type VisitConsentsTabProps } from "./consents/visitConsentTypes";
 import { VISIT_CONSENTS_TAB_STYLES } from "./consents/visitConsentsTabStyles";
 import { ConsentScopeMismatchBanner } from "./consents/ConsentScopeMismatchBanner";
-import { Consent1ClickBatchBanner } from "./consents/Consent1ClickBatchBanner";
+import { ConsentPackageBatchBanner } from "./consents/ConsentPackageBatchBanner";
 import { ConsentItemRow } from "./consents/ConsentItemRow";
 import { ConsentArchiveSection } from "./consents/ConsentArchiveSection";
 import { useVisitConsentsLogic } from "./consents/useVisitConsentsLogic";
@@ -110,8 +110,8 @@ export function VisitConsentsTab(props: VisitConsentsTabProps) {
 				onMarkAddendumSigned={handleMarkAddendumSigned}
 			/>
 
-			{/* ═══ HOT PATH БАННЕР: «1-КЛИК ПАКЕТ НА СЕГОДНЯ» (МАНДАТ 8e) ═══ */}
-			<Consent1ClickBatchBanner
+			{/* ═══ HOT PATH БАННЕР: ПАКЕТ СОГЛАСИЙ НА СЕГОДНЯ (МАНДАТ 8e) ═══ */}
+			<ConsentPackageBatchBanner
 				unsignedRequiredItems={unsignedRequiredItems}
 				onPrintTodayPackage={handlePrintTodayPackage}
 				onMarkAllRequiredTodaySigned={handleMarkAllRequiredTodaySigned}

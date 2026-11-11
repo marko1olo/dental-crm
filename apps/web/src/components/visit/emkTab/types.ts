@@ -3,6 +3,7 @@ import type { DentitionMode } from "@dental/shared";
 import type { VisitToothUiState } from "../../../store/visitStore";
 import type { ClinicalVisitCompletionResult } from "../clinicalVisitWorkflow";
 import type { VisitNoteFieldsPatch } from "../clinicalCatalog/clinicalProtocolsCatalog";
+import type { VisitDoctorEntity, VisitPatientEntity } from "../view/VisitViewProps";
 
 export type { DentitionMode };
 
@@ -15,7 +16,8 @@ export interface VisitEmkTabProps {
 	updateVisitNoteField?: (field: string, value: unknown) => void;
 	draft?: unknown;
 	patientHistory?: VisitEmkOdontogramBarProps["patientHistory"];
-	activePatient?: any;
+	activePatient?: VisitPatientEntity | null | undefined;
+	activeDoctor?: VisitDoctorEntity | null | undefined;
 	dashboard?: any;
 	openVisitId?: string;
 	isDraftAccepting?: boolean | undefined;

@@ -316,10 +316,10 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		id: "patient-card-360",
 		title: "Карточка пациента 360",
 		criteria: {
-			tokens: ["patient-card", "patient_card"],
+			tokens: ["patient-card", "patient_card", "patient_modal", "patient-modal"],
 		},
 		render: () => (
-			<StandalonePatientCardHost onClose={() => clearUrlTokens(["patient-card", "patient_card"])} />
+			<StandalonePatientCardHost onClose={() => clearUrlTokens(["patient-card", "patient_card", "patient_modal", "patient-modal"])} />
 		),
 	},
 	// 17. Аналитика и дашборд руководителя

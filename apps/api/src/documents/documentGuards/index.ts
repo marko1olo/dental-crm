@@ -25,7 +25,8 @@ export {
 } from "./moneyUtils.js";
 
 export {
-	checkDecree659TaxDeductionRestriction,
+	checkTaxDeductionIdentificationRestriction,
+	checkTaxPayerRequisitesRestriction,
 	checkPatientAndVisitAccess,
 } from "./accessControlGuards.js";
 
