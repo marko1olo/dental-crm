@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { CANONICAL_4_KANBAN_COLUMNS } from "../DentalLabOrdersKanbanBoard";
+import { CANONICAL_5_KANBAN_COLUMNS } from "../DentalLabOrdersKanbanBoard";
 import {
 	checkDentalLabFinancialGate,
 	createDoctorClinicalOverride,
@@ -40,9 +40,9 @@ describe("dentalLabScopeFinancialAutonomy — Mandate 8e Autonomy & Module Bound
 		assert.equal(urgent.isUrgentBypassed, true);
 	});
 
-	it("Канбан 4 этапа и оверрайд врача", () => {
-		const stageIds = CANONICAL_4_KANBAN_COLUMNS.map((col) => col.id);
-		assert.deepEqual(stageIds, ["sent_to_lab", "in_progress", "fitting_scheduled", "installed_completed"]);
+	it("Канбан 5 канонических этапов и оверрайд врача", () => {
+		const stageIds = CANONICAL_5_KANBAN_COLUMNS.map((col) => col.id);
+		assert.deepEqual(stageIds, ["sent_to_lab", "in_progress", "fitting_scheduled", "ready_in_clinic", "installed_completed"]);
 
 		const override = createDoctorClinicalOverride("Иванов И.И.", "Срочная примерка перед командировкой");
 		assert.equal(override.authorized, true);

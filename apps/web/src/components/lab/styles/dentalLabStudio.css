@@ -52,7 +52,7 @@
 	position: relative;
 	width: 100%;
 	max-width: 1280px;
-	max-height: 94vh;
+	max-height: 96vh;
 	display: flex;
 	flex-direction: column;
 	background: var(--paper-strong, #ffffff);
@@ -114,11 +114,11 @@
 .dental-lab-left-column {
 	border-right: 1px solid var(--line, #e2e8f0);
 	background: var(--paper, #f8fafc);
-	padding: 10px 12px 14px 12px;
+	padding: 8px 12px 12px 12px;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 4px;
 }
 
 .dental-lab-right-column {
@@ -290,6 +290,7 @@
 		border-bottom: none;
 		display: flex;
 		flex-direction: column;
+		overflow-x: clip;
 	}
 
 	.dental-lab-header {
@@ -338,7 +339,9 @@
 		font-size: 12px;
 	}
 
-	.dental-lab-action-btn {
+	.dental-lab-action-btn,
+	.dental-lab-primary-cta,
+	.dente-btn-pill {
 		min-height: var(--lab-touch-target-min);
 		padding: 8px 12px;
 		font-size: 12px;
@@ -357,21 +360,26 @@
 		right: 0;
 		z-index: 20;
 		padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px;
-		background: rgba(255, 255, 255, 0.92);
+		background: var(--paper-strong, rgba(255, 255, 255, 0.92));
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 		border-top: 1px solid var(--line, #e2e8f0);
 	}
 }
 
-/* 9. Тёмная тема (WCAG AAA без слепящих белых пятен) */
-[data-theme="dark"] .dental-lab-modal-container, .dark .dental-lab-modal-container { background: var(--paper-strong, #0f172a); border-color: var(--line, #334155); }
-[data-theme="dark"] .dental-lab-header, .dark .dental-lab-header { background: var(--paper, #0b1120); border-bottom-color: var(--line, #334155); }
-[data-theme="dark"] .dental-lab-left-column, .dark .dental-lab-left-column { background: var(--paper, #0b1120); border-right-color: var(--line, #334155); }
-[data-theme="dark"] .dental-lab-right-column, .dark .dental-lab-right-column { background: var(--paper-strong, #0f172a); }
-[data-theme="dark"] .dental-lab-order-card, .dark .dental-lab-order-card { background: var(--paper, #0b1120); border-color: var(--line, #334155); }
-[data-theme="dark"] .dental-lab-action-btn, .dark .dental-lab-action-btn { background: var(--paper-soft, #1e293b); border-color: var(--line, #334155); color: var(--ink, #f1f5f9); }
-[data-theme="dark"] .dental-lab-tooth-chip, .dark .dental-lab-tooth-chip { background: var(--paper-soft, #1e293b); border-color: var(--line, #334155); color: var(--ink, #f1f5f9); }
-[data-theme="dark"] .dental-lab-shade-chip, .dark .dental-lab-shade-chip { background: var(--paper-soft, #1e293b); border-color: var(--line, #334155); color: var(--ink, #f1f5f9); }
-[data-theme="dark"] .dental-lab-floating-bottom-bar, .dark .dental-lab-floating-bottom-bar { background: rgba(15, 23, 42, 0.92); border-top-color: var(--line, #334155); }
+/* 9. Поисковые поля */
+.dental-lab-search-input {
+	padding-left: 38px !important;
+}
+
+/* 10. Тёмная тема (WCAG AAA без слепящих белых пятен и синих гробов) */
+[data-theme="dark"] .dental-lab-modal-container, .dark .dental-lab-modal-container { background: var(--paper-strong); border-color: var(--line); }
+[data-theme="dark"] .dental-lab-header, .dark .dental-lab-header { background: var(--paper); border-bottom-color: var(--line); }
+[data-theme="dark"] .dental-lab-left-column, .dark .dental-lab-left-column { background: var(--paper); border-right-color: var(--line); }
+[data-theme="dark"] .dental-lab-right-column, .dark .dental-lab-right-column { background: var(--paper-strong); }
+[data-theme="dark"] .dental-lab-order-card, .dark .dental-lab-order-card { background: var(--paper); border-color: var(--line); }
+[data-theme="dark"] .dental-lab-action-btn, .dark .dental-lab-action-btn { background: rgba(255, 255, 255, 0.05); border-color: var(--line); color: var(--ink); }
+[data-theme="dark"] .dental-lab-tooth-chip, .dark .dental-lab-tooth-chip { background: rgba(255, 255, 255, 0.05); border-color: var(--line); color: var(--ink); }
+[data-theme="dark"] .dental-lab-shade-chip, .dark .dental-lab-shade-chip { background: rgba(255, 255, 255, 0.05); border-color: var(--line); color: var(--ink); }
+[data-theme="dark"] .dental-lab-floating-bottom-bar, .dark .dental-lab-floating-bottom-bar { background: var(--paper-strong); border-top-color: var(--line); }
 

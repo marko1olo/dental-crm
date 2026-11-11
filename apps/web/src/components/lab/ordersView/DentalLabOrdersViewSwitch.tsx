@@ -57,11 +57,11 @@ export function DentalLabOrdersViewSwitch({ logic }: DentalLabOrdersViewSwitchPr
 				</p>
 				<button
 					type="button" onClick={handleOpenNewOrder}
-					className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-medium inline-flex items-center gap-2 shadow-xs cursor-pointer transition-all active:scale-95 text-xs"
+					className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white font-medium inline-flex items-center gap-2 shadow-xs cursor-pointer transition-all active:scale-95 text-xs"
 					data-testid="empty-state-add-first-lab-order-btn"
 				>
 					<Plus className="w-4 h-4" />
-					<span>+ Заказ в лабораторию</span>
+					<span>Заказ в лабораторию</span>
 				</button>
 			</div>
 		);

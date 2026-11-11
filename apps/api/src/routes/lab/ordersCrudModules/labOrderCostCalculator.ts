@@ -20,9 +20,9 @@ export type {
 const MATERIAL_TURNAROUND_DAYS_MAP: Record<string, { standardDays: number; urgentDays: number; baseCostRub: number }> = {
 	crown_zirconia: { standardDays: 5, urgentDays: 3, baseCostRub: 7500 },
 	crown_emax: { standardDays: 5, urgentDays: 3, baseCostRub: 8500 },
-	metal_ceramic: { standardDays: 7, urgentDays: 4, baseCostRub: 5000 },
-	clasp_denture: { standardDays: 10, urgentDays: 6, baseCostRub: 11000 },
-	aligners: { standardDays: 5, urgentDays: 3, baseCostRub: 18000 },
+	metal_ceramic: { standardDays: 6, urgentDays: 4, baseCostRub: 3800 },
+	clasp_denture: { standardDays: 8, urgentDays: 5, baseCostRub: 13000 },
+	aligners: { standardDays: 4, urgentDays: 2, baseCostRub: 5500 },
 	implant_abutment: { standardDays: 4, urgentDays: 2, baseCostRub: 6000 },
 	pmma_cad: { standardDays: 2, urgentDays: 1, baseCostRub: 2500 },
 };
@@ -73,7 +73,7 @@ export async function fetchLabPriceFromDb(
 					? labCost
 					: materialsCost > 0
 						? materialsCost
-						: Math.round(basePrice * 0.35);
+						: 0;
 
 			if (resolvedCost > 0 && basePrice > 0) {
 				return { costRub: resolvedCost, priceRub: basePrice };
@@ -106,8 +106,7 @@ export async function fetchLabPriceFromDb(
 		if (historicalItem && historicalItem.priceRub) {
 			const parsedPrice = parseFloat(historicalItem.priceRub);
 			if (parsedPrice > 0) {
-				const estimatedCost = Math.round(parsedPrice * 0.35);
-				return { costRub: estimatedCost, priceRub: parsedPrice };
+				return { costRub: parsedPrice, priceRub: parsedPrice };
 			}
 		}
 	} catch {
@@ -124,11 +123,11 @@ export async function fetchLabPriceFromDb(
 
 	const defaultCostPerUnit = matchedPreset
 		? matchedPreset.suggestedCostRub
-		: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 7500);
+		: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 0);
 
 	const defaultPricePerUnit = matchedPreset
 		? matchedPreset.suggestedPriceRub
-		: Math.round(defaultCostPerUnit * 3.2);
+		: defaultCostPerUnit;
 
 	return { costRub: defaultCostPerUnit, priceRub: defaultPricePerUnit };
 }
@@ -145,7 +144,7 @@ export function calculateLabOrderTurnaround(
 	const config = MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey] ?? {
 		standardDays: 5,
 		urgentDays: 3,
-		baseCostRub: 7000,
+		baseCostRub: 0,
 	};
 
 	const turnaroundDays = isUrgent ? config.urgentDays : config.standardDays;
@@ -178,18 +177,18 @@ export function calculateLabOrderCostAndMarkup(params: {
 			params.materialOrConstruction.toLowerCase().includes(p.shortTitle.toLowerCase()),
 	);
 
-	const defaultCostPerUnit = params.customCostPerUnit != null && params.customCostPerUnit > 0
+	const defaultCostPerUnit = params.customCostPerUnit != null && params.customCostPerUnit >= 0
 		? params.customCostPerUnit
 		: matchedPreset
 			? matchedPreset.suggestedCostRub
-			: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 7500);
+			: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 0);
 
 	const defaultPricePerUnit = matchedPreset
 		? matchedPreset.suggestedPriceRub
-		: Math.round(defaultCostPerUnit * 3.2);
+		: defaultCostPerUnit;
 
 	const estimatedCostRub = defaultCostPerUnit * units;
-	const suggestedPriceRub = params.priceRub != null && params.priceRub > 0
+	const suggestedPriceRub = params.priceRub != null && params.priceRub >= 0
 		? params.priceRub
 		: defaultPricePerUnit * units;
 

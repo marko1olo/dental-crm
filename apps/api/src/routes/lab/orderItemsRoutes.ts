@@ -30,7 +30,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.lab_order.read",
 				role: staffRole,
-				message: `Отказ в доступе к единицам протезирования ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в доступе к единицам протезирования ЗТЛ: ${evalAccess.reason}`,
 			});
 		}
 
@@ -64,7 +64,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.lab_order.write",
 				role: staffRole,
-				message: `Отказ в добавлении единицы протезирования ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в добавлении единицы протезирования ЗТЛ: ${evalAccess.reason}`,
 			});
 		}
 

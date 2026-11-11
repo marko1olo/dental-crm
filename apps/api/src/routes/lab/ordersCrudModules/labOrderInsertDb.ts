@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { normalizeVitaShade, VALID_FDI_TOOTH_NUMBERS } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
-import { labItems, labOrders, patients, users } from "../../../db/schema.js";
+import { labItems, labOrders, patients, users, visits } from "../../../db/schema.js";
 import {
 	calculateBusinessDaysDueDate,
 	mapStageToLabOrderStatus,
@@ -56,25 +56,20 @@ export async function insertLabOrderInDb(
 		}
 	}
 
-	// Автономия врача (Мандаты 8e, 8n): если наряд создается соло-врачом без предварительно
-	// заведенного пациента, регистрируем карточку пациента в базе без блокировок и 404!
-	if (!effectivePatientId) {
-		const rawName = data.patientName?.trim() || "Ортопедический пациент";
-		const [newPatient] = await tx
-			.insert(patients)
-			.values({
-				organizationId: orgId,
-				fullName: rawName,
-				notes: "Автоматически создан при оформлении заказ-наряда ЗТЛ",
-			})
-			.returning({ id: patients.id });
-		if (newPatient) {
-			effectivePatientId = newPatient.id;
-		}
-	}
-
 	if (!effectivePatientId) {
 		return { kind: "patient_not_found" as const };
+	}
+
+	let effectiveAppointmentId = data.appointmentId ?? null;
+	if (!effectiveAppointmentId && data.visitId) {
+		const [visit] = await tx
+			.select({ appointmentId: visits.appointmentId })
+			.from(visits)
+			.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+		if (visit?.appointmentId) {
+			effectiveAppointmentId = visit.appointmentId;
+		}
 	}
 
 	let doctorName: string | null = null;
@@ -127,9 +122,20 @@ export async function insertLabOrderInDb(
 				? Math.round(Number(data.priceKopecks)) / 100
 				: 0;
 
+	// Нормализация гарантийных обязательств (Мандаты 8e, 8n):
+	// При гарантии пациент ВСЕГДА платит 0 ₽.
+	// При браке лаборатории (lab_defect) лаборатория переделывает бесплатно (labCostRub = 0).
+	// При гарантии клиники (clinic_warranty) клиника оплачивает ЗТЛ (labCostRub сохраняется).
+	const isWarranty = Boolean(data.isWarrantyRework || data.isWarranty);
+	const finalPriceRub = isWarranty ? 0 : effectivePriceRub;
+	const finalLabCostRub = isWarranty && data.warrantyLiabilityType === "lab_defect" ? 0 : effectiveLabCost;
+
 	let structuredNotes = effectiveNotes || "";
-	if (data.visitId && !structuredNotes.includes("Визит:")) {
-		structuredNotes = `* Визит: ${data.visitId}\n${structuredNotes}`;
+	if (isWarranty && !structuredNotes.includes("Гарантия")) {
+		const liabilityLabel = data.warrantyLiabilityType === "lab_defect"
+			? "Брак лаборатории (0 ₽ ЗТЛ, 0 ₽ пациенту)"
+			: "Гарантия клиники (оплата ЗТЛ клиникой, 0 ₽ пациенту)";
+		structuredNotes = `* Гарантия: ${liabilityLabel}\n${structuredNotes}`;
 	}
 
 	const [createdOrder] = await tx
@@ -138,7 +144,7 @@ export async function insertLabOrderInDb(
 			organizationId: orgId,
 			patientId: effectivePatientId,
 			treatmentPlanId: data.treatmentPlanId ?? null,
-			appointmentId: data.appointmentId ?? null,
+			appointmentId: effectiveAppointmentId,
 			doctorId: effectiveDoctorId,
 			doctorName: doctorName || data.doctorName || null,
 			laboratoryName: effectiveLabName,
@@ -152,9 +158,9 @@ export async function insertLabOrderInDb(
 			colorVita: normalizedColor,
 			dueDate: parsedDueDate,
 			clinicalNotes: structuredNotes.trim() || null,
-			priceRub: effectivePriceRub,
-			labCostRub: effectiveLabCost,
-			isWarranty: Boolean(data.isWarrantyRework),
+			priceRub: finalPriceRub,
+			labCostRub: finalLabCostRub,
+			isWarranty,
 			status: effectiveStatus,
 		})
 		.returning();
@@ -194,7 +200,7 @@ export async function insertLabOrderInDb(
 			.filter((num) => !Number.isNaN(num) && VALID_FDI_TOOTH_NUMBERS.has(num));
 
 		if (validTeeth.length > 0) {
-			const pricePerTooth = effectivePriceRub / validTeeth.length;
+			const pricePerTooth = finalPriceRub / validTeeth.length;
 			for (const toothNum of validTeeth) {
 				await tx.insert(labItems).values({
 					organizationId: orgId,
@@ -215,6 +221,8 @@ export async function insertLabOrderInDb(
 		treatmentPlanId: data.treatmentPlanId ?? null,
 		appointmentId: data.appointmentId ?? null,
 		visitId: data.visitId ?? null,
+		isWarranty,
+		warrantyLiabilityType: data.warrantyLiabilityType ?? (isWarranty ? "clinic_warranty" : null),
 		priceKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),
 		amountKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),
 		labCostKopecks: Math.round(Number(createdOrder.labCostRub ?? 0) * 100),

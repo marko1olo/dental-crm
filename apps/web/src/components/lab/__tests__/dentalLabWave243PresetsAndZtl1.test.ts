@@ -8,7 +8,7 @@ import {
 	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
 	EXPRESS_PRESET_EMAX_INLAY,
 	MODAL_EXPRESS_LAB_PRESETS,
-} from "../dentalLabModalPresets";
+} from "../dentalLabCatalogData";
 
 describe("Wave 243 — Presets & Form ZTL-1", () => {
 	it("1. 1-Click presets include Single crown ZrO2, Bridge prosthesis, and Inlay E.max", () => {

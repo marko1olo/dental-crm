@@ -1,3 +1,4 @@
+import { DEMO_SHOWCASE_ORG_ID, isDemoOrganizationId } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -33,7 +34,7 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.read",
 			role: staffRole,
-			message: `Отказ в доступе к наряд-заказам ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в доступе к наряд-заказам ЗТЛ: ${evalAccess.reason}`,
 		});
 	}
 
@@ -58,7 +59,7 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 		if (
 			current.length === 0 &&
 			!patientId &&
-			orgId === "00000000-0000-0000-0000-000000000001"
+			(orgId === DEMO_SHOWCASE_ORG_ID || isDemoOrganizationId(orgId))
 		) {
 			await seedDemoLabOrdersIfEmpty(tx, orgId);
 			return selectLabOrdersQuery(tx, orgId, patientId);

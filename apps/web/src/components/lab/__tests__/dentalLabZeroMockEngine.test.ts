@@ -9,12 +9,12 @@ import {
 	generateDeterministicLabOrderId,
 	createDentalLabOrderRecord,
 	calculateZtlWageFinancials,
-	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
-	mapTo6StageOrthopedicLifecycle,
-	type CanonicalOrthopedic6StageId,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	mapTo5StageLabStatus,
+	type Canonical5LabStatus,
 } from "../dentalLabOrderEngine";
 
-describe("dentalLabZeroMock — Engine & 6-Stage Lifecycle", () => {
+describe("dentalLabZeroMock — Engine & 5-Stage Canonical Lifecycle", () => {
 	it("generateDeterministicLabOrderNumber и Id производят детерминированные значения", () => {
 		const fixedDate = new Date("2026-10-15T10:00:00Z");
 		const orderNum1 = generateDeterministicLabOrderNumber({ date: fixedDate, sequence: 101 });
@@ -54,25 +54,27 @@ describe("dentalLabZeroMock — Engine & 6-Stage Lifecycle", () => {
 		assert.equal(codeLines.some((l) => l.includes("Math.random()")), false);
 	});
 
-	it("CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES содержит все 6 этапов", () => {
-		assert.equal(CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.length, 6);
-		const expectedOrder: CanonicalOrthopedic6StageId[] = [
-			"impression_taken",
-			"courier_sent",
-			"framework_fitting",
-			"ceramic_layering",
-			"ready_in_clinic",
-			"patient_fixation",
+	it("CANONICAL_5_CLINICAL_LAB_STATUSES содержит все 5 канонических этапов", () => {
+		assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES.length, 5);
+		const expectedOrder: Canonical5LabStatus[] = [
+			"sent",
+			"in_progress",
+			"fitting",
+			"ready",
+			"completed",
 		];
-		CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.forEach((item, idx) => {
+		CANONICAL_5_CLINICAL_LAB_STATUSES.forEach((item, idx) => {
 			assert.equal(item.step, idx + 1);
 			assert.equal(item.id, expectedOrder[idx]);
 		});
-		assert.equal(mapTo6StageOrthopedicLifecycle("draft"), "impression_taken");
-		assert.equal(mapTo6StageOrthopedicLifecycle("sent_to_lab"), "courier_sent");
-		assert.equal(mapTo6StageOrthopedicLifecycle("in_progress"), "framework_fitting");
-		assert.equal(mapTo6StageOrthopedicLifecycle("ready_in_clinic"), "ready_in_clinic");
-		assert.equal(mapTo6StageOrthopedicLifecycle("delivered_to_patient"), "patient_fixation");
+		assert.equal(mapTo5StageLabStatus("draft"), "sent");
+		assert.equal(mapTo5StageLabStatus("sent_to_lab"), "sent");
+		assert.equal(mapTo5StageLabStatus("in_progress"), "in_progress");
+		assert.equal(mapTo5StageLabStatus("model_cad_design"), "in_progress");
+		assert.equal(mapTo5StageLabStatus("fitting_scheduled"), "fitting");
+		assert.equal(mapTo5StageLabStatus("ready_in_clinic"), "ready");
+		assert.equal(mapTo5StageLabStatus("installed_completed"), "completed");
+		assert.equal(mapTo5StageLabStatus("delivered_to_patient"), "completed");
 	});
 
 	it("вычитает себестоимость ЗТЛ из сдельной базы врача с нулевым копеечным дрейфом", () => {

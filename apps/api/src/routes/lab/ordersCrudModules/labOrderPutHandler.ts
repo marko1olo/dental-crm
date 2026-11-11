@@ -30,7 +30,7 @@ export async function putLabOrderHandler(request: FastifyRequest, reply: Fastify
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.write",
 			role: staffRole,
-			message: `Отказ в изменении наряд-заказа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в изменении наряд-заказа ЗТЛ: ${evalAccess.reason}`,
 		});
 	}
 

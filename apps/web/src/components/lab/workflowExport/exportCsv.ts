@@ -3,7 +3,7 @@ import { ORTHOPEDIC_WORK_TYPES, LAB_WORKFLOW_STATUSES } from "../dentalLabWorkfl
 import {
 	ABUTMENT_TYPE_OPTIONS,
 	LAB_TECHNOLOGICAL_STAGES,
-} from "../orders/labWorkOrderPresets";
+} from "../dentalLabWorkflowEngine";
 
 export function exportDentalLabOrdersToCsv(orders: readonly DentalLabWorkflowOrder[]): string {
 	const headers = [

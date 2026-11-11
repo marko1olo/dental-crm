@@ -23,7 +23,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest, reply: 
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.passport.read",
 			role: staffRole,
-			message: `Отказ в доступе к гарантийному паспорту ортопедической конструкции (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в доступе к гарантийному паспорту ортопедической конструкции: ${evalAccess.reason}`,
 		});
 	}
 

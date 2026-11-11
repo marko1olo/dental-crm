@@ -22,7 +22,7 @@ export async function handleGetLabOrderEvents(request: FastifyRequest, reply: Fa
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.read",
 			role: staffRole,
-			message: `Отказ в доступе к журналу этапов ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в доступе к журналу этапов ЗТЛ: ${evalAccess.reason}`,
 		});
 	}
 
@@ -57,7 +57,7 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest, reply: 
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.write",
 			role: staffRole,
-			message: `Отказ в фиксации этапа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в фиксации этапа ЗТЛ: ${evalAccess.reason}`,
 		});
 	}
 

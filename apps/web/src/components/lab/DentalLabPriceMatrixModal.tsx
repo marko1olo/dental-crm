@@ -27,7 +27,9 @@ export function DentalLabPriceMatrixModal({
 
 	const filteredItems = CANONICAL_LAB_PRICE_MATRIX.filter((item) => {
 		const matchCat =
-			categoryFilter === "all" || item.category === categoryFilter;
+			categoryFilter === "all" ||
+			item.category === categoryFilter ||
+			(categoryFilter === "fixed" && (item.category === "crowns" || item.category === "aesthetics"));
 		const matchQuery =
 			!searchQuery.trim() ||
 			item.nameRu.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -36,7 +38,7 @@ export function DentalLabPriceMatrixModal({
 	});
 
 	const modalContent = (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+		<div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
 			<div className="w-full max-w-2xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl p-5 flex flex-col max-h-[85vh]">
 				<DentalLabPriceMatrixHeader
 					searchQuery={searchQuery}

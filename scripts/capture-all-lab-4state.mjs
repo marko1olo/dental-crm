@@ -45,7 +45,9 @@ async function capture() {
 			aliases: [
 				"01_dental_lab_pc_light_1440x900.png",
 				"01_lab_orders_pc_light_1440x900.png",
-				"lab_orders_kanban_pc_light.png"
+				"lab_orders_kanban_pc_light.png",
+				"lab_pc_light.png",
+				"01_pc_light_1440x900.png"
 			],
 			viewport: { width: 1440, height: 900 },
 			theme: "light",
@@ -56,7 +58,9 @@ async function capture() {
 			aliases: [
 				"02_dental_lab_pc_dark_1440x900.png",
 				"02_lab_orders_pc_dark_1440x900.png",
-				"lab_orders_kanban_pc_dark.png"
+				"lab_orders_kanban_pc_dark.png",
+				"lab_pc_dark.png",
+				"02_pc_dark_1440x900.png"
 			],
 			viewport: { width: 1440, height: 900 },
 			theme: "dark",
@@ -67,7 +71,9 @@ async function capture() {
 			aliases: [
 				"03_dental_lab_mobile_light_390x844.png",
 				"03_lab_orders_mobile_light_390x844.png",
-				"lab_order_drawer_mobile_light.png"
+				"lab_order_drawer_mobile_light.png",
+				"lab_mobile_light.png",
+				"03_mobile_light_390x844.png"
 			],
 			viewport: { width: 390, height: 844 },
 			theme: "light",
@@ -78,7 +84,9 @@ async function capture() {
 			aliases: [
 				"04_dental_lab_mobile_dark_390x844.png",
 				"04_lab_orders_mobile_dark_390x844.png",
-				"lab_order_drawer_mobile_dark.png"
+				"lab_order_drawer_mobile_dark.png",
+				"lab_mobile_dark.png",
+				"04_mobile_dark_390x844.png"
 			],
 			viewport: { width: 390, height: 844 },
 			theme: "dark",
@@ -172,6 +180,11 @@ async function capture() {
 				});
 				await page.waitForSelector('.boot-state', { state: "detached", timeout: 25000 }).catch(() => {});
 				await page.waitForTimeout(2000);
+				await page.evaluate(() => {
+					window.dispatchEvent(new CustomEvent("dente:open-lab", { detail: { toothFdi: 16 } }));
+					window.dispatchEvent(new CustomEvent("dente:open-dental-lab", { detail: { toothFdi: 16 } }));
+				}).catch(() => {});
+				await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { timeout: 15000 });
 				loaded = true;
 			} catch (e) {
 				console.log(`[RETRY] Attempt ${attempt} failed: ${e.message}`);
@@ -179,7 +192,7 @@ async function capture() {
 			}
 		}
 
-		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { timeout: 20000 });
+		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { timeout: 25000 });
 
 		// Clean overlays and enforce tokens
 		await page.evaluate(({ theme }) => {

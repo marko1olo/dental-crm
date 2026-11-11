@@ -1,4 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import {
+	handleMockStorageDownload,
+	handleMockStorageUpload,
+} from "./scansMockStorageHandlers.js";
 import { handlePortalLabScanDownloadUrl } from "./scansPortalHandlers.js";
 import {
 	handleLabScanDownloadUrl,
@@ -23,4 +27,16 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 	 * Получение Presigned URL на скачивание 3D скана зубным техником по токену наряда без авторизации клиники.
 	 */
 	app.get("/api/portal/lab-order/:token/scans/download-url", handlePortalLabScanDownloadUrl);
+
+	/**
+	 * PUT /api/portal/mock-storage/upload
+	 * Локальное хранилище сканов клиники при отсутствии S3 (защита от path traversal).
+	 */
+	app.put("/api/portal/mock-storage/upload", handleMockStorageUpload);
+
+	/**
+	 * GET /api/portal/mock-storage/download
+	 * Локальная выдача сканов клиники зубному технику или врачу при отсутствии S3.
+	 */
+	app.get("/api/portal/mock-storage/download", handleMockStorageDownload);
 }

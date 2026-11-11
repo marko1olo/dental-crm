@@ -45,7 +45,7 @@
 .ztl-kanban-board {
 	flex: 1;
 	display: grid;
-	grid-template-columns: repeat(4, minmax(260px, 1fr));
+	grid-template-columns: repeat(5, minmax(230px, 1fr));
 	gap: 12px;
 	padding: 16px;
 	overflow-x: auto;
@@ -78,6 +78,7 @@
 	.ztl-kanban-board[data-mobile-active="sent_to_lab"] .ztl-kanban-column:not([data-testid="kanban-column-sent_to_lab"]),
 	.ztl-kanban-board[data-mobile-active="in_progress"] .ztl-kanban-column:not([data-testid="kanban-column-in_progress"]),
 	.ztl-kanban-board[data-mobile-active="fitting_scheduled"] .ztl-kanban-column:not([data-testid="kanban-column-fitting_scheduled"]),
+	.ztl-kanban-board[data-mobile-active="ready_in_clinic"] .ztl-kanban-column:not([data-testid="kanban-column-ready_in_clinic"]),
 	.ztl-kanban-board[data-mobile-active="installed_completed"] .ztl-kanban-column:not([data-testid="kanban-column-installed_completed"]) {
 		display: none !important;
 	}

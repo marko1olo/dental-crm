@@ -12,15 +12,17 @@ export interface MobileLabOrderCardProps {
 }
 
 export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps): React.JSX.Element {
-	const orderNum = (order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "Наряд");
+	const rawOrderNum = order.orderNumber || (order.id ? (order.id.startsWith("ЗТЛ-") ? order.id : `ЗТЛ-${order.id.replace(/^[#a-zA-Z_-]+/, "") || order.id.slice(0, 6).toUpperCase()}`) : "ЗТЛ");
+	const orderNum = rawOrderNum.startsWith("ЗТЛ-") ? rawOrderNum : `ЗТЛ-${rawOrderNum.replace(/^[#a-zA-Z_-]+/, "")}`;
 	const toothDisplay = order.toothFdi ? `Зуб ${order.toothFdi}` : order.selectedTeeth?.length ? `Зуб ${order.selectedTeeth.join(", ")}` : "Челюсть";
 	const constructionDisplay = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
-	const labName = (order as any).labName || "Центральная CAD/CAM лаборатория";
-	const techName = (order as any).technicianName || "Дежурный техник";
+	const labName = order.labName || "Центральная CAD/CAM лаборатория";
+	const techName = order.technicianName || "Дежурный техник";
+	const labPhone = order.labPhone || "+7 (999) 000-00-00";
 	const stageIdx = getOrderStageIndex(order);
 	const deadline = formatMobileDeadlineAndTimer(order);
-	const isWarranty = (order as any).isWarrantyRework || order.status === "refitting" || order.priceRub === 0;
+	const isWarranty = Boolean(order.isWarrantyRework || order.status === "refitting" || order.priceRub === 0);
 
 	const statusBadge = (() => {
 		const st = (order.status || "").toLowerCase();

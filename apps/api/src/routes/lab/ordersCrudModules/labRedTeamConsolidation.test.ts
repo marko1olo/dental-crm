@@ -35,5 +35,27 @@ describe("Red Team Inquisition: LAB-01..05 Subsystem Consolidation & Defense", (
 		assert.equal(dynamicResult.grossMarginRub, 36400); // 50000 - 13600
 		assert.equal(dynamicResult.grossMarginPercent, 73);
 	});
+
+	it("warranty liability: zero price for patient, lab cost absorbed based on liability type", () => {
+		// При гарантии клиники (clinic_warranty) клиника берет на себя себестоимость ЗТЛ, пациент платит 0 ₽
+		const clinicWarrantyResult = calculateLabOrderCostAndMarkup({
+			materialOrConstruction: "crown_zirconia",
+			unitsCount: 1,
+			customCostPerUnit: 7500,
+			priceRub: 0,
+		});
+		assert.equal(clinicWarrantyResult.suggestedPriceRub, 0);
+		assert.equal(clinicWarrantyResult.estimatedCostRub, 7500);
+
+		// При браке лаборатории (lab_defect) лаборатория переделывает бесплатно (0 ₽ клинике и 0 ₽ пациенту)
+		const labDefectResult = calculateLabOrderCostAndMarkup({
+			materialOrConstruction: "crown_zirconia",
+			unitsCount: 1,
+			customCostPerUnit: 0,
+			priceRub: 0,
+		});
+		assert.equal(labDefectResult.suggestedPriceRub, 0);
+		assert.equal(labDefectResult.estimatedCostRub, 0);
+	});
 });
 

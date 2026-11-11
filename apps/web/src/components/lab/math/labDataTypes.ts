@@ -9,6 +9,9 @@ export interface DentalLabOrderData {
 	patientName?: string;
 	doctorId?: string | null;
 	doctorName?: string | null;
+	labName?: string | null;
+	technicianName?: string | null;
+	labPhone?: string | null;
 	secureToken?: string;
 	toothFdi?: string | null;
 	selectedTeeth?: number[];

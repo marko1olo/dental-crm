@@ -3,7 +3,8 @@
  * Декомпозирован по Мандату 8b (строго <= 120 строк).
  */
 
-export * from "./orders/labWorkOrderPresets";
+export * from "./workflowEngine/workflowImplantPresets";
+export * from "./workflowEngine/workflowTechStages";
 export * from "./dentalLabWorkflowModel";
 export * from "./dentalLabWorkflowExport";
 

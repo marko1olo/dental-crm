@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/lab/printBlankModules/DentalLabStudioPrintTab.tsx
  *
- * DENTE Dental CRM — Вкладка 3: Печатный клинический бланк заказ-наряда в 1 клик.
+ * DENTE Dental CRM — Вкладка 3: Печатный клинический бланк заказ-наряда.
  */
 
 import React from "react";

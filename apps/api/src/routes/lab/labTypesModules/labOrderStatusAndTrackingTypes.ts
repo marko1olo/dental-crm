@@ -46,6 +46,8 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 			return "draft";
 		case "sent":
 		case "sent_to_lab":
+		case "impression":
+		case "impression_sent":
 		case "impression_scan":
 		case "scan_sent":
 		case "слепок/скан":
@@ -53,8 +55,12 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "in_progress":
 		case "in_production":
 		case "cad_design":
+		case "cad_cam":
+		case "model_cad_design":
 		case "framework_fitting":
+		case "каркас/примерка":
 		case "ceramic_layering":
+		case "нанесение керамики":
 			return "in_progress";
 		case "shipped":
 		case "shipped_to_clinic":

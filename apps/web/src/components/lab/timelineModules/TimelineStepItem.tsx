@@ -3,16 +3,21 @@ import { Check } from "lucide-react";
 
 export function getStagePartyRu(stageId: string): string {
 	switch (stageId) {
+		case "sent":
 		case "impression_taken":
 			return "Врач-ортопед";
 		case "courier_sent":
 			return "Курьер ЗТЛ";
+		case "in_progress":
 		case "framework_fitting":
-			return "Примерка";
-		case "ceramic_layering":
 			return "Зубной техник";
+		case "fitting":
+		case "ceramic_layering":
+			return "Примерка";
+		case "ready":
 		case "ready_in_clinic":
 			return "В клинике";
+		case "completed":
 		case "patient_fixation":
 			return "Фиксация";
 		default:

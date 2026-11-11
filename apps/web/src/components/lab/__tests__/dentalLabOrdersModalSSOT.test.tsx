@@ -12,7 +12,7 @@ import {
 	DentalLabOrdersModal,
 	DentalLabOrderModal,
 } from "../DentalLabStudioModal";
-import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabModalPresets";
+import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabCatalogData";
 
 describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", () => {
 	it("1. DentalLabOrdersModal is canonical SSOT with identical interface and alias DentalLabOrderModal", () => {

@@ -31,6 +31,7 @@ export const expressLabOrderSchema = z.object({
 	stumpShade: z.string().trim().optional().nullable(),
 	dueDate: z.string().optional().nullable(),
 	priceRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	labCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
 	specialInstructions: z.string().trim().optional().nullable(),
 	treatmentPlanAgeDays: z.number().int().nonnegative().optional().nullable(),
 	isOneClickPreset: z.boolean().optional().default(false),

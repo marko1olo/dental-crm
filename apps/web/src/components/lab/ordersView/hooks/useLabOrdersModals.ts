@@ -3,28 +3,56 @@ import type { DentalLabOrderData } from "../../labMath";
 import type { LabPromptDialogState } from "../../LabActionPromptModal";
 import type { ReadyInClinicLabOrder } from "../../DentalLabReadyInClinicModal";
 
+export type ActiveLabModalType =
+	| "none"
+	| "hub"
+	| "work_order"
+	| "order_drawer"
+	| "price_matrix"
+	| "tracker_modal"
+	| "tracking_drawer"
+	| "scan_modal"
+	| "ready_in_clinic";
+
 export function useLabOrdersModals() {
-	const [isHubModalOpen, setIsHubModalOpen] = useState(false);
+	const [activeLabModal, setActiveLabModal] = useState<ActiveLabModalType>("none");
 	const [isCourierBarOpen, setIsCourierBarOpen] = useState(false);
 	const [selectedTimelineOrderId, setSelectedTimelineOrderId] = useState<string | null>(null);
 	const [kanbanStageLimits, setKanbanStageLimits] = useState<Record<string, number>>({});
 	const [kanbanActiveMenuId, setKanbanActiveMenuId] = useState<string | null>(null);
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 	const [promptState, setPromptState] = useState<LabPromptDialogState | null>(null);
-	const [isScanModalOpen, setIsScanModalOpen] = useState(false);
 	const [scanAttachOrder, setScanAttachOrder] = useState<DentalLabOrderData | null>(null);
 	const [scanAttachType, setScanAttachType] = useState<"stl" | "ply" | "photo">("stl");
-	const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
-	const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
-	const [isPriceMatrixModalOpen, setIsPriceMatrixModalOpen] = useState(false);
-	const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
-	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
-	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState(false);
 	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
 	const [view3DScanOrder, setView3DScanOrder] = useState<DentalLabOrderData | null>(null);
+
+	const isHubModalOpen = activeLabModal === "hub";
+	const setIsHubModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "hub" : "none"), []);
+
+	const isWorkOrderModalOpen = activeLabModal === "work_order";
+	const setIsWorkOrderModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "work_order" : "none"), []);
+
+	const isOrderDrawerOpen = activeLabModal === "order_drawer";
+	const setIsOrderDrawerOpen = useCallback((open: boolean) => setActiveLabModal(open ? "order_drawer" : "none"), []);
+
+	const isPriceMatrixModalOpen = activeLabModal === "price_matrix";
+	const setIsPriceMatrixModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "price_matrix" : "none"), []);
+
+	const isTrackerModalOpen = activeLabModal === "tracker_modal";
+	const setIsTrackerModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "tracker_modal" : "none"), []);
+
+	const isTrackingDrawerOpen = activeLabModal === "tracking_drawer";
+	const setIsTrackingDrawerOpen = useCallback((open: boolean) => setActiveLabModal(open ? "tracking_drawer" : "none"), []);
+
+	const isScanModalOpen = activeLabModal === "scan_modal";
+	const setIsScanModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "scan_modal" : "none"), []);
+
+	const isReadyInClinicModalOpen = activeLabModal === "ready_in_clinic";
+	const setIsReadyInClinicModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "ready_in_clinic" : "none"), []);
 
 	const handleOpenReadyInClinicPrompt = useCallback((order: DentalLabOrderData) => {
 		setOpenMenuOrderId(null);
@@ -41,10 +69,11 @@ export function useLabOrdersModals() {
 			constructionType: order.constructionType ?? undefined,
 			clinicName: "DENTE",
 		});
-		setIsReadyInClinicModalOpen(true);
+		setActiveLabModal("ready_in_clinic");
 	}, []);
 
 	return {
+		activeLabModal, setActiveLabModal,
 		isHubModalOpen, setIsHubModalOpen, isCourierBarOpen, setIsCourierBarOpen,
 		selectedTimelineOrderId, setSelectedTimelineOrderId, kanbanStageLimits, setKanbanStageLimits,
 		kanbanActiveMenuId, setKanbanActiveMenuId, openMenuOrderId, setOpenMenuOrderId,

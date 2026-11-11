@@ -6,8 +6,6 @@
 
 export * from "./clinicalStages/clinicalOcclusalOptions";
 export * from "./clinicalStages/clinicalStageConstants";
-export * from "./clinicalStages/canonicalManufacturingStages";
 export * from "./clinicalStages/canonical5Stages";
-export * from "./clinicalStages/canonical6Stages";
 export * from "./clinicalStages/statutoryZtl1Metadata";
 export * from "./clinicalStages/clinicalWorkingDays";

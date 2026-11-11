@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
-import { normalizeVitaShade } from "@dental/shared";
+import { normalizeVitaShade, VALID_FDI_TOOTH_NUMBERS } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import { labOrders, patients, users } from "../../../db/schema.js";
+import { labItems, labOrders, patients, users } from "../../../db/schema.js";
 
 export interface ExpressOrderDbParams {
 	orgId: string;
@@ -13,6 +13,7 @@ export interface ExpressOrderDbParams {
 	colorVita: string;
 	dueDate: Date;
 	priceRub: number;
+	labCostRub?: number | null | undefined;
 	specialInstructions?: string | null | undefined;
 	isOneClickPreset?: boolean | undefined;
 	construction: string;
@@ -71,12 +72,36 @@ export async function insertExpressLabOrder(params: ExpressOrderDbParams): Promi
 				dueDate: params.dueDate,
 				clinicalNotes: instructions,
 				priceRub: params.priceRub,
+				labCostRub: params.labCostRub ?? null,
 				status: "draft",
 			})
 			.returning();
 
 		if (!createdOrder) {
 			throw new Error("Не удалось создать заказ ЗТЛ: запись не возвращена базой данных.");
+		}
+
+		if (params.teethFdiStr) {
+			const parts = params.teethFdiStr.split(/[\s,;-]+/).filter(Boolean);
+			const validTeeth = parts
+				.map((p) => Number.parseInt(p, 10))
+				.filter((num) => !Number.isNaN(num) && VALID_FDI_TOOTH_NUMBERS.has(num));
+
+			if (validTeeth.length > 0) {
+				const pricePerTooth = params.priceRub / validTeeth.length;
+				for (const toothNum of validTeeth) {
+					await tx.insert(labItems).values({
+						organizationId: params.orgId,
+						labOrderId: createdOrder.id,
+						toothFdi: toothNum,
+						restorationType: "crown_monolithic",
+						material: params.materialName || "zirconia_multilayer_gradient",
+						shadeSystem: "VITA_CLASSICAL",
+						shadeFinal: normalizeVitaShade(params.colorVita),
+						priceRub: String(pricePerTooth.toFixed(2)),
+					});
+				}
+			}
 		}
 
 		return { kind: "ok", order: createdOrder, patientName: patient.fullName } as ExpressDbResult;

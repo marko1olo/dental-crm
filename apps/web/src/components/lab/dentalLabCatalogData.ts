@@ -6,6 +6,8 @@
  * расчет рабочих дней без выходных, учет строго в копейках (amountKopecks) и автономия врача (Мандаты 8b, 8e, 8am).
  */
 
+import { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
+
 export type DentalLabStage = "created" | "scan_sent" | "in_production" | "fitting_ready" | "in_clinic" | "seated";
 
 export interface DentalLabStageMeta {
@@ -72,27 +74,39 @@ export interface OrthopedicMaterialMeta {
 export const CANONICAL_LAB_MATERIALS: readonly OrthopedicMaterialMeta[] = Object.freeze([
 	{
 		id: "zirconia_multilayer", titleRu: "Циркониевая коронка Multi-layer (многослойный диоксид циркония)", shortTitle: "Цирконий (ZrO2)",
-		categoryRu: "Несъемное протезирование", defaultDurationDays: 5, baseLabCostKopecks: 750000, defaultPatientPriceKopecks: 2400000,
+		categoryRu: "Несъемное протезирование", defaultDurationDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
+		baseLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
+		defaultPatientPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks,
 		descriptionRu: "Высокоэстетичный градиентный цирконий с естественной прозрачностью режущего края", requiresShade: true, allowsStumpShade: true,
-		standardWorkingDays: 5, defaultLabCostKopecks: 750000, material: "Диоксид циркония",
+		standardWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
+		defaultLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks, material: "Диоксид циркония",
 	},
 	{
 		id: "emax_press", titleRu: "Пресс-керамика (дисиликат лития — вкладка / винир / коронка)", shortTitle: "Дисиликат лития",
-		categoryRu: "Несъемное протезирование", defaultDurationDays: 5, baseLabCostKopecks: 850000, defaultPatientPriceKopecks: 2600000,
+		categoryRu: "Несъемное протезирование", defaultDurationDays: DENTAL_LAB_CONSTRUCTIONS.crown_emax.standardTurnaroundDays,
+		baseLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks,
+		defaultPatientPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks,
 		descriptionRu: "Дисиликат лития высочайшей эстетики для виниров и коронок во фронтальной зоне", requiresShade: true, allowsStumpShade: true,
-		standardWorkingDays: 5, defaultLabCostKopecks: 850000, material: "Дисиликат лития",
+		standardWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_emax.standardTurnaroundDays,
+		defaultLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks, material: "Дисиликат лития",
 	},
 	{
 		id: "metal_ceramic_cocr", titleRu: "Металлокерамика на биосовместимом Co-Cr сплаве", shortTitle: "Металлокерамика",
-		categoryRu: "Несъемное протезирование", defaultDurationDays: 6, baseLabCostKopecks: 380000, defaultPatientPriceKopecks: 1400000,
+		categoryRu: "Несъемное протезирование", defaultDurationDays: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.standardTurnaroundDays,
+		baseLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks,
+		defaultPatientPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultPatientPriceKopecks,
 		descriptionRu: "Классическая прочная коронка с послойным нанесением керамической массы", requiresShade: true, allowsStumpShade: false,
-		standardWorkingDays: 6, defaultLabCostKopecks: 380000, material: "Металлокерамика Co-Cr",
+		standardWorkingDays: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.standardTurnaroundDays,
+		defaultLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks, material: "Металлокерамика Co-Cr",
 	},
 	{
 		id: "clasp_prosthesis", titleRu: "Бюгельный протез с прецизионной замковой фиксацией", shortTitle: "Бюгельный протез",
-		categoryRu: "Съемное протезирование", defaultDurationDays: 8, baseLabCostKopecks: 1300000, defaultPatientPriceKopecks: 3800000,
+		categoryRu: "Съемное протезирование", defaultDurationDays: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.standardTurnaroundDays,
+		baseLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks,
+		defaultPatientPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultPatientPriceKopecks,
 		descriptionRu: "Литая металлическая дуга с точной биомеханикой распределения жевательного давления", requiresShade: true, allowsStumpShade: false,
-		standardWorkingDays: 8, defaultLabCostKopecks: 1300000, material: "Бюгельный протез",
+		standardWorkingDays: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.standardTurnaroundDays,
+		defaultLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks, material: "Бюгельный протез",
 	},
 	{
 		id: "zirconia_abutment", titleRu: "Индивидуальный циркониевый абатмент на Ti-Base", shortTitle: "Циркониевый абатмент",
@@ -108,9 +122,12 @@ export const CANONICAL_LAB_MATERIALS: readonly OrthopedicMaterialMeta[] = Object
 	},
 	{
 		id: "aligner_splint", titleRu: "Ортодонтический элайнер / ретенционная каппа", shortTitle: "Каппа / элайнер",
-		categoryRu: "Ортодонтия и элайнеры", defaultDurationDays: 4, baseLabCostKopecks: 350000, defaultPatientPriceKopecks: 1100000,
+		categoryRu: "Ортодонтия и элайнеры", defaultDurationDays: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.standardTurnaroundDays,
+		baseLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.defaultZtlCostKopecks,
+		defaultPatientPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.defaultPatientPriceKopecks,
 		descriptionRu: "Прецизионная термоформованная полимерная каппа для позиционирования зубов", requiresShade: false, allowsStumpShade: false,
-		standardWorkingDays: 4, defaultLabCostKopecks: 350000, material: "Биополимер",
+		standardWorkingDays: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.standardTurnaroundDays,
+		defaultLabCostKopecks: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.defaultZtlCostKopecks, material: "Биополимер",
 	},
 ]);
 
@@ -265,6 +282,7 @@ export const VITA_SHADES = VITA_SHADES_SSOT;
 export const LAB_STAGES = CANONICAL_LAB_STAGES;
 export type LabConstructionType = OrthopedicMaterialMeta;
 export type LabStageId = DentalLabStage | "draft" | "sent" | "in_progress" | "fitting" | "ready" | "installed" | "warranty";
+export { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
 
 export interface PartnerLaboratory {
 	readonly id: string;
@@ -372,4 +390,15 @@ export const VITA_EXPRESS_SHADES = ["A1", "A2", "A3", "A3.5", "B1", "Bleach"] as
 
 export { getBridgeSpanTeeth } from "./fdiPickerModules/fdiBridgeSpanHelper";
 
+export {
+	type ExpressLabPreset,
+	EXPRESS_LAB_PRESETS,
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+	EXPRESS_PRESET_EMAX_CROWN,
+	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
+	EXPRESS_PRESET_EMAX_INLAY,
+	MODAL_EXPRESS_LAB_PRESETS,
+} from "./labExpressPresets";
 

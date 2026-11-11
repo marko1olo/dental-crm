@@ -12,7 +12,7 @@ export async function handleGetExpressPresets(request: FastifyRequest, reply: Fa
 	const presetInfo = {
 		rule: "Истечение 30 дней с момента составления плана лечения не блокирует наряды ЗТЛ",
 		standardPreset: CANONICAL_DENTAL_LAB_PRESETS[0],
-		threeClickWorkflow: ["1. Зуб / Мост", "2. Конструкция", "3. Цвет VITA", "Срок сдачи: 5 раб. дней"],
+		workflowSteps: ["1. Зуб / Мост", "2. Конструкция", "3. Цвет VITA", "Срок сдачи: 5 раб. дней"],
 	};
 
 	return reply.status(200).send({

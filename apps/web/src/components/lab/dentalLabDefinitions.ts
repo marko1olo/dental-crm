@@ -7,8 +7,11 @@
 
 export {
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	mapTo5StageLabStatus,
 	type Canonical5LabStatus,
 	type Canonical5LabStatusItem,
+	CANONICAL_MANUFACTURING_5_STAGES,
+	type CanonicalManufacturing5StageItem,
 	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
 	mapTo6StageOrthopedicLifecycle,
 	type CanonicalOrthopedic6StageId,

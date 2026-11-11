@@ -113,7 +113,7 @@ export function LabOrderDetailsDrawer({
 					isOpen={Boolean(view3DScanOrder)} onClose={onClose3DScanViewer}
 					modelUrl={view3DScanOrder.attachedImageUrl || undefined} modelFormat={scanModelFormat}
 					patientName={view3DScanOrder.patientName}
-					scanTitle={`3D-скан челюсти: Наряд #${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
+					scanTitle={`3D-скан челюсти: ${view3DScanOrder.orderNumber || (view3DScanOrder.id ? `ЗТЛ-${view3DScanOrder.id.slice(0, 8).toUpperCase()}` : "Наряд")} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
 					toothCode={view3DScanOrder.toothFdi ?? undefined} orderId={view3DScanOrder.id}
 				/>
 			)}

@@ -2,7 +2,7 @@ import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowModel";
 import {
 	LAB_TECHNOLOGICAL_STAGES,
 	LAB_TECHNOLOGICAL_STAGE_ORDER,
-} from "../orders/labWorkOrderPresets";
+} from "../dentalLabWorkflowEngine";
 
 export function renderImplantComponentsSection(order: DentalLabWorkflowOrder): string {
 	if (!order.implantComponents?.hasImplantComponents && order.workTypeId !== "custom_abutment" && !order.implantPlatform) {

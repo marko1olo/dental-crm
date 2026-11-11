@@ -1,10 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import {
-	LAB_ORDER_CLINIC_TRANSITIONS,
-	type LabOrderStatus,
-} from "../../../db/labQuery.js";
+import type { LabOrderStatus } from "../../../db/labQuery.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
+import { isPermittedLabStatusTransition } from "../ordersCrudModules/labOrderStatusTransitions.js";
 import { mapStageOrStatusToMilestone } from "../types.js";
 import type { LabOrderPatchBody } from "./labOrderPatchSchema.js";
 
@@ -41,23 +39,7 @@ export async function executeLabOrderPatch(
 
 		if (targetStatus && targetStatus !== currentOrder.status) {
 			const currentStatus = currentOrder.status as LabOrderStatus;
-			const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
-			const isPermittedShortcut =
-				(currentStatus === "in_progress" &&
-					["received", "refitting", "completed", "shipped", "cancelled", "sent"].includes(targetStatus)) ||
-				(currentStatus === "received" &&
-					["completed", "refitting", "in_progress", "sent", "cancelled"].includes(targetStatus)) ||
-				(currentStatus === "refitting" &&
-					["in_progress", "received", "completed", "sent", "cancelled"].includes(targetStatus)) ||
-				(currentStatus === "sent" &&
-					["in_progress", "shipped", "received", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
-				(currentStatus === "draft" &&
-					["sent", "in_progress", "received", "refitting", "completed", "cancelled"].includes(targetStatus)) ||
-				(currentStatus === "completed" &&
-					["refitting", "received", "in_progress"].includes(targetStatus)) ||
-				targetStatus === "cancelled";
-
-			if (!allowed && !isPermittedShortcut && !["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed", "cancelled"].includes(targetStatus)) {
+			if (!isPermittedLabStatusTransition(currentStatus, targetStatus)) {
 				return { kind: "invalid_transition", currentStatus, targetStatus };
 			}
 		}
@@ -78,7 +60,7 @@ export async function executeLabOrderPatch(
 				: `${notePrefix}${body.notes.trim()}`;
 		}
 
-		const updateValues: Record<string, any> = { updatedAt: now, ...auditFields };
+		const updateValues: Record<string, unknown> = { updatedAt: now, ...auditFields };
 		if (targetStatus) updateValues.status = targetStatus;
 		if (isWarrantyRequest) updateValues.isLockedInstalled = false;
 		if (updatedClinicalNotes !== undefined) updateValues.clinicalNotes = updatedClinicalNotes;

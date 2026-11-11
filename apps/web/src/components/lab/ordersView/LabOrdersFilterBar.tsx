@@ -31,13 +31,13 @@ export function LabOrdersFilterBar({
 				<div className="hidden 2xl:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--paper-soft)] text-[11px] text-[var(--ink-muted)] border border-[var(--line)] font-mono">
 					<span>Всего: <strong className="text-[var(--ink)]">{metrics.total}</strong></span>
 					<span>•</span>
-					<span>В работе: <strong className="text-blue-600 dark:text-blue-400">{metrics.inProgress}</strong></span>
+					<span>В работе: <strong className="text-[var(--primary)]">{metrics.inProgress}</strong></span>
 					<span>•</span>
-					<span>Готовы: <strong className="text-emerald-600 dark:text-emerald-400">{metrics.ready}</strong></span>
+					<span>Готовы: <strong className="text-[var(--ok,#10b981)]">{metrics.ready}</strong></span>
 					{metrics.overdue > 0 && (
 						<>
 							<span>•</span>
-							<span className="text-rose-600 dark:text-rose-400 font-bold">Просрочено: {metrics.overdue}</span>
+							<span className="text-[var(--danger,#ef4444)] font-bold">Просрочено: {metrics.overdue}</span>
 						</>
 					)}
 				</div>

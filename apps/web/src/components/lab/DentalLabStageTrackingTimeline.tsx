@@ -1,8 +1,11 @@
 import React from "react";
 import type { DentalLabOrderData } from "./labMath";
 import {
-	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
-	mapTo6StageOrthopedicLifecycle,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	mapTo5StageLabStatus,
+	type Canonical5LabStatus,
+} from "./clinicalStages/canonical5Stages";
+import {
 	type Orthopedic6StageKey,
 	checkFittingAppointmentCollision,
 } from "./dentalLabOrderEngine";
@@ -14,7 +17,7 @@ export { getStagePartyRu };
 
 export interface DentalLabStageTrackingTimelineProps {
 	readonly order: DentalLabOrderData;
-	readonly onAdvanceStage?: (orderId: string, newStage: Orthopedic6StageKey, notes?: string) => Promise<void> | void;
+	readonly onAdvanceStage?: (orderId: string, newStage: Canonical5LabStatus | Orthopedic6StageKey, notes?: string) => Promise<void> | void;
 	readonly onUpdateTrialDates?: (orderId: string, dates: { frameworkTrialDate?: string; ceramicTrialDate?: string; dueDate?: string }) => Promise<void> | void;
 	readonly compact?: boolean;
 }
@@ -24,11 +27,11 @@ export function DentalLabStageTrackingTimeline({
 	onAdvanceStage,
 	compact = false,
 }: DentalLabStageTrackingTimelineProps) {
-	const current6Stage = mapTo6StageOrthopedicLifecycle(order.currentStage || order.status || "draft");
-	const currentStepIndex = CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.findIndex((s) => s.id === current6Stage);
+	const current5Stage = mapTo5StageLabStatus(order.currentStage || order.status || "sent");
+	const currentStepIndex = CANONICAL_5_CLINICAL_LAB_STATUSES.findIndex((s) => s.id === current5Stage);
 	const collision = checkFittingAppointmentCollision(order.dueDate ?? undefined, order.scheduledVisitDate ?? undefined);
 
-	const handleStepClick = async (targetStage: Orthopedic6StageKey) => {
+	const handleStepClick = async (targetStage: Canonical5LabStatus) => {
 		if (!order.id || !onAdvanceStage) return;
 		await onAdvanceStage(order.id, targetStage);
 	};
@@ -40,15 +43,15 @@ export function DentalLabStageTrackingTimeline({
 		>
 			<TimelineHeader order={order} collision={collision} />
 
-			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-				{CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.map((step, idx) => (
+			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1">
+				{CANONICAL_5_CLINICAL_LAB_STATUSES.map((step, idx) => (
 					<TimelineStepItem
 						key={step.id}
 						step={step}
 						idx={idx}
 						isPassed={currentStepIndex >= idx}
 						isCurrent={currentStepIndex === idx}
-						onClick={() => handleStepClick(step.id as Orthopedic6StageKey)}
+						onClick={() => handleStepClick(step.id)}
 					/>
 				))}
 			</div>

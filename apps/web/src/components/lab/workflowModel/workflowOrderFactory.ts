@@ -8,7 +8,7 @@ import {
 	parseDateToMidnight,
 	formatDateToIsoDay,
 } from "../dentalLabWorkflowEngine";
-import type { LabTechnologicalStageId } from "../orders/labWorkOrderPresets";
+import type { LabTechnologicalStageId } from "../dentalLabWorkflowEngine";
 
 export function generateLabOrderNumber(sequence = 1, date = new Date()): string {
 	const year = date.getFullYear();

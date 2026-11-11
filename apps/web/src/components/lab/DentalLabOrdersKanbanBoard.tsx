@@ -37,17 +37,23 @@ export interface CanonicalKanbanColumnDef {
 	readonly colorHex: string;
 }
 
-export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	{ id: "sent_to_lab", title: "Слепок/скан отправлен в ЗТЛ", shortTitle: "Отправлен в ЗТЛ", icon: <Layers size={16} />, colorHex: "#3b82f6" },
-	{ id: "in_progress", title: "В работе у техника", shortTitle: "У техника", icon: <Calendar size={16} />, colorHex: "#8b5cf6" },
-	{ id: "fitting_scheduled", title: "В клинике (готово к примерке/фиксации)", shortTitle: "В клинике", icon: <FileText size={16} />, colorHex: "#0d9488" },
-	{ id: "installed_completed", title: "Установлено пациенту / Сдано", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
+export const CANONICAL_5_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
+	{ id: "sent_to_lab", title: "1. Слепок / Скан (Отправлен в ЗТЛ)", shortTitle: "Слепок/Скан", icon: <Layers size={16} />, colorHex: "#3b82f6" },
+	{ id: "in_progress", title: "2. В работе у техника (ЗТЛ)", shortTitle: "В работе ЗТЛ", icon: <Calendar size={16} />, colorHex: "#8b5cf6" },
+	{ id: "fitting_scheduled", title: "3. На примерку (каркас/модель)", shortTitle: "На примерку", icon: <FileText size={16} />, colorHex: "#f59e0b" },
+	{ id: "ready_in_clinic", title: "4. Готовая работа в клинике", shortTitle: "Готово в клинике", icon: <Truck size={16} />, colorHex: "#0d9488" },
+	{ id: "installed_completed", title: "5. Зафиксировано во рту / Сдано", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
 ] as const;
 
-export const CANONICAL_5_KANBAN_COLUMNS = CANONICAL_4_KANBAN_COLUMNS;
+export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
+	CANONICAL_5_KANBAN_COLUMNS[0]!,
+	CANONICAL_5_KANBAN_COLUMNS[1]!,
+	CANONICAL_5_KANBAN_COLUMNS[2]!,
+	CANONICAL_5_KANBAN_COLUMNS[4]!,
+];
 
 /**
- * 4-колоночная каноническая канбан-доска ЗТЛ (Мандат 8b: <= 120 строк).
+ * 5-колоночная каноническая канбан-доска ЗТЛ (Мандат 8b: <= 140 строк).
  */
 export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = (props) => {
 	const [dragOverCol, setDragOverCol] = useState<CanonicalKanbanStageId | null>(null);
@@ -69,6 +75,7 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 			sent_to_lab: [],
 			in_progress: [],
 			fitting_scheduled: [],
+			ready_in_clinic: [],
 			installed_completed: [],
 		};
 		if (props.orders) {
@@ -85,8 +92,9 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 		draft: [],
 		sent_to_lab: [...(safeOrdersByStage.draft || []), ...(safeOrdersByStage.sent_to_lab || [])],
 		in_progress: [...((safeOrdersByStage as any).in_progress || []), ...((safeOrdersByStage as any).warranty_rework || [])],
-		fitting_scheduled: safeOrdersByStage.fitting_scheduled || [],
-		installed_completed: safeOrdersByStage.installed_completed || [],
+		fitting_scheduled: (safeOrdersByStage as any).fitting_scheduled || (safeOrdersByStage as any).fitting || [],
+		ready_in_clinic: (safeOrdersByStage as any).ready_in_clinic || (safeOrdersByStage as any).ready || (safeOrdersByStage as any).received || (safeOrdersByStage as any).in_clinic || [],
+		installed_completed: safeOrdersByStage.installed_completed || (safeOrdersByStage as any).completed || (safeOrdersByStage as any).seated || [],
 	}), [safeOrdersByStage]);
 
 	const stageCounts = useMemo(() => ({
@@ -94,15 +102,16 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 		sent_to_lab: resolved.sent_to_lab.length,
 		in_progress: resolved.in_progress.length,
 		fitting_scheduled: resolved.fitting_scheduled.length,
+		ready_in_clinic: resolved.ready_in_clinic.length,
 		installed_completed: resolved.installed_completed.length,
 	}), [resolved]);
 
 	return (
 		<main className="ztl-kanban-board" data-testid="canonical-4-stage-kanban-board" data-mobile-active={mobileStage}>
 			<div className="sm:hidden w-full pb-1">
-				<KanbanMobileStageSelector columns={CANONICAL_4_KANBAN_COLUMNS} activeStageId={mobileStage} onSelectStage={setMobileStage} counts={stageCounts} />
+				<KanbanMobileStageSelector columns={CANONICAL_5_KANBAN_COLUMNS} activeStageId={mobileStage} onSelectStage={setMobileStage} counts={stageCounts} />
 			</div>
-			{CANONICAL_4_KANBAN_COLUMNS.map((col) => {
+			{CANONICAL_5_KANBAN_COLUMNS.map((col) => {
 				const colOrders = resolved[col.id] || [];
 				return (
 					<KanbanColumn

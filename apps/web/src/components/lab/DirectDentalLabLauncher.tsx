@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DentalLabStudioModal, DentalLabOrderModal } from "./DentalLabStudioModal";
+import { DentalLabOrdersView } from "./DentalLabOrdersView";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
@@ -38,15 +39,11 @@ export const DirectDentalLabLauncher: React.FC = () => {
 			setIsActive(active);
 			if (active) setIsOpen(true);
 		};
-		window.addEventListener("hashchange", handleLocationChange);
-		window.addEventListener("popstate", handleLocationChange);
-		window.addEventListener("dente:open-lab", handleOpen);
-		window.addEventListener("dente:open-dental-lab", handleOpen);
+		window.addEventListener("hashchange", handleLocationChange); window.addEventListener("popstate", handleLocationChange);
+		window.addEventListener("dente:open-lab", handleOpen); window.addEventListener("dente:open-dental-lab", handleOpen);
 		return () => {
-			window.removeEventListener("hashchange", handleLocationChange);
-			window.removeEventListener("popstate", handleLocationChange);
-			window.removeEventListener("dente:open-lab", handleOpen);
-			window.removeEventListener("dente:open-dental-lab", handleOpen);
+			window.removeEventListener("hashchange", handleLocationChange); window.removeEventListener("popstate", handleLocationChange);
+			window.removeEventListener("dente:open-lab", handleOpen); window.removeEventListener("dente:open-dental-lab", handleOpen);
 		};
 	}, [handleOpen]);
 
@@ -63,6 +60,7 @@ export const DirectDentalLabLauncher: React.FC = () => {
 
 	if (!isActive || (!hasDentalLab && !isDemoShowcaseMode())) return null;
 	const isOrderModal = typeof window !== "undefined" && (window.location.search.includes("standalone=lab_order") || (window.location.hash || "").includes("lab-order"));
+	const isKanban = typeof window !== "undefined" && !window.location.search.includes("standalone=dental_lab") && ((window.location.hash || "").toLowerCase() === "#lab" || (window.location.hash || "").toLowerCase() === "#ztl");
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
 			{isOrderModal ? (
@@ -72,6 +70,8 @@ export const DirectDentalLabLauncher: React.FC = () => {
 					doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
 					stageNumber={2} stageTitle="Ортопедический этап"
 				/>
+			) : isKanban ? (
+				<div className="w-full max-w-full"><DentalLabOrdersView /></div>
 			) : (
 				<DentalLabStudioModal isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi} />
 			)}

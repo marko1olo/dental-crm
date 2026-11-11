@@ -1,20 +1,22 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { db } from "../../../db/client.js";
 import {
 	getLabOrderByToken,
 	LAB_ORDER_TECHNICIAN_TRANSITIONS,
 	type LabOrderStatus,
-	updateLabOrderStatusByToken,
 } from "../../../db/labQuery.js";
-import { labOrders } from "../../../db/schema.js";
+import { withTenantCtx } from "../../../db/rls.js";
+import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import { mapStageOrStatusToMilestone } from "../types.js";
 
 const technicianAllowedStatuses = z.enum([
 	"in_progress",
 	"shipped",
 	"received",
+	"ready",
+	"ready_in_clinic",
 	"refitting",
 	"completed",
 ]);
@@ -57,29 +59,52 @@ export async function handlePostPortalOrderStatus(request: FastifyRequest, reply
 			});
 		}
 
-		const updated = await updateLabOrderStatusByToken(
-			token,
-			order.organizationId,
-			targetStatus as LabOrderStatus,
-		);
+		const updated = await withTenantCtx(order.organizationId, async (tx) => {
+			const now = new Date();
+			const auditFields: Partial<{ sentAt: Date; completedAt: Date; cancelledAt: Date }> = {};
+			if (targetStatus === "completed") auditFields.completedAt = now;
+
+			const updatePayload: Record<string, unknown> = {
+				status: targetStatus,
+				updatedAt: now,
+				...auditFields,
+			};
+			if (labComments !== undefined) {
+				updatePayload.labComments = labComments;
+			}
+
+			const [res] = await tx
+				.update(labOrders)
+				.set(updatePayload)
+				.where(
+					and(
+						eq(labOrders.secureToken, token),
+						eq(labOrders.organizationId, order.organizationId),
+					),
+				)
+				.returning();
+
+			if (!res) return null;
+
+			const milestone = mapStageOrStatusToMilestone(targetStatus);
+			await tx.insert(labOrderEvents).values({
+				organizationId: order.organizationId,
+				labOrderId: res.id,
+				milestone,
+				actorType: "external_lab",
+				actorName: "Зуботехническая лаборатория",
+				notes: labComments || `Статус изменен лабораторией: ${targetStatus}`,
+				photoUrls: [],
+			});
+
+			return res;
+		});
 
 		if (!updated) {
 			return reply.code(409).send({
 				error: "LabOrderStatusNotSaved",
 				message: "Статус заказа не обновлен: запись уже изменена или недоступна.",
 			});
-		}
-
-		if (labComments !== undefined) {
-			await db
-				.update(labOrders)
-				.set({ labComments, updatedAt: new Date() })
-				.where(
-					and(
-						eq(labOrders.id, updated.id),
-						eq(labOrders.organizationId, updated.organizationId),
-					),
-				);
 		}
 
 		wsBroker.broadcastToOrganization(updated.organizationId, {

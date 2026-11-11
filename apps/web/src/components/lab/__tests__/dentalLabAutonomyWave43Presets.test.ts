@@ -6,7 +6,7 @@ import {
 	EXPRESS_PRESET_EMAX_CROWN,
 	EXPRESS_PRESET_PMMA_TEMPORARY,
 	MODAL_EXPRESS_LAB_PRESETS,
-} from "../dentalLabModalPresets";
+} from "../dentalLabCatalogData";
 import { addWorkingDays } from "../labMath";
 
 describe("Wave 43 Autonomy — Express Presets Invariants", () => {

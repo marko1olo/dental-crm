@@ -147,8 +147,8 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 			"Must render submit-lab-order-button",
 		);
 		assert.ok(
-			content.includes("✓ Отправить заказ в лабораторию"),
-			"Button must state '✓ Отправить заказ в лабораторию'",
+			content.includes("✓ Создать заказ-наряд"),
+			"Button must state '✓ Создать заказ-наряд'",
 		);
 		assert.ok(
 			content.includes("var(--teal"),

@@ -11,7 +11,7 @@ import type {
 	FixationType,
 	LabTechnologicalStageId,
 	LabImplantComponentsManifest,
-} from "../orders/labWorkOrderPresets";
+} from "../dentalLabWorkflowEngine";
 
 export type { CreateDentalLabOrderParams } from "./workflowParamsTypes";
 

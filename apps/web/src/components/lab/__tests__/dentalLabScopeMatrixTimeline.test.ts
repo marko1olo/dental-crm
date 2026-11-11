@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { CANONICAL_LAB_PRICE_MATRIX } from "../DentalLabPriceMatrixModal";
 import {
-	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	checkFittingAppointmentCollision,
 } from "../dentalLabOrderEngine";
 
@@ -25,16 +25,15 @@ describe("dentalLabScopeMatrixTimeline — Matrix & Timeline", () => {
 		}
 	});
 
-	it("Канонический 6-этапный жизненный цикл и детектор коллизий", () => {
-		assert.equal(CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.length, 6);
-		const stageIds = CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.map((s) => s.id);
+	it("Канонический 5-этапный жизненный цикл и детектор коллизий", () => {
+		assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES.length, 5);
+		const stageIds = CANONICAL_5_CLINICAL_LAB_STATUSES.map((s) => s.id);
 		assert.deepEqual(stageIds, [
-			"impression_taken",
-			"courier_sent",
-			"framework_fitting",
-			"ceramic_layering",
-			"ready_in_clinic",
-			"patient_fixation",
+			"sent",
+			"in_progress",
+			"fitting",
+			"ready",
+			"completed",
 		]);
 
 		const today = new Date();

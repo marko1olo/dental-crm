@@ -38,7 +38,7 @@ export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProp
 			<div className="flex items-center justify-between gap-1.5 flex-wrap">
 				<div className="flex items-center gap-1.5">
 					<span className="text-xs font-bold font-mono px-2 py-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]">{ord.orderNumber}</span>
-					{ord.isUrgent && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--rose-surface,#fee2e2)] text-[var(--rose-ink,#991b1b)] border border-[var(--rose,#ef4444)]/40">СРОЧНО</span>}
+					{ord.isUrgent && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--rose-surface,#fee2e2)] text-[var(--rose-ink,#991b1b)] border border-[var(--rose,#ef4444)]/40">Срочно</span>}
 					<span className="text-[11px] text-[var(--ink-muted)] break-words">{ord.laboratoryName}</span>
 				</div>
 				<span data-testid={`order-stage-badge-${ord.id}`} className="text-[11px] font-bold px-2.5 py-0.5 rounded-xl border flex items-center gap-1.5 shrink-0" style={{ backgroundColor: stageMeta.bgToken, borderColor: stageMeta.borderToken, color: stageMeta.textToken }}>

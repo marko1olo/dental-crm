@@ -111,7 +111,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 					{[
 						{ id: "zirconia_crown_express", label: "Цирконий ZrO2", mat: "zirconia_multilayer", shade: "A2" },
 						{ id: "emax_crown_express", label: "E.max Press", mat: "emax_press", shade: "A2" },
-						{ id: "pfm_duceram_express", label: "Металлокерамика", mat: "pfm_cocr", shade: "A3" },
+						{ id: "pfm_duceram_express", label: "Металлокерамика", mat: "metal_ceramic_cocr", shade: "A3" },
 						{ id: "pmma_temporary_express", label: "PMMA временная", mat: "pmma_temp", shade: "A2" },
 					].map((p) => (
 						<button
@@ -119,7 +119,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 							type="button"
 							data-testid={`lab-preset-btn-${p.id}`}
 							onClick={() => { setSelectedMaterialId(p.mat); setSelectedShade(p.shade); }}
-							className={`dente-btn-pill px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === p.mat ? "is-active bg-[var(--teal)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}
+							className={`dente-btn-pill px-2.5 py-1 text-[11px] font-semibold rounded-full border transition-all cursor-pointer ${selectedMaterialId === p.mat ? "is-active bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}
 						>
 							{p.label}
 						</button>
@@ -138,20 +138,10 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 				<div className="dental-lab-teeth-grid">{LOWER_JAW_TEETH.map((tooth) => (<button key={tooth} type="button" data-testid={`tooth-chip-${tooth}`} onClick={() => toggleTooth(tooth)} className={`dental-lab-tooth-chip ${selectedTeeth.includes(tooth) ? "selected" : ""}`}>{tooth}</button>))}</div>
 			</div>
 			{/* Конструкция, Оттенок VITA, Лаборатория */}
-			<div className="space-y-1">
+			<div className="space-y-0.5">
 				<label htmlFor="lab-material-select" className="text-xs font-semibold text-[var(--ink)] block">Вид конструкции</label>
-				<div className="flex flex-wrap gap-1 pb-1">
-					{[
-						{ id: "zirconia_multilayer", label: "Цирконий e.max" },
-						{ id: "clasp_prosthesis", label: "Бюгельный протез" },
-						{ id: "pmma_temp", label: "Временная фрезерованная" },
-						{ id: "metal_ceramic_cocr", label: "Металлокерамика" },
-					].map((matBtn) => (
-						<button key={matBtn.id} type="button" data-testid={`quick-construction-${matBtn.id}`} onClick={() => setSelectedMaterialId(matBtn.id)} className={`px-2 py-0.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${selectedMaterialId === matBtn.id ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs" : "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"}`}>{matBtn.label}</button>
-					))}
-				</div>
 				<select id="lab-material-select" data-testid="lab-material-select" value={selectedMaterialId} onChange={(e) => setSelectedMaterialId(e.target.value)} className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
-					{CANONICAL_LAB_MATERIALS.map((mat) => (<option key={mat.id} value={mat.id}>{mat.titleRu} ({mat.defaultDurationDays} раб. дн.)</option>))}
+					{CANONICAL_LAB_MATERIALS.map((mat) => (<option key={mat.id} value={mat.id}>{mat.titleRu.split(" (")[0]} ({mat.defaultDurationDays} раб. дн.)</option>))}
 				</select>
 			</div>
 			<div className="space-y-1">
@@ -231,27 +221,22 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 			</div>
 			<div className="space-y-1">
 				<label htmlFor="lab-notes-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Указания технику</label>
-				<textarea id="lab-notes-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..." className="w-full text-xs p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />
+				<textarea id="lab-notes-input" rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..." className="w-full text-xs p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />
 			</div>
 			<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2 space-y-0.5 text-xs">
 				<div className="flex justify-between text-[var(--ink-muted)]"><span>Себестоимость ЗТЛ ({teethCount} ед.):</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalLabCostKopecks)}</strong></div>
 				<div className="flex justify-between text-[var(--ink-muted)]"><span>Прайс для пациента:</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalPatientPriceKopecks)}</strong></div>
 				<div className="flex justify-between border-t border-[var(--line)] pt-0.5 text-[var(--teal)] font-bold"><span>Маржа клиники:</span><span>+{formatKopecksToRubles(netClinicRevenueKopecks)}</span></div>
 			</div>
-			{/* Баннер клинической автономии врача (Мандаты 8e, 8n) */}
-			<div data-testid="lab-order-clinical-autonomy-banner" className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between text-[11px]">
-				<span className="text-[var(--ink-muted)]">Автономия врача</span>
-				<button type="button" data-testid="btn-lab-override-financial-gate" onClick={handleCreateOrder} className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-[var(--teal)] border border-[var(--teal)]/40 hover:bg-[var(--teal)] hover:text-white transition-all cursor-pointer">Подтвердить</button>
-			</div>
 			{/* Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am & 8e: НИКОГДА НЕ DISABLED) */}
-			<div className="pt-1 space-y-1.5">
+			<div className="pt-2 space-y-1.5 pb-2">
 				<button type="button" data-testid="submit-lab-order-button" id="submit-lab-order-button" onClick={handleCreateOrder}
 					className="dental-lab-primary-cta bg-[var(--teal,#0d9488)] submit-lab-order-btn" style={{ backgroundColor: "var(--teal, #0d9488)" }}>
-					<span>✓ Создать заказ-наряд / ✓ Отправить заказ в лабораторию</span>
+					<span>✓ Создать заказ-наряд</span>
 				</button>
 				<div className="grid grid-cols-2 gap-2">
-					<button type="button" data-testid="print-lab-order-a5-btn" onClick={handlePrintA5Blank} className="py-1 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Печать наряда А5</button>
-					<button type="button" data-testid="courier-blank-btn" onClick={handleCourierBlank} className="py-1 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Бланк курьеру</button>
+					<button type="button" data-testid="print-lab-order-a5-btn" onClick={handlePrintA5Blank} className="min-h-[36px] max-sm:min-h-[44px] py-1.5 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Печать наряда А5</button>
+					<button type="button" data-testid="courier-blank-btn" onClick={handleCourierBlank} className="min-h-[36px] max-sm:min-h-[44px] py-1.5 px-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-center">Бланк курьеру</button>
 				</div>
 			</div>
 		</aside>

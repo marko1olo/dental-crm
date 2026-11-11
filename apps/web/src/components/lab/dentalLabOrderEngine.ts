@@ -13,4 +13,3 @@ export * from "./orderEngine/labOrderRecordTypes";
 export * from "./orderEngine/labPartialDeliveryEngine";
 export * from "./orderEngine/labStatusTransitions";
 export * from "./orderEngine/labOrderRecordFactory";
-export * from "./clinicalStages/canonical6Stages";

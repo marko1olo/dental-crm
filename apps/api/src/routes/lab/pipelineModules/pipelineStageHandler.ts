@@ -37,7 +37,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest, reply: 
 			error: "PermissionDenied",
 			permission: "clinical.lab_order.write",
 			role: staffRole,
-			message: `Отказ в обновлении клинического этапа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в обновлении клинического этапа ЗТЛ: ${evalAccess.reason}`,
 		});
 	}
 

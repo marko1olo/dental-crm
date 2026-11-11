@@ -7,7 +7,7 @@ import {
 	renderTechStagesSection,
 	renderSignaturesSection,
 } from "./exportPrintBlankSections";
-import { ABUTMENT_TYPE_OPTIONS } from "../orders/labWorkOrderPresets";
+import { ABUTMENT_TYPE_OPTIONS } from "../dentalLabWorkflowEngine";
 
 export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder): string {
 	const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;

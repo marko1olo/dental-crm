@@ -46,30 +46,9 @@ export async function createExpressLabOrder({
 		}
 
 		const savedOrder = await res.json();
-		if (savedOrder?.id) {
-			for (const tooth of targetTeeth) {
-				try {
-					await fetch(`/api/clinical/lab-orders/${savedOrder.id}/items`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-						body: JSON.stringify({
-							toothFdi: tooth,
-							restorationType: construction,
-							material: ONE_CLICK_LAB_DEFAULTS.materialId,
-							shadeFinal: ONE_CLICK_LAB_DEFAULTS.colorVita,
-							translucencyLevel: ONE_CLICK_LAB_DEFAULTS.translucency,
-							cementGapMicrons: ONE_CLICK_LAB_DEFAULTS.cementGapMicrons,
-							priceRub: priceRub / targetTeeth.length,
-						}),
-					});
-				} catch {
-					// Non-blocking item fallback
-				}
-			}
-		}
 
 		showToast(`Наряд ЗТЛ успешно оформлен для зубов ${toothFdiStr} (Цирконий A2, срок до ${dueDateFormatted})!`, "success", 6000);
-		window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: { order: savedOrder } }));
+		window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: { ...savedOrder, order: savedOrder } }));
 	} catch (err: any) {
 		showToast(err.message || "Не удалось оформить наряд в ЗТЛ", "error");
 	}

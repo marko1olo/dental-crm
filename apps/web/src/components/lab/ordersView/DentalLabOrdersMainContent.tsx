@@ -6,7 +6,6 @@ import { LabOrdersSegmentedNav } from "./LabOrdersSegmentedNav";
 import { CANONICAL_STAGE_FILTERS } from "./constants";
 import type { useDentalLabOrders } from "./useDentalLabOrders";
 import { DentalLabOrdersViewSwitch } from "./DentalLabOrdersViewSwitch";
-import { DentalLabOrdersDrawersContainer } from "./DentalLabOrdersDrawersContainer";
 
 export interface DentalLabOrdersMainContentProps {
 	readonly logic: ReturnType<typeof useDentalLabOrders>;
@@ -70,8 +69,6 @@ export function DentalLabOrdersMainContent({
 			/>
 
 			<DentalLabOrdersViewSwitch logic={logic} />
-
-			<DentalLabOrdersDrawersContainer logic={logic} />
 		</main>
 	);
 }

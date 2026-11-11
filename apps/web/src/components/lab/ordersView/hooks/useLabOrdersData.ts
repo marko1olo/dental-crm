@@ -75,8 +75,11 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 
 	useEffect(() => {
 		const handleOrderCreated = (e: Event) => {
-			const detail = (e as CustomEvent<DentalLabOrderData>).detail;
-			if (detail) {
+			const rawDetail = (e as CustomEvent<any>).detail;
+			const detail = (rawDetail && typeof rawDetail === "object" && "order" in rawDetail && rawDetail.order)
+				? (rawDetail.order as DentalLabOrderData)
+				: (rawDetail as DentalLabOrderData);
+			if (detail && detail.id) {
 				setOrders((prev) => {
 					const idx = prev.findIndex((o) => o.id === detail.id || (detail.secureToken && o.secureToken === detail.secureToken));
 					if (idx >= 0) {

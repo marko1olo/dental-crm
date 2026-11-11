@@ -1,7 +1,7 @@
 import type { DentalLabWorkflowOrder } from "./workflowModelTypes";
 import type { LabWorkflowStatus } from "../dentalLabWorkflowEngine";
 import { LAB_WORKFLOW_STATUSES, checkLabDeadlineAndAlert } from "../dentalLabWorkflowEngine";
-import { type LabTechnologicalStageId, LAB_TECHNOLOGICAL_STAGES } from "../orders/labWorkOrderPresets";
+import { type LabTechnologicalStageId, LAB_TECHNOLOGICAL_STAGES } from "../dentalLabWorkflowEngine";
 
 export function advanceLabOrderTechStage(
 	order: DentalLabWorkflowOrder,

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DentalLabStudioModal } from "../DentalLabStudioModal";
-import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabModalPresets";
+import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabCatalogData";
 
 describe("Red Team — Dental Lab Buttons, Presets & Action Bar Invariants", () => {
 	it("1. Renders express presets with ZERO lightning bolts (Zap/amber circus eliminated)", () => {

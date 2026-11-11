@@ -71,10 +71,11 @@ export {
 	DirectLabLauncher,
 } from "./DirectDentalLabLauncher";
 
-// SSOT 2: Clinical Kanban Board (4 Lifecycle Stages) & Cards
+// SSOT 2: Clinical Kanban Board (5 Canonical Lifecycle Stages) & Cards
 export {
 	DentalLabOrdersKanbanBoard,
 	type DentalLabOrdersKanbanBoardProps,
+	CANONICAL_5_KANBAN_COLUMNS,
 	CANONICAL_4_KANBAN_COLUMNS,
 	type CanonicalKanbanColumnDef,
 } from "./DentalLabOrdersKanbanBoard";

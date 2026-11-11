@@ -38,9 +38,9 @@ export const CANONICAL_LAB_PRICE_MATRIX: readonly LabPriceMatrixItem[] = [
 		nameRu: "Металлокерамика Co-Cr (кобальт-хромовый сплав с керамикой)",
 		shortTitle: "Металлокерамика",
 		material: "Кобальт-хромовый сплав с керамикой",
-		turnaroundBusinessDays: 7,
-		suggestedCostRub: 5000,
-		suggestedPriceRub: 15000,
+		turnaroundBusinessDays: 6,
+		suggestedCostRub: 3800,
+		suggestedPriceRub: 14000,
 		doctorDeductionPct: 50,
 		specialInstructions:
 			"Керамическое плечо 360 градусов, промывное пространство промежутка.",
@@ -109,8 +109,8 @@ export const CANONICAL_LAB_PRICE_MATRIX: readonly LabPriceMatrixItem[] = [
 		shortTitle: "Хирургический шаблон",
 		material: "Биосовместимая 3D-смола с титановыми втулками",
 		turnaroundBusinessDays: 3,
-		suggestedCostRub: 6000,
-		suggestedPriceRub: 16000,
+		suggestedCostRub: 5000,
+		suggestedPriceRub: 15000,
 		doctorDeductionPct: 50,
 		specialInstructions:
 			"Прецизионная посадка по КЛКТ и оптическому скану, промывные окна.",
