@@ -3,8 +3,27 @@
  * Модуль декомпозирован на сателлиты строго <= 120 строк по Мандату 8b.
  */
 
-export * from "./audit/warehouseCommissionPresets.js";
+import type { WarehouseInventoryCommissionMember } from "./audit/warehouseAuditTypes.js";
+
 export * from "./audit/warehouseInventoryItemsPreset.js";
+
+export const SOLO_DOCTOR_COMMISSION_MEMBERS: readonly WarehouseInventoryCommissionMember[] = [
+	{
+		fullName: "Кузнецов Михаил Сергеевич",
+		position: "Врач-стоматолог (МОЛ)",
+		role: "mol",
+		roleRu: "Материально ответственное лицо (МОЛ)",
+	},
+];
+
+export const DEFAULT_COMMISSION_MEMBERS: readonly WarehouseInventoryCommissionMember[] = [
+	{
+		fullName: "Васильев Олег Петрович",
+		position: "Дежурный врач (МОЛ)",
+		role: "mol",
+		roleRu: "Материально ответственное лицо (МОЛ)",
+	},
+];
 
 export interface WarehousePresetItem {
 	readonly name: string;

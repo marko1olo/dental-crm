@@ -1,5 +1,5 @@
 import { Copy, Download } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { showToast } from "../../GlobalToast.js";
 
 export interface SeniorNurseDisposalActMoreMenuProps {

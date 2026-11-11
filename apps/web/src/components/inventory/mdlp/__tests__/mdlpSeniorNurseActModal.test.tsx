@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -102,6 +102,6 @@ describe("MDLP Senior Nurse Act Modal & Background Approval (Mandates 8e, 8k, 8n
 		assert.ok(html.includes("Акт списания медикаментов и анестетиков"));
 		assert.ok(html.includes("Д-р Кузнецов М.С."));
 		assert.ok(html.includes("Медсестра ЦСО не требуется"));
-		assert.ok(html.includes("Единоличное утверждение (без комиссии из 3 человек)"));
+		assert.ok(html.includes("Единоличное утверждение МОЛ"));
 	});
 });

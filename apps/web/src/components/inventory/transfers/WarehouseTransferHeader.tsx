@@ -1,5 +1,5 @@
 import { Check, Truck, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	TRANSFER_STATUS_PIPELINE,
 	type WarehouseTransferStatus,

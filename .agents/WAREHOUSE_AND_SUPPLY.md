@@ -254,6 +254,36 @@
   * `npm run check:encoding` чист (22 606 файлов).
   * 4-State Proofs сняты на живом приложении, размер каждого $\ge 125$KB, лично отсмотрены через `read_file`.
 
+---
+
+## 🎖️ 12. Red Team Хирург-Чинильщик: Полная ликвидация DEF-WARE-01..05, форм Госкомстата и комиссий (Мандаты 8bd, 8x, 8zg, 8bi, 8bj, 8e, 8n)
+
+* **Ликвидация мертвого сиротского кластера `WarehouseOverviewTab` (`git rm`)**:
+  1. `WarehouseOverviewTab.tsx`
+  2. `overviewTab/WarehouseOverviewKpiBar.tsx`
+  3. `overviewTab/WarehouseOverviewTable.tsx`
+  4. `acceptanceWaybills.css`
+  5. Очищен реэкспорт из `apps/web/src/components/inventory/index.ts`.
+* **Замена советских форм Госкомстата на легкие медицинские бланки клиники (DEF-WARE-01)**:
+  * ИНВ-3 (ОКУД 0317004) -> «Инвентаризационная ведомость остатков материалов».
+  * ИНВ-19 (ОКУД 0317019) -> «Сличительная ведомость инвентаризации материалов».
+  * ТОРГ-16 (ОКУД 0330216) -> «Акт списания материалов клиники».
+  * ТОРГ-12 Госкомстата 1998 г. -> «Приходная накладная материалов клиники».
+  * ТОРГ-13 (ОКУД 0330213) -> «Накладная перемещения материалов».
+  * ТОРГ-2 -> «Акт расхождения при приемке материалов».
+  * М-11 (ОКУД 0315003) -> «Требование на выдачу материалов клиники».
+  * ОКУД 0504230 -> «Акт списания материалов клиники».
+* **Ликвидация комиссий из 4 человек (DEF-WARE-02)**:
+  * В `warehouseCommissionPresets.ts` и `warehouseInventoryPrintForms.ts` устранена советская комиссия из 4 человек со строгим председателем; утверждение проводится единолично материально ответственным лицом (МОЛ).
+* **Искоренение спек-дампинга «без комиссии из 3 человек» (DEF-WARE-03)**:
+  * Из кнопок, тулбаров, тултипов и тостов (`SeniorNurseDisposalActFooter.tsx`, `SeniorNurseDisposalPassportBar.tsx`, `useSeniorNurseDisposalActLogic.ts`, `packageWriteoffExecution.ts`, `WarehousePackageButtons.tsx`) вычищен дев-жаргон. Лейблы приведены к чистому клиническому языку («Утвердить акт списания», «Единоличное утверждение МОЛ»).
+* **4-State Visual Proofs**:
+  * ☀️ PC Light (1440×900, 138 KB): `docs/proofs/warehouse/01_warehouse_stock_table_pc_light.png`
+  * 🌙 PC Dark (1440×900, 137 KB): `docs/proofs/warehouse/02_warehouse_stock_table_pc_dark.png`
+  * 📱 Mobile Light (390×844, 127 KB): `docs/proofs/warehouse/03_warehouse_stock_mobile_light.png`
+  * 🌙 Mobile Dark (390×844, 126 KB): `docs/proofs/warehouse/04_warehouse_stock_mobile_dark.png`
+
+
 
 
 

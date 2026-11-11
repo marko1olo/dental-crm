@@ -1,5 +1,5 @@
 import { FileText, PackageCheck, Printer, Zap } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface WarehouseTransferFooterProps {
 	readonly hasDiscrepancy: boolean;

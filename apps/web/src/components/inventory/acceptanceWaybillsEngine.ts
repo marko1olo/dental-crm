@@ -12,5 +12,5 @@ export * from "./acceptanceWaybills/acceptanceWaybillValidation.js";
 export * from "./acceptanceWaybills/acceptanceWaybillItemFactory.js";
 export * from "./acceptanceWaybills/acceptanceWaybillSampleItems.js";
 export * from "./acceptanceWaybills/acceptanceWaybillSamples.js";
-export * from "./acceptanceWaybills/acceptanceWaybillPrintTorg12.js";
+export * from "./acceptanceWaybills/acceptanceWaybillPrintDocument.js";
 export * from "./acceptanceWaybills/acceptanceWaybillCsvExport.js";

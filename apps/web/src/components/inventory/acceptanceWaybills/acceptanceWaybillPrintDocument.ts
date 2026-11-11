@@ -1,9 +1,10 @@
 import type { AcceptanceWaybillDocument } from "../acceptanceWaybillsTypes.js";
 
 /**
- * Формирует чистую печатную товарную накладную ТОРГ-12 в HTML.
+ * generateAcceptanceWaybillHtml — Чистая печатная приходная накладная материалов клиники в HTML.
+ * Мандаты 8e (Врачебная автономия), 8n (Соло-клиника), 8x (Без советских бланков ТОРГ-12 и ОКУД 0330212).
  */
-export function generateTorg12Html(
+export function generateAcceptanceWaybillHtml(
 	waybill: AcceptanceWaybillDocument,
 	clinicInfo?: { readonly nameRu?: string | undefined; readonly inn?: string | undefined },
 ): string {
@@ -34,7 +35,7 @@ export function generateTorg12Html(
 	}).join("");
 
 	return `<!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><title>Товарная накладная № ${waybill.waybillNumber}</title>
+<html lang="ru"><head><meta charset="utf-8"><title>Приходная накладная материалов № ${waybill.waybillNumber}</title>
 <style>
 body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; color: #000; margin: 20px; line-height: 1.25; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt; }
@@ -45,7 +46,7 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 @media print { body { margin: 10mm; } }
 </style></head><body>
 <div style="text-align:right; font-size:9pt; margin-bottom:10px; color:#666;">
-Товарная накладная (Унифицированная форма № ТОРГ-12, утв. Госкомстата России) • Приходная накладная материалов
+Приходная накладная материалов клиники • Стоматология DENTE
 </div>
 <table class="header-table">
 <tr><td style="width:15%;"><strong>Грузоотправитель:</strong></td><td>${waybill.supplier.name}, ИНН ${waybill.supplier.inn || "—"}</td></tr>
@@ -54,7 +55,7 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 <tr><td><strong>Грузополучатель:</strong></td><td>${clinicName}, Склад: ${waybill.warehouseName}</td></tr>
 </table>
 <div style="margin: 15px 0 10px 0; text-align: center;">
-<h2 style="margin: 0; font-size: 14pt;">ТОВАРНАЯ НАКЛАДНАЯ № ${waybill.waybillNumber}</h2>
+<h2 style="margin: 0; font-size: 14pt;">ПРИХОДНАЯ НАКЛАДНАЯ МАТЕРИАЛОВ № ${waybill.waybillNumber}</h2>
 <div style="font-size: 11pt; font-weight: bold;">от ${waybill.receiptDate} г.</div>
 </div>
 <table><thead><tr>
@@ -74,3 +75,5 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 <td style="width:50%;"><strong>Принял (Получатель):</strong><br><br>${waybill.receiverPosition} ______________ / ${waybill.receiverFullName} /<br><span style="font-size:8pt; color:#666;">подпись, расшифровка (Ответственный сотрудник)</span></td>
 </tr></table></body></html>`;
 }
+
+export const generateTorg12Html = generateAcceptanceWaybillHtml;

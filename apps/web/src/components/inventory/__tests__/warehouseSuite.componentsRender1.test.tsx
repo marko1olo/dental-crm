@@ -5,7 +5,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { WarehouseStockAlertsBar } from "../WarehouseStockAlertsBar.js";
-import { WarehouseOverviewTab } from "../WarehouseOverviewTab.js";
+import { WarehouseStockTable } from "../WarehouseStockTable.js";
 import { WarehouseWaybillsTab } from "../WarehouseWaybillsTab.js";
 import { WarehouseInventoryTab } from "../WarehouseInventoryTab.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
@@ -33,23 +33,17 @@ describe("Warehouse Suite: Components Rendering (Part 1)", () => {
 		assert.ok(html.includes("Просрочено: 1 поз."));
 	});
 
-	it("WarehouseOverviewTab рендерит таблицу ТМЦ и KPI карточки", () => {
+	it("WarehouseStockTable рендерит таблицу ТМЦ и остатки", () => {
 		const html = renderToStaticMarkup(
-			<WarehouseOverviewTab
+			<WarehouseStockTable
 				organizationId="test-org-1"
 				items={SAMPLE_ITEMS}
-				onRefresh={() => {}}
 				onSelectItem={() => {}}
 				onDeductItem={() => {}}
 				onReceiveItem={() => {}}
 				onOpenWaybills={() => {}}
-				onOpenBatchTracking={() => {}}
-				onOpenInventoryAudit={() => {}}
-				onQuickWriteoffCarpules={() => {}}
 			/>,
 		);
-		assert.ok(html.includes("warehouse-overview-tab"));
-		assert.ok(html.includes("Всего позиций"));
 		assert.ok(html.includes("Артикаин"));
 	});
 

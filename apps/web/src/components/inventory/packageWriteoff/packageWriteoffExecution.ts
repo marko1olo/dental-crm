@@ -45,7 +45,7 @@ export async function handleOneClickPackageWriteOff(
 	const toastType: "success" | "warning" = isOverdraft ? "warning" : "success";
 	const toastMessage = isOverdraft
 		? `Остаток 0: Мягкий учет расхода при нехватке (списание с дефицитом / мягкий овердрафт склада, пакет «${pkg.title}», дефицит ${overdraftCount} поз., накладная в пути). Операция не заблокирована!`
-		: `Клинический пакет «${pkg.title}» успешно списан со склада (${pkg.items.length} поз., без комиссии из 3 человек).`;
+		: `Клинический пакет «${pkg.title}» успешно списан (${pkg.items.length} поз.).`;
 
 	if (options.fetchFn && options.organizationId) {
 		try {

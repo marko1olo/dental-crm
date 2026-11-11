@@ -1,5 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SeniorNurseDisposalPassportBarProps {
 	readonly isApproved: boolean;
@@ -28,13 +28,13 @@ export const SeniorNurseDisposalPassportBar: React.FC<SeniorNurseDisposalPasspor
 					{isApproved && (
 						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 border border-teal-300 text-teal-800 text-[11px] font-bold">
 							<CheckCircle2 size={13} className="text-teal-600" />
-							{paperJournalAcknowledged ? "Акт утверждён (бумажный журнал учтён)" : "Акт утверждён единолично"}
+							{paperJournalAcknowledged ? "Акт утверждён (бумажный журнал учтён)" : "Акт списания утверждён"}
 						</span>
 					)}
 				</div>
 				<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/30 border border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-200 text-xs font-bold">
 					<CheckCircle2 size={13} className="text-teal-600" />
-					<span>Единоличное утверждение (без комиссии из 3 человек)</span>
+					<span>Единоличное утверждение МОЛ</span>
 				</span>
 			</div>
 

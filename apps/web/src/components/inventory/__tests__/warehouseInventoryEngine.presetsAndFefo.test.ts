@@ -27,18 +27,11 @@ describe("Warehouse Inventory Engine & Preset Catalogs", () => {
 		}
 	});
 
-	it("Эталонная инвентаризационная комиссия содержит 4 роли", () => {
-		assert.equal(DEFAULT_COMMISSION_MEMBERS.length, 4);
-		const roles = DEFAULT_COMMISSION_MEMBERS.map((c) => c.role);
-		assert.ok(roles.includes("chairman"));
-		assert.ok(roles.includes("mol"));
-		assert.ok(roles.includes("member"));
-		assert.ok(roles.includes("accountant"));
-
-		for (const member of DEFAULT_COMMISSION_MEMBERS) {
-			assert.ok(member.fullName.length > 0);
-			assert.ok(member.position.length > 0);
-		}
+	it("Инвентаризация утверждается единолично материально ответственным лицом (МОЛ)", () => {
+		assert.equal(DEFAULT_COMMISSION_MEMBERS.length, 1);
+		assert.equal(DEFAULT_COMMISSION_MEMBERS[0]?.role, "mol");
+		assert.ok(DEFAULT_COMMISSION_MEMBERS[0]?.fullName.length > 0);
+		assert.ok(DEFAULT_COMMISSION_MEMBERS[0]?.position.length > 0);
 	});
 });
 

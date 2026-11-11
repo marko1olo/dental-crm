@@ -48,9 +48,7 @@ export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModa
 
 	const handleApproveAct = async (isPaperLog = paperJournalAcknowledged) => {
 		setIsApproved(true);
-		const message = isPaperLog
-			? `Акт списания №${actNumber} утверждён в фоновом режиме: бумажный журнал учтён, участие старшей медсестры опционально`
-			: `Акт списания №${actNumber} утверждён единолично (без комиссии из 3 человек)`;
+		const message = `Акт списания №${actNumber} утверждён`;
 		showToast(message, "info");
 		if (onApproveAct) await onApproveAct(actData);
 	};

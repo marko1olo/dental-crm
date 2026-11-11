@@ -32,33 +32,36 @@ const sampleDoc: WarehouseInventoryAuditDocument = {
 };
 
 describe("Official Russian Print Forms Generation (HTML)", () => {
-	it("Формирует бланк формы ИНВ-3 (ОКУД 0317004) со всеми реквизитами", () => {
+	it("Формирует каноническую инвентаризационную ведомость остатков материалов", () => {
 		const html = generateInv3Html(sampleDoc);
-		assert.ok(html.includes("0317004"));
+		assert.ok(html.includes("Инвентаризационная ведомость остатков материалов"));
 		assert.ok(html.includes("ИНВЕНТАРИЗАЦИОННАЯ ОПИСЬ"));
 		assert.ok(html.includes("Расписка:"));
 		assert.ok(html.includes("Васильев Олег Петрович"));
 		assert.ok(html.includes("ИТОГО ПО ОПИСИ:"));
 		assert.ok(html.includes("Итого фактическая сумма прописью:"));
+		assert.ok(!html.includes("0317004"));
 	});
 
-	it("Формирует бланк формы ИНВ-19 (ОКУД 0317019) со сличительными колонками", () => {
+	it("Формирует сличительную ведомость инвентаризации материалов со сличительными колонками", () => {
 		const html = generateInv19Html(sampleDoc);
-		assert.ok(html.includes("0317019"));
+		assert.ok(html.includes("Сличительная ведомость инвентаризации материалов"));
 		assert.ok(html.includes("СЛИЧИТЕЛЬНАЯ ВЕДОМОСТЬ"));
 		assert.ok(html.includes("Излишки"));
 		assert.ok(html.includes("Недостачи"));
 		assert.ok(html.includes("Итого излишек прописью:"));
 		assert.ok(html.includes("Итого недостача прописью:"));
+		assert.ok(!html.includes("0317019"));
 	});
 
-	it("Формирует бланк формы ТОРГ-16 (ОКУД 0330216) со списанием просроченных ТМЦ", () => {
+	it("Формирует акт списания материалов клиники со списанием просроченных ТМЦ", () => {
 		const torg16 = generateTorg16ActFromInventory(sampleDoc);
 		const html = generateTorg16Html(torg16);
-		assert.ok(html.includes("0330216"));
-		assert.ok(html.includes("АКТ О СПИСАНИИ ТОВАРОВ"));
+		assert.ok(html.includes("Акт списания материалов клиники"));
+		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ КЛИНИКИ"));
 		assert.ok(html.includes("Причина списания:"));
 		assert.ok(html.includes("ВСЕГО ПО АКТУ:"));
 		assert.ok(html.includes("Итого сумма списания прописью:"));
+		assert.ok(!html.includes("0330216"));
 	});
 });

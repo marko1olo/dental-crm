@@ -57,25 +57,24 @@ describe("TORG-13 & TORG-2 Document Generation", () => {
 		],
 	};
 
-	it("generateTorg13Html генерирует официальную форму ТОРГ-13 (ОКУД 0330213)", () => {
+	it("generateTorg13Html генерирует накладную перемещения материалов", () => {
 		const html = generateTorg13Html(sampleDoc);
-		assert.ok(html.includes("0330213"), "Форма по ОКУД 0330213 обязана присутствовать");
-		assert.ok(html.includes("ТОРГ-13"));
-		assert.ok(html.includes("НАКЛАДНАЯ НА ВНУТРЕННЕЕ ПЕРЕМЕЩЕНИЕ"));
+		assert.ok(html.includes("Накладная перемещения материалов"));
+		assert.ok(html.includes("НАКЛАДНАЯ НА ВНУТРЕННЕЕ ПЕРЕМЕЩЕНИЕ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Ультракаин Д-С Форте"));
 		assert.ok(html.includes("127500.00"));
 		assert.ok(html.includes("Васильев О.П."));
 		assert.ok(html.includes("Смирнова А.В."));
 	});
 
-	it("generateDiscrepancyAct и generateTorg2Html формируют Акт расхождений ТОРГ-2", () => {
+	it("generateDiscrepancyAct и generateTorg2Html формируют Акт расхождения при приемке материалов", () => {
 		const act: WarehouseDiscrepancyAct = generateDiscrepancyAct(sampleDoc);
 		assert.equal(act.totalDiscrepantItemsCount, 1);
 		assert.equal(act.totalFinancialDamageRubles, 12500);
 		assert.ok(act.commissionMembers.length >= 2);
 
 		const html = generateTorg2Html(act);
-		assert.ok(html.includes("АКТ ОБ УСТАНОВЛЕННОМ РАСХОЖДЕНИИ"));
+		assert.ok(html.includes("АКТ РАСХОЖДЕНИЯ ПРИ ПРИЕМКЕ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("12500.00"));
 		assert.ok(html.includes("Osstem TS III"));
 		assert.ok(html.includes("Недостача"));

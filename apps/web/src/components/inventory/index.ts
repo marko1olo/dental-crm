@@ -48,7 +48,6 @@ export {
 export * from "./WarehouseInventoryAuditTable.js";
 export * from "./WarehouseInventoryKpisGrid.js";
 export * from "./WarehouseInventoryTab.js";
-export * from "./WarehouseOverviewTab.js";
 export * from "./WarehousePackageWriteOffBar.js";
 export * from "./WarehouseStockAlertsActions.js";
 export * from "./WarehouseStockAlertsBar.js";

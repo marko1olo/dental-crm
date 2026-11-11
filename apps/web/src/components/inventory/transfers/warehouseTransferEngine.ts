@@ -8,6 +8,5 @@ export * from "./warehouseTransferTotalsCalculator.js";
 export * from "./warehouseTransferValidation.js";
 export * from "./warehouseTransferDiscrepancy.js";
 export * from "./warehouseTransferExportCsv.js";
-export * from "./warehouseTransferPrintTorg13.js";
-export * from "./warehouseTransferPrintTorg2.js";
+export * from "./warehouseTransferPrintDocuments.js";
 export { kopecksToRubles, rublesToKopecks } from "@dental/shared";

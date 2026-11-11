@@ -51,7 +51,7 @@ export function generateDisposalActHtml(
 </style></head><body>
 	<div class="header-flex">
 		<div><strong>Организация:</strong> ${info.clinicNameRu}<br><strong>Подразделение:</strong> ${doc.cabinetNameRu}<br><strong>Ответственное лицо:</strong> ${doc.doctorFullName || info.chiefDoctorFullName}</div>
-		<div style="text-align: right; font-size: 8.5pt; color: #475569;">ИНН ${info.inn} / КПП ${info.kpp}<br>ОКПО ${info.okpoCode}<br>Стоматологическая клиника DENTE<br><small style="color: #64748b;">(Форма по ОКУД 0330216: ТОРГ-16 АКТ О СПИСАНИИ ТОВАРОВ)</small></div>
+		<div style="text-align: right; font-size: 8.5pt; color: #475569;">ИНН ${info.inn} / КПП ${info.kpp}<br>ОКПО ${info.okpoCode}<br>Стоматологическая клиника DENTE<br><small style="color: #64748b;">(Акт списания материалов клиники)</small></div>
 	</div>
 	<div class="act-title">АКТ СПИСАНИЯ МАТЕРИАЛОВ № ${doc.actNumber}</div>
 	<div class="act-date">Дата: <strong>${doc.actDate} г.</strong></div>

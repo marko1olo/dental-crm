@@ -1,5 +1,5 @@
 import { CheckCircle2, MoreVertical, Printer } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { SeniorNurseDisposalActMoreMenu } from "./SeniorNurseDisposalActMoreMenu.js";
 
 export interface SeniorNurseDisposalActFooterProps {
@@ -77,18 +77,18 @@ export const SeniorNurseDisposalActFooter: React.FC<SeniorNurseDisposalActFooter
 					data-testid="approve-act-paper-journal-btn"
 					title={
 						paperJournalAcknowledged
-							? "Утвердить списание (бумажный журнал учтён, старшая медсестра опциональна)"
-							: "Утвердить акт единолично (без комиссии из 3 человек)"
+							? "Утвердить списание (бумажный журнал учтён)"
+							: "Утвердить акт списания материалов"
 					}
 				>
 					<CheckCircle2 size={18} />
 					{isApproved
 						? paperJournalAcknowledged
 							? "Списание утверждено (бумажный журнал учтён)"
-							: "Акт утверждён единолично"
+							: "Акт списания утверждён"
 						: paperJournalAcknowledged
 							? "Утвердить списание (бумажный журнал учтён)"
-							: "Утвердить акт единолично"}
+							: "Утвердить акт списания"}
 				</button>
 			</div>
 		</footer>

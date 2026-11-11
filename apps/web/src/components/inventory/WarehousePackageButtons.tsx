@@ -23,7 +23,7 @@ export const WarehousePackageButtons: React.FC<WarehousePackageButtonsProps> = (
 			aria-busy={submittingPackageId === "carpule_quick"}
 			className="btn-writeoff-anesthetic-carpule h-10 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-98 transition inline-flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 			data-testid="btn-writeoff-anesthetic-carpule"
-			title="Списание использованных карпул анестетика медсестрой без комиссии"
+			title="Списание использованных карпул анестетика"
 		>
 			<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 			<span className="truncate min-w-0">

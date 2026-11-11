@@ -67,7 +67,7 @@ export function useWarehouseTransferPrintHandlers({
 		};
 		if (onConfirmTransfer) void onConfirmTransfer(doc);
 		else if (onDocumentSaved) onDocumentSaved(doc);
-		showToast(hasOverdraft ? "Быстрое списание выполнено (расход сверх остатка, списание с дефицитом)" : "Списание ТМЦ успешно оформлено медсестрой без комиссии из 3 человек", hasOverdraft ? "warning" : "success");
+		showToast(hasOverdraft ? "Списание выполнено с дефицитом остатка" : "Списание материалов успешно оформлено", hasOverdraft ? "warning" : "success");
 		onClose();
 	};
 

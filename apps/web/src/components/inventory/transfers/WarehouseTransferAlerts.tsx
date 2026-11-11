@@ -1,5 +1,5 @@
 import { AlertCircle, AlertTriangle } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { WarehouseTransferLineItem } from "./warehouseTransferEngine.js";
 
 export interface WarehouseTransferAlertsProps {

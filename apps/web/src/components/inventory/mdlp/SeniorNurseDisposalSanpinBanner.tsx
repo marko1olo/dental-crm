@@ -1,5 +1,5 @@
 import { CheckCircle2, ShoppingCart } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SeniorNurseDisposalSanpinBannerProps {
 	readonly paperJournalAcknowledged: boolean;

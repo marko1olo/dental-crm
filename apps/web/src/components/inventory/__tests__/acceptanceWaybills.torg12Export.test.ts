@@ -11,8 +11,9 @@ describe("AcceptanceWaybills: ТОРГ-12 Form & CSV Export", () => {
 		const waybill = createSampleDentalWaybill();
 		const html = generateTorg12Html(waybill, { nameRu: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", inn: "7701987654" });
 
-		assert.ok(html.includes("Унифицированная форма № ТОРГ-12"));
-		assert.ok(html.includes("Госкомстата России"));
+		assert.ok(html.includes("Приходная накладная материалов клиники"));
+		assert.ok(html.includes("ПРИХОДНАЯ НАКЛАДНАЯ МАТЕРИАЛОВ"));
+		assert.ok(!html.includes("Госкомстата России"));
 		assert.ok(html.includes(waybill.supplier.name));
 		assert.ok(html.includes(waybill.supplier.inn));
 		assert.ok(html.includes(waybill.waybillNumber));

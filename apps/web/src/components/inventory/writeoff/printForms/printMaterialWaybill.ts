@@ -98,7 +98,7 @@ export function generateFormM11Html(
 	}).join("\n");
 
 	return `<!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><title>Форма М-11 № ${doc.actNumber}</title>
+<html lang="ru"><head><meta charset="utf-8"><title>Требование на выдачу материалов № ${doc.actNumber}</title>
 <style>
 	@page { size: A4 landscape; margin: 10mm; }
 	body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 8pt; color: #000; line-height: 1.25; }
@@ -110,12 +110,11 @@ export function generateFormM11Html(
 	.signs { display: flex; justify-content: space-between; margin-top: 20px; font-size: 8pt; }
 </style></head><body>
 	<div class="form-header">
-		Типовая межотраслевая форма № <strong>М-11</strong><br>
-		Утверждена постановлением Госкомстата России от 30.10.97 № 71а<br>
-		Код по ОКУД <strong>0315003</strong>
+		Требование на выдачу материалов клиники<br>
+		Стоматологическая клиника DENTE
 	</div>
 	<div style="margin-bottom: 8px;"><strong>Организация:</strong> ${clinicName}</div>
-	<div class="title">ТРЕБОВАНИЕ-НАКЛАДНАЯ № ${doc.actNumber} от ${doc.actDate} г.</div>
+	<div class="title">ТРЕБОВАНИЕ НА ВЫДАЧУ МАТЕРИАЛОВ № ${doc.actNumber} от ${doc.actDate} г.</div>
 	<table>
 		<thead>
 			<tr>

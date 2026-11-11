@@ -6,7 +6,7 @@ import path from "node:path";
 describe("Warehouse Suite: Anti-Jargon & Zero Emojis", () => {
 	const filesToInspect = [
 		"WarehouseStockAlertsBar.tsx",
-		"WarehouseOverviewTab.tsx",
+		"WarehouseStockTable.tsx",
 		"WarehouseWaybillsTab.tsx",
 		"WarehouseInventoryTab.tsx",
 		"WarehouseBatchTrackingModal.tsx",

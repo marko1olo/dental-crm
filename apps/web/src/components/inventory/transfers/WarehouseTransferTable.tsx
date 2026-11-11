@@ -1,5 +1,5 @@
 import { Boxes } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { WarehouseTransferLineItem } from "./warehouseTransferEngine.js";
 import { WarehouseTransferTableRow } from "./WarehouseTransferTableRow.js";
 

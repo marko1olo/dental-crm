@@ -35,7 +35,7 @@ describe("Wave 64 (Feature 253): Package WriteOff & Soft Overdraft", () => {
 		assert.ok(result.actNumber.startsWith("АКТ-СПИС-ПК-"));
 		assert.equal(emittedToastType, "success");
 		assert.ok(emittedToastMessage.includes("успешно списан"));
-		assert.ok(emittedToastMessage.includes("без комиссии из 3 человек"));
+		assert.ok(!emittedToastMessage.includes("без комиссии из 3 человек"));
 	});
 
 	it("6. Мягкий овердрафт (allowSoftOverdraft: true): при остатке 0 операция НЕ блокируется и выдается warning toast", async () => {
