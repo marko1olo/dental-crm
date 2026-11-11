@@ -34,6 +34,44 @@ function isDbUnavailable(err: unknown): boolean {
 }
 
 /**
+ * Допустимые показания апекслокатора (включая микроны, миллиметры и рентгенологические отметки)
+ * Устраняет 400 Bad Request при выборе любых вариантов в UI (Мандаты 8e, 8n).
+ */
+export const validApexReadings: ReadonlySet<string> = new Set([
+	"0.0 (Apex)",
+	"0.0 Apex",
+	"0.0",
+	"-0.5 мм",
+	"-0.5 mm",
+	"-0.5 Apex",
+	"-0.5",
+	"+0.5 мм",
+	"+0.5 mm",
+	"+0.5 Apex",
+	"+0.5",
+	"-1.0 мм",
+	"-1.0 mm",
+	"-1.0 Apex",
+	"-1.0",
+	"-1.5 мм",
+	"-1.5 mm",
+	"-1.5 Apex",
+	"-1.5",
+	"+1.0 мм",
+	"+1.0 mm",
+	"+1.0 Apex",
+	"+1.0",
+	"+1.5 мм",
+	"+1.5 mm",
+	"+1.5 Apex",
+	"+1.5",
+	"За апексом",
+	"Over-apex",
+	"Apex 0.0",
+	"0.0 Apex (Raypex 6)",
+]);
+
+/**
  * Расширенная схема для сохранения эндодонтического протокола каналов зуба
  * Включает машинные инструменты NiTi (WaveOne/ProTaper), ирригацию, апекс-ориентиры, силер и Ca(OH)2.
  */
@@ -304,18 +342,33 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 
 		// Нормализация каналов с сохранением флага облитерации, апекслокатора и инструментов (Мандаты 8e, 8n)
 		const sanitizedCanals = parsed.data.canals.map((c) => {
-			let workingLength = c.workingLengthMm;
-			if (typeof workingLength === "number") {
-				if (Number.isNaN(workingLength) || !Number.isFinite(workingLength) || workingLength < 0) {
+			const isObliterated = Boolean((c as unknown as { isObliterated?: boolean }).isObliterated);
+			let workingLength: number;
+			if (isObliterated) {
+				workingLength = 0;
+			} else {
+				const raw = c.workingLengthMm;
+				const parsedWl =
+					typeof raw === "number"
+						? raw
+						: Number.parseFloat(String(raw || "").replace(",", "."));
+				if (Number.isNaN(parsedWl) || !Number.isFinite(parsedWl) || parsedWl <= 0) {
 					workingLength = 0;
-				} else if (workingLength > 40) {
-					workingLength = 40;
+				} else {
+					// Валидация строго в физиологическом диапазоне 10–35 мм с шагом 0.5 мм
+					const clamped = Math.max(10, Math.min(35, Math.round(parsedWl * 2) / 2));
+					workingLength = clamped;
 				}
 			}
+
+			const rawApex = (c.apexLocatorReading || parsed.data.apexLocator || "0.0 (Apex)").trim();
+			const apexLocatorReading = rawApex || "0.0 (Apex)";
+
 			return {
 				...c,
+				isObliterated,
 				workingLengthMm: workingLength,
-				apexLocatorReading: c.apexLocatorReading || parsed.data.apexLocator || "0.0 (Apex)",
+				apexLocatorReading,
 				masterFile: c.masterFile || c.masterApicalFile || "#25.04",
 				masterCone: c.masterCone || "Гуттаперча 0.04",
 				referencePoint: c.referencePoint || "Бугор зуба",

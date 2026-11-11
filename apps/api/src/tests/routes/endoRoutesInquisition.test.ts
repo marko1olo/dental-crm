@@ -193,4 +193,66 @@ describe("RED TEAM INQUISITION: Endodontics & Canal Working Length Integrity", (
 
 		await app.close();
 	});
+
+	it("5. Contract Normalization: Handles string working length ('21.5', '20,0') and extended apex locator ('-1.0 мм')", async () => {
+		const app = Fastify();
+		await registerOdontogramRoutes(app);
+		await app.ready();
+
+		const payload = {
+			canals: [
+				{
+					id: "c-mb1",
+					canalName: "MB1",
+					workingLengthMm: "21.5",
+					apexLocatorReading: "-1.0 мм",
+					masterFile: "#25.04",
+					masterCone: "Гуттаперча 0.04",
+					referencePoint: "Бугор",
+					taper: ".04",
+					obturationTechnique: "Латеральная компакция",
+					sealer: "AH Plus",
+					isObliterated: false,
+				},
+				{
+					id: "c-db",
+					canalName: "DB",
+					workingLengthMm: "20,0",
+					apexLocatorReading: "-1.5 mm",
+					masterFile: "#25.04",
+					masterCone: "Гуттаперча 0.04",
+					referencePoint: "Бугор",
+					taper: ".04",
+					obturationTechnique: "Латеральная компакция",
+					sealer: "AH Plus",
+					isObliterated: false,
+				},
+			],
+			irrigation: "NaOCl 3%",
+			stageStamp: "COMPLETED",
+		};
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/patients/pat-1/tooth-states/16/endo",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+				"x-dente-staff-token": doctorToken,
+				"content-type": "application/json",
+			},
+			payload,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const json = JSON.parse(res.payload);
+		assert.equal(json.success, true);
+		assert.equal(json.clinicalData.canals[0].workingLengthMm, 21.5);
+		assert.equal(typeof json.clinicalData.canals[0].workingLengthMm, "number");
+		assert.equal(json.clinicalData.canals[0].apexLocatorReading, "-1.0 мм");
+		assert.equal(json.clinicalData.canals[1].workingLengthMm, 20.0);
+		assert.equal(typeof json.clinicalData.canals[1].workingLengthMm, "number");
+		assert.equal(json.clinicalData.canals[1].apexLocatorReading, "-1.5 mm");
+
+		await app.close();
+	});
 });

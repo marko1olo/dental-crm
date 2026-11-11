@@ -8,7 +8,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import type { ToothData, ToothState } from "./ToothChart";
-import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
+import { EndodonticStudioModal } from "../endo/EndodonticStudioModal";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import { showToast } from "../GlobalToast";
 
@@ -169,9 +169,9 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 				</React.Suspense>
 			)}
 
-			{/* Tier 2 Endo Canal Measurement Drawer */}
+			{/* Tier 3 Endodontic Studio Modal */}
 			{endoDrawerTooth !== null && (
-				<EndoCanalMeasurementDrawer
+				<EndodonticStudioModal
 					isOpen={endoDrawerTooth !== null}
 					onClose={onCloseEndoDrawer}
 					toothNumber={endoDrawerTooth}

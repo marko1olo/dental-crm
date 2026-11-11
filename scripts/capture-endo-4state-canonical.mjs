@@ -13,7 +13,7 @@ import { chromium, devices } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CURRENT_CONV_ID = "b2393548-80c2-47e0-8360-d924199bf8cb";
+const CURRENT_CONV_ID = "ffe99d3a-6840-43da-a656-b8d5a93ed559";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_ENDO = path.resolve(__dirname, "../docs/proofs/endo");
 const OUT_THERAPY = path.resolve(__dirname, "../docs/proofs/therapy");
@@ -145,7 +145,15 @@ async function main() {
 			const targetUrl = `http://127.0.0.1:5173/?stand=endo&demo=true#endo`;
 			console.log(`Navigating to ${targetUrl}...`);
 			await page.goto(targetUrl, { waitUntil: "commit", timeout: 30000 });
-			await page.waitForTimeout(2000);
+			await page.waitForTimeout(1000);
+
+			// Ждем полной гидратации и исчезновения экрана загрузки
+			await page.waitForFunction(() => {
+				const bodyText = document.body ? document.body.innerText : "";
+				return !bodyText.includes("Загрузка системы...");
+			}, { timeout: 20000 }).catch(() => {});
+
+			await page.waitForTimeout(1000);
 			await suppressOverlays(page);
 
 			// Применяем тему
@@ -157,20 +165,25 @@ async function main() {
 				document.body.setAttribute("data-theme", theme);
 				document.body.classList.toggle("dark", isDark);
 				document.body.classList.toggle("light", !isDark);
-
-				// Гарантированно открываем эндодонтический лончер
-				window.dispatchEvent(new CustomEvent("dente:open-endo", { detail: { toothNumber: 16 } }));
-				window.dispatchEvent(new HashChangeEvent("hashchange"));
 			}, { theme: t.theme });
 
-			await page.waitForSelector('[data-testid="endodontic-studio-modal"], [data-testid="endo-canal-log-modal"]', { timeout: 15000 })
-				.catch((e) => console.log("Wait selector notice:", e.message));
+			// Надежный цикл открытия модалки через custom event
+			for (let attempt = 0; attempt < 8; attempt++) {
+				const modal = await page.$('[data-testid="endodontic-studio-modal"], [data-testid="endo-canal-log-modal"]');
+				if (modal) break;
+				await page.evaluate(() => {
+					window.dispatchEvent(new CustomEvent("dente:open-endo", { detail: { toothNumber: 16 } }));
+					window.dispatchEvent(new HashChangeEvent("hashchange"));
+				});
+				await page.waitForTimeout(600);
+			}
 
+			await page.waitForSelector('[data-testid="endodontic-studio-modal"], [data-testid="endo-canal-log-modal"]', { timeout: 15000 });
 			await page.waitForTimeout(1000);
 			await suppressOverlays(page);
 
-			// Нажимаем на норму обтурации в 1 клик, чтобы отобразить заполненный протокол
-			const normBtn = await page.$('[data-testid="btn-endo-1click-obturation-norm"]');
+			// Нажимаем на норму обтурации (физиологическая норма), чтобы отобразить заполненный протокол
+			const normBtn = await page.$('[data-testid="btn-endo-obturation-norm"], [data-testid="btn-endo-1click-obturation-norm"]');
 			if (normBtn) {
 				await normBtn.click();
 				await page.waitForTimeout(500);

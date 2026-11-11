@@ -14,12 +14,24 @@ import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
-	calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, QUICK_LENGTH_CHIPS, QUICK_MAF_OPTIONS,
-	type ChairsideEndoQuickBarProps, type EndoStageStamp, type QuickCanalState,
-} from "./endoCanalData";
-import { getAnatomicalWorkingLength } from "./endodonticsCatalogData";
+	calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, getAnatomicalWorkingLength,
+	type EndoStageStamp, type QuickCanalState,
+} from "./endodonticsCatalogData";
+export { getChairsideDefaultCanals, type QuickCanalState, type EndoStageStamp };
 
-export * from "./endoCanalData";
+export interface ChairsideEndoQuickBarProps {
+	readonly activeTooth?: number | undefined; readonly toothState?: string | undefined; readonly patientId?: string | undefined;
+	readonly isLocked?: boolean | undefined; readonly onInsertToDiary?: ((soapText: string, canals: EndoCanalData[]) => void) | undefined;
+	readonly onOpenFullModal?: (() => void) | undefined; readonly className?: string | undefined;
+}
+
+export const QUICK_LENGTH_CHIPS = [19, 20, 21, 21.5, 22] as const;
+export const QUICK_MAF_OPTIONS = [
+	{ label: "25/.04", maf: "#25", taper: ".04", system: "ProTaper / NiTi" },
+	{ label: "30/.04", maf: "#30", taper: ".04", system: "ProTaper / NiTi" },
+	{ label: "25/.06", maf: "#25", taper: ".06", system: "ProTaper / NiTi" },
+	{ label: "20/.04", maf: "#20", taper: ".04", system: "ProTaper / NiTi" },
+] as const;
 
 /** Генерация чистого SOAP-протокола эндодонтии без сырого канцелярита (Мандат 8x) */
 export function generateSoapEndoProtocol({
@@ -67,18 +79,10 @@ export function generateSoapEndoProtocol({
 
 /** Сохранение параметров каналов в Fastify API и списание расходников (Мандаты 8e, 8n) */
 export function executeChairsideTransferToDiary({
-	activeTooth,
-	toothAnatomicalName,
-	toothState,
-	canals,
-	patientId,
-	onInsertToDiary,
+	activeTooth, toothAnatomicalName, toothState, canals, patientId, onInsertToDiary,
 }: {
-	activeTooth: number;
-	toothAnatomicalName: string;
-	toothState?: string | undefined;
-	canals: QuickCanalState[];
-	patientId?: string | undefined;
+	activeTooth: number; toothAnatomicalName: string; toothState?: string | undefined;
+	canals: QuickCanalState[]; patientId?: string | undefined;
 	onInsertToDiary?: ((soapText: string, canals: EndoCanalData[]) => void) | undefined;
 }): void {
 	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
@@ -134,7 +138,6 @@ export function executeChairsideTransferToDiary({
 			}
 		}
 	} catch { /* soft */ }
-
 	if (patientId) {
 		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
 			method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),

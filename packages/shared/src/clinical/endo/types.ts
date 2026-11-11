@@ -36,6 +36,8 @@ export interface EndoToothClinicalData {
 	rotarySystem?: string;
 	radiologyControl?: string;
 	apexLocator?: string;
+	stageStamp?: EndoStageStamp | string;
+	notes?: string;
 	updatedAt?: string;
 }
 

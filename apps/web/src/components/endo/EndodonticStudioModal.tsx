@@ -28,20 +28,20 @@ import { EndoStudioToolbar, EndoCanalsTableSection } from "./studioModules";
 export interface EndodonticStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly toothNumber?: number;
-	readonly toothState?: string;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly doctorName?: string;
-	readonly clinicName?: string;
-	readonly clinicPhone?: string;
-	readonly initialCanals?: readonly EndoCanalData[];
-	readonly initialIrrigation?: string;
-	readonly initialRotarySystem?: string;
-	readonly initialRadiologyControl?: string;
-	readonly onInsertToProtocol?: (protocolText: string, canals: EndoCanalData[]) => void;
-	readonly onSaveCanals?: (canals: EndoCanalData[], clinicalData: EndoToothClinicalData) => Promise<void> | void;
-	readonly onSave?: (savedCanals: EndoCanalData[], noteText?: string) => void;
+	readonly toothNumber?: number | undefined;
+	readonly toothState?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly initialCanals?: readonly EndoCanalData[] | undefined;
+	readonly initialIrrigation?: string | undefined;
+	readonly initialRotarySystem?: string | undefined;
+	readonly initialRadiologyControl?: string | undefined;
+	readonly onInsertToProtocol?: ((protocolText: string, canals: EndoCanalData[]) => void) | undefined;
+	readonly onSaveCanals?: ((canals: EndoCanalData[], clinicalData: EndoToothClinicalData) => Promise<void> | void) | undefined;
+	readonly onSave?: ((savedCanals: EndoCanalData[], noteText?: string) => void) | undefined;
 }
 
 export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
@@ -144,11 +144,15 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		setStageStamp(proto.stageStamp);
 		setIrrigation(proto.irrigation);
 		setRotarySystem(proto.rotarySystem);
-		setCanals((prev) => prev.map((c) => ({
-			...c, isObliterated: false,
-			workingLengthMm: c.workingLengthMm > 0 ? c.workingLengthMm : getAnatomicalWorkingLength(activeTooth, c.canalName),
-			obturationTechnique: proto.obturationTechnique, sealer: proto.defaultSealer,
-		})));
+		setCanals((prev) => prev.map((c) => {
+			const numWl = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
+			const validWl = Number.isFinite(numWl) && numWl > 0 ? numWl : getAnatomicalWorkingLength(activeTooth, c.canalName);
+			return {
+				...c, isObliterated: false,
+				workingLengthMm: validWl,
+				obturationTechnique: proto.obturationTechnique, sealer: proto.defaultSealer,
+			};
+		}));
 		showToast(`Применён протокол: ${proto.title}`, "info", 1800);
 	}, [activeTooth]);
 

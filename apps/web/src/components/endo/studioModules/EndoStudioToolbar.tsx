@@ -25,9 +25,9 @@ export function EndoStudioToolbar(props: EndoStudioToolbarProps) {
 			<div className="flex items-center gap-1.5 flex-wrap">
 				<button
 					type="button"
-					data-testid="btn-endo-1click-obturation-norm"
+					data-testid="btn-endo-obturation-norm"
 					onClick={props.onApplyOneClickObturationNorm}
-					className="btn-endo-1click-obturation-norm secondary-button min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+					className="btn-endo-obturation-norm secondary-button min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
 					title="Мгновенно обтурировать каналы анатомической нормой: длина по FDI, МАФ 25.04, AH Plus, NaOCl 3%, латеральная компакция"
 				>
 					<Check size={14} className="stroke-[2.5] text-[var(--teal,#0d9488)]" />

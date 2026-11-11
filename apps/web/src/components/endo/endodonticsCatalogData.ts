@@ -6,7 +6,9 @@
  * MAF (#20.04..#35.04), ирригации (NaOCl 3% + EDTA 17% УЗ) и расчета в копейках BigInt (Мандаты 8e, 8n, 8wy).
  */
 
-import type { EndoCanalData, EndoPatientMemoParams, EndoToothClinicalData } from "@dental/shared";
+import {
+	calculateEndoBillingAndMaterialsEstimate, type EndoCanalData, type EndoPatientMemoParams, type EndoToothClinicalData,
+} from "@dental/shared";
 
 export {
 	ALL_ISO_ENDO_OPTIONS, applyAnatomicalWorkingLengths, applyCaOh2EndoProtocol, applyExpressApicalEndoProtocol,
@@ -91,11 +93,7 @@ export const VERTUCCI_CANAL_TYPES = [
 ] as const;
 
 export interface ToothCanalAnatomySpec {
-	minWlMm: number;
-	maxWlMm: number;
-	avgWlMm: number;
-	typicalCanalsCount: number;
-	vertucciType: string;
+	minWlMm: number; maxWlMm: number; avgWlMm: number; typicalCanalsCount: number; vertucciType: string;
 }
 
 /** Анатомические границы и статистика длин корней зубов человека по FDI (11..48) */
@@ -267,23 +265,47 @@ export interface EndoBillingCostBreakdown {
 }
 
 export function calculateEndoTreatmentCostKopecks(params: {
-	toothNumber: number; canalsCount: number; protocolId: EndoProtocolPresetId; withRvg?: boolean; withMicroscope?: boolean;
+	toothNumber: number;
+	canalsCount: number;
+	protocolId: EndoProtocolPresetId;
+	withRvg?: boolean;
+	withMicroscope?: boolean;
 }): EndoBillingCostBreakdown {
 	const count = Math.max(1, params.canalsCount);
+	const isRetreatment = params.protocolId === "retreatment_unsealing";
+	const isTemp = params.protocolId === "periodontitis_temp" || isRetreatment;
+	const estimate = calculateEndoBillingAndMaterialsEstimate({
+		toothNumber: params.toothNumber,
+		stageStamp: isTemp ? "TEMP_CAOH2" : "COMPLETED",
+		isRetreatment,
+		canals: Array.from({ length: count }, (_, i) => ({
+			id: `c-${i}`, canalName: `К${i + 1}`, referencePoint: "Бугор", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04",
+			obturationTechnique: isTemp ? "Временная обтурация Ca(OH)2" : "Гуттаперча + Силер (AH Plus)",
+			sealer: isTemp ? "Каласепт (Ca(OH)2)" : "AH Plus",
+		})),
+	});
+
 	const services: Array<{ code: string; title: string; priceKopecks: bigint; quantity: number }> = [];
-
-	if (params.protocolId === "retreatment_unsealing") {
-		services.push({ code: "A16.07.082.001", title: `Распломбировка корневого канала зуба #${params.toothNumber} (х${count})`, priceKopecks: 220_000n * BigInt(count), quantity: count });
+	if (isRetreatment) {
+		services.push({
+			code: "A16.07.082.001",
+			title: `Распломбировка корневого канала зуба #${params.toothNumber} (х${count})`,
+			priceKopecks: 220_000n * BigInt(count),
+			quantity: count,
+		});
 	}
-	services.push({ code: "A16.07.030.001", title: `Инструментальная обработка корневого канала зуба #${params.toothNumber} машинным NiTi (х${count})`, priceKopecks: 250_000n * BigInt(count), quantity: count });
-	services.push({ code: "A16.07.030.002", title: `Антисептическая ирригация NaOCl 3% + EDTA 17% с УЗ-активацией (зуб #${params.toothNumber})`, priceKopecks: 120_000n, quantity: 1 });
-
+	for (const s of estimate.services804n) {
+		if (s.code804n.startsWith("A16.07.082")) continue;
+		services.push({ code: s.code804n, title: s.title, priceKopecks: BigInt(s.totalPriceKopecks), quantity: s.quantity });
+	}
 	if (params.protocolId === "periodontitis_temp" || params.protocolId === "retreatment_unsealing") {
-		services.push({ code: "A16.07.082.002", title: `Временное пломбирование каналов лечебной пастой Ca(OH)2 (х${count})`, priceKopecks: 150_000n * BigInt(count), quantity: count });
-	} else {
-		services.push({ code: "A16.07.008.001", title: `Пломбирование корневого канала гуттаперчей и силером AH Plus (х${count})`, priceKopecks: 280_000n * BigInt(count), quantity: count });
+		services.push({
+			code: "A16.07.082.002",
+			title: `Временное пломбирование каналов лечебной пастой Ca(OH)2 (х${count})`,
+			priceKopecks: 150_000n * BigInt(count),
+			quantity: count,
+		});
 	}
-
 	if (params.withRvg !== false) {
 		services.push({ code: "A06.07.003", title: "Прицельная радиовизиография контрольная (1 снимок)", priceKopecks: 60_000n, quantity: 1 });
 	}
