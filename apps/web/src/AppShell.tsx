@@ -298,7 +298,17 @@ function isStandaloneActive(): boolean {
 		s.includes("messaging_hub") ||
 		h.includes("messaging_hub") ||
 		s.includes("communications") ||
-		h.includes("communications")
+		h.includes("communications") ||
+		s.includes("ortho") ||
+		h.includes("ortho") ||
+		s.includes("orthodontics") ||
+		h.includes("orthodontics") ||
+		s.includes("aligners") ||
+		h.includes("aligners") ||
+		s.includes("ceph") ||
+		h.includes("ceph") ||
+		s.includes("trg") ||
+		h.includes("trg")
 	);
 }
 

@@ -1269,6 +1269,49 @@
   - Все машинные гейты пройдены: `npm run check:encoding` (22 550 файлов), `npm run check:stub-overrides`, `npm run check:fetch-response` (13 005 файлов), `npm run check:dynamic-imports` (520 импортов).
   - 4-State Visual Proofs (PC Light 104 KB, PC Dark 102 KB, Mobile Light 134 KB, Mobile Dark 133 KB) в `docs/proofs/telephony/` отсмотрены лично глазами через `read_file`.
 
+### [TEL-08] [SEV-1] [ИСПРАВЛЕНО] Тотальная Red Team зачистка мертвого стека messaging, закрытие дыры Asterisk AMI, ликвидация фейковых WebRTC метрик и снос дублирующих табов (DEF-TEL-05..11)
+- **Файлы:**
+  - Удалены через `git rm -f`:
+    * `apps/api/src/services/messaging/notificationGateway.ts` и `__tests__/notificationGateway.test.ts`
+    * `apps/api/src/services/messaging/channelRegistry.ts`
+    * `apps/api/src/services/messaging/recallStateMachine.ts` и `__tests__/recallStateMachine.test.ts`
+    * `apps/api/src/services/messaging/templateEngine.ts` и `__tests__/templateEngine.test.ts`
+    * `apps/api/src/services/messaging/whatsappKapsoAdapter.ts` и `__tests__/whatsappKapsoAdapter.test.ts`
+    * `apps/api/src/routes/whatsappWebhook.ts` и `whatsappWebhook.test.ts`
+    * `apps/api/src/services/notificationWorker.ts` и `notificationWorker.test.ts`
+    * `apps/web/src/components/communications/communicationsViewModules/OmnichannelChatInlineView.tsx`
+  - Модифицированы (SSOT):
+    * [`apps/api/src/routes/telephony/sip/handleAsteriskAmiEvent.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/sip/handleAsteriskAmiEvent.ts)
+    * [`apps/api/src/routes/omnichannelBots/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/omnichannelBots/index.ts)
+    * [`apps/api/src/services/communications/dispatchWorker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/dispatchWorker.ts)
+    * [`apps/api/src/serverModules/lifecycleHooks.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/serverModules/lifecycleHooks.ts)
+    * [`apps/web/src/components/communications/communicationsViewModules/CommunicationsActiveChatPane.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/communicationsViewModules/CommunicationsActiveChatPane.tsx)
+    * [`apps/web/src/components/communications/communicationsViewModules/CommunicationsChannelFilterBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/communicationsViewModules/CommunicationsChannelFilterBar.tsx)
+    * [`apps/web/src/components/chat/operatorDesk/useOmnichannelOperatorDesk.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/chat/operatorDesk/useOmnichannelOperatorDesk.ts)
+    * [`apps/web/src/components/telephony/telephonyCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyCatalogData.ts)
+    * [`apps/web/src/components/telephony/telephonyDemoFixtures.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyDemoFixtures.ts)
+    * [`apps/web/src/store/telephonyModules/telephonyAudioStreamManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyModules/telephonyAudioStreamManager.ts)
+    * [`apps/web/src/components/telephony/drawerModules/activeCallPanel/TelephonyDrawerLeadAndPatientCreate.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/drawerModules/activeCallPanel/TelephonyDrawerLeadAndPatientCreate.tsx)
+    * [`apps/web/src/components/cashbox/DirectCashboxLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/DirectCashboxLauncher.tsx)
+- **Суть ликвидации дефектов:**
+  1. **Ликвидация заброшенного дублирующего стека (Мандат 8bf):** Полностью снесен параллельный мертвый стек `apps/api/src/services/messaging/` (5 файлов + юнит-тесты), мертвый роут `whatsappWebhook.ts`, `notificationWorker.ts` и `OmnichannelChatInlineView.tsx`. Канонический воркер диспетчеризации сообщений — `services/communications/dispatchWorker.ts`.
+  2. **[DEF-TEL-05] Ликвидация дублирующих табов:** В `CommunicationsActiveChatPane.tsx` и `CommunicationsChannelFilterBar.tsx` вкладки `omnichannel` и `bot_inbox` консолидированы в единый клинический раздел «Чаты и мессенджеры (WhatsApp / Telegram / SMS / Боты)», убран лишний промежуточный слой `OmnichannelChatInlineView`.
+  3. **[DEF-TEL-06] Защита тестовых роутов ботов:** Маршрут `POST /api/bots/test-incoming` защищен барьером: в боевом режиме без демо-хедера возвращается HTTP 403 Forbidden.
+  4. **[DEF-TEL-07] Защита симуляции входящих:** В `useOmnichannelOperatorDesk.ts` функция `handleSimulateIncoming` ограничена вызовом строго при `isDemoShowcaseMode() === true`.
+  5. **[DEF-TEL-08] Изоляция мок-каталога:** Статический демо-массив звонков вынесен из `telephonyCatalogData.ts` в изолированный файл `telephonyDemoFixtures.ts` (Мандат 8wy).
+  6. **[DEF-TEL-09] Ликвидация фейковых WebRTC метрик:** В `telephonyAudioStreamManager.ts` устранены захардкоженные заглушки (12ms jitter / 25ms RTT), метрики до установления соединения инициализируются нулями.
+  7. **[DEF-TEL-10] [SEV-1] Закрытие дыры изоляции арендатора в Asterisk AMI:** В `handleAsteriskAmiEvent.ts` устранен обход `params.organizationId`, внедрена обязательная валидация через `requireResolvedOrganizationId` с контролем несовпадения tenant ID и типизацией `AsteriskAmiEventPayload`.
+  8. **[DEF-TEL-11] Ликвидация хардкодных цветов и сленга:** В `TelephonyDrawerLeadAndPatientCreate.tsx` хардкодный класс `bg-teal-600` заменен на канонический токен `bg-[var(--primary)] text-white hover:bg-[var(--primary-dark,#0f766e)]`, дев-сленг «за 5 секунд» удален, кнопка переименована в «+ Создать карту пациента».
+- **Машинные гейты и доказательства:**
+  - 160/160 тестов во всех 40 файлах телефонии Vitest пройдены (100% green).
+  - 34/34 тестов Fastify API Telephony & Outbox пройдены (100% green).
+  - Машинные гейты: `check:encoding` (21 747 файлов), `check:buttons` (0 violations), `check:css-tokens` (0 unresolved), `check:react-hooks` (3 553 файла, 0 violations).
+  - 4-State Visual Proofs сняты на живом приложении и лично проверены через `read_file` в `docs/proofs/telephony/`:
+    * ☀️ PC Light (1440x900): [`docs/proofs/telephony/01_telephony_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/01_telephony_pc_light_1440x900.png) (106 KB)
+    * 🌙 PC Dark (1440x900): [`docs/proofs/telephony/02_telephony_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/02_telephony_pc_dark_1440x900.png) (105 KB)
+    * 📱 Mobile Light (390x844): [`docs/proofs/telephony/03_telephony_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/03_telephony_mobile_light_390x844.png) (137 KB)
+    * 🌙 Mobile Dark (390x844): [`docs/proofs/telephony/04_telephony_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/04_telephony_mobile_dark_390x844.png) (137 KB)
+
 ---
 
 ## 10. 📊 АНАЛИТИКА РУКОВОДИТЕЛЯ, ДАШБОРДЫ И МЕТРИКИ
@@ -4903,6 +4946,49 @@ ead_file по 8 осям качества Хаммера:
   - 🌙 PC Dark (1440x900): [`docs/proofs/patients/02_patient_card_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/02_patient_card_modal_pc_dark_1440x900.png) (88.3 KB $\ge 20$KB) — 100% темные токены `var(--paper-strong)`, WCAG AAA контраст, ноль белых пятен.
   - 📱 Mobile Light (390x844): [`docs/proofs/patients/03_patient_card_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/03_patient_card_mobile_light_390x844.png) (116.9 KB $\ge 20$KB) — Нативный Apple HIG Mobile Bottom Sheet, слово «Сохранить» отображается полностью без обрезаний (Zero-Clipping доказан).
   - 🌙 Mobile Dark (390x844): [`docs/proofs/patients/04_patient_card_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/patients/04_patient_card_mobile_dark_390x844.png) (118.9 KB $\ge 20$KB) — Тёмный мобильный режим карточки пациента, 0px горизонтального скролла, безупречная верстка.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ОРТОДОНТИЯ, ТРГ И ЦЕФАЛОМЕТРИЯ (Orthodontics & TRG Tracing Fixer) [DEF-ORTHO-01..06]
+- **Хирург-чинильщик:** Red Team Ортодонтии, ТРГ и цефалометрии (Orthodontics & TRG Fixer Surgeon).
+- **Мандаты:** 8bd, 8be, 8bf, 8e, 8n, 8x, 8zg, 8am, 8al, 8az, 8an, 8bi, 8bj, Закон №0, Решение по Rotten Seeds.
+- **Физически удаленные файлы-паразиты и фасады:**
+  1. `apps/api/src/routes/orthodontics.ts` (`git rm -f` — мертвый фасад-паразит вырезан, импорты переведены напрямую на `apps/api/src/routes/orthodontics/index.js`).
+- **Модифицированные боевые компоненты:**
+  1. `apps/api/src/serverModules/routeRegistrar.ts`
+  2. `apps/api/src/tests/routes/orthodonticsRoutes.test.ts`
+  3. `apps/web/src/AppShell.tsx`
+  4. `apps/web/src/components/orthodontics/CephalometricCanvas.tsx`
+  5. `apps/web/src/components/orthodontics/orthodonticsCatalogData.ts`
+  6. `apps/web/src/components/orthodontics/OrthodonticsStudioModal.tsx`
+  7. `apps/web/src/components/orthodontics/OrthodonticsTabsContent.tsx`
+  8. `apps/web/src/components/radiology/cephModal/CephAnalysisControls.tsx`
+  9. `apps/web/src/components/radiology/cephModal/types.ts`
+  10. `apps/web/src/components/radiology/cephModal/useCephLandmarks.ts`
+  11. `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx`
+  12. `scripts/capture-ortho-canonical-4proofs.cjs`
+- **100% Ликвидация дефектов инквизиции:**
+  1. **DEF-ORTHO-01 (Ликвидация The Hollow Canvas в цефалометрии):** В `CephalometricCanvas.tsx` восстановлен честный рендеринг реальной боковой рентгенограммы ТРГ (`/radiology/sample_trg_cephalogram.jpg`, 635 КБ), интерактивный векторный SVG-оверлей плоскостей (FH, SN, Ba-N, NA, NB, Y-axis, MP, небная ANS-PNS) и 16 анатомических точек (S, N, A, B, Pog, Gn, Me, Go, Ba, Pt, Or, Po, U1t, U1a, L1t, L1a) с поддержкой drag-and-drop перемещения координат `[x, y]` через Pointer Events API (`setPointerCapture`, `onPointerMove`, `onPointerUp`).
+  2. **DEF-ORTHO-02 (Ликвидация захардкоженного мок-стейта в `createDefaultOrthoProtocolState`):** В `orthodonticsCatalogData.ts` переписан генератор начального состояния: вместо захардкоженного месяца 6 из 18, фейковых фото и предзаполненных углов возвращается честный пустой клинический стейт (`currentStageIndex: 0`, `currentMonth: 0`, `photoStatuses: {}`, `trgValues: null`, `notes: ''`, `clinicalNotes: ''`).
+  3. **DEF-ORTHO-03 (Двусторонняя связка ТРГ-модуля и Орто-Студии):** В `OrthodonticsStudioModal.tsx` поддержан проброс `initialImageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}`, передан коллбэк `onApplyAnalysis` для применения рассчитанных углов ТРГ в клинический протокол без потери контекста. В `OrthodonticsTabsContent.tsx` устранена потенциальная ошибка `protocol.trgValues?.[norm.key] ?? norm.normDeg` при пустом стейте.
+  4. **DEF-ORTHO-04 (Искоренение потемкинских заявлений о CephaloHRNet-W32 и GPU):** В `CephAnalysisControls.tsx` вырезаны псевдо-селекторы GPU/CPU и заявления о нейросетях. Установлен чистый клинический статус «Анатомический шаблон (норма I класса)» и «Калибровка точек».
+  5. **DEF-ORTHO-05 (Унификация сплавов дуг):** В `orthodonticsCatalogData.ts` `ArchwireAlloy` объединен с `ArchwireMaterial` из `@dental/shared/orthodontics/orthoEngine.ts`, устранены костыльные приведения типов `as any`.
+  6. **DEF-ORTHO-06 (Ликвидация тестов-саботажников):** В `orthodonticsSSOTSuite.test.tsx` тесты 10 и 13 переписаны на функциональные тесты честного пустого стейта (DEF-ORTHO-02) и чистоты монтирования `DirectOrthodonticsLauncher`.
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - `orthodonticsSSOTSuite.test.tsx` -> **16/16 PASSED (100% Green)**.
+  - `orthodonticsRoutes.test.ts` (API Fastify & PostgreSQL 18) -> **10/10 PASSED (100% Green)**.
+  - `@dental/shared/orthodontics/*.test.ts` -> **18/18 PASSED (100% Green)**.
+  - `radiologyViewerProtocols.test.ts` -> **16/16 PASSED (100% Green)**.
+  - `npm run check:encoding` -> **Exit Code 0 (21 717 файлов, UTF-8)**.
+  - `npm run check:buttons` -> **Exit Code 0 (0 нарушений, 5 232 TSX)**.
+  - `npm run check:css-tokens` -> **Exit Code 0 (0 неразрешенных var)**.
+  - `npm run check:react-hooks` -> **Exit Code 0 (3 548 файлов с хуками, 0 нарушений)**.
+- **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/orthodontics/01_ortho_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/01_ortho_studio_pc_light_1440x900.png) (744 KB $\ge 20$KB) — Светлая тема, реальный снимок боковой ТРГ, 16 калиброванных анатомических ориентиров, векторные плоскости (FH, SN, Go-Me, ANS-PNS), 0px горизонтального скролла, 0 клиппинга.
+  - 🌙 PC Dark (1440x900): [`docs/proofs/orthodontics/02_ortho_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/02_ortho_studio_pc_dark_1440x900.png) (743 KB $\ge 20$KB) — Глубокая тёмная тема (`#020617`), 100% темные токены, идеальная контрастность рентгенограммы и аннотаций, Primary CTA «Перейти к расчету углов» (`#0d9488`).
+  - 📱 Mobile Light (390x844): [`docs/proofs/orthodontics/03_ortho_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/03_ortho_studio_mobile_light_390x844.png) (569 KB $\ge 20$KB) — Мобильный вид Apple HIG, 0px горизонтального скролла, сенсорные кнопки зума и шторка расчетов углов в зоне досягаемости большого пальца.
+  - 🌙 Mobile Dark (390x844): [`docs/proofs/orthodontics/04_ortho_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/04_ortho_studio_mobile_dark_390x844.png) (572 KB $\ge 20$KB) — Тёмный мобильный вид, контрастные ориентиры и рентгенограмма, безупречная верстка без наездов и обрезаний.
+
 
 
 

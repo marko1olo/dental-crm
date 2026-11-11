@@ -14,7 +14,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { UploadCloud, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 
 export type XrayFilterMode = "normal" | "invert" | "contrast" | "bone_enhance";
-export const SAMPLE_TRG_CEPHALOGRAM_URL = "/demo-assets/trg-sample.png";
+export const SAMPLE_TRG_CEPHALOGRAM_URL = "/radiology/sample_trg_cephalogram.jpg";
 
 export interface PointCoord {
 	x: number;
