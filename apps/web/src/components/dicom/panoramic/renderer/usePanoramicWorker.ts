@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import type { PanoramicWorkerRequest, PanoramicWorkerResponse, Point2D } from "../../../../utils/math/mprMath";
 import { isLowSpecHardware, isHostUnderHeavyLoad } from "../../../../utils/deviceDetection.js";
-import type { VisiographWindowPreset } from "../../../visiograph/VisiographWindowPresets";
+import type { VisiographWindowPreset } from "../../VisiographWindowPresets";
 import { paintHuPixelsToCanvas, type PanoramicVolumeInput } from "../panoramicTypes";
 
 export interface UsePanoramicWorkerParams {

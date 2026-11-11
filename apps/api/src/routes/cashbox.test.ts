@@ -210,6 +210,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 					doctorName: "Главный Врач / Кассир",
 					secureToken: `LO-TEST-${Date.now()}`,
 					priceRub: 5000,
+					labCostRub: 5000,
 					toothFdi: "26",
 					material: "Цирконий",
 					status: "received",
@@ -321,15 +322,17 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 			const headers = createStaffHeaders(orgId, userId, "admin");
 			const base = "/api/cashbox/payments";
 
-			// 1. Платёж без пациента — честный 400, никто «первый попавшийся» не оплачивается
+			// 1. Платёж без явного patientId (Walk-In / розничный чек физлица по 54-ФЗ ст. 1.2, 4.7) —
+			// не требует заведения карты, автоматически проводится через системного покупателя «Розничный покупатель»
 			const noPatientRes = await app.inject({
 				method: "POST",
 				url: base,
 				headers,
 				payload: { amountRub: 1500, method: "cash" },
 			});
-			assert.equal(noPatientRes.statusCode, 400);
-			assert.equal(noPatientRes.json().error, "PatientRequired");
+			assert.equal(noPatientRes.statusCode, 200);
+			assert.equal(noPatientRes.json().success, true);
+			assert.equal(noPatientRes.json().data.amountRub, 1500);
 
 			// 2. Нулевой платёж — 400: акт гарантии оформляется без кассового чека
 			const zeroAmountRes = await app.inject({
@@ -462,6 +465,61 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 				},
 			});
 			assert.equal(nullInnRes.statusCode, 200, "null buyerInn and clientType must pass Zod validation");
+
+			// 9. DEF-CASH-04: Сплит-платеж с несовпадающей суммой частей отклоняется с 400 SplitTenderSumMismatch
+			const splitMismatchRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 5000,
+					amountKopecks: 500000,
+					method: "split",
+					cashAmountKopecks: 200000,
+					electronicAmountKopecks: 200000, // сумма 400000 !== 500000
+					clientMutationId: `cbx-test-split-mismatch-${Date.now()}`,
+				},
+			});
+			assert.equal(splitMismatchRes.statusCode, 400);
+			assert.equal(splitMismatchRes.json().error, "SplitTenderSumMismatch");
+
+			// 10. DEF-CASH-04: Валидный сплит-платеж (сумма частей строго равна сумме чека)
+			const splitValidRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 5000,
+					amountKopecks: 500000,
+					method: "split",
+					cashAmountKopecks: 200000,
+					electronicAmountKopecks: 300000, // сумма 500000 === 500000
+					clientMutationId: `cbx-test-split-valid-${Date.now()}`,
+				},
+			});
+			assert.equal(splitValidRes.statusCode, 200);
+			assert.equal(splitValidRes.json().success, true);
+			const validPaymentId = splitValidRes.json().data.id;
+
+			// 11. DEF-CASH-03: Возврат из кассы связывается с фискальной очередью (receiptType: "income_return")
+			const refundRes = await app.inject({
+				method: "POST",
+				url: "/api/cashbox/refund",
+				headers,
+				payload: {
+					paymentId: validPaymentId,
+					amountRub: 2000,
+					reasonText: "Отказ от части процедуры (54-ФЗ возврат прихода)",
+				},
+			});
+			assert.equal(refundRes.statusCode, 200);
+			const refundJson = refundRes.json();
+			assert.equal(refundJson.success, true);
+			assert.ok(refundJson.refundPaymentId, "Должна быть создана отрицательная запись в payments");
+			assert.ok(refundJson.fiscalReceiptQueueId, "Чек должен быть поставлен в fiscalReceiptQueue");
+			assert.ok(refundJson.fiscalReceiptNumber, "Должен быть сгенерирован номер чека возврата");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

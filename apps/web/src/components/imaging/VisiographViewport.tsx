@@ -1,4 +1,4 @@
-import { VisiographStudioCanvas } from "../visiograph/VisiographStudioCanvas";
+import { VisiographStudyViewer } from "../radiology/VisiographStudyViewer";
 import { ClinicalImageViewer } from "./ClinicalImageViewer";
 import { RadiologyCalibratedScaleRuler } from "../radiology/RadiologyCalibratedScaleRuler";
 import type { XrayScan } from "./VisiographScanHelpers";
@@ -25,13 +25,11 @@ export function VisiographViewport({
 }: VisiographViewportProps) {
 	if (isStudioMode) {
 		return (
-			<VisiographStudioCanvas
+			<VisiographStudyViewer
 				imageUrl={currentImageUrl}
-				patientId={effectivePatientId}
-				patientFullName={effectivePatientId ? `Пациент #${effectivePatientId}` : undefined}
-				toothCode={currentScan?.toothCode}
-				studyId={currentScan?.id}
-				initialTool={initialStudioTool}
+				patientId={effectivePatientId || undefined}
+				patientName={effectivePatientId ? `Пациент #${effectivePatientId}` : undefined}
+				initialTooth={currentScan?.toothCode || undefined}
 				onClose={onCloseStudio}
 			/>
 		);

@@ -8,7 +8,7 @@ import { showToast } from "../GlobalToast";
 import {
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,
-} from "../visiograph/VisiographDicomExporter";
+} from "./radiologyDicomExporter.js";
 export {
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,

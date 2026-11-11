@@ -43,6 +43,7 @@ export class DicomCrawlerDaemon extends EventEmitter {
 	private config: DicomCrawlerDaemonConfig;
 	private intervalTimer: NodeJS.Timeout | null = null;
 	private fileWatchers: FSWatcher[] = [];
+	private pendingFileChecks = new Map<string, NodeJS.Timeout>();
 	private isScanning = false;
 	private lastScanAt: Date | null = null;
 	private lastScanDurationMs = 0;
@@ -128,6 +129,10 @@ export class DicomCrawlerDaemon extends EventEmitter {
 			}
 		}
 		this.fileWatchers = [];
+		for (const timer of this.pendingFileChecks.values()) {
+			clearTimeout(timer);
+		}
+		this.pendingFileChecks.clear();
 		this.config.enabled = false;
 		this.emit("stopped");
 	}
@@ -207,28 +212,63 @@ export class DicomCrawlerDaemon extends EventEmitter {
 	}
 
 	private handleHotFileEvent(targetPath: string): void {
-		setTimeout(async () => {
-			try {
-				if (!existsSync(targetPath)) return;
-				const st = await stat(targetPath);
-				if (Date.now() - st.mtimeMs < DEBOUNCE_FILE_STABILIZE_MS) {
-					return;
-				}
-				const orgId = await this.resolveOrganizationId();
-				if (!orgId) return;
+		const existingTimer = this.pendingFileChecks.get(targetPath);
+		if (existingTimer) {
+			clearTimeout(existingTimer);
+			this.pendingFileChecks.delete(targetPath);
+		}
 
-				if (st.isFile()) {
-					const ext = path.extname(targetPath).toLowerCase();
-					if (ext === ".zip") {
-						await this.processArchiveCandidate(targetPath, orgId);
-					}
-				} else if (st.isDirectory()) {
-					await this.processFolderCandidate(targetPath, orgId);
+		const timer = setTimeout(() => {
+			void this.checkHotFileStabilityAndProcess(targetPath, 0, 0);
+		}, 150);
+		this.pendingFileChecks.set(targetPath, timer);
+	}
+
+	private async checkHotFileStabilityAndProcess(
+		targetPath: string,
+		lastSize: number,
+		retryCount: number,
+	): Promise<void> {
+		this.pendingFileChecks.delete(targetPath);
+
+		try {
+			if (!existsSync(targetPath)) return;
+			const st = await stat(targetPath);
+
+			if (st.size === 0) {
+				if (retryCount < 10) {
+					const timer = setTimeout(() => {
+						void this.checkHotFileStabilityAndProcess(targetPath, 0, retryCount + 1);
+					}, 200);
+					this.pendingFileChecks.set(targetPath, timer);
 				}
-			} catch {
-				// игнорируем временные сбои доступа
+				return;
 			}
-		}, DEBOUNCE_FILE_STABILIZE_MS);
+
+			// Если размер изменился с прошлой проверки — файл пишется аппаратом
+			if (lastSize === 0 || st.size !== lastSize) {
+				const timer = setTimeout(() => {
+					void this.checkHotFileStabilityAndProcess(targetPath, st.size, retryCount + 1);
+				}, 150);
+				this.pendingFileChecks.set(targetPath, timer);
+				return;
+			}
+
+			// Размер стабилен! Приступаем к инжесту
+			const orgId = await this.resolveOrganizationId();
+			if (!orgId) return;
+
+			if (st.isFile()) {
+				const ext = path.extname(targetPath).toLowerCase();
+				if (ext === ".zip") {
+					await this.processArchiveCandidate(targetPath, orgId);
+				}
+			} else if (st.isDirectory()) {
+				await this.processFolderCandidate(targetPath, orgId);
+			}
+		} catch {
+			// игнорируем временные сбои доступа
+		}
 	}
 
 	public async scanNow(explicitPaths?: string[]): Promise<DicomCrawlerScanReport> {

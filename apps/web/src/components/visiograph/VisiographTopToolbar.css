@@ -1,9 +1,0 @@
-/**
- * VisiographTopToolbar.css
- * Canonical DENTE Visiograph & PACS Studio Toolbar Styling.
- * Strict 1-Row Compact 36px Toolbar (Mandates 8d, 8e, 8n).
- * Modular decomposition <= 120 lines (Mandate 8b).
- */
-
-@import "./VisiographTopToolbarBase.css";
-@import "./VisiographTopToolbarMenus.css";

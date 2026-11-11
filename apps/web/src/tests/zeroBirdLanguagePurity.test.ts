@@ -51,7 +51,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("2. SensorStudyViewer & DicomViewerModal: clean Norma action without 043/у cipher", () => {
-		const sensorCode = readComponent("components/radiology/SensorStudyViewer.tsx");
+		const sensorCode =
+			readComponent("components/radiology/SensorStudyViewer.tsx") +
+			"\n" +
+			readComponent("components/radiology/sensorViewer/ViewerToolbar.tsx");
 		assert.ok(sensorCode.includes("Норма: патологии нет"), "SensorStudyViewer must label button 'Норма: патологии нет'");
 		assert.ok(!sensorCode.includes("Норма (043/у)"), "SensorStudyViewer must not have 'Норма (043/у)' button text");
 		assert.ok(sensorCode.includes('data-testid="btn-sensor-norma"'), "Preserve data-testid for compatibility");
@@ -105,13 +108,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!printCode.includes("СанПиН 2.6.1.1192-03"), "Referral print template must not cite SanPiN 2.6.1.1192-03");
 	});
 
-	it("7. VisiographTopToolbar: purged 'DICOM Part 10' tech badge from export button", () => {
-		const toolbarCode =
-			readComponent("components/visiograph/VisiographTopToolbar.tsx") +
-			"\n" +
-			readComponent("components/visiograph/VisiographToolbarSecondaryMenu.tsx");
-		assert.ok(!toolbarCode.includes("DICOM Part 10"), "VisiographTopToolbar must not cite DICOM Part 10 in export button title");
-		assert.ok(toolbarCode.includes("Экспорт снимка (JPEG, PNG, DICOM)"), "VisiographTopToolbar must use clean export title");
+	it("7. DirectRvgFooter: clean export button without bureaucratic citations", () => {
+		const footerCode = readComponent("components/radiology/DirectRvgFooter.tsx");
+		assert.ok(!footerCode.includes("DICOM Part 10"), "DirectRvgFooter must not cite DICOM Part 10 in export button title");
+		assert.ok(footerCode.includes("Экспорт DICOM/JPEG"), "DirectRvgFooter must use clean export title");
 	});
 
 	it("8. TaxDeductionCertificateModal: purged Soviet ministerial decrees and order numbers", () => {

@@ -10,8 +10,8 @@ import {
 	createSnapshotThumbnail,
 	downloadSnapshotLocally,
 	exportSnapshotToClinicalRecord,
-} from "../../../visiograph/VisiographExportService";
-import type { VisiographWindowPreset } from "../../../visiograph/VisiographWindowPresets";
+} from "../../../radiology/radiologyExportService.js";
+import type { VisiographWindowPreset } from "../../VisiographWindowPresets";
 import type { BoneDensityRecommendation } from "../../panoramicMprMath";
 
 export interface UsePanoramicExporterParams {

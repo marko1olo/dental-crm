@@ -5,8 +5,8 @@
 import { useState } from "react";
 import type { ImagingExportOptions } from "../types";
 import { showToast } from "../../GlobalToast";
-import { exportCanvasToJpeg } from "../../visiograph/VisiographDicomExporter";
-import { exportSnapshotToClinicalRecord } from "../../visiograph/VisiographExportService";
+import { exportCanvasToJpeg } from "../../radiology/radiologyDicomExporter.js";
+import { exportSnapshotToClinicalRecord } from "../../radiology/radiologyExportService.js";
 import type { ImagingExportModalProps } from "./types";
 import { processCanvasDownload } from "./exportCanvasDownloadHelper";
 

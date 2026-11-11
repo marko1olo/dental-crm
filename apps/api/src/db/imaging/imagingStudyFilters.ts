@@ -2,7 +2,7 @@ import type { ImagingStudy } from "@dental/shared";
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
-import { mapImagingStudy, mapXrayScanToImagingStudy } from "./imagingMappers.js";
+import { mapImagingStudy } from "./imagingMappers.js";
 
 export interface ImagingStudiesQueryFilters {
 	patientId?: string | null | undefined;
@@ -39,7 +39,7 @@ export async function getImagingStudiesWithFilters(
 		);
 	}
 
-	const baseQuery = db
+	let query = db
 		.select({
 			study: schema.imagingStudies,
 			patientFullName: schema.patients.fullName,
@@ -55,54 +55,15 @@ export async function getImagingStudiesWithFilters(
 		.where(and(...conditions))
 		.orderBy(desc(schema.imagingStudies.capturedAt));
 
-	const rows = await baseQuery;
-	const studies = rows.map((r) => mapImagingStudy(r.study, r.patientFullName));
-	const existingStudyIds = new Set(studies.map((s) => s.id));
-
-	// Также объединяем снимки из xray_scans (если они ещё не продублированы в imaging_studies)
-	const xrayConditions = [eq(schema.xrayScans.organizationId, organizationId)];
-	if (filters.patientId) {
-		xrayConditions.push(eq(schema.xrayScans.patientId, filters.patientId));
+	if (filters.limit && filters.limit > 0) {
+		query = query.limit(filters.limit) as typeof query;
 	}
-	const legacyScans = await db
-		.select({
-			scan: schema.xrayScans,
-			patientFullName: schema.patients.fullName,
-		})
-		.from(schema.xrayScans)
-		.leftJoin(
-			schema.patients,
-			and(
-				eq(schema.patients.organizationId, organizationId),
-				eq(schema.patients.id, schema.xrayScans.patientId),
-			),
-		)
-		.where(and(...xrayConditions))
-		.orderBy(desc(schema.xrayScans.capturedAt));
-
-	for (const item of legacyScans) {
-		if (item?.scan?.id && !existingStudyIds.has(item.scan.id)) {
-			const scanModality = item.scan.kind === "opg" ? "PX" : "IO";
-			if (filters.modality && filters.modality.toUpperCase() !== scanModality) {
-				continue;
-			}
-			studies.push(mapXrayScanToImagingStudy(item.scan, item.patientFullName));
-			existingStudyIds.add(item.scan.id);
-		}
+	if (filters.offset && filters.offset > 0) {
+		query = query.offset(filters.offset) as typeof query;
 	}
 
-	studies.sort((a, b) => new Date(b.capturedAt).getTime() - new Date(a.capturedAt).getTime());
-
-	const limitVal = typeof filters.limit === "number" && filters.limit > 0 ? filters.limit : undefined;
-	const offsetVal = typeof filters.offset === "number" && filters.offset > 0 ? filters.offset : 0;
-
-	if (limitVal !== undefined) {
-		return studies.slice(offsetVal, offsetVal + limitVal);
-	}
-	if (offsetVal > 0) {
-		return studies.slice(offsetVal);
-	}
-	return studies;
+	const rows = await query;
+	return rows.map((r) => mapImagingStudy(r.study, r.patientFullName));
 }
 
 export async function getImagingStudiesForPatient(

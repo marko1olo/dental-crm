@@ -9,7 +9,7 @@ import { describe, it } from "node:test";
 import {
 	calculateRuler,
 	computeCalibration,
-} from "../../../visiograph/VisiographMeasurementMath";
+} from "../../../radiology/radiologyMeasurementMath.js";
 import {
 	isSupportedToothFdi,
 	PERMANENT_TEETH_FDI,

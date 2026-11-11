@@ -6,7 +6,7 @@ import {
 	captureHighDpiCanvas,
 	createSnapshotThumbnail,
 	exportSnapshotToClinicalRecord,
-} from "../../visiograph/VisiographExportService";
+} from "../../radiology/radiologyExportService.js";
 import { VISIOGRAPH_WINDOW_PRESETS, type VisiographPresetId } from "../VisiographWindowPresets";
 import type { ImplantData } from "../cornerstoneTypes";
 import type { WorldPoint3 } from "../ctPlanningPersistence";

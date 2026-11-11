@@ -25,9 +25,13 @@ import {
 	TOOTH_ANATOMICAL_NAMES,
 	UNSHARP_MASK_KERNEL_3X3,
 	apply2DSpatialConvolution,
+	calculateCurvedCanalLengthMm,
+	calculateLesionAreaGaussMm2,
+	calculatePhysicalDistanceMm,
 	calculateScaleRulerHeightPx,
 	resolveCalibratedPixelSpacing,
 } from "../dentalViewerMath.js";
+import { applyRadiologyProtocolToForm043 } from "../radiologyProtocols.js";
 import {
 	formatFilmstripDateTime,
 	getModalityBadge,
@@ -167,17 +171,40 @@ describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 	});
 
 	describe("5. Form 043/u Protocol Integration & Measurements", () => {
-		it("verifies SensorStudyViewer provides protocol injection into Form 043/u", () => {
-			const viewerSrc = readSource("components/radiology/SensorStudyViewer.tsx");
-			assert.ok(viewerSrc.includes("applyRadiologyProtocolToForm043"), "Must integrate protocol injection");
-			assert.ok(viewerSrc.includes("useVisitStore"), "Must access visit store");
+		it("verifies applyRadiologyProtocolToForm043 formats clinical statement with tooth FDI", () => {
+			let capturedStatement = "";
+			const res = applyRadiologyProtocolToForm043({
+				protocol: "Рентген-норма: периапикальные ткани без патологических изменений",
+				options: { toothFdi: "16", modalityLabel: "RVG 2D" },
+				onInsertToProtocol: (stmt) => {
+					capturedStatement = stmt;
+				},
+				showNotification: false,
+			});
+			assert.ok(res.includes("[RVG 2D · область зубов: 16]"));
+			assert.ok(res.includes("Рентген-норма"));
+			assert.equal(capturedStatement, res);
 		});
 
-		it("verifies measurement tools: ruler, curved canal working length, lesion contour", () => {
-			const viewerSrc = readSource("components/radiology/SensorStudyViewer.tsx");
-			assert.ok(viewerSrc.includes("calculateCurvedCanalLengthMm"), "Must support curved canal measurement");
-			assert.ok(viewerSrc.includes("calculateLesionAreaGaussMm2"), "Must support lesion contour area");
-			assert.ok(viewerSrc.includes("calculatePhysicalDistanceMm"), "Must support straight physical distance");
+		it("verifies measurement tools: straight distance, curved canal working length, lesion contour", () => {
+			const mmPerPixel = 0.035; // Vatech EzSensor 35 µm
+			// 1. Straight distance
+			const straightMm = calculatePhysicalDistanceMm({ x: 0, y: 0 }, { x: 100, y: 0 }, mmPerPixel);
+			assert.equal(straightMm, 3.5);
+
+			// 2. Curved canal polyline (3 points: 0,0 -> 30,40 -> 30,90: segments of 50px + 50px = 100px)
+			const curvedMm = calculateCurvedCanalLengthMm(
+				[{ x: 0, y: 0 }, { x: 30, y: 40 }, { x: 30, y: 90 }],
+				mmPerPixel,
+			);
+			assert.equal(curvedMm, 3.5);
+
+			// 3. Lesion area Gauss Shoelace (100x100 square: 10000 px² * 0.035² = 12.25 mm²)
+			const lesionArea = calculateLesionAreaGaussMm2(
+				[{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
+				mmPerPixel,
+			);
+			assert.equal(lesionArea, 12.25);
 		});
 	});
 });

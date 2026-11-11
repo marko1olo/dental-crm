@@ -7,7 +7,7 @@ import type { Point2D } from "../../../utils/math/mprMath";
 import {
 	huToGrayscale,
 	type VisiographWindowPreset,
-} from "../../visiograph/VisiographWindowPresets";
+} from "../VisiographWindowPresets";
 
 export interface PanoramicVolumeInput {
 	scalarData: Float32Array | Uint16Array;

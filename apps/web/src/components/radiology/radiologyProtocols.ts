@@ -24,6 +24,8 @@
 import { showToast } from "../GlobalToast.js";
 import { useVisitStore } from "../../store/visitStore.js";
 
+export * from "./radiologyCatalogData.js";
+
 export interface RadiologyProtocolPreset {
 	readonly id: string;
 	readonly titleRu: string;

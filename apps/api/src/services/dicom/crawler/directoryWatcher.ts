@@ -231,6 +231,7 @@ export type HotFileHandler = (targetPath: string) => Promise<void>;
  */
 export class HotFolderWatchController {
 	private watchers: FSWatcher[] = [];
+	private pendingFileChecks = new Map<string, NodeJS.Timeout>();
 
 	public setupWatchers(
 		folders: string[],
@@ -257,6 +258,11 @@ export class HotFolderWatchController {
 	}
 
 	public closeWatchers(): void {
+		for (const timer of this.pendingFileChecks.values()) {
+			clearTimeout(timer);
+		}
+		this.pendingFileChecks.clear();
+
 		for (const w of this.watchers) {
 			try {
 				w.close();
@@ -268,18 +274,53 @@ export class HotFolderWatchController {
 	}
 
 	private scheduleFileDebounce(targetPath: string, handler: HotFileHandler): void {
-		setTimeout(async () => {
-			try {
-				if (!existsSync(targetPath)) return;
-				const st = await stat(targetPath);
-				// Проверяем стабилизацию файла (завершение записи)
-				if (Date.now() - st.mtimeMs < DEBOUNCE_FILE_STABILIZE_MS) {
-					return;
+		const existingTimer = this.pendingFileChecks.get(targetPath);
+		if (existingTimer) {
+			clearTimeout(existingTimer);
+			this.pendingFileChecks.delete(targetPath);
+		}
+
+		const timer = setTimeout(() => {
+			void this.checkFileStabilityAndHandle(targetPath, 0, 0, handler);
+		}, 150);
+		this.pendingFileChecks.set(targetPath, timer);
+	}
+
+	private async checkFileStabilityAndHandle(
+		targetPath: string,
+		lastSize: number,
+		retryCount: number,
+		handler: HotFileHandler,
+	): Promise<void> {
+		this.pendingFileChecks.delete(targetPath);
+
+		try {
+			if (!existsSync(targetPath)) return;
+			const st = await stat(targetPath);
+
+			if (st.size === 0) {
+				if (retryCount < 10) {
+					const timer = setTimeout(() => {
+						void this.checkFileStabilityAndHandle(targetPath, 0, retryCount + 1, handler);
+					}, 200);
+					this.pendingFileChecks.set(targetPath, timer);
 				}
-				await handler(targetPath);
-			} catch {
-				// игнорируем временные сбои доступа
+				return;
 			}
-		}, DEBOUNCE_FILE_STABILIZE_MS);
+
+			// Если размер изменился с прошлой проверки — файл пишется аппаратом
+			if (lastSize === 0 || st.size !== lastSize) {
+				const timer = setTimeout(() => {
+					void this.checkFileStabilityAndHandle(targetPath, st.size, retryCount + 1, handler);
+				}, 150);
+				this.pendingFileChecks.set(targetPath, timer);
+				return;
+			}
+
+			// Размер стабилен! Вызываем обработчик
+			await handler(targetPath);
+		} catch {
+			// игнорируем временные сбои доступа
+		}
 	}
 }

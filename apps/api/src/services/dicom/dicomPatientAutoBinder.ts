@@ -153,6 +153,13 @@ export async function resolveOrAutoCreatePatientForDicom(
 				? patientFullName.trim()
 				: `Пациент карты ${patientChartNumber ?? new Date().toLocaleDateString("ru-RU")}`;
 
+		const adminProfile = (patientChartNumber || patientSex) ? {
+			chartNumber: patientChartNumber ?? undefined,
+			medicalCardNumber: patientChartNumber ?? undefined,
+			vatechPatId: patientChartNumber ?? undefined,
+			gender: patientSex ?? undefined,
+		} : null;
+
 		const [newPatient] = await db
 			.insert(schema.patients)
 			.values({
@@ -162,7 +169,7 @@ export async function resolveOrAutoCreatePatientForDicom(
 				status: "active",
 				isSynced: false,
 				notes: "Автоматически создан при прямом приеме снимка с аппарата лучевой диагностики.",
-				administrativeProfile: null,
+				administrativeProfile: adminProfile,
 			})
 			.returning({
 				id: schema.patients.id,

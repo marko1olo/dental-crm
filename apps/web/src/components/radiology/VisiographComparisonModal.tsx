@@ -8,9 +8,9 @@
 
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { RadiologyConsultationSplit } from "../radiology/RadiologyConsultationSplit.js";
-import type { RadiologyStudy } from "../radiology/types.js";
-import type { RadiologyFilmstripItem } from "../radiology/RadiologyFilmstripDock.js";
+import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit.js";
+import type { RadiologyStudy } from "./types.js";
+import type { RadiologyFilmstripItem } from "./RadiologyFilmstripDock.js";
 
 export interface VisiographComparisonModalProps {
 	readonly isOpen: boolean;

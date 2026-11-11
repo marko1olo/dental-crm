@@ -6,13 +6,13 @@ import {
 	buildLegalExportCanvas,
 	DEFAULT_CLINIC_CREDENTIALS,
 	DEFAULT_DOCTOR_SIGNATURE,
-} from "../../visiograph/VisiographLegalWatermark";
+} from "../../radiology/radiologyLegalWatermark.js";
 import {
 	createDicomSecondaryCaptureFile,
 	exportCanvasToJpeg,
 	exportCanvasToPng,
 	triggerBinaryDownload,
-} from "../../visiograph/VisiographDicomExporter";
+} from "../../radiology/radiologyDicomExporter.js";
 import type { ImagingExportOptions } from "../types";
 
 export interface CanvasExportParams {

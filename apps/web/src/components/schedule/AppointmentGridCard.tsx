@@ -121,8 +121,8 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 			const pid = patObj?.id || a.patientId;
 			if (pid) usePatientStore.getState().setSelectedPatientId(pid);
 			window.dispatchEvent(
-				new CustomEvent("dente:open-payment-modal", {
-					detail: { patientId: pid, patientName: pName, amountRub: 15400 },
+				new CustomEvent("dente:open-cashbox", {
+					detail: { mode: "checkout", patientId: pid, patientName: pName },
 				}),
 			);
 		} else {

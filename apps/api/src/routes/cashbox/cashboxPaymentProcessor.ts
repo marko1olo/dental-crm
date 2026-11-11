@@ -123,6 +123,66 @@ export async function processCashboxPayment(
 		requiredDepositKopecks = totalKopecks;
 	} else if (body.depositAmountKopecks !== undefined && body.depositAmountKopecks > 0) {
 		requiredDepositKopecks = BigInt(body.depositAmountKopecks);
+	} else if (body.splitTenders && body.splitTenders.length > 0) {
+		for (const tender of body.splitTenders) {
+			const norm = normalizePaymentMethod(tender.method);
+			if (norm === "deposit" || norm === "family_wallet") {
+				const tk =
+					tender.amountKopecks !== undefined
+						? BigInt(tender.amountKopecks)
+						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+				requiredDepositKopecks += tk;
+			}
+		}
+	}
+
+	// [DEF-CASH-04] Проверка равенства суммы сплит-частей итогу счета (54-ФЗ и Мандат 8e)
+	const isSplitMethod = body.method === "split";
+	const hasExplicitSplitTenders = Boolean(body.splitTenders && body.splitTenders.length > 0);
+	const hasMultipleTenderFields = [
+		body.cashAmountKopecks !== undefined,
+		body.electronicAmountKopecks !== undefined,
+		body.depositAmountKopecks !== undefined,
+	].filter(Boolean).length >= 2;
+
+	if (isSplitMethod || hasExplicitSplitTenders || hasMultipleTenderFields) {
+		let sumSplitKopecks = 0n;
+		if (body.splitTenders && body.splitTenders.length > 0) {
+			for (const tender of body.splitTenders) {
+				const tenderKop =
+					tender.amountKopecks !== undefined
+						? BigInt(tender.amountKopecks)
+						: tender.amountRub !== undefined
+							? BigInt(Math.round(tender.amountRub * 100))
+							: 0n;
+				sumSplitKopecks += tenderKop;
+			}
+		} else {
+			if (body.cashAmountKopecks !== undefined) {
+				sumSplitKopecks += BigInt(body.cashAmountKopecks);
+			}
+			if (body.electronicAmountKopecks !== undefined) {
+				sumSplitKopecks += BigInt(body.electronicAmountKopecks);
+			}
+			if (body.depositAmountKopecks !== undefined) {
+				sumSplitKopecks += BigInt(body.depositAmountKopecks);
+			}
+		}
+
+		if (sumSplitKopecks !== totalKopecks) {
+			return {
+				statusCode: 400,
+				body: {
+					error: "SplitTenderSumMismatch",
+					message: "Сумма сплит-платежей не совпадает с суммой счета",
+					details: {
+						totalKopecks: Number(totalKopecks),
+						sumSplitKopecks: Number(sumSplitKopecks),
+						diffKopecks: Number(totalKopecks - sumSplitKopecks),
+					},
+				},
+			};
+		}
 	}
 
 	// Честная атрибуция: при розничной продаже (Walk-In payment) по ст. 1.2 и 4.7 54-ФЗ
@@ -589,14 +649,26 @@ export async function processCashboxPayment(
 			cashDeskBox;
 
 		// 4. Кассовые проводки в cashOperations
-		const resolvedCashKop =
+		let resolvedCashKop =
 			body.cashAmountKopecks ??
 			(body.method === "cash" ? Number(totalKopecks) : 0);
-		const resolvedElecKop =
+		let resolvedElecKop =
 			body.electronicAmountKopecks ??
 			(["card", "sbp", "online"].includes(body.method || "")
 				? Number(totalKopecks)
 				: 0);
+
+		if (body.splitTenders && body.splitTenders.length > 0) {
+			for (const tender of body.splitTenders) {
+				const tk = tender.amountKopecks ?? Math.round((tender.amountRub ?? 0) * 100);
+				const norm = normalizePaymentMethod(tender.method);
+				if (norm === "cash" && body.cashAmountKopecks === undefined) {
+					resolvedCashKop += tk;
+				} else if (["card", "sbp", "online"].includes(norm) && body.electronicAmountKopecks === undefined) {
+					resolvedElecKop += tk;
+				}
+			}
+		}
 
 		if (resolvedCashKop > 0 && cashDeskBox) {
 			const curBalKop = rubToKopecks(cashDeskBox.balanceRub || 0);

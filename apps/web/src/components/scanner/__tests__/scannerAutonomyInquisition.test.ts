@@ -5,10 +5,9 @@ import path from 'node:path';
 
 describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy', () => {
 	const scannerDir = path.resolve(process.cwd(), 'apps/web/src/components/scanner');
-	const visiographDir = path.resolve(process.cwd(), 'apps/web/src/components/visiograph');
 	const photographyDir = path.resolve(process.cwd(), 'apps/web/src/components/photography');
 
-	const targetDirs = [scannerDir, visiographDir, photographyDir];
+	const targetDirs = [scannerDir, photographyDir];
 
 	function getAllSourceFiles(dir: string): string[] {
 		const result: string[] = [];

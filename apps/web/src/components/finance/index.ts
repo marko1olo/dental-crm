@@ -6,7 +6,7 @@
  */
 
 export * from "./cashierCatalogData.js";
-export * from "./DirectCashierLauncher.js";
+export { DirectCashboxLauncher } from "../cashbox/DirectCashboxLauncher.js";
 export * from "./cashShift/index.js";
 export * from "./PaymentModal.js";
 export * from "./FastCheckoutModal.js";

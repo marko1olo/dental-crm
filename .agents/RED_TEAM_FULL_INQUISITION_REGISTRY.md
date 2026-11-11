@@ -232,6 +232,42 @@
   - 📱 Mobile Light 390x844 (`05_cashbox_studio_mobile_light_390x844.png` — 130.5 KB)
   - 📱 Mobile Dark 390x844 (`06_cashbox_studio_mobile_dark_390x844.png` — 130.7 KB)
 
+### [DEF-CASH-01..06] [ИСПРАВЛЕНО] [SEV-1] Единый канонический SSOT кассы, 54-ФЗ, сплит-чеки и ликвидация расщепления чекаута
+- **Файлы:**
+  - SSOT Launcher: [`apps/web/src/components/cashbox/DirectCashboxLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/DirectCashboxLauncher.tsx)
+  - SSOT Modal: [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
+  - Bridge & Triggers:
+    - [`apps/web/src/components/billing/GlobalPaymentModalLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/GlobalPaymentModalLauncher.tsx)
+    - [`apps/web/src/components/schedule/AppointmentGridCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/AppointmentGridCard.tsx)
+    - [`apps/web/src/components/schedule/appointmentCardActions/CompletedActions.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/appointmentCardActions/CompletedActions.tsx)
+    - [`apps/web/src/components/schedule/appointmentContextMenu/OperationsMenuSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/appointmentContextMenu/OperationsMenuSection.tsx)
+    - [`apps/web/src/components/patients/headerModules/PatientHeaderActionsMenu.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/headerModules/PatientHeaderActionsMenu.tsx)
+    - [`apps/web/src/components/schedule/mobile/ScheduleMobileTimelineRow.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/mobile/ScheduleMobileTimelineRow.tsx)
+  - Backend Payment & Refund:
+    - [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts)
+    - [`apps/api/src/routes/cashbox/cashboxRefundRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxRefundRoutes.ts)
+    - [`apps/api/src/routes/cashbox.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox.test.ts)
+  - Tests & Purged Orphans:
+    - `git rm apps/web/src/components/finance/DirectCashierLauncher.tsx`
+    - [`apps/web/src/components/finance/__tests__/cashierSSOTSuite.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/__tests__/cashierSSOTSuite.test.tsx)
+- **Устраненные дефекты:**
+  1. **DEF-CASH-01 (Тройной раскол кассового чекаута в UI):** Все точки вызова оплаты в расписании, мобильной ленте и карточке пациента переведены с устаревшего `dente:open-payment-modal` на канонический `dente:open-cashbox`. Убран хардкод 15 400 ₽. В `GlobalPaymentModalLauncher.tsx` отключен параллельный рендер модалки на `#payment`, исключая наложение двух окон друг на друга.
+  2. **DEF-CASH-02 (Амнезия параметров диплинка):** В `DirectCashboxLauncher.tsx` реализован полный парсинг query-параметров (`patientId`, `patientName`, `invoiceId`, `amountRub`, `cashierFullName`) из `window.location.search` и хеш-строки `#checkout?patientId=...&amount=...`. При переходе по ссылке касса открывается с реальными данными пациента и долга.
+  3. **DEF-CASH-03 (Фискальный возврат прихода 54-ФЗ):** В `cashboxRefundRoutes.ts` операция возврата из кассы теперь формирует отрицательную проводку в `payments` (`amountRub: -amountRub`, `status: "refunded"`), ставит чек возврата `income_return` (тег 1054 = 2) в `fiscalReceiptQueue` и корректно обновляет статус счета (`refunded` / `partially_refunded`).
+  4. **DEF-CASH-04 (Валидация равенства сплит-частей итогу счета):** В `cashboxPaymentProcessor.ts` внедрен строгий барьер суммирования сплит-тендеров (`sumSplitKopecks === totalKopecks`). При расхождении сервер возвращает HTTP 400 `SplitTenderSumMismatch`.
+  5. **DEF-CASH-05 (Исправление интеграционных тестов):** В `cashbox.test.ts` восстановлен `labCostRub: 5000` в фикстуре лабораторного наряда и актуализирована проверка свободного чека физлица по 54-ФЗ (200 OK через системного розничного покупателя). Добавлены тесты сплита и фискального возврата.
+  6. **DEF-CASH-06 (Очистка сирот и сохранение ядра):** Сирота-дубликат `DirectCashierLauncher.tsx` удален через `git rm`. Тест `cashierSSOTSuite.test.tsx` перенаправлен на `DirectCashboxLauncher.tsx` (18/18 PASS). Клиническое ядро актов выполненных работ `PatientBillingModal.tsx` сохранено по Мандату 8bj.
+- **Машинные пруфы:**
+  - `npx tsx --test apps/api/src/routes/cashbox.test.ts` (2 suites, 2/2 PASS).
+  - `npx tsx --test apps/web/src/components/finance/__tests__/cashierSSOTSuite.test.tsx` (18/18 PASS).
+  - `npx tsx --test apps/web/src/components/cashbox/__tests__/cashboxSsotScreens.test.tsx` (10/10 PASS).
+  - `npx tsx --test apps/web/src/components/billing/__tests__/cashRegisterAndSplitModals.test.tsx` (8/8 PASS).
+- **4-State Visual Proofs (Лично отсмотрены через `read_file` в `docs/proofs/cashbox/`):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png) (77 KB)
+  - 🌙 PC Dark (1440x900): [`docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png) (74 KB)
+  - 📱 Mobile Light (390x844): [`docs/proofs/cashbox/03_cashbox_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/03_cashbox_studio_mobile_light_390x844.png) (121 KB)
+  - 🌙 Mobile Dark (390x844): [`docs/proofs/cashbox/04_cashbox_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/04_cashbox_studio_mobile_dark_390x844.png) (117 KB)
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ

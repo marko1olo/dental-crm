@@ -31,7 +31,7 @@ import type {
 	ImagingViewerSaveState,
 	LocalImagingFolderDraft,
 } from "../../AppConstants";
-import type { RadiologyStudyRecord } from "../../components/visiograph/visiographCatalogData";
+import type { RadiologyStudyRecord } from "../../components/radiology/radiologyProtocols.js";
 
 export type {
 	BrowserImagingScanProgress,

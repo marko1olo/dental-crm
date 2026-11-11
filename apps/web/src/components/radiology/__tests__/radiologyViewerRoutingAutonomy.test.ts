@@ -34,7 +34,7 @@ import {
 	createDicomSecondaryCaptureFile,
 	generateDicomUid,
 	transliterateCyrillicToLatin,
-} from "../../visiograph/VisiographDicomExporter";
+} from "../radiologyDicomExporter.js";
 import type { RadiologyStudy } from "../types";
 
 const webSrcRoot = path.join(import.meta.dirname, "../../..");

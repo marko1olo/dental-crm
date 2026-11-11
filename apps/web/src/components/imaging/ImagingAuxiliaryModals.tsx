@@ -7,7 +7,7 @@ import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
 import { RadiologyModule } from "../radiology/RadiologyModule.js";
 import { ImagingExportModal } from "./ImagingExportModal.js";
-import { VisiographComparisonModal } from "../visiograph/VisiographComparisonModal.js";
+import { VisiographComparisonModal } from "../radiology/VisiographComparisonModal.js";
 import { getActivePanoramicVolume } from "./panoramicVolumeResolver.js";
 
 const PanoramicRendererWindow = lazyWithRetry(() =>

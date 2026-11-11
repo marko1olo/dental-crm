@@ -9,7 +9,7 @@ import type {
 	CalibrationReference,
 	PeriapicalLesion,
 	RulerMeasurement,
-} from "../../visiograph/VisiographMeasurementMath";
+} from "../../radiology/radiologyMeasurementMath.js";
 
 export interface ImagingExportModalProps {
 	isOpen: boolean;

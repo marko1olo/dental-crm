@@ -49,7 +49,44 @@ export async function registerXrayUploadRoute(app: FastifyInstance): Promise<voi
 			: hasInlineReport ? extractSummary(data.aiReport!) : null;
 		const createStatus = data.status ?? (hasInlineReport ? "done" : "pending");
 		const scanId = crypto.randomUUID();
+		const identity = getRequestIdentity(request);
+		const studyTitle = data.originalFilename || (data.toothCode ? `Прицельный снимок зуба ${data.toothCode}` : "Прицельный снимок RVG");
+		const kindMapping = (data.kind === "bitewing" ? "bitewing" : data.kind === "opg" ? "opg" : data.kind === "other" ? "other" : "periapical") as "periapical" | "bitewing" | "opg" | "other";
+		const capturedTime = new Date();
 
+		// 1. Первичная каноническая запись в imaging_studies (SSOT рентгенологии)
+		const [canonicalStudy] = await db.insert(imagingStudies).values({
+			id: scanId,
+			organizationId,
+			patientId: data.patientId,
+			visitId: data.visitId ?? null,
+			doctorId: identity?.userId ?? null,
+			kind: kindMapping,
+			title: studyTitle,
+			toothCode: data.toothCode ?? null,
+			region: data.toothCode ? `Зуб ${data.toothCode}` : null,
+			capturedAt: capturedTime,
+			sourceKind: "sensor_bridge",
+			sourceName: "Визиограф (RVG)",
+			status: "available",
+			aiSummary: inlineSummary,
+			storagePath: storedFile.storagePath,
+			modality: data.kind === "opg" ? "PX" : "IO",
+			seriesDescription: data.notes ?? studyTitle,
+			fileSizeBytes: storedFile.fileSizeBytes,
+			bindingStatus: "manual_bound",
+			bindingConfidence: 100,
+		}).onConflictDoUpdate({
+			target: [imagingStudies.id],
+			set: { storagePath: storedFile.storagePath, aiSummary: inlineSummary, fileSizeBytes: storedFile.fileSizeBytes },
+		}).returning();
+
+		if (!canonicalStudy) {
+			reply.code(500);
+			return { error: "InsertError", message: "Не удалось сохранить исследование в реестр снимков." };
+		}
+
+		// 2. Зеркальная запись в legacy xray_scans для обратной совместимости
 		const [inserted] = await db.insert(xrayScans).values({
 			id: scanId,
 			organizationId,
@@ -70,45 +107,12 @@ export async function registerXrayUploadRoute(app: FastifyInstance): Promise<voi
 			aiSummary: inlineSummary,
 			aiToothStates: (data.aiToothStates ?? null) as Record<string, string> | null,
 			aiAnalyzedAt: hasInlineReport ? new Date() : null,
+			capturedAt: capturedTime,
 		}).returning();
 
 		if (!inserted) {
 			reply.code(500);
 			return { error: "InsertError", message: "Не удалось сохранить снимок." };
-		}
-
-		try {
-			const identity = getRequestIdentity(request);
-			const studyTitle = data.originalFilename || (data.toothCode ? `Прицельный снимок зуба ${data.toothCode}` : "Прицельный снимок RVG");
-			const kindMapping = (data.kind === "bitewing" ? "bitewing" : data.kind === "opg" ? "opg" : data.kind === "other" ? "other" : "periapical") as "periapical" | "bitewing" | "opg" | "other";
-
-			await db.insert(imagingStudies).values({
-				id: inserted.id,
-				organizationId,
-				patientId: data.patientId,
-				visitId: data.visitId ?? null,
-				doctorId: identity?.userId ?? null,
-				kind: kindMapping,
-				title: studyTitle,
-				toothCode: data.toothCode ?? null,
-				region: data.toothCode ? `Зуб ${data.toothCode}` : null,
-				capturedAt: inserted.capturedAt ?? new Date(),
-				sourceKind: "sensor_bridge",
-				sourceName: "Визиограф (RVG)",
-				status: "available",
-				aiSummary: inlineSummary,
-				storagePath: storedFile.storagePath,
-				modality: data.kind === "opg" ? "PX" : "IO",
-				seriesDescription: data.notes ?? studyTitle,
-				fileSizeBytes: storedFile.fileSizeBytes,
-				bindingStatus: "manual_bound",
-				bindingConfidence: 100,
-			}).onConflictDoUpdate({
-				target: [imagingStudies.id],
-				set: { storagePath: storedFile.storagePath, aiSummary: inlineSummary, fileSizeBytes: storedFile.fileSizeBytes },
-			});
-		} catch (syncErr) {
-			request.log.warn({ syncErr, scanId: inserted.id }, "Не удалось синхронизировать снимок в imaging_studies");
 		}
 
 		reply.code(201);

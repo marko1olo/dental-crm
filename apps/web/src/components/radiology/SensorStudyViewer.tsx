@@ -22,22 +22,7 @@ import {
 	SensorStudyViewerLayout,
 	type SensorStudyViewerProps,
 } from "./sensorViewer/index.js";
-import { applyRadiologyProtocolToForm043 } from "./radiologyProtocols.js";
-import { useVisitStore } from "../../store/visitStore.js";
-import {
-	calculateCurvedCanalLengthMm,
-	calculateLesionAreaGaussMm2,
-	calculatePhysicalDistanceMm,
-} from "./dentalViewerMath.js";
-import { RadiologyFilmstripDock } from "./RadiologyFilmstripDock.js";
 
-// Ensure static references for testing contracts & tree-shaking safety
-void applyRadiologyProtocolToForm043;
-void useVisitStore;
-void calculateCurvedCanalLengthMm;
-void calculateLesionAreaGaussMm2;
-void calculatePhysicalDistanceMm;
-// Clinical Norma contract: "Норма: патологии нет" data-testid="btn-sensor-norma"
 export type { SensorStudyViewerProps };
 
 /**

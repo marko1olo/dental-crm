@@ -1,5 +1,5 @@
 /**
- * VisiographLegalWatermark.ts — Модуль юридического протоколирования, ЭЦП и графических оверлеев (Мандаты 8b, 8e).
+ * radiologyLegalWatermark.ts — Модуль юридического протоколирования, ЭЦП и графических оверлеев (Мандаты 8b, 8e).
  *
  * Объединяет:
  * 1. Типы клинических реквизитов, данных пациента и ЭЦП врача.
@@ -14,7 +14,7 @@ import type {
 	CalibrationReference,
 	PeriapicalLesion,
 	RulerMeasurement,
-} from "./VisiographMeasurementMath";
+} from "./radiologyMeasurementMath.js";
 
 export interface LegalClinicCredentials {
 	clinicName: string;
@@ -306,4 +306,26 @@ export function renderLegalWatermarkBanners(
 	renderMeasurementsOverlay(ctx, options);
 }
 
-export { buildLegalExportCanvas } from "./VisiographWatermarkBanners";
+export function buildLegalExportCanvas(
+	sourceCanvas: HTMLCanvasElement,
+	options: LegalWatermarkOptions,
+): HTMLCanvasElement {
+	if (typeof document === "undefined") return sourceCanvas;
+	const w = sourceCanvas.width || 800;
+	const h = sourceCanvas.height || 600;
+	const exportCanvas = document.createElement("canvas");
+	exportCanvas.width = w;
+	exportCanvas.height = h;
+	const ctx = exportCanvas.getContext("2d");
+	if (!ctx) return sourceCanvas;
+
+	ctx.drawImage(sourceCanvas, 0, 0, w, h);
+	renderMeasurementsOverlay(ctx, {
+		rulers: options.rulers,
+		angles: options.angles,
+		lesions: options.lesions,
+		calibration: options.calibration,
+	});
+	renderLegalWatermarkBanners(ctx, w, h, options);
+	return exportCanvas;
+}

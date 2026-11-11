@@ -4,7 +4,7 @@
 
 import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
-import { VisiographComparisonModal } from "../../visiograph/VisiographComparisonModal";
+import { VisiographComparisonModal } from "../../radiology/VisiographComparisonModal";
 import { ImagingExportModal } from "../../imaging/ImagingExportModal";
 import { usePatientStore } from "../../../store/patientStore";
 import { useVisitStore } from "../../../store/visitStore";

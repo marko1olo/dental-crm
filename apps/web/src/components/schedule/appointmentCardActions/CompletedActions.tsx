@@ -20,8 +20,9 @@ export function CompletedActions({
 					const pid = appointmentPatient?.id || appointment.patientId;
 					if (pid) usePatientStore.getState().setSelectedPatientId(pid);
 					window.dispatchEvent(
-						new CustomEvent("dente:open-payment-modal", {
+						new CustomEvent("dente:open-cashbox", {
 							detail: {
+								mode: "checkout",
 								patientId: pid,
 								patientName: appointmentPatientName,
 							},

@@ -45,8 +45,9 @@ export function OperationsMenuSection({
 		if (appointmentPatient?.id)
 			usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 		window.dispatchEvent(
-			new CustomEvent("dente:open-payment-modal", {
+			new CustomEvent("dente:open-cashbox", {
 				detail: {
+					mode: "checkout",
 					patientId: appointmentPatient?.id || appointment.patientId,
 					patientName: appointmentPatientName,
 				},

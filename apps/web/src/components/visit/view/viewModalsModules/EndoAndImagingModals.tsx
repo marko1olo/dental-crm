@@ -9,7 +9,7 @@
 
 import React from "react";
 import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
-import { VisiographComparisonModal } from "../../../visiograph/VisiographComparisonModal";
+import { VisiographComparisonModal } from "../../../radiology/VisiographComparisonModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 
 export interface EndoAndImagingModalsProps {

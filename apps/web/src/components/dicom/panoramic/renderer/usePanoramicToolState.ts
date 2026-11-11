@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback } from "react";
-import type { VisiographPresetId } from "../../../visiograph/VisiographWindowPresets";
+import type { VisiographPresetId } from "../../VisiographWindowPresets";
 import type { RulerMeasurement, AngleMeasurement } from "../../PanoramicMeasurementOverlay";
 import { showToast } from "../../../GlobalToast";
 

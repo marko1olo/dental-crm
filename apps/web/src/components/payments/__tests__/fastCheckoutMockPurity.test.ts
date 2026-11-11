@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { generateFnsTaxCertificateData } from "../../../components/portal/patientPortalEngine.js";
 import type { PatientPortalProfile } from "../../../components/portal/patientPortalTypes.js";
-import { DEFAULT_CLINIC_CREDENTIALS, DEFAULT_DOCTOR_SIGNATURE } from "../../../components/visiograph/VisiographLegalWatermark.js";
+import { DEFAULT_CLINIC_CREDENTIALS, DEFAULT_DOCTOR_SIGNATURE } from "../../../components/radiology/radiologyLegalWatermark.js";
 
 describe("Wave 109: Fast Checkout, Requisites and Watermark Mock Purity", () => {
 	it("FastCheckoutModal.tsx has eradicated synthetic patient and monetary defaults", () => {

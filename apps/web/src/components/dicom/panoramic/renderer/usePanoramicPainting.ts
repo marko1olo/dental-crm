@@ -5,7 +5,7 @@
 import { useMemo, useCallback, useRef } from "react";
 import type { RefObject } from "react";
 import type { VolumeSamplingData } from "@dental/shared";
-import type { VisiographWindowPreset } from "../../../visiograph/VisiographWindowPresets";
+import type { VisiographWindowPreset } from "../../VisiographWindowPresets";
 import { paintCrossSectionSlice } from "../crossSectionPainter";
 import { paintHuPixelsToCanvas, type PanoramicVolumeInput } from "../panoramicTypes";
 import type { CrossSectionSlicePlane } from "../../panoramicMprMath";

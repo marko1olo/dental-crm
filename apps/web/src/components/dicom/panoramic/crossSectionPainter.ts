@@ -7,7 +7,7 @@ import { computeCrossSection, type Point2, type VolumeSamplingData } from "@dent
 import { isLowSpecHardware, isHostUnderHeavyLoad } from "../../../utils/deviceDetection.js";
 import type { CrossSectionSlicePlane } from "../panoramicMprMath";
 import type { Point2D } from "../../../utils/math/mprMath";
-import type { VisiographWindowPreset } from "../../visiograph/VisiographWindowPresets";
+import type { VisiographWindowPreset } from "../VisiographWindowPresets";
 import { paintHuPixelsToCanvas } from "./panoramicTypes";
 
 export interface PaintCrossSectionOptions {

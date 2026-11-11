@@ -9,8 +9,8 @@ import { describe, it } from "node:test";
 import {
 	calculateRuler,
 	recalculateRulersWithScale,
-} from "../../../visiograph/VisiographMeasurementMath";
-import { CLINICAL_VISIOGRAPH_FILTERS } from "../../../visiograph/VisiographWindowPresets";
+} from "../../../radiology/radiologyMeasurementMath.js";
+import { CLINICAL_VISIOGRAPH_FILTERS } from "../../../dicom/VisiographWindowPresets.js";
 
 describe("Imaging 2D Viewer — RVG / OPG Actions & Sensor Calculations", () => {
 	it("Zoom & Pan: ruler length in physical mm is invariant under canvas transforms", () => {

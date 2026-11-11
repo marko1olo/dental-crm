@@ -39,7 +39,7 @@ import {
 	convert16BitToRgbaImageData,
 	ProgressiveVisiographController,
 	shouldLoad16BitBuffer,
-} from "../../components/visiograph/VisiographProgressiveLoader";
+} from "../../components/radiology/radiologyProgressiveLoader.js";
 
 describe("lowSpecHddOptimizer — Детекция слабых устройств и адаптивные тайминги", () => {
 	it("управляет принудительным переключением Low-Spec режима", () => {

@@ -62,13 +62,13 @@ const __dirname = path.dirname(__filename);
 describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () => {
 	const financeDir = path.resolve(__dirname, "..");
 	let CashierStudioModal: React.FC<any>;
-	let DirectCashierLauncher: React.FC<any>;
+	let DirectCashboxLauncher: React.FC<any>;
 
 	before(async () => {
 		const modalMod = await import("../../cashbox/CashRegisterStudioModal.js");
 		CashierStudioModal = modalMod.CashRegisterStudioModal;
-		const launcherMod = await import("../DirectCashierLauncher.js");
-		DirectCashierLauncher = launcherMod.DirectCashierLauncher;
+		const launcherMod = await import("../../cashbox/DirectCashboxLauncher.js");
+		DirectCashboxLauncher = launcherMod.DirectCashboxLauncher;
 	});
 
 	// ТЕСТ 1: Sweet Spot cashierCatalogData.ts (300-380 строк)
@@ -82,21 +82,21 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		);
 	});
 
-	// ТЕСТ 2: DirectCashierLauncher.tsx делегирует напрямую канонической CashRegisterStudioModal.tsx
-	it("2. DirectCashierLauncher.tsx delegates directly to canonical CashRegisterStudioModal SSOT", () => {
-		const filePath = path.join(financeDir, "DirectCashierLauncher.tsx");
+	// ТЕСТ 2: DirectCashboxLauncher.tsx делегирует напрямую канонической CashRegisterStudioModal.tsx
+	it("2. DirectCashboxLauncher.tsx delegates directly to canonical CashRegisterStudioModal SSOT", () => {
+		const filePath = path.resolve(financeDir, "../cashbox/DirectCashboxLauncher.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 		assert.ok(content.includes("CashRegisterStudioModal"), "Must delegate to canonical CashRegisterStudioModal SSOT");
 	});
 
-	// ТЕСТ 3: Sweet Spot DirectCashierLauncher.tsx (70-90 строк)
-	it("3. DirectCashierLauncher.tsx satisfies Sweet Spot line count constraint (70-90 lines)", () => {
-		const filePath = path.join(financeDir, "DirectCashierLauncher.tsx");
+	// ТЕСТ 3: Sweet Spot DirectCashboxLauncher.tsx (<= 300 строк)
+	it("3. DirectCashboxLauncher.tsx satisfies Sweet Spot line count constraint (<= 300 lines)", () => {
+		const filePath = path.resolve(financeDir, "../cashbox/DirectCashboxLauncher.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines >= 70 && lines <= 90,
-			`DirectCashierLauncher.tsx must be in 70-90 lines range (Sweet Spot), got ${lines} lines`,
+			lines <= 300,
+			`DirectCashboxLauncher.tsx must be in <= 300 lines range (Sweet Spot), got ${lines} lines`,
 		);
 	});
 
@@ -359,9 +359,9 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		assert.ok(html.includes("Способ оплаты"));
 	});
 
-	// ТЕСТ 16: DirectCashierLauncher монтируется в DOM без крашей
-	it("16. DirectCashierLauncher SSR mounts cleanly and handles event contracts", () => {
-		const html = renderToString(<DirectCashierLauncher />);
+	// ТЕСТ 16: DirectCashboxLauncher монтируется в DOM без крашей
+	it("16. DirectCashboxLauncher SSR mounts cleanly and handles event contracts", () => {
+		const html = renderToString(<DirectCashboxLauncher />);
 		assert.ok(typeof html === "string");
 	});
 

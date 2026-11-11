@@ -149,8 +149,8 @@ export const ScheduleMobileTimelineRow: React.FC<
 		const pid = pat?.id || appt.patientId;
 		if (pid) usePatientStore.getState().setSelectedPatientId(pid);
 		window.dispatchEvent(
-			new CustomEvent("dente:open-payment-modal", {
-				detail: { patientId: pid, patientName: pName, amountRub: 15400 },
+			new CustomEvent("dente:open-cashbox", {
+				detail: { mode: "checkout", patientId: pid, patientName: pName },
 			}),
 		);
 	};

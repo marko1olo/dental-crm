@@ -73,7 +73,7 @@ const steps = [
 	},
 	{
 		name: "12. Visiograph 2D/3D & RVG Tonal Processing Suite",
-		cmd: "node --import tsx --import ./testCssStub.mjs --test src/components/visiograph/__tests__/visiographImageProcessing.test.ts src/components/visiograph/__tests__/visiographPresetsAndMath.test.ts",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/components/radiology/__tests__/rvgGlCanvasPerformance.test.ts src/components/radiology/__tests__/sensorStudyViewer.test.tsx",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
 	{

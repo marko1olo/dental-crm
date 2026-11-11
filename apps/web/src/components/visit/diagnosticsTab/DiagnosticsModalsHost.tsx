@@ -17,7 +17,7 @@ import { CephalometricAnalysisModal } from "../../radiology/CephalometricAnalysi
 import { RadiologyReportStudioModal } from "../../radiology/RadiologyReportStudioModal";
 import { CtSelectorModal } from "../../radiology/CtSelectorModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
-import { VisiographComparisonModal } from "../../visiograph/VisiographComparisonModal";
+import { VisiographComparisonModal } from "../../radiology/VisiographComparisonModal";
 
 export interface DiagnosticsModalsHostProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression

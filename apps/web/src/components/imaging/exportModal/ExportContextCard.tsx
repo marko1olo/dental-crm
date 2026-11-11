@@ -4,7 +4,7 @@
 
 import React from "react";
 import type { ImagingStudy } from "../types";
-import type { RulerMeasurement, AngleMeasurement, PeriapicalLesion } from "../../visiograph/VisiographMeasurementMath";
+import type { RulerMeasurement, AngleMeasurement, PeriapicalLesion } from "../../radiology/radiologyMeasurementMath.js";
 
 interface ExportContextCardProps {
 	effectiveStudy: Partial<ImagingStudy>;

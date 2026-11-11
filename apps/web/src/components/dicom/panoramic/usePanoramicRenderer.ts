@@ -4,7 +4,7 @@
  */
 
 import { useRef, useEffect } from "react";
-import { VISIOGRAPH_WINDOW_PRESETS } from "../../visiograph/VisiographWindowPresets";
+import { VISIOGRAPH_WINDOW_PRESETS } from "../VisiographWindowPresets";
 import {
 	type UsePanoramicRendererProps,
 	usePanoramicToolState,

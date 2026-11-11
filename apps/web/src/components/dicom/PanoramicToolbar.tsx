@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { VISIOGRAPH_PRESETS_LIST, type VisiographPresetId } from "../visiograph/VisiographWindowPresets.js";
+import { VISIOGRAPH_PRESETS_LIST, type VisiographPresetId } from "./VisiographWindowPresets.js";
 import type { CrossSectionSlicePlane } from "./panoramicMprMath.js";
 import { PanoramicToolsAndFilters } from "./panoramicToolbar/PanoramicToolsAndFilters.js";
 import { PanoramicCrossSectionControls } from "./panoramicToolbar/PanoramicCrossSectionControls.js";

@@ -4,7 +4,7 @@
  * 54-FZ Return of Income (Возврат прихода), Cash Payout, and Receipt Correction Rails.
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -12,6 +12,10 @@ import {
 	cashBoxes,
 	cashBoxShifts,
 	cashOperations,
+	fiscalReceiptQueue,
+	patientInvoices,
+	payments,
+	patients,
 } from "../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import {
@@ -134,7 +138,167 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				})
 				.returning();
 
-			return { kind: "ok" as const, operation: operation!, cashBox: updatedBox! };
+			// Поиск связанного платежа или счёта для фискального возврата (54-ФЗ Возврат прихода / Tag 1054 = 2)
+			let linkedPayment: typeof payments.$inferSelect | undefined;
+			if (paymentId) {
+				const [p] = await tx
+					.select()
+					.from(payments)
+					.where(and(eq(payments.id, paymentId), eq(payments.organizationId, orgId)))
+					.limit(1);
+				linkedPayment = p;
+			}
+
+			let linkedInvoice: typeof patientInvoices.$inferSelect | undefined;
+			const targetInvoiceId = invoiceId || linkedPayment?.documentId;
+			if (targetInvoiceId) {
+				const [inv] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.id, targetInvoiceId), eq(patientInvoices.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+				linkedInvoice = inv;
+			}
+
+			// Определяем пациента для проводки в payments
+			let effectivePatientId = linkedPayment?.patientId || linkedInvoice?.patientId || null;
+			let patientName = "Розничный покупатель";
+
+			if (effectivePatientId) {
+				const [pat] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(and(eq(patients.id, effectivePatientId), eq(patients.organizationId, orgId)))
+					.limit(1);
+				if (pat?.fullName) {
+					patientName = pat.fullName;
+				}
+			} else {
+				const [existingRetail] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), eq(patients.fullName, "Розничный покупатель")))
+					.limit(1);
+				if (existingRetail) {
+					effectivePatientId = existingRetail.id;
+				} else {
+					const [createdRetail] = await tx
+						.insert(patients)
+						.values({
+							organizationId: orgId,
+							fullName: "Розничный покупатель",
+							notes: "Системная запись для возвратов и розничных продаж (54-ФЗ)",
+						})
+						.returning({ id: patients.id });
+					effectivePatientId = createdRetail?.id ?? null;
+				}
+			}
+
+			// Формируем отрицательную проводку в payments и ставим чек «Возврат прихода» (Tag 1054 = 2)
+			const refundReceiptNumber = `ФД-ВОЗВРАТ-${Date.now().toString().slice(-6)}`;
+			const refundMethod = targetBox.isCashless ? "card" : (linkedPayment?.method || "cash");
+
+			let refundPaymentId: string | undefined;
+			let queuedReceiptId: string | undefined;
+
+			if (effectivePatientId) {
+				const [insertedPayment] = await tx
+					.insert(payments)
+					.values({
+						organizationId: orgId,
+						patientId: effectivePatientId,
+						visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
+						documentId: linkedInvoice?.id || (linkedPayment?.documentId ?? null),
+						amountRub: -amountRub,
+						method: refundMethod as any,
+						status: "refunded",
+						paidAt: new Date(),
+						fiscalReceiptNumber: refundReceiptNumber,
+						fiscalReceiptIssuedAt: new Date().toISOString(),
+						payerFullName: operatorId ? "Кассир" : (linkedPayment?.payerFullName || "Кассир"),
+						note: reasonText || `Возврат денежных средств (54-ФЗ возврат прихода) на сумму -${amountRub} ₽`,
+					})
+					.returning({ id: payments.id });
+
+				if (insertedPayment) {
+					refundPaymentId = insertedPayment.id;
+
+					const [queuedReceipt] = await tx
+						.insert(fiscalReceiptQueue)
+						.values({
+							organizationId: orgId,
+							paymentId: insertedPayment.id,
+							visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
+							receiptType: "income_return",
+							status: "pending_print",
+							payloadJson: {
+								receiptType: "income_return",
+								tag1054: 2,
+								operationType: "income_return",
+								amountRub,
+								amountKopecks: Math.round(amountRub * 100),
+								method: refundMethod,
+								cashRub: targetBox.isCashless ? 0 : amountRub,
+								electronicRub: targetBox.isCashless ? amountRub : 0,
+								fiscalReceiptNumber: refundReceiptNumber,
+								originalFiscalReceiptNumber: linkedPayment?.fiscalReceiptNumber || null,
+								originalPaymentId: linkedPayment?.id || null,
+								patientId: effectivePatientId,
+								patientName,
+								cashierFullName: "Кассир",
+								invoiceId: linkedInvoice?.id || null,
+								reasonText: reasonText || "Возврат денежных средств покупателю",
+							},
+							retryCount: 0,
+						})
+						.returning({ id: fiscalReceiptQueue.id });
+
+					queuedReceiptId = queuedReceipt?.id;
+				}
+			}
+
+			// Обновляем статус счёта и исходного платежа при наличии
+			if (linkedInvoice) {
+				const invoiceTotalRub = Number(linkedInvoice.totalAmountRub || linkedInvoice.totalRub || 0);
+				const [allRefunds] = await tx
+					.select({
+						totalRefunded: sql<number>`coalesce(sum(abs(${payments.amountRub})), 0)`,
+					})
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.documentId, linkedInvoice.id),
+							sql`${payments.amountRub} < 0`,
+						),
+					);
+				const totalRefunded = Number(allRefunds?.totalRefunded || 0);
+				const nextStatus = totalRefunded >= invoiceTotalRub ? "refunded" : "partially_refunded";
+				await tx
+					.update(patientInvoices)
+					.set({
+						status: nextStatus,
+						version: sql`${patientInvoices.version} + 1`,
+					})
+					.where(eq(patientInvoices.id, linkedInvoice.id));
+			}
+
+			if (linkedPayment && Number(linkedPayment.amountRub) <= amountRub) {
+				await tx
+					.update(payments)
+					.set({ status: "refunded" })
+					.where(eq(payments.id, linkedPayment.id));
+			}
+
+			return {
+				kind: "ok" as const,
+				operation: operation!,
+				cashBox: updatedBox!,
+				refundPaymentId,
+				queuedReceiptId,
+				fiscalReceiptNumber: refundReceiptNumber,
+			};
 		});
 
 		if (result.kind === "box_not_found") {
@@ -158,6 +322,9 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 			cashBox: result.cashBox,
 			invoiceId,
 			paymentId,
+			refundPaymentId: result.refundPaymentId,
+			fiscalReceiptQueueId: result.queuedReceiptId,
+			fiscalReceiptNumber: result.fiscalReceiptNumber,
 		});
 	};
 
