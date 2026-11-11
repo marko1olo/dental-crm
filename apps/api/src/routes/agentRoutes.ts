@@ -523,10 +523,6 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 	const actionEndpoints = [
 		"/api/agent/action",
 		"/api/agent/confirm",
-		"/api/copilot/action",
-		"/api/v1/copilot/confirm",
-		"/api/copilot/confirm",
-		"/api/v1/copilot/agent/execute",
 	];
 
 	for (const endpoint of actionEndpoints) {

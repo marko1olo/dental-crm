@@ -10,6 +10,11 @@
  * 5. Vision / DICOM Specialist (RVG & CBCT MPR analysis, Hounsfield D1-D4, nerve tracing)
  */
 
+/**
+ * ClinicalCopilotSpecialization — канонический тип клинических профилей и специализаций
+ * единого мудрого соло-копайлота клиники (Solo Chairside Copilot).
+ * Внутренние рои внутри клиентского ПО категорически запрещены (Мандат 8e / rules/ai_assistant.md).
+ */
 export type ClinicalCopilotSpecialization =
 	| "orchestrator"
 	| "triage"
@@ -17,6 +22,11 @@ export type ClinicalCopilotSpecialization =
 	| "billing_sentinel"
 	| "vision_specialist";
 
+/**
+ * Псевдоним обратной совместимости для ClinicalCopilotSpecialization.
+ * Внимание: внутри DENTE CRM работает СТРОГО ОДИН мудрый соло-агент.
+ * Любые профили представляют собой фокусные клинические специализации единого копайлота.
+ */
 export type ClinicalSwarmRole = ClinicalCopilotSpecialization;
 
 export interface ClinicalCopilotSpecializationDefinition {
@@ -26,6 +36,9 @@ export interface ClinicalCopilotSpecializationDefinition {
 	recommendedTools: string[];
 }
 
+/**
+ * Псевдоним обратной совместимости для ClinicalCopilotSpecializationDefinition.
+ */
 export type SwarmRoleDefinition = ClinicalCopilotSpecializationDefinition;
 
 export const CLINICAL_COPILOT_SPECIALIZATIONS: Record<
@@ -77,7 +90,7 @@ export const CLINICAL_COPILOT_SPECIALIZATIONS: Record<
 Принципы:
 1. Контроль клинических протоколов СтАР (K02–K08): кариес, пульпит, периодонтит.
 2. Проверка заполнения медицинской карты приёма (SOAP) и наличия обязательных согласий.
-3. Сохранение нормы в 1 клик: интактные зубы и здоровая соматика фиксируются без лишних кликов, ты фокусируешься на выявленных патологиях.
+3. Физиологическая норма: интактные зубы и здоровая соматика фиксируются без лишних кликов, ты фокусируешься на выявленных патологиях.
 4. Запрет на блокировки: ты советуешь и подсвечиваешь риски, но НИКОГДА не блокируешь сохранение действий врача.`,
 		recommendedTools: [
 			"get_patient_emr_and_odontogram",

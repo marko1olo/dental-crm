@@ -230,9 +230,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     setIsStreaming(false);
     const localProposal = localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined;
     if (isDemoShowcaseMode()) {
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() ? m.text : fallbackText, citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)", actionProposal: m.actionProposal ?? localProposal ?? { id: `act-${Date.now()}`, toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`, payload: { tooth: fallbackProposalTooth } } } : m)));
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() ? m.text : (fallbackText || "Готов к работе у кресла. Чем могу помочь?"), citation: m.citation || (localProposal ? "Клинический протокол СтАР" : undefined), actionProposal: m.actionProposal ?? localProposal } : m)));
     } else {
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackText || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: undefined, actionProposal: m.actionProposal ?? localProposal } : m)));
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackText || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: m.citation, actionProposal: m.actionProposal ?? localProposal } : m)));
     }
   };
 
@@ -245,7 +245,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     try {
       if (act.id || act.toolName) {
         try {
-          const res = await fetch("/api/v1/copilot/confirm", {
+          const res = await fetch("/api/agent/confirm", {
             method: "POST", headers: { "Content-Type": "application/json", "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             body: JSON.stringify({ callId: act.id, toolName: act.toolName, args: act.payload, confirmed: true, decision: "confirm", patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode }),
           });
@@ -318,7 +318,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         </header>
 
         {/* Компактный Antigravity Context Telemetry Bar (DEF-FRONT-07: честный Empty State без вымышленных Ивановых в бою) */}
-        {(() => { const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId); const effectiveName = (patientName && patientName !== "Иванов Иван Иванович") ? patientName : (isDemo ? (patientName || "Кузнецов М.П.") : null); return <CopilotContextTelemetryBar patientName={effectiveName} patientId={patientId || (isDemo ? "pat-36" : null)} activeTooth={typeof activeTooth === "number" ? activeTooth : (isDemo ? 36 : null)} compact />; })()}
+        {(() => { const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId); const effectiveName = patientName || (isDemo ? "Кузнецов М.П." : null); return <CopilotContextTelemetryBar patientName={effectiveName} patientId={patientId || (isDemo ? "pat-36" : null)} activeTooth={typeof activeTooth === "number" ? activeTooth : (isDemo ? 36 : null)} compact />; })()}
 
         {/* Apple HIG Segmented Control: 3 клинические вкладки */}
         <div className="copilot-tabs-segmented-wrapper px-4 py-2 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)] shrink-0">
@@ -357,7 +357,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
                             <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] space-y-1.5 text-[11px] opacity-80">
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Check size={13} className="text-[var(--teal,#0d9488)]" /><span>{m.actionProposal.description}</span></div>
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Применено</span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal,rgba(13,148,136,0.3))]">Применено</span>
                               </div>
                             </div>
                           );
@@ -370,15 +370,15 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
                           <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/30 space-y-2 text-[11px]">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Activity size={13} className="text-[var(--teal,#0d9488)]" /><span>{actionTitle}</span></div>
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">Требуется подтверждение</span>
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--warn-soft,rgba(245,158,11,0.12))] text-[var(--warn,#f59e0b)] border border-[var(--warn,rgba(245,158,11,0.3))]">Требуется подтверждение</span>
                             </div>
                             <div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs space-y-1.5">
                               <div className="flex items-center gap-2 text-[var(--muted)]"><span className="text-[11px] font-medium text-[var(--muted)] w-14 shrink-0">Было:</span><span className="line-through opacity-75">{proposalTooth ? `Зуб ${proposalTooth}: Без патологии / Интактный` : "Без патологии / Интактный"}</span></div>
                               <div className="flex items-center gap-2 text-[var(--ink)] font-medium"><span className="text-[11px] font-semibold text-[var(--teal,#0d9488)] w-14 shrink-0">Станет:</span><span className="text-[var(--teal,#0d9488)] font-semibold">{proposalTooth ? `Зуб ${proposalTooth}: ${m.actionProposal.description}` : m.actionProposal.description}</span></div>
                             </div>
-                            {actionError && <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center justify-between text-[11px] text-rose-700 dark:text-rose-300"><span>{actionError}</span><button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-rose-600 text-white font-semibold hover:bg-rose-700 cursor-pointer text-[10px]">Повторить попытку</button></div>}
+                            {actionError && <div className="p-2 rounded-lg bg-[var(--danger-soft,rgba(239,68,68,0.1))] border border-[var(--danger,rgba(239,68,68,0.3))] flex items-center justify-between text-[11px] text-[var(--danger,#ef4444)]"><span>{actionError}</span><button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-[var(--danger,#ef4444)] text-white font-semibold hover:opacity-90 cursor-pointer text-[10px]">Повторить попытку</button></div>}
                             <div className="flex items-center justify-end gap-2 pt-1">
-                              <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
+                              <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger,#ef4444)] font-semibold cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
                               <button type="button" data-testid="copilot-primary-apply-cta" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm hover:opacity-95 transition-all"><Check size={14} /><span>Применить в карту</span></button>
                             </div>
                           </div>
@@ -400,9 +400,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
               const replies = lastAssistant?.suggestedReplies;
               if (!replies || replies.length === 0 || isStreaming) return null;
               return (
-                <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 snap-x" data-testid="copilot-smart-replies">
-                  <span className="text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 flex items-center gap-1"><Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" /><span className="hidden sm:inline">Подсказки:</span></span>
-                  {replies.map((reply, i) => <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs snap-start flex items-center">{reply}</button>)}
+                <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0" data-testid="copilot-smart-replies">
+                  <span className="hidden sm:flex text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 items-center gap-1"><Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" /><span>Подсказки:</span></span>
+                  {replies.map((reply, i) => <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-2.5 sm:px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs flex items-center">{reply}</button>)}
                 </div>
               );
             })()}
@@ -410,7 +410,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
             {/* Нижняя панель ввода (Ровно 1 Primary CTA находится в карточке действия) */}
             <div className="copilot-bottom-composer px-3 sm:px-5 pt-2 pb-5 max-md:pb-[calc(16px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2">
               <div className="copilot-input-row flex items-center gap-2">
-                <button type="button" onClick={voice.toggleListening} aria-label="Голосовой ввод" className={`copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${voice.isListening ? "recording bg-rose-500 text-white border-rose-600 animate-pulse" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}>{voice.isListening ? <MicOff size={18} /> : <Mic size={18} />}{voice.isListening && <div className="copilot-vu-meter flex items-end gap-0.5 h-3.5 px-0.5" aria-label="Индикатор звука"><span className="w-0.5 rounded-full h-3 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-3.5 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-2 bg-white animate-pulse" /></div>}</button>
+                <button type="button" onClick={voice.toggleListening} aria-label="Голосовой ввод" className={`copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${voice.isListening ? "recording bg-[var(--danger,#ef4444)] text-white border-[var(--danger,#ef4444)] animate-pulse" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}>{voice.isListening ? <MicOff size={18} /> : <Mic size={18} />}{voice.isListening && <div className="copilot-vu-meter flex items-end gap-0.5 h-3.5 px-0.5" aria-label="Индикатор звука"><span className="w-0.5 rounded-full h-3 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-3.5 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-2 bg-white animate-pulse" /></div>}</button>
                 <input type="text" value={inputText} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }} placeholder="Запрос или диктовка..." className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]" />
                 <button type="button" onClick={() => handleSendMessage()} className="copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Отправить запрос"><Send size={16} /></button>
               </div>

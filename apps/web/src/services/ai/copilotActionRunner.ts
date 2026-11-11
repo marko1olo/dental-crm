@@ -226,13 +226,12 @@ export class CopilotActionRunner {
 		if (typeof window !== "undefined" || apiBaseUrl) {
 			const token = readDenteClinicToken() || readDenteStaffToken() || "";
 			const baseUrl = apiBaseUrl.replace(/\/$/, "");
-			const actionEndpoint = `${baseUrl}/api/copilot/action`;
-			const confirmEndpoint = `${baseUrl}/api/v1/copilot/confirm`;
+			const confirmEndpoint = `${baseUrl}/api/agent/confirm`;
 			const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
-			// 1. Canonical Fastify /api/copilot/action
+			// Canonical Fastify /api/agent/confirm
 			try {
-				const resp = await fetch(actionEndpoint, {
+				const resp = await fetch(confirmEndpoint, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -266,38 +265,6 @@ export class CopilotActionRunner {
 				);
 				showToast(`Сетевой сбой при подтверждении: ${msg}`, "warning");
 			}
-
-			// 2. Secondary confirmation endpoint
-			try {
-				const resp2 = await fetch(confirmEndpoint, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
-						...authHeader,
-					},
-					body: JSON.stringify({
-						sessionId: sessionId || "default-session",
-						callId,
-						decision: "confirm",
-						modifiedArgs: finalArgs,
-					}),
-				});
-				if (!resp2.ok) {
-					const errData2 = await resp2.json().catch(() => null);
-					if (errData2?.error && errData2.error !== "NotFound") {
-						console.warn(
-							"[CopilotActionRunner] Secondary endpoint error:",
-							errData2,
-						);
-					}
-				}
-			} catch (netErr2) {
-				console.warn(
-					"[CopilotActionRunner] Secondary confirmation failed:",
-					netErr2,
-				);
-			}
 		}
 
 		return await this.executeAction(
@@ -328,7 +295,7 @@ export class CopilotActionRunner {
 			const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
 			try {
-				await fetch(`${baseUrl}/api/copilot/action`, {
+				await fetch(`${baseUrl}/api/agent/confirm`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -346,28 +313,6 @@ export class CopilotActionRunner {
 			} catch (err) {
 				console.warn(
 					"[CopilotActionRunner] Failed to reject action on server:",
-					err,
-				);
-			}
-
-			try {
-				await fetch(`${baseUrl}/api/v1/copilot/confirm`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
-						...authHeader,
-					},
-					body: JSON.stringify({
-						sessionId: sessionId || "default-session",
-						callId,
-						decision: "reject",
-						reason,
-					}),
-				});
-			} catch (err) {
-				console.warn(
-					"[CopilotActionRunner] Secondary rejection failed:",
 					err,
 				);
 			}

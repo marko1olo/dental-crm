@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -70,8 +71,9 @@ export function useCopilotActions({
 			setBusy(true);
 			setPhase("working");
 
-			const sessId = conversationId || `sess_${Date.now()}`;
-			if (!conversationId) setConversationId(sessId);
+			const isValidUuid = typeof conversationId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId);
+			const sessId = isValidUuid ? conversationId : generateUuidV7();
+			if (!isValidUuid) setConversationId(sessId);
 
 			const settings = useCopilotStore.getState().settings;
 			const currentTrust = settings.trustLevel;
@@ -166,9 +168,11 @@ export function useCopilotActions({
 					});
 			}
 
-			const sessId = conversationId || "default-session";
+			const sessId = (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId))
+				? conversationId
+				: generateUuidV7();
 			try {
-				await streamRequest("/api/v1/copilot/confirm", {
+				await streamRequest("/api/agent/confirm", {
 					sessionId: sessId,
 					callId,
 					decision,

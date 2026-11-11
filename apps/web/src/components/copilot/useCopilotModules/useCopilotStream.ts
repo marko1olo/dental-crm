@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { showToast } from "../../GlobalToast";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -147,6 +148,17 @@ export function useCopilotStream({
 					handleEvent("error", {
 						detail: `HTTP ${res.status}: ${res.statusText}`,
 					});
+					showToast(
+						"Сбой соединения со шлюзом ИИ. Нажмите «Повторить» для повторной отправки.",
+						"error",
+						6000,
+						{
+							label: "Повторить",
+							onAction: () => {
+								void streamRequest(pathStr, body);
+							},
+						},
+					);
 					return;
 				}
 
@@ -154,6 +166,17 @@ export function useCopilotStream({
 			} catch (err: unknown) {
 				if ((err as Error).name !== "AbortError") {
 					handleEvent("error", { detail: String(err) });
+					showToast(
+						"Сетевой сбой при обращении к ИИ-копайлоту. Нажмите «Повторить» для повторной отправки.",
+						"error",
+						6000,
+						{
+							label: "Повторить",
+							onAction: () => {
+								void streamRequest(pathStr, body);
+							},
+						},
+					);
 				}
 			} finally {
 				if (abortControllerRef.current === controller) {

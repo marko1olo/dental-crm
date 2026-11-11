@@ -117,7 +117,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         <button
           type="button"
           onClick={onApplyAllActions}
-          className="chairside-hud-btn-quick-apply btn-capsule-apply-scheme hidden sm:inline-flex"
+          className="chairside-hud-btn-quick-apply chairside-capsule-btn-apply btn-capsule-apply-scheme bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)] border border-[var(--teal,#0d9488)] shadow-sm hidden sm:inline-flex"
           data-testid="chairside-btn-quick-apply"
         >
           <Check size={14} />
@@ -128,7 +128,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         <button
           type="button"
           onClick={onToggleDrawer}
-          className="chairside-hud-btn-icon btn-toggle-capsule-drawer"
+          className="chairside-hud-btn-icon btn-toggle-capsule-drawer border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
           title={isDrawerOpen ? "Свернуть панель" : "Развернуть детали"}
           aria-label="Развернуть"
         >
@@ -138,7 +138,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         <button
           type="button"
           onClick={onToggleDock}
-          className="chairside-hud-btn-icon btn-chairside-hud-dock-toggle"
+          className="chairside-hud-btn-icon btn-chairside-hud-dock-toggle border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
           title="Переключить докинг"
           aria-label="Докинг"
         >
@@ -148,7 +148,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         <button
           type="button"
           onClick={onMinimize}
-          className="chairside-hud-btn-icon btn-chairside-hud-minimize"
+          className="chairside-hud-btn-icon btn-chairside-hud-minimize border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
           title="Свернуть в пилюлю"
           aria-label="Свернуть"
         >
@@ -158,7 +158,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="chairside-hud-btn-icon btn-chairside-hud-close"
+          className="chairside-hud-btn-icon btn-chairside-hud-close border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
           title="Закрыть HUD"
           aria-label="Закрыть"
         >
