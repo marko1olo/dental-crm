@@ -36,13 +36,13 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
 		window.addEventListener("dente:open-orthodontics", handleOpenEvent);
-		window.addEventListener("dente:open-ortho", handleOpenEvent);
+		window.addEventListener("dente:open-ortho-studio", handleOpenEvent);
 
 		return () => {
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
 			window.removeEventListener("dente:open-orthodontics", handleOpenEvent);
-			window.removeEventListener("dente:open-ortho", handleOpenEvent);
+			window.removeEventListener("dente:open-ortho-studio", handleOpenEvent);
 			if (instanceClaimedRef.current) {
 				isGlobalOrthoModalMounted = false;
 				instanceClaimedRef.current = false;

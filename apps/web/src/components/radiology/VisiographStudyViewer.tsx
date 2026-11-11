@@ -200,7 +200,10 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 		let resolvedPriceRub = priceRub;
 		if (typeof resolvedPriceRub !== "number" || resolvedPriceRub <= 0) {
 			try {
-				const visitServices = useVisitStore.getState().services || [];
+				const visitState = useVisitStore.getState() as unknown as Record<string, unknown>;
+				const visitServices = Array.isArray(visitState.services)
+					? (visitState.services as Array<{ name?: string; price?: number }>)
+					: [];
 				const queryTerm = modality === "opg" ? "оптг" : "визиограф";
 				const found = visitServices.find((s) => {
 					const name = s.name?.toLowerCase() || "";

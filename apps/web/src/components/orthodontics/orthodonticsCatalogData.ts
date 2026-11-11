@@ -24,13 +24,17 @@ export interface ApplianceDef {
 }
 
 export const APPLIANCES_CATALOG: ApplianceDef[] = [
-	{ id: "damon_q2", category: "brackets", name: "Damon Q2 (Металл, .022)", description: "Самолигирующая металлическая брекет-система Ormco с пассивным пазом" },
-	{ id: "damon_clear", category: "brackets", name: "Damon Clear 2 (Керамика)", description: "Эстетические сапфирово-керамические самолигирующие замки" },
-	{ id: "clarity_adv", category: "brackets", name: "3M Clarity Advanced", description: "Ультраэстетичные поликристаллические керамические брекеты" },
-	{ id: "incognito", category: "brackets", name: "Incognito (Лингвальные)", description: "Индивидуализированная золотая невидимая язычная система" },
-	{ id: "flexiligner", category: "aligners", name: "FlexiLigner (Элайнеры)", description: "Прозрачные биосовместимые полимерные флексы для коррекции окклюзии" },
-	{ id: "starsmile", category: "aligners", name: "Star Smile (Элайнеры)", description: "Серия поликарбонатных ортодонтических кап с шагом перемещения 0.25 мм" },
-	{ id: "marco_rosa", category: "plate", name: "Аппарат Марко Роса (ВЧ)", description: "Несъемный аппарат для раннего форсированного расширения небного шва" },
+	{ id: "metal_self_ligating", category: "brackets", name: "Металлическая самолигирующая (.022)", description: "Самолигирующая металлическая брекет-система с пассивным пазом" },
+	{ id: "ceramic_aesthetic", category: "brackets", name: "Керамическая эстетическая (.022)", description: "Эстетические сапфирово-керамические самолигирующие замки" },
+	{ id: "damon_q2", category: "brackets", name: "Damon Q2 (Металл, .022)", description: "Самолигирующая металлическая брекет-система с пассивным пазом" },
+	{ id: "damon_clear", category: "brackets", name: "Керамика эстетическая (.022)", description: "Эстетические сапфирово-керамические самолигирующие замки" },
+	{ id: "clarity_adv", category: "brackets", name: "Керамические эстетические брекеты", description: "Ультраэстетичные поликристаллические керамические брекеты" },
+	{ id: "incognito", category: "brackets", name: "Лингвальная брекет-система", description: "Индивидуализированная невидимая язычная система" },
+	{ id: "clear_aligners", category: "aligners", name: "Элайнеры (ортодонтические каппы)", description: "Прозрачные биосовместимые полимерные каппы для коррекции окклюзии" },
+	{ id: "flexiligner", category: "aligners", name: "Элайнеры (флекс-система)", description: "Прозрачные биосовместимые полимерные флексы для коррекции окклюзии" },
+	{ id: "starsmile", category: "aligners", name: "Элайнеры (3D-сетап)", description: "Серия поликарбонатных ортодонтических кап с шагом перемещения 0.25 мм" },
+	{ id: "ortho_plate", category: "plate", name: "Пластинка с расширяющим винтом", description: "Съемный пластиночный аппарат трехмерного расширения челюсти" },
+	{ id: "marco_rosa", category: "plate", name: "Аппарат небного расширения (Марко Роса)", description: "Несъемный аппарат для раннего форсированного расширения небного шва" },
 	{ id: "bertoni_plate", category: "plate", name: "Пластинка с винтом Бертони", description: "Съемный пластиночный аппарат трехмерного расширения челюсти" },
 ];
 

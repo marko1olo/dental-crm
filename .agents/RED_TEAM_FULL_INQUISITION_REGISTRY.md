@@ -961,6 +961,43 @@
      - 📱 Mobile Light (390x844): `docs/proofs/radiology/03_rvg_capture_mobile_light_390x844.png` (99.4 KB)
      - 📱 Mobile Dark (390x844): `docs/proofs/radiology/04_rvg_capture_mobile_dark_390x844.png` (97.7 KB)
 
+### [RAD-07] [SEV-1] [ИСПРАВЛЕНО] Ликвидация бага 404 URL снимков в imagingXrayMapper (DEF-XRAY-01), снос сироты visiographPrintA4 и защита математического ядра рентгенологии (Мандаты 8bd, 8be, 8bf, 8bj, 8am, 8zg)
+- **Файлы:**
+  - [`apps/api/src/db/imaging/imagingXrayMapper.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/imaging/imagingXrayMapper.ts)
+  - [`apps/api/src/db/imaging/__tests__/imagingXrayMapper.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/imaging/__tests__/imagingXrayMapper.test.ts)
+  - [`apps/web/src/components/visiograph/visiographPrintA4.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/visiographPrintA4.ts) (Удален через git rm)
+  - [`apps/web/src/components/visiograph/VisiographLegalPrintProtocol.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographLegalPrintProtocol.ts) (Канонический SSOT протокола печати)
+  - [`apps/web/src/components/radiology/VisiographStudyViewer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/VisiographStudyViewer.tsx)
+  - [`apps/web/src/components/radiology/radiologyExportService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/radiologyExportService.ts)
+  - [`apps/web/src/components/radiology/__tests__/calibratedRulerAndClinicalPresets.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/__tests__/calibratedRulerAndClinicalPresets.test.ts)
+  - [`apps/web/src/components/visiograph/VisiographDicomExporter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographDicomExporter.ts) (Защищенное клиническое ядро)
+  - [`apps/web/src/components/visiograph/VisiographWindowPresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographWindowPresets.ts) (Защищенное клиническое ядро)
+  - [`apps/web/src/components/visiograph/VisiographExportService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographExportService.ts) (Защищенное клиническое ядро)
+  - [`apps/web/src/components/visiograph/VisiographMeasurementMath.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographMeasurementMath.ts) (Защищенное клиническое ядро)
+- **Суть дефектов:**
+  1. **DEF-XRAY-01 (Критический баг 404 URL снимков):** В `imagingXrayMapper.ts:61-64` выполнялась ошибочная конкатенация `/${record.id}` к уже готовому `record.fileUrl`, возвращаемому роутом экспорта рентгена (`/api/xray/scans/<UUID>/file`). В результате формировался дублирующий битый путь вида `/api/xray/scans/<UUID>/file/<UUID>`, вызывавший ошибки `404 Not Found` при попытке загрузки превью и самого снимка во вьюере.
+  2. **Сирота `visiographPrintA4.ts`:** Устаревший файл генерации A4 печати висел неиспользуемым (0 импортов во всем проекте), дублируя канонический протокол юридической печати `VisiographLegalPrintProtocol.ts`.
+  3. **Защита математического ядра рентгенологии (Мандат 8bj):** Предотвращен слепой снос математических файлов `components/visiograph/` (`VisiographDicomExporter.ts`, `VisiographWindowPresets.ts`, `VisiographExportService.ts`, `VisiographMeasurementMath.ts`), содержащих формулы калибровки физического разрешения, окон контрастирования DICOM, угловых измерений и тригонометрии.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Ликвидация конкатенации в `imagingXrayMapper.ts`:** `previewUrl` и `viewerUrl` теперь напрямую возвращают `record.fileUrl`, исключая искажение пути и 404 ошибки. Поведение верифицировано юнит-тестом `imagingXrayMapper.test.ts` (3/3 PASS).
+  2. **Снос файла-сироты:** `apps/web/src/components/visiograph/visiographPrintA4.ts` удален из репозитория (`git rm`).
+  3. **Сохранение и интеграция ядра:** Математическое ядро сохранено, добавлен канонический тест калибровки и пресетов DICOM `calibratedRulerAndClinicalPresets.test.ts` (7/7 PASS).
+  4. **Автономия и типобезопасность:** В `VisiographStudyViewer.tsx` устранены строгие несоответствия типов Zustand-стора визита (Мандат 8be).
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - Целевые юнит- и интеграционные тесты рентгенологии:
+    * `apps/api/src/db/imaging/__tests__/imagingXrayMapper.test.ts` (3/3 PASS)
+    * `apps/web/src/components/radiology/__tests__/calibratedRulerAndClinicalPresets.test.ts` (7/7 PASS)
+    * `apps/api/src/routes/xrayStorageAndDicomIndexing.test.ts` (9/9 PASS)
+    * `apps/web/src/components/radiology/__tests__/dental2DRadiologyViewer.test.ts` (24/24 PASS)
+    * `apps/web/src/components/radiology/__tests__/visiographStudyViewer.test.tsx` (7/7 PASS)
+    * **ИТОГО: 50/50 тестов рентгена и визиографа зелёные!**
+  - `npm run check:encoding` -> **Exit Code 0 (21 746 файлов проверено)**.
+- **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/radiology/01_visiograph_study_viewer_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/01_visiograph_study_viewer_pc_light_1440x900.png) (530.7 KB $\ge 20$KB) — Вьюпорт визиографа, глубокий фон снимка `#090d16`, интактная формула, ровно 1 Primary CTA `#0d9488`.
+  - 🌙 PC Dark (1440x900): [`docs/proofs/radiology/02_visiograph_study_viewer_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/02_visiograph_study_viewer_pc_dark_1440x900.png) (527.1 KB $\ge 20$KB) — 100% темные токены, WCAG AAA контраст, ноль белых пятен.
+  - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_visiograph_study_viewer_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_visiograph_study_viewer_mobile_light_390x844.png) (1.02 MB $\ge 20$KB) — Нативный Apple HIG Mobile Bottom Sheet, 0px горизонтального скролла, Zero-Clipping.
+  - 🌙 Mobile Dark (390x844): [`docs/proofs/radiology/04_visiograph_study_viewer_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_visiograph_study_viewer_mobile_dark_390x844.png) (1.02 MB $\ge 20$KB) — Тёмный мобильный режим, идеальная калибровка линейки и пресетов окон.
+
 
 ---
 
@@ -4561,6 +4598,10 @@ ead_file по 8 осям качества Хаммера:
   12. **Ликвидация псевдо-WebGPU/WebGL в цефалометрии (DEF-ORTHO-01):** В `cephAiInferenceService.ts` и `useCephLandmarks.ts` устранены симуляция задержки 15 мс и фейковые заявления о WebGPU нейросети. Установлен честный клинический статус «Калиброванный анатомический шаблон (норма)» (`template_norm`).
   13. **Десоветизация и реактивный биндинг формы карты (DEF-ORTHO-02):** Компонент `OrthodonticCard043_1uForm.tsx` удален (`git rm`) и заменен на канонический `OrthodonticPatientCardForm.tsx` с чистым русским языком («Медицинская карта ортодонтического пациента»), двусторонней привязкой всех полей ввода к `onChange(payload)` и обратной совместимостью через alias-экспорт.
   14. **Искоренение канцелярского сленга и дубликата `cephalometricMath` (DEF-ORTHO-03, DEF-ORTHO-04):** Удалена устаревшая функция `generateForm043OrthodonticProtocolText` (заменена на `generateOrthodonticProtocolText`). Удален фасад `radiology/cephalometricMath.ts`, все импорты переведены на единый SSOT `components/orthodontics/cephalometricMath`.
+  15. **Физический снос 7 сиротских файлов (`git rm`):** Ликвидирован мертвый кластер в `apps/web/src/components/patients/` (`OrthodonticProgressWidget.tsx`, `OrthodonticEditForm.tsx`, `OrthodonticQuickActionsBar.tsx`, `OrthodonticTrackerDisplay.tsx`, `useOrthodonticActions.ts`, `useOrthodonticQuickClinicalActions.ts`, `orthodonticProgressSerialization.ts` — 693 строки мертвого кода, Мандат 8bj).
+  16. **Устранение коллизии глобальных событий (DEF-ORTHO-05):** В `DirectOrthodonticsLauncher.tsx` коллизионный алиас `"dente:open-ortho"` заменен на `"dente:open-orthodontics"` и `"dente:open-ortho-studio"`, а в `DirectOrthopedicsLauncher.tsx` удален захват `#ortho` и `?ortho=1` в пользу строго раздельного `"dente:open-orthopedics"` (устранено наложение окон ортодонтии и ортопедии).
+  17. **Очистка от хардкода чужих брендов (Мандат 8ap):** В `materialParamsResolver.ts` хардкод `"Damon"` заменен на клиническую категорию `"Брекет-система металлическая самолигирующая"`. В `orthoEngine.ts` и `orthodonticsCatalogData.ts` аппаратура переведена на чистые клинические категории (`metal_self_ligating`, `ceramic_aesthetic`, `clear_aligners`, `ortho_plate`). В `orthodonticPatientMemo.ts` устранена привязка к марке. В `orthoMaterialsAndPresets.test.ts` устранены жесткие требования торговых марок в пользу проверки клинических свойств и 804н.
+  18. **Ликвидация `as any` (Мандат 8be):** В `OrthodonticPatientCardForm.tsx` (строки 364, 384) касты `as any` заменены на строго типизированные `LipCompetenceType` и `OrthodonticAppliancePlan["applianceType"]`.
 - **Машинные гейты Definition of Done (100% Exit Code 0):**
   - Ортодонтические веб-тесты: `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` -> **16/16 PASSED (Exit Code 0)**.
   - ТРГ трекер тесты: `apps/web/src/tests/orthoCephTracker.test.tsx` -> **6/6 PASSED (Exit Code 0)**.

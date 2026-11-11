@@ -15,8 +15,8 @@ function checkIsOrthopedicsActive(): boolean {
 	const s = window.location.search.toLowerCase();
 	const params = new URLSearchParams(s);
 	return (
-		h.includes("orthopedics") || h.includes("crowns") || h.includes("ortho-studio") || h === "#ortho" ||
-		params.get("ortho") === "1" || params.get("orthopedics") === "1" || params.get("crowns") === "1" || params.get("standalone") === "orthopedics"
+		h.includes("orthopedics") || h.includes("crowns") ||
+		params.get("orthopedics") === "1" || params.get("crowns") === "1" || params.get("standalone") === "orthopedics"
 	);
 }
 
@@ -52,14 +52,12 @@ export const DirectOrthopedicsLauncher: React.FC = () => {
 		window.addEventListener("popstate", handleLocationChange);
 		window.addEventListener("dente:open-orthopedics", handleOpenEvent);
 		window.addEventListener("dente:open-crowns", handleOpenEvent);
-		window.addEventListener("dente:open-ortho", handleOpenEvent);
 
 		return () => {
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
 			window.removeEventListener("dente:open-orthopedics", handleOpenEvent);
 			window.removeEventListener("dente:open-crowns", handleOpenEvent);
-			window.removeEventListener("dente:open-ortho", handleOpenEvent);
 		};
 	}, []);
 
@@ -67,10 +65,10 @@ export const DirectOrthopedicsLauncher: React.FC = () => {
 		setIsOpen(false); setIsActive(false);
 		if (typeof window !== "undefined") {
 			const hash = window.location.hash;
-			if (hash.includes("orthopedics") || hash.includes("crowns") || hash.includes("ortho")) {
-				const cleanHash = hash.replace(/#(orthopedics-studio|orthopedics|ortho-studio|crowns|ortho)/gi, "");
+			if (hash.includes("orthopedics") || hash.includes("crowns")) {
+				const cleanHash = hash.replace(/#(orthopedics-studio|orthopedics|crowns)/gi, "");
 				const url = new URL(window.location.href);
-				url.searchParams.delete("ortho"); url.searchParams.delete("orthopedics"); url.searchParams.delete("crowns");
+				url.searchParams.delete("orthopedics"); url.searchParams.delete("crowns");
 				if (url.searchParams.get("standalone") === "orthopedics") url.searchParams.delete("standalone");
 				window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + cleanHash);
 			}

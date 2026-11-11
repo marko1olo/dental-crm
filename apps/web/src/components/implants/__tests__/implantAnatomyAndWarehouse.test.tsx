@@ -35,7 +35,7 @@ describe("Implant Anatomy, Warehouse & Consumables", () => {
 		assert.ok(/4[\s\u00a0\u202f]?500/.test(html));
 		assert.ok(html.includes("doctor-net-margin"));
 		assert.ok(/28[\s\u00a0\u202f]?000/.test(html));
-		assert.ok(html.includes("Без сетевых поборов"));
+		assert.ok(html.includes("Себестоимость и маржа"));
 	});
 
 	it("26. ImplantConsumablesSelector handles GBR selection and hides when not performed", () => {

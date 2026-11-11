@@ -6,7 +6,7 @@
  * На смартфонах — нативный Bottom Sheet Apple HIG с Drag Handle 36x5px и тач-таргетами >= 44x44px.
  */
 
-import React, { useState, useCallback, useId, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useId, useMemo } from "react";
 import { createPortal, flushSync } from "react-dom";
 import { AlertTriangle, Award, Check, FileText, MessageSquare, Printer, ShieldCheck, Stethoscope, Wrench, X } from "lucide-react";
 import { DentalImplant } from "../icons/DentalIcons";
@@ -17,6 +17,7 @@ import { useAppStore } from "../../store/appStore";
 import {
 	SURGERY_SCENARIOS,
 	SURGERY_IMPLANT_SYSTEMS,
+	SURGERY_DEFAULT_BATCHES,
 	SURGERY_GRAFT_CATALOG,
 	SURGERY_MEMBRANE_CATALOG,
 	SURGERY_SUTURE_CATALOG,
@@ -37,6 +38,18 @@ import type { FastImplantPassportData } from "../implants/implantQuickPresets";
 import "./surgeryHub.css";
 
 export type SurgeryHubTab = "protocol" | "diary" | "passport" | "memo";
+
+interface StockImplantRecord {
+	readonly id: string;
+	readonly name: string;
+	readonly category?: string;
+	readonly sku?: string | null;
+	readonly lotNumber?: string | null;
+	readonly serialNumber?: string | null;
+	readonly expirationDate?: string | null;
+	readonly currentQty?: string | null;
+	readonly stockQuantity?: string | null;
+}
 
 export interface ChairsideSurgeryHubModalProps {
 	readonly isOpen: boolean;
@@ -155,11 +168,73 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	const [selectedMembrane] = useState<string>(initialMembrane || SURGERY_MEMBRANE_CATALOG[0].name);
 	const [selectedSuture] = useState<string>(initialSuture || SURGERY_SUTURE_CATALOG[0].name);
 
+	const [stockImplants, setStockImplants] = useState<readonly StockImplantRecord[]>([]);
+	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!isOpen || typeof fetch !== "function") return;
+		let isCancelled = false;
+		async function loadStock() {
+			try {
+				const res = await fetch("/api/clinical/implants/stock", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					if (!isCancelled && data?.success && Array.isArray(data.implants) && data.implants.length > 0) {
+						setStockImplants(data.implants);
+					}
+				}
+			} catch {
+				/* Офлайн фоллбэк на SURGERY_DEFAULT_BATCHES */
+			}
+		}
+		void loadStock();
+		return () => { isCancelled = true; };
+	}, [isOpen]);
+
+	const matchedStockItem = useMemo(() => {
+		const brandLower = selectedBrand.toLowerCase();
+		if (stockImplants.length > 0) {
+			const exact = stockImplants.find((item) => {
+				const name = (item.name || "").toLowerCase();
+				return name.includes(brandLower) &&
+					(name.includes(`${diameterMm}`) || name.includes(`ø${diameterMm}`)) &&
+					name.includes(`${lengthMm}`);
+			});
+			if (exact) return exact;
+			const brandOnly = stockImplants.find((item) => (item.name || "").toLowerCase().includes(brandLower));
+			if (brandOnly) return brandOnly;
+		}
+		const defaultBatch = SURGERY_DEFAULT_BATCHES.find(
+			(b) => b.brand.toLowerCase() === brandLower && b.diameterMm === diameterMm && b.lengthMm === lengthMm
+		) || SURGERY_DEFAULT_BATCHES.find((b) => b.brand.toLowerCase() === brandLower);
+		return defaultBatch || null;
+	}, [stockImplants, selectedBrand, diameterMm, lengthMm]);
+
+	useEffect(() => {
+		if (matchedStockItem) {
+			if (matchedStockItem.lotNumber) setLotNumber(matchedStockItem.lotNumber);
+			if ("sku" in matchedStockItem && matchedStockItem.sku) setCatalogArticle(matchedStockItem.sku);
+			if ("serialNumber" in matchedStockItem && matchedStockItem.serialNumber) setSerialNumber(matchedStockItem.serialNumber);
+			setSelectedInventoryItemId(matchedStockItem.id);
+		}
+	}, [matchedStockItem]);
+
+	const effectiveInventoryItemId = useMemo(() => {
+		const candidate = selectedInventoryItemId || matchedStockItem?.id || null;
+		if (candidate && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)) {
+			return candidate;
+		}
+		return undefined;
+	}, [selectedInventoryItemId, matchedStockItem]);
+
 	const scenarioConfig = SURGERY_SCENARIOS[activeScenario];
 	const currentSystem = useMemo(() => getImplantSystemById(selectedBrand), [selectedBrand]);
 
 	const handleSelectBrand = useCallback((brand: string) => {
 		setSelectedBrand(brand);
+		setSelectedInventoryItemId(null);
 		const sys = getImplantSystemById(brand);
 		setDiameterMm(sys.defaultDiameterMm); setLengthMm(sys.defaultLengthMm);
 		setCatalogArticle(sys.defaultArticle); setLotNumber(sys.defaultLotNumber);
@@ -208,7 +283,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			isqDay0: 72, capType, patientName, patientId, doctorName, doctorId, dateIso,
 			osteointegrationExpectedDate: computeOsteointegrationExpectedDate(dateIso, toothFdi),
 			isWarehouseOverdraft: Boolean(inventoryOverdraftActive),
-			inventoryItemId: `inv-${selectedBrand.toLowerCase()}-${diameterMm * 10}${lengthMm}`,
+			inventoryItemId: effectiveInventoryItemId || selectedInventoryItemId || matchedStockItem?.id || `inv-${selectedBrand.toLowerCase()}-${diameterMm * 10}${lengthMm}`,
 			expirationDate: currentSystem.defaultExpirationDate,
 			operationPriceRub: financials.operationPriceRub,
 			implantCostRub: financials.implantCostRub,
@@ -288,6 +363,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					if (activeScenario === "implant") {
 						const implantPayload = JSON.stringify({
 							patientId: targetId, toothNumberFdi: currentTooth, implantBrand: currentSystem.id,
+							inventoryItemId: effectiveInventoryItemId,
 							implantDiameterMm: diameterMm, implantLengthMm: lengthMm, lotNumber: toothLot, serialNumber,
 							boneDensityClass: boneDensity, finalInsertionTorqueNcm: torqueNcm, baselineIsqMesiodistal: 72,
 							baselineIsqBuccolingual: 72, boneGraftMaterial: selectedGraft, membraneUsed: selectedMembrane,

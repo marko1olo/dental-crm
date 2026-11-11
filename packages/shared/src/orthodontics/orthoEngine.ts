@@ -133,33 +133,40 @@ export const WORKHORSE_ARCHWIRES: WorkhorseArchwireOption[] = [
 ];
 
 export const BRACKET_SYSTEMS: BracketSystemOption[] = [
-	{ id: "damon_q2", label: "Damon Q2", desc: "Металл · Пассивное самолигирование (Ormco, топ-1 рынка)", category: "brackets" },
-	{ id: "damon_clear", label: "Damon Clear 2 (Ormco)", desc: "Керамика / сапфир · Эстетическое самолигирование", category: "brackets" },
-	{ id: "clarity_advanced", label: "3M Clarity Advanced", desc: "Керамические эстетические брекеты с концентратором напряжений", category: "brackets" },
-	{ id: "empower", label: "American Orthodontics Empower", desc: "Интерактивное самолигирование (двойной контроль)", category: "brackets" },
-	{ id: "pitts21", label: "Pitts 21 (OC Orthodontics)", desc: "Квадратный паз .021 · Протокол Smile Arc Protection", category: "brackets" },
-	{ id: "h4_system", label: "H4 (Orthocentric)", desc: "Низкопрофильное пассивное самолигирование", category: "brackets" },
-	{ id: "mini_master", label: "Mini Master / Mini Diamond", desc: "Лигатурные классические брекеты (AO / Ormco)", category: "brackets" },
-	{ id: "mini_diamond", label: "Mini Diamond", desc: "Лигатурные классические (Ormco)", category: "brackets" },
+	{ id: "metal_self_ligating", label: "Металлическая самолигирующая система", desc: "Металл · Пассивное/интерактивное самолигирование", category: "brackets" },
+	{ id: "ceramic_aesthetic", label: "Керамическая / сапфировая эстетическая система", desc: "Керамика / сапфир · Эстетическое самолигирование", category: "brackets" },
+	{ id: "metal_ligating", label: "Металлическая лигатурная система", desc: "Классическая фиксация лигатурами", category: "brackets" },
+	{ id: "lingual_system", label: "Лингвальная брекет-система", desc: "Индивидуализированная язычная фиксация", category: "brackets" },
+	{ id: "damon_q2", label: "Damon Q2", desc: "Металл · Пассивное самолигирование", category: "brackets" },
+	{ id: "damon_clear", label: "Damon Clear 2", desc: "Керамика / сапфир · Эстетическое самолигирование", category: "brackets" },
+	{ id: "clarity_adv", label: "Керамические эстетические брекеты", desc: "Керамические эстетические брекеты", category: "brackets" },
+	{ id: "clarity_advanced", label: "Керамические эстетические брекеты", desc: "Керамические эстетические брекеты", category: "brackets" },
+	{ id: "empower", label: "Интерактивная самолигирующая система", desc: "Интерактивное самолигирование", category: "brackets" },
+	{ id: "pitts21", label: "Квадратный паз .021", desc: "Квадратный паз .021", category: "brackets" },
+	{ id: "h4_system", label: "Низкопрофильное самолигирование", desc: "Низкопрофильное пассивное самолигирование", category: "brackets" },
+	{ id: "mini_master", label: "Лигатурная классическая система", desc: "Лигатурные классические брекеты", category: "brackets" },
+	{ id: "mini_diamond", label: "Лигатурные классические мини-замки", desc: "Лигатурные классические замки", category: "brackets" },
 	// Элайнеры
+	{ id: "clear_aligners", label: "Элайнеры (ортодонтические каппы)", desc: "Прозрачные ортодонтические каппы с аттачментами", category: "aligners" },
 	{ id: "aligners", label: "Элайнеры (общий протокол)", desc: "Прозрачные каппы с аттачментами", category: "aligners" },
-	{ id: "aligners_3d_smile", label: "3D Smile (Россия)", desc: "Элайнеры с анализом корней по КЛКТ (топ-1 рынка РФ)", category: "aligners" },
-	{ id: "aligners_flexiligner", label: "FlexiLigner (РФ/Италия)", desc: "Флексы из многослойного термопласта", category: "aligners" },
-	{ id: "aligners_spark", label: "Spark Aligners (Ormco)", desc: "Премиальный материал TruGEN", category: "aligners" },
-	{ id: "aligners_eurokappa", label: "Eurokappa (Россия)", desc: "Отечественные прозрачные каппы", category: "aligners" },
-	{ id: "aligners_invisalign", label: "Invisalign (США)", desc: "Материал SmartTrack и аттачменты SmartForce", category: "aligners" },
-	{ id: "aligners_star_smile", label: "Star Smile (Россия)", desc: "Доступные элайнеры с 3D-сетапом", category: "aligners" },
+	{ id: "aligners_3d_smile", label: "Элайнеры с анализом корней", desc: "Ортодонтические каппы с анализом корней", category: "aligners" },
+	{ id: "aligners_flexiligner", label: "Флексы из многослойного термопласта", desc: "Многослойные биосовместимые термопластические каппы", category: "aligners" },
+	{ id: "aligners_spark", label: "Элайнеры из прозрачного полимера", desc: "Высокопрозрачный материал капп", category: "aligners" },
+	{ id: "aligners_eurokappa", label: "Прозрачные элайнеры", desc: "Ортодонтические каппы с аттачментами", category: "aligners" },
+	{ id: "aligners_invisalign", label: "Элайнеры со Smart-аттачментами", desc: "Эластичный термопласт и аттачменты", category: "aligners" },
+	{ id: "aligners_star_smile", label: "Ортодонтические элайнеры", desc: "Элайнеры с 3D-сетапом", category: "aligners" },
 	// Пластинки и функциональные аппараты
+	{ id: "ortho_plate", label: "Пластинка с винтом", desc: "Съемный пластиночный аппарат с расширяющим винтом", category: "removable_plates" },
 	{ id: "removable_plate", label: "Пластинка с винтом", desc: "Съемный пластиночный аппарат с расширяющим винтом", category: "removable_plates" },
 	{ id: "twin_block", label: "Твин-Блок", desc: "Функциональный двухчелюстной аппарат", category: "functional" },
-	{ id: "haas_marco_rosa", label: "Аппарат Марко Роса / Хааса", desc: "RPE быстрое небное расширение на кольцах/каппах", category: "functional" },
+	{ id: "haas_marco_rosa", label: "Аппарат небного расширения (Марко Роса / Хаас)", desc: "RPE небное расширение на кольцах/каппах", category: "functional" },
 	{ id: "fraenkel", label: "Регулятор функции Френкеля", desc: "Функциональный аппарат", category: "functional" },
 ];
 
 export const ORTHODONTIC_MINISCREW_SYSTEMS = [
-	{ id: "bioray", label: "Bio-Ray (Южная Корея)", desc: "Топ-1 рынка мини-винтов Ø 1.4-2.0 мм" },
-	{ id: "vectortas", label: "VectorTAS (Ormco, США)", desc: "Премиальная система временной скелетной опоры" },
-	{ id: "absoanchor", label: "Dentos AbsoAnchor (Корея)", desc: "Конические микровинты профессора Парка" },
+	{ id: "bioray", label: "Микровинты конические титановые Ø 1.4-2.0 мм", desc: "Временная скелетная опора (титановый сплав)" },
+	{ id: "vectortas", label: "Микровинты временной скелетной опоры", desc: "Система временной скелетной опоры" },
+	{ id: "absoanchor", label: "Конические микровинты скелетной опоры", desc: "Самонарезающие микровинты" },
 ] as const;
 
 

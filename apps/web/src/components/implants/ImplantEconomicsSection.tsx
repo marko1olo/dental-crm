@@ -32,7 +32,7 @@ export const ImplantEconomicsSection: React.FC<ImplantEconomicsSectionProps> = (
 					<span>Экономика хирурга / ИП:</span>
 				</div>
 				<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">
-					Без сетевых поборов
+					Себестоимость и маржа
 				</span>
 			</div>
 

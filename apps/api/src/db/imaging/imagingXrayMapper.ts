@@ -58,9 +58,9 @@ export function mapXrayScanToImagingStudy(
 			? (browserRenderableImageMimeType(record.storagePath)
 				? `/api/imaging/studies/${record.id}/file`
 				: `/api/imaging/studies/${record.id}/preview.svg`)
-			: (record.fileUrl ? `${record.fileUrl}/${record.id}` : `/api/imaging/studies/${record.id}/preview.svg`),
+			: (record.fileUrl ? record.fileUrl : `/api/imaging/studies/${record.id}/preview.svg`),
 		viewerUrl: record.storagePath
 			? `/api/imaging/studies/${record.id}/file`
-			: (record.fileUrl ? `${record.fileUrl}/${record.id}` : `/api/imaging/studies/${record.id}/preview.svg`),
+			: (record.fileUrl ? record.fileUrl : `/api/imaging/studies/${record.id}/preview.svg`),
 	};
 }

@@ -27,7 +27,7 @@ export function buildForm043ProtocolText(payload: ClinicalSnapshotPayload): stri
 		if (expParts.length > 0) lines.push(`Параметры экспозиции: ${expParts.join(", ")}`);
 	}
 
-	const is3D = Boolean(payload.viewKind?.startsWith("mpr") || payload.viewKind === "cbct");
+	const is3D = Boolean(payload.viewKind?.startsWith("mpr") || (payload.viewKind as string) === "cbct");
 	const preset = payload.preset ?? (is3D ? VISIOGRAPH_WINDOW_PRESETS.bone : undefined);
 	if (preset) {
 		lines.push(`Режим контрастирования: ${preset.label} (Окно WW: ${preset.windowWidth}, Уровень WL: ${preset.windowCenter})`);

@@ -7,6 +7,7 @@ import React from "react";
 import { Wrench } from "lucide-react";
 import {
 	SURGERY_IMPLANT_SYSTEMS,
+	getImplantSystemById,
 	type SurgeryCapType,
 } from "./surgeryCatalogData";
 
@@ -41,6 +42,14 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 	lotNumber,
 	serialNumber,
 }) => {
+	const selectedSystem = getImplantSystemById(selectedBrand);
+	const availableDiameters = selectedSystem?.standardDiametersMm?.length
+		? selectedSystem.standardDiametersMm
+		: [3.5, 4.0, 4.5, 5.0];
+	const availableLengths = selectedSystem?.standardLengthsMm?.length
+		? selectedSystem.standardLengthsMm
+		: [8.5, 10.0, 11.5, 13.0];
+
 	return (
 		<div className="flex flex-col gap-3 p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
 			<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -68,8 +77,8 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 				<div className="flex flex-col gap-1">
 					<span className="text-[11px] font-semibold text-[var(--muted)]">Диаметр (мм):</span>
-					<div className="flex items-center gap-1">
-						{[3.5, 4.0, 4.5, 5.0].map((d) => (
+					<div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
+						{availableDiameters.map((d) => (
 							<button
 								key={d}
 								type="button"
@@ -79,6 +88,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 										? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
+								data-testid={`diameter-${d}`}
 							>
 								Ø {d}
 							</button>
@@ -87,8 +97,8 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 				</div>
 				<div className="flex flex-col gap-1">
 					<span className="text-[11px] font-semibold text-[var(--muted)]">Длина (мм):</span>
-					<div className="flex items-center gap-1">
-						{[8.5, 10.0, 11.5, 13.0].map((l) => (
+					<div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
+						{availableLengths.map((l) => (
 							<button
 								key={l}
 								type="button"
@@ -98,6 +108,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 										? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
+								data-testid={`length-${l}`}
 							>
 								{l}
 							</button>

@@ -36,7 +36,7 @@ export function formatOrthodonticPatientMemo(params: OrthodonticPatientMemoParam
 	const visitDate = params.visitDate || new Date().toLocaleDateString("ru-RU");
 
 	const isAligners = Boolean(params.isAligners || params.bracketSystem === "aligners");
-	const systemName = isAligners ? "Элайнеры" : params.bracketSystem || "Damon Q2";
+	const systemName = isAligners ? "Элайнеры" : params.bracketSystem || "Металлическая самолигирующая брекет-система";
 
 	let apparatusDetails = "";
 	if (isAligners) {

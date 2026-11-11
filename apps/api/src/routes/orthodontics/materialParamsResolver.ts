@@ -13,8 +13,8 @@ export function resolveMaterialParams(body: import("zod").infer<typeof deductOrt
 		category = "ortho_archwire";
 		unitCostRub = 1200;
 	} else if (body.action === "bonding") {
-		pattern = pattern || "Damon";
-		defaultName = defaultName || "Брекет-система металлическая Damon Q2";
+		pattern = pattern || "брекет";
+		defaultName = defaultName || "Брекет-система металлическая самолигирующая";
 		category = "ortho_bracket";
 		unit = "компл.";
 		unitCostRub = 28000;
