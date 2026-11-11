@@ -95,7 +95,7 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 				assert.equal(item.basePriceKopecks, item.basePriceRub * 100);
 				assert.ok(item.estimatedDurationMin > 0);
 				assert.ok(item.commercialTitle.length > 5);
-				assert.ok(item.statutoryTitle804n.length > 5);
+				assert.ok((item.statutoryTitle804n?.length ?? 0) > 5);
 			}
 		});
 
@@ -533,6 +533,7 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 		it('validates clinic packages and non-804n commercial services without blocking', () => {
 			const giftCert = STATUTORY_ORDER_804N_PRESETS.find((s) => s.code804n === 'CLINIC.GIFT.010');
 			assert.ok(giftCert);
+			assert.ok(giftCert.code804n);
 			assert.equal(giftCert.category, 'package');
 			assert.equal(giftCert.isClinicPackage, true);
 			assert.equal(giftCert.basePriceRub, 10000);

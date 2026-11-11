@@ -41,7 +41,7 @@ import {
 import {
 	SURGICAL_OPERATION_NORMS,
 	evaluateWarehouseOverdraft,
-} from "../components/surgery/surgeryProtocols.js";
+} from "../components/surgery/surgeryCatalogData.js";
 
 describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandates 8e, 8i, 8s, 8k)", () => {
 	const __filename = fileURLToPath(import.meta.url);
@@ -175,10 +175,13 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 		});
 
 		it("2.3. VisitEmkTab.tsx при пустом дневнике не блокирует врача, а авто-заполняет Z01.2 норму", () => {
-			const emkContent = fs.readFileSync(
-				path.join(visitDir, "VisitEmkTab.tsx"),
-				"utf-8",
-			);
+			const emkTabDir = path.join(visitDir, "emkTab");
+			const emkContent = [
+				fs.readFileSync(path.join(visitDir, "VisitEmkTab.tsx"), "utf-8"),
+				...(fs.existsSync(emkTabDir)
+					? fs.readdirSync(emkTabDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(emkTabDir, f), "utf8"))
+					: []),
+			].join("\n");
 
 			assert.ok(
 				emkContent.includes("Z01.2 Осмотр полости рта, патологий не выявлено (Норма)"),
@@ -255,26 +258,29 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 			checkDir(emrDir);
 		});
 
-		it("3.2. Form043PrintModal.tsx: кнопки печати, сохранения и нормы всегда disabled={false}", () => {
+		it("3.2. MedicalRecordStudioModal.tsx: кнопки печати, сохранения и нормы всегда disabled={false}", () => {
 			const recordDir = path.join(emrDir, "record");
+			const studioPath = path.join(emrDir, "MedicalRecordStudioModal.tsx");
+			const form043Path = path.join(emrDir, "Form043PrintModal.tsx");
 			const printModalContent = [
-				fs.readFileSync(path.join(emrDir, "Form043PrintModal.tsx"), "utf-8"),
+				fs.existsSync(studioPath) ? fs.readFileSync(studioPath, "utf-8") : "",
+				fs.existsSync(form043Path) ? fs.readFileSync(form043Path, "utf-8") : "",
 				...(fs.existsSync(recordDir)
 					? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
 					: []),
 			].join("\n");
 
 			assert.ok(
-				printModalContent.includes('data-testid="btn-print-043-card"'),
-				"Кнопка печати карты 043/у должна присутствовать",
+				printModalContent.includes('btn-print-043-card') || printModalContent.includes('btn-emr-print-card'),
+				"Кнопка печати карты должна присутствовать",
 			);
 			assert.ok(
 				printModalContent.includes('disabled={false}'),
-				"Печать и сохранение карты 043/у всегда доступны (Мандат 8e: печать в любой момент)",
+				"Печать и сохранение карты всегда доступны (Мандат 8e: печать в любой момент)",
 			);
 			assert.ok(
 				printModalContent.includes("Норма"),
-				"Кнопка нормы должна быть на тулбаре карты 043/у",
+				"Кнопка нормы должна быть на тулбаре карты",
 			);
 		});
 

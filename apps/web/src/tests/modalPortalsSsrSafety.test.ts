@@ -5,8 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
 import { EndodonticStudioModal as EndoCanalLogModal } from "../components/endo/EndodonticStudioModal";
 import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
-import { WaitlistDrawer } from "../components/schedule/WaitlistDrawer";
-import { WaitlistQuickFillModal } from "../components/schedule/WaitlistQuickFillModal";
+import { WaitlistDrawer } from "../components/schedule/waitlist/WaitlistDrawer";
 import { CryptoProSigner } from "../components/visit/CryptoProSigner";
 import { AppLogicProvider } from "../contexts/AppLogicContext";
 
@@ -38,17 +37,6 @@ describe("Modal Portals & SSR Safety Hardening", () => {
 		);
 		assert.ok(html.includes("data-testid=\"cephalometric-analysis-modal\""));
 		assert.ok(html.includes("Тестовый Пациент"));
-	});
-
-	it("WaitlistQuickFillModal renders SSR-safe static markup inside AppLogicProvider", () => {
-		const child = createElement(WaitlistQuickFillModal, {
-			isOpen: true,
-			onClose: () => {},
-		});
-		const html = renderToStaticMarkup(
-			createElement(AppLogicProvider, { value: mockAppLogicValue, children: child }),
-		);
-		assert.ok(html.includes("Лист ожидания"));
 	});
 
 

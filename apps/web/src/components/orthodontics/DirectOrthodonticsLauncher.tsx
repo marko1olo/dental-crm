@@ -4,8 +4,10 @@
  * Deep Link Mount: #ortho, #orthodontics, #ortho-studio, ?ortho=1, ?orthodontics=1.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
+import { usePatientStore } from "../../store/patientStore";
+import { useAppStore } from "../../store/appStore";
 
 let isGlobalOrthoModalMounted = false;
 
@@ -70,16 +72,34 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 	isGlobalOrthoModalMounted = true;
 	instanceClaimedRef.current = true;
 
+	const storePatientId = usePatientStore((s) => s.selectedPatientId);
+	const storePatientCore = usePatientStore((s) => s.patientCoreDraft);
+	const dashboard = useAppStore((s) => s.dashboard);
+	const storeActiveDoctorName = useAppStore((s) => s.activeDoctorName);
+
 	const queryPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
-	const activePatientId = queryPatientId || "pat-ortho-studio";
+	const activePatientId = queryPatientId || storePatientId || dashboard?.activeVisit?.patientId || "pat-ortho-studio";
+
+	const resolvedPatientName = useMemo(() => {
+		if (storePatientCore?.fullName?.trim()) return storePatientCore.fullName.trim();
+		return "Пациент ортодонтического приёма";
+	}, [storePatientCore?.fullName]);
+
+	const resolvedDoctorName = useMemo(() => {
+		if (storeActiveDoctorName?.trim()) return storeActiveDoctorName.trim();
+		const staff = dashboard?.clinicSettings?.staff ?? [];
+		const found = staff.find((d) => d.role === "doctor" || d.specialties?.includes("orthodontics"));
+		if (found?.fullName?.trim()) return found.fullName.trim();
+		return "Врач-ортодонт";
+	}, [storeActiveDoctorName, dashboard?.clinicSettings?.staff]);
 
 	return (
 		<OrthodonticsStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientId={activePatientId}
-			patientName="Смирнова Екатерина Андреевна"
-			doctorName="Д-р Соколов А. В."
+			patientName={resolvedPatientName}
+			doctorName={resolvedDoctorName}
 		/>
 	);
 };

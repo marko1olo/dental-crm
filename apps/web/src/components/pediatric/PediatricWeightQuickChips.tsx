@@ -42,7 +42,7 @@ export const PediatricWeightQuickChips: React.FC<PediatricWeightQuickChipsProps>
 							<span className="text-[11px] font-normal text-[var(--muted,#64748b)] ml-1">({patientAgeYears} лет)</span>
 						)}
 					</h4>
-					<p className="text-[10px] text-[var(--muted,#64748b)]">1-клик выбор весовой категории для дозировки</p>
+					<p className="text-[10px] text-[var(--muted,#64748b)]">Выбор весовой категории для дозировки</p>
 				</div>
 			</div>
 

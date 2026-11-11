@@ -76,7 +76,7 @@ export function Step3StarterPricelist() {
 				<div className="hero-text-block">
 					<div className="hero-title-row">
 						<Sparkles size={18} className="hero-sparkle-icon" aria-hidden="true" />
-						<strong>1-клик быстрое наполнение прайса</strong>
+						<strong>Быстрое наполнение прайса</strong>
 					</div>
 					<p>
 						Загружает готовый золотой стандарт: первичный осмотр, анестезия карпульная, лечение кариеса,
@@ -102,7 +102,7 @@ export function Step3StarterPricelist() {
 					) : (
 						<>
 							<Zap size={16} aria-hidden="true" />
-							Загрузить 15 услуг в 1 клик
+							Загрузить 15 базовых услуг
 						</>
 					)}
 				</button>

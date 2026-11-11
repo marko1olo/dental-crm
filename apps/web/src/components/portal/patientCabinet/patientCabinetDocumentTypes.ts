@@ -17,7 +17,7 @@ export interface ConsentSignatureAudit {
 	readonly integrityHash: string;
 	readonly timestamp: number;
 	readonly signedAtIso: string;
-	readonly legalBasis: "63-ФЗ ПЭП" | "323-ФЗ ст. 20";
+	readonly legalBasis: "Электронная подпись (ПЭП)" | "Информированное согласие" | "63-ФЗ ПЭП" | "323-ФЗ ст. 20" | string;
 	readonly signatureSvg?: string | undefined;
 	readonly ipAddress?: string | undefined;
 }
@@ -86,7 +86,7 @@ export interface PatientStatutoryConsent {
 	readonly code: string;
 	readonly titleRu: string;
 	readonly categoryRu: "Терапия" | "Хирургия & Имплантация" | "Ортопедия" | "Анестезия" | "Персональные данные";
-	readonly statutoryBasis: "323-ФЗ" | "152-ФЗ" | "63-ФЗ";
+	readonly statutoryBasis: "Охрана здоровья" | "Персональные данные" | "Электронная подпись" | "323-ФЗ" | "152-ФЗ" | "63-ФЗ" | string;
 	readonly status: "pending_signature" | "signed" | "rejected";
 	readonly diagnosisIcd?: string | undefined;
 	readonly toothNumbers?: string | undefined;

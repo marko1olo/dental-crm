@@ -63,7 +63,7 @@ import { registerMigrationRunRoutes } from "../routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "../routes/odontogram.js";
 import { registerPeriodontogramRoutes } from "../routes/periodontogram.js";
 import { registerPediatricRoutes as registerPediatricDomainRoutes } from "../routes/pediatric.js";
-import { registerOrthodonticsRoutes } from "../routes/orthodontics.js";
+import { registerOrthodonticsRoutes } from "../routes/orthodontics/index.js";
 import registerToothHistoryRoutes from "../routes/toothHistory.js";
 import { registerOutpatientRoutes } from "../routes/outpatient.js";
 import { registerPatientDuplicateRoutes } from "../routes/patientDuplicates.js";
@@ -77,7 +77,6 @@ import { clinicalBundlesRoutes } from "../routes/clinicalBundlesRoutes.js";
 import { registerPricelistRoutes } from "../routes/pricelist.js";
 import { registerPublicAppointmentActionRoutes } from "../routes/publicAppointmentActions.js";
 import { registerPublicBookingRoutes } from "../routes/publicBooking.js";
-import { registerPublicEstimatesRoutes } from "../routes/publicEstimates.js";
 import { registerReferralRoutes } from "../routes/referrals.js";
 import { registerReportRoutes } from "../routes/reports.js";
 import { registerManagerReportsRoutes } from "../routes/managerReportsRoutes.js";
@@ -88,10 +87,8 @@ import { registerSbpQrRoutes } from "../routes/sbpQr.js";
 import { registerScheduleRoutes } from "../routes/schedule.js";
 import { registerSettingsRoutes } from "../routes/settings.js";
 import { registerDoctorPreferencesRoutes } from "../routes/doctorPreferencesRoutes.js";
-import { registerDoctorEarningsRoutes } from "../routes/doctorEarningsRoutes.js";
 import { registerPayrollRoutes } from "../routes/payroll.js";
 import { registerDoctorReportsRoutes } from "../routes/doctorReports.js";
-import { registerChairRentalRoutes } from "../routes/chairRentalRoutes.js";
 import { registerStaffRoutes } from "../routes/staff.js";
 import { registerStaffChatRoutes } from "../routes/staffChat.js";
 import { registerSmartImportRoutes } from "../routes/smartImports.js";
@@ -218,10 +215,8 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerScheduleRoutes(app);
 	await registerSettingsRoutes(app);
 	await registerDoctorPreferencesRoutes(app);
-	await registerDoctorEarningsRoutes(app);
 	await registerPayrollRoutes(app);
 	await registerDoctorReportsRoutes(app);
-	await registerChairRentalRoutes(app);
 	await registerStaffRoutes(app);
 	await registerStaffChatRoutes(app);
 	await registerSpeechRoutes(app);
@@ -275,7 +270,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerCrmLeakDetectorRoutes(app);
 	await registerFinancialPnlRoutes(app);
 	await registerPatientRelationshipsRoutes(app);
-	await app.register(registerPublicEstimatesRoutes);
 	await app.register(registerPublicBookingRoutes, {
 		prefix: "/api/public/booking",
 	});

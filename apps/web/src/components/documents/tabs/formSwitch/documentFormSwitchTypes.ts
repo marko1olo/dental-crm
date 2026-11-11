@@ -97,4 +97,7 @@ export interface DocumentFormSwitchProps {
 	warrantyLinkedActOrContractValue?: string;
 	patientIntakePregnancyStatusOptions?: any;
 	normalizedPatientIntakePregnancyStatus?: any;
+	initialPayload?: any;
+	onChange?: (payload: any) => void;
+	onOrthodonticPayloadChange?: (payload: any) => void;
 }

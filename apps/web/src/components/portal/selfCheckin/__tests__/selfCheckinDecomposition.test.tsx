@@ -10,7 +10,6 @@ const {
 	SelfCheckinPhoneAuthSection,
 	SelfCheckinNumericKeypad,
 	SelfCheckinPhoneInput,
-	SelfCheckinOtpVerification,
 	MobileCheckinHeader,
 	MobileCheckinAppointmentCard,
 	formatRussianPhoneMask,
@@ -59,28 +58,6 @@ describe("Red Team Decomposition & Phone Auth SSOT Test Suite", () => {
 		assert.ok(html.includes("4"), "Displays digit 4");
 		assert.ok(html.includes("1"), "Displays digit 1");
 		assert.ok(html.includes("9"), "Displays digit 9");
-	});
-
-	it("renders SelfCheckinOtpVerification with countdown and messenger options", () => {
-		const html = renderToStaticMarkup(
-			createElement(SelfCheckinOtpVerification, {
-				phoneNumber: "+7 (913) 770-41-99",
-				otpCode: "4199",
-				setOtpCode: () => {},
-				countdown: 45,
-				onResendOtp: () => {},
-				onVerifyOtp: () => {},
-				onOpenTelegramBot: () => {},
-				onBypassToReception: () => {},
-			}),
-		);
-
-		assert.ok(html.includes("data-testid=\"selfcheckin-otp-verification\""), "Renders OTP container");
-		assert.ok(html.includes("Подтверждение номера телефона"), "Displays header title");
-		assert.ok(html.includes("+7 (913) 770-41-99"), "Displays target phone number");
-		assert.ok(html.includes("Повторная отправка через 45 сек"), "Displays resend countdown");
-		assert.ok(html.includes("Telegram-бот"), "Displays Telegram bot button");
-		assert.ok(html.includes("Подойти к администратору"), "Displays reception desk bypass option");
 	});
 
 	it("renders MobileCheckinHeader with dynamic titles and close button", () => {

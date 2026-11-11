@@ -21,7 +21,11 @@ describe("Inbox Message Sender & Channel Dispatch Realism (MSG-01..05)", () => {
 		assert.equal(result.status, 422);
 		assert.equal(result.error, "RecipientAddressMissing");
 		assert.ok(result.event, "Должна быть сохранена запись о попытке отправки в communicationEvents");
-		assert.equal(result.event.status, "failed");
+		if ("status" in result.event) {
+			assert.equal(result.event.status, "failed");
+		} else {
+			assert.fail("result.event should contain full event with status");
+		}
 	});
 
 	test("MSG-01: processSendMessage blocks critical medical secrecy leak (152-FZ / 323-FZ)", async () => {

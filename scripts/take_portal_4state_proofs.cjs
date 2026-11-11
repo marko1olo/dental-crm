@@ -13,6 +13,19 @@ if (!fs.existsSync(OUT_DIR)) {
 	fs.mkdirSync(OUT_DIR, { recursive: true });
 }
 
+async function safeGoto(page, url, retries = 3) {
+	for (let i = 0; i < retries; i++) {
+		try {
+			await page.goto(url, { waitUntil: "commit", timeout: 25000 });
+			return;
+		} catch (err) {
+			if (i === retries - 1) throw err;
+			console.log(`[safeGoto] Retrying ${url} after error: ${err.message}`);
+			await page.waitForTimeout(1500);
+		}
+	}
+}
+
 async function setTheme(page, isDark) {
 	const themeId = isDark ? "dark" : "light";
 	await page.evaluate(({ themeId, isDark }) => {
@@ -53,7 +66,7 @@ async function run() {
 		});
 		const pcKioskPage = await pcContext.newPage();
 		console.log("Loading Kiosk PC...");
-		await pcKioskPage.goto("http://127.0.0.1:5173/?kiosk=1#/portal/kiosk/demo-clinic", { waitUntil: "commit", timeout: 25000 });
+		await safeGoto(pcKioskPage, "http://127.0.0.1:5173/?kiosk=1#/portal/kiosk/demo-clinic");
 		await pcKioskPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
 		await pcKioskPage.waitForSelector(".self-checkin-modal, [data-testid='mobile-self-checkin-modal']", { timeout: 15000 }).catch(() => {});
 		await pcKioskPage.waitForTimeout(1000);
@@ -66,6 +79,8 @@ async function run() {
 		await setTheme(pcKioskPage, true);
 		await captureProof(pcKioskPage, "portal_kiosk_pc_dark_1440x900.png");
 		await pcKioskPage.close();
+		await pcContext.close();
+		await new Promise((r) => setTimeout(r, 1000));
 
 		// ==========================================
 		// 2. KIOSK MOBILE (390x844) - Light & Dark
@@ -78,7 +93,7 @@ async function run() {
 		});
 		const mobileKioskPage = await mobileContext.newPage();
 		console.log("Loading Kiosk Mobile...");
-		await mobileKioskPage.goto("http://127.0.0.1:5173/?kiosk=1#/portal/kiosk/demo-clinic", { waitUntil: "commit", timeout: 25000 });
+		await safeGoto(mobileKioskPage, "http://127.0.0.1:5173/?kiosk=1#/portal/kiosk/demo-clinic");
 		await mobileKioskPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
 		await mobileKioskPage.waitForSelector(".self-checkin-modal, [data-testid='mobile-self-checkin-modal']", { timeout: 15000 }).catch(() => {});
 		await mobileKioskPage.waitForTimeout(1000);
@@ -91,13 +106,19 @@ async function run() {
 		await setTheme(mobileKioskPage, true);
 		await captureProof(mobileKioskPage, "portal_kiosk_mobile_dark_390x844.png");
 		await mobileKioskPage.close();
+		await mobileContext.close();
+		await new Promise((r) => setTimeout(r, 1000));
 
 		// ==========================================
 		// 3. PUBLIC BOOKING (PC 1440x900) - Light & Dark
 		// ==========================================
-		const pcBookingPage = await pcContext.newPage();
+		const pcBookingContext = await browser.newContext({
+			viewport: { width: 1440, height: 900 },
+			deviceScaleFactor: 1,
+		});
+		const pcBookingPage = await pcBookingContext.newPage();
 		console.log("Loading Public Booking PC...");
-		await pcBookingPage.goto("http://127.0.0.1:5173/?booking=1#/portal/booking/demo-clinic", { waitUntil: "commit", timeout: 25000 });
+		await safeGoto(pcBookingPage, "http://127.0.0.1:5173/?booking=1#/portal/booking/demo-clinic");
 		await pcBookingPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
 		await pcBookingPage.waitForSelector(".dente-booking-widget, .dbw-header", { timeout: 15000 }).catch(() => {});
 		await pcBookingPage.waitForTimeout(1000);
@@ -108,13 +129,21 @@ async function run() {
 		await setTheme(pcBookingPage, true);
 		await captureProof(pcBookingPage, "portal_booking_pc_dark_1440x900.png");
 		await pcBookingPage.close();
+		await pcBookingContext.close();
+		await new Promise((r) => setTimeout(r, 1000));
 
 		// ==========================================
 		// 4. TELEGRAM MINI APP (Mobile 390x844) - Light & Dark
 		// ==========================================
-		const mobileTgPage = await mobileContext.newPage();
+		const mobileTgContext = await browser.newContext({
+			viewport: { width: 390, height: 844 },
+			deviceScaleFactor: 2,
+			isMobile: true,
+			hasTouch: true,
+		});
+		const mobileTgPage = await mobileTgContext.newPage();
 		console.log("Loading Telegram Mini App Mobile...");
-		await mobileTgPage.goto("http://127.0.0.1:5173/#/portal/tgapp", { waitUntil: "commit", timeout: 25000 });
+		await safeGoto(mobileTgPage, "http://127.0.0.1:5173/#/portal/tgapp");
 		await mobileTgPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
 		await mobileTgPage.waitForSelector(".tg-app-container, .tg-cabinet-root", { timeout: 15000 }).catch(() => {});
 		await mobileTgPage.waitForTimeout(1000);
@@ -125,6 +154,7 @@ async function run() {
 		await setTheme(mobileTgPage, true);
 		await captureProof(mobileTgPage, "portal_tgapp_mobile_dark_390x844.png");
 		await mobileTgPage.close();
+		await mobileTgContext.close();
 
 		console.log("ALL 4-STATE PROOFS CAPTURED SUCCESSFULLY!");
 	} finally {

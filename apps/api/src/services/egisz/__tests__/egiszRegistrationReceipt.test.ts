@@ -54,14 +54,36 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 		assert.equal(parseResult.success, true, "Receipt must strictly conform to schema");
 
 		// Verify domain fields
-		assert.match(receipt.receiptId, /^RCP-REMD-/);
+		assert.equal(receipt.receiptId, null);
 		assert.equal(receipt.remdDocumentId, "REMD-2026-09-02-99881");
 		assert.equal(receipt.remdTransactionId, "TX-EGISZ-8888");
 		assert.equal(receipt.docTypeNsiCode, "108");
 		assert.match(receipt.docTypeTitle, /Стоматологический протокол приёма/);
 		assert.equal(receipt.receiptVersion, "1.0");
 		assert.equal(receipt.operatorSignature.operatorName, "ЕГИСЗ РЭМД Минздрава России");
-		assert.equal(receipt.operatorSignature.verificationStatus, "VERIFIED_VALID");
+		assert.equal(receipt.operatorSignature.verificationStatus, "pending_gateway");
+
+		// When explicit gateway receiptId is provided:
+		const verifiedReceipt = createEgiszRemdReceipt({
+			receiptId: "RCP-REMD-2026-09-02-99881",
+			remdDocumentId: "REMD-2026-09-02-99881",
+			transactionId: "TX-EGISZ-8888",
+			registeredAt: "2026-09-02T18:00:00.000Z",
+			organizationId: validOrgId,
+			patientId: validPatientId,
+			patientSnils: "11223344595",
+			visitId: validVisitId,
+			documentId: validDocId,
+			docTypeNsiCode: "108",
+			clinicOid: "1.2.643.5.1.13.13.12.2.77.1001",
+			payloadHashSha256: sampleSha256,
+			doctorCertSerial: "37462819000182736451",
+			doctorCertSubject: "CN=Иванов Иван Иванович, O=Клиника ДЕНТЕ",
+			moCertSerial: "99887766554433221100",
+		});
+		assert.equal(verifiedReceipt.receiptId, "RCP-REMD-2026-09-02-99881");
+		assert.equal(verifiedReceipt.operatorSignature.verificationStatus, "VERIFIED_VALID");
+		assert.equal(egiszRemdRegistrationReceiptSchema.safeParse(verifiedReceipt).success, true);
 	});
 
 	it("1.2 Correctly maps NSI document kind codes to official Russian titles", () => {

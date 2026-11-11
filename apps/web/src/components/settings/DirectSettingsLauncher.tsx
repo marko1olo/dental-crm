@@ -12,15 +12,12 @@ function isSettingsRequested(): boolean {
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
 	return (
-		h === "#settings" ||
+		h === "#settings-studio" ||
 		h === "#clinic-setup" ||
 		h === "#clinic-requisites" ||
-		h === "#settings-studio" ||
-		h.startsWith("#settings?") ||
-		h.startsWith("#settings/") ||
+		h.startsWith("#settings-studio?") ||
 		h.startsWith("#clinic-setup?") ||
 		h.startsWith("#clinic-requisites?") ||
-		s.includes("settings=1") ||
 		s.includes("clinic_setup=1") ||
 		s.includes("clinic-setup") ||
 		s.includes("clinic-requisites") ||

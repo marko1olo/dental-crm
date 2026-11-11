@@ -6,7 +6,7 @@
 import React, { useCallback, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import { DentalLabOrderDrawer } from "../lab/DentalLabOrderDrawer";
+import { DentalLabOrderDrawer } from "../lab/DentalLabStudioModal";
 import {
 	ProtocolComplaintsAndAnamnesis,
 	ProtocolHeader,

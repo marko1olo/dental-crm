@@ -1,24 +1,14 @@
 import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import type { AppToastPortalProps } from "./types";
+import { A2hsPromptModal } from "../../pwa/A2hsPromptModal";
+import { ChairsideErgonomicsHost } from "../chairside/ChairsideErgonomicsHost";
 
-const VoiceAssistantUI = lazyWithRetry(() =>
-	import("../VoiceAssistantUI").then((module) => ({
-		default: module.VoiceAssistantUI,
-	})),
-);
-const Omnibar = lazyWithRetry(() =>
-	import("../Omnibar").then((module) => ({
-		default: module.Omnibar,
-	})),
-);
 const ClinicalGuidanceHost = lazyWithRetry(() =>
 	import("../guidance/ClinicalGuidanceHost").then((module) => ({
 		default: module.ClinicalGuidanceHost,
 	})),
 );
-import { A2hsPromptModal } from "../../pwa/A2hsPromptModal";
-import { ChairsideErgonomicsHost } from "../chairside/ChairsideErgonomicsHost";
 
 const VisiographIncomingToast = lazyWithRetry(() =>
 	import("../radiology/VisiographIncomingToast").then((module) => ({
@@ -26,37 +16,10 @@ const VisiographIncomingToast = lazyWithRetry(() =>
 	})),
 );
 
-const DoctorCommandHud = lazyWithRetry(() =>
-	import("../chairside/DoctorCommandHud").then((module) => ({
-		default: module.DoctorCommandHud,
-	})),
-);
-
-export function AppToastPortal(props: AppToastPortalProps) {
-	const { setCurrentView, setQuery, setScheduleDateFilter } = props;
-
+export function AppToastPortal(_props: AppToastPortalProps) {
 	return (
 		<>
 			<ChairsideErgonomicsHost />
-			<Suspense fallback={null}>
-				<VoiceAssistantUI
-					onNavigate={(view) => {
-						setCurrentView(view);
-						if (typeof window !== "undefined") {
-							window.location.hash = view;
-						}
-					}}
-					onSearchQuery={(q) => {
-						setQuery(q);
-					}}
-					onDateChange={(date) => {
-						setScheduleDateFilter(date);
-					}}
-				/>
-			</Suspense>
-			<Suspense fallback={null}>
-				<Omnibar />
-			</Suspense>
 			<Suspense fallback={null}>
 				<ClinicalGuidanceHost />
 			</Suspense>
@@ -65,16 +28,6 @@ export function AppToastPortal(props: AppToastPortalProps) {
 			</Suspense>
 			<Suspense fallback={null}>
 				<VisiographIncomingToast />
-			</Suspense>
-			<Suspense fallback={null}>
-				<DoctorCommandHud
-					onNavigate={(view) => {
-						setCurrentView(view);
-						if (typeof window !== "undefined") {
-							window.location.hash = view;
-						}
-					}}
-				/>
 			</Suspense>
 		</>
 	);

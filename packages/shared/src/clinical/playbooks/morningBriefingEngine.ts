@@ -103,7 +103,7 @@ export function generateMorningBriefing(input: {
 	const totalPendingBudgetsRub = formatKopecksRu(totalPendingBudgetsKopecks);
 	const alertsText = criticalAlerts.length > 0
 		? `ВНИМАНИЕ: ${criticalAlerts.length} пациентов с соматическими/аллергологическими стоп-факторами.`
-		: "Критические стоп-факторы отсутствуют. Физиологическая норма активна по умолчанию в 1 клик.";
+		: "Критические стоп-факторы отсутствуют. Физиологическая норма активна по умолчанию.";
 	const summaryChairsideNote = `Брифинг врача на ${input.date}: приемов ${appointments.length}. ${alertsText} Просроченных диспансерных вызовов: ${overdueRecalls.length}. Неотвеченных смет: ${unansweredBudgets.length} на сумму ${totalPendingBudgetsRub}.`;
 
 	return doctorMorningBriefingSchema.parse({

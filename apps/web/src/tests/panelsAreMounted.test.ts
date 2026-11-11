@@ -320,12 +320,21 @@ test("устаревших фасадов-дубликатов представ�
 	]);
 });
 
-test("авиационно-бытового симулятора предполетной подготовки (ChairsidePreFlight) в дереве больше нет", () => {
+test("устаревших параллельных файлов-клонов голосового управления и параллельных HUD в дереве больше нет", () => {
 	assertFilesDoNotExist([
 		"components/chairside/ChairsidePreFlightChecklist.tsx",
 		"components/chairside/chairsidePreFlight.css",
 		"components/chairside/__tests__/ChairsidePreFlightChecklist.test.tsx",
+		"components/VoiceAssistantUI.tsx",
+		"hooks/useVoiceAssistant.ts",
+		"lib/aiOrchestrator.ts",
+		"components/odontogram/VoiceChairsideHudBar.tsx",
+		"components/odontogram/VoiceChairsideHudBar.css",
+		"hooks/useVoiceChairsideSterileProtocol.ts",
+		"components/voice/VoiceDictationAssistantModal.tsx",
+		"components/chairside/DoctorCommandHud.tsx",
+		"components/chairside/useDoctorCommandHud.ts",
+		"components/chairside/__tests__/DoctorCommandHud.test.tsx",
+		"components/odontogram/OdontogramVoiceHud.tsx",
 	]);
-
-	assertFilesExist(["components/chairside/DoctorCommandHud.tsx"]);
 });

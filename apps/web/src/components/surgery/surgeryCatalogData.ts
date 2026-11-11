@@ -6,8 +6,10 @@
 
 import type { SurgicalServiceItem, SurgicalService804n, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
 import { CANONICAL_SURGICAL_OPERATION_NORMS } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export type { SurgicalServiceItem, SurgicalService804n, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus };
+export type WarehouseOverdraftStatus = SurgicalWarehouseOverdraftStatus;
 export type SurgeryScenarioType = "extraction" | "resection_periostotomy" | "sinus_gbr" | "implant";
 export type ExtractionComplexity = "simple" | "complex" | "impacted_dystopic";
 export type SurgicalHemostasisMethod = "alvogyl" | "hemostatic_sponge" | "vicryl_suture" | "tampon";
@@ -218,14 +220,67 @@ export const evaluateWarehouseOverdraft = evaluateSurgerySoftOverdraft;
 
 export async function quickDeductSurgicalMaterials(params: {
 	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean }[];
-	hasWarehouseDelay?: boolean; operationTitle?: string; organizationId?: string;
+	hasWarehouseDelay?: boolean;
+	operationTitle?: string;
+	organizationId?: string;
+	category?: string;
+	protocolId?: string;
+	toothNumber?: number;
+	sutureMaterial?: string;
+	implantBrand?: string;
+	visitId?: string;
 }): Promise<SurgicalMaterialDeductionResult> {
-	const isOverdraft = Boolean(params.hasWarehouseDelay);
-	const deductedItems = params.materials.map((m) => ({ name: m.name, unit: m.unit, quantity: m.quantity, isOverdraft }));
-	const messageRu = isOverdraft ? `Списано ${params.materials.length} поз. под операцию «${params.operationTitle || "Хирургия"}» в мягкий овердрафт без блокировки врача.` : `Материалы операции «${params.operationTitle || "Хирургия"}» (${params.materials.length} поз.) успешно списаны.`;
-	if (typeof window !== "undefined") {
-		window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", { detail: { materials: deductedItems, isOverdraft, operationTitle: params.operationTitle, timestamp: new Date().toISOString() } }));
+	let isOverdraft = Boolean(params.hasWarehouseDelay);
+	const title = params.operationTitle || "Хирургия";
+	const cat = params.category || (title.toLowerCase().includes("имплант") ? "implant" : title.toLowerCase().includes("синус") ? "sinus_gbr" : title.toLowerCase().includes("удален") ? "surgery_extraction" : title.toLowerCase().includes("резекц") ? "surgery_apicoectomy" : "surgery");
+
+	let bundleType: "surgery" | "implant" | "sinus_gbr" | "surgery_extraction" | "surgery_apicoectomy" | "anesthesia_carpule" = "surgery";
+	if (cat === "implant") bundleType = "implant";
+	else if (cat === "sinus_gbr") bundleType = "sinus_gbr";
+	else if (cat === "surgery_extraction" || cat === "extraction") bundleType = "surgery_extraction";
+	else if (cat === "surgery_apicoectomy" || cat === "resection_periostotomy") bundleType = "surgery_apicoectomy";
+
+	if (typeof fetch === "function") {
+		try {
+			const res = await fetch("/api/surgery/materials/quick-deduct", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					bundleType,
+					toothNumberFdi: params.toothNumber,
+					visitId: params.visitId,
+					notes: `Списание по техкарте «${title}» (${params.materials.length} поз.)`,
+				}),
+			});
+			if (res.ok) {
+				const body = await res.json().catch(() => null);
+				if (body?.isOverdraft !== undefined) {
+					isOverdraft = Boolean(body.isOverdraft);
+				}
+			}
+		} catch {
+			/* Soft Negative Stock: офлайн или сбой сети не блокирует операцию врача (Мандат 8e) */
+			isOverdraft = Boolean(params.hasWarehouseDelay);
+		}
 	}
+
+	const deductedItems = params.materials.map((m) => ({ name: m.name, unit: m.unit, quantity: m.quantity, isOverdraft }));
+	const messageRu = isOverdraft
+		? `Списано ${params.materials.length} поз. под операцию «${title}» в мягкий овердрафт без блокировки врача.`
+		: `Материалы операции «${title}» (${params.materials.length} поз.) успешно списаны.`;
+
+	if (typeof window !== "undefined") {
+		window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", {
+			detail: {
+				materials: deductedItems,
+				isOverdraft,
+				operationTitle: title,
+				toothFdi: params.toothNumber,
+				timestamp: new Date().toISOString(),
+			},
+		}));
+	}
+
 	return { success: true, isOverdraft, deductedItems, messageRu };
 }
 

@@ -178,40 +178,16 @@ export function usePatientCoreSave({
 			return null;
 		}
 		const storeState = usePatientStore.getState();
-		const domName =
-			typeof document !== "undefined"
-				? (
-						document.getElementById(
-							"patient-create-full-name",
-						) as HTMLInputElement | null
-					)?.value?.trim()
-				: "";
-		const fullName = (storeState.newPatientName || domName || "").trim();
+		const fullName = (storeState.newPatientName || storeState.patientCoreDraft.fullName || "").trim();
 		if (!fullName) {
 			setError("Укажите ФИО пациента перед созданием карточки.");
 			return null;
 		}
-		const domPhone =
-			typeof document !== "undefined"
-				? (
-						document.getElementById(
-							"patient-create-phone",
-						) as HTMLInputElement | null
-					)?.value?.trim()
-				: "";
-		const domBirth =
-			typeof document !== "undefined"
-				? (
-						document.getElementById(
-							"patient-create-birth-date",
-						) as HTMLInputElement | null
-					)?.value?.trim()
-				: "";
 		const phone = nullablePatientDraftValue(
-			storeState.newPatientPhone || domPhone,
+			storeState.newPatientPhone || storeState.patientCoreDraft.phone,
 		);
 		const birthDate = nullablePatientDraftValue(
-			storeState.newPatientBirthDate || domBirth,
+			storeState.newPatientBirthDate || storeState.patientCoreDraft.birthDate,
 		);
 		const isAnon = storeState.patientAdministrativeProfileDraft.isAnonymous === true;
 		const anonymousCode = isAnon

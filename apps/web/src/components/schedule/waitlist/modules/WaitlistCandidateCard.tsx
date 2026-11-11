@@ -91,17 +91,17 @@ export function WaitlistCandidateCard({
 				</p>
 			)}
 
-			{/* КНОПКИ ДЕЙСТВИЯ: Мессенджеры + Ровно 1 Primary CTA кнопка */}
-			<div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--line-subtle,#f1f5f9)]">
+			{/* КНОПКИ ДЕЙСТВИЯ: Мессенджеры + Ровно 1 Primary CTA кнопка (Apple HIG: full width on mobile) */}
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2 border-t border-[var(--line-subtle,#f1f5f9)]">
 				{/* Мессенджеры и копирование */}
-				<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-1.5 flex-wrap">
 					{candidate.patientPhone && (
 						<>
 							<button
 								type="button"
 								title="Написать в WhatsApp"
 								onClick={() => openWhatsAppChat(candidate.patientPhone!, offerText)}
-								className="h-8 px-2.5 min-w-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[#25D366]/10 text-xs font-medium text-[#128C7E] flex items-center gap-1 transition-colors cursor-pointer"
+								className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[#25D366]/10 text-xs font-medium text-[#128C7E] flex items-center gap-1 transition-colors cursor-pointer"
 							>
 								<span>WhatsApp</span>
 							</button>
@@ -109,7 +109,7 @@ export function WaitlistCandidateCard({
 								type="button"
 								title="Написать в Telegram"
 								onClick={() => openTelegramChat(candidate.patientPhone!, offerText)}
-								className="h-8 px-2.5 min-w-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[#0088cc]/10 text-xs font-medium text-[#0088cc] flex items-center gap-1 transition-colors cursor-pointer"
+								className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[#0088cc]/10 text-xs font-medium text-[#0088cc] flex items-center gap-1 transition-colors cursor-pointer"
 							>
 								<span>TG</span>
 							</button>
@@ -119,7 +119,7 @@ export function WaitlistCandidateCard({
 						type="button"
 						title="Скопировать вежливый текст предложения"
 						onClick={() => onCopyOfferMessage(candidate)}
-						className="h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						{copiedId === candidate.id ? (
 							<>
@@ -135,12 +135,12 @@ export function WaitlistCandidateCard({
 					</button>
 				</div>
 
-				{/* ЕДИНСТВЕННЫЙ PRIMARY CTA (Мандат 8am): «Записать в окно» */}
+				{/* ЕДИНСТВЕННЫЙ PRIMARY CTA (Мандат 8am): «Записать в окно» (Apple HIG: >= 44px на мобильных) */}
 				{targetSlot ? (
 					<button
 						type="button"
 						onClick={() => onBookCandidate(candidate)}
-						className="h-9 px-4 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+						className="w-full sm:w-auto h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
 					>
 						<span>Записать в окно</span>
 						<span>→</span>
@@ -149,7 +149,7 @@ export function WaitlistCandidateCard({
 					<button
 						type="button"
 						onClick={() => onAssignCandidate?.(candidate)}
-						className="h-8 px-3 rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 text-xs font-semibold transition-colors cursor-pointer"
+						className="w-full sm:w-auto h-11 sm:h-8 px-4 sm:px-3 rounded-xl sm:rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
 					>
 						Назначить
 					</button>

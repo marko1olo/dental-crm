@@ -56,7 +56,7 @@ export const PrescriptionCatalogWorkbench: React.FC<PrescriptionCatalogWorkbench
 			<div className="p-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mb-2">
 					<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-					Готовые клинические схемы в 1 клик
+					Готовые клинические схемы
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 					{CLINICAL_FAST_SETS.map((set) => {

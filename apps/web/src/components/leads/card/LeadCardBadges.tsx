@@ -78,11 +78,11 @@ export const LeadCardBadges: React.FC<LeadCardBadgesProps> = ({
 						cursor: "pointer",
 					}}
 					onClick={(e) => onOpenPatient(e, lead.existingPatient!.id)}
-					title={`Номер телефона совпадает с базой пациентов: ${lead.existingPatient.fullName}. Нажмите, чтобы открыть карту пациента в 1 клик.`}
+					title={`Номер телефона совпадает с базой пациентов: ${lead.existingPatient.fullName}. Нажмите, чтобы открыть карту пациента.`}
 					data-testid={`lead-existing-patient-badge-${lead.id}`}
 				>
 					<UserCheck size={11} className="shrink-0 text-[var(--amber)]" />
-					<span>Повторный пациент: {lead.existingPatient.fullName}</span>
+					<span>Постоянный пациент: {lead.existingPatient.fullName}</span>
 				</div>
 			)}
 

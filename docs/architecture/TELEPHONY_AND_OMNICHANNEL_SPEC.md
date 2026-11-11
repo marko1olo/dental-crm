@@ -36,7 +36,6 @@
 | `TelephonyFloatingDialer` | `apps/web/src/components/telephony/TelephonyFloatingDialer.tsx` | Плавающий софтфон/диалер с авто-сворачиванием на экранах приёма. |
 | `useTelephonyState` | `apps/web/src/components/telephony/useTelephonyState.ts` | Хук состояния телефонии, отслеживающий стерильную зону, активные линии L1/L2, DND и CTI статус. |
 | `CallHistoryDrawer` | `apps/web/src/components/telephony/CallHistoryDrawer.tsx` | Выдвижная шторка журнала звонков с плеером аудиозаписей и таймлайном. |
-| `WhatsAppChatView` | `apps/web/src/components/chat/WhatsAppChatView.tsx` | Полноэкранный омниканальный чат WhatsApp с диалогами пациентов и клиническими шаблонами. |
 | `WhatsAppChatPanel` | `apps/web/src/components/chat/WhatsAppChatPanel.tsx` | Панель WhatsApp чата с быстрыми шаблонами, вложениями до 16 МБ и неблокирующей кнопкой отправки. |
 | `OmnichannelOperatorDesk` | `apps/web/src/components/chat/OmnichannelOperatorDesk.tsx` | Единый пульт оператора ботов (Telegram, ВКонтакте, WhatsApp, MAX) с перехватом диалогов. |
 | `PatientOmnichannelHubModal` | `apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx` | Центральный омниканальный хаб сообщений, лояльности и динамических платежей СБП. |

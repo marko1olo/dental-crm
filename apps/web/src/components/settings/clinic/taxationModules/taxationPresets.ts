@@ -88,6 +88,6 @@ export const FISCAL_AGENT_OPTIONS: AgentSignOption[] = [
 		value: "agent",
 		label: "Агент (Тег 1057: 7)",
 		tag1057Code: FFD12_TAG_1057_AGENT_CODES.agent,
-		description: "Агентские договоры с врачами на аренде кресел (Мандат 8e)",
+		description: "Агентские договоры с врачами на аренде кресел",
 	},
 ];

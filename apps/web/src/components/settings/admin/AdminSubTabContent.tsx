@@ -1,6 +1,6 @@
 import type React from "react";
 import { ErrorBoundary } from "../../ErrorBoundary";
-import { EgiszBlankPermissionsWidget } from "../../integrations/EgiszBlankPermissionsWidget";
+import { EgiszBlankPermissionsWidget } from "../../integrations/egiszModules/EgiszBlankPermissionsWidget";
 import { YandexCalendarSyncsWidget } from "../../integrations/YandexCalendarSyncsWidget";
 import { PublicBookingLinkPanel } from "../PublicBookingLinkPanel";
 import { SettingsAccessTab } from "../SettingsAccessTab";

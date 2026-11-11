@@ -43,7 +43,7 @@ export {
 export * from "./datetime/index.js";
 export * from "./demo/index.js";
 export type { Kopecks } from "./money.js";
-export { kopecksToRubles, formatRubles } from "./money.js";
+export { kopecksToRubles, formatRubles, formatKopecksToRubles, kopecksToNumericString, parseKopecks } from "./money.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
 export * from "./fiscal/index.js";
@@ -136,8 +136,6 @@ export * from "./sync/index.js";
 export * from "./finance/index.js";
 export * from "./finance/cashFlowCatalogs.js";
 export * from "./finance/cashFlowCategories.js";
-export * from "./finance/clinicalCashFlowCatalogs.js";
-export * from "./finance/clinicalCashFlowCategories.js";
 export * from "./finance/treatmentBudgetEngine.js";
 export * from "./finance/accountingExportEngine.js";
 export * from "./imaging/index.js";
@@ -234,14 +232,12 @@ export {
 // --- Utilities & Migration Re-exports ---
 export * from "./migration.js";
 export * from "./utils/dates.js";
-export * from "./utils/money.js";
 export * from "./utils/strings.js";
 
 // --- Extended Domain Modules ---
 export * from "./security/index.js";
 export * from "./types/pricing.js";
 export * from "./staff/index.js";
-export * from "./utils/money.js";
 export * from "./anesthesia/index.js";
 export * from "./inventory/consumables.js";
 export * from "./lab/index.js";

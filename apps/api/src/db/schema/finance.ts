@@ -309,7 +309,7 @@ export const installmentTranches = pgTable(
 
 
 /**
- * Расчетная ведомость заработной платы врачей (Форма Т-51 по формуле Net Revenue).
+ * Расчетная ведомость заработной платы врачей (Расчётный листок врача по формуле Net Revenue).
  */
 export const doctorPayrollStatements = pgTable(
 	"doctor_payroll_statements",
@@ -343,28 +343,52 @@ export const doctorPayrollStatements = pgTable(
 		netBaseRevenueRub: numeric("net_base_revenue_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		netBaseRevenueKopecks: bigint("net_base_revenue_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		categoryPercent: numeric("category_percent", { precision: 5, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		calculatedPieceworkRub: numeric("calculated_piecework_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		calculatedPieceworkKopecks: bigint("calculated_piecework_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		fixedSalaryRub: numeric("fixed_salary_rub", { precision: 14, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		fixedSalaryKopecks: bigint("fixed_salary_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
 		serviceSalaryPriceRub: numeric("service_salary_price_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		serviceSalaryPriceKopecks: bigint("service_salary_price_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		bonusesTotalRub: numeric("bonuses_total_rub", { precision: 14, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		bonusesTotalKopecks: bigint("bonuses_total_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
 		penaltiesTotalRub: numeric("penalties_total_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		penaltiesTotalKopecks: bigint("penalties_total_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		totalAccruedRub: numeric("total_accrued_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		totalAccruedKopecks: bigint("total_accrued_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		ndfl13Rub: numeric("ndfl_13_rub", { precision: 14, scale: 2, mode: "number" })
+			.notNull()
+			.default(0),
+		ndfl13Kopecks: bigint("ndfl_13_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
 		netPayoutRub: numeric("net_payout_rub", { precision: 14, scale: 2, mode: "number" })

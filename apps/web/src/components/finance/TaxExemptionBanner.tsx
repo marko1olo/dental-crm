@@ -49,7 +49,7 @@ export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 					</span>
 				</div>
 				<span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/40">
-					Включены в акт приёма (1 клик)
+					Включены в акт приёма
 				</span>
 			</div>
 			<p className="mt-1 leading-relaxed text-[var(--ink,#0f172a)] opacity-90">
@@ -86,7 +86,7 @@ export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 						: "Распечатать Доп. соглашение (опционально)"}
 				</button>
 				<span className="text-[11px] text-teal-700 dark:text-teal-300 italic">
-					Кассовый чек и оплата доступны сразу в 1 клик
+					Кассовый чек и оплата сформированы
 				</span>
 			</div>
 		</div>

@@ -121,6 +121,7 @@ export async function validateVisitAndDocumentBalances(
 
 					await tx.insert(schema.advanceDepositTaggings).values({
 						organizationId,
+						patientId: input.patientId,
 						patientName: input.payerFullName || "Пациент",
 						depositAmountRub: overpaymentRub,
 						taggedTargetType: "patient_deposit",

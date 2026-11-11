@@ -68,7 +68,7 @@ describe("1. Clinical Help Micro-Modules — Category & Data Registry", () => {
 
 		const normShortcut = CLINICAL_HOTKEYS_REGISTRY.find((h) => h.keyCombination === "Shift+N");
 		assert.ok(normShortcut, "Shift+N autonorm shortcut must be registered");
-		assert.equal(normShortcut.title, "Норма формулы в 1 клик");
+		assert.equal(normShortcut.title, "Физиологическая норма формулы");
 	});
 });
 

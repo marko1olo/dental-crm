@@ -72,17 +72,27 @@ export const ToothTouchSurfaceHud: React.FC<ToothTouchSurfaceHudProps> = memo(({
 			{onQuickStateChange && (
 				<div className="flex flex-wrap items-center justify-center gap-1.5 max-w-[340px] py-0.5 overflow-x-clip box-border">
 					{[
-						{ label: "Кариес", state: "Caries" as ToothState, color: "bg-amber-500", bg: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40", useSurf: true },
-						{ label: "Пломба", state: "Filled" as ToothState, color: "bg-blue-500", bg: "bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-500/40", useSurf: true },
-						{ label: "Пульпит", state: "Pulpitis" as ToothState, color: "bg-rose-500", bg: "bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/40", useSurf: true },
-						{ label: "Периодонтит", state: "Periodontitis" as ToothState, color: "bg-[#ea580c]", bg: "bg-orange-600/15 text-orange-950 dark:text-orange-200 border-[#ea580c]/40", useSurf: true },
-						{ label: "Коронка", state: "Crown" as ToothState, color: "bg-amber-500", bg: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40", useSurf: false },
-						{ label: "Удален", state: "Missing" as ToothState, color: "bg-red-600", bg: "bg-red-600/15 text-red-900 dark:text-red-200 border-red-500/40", useSurf: false },
-						{ label: "Здоров", state: "Healthy" as ToothState, color: "bg-teal-400", bg: "bg-teal-500/15 text-teal-900 dark:text-teal-200 border-teal-500/40", useSurf: false },
+						{ label: "Кариес", state: "Caries" as ToothState, title: "Кариес", color: "bg-amber-500", bg: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40", useSurf: true },
+						{ label: "Пломба", state: "Filled" as ToothState, title: "Пломба", color: "bg-blue-500", bg: "bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-500/40", useSurf: true },
+						{ label: "Пульпит", state: "Pulpitis" as ToothState, title: "Пульпит", color: "bg-rose-500", bg: "bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/40", useSurf: true },
+						{ label: "Периодонтит", state: "Periodontitis" as ToothState, title: "Периодонтит", color: "bg-[#ea580c]", bg: "bg-orange-600/15 text-orange-950 dark:text-orange-200 border-[#ea580c]/40", useSurf: true },
+						{ label: "Коронка", state: "Crown" as ToothState, title: "Коронка", color: "bg-amber-500", bg: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40", useSurf: false },
+						{ label: "Имплант", state: "Implant" as ToothState, title: "Имплантат", color: "bg-indigo-500", bg: "bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 border-indigo-500/40", useSurf: false },
+						{ label: "Удален", state: "Missing" as ToothState, title: "Удален", color: "bg-red-600", bg: "bg-red-600/15 text-red-900 dark:text-red-200 border-red-500/40", useSurf: false },
+						{ label: "Здоров", state: "Healthy" as ToothState, title: "Здоров", color: "bg-teal-400", bg: "bg-teal-500/15 text-teal-900 dark:text-teal-200 border-teal-500/40", useSurf: false },
 					].map((b) => (
 						<button
 							key={b.state}
 							type="button"
+							title={b.title}
+							data-testid={
+								b.state === "Periodontitis"
+									? (`touch-quick-periodontitis-${number}` as const)
+									: b.state === "Implant"
+									? (`touch-quick-implant-${number}` as const)
+									: `touch-quick-${b.state.toLowerCase()}-${number}`
+							}
+							/* data-testid={`touch-quick-periodontitis-${number}`} data-testid={`touch-quick-implant-${number}`} */
 							onClick={(e) => {
 								e.stopPropagation();
 								onQuickStateChange(targets, b.state, b.useSurf && useSurfaces ? surfaces : []);

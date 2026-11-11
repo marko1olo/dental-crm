@@ -4,7 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { bookingVerificationEngine } from "../../services/publicBookingQueue/bookingVerificationEngine.js";
 import { signToken, verifyCredential } from "../../utils/cryptoHelper.js";
@@ -118,11 +118,14 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 			};
 		}
 
-		const [org] = await db
-			.select({ id: organizations.id })
-			.from(organizations)
-			.where(eq(organizations.id, orgId))
-			.limit(1);
+		const org = await withSuperuserBypass(async () => {
+			const [row] = await db
+				.select({ id: organizations.id })
+				.from(organizations)
+				.where(eq(organizations.id, orgId))
+				.limit(1);
+			return row;
+		});
 
 		if (!org) {
 			reply.status(404);

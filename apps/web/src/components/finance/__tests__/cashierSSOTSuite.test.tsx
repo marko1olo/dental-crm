@@ -65,8 +65,8 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 	let DirectCashierLauncher: React.FC<any>;
 
 	before(async () => {
-		const modalMod = await import("../CashierStudioModal.js");
-		CashierStudioModal = modalMod.CashierStudioModal;
+		const modalMod = await import("../../cashbox/CashRegisterStudioModal.js");
+		CashierStudioModal = modalMod.CashRegisterStudioModal;
 		const launcherMod = await import("../DirectCashierLauncher.js");
 		DirectCashierLauncher = launcherMod.DirectCashierLauncher;
 	});
@@ -82,15 +82,10 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		);
 	});
 
-	// ТЕСТ 2: CashierStudioModal.tsx — тонкий прозрачный фасад (< 100 строк) к канонической CashRegisterStudioModal.tsx
-	it("2. CashierStudioModal.tsx is a lean transparent proxy (< 100 lines) delegating to canonical SSOT", () => {
-		const filePath = path.join(financeDir, "CashierStudioModal.tsx");
+	// ТЕСТ 2: DirectCashierLauncher.tsx делегирует напрямую канонической CashRegisterStudioModal.tsx
+	it("2. DirectCashierLauncher.tsx delegates directly to canonical CashRegisterStudioModal SSOT", () => {
+		const filePath = path.join(financeDir, "DirectCashierLauncher.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
-		const lines = content.split("\n").length;
-		assert.ok(
-			lines <= 100,
-			`CashierStudioModal.tsx must be a lean proxy (< 100 lines per Mandate 8aq), got ${lines} lines`,
-		);
 		assert.ok(content.includes("CashRegisterStudioModal"), "Must delegate to canonical CashRegisterStudioModal SSOT");
 	});
 

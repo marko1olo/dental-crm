@@ -53,7 +53,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 				data-testid="diary-norm-direct-btn"
 				onClick={onApplyNorm}
 				className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--line-strong)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
-				title="Заполнить в 1 клик физиологическую норму: соматически здоров, слизистая бледно-розовая, зубы интактны"
+				title="Заполнить физиологическую норму: соматически здоров, интактный ряд"
 			>
 				<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 				<span>Норма (здоров)</span>

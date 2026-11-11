@@ -46,7 +46,7 @@ export const StockOverdraftBadge: React.FC<StockOverdraftBadgeProps> = ({ item, 
 					type="button"
 					onClick={() => onReceiveItem(item, qtyToReceive)}
 					className="text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 bg-amber-500/10 hover:bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30 transition-colors cursor-pointer"
-					title={isNegative ? "1-клик оприходование для закрытия дефицита" : "1-клик оприходование для пополнения склада"}
+					title={isNegative ? "Оприходование для закрытия дефицита" : "Оприходование для пополнения склада"}
 					data-testid={`quick-receive-overdraft-btn-${item.id}`}
 				>
 					+ Оприходовать

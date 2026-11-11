@@ -4,6 +4,12 @@
  * Green-Vermillion OHI-S, Schiller-Pisarev PMA, and PSR sextant screening.
  */
 
+import {
+	calculateOhiSScore,
+	calculatePmaScore,
+	type HygieneToothAssessment,
+} from "@dental/shared";
+
 export interface ToothRow {
 	id: string;
 	snapshotId: string;
@@ -116,11 +122,8 @@ export function computeSnapshotIndices(
 		if (hasDeep) deepPocketsCount++;
 	}
 
-	// OHI-S & PMA calculation based on Green-Vermillion index teeth (16, 11, 26, 36, 31, 46)
-	let ohiCount = 0;
-	let totalDebris = 0;
-	let totalCalculus = 0;
-	let pmaScoreSum = 0;
+	// OHI-S & PMA calculation via canonical @dental/shared standard (Green-Vermillion & Parma)
+	const hygieneAssessments: HygieneToothAssessment[] = [];
 
 	for (const toothNum of GREEN_VERMILLION_INDEX_TEETH) {
 		if (!presentTeethNumbers.has(toothNum)) continue;
@@ -139,27 +142,22 @@ export function computeSnapshotIndices(
 			}
 		}
 
-		totalDebris += Math.min(3, toothPlaque > 0 ? (toothPlaque > 2 ? 2 : 1) : 0);
-		totalCalculus += Math.min(
-			3,
-			toothCalculus > 0 ? (toothCalculus > 2 ? 2 : 1) : 0,
-		);
-		ohiCount++;
+		const debrisScore = toothPlaque > 0 ? (toothPlaque > 2 ? 2 : 1) : 0;
+		const calculusScore = toothCalculus > 0 ? (toothCalculus > 2 ? 2 : 1) : 0;
+		const pmaScore = maxPd >= 5 ? 3 : maxPd >= 4 ? 2 : hasBop ? 1 : 0;
 
-		// PMA: 0: norm, 1: bop, 2: pocket 4mm, 3: pocket >= 5mm
-		if (maxPd >= 5) pmaScoreSum += 3;
-		else if (maxPd >= 4) pmaScoreSum += 2;
-		else if (hasBop) pmaScoreSum += 1;
+		hygieneAssessments.push({
+			toothNumber: toothNum,
+			debrisScore,
+			calculusScore,
+			pmaScore,
+		});
 	}
 
-	const ohi_s =
-		ohiCount > 0
-			? Math.round(((totalDebris + totalCalculus) / ohiCount) * 10) / 10
-			: 0;
-	const pma =
-		ohiCount > 0
-			? Math.round((pmaScoreSum / (3 * ohiCount)) * 100 * 10) / 10
-			: 0;
+	const ohiResult = calculateOhiSScore(hygieneAssessments);
+	const pmaResult = calculatePmaScore(hygieneAssessments);
+	const ohi_s = ohiResult.totalScore;
+	const pma = pmaResult.pmaPercent;
 
 	// PSR: Sextant assessment (highest code across sextants: 0..4)
 	let maxPsr = 0;

@@ -296,7 +296,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 				</div>
 
 				<div style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>
-					Кассовый чек и фискализация в 1 клик
+					Кассовый чек и проведение оплаты
 				</div>
 			</div>
 		</div>

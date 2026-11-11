@@ -30,7 +30,7 @@ export function EmergencyKitActionsBar({
 				className={`emergency-copy-act-btn ${isKitWrittenOff ? 'teal' : 'surface'}`}
 				data-testid="emergency-writeoff-kit-btn"
 				onClick={onWriteoffAntishockKit}
-				title="1-клик списание укладки «Антишок» со склада (мягкий овердрафт)"
+				title="Списание укладки «Антишок» со склада (мягкий овердрафт)"
 			>
 				{isKitWrittenOff ? <Check size={18} /> : <PackageCheck size={18} />}
 				<span>{isWritingOffKit ? "Списание со склада..." : isKitWrittenOff ? "Укладка «Антишок» списана (Склад)" : "Списать укладку «Антишок» (Склад)"}</span>

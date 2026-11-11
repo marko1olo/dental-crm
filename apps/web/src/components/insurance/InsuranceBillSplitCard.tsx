@@ -16,19 +16,19 @@ import {
 } from "@dental/shared";
 
 export interface InsuranceBillSplitCardProps {
-	readonly letter?: DmsGuaranteeLetter;
-	readonly billItems?: readonly DmsBillableItem[];
-	readonly onApplySplitToCashbox?: (splitData: {
+	readonly letter?: DmsGuaranteeLetter | undefined;
+	readonly billItems?: readonly DmsBillableItem[] | undefined;
+	readonly onApplySplitToCashbox?: ((splitData: {
 		totalDueRub: number;
 		dmsRub: number;
 		patientRub: number;
 		patientMethod: PatientPaymentMethod;
-		patientCashRub?: number;
-		patientCardRub?: number;
-		letterId?: string;
-		letterNumber?: string;
-		insurerName?: string;
-	}) => void;
+		patientCashRub?: number | undefined;
+		patientCardRub?: number | undefined;
+		letterId?: string | undefined;
+		letterNumber?: string | undefined;
+		insurerName?: string | undefined;
+	}) => void) | undefined;
 }
 
 const DEFAULT_SAMPLE_BILL_ITEMS: readonly DmsBillableItem[] = [
@@ -47,14 +47,16 @@ export const InsuranceBillSplitCard: React.FC<InsuranceBillSplitCardProps> = ({
 	const effectiveBillItems = billItems !== undefined
 		? billItems
 		: (isDemoShowcaseMode() ? DEFAULT_SAMPLE_BILL_ITEMS : []);
-	const [franchisePercent, setFranchisePercent] = useState<number>(letter?.franchisePercent ?? 0);
+	const [franchisePercent, setFranchisePercent] = useState<number>(
+		letter?.franchisePercent ?? letter?.franchisePct ?? letter?.defaultFranchisePercent ?? 0,
+	);
 	const [paymentMethod, setPaymentMethod] = useState<PatientPaymentMethod>("card");
 
 	const splitResult = useMemo(() => {
 		return calculateDmsCoPaymentSplit(effectiveBillItems, { guaranteeLetter: letter, franchisePercent });
 	}, [effectiveBillItems, letter, franchisePercent]);
 
-	const { totalBillKopecks, totalInsuranceCoveredKopecks, totalPatientOutOfPocketKopecks, lineItems, remainingLimitKopecks } = splitResult;
+	const { totalBillKopecks, totalInsuranceCoveredKopecks, totalPatientOutOfPocketKopecks, remainingLimitKopecks } = splitResult;
 	const patientDueRub = kopecksToRub(totalPatientOutOfPocketKopecks);
 
 	const handleApply = () => {
@@ -63,12 +65,12 @@ export const InsuranceBillSplitCard: React.FC<InsuranceBillSplitCardProps> = ({
 				totalDueRub: kopecksToRub(totalBillKopecks),
 				dmsRub: kopecksToRub(totalInsuranceCoveredKopecks),
 				patientRub: patientDueRub,
-				patientMethod,
+				patientMethod: paymentMethod,
 				patientCashRub: paymentMethod === "cash" ? patientDueRub : 0,
 				patientCardRub: paymentMethod === "card" ? patientDueRub : 0,
 				letterId: letter?.id,
 				letterNumber: letter?.letterNumber,
-				insurerName: letter?.insurerName,
+				insurerName: letter?.insurerName || letter?.companyName,
 			});
 		}
 	};
@@ -82,7 +84,7 @@ export const InsuranceBillSplitCard: React.FC<InsuranceBillSplitCardProps> = ({
 					</div>
 					<div>
 						<h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>Сплит оплаты (страховая + пациент)</h3>
-						<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>{letter?.insurerName || "Прямой расчет"} • Остаток лимита: {formatCurrencyKopecks(remainingLimitKopecks)}</div>
+						<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>{letter?.insurerName || letter?.companyName || "Прямой расчет"} • Остаток лимита: {formatCurrencyKopecks(remainingLimitKopecks)}</div>
 					</div>
 				</div>
 				<div style={{ display: "flex", gap: "6px", alignItems: "center" }}>

@@ -319,6 +319,7 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 					})
 					.returning();
 
+				assert.ok(inserted);
 				assert.ok(inserted.id);
 				assert.equal(inserted.status, "queued");
 				assert.equal(inserted.attempts, 0);
@@ -334,9 +335,11 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 			assert.ok(Array.isArray(batchWorker1));
 
 			if (batchWorker1.length > 0) {
-				const claimedId = batchWorker1[0].id;
-				assert.equal(batchWorker1[0].status, "sending");
-				assert.equal(batchWorker1[0].lockedBy, "worker-primary-node1");
+				const firstClaimed = batchWorker1[0];
+				assert.ok(firstClaimed);
+				const claimedId = firstClaimed.id;
+				assert.equal(firstClaimed.status, "sending");
+				assert.equal(firstClaimed.lockedBy, "worker-primary-node1");
 
 				// Second parallel worker must receive 0 items (SKIP LOCKED guaranteed)
 				const batchWorker2 = await claimBatch(now, 10, "worker-replica-node2", ORG_A_ID);
@@ -438,7 +441,7 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 			await withFixtureTenant(ORG_A_ID, async (tx) => {
 				await tx
 					.update(appointments)
-					.set({ status: "confirmed", updatedAt: new Date() })
+					.set({ status: "confirmed" })
 					.where(eq(appointments.id, APPT_A_ID));
 			});
 
@@ -446,6 +449,7 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 				.select()
 				.from(appointments)
 				.where(eq(appointments.id, APPT_A_ID));
+			assert.ok(afterAppt);
 			assert.equal(afterAppt.status, "confirmed");
 		});
 

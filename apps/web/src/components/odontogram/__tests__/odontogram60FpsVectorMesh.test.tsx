@@ -26,10 +26,9 @@ function readCssWithImports(filePath: string): string {
 }
 
 import {
-	areToothWrapperPropsEqual,
-	areToothDataEqual,
-	type ToothWrapperProps,
-} from "../ToothWrapper";
+	areAnatomicalToothPropsEqual,
+	type AnatomicalToothProps,
+} from "../gate0/AnatomicalTooth";
 import {
 	areAnatomicalToothSvgPropsEqual,
 	type AnatomicalToothSVGProps,
@@ -49,93 +48,59 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators", () => {
-	it("areToothWrapperPropsEqual returns true for tooth 15 when tooth 16 changes state", () => {
+	it("areAnatomicalToothPropsEqual returns true for tooth 15 when tooth 16 changes state", () => {
 		const onClickDummy = () => {};
-		const onQuickStateChangeDummy = () => {};
 
-		const tooth15DataPrev: ToothData = {
+		const prevPropsTooth15: AnatomicalToothProps = {
 			toothNumber: 15,
-			state: "Healthy",
-			surfaces: [],
-		};
-
-		const tooth15DataNext: ToothData = {
-			toothNumber: 15,
-			state: "Healthy",
-			surfaces: [],
-		};
-
-		const prevPropsTooth15: ToothWrapperProps = {
-			tooth: tooth15DataPrev,
-			scale: 1,
-			isTop: true,
-			isSelected: false,
-			selectedTeeth: [16], // Tooth 16 selected
-			activeStamp: null,
+			presetId: "intact",
+			isDark: false,
+			zoom: 1,
+			isFlipped: false,
+			showBadge: true,
 			onClick: onClickDummy,
-			onQuickStateChange: onQuickStateChangeDummy,
-			useSurfaces: false,
-			isPontic: false,
-			hasLeftBridgeConnector: false,
-			hasRightBridgeConnector: false,
 		};
 
-		const nextPropsTooth15: ToothWrapperProps = {
-			tooth: tooth15DataNext,
-			scale: 1,
-			isTop: true,
-			isSelected: false,
-			selectedTeeth: [16], // Tooth 16 still selected
-			activeStamp: null,
-			onClick: onClickDummy, // Stable reference
-			onQuickStateChange: onQuickStateChangeDummy, // Stable reference
-			useSurfaces: false,
-			isPontic: false,
-			hasLeftBridgeConnector: false,
-			hasRightBridgeConnector: false,
+		const nextPropsTooth15: AnatomicalToothProps = {
+			toothNumber: 15,
+			presetId: "intact",
+			isDark: false,
+			zoom: 1,
+			isFlipped: false,
+			showBadge: true,
+			onClick: onClickDummy,
 		};
 
-		// For unselected tooth 15, areToothWrapperPropsEqual MUST be true -> ZERO re-render!
-		const isEqual = areToothWrapperPropsEqual(prevPropsTooth15, nextPropsTooth15);
+		// For unmutated tooth 15, areAnatomicalToothPropsEqual MUST be true -> ZERO re-render!
+		const isEqual = areAnatomicalToothPropsEqual(prevPropsTooth15, nextPropsTooth15);
 		expect(isEqual).toBe(true);
 	});
 
-	it("areToothWrapperPropsEqual returns false strictly for tooth 16 when tooth 16 is modified", () => {
+	it("areAnatomicalToothPropsEqual returns false strictly for tooth 16 when tooth 16 is modified", () => {
 		const onClickDummy = () => {};
-		const onQuickStateChangeDummy = () => {};
 
-		const prevTooth16Props: ToothWrapperProps = {
-			tooth: { toothNumber: 16, state: "Healthy", surfaces: [] },
-			scale: 1,
-			isTop: true,
-			isSelected: false,
-			selectedTeeth: [],
-			activeStamp: null,
+		const prevTooth16Props: AnatomicalToothProps = {
+			toothNumber: 16,
+			presetId: "intact",
+			isDark: false,
+			zoom: 1,
+			isFlipped: false,
+			showBadge: true,
 			onClick: onClickDummy,
-			onQuickStateChange: onQuickStateChangeDummy,
-			useSurfaces: false,
-			isPontic: false,
-			hasLeftBridgeConnector: false,
-			hasRightBridgeConnector: false,
 		};
 
-		const nextTooth16Props: ToothWrapperProps = {
-			tooth: { toothNumber: 16, state: "Caries", surfaces: ["O"] },
-			scale: 1,
-			isTop: true,
-			isSelected: true,
-			selectedTeeth: [16],
-			activeStamp: null,
+		const nextTooth16Props: AnatomicalToothProps = {
+			toothNumber: 16,
+			presetId: "caries_dentin",
+			isDark: false,
+			zoom: 1,
+			isFlipped: false,
+			showBadge: true,
 			onClick: onClickDummy,
-			onQuickStateChange: onQuickStateChangeDummy,
-			useSurfaces: false,
-			isPontic: false,
-			hasLeftBridgeConnector: false,
-			hasRightBridgeConnector: false,
 		};
 
-		// Tooth 16 MUST re-render because its state & selection changed
-		const isEqual = areToothWrapperPropsEqual(prevTooth16Props, nextTooth16Props);
+		// Tooth 16 MUST re-render because its presetId changed
+		const isEqual = areAnatomicalToothPropsEqual(prevTooth16Props, nextTooth16Props);
 		expect(isEqual).toBe(false);
 	});
 
@@ -186,58 +151,42 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 	});
 
 	it("simulates a 32-tooth arch state mutation and proves strictly 1 tooth re-renders", () => {
-		const initialTeeth: ToothData[] = [...TOP_TEETH, ...BOTTOM_TEETH].map((num) => ({
-			toothNumber: num,
-			state: "Healthy" as ToothState,
-			surfaces: [],
-		}));
-
+		const allTeeth = [...TOP_TEETH, ...BOTTOM_TEETH];
 		const onClickStable = () => {};
-		const onQuickStateChangeStable = () => {};
 
-		// Simulate updating tooth 16 from Healthy to Caries (O)
-		const updatedTeeth: ToothData[] = initialTeeth.map((t) =>
-			t.toothNumber === 16 ? { ...t, state: "Caries" as ToothState, surfaces: ["O"] } : t,
-		);
+		// Initial state: all intact
+		const prevMap = new Map<number, AnatomicalToothProps>();
+		const nextMap = new Map<number, AnatomicalToothProps>();
+
+		for (const toothNum of allTeeth) {
+			prevMap.set(toothNum, {
+				toothNumber: toothNum,
+				presetId: "intact",
+				isDark: false,
+				zoom: 1,
+				isFlipped: (toothNum >= 21 && toothNum <= 38),
+				showBadge: true,
+				onClick: onClickStable,
+			});
+			nextMap.set(toothNum, {
+				toothNumber: toothNum,
+				presetId: toothNum === 16 ? "caries_dentin" : "intact",
+				isDark: false,
+				zoom: 1,
+				isFlipped: (toothNum >= 21 && toothNum <= 38),
+				showBadge: true,
+				onClick: onClickStable,
+			});
+		}
 
 		let reRenderCount = 0;
 		const reRenderedTeeth: number[] = [];
 
-		for (const toothNum of [...TOP_TEETH, ...BOTTOM_TEETH]) {
-			const prevToothData = initialTeeth.find((t) => t.toothNumber === toothNum)!;
-			const nextToothData = updatedTeeth.find((t) => t.toothNumber === toothNum)!;
+		for (const toothNum of allTeeth) {
+			const prevProps = prevMap.get(toothNum)!;
+			const nextProps = nextMap.get(toothNum)!;
 
-			const prevProps: ToothWrapperProps = {
-				tooth: prevToothData,
-				scale: 1,
-				isTop: toothNum < 30,
-				isSelected: false,
-				selectedTeeth: [],
-				activeStamp: null,
-				onClick: onClickStable,
-				onQuickStateChange: onQuickStateChangeStable,
-				useSurfaces: false,
-				isPontic: false,
-				hasLeftBridgeConnector: false,
-				hasRightBridgeConnector: false,
-			};
-
-			const nextProps: ToothWrapperProps = {
-				tooth: nextToothData,
-				scale: 1,
-				isTop: toothNum < 30,
-				isSelected: toothNum === 16,
-				selectedTeeth: [16],
-				activeStamp: null,
-				onClick: onClickStable,
-				onQuickStateChange: onQuickStateChangeStable,
-				useSurfaces: false,
-				isPontic: false,
-				hasLeftBridgeConnector: false,
-				hasRightBridgeConnector: false,
-			};
-
-			const shouldSkipRender = areToothWrapperPropsEqual(prevProps, nextProps);
+			const shouldSkipRender = areAnatomicalToothPropsEqual(prevProps, nextProps);
 			if (!shouldSkipRender) {
 				reRenderCount++;
 				reRenderedTeeth.push(toothNum);

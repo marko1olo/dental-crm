@@ -56,7 +56,7 @@ export const MedicalWastePackagingAndScaleForm: React.FC<MedicalWastePackagingAn
 				<div>
 					<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 						<Sparkles size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
-						<span>1-Кликовый стандарт смены СанПиН 2.1.3684-21</span>
+						<span>Стандарт смены СанПиН 2.1.3684-21</span>
 					</div>
 					<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
 						Стандартная нормативная масса без процедурного взвешивания ваты по 1 грамму

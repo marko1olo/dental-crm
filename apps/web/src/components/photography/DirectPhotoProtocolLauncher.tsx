@@ -6,7 +6,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ClinicalPhotoProtocolModal } from "./ClinicalPhotoProtocolModal";
 import { ChairsidePhotoQrBridgeModal } from "./ChairsidePhotoQrBridgeModal";
-import { DigitalSmileDesignModal } from "./DigitalSmileDesignModal";
+import { DsdAestheticStudioModal } from "./dsd/DsdAestheticStudioModal";
 import { useAppStore } from "../../store/appStore";
 
 export const DirectPhotoProtocolLauncher: React.FC = () => {
@@ -133,7 +133,7 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 
 	if (isDsdMode) {
 		return (
-			<DigitalSmileDesignModal
+			<DsdAestheticStudioModal
 				isOpen={isOpen}
 				onClose={handleClose}
 				patientId={effectivePatient.id}

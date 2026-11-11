@@ -149,7 +149,7 @@ export function assembleStaffProfile(
 					? 64
 					: 0,
 		lastLoginAt: user.createdAt?.toISOString ? user.createdAt.toISOString() : null,
-		currentSessionIp: user.currentSessionId ? "127.0.0.1 (активно)" : null,
+		currentSessionIp: user.currentSessionId ? "Активная сессия" : null,
 		currentSessionUserAgent: user.currentSessionId ? "DENTE Clinic Workstation" : null,
 		isSessionActive: Boolean(user.currentSessionId),
 

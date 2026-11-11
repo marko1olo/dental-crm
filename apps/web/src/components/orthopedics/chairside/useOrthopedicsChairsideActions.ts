@@ -47,8 +47,8 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 		state.setIsLabOrderSending(true);
 		const labOrderPayload = {
 			orderNumber, createdAt: new Date().toISOString(),
-			teeth: teethParts.length > 0 ? teethParts : ["16"],
-			teethFdi: teethParts.length > 0 ? teethParts.join(", ") : "16",
+			teeth: teethParts.length > 0 ? teethParts : [],
+			teethFdi: teethParts.length > 0 ? teethParts.join(", ") : undefined,
 			jawScope: state.jawScope !== "none" ? state.jawScope : "upper",
 			construction: preset.constructionType, constructionType: preset.constructionType,
 			material: state.selectedMaterial, colorVita: state.selectedShade, stumpShade: state.selectedStumpShade,
@@ -69,12 +69,17 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 			if (res.ok) {
 				const json = await res.json().catch(() => null);
 				if (json?.id) state.setActiveOrderId(json.id);
+				state.setLabOrderSentNumber(orderNumber);
+				showToast(`Наряд ${orderNumber} в ЗТЛ успешно отправлен!`, "success", 3000);
+			} else {
+				showToast(`Ошибка отправки наряда ${orderNumber} на сервере`, "error", 4000);
 			}
-		} catch {} finally {
+		} catch (err) {
+			console.error("Failed to send lab order:", err);
+			showToast(`Сетевая ошибка при отправке наряда ${orderNumber}`, "error", 4000);
+		} finally {
 			inFlightRef.current = false;
 			state.setIsLabOrderSending(false);
-			state.setLabOrderSentNumber(orderNumber);
-			showToast(`Наряд ${orderNumber} в ЗТЛ успешно отправлен!`, "success", 3000);
 		}
 	}, [state, props]);
 

@@ -28,7 +28,7 @@ export const PrescriptionQuickSets: React.FC<PrescriptionQuickSetsProps> = ({
 	return (
 		<div>
 			<div className="rx-section-header">
-				<span>1-Клик экспресс-пакеты назначений</span>
+				<span>Экспресс-пакеты назначений</span>
 				<span className="text-[11px] text-[var(--rx-teal)] font-normal normal-case">
 					Готовые схемы РФ
 				</span>

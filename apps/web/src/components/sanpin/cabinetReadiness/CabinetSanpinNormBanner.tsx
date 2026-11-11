@@ -82,9 +82,9 @@ export function CabinetSanpinNormBanner({ allItemsReady, onQuickFillAllReady }: 
 					border: "1px solid rgba(13, 148, 136, 0.3)",
 					boxShadow: "0 1px 2px rgba(13, 148, 136, 0.08)",
 				}}
-				title="Подтвердить соблюдение нормативов СанПиН для текущего кабинета в 1 клик"
+				title="Подтвердить соблюдение нормативов СанПиН для текущего кабинета"
 			>
-				<Check size={16} /> <span>Норма в 1 клик</span>
+				<Check size={16} /> <span>Физиологическая норма</span>
 			</button>
 		</div>
 	);

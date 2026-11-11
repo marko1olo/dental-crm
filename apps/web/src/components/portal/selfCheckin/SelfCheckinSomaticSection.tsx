@@ -192,7 +192,7 @@ export const SelfCheckinSomaticSection: React.FC<SelfCheckinSomaticSectionProps>
 						data-testid="quick-allergies-block"
 					>
 						<div className="selfcheckin-quick-allergies-heading font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1.5">
-							Пациент правит только реальные аллергии (1 касание):
+							Пациент правит только реальные аллергии (быстрый выбор):
 						</div>
 						<div className="selfcheckin-quick-allergies-grid">
 							<button

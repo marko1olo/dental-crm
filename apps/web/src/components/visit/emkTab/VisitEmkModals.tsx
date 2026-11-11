@@ -336,7 +336,40 @@ export function VisitEmkModals({
 									activePatient.id ||
 									"",
 								patientPhone: activePatient.phone || "",
+								primaryDiagnosisText: visitNoteForm?.diagnosis || "",
+								primaryDiagnosisIcd10: visitNoteForm?.diagnosis
+									? String(visitNoteForm.diagnosis).split(" ")[0]
+									: "",
+								attendingDoctorFullName: dashboard?.activeDoctor?.fullName || "",
+								attendingDoctorSpecialty: dashboard?.activeDoctor?.specialty || "",
 							}
+						: undefined,
+					anamnesis: {
+						chiefComplaint: visitNoteForm?.complaint || visitNoteForm?.complaints || "",
+						historyOfPresentIllness: visitNoteForm?.anamnesis || "",
+					},
+					generalTreatmentPlan: visitNoteForm?.treatmentPlan || visitNoteForm?.treatment || "",
+					visitDiaries: (visitNoteForm?.complaint || visitNoteForm?.objectiveStatus || visitNoteForm?.treatmentPlan || visitNoteForm?.diagnosis)
+						? [
+								{
+									id: `diary-${dashboard?.activeVisit?.id || "active"}`,
+									entryDate: new Date().toISOString().split("T")[0],
+									entryTime: new Date().toTimeString().slice(0, 5),
+									doctorFullName: dashboard?.activeDoctor?.fullName || "Лечащий врач",
+									doctorSpecialty: dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт",
+									toothNumber: dashboard?.activeVisit?.diagnosisTooth
+										? String(dashboard.activeVisit.diagnosisTooth)
+										: null,
+									subjectiveComplaints: visitNoteForm?.complaint || visitNoteForm?.complaints || "",
+									objectiveStatusLocalis: visitNoteForm?.objectiveStatus || visitNoteForm?.objective || "",
+									assessmentDiagnosisText: visitNoteForm?.diagnosis || "",
+									assessmentIcd10Code: visitNoteForm?.diagnosis
+										? String(visitNoteForm.diagnosis).split(" ")[0]
+										: "",
+									procedureProtocol: visitNoteForm?.treatmentPlan || visitNoteForm?.treatment || "",
+									homeCareRecommendations: visitNoteForm?.recommendations || "",
+								},
+							]
 						: undefined,
 				}}
 				isLocked={isSignedVisit}
@@ -359,6 +392,10 @@ export function VisitEmkModals({
 					patientId={activePatient?.id}
 					patientName={patientName}
 					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+					onInsertToProtocol={(text) => {
+						const current = visitNoteForm?.objectiveStatus || "";
+						updateVisitNoteField("objectiveStatus", current ? `${current}\n\n${text}` : text);
+					}}
 				/>
 			)}
 		</>

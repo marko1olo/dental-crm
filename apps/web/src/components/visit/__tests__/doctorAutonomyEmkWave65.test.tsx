@@ -25,7 +25,15 @@ const __dirname = path.dirname(__filename);
 
 describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () => {
 	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const visitEmkTabSource = fs.readFileSync(visitEmkTabPath, "utf8");
+	const visitEmkCompletionPath = path.resolve(__dirname, "../emkTab/VisitEmkCompletionSection.tsx");
+	const visitEmkAutosavePath = path.resolve(__dirname, "../emkTab/useVisitEmkAutosave.ts");
+	const visitEmkControllerPath = path.resolve(__dirname, "../emkTabModules/useVisitEmkTabController.ts");
+	const visitEmkTabSource = [
+		fs.readFileSync(visitEmkTabPath, "utf8"),
+		fs.existsSync(visitEmkCompletionPath) ? fs.readFileSync(visitEmkCompletionPath, "utf8") : "",
+		fs.existsSync(visitEmkAutosavePath) ? fs.readFileSync(visitEmkAutosavePath, "utf8") : "",
+		fs.existsSync(visitEmkControllerPath) ? fs.readFileSync(visitEmkControllerPath, "utf8") : "",
+	].join("\n");
 
 	const visitDiarySectionPath = path.resolve(__dirname, "../VisitDiarySection.tsx");
 	const visitDiarySectionDir = path.resolve(__dirname, "../diary/section");
@@ -40,7 +48,7 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 	const medicalRecordStudioModalPath = path.resolve(__dirname, "../../emr/MedicalRecordStudioModal.tsx");
 	const form043RecordDir = path.resolve(__dirname, "../../emr/record");
 	const form043PrintModalSource = [
-		fs.readFileSync(form043PrintModalPath, "utf8"),
+		fs.existsSync(form043PrintModalPath) ? fs.readFileSync(form043PrintModalPath, "utf8") : "",
 		fs.existsSync(medicalRecordStudioModalPath) ? fs.readFileSync(medicalRecordStudioModalPath, "utf8") : "",
 		...(fs.existsSync(form043RecordDir)
 			? fs.readdirSync(form043RecordDir).filter((f) => (f.endsWith(".tsx") || f.endsWith(".ts")) && fs.statSync(path.join(form043RecordDir, f)).isFile()).map((f) => fs.readFileSync(path.join(form043RecordDir, f), "utf8"))

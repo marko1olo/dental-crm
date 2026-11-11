@@ -26,6 +26,7 @@ import {
 } from "../../_common.js";
 import { organizations, users } from "../../auth.js";
 import { patients } from "../../patients.js";
+import { appointments } from "../../schedule/appointmentsTable.js";
 import { treatmentPlans } from "../treatmentPlansSchema.js";
 import { visits } from "../visitsSchema.js";
 
@@ -124,6 +125,14 @@ export const labOrders = pgTable(
 		patientId: uuid("patient_id")
 			.notNull()
 			.references(() => patients.id),
+		treatmentPlanId: uuid("treatment_plan_id").references(
+			() => treatmentPlans.id,
+			{ onDelete: "set null" },
+		),
+		appointmentId: uuid("appointment_id").references(
+			() => appointments.id,
+			{ onDelete: "set null" },
+		),
 		doctorId: uuid("doctor_id"),
 		doctorName: text("doctor_name"),
 		laboratoryName: text("laboratory_name"),
@@ -167,6 +176,12 @@ export const labOrders = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("lab_orders_patientId_idx").on(t.patientId),
+		treatmentPlanIdIdx: index("lab_orders_treatment_plan_id_idx").on(
+			t.treatmentPlanId,
+		),
+		appointmentIdIdx: index("lab_orders_appointment_id_idx").on(
+			t.appointmentId,
+		),
 		doctorIdIdx: index("lab_orders_doctor_id_idx").on(t.doctorId),
 		statusIdx: index("lab_orders_status_idx").on(t.organizationId, t.status),
 	}),

@@ -388,12 +388,15 @@ export const acceptVisitDraftSchema = z.object({
 export type AcceptVisitDraftInput = z.infer<typeof acceptVisitDraftSchema>;
 
 export const visitSaveReceiptSchema = z.object({
-	visitId: z.string().uuid(),
-	clientMutationId: z.string().nullable(),
-	status: z.enum(["accepted", "duplicate", "conflict_accepted"]),
-	serverRevision: z.number().int().nonnegative(),
+	visitId: z.string().min(1),
+	clientMutationId: z.string().nullable().optional(),
+	status: z.enum(["accepted", "duplicate", "conflict_accepted"]).optional(),
+	serverRevision: z.number().int().nonnegative().optional(),
 	savedAt: z.string(),
-	warning: z.string().nullable(),
+	warning: z.string().nullable().optional(),
+	protocolId: z.string().nullable().optional(),
+	signatureSha256: z.string().nullable().optional(),
+	pepSigned: z.boolean().nullable().optional(),
 });
 
 export type VisitSaveReceipt = z.infer<typeof visitSaveReceiptSchema>;

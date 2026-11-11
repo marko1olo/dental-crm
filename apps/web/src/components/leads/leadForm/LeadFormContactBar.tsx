@@ -6,7 +6,7 @@
 import { MessageSquare, PhoneCall } from "lucide-react";
 import React from "react";
 import type { Lead } from "../../../store/leadsStore";
-import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
+import { formatWhatsAppUrl } from "@dental/shared";
 
 interface LeadFormContactBarProps {
 	currentLead: Lead;

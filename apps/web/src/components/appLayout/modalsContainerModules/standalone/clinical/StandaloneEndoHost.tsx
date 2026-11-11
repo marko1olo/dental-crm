@@ -38,7 +38,7 @@ export const StandaloneEndoHost: React.FC<StandaloneEndoHostProps> = ({ onClose 
 								</span>
 							</div>
 							<div className="text-xs text-[var(--muted,#64748b)]">
-								Диагноз: Острый очаговый пульпит (K04.0) · 1-клик протокол эндодонтии
+								Диагноз: Острый очаговый пульпит (K04.0) · Протокол эндодонтии
 							</div>
 						</div>
 					</div>

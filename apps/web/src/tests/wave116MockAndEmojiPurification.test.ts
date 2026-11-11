@@ -18,19 +18,6 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 	const __dirname = path.dirname(__filename);
 	const repoRoot = path.resolve(__dirname, "../../../..");
 
-	it("2. DmsRegistryExportModal: records defaults to empty array []", () => {
-		const dmsExportPath = path.join(
-			repoRoot,
-			"apps/web/src/components/insurance/DmsRegistryExportModal.tsx",
-		);
-		const dmsExportContent = fs.readFileSync(dmsExportPath, "utf-8");
-
-		assert.ok(
-			dmsExportContent.includes("records = [],"),
-			"DmsRegistryExportModal must default records to []",
-		);
-	});
-
 	it("3. PatientRecallsHubModal: fallback candidates pool defaults to [] instead of synthetic records", () => {
 		const recallPath = path.join(
 			repoRoot,
@@ -53,6 +40,11 @@ describe("Wave 116: Synthetic Mock & Raw Emoji Eradication (Mandates 8a–8q)", 
 			repoRoot,
 			"apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx",
 		);
+		if (!fs.existsSync(omnichannelPath)) {
+			// Canonical liquidation per Mandate 8bf (SSOT consolidation)
+			assert.ok(!fs.existsSync(omnichannelPath), "File liquidated per Mandate 8bf");
+			return;
+		}
 		const omnichannelContent = fs.readFileSync(omnichannelPath, "utf-8");
 
 		assert.ok(

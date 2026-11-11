@@ -1,6 +1,6 @@
 import React from "react";
 import "../../surgery/surgery.css";
-import { SURGICAL_OPERATION_NORMS, COMMON_SURGERY_TEETH } from "../../surgery/surgeryProtocols";
+import { SURGICAL_OPERATION_NORMS, COMMON_SURGERY_TEETH } from "../../surgery/surgeryCatalogData";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
 import { useVisitSurgeryState } from "./modules/useVisitSurgeryState";
 import { VisitSurgeryHeader } from "./modules/VisitSurgeryHeader";
@@ -21,7 +21,14 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 	patientId, patientName = "Пациент", doctorId, doctorName = "Врач-хирург",
 	activeTooth, onSelectActiveTooth, onApplyToDiary, onAddToInvoice, className = "",
 }) => {
-	const s = useVisitSurgeryState(activeTooth ?? undefined);
+	const s = useVisitSurgeryState({
+		activeTooth: activeTooth ?? 46,
+		patientName,
+		doctorName,
+		onSelectActiveTooth,
+		onApplyToDiary,
+		onAddToInvoice,
+	});
 
 	return (
 		<section

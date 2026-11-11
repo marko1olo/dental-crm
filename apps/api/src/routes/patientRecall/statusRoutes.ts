@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { auditEvents, communicationEvents } from "../../db/schema.js";
+import { auditEvents, communicationEvents, patientRecalls } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { roleHasPermission } from "../../security/permissions.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -86,6 +87,43 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					direction: "outbound",
 					status: commStatus,
 					message: note ?? `Контрольный вызов: ${status}`,
+				});
+			}
+
+			// Реальная персистентность статуса в PostgreSQL 18 patient_recalls (Дефект 3)
+			const existingRecalls = await tx
+				.select({ id: patientRecalls.id })
+				.from(patientRecalls)
+				.where(
+					and(
+						eq(patientRecalls.organizationId, context.organizationId),
+						eq(patientRecalls.patientId, patientId),
+					),
+				)
+				.orderBy(desc(patientRecalls.createdAt))
+				.limit(1);
+
+			const isCompletedState = ["completed", "reached", "scheduled"].includes(status.toLowerCase());
+			if (existingRecalls.length > 0 && existingRecalls[0]) {
+				await tx
+					.update(patientRecalls)
+					.set({
+						status,
+						channel: commChannel ?? channel ?? null,
+						notes: note ?? undefined,
+						completedAt: isCompletedState ? new Date() : undefined,
+						updatedAt: new Date(),
+					})
+					.where(eq(patientRecalls.id, existingRecalls[0].id));
+			} else {
+				await tx.insert(patientRecalls).values({
+					organizationId: context.organizationId,
+					patientId,
+					status,
+					dueDate: new Date(),
+					channel: commChannel ?? channel ?? null,
+					notes: note ?? `Обновление статуса профосмотра: ${status}`,
+					completedAt: isCompletedState ? new Date() : undefined,
 				});
 			}
 		});

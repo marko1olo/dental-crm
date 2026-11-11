@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Check } from "lucide-react";
-import type { StandardImplantationParams } from "../../../surgery/surgeryProtocols";
+import type { StandardImplantationParams } from "../../../surgery/surgeryCatalogData";
 
 export interface ImplantSystemSelectorProps {
 	readonly implantBrand: string;

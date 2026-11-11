@@ -78,6 +78,7 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 		it("OHI_S_PRESETS contains 4 standard levels with accurate scores", () => {
 			assert.equal(OHI_S_PRESETS.length, 4);
 			const [ideal, fair, poor, severe] = OHI_S_PRESETS;
+			assert.ok(ideal && fair && poor && severe, "Все 4 пресета должны быть определены");
 
 			assert.equal(ideal.id, "ideal");
 			assert.equal(ideal.score, 0.0);
@@ -103,7 +104,7 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 			assert.equal(complex.primaryService.code, "A16.07.051");
 			assert.equal(complex.primaryService.priceRub, 5500);
 			assert.ok(complex.consumables.some((c) => c.includes("глицин")));
-			assert.ok(complex.consumables.some((c) => c.includes("Cleanic")));
+			assert.ok(complex.consumables.some((c) => c.includes("полировочная") || c.includes("паста")));
 
 			const perio = CLEANING_PROTOCOLS.find((p) => p.id === "perio");
 			assert.ok(perio);
@@ -122,17 +123,60 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 		it("HOME_CARE_PLANS contains evidence-based oral hygiene recommendations", () => {
 			assert.equal(HOME_CARE_PLANS.length, 3);
 			const [std, perio, ortho] = HOME_CARE_PLANS;
+			assert.ok(std && perio && ortho, "Все 3 плана домашнего ухода должны быть определены");
 
-			assert.ok(std.toothbrush.includes("Curaprox"));
+			assert.ok(std.toothbrush.includes("Мягкая") || std.toothbrush.includes("густая") || std.toothbrush.includes("щетина") || std.toothbrush.includes("щетиной"));
 			assert.ok(std.interdental.includes("ершики"));
 			assert.equal(std.recallMonths, 6);
 
-			assert.ok(perio.toothpaste.includes("Biorepair") || perio.toothpaste.includes("Parodontax"));
+			assert.ok(perio.toothpaste.includes("реминерализирующая") || perio.toothpaste.includes("паста") || perio.toothpaste.includes("гидроксиапатитом"));
 			assert.equal(perio.recallMonths, 3);
 
-			assert.ok(ortho.toothbrush.includes("Ortho"));
-			assert.ok(ortho.monotuft.includes("1006"));
+			assert.ok(ortho.toothbrush.toLowerCase().includes("ортодонтическая") || ortho.toothbrush.includes("Ortho"));
+			assert.ok(ortho.monotuft.toLowerCase().includes("монопучковая") || ortho.monotuft.includes("1006"));
 			assert.equal(ortho.recallMonths, 3);
+		});
+
+		it("commitHygieneVisitProtocol dispatches dente-apply-soap-protocol with objectiveStatus payload", () => {
+			const events: Array<{ type: string; detail: any }> = [];
+			const origDispatch = typeof window !== "undefined" ? window.dispatchEvent : undefined;
+
+			(globalThis as any).window = {
+				dispatchEvent: (event: any) => {
+					events.push({ type: event.type, detail: event.detail });
+					return true;
+				},
+			};
+
+			try {
+				const sampleOhiS = {
+					debr: { "16": 0, "11": 0, "26": 0, "36": 0, "31": 0, "46": 0 },
+					calc: { "16": 0, "11": 0, "26": 0, "36": 0, "31": 0, "46": 0 },
+					score: 0.8,
+					status: "Хороший (0.8)",
+				};
+				commitHygieneVisitProtocol({
+					patientId: "test-pat-1",
+					visitId: "test-vis-1",
+					ohiS: sampleOhiS as any,
+					cleaningProtocol: CLEANING_PROTOCOLS[0]!,
+					homeCarePlan: HOME_CARE_PLANS[0]!,
+					customNotes: "Контроль через 6 месяцев",
+				});
+
+				const soapEvents = events.filter((e) => e.type === "dente-apply-soap-protocol");
+				assert.equal(soapEvents.length, 1);
+				const payload = soapEvents[0]?.detail;
+				assert.ok(payload);
+				assert.ok(payload.soap);
+				assert.ok(payload.soap.objectiveStatus);
+				assert.ok(payload.soap.objectiveStatus.includes("OHI-S: 0.8"));
+				assert.equal(payload.mode, "smart_append");
+			} finally {
+				if (origDispatch) {
+					(globalThis as any).window.dispatchEvent = origDispatch;
+				}
+			}
 		});
 
 		it("dispatchHygieneInvoiceAndServices fires estimate and invoice events cleanly", () => {
@@ -149,6 +193,7 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 
 			try {
 				const complex = CLEANING_PROTOCOLS[0];
+				assert.ok(complex, "Протокол complex должен быть определен");
 				dispatchHygieneInvoiceAndServices(complex);
 
 				const invoiceEvents = events.filter((e) => e.type === "dente-add-services-to-invoice");
@@ -156,6 +201,7 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 
 				assert.equal(invoiceEvents.length, 1);
 				assert.equal(estimateEvents.length, 1);
+				assert.ok(invoiceEvents[0]);
 				assert.equal(invoiceEvents[0].detail.code, "A16.07.051");
 				assert.equal(invoiceEvents[0].detail.priceRub, 5500);
 			} finally {

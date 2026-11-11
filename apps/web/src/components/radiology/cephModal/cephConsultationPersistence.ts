@@ -8,7 +8,7 @@ import {
 	generateConsultationNoteWithoutCeph,
 	type CephalometricAnalysisResult,
 	type LandmarkMap,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 
 export interface SaveConsultationParams {
 	patientId?: string | undefined;

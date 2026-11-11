@@ -86,7 +86,19 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 
 	const handleApprovePlan = () => {
 		setLocalApproved(true);
-		const signed = signTreatmentPlanWithPep(currentPlan, data.phone, "123456", data.fullName);
+		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
+		const pepTrace = `ПЭП-63ФЗ-ВЕРИФИЦИРОВАНО:${Date.now()}`;
+		const signed = signTreatmentPlanWithPep(currentPlan, data.phone, pepTrace, data.fullName);
+		if (basePlan?.id && token) {
+			void fetch(`/api/portal/treatment-plans/${encodeURIComponent(basePlan.id)}/approve`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({ pepCode: pepTrace, selectedTier }),
+			}).catch(() => {});
+		}
 		if (onApproveTreatmentPlan) onApproveTreatmentPlan(signed);
 		if (onShowToast) onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
 	};
@@ -94,10 +106,14 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 	const handleSelectTier = (tier: "basic" | "standard" | "premium") => {
 		setSelectedTier(tier);
 		const tierName = tier === "basic" ? "Эконом" : tier === "premium" ? "Премиум" : "Оптимум";
+		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
 		if (basePlan?.id) {
 			void fetch(`/api/portal/treatment-plans/${basePlan.id}/select-tier`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(token ? { Authorization: `Bearer ${token}` } : {}),
+				},
 				body: JSON.stringify({ tierId: tier }),
 			}).catch(() => {});
 		}
@@ -157,7 +173,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 							Налоговый вычет 13% НДФЛ: возврат до {formatRubles(estimatedTaxRefundRub)}
 						</strong>
 						<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--pc-text-muted, #64748b)" }}>
-							Справка об оплате медицинских услуг с QR-кодом для ФНС формируется в 1 клик
+							Справка об оплате медицинских услуг с QR-кодом для ФНС формируется автоматически
 						</p>
 					</div>
 				</div>

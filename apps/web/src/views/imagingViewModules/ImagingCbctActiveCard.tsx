@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { DicomArchiveUploader } from "../../components/imaging/DicomArchiveUploader";
+import { DicomArchiveUploader } from "../../components/radiology/DicomArchiveUploader";
 import { NativeTomographyLaunchBar } from "./NativeTomographyLaunchBar";
 
 export interface ImagingCbctActiveCardProps {

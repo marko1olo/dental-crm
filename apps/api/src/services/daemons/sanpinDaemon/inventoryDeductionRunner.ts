@@ -13,7 +13,7 @@ import {
 	inventoryTransactions,
 	patientImplantInstallations,
 	patients,
-	services,
+	serviceCatalogItems as services,
 	treatmentItems,
 	users,
 	visits,
@@ -222,7 +222,7 @@ export function reconcileSurgicalActWithInventory(
 						billedBrand: install.implantBrand,
 						warehouseTransactionsCount: warehouseRecorded.length,
 						auditRecommendation:
-							"Сверить накладные склада и упаковочные стикеры в карте 043/у для устранения пересорта",
+							"Сверить накладные склада и упаковочные стикеры в медицинской карте для устранения пересорта",
 					},
 				},
 			});

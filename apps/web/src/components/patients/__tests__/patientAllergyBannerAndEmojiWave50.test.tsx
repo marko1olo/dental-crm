@@ -42,7 +42,7 @@ describe("4. PatientAllergySafetyBanner Integration & Emojis", () => {
 			}),
 		);
 		assert.ok(html.includes('data-testid="patient-allergy-safety-banner"'));
-		assert.ok(html.includes("СОМАТИЧЕСКИЕ ФАКТОРЫ РИСКА:"));
+		assert.ok(html.includes("Соматические факторы риска:"));
 		assert.ok(html.includes("[СТОП] АЛЛЕРГИЯ: НПВП (ЗАПРЕТ АСПИРИНА / КЕТОРОЛА)"));
 	});
 

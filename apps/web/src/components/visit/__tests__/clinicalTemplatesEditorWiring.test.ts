@@ -27,9 +27,9 @@ import {
 	findStomxDefectByAlias,
 } from "@dental/shared";
 import {
-	VisitSoapEditor,
 	resolveProtocolFromTemplate,
-} from "../VisitSoapEditor";
+} from "../../emr/clinicalDiaryMath";
+import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm";
 import {
 	CLINICAL_SOAP_PRESETS,
 	CANONICAL_SOAP_TEMPLATES,
@@ -165,66 +165,33 @@ describe("Clinical Templates Editor Wiring, Defects & Doctor Autonomy Audit", ()
 			assert.ok(fullText.includes("15 зубе"));
 		});
 
-		it("VisitSoapEditor рендерит 1-строчный компактный тулбар (32-36px), 1-клик кнопки и селектор зуба", () => {
+		it("RecordNewDiaryInlineForm рендерит форму, 1-клик норму и селектор зуба FDI", () => {
 			const html = renderToStaticMarkup(
-				createElement(VisitSoapEditor, {
-					activeTooth: 46,
-					initialValues: {
-						complaint: "Кратковременная боль от холодного",
-						anamnesis: "Соматически здоров",
-						objectiveStatus: "Зуб 46: кариозная полость",
-						diagnosis: "K02.1 Кариес дентина",
-						treatmentPlan: "Препарирование, пломба световая",
-						recommendations: "Контроль через 6 месяцев",
-						icd10: "K02.1",
-					},
-					isTemplatesOpen: false,
+				createElement(RecordNewDiaryInlineForm, {
+					selectedTooth: "46",
+					setSelectedTooth: () => {},
+					commonTeeth: [16, 26, 36, 46, 11, 21, 14, 24],
+					subjective: "Кратковременная боль от холодного",
+					setSubjective: () => {},
+					objective: "Зуб 46: кариозная полость",
+					setObjective: () => {},
+					diagnosisText: "K02.1 Кариес дентина",
+					setDiagnosisText: () => {},
+					icd10Code: "K02.1",
+					setIcd10Code: () => {},
+					protocol: "Препарирование, пломба световая",
+					setProtocol: () => {},
+					onApplyNorm: () => {},
+					onClear: () => {},
+					onSave: () => {},
 				}),
 			);
 
-			// Проверка тулбара и критических кнопок
-			assert.ok(html.includes("btn-open-stomt-templates"), "Кнопка 'Шаблоны 043/у (448)' присутствует");
-			assert.ok(html.includes("btn-soap-physio-norm"), "Кнопка 'Норма в 1 клик' присутствует");
-			assert.ok(html.includes("soap-select-tooth"), "FDI селектор зуба присутствует");
-			assert.ok(html.includes("46 зуб"), "Выбран 46 зуб");
-			assert.ok(html.includes("soap-complaints"), "Поле Subjective: жалобы присутствует");
-			assert.ok(html.includes("soap-anamnesis"), "Поле Subjective: анамнез присутствует");
-			assert.ok(html.includes("soap-objective"), "Поле Objective: статус присутствует");
-			assert.ok(html.includes("soap-diagnosis"), "Поле Assessment: диагноз присутствует");
-			assert.ok(html.includes("soap-treatment"), "Поле Plan: лечение присутствует");
-			assert.ok(html.includes("soap-recommendations"), "Поле Plan: рекомендации присутствует");
-			assert.ok(html.includes("soap-autosave-status"), "Индикатор автосохранения присутствует");
-		});
-
-		it("VisitSoapEditor при isTemplatesOpen=true открывает выпадающую панель с фильтрами всех 5 специальностей", () => {
-			const html = renderToStaticMarkup(
-				createElement(VisitSoapEditor, {
-					activeTooth: 16,
-					isTemplatesOpen: true,
-				}),
-			);
-
-			assert.ok(html.includes("Клинические протоколы приёма (448 шаблонов)"));
-			assert.ok(html.includes("Все протоколы (448)"));
-			assert.ok(html.includes("Терапия"));
-			assert.ok(html.includes("Ортопедия"));
-			assert.ok(html.includes("Хирургия"));
-			assert.ok(html.includes("Имплантация"));
-			assert.ok(html.includes("Заполнить"));
-			assert.ok(!html.includes("Заполнить (1 клик)"));
-			assert.ok(html.includes("+ Добавить"));
-		});
-
-		it("VisitSoapEditor рендерит мобильный док действий с 448 шаблонами и нормой", () => {
-			const html = renderToStaticMarkup(
-				createElement(VisitSoapEditor, {
-					activeTooth: 21,
-				}),
-			);
-
-			assert.ok(html.includes("soap-mobile-action-bar"));
-			assert.ok(html.includes("Шаблоны (448)"));
-			assert.ok(html.includes("Норма"));
+			// Проверка формы и критических кнопок
+			assert.ok(html.includes("btn-inline-diary-norm"), "Кнопка 'Интактный ряд' присутствует");
+			assert.ok(html.includes("input-inline-diary-tooth"), "FDI селектор зуба присутствует");
+			assert.ok(html.includes("btn-save-inline-diary"), "Кнопка сохранения присутствует");
+			assert.ok(html.includes("inline-diary-autosave-indicator"), "Индикатор автосохранения присутствует");
 		});
 	});
 
@@ -232,31 +199,29 @@ describe("Clinical Templates Editor Wiring, Defects & Doctor Autonomy Audit", ()
 	// 5. DOCTOR AUTONOMY & ZERO OBSTACLES (MANDATES 8e, 8n)
 	// =========================================================================
 	describe("5. Doctor Autonomy & Non-Blocking Workflow (Mandates 8e, 8n)", () => {
-		it("кнопки никогда не блокируются disabled=true при isLocked=true", () => {
+		it("кнопка сохранения записи btn-save-inline-diary никогда не блокируется disabled=true", () => {
 			const html = renderToStaticMarkup(
-				createElement(VisitSoapEditor, {
-					activeTooth: 16,
-					isLocked: true,
+				createElement(RecordNewDiaryInlineForm, {
+					selectedTooth: "16",
+					setSelectedTooth: () => {},
+					commonTeeth: [16, 26, 36, 46, 11, 21, 14, 24],
+					subjective: "",
+					setSubjective: () => {},
+					objective: "",
+					setObjective: () => {},
+					diagnosisText: "",
+					setDiagnosisText: () => {},
+					icd10Code: "K02.1",
+					setIcd10Code: () => {},
+					protocol: "",
+					setProtocol: () => {},
+					onApplyNorm: () => {},
+					onClear: () => {},
+					onSave: () => {},
 				}),
 			);
 
-			assert.ok(!html.includes('disabled=""'), "Никакие кнопки не должны быть disabled");
-			assert.ok(!html.includes("disabled "), "Никакие кнопки не должны быть disabled");
-			assert.ok(
-				html.includes("btn-soap-enable-correction"),
-				"Кнопка 'Внести исправление («Исправленному верить»)' должна рендериться",
-			);
-		});
-
-		it("кнопка ручного сохранения btn-soap-save всегда активна (Мандат 8e)", () => {
-			const html = renderToStaticMarkup(
-				createElement(VisitSoapEditor, {
-					activeTooth: 16,
-				}),
-			);
-
-			assert.ok(html.includes('data-testid="btn-soap-save"'));
-			assert.ok(!html.includes('data-testid="btn-soap-save" disabled'));
+			assert.ok(!html.includes('data-testid="btn-save-inline-diary" disabled'), "Кнопка сохранения не должна быть disabled");
 		});
 
 		it("1-клик автопилот норм здоровья (build1ClickNormPreset / Z01.2) не требует ассистента или ИНН", () => {

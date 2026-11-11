@@ -17,7 +17,6 @@ import {
 	QuickAddChairModal,
 	CHAIR_COLOR_PRESETS,
 } from "../QuickAddChairModal";
-import { ChairScheduleView } from "../ChairScheduleView";
 import {
 	ScheduleGrid,
 	type ChairDoctorShiftAssignment,
@@ -201,62 +200,6 @@ describe("Wave 46 — StomX & IDENT Chair-Doctor Shift Assignment Parity Suite",
 					`Palette ${palette.id} rendered in modal`,
 				);
 			}
-		});
-	});
-
-	describe("2. ChairScheduleView: 1-Click Shift Presets & Copy Week to Next Week", () => {
-		it("renders 1-row toolbar with copy week to next week button and shift popover trigger", () => {
-			const html = renderToString(
-				<ChairScheduleView
-					dateKey="2026-09-08"
-					appointments={[]}
-					dashboard={mockDashboard}
-					chairDoctorAssignments={mockChairAssignments}
-					onSlotClick={() => {}}
-					onAppointmentClick={() => {}}
-					onOpenRosterModal={() => {}}
-				/>,
-			);
-
-			// 1-Click Copy week shifts to next week in toolbar
-			assert.ok(
-				html.includes("btn-copy-chair-week-next"),
-				"Toolbar must include btn-copy-chair-week-next",
-			);
-			assert.ok(
-				html.includes("На след. неделю"),
-				"Toolbar must have label for copying week",
-			);
-
-			// 1-Row toolbar layout constraint (Hick's Law / Apple HIG)
-			assert.ok(
-				html.includes("min-h-[36px]") && html.includes("max-h-[36px]"),
-				"Toolbar must enforce strictly 1-row height 36px",
-			);
-
-			// Chair doctor assignment popover trigger button
-			assert.ok(
-				html.includes("chair-view-assign-doctor-chair-1"),
-				"Chair 1 assign doctor button rendered",
-			);
-
-			// Settings button
-			assert.ok(
-				html.includes("chair-view-settings-chair-1"),
-				"Chair 1 settings button rendered",
-			);
-
-			// Add chair button
-			assert.ok(
-				html.includes("btn-add-chair-header"),
-				"Add chair button rendered in header",
-			);
-
-			// Open roster button
-			assert.ok(
-				html.includes("btn-open-chair-roster"),
-				"Open roster modal button rendered",
-			);
 		});
 	});
 

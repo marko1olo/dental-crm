@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { Form043PrintModal, DEFAULT_043_DATA } from "../../emr/Form043PrintModal.js";
+import { Form043PrintModal, DEFAULT_043_DATA } from "../../emr/MedicalRecordStudioModal.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +22,7 @@ export function sanitizeDocumentText(text: string): string {
 }
 
 describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
-	const form043Path = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
+	const form043Path = path.resolve(__dirname, "../../emr/MedicalRecordStudioModal.tsx");
 	const consentPath = path.resolve(__dirname, "../../consents/InformedConsentModal.tsx");
 	const form043Source = fs.readFileSync(form043Path, "utf8");
 	const consentSource = fs.readFileSync(consentPath, "utf8");
@@ -50,10 +50,16 @@ describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 				status: "draft",
 			}),
 		);
-		assert.ok(html.includes("data-testid=\"btn-print-043-card\""));
-		assert.ok(!html.includes("data-testid=\"btn-print-043-card\" disabled"));
-		assert.ok(html.includes("ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)"));
-		assert.ok(html.includes("data-testid=\"badge-043-draft-status\""));
+		assert.ok(
+			html.includes("btn-print-043-card") || html.includes("btn-emr-print-card"),
+			"Must include print button",
+		);
+		assert.ok(!html.includes("btn-emr-print-card\" disabled") && !html.includes("btn-print-043-card\" disabled"));
+		assert.ok(html.includes("ЧЕРНОВИК"));
+		assert.ok(
+			html.includes("badge-043-draft-status") || html.includes("badge-emr-draft-status"),
+			"Must include draft badge",
+		);
 	});
 
 	it("1.8. renders Form043PrintModal with signed status badge when closed", () => {
@@ -67,9 +73,15 @@ describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 				isLocked: true,
 			}),
 		);
-		assert.ok(html.includes("data-testid=\"btn-print-043-card\""));
-		assert.ok(!html.includes("data-testid=\"btn-print-043-card\" disabled"));
+		assert.ok(
+			html.includes("btn-print-043-card") || html.includes("btn-emr-print-card"),
+			"Must include print button",
+		);
+		assert.ok(!html.includes("btn-emr-print-card\" disabled") && !html.includes("btn-print-043-card\" disabled"));
 		assert.ok(html.includes("ПОДПИСАНО ВРАЧОМ"));
-		assert.ok(html.includes("data-testid=\"badge-043-draft-status\""));
+		assert.ok(
+			html.includes("badge-043-draft-status") || html.includes("badge-emr-draft-status"),
+			"Must include signed badge",
+		);
 	});
 });

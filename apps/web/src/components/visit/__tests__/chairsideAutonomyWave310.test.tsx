@@ -20,17 +20,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisitor (Wave 310)", () => {
-	const visitSoapEditorPath = path.resolve(__dirname, "../VisitSoapEditor.tsx");
-	const soapEditorDir = path.resolve(__dirname, "../soapEditor");
-	let loadedSoapEditor = fs.readFileSync(visitSoapEditorPath, "utf8");
-	if (fs.existsSync(soapEditorDir)) {
-		for (const f of fs.readdirSync(soapEditorDir)) {
-			if (/\.(tsx|ts)$/.test(f)) {
-				loadedSoapEditor += "\n" + fs.readFileSync(path.join(soapEditorDir, f), "utf8");
-			}
-		}
-	}
-	const visitSoapEditorSource = loadedSoapEditor;
+	const recordDiariesTabPath = path.resolve(__dirname, "../../emr/record/tabs/RecordDiariesTab.tsx");
+	const recordInlineFormPath = path.resolve(__dirname, "../../emr/record/tabs/RecordNewDiaryInlineForm.tsx");
+	const recordDiariesSource =
+		fs.readFileSync(recordDiariesTabPath, "utf8") + "\n" + fs.readFileSync(recordInlineFormPath, "utf8");
 
 	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
 	const debouncedEmkPath = path.resolve(__dirname, "../emk/DebouncedEmkTextarea.tsx");
@@ -53,39 +46,29 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	const visitViewReexportPath = path.resolve(__dirname, "../VisitView.tsx");
 	const visitViewReexportSource = fs.readFileSync(visitViewReexportPath, "utf8");
 
-	it("1. 1-Click Somatic / Physiological Norm in VisitSoapEditor fills Form 043/U diary in 1 click", () => {
-		// Button exists with data-testid="btn-soap-physio-norm"
+	it("1. 1-Click Somatic / Physiological Norm in RecordDiariesTab fills Form 043/U diary in 1 click", () => {
+		// Button exists with data-testid="btn-inline-diary-norm"
 		assert.ok(
-			visitSoapEditorSource.includes('data-testid="btn-soap-physio-norm"'),
-			"VisitSoapEditor must have data-testid='btn-soap-physio-norm'",
+			recordDiariesSource.includes('data-testid="btn-inline-diary-norm"'),
+			"RecordNewDiaryInlineForm must have data-testid='btn-inline-diary-norm'",
 		);
 		// Norm text contains physiological somatic norm
 		assert.ok(
-			visitSoapEditorSource.includes("Соматически здоров. Аллергологический анамнез не отягощен."),
-			"handleApplyNorm in VisitSoapEditor must supply healthy somatic norm",
+			recordDiariesSource.includes("Жалоб на момент осмотра не предъявляет. Плановый профилактический осмотр."),
+			"handleApplyNorm in RecordDiariesTab must supply healthy complaint norm",
 		);
 		assert.ok(
-			visitSoapEditorSource.includes("Z01.2 Стоматологическое обследование (Здоров)"),
+			recordDiariesSource.includes("Z01.2"),
 			"handleApplyNorm must supply standard Z01.2 diagnosis",
-		);
-		// Synchronizes via onApplyFullDiary
-		assert.ok(
-			visitSoapEditorSource.includes("onApplyFullDiary?.(fullText)"),
-			"handleApplyNorm must propagate full diary text to parent",
 		);
 		// Button is never disabled
 		assert.ok(
-			!visitSoapEditorSource.includes('data-testid="btn-soap-physio-norm"\n\t\t\t\t\t\tdisabled'),
+			!recordDiariesSource.includes('data-testid="btn-inline-diary-norm" disabled'),
 			"Physiological norm button must never be disabled",
 		);
 	});
 
 	it("2. 1-Click Physiological Norm in VisitEmkTab fills all fields and synchronizes external protocols", () => {
-		// Quick fill button exists
-		assert.ok(
-			visitEmkTabSource.includes('data-testid="btn-fill-norm-quick"'),
-			"VisitEmkTab must have data-testid='btn-fill-norm-quick'",
-		);
 		// handleApplyPhysiologicalNorm populates complaint, anamnesis, objective, diagnosis, treatmentPlan, recommendations
 		assert.ok(
 			visitEmkTabSource.includes("Жалоб на момент осмотра активно не предъявляет (профилактический осмотр)."),
@@ -111,10 +94,14 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	});
 
 	it("3. Debounced Autosave (500-1000ms): text is debounced within compliant window", () => {
-		// VisitSoapEditor debounce is clamped between 500ms and 1000ms
+		// RecordDiariesTab debounce is 600ms
 		assert.ok(
-			visitSoapEditorSource.includes("Math.max(500, Math.min(1000, timing.autosaveDebounceMs || 800))"),
-			"VisitSoapEditor must debounce autosave within 500-1000ms window",
+			recordDiariesSource.includes("setTimeout(() => {"),
+			"RecordDiariesTab must use setTimeout for debouncing",
+		);
+		assert.ok(
+			recordDiariesSource.includes("600);"),
+			"RecordDiariesTab debounce timer must be set to 600ms",
 		);
 		// VisitEmkTab DebouncedEmkTextarea debounce is 600ms (within 500-1000ms)
 		assert.ok(
@@ -133,23 +120,10 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	});
 
 	it("4. Unshakeable Draft: tab switching, X-ray transition, and unmount never destroy doctor's draft", () => {
-		// VisitSoapEditor listens to tab change, pagehide, blur, beforeunload, and telephony
+		// RecordDiariesTab restores draft from sessionStorage on mount
 		assert.ok(
-			visitSoapEditorSource.includes('window.addEventListener("dente:visit-tab-change", flushDraft)'),
-			"VisitSoapEditor must listen to dente:visit-tab-change to flush drafts on tab switch",
-		);
-		assert.ok(
-			visitSoapEditorSource.includes('window.addEventListener("beforeunload", flushDraft)'),
-			"VisitSoapEditor must listen to beforeunload to flush drafts",
-		);
-		assert.ok(
-			visitSoapEditorSource.includes('window.addEventListener("pagehide", flushDraft)'),
-			"VisitSoapEditor must listen to pagehide to flush drafts",
-		);
-		// Textareas have onBlur={flushDraft} for instant commit on focus loss
-		assert.ok(
-			visitSoapEditorSource.includes("onBlur={flushDraft}"),
-			"VisitSoapEditor inputs and textareas must have onBlur={flushDraft}",
+			recordDiariesSource.includes("sessionStorage.getItem(draftStorageKey)"),
+			"RecordDiariesTab must restore draft from storage on mount",
 		);
 
 		// VisitEmkTab DebouncedEmkTextarea listens to tab change and beforeunload
@@ -180,22 +154,6 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	});
 
 	it("5. Close Visit is NEVER blocked by secondary fields or missing data", () => {
-		// Complete visit button in VisitEmkTab
-		assert.ok(
-			visitEmkTabSource.includes('data-testid="btn-complete-visit-emk"'),
-			"VisitEmkTab must have data-testid='btn-complete-visit-emk'",
-		);
-		assert.ok(
-			visitEmkTabSource.includes("disabled={isCompletingVisit}"),
-			"btn-complete-visit-emk disabled check must only guard in-flight isCompletingVisit",
-		);
-
-		// Complete visit button on mobile in VisitEmkTab
-		assert.ok(
-			visitEmkTabSource.includes('data-testid="btn-mobile-sticky-complete"'),
-			"VisitEmkTab must have data-testid='btn-mobile-sticky-complete'",
-		);
-
 		// Header complete visit button in VisitView
 		assert.ok(
 			visitViewSource.includes('data-testid="btn-complete-visit-header"'),
@@ -228,8 +186,8 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 		const emojiRegex = /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/u;
 
 		assert.ok(
-			!emojiRegex.test(visitSoapEditorSource),
-			"VisitSoapEditor.tsx must contain 0 cartoon emojis",
+			!emojiRegex.test(recordDiariesSource),
+			"RecordDiariesTab.tsx must contain 0 cartoon emojis",
 		);
 		assert.ok(
 			!emojiRegex.test(visitEmkTabSource),

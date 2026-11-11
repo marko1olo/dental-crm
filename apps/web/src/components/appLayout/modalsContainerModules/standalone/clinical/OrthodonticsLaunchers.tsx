@@ -19,8 +19,8 @@ const CephalometricAnalysisModal = lazyWithRetry(() =>
 const SmartOpgViewerModal = lazyWithRetry(() =>
 	import("../../../../orthodontics/SmartOpgViewerModal").then((m) => ({ default: m.SmartOpgViewerModal })),
 );
-const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
-	import("../../../../diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({ default: m.OrthodonticPhotoProtocolModal })),
+const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
+	import("../../../../photography/ClinicalPhotoProtocolModal").then((m) => ({ default: m.ClinicalPhotoProtocolModal })),
 );
 
 const GUARD_MESSAGE =
@@ -113,11 +113,12 @@ function StandaloneOrthoPhotoHost({ onClose }: { onClose: () => void }) {
 	const { patientId, patientName, guard } = useOrthoGuard("standalone-ortho-photo-missing-state", onClose);
 	if (guard) return guard;
 	return (
-		<OrthodonticPhotoProtocolModal
+		<ClinicalPhotoProtocolModal
 			isOpen={true}
 			onClose={onClose}
 			patientId={patientId || undefined}
 			patientName={patientName || undefined}
+			initialPresetId="orthodontic_8"
 		/>
 	);
 }

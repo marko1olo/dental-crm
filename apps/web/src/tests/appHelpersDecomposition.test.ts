@@ -11,7 +11,7 @@ import * as ImagingMprHelpers from "../appHelpers/imagingMprHelpers.js";
 import * as PersistenceHelpers from "../appHelpers/persistenceHelpers.js";
 import * as PreferenceHelpers from "../appHelpers/preferenceHelpers.js";
 import * as SpeechHelpers from "../appHelpers/speechHelpers.js";
-import * as TelephonyHelpers from "../appHelpers/telephonyHelpers.js";
+import * as TelegramHelpers from "../helpers/telegramHelpers.js";
 import * as UiFormatters from "../appHelpers/uiFormatters.js";
 import * as BrowserScanUtils from "../utils/browserScanUtils.js";
 
@@ -121,18 +121,18 @@ describe("AppHelpers Decomposition: Module Identity & Export Parity", () => {
 			SpeechHelpers.assertSpeechChunkDbStores,
 		);
 
-		// Telephony
+		// Telegram
 		assert.strictEqual(
 			Facade.telegramBlockedReasonLabels,
-			TelephonyHelpers.telegramBlockedReasonLabels,
+			TelegramHelpers.telegramBlockedReasonLabels,
 		);
 		assert.strictEqual(
 			Facade.telegramHumanMessage,
-			TelephonyHelpers.telegramHumanMessage,
+			TelegramHelpers.telegramHumanMessage,
 		);
 		assert.strictEqual(
 			Facade.telegramQrSvgToDataUrl,
-			TelephonyHelpers.telegramQrSvgToDataUrl,
+			TelegramHelpers.telegramQrSvgToDataUrl,
 		);
 
 		// UI Formatters

@@ -52,7 +52,7 @@ export function SettingsBpmnTab() {
 				{loadState.phase === "ready" && workflows.length === 0 && (
 					<div className="py-8 text-center space-y-2">
 						<p className="m-0 text-sm font-medium text-[var(--ink)]">Нет активных авто-уведомлений</p>
-						<p className="m-0 text-xs text-[var(--muted)]">Включите стандартные напоминания клиники в 1 клик</p>
+						<p className="m-0 text-xs text-[var(--muted)]">Включите стандартные напоминания клиники</p>
 					</div>
 				)}
 

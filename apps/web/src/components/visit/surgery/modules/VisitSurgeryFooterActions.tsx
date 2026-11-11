@@ -3,11 +3,12 @@ import { FileCheck, Printer, PackageMinus, Plus, FileText } from "lucide-react";
 import { DentalImplant } from "../../../icons/DentalIcons";
 import {
 	executeApplyToVisitDiary,
+	executePrintProtocol,
 	executePrintProtocolTab,
 	executePrintIds,
 	executeQuickDeduct,
 } from "./visitSurgeryActions";
-import { dispatchSurgicalServicesToInvoice } from "../../../surgery/surgeryProtocols";
+import { dispatchSurgicalServicesToInvoice } from "../../../surgery/surgeryCatalogData";
 import { showToast } from "../../../GlobalToast";
 import type { useVisitSurgeryState } from "./useVisitSurgeryState";
 
@@ -61,7 +62,22 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 
 				<button
 					type="button"
-					onClick={() => executePrintProtocolTab(s, patientName, doctorName)}
+					onClick={() => executePrintProtocol({
+						patientName,
+						doctorName,
+						currentNorm: s.currentNorm,
+						effectiveTooth: s.effectiveTooth,
+						protocolText: s.protocolText,
+						implantDetails: s.selectedNormId === "surgery_implant_standard" ? {
+							implantBrand: s.implantBrand,
+							diameterMm: s.implantDiameter,
+							lengthMm: s.implantLength,
+							torqueNcm: s.implantTorque,
+							isq: s.implantIsq,
+							capType: s.implantCap,
+							sutureMaterial: s.implantSuture,
+						} : undefined,
+					})}
 					className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)]`}
 					data-testid="btn-tab-print-protocol" title="Печать протокола операции"
 				>

@@ -113,7 +113,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 								<div className="text-[11px] text-[var(--muted)]">
 									{hasPlugin
 										? "Доступен браузерный плагин CAdES и нативный CLI-мост Fastify"
-										: "Врач может подписать ПЭП в 1 клик или распечатать бумажный бланк без блокировок"}
+										: "Врач может подписать ПЭП или распечатать бумажный бланк без блокировок"}
 								</div>
 							</div>
 						</div>
@@ -298,7 +298,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 							className="secondary-button text-xs font-semibold px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-subtle)] flex items-center gap-1.5 transition-colors min-h-[44px] sm:min-h-[36px]"
 						>
 							<FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-							<span>Подписать ПЭП в 1 клик</span>
+							<span>Подписать ПЭП</span>
 						</button>
 
 						{/* Вторичное действие: Печать на бумагу */}

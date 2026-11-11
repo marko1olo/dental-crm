@@ -81,6 +81,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			notes: typeof body.notes === "string" ? body.notes : undefined,
 			status: body.status === "closed" ? "closed" : "draft",
 			autoClose: Boolean(body.autoClose),
+			psrData: (body.indices as any)?.psrData ?? (body.psrData as any),
 		});
 
 		// Расчет рекомендаций гигиены

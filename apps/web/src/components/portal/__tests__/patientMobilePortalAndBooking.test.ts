@@ -14,7 +14,6 @@ import {
 	generateFnsTaxCertificateData,
 	generateIcsCalendarEvent,
 	generateSbpPaymentQrPayload,
-	generateSmsOtpCode,
 	generateTimeSlots,
 	verifySmsOtpCode,
 } from "../patientPortalEngine";
@@ -77,13 +76,7 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 		});
 	});
 
-	describe("4. SMS OTP Generation & Verification", () => {
-		it("generates deterministic or custom 4-digit code", () => {
-			const { code, expiresAtIso } = generateSmsOtpCode("+7 (926) 555-12-34", "7788");
-			assert.strictEqual(code, "7788");
-			assert.ok(typeof expiresAtIso === "string");
-		});
-
+	describe("4. SMS OTP Verification", () => {
 		it("verifies matching SMS code successfully", () => {
 			assert.strictEqual(verifySmsOtpCode("7788", "7788"), true);
 			assert.strictEqual(verifySmsOtpCode(" 7788 ", "7788"), true);

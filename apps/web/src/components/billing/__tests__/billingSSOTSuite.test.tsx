@@ -30,8 +30,7 @@ import {
 	BILLING_VAT_RATES,
 	getBillingDemoInvoice,
 } from "../billingCatalogData.js";
-import { CashCheckoutStudioModal } from "../CashCheckoutStudioModal.js";
-import { DirectCashRegisterLauncher } from "../DirectCashRegisterLauncher.js";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 
 describe("Red Team Billing SSOT: Integer Kopeck Arithmetic & Zero Float Drift", () => {
 	it("converts rubles to integer kopecks safely without floating-point errors", () => {
@@ -166,11 +165,16 @@ describe("Red Team Mandate 8n & 8e: Sovereign Autonomy & Zero Forced Citizen INN
 });
 
 describe("Red Team UI Mounting & Apple HIG Accessibility", () => {
-	it("renders CashCheckoutStudioModal cleanly with large total display and 1 Primary CTA", () => {
+	it("renders CashRegisterStudioModal cleanly with large total display and 1 Primary CTA", () => {
 		const html = renderToString(
-			<CashCheckoutStudioModal
+			<CashRegisterStudioModal
 				isOpen={true}
 				onClose={() => {}}
+				mode="checkout"
+				initialTab="checkout"
+				containerTestId="cash-checkout-studio-modal"
+				submitButtonTestId="btn-execute-payment"
+				title="Касса и чеки · Приём оплаты"
 				totalDueRub={7500}
 				patientName="Иванова Анна Сергеевна"
 				patientPhone="+7 (999) 111-22-33"
@@ -186,13 +190,63 @@ describe("Red Team UI Mounting & Apple HIG Accessibility", () => {
 		assert.ok(html.includes("var(--teal, #0d9488)"), "CTA must use canonical #0d9488 token");
 	});
 
-	it("renders DirectCashRegisterLauncher studio stand with patient card and payment trigger", () => {
-		const html = renderToString(
-			<DirectCashRegisterLauncher initialOpen={false} onClose={() => {}} />,
-		);
+	it("guarantees server data overwrites stale local cache during invoice reconciliation", () => {
+		const staleLocal = [
+			{
+				id: "inv-100",
+				number: "СЧ-2026-000100",
+				patientId: "pat-1",
+				patientName: "Старое имя из кэша",
+				doctorName: "Врач",
+				date: "01.01.2026",
+				totalAmountRub: 1000,
+				paidAmountRub: 0,
+				status: "issued" as const,
+				items: [],
+				createdAt: "2026-01-01T10:00:00.000Z",
+			},
+		];
 
-		assert.ok(html.includes("direct-cash-register-launcher-root"), "Launcher root must be mounted");
-		assert.ok(html.includes("Касса и чеки · Экспресс-оплата"), "Header must be in clean clinical Russian");
-		assert.ok(html.includes("data-testid=\"btn-launcher-open-checkout\""), "Must have launch button");
+		const freshServer = [
+			{
+				id: "inv-100",
+				number: "СЧ-2026-000100",
+				patientId: "pat-1",
+				patientName: "Актуальное имя из PostgreSQL",
+				doctorName: "Врач",
+				date: "01.01.2026",
+				totalAmountRub: 5500,
+				paidAmountRub: 5500,
+				status: "paid" as const,
+				items: [
+					{
+						id: "item-1",
+						name: "Профессиональная гигиена полости рта",
+						quantity: 1,
+						priceRub: 5500,
+						totalAmountRub: 5500,
+					},
+				],
+				createdAt: "2026-01-01T10:00:00.000Z",
+			},
+		];
+
+		// Симуляция алгоритма слияния из useInvoicesData.ts
+		const map = new Map<string, any>();
+		for (const inv of staleLocal) {
+			map.set(inv.id, inv);
+			if (inv.number) map.set(inv.number, inv);
+		}
+		for (const inv of freshServer) {
+			map.set(inv.id, inv);
+			if (inv.number) map.set(inv.number, inv);
+		}
+		const merged = Array.from(new Set(map.values()));
+
+		assert.equal(merged.length, 1);
+		assert.equal(merged[0].totalAmountRub, 5500, "Server totalAmountRub must overwrite stale cache");
+		assert.equal(merged[0].status, "paid", "Server status must overwrite stale cache");
+		assert.equal(merged[0].items.length, 1, "Server items must be preserved");
+		assert.equal(merged[0].patientName, "Актуальное имя из PostgreSQL");
 	});
 });

@@ -15,6 +15,8 @@ import {
 import { TelephonyDrawer } from "../components/telephony/TelephonyDrawer";
 import { preloadWorkspaceView } from "../workspacePreload";
 import { getFilteredAppViews } from "../workspaceShell";
+import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
+import { viewsHiddenByFeatureFlags } from "../workspaceShellModules/sidebarNavigationData";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 
 interface AppNavigationShellProps {
@@ -45,6 +47,12 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 		setIsStripDismissedLocally,
 		...appLogic,
 	};
+
+	const featureFlags = useWorkspaceProfile();
+	const hiddenByModules = viewsHiddenByFeatureFlags(featureFlags);
+	const allowedMobileViews = getFilteredAppViews(selectedWorkspaceRole).filter(
+		(v) => !hiddenByModules.includes(v),
+	);
 
 	return (
 		<main className="app-shell">
@@ -85,7 +93,7 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 					if (typeof window !== "undefined") window.location.hash = view;
 				}}
 				onViewIntent={preloadWorkspaceView}
-				allowedViews={getFilteredAppViews(selectedWorkspaceRole)}
+				allowedViews={allowedMobileViews}
 			/>
 			<TelephonyDrawer />
 		</main>

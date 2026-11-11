@@ -59,7 +59,7 @@ export function ClinicRegistrationInputs({
 					onChange={(e) => updateClinicProfileDraft("kpp", e.target.value.replace(/[^\d]/g, "").slice(0, 9))}
 					className={`w-full px-3 py-2 rounded-lg border text-sm bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/30 ${isIp ? "opacity-60 bg-[var(--paper-soft)] cursor-not-allowed" : kpp && !kppValidation.isValid ? "border-amber-500" : "border-[var(--line)]"}`}
 				/>
-				<small className="text-[11px] text-[var(--muted)]">{isIp ? "Индивидуальные предприниматели работают без КПП (Мандат 8n)" : kpp && !kppValidation.isValid ? kppValidation.message : "9 цифр для юридических лиц"}</small>
+				<small className="text-[11px] text-[var(--muted)]">{isIp ? "Индивидуальные предприниматели работают без КПП" : kpp && !kppValidation.isValid ? kppValidation.message : "9 цифр для юридических лиц"}</small>
 			</label>
 
 			<label className="flex flex-col gap-1.5 text-xs font-medium text-[var(--ink)]">

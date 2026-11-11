@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { EgiszBlankPermissionsWidget } from "../EgiszBlankPermissionsWidget";
+import { EgiszBlankPermissionsWidget } from "../egiszModules/EgiszBlankPermissionsWidget";
 import { EgiszAuditLogDrawer } from "../egiszModules/EgiszAuditLogDrawer";
 import { EgiszRolePermissionsTable } from "../egiszModules/EgiszRolePermissionsTable";
 import { EgiszSyncStatusBadge } from "../egiszModules/EgiszSyncStatusBadge";

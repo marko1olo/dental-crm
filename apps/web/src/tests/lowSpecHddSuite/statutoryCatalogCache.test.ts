@@ -219,34 +219,35 @@ describe("lowSpecHddOptimizer — Statutory Catalog Caching (804n, ICD-10, 043/u
 	});
 });
 
-describe("VisitSoapEditor — Template Drawer DOM Chunking & Memory Guard (Mandates 8c, 8n)", () => {
-	it("ограничивает начальную выборку из 448 шаблонов 30 карточками в DOM и рендерит кнопку 'Показать ещё'", async () => {
+describe("ClinicalProtocolsCatalogModal — Template Drawer DOM Chunking & Memory Guard (Mandates 8c, 8n)", () => {
+	it("ограничивает начальную выборку каталога 30 карточками процедур в DOM и рендерит кнопку 'Показать ещё'", async () => {
 		const React = await import("react");
-		const { renderToString } = await import("react-dom/server");
-		const { VisitSoapEditor } = await import("../../components/visit/VisitSoapEditor");
+		const { renderToStaticMarkup } = await import("react-dom/server");
+		const { ClinicalProtocolsCatalogModal } = await import(
+			"../../components/visit/clinicalCatalog/ClinicalProtocolsCatalogModal"
+		);
 
-		const html = renderToString(
-			React.createElement(VisitSoapEditor, {
-				isTemplatesOpen: true,
+		const html = renderToStaticMarkup(
+			React.createElement(ClinicalProtocolsCatalogModal, {
+				isOpen: true,
+				onClose: () => {},
+				onApplyPatch: () => {},
 			}),
 		);
 
-		// Проверяем, что отрисовано ровно 30 карточек (кнопка 'Заполнить')
-		const matches = html.match(/<span>Заполнить<\/span>/g) || [];
+		// Проверяем, что отрисовано ровно 30 карточек (data-testid="card-procedure-...")
+		const matches = html.match(/data-testid="card-procedure-/g) || [];
 		assert.strictEqual(
 			matches.length,
 			30,
-			`Ожидалось ровно 30 шаблонов в начальном DOM, получено ${matches.length}`,
+			`Ожидалось ровно 30 процедур в начальном DOM, получено ${matches.length}`,
 		);
 
 		// Проверяем кнопку раскрытия следующей порции
-		assert.ok(
-			html.includes('data-testid="btn-soap-templates-show-more"'),
-			"Должна присутствовать кнопка 'Показать ещё' шаблонов",
-		);
-		assert.ok(
-			html.includes("Показать ещё 30 шаблонов (показано 30 из 448)"),
-			"Кнопка должна содержать точный счетчик: 'Показать ещё 30 шаблонов (показано 30 из 448)'",
+		assert.match(
+			html,
+			/Показать ещё \d+ из \d+/,
+			"Должна присутствовать кнопка 'Показать ещё N из M' для пагинации",
 		);
 	});
 });

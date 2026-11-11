@@ -23,7 +23,6 @@ import {
 	detectBridgeSpans,
 	type BridgeSpanInfo,
 } from "../anatomicalToothGeometries";
-import { DEFAULT_GLOBAL_PRESETS, type GlobalTreatmentItem } from "../GlobalTreatmentsStrip";
 import type { ToothData } from "../ToothChart";
 
 describe("Clinical Odontogram Adapter — Napkin Unfolding Quadrant Symmetry", () => {
@@ -238,38 +237,5 @@ describe("Clinical Odontogram Adapter — Fixed Bridge Pillars & Pontics", () =>
 		assert.deepEqual([...span.abutments], [16, 14]);
 		assert.deepEqual([...span.pontics], [15]);
 		assert.equal(span.material, "ceramic_emax");
-	});
-});
-
-describe("Clinical Odontogram Adapter — Global Treatments Strip", () => {
-	test("DEFAULT_GLOBAL_PRESETS contains standard full-mouth and full-arch items", () => {
-		assert.ok(DEFAULT_GLOBAL_PRESETS.length >= 4);
-
-		const airFlow = DEFAULT_GLOBAL_PRESETS.find((p) => p.clinicalType === "hygiene_airflow");
-		assert.ok(airFlow);
-		assert.equal(airFlow.scope, "global_mouth");
-
-		const upperAligners = DEFAULT_GLOBAL_PRESETS.find((p) => p.clinicalType === "aligners_upper");
-		assert.ok(upperAligners);
-		assert.equal(upperAligners.scope, "global_arch");
-		assert.equal(upperAligners.arch, "upper");
-
-		const lowerAligners = DEFAULT_GLOBAL_PRESETS.find((p) => p.clinicalType === "aligners_lower");
-		assert.ok(lowerAligners);
-		assert.equal(lowerAligners.scope, "global_arch");
-		assert.equal(lowerAligners.arch, "lower");
-	});
-
-	test("Filtering items restricts strictly to global_mouth and global_arch scopes", () => {
-		const items: Array<{ id: string; scope: string; arch?: "upper" | "lower"; clinicalType?: string; title?: string; status?: string }> = [
-			{ id: "1", scope: "global_mouth", clinicalType: "hygiene", title: "Air-Flow", status: "planned" },
-			{ id: "2", scope: "global_arch", arch: "upper", clinicalType: "splint", title: "Сплинт", status: "planned" },
-			{ id: "3", scope: "single_tooth", clinicalType: "caries", title: "Кариес 16", status: "existing" },
-		];
-
-		const filtered = items.filter((t) => t.scope === "global_mouth" || t.scope === "global_arch");
-		assert.equal(filtered.length, 2);
-		assert.equal(filtered[0]!.scope, "global_mouth");
-		assert.equal(filtered[1]!.scope, "global_arch");
 	});
 });

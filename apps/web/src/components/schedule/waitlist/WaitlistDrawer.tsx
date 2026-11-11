@@ -6,12 +6,14 @@
 import React, { useId } from "react";
 import { createPortal } from "react-dom";
 import { Inbox, X } from "lucide-react";
-import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import type { Dashboard, CreateAppointmentInput } from "@dental/shared";
+import { useOptionalAppLogicContext, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import type { TargetSlotInfo, WaitlistCandidateItem } from "./waitlistTypes";
 import { useWaitlistState } from "./useWaitlistState";
+import type { AppointmentScheduleDraft } from "../view/scheduleViewTypes";
 
 // Decomposed Waitlist Modules (Mandate 8b Sweet Spot)
 import { WaitlistSlotBanner } from "./modules/WaitlistSlotBanner";
@@ -24,11 +26,11 @@ export interface WaitlistDrawerProps {
   onClose: () => void;
   targetSlot?: TargetSlotInfo | null;
   onBookSlot?: (patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void;
-  updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
+  updateNewAppointmentDraft?: (<K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void) | undefined;
   focusNewAppointmentEditor?: (() => void) | undefined;
   onAppointmentCreated?: (() => void) | undefined;
-  dashboard?: any;
-  auth?: any;
+  dashboard?: Dashboard | null | undefined;
+  auth?: AppLogicContextType["auth"];
 }
 
 export function WaitlistDrawer(props: WaitlistDrawerProps) {
@@ -95,7 +97,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         const defaultDocFromStore = useScheduleStore.getState().scheduleDefaultDoctorUserId;
         const filterDocFromStore = useScheduleStore.getState().scheduleDoctorFilterId;
         const staffList = (dashboard?.clinicSettings?.staff || dashboard?.staff || []);
-        const staffDoctor = staffList.find((s: any) => s.role === "doctor" || s.role === "dentist")?.id;
+        const staffDoctor = staffList.find((s: { role?: string; id?: string }) => s.role === "doctor" || s.role === "dentist")?.id;
         const firstDoctor = (dashboard?.doctors || [])[0]?.id;
         const authUserId = auth?.user?.id;
 
@@ -114,7 +116,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
         const doctorUserId = candidateDoctor;
 
-        const payload: Record<string, any> = {
+        const payload: Partial<CreateAppointmentInput> & Record<string, unknown> = {
           patientId: candidate.patientId,
           doctorUserId,
           startsAt: slot.startsAt,
@@ -210,7 +212,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
   const clinicName = dashboard?.clinicSettings?.name || "Стоматология DENTE";
   const staffDoctors = (dashboard?.clinicSettings?.staff || []).filter(
-    (s: any) => s.role === "doctor" || s.role === "dentist",
+    (s: { role?: string }) => s.role === "doctor" || s.role === "dentist",
   );
   const clinicPatients = dashboard?.patients || [];
 
@@ -280,46 +282,49 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         )}
 
         {/* НАВИГАЦИОННЫЕ ВКЛАДКИ (Apple Segmented Control по Дизайн-Библии) */}
-        <div className="px-5 pt-3 pb-2 flex items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] shrink-0 overflow-x-auto">
+        <div className="px-3 sm:px-5 pt-3 pb-2 flex items-center justify-between gap-1.5 sm:gap-2 border-b border-[var(--line,#e2e8f0)] shrink-0">
           <div className="inline-flex p-1 bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-strong,#1e293b)] rounded-xl gap-1 shrink-0">
             {targetSlot && (
               <button
                 type="button"
                 onClick={() => state.setActiveTab("smart_match")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                   state.activeTab === "smart_match"
                     ? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-sm dark:bg-[var(--paper-soft,#334155)] dark:text-white"
                     : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
                 }`}
               >
-                <span>Подбор на окно</span>
+                <span className="max-sm:hidden">Подбор на окно</span>
+                <span className="sm:hidden">Подбор</span>
                 <span className="opacity-80 text-[10px]">({state.rankedCandidates.length})</span>
               </button>
             )}
             <button
               type="button"
               onClick={() => state.setActiveTab("all_patients")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                 state.activeTab === "all_patients"
                   ? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-sm dark:bg-[var(--paper-soft,#334155)] dark:text-white"
                   : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
               }`}
             >
-              <span>Все в очереди ({state.items.length})</span>
+              <span className="max-sm:hidden">Все в очереди</span>
+              <span className="sm:hidden">Все</span>
+              <span className="opacity-80 text-[10px]">({state.items.length})</span>
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => state.setActiveTab("add_new")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line,#e2e8f0)] transition-all min-h-[44px] sm:min-h-[34px] flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line,#e2e8f0)] transition-all min-h-[44px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${
               state.activeTab === "add_new"
                 ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
                 : "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"
             }`}
           >
-            <span className="hidden sm:inline">+ Добавить пациента</span>
-            <span className="sm:hidden">+</span>
+            <span className="max-sm:hidden">+ Добавить пациента</span>
+            <span className="sm:hidden">+ Добавить</span>
           </button>
         </div>
 
@@ -386,7 +391,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               newPatientId={state.newPatientId}
               onSelectPatientId={(pId) => {
                 state.setNewPatientId(pId);
-                const pat = clinicPatients.find((p: any) => p.id === pId);
+                const pat = clinicPatients.find((p: Dashboard["patients"][number]) => p.id === pId);
                 if (pat) {
                   state.setNewPatientName(pat.fullName);
                   state.setNewPatientPhone(pat.phone || "");
@@ -394,6 +399,8 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               }}
               newPatientName={state.newPatientName}
               onPatientNameChange={state.setNewPatientName}
+              newPatientPhone={state.newPatientPhone}
+              onPatientPhoneChange={state.setNewPatientPhone}
               newDoctorId={state.newDoctorId}
               onDoctorIdChange={state.setNewDoctorId}
               newUrgency={state.newUrgency}

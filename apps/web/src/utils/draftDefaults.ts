@@ -70,6 +70,8 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		utmContent: "",
 		utmTerm: "",
 		leadSource: "",
+		telegramUserId: null,
+		telegramUsername: null,
 	};
 }
 

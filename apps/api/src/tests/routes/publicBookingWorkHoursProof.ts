@@ -71,12 +71,24 @@ const WORKDAY_END = "20:00";
 const WORKING_DAYS = [1, 2, 3, 4, 5];
 
 /**
- * Даты проверки заведомо в будущем: маршнут слотов не предлагает время, которое
+ * Даты проверки заведомо в будущем: маршрут слотов не предлагает время, которое
  * уже прошло, и на сегодняшней дате утренние слоты исчезали бы по другой,
- * законной причине.
+ * законной причине. Вычисляются динамически, чтобы тест не протухал со временем.
  */
-const FUTURE_MONDAY = "2026-11-02";
-const FUTURE_SATURDAY = "2026-11-07";
+function computeFutureWeekday(targetDay: number): string {
+	const d = new Date();
+	d.setDate(d.getDate() + 7);
+	const curDay = d.getDay();
+	const diff = (targetDay - curDay + 7) % 7;
+	d.setDate(d.getDate() + diff);
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
+
+const FUTURE_MONDAY = computeFutureWeekday(1);
+const FUTURE_SATURDAY = computeFutureWeekday(6);
 
 let failures = 0;
 
@@ -202,7 +214,7 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 
 	const clinicToken = signToken({ organizationId }, authTokenSecret());
 	const ownerToken = signToken(
-		{ organizationId, role: "owner" },
+		{ organizationId, userId: doctorId, role: "owner" },
 		authTokenSecret(),
 	);
 

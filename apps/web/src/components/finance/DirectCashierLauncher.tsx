@@ -1,11 +1,9 @@
 /**
  * apps/web/src/components/finance/DirectCashierLauncher.tsx
- * Канонический лаунчер глубокой привязки Студии кассы и чеков DENTE CRM.
- * Мандаты: 8aq (Монтирование в UI), 8e (Автономия кассира), 8b (строго 70-90 строк).
+ * Канонический лаунчер глубокой привязки Студии кассы и чеков DENTE CRM (Мандаты: 8aq, 8e, 8b).
  */
-
 import React, { useEffect, useState, useCallback } from "react";
-import { CashierStudioModal } from "./CashierStudioModal.js";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 
 export interface CashierLauncherEventDetail {
 	readonly mode?: "checkout" | "shift" | "history";
@@ -28,11 +26,9 @@ export const DirectCashierLauncher: React.FC = () => {
 		const s = window.location.search.toLowerCase();
 		const hasCashier = h.includes("cashier") || h.includes("receipt") || h.includes("kassa");
 		const hasQuery = s.includes("cashier=1") || s.includes("kassa=1");
-
 		if (hasCashier || hasQuery) {
-			if (h.includes("shift") || s.includes("shift")) setActiveTab("shift");
-			else if (h.includes("receipt") || s.includes("history")) setActiveTab("history");
-			else setActiveTab("checkout");
+			const targetTab = h.includes("shift") || s.includes("shift") ? "shift" : h.includes("receipt") || s.includes("history") ? "history" : "checkout";
+			setActiveTab(targetTab);
 			setIsOpen(true);
 		}
 	}, []);
@@ -65,20 +61,27 @@ export const DirectCashierLauncher: React.FC = () => {
 		if (typeof window !== "undefined") {
 			const cleanHash = window.location.hash.replace(/#(cashier|checkout|receipt|kassa)[^&]*/g, "");
 			const url = new URL(window.location.href);
-			url.searchParams.delete("cashier");
-			url.searchParams.delete("checkout");
-			url.searchParams.delete("kassa");
-			window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + cleanHash);
+			["cashier", "checkout", "kassa"].forEach((k) => url.searchParams.delete(k));
+			window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
 		}
 	};
 
 	return (
-		<CashierStudioModal
-			isOpen={isOpen} onClose={handleClose} initialTab={activeTab}
-			totalDueRub={launchData?.amountRub} totalDueKopecks={launchData?.amountKopecks}
-			patientId={launchData?.patientId} patientName={launchData?.patientName}
-			invoiceId={launchData?.invoiceId} cashierFullName={launchData?.cashierFullName}
+		<CashRegisterStudioModal
+			isOpen={isOpen}
+			onClose={handleClose}
+			mode="studio"
+			initialTab={activeTab === "history" ? "tape" : activeTab}
+			totalDueRub={launchData?.amountRub}
+			totalDueKopecks={launchData?.amountKopecks}
+			patientId={launchData?.patientId}
+			patientName={launchData?.patientName}
+			invoiceId={launchData?.invoiceId}
+			cashierFullName={launchData?.cashierFullName}
 			onSuccess={handleClose}
+			containerTestId="cashier-studio-modal"
+			submitButtonTestId="cashier-submit-btn"
+			title="Студия кассы и чеков"
 		/>
 	);
 };

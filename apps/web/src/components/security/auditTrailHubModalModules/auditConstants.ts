@@ -7,7 +7,7 @@ export interface SelectOption<T extends string> {
 
 export const AUDIT_EVENT_TYPE_OPTIONS: readonly SelectOption<AuditEventType | 'all'>[] = [
 	{ value: 'all', label: 'Все типы событий' },
-	{ value: 'view_patient_card', label: 'Просмотр медкарты 043/у' },
+	{ value: 'view_patient_card', label: 'Просмотр медкарты' },
 	{ value: 'modify_bill', label: 'Изменение счета / оплаты' },
 	{ value: 'delete_appointment', label: 'Удаление / отмена приема' },
 	{ value: 'export_patients_csv', label: 'Экспорт базы пациентов' },

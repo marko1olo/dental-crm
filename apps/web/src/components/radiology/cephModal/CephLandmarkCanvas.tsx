@@ -11,7 +11,7 @@ import {
 	type LandmarkMap,
 	type Point2D,
 	type CephalometricAnalysisResult,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 import { CephalometricMobileAccordion } from "../CephalometricReportTab";
 import type { CephAiBackendPreference } from "../../orthodontics/cephAiInferenceService";
 import type { CephAiStats, CephMobileViewId } from "./types";

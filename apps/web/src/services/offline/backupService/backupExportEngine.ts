@@ -259,7 +259,7 @@ export async function exportOfflineClinicBackup(
 		icd10,
 		meta: options?.meta || {
 			clinicName: "DENTE Клиника",
-			notes: "Автономный 1-клик бэкап DENTE CRM (AES-GCM-256)",
+			notes: "Автономный резервный бэкап DENTE CRM (AES-GCM-256)",
 		},
 	};
 

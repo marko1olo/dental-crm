@@ -14,7 +14,6 @@ import {
 	QuickAddChairModal,
 	CHAIR_COLOR_PRESETS,
 } from "../QuickAddChairModal";
-import { ChairScheduleView } from "../ChairScheduleView";
 import {
 	ScheduleGrid,
 	type ChairMaintenanceBlock,
@@ -223,25 +222,6 @@ describe("Feature 190: 14 StomX Palettes & Chair Top Accent Strip", () => {
 			html.includes("rgb(37, 99, 235)"),
 			"renders chair 2 accent bar color",
 		);
-	});
-
-	it("ChairScheduleView renders chair-schedule-palette-strip with top accent bars", () => {
-		const html = renderToString(
-			<ChairScheduleView
-				dashboard={mockDashboard}
-				dateKey="2026-09-08"
-				appointments={[]}
-				onSlotClick={() => {}}
-				onAppointmentClick={() => {}}
-				patientName={(_, id) => id || ""}
-				formatTime={(iso) => iso.slice(11, 16)}
-				toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
-				appointmentLabels={defaultAppointmentLabels}
-			/>,
-		);
-		assert.ok(html.includes("chair-schedule-palette-strip"), "renders palette strip");
-		assert.ok(html.includes('data-testid="chair-view-badge-chair-1"'), "renders chair badge 1");
-		assert.ok(html.includes('data-testid="chair-view-badge-chair-2"'), "renders chair badge 2");
 	});
 });
 

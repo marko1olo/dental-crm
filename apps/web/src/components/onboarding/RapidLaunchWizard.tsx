@@ -122,7 +122,7 @@ export function RapidLaunchWizard({
 				</div>
 
 				<div className="wizard-top-actions">
-					{/* 0-Click Solo Doctor Button */}
+					{/* Быстрый старт соло-врача */}
 					<button
 						type="button"
 						className="wizard-zero-click-btn"
@@ -130,7 +130,7 @@ export function RapidLaunchWizard({
 						title="Мгновенный старт для соло-врача с базовыми настройками (1 кресло, 09:00–18:00)"
 					>
 						<Zap size={14} aria-hidden="true" />
-						0-клик старт (соло-врач)
+						Быстрый старт (соло-врач)
 					</button>
 
 					{/* Prominent Skip Button (Doctor Autonomy Mandate 8e, 8n) */}

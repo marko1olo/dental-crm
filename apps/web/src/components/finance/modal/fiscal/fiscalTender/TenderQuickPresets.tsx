@@ -7,6 +7,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import { showToast } from "../../../../GlobalToast";
+import { useWorkspaceProfile } from "../../../../../hooks/useWorkspaceProfile";
 import type { TenderQuickPresetsProps } from "./types";
 
 export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
@@ -27,6 +28,7 @@ export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
 	insuranceAmount = 0,
 	setInsuranceAmount,
 }) => {
+	const { hasInsuranceCoPay } = useWorkspaceProfile();
 	return (
 		<div
 			className="dente-filter-chips flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line-subtle,var(--border,#cbd5e1))]"
@@ -108,48 +110,52 @@ export const TenderQuickPresets: React.FC<TenderQuickPresetsProps> = ({
 				/>
 				<span>Гарантия (0 ₽)</span>
 			</button>
-			<button
-				type="button"
-				onClick={() => {
-					selectSingleMethod("insurance");
-					setPaymentMode("split");
-					showToast(
-						"Применено 100% покрытие по ДМС (безналичный расчёт со страховой)",
-						"info",
-						2000,
-					);
-				}}
-				className={`dente-filter-chip flex items-center gap-1 ${
-					insuranceAmount > 0 && insuranceAmount === totalSumRub ? "active" : ""
-				}`}
-				data-testid="preset-full-dms"
-				title="Оплата 100% через ДМС (по безналичному расчету со страховой компанией)"
-			>
-				<ShieldCheck
-					size={13}
-					className={
-						insuranceAmount > 0 && insuranceAmount === totalSumRub
-							? "text-[var(--teal)] shrink-0"
-							: "text-sky-600 shrink-0"
-					}
-				/>
-				<span>100% ДМС</span>
-			</button>
-			<button
-				type="button"
-				onClick={() => {
-					applyCombinedPaymentPreset("split_dms");
-					setPaymentMode("split");
-				}}
-				className={`dente-filter-chip flex items-center gap-1 ${
-					insuranceAmount > 0 && insuranceAmount < totalSumRub ? "active" : ""
-				}`}
-				data-testid="preset-split-dms"
-				title="Сплит ДМС: страховая компания покрывает основную часть (акт для СК), пациент доплачивает франшизу (кассовый чек)"
-			>
-				<Layers size={13} className="text-teal-600 shrink-0" />
-				<span>Сплит ДМС</span>
-			</button>
+			{hasInsuranceCoPay && (
+				<>
+					<button
+						type="button"
+						onClick={() => {
+							selectSingleMethod("insurance");
+							setPaymentMode("split");
+							showToast(
+								"Применено 100% покрытие по ДМС (безналичный расчёт со страховой)",
+								"info",
+								2000,
+							);
+						}}
+						className={`dente-filter-chip flex items-center gap-1 ${
+							insuranceAmount > 0 && insuranceAmount === totalSumRub ? "active" : ""
+						}`}
+						data-testid="preset-full-dms"
+						title="Оплата 100% через ДМС (по безналичному расчету со страховой компанией)"
+					>
+						<ShieldCheck
+							size={13}
+							className={
+								insuranceAmount > 0 && insuranceAmount === totalSumRub
+									? "text-[var(--teal)] shrink-0"
+									: "text-sky-600 shrink-0"
+							}
+						/>
+						<span>100% ДМС</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							applyCombinedPaymentPreset("split_dms");
+							setPaymentMode("split");
+						}}
+						className={`dente-filter-chip flex items-center gap-1 ${
+							insuranceAmount > 0 && insuranceAmount < totalSumRub ? "active" : ""
+						}`}
+						data-testid="preset-split-dms"
+						title="Сплит ДМС: страховая компания покрывает основную часть (акт для СК), пациент доплачивает франшизу (кассовый чек)"
+					>
+						<Layers size={13} className="text-teal-600 shrink-0" />
+						<span>Сплит ДМС</span>
+					</button>
+				</>
+			)}
 			<button
 				type="button"
 				onClick={handleManualCardTerminalConfirm}

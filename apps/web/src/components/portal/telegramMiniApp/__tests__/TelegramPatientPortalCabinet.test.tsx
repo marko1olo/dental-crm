@@ -133,7 +133,7 @@ describe("TelegramPatientPortalCabinet Decomposed Architecture Test Suite", () =
 		assert.ok(html.includes("ФИО налогоплательщика:"));
 		assert.ok(html.includes("ИНН (12 цифр):"));
 		assert.ok(html.includes("Код медицинской услуги:"));
-		assert.ok(html.includes("Сформировать справку КНД 1151156"));
+		assert.ok(html.includes("Сформировать справку для налогового вычета"));
 	});
 
 	it("6. Renders finance tab with bonus balances, referral card and operation history", () => {

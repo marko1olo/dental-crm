@@ -33,7 +33,7 @@ export function ScannerHeaderBar({ activeSubTab, onSelectSubTab }: ScannerHeader
 					</h1>
 					<p className="scanner-header-subtitle text-[11px] sm:text-xs text-[var(--muted)] hidden sm:block truncate">
 						{activeSubTab === "sanpin"
-							? "Автоклавирование, предстерилизационная очистка, упаковка инструментов и списание в 1 клик"
+							? "Автоклавирование, предстерилизационная очистка, упаковка инструментов и списание по техкартам"
 							: "Быстрое сканирование паспорта, СНИЛС, полиса ОМС и прикрепление к медкарте"}
 					</p>
 				</div>

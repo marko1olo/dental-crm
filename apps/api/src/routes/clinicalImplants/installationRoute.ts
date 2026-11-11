@@ -93,7 +93,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				boneGraftMaterial: effectiveInput.boneGraftMaterial ?? null,
 				membraneUsed: effectiveInput.membraneUsed ?? null,
 				torqueCurveSamplesJson: JSON.stringify(effectiveInput.torqueCurveSamples || []),
-				notes: JSON.stringify({ userNotes: effectiveInput.notes ?? null, expirationDate: screw.invItem.expirationDate ?? effectiveInput.expirationDate, sku: screw.invItem.sku, financials, deductedMaterials: allDeductions, isImmediateLoadingFeasible }),
+				notes: JSON.stringify({ userNotes: effectiveInput.notes ?? null, connectionType: effectiveInput.connectionType ?? effectiveInput.implantConnectionType ?? "internal_hex", expirationDate: screw.invItem.expirationDate ?? effectiveInput.expirationDate, sku: screw.invItem.sku, financials, deductedMaterials: allDeductions, isImmediateLoadingFeasible }),
 			}).returning();
 
 			if (!installation) throw new Error("Не удалось сохранить протокол установки имплантата.");

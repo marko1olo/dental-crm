@@ -12,8 +12,8 @@ import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 const ClinicalTasksPanel = lazyWithRetry(() =>
 	import("../ClinicalTasksPanel").then((m) => ({ default: m.ClinicalTasksPanel })),
 );
-const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
-	import("../components/diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({ default: m.OrthodonticPhotoProtocolModal })),
+const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
+	import("../components/photography/ClinicalPhotoProtocolModal").then((m) => ({ default: m.ClinicalPhotoProtocolModal })),
 );
 const OrthodonticsStudioModal = lazyWithRetry(() =>
 	import("../components/orthodontics/OrthodonticsStudioModal").then((m) => ({ default: m.OrthodonticsStudioModal })),
@@ -49,7 +49,13 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 		<>
 			{routing.isOrthoPhotoDirectModalOpen && (
 				<Suspense fallback={null}>
-					<OrthodonticPhotoProtocolModal isOpen={true} onClose={() => routing.setIsOrthoPhotoDirectModalOpen(false)} patientName="Воронов Дмитрий Игоревич" patientId="pat-demo-01" doctorName="Д-р Соколов А. В." clinicName="DENTE Clinic" />
+					<ClinicalPhotoProtocolModal
+						isOpen={true}
+						onClose={() => routing.setIsOrthoPhotoDirectModalOpen(false)}
+						patientName="Воронов Дмитрий Игоревич"
+						patientId="pat-demo-01"
+						initialPresetId="orthodontic_8"
+					/>
 				</Suspense>
 			)}
 			{routing.isOrthoProtocolDirectModalOpen && (

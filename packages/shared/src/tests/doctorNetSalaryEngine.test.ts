@@ -69,13 +69,13 @@ test("calculateDoctorNetSalary: handles kopeck exactness without float drift", (
 	// Total Accrued: 333 333 + 50 050 = 383 383 kop (3 833.83 RUB)
 	assert.strictEqual(result.totalAccruedKop, 383383);
 
-	// NDFL: round(383 383 * 0.13) = round(49 839.79) = 49 840 kop (498.40 RUB)
-	assert.strictEqual(result.ndflTaxKop, 49840);
-	assert.strictEqual(result.ndflTaxRub, 498.40);
+	// NDFL в полных рублях (п. 6 ст. 225 НК РФ): round(383 383 * 0.13 / 100) * 100 = 498 * 100 = 49 800 kop (498.00 RUB)
+	assert.strictEqual(result.ndflTaxKop, 49800);
+	assert.strictEqual(result.ndflTaxRub, 498.00);
 
-	// Net payout: 383 383 - 49 840 = 333 543 kop (3 335.43 RUB)
-	assert.strictEqual(result.netPayoutKop, 333543);
-	assert.strictEqual(result.netPayoutRub, 3335.43);
+	// Net payout: 383 383 - 49 800 = 333 583 kop (3 335.83 RUB)
+	assert.strictEqual(result.netPayoutKop, 333583);
+	assert.strictEqual(result.netPayoutRub, 3335.83);
 });
 
 test("calculateServicesPayrollBreakdown: itemizes services with isExpensive flag for FNS deduction codes", () => {

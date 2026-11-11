@@ -1,11 +1,12 @@
 import React from "react";
 import { Check, Sparkles } from "lucide-react";
 import {
+	LOWER_PRIMARY_TEETH,
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	RESORPTION_STAGE_DEFINITIONS,
+	UPPER_PRIMARY_TEETH,
 	type ResorptionStagePercent,
 } from "./pediatricDentitionEngine";
-import { UPPER_PRIMARY_TEETH, LOWER_PRIMARY_TEETH } from "./pediatricResorptionConstants";
 
 export interface PediatricResorptionTeethGridProps {
 	readonly selectedPrimaryTooth: number;

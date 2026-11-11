@@ -32,7 +32,7 @@ describe("ConsumablesBatchWriteoffModal SSOT Invariants (Mandates 8e, 8n, 8am, 8
 		);
 
 		assert.ok(html.includes("Списание расходников за смену"), "Должен быть живой понятный заголовок");
-		assert.ok(html.includes("1 клик по техкартам"), "Должен быть бейдж 1 клика по техкартам");
+		assert.ok(html.includes("Списание по техкартам"), "Должен быть бейдж списания по техкартам");
 		assert.ok(html.includes("Материалы по техкартам"), "Таблица материалов должна отображаться");
 		assert.ok(html.includes("btn-confirm-shift-batch-deduction"), "Должна быть Primary CTA кнопка");
 	});

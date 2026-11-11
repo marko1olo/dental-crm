@@ -12,20 +12,23 @@ export interface AnatomicalGate0RowProps {
 	readonly isUpper: boolean;
 	readonly leftTeeth: readonly number[];
 	readonly rightTeeth: readonly number[];
-	readonly teethDataMap: Map<number, ToothData>;
-	readonly selectedTeeth: readonly number[];
+	readonly teethDataMap?: Map<number, ToothData> | undefined;
+	readonly selectedTeeth?: readonly number[] | undefined;
 	readonly isDark: boolean;
 	readonly zoom: number;
 	readonly onToothClick?: ((e: React.MouseEvent<HTMLElement>, num: number) => void) | undefined;
 	readonly archTitle?: string | undefined;
 }
 
+const EMPTY_MAP = new Map<number, ToothData>();
+const EMPTY_SELECTED: readonly number[] = [];
+
 export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(({
 	isUpper,
 	leftTeeth,
 	rightTeeth,
-	teethDataMap,
-	selectedTeeth,
+	teethDataMap = EMPTY_MAP,
+	selectedTeeth = EMPTY_SELECTED,
 	isDark,
 	zoom,
 	onToothClick,

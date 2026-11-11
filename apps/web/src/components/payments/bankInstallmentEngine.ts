@@ -289,7 +289,7 @@ export function generateBankInstallmentDeepLink(
 	}
 
 	const providerConfig = BANK_INSTALLMENT_PROVIDERS[params.providerId];
-	const formattedSmsText = `Стоматология ДЕНТЕ: Вам доступна беспроцентная рассрочка на ${providerConfig.shortLabel} на этап «${params.stageTitle}» на сумму ${amount.toLocaleString("ru-RU")} ₽. Оформить онлайн в 1 клик: ${deepLinkUrl}`;
+	const formattedSmsText = `Стоматология ДЕНТЕ: Вам доступна беспроцентная рассрочка на ${providerConfig.shortLabel} на этап «${params.stageTitle}» на сумму ${amount.toLocaleString("ru-RU")} ₽. Оформить онлайн: ${deepLinkUrl}`;
 
 	return {
 		deepLinkUrl,

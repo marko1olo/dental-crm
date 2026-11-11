@@ -1,6 +1,8 @@
 /**
  * @dental/web/components/orthodontics/cephAiInferenceService.ts
- * Легкий детерминированный сервис ТРГ (Мандат 8b).
+ * Сервис калиброванных анатомических шаблонов ТРГ (Мандаты 8b, 8e, 8x).
+ * Честная доменная логика: калиброванный анатомический шаблон I класса (норма)
+ * без фиктивных GPU/WebGL нейросетей и искусственных задержек.
  */
 
 import type { LandmarkMap } from "./cephalometric";
@@ -23,42 +25,32 @@ export interface CephAiInferenceResult {
 	backend: string;
 }
 
-export function detectOptimalCephBackend(pref?: CephAiBackendPreference): CephBackendInfo {
-	const b = pref && pref !== "auto" ? pref : "wasm";
-	const isGpu = b === "webgpu" || b === "webgl";
-	const badge = b === "webgpu" ? "WebGPU" : b === "webgl" ? "WebGL" : "CPU";
-	const labelRu = b === "webgpu"
-		? "Дискретная GPU (WebGPU)"
-		: b === "webgl"
-		? "Интегрированная GPU (WebGL)"
-		: "Процессор (WASM / CPU)";
-
+export function detectOptimalCephBackend(_pref?: CephAiBackendPreference): CephBackendInfo {
 	return {
-		backend: b,
-		isGpuAccelerated: isGpu,
-		label: `Ceph Inference (${badge})`,
-		labelRu,
-		badge,
+		backend: "template_norm",
+		isGpuAccelerated: false,
+		label: "Анатомический шаблон (норма)",
+		labelRu: "Калиброванный анатомический шаблон (норма)",
+		badge: "Шаблон (норма)",
 	};
 }
 
 export const cephAiInferenceService = {
 	async detectLandmarks() {
-		return {};
+		return { ...DEFAULT_CEPH_LANDMARKS_PRESET };
 	},
 	async inferLandmarks() {
-		return {};
+		return { ...DEFAULT_CEPH_LANDMARKS_PRESET };
 	},
 	async runInference(
 		_imageUrl: string,
-		options?: { backend?: CephAiBackendPreference; allowFallback?: boolean },
+		_options?: { backend?: CephAiBackendPreference; allowFallback?: boolean },
 	): Promise<CephAiInferenceResult> {
-		const backend = options?.backend && options.backend !== "auto" ? options.backend : "wasm";
 		return {
 			landmarks: { ...DEFAULT_CEPH_LANDMARKS_PRESET },
-			latencyMs: 15,
+			latencyMs: 0,
 			isCalibratedFallback: true,
-			backend,
+			backend: "template_norm",
 		};
 	},
 };

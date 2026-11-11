@@ -59,11 +59,11 @@ export function validateAndResolvePaymentSplit(
 				? Math.round(input.familyDepositAmountRub * 100)
 				: 0);
 	const rawBonusKop =
-		(input as any).bonusAmountKopecks ??
-		((input as any).bonusAmountRub != null
-			? Math.round((input as any).bonusAmountRub * 100)
-			: (input as any).pointsToRedeem != null
-				? Math.round((input as any).pointsToRedeem * 100)
+		input.bonusAmountKopecks ??
+		(input.bonusAmountRub != null
+			? Math.round(input.bonusAmountRub * 100)
+			: input.pointsToRedeem != null
+				? Math.round(input.pointsToRedeem * 100)
 				: 0);
 	const rawCertificateKop =
 		(input.certificateAmountKopecks ??

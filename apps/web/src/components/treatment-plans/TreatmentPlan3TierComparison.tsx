@@ -13,12 +13,15 @@ import { TreatmentPlan3TierAgeWarning } from "./TreatmentPlan3TierAgeWarning";
 import { TreatmentPlan3TierMobileSegmented } from "./TreatmentPlan3TierMobileSegmented";
 import { TreatmentPlan3TierMobileThumbBar } from "./TreatmentPlan3TierMobileThumbBar";
 import { TreatmentPlan3TierEmptyState } from "./TreatmentPlan3TierEmptyState";
+import { createAndSharePlanBudgetLink } from "./treatmentPlanMessengerHelper";
 
 export { formatServiceLifeYearsText } from "./TreatmentPlanTierCard";
 
 export interface TreatmentPlan3TierComparisonProps {
 	readonly tiers: readonly TreatmentPlanTier[];
 	readonly selectedTierId?: TreatmentPlanTierId | undefined;
+	readonly planId?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
 	readonly planAgeDays?: number | undefined;
 	readonly planCreatedAtIso?: string | undefined;
 	readonly onSelectTier?: ((tier: TreatmentPlanTier) => void) | undefined;
@@ -63,11 +66,14 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	const handlePrintClick = (e: React.MouseEvent, t: TreatmentPlanTier) => { e.stopPropagation(); setActiveTierId(t.tierId); onPrintContract?.(t); };
 	const toggleStagesExpand = (e: React.MouseEvent, id: TreatmentPlanTierId) => { e.stopPropagation(); setExpandedStagesTierId((p) => (p === id ? null : id)); };
 
-	const handleCopyEstimateToMessenger = (e: React.MouseEvent, t: TreatmentPlanTier) => {
+	const handleCopyEstimateToMessenger = async (e: React.MouseEvent, t: TreatmentPlanTier) => {
 		e.stopPropagation();
-		const lines = [`[План лечения] «${t.title}»`, `[Стоимость]: ${formatPlanPriceRub(t.totalRub)}`, `[Рассрочка 0% клиники]: от ${formatPlanPriceRub(t.installments?.[12]?.monthlyPaymentRub ?? Math.round(t.totalRub / 12))}/мес на 12 мес.`, `[Гарантия]: ${formatWarrantyYearsText(t.warrantyYears || 1)} | [Срок службы]: ${formatServiceLifeYearsText(t.serviceLifeYears, t.tierId)}`, `[Сроки]: ~${t.durationWeeks} нед. (${t.durationVisits} виз.)`, t.materialsHeadline ? `[Материалы]: ${t.materialsHeadline}` : "", t.ndflRefundRub ? `[Налоговый вычет 13%]: до +${formatPlanPriceRub(t.ndflRefundRub)} к возврату` : "", `Подготовлено в DENTE CRM. Соответствует клиническим протоколам СтАР.`].filter(Boolean).join("\n");
-		if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(lines).catch(() => {});
 		setCopiedMessengerTierId(t.tierId);
+		await createAndSharePlanBudgetLink(t, {
+			planId: props.planId,
+			patientPhone: props.patientPhone,
+			openMessengerWindow: true,
+		});
 		setTimeout(() => setCopiedMessengerTierId(null), 2500);
 	};
 

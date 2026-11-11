@@ -92,7 +92,7 @@ export const CLINICAL_SHORTCUTS: readonly ClinicalShortcutItem[] = [
 		description: "1: Расписание, 2: Прием, 3: Пациенты, 4: Документы, 5: Финансы.",
 		category: "navigation",
 		context: "Десктоп",
-		badge: "0 кликов",
+		badge: "Хоткей",
 	},
 	{
 		id: "refresh-schedule",
@@ -157,7 +157,7 @@ export const CLINICAL_SHORTCUTS: readonly ClinicalShortcutItem[] = [
 		description: "Цифры 1..4 для взрослых квадрантов (11-48) и 5..8 для молочных (51-85).",
 		category: "odontogram",
 		context: "Зубная формула",
-		badge: "2 клика",
+		badge: "Квадранты",
 	},
 	{
 		id: "odontogram-autonorm",
@@ -221,7 +221,7 @@ export const CLINICAL_SHORTCUTS: readonly ClinicalShortcutItem[] = [
 	},
 	{
 		id: "cashier-split-tender",
-		title: "Комбинированная оплата (Сплит в 3 клика)",
+		title: "Комбинированная оплата (Сплит)",
 		keyCombination: "Alt+S",
 		keys: ["Alt", "S"],
 		description: "Разделение счета на наличные, карту терминала и семейный аванс без лишних реквизитов.",

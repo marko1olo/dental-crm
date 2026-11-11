@@ -4,7 +4,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import type { Patient } from "@dental/shared";
 import { PatientCardModal } from "../PatientCardModal.js";
-import { PatientHeaderCard } from "../PatientHeaderCard.js";
+import { PatientHeaderAllergiesAlert } from "../headerModules/PatientHeaderAllergiesAlert.js";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext.js";
 
 const samplePatients: Patient[] = [
@@ -58,40 +58,28 @@ describe("3. Somatic Safety Alerts in Patient Headers (PatientCardModal & Patien
 		);
 
 		assert.ok(html.includes('data-testid="patient-card-modal-somatic-banner"'));
-		assert.ok(html.includes("КРИТИЧЕСКИЙ СТОП-ФАКТОР") || html.includes("КЛИНИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ"));
+		assert.ok(html.includes("Критический стоп-фактор") || html.includes("Клиническое предупреждение"));
 		assert.ok(html.includes("data-testid=\"btn-somatic-healthy-norm\""));
 	});
 
-	it("PatientHeaderCard renders dedicated somatic alert banner for critical risks", () => {
-		const mockAppLogic = {
-			dashboard: { patients: samplePatients, clinicSettings: { profile: { legalName: 'ООО "ДЕНТЕ"' } } },
-			selectedPatient: samplePatients[1],
-		} as unknown as AppLogicContextType;
-
+	it("PatientHeaderAllergiesAlert renders dedicated somatic alert banner for critical risks", () => {
 		const html = renderToString(
-			React.createElement(
-				AppLogicProvider,
-				{ value: mockAppLogic },
-				React.createElement(PatientHeaderCard, { patient: samplePatients[1], onEditPatient: () => {} }),
-			),
+			React.createElement(PatientHeaderAllergiesAlert, {
+				allergyText: "",
+				criticalSomaticFlags: [{ id: "pacemaker", label: "Кардиостимулятор", category: "cardio" }],
+			}),
 		);
 
 		assert.ok(html.includes('data-testid="header-somatic-alert"'));
 		assert.ok(html.includes("СОМАТИЧЕСКИЙ СТАТУС"));
 	});
 
-	it("PatientHeaderCard renders dedicated allergy alert banner for allergic patient", () => {
-		const mockAppLogic = {
-			dashboard: { patients: samplePatients, clinicSettings: { profile: { legalName: 'ООО "ДЕНТЕ"' } } },
-			selectedPatient: samplePatients[0],
-		} as unknown as AppLogicContextType;
-
+	it("PatientHeaderAllergiesAlert renders dedicated allergy alert banner for allergic patient", () => {
 		const html = renderToString(
-			React.createElement(
-				AppLogicProvider,
-				{ value: mockAppLogic },
-				React.createElement(PatientHeaderCard, { patient: samplePatients[0], onEditPatient: () => {} }),
-			),
+			React.createElement(PatientHeaderAllergiesAlert, {
+				allergyText: "Аллергия на пенициллин",
+				criticalSomaticFlags: [],
+			}),
 		);
 
 		assert.ok(html.includes('data-testid="header-allergy-alert"'));

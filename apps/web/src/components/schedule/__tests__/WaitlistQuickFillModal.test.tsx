@@ -8,12 +8,12 @@ import {
 	TREATMENT_CATEGORIES,
 	type TargetSlotInfo,
 	type WaitlistPatientEntry,
-	WaitlistQuickFillModal,
 	calculateMatchScore,
 	generateWhatsAppOfferMessage,
 	openTelegramChat,
 	openWhatsAppChat,
-} from "../WaitlistQuickFillModal";
+	WaitlistDrawer,
+} from "../waitlist";
 
 // biome-ignore lint/suspicious/noExplicitAny: mock AppLogic value for isolated unit testing
 const mockAppLogicValue: any = {
@@ -237,14 +237,14 @@ describe("generateWhatsAppOfferMessage Helper", () => {
 	});
 });
 
-describe("WaitlistQuickFillModal Component Rendering", () => {
+describe("WaitlistDrawer Component Rendering", () => {
 	it("returns null when isOpen is false", () => {
 		const html = renderToStaticMarkup(
 			createElement(
 				AppLogicProvider,
 				{
 					value: mockAppLogicValue,
-					children: createElement(WaitlistQuickFillModal, {
+					children: createElement(WaitlistDrawer, {
 						isOpen: false,
 						onClose: () => {},
 					}),
@@ -260,7 +260,7 @@ describe("WaitlistQuickFillModal Component Rendering", () => {
 				AppLogicProvider,
 				{
 					value: mockAppLogicValue,
-					children: createElement(WaitlistQuickFillModal, {
+					children: createElement(WaitlistDrawer, {
 						isOpen: true,
 						onClose: () => {},
 						targetSlot: {

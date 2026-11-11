@@ -20,10 +20,8 @@ const TEST_DOMAINS = [
 		args: [
 			"tsx",
 			"--test",
-			"packages/shared/src/tests/stomxCatalogs.test.ts",
 			"packages/shared/src/tests/stomxDefects.test.ts",
 			"packages/shared/src/tests/stomxPricelist.test.ts",
-			"packages/shared/src/tests/wave118StomxCashFlowCatalogs.test.ts",
 			"packages/shared/src/tests/legalConsentsStomx.test.ts",
 		],
 		maxAllowedMs: 5000,

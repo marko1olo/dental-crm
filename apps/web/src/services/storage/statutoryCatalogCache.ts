@@ -77,7 +77,7 @@ export async function getOrLoadNomenclature804n<T = unknown>(): Promise<T[]> {
 
 	// Fallback to statutory presets
 	const { STATUTORY_804N_NOMENCLATURE } = await import(
-		"../../components/insurance/dmsInsurancePresets"
+		"@dental/shared"
 	);
 	const data = (STATUTORY_804N_NOMENCLATURE ?? []) as T[];
 	ram804nCache = data;

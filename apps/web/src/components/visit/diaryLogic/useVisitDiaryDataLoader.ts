@@ -150,19 +150,13 @@ export function useVisitDiaryDataLoader({
 
 function resolveDefaultOrPrefilledDiary(prefill: Partial<DiaryState>): Partial<DiaryState> {
 	return {
-		anamnesis:
-			prefill.anamnesis ||
-			"Жалобы на кратковременные боли от холодного и сладкого в области зуба 16, быстро проходящие после устранения раздражителя. Соматически здоров, аллергоанамнез не отягощен.",
-		statusLocalis:
-			prefill.statusLocalis ||
-			"Полость рта санирована. В зубе 16 на окклюзионной поверхности глубокая кариозная полость, дентин размягчен, зондирование болезненно по эмалево-дентинной границе. Перкуссия безболезненна. Слизистая бледно-розовая, влажная.",
-		diagnosisIcd10: prefill.diagnosisIcd10 || "K02.1",
-		diagnosisTooth: prefill.diagnosisTooth || "16",
-		treatmentDescription:
-			prefill.treatmentDescription ||
-			"Инфильтрационная анестезия Sol. Articaini 4% 1.7 мл. Препарирование кариозной полости зуба 16 с водно-воздушным охлаждением, медикаментозная обработка 2% р-ром хлоргексидина. Изоляция коффердамом. Бондинг, пломбирование светоотверждаемым композитом послойно. Шлифовка, полировка.",
-		complications: prefill.complications || "Осложнений нет.",
-		comorbidities: prefill.comorbidities || "Соматически здоров.",
+		anamnesis: prefill.anamnesis || "",
+		statusLocalis: prefill.statusLocalis || "",
+		diagnosisIcd10: prefill.diagnosisIcd10 || "",
+		diagnosisTooth: prefill.diagnosisTooth || "",
+		treatmentDescription: prefill.treatmentDescription || "",
+		complications: prefill.complications || "",
+		comorbidities: prefill.comorbidities || "",
 	};
 }
 

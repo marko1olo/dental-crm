@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import fastify, { type FastifyInstance } from "fastify";
 import {
-	maskPatientName152Fz,
+	maskPatientName,
 	registerPortalKioskRoutes,
 	resetKioskRateLimitsForTesting,
 	KIOSK_MAX_ATTEMPTS_PER_IP,
@@ -22,13 +22,13 @@ import {
 
 test("Portal Kiosk Self-Checkin & 152-FZ Privacy Security Invariants", async (t) => {
 	await t.test("1. 152-FZ Masking Engine converts full names to safe reception formats", () => {
-		assert.equal(maskPatientName152Fz("Смирнова Анна Викторовна"), "Анна С.");
-		assert.equal(maskPatientName152Fz("Иванов Иван"), "Иван И.");
-		assert.equal(maskPatientName152Fz("Кузнецов Петр Сергеевич"), "Петр К.");
-		assert.equal(maskPatientName152Fz("Мария"), "Мария");
-		assert.equal(maskPatientName152Fz(null), "Пациент");
-		assert.equal(maskPatientName152Fz(undefined), "Пациент");
-		assert.equal(maskPatientName152Fz(""), "Пациент");
+		assert.equal(maskPatientName("Смирнова Анна Викторовна"), "Анна С.");
+		assert.equal(maskPatientName("Иванов Иван"), "Иван И.");
+		assert.equal(maskPatientName("Кузнецов Петр Сергеевич"), "Петр К.");
+		assert.equal(maskPatientName("Мария"), "Мария");
+		assert.equal(maskPatientName(null), "Пациент");
+		assert.equal(maskPatientName(undefined), "Пациент");
+		assert.equal(maskPatientName(""), "Пациент");
 	});
 
 	await t.test("2. Rate limiting protects kiosk from automated phone number brute-forcing", async () => {
@@ -103,6 +103,39 @@ test("Portal Kiosk Self-Checkin & 152-FZ Privacy Security Invariants", async (t)
 				assert.equal(json.isEmergency, true);
 				assert.ok(json.queueTicket.startsWith("Талон № Э-"));
 				assert.ok(json.visitStatus.includes("экстренного врача") || json.visitStatus.includes("В холле"));
+			}
+		} finally {
+			await server.close();
+			resetKioskRateLimitsForTesting();
+		}
+	});
+
+	await t.test("4. First-time patient checkin registers primary queue ticket without dead-end", async () => {
+		resetKioskRateLimitsForTesting();
+
+		const server: FastifyInstance = fastify();
+		await registerPortalKioskRoutes(server);
+		await server.ready();
+
+		try {
+			const res = await server.inject({
+				method: "POST",
+				url: "/kiosk/checkin",
+				headers: { "x-forwarded-for": "10.0.0.51" },
+				payload: {
+					isFirstTime: true,
+					phoneLast4: "5544",
+					patientFullName: "Соколова Марина Юрьевна",
+				},
+			});
+
+			// If clinic organization exists, primary ticket is issued
+			if (res.statusCode === 200) {
+				const json = JSON.parse(res.body);
+				assert.equal(json.success, true);
+				assert.equal(json.isFirstTime, true);
+				assert.ok(json.queueTicket.startsWith("Талон № П-"), `Expected ticket to start with 'Талон № П-', got: ${json.queueTicket}`);
+				assert.ok(json.visitStatus.includes("первичного осмотра") || json.visitStatus.includes("В холле"));
 			}
 		} finally {
 			await server.close();

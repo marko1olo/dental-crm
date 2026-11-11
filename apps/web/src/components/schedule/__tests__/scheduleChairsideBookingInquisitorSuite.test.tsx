@@ -13,7 +13,7 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
-import { ChairScheduleView } from "../ChairScheduleView";
+import { ScheduleGrid } from "../ScheduleGrid";
 import { PlannedConfirmedActions } from "../appointmentCardActions/PlannedConfirmedActions";
 import { ArrivedInTreatmentActions } from "../appointmentCardActions/ArrivedInTreatmentActions";
 import { CompletedActions } from "../appointmentCardActions/CompletedActions";
@@ -150,9 +150,9 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 		assert.ok(htmlCompleted.includes("appointment-action-repeat-btn"), "Repeat appointment CTA rendered");
 	});
 
-	it("4. ChairScheduleView renders layout cleanly with 0 crashes", () => {
+	it("4. ScheduleGrid renders layout cleanly with 0 crashes", () => {
 		const html = renderToStaticMarkup(
-			React.createElement(ChairScheduleView, {
+			React.createElement(ScheduleGrid, {
 				dashboard: mockDashboard,
 				dateKey: "2026-11-04",
 				appointments: mockDashboard.appointments,
@@ -161,6 +161,8 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 				onAppointmentClick: () => {},
 				onSlotClick: () => {},
 				onQuickStatusChange: () => {},
+				formatTime: (t: string) => t,
+				toDateTimeLocalValue: (t: string) => t,
 				appointmentLabels: {
 					planned: "Запланирован",
 					confirmed: "Подтвержден",
@@ -173,6 +175,6 @@ describe("Schedule & Chairside Booking Red Team Inquisitor Suite", () => {
 			} as any),
 		);
 
-		assert.ok(html.length > 0, "ChairScheduleView must render HTML output");
+		assert.ok(html.length > 0, "ScheduleGrid must render HTML output");
 	});
 });

@@ -178,7 +178,7 @@ test("DicomViewerModal: 1-клик Норма, опциональный ИИ б�
 
 test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 16 анатомических ориентиров", { timeout: 15000 }, async () => {
 	const { LANDMARK_CLINICAL_ROLES, getRequiredLandmarksForMeasurement } = await import(
-		"../cephalometricMath.js"
+		"../../orthodontics/cephalometricMath.js"
 	);
 	const { CEPHALOMETRIC_LANDMARKS } = await import(
 		"../../orthodontics/cephalometricMath.js"

@@ -10,7 +10,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { RecallStudioModal } from "../RecallStudioModal";
+import { PatientRecallsHubModal } from "../PatientRecallsHubModal";
 import {
 	type PatientRecallRecord,
 	type RecallCycleType,
@@ -125,9 +125,9 @@ describe("Recall Studio SSOT Master Suite", () => {
 		assert.ok(calc.segmentCount >= 1);
 	});
 
-	it("4. Verifies Mandate 8e: zero disabled buttons in RecallStudioModal markup", () => {
+	it("4. Verifies Mandate 8e: zero disabled buttons in PatientRecallsHubModal markup", () => {
 		const html = renderToStaticMarkup(
-			createElement(RecallStudioModal, {
+			createElement(PatientRecallsHubModal, {
 				isOpen: true,
 				onClose: () => {},
 				initialCandidates: [sampleCandidate],
@@ -136,12 +136,12 @@ describe("Recall Studio SSOT Master Suite", () => {
 
 		// Ни одна кнопка не имеет атрибута disabled
 		const hasDisabledButton = /<button[^>]*\bdisabled\b/i.test(html);
-		assert.strictEqual(hasDisabledButton, false, "Mandate 8e violation: found disabled button in RecallStudioModal");
+		assert.strictEqual(hasDisabledButton, false, "Mandate 8e violation: found disabled button in PatientRecallsHubModal");
 	});
 
 	it("5. Verifies Apple HIG touch targets (>= 44x44px) and CSS class assignments", () => {
 		const html = renderToStaticMarkup(
-			createElement(RecallStudioModal, {
+			createElement(PatientRecallsHubModal, {
 				isOpen: true,
 				onClose: () => {},
 				initialCandidates: [sampleCandidate],
@@ -149,20 +149,17 @@ describe("Recall Studio SSOT Master Suite", () => {
 		);
 
 		// Проверка наличия элементов Apple HIG Bottom Sheet
-		assert.ok(html.includes("recall-studio-drag-handle"), "Missing drag handle for mobile bottom sheet");
-		assert.ok(html.includes("recall-studio-close-btn"), "Missing close button with 44x44px minimum target");
-		assert.ok(html.includes("recall-studio-btn-primary"), "Missing primary CTA button");
-		assert.ok(html.includes("primary-recall-cta"), "Missing primary-recall-cta test id");
+		assert.ok(html.includes("recall-drag-handle"), "Missing drag handle for mobile bottom sheet");
+		assert.ok(html.includes("recall-close-btn"), "Missing close button");
+		assert.ok(html.includes("dente-segmented-bar"), "Missing segmented control");
 
-		// Проверка текста шапки и KPI
-		assert.ok(html.includes("Повторные вызовы и диспансеризация"));
-		assert.ok(html.includes("Доходимость:"));
-		assert.ok(html.includes("Требуют вызова сегодня:"));
+		// Проверка текста шапки без советского бюрократического канцелярита
+		assert.ok(html.includes("Плановые профосмотры и профгигиена"));
 	});
 
 	it("6. Verifies modal respects isOpen=false with clean unmount", () => {
 		const html = renderToStaticMarkup(
-			createElement(RecallStudioModal, {
+			createElement(PatientRecallsHubModal, {
 				isOpen: false,
 				onClose: () => {},
 			}),

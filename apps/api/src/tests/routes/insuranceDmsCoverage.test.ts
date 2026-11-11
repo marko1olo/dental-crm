@@ -127,8 +127,10 @@ describe("DMS Guarantee Letters (Гарантийные письма) & 804n Spl
 		franchiseFixedRub: 0,
 		programExclusions: ["orthodontics", "whitening"],
 		approvedServiceCodes: ["A16.07.002.001", "A16.07.030.001", "B01.003.004.001"],
+		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.001", "B01.003.004.001"],
 		approvedTeethFdi: ["16", "17", "26", "46"],
 		approvedDiagnosisCodes: ["K02.1", "K04.0"],
+		approvedDiagnosisMkb10: ["K02.1", "K04.0"],
 		status: "active" as const,
 		notes: "",
 	};

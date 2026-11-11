@@ -69,7 +69,7 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 						title="Завершить смену врача, рассчитать заработок и сформировать Z-отчет"
 					>
 						<CheckCircle2 className="w-4 h-4" />
-						<span>Завершить смену и рассчитать (1 клик)</span>
+						<span>Завершить смену и рассчитать</span>
 					</button>
 				</div>
 			</div>

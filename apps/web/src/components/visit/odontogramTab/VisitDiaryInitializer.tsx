@@ -30,7 +30,7 @@ export const VisitDiaryInitializer: React.FC<VisitDiaryInitializerProps> = React
 						data-testid="btn-open-diary-visit-chairside"
 					>
 						<Stethoscope size={16} />
-						<span>Открыть дневник приёма (в 1 клик)</span>
+						<span>Открыть дневник приёма</span>
 					</button>
 				)}
 			</div>

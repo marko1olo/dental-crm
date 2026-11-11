@@ -167,7 +167,7 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 					<div className="font-semibold text-sm text-[var(--ink)] flex items-center justify-between gap-2">
 						<span>Зубная формула и одонтограмма</span>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/15 text-teal-700 dark:text-teal-300">
-							Норма в 1 клик (Shift+N)
+							Физиологическая норма (Shift+N)
 						</span>
 					</div>
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
@@ -519,7 +519,7 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 				<div className="space-y-0.5">
 					<div className="font-semibold text-xs text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
 						<Gamepad2 size={16} className="text-teal-600 dark:text-teal-400" />
-						<span>Интерактивный тренажёр: Зубная формула за 2 клика</span>
+						<span>Интерактивный тренажёр: Зубная формула</span>
 					</div>
 					<p className="text-[11px] text-teal-700/80 dark:text-teal-300/80">
 						Запустите интерактивный квест для отработки навыка быстрой маркировки патологий и автонормы.

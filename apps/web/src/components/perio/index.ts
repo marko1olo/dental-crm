@@ -4,6 +4,8 @@
  */
 
 export { PerioStudioModal, type PerioStudioModalProps } from "./PerioStudioModal";
+export { PerioPresetActions, type PerioPresetActionsProps } from "./PerioPresetActions";
+export { PerioDetailedProbeSection, type PerioDetailedProbeSectionProps } from "./PerioDetailedProbeSection";
 export { DirectPerioLauncher } from "./DirectPerioLauncher";
 
 export * from "./perioCatalogData";

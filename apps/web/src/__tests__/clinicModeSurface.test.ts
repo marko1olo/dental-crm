@@ -294,7 +294,7 @@ describe("состав рабочего экрана по режиму клин�
 		console.log(
 			`  словами: ${describeHiddenCapabilities("solo_doctor").join(", ")}`,
 		);
-		assert.deepEqual(named(ownerHiddenSolo), "Обращения, Маркетинг/SEO");
+		assert.deepEqual(named(ownerHiddenSolo), "Обращения, Маркетинг");
 		// Оба скрытых раздела названы в подписи, а не только один из них.
 		assert.ok(
 			describeHiddenCapabilities("solo_doctor").includes(

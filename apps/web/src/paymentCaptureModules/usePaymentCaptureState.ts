@@ -1,7 +1,7 @@
 import { rubAmountForInput } from "../components/payments/cashDeskAmounts";
 import { showToast } from "../components/GlobalToast";
 import { playTactileEarcon } from "../lib/intercomSound";
-import { AiOrchestrator } from "../lib/aiOrchestrator";
+import { processPaymentDictation } from "./parsePaymentDictation";
 import { money } from "../AppHelpers";
 import { normalizeRubAmountInput } from "../rubAmountInput";
 import type { PaymentMethod } from "@dental/shared";
@@ -41,7 +41,7 @@ export function usePaymentCaptureState(props: PaymentCaptureProps) {
 
 	const handleSmartDictation = (text: string) => {
 		if (!text.trim()) return;
-		const result = AiOrchestrator.processPaymentDictation(text);
+		const result = processPaymentDictation(text);
 		if (result.source === "local_algorithm" && result.data) {
 			const parsed = result.data;
 			if (parsed.amount) props.onAmountChange(parsed.amount);

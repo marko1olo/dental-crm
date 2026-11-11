@@ -1,7 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import { showToast } from "../../GlobalToast";
-import { WaitlistMatchesBlock } from "../WaitlistMatchesBlock";
+import { WaitlistMatchesBlock } from "../waitlist/WaitlistMatchesBlock";
 import { type FreedSlot, calledKey } from "./types";
 
 interface Props {

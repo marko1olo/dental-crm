@@ -66,15 +66,16 @@ describe("Mandate 8d Greed #7 — Elimination of raw checkmarks & emojis in SBP 
 	});
 
 	it("3. guarantees toolbar tooltips and badges do not contain raw checkmarks (✓, ✔)", () => {
-		// Verify tooltip of format toolbar does not contain raw checkmark ([✓] )
+		// Strict ban on raw checkmark in tooltips or badges
 		assert.strictEqual(
 			sourceCode.includes('title="Отметка выполнения ([✓] )"'),
 			false,
 			"Toolbar button must not use raw checkmark in title tooltip",
 		);
-		assert.ok(
-			sourceCode.includes('title="Отметка выполнения"'),
-			"Toolbar button must have clean title 'Отметка выполнения'",
+		assert.strictEqual(
+			sourceCode.includes("[✓]") || sourceCode.includes("[✔]") || sourceCode.includes("<span>✓</span>"),
+			false,
+			"VisitEmkTab and modals must not contain raw checkmark spans or brackets",
 		);
 	});
 

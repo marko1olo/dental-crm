@@ -38,7 +38,7 @@ import { sortBatchesByFefo } from "../../services/inventory/fefo/batchSelector.j
 import { validateAndResolvePaymentSplit } from "../../db/billing/paymentSplitValidation.js";
 import {
 	calculateDoctorNetSalary,
-	calculateIdentDoctorSalary,
+	calculateDoctorSalary,
 } from "@dental/shared";
 import {
 	fixtureUuid,
@@ -531,7 +531,7 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 		// Disciplinary Penalty attempt = 5 000 ₽ (illegal under Art. 137, 192 LC RF)
 		// Stimulating Bonus = 2 000 ₽
 
-		const result = calculateIdentDoctorSalary({
+		const result = calculateDoctorSalary({
 			model: "cash_basis",
 			grossRevenueRub: 20000,
 			invoiceTotalRub: 20000,

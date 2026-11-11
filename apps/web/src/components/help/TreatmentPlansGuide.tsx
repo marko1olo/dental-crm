@@ -92,7 +92,7 @@ export const TreatmentPlansGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 					<div className="font-semibold text-sm text-[var(--ink)] flex items-center justify-between gap-2">
 						<span>Планы лечения и сметы</span>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300">
-							3 варианта в 1 клик
+							3 варианта реабилитации
 						</span>
 					</div>
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">

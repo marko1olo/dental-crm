@@ -61,7 +61,7 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 					type="button"
 					onClick={onConfirmShiftActuals}
 					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs transition-colors"
-					title="Инвентаризация в 1 клик: подтвердить фактические остатки на смену без бюрократии"
+					title="Инвентаризация: подтвердить фактические остатки на смену без бюрократии"
 					data-testid="btn-reconcile-match-all"
 				>
 					<CheckCircle2 size={13} className="text-[var(--teal,#0d9488)] shrink-0" />

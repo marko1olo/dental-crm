@@ -56,7 +56,7 @@ export const ClinicChairQuickCreateBar: React.FC<ClinicChairQuickCreateBarProps>
 			</div>
 
 			<div className="flex items-center gap-1.5 flex-wrap">
-				<span className="text-[11px] text-[var(--ink-muted)] font-semibold">1-клик добавление:</span>
+				<span className="text-[11px] text-[var(--ink-muted)] font-semibold">Быстрое добавление:</span>
 				<button
 					type="button"
 					className="compact-button secondary-button h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--primary)] bg-[var(--teal-surface)] text-xs font-bold text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all cursor-pointer inline-flex items-center gap-1.5"

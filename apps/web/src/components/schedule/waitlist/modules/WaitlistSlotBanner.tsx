@@ -9,14 +9,14 @@ export interface WaitlistSlotBannerProps {
 
 export function WaitlistSlotBanner({ targetSlot, matchedCount }: WaitlistSlotBannerProps) {
 	return (
-		<div className="px-5 py-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--badge-teal-bg,rgba(13,148,136,0.08))] flex items-center justify-between shrink-0">
-			<div className="flex items-center gap-2.5 min-w-0">
-				<Zap size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
-				<div className="truncate">
-					<span className="text-xs font-semibold text-[var(--teal,#0d9488)] uppercase tracking-wide block">
+		<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--badge-teal-bg,rgba(13,148,136,0.08))] flex items-start sm:items-center justify-between gap-2 shrink-0">
+			<div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+				<Zap size={18} className="text-[var(--teal,#0d9488)] shrink-0 mt-0.5 sm:mt-0" />
+				<div className="min-w-0 flex-1">
+					<span className="text-[11px] sm:text-xs font-semibold text-[var(--teal,#0d9488)] uppercase tracking-wide block">
 						Освободившееся окно для записи
 					</span>
-					<span className="text-xs font-medium text-[var(--text,#0f172a)] truncate block">
+					<span className="text-xs font-medium text-[var(--text,#0f172a)] block leading-snug break-words">
 						{new Date(targetSlot.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
 						{targetSlot.doctorName ? ` • ${targetSlot.doctorName}` : ""}
 						{targetSlot.chairName ? ` • ${targetSlot.chairName}` : ""}
@@ -24,7 +24,7 @@ export function WaitlistSlotBanner({ targetSlot, matchedCount }: WaitlistSlotBan
 				</div>
 			</div>
 			{matchedCount > 0 && (
-				<span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-[var(--teal,#0d9488)] text-white whitespace-nowrap">
+				<span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-[var(--teal,#0d9488)] text-white whitespace-nowrap shrink-0 self-center">
 					{matchedCount} совпад.
 				</span>
 			)}

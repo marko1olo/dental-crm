@@ -79,7 +79,7 @@ describe("Schedule Fast Booking & Solo Doctor Invariants (Mandates 8e, 8n, 8am)"
 			);
 			assert.ok(html.includes("data-testid=\"select-booking-assistant\""), "Must render assistant select");
 			assert.ok(html.includes("Без ассистента (соло-приём)"), "Default value must be solo doctor option");
-			assert.ok(html.includes("Выбор ассистента строго опционален"), "Helper must emphasize non-blocking nature");
+			assert.ok(html.includes("Ассистент"), "Clean label without spec-dumping");
 		});
 
 		it("QuickResourceAllocationSection hides assistant completely when isSoloClinic is true", () => {

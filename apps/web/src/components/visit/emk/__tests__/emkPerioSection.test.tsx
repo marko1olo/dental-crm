@@ -172,8 +172,8 @@ describe("RED TEAM INQUISITION: Periodontal Screening & Prophylaxis in EMK", () 
 
 		const modalsSource = fs.readFileSync(modalsPath, "utf8");
 		assert.ok(
-			modalsSource.includes("PerioChartModal"),
-			"PerioChartModal must be mounted in VisitEmkModals",
+			modalsSource.includes("PerioStudioModal"),
+			"PerioStudioModal must be mounted in VisitEmkModals",
 		);
 
 		const barSource = fs.readFileSync(odontogramBarPath, "utf8");

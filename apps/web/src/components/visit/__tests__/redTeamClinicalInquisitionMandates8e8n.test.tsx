@@ -115,9 +115,9 @@ describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
 	});
 
 	it("4.1 verifies source files purged of raw regulatory acronyms in UI strings", () => {
-		const cockpitFile = path.join(WEB_SRC, "components/ai/DentalAgentCockpit.tsx");
-		const cockpitContent = fs.readFileSync(cockpitFile, "utf8");
-		assert.ok(!cockpitContent.includes("дневника 043/у"), "DentalAgentCockpit must not contain 'дневника 043/у'");
+		const copilotFile = path.join(WEB_SRC, "components/copilot/CopilotStudioModal.tsx");
+		const copilotContent = fs.readFileSync(copilotFile, "utf8");
+		assert.ok(!copilotContent.includes("дневника 043/у"), "CopilotStudioModal must not contain 'дневника 043/у'");
 
 		const usagePanelFile = path.join(WEB_SRC, "components/InventoryServiceUsagePanel.tsx");
 		const usageContent = fs.readFileSync(usagePanelFile, "utf8");

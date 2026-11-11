@@ -182,8 +182,10 @@ export function applyAdminSecretBypass(
 				identity.verified = true;
 			}
 		}
-		if (!identity.role && identity.organizationId) {
-			identity.role = "owner";
+		if (identity.organizationId) {
+			if (!identity.role) {
+				identity.role = "owner";
+			}
 			identity.userId = identity.userId ?? DEMO_OWNER_ID;
 			identity.fullName = identity.fullName ?? "Администратор клиники";
 		}

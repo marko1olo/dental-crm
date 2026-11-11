@@ -125,6 +125,10 @@ export async function processSendMessage(
 			subject: null,
 			body: messageToSend,
 			idempotencyKey: idempotencyKey ?? null,
+			intent: data.intent ?? null,
+			templateName: data.templateName ?? null,
+			languageCode: data.languageCode ?? null,
+			templateParameters: data.templateParameters ?? null,
 		},
 		credentials,
 	);

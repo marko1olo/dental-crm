@@ -304,7 +304,7 @@ export const ORTHODONTIC_QUICK_PRESETS: OrthodonticQuickPreset[] = [
 	},
 	{
 		id: "rebracket_single_tooth",
-		label: "Повторная фиксация отклеенного брекета (A16.07.048) в 1 клик",
+		label: "Повторная фиксация отклеенного брекета (A16.07.048)",
 		shortLabel: "Переклейка брекета (A16.07.048)",
 		systemId: "damon_q2",
 		targetArch: "upper",

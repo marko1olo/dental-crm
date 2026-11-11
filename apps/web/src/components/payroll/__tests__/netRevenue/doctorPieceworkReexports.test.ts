@@ -13,11 +13,11 @@ import {
 	type StaffDoctorCompletedServiceItem,
 	type DoctorStaffPayrollInput,
 } from "../../staffPayrollEngine";
-import { DoctorPayrollModal } from "../../DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
 
 describe("Doctor Piecework Re-exports & Implant Deductions (Mandate 8e, 8n)", () => {
 	it("1.1 Re-exports all required payroll modals and engines from canonical modules", () => {
-		assert.ok(DoctorPayrollModal, "DoctorPayrollModal must be exported");
+		assert.ok(DoctorPayrollStudioModal, "DoctorPayrollStudioModal must be exported");
 		assert.ok(calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
 		assert.ok(calculateAssistantStaffPayroll, "calculateAssistantStaffPayroll must be exported");
 		assert.ok(calculateConsolidatedStaffPayroll, "calculateConsolidatedStaffPayroll must be exported");

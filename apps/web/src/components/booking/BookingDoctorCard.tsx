@@ -59,21 +59,27 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 						{doctor.specialties.join(" • ")}
 					</div>
 					<div className="dbw-doctor-badges flex-wrap gap-1.5">
-						<span className="dbw-badge-rating text-xs font-bold">
-							<Star size={13} fill="#b45309" aria-hidden="true" />{" "}
-							{doctor.rating.toFixed(2)}
-						</span>
-						<span className="dbw-badge-exp text-xs font-semibold">
-							Стаж {doctor.experienceYears} лет
-						</span>
+						{doctor.rating > 0 && (
+							<span className="dbw-badge-rating text-xs font-bold">
+								<Star size={13} fill="#b45309" aria-hidden="true" />{" "}
+								{doctor.rating.toFixed(2)}
+							</span>
+						)}
+						{doctor.experienceYears > 0 && (
+							<span className="dbw-badge-exp text-xs font-semibold">
+								Стаж {doctor.experienceYears} лет
+							</span>
+						)}
 						{nextSlot && (
 							<span className="dbw-badge-slot text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-1.5 py-0.5 rounded border border-teal-500/20">
 								{nextSlot}
 							</span>
 						)}
-						<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-							({doctor.reviewsCount} отзывов)
-						</span>
+						{doctor.reviewsCount > 0 && (
+							<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+								({doctor.reviewsCount} отзывов)
+							</span>
+						)}
 					</div>
 					{doctor.bio && (
 						<p className="dbw-doctor-bio min-w-0 break-words text-xs text-slate-600 dark:text-slate-300 mt-1.5">

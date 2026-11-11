@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
+import { Camera } from 'lucide-react';
 import { PresentationComparisonMode } from './presentationSyncProtocol';
-import { DEMO_BEFORE_SMILE_SVG, DEMO_AFTER_SMILE_SVG } from './patientPresentationDemoData';
 import { usePresentationState } from './presentation/usePresentationState';
 import { PresentationHeader } from './presentation/PresentationHeader';
 import { PresentationSubBar } from './presentation/PresentationSubBar';
@@ -28,11 +28,8 @@ export const PatientPresentationStandaloneView: React.FC<PatientPresentationStan
 		return () => document.removeEventListener('fullscreenchange', handleFs);
 	}, [setIsFullscreen]);
 
-	const effectiveState = {
-		...state,
-		beforeImageUrl: state.beforeImageUrl || DEMO_BEFORE_SMILE_SVG,
-		afterImageUrl: state.afterImageUrl || DEMO_AFTER_SMILE_SVG,
-	};
+	const effectiveState = state;
+	const isEmpty = !state.beforeImageUrl && !state.afterImageUrl;
 
 	const onToggleFs = () => {
 		if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(() => {}); setIsFullscreen(true); }
@@ -66,16 +63,57 @@ export const PatientPresentationStandaloneView: React.FC<PatientPresentationStan
 				onBlendOpacityChange={(val) => { setBlendOpacity(val); broadcastLocalState({ blendOpacity: val }); }}
 			/>
 			<main style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: state.colors.viewportBg, padding: '16px' }}>
-				{state.mode === 'split' && (
-					<PresentationSplitViewport
-						state={effectiveState} sliderContainerRef={sliderContainerRef}
-						onPointerDown={(e) => { isDraggingRef.current = true; (e.target as HTMLElement).setPointerCapture(e.pointerId); updateSplit(e); }}
-						onPointerMove={(e) => { if (isDraggingRef.current) updateSplit(e); }}
-						onPointerUp={(e) => { isDraggingRef.current = false; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }}
-					/>
+				{isEmpty ? (
+					<div
+						data-testid="presentation-empty-state"
+						style={{
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
+							gap: '16px',
+							padding: '32px',
+							textAlign: 'center',
+							borderRadius: '16px',
+							border: '2px dashed rgba(255, 255, 255, 0.15)',
+							maxWidth: '480px',
+						}}
+					>
+						<div
+							style={{
+								width: '64px',
+								height: '64px',
+								borderRadius: '50%',
+								backgroundColor: 'rgba(13, 148, 136, 0.15)',
+								color: '#0d9488',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+							}}
+						>
+							<Camera size={32} />
+						</div>
+						<h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: state.colors.text }}>
+							Снимки для презентации пациенту не загружены
+						</h3>
+						<p style={{ fontSize: '13px', margin: 0, color: state.colors.subText, lineHeight: '1.6' }}>
+							Загрузите фотографии в клинический фотопротокол карточки пациента для демонстрации результатов До / После на внешнем экране.
+						</p>
+					</div>
+				) : (
+					<>
+						{state.mode === 'split' && (
+							<PresentationSplitViewport
+								state={effectiveState} sliderContainerRef={sliderContainerRef}
+								onPointerDown={(e) => { isDraggingRef.current = true; (e.target as HTMLElement).setPointerCapture(e.pointerId); updateSplit(e); }}
+								onPointerMove={(e) => { if (isDraggingRef.current) updateSplit(e); }}
+								onPointerUp={(e) => { isDraggingRef.current = false; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }}
+							/>
+						)}
+						{state.mode === 'side_by_side' && <PresentationSideBySideViewport state={effectiveState} />}
+						{state.mode === 'blend' && <PresentationBlendViewport state={effectiveState} />}
+					</>
 				)}
-				{state.mode === 'side_by_side' && <PresentationSideBySideViewport state={effectiveState} />}
-				{state.mode === 'blend' && <PresentationBlendViewport state={effectiveState} />}
 			</main>
 		</div>
 	);

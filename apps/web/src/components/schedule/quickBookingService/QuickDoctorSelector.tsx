@@ -61,9 +61,10 @@ export function QuickDoctorSelector({
         <div
           className="mt-2 p-2 rounded-lg text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
           data-testid="duty-doctor-override-note"
+          title="Назначить врача на приём"
         >
           <span>
-            На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением к выбранному врачу (выбор врача не блокируется).
+            На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается к выбранному врачу.
           </span>
         </div>
       )}

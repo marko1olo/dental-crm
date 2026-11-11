@@ -2,7 +2,6 @@ import { paymentSchema } from "@dental/shared";
 import type { FastifyReply } from "fastify";
 import {
 	BillingOverpaymentError,
-	Decree659Error,
 	findPaymentByClientMutationIdInDb,
 } from "../../../db/billingQuery.js";
 import {
@@ -17,12 +16,6 @@ export async function handlePaymentCreationError(
 	paymentInput: { clientMutationId?: string | null | undefined; patientId: string; [key: string]: any },
 	reply: FastifyReply,
 ) {
-	if (error instanceof Decree659Error) {
-		return reply.code(error.statusCode).send({
-			error: error.code,
-			message: error.message,
-		});
-	}
 	if (
 		error &&
 		typeof error === "object" &&

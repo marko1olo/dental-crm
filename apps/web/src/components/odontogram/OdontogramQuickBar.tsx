@@ -161,11 +161,11 @@ export const OdontogramQuickBar: React.FC<OdontogramQuickBarProps> = React.memo(
 							type="button"
 							onClick={props.handleMarkIntactDentition}
 							className="odontogram-toolbar__btn odontogram-toolbar__btn--primary-cta"
-							title="Физиологическая норма: вся зубная формула отмечается здоровой (1 клик, Мандат 8e)"
+							title="Физиологическая норма: вся зубная формула отмечается интактной"
 							data-testid="mark-intact-dentition-btn"
 						>
 							<ShieldCheck size={14} className="text-white shrink-0" />
-							<span>Норма в 1 клик</span>
+							<span>Физиологическая норма</span>
 						</button>
 					)}
 

@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 
-export const MAX_VERIFY_ATTEMPTS = 3;
+export const MAX_VERIFY_ATTEMPTS = 5;
 export const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 минут
 
 export function getSecretKey(): string {

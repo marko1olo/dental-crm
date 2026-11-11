@@ -2,7 +2,7 @@
  * jawOcclusionAutonomy.test.tsx
  *
  * DENTE Dental CRM — Mandates 8e, 8i, 8k, 8n Verification:
- * 1. Mandate 8e (Doctor Autonomy): Zero dead/disabled buttons in JawOcclusionModal & VoiceDictationAssistantModal.
+ * 1. Mandate 8e (Doctor Autonomy): Zero dead/disabled buttons in JawOcclusionModal & CopilotVoiceStenographer.
  * 2. Mandate 8k (CRM != Reality Simulator / Friction-Killer): 1-click physiological norm by default (ju_norm, jl_norm, c_orthognathic).
  * 3. Mandate 8i (Outpatient Bounded Context): Form 043/u SOAP presets without hospital/inpatient bloat.
  * 4. Mandate 8n (Solo Doctor Sovereignty): Instant action without mandatory pre-requisites.
@@ -18,7 +18,7 @@ import {
 	LOWER_JAW_PRESETS,
 	OCCLUSION_PRESETS,
 } from "../JawOcclusionModal";
-import { VoiceDictationAssistantModal } from "../../voice/VoiceDictationAssistantModal";
+import { CopilotVoiceStenographer } from "../../copilot/CopilotVoiceStenographer";
 
 interface MockDomNode {
 	nodeType: number;
@@ -363,7 +363,7 @@ async function clickNode(node: MockDomNode | null) {
 	});
 }
 
-describe("JawOcclusionModal & VoiceDictationAssistantModal — Mandate 8e Doctor Autonomy Suite", () => {
+describe("JawOcclusionModal & CopilotVoiceStenographer — Mandate 8e Doctor Autonomy Suite", () => {
 	beforeEach(() => {
 		mockDom = setupMockDom();
 	});
@@ -551,8 +551,8 @@ describe("JawOcclusionModal & VoiceDictationAssistantModal — Mandate 8e Doctor
 		});
 	});
 
-	describe("VoiceDictationAssistantModal — Mandate 8e & Non-blocking Apply", () => {
-		it("renders 'Применить всё' button enabled (disabled=false) even when 0 commands are recognized", async () => {
+	describe("CopilotVoiceStenographer — Mandate 8e & Non-blocking Apply", () => {
+		it("renders 'Применить в карту' button enabled (disabled=false) even with empty transcript", async () => {
 			const container = mockDom.doc.createElement("div");
 			mockDom.body.appendChild(container);
 
@@ -560,7 +560,7 @@ describe("JawOcclusionModal & VoiceDictationAssistantModal — Mandate 8e Doctor
 			await act(async () => {
 				root = createRoot(container as unknown as HTMLElement);
 				root.render(
-					<VoiceDictationAssistantModal
+					<CopilotVoiceStenographer
 						isOpen={true}
 						onClose={() => {}}
 					/>,
@@ -568,49 +568,13 @@ describe("JawOcclusionModal & VoiceDictationAssistantModal — Mandate 8e Doctor
 			});
 
 			const buttons = findAllNodesByTag(mockDom.body, "button");
-			const applyAllBtn = buttons.find((b) => (b.textContent || "").includes("Применить всё"));
-			assert.ok(applyAllBtn, "Кнопка 'Применить всё' должна присутствовать в модалке");
+			const applyAllBtn = buttons.find((b) => (b.textContent || "").includes("Применить в карту"));
+			assert.ok(applyAllBtn, "Кнопка 'Применить в карту' должна присутствовать в стенографе");
 			assert.equal(
 				applyAllBtn.disabled,
 				false,
-				"МАНДАТ 8e: Кнопка 'Применить всё' НЕ должна быть заблокирована серым замком",
+				"МАНДАТ 8e: Кнопка 'Применить в карту' НЕ должна быть заблокирована серым замком",
 			);
-
-			await act(async () => {
-				root?.unmount();
-			});
-		});
-
-		it("clicking 'Применить всё' with 0 commands displays informative guidance toast without errors", async () => {
-			const container = mockDom.doc.createElement("div");
-			mockDom.body.appendChild(container);
-
-			let toastDetail: unknown = null;
-			mockDom.win.addEventListener("dente-toast", (e: any) => {
-				toastDetail = (e as CustomEvent).detail;
-			});
-
-			let root: Root | null = null;
-			await act(async () => {
-				root = createRoot(container as unknown as HTMLElement);
-				root.render(
-					<VoiceDictationAssistantModal
-						isOpen={true}
-						onClose={() => {}}
-					/>,
-				);
-			});
-
-			const buttons = findAllNodesByTag(mockDom.body, "button");
-			const applyAllBtn = buttons.find((b) => (b.textContent || "").includes("Применить всё"));
-			assert.ok(applyAllBtn);
-
-			await clickNode(applyAllBtn);
-
-			assert.ok(toastDetail, "При клике без команд должен всплыть информационный тост-подсказка");
-			const t = toastDetail as { text: string; type: string };
-			assert.equal(t.type, "info");
-			assert.match(t.text, /Произнесите диагноз или статус зуба в микрофон/);
 
 			await act(async () => {
 				root?.unmount();

@@ -143,22 +143,4 @@
 	}
 }
 
-/* Mandate 8am / Hammer Section VI: ZERO FLOATING BLOBS in Leads Kanban Highway */
-body:has(.leads-studio-root) .copilot-trigger-btn,
-body:has([data-testid="leads-kanban-board"]) .copilot-trigger-btn,
-body:has(.leads-board-container) .copilot-trigger-btn,
-body:has(.leads-kanban-view) .copilot-trigger-btn,
-body:has(.leads-mobile-container) .copilot-trigger-btn,
-:has(.leads-studio-root) .copilot-trigger-btn,
-:has([data-testid="leads-kanban-board"]) .copilot-trigger-btn,
-:has(.leads-board-container) .copilot-trigger-btn,
-:has(.leads-kanban-view) .copilot-trigger-btn,
-:has(.leads-mobile-container) .copilot-trigger-btn,
-.leads-board-container ~ .copilot-trigger-btn,
-.leads-kanban-view ~ .copilot-trigger-btn {
-	display: none !important;
-	opacity: 0 !important;
-	pointer-events: none !important;
-	visibility: hidden !important;
-}
 

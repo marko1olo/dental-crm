@@ -236,7 +236,7 @@ describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k,
 			assert.equal(shift.microclimate.psychrometerLog.isWithinNorm, true);
 			assert.equal(shift.bactericidal.isLampNorm, true);
 			assert.ok(shift.digitalStampHash.length > 0);
-			assert.ok(shift.complianceSummaryRu.includes("Смена 2026-09-25 закрыта в 1 клик"));
+			assert.ok(shift.complianceSummaryRu.includes("Смена 2026-09-25 закрыта:"));
 
 			// CSV Export check
 			const csv = exportShiftSanpinDossierToCsv(shift);

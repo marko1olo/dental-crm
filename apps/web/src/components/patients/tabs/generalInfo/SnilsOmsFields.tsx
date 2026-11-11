@@ -28,7 +28,7 @@ export const SnilsOmsFields: React.FC<SnilsOmsFieldsProps> = ({
 								title="Оформить справку для налогового вычета (13%)"
 								data-testid="link-order-tax-certificate"
 							>
-								<span>Вычет</span>
+								<span data-testid="btn-patient-tax-deduction-tab">Справка для вычета (13%)</span>
 								<ExternalLink className="w-2.5 h-2.5" />
 							</button>
 						)}

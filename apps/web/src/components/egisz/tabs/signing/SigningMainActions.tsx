@@ -39,7 +39,7 @@ export const SigningMainActions: React.FC<SigningMainActionsProps> = ({
 				}}
 			>
 				<Key size={16} />
-				{isSigning ? "Выполняется подписание..." : "Подписать пакет (Врач + Клиника в 1 клик)"}
+				{isSigning ? "Выполняется подписание..." : "Подписать пакет (Врач + Клиника)"}
 			</button>
 			<button
 				type="button"

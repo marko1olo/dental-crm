@@ -5,7 +5,7 @@ import {
 	parseStockDimensions,
 	DEFAULT_CANONICAL_IMPLANT_STOCK,
 } from "../implantQuickPresets";
-import { IMPLANT_TORQUE_SPECS, getTorqueSpecsByBrand } from "../implantTorqueCatalog";
+import { IMPLANT_TORQUE_SPECS, getTorqueSpecsByBrand } from "../implantCatalogData";
 
 describe("Implant Torque Specifications & Warehouse Stock Catalog", () => {
 	it("13. Ankylos system preset and torque specifications are canonical and accurate in SSOT", () => {
@@ -78,7 +78,7 @@ describe("Implant Torque Specifications & Warehouse Stock Catalog", () => {
 	});
 
 	it("36. Normalized implantCatalogData and torqueCatalog maintain 100% SSOT parity", async () => {
-		const { getTorqueSpecsByBrand, getRecommendedTorqueNcm, TI_BASE_CATALOG } = await import("../implantTorqueCatalog");
+		const { getTorqueSpecsByBrand, getRecommendedTorqueNcm, TI_BASE_CATALOG } = await import("../implantCatalogData");
 		const { findImplantSystem, NORMALIZED_IMPLANT_SYSTEMS, TI_BASE_CATALOG_SSOT } = await import("../implantCatalogData");
 
 		const straumann = getTorqueSpecsByBrand("straumann");

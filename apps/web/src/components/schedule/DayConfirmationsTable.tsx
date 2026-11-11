@@ -29,7 +29,7 @@ export const DayConfirmationsTable: React.FC<DayConfirmationsTableProps> = ({
       <caption className="sr-only">Приёмы на {data.date}. Отмечены те, кому нужен звонок.</caption>
       <thead>
         <tr>
-          <th scope="col">Время</th>
+          <th scope="col" className="ops-time">Время</th>
           <th scope="col">Пациент</th>
           <th scope="col">Телефон</th>
           <th scope="col">Врач</th>

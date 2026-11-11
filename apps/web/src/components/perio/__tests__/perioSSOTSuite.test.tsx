@@ -84,19 +84,23 @@ describe("Канонический SSOT пародонтологии и эксп
 		assert.strictEqual(PERIO_TREATMENT_PROTOCOLS.length, 4);
 
 		const p1 = PERIO_TREATMENT_PROTOCOLS[0];
+		assert.ok(p1, "p1 протокол должен быть определен");
 		assert.strictEqual(p1.code804n, "A16.07.051");
 		assert.strictEqual(p1.defaultPriceRub, 5500);
 		assert.ok(p1.titleRu.includes("AirFlow + УЗ-скейлинг"));
 
 		const p2 = PERIO_TREATMENT_PROTOCOLS[1];
+		assert.ok(p2, "p2 протокол должен быть определен");
 		assert.strictEqual(p2.code804n, "A16.07.051.001");
 		assert.strictEqual(p2.defaultPriceRub, 4200);
 
 		const p3 = PERIO_TREATMENT_PROTOCOLS[2];
+		assert.ok(p3, "p3 протокол должен быть определен");
 		assert.strictEqual(p3.code804n, "A16.07.019");
 		assert.strictEqual(p3.defaultPriceRub, 6800);
 
 		const p4 = PERIO_TREATMENT_PROTOCOLS[3];
+		assert.ok(p4, "p4 протокол должен быть определен");
 		assert.strictEqual(p4.code804n, "A16.07.026");
 		assert.strictEqual(p4.defaultPriceRub, 12000);
 

@@ -33,7 +33,7 @@ export const patients = pgTable(
 		weightKg: numeric("weight_kg", { precision: 5, scale: 2 }),
 		administrativeProfile: jsonb(
 			"administrative_profile",
-		).$type<PatientAdministrativeProfile | null>(),
+		).$type<Partial<PatientAdministrativeProfile> | null>(),
 		familyGroupId: uuid("family_group_id"),
 		/**
 		 * Куда объединена карточка (миграция 0128). Заполнено — значит это дубль, все

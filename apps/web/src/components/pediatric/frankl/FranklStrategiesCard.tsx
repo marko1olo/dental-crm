@@ -79,7 +79,7 @@ export const FranklStrategiesCard: React.FC<FranklStrategiesCardProps> = ({
 					<span className="flex items-center gap-2 text-left min-w-0">
 						<Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span className="truncate sm:whitespace-normal">
-							1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания
+							Поведение позитивное (Frankl 4/4): адаптация успешна, лечение без удержания
 						</span>
 					</span>
 					{rating === 4 ? (

@@ -205,6 +205,7 @@ export const egiszLogsParamsSchema = z.object({
 export const egiszSendBodySchema = z.object({
 	patientId: z.string().uuid(),
 	visitId: z.string().uuid(),
+	pkg: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const egiszBlankPermissionsPatchSchema = z.object({

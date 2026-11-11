@@ -11,7 +11,7 @@ import {
 import React from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast";
-import { CEPHALOMETRIC_LANDMARKS } from "../cephalometricMath";
+import { CEPHALOMETRIC_LANDMARKS } from "../../orthodontics/cephalometricMath";
 import {
 	CephalometricReportTab,
 	CephalometricLandmarksList,

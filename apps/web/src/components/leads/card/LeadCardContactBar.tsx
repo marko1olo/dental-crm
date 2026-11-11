@@ -6,7 +6,7 @@
 import { MessageSquare, Phone, PhoneCall } from "lucide-react";
 import React from "react";
 import type { Lead } from "../../../store/leadsStore";
-import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
+import { formatWhatsAppUrl } from "@dental/shared";
 import { LeadAudioPlayerWidget } from "../LeadAudioPlayerWidget";
 
 interface LeadCardContactBarProps {
@@ -33,8 +33,8 @@ export const LeadCardContactBar: React.FC<LeadCardContactBarProps> = ({
 						href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
 						onClick={(e) => e.stopPropagation()}
 						className="icon-button h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-colors inline-flex items-center justify-center shrink-0"
-						title="1-клик перезвон"
-						aria-label="1-клик перезвон"
+						title="Быстрый перезвон"
+						aria-label="Быстрый перезвон"
 						data-testid={`lead-callback-btn-${lead.id}`}
 					>
 						<PhoneCall size={14} />

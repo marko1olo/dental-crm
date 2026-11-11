@@ -57,7 +57,7 @@ export const AnamnesisAllergyChips: React.FC<AnamnesisAllergyChipsProps> = ({
 			<div className="flex items-center justify-between">
 				<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 					<Pill className="w-3.5 h-3.5 text-rose-500" />
-					1. Аллергологический статус (1-кликовые чипы)
+					1. Аллергологический статус
 				</span>
 				<span className="text-[11px] text-[var(--muted,#64748b)]">
 					Красный — аллергия / Серый — норма

@@ -5,6 +5,12 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
+import { db } from "../../../db/client.js";
+import {
+	communicationEvents as communicationEventsTable,
+	denteTelegramOutboxDeliveryReceipts as denteTelegramOutboxDeliveryReceiptsTable,
+} from "../../../db/schema.js";
 import type {
 	CommunicationEvent,
 	DenteTelegramOutboxDeliveryReceipt,
@@ -20,7 +26,6 @@ import {
 	denteTelegramOutboxDeliveryReceiptsMap,
 	doctorUserId,
 	inMemoryDomainState,
-	organizationId,
 	persistMutableState,
 	recordAuditEvent,
 	uniqueStrings,
@@ -199,6 +204,7 @@ export function recordDenteTelegramOutboxDelivery(input: {
 	clientMutationId?: string | null;
 	warnings?: string[];
 	blockedReason?: string | null;
+	organizationId?: string | null;
 }): { eventId: string | null; taskId: string | null; taskCompleted: boolean } {
 	const now = new Date().toISOString();
 	const task = input.item.taskId
@@ -213,7 +219,7 @@ export function recordDenteTelegramOutboxDelivery(input: {
 	if (patientId) {
 		const event: CommunicationEvent = {
 			id: randomUUID(),
-			organizationId,
+			organizationId: input.item.organizationId ?? input.organizationId ?? "",
 			taskId: input.item.taskId,
 			patientId,
 			actorUserId: doctorUserId,
@@ -292,4 +298,210 @@ export function recordDenteTelegramOutboxDelivery(input: {
 
 	persistMutableState();
 	return { eventId, taskId: task?.id ?? input.item.taskId, taskCompleted };
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toValidUuid(val: string | null | undefined): string | null {
+	if (!val) return null;
+	const trimmed = val.trim();
+	return UUID_REGEX.test(trimmed) ? trimmed : null;
+}
+
+export async function findDenteTelegramOutboxDeliveryReceiptDb(
+	organizationIdParam: string | null | undefined,
+	outboxItemId: string,
+	clientMutationId: string | null | undefined,
+): Promise<DenteTelegramOutboxDeliveryReceipt | null> {
+	if (!clientMutationId) return null;
+	const memReceipt = findDenteTelegramOutboxDeliveryReceipt(outboxItemId, clientMutationId);
+	if (memReceipt) return memReceipt;
+
+	const targetOrgId = toValidUuid(organizationIdParam);
+	if (!targetOrgId) return null;
+	try {
+		const [row] = await db
+			.select()
+			.from(denteTelegramOutboxDeliveryReceiptsTable)
+			.where(
+				and(
+					eq(denteTelegramOutboxDeliveryReceiptsTable.organizationId, targetOrgId),
+					eq(denteTelegramOutboxDeliveryReceiptsTable.outboxItemId, outboxItemId),
+					eq(denteTelegramOutboxDeliveryReceiptsTable.clientMutationId, clientMutationId),
+				),
+			)
+			.limit(1);
+
+		if (!row) return null;
+		let parsedItem: DenteTelegramOutboxItem | null = null;
+		if (row.outboxItemJson) {
+			try {
+				parsedItem = JSON.parse(row.outboxItemJson);
+			} catch {}
+		}
+		return {
+			outboxItemId: row.outboxItemId,
+			status: row.status as any,
+			outboxItem: parsedItem,
+			taskId: row.taskId,
+			eventId: row.eventId,
+			telegramMessageId: row.telegramMessageId,
+			clientMutationId: row.clientMutationId,
+			warnings: (() => {
+				try {
+					return JSON.parse(row.warningsJson || "[]") as string[];
+				} catch {
+					return [];
+				}
+			})(),
+			blockedReason: row.blockedReason,
+			createdAt: row.createdAt ? row.createdAt.toISOString() : new Date().toISOString(),
+		};
+	} catch {
+		return null;
+	}
+}
+
+export async function claimDenteTelegramOutboxDeliveryReceiptDb(
+	organizationIdParam: string | null | undefined,
+	item: DenteTelegramOutboxItem,
+	clientMutationId: string,
+	warnings: string[],
+): Promise<DenteTelegramOutboxDeliveryReceipt | null> {
+	const memClaim = claimDenteTelegramOutboxDeliveryReceipt(item, clientMutationId, warnings);
+	if (memClaim) return memClaim;
+
+	const targetOrgId = toValidUuid(organizationIdParam) ?? toValidUuid(item.organizationId);
+	if (!targetOrgId) {
+		return null;
+	}
+	try {
+		const [existing] = await db
+			.select()
+			.from(denteTelegramOutboxDeliveryReceiptsTable)
+			.where(
+				and(
+					eq(denteTelegramOutboxDeliveryReceiptsTable.organizationId, targetOrgId),
+					eq(denteTelegramOutboxDeliveryReceiptsTable.outboxItemId, item.id),
+					eq(denteTelegramOutboxDeliveryReceiptsTable.clientMutationId, clientMutationId),
+				),
+			)
+			.limit(1);
+
+		if (existing) {
+			let parsedItem: DenteTelegramOutboxItem | null = null;
+			if (existing.outboxItemJson) {
+				try {
+					parsedItem = JSON.parse(existing.outboxItemJson);
+				} catch {}
+			}
+			return {
+				outboxItemId: existing.outboxItemId,
+				status: existing.status as any,
+				outboxItem: parsedItem ?? item,
+				taskId: existing.taskId ?? item.taskId,
+				eventId: existing.eventId,
+				telegramMessageId: existing.telegramMessageId,
+				clientMutationId: existing.clientMutationId,
+				warnings: (() => {
+					try {
+						return JSON.parse(existing.warningsJson || "[]") as string[];
+					} catch {
+						return warnings;
+					}
+				})(),
+				blockedReason: existing.blockedReason,
+				createdAt: existing.createdAt ? existing.createdAt.toISOString() : new Date().toISOString(),
+			};
+		}
+
+		await db
+			.insert(denteTelegramOutboxDeliveryReceiptsTable)
+			.values({
+				organizationId: targetOrgId,
+				outboxItemId: item.id,
+				status: "blocked",
+				outboxItemJson: JSON.stringify(item),
+				taskId: toValidUuid(item.taskId),
+				eventId: null,
+				telegramMessageId: null,
+				clientMutationId,
+				warningsJson: JSON.stringify(uniqueStrings([...warnings, "telegram_delivery_processing"])),
+				blockedReason: "telegram_delivery_processing",
+			})
+			.onConflictDoNothing();
+	} catch (err) {
+		console.warn("[TelegramOutbox] Failed to claim delivery receipt in Postgres 18:", err);
+	}
+	return null;
+}
+
+export async function recordDenteTelegramOutboxDeliveryDb(input: {
+	item: DenteTelegramOutboxItem;
+	status: "sent" | "failed";
+	message: string;
+	organizationId?: string | null;
+	telegramMessageId?: number | null;
+	clientMutationId?: string | null;
+	warnings?: string[];
+	blockedReason?: string | null;
+}): Promise<{ eventId: string | null; taskId: string | null; taskCompleted: boolean }> {
+	const memResult = recordDenteTelegramOutboxDelivery(input);
+	const targetOrgId = toValidUuid(input.organizationId) ?? toValidUuid(input.item.organizationId);
+	const clientMutationId = input.clientMutationId?.trim() || "";
+	const patientId = toValidUuid(input.item.patientId);
+	const taskId = toValidUuid(input.item.taskId);
+
+	let dbEventId: string | null = null;
+	if (!targetOrgId) {
+		return memResult;
+	}
+	try {
+		if (patientId) {
+			const [insertedEvent] = await db
+				.insert(communicationEventsTable)
+				.values({
+					organizationId: targetOrgId,
+					taskId,
+					patientId,
+					actorUserId: toValidUuid(doctorUserId),
+					channel: "telegram",
+					direction: "outbound",
+					status: input.status === "sent" ? "sent" : "failed",
+					message: input.message,
+				})
+				.returning({ id: communicationEventsTable.id });
+			if (insertedEvent?.id) {
+				dbEventId = insertedEvent.id;
+			}
+		}
+
+		if (clientMutationId) {
+			await db
+				.insert(denteTelegramOutboxDeliveryReceiptsTable)
+				.values({
+					organizationId: targetOrgId,
+					outboxItemId: input.item.id,
+					status: input.status,
+					outboxItemJson: JSON.stringify(input.item),
+					taskId,
+					eventId: dbEventId ?? toValidUuid(memResult.eventId),
+					telegramMessageId: typeof input.telegramMessageId === "number" ? input.telegramMessageId : null,
+					clientMutationId,
+					warningsJson: JSON.stringify(input.warnings ?? input.item.warnings ?? []),
+					blockedReason:
+						input.blockedReason ??
+						(input.status === "failed" ? "telegram_transport_failed" : null),
+				})
+				.onConflictDoNothing();
+		}
+	} catch (dbErr) {
+		console.warn("[TelegramOutbox] Failed to persist delivery receipt to Postgres 18:", dbErr);
+	}
+
+	return {
+		eventId: dbEventId ?? memResult.eventId,
+		taskId: memResult.taskId,
+		taskCompleted: memResult.taskCompleted,
+	};
 }

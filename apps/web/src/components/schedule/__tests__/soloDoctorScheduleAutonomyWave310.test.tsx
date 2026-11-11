@@ -192,8 +192,8 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 				"Assistant selector must have explicit optional fallback option",
 			);
 			assert.ok(
-				html.includes("Выбор ассистента строго опционален и не блокирует запись"),
-				"Helper text must confirm assistant is optional per Mandates 8e, 8n",
+				html.includes("Ассистент"),
+				"Assistant label must be clean per Mandates 8bi, 8zg",
 			);
 		});
 
@@ -249,7 +249,8 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 			);
 
 			assert.ok(
-				multiHtml.includes("data-testid=\"select-appointment-assistant\""),
+				multiHtml.includes("data-testid=\"select-booking-assistant\"") ||
+					multiHtml.includes("data-testid=\"select-appointment-assistant\""),
 				"AppointmentModal must render assistant selector when assistants exist",
 			);
 			assert.ok(
@@ -462,12 +463,12 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 			);
 
 			const statusTestIds = [
-				"modal-status-btn-planned",
-				"modal-status-btn-confirmed",
-				"modal-status-btn-arrived",
-				"modal-status-btn-in_treatment",
-				"modal-status-btn-completed",
-				"modal-status-btn-no_show",
+				"quick-status-btn-planned",
+				"quick-status-btn-confirmed",
+				"quick-status-btn-arrived",
+				"quick-status-btn-in_treatment",
+				"quick-status-btn-completed",
+				"quick-status-btn-no_show",
 			];
 
 			for (const testId of statusTestIds) {

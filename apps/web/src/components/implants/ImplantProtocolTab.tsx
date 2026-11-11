@@ -1,6 +1,6 @@
 /**
  * ImplantProtocolTab.tsx — Хирургический протокол имплантации (DENTE CRM).
- * 1-клик физиологическая норма, тактильные кнопки торка, упаковка и склад (Мандаты 8e, 8n, 8am).
+ * физиологическая норма, тактильные кнопки торка, упаковка и склад (Мандаты 8e, 8n, 8am).
  */
 
 import React from "react";
@@ -86,7 +86,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = (props) => 
 						<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div className="text-xs">
 							<strong className="text-[var(--ink)] block text-sm">Хирургический экспресс-протокол:</strong>
-							<span className="text-[var(--muted)]">1 клик: физиологическая норма (D2/D3, торк 35 Н·см, ФДМ, охлаждение 0.9% NaCl, шов Викрил 4-0)</span>
+							<span className="text-[var(--muted)]">Физиологическая норма (D2/D3, торк 35 Н·см, ФДМ, охлаждение 0.9% NaCl, шов Викрил 4-0)</span>
 						</div>
 					</div>
 				</div>

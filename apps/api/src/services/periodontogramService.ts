@@ -8,7 +8,6 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import {
 	patients,
-	perioCharts,
 	periodontogramSites,
 	periodontogramSnapshots,
 	periodontogramTeeth,
@@ -110,14 +109,17 @@ export function formatSnapshotTeethWithSites(
 	}));
 }
 
-export async function fetchSnapshotTeethAndSites(snapshotId: string) {
-	const teeth = await db
+export async function fetchSnapshotTeethAndSites(
+	snapshotId: string,
+	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
+) {
+	const teeth = await executor
 		.select()
 		.from(periodontogramTeeth)
 		.where(eq(periodontogramTeeth.snapshotId, snapshotId))
 		.orderBy(periodontogramTeeth.toothNumber);
 
-	const sites = await db
+	const sites = await executor
 		.select()
 		.from(periodontogramSites)
 		.where(eq(periodontogramSites.snapshotId, snapshotId))
@@ -274,7 +276,7 @@ function deterministicUuid(seed: string): string {
 
 /**
  * Разрешает идентификатор пациента (поддерживает client demo, tenant id и не-UUID строки).
- * Исключает 400 ошибки, гарантируя валидный foreign key для PostgreSQL 18.
+ * Исключает подлог чужого пациента из базы (Mandates 8e, 8n).
  */
 export async function resolvePerioPatientId(
 	orgId: string,
@@ -282,7 +284,7 @@ export async function resolvePerioPatientId(
 ): Promise<string> {
 	const trimmed = typeof rawPatientId === "string" ? rawPatientId.trim() : "";
 
-	// 1. Если передан валидный UUID, проверяем есть ли такой пациент в текущей организации
+	// 1. Если передан валидный UUID, проверяем наличие в организации; если не найден, возвращаем исходный ID
 	if (UUID_REGEX.test(trimmed)) {
 		try {
 			const [found] = await db
@@ -299,43 +301,45 @@ export async function resolvePerioPatientId(
 		} catch {
 			// Игнорируем сбои чтения в изолированных средах
 		}
+		return trimmed;
 	}
 
-	// 2. Ищем существующего пациента в этой организации
-	try {
-		const [existingPatient] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(eq(patients.organizationId, orgId))
-			.orderBy(desc(patients.createdAt))
-			.limit(1);
+	// 2. Если передан не-UUID идентификатор, детерминированно связываем с данным пациентом без подлога
+	if (trimmed) {
+		const deterministicId = deterministicUuid(`${orgId}:${trimmed}`);
+		try {
+			const [existing] = await db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, deterministicId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (existing) return existing.id;
 
-		if (existingPatient) {
-			return existingPatient.id;
+			const [created] = await db
+				.insert(patients)
+				.values({
+					id: deterministicId,
+					organizationId: orgId,
+					fullName: `Пациент (${trimmed})`,
+					birthDate: "1988-06-15",
+					phone: "+7 (999) 000-00-00",
+					notes: `Идентификатор: ${trimmed}`,
+				})
+				.returning({ id: patients.id });
+			if (created?.id) return created.id;
+		} catch {
+			// fallback
 		}
-	} catch {
-		// Игнорируем сбои чтения
+		return deterministicId;
 	}
 
-	// 3. Если в организации пока нет пациентов, пытаемся создать базового клинического пациента
-	try {
-		const [created] = await db
-			.insert(patients)
-			.values({
-				organizationId: orgId,
-				fullName: "Пациент (Пародонтология / Демо)",
-				birthDate: "1988-06-15",
-				phone: "+7 (999) 000-00-00",
-				notes: trimmed ? `Идентификатор: ${trimmed}` : "Пациент пародонтологии",
-			})
-			.returning({ id: patients.id });
-
-		if (created?.id) return created.id;
-	} catch {
-		// Если организация синтетическая (тесты, моки), возвращаем детерминированный UUID
-	}
-
-	return deterministicUuid(`${orgId}:${trimmed || "demo"}`);
+	// 3. Если rawPatientId не передан, возвращаем детерминированный UUID по умолчанию для организации
+	return deterministicUuid(`${orgId}:default-perio-patient`);
 }
 
 /**
@@ -400,6 +404,7 @@ export interface UpsertPatientFullPeriodontogramParams {
 	notes?: string | null | undefined;
 	status?: "draft" | "closed" | undefined;
 	autoClose?: boolean | undefined;
+	psrData?: Record<string, unknown> | undefined;
 }
 
 /**
@@ -415,6 +420,7 @@ export async function upsertPatientFullPeriodontogram({
 	notes,
 	status,
 	autoClose = false,
+	psrData,
 }: UpsertPatientFullPeriodontogramParams) {
 	try {
 		// Find existing draft snapshot or create a new one
@@ -523,8 +529,12 @@ export async function upsertPatientFullPeriodontogram({
 			let finalRecord: any;
 			if (shouldClose) {
 				const { teeth: currentTeeth, sites: currentSites } =
-					await fetchSnapshotTeethAndSites(activeDraft.id);
+					await fetchSnapshotTeethAndSites(activeDraft.id, tx);
 				const computedIndices = computeSnapshotIndices(currentTeeth, currentSites);
+				const mergedIndices = {
+					...computedIndices,
+					...(psrData ? { psrData } : {}),
+				};
 
 				const [closedSnap] = await tx
 					.update(periodontogramSnapshots)
@@ -532,69 +542,43 @@ export async function upsertPatientFullPeriodontogram({
 						status: "closed",
 						closedAt: new Date(),
 						closedByUserId: recordedByUserId,
-						indices: computedIndices,
+						indices: mergedIndices,
 						...(notes !== undefined ? { notes } : {}),
 						updatedAt: new Date(),
 					})
 					.where(eq(periodontogramSnapshots.id, activeDraft.id))
 					.returning();
 
-				const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id);
+				const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id, tx);
 				finalRecord = {
 					...closedSnap,
 					teeth: formattedTeeth,
 				};
 			} else {
+				if (psrData) {
+					await tx
+						.update(periodontogramSnapshots)
+						.set({
+							indices: {
+								...((activeDraft.indices as any) || {}),
+								psrData,
+							},
+							updatedAt: new Date(),
+						})
+						.where(eq(periodontogramSnapshots.id, activeDraft.id));
+				}
+
 				const [updatedSnap] = await tx
 					.select()
 					.from(periodontogramSnapshots)
 					.where(eq(periodontogramSnapshots.id, activeDraft.id))
 					.limit(1);
 
-				const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id);
+				const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id, tx);
 				finalRecord = {
 					...updatedSnap,
 					teeth: formattedTeeth,
 				};
-			}
-
-			// 5. Синхронизация с таблицей perio_charts для сквозной целостности с одонтограммой и приёмами
-			try {
-				const [existingPerioChart] = await tx
-					.select({ id: perioCharts.id })
-					.from(perioCharts)
-					.where(
-						and(
-							eq(perioCharts.patientId, patientId),
-							eq(perioCharts.organizationId, orgId),
-						),
-					)
-					.limit(1);
-
-				const chartPayload = {
-					organizationId: orgId,
-					patientId,
-					doctorId: recordedByUserId,
-					chartDate: new Date(),
-					teethData: teeth,
-					summaryData: (finalRecord.indices as any) ?? {},
-					notes: notes ?? null,
-					updatedAt: new Date(),
-				};
-
-				if (existingPerioChart) {
-					await tx
-						.update(perioCharts)
-						.set(chartPayload)
-						.where(eq(perioCharts.id, existingPerioChart.id));
-				} else {
-					await tx.insert(perioCharts).values({
-						...chartPayload,
-						createdAt: new Date(),
-					});
-				}
-			} catch {
-				// Мягкая деградация: snapshot уже сохранен
 			}
 
 			return finalRecord;
@@ -602,33 +586,18 @@ export async function upsertPatientFullPeriodontogram({
 	} catch (err: unknown) {
 		const pgCode = (err as any)?.code || (err as any)?.cause?.code;
 		const errMsg = String((err as any)?.message || err);
-		const isForeignKey = pgCode === "23503" || errMsg.includes("foreign key") || errMsg.includes("violates foreign key");
-		// В боевом режиме без синтетических фикстур пробрасываем ошибку наружу
-		if (!isForeignKey) {
-			throw err;
+		const isForeignKey =
+			pgCode === "23503" ||
+			errMsg.includes("foreign key") ||
+			errMsg.includes("violates foreign key");
+
+		if (isForeignKey) {
+			const error = new Error("Пациент или организация не найдены");
+			(error as any).statusCode = 404;
+			(error as any).code = "PatientNotFound";
+			throw error;
 		}
-		// Безопасный фоллбэк ИСКЛЮЧИТЕЛЬНО для изолированных тестов с синтетическими фикстурами (FK 23503)
-		return {
-			id: deterministicUuid(`${orgId}:${patientId}:snapshot`),
-			organizationId: orgId,
-			patientId,
-			status: status === "closed" || autoClose ? "closed" : "draft",
-			recordedAt: new Date(),
-			notes: notes ?? null,
-			indices: {
-				bop_pct: 0,
-				pi_pct: 0,
-				deep_pockets_count: 0,
-				psr: 0,
-			},
-			teeth: SEPA_PERMANENT_TEETH.map((tn) => ({
-				id: deterministicUuid(`${tn}`),
-				toothNumber: tn,
-				isPresent: true,
-				isImplant: false,
-				mobility: null,
-				sites: [],
-			})),
-		};
+
+		throw err;
 	}
 }

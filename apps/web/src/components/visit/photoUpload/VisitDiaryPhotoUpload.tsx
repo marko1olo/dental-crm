@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { IntraoralCameraModal } from "../../photography/IntraoralCameraModal";
-import { ChairsidePhotoQrBridgeModal } from "../../photography/ChairsidePhotoQrBridgeModal";
-import { DsdAestheticStudioModal } from "../../photography/dsd/DsdAestheticStudioModal";
-import { BeforeAfterSplitter } from "../BeforeAfterSplitter";
 import type { DiaryPrintPhoto } from "./useVisitDiaryPhotoUploadState";
 import { useVisitDiaryPhotoUploadState } from "./useVisitDiaryPhotoUploadState";
 import { VisitDiaryPhotoActionsToolbar } from "./VisitDiaryPhotoActionsToolbar";
 import { VisitDiaryPhotoThumbnailGrid } from "./VisitDiaryPhotoThumbnailGrid";
+import { VisitDiaryPhotoModals } from "./VisitDiaryPhotoModals";
 
 export type { DiaryPrintPhoto };
 
@@ -54,7 +51,7 @@ export function VisitDiaryPhotoUpload({
 		visitId,
 		diaryId,
 		isLocked,
-		onPrintPhotosChange,
+		...(onPrintPhotosChange ? { onPrintPhotosChange } : {}),
 	});
 
 	// Слушаем глобальное событие открытия DSD студии из тулбара или других вкладок
@@ -117,53 +114,32 @@ export function VisitDiaryPhotoUpload({
 				}}
 			/>
 
-			{/* Digital Smile Design (DSD) Эстетическая студия Wheeler 2.5D (PHO-02) */}
-			<DsdAestheticStudioModal
-				isOpen={isDsdModalOpen}
-				onClose={() => {
+			<VisitDiaryPhotoModals
+				isDsdModalOpen={isDsdModalOpen}
+				onCloseDsd={() => {
 					setIsDsdModalOpen(false);
 					setActiveDsdPhotoUrl(null);
 				}}
 				patientId={patientId}
 				patientName={patientName}
 				visitId={visitId}
-				initialPhotoUrl={activeDsdPhotoUrl || dsdPatientPhotos[0]?.url}
-				patientPhotos={dsdPatientPhotos}
-				onApplySuccess={() => {
+				initialDsdPhotoUrl={activeDsdPhotoUrl}
+				dsdPatientPhotos={dsdPatientPhotos}
+				onDsdApplySuccess={() => {
 					void reloadAttachments();
 				}}
-			/>
-
-			{/* Мобильный QR-мост загрузки со смартфона врача (Chairside QR Bridge PHO-01) */}
-			<ChairsidePhotoQrBridgeModal
-				isOpen={isQrBridgeOpen}
-				onClose={() => setIsQrBridgeOpen(false)}
-				patientId={patientId}
-				patientName={patientName}
-				visitId={visitId}
-				onPhotoReceived={() => {
+				isQrBridgeOpen={isQrBridgeOpen}
+				onCloseQrBridge={() => setIsQrBridgeOpen(false)}
+				onQrPhotoReceived={() => {
 					void reloadAttachments();
 				}}
+				isCameraModalOpen={isCameraModalOpen}
+				onCloseCameraModal={() => setIsCameraModalOpen(false)}
+				onCaptureCameraPhoto={uploadBlobAttachment}
+				isBeforeAfterOpen={isBeforeAfterOpen}
+				onCloseBeforeAfter={() => setIsBeforeAfterOpen(false)}
+				splitterPhotos={splitterPhotos}
 			/>
-
-			{/* Модальное окно прямого захвата с интраоральной камеры (WebRTC) */}
-			<IntraoralCameraModal
-				isOpen={isCameraModalOpen}
-				onClose={() => setIsCameraModalOpen(false)}
-				onCapturePhoto={uploadBlobAttachment}
-			/>
-
-			{/* Интерактивный режим сравнения До/После для экрана пациента */}
-			{isBeforeAfterOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-xs animate-in fade-in duration-150">
-					<div className="w-full max-w-4xl">
-						<BeforeAfterSplitter
-							photos={splitterPhotos}
-							onClose={() => setIsBeforeAfterOpen(false)}
-						/>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }

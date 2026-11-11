@@ -169,6 +169,9 @@ export const advanceDepositTaggings = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
+		patientId: uuid("patient_id").references(() => patients.id, {
+			onDelete: "cascade",
+		}),
 		patientName: text("patient_name").notNull(),
 		depositAmountRub: numeric("deposit_amount_rub", {
 			precision: 12,
@@ -184,6 +187,9 @@ export const advanceDepositTaggings = pgTable(
 	(t) => ({
 		organizationIdIdx: index("advance_deposit_taggings_organizationId_idx").on(
 			t.organizationId,
+		),
+		patientIdIdx: index("advance_deposit_taggings_patient_id_idx").on(
+			t.patientId,
 		),
 	}),
 );

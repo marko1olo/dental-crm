@@ -27,7 +27,7 @@ export const DiagnosticImagingMetricsGrid: React.FC<DiagnosticImagingMetricsGrid
 					6/12 слотов, VITA, FDI
 				</span>
 				<span style={{ fontSize: 11, color: "var(--muted, #64748b)", marginTop: 2 }}>
-					1-клик вставка Ctrl+V, экспорт PDF
+					Вставка Ctrl+V, экспорт PDF
 				</span>
 				<button
 					type="button"

@@ -41,7 +41,7 @@ export const DEMO_SHOWCASE_MIGRATION_AUTOPILOT: MigrationAutopilotResponse = {
 	],
 	steps: [
 		{ order: 1, title: "Поиск локальных баз и выгрузок", owner: "admin", blocking: false, detail: "Источники обнаружены" },
-		{ order: 2, title: "Пробный прогон (Dry Run)", owner: "operator", blocking: false, detail: "1-клик валидация связей" },
+		{ order: 2, title: "Пробный прогон (Dry Run)", owner: "operator", blocking: false, detail: "Валидация связей" },
 		{ order: 3, title: "Утверждение импорта", owner: "doctor", blocking: false, detail: "Финальная запись в БД" },
 	],
 	warnings: [],

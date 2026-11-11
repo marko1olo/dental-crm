@@ -3,4 +3,3 @@
  */
 
 export * from "./patientSmsAuthEngine.js";
-export * from "./patientOnlineBookingEngine.js";

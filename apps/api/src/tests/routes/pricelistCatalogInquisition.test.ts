@@ -43,8 +43,8 @@ before(async () => {
 			name: "Тестовый композит Gradia Direct (шприц)",
 			category: "materials",
 			unit: "шт",
-			pricePerUnit: 2500,
-			unitCostRub: 2500,
+			pricePerUnit: "2500",
+			unitCostRub: "2500",
 			currentQty: "10",
 			minQty: "1",
 		})

@@ -34,10 +34,10 @@ export function renderCashierFinanceLaunchers(props: StandaloneLaunchersProps): 
 		);
 	}
 
-	if (hasUrlToken(["fast_checkout", "checkout"])) {
+	if (hasUrlToken(["fast_checkout"])) {
 		return (
 			<StandaloneFastCheckoutHost
-				onClose={() => clearUrlTokens(["fast_checkout", "checkout"])}
+				onClose={() => clearUrlTokens(["fast_checkout"])}
 			/>
 		);
 	}

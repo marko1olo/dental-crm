@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import type { AppHashRoutingState, ImplantPassportConfig } from "./appStateTypes";
+import type { AppHashRoutingState } from "./appStateTypes";
 import { hasLocationToken } from "./appRoutingHelpers";
 
 export function useAppRoutingEvents(
@@ -75,11 +75,6 @@ export function useAppRoutingEvents(
 			stateRef.current.setIsPrescriptionBlankOpen?.(true);
 			stateRef.current.setIsPrescriptionForm107Open?.(true);
 		};
-		const onPassport = (e?: Event) => {
-			const d = (e as CustomEvent<ImplantPassportConfig> | undefined)?.detail;
-			if (d) stateRef.current.setImplantPassportConfig(d);
-			stateRef.current.setIsImplantPassportDirectOpen(true);
-		};
 		const onTasks = (e?: Event) => {
 			stateRef.current.setIsClinicalTasksOpen(true);
 		};
@@ -105,8 +100,6 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente:open-treatment-plan-presenter", () => stateRef.current.setIsCasePresenterDirectModalOpen(true));
 		window.addEventListener("dente-open-emergency-rescue", () => stateRef.current.setIsEmergencyDirectModalOpen(true));
 		window.addEventListener("dente:open-emergency-rescue", () => stateRef.current.setIsEmergencyDirectModalOpen(true));
-		window.addEventListener("dente-open-implant-passport", onPassport);
-		window.addEventListener("dente:open-implant-passport", onPassport);
 		window.addEventListener("dente-open-recalls-hub", () => stateRef.current.setIsRecallsHubOpen(true));
 		window.addEventListener("dente:open-recalls-hub", () => stateRef.current.setIsRecallsHubOpen(true));
 		window.addEventListener("dente-open-warranty-passport", () => stateRef.current.setIsWarrantyPassportOpen(true));
@@ -124,8 +117,6 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente:open-shift-close", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
 		return () => {
 			window.removeEventListener("dente:open-prescriptions", onRx);
-			window.removeEventListener("dente-open-implant-passport", onPassport);
-			window.removeEventListener("dente:open-implant-passport", onPassport);
 			window.removeEventListener("dente-open-medical-card", onEmrCard);
 			window.removeEventListener("dente:open-medical-card", onEmrCard);
 		};

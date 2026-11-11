@@ -23,8 +23,6 @@ export function maskPatientName(fullName: string | null | undefined): string {
 	return `${surname} ${firstInitial}${patronymicInitial}`.trim();
 }
 
-/** @deprecated Mandate 8ap: Use maskPatientName */
-export const maskPatientName152Fz = maskPatientName;
 
 /**
  * Преобразует ФИО врача в компактный клинический формат: "Зубов А. В."

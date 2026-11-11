@@ -177,7 +177,7 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 						}}
 						title="Мгновенный запуск клиники с базовыми настройками (соло-врач, 1 кресло)"
 					>
-						<Zap aria-hidden="true" /> 0-клик старт (соло-врач)
+						<Zap aria-hidden="true" /> Быстрый старт (соло-врач)
 					</button>
 					<button
 						className="secondary-button onboarding-rapid-wizard-btn"

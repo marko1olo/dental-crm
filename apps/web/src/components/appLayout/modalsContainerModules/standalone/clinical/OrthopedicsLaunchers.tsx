@@ -5,6 +5,7 @@
 import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { AppLoadingState } from "../../../../../AppBootState";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 import { isPatientPresentationRoute } from "../../../../photography/presentationSyncProtocol";
 import { OrthopedicsChairsidePanel } from "../../../../orthopedics/OrthopedicsChairsidePanel";
 import { DentalLabStudioModal } from "../../../../lab/DentalLabStudioModal";
@@ -49,9 +50,9 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 				onClose={() => {
 					window.location.hash = "";
 				}}
-				patientName="Ковалев Дмитрий Сергеевич"
-				doctorName="Д-р Смирнова Е. В. (Ортопед)"
-				initialToothFdi="16"
+				patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
+				doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
+				initialToothFdi={isDemoShowcaseMode() ? "16" : undefined}
 			/>
 		);
 	}
@@ -73,17 +74,21 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 					</div>
 				</div>
 				<OrthopedicsChairsidePanel
-					patientName="Ковалев Дмитрий Сергеевич"
-					doctorName="Д-р Смирнова Е. В."
-					activeToothFdi="16"
-					initialLabOrder={{
-						id: "demo-lab-order-1",
-						orderNumber: "ЗТЛ-402",
-						workType: "Коронка ZrO2",
-						toothFdi: "16",
-						technicianName: "Смирнов А. В.",
-						warrantyPassport: "ГП-ЗТЛ-402",
-					}}
+					patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
+					doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В." : undefined}
+					activeToothFdi={isDemoShowcaseMode() ? "16" : undefined}
+					initialLabOrder={
+						isDemoShowcaseMode()
+							? {
+									id: "demo-lab-order-1",
+									orderNumber: "ЗТЛ-402",
+									workType: "Коронка ZrO2",
+									toothFdi: "16",
+									technicianName: "Смирнов А. В.",
+									warrantyPassport: "ГП-ЗТЛ-402",
+								}
+							: undefined
+					}
 				/>
 			</main>
 		);

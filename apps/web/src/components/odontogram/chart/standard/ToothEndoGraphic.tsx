@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CanalObturationMaterial, PostCoreType } from "../../anatomicalToothGeometries";
 import type { ToothState } from "../toothChartTypes";
 import { ToothCanalPostGraphic } from "./ToothCanalPostGraphic";

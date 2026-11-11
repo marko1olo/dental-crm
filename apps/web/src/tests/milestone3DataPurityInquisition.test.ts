@@ -34,22 +34,14 @@ describe("Milestone 3: Data Purity & Zero Hardcoded Fallbacks Inquisition", () =
 		assert.ok(content.includes("effectiveDoctorName"), "Must pass effective doctor name to presenter");
 	});
 
-	it("2. DoctorPayrollModal & state eradicate hardcoded 'ООО «Денте Стоматология»' and synthetic figures", () => {
-		const modalPath = path.resolve(webSrcDir, "components/payroll/DoctorPayrollModal.tsx");
+	it("2. DoctorPayrollStudioModal eradicates hardcoded 'ООО «Денте Стоматология»' and synthetic figures", () => {
+		const modalPath = path.resolve(webSrcDir, "components/payroll/DoctorPayrollStudioModal.tsx");
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
 
 		// Must not have hardcoded default
 		assert.ok(!modalContent.includes('clinicName = "ООО «Денте Стоматология»"'), "Must eradicate default ООО «Денте Стоматология»");
-		assert.ok(modalContent.includes("useDocumentBrandingStore"), "Must resolve clinic name dynamically");
-
-		const contentPath = path.resolve(webSrcDir, "components/payroll/DoctorPayrollModalContent.tsx");
-		const contentCode = fs.readFileSync(contentPath, "utf-8");
-		assert.ok(contentCode.includes("Выберите врача для формирования расчетного листа"), "Must render honest EmptyState when no doctor is chosen");
-
-		const statePath = path.resolve(webSrcDir, "components/payroll/useDoctorPayrollModalState.ts");
-		const stateCode = fs.readFileSync(statePath, "utf-8");
-		assert.ok(stateCode.includes('doctorName: "Врач не выбран"'), "State must cleanly report Врач не выбран when activeDoc is null");
-		assert.ok(stateCode.includes("totalGrossRevenueKop: 0"), "Revenue must be 0 kop when activeDoc is null");
+		assert.ok(modalContent.includes("Нет закрытых нарядов за выбранный период"), "Must render honest EmptyState when no orders exist");
+		assert.ok(modalContent.includes("isDemoShowcaseMode"), "Must guard demo showcase behind isDemoShowcaseMode");
 	});
 
 	it("3. HeaderGlobalSearch.tsx eradicates SAMPLE_PATIENTS and queries live API", () => {

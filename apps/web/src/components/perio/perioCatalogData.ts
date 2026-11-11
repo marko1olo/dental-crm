@@ -134,17 +134,17 @@ export type PerioExpressPresetId = keyof typeof PERIO_EXPRESS_PRESETS;
 export type PerioExpressPreset = typeof PERIO_EXPRESS_PRESETS[PerioExpressPresetId];
 
 export function generateComprehensivePerio043Text(teeth: readonly PerioToothRecord[]): string {
-	const summary = calculatePerioIndices(teeth);
+	const summary = calculatePerioIndices(teeth as PerioToothRecord[]);
 	const deepCount = summary.deepPocketsCount;
 	const bop = summary.fmbsPercent;
 	return `Объективный пародонтальный статус: обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость десневой борозды (BOP): ${bop}%. Глубоких патологических карманов (>= 4 мм): ${deepCount}.`;
 }
 
 export const PERIO_TREATMENT_PROTOCOLS: readonly PerioTreatmentProtocol[] = [
-	{ id: "prophy_airflow_ultrasound", titleRu: "1. Профгигиена (AirFlow + УЗ-скейлинг)", code804n: "A16.07.051", defaultPriceRub: 5500, descriptionRu: "УЗ-удаление над- и поддесневого камня + порошок глицина + полировка пастой + фторирование", protocolTextRu: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений, воздушно-абразивная обработка порошком на основе глицина, циркулярная полировка абразивной пастой, глубокое фторирование эмали.", consumableKind: "hygiene", consumablesListRu: ["Порошок для воздушно-абразивной обработки (глицин)", "Паста полировочная", "Фторлак"] },
-	{ id: "vector_curettage_therapy", titleRu: "2. Пародонтологическая чистка и полировка корней / закрытый кюретаж", code804n: "A16.07.051.001", defaultPriceRub: 4200, descriptionRu: "Ультразвуковая полировка корней суспензией гидроксиапатита + антисептическая санация карманов", protocolTextRu: "Ультразвуковая обработка пародонтальных карманов микроабразивной суспензией гидроксиапатита кальция. Антисептическая ирригация хлоргексидином 0.05%, лечебная десневая повязка.", consumableKind: "vector", consumablesListRu: ["Суспензия для полировки корней (гидроксиапатит)", "Хлоргексидин 0.05%", "Лечебная пародонтальная повязка"] },
-	{ id: "perio_splinting_fiber", titleRu: "3. Пародонтальное шинирование стекловолокном", code804n: "A16.07.019", defaultPriceRub: 6800, descriptionRu: "Адгезивная фиксация подвижных зубов стекловолоконной лентой со светоотверждаемым композитом", protocolTextRu: "Шинирование подвижных зубов: изоляция, межзубная адаптация стекловолоконной ленты, травление, бондинг, послойная полимеризация текучим композитом, шлифовка и припасовка.", consumableKind: "splinting", consumablesListRu: ["Стекловолоконная лента для шинирования", "Адгезивная система", "Текучий композит"] },
-	{ id: "recession_gingival_plastic", titleRu: "4. Пластика рецессии / десневой трансплантат", code804n: "A16.07.026", defaultPriceRub: 12000, descriptionRu: "Микрохирургическое закрытие десневой рецессии тоннельным методом / трансплантатом с неба", protocolTextRu: "Пластика десневой рецессии (K06.0): создание поддесневого тоннеля, забор субэпителиального трансплантата, фиксация микрохирургическими швами 6-0, защитная повязка.", consumableKind: "recession", consumablesListRu: ["Микрохирургический шовный материал 6-0", "Трансплантат/коллагеновая матрица", "Защитная повязка"] },
+	{ id: "prophy_airflow_ultrasound", titleRu: "Профгигиена (AirFlow + УЗ-скейлинг)", code804n: "A16.07.051", defaultPriceRub: 5500, descriptionRu: "УЗ-удаление над- и поддесневого камня + порошок глицина + полировка пастой + фторирование", protocolTextRu: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений, воздушно-абразивная обработка порошком на основе глицина, циркулярная полировка абразивной пастой, глубокое фторирование эмали.", consumableKind: "hygiene", consumablesListRu: ["Порошок для воздушно-абразивной обработки (глицин)", "Паста полировочная", "Фторлак"] },
+	{ id: "vector_curettage_therapy", titleRu: "Пародонтологическая чистка и полировка корней", code804n: "A16.07.051.001", defaultPriceRub: 4200, descriptionRu: "Ультразвуковая полировка корней суспензией гидроксиапатита + антисептическая санация карманов", protocolTextRu: "Ультразвуковая обработка пародонтальных карманов микроабразивной суспензией гидроксиапатита кальция. Антисептическая ирригация хлоргексидином 0.05%, лечебная десневая повязка.", consumableKind: "vector", consumablesListRu: ["Суспензия для полировки корней (гидроксиапатит)", "Хлоргексидин 0.05%", "Лечебная пародонтальная повязка"] },
+	{ id: "perio_splinting_fiber", titleRu: "Пародонтальное шинирование", code804n: "A16.07.019", defaultPriceRub: 6800, descriptionRu: "Адгезивная фиксация подвижных зубов стекловолоконной лентой со светоотверждаемым композитом", protocolTextRu: "Шинирование подвижных зубов: изоляция, межзубная адаптация стекловолоконной ленты, травление, бондинг, послойная полимеризация текучим композитом, шлифовка и припасовка.", consumableKind: "splinting", consumablesListRu: ["Стекловолоконная лента для шинирования", "Адгезивная система", "Текучий композит"] },
+	{ id: "recession_gingival_plastic", titleRu: "Пластика десневой рецессии", code804n: "A16.07.026", defaultPriceRub: 12000, descriptionRu: "Микрохирургическое закрытие десневой рецессии тоннельным методом / трансплантатом с неба", protocolTextRu: "Пластика десневой рецессии (K06.0): создание поддесневого тоннеля, забор субэпителиального трансплантата, фиксация микрохирургическими швами 6-0, защитная повязка.", consumableKind: "recession", consumablesListRu: ["Микрохирургический шовный материал 6-0", "Трансплантат/коллагеновая матрица", "Защитная повязка"] },
 ] as const;
 
 // 3. СПИСАНИЕ РАСХОДНИКОВ ПАКЕТОМ В БЭКЕ (SOFT NEGATIVE STOCK, МАНДАТ 8n)
@@ -369,7 +369,7 @@ export function applyExpressPerioPreset(teeth: readonly PerioToothRecord[], pres
 	if (presetId === "pro_hygiene_express" || presetId === "prophy_airflow_ultrasound") {
 		return {
 			updatedTeeth: applyHealthyPeriodontiumPreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? PERIO_TREATMENT_PROTOCOLS[0].protocolTextRu,
+			protocolText: preset?.defaultProtocolRu ?? (PERIO_TREATMENT_PROTOCOLS[0]?.protocolTextRu || ""),
 			title: "Профгигиена AirFlow + УЗ",
 			service: { code: "A16.07.051", name: "Комплексная профессиональная гигиена полости рта (УЗ + AirFlow)", price: 5500, category: "hygiene" },
 		};
@@ -447,13 +447,14 @@ export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToP
 }
 
 export function generatePerioProtocolText(teeth: readonly PerioToothRecord[]): string {
-	const summary = calculatePerioIndices(teeth);
+	const summary = calculatePerioIndices(teeth as PerioToothRecord[]);
 	return `Пародонт: обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость BOP: ${summary.fmbsPercent}%. Глубоких карманов (>= 4 мм): ${summary.deepPocketsCount}.`;
 }
 
 export function generatePsrDiaryProtocol(presetId: string, customPsrSummary?: string, customNotes?: string): string {
-	if (presetId in PERIO_EXPRESS_PRESETS) {
-		return PERIO_EXPRESS_PRESETS[presetId].defaultProtocolRu;
+	const preset = PERIO_EXPRESS_PRESETS[presetId];
+	if (preset) {
+		return preset.defaultProtocolRu;
 	}
 	let text = `Пародонт: обследование по 6 секстантам PSR.\n${customPsrSummary ? `Скрининг PSR (ВОЗ): ${customPsrSummary}.` : ""}\nПародонтальный статус зафиксирован.`;
 	if (customNotes?.trim()) text += `\nОсобые отметки: ${customNotes.trim()}`;

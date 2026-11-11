@@ -87,7 +87,7 @@ describe("Red Team: Prescription Workspace Modular Architecture & Sweet Spot (Ma
 			/>,
 		);
 
-		assert.ok(html.includes("Готовые клинические схемы в 1 клик"), "Must render fast sets header");
+		assert.ok(html.includes("Готовые клинические схемы"), "Must render fast sets header");
 		for (const set of CLINICAL_FAST_SETS) {
 			assert.ok(html.includes(set.label), `Must render clinical set: ${set.label}`);
 		}

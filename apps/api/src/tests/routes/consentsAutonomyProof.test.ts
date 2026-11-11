@@ -47,7 +47,9 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 					organizationId: ORG_ID,
 					fullName: "Иванов Иван Иванович",
 					phone: "+79991234567",
-					gender: "male",
+					administrativeProfile: {
+						gender: "male",
+					},
 				})
 				.onConflictDoNothing();
 		});

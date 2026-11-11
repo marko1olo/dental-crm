@@ -31,6 +31,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 	selectedCount,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const pointsRef = useRef<Point[]>([]);
 	const [points, setPoints] = useState<Point[]>([]);
 	const [isDrawing, setIsDrawing] = useState<boolean>(false);
 
@@ -41,17 +42,23 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		if (!ctx) return;
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		if (points.length < 2) return;
+		const currentPoints = pointsRef.current.length > 0 ? pointsRef.current : points;
+		if (currentPoints.length < 2) return;
 
 		ctx.beginPath();
 		ctx.strokeStyle = "#0d9488";
 		ctx.lineWidth = 2.5;
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
-		ctx.moveTo(points[0].x, points[0].y);
+		const firstPoint = currentPoints[0];
+		if (!firstPoint) return;
+		ctx.moveTo(firstPoint.x, firstPoint.y);
 
-		for (let i = 1; i < points.length; i++) {
-			ctx.lineTo(points[i].x, points[i].y);
+		for (let i = 1; i < currentPoints.length; i++) {
+			const pt = currentPoints[i];
+			if (pt) {
+				ctx.lineTo(pt.x, pt.y);
+			}
 		}
 		ctx.stroke();
 	}, [points]);
@@ -60,13 +67,23 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		redrawCanvas();
 	}, [redrawCanvas]);
 
+	const getScaledPoint = (e: React.PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement): Point => {
+		const rect = canvas.getBoundingClientRect();
+		const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+		const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+		return {
+			x: (e.clientX - rect.left) * scaleX,
+			y: (e.clientY - rect.top) * scaleY,
+		};
+	};
+
 	const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		canvas.setPointerCapture(e.pointerId);
 		setIsDrawing(true);
-		const rect = canvas.getBoundingClientRect();
-		const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+		const p = getScaledPoint(e, canvas);
+		pointsRef.current = [p];
 		setPoints([p]);
 	};
 
@@ -74,9 +91,9 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		if (!isDrawing) return;
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		const rect = canvas.getBoundingClientRect();
-		const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-		setPoints((prev) => [...prev, p]);
+		const p = getScaledPoint(e, canvas);
+		pointsRef.current.push(p);
+		setPoints([...pointsRef.current]);
 	};
 
 	const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -86,8 +103,9 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		if (canvas && canvas.hasPointerCapture(e.pointerId)) {
 			canvas.releasePointerCapture(e.pointerId);
 		}
-		if (points.length > 2) {
-			const d = points.reduce(
+		const finalPoints = pointsRef.current;
+		if (finalPoints.length > 2) {
+			const d = finalPoints.reduce(
 				(acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`,
 				"",
 			);
@@ -97,6 +115,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 	};
 
 	const handleClear = () => {
+		pointsRef.current = [];
 		setPoints([]);
 		onSignatureChange("");
 		redrawCanvas();

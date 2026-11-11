@@ -82,7 +82,7 @@ describe("1. EgiszRemdHubModal — UKEP Signing Studio (Order 947n and 63-FZ)", 
 		);
 
 		assert.ok(
-			html.includes("Подписать пакет (Врач + Клиника в 1 клик)"),
+			html.includes("Подписать пакет (Врач + Клиника)"),
 			"Contains 1-click Doctor + Clinic dual signing button",
 		);
 		assert.ok(
@@ -258,7 +258,7 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 			"Contains 1-click Sign button",
 		);
 		assert.ok(
-			html.includes("1-Клик ZIP"),
+			html.includes("Скачать ZIP"),
 			"Contains 1-click ZIP export button",
 		);
 	});

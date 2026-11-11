@@ -190,7 +190,7 @@ export const CbctNerveSidebarSection: React.FC<CbctNerveSidebarSectionProps> = (
 			<div className="text-[10px] text-zinc-400 leading-tight flex items-center gap-1">
 				<Info className="w-3 h-3 text-cyan-400 shrink-0" />
 				<span>
-					Vatech 2-Seed: 2 клика на срезах (Foramen mentale + Foramen mandibulae)
+					Vatech 2-Seed: 2 точки на срезах (Foramen mentale + Foramen mandibulae)
 				</span>
 			</div>
 		</div>

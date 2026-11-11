@@ -20,6 +20,7 @@ export type { KioskSelectionMode } from "./SelfCheckinKioskModeTiles";
 
 export interface SelfCheckinPhoneAuthSectionProps {
 	readonly patientName: string;
+	readonly setPatientName?: ((name: string) => void) | undefined;
 	readonly appointmentTime: string;
 	readonly doctorName: string;
 	readonly phoneDigits: string;
@@ -30,7 +31,7 @@ export interface SelfCheckinPhoneAuthSectionProps {
 	readonly setAuthError: (err: string | null) => void;
 	readonly isSubmitting: boolean;
 	readonly onApplyPhysiologicalNorm: () => void;
-	readonly onOneTouchCheckin: () => void;
+	readonly onOneTouchCheckin: (mode?: KioskSelectionMode, patientFullName?: string) => void;
 	readonly onEmergencyCheckin?: (() => void) | undefined;
 	readonly onGoToConsents: () => void;
 	readonly onGoToSomatic: () => void;
@@ -38,6 +39,7 @@ export interface SelfCheckinPhoneAuthSectionProps {
 
 export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionProps> = memo(({
 	patientName,
+	setPatientName,
 	appointmentTime,
 	doctorName,
 	phoneDigits,
@@ -56,7 +58,8 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 	const [activeMode, setActiveMode] = useState<KioskSelectionMode>("scheduled");
 
 	const handleDigitPress = (digit: string) => {
-		if (phoneDigits.length < 4) {
+		const maxLen = activeMode === "first_time" ? 11 : 4;
+		if (phoneDigits.length < maxLen) {
 			setPhoneDigits(phoneDigits + digit);
 			setAuthError(null);
 		}
@@ -95,18 +98,19 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 				<SelfCheckinEmergencyCard
 					onEmergencyCheckin={onEmergencyCheckin}
 					onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
-					onOneTouchCheckin={onOneTouchCheckin}
+					onOneTouchCheckin={() => onOneTouchCheckin("emergency")}
 				/>
 			) : (
 				<SelfCheckinExpressCard
 					patientName={patientName}
+					setPatientName={setPatientName}
 					phoneDigits={phoneDigits}
 					setPhoneDigits={setPhoneDigits}
 					setAuthError={setAuthError}
 					isSubmitting={isSubmitting}
 					activeMode={activeMode}
 					onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
-					onOneTouchCheckin={onOneTouchCheckin}
+					onOneTouchCheckin={() => onOneTouchCheckin(activeMode, patientName)}
 					onDigitPress={handleDigitPress}
 					onBackspace={handleBackspace}
 					onClear={handleClear}

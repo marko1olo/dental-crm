@@ -218,7 +218,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 							type="button"
 							data-testid="btn-reset-intact"
 							onClick={handleResetAllIntact}
-							title="Сбросить все зубы в соматическую норму (1 клик)"
+							title="Сбросить все зубы в физиологическую норму"
 							className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg bg-[var(--emerald-surface)] text-[var(--emerald-ink)] border border-[var(--emerald)] hover:opacity-90 active:scale-95 transition-all shrink-0"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-[var(--emerald)]" />

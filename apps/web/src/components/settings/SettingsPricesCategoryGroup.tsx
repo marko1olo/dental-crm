@@ -84,7 +84,9 @@ export const SettingsPricesCategoryGroup: React.FC<
 				<span className="catalog-group-count">{items.length}</span>
 			</h4>
 			<div className="catalog-items-grid">
-				{visibleItems.map((item) => (
+				{visibleItems.map((item) => {
+					const isArchived = item.active === false || item.isActive === false;
+					return (
 					<div
 						className="catalog-item-card flex flex-col justify-between gap-2.5"
 						key={item.id}
@@ -135,17 +137,14 @@ export const SettingsPricesCategoryGroup: React.FC<
 										Без НДС (ст.149)
 									</span>
 								)}
-								{!item.isActive && (
+								{isArchived && (
 									<span className="badge-inactive">Архив</span>
 								)}
 							</div>
 						</div>
 
-						{/* Bottom: Economics & Actions */}
-						<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between gap-2">
-							<div className="text-xs text-[var(--muted)] font-mono leading-tight">
-								ЗП (25%): {money((item.basePriceRub ?? item.priceRub ?? 0) * 0.25)} · Маржа: {money((item.basePriceRub ?? item.priceRub ?? 0) * 0.75)}
-							</div>
+						{/* Bottom: Actions */}
+						<div className="pt-2 border-t border-[var(--line)] flex items-center justify-end gap-1">
 							<div className="flex items-center gap-1 shrink-0">
 								<button
 									type="button"
@@ -168,7 +167,8 @@ export const SettingsPricesCategoryGroup: React.FC<
 							</div>
 						</div>
 					</div>
-				))}
+				);
+				})}
 			</div>
 			{hasMore && (
 				<div className="flex items-center justify-between p-2.5 my-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">

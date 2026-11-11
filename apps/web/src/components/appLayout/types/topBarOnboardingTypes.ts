@@ -1,5 +1,11 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { StaffRole, DentalSpecialty, ClinicMode } from "@dental/shared";
+import type {
+	ClinicProfileDraft,
+	OnboardingStepItem,
+	UiLanguageOption,
+	WeekdayOption,
+} from "../../onboarding/wizard/types";
 
 export interface TopBarOnboardingBaseProps {
 	onboardingDismissed: boolean;
@@ -8,35 +14,35 @@ export interface TopBarOnboardingBaseProps {
 	isStripDismissedLocally: boolean;
 	setIsStripDismissedLocally: Dispatch<SetStateAction<boolean>>;
 	currentOnboardingIndex: number;
-	onboardingSteps: any[];
+	onboardingSteps: readonly OnboardingStepItem[];
 	legalReadinessPercent: number;
 	continueOnboardingInDraftMode: (view?: string) => Promise<void> | void;
 	openOnboardingGuide: () => void;
 	dismissOnboarding: () => void;
 	onboardingDraftMode: boolean;
 	onboardingReadyToFinish: boolean;
-	onboardingBlockingIssues: string[];
+	onboardingBlockingIssues: readonly string[];
 	onboardingDocumentsReady: boolean;
-	onboardingDocumentReadinessIssues: string[];
-	onboardingRoleChoices: any[];
+	onboardingDocumentReadinessIssues: readonly string[];
+	onboardingRoleChoices: readonly StaffRole[];
 	moveOnboardingTo: (step: string | number) => Promise<void> | void;
-	onboardingStep: any;
+	onboardingStep: string | number;
 	onboardingFinishGuidanceId: string;
 	specialtyLabels: Record<DentalSpecialty, string>;
 	selectedSpecialty: DentalSpecialty;
 	setSelectedSpecialty: (spec: DentalSpecialty) => void;
 	clinicModeLabels: Record<ClinicMode, { title: string; detail: string }>;
 	changeClinicMode: (mode: ClinicMode) => void;
-	clinicProfileDraft: any;
-	updateClinicProfileDraft: (patch: any) => void;
+	clinicProfileDraft: ClinicProfileDraft;
+	updateClinicProfileDraft: (patch: Partial<ClinicProfileDraft> | string, value?: unknown) => void;
 	uiLanguage: string;
 	setUiLanguage: (lang: string) => void;
 	normalizeUiLanguageInput: (input: string) => string;
-	uiLanguageOptions: any[];
-	selectedUiLanguageOption: any;
-	weekdayOptions: any[];
+	uiLanguageOptions: readonly UiLanguageOption[];
+	selectedUiLanguageOption: UiLanguageOption | null;
+	weekdayOptions: readonly WeekdayOption[];
 	toggleClinicWorkingDay: (day: number) => void;
-	legalMissingFields: string[];
+	legalMissingFields: readonly string[];
 	newStaffName: string;
 	setNewStaffName: Dispatch<SetStateAction<string>>;
 	newStaffRole: StaffRole;

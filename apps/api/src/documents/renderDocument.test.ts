@@ -155,6 +155,7 @@ describe("денежные гейты выдачи: квитанция и воз
 		notes: null,
 		administrativeProfile: null,
 		balanceRub: 0,
+		balanceKopecks: 0,
 		createdAt: "2026-01-10T08:00:00.000Z",
 		updatedAt: "2026-03-14T08:00:00.000Z",
 	} as Patient;
@@ -493,6 +494,7 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 		email: null,
 		administrativeProfile: null,
 		balanceRub: 0,
+		balanceKopecks: 0,
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	};

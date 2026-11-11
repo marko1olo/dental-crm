@@ -7,7 +7,6 @@ import { registerPortalKioskRoutes } from "./portalKioskRoutes.js";
 import { registerPortalPatientProfileRoutes } from "./portalPatientProfileRoutes.js";
 import { registerPortalPaymentsRoutes } from "./portalPaymentsRoutes.js";
 import { registerPortalTaxCertRoutes } from "./portalTaxCertRoutes.js";
-import { registerPortalMockStorageRoutes } from "./portalMockStorageRoutes.js";
 
 export type { SelfCheckinBody } from "./types.js";
 export * from "./types.js";
@@ -21,7 +20,6 @@ export * from "./portalDocumentsRoutes.js";
 export * from "./portalPaymentsRoutes.js";
 export * from "./portalTaxCertRoutes.js";
 export * from "./portalAppointmentsRoutes.js";
-export * from "./portalMockStorageRoutes.js";
 
 /**
  * Canonical Fastify plugin for the Patient Personal Portal API (/api/portal/*)
@@ -37,7 +35,6 @@ export const portalRoutes: FastifyPluginAsync = async (
 	await registerPortalTaxCertRoutes(server);
 	await registerPortalPaymentsRoutes(server);
 	await registerPortalAppointmentsRoutes(server);
-	await registerPortalMockStorageRoutes(server);
 };
 
 export default portalRoutes;

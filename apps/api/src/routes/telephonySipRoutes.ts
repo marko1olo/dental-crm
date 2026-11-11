@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import type { AsteriskAmiEventPayload } from "../services/telephony/telephonyGatewayService.js";
 import { handleAsteriskAmiEvent } from "./telephony/sip/handleAsteriskAmiEvent.js";
 import { handleSipCallTransfer } from "./telephony/sip/handleSipCallTransfer.js";
 import { handleSipCredentials } from "./telephony/sip/handleSipCredentials.js";
@@ -30,8 +31,14 @@ export const telephonySipRoutes: FastifyPluginAsync = async (server) => {
 	);
 
 	// Asterisk AMI / ARI
-	server.post<{ Params: { organizationId: string } }>("/:organizationId/asterisk/ami-event", handleAsteriskAmiEvent);
-	server.post<{ Params: { organizationId?: string } }>("/asterisk/ami-event", handleAsteriskAmiEvent);
+	server.post<{ Params: { organizationId?: string }; Body: AsteriskAmiEventPayload }>(
+		"/:organizationId/asterisk/ami-event",
+		handleAsteriskAmiEvent,
+	);
+	server.post<{ Params: { organizationId?: string }; Body: AsteriskAmiEventPayload }>(
+		"/asterisk/ami-event",
+		handleAsteriskAmiEvent,
+	);
 
 	// SIP Transfer
 	server.post<{ Params: { organizationId: string }; Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" } }>(

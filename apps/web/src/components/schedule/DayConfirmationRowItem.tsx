@@ -58,7 +58,7 @@ export const DayConfirmationRowItem: React.FC<DayConfirmationRowItemProps> = ({
               type="button"
               aria-busy={statusUpdatingId === row.appointmentId || undefined}
               className="secondary-button px-2 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line)]/50 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 pointer-coarse:min-h-[44px]"
-              title="1-клик: подтвердить явку пациента на приём"
+              title="Подтвердить явку пациента на приём"
               aria-label={`Подтвердить приём ${row.patientName}`}
               data-testid={`btn-confirm-appt-${row.appointmentId}`}
               onClick={() => {

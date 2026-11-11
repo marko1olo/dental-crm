@@ -81,25 +81,35 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 		);
 	});
 
-	it("3. EmkDiaryProtocolSection hides express protocols, ICD-10 and recommendation chips inside collapsed <details>", () => {
+	it("3. EmkDiaryProtocolSection is purged of accordion bloat and shortcut button dumps in favor of clean clinical diary and protocol catalog (Mandate 8bi)", () => {
 		const source = fs.readFileSync(diaryPath, "utf8");
 
-		// Express protocols must be inside <details>
+		// Accordion bloat and express chip dumps must NOT exist
 		assert.ok(
-			source.includes("Экспресс-протоколы у кресла"),
-			"Express protocols must be inside <details> spoiler",
+			!source.includes("<details"),
+			"Accordion spoilers must not exist in EmkDiaryProtocolSection (Mandate 8bi)",
+		);
+		assert.ok(
+			!source.includes("Экспресс-протоколы у кресла"),
+			"Legacy express accordion must be purged",
+		);
+		assert.ok(
+			!source.includes("Шаблоны диагнозов МКБ-10"),
+			"Legacy ICD-10 accordion must be purged",
+		);
+		assert.ok(
+			!source.includes("Шаблоны рекомендаций"),
+			"Legacy recommendations accordion must be purged",
 		);
 
-		// ICD-10 chips must be inside <details>
+		// Clinical textareas and protocol catalog button must be present
 		assert.ok(
-			source.includes("Шаблоны диагнозов МКБ-10"),
-			"ICD-10 chips must be inside <details> spoiler",
+			source.includes("DebouncedEmkTextarea"),
+			"Clinical textareas must be available for instant typing",
 		);
-
-		// Recommendation chips must be inside <details>
 		assert.ok(
-			source.includes("Шаблоны рекомендаций"),
-			"Recommendation chips must be inside <details> spoiler",
+			source.includes("btn-open-protocols-catalog-diary"),
+			"Protocols catalog action button must be present in diary section",
 		);
 	});
 

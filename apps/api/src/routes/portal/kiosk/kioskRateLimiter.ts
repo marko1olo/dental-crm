@@ -57,5 +57,4 @@ export function maskPatientName(fullName: string | null | undefined): string {
 	return `${p1} ${p0[0]?.toUpperCase()}.`;
 }
 
-/** @deprecated Mandate 8ap: Use maskPatientName */
-export const maskPatientName152Fz = maskPatientName;
+

@@ -145,7 +145,7 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
 				</div>
 
 				<div className="text-xs text-[var(--muted)] flex items-center gap-1 font-medium">
-					<Sparkles className="w-3.5 h-3.5 text-amber-500" />
+					<Sparkles className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
 					<span>Сдвигайте ползунок для сравнения</span>
 				</div>
 			</div>
@@ -175,7 +175,7 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
 									{cat.count} фото
 								</span>
 							</div>
-							<p className="text-[11px] text-[var(--muted)] m-0 line-clamp-1">{cat.description}</p>
+							<p className="text-[11px] text-[var(--muted)] m-0 leading-snug">{cat.description}</p>
 						</button>
 					);
 				})}

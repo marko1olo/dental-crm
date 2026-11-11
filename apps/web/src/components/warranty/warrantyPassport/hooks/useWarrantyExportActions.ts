@@ -6,10 +6,10 @@ import type { AttachedWarrantyPayload, WarrantyPatientMeta } from "../types";
 export interface UseWarrantyExportActionsParams {
 	certificateData: WarrantyCertificateData;
 	certificateHtml: string;
-	patient?: WarrantyPatientMeta;
-	doctorName?: string;
-	onAttachToForm043u?: (payload: AttachedWarrantyPayload) => void;
-	onCertificateIssued?: (data: WarrantyCertificateData) => void;
+	patient?: WarrantyPatientMeta | null | undefined;
+	doctorName?: string | null | undefined;
+	onAttachToForm043u?: ((payload: AttachedWarrantyPayload) => void) | undefined;
+	onCertificateIssued?: ((data: WarrantyCertificateData) => void) | undefined;
 }
 
 export function useWarrantyExportActions({

@@ -112,6 +112,7 @@ export interface UseVisitSpeechRecordingReturn {
 	speechLastSoundAtRef: React.MutableRefObject<number>;
 	speechPendingChunkDurationMsRef: React.MutableRefObject<number | null>;
 	startVisitDictation: () => void;
+	stopVisitDictation?: (() => void) | undefined;
 	preferredSpeechMimeType: () => string;
 	uploadSpeechBlob: (blob: Blob) => Promise<void>;
 	stopSpeechMonitor: () => void;
@@ -145,6 +146,7 @@ export interface UseVisitSpeechReturn extends UseVisitSpeechRecordingReturn {
 	finalizeSpeechRecording: (recordingId: string) => Promise<void>;
 	flushPendingSpeechChunks: (options?: { silent?: boolean }) => Promise<void>;
 	startVisitDictation: () => void;
+	stopVisitDictation?: (() => void) | undefined;
 	preferredSpeechMimeType: () => string;
 	uploadSpeechBlob: (blob: Blob) => Promise<void>;
 	stopSpeechMonitor: () => void;

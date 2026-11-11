@@ -14,26 +14,42 @@ import {
 import type { WarrantyPatientMeta } from "../types";
 
 export interface UseWarrantyCertificateBuildParams {
-	patient?: WarrantyPatientMeta;
-	doctorName?: string;
-	doctorSpecialty?: string;
-	clinicName?: string;
-	clinicLegalName?: string;
-	clinicLicenseNumber?: string;
-	clinicAddress?: string;
-	clinicPhone?: string;
-	clinicWebsite?: string;
+	patient?: WarrantyPatientMeta | null | undefined;
+	doctorName?: string | null | undefined;
+	doctorSpecialty?: string | null | undefined;
+	clinicName?: string | null | undefined;
+	clinicLegalName?: string | null | undefined;
+	clinicLicenseNumber?: string | null | undefined;
+	clinicAddress?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
+	clinicWebsite?: string | null | undefined;
 	items: WarrantyItem[];
 	attachedStatus: boolean;
 	remediations: WarrantyRemediationOrder[];
 }
 
 export function useWarrantyCertificateBuild({
-	patient, doctorName = "Лечащий врач", doctorSpecialty = "Врач-стоматолог",
-	clinicName = "ООО «Стоматологическая клиника»", clinicLegalName = "ООО «Стоматологическая клиника»",
-	clinicLicenseNumber = "Лицензия на медицинскую деятельность", clinicAddress = "Адрес клиники",
-	clinicPhone = "Телефон клиники", clinicWebsite = "", items, attachedStatus, remediations,
+	patient,
+	doctorName: rawDoctorName,
+	doctorSpecialty: rawDoctorSpecialty,
+	clinicName: rawClinicName,
+	clinicLegalName: rawClinicLegalName,
+	clinicLicenseNumber: rawClinicLicenseNumber,
+	clinicAddress: rawClinicAddress,
+	clinicPhone: rawClinicPhone,
+	clinicWebsite: rawClinicWebsite,
+	items,
+	attachedStatus,
+	remediations,
 }: UseWarrantyCertificateBuildParams) {
+	const doctorName = rawDoctorName || "Лечащий врач";
+	const doctorSpecialty = rawDoctorSpecialty || "Врач-стоматолог";
+	const clinicName = rawClinicName || "ООО «Стоматологическая клиника»";
+	const clinicLegalName = rawClinicLegalName || "ООО «Стоматологическая клиника»";
+	const clinicLicenseNumber = rawClinicLicenseNumber || "Лицензия на медицинскую деятельность";
+	const clinicAddress = rawClinicAddress || "Адрес клиники";
+	const clinicPhone = rawClinicPhone || "Телефон клиники";
+	const clinicWebsite = rawClinicWebsite || "";
 	const [certificateId, setCertificateId] = useState(() => generateCertificateId("WAR"));
 	const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10));
 	const [riskFactors, setRiskFactors] = useState<WarrantyRiskFactors>({

@@ -19,7 +19,6 @@ import {
 	CHAIR_COLOR_PRESETS,
 	CHAIR_NAME_SUGGESTIONS,
 } from "../QuickAddChairModal";
-import { ChairScheduleView } from "../ChairScheduleView";
 import { DEFAULT_SOLO_CHAIR } from "../ScheduleGrid";
 import {
 	setupMockDom,
@@ -138,83 +137,6 @@ describe("Schedule Parity: QuickAddChairModal & Solo Doctor Sovereignty", () => 
 			assert.strictEqual(DEFAULT_SOLO_CHAIR.id, "default-chair");
 			assert.ok(DEFAULT_SOLO_CHAIR.name.includes("Кресло 1"));
 			assert.strictEqual(DEFAULT_SOLO_CHAIR.isActive, true);
-		});
-
-		it("ChairScheduleView falls back to DEFAULT_SOLO_CHAIR when chairs list is empty", async () => {
-			const emptyDashboard = {
-				clinicSettings: {
-					chairs: [],
-					staff: [],
-					profile: { organizationId: "org-1", timezone: "Europe/Moscow" },
-				},
-				appointments: [],
-				patients: [],
-			} as unknown as Dashboard;
-
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={emptyDashboard}
-						dateKey="2026-09-09"
-						appointments={[]}
-						onSlotClick={() => {}}
-						onAppointmentClick={() => {}}
-					/>,
-				);
-			});
-
-			const soloBadge = findNodeByTestId(container, "chair-view-badge-default-chair");
-			assert.ok(
-				soloBadge,
-				"Solo default chair badge must render when clinicSettings.chairs is empty (Mandate 8n)",
-			);
-		});
-
-		it("ChairScheduleView toolbar has 1 unified compact row (32-36px, Hick's Law)", async () => {
-			const db = getMockDashboard();
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={db}
-						dateKey="2026-09-09"
-						appointments={[]}
-						onSlotClick={() => {}}
-						onAppointmentClick={() => {}}
-						onOpenRosterModal={() => {}}
-					/>,
-				);
-			});
-
-			const toolbar = findNodeByTestId(container, "chair-schedule-palette-strip");
-			assert.ok(toolbar, "chair-schedule-palette-strip toolbar must exist");
-			assert.ok(
-				toolbar.className?.includes("h-9") || toolbar.className?.includes("min-h-[36px]"),
-				"Toolbar must be strictly 1 compact row 32-36px",
-			);
-		});
-	});
-
-	describe("6. Mandate 8d & 8e Compliance Audit", () => {
-		it("all buttons in ChairScheduleView have zero cartoon emojis", async () => {
-			const db = getMockDashboard();
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={db}
-						dateKey="2026-09-09"
-						appointments={[]}
-						onSlotClick={() => {}}
-						onAppointmentClick={() => {}}
-					/>,
-				);
-			});
-
-			const text = collectAllText(container);
-			assert.strictEqual(
-				hasCartoonEmojis(text),
-				false,
-				"ChairScheduleView must contain 0 cartoon emojis (Mandate 8d)",
-			);
 		});
 	});
 });

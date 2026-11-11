@@ -85,7 +85,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 					<div className="font-semibold text-sm text-[var(--ink)] flex items-center justify-between gap-2">
 						<span>Касса, оплата и чеки</span>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-							Расчёт в 3 клика (F9)
+							Быстрый расчёт (F9)
 						</span>
 					</div>
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
@@ -103,7 +103,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 						<span>Интерактивный сплит-чекаут (Касса и оплата)</span>
 					</div>
 					<span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-						Комбинированная оплата в 1 клик
+						Комбинированная оплата
 					</span>
 				</div>
 
@@ -256,7 +256,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 			<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-2.5">
 				<div className="font-semibold text-xs text-[var(--ink)] flex items-center justify-between">
 					<span>Пошаговая инструкция по приёму оплаты</span>
-					<span className="text-[10px] text-[var(--muted)]">Сплит в 3 клика</span>
+					<span className="text-[10px] text-[var(--muted)]">Комбинированная оплата</span>
 				</div>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
 					<div className="p-2.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)]/50 space-y-1.5">
@@ -338,7 +338,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 						<div>
 							<span className="font-semibold text-[var(--ink)]">Семейный депозит / Аванс</span>
 							<p className="text-[var(--muted)] text-[10px] mt-0.5">
-								Списание средств с общего семейного кошелька родителей или родственников в 1 клик.
+								Списание средств с общего семейного кошелька родителей или родственников.
 							</p>
 						</div>
 					</div>

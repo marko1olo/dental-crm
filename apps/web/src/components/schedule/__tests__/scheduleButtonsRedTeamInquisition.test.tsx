@@ -1,78 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ChairScheduleQuickActions } from "../chairScheduleToolbar/ChairScheduleQuickActions";
 import { QuickBookingDrawerFooter } from "../QuickBookingDrawerFooter";
 import { AppointmentCardContextMenu } from "../AppointmentCardContextMenu";
 import { GridAppointmentQuickActions } from "../GridAppointmentQuickActions";
 
 describe("Schedule, Chair Grid & Quick Booking Button Primitives Inquisition (Red Team)", () => {
-  const defaultToolbarProps: any = {
-    chairs: [
-      { id: "chair-1", name: "Кресло 1", active: true, color: "#0d9488" },
-      { id: "chair-2", name: "Кресло 2", active: true, color: "#3b82f6" },
-    ],
-    isSoloDoctor: false,
-    rawBranches: [],
-    hasMultipleBranches: false,
-    selectedBranchId: null,
-    onSelectBranch: vi.fn(),
-    effectiveSelectedChairId: null,
-    handleToggleChairFilter: vi.fn(),
-    chairDoctorAssignments: {},
-    dashboard: { clinicSettings: { staff: [] } },
-    activeShiftChairId: null,
-    setActiveShiftChairId: vi.fn(),
-    handleEditChair: vi.fn(),
-    popoverRef: { current: null },
-    doctors: [{ id: "doc-1", fullName: "Иванов И.И." }],
-    popoverSelectedDocId: {},
-    setPopoverSelectedDocId: vi.fn(),
-    dateKey: "2026-10-16",
-    onDateChange: vi.fn(),
-    handleAssignShift: vi.fn(),
-    handleUnassignShift: vi.fn(),
-    handleDuplicateChair: vi.fn(),
-    isSubstituteOpen: {},
-    setIsSubstituteOpen: vi.fn(),
-    handleQuickSubstituteDoctor: vi.fn(),
-    handleOpenAddChair: vi.fn(),
-    isShiftsMenuOpen: true, // open to inspect menuitems
-    setIsShiftsMenuOpen: vi.fn(),
-    shiftsMenuRef: { current: null },
-    handleCopyTodayShiftsToCurrentWeek: vi.fn(),
-    handleCopyTodayShiftsToMonth: vi.fn(),
-    handleRotateChairShifts: vi.fn(),
-    handleApplyDoctorPreferredChairs: vi.fn(),
-    handleCopyWeekShiftsToNextWeek: vi.fn(),
-    setIsDateRangeModalOpen: vi.fn(),
-    handleClearAllDayShifts: vi.fn(),
-    onOpenRosterModal: vi.fn(),
-    setIsAddDoctorOpen: vi.fn(),
-    onOpenDoctorFreeSlots: vi.fn(),
-    onOpenPreventiveInspection: vi.fn(),
-    preventiveInspectionCount: 2,
-  };
-
-  it("1. ChairScheduleQuickActions enforces .secondary-button, .primary-button and clinical tokens", () => {
-    const html = renderToStaticMarkup(<ChairScheduleQuickActions {...defaultToolbarProps} />);
-
-    // Shifts menu trigger
-    expect(html).toContain('data-testid="btn-chair-shifts-menu-trigger"');
-    expect(html).toContain('class="secondary-button"');
-    expect(html).toContain("var(--teal)");
-
-    // Primary CTA "+ Кресло"
-    expect(html).toContain('data-testid="btn-add-chair-header"');
-    expect(html).toContain('class="primary-button"');
-
-    // Menuitems in dropdown have consistent 32px desktop / 44px touch height
-    expect(html).toContain('data-testid="btn-copy-chair-week-current"');
-    expect(html).toContain("h-8 min-h-[32px]");
-    expect(html).toContain("touch:min-h-[44px]");
-    expect(html).toContain("var(--teal)");
-  });
-
   it("2. QuickBookingDrawerFooter enforces Floating Bottom Bar with safe areas and canonical buttons", () => {
     const html = renderToStaticMarkup(
       <QuickBookingDrawerFooter

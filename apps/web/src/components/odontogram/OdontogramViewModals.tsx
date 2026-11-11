@@ -37,7 +37,7 @@ const JawOcclusionModal = React.lazy(() =>
 	})),
 );
 const TreatmentPlanWizard = React.lazy(() =>
-	import("./TreatmentPlanWizard").then((m) => ({
+	import("../treatment-plans/TreatmentPlanWizard").then((m) => ({
 		default: m.TreatmentPlanWizard,
 	})),
 );

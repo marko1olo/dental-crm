@@ -19,13 +19,13 @@ export const KKT_CASHIER_COMPONENT: CrmComponentKnowledge = {
 	tier: 1,
 	hotkeys: {
 		"F9": "Быстрый чекаут и фискализация чека 54-ФЗ",
-		"Alt+S": "Комбинированная оплата (сплит в 3 клика: нал + карта + семья)",
+		"Alt+S": "Комбинированная оплата (сплит: нал + карта + семья)",
 		"Esc": "Закрыть окно оплаты / отмена",
 	},
 	quickTips: [
 		"Мандат 8e: ИНН с пациентов-физлиц НЕ требуется по закону 54-ФЗ (ИНН нужен только юрлицам)",
 		"При 100% скидке чек в ККТ не направляется (запрет ФФД 1.2), оформляется внутренний гарантийный акт",
-		"Оплата картой POS или наличными без сдачи оформляется в 1 клик",
+		"Оплата картой POS или наличными без сдачи оформляется моментально",
 	],
 	primaryActions: [
 		{
@@ -33,7 +33,7 @@ export const KKT_CASHIER_COMPONENT: CrmComponentKnowledge = {
 			label: "Быстрый чекаут (F9)",
 			selector: '[data-tour="cashier-pay"], [data-tour="fast-cashier"], #cashier-tender-action-btn',
 			hotkey: "F9",
-			effect: "Открывает окно быстрой оплаты визита или чекаута за 1 клик.",
+			effect: "Открывает окно быстрой оплаты визита или чекаута.",
 			requiresConfirmation: false,
 			role: ["admin", "doctor"],
 		},
@@ -66,7 +66,7 @@ export const KKT_CASHIER_COMPONENT: CrmComponentKnowledge = {
 			label: "Сплит-оплата (комбинированная)",
 			selector: '[data-testid="cashier-split-payment-panel"], [data-testid="btn-split-payment"]',
 			hotkey: "Alt+S",
-			effect: "Разделение счёта между картой, наличными и семейным депозитом в 3 клика.",
+			effect: "Разделение счёта между картой, наличными и семейным депозитом.",
 			requiresConfirmation: false,
 			role: ["admin", "doctor"],
 		},
@@ -103,7 +103,7 @@ export const KKT_CASHIER_COMPONENT: CrmComponentKnowledge = {
 		{
 			element: "Кнопки быстрой оплаты",
 			selector: '[data-tour="cashier-pay"], [data-testid="btn-pay-pos-card"]',
-			description: "1-кликовая оплата картой или наличными без блокирующих модалок.",
+			description: "Быстрая оплата картой или наличными без блокирующих модалок.",
 			badgeText: "F9",
 			highlightType: "pulse",
 		},
@@ -171,7 +171,7 @@ export const KKT_CASHIER_COMPONENT: CrmComponentKnowledge = {
 			recoverySelector: '[data-tour="cashier-pay"]',
 		},
 	],
-	scaleAdaptability: "Соло-врач пробивает чек сам за 2 клика. Ресепшен клиники обслуживает сплит-платежи семьи.",
+	scaleAdaptability: "Соло-врач пробивает чек сам в считанные секунды. Ресепшен клиники обслуживает сплит-платежи семьи.",
 	complianceNotes: "54-ФЗ, ФФД 1.2, теги НДС (освобождено по ст. 149 НК РФ), QR-код чека ФНС.",
 	keywords: [
 		"касса",
@@ -213,7 +213,7 @@ export const PATIENT_CARD_RECORD_COMPONENT: CrmComponentKnowledge = {
 	tier: 1,
 	hotkeys: {
 		"Ctrl+K / Cmd+K / F1": "Глобальный поиск пациента по ФИО, телефону или номеру карты (50 мс)",
-		"Shift+N": "Соматически здоров / норма в 1 клик",
+		"Shift+N": "Соматически здоров / норма",
 		"Esc": "Закрыть строку поиска или карточку",
 	},
 	quickTips: [
@@ -244,7 +244,7 @@ export const PATIENT_CARD_RECORD_COMPONENT: CrmComponentKnowledge = {
 			label: "Соматически здоров / Норма",
 			selector: '[data-testid="btn-somatic-healthy-default"]',
 			hotkey: "Shift+N",
-			effect: "Устанавливает отсутствие общих соматических отягощений в 1 клик.",
+			effect: "Устанавливает отсутствие общих соматических отягощений.",
 			requiresConfirmation: false,
 			role: ["doctor"],
 		},
@@ -471,7 +471,7 @@ export const CHAIRSIDE_COPILOT_COMPONENT: CrmComponentKnowledge = {
 			recoverySelector: '[data-testid="copilot-composer-input"]',
 		},
 	],
-	scaleAdaptability: "Работает в 1 клик для соло-врача и в мульти-кабинетной среде клиники.",
+	scaleAdaptability: "Работает автономно для соло-врача и в мульти-кабинетной среде клиники.",
 	complianceNotes: "Врачебная тайна, безопасность данных, zero-sycophancy протокол T.A.R.S.",
 	keywords: ["ии", "ассистент", "copilot", "дента", "голос", "диктовка", "подсказки", "помощь", "Ctrl+Space"],
 };
@@ -494,7 +494,7 @@ export const DOCUMENT_GENERATOR_COMPONENT: CrmComponentKnowledge = {
 	},
 	quickTips: [
 		"Мандат 8e: администратор имеет право распечатать пустой договор со строками '_______' до осмотра без 403-ошибок",
-		"Справка для налогового вычета 13% НДФЛ (КНД 1151156) формируется в 1 клик по всем чекам за год",
+		"Справка для налогового вычета 13% НДФЛ (КНД 1151156) формируется автоматически по всем чекам за год",
 		"Печать в magazine-grade типографике со всеми реквизитами клиники",
 	],
 	primaryActions: [
@@ -526,7 +526,7 @@ export const DOCUMENT_GENERATOR_COMPONENT: CrmComponentKnowledge = {
 		{
 			element: "Кнопка справки в налоговую",
 			selector: '[data-testid="btn-generate-tax-knd1151156"]',
-			description: "1-кликовое оформление налогового вычета для пациента за любой год.",
+			description: "Быстрое оформление налогового вычета для пациента за любой год.",
 			badgeText: "ФНС РФ",
 			highlightType: "pulse",
 		},

@@ -6,13 +6,13 @@ import type { WarrantyPatientMeta } from "../types";
 
 export interface UseWarrantyRemediationParams {
 	certificateId: string;
-	patient?: WarrantyPatientMeta;
-	doctorId?: string;
-	doctorName?: string;
-	doctorSpecialty?: string;
-	clinicName?: string;
+	patient?: WarrantyPatientMeta | null | undefined;
+	doctorId?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	doctorSpecialty?: string | null | undefined;
+	clinicName?: string | null | undefined;
 	items: WarrantyItem[];
-	onRemediationCreated?: (order: WarrantyRemediationOrder) => void;
+	onRemediationCreated?: ((order: WarrantyRemediationOrder) => void) | undefined;
 }
 
 export function useWarrantyRemediationState({

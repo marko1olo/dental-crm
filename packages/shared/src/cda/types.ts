@@ -455,7 +455,7 @@ export interface EgiszExportPackageFiles {
 }
 
 export interface EgiszRemdRegistrationReceipt {
-	receiptId: string;
+	receiptId: string | null;
 	remdDocumentId: string;
 	remdTransactionId: string;
 	docTypeNsiCode: string;
@@ -475,7 +475,7 @@ export interface EgiszRemdRegistrationReceipt {
 		operatorName: string;
 		serviceEndpoint: string;
 		tspTimestamp: string;
-		verificationStatus: "VERIFIED_VALID";
+		verificationStatus: "VERIFIED_VALID" | "pending_gateway";
 	};
 	receiptVersion: "1.0";
 	issuedAt: string;

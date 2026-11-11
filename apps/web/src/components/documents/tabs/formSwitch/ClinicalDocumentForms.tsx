@@ -8,7 +8,7 @@ import { DailyDentistWorkSheet037uForm } from "../../forms/DailyDentistWorkSheet
 import { DentalMedicalCard043uForm } from "../../forms/DentalMedicalCard043uForm";
 import { LabWorkOrderForm } from "../../forms/LabWorkOrderForm";
 import { MedicalCardExtract003vuForm } from "../../forms/MedicalCardExtract003vuForm";
-import { OrthodonticCard043_1uForm } from "../../forms/OrthodonticCard043_1uForm";
+import { OrthodonticPatientCardForm, OrthodonticCard043_1uForm } from "../../forms/OrthodonticPatientCardForm";
 import { PostVisitRecommendationsForm } from "../../forms/PostVisitRecommendationsForm";
 import { PrescriptionOrderForm } from "../../forms/PrescriptionOrderForm";
 import { RadiationDoseSheetForm } from "../../forms/RadiationDoseSheetForm";
@@ -36,7 +36,16 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 				{((selectedDocumentKind as any) === "medical_record_extract" || (selectedDocumentKind as any) === "medical_card_extract_003vu") && (
 					<MedicalCardExtract003vuForm initialPayload={props.activeDoctor?.fullName ? { attendingDoctorFullName: props.activeDoctor.fullName, patientFullName: (props.documentPatient ?? props.activePatient)?.fullName ?? "" } : undefined} />
 				)}
-				{selectedDocumentKind === "orthodontic_medical_card_043_1u" && <OrthodonticCard043_1uForm />}
+				{selectedDocumentKind === "orthodontic_medical_card_043_1u" && (
+					<OrthodonticPatientCardForm
+						initialPayload={props.initialPayload ?? (props.activeDoctor?.fullName || props.activePatient?.fullName ? {
+							orthodontistFullName: props.activeDoctor?.fullName ?? "",
+							patientFullName: (props.documentPatient ?? props.activePatient)?.fullName ?? "",
+							medicalCardNumber: (props.documentPatient ?? props.activePatient)?.cardNumber ?? "",
+						} : undefined)}
+						onChange={props.onOrthodonticPayloadChange ?? props.onChange}
+					/>
+				)}
 				{selectedDocumentKind === "radiation_dose_sheet" && <RadiationDoseSheetForm />}
 				{((selectedDocumentKind as any) === "prescription_medication_order" || (selectedDocumentKind as any) === "prescription_order") && <PrescriptionOrderForm />}
 				{selectedDocumentKind === "lab_work_order" && <LabWorkOrderForm inferredTreatmentArea={props.inferredTreatmentArea} />}

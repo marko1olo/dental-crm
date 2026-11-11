@@ -11,5 +11,3 @@ export {
 	type SurgeryHubTab,
 } from "./ChairsideSurgeryHubModal";
 export * from "./DirectSurgeryLauncher";
-export * from "./surgeryProtocols";
-export * from "./surgeryNormsCatalog";

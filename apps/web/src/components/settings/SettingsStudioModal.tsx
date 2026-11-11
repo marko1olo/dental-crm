@@ -383,7 +383,7 @@ export const SettingsStudioModal: React.FC<SettingsStudioModalProps> = ({
 										<h4 className="font-bold text-sm m-0">Мессенджеры (WhatsApp & Telegram)</h4>
 										<span className="settings-studio-status-pill connected">✓ Активен</span>
 									</div>
-									<p className="text-xs text-[var(--muted)] m-0">Автоматические напоминания о приёме, подтверждение визита в 1 клик и сервисные опросы.</p>
+									<p className="text-xs text-[var(--muted)] m-0">Автоматические напоминания о приёме, подтверждение визита и сервисные опросы.</p>
 								</div>
 								<div className="settings-studio-integration-card">
 									<div className="settings-studio-integration-header">

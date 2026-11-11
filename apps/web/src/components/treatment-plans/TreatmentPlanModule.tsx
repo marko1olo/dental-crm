@@ -57,6 +57,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = (props) =
 
 			<TreatmentPlanScenarioSelector
 				activeViewTab={logic.activeViewTab} planTiers={logic.planTiers} selectedTierId={logic.selectedTierId}
+				planId={initialPlanId}
 				onSelectTier={(tier) => { logic.setSelectedTierId(tier.tierId); if (tier.stages?.length) logic.setCustomStages([...tier.stages]); }}
 				onApproveAndSignTier={(tier) => { logic.setSelectedTierId(tier.tierId); if (tier.stages?.length) logic.setCustomStages([...tier.stages]); logic.setIsSignModalOpen(true); }}
 				onOpenComparatorStudio={() => logic.setIsComparatorModalOpen(true)} onOpenStagePaymentStudio={() => logic.setIsStagePaymentModalOpen(true)} onOpenPriceValidatorStudio={() => logic.setIsPriceValidatorModalOpen(true)}

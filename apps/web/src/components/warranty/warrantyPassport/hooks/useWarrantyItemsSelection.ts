@@ -7,8 +7,8 @@ import type { CompletedTreatmentStage } from "../types";
 export interface UseWarrantyItemsSelectionParams {
 	isOpen: boolean;
 	initialCategory: WarrantyCategory;
-	initialTeeth?: string[];
-	completedStages?: CompletedTreatmentStage[];
+	initialTeeth?: string[] | undefined;
+	completedStages?: CompletedTreatmentStage[] | undefined;
 }
 
 export function useWarrantyItemsSelection({ isOpen, initialCategory, initialTeeth = [], completedStages = [] }: UseWarrantyItemsSelectionParams) {

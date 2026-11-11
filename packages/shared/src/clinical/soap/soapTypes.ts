@@ -101,7 +101,6 @@ export interface ClinicalSoapMasterProtocol {
 	readonly serviceLifeMonths?: number | undefined;
 	readonly informedConsent?: string | undefined;
 	readonly postOpMemo?: string | undefined;
-	readonly stomxId?: number | undefined;
 	readonly tags?: readonly string[] | undefined;
 	readonly is1ClickAutopilot?: boolean | undefined;
 }

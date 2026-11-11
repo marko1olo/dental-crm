@@ -38,7 +38,7 @@ export function usePatientCabinetModal({
 
 	const hydr = useCabinetDataHydration(initialData, token);
 	const sbp = useCabinetSbpState(hydr.setData, onInvoicePaid);
-	const signing = useCabinetConsentSigning(hydr.data, hydr.setData, initialSigningConsent, initialConsentSignMode, onConsentSigned);
+	const signing = useCabinetConsentSigning(hydr.data, hydr.setData, initialSigningConsent, initialConsentSignMode, onConsentSigned, token);
 	const booking = useCabinetAppointmentsBooking(token, hydr.availableDoctors, hydr.setData, hydr.handleShowCabinetToast, onAppointmentBooked);
 	const views = useCabinetCalculatedViews(hydr.data, selectedTaxYear);
 

@@ -222,33 +222,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 					</div>
 				</header>
 
-				{/* Reception QR Banner & Quick Action (Round 85 & 375px PWA) */}
-				{summary.nextAppointment && (
-					<div
-						className="pc-reception-qr-banner-strip"
-						style={{ display: "none" }}
-						aria-hidden="true"
-						data-testid="reception-qr-banner"
-					>
-						<span className="pc-next-visit-time">{summary.nextAppointment.timeRu}</span>
-						<span className="pc-next-visit-room">{summary.nextAppointment.roomNumber}</span>
-						<button
-							type="button"
-							data-testid="btn-show-reception-qr"
-							onClick={() => setIsReceptionQrOpen(true)}
-						>
-							Показать администратору
-						</button>
-						<button
-							type="button"
-							data-testid="next-appt-qr-btn"
-							onClick={() => setIsReceptionQrOpen(true)}
-						>
-							QR
-						</button>
-					</div>
-				)}
-
 				{/* Desktop & Tablet Segmented Navigation Bar */}
 				<PatientCabinetNavTabs
 					activeTab={activeTab}

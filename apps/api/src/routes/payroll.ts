@@ -30,8 +30,9 @@ import { getRequestIdentity } from "../security/identity.js";
 import {
 	closeSettlementPeriodInDb,
 	findPayrollStatement,
+	reopenSettlementPeriodInDb,
 	resolveDoctorUserUuid,
-} from "./doctorEarnings/settlementPeriodDbQueries.js";
+} from "./payrollSettlementDbQueries.js";
 
 interface PayrollOrderDto {
 	id: string;
@@ -358,6 +359,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 						id: treatmentItems.id,
 						visitId: treatmentItems.visitId,
 						priceRub: treatmentItems.priceRub,
+						quantity: treatmentItems.quantity,
 						title: treatmentItems.title,
 						category: serviceCatalogItems.category,
 						code: serviceCatalogItems.code,
@@ -372,7 +374,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			const totalGrossByVisit = new Map<string, number>();
 			for (const t of treats) {
 				if (t.visitId) {
-					const gKop = Math.round(Number(t.priceRub || 0) * 100);
+					const qty = Math.max(1, Number(t.quantity || 1));
+					const gKop = Math.round(Number(t.priceRub || 0) * 100 * qty);
 					totalGrossByVisit.set(t.visitId, (totalGrossByVisit.get(t.visitId) || 0) + gKop);
 				}
 			}
@@ -391,6 +394,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 						eq(labOrders.organizationId, orgId),
 						eq(labOrders.doctorId, resolvedDocId),
 						eq(labOrders.isWarranty, false),
+						gte(labOrders.createdAt, fromDate),
+						lte(labOrders.createdAt, toDate),
 					),
 				);
 
@@ -442,7 +447,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			}
 
 			for (const t of treats) {
-				const grossKop = Math.round(Number(t.priceRub || 0) * 100);
+				const qty = Math.max(1, Number(t.quantity || 1));
+				const grossKop = Math.round(Number(t.priceRub || 0) * 100 * qty);
 				const visitId = t.visitId;
 				const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
 				const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
@@ -458,12 +464,12 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					}
 				}
 
-				const isPaid = actuallyPaidGrossKop > 0 && (visitPaidTotal >= visitTotalGross || actuallyPaidGrossKop >= grossKop);
-				const isPartiallyPaid = actuallyPaidGrossKop > 0 && !isPaid;
-				const isDebt = actuallyPaidGrossKop < grossKop;
-				const invoiceStatus: "paid" | "partially_paid" | "unpaid" = isPaid
+				const isPaid = actuallyPaidGrossKop > 0;
+				const isPartiallyPaid = actuallyPaidGrossKop > 0 && actuallyPaidGrossKop < grossKop;
+				const isDebt = actuallyPaidGrossKop <= 0 && grossKop > 0;
+				const invoiceStatus: "paid" | "partially_paid" | "unpaid" = actuallyPaidGrossKop >= grossKop
 					? "paid"
-					: isPartiallyPaid
+					: actuallyPaidGrossKop > 0
 						? "partially_paid"
 						: "unpaid";
 				const receiptNum = visitId ? fiscalReceiptByVisit.get(visitId) : undefined;
@@ -539,8 +545,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			services: completedServices,
 			customBasePercentage: basePercent,
 			payoutModel: q.payoutModel === "chair_rental" ? "chair_rental" : "percentage",
-			chairRentalKop: q.payoutModel === "chair_rental" ? shiftsCount * (Number(q.shiftRateKop) || 400000) : 0,
-			advancePayoutKop: (Number(q.advanceRub) || 0) * 100,
+			chairRentalKop: q.payoutModel === "chair_rental" ? Math.round(shiftsCount * (Number(q.shiftRateKop) || 400000)) : 0,
+			advancePayoutKop: Math.round((Number(q.advanceRub) || 0) * 100),
 			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
 		});
 
@@ -557,11 +563,11 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			dateClosedIso: s.createdAt.toISOString().slice(0, 10),
 			doctorName,
 			rkoReceiptNumber: `РКО-${s.id.slice(0, 8).toUpperCase()}`,
-			grossKopecks: Number(s.grossRevenueKopecks || Math.round(Number(s.grossRevenueRub) * 100)),
-			labCostKopecks: Number(s.labCostKopecks || Math.round(Number(s.labCostRub) * 100)),
-			materialCostKopecks: Number(s.materialsCostKopecks || Math.round(Number(s.materialsCostRub) * 100)),
+			grossKopecks: Math.round(Number(s.grossRevenueKopecks || Math.round(Number(s.grossRevenueRub) * 100))),
+			labCostKopecks: Math.round(Number(s.labCostKopecks || Math.round(Number(s.labCostRub) * 100))),
+			materialCostKopecks: Math.round(Number(s.materialsCostKopecks || Math.round(Number(s.materialsCostRub) * 100))),
 			netBaseKopecks: Math.round(Number(s.netBaseRevenueRub) * 100),
-			payoutKopecks: Number(s.netPayoutKopecks || Math.round(Number(s.netPayoutRub) * 100)),
+			payoutKopecks: Math.round(Number(s.netPayoutKopecks || Math.round(Number(s.netPayoutRub) * 100))),
 			isPaidRko: Boolean(s.paidAt),
 		}));
 
@@ -618,26 +624,39 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			? body.periodStart.slice(0, 7)
 			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
 
-		const grossKop = body.grossRevenueKopecks ?? body.grossRevenueKop;
-		const grossRub = (grossKop !== undefined ? grossKop / 100 : body.grossRevenueRub) ?? 0;
+		const grossKop = (body.grossRevenueKopecks ?? body.grossRevenueKop) !== undefined
+			? Math.max(0, body.grossRevenueKopecks ?? body.grossRevenueKop ?? 0)
+			: Math.round(Math.max(0, body.grossRevenueRub ?? 0) * 100);
 
-		const labKop = body.labCostKopecks ?? body.labCostKop;
-		const labRub = (labKop !== undefined ? labKop / 100 : body.labCostRub) ?? 0;
+		const labKop = (body.labCostKopecks ?? body.labCostKop) !== undefined
+			? Math.max(0, body.labCostKopecks ?? body.labCostKop ?? 0)
+			: Math.round(Math.max(0, body.labCostRub ?? 0) * 100);
 
-		const matKop = body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop;
-		const matRub = (matKop !== undefined ? matKop / 100 : body.materialsCostRub) ?? 0;
+		const matKop = (body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop) !== undefined
+			? Math.max(0, body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop ?? 0)
+			: Math.round(Math.max(0, body.materialsCostRub ?? 0) * 100);
 
-		const netBaseKop = body.netBaseKopecks ?? body.netBaseKop;
-		const netBaseRub = (netBaseKop !== undefined ? netBaseKop / 100 : body.netBaseRevenueRub) ?? Math.max(0, grossRub - labRub - matRub);
+		const netBaseKop = (body.netBaseKopecks ?? body.netBaseKop) !== undefined
+			? Math.max(0, body.netBaseKopecks ?? body.netBaseKop ?? 0)
+			: body.netBaseRevenueRub !== undefined
+				? Math.round(Math.max(0, body.netBaseRevenueRub) * 100)
+				: Math.max(0, grossKop - labKop - matKop);
 
-		const payoutKop = body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop;
-		const payoutRub = (payoutKop !== undefined ? payoutKop / 100 : body.netPayoutRub) ?? 0;
+		const payoutKop = (body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop) !== undefined
+			? Math.max(0, body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop ?? 0)
+			: Math.round(Math.max(0, body.netPayoutRub ?? 0) * 100);
 
-		const totalAccruedKop = body.totalAccruedKopecks ?? body.totalAccruedKop;
-		const accruedRub = (totalAccruedKop !== undefined ? totalAccruedKop / 100 : body.totalAccruedRub) ?? payoutRub;
+		const totalAccruedKop = (body.totalAccruedKopecks ?? body.totalAccruedKop) !== undefined
+			? Math.max(0, body.totalAccruedKopecks ?? body.totalAccruedKop ?? 0)
+			: body.totalAccruedRub !== undefined
+				? Math.round(Math.max(0, body.totalAccruedRub) * 100)
+				: payoutKop;
 
-		const ndflKop = body.ndflKopecks ?? body.ndflKop;
-		const ndflRub = (ndflKop !== undefined ? ndflKop / 100 : body.ndfl13Rub) ?? 0;
+		const ndflKop = (body.ndflKopecks ?? body.ndflKop) !== undefined
+			? Math.max(0, body.ndflKopecks ?? body.ndflKop ?? 0)
+			: Math.round(Math.max(0, body.ndfl13Rub ?? 0) * 100);
+
+		const chairRentalKop = body.chairRentalRub !== undefined ? Math.round(Math.max(0, body.chairRentalRub) * 100) : 0;
 
 		const result = await closeSettlementPeriodInDb({
 			organizationId: orgId,
@@ -646,18 +665,18 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			fromDate,
 			toDate,
 			payoutModel: body.payoutModel || "percentage",
-			grossRevenueRub: Math.max(0, grossRub),
-			labCostRub: Math.max(0, labRub),
-			materialsCostRub: Math.max(0, matRub),
-			netBaseRevenueRub: Math.max(0, netBaseRub),
+			grossRevenueKopecks: grossKop,
+			labCostKopecks: labKop,
+			materialsCostKopecks: matKop,
+			netBaseRevenueKopecks: netBaseKop,
 			categoryPercent: body.categoryPercent ?? 25,
-			calculatedPieceworkRub: Math.max(0, accruedRub),
-			fixedSalaryRub: body.chairRentalRub ?? 0,
-			bonusesTotalRub: 0,
-			penaltiesTotalRub: 0,
-			totalAccruedRub: Math.max(0, accruedRub),
-			ndfl13Rub: Math.max(0, ndflRub),
-			netPayoutRub: Math.max(0, payoutRub),
+			calculatedPieceworkKopecks: totalAccruedKop,
+			fixedSalaryKopecks: chairRentalKop,
+			bonusesTotalKopecks: 0,
+			penaltiesTotalKopecks: 0,
+			totalAccruedKopecks: totalAccruedKop,
+			ndfl13Kopecks: ndflKop,
+			netPayoutKopecks: payoutKop,
 			markPaid: body.markPaid ?? true,
 		});
 
@@ -670,8 +689,30 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		});
 	};
 
+	const reopenSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const identity = getRequestIdentity(request);
+		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		const body = (request.body || {}) as { doctorId?: string; periodStart?: string; periodEnd?: string };
+		if (!body.doctorId || !body.periodStart || !body.periodEnd) {
+			return reply.code(400).send({ error: "ValidationError", message: "Не указаны параметры периода" });
+		}
+		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
+		if (!resolvedDocId) {
+			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
+		}
+		const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
+			? body.periodStart.slice(0, 7)
+			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
+		await reopenSettlementPeriodInDb(orgId, resolvedDocId, periodKey);
+		return reply.send({ ok: true, isFinalized: false });
+	};
+
 	app.post("/api/v1/payroll/close-settlement", closeSettlementHandler);
 	app.post("/api/payroll/close-settlement", closeSettlementHandler);
+	app.post("/api/doctor/close-settlement-period", closeSettlementHandler);
+	app.post("/api/v1/payroll/reopen-settlement", reopenSettlementHandler);
+	app.post("/api/payroll/reopen-settlement", reopenSettlementHandler);
+	app.post("/api/doctor/settlement-period/reopen", reopenSettlementHandler);
 }
 
 export default registerPayrollRoutes;

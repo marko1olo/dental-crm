@@ -15,7 +15,6 @@ export {
 	KIOSK_MAX_ATTEMPTS_PER_IP,
 	resetKioskRateLimitsForTesting,
 	maskPatientName,
-	maskPatientName152Fz,
 	checkKioskRateLimit,
 } from "./kioskRateLimiter.js";
 
@@ -24,6 +23,7 @@ export {
 	lookupPatient,
 	lookupTodayAppointment,
 	createEmergencyAppointment,
+	createFirstTimeAppointment,
 	getDoctorAndCabinetInfo,
 	type SelfCheckinBody,
 	type KioskPatientRecord,

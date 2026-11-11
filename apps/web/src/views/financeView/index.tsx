@@ -6,7 +6,7 @@ import { FinanceTransactionsSection } from "./FinanceTransactionsSection";
 import { FinanceModalsHost } from "./modalModules/FinanceModalsHost";
 import { DoctorPayrollTab } from "./DoctorPayrollTab";
 import { FinanceTabsNavBar } from "./FinanceTabsNavBar";
-import { CashShiftJournalView } from "../../components/cashbox/CashShiftJournalView";
+import { CashShiftJournalView } from "../../components/shift/CashShiftJournalView";
 import type { FinanceViewComponentProps } from "./types";
 import { useFinanceView } from "./useFinanceView";
 

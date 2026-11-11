@@ -27,6 +27,7 @@ export interface TreatmentPlanScenarioSelectorProps {
 	readonly stages: readonly TreatmentPlanStage[];
 	readonly patientName: string;
 	readonly patientId?: string | undefined;
+	readonly planId?: string | null | undefined;
 	readonly planAgeDays: number;
 	readonly planCreatedAtIso?: string | undefined;
 	readonly onExecuteWriteOffStage: (stage: TreatmentPlanStage) => void;
@@ -52,6 +53,7 @@ export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelect
 	stages,
 	patientName,
 	patientId,
+	planId,
 	planAgeDays,
 	planCreatedAtIso,
 	onExecuteWriteOffStage,
@@ -67,6 +69,7 @@ export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelect
 			<TreatmentPlan3TierComparison
 				tiers={planTiers}
 				selectedTierId={selectedTierId}
+				planId={planId}
 				planAgeDays={planAgeDays}
 				planCreatedAtIso={planCreatedAtIso}
 				onSelectTier={onSelectTier}

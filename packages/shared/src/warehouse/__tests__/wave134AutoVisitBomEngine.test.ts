@@ -12,11 +12,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-	CLASS_B_WEIGHT_ESTIMATES,
-	calculateClassBWasteWeightKg,
 	processConsumablesStockDeduction,
 } from "../treatmentConsumablesEngine.js";
 import {
+	CLASS_B_WEIGHT_ESTIMATES,
+	calculateClassBWasteWeightKg,
 	autoVisitBomDeductionInputSchema,
 	autoVisitBomDeductionResultSchema,
 	calculateAutoVisitConsumables,

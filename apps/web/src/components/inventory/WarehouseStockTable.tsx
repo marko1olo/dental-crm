@@ -216,7 +216,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 bg-[var(--paper)] p-2.5 rounded-xl border border-[var(--line)]">
 					<div className="relative flex-1 min-w-[220px]">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" size={16} />
-						<input ref={searchInputRef} type="text" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Поиск по артикулу, названию или категории (Ctrl+K)..." className="w-full !pl-10 pr-3 !h-9 !min-h-[36px] text-sm bg-[var(--paper-soft)] text-[var(--ink)] rounded-lg border border-[var(--line-subtle)] focus:outline-hidden focus:border-[var(--primary,#0d9488)] transition-colors" data-testid="warehouse-search-input" />
+						<input ref={searchInputRef} type="text" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Поиск по артикулу, названию или категории (Ctrl+K)..." className="w-full !pl-10 pr-3 !h-9 !min-h-[36px] text-sm bg-[var(--paper-soft)] text-[var(--ink)] rounded-lg border border-[var(--line-subtle)] focus:outline-none focus:border-[var(--primary,#0d9488)] transition-colors" data-testid="warehouse-search-input" />
 					</div>
 					<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
 						{CATEGORY_TABS.map((tab) => (
@@ -233,7 +233,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 									onClick={onOpenShiftDeduction}
 									className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--primary,#0d9488)] hover:opacity-95 transition-opacity shrink-0 shadow-xs whitespace-nowrap cursor-pointer"
 									data-testid="btn-warehouse-shift-deduction"
-									title="Списать расходники за смену (1 клик)"
+									title="Списать расходники за смену"
 								>
 									<Zap size={14} className="shrink-0" />
 									<span>Списать смену</span>

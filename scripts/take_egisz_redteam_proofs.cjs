@@ -114,19 +114,13 @@ async function main() {
 
     console.log("Loading live app at /?egisz=1&demo=true (PC Light)...");
     await pcPage.goto(`${BASE_URL}/?egisz=1&demo=true`, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "commit",
       timeout: 30000,
     });
     console.log("Waiting for React hydration (.boot-state detachment)...");
-    await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-    try {
-      await pcPage.waitForSelector(".egisz-modal-container, .egisz-modal-backdrop, .egisz-remd-shell, [data-testid='egisz-hub-modal']", { timeout: 15000 });
-    } catch {
-      console.log("Retrying navigation due to parallel dev reload...");
-      await pcPage.goto(`${BASE_URL}/?egisz=1&demo=true`, { waitUntil: "domcontentloaded", timeout: 25000 });
-      await pcPage.waitForSelector(".egisz-modal-container, .egisz-modal-backdrop, .egisz-remd-shell, [data-testid='egisz-hub-modal']", { timeout: 20000 });
-    }
-    await pcPage.waitForTimeout(800);
+    await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 60000 }).catch(() => {});
+    await pcPage.waitForSelector(".egisz-modal-container, .egisz-modal-backdrop, .egisz-remd-shell, [data-testid='egisz-hub-modal']", { timeout: 60000 });
+    await pcPage.waitForTimeout(1000);
 
     // Переключаемся на вкладку «Журнал отправки»
     const journalTab = await pcPage.$('.egisz-tab-btn:has-text("Журнал"), button:has-text("Журнал отправки")');
@@ -145,53 +139,23 @@ async function main() {
     await setDarkTheme(pcPage);
     await saveProof(pcPage, ["02_egisz_journal_pc_dark_1440x900.png", "egisz_remd_journal_pc_dark_1440x900.png"]);
 
+    // ═══════════════════════════════════════════════════════════
+    // 2. MOBILE (390 x 844, Apple HIG)
+    // ═══════════════════════════════════════════════════════════
+    console.log("\n--- 2. Mobile 390x844 Apple HIG Proofs (Smooth Viewport Transition) ---");
+    await pcPage.setViewportSize({ width: 390, height: 844 });
+    await pcPage.waitForTimeout(800);
+
+    // 2.1 Mobile Dark (currently in dark theme)
+    console.log("Saving Mobile Dark...");
+    await saveProof(pcPage, ["04_egisz_journal_mobile_dark_390x844.png", "egisz_remd_journal_mobile_dark_390x844.png"]);
+
+    // 2.2 Mobile Light
+    console.log("Switching to Mobile Light...");
+    await setLightTheme(pcPage);
+    await saveProof(pcPage, ["03_egisz_journal_mobile_light_390x844.png", "egisz_remd_journal_mobile_light_390x844.png"]);
+
     await pcContext.close();
-
-    // ═══════════════════════════════════════════════════════════
-    // 2. MOBILE CONTEXT (390 x 844, Apple HIG)
-    // ═══════════════════════════════════════════════════════════
-    console.log("\n--- 2. Mobile 390x844 Apple HIG Proofs ---");
-    const mobileContext = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
-    const mobilePage = await mobileContext.newPage();
-    await mobilePage.addInitScript(STORAGE_INIT);
-
-    console.log("Loading live app at /?egisz=1&demo=true (Mobile Light)...");
-    await mobilePage.goto(`${BASE_URL}/?egisz=1&demo=true`, {
-      waitUntil: "domcontentloaded",
-      timeout: 30000,
-    });
-    await mobilePage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-    try {
-      await mobilePage.waitForSelector(".egisz-modal-container, .egisz-modal-backdrop, .egisz-remd-shell, [data-testid='egisz-hub-modal']", { timeout: 15000 });
-    } catch {
-      console.log("Retrying mobile navigation due to parallel dev reload...");
-      await mobilePage.goto(`${BASE_URL}/?egisz=1&demo=true`, { waitUntil: "domcontentloaded", timeout: 25000 });
-      await mobilePage.waitForSelector(".egisz-modal-container, .egisz-modal-backdrop, .egisz-remd-shell, [data-testid='egisz-hub-modal']", { timeout: 20000 });
-    }
-    await mobilePage.waitForTimeout(800);
-
-    const mobileJournalTab = await mobilePage.$('.egisz-tab-btn:has-text("Журнал"), button:has-text("Журнал отправки")');
-    if (mobileJournalTab) {
-      console.log("Clicking Mobile 'Журнал отправки' tab...");
-      await mobileJournalTab.click();
-      await mobilePage.waitForTimeout(800);
-    }
-
-    // 2.1 Mobile Light
-    await setLightTheme(mobilePage);
-    await saveProof(mobilePage, ["03_egisz_journal_mobile_light_390x844.png", "egisz_remd_journal_mobile_light_390x844.png"]);
-
-    // 2.2 Mobile Dark
-    console.log("Switching to Mobile Dark...");
-    await setDarkTheme(mobilePage);
-    await saveProof(mobilePage, ["04_egisz_journal_mobile_dark_390x844.png", "egisz_remd_journal_mobile_dark_390x844.png"]);
-
-    await mobileContext.close();
 
     console.log("\n=======================================================");
     console.log("✓ ALL EGISZ REMD JOURNAL 4-STATE PROOFS SAVED SUCCESSFULLY!");

@@ -6,6 +6,7 @@
 
 import React from "react";
 import { Check, Printer, ShieldCheck, CreditCard } from "lucide-react";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile.js";
 import type { VisitBillingTotals } from "../visitBillingTypes.js";
 
 export interface VisitBillingActionsFooterProps {
@@ -33,6 +34,9 @@ export const VisitBillingActionsFooter: React.FC<VisitBillingActionsFooterProps>
 	onOpenDmsModal,
 	onOpenPaymentModal,
 }) => {
+	const flags = useWorkspaceProfile();
+	const showDmsAttach = !readOnly && (Boolean(flags?.hasInsuranceCoPay) || effectiveDmsCoverage > 0);
+
 	return (
 		<div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
 			<div className="flex items-center gap-2">
@@ -71,7 +75,7 @@ export const VisitBillingActionsFooter: React.FC<VisitBillingActionsFooterProps>
 						<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>ДМС: {effectiveDmsInsurer || "ГП"} ({effectiveDmsCoverage.toLocaleString("ru-RU")} ₽)</span>
 					</button>
-				) : !readOnly ? (
+				) : showDmsAttach ? (
 					<button
 						type="button"
 						onClick={onOpenDmsModal}

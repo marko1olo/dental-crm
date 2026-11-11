@@ -4,9 +4,7 @@ import type { CommunicationActiveSection, CommunicationsChannelFilterBarProps } 
 
 const SECTIONS: { id: CommunicationActiveSection; label: string; icon: any; testId?: string; title?: string }[] = [
 	{ id: "tasks", label: "Очередь и рассылки", icon: MessageSquare },
-	{ id: "omnichannel", label: "Диалоги с пациентами", icon: MessageSquare, testId: "communications-tab-omnichannel", title: "Диалоги с пациентами (WhatsApp / Telegram / SMS)" },
-	// data-testid="communications-tab-bot-inbox"
-	{ id: "bot_inbox", label: "Пульт ботов", icon: Bot, testId: "communications-tab-bot-inbox", title: "Пульт ботов (TG/VK/WA/MAX)" },
+	{ id: "omnichannel", label: "Чаты и мессенджеры", icon: MessageSquare, testId: "communications-tab-omnichannel", title: "Чаты и мессенджеры (WhatsApp / Telegram / SMS / Боты)" },
 	{ id: "notifications", label: "Уведомления", icon: Bell },
 	// data-testid="communications-tab-staff-chat"
 	{ id: "staff_chat", label: "Интерком", icon: Radio, testId: "communications-tab-staff-chat", title: "Внутренний чат клиники / Интерком" },

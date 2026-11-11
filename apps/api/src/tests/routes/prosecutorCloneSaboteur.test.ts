@@ -86,6 +86,10 @@ describe("PROSECUTOR 2: АТАКА НА РЕГИСТРАЦИЮ И ДЕДУПЛИ
 				{ organizationId: ORG_ID, clinicId: CLINIC_ID },
 				authTokenSecret(),
 			),
+			"x-dente-staff-token": signToken(
+				{ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" },
+				authTokenSecret(),
+			),
 			"x-organization-id": ORG_ID,
 			"content-type": "application/json",
 		};

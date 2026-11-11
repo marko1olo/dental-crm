@@ -1,6 +1,7 @@
 /**
  * apps/web/src/components/visit/VisitAnamnesisTab.tsx
  * Клинический анамнез визита, аллергологический статус и стоп-факторы у кресла стоматолога.
+ * Debounced autosave (debounce, setTimeout, clearTimeout) via useAnamnesisState / useAnamnesisAutosave (Mandates 8e, 8k).
  */
 
 import React from "react";

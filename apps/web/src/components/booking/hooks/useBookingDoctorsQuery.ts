@@ -50,8 +50,8 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 						specialties: Array.isArray(d.specialties) && d.specialties.length > 0
 							? d.specialties
 							: ["Врач-стоматолог"],
-						experienceYears: d.experienceYears ?? 5,
-						rating: d.rating ?? 5.0,
+						experienceYears: d.experienceYears ?? 0,
+						rating: d.rating ?? 0,
 						reviewsCount: d.reviewsCount ?? 0,
 						categoryIds: ["all"],
 						bio: d.bio,

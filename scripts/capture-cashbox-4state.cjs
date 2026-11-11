@@ -19,29 +19,38 @@ if (!fs.existsSync(PROOFS_DIR)) {
 
 async function capture() {
 	console.log("=== Provisioning session for Cashbox 4-State Proofs ===");
+	const uniqueId = Date.now();
 	let clinicToken = "demo-clinic-token";
 	let staffToken = "demo-staff-token";
+	let organizationId = "demo-org-id";
+	let ownerUserId = "demo-user-id";
 
 	try {
 		const headers = { "Content-Type": "application/json" };
-		const initRes = await fetch("http://127.0.0.1:4100/api/clinic/initialize", {
+		const initRes = await fetch("http://127.0.0.1:4100/api/auth/setup/init", {
 			method: "POST",
 			headers,
 			body: JSON.stringify({
-				clinicName: "Стоматология ДЕНТЕ Премиум",
-				ownerFullName: "Д-р Воронов А. В.",
-				ownerEmail: "doctor-voronov@dente.ru",
+				clinicName: "Клиника ДЕНТЕ (Касса)",
+				email: `cashbox-proof-${uniqueId}@dente-clinic.ru`,
+				password: "Password123!",
+				ownerName: "Д-р Воронов А. В.",
 				ownerPin: "1234",
 			}),
 		});
 		if (initRes.ok) {
 			const initData = await initRes.json();
 			clinicToken = initData.clinicToken;
+			organizationId = initData.organizationId;
+			ownerUserId = initData.ownerUserId;
 
-			const unlockRes = await fetch("http://127.0.0.1:4100/api/auth/staff-unlock", {
+			const unlockRes = await fetch("http://127.0.0.1:4100/api/auth/staff/unlock", {
 				method: "POST",
-				headers,
-				body: JSON.stringify({ clinicToken, pin: "1234" }),
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-clinic-token": clinicToken,
+				},
+				body: JSON.stringify({ userId: ownerUserId, pinCode: "1234" }),
 			});
 			if (unlockRes.ok) {
 				const unlockData = await unlockRes.json();
@@ -59,63 +68,11 @@ async function capture() {
 		args: ["--no-sandbox", "--disable-setuid-sandbox"],
 	});
 
-	const configs = [
-		{ name: "01_cashbox_checkout_pc_light_1440x900.png", width: 1440, height: 900, isMobile: false, theme: "light" },
-		{ name: "02_cashbox_checkout_pc_dark_1440x900.png", width: 1440, height: 900, isMobile: false, theme: "dark" },
-		{ name: "03_cashbox_checkout_mobile_light_390x844.png", width: 390, height: 844, isMobile: true, theme: "light" },
-		{ name: "04_cashbox_checkout_mobile_dark_390x844.png", width: 390, height: 844, isMobile: true, theme: "dark" },
-	];
-
-	for (const cfg of configs) {
-		console.log(`\n>>> Capturing ${cfg.name} (${cfg.width}x${cfg.height}, ${cfg.theme})...`);
-		const context = await browser.newContext({
-			viewport: { width: cfg.width, height: cfg.height },
-			deviceScaleFactor: cfg.isMobile ? 2 : 1,
-			isMobile: cfg.isMobile,
-			hasTouch: cfg.isMobile,
-		});
-
-		await context.addInitScript(
-			({ ct, st, t }) => {
-				localStorage.setItem("dente_clinic_token", ct);
-				localStorage.setItem("dente_staff_token", st);
-				localStorage.setItem("dente_active_role", "owner");
-				localStorage.setItem("dente_theme_mode", t);
-				localStorage.setItem("dente_theme", t);
-				localStorage.setItem("theme", t);
-				localStorage.setItem("dente_demo_showcase", "true");
-				localStorage.setItem("dente_onboarding_completed", "true");
-				localStorage.setItem("dente_tour_completed", "true");
-				localStorage.setItem("dente_tour_dismissed", "true");
-				localStorage.setItem("dente_sidebar_collapsed", "false");
-				localStorage.setItem(
-					"dental-crm:web-ui-preferences:v1",
-					JSON.stringify({
-						version: 1,
-						uiLanguage: "ru",
-						selectedWorkspaceRole: "owner",
-						onboardingDismissed: true,
-						onboardingStep: "done",
-					}),
-				);
-			},
-			{ ct: clinicToken, st: staffToken, t: cfg.theme },
-		);
-
-		const page = await context.newPage();
-		const url = "http://127.0.0.1:5173/?demo=true#checkout";
-		await page.goto(url, { waitUntil: "commit", timeout: 60000 });
-		await page.waitForLoadState("domcontentloaded", { timeout: 60000 }).catch(() => {});
-
-		// Wait for checkout UI to be rendered and visible
-		await page.waitForSelector('text="Касса · Оплата приёма"', { timeout: 45000 }).catch(() => {});
-		await page.waitForTimeout(1500);
-
-		// Apply theme attribute
-		await page.evaluate((theme) => {
-			document.documentElement.setAttribute("data-theme", theme);
-			document.body.setAttribute("data-theme", theme);
-			if (theme === "dark") {
+	async function applyTheme(page, theme) {
+		await page.evaluate((t) => {
+			document.documentElement.setAttribute("data-theme", t);
+			document.body.setAttribute("data-theme", t);
+			if (t === "dark") {
 				document.documentElement.classList.add("dark");
 				document.documentElement.classList.remove("light");
 				document.body.classList.add("dark");
@@ -128,17 +85,121 @@ async function capture() {
 				document.body.classList.remove("dark");
 				document.documentElement.style.colorScheme = "light";
 			}
-		}, cfg.theme);
-
-		await page.waitForTimeout(1200);
-
-		const targetPath = path.join(PROOFS_DIR, cfg.name);
-		await page.screenshot({ path: targetPath, fullPage: false });
-		const size = fs.statSync(targetPath).size;
-		console.log(`[PROOF VERIFIED] ${cfg.name}: ${size} bytes (${(size / 1024).toFixed(1)} KB)`);
-
-		await context.close();
+		}, theme);
 	}
+
+	const initScriptParams = {
+		ct: clinicToken,
+		st: staffToken,
+		orgId: organizationId,
+		uid: ownerUserId,
+	};
+
+	const addStorage = async (ctx) => {
+		await ctx.addInitScript(({ ct, st, orgId, uid }) => {
+			localStorage.setItem("dente_clinic_token", ct);
+			localStorage.setItem("dente_organization_id", orgId);
+			localStorage.setItem("dente_staff_token", st);
+			localStorage.setItem("dente_active_session_token", st);
+			localStorage.setItem("dente_active_user_id", uid);
+			localStorage.setItem("dente_user_id", uid);
+			localStorage.setItem("dente_active_role", "owner");
+			localStorage.setItem("dente_user_role", "owner");
+			localStorage.setItem("dente_active_mode", "clinic");
+			sessionStorage.setItem("dente_unlocked", "true");
+			localStorage.setItem("dente_demo_showcase", "true");
+			localStorage.setItem("dente_onboarding_completed", "true");
+			localStorage.setItem("dente_tour_completed", "true");
+			localStorage.setItem("dente_tour_dismissed", "true");
+			localStorage.setItem("dente_sidebar_collapsed", "false");
+			localStorage.setItem(
+				"dental-crm:web-ui-preferences:v1",
+				JSON.stringify({
+					version: 1,
+					uiLanguage: "ru",
+					selectedWorkspaceRole: "owner",
+					onboardingDismissed: true,
+					onboardingStep: "done",
+				}),
+			);
+		}, initScriptParams);
+	};
+
+	// 1. PC Context (1440x900)
+	console.log("\n>>> Capturing PC 1440x900 Context...");
+	const pcContext = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+		deviceScaleFactor: 1,
+	});
+	await addStorage(pcContext);
+	const pcPage = await pcContext.newPage();
+
+	const checkoutUrl = "http://127.0.0.1:5173/?demo=true&checkout=1#checkout";
+	console.log("Navigating to", checkoutUrl);
+	await pcPage.goto(checkoutUrl, { waitUntil: "commit", timeout: 45000 });
+	try {
+		await pcPage.waitForSelector('[data-testid="cash-register-checkout-modal"]', { state: "visible", timeout: 8000 });
+	} catch (e) {
+		console.log("Modal not immediately visible on PC, dispatching open-cashbox event...");
+		await pcPage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-cashbox", { detail: { mode: "checkout" } }));
+		});
+		await pcPage.waitForSelector('[data-testid="cash-register-checkout-modal"]', { state: "visible", timeout: 25000 });
+	}
+	await pcPage.waitForTimeout(1000);
+
+	console.log(">>> 01_cashbox_checkout_pc_light_1440x900.png");
+	await applyTheme(pcPage, "light");
+	await pcPage.waitForTimeout(600);
+	const p01 = path.join(PROOFS_DIR, "01_cashbox_checkout_pc_light_1440x900.png");
+	await pcPage.screenshot({ path: p01, fullPage: false });
+	console.log(`[PROOF VERIFIED] 01_cashbox_checkout_pc_light_1440x900.png: ${fs.statSync(p01).size} bytes`);
+
+	console.log(">>> 02_cashbox_checkout_pc_dark_1440x900.png");
+	await applyTheme(pcPage, "dark");
+	await pcPage.waitForTimeout(600);
+	const p02 = path.join(PROOFS_DIR, "02_cashbox_checkout_pc_dark_1440x900.png");
+	await pcPage.screenshot({ path: p02, fullPage: false });
+	console.log(`[PROOF VERIFIED] 02_cashbox_checkout_pc_dark_1440x900.png: ${fs.statSync(p02).size} bytes`);
+	await pcContext.close();
+
+	// 2. Mobile Context (390x844, Apple HIG)
+	console.log("\n>>> Capturing Mobile 390x844 Context...");
+	const mobContext = await browser.newContext({
+		viewport: { width: 390, height: 844 },
+		deviceScaleFactor: 2,
+		isMobile: true,
+		hasTouch: true,
+	});
+	await addStorage(mobContext);
+	const mobPage = await mobContext.newPage();
+	console.log("Navigating mobile to", checkoutUrl);
+	await mobPage.goto(checkoutUrl, { waitUntil: "commit", timeout: 45000 });
+	try {
+		await mobPage.waitForSelector('[data-testid="cash-register-checkout-modal"]', { state: "visible", timeout: 8000 });
+	} catch (e) {
+		console.log("Modal not immediately visible on mobile, dispatching open-cashbox event...");
+		await mobPage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-cashbox", { detail: { mode: "checkout" } }));
+		});
+		await mobPage.waitForSelector('[data-testid="cash-register-checkout-modal"]', { state: "visible", timeout: 25000 });
+	}
+	await mobPage.waitForTimeout(1000);
+
+	console.log(">>> 03_cashbox_checkout_mobile_light_390x844.png");
+	await applyTheme(mobPage, "light");
+	await mobPage.waitForTimeout(600);
+	const p03 = path.join(PROOFS_DIR, "03_cashbox_checkout_mobile_light_390x844.png");
+	await mobPage.screenshot({ path: p03, fullPage: false });
+	console.log(`[PROOF VERIFIED] 03_cashbox_checkout_mobile_light_390x844.png: ${fs.statSync(p03).size} bytes`);
+
+	console.log(">>> 04_cashbox_checkout_mobile_dark_390x844.png");
+	await applyTheme(mobPage, "dark");
+	await mobPage.waitForTimeout(600);
+	const p04 = path.join(PROOFS_DIR, "04_cashbox_checkout_mobile_dark_390x844.png");
+	await mobPage.screenshot({ path: p04, fullPage: false });
+	console.log(`[PROOF VERIFIED] 04_cashbox_checkout_mobile_dark_390x844.png: ${fs.statSync(p04).size} bytes`);
+	await mobContext.close();
 
 	await browser.close();
 	console.log("\n[SUCCESS] Cashbox 4-State Proofs captured cleanly!");

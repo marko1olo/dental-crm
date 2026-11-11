@@ -15,7 +15,7 @@ import {
 	buildPostPeriostotomyMemoText,
 	buildSurgicalPostOpMemoText,
 	SURGICAL_OPERATION_NORMS,
-} from "../surgeryProtocols";
+} from "../surgeryCatalogData";
 
 describe("Surgery Extraction Presets & Post-Op Patient Memo", () => {
 	it("1. Mandate 8e: 804n Extraction codes & 1-click complexity presets", () => {

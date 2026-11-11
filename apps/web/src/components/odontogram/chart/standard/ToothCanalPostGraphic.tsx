@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { PostCoreType } from "../../anatomicalToothGeometries";
 
 export interface ToothCanalPostGraphicProps {

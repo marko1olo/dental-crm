@@ -2,8 +2,8 @@ import { mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "c34b9953-0c3b-4d79-a5d8-85f4e1952564";
-const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`;
+const CURRENT_CONV_ID = "3804dee5-2404-4972-b037-04d34a6f9359";
+const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/radiology";
 const API_URL = "http://127.0.0.1:4100";
 const WEB_URL = "http://127.0.0.1:5173";
@@ -146,6 +146,20 @@ async function captureProof(page, filename, description) {
 	}
 	console.log(`[CAPTURED] ${filename} (${stat.size} bytes) -> ${description}`);
 	copyFileSync(outPath, path.join(OUT_CONV, filename));
+
+	if (filename.includes("pc_light")) {
+		copyFileSync(outPath, path.join(OUT_DOCS, "01_radiology_pc_light_1440x900.png"));
+		copyFileSync(outPath, path.join(OUT_CONV, "01_radiology_pc_light_1440x900.png"));
+	} else if (filename.includes("pc_dark")) {
+		copyFileSync(outPath, path.join(OUT_DOCS, "02_radiology_pc_dark_1440x900.png"));
+		copyFileSync(outPath, path.join(OUT_CONV, "02_radiology_pc_dark_1440x900.png"));
+	} else if (filename.includes("mobile_light")) {
+		copyFileSync(outPath, path.join(OUT_DOCS, "03_radiology_mobile_light_390x844.png"));
+		copyFileSync(outPath, path.join(OUT_CONV, "03_radiology_mobile_light_390x844.png"));
+	} else if (filename.includes("mobile_dark")) {
+		copyFileSync(outPath, path.join(OUT_DOCS, "04_radiology_mobile_dark_390x844.png"));
+		copyFileSync(outPath, path.join(OUT_CONV, "04_radiology_mobile_dark_390x844.png"));
+	}
 }
 
 async function captureWithRetry(browser, config, maxRetries = 2) {

@@ -160,19 +160,20 @@ async function waitForAppAndOpenPricelist(page, isMobile) {
 	}
 
 	const hasModalAlready = await safeEvaluate(page, () => {
-		return !!document.querySelector(".service-pricelist-modal, .pricelist-modal-container, .pricelist-modal-overlay");
+		return !!document.querySelector(".pricelist-studio-modal, .pricelist-studio-overlay, .service-pricelist-modal, .pricelist-modal-container, .pricelist-modal-overlay");
 	});
 
 	if (!hasModalAlready) {
 		console.log("  Dispatching dente-open-pricelist event...");
 		await safeEvaluate(page, () => {
 			window.dispatchEvent(new CustomEvent("dente-open-pricelist"));
+			window.dispatchEvent(new CustomEvent("dente:open-pricelist"));
 		});
 	}
 
 	console.log("  Waiting for pricelist modal or content...");
 	await page.waitForSelector(
-		".service-pricelist-modal, .pricelist-modal-container, .pricelist-modal-overlay",
+		".pricelist-studio-modal, .pricelist-studio-overlay, .service-pricelist-modal, .pricelist-modal-container, .pricelist-modal-overlay",
 		{ timeout: 30000, state: "visible" },
 	);
 

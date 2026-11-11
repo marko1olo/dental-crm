@@ -91,7 +91,7 @@ export function ClinicalStenographerBar({
 								data-testid="btn-steno-apply-speech"
 							>
 								<Check size={13} className="shrink-0" />
-								<span>✓ Применить в дневник</span>
+								<span>Применить в дневник</span>
 							</button>
 						)}
 
@@ -165,7 +165,7 @@ export function ClinicalStenographerBar({
 								data-testid="btn-steno-apply-speech-mobile"
 							>
 								<Check size={18} />
-								<span>✓ Применить в дневник</span>
+								<span>Применить в дневник</span>
 							</button>
 						)}
 						<button
@@ -224,35 +224,8 @@ export function ClinicalStenographerBar({
 			>
 				<Zap size={11} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 				<span className="hidden sm:inline">Стенограф:</span>
-				<span className="text-[10px] text-[var(--muted)] font-mono font-normal">Tab/Space</span>
+				<span className="text-[10px] text-[var(--muted)] font-mono font-normal">Tab / Space</span>
 			</div>
-
-			{/* Canonical Clinical Snippets Chips */}
-			{snippets && snippets.length > 0 && snippets.map((snippet) => {
-				const isSelected = activeKey === snippet.key;
-				return (
-					<button
-						key={snippet.key}
-						type="button"
-						onClick={(e) => {
-							e.preventDefault();
-							onSelectSnippet(snippet);
-						}}
-						data-testid={`btn-steno-chip-${snippet.key}`}
-						title={`Аббревиатура «${snippet.key}»: ${snippet.label}\n\n${snippet.text}`}
-						className={`dente-filter-chip shrink-0 h-7 min-h-[28px] px-2 text-xs transition-all ${
-							isSelected ? "active" : ""
-						}`}
-					>
-						<span className="font-mono font-bold text-[var(--teal,var(--brand-primary))] text-[11px]">
-							{snippet.key}
-						</span>
-						<span className="text-[11px] text-[var(--ink)] max-w-[140px] truncate">
-							{snippet.label}
-						</span>
-					</button>
-				);
-			})}
 		</div>
 	);
 }

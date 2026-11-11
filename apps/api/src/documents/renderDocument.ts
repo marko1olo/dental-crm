@@ -243,8 +243,8 @@ export function documentIssueBlockReasonRaw(
 
 	const isDraftOrBlank =
 		document.status === "draft" ||
-		Boolean(document.payload?.isDraft) ||
-		Boolean(document.payload?.isBlank) ||
+		Boolean((document.payload as Record<string, unknown> | undefined)?.isDraft) ||
+		Boolean((document.payload as Record<string, unknown> | undefined)?.isBlank) ||
 		Boolean((context as any)?.isDraft);
 
 	if (documentRequiresClinicLegalProfile(document.kind) && !isDraftOrBlank) {
@@ -389,8 +389,8 @@ export function documentIssueBlockReasonRaw(
 	const html = renderDocumentHtml(document, patient, context);
 	const isDraftOrBlankDoc =
 		document.status === "draft" ||
-		Boolean(document.payload?.isDraft) ||
-		Boolean(document.payload?.isBlank) ||
+		Boolean((document.payload as Record<string, unknown> | undefined)?.isDraft) ||
+		Boolean((document.payload as Record<string, unknown> | undefined)?.isBlank) ||
 		Boolean((context as any)?.isDraft) ||
 		isBlankPaidContract ||
 		isBlankInformedConsent;

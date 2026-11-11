@@ -13,7 +13,6 @@ import { describe, it, beforeEach } from "node:test";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-import { ChairScheduleView } from "../ChairScheduleView";
 import {
 	applyCellShiftPreset,
 	applyDoctorChairDateRange,
@@ -88,33 +87,6 @@ describe("Schedule Parity: Doctor Shifts Binding & Week/Month Copy", () => {
 			const s6 = applyCellShiftPreset(s5, { ...baseParams, presetType: "clear" });
 			assert.strictEqual(s6.length, 0, "Shift should be cleared");
 		});
-
-		it("ChairScheduleView popover renders morning-9 and evening-15 preset buttons", async () => {
-			const db = getMockDashboard();
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={db}
-						dateKey="2026-09-09"
-						appointments={[]}
-						onSlotClick={() => {}}
-						onAppointmentClick={() => {}}
-					/>,
-				);
-			});
-
-			// Open popover for chair-1
-			const assignBtn = findNodeByTestId(container, "chair-view-assign-doctor-chair-1");
-			assert.ok(assignBtn, "chair-view-assign-doctor-chair-1 must exist");
-
-			await clickNode(assignBtn);
-
-			const m9Btn = findNodeByTestId(container, "chair-view-shift-morning-9-chair-1");
-			const e15Btn = findNodeByTestId(container, "chair-view-shift-evening-15-chair-1");
-
-			assert.ok(m9Btn, "chair-view-shift-morning-9-chair-1 must exist in shift popover");
-			assert.ok(e15Btn, "chair-view-shift-evening-15-chair-1 must exist in shift popover");
-		});
 	});
 
 	describe("4. Multi-Day Date Range Shift Assignment", () => {
@@ -169,37 +141,6 @@ describe("Schedule Parity: Doctor Shifts Binding & Week/Month Copy", () => {
 
 			// Monday to Sunday: 5 workdays (Mon–Fri), Sat and Sun skipped
 			assert.strictEqual(result.length, 5, "five_day preset must skip Sat and Sun");
-		});
-
-		it("ChairScheduleView: dropdown menu has btn-assign-date-range which opens date range modal", async () => {
-			const db = getMockDashboard();
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={db}
-						dateKey="2026-09-09"
-						appointments={[]}
-						onSlotClick={() => {}}
-						onAppointmentClick={() => {}}
-					/>,
-				);
-			});
-
-			const menuBtn = findNodeByTestId(container, "btn-assign-date-range");
-			assert.ok(menuBtn, "btn-assign-date-range must exist in dropdown menu");
-
-			// Click to open modal
-			await clickNode(menuBtn);
-
-			const modal =
-				findNodeByTestId(container, "chair-schedule-date-range-modal") ||
-				findNodeByTestId(document.body as any, "chair-schedule-date-range-modal");
-			assert.ok(modal, "chair-schedule-date-range-modal must open");
-
-			const applyModalBtn =
-				findNodeByTestId(container, "chair-range-modal-apply-btn") ||
-				findNodeByTestId(document.body as any, "chair-range-modal-apply-btn");
-			assert.ok(applyModalBtn, "chair-range-modal-apply-btn must exist in modal");
 		});
 	});
 
@@ -262,27 +203,6 @@ describe("Schedule Parity: Doctor Shifts Binding & Week/Month Copy", () => {
 			assert.ok(copied.some((s) => s.dateIso === "2026-09-14"));
 			assert.ok(copied.some((s) => s.dateIso === "2026-09-21"));
 			assert.ok(copied.some((s) => s.dateIso === "2026-09-28"));
-		});
-
-		it("ChairScheduleView dropdown menu has btn-copy-chair-week-next and btn-copy-chair-month", async () => {
-			const db = getMockDashboard();
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={db}
-						dateKey="2026-09-09"
-						appointments={[]}
-						onSlotClick={() => {}}
-						onAppointmentClick={() => {}}
-					/>,
-				);
-			});
-
-			const copyNextWeekBtn = findNodeByTestId(container, "btn-copy-chair-week-next");
-			const copyMonthBtn = findNodeByTestId(container, "btn-copy-chair-month");
-
-			assert.ok(copyNextWeekBtn, "btn-copy-chair-week-next must exist");
-			assert.ok(copyMonthBtn, "btn-copy-chair-week-month must exist");
 		});
 	});
 });

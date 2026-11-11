@@ -13,6 +13,7 @@ export function useCabinetConsentSigning(
 	initialSigningConsent: PatientStatutoryConsent | null,
 	initialConsentSignMode: "sms_otp" | "cabinet_pep",
 	onConsentSigned?: (c: PatientStatutoryConsent) => void,
+	token?: string,
 ) {
 	const [signingConsent, setSigningConsent] = useState<PatientStatutoryConsent | null>(initialSigningConsent);
 	const [consentSignMode, setConsentSignMode] = useState<"sms_otp" | "cabinet_pep">(initialConsentSignMode);
@@ -62,7 +63,7 @@ export function useCabinetConsentSigning(
 		setOtpError(null);
 	}, [data.phone]);
 
-	const handleConfirmConsentOtp = useCallback(() => {
+	const handleConfirmConsentOtp = useCallback(async () => {
 		if (!signingConsent) return;
 		const code = otpDigits.join("");
 		if (code.length < 6) {
@@ -79,24 +80,68 @@ export function useCabinetConsentSigning(
 			return;
 		}
 		const signed = signConsentWithPep(signingConsent, data.phone, code, data.fullName);
+
+		// Реальная отправка на сервер Fastify API
+		const effectiveToken = token || (typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
+		if (effectiveToken) {
+			try {
+				await fetch(`/api/portal/consents/${encodeURIComponent(signingConsent.id)}/sign`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${effectiveToken}`,
+					},
+					body: JSON.stringify({
+						signatureMethod: "sms_otp",
+						signatureSvg: signed.signatureSvg,
+						deviceMeta: typeof navigator !== "undefined" ? navigator.userAgent : "PWA Patient Cabinet",
+					}),
+				});
+			} catch (err) {
+				console.warn("[useCabinetConsentSigning] Fallback to local PEP record:", err);
+			}
+		}
+
 		setData((prev) => ({
 			...prev,
 			consents: (prev.consents || []).map((c) => (c.id === signed.id ? signed : c)),
 		}));
 		onConsentSigned?.(signed);
 		setSigningConsent(null);
-	}, [signingConsent, otpDigits, sentOtp, data.phone, data.fullName, onConsentSigned, setData]);
+	}, [signingConsent, otpDigits, sentOtp, data.phone, data.fullName, onConsentSigned, setData, token]);
 
-	const handleSignConsentInCabinet = useCallback(() => {
+	const handleSignConsentInCabinet = useCallback(async () => {
 		if (!signingConsent) return;
 		const signed = signConsentWithPep(signingConsent, data.phone, "CABINET_PEP", data.fullName);
+
+		// Реальная отправка на сервер Fastify API
+		const effectiveToken = token || (typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
+		if (effectiveToken) {
+			try {
+				await fetch(`/api/portal/consents/${encodeURIComponent(signingConsent.id)}/sign`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${effectiveToken}`,
+					},
+					body: JSON.stringify({
+						signatureMethod: "portal_pep",
+						signatureSvg: signed.signatureSvg,
+						deviceMeta: typeof navigator !== "undefined" ? navigator.userAgent : "PWA Patient Cabinet",
+					}),
+				});
+			} catch (err) {
+				console.warn("[useCabinetConsentSigning] Fallback to local PEP record:", err);
+			}
+		}
+
 		setData((prev) => ({
 			...prev,
 			consents: (prev.consents || []).map((c) => (c.id === signed.id ? signed : c)),
 		}));
 		onConsentSigned?.(signed);
 		setSigningConsent(null);
-	}, [signingConsent, data.fullName, data.phone, onConsentSigned, setData]);
+	}, [signingConsent, data.fullName, data.phone, onConsentSigned, setData, token]);
 
 	return {
 		signingConsent, setSigningConsent,

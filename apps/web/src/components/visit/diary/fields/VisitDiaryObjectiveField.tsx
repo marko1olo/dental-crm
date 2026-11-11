@@ -95,7 +95,7 @@ export const VisitDiaryObjectiveField: React.FC<VisitDiaryObjectiveFieldProps> =
 					}`}
 					data-active={isObjectiveNormApplied}
 					data-testid="btn-quick-norm-objective"
-					title="Зафиксировать норму в 1 клик: интактные зубы, слизистая бледно-розовая, без патологии"
+					title="Зафиксировать физиологическую норму: интактный ряд, слизистая без патологии"
 				>
 					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
 					<span>Интактные зубы / Осмотр в норме</span>

@@ -20,6 +20,8 @@ import { nameKey } from "../../services/patients/duplicateDetection.js";
 import { patientReferenceColumns } from "../../services/patients/patientMerge.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 
 /**
  * Разбор дублей пациентов.
@@ -41,7 +43,18 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
 const ORG_ID = "dce70000-0000-4000-8000-000000000801";
 const CLINIC_ID = "dce70000-0000-4000-8000-000000000802";
 const DOCTOR_ID = "dce70000-0000-4000-8000-000000000803";
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const STAFF_TOKEN = signToken(
+	{
+		organizationId: ORG_ID,
+		userId: DOCTOR_ID,
+		role: "doctor",
+	},
+	authTokenSecret(),
+);
+const ORG_HEADERS = {
+	"x-organization-id": ORG_ID,
+	"x-dente-staff-token": STAFF_TOKEN,
+};
 
 // Пара настоящих дублей: то же имя, та же дата рождения.
 const DUP_PRIMARY = "dce70000-0000-4000-8000-000000000811";
@@ -630,10 +643,18 @@ describe("поиск и слияние дублей", () => {
 	test("карточка чужой организации не сливается", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
+		const alienOrgId = "dce70000-0000-4000-8000-0000000008ff";
+		const alienToken = signToken(
+			{ organizationId: alienOrgId, userId: DOCTOR_ID, role: "doctor" },
+			authTokenSecret(),
+		);
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/patients/duplicates/merge",
-			headers: { "x-organization-id": "dce70000-0000-4000-8000-0000000008ff" },
+			headers: {
+				"x-organization-id": alienOrgId,
+				"x-dente-staff-token": alienToken,
+			},
 			payload: { primaryPatientId: KIN_MOTHER, duplicatePatientId: KIN_CHILD },
 		});
 		assert.equal(response.statusCode, 409, response.body);

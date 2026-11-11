@@ -35,6 +35,7 @@ import {
 } from "../../services/clinical/Icd10ClinicalValidator.js";
 import { computeDiaryHash } from "../../services/clinical/signingModules/diaryHashCalculator.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -92,7 +93,7 @@ describe("Клинический жизненный цикл ЭМК, форму�
 					organizationId,
 					fullName: "Волкова Елена Сергеевна",
 					birthDate: "1992-04-18",
-					administrativeProfile: { gender: "female" },
+					administrativeProfile: normalizePatientAdministrativeProfile({ gender: "female" }),
 					phone: "+79031234567",
 				})
 				.returning({ id: patients.id });

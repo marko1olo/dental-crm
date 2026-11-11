@@ -7,7 +7,7 @@
  * - Автоматический выпуск токена фиксации цен (issuePriceFreezeToken)
  * - Запись юридически значимого аудита (audit_events)
  *
- * Законодательная база: ст. 20 323-ФЗ, Постановление Правительства РФ №659.
+ * Законодательная база: ст. 20 и 84 Федерального закона № 323-ФЗ, ст. 149 НК РФ, Постановление Правительства РФ № 736 от 11.05.2023.
  */
 
 import { randomUUID } from "node:crypto";
@@ -34,7 +34,7 @@ import {
 } from "./alternativePlanCalculations.js";
 
 /**
- * Создать группу альтернативных планов лечения (ст. 20 323-ФЗ и ПП РФ №659)
+ * Создать группу альтернативных планов лечения (ст. 20 и 84 Федерального закона № 323-ФЗ, ПП РФ № 736 от 11.05.2023)
  */
 export async function createAlternativePlanGroup(
 	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
@@ -184,7 +184,7 @@ export async function createAlternativePlanGroup(
 				planId: createdPlan.id,
 				policyKind: "standard_30_days",
 				actorUserId: input.actorUserId ?? null,
-				notes: `Автоматическое закрепление цен при создании утвержденного плана «${variant.name}» (ПП РФ №659)`,
+				notes: `Автоматическое закрепление цен при создании утвержденного плана «${variant.name}» (ст. 84 323-ФЗ, ПП РФ № 736)`,
 			});
 		}
 
@@ -271,7 +271,7 @@ export async function selectAndApprovePlanVariant(
 
 		const reasonForDeclined =
 			input.reason ||
-			`Отклонен в пользу утвержденного варианта: «${targetPlan.name}» (ст. 20 323-ФЗ / ПП РФ №659)`;
+			`Отклонен в пользу утвержденного варианта: «${targetPlan.name}» (ст. 20 и 84 323-ФЗ, ПП РФ № 736)`;
 
 		for (const sibling of siblingPlans) {
 			if (sibling.id === targetPlan.id) continue;
@@ -434,7 +434,7 @@ export async function selectAndApprovePlanVariant(
 		planId: targetPlan.id,
 		policyKind: "standard_30_days",
 		actorUserId: input.actorUserId ?? null,
-		notes: `Закрепление цен на дату утверждения плана «${targetPlan.name}» (ПП РФ №659)`,
+		notes: `Закрепление цен на дату утверждения плана «${targetPlan.name}» (ст. 84 323-ФЗ, ПП РФ № 736)`,
 	});
 
 	// 6. Юридически значимый журнал аудита (audit_events) для фиксации факта утверждения варианта
@@ -447,7 +447,7 @@ export async function selectAndApprovePlanVariant(
 		action: "approve_variant",
 		reason:
 			input.reason ||
-			`Утвержден вариант плана лечения: «${targetPlan.name}» (ст. 20 323-ФЗ / ПП РФ №659)`,
+			`Утвержден вариант плана лечения: «${targetPlan.name}» (ст. 20 и 84 323-ФЗ, ст. 149 НК РФ, ПП РФ № 736)`,
 	});
 
 	return {

@@ -65,6 +65,7 @@ describe("PricesFilterToolbar — Clinical Language & Apple HIG (Mandates 8x, 8a
 				searchQuery=""
 				onSearchChange={() => {}}
 				isCodesMenuOpen={false}
+				isSeedingBaseline={false}
 				onExportCsv={() => {}}
 				isNativeScannerDropzoneOpen={false}
 				onToggleNativeScannerDropzone={() => {}}

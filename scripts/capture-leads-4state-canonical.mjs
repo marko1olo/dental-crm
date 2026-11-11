@@ -143,23 +143,31 @@ async function waitForRealUI(page) {
   }
 
   console.log("  Waiting for UI to stabilize...");
+  await page.waitForSelector("#boot-splash, .boot-state, .boot-container", {
+    state: "detached",
+    timeout: 30000,
+  }).catch(() => {});
+
   await page.waitForFunction(
     () => {
       const text = document.body.innerText || "";
-      return (
-        !text.includes("Загрузка CRM") &&
-        !text.includes("Загрузка системы") &&
-        !text.includes("Подготовка модулей") &&
-        (document.querySelector(".workspace-shell") ||
+      const isBoot =
+        text.includes("Загрузка CRM") ||
+        text.includes("Загрузка системы") ||
+        text.includes("Подготовка модулей");
+      const hasRealContainer = Boolean(
+        document.querySelector(".workspace-shell") ||
           document.querySelector(".topbar") ||
-          document.querySelector("#root"))
+          document.querySelector(".leads-kanban-board") ||
+          document.querySelector(".leads-view")
       );
+      return !isBoot && hasRealContainer;
     },
-    { timeout: 30000 },
+    { timeout: 35000 },
   );
 
   await suppressOverlays(page);
-  await sleep(1000);
+  await sleep(1500);
 }
 
 async function setTheme(page, theme) {
@@ -206,8 +214,8 @@ async function run() {
     const pcPage = await pcContext.newPage();
     await setupPageSession(pcContext, pcPage, "owner");
 
-    console.log("Navigating to http://127.0.0.1:5173/?demo=true...");
-    await pcPage.goto(`${WEB_BASE}/?demo=true`, {
+    console.log("Navigating to http://127.0.0.1:5173/?demo=true#leads...");
+    await pcPage.goto(`${WEB_BASE}/?demo=true#leads`, {
       waitUntil: "domcontentloaded",
       timeout: 45000,
     });
@@ -217,20 +225,22 @@ async function run() {
     console.log("Switching view to leads...");
     await pcPage.evaluate(() => {
       // Ищем навигационный пункт или переключаем стор
-      if (window.__APP_STORE__) {
-        window.__APP_STORE__.getState().setCurrentView("leads");
+      if (window.__useAppStore) {
+        window.__useAppStore.getState().setCurrentView("leads");
       }
       window.location.hash = "leads";
     });
-    await sleep(1500);
+    await sleep(2000);
     await suppressOverlays(pcPage);
 
     // Проверяем, смонтирован ли контейнер канбана
     const kanbanRoot = pcPage.locator(".leads-kanban-board, .leads-board-container, .leads-studio-content").first();
     await kanbanRoot.waitFor({ state: "visible", timeout: 10000 }).catch(() => {
-      console.log("  [WARN] Kanban root not immediately visible, triggering direct event...");
+      console.log("  [WARN] Kanban root not immediately visible, re-triggering store change...");
       return pcPage.evaluate(() => {
-        window.dispatchEvent(new CustomEvent("dente:open-leads"));
+        if (window.__useAppStore) {
+          window.__useAppStore.getState().setCurrentView("leads");
+        }
       });
     });
     await sleep(1000);
@@ -247,26 +257,6 @@ async function run() {
     const pcDarkPath = path.join(OUT_DIR, "02_leads_kanban_pc_dark_1440x900.png");
     await pcPage.screenshot({ path: pcDarkPath, fullPage: false });
     console.log(`[PROOF SAVED] PC Dark: ${pcDarkPath} (${fs.statSync(pcDarkPath).size} bytes)`);
-
-    // 1.3 PC Studio Modal Light & Dark
-    console.log("Opening LeadsStudioModal for modal screenshots...");
-    await pcPage.evaluate(() => {
-      window.dispatchEvent(new CustomEvent("dente:open-leads"));
-    });
-    await sleep(1000);
-    const studioModal = pcPage.locator(".leads-studio-backdrop, .leads-studio-modal").first();
-    await studioModal.waitFor({ state: "visible", timeout: 8000 }).catch(() => {});
-    await suppressOverlays(pcPage);
-
-    await setTheme(pcPage, "light");
-    const studioLightPath = path.join(OUT_DIR, "05_leads_studio_modal_pc_light_1440x900.png");
-    await pcPage.screenshot({ path: studioLightPath, fullPage: false });
-    console.log(`[PROOF SAVED] Studio Light: ${studioLightPath} (${fs.statSync(studioLightPath).size} bytes)`);
-
-    await setTheme(pcPage, "dark");
-    const studioDarkPath = path.join(OUT_DIR, "06_leads_studio_modal_pc_dark_1440x900.png");
-    await pcPage.screenshot({ path: studioDarkPath, fullPage: false });
-    console.log(`[PROOF SAVED] Studio Dark: ${studioDarkPath} (${fs.statSync(studioDarkPath).size} bytes)`);
 
     await pcContext.close();
 
@@ -285,8 +275,8 @@ async function run() {
     const mobilePage = await mobileContext.newPage();
     await setupPageSession(mobileContext, mobilePage, "owner");
 
-    console.log("Navigating mobile to http://127.0.0.1:5173/?demo=true...");
-    await mobilePage.goto(`${WEB_BASE}/?demo=true`, {
+    console.log("Navigating mobile to http://127.0.0.1:5173/?demo=true#leads...");
+    await mobilePage.goto(`${WEB_BASE}/?demo=true#leads`, {
       waitUntil: "domcontentloaded",
       timeout: 45000,
     });
@@ -294,12 +284,16 @@ async function run() {
 
     console.log("Switching mobile view to leads...");
     await mobilePage.evaluate(() => {
-      if (window.__APP_STORE__) {
-        window.__APP_STORE__.getState().setCurrentView("leads");
+      if (window.__useAppStore) {
+        window.__useAppStore.getState().setCurrentView("leads");
       }
       window.location.hash = "leads";
     });
-    await sleep(1500);
+    await sleep(2000);
+    const mobileRoot = mobilePage.locator(".leads-mobile-container, .leads-mobile-feed-container, .leads-board-container").first();
+    await mobileRoot.waitFor({ state: "visible", timeout: 10000 }).catch(() => {
+      console.log("  [WARN] Mobile leads container not visible yet...");
+    });
     await suppressOverlays(mobilePage);
 
     // 2.1 Mobile Light Feed

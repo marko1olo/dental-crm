@@ -1,47 +1,9 @@
 /**
- * gostSignatures.ts — GOST R 34.10-2012 / 63-FZ XMLDSig and Visual Stamps
+ * gostSignatures.ts — GOST R 34.10-2012 / 63-FZ Visual Stamps for Detached Signatures
+ * Minzdrav Order 947n compliant (detached PKCS#7 / CAdES-BES signatures).
  */
 
 import { escapeXml, formatRuDate } from "@dental/shared/cda";
-import { EGISZ_REMD_OIDS } from "../remdXml/egiszRemdPresets";
-import type { GostSignatureInfo } from "./cdaTypes";
-
-export function generateGostXmlSignatureBlock(sig: GostSignatureInfo, documentRef = ""): string {
-	const is512 =
-		sig.algorithmOid === "1.2.643.7.1.1.1.2" ||
-		sig.algorithmOid === EGISZ_REMD_OIDS.GOST_3410_2012_512;
-	const sigMethod = is512
-		? "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-512"
-		: "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256";
-	const digestMethod = is512
-		? "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-512"
-		: "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-256";
-
-	return `
-<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-	<ds:SignedInfo>
-		<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
-		<ds:SignatureMethod Algorithm="${sigMethod}"/>
-		<ds:Reference URI="${escapeXml(documentRef)}">
-			<ds:Transforms>
-				<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
-			</ds:Transforms>
-			<ds:DigestMethod Algorithm="${digestMethod}"/>
-			<ds:DigestValue>${escapeXml(sig.signatureBase64 ? sig.signatureBase64.slice(0, 44) : "")}</ds:DigestValue>
-		</ds:Reference>
-	</ds:SignedInfo>
-	<ds:SignatureValue>${escapeXml(sig.signatureBase64)}</ds:SignatureValue>
-	<ds:KeyInfo>
-		<ds:X509Data>
-			<ds:X509SubjectName>${escapeXml(sig.certificateSubject)}</ds:X509SubjectName>
-			<ds:X509IssuerSerial>
-				<ds:X509IssuerName>${escapeXml(sig.certificateIssuer || "Головной УЦ Минцифры России")}</ds:X509IssuerName>
-				<ds:X509SerialNumber>${escapeXml(sig.certificateSerialNumber)}</ds:X509SerialNumber>
-			</ds:X509IssuerSerial>
-		</ds:X509Data>
-	</ds:KeyInfo>
-</ds:Signature>`.trim();
-}
 
 export function generateGostSignatureStampHtml(params: {
 	signerName: string;

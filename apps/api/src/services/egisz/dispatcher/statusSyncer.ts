@@ -45,7 +45,11 @@ export async function syncPendingStatuses(
 
 				let receipt: EgiszRemdRegistrationReceipt | null = null;
 				if (isRegistered) {
+					const rawObj = (statusRes as unknown as Record<string, unknown>) ?? {};
+					const serverReceiptId =
+						typeof rawObj.receiptId === "string" ? rawObj.receiptId : undefined;
 					receipt = createEgiszRemdReceipt({
+						receiptId: serverReceiptId,
 						remdDocumentId: resolvedRemdDocId,
 						transactionId: row.remdTransactionId,
 						registeredAt: statusRes.registrationDate,

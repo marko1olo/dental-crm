@@ -22,26 +22,8 @@ export async function resolveEffectiveSurgeryPatientId(
 	if (isUuid(activeVisitPat)) return activeVisitPat;
 
 	const pts = store.dashboard?.patients || [];
-	const byMatch = pts.find((p) => (isUuid(p.id) && p.id === patientId) || p.fullName === patientName);
+	const byMatch = pts.find((p) => (isUuid(p.id) && p.id === patientId) || (Boolean(patientName) && p.fullName === patientName));
 	if (byMatch && isUuid(byMatch.id)) return byMatch.id;
 
-	const firstValid = pts.find((p) => isUuid(p.id));
-	if (firstValid) return firstValid.id;
-
-	if (typeof fetch === "function") {
-		try {
-			const res = await fetch("/api/patients?limit=5", {
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			});
-			if (res.ok) {
-				const data = await res.json();
-				const list: Array<{ id: string }> = Array.isArray(data) ? data : data.patients || [];
-				const found = list.find((p) => isUuid(p.id));
-				if (found) return found.id;
-			}
-		} catch {
-			/* автономный режим без сети */
-		}
-	}
 	return null;
 }

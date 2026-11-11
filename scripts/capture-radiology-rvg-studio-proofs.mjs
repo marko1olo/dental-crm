@@ -2,8 +2,8 @@ import { mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "ba850a5d-b8c4-4d22-8499-d8867e798db3";
-const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`;
+const CURRENT_CONV_ID = "3804dee5-2404-4972-b037-04d34a6f9359";
+const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/radiology";
 const API_URL = "http://127.0.0.1:4100";
 const WEB_URL = "http://127.0.0.1:5173";

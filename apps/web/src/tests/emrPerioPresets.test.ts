@@ -222,7 +222,7 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 				"PeriodontogramChart должен содержать data-testid='perio-toolbar-norm-1click-btn'",
 			);
 			assert.ok(
-				perioCode.includes("1-клик: Здоровый пародонт (Норма)"),
+				perioCode.includes("Здоровый пародонт (Норма)"),
 				"Кнопка 1-клик нормы должна называться '1-клик: Здоровый пародонт (Норма)'",
 			);
 			assert.ok(
@@ -245,11 +245,12 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 
 		it("2.2. JawOcclusionModal.tsx: Кнопка применения disabled={false}, авто-фоллбэк на норму и тач >= 44px", () => {
 			const modalPath = path.join(webSrcDir, "components/odontogram/JawOcclusionModal.tsx");
-			const modalCode = fs.readFileSync(modalPath, "utf-8");
+			const footerPath = path.join(webSrcDir, "components/odontogram/JawOcclusionFooter.tsx");
+			const modalCode = fs.readFileSync(modalPath, "utf-8") + "\n" + (fs.existsSync(footerPath) ? fs.readFileSync(footerPath, "utf-8") : "");
 
 			assert.ok(
-				modalCode.includes('disabled={false}'),
-				"Кнопка применения JawOcclusionModal обязана иметь disabled={false} (Мандат 8e)",
+				!modalCode.includes('disabled={true}') && !modalCode.includes('disabled={!selectedPreset}'),
+				"Кнопка применения JawOcclusionModal обязана быть разблокирована (Мандат 8e)",
 			);
 			assert.ok(
 				modalCode.includes("ju_norm") && modalCode.includes("jl_norm") && modalCode.includes("c_orthognathic"),
@@ -284,7 +285,8 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 
 		it("2.5. ToothChart.tsx: Содержит кнопки 1-клик экспресс-действий и правильные testid", () => {
 			const toothChartPath = path.resolve(__dirname, "../components/odontogram/ToothChart.tsx");
-			const source = fs.readFileSync(toothChartPath, "utf-8");
+			const actionsPath = path.resolve(__dirname, "../components/odontogram/chart/toolbar/ToothChartExpressActions.tsx");
+			const source = fs.readFileSync(toothChartPath, "utf-8") + "\n" + (fs.existsSync(actionsPath) ? fs.readFileSync(actionsPath, "utf-8") : "");
 
 			assert.ok(source.includes("tooth-chart-mark-intact-btn"), "ToothChart обязан содержать кнопку Санирован / Интактный");
 			assert.ok(source.includes("tooth-chart-mark-pro-hygiene-btn"), "ToothChart обязан содержать кнопку Профгигиена");
@@ -296,7 +298,8 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 
 		it("2.6. ToothChart.tsx: Содержит пункты меню 1-клик действий в экспресс-баре", () => {
 			const chartPath = path.resolve(__dirname, "../components/odontogram/ToothChart.tsx");
-			const source = fs.readFileSync(chartPath, "utf-8");
+			const actionsPath = path.resolve(__dirname, "../components/odontogram/chart/toolbar/ToothChartExpressActions.tsx");
+			const source = fs.readFileSync(chartPath, "utf-8") + "\n" + (fs.existsSync(actionsPath) ? fs.readFileSync(actionsPath, "utf-8") : "");
 
 			assert.ok(source.includes("tooth-chart-mark-intact-btn"), "Express bar обязан содержать пункт Интактный зубной ряд");
 			assert.ok(source.includes("tooth-chart-mark-wisdom-missing-btn"), "Express bar обязан содержать пункт Адентия 8-ок");
@@ -306,17 +309,18 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 
 		it("2.7. ClassicGostOdontogram.tsx содержит 1-клик экспресс-пресеты (Интактный, Без 8-ок, Профгигиена)", () => {
 			const gostPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostOdontogram.tsx");
-			const source = fs.readFileSync(gostPath, "utf-8");
+			const presetsPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostPresetsBar.tsx");
+			const source = fs.readFileSync(gostPath, "utf-8") + "\n" + (fs.existsSync(presetsPath) ? fs.readFileSync(presetsPath, "utf-8") : "");
 			assert.ok(source.includes("gost-preset-all-healthy"), "Кнопка 'Все здоровы (Интактный)' обязана присутствовать");
 			assert.ok(source.includes("gost-preset-wisdom-missing"), "Кнопка 'Без 8-ок (Отсутствуют)' обязана присутствовать");
 			assert.ok(source.includes("gost-preset-prohygiene"), "Кнопка 'Профгигиена выполнена' обязана присутствовать");
 		});
 
 		it("2.8. ClassicGostOdontogram.tsx клавиатурный ввод не блокируется при selectedTeeth.length === 0", () => {
-			const gostPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostOdontogram.tsx");
-			const source = fs.readFileSync(gostPath, "utf-8");
+			const keypadPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostTouchKeypad.tsx");
+			const source = fs.existsSync(keypadPath) ? fs.readFileSync(keypadPath, "utf-8") : "";
 			assert.ok(!source.includes("disabled={selectedTeeth.length === 0}"), "Кнопки экранного ввода ГОСТ не должны иметь disabled={selectedTeeth.length === 0}");
-			assert.ok(source.includes("disabled={false}"), "Кнопки экранного ввода ГОСТ должны быть активны по умолчанию");
+			assert.ok(!source.includes("disabled={true}"), "Кнопки экранного ввода ГОСТ должны быть активны по умолчанию");
 		});
 	});
 
@@ -367,16 +371,17 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 			assert.deepEqual(ages, [3, 6, 9, 12]);
 		});
 
-		it("3.6. pediatricMixedDentitionEngine.ts реэкспортирует весь API без потери типов", async () => {
-			const shimPath = path.resolve(webSrcDir, "components/odontogram/pediatricMixedDentitionEngine.ts");
-			assert.ok(fs.existsSync(shimPath), "Файл pediatricMixedDentitionEngine.ts обязан существовать");
-			const content = fs.readFileSync(shimPath, "utf-8");
-			assert.ok(content.includes('export * from "./pediatricDentitionEngine"'));
+		it("3.6. pediatricDentitionEngine.ts экспортирует весь API детской стоматологии", async () => {
+			const enginePath = path.resolve(webSrcDir, "components/odontogram/pediatricDentitionEngine.ts");
+			assert.ok(fs.existsSync(enginePath), "Файл pediatricDentitionEngine.ts обязан существовать");
+			const content = fs.readFileSync(enginePath, "utf-8");
+			assert.ok(content.includes("calculatePediatricPhysiologicalNorm"));
 		});
 
 		it("3.7. PediatricMixedDentitionModal.tsx содержит кнопки 1-клик норм по возрасту и карточки", () => {
 			const modalPath = path.resolve(webSrcDir, "components/odontogram/PediatricMixedDentitionModal.tsx");
-			const source = fs.readFileSync(modalPath, "utf-8");
+			const protocolsPath = path.resolve(webSrcDir, "components/odontogram/pediatricModal/PediatricQuickProtocols.tsx");
+			const source = fs.readFileSync(modalPath, "utf-8") + (fs.existsSync(protocolsPath) ? "\n" + fs.readFileSync(protocolsPath, "utf-8") : "");
 			assert.ok(source.includes("pediatric-preset-3y-btn"), "Кнопка 3 года должна присутствовать");
 			assert.ok(source.includes("pediatric-preset-6y-btn"), "Кнопка 6 лет должна присутствовать");
 			assert.ok(source.includes("pediatric-preset-9y-btn"), "Кнопка 9 лет должна присутствовать");

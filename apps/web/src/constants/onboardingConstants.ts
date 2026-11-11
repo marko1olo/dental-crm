@@ -87,6 +87,8 @@ export type PatientAdministrativeProfileDraft = {
 		| "dmsGuaranteeLetterNumber"
 		| "dmsCoverageLimitKopecks"
 		| "dmsCoverageLimitRub"
+		| "telegramUserId"
+		| "telegramUsername"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
@@ -106,6 +108,8 @@ export type PatientAdministrativeProfileDraft = {
 	utmContent?: string | null;
 	utmTerm?: string | null;
 	leadSource?: string | null;
+	telegramUserId?: string | null;
+	telegramUsername?: string | null;
 };
 
 export type PatientAdministrativeProfileSaveState =

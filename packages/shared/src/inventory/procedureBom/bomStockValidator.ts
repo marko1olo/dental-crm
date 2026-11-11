@@ -257,7 +257,7 @@ export function generateSupplierPurchaseOrderHtml(order: SupplierPurchaseOrder):
 		<div style="text-align: right;">
 			<div><strong>Основание:</strong> ${order.reason === "stock_deficit" ? "Дефицит материалов" : "Пополнение неснижаемого запаса"}</div>
 			${order.visitId ? `<div><strong>Прием:</strong> ${order.visitId}</div>` : ""}
-			<div><strong>Статус:</strong> Проект (Сформирован в 1 клик)</div>
+			<div><strong>Статус:</strong> Проект (Сформирован автоматически)</div>
 		</div>
 	</div>
 

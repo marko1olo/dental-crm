@@ -219,7 +219,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 							}}
 							className="h-7 px-2.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/40 text-[11px] font-bold cursor-pointer inline-flex items-center gap-1.5 transition-colors shadow-xs"
 							data-testid="btn-fefo-batch-dispose"
-							title="Списать все просроченные партии со склада в 1 клик"
+							title="Списать все просроченные партии по FEFO"
 						>
 							<Trash2 size={12} className="shrink-0" />
 							<span>Списать всю просрочку ({stats.expiredCount})</span>

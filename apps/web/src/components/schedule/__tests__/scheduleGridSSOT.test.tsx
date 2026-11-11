@@ -89,7 +89,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 
 	describe("1. Mobile Agenda Timeline Card Structure & Typography", () => {
 		it("Renders prominent time display on left (09:30 - 10:30) with font-mono", () => {
-			const appt = mockDashboard.appointments[0];
+			const appt = mockDashboard.appointments[0]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -115,7 +115,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 		});
 
 		it("Renders 4px status stripe and semantic status badge without color chaos", () => {
-			const appt = mockDashboard.appointments[0];
+			const appt = mockDashboard.appointments[0]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -141,7 +141,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 		});
 
 		it("Extracts and displays tooth number badge when present (Зуб 36)", () => {
-			const appt = mockDashboard.appointments[0];
+			const appt = mockDashboard.appointments[0]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -166,7 +166,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 		});
 
 		it("Renders allergy alert as passive warning indicator without UI blockades", () => {
-			const appt = mockDashboard.appointments[0];
+			const appt = mockDashboard.appointments[0]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -192,7 +192,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 
 	describe("2. 1-Tap Touch Targets (>= 44x44px) & Rapid Transitions", () => {
 		it("Provides 1-tap call button with telephone protocol and min 44x44px hit area", () => {
-			const appt = mockDashboard.appointments[0];
+			const appt = mockDashboard.appointments[0]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -217,7 +217,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 		});
 
 		it("Planned appointment displays 'В кресло' 1-tap CTA with min 44px height", () => {
-			const appt = mockDashboard.appointments[0];
+			const appt = mockDashboard.appointments[0]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -243,7 +243,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 		});
 
 		it("In-treatment appointment displays 'В приём' 1-tap CTA to open medical record", () => {
-			const appt = mockDashboard.appointments[1];
+			const appt = mockDashboard.appointments[1]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {
@@ -268,7 +268,7 @@ describe("Schedule Grid & Mobile Agenda View SSOT (Apple HIG & Anti-Desktop-Sque
 		});
 
 		it("Completed appointment displays 'Чек' 1-tap CTA to navigate to cashier checkout", () => {
-			const appt = mockDashboard.appointments[2];
+			const appt = mockDashboard.appointments[2]!;
 			const html = renderToStaticMarkup(
 				React.createElement(ScheduleMobileTimelineRow, {
 					item: {

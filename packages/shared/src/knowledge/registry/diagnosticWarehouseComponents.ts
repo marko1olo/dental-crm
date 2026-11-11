@@ -156,7 +156,7 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 	category: "warehouse",
 	categoryRu: "Склад и материалы",
 	description:
-		"Учёт стоматологических материалов, партий, сроков годности (First Expired, First Out), списание анестетиков в 1 клик и мягкий овердрафт.",
+		"Учёт стоматологических материалов, партий, сроков годности (First Expired, First Out), быстрое списание анестетиков и мягкий овердрафт.",
 	route: "warehouse",
 	navigationHint: "Роут warehouse (вкладка #warehouse)",
 	primaryRole: ["nurse", "admin", "owner"],
@@ -166,7 +166,7 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 	},
 	quickTips: [
 		"Мандат 8e / 8ab: система тихо списывает материалы в отрицательный овердрафт без алертов и прерываний врача",
-		"Списание карпул анестетиков выполняется в 1 клик без комиссий из 3 человек",
+		"Списание карпул анестетиков выполняется без комиссий из 3 человек",
 		"Партии с истекающим сроком подсвечиваются автоматически по правилу FEFO",
 	],
 	primaryActions: [
@@ -174,7 +174,7 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 			id: "btn-quick-carpules-deduct",
 			label: "Списать анестетики",
 			selector: '[data-testid="nurse-quick-carpules-btn"]',
-			effect: "В 1 клик списывает отработанные карпулы анестетика без составления комиссий.",
+			effect: "Списывает отработанные карпулы анестетика без составления комиссий.",
 			requiresConfirmation: false,
 			role: ["nurse", "doctor", "admin"],
 		},
@@ -206,7 +206,7 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 			element: "Кнопка быстрого списания анестетиков",
 			selector: '[data-testid="nurse-quick-carpules-btn"]',
 			description: "Мгновенное пакетное списание без бумажной волокиты.",
-			badgeText: "1-клик",
+			badgeText: "Быстро",
 			highlightType: "pulse",
 		},
 	],
@@ -219,7 +219,7 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 		},
 		{
 			question: "Как списываются карпулы Ультракаина?",
-			answer: "Нажмите 'Списать анестетики' в 1 клик, либо они спишутся автоматически по протоколу услуги визита.",
+			answer: "Нажмите 'Списать анестетики', либо они спишутся автоматически по протоколу услуги визита.",
 		},
 	],
 	troubleshooting: [
@@ -340,7 +340,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 	},
 	quickTips: [
 		"Мандат 8v: запрещен крафт-пакетный маразм у кресла; лоток стерилен по умолчанию",
-		"Журнал формы 257/у формируется автоматически в 1 клик для проверок Роспотребнадзора",
+		"Журнал формы 257/у формируется автоматически для проверок Роспотребнадзора",
 		"Никаких обязательных сканирований штрихкодов пакетов на приёме у врача",
 	],
 	primaryActions: [
@@ -348,7 +348,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 			id: "btn-sanpin-autonorm",
 			label: "Авто-норма СанПиН",
 			selector: '[data-testid="btn-sanpin-autonorm"]',
-			effect: "В 1 клик фиксирует успешное прохождение азопирамовой пробы и стерилизации без фиктивных кликов.",
+			effect: "Фиксирует успешное прохождение азопирамовой пробы и стерилизации без лишних действий.",
 			requiresConfirmation: false,
 			role: ["nurse", "doctor"],
 		},
@@ -377,7 +377,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 		},
 	],
 	clinicalWorkflow:
-		"1. Инструменты в лотке стерильны по умолчанию -> 2. Циклы автоклава логируются автоматически -> 3. При проверке РПН журнал выгружается в 1 клик.",
+		"1. Инструменты в лотке стерильны по умолчанию -> 2. Циклы автоклава логируются автоматически -> 3. При проверке РПН журнал выгружается мгновенно.",
 	faq: [
 		{
 			question: "Нужно ли врачу сканировать штрихкоды крафт-пакетов перед каждым лечением кариеса?",

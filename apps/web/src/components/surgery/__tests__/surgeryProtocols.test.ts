@@ -9,7 +9,7 @@ import {
 	buildSurgicalDiaryEntry,
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
-} from "../surgeryProtocols";
+} from "../surgeryCatalogData";
 import {
 	createDefaultPassportRecord,
 	FAST_IMPLANT_SYSTEM_PRESETS,

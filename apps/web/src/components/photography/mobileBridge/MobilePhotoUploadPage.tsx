@@ -11,12 +11,12 @@ export interface MobilePhotoSlot {
 }
 
 export const CHAIRSIDE_MOBILE_SLOTS: MobilePhotoSlot[] = [
-	{ id: "frontal_smile", titleRu: "Улыбка и пропорции лица", shortLabelRu: "Улыбка", instructionRu: "Естественная широкая улыбка анфас" },
-	{ id: "frontal_occlusion", titleRu: "Фронт в смыкании (прикус)", shortLabelRu: "Фронт", instructionRu: "С роторасширителем, резцы в окклюзии" },
-	{ id: "upper_occlusal", titleRu: "Окклюзия верхняя челюсть", shortLabelRu: "Верхняя дуга", instructionRu: "С зеркалом, вся зубная дуга в фокусе" },
-	{ id: "lower_occlusal", titleRu: "Окклюзия нижняя челюсть", shortLabelRu: "Нижняя дуга", instructionRu: "С зеркалом, язык убран кзади" },
-	{ id: "right_lateral", titleRu: "Правый боковой сегмент", shortLabelRu: "Правый бок", instructionRu: "Соотношение клыков и моляров справа" },
-	{ id: "left_lateral", titleRu: "Левый боковой сегмент", shortLabelRu: "Левый бок", instructionRu: "Соотношение клыков и моляров слева" },
+	{ id: "portrait_smile", titleRu: "Улыбка и пропорции лица", shortLabelRu: "Улыбка", instructionRu: "Естественная широкая улыбка анфас" },
+	{ id: "intraoral_frontal_occlusion", titleRu: "Фронт в смыкании (прикус)", shortLabelRu: "Фронт", instructionRu: "С роторасширителем, резцы в окклюзии" },
+	{ id: "intraoral_maxillary_occlusal", titleRu: "Окклюзия верхняя челюсть", shortLabelRu: "Верхняя дуга", instructionRu: "С зеркалом, вся зубная дуга в фокусе" },
+	{ id: "intraoral_mandibular_occlusal", titleRu: "Окклюзия нижняя челюсть", shortLabelRu: "Нижняя дуга", instructionRu: "С зеркалом, язык убран кзади" },
+	{ id: "intraoral_right_buccal", titleRu: "Правый боковой сегмент", shortLabelRu: "Правый бок", instructionRu: "Соотношение клыков и моляров справа" },
+	{ id: "intraoral_left_buccal", titleRu: "Левый боковой сегмент", shortLabelRu: "Левый бок", instructionRu: "Соотношение клыков и моляров слева" },
 ];
 
 export interface MobilePhotoUploadPageProps {
@@ -39,7 +39,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 		expiresAt: number;
 	} | null>(null);
 
-	const [selectedSlotId, setSelectedSlotId] = useState<string>("frontal_smile");
+	const [selectedSlotId, setSelectedSlotId] = useState<string>("portrait_smile");
 	const [uploadedSlots, setUploadedSlots] = useState<Record<string, { url: string; fileName: string }>>({});
 	const [isLoadingSession, setIsLoadingSession] = useState<boolean>(true);
 	const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -70,13 +70,10 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				}
 				setUploadedSlots(map);
 			}
-		} catch (err: any) {
-			console.warn("[MobilePhotoUploadPage] Session fetch fallback:", err);
-			// Мандат 8wy: надежный фолбек для демонстрации и офлайн-режима
-			setSessionData({
-				patientInitials: "Морозова Е. Д.",
-				expiresAt: Date.now() + 15 * 60 * 1000,
-			});
+		} catch (err: unknown) {
+			console.warn("[MobilePhotoUploadPage] Session fetch failed:", err);
+			const msg = err instanceof Error ? err.message : String(err);
+			setError(msg || "Сессия не найдена или срок действия истек.");
 		} finally {
 			setIsLoadingSession(false);
 		}
@@ -298,7 +295,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 											{slot.shortLabelRu}
 										</div>
 										<div className="text-[10px] text-[var(--muted)] truncate">
-											{isDone ? "✓ В карточке" : "Ожидает"}
+											{isDone ? "В карточке" : "Ожидает"}
 										</div>
 									</div>
 
@@ -353,7 +350,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				<button
 					type="button"
 					onClick={triggerCamera}
-					disabled={isUploading}
+					aria-disabled={isUploading}
 					className="w-full h-14 rounded-2xl bg-[#0d9488] hover:bg-[#0f766e] active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer transition-all"
 					data-testid="btn-mobile-take-photo"
 				>

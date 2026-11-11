@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { calculateDoctorPeriodPayroll } from "../../staffPayrollEngine";
-import { DoctorPayrollModal } from "../../DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
 
 describe("Doctor Net Revenue: Cashbox Discipline & Rental (Mandates 8e, 8n)", () => {
 	it("4. Cashbox Discipline: uncollected patient debts produce zero doctor commission", () => {
@@ -65,7 +65,7 @@ describe("Doctor Net Revenue: Cashbox Discipline & Rental (Mandates 8e, 8n)", ()
 		assert.equal(res.baseCommissionPercent, 100);
 	});
 
-	it("6. Mandate 8e: DoctorPayrollModal renders seamlessly without any blocking disabled buttons", () => {
-		assert.ok(DoctorPayrollModal, "DoctorPayrollModal component must be cleanly exported");
+	it("6. Mandate 8e: DoctorPayrollStudioModal renders seamlessly without any blocking disabled buttons", () => {
+		assert.ok(DoctorPayrollStudioModal, "DoctorPayrollStudioModal component must be cleanly exported");
 	});
 });

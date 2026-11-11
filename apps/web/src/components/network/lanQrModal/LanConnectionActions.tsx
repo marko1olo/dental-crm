@@ -106,7 +106,7 @@ export const LanConnectionActions: React.FC<LanConnectionActionsProps> = ({
 						onClick={onOpenDiagnostics}
 						className="min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--teal,#0d9488)]/10 border border-[var(--teal,#0d9488)]/30 text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/20 transition-colors shrink-0 cursor-pointer"
 					>
-						Решение в 1 клик
+						Решение проблемы
 					</button>
 				</div>
 			)}

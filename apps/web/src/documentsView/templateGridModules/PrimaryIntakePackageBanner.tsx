@@ -26,7 +26,7 @@ export const PrimaryIntakePackageBanner: React.FC<
 				<div>
 					<div className="flex items-center gap-2">
 						<h3 className="text-sm font-bold text-[var(--ink,#0f172a)] leading-tight">
-							Пакет первичного приёма в 1 клик
+							Пакет первичного приёма
 						</h3>
 						<span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)]">
 							4 документа в 1 комплекте

@@ -30,18 +30,22 @@ export {
 	humanizeRestorationType,
 } from "./helpers.js";
 
-export { generateDoctorT51Payslip } from "./t51Payslip.js";
+export { generateDoctorPayslipHtml, generateDoctorT51Payslip } from "./doctorPayslip.js";
 
 export { doctorPayouts } from "./reportEngine.js";
 
+export { buildDoctorPayoutAggregateQuery } from "./queries.js";
+
 export {
-	type IdentSalaryModel,
-	type IdentDoctorSalaryCalculationParams,
-	type IdentDoctorSalaryCalculationResult,
-	type IdentSalaryPriceApplicationMode,
-	type IdentDiscountAllocationPolicy,
+	type DoctorSalaryModel,
+	type DoctorSalaryCalculationInput,
+	type DoctorSalaryCalculationResult,
+	type DoctorSalaryPriceApplicationMode,
+	type DiscountAllocationPolicy,
 	type DoctorOneTimeDeduction,
-	calculateIdentDoctorSalary,
+	calculateDoctorSalary,
+	calculateStandardDoctorSalary,
 	extractDeductibleMaterialsFromWriteoff,
-	IDENT_SALARY_MODEL_NAMES_RU,
+	DOCTOR_SALARY_MODEL_NAMES_RU,
 } from "@dental/shared";
+

@@ -77,12 +77,9 @@ describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states/:toothNumber/history" }), "GET /api/patients/:patientId/tooth-states/:toothNumber/history");
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states/history" }), "GET /api/patients/:patientId/tooth-states/history");
 
-		// Periodontal
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states/:toothNumber/periodontal" }), "GET /api/patients/:patientId/tooth-states/:toothNumber/periodontal");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/tooth-states/:toothNumber/periodontal" }), "POST /api/patients/:patientId/tooth-states/:toothNumber/periodontal");
-
-		// Pediatric
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/odontogram/pediatric-indices" }), "GET /api/patients/:patientId/odontogram/pediatric-indices");
+		// Extended Tooth States
+		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/extended-tooth-states" }), "GET /api/patients/:patientId/extended-tooth-states");
+		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/extended-tooth-states/batch" }), "POST /api/patients/:patientId/extended-tooth-states/batch");
 
 		// Treatment Plans Core
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/treatment-plans/:id" }), "GET /api/treatment-plans/:id");

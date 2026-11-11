@@ -11,7 +11,7 @@ import {
 	calculateCephalometrics,
 	CEPHALOMETRIC_LANDMARKS,
 	DEFAULT_CEPH_LANDMARKS_PRESET,
-	generateForm043OrthodonticProtocolText,
+	generateOrthodonticProtocolText,
 	type LandmarkMap,
 } from "../components/orthodontics/cephalometricMath";
 import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
@@ -74,10 +74,10 @@ describe("Orthodontic Cephalometric Tracker & Analysis (OrthodonticCephTrackerMo
 		});
 	});
 
-	describe("2. Comprehensive Form 043/u Orthodontic Protocol Generation", () => {
-		it("generates structured text conforming to Order 834n with all angles and skeletal diagnosis", () => {
+	describe("2. Comprehensive Orthodontic Protocol Generation", () => {
+		it("generates structured text with all angles and skeletal diagnosis", () => {
 			const analysis = calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET);
-			const text = generateForm043OrthodonticProtocolText(analysis, {
+			const text = generateOrthodonticProtocolText(analysis, {
 				patientName: "Кузнецова Анна Павловна",
 				doctorName: "Д-р Смирнов К.В.",
 			});

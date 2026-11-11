@@ -71,20 +71,24 @@ describe("Frontend Ergonomics & Layout Defects Remediation", () => {
     );
   });
 
-  it("3. Floating Softphone CSS: safe bottom/right spacing avoiding toast collision", () => {
+  it("3. Telephony Ambient Top Capsule & Drawer: Apple HIG non-blocking island layout", () => {
     const cssPath = path.resolve(
       import.meta.dirname,
-      "../components/telephony/telephonyFloatingWidget.css",
+      "../components/telephony/styles/telephonyCapsuleAndDrawer.css",
     );
     const cssContent = fs.readFileSync(cssPath, "utf8");
 
     assert.ok(
-      cssContent.includes("bottom: 84px"),
-      "telephonyFloatingWidget.css must position floating softphone at bottom: 84px on desktop to avoid toast collision",
+      cssContent.includes(".dnt-incoming-call-badge-container") && cssContent.includes("top: 12px"),
+      "telephonyCapsuleAndDrawer.css must position incoming call capsule container at top: 12px for non-blocking ambient banner",
     );
     assert.ok(
-      cssContent.includes("right: 24px"),
-      "telephonyFloatingWidget.css must align right: 24px on desktop",
+      cssContent.includes(".dnt-incoming-call-capsule"),
+      "telephonyCapsuleAndDrawer.css must contain .dnt-incoming-call-capsule style",
+    );
+    assert.ok(
+      cssContent.includes(".dnt-telephony-patient-drawer") && cssContent.includes("width: 420px"),
+      "telephonyCapsuleAndDrawer.css must specify patient drawer width of 420px strictly per Mandates 8b & 8e",
     );
   });
 
@@ -154,10 +158,11 @@ describe("Frontend Ergonomics & Layout Defects Remediation", () => {
       }),
     );
 
-    // 1. Legal requisites: no truncate, full text with Order 804n & Law 2300-1
+    // 1. Legal requisites: no truncate, full text with Price catalog & Law 2300-1
     assert.ok(
-      html.includes("Приказ МЗ РФ № 804н") && html.includes("Закон РФ № 2300-1"),
-      "Legal requisites must include both Order 804n and Law 2300-1",
+      (html.includes("Прейскурант услуг") || html.includes("Приказ МЗ РФ № 804н")) &&
+        html.includes("Закон РФ № 2300-1"),
+      "Legal requisites must include Price catalog / Order 804n and Law 2300-1",
     );
     assert.ok(
       html.includes("flex-wrap"),
@@ -204,8 +209,9 @@ describe("Frontend Ergonomics & Layout Defects Remediation", () => {
       "Scroll container must have padding-bottom: 96px to prevent fixed footer collision",
     );
     assert.ok(
-      html.includes("btn-fiscalize-54fz") && html.includes("Фискализировать (54-ФЗ)"),
-      "Bottom toolbar must contain 54-FZ fiscalization button",
+      html.includes("btn-fiscalize-54fz") &&
+        (html.includes("Фискальный чек") || html.includes("Фискализировать")),
+      "Bottom toolbar must contain fiscalization button",
     );
 
     // 6. Anti-Matryoshka: items inside group use divide-y without nested double border

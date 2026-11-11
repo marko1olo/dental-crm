@@ -44,7 +44,7 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	if (discountViolation) {
 		return reply.code(422).send({
 			error: "InvalidDiscountError",
-			code: "Decree659DiscountLimitExceededError",
+			code: "DiscountLimitExceededError",
 			message: `Сумма скидки (${discountViolation.discountRub} ₽) по позиции «${discountViolation.nameRu}» превышает 100% стоимости услуги (${discountViolation.lineGrossRub} ₽). Скидка не может быть больше стоимости позиции.`,
 		});
 	}

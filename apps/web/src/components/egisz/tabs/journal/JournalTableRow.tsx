@@ -74,7 +74,7 @@ export const JournalTableRow: React.FC<JournalTableRowProps> = ({
 						className="egisz-btn sm"
 						style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem", fontWeight: 600, borderRadius: "4px", background: "var(--paper-strong)", color: "var(--ink)", border: "1px solid var(--line)", cursor: "pointer" }}
 					>
-						1-Клик ZIP
+						Скачать ZIP
 					</button>
 				</div>
 			</td>

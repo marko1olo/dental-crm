@@ -1,5 +1,5 @@
 import { FileText, PenTool, Printer, Save, ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { EstimatorTopBarProps } from "./estimatorUiTypes";
 
 export const TreatmentEstimatorTopBar: React.FC<EstimatorTopBarProps> = ({
@@ -29,9 +29,10 @@ export const TreatmentEstimatorTopBar: React.FC<EstimatorTopBarProps> = ({
 						onClick={() => setPlannerTab("catalogServices")}
 						style={{ padding: "5px 12px", borderRadius: "6px", ...(plannerTab === "catalogServices" || plannerTab === "comprehensive_804n" ? { backgroundColor: "#0d9488", color: "#ffffff" } : { color: "var(--muted)" }) }}
 						className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${plannerTab === "catalogServices" || plannerTab === "comprehensive_804n" ? "bg-teal-600 text-white shadow-xs font-black" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
-						aria-label="3 Варианта плана"
+						aria-label="Комплексный план"
+						title="Комплексный план (3 варианта реабилитации)"
 					>
-						3 Варианта плана
+						Комплексный план
 					</button>
 					<button
 						type="button"
@@ -46,7 +47,7 @@ export const TreatmentEstimatorTopBar: React.FC<EstimatorTopBarProps> = ({
 			<div className="flex gap-2 flex-wrap sm:flex-nowrap shrink-0" style={{ gap: "8px" }}>
 				{signatureUrl && (
 					<span className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center" style={{ padding: "4px 10px" }}>
-						ПОДПИСАНО
+						Подписано
 					</span>
 				)}
 				<button

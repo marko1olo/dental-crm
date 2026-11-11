@@ -95,7 +95,7 @@ export const SovereignPresetCardItem: React.FC<SovereignPresetCardItemProps> = R
 							Применение...
 						</>
 					) : (
-						"Применить в 1 клик"
+						"Применить пресет"
 					)}
 				</span>
 			</div>

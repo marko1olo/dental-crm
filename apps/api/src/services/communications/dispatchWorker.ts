@@ -175,6 +175,18 @@ function parseInteger(
 	return Math.max(min, Math.min(max, parsed));
 }
 
+let activeCommunicationWorkerHandle: DispatchWorkerHandle | null = null;
+
+/**
+ * Останавливает глобально активный экземпляр воркера коммуникаций, если он запущен.
+ */
+export function stopCommunicationDispatchWorker(): void {
+	if (activeCommunicationWorkerHandle) {
+		activeCommunicationWorkerHandle.stop();
+		activeCommunicationWorkerHandle = null;
+	}
+}
+
 export function startCommunicationDispatchWorker(
 	options: { logger?: DispatchWorkerLogger; env?: NodeJS.ProcessEnv } = {},
 ): DispatchWorkerHandle {
@@ -373,16 +385,22 @@ export function startCommunicationDispatchWorker(
 
 	schedule(intervalMs);
 
-	return {
+	const handle: DispatchWorkerHandle = {
 		enabled: true,
 		stop: () => {
 			stopped = true;
 			if (timer) clearTimeout(timer);
 			timer = null;
+			if (activeCommunicationWorkerHandle === handle) {
+				activeCommunicationWorkerHandle = null;
+			}
 		},
 		runOnce,
 		scheduleRemindersOnce,
 	};
+
+	activeCommunicationWorkerHandle = handle;
+	return handle;
 }
 
 /**

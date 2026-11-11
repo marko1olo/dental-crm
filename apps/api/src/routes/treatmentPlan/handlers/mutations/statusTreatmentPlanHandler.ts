@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../../db/client.js";
-import { auditEvents, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
+import { auditEvents, patientInvoices, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../../odontogram/types.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
 
@@ -35,6 +35,7 @@ export async function handleApproveTreatmentPlan(
 	}
 
 	const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
+	let createdInvoice: typeof patientInvoices.$inferSelect | null = null;
 	const approvedPlan = await db.transaction(async (tx) => {
 		const [updated] = await tx
 			.update(treatmentPlans)
@@ -59,6 +60,27 @@ export async function handleApproveTreatmentPlan(
 						sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
 					),
 				);
+
+			const totalAmountRub = Number(
+				updated.totalPriceRub || updated.totalPrice || existing.totalPriceRub || existing.totalPrice || 0,
+			);
+			if (totalAmountRub > 0) {
+				const now = new Date();
+				const [invoice] = await tx
+					.insert(patientInvoices)
+					.values({
+						organizationId,
+						patientId: existing.patientId,
+						totalRub: String(totalAmountRub),
+						totalAmountRub,
+						status: "issued",
+						issuedAt: now,
+						createdAt: now,
+						isSynced: false,
+					})
+					.returning();
+				createdInvoice = invoice ?? null;
+			}
 		}
 
 		return updated;
@@ -87,6 +109,8 @@ export async function handleApproveTreatmentPlan(
 	return reply.code(200).send({
 		success: true,
 		plan: approvedPlan,
+		invoice: createdInvoice,
+		createdInvoice,
 	});
 }
 

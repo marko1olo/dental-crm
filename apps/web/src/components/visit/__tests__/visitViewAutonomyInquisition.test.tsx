@@ -248,7 +248,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 
 		// Verify that VisitView contains the 1-click somatic norm button in the header toolbar per Mandates 8e, 8p
 		expect(visitViewSource).toContain('data-testid="btn-somatic-norm-one-click"');
-		expect(visitViewSource).toMatch(/Заполнить нормой|Соматически здоров \/ норма \(1-клик\)/);
+		expect(visitViewSource).toMatch(/Заполнить нормой|Соматически здоров \/ норма/);
 		// Mandate 8p: No duplicate somatic status banner in the visit body when button is in the header
 		expect(visitViewSource).not.toContain("visit-somatic-status-block");
 	});
@@ -280,7 +280,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(telephonyPopupSource).toMatch(
 			/const isDoctorMode\s*=\s*selectedWorkspaceRole === "doctor" \|\| currentView === "visit"/,
 		);
-		expect(telephonyPopupSource).toContain("if (!activeCall || isDoctorMode || isDndActive");
+		expect(telephonyPopupSource).toContain("if (isDoctorMode) return null;");
 	});
 
 	it("7. guarantees fast Form 043/u printing is accessible anytime with draft/signed watermark (Mandate 8e)", () => {

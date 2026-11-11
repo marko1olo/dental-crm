@@ -104,7 +104,7 @@ export function validateClinicalWorkflowStep(
 					safeDefaultsApplied = true;
 				} else if (!softFocusFieldId) {
 					softFocusFieldId = "visit-treatment-description-input";
-					guidingHint = "Опишите проведенное лечение или выберите 1-клик шаблон приёма";
+					guidingHint = "Опишите проведенное лечение или выберите клинический протокол приёма";
 				}
 			}
 			break;

@@ -169,7 +169,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			.select({
 				doctorUserId: labOrders.doctorId,
 				labCostRub:
-					sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, ${labOrders.priceRub})), 0)::numeric(12,2)`.as(
+					sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)::numeric(12,2)`.as(
 						"lab_cost_rub",
 					),
 				labOrdersCount: sql<number>`count(*)::int`.as("lab_orders_count"),

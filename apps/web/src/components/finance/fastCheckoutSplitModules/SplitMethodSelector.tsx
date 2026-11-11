@@ -7,6 +7,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React from "react";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile.js";
 import { CHECKOUT_PAYMENT_METHODS } from "../../payments/checkout/fastCheckoutPresets.js";
 import {
 	SplitSimpleCashierButtons,
@@ -27,6 +28,12 @@ export const SplitMethodSelector: React.FC<SplitMethodSelectorProps> = ({
 	onApplyOneClickLoyaltyPoints,
 	onSwitchToSplitMode,
 }) => {
+	const flags = useWorkspaceProfile();
+	const visibleMethods = CHECKOUT_PAYMENT_METHODS.filter((m) => {
+		if (m.id === "dms_insurance" && !flags?.hasInsuranceCoPay) return false;
+		return true;
+	});
+
 	return (
 		<div className="space-y-1.5">
 			<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
@@ -48,7 +55,7 @@ export const SplitMethodSelector: React.FC<SplitMethodSelectorProps> = ({
 					role="tablist"
 					aria-label="Способ оплаты"
 				>
-					{CHECKOUT_PAYMENT_METHODS.map((m) => {
+					{visibleMethods.map((m) => {
 						const isSelected = activeMethod === m.id;
 						return (
 							<button

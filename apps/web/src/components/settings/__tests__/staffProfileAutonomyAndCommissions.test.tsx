@@ -148,7 +148,7 @@ describe("Red Team: Staff Profile & Doctor Shift Autonomy", () => {
 
 		assert.ok(html.includes("Печать сводки смены"), "Must render print button");
 		assert.ok(html.includes("Отправить в Telegram"), "Must render Telegram summary button");
-		assert.ok(html.includes("Завершить смену и рассчитать (1 клик)"), "Must render 1-click close button");
+		assert.ok(html.includes("Завершить смену и рассчитать"), "Must render close button");
 		assert.ok(html.includes("btn-send-telegram-shift-summary"), "Must have telegram testid");
 		assert.ok(html.includes("btn-confirm-close-shift-1click"), "Must have 1-click confirm testid");
 	});

@@ -53,11 +53,10 @@ export const PaymentBuyerRequisitesSection: React.FC<
 					<span
 						className="px-2 py-0.5 rounded text-[11px] font-bold bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] flex items-center"
 						data-testid="inn-physical-not-required-badge"
-						title="Для физлиц не требуется"
+						title="Плательщик — пациент (физлицо)"
 					>
 						<ShieldCheck size={12} className="inline mr-1 text-[var(--teal,#0d9488)]" />
-						Для физлиц не требуется
-						<span className="sr-only">54-ФЗ для физлиц не требуется</span>
+						Пациент (физлицо)
 					</span>
 				) : (
 					<span

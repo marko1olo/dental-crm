@@ -20,9 +20,9 @@ export function useVisitSpeech(params: UseVisitSpeechParams): UseVisitSpeechRetu
 
 	const recording = useVisitSpeechRecording({
 		dashboard, activeOrganizationId, isOnline, selectedSpecialty,
-		speechGatewayStatus: null,
+		speechGatewayStatus: gateway.speechGatewayStatus,
 		setError,
-		setSpeechStatusNote: () => {},
+		setSpeechStatusNote: gateway.setSpeechStatusNote,
 		appendVisitDictationText,
 		submitSpeechChunk: transcription.submitSpeechChunk,
 		applySpeechTranscription: textInsertion.applySpeechTranscription,

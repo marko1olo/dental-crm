@@ -1,6 +1,6 @@
 /**
  * marketingRecallsAndAppleHig.test.ts
- * Red Team Inquisitorial tests for Patient Recalls Hub, 1-Click WhatsApp/SMS/Telegram status persistence,
+ * Red Team Inquisitorial tests for Patient Recalls Hub, WhatsApp/SMS/Telegram status persistence,
  * single Primary CTA, and Apple HIG mobile ergonomics (Mandates 8e, 8am, 8ze).
  */
 
@@ -14,48 +14,47 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const marketingDir = path.resolve(__dirname, "..");
 const stylesDir = path.resolve(marketingDir, "../../styles/marketingStyles");
+const recallsDir = path.resolve(marketingDir, "../recalls");
 
-test("1. MarketingRecallPatientCard persists status to PostgreSQL /api/recalls/:patientId/status", () => {
-	const cardPath = path.join(marketingDir, "MarketingRecallPatientCard.tsx");
-	const content = fs.readFileSync(cardPath, "utf8");
+test("1. PatientRecallsHub canonical SSOT persists status to PostgreSQL /api/patients/recall-candidates", () => {
+	const actionsPath = path.join(recallsDir, "recallStatusUpdateApi.ts");
+	const actionsContent = fs.readFileSync(actionsPath, "utf8");
 
 	assert.ok(
-		content.includes("/api/recalls/"),
-		"Must invoke /api/recalls/ to persist recall status in PostgreSQL",
+		actionsContent.includes("/api/patients/recall-candidates/"),
+		"Must invoke /api/patients/recall-candidates/ to persist recall status in PostgreSQL",
+	);
+
+	const invitePath = path.join(recallsDir, "recallMessagingApi.ts");
+	const inviteContent = fs.readFileSync(invitePath, "utf8");
+	assert.ok(
+		inviteContent.includes("/api/recalls/invite"),
+		"Must invoke /api/recalls/invite for messaging invitations",
+	);
+
+	const hubActionsPath = path.join(recallsDir, "useRecallHubActions.ts");
+	const hubActionsContent = fs.readFileSync(hubActionsPath, "utf8");
+	assert.ok(
+		hubActionsContent.includes("buildWhatsAppUrl"),
+		"Must provide WhatsApp messaging integration",
 	);
 	assert.ok(
-		content.includes("denteClinicalMutationHeaders"),
-		"Must include mutation headers for status updates",
-	);
-	assert.ok(
-		content.includes("https://wa.me/"),
-		"Must provide 1-click WhatsApp messaging link",
-	);
-	assert.ok(
-		content.includes("https://t.me/"),
-		"Must provide 1-click Telegram messaging link",
-	);
-	assert.ok(
-		content.includes("/api/patients/recall-candidates/invite"),
-		"Must provide SMS invitation route",
+		hubActionsContent.includes("buildTelegramUrl"),
+		"Must provide Telegram messaging integration",
 	);
 });
 
-test("2. MarketingRecallsHub contains Teal Primary CTA for batch reminders", () => {
-	const hubPath = path.join(marketingDir, "MarketingRecallsHub.tsx");
+test("2. PatientRecallsHubModal contains canonical modal structure and Apple HIG drag handle", () => {
+	const hubPath = path.join(recallsDir, "PatientRecallsHubModal.tsx");
 	const content = fs.readFileSync(hubPath, "utf8");
 
 	assert.ok(
-		content.includes("btn-batch-recall-reminders"),
-		"Must have data-testid btn-batch-recall-reminders",
+		content.includes("data-testid=\"patient-recalls-hub-modal\""),
+		"Must have data-testid patient-recalls-hub-modal",
 	);
 	assert.ok(
-		content.includes("var(--teal"),
-		"Primary CTA button must use Teal design token",
-	);
-	assert.ok(
-		content.includes("Отправить напоминания"),
-		"Primary CTA text must be human Russian",
+		content.includes("recall-drag-handle"),
+		"Modal must contain Apple HIG mobile bottom sheet drag handle",
 	);
 });
 
@@ -88,3 +87,4 @@ test("4. Marketing mobile styles enforce Apple HIG >= 44px touch targets and 0px
 		"Must prevent horizontal drift with overflow-x: clip",
 	);
 });
+

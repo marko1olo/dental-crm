@@ -35,7 +35,7 @@ export function UkepPluginFallbackBanner({
 						data-testid="btn-ukep-fallback-pep"
 					>
 						<FileSignature size={14} />
-						<span>Подписать ПЭП в 1 клик</span>
+						<span>Подписать ПЭП</span>
 					</button>
 				)}
 				{onPrintPaperFallback && (

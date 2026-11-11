@@ -23,7 +23,7 @@ import { PaymentModal } from "../PaymentModal.js";
 import { FastCheckoutModal } from "../FastCheckoutModal.js";
 import { CashReceiptModal } from "../CashReceiptModal.js";
 import { PatientAdministrativeForm } from "../../patients/PatientAdministrativeForm.js";
-import { ClinicalWriteoffModal } from "../../inventory/writeoff/ClinicalWriteoffModal.js";
+import { ClinicalWriteoffModal } from "../../inventory/writeoff/index.js";
 import {
 	createQuickCarpuleWriteoffDocument,
 	createQuickVisitWriteoffDocument,

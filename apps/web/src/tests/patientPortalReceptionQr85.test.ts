@@ -7,11 +7,17 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import React, { createElement } from "react";
+globalThis.React = React;
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	generateReceptionCheckinQrPayload,
 	type ReceptionCheckinQrResult,
 } from "../components/portal/patientCabinet/patientCabinetEngine";
 import { DEMO_PATIENT_CABINET } from "../components/portal/patientCabinet/patientCabinetPresets";
+import { OverviewReceptionQrBanner } from "../components/portal/patientCabinet/tabs/overview/OverviewReceptionQrBanner";
+import { OverviewNextAppointmentCard } from "../components/portal/patientCabinet/tabs/overview/OverviewNextAppointmentCard";
+import { ReceptionQrSheet } from "../components/portal/patientCabinet/sheets/ReceptionQrSheet";
 
 test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => {
 	await t.test("1. generateReceptionCheckinQrPayload creates high-contrast SVG QR matrix & check-in data", () => {
@@ -31,28 +37,49 @@ test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => 
 		assert.ok(result.receptionInstructionsRu.includes("ресепшен"));
 	});
 
-	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
-		? path.resolve(process.cwd(), "apps/web/src")
-		: path.resolve(process.cwd(), "src");
+	await t.test("2. OverviewReceptionQrBanner renders Reception QR Banner and 'Показать администратору' button", () => {
+		const html = renderToStaticMarkup(
+			createElement(OverviewReceptionQrBanner, {
+				onOpenReceptionQr: () => {},
+			}),
+		);
 
-	await t.test("2. PatientCabinetModal contains Reception QR Banner and 'Показать администратору' button", () => {
-		const modalPath = path.resolve(srcDir, "components/portal/patientCabinet/PatientCabinetModal.tsx");
-		const modalSrc = fs.readFileSync(modalPath, "utf-8");
+		assert.ok(html.includes('data-testid="reception-qr-banner"'), "Must render reception-qr-banner in Overview tab");
+		assert.ok(html.includes("Показать администратору"), "Must have button 'Показать администратору'");
+		assert.ok(html.includes('data-testid="btn-show-reception-qr"'), "Must have testid for reception QR button");
 
-		assert.ok(modalSrc.includes("data-testid=\"reception-qr-banner\""), "Must render reception-qr-banner in Overview tab");
-		assert.ok(modalSrc.includes("Показать администратору"), "Must have button 'Показать администратору'");
-		assert.ok(modalSrc.includes("data-testid=\"btn-show-reception-qr\""), "Must have testid for reception QR button");
-		assert.ok(modalSrc.includes("data-testid=\"reception-qr-modal\""), "Must render reception-qr-modal dialog");
+		// ReceptionQrSheet dialog check
+		const sheetHtml = renderToStaticMarkup(
+			createElement(ReceptionQrSheet, {
+				isOpen: true,
+				onClose: () => {},
+				data: DEMO_PATIENT_CABINET,
+				nextAppointment: DEMO_PATIENT_CABINET.appointments[0] || null,
+			}),
+		);
+		assert.ok(sheetHtml.includes('data-testid="reception-qr-modal"'), "Must render reception-qr-modal dialog");
 	});
 
 	await t.test("3. Nearest visit card highlights time with 20px bold font and cabinet room number", () => {
-		const modalPath = path.resolve(srcDir, "components/portal/patientCabinet/PatientCabinetModal.tsx");
-		const modalSrc = fs.readFileSync(modalPath, "utf-8");
+		const demoAppt = DEMO_PATIENT_CABINET.appointments[0];
+		assert.ok(demoAppt, "Demo cabinet must have appointments");
 
-		assert.ok(modalSrc.includes("pc-next-visit-time"), "Must use pc-next-visit-time class");
-		assert.ok(modalSrc.includes("pc-next-visit-room"), "Must use pc-next-visit-room class");
-		assert.ok(modalSrc.includes("data-testid=\"next-appt-qr-btn\""), "Next appointment card must have reception QR button");
+		const html = renderToStaticMarkup(
+			createElement(OverviewNextAppointmentCard, {
+				appt: demoAppt,
+				countdown: "1 ч 15 мин",
+				onOpenSelfCheckin: () => {},
+				onOpenReceptionQr: () => {},
+			}),
+		);
 
+		assert.ok(html.includes("pc-next-visit-time"), "Must use pc-next-visit-time class");
+		assert.ok(html.includes("pc-next-visit-room"), "Must use pc-next-visit-room class");
+		assert.ok(html.includes('data-testid="next-appt-qr-btn"'), "Next appointment card must have reception QR button");
+
+		const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+			? path.resolve(process.cwd(), "apps/web/src")
+			: path.resolve(process.cwd(), "src");
 		const cssPath = path.resolve(srcDir, "components/portal/patientCabinet/patientCabinet.css");
 		const cssSrc = fs.readFileSync(cssPath, "utf-8");
 
@@ -62,6 +89,9 @@ test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => 
 	});
 
 	await t.test("4. Touch targets >= 48px and zero horizontal overflow compliance for 375px mobile viewports", () => {
+		const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+			? path.resolve(process.cwd(), "apps/web/src")
+			: path.resolve(process.cwd(), "src");
 		const cssPath = path.resolve(srcDir, "components/portal/patientCabinet/patientCabinet.css");
 		const cssSrc = fs.readFileSync(cssPath, "utf-8");
 

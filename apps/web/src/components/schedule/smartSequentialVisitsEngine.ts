@@ -312,7 +312,7 @@ export async function createSmartSequentialAppointment(
     toothNumber: parentAppointment.toothNumber ?? null,
     diagnosisMkb10: parentAppointment.diagnosisMkb10 ?? null,
     reason: reasonTitle,
-    comment: `Создано в 1 клик по протоколу «${protocol.title}» из визита ${parentAppointment.id}`,
+    comment: `Создано по протоколу «${protocol.title}» из визита ${parentAppointment.id}`,
   };
 
   const isDemoOrOffline =

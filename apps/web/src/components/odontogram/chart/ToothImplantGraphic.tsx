@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { ToothState } from "./toothChartTypes";
 import type { ToothVisualProps } from "./ToothColors";
 import { UpperImplantGraphic } from "./implant/UpperImplantGraphic";

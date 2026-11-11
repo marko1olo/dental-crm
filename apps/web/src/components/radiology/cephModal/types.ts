@@ -3,11 +3,11 @@ import type {
 	LandmarkMap,
 	Point2D,
 	CephalometricAnalysisResult,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 import {
 	LANDMARK_CLINICAL_ROLES,
 	getRequiredLandmarksForMeasurement,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 
 export { LANDMARK_CLINICAL_ROLES, getRequiredLandmarksForMeasurement };
 export type { LandmarkKey, LandmarkMap, Point2D, CephalometricAnalysisResult };
@@ -20,6 +20,7 @@ export interface CephalometricAnalysisModalProps {
 	readonly initialImageUrl?: string | undefined;
 	readonly initialTab?: ("landmarks" | "metrics" | "report") | undefined;
 	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
+	readonly onApplyAnalysis?: ((analysis: { trgValues: Record<string, number>; skeletalClass?: string }) => void) | undefined;
 }
 
 export type CephTabId = "landmarks" | "metrics" | "report";

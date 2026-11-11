@@ -111,7 +111,7 @@ export function generateFnsTaxDeductionXml(params: TaxDeductionCertificateParams
 	const taxOfficeCode = (params.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
-	// Формат ИдФайл по Приказу 824@: VO_SPRRECH_КодНО_ИНН_ГГГГММДД_GUID
+	// Формат ИдФайл по Приказу 824@: UT_SVOPLMEDUSL_КодНО_ИНН_ГГГГММДД_GUID
 	const safeTaxOffice = taxOfficeCode.replace(/[^A-Za-z0-9]/g, "");
 	const clinicInnClean = String(params.clinic.inn || "").replace(/\D/g, "");
 	const isIp = params.clinic.isSoleProprietor === true || clinicInnClean.length === 12;
@@ -123,7 +123,7 @@ export function generateFnsTaxDeductionXml(params: TaxDeductionCertificateParams
 		8,
 		`${safeTaxOffice}_${clinicId}_${dateStamp}_${params.taxYear}_${params.certificateNumber}`,
 	);
-	const fileId = `VO_SPRRECH_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
+	const fileId = `UT_SVOPLMEDUSL_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
 	const fileName = `${fileId}.xml`;
 
 	const code01Str = (targetYearSummary.code01Kopecks / 100).toFixed(2);
@@ -221,7 +221,7 @@ export function generateFnsTaxDeductionBatchXml(batch: TaxDeductionBatchParams):
 		8,
 		`${safeTaxOffice}_${clinicId}_${dateStamp}_${batch.taxYear}_${batch.certificates.length}`,
 	);
-	const fileId = `VO_SPRRECH_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
+	const fileId = `UT_SVOPLMEDUSL_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
 	const fileName = `${fileId}.xml`;
 
 	const signerType = batch.signer?.signerType || "1";

@@ -172,7 +172,13 @@ async function main() {
   const browser = await chromium.launch({
     executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--font-render-hinting=none",
+      "--proxy-server=direct://",
+      "--proxy-bypass-list=*",
+    ],
   });
 
   try {
@@ -188,8 +194,8 @@ async function main() {
     const pcPage = await pcContext.newPage();
     await setupPageSession(pcContext, pcPage, "administrator");
 
-    console.log("  Navigating to http://127.0.0.1:5173/?demo=true#schedule ...");
-    await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 45000 });
+    console.log("  Navigating to http://127.0.0.1:4173/?demo=true#schedule ...");
+    await pcPage.goto("http://127.0.0.1:4173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 45000 });
     await waitForRealUI(pcPage);
 
     // 01_telephony_pc_light.png
@@ -202,6 +208,7 @@ async function main() {
     const pcLightPath = path.join(outDir, "01_telephony_pc_light_1440x900.png");
     await pcPage.screenshot({ path: pcLightPath, fullPage: false });
     fs.copyFileSync(pcLightPath, path.join(outDir, "01_telephony_pc_light.png"));
+    fs.copyFileSync(pcLightPath, path.join(outDir, "01_telephony_incoming_call_pc_light_1440x900.png"));
     const pcLightStat = fs.statSync(pcLightPath);
     console.log(`  [OK] Saved 01_telephony_pc_light_1440x900.png (${Math.round(pcLightStat.size / 1024)} KB)`);
 
@@ -215,6 +222,7 @@ async function main() {
     const pcDarkPath = path.join(outDir, "02_telephony_pc_dark_1440x900.png");
     await pcPage.screenshot({ path: pcDarkPath, fullPage: false });
     fs.copyFileSync(pcDarkPath, path.join(outDir, "02_telephony_pc_dark.png"));
+    fs.copyFileSync(pcDarkPath, path.join(outDir, "02_telephony_incoming_call_pc_dark_1440x900.png"));
     const pcDarkStat = fs.statSync(pcDarkPath);
     console.log(`  [OK] Saved 02_telephony_pc_dark_1440x900.png (${Math.round(pcDarkStat.size / 1024)} KB)`);
 
@@ -234,8 +242,8 @@ async function main() {
     const mobilePage = await mobileContext.newPage();
     await setupPageSession(mobileContext, mobilePage, "administrator");
 
-    console.log("  Navigating mobile to http://127.0.0.1:5173/?demo=true#schedule ...");
-    await mobilePage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 45000 });
+    console.log("  Navigating mobile to http://127.0.0.1:4173/?demo=true#schedule ...");
+    await mobilePage.goto("http://127.0.0.1:4173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 45000 });
     await waitForRealUI(mobilePage);
 
     // 03_telephony_mobile_light.png
@@ -248,6 +256,7 @@ async function main() {
     const mobileLightPath = path.join(outDir, "03_telephony_mobile_light_390x844.png");
     await mobilePage.screenshot({ path: mobileLightPath, fullPage: false });
     fs.copyFileSync(mobileLightPath, path.join(outDir, "03_telephony_mobile_light.png"));
+    fs.copyFileSync(mobileLightPath, path.join(outDir, "03_telephony_incoming_call_mobile_light_390x844.png"));
     const mobileLightStat = fs.statSync(mobileLightPath);
     console.log(`  [OK] Saved 03_telephony_mobile_light_390x844.png (${Math.round(mobileLightStat.size / 1024)} KB)`);
 
@@ -261,6 +270,7 @@ async function main() {
     const mobileDarkPath = path.join(outDir, "04_telephony_mobile_dark_390x844.png");
     await mobilePage.screenshot({ path: mobileDarkPath, fullPage: false });
     fs.copyFileSync(mobileDarkPath, path.join(outDir, "04_telephony_mobile_dark.png"));
+    fs.copyFileSync(mobileDarkPath, path.join(outDir, "04_telephony_incoming_call_mobile_dark_390x844.png"));
     const mobileDarkStat = fs.statSync(mobileDarkPath);
     console.log(`  [OK] Saved 04_telephony_mobile_dark_390x844.png (${Math.round(mobileDarkStat.size / 1024)} KB)`);
 

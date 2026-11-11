@@ -51,7 +51,7 @@ export const MedicalRecordExtractDrawer: React.FC<MedicalRecordExtractDrawerProp
 		<div className="egisz-extract-drawer" data-testid="medical-extract-drawer">
 			<div className="egisz-extract-header">
 				<h3 className="egisz-extract-title">Выписки и медицинские справки</h3>
-				<p className="egisz-extract-sub">Формирование официальных справок в 1 клик на основе медкарты</p>
+				<p className="egisz-extract-sub">Формирование официальных справок на основе медкарты</p>
 			</div>
 
 			<div className="egisz-extract-types">

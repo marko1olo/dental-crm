@@ -12,6 +12,8 @@
  * - Мандат 8b (Sweet Spot: 250–320 строк).
  */
 
+import { normalizePhone, formatPhoneDisplay as sharedFormatPhoneDisplay } from "@dental/shared";
+
 export type PatientCategory = "primary" | "regular" | "vip" | "debtor" | "blacklist";
 
 export interface PatientCategoryMeta {
@@ -113,30 +115,18 @@ export interface PatientCatalogItem {
 
 /**
  * Нормализация номера телефона к каноническому формату (только цифры с префиксом 7).
+ * Делегирует в канонический SSOT @dental/shared.
  */
 export function normalizePhoneNumber(raw: string | null | undefined): string {
-	if (!raw) return "";
-	const digits = raw.replace(/\D/g, "");
-	if (!digits) return "";
-	if (digits.length === 11 && (digits.startsWith("8") || digits.startsWith("7"))) {
-		return "7" + digits.slice(1);
-	}
-	if (digits.length === 10) {
-		return "7" + digits;
-	}
-	return digits;
+	const norm = normalizePhone(raw);
+	return norm ? norm.replace(/^\+/, "") : "";
 }
 
 /**
  * Человекочитаемое форматирование телефона для интерфейса: +7 (999) 000-00-00.
  */
 export function formatPhoneDisplay(raw: string | null | undefined): string {
-	const normalized = normalizePhoneNumber(raw);
-	if (normalized.length === 11 && normalized.startsWith("7")) {
-		const d = normalized;
-		return `+7 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9, 11)}`;
-	}
-	return raw || "—";
+	return sharedFormatPhoneDisplay(raw);
 }
 
 /**

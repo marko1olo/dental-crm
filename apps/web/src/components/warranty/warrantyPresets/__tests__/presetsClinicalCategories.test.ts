@@ -6,24 +6,18 @@ import {
 	FILLING_LOSS_DEFECT_TEMPLATE,
 	THERAPEUTIC_DEFECT_TEMPLATES,
 	THERAPEUTIC_WARRANTY_PRESETS,
-} from "../therapeuticWarrantyPresets.js";
-import {
 	CERAMIC_CROWN_VENEER_PRESET,
 	CROWN_DECEMENTATION_DEFECT_TEMPLATE,
 	ORTHOPEDIC_DEFECT_TEMPLATES,
 	ORTHOPEDIC_WARRANTY_PRESETS,
 	STAR_EMAX_QUICK_PRESET,
 	STAR_ZIRCONIA_QUICK_PRESET,
-} from "../orthopedicWarrantyPresets.js";
-import {
 	IMPLANT_FIXTURE_PRESET,
 	SCREW_LOOSENING_DEFECT_TEMPLATE,
 	STAR_IMPLANT_QUICK_PRESET,
-} from "../surgicalAndImplantWarrantyPresets.js";
-import {
 	ORTHODONTIC_ALIGNERS_PRESET,
 	RETAINER_DEBONDING_DEFECT_TEMPLATE,
-} from "../orthodonticWarrantyPresets.js";
+} from "../index.js";
 
 describe("2-5. Clinical Categories & Defect Templates", () => {
 	test("Therapeutic presets and defect templates", () => {

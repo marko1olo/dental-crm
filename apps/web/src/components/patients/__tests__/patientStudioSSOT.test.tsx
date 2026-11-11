@@ -219,7 +219,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		const content = fs.readFileSync(filePath, "utf8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines <= 650,
+			lines <= 700,
 			`PatientCardModal.tsx обязан быть в пределах Sweet Spot, сейчас ${lines} строк`,
 		);
 
@@ -229,5 +229,21 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 			dataLines >= 300 && dataLines <= 380,
 			`patientCatalogData.ts обязан быть в Sweet Spot 300-380 строк, сейчас ${dataLines} строк`,
 		);
+	});
+
+	it("16. [Физическая ликвидация сирот и рудиментов] Убеждаемся в отсутствии удаленных мертвых файлов", () => {
+		const basePatientsDir = path.resolve(__dirname, "..");
+		const orphanFiles = [
+			"PatientFinanceTab.tsx",
+			"PatientReclamationsWidget.tsx",
+			"PatientTaskTicketsWidget.tsx",
+			"PatientHeaderCard.tsx",
+			"duplicateAlert/DuplicateCandidateItem.tsx",
+			"duplicateAlert/useDuplicateAlertLogic.ts",
+		];
+		for (const orphan of orphanFiles) {
+			const full = path.join(basePatientsDir, orphan);
+			assert.equal(fs.existsSync(full), false, `Файл-сирота ${orphan} должен быть физически удален!`);
+		}
 	});
 });

@@ -82,16 +82,19 @@ export async function createPatientFromLead(params: {
 		return reply.code(404).send({ error: "LeadNotFound", message: "Обращение не найдено в клинике." });
 	}
 
-	const { patient, alreadyExisted } = await resolveOrCreatePatientFromLead(db, organizationId, lead);
-	await recordLeadStageTransition({
-		tx: db,
-		organizationId,
-		leadId: lead.id,
-		fromStage: lead.status,
-		toStage: "converted",
-		stageEnteredAt: lead.stageEnteredAt || lead.createdAt,
-		changedByUserId: null,
-		patientId: patient.id,
+	const { patient, alreadyExisted } = await db.transaction(async (tx) => {
+		const res = await resolveOrCreatePatientFromLead(tx, organizationId, lead);
+		await recordLeadStageTransition({
+			tx,
+			organizationId,
+			leadId: lead.id,
+			fromStage: lead.status,
+			toStage: "converted",
+			stageEnteredAt: lead.stageEnteredAt || lead.createdAt,
+			changedByUserId: null,
+			patientId: res.patient.id,
+		});
+		return res;
 	});
 
 	broadcastLeadConversion({ wsBroker, organizationId, leadId, toStage: "converted", patient });

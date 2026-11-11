@@ -34,7 +34,6 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 				.values({
 					id: USER_ID,
 					organizationId: ORG_ID,
-					login: "qr_doctor_test",
 					passwordHash: "hash",
 					fullName: "Доктор Ортодонтов",
 					role: "doctor",
@@ -47,8 +46,10 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Смирнов Алексей Викторович",
-					gender: "male",
 					phone: "+79998887766",
+					administrativeProfile: {
+						gender: "male",
+					},
 				})
 				.onConflictDoNothing();
 		} catch (e) {

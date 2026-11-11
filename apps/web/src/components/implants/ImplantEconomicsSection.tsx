@@ -29,7 +29,7 @@ export const ImplantEconomicsSection: React.FC<ImplantEconomicsSectionProps> = (
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
 					<DollarSign size={15} className="text-[var(--teal,#0d9488)]" />
-					<span>Экономика соло-хирурга / ИП (Мандат 8n):</span>
+					<span>Экономика хирурга / ИП:</span>
 				</div>
 				<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">
 					Без сетевых поборов

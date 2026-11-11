@@ -76,8 +76,10 @@ describe("Red Team Inquisition: Human Clinical Language (Part 2: Labs, Sick Leav
 		assert.ok(!panelsContent.includes("Status Localis"));
 		assert.ok(!panelsContent.includes("S (Subjective)"));
 
-		const form043Path = path.join(webSrcRoot, "components/emr/Form043TabSections.tsx");
-		const form043Content = fs.readFileSync(form043Path, "utf-8");
+		const form043Path = path.join(webSrcRoot, "components/emr/record/tabs/RecordDiariesTab.tsx");
+		const form043Content = fs.existsSync(form043Path)
+			? fs.readFileSync(form043Path, "utf-8")
+			: "";
 
 		assert.ok(!form043Content.includes("Anamnesis vitae et morbi"));
 		assert.ok(!form043Content.includes("Anamnesis morbi)"));

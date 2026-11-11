@@ -39,7 +39,7 @@ export const AnamnesisHeaderBanner: React.FC<AnamnesisHeaderBannerProps> = ({
 						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0 truncate">
 							{patientName ? `${patientName} • ` : ""}
-							Безопасность у кресла: 1-клик норма, быстрые чипы аллергенов
+							Безопасность у кресла: соматическая норма, чипы аллергенов
 						</p>
 					</div>
 				</div>

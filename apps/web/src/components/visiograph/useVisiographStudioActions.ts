@@ -183,7 +183,7 @@ export function useVisiographStudioActions(opts: StudioActionsOptions) {
 		}
 
 		const countText = rulers.length > 0 ? ` (${rulers[0]?.lengthMm.toFixed(1)} мм)` : "";
-		showToast(`✓ Снимок и замеры${countText} привязаны к карте пациента (зуб ${targetTooth})`, "success");
+		showToast(`Снимок и замеры${countText} привязаны к карте пациента (зуб ${targetTooth})`, "success");
 	};
 
 	return { handleApplySensorPreset, handleResetParams, handleApplyClinicalFilter, handlePrintProtocol, handleAttachToVisit };

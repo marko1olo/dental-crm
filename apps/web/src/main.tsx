@@ -98,6 +98,16 @@ const HygieneStudioStandaloneView = React.lazy(() =>
 		default: m.DirectHygieneLauncher,
 	})),
 );
+const WaitlistStandaloneView = React.lazy(() =>
+	import("./components/schedule/DirectWaitlistMatchesLauncher").then((m) => ({
+		default: m.DirectWaitlistMatchesLauncher,
+	})),
+);
+const QuickBookingStandaloneView = React.lazy(() =>
+	import("./components/schedule/DirectQuickBookingLauncher").then((m) => ({
+		default: m.DirectQuickBookingLauncher,
+	})),
+);
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
@@ -517,6 +527,74 @@ if (publicPortalRoute) {
 					}
 				>
 					<HygieneStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=waitlist") ||
+		window.location.search.includes("standalone=waitlist") ||
+		window.location.search.includes("waitlist-matches=true") ||
+		window.location.hash === "#waitlist" ||
+		window.location.hash === "#waitlist-matches" ||
+		window.location.hash.startsWith("#waitlist?") ||
+		window.location.hash.startsWith("#waitlist-matches?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка листа ожидания...
+						</div>
+					}
+				>
+					<WaitlistStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=quick-booking") ||
+		window.location.search.includes("standalone=quick-booking") ||
+		window.location.search.includes("quick-booking=true") ||
+		window.location.hash === "#quick-booking" ||
+		window.location.hash.startsWith("#quick-booking?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка быстрой записи...
+						</div>
+					}
+				>
+					<QuickBookingStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

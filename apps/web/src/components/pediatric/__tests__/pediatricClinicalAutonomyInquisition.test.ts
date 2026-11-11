@@ -295,7 +295,7 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 				"Card mode must render 1-click positive behavior button",
 			);
 			assert.ok(
-				html.includes("1-клик: Поведение позитивное (Frankl 4/4)"),
+				html.includes("Поведение позитивное (Frankl 4/4)"),
 				"Must contain 1-click positive behavior text",
 			);
 			assert.ok(!EMOJI_REGEX.test(html), "FranklBehaviorBadge card must contain ZERO cartoon emojis");

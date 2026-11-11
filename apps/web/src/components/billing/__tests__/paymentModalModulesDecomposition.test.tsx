@@ -27,15 +27,15 @@ import {
 	calculatePaymentDiscount,
 	generateInvoicePrintHtml,
 	generateActPrintHtml,
-} from "../PaymentModal.js";
+} from "../../finance/PaymentModal.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const billingDir = path.resolve(__dirname, "..");
-const modulesDir = path.resolve(billingDir, "paymentModalModules");
+const financeDir = path.resolve(__dirname, "../../finance");
+const modulesDir = path.resolve(financeDir, "paymentModalModules");
 
 describe("PaymentModal Decomposition Architecture (Mandate 8b & Decomposer Skill)", () => {
 	it("enforces strict line limits: facade <= 120 lines, all submodules <= 800 lines", () => {
-		const facadePath = path.resolve(billingDir, "PaymentModal.tsx");
+		const facadePath = path.resolve(financeDir, "PaymentModal.tsx");
 		const facadeLines = fs.readFileSync(facadePath, "utf8").split("\n").length;
 		assert.ok(
 			facadeLines <= 120,

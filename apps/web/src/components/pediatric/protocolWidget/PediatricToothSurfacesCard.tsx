@@ -16,7 +16,7 @@ export const PediatricToothSurfacesCard: React.FC<PediatricToothSurfacesCardProp
 		<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3">
 			<div className="mb-2 flex items-center justify-between">
 				<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-					Поверхности зуба в 1 клик:
+					Поверхности зуба:
 				</span>
 				<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
 					[{selectedSurfaces.join(", ") || "O"}]

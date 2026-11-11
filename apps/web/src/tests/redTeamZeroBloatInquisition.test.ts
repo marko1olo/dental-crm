@@ -117,17 +117,17 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			);
 		});
 
-		it("1.3. Форма 043/у является единственной легитимной амбулаторной картой в lib/clinicalProtocols043", () => {
+		it("1.3. Форма медицинской карты приёма является единственной легитимной амбулаторной картой в lib/clinicalProtocols", () => {
 			const norm = createForm043PhysiologicalNorm();
-			assert.ok(norm, "Норма Формы 043/у должна успешно создаваться");
-			assert.ok(!JSON.stringify(norm).toLowerCase().includes("025/у"), "Норма 043/у не содержит упоминаний 025/у");
+			assert.ok(norm, "Норма Формы медицинской карты должна успешно создаваться");
+			assert.ok(!JSON.stringify(norm).toLowerCase().includes("025/у"), "Норма карты не содержит упоминаний 025/у");
 			assert.ok(norm.chiefComplaint.length > 0, "Жалобы должны быть заполнены физиологической нормой");
 			assert.ok(norm.historyOfPresentIllness.length > 0, "Анамнез заболевания заполнен нормой");
 			assert.ok(norm.biteType, "Прикус ортогнатический");
 			assert.ok(norm.oralMucosaStatus, "СОПР заполнена физиологической нормой");
 
 			const intactFormula = createIntactOdontogramRecords();
-			assert.equal(Object.keys(intactFormula).length, 32, "Стоматологическая формула 043/у содержит 32 интактных зуба");
+			assert.equal(Object.keys(intactFormula).length, 32, "Стоматологическая формула карты содержит 32 интактных зуба");
 		});
 	});
 
@@ -167,13 +167,15 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 		});
 
 		it("2.3. В критических путях оформления визита и чека отсутствуют симуляторы задержки (fake setTimeout)", () => {
-			const visitSoapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
-			const soapContent = fs.readFileSync(visitSoapPath, "utf-8");
+			const visitEmkPath = path.join(webSrcRoot, "components/visit/VisitEmkTab.tsx");
+			const diariesTabPath = path.join(webSrcRoot, "components/emr/record/tabs/RecordDiariesTab.tsx");
+			const visitEmkContent = fs.readFileSync(visitEmkPath, "utf-8");
+			const diariesContent = fs.readFileSync(diariesTabPath, "utf-8");
 
 			// Запрещены процедурные симуляции ожидания
 			assert.ok(
-				!soapContent.includes("setTimeout") || !soapContent.includes("simulateProgress"),
-				"VisitSoapEditor не должен содержать симуляторов процедурного прогресса",
+				!visitEmkContent.includes("simulateProgress") && !diariesContent.includes("simulateProgress"),
+				"Канонические компоненты ЭМК не должны содержать симуляторов процедурного прогресса",
 			);
 		});
 	});
@@ -182,11 +184,11 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 	// БЛОК 3: АВТОНОМИЯ ВРАЧА И РЕГИСТРАТОРА (МАНДАТ 8e, 8n)
 	// ═════════════════════════════════════════════════════════════════════════
 	describe("3. Мандат 8e и 8n: Автономия персонала без заблокированных кнопок", () => {
-		it("3.1. Печать Карты 043/у всегда доступна (disabled={false}) без бюрократических блокировок", () => {
-			const form043ModalPath = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
+		it("3.1. Печать Карты приёма всегда доступна (disabled={false}) без бюрократических блокировок", () => {
+			const medicalRecordModalPath = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
 			const recordDir = path.join(webSrcRoot, "components/emr/record");
 			const modalContent = [
-				fs.readFileSync(form043ModalPath, "utf-8"),
+				fs.readFileSync(medicalRecordModalPath, "utf-8"),
 				...(fs.existsSync(recordDir)
 					? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
 					: []),
@@ -194,7 +196,7 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 
 			assert.ok(
 				modalContent.includes('disabled={false}'),
-				"Form043PrintModal обязан содержать активную кнопку печати disabled={false}",
+				"MedicalRecordStudioModal обязан содержать активную кнопку печати disabled={false}",
 			);
 		});
 
@@ -234,8 +236,8 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 	// БЛОК 4: СВЯТОСТЬ ОФИЦИАЛЬНЫХ БЛАНКОВ И ZERO EMOJIS (МАНДАТ 8d п. 7, 8p)
 	// ═════════════════════════════════════════════════════════════════════════
 	describe("4. Мандат 8d п. 7: Строгий запрет на мультяшные эмодзи в медицинских и финансовых бланках", () => {
-		it("4.1. Form043PrintModal.tsx (Медицинская карта 043/у) содержит 0 мультяшных эмодзи", () => {
-			const filePath = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
+		it("4.1. MedicalRecordStudioModal.tsx (Медицинская карта приёма) содержит 0 мультяшных эмодзи", () => {
+			const filePath = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
 			const content = fs.readFileSync(filePath, "utf-8");
 			const lines = content.split("\n");
 
@@ -246,7 +248,7 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 					emojiCount++;
 				}
 			}
-			assert.equal(emojiCount, 0, `В Form043PrintModal.tsx обнаружено ${emojiCount} эмодзи! Должно быть 0.`);
+			assert.equal(emojiCount, 0, `В MedicalRecordStudioModal.tsx обнаружено ${emojiCount} эмодзи! Должно быть 0.`);
 		});
 
 		it("4.2. ServiceReceiptPrintDocument.tsx, CashReceiptPrintModal.tsx и CashReceiptModal.tsx (Кассовые чеки) содержат 0 мультяшных эмодзи", () => {

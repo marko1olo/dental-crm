@@ -131,12 +131,21 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 					);
 				}
 
-				const unitPrice =
-					order.priceRub && targetTeeth.length > 0
-						? Math.round(order.priceRub / targetTeeth.length)
-						: order.priceRub || 18000;
+				const patientPriceRub =
+					order.patientPriceKopecks != null
+						? Math.round(order.patientPriceKopecks / 100)
+						: (order.priceRub || 0);
 
-				const rawLabCost = order.doctorDeductionRub ?? order.priceRub ?? 0;
+				const unitPrice =
+					patientPriceRub > 0 && targetTeeth.length > 0
+						? Math.round(patientPriceRub / targetTeeth.length)
+						: patientPriceRub;
+
+				const rawLabCost =
+					order.labCostKopecks != null
+						? Math.round(order.labCostKopecks / 100)
+						: (order.doctorDeductionRub ?? 0);
+
 				const unitLabCost =
 					rawLabCost > 0 && targetTeeth.length > 0
 						? Math.round(rawLabCost / targetTeeth.length)
@@ -204,7 +213,26 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 								? "полиэфирный оттиск"
 								: "прецизионный силиконовый оттиск";
 					const impressionTitle = `Снятие оттиска с челюсти (${impressionKind})`;
-					const impressionPriceRub = 2500;
+					const catalogImpressionPrice = (() => {
+						if (typeof order.impressionPriceRub === "number" && order.impressionPriceRub > 0) {
+							return order.impressionPriceRub;
+						}
+						if (typeof order.impressionPriceKopecks === "number" && order.impressionPriceKopecks > 0) {
+							return Math.round(order.impressionPriceKopecks / 100);
+						}
+						const servicesList = dashboard?.services || dashboard?.pricelist || dashboard?.catalogServices;
+						if (Array.isArray(servicesList)) {
+							const found = servicesList.find((s: any) => s.code804n === "A02.07.010" || s.order804nCode === "A02.07.010" || s.code === "A02.07.010");
+							if (found && typeof found.priceRub === "number" && found.priceRub > 0) {
+								return found.priceRub;
+							}
+							if (found && typeof found.price === "number" && found.price > 0) {
+								return found.price;
+							}
+						}
+						return 2500;
+					})();
+					const impressionPriceRub = catalogImpressionPrice;
 
 					useVisitStore.getState().addCompletedService({
 						serviceId: `lab-order-impression-${order.id || Date.now()}`,
@@ -279,7 +307,7 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 
 				showToast(
 					order.includeImpressionBilling !== false
-						? "Наряд ЗТЛ сохранен. Снятие слепка (2 500 ₽) включено в счёт визита"
+						? `Наряд ЗТЛ сохранен. Снятие слепка (${impressionPriceRub.toLocaleString("ru-RU")} ₽) включено в счёт визита`
 						: "Наряд ЗТЛ сохранен",
 					"success",
 				);

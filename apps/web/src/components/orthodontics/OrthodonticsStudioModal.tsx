@@ -27,8 +27,8 @@ if (typeof document !== "undefined") {
 	import("./styles/orthodonticsStudio.css");
 }
 
-const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
-	import("../diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({ default: m.OrthodonticPhotoProtocolModal })),
+const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
+	import("../photography/ClinicalPhotoProtocolModal").then((m) => ({ default: m.ClinicalPhotoProtocolModal })),
 );
 const CephalometricAnalysisModal = lazyWithRetry(() =>
 	import("../radiology/CephalometricAnalysisModal").then((m) => ({ default: m.CephalometricAnalysisModal })),
@@ -116,9 +116,59 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	}, [patientId]);
 
 	const skeletalClassInfo = useMemo(() => {
-		const anbVal = protocol.trgValues.anb ?? 2.1;
+		const anbVal = protocol.trgValues?.anb ?? 2.1;
 		return calculateSkeletalClassFromAnb(anbVal);
-	}, [protocol.trgValues.anb]);
+	}, [protocol.trgValues?.anb]);
+
+	// Честная гидратация ТРГ-анализа пациента из базы PostgreSQL 18 (DEF-ORTHO-03)
+	useEffect(() => {
+		if (!patientId) return;
+		let isCancelled = false;
+		const fetchCephAnalysis = async () => {
+			try {
+				const res = await fetch(`/api/orthodontics/${patientId}/ceph-analysis`, {
+					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
+				});
+				if (res.ok) {
+					const data = (await res.json()) as {
+						study?: {
+							analysis?: {
+								sna?: number;
+								snb?: number;
+								anb?: number;
+								u1NaDeg?: number;
+								l1NbDeg?: number;
+								fmaDeg?: number;
+							};
+						};
+					};
+					if (!isCancelled && data?.study?.analysis) {
+						const ca = data.study.analysis;
+						setProtocol((prev) => ({
+							...prev,
+							trgValues: {
+								...(prev.trgValues || {}),
+								...(typeof ca.sna === "number" ? { sna: ca.sna } : {}),
+								...(typeof ca.snb === "number" ? { snb: ca.snb } : {}),
+								...(typeof ca.anb === "number" ? { anb: ca.anb } : {}),
+								...(typeof ca.u1NaDeg === "number" ? { u1_na: ca.u1NaDeg } : {}),
+								...(typeof ca.l1NbDeg === "number" ? { l1_nb: ca.l1NbDeg } : {}),
+								...(typeof ca.fmaDeg === "number" ? { fma: ca.fmaDeg } : {}),
+							},
+						}));
+					}
+				}
+			} catch (err) {
+				if (!isCancelled) {
+					console.warn("[OrthodonticsStudioModal] Failed to fetch ceph analysis:", err);
+				}
+			}
+		};
+		fetchCephAnalysis();
+		return () => {
+			isCancelled = true;
+		};
+	}, [patientId]);
 
 	const soapSummary = useMemo(() => formatOrthoProtocolSoapEntry(protocol), [protocol]);
 	const memoText = useMemo(() => getOrthoPatientMemoText(), []);
@@ -137,7 +187,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			};
 			if (preset.id === "class_1_norm") {
 				updated.angleClass = "class_1";
-				updated.trgValues = { ...updated.trgValues, anb: 2.0 };
+				updated.trgValues = { ...(updated.trgValues || {}), anb: 2.0 };
 			} else if (preset.id === "aligners_28d") {
 				updated.applianceCategory = "aligners";
 				updated.alignerTracking = { ...updated.alignerTracking, issuedSetsCount: 2, wearDaysPerStep: 14 };
@@ -212,6 +262,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						cuniti: "CuNiTi",
 						ss: "SS",
 						tma: "TMA",
+						NiTi: "NiTi",
+						CuNiTi: "CuNiTi",
+						SS: "SS",
+						TMA: "TMA",
 					};
 					await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
 						method: "POST",
@@ -320,7 +374,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					</div>
 					<div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none max-w-full">
 						<span className="text-[11px] font-semibold text-[var(--ink-muted)] shrink-0 flex items-center gap-1">
-							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> 1-клик шаблоны:
+							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Клинические шаблоны:
 						</span>
 						{ORTHO_ACTIVATION_PRESETS.map((preset) => (
 							<button key={preset.id} type="button" onClick={() => handleApplyPreset(preset)} className="shrink-0 px-2.5 py-1 min-h-[32px] text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all">
@@ -394,12 +448,13 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 
 			{isPhotoModalOpen && (
 				<Suspense fallback={null}>
-					<OrthodonticPhotoProtocolModal
+					<ClinicalPhotoProtocolModal
 						isOpen={true}
 						onClose={() => setIsPhotoModalOpen(false)}
 						patientId={patientId || "pat-ortho-01"}
 						patientName={patientName}
 						doctorName={doctorName}
+						initialPresetId="orthodontic_8"
 					/>
 				</Suspense>
 			)}
@@ -411,6 +466,16 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						onClose={() => setIsCephModalOpen(false)}
 						patientId={patientId || "pat-ortho-01"}
 						patientName={patientName}
+						onApplyAnalysis={({ trgValues }) => {
+							setProtocol((prev) => ({
+								...prev,
+								trgValues: {
+									...(prev.trgValues || {}),
+									...trgValues,
+								},
+							}));
+							showToast("✓ Углы ТРГ применены в ортодонтический протокол", "success");
+						}}
 					/>
 				</Suspense>
 			)}

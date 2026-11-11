@@ -280,31 +280,33 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 	});
 
 	describe("3. Врачебная автономия и ликвидация блокировок UI (Мандаты 8e, 8d, 8k, 8n)", () => {
-		it("3.1. VoiceDictationAssistantModal.tsx: Кнопка 'Применить всё' disabled={false} и не блокирует врача", () => {
-			const voiceModalPath = path.join(webSrcDir, "components/voice/VoiceDictationAssistantModal.tsx");
+		it("3.1. CopilotVoiceStenographer.tsx: Кнопка 'Применить в карту' disabled={false} и не блокирует врача", () => {
+			const voiceModalPath = path.join(webSrcDir, "components/copilot/CopilotVoiceStenographer.tsx");
 			const voiceCode = fs.readFileSync(voiceModalPath, "utf-8");
 
 			assert.ok(
 				voiceCode.includes("disabled={false}"),
-				"Кнопка 'Применить всё' в VoiceDictationAssistantModal обязана быть disabled={false}",
+				"Кнопка 'Применить в карту' в CopilotVoiceStenographer обязана быть disabled={false}",
 			);
 			assert.ok(
-				voiceCode.includes("Произнесите диагноз") || voiceCode.includes("showToast"),
-				"Голосовой ассистент должен давать понятный тост вместо серой заблокированной кнопки",
+				voiceCode.includes("handleApplyAll"),
+				"Голосовой стенограф приёма должен мгновенно применять распознанный протокол",
 			);
 		});
 
 		it("3.2. VisiographAnalyzer: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {
 			const implPath = path.resolve(__dirname, "../components/imaging/VisiographAnalyzer.tsx");
+			const modulePath = path.resolve(__dirname, "../components/imaging/visiographAnalyzer/useVisiographAnalyzer.ts");
 			assert.ok(fs.existsSync(implPath), "Реализация components/imaging/VisiographAnalyzer.tsx обязана существовать");
-			const source = fs.readFileSync(implPath, "utf-8");
+			const source = fs.readFileSync(implPath, "utf-8") + (fs.existsSync(modulePath) ? fs.readFileSync(modulePath, "utf-8") : "");
 			assert.ok(source.includes("processFile"), "Снимок должен обрабатываться через мгновенный processFile");
 			assert.ok(source.includes("handleRunAiAnalysis"), "ИИ анализ должен запускаться только врачом через handleRunAiAnalysis");
 		});
 
 		it("3.3. VisitAnamnesisTab.tsx реализует debounced autosave для автономии врача (Мандат 8e)", () => {
 			const anamnesisPath = path.resolve(webSrcDir, "components/visit/VisitAnamnesisTab.tsx");
-			const source = fs.readFileSync(anamnesisPath, "utf-8");
+			const autosavePath = path.resolve(webSrcDir, "components/visit/anamnesisTab/useAnamnesisAutosave.ts");
+			const source = fs.readFileSync(anamnesisPath, "utf-8") + (fs.existsSync(autosavePath) ? fs.readFileSync(autosavePath, "utf-8") : "");
 			assert.ok(source.includes("debounce") || source.includes("setTimeout"), "VisitAnamnesisTab обязан содержать debounced сохранение");
 			assert.ok(source.includes("clearTimeout"), "VisitAnamnesisTab обязан очищать таймер при размонтировании");
 		});
@@ -318,7 +320,8 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 
 		it("3.5. VisiographAnalyzer.tsx перенос находок не заблокирован при пустом выделении", () => {
 			const visPath = path.resolve(webSrcDir, "components/imaging/VisiographAnalyzer.tsx");
-			const source = fs.readFileSync(visPath, "utf-8");
+			const applyPath = path.resolve(webSrcDir, "components/imaging/visiographAnalyzer/useVisiographAnalyzer/useVisiographAnalyzerFindingsApply.ts");
+			const source = fs.readFileSync(visPath, "utf-8") + (fs.existsSync(applyPath) ? fs.readFileSync(applyPath, "utf-8") : "");
 			assert.ok(!source.includes("disabled={isApplyingToChart || selectedFindingCodes.size === 0}"), "Кнопка переноса находок не должна быть заблокирована по признаку selectedFindingCodes.size === 0");
 			assert.ok(source.includes("Отметьте галочками хотя бы одну находку ИИ"), "Обработчик должен уведомлять врача через тост при пустом выборе");
 		});

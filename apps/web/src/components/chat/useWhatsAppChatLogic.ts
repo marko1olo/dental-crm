@@ -109,8 +109,16 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 		showToast("Шаблон подготовлен к отправке", "info");
 	};
 
-	const dispatchMessage = async (text: string, templateLabel?: string) => {
+	const dispatchMessage = async (
+		text: string,
+		templateLabel?: string,
+		options?: { templateName?: string; intent?: string; languageCode?: string },
+	) => {
 		if (isSending) return;
+		if (!effectivePatientId) {
+			showToast("Для отправки сообщений требуется привязать или создать карту пациента", "warning");
+			return;
+		}
 		const newMsgId = `msg-${Date.now()}-${++chatMsgSeq}`;
 		const newMsg: ChatMessage = {
 			id: newMsgId,
@@ -127,27 +135,33 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 		setIsSending(true);
 
 		try {
-			if (effectivePatientId) {
-				const res = await fetch(
-					`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}/send`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...denteAdminSecretRequestHeaders(),
-						},
-						body: JSON.stringify({ message: text, channel: selectedChannel }),
+			const payload: Record<string, unknown> = {
+				message: text,
+				channel: selectedChannel,
+			};
+			if (options?.templateName) payload.templateName = options.templateName;
+			if (options?.intent) payload.intent = options.intent;
+			if (options?.languageCode) payload.languageCode = options.languageCode;
+
+			const res = await fetch(
+				`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}/send`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
 					},
-				);
-				if (!res.ok) {
-					const data = await res.json().catch(() => ({}));
-					showToast(data.message || (templateLabel ? "Ошибка отправки шаблона через шлюз" : "Ошибка отправки сообщения через шлюз"), "error");
-					setMessages((prev) => prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)));
-					return;
-				}
+					body: JSON.stringify(payload),
+				},
+			);
+			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				if (data.warning) showToast(data.warning, "info");
+				showToast(data.message || (templateLabel ? "Ошибка отправки шаблона через шлюз" : "Ошибка отправки сообщения через шлюз"), "error");
+				setMessages((prev) => prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)));
+				return;
 			}
+			const data = await res.json().catch(() => ({}));
+			if (data.warning) showToast(data.warning, "info");
 			showToast(
 				templateLabel
 					? `Шаблон «${templateLabel}» отправлен (${selectedChannel.toUpperCase()})`
@@ -165,7 +179,10 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 
 	const handleDirectSendTemplate = async (tmpl?: QuickTemplateItem) => {
 		if (!tmpl) return;
-		await dispatchMessage(tmpl.buildText(), tmpl.label);
+		await dispatchMessage(tmpl.buildText(), tmpl.label, {
+			templateName: tmpl.id,
+			intent: tmpl.intent,
+		});
 	};
 
 	const handleSendMessage = async () => {

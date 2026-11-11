@@ -39,7 +39,7 @@ export function parseUnstructuredPriceText(
 
 		const matchedPreset = finalCode
 			? CANONICAL_SERVICE_PRESETS.find(
-					(p) => (p.statutoryCode || p.code804n).toUpperCase() === finalCode.toUpperCase(),
+					(p) => (p.statutoryCode || p.code804n || "").toUpperCase() === finalCode.toUpperCase(),
 				)
 			: undefined;
 

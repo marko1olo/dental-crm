@@ -155,7 +155,9 @@ export function useWaitlistState(options: UseWaitlistOptions) {
         }
 
         const payload = {
-          patientId: newPatientId,
+          patientId: newPatientId || undefined,
+          patientName: newPatientName.trim() || undefined,
+          patientPhone: newPatientPhone.trim() || undefined,
           preferredDoctorId: newDoctorId || null,
           priorityLevel: newUrgency === "urgent" || newUrgency === "acute_pain" ? "high" : "medium",
           urgency: newUrgency,

@@ -66,6 +66,10 @@ export function normalizePhoneToE164(value: string | null | undefined): string |
 	return normalizePhone(value);
 }
 
+export function normalizePhoneRu(value: string | null | undefined): string {
+	return normalizePhone(value) ?? "";
+}
+
 export function isValidRussianPhone(value: string | null | undefined): boolean {
 	if (!value) return false;
 	const nat = getNationalPhoneDigits(value);

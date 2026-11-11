@@ -1,5 +1,6 @@
 import type {
 	Appointment,
+	AppointmentStatus,
 	CreateAppointmentInput,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -17,6 +18,7 @@ import {
 	assertAppointmentResourcesBelongToOrganization,
 	assertNoResourceOverlap,
 	lockAppointmentResources,
+	type DbClientOrTransaction,
 } from "./appointmentValidationHelpers.js";
 
 export async function createAppointmentInDb(
@@ -26,8 +28,7 @@ export async function createAppointmentInDb(
 		allowEmergencyOverride?: boolean | undefined;
 		urgency?: "routine" | "urgent" | "emergency" | undefined;
 	},
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	tx?: any,
+	tx?: DbClientOrTransaction,
 ): Promise<Appointment> {
 	if (useInMemory()) {
 		return createAppointmentInMemory(input as unknown as CreateAppointmentInput);
@@ -73,8 +74,7 @@ export async function createAppointmentInDb(
 
 	const isEmergencyOverrideOverall = isEmergencyBookingOverride(input);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const insertChecked = async (executor: any) => {
+	const insertChecked = async (executor: DbClientOrTransaction) => {
 		// Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
 		// строку незачем, а отказ обязан прийти раньше любой записи.
 		await assertAppointmentResourcesBelongToOrganization(
@@ -128,14 +128,14 @@ export async function createAppointmentInDb(
 		if (!created)
 			throw new Error("Не удалось создать запись на приём в базе данных");
 
-		return {
+		const result: Appointment = {
 			id: created.id,
 			organizationId: created.organizationId,
 			patientId: created.patientId,
 			doctorUserId: created.doctorUserId,
 			assistantUserId: created.assistantUserId,
 			chairId: created.chairId,
-			status: created.status,
+			status: created.status as AppointmentStatus,
 			startsAt: created.startsAt.toISOString(),
 			endsAt: created.endsAt.toISOString(),
 			reason: created.reason,
@@ -145,7 +145,8 @@ export async function createAppointmentInDb(
 			clinicalStage: created.clinicalStage,
 			toothNumber: created.toothNumber,
 			diagnosisMkb10: created.diagnosisMkb10,
-		} as unknown as Appointment;
+		};
+		return result;
 	};
 
 	// Блокировки живут только внутри транзакции. Если вызывающий код уже

@@ -1,9 +1,8 @@
 import React from "react";
-import { Check, Plus, Sparkles, Stethoscope } from "lucide-react";
+import { Check, Stethoscope } from "lucide-react";
 import { SmartMicrophoneButton } from "../../../SmartMicrophoneButton";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
 import { ClinicalStenographerBar } from "../../emk/ClinicalStenographerBar";
-import { COMPLAINT_QUICK_CHIPS } from "../visitDiaryTypes";
 
 export interface ComplaintQuickChipsBarProps {
 	readonly anamnesis?: string;
@@ -16,7 +15,7 @@ export const ComplaintQuickChipsBar: React.FC<ComplaintQuickChipsBarProps> = ({
 	fieldsDisabled,
 	onAddComplaintChip,
 }) => {
-	if ((COMPLAINT_QUICK_CHIPS as readonly string[]).length === 0) return null;
+	if (fieldsDisabled) return null;
 
 	const isNormComplaintApplied =
 		(anamnesis ?? "").includes("Жалоб нет") ||
@@ -39,7 +38,7 @@ export const ComplaintQuickChipsBar: React.FC<ComplaintQuickChipsBarProps> = ({
 				className={`dente-filter-chip shrink-0 ${isNormComplaintApplied ? "active" : ""}`}
 				data-active={isNormComplaintApplied}
 				data-testid="btn-quick-norm-complaint"
-				title="Зафиксировать в 1 клик: Жалоб нет"
+				title="Зафиксировать: Жалоб нет"
 			>
 				<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
 				<span>Жалоб нет</span>
@@ -54,42 +53,11 @@ export const ComplaintQuickChipsBar: React.FC<ComplaintQuickChipsBarProps> = ({
 				className={`dente-filter-chip shrink-0 ${isNormAnamnesisApplied ? "active" : ""}`}
 				data-active={isNormAnamnesisApplied}
 				data-testid="btn-quick-norm-anamnesis"
-				title="Зафиксировать в 1 клик: Соматически здоров"
+				title="Зафиксировать: Соматически здоров"
 			>
 				<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
 				<span>Соматически здоров</span>
 			</button>
-
-			<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 shrink-0 ml-1">
-				<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
-				Жалобы:
-			</span>
-			{COMPLAINT_QUICK_CHIPS.map((chipText) => {
-				const isApplied = (anamnesis ?? "").includes(chipText);
-				return (
-					<button
-						key={chipText}
-						type="button"
-						onClick={() => onAddComplaintChip(chipText)}
-						disabled={fieldsDisabled}
-						className={`dente-filter-chip shrink-0 ${isApplied ? "active" : ""}`}
-						data-active={isApplied}
-						title={
-							isApplied
-								? `Жалоба внесена: «${chipText}»`
-								: `Внести в анамнез: «${chipText}»`
-						}
-						data-testid={`complaint-chip-${chipText}`}
-					>
-						{chipText}
-						{isApplied ? (
-							<Check className="w-3 h-3 shrink-0" />
-						) : (
-							<Plus className="w-3 h-3 opacity-60 shrink-0" />
-						)}
-					</button>
-				);
-			})}
 		</div>
 	);
 };
@@ -168,30 +136,6 @@ export const VisitDiaryAnamnesisField: React.FC<VisitDiaryAnamnesisFieldProps> =
 				onKeyDown={steno.handleKeyDown}
 				placeholder="Жалобы пациента, история заболевания, соматический статус (Стенограф: Tab / Пробел)..."
 			/>
-			<div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-				<button
-					type="button"
-					onClick={() => {
-						ensureRevisingIfLocked();
-						const normSomatic = "Жалоб на момент приёма не предъявляет (профилактический осмотр). Соматически здоров, хронические заболевания и аллергии со слов отрицает.";
-						setDiary((p) => ({
-							...p,
-							anamnesis: p.anamnesis ? `${p.anamnesis}\n${normSomatic}` : normSomatic,
-						}));
-						scheduleDebouncedSave();
-					}}
-					disabled={fieldsDisabled}
-					className={`dente-filter-chip shrink-0 ${
-						isSomaticNormApplied ? "active" : ""
-					}`}
-					data-active={isSomaticNormApplied}
-					data-testid="btn-quick-norm-somatic"
-					title="Зафиксировать норму в 1 клик: соматически здоров, аллергии отрицает"
-				>
-					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
-					<span>Соматически здоров</span>
-				</button>
-			</div>
 			{!fieldsDisabled && (
 				<ClinicalStenographerBar
 					snippets={steno.fieldSnippets}

@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { createImplantInstallationSchema } from "@dental/shared";
 import type { z } from "zod";
+import { db } from "../../db/client.js";
 import {
 	patientInvoices,
 	toothStateHistory,
@@ -9,10 +10,10 @@ import {
 } from "../../db/schema.js";
 
 type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export async function linkBillingAndOdontogram(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	tx: any,
+	tx: DatabaseTransaction,
 	orgId: string,
 	input: InstallationInput,
 	implantCost: number,

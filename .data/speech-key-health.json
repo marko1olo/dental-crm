@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-15T07:55:45.327Z",
+  "savedAt": "2026-11-10T08:44:09.400Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
@@ -11,12 +11,192 @@
       "lastStatusCode": null,
       "lastError": null
     },
+    "gemini:0829fbc6a709": {
+      "cooldownUntil": 1794199257000,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198777000,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:086400c4e22a": {
+      "cooldownUntil": 1794199254738,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198774738,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:10e80b2f099f": {
+      "cooldownUntil": 1794199257639,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198777639,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:1e9bc2896b67": {
+      "cooldownUntil": 1794199258052,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198778052,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:353cfac9603d": {
+      "cooldownUntil": 1794199256379,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198776379,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:7341b972a243": {
+      "cooldownUntil": 1794199258498,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198778498,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:767266f4cdec": {
+      "cooldownUntil": 1794199255322,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198775322,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:79d31bffc350": {
+      "cooldownUntil": 1794199256578,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198776578,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:7b18f509b817": {
+      "cooldownUntil": 1794199255991,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198775991,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:a7e068b77098": {
+      "cooldownUntil": 1794199255604,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198775604,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:c3861215d957": {
+      "cooldownUntil": 1794199257218,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198777218,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:c4318f5b48c9": {
+      "cooldownUntil": 1794199258268,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198778268,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:d2f7e7168b58": {
+      "cooldownUntil": 1794199254927,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198774927,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:d3fdf1db8884": {
+      "cooldownUntil": 1794199256185,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198776185,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:d53c33df94be": {
+      "cooldownUntil": 1794199255802,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198775802,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:d547586e7e97": {
+      "cooldownUntil": 1794199257843,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198777843,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:dc3b77f3539e": {
+      "cooldownUntil": 1794199254546,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198774547,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:ecb4dd2e44da": {
+      "cooldownUntil": 1794199255117,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198775117,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:eeaac9e2f5e4": {
+      "cooldownUntil": 1794199257439,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198777439,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
+    "gemini:fc0daee864cf": {
+      "cooldownUntil": 1794199256788,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198776788,
+      "lastStatusCode": null,
+      "lastError": "[gemini] Gemini connection failed: fetch failed"
+    },
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 10,
-      "lastUsedAt": 1792050945326,
+      "successes": 14,
+      "lastUsedAt": 1794300249400,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -128,32 +308,68 @@
       "lastStatusCode": 503,
       "lastError": "503 "
     },
-    "groq:6eed7e8c3252": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791970309671,
+    "groq:6058314b22ec": {
+      "cooldownUntil": 1794199259381,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198779381,
       "lastStatusCode": null,
-      "lastError": null
+      "lastError": "[groq] Groq connection failed: fetch failed"
+    },
+    "groq:6ea9f119eff0": {
+      "cooldownUntil": 1794199259597,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198779597,
+      "lastStatusCode": null,
+      "lastError": "[groq] Groq connection failed: fetch failed"
+    },
+    "groq:6eed7e8c3252": {
+      "cooldownUntil": 1794199259170,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 1,
+      "lastUsedAt": 1794198779170,
+      "lastStatusCode": null,
+      "lastError": "[groq] Groq connection failed: fetch failed"
     },
     "groq:83177d60e957": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1794199258939,
+      "failures": 7,
+      "consecutiveFailures": 7,
       "successes": 2,
-      "lastUsedAt": 1791970308721,
+      "lastUsedAt": 1794198778939,
       "lastStatusCode": null,
-      "lastError": null
+      "lastError": "[groq] Groq connection failed: fetch failed"
+    },
+    "groq:c50f385b1343": {
+      "cooldownUntil": 1794199259843,
+      "failures": 7,
+      "consecutiveFailures": 7,
+      "successes": 0,
+      "lastUsedAt": 1794198779843,
+      "lastStatusCode": null,
+      "lastError": "[groq] Groq connection failed: fetch failed"
+    },
+    "groq:c73b9c86b8c4": {
+      "cooldownUntil": 1794199260052,
+      "failures": 6,
+      "consecutiveFailures": 6,
+      "successes": 0,
+      "lastUsedAt": 1794198780052,
+      "lastStatusCode": null,
+      "lastError": "[groq] Groq connection failed: fetch failed"
     },
     "groq:caf98f576295": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
+      "cooldownUntil": 1794199258706,
+      "failures": 7,
+      "consecutiveFailures": 7,
       "successes": 2,
-      "lastUsedAt": 1791970307758,
+      "lastUsedAt": 1794198778706,
       "lastStatusCode": null,
-      "lastError": null
+      "lastError": "[groq] Groq connection failed: fetch failed"
     },
     "openai_transcribe:8234d0fc8e1f": {
       "cooldownUntil": 1791970326428,

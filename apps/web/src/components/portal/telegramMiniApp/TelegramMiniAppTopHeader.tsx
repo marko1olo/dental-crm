@@ -37,7 +37,7 @@ export const TelegramMiniAppTopHeader: React.FC<TelegramMiniAppTopHeaderProps> =
 					<div className="tg-app-title">DENTE Pocket Clinic</div>
 					<div className="tg-app-subtitle">
 						<ShieldCheck size={12} className="text-teal-400" />
-						<span>Здравствуйте, {patientName}!</span>
+						<span>Здравствуйте{patientName ? `, ${patientName}` : ""}!</span>
 					</div>
 				</div>
 			</div>

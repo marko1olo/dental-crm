@@ -18,7 +18,6 @@ import {
 import { persistentOutboxService } from "../services/outbox/persistentOutboxService.js";
 import { dicomWatcherDaemon } from "../services/imaging/dicomFolderWatcherDaemon.js";
 import { stopCloudRelayClient } from "../services/cloudRelayClient.js";
-import { stopNotificationWorker } from "../services/notificationWorker.js";
 import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
 import { getLanMeshService, resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
@@ -135,7 +134,6 @@ export async function startDenteApiServer(): Promise<void> {
 				persistentOutboxService.stop();
 				dicomWatcherDaemon.stop();
 				stopCloudRelayClient();
-				stopNotificationWorker();
 				stopBiAnalyticsWorker();
 				resetLanMeshServiceForTest();
 				resetLanMeshAutoJoinServiceForTest();

@@ -84,7 +84,7 @@ export function CabinetBactericidalTimer({
 							display: "inline-flex", alignItems: "center", gap: "0.4rem", boxShadow: "0 1px 3px rgba(13, 148, 136, 0.2)",
 						}}
 						data-testid="bactericidal-log-cycle-btn"
-						title="Зафиксировать цикл работы рециркулятора в журнале в 1 клик"
+						title="Зафиксировать цикл работы рециркулятора в журнале"
 					>
 						<Sparkles size={16} />
 						<span>Зафиксировать цикл ({selectedDurationMinutes} мин)</span>

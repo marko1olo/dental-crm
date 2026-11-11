@@ -14,9 +14,8 @@ export { PatientCreationExtraSection } from "./PatientCreationExtraSection";
 export { usePatientCreationForm } from "./usePatientCreationForm";
 
 export {
-	PatientCreationModalView,
 	PatientCreationModal,
 	CreatePatientModal,
-} from "./PatientCreationModalView";
+} from "../PatientCreationModal";
 
-export { default } from "./PatientCreationModalView";
+export { default } from "../PatientCreationModal";

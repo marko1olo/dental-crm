@@ -21,7 +21,8 @@ import {
 	formatKopecksToRubles,
 	generateEgiszDentalCdaXml,
 	generateFnsTaxCertificateXml,
-	generateGostXmlSignatureBlock,
+	generateGostSignatureStampHtml,
+	generateGostSignatureStampSvg,
 	parseRublesToKopecks,
 	validateXmlStructure,
 	type EgiszDentalCdaPayload,
@@ -232,17 +233,28 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 			);
 		});
 
-		it("2.5 Generates GOST XMLDSig blocks for both 256-bit and 512-bit keys", () => {
+		it("2.5 Generates GOST signature visual stamps for both doctor and MO certificates", () => {
 			const sig256 = createMockGostSignature("Врач Смирнова А.С.", "123-456-789 64", 'ООО "Денте"');
-			const block256 = generateGostXmlSignatureBlock(sig256, "cda-doc-ref");
-			assert.ok(block256.includes("gostr34102012-256"));
-			assert.ok(block256.includes("gostr34112012-256"));
+			const html = generateGostSignatureStampHtml({
+				signerName: sig256.certificateSubject,
+				certificateNumber: sig256.certificateSerialNumber,
+				validFrom: "2026-01-01",
+				validTo: "2027-01-01",
+				orgName: 'ООО "Денте"',
+			});
+			assert.ok(html.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
+			assert.ok(html.includes(sig256.certificateSerialNumber));
 
 			const sig512 = createMockMoGostSignature('ООО "Денте"', "1027700132195");
-			sig512.algorithmOid = EGISZ_REMD_OIDS.GOST_3410_2012_512;
-			const block512 = generateGostXmlSignatureBlock(sig512, "cda-doc-ref");
-			assert.ok(block512.includes("gostr34102012-512"));
-			assert.ok(block512.includes("gostr34112012-512"));
+			const svg = generateGostSignatureStampSvg({
+				signerName: sig512.certificateSubject,
+				certificateNumber: sig512.certificateSerialNumber,
+				validFrom: "2026-01-01",
+				validTo: "2027-01-01",
+				orgName: 'ООО "Денте"',
+			});
+			assert.ok(svg.includes("<svg"));
+			assert.ok(svg.includes(sig512.certificateSerialNumber));
 		});
 	});
 

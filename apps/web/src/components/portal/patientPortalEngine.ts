@@ -102,30 +102,6 @@ export function generateSbpPaymentQrPayload(
 }
 
 /**
- * @deprecated Client-side OTP generation is strictly for offline mockup/storybook tests. Production OTP issuance is server-authoritative via /api/portal/auth/send-code.
- * Generates deterministic or pseudo-random 4-digit SMS OTP code
- */
-export function generateSmsOtpCode(phone: string, fixedCode = "7788"): { code: string; expiresAtIso: string } {
-	const now = new Date();
-	const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes validity
-	let code = fixedCode;
-	if (!code) {
-		if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-			const buf = new Uint32Array(1);
-			crypto.getRandomValues(buf);
-			const val = buf[0] ?? 0;
-			code = String(1000 + (val % 9000));
-		} else {
-			code = "7788";
-		}
-	}
-	return {
-		code,
-		expiresAtIso: expiresAt.toISOString(),
-	};
-}
-
-/**
  * Validates SMS OTP code entered by patient
  */
 export function verifySmsOtpCode(enteredCode: string, expectedCode: string): boolean {

@@ -73,7 +73,7 @@ export const ClinicalTasksDesktopTableRow: React.FC<ClinicalTasksDesktopTableRow
 						className="primary-button task-action-btn"
 						data-testid={`btn-complete-task-${task.id}`}
 						onClick={() => void onCompleteTask(task.id)}
-						title="Завершить задачу в 1 клик"
+						title="Завершить задачу"
 					>
 						<Check size={14} />
 						<span>{isCurrentCompleting ? "Завершаю…" : "Выполнено"}</span>

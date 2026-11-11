@@ -3,7 +3,7 @@ import type { Dashboard } from "@dental/shared";
 import { DEFAULT_SOLO_CHAIR, type ChairDoctorShiftAssignment } from "../ScheduleGrid";
 import type { ScheduleChair } from "../ScheduleFilterStrip";
 import { resolveChairDutyDoctor } from "../QuickBookingDrawer";
-import { matchWaitlistCandidatesForSlot, type MatchWaitlistSlotParams } from "../smartSlotRecoveryEngine";
+import { filterWaitlistCandidates } from "../waitlist/waitlistScoringEngine";
 
 interface Params {
 	chairs: ScheduleChair[];
@@ -45,11 +45,11 @@ export function useAppointmentSlotMovement({
 	);
 
 	const findSmartSlotRecoveryCandidates = useCallback(
-		(slotParams: Omit<MatchWaitlistSlotParams, "clinicName">) => {
-			const clinicName = dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || "DENTE";
-			return matchWaitlistCandidatesForSlot({ ...slotParams, clinicName });
+		(slotParams: any) => {
+			const waitlist = (dashboard as any)?.waitlist || (dashboard as any)?.appointmentWaitlists || [];
+			return filterWaitlistCandidates(waitlist, slotParams);
 		},
-		[dashboard?.clinicSettings],
+		[dashboard],
 	);
 
 	return { resolveDutyDoctorForSlot, moveAppointment, findSmartSlotRecoveryCandidates };

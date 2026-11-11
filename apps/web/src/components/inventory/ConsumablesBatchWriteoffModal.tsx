@@ -155,7 +155,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 									{isClinicalMode ? "Клиническое списание материалов (Расходные материалы приёма)" : "Списание расходников за смену"}
 								</h3>
 								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30">
-									{isClinicalMode ? "Норма расхода (1 клик по техкартам)" : "1 клик по техкартам"}
+									{isClinicalMode ? "Норма расхода (по техкартам)" : "Списание по техкартам"}
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)]">

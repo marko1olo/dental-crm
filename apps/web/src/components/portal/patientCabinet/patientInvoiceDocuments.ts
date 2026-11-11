@@ -170,7 +170,7 @@ export function generatePaymentInvoiceHtml(
       <div class="parties-value">${clinicName}, ИНН ${clinicInn}, КПП ${clinicKpp}, ${clinicAddress}, тел: ${clinicPhone}, Лицензия ${clinicLicense}</div>
 
       <div class="parties-label">Заказчик:</div>
-      <div class="parties-value">${data.fullName}, Медкарта 043/у № ${data.cardNumber}, тел: ${data.phone}</div>
+      <div class="parties-value">${data.fullName}, Медицинская карта № ${data.cardNumber}, тел: ${data.phone}</div>
       
       <div class="parties-label">Основание:</div>
       <div class="parties-value">Договор на оказание платных медицинских услуг &bull; ${invoice.titleRu}</div>

@@ -134,7 +134,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 						</div>
 					</div>
 					<div className="ortho-card">
-						<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Манипуляции приёма в 1 клик</span>
+						<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Манипуляции приёма</span>
 						<div className="flex flex-wrap gap-1.5">
 							{CHAIRSIDE_ACTIONS_CATALOG.map((action) => {
 								const isChecked = protocol.selectedActionIds.includes(action.id);
@@ -250,7 +250,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 						{TRG_ANGLES_NORMS_SSOT.map((norm) => {
-							const currentVal = protocol.trgValues[norm.key] ?? norm.normDeg;
+							const currentVal = protocol.trgValues?.[norm.key] ?? norm.normDeg;
 							const evaluation = evaluateTrgAngleStatus(norm.key, currentVal);
 							return (
 								<div key={norm.key} className="ortho-card">

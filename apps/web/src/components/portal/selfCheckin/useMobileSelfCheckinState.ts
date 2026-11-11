@@ -10,12 +10,13 @@
  */
 
 import { useMemo, useState } from "react";
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg } from "@dental/shared/fiscal/qrGenerator";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	type StatutoryConsentItem,
 	DEFAULT_CONSENTS,
 } from "./SelfCheckinConsentsSection";
+import type { KioskSelectionMode } from "./SelfCheckinKioskModeTiles";
 import {
 	createPhysiologicalNormSomaticQuestionnaire,
 	evaluateSomaticRisks,
@@ -52,6 +53,7 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 	const [serverAppointmentTime, setServerAppointmentTime] = useState<string | null>(null);
 	const [serverCabinetName, setServerCabinetName] = useState<string | null>(null);
 	const [serverQueueTicket, setServerQueueTicket] = useState<string | null>(null);
+	const [firstTimeName, setFirstTimeName] = useState<string>("");
 
 	const effectivePhone =
 		props.initialPhone !== undefined
@@ -129,8 +131,7 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		const effectiveDoctor = docShort || (isDemo ? "Д-р Смирнова" : "Лечащий врач");
 		const cabMatch = effectiveAppointmentTime.match(/Кабинет\s*(\d+)/i);
 		const cabNum = props.cabinetName || serverCabinetName || (cabMatch ? cabMatch[1] : "");
-		const floorInfo = effectiveAppointmentTime.includes("этаж") ? "" : (cabNum ? " (2 этаж)" : "");
-		const cabInfo = cabNum ? ` в кабинете №${cabNum}${floorInfo}` : "";
+		const cabInfo = cabNum ? ` в кабинете №${cabNum}` : "";
 		return `${effectiveDoctor} ожидает вас${cabInfo}`;
 	}, [effectiveDoctorName, effectiveAppointmentTime, props.cabinetName, serverCabinetName, isDemo]);
 
@@ -144,14 +145,19 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		return `CK-${new Date().getFullYear()}-${suffix}`;
 	}, [effectivePatientName, effectiveAppointmentTime]);
 
+	const checkinQrPayload = useMemo(() => {
+		return `DENTE:CHECKIN:v1|pid=${props.patientId || "selfcheckin"}|ticket=${checkinCode}|phone=${phoneDigits}|ts=${Date.now()}`;
+	}, [props.patientId, checkinCode, phoneDigits]);
+
 	const checkinQrSvg = useMemo(() => {
-		const verifyUrl = `https://dente.clinic/checkin/verify?ticket=${encodeURIComponent(checkinCode)}`;
-		return generateQrCodeSvg(verifyUrl, {
-			size: 84,
+		return generateQrCodeSvg(checkinQrPayload, {
+			size: 140,
 			margin: 1,
 			title: `Талон чекина ${checkinCode}`,
+			colorDark: "#000000",
+			colorLight: "#ffffff",
 		});
-	}, [checkinCode]);
+	}, [checkinQrPayload, checkinCode]);
 
 	const riskEvaluation = evaluateSomaticRisks({
 		...somaticData,
@@ -165,6 +171,8 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		somatic: SomaticQuestionnaireData;
 		evaluatedRisks: ReturnType<typeof evaluateSomaticRisks>;
 		isEmergency?: boolean;
+		isFirstTime?: boolean;
+		patientFullName?: string;
 	}) => {
 		setIsSubmitting(true);
 		setAuthError(null);
@@ -175,12 +183,15 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					organizationId: props.organizationId || undefined,
-					phoneLast4: phoneDigits,
-					patientPhone: props.initialPhone,
+					phoneLast4: phoneDigits.slice(-4),
+					patientPhone: phoneDigits.length >= 10 ? phoneDigits : (props.initialPhone || undefined),
 					patientId: props.patientId,
+					patientFullName: payload.patientFullName || firstTimeName || effectivePatientName || undefined,
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
 					isEmergency: Boolean(payload.isEmergency),
+					isFirstTime: Boolean(payload.isFirstTime),
+					kioskMode: payload.isEmergency ? "emergency" : payload.isFirstTime ? "first_time" : "scheduled",
 				}),
 			});
 			if (res.ok) {
@@ -197,7 +208,7 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
 					queueTicket: json?.queueTicket || displayQueueTicket,
-					visitStatus: json?.visitStatus || (payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма"),
+					visitStatus: json?.visitStatus || (payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : payload.isFirstTime ? "🆕 В холле / Ожидает первичного осмотра и оформления" : "В холле / Ожидает приёма"),
 				});
 				return;
 			}
@@ -210,12 +221,12 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 					patientId: props.patientId || "",
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
-					queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
-					visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
+					queueTicket: payload.isEmergency ? "Талон № Э-01" : payload.isFirstTime ? "Талон № П-01" : displayQueueTicket,
+					visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : payload.isFirstTime ? "🆕 В холле / Ожидает первичного осмотра и оформления" : "В холле / Ожидает приёма",
 				});
 			}
-		} catch (err: any) {
-			const networkMsg = err?.message || "Ошибка связи с сервером терминала. Пожалуйста, обратитесь к администратору на ресепшн.";
+		} catch (err: unknown) {
+			const networkMsg = err instanceof Error ? err.message : "Ошибка связи с сервером терминала. Пожалуйста, обратитесь к администратору на ресепшн.";
 			setAuthError(networkMsg);
 			if (isDemo) {
 				setStep("completed");
@@ -223,8 +234,8 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 					patientId: props.patientId || "",
 					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
 					somaticProfile: payload.evaluatedRisks,
-					queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
-					visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
+					queueTicket: payload.isEmergency ? "Талон № Э-01" : payload.isFirstTime ? "Талон № П-01" : displayQueueTicket,
+					visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : payload.isFirstTime ? "🆕 В холле / Ожидает первичного осмотра и оформления" : "В холле / Ожидает приёма",
 				});
 			}
 		} finally {
@@ -241,11 +252,21 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		setIsNormApplied(true);
 	};
 
-	const handleOneTouchCheckin = () => {
+	const handleOneTouchCheckin = (mode: KioskSelectionMode = "scheduled", customName?: string) => {
 		setAuthError(null);
 		const signed = consents.map((c) => ({ ...c, isSigned: true, signedAtIso: new Date().toISOString() }));
 		setConsents(signed);
-		void submitCheckinToBackend({ signed, somatic: somaticData, evaluatedRisks: riskEvaluation });
+		const isFirstTime = mode === "first_time";
+		const isEmergency = mode === "emergency";
+		const resolvedName = customName || firstTimeName || effectivePatientName;
+		void submitCheckinToBackend({
+			signed,
+			somatic: somaticData,
+			evaluatedRisks: riskEvaluation,
+			isFirstTime,
+			isEmergency,
+			patientFullName: resolvedName,
+		});
 	};
 
 	const handleEmergencyCheckin = () => {
@@ -359,6 +380,8 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		checkinQrSvg,
 		phoneDigits,
 		setPhoneDigits,
+		firstTimeName,
+		setFirstTimeName,
 		showOptionalDocs,
 		setShowOptionalDocs,
 		consents,
@@ -389,4 +412,21 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 		handleSignAllConsentsWithPep,
 		handleToggleQuickAllergy,
 	};
+}
+
+export function formatRussianPhoneMask(phone: string): string {
+	const digits = (phone || "").replace(/\D/g, "");
+	if (!digits) return "";
+	let main = digits;
+	if (main.startsWith("7") || main.startsWith("8")) main = main.slice(1);
+	if (!main) return "+7";
+	let formatted = "+7 (";
+	formatted += main.slice(0, 3);
+	if (main.length >= 3) formatted += ") ";
+	if (main.length > 3) formatted += main.slice(3, 6);
+	if (main.length >= 6) formatted += "-";
+	if (main.length > 6) formatted += main.slice(6, 8);
+	if (main.length >= 8) formatted += "-";
+	if (main.length > 8) formatted += main.slice(8, 10);
+	return formatted.trim();
 }

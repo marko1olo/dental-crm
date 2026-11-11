@@ -19,7 +19,7 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = "faf313ed-fd7a-4073-98cf-ccdf1b65c760";
+const CONV_ID = "26262900-83f3-4de0-8f8e-911f41c962d3";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/schedule");
 
@@ -86,12 +86,27 @@ async function setTheme(page, theme) {
 }
 
 async function setupPageSession(context, page, role = "doctor") {
+  const cToken = "demo-clinic-token";
+  const sToken = "demo-staff-token";
+  const doc = { id: "doc-1", name: "Доктор Терапевт", role: "doctor" };
+
+  try {
+    await context.addCookies([
+      { name: "dente_clinic_token", value: cToken, domain: "127.0.0.1", path: "/" },
+      { name: "dente_staff_token", value: sToken, domain: "127.0.0.1", path: "/" },
+      { name: "dente_unlocked", value: "true", domain: "127.0.0.1", path: "/" },
+    ]);
+  } catch (_) {}
+
   await page.addInitScript(
-    ({ role }) => {
+    ({ role, cToken, sToken, doc }) => {
       sessionStorage.setItem("dente_unlocked", "true");
+      localStorage.setItem("dente_clinic_token", cToken);
+      localStorage.setItem("dente_staff_token", sToken);
       localStorage.setItem("dente_workspace_perspective", role);
       localStorage.setItem("dente_user_role", role);
       localStorage.setItem("dente_active_role", role);
+      localStorage.setItem("dente_active_staff_user", JSON.stringify(doc));
       localStorage.setItem("dente_demo_showcase", "true");
       localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
@@ -109,6 +124,7 @@ async function setupPageSession(context, page, role = "doctor") {
           version: 1,
           uiLanguage: "ru",
           selectedWorkspaceRole: role,
+          selectedSpecialty: "therapist",
           onboardingDismissed: true,
           onboardingStep: "done",
         }),
@@ -118,16 +134,26 @@ async function setupPageSession(context, page, role = "doctor") {
         JSON.stringify({ mode: "clinic", role: role, activeRole: role }),
       );
     },
-    { role },
+    { role, cToken, sToken, doc },
   );
 }
 
 async function waitForRealUI(page) {
+  console.log("  Waiting for boot splash to clear...");
+  await page.waitForSelector('.boot-state, text="Загрузка системы..."', {
+    state: "detached",
+    timeout: 30000,
+  }).catch(() => {});
+
   const loginBtn = page.locator('button:has-text("Войти в систему")');
   if (await loginBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     console.log("  [AUTH] Clicking login submit button...");
     await loginBtn.click();
     await sleep(1500);
+    await page.waitForSelector('.boot-state, text="Загрузка системы..."', {
+      state: "detached",
+      timeout: 20000,
+    }).catch(() => {});
   }
 
   const demoBtn = page.locator(".auth-demo-btn");
@@ -148,27 +174,33 @@ async function waitForRealUI(page) {
     if (await launchBtn.isVisible().catch(() => false)) {
       await launchBtn.click();
       await sleep(2000);
+      await page.waitForSelector('.boot-state, text="Загрузка системы..."', {
+        state: "detached",
+        timeout: 20000,
+      }).catch(() => {});
     }
   }
 
-  console.log("  Waiting for UI to stabilize...");
+  console.log("  Waiting for schedule toolbar or elements...");
+  await page.waitForSelector(
+    '.schedule-filter-strip, [data-testid="schedule-toolbar"], [data-testid="schedule-grid"], [data-testid="schedule-mobile-agenda-view"], .workspace-shell, nav',
+    {
+      state: "visible",
+      timeout: 35000,
+    },
+  ).catch(() => console.log("  Warning: timeout waiting for schedule elements"));
+
   await page.waitForFunction(
     () => {
       const text = document.body.innerText || "";
-      return (
-        !text.includes("Загрузка") &&
-        !text.includes("Подготовка модулей") &&
-        (document.querySelector(".workspace-shell") ||
-          document.querySelector('[data-testid="schedule-toolbar"]') ||
-          document.querySelector('[data-testid="schedule-mobile-agenda-view"]') ||
-          document.querySelector("#root"))
-      );
+      const hasBoot = Boolean(document.querySelector(".boot-state"));
+      return !hasBoot && !text.includes("Загрузка системы") && !text.includes("Подготовка модулей");
     },
-    { timeout: 45000 },
+    { timeout: 35000 },
   ).catch(() => {});
 
   await suppressOverlays(page);
-  await sleep(1000);
+  await sleep(1500);
 }
 
 async function saveProof(page, filename, description) {
@@ -223,7 +255,7 @@ async function main() {
 
     console.log("Navigating to Schedule: http://127.0.0.1:5173/?demo=true#schedule");
     await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", {
-      waitUntil: "commit",
+      waitUntil: "domcontentloaded",
       timeout: 30000,
     });
 
@@ -308,7 +340,7 @@ async function main() {
 
     console.log("Navigating Mobile to Schedule: http://127.0.0.1:5173/?demo=true#schedule");
     await mobilePage.goto("http://127.0.0.1:5173/?demo=true#schedule", {
-      waitUntil: "commit",
+      waitUntil: "domcontentloaded",
       timeout: 30000,
     });
 
@@ -332,7 +364,7 @@ async function main() {
     console.log("Opening Quick Booking Bottom Sheet on Mobile...");
     try {
       await setTheme(mobilePage, "light");
-      const mobileQuickBtn = mobilePage.locator('button:has-text("Записать пациента"), button:has-text("+ Новая запись")').first();
+      const mobileQuickBtn = mobilePage.locator('button:has-text("Новая запись"), button:has-text("Записать пациента"), button:has-text("+ Новая запись")').first();
       if (await mobileQuickBtn.isVisible()) {
         console.log("Clicking mobile quick booking button...");
         await mobileQuickBtn.click();

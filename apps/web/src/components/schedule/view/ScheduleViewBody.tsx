@@ -1,12 +1,23 @@
 import React, { useRef, useCallback } from "react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import type {
+  Appointment,
+  AppointmentReadiness,
+  Dashboard,
+  ScheduleSuggestion,
+} from "@dental/shared";
 import { ScheduleGrid } from "../ScheduleGrid";
 import { ScheduleTimeline } from "../ScheduleTimeline";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
 import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
-import type { AppointmentScheduleDraft } from "./scheduleViewTypes";
+import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
+import type { DoctorShift } from "../roster/DoctorShiftRosterModal";
+import type { ScheduleDayGroup } from "../scheduleDayGrouping";
+import type {
+  AppointmentScheduleDraft,
+  AppointmentScheduleSaveState,
+} from "./scheduleViewTypes";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { ScheduleMobileAgendaView } from "../mobile/ScheduleMobileAgendaView";
 import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";
@@ -19,11 +30,11 @@ export interface ScheduleViewBodyProps {
   todayScheduleDate: () => string;
   scheduleGridStep: 15 | 30 | 60;
   setScheduleGridStep: (step: 15 | 30 | 60) => void;
-  computedChairDoctorAssignments: any;
-  savedDoctorShifts: any[];
-  handleAssignChairDoctor: any;
+  computedChairDoctorAssignments: Record<string, ChairDoctorShiftAssignment>;
+  savedDoctorShifts: DoctorShift[];
+  handleAssignChairDoctor?: ((chairId: string, assignment: ChairDoctorShiftAssignment | null) => void) | undefined;
   handleAddChairFromSchedule: (chairData: QuickAddChairData) => Promise<void>;
-  handleAddDoctorFromSchedule: (doctorData: QuickAddDoctorData) => Promise<any>;
+  handleAddDoctorFromSchedule: (doctorData: QuickAddDoctorData) => Promise<unknown>;
   handleEditChairFromSchedule: (chairData: QuickAddChairData) => void;
   handleOpenWaitlistForSlot: (slot: TargetSlotInfo) => void;
   setIsRosterModalOpen: (open: boolean) => void;
@@ -33,33 +44,44 @@ export interface ScheduleViewBodyProps {
   setQuickBookingSlot: (slot: QuickBookingSlotInfo | null) => void;
   setQuickBookingOpen: (open: boolean) => void;
   setModalAppointment: (app: Appointment | null) => void;
-  updateAppointmentScheduleDraft: (id: string, key: any, val: any) => void;
-  saveAppointmentSchedule: (id: string, opts?: any) => Promise<boolean>;
-  patientName: (patients: any[], id: string | null) => string;
+  updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(
+    id: string,
+    key: K,
+    val: AppointmentScheduleDraft[K],
+  ) => void;
+  saveAppointmentSchedule: (
+    id: string,
+    opts?: {
+      closeEditorOnSave?: boolean;
+      allowOverbooking?: boolean;
+      allowEmergencyOverride?: boolean;
+    },
+  ) => Promise<boolean>;
+  patientName: (patients: Dashboard["patients"], id: string | null) => string;
   formatTime: (iso: string) => string;
-  toDateTimeLocalValue: (iso: string) => string;
-  fromDateTimeLocalValue: (val: string) => string;
-  appointmentLabels: Record<string, string>;
+  toDateTimeLocalValue: (iso: string, timeZone?: string | null) => string;
+  fromDateTimeLocalValue: (val: string, timeZone?: string | null) => string;
+  appointmentLabels: Record<Appointment["status"], string>;
   showToast: (msg: string, type?: "success" | "error" | "info" | "warning", duration?: number) => void;
   setEditingChairData: (data: QuickAddChairData | null) => void;
   setIsQuickAddChairOpen: (open: boolean) => void;
-  visibleDayGroups: any[];
-  visibleScheduleSuggestions: any[];
-  appointmentReadinessById: Map<string, any>;
-  appointmentScheduleDrafts: Record<string, any>;
-  appointmentScheduleSaveStates: Record<string, any>;
-  appointmentScheduleErrors: Record<string, any>;
+  visibleDayGroups: ScheduleDayGroup[];
+  visibleScheduleSuggestions: ScheduleSuggestion[];
+  appointmentReadinessById: Map<string, AppointmentReadiness>;
+  appointmentScheduleDrafts: Record<string, AppointmentScheduleDraft>;
+  appointmentScheduleSaveStates: Record<string, AppointmentScheduleSaveState>;
+  appointmentScheduleErrors: Record<string, string | null>;
   appointmentScheduleDirtyIds: Set<string>;
   editingAppointmentId: string | null;
   appointmentScheduleDraftFromAppointment: (app: Appointment) => AppointmentScheduleDraft;
-  appointmentDraftMissingSteps: (draft: AppointmentScheduleDraft) => any[];
+  appointmentDraftMissingSteps: (draft: AppointmentScheduleDraft) => string[];
   activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
   openScheduleSuggestion: (section: string) => void;
   openAppointmentEditor: (appointment: Appointment) => void;
   repeatAppointment: (app: Appointment) => void;
-  copyAppointmentToBuffer: (app: Appointment) => Promise<void>;
-  closeAppointmentEditor: () => void;
-  normalizedAppointmentStatus: (val: any) => any;
+  copyAppointmentToBuffer: (app: Appointment) => void | Promise<void>;
+  closeAppointmentEditor: (appointmentId: string) => void;
+  normalizedAppointmentStatus: (val: unknown, fallback?: Appointment["status"]) => Appointment["status"];
   useManualSelects: boolean;
   stepScheduleDay: (delta: number) => void;
   activeScheduleFilterCount: number;
@@ -248,25 +270,26 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     setQuickBookingOpen(true);
   };
 
+  if (!dashboard) {
+    return (
+      <div
+        className="p-8 flex flex-col items-center justify-center gap-3 text-center min-h-[350px]"
+        data-testid="schedule-view-loading"
+      >
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--teal,#0d9488)] border-t-transparent animate-spin" />
+        <p className="text-sm font-medium text-[var(--muted)]">
+          Подготовка расписания...
+        </p>
+      </div>
+    );
+  }
+
   if (isMobile) {
-    if (!dashboard) {
-      return (
-        <div
-          className="schedule-mobile-agenda p-8 flex flex-col items-center justify-center gap-3 text-center min-h-[350px]"
-          data-testid="schedule-mobile-agenda-loading"
-        >
-          <div className="w-8 h-8 rounded-full border-2 border-[var(--teal,#0d9488)] border-t-transparent animate-spin" />
-          <p className="text-sm font-medium text-[var(--muted)]">
-            Подготовка расписания...
-          </p>
-        </div>
-      );
-    }
     return (
       <ScheduleMobileAgendaView
         dashboard={dashboard}
         dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
-        appointments={dashboard?.appointments ?? []}
+        appointments={dashboard.appointments ?? []}
         onDateChange={setScheduleDateFilter}
         onSlotClick={(slot) => {
           setQuickBookingSlot(slot);
@@ -298,7 +321,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
           });
           setQuickBookingOpen(true);
         }}
-        timezone={dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
+        timezone={dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
       />
     );
   }
@@ -306,13 +329,13 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   if (scheduleViewMode === "grid" || (scheduleViewMode as string) === "chairs") {
     return (
       <ScheduleGrid
-        dashboard={dashboard as any}
+        dashboard={dashboard}
         hideInlineAddChair={true}
         hideToolbar={true}
         gridStepMinutes={scheduleGridStep}
         onGridStepChange={setScheduleGridStep}
         dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
-        appointments={dashboard?.appointments ?? []}
+        appointments={dashboard.appointments ?? []}
         onSlotClick={(slot) => {
           setQuickBookingSlot(slot);
           setQuickBookingOpen(true);
@@ -349,7 +372,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   return (
     <ScheduleTimeline
       visibleDayGroups={visibleDayGroups}
-      dashboard={dashboard as any}
+      dashboard={dashboard}
       visibleScheduleSuggestions={visibleScheduleSuggestions}
       appointmentReadinessById={appointmentReadinessById}
       appointmentLabels={appointmentLabels}
@@ -371,7 +394,13 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
       repeatAppointment={repeatAppointment}
       copyAppointmentToBuffer={copyAppointmentToBuffer}
       closeAppointmentEditor={closeAppointmentEditor}
-      updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
+      updateAppointmentScheduleDraft={(id, key, val) =>
+        updateAppointmentScheduleDraft(
+          id,
+          key as keyof AppointmentScheduleDraft,
+          val as AppointmentScheduleDraft[keyof AppointmentScheduleDraft],
+        )
+      }
       saveAppointmentSchedule={saveAppointmentSchedule}
       normalizedAppointmentStatus={normalizedAppointmentStatus}
       toDateTimeLocalValue={toDateTimeLocalValue}

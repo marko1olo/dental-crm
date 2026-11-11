@@ -18,7 +18,7 @@ export interface ConsentSignatureAudit {
 	readonly integrityHash: string;
 	readonly timestamp: number;
 	readonly signedAtIso: string;
-	readonly legalBasis: "63-ФЗ ПЭП" | "323-ФЗ ст. 20";
+	readonly legalBasis: "Электронная подпись (ПЭП)" | "Информированное согласие" | "63-ФЗ ПЭП" | "323-ФЗ ст. 20" | string;
 	readonly signatureSvg?: string | undefined;
 	readonly ipAddress?: string | undefined;
 }

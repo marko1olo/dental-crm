@@ -18,13 +18,9 @@ describe("Tooth Defect History Preservation & Multi-Status [CLN-03]", () => {
 
 		const parsed = parseClinicalDataFromNotes(rawNotes);
 		assert.ok(parsed !== null, "Clinical data must be parsed successfully");
-		// @ts-expect-error passthrough property
 		assert.equal(parsed.baseState, "Crown");
-		// @ts-expect-error passthrough property
 		assert.equal(parsed.hasCrown, true);
-		// @ts-expect-error passthrough property
 		assert.equal(parsed.hasSecondaryCaries, true);
-		// @ts-expect-error passthrough property
 		assert.deepEqual(parsed.conditions, ["Caries"]);
 	});
 

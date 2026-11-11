@@ -22,7 +22,9 @@ const waitlistTimeRangeSchema = z.object({
 });
 
 const waitlistSchema = z.object({
-	patientId: z.string().uuid(),
+	patientId: z.string().uuid().or(z.literal("")).nullable().optional(),
+	patientName: z.string().optional(),
+	patientPhone: z.string().optional(),
 	preferredDoctorId: z.string().uuid().nullable().optional(),
 	priorityLevel: z.enum(["high", "medium", "low"]).default("medium"),
 	notes: z.string().optional(),
@@ -155,24 +157,57 @@ export async function registerWaitlistRoutes(
 
 			const data = parsed.data;
 
-			// Verify the patient exists AND belongs to this organization. Without the
-			// org scope, org A could waitlist org B's patient, leaking that patient's
-			// name/phone into org A's waitlist via the GET join.
-			const [patient] = await db
-				.select()
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, data.patientId),
-						eq(patients.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			let patient: typeof patients.$inferSelect | undefined;
+
+			// 1. Поиск по валидному patientId
+			if (data.patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patientId)) {
+				const [found] = await db
+					.select()
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, data.patientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				patient = found;
+			}
+
+			// 2. Если patientId пустой или не найден — пробуем найти по телефону в организации
+			const cleanPhone = data.patientPhone?.trim();
+			if (!patient && cleanPhone && cleanPhone.length > 0) {
+				const [foundByPhone] = await db
+					.select()
+					.from(patients)
+					.where(
+						and(
+							eq(patients.phone, cleanPhone),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				patient = foundByPhone;
+			}
+
+			// 3. Если всё ещё не найден, но указано имя — создаем легкого пациента-кандидата (Lightweight Patient)
+			const cleanName = data.patientName?.trim();
+			if (!patient && cleanName && cleanName.length > 0) {
+				const [newPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId: orgId,
+						fullName: cleanName,
+						phone: cleanPhone || null,
+					})
+					.returning();
+				patient = newPatient;
+			}
 
 			if (!patient) {
-				return reply.code(404).send({
-					error: "PatientNotFound",
-					message: "Пациент не найден.",
+				return reply.code(400).send({
+					error: "PatientRequired",
+					message: "Необходимо выбрать пациента или указать ФИО для добавления в лист ожидания.",
 				});
 			}
 
@@ -233,7 +268,7 @@ export async function registerWaitlistRoutes(
 				.insert(appointmentWaitlists)
 				.values({
 					organizationId: orgId,
-					patientId: data.patientId,
+					patientId: patient.id,
 					patientName: patient.fullName,
 					patientPhone: patient.phone,
 					preferredDoctorId: data.preferredDoctorId ?? null,

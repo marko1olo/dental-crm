@@ -128,7 +128,7 @@ describe("LanQrConnectionModal Decomposed Submodules & Ergonomics", () => {
 		expect(html).toContain('data-testid="lan-qr-open-browser-btn"');
 		expect(html).toContain("192.168.1.100");
 		expect(html).toContain("10.0.0.5");
-		expect(html).toContain("Решение в 1 клик");
+		expect(html).toContain("Решение проблемы");
 		expect(html).not.toContain("disabled");
 	});
 

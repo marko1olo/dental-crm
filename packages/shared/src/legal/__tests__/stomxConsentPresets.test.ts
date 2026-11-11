@@ -139,8 +139,10 @@ test("DOC-02 Fix: Specialized procedure keys generate distinct specialized conse
 
 	// 4. Pediatric / Minor
 	const pedHtml = generateClinicalConsentHtml("pediatric", {
-		"Пациент.ФИО": "Иванов Ваня (7 лет)",
-		"Пациент.ПредставительФИО": "Иванова Ольга Петровна (мать)",
+		patient: {
+			fullName: "Иванов Ваня (7 лет)",
+			representativeFullName: "Иванова Ольга Петровна (мать)",
+		},
 	});
 	assert.ok(pedHtml.includes("несовершеннолетн"), "Pediatric key must render minor consent with representative");
 

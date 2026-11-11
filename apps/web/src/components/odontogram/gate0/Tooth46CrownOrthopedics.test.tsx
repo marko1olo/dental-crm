@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { Tooth46Container } from "./Tooth46Container";
+import { Tooth46Container } from "./teeth/tooth46/Tooth46Container";
 import { Tooth46CrownOverlay } from "./Tooth46CrownOverlay";
 import { TOOTH46_CROWN_PRESETS } from "./Tooth46CrownPresets";
 import type { CrownMaterial } from "./tooth46Types";

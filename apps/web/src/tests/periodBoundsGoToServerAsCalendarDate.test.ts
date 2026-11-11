@@ -54,7 +54,7 @@ import { fetchReportsSummary } from "../components/reports/ManagerReportsPanel.j
 import {
 	payoutMonthCalendarBounds,
 	requestDoctorPayouts,
-} from "../pages/DoctorPayoutDashboard.js";
+} from "../components/analytics/DoctorPayrollReport.js";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -281,7 +281,7 @@ describe("границы периода уходят на сервер кале�
 	test("ни в панели отчётов, ни в выплатах не осталось превращения даты в мгновение", () => {
 		for (const relative of [
 			"components/reports/ManagerReportsPanel.tsx",
-			"pages/DoctorPayoutDashboard.tsx",
+			"components/analytics/DoctorPayrollReport.tsx",
 		]) {
 			const source = readFileSync(path.join(webSrc, relative), "utf8");
 			/*

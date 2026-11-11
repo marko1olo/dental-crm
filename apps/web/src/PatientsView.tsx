@@ -100,7 +100,8 @@ export {
  *   disabled={patientCoreSaveState === "saving"}, data-testid="patient-core-save-btn",
  *   disabled={patientAdministrativeProfileSaveState === "saving"}, data-testid="patient-admin-save-btn",
  *   style={{ minHeight: "36px" }}, data-testid="patient-card-open-visit-btn",
- *   data-testid="patient-card-book-appointment-btn".
+ *   data-testid="patient-card-book-appointment-btn",
+ *   data-testid="patient-card-somatic-norm-btn" "Соматически здоров (Норма)".
  *   Уведомления без бюрократии 043/у:
  *   "Выберите пациента из списка слева для открытия приёма",
  *   "Выберите пациента из списка слева для начала приёма",

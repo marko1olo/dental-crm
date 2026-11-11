@@ -19,7 +19,7 @@ export const PediatricBehaviorCard: React.FC<PediatricBehaviorCardProps> = ({
 		<div className="mb-4">
 			<div className="mb-2 flex items-center justify-between gap-2 min-w-0">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] shrink-0">
-					Шкала поведения Франкла (экспресс-выбор в 1 клик):
+					Шкала поведения Франкла (экспресс-выбор):
 				</span>
 				<span className="text-xs font-medium text-[var(--muted,#64748b)] truncate min-w-0">
 					{activeFrankl.clinicalTacticRu}

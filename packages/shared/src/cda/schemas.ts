@@ -387,7 +387,7 @@ export const egiszRemdPackageSchema = z.object({
 });
 
 export const egiszRemdRegistrationReceiptSchema = z.object({
-	receiptId: z.string().min(1),
+	receiptId: z.string().min(1).nullable(),
 	remdDocumentId: z.string().min(1),
 	remdTransactionId: z.string().min(1),
 	docTypeNsiCode: z.string().min(1),
@@ -407,7 +407,7 @@ export const egiszRemdRegistrationReceiptSchema = z.object({
 		operatorName: z.string(),
 		serviceEndpoint: z.string(),
 		tspTimestamp: z.string(),
-		verificationStatus: z.literal("VERIFIED_VALID"),
+		verificationStatus: z.enum(["VERIFIED_VALID", "pending_gateway"]),
 	}),
 	receiptVersion: z.literal("1.0"),
 	issuedAt: z.string(),

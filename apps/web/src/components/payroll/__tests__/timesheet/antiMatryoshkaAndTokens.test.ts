@@ -8,28 +8,27 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { DoctorPayrollModal } from "../../DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Red Team: Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens (Mandates 8d, 8s)", () => {
-	it("3.1 DoctorPayrollModal.tsx contains 0 nested modals and exports cleanly", () => {
-		assert.ok(DoctorPayrollModal, "DoctorPayrollModal must be exported");
+	it("3.1 DoctorPayrollStudioModal.tsx contains 0 nested modals and exports cleanly", () => {
+		assert.ok(DoctorPayrollStudioModal, "DoctorPayrollStudioModal must be exported");
 
-		const filePath = path.resolve(__dirname, "../../DoctorPayrollModal.tsx");
+		const filePath = path.resolve(__dirname, "../../DoctorPayrollStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf8");
 
 		const modalTagMatches = content.match(/<Modal\b|<Dialog\b/g);
-		assert.equal(modalTagMatches, null, "DoctorPayrollModal must not contain nested modals");
+		assert.equal(modalTagMatches, null, "DoctorPayrollStudioModal must not contain nested modals");
 
-		const overlayCount = (content.match(/payroll-modal-overlay/g) || []).length;
-		assert.ok(overlayCount <= 1, "DoctorPayrollModal overlay must not be nested");
+		const overlayCount = (content.match(/payroll-studio-overlay/g) || []).length;
+		assert.ok(overlayCount <= 1, "DoctorPayrollStudioModal overlay must not be nested");
 	});
 
-	it("3.2 Zero cartoon emojis exist in DoctorPayrollModal.tsx, Content, or Engine", () => {
+	it("3.2 Zero cartoon emojis exist in DoctorPayrollStudioModal.tsx or Engine", () => {
 		const files = [
-			path.resolve(__dirname, "../../DoctorPayrollModal.tsx"),
 			path.resolve(__dirname, "../../DoctorPayrollStudioModal.tsx"),
 			path.resolve(__dirname, "../../staffPayrollEngine.ts"),
 		];

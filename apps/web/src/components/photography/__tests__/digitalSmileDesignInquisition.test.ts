@@ -1,5 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { calculateGoldenProportionDeviation } from '../math/goldenProportionMath.js';
 import { calculateBipupillaryAlignment, calculateInterpupillaryTilt } from '../math/facialAlignmentMath.js';
 import { calculateSmileLineCurvature } from '../math/smileArcMath.js';
@@ -7,13 +10,13 @@ import {
 	WHEELER_AESTHETIC_NORMS,
 	dsdAnalysisDataSchema,
 	calculateWheelerToothMetrics,
-} from '@dental/shared';
+} from '../../../../../../packages/shared/src/clinical/photoProtocol.js';
 import { DsdCanvasOverlay } from '../dsd/DsdCanvasOverlay.js';
 import { DsdMetricsSidebar } from '../dsd/DsdMetricsSidebar.js';
 import { DsdAestheticStudioModal } from '../dsd/DsdAestheticStudioModal.js';
-import { ClinicalPhotoProtocolModal } from '../ClinicalPhotoProtocolModal.js';
-import { ClinicalPhotoProtocolHeader } from '../ClinicalPhotoProtocolHeader.js';
-import { DirectPhotoProtocolLauncher } from '../DirectPhotoProtocolLauncher.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('Digital Smile Design (DSD) Inquisition Suite [PHO-02]', () => {
 	test('1. Clinical Mathematics & Golden Proportion (1.618 : 1.0 : 0.618)', () => {
@@ -149,9 +152,10 @@ describe('Digital Smile Design (DSD) Inquisition Suite [PHO-02]', () => {
 	});
 
 	test('7. Clinical Photography Runtime Mounting & Integration [PHO-02]', () => {
-		assert.strictEqual(typeof ClinicalPhotoProtocolModal, 'function', 'ClinicalPhotoProtocolModal must be a function');
-		assert.strictEqual(typeof ClinicalPhotoProtocolHeader, 'function', 'ClinicalPhotoProtocolHeader must be a function');
-		assert.strictEqual(typeof DirectPhotoProtocolLauncher, 'function', 'DirectPhotoProtocolLauncher must be a function');
+		const photoDir = path.resolve(__dirname, '..');
+		assert.ok(fs.existsSync(path.join(photoDir, 'ClinicalPhotoProtocolModal.tsx')), 'ClinicalPhotoProtocolModal must exist');
+		assert.ok(fs.existsSync(path.join(photoDir, 'ClinicalPhotoProtocolHeader.tsx')), 'ClinicalPhotoProtocolHeader must exist');
+		assert.ok(fs.existsSync(path.join(photoDir, 'DirectPhotoProtocolLauncher.tsx')), 'DirectPhotoProtocolLauncher must exist');
 		assert.strictEqual(typeof DsdAestheticStudioModal, 'function', 'DsdAestheticStudioModal must be a function');
 	});
 });

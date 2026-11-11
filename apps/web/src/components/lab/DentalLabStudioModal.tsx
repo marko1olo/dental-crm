@@ -344,6 +344,44 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						printMaterial={printMaterial}
 						onBackToRegistry={() => setActiveMainTab("registry")}
 					/>
+				) : activeMainTab === "registry" ? (
+					<div className="w-full p-4 overflow-y-auto max-h-[78vh]">
+						<section className="dental-lab-right-column w-full border-0 p-0" data-testid="lab-orders-registry-panel">
+							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mb-3">
+								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
+										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В работе ЗТЛ", in_clinic: "Готово в клинике", overdue: "Просроченные" };
+										return (
+											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
+												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--teal)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
+										);
+									})}
+								</div>
+								<div className="w-full sm:w-64 shrink-0">
+									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="w-full text-xs p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
+								</div>
+							</div>
+							<div className="space-y-3">
+								{filteredOrders.length === 0 ? (
+									<div className="text-center py-12 text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-2xl">
+										<p className="text-sm font-semibold">Нарядов в выбранной категории не найдено</p>
+										<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла</p>
+									</div>
+								) : (
+									filteredOrders.map((ord) => (
+										<DentalLabRegistryOrderCard
+											key={ord.id}
+											ord={ord}
+											onMarkInClinic={handleMarkInClinic}
+											onCallPatient={handleCallPatient}
+											onPrintOrder={handlePrintOrder}
+											onAdvanceStage={handleAdvanceStage}
+										/>
+									))
+								)}
+							</div>
+						</section>
+					</div>
 				) : (
 					<div className="dental-lab-body-grid">
 						<DentalLabCreateOrderSection
@@ -377,8 +415,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							handlePrintA5Blank={handlePrintA5Blank}
 							handleCourierBlank={handleCourierBlank}
 						/>
-						{/* ПРАВАЯ КОЛОНКА: Реестр нарядов с фильтрами (Вкладка 2) */}
-						<section className={`dental-lab-right-column ${activeMainTab === "registry" ? "mobile-visible" : "mobile-hidden"}`} data-testid="lab-orders-registry-panel">
+						{/* ПРАВАЯ КОЛОНКА: Оперативный реестр последних нарядов */}
+						<section className="dental-lab-right-column mobile-hidden" data-testid="lab-orders-registry-panel">
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
 								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
 									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
@@ -397,7 +435,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 								{filteredOrders.length === 0 ? (
 									<div className="text-center py-12 text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-2xl">
 										<p className="text-sm font-semibold">Нарядов в выбранной категории не найдено</p>
-										<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла за 10 секунд</p>
+										<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла</p>
 									</div>
 								) : (
 									filteredOrders.map((ord) => (

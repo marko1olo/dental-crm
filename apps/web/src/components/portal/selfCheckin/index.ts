@@ -6,8 +6,6 @@ export * from "./SelfCheckinSomaticSection";
 export * from "./SelfCheckinTicketSection";
 export * from "./SelfCheckinNumericKeypad";
 export * from "./SelfCheckinPhoneInput";
-export * from "./SelfCheckinOtpVerification";
-export * from "./useSelfCheckinPhoneAuthState";
 export * from "./SelfCheckinKioskModeTiles";
 export * from "./SelfCheckinEmergencyCard";
 export * from "./SelfCheckinExpressCard";

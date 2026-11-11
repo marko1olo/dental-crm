@@ -73,12 +73,9 @@ describe("Red Team Inquisitor: Patient Registry & Somatic Autonomy", () => {
 		assert.ok(!htmlOpen.includes("ЕГИСЗ"), "Must not leak raw bureaucratic acronym ЕГИСЗ in labels");
 	});
 
-	it("2. PatientCreationModalView never disables primary save buttons (Mandate 8e)", () => {
-		const modalViewPath = path.resolve(patientsDir, "patientCreation/PatientCreationModalView.tsx");
-		const footerPath = path.resolve(patientsDir, "patientCreation/PatientCreationModalFooter.tsx");
-		const content =
-			fs.readFileSync(modalViewPath, "utf-8") +
-			(fs.existsSync(footerPath) ? "\n" + fs.readFileSync(footerPath, "utf-8") : "");
+	it("2. PatientCreationModal / PatientCardModal never disables primary save buttons (Mandate 8e)", () => {
+		const modalPath = path.resolve(patientsDir, "PatientCardModal.tsx");
+		const content = fs.readFileSync(modalPath, "utf-8");
 
 		assert.ok(content.includes('data-testid="patient-creation-submit-btn"'));
 		assert.ok(content.includes('data-testid="patient-creation-submit-and-visit-btn"'));

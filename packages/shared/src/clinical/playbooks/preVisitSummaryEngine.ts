@@ -96,7 +96,7 @@ export function generatePreAppointmentSummary(input: {
 	if (hasCriticalAlerts) {
 		chairsideTip = `[СТОП-ФАКТОР] Внимание: ${criticalAlerts.join("; ")}. Подобрать безопасный анестетик, контролировать гемостаз.`;
 	} else if (isFirstVisit) {
-		chairsideTip = "Первичный пациент: активна норма в 1 клик по Мандату 8e. Заполните зубную формулу и проведите фотопротокол.";
+		chairsideTip = "Первичный пациент: активна физиологическая норма. Заполните зубную формулу и проведите фотопротокол.";
 	} else if (agreedBudgetStages.length > 0 && agreedBudgetStages[0]) {
 		const next = agreedBudgetStages[0];
 		chairsideTip = `Согласован план лечения: этап №${next.stageNumber} «${next.title}» (${next.totalPriceRub}). Материалы подготовлены.`;

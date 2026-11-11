@@ -3,7 +3,7 @@ import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
-import { registerOrthodonticsRoutes } from "../../routes/orthodontics.js";
+import { registerOrthodonticsRoutes } from "../../routes/orthodontics/index.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,

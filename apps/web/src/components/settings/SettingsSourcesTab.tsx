@@ -15,7 +15,7 @@ type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { EgiszBlankPermissionsWidget } from "../integrations/EgiszBlankPermissionsWidget";
+import { EgiszBlankPermissionsWidget } from "../integrations/egiszModules/EgiszBlankPermissionsWidget";
 import { DicomServerConfigPanel } from "./sources/dicomCapability/DicomServerConfigPanel";
 import { SourcesConnectorGrid } from "./sources/SourcesConnectorGrid";
 import { SourcesDicomCapability } from "./sources/SourcesDicomCapability";

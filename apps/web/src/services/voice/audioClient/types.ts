@@ -59,6 +59,7 @@ export interface UnifiedAudioClientOptions {
 	specialty?: string | undefined;
 	language?: string | undefined;
 	adminSecret?: string | null | undefined;
+	source?: "visit" | "copilot" | "consultation" | "notes" | string | undefined;
 	filterOptions?: DentalNoiseFilterOptions | undefined;
 	vadOptions?: VadOptions | undefined;
 	autoFallback?: boolean | undefined;
@@ -94,6 +95,7 @@ export interface InternalUnifiedAudioClientOptions {
 	organizationId: string | null;
 	patientId: string | null;
 	visitId: string | null;
+	source: string;
 	specialty: string;
 	language: string;
 	adminSecret: string;
@@ -133,6 +135,7 @@ export function resolveUnifiedAudioClientOptions(
 		organizationId: options.organizationId ?? null,
 		patientId: options.patientId ?? null,
 		visitId: options.visitId ?? null,
+		source: options.source ?? (options.visitId ? "visit" : "copilot"),
 		specialty: options.specialty ?? "therapy",
 		language: options.language ?? "ru",
 		adminSecret: options.adminSecret ?? "",

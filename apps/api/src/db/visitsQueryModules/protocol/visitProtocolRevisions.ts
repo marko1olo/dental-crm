@@ -349,7 +349,7 @@ export async function acceptVisitDraftInDb(
 			signedVisit,
 			input,
 			previousRevision,
-			saveReceipt.warning,
+			saveReceipt.warning ?? null,
 		);
 
 		try {

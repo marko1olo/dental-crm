@@ -49,7 +49,7 @@ export function usePanoramicWorker(params: UsePanoramicWorkerParams) {
 
 		setLoading(true);
 		setError(null);
-		const worker = new Worker(new URL("../../../workers/mprWorker.ts", import.meta.url), { type: "module" });
+		const worker = new Worker(new URL("../../../../workers/mprWorker.ts", import.meta.url), { type: "module" });
 		workerRef.current = worker;
 
 		const depthWorld = volume.dimensions[2] * volume.spacing[2];

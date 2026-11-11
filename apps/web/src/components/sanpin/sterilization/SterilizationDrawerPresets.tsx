@@ -21,7 +21,7 @@ export function SterilizationDrawerPresets({
 	return (
 		<div className="flex flex-col gap-1.5">
 			<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-				Клинический режим автоклава (1 клик):
+				Клинический режим автоклава:
 			</div>
 			<div className="grid grid-cols-1 gap-2">
 				{CLINICAL_AUTOCLAVE_1CLICK_PRESETS.map((preset, idx) => {

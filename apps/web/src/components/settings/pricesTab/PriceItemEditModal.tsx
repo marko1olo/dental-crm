@@ -225,7 +225,7 @@ export function PriceItemEditModal(props: Partial<UnifiedPriceItemModalProps> & 
 								required
 							/>
 							{priceProblem && (
-								<small style={{ color: "var(--danger-color, #ef4444)", marginTop: "4px" }}>
+								<small style={{ color: "var(--danger)", marginTop: "4px" }}>
 									{priceProblem}
 								</small>
 							)}
@@ -343,7 +343,7 @@ export function PriceItemEditModal(props: Partial<UnifiedPriceItemModalProps> & 
 						</button>
 						<button
 							type="submit"
-							className="primary-button w-full sm:w-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 inline-flex items-center justify-center gap-1.5 font-semibold text-white bg-[var(--teal)] hover:bg-[#0f766e] transition-colors rounded-xl border-none cursor-pointer"
+							className="primary-button w-full sm:w-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 inline-flex items-center justify-center gap-1.5 font-semibold text-white bg-[var(--teal)] hover:bg-[var(--teal-dark)] transition-colors rounded-xl border-none cursor-pointer"
 							aria-busy={Boolean(isSaving)}
 						>
 							<Check size={16} />

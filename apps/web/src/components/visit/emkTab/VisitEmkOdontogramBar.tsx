@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity, ArrowUpRight, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
+import { Activity, ArrowUpRight, ChevronDown, ChevronUp, ShieldCheck, Sparkles } from "lucide-react";
 import {
 	calculateAge,
 	type DentitionMode,
@@ -404,10 +404,30 @@ export function VisitEmkOdontogramBar({
 						}}
 						data-testid="btn-open-perio-modal"
 						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
-						title="Открыть подробную пародонтограмму и скрининг карманов (Мандат 8e)"
+						title="Открыть подробную пародонтограмму и скрининг карманов"
 					>
 						<Activity size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
 						<span className="hidden sm:inline">Пародонтограмма</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							window.dispatchEvent(
+								new CustomEvent("dente:open-hygiene", {
+									detail: {
+										patientId: activePatient?.id,
+										visitId: draft?.id,
+										patientName: activePatient?.fullName,
+									},
+								}),
+							);
+						}}
+						data-testid="btn-open-hygiene-studio"
+						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
+						title="Открыть студию профессиональной гигиены и индекса OHI-S"
+					>
+						<Sparkles size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span className="hidden sm:inline">Профгигиена</span>
 					</button>
 					<button
 						type="button"

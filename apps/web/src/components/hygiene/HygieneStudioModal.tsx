@@ -81,8 +81,8 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 		setSelectedOhiS(calculatedOhiS);
 	}, [calculatedOhiS]);
 
-	const [selectedProtocol, setSelectedProtocol] = useState<CleaningProtocol>(CLEANING_PROTOCOLS[0]);
-	const [selectedCarePlan, setSelectedCarePlan] = useState<HomeCarePlan>(HOME_CARE_PLANS[0]);
+	const [selectedProtocol, setSelectedProtocol] = useState<CleaningProtocol>(CLEANING_PROTOCOLS[0]!);
+	const [selectedCarePlan, setSelectedCarePlan] = useState<HomeCarePlan>(HOME_CARE_PLANS[0]!);
 	const [activeSection, setActiveSection] = useState<"protocol" | "homecare">("protocol");
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -143,8 +143,8 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 	const handlePrint = useCallback(() => {
 		printHygieneHomeCareMemo({
-			patientName,
-			doctorName,
+			patientName: patientName || "Пациент приёма",
+			doctorName: doctorName || "Лечащий врач",
 			carePlan: selectedCarePlan,
 			ohiS: selectedOhiS,
 		});
@@ -291,7 +291,10 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 												<button
 													key={`d-${val}`}
 													type="button"
-													onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], debris: val } }))}
+													onClick={() => setOhisTeeth((p) => {
+														const prevEntry = p[t.toothNumber] ?? { debris: 0, calculus: 0 };
+														return { ...p, [t.toothNumber]: { ...prevEntry, debris: val } };
+													})}
 													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
 														current.debris === val ? "bg-teal-700 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
 													}`}
@@ -306,7 +309,10 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 												<button
 													key={`c-${val}`}
 													type="button"
-													onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], calculus: val } }))}
+													onClick={() => setOhisTeeth((p) => {
+														const prevEntry = p[t.toothNumber] ?? { debris: 0, calculus: 0 };
+														return { ...p, [t.toothNumber]: { ...prevEntry, calculus: val } };
+													})}
 													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
 														current.calculus === val ? "bg-amber-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
 													}`}

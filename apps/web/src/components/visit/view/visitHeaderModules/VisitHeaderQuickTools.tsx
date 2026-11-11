@@ -32,7 +32,7 @@ export function VisitHeaderQuickTools({
 				type="button"
 				onClick={handleOpenLabOrder}
 				data-testid="btn-visit-lab-order-fast"
-				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
+				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
 				title="Оформить заказ-наряд в зуботехническую лабораторию (ЗТЛ)"
 				aria-label="Наряд в ЗТЛ"
 			>
@@ -46,7 +46,7 @@ export function VisitHeaderQuickTools({
 				onClick={() => window.dispatchEvent(new CustomEvent("dente:open-agent-cockpit", { detail: { patientId: activePatient?.id } }))}
 				id="btn-visit-ai-agent-cockpit"
 				data-testid="btn-visit-ai-agent-cockpit"
-				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
+				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
 				title="Открыть клинический ассистент у кресла"
 				aria-label="Ассистент у кресла"
 			>
@@ -60,7 +60,7 @@ export function VisitHeaderQuickTools({
 				onClick={onOpenQueue}
 				id="btn-visit-switch-to-queue"
 				data-testid="btn-visit-switch-to-queue"
-				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] !hidden md:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
+				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] !hidden md:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
 				title="Открыть очередь смены и список пациентов"
 				aria-label="Очередь смены"
 			>

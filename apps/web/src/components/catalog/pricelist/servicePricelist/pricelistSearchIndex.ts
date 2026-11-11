@@ -24,9 +24,9 @@ const itemSearchIndexCache = new WeakMap<
 export function getItemSearchIndex(item: ServicePricelistItem): ItemSearchIndex {
 	let cached = itemSearchIndexCache.get(item);
 	if (!cached) {
-		const rawCode = item.statutoryCode || item.code804n;
-		const statTitle = item.statutoryTitle || item.statutoryTitle804n;
-		const cleanCode = rawCode.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+		const rawCode = item.statutoryCode || item.code804n || "";
+		const statTitle = item.statutoryTitle || item.statutoryTitle804n || "";
+		const cleanCode = (rawCode ?? "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
 		const catLabel = CATEGORY_LABELS[item.category] ?? "";
 		const specLabel = SPECIALTY_LABELS[item.specialty] ?? "";
 		const tagsStr = item.tags.length > 0 ? item.tags.join(" ") : "";

@@ -22,7 +22,6 @@ import QuickAddDoctorModal, {
 	formatDoctorShortName,
 	DOCTOR_COLOR_PRESETS,
 } from "../QuickAddDoctorModal";
-import { ChairScheduleView } from "../ChairScheduleView";
 import {
 	ScheduleGrid,
 	DEFAULT_SOLO_CHAIR,
@@ -658,31 +657,6 @@ describe("Wave 57 (Feature 246) — Quick Add Doctor & Chair Binding Autonomy", 
 		// Check chair-popover-bind-doctor in popover
 		const bindBtn = findNodeByTestId(rootNode, "chair-popover-bind-doctor-chair-1");
 		assert.ok(bindBtn, "chair-popover-bind-doctor-chair-1 must be present in chair popover");
-	});
-
-	it("ChairScheduleView: has btn-apply-preferred-chairs and btn-chair-view-add-doctor with 0 disabled buttons", async () => {
-		await act(async () => {
-			reactRoot.render(
-				<ChairScheduleView
-					dashboard={mockDashboard as Dashboard}
-					dateKey="2026-09-08"
-					appointments={[]}
-					onSlotClick={() => {}}
-					onAppointmentClick={() => {}}
-				/>,
-			);
-		});
-
-		const applyBtn = findNodeByTestId(rootNode, "btn-apply-preferred-chairs");
-		const addDocBtn = findNodeByTestId(rootNode, "btn-chair-view-add-doctor");
-
-		assert.ok(applyBtn, "btn-apply-preferred-chairs must exist in ChairScheduleView toolbar");
-		assert.ok(addDocBtn, "btn-chair-view-add-doctor must exist in ChairScheduleView toolbar");
-		assert.equal(applyBtn.disabled, false, "btn-apply-preferred-chairs must never be disabled (Mandate 8e)");
-		assert.equal(addDocBtn.disabled, false, "btn-chair-view-add-doctor must never be disabled (Mandate 8e)");
-
-		// Mandate 8d: 0 cartoon emojis in toolbar buttons
-		assert.equal(hasCartoonEmojis(collectAllText(applyBtn)), false);
 	});
 
 	it("QuickBookingDrawer & AppointmentModal: Solo doctor resilience with 0 chairs fallback (Mandate 8n)", async () => {

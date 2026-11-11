@@ -4,16 +4,7 @@
  * touch-first ergonomics, warehouse soft overdraft non-blocking operations.
  */
 
-export * from "./implantologyCatalogData";
-export {
-	NORMALIZED_IMPLANT_SYSTEMS,
-	TI_BASE_CATALOG_SSOT,
-	findImplantSystem,
-	resolveNormalizedBrand,
-	type NormalizedBrandId,
-	type NormalizedImplantSystem,
-	type TiBaseItemSSOT,
-} from "./implantCatalogData";
+export * from "./implantCatalogData";
 export * from "./implantQuickPresets";
 export * from "./ImplantPassportCard";
 export * from "./ImplantPassportModal";
@@ -23,9 +14,6 @@ export * from "./ImplantEconomicsSection";
 export * from "./ImplantConsumablesSelector";
 export * from "./ImplantWarehouseSelector";
 export * from "./ImplantDiaryTab";
-export * from "./implantCatalog";
-export * from "./implantTorqueCatalog";
-
 
 import {
 	IMPLANT_BRANDS_METADATA,
@@ -33,7 +21,7 @@ import {
 	type BrandMetadata,
 	type PlatformType,
 	getFixturesByBrand,
-} from "./implantCatalog";
+} from "./implantCatalogData";
 
 // Re-exports from existing catalog for backward compatibility
 export function getImplantBrandById(brand: ImplantBrand): BrandMetadata | undefined {

@@ -7,8 +7,10 @@
  * Sweet Spot: 300–350 строк (Мандат 8b/8zi).
  */
 
+import type { ArchwireMaterial } from "@dental/shared/orthodontics/types.js";
+
 export type ApplianceCategory = "brackets" | "aligners" | "plate";
-export type ArchwireAlloy = "niti" | "cuniti" | "ss" | "tma";
+export type ArchwireAlloy = "niti" | "cuniti" | "ss" | "tma" | ArchwireMaterial;
 export type ArchwireSection = "0.012" | "0.014" | "0.016" | "0.018" | "16x22" | "17x25" | "19x25";
 export type ArchwireShape = "round" | "rectangular";
 export type AngleClass = "class_1" | "class_2_1" | "class_2_2" | "class_3";
@@ -246,6 +248,7 @@ export interface OrthoProtocolState {
 	verticalBite: VerticalBite;
 	currentMonth: number;
 	totalMonths: number;
+	currentStageIndex?: number;
 	nextVisitWeeks: number;
 	upperAlloy: ArchwireAlloy;
 	upperSection: ArchwireSection;
@@ -253,10 +256,11 @@ export interface OrthoProtocolState {
 	lowerSection: ArchwireSection;
 	selectedElasticId: string | null;
 	selectedActionIds: string[];
-	trgValues: Record<string, number>;
+	trgValues: Record<string, number> | null;
 	alignerTracking: AlignerTrackingState;
 	photoStatuses: Record<string, boolean>;
 	clinicalNotes: string;
+	notes?: string;
 	savedAt?: string;
 }
 
@@ -267,19 +271,29 @@ export function createDefaultOrthoProtocolState(): OrthoProtocolState {
 		applianceName: "Damon Q2 (Металл, .022)",
 		angleClass: "class_1",
 		verticalBite: "normal",
-		currentMonth: 6,
+		currentMonth: 0,
 		totalMonths: 18,
+		currentStageIndex: 0,
 		nextVisitWeeks: 4,
-		upperAlloy: "cuniti",
-		upperSection: "17x25",
-		lowerAlloy: "cuniti",
-		lowerSection: "17x25",
-		selectedElasticId: "c2_fox",
-		selectedActionIds: ["archwire_replace", "change_ligatures", "cinch_back"],
-		trgValues: { sna: 82.2, snb: 80.1, anb: 2.1, u1_na: 22.5, l1_nb: 25.1, fma: 24.8 },
-		alignerTracking: { currentStep: 6, totalSteps: 24, wearDaysPerStep: 14, issuedSetsCount: 2, nextPlannedDate: "24.11.2026", iprCompleted: true, attachmentsVerified: true },
-		photoStatuses: { frontal_rest: true, frontal_smile: true, profile: true, occlusion_right: true, occlusion_center: true, occlusion_left: true },
-		clinicalNotes: "Плановая активация брекет-системы. Динамика смыкания по I классу Энгля положительная. Рекомендовано ношение эластиков Fox 3.5 oz 22 ч/сут.",
+		upperAlloy: "niti",
+		upperSection: "0.014",
+		lowerAlloy: "niti",
+		lowerSection: "0.014",
+		selectedElasticId: null,
+		selectedActionIds: [],
+		trgValues: null,
+		alignerTracking: {
+			currentStep: 0,
+			totalSteps: 24,
+			wearDaysPerStep: 14,
+			issuedSetsCount: 0,
+			nextPlannedDate: "",
+			iprCompleted: false,
+			attachmentsVerified: false,
+		},
+		photoStatuses: {},
+		clinicalNotes: "",
+		notes: "",
 	};
 }
 
@@ -320,16 +334,18 @@ export function formatOrthoProtocolSoapEntry(state: OrthoProtocolState): string 
 	const parts: string[] = [
 		`[ПРОТОКОЛ ПРИЁМА ОРТОДОНТА — ${state.applianceName}]`,
 		`Диагноз окклюзии: ${angleObj?.titleRu || "I класс по Энглю"}.`,
-		`Этап ортодонтического лечения: месяц ${state.currentMonth} из ${state.totalMonths}.`,
+		state.currentMonth > 0
+			? `Этап ортодонтического лечения: месяц ${state.currentMonth} из ${state.totalMonths}.`
+			: `Этап ортодонтического лечения: первичный этап (подготовка и фиксация).`,
 	];
 	if (state.applianceCategory === "aligners") {
-		parts.push(`Элайнеры: шаг ${state.alignerTracking.currentStep} из ${state.alignerTracking.totalSteps} (смена каждые ${state.alignerTracking.wearDaysPerStep} дн.). Выдано: ${state.alignerTracking.issuedSetsCount} компл. Плановый переход: ${state.alignerTracking.nextPlannedDate}.`);
+		parts.push(`Элайнеры: шаг ${state.alignerTracking.currentStep} из ${state.alignerTracking.totalSteps} (смена каждые ${state.alignerTracking.wearDaysPerStep} дн.). Выдано: ${state.alignerTracking.issuedSetsCount} компл.${state.alignerTracking.nextPlannedDate ? ` Плановый переход: ${state.alignerTracking.nextPlannedDate}.` : ""}`);
 	} else {
 		parts.push(`Дуга на верхней челюсти: ${state.upperSection} ${upperAlloyObj}; Дуга на нижней челюсти: ${state.lowerSection} ${lowerAlloyObj}.`);
 	}
 	if (elastic) parts.push(`Межчелюстная тяга: ${elastic.classNameRu} (${elastic.animalName}, сила ${elastic.forceOz}), схема фиксации: ${elastic.hookSchemeRu}.`);
 	if (actionLabels.length > 0) parts.push(`Манипуляции у кресла: ${actionLabels.join("; ")}.`);
-	if (state.clinicalNotes) parts.push(`Клинические заметки: ${state.clinicalNotes}`);
+	if (state.clinicalNotes || state.notes) parts.push(`Клинические заметки: ${state.clinicalNotes || state.notes}`);
 	parts.push(`Назначен следующий визит активации через ${state.nextVisitWeeks} нед.`);
 	return parts.join("\n");
 }

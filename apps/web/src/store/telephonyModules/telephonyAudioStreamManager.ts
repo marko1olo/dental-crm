@@ -26,10 +26,10 @@ export class TelephonyAudioStreamManager {
 	private volume = 1.0;
 	private microphoneError: string | null = null;
 
-	private cachedJitterMs = 12;
+	private cachedJitterMs = 0;
 	private cachedPacketsLost = 0;
-	private cachedRoundTripTimeMs = 25;
-	private cachedCodecName = "opus/48000/2";
+	private cachedRoundTripTimeMs = 0;
+	private cachedCodecName = "";
 	private statsPollingTimer: ReturnType<typeof setInterval> | null = null;
 
 	constructor(private readonly config: TelephonyAudioStreamConfig = {}) {}
@@ -489,6 +489,7 @@ export class TelephonyAudioStreamManager {
 
 	/**
 	 * Returns current audio stats with live AnalyserNode volume levels.
+	 * Initializes metrics with 0 / undefined when no active WebRTC stream is polled (DEF-TEL-09).
 	 */
 	public getAudioStats(): TelephonyAudioStreamStats {
 		return {
@@ -497,7 +498,7 @@ export class TelephonyAudioStreamManager {
 			jitterMs: this.cachedJitterMs,
 			packetsLost: this.cachedPacketsLost,
 			roundTripTimeMs: this.cachedRoundTripTimeMs,
-			codecName: this.cachedCodecName,
+			codecName: this.cachedCodecName || undefined,
 			connectionState: this.peerConnection?.connectionState ?? "uninitialized",
 			audioLevelsHistory: this.getAudioWaveform(12),
 		};

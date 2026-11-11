@@ -320,7 +320,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 				curatorPhone: null,
 				notes: body.isEmergency
 					? "Экстренный приём (острая боль). Требуется досылка гарантийного письма ДМС."
-					: "Экспресс-прикрепление ДМС в 1 клик",
+					: "Экспресс-прикрепление полиса ДМС",
 				status: "active",
 			})
 			.returning();

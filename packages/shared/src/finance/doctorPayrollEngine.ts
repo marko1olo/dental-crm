@@ -5,4 +5,3 @@
  */
 
 export * from "./payrollModules/payrollRegistry.js";
-export { isGeneralClinicOverheadConsumable } from "./doctorNetSalaryEngine.js";

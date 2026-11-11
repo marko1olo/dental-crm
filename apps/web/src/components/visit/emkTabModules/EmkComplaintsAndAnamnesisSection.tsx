@@ -59,13 +59,6 @@ export function EmkComplaintsAndAnamnesisSection(props: EmkComplaintsAndAnamnesi
 
 	return (
 		<div className="space-y-2.5 w-full min-w-0" data-testid="emk-complaints-and-anamnesis-module">
-			<EmkSomaticStatusBar
-				isNormActive={isNormActive}
-				handleOneClickNorm={handleOneClickNorm}
-				currentAnamnesis={currentAnamnesis}
-				handleToggleSomaticChip={handleToggleSomaticChip}
-			/>
-
 			<EmkComplaintsSection
 				visitNoteForm={visitNoteForm}
 				updateVisitNoteField={updateVisitNoteField}

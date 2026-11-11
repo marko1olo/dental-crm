@@ -11,6 +11,7 @@ import { documentKindSchema } from "../documents/index.js";
 import { patientInsightSchema, patientSchema } from "../patients/index.js";
 import { appointmentSchema } from "../schedule/index.js";
 import { paymentSchema } from "../fiscal/index.js";
+import { invoiceSchema } from "../billing/invoiceContract.js";
 import { nonNegativeMoneyRubSchema } from "../money.js";
 
 export const documentChainSummarySchema = z
@@ -262,6 +263,7 @@ export const dashboardSchema = z.object({
 	auditEvents: z.array(auditEventSchema),
 	complianceWarnings: z.array(z.string()),
 	insuranceContracts: z.array(z.any()).optional(),
+	invoices: z.array(invoiceSchema).optional(),
 });
 
 export type Dashboard = z.infer<typeof dashboardSchema>;
@@ -472,21 +474,37 @@ export const dmsGuaranteeLetterSchema = z.object({
 	patientFullName: z.string().trim().min(1),
 	patientBirthDate: z.string().nullable().optional(),
 	policyNumber: z.string().trim().min(1),
+	patientPolicyNumber: z.string().trim().optional(),
 	insurerKey: z.string().trim().optional(),
 	insurerName: z.string().trim().min(1),
+	companyName: z.string().trim().optional(),
+	companyId: z.string().trim().optional(),
 	letterNumber: z.string().trim().min(1),
 	issueDate: z.string().min(1),
 	validFrom: z.string().min(1),
 	validUntil: z.string().min(1),
-	maxCoverageRub: nonNegativeMoneyRubSchema,
+	validTo: z.string().min(1).optional(),
+	maxCoverageRub: nonNegativeMoneyRubSchema.optional().default(0),
+	maxCoverageKopecks: z.number().int().nonnegative().optional(),
+	maxApprovedAmountKopecks: z.number().int().nonnegative().optional(),
+	approvedAmountKopecks: z.number().int().nonnegative().optional(),
+	limitKopecks: z.number().int().nonnegative().optional(),
+	usedKopecks: z.number().int().nonnegative().optional(),
+	remainingLimitKopecks: z.number().int().nonnegative().optional(),
+	defaultFranchisePercent: z.number().min(0).max(100).optional(),
 	usedAmountRub: nonNegativeMoneyRubSchema.default(0),
+	usedAmountKopecks: z.number().int().nonnegative().optional(),
 	franchisePct: z.number().min(0).max(100).default(0),
-	franchiseType: z.enum(["none", "percent", "fixed_rub"]).default("none"),
+	franchisePercent: z.number().min(0).max(100).optional(),
+	franchiseType: z.enum(["none", "percent", "fixed_rub", "fixed_kopecks", "fixed"]).default("none"),
 	franchiseFixedRub: nonNegativeMoneyRubSchema.default(0),
+	franchiseFixedKopecks: z.number().int().nonnegative().optional(),
 	programExclusions: z.array(z.string()).default([]),
 	approvedServiceCodes: z.array(z.string()).default([]),
+	approvedServiceCodes804n: z.array(z.string()).default([]),
 	approvedTeethFdi: z.array(z.string()).default([]),
 	approvedDiagnosisCodes: z.array(z.string()).default([]),
+	approvedDiagnosisMkb10: z.array(z.string()).default([]),
 	curatorFullName: z.string().trim().nullable().optional(),
 	curatorPhone: z.string().trim().nullable().optional(),
 	notes: z.string().trim().default(""),

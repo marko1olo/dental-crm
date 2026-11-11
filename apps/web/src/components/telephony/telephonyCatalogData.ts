@@ -6,6 +6,18 @@
  * Mandates 8b (Sweet Spot <= 350 lines), 8e (Doctor Autonomy), 8x (Domain Purity).
  */
 
+import {
+	fuzzyMatchPhone,
+	normalizePhoneRu,
+	formatPhoneRu,
+	maskPhoneDisplay,
+	maskPhoneRu,
+	formatWhatsAppUrl,
+} from "@dental/shared";
+
+export { normalizePhoneRu, formatPhoneRu, maskPhoneRu, formatWhatsAppUrl };
+
+
 export type TelephonyCallType =
 	| "incoming_answered"
 	| "incoming_missed"
@@ -46,57 +58,10 @@ export const TELEPHONY_CALL_TYPES: Record<TelephonyCallType, TelephonyCallTypeCo
 };
 
 /**
- * Normalizes any Russian phone representation to standard E.164 (+7XXXXXXXXXX).
- * Accepts "+7 (999) 123-45-67", "8 999 123 45 67", "9991234567", "+79991234567".
- */
-export function normalizePhoneRu(phone: string): string {
-	if (!phone) return "";
-	const digits = phone.replace(/\D/g, "");
-	if (digits.length === 11) {
-		if (digits.startsWith("7") || digits.startsWith("8")) {
-			return `+7${digits.slice(1)}`;
-		}
-	} else if (digits.length === 10) {
-		return `+7${digits}`;
-	}
-	return phone.startsWith("+") ? phone : `+${digits}`;
-}
-
-/**
- * Formats Russian E.164 phone to clean readable format: "+7 (999) 123-45-67".
- */
-export function formatPhoneRu(phone: string): string {
-	const normalized = normalizePhoneRu(phone);
-	const digits = normalized.replace(/\D/g, "");
-	if (digits.length === 11 && digits.startsWith("7")) {
-		const code = digits.slice(1, 4);
-		const p1 = digits.slice(4, 7);
-		const p2 = digits.slice(7, 9);
-		const p3 = digits.slice(9, 11);
-		return `+7 (${code}) ${p1}-${p2}-${p3}`;
-	}
-	return phone;
-}
-
-/**
- * Masks patient phone number for compliance with 152-ФЗ in public reception areas: "+7 (999) ***-45-67".
- */
-export function maskPhoneRu(phone: string): string {
-	const formatted = formatPhoneRu(phone);
-	return formatted.replace(/\((\d{3})\)\s*\d{3}-(\d{2}-\d{2})/, "($1) ***-$2");
-}
-
-/**
- * Compares two phone strings using national 10-digit suffix matching.
+ * Compares two phone strings using national 10-digit suffix matching (SSOT delegation).
  */
 export function fuzzyMatchPhoneRu(a: string, b: string): boolean {
-	if (!a || !b) return false;
-	const digA = a.replace(/\D/g, "");
-	const digB = b.replace(/\D/g, "");
-	if (digA === digB) return true;
-	const sufA = digA.slice(-10);
-	const sufB = digB.slice(-10);
-	return sufA.length === 10 && sufA === sufB;
+	return fuzzyMatchPhone(a, b);
 }
 
 /**
@@ -211,95 +176,6 @@ export interface TelephonyCatalogCall {
 }
 
 /**
- * Canonical Clinic Telephony Call Log (SSOT Data Catalog).
+ * Re-export demo call fixtures for showcase mode & tests (isolated in telephonyDemoFixtures.ts).
  */
-export const TELEPHONY_CATALOG_DATA: TelephonyCatalogCall[] = [
-	{
-		id: "call-rec-001",
-		callType: "incoming_answered",
-		phone: "+7 (999) 123-45-67",
-		callerName: "Иванов Сергей Павлович",
-		patientId: "pat-ivanov-01",
-		patientCategory: "Постоянный",
-		balanceRub: 0,
-		lastVisitDate: "14.10.2026",
-		attendingDoctor: "Смирнова А.В.",
-		clinicalNote: "Терапия: зуб 36 кариес дентина, плановый осмотр",
-		somaticAlert: null,
-		durationSeconds: 165,
-		timestampText: "Сегодня, 10:42",
-		hasRecording: true,
-		recordingUrl: "/audio/call-sample.mp3",
-		transcriptSnippet: "Пациент уточняет время контрольного осмотра после лечения пульпита зуба 36.",
-	},
-	{
-		id: "call-rec-002",
-		callType: "incoming_missed",
-		phone: "+7 (916) 555-43-21",
-		callerName: "Ковалева Елена Викторовна",
-		patientId: "pat-kovaleva-02",
-		patientCategory: "Первичный",
-		balanceRub: 0,
-		lastVisitDate: null,
-		attendingDoctor: null,
-		clinicalNote: "Острая ноющая боль в области зуба 46, реакция на холодное",
-		somaticAlert: "Аллергия на лидокаин",
-		durationSeconds: 0,
-		timestampText: "Сегодня, 09:15",
-		hasRecording: false,
-		transcriptSnippet: "Звонок не принят. Требуется обратный звонок в течение 15 минут.",
-	},
-	{
-		id: "call-rec-003",
-		callType: "outgoing_success",
-		phone: "+7 (903) 777-88-99",
-		callerName: "Смирнов Дмитрий Александрович",
-		patientId: "pat-smirnov-03",
-		patientCategory: "VIP",
-		balanceRub: 15000,
-		lastVisitDate: "20.10.2026",
-		attendingDoctor: "Попов И.С.",
-		clinicalNote: "Ортопедия: примерка каркаса коронки из диоксида циркония",
-		somaticAlert: null,
-		durationSeconds: 75,
-		timestampText: "Вчера, 16:30",
-		hasRecording: true,
-		recordingUrl: "/audio/call-sample-2.mp3",
-		transcriptSnippet: "Администратор подтвердил готовность ортопедической конструкции из лаборатории.",
-	},
-	{
-		id: "call-rec-004",
-		callType: "incoming_answered",
-		phone: "+7 (925) 111-22-33",
-		callerName: "Михайлова Анна Сергеевна",
-		patientId: "pat-mikhailova-04",
-		patientCategory: "Долг",
-		balanceRub: -2500,
-		lastVisitDate: "05.10.2026",
-		attendingDoctor: "Васильев К.Н.",
-		clinicalNote: "Ортодонтия: коррекция дуги брекет-системы",
-		somaticAlert: null,
-		durationSeconds: 200,
-		timestampText: "Вчера, 14:10",
-		hasRecording: true,
-		recordingUrl: "/audio/call-sample-2.mp3",
-		transcriptSnippet: "Запись на плановую замену эластических лигатур на верхней челюсти.",
-	},
-	{
-		id: "call-rec-005",
-		callType: "incoming_missed",
-		phone: "+7 (985) 000-11-22",
-		callerName: "Неизвестный номер",
-		patientId: null,
-		patientCategory: "Первичный",
-		balanceRub: 0,
-		lastVisitDate: null,
-		attendingDoctor: null,
-		clinicalNote: "Новое обращение по рекламе (Яндекс Карты)",
-		somaticAlert: null,
-		durationSeconds: 0,
-		timestampText: "Вчера, 11:05",
-		hasRecording: false,
-		transcriptSnippet: "Входящий вызов с рекламного подменного номера клиники.",
-	},
-];
+export { TELEPHONY_DEMO_CALLS, TELEPHONY_CATALOG_DATA } from "./telephonyDemoFixtures";

@@ -229,7 +229,7 @@ export const THERAPY_ADHESIVES_REGISTRY: readonly ClinicalMarketMaterialItem[] =
 		isMarketLeader: false,
 		tier: "premium",
 		descriptionRu: "Универсальный адгезив с мономером MDP и силаном в одном флаконе: связывается с эмалью, дентином, цирконием и стеклокерамикой.",
-		clinicalIndicationsRu: "Универсальный протокол в 1 клик, фиксация стекловолоконных штифтов, адгезивная фиксация коронок.",
+		clinicalIndicationsRu: "Универсальный клинический протокол, фиксация стекловолоконных штифтов, адгезивная фиксация коронок.",
 		defaultUnit: "фл. 5 мл",
 		approximatePriceRub: 5900,
 		requiresLotTracking: false,

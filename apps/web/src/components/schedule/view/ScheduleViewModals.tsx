@@ -1,6 +1,6 @@
 import React from "react";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
-import { WaitlistDrawer } from "../WaitlistDrawer";
+import { WaitlistDrawer } from "../waitlist/WaitlistDrawer";
 import type { WaitlistCandidateItem } from "../waitlist/waitlistTypes";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import {

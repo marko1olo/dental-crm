@@ -210,8 +210,19 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	/**
 	 * POST /api/bots/test-incoming
 	 * Симуляция входящего сообщения (для тестов, отладки и телефона-симулятора).
+	 * DEF-TEL-06: Защита боевого режима от несанкционированной симуляции входящих сообщений.
 	 */
 	app.post("/api/bots/test-incoming", async (request, reply) => {
+		const isDemoMode =
+			request.headers["x-demo-mode"] === "true" ||
+			process.env.DENTE_DEMO_MODE === "true";
+		if (process.env.NODE_ENV === "production" && !isDemoMode) {
+			return reply.status(403).send({
+				error: "Forbidden",
+				message: "Симуляция входящих сообщений запрещена в боевом режиме.",
+			});
+		}
+
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots test incoming");
 		if (!orgId) return;
 

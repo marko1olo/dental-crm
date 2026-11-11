@@ -133,7 +133,7 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 				missingUrls.includes("/api/price-lists")
 			) {
 				const { STATUTORY_804N_NOMENCLATURE } = await import(
-					"../../components/insurance/dmsInsurancePresets"
+					"@dental/shared"
 				);
 				if (STATUTORY_804N_NOMENCLATURE && STATUTORY_804N_NOMENCLATURE.length > 0) {
 					if (!getCachedApiResponse("/api/clinical/804n")) {

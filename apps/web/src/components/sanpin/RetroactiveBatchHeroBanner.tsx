@@ -90,7 +90,7 @@ export function RetroactiveBatchHeroBanner({
 					data-testid="execute-sanpin-batch-1click-btn"
 				>
 					<FileCheck size={20} color="#ffffff" />
-					<span>Заполнить журналы стерилизации за период в 1 клик</span>
+					<span>Заполнить журналы стерилизации за период</span>
 				</button>
 			</div>
 		</div>

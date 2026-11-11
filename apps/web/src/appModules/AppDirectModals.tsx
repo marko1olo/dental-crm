@@ -77,7 +77,14 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 					<WarrantyPassportModal
 						isOpen={true}
 						onClose={() => routing.setIsWarrantyPassportOpen(false)}
-						patient={{ id: patient?.id || "pat-demo-01", fullName: patient?.fullName || "Смирнова Анна Сергеевна", cardNumber: patient?.cardNumber || "К-4819", phone: patient?.phone || "+7 (926) 412-88-99" }}
+						patient={{
+							id: (patient?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patient.id))
+								? patient.id
+								: (patient?.id || "00000000-0000-0000-0000-000000000001"),
+							fullName: patient?.fullName || "Смирнова Анна Сергеевна",
+							cardNumber: patient?.cardNumber || "К-4819",
+							phone: patient?.phone || "+7 (926) 412-88-99",
+						}}
 						doctorName={doctorName}
 						clinicName={activeWorkspaceProfile?.title || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
 						completedStages={[

@@ -14,9 +14,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { PaymentModal } from "../PaymentModal.js";
+import { PaymentModal } from "../../finance/PaymentModal.js";
 import { ReceiptPreview } from "../ReceiptPreview.js";
-import { CashRegisterDrawer } from "../CashRegisterDrawer.js";
 
 describe("Studio Clinical HIG: PaymentModal 1-Click Operations (Mandates 8e, 8n)", () => {
 	it("renders large total due, 1-click tenders, and quick denomination bills", () => {
@@ -171,26 +170,4 @@ describe("Studio Clinical HIG: ReceiptPreview 54-FZ Fiscal Requisites (Mandate 8
 	});
 });
 
-describe("Studio Clinical HIG: CashRegisterDrawer Shift Telemetry & Operations (Mandates 8e, 8n)", () => {
-	it("renders shift status, cash in drawer, quick 1-click operations, and recent receipts", () => {
-		const html = renderToString(
-			React.createElement(CashRegisterDrawer, {
-				isOpen: true,
-				onClose: () => {},
-				cashierFullName: "Д-р Смирнов А. И.",
-			})
-		);
 
-		assert.ok(html.includes('data-testid="cash-register-drawer"'));
-		// Честная телеметрия: пока X-отчёт сервера не пришёл, шторка не выдумывает номер смены.
-		assert.ok(html.includes("Смена открыта"));
-		assert.ok(!html.includes("Смена № 14"), "No fabricated shift number before the server answers");
-		assert.ok(html.includes('data-testid="shift-grand-total"'));
-		assert.ok(html.includes('data-testid="cash-in-drawer-amount"'));
-		assert.ok(html.includes('data-testid="btn-x-report"'), "Must render X-report button");
-		assert.ok(html.includes('data-testid="btn-z-report"'), "Must render Z-report button");
-		// Чеки строятся только из реальных оплаченных счетов — демо-заготовок больше нет.
-		assert.ok(!html.includes("shift-receipt-item-0104"), "No fabricated demo receipts");
-		assert.ok(html.includes('data-testid="btn-drawer-new-payment"'), "Must render 1-click new payment button");
-	});
-});

@@ -124,8 +124,16 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 				process.cwd(),
 				"apps/web/src/components/visit/VisitEmkTab.tsx",
 			);
+			const completionSectionPath = path.resolve(
+				process.cwd(),
+				"apps/web/src/components/visit/emkTab/VisitEmkCompletionSection.tsx",
+			);
 			assert.ok(fs.existsSync(emkTabPath), "VisitEmkTab.tsx must exist");
-			const content = fs.readFileSync(emkTabPath, "utf8");
+			assert.ok(fs.existsSync(completionSectionPath), "VisitEmkCompletionSection.tsx must exist");
+			const content =
+				fs.readFileSync(emkTabPath, "utf8") +
+				"\n" +
+				fs.readFileSync(completionSectionPath, "utf8");
 
 			// btn-complete-visit-emk disabled attribute check
 			const completeBtnMatches = content.match(
@@ -146,7 +154,7 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 			);
 		});
 
-		it("VisitEmkTab & VisitSoapEditor: Autosave safeguards drafts against data loss", () => {
+		it("VisitEmkTab & RecordDiariesTab: Autosave safeguards drafts against data loss", () => {
 			const emkTabPath = path.resolve(
 				process.cwd(),
 				"apps/web/src/components/visit/VisitEmkTab.tsx",
@@ -155,23 +163,23 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 				process.cwd(),
 				"apps/web/src/components/visit/emkTab/useVisitEmkAutosave.ts",
 			);
-			const soapEditorPath = path.resolve(
+			const diariesTabPath = path.resolve(
 				process.cwd(),
-				"apps/web/src/components/visit/VisitSoapEditor.tsx",
+				"apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx",
 			);
 			const emkContent =
 				fs.readFileSync(emkTabPath, "utf8") +
 				"\n" +
 				(fs.existsSync(emkAutosaveHookPath) ? fs.readFileSync(emkAutosaveHookPath, "utf8") : "");
-			const soapContent = fs.readFileSync(soapEditorPath, "utf8");
+			const diariesContent = fs.readFileSync(diariesTabPath, "utf8");
 
 			assert.ok(
 				emkContent.includes("Debounced autosave") || emkContent.includes("soloAutosaveState"),
 				"VisitEmkTab must implement debounced autosave",
 			);
 			assert.ok(
-				soapContent.includes("autosaveDebounceMs") || soapContent.includes("autosave"),
-				"VisitSoapEditor must implement draft autosave",
+				diariesContent.includes("triggerAutosave") || diariesContent.includes("sessionStorage"),
+				"RecordDiariesTab must implement draft autosave",
 			);
 		});
 	});

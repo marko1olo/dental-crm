@@ -67,7 +67,7 @@ export function SanpinKraftPacketsTab() {
 						</div>
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink)]">Пакетный учет автоклавирования смены</h3>
-							<p className="text-xs text-[var(--muted)]">Журнал стерилизации и автоклава: 1 клик на смену, без поштучного сканирования у кресла</p>
+							<p className="text-xs text-[var(--muted)]">Журнал стерилизации и автоклава: учёт на смену, без поштучного сканирования</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-2">

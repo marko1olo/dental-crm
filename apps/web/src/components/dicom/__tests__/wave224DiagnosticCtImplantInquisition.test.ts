@@ -24,12 +24,10 @@ import {
 import {
 	IMPLANT_BRANDS_METADATA,
 	getFixturesByBrand,
-} from "../../implants/implantCatalog";
-import { FAST_IMPLANT_SYSTEM_PRESETS } from "../../implants/implantQuickPresets";
-import {
 	IMPLANT_TORQUE_SPECS,
 	getTorqueSpecsByBrand,
-} from "../../implants/implantTorqueCatalog";
+} from "../../implants/implantCatalogData";
+import { FAST_IMPLANT_SYSTEM_PRESETS } from "../../implants/implantQuickPresets";
 import {
 	STANDARD_IMPLANT_CATALOG,
 	SURGEON_IMPLANT_PRESETS,

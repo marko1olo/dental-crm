@@ -5,7 +5,6 @@
 
 import React from "react";
 import { AppModalsContainer as BaseAppModalsContainer } from "../components/appLayout";
-import { VoiceChairsideHudBar } from "../components/odontogram/VoiceChairsideHudBar";
 import { AppDirectModals } from "./AppDirectModals";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 
@@ -39,7 +38,6 @@ export function AppModalsContainer({ routing, sessionAuth, appLogic }: AppModals
 				handleFullStaffLock={sessionAuth.handleFullStaffLock}
 			/>
 			<AppDirectModals routing={routing} sessionAuth={sessionAuth} appLogic={appLogic} />
-			<VoiceChairsideHudBar />
 		</>
 	);
 }

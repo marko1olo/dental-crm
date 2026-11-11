@@ -68,6 +68,7 @@ export interface VisitConsentsTabProps {
 	readonly selectedToothForMenu?: { code: string; label?: string } | null | undefined;
 	readonly onOpenInformedConsentModal?: () => void;
 	readonly onOpenWarrantyModal?: () => void;
+	readonly onFastPrintMedicalCard?: () => void;
 	readonly onFastPrint043u?: () => void;
 	readonly onFastPrintInformedConsent?: () => void;
 }

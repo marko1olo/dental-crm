@@ -5,7 +5,5 @@ export * from "./duplicateMerge/PatientDuplicateMergeModal";
 export * from "./duplicateMerge/types";
 export * from "./duplicateMerge/useDuplicateMergeLogic";
 export * from "./modalExclusivityUtils";
-export * from "./PatientWorkspaceModalsView";
 export * from "./types";
 export * from "./usePatientModalEventListeners";
-export * from "./usePatientWorkspaceModalsLogic";

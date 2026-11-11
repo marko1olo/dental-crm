@@ -47,19 +47,21 @@ export interface ConsentDocumentItem {
 
 export interface ConsentPartyContext {
 	readonly patientName: string;
-	readonly birthDate?: string;
-	readonly passport?: string;
-	readonly phone?: string;
-	readonly address?: string;
-	readonly clinicName?: string;
-	readonly doctorName?: string;
-	readonly date?: string;
-	readonly guardianName?: string;
-	readonly guardianPassport?: string;
-	readonly guardianRelation?: string;
-	readonly toothOrArea?: string;
-	readonly diagnosisText?: string;
-	readonly plannedProcedures?: string;
+	readonly patientId?: string | undefined;
+	readonly birthDate?: string | undefined;
+	readonly passport?: string | undefined;
+	readonly phone?: string | undefined;
+	readonly snils?: string | undefined;
+	readonly address?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly date?: string | undefined;
+	readonly guardianName?: string | undefined;
+	readonly guardianPassport?: string | undefined;
+	readonly guardianRelation?: string | undefined;
+	readonly toothOrArea?: string | undefined;
+	readonly diagnosisText?: string | undefined;
+	readonly plannedProcedures?: string | undefined;
 }
 
 export const CANONICAL_CONSENT_CATALOG: readonly ConsentDocumentItem[] = [
@@ -326,7 +328,7 @@ export function computeConsentIntegrityHash(
 export function generateConsentPrintHtml(
 	doc: ConsentDocumentItem,
 	context?: Partial<ConsentPartyContext>,
-	signature?: { status: ConsentSignStatus; signedAt?: string; signatureSvg?: string },
+	signature?: { status: ConsentSignStatus; signedAt?: string | undefined; signatureSvg?: string | undefined },
 ): string {
 	const pName = context?.patientName || "________________________________________________";
 	const bDate = context?.birthDate || "____.____.________";

@@ -3,7 +3,7 @@ import type { Dashboard } from "@dental/shared";
 import { DoctorChairScheduleModal } from "../DoctorChairScheduleModal";
 import { QuickAddChairModal, type QuickAddChairData } from "../QuickAddChairModal";
 import { QuickAddDoctorModal, type QuickAddDoctorData } from "../QuickAddDoctorModal";
-import type { TargetSlotInfo } from "../WaitlistDrawer";
+import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 

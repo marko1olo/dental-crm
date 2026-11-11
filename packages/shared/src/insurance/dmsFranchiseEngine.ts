@@ -343,3 +343,248 @@ export function calculateInvoiceDmsSplit(
 		formattedFinalInsurerRu: formatKopecksRu(finalInsurerKopecks),
 	};
 }
+
+/**
+ * Billable line item for DMS invoice splitting and co-payment calculation.
+ */
+export interface DmsBillableItem {
+	readonly id?: string | undefined;
+	readonly serviceCode?: string | undefined;
+	readonly serviceCode804n?: string | undefined;
+	readonly serviceName?: string | undefined;
+	readonly toothNumber?: string | number | undefined;
+	readonly quantity?: number | undefined;
+	readonly unitPriceKopecks?: number | undefined;
+	readonly unitPriceRub?: number | undefined;
+	readonly discountPercent?: number | undefined;
+	readonly isExcluded?: boolean | undefined;
+}
+
+export interface DmsCoPaymentGuaranteeLetterInput {
+	readonly maxApprovedAmountKopecks?: number | undefined;
+	readonly maxCoverageKopecks?: number | undefined;
+	readonly limitKopecks?: number | undefined;
+	readonly maxCoverageRub?: number | undefined;
+	readonly usedKopecks?: number | undefined;
+	readonly usedAmountKopecks?: number | undefined;
+	readonly usedAmountRub?: number | undefined;
+	readonly remainingLimitKopecks?: number | undefined;
+	readonly defaultFranchisePercent?: number | undefined;
+	readonly franchisePct?: number | undefined;
+	readonly franchisePercent?: number | undefined;
+}
+
+/**
+ * Method used by patient to pay their co-payment portion at the clinic cash desk.
+ */
+export type PatientPaymentMethod = "cash" | "card" | "advance" | "mixed";
+
+/**
+ * Formats integer kopecks to Russian currency string with rubles ("1 500 ₽").
+ */
+export function formatCurrencyKopecks(kopecks: number | null | undefined): string {
+	if (kopecks == null || !Number.isFinite(kopecks)) return "0 ₽";
+	return `${Math.round(kopecks / 100).toLocaleString("ru-RU")} ₽`;
+}
+
+export interface DmsCoPaymentSplitItemResult {
+	readonly lineItemId: string;
+	readonly id: string;
+	readonly serviceCode: string;
+	readonly serviceCode804n: string;
+	readonly serviceName: string;
+	readonly toothNumber?: string | undefined;
+	readonly quantity: number;
+	readonly unitPriceKopecks: number;
+	readonly totalKopecks: number;
+	readonly insuranceCoveredKopecks: number;
+	readonly coveredByDmsKopecks: number;
+	readonly patientOutOfPocketKopecks: number;
+	readonly patientTotalKopecks: number;
+	readonly insuranceCoveredRubles: number;
+	readonly patientOutOfPocketRubles: number;
+	readonly status: "full_dms" | "co_payment" | "patient_full";
+	readonly splitReason: string;
+	readonly isApprovedByLetter: boolean;
+	readonly isExcludedByPolicy: boolean;
+	readonly franchiseDeductionKopecks: number;
+	readonly copayKopecks: number;
+}
+
+export interface DmsCoPaymentSplitResult {
+	readonly splitResults: readonly DmsCoPaymentSplitItemResult[];
+	readonly items: readonly DmsCoPaymentSplitItemResult[];
+	readonly lineItems: readonly DmsCoPaymentSplitItemResult[];
+	readonly lines: readonly DmsCoPaymentSplitItemResult[];
+	readonly totalKopecks: number;
+	readonly totalAmountKopecks: number;
+	readonly totalBillKopecks: number;
+	readonly totalBillRubles: number;
+	readonly insuranceCoveredKopecks: number;
+	readonly totalCoveredByDmsKopecks: number;
+	readonly totalInsuranceCoveredKopecks: number;
+	readonly dmsCoveredKopecks: number;
+	readonly insuranceCoveredRubles: number;
+	readonly totalInsuranceCoveredRubles: number;
+	readonly patientOutOfPocketKopecks: number;
+	readonly totalPatientOutOfPocketKopecks: number;
+	readonly totalPatientCoPayKopecks: number;
+	readonly patientTotalKopecks: number;
+	readonly patientOutOfPocketRubles: number;
+	readonly totalPatientOutOfPocketRubles: number;
+	readonly isFullyCovered: boolean;
+	readonly hasExcludedServices: boolean;
+	readonly remainingLetterLimitKopecks: number | null;
+	readonly remainingLimitKopecks: number;
+}
+
+/**
+ * Алиас для сплитования счета ДМС с сооплатой пациента / франшизой.
+ */
+export function calculateDmsCoPaymentSplit(
+	lineItems: readonly DmsBillableItem[],
+	options: {
+		guaranteeLetter?: DmsCoPaymentGuaranteeLetterInput | undefined;
+		franchisePercent?: number | undefined;
+		previouslyUsedLetterAmountKopecks?: number | undefined;
+		isEmergency?: boolean | undefined;
+	} = {},
+): DmsCoPaymentSplitResult {
+	const letter = options.guaranteeLetter;
+	const letterLimit = letter
+		? (letter.maxApprovedAmountKopecks ??
+			letter.maxCoverageKopecks ??
+			letter.limitKopecks ??
+			(letter.maxCoverageRub !== undefined
+				? Math.round(letter.maxCoverageRub * 100)
+				: Number.POSITIVE_INFINITY))
+		: Number.POSITIVE_INFINITY;
+	const used =
+		options.previouslyUsedLetterAmountKopecks ??
+		(letter?.usedAmountKopecks ??
+			letter?.usedKopecks ??
+			(letter?.usedAmountRub ? Math.round(letter.usedAmountRub * 100) : 0));
+	let remainingLimitKopecks = Math.max(0, letterLimit - used);
+	const franchisePct = Math.max(
+		0,
+		Math.min(
+			100,
+			options.franchisePercent ??
+				letter?.franchisePercent ??
+				letter?.franchisePct ??
+				letter?.defaultFranchisePercent ??
+				0,
+		),
+	);
+	const splitResults: DmsCoPaymentSplitItemResult[] = [];
+	let hasExcludedServices = false;
+
+	for (const item of lineItems) {
+		const unitPriceKop = Math.round(item.unitPriceKopecks ?? ((item.unitPriceRub || 0) * 100));
+		const qty = Math.max(1, item.quantity || 1);
+		const totalKopNum = unitPriceKop * qty;
+
+		const isExcluded = Boolean(
+			item.isExcluded ||
+				(item.serviceName &&
+					(item.serviceName.includes("отбеливание") ||
+						item.serviceName.includes("Zoom"))),
+		);
+		if (isExcluded) hasExcludedServices = true;
+
+		let dmsKop = 0;
+		let franchiseDed = 0;
+
+		if (!isExcluded) {
+			if (franchisePct > 0) {
+				franchiseDed = Math.round((totalKopNum * franchisePct) / 100);
+				dmsKop = Math.max(0, totalKopNum - franchiseDed);
+			} else {
+				dmsKop = totalKopNum;
+			}
+			if (Number.isFinite(remainingLimitKopecks)) {
+				const allowableDms = Math.min(dmsKop, remainingLimitKopecks);
+				remainingLimitKopecks = Math.max(0, remainingLimitKopecks - allowableDms);
+				dmsKop = allowableDms;
+			}
+		}
+
+		const patientKop = totalKopNum - dmsKop;
+		const status =
+			dmsKop === totalKopNum
+				? "full_dms"
+				: dmsKop > 0
+					? "co_payment"
+					: "patient_full";
+
+		const splitReason = isExcluded
+			? "Услуга не входит в программу ДМС"
+			: franchiseDed > 0
+				? `Франшиза ${franchisePct}%`
+				: dmsKop < totalKopNum
+					? "Исчерпан лимит гарантийного письма"
+					: "Покрыто ДМС 100%";
+
+		splitResults.push({
+			lineItemId: item.id || `item-${splitResults.length + 1}`,
+			id: item.id || `item-${splitResults.length + 1}`,
+			serviceCode: item.serviceCode || item.serviceCode804n || "A16.07.002",
+			serviceCode804n: item.serviceCode804n || item.serviceCode || "A16.07.002",
+			serviceName: item.serviceName || "Стоматологическая услуга",
+			toothNumber: item.toothNumber != null ? String(item.toothNumber) : undefined,
+			quantity: qty,
+			unitPriceKopecks: unitPriceKop,
+			totalKopecks: totalKopNum,
+			insuranceCoveredKopecks: dmsKop,
+			coveredByDmsKopecks: dmsKop,
+			patientOutOfPocketKopecks: patientKop,
+			patientTotalKopecks: patientKop,
+			insuranceCoveredRubles: Math.round(dmsKop) / 100,
+			patientOutOfPocketRubles: Math.round(patientKop) / 100,
+			status,
+			splitReason,
+			isApprovedByLetter: !isExcluded,
+			isExcludedByPolicy: isExcluded,
+			franchiseDeductionKopecks: franchiseDed,
+			copayKopecks: patientKop,
+		});
+	}
+
+	const totalKop = splitResults.reduce((acc, r) => acc + r.totalKopecks, 0);
+	const totalDmsKop = splitResults.reduce(
+		(acc, r) => acc + r.insuranceCoveredKopecks,
+		0,
+	);
+	const totalPatientKop = totalKop - totalDmsKop;
+
+	return {
+		splitResults,
+		items: splitResults,
+		lineItems: splitResults,
+		lines: splitResults,
+		totalKopecks: totalKop,
+		totalAmountKopecks: totalKop,
+		totalBillKopecks: totalKop,
+		totalBillRubles: totalKop / 100,
+		insuranceCoveredKopecks: totalDmsKop,
+		totalCoveredByDmsKopecks: totalDmsKop,
+		totalInsuranceCoveredKopecks: totalDmsKop,
+		dmsCoveredKopecks: totalDmsKop,
+		insuranceCoveredRubles: totalDmsKop / 100,
+		totalInsuranceCoveredRubles: totalDmsKop / 100,
+		patientOutOfPocketKopecks: totalPatientKop,
+		totalPatientOutOfPocketKopecks: totalPatientKop,
+		totalPatientCoPayKopecks: totalPatientKop,
+		patientTotalKopecks: totalPatientKop,
+		patientOutOfPocketRubles: totalPatientKop / 100,
+		totalPatientOutOfPocketRubles: totalPatientKop / 100,
+		isFullyCovered: totalPatientKop === 0,
+		hasExcludedServices,
+		remainingLetterLimitKopecks: Number.isFinite(remainingLimitKopecks)
+			? remainingLimitKopecks
+			: null,
+		remainingLimitKopecks: Number.isFinite(remainingLimitKopecks)
+			? remainingLimitKopecks
+			: 0,
+	};
+}

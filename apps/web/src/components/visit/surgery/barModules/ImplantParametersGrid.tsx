@@ -1,5 +1,5 @@
 import React from "react";
-import type { StandardImplantationParams } from "../../../surgery/surgeryProtocols";
+import type { StandardImplantationParams } from "../../../surgery/surgeryCatalogData";
 
 export interface ImplantParametersGridProps {
 	readonly implantDiameter: number;

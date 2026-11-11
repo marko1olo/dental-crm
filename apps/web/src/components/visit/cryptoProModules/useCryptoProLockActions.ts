@@ -103,7 +103,7 @@ export function useCryptoProLockActions(params: UseCryptoProLockActionsParams) {
 			return;
 		}
 		if (pinCode.length === 0) { await handleSessionLock(); return; }
-		if (pinCode.length !== 4) { setFailureText("ПИН-код сотрудника — четыре цифры. Введите все четыре или оставьте поле пустым для подписи в 1 клик."); return; }
+		if (pinCode.length !== 4) { setFailureText("ПИН-код сотрудника — четыре цифры. Введите все четыре или оставьте поле пустым для быстрой подписи."); return; }
 		setIsSigning(true);
 		try {
 			await props.onLock("PIN_SIGNATURE", `PIN:${pinCode}`);

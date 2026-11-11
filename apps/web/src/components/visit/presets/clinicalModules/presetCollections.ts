@@ -1,7 +1,7 @@
 import type { DoctorAutopilotPreset } from "../../clinicalSoapTypes";
 import { AUTOPILOT_CARIES_K021, AUTOPILOT_NORM_HEALTHY } from "./therapyPresets";
 import { AUTOPILOT_EMERGENCY_PAIN_K040, AUTOPILOT_PULPITIS_K040, AUTOPILOT_PERIODONTITIS_K045 } from "./endoPresets";
-import { AUTOPILOT_HYGIENE_AIRFLOW, AUTOPILOT_HYGIENE_K051 } from "./perioHygienePresets";
+import { AUTOPILOT_HYGIENE_AIRFLOW, AUTOPILOT_HYGIENE_K051 } from "@dental/shared";
 import {
 	AUTOPILOT_EXTRACTION_K011,
 	AUTOPILOT_EXTRACTION_K045,

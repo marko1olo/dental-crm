@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readBlankPermissions } from "../EgiszBlankPermissionsWidget";
+import { readBlankPermissions } from "../egiszModules/egiszWidgetTypes";
 
 test("EgiszBlankPermissionsWidget — readBlankPermissions parses items, required role, and opt-out respect", () => {
 	assert.deepEqual(readBlankPermissions("invalid"), { kind: "unreadable" });

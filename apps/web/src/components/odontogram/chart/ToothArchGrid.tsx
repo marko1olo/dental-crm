@@ -1,5 +1,4 @@
-import type React from "react";
-import { memo } from "react";
+import React, { memo } from "react";
 import { ToothCarouselFocus } from "./ToothCarouselFocus";
 import { QuadrantArchView } from "./arch/QuadrantArchView";
 import { FullArchView } from "./arch/FullArchView";

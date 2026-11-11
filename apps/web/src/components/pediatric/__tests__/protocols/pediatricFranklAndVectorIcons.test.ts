@@ -44,7 +44,7 @@ describe("Frankl Behavioral Scale & Vector Icons (Zero Emojis)", () => {
 	it("renders 1-click positive behavior button in full card mode", () => {
 		const html = renderToString(createElement(FranklBehaviorBadge, { rating: 2, readOnly: false, onChange: () => {} }));
 		assert.ok(html.includes('data-testid="frankl-one-click-btn"'));
-		assert.ok(html.includes("1-клик: Поведение позитивное (Frankl 4/4)"));
+		assert.ok(html.includes("Поведение позитивное (Frankl 4/4)"));
 		assert.ok(!EMOJI_REGEX.test(html));
 	});
 });

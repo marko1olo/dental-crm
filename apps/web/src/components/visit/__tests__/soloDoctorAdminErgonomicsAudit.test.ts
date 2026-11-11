@@ -262,8 +262,8 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 	// 4. DOCTOR HOT PATH SOVEREIGNTY (Zero Kraft Scanning in Visit Screen)
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("4. Doctor Hot Path Sovereignty (Zero Kraft Scanning & Zero Nurse Roadblocks)", () => {
-		it("confirms zero buttons for 'сканировать лоток / пакет' in VisitSoapEditor.tsx and VisitView.tsx", () => {
-			const visitSoapFile = path.join(WEB_SRC, "components/visit/VisitSoapEditor.tsx");
+		it("confirms zero buttons for 'сканировать лоток / пакет' in VisitEmkTab.tsx and VisitView.tsx", () => {
+			const visitSoapFile = path.join(WEB_SRC, "components/visit/VisitEmkTab.tsx");
 			const visitViewFile = path.join(WEB_SRC, "components/visit/VisitView.tsx");
 
 			const soapContent = fs.readFileSync(visitSoapFile, "utf8");
@@ -271,11 +271,11 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 
 			assert.ok(
 				!soapContent.toLowerCase().includes("сканировать лоток"),
-				"VisitSoapEditor must not require scanning sterile trays",
+				"VisitEmkTab must not require scanning sterile trays",
 			);
 			assert.ok(
 				!soapContent.toLowerCase().includes("сканировать крафт"),
-				"VisitSoapEditor must not require scanning kraft bags",
+				"VisitEmkTab must not require scanning kraft bags",
 			);
 			assert.ok(
 				!viewContent.toLowerCase().includes("сканировать лоток"),
@@ -414,13 +414,13 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 			);
 		});
 
-		it("verifies VisitSoapEditor primary action is never disabled", () => {
-			const soapFile = path.join(WEB_SRC, "components/visit/VisitSoapEditor.tsx");
+		it("verifies VisitEmkTab and RecordNewDiaryInlineForm primary action is never disabled", () => {
+			const soapFile = path.join(WEB_SRC, "components/emr/record/tabs/RecordNewDiaryInlineForm.tsx");
 			const content = fs.readFileSync(soapFile, "utf8");
 
 			assert.ok(
-				content.includes("disabled={false}"),
-				"VisitSoapEditor template/action buttons must have disabled={false}",
+				!content.includes('data-testid="btn-save-inline-diary" disabled'),
+				"RecordNewDiaryInlineForm primary save button must not be disabled",
 			);
 		});
 	});

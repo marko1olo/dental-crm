@@ -1,6 +1,6 @@
 import React from "react";
 import { Zap, MessageSquare, ShieldCheck, SlidersHorizontal } from "lucide-react";
-import type { SurgicalServiceItem } from "../../surgery/surgeryProtocols";
+import type { SurgicalServiceItem } from "../../surgery/surgeryCatalogData";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { useExtractionBarState } from "./barModules/useExtractionBarState";

@@ -16,6 +16,7 @@ import { SelfCheckinPhoneInput } from "./SelfCheckinPhoneInput";
 
 export interface SelfCheckinExpressCardProps {
 	readonly patientName: string;
+	readonly setPatientName?: ((name: string) => void) | undefined;
 	readonly phoneDigits: string;
 	readonly setPhoneDigits: (digits: string) => void;
 	readonly setAuthError: (err: string | null) => void;
@@ -30,6 +31,7 @@ export interface SelfCheckinExpressCardProps {
 
 export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = memo(({
 	patientName,
+	setPatientName,
 	phoneDigits,
 	setPhoneDigits,
 	setAuthError,
@@ -42,8 +44,12 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 	onClear,
 }) => {
 	const handleExpressNormClick = () => {
-		if (!patientName && phoneDigits.length < 4) {
+		if (activeMode !== "first_time" && !patientName && phoneDigits.length < 4) {
 			setAuthError("Пожалуйста, введите 4 последние цифры номера мобильного телефона на клавиатуре ниже.");
+			return;
+		}
+		if (activeMode === "first_time" && phoneDigits.length < 4) {
+			setAuthError("Пожалуйста, введите номер телефона для первичной регистрации талона.");
 			return;
 		}
 		onApplyPhysiologicalNorm();
@@ -52,7 +58,11 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 
 	const handleConfirmArrival = () => {
 		if (phoneDigits.length < 4) {
-			setAuthError("Пожалуйста, введите 4 последние цифры номера мобильного телефона.");
+			setAuthError(
+				activeMode === "first_time"
+					? "Пожалуйста, введите номер телефона для регистрации первичного визита."
+					: "Пожалуйста, введите 4 последние цифры номера мобильного телефона.",
+			);
 			return;
 		}
 		onOneTouchCheckin();
@@ -91,7 +101,7 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 				}}
 				onClick={handleExpressNormClick}
 				data-testid="kiosk-express-norm-btn"
-				title="Мгновенный самочекин: соматическая норма + получение талона очереди в 1 касание"
+				title="Мгновенный самочекин: соматическая норма + получение талона очереди"
 			>
 				<CheckCircle2 size={24} style={{ flexShrink: 0 }} />
 				<div style={{ textAlign: "left" }}>
@@ -99,10 +109,55 @@ export const SelfCheckinExpressCard: React.FC<SelfCheckinExpressCardProps> = mem
 						✓ Чувствую себя хорошо / Соматическая норма
 					</span>
 					<span style={{ display: "block", fontSize: "12px", opacity: 0.85, fontWeight: 500 }}>
-						Экспресс-чекин в 1 касание и получение талона очереди
+						Экспресс-чекин и получение талона очереди
 					</span>
 				</div>
 			</button>
+
+			{/* First-time patient name input */}
+			{activeMode === "first_time" && (
+				<div style={{ marginBottom: "12px" }}>
+					<label
+						htmlFor="kiosk-first-time-fullname"
+						style={{
+							display: "block",
+							fontSize: "12px",
+							fontWeight: 700,
+							color: "var(--muted)",
+							textTransform: "uppercase",
+							letterSpacing: "0.08em",
+							marginBottom: "6px",
+							textAlign: "center",
+						}}
+					>
+						Ваше ФИО (для оформления первичного талона)
+					</label>
+					<input
+						id="kiosk-first-time-fullname"
+						type="text"
+						value={patientName}
+						onChange={(e) => {
+							setPatientName?.(e.target.value);
+							setAuthError(null);
+						}}
+						placeholder="Фамилия Имя Отчество"
+						data-testid="kiosk-first-time-name-input"
+						style={{
+							width: "100%",
+							height: "44px",
+							borderRadius: "12px",
+							border: "1px solid var(--line)",
+							backgroundColor: "var(--paper-card, var(--paper))",
+							padding: "0 14px",
+							fontSize: "15px",
+							color: "var(--ink)",
+							textAlign: "center",
+							fontWeight: 600,
+							outline: "none",
+						}}
+					/>
+				</div>
+			)}
 
 			{/* 4-Digit Display Input Component */}
 			<SelfCheckinPhoneInput

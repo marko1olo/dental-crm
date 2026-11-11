@@ -123,8 +123,8 @@ describe("Telegram WebApp Mini-App & Interactive Tooth Formula Flow", () => {
 		assert.ok(html.includes('data-embed="telegram"'));
 	});
 
-	it("renders full TelegramMiniAppView with navigation bar, responsive safe area container and reactive tooth complaints badge", () => {
-		const html = renderToStaticMarkup(
+	it("renders full TelegramMiniAppView with navigation bar, responsive safe area container and honest initial state without mock badges", () => {
+		const htmlDefault = renderToStaticMarkup(
 			createElement(TelegramMiniAppView, {
 				organizationId: "org-1",
 				patientId: "patient-1",
@@ -133,15 +133,34 @@ describe("Telegram WebApp Mini-App & Interactive Tooth Formula Flow", () => {
 		);
 
 		// Brand and header
-		assert.ok(html.includes("DENTE Pocket Clinic"));
-		assert.ok(html.includes("Здравствуйте"));
+		assert.ok(htmlDefault.includes("DENTE Pocket Clinic"));
+		assert.ok(htmlDefault.includes("Здравствуйте"));
 
 		// Nav bar
-		assert.ok(html.includes("Зубная формула"));
-		assert.ok(html.includes("Онлайн-запись"));
-		assert.ok(html.includes("Моё здоровье"));
+		assert.ok(htmlDefault.includes("Зубная формула"));
+		assert.ok(htmlDefault.includes("Онлайн-запись"));
+		assert.ok(htmlDefault.includes("Моё здоровье"));
 
-		// Tooth badge in bottom nav
-		assert.ok(html.includes("tg-nav-badge"));
+		// Honest initial render has 0 complaints and NO mock badge
+		assert.ok(!htmlDefault.includes("tg-nav-badge"), "Honest initial state has no fake mock badge");
+
+		// When complaints are explicitly present, badge displays reactive count
+		const htmlWithComplaints = renderToStaticMarkup(
+			createElement(TelegramMiniAppView, {
+				organizationId: "org-1",
+				patientId: "patient-1",
+				initialTab: "odontogram",
+				initialComplaints: [
+					{
+						toothNumber: 16,
+						complaintType: "acute_throbbing",
+						symptomLabel: "Острая пульсирующая боль",
+						painLevel: 5,
+						cito: true,
+					},
+				],
+			}),
+		);
+		assert.ok(htmlWithComplaints.includes("tg-nav-badge"), "Badge appears when real complaints are attached");
 	});
 });

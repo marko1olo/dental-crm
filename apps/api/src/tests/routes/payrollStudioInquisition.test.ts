@@ -8,7 +8,6 @@ import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
 import { registerPayrollRoutes } from "../../routes/payroll.js";
-import { registerDoctorEarningsRoutes } from "../../routes/doctorEarningsRoutes.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
@@ -42,7 +41,6 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		resetAuthSecretCacheForTests();
 
 		app = Fastify({ logger: false });
-		await registerDoctorEarningsRoutes(app);
 		await registerPayrollRoutes(app);
 		await app.ready();
 	});
@@ -60,6 +58,9 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: authHeaders(),
 		});
 
+		if (res.statusCode !== 200) {
+			console.error("Test 2 error body:", res.body);
+		}
 		assert.equal(res.statusCode, 200);
 		const data = JSON.parse(res.body);
 		assert.equal(data.ok, true);
@@ -73,6 +74,9 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: authHeaders(),
 		});
 
+		if (res.statusCode !== 200) {
+			console.error("Test 2 error body:", res.body);
+		}
 		assert.equal(res.statusCode, 200);
 		const data = JSON.parse(res.body);
 		assert.equal(data.ok, true);
@@ -119,6 +123,9 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			console.error("Test 3 error body:", res.body);
 		}
 
+		if (res.statusCode !== 200) {
+			console.error("Test 2 error body:", res.body);
+		}
 		assert.equal(res.statusCode, 200);
 		const data = JSON.parse(res.body);
 		assert.equal(data.ok, true);

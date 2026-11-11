@@ -20,7 +20,6 @@ import { OdontogramToolbarMoreMenu } from "../OdontogramToolbarMoreMenu";
 import { OdontogramToolbar } from "../OdontogramToolbar";
 import { OdontogramToolbarQuickActions } from "../OdontogramToolbarQuickActions";
 import { OdontogramStampPalette } from "../OdontogramStampPalette";
-import { GlobalTreatmentsStrip } from "../GlobalTreatmentsStrip";
 
 function getMoreMenuAllSources(): string {
 	const dir = path.resolve(__dirname, "../../../../src/components/odontogram");
@@ -363,24 +362,5 @@ describe("5. OdontogramStampPalette: 15 Clinical Pathology Stamps & Category Fil
 		// Inspection Mode button
 		assert.ok(html.includes('data-testid="clear-active-stamp-btn"'), "Must render clear-active-stamp-btn");
 		assert.ok(html.includes("Режим осмотра [Esc]"), "Must contain Inspection Mode [Esc] label");
-	});
-});
-
-describe("6. GlobalTreatmentsStrip: General Arch & Mouth Quick Actions", () => {
-	it("renders Air-Flow and Aligners Upper/Lower quick add triggers", () => {
-		const html = renderToString(
-			<GlobalTreatmentsStrip
-				treatments={[]}
-				onQuickAdd={() => {}}
-				readOnly={false}
-			/>,
-		);
-
-		assert.ok(html.includes('data-testid="btn-quick-add-airflow"'), "Must render btn-quick-add-airflow");
-		assert.ok(html.includes('data-testid="btn-quick-add-aligners-upper"'), "Must render btn-quick-add-aligners-upper");
-		assert.ok(html.includes('data-testid="btn-quick-add-aligners-lower"'), "Must render btn-quick-add-aligners-lower");
-		assert.ok(html.includes("Air-Flow (Вся полость)"), "Must render Air-flow text");
-		assert.ok(html.includes("Элайнеры (В/Ч)"), "Must render Aligners Upper text");
-		assert.ok(html.includes("Элайнеры (Н/Ч)"), "Must render Aligners Lower text");
 	});
 });

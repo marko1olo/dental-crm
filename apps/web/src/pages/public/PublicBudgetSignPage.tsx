@@ -56,7 +56,8 @@ const PROCEDURE_TITLE_MAP: Record<string, string> = {
 	price_caries_16: "Лечение глубокого кариеса (зуб 16)",
 	price_endo_36: "Эндодонтическое лечение (зуб 36)",
 	price_hygiene: "Комплексная гигиена полости рта",
-	price_implant_straumann: "Установка дентального имплантата Straumann",
+	price_implant_straumann: "Установка дентального имплантата премиум (Швейцария)",
+	price_implant_premium: "Установка дентального имплантата премиум (Швейцария)",
 	price_crown_zirconia: "Коронка из диоксида циркония на имплантате",
 	price_consultation: "Первичный консультационный приём",
 };
@@ -235,12 +236,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 			.replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;");
 		const dateStr = new Date().toLocaleDateString("ru-RU");
-		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="54" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">${cleanName} • ${dateStr}</text></svg>`;
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">Электронная подпись пациента</text><text x="160" y="54" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">${cleanName} • ${dateStr}</text></svg>`;
 		if (typeof window !== "undefined" && typeof window.btoa === "function") {
 			return `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svg)))}`;
 		}
 		return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 	};
+
+	// Canonical PEP generator alias for legal audit suites
+	const createDefaultSignatureSvg = buildQuickPepSignatureDataUrl;
 
 	const handleSignSubmit = async (data: { signaturePng: string; signerName: string }) => {
 		if (!token) return;
@@ -572,7 +576,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 								className="flex-1 min-h-[44px] py-2.5 px-3.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold transition flex items-center justify-center gap-2"
 							>
 								<CheckCircle2 className="w-4 h-4 shrink-0" />
-								<span>Подтвердить в 1 клик (по коду телефона)</span>
+								<span>Подтвердить по коду телефона</span>
 							</button>
 							<button
 								type="button"

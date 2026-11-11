@@ -1,0 +1,431 @@
+{
+  "timestamp": "2026-10-20T07:02:32.584Z",
+  "appBase": "http://127.0.0.1:5173",
+  "apiBase": "http://127.0.0.1:4100",
+  "authSession": {
+    "ownerUserId": "01a1581e-7076-70c0-af7b-168120c7b838",
+    "patientId": "01a1581e-70c0-7975-85a6-05ca7359f890"
+  },
+  "viewports": {
+    "desktop": {
+      "width": 1440,
+      "height": 900
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "screenshots": [
+    {
+      "filename": "proof_01_schedule_desktop_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_01_schedule_desktop_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_01_schedule_desktop_light.png",
+      "sizeBytes": 127433,
+      "sizeKb": 124,
+      "md5": "a67cb476597ff8e36b3cf0699dbe4727",
+      "audit": {
+        "viewName": "schedule",
+        "viewportType": "desktop",
+        "theme": "light",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_01_schedule_desktop_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_01_schedule_desktop_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_01_schedule_desktop_dark.png",
+      "sizeBytes": 99917,
+      "sizeKb": 98,
+      "md5": "ab0722924b5d29be0dd19c8bbe2ae85e",
+      "audit": {
+        "viewName": "schedule",
+        "viewportType": "desktop",
+        "theme": "dark",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_02_patient_card_desktop_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_02_patient_card_desktop_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_02_patient_card_desktop_light.png",
+      "sizeBytes": 142355,
+      "sizeKb": 139,
+      "md5": "31984d71792c05825141f976c6cf479a",
+      "audit": {
+        "viewName": "patient_card",
+        "viewportType": "desktop",
+        "theme": "light",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_02_patient_card_desktop_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_02_patient_card_desktop_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_02_patient_card_desktop_dark.png",
+      "sizeBytes": 144453,
+      "sizeKb": 141,
+      "md5": "3687c720239d7f8794dc5556483d4952",
+      "audit": {
+        "viewName": "patient_card",
+        "viewportType": "desktop",
+        "theme": "dark",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_03_visit_desktop_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_03_visit_desktop_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_03_visit_desktop_light.png",
+      "sizeBytes": 300161,
+      "sizeKb": 293,
+      "md5": "5dd13204867908736b13226a37d536e9",
+      "audit": {
+        "viewName": "visit",
+        "viewportType": "desktop",
+        "theme": "light",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_03_visit_desktop_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_03_visit_desktop_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_03_visit_desktop_dark.png",
+      "sizeBytes": 302607,
+      "sizeKb": 296,
+      "md5": "7853e6e5f6edc1c142abdb167f0a033b",
+      "audit": {
+        "viewName": "visit",
+        "viewportType": "desktop",
+        "theme": "dark",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_04_emk_desktop_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_04_emk_desktop_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_04_emk_desktop_light.png",
+      "sizeBytes": 188062,
+      "sizeKb": 184,
+      "md5": "2bdea57575cf2f8a7997ecc5191988fd",
+      "audit": {
+        "viewName": "emk",
+        "viewportType": "desktop",
+        "theme": "light",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_04_emk_desktop_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_04_emk_desktop_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_04_emk_desktop_dark.png",
+      "sizeBytes": 188296,
+      "sizeKb": 184,
+      "md5": "7049e879fef7121aa21ec76a91c0fef3",
+      "audit": {
+        "viewName": "emk",
+        "viewportType": "desktop",
+        "theme": "dark",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_05_cashbox_desktop_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_05_cashbox_desktop_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_05_cashbox_desktop_light.png",
+      "sizeBytes": 128716,
+      "sizeKb": 126,
+      "md5": "766ebf37d9f2a8613be6514478cf98b2",
+      "audit": {
+        "viewName": "cashbox",
+        "viewportType": "desktop",
+        "theme": "light",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_05_cashbox_desktop_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_05_cashbox_desktop_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_05_cashbox_desktop_dark.png",
+      "sizeBytes": 132022,
+      "sizeKb": 129,
+      "md5": "19d4f5c608c8d7a730a71ae3e0c7cdc8",
+      "audit": {
+        "viewName": "cashbox",
+        "viewportType": "desktop",
+        "theme": "dark",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_01_schedule_mobile_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_01_schedule_mobile_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_01_schedule_mobile_light.png",
+      "sizeBytes": 35222,
+      "sizeKb": 34,
+      "md5": "4a56dcaeb32ef97cc1d95712552493ed",
+      "audit": {
+        "viewName": "schedule",
+        "viewportType": "mobile",
+        "theme": "light",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_01_schedule_mobile_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_01_schedule_mobile_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_01_schedule_mobile_dark.png",
+      "sizeBytes": 36172,
+      "sizeKb": 35,
+      "md5": "313361f020e2e382b2e79373c7ed7a91",
+      "audit": {
+        "viewName": "schedule",
+        "viewportType": "mobile",
+        "theme": "dark",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_02_patient_card_mobile_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_02_patient_card_mobile_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_02_patient_card_mobile_light.png",
+      "sizeBytes": 36148,
+      "sizeKb": 35,
+      "md5": "549e6bfa0087bc012f37cdbb419e723a",
+      "audit": {
+        "viewName": "patient_card",
+        "viewportType": "mobile",
+        "theme": "light",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_02_patient_card_mobile_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_02_patient_card_mobile_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_02_patient_card_mobile_dark.png",
+      "sizeBytes": 35171,
+      "sizeKb": 34,
+      "md5": "333c35c00ff4009daa38bfa6dab02fd1",
+      "audit": {
+        "viewName": "patient_card",
+        "viewportType": "mobile",
+        "theme": "dark",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_03_visit_mobile_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_03_visit_mobile_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_03_visit_mobile_light.png",
+      "sizeBytes": 72387,
+      "sizeKb": 71,
+      "md5": "22a0e91681ca8c11e7f7f1a5beca7faa",
+      "audit": {
+        "viewName": "visit",
+        "viewportType": "mobile",
+        "theme": "light",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_03_visit_mobile_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_03_visit_mobile_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_03_visit_mobile_dark.png",
+      "sizeBytes": 71909,
+      "sizeKb": 70,
+      "md5": "808259b55ffcc034b8d083f11205b6eb",
+      "audit": {
+        "viewName": "visit",
+        "viewportType": "mobile",
+        "theme": "dark",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_04_emk_mobile_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_04_emk_mobile_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_04_emk_mobile_light.png",
+      "sizeBytes": 72387,
+      "sizeKb": 71,
+      "md5": "22a0e91681ca8c11e7f7f1a5beca7faa",
+      "audit": {
+        "viewName": "emk",
+        "viewportType": "mobile",
+        "theme": "light",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_04_emk_mobile_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_04_emk_mobile_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_04_emk_mobile_dark.png",
+      "sizeBytes": 71909,
+      "sizeKb": 70,
+      "md5": "808259b55ffcc034b8d083f11205b6eb",
+      "audit": {
+        "viewName": "emk",
+        "viewportType": "mobile",
+        "theme": "dark",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 0,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_05_cashbox_mobile_light.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_05_cashbox_mobile_light.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_05_cashbox_mobile_light.png",
+      "sizeBytes": 46113,
+      "sizeKb": 45,
+      "md5": "412c5d9542e1107ccb0616da79ba09ba",
+      "audit": {
+        "viewName": "cashbox",
+        "viewportType": "mobile",
+        "theme": "light",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 36,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    },
+    {
+      "filename": "proof_05_cashbox_mobile_dark.png",
+      "outPath": "C:\\Clinic_MVP\\dental-crm\\docs\\proofs\\root_e2e\\proof_05_cashbox_mobile_dark.png",
+      "brainPath": "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\95068f8e-4ed7-470e-99ee-b6b4e212aa65\\proof_05_cashbox_mobile_dark.png",
+      "sizeBytes": 46938,
+      "sizeKb": 46,
+      "md5": "3eb697e3f84fd017a6f5483ab0e46287",
+      "audit": {
+        "viewName": "cashbox",
+        "viewportType": "mobile",
+        "theme": "dark",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0,
+        "hasHorizontalScroll": false,
+        "smallTouchTargets": 36,
+        "truncatedLabelsCount": 3,
+        "passed": true
+      }
+    }
+  ],
+  "auditSummary": {
+    "totalCaptures": 20,
+    "totalPassed": 20,
+    "zeroHorizontalScroll": true,
+    "allOver30Kb": true
+  }
+}

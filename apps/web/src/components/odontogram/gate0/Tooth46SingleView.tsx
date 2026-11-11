@@ -5,7 +5,7 @@
 
 import React from "react";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
-import { Tooth46Container } from "./Tooth46Container";
+import { Tooth46Container } from "./teeth/tooth46/Tooth46Container";
 import { Tooth46StandToggles } from "./Tooth46StandToggles";
 import type {
 	CariesDepth,

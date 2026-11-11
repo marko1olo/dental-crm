@@ -1,19 +1,19 @@
 import type { FastifyInstance } from "fastify";
+import { registerEndoRoutes } from "./endoRoutes.js";
 import { registerExtendedOdontogramRoutes } from "./extendedRoutes.js";
 import { registerHistoryRoutes } from "./historyRoutes.js";
-import { registerPediatricRoutes } from "./pediatricRoutes.js";
 import { registerPlanCompletionRoutes } from "./planCompletionRoutes.js";
+import { registerPlanCrudRoutes } from "./planCrudRoutes.js";
 import { registerPlanVariantRoutes } from "./planVariantRoutes.js";
 import { registerStatusRoutes } from "./statusRoutes.js";
-import { registerSurfaceRoutes } from "./surfaceRoutes.js";
 
 export * from "./types.js";
 export * from "./planHelpers.js";
 export * from "./statusRoutes.js";
-export * from "./surfaceRoutes.js";
+export * from "./endoRoutes.js";
 export * from "./historyRoutes.js";
-export * from "./pediatricRoutes.js";
 export * from "./planCompletionRoutes.js";
+export * from "./planCrudRoutes.js";
 export * from "./planVariantRoutes.js";
 export * from "./extendedRoutes.js";
 
@@ -24,9 +24,9 @@ export * from "./extendedRoutes.js";
 export async function registerOdontogramRoutes(app: FastifyInstance): Promise<void> {
 	registerStatusRoutes(app);
 	registerExtendedOdontogramRoutes(app);
-	registerSurfaceRoutes(app);
+	registerEndoRoutes(app);
 	registerHistoryRoutes(app);
-	registerPediatricRoutes(app);
+	registerPlanCrudRoutes(app);
 	registerPlanCompletionRoutes(app);
 	registerPlanVariantRoutes(app);
 }

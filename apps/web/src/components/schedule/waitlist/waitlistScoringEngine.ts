@@ -38,6 +38,7 @@ export function scoreWaitlistCandidate(
       urgency,
       urgencyLabel: urgencyCfg.label,
       matchReasons,
+      mismatchReasons,
       priorityRank: urgencyCfg.rank,
     };
   }

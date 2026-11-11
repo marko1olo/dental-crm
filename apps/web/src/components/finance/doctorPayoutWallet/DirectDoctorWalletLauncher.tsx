@@ -6,11 +6,21 @@
  * Allows instant, robust standalone deep-linking to DoctorPayoutMobileWallet.
  */
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState, useCallback } from "react";
 import { X } from "lucide-react";
 import { DoctorPayoutMobileWallet } from "./DoctorPayoutMobileWallet";
 import { DEMO_SHOWCASE_REPORT } from "./demoShowcaseData";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import type { DoctorPayoutReport } from "./types";
+
+function getMonthBounds(monthStr: string): { from: string; to: string } {
+	const [year, month] = monthStr.split("-").map(Number);
+	const y = year || new Date().getFullYear();
+	const m = (month || 1) - 1;
+	const firstDay = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
+	const lastDay = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
+	return { from: firstDay.toISOString(), to: lastDay.toISOString() };
+}
 
 export const DirectDoctorWalletLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
@@ -24,6 +34,56 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 			s.includes("doctor_wallet")
 		);
 	});
+
+	const isDemo = isDemoShowcaseMode();
+	const [month, setMonth] = useState<string>(() => (isDemo ? "2026-10" : new Date().toISOString().slice(0, 7)));
+	const [report, setReport] = useState<DoctorPayoutReport | null>(() => (isDemo ? DEMO_SHOWCASE_REPORT : null));
+	const [isLoading, setIsLoading] = useState<boolean>(!isDemo && isOpen);
+
+	const fetchReport = useCallback(async (selectedMonth: string) => {
+		if (isDemo) {
+			setReport(DEMO_SHOWCASE_REPORT);
+			setIsLoading(false);
+			return;
+		}
+		setIsLoading(true);
+		try {
+			const { from, to } = getMonthBounds(selectedMonth);
+			const res = await fetch(`/api/billing/payouts?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+			if (!res.ok) throw new Error("Payouts api error");
+			const data = (await res.json()) as DoctorPayoutReport;
+			setReport(data);
+		} catch {
+			setReport({
+				scope: "all",
+				period: { from: `${selectedMonth}-01`, to: `${selectedMonth}-28` },
+				rows: [],
+				totals: {
+					revenueRub: 0,
+					paymentCount: 0,
+					attributableRevenueRub: 0,
+					unattributedRevenueRub: 0,
+					materialCostRub: 0,
+					accruedRub: 0,
+					withheldMaterialRub: 0,
+					payoutRub: 0,
+					doctorsCounted: 0,
+					doctorsWithoutRate: 0,
+				},
+				methodNote: "Фактические начисления по базе данных",
+				limitations: [],
+				isEmpty: true,
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	}, [isDemo]);
+
+	useEffect(() => {
+		if (isOpen) {
+			void fetchReport(month);
+		}
+	}, [fetchReport, month, isOpen]);
 
 	useEffect(() => {
 		const handleOpen = () => setIsOpen(true);
@@ -65,9 +125,6 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 		}
 	};
 
-	const isDemo = isDemoShowcaseMode();
-	const activeMonth = isDemo ? "2026-10" : new Date().toISOString().slice(0, 7);
-
 	return (
 		<div
 			id="direct-doctor-wallet-overlay"
@@ -103,15 +160,13 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 						}
 					>
 						<DoctorPayoutMobileWallet
-							report={isDemo ? DEMO_SHOWCASE_REPORT : null}
-							month={activeMonth}
-							onMonthChange={() => {}}
-							onRefresh={() => {
-								if (typeof window !== "undefined") window.location.reload();
-							}}
+							report={report}
+							month={month}
+							onMonthChange={(newMonth) => setMonth(newMonth)}
+							onRefresh={() => void fetchReport(month)}
 							onOpenPayrollModal={() => {}}
 							canEditRates={false}
-							isLoading={false}
+							isLoading={isLoading}
 							onRequestPayout={(doc, amountKop) => {
 								alert(`Запрос на выплату: ${doc.doctorName}, ${(amountKop / 100).toLocaleString("ru-RU")} ₽`);
 							}}

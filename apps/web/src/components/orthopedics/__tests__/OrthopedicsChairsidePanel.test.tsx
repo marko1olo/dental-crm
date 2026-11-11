@@ -195,7 +195,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 			/>,
 		);
 
-		assert.ok(html.includes("Этапы изготовления ЗТЛ (1 клик):"), "Must render 5-stage tracker header");
+		assert.ok(html.includes("Этапы изготовления ЗТЛ:"), "Must render 5-stage tracker header");
 		assert.ok(html.includes("Слепок/Скан"), "Must render stage 1 Слепок/Скан");
 		assert.ok(html.includes("Каркас/Примерка"), "Must render stage 2 Каркас/Примерка");
 		assert.ok(html.includes("Нанесение керамики"), "Must render stage 3 Нанесение керамики");
@@ -248,7 +248,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		);
 
 		assert.ok(html.includes('data-testid="stump-shade-section"'), "Must render stump shade section");
-		assert.ok(html.includes("Цвет культи зуба (Natural Die ND1–ND9, 1 клик)"), "Must render header for ND1..ND9");
+		assert.ok(html.includes("Цвет культи зуба (Natural Die ND1–ND9):"), "Must render header for ND1..ND9");
 		for (let i = 1; i <= 9; i++) {
 			assert.ok(html.includes(`data-testid="stump-shade-ND${i}"`), `Must render button for ND${i}`);
 		}
@@ -280,7 +280,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		);
 
 		assert.ok(html.includes('data-testid="occlusion-section"'), "Must render occlusion section");
-		assert.ok(html.includes("Окклюзия и артикулятор (1 клик):"), "Must render occlusion header");
+		assert.ok(html.includes("Окклюзия и артикулятор:"), "Must render occlusion header");
 		assert.ok(html.includes('data-testid="articulator-chip-bio_art"'), "Must render Bio-Art chip");
 		assert.ok(html.includes('data-testid="articulator-chip-kavo_protar"'), "Must render KaVo Protar chip");
 		assert.ok(html.includes('data-testid="articulator-chip-average_anatomical"'), "Must render average anatomical chip");
@@ -328,7 +328,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		);
 
 		assert.ok(html.includes('data-testid="ortho-protocol-card-ortho_standard_crown_complete"'), "Must render card for master preset");
-		assert.ok(html.includes("1-клик Полный цикл"), "Must render badge 1-клик Полный цикл");
+		assert.ok(html.includes("Полный цикл"), "Must render badge Полный цикл");
 		assert.ok(html.includes("Автосписание БОМ"), "Must indicate warehouse soft overdraft write-off");
 		assert.ok(html.includes('data-testid="apply-ortho-protocol-ortho_standard_crown_complete"'), "Must render button for master preset");
 	});

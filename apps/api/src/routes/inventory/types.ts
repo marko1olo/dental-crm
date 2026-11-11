@@ -51,6 +51,7 @@ export const inventoryStockBodySchema = z.object({
 	allowOverdraft: z.boolean().default(true).optional(),
 	reason: z.string().optional(),
 	isClinicalOperation: z.boolean().optional(),
+	visitId: z.string().uuid().optional(),
 	batchNumber: z.string().optional(),
 	lotNumber: z.string().optional(),
 	expirationDate: z.string().optional(),

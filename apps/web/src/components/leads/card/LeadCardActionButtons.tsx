@@ -29,7 +29,7 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 			className="flex flex-col gap-1.5 mt-2"
 			onClick={(e) => e.stopPropagation()}
 		>
-			{/* Действие 1: Записать в сетку расписания (Secondary Outline/Accent CTA + 1-Click Fast Booking) */}
+			{/* Действие 1: Записать в сетку расписания (Secondary Outline/Accent CTA) */}
 			{lead.status !== "trash" && (
 				<div className="flex items-center gap-1.5 w-full">
 					<button
@@ -62,8 +62,8 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 							}}
 							className="secondary-button h-8 min-h-[32px] w-8 min-w-[32px] px-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--teal-dark, var(--teal))] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] active:scale-[0.95] inline-flex items-center justify-center transition-all cursor-pointer shrink-0"
 							data-testid={`quick-schedule-lead-btn-${lead.id}`}
-							title="Мгновенная запись на завтра в 10:00 (1 клик)"
-							aria-label="Записать в 1 клик на завтра"
+							title="Запись на завтра в 10:00"
+							aria-label="Записать на приём на завтра"
 						>
 							<Zap size={13} className="shrink-0 fill-current" />
 						</button>
@@ -81,7 +81,7 @@ export const LeadCardActionButtons: React.FC<LeadCardActionButtonsProps> = ({
 					title={`Открыть карту постоянного пациента ${lead.existingPatient.fullName}`}
 				>
 					<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
-					<span className="truncate">Открыть карту пациента</span>
+					<span className="truncate">Карточка пациента</span>
 				</button>
 			) : (
 				<button

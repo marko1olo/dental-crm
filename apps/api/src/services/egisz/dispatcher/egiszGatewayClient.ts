@@ -43,8 +43,8 @@ export function createEgiszRemdReceipt(
 	params: CreateEgiszRemdReceiptParams,
 ): EgiszRemdRegistrationReceipt {
 	const registeredAt = params.registeredAt || new Date().toISOString();
-	const sanitizedDocId = params.remdDocumentId.replace(/[^a-zA-Z0-9_-]/g, "");
-	const receiptId = `RCP-REMD-${sanitizedDocId || "DOC"}-${Date.now()}`;
+	const receiptId = params.receiptId ?? null;
+	const isVerified = Boolean(receiptId);
 	const docTypeTitles: Record<string, string> = {
 		"108": "Стоматологический протокол приёма (СЭМД 108)",
 		"107": "Консультация врача-стоматолога",
@@ -75,7 +75,7 @@ export function createEgiszRemdReceipt(
 			operatorName: "ЕГИСЗ РЭМД Минздрава России",
 			serviceEndpoint: params.serviceEndpoint || "https://api.n3health.ru/egisz/v1/remd",
 			tspTimestamp: registeredAt,
-			verificationStatus: "VERIFIED_VALID",
+			verificationStatus: isVerified ? "VERIFIED_VALID" : "pending_gateway",
 		},
 		receiptVersion: "1.0",
 		issuedAt: new Date().toISOString(),

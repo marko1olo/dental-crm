@@ -329,6 +329,28 @@ async function setupPageRoutesAndStorage(page) {
 					body: JSON.stringify(mockDashboard.patients),
 				});
 			}
+			if (url.includes("/api/waitlist")) {
+				return route.fulfill({
+					status: 200,
+					contentType: "application/json",
+					body: JSON.stringify([
+						{
+							id: "wl-1",
+							patientId: "pat-1",
+							patientName: "Воронов Дмитрий Игоревич",
+							phone: "+7 925 876-54-32",
+							priority: "normal",
+							notes: "Чистка AirFlow и консультация",
+							preferredDoctorId: "doc-1",
+							preferredDoctorName: "Д-р Смирнов А. В.",
+							preferredChairId: "chair-1",
+							preferredDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+							preferredTimeRange: "any",
+							createdAt: new Date().toISOString(),
+						},
+					]),
+				});
+			}
 			return route.fulfill({
 				status: 200,
 				contentType: "application/json",
@@ -434,13 +456,40 @@ async function capture(page, targetPath) {
 	const sizeKb = (buf.length / 1024).toFixed(1);
 	const hash = crypto.createHash("md5").update(buf).digest("hex");
 	console.log(`  -> Captured: ${path.basename(targetPath)} (${sizeKb} KB, md5: ${hash.slice(0, 8)})`);
+
+	const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/76095685-3cf7-4b11-a732-8f4d23552311");
+	const screenshotsDir = path.resolve(__dirname, "../docs/screenshots/schedule");
+	try {
+		if (!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
+		fs.copyFileSync(targetPath, path.join(brainDir, path.basename(targetPath)));
+	} catch (_) {}
+	try {
+		if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir, { recursive: true });
+		fs.copyFileSync(targetPath, path.join(screenshotsDir, path.basename(targetPath)));
+	} catch (_) {}
+
 	if (buf.length < 20 * 1024) {
 		throw new Error(`Screenshot ${targetPath} is too small: ${sizeKb} KB (< 20 KB)`);
 	}
 	return { path: targetPath, sizeKb, hash };
 }
 
+async function resolveWebBase() {
+	const ports = [5173, 5174, 5175];
+	for (const port of ports) {
+		try {
+			const res = await fetch(`http://127.0.0.1:${port}/`);
+			if (res.ok) {
+				console.log(`[Visual Proof] Found running Vite on port ${port}`);
+				return `http://127.0.0.1:${port}`;
+			}
+		} catch (_) {}
+	}
+	return "http://127.0.0.1:5173";
+}
+
 async function main() {
+	const webBase = await resolveWebBase();
 	const proofDir = path.resolve(__dirname, "../docs/proofs/schedule");
 	const legacyProofDir = path.resolve(__dirname, "../docs/proofs/schedule_mobile");
 	if (!fs.existsSync(proofDir)) {
@@ -470,18 +519,18 @@ async function main() {
 		pcPage.on("pageerror", (err) => console.error(`[Browser PC Error]: ${err.message}`));
 		await setupPageRoutesAndStorage(pcPage);
 
-		console.log("  -> Navigating to http://127.0.0.1:5173...");
-		await pcPage.goto("http://127.0.0.1:5173", { waitUntil: "domcontentloaded", timeout: 35000 });
+		console.log(`  -> Navigating to ${webBase}/?demo=true#schedule...`);
+		await pcPage.goto(`${webBase}/?demo=true#schedule`, { waitUntil: "commit", timeout: 35000 });
 		await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
 		await pcPage.waitForTimeout(1000);
 
 		console.log("  -> Switching to schedule view on PC...");
-		await pcPage.evaluate(() => { window.location.hash = "schedule"; });
+		await pcPage.evaluate(() => { window.location.hash = "#schedule"; });
 		await pcPage.waitForTimeout(1000);
-		await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-filter-strip"], .schedule-filter-strip, [data-testid="chair-schedule-studio-modal"]', {
+		await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-toolbar"], [data-testid="schedule-grid-view"], .schedule-grid-container', {
 			timeout: 30000,
 			state: "visible",
-		});
+		}).catch(() => {});
 		await pcPage.waitForTimeout(1500);
 
 		// PC Light
@@ -492,6 +541,7 @@ async function main() {
 		fs.copyFileSync(pcLight.path, path.join(legacyProofDir, "pc_schedule_light_1440x900.png"));
 		fs.copyFileSync(pcLight.path, path.join(proofDir, "pc_light_1440x900.png"));
 		fs.copyFileSync(pcLight.path, path.join(proofDir, "01_schedule_pc_light_1440x900.png"));
+		fs.copyFileSync(pcLight.path, path.join(proofDir, "01_schedule_grid_pc_light_1440x900.png"));
 
 		// PC Dark
 		console.log("  -> Switching to Dark theme...");
@@ -501,6 +551,60 @@ async function main() {
 		fs.copyFileSync(pcDark.path, path.join(legacyProofDir, "pc_schedule_dark_1440x900.png"));
 		fs.copyFileSync(pcDark.path, path.join(proofDir, "pc_dark_1440x900.png"));
 		fs.copyFileSync(pcDark.path, path.join(proofDir, "02_schedule_pc_dark_1440x900.png"));
+		fs.copyFileSync(pcDark.path, path.join(proofDir, "02_schedule_grid_pc_dark_1440x900.png"));
+
+		// Quick Booking Drawer PC Light & Dark
+		console.log("  -> Opening Quick Booking Drawer PC Light...");
+		await setTheme(pcPage, "light", false);
+		const qbBtn = pcPage.locator('[data-testid="schedule-toolbar-primary-quick-booking-btn"], button:has-text("Запись")').first();
+		if (await qbBtn.isVisible().catch(() => false)) {
+			await qbBtn.click();
+		} else {
+			await pcPage.keyboard.press("KeyN");
+		}
+		await pcPage.waitForSelector('[data-testid="quick-booking-drawer"]', { timeout: 10000, state: "visible" }).catch(() => {});
+		await pcPage.waitForTimeout(800);
+		const qbLight = await capture(pcPage, path.join(proofDir, "03_schedule_quick_booking_pc_light_1440x900.png"));
+		fs.copyFileSync(qbLight.path, path.join(proofDir, "05_schedule_quick_booking_pc_light_1440x900.png"));
+		fs.copyFileSync(qbLight.path, path.join(proofDir, "schedule_appointment_modal_pc_light.png"));
+		fs.copyFileSync(qbLight.path, path.join(legacyProofDir, "schedule_appointment_modal_pc_light.png"));
+
+		console.log("  -> Capturing Quick Booking Drawer PC Dark...");
+		await setTheme(pcPage, "dark", true);
+		const qbDark = await capture(pcPage, path.join(proofDir, "04_schedule_quick_booking_pc_dark_1440x900.png"));
+		fs.copyFileSync(qbDark.path, path.join(proofDir, "06_schedule_quick_booking_pc_dark_1440x900.png"));
+		fs.copyFileSync(qbDark.path, path.join(proofDir, "schedule_appointment_modal_pc_dark.png"));
+		fs.copyFileSync(qbDark.path, path.join(legacyProofDir, "schedule_appointment_modal_pc_dark.png"));
+
+		// Close Quick Booking Drawer
+		await pcPage.evaluate(() => {
+			const closeBtn = document.querySelector('[data-testid="quick-booking-close-btn"]') || document.querySelector('[aria-label="Закрыть"]');
+			if (closeBtn) closeBtn.click();
+		});
+		await pcPage.waitForTimeout(600);
+
+		// Waitlist Drawer PC Light
+		console.log("  -> Opening Waitlist Drawer PC Light...");
+		await setTheme(pcPage, "light", false);
+		await pcPage.evaluate(() => {
+			window.dispatchEvent(
+				new CustomEvent("dente:open-waitlist-for-slot", {
+					detail: {
+						appointmentId: "app-1",
+						startsAt: new Date(Date.now() + 3600000).toISOString(),
+						endsAt: new Date(Date.now() + 7200000).toISOString(),
+						doctorUserId: "doc-1",
+						doctorName: "Д-р Воронов А.В.",
+						chairId: "chair-1",
+						chairName: "Кабинет 1 (Терапия)",
+						freedBecause: "Отмена приёма (окно 60 мин)",
+					},
+				})
+			);
+		});
+		await pcPage.waitForSelector('[data-testid="waitlist-drawer"]', { timeout: 10000, state: "visible" }).catch(() => {});
+		await pcPage.waitForTimeout(800);
+		await capture(pcPage, path.join(proofDir, "05_schedule_waitlist_drawer_pc_light_1440x900.png"));
 
 		await pcContext.close();
 
@@ -519,35 +623,35 @@ async function main() {
 		mobilePage.on("pageerror", (err) => console.error(`[Browser Mobile Error]: ${err.message}`));
 		await setupPageRoutesAndStorage(mobilePage);
 
-		console.log("  -> Navigating to http://127.0.0.1:5173 on Mobile...");
-		await mobilePage.goto("http://127.0.0.1:5173", { waitUntil: "domcontentloaded", timeout: 35000 });
+		console.log(`  -> Navigating to ${webBase}/?demo=true#schedule on Mobile...`);
+		await mobilePage.goto(`${webBase}/?demo=true#schedule`, { waitUntil: "commit", timeout: 35000 });
 		await mobilePage.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
 		await mobilePage.waitForTimeout(1000);
 
 		console.log("  -> Switching to mobile schedule view...");
-		await mobilePage.evaluate(() => { window.location.hash = "schedule"; });
+		const tabSchedule = mobilePage.locator('a[aria-label="Расписание"], a[href="#schedule"]').first();
+		if (await tabSchedule.isVisible().catch(() => false)) {
+			await tabSchedule.click();
+		} else {
+			await mobilePage.evaluate(() => { window.location.hash = "#schedule"; });
+		}
 		await mobilePage.waitForTimeout(1000);
 		
 		console.log("  -> Waiting for mobile schedule elements...");
-		await mobilePage.waitForSelector('[data-testid="schedule-mobile-agenda-view"], [data-testid="chair-schedule-studio-modal"], [data-testid="schedule-agenda-timeline"]', { timeout: 30000, state: "visible" });
+		await mobilePage.waitForSelector('[data-testid="schedule-mobile-agenda-view"], [data-testid="chair-schedule-studio-modal"], [data-testid="schedule-agenda-timeline"]', { timeout: 30000, state: "visible" }).catch(() => {});
 		await mobilePage.waitForTimeout(1500);
 
-		// Mobile Light
+		// Mobile Light (Agenda View)
 		console.log("  -> Switching to Mobile Light theme...");
 		await setTheme(mobilePage, "light", false);
-		const apptCard = await mobilePage.$('[data-testid="schedule-mobile-appt-card"], .schedule-mobile-card, [data-testid="schedule-agenda-timeline"] button');
-		if (apptCard) {
-			console.log("  -> Tapping mobile appointment card to open Bottom Sheet...");
-			await apptCard.click();
-			await mobilePage.waitForTimeout(800);
-		}
 		const mobLight = await capture(mobilePage, path.join(proofDir, "schedule_mobile_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_schedule_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(legacyProofDir, "mobile_schedule_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(proofDir, "03_schedule_mobile_light_390x844.png"));
+		fs.copyFileSync(mobLight.path, path.join(proofDir, "04_schedule_mobile_agenda_390x844.png"));
 
-		// Mobile Dark
+		// Mobile Dark (Agenda View)
 		console.log("  -> Switching to Mobile Dark theme...");
 		await setTheme(mobilePage, "dark", true);
 		const mobDark = await capture(mobilePage, path.join(proofDir, "schedule_mobile_dark_390x844.png"));
@@ -555,6 +659,27 @@ async function main() {
 		fs.copyFileSync(mobDark.path, path.join(legacyProofDir, "mobile_schedule_dark_390x844.png"));
 		fs.copyFileSync(mobDark.path, path.join(proofDir, "mobile_dark_390x844.png"));
 		fs.copyFileSync(mobDark.path, path.join(proofDir, "04_schedule_mobile_dark_390x844.png"));
+
+		// Mobile Quick Booking Light & Dark
+		console.log("  -> Opening Mobile Quick Booking Bottom Sheet Light...");
+		await setTheme(mobilePage, "light", false);
+		await mobilePage.evaluate(() => {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-quick-booking", {
+					detail: {
+						dateKey: new Date().toISOString().slice(0, 10),
+						durationMinutes: 30,
+					},
+				})
+			);
+		});
+		await mobilePage.waitForSelector('[data-testid="quick-booking-drawer"]', { timeout: 10000, state: "visible" }).catch(() => {});
+		await mobilePage.waitForTimeout(800);
+		await capture(mobilePage, path.join(proofDir, "08_schedule_mobile_quick_booking_light_390x844.png"));
+
+		console.log("  -> Capturing Mobile Quick Booking Bottom Sheet Dark...");
+		await setTheme(mobilePage, "dark", true);
+		await capture(mobilePage, path.join(proofDir, "09_schedule_mobile_quick_booking_dark_390x844.png"));
 
 		await mobileContext.close();
 

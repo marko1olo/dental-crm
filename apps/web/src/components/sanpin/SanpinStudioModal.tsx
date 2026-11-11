@@ -224,7 +224,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								<span className="sm:hidden">Журнал автоклавирования</span>
 								<span className="hidden sm:inline">Журнал автоклавирования и санитарного контроля</span>
 							</h2>
-							<p className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block truncate">Автоклавирование смены в 1 клик, журнал циклов и печать бланков СанПиН</p>
+							<p className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block truncate">Автоклавирование смены, журнал циклов и печать бланков СанПиН</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">

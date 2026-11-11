@@ -34,7 +34,7 @@ export function MobileDocumentsFloatingBar({
 				data-testid="btn-mobile-primary-intake"
 			>
 				<Printer size={18} aria-hidden="true" />
-				<span>Пакет приёма в 1 клик</span>
+				<span>Пакет приёма</span>
 			</button>
 
 			{onOpenCreateDocumentModal && (

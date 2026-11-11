@@ -1,7 +1,7 @@
 import React from "react";
 import { Zap } from "lucide-react";
 import type { Appointment } from "@dental/shared";
-import { WaitlistMatchesBlock } from "../WaitlistMatchesBlock";
+import { WaitlistMatchesBlock } from "../waitlist/WaitlistMatchesBlock";
 
 export interface AppointmentCardWaitlistRecoveryProps {
 	appointment: Appointment;
@@ -47,7 +47,7 @@ export function AppointmentCardWaitlistRecovery({
 					className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/30 hover:bg-[var(--teal)] hover:text-white transition-all cursor-pointer inline-flex items-center gap-1"
 					data-testid="smart-slot-recovery-open-btn"
 				>
-					<span>Умный подбор (3 кандидата)</span>
+					<span>Умный подбор</span>
 				</button>
 			</div>
 			<WaitlistMatchesBlock appointmentId={appointment.id} compact />

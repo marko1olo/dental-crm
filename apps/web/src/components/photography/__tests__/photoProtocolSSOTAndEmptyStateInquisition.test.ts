@@ -18,7 +18,6 @@ import path from 'node:path';
 describe('Photo Protocol SSOT, Empty State & Persistence Inquisition Suite', () => {
 	const photographyDir = path.resolve(process.cwd(), 'apps/web/src/components/photography');
 	const visitDir = path.resolve(process.cwd(), 'apps/web/src/components/visit');
-	const orthoModalDir = path.resolve(process.cwd(), 'apps/web/src/components/diagnostics/orthoModal');
 	const presenterDir = path.resolve(process.cwd(), 'apps/web/src/components/treatment-plans');
 
 	it('[PHO-03] usePhotoProtocolUpload hydrats and saves via PostgreSQL 18 Fastify API', () => {
@@ -28,18 +27,14 @@ describe('Photo Protocol SSOT, Empty State & Persistence Inquisition Suite', () 
 		assert.ok(hookFile.includes("method: 'POST'") || hookFile.includes('method: "POST"'), 'Hook must save protocol via POST request');
 	});
 
-	it('[PHO-05] BeforeAfterSplitter and OrthoSliderSplitView are thin facades over BeforeAfterSplitSlider SSOT', () => {
+	it('[PHO-05] BeforeAfterSplitter is a thin facade over BeforeAfterSplitSlider SSOT', () => {
 		const splitterFile = fs.readFileSync(path.join(visitDir, 'BeforeAfterSplitter.tsx'), 'utf-8');
-		const orthoSliderFile = fs.readFileSync(path.join(orthoModalDir, 'OrthoSliderSplitView.tsx'), 'utf-8');
 
 		assert.ok(splitterFile.includes('BeforeAfterSplitSlider'), 'BeforeAfterSplitter must delegate to BeforeAfterSplitSlider');
-		assert.ok(orthoSliderFile.includes('BeforeAfterSplitSlider'), 'OrthoSliderSplitView must delegate to BeforeAfterSplitSlider');
 
 		const splitterLines = splitterFile.split('\n').filter((l) => l.trim().length > 0).length;
-		const orthoSliderLines = orthoSliderFile.split('\n').filter((l) => l.trim().length > 0).length;
 
 		assert.ok(splitterLines <= 40, `BeforeAfterSplitter must be a thin facade <= 40 lines (got ${splitterLines})`);
-		assert.ok(orthoSliderLines <= 40, `OrthoSliderSplitView must be a thin facade <= 40 lines (got ${orthoSliderLines})`);
 	});
 
 	it('[PHO-05] Treatment plan presenter integrates Before/After split comparison', () => {
@@ -88,7 +83,7 @@ describe('Photo Protocol SSOT, Empty State & Persistence Inquisition Suite', () 
 			path.join(photographyDir, 'BeforeAfterSplitSlider.tsx'),
 			path.join(photographyDir, 'ClinicalPhotoProtocolModal.tsx'),
 			path.join(photographyDir, 'LabPhotoExportDrawer.tsx'),
-			path.join(photographyDir, 'PhotoCollageExportSheet.tsx'),
+			path.join(photographyDir, 'BeforeAfterComparisonView.tsx'),
 		];
 
 		for (const file of files) {

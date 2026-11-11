@@ -26,9 +26,6 @@ import {
 	computeShiftAssignment,
 } from "../scheduleShiftHelpers";
 import {
-	ChairScheduleView,
-} from "../ChairScheduleView";
-import {
 	ScheduleGrid,
 	DEFAULT_SOLO_CHAIR,
 	formatDoctorShortName,
@@ -815,7 +812,7 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 		});
 	});
 
-	describe("3. ScheduleGrid & ChairScheduleView Visual & Functional Parity", () => {
+	describe("3. ScheduleGrid Visual & Functional Parity", () => {
 		it("ScheduleGrid renders prominent + Врач badge (chair-grid-unstaffed-badge-${chair.id}) on unstaffed chair", async () => {
 			const container = document.createElement("div") as unknown as MockDomNode;
 			const root: Root = createRoot(container as unknown as HTMLElement);
@@ -849,53 +846,6 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 
 			const popover = findNodeByTestId(container, "chair-doctor-quick-popover-chair-3");
 			assert.ok(popover, "Clicking + Врач badge must open doctor assignment popover");
-		});
-
-		it("ChairScheduleView renders + Врач badge on unstaffed active chair (chair-view-unstaffed-badge-${chair.id})", async () => {
-			const container = document.createElement("div") as unknown as MockDomNode;
-			const root: Root = createRoot(container as unknown as HTMLElement);
-
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={mockDashboard}
-						dateKey="2026-09-09"
-						appointments={[]}
-						chairDoctorAssignments={mockEmptyAssignments}
-						onSlotClick={noop}
-						onAppointmentClick={noop}
-					/>,
-				);
-			});
-
-			const unstaffedBadge = findNodeByTestId(container, "chair-view-unstaffed-badge-chair-3");
-			assert.ok(unstaffedBadge, "ChairScheduleView must render chair-view-unstaffed-badge on unstaffed chair");
-			assert.ok(unstaffedBadge.textContent.includes("+ Врач"));
-		});
-
-		it("guarantees 0 cartoon emojis in ScheduleGrid and ChairScheduleView (Mandate 8d)", async () => {
-			const container = document.createElement("div") as unknown as MockDomNode;
-			const root: Root = createRoot(container as unknown as HTMLElement);
-
-			await act(async () => {
-				root.render(
-					<ChairScheduleView
-						dashboard={mockDashboard}
-						dateKey="2026-09-09"
-						appointments={[]}
-						chairDoctorAssignments={mockEmptyAssignments}
-						onSlotClick={noop}
-						onAppointmentClick={noop}
-					/>,
-				);
-			});
-
-			const allText = collectAllText(container);
-			assert.equal(
-				hasCartoonEmojis(allText),
-				false,
-				"Zero cartoon emojis in medical and schedule views (Mandate 8d)",
-			);
 		});
 	});
 

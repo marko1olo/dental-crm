@@ -4,3 +4,4 @@
  * Complies with Mandate 8b (exact kopeck money) and Mandate 8s (single source of truth).
  */
 export * from "../money.js";
+export { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";

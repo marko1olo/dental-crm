@@ -11,7 +11,17 @@ import { TelegramPatientPortalCabinet, type TelegramCabinetTab } from "./Telegra
 import { TelegramMiniAppTopHeader } from "./TelegramMiniAppTopHeader";
 import { TelegramMiniAppBottomNav } from "./TelegramMiniAppBottomNav";
 import { TelegramEmrTab } from "./TelegramEmrTab";
+import type { FamilyMember } from "./TelegramMiniAppTopHeader";
+import type { ToothComplaint } from "./TelegramInteractiveToothPicker";
 import { useTelegramMiniAppState } from "./useTelegramMiniAppState";
+
+interface TelegramLinkWindow {
+	Telegram?: {
+		WebApp?: {
+			openTelegramLink?: (url: string) => void;
+		};
+	};
+}
 
 export type TelegramTab = "teeth" | "odontogram" | "booking" | "emr" | "cabinet" | "appointments" | "imaging" | "tax" | "finance";
 
@@ -19,14 +29,27 @@ export interface TelegramMiniAppViewProps {
 	readonly organizationId?: string | null | undefined;
 	readonly initialTab?: TelegramTab;
 	readonly patientId?: string | null | undefined;
+	readonly bonusPoints?: number | undefined;
+	readonly initialComplaints?: ToothComplaint[] | undefined;
+	readonly initialPatientName?: string | undefined;
+	readonly initialFamilyMembers?: readonly FamilyMember[] | undefined;
 }
 
 export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 	organizationId: propOrgId,
 	initialTab,
 	patientId: propPatientId,
+	bonusPoints: propBonusPoints,
+	initialComplaints,
+	initialPatientName,
+	initialFamilyMembers,
 }) => {
-	const state = useTelegramMiniAppState(initialTab);
+	const state = useTelegramMiniAppState(initialTab, {
+		initialComplaints,
+		initialPatientName,
+		initialFamilyMembers,
+		initialBonusPoints: propBonusPoints,
+	});
 
 	if (["cabinet", "teeth", "appointments", "imaging", "tax", "finance"].includes(state.activeTab)) {
 		return (
@@ -44,7 +67,7 @@ export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 		<div className="tg-app-container">
 			<TelegramMiniAppTopHeader
 				patientName={state.patientName}
-				bonusPoints={1500}
+				bonusPoints={propBonusPoints ?? state.bonusPoints ?? 0}
 				familyMembers={state.familyMembers}
 				activeFamilyMemberId={state.activeFamilyMemberId}
 				onSelectFamilyMember={(id) => { state.setActiveFamilyMemberId(id); state.triggerHaptic("light"); }}
@@ -81,7 +104,8 @@ export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 						state.triggerHaptic("medium");
 						const link = `https://t.me/DenteClinicBot?start=ref_${propPatientId || "friend"}`;
 						const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Дарю 1000 ₽ в DENTE")}`;
-						if ((window as any).Telegram?.WebApp?.openTelegramLink) (window as any).Telegram.WebApp.openTelegramLink(url);
+						const tgWin = window as unknown as TelegramLinkWindow;
+						if (tgWin.Telegram?.WebApp?.openTelegramLink) tgWin.Telegram.WebApp.openTelegramLink(url);
 						else window.open(url, "_blank");
 					}}
 				/>

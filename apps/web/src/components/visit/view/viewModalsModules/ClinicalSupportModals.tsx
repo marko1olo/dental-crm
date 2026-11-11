@@ -14,10 +14,6 @@
 import React, { useMemo } from "react";
 import { EmergencyRescueModal } from "../../../emergency/EmergencyRescueModal";
 import {
-	VoiceDictationAssistantModal,
-	type DictationCommand,
-} from "../../../voice/VoiceDictationAssistantModal";
-import {
 	WarrantyPassportModal,
 	type CompletedTreatmentStage,
 } from "../../../warranty/WarrantyPassportModal";
@@ -115,56 +111,6 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 				/>
 			)}
 
-			{/* AI Voice Dictation Assistant Modal */}
-			{effectiveActiveModal === "voice_dictation" && (
-				<VoiceDictationAssistantModal
-					isOpen={isVoiceDictationModalOpen}
-					onClose={() => {
-						setIsVoiceDictationModalOpen(false);
-						useUiSurfaceStore.getState().closePrimaryModal("voice_dictation");
-					}}
-					activeToothNumber={
-						selectedToothForMenu?.code
-							? Number.parseInt(selectedToothForMenu.code, 10) || null
-							: null
-					}
-					onApplySoapNote={(soap) => {
-						if (soap.subjective) appendToEMKField("complaints", soap.subjective);
-						if (soap.objective)
-							appendToEMKField("objectiveInspection", soap.objective);
-						if (soap.assessment) appendToEMKField("diagnosis", soap.assessment);
-						if (soap.plan) appendToEMKField("treatmentPlan", soap.plan);
-						if (soap.recommendations)
-							appendToEMKField("recommendations", soap.recommendations);
-						showToast("SOAP-запись внесена в медицинскую карту", "success");
-					}}
-					onApplyCommand={(cmd: DictationCommand) => {
-						if (cmd.toothNumber && cmd.clinicalStatus) {
-							setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
-						}
-						if (cmd.soapText || cmd.summary) {
-							appendToEMKField(
-								"objectiveInspection",
-								cmd.soapText || cmd.summary,
-							);
-						}
-					}}
-					onApplyAllCommands={(cmds: DictationCommand[]) => {
-						for (const cmd of cmds) {
-							if (cmd.toothNumber && cmd.clinicalStatus) {
-								setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
-							}
-							if (cmd.soapText || cmd.summary) {
-								appendToEMKField(
-									"objectiveInspection",
-									cmd.soapText || cmd.summary,
-								);
-							}
-						}
-						showToast(`Применено команд: ${cmds.length}`, "success");
-					}}
-				/>
-			)}
 
 			{/* Warranty Passport Modal (Мандаты 8e, 8k — Авто-заполнение из выполненных услуг визита и 0 ₽ переделка) */}
 			{(effectiveActiveModal === "warranty_passport" || isWarrantyModalOpen) && (() => {

@@ -5,7 +5,7 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js
 import {
 	type PaymentMethodTab,
 	PaymentModal,
-} from "./PaymentModal.js";
+} from "../finance/PaymentModal.js";
 
 export interface GlobalPaymentModalContext {
 	patientId?: string | undefined;
@@ -18,17 +18,16 @@ export interface GlobalPaymentModalContext {
 	clinicLegalName?: string | undefined;
 	patientDepositRub?: number | undefined;
 	patientFamilyBalanceRub?: number | undefined;
-	items?: import("./PaymentModal.js").PaymentModalProps["items"];
+	items?: import("../finance/PaymentModal.js").PaymentModalProps["items"];
 }
 
 const hasPayment = (): boolean =>
 	typeof window !== "undefined" &&
-	/(payment|checkout)/i.test(window.location.href);
+	/(payment)/i.test(window.location.href);
 
 const EVTS = [
 	"dente:open-payment-modal",
 	"dente-open-payment-modal",
-	"dente:open-checkout",
 ] as const;
 
 /**

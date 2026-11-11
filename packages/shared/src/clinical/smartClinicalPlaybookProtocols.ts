@@ -82,7 +82,7 @@ export function formatPlaybookForm043A4Protocol(
 
 		lines.push("2. КРИТИЧЕСКИЕ АЛЛЕРГИИ И СОМАТИЧЕСКИЕ СТОП-ФАКТОРЫ:");
 		if (b.criticalAlerts.length === 0) {
-			lines.push("   [OK] Стоп-факторы отсутствуют. Физиологическая норма активна по умолчанию в 1 клик.");
+			lines.push("   [OK] Стоп-факторы отсутствуют. Физиологическая норма активна по умолчанию.");
 		} else {
 			for (const alert of b.criticalAlerts) {
 				lines.push(`   [!] ПАЦИЕНТ: ${alert.patientFullName} (${alert.appointmentTime}, ${alert.chairName})`);
@@ -119,7 +119,7 @@ export function formatPlaybookForm043A4Protocol(
 		}
 		lines.push(subDivider);
 
-		lines.push("5. КЛИНИЧЕСКОЕ РЕЗЮМЕ ДНЯ ДЛЯ ВРАЧА У КРЕСЛА (0-КЛИК):");
+		lines.push("5. КЛИНИЧЕСКОЕ РЕЗЮМЕ ДНЯ ДЛЯ ВРАЧА У КРЕСЛА:");
 		lines.push(`   ${b.summaryChairsideNote}`);
 		lines.push(subDivider);
 		lines.push("Подпись врача-стоматолога: ____________________ / " + b.doctorFullName + " /");
@@ -146,7 +146,7 @@ export function formatPlaybookForm043A4Protocol(
 
 		lines.push("1. СОМАТИЧЕСКИЙ АНАМНЕЗ И КРИТИЧЕСКИЕ АЛЛЕРГИИ:");
 		if (!p.hasCriticalAlerts) {
-			lines.push("   [OK] Соматически здоров / физиологическая норма активна в 1 клик.");
+			lines.push("   [OK] Соматически здоров / физиологическая норма активна по умолчанию.");
 		} else {
 			for (const alert of p.criticalAlerts) {
 				lines.push(`   [!] КРИТИЧЕСКИЙ СТОП-ФАКТОР: ${alert}`);
@@ -187,7 +187,7 @@ export function formatPlaybookForm043A4Protocol(
 		lines.push(`   Статус: ${p.financialSummary.financialStatusRu}`);
 		lines.push(subDivider);
 
-		lines.push("5. КЛИНИЧЕСКАЯ ПОДСКАЗКА ДЛЯ ВРАЧА У КРЕСЛА (0-КЛИК CHAIRSIDE GUIDANCE):");
+		lines.push("5. КЛИНИЧЕСКАЯ ПОДСКАЗКА ДЛЯ ВРАЧА У КРЕСЛА:");
 		lines.push(`   ${p.chairsideTip}`);
 		lines.push(subDivider);
 		lines.push("Подпись врача-стоматолога: ____________________ /                         /");

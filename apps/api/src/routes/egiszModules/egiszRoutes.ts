@@ -5,8 +5,13 @@ import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
-import { canonicalizeCdaXml, egiszRemdPackageSchema } from "../../services/cda/index.js";
-import { readGatewayConfig } from "../egisz/helpers.js";
+import { canonicalizeCdaXml, egiszRemdPackageSchema, type EgiszRemdPackage } from "../../services/cda/index.js";
+import { createDemonstrationGostSignature } from "@dental/shared/cda";
+import { generateDentalCdaXml } from "../../services/egiszCdaGenerator.js";
+import { assembleVisitCdaParams } from "../egisz/visitCda/buildVisitCdaParams.js";
+import { fetchDiaryRow, fetchVisitRow, resolveDoctorFromAppointmentOrDiary } from "../egisz/visitCda/fetchVisitCdaData.js";
+import { EgiszOutboxDispatcher } from "../../services/egisz/EgiszOutboxDispatcher.js";
+import { extractIcd10, readGatewayConfig, readGenderFromProfile, readSnilsFromProfile, splitFullName } from "../egisz/helpers.js";
 import { registerN3HealthRoutes } from "../egisz/n3HealthRoutes.js";
 import { registerEgiszOutboxRoutes } from "../egisz/outboxRoutes.js";
 import { registerVisitCdaExportRoute } from "../egisz/visitCdaExport.js";
@@ -25,8 +30,8 @@ import {
 import { dispatchPackageToVimis } from "./egiszVimisSender.js";
 
 function normalizeBlankLabel(code: string, title: string): { formCode: string; fieldName: string } {
-	if (code.includes("043") || title.includes("043")) {
-		return { formCode: "Медицинская карта стоматологического больного (043/у)", fieldName: "Анамнез, дневник приёма и зубная формула" };
+	if (code.includes("043") || title.includes("043") || title.toLowerCase().includes("медицинская карта")) {
+		return { formCode: "Медицинская карта приёма", fieldName: "Анамнез, дневник приёма и зубная формула" };
 	}
 	if (code.includes("101") || title.toLowerCase().includes("консультац")) {
 		return { formCode: "Протокол консультации и осмотра", fieldName: "Первичный и повторный осмотр врача-стоматолога" };
@@ -107,7 +112,7 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 				const [doc] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.organizationId, orgId)).limit(1);
 				const doctorId = doc?.id ?? orgId;
 				const defaults = [
-					{ organizationId: orgId, doctorId, blankCode: "Медицинская карта стоматологического больного (043/у)", blankTitle: "Анамнез, дневник приёма и зубная формула", isAllowed: true, patientOptOutRespect: true },
+					{ organizationId: orgId, doctorId, blankCode: "Медицинская карта приёма", blankTitle: "Анамнез, дневник приёма и зубная формула", isAllowed: true, patientOptOutRespect: true },
 					{ organizationId: orgId, doctorId, blankCode: "Протокол консультации и осмотра", blankTitle: "Первичный и повторный осмотр врача-стоматолога", isAllowed: true, patientOptOutRespect: true },
 					{ organizationId: orgId, doctorId, blankCode: "Протокол КЛКТ 3D и рентген-снимков", blankTitle: "Описание КЛКТ 3D, панорамных и прицельных снимков", isAllowed: true, patientOptOutRespect: true },
 					{ organizationId: orgId, doctorId, blankCode: "Информированное добровольное согласие (ИДС)", blankTitle: "Согласие пациента на стоматологическое вмешательство", isAllowed: true, patientOptOutRespect: true },
@@ -195,15 +200,96 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		const [patient] = await db.select({ id: schema.patients.id }).from(schema.patients).where(and(eq(schema.patients.id, body.patientId), eq(schema.patients.organizationId, orgId))).limit(1);
 		if (!patient) return reply.status(404).send({ error: "PatientNotFound", message: "Пациент не найден в текущей клинике." });
 
-		const [visit] = await db.select({ id: schema.visits.id, patientId: schema.visits.patientId }).from(schema.visits).where(and(eq(schema.visits.id, body.visitId), eq(schema.visits.organizationId, orgId))).limit(1);
-		if (!visit) return reply.status(404).send({ error: "VisitNotFound", message: "Приём не найден в текущей клинике." });
-		if (visit.patientId !== body.patientId) return reply.status(400).send({ error: "VisitPatientMismatch", message: "Указанный приём принадлежит другому пациенту." });
+		const row = await fetchVisitRow(body.visitId, orgId);
+		if (!row) return reply.status(404).send({ error: "VisitNotFound", message: "Приём не найден в текущей клинике." });
+		if (row.visit.patientId !== body.patientId) return reply.status(400).send({ error: "VisitPatientMismatch", message: "Указанный приём принадлежит другому пациенту." });
 
-		const [inserted] = await db.insert(schema.egiszLogs).values({ organizationId: orgId, patientId: body.patientId, visitId: body.visitId, status: "Pending" }).returning();
-		if (!inserted) {
-			return reply.status(500).send({ error: "DbInsertError", message: "Не удалось создать запись в журнале ЕГИСЗ." });
+		const diaryRow = await fetchDiaryRow(body.visitId, orgId);
+		const doctorRes = await resolveDoctorFromAppointmentOrDiary(row.visit.appointmentId, diaryRow, orgId);
+		const identity = getRequestIdentity(request);
+		const doctorId = diaryRow?.doctorId || identity.userId || orgId;
+
+		const dispatcher = new EgiszOutboxDispatcher();
+		let pkg: EgiszRemdPackage;
+		if (body.pkg) {
+			pkg = body.pkg as unknown as EgiszRemdPackage;
+		} else {
+			const clinicOid = readGatewayConfig().clinicOid || "1.2.643.5.1.13.13.12.2.77.8432";
+			const patientSnilsDigits = readSnilsFromProfile(row.patient.administrativeProfile);
+			const diaryIcd = typeof diaryRow?.diagnosisIcd10 === "string" ? diaryRow.diagnosisIcd10.trim() : "";
+			const effectiveDiagnosis = typeof row.visit.diagnosis === "string" && row.visit.diagnosis.trim() ? row.visit.diagnosis.trim() : (diaryIcd || "K02.1");
+			const resolvedIcd10 = diaryIcd || extractIcd10(effectiveDiagnosis) || "K02.1";
+			const birthStr = typeof row.patient.birthDate === "string" && row.patient.birthDate.trim() ? row.patient.birthDate.trim() : "1990-01-01";
+			const patientGender = (readGenderFromProfile(row.patient.administrativeProfile) || "male") as "male" | "female";
+			const patientNameParts = splitFullName(typeof row.patient.fullName === "string" ? row.patient.fullName : "Пациент");
+			const clinicName = typeof row.organization.name === "string" && row.organization.name.trim() ? row.organization.name.trim() : "Стоматологическая клиника";
+			const [clinicRow] = await db.select({ address: schema.clinics.address, phone: schema.clinics.phone }).from(schema.clinics).where(eq(schema.clinics.organizationId, orgId)).limit(1);
+
+			const cdaParams = assembleVisitCdaParams({
+				row,
+				clinicRow,
+				diaryRow,
+				doctorName: doctorRes.doctorName,
+				doctorContact: doctorRes.doctorContact,
+				doctorPosition: doctorRes.doctorPosition,
+				doctorPositionCode: doctorRes.doctorPositionCode,
+				resolvedIcd10,
+				effectiveDiagnosis,
+				encounterDate: doctorRes.encounterDate || row.visit.createdAt,
+				clinicOid,
+				clinicName,
+				patientNameParts,
+				patientSnilsDigits,
+				birthStr,
+				patientGender,
+				anamnesis: (typeof diaryRow?.anamnesis === "string" ? diaryRow.anamnesis.trim() : "") || (typeof row.visit.anamnesis === "string" ? row.visit.anamnesis.trim() : ""),
+				objectiveStatus: (typeof diaryRow?.statusLocalis === "string" ? diaryRow.statusLocalis.trim() : "") || (typeof row.visit.objectiveStatus === "string" ? row.visit.objectiveStatus.trim() : ""),
+				complications: typeof diaryRow?.complications === "string" ? diaryRow.complications.trim() : undefined,
+				comorbidities: typeof diaryRow?.comorbidities === "string" ? diaryRow.comorbidities.trim() : undefined,
+				instrumentTrayBarcode: typeof diaryRow?.instrumentTrayBarcode === "string" ? diaryRow.instrumentTrayBarcode.trim() : undefined,
+				diagnosisTooth: typeof diaryRow?.diagnosisTooth === "string" ? diaryRow.diagnosisTooth.trim() : undefined,
+				treatmentPlan: (typeof diaryRow?.treatmentDescription === "string" ? diaryRow.treatmentDescription.trim() : "") || (typeof row.visit.treatmentPlan === "string" ? row.visit.treatmentPlan.trim() : ""),
+			});
+			const cdaRes = generateDentalCdaXml(cdaParams);
+			if (!cdaRes.success) {
+				return reply.status(422).send({ error: "CdaGenerationFailed", message: "Ошибка схемы CDA.", details: cdaRes.error.issues });
+			}
+			const canonicalXml = cdaRes.xml;
+			const doctorFullName = `${doctorRes.doctorName.last} ${doctorRes.doctorName.first}`.trim() || "Врач-стоматолог";
+			const docSig = createDemonstrationGostSignature({
+				doctorName: doctorFullName,
+				doctorSnils: "000-000-000 00",
+				clinicName,
+			});
+			pkg = {
+				documentId: body.visitId,
+				documentVersion: 1,
+				xmlCanonicalPayload: canonicalXml,
+				doctorSignature: docSig,
+				metadata: {
+					patientSnils: patientSnilsDigits || undefined,
+					clinicOid,
+					docTypeNsiCode: "108",
+				},
+			};
 		}
-		return reply.status(200).send({ success: true, logId: inserted.id });
+
+		const enqueueRes = await dispatcher.enqueueSignedPackage({
+			organizationId: orgId,
+			patientId: body.patientId,
+			visitId: body.visitId,
+			doctorId,
+			documentId: pkg.documentId || body.visitId,
+			pkg,
+			actorUserId: identity.userId || undefined,
+		});
+
+		return reply.status(200).send({
+			success: true,
+			logId: enqueueRes.logId,
+			outboxId: enqueueRes.outboxId,
+			status: enqueueRes.status,
+		});
 	});
 
 	app.post("/api/egisz/packages", async (request, reply) => {

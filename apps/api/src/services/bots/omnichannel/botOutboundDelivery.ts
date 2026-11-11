@@ -2,19 +2,15 @@ import { and, eq, ilike } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	communicationEvents,
-	denteTelegramBotConfigs,
-	denteWhatsappBotConfigs,
 	patients,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { MessageTemplateEngine } from "../../communications/MessageTemplateEngine.js";
-import { sendTelegramTextMessage } from "../../../telegramTransport.js";
 import {
-	sendWhatsappTextMessage,
-	readWhatsappCredentials,
-	normalizeWhatsappRecipient,
-} from "../../../whatsappTransport.js";
-import { OmnichannelTokenVault } from "../OmnichannelTokenVault.js";
+	resolveChannelCredentials,
+	sendThroughChannel,
+	type ChannelSendResult,
+} from "../../communications/channelRouter.js";
 import type { BotChannel } from "../types.js";
 
 export interface SendOperatorMessageParams {
@@ -94,7 +90,34 @@ export class BotOutboundDelivery {
 				return { ok: false, error: "Не удалось привязать пациента к диалогу" };
 			}
 
-			// Персистентность исходящего сообщения в communicationEvents
+			// Канонический транспорт через единый роутер каналов
+			const credentials = await resolveChannelCredentials(params.organizationId);
+			let sendResult: ChannelSendResult;
+			try {
+				sendResult = await sendThroughChannel(
+					{
+						channel: params.channel,
+						recipientAddress: params.senderId,
+						subject: null,
+						body: trimmed,
+						idempotencyKey: null,
+					},
+					credentials,
+				);
+			} catch (transportErr) {
+				sendResult = {
+					ok: false,
+					errorClass: "network",
+					errorMessage:
+						transportErr instanceof Error
+							? transportErr.message
+							: String(transportErr),
+				};
+			}
+
+			const deliveryStatus = sendResult.ok ? "sent" : "failed";
+
+			// Персистентность исходящего сообщения в communicationEvents с реальным статусом
 			const [outboundEvent] = await tx
 				.insert(communicationEvents)
 				.values({
@@ -102,62 +125,10 @@ export class BotOutboundDelivery {
 					patientId,
 					channel: params.channel,
 					direction: "outbound",
-					status: "sent",
+					status: deliveryStatus,
 					message: trimmed,
 				})
 				.returning();
-
-			let providerMessageId: string | null = null;
-			try {
-				if (params.channel === "telegram") {
-					const [tgConfig] = await tx
-						.select()
-						.from(denteTelegramBotConfigs)
-						.where(eq(denteTelegramBotConfigs.organizationId, params.organizationId))
-						.limit(1);
-
-					if (tgConfig?.tokenSecretRef) {
-						let botToken = tgConfig.tokenSecretRef;
-						if (OmnichannelTokenVault.isEncrypted(botToken)) {
-							botToken = OmnichannelTokenVault.decrypt(botToken, params.organizationId);
-						}
-						const sendRes = await sendTelegramTextMessage({
-							botToken,
-							chatId: params.senderId,
-							text: trimmed,
-						});
-						if (sendRes.ok && sendRes.telegramMessageId) {
-							providerMessageId = String(sendRes.telegramMessageId);
-						}
-					}
-				} else if (params.channel === "whatsapp") {
-					const [waConfig] = await tx
-						.select()
-						.from(denteWhatsappBotConfigs)
-						.where(eq(denteWhatsappBotConfigs.organizationId, params.organizationId))
-						.limit(1);
-
-					const creds = waConfig
-						? readWhatsappCredentials({ ...waConfig, organizationId: params.organizationId })
-						: null;
-					const toPhone = normalizeWhatsappRecipient(params.senderId);
-					if (creds && toPhone) {
-						const sendRes = await sendWhatsappTextMessage({
-							...creds,
-							toPhoneE164: toPhone,
-							text: trimmed,
-						});
-						if (sendRes.ok && sendRes.providerMessageId) {
-							providerMessageId = sendRes.providerMessageId;
-						}
-					}
-				}
-			} catch (transportErr) {
-				console.warn(
-					`[BotOutboundDelivery] Transport send notification (offline/test mode active):`,
-					transportErr,
-				);
-			}
 
 			// Оповещение CRM операторов по WebSocket
 			wsBroker.broadcastToOrganization(params.organizationId, {
@@ -172,13 +143,22 @@ export class BotOutboundDelivery {
 					direction: "outbound",
 					sender: "operator",
 					operatorName: params.operatorName || "Оператор",
+					status: deliveryStatus,
 					createdAt: (outboundEvent?.createdAt || new Date()).toISOString(),
 				},
 			});
 
+			if (!sendResult.ok) {
+				return {
+					ok: false,
+					messageId: outboundEvent?.id ?? null,
+					error: sendResult.errorMessage,
+				};
+			}
+
 			return {
 				ok: true,
-				messageId: outboundEvent?.id || providerMessageId || null,
+				messageId: outboundEvent?.id || sendResult.providerMessageId || null,
 			};
 		});
 	}

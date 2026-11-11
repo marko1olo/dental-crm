@@ -146,7 +146,7 @@ export function AppointmentModalLabSection({
       fetch(`/api/lab/orders/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-        body: JSON.stringify({ stage: "fitting", notes: "Примерка успешно подтверждена у кресла в 1 клик" }),
+        body: JSON.stringify({ stage: "fitting", notes: "Примерка успешно подтверждена у кресла" }),
       }).catch(() => {});
     }
     showToast(`Примерка наряда ${item.orderNumber} успешно подтверждена!`, "success", 3000);
@@ -273,7 +273,7 @@ export function AppointmentModalLabSection({
                   onClick={() => handleConfirmFitting(item)}
                   className="h-6 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
                   data-testid="appointment-confirm-fitting-btn"
-                  title="Подтвердить успешную примерку конструкции в 1 клик"
+                  title="Подтвердить успешную примерку конструкции"
                 >
                   <CheckCircle2 size={11} />
                   <span>Подтвердить примерку</span>
@@ -331,7 +331,7 @@ export function AppointmentModalLabSection({
                     onClick={handleSyncDate}
                     className="secondary-button h-6 sm:h-6 pointer-coarse:min-h-[44px] px-2 rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line-strong)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
                     data-testid="appointment-modal-sync-lab-date-banner-btn"
-                    title="Синхронизировать дату приёма с готовностью ЗТЛ в 1 клик"
+                    title="Синхронизировать дату приёма с готовностью ЗТЛ"
                   >
                     <Calendar size={11} className="text-[var(--teal)] shrink-0" />
                     <span>Синхронизировать дату</span>

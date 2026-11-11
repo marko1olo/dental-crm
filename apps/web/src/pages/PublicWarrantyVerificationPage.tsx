@@ -118,6 +118,7 @@ export function PublicWarrantyVerificationPage({
 
 	const handleSubmitSearch = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isLoading) return;
 		setActiveCert(inputCert);
 		void fetchWarranty(inputCert);
 	};
@@ -163,8 +164,8 @@ export function PublicWarrantyVerificationPage({
 					</div>
 					<button
 						type="submit"
-						disabled={isLoading}
-						className="min-h-[48px] px-5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
+						aria-busy={isLoading}
+						className="min-h-[48px] px-5 rounded-xl bg-[var(--primary,#0d9488)] hover:opacity-90 text-white text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center gap-2"
 					>
 						{isLoading ? <Loader2 size={16} className="animate-spin" /> : "Проверить"}
 					</button>

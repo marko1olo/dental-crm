@@ -1,4 +1,5 @@
 import React from "react";
+import { useWorkspaceProfile } from "../../../../../hooks/useWorkspaceProfile";
 import { TenderSplitCertificateRow } from "./TenderSplitCertificateRow";
 import { TenderSplitInsuranceRow } from "./TenderSplitInsuranceRow";
 import { TenderSplitStandardRows } from "./TenderSplitStandardRows";
@@ -48,6 +49,7 @@ export const TenderSplitPanel: React.FC<TenderSplitPanelProps> = ({
 	remainingRub,
 	handleFillRemaining,
 }) => {
+	const { hasInsuranceCoPay } = useWorkspaceProfile();
 	return (
 		<div className="space-y-2.5" data-testid="panel-split-focused">
 			<TenderSplitStandardRows
@@ -75,16 +77,18 @@ export const TenderSplitPanel: React.FC<TenderSplitPanelProps> = ({
 				handleFillRemaining={handleFillRemaining}
 			/>
 
-			<TenderSplitInsuranceRow
-				totalSumRub={totalSumRub}
-				insuranceAmount={insuranceAmount}
-				setInsuranceAmount={setInsuranceAmount}
-				guaranteeLetterNumber={guaranteeLetterNumber}
-				setGuaranteeLetterNumber={setGuaranteeLetterNumber}
-				setCardAmount={setCardAmount as (setter: (prev: number) => number) => void}
-				remainingRub={remainingRub}
-				handleFillRemaining={handleFillRemaining}
-			/>
+			{hasInsuranceCoPay && (
+				<TenderSplitInsuranceRow
+					totalSumRub={totalSumRub}
+					insuranceAmount={insuranceAmount}
+					setInsuranceAmount={setInsuranceAmount}
+					guaranteeLetterNumber={guaranteeLetterNumber}
+					setGuaranteeLetterNumber={setGuaranteeLetterNumber}
+					setCardAmount={setCardAmount as (setter: (prev: number) => number) => void}
+					remainingRub={remainingRub}
+					handleFillRemaining={handleFillRemaining}
+				/>
+			)}
 		</div>
 	);
 };

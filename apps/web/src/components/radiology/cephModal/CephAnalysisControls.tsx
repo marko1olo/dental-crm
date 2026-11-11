@@ -9,11 +9,11 @@ import type {
 	LandmarkKey,
 	LandmarkMap,
 	CephalometricAnalysisResult,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 import {
 	CEPHALOMETRIC_LANDMARKS,
 	LANDMARK_CLINICAL_ROLES,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 import { CephalometricPresetsBar } from "../CephalometricReportTab";
 import type { CephAiBackendPreference, CephBackendInfo } from "../../orthodontics/cephAiInferenceService";
 import type { CephAiStats } from "./types";
@@ -53,13 +53,10 @@ export function CephDesktopControlsStrip({
 						color: "#ffffff",
 						borderColor: "rgba(45, 212, 191, 0.6)",
 					}}
-					title={`Локальная нейросеть CephaloHRNet-W32 (${aiBackendLabel})`}
+					title="Анатомический шаблон (норма I класса) / Калибровка точек"
 				>
 					<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-					<span style={{ color: "#ffffff" }}>{isAiInferring ? "AI расчёт..." : "AI Авторазметка"}</span>
-					<span className="text-[10px] px-1 rounded bg-black/50 font-mono text-teal-200 border border-teal-400/40">
-						[{aiBackendBadge}]
-					</span>
+					<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Анатомический шаблон (норма I класса)"}</span>
 				</button>
 			</div>
 			<div className="text-xs text-slate-400 font-medium hidden md:flex items-center gap-2 shrink-0 ml-4">
@@ -120,33 +117,18 @@ export function CephTab1TopControls({
 				<CephalometricPresetsBar variant="tab1" onApplyPreset={onApplyPreset} onResetLandmarks={onResetLandmarks} />
 			</div>
 
-			{/* AI Auto-Placement Card in Tab 1 */}
-			<div className="mb-3.5 bg-gradient-to-r from-teal-950/80 to-slate-900/90 p-3 rounded-xl border border-teal-500/40 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+			{/* Анатомический шаблон (норма I класса) / Калибровка точек */}
+			<div className="mb-3.5 bg-slate-900/90 p-3 rounded-xl border border-teal-500/40 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 				<div className="min-w-0">
 					<div className="flex items-center gap-1.5 font-bold text-xs text-teal-300">
 						<Zap size={14} className="text-amber-400 fill-amber-400 shrink-0" />
-						<span className="font-extrabold">CephaloHRNet-W32 (2D ТРГ)</span>
-						<span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-950 text-teal-200 border border-teal-400/40 font-mono">
-							[{aiBackendBadge}]
-						</span>
+						<span className="font-extrabold">Анатомический шаблон (норма I класса)</span>
 					</div>
 					<p className="text-[11px] text-slate-300 m-0 mt-1 truncate">
-						{aiStats ? `✓ Расчёт: ${aiStats.placedCount} точек за ${aiStats.latencyMs} мс` : "100% локально в браузере (0 байт в сеть, 152-ФЗ)"}
+						{aiStats ? `✓ Калибровка: ${aiStats.placedCount} ориентиров расставлено` : "Калиброванная расстановка 16 анатомических точек для боковой ТРГ"}
 					</p>
 				</div>
 				<div className="flex items-center gap-1.5 shrink-0">
-					<select
-						value={aiBackendPref}
-						onChange={(e) => setAiBackendPref(e.target.value as CephAiBackendPreference)}
-						className="h-8 px-2 rounded-lg bg-slate-900 border border-slate-700 text-[11px] font-bold text-slate-200 cursor-pointer"
-						title="Выбор аппаратного бэкенда инференса"
-						data-testid="ai-backend-select"
-					>
-						<option value="auto">Auto ({detectedBackend?.badge || "GPU"})</option>
-						<option value="webgpu">WebGPU (Дискретная)</option>
-						<option value="webgl">WebGL (Встройка)</option>
-						<option value="wasm">CPU (Процессор)</option>
-					</select>
 					<button
 						type="button"
 						onClick={onRunAiAutoPlacement}
@@ -160,10 +142,10 @@ export function CephTab1TopControls({
 							color: "#ffffff",
 							borderColor: "rgba(45, 212, 191, 0.6)",
 						}}
-						title="Автоматическая расстановка 16 точек с помощью локальной нейросети"
+						title="Анатомический шаблон (норма I класса) / Калибровка точек"
 					>
 						<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-						<span style={{ color: "#ffffff" }}>{isAiInferring ? "Расчёт..." : "AI Разметка"}</span>
+						<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Калибровка точек (Норма I класса)"}</span>
 					</button>
 				</div>
 			</div>

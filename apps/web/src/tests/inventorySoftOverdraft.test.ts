@@ -290,7 +290,7 @@ describe("Soft Overdraft & Doctor Autonomy (Mandates 8e, 8n)", () => {
 
 	it("ConsumablesDeductionModal рендерится с кнопкой списания, не заблокированной при дефиците склада (Мандат 8e)", async () => {
 		const { ConsumablesDeductionModal } = await import(
-			"../components/inventory/ConsumablesDeductionModal.js"
+			"../components/inventory/ConsumablesBatchWriteoffModal.js"
 		);
 
 		const html = renderToStaticMarkup(

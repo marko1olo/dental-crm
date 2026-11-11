@@ -38,39 +38,40 @@ import { ConsentSignaturePad } from "./studio/ConsentSignaturePad";
 export interface ConsentStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientId?: string;
-	readonly patientContext?: Partial<ConsentPartyContext> & { patientId?: string };
+	readonly patientId?: string | undefined;
+	readonly patientContext?: Partial<ConsentPartyContext> | undefined;
 	readonly patient?: {
-		readonly id?: string;
-		readonly fullName?: string;
-		readonly birthDate?: string;
-		readonly passport?: string;
-		readonly phone?: string;
-		readonly snils?: string;
-		readonly cardNumber?: string;
-		readonly [key: string]: any;
-	};
-	readonly patientName?: string;
-	readonly initialDocId?: ConsentDocumentId;
-	readonly initialSelectedIds?: readonly ConsentDocumentId[];
-	readonly initialMode?: "single" | "batch";
-	readonly onDocumentSigned?: (payload: {
+		readonly id?: string | undefined;
+		readonly fullName?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly passport?: string | undefined;
+		readonly phone?: string | undefined;
+		readonly snils?: string | undefined;
+		readonly cardNumber?: string | undefined;
+		readonly [key: string]: unknown;
+	} | undefined;
+	readonly patientName?: string | undefined;
+	readonly initialDocId?: ConsentDocumentId | undefined;
+	readonly initialSelectedIds?: readonly ConsentDocumentId[] | undefined;
+	readonly initialMode?: "single" | "batch" | undefined;
+	readonly onDocumentSigned?: ((payload: {
 		docIds: ConsentDocumentId[];
 		status: ConsentSignStatus;
-		signatureSvg?: string;
+		signatureSvg?: string | undefined;
 		signedAt: string;
 		integrityHash: string;
-	}) => void;
-	readonly onConsentSigned?: (payload: {
+	}) => void) | undefined;
+	readonly onConsentSigned?: ((payload: {
 		verificationMethod: string;
-		paperOriginalStored?: boolean;
-		docIds?: ConsentDocumentId[];
-		status?: ConsentSignStatus;
-		signedAt?: string;
-		integrityHash?: string;
-		patientName?: string;
-		[key: string]: any;
-	}) => void;
+		paperOriginalStored?: boolean | undefined;
+		docIds?: ConsentDocumentId[] | undefined;
+		status?: ConsentSignStatus | undefined;
+		signedAt?: string | undefined;
+		signatureSvg?: string | undefined;
+		integrityHash?: string | undefined;
+		patientName?: string | undefined;
+		[key: string]: unknown;
+	}) => void) | undefined;
 }
 
 function mapCatalogIdToBackendKind(id: ConsentDocumentId): string {
@@ -125,11 +126,12 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 	const effectivePatientId =
 		patientId ||
-		(patient as any)?.id ||
-		(patientContext as any)?.patientId;
+		patient?.id ||
+		patientContext?.patientId;
 
 	const effectiveContext: Partial<ConsentPartyContext> = {
 		patientName: effectivePatientName,
+		patientId: effectivePatientId,
 		birthDate: patientContext?.birthDate || patient?.birthDate,
 		passport: patientContext?.passport || patient?.passport,
 		phone: patientContext?.phone || patient?.phone,
@@ -184,17 +186,18 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 			updated[docId] = {
 				status,
 				signedAt: nowStr,
-				signatureSvg: signatureSvg || undefined,
+				...(signatureSvg ? { signatureSvg } : {}),
 				integrityHash: hash,
 			};
 		}
 		setSignRecords(updated);
 
-		const firstHash = updated[targetDocs[0]]?.integrityHash || "DENTE-SSOT";
+		const firstDocId = targetDocs[0];
+		const firstHash = (firstDocId ? updated[firstDocId]?.integrityHash : undefined) || "DENTE-SSOT";
 		onDocumentSigned?.({
 			docIds: targetDocs,
 			status,
-			signatureSvg: signatureSvg || undefined,
+			...(signatureSvg ? { signatureSvg } : {}),
 			signedAt: nowStr,
 			integrityHash: firstHash,
 		});
@@ -205,7 +208,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 			docIds: targetDocs,
 			status,
 			signedAt: nowStr,
-			signatureSvg: signatureSvg || undefined,
+			...(signatureSvg ? { signatureSvg } : {}),
 			integrityHash: firstHash,
 			patientName: effectivePatientName,
 		});
@@ -223,6 +226,9 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 						consentType: docId,
 						kind: mappedKind,
 						title: docItem.title,
+						isSigned: true,
+						signedAt: new Date().toISOString(),
+						signatureType: status === "signed_paper" ? "paper_signed" : "tablet_stylus",
 						verificationMethod: status === "signed_paper" ? "paper_signed" : "tablet_stylus",
 						signatureSvg: status === "signed_digital" ? signatureSvg : undefined,
 						integrityHash: hash,
@@ -280,7 +286,8 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 		setSignRecords(updated);
 		setIsPaperChecked(true);
 
-		const firstHash = updated[targetDocs[0]]?.integrityHash || "DENTE-SSOT-PAPER";
+		const firstDocId = targetDocs[0];
+		const firstHash = (firstDocId ? updated[firstDocId]?.integrityHash : undefined) || "DENTE-SSOT-PAPER";
 		onDocumentSigned?.({
 			docIds: targetDocs,
 			status: "signed_paper",
@@ -311,6 +318,9 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 						consentType: docId,
 						kind: mappedKind,
 						title: docItem.title,
+						isSigned: true,
+						signedAt: new Date().toISOString(),
+						signatureType: "paper_signed",
 						verificationMethod: "paper_signed",
 						integrityHash: hash,
 						notes: "Подтверждено подписание на бумажном носителе (оригинал в архиве)",

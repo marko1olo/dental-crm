@@ -103,7 +103,7 @@ export const VisitDiaryComplicationsField: React.FC<VisitDiaryComplicationsField
 					}`}
 					data-active={Boolean(diary.complications?.includes("Осложнений нет"))}
 					data-testid="btn-quick-norm-complications"
-					title="Зафиксировать в 1 клик: Осложнений нет, соматически здоров"
+					title="Зафиксировать: Осложнений нет, соматически здоров"
 				>
 					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
 					<span>Осложнений нет (норма)</span>

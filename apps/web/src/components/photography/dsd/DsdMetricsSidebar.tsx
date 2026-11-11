@@ -65,12 +65,12 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 	const smileDepthPx = landmarks.smileArcCenter.y - commY;
 	let smileCurvature: 'consonant' | 'flat' | 'reverse' = 'consonant';
 	let smileDescription = 'Консонантная (повторяет дугу нижней губы)';
-	if (smileDepthPx < 5) {
-		smileCurvature = 'flat';
-		smileDescription = 'Прямая (уплощенная линия улыбки)';
-	} else if (smileDepthPx < -5) {
+	if (smileDepthPx < -5) {
 		smileCurvature = 'reverse';
 		smileDescription = 'Обратная (инвертированная дуга)';
+	} else if (smileDepthPx < 5) {
+		smileCurvature = 'flat';
+		smileDescription = 'Прямая (уплощенная линия улыбки)';
 	}
 
 	// Зубы Wheeler 2.5D и золотая пропорция
@@ -383,7 +383,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 					data-testid="btn-apply-dsd-to-plan-and-lab"
 				>
 					<Send className="w-4 h-4" />
-					<span>✓ Применить к плану лечения и ЗТЛ</span>
+					<span>Применить к плану лечения и ЗТЛ</span>
 				</button>
 			</div>
 		</div>

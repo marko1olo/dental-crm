@@ -30,10 +30,10 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 	crown_zirconia: {
 		id: "crown_zirconia",
 		canonicalWorkTypeId: "wt_003",
-		nameRu: "Коронка из диоксида циркония (Katana ML / Prettau)",
+		nameRu: "Коронка из диоксида циркония (Multi-layer)",
 		shortNameRu: "Коронка цирконий",
 		categoryRu: "Несъемное протезирование",
-		defaultMaterialRu: "Многослойный диоксид циркония Katana Zirconia HTML",
+		defaultMaterialRu: "Многослойный высокопрочный диоксид циркония Multi-layer",
 		standardTurnaroundDays: 5,
 		requiresVitaShade: true,
 		requiresStumpShade: true,
@@ -45,10 +45,10 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 	crown_emax: {
 		id: "crown_emax",
 		canonicalWorkTypeId: "wt_005",
-		nameRu: "Коронка / винир IPS e.max Press (дисиликат лития)",
+		nameRu: "Коронка / винир из дисиликата лития (IPS e.max Press)",
 		shortNameRu: "E-max пресс",
 		categoryRu: "Высокоэстетичная керамика",
-		defaultMaterialRu: "Дисиликат лития IPS e.max Press (Ivoclar Vivadent)",
+		defaultMaterialRu: "Цельнокерамический дисиликат лития высокой прозрачности",
 		standardTurnaroundDays: 5,
 		requiresVitaShade: true,
 		requiresStumpShade: true,
@@ -63,28 +63,28 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		nameRu: "Металлокерамическая коронка (Co-Cr фрезерованный / литой)",
 		shortNameRu: "Металлокерамика",
 		categoryRu: "Классическое протезирование",
-		defaultMaterialRu: "Co-Cr сплав Bego Wiron light + керамика Noritake EX-3",
+		defaultMaterialRu: "Биосовместимый Co-Cr сплав с полевошпатной керамической облицовкой",
 		standardTurnaroundDays: 6,
 		requiresVitaShade: true,
 		requiresStumpShade: false,
 		requiresTranslucency: false,
 		defaultPatientPriceKopecks: 1400000, // 14 000 руб
-		defaultZtlCostKopecks: 450000,       // 4 500 руб себестоимость ЗТЛ
+		defaultZtlCostKopecks: 380000,       // 3 800 руб себестоимость ЗТЛ
 		descriptionRu: "Металлокерамическая коронка на прочном кобальт-хромовом каркасе с керамической облицовкой.",
 	},
 	clasp_denture: {
 		id: "clasp_denture",
 		canonicalWorkTypeId: "wt_007",
-		nameRu: "Бюгельный протез (замковый Bredent / кламмерный)",
+		nameRu: "Бюгельный протез (замковый / кламмерный)",
 		shortNameRu: "Бюгельный протез",
 		categoryRu: "Съемное протезирование",
-		defaultMaterialRu: "Литой Co-Cr каркас + замки Bredent VKS-SG + гарнитур Ivoclar",
-		standardTurnaroundDays: 10,
+		defaultMaterialRu: "Литой Co-Cr каркас + прецизионные замковые аттачмены + гарнитурные зубы",
+		standardTurnaroundDays: 8,
 		requiresVitaShade: true,
 		requiresStumpShade: false,
 		requiresTranslucency: false,
-		defaultPatientPriceKopecks: 4800000, // 48 000 руб
-		defaultZtlCostKopecks: 1650000,      // 16 500 руб себестоимость ЗТЛ
+		defaultPatientPriceKopecks: 3800000, // 38 000 руб — каноническая синхронизированная цена
+		defaultZtlCostKopecks: 1300000,      // 13 000 руб себестоимость ЗТЛ
 		descriptionRu: "Дуговой протез с замковыми аттачменами или литыми удерживающими кламмерами.",
 	},
 	aligner_splint: {

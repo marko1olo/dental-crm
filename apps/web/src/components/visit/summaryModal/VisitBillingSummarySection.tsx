@@ -121,10 +121,10 @@ export const VisitBillingSummarySection: React.FC<VisitBillingSummarySectionProp
 							onClick={onAddAllUnbilledToBill}
 							className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[32px] rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white font-bold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-[0.98]"
 							data-testid="add-unbilled-consumables-btn"
-							title="Добавить все пропущенные расходники в смету и чек в 1 клик"
+							title="Добавить все расходники в смету и чек"
 						>
 							<Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-							<span>+ Добавить всё в счёт (1 клик)</span>
+							<span>+ Добавить всё в счёт</span>
 						</button>
 					)}
 				</div>

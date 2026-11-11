@@ -33,7 +33,7 @@ export const ToothChartExpressActions: React.FC<ToothChartExpressActionsProps> =
 				type="button"
 				onClick={handleMarkIntactDentition}
 				className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
-				title="Физиологическая норма (Мандат 8e): вся зубная формула отмечается здоровой в 1 клик"
+				title="Физиологическая норма: вся зубная формула отмечается интактной"
 				data-testid="mark-intact-dentition-btn"
 				data-action="tooth-chart-mark-intact-btn"
 			>

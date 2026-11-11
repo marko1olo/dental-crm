@@ -1,3 +1,8 @@
+/**
+ * fetchDoctorEarningsApi.ts — Клиентский адаптер выборки начислений врача через SSOT /api/v1/payroll/calculations.
+ * Mandate 8bf: Единый SSOT расчетного движка.
+ */
+
 import type { DoctorCompletedServiceItem } from "./staffPayrollEngine";
 import type { SettlementStatementPayload } from "./closeSettlementPeriodApi";
 
@@ -18,7 +23,7 @@ export interface FetchDoctorEarningsWithStatusResult {
 }
 
 export async function fetchDoctorEarningsWithStatusApi(
-	params: FetchDoctorEarningsParams
+	params: FetchDoctorEarningsParams,
 ): Promise<FetchDoctorEarningsWithStatusResult> {
 	const query = new URLSearchParams({
 		doctorId: params.doctorId,
@@ -30,51 +35,53 @@ export async function fetchDoctorEarningsWithStatusApi(
 		taxRegime: params.taxRegime,
 	});
 
-	const res = await fetch(`/api/doctor/my-earnings?${query.toString()}`);
+	const res = await fetch(`/api/v1/payroll/calculations?${query.toString()}`);
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	const data = await res.json();
 
 	const mapped: DoctorCompletedServiceItem[] = [];
-	if (data && Array.isArray(data.appointments)) {
-		for (const apt of data.appointments) {
-			const dateIso = apt.startsAtIso ? apt.startsAtIso.slice(0, 10) : params.periodStart;
-			if (Array.isArray(apt.services) && apt.services.length > 0) {
-				for (const srv of apt.services) {
-					const cat = ["therapy", "orthopedics", "surgery", "orthodontics", "hygiene", "retail_hygiene", "pediatric"].includes(srv.category)
-						? srv.category
-						: "therapy";
-					const isPaid = srv.isPaid !== false && apt.paymentStatus !== "unpaid";
-					const priceKop = srv.priceKop ?? Math.round((srv.priceRub || 0) * 100);
-					mapped.push({
-						id: srv.id || `srv-${apt.appointmentId}-${mapped.length}`,
-						dateIso,
-						patientName: apt.patientFullName || "Пациент",
-						medicalCardNumber: apt.cardNumber || "—",
-						serviceNameRu: srv.nameRu || "Стоматологическая процедура",
-						category: cat as DoctorCompletedServiceItem["category"],
-						grossRevenueKop: priceKop,
-						labCostKop: srv.labCostKop ?? Math.round((srv.labCostRub || 0) * 100),
-						materialCostKop: srv.materialCostKop ?? Math.round((srv.materialCostRub || 0) * 100),
-						customCommissionPercent: srv.commissionPercent,
-						doctorId: params.doctorId,
-						performerId: params.doctorId,
-						isPaid,
-						paidAmountKop: srv.paidKop ?? (isPaid ? priceKop : 0),
-					});
-				}
-			}
+	if (data && Array.isArray(data.orders)) {
+		for (const ord of data.orders) {
+			const cat = [
+				"therapy",
+				"orthopedics",
+				"surgery",
+				"orthodontics",
+				"hygiene",
+				"retail_hygiene",
+				"pediatric",
+			].includes(ord.category)
+				? ord.category
+				: "therapy";
+
+			mapped.push({
+				id: ord.id,
+				dateIso: ord.dateIso,
+				patientName: ord.patientName || "Пациент",
+				medicalCardNumber: ord.medicalCardNumber || "—",
+				serviceNameRu: ord.serviceNameRu || "Стоматологическая процедура",
+				category: cat as DoctorCompletedServiceItem["category"],
+				grossRevenueKop: ord.grossKopecks,
+				labCostKop: ord.labCostKopecks,
+				materialCostKop: ord.materialCostKopecks,
+				doctorId: ord.doctorId || params.doctorId,
+				performerId: ord.doctorId || params.doctorId,
+				isPaid: ord.isPaid54Fz,
+				paidAmountKop: ord.isPaid54Fz ? ord.grossKopecks : 0,
+			});
 		}
 	}
 
+	const isPeriodClosed = Array.isArray(data?.closedPeriods) && data.closedPeriods.length > 0;
 	return {
 		services: mapped,
-		isPeriodClosed: Boolean(data?.isPeriodClosed),
-		settlementStatement: data?.settlementStatement ?? null,
+		isPeriodClosed,
+		settlementStatement: data?.summary ?? null,
 	};
 }
 
 export async function fetchDoctorEarningsApi(
-	params: FetchDoctorEarningsParams
+	params: FetchDoctorEarningsParams,
 ): Promise<DoctorCompletedServiceItem[]> {
 	const res = await fetchDoctorEarningsWithStatusApi(params);
 	return res.services;

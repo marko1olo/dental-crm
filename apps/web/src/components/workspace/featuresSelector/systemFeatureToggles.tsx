@@ -6,7 +6,7 @@ export const SYSTEM_FEATURE_TOGGLES: readonly FeatureToggleDef[] = [
 	{
 		key: "hasAssistants",
 		label: "Ассистенты",
-		description: "Отключите, если ведёте приём без ассистента — подписание карты в 1 клик.",
+		description: "Отключите, если ведёте приём без ассистента — быстрое подписание карты.",
 		icon: <Users size={20} />,
 		color: "hsl(262 80% 65%)",
 	},

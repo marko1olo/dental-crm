@@ -201,7 +201,7 @@ export function generateTreatmentPlanEstimateHtml(
     <div class="meta-box">
       <div class="meta-grid">
         <div><strong>Пациент:</strong> ${data.fullName}</div>
-        <div><strong>Медицинская карта 043/у:</strong> № ${data.cardNumber}</div>
+        <div><strong>Медицинская карта:</strong> № ${data.cardNumber}</div>
         <div><strong>Телефон:</strong> ${data.phone}</div>
         <div><strong>Куратор плана лечения:</strong> ${plan.curatingDoctor}</div>
         <div><strong>Наименование плана:</strong> ${plan.titleRu}</div>

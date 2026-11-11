@@ -8,7 +8,7 @@ import {
 	type ExtractionComplexity,
 	type SurgicalHemostasisMethod,
 	type SurgicalServiceItem,
-} from "../../../surgery/surgeryProtocols";
+} from "../../../surgery/surgeryCatalogData";
 
 export interface UseExtractionBarStateParams {
 	readonly effectiveTooth: number;

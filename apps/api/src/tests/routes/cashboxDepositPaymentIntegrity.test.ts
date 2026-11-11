@@ -130,7 +130,7 @@ describe("FIN-05: Cashbox Deposit Integrity & Unauthorized Spend Blocking", () =
 				.where(eq(cashOperations.patientId, patientId));
 			assert.ok(op, "Cash operation must be recorded");
 			assert.equal(Number(op?.amountRub), 20000);
-			assert.ok(op?.reasonText.includes("Зачёт аванса/депозита"));
+			assert.ok(op?.reasonText?.includes("Зачёт аванса/депозита"));
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

@@ -61,8 +61,8 @@ export function InlinePatientFormInputs({
             className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="min-w-0">
             <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Телефон</label>
             <input
               type="tel"
@@ -70,39 +70,39 @@ export function InlinePatientFormInputs({
               value={newPatientPhone}
               onChange={(e) => setNewPatientPhone(e.target.value)}
               placeholder="+7 999 123-45-67"
-              className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+              className="w-full min-w-0 p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Дата рождения</label>
             <input
               type="date"
               value={newPatientBirthDate}
               onChange={(e) => setNewPatientBirthDate(e.target.value)}
-              className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+              className="w-full min-w-0 p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
             />
           </div>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <button
           type="button"
           onClick={handlePrintContract}
           className="secondary-button flex-1 min-h-[44px] py-2 px-3 bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] border border-[var(--line)] font-semibold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           data-testid="quick-booking-inline-print-contract-btn"
-          title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
+          title="Распечатать типовой медицинский договор для заполнения"
         >
-          <FileText size={14} className="text-[var(--teal)]" />
-          <span>Печать договора (_______)</span>
+          <FileText size={14} className="text-[var(--teal)] shrink-0" />
+          <span className="truncate">Бланк договора</span>
         </button>
         <button
           type="submit"
           aria-busy={isCreatingPatient}
           data-testid="quick-booking-create-inline-patient-btn"
-          className="flex-1 min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
         >
-          <Check size={14} />
-          <span>{isCreatingPatient ? "Создаю пациента…" : "Создать и выбрать"}</span>
+          <Check size={14} className="shrink-0" />
+          <span className="truncate">{isCreatingPatient ? "Создаю пациента…" : "Создать и выбрать"}</span>
         </button>
       </div>
     </>

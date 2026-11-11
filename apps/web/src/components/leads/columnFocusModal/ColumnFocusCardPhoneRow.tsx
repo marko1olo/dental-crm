@@ -6,7 +6,7 @@
 import { MessageSquare, Phone } from "lucide-react";
 import React from "react";
 import type { Lead } from "../../../store/leadsStore";
-import { formatWhatsAppUrl } from "../../messaging/omnichannelEngine";
+import { formatWhatsAppUrl } from "@dental/shared";
 import { LeadAudioPlayerWidget } from "../LeadAudioPlayerWidget";
 
 interface ColumnFocusCardPhoneRowProps {

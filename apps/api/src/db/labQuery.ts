@@ -23,16 +23,20 @@ import { and, eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { labOrders, patients } from "./schema.js";
 
-/** Все допустимые статусы заказа ЗТЛ — строгий тип, синхронен с CHECK в 0042. */
+/** Все допустимые статусы заказа ЗТЛ — строгий тип, синхронен с CHECK в 0231. */
 export type LabOrderStatus =
 	| "draft"
 	| "sent"
 	| "in_progress"
 	| "shipped"
 	| "received"
+	| "ready"
+	| "ready_in_clinic"
 	| "refitting"
+	| "fitted"
 	| "completed"
-	| "cancelled";
+	| "cancelled"
+	| "rejected_remake";
 
 /**
  * Допустимые переходы статусов для клиники (staff / admin):
@@ -45,13 +49,17 @@ export const LAB_ORDER_CLINIC_TRANSITIONS: Readonly<
 	Record<LabOrderStatus, readonly LabOrderStatus[]>
 > = {
 	draft: ["sent", "cancelled"],
-	sent: ["in_progress", "shipped", "received", "completed", "cancelled"],
-	in_progress: ["shipped", "received", "refitting", "completed", "cancelled"],
-	shipped: ["received", "refitting", "completed", "cancelled"],
-	received: ["completed", "refitting", "cancelled"],
-	refitting: ["in_progress", "shipped", "received", "completed", "cancelled"],
-	completed: ["refitting"],
-	cancelled: [],
+	sent: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
+	in_progress: ["shipped", "received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled", "rejected_remake"],
+	shipped: ["received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled", "rejected_remake"],
+	received: ["ready", "ready_in_clinic", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
+	ready: ["ready_in_clinic", "received", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
+	ready_in_clinic: ["ready", "received", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
+	refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
+	fitted: ["completed", "refitting", "cancelled", "rejected_remake"],
+	completed: ["refitting", "rejected_remake"],
+	cancelled: ["draft", "sent"],
+	rejected_remake: ["draft", "sent", "cancelled"],
 } as const;
 
 /**
@@ -63,12 +71,16 @@ export const LAB_ORDER_TECHNICIAN_TRANSITIONS: Readonly<
 > = {
 	draft: [],
 	sent: ["in_progress"],
-	in_progress: ["shipped", "refitting"],
-	shipped: ["received"],
-	received: ["completed", "refitting"],
+	in_progress: ["shipped", "ready", "ready_in_clinic", "refitting"],
+	shipped: ["received", "ready", "ready_in_clinic"],
+	received: ["completed", "fitted", "refitting"],
+	ready: ["ready_in_clinic", "completed", "refitting"],
+	ready_in_clinic: ["completed", "fitted", "refitting"],
 	refitting: ["in_progress", "shipped"],
+	fitted: ["completed"],
 	completed: [],
 	cancelled: [],
+	rejected_remake: ["draft", "sent"],
 } as const;
 
 /** Аудит-метки для статусов, которые требуют временну́ю отметку. */

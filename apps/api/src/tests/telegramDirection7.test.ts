@@ -102,7 +102,6 @@ describe("Направление 7: Telegram Integration & Bot Core Invariants",
 		// Инициализация тестового экземпляра Fastify
 		app = createTenantTestApp();
 		await registerTelegramRoutes(app);
-		await registerTelegramWebhookRoutes(app);
 		await app.ready();
 
 		// Настройка основной организации и субъектов в БД

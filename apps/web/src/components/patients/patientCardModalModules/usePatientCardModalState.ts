@@ -19,7 +19,8 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	} = props;
 
 	const targetId = initialPatientId || propPatientId;
-	const demoMatch = targetId ? DEMO_PATIENT_CATALOG.find((p) => p.id === targetId) : null;
+	const isDemo = isDemoShowcaseMode() || (typeof process !== "undefined" && process.env?.NODE_ENV === "test");
+	const demoMatch = (isDemo && targetId) ? DEMO_PATIENT_CATALOG.find((p) => p.id === targetId) : null;
 	const fallbackDemoPatient = demoMatch ? {
 		id: demoMatch.id,
 		fullName: demoMatch.fullName,
@@ -27,7 +28,7 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		birthDate: demoMatch.birthDate,
 		patientBalanceRub: demoMatch.balanceKopecks / 100,
 		doctorClinicalNotes: demoMatch.notes,
-	} : (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT : {});
+	} : (isDemo ? DEMO_SHOWCASE_MODAL_PATIENT : {});
 
 	const rawP = initP ?? initPAlias ?? fallbackDemoPatient;
 	const effP = mapPatientToGeneralInfo(rawP);

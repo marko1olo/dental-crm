@@ -10,7 +10,7 @@
  * - Idempotency & Financial Resilience: clientMutationId & idempotencyKey.
  */
 
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
@@ -278,14 +278,20 @@ export async function processCashboxPayment(
 				? BigInt(rubToKopecks(Number(lockedFamilyGroup.balance || 0)))
 				: 0n;
 
-			// 2. Поиск и блокировка целевых авансов advanceDepositTaggings
+			// 2. Поиск и блокировка целевых авансов advanceDepositTaggings (реляционная привязка по patientId с fallback по patientName)
 			advanceRows = await tx
 				.select()
 				.from(advanceDepositTaggings)
 				.where(
 					and(
 						eq(advanceDepositTaggings.organizationId, orgId),
-						eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
+						or(
+							eq(advanceDepositTaggings.patientId, resolvedPatientId),
+							and(
+								isNull(advanceDepositTaggings.patientId),
+								eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
+							),
+						),
 						inArray(advanceDepositTaggings.allocationStatus, [
 							"unallocated",
 							"pinned",

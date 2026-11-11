@@ -73,7 +73,10 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 		// Динамический расчет тарифов на основе реальных позиций или переданных тарифов
 		const effectiveTiers: TreatmentTierOption[] = useMemo(() => {
 			if (propTiers && propTiers.length > 0) {
-				return propTiers;
+				return propTiers.map((t) => ({
+					...t,
+					tagline: t.tagline.replace(/E\.max/gi, "Премиальная безметалловая керамика"),
+				}));
 			}
 			if (items && items.length > 0) {
 				const baseTotal = items.reduce(
@@ -82,32 +85,14 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				);
 				return [
 					{
-						id: "economy",
-						title: "Эконом",
-						tagline: "Базовая функциональная реабилитация",
-						totalRub: Math.round(baseTotal * 0.75),
-						warrantyYears: 1,
-						accentClass: "border-slate-300 dark:border-slate-700 bg-slate-500/5",
-						badgeText: "Базовый",
-					},
-					{
 						id: "optimum",
-						title: "Оптимум",
-						tagline: "Стандарт клиники: биоинертные материалы и прецизионный протокол",
+						title: "Утверждённый план",
+						tagline: "Согласованный комплекс процедур: премиальная безметалловая керамика и прецизионный протокол",
 						totalRub: baseTotal,
 						warrantyYears: 3,
 						isRecommended: true,
 						accentClass: "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/5 ring-1 ring-[var(--teal)]/30",
-						badgeText: "Стандарт клиники",
-					},
-					{
-						id: "premium",
-						title: "Премиум",
-						tagline: "Максимальная эстетика: керамика E.max и цифровой протокол",
-						totalRub: Math.round(baseTotal * 1.4),
-						warrantyYears: 5,
-						accentClass: "border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30",
-						badgeText: "Премиум",
+						badgeText: "План лечения",
 					},
 				];
 			}
@@ -199,10 +184,14 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 								</div>
 								<div>
 									<h3 className="text-sm font-bold m-0 text-[var(--ink)]">
-										Комплексные планы лечения (3 альтернативы)
+										{effectiveTiers.length > 1
+											? `Комплексные планы лечения (${effectiveTiers.length} альтернативы)`
+											: "План лечения пациента"}
 									</h3>
 									<p className="text-xs text-[var(--muted)] m-0">
-										Выбор варианта реабилитации в 1 клик для пациента у кресла
+										{effectiveTiers.length > 1
+											? "Выбор варианта реабилитации для пациента у кресла"
+											: "Согласованная смета этапов лечения"}
 									</p>
 								</div>
 							</div>
@@ -327,21 +316,32 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 									<span>Черновик</span>
 								</button>
 
+								{onSendToCheckout && (
+									<button
+										type="button"
+										onClick={() => onSendToCheckout(selectedTier, discountedTotalRub)}
+										className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 transition-all cursor-pointer"
+										data-testid="btn-send-to-checkout"
+										title="Передать смету в кассу для формирования чека"
+									>
+										<CreditCard className="w-4 h-4 text-[var(--muted)]" />
+										<span>В кассу</span>
+									</button>
+								)}
+
 								{/* ЕДИНСТВЕННЫЙ PRIMARY CTA НА ВИДИМЫЙ КОНТЕКСТ */}
 								<button
 									type="button"
 									onClick={() => {
-										if (onSendToCheckout) {
-											onSendToCheckout(selectedTier, discountedTotalRub);
-										} else if (onOpenPlanPresenter) {
+										if (onOpenPlanPresenter) {
 											onOpenPlanPresenter(selectedTier);
 										}
 									}}
 									className="primary-button min-h-[44px] px-5 py-2 text-xs font-bold rounded-xl inline-flex items-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer"
 									data-testid="btn-primary-plan-action"
 								>
-									<CreditCard className="w-4 h-4" />
-									<span>Передать в кассу / Презентация</span>
+									<Calendar className="w-4 h-4" />
+									<span>Открыть презентацию</span>
 									<ChevronRight className="w-3.5 h-3.5 opacity-80" />
 								</button>
 							</div>

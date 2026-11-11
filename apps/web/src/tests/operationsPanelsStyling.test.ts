@@ -40,7 +40,7 @@ const OPERATIONS_PANELS = [
  * Tailwind-утилитами с подстановками вида `text-[var(--danger,#e11d48)]` — то
  * есть с зашитым цветом, который этот страж и должен ловить.
  */
-const NESTED_OPERATIONS_BLOCKS = ["pages/DoctorPayoutDashboard.tsx"];
+const NESTED_OPERATIONS_BLOCKS = ["components/analytics/DoctorPayrollReport.tsx"];
 
 const STYLESHEET = "styles/dente-operations.css";
 

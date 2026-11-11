@@ -28,7 +28,7 @@ export function CabinetSanpinChecklist(props: CabinetSanpinChecklistProps) {
 			className="cabinet-sanpin-checklist-container"
 			style={{ marginTop: "0.75rem" }}
 			data-section="Автоматический санитарный контроль готовности кабинета"
-			data-description="Фоновый расчет нормативов без симуляции ручного труда (Норма в 1 клик)"
+			data-description="Фоновый расчет нормативов без симуляции ручного труда (Норма)"
 		>
 			<div
 				style={{

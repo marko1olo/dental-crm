@@ -1,5 +1,4 @@
-import type React from "react";
-import { useCallback, memo } from "react";
+import React, { useCallback, memo } from "react";
 import { getToothConfig, getToothPath } from "../../../utils/math/toothGeometry";
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { useIsTouchScreen } from "../useIsTouchScreen";

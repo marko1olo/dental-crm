@@ -1,7 +1,7 @@
 import type React from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { QuickBookingSlotInfo } from "../../QuickBookingDrawer";
-import type { TargetSlotInfo } from "../../WaitlistDrawer";
+import type { TargetSlotInfo } from "../../waitlist/WaitlistDrawer";
 import type {
   DoctorShift,
   StaffMember as RosterStaffMember,

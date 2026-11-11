@@ -351,7 +351,6 @@ describe("группа действительно смонтирована, а �
 
 	it("жильцы переехали на слоты группы", () => {
 		for (const file of [
-			"components/VoiceAssistantUI.tsx",
 			"components/Omnibar.tsx",
 		]) {
 			const source = readSource(file);

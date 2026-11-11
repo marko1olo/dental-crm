@@ -62,7 +62,7 @@ export const ImagingToothVisitGroup: React.FC<ImagingToothVisitGroupProps> = ({
 							? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold"
 							: "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white hover:brightness-105"
 					}`}
-					title={isAttachedToCurrentVisit ? "Снимок прикреплен к текущему приёму" : "Привязать снимок к приёму в 1 клик"}
+					title={isAttachedToCurrentVisit ? "Снимок прикреплен к текущему приёму" : "Привязать снимок к приёму"}
 					onClick={() => onAttachToVisit?.(activeAppointment.id)}
 				>
 					<Check size={14} className={isAttachedToCurrentVisit ? "text-emerald-500" : "text-white stroke-[2.5]"} />

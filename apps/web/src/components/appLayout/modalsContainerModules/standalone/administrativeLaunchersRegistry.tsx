@@ -19,7 +19,7 @@ import { DirectCashboxLauncher } from "../../../cashbox/DirectCashboxLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 import { DirectSanpinLauncher } from "../../../sanpin/DirectSanpinLauncher";
 import { DirectSterilizationLauncher } from "../../../sanpin/DirectSterilizationLauncher";
-import { PatientOmnichannelHubModal } from "../../../messaging/PatientOmnichannelHubModal";
+import { OmnichannelOperatorDesk } from "../../../chat/OmnichannelOperatorDesk";
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectUkepSigningLauncher } from "../../../documents/ukep/DirectUkepSigningLauncher";
@@ -32,6 +32,7 @@ import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLaunche
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
+import { DirectWaitlistMatchesLauncher } from "../../../schedule/DirectWaitlistMatchesLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
@@ -243,7 +244,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			return null;
 		},
 	},
-	// 13. Омниканальный центр сообщений
+	// 13. Омниканальный центр сообщений (SSOT)
 	{
 		id: "omnichannel-hub",
 		title: "Омниканальный центр сообщений",
@@ -251,8 +252,8 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			tokens: ["omnichannel_hub", "messaging_hub"],
 		},
 		render: () => (
-			<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
-				<PatientOmnichannelHubModal isOpen={true} onClose={() => {}} portal={false} />
+			<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen p-2 sm:p-4 bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
+				<OmnichannelOperatorDesk className="flex-1 w-full h-full" />
 			</div>
 		),
 	},
@@ -367,6 +368,18 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			hashPrefixes: ["#settings?", "#settings/", "#clinic-setup?", "#clinic-requisites?"],
 		},
 		render: () => <DirectSettingsLauncher />,
+	},
+	// 21. Лист ожидания и подбор пациентов в освободившийся слот (SSOT)
+	{
+		id: "waitlist-matches",
+		title: "Лист ожидания и подбор пациентов",
+		criteria: {
+			tokens: ["waitlist-matches", "waitlist_matches"],
+			searchIncludes: ["waitlist-matches=true", "waitlist_matches=true"],
+			exactHashes: ["#waitlist-matches", "#waitlist_matches"],
+			hashPrefixes: ["#waitlist-matches?", "#waitlist_matches?"],
+		},
+		render: () => <DirectWaitlistMatchesLauncher />,
 	},
 ];
 

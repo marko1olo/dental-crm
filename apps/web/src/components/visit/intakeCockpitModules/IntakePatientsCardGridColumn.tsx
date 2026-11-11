@@ -43,7 +43,7 @@ export function IntakePatientsCardGridColumn({
 					</h3>
 				</div>
 				<span className="text-[11px] text-[var(--muted)] font-medium">
-					Открытие медицинской карты в 1 клик
+					Открытие медицинской карты
 				</span>
 			</div>
 

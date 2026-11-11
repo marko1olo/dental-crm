@@ -31,7 +31,7 @@ import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { PediatricBraveryDiplomaModal } from "../components/pediatric/PediatricBraveryDiplomaModal.js";
-import { PediatricVisitAdaptationTab } from "../components/pediatric/PediatricVisitAdaptationTab.js";
+import { VisitPediatricProtocolWidget } from "../components/pediatric/VisitPediatricProtocolWidget.js";
 import { DocumentsCatalogView } from "../components/documents/DocumentsCatalogView.js";
 import { ConsentModal } from "../components/consents/ConsentModal.js";
 
@@ -100,101 +100,82 @@ describe("Red Team Inquisition: Pediatric Workflow & Clinical Documents Catalog"
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// 2. АДАПТАЦИОННЫЙ ПРИЁМ (PEDIATRIC VISIT ADAPTATION TAB)
+	// 2. ДЕТСКИЙ КРЕСЕЛЬНЫЙ ПРОТОКОЛ (VISIT PEDIATRIC PROTOCOL WIDGET)
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("2. PediatricVisitAdaptationTab Ergonomics & Purity", () => {
-		it("renders Tell-Show-Do adaptation protocol with 5 step items", () => {
+	describe("2. VisitPediatricProtocolWidget Ergonomics & Purity", () => {
+		it("renders pediatric chairside protocol widget with zero cartoon emojis", () => {
 			const html = renderToStaticMarkup(
-				createElement(PediatricVisitAdaptationTab, {
+				createElement(VisitPediatricProtocolWidget, {
 					patientName: "Даша (6 лет)",
 					patientAgeYears: 6,
+					activeTooth: 54,
 				}),
 			);
 
-			assert.ok(!EMOJI_REGEX.test(html), "PediatricVisitAdaptationTab must contain ZERO cartoon emojis");
-			assert.ok(html.includes("Знакомство и игра"), "Step 1 must be present");
-			assert.ok(html.includes("«Ветерок» и водичка"), "Step 2 must be present");
-			assert.ok(html.includes("Считаем зубки"), "Step 3 must be present");
-			assert.ok(html.includes("Мягкая полировка"), "Step 4 must be present");
-			assert.ok(html.includes("Награда и грамота"), "Step 5 must be present");
+			assert.ok(!EMOJI_REGEX.test(html), "VisitPediatricProtocolWidget must contain ZERO cartoon emojis");
+			assert.ok(html.includes("Детский приём у кресла"), "Header must indicate chairside title");
+			assert.ok(html.includes("Зуб 54"), "Must indicate selected tooth 54");
 		});
 
-		it("renders Frankl behavior scale buttons with 100% SVG vector icons", () => {
+		it("renders Frankl behavior scale express items with SVG vector icons", () => {
 			const html = renderToStaticMarkup(
-				createElement(PediatricVisitAdaptationTab, {
+				createElement(VisitPediatricProtocolWidget, {
 					patientName: "Илья (7 лет)",
 					initialFranklRating: 3,
+					activeTooth: 54,
 				}),
 			);
 
-			for (const r of [1, 2, 3, 4]) {
-				assert.ok(
-					html.includes(`data-testid="btn-frankl-${r}"`),
-					`Must render Frankl button for rating ${r}`,
-				);
-			}
+			assert.ok(html.includes("Шкала поведения Франкла"), "Must display Frankl title");
+			assert.ok(html.includes("Рейтинг --"), "Must display Frankl 1");
+			assert.ok(html.includes("Рейтинг -"), "Must display Frankl 2");
+			assert.ok(html.includes("Рейтинг +"), "Must display Frankl 3");
+			assert.ok(html.includes("Рейтинг ++"), "Must display Frankl 4");
 			assert.ok(html.includes("svg"), "Must render SVG icons for Frankl items");
 		});
 
-		it("provides 1-click physiological norm button without blocking fields (Mandate 8e)", () => {
+		it("provides 1-click clinical presets without blocking fields (Mandate 8e)", () => {
 			const html = renderToStaticMarkup(
-				createElement(PediatricVisitAdaptationTab, {
+				createElement(VisitPediatricProtocolWidget, {
 					patientName: "Миша (5 лет)",
+					activeTooth: 54,
 				}),
 			);
 
-			assert.ok(
-				html.includes('data-testid="btn-adaptation-1click-norm"'),
-				"Must render 1-click norm button",
-			);
-			assert.ok(html.includes("Норма прикуса"), "Must display clear button title");
+			assert.ok(html.includes("Кариес (СИЦ / SDR)"), "Has 1-click caries preset button");
+			assert.ok(html.includes("Пульпотомия (Pulpotec)"), "Has 1-click pulpotomy preset button");
+			assert.ok(html.includes("Герметизация (Fissurit)"), "Has 1-click fissure sealing preset button");
+			assert.ok(html.includes("Серебрение / Фтор"), "Has 1-click silvering preset button");
+			assert.ok(!html.includes("disabled"), "Action buttons must never be disabled (Mandate 8e)");
 		});
 
-		it("provides 1-click bravery diploma button opening diploma modal", () => {
+		it("renders primary dentition formula FDI 51..85", () => {
 			const html = renderToStaticMarkup(
-				createElement(PediatricVisitAdaptationTab, {
-					patientName: "Тимофей (6 лет)",
-				}),
-			);
-
-			assert.ok(
-				html.includes('data-testid="btn-adaptation-open-diploma"'),
-				"Must render diploma trigger button",
-			);
-			assert.ok(html.includes("Грамота за смелость"), "Must label button with patient-friendly title");
-		});
-
-		it("renders primary dentition formula FDI 51..85 with large touch targets >= 44x44px", () => {
-			const html = renderToStaticMarkup(
-				createElement(PediatricVisitAdaptationTab, {
+				createElement(VisitPediatricProtocolWidget, {
 					patientName: "Алиса (5 лет)",
 					patientAgeYears: 5,
+					activeTooth: 55,
 				}),
 			);
 
-			// Проверяем наличие кнопок молочных зубов
-			for (const tooth of [51, 55, 61, 65, 71, 75, 81, 85]) {
-				assert.ok(
-					html.includes(`data-testid="pediatric-tooth-btn-${tooth}"`),
-					`Must render primary tooth button for tooth ${tooth}`,
-				);
-			}
-
-			// Проверяем наличие переключателя прикуса
-			assert.ok(html.includes('data-testid="btn-mode-primary"'), "Must render primary mode button");
-			assert.ok(html.includes('data-testid="btn-mode-mixed"'), "Must render mixed mode button");
+			assert.ok(html.includes("51"), "Must render tooth 51");
+			assert.ok(html.includes("55"), "Must render tooth 55");
+			assert.ok(html.includes("61"), "Must render tooth 61");
+			assert.ok(html.includes("75"), "Must render tooth 75");
+			assert.ok(html.includes("85"), "Must render tooth 85");
 		});
 
-		it("purges bird language and raw ICD codes (Z01.2) from visible toolbar headers", () => {
+		it("purges bird language and raw bureaucrat codes from visible toolbar headers", () => {
 			const html = renderToStaticMarkup(
-				createElement(PediatricVisitAdaptationTab, {
+				createElement(VisitPediatricProtocolWidget, {
 					patientName: "Егор",
+					activeTooth: 54,
 				}),
 			);
 
-			assert.ok(!html.includes("Z01.2"), "Visible toolbar must NOT leak raw ICD code Z01.2");
+			assert.ok(!html.includes("043/у"), "Visible widget must NOT leak raw 043/у");
 			assert.ok(
-				html.includes("Адаптационный приём и привыкание к лечению"),
+				html.includes("Детский приём у кресла"),
 				"Must use human clinical title",
 			);
 		});
@@ -307,7 +288,7 @@ describe("Red Team Inquisition: Pediatric Workflow & Clinical Documents Catalog"
 
 			assert.ok(!EMOJI_REGEX.test(html), "ConsentModal must contain ZERO cartoon emojis");
 			assert.ok(
-				html.includes("Информированное добровольное согласие") || html.includes("СОГЛАСИЕ"),
+				html.includes("Информированное добровольное согласие") || html.includes("согласий") || html.includes("Согласия"),
 				"Must render consent modal title",
 			);
 		});

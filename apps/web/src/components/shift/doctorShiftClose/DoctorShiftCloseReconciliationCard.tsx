@@ -125,7 +125,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 						</span>
 					</button>
 					<span className="text-[11px] text-[var(--muted)]">
-						Акт передачи выручки в сейф / банк в 1 клик
+						Акт передачи выручки в сейф / банк
 					</span>
 				</div>
 			)}

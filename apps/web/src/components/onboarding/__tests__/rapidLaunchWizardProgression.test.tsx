@@ -319,7 +319,7 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 			assert.ok(html.includes("Мастер быстрого запуска клиники"));
 			assert.ok(html.includes("Пропустить и настроить позже"));
 			assert.ok(html.includes("Начать приём прямо сейчас (Пропустить настройку)"));
-			assert.ok(html.includes("0-клик старт (соло-врач)"));
+			assert.ok(html.includes("Быстрый старт (соло-врач)"));
 			assert.ok(html.includes("Профиль и Режим"));
 			assert.ok(html.includes("Кресла и График"));
 			assert.ok(html.includes("Стартовый Прайс"));
@@ -349,7 +349,7 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 			const html = renderToString(<Step3StarterPricelist />);
 
 			assert.ok(html.includes("Базовый прейскурант"));
-			assert.ok(html.includes("1-клик быстрое наполнение прайса"));
+			assert.ok(html.includes("Быстрое наполнение прайса"));
 			assert.ok(html.includes("B01.065.001"));
 			assert.ok(html.includes("A11.07.012"));
 			assert.ok(html.includes("A16.07.002.001"));

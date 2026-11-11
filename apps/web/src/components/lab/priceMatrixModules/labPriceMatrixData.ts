@@ -66,9 +66,9 @@ export const CANONICAL_LAB_PRICE_MATRIX: readonly LabPriceMatrixItem[] = [
 		nameRu: "Бюгельный протез с замковыми креплениями",
 		shortTitle: "Бюгель замковый",
 		material: "Co-Cr литой каркас с аттачменами",
-		turnaroundBusinessDays: 10,
-		suggestedCostRub: 11000,
-		suggestedPriceRub: 32000,
+		turnaroundBusinessDays: 8,
+		suggestedCostRub: 13000,
+		suggestedPriceRub: 38000,
 		doctorDeductionPct: 50,
 		specialInstructions:
 			"Прецизионные микрозамки, анатомическая постановка зубов.",

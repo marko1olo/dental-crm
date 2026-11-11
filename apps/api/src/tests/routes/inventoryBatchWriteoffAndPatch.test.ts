@@ -166,6 +166,7 @@ describe("POST /api/v1/inventory/batch-writeoff & PATCH items (Mandates 8e, 8n)"
 				.select()
 				.from(inventoryItems)
 				.where(and(eq(inventoryItems.id, ITEM_BOND_ID), eq(inventoryItems.organizationId, ORG_ID)));
+			assert.ok(bondRow);
 			assert.equal(Number(bondRow.stockQuantity), -1);
 
 			const txs = await tx
@@ -173,6 +174,7 @@ describe("POST /api/v1/inventory/batch-writeoff & PATCH items (Mandates 8e, 8n)"
 				.from(inventoryTransactions)
 				.where(and(eq(inventoryTransactions.organizationId, ORG_ID), eq(inventoryTransactions.itemId, ITEM_BOND_ID)));
 			assert.ok(txs.length > 0);
+			assert.ok(txs[0]);
 			assert.equal(txs[0].isOverdraft, true);
 		});
 	});

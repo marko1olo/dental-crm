@@ -11,7 +11,7 @@ export function CyclePresetsSelector({ selectedRegimeId, onSelectPreset }: Cycle
 	return (
 		<div className="sanpin-form-group" style={{ margin: 0 }}>
 			<label className="sanpin-form-label" style={{ margin: "0 0 0.35rem 0", fontWeight: 700 }}>
-				Клинические пресеты цикла (выбор в 1 клик)
+				Клинические пресеты цикла
 			</label>
 			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.5rem" }}>
 				{CLINICAL_AUTOCLAVE_1CLICK_PRESETS.map((p, idx) => {

@@ -2,7 +2,7 @@ import React from "react";
 import { Tooth46AdvancedPathologyOverlay } from "./Tooth46AdvancedPathologyOverlay";
 import { Tooth46CalculusOverlay } from "./Tooth46CalculusOverlay";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
-import { Tooth46PostCoreOverlay } from "./Tooth46PostCoreOverlay";
+import { Tooth46PostCoreOverlay } from "./teeth/tooth46/Tooth46PostCoreOverlay";
 import type { PostCoreType } from "./tooth46Types";
 
 export interface Tooth46PathologyOverlayProps {

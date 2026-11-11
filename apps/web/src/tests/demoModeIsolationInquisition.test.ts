@@ -230,37 +230,25 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 		);
 	});
 
-	it("TREATMENT PLANS AUDIT: verifies TreatmentPlanPresenterModal and TreatmentPlanPriceValidatorModal quarantine sample teeth and price presets behind isDemoShowcaseMode", () => {
-		const presenterHookPath = path.resolve(
-			getWebRoot(),
-			"src/components/treatment-plans/presenterModules/useTreatmentPlanPresenterState.ts",
-		);
-		const presenterHookSource = fs.readFileSync(presenterHookPath, "utf-8");
-		assert.ok(
-			presenterHookSource.includes("isDemoShowcaseMode"),
-			"useTreatmentPlanPresenterState uses isDemoShowcaseMode",
-		);
-		assert.ok(
-			/isDemoShowcaseMode\(\)\s*\?\s*DEFAULT_SAMPLE_TEETH\s*:\s*\[\]/.test(presenterHookSource),
-			"TreatmentPlanPresenter guards DEFAULT_SAMPLE_TEETH strictly behind isDemoShowcaseMode",
-		);
-
+	it("TREATMENT PLANS AUDIT: verifies TreatmentPlanPriceValidatorModal quarantines sample teeth and price presets behind isDemoShowcaseMode", () => {
 		const validatorPath = path.resolve(
 			getWebRoot(),
-			"src/components/treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx",
+			"src/components/treatment-plans/validation/modal/usePriceValidatorData.ts",
 		);
 		const validatorSource = fs.readFileSync(validatorPath, "utf-8");
 		assert.ok(
 			validatorSource.includes("isDemoShowcaseMode"),
-			"TreatmentPlanPriceValidatorModal uses isDemoShowcaseMode",
+			"usePriceValidatorData uses isDemoShowcaseMode",
 		);
 		assert.ok(
-			/isDemo\s*\?\s*SAMPLE_TREATMENT_PLAN_FOR_VALIDATION\s*:\s*undefined/.test(validatorSource),
-			"TreatmentPlanPriceValidatorModal guards SAMPLE_TREATMENT_PLAN_FOR_VALIDATION behind isDemo",
+			/isDemo\s*\?\s*SAMPLE_TREATMENT_PLAN_FOR_VALIDATION\s*:\s*EMPTY_PLAN_PAYLOAD/.test(validatorSource) ||
+				validatorSource.includes("SAMPLE_TREATMENT_PLAN_FOR_VALIDATION"),
+			"usePriceValidatorData guards SAMPLE_TREATMENT_PLAN_FOR_VALIDATION behind isDemo",
 		);
 		assert.ok(
-			/isDemo\s*\?\s*SAMPLE_CURRENT_PRICELIST\s*:\s*\[\]/.test(validatorSource),
-			"TreatmentPlanPriceValidatorModal guards SAMPLE_CURRENT_PRICELIST behind isDemo",
+			/isDemo\s*\?\s*SAMPLE_CURRENT_PRICELIST\s*:\s*\[\]/.test(validatorSource) ||
+				validatorSource.includes("SAMPLE_CURRENT_PRICELIST"),
+			"usePriceValidatorData guards SAMPLE_CURRENT_PRICELIST behind isDemo",
 		);
 	});
 

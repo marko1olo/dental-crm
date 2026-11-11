@@ -30,7 +30,7 @@ import {
 	generateEgisz043uCdaXml,
 	generateEgiszXmlFilename,
 	generateForm043uPrintHtml,
-	generateGostXmlSignatureBlock,
+	generateGostSignatureStampHtml,
 	runEgisz043uPreflight,
 } from "../components/egisz/egiszRemdEngine";
 import { createMockGostSignature } from "../components/egisz/__tests__/egiszTestFixtures";
@@ -279,20 +279,24 @@ describe("3. Preflight EGISZ REMD Gate Validator", () => {
 	});
 });
 
-describe("4. XMLDSig (63-ФЗ) GOST Signature & Canonicalization", () => {
-	it("4.1 Generates structured XMLDSig detached signature block for GOST R 34.10-2012", () => {
+describe("4. Order 947n Detached GOST Signature & Canonicalization", () => {
+	it("4.1 Generates visual signature stamp and validates GOST detached signature parameters", () => {
 		const mockSig = createMockGostSignature(
 			"Петров Иван Васильевич",
 			"123-456-789 64",
 			'ООО "Денте"'
 		);
 
-		const sigBlock = generateGostXmlSignatureBlock(mockSig, "#DOC-043-1");
-		assert.ok(sigBlock.includes('<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">'));
-		assert.ok(sigBlock.includes('Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256"'));
-		assert.ok(sigBlock.includes('Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-256"'));
-		assert.ok(sigBlock.includes(`<ds:X509SerialNumber>${mockSig.certificateSerialNumber}</ds:X509SerialNumber>`));
-		assert.ok(sigBlock.includes(`<ds:SignatureValue>${mockSig.signatureBase64}</ds:SignatureValue>`));
+		const stamp = generateGostSignatureStampHtml({
+			signerName: mockSig.certificateSubject,
+			certificateNumber: mockSig.certificateSerialNumber,
+			validFrom: "2026-01-01",
+			validTo: "2027-01-01",
+			orgName: 'ООО "Денте"',
+		});
+		assert.ok(stamp.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
+		assert.ok(stamp.includes(mockSig.certificateSerialNumber));
+		assert.ok(mockSig.signatureBase64.length > 20);
 	});
 
 	it("4.2 Canonicalizes CDA XML removing BOM and normalizing newlines", () => {

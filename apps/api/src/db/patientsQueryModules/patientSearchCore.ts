@@ -455,7 +455,11 @@ export async function updatePatientInDb(
 
 			if (input.familyGroupId !== null) {
 				const [family] = await db
-					.select({ id: schema.familyGroups.id })
+					.select({
+						id: schema.familyGroups.id,
+						headPatientId: schema.familyGroups.headPatientId,
+						primaryPatientId: schema.familyGroups.primaryPatientId,
+					})
 					.from(schema.familyGroups)
 					.where(
 						and(
@@ -468,6 +472,59 @@ export async function updatePatientInDb(
 					throw new Error(
 						"Указанная семейная группа не найдена в вашей организации",
 					);
+				}
+
+				const ownerId = family.headPatientId || family.primaryPatientId;
+				if (ownerId && ownerId !== patientId) {
+					// Автоматически гарантируем авторизацию родственной связи для списания с семейного депозита (SEV-1 BOLA fix)
+					const [existingRel] = await db
+						.select({ id: schema.patientRelationships.id })
+						.from(schema.patientRelationships)
+						.where(
+							and(
+								eq(schema.patientRelationships.organizationId, organizationId),
+								or(
+									and(
+										eq(schema.patientRelationships.patientId, ownerId),
+										eq(schema.patientRelationships.relatedPatientId, patientId),
+									),
+									and(
+										eq(schema.patientRelationships.patientId, patientId),
+										eq(schema.patientRelationships.relatedPatientId, ownerId),
+									),
+								),
+							),
+						)
+						.limit(1);
+
+					if (existingRel) {
+						await db
+							.update(schema.patientRelationships)
+							.set({
+								canSpendFamilyWallet: true,
+								isPrimaryPayer: true,
+								updatedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(schema.patientRelationships.id, existingRel.id),
+									eq(schema.patientRelationships.organizationId, organizationId),
+								),
+							);
+					} else {
+						await db.insert(schema.patientRelationships).values({
+							organizationId,
+							patientId: ownerId,
+							relatedPatientId: patientId,
+							relationshipType: "relative",
+							isLegalRepresentative: false,
+							canViewMedicalRecord: true,
+							canSignConsents: false,
+							canSpendFamilyWallet: true,
+							isPrimaryPayer: true,
+							canViewRecords: true,
+						});
+					}
 				}
 			}
 			updateData.familyGroupId = input.familyGroupId;

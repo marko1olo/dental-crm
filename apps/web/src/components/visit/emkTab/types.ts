@@ -14,11 +14,11 @@ export interface VisitEmkTabProps {
 	visitNoteForm?: Record<string, unknown>;
 	updateVisitNoteField?: (field: string, value: unknown) => void;
 	draft?: unknown;
-	patientHistory?: unknown;
+	patientHistory?: VisitEmkOdontogramBarProps["patientHistory"];
 	activePatient?: any;
 	dashboard?: any;
 	openVisitId?: string;
-	isDraftAccepting?: boolean;
+	isDraftAccepting?: boolean | undefined;
 	[key: string]: any;
 }
 
@@ -82,7 +82,7 @@ export interface VisitEmkCompletionSectionProps {
 	setIsRevisingVisitNote: (revising: boolean) => void;
 	handleSaveVisitNote: () => Promise<void>;
 	handleCompleteVisitAndGenerateReceipt: () => Promise<void>;
-	isDraftAccepting?: boolean;
+	isDraftAccepting?: boolean | undefined;
 	isCompletingVisit: boolean;
 	completionResult: ClinicalVisitCompletionResult | null;
 	completionError?: string | null | undefined;

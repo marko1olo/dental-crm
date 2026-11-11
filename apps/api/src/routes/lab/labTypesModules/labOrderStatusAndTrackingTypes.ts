@@ -36,72 +36,58 @@ export const createLabOrderEventSchema = z.object({
 });
 
 /**
- * Вспомогательное сопоставление клинического этапа ЗТЛ на допустимый статус lab_orders.status (0042 CHECK).
+ * Вспомогательное сопоставление клинического этапа ЗТЛ на допустимый статус lab_orders.status.
  */
 export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
-	switch (stage) {
-		case "sent_to_lab":
+	if (!stage) return null;
+	const s = stage.trim().toLowerCase();
+	switch (s) {
+		case "draft":
+			return "draft";
 		case "sent":
-		case "scan_sent":
+		case "sent_to_lab":
 		case "impression_scan":
-		case "impression":
-		case "scan":
-		case "Слепок/Скан":
+		case "scan_sent":
+		case "слепок/скан":
 			return "sent";
 		case "in_progress":
 		case "in_production":
-		case "model_cad_design":
-		case "cad_cam":
-		case "framework_wax_milling":
-		case "sintering_ceramic_layering":
-		case "sintering_glaze":
-		case "final_glaze":
+		case "cad_design":
 		case "framework_fitting":
-		case "framework":
-		case "Каркас/Примерка":
 		case "ceramic_layering":
-		case "ceramic":
-		case "Нанесение керамики":
 			return "in_progress";
 		case "shipped":
 		case "shipped_to_clinic":
 		case "fitting_ready":
 			return "shipped";
-		case "delivered_to_clinic":
+		case "ready":
 		case "received":
 		case "in_clinic":
-		case "clinic_received":
 		case "ready_in_clinic":
-		case "ready":
-		case "ready_work":
-		case "Готовая работа":
+		case "delivered_to_clinic":
+		case "готовая работа":
 			return "ready_in_clinic";
 		case "fitting":
+		case "fitted":
 		case "fitting_scheduled":
 		case "fitting_in_mouth":
-		case "Примерка":
-		case "Примерка во рту":
-		case "fitted":
+		case "примерка":
+		case "примерка во рту":
 			return "fitted";
-		case "correction_remake":
-		case "warranty_rework":
 		case "refitting":
 		case "rework":
 		case "rejected_remake":
-		case "Переделка":
-		case "Рекламация":
+		case "correction_remake":
+		case "warranty_rework":
+		case "переделка":
+		case "рекламация":
 			return "refitting";
-		case "delivered_completed":
 		case "completed":
 		case "seated":
-		case "patient_fixation":
-		case "fixation":
-		case "Фиксация":
+		case "фиксация":
 			return "completed";
 		case "cancelled":
 			return "cancelled";
-		case "draft":
-			return "draft";
 		default:
 			return null;
 	}

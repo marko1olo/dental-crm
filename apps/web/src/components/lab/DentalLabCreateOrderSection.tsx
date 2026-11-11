@@ -83,7 +83,6 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 		<aside className={`dental-lab-left-column ${activeMainTab === "new_order" ? "mobile-visible" : "mobile-hidden"}`} data-testid="lab-order-create-panel">
 			<div className="flex items-center justify-between">
 				<h3 className="text-xs font-bold tracking-tight text-[var(--ink-muted)]">Экспресс-наряд у кресла</h3>
-				<span className="text-[11px] text-[var(--teal)] font-semibold">10 секунд</span>
 			</div>
 			{/* Пациент (автокомплит из базы клиники или свободный ввод ФИО) */}
 			<div className="space-y-1">

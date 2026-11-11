@@ -789,8 +789,8 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			assert.equal(batch.actualExposureMinutes, 5.5);
 			assert.equal(batch.packsCount, 18);
 			assert.equal(batch.chamberPoints.length, 5);
-			assert.ok(batch.notes.includes("Soft Negative Stock"));
-			assert.ok(batch.notes.includes("Режим 134°C, 2.15 бар, 5 мин"));
+			assert.ok(batch.notes?.includes("Soft Negative Stock"));
+			assert.ok(batch.notes?.includes("Режим 134°C, 2.15 бар, 5 мин"));
 			assert.ok(batch.id.startsWith("F257-20260925-"));
 			assert.ok(batch.id.includes("-C01"));
 			assert.ok(batch.digitalStampHash.startsWith("DENTE-CSO-257-"));
@@ -825,7 +825,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			const form257 = exportChairsidePouchToForm257Record(pouch);
 			assert.equal(form257.isCyclePassed, true);
 			assert.equal(form257.chamberPoints.length, 5);
-			assert.ok(form257.notes.includes("Мандат 8aa"));
+			assert.ok(form257.notes?.includes("Мандат 8aa"));
 		});
 	});
 });

@@ -66,6 +66,12 @@ export function LeadsFunnelAnalyticsModal(
 						isWaterfallOpen={ctrl.isWaterfallOpen}
 						onToggleWaterfall={ctrl.toggleWaterfall}
 					/>
+					<FunnelBudgetAdjusterPanel
+						isOpen={ctrl.isBudgetDrawerOpen}
+						customSpends={ctrl.customSpends}
+						onBudgetChange={ctrl.handleBudgetChange}
+						onResetBudgets={ctrl.handleResetBudgets}
+					/>
 					<FunnelSourcesBreakdownTable
 						channels={channels}
 						summary={summary}

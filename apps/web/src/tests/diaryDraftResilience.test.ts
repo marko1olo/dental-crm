@@ -338,8 +338,16 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 	});
 
 	test("Мандат 8c / 8e: Полный запрет на window.alert, window.confirm и window.prompt в коде дневника", () => {
-		const soapEditorCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
+		const inlineFormCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
+			"utf-8",
+		);
+		const diariesTabCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
+			"utf-8",
+		);
+		const visitEmkTabCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitEmkTab.tsx"),
 			"utf-8",
 		);
 		const debouncedTextareaCode = fs.readFileSync(
@@ -347,13 +355,16 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 			"utf-8",
 		);
 
-		assert.ok(!soapEditorCode.includes("window.alert"), "VisitSoapEditor не должен вызывать window.alert");
-		assert.ok(!soapEditorCode.includes("window.confirm"), "VisitSoapEditor не должен вызывать window.confirm");
-		assert.ok(!soapEditorCode.includes("window.prompt"), "VisitSoapEditor не должен вызывать window.prompt");
-
-		assert.ok(!debouncedTextareaCode.includes("window.alert"), "DebouncedEmkTextarea не должен вызывать window.alert");
-		assert.ok(!debouncedTextareaCode.includes("window.confirm"), "DebouncedEmkTextarea не должен вызывать window.confirm");
-		assert.ok(!debouncedTextareaCode.includes("window.prompt"), "DebouncedEmkTextarea не должен вызывать window.prompt");
+		for (const [name, code] of [
+			["RecordNewDiaryInlineForm", inlineFormCode],
+			["RecordDiariesTab", diariesTabCode],
+			["VisitEmkTab", visitEmkTabCode],
+			["DebouncedEmkTextarea", debouncedTextareaCode],
+		] as const) {
+			assert.ok(!code.includes("window.alert"), `${name} не должен вызывать window.alert`);
+			assert.ok(!code.includes("window.confirm"), `${name} не должен вызывать window.confirm`);
+			assert.ok(!code.includes("window.prompt"), `${name} не должен вызывать window.prompt`);
+		}
 	});
 
 	test("Мандат 8e: DebouncedEmkTextarea калиброван на 400ms и слушает телефонию и смену вкладок", () => {
@@ -384,83 +395,101 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 		);
 	});
 
-	function getSoapEditorFullCode(): string {
-		const facadePath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/visit/VisitSoapEditor.tsx",
-		);
-		const soapDir = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/visit/soapEditor",
-		);
-		let code = fs.existsSync(facadePath)
-			? fs.readFileSync(facadePath, "utf-8")
-			: "";
-		if (fs.existsSync(soapDir)) {
-			for (const file of fs.readdirSync(soapDir)) {
-				if (file.endsWith(".ts") || file.endsWith(".tsx")) {
-					code += `\n${fs.readFileSync(path.join(soapDir, file), "utf-8")}`;
-				}
-			}
-		}
-		return code;
+	function getCanonicalDiaryCode(): string {
+		const paths = [
+			"apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx",
+			"apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx",
+			"apps/web/src/components/visit/VisitEmkTab.tsx",
+			"apps/web/src/components/visit/emkTabModules/useVisitEmkTabController.ts",
+			"apps/web/src/components/visit/useVisitSave.ts",
+			"apps/web/src/components/visit/save/visitDraftStorage.ts",
+			"apps/web/src/components/visit/save/useVisitSaveUnloadFlush.ts",
+			"apps/web/src/components/visit/emk/emkToolbarModules/EmkQuickActionButtons.tsx",
+		];
+		return paths
+			.map((rel) => {
+				const abs = path.resolve(process.cwd(), rel);
+				return fs.existsSync(abs) ? fs.readFileSync(abs, "utf-8") : "";
+			})
+			.join("\n");
 	}
 
-	test("Мандат 8e: VisitSoapEditor содержит дуальное сохранение в localStorage и IndexedDB", () => {
-		const soapEditorCode = getSoapEditorFullCode();
+	test("Мандат 8e: Канонический контур сохранения ЭМК выполняет дуальное сохранение в localStorage и IndexedDB", () => {
+		const storageCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/save/visitDraftStorage.ts"),
+			"utf-8",
+		);
+		const unloadFlushCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/save/useVisitSaveUnloadFlush.ts"),
+			"utf-8",
+		);
+		const diariesTabCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
+			"utf-8",
+		);
 
 		assert.ok(
-			soapEditorCode.includes("saveOfflineDraft"),
-			"VisitSoapEditor должен выполнять дуальное сохранение в офлайн-очередь IndexedDB",
+			storageCode.includes("saveVisitDraft"),
+			"visitDraftStorage должен выполнять дуальное сохранение в офлайн-очередь IndexedDB",
 		);
 		assert.ok(
-			soapEditorCode.includes("safeLocalStorageSetItem"),
-			"VisitSoapEditor должен выполнять синхронное сохранение в localStorage",
+			storageCode.includes("localStorage.setItem"),
+			"visitDraftStorage должен выполнять синхронное сохранение в localStorage",
 		);
 		assert.ok(
-			soapEditorCode.includes('data-testid="banner-draft-recovery"'),
-			"VisitSoapEditor должен содержать неблокирующий баннер восстановления черновика",
+			unloadFlushCode.includes("flushPendingOfflineDrafts") && unloadFlushCode.includes("sendBeacon"),
+			"useVisitSaveUnloadFlush должен сбрасывать офлайн-черновики при закрытии",
 		);
 		assert.ok(
-			soapEditorCode.includes('data-testid="btn-restore-draft"'),
-			"В баннере должна быть кнопка быстрого восстановления черновика",
-		);
-		assert.ok(
-			soapEditorCode.includes('data-testid="btn-discard-draft"'),
-			"В баннере должна быть кнопка сброса черновика",
+			diariesTabCode.includes("sessionStorage.getItem(draftStorageKey)") && diariesTabCode.includes("triggerAutosave"),
+			"RecordDiariesTab должен восстанавливать и автосохранять черновики без блокировок",
 		);
 	});
 
 	test("Мандат 8z: Полное искоренение советских кодов 043/у и 834н из пользовательского интерфейса", () => {
-		const soapEditorCode = getSoapEditorFullCode();
+		const inlineFormCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
+			"utf-8",
+		);
+		const diariesTabCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
+			"utf-8",
+		);
 		const controlBoardCode = fs.readFileSync(
 			path.resolve(process.cwd(), "apps/web/src/components/visit/EmkControlBoard.tsx"),
 			"utf-8",
 		);
 
-		assert.ok(!soapEditorCode.includes("043/у"), "VisitSoapEditor не должен содержать 043/у");
-		assert.ok(!soapEditorCode.includes("834н"), "VisitSoapEditor не должен содержать 834н");
+		assert.ok(!inlineFormCode.includes("043/у"), "RecordNewDiaryInlineForm не должен содержать 043/у");
+		assert.ok(!inlineFormCode.includes("834н"), "RecordNewDiaryInlineForm не должен содержать 834н");
+		assert.ok(!diariesTabCode.includes("043/у"), "RecordDiariesTab не должен содержать 043/у");
+		assert.ok(!diariesTabCode.includes("834н"), "RecordDiariesTab не должен содержать 834н");
 		assert.ok(!controlBoardCode.includes("043/у"), "EmkControlBoard не должен содержать 043/у");
 		assert.ok(!controlBoardCode.includes("834н"), "EmkControlBoard не должен содержать 834н");
 	});
 
-	test("Мандат 8e: Кнопка 1-клика физиологической нормы никогда не disabled и заполняет статус", () => {
-		const soapEditorCode = getSoapEditorFullCode();
+	test("Мандат 8e: Кнопка физиологической нормы никогда не disabled и заполняет статус", () => {
+		const canonicalCode = getCanonicalDiaryCode();
 
 		assert.ok(
-			soapEditorCode.includes('data-testid="btn-soap-physio-norm"'),
-			"VisitSoapEditor должен содержать кнопку 1-клика физиологической нормы",
+			canonicalCode.includes('data-testid="btn-chairside-physiological-norm"'),
+			"EmkQuickActionButtons должен содержать кнопку физиологической нормы у кресла",
 		);
 		assert.ok(
-			soapEditorCode.includes("disabled={false}"),
-			"Кнопка нормы не должна блокироваться",
+			canonicalCode.includes('data-testid="btn-inline-diary-norm"'),
+			"RecordNewDiaryInlineForm должен содержать кнопку нормы интактного ряда",
 		);
 		assert.ok(
-			soapEditorCode.includes("Жалоб на момент осмотра не предъявляет"),
+			!canonicalCode.includes('data-testid="btn-chairside-physiological-norm" disabled'),
+			"Кнопка физиологической нормы не должна блокироваться",
+		);
+		assert.ok(
+			canonicalCode.includes("Жалоб на момент осмотра"),
 			"Должен быть включен текст соматической нормы",
 		);
 		assert.ok(
-			soapEditorCode.includes("Соматически здоров. Аллергологический анамнез не отягощен."),
+			canonicalCode.includes("Соматически здоров. Аллергоанамнез не отягощен.") ||
+				canonicalCode.includes("Соматически здоров."),
 			"Должен быть включен соматически здоровый статус",
 		);
 	});

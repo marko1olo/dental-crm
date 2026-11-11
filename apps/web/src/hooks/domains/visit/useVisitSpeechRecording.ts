@@ -54,6 +54,7 @@ export function useVisitSpeechRecording({
 	const speechSegmentStartedAtRef = useRef(0);
 	const speechLastSoundAtRef = useRef(0);
 	const speechPendingChunkDurationMsRef = useRef<number | null>(null);
+	const visitDictationClientRef = useRef<UnifiedAudioClient | null>(null);
 	const importDictationClientRef = useRef<UnifiedAudioClient | null>(null);
 
 	const stopSpeechMonitor = useCallback(() => {
@@ -197,17 +198,33 @@ export function useVisitSpeechRecording({
 		[stopSpeechMonitor, setSpeechStatusNote, requestSpeechChunk],
 	);
 
+	const stopVisitDictation = useCallback(() => {
+		if (visitDictationClientRef.current) {
+			visitDictationClientRef.current.dispose();
+			visitDictationClientRef.current = null;
+		}
+		setIsVisitDictating(false);
+	}, [setIsVisitDictating]);
+
 	const startVisitDictation = useCallback(() => {
 		if (isVisitDictating) {
 			setError("Дождитесь завершения текущей диктовки.");
 			return;
 		}
 
+		if (visitDictationClientRef.current) {
+			visitDictationClientRef.current.dispose();
+			visitDictationClientRef.current = null;
+		}
+
 		const client = new UnifiedAudioClient({
 			preferredMode: "gemini_live",
-			specialty: "therapy",
+			specialty: selectedSpecialty || "therapy",
+			organizationId: activeOrganizationId,
+			source: "visit",
 			autoFallback: true,
 		});
+		visitDictationClientRef.current = client;
 
 		client.subscribe({
 			onFinalText: (text) => {
@@ -242,6 +259,8 @@ export function useVisitSpeechRecording({
 		setError,
 		isVisitDictating,
 		appendVisitDictationText,
+		selectedSpecialty,
+		activeOrganizationId,
 	]);
 
 	const uploadSpeechBlob = useCallback(
@@ -428,6 +447,10 @@ export function useVisitSpeechRecording({
 				});
 				mediaStreamRef.current = null;
 			}
+			if (visitDictationClientRef.current) {
+				visitDictationClientRef.current.dispose();
+				visitDictationClientRef.current = null;
+			}
 			if (importDictationClientRef.current) {
 				importDictationClientRef.current.dispose();
 				importDictationClientRef.current = null;
@@ -447,6 +470,7 @@ export function useVisitSpeechRecording({
 		speechLastSoundAtRef,
 		speechPendingChunkDurationMsRef,
 		startVisitDictation,
+		stopVisitDictation,
 		preferredSpeechMimeType,
 		uploadSpeechBlob,
 		stopSpeechMonitor,

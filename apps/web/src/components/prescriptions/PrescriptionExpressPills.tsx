@@ -183,7 +183,7 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 			<div className="flex flex-col gap-1.5">
 				<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-					Клинические курсы в 1 клик:
+					Клинические курсы:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 					{presets.map((preset) => (

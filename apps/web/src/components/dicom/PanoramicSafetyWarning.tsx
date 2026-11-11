@@ -89,7 +89,7 @@ export const PanoramicSafetyWarning: React.FC<PanoramicSafetyWarningProps> = ({
 					Зазор: {audit.minClearanceMm?.toFixed(1) ?? "--"} мм
 				</span>
 				<span className="text-[10px] text-neutral-300 italic hidden md:inline">
-					(Мандат 8e: действие не заблокировано)
+					(действие не заблокировано)
 				</span>
 			</div>
 		</div>

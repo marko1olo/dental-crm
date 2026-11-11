@@ -92,9 +92,9 @@ describe("Wave 44: Clinical Friction-Killer & Outpatient Bounded Context", () =>
 				"SomaticAnamnesisCard must contain button with data-testid='mark-somatic-norm-btn'",
 			);
 			assert.equal(
-				somaticCardSource.includes("Соматически здоров / норма (1-клик)"),
+				somaticCardSource.includes("Соматически здоров / норма"),
 				true,
-				"Must display 1-click norm label",
+				"Must display clinical norm label",
 			);
 		});
 

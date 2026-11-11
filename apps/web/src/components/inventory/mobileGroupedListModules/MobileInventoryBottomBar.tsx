@@ -47,7 +47,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 					type="button"
 					className="mobile-inventory-secondary-btn cursor-pointer"
 					onClick={onOpenShiftDeduction}
-					title="Пакетное списание расходников за смену в 1 клик"
+					title="Пакетное списание расходников за смену"
 					aria-label="Списать смену"
 					data-testid="mobile-btn-shift-deduction"
 				>

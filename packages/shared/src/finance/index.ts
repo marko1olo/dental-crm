@@ -5,7 +5,6 @@
 
 export * from "./taxDeduction.js";
 export * from "./doctorPayrollEngine.js";
-export * from "./doctorPayrollT51.js";
 export * from "../payroll/formT13TimesheetEngine.js";
 export * from "./familyDeposit.js";
 export * from "./loyaltyProgram.js";
@@ -29,8 +28,6 @@ export * from "./doctorPayoutCalculator.js";
 export * from "./managerialPnlEngine.js";
 export * from "./cashFlowCatalogs.js";
 export * from "./cashFlowCategories.js";
-export * from "./clinicalCashFlowCatalogs.js";
-export * from "./clinicalCashFlowCategories.js";
 export * from "./treatmentBudgetEngine.js";
 export * from "./accountingExportEngine.js";
 export {

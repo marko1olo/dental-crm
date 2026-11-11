@@ -176,7 +176,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 				effectiveActiveTooth={effectiveActiveTooth}
 				activePatient={activePatient}
 				dashboard={dashboard}
-				openVisitId={openVisitId}
+				openVisitId={openVisitId || ""}
 				setIsSoapTemplatesModalOpen={setIsSoapTemplatesModalOpen}
 				handleCompleteVisitAndGenerateReceipt={async () => {
 					await handleCompleteVisitAndGenerateReceipt();
@@ -222,22 +222,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 				onApplyCatalogPatch={handleApplyCatalogPatch}
 			/>
 
-			{/* Clinical quick actions & autonomy markers */}
-			<div className="pt-3 border-t border-[var(--line)] bg-transparent hidden" aria-hidden="true">
-				<span data-testid="stepper-step-1" />
-				<span data-testid="stepper-step-2" />
-				<span data-testid="stepper-step-3" />
-				<button type="button" data-testid="btn-cockpit-quick-complete" />
-				<button type="button" data-testid="btn-open-odontogram-tab" />
-				<button type="button" data-testid="btn-toggle-odontogram-collapse" />
-				<button type="button" data-testid="btn-fill-norm-quick" onClick={handleApplyPhysiologicalNorm} title="Отметка выполнения">Заполнить нормой</button>
-				<button type="button" disabled={isDraftAccepting} data-testid="btn-save-visit-note" />
-				<button type="button" disabled={isCompletingVisit} data-testid="btn-complete-visit-emk">Завершить приём и сформировать чек</button>
-				<button type="button" data-testid="btn-anes-ultracain-ds" />
-				<button type="button" data-testid="btn-anes-ultracain-ds-forte" />
-				<button type="button" data-testid="btn-anes-scandonest-3" />
-				<details className="group border-t border-[var(--line)] pt-2 bg-transparent" />
-			</div>
+
 		</div>
 	);
 }

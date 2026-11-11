@@ -117,7 +117,7 @@ export function VisitActionFooter({
 											customIntervalDays: preset.days,
 										});
 									}}
-									title={`Запланировать повторный визит через ${preset.days} дн в 1 клик`}
+									title={`Запланировать повторный визит через ${preset.days} дн`}
 								>
 									<CalendarPlus size={14} className="text-[var(--ink-muted)]" />
 									<span>{preset.buttonLabel}</span>
@@ -135,7 +135,7 @@ export function VisitActionFooter({
 								});
 							}}
 							className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
-							title={`Запланировать «${recommendedProtocol.title}» через ${recommendedProtocol.defaultIntervalDays} дней в 1 клик`}
+							title={`Запланировать «${recommendedProtocol.title}» через ${recommendedProtocol.defaultIntervalDays} дней`}
 						>
 							<FastForward size={14} className="text-[var(--ink-muted)]" />
 							<span>

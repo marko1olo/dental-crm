@@ -208,7 +208,7 @@ export function humanizeRussianError(error: unknown): HumanizedError {
 		return {
 			titleRu: "Зафиксирован дефект лабораторного изделия",
 			descriptionRu: "По наряду ЗТЛ выявлено несоответствие или производственный брак.",
-			actionAdviceRu: "Оформите акт гарантийной переделки в 1 клик без блокировки приёма пациента.",
+			actionAdviceRu: "Оформите акт гарантийной переделки без блокировки приёма пациента.",
 			rawMessage: rawStr,
 		};
 	}
@@ -221,7 +221,7 @@ export function humanizeRussianError(error: unknown): HumanizedError {
 		return {
 			titleRu: "Срок действия предварительной сметы истёк",
 			descriptionRu: "С момента составления плана лечения прошло более 30 дней.",
-			actionAdviceRu: "Оказание услуг и оплата не блокируются. При необходимости актуализируйте цены в 1 клик.",
+			actionAdviceRu: "Оказание услуг и оплата не блокируются. При необходимости актуализируйте цены.",
 			rawMessage: rawStr,
 		};
 	}

@@ -3,7 +3,7 @@ import { Plus, CheckCircle2 } from "lucide-react";
 import {
 	EXTRACTION_COMPLEXITY_OPTIONS,
 	type ExtractionComplexity,
-} from "../../../surgery/surgeryProtocols";
+} from "../../../surgery/surgeryCatalogData";
 
 export interface ExtractionComplexitySelectorProps {
 	readonly complexity: ExtractionComplexity;

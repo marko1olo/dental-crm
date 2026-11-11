@@ -214,7 +214,7 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 		);
 	});
 
-	it("6. подтверждает абсолютную чистоту рабочих экранов врача (VisitView, VisitSoapEditor, OdontogramModule, Мандаты 8e, 8v)", () => {
+	it("6. подтверждает абсолютную чистоту рабочих экранов врача (VisitView, VisitEmkTab, RecordDiariesTab, OdontogramModule, Мандаты 8e, 8v)", () => {
 		const webSrc = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
 			? path.resolve(process.cwd(), "apps/web/src")
 			: path.resolve(process.cwd(), "src");
@@ -230,11 +230,18 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 			"VisitView.tsx не должен содержать AutoclaveLog257Modal (документы стерилизации — бэк-офис)",
 		);
 
-		const visitSoapPath = path.join(webSrc, "components/visit/VisitSoapEditor.tsx");
-		const visitSoapContent = fs.readFileSync(visitSoapPath, "utf8");
+		const visitEmkPath = path.join(webSrc, "components/visit/VisitEmkTab.tsx");
+		const visitEmkContent = fs.readFileSync(visitEmkPath, "utf8");
 		assert.ok(
-			!visitSoapContent.includes("ChairsideSterilizationPouchWidget"),
-			"VisitSoapEditor.tsx не должен содержать ChairsideSterilizationPouchWidget",
+			!visitEmkContent.includes("ChairsideSterilizationPouchWidget"),
+			"VisitEmkTab.tsx не должен содержать ChairsideSterilizationPouchWidget",
+		);
+
+		const diariesTabPath = path.join(webSrc, "components/emr/record/tabs/RecordDiariesTab.tsx");
+		const diariesContent = fs.readFileSync(diariesTabPath, "utf8");
+		assert.ok(
+			!diariesContent.includes("ChairsideSterilizationPouchWidget"),
+			"RecordDiariesTab.tsx не должен содержать ChairsideSterilizationPouchWidget",
 		);
 
 		const odontogramPath = path.join(webSrc, "components/odontogram/OdontogramModule.tsx");

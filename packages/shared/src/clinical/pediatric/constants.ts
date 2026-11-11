@@ -31,6 +31,9 @@ export const PRIMARY_LOWER_TEETH = [
 	...PRIMARY_LOWER_LEFT,
 ] as const;
 
+export const UPPER_PRIMARY_TEETH = PRIMARY_UPPER_TEETH;
+export const LOWER_PRIMARY_TEETH = PRIMARY_LOWER_TEETH;
+
 export const ALL_PRIMARY_TEETH = DECIDUOUS_TEETH;
 
 export const primaryToothNumberSchema = z

@@ -18,7 +18,7 @@ import {
 import { dicomWatcherDaemon } from "../services/imaging/dicomFolderWatcherDaemon.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
 import { resetLanMeshServiceForTest } from "../services/lanMeshService.js";
-import { stopNotificationWorker } from "../services/notificationWorker.js";
+import { stopCommunicationDispatchWorker } from "../services/communications/dispatchWorker.js";
 import { persistentOutboxService } from "../services/outbox/persistentOutboxService.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import type { CreateDenteApiAppOptions, HttpErrorLike } from "./types.js";
@@ -253,7 +253,7 @@ export async function setupBackgroundWorkers(
 		persistentOutboxService.stop();
 		dicomWatcherDaemon.stop();
 		stopCloudRelayClient();
-		stopNotificationWorker();
+		stopCommunicationDispatchWorker();
 		stopBiAnalyticsWorker();
 		resetLanMeshServiceForTest();
 		resetLanMeshAutoJoinServiceForTest();

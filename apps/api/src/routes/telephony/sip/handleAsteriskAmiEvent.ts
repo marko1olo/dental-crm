@@ -1,11 +1,17 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { TelephonyGatewayService } from "../../../services/telephony/telephonyGatewayService.js";
+import {
+	type AsteriskAmiEventPayload,
+	TelephonyGatewayService,
+} from "../../../services/telephony/telephonyGatewayService.js";
 import { UUID_REGEX } from "../../../services/telephony/telephonySecurity.js";
 
 export async function handleAsteriskAmiEvent(
-	request: FastifyRequest<{ Params: { organizationId?: string } }>,
+	request: FastifyRequest<{
+		Params: { organizationId?: string };
+		Body: AsteriskAmiEventPayload;
+	}>,
 	reply: FastifyReply,
 ) {
 	const rawOrgId = request.params.organizationId;
@@ -16,12 +22,20 @@ export async function handleAsteriskAmiEvent(
 		});
 	}
 
-	const orgId = rawOrgId || (await requireResolvedOrganizationId(request, reply, "asterisk ami event"));
+	const orgId = await requireResolvedOrganizationId(request, reply, "asterisk ami event");
 	if (!orgId) return;
 
-	const rawBody = (request.body || {}) as Record<string, unknown>;
+	// DEF-TEL-10: Предотвращение обхода изоляции арендатора при передаче чужого organizationId в params
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.status(403).send({
+			error: "OrganizationMismatch",
+			message: "Запрещён доступ к событиям телефонии другой организации.",
+		});
+	}
+
+	const payload = (request.body || {}) as AsteriskAmiEventPayload;
 	const result = await withTenantCtx(orgId, async () => {
-		return await TelephonyGatewayService.processAsteriskAmiEvent(orgId, rawBody as any);
+		return await TelephonyGatewayService.processAsteriskAmiEvent(orgId, payload);
 	});
 
 	return reply.status(200).send(result);

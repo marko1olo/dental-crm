@@ -9,7 +9,7 @@ import {
 	type SurgicalOperationNorm,
 	type StandardImplantationParams,
 	type SurgicalServiceItem,
-} from "../../../surgery/surgeryProtocols";
+} from "../../../surgery/surgeryCatalogData";
 import { useSurgerySyncDiary } from "./useSurgerySyncDiary";
 import {
 	executeApplyToVisitDiary,
@@ -27,8 +27,9 @@ export interface UseVisitSurgeryStateParams {
 	readonly onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
 }
 
-export function useVisitSurgeryState(params: UseVisitSurgeryStateParams) {
-	const { activeTooth = 46, onSelectActiveTooth, patientName = "Пациент", doctorName = "Хирург-имплантолог", onApplyToDiary } = params;
+export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number = {}) {
+	const normalizedParams: UseVisitSurgeryStateParams = typeof params === "number" ? { activeTooth: params } : (params ?? {});
+	const { activeTooth = 46, onSelectActiveTooth, patientName = "Пациент", doctorName = "Хирург-имплантолог", onApplyToDiary } = normalizedParams;
 	const [selectedTooth, setSelectedTooth] = useState<number>(activeTooth ?? 46);
 	const [selectedNormId, setSelectedNormId] = useState<string>("surgery_implant_standard");
 	const [protocolText, setProtocolText] = useState<string>(DENTAL_IMPLANTATION_NORM_TEXT);

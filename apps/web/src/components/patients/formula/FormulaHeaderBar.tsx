@@ -106,7 +106,7 @@ export const FormulaHeaderBar: React.FC<FormulaHeaderBarProps> = React.memo(
 						data-testid="btn-formula-mark-intact"
 						onClick={onMarkIntact}
 						className="min-h-[30px] sm:min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap"
-						title="Физиологическая норма (Мандат 8e): отметить всю зубную формулу санированной (интактной) в 1 клик"
+						title="Физиологическая норма: отметить всю зубную формулу санированной (интактной)"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 						<span>✓ Все интактны / норма</span>

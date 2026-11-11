@@ -31,7 +31,7 @@ export const CLINICAL_HOTKEYS_REGISTRY: readonly ClinicalHotkeyMeta[] = [
 	{
 		id: "autonorm-odontogram",
 		keyCombination: "Shift+N",
-		title: "Норма формулы в 1 клик",
+		title: "Физиологическая норма формулы",
 		description: "Заполнить всю зубную формулу физиологической нормой",
 		category: "chairside",
 		targetView: "visit",

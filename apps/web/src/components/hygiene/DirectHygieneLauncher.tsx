@@ -13,14 +13,9 @@ function checkIsHygieneActive(): boolean {
 	const s = window.location.search.toLowerCase();
 	const params = new URLSearchParams(s);
 	return (
-		h.includes("hygiene") ||
-		h.includes("cleaning") ||
-		h.includes("prophy") ||
-		params.get("hygiene") === "1" ||
-		params.get("cleaning") === "1" ||
-		params.get("standalone") === "hygiene" ||
-		params.get("stand") === "hygiene" ||
-		s.includes("hygiene")
+		h.includes("hygiene") || h.includes("cleaning") || h.includes("prophy") ||
+		params.get("hygiene") === "1" || params.get("cleaning") === "1" ||
+		params.get("standalone") === "hygiene" || params.get("stand") === "hygiene" || s.includes("hygiene")
 	);
 }
 
@@ -34,6 +29,8 @@ export const DirectHygieneLauncher: React.FC = () => {
 	const [isActive, setIsActive] = useState<boolean>(checkIsHygieneActive);
 	const [isOpen, setIsOpen] = useState<boolean>(true);
 	const [patientName, setPatientName] = useState<string>(readPatientNameFromUrl);
+	const [customPatientId, setCustomPatientId] = useState<string | undefined>(undefined);
+	const [customVisitId, setCustomVisitId] = useState<string | undefined>(undefined);
 
 	useEffect(() => {
 		const handleLocationChange = () => {
@@ -44,19 +41,19 @@ export const DirectHygieneLauncher: React.FC = () => {
 				setPatientName(readPatientNameFromUrl());
 			}
 		};
-
 		const handleOpenEvent = (e: Event) => {
 			setIsActive(true);
 			setIsOpen(true);
-			const custom = e as CustomEvent<{ patientName?: string }>;
+			const custom = e as CustomEvent<{ patientName?: string; patientId?: string; visitId?: string }>;
 			if (custom.detail?.patientName) setPatientName(custom.detail.patientName);
+			if (custom.detail?.patientId) setCustomPatientId(custom.detail.patientId);
+			if (custom.detail?.visitId) setCustomVisitId(custom.detail.visitId);
 		};
 
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
 		window.addEventListener("dente:open-hygiene", handleOpenEvent);
 		window.addEventListener("dente:open-cleaning", handleOpenEvent);
-
 		return () => {
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
@@ -81,14 +78,13 @@ export const DirectHygieneLauncher: React.FC = () => {
 	}, []);
 
 	if (!isActive || !isOpen) return null;
-
 	const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 	return (
 		<HygieneStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			patientId={search?.get("patientId") || undefined}
-			visitId={search?.get("visitId") || undefined}
+			patientId={customPatientId || search?.get("patientId") || undefined}
+			visitId={customVisitId || search?.get("visitId") || undefined}
 			patientName={patientName}
 		/>
 	);

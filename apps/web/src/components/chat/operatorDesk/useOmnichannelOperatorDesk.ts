@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { showToast } from "../../GlobalToast";
 import type {
 	BotChannel,
@@ -318,6 +319,10 @@ export function useOmnichannelOperatorDesk({
 
 	// ─── 6. Simulate Incoming Message (Demo & Test Trigger) ───
 	const handleSimulateIncoming = async () => {
+		if (!isDemoShowcaseMode()) {
+			showToast("Симуляция входящих сообщений доступна только в демонстрационном режиме", "warning");
+			return;
+		}
 		try {
 			const randomChannels: BotChannel[] = ["telegram", "vk", "whatsapp", "max"];
 			const ch = randomChannels[Math.floor(Math.random() * randomChannels.length)]!;

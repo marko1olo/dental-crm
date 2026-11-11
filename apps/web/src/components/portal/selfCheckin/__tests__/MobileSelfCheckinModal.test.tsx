@@ -158,8 +158,8 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 			"Express button has dominant text '✓ Чувствую себя хорошо / Соматическая норма'",
 		);
 		assert.ok(
-			html.includes("Экспресс-чекин в 1 касание и получение талона очереди"),
-			"Express button explains 1-touch checkin and ticket generation",
+			html.includes("Экспресс-чекин и получение талона очереди"),
+			"Express button explains checkin and ticket generation",
 		);
 	});
 
@@ -255,8 +255,13 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 			"Doctor wait status container is displayed",
 		);
 		assert.ok(
-			html.includes("Д-р Смирнова Е. В. ожидает вас в кабинете №3 (2 этаж)"),
-			"Doctor waiting status matches 'Д-р Смирнова ожидает вас в кабинете №3 (2 этаж)'",
+			html.includes("Д-р Смирнова Е. В. ожидает вас в кабинете №3"),
+			"Doctor waiting status matches 'Д-р Смирнова ожидает вас в кабинете №3'",
+		);
+		assert.equal(
+			html.includes("(2 этаж)"),
+			false,
+			"No hardcoded '(2 этаж)' floor suffix",
 		);
 
 		// 3. Animated Green Success Badge

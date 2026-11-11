@@ -15,7 +15,6 @@ import {
 } from "./OdontogramViewTypes";
 
 export * from "./OdontogramViewTypes";
-import { OdontogramVoiceHud } from "./OdontogramVoiceHud";
 import { resolveEffectiveDentition } from "./odontogramContainerDentition";
 import { useOdontogramContainerBatchActions } from "./useOdontogramContainerBatchActions";
 import { useOdontogramContainerState } from "./useOdontogramContainerState";
@@ -96,10 +95,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> =
 				<OdontogramToolbarBridge
 					hideModeSwitcher={props.hideModeSwitcher}
 					toolbarProps={toolbarProps}
-				/>
-				<OdontogramVoiceHud
-					isVoiceListening={st.isVoiceListening}
-					voiceInterimText={st.voiceInterimText}
 				/>
 				<OdontogramActiveViewSlot
 					activeMode={st.activeMode}

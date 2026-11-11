@@ -206,7 +206,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 									</span>
 								)}
 							</div>
-							<p className="text-[11px] sm:text-xs text-[var(--muted)]">Протокол обезболивания • 1 клик</p>
+							<p className="text-[11px] sm:text-xs text-[var(--muted)]">Протокол обезболивания • Стандартная дозировка</p>
 						</div>
 					</div>
 
@@ -263,7 +263,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 				<main className="p-3 sm:p-4 space-y-2 overflow-y-auto min-h-0 flex-1">
 					{/* 1. Four 1-Click Clinical Fast Presets */}
 					<div className="space-y-1">
-						<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Быстрые шаблоны в 1 клик</label>
+						<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Клинические протоколы</label>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5" data-testid="clinical-fast-presets-grid">
 							{CLINICAL_FAST_PRESETS.map((preset) => {
 								const isSel = selectedDrugId === preset.drugId && (preset.drugId === "none" || carpulesCount === preset.count);

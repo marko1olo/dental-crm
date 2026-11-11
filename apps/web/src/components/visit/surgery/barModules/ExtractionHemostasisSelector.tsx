@@ -3,7 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import {
 	SURGICAL_HEMOSTASIS_OPTIONS,
 	type SurgicalHemostasisMethod,
-} from "../../../surgery/surgeryProtocols";
+} from "../../../surgery/surgeryCatalogData";
 
 export interface ExtractionHemostasisSelectorProps {
 	readonly selectedHemostasis: readonly SurgicalHemostasisMethod[];

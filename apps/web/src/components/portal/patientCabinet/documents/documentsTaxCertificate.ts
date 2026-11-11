@@ -48,31 +48,41 @@ export function generatePatientTaxCertificate1151156(
 
 	const clinicName = data.clinicInfo?.legalName || data.clinicInfo?.nameRu || "ООО «Стоматологическая клиника ДЕНТЕ»";
 	const clinicInn = data.clinicInfo?.inn || "7841098765";
-	const clinicOgrn = data.clinicInfo?.ogrn || "1217800012345";
-	const clinicLicense = data.clinicInfo?.licenseNumber || "ЛО-78-01-011842";
-	const clinicPhone = data.clinicInfo?.phone || "+7 (812) 400-20-20";
+	const clinicKpp = (data.clinicInfo as any)?.kpp || "784101001";
+	const clinicOgrn = data.clinicInfo?.ogrn || "1217800098765";
+	const clinicLicense = data.clinicInfo?.licenseNumber || "ЛО-78-01-011842 от 15.06.2021";
+	const clinicPhone = data.clinicInfo?.phone || "+7 (812) 345-67-89";
 
-	const payerInn = (data as { inn?: string }).inn || "781429810482";
-	const payerBirthDate = data.birthDate || data.birthDateIso || "1984-05-14";
+	const payerInn = (data as { inn?: string }).inn || "";
+	const payerBirthDate = data.birthDate || data.birthDateIso || "";
+
+	const rawDoc = data as Record<string, any>;
+	const passportSeriesNum = rawDoc.passportSeries && rawDoc.passportNumber
+		? `${rawDoc.passportSeries} ${rawDoc.passportNumber}`
+		: rawDoc.passport
+			? String(rawDoc.passport)
+			: undefined;
 
 	const payload: FnsNdflXmlPayload = {
-		documentNumber: data.cardNumber || data.cardNumberRu || "10492",
+		documentNumber: data.cardNumber || data.cardNumberRu || data.patientId?.slice(0, 8).toUpperCase() || "1",
 		documentDate: new Date(),
 		taxYear,
 		clinic: {
 			name: clinicName,
 			inn: clinicInn,
-			kpp: "784101001",
+			kpp: clinicKpp,
 			ogrn: clinicOgrn,
-			license: { number: clinicLicense, date: "2021-06-15" },
+			license: clinicLicense ? { number: clinicLicense, date: (data.clinicInfo as any)?.licenseDate || "15.06.2021" } : undefined,
 			phone: clinicPhone,
-			directorName: data.curatingDoctor || "Смирнов А. В.",
+			directorName: data.curatingDoctor || "",
 		},
 		payer: {
 			fullName: { family, given, patronymic },
-			inn: payerInn,
+			inn: payerInn || undefined,
 			birthDate: payerBirthDate,
-			identityDocument: { docTypeCode: "21", seriesAndNumber: "4014 982310", issueDate: "2014-06-20" },
+			identityDocument: passportSeriesNum
+				? { docTypeCode: "21", seriesAndNumber: passportSeriesNum, issueDate: rawDoc.passportIssuedDate || undefined }
+				: undefined,
 		},
 		patient: { kinshipCode: "1" },
 		receipts,

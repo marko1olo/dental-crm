@@ -3,7 +3,7 @@ import type { ClinicFiscalRequisites } from "@dental/shared";
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../GlobalToast";
 import { CashFlowModal } from "../CashFlowModal";
-import { CashRegisterModal } from "../CashRegisterModal";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { OfflineFiscalBatchModal } from "../fiscal/OfflineFiscalBatchModal";
 import { ShiftCloseZReportModal } from "../fiscal/ShiftCloseZReportModal";
 import { executeCloseShiftDbTransaction, executeOpenShiftDbTransaction } from "./cashShiftService";
@@ -81,12 +81,16 @@ export function CashShiftModals({
 				initialMode={clinicProps.cashFlowMode} cashInDrawerRub={clinicProps.cashInDrawerRub}
 				onCashIn={onCashIn} onCashOut={onCashOut}
 			/>
-			<CashRegisterModal
+			<CashRegisterStudioModal
 				isOpen={modalState.isCashRegisterModalOpen} onClose={() => modalState.setIsCashRegisterModalOpen(false)}
+				mode="shift"
+				initialTab="shift"
+				containerTestId="cash-register-modal"
+				submitButtonTestId="btn-confirm-close-shift-z-report"
+				title="Касса и чеки · Управление сменой и Z-отчёт"
 				isShiftOpen={isShiftOpen} shiftNumber={shiftNumber} cashierFullName={cashierName}
 				cashierInn={cashierInn} clinicLegalName={clinicName} clinicInn={clinicInn}
-				clinicAddress={clinicRequisites.address} kktRegNumber={clinicRequisites.kktRegNumber}
-				kktSerialNumber={clinicRequisites.kktSerialNumber} fnSerial={clinicRequisites.fnSerialNumber}
+				kktRegNumber={clinicRequisites.kktRegNumber}
 				ofdName={clinicRequisites.ofdName} cashInDrawerRub={clinicProps.cashInDrawerRub}
 				cardSumRub={clinicProps.cardSumRub} sbpSumRub={clinicProps.sbpSumRub}
 				advanceOffsetRub={clinicProps.advanceOffsetRub}

@@ -38,7 +38,7 @@ import {
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 } from "../ToothChart";
-import { TreatmentPlanWizard } from "../TreatmentPlanWizard";
+import { TreatmentPlanWizard } from "../../treatment-plans/TreatmentPlanWizard";
 import { calculateLiveInvoiceItems } from "../OdontogramLiveInvoice";
 
 describe("PARITY-01: 1-Click Adult / Pediatric Dentition Switch (FDI 11..48 <-> 51..85)", () => {
@@ -334,7 +334,10 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 		for (const file of files) {
-			const filePath = path.resolve(__dirname, "..", file);
+			const filePath =
+				file === "TreatmentPlanWizard.tsx"
+					? path.resolve(__dirname, "../../treatment-plans", file)
+					: path.resolve(__dirname, "..", file);
 			const content = fs.readFileSync(filePath, "utf-8");
 			assert.strictEqual(
 				emojiRegex.test(content),

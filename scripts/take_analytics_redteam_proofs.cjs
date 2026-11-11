@@ -15,7 +15,7 @@ const crypto = require("node:crypto");
 
 const WEB_URL = "http://127.0.0.1:5173/?demo=true&reports=1#reports";
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/analytics");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/5d0abcc8-7a38-4ef3-a120-b3ea3b36e2b9");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/234960d8-d28d-4adb-b244-8fc18f4b4df2");
 
 fs.mkdirSync(PROOFS_DIR, { recursive: true });
 if (fs.existsSync(BRAIN_DIR)) {
@@ -58,6 +58,14 @@ async function captureSingleProof(browser, { isDark, isMobile, fileName, altName
       localStorage.setItem("dente_theme_mode", mode);
       localStorage.setItem("dente_theme", mode);
       localStorage.setItem("dente_demo_showcase", "true");
+      localStorage.setItem("dente_clinic_token", "demo-showcase-token-owner");
+      localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-owner");
+      localStorage.setItem("dente_active_session_token", "demo-showcase-staff-token-owner");
+      localStorage.setItem("dente_active_role", "owner");
+      localStorage.setItem("dente_user_role", "owner");
+      sessionStorage.setItem("dente_unlocked", "true");
+      localStorage.setItem("dente_onboarding_completed", "true");
+      localStorage.setItem("dente_tour_completed", "true");
     } catch {}
     if (document.documentElement) {
       document.documentElement.setAttribute("data-theme", mode);

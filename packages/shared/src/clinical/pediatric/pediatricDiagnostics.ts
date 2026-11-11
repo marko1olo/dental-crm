@@ -105,7 +105,7 @@ export function generatePediatricCariogramDiaryText(
 	lines.push(`   • ${cariogram.preventiveProgram.fissureSealingIndicationRu}`);
 	lines.push(`   • ${cariogram.preventiveProgram.homeCareProtocolRu}`);
 	lines.push(`   • ${cariogram.preventiveProgram.dietaryGuidanceRu}`);
-	lines.push(`   • Диспансерный осмотр: через ${cariogram.preventiveProgram.hygieneRecallIntervalMonths} месяца(ев).`);
+	lines.push(`   • Плановый контрольный осмотр: через ${cariogram.preventiveProgram.hygieneRecallIntervalMonths} месяца(ев).`);
 
 	// 5/6. Выполненные детские клинические манипуляции
 	const procLines: string[] = [];

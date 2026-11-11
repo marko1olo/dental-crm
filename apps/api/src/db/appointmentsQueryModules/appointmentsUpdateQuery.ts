@@ -1,5 +1,6 @@
 import type {
 	Appointment,
+	AppointmentStatus,
 	UpdateAppointmentInput,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -52,7 +53,7 @@ export async function updateAppointmentInDb(
 		if (
 			input.expectedCurrentStatus &&
 			input.expectedCurrentStatus.length > 0 &&
-			!input.expectedCurrentStatus.includes(existing.status as any)
+			!input.expectedCurrentStatus.includes(existing.status as AppointmentStatus)
 		) {
 			throw new Error(
 				`Слот уже занят другим администратором или приём больше не свободен (текущий статус: ${existing.status}).`,
@@ -151,7 +152,7 @@ export async function updateAppointmentInDb(
 			if (
 				input.expectedCurrentStatus &&
 				input.expectedCurrentStatus.length > 0 &&
-				!input.expectedCurrentStatus.includes(locked.status as any)
+				!input.expectedCurrentStatus.includes(locked.status as AppointmentStatus)
 			) {
 				throw new Error(
 					`Слот уже занят другим администратором или приём больше не свободен (текущий статус: ${locked.status}).`,
@@ -219,14 +220,14 @@ export async function updateAppointmentInDb(
 
 	if (!updated) throw new Error("Не удалось обновить запись на приём");
 
-	return {
+	const result: Appointment = {
 		id: updated.id,
 		organizationId: updated.organizationId,
 		patientId: updated.patientId,
 		doctorUserId: updated.doctorUserId,
 		assistantUserId: updated.assistantUserId,
 		chairId: updated.chairId,
-		status: updated.status,
+		status: updated.status as AppointmentStatus,
 		startsAt: updated.startsAt.toISOString(),
 		endsAt: updated.endsAt.toISOString(),
 		reason: updated.reason,
@@ -236,5 +237,6 @@ export async function updateAppointmentInDb(
 		clinicalStage: updated.clinicalStage,
 		toothNumber: updated.toothNumber,
 		diagnosisMkb10: updated.diagnosisMkb10,
-	} as unknown as Appointment;
+	};
+	return result;
 }

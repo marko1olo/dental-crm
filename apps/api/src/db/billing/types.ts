@@ -61,16 +61,6 @@ export class BillingOverpaymentError extends Error {
 	}
 }
 
-export class Decree659Error extends Error {
-	readonly statusCode = 422;
-	readonly code: string;
-
-	constructor(code: string, message: string) {
-		super(message);
-		this.name = code;
-		this.code = code;
-	}
-}
 
 export interface LockedPatientForBilling {
 	id: string;

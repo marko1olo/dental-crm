@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import { DoctorPayrollModal } from "../payroll/DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
 import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
 import { StaffProfileCard } from "./StaffProfileCard";
@@ -68,7 +68,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 			)}
 
 			{isTimesheetT13Open && (
-				<DoctorPayrollModal
+				<DoctorPayrollStudioModal
 					isOpen={isTimesheetT13Open}
 					onClose={() => setIsTimesheetT13Open(false)}
 					clinicName={dashboard?.clinicSettings?.name || dashboard?.clinicName}

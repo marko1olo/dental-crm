@@ -391,7 +391,7 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 	const totalAccruedKop = Math.max(0, rawAccruedKop) as Kopecks;
 
 	const ndflRatePercent = input.ndflRatePercent !== undefined ? Math.max(0, input.ndflRatePercent) : 13;
-	const ndflTaxKop = Math.round((totalAccruedKop * ndflRatePercent) / 100) as Kopecks;
+	const ndflTaxKop = (Math.round((totalAccruedKop * ndflRatePercent) / 10000) * 100) as Kopecks;
 	const netPayoutKop = Math.max(0, totalAccruedKop - ndflTaxKop) as Kopecks;
 
 	return {
@@ -521,7 +521,7 @@ export function calculateDoctorSalary(
 	const totalAccruedKop = Math.max(0, effectivePieceworkKop + fixedSalaryKop + effectiveBonusesKop) as Kopecks;
 
 	const ndflRatePercent = params.ndflRatePercent !== undefined ? Math.max(0, params.ndflRatePercent) : 13;
-	const ndflTaxKop = Math.round((totalAccruedKop * ndflRatePercent) / 100) as Kopecks;
+	const ndflTaxKop = (Math.round((totalAccruedKop * ndflRatePercent) / 10000) * 100) as Kopecks;
 	const netPayoutKop = Math.max(0, totalAccruedKop - ndflTaxKop) as Kopecks;
 
 	return {

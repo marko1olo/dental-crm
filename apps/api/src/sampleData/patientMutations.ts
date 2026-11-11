@@ -60,6 +60,7 @@ export function createPatient(input: {
 			input.administrativeProfile,
 		),
 		balanceRub: 0,
+		balanceKopecks: 0,
 		createdAt,
 		updatedAt: createdAt,
 	};

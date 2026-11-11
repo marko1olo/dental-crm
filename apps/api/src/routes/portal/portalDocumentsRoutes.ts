@@ -8,6 +8,7 @@ import {
 } from "../../db/documentQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	generatedDocuments,
 	patientConsents,
 	patients,
 	treatmentPlanItemsNew,
@@ -270,7 +271,55 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				return { error: "PatientNotFound" };
 			}
 
-			// Update or insert patient consent record
+			// Физическая генерация официального бланка согласия в таблице generated_documents
+			const normalizedKind = consentId.toLowerCase();
+			let docKind:
+				| "informed_consent"
+				| "anesthesia_consent_log"
+				| "personal_data_processing_consent"
+				| "procedure_specific_consent_packet" = "informed_consent";
+			let docTitle = "Информированное добровольное согласие на стоматологическое лечение (ст. 20 № 323-ФЗ)";
+
+			if (normalizedKind.includes("anest") || normalizedKind.includes("анест")) {
+				docKind = "anesthesia_consent_log";
+				docTitle = "Информированное добровольное согласие на местное обезболивание";
+			} else if (
+				normalizedKind.includes("pd") ||
+				normalizedKind.includes("пдн") ||
+				normalizedKind.includes("152")
+			) {
+				docKind = "personal_data_processing_consent";
+				docTitle = "Согласие на обработку персональных данных (152-ФЗ)";
+			} else if (normalizedKind.includes("packet") || normalizedKind.includes("пакет")) {
+				docKind = "procedure_specific_consent_packet";
+				docTitle = "Пакет информированных добровольных согласий на медицинские вмешательства";
+			}
+
+			const [createdDoc] = await db
+				.insert(generatedDocuments)
+				.values({
+					organizationId: auth.organizationId,
+					patientId: auth.patientId,
+					kind: docKind,
+					status: "issued",
+					title: docTitle,
+					signatureSvg: effectiveSignatureSvg,
+					issuedSnapshotSha256: integrityHash,
+					issuedAt: now,
+					issuedSnapshotCreatedAt: now,
+					payloadJson: JSON.stringify({
+						consentId,
+						signatureMethod,
+						clientIp,
+						integrityHash,
+						signedAtIso,
+					}),
+				})
+				.returning({ id: generatedDocuments.id });
+
+			const generatedDocId = createdDoc?.id ?? null;
+
+			// Update or insert patient consent record with link to generated_documents
 			const existing = await db
 				.select({ id: patientConsents.id })
 				.from(patientConsents)
@@ -286,7 +335,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			if (existing.length > 0 && existing[0]) {
 				await db
 					.update(patientConsents)
-					.set({ grantedAt: now, revokedAt: null })
+					.set({ grantedAt: now, revokedAt: null, documentId: generatedDocId })
 					.where(
 						and(
 							eq(patientConsents.id, existing[0].id),
@@ -299,6 +348,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					patientId: auth.patientId,
 					kind: consentId,
 					grantedAt: now,
+					documentId: generatedDocId,
 				});
 			}
 
@@ -344,6 +394,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return {
 				success: true,
 				consentId,
+				documentId: generatedDocId,
 				status: "signed",
 				signedAtIso,
 				ipAddress: clientIp,
@@ -595,6 +646,67 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				success: true,
 				planId,
 				selectedTier: tierId,
+			};
+		});
+	});
+
+	// 11. Approve Treatment Plan with 63-FZ PEP Audit (Protected)
+	server.post<{
+		Params: { planId: string };
+		Body: {
+			pepCode?: string;
+			selectedTier?: string;
+		};
+	}>("/treatment-plans/:planId/approve", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const planId = request.params.planId?.trim();
+		if (!planId) {
+			reply.status(400);
+			return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const [planRow] = await db
+				.select({ id: treatmentPlans.id })
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, planId),
+						eq(treatmentPlans.organizationId, auth.organizationId),
+						eq(treatmentPlans.patientId, auth.patientId),
+					),
+				)
+				.limit(1);
+
+			if (!planRow) {
+				reply.status(404);
+				return { error: "PlanNotFound", message: "План лечения не найден." };
+			}
+
+			const now = new Date();
+			await db
+				.update(treatmentPlans)
+				.set({
+					status: "Approved",
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(treatmentPlans.id, planId),
+						eq(treatmentPlans.organizationId, auth.organizationId),
+					),
+				);
+
+			return {
+				success: true,
+				planId,
+				status: "Approved",
+				approvedAt: now.toISOString(),
 			};
 		});
 	});

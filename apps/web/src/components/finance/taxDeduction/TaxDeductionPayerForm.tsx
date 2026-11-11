@@ -167,7 +167,7 @@ export const TaxDeductionPayerForm: React.FC<TaxDeductionPayerFormProps> = ({
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "var(--teal, #0d9488)" }}>
 						<Users size={15} className="text-teal-600" />
-						1 клик: Налогоплательщик из семейного баланса:
+						Налогоплательщик из семейного баланса:
 					</span>
 					<span className="text-[11px] font-semibold" style={{ color: "var(--muted)" }}>
 						Быстрый выбор плательщика
@@ -390,7 +390,7 @@ export const TaxDeductionPayerForm: React.FC<TaxDeductionPayerFormProps> = ({
 						/>
 						<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "var(--ink)" }}>
 							<Sliders size={14} className="text-teal-600" />
-							Ручная корректировка сумм вычета (Мандат 8e автономии клиники)
+							Ручная корректировка сумм вычета
 						</span>
 					</label>
 					{isManualAdjustment && (

@@ -131,7 +131,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 					...(documentId ? { documentId } : {}),
 					...(invoiceId ? { invoiceId } : {}),
 					operation: targetOp,
-					autoPrintSlip: false, // We provide manual or 1-click auto print button
+					autoPrintSlip: false, // We provide manual or auto print button
 				});
 
 				setLastResponse(response);

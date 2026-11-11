@@ -11,6 +11,8 @@ export interface WaitlistAddPatientFormProps {
 	onSelectPatientId: (id: string) => void;
 	newPatientName: string;
 	onPatientNameChange: (name: string) => void;
+	newPatientPhone?: string;
+	onPatientPhoneChange?: (phone: string) => void;
 	newDoctorId: string;
 	onDoctorIdChange: (id: string) => void;
 	newUrgency: WaitlistUrgency;
@@ -33,6 +35,8 @@ export function WaitlistAddPatientForm({
 	onSelectPatientId,
 	newPatientName,
 	onPatientNameChange,
+	newPatientPhone = "",
+	onPatientPhoneChange,
 	newDoctorId,
 	onDoctorIdChange,
 	newUrgency,
@@ -74,13 +78,24 @@ export function WaitlistAddPatientForm({
 					</select>
 
 					{!newPatientId && (
-						<input
-							type="text"
-							placeholder="Или введите ФИО нового пациента..."
-							value={newPatientName}
-							onChange={(e) => onPatientNameChange(e.target.value)}
-							className="w-full h-9 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-						/>
+						<div className="space-y-1.5 pt-1">
+							<input
+								type="text"
+								placeholder="Или введите ФИО нового пациента..."
+								value={newPatientName}
+								onChange={(e) => onPatientNameChange(e.target.value)}
+								className="w-full h-9 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+							/>
+							{onPatientPhoneChange && (
+								<input
+									type="tel"
+									placeholder="Телефон: +7 (___) ___-__-__"
+									value={newPatientPhone}
+									onChange={(e) => onPatientPhoneChange(e.target.value)}
+									className="w-full h-9 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+								/>
+							)}
+						</div>
 					)}
 				</div>
 			</div>

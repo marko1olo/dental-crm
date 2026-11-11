@@ -48,7 +48,9 @@ describe("Red Team Endo JSONB & Wheeler Persistence [END-03..07]", () => {
 			fullName: "Кузнецов Эндодонтический Пациент",
 			phone: "+79991112233",
 			birthDate: "1988-04-12",
-			gender: "male",
+			administrativeProfile: {
+				gender: "male",
+			},
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		}).onConflictDoNothing();

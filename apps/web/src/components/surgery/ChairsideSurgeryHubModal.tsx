@@ -106,10 +106,6 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			return { id: targetId || storePatientId || "PAT-CURRENT", name: storePatientCore.fullName.trim() };
 		}
 
-		if (appDashboard?.patients && appDashboard.patients.length > 0) {
-			return { id: appDashboard.patients[0].id, name: appDashboard.patients[0].fullName };
-		}
-
 		if (targetId) {
 			return { id: targetId, name: `Пациент (${targetId.slice(0, 8)})` };
 		}
@@ -276,7 +272,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		if (typeof fetch === "function") {
 			const targetId = await resolveEffectiveSurgeryPatientId(patientId, patientName);
 			if (!targetId) {
-				showToast("Пациент не найден в клинике", "error");
+				showToast("Пациент не выбран. Выберите пациента для сохранения протокола.", "error");
 				return;
 			}
 			try {
@@ -308,9 +304,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 								body: implantPayload,
 							});
 						}
-						if (!apiRes.ok && apiRes.status === 404) {
+						if (!apiRes.ok) {
 							const errBody = await apiRes.json().catch(() => null);
-							saveError = errBody?.message || "Пациент не найден в базе данных";
+							saveError = errBody?.message || errBody?.error || `Ошибка сохранения имплантата (${apiRes.status})`;
 							break;
 						}
 					} else {
@@ -323,9 +319,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 								isOverdraftActive: Boolean(inventoryOverdraftActive), notes: scenarioConfig.defaultRecommendationsRu,
 							}),
 						});
-						if (!protoRes.ok && protoRes.status === 404) {
+						if (!protoRes.ok) {
 							const errBody = await protoRes.json().catch(() => null);
-							saveError = errBody?.message || "Пациент не найден в базе данных";
+							saveError = errBody?.message || errBody?.error || `Ошибка сохранения протокола (${protoRes.status})`;
 							break;
 						}
 						await fetch("/api/surgery/materials/quick-deduct", {
@@ -342,7 +338,10 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					showToast(saveError, "error");
 					return;
 				}
-			} catch { /* Офлайн автономия врача (Мандат 8e) */ }
+			} catch (err: any) {
+				showToast(err?.message || "Ошибка связи с сервером при фиксации операции", "error");
+				return;
+			}
 		}
 
 		showToast(`✓ Операция «${scenarioConfig.titleRu} #${teethToProcess.join(", #")}» зафиксирована в карте приёма`, "success");
@@ -494,7 +493,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 									className="min-h-[44px] px-3.5 text-xs font-semibold rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.1))] cursor-pointer shrink-0 flex items-center gap-1.5 transition-colors"
 									data-testid="btn-standard-implant-protocol"
 									id="btn-apply-physio-norm"
-									title="Применить стандартный протокол операции без осложнений в 1 клик"
+									title="Применить стандартный протокол операции без осложнений"
 								>
 									<Check size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 									<span className="hidden sm:inline">Стандартная операция без осложнений</span>

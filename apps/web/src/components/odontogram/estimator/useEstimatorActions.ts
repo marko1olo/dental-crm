@@ -78,7 +78,7 @@ export function useEstimatorActions(
 			next[idx] = { ...cur, price: newPrice, issue: newPrice !== null ? null : (cur.issue ?? null) };
 			return next;
 		});
-		if (newPrice === 0) showToast("Установлена гарантийная цена 0 ₽ (Мандат 8e)", "info", 2500);
+		if (newPrice === 0) showToast("Установлена гарантийная цена 0 ₽", "info", 2500);
 		else if (newPrice !== null) showToast(`Установлена цена врача: ${newPrice} ₽`, "success", 2500);
 	};
 

@@ -25,22 +25,22 @@ export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 			targetDateRu: "Август 2026",
 			procedures: [
 				{
-					id: "proc-1-1", code804n: "A16.07.030.002", toothFdi: "1.6",
+					id: "proc-1-1", serviceCode: "A16.07.030.002", toothFdi: "1.6",
 					nameRu: "Инструментальная и медикаментозная обработка 3 каналов (Reciproc Blue)",
 					priceRub: 8500, status: "completed", doctorName: "Д-р Смирнов А. П.",
 				},
 				{
-					id: "proc-1-2", code804n: "A16.07.008", toothFdi: "1.6",
+					id: "proc-1-2", serviceCode: "A16.07.008", toothFdi: "1.6",
 					nameRu: "Трехмерная обтурация каналов термопластичной гуттаперчей GuttaCore",
 					priceRub: 4800, status: "completed", doctorName: "Д-р Смирнов А. П.",
 				},
 				{
-					id: "proc-1-3", code804n: "A16.07.002.002", toothFdi: "2.4",
+					id: "proc-1-3", serviceCode: "A16.07.002.002", toothFdi: "2.4",
 					nameRu: "Эстетическая реставрация зуба 2.4 нанокомпозитом Estelite Asteria",
 					priceRub: 6800, status: "completed", doctorName: "Д-р Смирнов А. П.",
 				},
 				{
-					id: "proc-1-4", code804n: "A16.07.002.001", toothFdi: "1.6, 2.4",
+					id: "proc-1-4", serviceCode: "A16.07.002.001", toothFdi: "1.6, 2.4",
 					nameRu: "Анестезия инфильтрационная Sol. Ultracaini DS Forte (2 карпулы)",
 					priceRub: 1200, status: "completed", doctorName: "Д-р Смирнов А. П.",
 				},
@@ -59,12 +59,12 @@ export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 			targetDateRu: "Сентябрь 2026",
 			procedures: [
 				{
-					id: "proc-2-1", code804n: "A16.07.004.002", toothFdi: "1.6",
+					id: "proc-2-1", serviceCode: "A16.07.004.002", toothFdi: "1.6",
 					nameRu: "Оптический 3D-скан челюстей iTero Element",
 					priceRub: 3000, status: "in_progress", doctorName: "Д-р Миронова Е. С.",
 				},
 				{
-					id: "proc-2-2", code804n: "A16.07.004.001", toothFdi: "1.6",
+					id: "proc-2-2", serviceCode: "A16.07.004.001", toothFdi: "1.6",
 					nameRu: "Коронка из диоксида циркония Katana Multi-Layer (CAD/CAM)",
 					priceRub: 25000, status: "planned", doctorName: "Д-р Миронова Е. С.",
 				},
@@ -83,12 +83,12 @@ export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 			targetDateRu: "Октябрь 2026",
 			procedures: [
 				{
-					id: "proc-3-1", code804n: "A16.07.051", toothFdi: "11-48",
+					id: "proc-3-1", serviceCode: "A16.07.051", toothFdi: "11-48",
 					nameRu: "Комплексная гигиена полости рта AirFlow + ультразвук EMS",
 					priceRub: 6500, status: "planned", doctorName: "Д-р Васильева О. И.",
 				},
 				{
-					id: "proc-3-2", code804n: "A16.07.054.001", toothFdi: "4.6",
+					id: "proc-3-2", serviceCode: "A16.07.054.001", toothFdi: "4.6",
 					nameRu: "Установка дентального имплантата Osstem TS III (Южная Корея)",
 					priceRub: 28700, status: "planned", doctorName: "Врач-хирург-имплантолог",
 				},

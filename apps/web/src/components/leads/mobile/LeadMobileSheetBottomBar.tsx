@@ -38,15 +38,10 @@ export const LeadMobileSheetBottomBar: React.FC<
 			<button
 				type="button"
 				onClick={handleScheduleClick}
-				className="w-full min-h-[50px] rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer"
-				style={{
-					background:
-						"linear-gradient(135deg, var(--teal-fill, #0d9488), var(--teal-dark, #0f766e))",
-					color: "#ffffff",
-				}}
+				className="primary-button w-full min-h-[50px] rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-all cursor-pointer bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)]"
 				data-testid="bottom-sheet-schedule-cta"
 			>
-				<Calendar size={18} />
+				<Calendar size={18} className="shrink-0 text-white" />
 				<span>Записать на приём в расписание</span>
 			</button>
 

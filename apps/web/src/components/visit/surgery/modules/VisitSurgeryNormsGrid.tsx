@@ -1,6 +1,6 @@
 import React from "react";
 import { Zap, CheckCircle2 } from "lucide-react";
-import type { SurgicalOperationNorm } from "../../../surgery/surgeryProtocols";
+import type { SurgicalOperationNorm } from "../../../surgery/surgeryCatalogData";
 
 interface VisitSurgeryNormsGridProps {
 	norms: readonly SurgicalOperationNorm[];

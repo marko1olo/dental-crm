@@ -17,9 +17,9 @@ import { describe, it } from "node:test";
 import React from "react";
 
 import {
-	IncisalAlignmentGuideOverlay,
-	GuideOverlayType,
-} from "../IncisalAlignmentGuideOverlay";
+	DsdCanvasOverlay,
+	type DsdCanvasGuideFlags,
+} from "../dsd/DsdCanvasOverlay";
 import {
 	createVitaPhysicalTabReference,
 	getShadeHueGroup,
@@ -97,60 +97,24 @@ describe("Clinical Dental Photo Protocol Sanity (Mandates 8i, 8k)", () => {
 		});
 	});
 
-	describe("2. Purge of Procedural Golden Ratio & DSD Gimmicks (IncisalAlignmentGuideOverlay)", () => {
-		it("verifies GuideOverlayType contains only orthopedic clinical guides", () => {
-			const validGuideTypes: GuideOverlayType[] = [
-				"bipupillary",
-				"incisal",
-				"midline",
-				"thirds",
-			];
-			assert.equal(validGuideTypes.length, 4);
-
-			const activeGuides: Record<GuideOverlayType, boolean> = {
+	describe("2. Canonical DSD Clinical Guides (DsdCanvasOverlay)", () => {
+		it("verifies DsdCanvasGuideFlags contains only clinical guides", () => {
+			const activeGuides: DsdCanvasGuideFlags = {
 				bipupillary: true,
-				incisal: true,
 				midline: true,
-				thirds: false,
+				smileArc: true,
+				goldenRatio: true,
+				calibration: true,
 			};
 			assert.equal(activeGuides.bipupillary, true);
-			assert.equal(activeGuides.incisal, true);
 			assert.equal(activeGuides.midline, true);
-			assert.equal((activeGuides as Record<string, boolean>).golden_ratio, undefined);
+			assert.equal(activeGuides.smileArc, true);
+			assert.equal(activeGuides.goldenRatio, true);
+			assert.equal(activeGuides.calibration, true);
 		});
 
-		it("renders orthopedic guide overlay without golden ratio curves", () => {
-			const rendered = IncisalAlignmentGuideOverlay({
-				activeGuides: {
-					bipupillary: true,
-					incisal: true,
-					midline: true,
-					thirds: true,
-				},
-				bipupillaryTiltDegrees: 1.5,
-				incisalCantingDegrees: -0.8,
-			});
-
-			assert.ok(React.isValidElement(rendered), "IncisalAlignmentGuideOverlay must render valid React element");
-			const element = rendered as React.ReactElement<any>;
-			assert.equal(element.type, "svg");
-			assert.equal(element.props.viewBox, "0 0 1000 1000");
-
-			const children = React.Children.toArray(element.props.children);
-			// 4 active guides: thirds, midline, bipupillary, incisal
-			assert.equal(children.length, 4);
-		});
-
-		it("returns null when no guides are active", () => {
-			const rendered = IncisalAlignmentGuideOverlay({
-				activeGuides: {
-					bipupillary: false,
-					incisal: false,
-					midline: false,
-					thirds: false,
-				},
-			});
-			assert.equal(rendered, null);
+		it("verifies DsdCanvasOverlay is an active component", () => {
+			assert.ok(typeof DsdCanvasOverlay === "function", "DsdCanvasOverlay must be a valid component function");
 		});
 	});
 

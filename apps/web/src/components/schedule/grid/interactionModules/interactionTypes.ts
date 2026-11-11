@@ -4,7 +4,7 @@
 
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { ChairMaintenanceBlock } from "../../../../utils/scheduleCollisionUtils";
-import type { TargetSlotInfo } from "../../WaitlistDrawer";
+import type { TargetSlotInfo } from "../../waitlist/WaitlistDrawer";
 
 export interface UseScheduleAppointmentInteractionsProps {
   dateKey: string;

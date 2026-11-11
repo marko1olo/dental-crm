@@ -58,7 +58,7 @@ export function mapRecallCandidateToRecord(candidate: RecallCandidate): PatientR
 		urgencyStatus,
 		status: "due_now",
 		clinicalNotes: candidate.reason,
-		historicalRevenueRub: 6500,
+		historicalRevenueRub: (candidate as { historicalRevenueRub?: number }).historicalRevenueRub ?? 0,
 		visitsCount: candidate.lastCompletedAt ? 1 : 0,
 	};
 }

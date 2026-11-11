@@ -196,12 +196,12 @@ export function useConsumablesBatchWriteoff({
 			});
 			if (res.ok) {
 				const d = await res.json();
-				showToast(d.message || "Пакет анестезии списан в 1 клик (мягкий овердрафт активен)", "success");
+				showToast(d.message || "Пакет анестезии списан по техкарте (мягкий овердрафт активен)", "success");
 			} else {
-				showToast("Пакет анестезии списан в 1 клик (овердрафт учтен)", "success");
+				showToast("Пакет анестезии списан по техкарте (овердрафт учтен)", "success");
 			}
 		} catch {
-			showToast("Пакет анестезии списан в 1 клик", "success");
+			showToast("Пакет анестезии списан по техкарте", "success");
 		}
 	};
 
@@ -216,12 +216,12 @@ export function useConsumablesBatchWriteoff({
 			});
 			if (res.ok) {
 				const d = await res.json();
-				showToast(d.message || "Полный пакет анестезии списан в 1 клик", "success");
+				showToast(d.message || "Полный пакет анестезии списан по техкарте", "success");
 			} else {
-				showToast("Полный пакет анестезии списан в 1 клик", "success");
+				showToast("Полный пакет анестезии списан по техкарте", "success");
 			}
 		} catch {
-			showToast("Полный пакет анестезии списан в 1 клик", "success");
+			showToast("Полный пакет анестезии списан по техкарте", "success");
 		}
 	};
 
@@ -236,12 +236,12 @@ export function useConsumablesBatchWriteoff({
 			});
 			if (res.ok) {
 				const d = await res.json();
-				showToast(d.message || "Расходники терапии списаны в 1 клик", "success");
+				showToast(d.message || "Расходники терапии списаны по техкарте", "success");
 			} else {
-				showToast("Расходники терапии списаны в 1 клик", "success");
+				showToast("Расходники терапии списаны по техкарте", "success");
 			}
 		} catch {
-			showToast("Расходники терапии списаны в 1 клик", "success");
+			showToast("Расходники терапии списаны по техкарте", "success");
 		}
 	};
 
@@ -256,12 +256,12 @@ export function useConsumablesBatchWriteoff({
 			});
 			if (res.ok) {
 				const d = await res.json();
-				showToast(d.message || "Расходники хирургии списаны в 1 клик", "success");
+				showToast(d.message || "Расходники хирургии списаны по техкарте", "success");
 			} else {
-				showToast("Расходники хирургии списаны в 1 клик", "success");
+				showToast("Расходники хирургии списаны по техкарте", "success");
 			}
 		} catch {
-			showToast("Расходники хирургии списаны в 1 клик", "success");
+			showToast("Расходники хирургии списаны по техкарте", "success");
 		}
 	};
 

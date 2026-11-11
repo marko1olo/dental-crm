@@ -20,7 +20,6 @@ import { renderRecallsStandaloneLauncher } from "./administrative/RecallsStandal
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
-import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
@@ -95,7 +94,10 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.search.includes("ai=1") ||
 			window.location.search.includes("assistant=1"))
 	) {
-		return <DirectCopilotLauncher />;
+		if (typeof window !== "undefined" && (window as any).__denteCopilot) {
+			(window as any).__denteCopilot.open();
+		}
+		return null;
 	}
 
 	// 0. Повторные вызовы и диспансеризация (?recalls=1, #recalls, #prophylaxis)

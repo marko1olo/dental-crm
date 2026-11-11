@@ -66,7 +66,7 @@ export function useDoctorPayrollTabData({
 				}));
 				if (mapped.length > 0) {
 					setApiDoctors(mapped);
-					setSelectedDoctorId((prev) => (prev && mapped.some((m) => m.id === prev) ? prev : mapped[0].id));
+					setSelectedDoctorId((prev) => (prev && mapped.some((m) => m.id === prev) ? prev : mapped[0]?.id ?? ""));
 				}
 			})
 			.catch(() => {});

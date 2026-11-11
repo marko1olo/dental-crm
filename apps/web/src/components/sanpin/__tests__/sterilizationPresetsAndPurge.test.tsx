@@ -62,7 +62,7 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		// Header is clean clinical
 		assert.ok(html.includes("Утверждение цикла автоклава"));
 		assert.ok(
-			html.includes("Журнал работы стерилизаторов • 1-Click пресеты смены"),
+			html.includes("Журнал работы стерилизаторов • Стандартные пресеты смены"),
 		);
 
 		// Check all 3 presets in rendered output

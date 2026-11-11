@@ -15,10 +15,9 @@ import { createRoot, type Root } from "react-dom/client";
 import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
 import type { Dashboard } from "@dental/shared";
-import { resolveChairDutyDoctor } from "../ChairScheduleView";
+import { resolveChairDutyDoctor, type ChairDoctorShiftAssignment } from "../ScheduleGrid";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { AppointmentModal } from "../AppointmentModal";
-import type { ChairDoctorShiftAssignment } from "../ScheduleGrid";
 import {
 	type MockDomNode,
 	setupMockDom,

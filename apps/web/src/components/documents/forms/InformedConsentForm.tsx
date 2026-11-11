@@ -23,7 +23,7 @@ export const InformedConsentForm = React.memo(function InformedConsentForm(props
 		<div className="schedule-create-missing document-informed-consent-blockers mt-3 p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)]" role="status" aria-live="polite">
 			<strong className="block font-semibold mb-1 text-[var(--teal,#0d9488)]">Печать и оформление доступны: незаполненные поля ({review.blockers.length} из {review.requiredCount}) будут напечатаны строками «___________» для ручного заполнения:</strong>
 			<ul className="list-disc pl-4 space-y-0.5 text-[var(--muted,#64748b)]">{review.blockers.map((b) => <li key={b.field}>{b.label} — {b.hint}</li>)}</ul>
-			<small className="block mt-1 text-[var(--muted,#64748b)]">Вы можете распечатать бланк прямо сейчас или нажать «Заполнить нормой» для автозаполнения в 1 клик.</small>
+			<small className="block mt-1 text-[var(--muted,#64748b)]">Вы можете распечатать бланк прямо сейчас или нажать «Заполнить нормой» для быстрого автозаполнения.</small>
 		</div>
 	) : null;
 

@@ -288,7 +288,7 @@ describe("Wave 132: Smart Clinical Playbooks Engine (DentalPin Reverse-Engineeri
 
 			assert.equal(briefing.hasCriticalAlerts, false);
 			assert.equal(briefing.criticalAlerts.length, 0);
-			assert.ok(briefing.summaryChairsideNote.includes("норма активна по умолчанию в 1 клик"));
+			assert.ok(briefing.summaryChairsideNote.includes("норма активна по умолчанию"));
 		});
 	});
 
@@ -471,7 +471,7 @@ describe("Wave 132: Smart Clinical Playbooks Engine (DentalPin Reverse-Engineeri
 			assert.equal(summary.lastVisit, null);
 			assert.equal(summary.financialSummary.unpaidKopecks, 0);
 			assert.equal(summary.financialSummary.financialStatusRu, "Оплачено 100% (задолженности нет)");
-			assert.ok(summary.chairsideTip.includes("Первичный пациент: активна норма в 1 клик по Мандату 8e"));
+			assert.ok(summary.chairsideTip.includes("Первичный пациент: активна физиологическая норма"));
 		});
 
 		it("flags critical stop-factors, prior visit services and agreed budget stages", () => {

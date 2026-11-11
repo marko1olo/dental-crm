@@ -143,7 +143,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			});
 
 			if (!res.ok) {
-				throw new Error(`HTTP error ${res.status}`);
+				const errJson = await res.json().catch(() => null);
+				throw new Error(errJson?.error || errJson?.message || `HTTP error ${res.status}`);
 			}
 
 			const json = await res.json().catch(() => null);
@@ -155,13 +156,10 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			setTimeout(() => {
 				onClose();
 			}, 900);
-		} catch {
-			setClosedSuccessData(payload);
+		} catch (err: any) {
+			const message = err?.message || "Ошибка соединения с сервером";
+			setErrorMessage(`Сбой закрытия смены: ${message}. Проверьте подключение и повторите попытку.`);
 			setIsSubmitting(false);
-			onShiftClosed?.(payload);
-			setTimeout(() => {
-				onClose();
-			}, 900);
 		}
 	};
 

@@ -49,7 +49,7 @@ export function TelephonyDrawerLeadAndPatientCreate({
 						type="button"
 						onClick={onCaptureLead}
 						aria-busy={isCapturingLead}
-						className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+						className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
 						data-testid="drawer-action-capture-lead"
 					>
 						{currentCall.isLeadCaptured ? <Check size={15} /> : <UserPlus size={15} />}
@@ -84,13 +84,13 @@ export function TelephonyDrawerLeadAndPatientCreate({
 						type="button"
 						onClick={onQuickCreatePatient}
 						aria-busy={isCreatingPatient}
-						className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+						className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-bold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 						data-testid="drawer-quick-create-patient-btn"
 						data-legacy-testid="popup-drawer-quick-create-patient-btn"
 					>
 						<UserCheck size={15} />
 						<span>
-							{isCreatingPatient ? "Создание карты..." : "+ Создать пациента за 5 секунд"}
+							{isCreatingPatient ? "Создание карты..." : "+ Создать карту пациента"}
 						</span>
 					</button>
 				</div>

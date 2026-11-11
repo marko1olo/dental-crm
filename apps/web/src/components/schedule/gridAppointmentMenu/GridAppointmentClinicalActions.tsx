@@ -92,7 +92,7 @@ export const GridAppointmentClinicalActions: React.FC<Props> = ({
 				onClick={handleNextStage}
 				className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center justify-between gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal)] font-bold transition-colors cursor-pointer"
 				style={{ background: "rgba(13, 148, 136, 0.08)", border: "1px solid rgba(13, 148, 136, 0.28)", borderRadius: "8px", marginTop: "2px" }}
-				title="Запланировать следующий этап лечения в 1 клик (с авто-подбором даты и Rollback Toast)"
+				title="Запланировать следующий этап лечения (с авто-подбором даты)"
 				data-testid={`menu-next-stage-btn-${a.id}`}
 			>
 				<div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export const GridAppointmentClinicalActions: React.FC<Props> = ({
 					<span>+ След. этап лечения</span>
 				</div>
 				<span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-[var(--teal,#0d9488)] text-white">
-					1 клик
+					Автоподбор
 				</span>
 			</button>
 		</div>

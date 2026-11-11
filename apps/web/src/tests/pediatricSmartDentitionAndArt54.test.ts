@@ -124,10 +124,10 @@ describe("Pediatric Smart Dentition & Federal Law No. 323-FZ Art. 54", () => {
 
 			const textSigned = formatPediatricRepresentativeText(rep, 16);
 			assert.ok(textSigned.includes("Родитель/представитель"));
-			assert.ok(textSigned.includes("пациент 15+ лет / представитель, ст. 54 323-ФЗ"));
+			assert.ok(textSigned.includes("пациент старше 15 лет / представитель"));
 
 			const textUnsigned = formatPediatricRepresentativeText({ ...rep, consentSigned: false }, 16);
-			assert.ok(textUnsigned.includes("ст. 54 323-ФЗ"));
+			assert.ok(textUnsigned.includes("старше 15 лет"));
 			assert.ok(textUnsigned.includes("самостоятельно"));
 		});
 
@@ -142,9 +142,9 @@ describe("Pediatric Smart Dentition & Federal Law No. 323-FZ Art. 54", () => {
 				}),
 			);
 
-			assert.ok(htmlAge16.includes("Пациент 15+ лет (ст. 54 323-ФЗ)"), "Must indicate 15+ status");
+			assert.ok(htmlAge16.includes("Пациент старше 15 лет"), "Must indicate 15+ status");
 			assert.ok(
-				htmlAge16.includes("пациент старше 15 лет вправе подписать ИДС лично"),
+				htmlAge16.includes("Пациент старше 15 лет вправе подписать согласие"),
 				"Warning banner must inform doctor of patient's right under Art. 54",
 			);
 			assert.ok(!EMOJI_REGEX.test(htmlAge16), "Must contain 0 emojis");
@@ -163,8 +163,8 @@ describe("Pediatric Smart Dentition & Federal Law No. 323-FZ Art. 54", () => {
 
 			assert.ok(htmlAge7.includes("Законный представитель ребёнка"), "Must indicate legal representative");
 			assert.ok(
-				htmlAge7.includes("323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством"),
-				"Warning banner must cite Art. 20 requirement for young children",
+				htmlAge7.includes("Требуется согласие родителя на медицинское вмешательство"),
+				"Warning banner must cite requirement for young children",
 			);
 			assert.ok(!EMOJI_REGEX.test(htmlAge7), "Must contain 0 emojis");
 		});

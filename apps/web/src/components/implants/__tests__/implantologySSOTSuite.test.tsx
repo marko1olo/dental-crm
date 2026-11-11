@@ -18,7 +18,7 @@ import {
 	generateWarrantyPassportRecord,
 	buildSoapSurgeryDiaryText,
 	type CanonicalImplantSystemId,
-} from "../implantologyCatalogData";
+} from "../implantCatalogData";
 
 describe("🏛️ Canonical Implantology & Surgical SSOT Suite (DENTE CRM)", () => {
 	it("1. Verifies 6 key implant systems widely used in the Russian Federation", () => {

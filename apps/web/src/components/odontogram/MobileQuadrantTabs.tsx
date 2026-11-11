@@ -5,8 +5,7 @@
  * Replaces the cramped 16-tooth dual-arch with an ergonomic 2x2 matrix for smartphone thumb zones.
  */
 
-import type React from "react";
-import { memo, useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { triggerHaptic } from "../../native/mobileBridge";
 import type { OdontogramQuadrantId } from "./chart/toothChartTypes";
 import { buildMobileQuadrants } from "./mobileQuadrantData";

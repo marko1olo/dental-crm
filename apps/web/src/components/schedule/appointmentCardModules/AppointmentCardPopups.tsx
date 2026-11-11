@@ -4,7 +4,7 @@ import {
 	AppointmentHoverHud,
 	AppointmentMobileBottomSheet,
 } from "../AppointmentStatusPopup";
-import { SmartSlotRecoveryPopover } from "../SmartSlotRecoveryPopover";
+import { WaitlistDrawer } from "../waitlist/WaitlistDrawer";
 import type { AppointmentCardPopupsProps } from "./types";
 
 export function AppointmentCardHoverOverlay({
@@ -148,21 +148,21 @@ export function AppointmentCardBottomPopups({
 			/>
 
 			{isSmartRecoveryOpen && (
-				<SmartSlotRecoveryPopover
+				<WaitlistDrawer
 					isOpen={isSmartRecoveryOpen}
 					onClose={() => setIsSmartRecoveryOpen(false)}
-					slot={{
+					targetSlot={{
 						appointmentId: appointment.id,
 						startsAt: appointment.startsAt,
 						endsAt: appointment.endsAt,
-						doctorId: appointment.doctorUserId,
+						doctorUserId: appointment.doctorUserId,
 						doctorName: appointmentDoctor?.fullName || null,
 						chairId: appointment.chairId,
 						chairName: appointmentChair?.name || null,
 						freedBecause: appointment.reason || "Отмена приёма",
 						patientName: appointmentPatientName,
 					}}
-					clinicName={dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || "DENTE"}
+					dashboard={dashboard}
 				/>
 			)}
 		</>

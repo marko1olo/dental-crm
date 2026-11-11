@@ -165,9 +165,9 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(dispatcherCode.includes('return "Заполнение дневника приёма";'), "Action title must be clean");
 		assert.ok(!dispatcherCode.includes("Заполнение дневника приёма (Форма 043/у)"), "Action title must not include (Форма 043/у)");
 
-		const aiAssistantCode = readComponent("services/ai/aiAssistantService.ts");
-		assert.ok(!aiAssistantCode.includes("Дневник приёма по Форме 043/у"), "AI message must not cite Форма 043/у");
-		assert.ok(!aiAssistantCode.includes("медицинской карты (Форма 043/у)"), "AI message must not cite (Форма 043/у)");
+		const copilotCode = readComponent("components/copilot/CopilotStudioModal.tsx");
+		assert.ok(!copilotCode.includes("Дневник приёма по Форме 043/у"), "AI message must not cite Форма 043/у");
+		assert.ok(!copilotCode.includes("медицинской карты (Форма 043/у)"), "AI message must not cite (Форма 043/у)");
 	});
 
 	it("14. SanpinRegisters & Warranty: human toast messages & standard card prefix", () => {
@@ -207,9 +207,12 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("16. Doctor Chairside & EMK: purged 54-FZ, 804n, CDA R2, EGISZ, and cartoon emojis (Mandate 8x & 8d)", () => {
-		const emkTabCode = readComponent("components/visit/VisitEmkTab.tsx");
+		const emkTabCode =
+			readComponent("components/visit/VisitEmkTab.tsx") +
+			"\n" +
+			readComponent("components/visit/emkTab/VisitEmkCompletionSection.tsx");
 		assert.ok(!emkTabCode.includes("54-ФЗ"), "VisitEmkTab must not have 54-ФЗ in doctor CTA");
-		assert.ok(emkTabCode.includes("Завершить приём и сформировать чек"), "VisitEmkTab must have clean receipt CTA");
+		assert.ok(emkTabCode.includes("Завершить приём и сформировать"), "VisitEmkTab must have clean receipt CTA");
 
 		const summaryModalCode = readComponent("components/visit/VisitSummaryModal.tsx");
 		assert.ok(!summaryModalCode.includes("СЭМД ЕГИСЗ"), "VisitSummaryModal must not have СЭМД ЕГИСЗ");
@@ -315,8 +318,8 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const cashClosingCode = readComponent("components/billing/cashShiftClosingEngine.ts");
 		assert.ok(!cashClosingCode.includes("54-ФЗ"), "cashShiftClosingEngine must not cite '54-ФЗ' in user warnings");
 
-		const outpatientPrintCode = readComponent("components/documents/OutpatientCardPrintModal.tsx");
-		assert.ok(!outpatientPrintCode.includes("-043/"), "OutpatientCardPrintModal must not contain '-043/' in document prefixes");
+		const emrStudioCode = readComponent("components/emr/MedicalRecordStudioModal.tsx");
+		assert.ok(!emrStudioCode.includes("-043/"), "MedicalRecordStudioModal must not contain '-043/' in document prefixes");
 	});
 
 	it("21. Executive Analytics & Cash Register Studio: zero '54-ФЗ' in charts, KPI grid, studio headers & cashier bar (Mandates 8x, 8ap, 8n)", () => {

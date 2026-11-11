@@ -96,7 +96,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 								paidAt: new Date().toISOString(),
 							});
 						}
-						showToast(`Оплата по счёту ${invoices[0]?.number || ""} успешно зафиксирована в кассе 54-ФЗ`, "success");
+						showToast(`Оплата по счёту ${invoices[0]?.number || ""} успешно зафиксирована в кассе`, "success");
 					}}
 				/>
 			)}

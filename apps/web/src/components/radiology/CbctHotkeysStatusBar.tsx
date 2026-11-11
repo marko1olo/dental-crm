@@ -133,9 +133,9 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					{/* Mouse: Double Click -> Maximize / Reset Angle */}
 					<span
 						className="hidden 2xl:inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 whitespace-nowrap shrink-0"
-						title="Двойной клик: развернуть на весь экран или сбросить наклон осей"
+						title="Двойной щелчок: развернуть на весь экран или сбросить наклон осей"
 					>
-						<strong className="text-cyan-400 font-semibold">2-клик:</strong>
+						<strong className="text-cyan-400 font-semibold">2×ЛКМ:</strong>
 						<span>развернуть/сброс</span>
 					</span>
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock } from "lucide-react";
-import { RESORPTION_AGE_PRESETS } from "./pediatricResorptionConstants";
+import { RESORPTION_AGE_PRESETS } from "./pediatricDentitionEngine";
 
 export interface PediatricResorptionHeaderProps {
 	readonly currentAge: number;

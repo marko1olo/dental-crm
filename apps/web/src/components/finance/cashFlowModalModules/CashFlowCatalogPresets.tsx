@@ -92,7 +92,9 @@ export const CashFlowCatalogPresets: React.FC<CashFlowCatalogPresetsProps> = ({
 											{expense.ffdTag1054 !== null
 												? expense.alias === "collection"
 													? "Инкассация / Выемка"
-													: "Кассовый ордер (расход)"
+													: expense.ffdTag1054 === "возврат_прихода" || expense.ffdTag1054Code === 2
+														? "Кассовый ордер (возврат_прихода)"
+														: "Кассовый ордер (расход)"
 												: "Внутренний ордер"}
 										</span>
 									</div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { ScheduleMobileAgendaView } from "../ScheduleMobileAgendaView";
+import { ScheduleMobileAgendaView } from "../mobile/ScheduleMobileAgendaView";
 import type { ScheduleGridProps } from "./gridTypes";
 
 export interface ScheduleGridMobileLayoutProps {

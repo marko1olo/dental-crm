@@ -1,5 +1,4 @@
-import type React from "react";
-import { memo } from "react";
+import React, { memo } from "react";
 import type { OdontogramQuadrantId } from "./chart/toothChartTypes";
 
 export interface MobileQuadrantTopBarProps {

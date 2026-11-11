@@ -299,72 +299,46 @@ describe("MessageTemplateEngine & 152-FZ Medical Secrecy Perimeter", () => {
 	});
 
 	// =========================================================================
-	// 4. E2E API МАРШРУТЫ: /api/communications/catalogs/templates
+	// 4. E2E ТЕСТИРОВАНИЕ ШАБЛОНОВ НА БАЗЕ ДАННЫХ
 	// =========================================================================
-	test("8. API POST /api/communications/catalogs/templates: Creating template with medical leak is REJECTED (422)", async (t) => {
+	test("8. MessageTemplateEngine.createTemplate: Creating template with medical leak is REJECTED", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
-		const res = await app.inject({
-			method: "POST",
-			url: "/api/communications/catalogs/templates",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": doctorStaffToken,
+		await assert.rejects(
+			async () => {
+				await MessageTemplateEngine.createTemplate(ORGANIZATION_ID, {
+					title: "Напоминание о лечении периодонтита",
+					channel: "telegram",
+					templateText: "Здравствуйте, {patient_name}! Ждем на лечение периодонтита зуба 16.",
+				});
 			},
-			payload: {
-				title: "Напоминание о лечении периодонтита",
-				channel: "telegram",
-				templateText: "Здравствуйте, {patient_name}! Ждем на лечение периодонтита зуба 16.",
+			(err: Error) => {
+				assert.ok(err.message.includes("врачебной тайной"));
+				return true;
 			},
-		});
-
-		assert.strictEqual(res.statusCode, 422, "Шаблон с врачебной тайной должен отвергаться со статусом 422");
-		const body = JSON.parse(res.payload);
-		assert.strictEqual(body.error, "MedicalSecrecyInTemplateError");
-		assert.ok(body.message.includes("врачебной тайной"));
+		);
 	});
 
-	test("9. API POST /api/communications/catalogs/templates: Clean template is CREATED (201 Created)", async (t) => {
+	test("9. MessageTemplateEngine.createTemplate: Clean template is CREATED", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
-		const res = await app.inject({
-			method: "POST",
-			url: "/api/communications/catalogs/templates",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": doctorStaffToken,
-			},
-			payload: {
-				title: "Стандартное напоминание о визите",
-				channel: "whatsapp",
-				intent: "appointment_reminder",
-				templateText: "Здравствуйте, {patient_name}! Ждем вас в клинике «{clinic_name}» {appointment_date} в {appointment_time}.",
-			},
+		const template = await MessageTemplateEngine.createTemplate(ORGANIZATION_ID, {
+			title: "Стандартное напоминание о визите",
+			channel: "whatsapp",
+			intent: "appointment_reminder",
+			templateText: "Здравствуйте, {patient_name}! Ждем вас в клинике «{clinic_name}» {appointment_date} в {appointment_time}.",
 		});
 
-		assert.strictEqual(res.statusCode, 201, "Корректный шаблон должен успешно создаваться (201)");
-		const body = JSON.parse(res.payload);
-		assert.strictEqual(body.success, true);
-		assert.strictEqual(body.template.title, "Стандартное напоминание о визите");
+		assert.strictEqual(template.title, "Стандартное напоминание о визите");
+		assert.strictEqual(template.channel, "whatsapp");
 	});
 
-	test("10. API GET /api/communications/catalogs/templates: Lists stored templates for organization", async (t) => {
+	test("10. MessageTemplateEngine.listTemplates: Lists stored templates for organization", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
-		const res = await app.inject({
-			method: "GET",
-			url: "/api/communications/catalogs/templates?channel=whatsapp",
-			headers: {
-				"x-dente-clinic-token": clinicToken,
-				"x-dente-staff-token": doctorStaffToken,
-			},
-		});
-
-		assert.strictEqual(res.statusCode, 200);
-		const body = JSON.parse(res.payload);
-		assert.strictEqual(body.success, true);
-		assert.ok(Array.isArray(body.templates));
-		assert.ok(body.templates.some((tpl: any) => tpl.title === "Стандартное напоминание о визите"));
+		const templates = await MessageTemplateEngine.listTemplates(ORGANIZATION_ID, { channel: "whatsapp" });
+		assert.ok(Array.isArray(templates));
+		assert.ok(templates.some((tpl: any) => tpl.title === "Стандартное напоминание о визите"));
 	});
 
 	test("11. API POST /api/communications/templates/render: Renders with variables and blocks leaks", async (t) => {

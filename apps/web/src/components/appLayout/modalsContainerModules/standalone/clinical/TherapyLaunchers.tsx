@@ -18,9 +18,8 @@ import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHo
 import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
 import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
-import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
 import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
-import { PediatricStudioModal } from "../../../../pediatric/PediatricStudioModal";
+import { PediatricMixedDentitionModal } from "../../../../odontogram/PediatricMixedDentitionModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderTherapyLaunchers(): React.ReactElement | null {
@@ -83,15 +82,6 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		);
 	}
 
-	if (hasUrlToken(["voice-dictation", "voice-assistant", "voice", "smart-mic"])) {
-		return (
-			<VoiceDictationAssistantModal
-				isOpen={true}
-				onClose={() => clearUrlTokens(["voice-dictation", "voice-assistant", "voice", "smart-mic"])}
-				activeToothNumber={46}
-			/>
-		);
-	}
 
 	if (hasUrlToken(["tooth-drawer", "tooth-card", "chairside-tooth"])) {
 		return (
@@ -106,7 +96,7 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 
 	if (hasUrlToken(["pediatric", "children", "pedodontics"])) {
 		return (
-			<PediatricStudioModal
+			<PediatricMixedDentitionModal
 				isOpen={true}
 				onClose={() => clearUrlTokens(["pediatric", "children", "pedodontics"], ["pediatric", "children"])}
 			/>

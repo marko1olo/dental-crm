@@ -51,23 +51,23 @@ export interface DmsStudioModalProps {
 	readonly patient?: {
 		id: string;
 		fullName: string;
-		birthDate?: string;
-		policyNumber?: string;
-		cardNumber?: string;
-	};
-	readonly initialTab?: "split" | "policies" | "registry";
-	readonly billItems?: readonly DmsBillableItem[];
-	readonly onApplySplitToCashbox?: (splitData: {
+		birthDate?: string | undefined;
+		policyNumber?: string | undefined;
+		cardNumber?: string | undefined;
+	} | undefined;
+	readonly initialTab?: ("split" | "policies" | "registry") | undefined;
+	readonly billItems?: readonly DmsBillableItem[] | undefined;
+	readonly onApplySplitToCashbox?: ((splitData: {
 		totalDueRub: number;
 		dmsRub: number;
 		patientRub: number;
 		patientMethod: PatientPaymentMethod;
-		patientCashRub?: number;
-		patientCardRub?: number;
-		letterId?: string;
-		letterNumber?: string;
-		insurerName?: string;
-	}) => void;
+		patientCashRub?: number | undefined;
+		patientCardRub?: number | undefined;
+		letterId?: string | undefined;
+		letterNumber?: string | undefined;
+		insurerName?: string | undefined;
+	}) => void) | undefined;
 }
 
 const DEFAULT_DEMO_SERVICES: readonly DmsBillableItem[] = [
@@ -210,11 +210,14 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 
 	const registryRecords: readonly DmsRegistryServiceRecord[] = useMemo(() => {
 		if (!isDemo) return [];
-		return [
-			{ id: "r-1", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.companyName || "АО «СОГАЗ»", serviceCode804n: "A16.07.002.001", serviceName: "Восстановление зуба пломбой светового отверждения", toothNumber: "16", diagnosisCodeMkb10: "K02.1", quantity: 1, unitPriceRub: 4500, totalPriceRub: 4500, dmsCoveredRub: 4500, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: selectedLetter?.letterNumber },
-			{ id: "r-2", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.companyName || "АО «СОГАЗ»", serviceCode804n: "A16.07.030.002", serviceName: "Эндодонтическая обработка 2 корневых каналов", toothNumber: "16", diagnosisCodeMkb10: "K04.0", quantity: 1, unitPriceRub: 5800, totalPriceRub: 5800, dmsCoveredRub: 5800, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: selectedLetter?.letterNumber },
-			{ id: "r-3", visitId: "v-2", visitDate: "20.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: selectedLetter?.companyName || "АО «СОГАЗ»", serviceCode804n: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", diagnosisCodeMkb10: "K05.0", quantity: 1, unitPriceRub: 6500, totalPriceRub: 6500, dmsCoveredRub: 5200, patientPaidRub: 1300, doctorFullName: "Д-р Смирнова Е.П.", isExcluded: false, exclusionReason: "Франшиза 20%", letterNumber: selectedLetter?.letterNumber },
+		const insurerTitle = selectedLetter?.insurerName || (selectedLetter as any)?.companyName || "АО «СОГАЗ»";
+		const letNum = selectedLetter?.letterNumber;
+		const records: DmsRegistryServiceRecord[] = [
+			{ id: "r-1", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: insurerTitle, serviceCode804n: "A16.07.002.001", serviceName: "Восстановление зуба пломбой светового отверждения", toothNumber: "16", diagnosisCodeMkb10: "K02.1", quantity: 1, unitPriceRub: 4500, totalPriceRub: 4500, dmsCoveredRub: 4500, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: letNum },
+			{ id: "r-2", visitId: "v-1", visitDate: "15.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: insurerTitle, serviceCode804n: "A16.07.030.002", serviceName: "Эндодонтическая обработка 2 корневых каналов", toothNumber: "16", diagnosisCodeMkb10: "K04.0", quantity: 1, unitPriceRub: 5800, totalPriceRub: 5800, dmsCoveredRub: 5800, patientPaidRub: 0, doctorFullName: "Д-р Соколов А.В.", isExcluded: false, letterNumber: letNum },
+			{ id: "r-3", visitId: "v-2", visitDate: "20.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: insurerTitle, serviceCode804n: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", diagnosisCodeMkb10: "K05.0", quantity: 1, unitPriceRub: 6500, totalPriceRub: 6500, dmsCoveredRub: 5200, patientPaidRub: 1300, doctorFullName: "Д-р Смирнова Е.П.", isExcluded: false, exclusionReason: "Франшиза 20%", letterNumber: letNum },
 		];
+		return records;
 	}, [isDemo, patient, selectedLetter]);
 
 	if (!isOpen) return null;
@@ -319,7 +322,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				patientCardRub: paymentMethod === "card" ? patientDueRub : paymentMethod === "mixed" ? mixedCardRub : 0,
 				letterId: selectedLetter?.id,
 				letterNumber: selectedLetter?.letterNumber,
-				insurerName: selectedLetter?.insurerName || (selectedLetter as any)?.companyName,
+				insurerName: selectedLetter?.insurerName || (selectedLetter as any)?.companyName || "АО «СОГАЗ»",
 			});
 		}
 		showToast("ДМС-сплит успешно утвержден", "success");
@@ -338,8 +341,8 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 							<Shield size={22} />
 						</div>
 						<div style={{ minWidth: 0 }}>
-							<h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--ink, #0f172a)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-								ДМС и страховые полисы: {patient.fullName}
+							<h2 style={{ margin: 0, fontSize: "clamp(13px, 3.5vw, 16px)", fontWeight: 700, color: "var(--ink, #0f172a)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+								ДМС: {patient.fullName}
 							</h2>
 							<div style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted, #64748b)" }}>
 								{patient.birthDate ? `Дата рождения: ${patient.birthDate} • ` : "15.04.1990 • "}Полис: {patient.policyNumber || "Не указан"} • Статус: <span style={{ color: "var(--teal, #0d9488)", fontWeight: 700 }}>Активен</span>
@@ -547,7 +550,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 						</button>
 						{/* EXACTLY ONE PRIMARY CTA: Mandate 8am & 8e (never disabled) */}
 						<button type="button" onClick={handleApplySplit} style={{ minHeight: "44px", padding: "0 22px", borderRadius: "10px", border: "none", background: "var(--teal, #0d9488)", color: "#ffffff", fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 4px 12px rgba(13,148,136,0.25)" }}>
-							<Check size={18} /> {isSplitApproved ? "✓ Сплит утвержден в кассе" : "✓ Утвердить ДМС-сплит"}
+							<Check size={18} /> {isSplitApproved ? "Сплит утвержден в кассе" : "Утвердить ДМС-сплит"}
 						</button>
 					</div>
 				</div>

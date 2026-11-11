@@ -46,11 +46,32 @@ export const familyTopupSchema = z.object({
 export const createFamilyGroupSchema = z.object({
 	name: z.string().min(1),
 	headPatientId: z.string().uuid().optional(),
+	memberPatientIds: z.array(z.string().uuid()).optional(),
 });
 
 export const updateFamilyGroupSchema = z.object({
 	name: z.string().min(1).optional(),
 	headPatientId: z.string().uuid().nullable().optional(),
+	memberPatientIds: z.array(z.string().uuid()).optional(),
+});
+
+export const addFamilyMemberSchema = z.object({
+	patientId: z.string().uuid(),
+	relationshipType: z.string().trim().min(1).optional().default("relative"),
+	canSpendFamilyWallet: z.boolean().optional().default(true),
+});
+
+export const updateFamilyPermissionsSchema = z.object({
+	familyGroupId: z.string().uuid().optional(),
+	patientId: z.string().uuid().optional(),
+	memberId: z.string().uuid().optional(),
+	canSpendFamilyWallet: z.boolean().optional(),
+	permissions: z.array(
+		z.object({
+			memberId: z.string().uuid(),
+			canSpendFamilyWallet: z.boolean(),
+		}),
+	).optional(),
 });
 
 export class FamilyFinanceError extends Error {

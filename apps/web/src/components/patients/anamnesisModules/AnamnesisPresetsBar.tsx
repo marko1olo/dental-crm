@@ -11,7 +11,7 @@ export const AnamnesisPresetsBar: React.FC<AnamnesisPresetsBarProps> = React.mem
 		<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex flex-wrap items-center gap-2">
 			<span className="text-xs font-semibold text-[var(--muted)] inline-flex items-center gap-1 shrink-0">
 				<Sparkles size={13} className="text-[var(--teal)]" />
-				<span>1-Click шаблоны:</span>
+				<span>Клинические шаблоны:</span>
 			</span>
 			<button
 				type="button"

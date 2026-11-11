@@ -114,7 +114,6 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 			"components/photography/photoProtocolEngine.ts",
 			"components/photography/photoGridPresets.ts",
 			"components/photography/PhotoSlotCard.tsx",
-			"components/diagnostics/OrthodonticPhotoProtocolModal.tsx",
 			"components/patients/PatientCardModal.tsx",
 		];
 
@@ -136,7 +135,6 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 			"components/photography/BeforeAfterComparisonView.tsx",
 			"components/photography/VitaShadeSelector.tsx",
 			"components/photography/PhotoSlotCard.tsx",
-			"components/diagnostics/OrthodonticPhotoProtocolModal.tsx",
 		];
 
 		const disabledRegex = /disabled=\{/i;
@@ -162,7 +160,6 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 			"components/photography/VitaShadeSelector.tsx",
 			"components/photography/vitaShadesCatalog.ts",
 			"components/photography/photoProtocolEngine.ts",
-			"components/diagnostics/OrthodonticPhotoProtocolModal.tsx",
 		];
 
 		// Matches common emojis range excluding standard clinical ASCII / text
@@ -182,19 +179,17 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 	it("7. Clinical Integration: Photo Protocol Modals wired into StandaloneSurgeryHosts & OrthodonticsLaunchers", () => {
 		const surgeryHostPath = path.resolve(webSrc, "components/appLayout/modalsContainerModules/standalone/clinical/StandaloneSurgeryHosts.tsx");
 		const orthoLauncherPath = path.resolve(webSrc, "components/appLayout/modalsContainerModules/standalone/clinical/OrthodonticsLaunchers.tsx");
-		const modalsContent = [
-			fs.existsSync(surgeryHostPath) ? fs.readFileSync(surgeryHostPath, "utf-8") : "",
-			fs.existsSync(orthoLauncherPath) ? fs.readFileSync(orthoLauncherPath, "utf-8") : "",
-		].join("\n");
+		const surgeryContent = fs.existsSync(surgeryHostPath) ? fs.readFileSync(surgeryHostPath, "utf-8") : "";
+		const orthoContent = fs.existsSync(orthoLauncherPath) ? fs.readFileSync(orthoLauncherPath, "utf-8") : "";
 
-		// Proves clinical surgery hosts and orthodontic launchers import and render ClinicalPhotoProtocolModal & OrthodonticPhotoProtocolModal
+		// Proves clinical surgery hosts and orthodontic launchers import and render canonical ClinicalPhotoProtocolModal
 		assert.ok(
-			modalsContent.includes("ClinicalPhotoProtocolModal"),
+			surgeryContent.includes("ClinicalPhotoProtocolModal"),
 			"StandaloneSurgeryHosts must import ClinicalPhotoProtocolModal",
 		);
 		assert.ok(
-			modalsContent.includes("OrthodonticPhotoProtocolModal"),
-			"OrthodonticsLaunchers must import OrthodonticPhotoProtocolModal",
+			orthoContent.includes("ClinicalPhotoProtocolModal"),
+			"OrthodonticsLaunchers must import canonical ClinicalPhotoProtocolModal",
 		);
 	});
 });

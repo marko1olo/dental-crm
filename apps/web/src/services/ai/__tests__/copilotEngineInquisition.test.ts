@@ -16,7 +16,7 @@ import {
 	dispatchCrmAction,
 } from "../aiActionDispatcher";
 import { copilotActionRunner } from "../copilotActionRunner";
-import { AiOrchestrator } from "../../../lib/aiOrchestrator";
+import { parseDentalVoiceSpeech } from "../../../services/voice/dentalGrammarParser";
 import { useVisitStore } from "../../../store/visitStore";
 import { useAppStore } from "../../../store/appStore";
 
@@ -189,16 +189,9 @@ describe("Red Team Copilot Engine Inquisition", () => {
 		assert.equal(copilotActionRunner.getPendingActions().length, 0);
 	});
 
-	it("6. Navigation: voice command parser maps odontogram and warehouse views", () => {
-		const navOdontogram = AiOrchestrator.parseGlobalNavigation("открой зубную формулу");
-		assert.equal(navOdontogram.view, "odontogram");
-		assert.ok(navOdontogram.feedbackText.includes("зубную формулу"));
-
-		const navOdon = AiOrchestrator.parseGlobalNavigation("покажи одонтограмму");
-		assert.equal(navOdon.view, "odontogram");
-
-		const navInventory = AiOrchestrator.parseGlobalNavigation("перейди на склад материалов");
-		assert.equal(navInventory.view, "inventory");
-		assert.ok(navInventory.feedbackText.includes("склад материалов"));
+	it("6. Voice Grammar: correctly parses dental intent from voice speech", () => {
+		const intent = parseDentalVoiceSpeech("зуб 46 кариес дентина пломба");
+		assert.ok(intent.detectedTeeth.includes(46));
+		assert.ok(intent.teethUpdates.some((t) => t.toothNumber === 46));
 	});
 });

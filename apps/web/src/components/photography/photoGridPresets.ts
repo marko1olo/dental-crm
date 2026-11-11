@@ -23,7 +23,7 @@ export * from './presets/intraoralOcclusalSlots';
 export * from './presets/protocolRegistry';
 
 export function getPresetById(id: string): PhotoProtocolPreset {
-	if (id === 'standard_8_clinical' || id === 'standard_8_ortho' || id === 'ortho_8_slot') {
+	if (id === 'standard_8_clinical' || id === 'standard_8_ortho' || id === 'ortho_8_slot' || id === 'orthodontic_8') {
 		return STANDARD_8_SLOT_PROTOCOL;
 	}
 	const found = CLINICAL_PROTOCOLS_REGISTRY.find((p) => p.id === id);

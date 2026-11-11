@@ -70,7 +70,7 @@ export const EgiszRemdModalFooter: React.FC<EgiszRemdModalFooterProps> = ({
 					}}
 				>
 					<CheckCircle2 size={16} />
-					1-Клик Валидация
+					Валидация пакета
 				</button>
 			</div>
 

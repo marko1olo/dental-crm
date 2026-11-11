@@ -1,5 +1,5 @@
 import { calculateChairHourlyCost } from "@dental/shared";
-import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalReadAccess,
@@ -8,6 +8,7 @@ import {
 import { db } from "../../db/client.js";
 import {
 	appointments,
+	cashOperations,
 	chairs,
 	doctorPayrollStatements,
 	inventoryTransactions,
@@ -61,10 +62,9 @@ import {
 export type { HeatmapCell, NoShowHeatmap };
 export { calculateNoShowHeatmap };
 
-// biome-ignore lint/suspicious/noExplicitAny: generic column matching helper
-function withDateFilter(orgId: string, orgCol: any, dateCol?: any, startDate?: Date) {
-	return startDate
-		? and(eq(orgCol, orgId), gte(dateCol, startDate))
+function withDateFilter(orgId: string, orgCol: AnyColumn, dateCol?: AnyColumn, startDate?: Date): SQL {
+	return startDate && dateCol
+		? and(eq(orgCol, orgId), gte(dateCol, startDate))!
 		: eq(orgCol, orgId);
 }
 
@@ -99,13 +99,13 @@ export async function calculateChairUtilization(
 		.select()
 		.from(organizations)
 		.where(eq(organizations.id, orgId));
-	const clinicScheduleSpec = resolveClinicScheduleWorkHours((orgRow as any)?.clinicSchedule);
+	const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule as Parameters<typeof resolveClinicScheduleWorkHours>[0]);
 
 	// [ANL-04] Честный расчет рабочих минут кресел по реальному графику клиники (40ч/нед по умолчанию) вместо 84ч/нед
 	const effectiveStart = startDate ?? new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(effectiveStart, now, clinicScheduleSpec);
 
-	const chairConditions: any[] = [eq(chairs.organizationId, orgId)];
+	const chairConditions: SQL[] = [eq(chairs.organizationId, orgId)];
 	if (branchId && branchId !== "all") {
 		chairConditions.push(eq(chairs.clinicId, branchId));
 	}
@@ -452,12 +452,12 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			const chairData = await calculateChairUtilization(orgId, startDate, now);
 			const doctorProfitability = await calculateDoctorProfitability(orgId, startDate);
 
-			// [ANL-04] Честный график и себестоимость кресел без хардкода 360ч и 1М расходов (Мандат 8n)
+			// [ANL-04] Честный график и себестоимость кресел без хардкода (Мандаты 8n, 8wy)
 			const [orgRow] = await db
 				.select({ clinicSchedule: organizations.clinicSchedule })
 				.from(organizations)
 				.where(eq(organizations.id, orgId));
-			const clinicScheduleSpec = resolveClinicScheduleWorkHours((orgRow as any)?.clinicSchedule);
+			const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule as Parameters<typeof resolveClinicScheduleWorkHours>[0]);
 
 			const hoursPerDay = Math.max(
 				4,
@@ -472,18 +472,37 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			const workingDaysPerMonth = Math.min(31, Math.max(1, Math.round((daysPerWeek * 52) / 12)));
 			const activeChairsCount = Math.max(1, chairData.chairUtilizationJson.length);
 
-			const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : activeChairsCount * 90_000;
-			const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : activeChairsCount * 15_000;
-			const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : activeChairsCount * 70_000;
-			const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : activeChairsCount * 35_000;
-			const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : activeChairsCount * 15_000;
-			const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : activeChairsCount * 35_000;
+			// Чтение фактических расходов клиники из cash_operations (Мандат 8wy — 100% реальный PostgreSQL без моков)
+			const [actualExpenses] = await db
+				.select({
+					rent: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 100 or lower(coalesce(${cashOperations.reasonText}, '')) like '%аренд%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					utilities: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} in (7, 10) or lower(coalesce(${cashOperations.reasonText}, '')) like '%коммун%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%связ%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					payroll: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 1 or lower(coalesce(${cashOperations.reasonText}, '')) like '%зарплат%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%фот%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%оклад%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					depreciation: sql<number>`coalesce(sum(case when lower(coalesce(${cashOperations.reasonText}, '')) like '%амортиз%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%оборудован%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					sanpin: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 4 or lower(coalesce(${cashOperations.reasonText}, '')) like '%санпин%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%стерил%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%дезинф%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					marketing: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 6 or lower(coalesce(${cashOperations.reasonText}, '')) like '%маркетинг%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%реклам%' then ${cashOperations.amountRub} else 0 end), 0)`,
+				})
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						eq(cashOperations.operationType, "expense"),
+						startDate ? gte(cashOperations.createdAt, startDate) : gte(cashOperations.createdAt, new Date(now.getFullYear(), now.getMonth(), 1)),
+					),
+				);
+
+			const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : Number(actualExpenses?.rent || 0);
+			const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : Number(actualExpenses?.utilities || 0);
+			const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : Number(actualExpenses?.payroll || 0);
+			const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : Number(actualExpenses?.depreciation || 0);
+			const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : Number(actualExpenses?.sanpin || 0);
+			const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : Number(actualExpenses?.marketing || 0);
 
 			const hourlyEconomics = calculateChairHourlyCost({
 				activeChairsCount,
 				workingDaysPerMonth,
 				workingHoursPerDay: hoursPerDay,
-				chairUtilizationRate: Math.max(0.1, (chairData.chairOccupancyRate || 10) / 100),
+				chairUtilizationRate: Math.max(0, (chairData.chairOccupancyRate || 0) / 100),
 				monthlyRentRub: rentRub,
 				monthlyUtilitiesRub: utilitiesRub,
 				monthlyAdministrativePayrollRub: payrollRub,

@@ -204,8 +204,8 @@ describe("DENTE Clinic Settings & Requisites SSOT Suite", () => {
 				"AppShell.tsx must render <DirectSettingsLauncher />",
 			);
 			assert.ok(
-				content.includes("h.includes(\"settings\")") || content.includes("s.includes(\"settings\")"),
-				"AppShell.tsx isStandaloneActive must include settings token",
+				content.includes("h.includes(\"settings-studio\")") || content.includes("s.includes(\"standalone=settings\")"),
+				"AppShell.tsx isStandaloneActive must include settings-studio token",
 			);
 		});
 

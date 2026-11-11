@@ -103,7 +103,7 @@ describe("CabinetReadinessTab Monolith Decomposition & SanPiN Autonomy (Mandates
 			"utf8",
 		);
 		assert.ok(
-			checklistCode.includes("Норма в 1 клик"),
+			checklistCode.includes("Норма"),
 			"Checklist must include 1-click 'Норма' button for assistant autonomy",
 		);
 

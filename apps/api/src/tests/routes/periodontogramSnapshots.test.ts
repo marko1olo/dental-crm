@@ -15,7 +15,12 @@ import {
 	type ToothRow,
 } from "../../services/periodontogramIndices.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid } from "../support/fixtureOrganizations.js";
+import { organizations, users } from "../../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 const NAMESPACE = "perioSnapshotsTest";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
@@ -157,9 +162,30 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 
 		app = Fastify();
 		await registerPeriodontogramRoutes(app);
+
+		await purgeFixtureOrganizations([ORG_ID]);
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника Пародонтологии Тест",
+				})
+				.onConflictDoNothing();
+			await tx
+				.insert(users)
+				.values({
+					id: USER_ID,
+					organizationId: ORG_ID,
+					fullName: "Доктор Пародонтолог",
+					role: "doctor",
+				})
+				.onConflictDoNothing();
+		});
 	});
 
 	afterEach(async () => {
+		await purgeFixtureOrganizations([ORG_ID]);
 		await app.close();
 		process.env = originalEnv;
 		mock.restoreAll();

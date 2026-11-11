@@ -288,6 +288,113 @@ export const PREMIUM_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [
 
 export const DEFAULT_PRESENTER_STAGES: readonly TreatmentPlanStage[] = STANDARD_PRESENTER_STAGES;
 
+export const INTACT_PREVENTION_STAGES_ECONOMY: readonly TreatmentPlanStage[] = [
+	mkStage(
+		"st-prev-econ-1",
+		1,
+		"stage_1_therapy",
+		"Этап 1: Профилактика и гигиена",
+		"Профессиональная гигиена и базовое фторирование",
+		"Ультразвуковое удаление наддесневых зубных отложений и полировка",
+		3500,
+		350000,
+		[
+			mkItem("it-prev-ec-1", undefined, "A16.07.051", "Профессиональная гигиена полости рта (ультразвуковое снятие наддесневых зубных отложений)", 3500, 3500, 1, "stage_1_therapy", "Гигиена и профилактика"),
+		],
+	),
+];
+
+export const INTACT_PREVENTION_STAGES_OPTIMUM: readonly TreatmentPlanStage[] = [
+	mkStage(
+		"st-prev-opt-1",
+		1,
+		"stage_1_therapy",
+		"Этап 1: Профилактика и гигиена",
+		"Комплексная гигиена AirFlow + глубокое фторирование",
+		"Ультразвук + воздушно-абразивная полировка AirFlow и реминерализирующая терапия",
+		6500,
+		650000,
+		[
+			mkItem("it-prev-opt-1", undefined, "A16.07.051.001", "Комплексная профессиональная гигиена полости рта (ультразвук + AirFlow)", 5500, 5500, 1, "stage_1_therapy", "Гигиена и профилактика"),
+			mkItem("it-prev-opt-2", undefined, "A11.07.024", "Глубокое фторирование и реминерализация эмали зубов", 1000, 1000, 1, "stage_1_therapy", "Гигиена и профилактика"),
+		],
+	),
+];
+
+export const INTACT_PREVENTION_STAGES_PREMIUM: readonly TreatmentPlanStage[] = [
+	mkStage(
+		"st-prev-prem-1",
+		1,
+		"stage_1_therapy",
+		"Этап 1: Профилактика и гигиена",
+		"Премиальный SPA-протокол гигиены GBT (Guided Biofilm Therapy)",
+		"Атравматичный протокол GBT EMS, эмаль-герметизация и ремо-терапия",
+		9500,
+		950000,
+		[
+			mkItem("it-prev-pr-1", undefined, "A16.07.051.002", "Профессиональная гигиена полости рта по атравматичному протоколу GBT EMS", 7500, 7500, 1, "stage_1_therapy", "Гигиена и профилактика"),
+			mkItem("it-prev-pr-2", undefined, "A11.07.024.001", "Глубокая эмаль-герметизация и реминерализующая SPA-терапия эмали", 2000, 2000, 1, "stage_1_therapy", "Гигиена и профилактика"),
+		],
+	),
+];
+
+export const INTACT_PREVENTION_TIERS: readonly TreatmentPlanTier[] = [
+	{
+		tierId: "economy",
+		title: "Базовый (Эконом)",
+		subtitle: "Профессиональная гигиена и базовое фторирование",
+		badge: "Базовый",
+		isRecommended: false,
+		totalRub: 3500,
+		totalKopecks: 350000,
+		amountKopecks: 350000n,
+		warrantyYears: 1,
+		keyAdvantages: [
+			"Ультразвуковое удаление наддесневого зубного камня",
+			"Полировка поверхностей зубов абразивной пастой",
+			"Рекомендации по домашней гигиене полости рта",
+			"Гарантия чистоты эмали",
+		],
+		stages: INTACT_PREVENTION_STAGES_ECONOMY,
+	},
+	{
+		tierId: "optimum",
+		title: "Оптимальный",
+		subtitle: "Комплексная гигиена AirFlow + глубокое фторирование",
+		badge: "Оптимальный",
+		isRecommended: true,
+		totalRub: 6500,
+		totalKopecks: 650000,
+		amountKopecks: 650000n,
+		warrantyYears: 3,
+		keyAdvantages: [
+			"Ультразвуковое бережное удаление зубного камня",
+			"Мягкое снятие пигментированного налета AirFlow (глицин)",
+			"Глубокое фторирование эмали реминерализующим гелем",
+			"Индивидуальный подбор средств гигиены",
+		],
+		stages: INTACT_PREVENTION_STAGES_OPTIMUM,
+	},
+	{
+		tierId: "premium",
+		title: "Премиум",
+		subtitle: "Премиальный SPA-протокол гигиены GBT (Guided Biofilm Therapy)",
+		badge: "Премиум",
+		isRecommended: false,
+		totalRub: 9500,
+		totalKopecks: 950000,
+		amountKopecks: 950000n,
+		warrantyYears: 10,
+		keyAdvantages: [
+			"Индикация биопленки швейцарским маркером",
+			"Атравматичная чистка по протоколу GBT аппаратом EMS Prophylaxis Master",
+			"Подогретая вода и мелкодисперсный порошок Plus для комфорта",
+			"Глубокая эмаль-герметизация и ремо-терапия",
+		],
+		stages: INTACT_PREVENTION_STAGES_PREMIUM,
+	},
+];
+
 export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 	{
 		tierId: "economy",
@@ -445,7 +552,7 @@ export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
  */
 export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly TreatmentPlanTier[] {
 	if (!Array.isArray(teeth) || teeth.length === 0) {
-		return DEFAULT_PRESENTER_TIERS;
+		return INTACT_PREVENTION_TIERS;
 	}
 
 	const teethList = teeth as Array<{ toothNumber?: number; number?: number; state?: string; diagnosis?: string }>;
@@ -475,7 +582,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 	];
 
 	if (cariesTeeth.length === 0 && missingTeeth.length === 0 && pulpitisTeeth.length === 0) {
-		return DEFAULT_PRESENTER_TIERS;
+		return INTACT_PREVENTION_TIERS;
 	}
 
 	// 1. Эконом
@@ -690,6 +797,149 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 }
 
 /**
+ * differentiateStagesForTier — Дифференциация этапов и услуг по клинической матрице материалов:
+ * - Эконом (economy): базовый световой композит (3 500 ₽), стандартное эндо (9 500 ₽), металлокерамика Co-Cr (14 000 ₽), базовая имплантация (32 000 ₽), коронка на имплантате металлокерамика (22 000 ₽).
+ * - Оптимум (optimum): наногибридный композит (4 800 ₽), микроскопная эндодонтия (13 500 ₽), коронка из диоксида циркония Katana CAD/CAM (26 000 ₽), SLA-имплантат (42 000 ₽), коронка на имплантате с винтовой фиксацией (34 000 ₽).
+ * - Премиум (premium): прессованная керамика E.max / накладка Inlay (8 500 ₽ / 38 000 ₽), биокерамическая эндодонтия под микроскопом (16 500 ₽), премиум гидрофильный имплантат + навигационный 3D-шаблон (80 000 ₽), индивидуальный абатмент Ti-Base + коронка E.max (48 000 ₽).
+ */
+export function differentiateStagesForTier(
+	stages: readonly TreatmentPlanStage[],
+	tierId: string,
+): TreatmentPlanStage[] {
+	return stages.map((stg) => {
+		const mappedItems = stg.items.map((it) => {
+			const nameLower = (it.name || "").toLowerCase();
+			const toothPrefix = it.toothNumber ? `зуба ${it.toothNumber} ` : "";
+
+			if (tierId === "economy") {
+				if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Протезирование на имплантате ${toothPrefix}металлокерамической коронкой`,
+						priceRub: 22000,
+						unitPriceRub: 22000,
+					};
+				}
+				if (/имплант/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Дентальная имплантация ${toothPrefix}(базовая система)`,
+						priceRub: 32000,
+						unitPriceRub: 32000,
+					};
+				}
+				if (/коронк|вкладк/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Восстановление ${toothPrefix}металлокерамической коронкой Co-Cr`,
+						priceRub: 14000,
+						unitPriceRub: 14000,
+					};
+				}
+				if (/эндодонт|канал/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Эндодонтическое лечение ${toothPrefix}(стандартная обработка и пломбирование)`,
+						priceRub: 9500,
+						unitPriceRub: 9500,
+					};
+				}
+				if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Восстановление ${toothPrefix}пломбой световой полимеризации`,
+						priceRub: 3500,
+						unitPriceRub: 3500,
+					};
+				}
+				const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
+				const discountedPrice = Math.max(500, Math.round((basePrice * 0.85) / 100) * 100);
+				return {
+					...it,
+					priceRub: discountedPrice,
+					unitPriceRub: discountedPrice,
+				};
+			}
+
+			if (tierId === "premium") {
+				if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Протезирование на имплантате ${toothPrefix}(индивидуальный абатмент Ti-Base + керамическая коронка)`,
+						priceRub: 48000,
+						unitPriceRub: 48000,
+					};
+				}
+				if (/имплант/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Премиальная имплантация ${toothPrefix}с гидрофильной поверхностью + 3D-шаблон`,
+						priceRub: 80000,
+						unitPriceRub: 80000,
+					};
+				}
+				if (/коронк/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Восстановление ${toothPrefix}керамической коронкой E.max с индивидуальной раскраской`,
+						priceRub: 38000,
+						unitPriceRub: 38000,
+					};
+				}
+				if (/вкладк/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Восстановление ${toothPrefix}прессованной керамической накладкой Inlay`,
+						priceRub: 8500,
+						unitPriceRub: 8500,
+					};
+				}
+				if (/эндодонт|канал/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Прецизионная микроскопная эндодонтия ${toothPrefix}с биокерамикой`,
+						priceRub: 16500,
+						unitPriceRub: 16500,
+					};
+				}
+				if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
+					return {
+						...it,
+						name: `Восстановление ${toothPrefix}керамической накладкой / вкладкой E.max`,
+						priceRub: 8500,
+						unitPriceRub: 8500,
+					};
+				}
+				const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
+				const premiumPrice = Math.round((basePrice * 1.35) / 100) * 100;
+				return {
+					...it,
+					priceRub: premiumPrice,
+					unitPriceRub: premiumPrice,
+				};
+			}
+
+			// optimum (золотой клинический стандарт — сохраняет точные наименования врача и базовые сметы)
+			const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
+			return {
+				...it,
+				name: it.name,
+				priceRub: basePrice,
+				unitPriceRub: basePrice,
+			};
+		});
+
+		const stageTotalRub = mappedItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
+		return {
+			...stg,
+			totalRub: stageTotalRub,
+			totalKopecks: stageTotalRub * 100,
+			items: mappedItems,
+		};
+	});
+}
+
+/**
  * buildCanonical3TierPlans — Сборка 3 канонических тарифов плана лечения.
  * Тарифы базируются на честных альтернативных клинических процедурах,
  * исключая фиктивные скалярные множители цен (0.75 / 1.45).
@@ -718,23 +968,7 @@ export function buildCanonical3TierPlans(baseStages?: readonly TreatmentPlanStag
 	const sanitized = sanitizePatientPresentationStages(baseStages);
 
 	return CANONICAL_TIER_DEFINITIONS.map((def) => {
-		const tierStages: TreatmentPlanStage[] = sanitized.map((stg) => {
-			const mappedItems = stg.items.map((it) => ({
-				...it,
-				name: it.name,
-				priceRub: it.priceRub,
-				unitPriceRub: typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub,
-			}));
-
-			const sRub = mappedItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
-			return {
-				...stg,
-				totalRub: sRub,
-				totalKopecks: sRub * 100,
-				items: mappedItems,
-			};
-		});
-
+		const tierStages = differentiateStagesForTier(sanitized, def.id);
 		const totalRub = tierStages.reduce((sum, s) => sum + s.totalRub, 0);
 		const totalKopecks = totalRub * 100;
 		return {

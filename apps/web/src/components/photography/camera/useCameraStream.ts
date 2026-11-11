@@ -9,6 +9,7 @@ export const PREFERRED_CAMERA_KEY = 'dente_preferred_camera_device_id';
 
 export function useCameraStream(isOpen: boolean) {
 	const videoRef = useRef<HTMLVideoElement | null>(null);
+	const activeStreamRef = useRef<MediaStream | null>(null);
 	const [stream, setStream] = useState<MediaStream | null>(null);
 	const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
 	const [selectedDeviceId, setSelectedDeviceId] = useState<string>(() => {
@@ -21,11 +22,15 @@ export function useCameraStream(isOpen: boolean) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-	const stopActiveStream = useCallback((mediaStream: MediaStream | null) => {
-		if (mediaStream) {
-			for (const track of mediaStream.getTracks()) {
+	const stopActiveStream = useCallback((mediaStream?: MediaStream | null) => {
+		const target = mediaStream !== undefined ? mediaStream : activeStreamRef.current;
+		if (target) {
+			for (const track of target.getTracks()) {
 				track.stop();
 			}
+		}
+		if (mediaStream === undefined || mediaStream === activeStreamRef.current) {
+			activeStreamRef.current = null;
 		}
 	}, []);
 
@@ -49,7 +54,7 @@ export function useCameraStream(isOpen: boolean) {
 	const startStream = useCallback(async (deviceId?: string) => {
 		setIsLoading(true);
 		setErrorMessage(null);
-		stopActiveStream(stream);
+		stopActiveStream();
 		setStream(null);
 
 		try {
@@ -66,6 +71,7 @@ export function useCameraStream(isOpen: boolean) {
 				videoConstraints.facingMode = { ideal: 'environment' };
 			}
 			const newStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+			activeStreamRef.current = newStream;
 			setStream(newStream);
 			if (videoRef.current) {
 				videoRef.current.srcObject = newStream;
@@ -82,17 +88,19 @@ export function useCameraStream(isOpen: boolean) {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [stream, stopActiveStream, refreshDevices]);
+	}, [stopActiveStream, refreshDevices]);
 
 	useEffect(() => {
 		if (isOpen) {
 			void startStream(selectedDeviceId);
 		} else {
-			stopActiveStream(stream);
+			stopActiveStream();
 			setStream(null);
 		}
-		return () => { stopActiveStream(stream); };
-	}, [isOpen]);
+		return () => {
+			stopActiveStream();
+		};
+	}, [isOpen, selectedDeviceId, startStream, stopActiveStream]);
 
 	const handleDeviceSelect = (deviceId: string) => {
 		setSelectedDeviceId(deviceId);

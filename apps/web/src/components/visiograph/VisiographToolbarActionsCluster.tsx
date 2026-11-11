@@ -70,7 +70,7 @@ export function VisiographToolbarActionsCluster({
 				title="Добавить услугу прицельного снимка (450 ₽) в кассовый чек приёма"
 			>
 				<CreditCard size={13} aria-hidden="true" />
-				<span>{isBilled ? "✓ В чеке" : "+ В чек (450 ₽)"}</span>
+				<span>{isBilled ? "В чеке" : "+ В чек (450 ₽)"}</span>
 			</button>
 
 			<button
@@ -117,7 +117,7 @@ export function VisiographToolbarActionsCluster({
 				title="Сохранить снимок с измерениями в карту пациента (Прикрепить к визиту)"
 			>
 				<Check size={14} strokeWidth={2.5} />
-				<span>{isAttached ? "✓ В карте приёма" : "Сохранить в карту пациента"}</span>
+				<span>{isAttached ? "В карте приёма" : "Сохранить в карту пациента"}</span>
 			</button>
 
 			{onClose && (

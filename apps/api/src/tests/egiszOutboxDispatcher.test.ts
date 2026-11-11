@@ -277,7 +277,7 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 		});
 
 		it("4.2 createEgiszRemdReceipt generates compliant statutory receipt", () => {
-			const receipt = createEgiszRemdReceipt({
+			const pendingReceipt = createEgiszRemdReceipt({
 				remdDocumentId: "REMD-2026-9999",
 				transactionId: "TXN-8888",
 				organizationId: "11111111-1111-1111-1111-111111111111",
@@ -291,15 +291,32 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 				docTypeNsiCode: "108",
 			});
 
-			assert.strictEqual(receipt.remdDocumentId, "REMD-2026-9999");
-			assert.strictEqual(receipt.remdTransactionId, "TXN-8888");
-			assert.strictEqual(receipt.docTypeNsiCode, "108");
+			assert.strictEqual(pendingReceipt.remdDocumentId, "REMD-2026-9999");
+			assert.strictEqual(pendingReceipt.remdTransactionId, "TXN-8888");
+			assert.strictEqual(pendingReceipt.docTypeNsiCode, "108");
 			assert.strictEqual(
-				receipt.docTypeTitle,
+				pendingReceipt.docTypeTitle,
 				"Стоматологический протокол приёма (СЭМД 108)",
 			);
-			assert.strictEqual(receipt.operatorSignature.verificationStatus, "VERIFIED_VALID");
-			assert.ok(receipt.receiptId.startsWith("RCP-REMD-REMD-2026-9999-"));
+			assert.strictEqual(pendingReceipt.operatorSignature.verificationStatus, "pending_gateway");
+			assert.strictEqual(pendingReceipt.receiptId, null);
+
+			const verifiedReceipt = createEgiszRemdReceipt({
+				receiptId: "RCP-REMD-REMD-2026-9999-123456",
+				remdDocumentId: "REMD-2026-9999",
+				transactionId: "TXN-8888",
+				organizationId: "11111111-1111-1111-1111-111111111111",
+				patientId: "22222222-2222-2222-2222-222222222222",
+				patientSnils: "11223344595",
+				visitId: "33333333-3333-3333-3333-333333333333",
+				clinicOid: "1.2.643.5.1.13.13.12.2.77.9999",
+				payloadHashSha256: "abc123hash",
+				doctorCertSerial: "55AA",
+				doctorCertSubject: "Врач Стоматолог",
+				docTypeNsiCode: "108",
+			});
+			assert.strictEqual(verifiedReceipt.operatorSignature.verificationStatus, "VERIFIED_VALID");
+			assert.ok(verifiedReceipt.receiptId?.startsWith("RCP-REMD-REMD-2026-9999-"));
 		});
 
 		it("4.3 EgiszGatewayClient delegates to underlying gateway cleanly", () => {

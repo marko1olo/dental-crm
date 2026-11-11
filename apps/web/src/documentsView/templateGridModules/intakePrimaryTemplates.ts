@@ -10,7 +10,7 @@ export const INTAKE_PRIMARY_TEMPLATES: readonly DocumentTemplateItem[] = [
 	{
 		id: "primary_intake_package_quick",
 		kind: "primary_intake_package",
-		titleRu: "Пакет первичного приёма в 1 клик",
+		titleRu: "Пакет первичного приёма",
 		category: "intake",
 		badgeRu: "Комплект",
 		descriptionRu: "Комплект первичного приёма: Договор на лечение, Информированное согласие, Защита персональных данных и Анкета соматического здоровья.",

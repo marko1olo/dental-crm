@@ -30,6 +30,8 @@ import {
 	revokedPortalTokens,
 } from "./portal/index.js";
 
+export const patientPortalRoutes = portalRoutes;
+
 export {
 	OTP_EXPIRY_SECONDS,
 	OTP_MAX_REQUESTS_PER_IP,

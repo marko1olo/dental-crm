@@ -135,7 +135,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 
 					<div className="flex items-baseline justify-between gap-2">
 						<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
-							{activeTier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
+							{activeTier.isRecommended && <ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />}
 							<span>{sanitizedActiveTitle}</span>
 						</h3>
 						<div className="text-xl font-black text-[var(--ink)] tracking-tight">{formatRubles(activeTier.totalRub)}</div>
@@ -195,7 +195,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 							</div>
 
 							<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
-								{tier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
+								{tier.isRecommended && <ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />}
 								<span>{tierTitleClean}</span>
 							</h3>
 

@@ -20,15 +20,15 @@ export async function postFamilyRefundApi(
 	comment: string,
 	clientMutationId: string,
 ) {
-	return fetch("/api/finance/family/topup", {
+	return fetch("/api/finance/family/refund", {
 		method: "POST",
 		headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 		body: JSON.stringify({
 			patientId: effectiveTargetPatientId,
 			familyGroupId: familyId,
 			amountRub: refundAmount,
-			method: "other",
-			comment,
+			method: "cash",
+			reason: comment,
 			clientMutationId,
 		}),
 	});

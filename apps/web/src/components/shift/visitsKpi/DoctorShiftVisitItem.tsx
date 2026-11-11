@@ -85,7 +85,7 @@ export const DoctorShiftVisitItem: React.FC<DoctorShiftVisitItemProps> = ({
 						className="primary-button"
 						style={{ fontSize: "13px", height: "36px", padding: "0 14px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--teal)", color: "#fff", cursor: "pointer" }}
 						onClick={() => patient && onOpenAppointmentEmk?.(patient.id)}
-						title="Принять пациента в кресло в 1 клик"
+						title="Принять пациента в кресло"
 						data-testid="btn-call-to-chair"
 					>
 						<UserCheck size={14} aria-hidden="true" /> Вызвать в кабинет

@@ -5,7 +5,7 @@
  */
 
 import type React from "react";
-import { Sparkles, Star, UserCheck } from "lucide-react";
+import { Star, UserCheck } from "lucide-react";
 import {
 	BookingAnyDoctorCard,
 	BookingDoctorCard,
@@ -58,18 +58,17 @@ export const BookingDoctorsSection: React.FC<BookingDoctorsSectionProps> = ({
 						</div>
 						<div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap mt-0.5">
 							<span className="truncate">
-								{selectedDoctor.specialties.join(", ")} • Опыт {selectedDoctor.experienceYears} лет
+								{selectedDoctor.specialties.join(", ")}{selectedDoctor.experienceYears ? ` • Опыт ${selectedDoctor.experienceYears} лет` : ""}
 							</span>
-							<span className="dbw-badge-rating text-[11px] font-bold py-0.5 px-1.5 rounded inline-flex items-center gap-0.5 shrink-0">
-								<Star size={11} fill="#b45309" aria-hidden="true" />
-								{selectedDoctor.rating.toFixed(1)}
-							</span>
+							{selectedDoctor.rating > 0 && (
+								<span className="dbw-badge-rating text-[11px] font-bold py-0.5 px-1.5 rounded inline-flex items-center gap-0.5 shrink-0">
+									<Star size={11} fill="#b45309" aria-hidden="true" />
+									{selectedDoctor.rating.toFixed(1)}
+								</span>
+							)}
 						</div>
 					</div>
 				</div>
-				<span className="dbw-solo-tag shrink-0">
-					<Sparkles size={12} /> Соло-доктор
-				</span>
 			</div>
 		);
 	}

@@ -39,6 +39,7 @@ export function VisitConsentsTab(props: VisitConsentsTabProps) {
 	const {
 		onOpenInformedConsentModal,
 		onOpenWarrantyModal,
+		onFastPrintMedicalCard,
 		onFastPrint043u,
 	} = props;
 
@@ -184,7 +185,7 @@ export function VisitConsentsTab(props: VisitConsentsTabProps) {
 				<div className="vct-footer-actions">
 					<button
 						type="button"
-						onClick={onFastPrint043u}
+						onClick={onFastPrintMedicalCard ?? onFastPrint043u}
 						data-testid="btn-visit-consents-print-043u"
 						className="vct-btn vct-btn-secondary"
 						title="Печать полного дневника приёма (медицинская карта)"

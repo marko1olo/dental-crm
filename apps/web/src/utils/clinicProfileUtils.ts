@@ -274,6 +274,8 @@ export function patientAdministrativeProfileDraftFromPatient(
 				? profile.dmsCoverageLimitRub
 				: null,
 		leadSource: safeProfileString(profile?.leadSource),
+		telegramUserId: typeof profile?.telegramUserId === "string" ? profile.telegramUserId : null,
+		telegramUsername: typeof profile?.telegramUsername === "string" ? profile.telegramUsername : null,
 	};
 }
 
@@ -379,6 +381,8 @@ export function buildPatientAdministrativeProfilePayload(
 		isAnonymous: draft.isAnonymous === true,
 		anonymousCode: draft.isAnonymous === true ? nullablePatientDraftValue(draft.anonymousCode ?? "") : null,
 		decree659Compliance: draft.decree659Compliance ?? null,
+		telegramUserId: nullablePatientDraftValue(draft.telegramUserId),
+		telegramUsername: nullablePatientDraftValue(draft.telegramUsername),
 		insuranceContractId: (() => {
 			const raw = nullablePatientDraftValue(draft.insuranceContractId);
 			return raw && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw) ? raw : null;

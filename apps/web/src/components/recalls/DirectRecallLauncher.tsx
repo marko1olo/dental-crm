@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { RecallStudioModal } from "./RecallStudioModal";
+import { PatientRecallsHubModal } from "./PatientRecallsHubModal";
 
 function checkIsRecallRequested(): boolean {
 	if (typeof window === "undefined") return false;
@@ -60,7 +60,7 @@ export const DirectRecallLauncher: React.FC = () => {
 
 	return (
 		<div data-testid="direct-recall-launcher">
-			<RecallStudioModal isOpen={isOpen} onClose={handleClose} />
+			<PatientRecallsHubModal isOpen={isOpen} onClose={handleClose} />
 		</div>
 	);
 };

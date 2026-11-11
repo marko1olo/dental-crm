@@ -54,7 +54,6 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 		const sidebarFile = path.join(dsdDir, 'DsdMetricsSidebar.tsx');
 		const studioModalFile = path.join(dsdDir, 'DsdAestheticStudioModal.tsx');
 		const photoModalFile = path.join(photographyDir, 'ClinicalPhotoProtocolModal.tsx');
-		const legacyModalFile = path.join(photographyDir, 'DigitalSmileDesignModal.tsx');
 		const indexExportFile = path.join(photographyDir, 'index.ts');
 
 		assert.ok(fs.existsSync(canvasFile), 'DsdCanvasOverlay.tsx must exist');
@@ -64,7 +63,6 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 
 		const photoModalContent = fs.readFileSync(photoModalFile, 'utf-8');
 		const studioModalContent = fs.readFileSync(studioModalFile, 'utf-8');
-		const legacyModalContent = fs.readFileSync(legacyModalFile, 'utf-8');
 		const indexExportContent = fs.readFileSync(indexExportFile, 'utf-8');
 
 		// 1. ClinicalPhotoProtocolModal mounts DsdCanvasOverlay & DsdMetricsSidebar
@@ -87,25 +85,7 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 			'DsdAestheticStudioModal must import DsdMetricsSidebar',
 		);
 
-		// 3. DigitalSmileDesignModal mounts DsdCanvasOverlay & DsdMetricsSidebar
-		assert.ok(
-			legacyModalContent.includes("from './dsd/DsdCanvasOverlay'") || legacyModalContent.includes("from './dsd/DsdAestheticStudioModal'"),
-			'DigitalSmileDesignModal must import DsdCanvasOverlay or delegate to DsdAestheticStudioModal',
-		);
-
-		// 4. Index exports all DSD artifacts
-		assert.ok(
-			studioModalContent.includes("from './DsdMetricsSidebar'"),
-			'DsdAestheticStudioModal must import DsdMetricsSidebar',
-		);
-
-		// 4. DigitalSmileDesignModal mounts DsdCanvasOverlay & DsdMetricsSidebar
-		assert.ok(
-			legacyModalContent.includes("from './dsd/DsdCanvasOverlay'") || legacyModalContent.includes("from './dsd/DsdAestheticStudioModal'"),
-			'DigitalSmileDesignModal must import DsdCanvasOverlay or delegate to DsdAestheticStudioModal',
-		);
-
-		// 5. Index exports all DSD artifacts
+		// 3. Index exports all DSD artifacts
 		assert.ok(
 			indexExportContent.includes("from './dsd/DsdAestheticStudioModal'"),
 			'index.ts must export DsdAestheticStudioModal',
@@ -124,15 +104,17 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 		const visitUploadFile = path.join(visitPhotoDir, 'VisitDiaryPhotoUpload.tsx');
 		const visitToolbarFile = path.join(visitPhotoDir, 'VisitDiaryPhotoActionsToolbar.tsx');
 		const visitGridFile = path.join(visitPhotoDir, 'VisitDiaryPhotoThumbnailGrid.tsx');
+		const visitModalsFile = path.join(visitPhotoDir, 'VisitDiaryPhotoModals.tsx');
 
 		const visitUploadContent = fs.readFileSync(visitUploadFile, 'utf-8');
 		const visitToolbarContent = fs.readFileSync(visitToolbarFile, 'utf-8');
 		const visitGridContent = fs.readFileSync(visitGridFile, 'utf-8');
+		const visitModalsContent = fs.readFileSync(visitModalsFile, 'utf-8');
 
-		// VisitDiaryPhotoUpload mounts DsdAestheticStudioModal
+		// VisitDiaryPhotoModals mounts DsdAestheticStudioModal
 		assert.ok(
-			visitUploadContent.includes('DsdAestheticStudioModal'),
-			'VisitDiaryPhotoUpload must import and render DsdAestheticStudioModal',
+			visitModalsContent.includes('DsdAestheticStudioModal'),
+			'VisitDiaryPhotoModals must import and render DsdAestheticStudioModal',
 		);
 		assert.ok(
 			visitUploadContent.includes('dente:open-dsd'),
@@ -167,7 +149,6 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 	test('4. Memory Leak Protection (PHO-04) & URL.revokeObjectURL cleanup', () => {
 		const studioModalContent = fs.readFileSync(path.join(dsdDir, 'DsdAestheticStudioModal.tsx'), 'utf-8');
 		const photoModalContent = fs.readFileSync(path.join(photographyDir, 'ClinicalPhotoProtocolModal.tsx'), 'utf-8');
-		const legacyModalContent = fs.readFileSync(path.join(photographyDir, 'DigitalSmileDesignModal.tsx'), 'utf-8');
 
 		assert.ok(
 			studioModalContent.includes('URL.revokeObjectURL'),
@@ -176,10 +157,6 @@ describe('Digital Smile Design (DSD) Studio Integration Suite [PHO-02..05]', () 
 		assert.ok(
 			photoModalContent.includes('URL.revokeObjectURL'),
 			'ClinicalPhotoProtocolModal must explicitly revoke Blob URLs to prevent memory leaks',
-		);
-		assert.ok(
-			legacyModalContent.includes('URL.revokeObjectURL') || legacyModalContent.includes('DsdAestheticStudioModal'),
-			'DigitalSmileDesignModal must delegate to DsdAestheticStudioModal or explicitly revoke Blob URLs to prevent memory leaks',
 		);
 	});
 

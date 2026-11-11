@@ -21,7 +21,7 @@ export function sortPricelistItems(
 			case "code": {
 				const codeA = a.statutoryCode || a.code804n;
 				const codeB = b.statutoryCode || b.code804n;
-				return factor * codeA.localeCompare(codeB, "ru");
+				return factor * (codeA ?? "").localeCompare(codeB ?? "", "ru");
 			}
 			case "title":
 				return factor * a.commercialTitle.localeCompare(b.commercialTitle, "ru");

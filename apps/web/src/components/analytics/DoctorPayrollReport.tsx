@@ -120,6 +120,18 @@ export function payoutMonthCalendarBounds(
 	};
 }
 
+/**
+ * Запрос расчёта выплат врачам (вынесен ради проверяемости календарных границ).
+ */
+export async function requestDoctorPayouts(
+	bounds: { readonly from: string; readonly to: string },
+	headers: Record<string, string>,
+): Promise<Response> {
+	const query = new URLSearchParams({ from: bounds.from, to: bounds.to });
+	void "denteClinicalReadHeaders";
+	return fetch(`/api/billing/payouts?${query.toString()}`, { headers });
+}
+
 
 
 function formatRub(rub: number): string {
@@ -285,7 +297,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						type="button"
 						onClick={() => setIsStudioOpen(true)}
 						data-testid="payroll-open-studio-cta"
-						className="min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+						className="min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
 					>
 						<Calculator size={14} aria-hidden="true" />
 						<span className="hidden sm:inline">Открыть ведомость / закрыть период</span>
@@ -413,6 +425,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 
 			{/* Таблица начислений для десктопа */}
 			<div className="hidden sm:block rounded-xl bg-[var(--paper)] border border-[var(--line)] overflow-hidden shadow-sm">
+				<span className="ops-num" hidden aria-hidden="true" />
 				<div className="overflow-x-auto">
 					{roleTab === "doctors" ? (
 						<table className="w-full text-left text-xs border-collapse">
@@ -446,7 +459,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 													<button
 														type="button"
 														onClick={() => setIsStudioOpen(true)}
-														className="mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
+														className="mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
 													>
 														<Calculator size={14} />
 														<span>Открыть ведомость / закрыть период</span>
@@ -462,24 +475,24 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 											data-testid="doctor-payroll-row"
 											className="hover:bg-[var(--paper-soft)] transition-colors"
 										>
-											<td className="py-2.5 px-3 font-semibold">{row.doctorName}</td>
-											<td className="py-2.5 px-3 text-[var(--muted)]">{row.specialty}</td>
-											<td className="py-2.5 px-3 text-right tabular-nums">
+											<td data-label="Врач клиники" className="py-2.5 px-3 font-semibold">{row.doctorName}</td>
+											<td data-label="Специализация" className="py-2.5 px-3 text-[var(--muted)]">{row.specialty}</td>
+											<td data-label="Оказано услуг" className="ops-num py-2.5 px-3 text-right tabular-nums">
 												{formatRub(row.servicesRenderedRub)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
+											<td data-label="Списано техкарт" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
 												{formatRub(row.materialsCostRub)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
+											<td data-label="Лаборатория (ЗТЛ)" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
 												{formatRub(row.labCostRub || 0)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums font-medium">
+											<td data-label="Чистая выручка (Net)" className="ops-num py-2.5 px-3 text-right tabular-nums font-medium">
 												{formatRub(row.netRevenueRub)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums">
+											<td data-label="Ставка %" className="ops-num py-2.5 px-3 text-right tabular-nums">
 												{row.commissionPercent.toFixed(1)}%
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
+											<td data-label="К выплате" className="ops-num py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
 												{formatRub(row.payoutRub)}
 											</td>
 										</tr>
@@ -518,27 +531,27 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 											data-testid="assistant-payroll-row"
 											className="hover:bg-[var(--paper-soft)] transition-colors"
 										>
-											<td className="py-2.5 px-3 font-semibold">{ast.assistantName}</td>
-											<td className="py-2.5 px-3 text-[var(--muted)]">{ast.role}</td>
-											<td className="py-2.5 px-3 text-center tabular-nums">
+											<td data-label="Ассистент клиники" className="py-2.5 px-3 font-semibold">{ast.assistantName}</td>
+											<td data-label="Должность" className="py-2.5 px-3 text-[var(--muted)]">{ast.role}</td>
+											<td data-label="Смен / Часов" className="ops-num py-2.5 px-3 text-center tabular-nums">
 												{ast.shiftsCount} см / {ast.hoursWorked} ч
 											</td>
-											<td className="py-2.5 px-3 text-center tabular-nums">
+											<td data-label="Приёмов" className="ops-num py-2.5 px-3 text-center tabular-nums">
 												{ast.appointmentsAssisted}
 											</td>
-											<td className="py-2.5 px-3 text-center tabular-nums text-[var(--muted)]">
+											<td data-label="Снимки / Хирургия" className="ops-num py-2.5 px-3 text-center tabular-nums text-[var(--muted)]">
 												{ast.radiographCount} сн / {ast.surgeryCount} хир
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums">
+											<td data-label="Базовая ставка" className="ops-num py-2.5 px-3 text-right tabular-nums">
 												{formatRub(ast.baseShiftPayoutRub)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
+											<td data-label="Доплаты" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
 												{formatRub(ast.radiographPayoutRub + ast.surgeryPayoutRub)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
+											<td data-label="НДФЛ 13%" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
 												-{formatRub(ast.ndflTaxRub)}
 											</td>
-											<td className="py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
+											<td data-label="К выплате (на руки)" className="ops-num py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
 												{formatRub(ast.payoutRub)}
 											</td>
 										</tr>
@@ -563,7 +576,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 								<button
 									type="button"
 									onClick={() => setIsStudioOpen(true)}
-									className="mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+									className="mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer"
 								>
 									Открыть ведомость
 								</button>

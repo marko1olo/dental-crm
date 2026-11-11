@@ -6,7 +6,7 @@ import {
 import {
 	quickDeductSurgicalMaterials,
 	type SurgicalOperationNorm,
-} from "../../../surgery/surgeryProtocols";
+} from "../../../surgery/surgeryCatalogData";
 import { useVisitStore } from "../../../../store/visitStore";
 
 export function executeApplyToVisitDiary(protocolText: string, onApplyToDiary?: (text: string) => void) {
@@ -53,7 +53,32 @@ export function executePrintProtocol(params: {
 	showToast("Протокол операции отправлен на печать", "info");
 }
 
-export const executePrintProtocolTab = executePrintProtocol;
+export function executePrintProtocolTab(
+	first: any,
+	second?: string,
+	third?: string,
+) {
+	if (first && typeof first === "object" && "currentNorm" in first && "protocolText" in first && !("patientName" in first)) {
+		const s = first;
+		return executePrintProtocol({
+			patientName: second || "Пациент",
+			doctorName: third || "Врач-хирург",
+			currentNorm: s.currentNorm,
+			effectiveTooth: s.effectiveTooth ?? 46,
+			protocolText: s.protocolText || "",
+			implantDetails: s.selectedNormId === "surgery_implant_standard" ? {
+				implantBrand: s.implantBrand || "Dentium",
+				diameterMm: s.implantDiameter || 4.0,
+				lengthMm: s.implantLength || 10.0,
+				torqueNcm: s.implantTorque || 35,
+				isq: s.implantIsq || 72,
+				capType: s.implantCap || "fdm",
+				sutureMaterial: s.implantSuture || "Prolene 4-0",
+			} : undefined,
+		});
+	}
+	return executePrintProtocol(first);
+}
 
 export function executePrintIds(patientName: string, doctorName: string, normTitle: string, effectiveTooth: number) {
 	printSurgicalPackage({

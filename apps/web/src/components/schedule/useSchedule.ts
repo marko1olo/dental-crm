@@ -9,11 +9,9 @@ import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 import { syncShiftsWithServer, type SyncShiftPayload } from "./chairRosterMath";
 import { computeShiftAssignment, type ShiftPresetType } from "./scheduleShiftHelpers";
 import {
-	matchWaitlistCandidatesForSlot,
-	type MatchWaitlistSlotParams,
-	type SmartSlotCandidateMatch,
-	type SmartSlotRecoveryResult,
-} from "./smartSlotRecoveryEngine";
+	filterWaitlistCandidates as matchWaitlistCandidatesForSlot,
+	scoreWaitlistCandidate,
+} from "./waitlist/waitlistScoringEngine";
 import { useChairSlotsLoader } from "./scheduleHooks/useChairSlotsLoader";
 import { useChairAssignmentsState } from "./scheduleHooks/useChairAssignmentsState";
 import { useSingleShiftAssigner } from "./scheduleHooks/useSingleShiftAssigner";
@@ -23,8 +21,7 @@ import { useChairEntityOperations } from "./scheduleHooks/useChairEntityOperatio
 import { useAppointmentSlotMovement } from "./scheduleHooks/useAppointmentSlotMovement";
 
 export {
-	resolveChairDutyDoctor, syncShiftsWithServer, computeShiftAssignment, matchWaitlistCandidatesForSlot,
-	type MatchWaitlistSlotParams, type SmartSlotCandidateMatch, type SmartSlotRecoveryResult,
+	resolveChairDutyDoctor, syncShiftsWithServer, computeShiftAssignment, matchWaitlistCandidatesForSlot, scoreWaitlistCandidate,
 	type ChairDoctorShiftAssignment, type ChairDoctorSubShift, type ScheduleChair,
 	type QuickAddChairData, type SyncShiftPayload, type ShiftPresetType,
 };

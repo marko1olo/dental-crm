@@ -182,7 +182,7 @@ for (const state of states) {
 	await page.waitForTimeout(500);
 
 	const filePath = path.join(PROOFS_DIR, state.filename);
-	const buffer = await page.screenshot({ fullPage: false });
+	const buffer = await page.screenshot({ fullPage: false, animations: "disabled", timeout: 15000 });
 	fs.writeFileSync(filePath, buffer);
 
 	for (const alias of state.aliases) {

@@ -15,35 +15,35 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Red Team: Settlement Period Close & Potemkin Village Eradication", () => {
-	it("1. DoctorPayrollModal.tsx contains 0 fake setTimeout period closed simulations", () => {
-		const modalPath = path.resolve(__dirname, "../../DoctorPayrollModal.tsx");
-		assert.ok(fs.existsSync(modalPath), "DoctorPayrollModal.tsx must exist");
+	it("1. DoctorPayrollStudioModal.tsx contains 0 fake setTimeout period closed simulations and binds canonical API", () => {
+		const modalPath = path.resolve(__dirname, "../../DoctorPayrollStudioModal.tsx");
+		assert.ok(fs.existsSync(modalPath), "DoctorPayrollStudioModal.tsx must exist");
 		const content = fs.readFileSync(modalPath, "utf8");
 
 		// Запрет на старый бутафорский паттерн: setPeriodClosedNotice(true) + setTimeout
 		assert.equal(
 			content.includes("setPeriodClosedNotice"),
 			false,
-			"DoctorPayrollModal.tsx must not contain fake setPeriodClosedNotice simulation!",
+			"DoctorPayrollStudioModal.tsx must not contain fake setPeriodClosedNotice simulation!",
 		);
 		assert.equal(
 			content.includes("setTimeout(() => setPeriodClosedNotice(false), 4000)"),
 			false,
-			"DoctorPayrollModal.tsx must not contain fake setTimeout period closed simulation!",
+			"DoctorPayrollStudioModal.tsx must not contain fake setTimeout period closed simulation!",
 		);
 
 		// Доказательство наличия реальной связки с бэкендом
 		assert.ok(
-			content.includes("handleCloseSettlementPeriod"),
-			"DoctorPayrollModal.tsx must wire handleCloseSettlementPeriod",
+			content.includes("handleCommitPayout"),
+			"DoctorPayrollStudioModal.tsx must wire handleCommitPayout",
 		);
 		assert.ok(
-			content.includes("isPeriodClosed"),
-			"DoctorPayrollModal.tsx must check isPeriodClosed state",
+			content.includes("closeSettlementPeriodApi"),
+			"DoctorPayrollStudioModal.tsx must call closeSettlementPeriodApi",
 		);
 		assert.ok(
-			content.includes("doctor-payroll-close-period-btn"),
-			"Close period button must have data-testid",
+			content.includes("payroll-studio-primary-cta"),
+			"Close period button must have data-testid payroll-studio-primary-cta",
 		);
 	});
 
@@ -57,30 +57,5 @@ describe("Red Team: Settlement Period Close & Potemkin Village Eradication", () 
 		assert.ok(apiContent.includes("/api/doctor/close-settlement-period"));
 		assert.ok(apiContent.includes("/api/doctor/settlement-period/reopen"));
 	});
-
-	it("3. useDoctorPayrollModalState binds real settlement period closing and reactive state update", () => {
-		const statePath = path.resolve(__dirname, "../../useDoctorPayrollModalState.ts");
-		const stateContent = fs.readFileSync(statePath, "utf8");
-
-		assert.ok(
-			stateContent.includes("isPeriodClosed"),
-			"State must track isPeriodClosed",
-		);
-		assert.ok(
-			stateContent.includes("settlementStatement"),
-			"State must track settlementStatement payload",
-		);
-		assert.ok(
-			stateContent.includes("closeSettlementPeriodApi"),
-			"State must call closeSettlementPeriodApi",
-		);
-		assert.ok(
-			stateContent.includes("reopenSettlementPeriodApi"),
-			"State must call reopenSettlementPeriodApi",
-		);
-		assert.ok(
-			stateContent.includes("fetchDoctorEarningsWithStatusApi"),
-			"State must call fetchDoctorEarningsWithStatusApi to restore closed period on mount",
-		);
-	});
 });
+

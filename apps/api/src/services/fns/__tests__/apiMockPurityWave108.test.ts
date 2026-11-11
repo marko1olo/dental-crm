@@ -4,7 +4,6 @@ import { describe, it } from "node:test";
 import { buildFnsKnd1151156Xml } from "../fnsKnd1151156Builder.js";
 import { renderDocumentHtml } from "../../../documents/renderDocument.js";
 import { parsePassportFromString } from "../../../routes/documentTemplatesModules/defaultStatutoryTemplates.js";
-import { PublicEstimatesService, type StoredPublicEstimate } from "../../publicEstimatesService.js";
 import { verifySberPosWebhookChecksum } from "../../../routes/payments/sberPosWebhookRoute.js";
 import type { GeneratedDocument, Patient } from "@dental/shared";
 
@@ -85,39 +84,6 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 
 		const parsedEmpty = parsePassportFromString("");
 		assert.deepEqual(parsedEmpty, {});
-	});
-
-	it("PublicEstimatesService registers and returns realistic estimate metadata in runtime", () => {
-		const testToken = "test-token-wave108-" + Date.now();
-		const estimate: StoredPublicEstimate = {
-			id: "est-108",
-			organizationId: "org-108",
-			patientId: "pat-108",
-			publicToken: testToken,
-			estimateNumber: "СМ-2026-0042",
-			status: "pending",
-			validFrom: "2026-03-01",
-			validUntil: null,
-			clinicName: "Клиника Денте",
-			clinicPhone: "+7 (495) 123-45-67",
-			clinicEmail: "info@dente.ru",
-			clinicAddress: "Москва, ул. Ленина, 1",
-			clinicCurrency: "RUB",
-			patientFirstName: "Елена",
-			failedAttempts: 0,
-			totalFailures: 0,
-			isLocked: false,
-			patientNotes: null,
-			items: [],
-		};
-
-		PublicEstimatesService.registerEstimate(estimate);
-		const meta = PublicEstimatesService.getMeta(testToken);
-
-		assert(meta !== null, "Meta must be returned for registered estimate");
-		assert.equal(meta.patient_first_name, "Елена");
-		assert.equal(meta.estimate_number, "СМ-2026-0042");
-		assert.equal(meta.clinic_name, "Клиника Денте");
 	});
 
 	it("verifySberPosWebhookChecksum validates HMAC-SHA256 signatures in runtime without disk regex", () => {

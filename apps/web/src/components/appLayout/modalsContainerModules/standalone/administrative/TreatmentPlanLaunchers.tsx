@@ -1,69 +1,32 @@
 /**
- * TreatmentPlanLaunchers — Сравнение сценариев, сметы и планы лечения (Мандат 8b, <= 120 строк).
- *
- * Тонкий URL-роутер: пациент и план приходят из базы через честные хосты.
- * Никаких вбитых пациентов, зубов и демо-режимов «для красоты».
+ * TreatmentPlanLaunchers — Сравнение сценариев, сметы и планы лечения (Мандат 8b, <= 60 строк).
+ * Тонкий URL-роутер: единый канонический лаунчер DirectTreatmentPlanLauncher (SSOT).
  */
 
 import React from "react";
-import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
-import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
-import {
-	StandaloneScenarioComparisonHost,
-	StandaloneTreatmentEstimatorHost,
-	StandaloneTreatmentPlansWorkspaceHost,
-} from "./StandaloneTreatmentPlanLauncherHosts";
+import { hasUrlToken } from "../deepLinkUrl";
 import { DirectTreatmentPlanLauncher } from "../../../../treatment-plans/DirectTreatmentPlanLauncher";
 
-const LiveTreatmentPlanPresenterLauncher = lazyWithRetry(() =>
-	import("../LiveTreatmentPlanPresenterLauncher").then((m) => ({ default: m.LiveTreatmentPlanPresenterLauncher })),
-);
-
 export function renderTreatmentPlanLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
-	const { isPlanScenariosDirectModalOpen, setIsPlanScenariosDirectModalOpen, isCasePresenterDirectModalOpen, setIsCasePresenterDirectModalOpen } = props;
+	const { isPlanScenariosDirectModalOpen, isCasePresenterDirectModalOpen } = props;
 
-	if (isPlanScenariosDirectModalOpen) {
-		return (
-			<StandaloneScenarioComparisonHost
-				onClose={() => {
-					setIsPlanScenariosDirectModalOpen?.(false);
-					clearUrlTokens(["scenarios"]);
-				}}
-			/>
-		);
-	}
-
-	if (isCasePresenterDirectModalOpen) {
-		return (
-			<LiveTreatmentPlanPresenterLauncher
-				isOpen={true}
-				onClose={() => {
-					setIsCasePresenterDirectModalOpen?.(false);
-					clearUrlTokens(["presenter", "patientId", "planId"]);
-				}}
-			/>
-		);
-	}
-
-	if (hasUrlToken(["estimator"])) {
-		return (
-			<StandaloneTreatmentEstimatorHost
-				onClose={() => clearUrlTokens(["estimator"])}
-			/>
-		);
-	}
-
-	if (hasUrlToken(["treatment-studio", "treatment_studio"])) {
+	if (
+		isPlanScenariosDirectModalOpen ||
+		isCasePresenterDirectModalOpen ||
+		hasUrlToken([
+			"scenarios",
+			"presenter",
+			"estimator",
+			"treatment-studio",
+			"treatment_studio",
+			"treatment-plans",
+			"treatment_plans",
+			"plans",
+			"estimates",
+		])
+	) {
 		return <DirectTreatmentPlanLauncher />;
-	}
-
-	if (hasUrlToken(["treatment-plans", "treatment_plans"])) {
-		return (
-			<StandaloneTreatmentPlansWorkspaceHost
-				onClose={() => clearUrlTokens(["treatment-plans", "treatment_plans"])}
-			/>
-		);
 	}
 
 	return null;

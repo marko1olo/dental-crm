@@ -28,7 +28,7 @@ import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { OdontogramStudioModal } from "../odontogram/OdontogramStudioModal";
 import { VisitDiaryActionsFooter } from "../visit/diary/section/VisitDiaryActionsFooter";
 import { TreatmentPlanStudioModal } from "../treatment-plans/TreatmentPlanStudioModal";
-import { CashRegisterCheckoutModal } from "../cashbox/CashRegisterCheckoutModal";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 import { ScheduleMobileBottomBar } from "../schedule/mobile/ScheduleMobileBottomBar";
 import { IcdMobileBottomSheet } from "../visit/diary/fields/IcdMobileBottomSheet";
 
@@ -140,7 +140,10 @@ describe("Clinical Workflow — Stage 3: Visit SOAP Diary & Autosave Protocol", 
 
 		// Primary CTA
 		assert.ok(html.includes('id="diary-complete-visit-btn"'));
-		assert.ok(html.includes("Завершить приём и сохранить карту"));
+		assert.ok(
+			html.includes("Завершить приём и подписать") ||
+				html.includes("Завершить приём и сохранить карту"),
+		);
 
 		// Secondary buttons
 		assert.ok(html.includes('id="diary-save-btn"'));
@@ -203,11 +206,16 @@ describe("Clinical Workflow — Stage 4: Treatment Plans 3-Tier Autonomy & Exact
 });
 
 describe("Clinical Workflow — Stage 5: Cash Register Checkout & Solo Sovereignty (Mandate 8n)", () => {
-	it("8. renders CashRegisterCheckoutModal with tender tiles, 0 disabled buttons and clean Russian", () => {
+	it("8. renders CashRegisterStudioModal with tender tiles, 0 disabled buttons and clean Russian", () => {
 		const html = renderToString(
-			<CashRegisterCheckoutModal
+			<CashRegisterStudioModal
 				isOpen={true}
 				onClose={() => {}}
+				mode="checkout"
+				initialTab="checkout"
+				containerTestId="cash-register-checkout-modal"
+				submitButtonTestId="btn-confirm-checkout-payment"
+				title="Касса · Оплата приёма"
 				totalDueRub={12500}
 				patientId="pat-petrov"
 				patientName="Петров Василий Николаевич"
@@ -314,7 +322,10 @@ describe("Clinical Workflow — Stage 7: 0-F5 Reactive State Hydration & Counter
 		assert.equal(currentServices[0]?.amountKopecks, 150000);
 
 		// Calculate total in kopecks
-		let totalKopecks = currentServices.reduce((sum, s) => sum + (s.amountKopecks || s.price * 100), 0);
+		let totalKopecks = currentServices.reduce(
+			(sum, s) => sum + (s.amountKopecks ?? (s.price != null ? s.price * 100 : 0)),
+			0,
+		);
 		assert.equal(totalKopecks, 150000, "1500.00 RUB = 150000 kopecks");
 
 		// 2. Add second service: Photopolymer restoration
@@ -328,7 +339,10 @@ describe("Clinical Workflow — Stage 7: 0-F5 Reactive State Hydration & Counter
 
 		currentServices = useVisitStore.getState().completedServices;
 		assert.equal(currentServices.length, 2);
-		totalKopecks = currentServices.reduce((sum, s) => sum + (s.amountKopecks || s.price * 100), 0);
+		totalKopecks = currentServices.reduce(
+			(sum, s) => sum + (s.amountKopecks ?? (s.price != null ? s.price * 100 : 0)),
+			0,
+		);
 		assert.equal(totalKopecks, 700000, "Total must be exactly 7000.00 RUB (700000 kopecks)");
 
 		// 3. Remove first service: instantly reactively decrements badge count and updates total
@@ -336,7 +350,10 @@ describe("Clinical Workflow — Stage 7: 0-F5 Reactive State Hydration & Counter
 		currentServices = useVisitStore.getState().completedServices;
 		assert.equal(currentServices.length, 1);
 		assert.equal(currentServices[0]?.serviceId, "srv-rest-02");
-		totalKopecks = currentServices.reduce((sum, s) => sum + (s.amountKopecks || s.price * 100), 0);
+		totalKopecks = currentServices.reduce(
+			(sum, s) => sum + (s.amountKopecks ?? (s.price != null ? s.price * 100 : 0)),
+			0,
+		);
 		assert.equal(totalKopecks, 550000);
 	});
 
@@ -354,7 +371,7 @@ describe("Clinical Workflow — Stage 7: 0-F5 Reactive State Hydration & Counter
 		};
 
 		// Simulate server protocol confirmation response hydration
-		useVisitStore.getState().setLastVisitSaveReceipt(mockReceipt as any);
+		useVisitStore.getState().setLastVisitSaveReceipt(mockReceipt);
 		useVisitStore.getState().setServerDraftSyncState("saved");
 
 		const state = useVisitStore.getState();

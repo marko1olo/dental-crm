@@ -42,7 +42,7 @@ export const FastCheckoutDiscountBanners: React.FC<FastCheckoutDiscountBannersPr
 				</div>
 			)}
 
-			<span className="sr-only" data-testid="statute-54fz-reference">Для физлиц не требуется (ИНН опционален)</span>
+			<span className="sr-only" data-testid="statute-54fz-reference">Плательщик — пациент (физлицо)</span>
 
 			{discountPreset === "round_hundreds" && (
 				<div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-amber-950 dark:text-amber-100">
@@ -66,7 +66,7 @@ export const FastCheckoutDiscountBanners: React.FC<FastCheckoutDiscountBannersPr
 					<div className="flex items-center gap-2 font-bold">
 						<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
 						<div>
-							<div className="font-extrabold text-emerald-900 dark:text-emerald-200">100% Гарантийная переделка (Мандат 8e)</div>
+							<div className="font-extrabold text-emerald-900 dark:text-emerald-200">100% Гарантийная переделка</div>
 							<div className="text-[11px] font-normal text-emerald-800 dark:text-emerald-300">Сумма к оплате: 0.00 ₽. Физический чек ККТ пропускается (нулевая сумма не печатается).</div>
 						</div>
 					</div>

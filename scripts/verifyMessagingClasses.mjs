@@ -2,6 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const targetDir = "apps/web/src/components/messaging/styles";
+if (!fs.existsSync(targetDir)) {
+	console.log("Messaging styles directory eradicated per Mandate 8bf.");
+	process.exit(0);
+}
 const targetFiles = fs.readdirSync(targetDir);
 const combinedTarget = targetFiles.map((f) => fs.readFileSync(path.join(targetDir, f), "utf-8")).join("\n");
 const targetClasses = new Set(combinedTarget.match(/\.[\w-]+/g) || []);

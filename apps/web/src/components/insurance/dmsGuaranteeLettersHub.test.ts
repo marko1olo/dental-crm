@@ -46,7 +46,9 @@ describe("DmsGuaranteeLettersHub — Guarantee Letters, FDI Formula & Copay Spli
 		assert.ok(usedPct < 80);
 
 		const expiredLetter = TEST_PATIENT_GUARANTEE_LETTERS[1]!;
-		const usedPctExpired = Math.round((expiredLetter.usedAmountKopecks / expiredLetter.maxCoverageKopecks) * 100);
+		const usedAmount = expiredLetter.usedAmountKopecks ?? (expiredLetter.usedAmountRub ? expiredLetter.usedAmountRub * 100 : 0);
+		const maxCoverage = expiredLetter.maxCoverageKopecks ?? (expiredLetter.maxCoverageRub ? expiredLetter.maxCoverageRub * 100 : 1);
+		const usedPctExpired = Math.round((usedAmount / maxCoverage) * 100);
 		assert.equal(usedPctExpired, 85);
 		assert.ok(usedPctExpired >= 80 && usedPctExpired < 100);
 	});

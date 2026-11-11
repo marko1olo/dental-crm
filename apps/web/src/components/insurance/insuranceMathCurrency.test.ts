@@ -10,7 +10,7 @@ import {
 	formatRubKopecks,
 	kopecksToRub,
 	rubToKopecks,
-} from "./insuranceMath";
+} from "./dmsCatalogData.js";
 
 describe("insuranceMath — Копеечная финансовая арифметика ДМС", () => {
 	it("rubToKopecks и kopecksToRub должны переводить рубли в копейки без двоичных погрешностей", () => {

@@ -260,7 +260,7 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 	test("FORM_ZTL_1_METADATA defines statutory Form ZTL-1 and Mandate 8e invariants", () => {
 		assert.equal(FORM_ZTL_1_METADATA.code, "Форма № ЗТЛ-1");
 		assert.ok(FORM_ZTL_1_METADATA.titleRu.includes("Форма № ЗТЛ-1"));
-		assert.ok(FORM_ZTL_1_METADATA.mandate8eClauseRu.includes("30 дней"));
+		assert.ok(FORM_ZTL_1_METADATA.mandate8eClauseRu.includes("подтвержден лечащим врачом"));
 		assert.ok(FORM_ZTL_1_METADATA.sanpinClauseRu.includes("СанПиН 3.3686-21"));
 		assert.ok(FORM_ZTL_1_METADATA.warrantyGostRu.includes("ГОСТ Р 51087-97"));
 	});

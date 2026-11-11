@@ -18,7 +18,6 @@ import {
 	generateFnsTaxCertificateXml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
-	generateGostXmlSignatureBlock,
 	parseRublesToKopecks,
 	validateXmlStructure,
 	type EgiszDentalCdaPayload,
@@ -161,35 +160,27 @@ describe("cdaR2XmlBuilder — HL7 CDA R2 Generation & Legal Standards", () => {
 		assert.ok(brokenValidation.errors.some((e) => e.includes("СвОрг") || e.includes("не совпадает")));
 	});
 
-	it("3. Supports GOST R 34.10-2012 256-bit and 512-bit XMLDSig Signature Blocks", () => {
-		const sig256: GostSignatureInfo = {
-			signatureBase64: "MEYCIQDx...test256base64...",
-			certificateSerialNumber: "7A8B9C0D1E2F3A4B",
-			certificateSubject: "CN=Смирнова Анна Сергеевна, O=ООО Денте Клиник",
-			signedAt: "2026-09-25T10:00:00Z",
-			algorithmOid: "1.2.643.7.1.1.1.1", // GOST 34.10-2012 256
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2", // GOST 34.11-2012 256
-		};
+	it("3. Order 947n enforces detached PKCS#7 / CAdES signatures and visual stamp rendering", () => {
+		const htmlStamp = generateGostSignatureStampHtml({
+			signerName: "Смирнова Анна Сергеевна",
+			certificateNumber: "7A8B9C0D1E2F3A4B",
+			validFrom: "2026-01-01",
+			validTo: "2027-01-01",
+			orgName: "ООО Денте Клиник",
+		});
+		assert.ok(htmlStamp.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
+		assert.ok(htmlStamp.includes("7A8B9C0D1E2F3A4B"));
+		assert.ok(htmlStamp.includes("Смирнова Анна Сергеевна"));
+		assert.ok(htmlStamp.includes("ГОСТ Р 34.10-2012"));
 
-		const block256 = generateGostXmlSignatureBlock(sig256, "doc-cda-root");
-		assert.ok(block256.includes("gostr34102012-256"));
-		assert.ok(block256.includes("gostr34112012-256"));
-		assert.ok(block256.includes("7A8B9C0D1E2F3A4B"));
-		assert.ok(block256.includes("doc-cda-root"));
-
-		const sig512: GostSignatureInfo = {
-			signatureBase64: "MEUCIQDz...test512base64...",
-			certificateSerialNumber: "1122334455667788",
-			certificateSubject: "CN=Иванов Иван Иванович, O=ООО Денте Клиник",
-			signedAt: "2026-09-25T10:00:00Z",
-			algorithmOid: "1.2.643.7.1.1.1.2", // GOST 34.10-2012 512
-			digestAlgorithmOid: "1.2.643.7.1.1.2.3", // GOST 34.11-2012 512
-		};
-
-		const block512 = generateGostXmlSignatureBlock(sig512, "doc-cda-root");
-		assert.ok(block512.includes("gostr34102012-512"));
-		assert.ok(block512.includes("gostr34112012-512"));
-		assert.ok(block512.includes("1122334455667788"));
+		const svgStamp = generateGostSignatureStampSvg({
+			signerName: "Иванов Иван Иванович",
+			certificateNumber: "1122334455667788",
+			validFrom: "2026-01-01",
+			validTo: "2027-01-01",
+		});
+		assert.ok(svgStamp.includes("<svg"));
+		assert.ok(svgStamp.includes("1122334455667788"));
 	});
 
 	it("4. Deterministic C14N Canonicalization Enforces Detached PKCS#7 Signatures", () => {

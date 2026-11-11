@@ -308,9 +308,9 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 			],
 		};
 
-		// Test VO_SPRRECH format
+		// Test UT_SVOPLMEDUSL format
 		const xmlGen = generateFnsTaxDeductionXml(certificateParams);
-		assert.ok(xmlGen.fileName.startsWith("VO_SPRRECH_7701_7707083893_770101001_"));
+		assert.ok(xmlGen.fileName.startsWith("UT_SVOPLMEDUSL_7701_7707083893_770101001_"));
 		assert.ok(xmlGen.fileName.endsWith(".xml"));
 
 		const xml = xmlGen.xmlContent;
@@ -438,7 +438,7 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 
 		const batchGen = generateFnsTaxDeductionBatchXml(batchParams);
 		assert.equal(batchGen.certificatesCount, 2);
-		assert.ok(batchGen.fileName.startsWith("VO_SPRRECH_7701_"));
+		assert.ok(batchGen.fileName.startsWith("UT_SVOPLMEDUSL_7701_"));
 		assert.ok(batchGen.xmlContent.includes('НомерСвед="101"'));
 		assert.ok(batchGen.xmlContent.includes('НомерСвед="102"'));
 		assert.ok(batchGen.xmlContent.includes('КодРодств="4"'));
@@ -868,7 +868,7 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 
 		// 1. Single XML: only 2025 checks included
 		const xmlRes = generateFnsTaxDeductionXml(cert);
-		assert.match(xmlRes.fileId, /^VO_SPRRECH_7801_7841098765_\d{8}_[A-Z0-9]{8}$/);
+		assert.match(xmlRes.fileId, /^UT_SVOPLMEDUSL_7801_7841098765_\d{8}_[A-Z0-9]{8}$/);
 		assert.ok(!xmlRes.xmlContent.includes("Осмотр 2024"));
 		assert.ok(!xmlRes.xmlContent.includes("Гигиена 2026"));
 		assert.ok(xmlRes.xmlContent.includes('СуммаКод1="50000.00"')); // 15000 + 35000

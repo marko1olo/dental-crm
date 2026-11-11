@@ -200,12 +200,10 @@ export async function financialExecutiveSummary(
 	const depositRealizedKopecks = Math.round(depositRealizedRub * 100);
 
 	// (в) Итоговая выручка от реализации услуг за период:
-	// Рассчитывается по фактически выполненным нарядам и актам (invoicesSummary.invoicesTotalRub),
-	// либо (если наряды не выставлялись отдельно) как сумма прямых платежей за оказанные услуги плюс зачет депозита,
-	// исключая повторный учет внесенного ранее аванса!
-	const totalRevenueRub =
-		totalInvoicedRub > 0 ? totalInvoicedRub : cashInflowRub + depositRealizedRub;
-	const totalRevenueKopecks = Math.round(totalRevenueRub * 100);
+	// Выручка = фактически принятые кассовые оплаты (cashInflowRub) + реализованные депозиты (depositRealizedRub).
+	// Недопустимо перетирать реальные кассовые поступления единичным инвойсом.
+	const totalRevenueRub = cashInflowRub + depositRealizedRub;
+	const totalRevenueKopecks = cashInflowKopecks + depositRealizedKopecks;
 
 	// Общий объем платежных проводок за период (для долевого распределения в breakdown)
 	const paymentTurnoverRub = cashInflowRub + depositRealizedRub;

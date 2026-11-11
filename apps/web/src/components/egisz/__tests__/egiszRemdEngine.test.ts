@@ -34,7 +34,6 @@ import {
 	generateForm043uPrintHtml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
-	generateGostXmlSignatureBlock,
 	parseRublesToKopecks,
 	runEgisz043uPreflight,
 	runFnsTaxCertificatePreflight,
@@ -365,14 +364,17 @@ describe("7. UKEP Electronic Signatures & Visual Stamps (63-ФЗ / ГОСТ Р 7
 		assert.ok(moSig.certificateSerialNumber.startsWith("00B17F9A"));
 	});
 
-	it("7.2 Generates XMLDSig signature block without forbidden enveloped transform", () => {
+	it("7.2 Order 947n mandates detached PKCS#7/CAdES and visual signature stamps", () => {
 		const docSig = createMockGostSignature("Иванов С.П.", "123-456-789 64", "Клиника");
-		const xmlSig = generateGostXmlSignatureBlock(docSig, "DOC-123");
-
-		assert.ok(xmlSig.includes('<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'));
-		assert.ok(xmlSig.includes('<ds:SignatureMethod Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256"/>'));
-		assert.ok(xmlSig.includes(`<ds:SignatureValue>${escapeXml(docSig.signatureBase64)}</ds:SignatureValue>`));
-		assert.ok(!xmlSig.includes("enveloped-signature"));
+		assert.ok(docSig.signatureBase64.length > 20);
+		assert.equal(docSig.algorithmOid, EGISZ_REMD_OIDS.GOST_3410_2012_256);
+		const htmlStamp = generateGostSignatureStampHtml({
+			signerName: docSig.certificateSubject,
+			certificateNumber: docSig.certificateSerialNumber,
+			validFrom: "2026-01-01",
+			validTo: "2027-01-01",
+		});
+		assert.ok(htmlStamp.includes(docSig.certificateSerialNumber));
 	});
 
 	it("7.3 Generates GOST R 7.0.97-2016 visual signature stamp (HTML & SVG)", () => {

@@ -160,6 +160,11 @@ export function inferProcedureServiceFromStamp(
 }
 
 /**
+ * Канонический маппинг услуг каталога прейскуранта из штампа зубной формулы (Мандат 8x)
+ */
+export const inferCatalogServiceFromStamp = inferProcedureServiceFromStamp;
+
+/**
  * Алиас обратной совместимости
  */
 export const infer804nServiceFromStamp = inferProcedureServiceFromStamp;

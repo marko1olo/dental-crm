@@ -376,8 +376,8 @@ describe("QuickBookingDrawer", () => {
 			"Must offer solo reception without assistant by default",
 		);
 		assert.ok(
-			html.includes("Выбор ассистента строго опционален"),
-			"Must reassure receptionist that assistant does not block booking",
+			html.includes("Ассистент"),
+			"Assistant label must be clean without spec dumping",
 		);
 
 		// 2. 1-Click status selection buttons are present

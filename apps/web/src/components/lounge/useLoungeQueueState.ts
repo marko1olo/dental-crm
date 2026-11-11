@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isDemoShowcaseMode } from "../../utils/demoModeEngine.js";
 import { playCallingChime } from "./loungeChimeAudio";
-import { formatDoctorDisplay, maskPatientName152Fz } from "./patientNameMasker";
+import { formatDoctorDisplay, maskPatientName } from "./patientNameMasker";
 import { DEFAULT_LOUNGE_QUEUE, type WaitingLoungeQueueItem } from "./loungeTypes";
 
 export function useLoungeQueueState(initialItems?: readonly WaitingLoungeQueueItem[]) {
@@ -91,7 +91,7 @@ export function useLoungeQueueState(initialItems?: readonly WaitingLoungeQueueIt
 						cabinetName: chairName || "Терапевтический приём",
 						doctorName: formatDoctorDisplay(doc?.name),
 						doctorRole: doc?.role || "Врач-стоматолог",
-						patientName: maskPatientName152Fz(ptName),
+						patientName: maskPatientName(ptName),
 						status,
 						scheduledTime: a.startsAt ? a.startsAt.slice(11, 16) : "",
 					};

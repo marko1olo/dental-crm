@@ -2,7 +2,7 @@
  * toothFormulaGrammar.ts — Распознавание команд переключения квадрантов и зубной формулы
  */
 
-import type { OdontogramQuadrantId } from "../../../components/odontogram/ToothChart";
+import type { OdontogramQuadrantId } from "../../../../components/odontogram/ToothChart";
 
 export function extractQuadrantIntent(text: string): OdontogramQuadrantId | null {
 	if (!text) return null;

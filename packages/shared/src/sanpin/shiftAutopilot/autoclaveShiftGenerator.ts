@@ -22,7 +22,7 @@ export interface CanonicalShiftAutoclaveOptions {
 }
 
 /**
- * Канонический 1-клик цикл автоклава смены ЦСО (134°C, 2.15 бар, 5 мин).
+ * Канонический сменный цикл автоклава ЦСО (134°C, 2.15 бар, 5 мин).
  * SSOT пакетного автопилота с автоматическим списанием со склада по Soft Negative Stock.
  */
 export function createCanonicalShiftAutoclaveBatch(
@@ -58,7 +58,7 @@ export function createCanonicalShiftAutoclaveBatch(
 		operatorStaffPosition: operatorPosition,
 		headNurseSignatureFullName: headNurseFullName,
 		isHeadNurseVerified: true,
-		notes: "Сменный пакетный цикл автоклавирования ЦСО в 1 клик. Режим 134°C, 2.15 бар, 5 мин. Списание упаковки и дезсредств со склада выполнено автоматически (Soft Negative Stock).",
+		notes: "Сменный пакетный цикл автоклавирования ЦСО. Режим 134°C, 2.15 бар, 5 мин. Списание упаковки и дезсредств со склада выполнено автоматически (Soft Negative Stock).",
 	});
 }
 

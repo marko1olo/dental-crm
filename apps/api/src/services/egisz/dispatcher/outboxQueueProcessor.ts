@@ -446,7 +446,11 @@ export class EgiszOutboxDispatcher {
 
 					let receipt: EgiszRemdRegistrationReceipt | null = null;
 					if (isRegistered) {
+						const rawObj = (submissionRes.rawResponse as Record<string, unknown>) ?? {};
+						const serverReceiptId =
+							typeof rawObj.receiptId === "string" ? rawObj.receiptId : undefined;
 						receipt = createEgiszRemdReceipt({
+							receiptId: serverReceiptId,
 							remdDocumentId: resolvedRemdDocId,
 							transactionId: submissionRes.transactionId,
 							registeredAt: submissionRes.registrationDate,

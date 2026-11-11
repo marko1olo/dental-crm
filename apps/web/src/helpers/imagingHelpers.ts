@@ -594,3 +594,5 @@ export function normalizedXrayPregnancyStatus(
 ): XrayCbctReferralPregnancyStatus {
 	return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
 }
+
+export { createLocalDicomWorkbenchDraft } from "../appHelpers/imagingModules/imagingDraftStorage";

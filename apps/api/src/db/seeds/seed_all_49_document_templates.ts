@@ -262,7 +262,7 @@ export async function seedAll49DocumentTemplates(): Promise<{
 		await tx
 			.insert(documentTemplates)
 			.values({
-				stomxId: item.id,
+				externalTemplateId: item.id,
 				categoryId: assignedCategoryId,
 				name: item.name,
 				systemAlias: item.system_alias,
@@ -279,7 +279,7 @@ export async function seedAll49DocumentTemplates(): Promise<{
 				},
 			})
 			.onConflictDoUpdate({
-				target: documentTemplates.stomxId,
+				target: documentTemplates.externalTemplateId,
 				set: {
 					categoryId: assignedCategoryId,
 					name: item.name,

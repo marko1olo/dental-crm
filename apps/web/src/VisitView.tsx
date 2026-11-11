@@ -69,10 +69,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				data-testid="btn-complete-visit-header"
 				data-testid="btn-somatic-norm-one-click"
 				handleApplySomaticNormQuick
+				data-testid="btn-visit-fast-print-043u"
 				btn-visit-fast-print-043u
 				btn-visit-fast-print-consent-1051n
 				visit-more-action-print-consent
 				visit-plan-expired-soft-notice
+				debounced autosave draft protection
 				"Z01.2 Стоматологическое обследование (Здоров)"
 				"Соматически здоров. Аллергоанамнез не отягощен."
 				"ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ"

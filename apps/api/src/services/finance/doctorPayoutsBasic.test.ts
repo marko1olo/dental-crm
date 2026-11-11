@@ -91,7 +91,7 @@ test("нулевая касса при заданной ставке даёт н
 	assert.match(note, /Кассы за период нет/);
 });
 
-test("удержание идёт ПОСЛЕ начисления процента, а не до, но не может уводить выплату в минус (ТК РФ)", () => {
+test("расходы на материалы вычитаются из базы выручки (Gross Base) согласно стандарту PAY-01", () => {
 	const result = computeDoctorPayout({
 		revenueRub: 10000,
 		materialCostRub: 4000,
@@ -99,40 +99,30 @@ test("удержание идёт ПОСЛЕ начисления процент
 		commissionPct: 30,
 		materialDeductionPct: 100,
 	});
-	assert.equal(result.accruedRub, 3000);
+	// Чистая база: 10 000 - 4 000 = 6 000 ₽; начислено 30% = 1 800 ₽ (PAY-01)
+	assert.equal(result.accruedRub, 1800);
 	assert.equal(result.withheldMaterialRub, 4000);
-	// По ТК РФ заработная плата не может быть отрицательной (payout >= 0)
-	assert.equal(result.payoutRub, 0);
+	assert.equal(result.payoutRub, 1800);
 });
 
-test("материалы дороже начисленного: выплата не может быть отрицательной по ТК РФ (минимальная 0 ₽)", () => {
+test("материалы превышают выручку: чистая база 0 ₽, выплата не может быть отрицательной по ТК РФ (минимальная 0 ₽)", () => {
 	const result = computeDoctorPayout({
-		revenueRub: 5000,
+		revenueRub: 3000,
 		materialCostRub: 4000,
 		materialMovements: 2,
 		commissionPct: 25,
 		materialDeductionPct: 100,
 	});
-	assert.equal(result.accruedRub, 1250);
+	// Чистая база: max(0, 3000 - 4000) = 0 ₽; начислено 25% = 0 ₽
+	assert.equal(result.accruedRub, 0);
 	assert.equal(result.withheldMaterialRub, 4000);
 	assert.equal(result.payoutRub, 0);
-
-	const note = payoutRowNote({
-		state: result.state,
-		materialsState: "counted",
-		materialMovementsUnpriced: 0,
-		commissionPct: 25,
-		rateRowCount: 1,
-		payoutRub: result.payoutRub,
-		revenueRub: 5000,
-	});
-	assert.match(note, /Отрицательная выплата по ТК РФ запрещена/);
 });
 
 test("гарантийные заказы ЗТЛ (isWarranty: true) списываются на рекламационный фонд клиники и не удерживаются с врача", () => {
 	const result = computeDoctorPayout({
 		revenueRub: 50000,
-		commissionPct: 30, // 15 000 ₽ начислено
+		commissionPct: 30,
 		materialCostRub: 1000,
 		materialMovements: 1,
 		materialDeductionPct: 100, // 1 000 ₽ удержано материалов
@@ -143,12 +133,12 @@ test("гарантийные заказы ЗТЛ (isWarranty: true) списыв
 	});
 
 	assert.equal(result.state, "computed");
-	assert.equal(result.accruedRub, 15000);
+	// База: 50 000 - 1 000 - 0 (гарантия ЗТЛ) = 49 000 ₽. 30% = 14 700 ₽
+	assert.equal(result.accruedRub, 14700);
 	assert.equal(result.withheldMaterialRub, 1000);
 	// С врача ЗТЛ НЕ удерживается: 0 ₽
 	assert.equal(result.withheldLabRub, 0);
-	// 15 000 - 1 000 - 0 = 14 000 ₽
-	assert.equal(result.payoutRub, 14000);
+	assert.equal(result.payoutRub, 14700);
 });
 
 test("копейка не теряется: половина округляется вверх", () => {
@@ -165,9 +155,10 @@ test("копейка не теряется: половина округляет�
 		commissionPct: 30,
 		materialDeductionPct: 100,
 	});
-	assert.equal(result.accruedRub, 7020.17);
+	// Чистая база: 23 400,55 - 1 500,50 = 21 900,05 ₽. 30% = 6 570,015 -> 6 570,02 ₽
+	assert.equal(result.accruedRub, 6570.02);
 	assert.equal(result.withheldMaterialRub, 1500.5);
-	assert.equal(result.payoutRub, 5519.67);
+	assert.equal(result.payoutRub, 6570.02);
 });
 
 test("списаний нет — удерживать нечего, даже если процент удержания не задан", () => {

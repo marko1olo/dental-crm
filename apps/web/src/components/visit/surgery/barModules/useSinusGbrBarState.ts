@@ -4,7 +4,7 @@ import {
 	getSinusGbrSurgicalServices,
 	dispatchSurgicalServicesToInvoice,
 	type SurgicalServiceItem,
-} from "../../../surgery/surgeryProtocols";
+} from "../../../surgery/surgeryCatalogData";
 
 export interface UseSinusGbrBarStateParams {
 	readonly effectiveTooth: number;

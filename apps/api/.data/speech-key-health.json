@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "savedAt": "2026-10-19T22:42:12.853Z",
+  "savedAt": "2026-11-10T22:35:42.619Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1792449732845,
+      "successes": 29,
+      "lastUsedAt": 1794350142616,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -47,12 +47,21 @@
       "lastStatusCode": 400,
       "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
     },
+    "google_speech:2cb34da025bd": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 4,
+      "lastUsedAt": 1794350142574,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1792450212853,
-      "failures": 23,
-      "consecutiveFailures": 23,
+      "cooldownUntil": 1794350622619,
+      "failures": 27,
+      "consecutiveFailures": 27,
       "successes": 0,
-      "lastUsedAt": 1792449732853,
+      "lastUsedAt": 1794350142619,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -60,8 +69,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1792449732832,
+      "successes": 29,
+      "lastUsedAt": 1794350142610,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -69,26 +78,26 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1792449732802,
+      "successes": 29,
+      "lastUsedAt": 1794350142588,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1792450212826,
-      "failures": 23,
-      "consecutiveFailures": 23,
+      "cooldownUntil": 1794350622607,
+      "failures": 27,
+      "consecutiveFailures": 27,
       "successes": 0,
-      "lastUsedAt": 1792449732826,
+      "lastUsedAt": 1794350142607,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1792450212839,
-      "failures": 23,
-      "consecutiveFailures": 23,
+      "cooldownUntil": 1794350622613,
+      "failures": 27,
+      "consecutiveFailures": 27,
       "successes": 0,
-      "lastUsedAt": 1792449732839,
+      "lastUsedAt": 1794350142613,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -156,11 +165,11 @@
       "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw6zfm8cfaav523xyhct4bs9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 195130, Requested 25197. Please"
     },
     "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1792450692843,
-      "failures": 21,
-      "consecutiveFailures": 21,
+      "cooldownUntil": 1794351102615,
+      "failures": 25,
+      "consecutiveFailures": 25,
       "successes": 0,
-      "lastUsedAt": 1792449732843,
+      "lastUsedAt": 1794350142615,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -168,8 +177,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1792449732828,
+      "successes": 29,
+      "lastUsedAt": 1794350142609,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -177,8 +186,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 25,
-      "lastUsedAt": 1792449732835,
+      "successes": 29,
+      "lastUsedAt": 1794350142611,
       "lastStatusCode": null,
       "lastError": null
     }

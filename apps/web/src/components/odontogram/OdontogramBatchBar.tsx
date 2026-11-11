@@ -326,7 +326,7 @@ export const OdontogramBatchBar: React.FC<OdontogramBatchBarProps> = React.memo(
 									? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/15"
 									: ""
 							}`}
-							title={`${opt.title} (применить к ${count} зубам в 1 клик)`}
+							title={`${opt.title} (применить к ${count} зубам)`}
 							data-testid={opt.testId}
 						>
 							<span

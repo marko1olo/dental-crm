@@ -300,7 +300,7 @@ describe("Doctor Production Piece-Rate Salary & Material Write-Off (DENTE First 
 		assert.equal(res.totalAccruedRub, 5250);
 		assert.equal(res.deferredPendingDoctorEarningsRub, 5250);
 		assert.equal(res.deferredPendingDoctorEarningsKop, 525000);
-		assert.equal(res.ndflTaxKop, 68250);
+		assert.equal(res.ndflTaxKop, 68300); // 525 000 * 0.13 = 68 250 kop -> п. 6 ст. 225 НК РФ (округление до рубля) = 68 300 kop
 	});
 
 	test("calculateDoctorSalary: handles materialWriteoffResult auto-extraction and deduction", () => {

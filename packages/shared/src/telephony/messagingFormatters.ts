@@ -43,6 +43,13 @@ export function generateWhatsAppConfirmationUrl(phone: string, text: string): st
 	return `https://wa.me/${e164}?text=${encodeURIComponent(text)}`;
 }
 
+export function formatWhatsAppUrl(phone: string, text?: string): string {
+	const clean = normalizePhoneDigits(phone);
+	const waDigits = clean.startsWith("8") ? `7${clean.slice(1)}` : clean;
+	const query = text ? `?text=${encodeURIComponent(text)}` : "";
+	return `https://wa.me/${waDigits}${query}`;
+}
+
 export function generateSmsConfirmationUrl(phone: string, text: string): string {
 	const clean = normalizePhoneDigits(phone);
 	const e164 = clean.startsWith("8") ? `+7${clean.slice(1)}` : `+${clean}`;

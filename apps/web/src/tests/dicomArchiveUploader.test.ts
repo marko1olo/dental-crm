@@ -17,7 +17,7 @@ import {
 	sortDicomEntries as uploaderSortEntries,
 	DicomArchiveUploader,
 } from "../components/dicom/DicomArchiveUploader";
-import { DicomArchiveUploader as ImagingDicomArchiveUploader } from "../components/imaging/DicomArchiveUploader";
+import { DicomArchiveUploader as RadiologyDicomArchiveUploader } from "../components/radiology/DicomArchiveUploader";
 
 describe("DicomArchiveUploader - DICOM filter and format validation", () => {
 	test("identifies standard DICOM with 128-byte preamble and DICM magic", () => {
@@ -223,10 +223,10 @@ describe("DicomArchiveUploader - DICOM filter and format validation", () => {
 		assert.equal(isDicomEntry("DATA/DICOMDIR", u8), false);
 	});
 
-	test("verifies DicomArchiveUploader components are exported in both dicom and imaging domains", () => {
+	test("verifies DicomArchiveUploader components are exported in both dicom and radiology domains", () => {
 		assert.equal(typeof DicomArchiveUploader, "function");
-		assert.equal(typeof ImagingDicomArchiveUploader, "function");
-		assert.equal(DicomArchiveUploader, ImagingDicomArchiveUploader);
+		assert.equal(typeof RadiologyDicomArchiveUploader, "function");
+		assert.equal(DicomArchiveUploader, RadiologyDicomArchiveUploader);
 	});
 
 	test("verifies DicomArchiveUploader is re-exported from radiology domain per Mandate 8l", async () => {

@@ -30,7 +30,7 @@ export const CbctSidebarToothSelector: React.FC<CbctSidebarToothSelectorProps> =
 						? "bg-[var(--primary)] text-white font-bold"
 						: "bg-[var(--paper-strong)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--line)]"
 				}`}
-				title={`Зуб ${fdi} (фокус в 1 клик)`}
+				title={`Зуб ${fdi} (фокус)`}
 			>
 				{fdi}
 			</button>

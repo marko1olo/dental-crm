@@ -35,7 +35,7 @@ export const StandaloneClinicalBundlesHost: React.FC<StandaloneClinicalBundlesHo
 								</span>
 							</div>
 							<div className="text-xs text-[var(--muted,#64748b)]">
-								1-клик выбор пакета по диагнозу МКБ-10 · Точный расчёт в копейках
+								Клинический пакет по диагнозу МКБ-10 · Точный расчёт в копейках
 							</div>
 						</div>
 					</div>

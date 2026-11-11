@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents, portalBudgetTokens, treatmentPlans } from "../../db/schema.js";
 import { wsBroker } from "../websocketBroker.js";
 import type { SignBody } from "./budgetSchemas.js";
@@ -55,54 +56,57 @@ export async function completeBudgetSigning({
 		documentHash,
 	};
 
-	// Обновляем токен сметы в базе
-	await db
-		.update(portalBudgetTokens)
-		.set({
-			status: "accepted",
-			signedAt,
-			signerName: signer,
-			documentHash,
-			signature: signatureRecord,
-			updatedAt: signedAt,
-		})
-		.where(eq(portalBudgetTokens.token, budget.token));
+	// Обновляем токен сметы в базе, синхронизируем статус Approved и фиксируем аудит с изоляцией тенанта
+	await withTenantCtx(budget.organizationId, async () => {
+		await db
+			.update(portalBudgetTokens)
+			.set({
+				status: "accepted",
+				signedAt,
+				signerName: signer,
+				documentHash,
+				signature: signatureRecord,
+				updatedAt: signedAt,
+			})
+			.where(eq(portalBudgetTokens.token, budget.token));
 
-	// Если смета привязана к плану лечения в БД — синхронизируем статус Approved
-	if (budget.planId) {
-		try {
-			await db
-				.update(treatmentPlans)
-				.set({
-					status: "Approved",
-					patientSignature: parsedSignData.signaturePng,
-					approvedAt: signedAt,
-					updatedAt: signedAt,
-				})
-				.where(
-					and(
-						eq(treatmentPlans.id, budget.planId),
-						eq(treatmentPlans.organizationId, budget.organizationId),
-					),
-				);
-		} catch (dbErr) {
-			log.warn({ err: dbErr, planId: budget.planId }, "Ошибка синхронизации статуса плана лечения");
+		// Если смета привязана к плану лечения в БД — синхронизируем статус Approved
+		if (budget.planId) {
+			try {
+				await db
+					.update(treatmentPlans)
+					.set({
+						status: "Approved",
+						patientSignature: parsedSignData.signaturePng,
+						approvedAt: signedAt,
+						updatedAt: signedAt,
+					})
+					.where(
+						and(
+							eq(treatmentPlans.id, budget.planId),
+							eq(treatmentPlans.organizationId, budget.organizationId),
+						),
+					);
+			} catch (dbErr) {
+				log.error({ err: dbErr, planId: budget.planId }, "Ошибка синхронизации статуса плана лечения");
+				throw dbErr;
+			}
 		}
-	}
 
-	// Журнал аудита (Mandate 8a PostgreSQL 18 Law)
-	try {
-		await db.insert(auditEvents).values({
-			organizationId: budget.organizationId,
-			actorUserId: null,
-			entityType: "treatment_plan",
-			entityId: budget.planId || budget.token,
-			action: "BUDGET_SIGNED_REMOTE",
-			reason: `Дистанционное согласование сметы пациентом ${signer} (IP hash: ${clientIpHash.slice(0, 8)}...)`,
-		});
-	} catch (auditErr) {
-		log.warn({ err: auditErr }, "Не удалось записать событие согласования сметы в журнал аудита");
-	}
+		// Журнал аудита (Mandate 8a PostgreSQL 18 Law)
+		try {
+			await db.insert(auditEvents).values({
+				organizationId: budget.organizationId,
+				actorUserId: null,
+				entityType: "treatment_plan",
+				entityId: budget.planId || budget.token,
+				action: "BUDGET_SIGNED_REMOTE",
+				reason: `Дистанционное согласование сметы пациентом ${signer} (IP hash: ${clientIpHash.slice(0, 8)}...)`,
+			});
+		} catch (auditErr) {
+			log.warn({ err: auditErr }, "Не удалось записать событие согласования сметы в журнал аудита");
+		}
+	});
 
 	// Вебсокет-оповещение для координаторов и врачей
 	wsBroker.broadcastToOrganization(budget.organizationId, {

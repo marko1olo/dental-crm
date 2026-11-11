@@ -284,7 +284,7 @@ export const APICOECTOMY_NORM_TEXT =
 export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 	{
 		id: "surgery_implant_standard",
-		title: "Дентальная имплантация (1-клик норма)",
+		title: "Дентальная имплантация (Норма)",
 		shortBadge: "Имплантация 35 Н·см",
 		category: "implant",
 		icd10: "K08.1",
@@ -344,7 +344,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 	},
 	{
 		id: "surgery_extraction_simple",
-		title: "Простое удаление зуба (1-клик норма)",
+		title: "Простое удаление зуба (Норма)",
 		shortBadge: "Удаление простое",
 		category: "extraction",
 		icd10: "K08.8",
@@ -395,7 +395,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 	},
 	{
 		id: "surgery_extraction_atypical",
-		title: "Атипичное удаление зуба мудрости (1-клик норма)",
+		title: "Атипичное удаление зуба мудрости (Норма)",
 		shortBadge: "Атипичное удаление 8-ки",
 		category: "extraction",
 		icd10: "K01.1",
@@ -455,7 +455,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 	},
 	{
 		id: "surgery_sinus_lift_gbr",
-		title: "Синус-лифтинг и НКР аугментация (1-клик норма)",
+		title: "Синус-лифтинг и НКР аугментация (Норма)",
 		shortBadge: "Синус-лифтинг + НКР",
 		category: "sinus_gbr",
 		icd10: "K08.2",
@@ -576,7 +576,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 	},
 	{
 		id: "surgery_extraction_complex",
-		title: "Сложное удаление зуба с разъединением корней (1-клик норма)",
+		title: "Сложное удаление зуба с разъединением корней (Норма)",
 		shortBadge: "Сложное удаление с сепарацией",
 		category: "extraction",
 		icd10: "K08.8",
@@ -627,7 +627,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 	},
 	{
 		id: "surgery_periostotomy",
-		title: "Периостотомия с дренированием (1-клик норма)",
+		title: "Периостотомия с дренированием (Норма)",
 		shortBadge: "Периостотомия",
 		category: "emergency",
 		icd10: "K10.2",
@@ -677,7 +677,7 @@ export const CANONICAL_SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[
 	},
 	{
 		id: "surgery_apicoectomy",
-		title: "Резекция верхушки корня (апикоэктомия) (1-клик норма)",
+		title: "Резекция верхушки корня (апикоэктомия) (Норма)",
 		shortBadge: "Апикоэктомия + МТА",
 		category: "perio_surgery",
 		icd10: "K04.5",

@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { Award, Tag } from "lucide-react";
 import { EmkServicesSection } from "../emk/EmkServicesSection";
 import { Icd10ClinicalSelector } from "../../diagnostics/Icd10ClinicalSelector";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
 import type { VisitEmkServicesBillingProps } from "./types";
 
 const OrthopedicsChairsidePanel = lazy(() =>
@@ -19,6 +20,7 @@ export function VisitEmkServicesBilling({
 	dashboard,
 	effectiveActiveTooth,
 }: VisitEmkServicesBillingProps) {
+	const { hasDentalLab } = useWorkspaceProfile();
 	const linkedLabOrder = React.useMemo(() => {
 		const appts = Array.isArray(dashboard?.appointments) ? dashboard.appointments : [];
 		const currentAppt = appts.find((a: any) => String(a?.id) === String(openVisitId));
@@ -45,28 +47,30 @@ export function VisitEmkServicesBilling({
 
 	return (
 		<div className="space-y-4 w-full min-w-0" data-testid="emk-treatment-section">
-			<Suspense fallback={null}>
-				<details
-					open={Boolean(linkedLabOrder)}
-					className="group border-t border-[var(--line)] pt-2 bg-transparent"
-					data-testid="emk-orthopedics-details"
-				>
-					<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
-						<span className="flex items-center gap-1.5">
-							<Award size={14} className="text-amber-500" />
-							<span>Ортопедический протокол и заказ в лабораторию (ЗТЛ)</span>
-						</span>
-					</summary>
-					<div className="pt-2">
-						<OrthopedicsChairsidePanel
-							patientId={activePatient?.id}
-							activeToothFdi={effectiveActiveTooth}
-							initialLabOrder={linkedLabOrder}
-							isLocked={isLocked}
-						/>
-					</div>
-				</details>
-			</Suspense>
+			{hasDentalLab && (
+				<Suspense fallback={null}>
+					<details
+						open={Boolean(linkedLabOrder)}
+						className="group border-t border-[var(--line)] pt-2 bg-transparent"
+						data-testid="emk-orthopedics-details"
+					>
+						<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+							<span className="flex items-center gap-1.5">
+								<Award size={14} className="text-amber-500" />
+								<span>Ортопедический протокол и заказ в лабораторию (ЗТЛ)</span>
+							</span>
+						</summary>
+						<div className="pt-2">
+							<OrthopedicsChairsidePanel
+								patientId={activePatient?.id}
+								activeToothFdi={effectiveActiveTooth}
+								initialLabOrder={linkedLabOrder}
+								isLocked={isLocked}
+							/>
+						</div>
+					</details>
+				</Suspense>
+			)}
 
 			<EmkServicesSection
 				visitId={openVisitId}

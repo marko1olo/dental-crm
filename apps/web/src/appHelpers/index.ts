@@ -6,7 +6,7 @@ export * from "./types.js";
 export * from "./uiFormatters.js";
 export * from "./clinicProfileHelpers.js";
 export * from "./financialHelpers.js";
-export * from "./telephonyHelpers.js";
+export * from "../helpers/telegramHelpers.js";
 export * from "./documentHelpers.js";
 export * from "./imagingHelpers.js";
 export * from "./speechHelpers.js";

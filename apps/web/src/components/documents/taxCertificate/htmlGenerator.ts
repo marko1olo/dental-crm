@@ -33,7 +33,7 @@ export function generateTaxCertificateKnd1151156Html(data: TaxCertificateDocumen
 	const c1Formatted = formatRublesExactRu(aggregation.code01Rub);
 	const c2Formatted = formatRublesExactRu(aggregation.code02Rub);
 	const totFormatted = formatRublesExactRu(aggregation.totalNetRub);
-	const totalInWords = amountToWordsRu(aggregation.totalNetRub);
+	const totalInWords = amountToWordsRu(aggregation.totalNetKopecks);
 
 	const taxpayerPassportStr = taxpayer.passportSeries && taxpayer.passportNumber
 		? `серия ${escapeHtml(taxpayer.passportSeries)} № ${escapeHtml(taxpayer.passportNumber)}${taxpayer.passportIssuedBy ? `, выдан: ${escapeHtml(taxpayer.passportIssuedBy)}` : ""}${taxpayer.passportIssuedDate ? `, ${formatDateRu(taxpayer.passportIssuedDate)}` : ""}`

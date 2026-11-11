@@ -50,8 +50,14 @@ export async function handleStageTransition(
 		});
 	}
 
-	let targetStatus: "Draft" | "Active" | "Approved" | "Completed" | "Rejected";
-	if (status) {
+	const VALID_STATUSES = ["Draft", "Active", "Approved", "Completed", "Rejected"] as const;
+	type TreatmentPlanStatus = (typeof VALID_STATUSES)[number];
+	function isValidStatus(val: string): val is TreatmentPlanStatus {
+		return (VALID_STATUSES as readonly string[]).includes(val);
+	}
+
+	let targetStatus: TreatmentPlanStatus;
+	if (status && isValidStatus(status)) {
 		targetStatus = status;
 	} else if (targetStage) {
 		switch (targetStage) {
@@ -74,7 +80,7 @@ export async function handleStageTransition(
 				targetStatus = "Active";
 		}
 	} else {
-		targetStatus = existing.status as any;
+		targetStatus = isValidStatus(existing.status) ? existing.status : "Active";
 	}
 
 	const now = new Date();

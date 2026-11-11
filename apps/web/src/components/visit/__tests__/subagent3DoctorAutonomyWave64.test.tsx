@@ -27,7 +27,14 @@ const __dirname = path.dirname(__filename);
 
 describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e & 8n)", () => {
 	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const visitEmkTabSource = fs.readFileSync(visitEmkTabPath, "utf8");
+	const controllerPath = path.resolve(__dirname, "../emkTabModules/useVisitEmkTabController.ts");
+	const quickActionsPath = path.resolve(__dirname, "../emk/emkToolbarModules/EmkQuickActionButtons.tsx");
+	const visitEmkTabSource =
+		fs.readFileSync(visitEmkTabPath, "utf8") +
+		"\n" +
+		(fs.existsSync(controllerPath) ? fs.readFileSync(controllerPath, "utf8") : "") +
+		"\n" +
+		(fs.existsSync(quickActionsPath) ? fs.readFileSync(quickActionsPath, "utf8") : "");
 
 	const cryptoProSignerPath = path.resolve(__dirname, "../CryptoProSigner.tsx");
 	const cryptoProSignerSource = fs.readFileSync(cryptoProSignerPath, "utf8");
@@ -148,14 +155,16 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 	});
 
 	it("6. guarantees 1-Click Physiological Somatic Norm is present across visit and patient cards (Mandate 8e)", () => {
-		// VisitEmkTab contains 1-click norm
+		// VisitEmkTab contains 1-click norm action
 		assert.ok(
-			visitEmkTabSource.includes("data-testid=\"btn-fill-norm-quick\""),
-			"VisitEmkTab must have btn-fill-norm-quick",
+			visitEmkTabSource.includes('data-testid="btn-chairside-physiological-norm"') ||
+			visitEmkTabSource.includes('data-testid="btn-fill-norm-quick"'),
+			"VisitEmkTab must have btn-chairside-physiological-norm or btn-fill-norm-quick",
 		);
 		assert.ok(
+			visitEmkTabSource.includes("Соматически здоров / Норма") ||
 			visitEmkTabSource.includes("Заполнить нормой"),
-			"VisitEmkTab must have label 'Заполнить нормой'",
+			"VisitEmkTab must have clinical norm label",
 		);
 
 		// PatientCardModal contains 1-click somatic healthy norm in toolbar (Mandate 8p §206)

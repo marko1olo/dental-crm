@@ -24,8 +24,8 @@ export const RECALL_CYCLE_PRESETS: readonly RecallCyclePresetItem[] = [
 	{
 		id: "standard_prophylaxis",
 		testId: "preset-hygiene-6m",
-		title: "1-Click: Пациенты на плановую профгигиену 6 мес.",
-		labelFull: "1-Click: Профгигиена (6 мес.)",
+		title: "Пациенты на плановую профгигиену 6 мес.",
+		labelFull: "Профгигиена (6 мес.)",
 		labelShort: "Профгигиена (6м)",
 		icon: ShieldCheck,
 		getCountKey: (c) => c?.standard_prophylaxis,
@@ -33,8 +33,8 @@ export const RECALL_CYCLE_PRESETS: readonly RecallCyclePresetItem[] = [
 	{
 		id: "implant_monitoring",
 		testId: "preset-implants-1y",
-		title: "1-Click: Пациенты с имплантами на годовой рентген-контроль",
-		labelFull: "1-Click: Импланты (1 год)",
+		title: "Пациенты с имплантами на годовой рентген-контроль",
+		labelFull: "Импланты (1 год)",
 		labelShort: "Импланты (1г)",
 		icon: Sparkles,
 		getCountKey: (c) => c?.implant_monitoring,
@@ -42,8 +42,8 @@ export const RECALL_CYCLE_PRESETS: readonly RecallCyclePresetItem[] = [
 	{
 		id: "orthodontic_braces",
 		testId: "preset-ortho-1m",
-		title: "1-Click: Пациенты на плановую активацию брекетов (1 мес.)",
-		labelFull: "1-Click: Орто-активация (1 мес.)",
+		title: "Пациенты на плановую активацию брекетов (1 мес.)",
+		labelFull: "Орто-активация (1 мес.)",
 		labelShort: "Орто-активация (1м)",
 		icon: Clock,
 		getCountKey: (c) => c?.orthodontic_braces,
@@ -51,8 +51,8 @@ export const RECALL_CYCLE_PRESETS: readonly RecallCyclePresetItem[] = [
 	{
 		id: "pediatric_fluoridation",
 		testId: "preset-pediatric-3m",
-		title: "1-Click: Детский профилактический осмотр (3-4 мес.)",
-		labelFull: "1-Click: Детский осмотр (3-4 мес.)",
+		title: "Детский профилактический осмотр (3-4 мес.)",
+		labelFull: "Детский осмотр (3-4 мес.)",
 		labelShort: "Детский осмотр (3м)",
 		icon: Users,
 		getCountKey: (c) => c?.pediatric_fluoridation,

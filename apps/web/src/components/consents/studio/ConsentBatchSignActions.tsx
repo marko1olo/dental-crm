@@ -19,17 +19,13 @@ import type {
 	ConsentDocumentItem,
 	ConsentSignStatus,
 } from "../consentCatalogData";
+import type { DocumentSignRecord } from "./ConsentDocumentViewer";
 
 export interface ConsentBatchSignActionsProps {
 	readonly documents: readonly ConsentDocumentItem[];
 	readonly activeDocId: ConsentDocumentId;
 	readonly selectedIds: Set<ConsentDocumentId>;
-	readonly signRecords: Record<string, {
-		status: ConsentSignStatus;
-		signedAt?: string;
-		signatureSvg?: string;
-		integrityHash?: string;
-	}>;
+	readonly signRecords: Record<string, DocumentSignRecord>;
 	readonly onSelectDoc: (id: ConsentDocumentId) => void;
 	readonly onToggleSelected: (id: ConsentDocumentId) => void;
 	readonly onToggleAll: () => void;

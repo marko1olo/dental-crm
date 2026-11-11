@@ -173,31 +173,31 @@ export interface CleaningProtocol {
 export const CLEANING_PROTOCOLS: readonly CleaningProtocol[] = [
 	{
 		id: "complex",
-		title: "Комплекс Профгигиены (AirFlow + УЗ)",
-		description: "Ультразвуковой скейлинг над- и поддесневого камня, AirFlow порошком глицина, полировка Cleanic и фторирование Clinpro.",
+		title: "Комплекс профессиональной гигиены",
+		description: "Ультразвуковой скейлинг над- и поддесневого камня, воздушно-абразивная обработка, полировка абразивной пастой и глубокое фторирование эмали.",
 		durationMinutes: 45,
 		primaryService: { code: "A16.07.051", title: "Комплексная профессиональная гигиена полости рта", priceRub: 5500 },
-		consumables: ["Порошок Air-Flow глицин/эритритол (25 г)", "Полировочная паста Cleanic (3 г)", "Нейлоновая полировочная щетка", "Фтор-лак Clinpro White Varnish (0.5 мл)", "Ретрактор OptraGate и слюноотсос"],
-		clinicalDiaryTemplate: "Проведена комплексная профессиональная гигиена полости рта. Обезболивание аппликационное (Лидокаин-спрей 10%). Ультразвуковым пьезо-скейлером удалены над- и поддесневые зубные отложения во всех секстантах. Поверхности зубов обработаны воздушно-абразивным методом AirFlow с порошком на основе глицина. Межзубные промежутки очищены флоссом и штрипсами. Проведена финишная циркулярная полировка пастой Cleanic с чашечками и щетками. Выполнена аппликация фторсодержащего защитного лака Clinpro White Varnish. Пациент обучен правилам индивидуальной гигиены.",
+		consumables: ["Порошок для воздушно-абразивной обработки (глицин)", "Абразивная полировочная паста", "Нейлоновая полировочная щетка", "Фторсодержащий защитный лак", "Ретрактор мягких тканей и слюноотсос"],
+		clinicalDiaryTemplate: "Проведена комплексная профессиональная гигиена полости рта. Обезболивание аппликационное (Лидокаин-спрей 10%). Ультразвуковым пьезо-скейлером удалены над- и поддесневые зубные отложения во всех секстантах. Поверхности зубов обработаны воздушно-абразивным методом с порошком на основе глицина. Межзубные промежутки очищены флоссом и штрипсами. Проведена финишная циркулярная полировка абразивной пастой с чашечками и щетками. Выполнена аппликация фторсодержащего защитного лака. Пациент обучен правилам индивидуальной гигиены.",
 	},
 	{
 		id: "perio",
 		title: "Пародонтологическая чистка и кюретаж",
-		description: "Атравматичное субгингивальное снятие отложений, медикаментозная обработка десневых карманов хлоргексидином и дентальный гель.",
+		description: "Атравматичное субгингивальное снятие отложений, медикаментозная обработка десневых карманов антисептиком и дентальный гель.",
 		durationMinutes: 60,
 		primaryService: { code: "A16.07.051.001", title: "Профессиональная гигиена при заболеваниях пародонта", priceRub: 6200 },
 		additionalServices: [{ code: "A16.07.053", title: "Медикаментозная обработка пародонтальных карманов", priceRub: 1200 }],
-		consumables: ["Субгингивальный порошок Perio глицин (15 г)", "Раствор хлоргексидина 0.05% (50 мл)", "Антимикробный дентальный гель Метрогил Дента", "Стерильные пародонтологические насадки"],
-		clinicalDiaryTemplate: "Проведена профессиональная гигиена при заболеваниях пародонта. Обильные поддесневые отложения удалены пародонтологическими насадками пьезо-скейлера с минимальной амплитудой. Субгингивальная полировка шеек корней порошком Perio. Пародонтальные карманы промыты раствором хлоргексидина 0.05%, введена пародонтальная повязка с метронидазолом и хлоргексидином. Кровоточивость купирована. Назначен курс антисептических полосканий на 7 дней.",
+		consumables: ["Субгингивальный порошок для полировки корней (глицин)", "Раствор хлоргексидина 0.05% (50 мл)", "Антимикробный дентальный гель", "Стерильные пародонтологические насадки"],
+		clinicalDiaryTemplate: "Проведена профессиональная гигиена при заболеваниях пародонта. Обильные поддесневые отложения удалены пародонтологическими насадками пьезо-скейлера с минимальной амплитудой. Субгингивальная полировка шеек корней порошком глицина. Пародонтальные карманы промыты раствором хлоргексидина 0.05%, введена лечебная десневая повязка с антибактериальным препаратом. Кровоточивость купирована. Назначен курс антисептических полосканий на 7 дней.",
 	},
 	{
 		id: "pediatric",
 		title: "Детская гигиена и обучение чистке",
-		description: "Мягкое окрашивание зубного налета индикатором, атравматичная полировка резиновыми чашечками и реминерализация Tooth Mousse.",
+		description: "Мягкое окрашивание зубного налета индикатором, атравматичная полировка резиновыми чашечками и глубокая реминерализирующая терапия.",
 		durationMinutes: 30,
 		primaryService: { code: "A16.07.051.002", title: "Профессиональная гигиена у детей и подростков", priceRub: 3200 },
-		consumables: ["Индикатор налета PlaqSearch", "Безабразивная детская полировочная паста", "Мягкие резиновые полировочные колпачки", "Реминерализующий гель GC Tooth Mousse"],
-		clinicalDiaryTemplate: "Проведена профессиональная гигиена в детском приёме. Проведена визуализация налета двухцветным индикатором PlaqSearch, проведена беседа с ребенком и родителями по технике чистки. Зубы очищены вращающейся мягкой щеткой с пастой без абразива. Проведена глубокая реминерализирующая терапия гелем GC Tooth Mousse в индивидуальных каппах на 5 минут. Даны рекомендации по домашнему уходу.",
+		consumables: ["Индикатор зубного налета", "Безабразивная детская полировочная паста", "Мягкие резиновые полировочные колпачки", "Реминерализующий гель с кальцием и фосфатами"],
+		clinicalDiaryTemplate: "Проведена профессиональная гигиена в детском приёме. Проведена визуализация налета двухцветным индикатором, проведена беседа с ребенком и родителями по технике чистки. Зубы очищены вращающейся мягкой щеткой с пастой без абразива. Проведена глубокая реминерализирующая терапия гелем с биодоступным кальцием в индивидуальных каппах на 5 минут. Даны рекомендации по домашнему уходу.",
 	},
 	{
 		id: "fluoridation",
@@ -228,11 +228,11 @@ export const HOME_CARE_PLANS: readonly HomeCarePlan[] = [
 		id: "standard",
 		label: "Стандартный уход",
 		description: "Профилактика кариеса и поддержание здоровья эмали у взрослых без патологии пародонта.",
-		toothbrush: "Curaprox Ultra Soft 5460 (чистка выметающими движениями 2 раза в день по 2-3 мин)",
-		monotuft: "Монопучковая щетка Curaprox CS 1006 для пришеечной зоны моляров",
-		interdental: "Межзубные ершики Curaprox Prime 0.6–0.8 мм ежедневно перед сном",
-		toothpaste: "Низкоабразивная паста с фторидами 1450 ppm (Curaprox Enzycal / Biorepair Total RDA < 50)",
-		irrigator: "Ирригатор полости рта Waterpik / Revyline на мощности 3-4 после вечерней чистки",
+		toothbrush: "Мягкая зубная щетка с густой щетиной (чистка выметающими движениями 2 раза в день по 2-3 мин)",
+		monotuft: "Монопучковая щетка для пришеечной зоны моляров",
+		interdental: "Межзубные ершики 0.6–0.8 мм ежедневно перед сном",
+		toothpaste: "Низкоабразивная паста с фторидами 1450 ppm (RDA < 50)",
+		irrigator: "Ирригатор полости рта на мощности 3-4 после вечерней чистки",
 		recallMonths: 6,
 		clinicalAdvice: "Исключить горизонтальные пилящие движения щеткой во избежание клиновидных дефектов.",
 	},
@@ -240,10 +240,10 @@ export const HOME_CARE_PLANS: readonly HomeCarePlan[] = [
 		id: "perio",
 		label: "При пародонтите и кровоточивости",
 		description: "Атравматичный бережный уход при воспалении десны и оголении шеек зубов.",
-		toothbrush: "Curaprox Velvet 12460 или мягкая щетина с атравматичным закругленным кончиком",
-		monotuft: "Монопучковая щетка CS 708 для бережной очистки обнаженных шеек корней",
-		interdental: "Калиброванные ершики Curaprox Perio Plus 0.7–1.1 мм",
-		toothpaste: "Пародонтологическая паста Biorepair Gum Protection RDA < 40 без жестких абразивов",
+		toothbrush: "Сверхмягкая щетина с атравматичным закругленным кончиком",
+		monotuft: "Монопучковая щетка с изогнутой шейкой для бережной очистки обнаженных шеек корней",
+		interdental: "Калиброванные пародонтологические ершики 0.7–1.1 мм",
+		toothpaste: "Пародонтологическая паста с гидроксиапатитом (RDA < 40) без жестких абразивов",
 		irrigator: "Ирригатор с пародонтологической насадкой на минимальном давлении (режим 1-2)",
 		recallMonths: 3,
 		clinicalAdvice: "Категорически исключить жесткие щетки и деревянные зубочистки. Контроль карманов через 3 месяца.",
@@ -252,21 +252,21 @@ export const HOME_CARE_PLANS: readonly HomeCarePlan[] = [
 		id: "ortho",
 		label: "С брекетами и элайнерами",
 		description: "Специализированная гигиена при наличии ортодонтических конструкций и ретейнеров.",
-		toothbrush: "Ортодонтическая зубная щетка Curaprox CS 5460 Ortho с углублением под дугу",
-		monotuft: "Монопучковая щетка Curaprox CS 1006 вокруг каждого брекета и ретейнера",
-		interdental: "Суперфлосс Oral-B Super Floss и ершики увеличенного калибра 1.1–1.4 мм",
-		toothpaste: "Паста с гидроксиапатитом и энзимами RDA < 50 для защиты от деминерализации",
+		toothbrush: "Ортодонтическая (специальная ортодонтическая) зубная щетка с V-образным углублением под дугу",
+		monotuft: "Монопучковая щетка (монопучковая 1006) вокруг каждого брекета и ретейнера",
+		interdental: "Ортодонтический суперфлосс и ершики увеличенного калибра 1.1–1.4 мм",
+		toothpaste: "Паста с гидроксиапатитом и энзимами (RDA < 50) для защиты от деминерализации",
 		irrigator: "Ирригатор с ортодонтической насадкой после каждого приема пищи",
 		recallMonths: 3,
-		clinicalAdvice: "Использовать индикатор налета PlaqSearch 1 раз в неделю для самоконтроля качества очистки.",
+		clinicalAdvice: "Использовать индикатор налета 1 раз в неделю для самоконтроля качества очистки.",
 	},
 ];
 
 export async function deductWarehouseHygieneConsumables(options: {
-	readonly organizationId?: string;
-	readonly visitId?: string;
-	readonly doctorName?: string;
-	readonly protocolTitle?: string;
+	readonly organizationId?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly protocolTitle?: string | undefined;
 }): Promise<boolean> {
 	const orgId = options.organizationId || "00000000-0000-0000-0000-000000000001";
 	try {
@@ -329,13 +329,23 @@ export function dispatchHygieneInvoiceAndServices(protocol: CleaningProtocol): v
 	}
 }
 
-export function commitHygieneVisitProtocol(params: {
+export interface CommitHygieneProtocolParams {
 	readonly ohiS: OhiSPreset;
-	readonly protocol: CleaningProtocol;
-	readonly carePlan: HomeCarePlan;
-	readonly patientName?: string;
-	readonly doctorName?: string;
-}): void {
+	readonly protocol?: CleaningProtocol | undefined;
+	readonly cleaningProtocol?: CleaningProtocol | undefined;
+	readonly carePlan?: HomeCarePlan | undefined;
+	readonly homeCarePlan?: HomeCarePlan | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly customNotes?: string | undefined;
+}
+
+export function commitHygieneVisitProtocol(params: CommitHygieneProtocolParams): void {
+	const activeProtocol = params.protocol ?? params.cleaningProtocol ?? CLEANING_PROTOCOLS[0]!;
+	const activeCarePlan = params.carePlan ?? params.homeCarePlan ?? HOME_CARE_PLANS[0]!;
+
 	const ohiSData = {
 		ohi_s: params.ohiS.score,
 		debris: params.ohiS.debris,
@@ -343,25 +353,30 @@ export function commitHygieneVisitProtocol(params: {
 		date: new Date().toISOString(),
 	};
 	const fullSoapText = [
-		`• Индекс гигиены Грина-Вермиллиона (OHI-S): ${params.ohiS.score} (${params.ohiS.label}).`,
+		`• Индекс гигиены Грина-Вермиллиона OHI-S: ${params.ohiS.score} (${params.ohiS.label}).`,
 		`• Статус полости рта: ${params.ohiS.statusDescription}`,
-		`• Проведённая процедура: ${params.protocol.title}. ${params.protocol.clinicalDiaryTemplate}`,
-		`• Рекомендован домашний уход (${params.carePlan.label}): щетка ${params.carePlan.toothbrush}; ${params.carePlan.monotuft}; ${params.carePlan.interdental}; паста ${params.carePlan.toothpaste}; ${params.carePlan.irrigator}. Контрольный осмотр через ${params.carePlan.recallMonths} мес.`,
-	].join("\n");
+		`• Проведённая процедура: ${activeProtocol.title}. ${activeProtocol.clinicalDiaryTemplate}`,
+		`• Рекомендован домашний уход (${activeCarePlan.label}): щетка ${activeCarePlan.toothbrush}; ${activeCarePlan.monotuft}; ${activeCarePlan.interdental}; паста ${activeCarePlan.toothpaste}; ${activeCarePlan.irrigator}. Контрольный осмотр через ${activeCarePlan.recallMonths} мес.`,
+		params.customNotes ? `• Особые отметки: ${params.customNotes}` : "",
+	].filter(Boolean).join("\n");
 
 	useVisitStore.getState().setVisitNoteForm((prev) => ({
 		...prev,
-		objective: prev.objective ? `${prev.objective}\n\n${fullSoapText}` : fullSoapText,
+		objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${fullSoapText}` : fullSoapText,
 		hygieneIndices: ohiSData,
 	}));
 	window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
-		detail: { soap: fullSoapText, mode: "smart_append" },
+		detail: {
+			soap: { objectiveStatus: fullSoapText },
+			objectiveStatus: fullSoapText,
+			mode: "smart_append",
+		},
 	}));
 
-	dispatchHygieneInvoiceAndServices(params.protocol);
+	dispatchHygieneInvoiceAndServices(activeProtocol);
 	void deductWarehouseHygieneConsumables({
 		doctorName: params.doctorName,
-		protocolTitle: params.protocol.title,
+		protocolTitle: activeProtocol.title,
 	});
 	showToast("✓ Протокол гигиены успешно зафиксирован в карте приёма и кассе", "success", 3500);
 }

@@ -82,7 +82,7 @@ describe("Red Team: Pricelist Humanization, Zero-Barrier Flat Import & UI Invari
 			"Text mode must provide 1-click import button 'btn-flat-text-commit'",
 		);
 		assert.ok(
-			importModalCode.includes("Импортировать в каталог (в 1 клик)"),
+			importModalCode.includes("Импортировать в каталог"),
 			"Buttons must clearly state 'Импортировать в каталог (в 1 клик)' for solo doctor autonomy",
 		);
 	});

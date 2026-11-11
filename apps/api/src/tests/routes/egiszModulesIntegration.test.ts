@@ -7,9 +7,9 @@ import {
 	verifyDoctorSnilsForFrmr,
 } from "../../routes/egiszModules/egiszAuthService.js";
 import {
-	buildSemd043uPackage,
-	validateSemdCompleteness,
-} from "../../routes/egiszModules/egiszSemdBuilder.js";
+	generateSemd101Xml,
+	validateCdaParams,
+} from "@dental/shared/cda";
 import {
 	dispatchPackageToVimis,
 	parseFlkErrors,
@@ -93,71 +93,78 @@ describe("EGISZ Modular Architecture — Unit & Integration Tests", () => {
 		assert.equal(status.missingConfiguration.length, 0);
 	});
 
-	it("egiszSemdBuilder builds deterministic SEMD 043/u with clinical fields", () => {
-		const built = buildSemd043uPackage({
-			visitId: "00000000-0000-4000-8000-000000000001",
-			visitDate: "2026-10-12T10:00:00.000Z",
+	it("canonical CDA R2 engine builds deterministic SEMD 043/u with clinical fields", () => {
+		const xml = generateSemd101Xml({
+			docKind: "101",
+			documentId: "00000000-0000-4000-8000-000000000001",
+			visitDate: new Date("2026-10-12T10:00:00.000Z"),
 			patient: {
-				id: "patient-1",
-				fullName: "Смирнов Алексей Петрович",
+				patientId: "patient-1",
 				snils: "11223344595",
+				name: { last: "Смирнов", first: "Алексей", middle: "Петрович" },
 				birthDate: "1988-04-15",
 				gender: "male",
 			},
 			doctor: {
-				id: "doctor-1",
-				fullName: "Кузнецова Анна Сергеевна",
 				snils: "11223344595",
-				specialty: "терапевт",
+				name: { last: "Кузнецова", first: "Анна", middle: "Сергеевна" },
+				specialtyName: "Врач-стоматолог-терапевт",
+			},
+			clinic: {
+				oid: "1.2.643.5.1.13.13.12.2.77.8432",
+				name: 'ООО "Стоматология ДЕНТЕ"',
 			},
 			complaints: "Боли в зубе 1.6 при приеме сладкого",
 			diagnoses: [
 				{
 					icd10Code: "K02.1",
-					title: "Кариес дентина (средний)",
+					diagnosisText: "Кариес дентина (средний)",
 					isPrimary: true,
+					tooth: "16",
 				},
 			],
-			servicesRendered: [
+			services: [
 				{
-					code804n: "A16.07.002",
-					title: "Восстановление зуба пломбой (зуб 16)",
-					toothNumber: 16,
+					code: "A16.07.002",
+					name: "Восстановление зуба пломбой (зуб 16)",
 					quantity: 1,
-					priceKopecks: 450000,
+					tooth: "16",
 				},
 			],
 		});
 
-		assert.ok(built.canonicalXml.includes("<ClinicalDocument"));
-		assert.ok(built.canonicalXml.includes("Смирнов"));
-		assert.ok(built.canonicalXml.includes("Кузнецова"));
-		assert.ok(built.canonicalXml.includes("K02.1"));
-		assert.ok(built.canonicalXml.includes("A16.07.002"));
-		assert.ok(built.canonicalXml.includes("11223344595"));
-		assert.equal(built.remdPackage.documentId, "00000000-0000-4000-8000-000000000001");
-		assert.equal(built.validationIssues.length, 0);
+		assert.ok(xml.includes("<ClinicalDocument"));
+		assert.ok(xml.includes("Смирнов"));
+		assert.ok(xml.includes("Кузнецова"));
+		assert.ok(xml.includes("K02.1"));
+		assert.ok(xml.includes("A16.07.002"));
+		assert.ok(xml.includes("11223344595"));
 	});
 
-	it("egiszSemdBuilder catches incomplete clinical data", () => {
-		const issues = validateSemdCompleteness({
-			visitId: "visit-1",
+	it("canonical CDA R2 validator catches incomplete clinical data", () => {
+		const validation = validateCdaParams({
+			docKind: "101",
+			documentId: "visit-1",
 			visitDate: "2026-10-12T10:00:00.000Z",
 			patient: {
-				id: "p1",
-				fullName: "Тестов Тест",
 				snils: "12345", // Bad SNILS
+				fullName: "Тестов Тест",
+				birthDate: "1990-01-01",
+				gender: "male",
 			},
 			doctor: {
-				id: "d1",
-				fullName: "Врач Врач",
 				snils: "12345", // Bad SNILS
+				fullName: "Врач Врач",
+			},
+			clinic: {
+				oid: "1.2.643.5.1.13.13.12.2.77.8432",
+				name: "Клиника",
 			},
 			diagnoses: [], // Missing
-			servicesRendered: [], // Missing
 		});
 
-		assert.ok(issues.length >= 3);
+		assert.equal(validation.valid, false);
+		assert.ok(validation.errors.length >= 1);
 	});
 
 	it("egiszVimisSender decodes statutory FLC errors", () => {
@@ -271,6 +278,7 @@ describe("EGISZ Modular Architecture — Unit & Integration Tests", () => {
 		});
 		assert.equal(resBad.success, false);
 		assert.equal(resBad.status, "Rejected");
-		assert.ok(resBad.flkErrors?.includes(STATUTORY_FLK_ERROR_DICTIONARY["FLK-001"]));
+		const flk001Error = STATUTORY_FLK_ERROR_DICTIONARY["FLK-001"];
+		assert.ok(flk001Error && resBad.flkErrors?.includes(flk001Error));
 	});
 });

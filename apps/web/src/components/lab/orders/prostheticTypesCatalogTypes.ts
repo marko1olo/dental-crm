@@ -8,10 +8,10 @@ export type ProstheticTypeId =
 	| 'removable_clasp_prosthesis'   // Бюгельный протез с кламмерной/замковой фиксацией Bredent
 	| 'all_on_4_hybrid'              // Условно-съемный протез на титановой балке All-on-4 / All-on-6
 	| 'surgical_guide_3d'            // Навигационный хирургический шаблон с титановыми втулками
-	| 'orthodontic_aligners_set'     // Комплект ортодонтических элайнеров CAD/CAM (1 клик)
+	| 'orthodontic_aligners_set'     // Комплект ортодонтических элайнеров CAD/CAM
 	| 'orthodontic_retention_splint' // Ретенционная прозрачная каппа / вакуум-сплинт
 	| 'orthodontic_expansion_plate'  // Съемная пластинка с расширяющим винтом
-	| 'orthodontic_tmj_splint';      // Окклюзионный миорелаксирующий сплинт / шина ВНЧС (1 клик)
+	| 'orthodontic_tmj_splint';      // Окклюзионный миорелаксирующий сплинт / шина ВНЧС
 
 export type ProstheticCategory =
 	| 'fixed'

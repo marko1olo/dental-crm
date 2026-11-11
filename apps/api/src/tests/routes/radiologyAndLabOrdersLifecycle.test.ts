@@ -40,7 +40,6 @@ import {
 	validateFdiToothNotation,
 } from "../../routes/lab.js";
 
-import { registerAutonomousTrackerRoutes } from "../../routes/lab/autonomousTrackerRoutes.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const TEST_ORG_ID = "00000000-0000-0000-0000-000000000001";
@@ -466,8 +465,8 @@ describe("Section 2: Dental Technical Laboratory (ЗТЛ наряды-заказ
 		assert.equal(mapStageToLabOrderStatus("Каркас/Примерка"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("Нанесение керамики"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("shipped"), "shipped");
-		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "received");
-		assert.equal(mapStageToLabOrderStatus("Примерка"), "received");
+		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "ready_in_clinic");
+		assert.equal(mapStageToLabOrderStatus("Примерка"), "fitted");
 		assert.equal(mapStageToLabOrderStatus("Фиксация"), "completed");
 		assert.equal(mapStageToLabOrderStatus("Рекламация"), "refitting");
 		assert.equal(mapStageToLabOrderStatus("Переделка"), "refitting");
@@ -493,122 +492,3 @@ describe("Section 2: Dental Technical Laboratory (ЗТЛ наряды-заказ
 	});
 });
 
-describe("Section 3: Fastify Autonomous Lab & Courier HTTP API («Лаба в кармане»)", () => {
-	let app: FastifyInstance;
-
-	before(async () => {
-		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
-		process.env.NODE_ENV = "development";
-
-		app = createTenantTestApp();
-		await registerAutonomousTrackerRoutes(app);
-		await app.ready();
-	});
-
-	it("POST /api/clinical/dental-lab/autonomous/orders — creates lab order with 152-ФЗ masking and QR token", async () => {
-		const res = await app.inject({
-			method: "POST",
-			url: "/api/clinical/dental-lab/autonomous/orders",
-			headers: {
-				"x-organization-id": TEST_ORG_ID,
-				"content-type": "application/json",
-			},
-			payload: {
-				patientFullName: "Соколова Марина Владимировна",
-				doctorName: "Др. Белов А.В.",
-				doctorTelegramChatId: "tg_doc_belov",
-				labName: "ЗТЛ Премиум",
-				teethFdi: [16],
-				constructionType: "single_crown",
-				material: "zirconia_multilayer",
-				vitaShade: "A2",
-				impressionType: "digital_scan",
-				patientAppointmentAt: new Date(Date.now() + 96 * 3600 * 1000).toISOString(),
-				clinicTrayNumber: "Лоток №12 (Секция B)",
-			},
-		});
-
-		assert.equal(res.statusCode, 201);
-		const json = res.json();
-		assert.ok(json.order);
-		assert.match(json.order.orderRef, /^L-[A-Z0-9]{5}$/);
-		assert.equal(json.order.patientToken.tokenizedInitials, "С***а М. В.");
-		assert.ok(json.qrPayload.startsWith(`DNT-LAB:${json.order.orderRef}:`));
-		assert.ok(json.trayLabelText.includes("Лоток №12 (Секция B)"));
-		assert.ok(json.doctorTelegramAlert.includes("С***а М. В."));
-	});
-
-	it("GET /api/clinical/dental-lab/autonomous/orders/:ref — retrieves order with SLA risk level", async () => {
-		const createRes = await app.inject({
-			method: "POST",
-			url: "/api/clinical/dental-lab/autonomous/orders",
-			headers: { "x-organization-id": TEST_ORG_ID },
-			payload: {
-				patientFullName: "Васильев Олег Петрович",
-				doctorName: "Др. Смирнов",
-				labName: "ЗТЛ ДенталАрт",
-				teethFdi: [21],
-				constructionType: "single_crown",
-				material: "emax_lithium_disilicate",
-				vitaShade: "A1",
-				impressionType: "digital_scan",
-				patientAppointmentAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-			},
-		});
-
-		assert.equal(createRes.statusCode, 201);
-		const { order } = createRes.json();
-		assert.ok(order?.orderRef, "Order must have orderRef");
-
-		const getRes = await app.inject({
-			method: "GET",
-			url: `/api/clinical/dental-lab/autonomous/orders/${order.orderRef}`,
-		});
-
-		assert.equal(getRes.statusCode, 200);
-		const body = getRes.json();
-		assert.equal(body.orderRef, order.orderRef);
-		assert.equal(body.slaRiskLevel, "warning_approaching");
-	});
-
-	it("POST /api/clinical/dental-lab/autonomous/orders/:ref/defect — triggers Stop-the-Line defect halt", async () => {
-		const createRes = await app.inject({
-			method: "POST",
-			url: "/api/clinical/dental-lab/autonomous/orders",
-			headers: { "x-organization-id": TEST_ORG_ID },
-			payload: {
-				patientFullName: "Николаев Денис",
-				doctorName: "Др. Краснов",
-				labName: "ЗТЛ Точность",
-				teethFdi: [46],
-				constructionType: "single_crown",
-				material: "zirconia_multilayer",
-				vitaShade: "A3",
-				impressionType: "digital_scan",
-				patientAppointmentAt: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
-			},
-		});
-
-		assert.equal(createRes.statusCode, 201);
-		const { order } = createRes.json();
-
-		const defectRes = await app.inject({
-			method: "POST",
-			url: `/api/clinical/dental-lab/autonomous/orders/${order.orderRef}/defect`,
-			headers: { "x-organization-id": TEST_ORG_ID },
-			payload: {
-				reportedByRole: "technician",
-				reportedByName: "Техник-керамист Алексей",
-				reasonCategory: "ceramic_chipping",
-				description: "Обнаружена микропора на вестибулярной стенке каркаса диоксида циркония",
-			},
-		});
-
-		assert.equal(defectRes.statusCode, 200);
-		const defectJson = defectRes.json();
-		assert.equal(defectJson.success, true);
-		assert.equal(defectJson.updatedOrder.currentStage, "rework_flagged");
-		assert.equal(defectJson.updatedOrder.activeDefect.reasonCategory, "ceramic_chipping");
-		assert.ok(defectJson.alertDoctorTelegram.includes("ТРЕВОГА ПО ЗТЛ"));
-	});
-});

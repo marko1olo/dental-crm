@@ -1,16 +1,19 @@
 import { Calculator, FileText, Printer } from "lucide-react";
 
 export interface VisitHeaderFastPrintClusterProps {
-	handlePrintForm043uFast: () => void;
+	handlePrintMedicalCardFast?: () => void;
+	handlePrintForm043uFast?: () => void;
 	handlePrintCompletedActFast: () => void;
 	handlePrintEstimateFast: () => void;
 }
 
 export function VisitHeaderFastPrintCluster({
+	handlePrintMedicalCardFast,
 	handlePrintForm043uFast,
 	handlePrintCompletedActFast,
 	handlePrintEstimateFast,
 }: VisitHeaderFastPrintClusterProps) {
+	const onPrintCard = handlePrintMedicalCardFast ?? handlePrintForm043uFast;
 	return (
 		<div
 			className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] h-9 min-h-[36px] divide-x divide-[var(--line)] overflow-hidden shadow-xs shrink-0"
@@ -19,9 +22,9 @@ export function VisitHeaderFastPrintCluster({
 		>
 			<button
 				type="button"
-				onClick={handlePrintForm043uFast}
+				onClick={onPrintCard}
 				data-testid="btn-visit-fast-print-043u"
-				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
 				title="Печать дневника приёма (Медицинская карта)"
 				aria-label="Печать дневника"
 			>
@@ -31,7 +34,7 @@ export function VisitHeaderFastPrintCluster({
 				type="button"
 				onClick={handlePrintCompletedActFast}
 				data-testid="btn-visit-fast-print-act"
-				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
 				title="Печать акта выполненных работ"
 				aria-label="Печать Акта выполненных работ"
 			>
@@ -41,7 +44,7 @@ export function VisitHeaderFastPrintCluster({
 				type="button"
 				onClick={handlePrintEstimateFast}
 				data-testid="btn-visit-fast-print-estimate"
-				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
 				title="Печать сметы и плана лечения"
 				aria-label="Печать Сметы и плана лечения"
 			>

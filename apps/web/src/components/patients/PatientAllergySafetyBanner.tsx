@@ -85,7 +85,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 						</div>
 						<div className="patient-safety-banner__title-group">
 							<h2 className="patient-safety-banner__title">
-								{evaluation.hasCriticalStopFlags ? <span className="inline-flex items-center gap-1.5 font-black uppercase text-xs tracking-wider"><span className="safety-beacon-ping" aria-hidden="true" />КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ ПАЦИЕНТА:</span> : evaluation.hasHighRiskFlags ? <span className="font-black uppercase text-xs tracking-wider inline-flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />СОМАТИЧЕСКИЕ ФАКТОРЫ РИСКА:</span> : <span className="font-bold text-xs">Клинический профиль безопасности:</span>}
+								{evaluation.hasCriticalStopFlags ? <span className="inline-flex items-center gap-1.5 font-bold text-xs tracking-wide"><span className="safety-beacon-ping" aria-hidden="true" />Критические стоп-факторы пациента:</span> : evaluation.hasHighRiskFlags ? <span className="font-bold text-xs tracking-wide inline-flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />Соматические факторы риска:</span> : <span className="font-bold text-xs">Клинический профиль безопасности:</span>}
 								{evaluation.activeFlags.length > 0 && <span className="text-[11px] font-bold opacity-90">({evaluation.activeFlags.length} фактора)</span>}
 							</h2>
 							<div className="patient-safety-banner__subtitle truncate">{evaluation.formattedSummaryLine}</div>

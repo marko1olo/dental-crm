@@ -17,7 +17,7 @@ interface UseVisitSpeechGatewayParams {
 
 export function useVisitSpeechGateway({ auth, setError, dashboard, activeOrganizationId, isOnline, selectedSpecialty }: UseVisitSpeechGatewayParams) {
 	const appStore = useAppStore();
-	const { speechGatewayHealthReport, setSpeechGatewayHealthReport, speechGatewayStatus, setSpeechGatewayStatus, speechProviderRuntimeStatuses, setSpeechProviderRuntimeStatuses, setSpeechRecordingStrategy, setSpeechRecordingRecovery, setPendingSpeechChunkCount } = appStore;
+	const { speechGatewayHealthReport, setSpeechGatewayHealthReport, speechGatewayStatus, setSpeechGatewayStatus, speechProviderRuntimeStatuses, setSpeechProviderRuntimeStatuses, setSpeechRecordingStrategy, setSpeechRecordingRecovery, setPendingSpeechChunkCount, setSpeechStatusNote } = appStore;
 
 	const speechProviderRuntimeById = useMemo(() => new Map((Array.isArray(speechProviderRuntimeStatuses) ? speechProviderRuntimeStatuses : []).map((p) => [p.providerId, p])), [speechProviderRuntimeStatuses]);
 	const speechProviderHealthById = useMemo(() => new Map<string, any>((speechGatewayHealthReport?.providers ?? []).map((p) => [p.providerId, p])), [speechGatewayHealthReport]);
@@ -84,5 +84,5 @@ export function useVisitSpeechGateway({ auth, setError, dashboard, activeOrganiz
 		setPendingSpeechChunkCount((await loadPendingSpeechChunks(activeOrganizationId)).length);
 	}, [activeOrganizationId, setPendingSpeechChunkCount]);
 
-	return { speechProviderRuntimeById, speechProviderHealthById, activeSpeechProviderHealth, loadSpeechGatewayStatus, loadSpeechGatewayHealthReport, loadSpeechProviderRuntimeStatuses, loadSpeechRecordingStrategy, loadSpeechRecordingRecovery, refreshSpeechRuntime, refreshPendingSpeechChunkState };
+	return { speechGatewayStatus, setSpeechStatusNote, speechProviderRuntimeById, speechProviderHealthById, activeSpeechProviderHealth, loadSpeechGatewayStatus, loadSpeechGatewayHealthReport, loadSpeechProviderRuntimeStatuses, loadSpeechRecordingStrategy, loadSpeechRecordingRecovery, refreshSpeechRuntime, refreshPendingSpeechChunkState };
 }

@@ -22,7 +22,7 @@ export const ClinicEgiszAutonomousRow: React.FC<ClinicEgiszAutonomousRowProps> =
 							Автономный режим (без принудительной выгрузки в ЕГИСЗ)
 						</span>
 						<span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-							Мандат 8n
+							Соло-практика
 						</span>
 					</div>
 					<p className="text-[11px] text-[var(--muted)] m-0 leading-relaxed">

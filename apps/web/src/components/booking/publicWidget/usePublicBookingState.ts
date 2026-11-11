@@ -31,15 +31,37 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 	const selectedCategory: BookingCategoryOption = useMemo(() => CANONICAL_BOOKING_CATEGORIES.find((c) => c.id === selectedCategoryId) || CANONICAL_BOOKING_CATEGORIES[0]!, [selectedCategoryId]);
 
 	const activeDoctors: BookingDoctorData[] = useMemo(() => {
-		if (customDoctors && customDoctors.length > 0) return customDoctors.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 5, rating: doc.rating ?? 5.0, reviewsCount: doc.reviewsCount ?? 0 }));
+		if (customDoctors && customDoctors.length > 0) return customDoctors.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 0, rating: doc.rating ?? 0, reviewsCount: doc.reviewsCount ?? 0 }));
 		if (avail.loadedDoctors && avail.loadedDoctors.length > 0) return avail.loadedDoctors;
-		return DEFAULT_DOCTORS_LIST.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 5, rating: doc.rating ?? 5.0, reviewsCount: doc.reviewsCount ?? 0 }));
+		return DEFAULT_DOCTORS_LIST.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 0, rating: doc.rating ?? 0, reviewsCount: doc.reviewsCount ?? 0 }));
 	}, [customDoctors, avail.loadedDoctors]);
 
 	const isSoloDoctor = activeDoctors.length === 1;
 	useEffect(() => { if (activeDoctors.length === 1 && activeDoctors[0]) setSelectedDoctorId(activeDoctors[0].id); }, [activeDoctors]);
 
-	const selectedDoctor: BookingDoctorData = useMemo(() => (selectedDoctorId && activeDoctors.find((d) => d.id === selectedDoctorId)) || activeDoctors[0] || { id: "solo-doctor", fullName: "Дежурный врач-стоматолог", specialties: ["Врач-стоматолог"], experienceYears: 8, rating: 5.0, reviewsCount: 120, categoryIds: ["all"] }, [activeDoctors, selectedDoctorId]);
+	const selectedDoctor: BookingDoctorData = useMemo(() => {
+		if (selectedDoctorId) {
+			const found = activeDoctors.find((d) => d.id === selectedDoctorId);
+			if (found) return found;
+		}
+		// При selectedDoctorId === null («Любой врач») подставляем свободного доктора для выбранного слота
+		if (avail.selectedSlot?.availableDoctorIds && avail.selectedSlot.availableDoctorIds.length > 0) {
+			const freeDoctor = activeDoctors.find((d) => avail.selectedSlot!.availableDoctorIds!.includes(d.id));
+			if (freeDoctor) return freeDoctor;
+		}
+		if (activeDoctors.length > 0 && activeDoctors[0]) {
+			return activeDoctors[0];
+		}
+		return {
+			id: "00000000-0000-0000-0000-000000000000",
+			fullName: "Дежурный врач-стоматолог",
+			specialties: ["Врач-стоматолог"],
+			experienceYears: 0,
+			rating: 0,
+			reviewsCount: 0,
+			categoryIds: ["all"],
+		};
+	}, [activeDoctors, selectedDoctorId, avail.selectedSlot]);
 	const selectedBranch: ClinicBranch = useMemo(() => (customBranches.length > 0 && ((initialBranchId && customBranches.find((b) => b.id === initialBranchId)) || customBranches[0])) || { id: "main-branch", name: "Стоматологический центр DENTE", address: "Главный клинический корпус", phone: "+7 (800) 000-00-00", workHours: "Пн-Сб 09:00 - 20:00, Вс 10:00 - 18:00", isMain: true }, [customBranches, initialBranchId]);
 
 	const handleStepChange = useCallback((newStep: number) => { setStep(newStep); onStepChange?.(newStep); }, [onStepChange]);
@@ -56,6 +78,11 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 		const activeSlot = avail.selectedSlot || avail.slots[0] || null;
 		if (!activeSlot) { setSubmitError("На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания."); showToast?.("На выбранную дату нет свободных окон для записи. Пожалуйста, выберите другой день или оставьте заявку в лист ожидания.", "warning"); return; }
 		if (!avail.selectedSlot && activeSlot) avail.setSelectedSlot(activeSlot);
+		if (!selectedDoctor || !selectedDoctor.id) {
+			setSubmitError("Не удалось определить врача для записи. Пожалуйста, обратитесь в клинику по телефону.");
+			showToast?.("Не удалось определить врача для записи", "warning");
+			return;
+		}
 
 		setIsSubmitting(true);
 		setSubmitError(null);

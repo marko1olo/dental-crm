@@ -390,9 +390,17 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 				__dirname,
 				"../components/visit/VisitEmkTab.tsx",
 			);
+			const completionSectionPath = path.resolve(
+				__dirname,
+				"../components/visit/emkTab/VisitEmkCompletionSection.tsx",
+			);
 			assert.ok(fs.existsSync(emkTabPath), "VisitEmkTab.tsx must physically exist");
+			assert.ok(fs.existsSync(completionSectionPath), "VisitEmkCompletionSection.tsx must physically exist");
 
-			const content = fs.readFileSync(emkTabPath, "utf8");
+			const content =
+				fs.readFileSync(emkTabPath, "utf8") +
+				"\n" +
+				fs.readFileSync(completionSectionPath, "utf8");
 			assert.ok(
 				content.includes('data-testid="btn-save-visit-note"'),
 				"VisitEmkTab must have btn-save-visit-note",

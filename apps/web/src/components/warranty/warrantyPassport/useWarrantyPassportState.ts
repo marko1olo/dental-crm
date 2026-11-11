@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
-import type { WarrantyPassportModalProps, WarrantyTab } from "./types";
+import type {
+	HistoricalWarrantyCertificate,
+	PatientReclamationResponse,
+	WarrantyPassportModalProps,
+	WarrantyTab,
+} from "./types";
 import { useWarrantyItemsSelection } from "./hooks/useWarrantyItemsSelection";
 import { useWarrantyRemediationState } from "./hooks/useWarrantyRemediationState";
 import { useWarrantyCertificateBuild } from "./hooks/useWarrantyCertificateBuild";
 import { useWarrantyExportActions } from "./hooks/useWarrantyExportActions";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import type { WarrantyRemediationOrder } from "../../warrantyEngine.js";
+import type { WarrantyRemediationOrder } from "../warrantyEngine.js";
 
 export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 	const [activeTab, setActiveTab] = useState<WarrantyTab>("editor");
-	const [historicalCertificates, setHistoricalCertificates] = useState<any[]>([]);
+	const [historicalCertificates, setHistoricalCertificates] = useState<HistoricalWarrantyCertificate[]>([]);
 	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
 	const itemsSelection = useWarrantyItemsSelection({
@@ -53,7 +58,9 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 				// 1. Загрузка существующих сертификатов пациента
 				const certsRes = await fetch(`/api/warranty/certificates/${patientId}`, { headers });
 				if (certsRes.ok && isMounted) {
-					const certsJson = await certsRes.json().catch(() => null);
+					const certsJson = (await certsRes.json().catch(() => null)) as {
+						certificates?: HistoricalWarrantyCertificate[];
+					} | null;
 					if (certsJson?.certificates && Array.isArray(certsJson.certificates)) {
 						setHistoricalCertificates(certsJson.certificates);
 					}
@@ -62,18 +69,18 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 				// 2. Загрузка рекламаций и осложнений по пациенту
 				const reclRes = await fetch(`/api/patients/${patientId}/reclamations`, { headers });
 				if (reclRes.ok && isMounted) {
-					const reclJson = await reclRes.json().catch(() => null);
+					const reclJson = (await reclRes.json().catch(() => null)) as PatientReclamationResponse[] | null;
 					if (Array.isArray(reclJson)) {
-						const mappedOrders: WarrantyRemediationOrder[] = reclJson.map((rec: any) => {
+						const mappedOrders: WarrantyRemediationOrder[] = reclJson.map((rec) => {
 							const toothMatch = rec.complicationDetails?.match(/зуб\s*([1-4][1-8])/i);
-							const tooth = toothMatch ? toothMatch[1] : "—";
+							const tooth = toothMatch ? (toothMatch[1] ?? "—") : "—";
 							return {
 								id: rec.id,
 								orderNumber: `Р-${rec.id.slice(0, 6)}`,
 								certificateId: certBuild.certificateId,
 								toothNumber: tooth,
 								originalWorkTitle: "Ранее выполненная работа",
-								defectType: "filling_loss" as any,
+								defectType: "filling_loss",
 								defectTitle: rec.complicationDetails?.split(".")[0] || "Рекламация",
 								clinicalFinding: rec.complicationDetails || "Гарантийный случай",
 								remediationAction: rec.proposedAction || "Гарантийная переделка (0 ₽)",

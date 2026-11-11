@@ -150,7 +150,7 @@ export const CbctTunerHeader: React.FC<CbctTunerHeaderProps> = ({
 							: "bg-teal-600 hover:bg-teal-500 text-teal-50 border border-teal-500 active:scale-[0.98]"
 					}`}
 					data-testid="cbct-tuner-attach-visit-btn"
-					title="Прикрепить текущий срез и параметры к визиту пациента в 1 клик"
+					title="Прикрепить текущий срез и параметры к визиту пациента"
 				>
 					{attachFeedback ? (
 						<Check className="w-3.5 h-3.5 shrink-0" />

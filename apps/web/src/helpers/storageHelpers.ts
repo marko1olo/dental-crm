@@ -59,7 +59,7 @@ import {
 	removeLocalDicomWorkbenchDraftFromLocalStorage,
 	saveLocalDicomWorkbenchDraftToLocalStorage,
 	createLocalDicomWorkbenchDraft,
-} from "./imagingStorage";
+} from "../appHelpers/imagingHelpers";
 
 export const imagingViewerLocalStoragePrefix = "dental-crm:imaging-viewer:";
 

@@ -11,7 +11,7 @@ describe("Implant Protocol Tab & Express Protocols", () => {
 		assert.ok(html.includes("banner-standard-protocol-preset"));
 		assert.ok(html.includes("btn-apply-standard-protocol"));
 		assert.ok(html.includes("Хирургический экспресс-протокол"));
-		assert.ok(html.includes("1 клик"));
+		assert.ok(html.includes("Физиологическая норма"));
 		assert.ok(html.includes("0.9% NaCl"));
 		assert.ok(html.includes("Викрил 4-0"));
 	});

@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertTriangle } from "lucide-react";
-import type { WarehouseOverdraftStatus } from "../../../surgery/surgeryProtocols";
+import type { WarehouseOverdraftStatus } from "../../../surgery/surgeryCatalogData";
 
 interface VisitSurgeryOverdraftBannerProps {
 	overdraftStatus: WarehouseOverdraftStatus;

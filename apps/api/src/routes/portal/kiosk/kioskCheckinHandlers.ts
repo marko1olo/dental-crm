@@ -5,13 +5,14 @@
  * (Мандаты 8e: 1 клик, 8n: малая клиника без бюрократии, 8ap: маскирование ПДн).
  */
 
-import { createHash, randomInt } from "node:crypto";
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
+	generatedDocuments,
 	patientConsents,
 	patientDrugAllergies,
 	patients,
@@ -23,6 +24,7 @@ import {
 	type KioskPatientRecord,
 	type SelfCheckinBody,
 	createEmergencyAppointment,
+	createFirstTimeAppointment,
 	getDoctorAndCabinetInfo,
 	lookupPatient,
 	lookupTodayAppointment,
@@ -56,6 +58,9 @@ export async function handleKioskCheckinRequest(
 	const rawOrgId =
 		typeof rawBody.organizationId === "string" ? rawBody.organizationId.trim() : "";
 	const isEmergency = isEmergencyOverride || Boolean(rawBody.isEmergency);
+	const isFirstTime = Boolean(rawBody.isFirstTime) || rawBody.kioskMode === "first_time";
+	const patientFullName =
+		typeof rawBody.patientFullName === "string" ? rawBody.patientFullName.trim() : "";
 	const emergencyChiefComplaint =
 		typeof rawBody.emergencyChiefComplaint === "string"
 			? rawBody.emergencyChiefComplaint.trim()
@@ -87,15 +92,24 @@ export async function handleKioskCheckinRequest(
 		rawPhoneLast4,
 		isEmergency,
 		emergencyChiefComplaint,
+		isFirstTime,
+		patientFullName,
 	});
 
-	// 3. Поиск приёма на сегодня или экстренное назначение
-	let appointment: KioskAppointmentRecord | null = null;
-	if (targetPatient) {
-		appointment = await lookupTodayAppointment(organizationId, targetPatient.id);
+	if (!targetPatient) {
+		reply.status(404);
+		return {
+			success: false,
+			error: "PatientNotFound",
+			message: "Пациент не найден в системе клиники. Пожалуйста, обратитесь к администратору на стойке регистрации.",
+		};
 	}
 
-	if (!appointment && isEmergency && targetPatient) {
+	// 3. Поиск приёма на сегодня или экстренное/первичное назначение
+	let appointment: KioskAppointmentRecord | null = null;
+	appointment = await lookupTodayAppointment(organizationId, targetPatient.id);
+
+	if (!appointment && isEmergency) {
 		appointment = await createEmergencyAppointment(
 			organizationId,
 			targetPatient.id,
@@ -103,57 +117,76 @@ export async function handleKioskCheckinRequest(
 		);
 	}
 
+	if (!appointment && isFirstTime) {
+		appointment = await createFirstTimeAppointment(
+			organizationId,
+			targetPatient.id,
+			patientFullName || targetPatient.fullName || "Первичный визит",
+		);
+	}
+
+	if (!appointment) {
+		reply.status(404);
+		return {
+			success: false,
+			arrived: false,
+			error: "AppointmentNotFound",
+			message: "На сегодня активная запись на приём не найдена. Пожалуйста, обратитесь к администратору на стойке регистрации.",
+		};
+	}
+
 	// 4. Определение кабинета и врача
 	const { doctorName, cabinetName } = await getDoctorAndCabinetInfo(
 		organizationId,
-		appointment?.doctorUserId ?? null,
-		appointment?.chairId ?? null,
+		appointment.doctorUserId,
+		appointment.chairId,
 	);
 
-	// 5. Генерация талона очереди (Э-xx для острой боли, А-xx для плановых)
-	const ticketPrefix = isEmergency ? "Э" : "А";
-	const ticketSuffix = appointment
-		? appointment.id.slice(-2).toUpperCase()
-		: randomInt(10, 100).toString();
+	// 5. Генерация талона очереди (Э-xx для острой боли, П-xx для первичных, А-xx для плановых)
+	const ticketPrefix = isEmergency ? "Э" : isFirstTime ? "П" : "А";
+	const ticketSuffix = appointment.id.slice(-2).toUpperCase();
 	const queueTicket = `Талон № ${ticketPrefix}-${ticketSuffix}`;
 
 	// 6. Обновление статуса визита на 'arrived' и оповещение WebSocket
-	if (appointment) {
-		await withTenantCtx(organizationId, async () => {
-			await db
-				.update(appointments)
-				.set({ status: "arrived" })
-				.where(
-					and(
-						eq(appointments.id, appointment!.id),
-						eq(appointments.organizationId, organizationId),
-					),
-				);
-		});
+	await withTenantCtx(organizationId, async () => {
+		await db
+			.update(appointments)
+			.set({ status: "arrived" })
+			.where(
+				and(
+					eq(appointments.id, appointment.id),
+					eq(appointments.organizationId, organizationId),
+				),
+			);
+	});
 
-		try {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "APPOINTMENT_UPDATED",
-				payload: {
-					id: appointment.id,
-					patientId: targetPatient?.id,
-					status: "arrived",
-					isEmergency,
-					chiefComplaint: isEmergency ? emergencyChiefComplaint : undefined,
-					patientMaskedName: maskPatientName(targetPatient?.fullName),
-					cabinetName,
-					doctorName,
-					queueTicket,
-					updatedAt: new Date().toISOString(),
-				},
-			});
-		} catch {
-			// non-blocking broadcast
-		}
+	try {
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "APPOINTMENT_UPDATED",
+			payload: {
+				id: appointment.id,
+				patientId: targetPatient.id,
+				status: "arrived",
+				isEmergency,
+				isFirstTime,
+				chiefComplaint: isEmergency
+					? emergencyChiefComplaint
+					: isFirstTime
+						? "Первичный визит / Осмотр и консультация"
+						: undefined,
+				patientMaskedName: maskPatientName(targetPatient.fullName),
+				cabinetName,
+				doctorName,
+				queueTicket,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+	} catch {
+		// non-blocking broadcast
 	}
 
 	// 7. Сохранение согласий с ПЭП аудитом (63-ФЗ)
-	if (targetPatient && signedConsents.length > 0) {
+	if (signedConsents.length > 0) {
 		await persistKioskConsents(
 			organizationId,
 			targetPatient,
@@ -164,33 +197,69 @@ export async function handleKioskCheckinRequest(
 	}
 
 	// 8. Сохранение аллергий из соматической анкеты
-	if (targetPatient && somaticProfile) {
+	if (somaticProfile) {
 		await persistKioskAllergies(organizationId, targetPatient.id, somaticProfile);
 	}
 
-	const apptTimeStr = appointment
-		? isEmergency
-			? `Экстренный приём прямо сейчас (${cabinetName})`
-			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`
-		: isEmergency
-			? "Экстренный приём (вызов дежурного врача)"
-			: "Сегодня (приём по очереди)";
+	const apptTimeStr = isEmergency
+		? `Экстренный приём прямо сейчас (${cabinetName})`
+		: isFirstTime
+			? `Первичный приём прямо сейчас (${cabinetName})`
+			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
 
 	return {
 		success: true,
-		arrived: Boolean(appointment),
+		arrived: true,
 		isEmergency,
-		patientId: targetPatient?.id || rawPatientId || "",
-		patientName: maskPatientName(targetPatient?.fullName),
+		isFirstTime,
+		patientId: targetPatient.id,
+		patientName: maskPatientName(targetPatient.fullName),
 		appointmentTime: apptTimeStr,
 		doctorName,
 		cabinetName,
 		queueTicket,
 		visitStatus: isEmergency
 			? "⚡ В холле / Ожидает экстренного врача"
-			: appointment
-				? "✓ Пациент в клинике / ожидает приёма"
-				: "Ожидает администратора",
+			: isFirstTime
+				? "🆕 В холле / Ожидает первичного осмотра и оформления"
+				: "✓ Пациент в клинике / ожидает приёма",
+	};
+}
+
+function mapConsentKindToDocumentKindAndTitle(consentKind: string): {
+	kind:
+		| "informed_consent"
+		| "anesthesia_consent_log"
+		| "personal_data_processing_consent"
+		| "procedure_specific_consent_packet";
+	title: string;
+} {
+	const normalized = consentKind.toLowerCase();
+	if (normalized.includes("anest") || normalized.includes("анест")) {
+		return {
+			kind: "anesthesia_consent_log",
+			title: "Информированное добровольное согласие на местное обезболивание",
+		};
+	}
+	if (
+		normalized.includes("pd") ||
+		normalized.includes("пдн") ||
+		normalized.includes("152")
+	) {
+		return {
+			kind: "personal_data_processing_consent",
+			title: "Согласие на обработку персональных данных (152-ФЗ)",
+		};
+	}
+	if (normalized.includes("packet") || normalized.includes("пакет")) {
+		return {
+			kind: "procedure_specific_consent_packet",
+			title: "Пакет информированных добровольных согласий на медицинские вмешательства",
+		};
+	}
+	return {
+		kind: "informed_consent",
+		title: "Информированное добровольное согласие на стоматологическое лечение (ст. 20 № 323-ФЗ)",
 	};
 }
 
@@ -206,6 +275,39 @@ async function persistKioskConsents(
 
 	await withTenantCtx(organizationId, async () => {
 		for (const consentKind of signedConsents) {
+			const docMeta = mapConsentKindToDocumentKindAndTitle(consentKind);
+			const integrityHash = createHash("sha256")
+				.update(`${targetPatient.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
+				.digest("hex");
+
+			const signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО (ПЭП 63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Терминал саморегистрации • IP: ${clientIp}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${nowConsent.toLocaleString("ru-RU")}</text></svg>`;
+
+			// Физическая генерация документа в таблице generated_documents
+			const [createdDoc] = await db
+				.insert(generatedDocuments)
+				.values({
+					organizationId,
+					patientId: targetPatient.id,
+					kind: docMeta.kind,
+					status: "issued",
+					title: docMeta.title,
+					signatureSvg,
+					issuedSnapshotSha256: integrityHash,
+					issuedAt: nowConsent,
+					issuedSnapshotCreatedAt: nowConsent,
+					payloadJson: JSON.stringify({
+						consentKind,
+						signatureMethod: "touchscreen_kiosk_pep",
+						clientIp,
+						integrityHash,
+						signedAtIso: nowConsentIso,
+						deviceMeta: userAgent,
+					}),
+				})
+				.returning({ id: generatedDocuments.id });
+
+			const generatedDocId = createdDoc?.id ?? null;
+
 			const existing = await db
 				.select({ id: patientConsents.id })
 				.from(patientConsents)
@@ -221,7 +323,7 @@ async function persistKioskConsents(
 			if (existing.length > 0 && existing[0]) {
 				await db
 					.update(patientConsents)
-					.set({ grantedAt: nowConsent, revokedAt: null })
+					.set({ grantedAt: nowConsent, revokedAt: null, documentId: generatedDocId })
 					.where(
 						and(
 							eq(patientConsents.id, existing[0].id),
@@ -234,6 +336,7 @@ async function persistKioskConsents(
 					patientId: targetPatient.id,
 					kind: consentKind,
 					grantedAt: nowConsent,
+					documentId: generatedDocId,
 				});
 			}
 		}

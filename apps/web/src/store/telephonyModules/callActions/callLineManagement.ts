@@ -193,5 +193,59 @@ export function createCallLineManagementActions(set: SetState, get: GetState) {
 				transferState: initialTransferState,
 			});
 		},
+
+		startOutboundCall: (call: IncomingCallPayload) => {
+			const state = get();
+			const now = Date.now();
+			const normalizedPhone = normalizePhone(call.phone) || call.phone;
+			const id = call.callId || `outbound-${now}-${++telephonyCallSeq}`;
+			const callStartedAt = call.callStartedAt ?? now;
+			const outboundPayload: IncomingCallPayload = {
+				...call,
+				phone: normalizedPhone,
+				id,
+				direction: "outbound",
+				status: "ringing",
+				callStartedAt,
+			};
+
+			const historyItem: CallHistoryItem = {
+				...outboundPayload,
+				id,
+				direction: "outbound",
+				status: "ringing",
+				callStartedAt,
+				actionTaken: undefined,
+				transcript: undefined,
+			};
+
+			let assignedLineId: 1 | 2 = 1;
+			let updatedLine1 = { ...state.line1 };
+			let updatedLine2 = { ...state.line2 };
+
+			if (state.line1.state === "idle") {
+				assignedLineId = 1;
+				updatedLine1 = { lineId: 1, call: outboundPayload, state: "ringing", durationSeconds: 0, isMuted: false };
+			} else if (state.line2.state === "idle") {
+				assignedLineId = 2;
+				updatedLine2 = { lineId: 2, call: outboundPayload, state: "ringing", durationSeconds: 0, isMuted: false };
+			} else {
+				assignedLineId = state.activeLineId === 1 ? 1 : 2;
+				if (assignedLineId === 2) {
+					updatedLine2 = { lineId: 2, call: outboundPayload, state: "ringing", durationSeconds: 0, isMuted: false };
+				} else {
+					updatedLine1 = { lineId: 1, call: outboundPayload, state: "ringing", durationSeconds: 0, isMuted: false };
+				}
+			}
+
+			set({
+				activeCall: outboundPayload,
+				activeLineId: assignedLineId,
+				line1: updatedLine1,
+				line2: updatedLine2,
+				callHistory: [historyItem, ...state.callHistory.slice(0, 49)],
+				transferState: initialTransferState,
+			});
+		},
 	};
 }

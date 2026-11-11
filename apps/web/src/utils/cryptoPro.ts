@@ -24,12 +24,12 @@ export interface CryptoProCertificate {
 	thumbprint: string;
 	hasPrivateKey: boolean;
 	isValid: boolean;
-	serialNumber?: string;
-	algorithmOid?: string;
-	algorithmName?: string;
-	isGost?: boolean;
-	isNative?: boolean;
-	deviceId?: number;
+	serialNumber?: string | undefined;
+	algorithmOid?: string | undefined;
+	algorithmName?: string | undefined;
+	isGost?: boolean | undefined;
+	isNative?: boolean | undefined;
+	deviceId?: number | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	certObject: any;
 }

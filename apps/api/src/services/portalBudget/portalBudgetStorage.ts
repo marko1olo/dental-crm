@@ -1,6 +1,3 @@
-import { randomUUID } from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
 import { pool } from "../../db/client.js";
 import type {
 	PortalAuthMethod,
@@ -10,117 +7,13 @@ import type {
 	StoredPortalBudget,
 } from "./types.js";
 
-// Fast L1 memory cache (backed by PostgreSQL portal_budget_tokens & atomic disk cache)
+// Fast L1 memory cache (backed by PostgreSQL portal_budget_tokens)
 export const memoryCache = new Map<string, StoredPortalBudget>();
-
-export function getFileCachePath(): string {
-	const baseDir = path.resolve(process.cwd(), ".data");
-	if (!fs.existsSync(baseDir)) {
-		try {
-			fs.mkdirSync(baseDir, { recursive: true });
-		} catch (err) {
-			console.warn("[PortalBudgetService] Failed to create data directory:", err);
-		}
-	}
-	return path.join(baseDir, "portal_budgets.json");
-}
-
-export function loadBudgetsFromFile(): Map<string, StoredPortalBudget> {
-	const map = new Map<string, StoredPortalBudget>();
-	try {
-		const filePath = getFileCachePath();
-		if (fs.existsSync(filePath)) {
-			const raw = fs.readFileSync(filePath, "utf-8");
-			const data = JSON.parse(raw);
-			if (Array.isArray(data)) {
-				for (const item of data) {
-					if (item && item.token) {
-						map.set(item.token, {
-							...item,
-							lockedUntil: item.lockedUntil ? new Date(item.lockedUntil) : null,
-						});
-					}
-				}
-			}
-		}
-	} catch (err) {
-		console.warn("[PortalBudgetService] Failed to read cached budgets from file:", err);
-	}
-	return map;
-}
-
-export function saveBudgetToFile(budget: StoredPortalBudget): void {
-	try {
-		const filePath = getFileCachePath();
-		const map = loadBudgetsFromFile();
-		map.set(budget.token, budget);
-		const tempPath = `${filePath}.tmp.${Date.now()}.${randomUUID()}`;
-		fs.writeFileSync(tempPath, JSON.stringify(Array.from(map.values()), null, 2), "utf-8");
-		fs.renameSync(tempPath, filePath);
-	} catch (err) {
-		console.warn("[PortalBudgetService] Failed to save budget cache to file:", err);
-	}
-}
-
-let ensureTablePromise: Promise<void> | null = null;
-export async function ensurePortalBudgetTable(): Promise<void> {
-	if (!ensureTablePromise) {
-		ensureTablePromise = (async () => {
-			try {
-				const ddl = `
-				CREATE TABLE IF NOT EXISTS portal_budget_tokens (
-					token VARCHAR(128) PRIMARY KEY,
-					plan_id UUID,
-					organization_id UUID NOT NULL,
-					patient_id UUID NOT NULL,
-					doctor_id UUID,
-					status VARCHAR(32) NOT NULL DEFAULT 'sent',
-					clinic_name TEXT NOT NULL,
-					clinic_phone TEXT,
-					clinic_address TEXT,
-					doctor_name TEXT NOT NULL,
-					patient_first_name TEXT NOT NULL,
-					patient_phone TEXT,
-					patient_birth_date TEXT,
-					auth_method VARCHAR(32) NOT NULL DEFAULT 'phone_last4',
-					verbal_pin_hash TEXT,
-					items JSONB NOT NULL DEFAULT '[]'::jsonb,
-					total_price_rub NUMERIC(12, 2) NOT NULL DEFAULT 0,
-					discount_rub NUMERIC(12, 2) NOT NULL DEFAULT 0,
-					net_total_rub NUMERIC(12, 2) NOT NULL DEFAULT 0,
-					currency VARCHAR(8) NOT NULL DEFAULT 'RUB',
-					failed_attempts INTEGER NOT NULL DEFAULT 0,
-					total_failures INTEGER NOT NULL DEFAULT 0,
-					is_locked BOOLEAN NOT NULL DEFAULT FALSE,
-					locked_until TIMESTAMPTZ,
-					viewed_at TIMESTAMPTZ,
-					signed_at TIMESTAMPTZ,
-					signer_name TEXT,
-					document_hash TEXT,
-					signature JSONB,
-					valid_until TIMESTAMPTZ,
-					created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-					updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-				);
-				CREATE INDEX IF NOT EXISTS idx_portal_budget_tokens_plan_id ON portal_budget_tokens(plan_id);
-				CREATE INDEX IF NOT EXISTS idx_portal_budget_tokens_patient_id ON portal_budget_tokens(patient_id);
-				CREATE INDEX IF NOT EXISTS idx_portal_budget_tokens_org_id ON portal_budget_tokens(organization_id);
-				`;
-				await pool.query(ddl);
-			} catch (err) {
-				console.error("[PortalBudgetService] Error ensuring portal_budget_tokens table:", err);
-			}
-		})();
-	}
-	return ensureTablePromise;
-}
 
 export async function persistBudget(budget: StoredPortalBudget): Promise<void> {
 	memoryCache.set(budget.token, budget);
-	saveBudgetToFile(budget);
 
 	try {
-		await ensurePortalBudgetTable();
 		const upsertSql = `
 		INSERT INTO portal_budget_tokens (
 			token, plan_id, organization_id, patient_id, doctor_id, status,
@@ -199,7 +92,6 @@ export async function loadBudget(token: string): Promise<StoredPortalBudget | nu
 	}
 
 	try {
-		await ensurePortalBudgetTable();
 		const res = await pool.query(
 			"SELECT * FROM portal_budget_tokens WHERE token = $1 LIMIT 1",
 			[token],
@@ -254,27 +146,11 @@ export async function loadBudget(token: string): Promise<StoredPortalBudget | nu
 		console.error("[PortalBudgetService] Error reading from portal_budget_tokens:", err);
 	}
 
-	// Fallback to disk cache
-	const diskBudgets = loadBudgetsFromFile();
-	if (diskBudgets.has(token)) {
-		const budget = diskBudgets.get(token)!;
-		memoryCache.set(token, budget);
-		return budget;
-	}
-
 	return null;
 }
 
 export function clearRegistry(): void {
 	memoryCache.clear();
-	try {
-		const filePath = getFileCachePath();
-		if (fs.existsSync(filePath)) {
-			fs.unlinkSync(filePath);
-		}
-	} catch (err) {
-		console.warn("[PortalBudgetService] Failed to unlink cache file on cleanup:", err);
-	}
 }
 
 export function resetMemoryCacheOnly(): void {

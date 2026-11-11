@@ -14,6 +14,7 @@ export interface EmkProtocolsDropdownMenuProps {
 	onApplySurgeryNorm?: (() => void) | undefined;
 	onToggleStarProtocols?: (() => void) | undefined;
 	onOpenConsent?: (() => void) | undefined;
+	onPrintMedicalCard?: (() => void) | undefined;
 	onPrint043?: (() => void) | undefined;
 	canUndo: boolean; canRedo: boolean;
 	handleUndo: () => void; handleRedo: () => void;
@@ -22,13 +23,13 @@ export interface EmkProtocolsDropdownMenuProps {
 export function EmkProtocolsDropdownMenu({
 	isOpen, dropdownPos, menuRef, onClose, onApplyNorm, onApplyPhysiologicalNorm,
 	onApplyOrthoNorm, onApplySurgeryNorm, onToggleStarProtocols, onOpenConsent,
-	onPrint043, canUndo, canRedo, handleUndo, handleRedo,
+	onPrintMedicalCard, onPrint043, canUndo, canRedo, handleUndo, handleRedo,
 }: EmkProtocolsDropdownMenuProps) {
 	if (!isOpen || !dropdownPos || typeof document === "undefined") return null;
 
 	return createPortal(
 		<div
-			ref={menuRef as any}
+			ref={menuRef}
 			className="fixed z-[9999] flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[260px] text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
 			style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
 			role="menu"
@@ -117,11 +118,11 @@ export function EmkProtocolsDropdownMenu({
 				</button>
 			)}
 
-			{onPrint043 && (
+			{Boolean(onPrintMedicalCard || onPrint043) && (
 				<button
 					type="button"
-					data-testid="btn-print-043u-toolbar"
-					onClick={() => { onPrint043(); onClose(); }}
+					data-testid="btn-print-medical-card-toolbar"
+					onClick={() => { (onPrintMedicalCard ?? onPrint043)?.(); onClose(); }}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 				>
 					<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />

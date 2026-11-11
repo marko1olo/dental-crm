@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { useLeadsStore } from "../../../store/leadsStore";
 import { LeadsKanbanMasterModals } from "./LeadsKanbanMasterModals";
@@ -30,7 +30,8 @@ export function useLeadsKanbanMasterController() {
 		isLoading,
 		error: loadError,
 	} = useLeadsStore();
-	const { dashboard } = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
+	const dashboard = appLogic?.dashboard;
 	const isMobile = useIsMobile(768);
 	const visitMinutes = dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
 	const clinicTimeZone = dashboard?.clinicSettings?.profile?.timezone ?? null;

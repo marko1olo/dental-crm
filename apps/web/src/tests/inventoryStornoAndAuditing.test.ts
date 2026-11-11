@@ -209,7 +209,7 @@ describe("Billing1CExportModal & Kopeck-Exact Formatting", () => {
 
 describe("SSOT Unification & Facade Parity (Mandates 8e, 8n, 8s, 8zh)", () => {
 	it("ConsumablesDeductionModal и WarehouseInventoryTab экспортируются из components/inventory как канонический SSOT", async () => {
-		const inventoryModal = await import("../components/inventory/ConsumablesDeductionModal.js");
+		const inventoryModal = await import("../components/inventory/ConsumablesBatchWriteoffModal.js");
 		const inventoryTab = await import("../components/inventory/WarehouseInventoryTab.js");
 
 		assert.ok(inventoryModal.ConsumablesDeductionModal, "ConsumablesDeductionModal должен экспортироваться из components/inventory");

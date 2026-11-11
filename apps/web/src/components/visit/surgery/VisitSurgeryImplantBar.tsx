@@ -1,6 +1,6 @@
 import React from "react";
 import { Sparkles, Zap } from "lucide-react";
-import type { StandardImplantationParams } from "../../surgery/surgeryProtocols";
+import type { StandardImplantationParams } from "../../surgery/surgeryCatalogData";
 import { ImplantSystemSelector } from "./barModules/ImplantSystemSelector";
 import { ImplantParametersGrid } from "./barModules/ImplantParametersGrid";
 
@@ -46,7 +46,7 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 					onClick={() => onApplyPreset()}
 					className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
 					data-testid="btn-preset-standard-implant-tab"
-					title="Стандартный протокол: установка дентального имплантата с ФДМ (1 клик)"
+					title="Стандартный протокол: установка дентального имплантата с ФДМ"
 				>
 					<Zap size={14} className="text-amber-300" />
 					<span>Стандартная имплантация с ФДМ</span>

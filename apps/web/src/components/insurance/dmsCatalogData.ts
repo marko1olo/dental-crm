@@ -46,15 +46,15 @@ export type DmsBillItemInput = DmsBillableItem;
 export type DmsBillableLineItem = DmsBillableItem;
 
 export interface DmsSplitLineResult {
-	readonly lineItemId: string; readonly id?: string;
-	readonly serviceCode: string; readonly serviceCode804n?: string; readonly serviceName: string;
-	readonly toothNumber?: string; readonly quantity: number; readonly unitPriceKopecks: number;
-	readonly totalKopecks: number; readonly insuranceCoveredKopecks: number; readonly coveredByDmsKopecks?: number;
-	readonly patientOutOfPocketKopecks: number; readonly patientTotalKopecks?: number;
+	readonly lineItemId: string; readonly id?: string | undefined;
+	readonly serviceCode: string; readonly serviceCode804n?: string | undefined; readonly serviceName: string;
+	readonly toothNumber?: string | undefined; readonly quantity: number; readonly unitPriceKopecks: number;
+	readonly totalKopecks: number; readonly insuranceCoveredKopecks: number; readonly coveredByDmsKopecks?: number | undefined;
+	readonly patientOutOfPocketKopecks: number; readonly patientTotalKopecks?: number | undefined;
 	readonly insuranceCoveredRubles: number; readonly patientOutOfPocketRubles: number;
 	readonly status: "full_dms" | "co_payment" | "patient_full"; readonly splitReason: string;
 	readonly isApprovedByLetter: boolean; readonly isExcludedByPolicy: boolean;
-	readonly franchiseDeductionKopecks: number; readonly copayKopecks?: number;
+	readonly franchiseDeductionKopecks: number; readonly copayKopecks?: number | undefined;
 }
 
 export type PatientPaymentMethod = "cash" | "card" | "advance" | "mixed";
@@ -70,16 +70,16 @@ export interface PatientPaymentSplit {
 export interface DmsSplitCalculationResult {
 	readonly lineItems: readonly DmsSplitLineResult[]; readonly lines: readonly DmsSplitLineResult[];
 	readonly totalBillKopecks: number; readonly totalInsuranceCoveredKopecks: number;
-	readonly totalDmsCoveredKopecks?: number; readonly dmsCoveredKopecks: number;
-	readonly totalPatientOutOfPocketKopecks: number; readonly totalPatientCoPayKopecks?: number;
+	readonly totalDmsCoveredKopecks?: number | undefined; readonly dmsCoveredKopecks: number;
+	readonly totalPatientOutOfPocketKopecks: number; readonly totalPatientCoPayKopecks?: number | undefined;
 	readonly patientTotalKopecks: number; readonly totalBillRubles: number;
 	readonly totalInsuranceCoveredRubles: number; readonly totalPatientOutOfPocketRubles: number;
 	readonly letterApprovedLimitKopecks: number; readonly letterRemainingLimitKopecks: number;
 	readonly remainingLimitKopecks: number; readonly letterExcessAmountKopecks: number;
 	readonly hasUnapprovedTeeth: boolean; readonly hasExcludedServices: boolean;
-	readonly integrityInvariantHolds: boolean; readonly balanceInvariantHolds?: boolean;
-	readonly isBalanced?: boolean; readonly warningMessage?: string;
-	readonly isEmergency?: boolean; readonly patientPaymentSplit?: PatientPaymentSplit;
+	readonly integrityInvariantHolds: boolean; readonly balanceInvariantHolds?: boolean | undefined;
+	readonly isBalanced?: boolean | undefined; readonly warningMessage?: string | undefined;
+	readonly isEmergency?: boolean | undefined; readonly patientPaymentSplit?: PatientPaymentSplit | undefined;
 }
 export type DmsSplitInvoiceSummary = DmsSplitCalculationResult;
 

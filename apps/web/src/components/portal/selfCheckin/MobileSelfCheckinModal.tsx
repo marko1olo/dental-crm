@@ -108,7 +108,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{/* STEP 1: Phone 1-Touch Auth & Instant Checkin */}
 					{state.step === "phone_auth" && (
 						<SelfCheckinPhoneAuthSection
-							patientName={state.effectivePatientName}
+							patientName={state.firstTimeName || state.effectivePatientName}
+							setPatientName={state.setFirstTimeName}
 							appointmentTime={state.effectiveAppointmentTime}
 							doctorName={state.effectiveDoctorName}
 							phoneDigits={state.phoneDigits}

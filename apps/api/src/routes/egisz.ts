@@ -29,7 +29,6 @@ export {
 
 export * from "./egiszModules/egiszTypes.js";
 export * from "./egiszModules/egiszAuthService.js";
-export * from "./egiszModules/egiszSemdBuilder.js";
 export * from "./egiszModules/egiszVimisSender.js";
 
 /**

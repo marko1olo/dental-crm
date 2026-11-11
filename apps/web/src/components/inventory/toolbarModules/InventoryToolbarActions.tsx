@@ -71,7 +71,7 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 					type="button"
 					className="dente-btn dente-btn-secondary secondary-button inline-flex h-9 min-h-[36px] px-3 font-medium text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 whitespace-nowrap items-center bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs transition"
 					onClick={onOpenShiftDeductionModal}
-					title="Автоматическое списание расходных материалов за смену по закрытым визитам (1 клик)"
+					title="Автоматическое списание расходных материалов за смену по закрытым визитам"
 					data-testid="btn-open-shift-batch-deduction"
 				>
 					<Zap className="w-4 h-4 shrink-0 text-[var(--ink-muted)]" />

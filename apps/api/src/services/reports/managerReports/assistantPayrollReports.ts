@@ -172,7 +172,37 @@ export async function assistantPayrollReport(
 			const code = (it.order804nCode || it.code || "").toUpperCase();
 			const cat = String(it.category || "").toLowerCase();
 			const isRad = code.startsWith("A06") || cat === "xray" || cat === "radiology";
-			const isSurg = code.startsWith("A16") || cat === "surgery";
+			const isNonSurgicalCode =
+				code.startsWith("A16.07.002") || // Наложение пломбы
+				code.startsWith("A16.07.051") || // Профессиональная гигиена
+				code.startsWith("A16.07.003") || // Лечение каналов
+				code.startsWith("A16.07.004") ||
+				code.startsWith("A16.07.008") ||
+				code.startsWith("A16.07.025") ||
+				code.startsWith("A16.07.050");
+			const SURGERY_PREFIXES = [
+				"A16.07.001", // Удаление зуба
+				"A16.07.007", // Резекция верхушки корня
+				"A16.07.011", // Вскрытие очага воспаления (периостотомия)
+				"A16.07.012", // Вскрытие абсцесса
+				"A16.07.013", // Коррекция альвеолярного отростка
+				"A16.07.016", // Цистэктомия
+				"A16.07.017", // Гемисекция
+				"A16.07.024", // Удаление ретинированного зуба
+				"A16.07.026", // Лоскутная операция
+				"A16.07.041", // Костная пластика
+				"A16.07.042", // Синус-лифтинг
+				"A16.07.043", // Расщепление гребня
+				"A16.07.054", // Дентальная имплантация
+				"A16.07.055", // Установка формирователя десны
+				"A16.07.058", // Вестибулопластика
+				"A16.07.089", // Гингивопластика
+				"A16.07.090", // Пластика уздечки
+				"A16.07.096", // Удаление имплантата
+			];
+			const isSurg =
+				!isNonSurgicalCode &&
+				(SURGERY_PREFIXES.some((prefix) => code.startsWith(prefix)) || cat === "surgery");
 
 			const cur = apptServicesMap.get(apptId) ?? { radiographs: 0, surgeries: 0 };
 			if (isRad) cur.radiographs += 1;

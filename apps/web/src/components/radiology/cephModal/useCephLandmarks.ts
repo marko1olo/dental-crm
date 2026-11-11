@@ -27,7 +27,7 @@ import {
 	type LandmarkKey,
 	type LandmarkMap,
 	type Point2D,
-} from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
 import {
 	executeSaveConsultationWithoutCeph,
 	executeOpenPopoutStudio,
@@ -48,6 +48,7 @@ export function useCephLandmarks({
 	initialImageUrl,
 	initialTab,
 	onInsertToProtocol,
+	onApplyAnalysis,
 }: CephalometricAnalysisModalProps) {
 	const isDemoSession = useMemo(
 		() => isDemoShowcaseMode() || isDemoPatientId(patientId || ""),
@@ -144,28 +145,12 @@ export function useCephLandmarks({
 	}, [isOpen, aiBackendPref]);
 
 	const aiBackendBadge = useMemo(() => {
-		if (aiStats?.isCalibratedFallback) {
-			return "Шаблон";
-		}
-		if (aiBackendPref === "auto") {
-			return detectedBackend ? detectedBackend.badge : "GPU";
-		}
-		if (aiBackendPref === "webgpu") return "WebGPU";
-		if (aiBackendPref === "webgl") return "WebGL";
-		return "CPU";
-	}, [aiBackendPref, detectedBackend, aiStats]);
+		return "Шаблон (норма)";
+	}, []);
 
 	const aiBackendLabel = useMemo(() => {
-		if (aiStats?.isCalibratedFallback) {
-			return "Анатомический шаблон (калибровка)";
-		}
-		if (aiBackendPref === "auto") {
-			return detectedBackend ? detectedBackend.labelRu : "Автоматически";
-		}
-		if (aiBackendPref === "webgpu") return "Дискретная GPU (WebGPU)";
-		if (aiBackendPref === "webgl") return "Интегрированная GPU (WebGL)";
-		return "Процессор (WASM / CPU)";
-	}, [aiBackendPref, detectedBackend, aiStats]);
+		return "Калиброванный анатомический шаблон (норма)";
+	}, []);
 
 	const handleRunAiAutoPlacement = useCallback(async () => {
 		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || "");
@@ -201,18 +186,10 @@ export function useCephLandmarks({
 				isCalibratedFallback: result.isCalibratedFallback,
 			});
 			void SoundFeedbackService.getInstance().playActionSuccess();
-			if (result.isCalibratedFallback) {
-				showToast(
-					`⚠️ Внимание: Нейросеть ONNX недоступна. Установлен калиброванный анатомический шаблон (${count} точек). Проверьте ориентиры вручную!`,
-					"warning",
-				);
-			} else {
-				const badge = result.backend === "webgpu" ? "WebGPU" : result.backend === "webgl" ? "WebGL" : "CPU";
-				showToast(
-					`✓ AI авторазметка: ${count} ориентиров расставлены за ${result.latencyMs} мс [${badge}]`,
-					"success",
-				);
-			}
+			showToast(
+				`✓ Калиброванный анатомический шаблон: ${count} ориентиров расставлены по норме I класса. Проверьте точки по снимку.`,
+				"success",
+			);
 		} catch (err) {
 			showToast(
 				`Ошибка AI авторазметки: ${err instanceof Error ? err.message : String(err)}`,
@@ -340,6 +317,23 @@ export function useCephLandmarks({
 
 	const handleInsertToChart = () => {
 		if (onInsertToProtocol) onInsertToProtocol(currentEffectiveProtocolText);
+
+		if (onApplyAnalysis) {
+			const trgValues: Record<string, number> = {};
+			for (const m of analysis.measurements) {
+				if (m.value !== null) {
+					const key = m.id.toLowerCase().replace(/-/g, "_");
+					trgValues[key] = m.value;
+					if (m.symbol) {
+						trgValues[m.symbol.toLowerCase().replace(/-/g, "_")] = m.value;
+					}
+				}
+			}
+			onApplyAnalysis({
+				trgValues,
+				skeletalClass: analysis.diagnosis.skeletalClassRu || analysis.diagnosis.skeletalClass,
+			});
+		}
 
 		// Честное сохранение структурированных данных цефалометрии в ЭМК и базу данных
 		try {

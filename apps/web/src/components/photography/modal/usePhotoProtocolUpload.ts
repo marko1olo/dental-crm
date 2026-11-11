@@ -47,6 +47,11 @@ export function usePhotoProtocolUpload(
 	const fallbackBlobUrlsRef = useRef<Set<string>>(new Set());
 	const createdBlobUrlsRef = externalBlobUrlsRef || fallbackBlobUrlsRef;
 
+	// Сброс состояния слотов при переключении пациента для исключения кросс-пациентной утечки (Мандат 8aq, D-9)
+	useEffect(() => {
+		setSlotsData(initialSlots || {});
+	}, [patientId]);
+
 	// Гидратация сохраненного фотопротокола из PostgreSQL 18 через Fastify API (Мандат 8aq / PHO-03)
 	useEffect(() => {
 		if (!patientId || Object.keys(initialSlots).length > 0) return;
@@ -61,12 +66,8 @@ export function usePhotoProtocolUpload(
 				const data = await res.json();
 				if (isCancelled || !data?.protocol?.slots) return;
 
-				const loadedSlots = data.protocol.slots as Record<string, PhotoSlotRecord>;
-				setSlotsData((prev) => {
-					// Не затираем если пользователь уже добавил снимки у кресла
-					if (Object.keys(prev).length > 0) return { ...loadedSlots, ...prev };
-					return loadedSlots;
-				});
+				const loadedSlots = (data.protocol.slots || {}) as Record<string, PhotoSlotRecord>;
+				setSlotsData(loadedSlots);
 
 				if (data.protocol.presetId && !initialPresetId) {
 					setActivePreset(getPresetById(data.protocol.presetId));

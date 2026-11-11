@@ -82,7 +82,7 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				certificate: {
 					certificateNumber: cert.certificateNumber,
 					status: cert.status,
-					clinicName: clinicOrg?.name || "Стоматологическая клиники ДЕНТЕ",
+					clinicName: clinicOrg?.name || "Стоматологическая клиника ДЕНТЕ",
 					clinicLegalName: clinicOrg?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
 					clinicPhone: "",
 					clinicAddress: clinicOrg?.legalAddress || "",

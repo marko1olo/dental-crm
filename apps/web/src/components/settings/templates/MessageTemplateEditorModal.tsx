@@ -55,7 +55,7 @@ export const MessageTemplateEditorModal: React.FC<Props> = ({ template, isOpen, 
 					<div className="p-2.5 rounded-xl border border-[var(--teal)]/30 bg-[var(--teal-soft)]/20 space-y-1.5">
 						<div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--teal)]">
 							<Sparkles size={14} />
-							<span>Клинические пресеты в 1 клик:</span>
+							<span>Клинические пресеты:</span>
 						</div>
 						<div className="flex flex-wrap gap-1.5">
 							{CLINICAL_QUICK_PRESETS.map((preset) => (

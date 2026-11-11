@@ -18,7 +18,7 @@ export function QuickAssistantSelector({
   return (
     <div className="sm:col-span-2">
       <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
-        Ассистент <span className="font-normal text-[var(--muted)] lowercase">(опционально, соло-приём без ассистента)</span>
+        Ассистент
       </label>
       <select
         value={assistantUserId || ""}
@@ -31,9 +31,6 @@ export function QuickAssistantSelector({
           <option key={a.id} value={a.id}>{a.fullName}</option>
         ))}
       </select>
-      <span className="text-[11px] text-[var(--muted)] block mt-0.5">
-        Выбор ассистента строго опционален и не блокирует запись
-      </span>
     </div>
   );
 }

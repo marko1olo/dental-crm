@@ -97,16 +97,26 @@ export function useMigrationWizardController() {
 	);
 
 	const runMapping = useCallback(
-		async (runId: string, useLlm: boolean) => {
+		async (runId: string, useLlm: boolean, mapOverrides?: Record<string, MigrationFieldTarget>) => {
 			setBusy(true);
 			setError(null);
 			try {
+				const activeMap = mapOverrides ?? columnMap;
+				const overrides = Object.entries(activeMap)
+					.filter(([_, target]) => target && target !== "ignore")
+					.map(([sourceColumn, targetField]) => ({
+						sourceColumn,
+						targetField,
+					}));
 				const response = await fetch(`/api/migration/${runId}/map`, {
 					method: "POST",
 					headers: clinicalMutationHeaders({
 						"content-type": "application/json",
 					}),
-					body: JSON.stringify({ allowLlm: useLlm }),
+					body: JSON.stringify({
+						allowLlm: useLlm,
+						mappingOverrides: overrides,
+					}),
 				});
 				const result = await readResponse<MapResponse>(response);
 				if (!result.ok) {
@@ -266,12 +276,35 @@ export function useMigrationWizardController() {
 			pollAttemptsRef.current = 0;
 
 			try {
+				const overrides = Object.entries(columnMap)
+					.filter(([_, target]) => target && target !== "ignore")
+					.map(([sourceColumn, targetField]) => ({
+						sourceColumn,
+						targetField,
+					}));
+				if (overrides.length > 0) {
+					await fetch(`/api/migration/${upload.runId}/map`, {
+						method: "POST",
+						headers: clinicalMutationHeaders({
+							"content-type": "application/json",
+						}),
+						body: JSON.stringify({
+							allowLlm: false,
+							mappingOverrides: overrides,
+						}),
+					}).catch(() => null);
+				}
+
 				const response = await fetch(`/api/migration/${upload.runId}/execute`, {
 					method: "POST",
 					headers: clinicalMutationHeaders({
 						"content-type": "application/json",
 					}),
-					body: JSON.stringify({ dryRun, sourceSystem: "legacy" }),
+					body: JSON.stringify({
+						dryRun,
+						sourceSystem: "legacy",
+						columnMap,
+					}),
 				});
 				const result = await readResponse<{
 					accepted: boolean;
@@ -332,7 +365,7 @@ export function useMigrationWizardController() {
 				setBusy(false);
 			}
 		},
-		[upload, pollStatus, loadReport, clinicalMutationHeaders, stopPolling],
+		[upload, pollStatus, loadReport, clinicalMutationHeaders, stopPolling, columnMap],
 	);
 
 	const rollback = useCallback(async () => {

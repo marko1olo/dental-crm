@@ -74,11 +74,11 @@ export interface CandidateScoreResult {
   urgency: WaitlistUrgency;
   urgencyLabel: string;
   matchReasons: string[];
-  mismatchReasons?: string[];
+  mismatchReasons: string[];
   rating?: "excellent" | "good" | "moderate" | "poor";
   dayFits?: boolean;
   categoryFits?: boolean;
-  priorityRank?: number;
+  priorityRank: number;
 }
 
 export type WaitlistMatchScore = CandidateScoreResult;

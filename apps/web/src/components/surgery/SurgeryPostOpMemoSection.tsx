@@ -41,7 +41,7 @@ export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> =
 							onClick={onPrint}
 							className="surgery-memo-action-btn"
 							data-testid="btn-print-memo"
-							title="Распечатать памятку пациенту в 1 клик"
+							title="Распечатать памятку пациенту"
 						>
 							<Printer size={14} className="text-[var(--teal,#0d9488)]" /><span>Печать памятки</span>
 						</button>

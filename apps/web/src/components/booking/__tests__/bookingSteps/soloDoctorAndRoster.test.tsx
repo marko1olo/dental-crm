@@ -22,10 +22,11 @@ describe("Booking Steps: Solo Doctor & Specialist Roster (Mandate 8n)", () => {
 		);
 
 		assert.ok(html.includes("dbw-solo-doctor-banner"));
-		assert.ok(html.includes("Соло-доктор"));
+		assert.ok(html.includes("Ваш доктор:"));
 		assert.ok(html.includes("Д-р Кузнецов Андрей Игоревич"));
 		assert.ok(html.includes("Опыт 12 лет"));
 		assert.equal(html.includes("Любой свободный специалист"), false);
+		assert.equal(html.includes("Соло-доктор"), false);
 	});
 
 	it("renders doctor list with 'Любой свободный специалист' when multiple doctors are provided", () => {

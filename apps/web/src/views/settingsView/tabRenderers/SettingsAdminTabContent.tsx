@@ -8,7 +8,7 @@ import { ErrorBoundary } from "../../../components/ErrorBoundary";
 import { SettingsStaffTab } from "../../../components/settings/SettingsStaffTab";
 import { StaffCommissionsPanel } from "../../../components/settings/StaffCommissionsPanel";
 import { SettingsAccessTab } from "../../../components/settings/SettingsAccessTab";
-import { EgiszBlankPermissionsWidget } from "../../../components/integrations/EgiszBlankPermissionsWidget";
+import { EgiszBlankPermissionsWidget } from "../../../components/integrations/egiszModules/EgiszBlankPermissionsWidget";
 import { HardwareSettingsTab } from "../../../components/settings/HardwareSettingsTab";
 import { InsuranceContractsPanel } from "../../../components/settings/InsuranceContractsPanel";
 import { SettingsMessengersTab } from "../../../components/settings/SettingsMessengersTab";

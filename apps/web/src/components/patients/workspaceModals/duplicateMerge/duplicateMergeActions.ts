@@ -23,7 +23,7 @@ export async function performPatientMerge({
 			{
 				keepPatientId: patientId,
 				mergePatientId: targetId,
-				reason: "1-Click неразрушающее слияние дубликатов",
+				reason: "Неразрушающее слияние дубликатов",
 			},
 			headers,
 		);

@@ -11,9 +11,9 @@
 
 import React, { useState, useEffect } from "react";
 import { CreditCard, FileText, Plus, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
-import { CashRegisterCheckoutModal } from "../../../../cashbox/CashRegisterCheckoutModal";
-import { CashShiftClosingModal } from "../../../../cashbox/CashShiftClosingModal";
-import { CashShiftJournalView } from "../../../../cashbox/CashShiftJournalView";
+import { CashRegisterStudioModal } from "../../../../cashbox/CashRegisterStudioModal";
+import { CashShiftClosingModal } from "../../../../shift/CashShiftClosingModal";
+import { CashShiftJournalView } from "../../../../shift/CashShiftJournalView";
 
 export interface StandaloneCashboxSsotHostProps {
 	readonly onClose?: () => void;
@@ -100,9 +100,14 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 
 			{/* Checkout Modal */}
 			{isCheckoutOpen && (
-				<CashRegisterCheckoutModal
+				<CashRegisterStudioModal
 					isOpen={isCheckoutOpen}
 					onClose={() => setIsCheckoutOpen(false)}
+					mode="checkout"
+					initialTab="checkout"
+					containerTestId="cash-register-checkout-modal"
+					submitButtonTestId="btn-confirm-checkout-payment"
+					title="Касса · Оплата приёма"
 					totalDueRub={7500}
 					patientId="pat-sample-1"
 					patientName="Алексеев Максим Дмитриевич"

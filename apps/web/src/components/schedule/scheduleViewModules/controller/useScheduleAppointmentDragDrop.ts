@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { QuickBookingSlotInfo } from "../../QuickBookingDrawer";
-import type { TargetSlotInfo } from "../../WaitlistDrawer";
+import type { TargetSlotInfo } from "../../waitlist/WaitlistDrawer";
 import type {
   ScheduleAppointmentDragDropOptions,
   ScheduleAppointmentDragDropResult,

@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronDown, FileCheck } from "lucide-react";
+import { useWorkspaceProfile } from "../../../../hooks/useWorkspaceProfile.js";
 import type { PatientInsuranceSectionProps } from "./types";
 import { SnilsOmsFields } from "./SnilsOmsFields";
 import { DmsPolicyCard } from "./DmsPolicyCard";
@@ -15,6 +16,14 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 		onOpenDmsLetters,
 		onOpenTaxCertificate,
 	}) {
+		const flags = useWorkspaceProfile();
+		const hasDmsPolicy = Boolean(
+			patient?.dmsInsuranceCompany ||
+			patient?.dmsPolicyNumber ||
+			patient?.dmsGuaranteeLetterNumber
+		);
+		const showDms = Boolean(flags?.hasInsuranceCoPay || hasDmsPolicy);
+
 		return (
 			<div
 				className={`rounded-xl bg-[var(--paper)] border transition-all overflow-hidden ${
@@ -36,7 +45,7 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 						</div>
 						<div className="min-w-0">
 							<span className="text-xs sm:text-sm font-bold text-[var(--ink)] block truncate">
-								Страхование и СНИЛС (ОМС, ДМС)
+								{showDms ? "Страхование и СНИЛС (ОМС, ДМС)" : "Страхование и СНИЛС (ОМС)"}
 							</span>
 							<span className="text-[11px] text-[var(--muted)] block truncate font-normal sm:hidden">
 								{summary}
@@ -74,12 +83,14 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 						disabled={disabled}
 						onOpenTaxCertificate={onOpenTaxCertificate}
 					/>
-					<DmsPolicyCard
-						patient={patient}
-						onUpdatePatient={onUpdatePatient}
-						disabled={disabled}
-						onOpenDmsLetters={onOpenDmsLetters}
-					/>
+					{showDms && (
+						<DmsPolicyCard
+							patient={patient}
+							onUpdatePatient={onUpdatePatient}
+							disabled={disabled}
+							onOpenDmsLetters={onOpenDmsLetters}
+						/>
+					)}
 				</div>
 			</div>
 		);

@@ -680,7 +680,7 @@ export function evaluateSomaticSafety(
 					shortLabel: "Норма",
 					fullLabel: CANONICAL_SOMATIC_NORM_SHORT,
 					title:
-						"Соматический статус: норма (1-клик). Противопоказаний к анестезии и вмешательствам нет.",
+						"Соматический статус: норма. Противопоказаний к анестезии и вмешательствам нет.",
 					severity: "healthy" as const,
 					testId: "btn-somatic-norm-one-click",
 				}
@@ -707,7 +707,7 @@ export function evaluateSomaticSafety(
 					testId: "visit-somatic-norm-badge",
 					shortLabel: "Норма",
 					fullLabel: CANONICAL_SOMATIC_NORM_SHORT,
-					title: "Соматический статус: норма (1-клик)",
+					title: "Соматический статус: норма",
 					severity: "healthy" as const,
 					actionHint: "Патологий не выявлено. Врач правит только патологию.",
 				},

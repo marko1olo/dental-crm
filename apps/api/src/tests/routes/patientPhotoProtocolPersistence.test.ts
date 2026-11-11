@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { eq } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
@@ -39,7 +40,6 @@ describe("Patient Photo Protocol Persistence API (PostgreSQL 18, Mandate 8aq / P
 				.values({
 					id: USER_ID,
 					organizationId: ORG_ID,
-					login: "photo_doctor_test",
 					passwordHash: "hash",
 					fullName: "Доктор Фотографов",
 					role: "doctor",
@@ -52,8 +52,10 @@ describe("Patient Photo Protocol Persistence API (PostgreSQL 18, Mandate 8aq / P
 					id: PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Пациент Снимков А. И.",
-					gender: "male",
 					phone: "+79991112233",
+					administrativeProfile: {
+						gender: "male",
+					},
 				})
 				.onConflictDoNothing();
 		} catch (e) {

@@ -11,7 +11,7 @@ import {
 	generateBilateralAcceptanceActHtml,
 	search804nServices,
 	type DmsRegistryServiceRecord,
-} from "./insuranceMath";
+} from "./dmsCatalogData.js";
 
 describe("insuranceMath — Сводка реестра и проверка баланса", () => {
 	const sampleRecords: DmsRegistryServiceRecord[] = [

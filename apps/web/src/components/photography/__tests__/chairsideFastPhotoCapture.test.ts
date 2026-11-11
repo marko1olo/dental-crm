@@ -50,6 +50,10 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 		photoUploadDir,
 		"useVisitDiaryPhotoUploadState.ts",
 	);
+	const modalsPath = path.join(
+		photoUploadDir,
+		"VisitDiaryPhotoModals.tsx",
+	);
 
 	it("1. Verifies all required files exist on disk and meet anti-monolith limit (<= 800 lines)", () => {
 		const filesToCheck = [
@@ -62,6 +66,7 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 			toolbarPath,
 			gridPath,
 			hookPath,
+			modalsPath,
 		];
 
 		for (const file of filesToCheck) {
@@ -241,6 +246,7 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 			fs.readFileSync(toolbarPath, "utf8"),
 			fs.readFileSync(gridPath, "utf8"),
 			fs.readFileSync(hookPath, "utf8"),
+			fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "",
 		].join("\n");
 
 		// Proves hook is wired

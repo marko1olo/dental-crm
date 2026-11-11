@@ -97,7 +97,7 @@ export const CBCT_HOTKEY_DEFINITIONS: readonly CbctHotkeyItem[] = [
 		category: "zoom_pan",
 	},
 	{
-		keyLabel: "2-клик",
+		keyLabel: "2×ЛКМ",
 		actionLabel: "Развернуть / сброс",
 		descriptionRu: "Двойной клик: развернуть активное окно на весь экран или сбросить наклон осей",
 		category: "zoom_pan",

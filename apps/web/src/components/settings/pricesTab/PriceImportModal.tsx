@@ -191,7 +191,7 @@ export function PriceImportModal({
 											<span>
 												{isCommittingImport
 													? "Импорт..."
-													: "Импортировать в каталог (в 1 клик)"}
+													: "Импортировать в каталог"}
 											</span>
 										</button>
 										<button
@@ -239,7 +239,7 @@ export function PriceImportModal({
 									<span>
 										{isCommittingImport
 											? "Импорт..."
-											: "Импортировать в каталог (в 1 клик)"}
+											: "Импортировать в каталог"}
 									</span>
 								</button>
 								<button

@@ -68,7 +68,7 @@ export const AutoclaveToolbarMoreMenu: React.FC<AutoclaveToolbarMoreMenuProps> =
 							data-testid="open-new-cycle-modal-btn"
 						>
 							<Plus size={15} color="#0284c7" />
-							<span>Запустить цикл автоклава (1 клик)</span>
+							<span>Запустить цикл автоклава</span>
 						</button>
 					)}
 

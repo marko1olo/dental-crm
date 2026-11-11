@@ -5,6 +5,7 @@ import {
 	type MdlpOperationCode,
 	type MdlpSchema10560Document,
 } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast.js";
 import { executeSeniorNurseDisposalActInBackground } from "./SeniorNurseDisposalActModal.js";
 
@@ -59,7 +60,7 @@ export async function submitMdlpDisposalBatch({
 	try {
 		const res = await fetch("/api/mdlp/dispose-batch", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 			body: JSON.stringify({
 				docNum,
 				docDate,

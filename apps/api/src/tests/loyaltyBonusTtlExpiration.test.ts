@@ -154,8 +154,10 @@ describe("Loyalty Bonus TTL Expiration & FIFO Red Team Inquest [LOY-04]", () => 
 			);
 
 		assert.equal(txs.length, 1, "Должна быть ровно 1 запись типа 'expired'");
-		assert.equal(Number(txs[0].amountPoints), -500);
-		assert.equal(Number(txs[0].balanceAfterPoints), 1000);
+		const firstTx = txs[0];
+		assert.ok(firstTx);
+		assert.equal(Number(firstTx.amountPoints), -500);
+		assert.equal(Number(firstTx.balanceAfterPoints), 1000);
 	});
 
 	test("2. Blind-Spot #1 (FIFO): списание баллов сначала списывает ранние начисления", async () => {
@@ -211,7 +213,9 @@ describe("Loyalty Bonus TTL Expiration & FIFO Red Team Inquest [LOY-04]", () => 
 				),
 			);
 		assert.equal(txRows.length, 1);
-		assert.equal(Number(txRows[0].unspentPoints), 0, "Ранняя пачка 300 б. должна быть списана первой в 0");
+		const firstTxRow = txRows[0];
+		assert.ok(firstTxRow);
+		assert.equal(Number(firstTxRow.unspentPoints), 0, "Ранняя пачка 300 б. должна быть списана первой в 0");
 
 		const txRows2 = await db
 			.select()
@@ -224,7 +228,9 @@ describe("Loyalty Bonus TTL Expiration & FIFO Red Team Inquest [LOY-04]", () => 
 				),
 			);
 		assert.equal(txRows2.length, 1);
-		assert.equal(Number(txRows2[0].unspentPoints), 600, "Из второй пачки списано 100, осталось 600");
+		const firstTxRow2 = txRows2[0];
+		assert.ok(firstTxRow2);
+		assert.equal(Number(firstTxRow2.unspentPoints), 600, "Из второй пачки списано 100, осталось 600");
 
 		// Если теперь наступит дата batch1Exp + 1 день, сгорать нечему — ранние баллы уже были потрачены пациентом!
 		const simFutureDate = new Date(batch1Exp.getTime() + 86400000);

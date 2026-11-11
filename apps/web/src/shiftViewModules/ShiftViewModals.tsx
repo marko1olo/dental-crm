@@ -1,6 +1,6 @@
 import React from "react";
 import type { Dashboard } from "@dental/shared";
-import { DoctorPayrollModal } from "../components/payroll/DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../components/payroll/DoctorPayrollStudioModal";
 import { DoctorShiftCloseModal } from "../components/shift";
 import { QueueBoardModal } from "./QueueBoardModal";
 
@@ -52,7 +52,7 @@ export const ShiftViewModals: React.FC<ShiftViewModalsProps> = ({
 }) => (
 	<>
 		{isPayrollModalOpen && (
-			<DoctorPayrollModal
+			<DoctorPayrollStudioModal
 				isOpen={isPayrollModalOpen}
 				onClose={onClosePayrollModal}
 				clinicName={dashboard?.clinicName}

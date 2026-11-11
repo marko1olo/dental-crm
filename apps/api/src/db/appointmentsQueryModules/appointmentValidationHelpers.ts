@@ -1,5 +1,11 @@
 import { and, eq, gt, inArray, lt, ne, or, type SQL } from "drizzle-orm";
+import type { PgTableWithColumns } from "drizzle-orm/pg-core";
+import { db } from "../client.js";
 import * as schema from "../schema.js";
+
+export type DbClientOrTransaction =
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Пессимистично блокирует строки ресурсов приёма до проверки занятости.
@@ -14,8 +20,7 @@ import * as schema from "../schema.js";
  * встречные вызовы могут заклиниться друг о друга.
  */
 export async function lockAppointmentResources(
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	executor: any,
+	executor: DbClientOrTransaction,
 	organizationId: string,
 	resources: {
 		chairId?: string | null | undefined;
@@ -112,8 +117,7 @@ export const acquireHierarchyLocks = lockAppointmentResources;
  * конкретного виновника.
  */
 export async function assertNoResourceOverlap(
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	executor: any,
+	executor: DbClientOrTransaction,
 	organizationId: string,
 	candidate: {
 		startsAt: Date;
@@ -193,8 +197,7 @@ export async function assertNoResourceOverlap(
  * ПАЦИЕНТ, ВРАЧ И КРЕСЛО ОБЯЗАНЫ ПРИНАДЛЕЖАТЬ ЭТОЙ КЛИНИКЕ.
  */
 export async function assertAppointmentResourcesBelongToOrganization(
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	executor: any,
+	executor: DbClientOrTransaction,
 	organizationId: string,
 	input: {
 		patientId?: string | null | undefined;
@@ -203,52 +206,74 @@ export async function assertAppointmentResourcesBelongToOrganization(
 		chairId?: string | null | undefined;
 	},
 ): Promise<void> {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const checks: { id: string; table: any; what: string; action: string }[] = [];
-	if (input.patientId)
-		checks.push({
-			id: input.patientId,
-			table: schema.patients,
-			what: "Пациент",
-			action: "Обновите список пациентов и выберите карту из своей клиники.",
-		});
-	if (input.doctorUserId)
-		checks.push({
-			id: input.doctorUserId,
-			table: schema.users,
-			what: "Врач",
-			action: "Обновите список сотрудников и выберите врача своей клиники.",
-		});
-	if (input.assistantUserId)
-		checks.push({
-			id: input.assistantUserId,
-			table: schema.users,
-			what: "Ассистент",
-			action:
-				"Обновите список сотрудников и выберите ассистента своей клиники.",
-		});
-	if (input.chairId)
-		checks.push({
-			id: input.chairId,
-			table: schema.chairs,
-			what: "Кресло",
-			action: "Обновите список кресел и выберите кресло своей клиники.",
-		});
-
-	for (const check of checks) {
-		const [found] = await executor
-			.select({ id: check.table.id })
-			.from(check.table)
+	if (input.patientId) {
+		const [patient] = await executor
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
 			.where(
 				and(
-					eq(check.table.id, check.id),
-					eq(check.table.organizationId, organizationId),
+					eq(schema.patients.id, input.patientId),
+					eq(schema.patients.organizationId, organizationId),
 				),
 			)
 			.limit(1);
-		if (!found) {
+		if (!patient) {
 			throw new Error(
-				`${check.what} не относится к вашей клинике, приём не записан. ${check.action}`,
+				"Пациент не относится к вашей клинике, приём не записан. Обновите список пациентов и выберите карту из своей клиники.",
+			);
+		}
+	}
+
+	if (input.doctorUserId) {
+		const [doctor] = await executor
+			.select({ id: schema.users.id })
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.id, input.doctorUserId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!doctor) {
+			throw new Error(
+				"Врач не относится к вашей клинике, приём не записан. Обновите список сотрудников и выберите врача своей клиники.",
+			);
+		}
+	}
+
+	if (input.assistantUserId) {
+		const [assistant] = await executor
+			.select({ id: schema.users.id })
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.id, input.assistantUserId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!assistant) {
+			throw new Error(
+				"Ассистент не относится к вашей клинике, приём не записан. Обновите список сотрудников и выберите ассистента своей клиники.",
+			);
+		}
+	}
+
+	if (input.chairId) {
+		const [chair] = await executor
+			.select({ id: schema.chairs.id })
+			.from(schema.chairs)
+			.where(
+				and(
+					eq(schema.chairs.id, input.chairId),
+					eq(schema.chairs.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!chair) {
+			throw new Error(
+				"Кресло не относится к вашей клинике, приём не записан. Обновите список кресел и выберите кресло своей клиники.",
 			);
 		}
 	}

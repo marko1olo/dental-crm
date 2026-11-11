@@ -7,8 +7,8 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { buildChairsideSmartProtocol } from "../../visit/workflowModules/chairsideSmartProtocolBuilder";
-import { dispatchExpressProtocolServicesToInvoice } from "../../visit/soapEditor/soapExpressInvoiceBridge";
-import { SoapExpressProtocolsBar } from "../../visit/soapEditor/SoapExpressProtocolsBar";
+import { dispatchSurgicalServicesToInvoice, getExtractionSurgicalServices } from "../surgeryCatalogData";
+import { VisitSurgeryExtractionBar } from "../../visit/surgery/VisitSurgeryExtractionBar";
 
 describe("Surgery Chairside 1-Click Express Protocols & Invoice Dispatch (Mandates 8e, 8n, 8ap)", () => {
 	it("1. builds complex extraction protocol with K01.1, osteotomy and root separation", () => {
@@ -48,12 +48,13 @@ describe("Surgery Chairside 1-Click Express Protocols & Invoice Dispatch (Mandat
 			window.addEventListener("dente-add-services-to-invoice", listener);
 		}
 
-		const services = dispatchExpressProtocolServicesToInvoice("extraction_complex", 48);
+		const customServices = getExtractionSurgicalServices({ complexity: "complex", toothFdi: 48 });
+		const services = dispatchSurgicalServicesToInvoice({ toothFdi: 48, customServices });
 		assert.ok(services.length >= 3, "Complex extraction must provide at least 3 billable services");
 		assert.ok(services.some((s) => s.code === "A16.07.001.001"), "Must include primary extraction code");
 
 		if (capturedEvent) {
-			assert.equal((capturedEvent as any).detail.toothNumber, 48);
+			assert.equal((capturedEvent as any).detail.toothFdi, 48);
 			assert.ok((capturedEvent as any).detail.services.length >= 3);
 		}
 
@@ -62,17 +63,16 @@ describe("Surgery Chairside 1-Click Express Protocols & Invoice Dispatch (Mandat
 		}
 	});
 
-	it("5. SoapExpressProtocolsBar renders all 1-click surgical buttons with ZERO disabled controls", () => {
+	it("5. VisitSurgeryExtractionBar renders chairside surgical buttons with ZERO disabled controls", () => {
 		const html = renderToString(
-			<SoapExpressProtocolsBar
-				onApplyExpressProtocol={() => {}}
+			<VisitSurgeryExtractionBar
+				effectiveTooth={48}
+				onApplyProtocolText={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes("btn-soap-express-extraction"), "Must render simple extraction");
-		assert.ok(html.includes("btn-soap-express-extraction-complex"), "Must render complex extraction");
-		assert.ok(html.includes("btn-soap-express-implant"), "Must render implant express protocol");
-		assert.ok(html.includes("btn-soap-express-sinus-gbr"), "Must render sinus lift express protocol");
+		assert.ok(html.includes("btn-uncomplicated-extraction-norm"), "Must render uncomplicated norm");
+		assert.ok(html.includes("btn-copy-post-op-memo"), "Must render copy patient memo");
 
 		// Mandate 8e: Doctor Autonomy (ZERO buttons disabled)
 		assert.equal(html.includes("disabled"), false, "Buttons must NEVER be disabled in chairside bar");

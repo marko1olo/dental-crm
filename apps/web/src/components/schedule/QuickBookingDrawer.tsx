@@ -262,6 +262,17 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     );
   });
 
+  const effectiveOrgId = React.useMemo(() => {
+    return (
+      (dashboard as any)?.clinicSettings?.profile?.organizationId ||
+      (dashboard as any)?.organizationId ||
+      (dashboard as any)?.clinicSettings?.id ||
+      (dashboard as any)?.clinicSettings?.profile?.id ||
+      initialSlot?.appointment?.organizationId ||
+      ""
+    );
+  }, [dashboard, initialSlot?.appointment?.organizationId]);
+
   const appointmentForLab: Appointment = React.useMemo(() => {
     const rawAppt = initialSlot?.appointment || initialSlot?.editingAppointment;
     if (rawAppt) {
@@ -279,15 +290,14 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
       status: status || "planned",
       reason: reason || "",
       comment: comment || "",
-      organizationId: "org-1",
+      organizationId: effectiveOrgId,
     } as Appointment;
-  }, [initialSlot, selectedPatient?.id, doctorUserId, chairId, startsAtLocal, durationMinutes, status, reason, comment]);
+  }, [initialSlot, selectedPatient?.id, doctorUserId, chairId, startsAtLocal, durationMinutes, status, reason, comment, effectiveOrgId]);
 
   const activeLabOrders = React.useMemo(() => {
+    if (!selectedPatient?.id) return [];
     const allLab = (dashboard as any)?.labOrders || [];
-    if (!selectedPatient?.id) return allLab;
-    const patientLab = allLab.filter((lo: any) => lo.patientId === selectedPatient.id);
-    return patientLab.length > 0 ? patientLab : allLab;
+    return allLab.filter((lo: any) => lo.patientId === selectedPatient.id);
   }, [dashboard, selectedPatient?.id]);
 
   return (

@@ -24,7 +24,6 @@ import { and, eq, or, sql } from "drizzle-orm";
 import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import { validateVisitAndDocumentBalances } from "./billingTargetBalance.js";
-import { validateDecree659AndPriceCompliance } from "./decree659Audit.js";
 import { recordCashAndFiscalAccounting } from "./fiscalAccounting.js";
 import { executePaymentInsertAndBalanceDeductions } from "./paymentRecordExecutor.js";
 import { validateAndResolvePaymentSplit } from "./paymentSplitValidation.js";
@@ -118,14 +117,24 @@ export async function createPaymentInDb(
 			);
 		}
 
-		// 1. Блокирующий гейт Постановления №659 и проверка цен каталога
-		await validateDecree659AndPriceCompliance(tx, {
-			organizationId,
-			lockedPatient,
-			input,
-			incomingPaymentKopecks,
-			isWarrantyOrFullDiscount,
-		});
+		// 1. Проверка существования услуги в каталоге при передаче идентификатора
+		const targetServiceId = input.serviceId || input.catalogItemId;
+		if (targetServiceId) {
+			const [serviceItem] = await tx
+				.select({ id: schema.serviceCatalogItems.id })
+				.from(schema.serviceCatalogItems)
+				.where(
+					and(
+						eq(schema.serviceCatalogItems.id, targetServiceId),
+						eq(schema.serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!serviceItem) {
+				throw new Error(`Услуга с ID «${targetServiceId}» не найдена в каталоге клиники.`);
+			}
+		}
 
 		// 2 & 3. Валидация остатков по визиту и документу
 		const { lockedVisit, remainingVisitKopecks } =

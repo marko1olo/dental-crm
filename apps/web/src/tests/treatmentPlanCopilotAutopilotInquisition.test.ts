@@ -280,7 +280,7 @@ describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 		// Total: 260 000 ₽. With high-cost Code 02 (200 000 ₽ implant), refund is unlimited:
 		// Code 02: 200k * 0.13 = 26 000 ₽. Code 01: 60k * 0.13 = 7 800 ₽. Total = 33 800 ₽.
 		// If isHighCost failed, it would cap total base at 150 000 ₽ (max refund 19 500 ₽).
-		assert.ok(tier.ndflRefundRub > 19500, `Expected refund > 19 500 ₽ for high-cost implant plan, got ${tier.ndflRefundRub} ₽`);
+		assert.ok((tier.ndflRefundRub ?? 0) > 19500, `Expected refund > 19 500 ₽ for high-cost implant plan, got ${tier.ndflRefundRub} ₽`);
 		assert.equal(tier.ndflRefundRub, 33800);
 	});
 

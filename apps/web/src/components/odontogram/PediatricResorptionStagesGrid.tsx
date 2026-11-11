@@ -2,9 +2,9 @@ import React from "react";
 import { Check } from "lucide-react";
 import {
 	RESORPTION_STAGE_DEFINITIONS,
+	RESORPTION_STAGES,
 	type ResorptionStagePercent,
 } from "./pediatricDentitionEngine";
-import { RESORPTION_STAGES } from "./pediatricResorptionConstants";
 
 export interface PediatricResorptionStagesGridProps {
 	readonly selectedResorptionStage: ResorptionStagePercent;

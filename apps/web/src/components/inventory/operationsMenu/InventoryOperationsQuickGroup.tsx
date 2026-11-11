@@ -33,7 +33,7 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 						onClose();
 					}}
 					role="menuitem"
-					title="Списание расходников смены по оказанным услугам в 1 клик"
+					title="Списание расходников смены по оказанным услугам"
 				>
 					<PackageCheck size={15} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Списать расходники смены</span>
@@ -50,10 +50,10 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 						onClose();
 					}}
 					role="menuitem"
-					title="1-кликовый цикл автоклавирования: списание крафт-пакетов и индикаторов 5 класса со склада"
+					title="Цикл автоклавирования: списание крафт-пакетов и индикаторов со склада"
 				>
 					<Flame size={15} className="text-[var(--ink-muted)] shrink-0" />
-					<span>Стерилизация в автоклаве (1 клик)</span>
+					<span>Стерилизация в автоклаве</span>
 				</button>
 			)}
 

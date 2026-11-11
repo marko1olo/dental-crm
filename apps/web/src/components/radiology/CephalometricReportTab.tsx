@@ -26,7 +26,7 @@ import {
 	type LandmarkKey,
 	type LandmarkMap,
 	getRequiredLandmarksForMeasurement,
-} from "./cephalometricMath";
+} from "../orthodontics/cephalometricMath";
 
 export interface CephalometricReportTabProps {
 	readonly currentEffectiveProtocolText: string;

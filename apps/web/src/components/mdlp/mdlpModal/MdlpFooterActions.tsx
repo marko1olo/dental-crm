@@ -101,7 +101,7 @@ export const MdlpFooterActions: React.FC<MdlpFooterActionsProps> = ({
 				{/* Мандат 8am: Ровно ОДНА Primary CTA кнопка «Вывести из оборота», изумрудный цвет DENTE */}
 				<button
 					type="button" onClick={() => onConfirmDisposal?.()} className="mdlp-action-btn primary-cta text-xs font-bold" style={{ height: 38 }}
-					data-testid="mdlp-confirm-disposal-primary-cta" title="Вывести отсканированные упаковки из оборота в 1 клик"
+					data-testid="mdlp-confirm-disposal-primary-cta" title="Вывести отсканированные упаковки из оборота"
 				>
 					<PackageCheck className="w-4 h-4" />
 					<span>Вывести из оборота</span>

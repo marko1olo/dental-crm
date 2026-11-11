@@ -227,6 +227,7 @@ export interface PediatricPhysiologicalNormResult {
 	readonly resorptionStages: Record<number, ResorptionStagePercent>;
 	readonly diagnosisIcd10: string;
 	readonly order804nCode: string;
+	readonly catalogServiceCode: string;
 	readonly statusLocalisRu: string;
 	readonly statusLocalis: string;
 	readonly treatmentDescriptionRu: string;
@@ -241,6 +242,7 @@ export interface Pediatric1ClickProcedurePreset {
 	readonly labelRu: string;
 	readonly nameRu: string;
 	readonly serviceCode804n: string;
+	readonly catalogServiceCode: string;
 	readonly diagnosisIcd10: string;
 	readonly drugOrMaterial: string;
 	readonly targetTeeth: readonly number[];
@@ -305,6 +307,7 @@ export function calculatePediatricPhysiologicalNorm(
 			resorptionStages,
 			diagnosisIcd10: "Z01.2",
 			order804nCode: "B01.064.003",
+			catalogServiceCode: "B01.064.003",
 			statusLocalisRu,
 			statusLocalis: statusLocalisRu,
 			treatmentDescriptionRu,
@@ -375,6 +378,7 @@ export function calculatePediatricPhysiologicalNorm(
 			resorptionStages,
 			diagnosisIcd10: "Z01.2",
 			order804nCode: "B01.064.003",
+			catalogServiceCode: "B01.064.003",
 			statusLocalisRu,
 			statusLocalis: statusLocalisRu,
 			treatmentDescriptionRu,
@@ -424,6 +428,7 @@ export function calculatePediatricPhysiologicalNorm(
 			resorptionStages,
 			diagnosisIcd10: "Z01.2",
 			order804nCode: "B01.064.003",
+			catalogServiceCode: "B01.064.003",
 			statusLocalisRu,
 			statusLocalis: statusLocalisRu,
 			treatmentDescriptionRu,
@@ -494,6 +499,7 @@ export function calculatePediatricPhysiologicalNorm(
 			resorptionStages,
 			diagnosisIcd10: "Z01.2",
 			order804nCode: "B01.064.003",
+			catalogServiceCode: "B01.064.003",
 			statusLocalisRu,
 			statusLocalis: statusLocalisRu,
 			treatmentDescriptionRu,
@@ -564,6 +570,7 @@ export function calculatePediatricPhysiologicalNorm(
 		resorptionStages,
 		diagnosisIcd10: "Z01.2",
 		order804nCode: "B01.064.003",
+		catalogServiceCode: "B01.064.003",
 		statusLocalisRu,
 		statusLocalis: statusLocalisRu,
 		treatmentDescriptionRu,
@@ -597,9 +604,10 @@ export function getPediatricProcedurePreset(
 			].join("\n");
 			return {
 				id: "saforide",
-				labelRu: "Серебрение Saforide (A16.07.057)",
-				nameRu: "Серебрение Saforide (A16.07.057)",
+				labelRu: "Серебрение Saforide",
+				nameRu: "Серебрение Saforide",
 				serviceCode804n: "A16.07.057",
+				catalogServiceCode: "A16.07.057",
 				diagnosisIcd10: "K02.0",
 				drugOrMaterial: "Saforide 38%",
 				targetTeeth: teeth,
@@ -608,7 +616,7 @@ export function getPediatricProcedurePreset(
 				treatmentDescriptionRu,
 				treatmentDescription: treatmentDescriptionRu,
 				diaryText,
-				summaryRu: "Серебрение Saforide (A16.07.057) в 1 клик",
+				summaryRu: "Серебрение Saforide",
 			};
 		}
 		case "fissurit": {
@@ -626,9 +634,10 @@ export function getPediatricProcedurePreset(
 			].join("\n");
 			return {
 				id: "fissurit",
-				labelRu: "Герметизация фиссур Fissurit (A16.07.050)",
-				nameRu: "Герметизация фиссур Fissurit (A16.07.050)",
+				labelRu: "Герметизация фиссур Fissurit",
+				nameRu: "Герметизация фиссур Fissurit",
 				serviceCode804n: "A16.07.050",
+				catalogServiceCode: "A16.07.050",
 				diagnosisIcd10: "Z29.8",
 				drugOrMaterial: "Fissurit FX (VOCO)",
 				targetTeeth: teeth,
@@ -637,7 +646,7 @@ export function getPediatricProcedurePreset(
 				treatmentDescriptionRu,
 				treatmentDescription: treatmentDescriptionRu,
 				diaryText,
-				summaryRu: "Герметизация фиссур Fissurit (A16.07.050) в 1 клик",
+				summaryRu: "Герметизация фиссур Fissurit",
 			};
 		}
 		case "pulpotec": {
@@ -656,8 +665,9 @@ export function getPediatricProcedurePreset(
 			return {
 				id: "pulpotec",
 				labelRu: "Витальная пульпотомия Pulpotec",
-				nameRu: "Витальная пульпотомия Pulpotec (A16.07.009)",
+				nameRu: "Витальная пульпотомия Pulpotec",
 				serviceCode804n: "A16.07.009",
+				catalogServiceCode: "A16.07.009",
 				diagnosisIcd10: "K04.0",
 				drugOrMaterial: "Pulpotec",
 				targetTeeth: teeth,
@@ -666,7 +676,7 @@ export function getPediatricProcedurePreset(
 				treatmentDescriptionRu,
 				treatmentDescription: treatmentDescriptionRu,
 				diaryText,
-				summaryRu: "Витальная пульпотомия Pulpotec в 1 клик",
+				summaryRu: "Витальная пульпотомия Pulpotec",
 			};
 		}
 	}

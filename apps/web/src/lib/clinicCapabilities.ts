@@ -195,11 +195,16 @@ export function hasCapability(
  * объект на каждый рендер перерисовывал бы всех потребителей признаков.
  */
 export function applyClinicModeToFlags<
-	Flags extends { hasMarketingModule: boolean },
+	Flags extends { hasMarketingModule: boolean; hasInsuranceCoPay?: boolean },
 >(flags: Flags, mode: ClinicMode | null | undefined): Flags {
-	if (!flags.hasMarketingModule) return flags;
-	if (hasCapability(mode, "marketingSection")) return flags;
-	return { ...flags, hasMarketingModule: false };
+	let result = flags;
+	if (flags.hasMarketingModule && !hasCapability(mode, "marketingSection")) {
+		result = { ...result, hasMarketingModule: false };
+	}
+	if (mode === "solo_doctor" && result.hasInsuranceCoPay) {
+		result = { ...result, hasInsuranceCoPay: false };
+	}
+	return result;
 }
 
 /**

@@ -21,6 +21,8 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerPatientRecallRoutes } from "../../routes/patientRecall.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -69,7 +71,8 @@ const RECENT_PAST_APPOINTMENT = fixtureUuid(FIXTURE, 0x22);
 const BOOKED_PAST_APPOINTMENT = fixtureUuid(FIXTURE, 0x23);
 const BOOKED_FUTURE_APPOINTMENT = fixtureUuid(FIXTURE, 0x24);
 
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const STAFF_TOKEN = signToken({ role: "admin", organizationId: ORG_ID, userId: DOCTOR_ID, clinicalRole: "admin" }, authTokenSecret());
+const ORG_HEADERS = { "x-organization-id": ORG_ID, "x-dente-staff-token": STAFF_TOKEN };
 
 function monthsAgo(months: number): Date {
 	const date = new Date();
@@ -113,93 +116,108 @@ describe("возврат пациентов", () => {
 					.insert(organizations)
 					.values({ id: ORG_ID, name: "Клиника возврата" })
 					.onConflictDoNothing();
-				await db.insert(users).values({
-					id: DOCTOR_ID,
-					organizationId: ORG_ID,
-					fullName: "Врач Возвратов",
-					role: "doctor",
-				});
+				await db
+					.insert(users)
+					.values({
+						id: DOCTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Врач Возвратов",
+						role: "doctor",
+					})
+					.onConflictDoNothing();
 				// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
 				// клиника заводится здесь же, как в остальных тестах по живой базе.
-				await db.insert(clinics).values({
-					id: CLINIC_ID,
-					organizationId: ORG_ID,
-					name: "Главная",
-					timezone: "Europe/Moscow",
-				});
-				await db.insert(chairs).values({
-					id: CHAIR_ID,
-					organizationId: ORG_ID,
-					clinicId: CLINIC_ID,
-					name: "Кресло 1",
-				});
+				await db
+					.insert(clinics)
+					.values({
+						id: CLINIC_ID,
+						organizationId: ORG_ID,
+						name: "Главная",
+						timezone: "Europe/Moscow",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(chairs)
+					.values({
+						id: CHAIR_ID,
+						organizationId: ORG_ID,
+						clinicId: CLINIC_ID,
+						name: "Кресло 1",
+					})
+					.onConflictDoNothing();
 
-				await db.insert(patients).values([
-					{
-						id: DUE_PATIENT,
-						organizationId: ORG_ID,
-						fullName: "Давний Пациент",
-						phone: "+7 916 000-09-01",
-					},
-					{
-						id: RECENT_PATIENT,
-						organizationId: ORG_ID,
-						fullName: "Недавний Пациент",
-						phone: "+7 916 000-09-02",
-					},
-					{
-						id: BOOKED_PATIENT,
-						organizationId: ORG_ID,
-						fullName: "Уже Записан",
-						phone: "+7 916 000-09-03",
-					},
-				]);
+				await db
+					.insert(patients)
+					.values([
+						{
+							id: DUE_PATIENT,
+							organizationId: ORG_ID,
+							fullName: "Давний Пациент",
+							phone: "+7 916 000-09-01",
+						},
+						{
+							id: RECENT_PATIENT,
+							organizationId: ORG_ID,
+							fullName: "Недавний Пациент",
+							phone: "+7 916 000-09-02",
+						},
+						{
+							id: BOOKED_PATIENT,
+							organizationId: ORG_ID,
+							fullName: "Уже Записан",
+							phone: "+7 916 000-09-03",
+						},
+					])
+					.onConflictDoNothing();
 
-				await db.insert(appointments).values([
-					// Девять месяцев назад — попадает в список.
-					{
-						id: DUE_PAST_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: DUE_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: monthsAgo(9),
-						endsAt: new Date(monthsAgo(9).getTime() + 3_600_000),
-					},
-					// Месяц назад — звать рано.
-					{
-						id: RECENT_PAST_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: RECENT_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: monthsAgo(1),
-						endsAt: new Date(monthsAgo(1).getTime() + 3_600_000),
-					},
-					// Давно не был, НО уже записан на будущее — звать не нужно.
-					{
-						id: BOOKED_PAST_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: BOOKED_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "completed",
-						startsAt: monthsAgo(20),
-						endsAt: new Date(monthsAgo(20).getTime() + 3_600_000),
-					},
-					{
-						id: BOOKED_FUTURE_APPOINTMENT,
-						organizationId: ORG_ID,
-						patientId: BOOKED_PATIENT,
-						doctorUserId: DOCTOR_ID,
-						chairId: CHAIR_ID,
-						status: "planned",
-						startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
-						endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000),
-					},
-				]);
+				await db
+					.insert(appointments)
+					.values([
+						// Девять месяцев назад — попадает в список.
+						{
+							id: DUE_PAST_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: DUE_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: monthsAgo(9),
+							endsAt: new Date(monthsAgo(9).getTime() + 3_600_000),
+						},
+						// Месяц назад — звать рано.
+						{
+							id: RECENT_PAST_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: RECENT_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: monthsAgo(1),
+							endsAt: new Date(monthsAgo(1).getTime() + 3_600_000),
+						},
+						// Давно не был, НО уже записан на будущее — звать не нужно.
+						{
+							id: BOOKED_PAST_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: BOOKED_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "completed",
+							startsAt: monthsAgo(20),
+							endsAt: new Date(monthsAgo(20).getTime() + 3_600_000),
+						},
+						{
+							id: BOOKED_FUTURE_APPOINTMENT,
+							organizationId: ORG_ID,
+							patientId: BOOKED_PATIENT,
+							doctorUserId: DOCTOR_ID,
+							chairId: CHAIR_ID,
+							status: "planned",
+							startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
+							endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000),
+						},
+					])
+					.onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;

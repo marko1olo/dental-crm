@@ -54,7 +54,7 @@ export function IncomingCallActionFooter({
 				<button
 					type="button"
 					onClick={() => handleQuickBook("today_standard")}
-					className="primary-button flex-1 min-h-[44px] sm:min-h-[38px] px-3 sm:px-3.5 text-xs sm:text-sm font-bold whitespace-nowrap inline-flex items-center justify-center gap-1.5 rounded-xl cursor-pointer transition-all active:scale-95 bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)] shadow-sm"
+					className="primary-button flex-1 min-h-[44px] sm:min-h-[38px] px-3 sm:px-3.5 text-xs sm:text-sm font-bold whitespace-nowrap inline-flex items-center justify-center gap-1.5 rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm"
 					title={
 						isKnownPatient
 							? "Записать пациента на приём"
@@ -76,7 +76,7 @@ export function IncomingCallActionFooter({
 				>
 					<PhoneForwarded
 						size={15}
-						className="text-emerald-600 dark:text-emerald-400 shrink-0"
+						className="shrink-0 text-current"
 					/>
 					<span className="hidden sm:inline">Перезвонить</span>
 				</button>
@@ -90,7 +90,7 @@ export function IncomingCallActionFooter({
 					aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать карту пациента"}
 					data-testid="badge-action-card"
 				>
-					<UserCheck size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<UserCheck size={15} className="shrink-0 text-current" />
 					<span className="hidden sm:inline">{isKnownPatient ? "Карта" : "+ Карта"}</span>
 				</button>
 

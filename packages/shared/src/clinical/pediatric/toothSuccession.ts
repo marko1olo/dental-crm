@@ -81,7 +81,7 @@ export function isPrimaryMolar(toothNumber: number): boolean {
 
 export interface ToothSuccessionResult {
 	readonly primaryTooth: number;
-	readonly permanentSuccessor?: number;
+	readonly permanentSuccessor?: number | undefined;
 	readonly isSuccessionSupported: boolean;
 }
 

@@ -15,15 +15,15 @@ export function enrichSoapWithProcedures(
 	procedures804n: Procedure804nVoiceItem[],
 	anesthesia: AnesthesiaVoiceItem | null,
 ): SoapSectionsVoiceNote {
-	const enrichedSoap: SoapSectionsVoiceNote = { ...soapNotes };
-
-	if (!enrichedSoap.assessment && teethUpdates.length > 0) {
-		enrichedSoap.assessment = teethUpdates
+	let assessment = soapNotes.assessment;
+	if (!assessment && teethUpdates.length > 0) {
+		assessment = teethUpdates
 			.map((t) => `Зуб ${t.toothNumber}: ${t.icd10Title} [${t.icd10Code}]`)
 			.join("; ");
 	}
 
-	if (!enrichedSoap.plan && (procedures804n.length > 0 || anesthesia)) {
+	let plan = soapNotes.plan;
+	if (!plan && (procedures804n.length > 0 || anesthesia)) {
 		const planParts: string[] = [];
 		if (anesthesia) {
 			planParts.push(`Анестезия: ${anesthesia.displayName}`);
@@ -31,8 +31,12 @@ export function enrichSoapWithProcedures(
 		for (const p of procedures804n) {
 			planParts.push(p.name);
 		}
-		enrichedSoap.plan = planParts.join(", ");
+		plan = planParts.join(", ");
 	}
 
-	return enrichedSoap;
+	return {
+		...soapNotes,
+		...(assessment !== undefined ? { assessment } : {}),
+		...(plan !== undefined ? { plan } : {}),
+	};
 }

@@ -17,9 +17,9 @@ import type {
 
 export interface DocumentSignRecord {
 	readonly status: ConsentSignStatus;
-	readonly signedAt?: string;
-	readonly signatureSvg?: string;
-	readonly integrityHash?: string;
+	readonly signedAt?: string | undefined;
+	readonly signatureSvg?: string | undefined;
+	readonly integrityHash?: string | undefined;
 }
 
 export interface ConsentDocumentViewerProps {

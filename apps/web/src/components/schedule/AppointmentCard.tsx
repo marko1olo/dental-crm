@@ -11,7 +11,6 @@ export * from "./AppointmentCardPrimaryActions";
 export * from "./AppointmentCardContextMenu";
 export * from "./AppointmentCardEditor";
 export * from "./useAppointmentCardState";
-export * from "./SmartSlotRecoveryPopover";
 export * from "./appointmentCardModules";
 export {
 	extractTeethList,

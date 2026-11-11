@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generatePrimaryIntakePackageHtml } from "../components/documents/primaryIntakePackagePrintEngine.js";
-import { generateMinorConsentPrintHtml } from "../components/consents/templates/adultAndMinorPrint.js";
+import { generateMinorConsentPrintHtml } from "../components/consents/consentTemplates.js";
 
 describe("Audit: Primary Intake Package & Minor Legal Consent (ПП РФ № 736, 152-ФЗ, ст. 54 323-ФЗ, ГОСТ)", () => {
 	it("1. generatePrimaryIntakePackageHtml формирует все 4 бланка с ГОСТ-полями и динамическим городом", () => {

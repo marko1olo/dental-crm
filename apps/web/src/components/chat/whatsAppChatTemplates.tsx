@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import {
 	Calendar,
 	CalendarCheck,
@@ -19,6 +19,7 @@ export interface QuickTemplateItem {
 	icon: React.ReactNode;
 	label: string;
 	category: string;
+	intent?: string;
 	buildText: () => string;
 }
 
@@ -66,6 +67,7 @@ export function buildQuickTemplates({
 			icon: <Calendar size={14} className="text-teal-400" />,
 			label: "Напоминание о приёме",
 			category: "appointment",
+			intent: "appointment_reminder",
 			buildText: () =>
 				upcomingAppointment
 					? `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи на приём в стоматологию ${clinicName}: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Ждём вас!`
@@ -76,6 +78,7 @@ export function buildQuickTemplates({
 			icon: <FileText size={14} className="text-cyan-400" />,
 			label: "План лечения",
 			category: "clinical",
+			intent: "treatment_plan",
 			buildText: () =>
 				activeTreatmentPlan
 					? `Здравствуйте, ${effectiveName}! Ваш план лечения «${activeTreatmentPlan.title}» в клинике ${clinicName} подготовлен доктором. Предварительная стоимость: ${activeTreatmentPlan.totalRub || "по прайсу"} ₽. Если у вас есть вопросы по этапам или срокам, с радостью ответим!`
@@ -86,6 +89,7 @@ export function buildQuickTemplates({
 			icon: <CreditCard size={14} className="text-emerald-400" />,
 			label: "Чек / СБП",
 			category: "financial",
+			intent: "payment_reminder",
 			buildText: () =>
 				financialSummary?.formattedDebt && financialSummary.formattedDebt !== "0 ₽"
 					? `Здравствуйте, ${effectiveName}! Счёт на оплату медицинских услуг в клинике ${clinicName} на сумму ${financialSummary.formattedDebt}. Быстрая оплата через СБП без комиссии: ${sbpPaymentLink || "https://qr.nspk.ru/dente-sbp-pay"}. Электронный кассовый чек будет направлен сразу после оплаты.`
@@ -96,6 +100,7 @@ export function buildQuickTemplates({
 			icon: <FileText size={14} className="text-amber-400" />,
 			label: "Рекомендации после удаления",
 			category: "clinical",
+			intent: "post_visit_instruction",
 			buildText: () =>
 				`Здравствуйте, ${effectiveName}! Рекомендации после хирургического вмешательства / удаления в клинике ${clinicName}:\n1. Не принимать пищу 2 часа до окончания действия анестезии.\n2. Не полоскать полость рта в первые сутки (сохраняйте кровяной сгусток!).\n3. Исключить горячую пищу, бани, сауны и физические нагрузки на 3–5 дней.\n4. При возникновении вопросов звоните нам в клинику: ${clinicPhone || ""}. До скорой встречи!`,
 		},
@@ -104,6 +109,7 @@ export function buildQuickTemplates({
 			icon: <CalendarCheck size={14} className="text-emerald-400" />,
 			label: "Подтверждение визита",
 			category: "appointment",
+			intent: "appointment_confirmation",
 			buildText: () =>
 				upcomingAppointment
 					? generateAppointmentWhatsAppMessage({
@@ -121,6 +127,7 @@ export function buildQuickTemplates({
 			icon: <CheckCheck size={14} className="text-emerald-400" />,
 			label: "Запись подтверждена",
 			category: "appointment",
+			intent: "appointment_confirmation",
 			buildText: () =>
 				upcomingAppointment
 					? `Здравствуйте, ${effectiveName}! Ваша запись на приём подтверждена: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Стоматология ${clinicName} (${clinicAddress}). Будем рады вас видеть!`

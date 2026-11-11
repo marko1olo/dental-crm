@@ -3,8 +3,8 @@ import React from "react";
 import type {
 	LandmarkMap,
 	CephalometricAnalysisResult,
-} from "../cephalometricMath";
-import { getRequiredLandmarksForMeasurement } from "../cephalometricMath";
+} from "../../orthodontics/cephalometricMath";
+import { getRequiredLandmarksForMeasurement } from "../../orthodontics/cephalometricMath";
 import {
 	CephalometricPresetsBar,
 	CephalometricMeasurementsCategories,

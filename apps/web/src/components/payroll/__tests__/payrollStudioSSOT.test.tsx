@@ -28,7 +28,6 @@ import {
 	CANONICAL_CLOSED_PERIODS,
 } from "../payrollCatalogData";
 import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
-import { DoctorPayrollModal } from "../DoctorPayrollModal";
 import { DirectPayrollLauncher } from "../DirectPayrollLauncher";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import { useDoctorPayrollTabData } from "../../../views/financeView/payrollTabModules/useDoctorPayrollTabData";
@@ -248,9 +247,8 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			assert.ok(specializedContent.includes("DirectPayrollLauncher"), "SpecializedAdministrativeLaunchers must include DirectPayrollLauncher");
 		});
 
-		it("3.5 Verifies clean exports of Studio, Facade Modals, and Launcher components", () => {
+		it("3.5 Verifies clean exports of Studio and Launcher components", () => {
 			assert.ok(DoctorPayrollStudioModal);
-			assert.ok(DoctorPayrollModal);
 			assert.ok(DirectPayrollLauncher);
 		});
 	});

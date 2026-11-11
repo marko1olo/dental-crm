@@ -47,7 +47,6 @@ export {
 	generateFnsTaxCertificateXml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
-	generateGostXmlSignatureBlock,
 	parseRublesToKopecks,
 	validateXmlStructure,
 } from "./cdaR2XmlBuilder";

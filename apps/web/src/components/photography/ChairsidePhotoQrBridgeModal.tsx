@@ -82,13 +82,10 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 			setToken(data.token);
 			setExpiresAt(data.expiresAt);
 			setSecondsLeft(Math.max(0, Math.floor((data.expiresAt - Date.now()) / 1000)));
-		} catch (err: any) {
-			console.warn("[ChairsidePhotoQrBridge] Session network warning, activating chairside fallback:", err);
-			// Мандат 8wy: в офлайн / демо-режиме генерируем локальный токен для показа QR-кода
-			const fallbackToken = "demo-qr-" + Math.random().toString(36).slice(2, 12);
-			setToken(fallbackToken);
-			setExpiresAt(Date.now() + 15 * 60 * 1000);
-			setSecondsLeft(900);
+		} catch (err: unknown) {
+			console.error("[ChairsidePhotoQrBridge] Session creation failed:", err);
+			const msg = err instanceof Error ? err.message : String(err);
+			setError(msg || "Не удалось создать QR-сессию. Проверьте подключение к серверу.");
 		} finally {
 			setIsLoading(false);
 		}

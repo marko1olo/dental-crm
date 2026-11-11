@@ -6,7 +6,7 @@
  * - Быстрые пресеты [4, 8, 12, 16, 24] пакетов, норматив индикатора 4/5 класса (Пройден).
  * - Предстерилизационная очистка (ПСО): азопирамовая и фенолфталеиновая пробы отрицательные (норма).
  * - Автоматическое фоновое списание со склада (Soft Negative Stock, Мандат 8n).
- * - Печать журнала контроля стерилизации в 1 клик.
+ * - Печать журнала контроля стерилизации.
  * - Размер строго 250–350 строк (Мандат 8b Sweet Spot).
  */
 
@@ -178,10 +178,10 @@ export function SterilizationBatchCycleModal({
 				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line,#e2e8f0)]">
 					<div className="flex items-center gap-3">
 						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0"><ShieldCheck size={20} /></div>
-						<div><h2 className="text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug">Утверждение цикла автоклава • Запустить цикл стерилизации</h2><p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">Журнал стерилизации • Журнал работы стерилизаторов • 1-Click пресеты смены</p></div>
+						<div><h2 className="text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug">Утверждение цикла автоклава • Запустить цикл стерилизации</h2><p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">Журнал стерилизации • Журнал работы стерилизаторов • Стандартные пресеты смены</p></div>
 					</div>
 					<div className="flex items-center gap-2">
-						<button type="button" onClick={handlePrintJournal} data-testid="sterilization-print-journal-btn" className="h-8 px-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] flex items-center gap-1.5 cursor-pointer text-xs font-semibold" title="Печать журнала контроля стерилизации в 1 клик"><Printer size={14} /><span className="hidden sm:inline">Печать журнала</span></button>
+						<button type="button" onClick={handlePrintJournal} data-testid="sterilization-print-journal-btn" className="h-8 px-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] flex items-center gap-1.5 cursor-pointer text-xs font-semibold" title="Печать журнала контроля стерилизации"><Printer size={14} /><span className="hidden sm:inline">Печать журнала</span></button>
 						<button type="button" onClick={onClose} className="w-8 h-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] flex items-center justify-center cursor-pointer" aria-label="Закрыть"><X size={16} /></button>
 					</div>
 				</div>
@@ -262,7 +262,7 @@ export function SterilizationBatchCycleModal({
 							<CheckCircle2 size={15} className="text-white" />
 							<span>Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
 						</button>
-						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить единичный цикл стерилизации в 1 клик" className="h-10 min-h-[44px] px-3 rounded-xl font-semibold text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-[0.98]">
+						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] px-3 rounded-xl font-semibold text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-[0.98]">
 							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
 							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>

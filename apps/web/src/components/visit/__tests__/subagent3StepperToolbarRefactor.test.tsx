@@ -60,7 +60,13 @@ describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", ()
 	});
 
 	it("2. VisitEmkTab stepper is free of Z01.2 noise and duplicate 'Смета & Чек' button", () => {
-		const content = fs.readFileSync(emkTabPath, "utf-8");
+		const somaticSummaryPath = path.resolve(
+			__dirname,
+			"../emkTab/canvasModules/VisitEmkSomaticSummaryBar.tsx",
+		);
+		const content =
+			fs.readFileSync(emkTabPath, "utf-8") +
+			(fs.existsSync(somaticSummaryPath) ? "\n" + fs.readFileSync(somaticSummaryPath, "utf-8") : "");
 
 		// No redundant 'btn-cockpit-quick-norm' cluttering the steps
 		assert.equal(
@@ -89,7 +95,18 @@ describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", ()
 	});
 
 	it("3. Embedded odontogram in VisitEmkTab defaults to collapsed 32px bar with formula summary", () => {
-		const content = fs.readFileSync(emkTabPath, "utf-8");
+		const odontogramBarPath = path.resolve(
+			__dirname,
+			"../emkTab/VisitEmkOdontogramBar.tsx",
+		);
+		const controllerPath = path.resolve(
+			__dirname,
+			"../emkTabModules/useVisitEmkTabController.ts",
+		);
+		const content =
+			fs.readFileSync(emkTabPath, "utf-8") +
+			(fs.existsSync(odontogramBarPath) ? "\n" + fs.readFileSync(odontogramBarPath, "utf-8") : "") +
+			(fs.existsSync(controllerPath) ? "\n" + fs.readFileSync(controllerPath, "utf-8") : "");
 
 		// isOdontogramCollapsed defaults to true
 		assert.ok(

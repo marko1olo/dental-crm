@@ -459,6 +459,13 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						if (!approveRes.ok) {
 							const errJson = await approveRes.json().catch(() => ({}));
 							console.warn("[TreatmentPlanStudioModal] Ошибка утверждения плана лечения:", errJson);
+						} else {
+							const resJson = await approveRes.json().catch(() => ({}));
+							if (resJson?.invoice || resJson?.createdInvoice) {
+								const inv = resJson.invoice || resJson.createdInvoice;
+								window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: inv, patientId } }));
+								window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
+							}
 						}
 					}
 				} catch (networkErr) {
@@ -513,13 +520,13 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 	return (
 		<div
-			className={`tp-studio-overlay fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/65 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip max-w-[100vw] h-full ${className}`}
+			className={`tp-studio-overlay fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center bg-black/65 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip max-w-[100vw] h-full ${className}`}
 			data-testid="treatment-plan-studio-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="treatment-studio-title"
 		>
-			<div className="tp-studio-dialog flex flex-col w-full max-w-6xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden h-[94dvh] sm:h-auto sm:max-h-[92vh] mt-auto sm:my-auto">
+			<div className="tp-studio-dialog flex flex-col w-full max-w-[1260px] bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden h-[94dvh] sm:h-auto sm:max-h-[92vh] mt-auto sm:my-auto">
 				{/* 0. Тактильный Drag Handle для смартфонов по Apple HIG */}
 				<div className="tp-studio-drag-handle-wrap sm:hidden flex justify-center pt-2.5 pb-1">
 					<div className="tp-studio-drag-handle w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)] opacity-60" />
@@ -558,10 +565,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={depthMode === "express"}
 								onClick={() => setDepthMode("express")}
-								className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
 									depthMode === "express"
-										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)] font-bold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)] font-bold"
+										: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								data-testid="depth-mode-express-btn"
 								title="Режим «Экспресс»: чистый 1-экранный интерфейс сметы"
@@ -575,10 +582,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={depthMode === "expert"}
 								onClick={() => setDepthMode("expert")}
-								className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[36px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
 									depthMode === "expert"
-										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)] font-bold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)] font-bold"
+										: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								data-testid="depth-mode-expert-btn"
 								title="Режим «Клинический эксперт»: этапы, гарантийный паспорт, фотопротокол"
@@ -629,20 +636,20 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				</header>
 
 				{/* 1.1. Вкладки студии (в режиме Эксперт — полная палитра; в Экспресс — всегда доступно) */}
-				<div className="flex items-center gap-1.5 p-1 bg-[var(--paper-soft)] border-b border-[var(--line)] px-3 sm:px-6 shrink-0 overflow-x-auto no-scrollbar" role="tablist">
+				<div className="flex items-center gap-1 p-1.5 bg-[var(--paper-soft)] border-b border-[var(--line)] px-3 sm:px-6 shrink-0 overflow-x-auto no-scrollbar" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "tiers"}
 						onClick={() => setActiveTab("tiers")}
-						className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+						className={`min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap border ${
 							activeTab === "tiers"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)]"
+								: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 						}`}
 						data-testid="tab-tiers-stages"
 					>
-						<BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<BarChart3 className="w-3.5 h-3.5 shrink-0" />
 						<span>Тарифы и этапы</span>
 					</button>
 
@@ -651,14 +658,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						role="tab"
 						aria-selected={activeTab === "installment"}
 						onClick={() => setActiveTab("installment")}
-						className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+						className={`min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap border ${
 							activeTab === "installment"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)]"
+								: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 						}`}
 						data-testid="tab-installment-calculator"
 					>
-						<CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<CreditCard className="w-3.5 h-3.5 shrink-0" />
 						<span>Рассрочка 0% и вычет</span>
 					</button>
 
@@ -669,14 +676,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={activeTab === "warranty"}
 								onClick={() => setActiveTab("warranty")}
-								className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+								className={`min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap border ${
 									activeTab === "warranty"
-										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)]"
+										: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 								}`}
 								data-testid="tab-warranty-passport"
 							>
-								<ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+								<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 								<span>Гарантийный паспорт</span>
 							</button>
 
@@ -685,14 +692,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								role="tab"
 								aria-selected={activeTab === "photo"}
 								onClick={() => setActiveTab("photo")}
-								className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+								className={`min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap border ${
 									activeTab === "photo"
-										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)]"
+										: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 								}`}
 								data-testid="tab-photo-protocol"
 							>
-								<Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+								<Camera className="w-3.5 h-3.5 shrink-0" />
 								<span>Фотопротокол До/После</span>
 							</button>
 						</>
@@ -703,14 +710,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						role="tab"
 						aria-selected={activeTab === "bundles"}
 						onClick={() => setActiveTab("bundles")}
-						className={`min-h-[38px] px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+						className={`min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap border ${
 							activeTab === "bundles"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)]"
+								: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 						}`}
 						data-testid="tab-clinical-bundles"
 					>
-						<Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<Package className="w-3.5 h-3.5 shrink-0" />
 						<span>Клинические пакеты</span>
 					</button>
 
@@ -719,14 +726,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						role="tab"
 						aria-selected={activeTab === "curator"}
 						onClick={() => setActiveTab("curator")}
-						className={`min-h-[38px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+						className={`min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap border ${
 							activeTab === "curator"
-								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border-[var(--line)]"
+								: "bg-transparent border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 						}`}
 						data-testid="tab-curator-assignment"
 					>
-						<UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<UserCheck className="w-3.5 h-3.5 shrink-0" />
 						<span className="hidden sm:inline">Куратор плана</span>
 						<span className="sm:hidden">Куратор</span>
 					</button>

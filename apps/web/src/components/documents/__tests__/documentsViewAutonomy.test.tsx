@@ -20,7 +20,6 @@ import {
 	DocumentsView,
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
-import { DocumentsOutpatientArchive } from "../DocumentsOutpatientArchive";
 import { DentalMedicalCard043uForm } from "../forms/DentalMedicalCard043uForm";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";
@@ -352,56 +351,6 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 
 		// Verify action button in document card
 		expect(html).toContain("doc-link min-h-[44px] sm:min-h-[36px]");
-	});
-
-	it("DocumentsOutpatientArchive renders 1-click quick blank toolbar with zero disabled buttons", () => {
-		const mockContext = createMockAppLogic({
-			activeDocuments: [
-				{
-					id: "doc-archive-1",
-					title: "Договор платных услуг № 101",
-					kind: "paid_medical_services_contract",
-					status: "issued",
-					patientId: "patient-1",
-					issuedAt: "2026-09-01",
-					totalAmountRub: 15000,
-				},
-				{
-					id: "doc-archive-2",
-					title: "Карта 043/у",
-					kind: "dental_medical_card_043u",
-					status: "draft",
-					patientId: "patient-1",
-					issuedAt: null,
-					totalAmountRub: 0,
-				},
-			],
-		});
-
-		const html = renderToStaticMarkup(
-			<AppLogicProvider value={mockContext as any}>
-				<DocumentsOutpatientArchive patientId="patient-1" />
-			</AppLogicProvider>,
-		);
-
-		// Toolbar blank buttons must exist
-		expect(html).toContain('data-testid="archive-quick-blank-contract-btn"');
-		expect(html).toContain('data-testid="archive-quick-blank-consent-btn"');
-		expect(html).toContain('data-testid="archive-quick-blank-form043-btn"');
-		expect(html).toContain('data-testid="archive-quick-open-latest-btn"');
-
-		// Status stamps
-		expect(html).toContain("ПОДПИСАНО ВРАЧОМ");
-		expect(html).toContain("ЧЕРНОВИК");
-
-		// Action buttons (max 2 direct buttons + more menu per Miller's Law)
-		expect(html).toContain('data-testid="archive-open-btn-doc-archive-1"');
-		expect(html).toContain('data-testid="archive-print-btn-doc-archive-1"');
-		expect(html).toContain('data-testid="archive-more-btn-doc-archive-1"');
-
-		// No disabled buttons anywhere
-		const disabledButtons = html.match(/<button[^>]*disabled[^>]*>/g);
-		expect(disabledButtons).toBeNull();
 	});
 
 	it("DentalMedicalCard043uForm renders form043-stamp-badge and btn-043-print-blank without blocking doctor", () => {

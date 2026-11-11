@@ -75,3 +75,13 @@ export function maskPhoneDisplay(phone: string | null | undefined): string {
 	const last2 = main.slice(-2);
 	return `+7 (${code}) ***-**-${last2}`;
 }
+
+/**
+ * Masks patient phone number for public reception areas: "+7 (999) ***-45-67".
+ */
+export function maskPhoneRu(phone: string | null | undefined): string {
+	if (!phone) return "";
+	const formatted = formatPhoneRu(phone);
+	return formatted.replace(/\((\d{3})\)\s*\d{3}-(\d{2}-\d{2})/, "($1) ***-$2");
+}
+

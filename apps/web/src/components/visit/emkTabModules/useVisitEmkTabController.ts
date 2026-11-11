@@ -9,6 +9,7 @@ import React from "react";
 import { showToast } from "../../GlobalToast";
 import {
 	inferProcedureServiceFromStamp,
+	inferCatalogServiceFromStamp,
 	infer804nServiceFromStamp,
 } from "../clinicalProcedureCatalogService";
 import { useVisitEmkToothSync } from "../useVisitEmkToothSync";
@@ -190,7 +191,7 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 
 		triggerDebouncedAutosave();
 		showToast(
-			"Дневник и зубная формула заполнены физиологической нормой в 1 клик. Исправьте только зубы с патологией.",
+			"Дневник и зубная формула заполнены физиологической нормой. Зафиксируйте только зубы с патологией.",
 			"success",
 			3000,
 		);
@@ -315,7 +316,7 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		setIsSbpQrModalOpen,
 		handleCompleteVisitAndGenerateReceipt,
 	} = useVisitCompletionWorkflow({
-		openVisitId,
+		openVisitId: openVisitId || "",
 		dashboard,
 		activePatient,
 		visitNoteForm,

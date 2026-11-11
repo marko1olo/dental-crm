@@ -48,7 +48,7 @@ export const SomaticCardTopBar: React.FC<SomaticCardTopBarProps> = ({
 					aria-label="Физиологическая норма"
 				>
 					<ShieldCheck className="w-4 h-4 shrink-0" />
-					<span>Соматически здоров / норма (1-клик)</span>
+					<span>Соматически здоров / норма</span>
 				</button>
 			</div>
 		</div>

@@ -66,10 +66,10 @@ export const LeadCardStageSelect: React.FC<LeadCardStageSelectProps> = ({
 				aria-label="Выбрать статус обращения"
 			>
 				<option value="new">Новые обращения</option>
-				<option value="contacted">Квалифицированы</option>
-				<option value="consult_booked">Записаны на приём</option>
-				<option value="showed_up">Дошли до клиники</option>
-				<option value="trash">Архив / Спам</option>
+				<option value="contacted">В работе</option>
+				<option value="consult_booked">Записан на приём</option>
+				<option value="showed_up">Дошел до клиники</option>
+				<option value="trash">Архив / Неактуально</option>
 			</select>
 
 			{NEXT_STAGE_MAP[lead.status] ? (

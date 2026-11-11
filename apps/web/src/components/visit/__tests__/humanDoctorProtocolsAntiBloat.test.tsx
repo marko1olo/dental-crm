@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { VisitSoapEditor } from "../VisitSoapEditor";
+import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm";
 import { EmkComplaintsSection } from "../emk/EmkComplaintsSection";
 import { EmkDiaryProtocolSection } from "../emk/EmkDiaryProtocolSection";
 import { CompletedServicesList } from "../CompletedServicesList";
@@ -17,46 +17,58 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Anti-Academic Bloat & Human Doctor Protocol Inquisition", () => {
-	it("1. VisitSoapEditor renders 4 express 1-click chairside protocols bar with correct testids", () => {
+	it("1. RecordNewDiaryInlineForm renders 1-click physiological norm without Latin abbreviations", () => {
 		const html = renderToStaticMarkup(
-			createElement(VisitSoapEditor, {
-				activeTooth: 16,
-				initialValues: {
-					complaint: "",
-					anamnesis: "",
-					objectiveStatus: "",
-					diagnosis: "",
-					treatmentPlan: "",
-					recommendations: "",
-					icd10: "",
-				},
+			createElement(RecordNewDiaryInlineForm, {
+				selectedTooth: "16",
+				setSelectedTooth: () => {},
+				commonTeeth: [16, 26, 36, 46, 11, 21, 14, 24],
+				subjective: "",
+				setSubjective: () => {},
+				objective: "",
+				setObjective: () => {},
+				diagnosisText: "",
+				setDiagnosisText: () => {},
+				icd10Code: "K02.1",
+				setIcd10Code: () => {},
+				protocol: "",
+				setProtocol: () => {},
+				onApplyNorm: () => {},
+				onClear: () => {},
+				onSave: () => {},
 			}),
 		);
 
-		assert.ok(html.includes("soap-chairside-express-bar"), "Renders express bar");
-		assert.ok(html.includes("btn-soap-express-caries"), "Renders caries 1-click button");
-		assert.ok(html.includes("btn-soap-express-pulpitis"), "Renders pulpitis 1-click button");
-		assert.ok(html.includes("btn-soap-express-hygiene"), "Renders hygiene 1-click button");
-		assert.ok(html.includes("btn-soap-express-extraction"), "Renders extraction 1-click button");
-		assert.ok(html.includes("Кариес (K02.1)"), "Shows plain human title for Caries");
-		assert.ok(html.includes("Пульпит (K04.0)"), "Shows plain human title for Pulpitis");
-		assert.ok(html.includes("Профгигиена (K05.1)") || html.includes("Профгигиена (K03.6)"), "Shows plain human title for Hygiene");
-		assert.ok(html.includes("Удаление (K01.1)") || html.includes("Удаление зуба"), "Shows plain human title for Extraction");
+		assert.ok(html.includes("btn-inline-diary-norm"), "Renders norm button");
+		assert.ok(html.includes("Интактный ряд"), "Shows plain human title for norm");
+		assert.ok(!html.includes("Status praesens"), "Does not contain Status praesens");
+		assert.ok(!html.includes("Anamnesis morbi"), "Does not contain Anamnesis morbi");
 	});
 
-	it("2. VisitSoapEditor markup strictly eliminates academic Latin and SOAP abbreviations", () => {
+	it("2. RecordNewDiaryInlineForm markup strictly eliminates academic Latin and SOAP bloat", () => {
 		const html = renderToStaticMarkup(
-			createElement(VisitSoapEditor, {
-				activeTooth: 26,
+			createElement(RecordNewDiaryInlineForm, {
+				selectedTooth: "26",
+				setSelectedTooth: () => {},
+				commonTeeth: [16, 26, 36, 46, 11, 21, 14, 24],
+				subjective: "",
+				setSubjective: () => {},
+				objective: "",
+				setObjective: () => {},
+				diagnosisText: "",
+				setDiagnosisText: () => {},
+				icd10Code: "K02.1",
+				setIcd10Code: () => {},
+				protocol: "",
+				setProtocol: () => {},
+				onApplyNorm: () => {},
+				onClear: () => {},
+				onSave: () => {},
 			}),
 		);
 
 		assert.ok(!html.includes("Status praesens"), "Does not contain Status praesens");
-		assert.ok(!html.includes("Status localis"), "Does not contain Status localis");
-		assert.ok(!html.includes("Anamnesis morbi"), "Does not contain Anamnesis morbi");
-		assert.ok(!html.includes("Anamnesis vitae"), "Does not contain Anamnesis vitae");
-		assert.ok(!html.includes("(Subjective)"), "Does not contain (Subjective)");
-		assert.ok(!html.includes("(Assessment)"), "Does not contain (Assessment)");
+		assert.ok(!html.includes("Anamnesis morbi et vitae"), "Does not contain Anamnesis morbi et vitae");
 	});
 
 	it("3. EmkComplaintsSection renders pure Russian clinical labels without Latin parentheses", () => {

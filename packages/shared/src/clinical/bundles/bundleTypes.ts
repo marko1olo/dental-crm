@@ -97,19 +97,21 @@ export interface Cashier54FzBundleExport {
 }
 
 export interface ToothClinicalServicePayload {
-	readonly serviceId: string;
+	readonly serviceId?: string | undefined;
 	readonly serviceCode?: string | undefined;
-	readonly code804n: string;
+	readonly code804n?: string | undefined;
 	readonly code?: string | undefined;
 	readonly toothNumber?: number | string | undefined;
 	readonly toothCode?: string | undefined;
-	readonly name: string;
-	readonly priceRub: number;
+	readonly name?: string | undefined;
+	readonly title?: string | undefined;
+	readonly priceRub?: number | undefined;
 	readonly price?: number | undefined;
 	readonly priceKopecks?: number | undefined;
+	readonly amountKopecks?: number | undefined;
 	readonly discountRub?: number | undefined;
 	readonly discountPercent?: number | undefined;
-	readonly quantity: number;
+	readonly quantity?: number | undefined;
 	readonly category?: string | undefined;
 	readonly labCostRub?: number | undefined;
 	readonly labCostKopecks?: number | undefined;

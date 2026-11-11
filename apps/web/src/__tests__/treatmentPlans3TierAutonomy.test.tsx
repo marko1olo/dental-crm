@@ -117,7 +117,7 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 		// В блоке выбора тарифа и согласования плана ровно одна главная кнопка подтверждения
 		assert.ok(html.includes('data-testid="btn-primary-plan-action"'), "Кнопка главного действия плана присутствует");
 		assert.ok(html.includes("primary-button"), "Главное действие плана лечения должно быть primary-button");
-		assert.ok(html.includes("Передать в кассу / Презентация"));
+		assert.ok(html.includes("Открыть презентацию"));
 	});
 
 	it("4. Upholds Mandate 8x & 8ap: Zero Soviet decrees or bureaucratic jargon in production UI", () => {

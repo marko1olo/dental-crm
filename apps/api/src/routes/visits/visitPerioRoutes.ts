@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalMutationContext,
@@ -6,7 +6,7 @@ import {
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { db as database } from "../../db/client.js";
-import { perioCharts, visits } from "../../db/schema.js";
+import { visits } from "../../db/schema.js";
 import {
 	fetchPatientLatestPeriodontogram,
 	upsertPatientFullPeriodontogram,
@@ -54,30 +54,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// 1. Попытка получить карту пародонта, привязанную к этому визиту
-		const [visitChart] = await database
-			.select()
-			.from(perioCharts)
-			.where(
-				and(
-					eq(perioCharts.visitId, visit.id),
-					eq(perioCharts.organizationId, context.organizationId),
-				),
-			)
-			.orderBy(desc(perioCharts.createdAt))
-			.limit(1);
-
-		if (visitChart) {
-			return reply.send({
-				ok: true,
-				success: true,
-				visitId: visit.id,
-				patientId: visit.patientId,
-				data: visitChart,
-			});
-		}
-
-		// 2. Фоллбэк: актуальная пародонтограмма пациента (черновик или последний снимок)
+		// Актуальная пародонтограмма пациента (черновик или последний закрытый снимок — ADR 0013 SSOT)
 		const latestPerio = await fetchPatientLatestPeriodontogram(
 			context.organizationId,
 			visit.patientId,
@@ -146,74 +123,25 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		const identity = getRequestIdentity(request);
 		const doctorUserId = identity.userId ?? null;
 
-		// 1. Если переданы зубы или сайты — синкаем в periodontogram_snapshots / periodontogram_teeth
-		if (teeth.length > 0 || sites.length > 0) {
-			try {
-				await upsertPatientFullPeriodontogram({
-					orgId: context.organizationId,
-					patientId: visit.patientId,
-					recordedByUserId: doctorUserId,
-					teeth,
-					sites,
-					notes,
-					status,
-					autoClose,
-				});
-			} catch (err) {
-				request.log.warn({ err }, "Не удалось синхронизировать snapshot пародонта");
-			}
-		}
-
-		// 2. Сохраняем в таблицу perio_charts
-		const [existingChart] = await database
-			.select({ id: perioCharts.id })
-			.from(perioCharts)
-			.where(
-				and(
-					eq(perioCharts.visitId, visit.id),
-					eq(perioCharts.organizationId, context.organizationId),
-				),
-			)
-			.limit(1);
-
-		let savedChart: unknown;
-		if (existingChart) {
-			const [updated] = await database
-				.update(perioCharts)
-				.set({
-					teethData: teeth,
-					summaryData: summary,
-					psrData: psr,
-					notes,
-					updatedAt: new Date(),
-				})
-				.where(eq(perioCharts.id, existingChart.id))
-				.returning();
-			savedChart = updated;
-		} else {
-			const [created] = await database
-				.insert(perioCharts)
-				.values({
-					organizationId: context.organizationId,
-					patientId: visit.patientId,
-					visitId: visit.id,
-					doctorId: doctorUserId,
-					chartDate: new Date(),
-					teethData: teeth,
-					summaryData: summary,
-					psrData: psr,
-					notes,
-				})
-				.returning();
-			savedChart = created;
-		}
+		// Сохраняем в единую каноническую систему periodontogram_snapshots / teeth / sites (ADR 0013)
+		const savedSnapshot = await upsertPatientFullPeriodontogram({
+			orgId: context.organizationId,
+			patientId: visit.patientId,
+			recordedByUserId: doctorUserId,
+			teeth,
+			sites,
+			notes,
+			status,
+			autoClose,
+			psrData: ((psr ?? summary) as Record<string, unknown>) || undefined,
+		});
 
 		return reply.send({
 			ok: true,
 			success: true,
 			visitId: visit.id,
 			patientId: visit.patientId,
-			data: savedChart,
+			data: savedSnapshot,
 		});
 	};
 

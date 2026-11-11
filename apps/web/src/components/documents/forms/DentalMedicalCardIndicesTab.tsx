@@ -77,7 +77,7 @@ export const DentalMedicalCardIndicesTab: React.FC<DentalMedicalCardIndicesTabPr
 							data-testid="btn-043-ohis-ideal"
 							onClick={() => setHygieneIndexOhiS("OHI-S = 0.0 (Отличная гигиена)")}
 							className="btn btn-xs btn-outline-success"
-							title="Установить OHI-S 0.0 в 1 клик"
+							title="Установить OHI-S 0.0 (Норма)"
 						>
 							✓ 0.0 Идеальная
 						</button>
@@ -86,7 +86,7 @@ export const DentalMedicalCardIndicesTab: React.FC<DentalMedicalCardIndicesTabPr
 							data-testid="btn-043-ohis-good"
 							onClick={() => setHygieneIndexOhiS("OHI-S = 0.8 (Хорошая гигиена)")}
 							className="btn btn-xs btn-outline-info"
-							title="Установить OHI-S 0.8 в 1 клик"
+							title="Установить OHI-S 0.8"
 						>
 							0.8 Хорошая
 						</button>
@@ -95,7 +95,7 @@ export const DentalMedicalCardIndicesTab: React.FC<DentalMedicalCardIndicesTabPr
 							data-testid="btn-043-ohis-fair"
 							onClick={() => setHygieneIndexOhiS("OHI-S = 1.8 (Удовлетворительная гигиена)")}
 							className="btn btn-xs btn-outline-warning"
-							title="Установить OHI-S 1.8 в 1 клик"
+							title="Установить OHI-S 1.8"
 						>
 							1.8 Удовл.
 						</button>

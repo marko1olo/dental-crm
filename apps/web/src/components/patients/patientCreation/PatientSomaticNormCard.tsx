@@ -41,7 +41,7 @@ export function PatientSomaticNormCard({
 							? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
 							: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--glass-border)] shadow-2xs"
 					}`}
-					title="✓ Соматически здоров / Аллергий нет (1 клик)"
+					title="✓ Соматически здоров / Аллергий нет"
 				>
 					<Check size={13} className="shrink-0" />
 					<span>✓ Соматически здоров / Аллергий нет</span>

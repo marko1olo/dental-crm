@@ -43,6 +43,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	const modalContent = (
 		<div className="recall-manager-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="recalls-hub-title">
 			<div className="recall-manager-container" data-testid="patient-recalls-hub-modal">
+				<div className="recall-drag-handle-wrap" aria-hidden="true">
+					<div className="recall-drag-handle" />
+				</div>
 				<RecallHubHeader activeTab={hub.activeTab} onTabChange={hub.setActiveTab} onClose={onClose} />
 				<RecallCycleSegmentedBar selectedCycle={hub.selectedCycle} onSelectedCycleChange={hub.setSelectedCycle} />
 

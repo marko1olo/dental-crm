@@ -84,27 +84,21 @@ describe('Photo Protocol Chairside Autonomy & Dental Lab (ZTL) Bridge', () => {
 		);
 	});
 
-	test('4. Floating Zoom Bar & Projection Toolbar Decomposition (Anti-Monolith Invariant)', () => {
-		const zoomBarFile = fs.readFileSync(path.join(photographyDir, 'BeforeAfterFloatingZoomBar.tsx'), 'utf-8');
-		const projectionToolbarFile = fs.readFileSync(path.join(photographyDir, 'BeforeAfterProjectionToolbar.tsx'), 'utf-8');
+	test('4. Comparison & Split Slider Architecture (Anti-Monolith Invariant)', () => {
 		const compViewFile = fs.readFileSync(path.join(photographyDir, 'BeforeAfterComparisonView.tsx'), 'utf-8');
+		const splitSliderFile = fs.readFileSync(path.join(photographyDir, 'BeforeAfterSplitSlider.tsx'), 'utf-8');
 
 		// Check line count limits (Mandate 8c: <= 800 lines)
 		const compViewLines = compViewFile.split('\n').length;
-		const zoomBarLines = zoomBarFile.split('\n').length;
-		const projToolbarLines = projectionToolbarFile.split('\n').length;
+		const splitSliderLines = splitSliderFile.split('\n').length;
 
 		assert.ok(
 			compViewLines <= 800,
 			`BeforeAfterComparisonView.tsx must stay <= 800 lines (actual: ${compViewLines})`,
 		);
 		assert.ok(
-			zoomBarLines <= 250,
-			`BeforeAfterFloatingZoomBar.tsx must stay <= 250 lines (actual: ${zoomBarLines})`,
-		);
-		assert.ok(
-			projToolbarLines <= 250,
-			`BeforeAfterProjectionToolbar.tsx must stay <= 250 lines (actual: ${projToolbarLines})`,
+			splitSliderLines <= 800,
+			`BeforeAfterSplitSlider.tsx must stay <= 800 lines (actual: ${splitSliderLines})`,
 		);
 
 		// Test zoom clamping math
@@ -113,9 +107,9 @@ describe('Photo Protocol Chairside Autonomy & Dental Lab (ZTL) Bridge', () => {
 		assert.equal(clamp(1.25, 0.5, 4.0), 1.25);
 	});
 
-	test('5. Multi-Slot Grid PNG Export Engine', () => {
+	test('5. Multi-Slot Grid PNG Export & Lab Transfer Engine', () => {
 		const gridExportFile = fs.readFileSync(path.join(photographyDir, 'photoProtocolGridExport.ts'), 'utf-8');
-		const exportSheetFile = fs.readFileSync(path.join(photographyDir, 'PhotoCollageExportSheet.tsx'), 'utf-8');
+		const exportDrawerFile = fs.readFileSync(path.join(photographyDir, 'LabPhotoExportDrawer.tsx'), 'utf-8');
 
 		assert.ok(
 			gridExportFile.includes('export async function exportProtocolGridAsPng'),
@@ -126,12 +120,12 @@ describe('Photo Protocol Chairside Autonomy & Dental Lab (ZTL) Bridge', () => {
 			'photoProtocolGridExport.ts must render to canvas and produce dataUrl',
 		);
 		assert.ok(
-			exportSheetFile.includes('data-testid="btn-export-collage-png"'),
-			'PhotoCollageExportSheet must provide 1-click button to export collage as PNG',
+			exportDrawerFile.includes('exportCollageAsPng'),
+			'LabPhotoExportDrawer must provide 1-click button to export collage as PNG',
 		);
 		assert.ok(
-			!exportSheetFile.includes('disabled='),
-			'PhotoCollageExportSheet must follow Mandate 8e (0 disabled buttons)',
+			!exportDrawerFile.includes('disabled='),
+			'LabPhotoExportDrawer must follow Mandate 8e (0 disabled buttons)',
 		);
 	});
 });

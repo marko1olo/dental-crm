@@ -2,6 +2,11 @@ import { createHash, createHmac } from "node:crypto";
 import * as dns from "node:dns/promises";
 import { URL } from "node:url";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import {
+	getNationalPhoneDigits,
+	normalizePhoneDigits,
+	normalizePhoneToE164,
+} from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 export interface TelephonyWebhookPayload {
@@ -58,33 +63,15 @@ export function normalizePhoneNumber(rawPhone?: string | null): NormalizedPhone 
 	}
 
 	const raw = rawPhone.trim();
-	const cleanDigits = raw.replace(/\D/g, "");
+	const cleanDigits = normalizePhoneDigits(raw);
 
 	if (cleanDigits.length < 7) {
 		return { raw, cleanDigits, e164: raw, national10: cleanDigits, isValid: false };
 	}
 
-	let national10 = "";
-	let e164 = "";
-
-	if (cleanDigits.length === 11) {
-		if (cleanDigits.startsWith("7") || cleanDigits.startsWith("8")) {
-			national10 = cleanDigits.slice(1);
-			e164 = `+7${national10}`;
-		} else {
-			national10 = cleanDigits.slice(-10);
-			e164 = `+${cleanDigits}`;
-		}
-	} else if (cleanDigits.length === 10) {
-		national10 = cleanDigits;
-		e164 = `+7${national10}`;
-	} else if (cleanDigits.length > 11) {
-		national10 = cleanDigits.slice(-10);
-		e164 = `+${cleanDigits}`;
-	} else {
-		national10 = cleanDigits;
-		e164 = `+7${cleanDigits}`;
-	}
+	const national10 = getNationalPhoneDigits(cleanDigits);
+	const e164 =
+		normalizePhoneToE164(cleanDigits) || (cleanDigits ? `+${cleanDigits}` : "");
 
 	return {
 		raw,

@@ -31,7 +31,7 @@ import {
 } from "../db/doctorPreferencesQuery.js";
 import { db } from "../db/client.js";
 import { copilotHitlCards } from "../db/schema/copilot.js";
-import { patients } from "../db/schema/patients.js";
+import { patientDrugAllergies, patients } from "../db/schema/patients.js";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 const chatMessageSchema = z.object({
@@ -522,6 +522,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 	// ─── ACTION CONFIRMATION ENDPOINTS (TWO-PHASE GUARD & HITL) ───────────────
 	const actionEndpoints = [
 		"/api/agent/action",
+		"/api/agent/confirm",
 		"/api/copilot/action",
 		"/api/v1/copilot/confirm",
 		"/api/copilot/confirm",
@@ -862,18 +863,18 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 
 			if (body.patientId) {
 				try {
-					const patientRows = await db
-						.select({ allergies: patients.allergies })
-						.from(patients)
-						.where(and(eq(patients.id, body.patientId), eq(patients.organizationId, resolvedOrgId)))
-						.limit(1);
+					const allergyRows = await db
+						.select({ allergen: patientDrugAllergies.allergenGroup })
+						.from(patientDrugAllergies)
+						.where(and(eq(patientDrugAllergies.patientId, body.patientId), eq(patientDrugAllergies.organizationId, resolvedOrgId)))
+						.limit(10);
 
-					if (patientRows[0]?.allergies && Array.isArray(patientRows[0].allergies) && patientRows[0].allergies.length > 0) {
+					if (allergyRows.length > 0) {
 						alerts.push({
 							id: `alert_allergy_${body.patientId}`,
 							severity: "warning",
 							title: "Аллергоанамнез пациента",
-							description: `Зафиксированы аллергии: ${patientRows[0].allergies.join(", ")}`,
+							description: `Зафиксированы аллергии: ${allergyRows.map((r) => r.allergen).join(", ")}`,
 						});
 					}
 				} catch (err: unknown) {

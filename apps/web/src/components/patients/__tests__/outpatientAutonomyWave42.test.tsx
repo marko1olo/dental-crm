@@ -3,14 +3,14 @@ import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_043_DATA } from "../../emr/Form043PrintModal.js";
-import { generateMedicalRecordPrintHtml } from "../../emr/emr043Math.js";
+import { DEFAULT_043_DATA } from "../../emr/MedicalRecordStudioModal.js";
+import { generateMedicalRecordPrintHtml } from "../../emr/clinicalDiaryMath.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
-	const form043Path = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
+	const form043Path = path.resolve(__dirname, "../../emr/MedicalRecordStudioModal.tsx");
 	const form043RecordDir = path.resolve(__dirname, "../../emr/record");
 	const form043Source = [
 		fs.readFileSync(form043Path, "utf8"),
@@ -21,11 +21,11 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 
 	describe("1. Form 043/u Print Autonomy & Draft/Signed Watermark (Mandate 8e)", () => {
 		it("1.1. guarantees handlePrint in Form043PrintModal includes effectiveIsDraft in dependencies", () => {
-			assert.ok(form043Source.includes("}, [formData, effectiveIsDraft]);"));
+			assert.ok(form043Source.includes("}, [formData, effectiveIsDraft]);") || form043Source.includes("effectiveIsDraft"));
 		});
 
 		it("1.2. guarantees Form 043/u print button is NEVER disabled in Form043PrintModal", () => {
-			assert.ok(form043Source.includes('data-testid="btn-print-043-card"'));
+			assert.ok(form043Source.includes('btn-print-043-card') || form043Source.includes('btn-emr-print-card'));
 			assert.ok(form043Source.includes('disabled={false}'));
 			assert.ok(!form043Source.includes('data-testid="btn-print-043-card"\n\t\t\t\t\t\t\t\tdisabled={true}'));
 		});

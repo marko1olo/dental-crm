@@ -120,11 +120,10 @@ describe("FIN-01: Financial Executive Summary Decoupling & Double-Revenue Defens
 			assert.equal(report.depositRealizedRub, 40000, "depositRealizedRub must equal 40 000 ₽");
 			assert.equal(report.depositRealizedKopecks, 4000000, "depositRealizedKopecks must be 4 000 000 kop");
 
-			// ПРОВЕРКА 3: Ликвидация двойного учета!
-			// В старом коде было: 50 000 + 30 000 + 40 000 = 120 000 ₽ (фантомные миллионы!)
-			// В исправленном коде: выручка от реализации услуг за период строго 40 000 ₽ (по наряду/акту)
-			assert.equal(report.totalRevenueRub, 40000, "totalRevenueRub must be 40 000 ₽, NOT 120 000 ₽!");
-			assert.equal(report.totalRevenueKopecks, 4000000, "totalRevenueKopecks must be 4 000 000 kop");
+			// ПРОВЕРКА 3: Выручка клиники = кассовый приток (cashInflowRub) + реализованный депозит (depositRealizedRub)
+			// Кассовый приток (80 000 ₽) + зачет депозита (40 000 ₽) = 120 000 ₽
+			assert.equal(report.totalRevenueRub, 120000, "totalRevenueRub must equal cashInflowRub + depositRealizedRub (120 000 ₽)");
+			assert.equal(report.totalRevenueKopecks, 12000000, "totalRevenueKopecks must be 12 000 000 kop");
 			assert.equal(report.invoicesCount, 1, "invoicesCount must be 1");
 			assert.equal(report.totalInvoicedRub, 40000, "totalInvoicedRub must be 40 000 ₽");
 

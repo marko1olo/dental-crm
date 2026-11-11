@@ -307,7 +307,7 @@ export const SHOWCASE_PRESCRIPTION_PRESET: ShowcasePrescriptionPreset = {
 	id: "post_extraction_implant",
 	titleRu: "Комплект после удаления / имплантации",
 	categoryRu: "Хирургический протокол",
-	badgeRu: "Хирургия / 1-клик",
+	badgeRu: "Хирургия / Экспресс",
 	medications: [
 		{
 			tradeName: "Амоксиклав (875+125 мг)",

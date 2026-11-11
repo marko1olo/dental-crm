@@ -39,7 +39,6 @@ export {
 } from "./cdaR2/xmlStructureValidator";
 
 export {
-	generateGostXmlSignatureBlock,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
 } from "./cdaR2/gostSignatures";

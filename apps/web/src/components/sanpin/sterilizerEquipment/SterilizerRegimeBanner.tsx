@@ -68,7 +68,7 @@ export function SterilizerRegimeBanner({
 					alignItems: "center",
 					gap: "0.35rem",
 				}}
-				title="Фиксация цикла за 5 секунд в 1 клик"
+				title="Фиксация цикла стерилизации"
 			>
 				<Plus size={15} />
 				<span>Зафиксировать цикл 134°C (5 сек)</span>

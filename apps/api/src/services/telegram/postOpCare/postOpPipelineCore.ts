@@ -12,12 +12,16 @@ import {
 	appointments,
 	clinics,
 	communicationTasks,
+	patients,
 	visits,
 } from "../../../db/schema.js";
+import { normalizeRussianMsisdn } from "../../../smsTransport.js";
 import {
 	editTelegramMessageText,
 	sendTelegramTextMessage,
 } from "../../../telegramTransport.js";
+import { normalizeWhatsappRecipient } from "../../../whatsappTransport.js";
+import { resolveTelegramChatId } from "../../communications/channelRouter.js";
 import type { TriageScreenResult } from "../TelegramInteractiveTriageService.js";
 import {
 	COMPLEX_SURGERY_PATTERNS,
@@ -43,6 +47,32 @@ import {
 // In-memory хранилище активных планов теле-ухода (с поддержкой персистентности в communicationTasks)
 const activeCarePlans = new Map<string, PostOpCarePlan>();
 const scheduledVisitIds = new Set<string>();
+
+async function resolveOptimalPostVisitChannel(
+	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
+	tx: any,
+	organizationId: string,
+	patientId: string,
+): Promise<"telegram" | "whatsapp" | "sms"> {
+	try {
+		const tgChatId = await resolveTelegramChatId(organizationId, patientId);
+		if (tgChatId) return "telegram";
+
+		const [p] = await tx
+			.select({ phone: patients.phone })
+			.from(patients)
+			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+			.limit(1);
+
+		if (p?.phone) {
+			if (normalizeWhatsappRecipient(p.phone)) return "whatsapp";
+			if (normalizeRussianMsisdn(p.phone)) return "sms";
+		}
+	} catch {
+		// fallback
+	}
+	return "whatsapp";
+}
 
 export class TelegramPostOpCarePipeline {
 	/**
@@ -160,6 +190,12 @@ export class TelegramPostOpCarePipeline {
 				},
 			];
 
+			const optimalChannel = await resolveOptimalPostVisitChannel(
+				tx,
+				params.organizationId,
+				params.patientId,
+			);
+
 			for (const sc of stageConfigs) {
 				await tx.insert(communicationTasks).values({
 					organizationId: params.organizationId,
@@ -167,7 +203,7 @@ export class TelegramPostOpCarePipeline {
 					patientId: params.patientId,
 					visitId: validVisitId,
 					assignedRole: "reception",
-					channel: "telegram" as const,
+					channel: optimalChannel,
 					intent: "post_visit_instruction" as const,
 					status: "scheduled" as const,
 					priority: "normal" as const,
@@ -301,6 +337,12 @@ export class TelegramPostOpCarePipeline {
 				if (cRow) validClinicId = cRow.id;
 			}
 
+			const optimalChannel = await resolveOptimalPostVisitChannel(
+				tx,
+				params.organizationId,
+				params.patientId,
+			);
+
 			const [createdTask] = await tx
 				.insert(communicationTasks)
 				.values({
@@ -310,7 +352,7 @@ export class TelegramPostOpCarePipeline {
 					visitId: validVisitId,
 					appointmentId: validAppointmentId,
 					assignedRole: "reception",
-					channel: "telegram" as const,
+					channel: optimalChannel,
 					intent: "post_visit_instruction" as const,
 					status: "scheduled" as const,
 					priority: "normal" as const,

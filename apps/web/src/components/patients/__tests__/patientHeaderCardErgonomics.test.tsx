@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { PatientHeaderCard } from "../PatientHeaderCard";
+import { PatientHeaderQuickActions } from "../headerModules/PatientHeaderQuickActions";
+import { PatientHeaderIdentity } from "../headerModules/PatientHeaderIdentity";
+import { formatPatientBirthAndAge } from "../headerModules/patientHeaderTypes";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 const mockPatient = {
@@ -25,11 +27,21 @@ const mockAppLogic = {
 	selectedPatient: mockPatient,
 } as unknown as AppLogicContextType;
 
-describe("PatientHeaderCard — Wave 97 Action Toolbar Compacting (Miller's Law & Mandate 8d/8e/8p)", () => {
+describe("PatientHeaderQuickActions & Identity — Wave 97 Action Toolbar Compacting (Miller's Law & Mandate 8d/8e/8p)", () => {
 	it("1. Renders exactly 2 primary direct action buttons in the main actions toolbar", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppLogic}>
-				<PatientHeaderCard patient={mockPatient} onEditPatient={() => {}} onOpenAnamnesis={() => {}} />
+				<PatientHeaderQuickActions
+					resolvedPatient={mockPatient}
+					fullName={mockPatient.fullName}
+					phone={mockPatient.phone}
+					clinicLegalName='ООО "ДЕНТЕ КЛИНИКА"'
+					onOpenAnamnesis={() => {}}
+					onEditPatient={() => {}}
+					onOpenFamilyWallet={() => {}}
+					isActiveVisit={true}
+					nextAppointment={null}
+				/>
 			</AppLogicProvider>,
 		);
 
@@ -43,7 +55,17 @@ describe("PatientHeaderCard — Wave 97 Action Toolbar Compacting (Miller's Law 
 	it("2. Does not clutter main screen toolbar with secondary action buttons by default", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppLogic}>
-				<PatientHeaderCard patient={mockPatient} onEditPatient={() => {}} onOpenAnamnesis={() => {}} />
+				<PatientHeaderQuickActions
+					resolvedPatient={mockPatient}
+					fullName={mockPatient.fullName}
+					phone={mockPatient.phone}
+					clinicLegalName='ООО "ДЕНТЕ КЛИНИКА"'
+					onOpenAnamnesis={() => {}}
+					onEditPatient={() => {}}
+					onOpenFamilyWallet={() => {}}
+					isActiveVisit={true}
+					nextAppointment={null}
+				/>
 			</AppLogicProvider>,
 		);
 
@@ -56,7 +78,18 @@ describe("PatientHeaderCard — Wave 97 Action Toolbar Compacting (Miller's Law 
 	it("3. Preserves phone number and copy button in contact quick bar", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppLogic}>
-				<PatientHeaderCard patient={mockPatient} onEditPatient={() => {}} onOpenAnamnesis={() => {}} />
+				<PatientHeaderIdentity
+					resolvedPatient={mockPatient}
+					fullName={mockPatient.fullName}
+					initials="СА"
+					birthDateStr={formatPatientBirthAndAge(mockPatient.birthDate)}
+					phone={mockPatient.phone}
+					diagnosisText={null}
+					isActiveVisit={true}
+					nextAppointment={null}
+					contractStatus="signed"
+					consentStatus="signed"
+				/>
 			</AppLogicProvider>,
 		);
 

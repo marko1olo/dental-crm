@@ -1,5 +1,4 @@
-import type React from "react";
-import { memo } from "react";
+import React, { memo } from "react";
 import { MobileQuadrantTabs } from "../MobileQuadrantTabs";
 import { ToothChartExpressActions } from "./toolbar/ToothChartExpressActions";
 import { ToothChartQuadrantBar } from "./toolbar/ToothChartQuadrantBar";

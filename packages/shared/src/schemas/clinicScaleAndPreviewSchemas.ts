@@ -231,6 +231,7 @@ export const createPaymentSchema = z
 		familyDepositAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 		certificateAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 		installmentAmountKopecks: z.number().int().nonnegative().nullable().optional(),
+		bonusAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 		cashAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		electronicAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		sbpAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
@@ -239,6 +240,8 @@ export const createPaymentSchema = z
 		familyDepositAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		certificateAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		installmentAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
+		bonusAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
+		pointsToRedeem: z.number().nonnegative().nullable().optional(),
 		guaranteeLetterId: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptNumber: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptIssuedAt: strictFiscalReceiptIssuedAtSchema

@@ -154,15 +154,9 @@ describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy',
 			'.photo-editor-overlay must use position: absolute within parent modal to respect Anti-Matryoshka Law'
 		);
 
-		// Verify BeforeAfterExportModal export overlay uses position: absolute
-		const exportModalPath = path.join(photographyDir, 'BeforeAfterExportModal.tsx');
-		assert.ok(fs.existsSync(exportModalPath), 'BeforeAfterExportModal.tsx must exist');
-		const exportModal = fs.readFileSync(exportModalPath, 'utf8');
-
-		assert.ok(
-			exportModal.includes("position: 'absolute'") && exportModal.includes('zIndex: 50'),
-			'BeforeAfterExportModal export preview must use position: absolute; zIndex: 50 instead of nested fixed overlay'
-		);
+		// Verify LabPhotoExportDrawer exists and is mounted in ClinicalPhotoProtocolModal
+		const exportDrawerPath = path.join(photographyDir, 'LabPhotoExportDrawer.tsx');
+		assert.ok(fs.existsSync(exportDrawerPath), 'LabPhotoExportDrawer.tsx must exist');
 	});
 
 	it('5. Zero Cartoon Emojis (Mandate 8d pt 7): 0 unicode emojis across all clinical imaging files', () => {

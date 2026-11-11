@@ -1,18 +1,8 @@
 import type { QuickSlotType } from "../IncomingCallQuickBooking";
 import type { TelephonyCall } from "./types";
-import { DEFAULT_TELEPHONY_WS_URL } from "./incomingCallConstants";
+import { resolveTelephonyWsUrl } from "../../../store/telephonyStore";
 
-export function resolveTelephonyWsUrl(): string {
-	const configured = (
-		import.meta as unknown as { env?: Record<string, string> }
-	).env?.VITE_WS_URL;
-	if (configured) return configured;
-	if (typeof window !== "undefined") {
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		return `${protocol}//${window.location.host}/api/ws/schedule`;
-	}
-	return DEFAULT_TELEPHONY_WS_URL;
-}
+export { resolveTelephonyWsUrl };
 
 export function formatShortCallerName(name: string): string {
 	const parts = name.trim().split(/\s+/);

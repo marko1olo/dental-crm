@@ -109,6 +109,33 @@ export type Appointment = z.infer<typeof appointmentSchema>;
 
 // ─── 4. DTO SCHEMAS (CREATE & UPDATE) ─────────────────────────────────────────
 
+export const appointmentInvoiceItemSchema = z
+	.object({
+		id: z.string().optional(),
+		serviceId: z.string().optional(),
+		code: z.string().optional(),
+		code804n: z.string().optional(),
+		name: z.string().optional(),
+		title: z.string().optional(),
+		serviceName: z.string().optional(),
+		quantity: z.number().positive().optional().default(1),
+		priceRub: z.number().nonnegative().optional(),
+		price: z.number().nonnegative().optional(),
+		amountRub: z.number().nonnegative().optional(),
+		amountKopecks: z.union([z.number().int().nonnegative(), z.bigint()]).optional(),
+		toothNumber: z.union([z.number().int().min(11).max(85), z.string()]).nullable().optional(),
+		tooth: z.union([z.number().int().min(11).max(85), z.string()]).nullable().optional(),
+		discountPercent: z.number().min(0).max(100).optional(),
+		discountRub: z.number().nonnegative().optional(),
+		comment: z.string().optional(),
+		category: z.string().optional(),
+		stageId: z.string().optional(),
+		stageNumber: z.number().optional(),
+		completed: z.boolean().optional(),
+	})
+	.passthrough();
+export type AppointmentInvoiceItem = z.infer<typeof appointmentInvoiceItemSchema>;
+
 export const createAppointmentSchema = z
 	.object({
 		patientId: z.string().uuid().nullable().optional(),
@@ -133,9 +160,9 @@ export const createAppointmentSchema = z
 		allowEmergencyOverride: z.boolean().optional(),
 		idempotencyKey: z.string().optional(),
 		clientMutationId: z.string().optional(),
-		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
-		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
-		completedServices: z.array(z.record(z.string(), z.any())).optional(),
+		invoice_items: z.array(appointmentInvoiceItemSchema).optional(),
+		invoiceItems: z.array(appointmentInvoiceItemSchema).optional(),
+		completedServices: z.array(appointmentInvoiceItemSchema).optional(),
 	})
 	.superRefine((value, context) => {
 		const startsAt = parseStrictAppointmentDateTimeMs(value.startsAt);
@@ -191,9 +218,9 @@ export const updateAppointmentSchema = z
 		idempotencyKey: z.string().optional(),
 		clientMutationId: z.string().optional(),
 		expectedCurrentStatus: z.array(appointmentStatusSchema).optional(),
-		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
-		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
-		completedServices: z.array(z.record(z.string(), z.any())).optional(),
+		invoice_items: z.array(appointmentInvoiceItemSchema).optional(),
+		invoiceItems: z.array(appointmentInvoiceItemSchema).optional(),
+		completedServices: z.array(appointmentInvoiceItemSchema).optional(),
 	})
 	.superRefine((value, context) => {
 		const startsAt =

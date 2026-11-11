@@ -43,6 +43,7 @@ import {
 } from "./hygieneCatalogData";
 
 export type ActiveHygieneTab = "ohis" | "fedorov" | "pma" | "protocols";
+export type ActiveHygieneIndexTab = ActiveHygieneTab;
 
 export {
 	CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
@@ -246,7 +247,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 											<button
 												key={`d-${val}`}
 												type="button"
-												onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], debris: val } }))}
+												onClick={() => setOhisTeeth((p) => {
+													const prevEntry = p[t.toothNumber] ?? { debris: 0, calculus: 0 };
+													return { ...p, [t.toothNumber]: { ...prevEntry, debris: val } };
+												})}
 												className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
 													current.debris === val ? "bg-teal-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
 												}`}
@@ -261,7 +265,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 											<button
 												key={`c-${val}`}
 												type="button"
-												onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], calculus: val } }))}
+												onClick={() => setOhisTeeth((p) => {
+													const prevEntry = p[t.toothNumber] ?? { debris: 0, calculus: 0 };
+													return { ...p, [t.toothNumber]: { ...prevEntry, calculus: val } };
+												})}
 												className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
 													current.calculus === val ? "bg-amber-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
 												}`}

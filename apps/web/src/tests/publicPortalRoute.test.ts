@@ -17,7 +17,7 @@ import {
 	buildPatientCabinetPortalUrl,
 	buildWarrantyPortalUrl,
 	publicPortalRouteFromHash,
-} from "../lib/publicPortalRoute";
+} from "../lib/publicPortalRoute.js";
 
 const webSrcRoot = path.join(import.meta.dirname, "..");
 

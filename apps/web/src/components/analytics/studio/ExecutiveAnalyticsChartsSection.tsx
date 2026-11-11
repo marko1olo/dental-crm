@@ -36,9 +36,9 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 				{/* Секция 1: Структура оплат кассы */}
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 					<div className="flex items-center justify-between">
-						<h2 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-							<Wallet className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Структура оплат (Касса)
+						<h2 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+							<Wallet className="w-3.5 h-3.5 text-current" />
+							Структура оплат (касса)
 						</h2>
 						<span className="text-xs font-medium text-[var(--muted)]">
 							Итого: {data.revenueFormatted}
@@ -52,10 +52,10 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 								className="flex items-center justify-between p-2 rounded-lg bg-[var(--paper-soft)] text-xs border border-[var(--line)]/50"
 							>
 								<div className="flex items-center gap-2 min-w-0">
-									{m.id === "cash" && <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-									{m.id === "card" && <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-									{m.id === "sbp" && <QrCode className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-									{m.id === "deposit" && <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
+									{m.id === "cash" && <Wallet className="w-4 h-4 text-current" />}
+									{m.id === "card" && <CreditCard className="w-4 h-4 text-current" />}
+									{m.id === "sbp" && <QrCode className="w-4 h-4 text-current" />}
+									{m.id === "deposit" && <Sparkles className="w-4 h-4 text-current" />}
 									<span className="font-medium text-[var(--ink)] truncate">{m.label}</span>
 								</div>
 								<div className="flex items-center gap-2.5 shrink-0">
@@ -70,7 +70,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 
 					{/* Направления услуг */}
 					<div className="pt-2 border-t border-[var(--line)] space-y-1.5">
-						<span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] block">
+						<span className="text-[11px] font-semibold text-[var(--muted)] block">
 							Услуги по направлениям
 						</span>
 						<div className="grid grid-cols-2 gap-1.5 text-xs">
@@ -90,8 +90,8 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 				{/* Секция 2: Рейтинг врачей и продуктивность кресел */}
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 					<div className="flex items-center justify-between">
-						<h2 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-							<Users className="w-3.5 h-3.5 text-[var(--teal)]" />
+						<h2 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+							<Users className="w-3.5 h-3.5 text-current" />
 							Рейтинг врачей ({data.doctors.length})
 						</h2>
 						<span className="text-xs font-medium text-[var(--muted)]">
@@ -134,8 +134,8 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 			{/* 3 Секция: Когорты удержания пациентов Recall (3/6/12 мес) и WhatsApp */}
 			<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<div className="flex items-center justify-between">
-					<h2 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-						<Activity className="w-3.5 h-3.5 text-[var(--teal)]" />
+					<h2 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+						<Activity className="w-3.5 h-3.5 text-current" />
 						Удержание пациентов по когортам визитов (Recall ≥ 70%)
 					</h2>
 					<span className="text-xs text-[var(--muted)] hidden sm:inline">
@@ -193,7 +193,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 											</>
 										) : (
 											<>
-												<MessageCircle className="w-3.5 h-3.5 text-[var(--teal)]" />
+												<MessageCircle className="w-3.5 h-3.5 text-current" />
 												<span>Шаблон WhatsApp</span>
 											</>
 										)}

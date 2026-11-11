@@ -20,7 +20,6 @@ import { createRoot, type Root } from "react-dom/client";
 import type { Dashboard, Appointment } from "@dental/shared";
 
 import { ScheduleGrid, DEFAULT_SOLO_CHAIR } from "../ScheduleGrid";
-import { ChairScheduleView } from "../ChairScheduleView";
 
 // Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
@@ -847,13 +846,13 @@ describe("Wave 58 (Feature 247) — Quick Adjust Duration, Lateness Shift & Free
 		assert.equal(hasCartoonEmojis(fullText), false, "ScheduleGrid must contain 0 cartoon emojis (Mandate 8d п. 7)");
 	});
 
-	it("ChairScheduleView passes onAppointmentMove and onQuickStatusChange to ScheduleGrid and functions seamlessly", async () => {
+	it("ScheduleGrid passes onAppointmentMove and onQuickStatusChange and functions seamlessly", async () => {
 		const onAppointmentMove = vi.fn();
 		const onQuickStatusChange = vi.fn();
 
 		await act(async () => {
 			reactRoot.render(
-				<ChairScheduleView
+				<ScheduleGrid
 					dashboard={mockDashboard}
 					dateKey="2026-09-09"
 					appointments={[baseSampleAppointment]}
@@ -872,23 +871,23 @@ describe("Wave 58 (Feature 247) — Quick Adjust Duration, Lateness Shift & Free
 		const menuBtn = findAllNodesByTag(mockDoc.body, "button").find(
 			(b) => b.getAttribute("aria-label") === "Дополнительные действия визита",
 		);
-		assert.ok(menuBtn, "More actions button must exist inside ChairScheduleView");
+		assert.ok(menuBtn, "More actions button must exist inside ScheduleGrid");
 		await clickNode(menuBtn);
 
 		const plus15Btn = findNodeByTestId(mockDoc.body, `menu-duration-plus-15-${baseSampleAppointment.id}`);
-		assert.ok(plus15Btn, "Duration button must exist inside ChairScheduleView");
+		assert.ok(plus15Btn, "Duration button must exist inside ScheduleGrid");
 		await clickNode(plus15Btn);
 
-		assert.equal(onAppointmentMove.calls.length, 1, "ChairScheduleView must forward onAppointmentMove call");
+		assert.equal(onAppointmentMove.calls.length, 1, "ScheduleGrid must forward onAppointmentMove call");
 		assert.equal(onAppointmentMove.calls[0]?.[1]?.endsAt, "2026-09-09T09:45:00.000Z");
 
-		// Test free slot to waitlist via ChairScheduleView
+		// Test free slot to waitlist via ScheduleGrid
 		await clickNode(menuBtn);
 		const freeSlotBtn = findNodeByTestId(mockDoc.body, `menu-free-slot-waitlist-${baseSampleAppointment.id}`);
 		assert.ok(freeSlotBtn);
 		await clickNode(freeSlotBtn);
 
-		assert.equal(onQuickStatusChange.calls.length, 1, "ChairScheduleView must forward onQuickStatusChange call");
+		assert.equal(onQuickStatusChange.calls.length, 1, "ScheduleGrid must forward onQuickStatusChange call");
 		assert.equal(onQuickStatusChange.calls[0]?.[1], "cancelled");
 	});
 });

@@ -235,13 +235,17 @@ describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/
 						patientId: body.patientId,
 						visitId: body.visitId ?? null,
 						amountRub: body.amountRub,
-						method: (body.method as "card" | "cash" | "sbp") || "card",
+						method: (body.method === "sbp" ? "online" : body.method as "card" | "cash") || "card",
 						status: "paid",
 						clientMutationId: idempotencyKey,
 						payerFullName: "Кузнецов Василий Петрович",
 					})
 					.returning();
 			});
+
+			if (!createdPayment) {
+				return reply.code(500).send({ error: "Failed to create payment" });
+			}
 
 			return reply.code(201).send({
 				success: true,

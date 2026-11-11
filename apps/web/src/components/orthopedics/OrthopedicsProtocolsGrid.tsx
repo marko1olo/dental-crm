@@ -63,7 +63,7 @@ export function OrthopedicsProtocolsGrid({
 										</h4>
 										{isMasterPreset && (
 											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-600 text-white shadow-2xs shrink-0">
-												1-клик Полный цикл
+												Полный цикл
 											</span>
 										)}
 									</div>

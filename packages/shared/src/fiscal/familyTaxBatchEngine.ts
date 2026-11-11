@@ -5,7 +5,7 @@
  * - Multi-member tax period package (Patient, Spouse, Parents, Children).
  * - Exact kopeck aggregation per family member without floating point drift.
  * - Multi-page museum-grade A4 printable HTML document.
- * - FNS electronic registry batch generation (NO_MEDOPL 5.01 / VO_SPRRECH).
+ * - FNS electronic registry batch generation (NO_MEDOPL 5.01 / UT_SVOPLMEDUSL 5.01).
  * ============================================================================
  */
 

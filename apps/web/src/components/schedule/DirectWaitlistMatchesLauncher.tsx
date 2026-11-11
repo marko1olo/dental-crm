@@ -20,8 +20,29 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 		);
 	});
 
-	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-	const [activeSlot, setActiveSlot] = useState<TargetSlotInfo | null>(null);
+	const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		const s = window.location.search || "";
+		return s.includes("drawer=true") || s.includes("waitlist-drawer=true");
+	});
+	const [activeSlot, setActiveSlot] = useState<TargetSlotInfo | null>(() => {
+		if (typeof window === "undefined") return null;
+		const s = window.location.search || "";
+		if (s.includes("target-slot") || s.includes("slot=demo")) {
+			return {
+				appointmentId: "demo-freed-slot-1",
+				startsAt: "2026-11-12T10:00:00.000Z",
+				endsAt: "2026-11-12T11:00:00.000Z",
+				doctorUserId: "demo-doctor-smirnov",
+				doctorName: "Д-р Смирнов А. В.",
+				chairId: "chair-1",
+				chairName: "Кресло 1 (Терапия)",
+				treatmentCategory: "Терапия",
+				freedBecause: "Отмена приёма (окно 60 мин)",
+			};
+		}
+		return null;
+	});
 
 	useEffect(() => {
 		const handleHash = () => {

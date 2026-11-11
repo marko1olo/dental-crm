@@ -24,7 +24,7 @@ export const CrmLeakDeclineSection: React.FC<Props> = ({
 	return (
 		<div className="p-4 bg-[var(--paper-soft)] border-b border-[var(--line)]">
 			<div className="flex items-center justify-between mb-2">
-				<h4 className="m-0 text-sm font-bold text-red-600 flex items-center gap-2">
+				<h4 className="m-0 text-sm font-bold text-[var(--destructive)] flex items-center gap-2">
 					<X size={15} />
 					<span>Причина отказа: {lead.patientFullName}</span>
 				</h4>
@@ -67,7 +67,7 @@ export const CrmLeakDeclineSection: React.FC<Props> = ({
 					</button>
 					<button
 						type="button"
-						className="primary-button !bg-red-600 !border-red-600 text-white"
+						className="secondary-button border-[var(--destructive)] text-[var(--destructive)] hover:bg-[var(--destructive-soft,#ef44441a)] font-semibold"
 						onClick={onSave}
 					>
 						Зафиксировать отказ

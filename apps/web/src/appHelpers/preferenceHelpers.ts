@@ -70,7 +70,7 @@ import {
 	isTelegramLinkSubjectTypePreference,
 	isTelegramOutboxStatusFilterPreference,
 	isTelegramOutboxTemplateFilterPreference,
-} from "./telephonyHelpers.js";
+} from "../helpers/telegramHelpers.js";
 
 export {
 	defaultUiPreferences,

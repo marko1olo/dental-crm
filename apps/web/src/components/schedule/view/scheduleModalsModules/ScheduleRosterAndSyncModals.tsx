@@ -6,7 +6,6 @@ import {
 import { QuickAddChairModal } from "../../QuickAddChairModal";
 import { DoctorCalendarSyncModal } from "../../DoctorCalendarSyncModal";
 import { DoctorShiftDrawer } from "../../roster/DoctorShiftDrawer";
-import { ChairDateRangeModal } from "../../ChairDateRangeModal";
 import type { ScheduleViewModalsProps } from "./scheduleModalsTypes";
 
 export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
@@ -37,24 +36,16 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
     isNewDrawerShift,
     isChairDateRangeModalOpen,
     setIsChairDateRangeModalOpen,
-    chairRangeDoctorId,
-    setChairRangeDoctorId,
-    chairRangeChairId,
-    setChairRangeChairId,
-    chairRangeStartDate,
-    setChairRangeStartDate,
-    chairRangeEndDate,
-    setChairRangeEndDate,
-    chairRangePreset,
-    setChairRangePreset,
-    onApplyChairDateRange,
   } = props;
 
   return (
     <>
       <DoctorShiftRosterModal
-        isOpen={isRosterModalOpen}
-        onClose={() => setIsRosterModalOpen(false)}
+        isOpen={Boolean(isRosterModalOpen || isChairDateRangeModalOpen)}
+        onClose={() => {
+          setIsRosterModalOpen(false);
+          setIsChairDateRangeModalOpen?.(false);
+        }}
         staffList={rosterStaffList}
         cabinets={rosterCabinets}
         initialShifts={
@@ -107,26 +98,6 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
             onDeleteShift={onDeleteDrawerShift}
           />
         )}
-
-      {isChairDateRangeModalOpen && setIsChairDateRangeModalOpen && (
-        <ChairDateRangeModal
-          isOpen={isChairDateRangeModalOpen}
-          onClose={() => setIsChairDateRangeModalOpen(false)}
-          doctors={scheduleDoctors}
-          chairs={dashboard?.clinicSettings?.chairs ?? []}
-          rangeDoctorId={chairRangeDoctorId ?? ""}
-          setRangeDoctorId={setChairRangeDoctorId ?? (() => {})}
-          rangeChairId={chairRangeChairId ?? ""}
-          setRangeChairId={setChairRangeChairId ?? (() => {})}
-          rangeStartDate={chairRangeStartDate ?? currentDateKey}
-          setRangeStartDate={setChairRangeStartDate ?? (() => {})}
-          rangeEndDate={chairRangeEndDate ?? currentDateKey}
-          setRangeEndDate={setChairRangeEndDate ?? (() => {})}
-          rangePreset={chairRangePreset ?? "full"}
-          setRangePreset={setChairRangePreset ?? (() => {})}
-          onApply={onApplyChairDateRange ?? (() => {})}
-        />
-      )}
     </>
   );
 }

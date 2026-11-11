@@ -9,7 +9,7 @@ export interface PatientPortalProfile {
 	phone: string;
 	email: string;
 	birthDate: string;
-	cardNumber: string; // e.g. "043/у-2026/891"
+	cardNumber: string; // e.g. "Медицинская карта № 891"
 	curatingDoctor: string;
 	curatingDoctorName?: string;
 	curatingDoctorSpecialty: string;
@@ -124,6 +124,7 @@ export interface PortalInvoiceItem {
 
 export interface PortalTreatmentProcedure {
 	id: string;
+	serviceCode?: string;
 	code804n?: string;
 	nameRu: string;
 	toothFdi?: string;

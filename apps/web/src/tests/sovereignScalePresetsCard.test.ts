@@ -47,8 +47,8 @@ describe("SovereignScalePresetsCard Specification & Store Integrity", () => {
 		const standard = SOVEREIGN_PRESETS.find((p) => p.id === "standard_clinic");
 		expect(standard).toBeDefined();
 		expect(standard!.chairsCountText).toContain("3 кресла");
-		expect(standard!.features.some((f) => f.includes("54-ФЗ"))).toBe(true);
-		expect(standard!.features.some((f) => f.includes("SanPiN"))).toBe(true);
+		expect(standard!.features.some((f) => f.includes("фискализацией"))).toBe(true);
+		expect(standard!.features.some((f) => f.includes("стерилизации"))).toBe(true);
 	});
 
 	it("preserves Network Center preset configuration for multi-branch and dental lab", () => {
@@ -56,7 +56,7 @@ describe("SovereignScalePresetsCard Specification & Store Integrity", () => {
 		expect(network).toBeDefined();
 		expect(network!.chairsCountText).toContain("5+ кресел");
 		expect(network!.features.some((f) => f.includes("ЗТЛ"))).toBe(true);
-		expect(network!.features.some((f) => f.includes("ЕГИСЗ"))).toBe(true);
+		expect(network!.features.some((f) => f.includes("медицинские карты"))).toBe(true);
 	});
 
 	it("deepClinicalSettingsStore successfully applies matching presets without throws", () => {

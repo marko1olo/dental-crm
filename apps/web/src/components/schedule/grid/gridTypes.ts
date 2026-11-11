@@ -3,7 +3,7 @@ import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtils";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
-import type { TargetSlotInfo } from "../WaitlistDrawer";
+import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
 
 export interface ChairDoctorSubShift {
   doctorId: string;

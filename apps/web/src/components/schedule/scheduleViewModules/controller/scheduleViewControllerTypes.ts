@@ -7,7 +7,7 @@
 
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { QuickBookingSlotInfo } from "../../QuickBookingDrawer";
-import type { TargetSlotInfo } from "../../WaitlistDrawer";
+import type { TargetSlotInfo } from "../../waitlist/WaitlistDrawer";
 import type { DayGroupingAppointment, ScheduleDayGroup } from "../../scheduleDayGrouping";
 
 export type ScheduleGridStep = 15 | 30 | 60;

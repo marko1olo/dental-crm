@@ -6,7 +6,6 @@ import {
 	selectPatientArchiveRows,
 } from "./administrativeRoutes.js";
 import { registerPatientCrudRoutes } from "./crudRoutes.js";
-import { registerPatientDuplicateRoutes } from "./duplicateRoutes.js";
 import { registerPatientReclamationRoutes } from "./reclamationRoutes.js";
 import { registerPatientTicketRoutes } from "./ticketRoutes.js";
 import { registerPatientTimelineRoutes } from "./timelineRoutes.js";
@@ -25,7 +24,6 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 	registerMedicalSecrecyPayloadStripping(app);
 
 	registerPatientCrudRoutes(app);
-	registerPatientDuplicateRoutes(app);
 	registerPatientAdministrativeRoutes(app);
 	registerPatientReclamationRoutes(app);
 	registerPatientTicketRoutes(app);

@@ -54,6 +54,7 @@ export interface EgiszQueueHealthSummary {
 }
 
 export interface CreateEgiszRemdReceiptParams {
+	receiptId?: string | null | undefined;
 	remdDocumentId: string;
 	transactionId: string;
 	registeredAt?: string | null | undefined;

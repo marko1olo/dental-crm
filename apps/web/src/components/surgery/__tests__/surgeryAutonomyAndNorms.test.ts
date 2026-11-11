@@ -13,7 +13,7 @@ import {
 	SURGICAL_OPERATION_NORMS,
 	evaluateWarehouseOverdraft,
 	quickDeductSurgicalMaterials,
-} from "../surgeryProtocols";
+} from "../surgeryCatalogData";
 
 describe("Surgery Autonomy & 1-Click Operation Norms (DENTE CRM)", () => {
 	it("1. Dental Implantation 1-click norm matches canonical text and 35 N·см torque", () => {

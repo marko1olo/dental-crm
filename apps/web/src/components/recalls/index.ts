@@ -17,13 +17,6 @@ export {
 } from "./recallsCatalogData";
 
 export { DirectRecallLauncher } from "./DirectRecallLauncher";
-export { DirectRecallsLauncher } from "./DirectRecallsLauncher";
-
-export {
-	RecallStudioModal,
-	type RecallStudioModalProps,
-	type RecallStudioCycleFilter,
-} from "./RecallStudioModal";
 
 export {
 	PatientRecallsHubModal,
@@ -32,6 +25,4 @@ export {
 } from "./PatientRecallsHubModal";
 
 export * from "./PatientRecallsTaskCallsTab";
-export * from "./PatientRecallsTableView";
 export * from "./PatientRecallsKanbanView";
-export * from "./PatientRecallsToolbar";
