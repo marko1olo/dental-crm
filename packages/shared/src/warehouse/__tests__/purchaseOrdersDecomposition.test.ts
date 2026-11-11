@@ -174,7 +174,9 @@ describe("Warehouse Purchase Orders: Decomposed Modules & Invariants", () => {
 			actNumber: "М7-ТЕСТ-01",
 		});
 
-		assert.ok(actM7.includes("ТИПОВАЯ МЕЖОТРАСЛЕВАЯ ФОРМА № М-7"));
+		assert.ok(actM7.includes("ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ"));
+		assert.ok(actM7.includes("АКТ О ПРИЕМКЕ МАТЕРИАЛОВ"));
+		assert.ok(!actM7.includes("Госкомстата"));
 		assert.ok(actM7.includes("М7-ТЕСТ-01"));
 		assert.ok(actM7.includes("Артикаин 1:100000"));
 		// Mandate 8d zero emojis check

@@ -88,12 +88,11 @@ export async function performAutoVisitBomDeduction(
 
 	// Мандат 8aa (Soft Negative Overdraft): при овердрафте списание со склада
 	// происходит бесшумно в фоновом бэк-офисе без единого всплывающего окна у врача.
-	if (validation.toastType !== "warning") {
-		if (options.onToast) {
-			options.onToast(validation.toastMessage, validation.toastType);
-		} else {
-			showToast(validation.toastMessage, validation.toastType);
-		}
+	// При передаче явного колбэка onToast уведомляем вызывающий контур.
+	if (options.onToast) {
+		options.onToast(validation.toastMessage, validation.toastType);
+	} else if (validation.toastType !== "warning") {
+		showToast(validation.toastMessage, validation.toastType);
 	}
 
 	if (validation.hasOverdraft && options.onOverdraftAlert) {

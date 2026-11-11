@@ -336,16 +336,21 @@ export interface ThreeWayMatchingResult {
 
 // ─── 5. REGULATORY REPORT CONTRACTS ──────────────────────────────────────────
 
-export interface FormatMaterialReceiptActM7Options {
+export interface FormatMaterialReceiptStatementOptions {
 	readonly clinicName?: string;
 	readonly actNumber?: string;
 	readonly actDate?: string;
-	readonly commissionPresident?: string;
-	readonly commissionMembers?: readonly string[];
+	readonly receiverFullName?: string;
+	readonly receiverPosition?: string;
 	readonly storekeeperName?: string;
 	readonly supplierDocumentNumber?: string;
 	readonly supplierDocumentDate?: string;
+	/** @deprecated commission fields are not required in clinical receipts (Mandate 8e, 8n) */
+	readonly commissionPresident?: string;
+	readonly commissionMembers?: readonly string[];
 }
+
+export type FormatMaterialReceiptActM7Options = FormatMaterialReceiptStatementOptions;
 
 // ─── 6. STOCK THRESHOLDS & SUPPLIER COMPARISON EXTENSIONS ─────────────────────
 

@@ -658,22 +658,22 @@ export function receiveDeliveryBatch(
 	};
 }
 
-// ─── 7. REGULATORY FORM M-7 A4 (МАТЕРИАЛЬНЫЙ АКТ ПРИЕМКИ) ─────────────────────
+// ─── 7. CLINICAL MATERIAL RECEIPT STATEMENT (ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ) ────
 
 /**
- * Formats a clean, statutory Russian Form M-7 / TORG-1 material receipt act (Акт о приемке материалов).
- * Adheres strictly to Mandate 8d p. 7: ZERO EMOJIS!
+ * Formats a clean, statutory clinical material receipt statement (Ведомость приемки материалов / Акт приемки).
+ * Replaces archaic Soviet Goskomstat 1997 M-7 and 3-person commissions with autonomous clinic MOL workflow.
+ * Adheres strictly to Mandate 8d p. 7 (ZERO EMOJIS), 8e (Doctor/Nurse autonomy), 8n (Solo clinic).
  */
-export function formatMaterialReceiptActM7A4(
+export function formatMaterialReceiptStatementA4(
 	order: PurchaseOrderRecord,
 	options?: FormatMaterialReceiptActM7Options,
 ): string {
 	const clinicName = options?.clinicName || 'ООО "ДЕНТЕ"';
-	const actNumber = options?.actNumber || `М7-${order.id.replace(/^po-/, "")}`;
+	const actNumber = options?.actNumber || `ПР-${order.id.replace(/^po-/, "")}`;
 	const actDate = formatDateRu(options?.actDate || new Date().toISOString());
-	const president = options?.commissionPresident || "Главный врач клиники";
-	const members = options?.commissionMembers || ["Старшая медицинская сестра", "Заведующий складом"];
-	const storekeeper = options?.storekeeperName || "Материально ответственное лицо";
+	const storekeeper = options?.storekeeperName || options?.receiverFullName || "Материально ответственное лицо";
+	const storekeeperPosition = options?.receiverPosition || "Заведующий складом / Старшая медсестра";
 	const docNum = options?.supplierDocumentNumber || `СФ-${order.id}`;
 	const docDate = formatDateRu(options?.supplierDocumentDate || order.expectedDate || new Date().toISOString());
 
@@ -731,12 +731,11 @@ export function formatMaterialReceiptActM7A4(
 
 	const conclusionText = hasDiscrepancy
 		? `ВНИМАНИЕ: При приемке выявлены расхождения/дефекты. Принято годных: ${totalGoodUnits} шт., забраковано: ${totalRejectedUnits} шт. Составлена рекламация поставщику.`
-		: "ЗАКЛЮЧЕНИЕ КОМИССИИ: Материалы поступили в полном объеме, надлежащего качества, дефектов и повреждений тары не обнаружено. Оприходовано на баланс склада.";
+		: "ЗАКЛЮЧЕНИЕ: Материалы поступили в полном объеме, надлежащего качества, дефектов и повреждений тары не обнаружено. Оприходовано на баланс склада.";
 
 	return [
 		sep,
-		"               ТИПОВАЯ МЕЖОТРАСЛЕВАЯ ФОРМА № М-7 (ТОРГ-1)",
-		"          Утверждена постановлением Госкомстата России от 30.10.97 № 71а",
+		"                  ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ",
 		`                     АКТ О ПРИЕМКЕ МАТЕРИАЛОВ № ${actNumber}`,
 		sep,
 		`Организация-получатель:   ${clinicName}`,
@@ -744,10 +743,7 @@ export function formatMaterialReceiptActM7A4(
 		`Дата составления акта:    ${actDate}`,
 		`Документ поставщика:      Накладная/УПД № ${docNum} от ${docDate}`,
 		`Номер заказа (PO):        ${order.id}`,
-		subSep,
-		"СОСТАВ КОМИССИИ:",
-		`Председатель комиссии:    ${president}`,
-		`Члены комиссии:           ${members.join(", ")}`,
+		`Ответственный за приемку: ${storekeeper} (${storekeeperPosition})`,
 		subSep,
 		"ВЕДОМОСТЬ ПРИНЯТЫХ МАТЕРИАЛОВ И РАСХОЖДЕНИЙ:",
 		subSep,
@@ -762,14 +758,16 @@ export function formatMaterialReceiptActM7A4(
 		subSep,
 		conclusionText,
 		sep,
-		"ПОДПИСИ ЧЛЕНОВ КОМИССИИ:",
+		"ПОДПИСИ СТОРОН:",
 		"",
-		`Председатель комиссии:     ____________________ / ${president} /`,
+		"Отпустил (Поставщик):       ____________________ / ____________________ /",
 		"",
-		...members.map((m) => `Член комиссии:             ____________________ / ${m} /`),
-		"",
-		`Материально ответственное`,
-		`лицо (принял на склад):    ____________________ / ${storekeeper} /`,
+		`Принял на склад (МОЛ):      ____________________ / ${storekeeper} /`,
 		sep,
 	].join("\n");
 }
+
+/**
+ * @deprecated Use formatMaterialReceiptStatementA4 (Мандат 8x: искоренение советских форм М-7 Госкомстата 1997 г.)
+ */
+export const formatMaterialReceiptActM7A4 = formatMaterialReceiptStatementA4;

@@ -150,7 +150,7 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
 </head>
 <body>
   <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
-    Инвентаризационная ведомость остатков материалов<br>
+    Инвентаризационная ведомость остатков материалов (ИНВ-3)<br>
     Стоматологическая клиника DENTE
   </div>
   <div class="header-box">
@@ -258,7 +258,7 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 </head>
 <body>
   <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
-    Сличительная ведомость инвентаризации материалов<br>
+    Сличительная ведомость инвентаризации материалов (ИНВ-19)<br>
     Стоматологическая клиника DENTE
   </div>
   <div class="header-box">

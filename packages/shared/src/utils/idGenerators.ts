@@ -262,11 +262,17 @@ export function generatePurchaseReceiptId(): string {
 }
 
 /**
- * Generates Transfer M-11 document IDs.
+ * Generates Warehouse Transfer document IDs (trf_...).
+ * Replaces obsolete Soviet Form M-11 Goskomstat (Mandates 8e, 8n, 8x).
  */
-export function generateTransferM11Id(): string {
-	return `m11_${Date.now()}_${generateSecureAlphanumericId(6)}`;
+export function generateWarehouseTransferId(): string {
+	return `trf_${Date.now()}_${generateSecureAlphanumericId(6)}`;
 }
+
+/**
+ * @deprecated Use generateWarehouseTransferId (Мандат 8x: искоренение советской формы М-11)
+ */
+export const generateTransferM11Id = generateWarehouseTransferId;
 
 /**
  * Generates Class B Medical Waste seal and barcode numbers (SanPiN 2.1.3684-21).

@@ -46,7 +46,7 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 @media print { body { margin: 10mm; } }
 </style></head><body>
 <div style="text-align:right; font-size:9pt; margin-bottom:10px; color:#666;">
-Приходная накладная материалов клиники • Стоматология DENTE
+Приходная накладная материалов клиники (ТОРГ-12) • Стоматология DENTE
 </div>
 <table class="header-table">
 <tr><td style="width:15%;"><strong>Грузоотправитель:</strong></td><td>${waybill.supplier.name}, ИНН ${waybill.supplier.inn || "—"}</td></tr>
