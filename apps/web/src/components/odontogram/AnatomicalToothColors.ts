@@ -15,7 +15,7 @@ import {
 	splitArchAtMidline,
 } from "@dental/shared";
 import type { ToothState, ToothVisualProps } from "./ToothChart";
-import type { RestorativeMaterialKey } from "./anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "./anatomicalGeometriesTypes";
 
 export {
 	TOP_TEETH,

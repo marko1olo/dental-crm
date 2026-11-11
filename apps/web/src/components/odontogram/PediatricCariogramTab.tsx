@@ -48,7 +48,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						</p>
 					</div>
 					<span
-						className="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider"
+						className="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black tracking-wider"
 						style={{
 							backgroundColor: cariogramResult.badgeBg,
 							color: cariogramResult.badgeColor,
@@ -146,7 +146,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 			{/* Preventive Program Summary */}
 			<div className="p-6 rounded-3xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
 				<div className="flex items-center justify-between">
-					<h4 className="text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+					<h4 className="text-sm font-black tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
 						Индивидуальный план детской профилактики
 					</h4>
 					<span className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -193,9 +193,9 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						<button
 							type="button"
 							onClick={handleInsert}
-							className="min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+							className="dente-btn dente-btn-secondary min-h-[44px] px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-2xs"
 						>
-							<Check className="w-4 h-4" />
+							<Check className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							<span>Вставить протокол Cariogram в карту</span>
 						</button>
 					</div>

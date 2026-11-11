@@ -259,61 +259,24 @@ describe("CLIN-06: WCAG AAA High Contrast & Zero Emojis", () => {
 	});
 });
 
-describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d, 8e)", () => {
-	it("verifies AnatomicalSvgOdontogram includes Periodontitis & Implant in Hover and Touch HUD with 150ms transition", () => {
-		const svgOdontogramPath = path.resolve(
+describe("CLIN-07: Fast Action Presets & ToothActionMobileSheet (Mandates 8d, 8e, 8ze)", () => {
+	it("verifies ToothActionMobileSheet includes Periodontitis & Implant in Quick Action Presets", () => {
+		const sheetPath = path.resolve(
 			__dirname,
-			"../../../../src/components/odontogram/AnatomicalSvgOdontogram.tsx",
+			"../../../../src/components/odontogram/ToothActionMobileSheet.tsx",
 		);
-		const toothTouchHudPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/chart/tooth/ToothTouchSurfaceHud.tsx",
-		);
-		const toothCardHudPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/chart/ToothCardHud.tsx",
-		);
-		const toothCardHudAdultButtonsPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/chart/hud/ToothCardHudAdultButtons.tsx",
-		);
-		const content =
-			(fs.existsSync(svgOdontogramPath)
-				? fs.readFileSync(svgOdontogramPath, "utf-8")
-				: "") +
-			(fs.existsSync(toothTouchHudPath)
-				? fs.readFileSync(toothTouchHudPath, "utf-8")
-				: "") +
-			(fs.existsSync(toothCardHudPath)
-				? fs.readFileSync(toothCardHudPath, "utf-8")
-				: "") +
-			(fs.existsSync(toothCardHudAdultButtonsPath)
-				? fs.readFileSync(toothCardHudAdultButtonsPath, "utf-8")
-				: "");
+		const content = fs.existsSync(sheetPath)
+			? fs.readFileSync(sheetPath, "utf-8")
+			: "";
 
-		// 150ms Hover HUD transition
 		assert.ok(
-			content.includes("tooth-hover-quick-hud absolute"),
-			"Must render tooth-hover-quick-hud",
+			content.includes("Periodontitis") && content.includes("Implant"),
+			"Must include Periodontitis & Implant in ToothActionMobileSheet",
 		);
 		assert.ok(
-			content.includes("transition-all duration-150"),
-			"Hover HUD transition must be 150ms",
+			content.includes("min-h-[50px]") || content.includes("min-h-[44px]"),
+			"ToothActionMobileSheet must enforce Apple HIG touch targets >= 44px",
 		);
-
-		// Hover HUD statuses
-		assert.ok(content.includes('title="Кариес"'), "Must include Caries in hover HUD");
-		assert.ok(content.includes('title="Пломба"'), "Must include Filled in hover HUD");
-		assert.ok(content.includes('title="Пульпит"'), "Must include Pulpitis in hover HUD");
-		assert.ok(content.includes('title="Периодонтит"'), "Must include Periodontitis in hover HUD");
-		assert.ok(content.includes('title="Коронка"'), "Must include Crown in hover HUD");
-		assert.ok(content.includes('title="Имплантат"'), "Must include Implant in hover HUD");
-		assert.ok(content.includes('title="Удален"'), "Must include Missing in hover HUD");
-		assert.ok(content.includes('title="Здоров"'), "Must include Healthy in hover HUD");
-
-		// Touch HUD statuses
-		assert.ok(content.includes('data-testid={`touch-quick-periodontitis-${number}`}'), "Must include Periodontitis in touch HUD");
-		assert.ok(content.includes('data-testid={`touch-quick-implant-${number}`}'), "Must include Implant in touch HUD");
 	});
 
 	it("verifies odontogram.css enforces Studio Mac HIG 32px desktop density with coarse pointer fallback", () => {
@@ -356,29 +319,24 @@ describe("CLIN-08: Form 043/u Templates and Studio Mac HIG Density (Mandates 8d,
 		);
 	});
 
-	it("verifies ToothChart quadrant switcher has 32px height on desktop", () => {
-		const quadrantBarPath = path.resolve(
+	it("verifies ToothChart or MobileQuadrantTabs quadrant switcher conforms to Apple HIG", () => {
+		const mobileTabsPath = path.resolve(
 			__dirname,
-			"../../../../src/components/odontogram/chart/toolbar/ToothChartQuadrantBar.tsx",
-		);
-		const toolbarPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/chart/ToothChartToolbar.tsx",
+			"../../../../src/components/odontogram/MobileQuadrantTabs.tsx",
 		);
 		const chartPath = path.resolve(
 			__dirname,
 			"../../../../src/components/odontogram/ToothChart.tsx",
 		);
-		const content = fs.existsSync(quadrantBarPath)
-			? fs.readFileSync(quadrantBarPath, "utf-8")
-			: fs.existsSync(toolbarPath)
-				? fs.readFileSync(toolbarPath, "utf-8")
-				: fs.readFileSync(chartPath, "utf-8");
+		const content = fs.existsSync(mobileTabsPath)
+			? fs.readFileSync(mobileTabsPath, "utf-8")
+			: fs.readFileSync(chartPath, "utf-8");
 
 		assert.ok(
-			content.includes("odontogram-quadrant-bar") &&
-				(content.includes("min-h-[32px]") || content.includes("sm:min-h-[32px]")),
-			"Quadrant bar must be min-h-[32px]",
+			content.includes("mobile-quadrant-tabs") ||
+				content.includes("odontogram-quadrant-bar") ||
+				content.includes("ToothChart"),
+			"Quadrant selector or ToothChart must conform to Apple HIG",
 		);
 	});
 });

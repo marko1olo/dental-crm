@@ -166,7 +166,7 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 				</div>
 			)}
 
-			<div className="w-full max-w-[980px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
+			<div className="w-full max-w-[1080px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
 				<AnatomicalGate0Row
 					isUpper={true}
 					leftTeeth={q1}
@@ -180,10 +180,10 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 				/>
 
 				{/* Окклюзионная плоскость смыкания */}
-				<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5" title="Окклюзионная плоскость смыкания">
+				<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5 order-2" title="Окклюзионная плоскость смыкания">
 					<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
-					<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400/90 dark:text-slate-500/90 select-none">
-						Линия окклюзии Wheeler 2.5D
+					<span className="text-[10px] font-medium tracking-wide text-slate-400/90 dark:text-slate-500/90 select-none">
+						Окклюзионная линия
 					</span>
 					<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
 				</div>

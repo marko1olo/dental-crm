@@ -26,11 +26,11 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 }) => {
 	const handleInsertToCard = onInsertCariogramToClinicalNote || (() => {});
 	return (
-		<div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 space-y-2.5 shadow-xs">
+		<div className="p-3 sm:p-4 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-900/60 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-2.5 shadow-2xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
-					<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-black text-teal-700 dark:text-teal-300">
+					<Zap className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="text-xs font-black text-[var(--teal,#0d9488)]">
 						Клинические протоколы и физиологическая норма
 					</span>
 				</div>
@@ -178,20 +178,19 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 				<button
 					type="button"
 					onClick={handleInsertToCard}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-sm text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник приёма"
 					data-testid="pediatric-preset-insert-card-btn"
-					data-legacy-testid="pediatric-preset-insert-043-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold whitespace-nowrap">
+						<div className="font-extrabold whitespace-nowrap text-[var(--teal,#0d9488)]">
 							В карту
 						</div>
-						<div className="text-[10px] text-teal-100 whitespace-nowrap">
+						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
 							Перенос в дневник
 						</div>
 					</div>
-					<Zap className="w-4 h-4 text-amber-300 shrink-0" />
+					<Zap className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 			</div>
 		</div>

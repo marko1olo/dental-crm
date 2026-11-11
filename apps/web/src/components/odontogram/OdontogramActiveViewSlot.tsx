@@ -1,6 +1,6 @@
 import type { OdontogramViewMode } from "@dental/shared";
 import type React from "react";
-import { AnatomicalGate0FullArchView } from "./AnatomicalGate0FullArchView";
+import { WheelerToothArch } from "./WheelerToothArch";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { OdontogramBatchBar } from "./OdontogramBatchBar";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
@@ -55,16 +55,27 @@ export const OdontogramActiveViewSlot: React.FC<
 	isPediatric,
 	isMixed,
 }) => {
+	const sharedSelectTeethGroup = typeof sharedViewProps?.onSelectTeethGroup === "function"
+		? (sharedViewProps.onSelectTeethGroup as (teeth: number[]) => void)
+		: undefined;
+	const sharedClearSelection = typeof sharedViewProps?.onClearSelection === "function"
+		? (sharedViewProps.onClearSelection as () => void)
+		: undefined;
+	const sharedInvertSelection = typeof sharedViewProps?.onInvertSelection === "function"
+		? (sharedViewProps.onInvertSelection as () => void)
+		: undefined;
+
 	return (
 		<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
 			<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 				{activeMode === "anatomical_svg" && (
-					<AnatomicalGate0FullArchView
+					<WheelerToothArch
 						{...sharedViewProps}
 						teethData={teethData}
 						selectedTeeth={selectedTeeth}
 						onQuickStateChange={onQuickStateChange}
 						activeStamp={activeStampTool}
+						mode="interactive"
 						dentitionMode={isPediatric ? "pediatric" : isMixed ? "mixed" : undefined}
 						isPediatric={isPediatric}
 						isMixed={isMixed}
@@ -90,9 +101,9 @@ export const OdontogramActiveViewSlot: React.FC<
 					>
 						<OdontogramBatchBar
 							selectedTeeth={selectedTeeth}
-							onSelectTeethGroup={onSelectTeethGroup ?? (sharedViewProps?.onSelectTeethGroup as any)}
-							onClearSelection={onClearSelection ?? (sharedViewProps?.onClearSelection as any)}
-							onInvertSelection={onInvertSelection ?? (sharedViewProps?.onInvertSelection as any)}
+							onSelectTeethGroup={onSelectTeethGroup ?? sharedSelectTeethGroup}
+							onClearSelection={onClearSelection ?? sharedClearSelection}
+							onInvertSelection={onInvertSelection ?? sharedInvertSelection}
 							onQuickStateChange={onQuickStateChange}
 							isPediatric={isPediatric ?? Boolean(sharedViewProps?.pediatricMode)}
 							isMixed={isMixed ?? Boolean(sharedViewProps?.mixedDentition)}
@@ -110,14 +121,18 @@ export const OdontogramActiveViewSlot: React.FC<
 						<div className="w-full h-px bg-[var(--line,#e2e8f0)]/60 dark:bg-slate-800/60" />
 						<OdontogramQuickTextInput
 							className="bg-transparent border-0 p-0 shadow-none"
-							onApplyBatch={(batchOrTargets: any, maybeState?: any, maybeSurfaces?: any) => {
+							onApplyBatch={(
+								batchOrTargets: readonly { readonly toothNumber: number; readonly state: ToothState; readonly surfaces?: readonly string[] }[] | readonly number[],
+								maybeState?: ToothState,
+								maybeSurfaces?: readonly string[],
+							) => {
 								if (!onQuickStateChange) return;
-								if (Array.isArray(batchOrTargets) && batchOrTargets.length > 0 && typeof batchOrTargets[0] === "object") {
-									for (const item of batchOrTargets) {
+								if (Array.isArray(batchOrTargets) && batchOrTargets.length > 0 && typeof batchOrTargets[0] === "object" && batchOrTargets[0] !== null) {
+									for (const item of (batchOrTargets as readonly { readonly toothNumber: number; readonly state: ToothState; readonly surfaces?: readonly string[] }[])) {
 										onQuickStateChange([item.toothNumber], item.state, item.surfaces);
 									}
 								} else if (Array.isArray(batchOrTargets) && maybeState) {
-									onQuickStateChange(batchOrTargets, maybeState, maybeSurfaces);
+									onQuickStateChange(batchOrTargets as number[], maybeState, maybeSurfaces);
 								}
 							}}
 						/>

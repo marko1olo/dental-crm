@@ -1,4 +1,4 @@
-import type { RestorativeMaterialKey } from "../../anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "../../anatomicalGeometriesTypes";
 import type { ToothVisualProps } from "../ToothColors";
 
 export function getFilledToothColors(material?: RestorativeMaterialKey): ToothVisualProps {

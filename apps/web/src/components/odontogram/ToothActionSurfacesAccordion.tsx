@@ -1,5 +1,4 @@
 import type React from "react";
-import { SurfaceSelector } from "./ToothChart";
 
 const SURFACE_CHIPS = [
 	{
@@ -74,18 +73,6 @@ export const ToothActionSurfacesAccordion: React.FC<
 						);
 					})}
 				</div>
-				<details className="mt-1">
-					<summary className="text-[11px] text-[var(--muted,#64748b)] cursor-pointer hover:underline text-center">
-						Анатомическая 2D схема
-					</summary>
-					<div className="flex justify-center p-1">
-						<SurfaceSelector
-							selected={activeSurfaces}
-							onChange={setActiveSurfaces}
-							size={80}
-						/>
-					</div>
-				</details>
 			</div>
 		</details>
 	);

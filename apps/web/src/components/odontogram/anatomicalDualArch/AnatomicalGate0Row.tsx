@@ -58,7 +58,7 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 			data-testid={isUpper ? "anatomical-arch-upper" : "anatomical-arch-lower"}
 		>
 			{archTitle && isUpper && (
-				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wider mb-0.5">
 					{archTitle}
 				</div>
 			)}
@@ -75,7 +75,7 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 				{renderQuadrant(rightTeeth, isUpper ? "quadrant-2" : "quadrant-3")}
 			</div>
 			{archTitle && !isUpper && (
-				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wider mt-0.5">
 					{archTitle}
 				</div>
 			)}

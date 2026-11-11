@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { AnatomicalGate0FullArchView } from "../AnatomicalGate0FullArchView";
+import { WheelerToothArch } from "../WheelerToothArch";
 import { AnatomicalGate0Row } from "../anatomicalDualArch/AnatomicalGate0Row";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46SingleView } from "./Tooth46SingleView";
@@ -104,7 +104,7 @@ export const Tooth46InspectionStand: React.FC = () => {
 				</div>
 			) : standMode === "arch32" ? (
 				<div className="w-full max-w-[1040px] flex justify-center py-4 bg-[var(--paper,#ffffff)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xs">
-					<AnatomicalGate0FullArchView isDark={isDark} zoom={0.52} />
+					<WheelerToothArch isDark={isDark} zoom={0.52} mode="interactive" />
 				</div>
 			) : (
 				<Tooth46SingleView

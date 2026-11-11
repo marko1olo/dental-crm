@@ -1,5 +1,5 @@
 /**
- * DENTE Dental CRM — AnatomicalGate0FullArchView Integration Test
+ * DENTE Dental CRM — WheelerToothArch Integration Test
  * Verifies 32-tooth Wheeler arch mounting, sagittal midline, selection, and stamps.
  * Mandate 8b <= 120 lines.
  */
@@ -9,7 +9,7 @@ import { describe, it } from "node:test";
 import React from "react";
 (globalThis as any).React = React;
 import { renderToString } from "react-dom/server";
-import { AnatomicalGate0FullArchView } from "../AnatomicalGate0FullArchView";
+import { WheelerToothArch } from "../WheelerToothArch";
 import type { ToothData } from "../ToothChart";
 
 const ALL_32_TEETH = [
@@ -19,14 +19,14 @@ const ALL_32_TEETH = [
 	31, 32, 33, 34, 35, 36, 37, 38,
 ];
 
-describe("AnatomicalGate0FullArchView — Live UI 32-Tooth Mounting & Interaction", () => {
+describe("WheelerToothArch — Live UI 32-Tooth Mounting & Interaction", () => {
 	it("renders all 32 Wheeler anatomical teeth and sagittal midline guides", () => {
-		const html = renderToString(React.createElement(AnatomicalGate0FullArchView, {
+		const html = renderToString(React.createElement(WheelerToothArch, {
 			selectedTeeth: [16, 46],
 			showWisdomTeeth: true,
 		}));
 
-		assert.ok(html.includes("data-testid=\"anatomical-gate0-full-arch-view\""));
+		assert.ok(html.includes("data-testid=\"wheeler-tooth-arch\""));
 		assert.ok(html.includes("data-testid=\"anatomical-arch-upper\""));
 		assert.ok(html.includes("data-testid=\"anatomical-arch-lower\""));
 		assert.ok(html.includes("title=\"Сагиттальная линия (Facial Midline Guide)\""));
@@ -38,7 +38,7 @@ describe("AnatomicalGate0FullArchView — Live UI 32-Tooth Mounting & Interactio
 	});
 
 	it("applies teal accent selection ring to selected teeth", () => {
-		const html = renderToString(React.createElement(AnatomicalGate0FullArchView, {
+		const html = renderToString(React.createElement(WheelerToothArch, {
 			selectedTeeth: [21, 36],
 		}));
 
@@ -60,7 +60,7 @@ describe("AnatomicalGate0FullArchView — Live UI 32-Tooth Mounting & Interactio
 			{ toothNumber: 26, state: "Missing" },
 		];
 
-		const html = renderToString(React.createElement(AnatomicalGate0FullArchView, {
+		const html = renderToString(React.createElement(WheelerToothArch, {
 			teethData,
 		}));
 
@@ -75,7 +75,7 @@ describe("AnatomicalGate0FullArchView — Live UI 32-Tooth Mounting & Interactio
 	});
 
 	it("hides wisdom teeth cleanly when showWisdomTeeth=false", () => {
-		const html = renderToString(React.createElement(AnatomicalGate0FullArchView, {
+		const html = renderToString(React.createElement(WheelerToothArch, {
 			showWisdomTeeth: false,
 		}));
 
@@ -97,7 +97,7 @@ describe("AnatomicalGate0FullArchView — Live UI 32-Tooth Mounting & Interactio
 		};
 
 		// Test element creation with active stamp
-		const elem = React.createElement(AnatomicalGate0FullArchView, {
+		const elem = React.createElement(WheelerToothArch, {
 			activeStamp: "Caries",
 			onQuickStateChange,
 		});

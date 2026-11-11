@@ -94,7 +94,7 @@ export function useOdontogramSync({
 	);
 
 	const { lastMessage } = useWebsocket(
-		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
+		import.meta.env?.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
 	);
 
 	useEffect(() => {

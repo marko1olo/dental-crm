@@ -26,7 +26,7 @@ export const PediatricModalHeader: React.FC<PediatricModalHeaderProps> = ({
 							id="pediatric-modal-title"
 							className="text-sm sm:text-lg lg:text-xl font-black tracking-tight text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 whitespace-normal break-words"
 						>
-							Детский и сменный прикус: Сроки смены &amp; Cariogram
+							Детский и сменный прикус: сроки смены и Cariogram
 						</h2>
 						<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 font-medium mt-0.5 whitespace-normal break-words">
 							Физиологическая резорбция корней (0–100%), эксфолиация и оценка кариесогенного риска по Douglas Bratthall (ВОЗ)

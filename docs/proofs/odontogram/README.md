@@ -1,33 +1,37 @@
 # Clinical Odontogram & Radial Menu SSOT — 4-State Visual Proofs
 
-## 📸 Red Team 4-State Inspection Gate
+## 📸 Red Team 4-State Inspection Gate (Domain 36: Wheeler 2.5D Odontogram & Pediatric Dentition)
 
 | State | Dimensions | Path | Size |
 |---|---|---|---|
-| ☀️ **PC Light** | 1440×900 | [`docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png`](./01_odontogram_pc_light_1440x900.png) | ~263 KB |
-| 🌙 **PC Dark** | 1440×900 | [`docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png`](./02_odontogram_pc_dark_1440x900.png) | ~262 KB |
-| 📱 **Mobile Light** | 390×844 | [`docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png`](./03_odontogram_mobile_light_390x844.png) | ~55 KB |
-| 📱 **Mobile Dark** | 390×844 | [`docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png`](./04_odontogram_mobile_dark_390x844.png) | ~57 KB |
+| ☀️ **PC Light** | 1440×900 | [`docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png`](./01_odontogram_pc_light_1440x900.png) | 165 KB |
+| 🌙 **PC Dark** | 1440×900 | [`docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png`](./02_odontogram_pc_dark_1440x900.png) | 174 KB |
+| ☀️ **Pediatric PC Light** | 1440×900 | [`docs/proofs/odontogram/03_odontogram_pediatric_pc_light_1440x900.png`](./03_odontogram_pediatric_pc_light_1440x900.png) | 132 KB |
+| 🌙 **Pediatric PC Dark** | 1440×900 | [`docs/proofs/odontogram/06_odontogram_pediatric_pc_dark_1440x900.png`](./06_odontogram_pediatric_pc_dark_1440x900.png) | 142 KB |
+| 📱 **Mobile Light** | 390×844 | [`docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png`](./03_odontogram_mobile_light_390x844.png) | 217 KB |
+| 📱 **Mobile Dark** | 390×844 | [`docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png`](./04_odontogram_mobile_dark_390x844.png) | 221 KB |
+| 📱 **Pediatric Mobile Light** | 390×844 | [`docs/proofs/odontogram/03_pediatric_mobile_light_390x844.png`](./03_pediatric_mobile_light_390x844.png) | 218 KB |
+| 📱 **Pediatric Mobile Dark** | 390×844 | [`docs/proofs/odontogram/04_pediatric_mobile_dark_390x844.png`](./04_pediatric_mobile_dark_390x844.png) | 227 KB |
 
 ---
 
 ## 🎯 Architectural Invariants & Autopsy Summary
 
-1. **Toolbar Consolidation (Mandate 8b / 8zi Sweet Spot: 232 lines):**
-   - Smashed 5 micro-components into `OdontogramQuickBar.tsx` ($\le 40$px height).
-   - Mode selectors (Анатомическая / ГОСТ / Детская) & Dentition selector (Взрослый / Детский / Сменный) integrated cleanly.
-   - QuickActions dropdown & MoreMenu dropdown integrated without prop-drilling hell.
+1. **Toolbar Consolidation & Anti-Desktop-Squeeze (Mandates 8b, 8al, 8aw):**
+   - Плавный перенос на 2 строки на мобильных устройствах (390px) без сжатия кнопок в частокол и без горизонтального скролла страницы.
+   - Переключатели режимов (Анатомия / 2D / Таблица) и прикуса (Взрослый / Детский / Сменный) в формате Apple Segmented Control.
 
-2. **Single Primary CTA Button Rule:**
-   - Strictly 1 Primary CTA button: `✓ Санирован` with `#0d9488` background, white shield icon, and 1-click physiological norm (Mandate 8e).
-   - All other toolbar buttons are neutral secondary buttons (`border: 1px solid var(--line)`, `background: transparent`).
+2. **Single Primary CTA Button Rule (Мандат 8am):**
+   - Строго 1 Primary CTA: `Физиологическая норма` (`#0d9488`, иконка щита, белый текст). Искоренен дев-сленг «1 клик» по Мандату 8zg.
+   - Все остальные кнопки — нейтральные Secondary с `var(--line)`.
 
-3. **End-to-End Live Cohesion (Fastify API -> PostgreSQL 18 -> SOAP Diary):**
-   - Implemented canonical mutation endpoint `POST /api/odontogram/status` with atomic transaction in `tooth_states`, audit history in `tooth_state_history`, and WebSocket broker broadcast.
-   - Dispatch of `dente-apply-soap-protocol` on tooth status mutation dynamically updates the visit diary and diagnosis package without page reload.
+3. **Wheeler 2.5D Anatomical Integrity & Pediatric Dentition (Мандат 8bj):**
+   - Честная анатомия Wheeler/Hess: дифференциальные ширины зубов (резцы 48px, клыки 54px, премоляры 60px, моляры 68px).
+   - Честные молочные моляры (54, 55, 64, 65 с 3 корнями сверху, 74, 75, 84, 85 с 2 корнями снизу).
+   - Временный прикус: 20 молочных зубов (51..85), сменный прикус: 20 молочных + 4 постоянных моляра (16, 26, 36, 46).
+   - Окклюзионная плоскость смыкания (`order-2`) соосно отцентрована между челюстями.
+   - Заголовки челюстей в чистом sentence case без капслока.
 
 4. **Apple HIG Touch Ergonomics (390×844):**
-   - Native Bottom Sheet Drawer (`ToothRadialMobileSheet.tsx` / `ToothActionMobileSheet.tsx`) with tactile drag handle (36×5px).
-   - Sticky action bar in the Natural Thumb Zone with 48px height touch target for `✓ Здоров / Интактный (Норма)`.
-   - All surface and action touch targets $\ge 44\times 44$px.
-   - 0px horizontal drift.
+   - Хитбоксы кнопок $\ge 44\times 44$px в сенсорных зонах.
+   - 0px горизонтального дрифта (`overflow-x: clip; max-width: 100vw;`).

@@ -13,7 +13,7 @@ import { describe, it } from "node:test";
 import React from "react";
 (globalThis as any).React = React;
 import { renderToString } from "react-dom/server";
-import { AnatomicalGate0FullArchView } from "../AnatomicalGate0FullArchView";
+import { WheelerToothArch } from "../WheelerToothArch";
 import { ToothStatusBadge } from "../gate0/ToothStatusBadge";
 import { OdontogramQuickTextInput } from "../OdontogramQuickTextInput";
 import { AnatomicalGate0Cell } from "../anatomicalDualArch/AnatomicalGate0Cell";
@@ -27,11 +27,11 @@ const PEDIATRIC_TEETH = [
 
 describe("Domain 1 Fixes — Odontogram, Wheeler 2.5D & Pediatric SSOT", () => {
 	it("renders all 20 primary deciduous teeth in pediatric mode without undefined components", () => {
-		const html = renderToString(React.createElement(AnatomicalGate0FullArchView, {
+		const html = renderToString(React.createElement(WheelerToothArch, {
 			dentitionMode: "pediatric",
 		}));
 
-		assert.ok(html.includes("data-testid=\"anatomical-gate0-full-arch-view\""));
+		assert.ok(html.includes("data-testid=\"wheeler-tooth-arch\""));
 		for (const num of PEDIATRIC_TEETH) {
 			assert.ok(html.includes(`data-testid="anatomical-tooth-cell-${num}"`), `Deciduous tooth ${num} missing`);
 			assert.ok(html.includes(`data-tooth-number="${num}"`), `Tooth number ${num} missing`);
@@ -42,7 +42,7 @@ describe("Domain 1 Fixes — Odontogram, Wheeler 2.5D & Pediatric SSOT", () => {
 	});
 
 	it("renders mixed dentition with both permanent first molars and deciduous teeth", () => {
-		const html = renderToString(React.createElement(AnatomicalGate0FullArchView, {
+		const html = renderToString(React.createElement(WheelerToothArch, {
 			dentitionMode: "mixed",
 		}));
 

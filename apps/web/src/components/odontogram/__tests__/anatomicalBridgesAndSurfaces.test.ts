@@ -2,19 +2,23 @@ import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
 	CANAL_OBTURATIONS,
-	detectBridgeSpans,
-	getBridgeSpanForTooth,
-	getPhysiologicalRootResorptionGeometry,
 	getSurfaceShading,
 	ICDAS_CLASSIFICATIONS,
-	type IcdasCode,
+	RESTORATIVE_MATERIALS,
+} from "../anatomicalMaterialsAndSurfaces";
+import {
+	detectBridgeSpans,
+	getBridgeSpanForTooth,
 	isToothAbutment,
 	isToothPontic,
 	isToothPonticInBridge,
-	RESTORATIVE_MATERIALS,
+} from "../anatomicalBridges";
+import { getPhysiologicalRootResorptionGeometry } from "../anatomicalPediatricGeometries";
+import {
+	type IcdasCode,
 	ROOT_RESORPTION_STAGES,
 	type RootResorptionStage,
-} from "../anatomicalToothGeometries";
+} from "../anatomicalGeometriesTypes";
 import type { ToothData } from "../ToothChart";
 
 describe("Anatomical Shading, Materials, Resorption & ICDAS Suite", () => {

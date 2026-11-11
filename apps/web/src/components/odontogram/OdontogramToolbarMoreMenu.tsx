@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Odontogram Toolbar "More..." (Ещё) Dropdown Menu
- * Clinical modules triggers (Perio, Ceph TRG, Diagnocat, A4 Print) and display preferences.
+ * Clinical modules triggers (Perio, Ceph TRG, ИИ-ассистент снимков, A4 Print) and display preferences.
  */
 
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
@@ -63,7 +63,7 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 						className={`shrink-0 transition-transform duration-200 ${props.isMoreMenuOpen ? "rotate-180 text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`}
 					/>
 					{isActiveIndicator && (
-						<span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0 ml-0.5" />
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)] animate-pulse shrink-0 ml-0.5" />
 					)}
 				</button>
 

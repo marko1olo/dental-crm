@@ -14,8 +14,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
-import { OdontogramStudioModal } from "../OdontogramStudioModal";
-import { DirectOdontogramLauncher } from "../DirectOdontogramLauncher";
+import { DirectOdontogramModuleLauncher } from "../DirectOdontogramModuleLauncher";
 import { QuickActionsBatchOps } from "../QuickActionsBatchOps";
 import {
 	markIntactDentitionAction,
@@ -41,79 +40,45 @@ import {
 } from "../chart/toothChartTypes";
 import type { ToothData } from "../ToothChart";
 
-describe("OdontogramStudioModal Real Component Rendering (React 19)", () => {
-	it("1. returns null when isOpen is false", () => {
-		const html = renderToString(
-			<OdontogramStudioModal isOpen={false} onClose={() => {}} />,
-		);
-		assert.equal(html, "");
+describe("DirectOdontogramModuleLauncher & QuickActionsBatchOps (React 19)", () => {
+	it("1. mounts DirectOdontogramModuleLauncher without DOM exceptions (Mandate 8aq)", () => {
+		const html = renderToString(<DirectOdontogramModuleLauncher />);
+		assert.equal(typeof html, "string");
 	});
 
-	it("2. renders full Odontogram Studio with exactly ONE Primary CTA button (Mandate 8am)", () => {
+	it("2. renders QuickActionsBatchOps with 0 disabled buttons (Mandate 8e)", () => {
 		const html = renderToString(
-			<OdontogramStudioModal
-				isOpen={true}
-				onClose={() => {}}
-				patientName="Иванов Иван Иванович"
+			<QuickActionsBatchOps
+				onSanitizeAll={() => {}}
+				onWisdomMissing={() => {}}
+				onInvert={() => {}}
+				onClear={() => {}}
+				onFrontalHygiene={() => {}}
 			/>,
 		);
-
-		// Header checks
-		assert.ok(html.includes("Зубная формула"), "Must contain dental formula header");
-		assert.ok(html.includes("Иванов Иван Иванович"), "Must display patient name");
-
-		// Primary CTA button
-		assert.ok(
-			html.includes("btn-save-odontogram-studio"),
-			"Must contain btn-save-odontogram-studio Primary CTA",
-		);
-		assert.ok(
-			html.includes("Сохранить зубную формулу"),
-			"Primary CTA button must have text 'Сохранить зубную формулу'",
-		);
-
-		// Verify count of primary CTA in modal footer
-		const primaryCtaMatches = html.match(/btn-save-odontogram-studio/g);
-		assert.equal(primaryCtaMatches?.length, 1, "Must contain strictly ONE Primary CTA button");
-	});
-
-	it("3. verifies Mandate 8e: 0 disabled buttons in OdontogramStudioModal (Doctor Autonomy)", () => {
-		const html = renderToString(
-			<OdontogramStudioModal isOpen={true} onClose={() => {}} />,
-		);
-
-		// Assert no button with disabled attribute exists
 		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
 		assert.equal(
 			disabledButtons,
 			null,
-			`OdontogramStudioModal must have 0 disabled buttons, found: ${disabledButtons?.length}`,
+			`QuickActionsBatchOps must have 0 disabled buttons, found: ${disabledButtons?.length}`,
 		);
 	});
 
-	it("4. renders 1-click intact teeth button & chairside pathology stamps", () => {
+	it("3. renders 1-click intact teeth button & chairside operations", () => {
 		const html = renderToString(
-			<OdontogramStudioModal isOpen={true} onClose={() => {}} />,
+			<QuickActionsBatchOps
+				onSanitizeAll={() => {}}
+				onWisdomMissing={() => {}}
+				onInvert={() => {}}
+				onClear={() => {}}
+				onFrontalHygiene={() => {}}
+			/>,
 		);
 
-		// 1-click intact teeth
-		assert.ok(html.includes("btn-reset-intact"), "Must contain 1-click intact teeth button");
-		assert.ok(html.includes("Все зубы здоровы (Норма)"), "Must show 'Все зубы здоровы (Норма)' text");
-
-		// Fast stamp bar
-		assert.ok(html.includes("stamp-btn-Healthy"), "Must have Healthy stamp");
-		assert.ok(html.includes("stamp-btn-Caries"), "Must have Caries stamp");
-		assert.ok(html.includes("stamp-btn-Pulpitis"), "Must have Pulpitis stamp");
-		assert.ok(html.includes("stamp-btn-Periodontitis"), "Must have Periodontitis stamp");
-		assert.ok(html.includes("stamp-btn-Filled"), "Must have Filled stamp");
-		assert.ok(html.includes("stamp-btn-Crown"), "Must have Crown stamp");
-		assert.ok(html.includes("stamp-btn-Implant"), "Must have Implant stamp");
-		assert.ok(html.includes("stamp-btn-Missing"), "Must have Missing stamp");
-	});
-
-	it("5. mounts DirectOdontogramLauncher without DOM exceptions (Mandate 8aq)", () => {
-		const html = renderToString(<DirectOdontogramLauncher />);
-		assert.equal(typeof html, "string");
+		assert.ok(html.includes("mark-intact-dentition-dropdown-btn"), "Must contain 1-click intact teeth button");
+		assert.ok(html.includes("Санирован"), "Must show 'Санирован' text");
+		assert.ok(html.includes("mark-frontal-hygiene-btn"), "Must have frontal hygiene button");
+		assert.ok(html.includes("mark-wisdom-missing-btn"), "Must have wisdom missing button");
 	});
 });
 

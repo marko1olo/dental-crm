@@ -9,7 +9,7 @@ import {
 	LOWER_INCISOR_GEOMETRY,
 	UPPER_CANINE_GEOMETRY,
 	UPPER_INCISOR_GEOMETRY,
-} from "../anatomicalAdultGeometries";
+} from "./resorptionFallbackGeometries";
 import {
 	PEDIATRIC_LOWER_MOLAR_GEOMETRY,
 	PEDIATRIC_UPPER_MOLAR_GEOMETRY,

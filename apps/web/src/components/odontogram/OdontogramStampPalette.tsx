@@ -331,7 +331,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								<span
 									className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/10 dark:ring-white/20 ${opt.colorDotClass}`}
 								/>
-								<span className="text-[10px] font-mono font-bold opacity-60 shrink-0">
+								<span className="text-[10px] font-mono font-bold opacity-60 shrink-0 hidden md:inline">
 									{opt.abbr}
 								</span>
 								<span className="whitespace-nowrap font-bold">
@@ -339,15 +339,13 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 									<span className="md:hidden">{opt.shortLabel}</span>
 								</span>
 								{isActive && (
-									<Check size={13} className="stroke-[3] shrink-0 ml-0.5 text-teal-700 dark:text-teal-300" />
+									<Check size={13} className="stroke-[3] shrink-0 ml-0.5 text-white" />
 								)}
 							</button>
 						);
 					})}
 				</div>
 			</div>
-
-			<div className="hidden sm:block h-5 w-px bg-[var(--line-strong,#cbd5e1)] dark:bg-white/15 mx-0.5 shrink-0" aria-hidden="true" />
 
 			{/* Right section: Active Stamp Indicator & Inspection Mode Reset */}
 			<div className="flex items-center gap-2 shrink-0">

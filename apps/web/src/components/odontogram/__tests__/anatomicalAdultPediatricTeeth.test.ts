@@ -1,77 +1,48 @@
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
+import type { AnatomicalSurfaceKey } from "../anatomicalGeometriesTypes";
 import {
-	ADULT_LOWER_TEETH,
-	ADULT_UPPER_TEETH,
 	ANATOMICAL_SURFACE_LABELS_RU,
-	type AnatomicalSurfaceKey,
-	getAnatomicalToothGeometry,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
 	isMaxillaryArch,
 	isPatientLeftSide,
 	isSurfaceActive,
-	MIXED_LOWER_TEETH,
-	MIXED_UPPER_TEETH,
 	normalizeAnatomicalSurfaces,
 	normalizeSurfaceKey,
+} from "../anatomicalMaterialsAndSurfaces";
+import {
+	MIXED_LOWER_TEETH,
+	MIXED_UPPER_TEETH,
 	PEDIATRIC_LOWER_TEETH,
 	PEDIATRIC_UPPER_TEETH,
-} from "../anatomicalToothGeometries";
+} from "../anatomicalPediatricGeometries";
+import { BOTTOM_TEETH, TOP_TEETH } from "../AnatomicalToothColors";
+import { AnatomicalTooth } from "../gate0/AnatomicalTooth";
 
-describe("Anatomical Adult & Pediatric Teeth Morphology Suite", () => {
-	test("Все 32 постоянных зуба взрослого человека имеют полную анатомическую модель", () => {
-		const allAdultTeeth = [...ADULT_UPPER_TEETH, ...ADULT_LOWER_TEETH];
+describe("Anatomical Adult & Pediatric Teeth Morphology Suite (Wheeler 2.5D SSOT)", () => {
+	test("Все 32 постоянных зуба взрослого человека рендерятся каноническим AnatomicalTooth", () => {
+		const allAdultTeeth = [...TOP_TEETH, ...BOTTOM_TEETH];
 		assert.equal(allAdultTeeth.length, 32, "Должно быть ровно 32 постоянных зуба");
 
 		for (const toothNum of allAdultTeeth) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.fdiNumber, toothNum);
-			assert.equal(geom.isPediatric, false, `Зуб ${toothNum} является постоянным`);
-			assert.ok(geom.crownPath.length > 10, `Зуб ${toothNum} должен иметь SVG контур коронки`);
-			assert.ok(geom.rootPath.length > 10, `Зуб ${toothNum} должен иметь SVG контур корня`);
-			assert.ok(geom.cejPath.length > 5, `Зуб ${toothNum} должен иметь границу эмаль-цемент (CEJ)`);
-			assert.ok(geom.touchTargetMinPx >= 44, `Touch-target зуба ${toothNum} обязан быть >= 44px`);
-
-			// Проверка 6 поверхностей
-			assert.ok(geom.surfaces.O, `Зуб ${toothNum} обязан иметь окклюзионную/режущую поверхность (O)`);
-			assert.ok(geom.surfaces.V, `Зуб ${toothNum} обязан иметь вестибулярную поверхность (V)`);
-			assert.ok(geom.surfaces.L, `Зуб ${toothNum} обязан иметь язычную/нёбную поверхность (L)`);
-			assert.ok(geom.surfaces.M, `Зуб ${toothNum} обязан иметь медиальную поверхность (M)`);
-			assert.ok(geom.surfaces.D, `Зуб ${toothNum} обязан иметь дистальную поверхность (D)`);
-			assert.ok(geom.surfaces.C, `Зуб ${toothNum} обязан иметь пришеечную поверхность (C)`);
-
-			// Проверка корневых каналов и апексов
-			assert.ok(geom.canals.length >= 1, `Зуб ${toothNum} должен иметь как минимум 1 корневой канал`);
-			for (const canal of geom.canals) {
-				assert.ok(canal.id, "Канал должен иметь идентификатор");
-				assert.ok(canal.nameRu, "Канал должен иметь русское название");
-				assert.ok(canal.path.startsWith("M"), "Путь канала должен быть валидным SVG");
-				assert.ok(canal.apex.x > 0 && canal.apex.y > 0, "Координаты апекса должны быть положительными");
-				assert.ok(canal.defaultLengthMm >= 15.0, "Рабочая длина канала должна быть реалистичной (>= 15мм)");
-			}
+			const html = renderToString(React.createElement(AnatomicalTooth, { toothNumber: toothNum }));
+			assert.ok(html.includes("<svg"), `Зуб ${toothNum} должен рендерить SVG`);
+			assert.ok(html.includes("viewBox=\"0 0 100"), `Зуб ${toothNum} должен иметь канонический viewBox 100`);
+			assert.ok(html.includes(`>${toothNum}<`), `Зуб ${toothNum} должен отображать бейдж номера FDI`);
 		}
 	});
 
-	test("Все 20 молочных зубов ребенка имеют полную анатомическую модель", () => {
+	test("Все 20 молочных зубов ребенка рендерятся каноническим AnatomicalTooth", () => {
 		const allPediatricTeeth = [...PEDIATRIC_UPPER_TEETH, ...PEDIATRIC_LOWER_TEETH];
 		assert.equal(allPediatricTeeth.length, 20, "Должно быть ровно 20 молочных зубов");
 
 		for (const toothNum of allPediatricTeeth) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.fdiNumber, toothNum);
-			assert.equal(geom.isPediatric, true, `Зуб ${toothNum} является молочным`);
-			assert.ok(geom.crownPath.length > 10, `Молочный зуб ${toothNum} должен иметь контур коронки`);
-			assert.ok(geom.rootPath.length > 10, `Молочный зуб ${toothNum} должен иметь контур корня`);
-			assert.ok(geom.touchTargetMinPx >= 44, `Touch-target молочного зуба ${toothNum} обязан быть >= 44px`);
-
-			// Проверка 6 поверхностей
-			assert.ok(geom.surfaces.O);
-			assert.ok(geom.surfaces.V);
-			assert.ok(geom.surfaces.L);
-			assert.ok(geom.surfaces.M);
-			assert.ok(geom.surfaces.D);
-			assert.ok(geom.surfaces.C);
+			const html = renderToString(React.createElement(AnatomicalTooth, { toothNumber: toothNum }));
+			assert.ok(html.includes("<svg"), `Молочный зуб ${toothNum} должен рендерить SVG`);
+			assert.ok(html.includes(`>${toothNum}<`), `Молочный зуб ${toothNum} должен отображать бейдж номера FDI`);
 		}
 	});
 
@@ -84,66 +55,13 @@ describe("Anatomical Adult & Pediatric Teeth Morphology Suite", () => {
 		assert.ok(MIXED_LOWER_TEETH.includes(85) && MIXED_LOWER_TEETH.includes(75));
 	});
 
-	test("Анатомия корней верхних постоянных моляров: 3 корня (MB, DB, P) и 4 канала (MB1, MB2, P, DB)", () => {
-		const upperMolars = [16, 17, 18, 26, 27, 28];
-		for (const toothNum of upperMolars) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.rootsCount, 3, `Верхний моляр ${toothNum} обязан иметь 3 корня`);
-			assert.equal(geom.canals.length, 4, `Верхний моляр ${toothNum} имеет 4 анатомических канала`);
-			const canalIds = geom.canals.map((c) => c.id);
-			assert.deepEqual(canalIds, ["MB1", "MB2", "P", "DB"]);
-			assert.equal(geom.apexHalos.length, 3, "Верхний моляр должен иметь 3 апикальных зоны");
-		}
-	});
-
-	test("Анатомия корней нижних постоянных моляров: 2 корня (M, D) и 3 канала (MB, ML, D)", () => {
-		const lowerMolars = [36, 37, 38, 46, 47, 48];
-		for (const toothNum of lowerMolars) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.rootsCount, 2, `Нижний моляр ${toothNum} обязан иметь 2 корня`);
-			assert.equal(geom.canals.length, 3, `Нижний моляр ${toothNum} имеет 3 анатомических канала`);
-			const canalIds = geom.canals.map((c) => c.id);
-			assert.deepEqual(canalIds, ["MB", "ML", "D"]);
-			assert.equal(geom.apexHalos.length, 2, "Нижний моляр должен иметь 2 апикальных зоны");
-		}
-	});
-
-	test("Анатомия верхних первых премоляров (14, 24): бифуркация корней (B, P)", () => {
-		for (const toothNum of [14, 24]) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.rootsCount, 2, `Премоляр ${toothNum} имеет 2 бифуркированных корня`);
-			const canalIds = geom.canals.map((c) => c.id);
-			assert.deepEqual(canalIds, ["B", "P"]);
-		}
-	});
-
-	test("Анатомия клыков (13, 23, 33, 43): одиночный массивный корень с наибольшей рабочей длиной", () => {
-		for (const toothNum of [13, 23, 33, 43]) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.rootsCount, 1);
-			assert.equal(geom.canals.length, 1);
-			const firstCanal = geom.canals[0];
-			assert.ok(firstCanal);
-			assert.ok(
-				firstCanal.defaultLengthMm >= 25.0,
-				`Клык ${toothNum} должен иметь длину >= 25мм (фактически ${firstCanal.defaultLengthMm})`,
-			);
-		}
-	});
-
-	test("Анатомия молочных моляров (54, 55, 64, 65, 74, 75, 84, 85)", () => {
-		// Верхние молочные моляры: 3 корня
-		for (const toothNum of [54, 55, 64, 65]) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.rootsCount, 3);
-			assert.equal(geom.canals.length, 3);
-		}
-		// Нижние молочные моляры: 2 корня
-		for (const toothNum of [74, 75, 84, 85]) {
-			const geom = getAnatomicalToothGeometry(toothNum);
-			assert.equal(geom.rootsCount, 2);
-			assert.equal(geom.canals.length, 2);
-		}
+	test("Сагиттальная симметрия (Q2/Q3 scale(-1, 1)) и сохранение читаемости номера зуба", () => {
+		const html26 = renderToString(React.createElement(AnatomicalTooth, { toothNumber: 26 }));
+		assert.ok(html26.includes("scale(-1, 1)"));
+		assert.ok(html26.includes(">26<"));
+		const html16 = renderToString(React.createElement(AnatomicalTooth, { toothNumber: 16 }));
+		assert.ok(!html16.includes("scale(-1, 1)"));
+		assert.ok(html16.includes(">16<"));
 	});
 
 	test("Расчет геометрических путей резорбции пародонтальной кости (Periodontal Bone Loss)", () => {

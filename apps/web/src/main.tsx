@@ -83,6 +83,11 @@ const PatientPresentationStandaloneView = React.lazy(() =>
 		default: m.PatientPresentationStandaloneView,
 	})),
 );
+const OdontogramStudioStandaloneView = React.lazy(() =>
+	import("./components/odontogram/DirectOdontogramModuleLauncher").then((m) => ({
+		default: m.DirectOdontogramModuleLauncher,
+	})),
+);
 const EndodonticStudioStandaloneView = React.lazy(() =>
 	import("./components/endo/DirectEndodonticsLauncher").then((m) => ({
 		default: m.DirectEndodonticsLauncher,
@@ -595,6 +600,43 @@ if (publicPortalRoute) {
 					}
 				>
 					<QuickBookingStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=odontogram") ||
+		window.location.search.includes("stand=module") ||
+		window.location.search.includes("stand=arch32") ||
+		window.location.search.includes("odontogram-module=1") ||
+		window.location.search.includes("odontogram=1") ||
+		window.location.hash === "#odontogram" ||
+		window.location.hash === "#odontogram-module" ||
+		window.location.hash.startsWith("#odontogram?") ||
+		window.location.hash.startsWith("#odontogram/"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка одонтограммы...
+						</div>
+					}
+				>
+					<OdontogramStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

@@ -30,10 +30,6 @@ import {
 	type AnatomicalToothProps,
 } from "../gate0/AnatomicalTooth";
 import {
-	areAnatomicalToothSvgPropsEqual,
-	type AnatomicalToothSVGProps,
-} from "../AnatomicalToothSVG";
-import {
 	isLowSpecFilterDisabled,
 	TOP_TEETH,
 	BOTTOM_TEETH,
@@ -104,50 +100,47 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 		expect(isEqual).toBe(false);
 	});
 
-	it("areAnatomicalToothSvgPropsEqual preserves memoization when unmutated tooth received stable callbacks", () => {
+	it("areAnatomicalToothPropsEqual preserves memoization with deep layer comparison", () => {
 		const onClickDummy = () => {};
-		const onQuickStateChangeDummy = () => {};
 
-		const prevSvgProps: AnatomicalToothSVGProps = {
-			number: 15,
-			state: "Healthy",
-			scale: 1,
+		const prevProps: AnatomicalToothProps = {
+			toothNumber: 46,
+			isDark: false,
+			zoom: 1,
 			onClick: onClickDummy,
-			onQuickStateChange: onQuickStateChangeDummy,
-			surfaces: [],
-			bopSites: [],
-			suppurationSites: [],
-			pocketDepth: 2,
-			mobility: 0,
-			furcation: 0,
+			layers: {
+				crown: true,
+				roots: true,
+				canals: true,
+				pulp: true,
+				caries: false,
+			} as any,
 		};
 
-		const nextSvgProps: AnatomicalToothSVGProps = {
-			number: 15,
-			state: "Healthy",
-			scale: 1,
+		const nextProps: AnatomicalToothProps = {
+			toothNumber: 46,
+			isDark: false,
+			zoom: 1,
 			onClick: onClickDummy,
-			onQuickStateChange: onQuickStateChangeDummy,
-			surfaces: [],
-			bopSites: [],
-			suppurationSites: [],
-			pocketDepth: 2,
-			mobility: 0,
-			furcation: 0,
+			layers: {
+				crown: true,
+				roots: true,
+				canals: true,
+				pulp: true,
+				caries: false,
+			} as any,
 		};
 
-		expect(areAnatomicalToothSvgPropsEqual(prevSvgProps, nextSvgProps)).toBe(true);
+		expect(areAnatomicalToothPropsEqual(prevProps, nextProps)).toBe(true);
 
-		// Now change pathology on tooth 15: must return false (re-render triggered)
-		const changedSvgProps: AnatomicalToothSVGProps = {
-			...nextSvgProps,
-			state: "Periodontitis",
-			pocketDepth: 6,
-			mobility: 2,
-			furcation: 1,
-			bopSites: ["M", "D"],
+		const changedProps: AnatomicalToothProps = {
+			...nextProps,
+			layers: {
+				...nextProps.layers!,
+				caries: true,
+			},
 		};
-		expect(areAnatomicalToothSvgPropsEqual(prevSvgProps, changedSvgProps)).toBe(false);
+		expect(areAnatomicalToothPropsEqual(prevProps, changedProps)).toBe(false);
 	});
 
 	it("simulates a 32-tooth arch state mutation and proves strictly 1 tooth re-renders", () => {

@@ -11,11 +11,13 @@ import {
 	type PostCoreType,
 	type RestorativeMaterialKey,
 	type RootResorptionStage,
+	ROOT_RESORPTION_STAGES,
+} from "../../anatomicalGeometriesTypes";
+import {
 	getFurcationMarkerSvg,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
-	ROOT_RESORPTION_STAGES,
-} from "../../anatomicalToothGeometries";
+} from "../../anatomicalMaterialsAndSurfaces";
 import type { OdontogramQuadrantId } from "./toothQuadrantTypes";
 
 export * from "./toothQuadrantTypes";

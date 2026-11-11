@@ -1,4 +1,4 @@
-import type { RestorativeMaterialKey } from "../anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "../anatomicalGeometriesTypes";
 import type { ToothState } from "./toothChartTypes";
 import { getFilledToothColors, getCrownToothColors } from "./colors/toothMaterialColors";
 import { getPathologyToothColors } from "./colors/toothPathologyColors";

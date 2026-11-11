@@ -116,7 +116,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] sm:min-h-[32px] px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer select-none active:scale-95"
+						className="dente-btn dente-btn-primary min-h-[44px] sm:min-h-[36px] px-8 py-2 text-sm font-bold shadow-md shadow-[var(--teal,#0d9488)]/20 transition-all cursor-pointer select-none active:scale-95"
 					>
 						Готово
 					</button>

@@ -54,7 +54,7 @@
 	z-index: 30 !important;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1023px) and (min-width: 768px) {
 	.odontogram-toolbar:not(:has([aria-expanded="true"])):not(:has(details[open])) {
 		overflow-x: auto !important;
 		overflow-y: hidden !important;
@@ -62,6 +62,18 @@
 		-webkit-overflow-scrolling: touch !important;
 		touch-action: pan-x !important;
 		overscroll-behavior-x: contain !important;
+	}
+}
+
+@media (max-width: 767px) {
+	.odontogram-toolbar {
+		flex-wrap: wrap !important;
+		height: auto !important;
+		max-height: none !important;
+		min-height: 36px !important;
+		overflow-x: visible !important;
+		padding: 4px 6px !important;
+		gap: 6px !important;
 	}
 }
 

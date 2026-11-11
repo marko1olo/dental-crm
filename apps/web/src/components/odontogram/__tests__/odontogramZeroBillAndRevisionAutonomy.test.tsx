@@ -66,8 +66,9 @@ describe("CLIN-01: Exact Kopeck Money & Zero Bill Floor Elimination (Mandate 8b)
 		);
 
 		assert.ok(
+			content.includes("amountKopecks={Math.round(liveGrossTotalRub * 100)}") ||
 			content.includes("totalBillKop={Math.round(liveGrossTotalRub * 100)}"),
-			"OdontogramModule.tsx must pass exact kopecks: Math.round(liveGrossTotalRub * 100)",
+			"OdontogramModule / OdontogramModalsLayer must pass exact kopecks: Math.round(liveGrossTotalRub * 100)",
 		);
 	});
 });

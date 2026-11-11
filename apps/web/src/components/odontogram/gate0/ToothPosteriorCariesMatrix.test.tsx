@@ -4,7 +4,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { Tooth44Container } from "./teeth/tooth44";
 import { Tooth45Container } from "./teeth/tooth45";
-import { Tooth46Container } from "./Tooth46Container";
+import { Tooth46Container } from "./teeth/tooth46";
 import { Tooth47Container } from "./teeth/tooth47";
 import { Tooth48Container } from "./teeth/tooth48";
 import type { CariesDepth, CariesType } from "./tooth46PresetTypes";

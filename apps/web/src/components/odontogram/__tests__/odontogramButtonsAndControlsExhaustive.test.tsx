@@ -32,7 +32,6 @@ function getMoreMenuAllSources(): string {
 		"ClinicalPlanningButtons.tsx",
 		"ClinicalExamButtons.tsx",
 		"AiAnalysisImagingButtons.tsx",
-		"AiAnalysisPediatricDiagnocatButtons.tsx",
 		"AiAnalysisMenuButtons.tsx",
 		"DisplayModesToggles.tsx",
 		"DisplayModesSelection.tsx",

@@ -29,19 +29,19 @@ export const PediatricResorptionActions: React.FC<PediatricResorptionActionsProp
 					<button
 						type="button"
 						onClick={onApplyNorm}
-						className="min-h-[48px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white text-xs sm:text-sm font-black shadow-md shadow-teal-600/20 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 select-none"
+						className="dente-btn dente-btn-secondary min-h-[48px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 select-none shadow-2xs"
 					>
-						<Sparkles className="w-4 h-4 shrink-0" />
+						<Sparkles className="w-4 h-4 shrink-0 text-[var(--teal,#0d9488)]" />
 						<span>Физиологическая резорбция в норме ({currentAge.toFixed(1)} лет)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onApplyAllZero}
-						className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 select-none"
+						className="dente-btn dente-btn-secondary min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 select-none shadow-2xs"
 						title="Установить 0% для всех 20 зубов (интактные корни)"
 					>
-						<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 						<span>Все 0% (Интактные)</span>
 					</button>
 				</div>

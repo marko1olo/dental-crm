@@ -25,7 +25,7 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 	return (
 		<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-4">
 			<div className="flex items-center justify-between">
-				<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
+				<h4 className="text-xs sm:text-sm font-black tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
 					Ожидаемая зубная формула в {selectedAge.toFixed(1)} лет
 				</h4>
 			</div>
@@ -111,9 +111,9 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 								...timelineAnalysis.expectedLowerArchTeeth,
 							])
 						}
-						className="w-full min-h-[48px] flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white text-sm sm:text-base font-bold shadow-lg shadow-teal-600/20 transition-all cursor-pointer active:scale-[0.98]"
+						className="dente-btn dente-btn-secondary w-full min-h-[48px] flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl text-sm sm:text-base font-bold transition-all cursor-pointer active:scale-[0.98] shadow-2xs"
 					>
-						<Sparkles className="w-5 h-5 shrink-0" />
+						<Sparkles className="w-5 h-5 shrink-0 text-[var(--teal,#0d9488)]" />
 						<span>Применить возрастную формулу ({selectedAge.toFixed(1)} лет) к одонтограмме</span>
 					</button>
 				</div>

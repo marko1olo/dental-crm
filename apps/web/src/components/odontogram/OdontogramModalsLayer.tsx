@@ -43,9 +43,9 @@ const VoiceDictationOverlay = React.lazy(() =>
 		default: m.VoiceDictationOverlay,
 	})),
 );
-const FastCheckoutModal = React.lazy(() =>
-	import("../finance/FastCheckoutModal").then((m) => ({
-		default: m.FastCheckoutModal,
+const CashRegisterStudioModal = React.lazy(() =>
+	import("../cashbox/CashRegisterStudioModal").then((m) => ({
+		default: m.CashRegisterStudioModal,
 	})),
 );
 
@@ -405,17 +405,21 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 				</React.Suspense>
 			)}
 
-			{/* 1-Click Fast Checkout Modal for In-Chair Cockpit */}
+			{/* 1-Click Cash Register Studio for In-Chair Cockpit */}
 			{isFastCheckoutOpen && (
 				<React.Suspense fallback={null}>
-					<FastCheckoutModal
+					<CashRegisterStudioModal
 						isOpen={isFastCheckoutOpen}
 						onClose={() => setIsFastCheckoutOpen(false)}
-						totalBillKop={Math.round(liveGrossTotalRub * 100)}
-						initialPaymentMethod={fastCheckoutMethod}
-						patientName={activePatient?.fullName || "Пациент"}
-						patientPhone={activePatient?.phone || "+7 (999) 000-00-00"}
-						orderId={`CHK-${patientId.slice(0, 8)}`}
+						mode="checkout"
+						initialTab="checkout"
+						totalDueRub={liveGrossTotalRub}
+						amountRub={liveGrossTotalRub}
+						amountKopecks={Math.round(liveGrossTotalRub * 100)}
+						defaultMethod={fastCheckoutMethod as any}
+						patientId={patientId}
+						patientName={activePatient?.fullName || undefined}
+						patientPhone={activePatient?.phone || undefined}
 						onPaymentComplete={() => {
 							showToast(
 								`Чек на сумму ${liveGrossTotalRub.toLocaleString("ru-RU")} ₽ успешно пробит`,

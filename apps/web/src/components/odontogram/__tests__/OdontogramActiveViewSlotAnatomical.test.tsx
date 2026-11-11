@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — OdontogramActiveViewSlot Anatomical Mode Test
- * Verifies live mounting of AnatomicalGate0FullArchView for activeMode="anatomical_svg".
+ * Verifies live mounting of WheelerToothArch for activeMode="anatomical_svg".
  * Mandate 8b <= 120 lines.
  */
 
@@ -18,7 +18,7 @@ const sampleTeeth: ToothData[] = [
 ];
 
 describe("OdontogramActiveViewSlot — Anatomical Mode Integration", () => {
-	it("mounts AnatomicalGate0FullArchView when activeMode === 'anatomical_svg'", () => {
+	it("mounts WheelerToothArch when activeMode === 'anatomical_svg'", () => {
 		const html = renderToString(React.createElement(OdontogramActiveViewSlot, {
 			activeMode: "anatomical_svg",
 			sharedViewProps: { teethData: sampleTeeth },
@@ -32,7 +32,7 @@ describe("OdontogramActiveViewSlot — Anatomical Mode Integration", () => {
 			teethData: sampleTeeth,
 		}));
 
-		assert.ok(html.includes("data-testid=\"anatomical-gate0-full-arch-view\""));
+		assert.ok(html.includes("data-testid=\"wheeler-tooth-arch\""));
 		assert.ok(html.includes("data-testid=\"anatomical-tooth-cell-46\""));
 		assert.ok(html.includes("data-testid=\"anatomical-arch-upper\""));
 		assert.ok(html.includes("data-testid=\"anatomical-arch-lower\""));
@@ -52,7 +52,6 @@ describe("OdontogramActiveViewSlot — Anatomical Mode Integration", () => {
 			teethData: sampleTeeth,
 		}));
 
-		assert.ok(!html.includes("data-testid=\"anatomical-gate0-full-arch-view\""));
 		assert.ok(html.includes("tooth-chart-container") || html.includes("tooth-chart"));
 	});
 
@@ -71,7 +70,7 @@ describe("OdontogramActiveViewSlot — Anatomical Mode Integration", () => {
 			teethData: sampleTeeth,
 		}));
 
-		assert.ok(html.includes("data-testid=\"anatomical-gate0-full-arch-view\""));
+		assert.ok(html.includes("data-testid=\"wheeler-tooth-arch\""));
 		assert.ok(html.includes("stamp-palette") || html.includes("Кариес") || html.includes("Пломба"));
 	});
 });

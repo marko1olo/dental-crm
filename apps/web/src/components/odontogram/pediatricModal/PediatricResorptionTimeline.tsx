@@ -38,7 +38,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 			<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-4">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 					<div>
-						<span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">
+						<span className="text-xs sm:text-sm font-bold tracking-wider text-[var(--teal,#0d9488)]">
 							Калькулятор смены зубов
 						</span>
 						<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100">
@@ -88,7 +88,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 												{preset.ageRangeRu}
 											</span>
 										</div>
-										<p className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 line-clamp-2 font-medium">
+										<p className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 font-medium">
 											{preset.descriptionRu}
 										</p>
 									</div>
@@ -118,11 +118,11 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 														3000,
 													);
 												}}
-												className="min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-xs select-none touch-manipulation"
+												className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[32px] px-3.5 py-2 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-2xs select-none touch-manipulation"
 												title={`Применить формулу «${preset.labelRu}»`}
 												data-testid={`pediatric-timeline-apply-${preset.id}`}
 											>
-												<Sparkles className="w-4 h-4 shrink-0" />
+												<Sparkles className="w-4 h-4 shrink-0 text-[var(--teal,#0d9488)]" />
 												<span>Применить</span>
 											</button>
 										)}
@@ -173,8 +173,8 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 			{/* Clinical Alerts / Space Maintenance Cards */}
 			{timelineAnalysis.clinicalAlerts.length > 0 && (
 				<div className="space-y-3">
-					<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-						Клинические рекомендации &amp; Профилактика
+					<h4 className="text-xs sm:text-sm font-black tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+						Клинические рекомендации и профилактика
 					</h4>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 						{timelineAnalysis.clinicalAlerts.map((alert, idx) => (
@@ -199,7 +199,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 
 			{/* Detailed Tooth Exchange Matrix */}
 			<div className="space-y-3">
-				<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+				<h4 className="text-xs sm:text-sm font-black tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
 					Матрица смены зубов ({timelineAnalysis.toothStatuses.length} пар)
 				</h4>
 				<div className="overflow-x-auto rounded-2xl border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))]">

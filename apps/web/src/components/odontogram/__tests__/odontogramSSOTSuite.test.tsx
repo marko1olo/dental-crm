@@ -13,8 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { OdontogramStudioModal } from "../OdontogramStudioModal";
-import { DirectOdontogramLauncher } from "../DirectOdontogramLauncher";
+import { DirectOdontogramModuleLauncher } from "../DirectOdontogramModuleLauncher";
 
 import {
 	ADULT_TEETH_SSOT,
@@ -167,53 +166,45 @@ describe("Odontogram & Dental Formula SSOT Invariants (FDI 11-48 & 51-85)", () =
 });
 
 describe("Odontogram Studio & Launchers Architecture Inquisition", () => {
-	it("8. Verifies OdontogramStudioModal.tsx lines Sweet Spot (350-480 lines)", () => {
-		const modalPath = path.join(odontogramDir, "OdontogramStudioModal.tsx");
-		assert.ok(fs.existsSync(modalPath), "OdontogramStudioModal.tsx must exist");
+	it("8. Verifies DirectOdontogramModuleLauncher.tsx lines Sweet Spot (<= 150 lines)", () => {
+		const launcherPath = path.join(odontogramDir, "DirectOdontogramModuleLauncher.tsx");
+		assert.ok(fs.existsSync(launcherPath), "DirectOdontogramModuleLauncher.tsx must exist");
 
-		const lines = fs.readFileSync(modalPath, "utf8").split("\n").length;
+		const lines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
 		assert.ok(
-			lines >= 350 && lines <= 480,
-			`OdontogramStudioModal.tsx must be in Sweet Spot 350-480 lines, was ${lines}`,
+			lines <= 150,
+			`DirectOdontogramModuleLauncher.tsx must be in Sweet Spot <= 150 lines, was ${lines}`,
 		);
 	});
 
-	it("9. Verifies OdontogramStudioModal renders cleanly with exactly ONE Primary CTA and 0 disabled buttons (Mandates 8am, 8e)", () => {
+	it("9. Verifies DirectOdontogramModuleLauncher renders cleanly with 0 disabled buttons (Mandate 8e)", () => {
 		const html = renderToString(
-			<OdontogramStudioModal isOpen={true} onClose={() => {}} />,
+			<DirectOdontogramModuleLauncher />,
 		);
 
-		// Assert existence of Primary CTA save button
-		assert.ok(html.includes("btn-save-odontogram-studio"), "Must contain btn-save-odontogram-studio");
 		assert.ok(
-			html.includes("var(--teal") || html.includes("#0d9488"),
-			"Primary CTA button must use canonical teal token / #0d9488",
+			html.includes("data-testid=\"direct-odontogram-module-launcher\""),
+			"Must contain direct-odontogram-module-launcher root",
 		);
-
-		// Assert Mandate 8e: 1-click intact teeth button
-		assert.ok(html.includes("btn-reset-intact"), "Must contain 1-click intact teeth reset button");
-
-		// Assert Fast-Stamp Bar
-		assert.ok(html.includes("stamp-btn-"), "Must render One-Touch Stamp Bar buttons");
 
 		// Doctor autonomy: 0 disabled buttons
 		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
-		assert.equal(disabledButtons, null, "OdontogramStudioModal must have 0 disabled buttons");
+		assert.equal(disabledButtons, null, "DirectOdontogramModuleLauncher must have 0 disabled buttons");
 	});
 
-	it("10. Verifies DirectOdontogramLauncher mounts without runtime DOM exceptions", () => {
-		const html = renderToString(<DirectOdontogramLauncher />);
+	it("10. Verifies DirectOdontogramModuleLauncher mounts without runtime DOM exceptions", () => {
+		const html = renderToString(<DirectOdontogramModuleLauncher />);
 		assert.equal(typeof html, "string");
 		assert.ok(html.length >= 0);
 	});
 
-	it("11. Verifies DirectOdontogramLauncher is mounted in AppShell.tsx (Mandate 8aq)", () => {
+	it("11. Verifies DirectOdontogramModuleLauncher is mounted in AppShell.tsx (Mandate 8aq)", () => {
 		const appShellPath = path.join(webSrcDir, "AppShell.tsx");
 		const content = fs.readFileSync(appShellPath, "utf8");
 
 		assert.ok(
-			content.includes("DirectOdontogramLauncher"),
-			"AppShell.tsx must import and render DirectOdontogramLauncher",
+			content.includes("DirectOdontogramModuleLauncher"),
+			"AppShell.tsx must import and render DirectOdontogramModuleLauncher",
 		);
 		assert.ok(
 			content.includes("odontogram"),
@@ -221,7 +212,7 @@ describe("Odontogram Studio & Launchers Architecture Inquisition", () => {
 		);
 	});
 
-	it("12. Verifies DirectOdontogramLauncher is mounted in StandaloneLaunchers.tsx", () => {
+	it("12. Verifies DirectOdontogramModuleLauncher is mounted in StandaloneLaunchers.tsx", () => {
 		const launchersPath = path.join(
 			webSrcDir,
 			"components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
@@ -229,8 +220,8 @@ describe("Odontogram Studio & Launchers Architecture Inquisition", () => {
 		const content = fs.readFileSync(launchersPath, "utf8");
 
 		assert.ok(
-			content.includes("DirectOdontogramLauncher"),
-			"StandaloneLaunchers.tsx must import and render DirectOdontogramLauncher",
+			content.includes("DirectOdontogramModuleLauncher"),
+			"StandaloneLaunchers.tsx must import and render DirectOdontogramModuleLauncher",
 		);
 		assert.ok(
 			content.includes("#odontogram") || content.includes("odontogram"),
