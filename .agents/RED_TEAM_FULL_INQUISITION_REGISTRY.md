@@ -1997,6 +1997,35 @@
   - `npm run check:migration-drift` -> Exit Code 0 (100% синхронизация DDL).
   - Целевой тестовый пакет планов лечения -> 29/29 PASS (Exit Code 0).
 
+### [PLN-14] [SEV-2] [ИСПРАВЛЕНО] Ликвидация дефектов DEF-PLAN-01..04: снос сиротского компонента TreatmentPlanTierSelector, депаразитизация брендов в PlanThreeTierMatrix, зачистка дев-сленга «1-клик» и независимое сокрытие микро-расходников для пациента
+- **Файлы:**
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanTierSelector.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanTierSelector.tsx) (УДАЛЕН через `git rm`)
+  - [`apps/web/src/components/treatment-plans/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/index.ts) (удален экспорт сироты)
+  - [`apps/web/src/components/portal/scans/threeTier/PlanThreeTierMatrix.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/scans/threeTier/PlanThreeTierMatrix.tsx) (депаразитизация торговых марок и брендов)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx) (зачистка сленга «1-клик»)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx) (зачистка сленга и передача `hideMicroConsumablesForPatient`)
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioTiersAndStagesTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioTiersAndStagesTab.tsx) (независимый флаг `hideMicroConsumablesForPatient` по умолчанию `true`)
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioClinicalBundlesTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioClinicalBundlesTab.tsx) (зачистка сленга «1-клик»)
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioInstallmentTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioInstallmentTab.tsx) (зачистка сленга «1-клик»)
+  - [`apps/web/src/components/treatment-plans/curator/CuratorModalFooter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/curator/CuratorModalFooter.tsx) (зачистка сленга «1-клик»)
+  - [`apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts) (зачистка сленга «1-клик»)
+- **Суть ликвидированных дефектов:**
+  1. **DEF-PLAN-01:** Физически снесен через `git rm` мертвый сиротский компонент `TreatmentPlanTierSelector.tsx`, содержавший хардкод 48 000 ₽ (металлокерамика Shofu), 86 000 ₽ (цирконий Prettau) и 145 000 ₽ (E.max Press). Удален неиспользуемый экспорт из `treatment-plans/index.ts`. Единым каноническим SSOT является `TreatmentPlanStudioModal.tsx` и `TreatmentPlan3TierComparison.tsx`.
+  2. **DEF-PLAN-02:** В `PlanThreeTierMatrix.tsx` все торговые марки коммерческих брендов и конкурентов заменены на канонические клинические категории: Filtek Z250 -> «Микрогибридный композит светового отверждения», Estelite Asteria -> «Нанокомпозит с эффектом хамелеона», IPS e.max CAD -> «Прессованная стеклокерамика (дисиликат лития)», Katana HTML -> «Многослойный ультратранслюцентный диоксид циркония», Straumann -> «Премиальная имплантационная система с гидрофильной поверхностью». Убран сырой номер закона «Закон РФ № 2300-1» -> заменен на «Клинические гарантии и стандарты клиники» (Мандаты 8x, 8ap).
+  3. **DEF-PLAN-03:** В `TreatmentPlan3TierComparison.tsx`, `TreatmentPlanStudioModal.tsx`, `CuratorModalFooter.tsx`, `StudioClinicalBundlesTab.tsx`, `StudioInstallmentTab.tsx`, `StudioTiersAndStagesTab.tsx`, `treatmentPlanCatalogData.ts` зачищен дев-сленг «1-клик» / «в 1 клик» в комментариях и подсказках (Мандат 8zg).
+  4. **DEF-PLAN-04:** В `StudioTiersAndStagesTab.tsx` фильтрация микро-расходников для пациента отвязана от `isExpressMode`. Введен независимый флаг `hideMicroConsumablesForPatient` (по умолчанию `true`), гарантирующий, что при переключении режима врача сокрытие валиков, салфеток и перчаток для пациента не слетает и не загромождает экран.
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file`):**
+  - [`docs/proofs/treatment_plans/01_treatment_plan_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/01_treatment_plan_pc_light_1440x900.png) (106 KB)
+  - [`docs/proofs/treatment_plans/02_treatment_plan_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/02_treatment_plan_pc_dark_1440x900.png) (107 KB)
+  - [`docs/proofs/treatment_plans/03_treatment_plan_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/03_treatment_plan_mobile_light_390x844.png) (137 KB)
+  - [`docs/proofs/treatment_plans/04_treatment_plan_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/04_treatment_plan_mobile_dark_390x844.png) (137 KB)
+- **Тесты и машинные гейты (Definition of Done):**
+  - Юнит-тесты планов лечения `treatmentPlanStudioSSOT.test.tsx` + `treatmentPlanSSOTSuite.test.tsx` -> 31/31 PASS (Exit Code 0).
+  - Тесты презентера и модалок `treatmentPlan3TierComparisonView.test.tsx`, `treatmentPlanStudioWarrantyPhotoDepth.test.tsx`, `clinicalServiceBundlesModal.test.tsx`, `curatorPlanButtonsAutonomy.test.tsx` -> 20/20 PASS (Exit Code 0).
+  - Математические тесты `treatmentPlanMath*.test.ts` -> 15/15 PASS (Exit Code 0).
+  - Полный пакет тестов `@dental/shared` -> 3378 PASS.
+  - TypeScript компиляция затронутых файлов планов лечения -> 0 ошибок.
+
 
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ

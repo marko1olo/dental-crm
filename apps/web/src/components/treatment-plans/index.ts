@@ -3,7 +3,6 @@
  */
 
 export * from "./types";
-export * from "./TreatmentPlanTierSelector";
 export {
 	treatmentPlanItemSchema,
 	treatmentPlanStageSchema,

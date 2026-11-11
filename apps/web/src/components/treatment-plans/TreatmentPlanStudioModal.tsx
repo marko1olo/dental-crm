@@ -3,7 +3,7 @@
  * Мандаты 8b, 8zi: Целевой размер 350–450 строк (Sweet Spot). Консолидированный монолит без микро-шредера.
  * Мандат 8e: Автономия врача — свобода скидок до 100%, автосейв, кнопки НИКОГДА не блокируются (disabled=false).
  * Мандат 8am: Ровно 1 Primary CTA кнопка var(--teal) (#0d9488) на видимый экран, вторичные кнопки в нейтрале.
- * Мандат 8n: Простота для соло-врача и клиники у кресла — выбор из 3 вариантов в 1 клик, генератор по МКБ-10.
+ * Мандат 8n: Простота для соло-врача и клиники у кресла — выбор из 3 вариантов, генератор по МКБ-10.
  * Мандат 8x & 8ap: Человеческий клинический язык без советского канцелярита в прод-UI.
  * Режимы глубины: Экспресс-смета (чистый 1-экранный интерфейс) и Клинический эксперт (этапы, гарантийный паспорт, фотопротокол).
  * Apple HIG: Сенсорная зона >= 44x44px, Drag Handle 36x5px, нативный Segmented Switcher на смартфонах (390x844).
@@ -306,7 +306,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		setExpandedStageId(newStageId);
 	}, [stages.length]);
 
-	// 4. Добавление клинического пакета в этапы плана в 1 клик
+	// 4. Добавление клинического пакета в этапы плана
 	const handleAddBundleToStages = useCallback((bundle: ClinicalBundleDefinition, toothNumber?: number) => {
 		setStages((prevStages) => {
 			const newItems: TreatmentPlanItem[] = bundle.items.map((it, idx) => ({
@@ -380,7 +380,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		);
 	}, []);
 
-	// 5. Утверждение плана в 1 клик (Мандат 8e: 0 disabled блокировок)
+	// 5. Утверждение плана (Мандат 8e: 0 disabled блокировок)
 	const handleApprove = useCallback(async () => {
 		if (onApprovePlan && activeTier) onApprovePlan(activeTier);
 		if (onConfirmSelection && activeTier) onConfirmSelection(activeTier);
@@ -799,6 +799,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							onSelectDiagnosisPreset={handleSelectDiagnosisPreset}
 							onResetToCanonical={() => setStages(CANONICAL_CLINICAL_STAGES)}
 							isExpressMode={depthMode === "express"}
+							hideMicroConsumablesForPatient={true}
 							onAddItemToStage={handleAddItemToStage}
 							onRemoveItemFromStage={handleRemoveItemFromStage}
 							onGenerateFromTeeth={handleGenerateFromTeeth}

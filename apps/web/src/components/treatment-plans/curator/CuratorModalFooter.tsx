@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/treatment-plans/curator/CuratorModalFooter.tsx
  *
- * Подвал модального окна курации с 1-клик действиями врача (Мандаты 8e, 8n).
+ * Подвал модального окна курации с быстрыми действиями врача (Мандаты 8e, 8n).
  * Кнопки утверждения, печати и кассы НИКОГДА не блокируются (disabled=false).
  * Строго <= 120 строк per Mandate 8b.
  */
@@ -30,7 +30,7 @@ export const CuratorModalFooter: React.FC<CuratorModalFooterProps> = ({
 }) => {
 	return (
 		<div className="curator-modal-footer flex flex-col gap-2.5 p-3.5 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] rounded-b-2xl">
-			{/* Быстрые действия соло-врача (Мандат 8e: 0 блокировок, 1 клик) */}
+			{/* Быстрые действия соло-врача (Мандат 8e: 0 блокировок) */}
 			<div className="flex flex-wrap items-center gap-2">
 				<button
 					type="button"

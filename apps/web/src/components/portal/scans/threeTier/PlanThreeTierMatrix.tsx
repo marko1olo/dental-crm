@@ -24,7 +24,7 @@ export const PlanThreeTierMatrix: React.FC<PlanThreeTierMatrixProps> = ({ select
 					Сравнение используемых материалов и гарантии (Текущий выбор):
 				</strong>
 				<span style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
-					Закон РФ № 2300-1 &bull; Положение СтАР
+					Клинические гарантии и стандарты клиники
 				</span>
 			</div>
 
@@ -32,9 +32,9 @@ export const PlanThreeTierMatrix: React.FC<PlanThreeTierMatrixProps> = ({ select
 				<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
 					<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "12px" }}>Материалы пломб / реставраций:</div>
 					<strong style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-						{selectedTierId === "basic" && "Нанокомпозит Filtek Z250 (3M ESPE)"}
-						{selectedTierId === "standard" && "Субмикрофил Estelite Asteria (Tokuyama, Япония)"}
-						{selectedTierId === "premium" && "Ультратонкие керамические виниры IPS e.max CAD"}
+						{selectedTierId === "basic" && "Микрогибридный композит светового отверждения"}
+						{selectedTierId === "standard" && "Нанокомпозит с эффектом хамелеона"}
+						{selectedTierId === "premium" && "Прессованная стеклокерамика (дисиликат лития)"}
 					</strong>
 				</div>
 
@@ -50,9 +50,9 @@ export const PlanThreeTierMatrix: React.FC<PlanThreeTierMatrixProps> = ({ select
 				<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
 					<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "12px" }}>Ортопедические конструкции:</div>
 					<strong style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-						{selectedTierId === "basic" && "Металлокерамика на Co-Cr каркасе"}
-						{selectedTierId === "standard" && "Монолитный диоксид циркония Katana HTML"}
-						{selectedTierId === "premium" && "Бескаркасная керамика E.max CAD / Straumann"}
+						{selectedTierId === "basic" && "Металлокерамика на биоинертном кобальт-хромовом каркасе"}
+						{selectedTierId === "standard" && "Многослойный ультратранслюцентный диоксид циркония"}
+						{selectedTierId === "premium" && "Прессованная стеклокерамика и премиальная имплантационная система с гидрофильной поверхностью"}
 					</strong>
 				</div>
 			</div>

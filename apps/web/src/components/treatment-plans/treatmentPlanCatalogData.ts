@@ -2,7 +2,7 @@
  * treatmentPlanCatalogData.ts — Канонический SSOT планов лечения и 3-уровневых смет.
  * Мандаты 8b, 8zi: Целевой размер 300–450 строк (Sweet Spot).
  * Мандат 8e: Автономия врача — скидки до 100%, фильтрация микро-расходников для пациента, 0 блокировок.
- * Мандат 8n: Клиники РФ 1–5 кресел — 3 тарифа в 1 клик, честные альтернативные материалы без множителей *0.75 / *1.45.
+ * Мандат 8n: Клиники РФ 1–5 кресел — 3 тарифа, честные альтернативные материалы без множителей *0.75 / *1.45.
  * Мандат 8x: Чистый клинический язык без советского канцелярита в прод-UI.
  */
 
@@ -1024,7 +1024,7 @@ export function applyDoctorDiscountToTiers(tiers: readonly TreatmentPlanTier[], 
 	});
 }
 
-/** 1-клик генератор типовых планов по диагнозу МКБ-10 (Мандат 8n) */
+/** Клинический генератор типовых планов по диагнозу МКБ-10 (Мандат 8n) */
 export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothNumber?: number): readonly TreatmentPlanStage[] {
 	const cleanCode = diagnosisCode.trim().toUpperCase();
 	const toothLabel = toothNumber ? ` зуба ${toothNumber}` : "";

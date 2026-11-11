@@ -21,6 +21,7 @@ export interface StudioTiersAndStagesTabProps {
 	readonly onSelectDiagnosisPreset: (diagCode: string) => void;
 	readonly onResetToCanonical: () => void;
 	readonly isExpressMode?: boolean;
+	readonly hideMicroConsumablesForPatient?: boolean;
 	readonly onAddItemToStage?: (stageId: string, item: TreatmentPlanItem) => void;
 	readonly onRemoveItemFromStage?: (stageId: string, itemId: string) => void;
 	readonly onGenerateFromTeeth?: () => void;
@@ -37,6 +38,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 	onSelectDiagnosisPreset,
 	onResetToCanonical,
 	isExpressMode = false,
+	hideMicroConsumablesForPatient = true,
 	onAddItemToStage,
 	onRemoveItemFromStage,
 	onGenerateFromTeeth,
@@ -70,7 +72,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 
 	return (
 		<div className="space-y-6" data-testid="studio-tiers-stages-tab">
-			{/* Быстрые шаблоны по диагнозам в 1 клик (Мандат 8n) */}
+			{/* Быстрые шаблоны по диагнозам МКБ-10 (Мандат 8n) */}
 			<div className="flex items-center gap-2 overflow-x-auto text-xs no-scrollbar pb-1 snap-x">
 				<span className="text-[var(--muted)] font-medium shrink-0 flex items-center gap-1">
 					<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
@@ -340,8 +342,8 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 									{/* Состав процедур этапа */}
 									{isExpanded && (() => {
 										const rawItems = stage.items || [];
-										const cleanItems = isExpressMode ? rawItems.filter((item) => !isMicroConsumable(item)) : rawItems;
-										const itemsToRender = isExpressMode && cleanItems.length > 0 ? cleanItems : rawItems;
+										const cleanItems = hideMicroConsumablesForPatient ? rawItems.filter((item) => !isMicroConsumable(item)) : rawItems;
+										const itemsToRender = hideMicroConsumablesForPatient && cleanItems.length > 0 ? cleanItems : rawItems;
 										const hiddenMicroCount = rawItems.length - itemsToRender.length;
 
 										return (
