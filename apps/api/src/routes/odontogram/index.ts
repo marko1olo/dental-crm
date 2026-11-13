@@ -3,7 +3,6 @@ import { registerEndoRoutes } from "./endoRoutes.js";
 import { registerExtendedOdontogramRoutes } from "./extendedRoutes.js";
 import { registerHistoryRoutes } from "./historyRoutes.js";
 import { registerPlanCompletionRoutes } from "./planCompletionRoutes.js";
-import { registerPlanCrudRoutes } from "./planCrudRoutes.js";
 import { registerPlanVariantRoutes } from "./planVariantRoutes.js";
 import { registerStatusRoutes } from "./statusRoutes.js";
 
@@ -13,7 +12,6 @@ export * from "./statusRoutes.js";
 export * from "./endoRoutes.js";
 export * from "./historyRoutes.js";
 export * from "./planCompletionRoutes.js";
-export * from "./planCrudRoutes.js";
 export * from "./planVariantRoutes.js";
 export * from "./extendedRoutes.js";
 
@@ -26,7 +24,6 @@ export async function registerOdontogramRoutes(app: FastifyInstance): Promise<vo
 	registerExtendedOdontogramRoutes(app);
 	registerEndoRoutes(app);
 	registerHistoryRoutes(app);
-	registerPlanCrudRoutes(app);
 	registerPlanCompletionRoutes(app);
 	registerPlanVariantRoutes(app);
 }

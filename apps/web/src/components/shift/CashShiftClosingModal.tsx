@@ -312,7 +312,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								}`}
 							>
 								<CheckCircle2 className="w-3.5 h-3.5" />
-								{isTerminalReconciled ? "Терминал сверен ✓" : "Подтвердить сверку"}
+								{isTerminalReconciled ? "Терминал сверен" : "Подтвердить сверку"}
 							</button>
 						</div>
 					</div>

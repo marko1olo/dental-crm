@@ -10,11 +10,16 @@ export function deriveLocalLostPatients(dashboard: Dashboard | null | undefined)
 	for (const p of localPatients) {
 		const pId = typeof p.id === "string" ? p.id : "";
 		if (!pId) continue;
+		const pFullName = typeof p.fullName === "string" ? p.fullName.trim() : "";
+		const pFallbackName =
+			"name" in p && typeof (p as { name?: unknown }).name === "string"
+				? (p as { name: string }).name.trim()
+				: "";
 		const pName =
-			typeof p.fullName === "string" && p.fullName.trim() && p.fullName !== "Пациент"
-				? p.fullName
-				: typeof (p as { name?: string }).name === "string" && (p as { name?: string }).name!.trim() && (p as { name?: string }).name !== "Пациент"
-					? (p as { name?: string }).name!
+			pFullName && pFullName !== "Пациент"
+				? pFullName
+				: pFallbackName && pFallbackName !== "Пациент"
+					? pFallbackName
 					: "";
 		if (!pName) continue;
 
@@ -29,7 +34,10 @@ export function deriveLocalLostPatients(dashboard: Dashboard | null | undefined)
 		const daysSince = Math.floor((now - new Date(lastAppt.startsAt).getTime()) / (1000 * 60 * 60 * 24));
 		if (daysSince < 90) continue;
 
-		derived.push({
+		const doctorNameCandidate = (lastAppt as { doctorName?: unknown }).doctorName;
+		const lastDoctorName = typeof doctorNameCandidate === "string" ? doctorNameCandidate : undefined;
+
+		const row: LostPatientRow = {
 			id: pId,
 			organizationId: typeof p.organizationId === "string" ? p.organizationId : "org-1",
 			patientName: pName,
@@ -38,8 +46,9 @@ export function deriveLocalLostPatients(dashboard: Dashboard | null | undefined)
 			hasFutureAppointment: futureAppt,
 			createdAt: typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString(),
 			lastTreatmentCategory: "general_therapy",
-			lastDoctorName: typeof (lastAppt as any).doctorName === "string" ? (lastAppt as any).doctorName : undefined,
-		});
+			...(lastDoctorName ? { lastDoctorName } : {}),
+		};
+		derived.push(row);
 	}
 	return derived;
 }

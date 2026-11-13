@@ -65,8 +65,9 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 					setHasError(false);
 				}
 			})
-			.catch(() => {
+			.catch((err: unknown) => {
 				if (isMounted) {
+					console.error("[ExecutiveAnalytics] Failed to fetch clinic analytics SSOT:", err);
 					// Никакой подмены данных моками! Честный Empty State при сбое
 					setData(createEmptyAnalyticsState(period));
 					setIsLoading(false);
@@ -103,7 +104,8 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 				setIsLoading(false);
 				setHasError(false);
 			})
-			.catch(() => {
+			.catch((err: unknown) => {
+				console.error("[ExecutiveAnalytics] Failed to refresh clinic analytics SSOT:", err);
 				setData(createEmptyAnalyticsState(period));
 				setIsLoading(false);
 				setHasError(true);
@@ -112,7 +114,9 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 
 	const copyWhatsappTemplate = (template: string, cohortKey: string) => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
-			navigator.clipboard.writeText(template).catch(() => {});
+			navigator.clipboard.writeText(template).catch((err: unknown) => {
+				console.warn("[ExecutiveAnalytics] Clipboard write failed:", err);
+			});
 		}
 		setActiveWhatsappCohort(cohortKey);
 		setTimeout(() => setActiveWhatsappCohort(null), 2500);

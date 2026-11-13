@@ -55,14 +55,19 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 
 		return (
 			<div className="ortho-card">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<Layers className={`w-4 h-4 ${isUpper ? "text-[var(--teal,#0d9488)]" : "text-[var(--accent-glow,#38bdf8)]"}`} />
-						<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">{title}</span>
+				<div className="flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2 min-w-0">
+						<Layers className={`w-4 h-4 shrink-0 ${isUpper ? "text-[var(--teal,#0d9488)]" : "text-[var(--accent-glow,#38bdf8)]"}`} />
+						<span className="text-sm font-semibold text-[var(--ink)]">{title}</span>
 					</div>
 					{isUpper && (
-						<button type="button" onClick={handleSyncUpperToLower} className="text-[11px] text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 font-medium min-h-[36px]">
-							Копировать на НЧ <ArrowRight className="w-3 h-3" />
+						<button
+							type="button"
+							onClick={handleSyncUpperToLower}
+							className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap shrink-0 min-h-[36px] transition-colors cursor-pointer"
+						>
+							<span>Копировать на НЧ</span>
+							<ArrowRight className="w-3 h-3 shrink-0" />
 						</button>
 					)}
 				</div>
@@ -98,7 +103,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 					{renderJawCard("Нижняя челюсть (НЧ)", false)}
 					<div className="ortho-card">
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Межчелюстные эластики</span>
+							<span className="text-sm font-semibold text-[var(--ink)]">Межчелюстные эластики</span>
 							{protocol.selectedElasticId && (
 								<button type="button" onClick={() => setProtocol((p) => ({ ...p, selectedElasticId: null }))} className="text-[11px] text-[var(--ink-muted)] hover:text-[var(--ink)]">Снять тяги</button>
 							)}
@@ -134,7 +139,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 						</div>
 					</div>
 					<div className="ortho-card">
-						<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Манипуляции приёма</span>
+						<span className="text-sm font-semibold text-[var(--ink)]">Манипуляции приёма</span>
 						<div className="flex flex-wrap gap-1.5">
 							{CHAIRSIDE_ACTIONS_CATALOG.map((action) => {
 								const isChecked = protocol.selectedActionIds.includes(action.id);
@@ -155,39 +160,120 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 			{activeTab === "aligners" && (
 				<div className="flex flex-col gap-4">
 					<div className="ortho-card">
-						<div className="flex items-center justify-between">
+						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
 							<div>
 								<h4 className="text-sm font-bold text-[var(--ink)]">Контроль этапов элайнеров</h4>
 								<p className="text-xs text-[var(--ink-muted)]">Шаг {protocol.alignerTracking.currentStep} из {protocol.alignerTracking.totalSteps} (смена каждые {protocol.alignerTracking.wearDaysPerStep} дней)</p>
 							</div>
-							<button type="button" onClick={handleAdvanceAlignerStep} className="ortho-touch-button selected">
-								+ Выдать следующий шаг
-							</button>
+							<div className="flex items-center gap-2 flex-wrap">
+								<div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)]">
+									<label htmlFor="ortho-current-step-input" className="text-xs text-[var(--ink-muted)] font-medium">Шаг:</label>
+									<input
+										id="ortho-current-step-input"
+										type="number"
+										min={0}
+										max={protocol.alignerTracking.totalSteps}
+										value={protocol.alignerTracking.currentStep}
+										onChange={(e) => {
+											const val = Math.min(protocol.alignerTracking.totalSteps, Math.max(0, parseInt(e.target.value, 10) || 0));
+											setProtocol((p) => ({
+												...p,
+												alignerTracking: { ...p.alignerTracking, currentStep: val },
+											}));
+										}}
+										className="w-12 text-xs font-bold text-center bg-transparent border-none outline-none text-[var(--ink)]"
+									/>
+									<span className="text-xs text-[var(--ink-muted)]">/ {protocol.alignerTracking.totalSteps}</span>
+								</div>
+								<button type="button" onClick={handleAdvanceAlignerStep} className="ortho-touch-button selected">
+									+ Выдать следующий шаг
+								</button>
+							</div>
 						</div>
 						<div className="ortho-aligner-progress-bar">
-							<div className="ortho-aligner-progress-fill" style={{ width: `${Math.round((protocol.alignerTracking.currentStep / protocol.alignerTracking.totalSteps) * 100)}%` }} />
+							<div className="ortho-aligner-progress-fill" style={{ width: `${Math.round(((protocol.alignerTracking.currentStep || 0) / (protocol.alignerTracking.totalSteps || 24)) * 100)}%` }} />
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-								<span className="text-[10px] text-[var(--ink-muted)]">Выдано комплектов</span>
-								<span className="text-sm font-bold text-[var(--ink)]">{protocol.alignerTracking.issuedSetsCount} пары</span>
+							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col justify-between min-h-[56px]">
+								<label htmlFor="ortho-issued-sets-input" className="text-[10px] text-[var(--ink-muted)] font-medium">Выдано комплектов</label>
+								<div className="flex items-center gap-1.5 mt-0.5">
+									<input
+										id="ortho-issued-sets-input"
+										type="number"
+										min={1}
+										max={protocol.alignerTracking.totalSteps}
+										value={protocol.alignerTracking.issuedSetsCount || 1}
+										onChange={(e) => {
+											const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+											setProtocol((p) => ({
+												...p,
+												alignerTracking: { ...p.alignerTracking, issuedSetsCount: val },
+											}));
+										}}
+										className="w-14 text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded px-1.5 py-0.5 text-center"
+									/>
+									<span className="text-xs text-[var(--ink-muted)] font-medium">пар</span>
+								</div>
 							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-								<span className="text-[10px] text-[var(--ink-muted)]">Плановая дата визита</span>
-								<span className="text-sm font-bold text-[var(--ink)]">{protocol.alignerTracking.nextPlannedDate}</span>
+							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col justify-between min-h-[56px]">
+								<label htmlFor="ortho-next-date-input" className="text-[10px] text-[var(--ink-muted)] font-medium">Плановая дата визита</label>
+								<input
+									id="ortho-next-date-input"
+									data-testid="next-aligner-date-input"
+									type="date"
+									value={protocol.alignerTracking.nextPlannedDate}
+									onChange={(e) => {
+										const val = e.target.value;
+										setProtocol((p) => ({
+											...p,
+											alignerTracking: { ...p.alignerTracking, nextPlannedDate: val },
+										}));
+									}}
+									className="text-xs font-bold text-[var(--ink)] bg-transparent border-none outline-none p-0 cursor-pointer w-full mt-0.5"
+								/>
 							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-								<span className="text-[10px] text-[var(--ink-muted)]">Сепарация (IPR)</span>
-								<span className="text-sm font-bold text-[var(--teal,#0d9488)]">{protocol.alignerTracking.iprCompleted ? "Выполнена ✓" : "Не требуется"}</span>
-							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col">
-								<span className="text-[10px] text-[var(--ink-muted)]">Аттачменты</span>
-								<span className="text-sm font-bold text-[var(--teal,#0d9488)]">{protocol.alignerTracking.attachmentsVerified ? "В норме ✓" : "Требуется осмотр"}</span>
-							</div>
+							<button
+								type="button"
+								data-testid="toggle-ipr-btn"
+								onClick={() => setProtocol((p) => ({
+									...p,
+									alignerTracking: { ...p.alignerTracking, iprCompleted: !p.alignerTracking.iprCompleted },
+								}))}
+								className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
+									protocol.alignerTracking.iprCompleted
+										? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
+										: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
+								}`}
+							>
+								<span className="text-[10px] text-[var(--ink-muted)] font-medium">Сепарация (IPR)</span>
+								<span className="text-xs font-bold flex items-center justify-between w-full">
+									<span>{protocol.alignerTracking.iprCompleted ? "Выполнена ✓" : "Не требуется"}</span>
+									<span className="text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] font-normal border border-[var(--line)]">изменить</span>
+								</span>
+							</button>
+							<button
+								type="button"
+								data-testid="toggle-attachments-btn"
+								onClick={() => setProtocol((p) => ({
+									...p,
+									alignerTracking: { ...p.alignerTracking, attachmentsVerified: !p.alignerTracking.attachmentsVerified },
+								}))}
+								className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
+									protocol.alignerTracking.attachmentsVerified
+										? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
+										: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
+								}`}
+							>
+								<span className="text-[10px] text-[var(--ink-muted)] font-medium">Аттачменты</span>
+								<span className="text-xs font-bold flex items-center justify-between w-full">
+									<span>{protocol.alignerTracking.attachmentsVerified ? "В норме ✓" : "Требуется осмотр"}</span>
+									<span className="text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] font-normal border border-[var(--line)]">изменить</span>
+								</span>
+							</button>
 						</div>
 					</div>
 					<div className="ortho-card">
-						<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Классификация прикуса по Энглю</span>
+						<span className="text-sm font-semibold text-[var(--ink)]">Классификация прикуса по Энглю</span>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 							{ANGLE_CLASSES_CATALOG.map((ac) => {
 								const isSelected = protocol.angleClass === ac.key;
@@ -208,7 +294,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 					<div className="ortho-card">
 						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
 							<div>
-								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Клинический фотопротокол и ТРГ</h4>
+								<h4 className="text-sm font-semibold text-[var(--ink)]">Клинический фотопротокол и ТРГ</h4>
 								<p className="text-[11px] text-[var(--ink-muted)]">Связка со специализированными модулями фотопротокола и цефалометрии</p>
 							</div>
 							<div className="flex items-center gap-2 flex-wrap">
@@ -276,8 +362,8 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 					<div className="ortho-card">
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Дневник приёма (SOAP)</span>
-							<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="text-xs text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 font-semibold min-h-[36px]">
+							<span className="text-sm font-semibold text-[var(--ink)]">Дневник приёма (SOAP)</span>
+							<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
 								<Copy className="w-3.5 h-3.5" /> В медкарту
 							</button>
 						</div>
@@ -286,19 +372,12 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 
 					<div className="ortho-card">
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">Памятка пациенту</span>
-							<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="text-xs text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 font-semibold min-h-[36px]">
+							<span className="text-sm font-semibold text-[var(--ink)]">Памятка пациенту</span>
+							<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
 								<BookOpen className="w-3.5 h-3.5" /> Копировать памятку
 							</button>
 						</div>
-						<div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
-							{ORTHO_PATIENT_MEMO_SECTIONS.map((sec) => (
-								<div key={sec.id} className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-1">
-									<span className="text-xs font-bold text-[var(--ink)]">{sec.titleRu}</span>
-									<span className="text-xs text-[var(--ink-muted)] leading-relaxed">{sec.textRu}</span>
-								</div>
-							))}
-						</div>
+						<pre className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{memoText}</pre>
 					</div>
 				</div>
 			)}

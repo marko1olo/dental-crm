@@ -99,7 +99,31 @@ export {
 export * from "./clinicalMarketMaterialsCatalog.js";
 export * from "./clinicalDiagnosesSsot.js";
 export * from "./bundles/index.js";
-export * from "./presets/index.js";
+export {
+	THERAPY_SOAP_PRESETS,
+	THERAPY_COPILOT_PRESETS,
+	THERAPY_PRESETS,
+	AUTOPILOT_CARIES_K021,
+	AUTOPILOT_NORM_HEALTHY,
+} from "./presets/therapyPresets.js";
+export {
+	SURGERY_SOAP_PRESETS,
+	AUTOPILOT_EXTRACTION_K045,
+	AUTOPILOT_EXTRACTION_K011,
+	AUTOPILOT_EXTRACTION_COMPLEX_K011,
+} from "./presets/surgeryPresets.js";
+export type {
+	ClinicalSoapPreset,
+	DoctorAutopilotPreset,
+	ChairsideCopilotPreset,
+} from "./presets/types.js";
+export {
+	getAllCanonicalSoapPresets,
+	findTherapySoapPresetById,
+	findSurgerySoapPresetById,
+	findCanonicalPresetById,
+	findClinicalBundleById,
+} from "./presets/index.js";
 export * from "./diagnosisServiceBundles.js";
 export * from "./pricelistBatchImport.js";
 export * from "./informedConsentEngine.js";
@@ -109,6 +133,7 @@ export * from "./touchErgonomics.js";
 export * from "./dentalFormulaTextParser.js";
 export * from "./speech/toothSpeechGrammar.js";
 export * from "../anesthesia/index.js";
+export * from "./implants/catalog.js";
 
 // Explicit re-exports to resolve wildcard collision (TS2308)
 export type {

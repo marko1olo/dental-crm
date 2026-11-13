@@ -64,13 +64,13 @@ export function generateDoctorPayslipMessengerText(
 	}
 
 	lines.push(`─────────────────────────────────`);
-	lines.push(`ИТОГО К ВЫПЛАТЕ: ${netToDocRub} ₽`);
+	lines.push(`Итого к выплате: ${netToDocRub} ₽`);
 
 	if ((payrollResult.advancePayoutKop ?? 0) > 0) {
 		const advanceRub = ((payrollResult.advancePayoutKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		const mainRub = ((payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - (payrollResult.advancePayoutKop ?? 0))) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Выплаченный аванс: -${advanceRub} ₽`);
-		lines.push(`• ОСТАТОК К ПЕРЕЧИСЛЕНИЮ: ${mainRub} ₽`);
+		lines.push(`• Остаток к перечислению: ${mainRub} ₽`);
 	}
 
 	return lines.join("\n");

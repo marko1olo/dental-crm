@@ -13,10 +13,12 @@ import { X, Check, Sparkles, Activity, Layers, Clock, Smile, FileText, Camera } 
 import {
 	APPLIANCES_CATALOG, ORTHO_ACTIVATION_PRESETS, createDefaultOrthoProtocolState,
 	calculateSkeletalClassFromAnb, formatOrthoProtocolSoapEntry, getOrthoPatientMemoText,
-	type OrthoProtocolState, type OrthoActivationPreset,
+	type OrthoProtocolState, type OrthoActivationPreset, ELASTICS_CATALOG,
 } from "./orthodonticsCatalogData";
+import { formatOrthodonticPatientMemo } from "./orthodonticPatientMemo";
 import { SAMPLE_TRG_CEPHALOGRAM_URL } from "./CephalometricCanvas";
 import { OrthodonticsTabsContent } from "./OrthodonticsTabsContent";
+import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
@@ -171,8 +173,92 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		};
 	}, [patientId]);
 
+	// Реактивная синхронизация ТРГ через BroadcastChannel (DEF-1)
+	useEffect(() => {
+		const cachedStudy = getActiveCephStudy<{
+			analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
+			measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
+		}>();
+		if (cachedStudy) {
+			const mList = cachedStudy.measurements;
+			if (Array.isArray(mList) && mList.length > 0) {
+				const vals: Record<string, number> = {};
+				for (const m of mList) {
+					const k = (m.parameterKey || m.parameter || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
+					if (typeof m.value === "number") vals[k] = m.value;
+				}
+				if (Object.keys(vals).length > 0) {
+					setProtocol((prev) => ({
+						...prev,
+						trgValues: { ...(prev.trgValues || {}), ...vals },
+					}));
+				}
+			}
+		}
+
+		const unsubscribe = subscribeCephSyncChannel((msg) => {
+			if (msg.type === "CEPH_STUDY_CACHED" || msg.type === "CEPH_ANALYSIS_UPDATED") {
+				const study = msg.payload as {
+					measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
+					analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
+				};
+				const mList = study?.measurements;
+				if (Array.isArray(mList) && mList.length > 0) {
+					const vals: Record<string, number> = {};
+					for (const m of mList) {
+						const k = (m.parameterKey || m.parameter || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
+						if (typeof m.value === "number") vals[k] = m.value;
+					}
+					if (Object.keys(vals).length > 0) {
+						setProtocol((prev) => ({
+							...prev,
+							trgValues: { ...(prev.trgValues || {}), ...vals },
+						}));
+					}
+				} else if (study?.analysis) {
+					const ca = study.analysis;
+					setProtocol((prev) => ({
+						...prev,
+						trgValues: {
+							...(prev.trgValues || {}),
+							...(typeof ca.sna === "number" ? { sna: ca.sna } : {}),
+							...(typeof ca.snb === "number" ? { snb: ca.snb } : {}),
+							...(typeof ca.anb === "number" ? { anb: ca.anb } : {}),
+							...(typeof ca.u1NaDeg === "number" ? { u1_na: ca.u1NaDeg } : {}),
+							...(typeof ca.l1NbDeg === "number" ? { l1_nb: ca.l1NbDeg } : {}),
+							...(typeof ca.fmaDeg === "number" ? { fma: ca.fmaDeg } : {}),
+						},
+					}));
+				}
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
+
 	const soapSummary = useMemo(() => formatOrthoProtocolSoapEntry(protocol), [protocol]);
-	const memoText = useMemo(() => getOrthoPatientMemoText(), []);
+	const memoText = useMemo(() => {
+		const elastic = ELASTICS_CATALOG.find((e) => e.id === protocol.selectedElasticId);
+		const isPlate = protocol.applianceCategory === "plate";
+		return formatOrthodonticPatientMemo({
+			clinicName: "Стоматологическая клиника DENTE",
+			doctorName,
+			patientName,
+			bracketSystem: protocol.applianceName,
+			archwireMaterial: isPlate ? undefined : `${protocol.upperAlloy.toUpperCase()} (ВЧ) / ${protocol.lowerAlloy.toUpperCase()} (НЧ)`,
+			archwireSection: isPlate ? undefined : `${protocol.upperSection} (ВЧ) / ${protocol.lowerSection} (НЧ)`,
+			targetArch: "both",
+			elasticScheme: elastic ? `${elastic.classNameRu} (${elastic.animalName})` : undefined,
+			elasticSize: selectedElasticSize,
+			isAligners: protocol.applianceCategory === "aligners",
+			isPlate,
+			currentAligner: protocol.alignerTracking.currentStep || 1,
+			totalAligners: protocol.alignerTracking.totalSteps || 24,
+			notes: protocol.clinicalNotes || protocol.notes,
+		});
+	}, [doctorName, patientName, protocol, selectedElasticSize]);
 
 	const handleApplyPreset = useCallback((preset: OrthoActivationPreset) => {
 		setProtocol((prev) => {
@@ -247,14 +333,27 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		if (patientId) {
 			try {
 				if (protocol.applianceCategory === "aligners") {
+					const alignerCount = protocol.alignerTracking.issuedSetsCount > 0
+						? protocol.alignerTracking.issuedSetsCount
+						: (protocol.alignerTracking.currentStep > 0 ? protocol.alignerTracking.currentStep : 1);
 					await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
 						method: "POST",
 						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({
-							alignerCount: protocol.alignerTracking.issuedSetsCount || 2,
+							alignerCount,
 							wearDaysPerAligner: protocol.alignerTracking.wearDaysPerStep || 14,
 							totalAligners: protocol.alignerTracking.totalSteps || 24,
-							note: "Выдача комплекта элайнеров",
+							note: `Выдача комплекта элайнеров (актуальный шаг ${protocol.alignerTracking.currentStep} из ${protocol.alignerTracking.totalSteps})`,
+						}),
+					});
+				} else if (protocol.applianceCategory === "plate") {
+					await fetch(`/api/orthodontics/${patientId}/stages/advance`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							nextStage: Math.max(1, protocol.currentMonth || 1),
+							stageTitle: `Активация аппарата / винта: ${protocol.applianceName}`,
+							note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
 						}),
 					});
 				} else {
@@ -268,21 +367,56 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						SS: "SS",
 						TMA: "TMA",
 					};
-					await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-						body: JSON.stringify({
-							material: materialMap[protocol.upperAlloy] || "CuNiTi",
-							section: protocol.upperSection,
-							arch: "both",
-							note: "Плановая смена ортодонтической дуги",
-						}),
-					});
+					const upperMat = materialMap[protocol.upperAlloy] || "CuNiTi";
+					const lowerMat = materialMap[protocol.lowerAlloy] || "CuNiTi";
+
+					if (upperMat === lowerMat && protocol.upperSection === protocol.lowerSection) {
+						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+							body: JSON.stringify({
+								material: upperMat,
+								section: protocol.upperSection,
+								arch: "both",
+								applianceCategory: "brackets",
+								isWireChange: true,
+								note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
+							}),
+						});
+					} else {
+						// Сохраняем параметры обеих дуг: ВЧ и НЧ
+						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+							body: JSON.stringify({
+								material: upperMat,
+								section: protocol.upperSection,
+								arch: "upper",
+								applianceCategory: "brackets",
+								isWireChange: true,
+								note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
+							}),
+						});
+						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+							body: JSON.stringify({
+								material: lowerMat,
+								section: protocol.lowerSection,
+								arch: "lower",
+								applianceCategory: "brackets",
+								isWireChange: true,
+								note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
+							}),
+						});
+					}
+
 					await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
 						method: "POST",
 						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({
 							powerChain: protocol.selectedActionIds.includes("power_chain"),
+							applianceCategory: "brackets",
 							note: "Активация лигатур",
 						}),
 					});
@@ -373,12 +507,12 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							<span>Следующий визит через {protocol.nextVisitWeeks} нед.</span>
 						</div>
 					</div>
-					<div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none max-w-full">
+					<div className="flex items-center gap-1.5 flex-wrap py-0.5 max-w-full">
 						<span className="text-[11px] font-semibold text-[var(--ink-muted)] shrink-0 flex items-center gap-1">
 							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Клинические шаблоны:
 						</span>
 						{ORTHO_ACTIVATION_PRESETS.map((preset) => (
-							<button key={preset.id} type="button" onClick={() => handleApplyPreset(preset)} className="shrink-0 px-2.5 py-1 min-h-[32px] text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all">
+							<button key={preset.id} type="button" onClick={() => handleApplyPreset(preset)} className="shrink-0 whitespace-nowrap px-2.5 py-1 min-h-[30px] text-[11px] sm:text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer">
 								{preset.title}
 							</button>
 						))}
@@ -386,22 +520,22 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 				</div>
 
 				<div className="ortho-tabs-bar">
-					<div className="flex items-center gap-1">
+					<div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-1 w-full">
 						<button type="button" onClick={() => setActiveTab("brackets")} className={`ortho-tab-btn ${activeTab === "brackets" ? "active" : ""}`}>
-							<Layers className="w-3.5 h-3.5" /><span>Брекеты и дуги</span>
+							<Layers className="w-3.5 h-3.5 shrink-0" /><span>Брекеты и дуги</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("aligners")} className={`ortho-tab-btn ${activeTab === "aligners" ? "active" : ""}`}>
-							<Smile className="w-3.5 h-3.5" /><span>Элайнеры и капы</span>
+							<Smile className="w-3.5 h-3.5 shrink-0" /><span>Элайнеры и капы</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("photo_trg")} className={`ortho-tab-btn ${activeTab === "photo_trg" ? "active" : ""}`}>
-							<Camera className="w-3.5 h-3.5" /><span>Фото и ТРГ</span>
+							<Camera className="w-3.5 h-3.5 shrink-0" /><span>Фото и ТРГ</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("diary")} className={`ortho-tab-btn ${activeTab === "diary" ? "active" : ""}`}>
-							<FileText className="w-3.5 h-3.5" /><span>Дневник и памятка</span>
+							<FileText className="w-3.5 h-3.5 shrink-0" /><span>Дневник и памятка</span>
 						</button>
 					</div>
 					{feedbackToast && (
-						<div className="text-[11px] font-semibold text-[var(--teal,#0d9488)] px-2 py-0.5 rounded bg-[var(--teal-subtle,rgba(13,148,136,0.1))]">
+						<div className="text-[11px] font-semibold text-[var(--teal,#0d9488)] px-2 py-0.5 rounded bg-[var(--teal-subtle,rgba(13,148,136,0.1))] shrink-0">
 							{feedbackToast}
 						</div>
 					)}
@@ -437,11 +571,11 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							type="button"
 							data-testid="save-ortho-protocol-button"
 							onClick={handleSaveProtocol}
-							style={{ backgroundColor: "var(--teal, #0d9488)" }}
+							style={{ backgroundColor: "var(--teal-fill, var(--teal, #0d9488))", color: "var(--on-teal, #ffffff)" }}
 							className="ortho-primary-cta w-full sm:w-auto"
 						>
 							<Check className="w-4 h-4 shrink-0" />
-							<span>✓ Зафиксировать активацию этапа</span>
+							<span>Зафиксировать активацию этапа</span>
 						</button>
 					</div>
 				</footer>
@@ -454,9 +588,32 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						onClose={() => setIsPhotoModalOpen(false)}
 						patientId={patientId || "pat-ortho-01"}
 						patientName={patientName}
-						initialImageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}
 						doctorName={doctorName}
 						initialPresetId="orthodontic_8"
+						onSaveProtocol={(slots) => {
+							const slotKeys = Object.keys(slots);
+							if (slotKeys.length > 0) {
+								setProtocol((prev) => {
+									const updatedStatuses = { ...prev.photoStatuses };
+									slotKeys.forEach((slotId) => {
+										if (slots[slotId]?.imageUrl) {
+											updatedStatuses[slotId] = true;
+										}
+									});
+									return { ...prev, photoStatuses: updatedStatuses };
+								});
+								showToast("✓ Фотопротокол сохранён в ортодонтическую карту", "success");
+							}
+						}}
+						onPhotoSaved={(res) => {
+							const record = res as { slotId?: string } | undefined;
+							if (record?.slotId) {
+								setProtocol((prev) => ({
+									...prev,
+									photoStatuses: { ...prev.photoStatuses, [record.slotId!]: true },
+								}));
+							}
+						}}
 					/>
 				</Suspense>
 			)}

@@ -24,18 +24,5 @@ export function formatRussianDate(isoString: string): string {
 	return isoString;
 }
 
-/**
- * Добавление рабочих дней с пропуском суббот и воскресений.
- */
-export function addWorkingDaysRu(startDate: Date | string, daysToAdd: number): Date {
-	const result = parseDateToMidnight(startDate);
-	let added = 0;
-	while (added < daysToAdd) {
-		result.setDate(result.getDate() + 1);
-		const dayOfWeek = result.getDay();
-		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-			added++;
-		}
-	}
-	return result;
-}
+import { addWorkingDaysRu } from "../dentalLabCatalogData";
+export { addWorkingDaysRu };

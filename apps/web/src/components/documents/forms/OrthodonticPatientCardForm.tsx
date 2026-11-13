@@ -11,9 +11,9 @@ import {
 type LipCompetenceType = "competent_closed" | "incompetent_open" | "closed_with_strain";
 
 export interface OrthodonticPatientCardFormProps {
-	initialPayload?: Partial<OrthodonticCard043_1uPayload>;
-	onChange?: (payload: OrthodonticCard043_1uPayload) => void;
-	disabled?: boolean;
+	initialPayload?: Partial<OrthodonticCard043_1uPayload> | undefined;
+	onChange?: ((payload: OrthodonticCard043_1uPayload) => void) | undefined;
+	disabled?: boolean | undefined;
 }
 
 export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProps> = React.memo(
@@ -177,7 +177,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 		return (
 			<div className="document-form-container orthodontic-card-wrapper">
 				<DocumentPayloadCard
-					title="Медицинская карта ортодонтического пациента"
+					title="Ортодонтическая карта приёма"
 					description="Антропометрия лица, цефалометрия ТРГ, расчет индексов Тона, Пона, Болтона и план аппаратурного лечения"
 				>
 					<div className="document-form-nav-tabs" style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>

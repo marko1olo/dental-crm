@@ -1,12 +1,9 @@
 import { showToast } from "../GlobalToast";
-import type { RadialMenuAnchorData } from "./OdontogramViewModals";
+import type { RadialMenuAnchorData, OpgToothSlot } from "./OdontogramViewModals";
 import type { ToothState } from "./ToothChart";
 
 export function applyOpgOdontogramAction(
-	teethMap: Record<
-		number,
-		import("../orthodontics/opgTopologicalEngine").OpgToothSlot
-	>,
+	teethMap: Record<number, OpgToothSlot>,
 	onQuickStateChange?:
 		| ((
 				targets: number[],

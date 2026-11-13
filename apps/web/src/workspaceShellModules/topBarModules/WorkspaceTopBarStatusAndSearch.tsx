@@ -16,6 +16,7 @@ import {
 export function WorkspaceTopBarStatusAndSearch({
 	clinicName,
 	formattedDate,
+	cabinetName,
 	selectedWorkspaceRole,
 	staffRoleLabels,
 	availableRoles,
@@ -42,10 +43,12 @@ export function WorkspaceTopBarStatusAndSearch({
 			</div>
 
 			{/* Тихий индикатор кабинета для клиники 1-3 кресел */}
-			<div className="topbar-chair-badge hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
-				<Armchair size={12} className="text-[var(--teal)] opacity-80" aria-hidden="true" />
-				<span>Кабинет 1</span>
-			</div>
+			{cabinetName && (
+				<div className="topbar-chair-badge hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
+					<Armchair size={12} className="text-[var(--teal)] opacity-80" aria-hidden="true" />
+					<span>{cabinetName}</span>
+				</div>
+			)}
 
 			{/* Скрытый якорный селектор роли для совместимости со скринридерами и тестами доступности */}
 			<details

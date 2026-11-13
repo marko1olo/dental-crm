@@ -78,7 +78,14 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	};
 
 	if (!tiers || tiers.length === 0) return null;
-	if (tiers.every((t) => (t.itemsCount ?? 0) === 0 && (t.totalRub ?? 0) === 0)) return <TreatmentPlan3TierEmptyState className={className} />;
+	if (tiers.every((t) => (t.itemsCount ?? 0) === 0 && (t.totalRub ?? 0) === 0)) {
+		return (
+			<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-44 sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
+				<TreatmentPlan3TierMobileSegmented tiers={tiers} activeTierId={activeTierId} onSelectTier={handleCardClick} getTierShortLabel={getTierShortLabel} />
+				<TreatmentPlan3TierEmptyState />
+			</div>
+		);
+	}
 
 	const activeTier = tiers.find((t) => t.tierId === activeTierId) ?? tiers[0]!;
 	const renderSingleTierCard = (tier: TreatmentPlanTier, isMobile: boolean) => (
@@ -91,7 +98,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			<TreatmentPlan3TierToolbar activePaymentMode={activePaymentMode} onPaymentModeChange={setActivePaymentMode} installmentMonths={installmentMonths} onInstallmentMonthsChange={setInstallmentMonths} showNdflBreakdown={showNdflBreakdown} onToggleNdflBreakdown={() => setShowNdflBreakdown((p) => !p)} activeTier={activeTier} copiedMessengerTierId={copiedMessengerTierId} onCopyEstimateToMessenger={handleCopyEstimateToMessenger} onOpenComparatorStudio={onOpenComparatorStudio} onOpenStagePaymentStudio={onOpenStagePaymentStudio} onOpenPriceValidatorStudio={onOpenPriceValidatorStudio} />
 			<TreatmentPlan3TierMobileSegmented tiers={tiers} activeTierId={activeTierId} onSelectTier={handleCardClick} getTierShortLabel={getTierShortLabel} />
 			<div className="sm:hidden flex flex-col w-full min-w-0">{renderSingleTierCard(activeTier, true)}</div>
-			<div className="hidden sm:grid sm:grid-cols-3 gap-3 sm:gap-4 items-stretch h-[calc(100vh-250px)] min-h-[500px] max-h-[620px] overflow-hidden">{tiers.map((t) => renderSingleTierCard(t, false))}</div>
+			<div className="hidden sm:grid sm:grid-cols-3 gap-3 sm:gap-4 items-stretch min-h-[460px]">{tiers.map((t) => renderSingleTierCard(t, false))}</div>
 			<TreatmentPlanRoadmapGrid activeTier={activeTier} />
 			<TreatmentPlan3TierMobileThumbBar activeTier={activeTier} activePaymentMode={activePaymentMode} installmentMonths={installmentMonths} getTierShortLabel={getTierShortLabel} onSignClick={handleSignClick} />
 		</div>

@@ -11,6 +11,9 @@ import {
 } from "../../AppConstants";
 import {
 	type SettingsRoleMode,
+	type SettingsStaffUser,
+	type SettingsViewFeatureFlags,
+	type SettingsTabItem,
 	DOCTOR_TABS,
 	ADMIN_TABS,
 	OWNER_TABS,
@@ -38,9 +41,9 @@ export function useSettingsRoleModeSync(
 }
 
 export function useFilteredSettingsTabs(
-	rawSettingsTabs: any,
-	flags: any,
-	activeStaffUser?: any,
+	rawSettingsTabs: SettingsTabItem[] | null | undefined,
+	flags: SettingsViewFeatureFlags,
+	activeStaffUser?: SettingsStaffUser | null,
 ): Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }> {
 	let typed = (
 		Array.isArray(rawSettingsTabs) && rawSettingsTabs.length > 0

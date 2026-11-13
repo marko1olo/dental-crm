@@ -199,6 +199,9 @@ async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width:
 	await page.route('**/api/dental-lab/orders**', async (route) => {
 		await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_LAB_ORDERS) });
 	});
+	await page.route('**/api/lab/orders**', async (route) => {
+		await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_LAB_ORDERS) });
+	});
 }
 
 test.describe('Dental Lab Orders Unification 4-State Proof', () => {

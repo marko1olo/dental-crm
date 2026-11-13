@@ -253,9 +253,8 @@ export async function handleUpsertPatientTreatmentPlan(
 						organizationId,
 						planId: savedPlanId,
 						toothNumber: item.toothNumber ?? null,
-						priceId: item.name
-							? `${item.priceId}::${item.name}`
-							: item.priceId,
+						priceId: item.priceId,
+						name: item.name ?? null,
 						quantity: item.quantity,
 						price: item.price.toString(),
 						discount: item.discount.toString(),

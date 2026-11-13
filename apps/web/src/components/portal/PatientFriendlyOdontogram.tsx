@@ -6,7 +6,7 @@
 
 import React, { memo, useCallback, useMemo, useState } from "react";
 import {
-	DEFAULT_PATIENT_TEETH,
+	createDefaultHealthyAdultTeeth,
 	calculateDentalHealthIndex,
 	type PatientToothInfo,
 	type PatientToothStatus,
@@ -31,7 +31,7 @@ const LR_FDI = ["48", "47", "46", "45", "44", "43", "42", "41"];
 const LL_FDI = ["31", "32", "33", "34", "35", "36", "37", "38"];
 
 export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps> = memo(({
-	teeth = DEFAULT_PATIENT_TEETH,
+	teeth = createDefaultHealthyAdultTeeth(),
 	onSelectTooth,
 	showHealthIndexHeader = true,
 }) => {

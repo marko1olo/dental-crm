@@ -15,7 +15,7 @@ import { useSettingsStore } from "../../store/settingsStore";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { buildSettingsProps } from "../../components/settings/settingsPropsBuilder";
-import { type SettingsRoleMode, type SettingsViewProps } from "./types.js";
+import { type SettingsRoleMode, type SettingsViewProps, type SettingsTabItem } from "./types.js";
 import { SettingsDesktopLayout } from "./SettingsDesktopLayout.js";
 import { useSettingsRoleModeSync, selectSettingsTabHelper, handleSettingsTabKeyboardNav } from "./useSettingsViewLogic.js";
 
@@ -23,9 +23,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const appLogic = useAppLogicContext();
 	const settingsStore = useSettingsStore();
 	const derivations = useSettingsDerivations();
-	// biome-ignore lint/suspicious/noExplicitAny: props bag unpacking
-	const logic = appLogic as Record<string, any>;
-	const { activeSettingsTabButtonRef, reopenOnboarding, setSettingsTab, settingsTab, settingsTabs: rawSettingsTabs } = logic;
+	const logic = appLogic as Record<string, unknown>;
+	const { activeSettingsTabButtonRef, reopenOnboarding, setSettingsTab, settingsTab, settingsTabs: rawSettingsTabs } =
+		logic as { activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null>; reopenOnboarding?: () => void; setSettingsTab?: (tab: string) => void; settingsTab?: string; settingsTabs?: SettingsTabItem[] };
 	const settingsProps = buildSettingsProps(logic, settingsStore, derivations, activeStaffUser);
 	const [roleMode, setRoleMode] = useState<SettingsRoleMode>("all");
 	useSettingsRoleModeSync(settingsTab, roleMode, setRoleMode);

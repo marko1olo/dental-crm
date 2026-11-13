@@ -48,6 +48,8 @@ export interface CopilotExecutionResult {
   matchedProtocol?: MatchedProtocolInfo | null;
   activePresetIndex?: number;
   toastMessage?: { text: string; type: "info" | "success" | "warning" };
+  isLocalFallback?: boolean;
+  fallbackMessage?: string;
 }
 
 export async function executeCopilotAgentRequest(
@@ -94,8 +96,15 @@ export async function executeCopilotAgentRequest(
     headers["x-dente-staff-token"] = staffToken;
   }
 
-  const currentTrust = useCopilotStore.getState().settings.trustLevel;
-  const activeMode = (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious" ? "cautious" : currentTrust === "autonomous" ? "autonomous" : "supervised";
+  const copilotSettings = useCopilotStore.getState().settings;
+  const currentTrust = copilotSettings.trustLevel;
+  const maskPhiData = copilotSettings.maskPhiData ?? true;
+  const activeMode: "confirm_all" | "balanced" | "autonomous" =
+    currentTrust === "confirm_all"
+      ? "confirm_all"
+      : currentTrust === "autonomous"
+      ? "autonomous"
+      : "balanced";
 
   const requestBody = {
     patientId: patientId?.trim() || undefined,
@@ -116,6 +125,7 @@ export async function executeCopilotAgentRequest(
         }
       : undefined,
     mode: activeMode,
+    maskPhiData,
   };
 
   // 1. Canonical ReAct SSE streaming via /api/agent/chat
@@ -125,7 +135,10 @@ export async function executeCopilotAgentRequest(
     patientId: patientId?.trim() || undefined,
     visitId,
     headers,
-    trustLevel: (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious" ? "confirm_all" : currentTrust === "autonomous" ? "autonomous" : "balanced",
+    trustLevel: activeMode,
+    maskPhiData,
+    patientAllergies,
+    somaticHistory: patientSomaticHistory,
     onThoughtChunk: params.onThoughtChunk,
   });
   if (sseResult) {
@@ -144,7 +157,8 @@ export async function executeCopilotAgentRequest(
       toothNumber: effectiveTooth,
       allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
       stream: false,
-      trustLevel: (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious" ? "confirm_all" : currentTrust === "autonomous" ? "autonomous" : "balanced",
+      maskPhiData,
+      trustLevel: activeMode,
       context: {
         activeTooth: effectiveTooth,
         patientId: patientId?.trim() || undefined,
@@ -215,7 +229,12 @@ export async function executeCopilotAgentRequest(
           }
         }
       }
-      return parseAgentApiResponse(normalizedData, effectiveTooth || null, matchedProtocol);
+      const parsed = parseAgentApiResponse(normalizedData, effectiveTooth || null, matchedProtocol);
+      if (normalizedData.verdict && normalizedData.verdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]")) {
+        parsed.isLocalFallback = true;
+        parsed.fallbackMessage = "Локальный автономный режим (API-ключ не настроен)";
+      }
+      return parsed;
     }
   } catch (err) {
     console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);

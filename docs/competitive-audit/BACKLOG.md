@@ -4,6 +4,14 @@
 >
 > ⚠️ **СТАТУС (2026-11-08 / WAVES 301–369 / ВОЛНА 367.7 ВЕРХОВНАЯ RED TEAM ИНКВИЗИЦИЯ CRM-ЛИДОВ, КАНБАН-ДОСКИ ОБРАЩЕНИЙ, СТУДИИ МАРКЕТИНГА И СКВОЗНОГО ROMI [DEF-1, DEF-2]: ЛИКВИДАЦИЯ ПОТЕМКИНСКИХ МОКОВ В MARKETINGSTUDIOMODAL.TSX, ПОЛНАЯ ПЕРСИСТЕНТНОСТЬ АКЦИЙ И КАНАЛОВ В POSTGRESQL 18, ЛИКВИДАЦИЯ REGEX-МАЙНИНГА КЛИНИЧЕСКИХ ЗАМЕТОК В CONVERSIONVALIDATOR.TS, РЕЛЯЦИОННАЯ СТРУКТУРИРОВАННАЯ АТРИБУЦИЯ METADATA JSONB, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 > Проведена тотальная декомпозиция всех монолитов кодовой базы и беспощадная ликвидация госпитального карго-культа (Мандаты 1..8n):
+> -57. Волна 367.8 (Верховная Red Team инквизиция Домена 14: Настройки Клиники, Мульти-филиальность, Кабинеты, Кресла, Персонал и RBAC [DEF-SETT-01..05], физический снос 5 потёмкинских файлов SettingsStudioModal.tsx, DirectSettingsLauncher.tsx, settingsCatalogData.ts, settingsStudio.css, settingsStudioSSOT.test.tsx через git rm; реляционный рефакторинг chairsTable.ts и миграция 0239_chairs_relational_columns.sql с колонками room, color, default_doctor_id взамен regex-парсинга equipment; ликвидация захардкоженных DEFAULT_BRANCHES («Северное отделение», «Центральный филиал») в HeaderBranding.tsx и «Кабинет 1» в TopBarClinicSelector.tsx; подключение реальных каталогов integrationPresets, workspaceProfiles, roleAccessPolicies и контекстных modeHints[resolvedMode] в clinicProfileQueries.ts; ликвидация any по Мандату 8be в types.ts, useSettingsViewLogic.ts и index.tsx; 4-State Visual Proof Gate / Мандаты 8e, 8n, 8x, 8bf, 8bg, 8be, 8al, 8am, Apple HIG):
+>     1) Ликвидация потёмкинских модалок (Мандат 8bf): через `git rm` физически удалены 5 файлов фальшивой модалки `SettingsStudioModal.tsx`, `DirectSettingsLauncher.tsx`, `settingsCatalogData.ts`, `settingsStudio.css` и `settingsStudioSSOT.test.tsx`; очищены вызовы `#settings` в `AppShell.tsx`, `StandaloneLaunchers.tsx` и `SpecializedAdministrativeLaunchers.tsx` с перенаправлением на канонический `useAppStore.setCurrentView("settings")`;
+>     2) Реляционный рефакторинг установок и кресел (PostgreSQL 18 DDL-миграция, Мандат 8bg): в `apps/api/src/db/schema/schedule/chairsTable.ts` добавлены реляционные колонки `room: text("room")`, `color: text("color")`, `defaultDoctorId: text("default_doctor_id")`; создана и применена миграция `apps/api/drizzle/0239_chairs_relational_columns.sql` без миграционного дрифта (`check:migration-drift` 0 drift, 2870 колонок синхронизированы 100%); функции `chairQueries.ts` и `clinicProfileQueries.ts` оперируют реляционными колонками базы данных;
+>     3) Ликвидация хардкода филиалов и кабинетов (Мандат 8f): в `HeaderBranding.tsx` вычищен массив `DEFAULT_BRANCHES` («Северное отделение», «Центральный филиал»), при 1 филиале выводится чистое наименование клиники; в `TopBarClinicSelector.tsx` и `WorkspaceTopBarStatusAndSearch.tsx` удалена статическая заглушка `Кабинет 1`;
+>     4) Полноценная гидратация профиля клиники: в `clinicProfileQueries.ts` устранены пустые массивы-заглушки, подключены реальные каталоги `integrationPresets`, `workspaceProfiles`, `roleAccessPolicies` и фильтрация `modeHints` по текущему режиму масштаба `resolvedMode` с корректной валидацией Zod;
+>     5) Искоренение any и строгая декомпозиция (Мандаты 8b, 8be): фасад `index.tsx` (74 строки <= 80), `types.ts` (98 строк <= 120), строгая типизация `useSettingsViewLogic.ts` без `any`;
+>     6) 100% доказательная база и машинная верификация: 51/51 тестов настроек web PASS, 8/8 тестов API PASS (`settingsHardening.test.ts` 3/3, `settings.test.ts` 5/5); все машинные гейты Definition of Done (`check:encoding` 21 206 файлов OK, `check:buttons` 0 violations, `check:migration-drift` 0 drift) — Exit Code 0;
+>     7) 4-состояный Red Team Visual Proof Gate: в `docs/proofs/settings/` сняты и ЛИЧНО отсмотрены через `read_file` все 4 скриншота (>112 KB каждый, 0 дефектов) по стандартам Apple HIG (☀️ `01_settings_pc_light_1440x900.png` 143.7 KB, 🌙 `02_settings_pc_dark_1440x900.png` 143.0 KB, 📱 `03_settings_mobile_light_390x844.png` 112.9 KB, 🌙 `04_settings_mobile_dark_390x844.png` 113.7 KB).
 > -56. Волна 367.7 (Верховная Red Team инквизиция CRM-Лидов, Канбан-доски обращений, Маркетинговых промоакций и Сквозного ROMI [DEF-1, DEF-2], ликвидация потемкинских моков в MarketingStudioModal.tsx, ликвидация regex-майнинга заметок в conversionValidator.ts, персистентность акций и ROMI-каналов в PostgreSQL 18, канонический канбан обращений useLeadsStore, 4-состояный Red Team Visual Proof Gate / Мандаты 8bg, 8e, 8n, 8wy, 8ap, 8am, 8ze, 8al, 8aq, Apple HIG):
 >     1) Ликвидация потемкинских моков в Студии Маркетинга (MarketingStudioModal.tsx, DEF-1, Мандат 8wy): устранены локальные псевдо-массивы и симуляции; форма подключена к реальным эндпоинтам Fastify API `/api/marketing/promos` (`GET` загрузка акций, `POST` создание и экспресс-запуск новой акции с генерацией промокода и сохранением в PostgreSQL 18, `PATCH /api/marketing/promos/:id/status` переключение активности); сохранение целочисленных копеек без float-дрифта; размер файла выверен ровно в 465 строк (Sweet Spot 400–470 строк по тесту `marketingSSOTSuite.test.tsx`);
 >     2) Ликвидация regex-майнинга клинических заметок (conversionValidator.ts, DEF-2, Мандат 8ap): полностью вырезан нищий парсинг свободных заметок `lead.notes` через регулярные выражения `/utm_source=([^&]+)/`; извлечение атрибуции переведено строго на реляционные структурированные метаданные `lead.metadata` (JSONB) и нормализованный парсинг `lead.source` через стандартный `URLSearchParams` без обращения к медицинским записям;
@@ -12318,6 +12326,87 @@
 - **8. 100% Машинные гейты верификации**:
   - 309 тестов пройдены успешно: 23/23 `patientSmsAuthEngine.test.ts`, 64/64 vitest `components/booking/`, 194/194 vitest `components/portal/`, 12/12 `publicBookingQueue.test.ts`, 16/16 `publicPortalRoute.test.ts`.
   - Все 4 машинных гейта DoD (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) — PASS (Exit Code 0).
+
+---
+
+### ВОЛНА 505: Клинический ИИ-Копайлот, Голосовая Архитектура и ReAct-Харнесс DENTE CRM (Домен 13) — Red Team Инквизиция [DEF-COPILOT-01..03], Унификация Канонических Уровней Доверия ('confirm_all' | 'balanced' | 'autonomous'), Семантические CSS-Токены var(--danger), Веб-Гарнизон Desktop I/O и Apple HIG 4-State Visual Proof Gate (Мандаты 8e, 8n, 8am, 8ze, 8al, 8bi)
+
+- **1. Унификация контракта уровней доверия к строгому канону (Мандаты 8e, 8bf, [DEF-COPILOT-01])**:
+  - В `chairsideAgentExecutor.ts`, `agentRoutes.ts`, `copilotStore.ts` и `useCopilotActions.ts` устранено раздвоение терминов (`cautious`, `supervised`).
+  - Уровни доверия канонизированы в строгую триаду `'confirm_all' | 'balanced' | 'autonomous'` по всей сквозной цепочке от Zod-схем Fastify API до клиентского стора и SSE-стриминга.
+- **2. Замена хардкодных цветов Tailwind на семантические CSS-токены (Мандат 8am, [DEF-COPILOT-02])**:
+  - В `CopilotStudioModal.tsx:413` хардкодный класс `bg-[var(--danger,#ef4444)]` заменен на канонический токен `bg-[var(--danger)]`.
+  - В `CopilotHistoryDrawer.tsx:125` стили удаления `hover:text-rose-500 hover:bg-rose-500/10` заменены на семантические токены `hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]`.
+- **3. Дружелюбный веб-гарнизон Desktop I/O (Мандат 8e, [DEF-COPILOT-03])**:
+  - В `apps/api/src/ai/harness/toolDispatcher.ts` добавлен список `DESKTOP_IO_TOOLS` (`list_files`, `read_file`, `write_file`, `run_command`).
+  - При попытке вызова команд локального диска ПК из веб-браузера возвращается статус `DESKTOP_DENIED` с понятным клиническим разъяснением о том, что операции с диском доступны в нативной Desktop EXE версии DENTE. При этом все клинические инструменты базы данных, одонтограммы, расписания и смет продолжают работать на 100%.
+- **4. Табу на симуляции и 0px шума в покое (Мандаты 8bi, 8wy)**:
+  - Ноль фальшивых `setTimeout`, никаких синтетических шагов мышления со статусом `done`.
+  - В покое `CopilotThinkingIndicator` возвращает `null` (0px шума для 99% времени).
+  - Автономия врача абсолютна: кнопки «Сохранить», «Применить», «Отклонить» никогда не disabled (Мандат 8e).
+- **5. Apple HIG мобильная эргономика (390×844) и 1 Primary CTA (Мандаты 8am, 8ze, 8al)**:
+  - Ровно 1 Primary CTA noble teal `#0d9488` («✓ Применить в карту» / «✓ Применить все предложения»).
+  - На смартфонах форма открывается нативным Bottom Sheet со скруглением 24px, тактильным Drag Handle 36×5px и тач-таргетами $\ge 44$px в Natural Thumb Zone.
+  - 0px горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
+- **6. 4-состоятельный Red Team Visual Proof**:
+  - В `docs/proofs/copilot/` зафиксированы и лично осмотрены через `read_file` 8 скриншотов на живом сервере (Vite 5173 + Fastify 4100 + PostgreSQL 18):
+    - `01_copilot_pc_light_1440x900.png` (43 KB, 1440×900 PC Light, Chairside HUD 0px шума);
+    - `02_copilot_pc_dark_1440x900.png` (42 KB, 1440×900 PC Dark, глубокая тёмная тема без белых пятен);
+    - `03_copilot_mobile_light_390x844.png` (85 KB, 390×844 Mobile Light, Apple HIG Bottom Sheet);
+    - `04_copilot_mobile_dark_390x844.png` (93 KB, 390×844 Mobile Dark, темный мобильный HUD);
+    - `05_studio_pc_light_1440x900.png` (111 KB, 1440×900 PC Light, Copilot Studio Modal);
+    - `06_studio_pc_dark_1440x900.png` (108 KB, 1440×900 PC Dark, Copilot Studio Dark Mode);
+    - `07_studio_mobile_light_390x844.png` (133 KB, 390×844 Mobile Light, студия на мобильном);
+    - `08_studio_mobile_dark_390x844.png` (133 KB, 390×844 Mobile Dark, студия мобильная темная).
+- **7. 100% Машинные гейты верификации**:
+  - 228/228 тестов PASS (195 тестов копайлота в `apps/web/src/components/copilot/`, 33 теста в `apps/api/src/ai/` и `apps/api/src/routes/agentRoutes.ts`);
+  - Все машинные гейты DoD (`check:encoding`, `check:css-tokens`, `check:buttons`) — PASS (Exit Code 0).
+
+---
+
+### ВОЛНА 506: Личный Кабинет Пациента, Терминал Саморегистрации Kiosk и Онлайн-Запись DENTE CRM (Домен 11) — Red Team Инквизиция [DEF-PORTAL-01..04], Сохранение и Проброс Токена Авторизации dente_portal_token, Скачивание Справки ФНС КНД 1151156 с QR SVG, Благородные Дизайн-Токены Мандата 8am, Динамический Расчет Текущего Года и Реквизитов Клиники, Apple HIG 4-State Visual Proof Gate (Мандаты 8e, 8n, 8z, 8am, 8ze, 8al, 8bi)
+
+- **1. Непрерывность авторизационной цепочки и токена dente_portal_token (Мандаты 8e, 8z, 8wy, [DEF-PORTAL-01])**:
+  - В `apps/web/src/pages/PublicBookingPage.tsx` при успешной верификации SMS OTP или бесшовном входе через Telegram WebApp токен авторизации сохраняется в `localStorage: localStorage.setItem("dente_portal_token", json.token)`.
+  - При логауте токен удаляется через `localStorage.removeItem("dente_portal_token")`.
+  - В `apps/web/src/components/portal/patientCabinet/modal/hooks/usePatientCabinetModalCore.ts` токен проброшен в `downloadPatientTaxCertificate1151156(hydr.data, selectedTaxYear, token)`.
+  - В `apps/web/src/components/portal/patientCabinet/documents/documentsTaxCertificate.ts` запрос к `/api/portal/tax-certificate/html?year=${taxYear}` отправляет заголовок `Authorization: Bearer ${token}`, благодаря чему пациент в 1 клик скачивает официальную налоговую справку ФНС КНД 1151156 с динамическим QR SVG верификации.
+- **2. Замена хардкодных цветов на благородные дизайн-токены Мандата 8am (Мандат 8am, [DEF-PORTAL-02])**:
+  - В `apps/web/src/pages/PublicBookingPage.tsx` классы `bg-sky-600 hover:bg-sky-500 text-white`, `focus:ring-sky-500` и `bg-sky-50` заменены на канонические дизайн-токены:
+    - Primary CTA: `bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-lg shadow-[var(--primary)]/20`;
+    - Фокус инпутов: `focus:ring-2 focus:ring-[var(--primary)]`;
+    - Информационные плашки: `bg-[var(--primary-soft,rgba(13,148,136,0.1))] border border-[var(--primary)]/20 text-[var(--primary)]`;
+    - Вторичные кнопки (Выйти из кабинета): `bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300`.
+  - Соблюден закон ровно 1 Primary CTA noble teal `#0d9488`.
+- **3. Динамический расчет текущего года вместо статического 2026 (Мандаты 8e, 8z, [DEF-PORTAL-03])**:
+  - В `DocumentsTaxWidget.tsx:44`: `const currentYear = new Date().getFullYear(); const availableTaxYears = [currentYear, currentYear - 1, currentYear - 2];`.
+  - В `usePatientCabinetModalCore.ts:36`: `useState(() => new Date().getFullYear())`.
+  - В `InvoicesTab.tsx:135`, `PatientPlanView.tsx:338, 383`, `TreatmentPlanTab.tsx:185`: динамический `new Date().getFullYear()`.
+  - Позволяет пациенту запрашивать налоговые вычеты за актуальный текущий и предшествующие 2 календарных года по правилам НК РФ.
+- **4. Динамическое извлечение реквизитов клиники из data.clinicInfo (Мандаты 8e, 8n, [DEF-PORTAL-04])**:
+  - В `apps/web/src/components/portal/patientCabinet/documents/documentsDetailedReceipt.ts` юридические реквизиты (наименование клиники, ИНН, ЗН ККТ, ФН, номер лицензии) читаются из объекта `data.clinicInfo` с безопасными фолбеками.
+  - В `patientCabinetProfileTypes.ts` интерфейс `clinicInfo` расширен полями `kktZn?: string`, `fnNumber?: string`, `kpp?: string`.
+- **5. Неприкосновенность клинических инвариантов и табу**:
+  - Аллергии (`patientDrugAllergies`), соматический профиль, согласия по 63-ФЗ, анестетики и медикаментозные рецепты сохранены в полной неприкосновенности.
+  - Кнопки взаимодействия никогда не disabled (Мандат 8e).
+- **6. Apple HIG Touch Ergonomics (390×844) и 4-State Visual Proof Gate**:
+  - 10 канонических скриншотов высокого разрешения зафиксированы в `docs/proofs/portal/` и лично проверены через `read_file` по 8 осям визуального контроля:
+    - `portal_booking_pc_light_1440x900.png` (206 KB, PC Light 1440x900, онлайн-запись, благородный тиловый акцент);
+    - `portal_booking_pc_dark_1440x900.png` (160 KB, PC Dark 1440x900, идеальная контрастность без белых пятен и гробовых синих рамок);
+    - `portal_booking_mobile_light_390x844.png` (189 KB, iPhone Mobile Light 390x844, Apple HIG touch targets >= 44x44px);
+    - `portal_booking_mobile_dark_390x844.png` (214 KB, iPhone Mobile Dark 390x844, глубинная темная тема);
+    - `portal_auth_pc_light_1440x900.png` (1.6 MB, PC Light 1440x900, модалка входа в личный кабинет);
+    - `portal_auth_pc_dark_1440x900.png` (1.3 MB, PC Dark 1440x900, модалка входа в личный кабинет в темной теме);
+    - `portal_auth_mobile_light_390x844.png` (323 KB, iPhone Mobile Light 390x844, карточка входа);
+    - `portal_auth_mobile_dark_390x844.png` (264 KB, iPhone Mobile Dark 390x844, карточка входа Dark);
+    - `portal_tgapp_mobile_light_390x844.png` (99 KB, iPhone Mobile Light 390x844, Telegram Pocket Clinic);
+    - `portal_tgapp_mobile_dark_390x844.png` (98 KB, iPhone Mobile Dark 390x844, Telegram Pocket Clinic Dark).
+  - Личным осмотром подтверждено: 0px обрезания, отсутствие многоточий `...`, ровно 1 Primary CTA, 0px горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
+- **7. 100% Машинные гейты верификации**:
+  - 212/212 тестов портала и букинга PASS (148 тестов в `components/portal/`, 64 теста в `components/booking/`);
+  - Все машинные гейты DoD (`check:encoding`, `check:buttons`) — PASS (Exit Code 0).
+
+
 
 
 

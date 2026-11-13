@@ -2,7 +2,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "6005e194-3b84-4951-9e6d-d0b164f0e0d6";
+const CONV_ID = process.env.CONV_ID || "90778293-7eb7-4709-a06e-d117781acf86";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/treatment_plans");
 const OUT_DOCS_DASH = path.resolve(__dirname, "../docs/proofs/treatment-plans");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
@@ -24,18 +24,30 @@ async function saveProof(page, filename) {
 	if (filename.includes("01_") || filename.includes("pc_light")) {
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "01_treatment_plan_pc_light_1440x900.png"));
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "01_treatment_plan_pc_light_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "01_treatment_plan_3tier_pc_light_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "01_treatment_plan_3tier_pc_light_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_BRAIN, "01_treatment_plan_3tier_pc_light_1440x900.png"));
 	}
 	if (filename.includes("02_") || filename.includes("pc_dark")) {
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "02_treatment_plan_pc_dark_1440x900.png"));
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "02_treatment_plan_pc_dark_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "02_treatment_plan_3tier_pc_dark_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "02_treatment_plan_3tier_pc_dark_1440x900.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_BRAIN, "02_treatment_plan_3tier_pc_dark_1440x900.png"));
 	}
 	if (filename.includes("05_") || filename.includes("mobile_light")) {
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "03_treatment_plan_mobile_light_390x844.png"));
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "03_treatment_plan_mobile_light_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "03_treatment_plan_3tier_mobile_light_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "03_treatment_plan_3tier_mobile_light_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_BRAIN, "03_treatment_plan_3tier_mobile_light_390x844.png"));
 	}
 	if (filename.includes("06_") || filename.includes("mobile_dark")) {
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "04_treatment_plan_mobile_dark_390x844.png"));
 		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "04_treatment_plan_mobile_dark_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS_DASH, "04_treatment_plan_3tier_mobile_dark_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_DOCS, "04_treatment_plan_3tier_mobile_dark_390x844.png"));
+		fs.copyFileSync(pDocs, path.join(OUT_BRAIN, "04_treatment_plan_3tier_mobile_dark_390x844.png"));
 	}
 
 	const size = fs.statSync(pDocs).size;

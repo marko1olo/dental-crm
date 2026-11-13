@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { visitDiaries, visits } from "../../db/schema.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
@@ -19,11 +19,14 @@ import {
  */
 export function registerPatientRecordsRoutes(app: FastifyInstance) {
 	/**
-	 * GET /api/patients/:patientId/records
+	 * GET /api/patients/:patientId/records & /api/patients/:patientId/emk
 	 * Медицинские записи, протоколы приёмов и дневники медицинской карты приёма пациента
 	 * с соблюдением 152-ФЗ / 323-ФЗ ст. 13 (врачебная тайна).
 	 */
-	app.get("/api/patients/:patientId/records", async (request, reply) => {
+	const getPatientRecordsHandler = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -105,5 +108,8 @@ export function registerPatientRecordsRoutes(app: FastifyInstance) {
 				message: "Не удалось загрузить медицинские записи пациента.",
 			});
 		}
-	});
+	};
+
+	app.get("/api/patients/:patientId/records", getPatientRecordsHandler);
+	app.get("/api/patients/:patientId/emk", getPatientRecordsHandler);
 }

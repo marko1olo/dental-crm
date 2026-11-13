@@ -19,7 +19,7 @@ import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { performAutoVisitBomDeduction } from "../../inventory/autoBomDeductionEngine";
 import { useInventoryStore } from "../../../store/inventoryStore";
-import type { AutoVisitBomDeductionResult } from "@dental/shared";
+import type { AutoVisitBomDeductionResult, Dashboard } from "@dental/shared";
 import {
 	useVisitStore,
 	mapVisitUiStateToToothDataState,
@@ -32,8 +32,44 @@ import {
 import {
 	createDefaultAdultTeethData,
 	type ToothData,
+	type ToothState,
 } from "../../odontogram/chart/toothChartTypes";
 import type { ClinicalVisitCompletionResult } from "../clinicalVisitWorkflow";
+
+export interface CompletedPlanItemReference {
+	readonly id?: string | undefined;
+	readonly itemId?: string | undefined;
+	readonly name?: string | undefined;
+	readonly title?: string | undefined;
+	readonly code?: string | undefined;
+	readonly toothNumber?: number | string | undefined;
+	readonly priceRub?: number | undefined;
+}
+
+export interface ActiveVisitCompletionContext {
+	readonly id?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly revision?: number | null | undefined;
+	readonly organizationId?: string | null | undefined;
+	readonly transcript?: string | null | undefined;
+	readonly treatmentPlanId?: string | null | undefined;
+	readonly stageNumber?: number | string | null | undefined;
+}
+
+export interface DashboardAppointmentContext {
+	readonly id?: string | null | undefined;
+	readonly treatmentPlanId?: string | null | undefined;
+	readonly stageNumber?: number | string | null | undefined;
+}
+
+export type DashboardCompletionContext = Partial<Dashboard> & {
+	readonly activeAppointment?: DashboardAppointmentContext | null | undefined;
+	readonly clinicSettings?: {
+		readonly profile?: {
+			readonly organizationId?: string | null | undefined;
+		} | null | undefined;
+	} | null | undefined;
+};
 
 export interface VisitPostCompletionContext {
 	effectiveVisitId: string;
@@ -47,11 +83,11 @@ export interface VisitPostCompletionContext {
 		diagnosisTooth: string;
 		treatmentDescription: string;
 	};
-	effectiveCompletedPlan: readonly any[];
+	effectiveCompletedPlan: readonly CompletedPlanItemReference[];
 	targetPlanId?: string | null | undefined;
 	stageNumber?: number | null | undefined;
-	activeVisit?: any;
-	dashboard?: any;
+	activeVisit?: ActiveVisitCompletionContext | null | undefined;
+	dashboard?: DashboardCompletionContext | null | undefined;
 	result: ClinicalVisitCompletionResult;
 }
 
@@ -78,7 +114,27 @@ export async function executeBomDeduction(
 				ctx.activeVisit?.organizationId ||
 				ctx.dashboard?.clinicSettings?.profile?.organizationId ||
 				"org-default",
-			warehouseItems: useInventoryStore.getState().items as any,
+			warehouseItems: useInventoryStore.getState().items.map((it) => {
+				const item = {
+					id: it.id,
+					name: it.name,
+					stockQuantity: it.stockQuantity,
+					criticalThreshold: it.criticalThreshold,
+					unitCostRub: String(it.unitCostRub),
+					updatedAt: new Date().toISOString(),
+				} as import("../../inventory/inventoryDataMappers").InventoryItem & {
+					cabinetId?: string;
+					chairId?: string;
+					locationId?: string;
+				};
+				if (it.unit) item.unit = it.unit;
+				if (it.sku) item.sku = it.sku;
+				if (it.barcode) item.barcode = it.barcode;
+				if (it.expirationDate) item.expirationDate = it.expirationDate;
+				if (it.lotNumber) item.lotNumber = it.lotNumber;
+				if (it.category) item.category = it.category;
+				return item;
+			}),
 			fetchFn: fetchWithHandling as unknown as typeof fetch,
 		});
 	} catch (deductionErr) {
@@ -240,15 +296,15 @@ export async function executeTreatmentPlanItemCompletion(
 	try {
 		let targetPlanId =
 			ctx.targetPlanId ||
-			(ctx.activeVisit as any)?.treatmentPlanId ||
-			((ctx.dashboard as any)?.activeAppointment as any)?.treatmentPlanId ||
+			ctx.activeVisit?.treatmentPlanId ||
+			ctx.dashboard?.activeAppointment?.treatmentPlanId ||
 			null;
 
 		const effectiveStage =
 			ctx.stageNumber !== undefined
 				? ctx.stageNumber
-				: (ctx.activeVisit as any)?.stageNumber ??
-					((ctx.dashboard as any)?.activeAppointment as any)?.stageNumber ??
+				: ctx.activeVisit?.stageNumber ??
+					ctx.dashboard?.activeAppointment?.stageNumber ??
 					undefined;
 
 		if (!targetPlanId || !isUuid(targetPlanId)) {
@@ -262,16 +318,26 @@ export async function executeTreatmentPlanItemCompletion(
 				},
 			).catch(() => null);
 
-			const planList = Array.isArray((plansRes as any)?.plans)
-				? (plansRes as any).plans
-				: Array.isArray(plansRes)
-					? (plansRes as any)
-					: [];
+			interface TreatmentPlanRecord {
+				id: string;
+				planNumber?: string | null | undefined;
+				title?: string | null | undefined;
+				status?: string | null | undefined;
+			}
+
+			let planList: TreatmentPlanRecord[] = [];
+			if (plansRes && typeof plansRes === "object") {
+				if ("plans" in plansRes && Array.isArray((plansRes as { plans: unknown }).plans)) {
+					planList = (plansRes as { plans: TreatmentPlanRecord[] }).plans;
+				} else if (Array.isArray(plansRes)) {
+					planList = plansRes as TreatmentPlanRecord[];
+				}
+			}
 
 			if (planList.length > 0) {
 				if (targetPlanId) {
 					const matched = planList.find(
-						(p: any) =>
+						(p) =>
 							p.id === targetPlanId ||
 							String(p.planNumber || "").toLowerCase() ===
 								String(targetPlanId).toLowerCase() ||
@@ -284,9 +350,9 @@ export async function executeTreatmentPlanItemCompletion(
 				if (!targetPlanId || !isUuid(targetPlanId)) {
 					const activePlan =
 						planList.find(
-							(p: any) => p.status === "Active" || p.status === "Approved",
+							(p) => p.status === "Active" || p.status === "Approved",
 						) ||
-						planList.find((p: any) => p.status === "Draft") ||
+						planList.find((p) => p.status === "Draft") ||
 						planList[0];
 					if (activePlan?.id) targetPlanId = activePlan.id;
 				}
@@ -295,7 +361,7 @@ export async function executeTreatmentPlanItemCompletion(
 
 		if (targetPlanId && isUuid(targetPlanId)) {
 			const planItemIds = (ctx.effectiveCompletedPlan || [])
-				.map((x: any) => String(x.id || x.itemId || ""))
+				.map((x) => String(x.id || x.itemId || ""))
 				.filter(Boolean);
 
 			await fetchWithHandling(
@@ -354,7 +420,7 @@ export async function executeOdontogramToothHistorySync(
 
 	try {
 		const visitState = useVisitStore.getState();
-		const treatedTeethMap = new Map<number, { state: string; reason: string }>();
+		const treatedTeethMap = new Map<number, { state: ToothState; reason: string }>();
 
 		// 1. Из структурированных записей зубов текущего визита
 		for (const [codeStr, record] of Object.entries(
@@ -392,8 +458,8 @@ export async function executeOdontogramToothHistorySync(
 			if (toothNum) {
 				const existing = treatedTeethMap.get(toothNum);
 				const uiState = inferToothStateFromService({
-					code: item.code || "",
-					title: item.name,
+					...(item.code ? { code: item.code } : {}),
+					...(item.name ? { title: item.name } : {}),
 				});
 				const clinicalState = mapVisitUiStateToToothDataState(uiState);
 				const reason = existing
@@ -414,11 +480,11 @@ export async function executeOdontogramToothHistorySync(
 				if (Number.isFinite(parsed) && parsed > 0) {
 					const existing = treatedTeethMap.get(parsed);
 					const uiState = inferToothStateFromService({
-						code: srv.code804n,
-						title: srv.name,
+						...(srv.code804n ? { code: srv.code804n } : {}),
+						...(srv.name ? { title: srv.name } : {}),
 					});
 					const clinicalState = mapVisitUiStateToToothDataState(uiState);
-					const reason = existing ? existing.reason : srv.name;
+					const reason = existing?.reason || srv.name || `Лечение зуба ${parsed}`;
 					treatedTeethMap.set(parsed, {
 						state: existing?.state || clinicalState,
 						reason,
@@ -440,13 +506,13 @@ export async function executeOdontogramToothHistorySync(
 					updatedTeeth[idx] = {
 						...updatedTeeth[idx],
 						toothNumber: toothNum,
-						state: info.state as any,
+						state: info.state,
 						updatedAt: new Date().toISOString(),
 					};
 				} else {
 					updatedTeeth.push({
 						toothNumber: toothNum,
-						state: info.state as any,
+						state: info.state,
 						updatedAt: new Date().toISOString(),
 					});
 				}

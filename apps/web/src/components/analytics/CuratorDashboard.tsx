@@ -12,9 +12,20 @@ import { CuratorPlanAssignmentModal } from "../treatment-plans/CuratorPlanAssign
 import { CuratorHeader } from "./curatorModules/CuratorHeader";
 import { CuratorKpiCardsGrid } from "./curatorModules/CuratorKpiCardsGrid";
 import { CuratorQueueFiltersBar } from "./curatorModules/CuratorQueueFiltersBar";
-import { mapDashboardContextToQueue } from "./curatorModules/curatorContextQueueMapper";
+import {
+	type ContextStaffMember,
+	mapDashboardContextToQueue,
+} from "./curatorModules/curatorContextQueueMapper";
 import { useCuratorDashboardData } from "./curatorModules/useCuratorDashboardData";
 import "./curatorDashboard.css";
+
+export interface CuratorAssignmentTarget {
+	readonly patientId: string;
+	readonly patientName: string;
+	readonly planId: string;
+	readonly planTitle: string;
+	readonly currentCuratorId?: string | null | undefined;
+}
 
 export interface CuratorDashboardProps {
 	readonly onOpenPatientPlan?: ((patientId: string, planId: string) => void) | undefined;
@@ -28,14 +39,18 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 	className = "",
 }) => {
 	const { dashboard } = useAppLogicContext();
-	const [selectedCuratorId, setSelectedCuratorId] = useState<string>("all"); const [selectedStage, setSelectedStage] = useState<CuratorFunnelStage | "all">("all");
-	const [selectedPriceRange, setSelectedPriceRange] = useState<"all" | "low" | "medium" | "high">("all"); const [searchQuery, setSearchQuery] = useState<string>("");
-	const [onlyAttentionFlags, setOnlyAttentionFlags] = useState<boolean>(false); const [sortBy, setSortBy] = useState<"priority" | "sum_desc" | "days_in_stage_desc" | "assigned_at_desc">("priority");
-	const [assignmentTarget, setAssignmentTarget] = useState<any | null>(null); const [openMenuPlanId, setOpenMenuPlanId] = useState<string | null>(null);
+	const [selectedCuratorId, setSelectedCuratorId] = useState<string>("all");
+	const [selectedStage, setSelectedStage] = useState<CuratorFunnelStage | "all">("all");
+	const [selectedPriceRange, setSelectedPriceRange] = useState<"all" | "low" | "medium" | "high">("all");
+	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [onlyAttentionFlags, setOnlyAttentionFlags] = useState<boolean>(false);
+	const [sortBy, setSortBy] = useState<"priority" | "sum_desc" | "days_in_stage_desc" | "assigned_at_desc">("priority");
+	const [assignmentTarget, setAssignmentTarget] = useState<CuratorAssignmentTarget | null>(null);
+	const [openMenuPlanId, setOpenMenuPlanId] = useState<string | null>(null);
 
 	const staffCurators = useMemo(() => {
-		const staff = (dashboard?.clinicSettings?.staff ?? []) as any[];
-		return staff.filter((s) => s.active && ["curator", "administrator", "manager", "owner"].includes(s.role));
+		const staff: readonly ContextStaffMember[] = (dashboard?.clinicSettings?.staff as readonly ContextStaffMember[] | undefined) ?? [];
+		return staff.filter((s) => Boolean(s.active) && typeof s.role === "string" && ["curator", "administrator", "manager", "owner"].includes(s.role));
 	}, [dashboard?.clinicSettings?.staff]);
 
 	const fallbackQueue = useMemo(
@@ -105,12 +120,10 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 					isOpen={Boolean(assignmentTarget)}
 					onClose={() => setAssignmentTarget(null)}
 					patientId={assignmentTarget.patientId}
-					patientName={assignmentTarget.patientFullName}
-					treatmentPlanId={assignmentTarget.treatmentPlanId}
-					treatmentPlanTitle={assignmentTarget.treatmentPlanTitle}
-					currentCuratorId={assignmentTarget.curatorId}
-					currentCuratorName={assignmentTarget.curatorFullName}
-					currentStage={assignmentTarget.funnelStage}
+					patientName={assignmentTarget.patientName}
+					treatmentPlanId={assignmentTarget.planId}
+					treatmentPlanTitle={assignmentTarget.planTitle}
+					currentCuratorId={assignmentTarget.currentCuratorId}
 				/>
 			)}
 		</div>

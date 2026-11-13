@@ -345,7 +345,7 @@ export function createDefaultHealthyAdultTeeth(): PatientToothInfo[] {
  * Formula: % of healthy, cured and restored teeth vs total teeth in chart.
  */
 export function calculateDentalHealthIndex(
-	teeth: readonly PatientToothInfo[] = DEFAULT_PATIENT_TEETH,
+	teeth: readonly PatientToothInfo[] = createDefaultHealthyAdultTeeth(),
 ): DentalHealthIndexResult {
 	const totalTeeth = teeth.length || 32;
 	const healthyCount = teeth.filter((t) => t.status === "healthy").length;

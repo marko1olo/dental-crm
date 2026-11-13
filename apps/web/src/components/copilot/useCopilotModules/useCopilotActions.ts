@@ -77,11 +77,12 @@ export function useCopilotActions({
 
 			const settings = useCopilotStore.getState().settings;
 			const currentTrust = settings.trustLevel;
-			const normalizedTrust = (currentTrust as string) === "confirm_all" || (currentTrust as string) === "cautious"
-				? "confirm_all"
-				: currentTrust === "autonomous"
-				? "autonomous"
-				: "balanced";
+			const normalizedTrust: "confirm_all" | "balanced" | "autonomous" =
+				currentTrust === "confirm_all"
+					? "confirm_all"
+					: currentTrust === "autonomous"
+					? "autonomous"
+					: "balanced";
 
 			await streamRequest("/api/agent/chat", {
 				conversationId: sessId,
@@ -96,6 +97,7 @@ export function useCopilotActions({
 				speedMode: settings.speedMode,
 				trustLevel: normalizedTrust,
 				runtimeMode: settings.runtimeMode,
+				maskPhiData: settings.maskPhiData ?? true,
 			});
 			setBusy(false);
 			setPhase(null);

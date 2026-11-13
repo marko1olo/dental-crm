@@ -27,7 +27,6 @@ import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost"
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
-import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
@@ -357,7 +356,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		},
 		render: () => <DirectMarketingLauncher />,
 	},
-	// 20. Студия настроек клиники и реквизитов (SSOT)
+	// 20. Студия настроек клиники и реквизитов (SSOT переход в SettingsView)
 	{
 		id: "settings-studio",
 		title: "Студия настроек клиники и реквизитов",
@@ -367,7 +366,14 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			exactHashes: ["#settings", "#clinic-setup", "#clinic-requisites", "#settings-studio"],
 			hashPrefixes: ["#settings?", "#settings/", "#clinic-setup?", "#clinic-requisites?"],
 		},
-		render: () => <DirectSettingsLauncher />,
+		render: () => {
+			if (typeof window !== "undefined") {
+				import("../../../../store/appStore").then((m) => {
+					m.useAppStore.getState().setCurrentView("settings");
+				});
+			}
+			return null;
+		},
 	},
 	// 21. Лист ожидания и подбор пациентов в освободившийся слот (SSOT)
 	{

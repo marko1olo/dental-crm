@@ -24,20 +24,59 @@ export async function buildCommerceMlPackage(params: ExportCommerceMlParams): Pr
 	const { startDateIso, endDateIso } = parsed;
 	const startTimestamp = new Date(`${startDateIso}T00:00:00.000Z`);
 	const endTimestamp = new Date(`${endDateIso}T23:59:59.999Z`);
-	const prefix = (parsed.clinicProfileOverrides as any)?.prefix1C || "DN";
+	const prefix = parsed.clinicProfileOverrides?.prefix1C || "DN";
 	const cleanDate = startDateIso.replace(/-/g, "");
 
-	let clinic: OneCClinicProfile = { ...DEFAULT_CLINIC_PROFILE_1C, id: orgId, ...parsed.clinicProfileOverrides };
-	const chartOfAccounts: OneCChartOfAccounts = { ...DEFAULT_1C_CHART_OF_ACCOUNTS, ...parsed.chartOfAccountsOverrides };
+	let clinic: OneCClinicProfile = {
+		id: orgId,
+		name: parsed.clinicProfileOverrides?.name ?? DEFAULT_CLINIC_PROFILE_1C.name,
+		fullName: parsed.clinicProfileOverrides?.fullName ?? DEFAULT_CLINIC_PROFILE_1C.fullName,
+		inn: parsed.clinicProfileOverrides?.inn ?? DEFAULT_CLINIC_PROFILE_1C.inn,
+		kpp: parsed.clinicProfileOverrides?.kpp ?? DEFAULT_CLINIC_PROFILE_1C.kpp,
+		ogrn: parsed.clinicProfileOverrides?.ogrn ?? DEFAULT_CLINIC_PROFILE_1C.ogrn,
+		address: parsed.clinicProfileOverrides?.address ?? DEFAULT_CLINIC_PROFILE_1C.address,
+		phone: parsed.clinicProfileOverrides?.phone ?? DEFAULT_CLINIC_PROFILE_1C.phone,
+		email: parsed.clinicProfileOverrides?.email ?? DEFAULT_CLINIC_PROFILE_1C.email,
+		bankAccount: parsed.clinicProfileOverrides?.bankAccount ?? DEFAULT_CLINIC_PROFILE_1C.bankAccount,
+		bankBik: parsed.clinicProfileOverrides?.bankBik ?? DEFAULT_CLINIC_PROFILE_1C.bankBik,
+		bankName: parsed.clinicProfileOverrides?.bankName ?? DEFAULT_CLINIC_PROFILE_1C.bankName,
+		bankCorrAccount: parsed.clinicProfileOverrides?.bankCorrAccount ?? DEFAULT_CLINIC_PROFILE_1C.bankCorrAccount,
+		chiefDoctorName: parsed.clinicProfileOverrides?.chiefDoctorName ?? DEFAULT_CLINIC_PROFILE_1C.chiefDoctorName,
+		chiefAccountantName: parsed.clinicProfileOverrides?.chiefAccountantName ?? DEFAULT_CLINIC_PROFILE_1C.chiefAccountantName,
+		defaultWarehouseName: parsed.clinicProfileOverrides?.defaultWarehouseName ?? DEFAULT_CLINIC_PROFILE_1C.defaultWarehouseName,
+		defaultCashRegisterName: parsed.clinicProfileOverrides?.defaultCashRegisterName ?? DEFAULT_CLINIC_PROFILE_1C.defaultCashRegisterName,
+		prefix1C: parsed.clinicProfileOverrides?.prefix1C ?? DEFAULT_CLINIC_PROFILE_1C.prefix1C,
+	};
+	const chartOfAccounts: OneCChartOfAccounts = {
+		accountSalesRevenue: parsed.chartOfAccountsOverrides?.accountSalesRevenue ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountSalesRevenue,
+		accountSalesCost: parsed.chartOfAccountsOverrides?.accountSalesCost ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountSalesCost,
+		accountMaterials: parsed.chartOfAccountsOverrides?.accountMaterials ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountMaterials,
+		accountConsumables: parsed.chartOfAccountsOverrides?.accountConsumables ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountConsumables,
+		accountProductionCost: parsed.chartOfAccountsOverrides?.accountProductionCost ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountProductionCost,
+		accountGeneralExpense: parsed.chartOfAccountsOverrides?.accountGeneralExpense ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountGeneralExpense,
+		accountCashDesk: parsed.chartOfAccountsOverrides?.accountCashDesk ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountCashDesk,
+		accountBankCurrent: parsed.chartOfAccountsOverrides?.accountBankCurrent ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountBankCurrent,
+		accountAcquiringTransit: parsed.chartOfAccountsOverrides?.accountAcquiringTransit ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountAcquiringTransit,
+		accountBuyersSettlement: parsed.chartOfAccountsOverrides?.accountBuyersSettlement ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountBuyersSettlement,
+		accountAdvancesReceived: parsed.chartOfAccountsOverrides?.accountAdvancesReceived ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountAdvancesReceived,
+		accountRetailBuyers: parsed.chartOfAccountsOverrides?.accountRetailBuyers ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountRetailBuyers,
+		accountPayroll: parsed.chartOfAccountsOverrides?.accountPayroll ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountPayroll,
+		accountNdfl: parsed.chartOfAccountsOverrides?.accountNdfl ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountNdfl,
+		accountSocialTaxes: parsed.chartOfAccountsOverrides?.accountSocialTaxes ?? DEFAULT_1C_CHART_OF_ACCOUNTS.accountSocialTaxes,
+	};
 
 	try {
 		const [orgRecord] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
 		if (orgRecord) {
 			clinic = {
-				...clinic, name: orgRecord.name || clinic.name, fullName: `ООО «${orgRecord.name || clinic.name}»`,
-				inn: (orgRecord as any).inn || clinic.inn, kpp: (orgRecord as any).kpp || clinic.kpp,
-				ogrn: (orgRecord as any).ogrn || clinic.ogrn, address: (orgRecord as any).address || clinic.address,
-				phone: (orgRecord as any).phone || clinic.phone,
+				...clinic,
+				name: orgRecord.name || clinic.name,
+				fullName: `ООО «${orgRecord.name || clinic.name}»`,
+				inn: orgRecord.inn || clinic.inn,
+				kpp: orgRecord.kpp || clinic.kpp,
+				ogrn: orgRecord.ogrn || clinic.ogrn,
+				address: orgRecord.legalAddress || clinic.address,
+				phone: clinic.phone,
 			};
 		}
 

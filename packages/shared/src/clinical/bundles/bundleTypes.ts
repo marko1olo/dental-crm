@@ -116,3 +116,67 @@ export interface ToothClinicalServicePayload {
 	readonly labCostRub?: number | undefined;
 	readonly labCostKopecks?: number | undefined;
 }
+
+export type ClinicalBundleId =
+	| "caries_turnkey"
+	| "endo_1canal_turnkey"
+	| "endo_3canal_turnkey"
+	| "hygiene_turnkey"
+	| "extraction_turnkey"
+	| "complex_extraction"
+	| "implant_turnkey"
+	| "crown_metalloceramic_turnkey"
+	| "crown_zirconia_turnkey"
+	| "impression_asilicone_2jaws"
+	| (string & {});
+
+export type ClinicalBundleCategory =
+	| "therapy"
+	| "surgery"
+	| "hygiene"
+	| "orthopedics"
+	| "implantation"
+	| "periodontics"
+	| "prevention"
+	| (string & {});
+
+export interface ClinicalBundleItemTemplate {
+	readonly id: string;
+	readonly serviceCode: string;
+	readonly code804n?: string | undefined;
+	readonly name: string;
+	readonly category: string;
+	readonly defaultPriceRub: number;
+	readonly defaultPriceKopecks: number;
+	readonly priceRub?: number | undefined;
+	readonly unitPriceRub?: number | undefined;
+	readonly toothNumber?: number | undefined;
+	readonly materials: string;
+	readonly clinicalRationale: string;
+	readonly optional?: boolean | undefined;
+	readonly defaultSelected?: boolean | undefined;
+	readonly hideInPatientPresentation?: boolean | undefined;
+}
+
+export interface ClinicalBundleDefinition {
+	readonly id: ClinicalBundleId;
+	readonly title: string;
+	readonly shortTitle: string;
+	readonly description: string;
+	readonly category: ClinicalBundleCategory;
+	readonly categoryLabel: string;
+	readonly categoryName?: string | undefined;
+	readonly stageKind: string;
+	readonly stageNumber: number;
+	readonly totalPriceRub: number;
+	readonly totalPriceKopecks: number;
+	readonly basePriceRub: number;
+	readonly basePriceKopecks: number;
+	readonly totalRub?: number | undefined;
+	readonly totalKopecks?: number | undefined;
+	readonly estimatedVisits?: number | undefined;
+	readonly requiresTooth: boolean;
+	readonly defaultTooth: number;
+	readonly badgeColor: string;
+	readonly items: readonly ClinicalBundleItemTemplate[];
+}

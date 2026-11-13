@@ -1,3 +1,3 @@
 export * from "./fastCheckoutPresets";
 export * from "./fastCheckoutEngine";
-export * from "../../finance/FastCheckoutModal";
+export { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";

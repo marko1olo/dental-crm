@@ -213,8 +213,8 @@ export interface DentalLabOrderEntry {
 }
 
 /** Экспресс-расчет контрольных дат с учетом рабочих дней ЗТЛ в РФ (без сб и вс) */
-export function addWorkingDaysRu(startDate: Date, workingDays: number): Date {
-	const current = new Date(startDate);
+export function addWorkingDaysRu(startDate: Date | string, workingDays: number): Date {
+	const current = typeof startDate === "string" ? new Date(startDate) : new Date(startDate.getTime());
 	let added = 0;
 	while (added < workingDays) {
 		current.setDate(current.getDate() + 1);

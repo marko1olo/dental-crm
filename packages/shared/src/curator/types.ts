@@ -241,3 +241,15 @@ export const curatorPlanAssignmentPayloadSchema = z.object({
 	nextContactDate: z.string().nullable().optional(),
 });
 export type CuratorPlanAssignmentPayload = z.infer<typeof curatorPlanAssignmentPayloadSchema>;
+
+/**
+ * Запрос на обновление этапа воронки куратора
+ */
+export const updateCuratorStagePayloadSchema = z.object({
+	patientId: z.string().min(1, "Требуется patientId"),
+	stage: curatorFunnelStageSchema,
+	treatmentPlanId: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
+	curatorId: z.string().nullable().optional(),
+});
+export type UpdateCuratorStagePayload = z.infer<typeof updateCuratorStagePayloadSchema>;

@@ -111,9 +111,8 @@ export async function createAlternativePlanGroup(
 					organizationId: input.organizationId,
 					planId: createdPlan.id,
 					toothNumber: item.toothNumber ?? null,
-					priceId: item.name
-						? `${item.priceId}::${item.name}`
-						: item.priceId,
+					priceId: item.priceId,
+					name: item.name ?? null,
 					quantity: item.quantity,
 					price: item.price.toString(),
 					discount: (item.discount ?? 0).toString(),
@@ -393,9 +392,10 @@ export async function selectAndApprovePlanVariant(
 			const pureServiceId =
 				separatorIndex >= 0 ? item.priceId.slice(0, separatorIndex) : item.priceId;
 			const title =
-				separatorIndex >= 0
+				item.name ||
+				(separatorIndex >= 0
 					? item.priceId.slice(separatorIndex + 2)
-					: item.priceId;
+					: item.priceId);
 
 			return {
 				id,

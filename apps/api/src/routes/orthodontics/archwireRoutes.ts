@@ -89,21 +89,27 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				orthodonticProgress: updatedProgress,
 			});
 
+			const isPlate = body.applianceCategory === "plate";
+			const shouldDeductLigatures = !isPlate;
+
 			// DEF-ORTHO-06: Стоимость в копейках BIGINT (Power Chain: 8 000 коп = 80 руб; лигатуры: 1 500 коп = 15 руб)
-			const deduction = await deductOrthoMaterialSafely({
-				organizationId: orgId,
-				patientId,
-				itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
-				defaultItemName: body.powerChain
-					? "Эластическая цепочка Power Chain"
-					: "Эластические лигатуры цветные/прозрачные",
-				category: body.powerChain ? "ortho_archwire" : "other",
-				quantity: body.powerChain ? 1 : 10,
-				unit: body.powerChain ? "см" : "шт.",
-				unitCostKopecks: body.powerChain ? 8_000n : 1_500n,
-				unitCostRub: body.powerChain ? 80 : 15,
-				notes: actionSummary,
-			});
+			// Списание материалов отключается для съемных пластинок (plate)
+			const deduction = shouldDeductLigatures
+				? await deductOrthoMaterialSafely({
+						organizationId: orgId,
+						patientId,
+						itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
+						defaultItemName: body.powerChain
+							? "Эластическая цепочка Power Chain"
+							: "Эластические лигатуры цветные/прозрачные",
+						category: body.powerChain ? "ortho_archwire" : "other",
+						quantity: body.powerChain ? 1 : 10,
+						unit: body.powerChain ? "см" : "шт.",
+						unitCostKopecks: body.powerChain ? 8_000n : 1_500n,
+						unitCostRub: body.powerChain ? 80 : 15,
+						notes: actionSummary,
+				  })
+				: null;
 
 			return reply.send({ success: true, actionSummary, progress: updatedProgress, deduction });
 		},

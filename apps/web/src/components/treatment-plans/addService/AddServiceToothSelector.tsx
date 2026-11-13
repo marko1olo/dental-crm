@@ -1,5 +1,5 @@
 import React from "react";
-import { AnatomicalTooth } from "../../odontogram/AnatomicalTooth";
+import { AnatomicalTooth } from "../../odontogram/gate0/AnatomicalTooth";
 
 export interface AddServiceToothSelectorProps {
 	readonly selectedTooth: number | null;

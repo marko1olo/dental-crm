@@ -49,24 +49,28 @@ async function capture() {
 	const configs = [
 		{
 			name: "01_dental_lab_studio_pc_light_1440x900",
+			altName: "dental_lab_studio_pc_light",
 			viewport: { width: 1440, height: 900 },
 			theme: "light",
 			isMobile: false,
 		},
 		{
 			name: "02_dental_lab_studio_pc_dark_1440x900",
+			altName: "dental_lab_studio_pc_dark",
 			viewport: { width: 1440, height: 900 },
 			theme: "dark",
 			isMobile: false,
 		},
 		{
 			name: "03_dental_lab_studio_mobile_light_390x844",
+			altName: "dental_lab_studio_mobile_light",
 			viewport: { width: 390, height: 844 },
 			theme: "light",
 			isMobile: true,
 		},
 		{
 			name: "04_dental_lab_studio_mobile_dark_390x844",
+			altName: "dental_lab_studio_mobile_dark",
 			viewport: { width: 390, height: 844 },
 			theme: "dark",
 			isMobile: true,
@@ -118,12 +122,12 @@ async function capture() {
 
 		// Navigate to standalone dental_lab route
 		await page.goto("http://127.0.0.1:5173/?demo=true&standalone=dental_lab", {
-			waitUntil: "domcontentloaded",
+			waitUntil: "commit",
 			timeout: 30000,
 		});
 
 		// Wait for DentalLabStudioModal to mount
-		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { timeout: 15000 });
+		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { timeout: 30000 });
 		await page.waitForTimeout(1000);
 
 		// Suppress any tour banners
@@ -159,6 +163,9 @@ async function capture() {
 		await page.screenshot({ path: outPath, fullPage: false, animations: "disabled" });
 		const labOutPath = path.join(LAB_DIR, `${cfg.name}.png`);
 		fs.copyFileSync(outPath, labOutPath);
+		if (cfg.altName) {
+			fs.copyFileSync(outPath, path.join(LAB_DIR, `${cfg.altName}.png`));
+		}
 		const size = fs.statSync(outPath).size;
 		console.log(`✓ Saved ${cfg.name}.png (${(size / 1024).toFixed(1)} KB)`);
 

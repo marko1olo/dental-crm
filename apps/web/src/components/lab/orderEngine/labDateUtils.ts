@@ -22,18 +22,8 @@ export function formatRuDate(iso: string): string {
 	return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : iso;
 }
 
-export function addWorkingDaysRu(startDate: Date | string, daysToAdd: number): Date {
-	const result = parseDateOnly(startDate);
-	let added = 0;
-	while (added < daysToAdd) {
-		result.setDate(result.getDate() + 1);
-		const dayOfWeek = result.getDay();
-		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-			added++;
-		}
-	}
-	return result;
-}
+import { addWorkingDaysRu } from "../dentalLabCatalogData";
+export { addWorkingDaysRu };
 
 export function calculateLabReadinessDate(
 	startDate: Date | string = new Date(),

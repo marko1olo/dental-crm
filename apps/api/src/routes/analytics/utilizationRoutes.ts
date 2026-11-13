@@ -1,6 +1,7 @@
 import { calculateChairHourlyCost } from "@dental/shared";
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
@@ -63,9 +64,11 @@ export type { HeatmapCell, NoShowHeatmap };
 export { calculateNoShowHeatmap };
 
 function withDateFilter(orgId: string, orgCol: AnyColumn, dateCol?: AnyColumn, startDate?: Date): SQL {
-	return startDate && dateCol
-		? and(eq(orgCol, orgId), gte(dateCol, startDate))!
-		: eq(orgCol, orgId);
+	if (startDate && dateCol) {
+		const combined = and(eq(orgCol, orgId), gte(dateCol, startDate));
+		return combined ?? eq(orgCol, orgId);
+	}
+	return eq(orgCol, orgId);
 }
 
 /**
@@ -99,7 +102,7 @@ export async function calculateChairUtilization(
 		.select()
 		.from(organizations)
 		.where(eq(organizations.id, orgId));
-	const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule as Parameters<typeof resolveClinicScheduleWorkHours>[0]);
+	const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule);
 
 	// [ANL-04] Честный расчет рабочих минут кресел по реальному графику клиники (40ч/нед по умолчанию) вместо 84ч/нед
 	const effectiveStart = startDate ?? new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
@@ -117,7 +120,7 @@ export async function calculateChairUtilization(
 	const activeChairs = allChairs.filter((c) => c.isActive !== false);
 	const totalActiveChairsCount = Math.max(1, activeChairs.length);
 
-	const apptConditions: any[] = [
+	const apptConditions: SQL[] = [
 		withDateFilter(orgId, appointments.organizationId, appointments.startsAt, startDate),
 	];
 	if (branchId && branchId !== "all" && allChairs.length > 0) {
@@ -169,7 +172,7 @@ export async function calculateChairUtilization(
 			occupiedMinutes,
 			availableMinutes: availableMinutesPerChair,
 			utilizationPercent,
-			fill: colors[colorIdx % colors.length]!,
+			fill: colors[colorIdx % colors.length] ?? "#3b82f6",
 		});
 		colorIdx++;
 	}
@@ -237,7 +240,7 @@ export async function calculateDoctorProfitability(
 		.where(eq(users.organizationId, orgId));
 	const docMap = new Map(allDocs.map((d) => [d.id, d.fullName]));
 
-	// 2b. Выработка врачей по номенклатуре 804н (услуги) и сданным нарядам ЗТЛ
+	// 2b. Выработка врачей по каталогу услуг и сданным нарядам ЗТЛ
 	const docServicesRes = await db
 		.select({
 			doctorId: sql<string | null>`coalesce(${treatmentItems.plannedDoctorUserId}, ${appointments.doctorUserId})`,
@@ -256,13 +259,14 @@ export async function calculateDoctorProfitability(
 		.select({
 			doctorId: labOrders.doctorId,
 			labOrdersCount: sql<number>`count(*)::int`,
-			labOrdersCostRub: sql<number>`coalesce(sum(${labOrders.priceRub}), 0)`,
+			labOrdersCostRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 		})
 		.from(labOrders)
 		.where(
 			and(
 				withDateFilter(orgId, labOrders.organizationId, labOrders.createdAt, startDate),
-				inArray(labOrders.status, ["completed", "received", "installed"]),
+				inArray(labOrders.status, ["completed", "received", "ready", "ready_in_clinic", "fitted", "installed"]),
+				eq(labOrders.isWarranty, false),
 			),
 		)
 		.groupBy(labOrders.doctorId);
@@ -355,7 +359,7 @@ export async function calculateDoctorProfitability(
 				appointmentsCount > 0
 					? Math.round((completedCount / appointmentsCount) * 100)
 					: null;
-			const services804nCount = docServicesMap.get(docId ?? "unassigned") || 0;
+			const servicesCount = docServicesMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
 			const labOrdersCostRub = docLabCostMap.get(docId ?? "unassigned") || 0;
 			const materialsCostRub = docMaterialsMap.get(docId ?? "unassigned") || 0;
@@ -381,8 +385,8 @@ export async function calculateDoctorProfitability(
 				hourlyRevenueRub,
 				margin,
 				completionRate,
-				servicesCount: services804nCount,
-				services804nCount,
+				servicesCount,
+				services804nCount: servicesCount,
 				labOrdersCount,
 				labOrdersCostRub,
 				materialsCostRub,
@@ -403,6 +407,17 @@ export async function calculateDoctorProfitability(
 }
 
 
+const utilizationQuerySchema = z.object({
+	range: z.string().optional(),
+	monthlyRentRub: z.union([z.string(), z.number()]).optional(),
+	monthlyUtilitiesRub: z.union([z.string(), z.number()]).optional(),
+	monthlyAdministrativePayrollRub: z.union([z.string(), z.number()]).optional(),
+	monthlyEquipmentDepreciationRub: z.union([z.string(), z.number()]).optional(),
+	monthlySanpinSterilizationRub: z.union([z.string(), z.number()]).optional(),
+	monthlyMarketingAndOtherRub: z.union([z.string(), z.number()]).optional(),
+});
+type UtilizationQuery = z.infer<typeof utilizationQuerySchema>;
+
 export async function registerUtilizationRoutes(app: FastifyInstance) {
 	const getUtilization = async (request: FastifyRequest, reply: FastifyReply) => {
 		const readAllowed = await requireClinicalReadAccess(
@@ -420,15 +435,8 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const query = request.query as {
-				range?: string;
-				monthlyRentRub?: string | number;
-				monthlyUtilitiesRub?: string | number;
-				monthlyAdministrativePayrollRub?: string | number;
-				monthlyEquipmentDepreciationRub?: string | number;
-				monthlySanpinSterilizationRub?: string | number;
-				monthlyMarketingAndOtherRub?: string | number;
-			};
+			const parsedQuery = utilizationQuerySchema.safeParse(request.query);
+			const query: UtilizationQuery = parsedQuery.success ? parsedQuery.data : {};
 			const { range } = query;
 			let startDate: Date | undefined;
 			const now = new Date();
@@ -457,7 +465,7 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 				.select({ clinicSchedule: organizations.clinicSchedule })
 				.from(organizations)
 				.where(eq(organizations.id, orgId));
-			const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule as Parameters<typeof resolveClinicScheduleWorkHours>[0]);
+			const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule);
 
 			const hoursPerDay = Math.max(
 				4,

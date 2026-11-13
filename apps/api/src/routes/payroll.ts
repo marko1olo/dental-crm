@@ -120,23 +120,23 @@ const CATEGORY_LABELS_RU: Record<string, string> = {
 
 function normalizeClinicalCategory(
 	cat?: string | null,
-	title?: string | null,
+	specialty?: string | null,
 ): "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric" {
 	const c = (cat || "").toLowerCase();
-	if (c === "orthopedics" || c === "orthopedic") return "orthopedics";
+	if (c === "prosthetics" || c === "orthopedics" || c === "orthopedic") return "orthopedics";
 	if (c === "surgery" || c === "surgical") return "surgery";
 	if (c === "orthodontics" || c === "orthodontic") return "orthodontics";
 	if (c === "hygiene" || c === "prevention") return "hygiene";
 	if (c === "pediatric" || c === "children") return "pediatric";
 	if (c === "retail" || c === "retail_hygiene") return "retail_hygiene";
-	if (c === "therapy" || c === "therapeutic") return "therapy";
+	if (c === "therapy" || c === "therapeutic" || c === "periodontology" || c === "consultation" || c === "imaging") return "therapy";
 
-	const t = (title || "").toLowerCase();
-	if (/коронк|протез|винир|вкладк|бюгел|абатмент|имплант|слепок|сканирован|ортопед/i.test(t)) return "orthopedics";
-	if (/хирург|удалени|синус|резекци/i.test(t)) return "surgery";
-	if (/гигиен|чистк|отбеливан|airflow/i.test(t)) return "hygiene";
-	if (/брекет|элайнер|пластинк|ортодонт/i.test(t)) return "orthodontics";
-	if (/детск|молочн/i.test(t)) return "pediatric";
+	const s = (specialty || "").toLowerCase();
+	if (s === "orthopedist") return "orthopedics";
+	if (s === "surgeon" || s === "implantologist") return "surgery";
+	if (s === "orthodontist") return "orthodontics";
+	if (s === "hygienist") return "hygiene";
+	if (s === "pediatric") return "pediatric";
 
 	return "therapy";
 }
@@ -362,6 +362,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 						quantity: treatmentItems.quantity,
 						title: treatmentItems.title,
 						category: serviceCatalogItems.category,
+						specialty: serviceCatalogItems.specialty,
 						code: serviceCatalogItems.code,
 						order804nCode: serviceCatalogItems.order804nCode,
 					})
@@ -381,7 +382,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			}
 			const remainingPaidKopByVisit = new Map<string, number>(paidKopByVisit);
 
-			// Заказы ЗТЛ для доктора за период (исключая гарантии)
+			// Заказы ЗТЛ для доктора за период (исключая гарантии и отмененные)
 			const docLabOrders = await db
 				.select({
 					id: labOrders.id,
@@ -394,8 +395,9 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 						eq(labOrders.organizationId, orgId),
 						eq(labOrders.doctorId, resolvedDocId),
 						eq(labOrders.isWarranty, false),
-						gte(labOrders.createdAt, fromDate),
-						lte(labOrders.createdAt, toDate),
+						inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed", "installed"]),
+						gte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, fromDate),
+						lte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, toDate),
 					),
 				);
 
@@ -492,7 +494,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					matCostByVisit.set(t.visitId, Math.max(0, visitMatTotal - matKop));
 				}
 
-				const cat = normalizeClinicalCategory(t.category, t.title);
+				const cat = normalizeClinicalCategory(t.category, t.specialty);
 				const catLabelRu = CATEGORY_LABELS_RU[cat] || "Терапия";
 				const serviceTitle = t.title || "Стоматологическая услуга";
 
@@ -597,7 +599,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	});
 
 	/**
-	 * POST /api/v1/payroll/close-settlement & /api/payroll/close-settlement — 1-клик закрытие расчетного периода в ACID транзакции
+	 * POST /api/v1/payroll/close-settlement & /api/payroll/close-settlement — Фиксация закрытия расчетного периода в ACID транзакции
 	 */
 	const closeSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = closeSettlementSchema.safeParse(request.body);

@@ -1,11 +1,9 @@
-import type { CuratorFunnelStage } from "@dental/shared";
-
-export interface UpdateCuratorStagePayload {
-	readonly patientId: string;
-	readonly stage: CuratorFunnelStage;
-	readonly notes?: string | null | undefined;
-	readonly curatorId?: string | null | undefined;
-}
+import type {
+	CuratorFunnelStage,
+	UpdateCuratorStagePayload,
+} from "@dental/shared";
+export { updateCuratorStagePayloadSchema } from "@dental/shared";
+export type { UpdateCuratorStagePayload };
 
 export interface CuratorStaffUser {
 	readonly id: string;

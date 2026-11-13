@@ -125,6 +125,11 @@ export function normalizePatientAdministrativeProfile(
 				: null,
 		curatorNotes: nullableTrimmed(input?.curatorNotes),
 		curatorNextContactDate: nullableTrimmed(input?.curatorNextContactDate),
+		curatorStageUpdatedAt: nullableTrimmed(input?.curatorStageUpdatedAt),
+		curatorPlanStages:
+			typeof input?.curatorPlanStages === "object" && input?.curatorPlanStages !== null
+				? (input.curatorPlanStages as PatientAdministrativeProfile["curatorPlanStages"])
+				: null,
 		isAnonymous: Boolean(input?.isAnonymous),
 		anonymousCode: nullableTrimmed(input?.anonymousCode),
 		decree659Compliance:

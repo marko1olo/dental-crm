@@ -150,7 +150,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.limit(5);
 
 	const topDoctors: ExecutiveTopDoctorItem[] = doctorStats
-		.filter((d) => d.doctorUserId)
+		.filter((d): d is typeof d & { doctorUserId: string } => typeof d.doctorUserId === "string" && d.doctorUserId.length > 0)
 		.map((d, idx) => {
 			const revKop = Math.round(Number(d.revenueRub || 0) * 100);
 			const visitsCount = Number(d.completedCount || d.appointmentsCount || 0);
@@ -162,14 +162,14 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			const initials = name
 				.split(" ")
 				.filter(Boolean)
-				.map((w: string) => w[0])
+				.map((w: string) => w.charAt(0))
 				.slice(0, 2)
 				.join("")
 				.toUpperCase();
 
 			return {
-				id: d.doctorUserId ? String(d.doctorUserId) : `doc-${idx + 1}`,
-				...(d.doctorUserId ? { doctorUserId: String(d.doctorUserId) } : {}),
+				id: d.doctorUserId,
+				doctorUserId: d.doctorUserId,
 				name,
 				specialty: formatDoctorRoleRu(d.role),
 				initials: initials || "ВК",
@@ -212,8 +212,9 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	const totalProcRevenueRub = procedureStats.reduce((s, p) => s + Number(p.revenueRub || 0), 0);
 	const formatCategoryRu = (cat?: string | null): string => {
 		const c = (cat || "").toLowerCase();
-		if (c.includes("therap") || c === "терапия") return "Терапия";
-		if (c.includes("surg") || c === "хирургия") return "Хирургия";
+		if (c.includes("consult") || c.includes("консуль")) return "Консультация";
+		if (c.includes("therap") || c.includes("терапия")) return "Терапия";
+		if (c.includes("surg") || c.includes("хирургия")) return "Хирургия";
 		if (c.includes("orthoped") || c === "ортопедия") return "Ортопедия";
 		if (c.includes("orthodont") || c === "ортодонтия") return "Ортодонтия";
 		if (c.includes("pediatric") || c === "детство") return "Детская";
@@ -226,7 +227,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		const share = totalProcRevenueRub > 0 ? Math.round((Number(p.revenueRub || 0) / totalProcRevenueRub) * 100) : 0;
 		return {
 			id: p.id ? String(p.id) : `proc-${idx + 1}`,
-			name: p.name,
+			name: p.name || "Медицинская услуга",
 			category: formatCategoryRu(p.category),
 			count: Number(p.count || 0),
 			revenueKopecks: revKop,

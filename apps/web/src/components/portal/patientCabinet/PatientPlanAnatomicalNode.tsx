@@ -4,7 +4,8 @@
  */
 
 import React, { memo } from "react";
-import { AnatomicalToothSVG } from "../../odontogram/AnatomicalToothSVG";
+import { AnatomicalTooth } from "../../odontogram/gate0/AnatomicalTooth";
+import { toothDataToGate0Flags } from "../../odontogram/gate0/gate0ToothFlagsConverter";
 import type { PatientToothInfo } from "../patientFriendlyOdontogramEngine";
 import { resolveToothAnatomicalVisual } from "../patientOdontogram/patientOdontogramTypes";
 
@@ -41,14 +42,16 @@ export const PatientPlanAnatomicalNode: React.FC<PatientPlanAnatomicalNodeProps>
 			tabIndex={0}
 			aria-label={`${fdi}: ${tooth.humanNameRu}`}
 		>
-			<svg x={x} y={y} width="36" height="56" style={{ overflow: "visible" }}>
-				<AnatomicalToothSVG
-					number={toothNum}
-					state={visual.state}
-					material={visual.material}
-					scale={0.5}
-					isSelected={isSelected}
-					onClick={() => onSelect(tooth)}
+			<svg x={x} y={y} width="36" height="56" viewBox="0 0 100 218" style={{ overflow: "visible" }}>
+				<AnatomicalTooth
+					toothNumber={toothNum}
+					layers={toothDataToGate0Flags({
+						toothNumber: toothNum,
+						state: visual.state as any,
+						material: visual.material as any,
+					})}
+					zoom={0.5}
+					showBadge={false}
 				/>
 			</svg>
 			<text x={x + 18} y={y + 64} textAnchor="middle" fill="currentColor" fontSize="11" fontWeight="700">

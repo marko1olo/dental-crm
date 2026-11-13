@@ -5,6 +5,14 @@
  * Strict integer arithmetic in KOPECKS (1 RUB = 100 KOPECKS) eliminating float-drift.
  */
 
+import {
+	computeNetBaseKopecks,
+	calculateDoctorCommissionKopecks,
+	applyMinimumGuarantee,
+} from "@dental/shared/payroll";
+
+export { computeNetBaseKopecks, calculateDoctorCommissionKopecks };
+
 export type MotivationSchemeType = "net_percentage" | "gross_percentage" | "fixed_shift" | "chair_rental";
 export type PayrollPayoutStatus = "accrued" | "paid_rko";
 export type PayrollPeriodPreset = "today" | "yesterday" | "current_week" | "current_month" | "previous_month" | "shift" | "custom";
@@ -32,7 +40,7 @@ export interface PayrollServiceOrder {
 	readonly serviceNameRu: string;
 	readonly category: "orthopedics" | "therapy" | "surgery" | "hygiene" | "orthodontics";
 	readonly categoryLabelRu: string;
-	readonly grossKopecks: number; // Выручка по чеку 54-ФЗ
+	readonly grossKopecks: number; // Выручка по кассовым чекам
 	readonly labCostKopecks: number; // Зуботехническая лаборатория (ЗТЛ)
 	readonly materialCostKopecks: number; // Дорогие материалы (Импланты)
 	readonly isPaid54Fz: boolean;
@@ -121,16 +129,6 @@ export interface AssistantPieceworkResult {
 	readonly totalAssistantPayoutKop: number;
 }
 
-/** Pure integer arithmetic: Net Base = Gross − Lab − Materials */
-export function computeNetBaseKopecks(grossKop: number, labKop: number, matKop: number): number {
-	return Math.max(0, Math.round(grossKop) - Math.round(labKop) - Math.round(matKop));
-}
-
-/** Pure integer arithmetic: Doctor Commission = Base × Percent */
-export function calculateDoctorCommissionKopecks(baseKop: number, percent: number): number {
-	return (baseKop <= 0 || percent <= 0) ? 0 : Math.round((baseKop * percent) / 100);
-}
-
 /** Mandate 8n: Solo Doctor Chair Rental Economics: [Gross] − [ЗТЛ] − [Материалы] − [Аренда] = Доход */
 export function calculateSoloDoctorRentalModel(params: {
 	grossRevenueKop: number; labCostKop: number; materialCostKop: number;
@@ -209,8 +207,12 @@ export function calculateDoctorPayrollSummary(params: {
 	}
 
 	const minGuaranteeKop = params.doctor.minGuaranteeMonthlyKop;
-	const minimumGuaranteeApplied = scheme !== "chair_rental" && docOrders.length > 0 && doctorAccruedKopecks < minGuaranteeKop;
-	const grossPayout = Math.max(doctorAccruedKopecks, minimumGuaranteeApplied ? minGuaranteeKop : 0);
+	const { grossPayout, guaranteeApplied: minimumGuaranteeApplied } = applyMinimumGuarantee(
+		doctorAccruedKopecks,
+		minGuaranteeKop,
+		scheme === "chair_rental",
+		docOrders.length,
+	);
 	const ndfl13TaxKopecks = params.doctor.taxRegime === "employee" ? Math.round((grossPayout * 13) / 100) : 0;
 	const payoutKopecks = Math.max(0, grossPayout - ndfl13TaxKopecks - advanceKopecks);
 
@@ -320,19 +322,19 @@ export function formatKopecksToRubles(kopecks: number): string {
 }
 
 /** Printable Payslip A4 / A5 without bureaucratic Soviet labels (Mandate 8x) */
-export function generateDoctorPayslipA5Html(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "Стоматологическая клиника DENTE"): string {
+export function generateDoctorPayslipA5Html(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "Стоматологическая клиника"): string {
 	const rub = formatKopecksToRubles;
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Расчетный листок врача — ${doctor.name}</title>
 <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:24px;color:#0f172a;font-size:13px;line-height:1.4}.header{border-bottom:2px solid #0d9488;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}.title{font-size:18px;font-weight:bold;margin:0}.clinic{font-size:12px;color:#64748b;margin-top:4px}.table{width:100%;border-collapse:collapse;margin:14px 0}.table th,.table td{padding:8px 10px;border:1px solid #e2e8f0;text-align:left}.table th{background:#f8fafc;font-weight:600;color:#475569}.total-row{font-weight:bold;background:#f0fdfa}.highlight{color:#0d9488;font-size:16px;font-weight:bold}.signatures{margin-top:32px;display:flex;justify-content:space-between;font-size:12px}.sign-line{border-top:1px solid #94a3b8;width:180px;margin-top:24px;text-align:center;padding-top:4px;color:#64748b}</style></head>
 <body><div class="header"><div><h1 class="title">РАСЧЕТНЫЙ ЛИСТОК ВРАЧА</h1><div class="clinic">${clinicName} • Период: ${calc.periodLabelRu}</div></div><div style="text-align:right;"><div style="font-weight:600;">${doctor.name}</div><div style="color:#64748b;font-size:11px;">${doctor.specialtyTitleRu}</div></div></div>
-<table class="table"><tr><th>Показатель расчета</th><th style="text-align:right;">Сумма</th></tr><tr><td>Выручка по чекам 54-ФЗ (Gross)</td><td style="text-align:right;">${rub(calc.totalGrossKopecks)}</td></tr><tr><td>Удержание: зуботехническая лаборатория (ЗТЛ)</td><td style="text-align:right;">− ${rub(calc.totalLabCostKopecks)}</td></tr><tr><td>Удержание: дорогостоящие расходные материалы</td><td style="text-align:right;">− ${rub(calc.totalMaterialCostKopecks)}</td></tr><tr style="background:#f8fafc;font-weight:600;"><td>Чистая расчетная база (Net Base)</td><td style="text-align:right;">${rub(calc.totalNetBaseKopecks)}</td></tr>${calc.isChairRental ? `<tr><td>Аренда стоматологического кресла</td><td style="text-align:right;">− ${rub(calc.chairRentalKopecks)}</td></tr>` : `<tr><td>Процент врача (${calc.commissionPercent}%)</td><td style="text-align:right;">${rub(calc.earnedDoctorKopecks)}</td></tr>`}${calc.advanceKopecks > 0 ? `<tr><td>Выплаченный аванс</td><td style="text-align:right;">− ${rub(calc.advanceKopecks)}</td></tr>` : ""}${calc.ndfl13TaxKopecks > 0 ? `<tr><td>НДФЛ 13%</td><td style="text-align:right;">− ${rub(calc.ndfl13TaxKopecks)}</td></tr>` : ""}<tr class="total-row"><td>ИТОГО К ВЫПЛАТЕ ВРАЧУ (НА РУКИ)</td><td style="text-align:right;" class="highlight">${rub(calc.netPayoutToDoctorKopecks)}</td></tr></table>
+<table class="table"><tr><th>Показатель расчета</th><th style="text-align:right;">Сумма</th></tr><tr><td>Выручка по кассовым чекам (Gross)</td><td style="text-align:right;">${rub(calc.totalGrossKopecks)}</td></tr><tr><td>Удержание: зуботехническая лаборатория (ЗТЛ)</td><td style="text-align:right;">− ${rub(calc.totalLabCostKopecks)}</td></tr><tr><td>Удержание: дорогостоящие расходные материалы</td><td style="text-align:right;">− ${rub(calc.totalMaterialCostKopecks)}</td></tr><tr style="background:#f8fafc;font-weight:600;"><td>Чистая расчетная база (Net Base)</td><td style="text-align:right;">${rub(calc.totalNetBaseKopecks)}</td></tr>${calc.isChairRental ? `<tr><td>Аренда стоматологического кресла</td><td style="text-align:right;">− ${rub(calc.chairRentalKopecks)}</td></tr>` : `<tr><td>Процент врача (${calc.commissionPercent}%)</td><td style="text-align:right;">${rub(calc.earnedDoctorKopecks)}</td></tr>`}${calc.advanceKopecks > 0 ? `<tr><td>Выплаченный аванс</td><td style="text-align:right;">− ${rub(calc.advanceKopecks)}</td></tr>` : ""}${calc.ndfl13TaxKopecks > 0 ? `<tr><td>НДФЛ 13%</td><td style="text-align:right;">− ${rub(calc.ndfl13TaxKopecks)}</td></tr>` : ""}<tr class="total-row"><td>Итого к выплате врачу (на руки)</td><td style="text-align:right;" class="highlight">${rub(calc.netPayoutToDoctorKopecks)}</td></tr></table>
 <div class="signatures"><div>Главный бухгалтер:<div class="sign-line">/ подпись /</div></div><div>Руководитель клиники:<div class="sign-line">/ подпись /</div></div><div>Врач-специалист:<div class="sign-line">/ подпись /</div></div></div></body></html>`;
 }
 
 export const generateDoctorPayslipA4Html = generateDoctorPayslipA5Html;
 
 /** Plaintext format for Messenger sharing (WhatsApp / Telegram) */
-export function generateDoctorPayslipMessengerText(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "DENTE Clinic"): string {
+export function generateDoctorPayslipMessengerText(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "Стоматологическая клиника"): string {
 	const rub = formatKopecksToRubles;
-	return `[Расчетный листок]\nРасчетный листок врача: ${doctor.name}\nКлиника: ${clinicName} • ${calc.periodLabelRu}\n━━━━━━━━━━━━━━━━━━\nВыручка (54-ФЗ): ${rub(calc.totalGrossKopecks)}\nЗТЛ: − ${rub(calc.totalLabCostKopecks)}\nМатериалы: − ${rub(calc.totalMaterialCostKopecks)}\nЧистая база: ${rub(calc.totalNetBaseKopecks)}\n${calc.isChairRental ? `Аренда кресла: − ${rub(calc.chairRentalKopecks)}` : `Ставка врача: ${calc.commissionPercent}% (${rub(calc.earnedDoctorKopecks)})`}\n${calc.advanceKopecks > 0 ? `Аванс: − ${rub(calc.advanceKopecks)}\n` : ""}${calc.ndfl13TaxKopecks > 0 ? `НДФЛ 13%: − ${rub(calc.ndfl13TaxKopecks)}\n` : ""}━━━━━━━━━━━━━━━━━━\nИТОГО К ВЫПЛАТЕ: ${rub(calc.netPayoutToDoctorKopecks)}`;
+	return `[Расчетный листок]\nРасчетный листок врача: ${doctor.name}\nКлиника: ${clinicName} • ${calc.periodLabelRu}\n━━━━━━━━━━━━━━━━━━\nКассовая выручка: ${rub(calc.totalGrossKopecks)}\nЗТЛ: − ${rub(calc.totalLabCostKopecks)}\nМатериалы: − ${rub(calc.totalMaterialCostKopecks)}\nЧистая база: ${rub(calc.totalNetBaseKopecks)}\n${calc.isChairRental ? `Аренда кресла: − ${rub(calc.chairRentalKopecks)}` : `Ставка врача: ${calc.commissionPercent}% (${rub(calc.earnedDoctorKopecks)})`}\n${calc.advanceKopecks > 0 ? `Аванс: − ${rub(calc.advanceKopecks)}\n` : ""}${calc.ndfl13TaxKopecks > 0 ? `НДФЛ 13%: − ${rub(calc.ndfl13TaxKopecks)}\n` : ""}━━━━━━━━━━━━━━━━━━\nИтого к выплате: ${rub(calc.netPayoutToDoctorKopecks)}`;
 }

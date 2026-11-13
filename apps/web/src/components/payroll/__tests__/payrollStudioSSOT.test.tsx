@@ -179,7 +179,7 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 
 			// Clean messenger text
 			assert.ok(msgText.includes("Расчетный листок врача:"));
-			assert.ok(msgText.includes("К ВЫПЛАТЕ:"));
+			assert.ok(msgText.includes("Итого к выплате:"));
 		});
 	});
 
@@ -289,10 +289,10 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			const messengerText = generateDoctorPayslipMessengerText(calcCompat, volkov, "Стоматология DENTE");
 			assert.ok(!emojiRegex.test(messengerText), "Messenger text must not contain any cartoon emojis");
 			assert.ok(messengerText.includes("[Расчетный листок]"), "Must include textual tag [Расчетный листок]");
-			assert.ok(messengerText.includes("Выручка (54-ФЗ):"), "Must include textual marker Выручка (54-ФЗ):");
+			assert.ok(messengerText.includes("Кассовая выручка:"), "Must include textual marker Кассовая выручка:");
 			assert.ok(messengerText.includes("ЗТЛ:"), "Must include textual marker ЗТЛ:");
 			assert.ok(messengerText.includes("Материалы:"), "Must include textual marker Материалы:");
-			assert.ok(messengerText.includes("ИТОГО К ВЫПЛАТЕ:"), "Must include textual marker ИТОГО К ВЫПЛАТЕ:");
+			assert.ok(messengerText.includes("Итого к выплате:"), "Must include textual marker Итого к выплате:");
 		});
 
 		it("4.2 Mandate 8wy: DoctorPayrollStudioModal in production mode strictly isolates mockups and shows honest Empty State", () => {
@@ -346,12 +346,12 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 				setRuntimeDemoMode(null);
 			}
 
-			// Demo mode without doctorsList -> showcases DEFAULT_DOCTORS
+			// Without doctorsList, hook maintains honest 0 doctors and loads via API without synthetic DEFAULT_DOCTORS
 			setRuntimeDemoMode(true);
 			try {
 				const demoHtml = renderToString(<TestPayrollHookConsumer />);
-				assert.ok(demoHtml.includes('<span data-testid="doc-count">4</span>'), "Demo mode must default to 4 showcase doctors");
-				assert.ok(demoHtml.includes("doc-1"), "Demo mode active doctor must be doc-1");
+				assert.ok(demoHtml.includes('<span data-testid="doc-count">0</span>'), "Must not leak synthetic DEFAULT_DOCTORS in demo mode");
+				assert.ok(demoHtml.includes("Врачи не зарегистрированы"), "Honest placeholder when no doctors passed");
 			} finally {
 				setRuntimeDemoMode(null);
 			}

@@ -31,41 +31,42 @@ export interface ExecutivePeriodRange {
 	readonly daysCount: number;
 }
 
+export function isExecutivePeriod(val: unknown): val is ExecutivePeriod {
+	return (
+		typeof val === "string" &&
+		["day", "yesterday", "week", "month", "quarter", "year", "custom"].includes(val)
+	);
+}
+
 export function resolveExecutiveDateRange(
 	period?: string,
 	fromDateIso?: string,
 	toDateIso?: string,
 ): ExecutivePeriodRange {
-	const validPeriods: ExecutivePeriod[] = [
-		"day",
-		"yesterday",
-		"week",
-		"month",
-		"quarter",
-		"year",
-		"custom",
-	];
-	const execPeriod: ExecutivePeriod = validPeriods.includes(period as ExecutivePeriod)
-		? (period as ExecutivePeriod)
-		: "month";
+	const execPeriod: ExecutivePeriod = isExecutivePeriod(period) ? period : "month";
 
 	const now = new Date();
+	const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 	let startDate: Date;
-	let endDate: Date = now;
+	let endDate: Date = endOfToday;
 
 	if (execPeriod === "yesterday") {
 		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
 		endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
 	} else if (execPeriod === "day") {
 		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+		endDate = endOfToday;
 	} else if (execPeriod === "week") {
 		const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Monday
 		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
+		endDate = endOfToday;
 	} else if (execPeriod === "quarter") {
 		const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
 		startDate = new Date(now.getFullYear(), currentQuarterMonth, 1, 0, 0, 0, 0);
+		endDate = endOfToday;
 	} else if (execPeriod === "year") {
 		startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+		endDate = endOfToday;
 	} else if (execPeriod === "custom" && fromDateIso) {
 		const parsedFrom = new Date(fromDateIso);
 		startDate = Number.isNaN(parsedFrom.getTime())
@@ -73,10 +74,15 @@ export function resolveExecutiveDateRange(
 			: parsedFrom;
 		if (toDateIso) {
 			const parsedTo = new Date(toDateIso);
-			endDate = Number.isNaN(parsedTo.getTime()) ? now : parsedTo;
+			endDate = Number.isNaN(parsedTo.getTime())
+				? endOfToday
+				: new Date(parsedTo.getFullYear(), parsedTo.getMonth(), parsedTo.getDate(), 23, 59, 59, 999);
+		} else {
+			endDate = endOfToday;
 		}
 	} else {
 		startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+		endDate = endOfToday;
 	}
 
 	const daysCount = Math.max(
@@ -115,18 +121,26 @@ export function resolveClinicScheduleWorkHours(scheduleRaw: unknown): ClinicWork
 
 	if (typeof raw.workdayStart === "string") {
 		const parts = raw.workdayStart.split(":");
-		const h = Number(parts[0]);
-		const m = Number(parts[1]);
-		if (Number.isFinite(h) && Number.isFinite(m)) {
-			startMins = h * 60 + m;
+		const hStr = parts[0];
+		const mStr = parts[1];
+		if (hStr !== undefined && mStr !== undefined) {
+			const h = Number(hStr);
+			const m = Number(mStr);
+			if (Number.isFinite(h) && Number.isFinite(m)) {
+				startMins = h * 60 + m;
+			}
 		}
 	}
 	if (typeof raw.workdayEnd === "string") {
 		const parts = raw.workdayEnd.split(":");
-		const h = Number(parts[0]);
-		const m = Number(parts[1]);
-		if (Number.isFinite(h) && Number.isFinite(m)) {
-			endMins = h * 60 + m;
+		const hStr = parts[0];
+		const mStr = parts[1];
+		if (hStr !== undefined && mStr !== undefined) {
+			const h = Number(hStr);
+			const m = Number(mStr);
+			if (Number.isFinite(h) && Number.isFinite(m)) {
+				endMins = h * 60 + m;
+			}
 		}
 	}
 	if (endMins <= startMins) {
@@ -241,7 +255,7 @@ export async function queryExecutiveKpiAndFunnel(
 		.select()
 		.from(organizations)
 		.where(eq(organizations.id, orgId));
-	const clinicScheduleSpec = resolveClinicScheduleWorkHours((orgRow as any)?.clinicSchedule);
+	const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule);
 
 	const totalChairs = Math.max(1, Number(chairCountRow?.count || 1));
 	// [ANL-04] Честный расчет доступных минут кресел по реальному графику клиники (40 ч/нед по умолчанию) вместо 84 ч/нед
@@ -456,13 +470,14 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const [labOrdersRow] = await db
 		.select({
-			totalRub: sql<number>`coalesce(sum(${labOrders.priceRub}), 0)`,
+			totalRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 		})
 		.from(labOrders)
 		.where(
 			and(
 				eq(labOrders.organizationId, orgId),
 				ne(labOrders.status, "cancelled"),
+				eq(labOrders.isWarranty, false),
 				gte(labOrders.createdAt, startDate),
 				lte(labOrders.createdAt, range.endDate),
 			),
@@ -510,17 +525,24 @@ export async function queryExecutiveKpiAndFunnel(
 	const attendedCount = Number(apptSummary?.attendedCount || 0);
 	const bookingsCount = Number(apptSummary?.totalAppointments || 0);
 
+	const rawFunnelInput: Array<{
+		stage: ExecutiveFunnelStage;
+		count: number;
+		isAiAssisted?: boolean;
+		totalVolumeKopecks?: number;
+	}> = [
+		{ stage: "lead", count: totalLeads },
+		{ stage: "consultation_booking", count: bookingsCount },
+		{ stage: "attended", count: attendedCount },
+		{ stage: "ai_examination", count: aiExaminedCount, isAiAssisted: true },
+		{ stage: "plan_presentation", count: plansPresentedCount, totalVolumeKopecks: plansPresentedVolumeKopecks },
+		{ stage: "plan_approved", count: plansApprovedCount, totalVolumeKopecks: plansApprovedVolumeKopecks },
+		{ stage: "treatment_started", count: payingPatients, totalVolumeKopecks: totalRevenueKopecks },
+		{ stage: "sanitation_completed", count: sanitationCompletedCount },
+	];
+
 	const funnelStages = calculateExecutiveFunnel(
-		[
-			{ stage: "lead" as ExecutiveFunnelStage, count: totalLeads },
-			{ stage: "consultation_booking" as ExecutiveFunnelStage, count: bookingsCount },
-			{ stage: "attended" as ExecutiveFunnelStage, count: attendedCount },
-			{ stage: "ai_examination" as ExecutiveFunnelStage, count: aiExaminedCount, isAiAssisted: true },
-			{ stage: "plan_presentation" as ExecutiveFunnelStage, count: plansPresentedCount, totalVolumeKopecks: plansPresentedVolumeKopecks },
-			{ stage: "plan_approved" as ExecutiveFunnelStage, count: plansApprovedCount, totalVolumeKopecks: plansApprovedVolumeKopecks },
-			{ stage: "treatment_started" as ExecutiveFunnelStage, count: payingPatients, totalVolumeKopecks: totalRevenueKopecks },
-			{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: sanitationCompletedCount },
-		],
+		rawFunnelInput,
 		totalMarketingSpendKopecks,
 	);
 

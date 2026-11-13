@@ -1,1 +1,1 @@
-export { MissingPriceInlineAlert, default } from "../MissingPriceInlineAlert";
+export { MissingPriceInlineAlert, default } from "../MissingPriceAlertHub";

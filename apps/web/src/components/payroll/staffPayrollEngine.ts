@@ -9,6 +9,12 @@ import {
 	DEFAULT_CATEGORY_COMMISSION_PERCENT,
 	CLINICAL_CATEGORY_COMMISSION_PERCENT,
 	resolveDoctorPreset,
+	computeNetBaseKopecks,
+	calculateDoctorCommissionKopecks,
+	applyMinimumGuarantee,
+	computeChairRental,
+	computeKpiBonus,
+	calculateDoctorPeriodPayroll,
 	type DoctorSpecialtyCommissionRule,
 } from "@dental/shared/payroll";
 
@@ -112,15 +118,6 @@ export const SOLO_DOCTOR_SPECIALTY_PRESETS: readonly SoloDoctorSpecialtyPreset[]
 	{ specialtyId: "hygienist", titleRu: "Гигиенист стоматологический", labelRu: "Гигиенист" },
 ];
 
-export const DEFAULT_SOLO_DOCTOR = {
-	id: "solo-doc-default",
-	name: "Кузнецов М.М.",
-	specialtyId: "general_dentist",
-	clinicName: "Стоматология «Денте»",
-	shiftRateKop: 400000,
-	defaultPercentage: 25,
-};
-
 export const DEFAULT_ASSISTANT_RATES: AssistantRatesConfig = {
 	baseShiftRate6hKop: 350000,
 	baseShiftRate12hKop: 700000,
@@ -219,19 +216,11 @@ export function calculateDoctorStaffPayroll(input: DoctorStaffPayrollInput): Doc
 	const { totalGross, totalLab, totalMaterial, earnedBase, earnedRetail } =
 		calculateDoctorServicesMetrics(input, preset, basePercent);
 
-	const totalNetBase = Math.max(0, totalGross - totalLab - totalMaterial);
+	const totalNetBase = computeNetBaseKopecks(totalGross, totalLab, totalMaterial);
 
-	let revenueKpiPercent = 0;
-	let kpiBadge = "Базовая ставка";
-	if (totalGross >= 100000000) {
-		revenueKpiPercent = 5;
-		kpiBadge = "Топ-выручка (+5% премия)";
-	} else if (totalGross >= 50000000) {
-		revenueKpiPercent = 2;
-		kpiBadge = "План выполнен (+2% премия)";
-	}
+	const { kpiPercent: revenueKpiPercent, kpiBadge, kpiBonusEarned: revenueKpiBonusKop } =
+		computeKpiBonus(totalGross, totalNetBase, false, "fixed");
 
-	const revenueKpiBonusKop = Math.round((totalNetBase * revenueKpiPercent) / 100);
 	const compPlansCount = Math.round(Number(input.comprehensivePlansCount) || 0);
 	const compPlanBonusPerUnit = Math.round(Number(input.comprehensivePlanBonusPerUnitKop) || 500000);
 	const comprehensivePlanBonusKop = Math.round(compPlansCount * compPlanBonusPerUnit);
@@ -239,18 +228,21 @@ export function calculateDoctorStaffPayroll(input: DoctorStaffPayrollInput): Doc
 	const noteRu = input.manualAdjustmentNoteRu ?? "";
 
 	const preGuaranteeGross = earnedBase + earnedRetail + revenueKpiBonusKop + comprehensivePlanBonusKop + manualAdj;
-	let finalGross = preGuaranteeGross;
-	let guaranteeApplied = false;
-	let guaranteeTopUpKop = 0;
-
 	const daysWorked = input.daysWorked !== undefined ? Math.round(Number(input.daysWorked)) : (input.services.length > 0 ? 21 : 0);
 	const hoursWorked = input.hoursWorked !== undefined ? Number(input.hoursWorked) : Number((daysWorked * 6.6).toFixed(1));
 	const hasActiveProductionOrAttendance = input.services.length > 0 || daysWorked > 0;
 
-	if (finalGross < preset.minGuaranteeMonthlyKop && hasActiveProductionOrAttendance && preset.minGuaranteeMonthlyKop > 0) {
-		guaranteeTopUpKop = preset.minGuaranteeMonthlyKop - finalGross;
-		finalGross = preset.minGuaranteeMonthlyKop;
-		guaranteeApplied = true;
+	let finalGross = preGuaranteeGross;
+	let guaranteeApplied = false;
+	let guaranteeTopUpKop = 0;
+
+	if (hasActiveProductionOrAttendance && preset.minGuaranteeMonthlyKop > 0) {
+		const guaranteeRes = applyMinimumGuarantee(preGuaranteeGross, preset.minGuaranteeMonthlyKop, false, 1);
+		finalGross = guaranteeRes.grossPayout;
+		guaranteeApplied = guaranteeRes.guaranteeApplied;
+		if (guaranteeApplied) {
+			guaranteeTopUpKop = preset.minGuaranteeMonthlyKop - preGuaranteeGross;
+		}
 	}
 
 	return {

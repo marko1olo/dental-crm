@@ -12,6 +12,7 @@ export type { WorkspaceTopbarProps, WorkspaceViewIntentHandler };
 export interface WorkspaceTopBarStatusAndSearchProps {
 	clinicName?: string | null;
 	formattedDate: string;
+	cabinetName?: string | null;
 	selectedWorkspaceRole: StaffRole;
 	staffRoleLabels: Record<StaffRole, string>;
 	availableRoles: StaffRole[];

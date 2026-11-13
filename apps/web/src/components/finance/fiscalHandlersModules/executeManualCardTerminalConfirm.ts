@@ -49,7 +49,7 @@ export async function executeManualCardTerminalConfirm(params: ManualCardTermina
 			let res = await fetch("/api/cashbox/payments", { method: "POST", headers, body: manualBody }).catch(() => null);
 			if (!res || !res.ok) {
 				await fetch("/api/billing/payments", { method: "POST", headers, body: manualBody }).catch((err) => {
-					console.warn("[FastCheckoutModal] Manual card payment recording warning:", err);
+					console.warn("[CashboxPayment] Manual card payment recording warning:", err);
 				});
 			}
 		}

@@ -7,7 +7,7 @@ import { copyLabPortalLink, executeLabPayFromCashbox } from "./labOrderActionHel
 
 export function useLabOrderActions(
 	fetchOrders: () => Promise<void>,
-	onOpenReadyPrompt: (order: DentalLabOrderData) => void,
+	onOpenReadyPrompt: (order: Partial<DentalLabOrderData>) => void,
 ) {
 	const inFlightSetRef = useRef(new Set<string>());
 
@@ -16,12 +16,12 @@ export function useLabOrderActions(
 		if (inFlightSetRef.current.has(lockKey)) return;
 		inFlightSetRef.current.add(lockKey);
 		try {
-			const payload: Record<string, any> = { status: newStatus, stage: newStatus };
+			const payload: Record<string, string> = { status: newStatus, stage: newStatus };
 			if (notes) {
 				payload.clinicalNotes = notes;
 				payload.remakeReason = notes;
 			}
-			const res = await fetch(`/api/clinical/lab-orders/${orderId}`, {
+			const res = await fetch(`/api/lab/orders/${orderId}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 				body: JSON.stringify(payload),
@@ -36,7 +36,7 @@ export function useLabOrderActions(
 				if (typeof window !== "undefined") {
 					window.dispatchEvent(new CustomEvent("dente-lab-order-ready", { detail: { orderId, status: newStatus } }));
 				}
-				onOpenReadyPrompt({ id: orderId, status: newStatus } as any);
+				onOpenReadyPrompt({ id: orderId, status: newStatus });
 			}
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Ошибка смены статуса", "error");
@@ -91,7 +91,7 @@ export function useLabOrderActions(
 		if (inFlightSetRef.current.has(lockKey)) return;
 		inFlightSetRef.current.add(lockKey);
 		try {
-			const res = await fetch(`/api/clinical/lab-orders/${orderId}`, {
+			const res = await fetch(`/api/lab/orders/${orderId}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 				body: JSON.stringify({ attachedImageUrl: url.trim() }),

@@ -133,6 +133,19 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	curatorCommissionPercent: z.number().min(0).max(100).nullable().optional().default(null),
 	curatorNotes: z.string().trim().max(2000).nullable().optional().default(null),
 	curatorNextContactDate: z.string().nullable().optional().default(null),
+	curatorStageUpdatedAt: z.string().nullable().optional().default(null),
+	curatorPlanStages: z
+		.record(
+			z.object({
+				stage: curatorFunnelStageSchema,
+				updatedAt: z.string(),
+				notes: z.string().nullable().optional(),
+				curatorId: z.string().nullable().optional(),
+			}),
+		)
+		.nullable()
+		.optional()
+		.default(null),
 	/*
 	 * Режим «Анонимный пациент»
 	 */

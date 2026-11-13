@@ -116,6 +116,7 @@ export async function handleCreateTreatmentPlan(
 						stageId: createdStage?.id ?? null,
 						toothNumber: item.toothNumber ?? null,
 						priceId: item.priceId,
+						name: item.name ?? null,
 						quantity: item.quantity,
 						price: item.price.toFixed(2),
 						discount: item.discount.toFixed(2),

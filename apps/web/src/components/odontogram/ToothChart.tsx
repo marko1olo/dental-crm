@@ -115,7 +115,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 						</button>
 						<button
 							type="button"
-							data-testid="mark-molars-missing-btn"
+							data-testid="tooth-chart-apply-fast-caries-btn"
 							onClick={handleFastCaries}
 							title="Зафиксировать кариес дентина K02.1"
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"

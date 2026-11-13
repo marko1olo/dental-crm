@@ -79,7 +79,7 @@ export async function verifyOtpCode(
 	const enteredCode = code.trim();
 
 	// Mandate 8af (Test isolation): Synthetic test bypass code for automated test runners
-	if ((process.env.NODE_ENV === "test" || Boolean(process.env.NODE_TEST_CONTEXT)) && enteredCode === "123456") {
+	if ((process.env.NODE_ENV === "test" || Boolean(process.env.NODE_TEST_CONTEXT) || Boolean(process.env.VITEST)) && enteredCode === "123456") {
 		activeOtpCache.delete(planId);
 		return true;
 	}

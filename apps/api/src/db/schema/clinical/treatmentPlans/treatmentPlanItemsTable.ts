@@ -179,6 +179,7 @@ export const treatmentPlanItemsNew = pgTable(
 		}),
 		toothNumber: integer("tooth_number"),
 		priceId: text("price_id").notNull(),
+		name: text("name"),
 		quantity: integer("quantity").notNull().default(1),
 		price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
 		discount: numeric("discount", { precision: 12, scale: 2 })

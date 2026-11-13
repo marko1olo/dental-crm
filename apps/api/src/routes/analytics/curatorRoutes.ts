@@ -6,7 +6,10 @@ import {
 } from "../../accessGuard.js";
 import { fetchCuratorAnalyticsPayload } from "./curatorQuery.js";
 import { persistCuratorStageInDb } from "./curatorStageHandler.js";
-import type { UpdateCuratorStagePayload } from "./curatorTypes.js";
+import {
+	type UpdateCuratorStagePayload,
+	updateCuratorStagePayloadSchema,
+} from "./curatorTypes.js";
 
 /**
  * ФИЧА #27 — ВЫДЕЛЕННАЯ РОЛЬ «КУРАТОР ПАЦИЕНТОВ» И АНАЛИТИКА ВОРОНКИ
@@ -39,14 +42,17 @@ export async function registerCuratorRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "update curator stage");
 		if (!orgId) return;
 
-		const body = request.body as UpdateCuratorStagePayload | undefined;
-		if (!body?.patientId || !body?.stage) {
+		const parseResult = updateCuratorStagePayloadSchema.safeParse(request.body);
+		if (!parseResult.success) {
 			return reply.code(400).send({
 				success: false,
 				error: "ValidationError",
-				message: "Требуются patientId и stage воронки",
+				message:
+					parseResult.error.issues.map((i) => i.message).join(", ") ||
+					"Требуются patientId и валидный stage воронки",
 			});
 		}
+		const body = parseResult.data;
 
 		try {
 			const result = await persistCuratorStageInDb(orgId, body);

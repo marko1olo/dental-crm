@@ -7,7 +7,7 @@
  * Sweet Spot: 300–350 строк (Мандат 8b/8zi).
  */
 
-import type { ArchwireMaterial } from "@dental/shared/orthodontics/types.js";
+import type { ArchwireMaterial } from "@dental/shared";
 
 export type ApplianceCategory = "brackets" | "aligners" | "plate";
 export type ArchwireAlloy = "niti" | "cuniti" | "ss" | "tma" | ArchwireMaterial;
@@ -344,6 +344,8 @@ export function formatOrthoProtocolSoapEntry(state: OrthoProtocolState): string 
 	];
 	if (state.applianceCategory === "aligners") {
 		parts.push(`Элайнеры: шаг ${state.alignerTracking.currentStep} из ${state.alignerTracking.totalSteps} (смена каждые ${state.alignerTracking.wearDaysPerStep} дн.). Выдано: ${state.alignerTracking.issuedSetsCount} компл.${state.alignerTracking.nextPlannedDate ? ` Плановый переход: ${state.alignerTracking.nextPlannedDate}.` : ""}`);
+	} else if (state.applianceCategory === "plate") {
+		parts.push(`Съемная ортодонтическая пластинка: активация расширяющего винта на 1/4 оборота (0.25 мм). Проверка кламмерной фиксации и ретенции.`);
 	} else {
 		parts.push(`Дуга на верхней челюсти: ${state.upperSection} ${upperAlloyObj}; Дуга на нижней челюсти: ${state.lowerSection} ${lowerAlloyObj}.`);
 	}

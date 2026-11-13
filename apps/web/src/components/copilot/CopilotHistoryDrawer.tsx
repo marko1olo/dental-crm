@@ -86,7 +86,6 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 	const handleCreateNew = () => {
 		const newId = createThread("Новый пациент", "Клинический диалог");
 		onSelectThread(newId);
-		showToast("Создан новый диалог с ассистентом", "success");
 	};
 
 	const renderThreadCard = (thread: CopilotThread) => {
@@ -123,7 +122,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 								deleteThread(thread.id);
 								showToast("Диалог удален из истории", "info");
 							}}
-							className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
+							className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-[var(--danger-soft)] text-[var(--muted)] hover:text-[var(--danger)] transition-colors cursor-pointer"
 							title="Удалить диалог"
 							aria-label="Удалить диалог"
 						>
@@ -254,7 +253,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 				<footer className="px-5 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-[11px] shrink-0">
 						{isConfirmingClear ? (
 							<div className="flex items-center justify-between w-full gap-2">
-								<span className="text-rose-600 font-semibold text-[10px]">Очистить все диалоги?</span>
+								<span className="text-[var(--danger)] font-semibold text-[10px]">Очистить все диалоги?</span>
 								<div className="flex items-center gap-1.5">
 									<button
 										type="button"
@@ -270,7 +269,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 											setIsConfirmingClear(false);
 											showToast("Вся история диалогов очищена", "info");
 										}}
-										className="px-2 py-0.5 rounded bg-rose-500 text-white font-bold text-[10px] cursor-pointer"
+										className="px-2 py-0.5 rounded bg-[var(--danger)] text-white font-bold text-[10px] cursor-pointer"
 									>
 										Да, очистить
 									</button>
@@ -280,7 +279,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 							<button
 								type="button"
 								onClick={() => setIsConfirmingClear(true)}
-								className="text-[10px] text-[var(--muted)] hover:text-rose-500 cursor-pointer bg-transparent transition-colors"
+								className="text-[10px] text-[var(--muted)] hover:text-[var(--danger)] cursor-pointer bg-transparent transition-colors"
 							>
 								Очистить историю
 							</button>

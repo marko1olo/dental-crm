@@ -55,17 +55,39 @@ export function PatientFieldRequirementsSettings() {
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{[
-					{ key: "requirePhone", label: "Номер телефона", badge: "ОБЯЗАТЕЛЬНО", desc: "Блокирует сохранение без ввода номера телефона для СМС и визитов." },
-					{ key: "requireAdvertisingSource", label: "Рекламный источник", badge: "ОБЯЗАТЕЛЬНО", desc: "Обязывает выбрать источник (Сайт, Карты, Сарафан) для 100% точности ROMI." },
-					{ key: "requireSnils", label: "СНИЛС (11 цифр)", badge: "ДЛЯ ЕГИСЗ", desc: "Обязателен для клиник, подписывающих ЭМК с УКЭП в ЕГИСЗ РЭМД." },
-					{ key: "requireBirthDate", label: "Дата рождения", badge: "ОБЯЗАТЕЛЬНО", desc: "Требуется для разделения взрослой/детской одонтограммы и анестезии." },
-				].map((f) => (
+				{(
+					[
+						{
+							key: "requirePhone",
+							label: "Номер телефона",
+							badge: "ОБЯЗАТЕЛЬНО",
+							desc: "Блокирует сохранение без ввода номера телефона для СМС и визитов.",
+						},
+						{
+							key: "requireAdvertisingSource",
+							label: "Рекламный источник",
+							badge: "ОБЯЗАТЕЛЬНО",
+							desc: "Обязывает выбрать источник (Сайт, Карты, Сарафан) для 100% точности ROMI.",
+						},
+						{
+							key: "requireSnils",
+							label: "СНИЛС (11 цифр)",
+							badge: "ДЛЯ ЕГИСЗ",
+							desc: "Обязателен для клиник, подписывающих ЭМК с УКЭП в ЕГИСЗ РЭМД.",
+						},
+						{
+							key: "requireBirthDate",
+							label: "Дата рождения",
+							badge: "ОБЯЗАТЕЛЬНО",
+							desc: "Требуется для разделения взрослой/детской одонтограммы и анестезии.",
+						},
+					] as const
+				).map((f) => (
 					<div key={f.key} className="p-4 rounded-2xl bg-[var(--paper-soft)]/50 border border-[var(--line)] flex items-start justify-between gap-3">
 						<div className="space-y-1">
 							<div className="flex items-center gap-2">
 								<span className="font-bold text-sm text-[var(--ink)]">{f.label}</span>
-								{(requirements as any)[f.key] && (
+								{requirements[f.key] && (
 									<span className="text-xs px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold">{f.badge}</span>
 								)}
 							</div>
@@ -74,8 +96,8 @@ export function PatientFieldRequirementsSettings() {
 						<label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
 							<input
 								type="checkbox"
-								checked={(requirements as any)[f.key]}
-								onChange={() => handleToggle(f.key as any)}
+								checked={Boolean(requirements[f.key])}
+								onChange={() => handleToggle(f.key)}
 								className="sr-only peer"
 								data-testid={`toggle-${f.key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`}
 							/>

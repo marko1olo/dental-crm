@@ -41,9 +41,6 @@ export async function createChairInDb(
 	if (!clinic) throw new Error("Не удалось инициализировать отделение клиники для добавления кресла.");
 
 	const equipmentParts: string[] = [];
-	if (input.room) equipmentParts.push(`Кабинет: ${input.room}`);
-	if (input.color) equipmentParts.push(`Цвет: ${input.color}`);
-	if (input.defaultDoctorId) equipmentParts.push(`Врач: ${input.defaultDoctorId}`);
 	if (input.hasXraySensor) equipmentParts.push("рентген");
 	if (input.hasMicroscope) equipmentParts.push("микроскоп");
 	if (input.hasSurgeryKit) equipmentParts.push("хирургия");
@@ -53,6 +50,9 @@ export async function createChairInDb(
 		organizationId,
 		clinicId: clinic.id,
 		name: input.name,
+		room: input.room ?? null,
+		color: input.color ?? null,
+		defaultDoctorId: input.defaultDoctorId ?? null,
 		specializations: input.specialization ?? null,
 		equipment: equipmentParts.length > 0 ? equipmentParts.join(", ") : null,
 		isActive: true,
@@ -104,16 +104,19 @@ export async function updateChairProfileInDb(
 		name?: string;
 		isActive?: boolean;
 		specializations?: string | null;
+		room?: string | null;
+		color?: string | null;
+		defaultDoctorId?: string | null;
 		equipment?: string | null;
 	} = {};
 	if (input.name !== undefined) updateData.name = input.name;
 	if (input.active !== undefined) updateData.isActive = input.active;
 	if (input.specialization !== undefined) updateData.specializations = input.specialization ?? null;
+	if (input.room !== undefined) updateData.room = input.room ?? null;
+	if (input.color !== undefined) updateData.color = input.color ?? null;
+	if (input.defaultDoctorId !== undefined) updateData.defaultDoctorId = input.defaultDoctorId ?? null;
 
 	const hasEquipmentField =
-		input.room !== undefined ||
-		input.color !== undefined ||
-		input.defaultDoctorId !== undefined ||
 		input.hasXraySensor !== undefined ||
 		input.hasMicroscope !== undefined ||
 		input.hasSurgeryKit !== undefined ||
@@ -132,25 +135,16 @@ export async function updateChairProfileInDb(
 			.limit(1);
 
 		const eqStr = existing?.equipment || "";
-		const currentRoom = eqStr.match(/Кабинет:\s*([^,]+)/)?.[1]?.trim() ?? null;
-		const currentColor = eqStr.match(/Цвет:\s*([^,]+)/)?.[1]?.trim() ?? null;
-		const currentDoctor = eqStr.match(/Врач:\s*([^,]+)/)?.[1]?.trim() ?? null;
 		const currentHasXray = eqStr.toLowerCase().includes("рентген") || eqStr.toLowerCase().includes("xray");
 		const currentHasMicroscope = eqStr.toLowerCase().includes("микроскоп") || eqStr.toLowerCase().includes("microscope");
 		const currentHasSurgery = eqStr.toLowerCase().includes("хирург") || eqStr.toLowerCase().includes("surgery");
 
-		const room = input.room !== undefined ? input.room : currentRoom;
-		const color = input.color !== undefined ? input.color : currentColor;
-		const defaultDoctorId = input.defaultDoctorId !== undefined ? input.defaultDoctorId : currentDoctor;
 		const hasXray = input.hasXraySensor !== undefined ? input.hasXraySensor : currentHasXray;
 		const hasMicroscope = input.hasMicroscope !== undefined ? input.hasMicroscope : currentHasMicroscope;
 		const hasSurgery = input.hasSurgeryKit !== undefined ? input.hasSurgeryKit : currentHasSurgery;
 		const notes = input.notes !== undefined ? input.notes : null;
 
 		const equipmentParts: string[] = [];
-		if (room) equipmentParts.push(`Кабинет: ${room}`);
-		if (color) equipmentParts.push(`Цвет: ${color}`);
-		if (defaultDoctorId) equipmentParts.push(`Врач: ${defaultDoctorId}`);
 		if (hasXray) equipmentParts.push("рентген");
 		if (hasMicroscope) equipmentParts.push("микроскоп");
 		if (hasSurgery) equipmentParts.push("хирургия");

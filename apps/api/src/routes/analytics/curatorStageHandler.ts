@@ -1,3 +1,4 @@
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { patients } from "../../db/schema.js";
@@ -17,23 +18,35 @@ export async function persistCuratorStageInDb(
 		return { success: false, error: "PatientNotFound" };
 	}
 
-	const existingProfile = (patient.profile as Record<string, unknown>) ?? {};
-	const updatedProfile: Record<string, unknown> = {
+	const existingProfile: Partial<PatientAdministrativeProfile> = patient.profile ?? {};
+	const nowIso = new Date().toISOString();
+	const existingPlanStages = existingProfile.curatorPlanStages ?? {};
+
+	const updatedPlanStages: NonNullable<PatientAdministrativeProfile["curatorPlanStages"]> = {
+		...existingPlanStages,
+	};
+	if (payload.treatmentPlanId) {
+		const prevForPlan = existingPlanStages[payload.treatmentPlanId];
+		updatedPlanStages[payload.treatmentPlanId] = {
+			stage: payload.stage,
+			updatedAt: nowIso,
+			notes: payload.notes !== undefined ? payload.notes : (prevForPlan?.notes ?? null),
+			curatorId: payload.curatorId !== undefined ? payload.curatorId : (prevForPlan?.curatorId ?? null),
+		};
+	}
+
+	const updatedProfile: Partial<PatientAdministrativeProfile> = {
 		...existingProfile,
 		curatorFunnelStage: payload.stage,
-		curatorStageUpdatedAt: new Date().toISOString(),
+		curatorStageUpdatedAt: nowIso,
+		curatorPlanStages: updatedPlanStages,
+		...(payload.notes !== undefined ? { curatorNotes: payload.notes } : {}),
+		...(payload.curatorId !== undefined ? { curatorId: payload.curatorId } : {}),
 	};
-
-	if (payload.notes !== undefined) {
-		updatedProfile.curatorNotes = payload.notes;
-	}
-	if (payload.curatorId !== undefined) {
-		updatedProfile.curatorId = payload.curatorId;
-	}
 
 	await db
 		.update(patients)
-		.set({ administrativeProfile: updatedProfile as any })
+		.set({ administrativeProfile: updatedProfile })
 		.where(and(eq(patients.id, payload.patientId), eq(patients.organizationId, orgId)));
 
 	return { success: true };

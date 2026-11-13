@@ -64,8 +64,17 @@ export function AnalyticsSubDashboards({
 					onNavigateToSection={(s) => {
 						if (s === "financial_analytics") {
 							setIsFinancialAnalyticsOpen(true);
-						} else {
-							setAnalyticsSection(s as any);
+						} else if (
+							s === "executive" ||
+							s === "reports" ||
+							s === "operational" ||
+							s === "curators" ||
+							s === "lost_patients" ||
+							s === "freed_slots" ||
+							s === "marketing" ||
+							s === "clinic"
+						) {
+							setAnalyticsSection(s);
 						}
 					}}
 					onOpenFinancialAnalytics={() => setIsFinancialAnalyticsOpen(true)}

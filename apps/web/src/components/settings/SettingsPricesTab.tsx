@@ -9,11 +9,37 @@ import {
 	useSettingsPricesLogic,
 } from "./pricesTab";
 
+type SettingsPricesTabContract = {
+	readonly dashboard?: unknown;
+	readonly pricelistSourceKindLabels?: Record<string, string> | undefined;
+	readonly pricelistSourceKind?: string | undefined;
+	readonly setPricelistSourceKind?: ((val: string) => void) | undefined;
+	readonly clearPricelistImage?: (() => void) | undefined;
+	readonly setPricelistAnalysis?: ((analysis: unknown) => void) | undefined;
+	readonly pricelistRecognitionServiceGroups?: Array<{ title: string; items: string[] }> | undefined;
+	readonly pricelistRecognitionBrandGroups?: Array<{ title: string; items: string[] }> | undefined;
+	readonly pricelistText?: string | undefined;
+	readonly setPricelistText?: ((val: string) => void) | undefined;
+	readonly pricelistImageName?: string | null | undefined;
+	readonly attachPricelistImage?: ((file: File) => void) | undefined;
+	readonly usePricelistAi?: boolean | undefined;
+	readonly setUsePricelistAi?: ((val: boolean) => void) | undefined;
+	readonly analyzePricelist?: (() => void) | undefined;
+	readonly isPricelistAnalyzing?: boolean | undefined;
+	readonly pricelistImageBase64?: string | null | undefined;
+	readonly pricelistAnalysis?: unknown;
+	readonly pricelistParserModeLabels?: Record<string, string> | undefined;
+	readonly serviceCategoryLabels?: Record<string, string> | undefined;
+	readonly specialtyLabels?: Record<string, string> | undefined;
+	readonly createServiceCatalogItem?: ((item: any) => Promise<any> | void) | undefined;
+	readonly updateServiceCatalogItem?: ((id: string, item: any) => Promise<any> | void) | undefined;
+	readonly deleteServiceCatalogItem?: ((id: string) => Promise<any> | void) | undefined;
+};
+
 export function SettingsPricesTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const mergedProps: SettingsPricesTabContract = Object.assign({}, appLogic, derivations);
 	const {
 		dashboard,
 		pricelistSourceKindLabels,

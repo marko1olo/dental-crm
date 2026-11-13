@@ -272,4 +272,51 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		);
 		assert.ok(html.includes("Тестовый Пациент"));
 	});
+
+	it("17. Verifies interactive controls in OrthodonticsTabsContent (IPR, attachments, date, sets)", () => {
+		const tabsPath = path.join(orthoDir, "OrthodonticsTabsContent.tsx");
+		assert.ok(fs.existsSync(tabsPath), "OrthodonticsTabsContent.tsx must exist");
+		const content = fs.readFileSync(tabsPath, "utf-8");
+
+		assert.ok(content.includes('data-testid="toggle-ipr-btn"'), "Must have interactive IPR toggle");
+		assert.ok(content.includes('data-testid="toggle-attachments-btn"'), "Must have interactive attachments toggle");
+		assert.ok(content.includes('data-testid="next-aligner-date-input"'), "Must have next planned date picker");
+		assert.ok(content.includes("ortho-issued-sets-input"), "Must have issued sets input control");
+	});
+
+	it("18. Verifies removable plates branching, dual arch parameters and photo protocol sync", () => {
+		const modalPath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
+		const content = fs.readFileSync(modalPath, "utf-8");
+
+		assert.ok(
+			content.includes('protocol.applianceCategory === "plate"'),
+			"Must branch for removable plates without calling archwire-change",
+		);
+		assert.ok(
+			content.includes("/stages/advance"),
+			"Must advance stage / activate screw for plate category",
+		);
+		assert.ok(
+			content.includes('arch: "upper"') && content.includes('arch: "lower"'),
+			"Must preserve both upper and lower arch parameters independently",
+		);
+		assert.ok(
+			!content.includes("initialImageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}\n\t\t\t\t\t\tdoctorName="),
+			"ClinicalPhotoProtocolModal must not be passed SAMPLE_TRG_CEPHALOGRAM_URL",
+		);
+	});
+
+	it("19. Verifies canonical CSS has Safe Area support and orphan orthodontics.css is purged", () => {
+		const orphanPath = path.join(orthoDir, "orthodontics.css");
+		assert.ok(!fs.existsSync(orphanPath), "Orphan orthodontics.css must be purged (git rm)");
+
+		const canonicalCssPath = path.join(orthoDir, "styles/orthodonticsStudio.css");
+		assert.ok(fs.existsSync(canonicalCssPath), "Canonical orthodonticsStudio.css must exist");
+
+		const cssContent = fs.readFileSync(canonicalCssPath, "utf-8");
+		assert.ok(
+			cssContent.includes("env(safe-area-inset-bottom)"),
+			"Must support Apple HIG Safe Area in .ortho-footer",
+		);
+	});
 });

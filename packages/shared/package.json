@@ -175,6 +175,11 @@
 			"types": "./dist/ai/index.d.ts",
 			"import": "./dist/ai/index.js",
 			"default": "./dist/ai/index.js"
+		},
+		"./clinical/bundles": {
+			"types": "./dist/clinical/bundles/index.d.ts",
+			"import": "./dist/clinical/bundles/index.js",
+			"default": "./dist/clinical/bundles/index.js"
 		}
 	},
 	"scripts": {

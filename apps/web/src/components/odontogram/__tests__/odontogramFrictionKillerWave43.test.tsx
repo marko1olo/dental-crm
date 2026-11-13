@@ -221,7 +221,7 @@ describe("Wave 43: Odontogram Clinical Presets & Friction-Killer Stamp Workflow"
 
 			assert.ok(html.includes("data-testid=\"mark-intact-dentition-btn\""));
 			assert.ok(html.includes("data-testid=\"mark-wisdom-missing-btn\""));
-			assert.ok(html.includes("data-testid=\"mark-molars-missing-btn\""));
+			assert.ok(html.includes("data-testid=\"tooth-chart-apply-fast-caries-btn\""));
 			assert.ok(html.includes("data-testid=\"mark-front-intact-btn\""));
 		});
 

@@ -8,12 +8,12 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { PatientBillingModal } from "../PatientBillingModal";
-import { FastCheckoutModal } from "../FastCheckoutModal";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { FamilyWalletPanel } from "../FamilyWalletPanel";
 import { calculateCashChange, getCashPresetSuggestions } from "../fiscal/fiscal54fzEngine";
 
 describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () => {
-	it("PatientBillingModal: renders 1-click payment tender buttons and exact change calculation in DOM", () => {
+	it("PatientBillingModal: delegates payment execution to CashRegisterStudioModal without nested tender button sprawl", () => {
 		const html = renderToString(
 			<PatientBillingModal
 				isOpen={true}
@@ -37,17 +37,14 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 			/>,
 		);
 
-		// Assert tender panel and buttons are present
-		assert.ok(html.includes('data-testid="patient-billing-payment-panel"'), "Payment panel must be rendered");
-		assert.ok(html.includes('data-testid="tender-btn-card"'), "Card tender button must be present");
-		assert.ok(html.includes('data-testid="tender-btn-sbp"'), "SBP tender button must be present");
-		assert.ok(html.includes('data-testid="tender-btn-cash"'), "Cash tender button must be present");
-		assert.ok(html.includes('data-testid="tender-btn-family"'), "Family wallet tender button must be present");
-		assert.ok(html.includes('data-testid="tender-btn-deposit"'), "Deposit tender button must be present");
-		assert.ok(html.includes('data-testid="tender-btn-installment"'), "Installment tender button must be present");
+		// Assert payment delegation panel is present with single clear CTA to cashbox
+		assert.ok(html.includes('data-testid="patient-billing-payment-panel"'), "Payment delegation panel must be rendered");
+		assert.ok(html.includes('data-testid="btn-open-cashbox-from-act"'), "Open cashbox CTA must be present");
+		assert.ok(html.includes('data-testid="btn-fiscalize-54fz"'), "Footer 54-FZ fiscalize button must be present");
 
-		// Assert Anti-Matryoshka clean layout
-		assert.ok(html.includes("Способ оплаты:"), "Monolithic header must be visible");
+		// Mandate 8bf: Anti-Matryoshka — nested tender buttons sprawl is amputated from act view
+		assert.ok(!html.includes('data-testid="tender-btn-card"'), "Nested card button must NOT be sprawled inside act form");
+		assert.ok(!html.includes('data-testid="tender-btn-installment"'), "Nested installment button must NOT be sprawled inside act form");
 	});
 
 	it("Exact Cash Change Engine: calculates change down to kopecks without float drift", () => {
@@ -77,27 +74,28 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 		assert.ok(suggestions.includes(5000), "5000 bill must be suggested");
 	});
 
-	it("FastCheckoutModal: renders 54-FZ checkout studio with multi-tender support and doctor discounts", () => {
+	it("CashRegisterStudioModal: renders 54-FZ checkout studio with multi-tender support and doctor discounts", () => {
 		const html = renderToString(
-			<FastCheckoutModal
+			<CashRegisterStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				totalBillRub={18500}
+				totalDueRub={18500}
 				patientName="Петров Петр Петрович"
 				patientDepositRub={5000}
 				patientFamilyBalanceRub={35000}
-				initialPaymentMethod="cash"
+				defaultMethod="cash"
+				mode="checkout"
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="fast-checkout-modal"'), "Fast checkout modal must be rendered in DOM");
-		assert.ok(html.includes('data-testid="checkout-doctor-discounts-section"'), "Doctor discount & warranty panel must be present");
-		assert.ok(html.includes('data-testid="btn-discount-warranty"'), "100% warranty discount button must be present");
+		assert.ok(html.includes('data-testid="cash-register-studio-modal"'), "Cash register studio modal must be rendered in DOM");
+		assert.ok(html.includes('data-testid="payment-modal-presets-bar"'), "Doctor discount & warranty panel must be present");
+		assert.ok(html.includes('data-testid="preset-warranty-100"'), "100% warranty discount button must be present");
 		assert.ok(html.includes('data-testid="cash-tender-panel"'), "Tender panel must be present");
-		assert.ok(html.includes('data-testid="btn-checkout-100-card"'), "Card tender button must be present");
-		assert.ok(html.includes('data-testid="btn-checkout-100-sbp"'), "SBP tender button must be present");
-		assert.ok(html.includes('data-testid="btn-checkout-100-cash"'), "Cash tender button must be present");
-		assert.ok(html.includes('data-testid="btn-submit-fast-checkout"'), "Fiscalize submit button must be present");
+		assert.ok(html.includes('data-testid="btn-tender-card"'), "Card tender button must be present");
+		assert.ok(html.includes('data-testid="btn-tender-sbp"'), "SBP tender button must be present");
+		assert.ok(html.includes('data-testid="btn-tender-cash"'), "Cash tender button must be present");
+		assert.ok(html.includes('data-testid="btn-submit-checkout-54fz"'), "Fiscalize submit button must be present");
 	});
 
 	it("FamilyWalletPanel: renders balance allocation and family wallet controls", () => {

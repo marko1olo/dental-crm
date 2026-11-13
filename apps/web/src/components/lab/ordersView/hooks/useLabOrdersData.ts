@@ -17,13 +17,13 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 	);
 	const [isLoading, setIsLoading] = useState(!initialOrders);
 	const [error, setError] = useState<string | null>(null);
-	const labOrderStatuses = useAppStore((state: any) => state.labOrderStatuses);
+	const labOrderStatuses = useAppStore((state) => (state as { labOrderStatuses?: unknown }).labOrderStatuses);
 
 	const fetchOrders = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
-			const res = await fetch("/api/dental-lab/orders", { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch("/api/lab/orders", { headers: denteAdminSecretRequestHeaders() });
 			if (!res.ok) {
 				if (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"))) {
 					setOrders([...CANONICAL_DEMO_LAB_ORDERS]);
@@ -65,7 +65,9 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 				try {
 					const raw = window.localStorage.getItem("dente_pending_lab_order_draft");
 					if (raw) draft = JSON.parse(raw);
-				} catch {}
+				} catch (err) {
+					console.warn("Failed to parse pending lab order draft:", err);
+				}
 			}
 			if (draft) onOpenOrderFromEvent?.(draft);
 		};
@@ -75,9 +77,9 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 
 	useEffect(() => {
 		const handleOrderCreated = (e: Event) => {
-			const rawDetail = (e as CustomEvent<any>).detail;
-			const detail = (rawDetail && typeof rawDetail === "object" && "order" in rawDetail && rawDetail.order)
-				? (rawDetail.order as DentalLabOrderData)
+			const rawDetail = (e as CustomEvent<unknown>).detail;
+			const detail = (rawDetail && typeof rawDetail === "object" && "order" in rawDetail && (rawDetail as { order: unknown }).order)
+				? ((rawDetail as { order: DentalLabOrderData }).order)
 				: (rawDetail as DentalLabOrderData);
 			if (detail && detail.id) {
 				setOrders((prev) => {

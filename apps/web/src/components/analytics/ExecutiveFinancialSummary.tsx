@@ -22,7 +22,7 @@ import {
 	TrendingUp,
 	Wallet,
 } from "lucide-react";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 
 export interface PaymentBreakdownItem {
 	readonly method: "cash" | "card" | "sbp" | "deposit";
@@ -65,6 +65,23 @@ function formatRub(val: number): string {
 	return `${rounded.toLocaleString("ru-RU")} ₽`;
 }
 
+const createEmptySummary = (): FinancialSummaryData => ({
+	totalRevenueRub: 0,
+	totalRevenueKopecks: 0,
+	invoicesCount: 0,
+	totalInvoicedRub: 0,
+	totalInvoicedKopecks: 0,
+	averageCheckRub: 0,
+	averageCheckKopecks: 0,
+	paymentBreakdown: {
+		cash: { method: "cash", label: "Наличные (Касса)", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
+		card: { method: "card", label: "Банковские карты", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
+		sbp: { method: "sbp", label: "Оплата по QR (СБП)", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
+		deposit: { method: "deposit", label: "Списание с авансов/депозитов", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
+	},
+	isEmpty: true,
+});
+
 const PERIOD_LABELS: Record<string, string> = {
 	day: "Сегодня",
 	week: "Неделя",
@@ -80,7 +97,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 }) => {
 	const [activePeriod, setActivePeriod] = useState<string>(period);
 	const [loading, setLoading] = useState<boolean>(true);
-	const [summary, setSummary] = useState<FinancialSummaryData | null>(null);
+	const [summary, setSummary] = useState<FinancialSummaryData>(createEmptySummary);
 
 	const handlePeriodSelect = useCallback(
 		(p: string) => {
@@ -93,10 +110,9 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 	const fetchSummary = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			let res = await fetch(`/api/reports/financial-summary?period=${p}`);
-			if (!res.ok) {
-				res = await fetch(`/api/v1/manager/reports/financial?period=${p}`);
-			}
+			const res = await fetch(`/api/reports/financial-summary?period=${encodeURIComponent(p)}`, {
+				headers: denteClinicalReadHeaders(),
+			});
 			if (res.ok) {
 				const json = await res.json();
 				const payload = (json && typeof json === "object" && "data" in json && json.data) ? json.data : json;
@@ -104,73 +120,11 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 				setLoading(false);
 				return;
 			}
-		} catch {
-			// fallback к демо-данным при оффлайне или демо-витрине
+		} catch (err: unknown) {
+			console.warn("[ExecutiveFinancialSummary] Failed to fetch summary, fallback to empty state:", err);
 		}
 
-		if (isDemoShowcaseMode()) {
-			setSummary({
-				totalRevenueRub: 1450000,
-				totalRevenueKopecks: 145000000,
-				invoicesCount: 184,
-				totalInvoicedRub: 1520000,
-				totalInvoicedKopecks: 152000000,
-				averageCheckRub: 7880,
-				averageCheckKopecks: 788000,
-				paymentBreakdown: {
-					cash: {
-						method: "cash",
-						label: "Наличные (Касса)",
-						amountRub: 362500,
-						amountKopecks: 36250000,
-						percent: 25.0,
-						count: 48,
-					},
-					card: {
-						method: "card",
-						label: "Банковские карты",
-						amountRub: 797500,
-						amountKopecks: 79750000,
-						percent: 55.0,
-						count: 98,
-					},
-					sbp: {
-						method: "sbp",
-						label: "Оплата по QR (СБП)",
-						amountRub: 217500,
-						amountKopecks: 21750000,
-						percent: 15.0,
-						count: 26,
-					},
-					deposit: {
-						method: "deposit",
-						label: "Списание с авансов/депозитов",
-						amountRub: 72500,
-						amountKopecks: 7250000,
-						percent: 5.0,
-						count: 12,
-					},
-				},
-				isEmpty: false,
-			});
-		} else {
-			setSummary({
-				totalRevenueRub: 0,
-				totalRevenueKopecks: 0,
-				invoicesCount: 0,
-				totalInvoicedRub: 0,
-				totalInvoicedKopecks: 0,
-				averageCheckRub: 0,
-				averageCheckKopecks: 0,
-				paymentBreakdown: {
-					cash: { method: "cash", label: "Наличные (Касса)", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
-					card: { method: "card", label: "Банковские карты", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
-					sbp: { method: "sbp", label: "Оплата по QR (СБП)", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
-					deposit: { method: "deposit", label: "Списание с авансов/депозитов", amountRub: 0, amountKopecks: 0, percent: 0, count: 0 },
-				},
-				isEmpty: true,
-			});
-		}
+		setSummary(createEmptySummary());
 		setLoading(false);
 	}, []);
 

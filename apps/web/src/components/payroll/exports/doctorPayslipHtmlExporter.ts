@@ -79,7 +79,7 @@ export function generateDoctorPayslipHtml(
 		<div class="summary-row"><span>Всего начислено (до налогообложения):</span><strong>${grossPayoutRub} ₽</strong></div>
 		<div class="summary-row" style="color: #b91c1c;"><span>${taxTitle}</span><span>-${ndflRub} ₽</span></div>
 		${npdRow}
-		<div class="summary-row total"><span>ИТОГО К ВЫПЛАТЕ («НА РУКИ»):</span><span>${netToDocRub} ₽</span></div>
+		<div class="summary-row total"><span>Итого к выплате («на руки»):</span><span>${netToDocRub} ₽</span></div>
 		${advanceRows}
 	</div>
 	<div class="signatures">

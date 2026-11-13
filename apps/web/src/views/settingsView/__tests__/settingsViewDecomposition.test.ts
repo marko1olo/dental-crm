@@ -1,20 +1,25 @@
 /**
  * apps/web/src/views/settingsView/__tests__/settingsViewDecomposition.test.ts
  *
- * Vitest suite verifying SettingsView facade and submodules decomposition,
- * navigation menu, tab rendering, and file limit compliance (<= 250 lines facade).
+ * Test suite verifying SettingsView facade and submodules decomposition,
+ * navigation menu, tab rendering, and file limit compliance (<= 80 lines facade).
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	DOCTOR_TABS,
 	ADMIN_TABS,
 	OWNER_TABS,
 	ENTERPRISE_ADVANCED_TABS,
 	SETTINGS_ROLE_LABELS,
-} from "../types";
+} from "../types.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("SettingsView Architecture & Decomposition", () => {
 	const viewDir = path.resolve(__dirname, "..");
@@ -23,7 +28,7 @@ describe("SettingsView Architecture & Decomposition", () => {
 		const indexPath = path.join(viewDir, "index.tsx");
 		const content = fs.readFileSync(indexPath, "utf-8");
 		const lines = content.split("\n").length;
-		expect(lines).toBeLessThanOrEqual(80);
+		assert.ok(lines <= 80, `index.tsx must be <= 80 lines, got ${lines}`);
 	});
 
 	it("has submodules each strictly <= 120 lines per Mandate 8b", () => {
@@ -43,25 +48,25 @@ describe("SettingsView Architecture & Decomposition", () => {
 			if (fs.existsSync(fullPath)) {
 				const content = fs.readFileSync(fullPath, "utf-8");
 				const lines = content.split("\n").length;
-				expect(lines).toBeLessThanOrEqual(120);
+				assert.ok(lines <= 120, `${file} must be <= 120 lines, got ${lines}`);
 			}
 		}
 	});
 
 	it("properly separates roles into DOCTOR_TABS, ADMIN_TABS, OWNER_TABS, and ENTERPRISE_ADVANCED_TABS sets", () => {
-		expect(DOCTOR_TABS.has("profile")).toBe(true);
-		expect(DOCTOR_TABS.has("protocols")).toBe(true);
+		assert.strictEqual(DOCTOR_TABS.has("profile"), true);
+		assert.strictEqual(DOCTOR_TABS.has("protocols"), true);
 
-		expect(ADMIN_TABS.has("staff")).toBe(true);
-		expect(ADMIN_TABS.has("booking")).toBe(true);
+		assert.strictEqual(ADMIN_TABS.has("staff"), true);
+		assert.strictEqual(ADMIN_TABS.has("booking"), true);
 
-		expect(OWNER_TABS.has("clinic")).toBe(true);
-		expect(OWNER_TABS.has("prices")).toBe(true);
-		expect(OWNER_TABS.has("audit")).toBe(true);
+		assert.strictEqual(OWNER_TABS.has("clinic"), true);
+		assert.strictEqual(OWNER_TABS.has("prices"), true);
+		assert.strictEqual(OWNER_TABS.has("audit"), true);
 
-		expect(ENTERPRISE_ADVANCED_TABS.has("bpmn")).toBe(true);
-		expect(ENTERPRISE_ADVANCED_TABS.has("sources")).toBe(true);
-		expect(SETTINGS_ROLE_LABELS.owner).toBe("Управление клиникой");
+		assert.strictEqual(ENTERPRISE_ADVANCED_TABS.has("bpmn"), true);
+		assert.strictEqual(ENTERPRISE_ADVANCED_TABS.has("sources"), true);
+		assert.strictEqual(SETTINGS_ROLE_LABELS.owner, "Управление клиникой");
 	});
 
 	it("verifies SettingsClinicTab facade <= 250 lines and legal modules <= 500 lines", () => {
@@ -76,11 +81,11 @@ describe("SettingsView Architecture & Decomposition", () => {
 
 		const tabContent = fs.readFileSync(clinicTabPath, "utf-8");
 		const tabLines = tabContent.split("\n").length;
-		expect(tabLines).toBeLessThanOrEqual(250);
+		assert.ok(tabLines <= 250, `SettingsClinicTab.tsx must be <= 250 lines, got ${tabLines}`);
 
 		const legalContent = fs.readFileSync(legalSectionPath, "utf-8");
 		const legalLines = legalContent.split("\n").length;
-		expect(legalLines).toBeLessThanOrEqual(250);
+		assert.ok(legalLines <= 250, `SettingsClinicLegalSection.tsx must be <= 250 lines, got ${legalLines}`);
 	});
 
 	it("enforces Mandate 8am unified 36px/rounded-xl geometry and zero hardcoded colors in settings styles", () => {
@@ -88,26 +93,26 @@ describe("SettingsView Architecture & Decomposition", () => {
 			path.join(viewDir, "SettingsNavigationSidebar.tsx"),
 			"utf-8",
 		);
-		expect(sidebarContent).toContain("h-9 min-h-[36px] px-3 rounded-xl");
-		expect(sidebarContent).toContain("w-4 h-4");
-		expect(sidebarContent).toContain("text-[var(--primary)]");
-		expect(sidebarContent).toContain("text-[var(--ink-muted)]");
+		assert.ok(sidebarContent.includes("h-9 min-h-[36px] px-3 rounded-xl"));
+		assert.ok(sidebarContent.includes("w-4 h-4"));
+		assert.ok(sidebarContent.includes("text-[var(--primary)]"));
+		assert.ok(sidebarContent.includes("text-[var(--ink-muted)]"));
 
 		const menuContent = fs.readFileSync(
 			path.join(viewDir, "settingsNavigationMenu.tsx"),
 			"utf-8",
 		);
-		expect(menuContent).toContain("min-h-[48px] max-h-[52px]");
-		expect(menuContent).toContain("h-9 min-h-[36px] max-h-[36px] p-0.5 rounded-xl");
-		expect(menuContent).toContain("h-8 px-3 rounded-lg");
+		assert.ok(menuContent.includes("min-h-[48px] max-h-[52px]"));
+		assert.ok(menuContent.includes("h-9 min-h-[36px] max-h-[36px] p-0.5 rounded-xl"));
+		assert.ok(menuContent.includes("h-8 px-3 rounded-lg"));
 
 		const layoutCss = fs.readFileSync(
 			path.resolve(viewDir, "../../styles/modules/settings-layout.css"),
 			"utf-8",
 		);
-		expect(layoutCss).not.toContain("#f8fafc");
-		expect(layoutCss).not.toContain("#f1f5f9");
-		expect(layoutCss).not.toContain("rgba(30, 41, 59");
-		expect(layoutCss).not.toContain("rgba(15, 23, 42");
+		assert.ok(!layoutCss.includes("#f8fafc"));
+		assert.ok(!layoutCss.includes("#f1f5f9"));
+		assert.ok(!layoutCss.includes("rgba(30, 41, 59"));
+		assert.ok(!layoutCss.includes("rgba(15, 23, 42"));
 	});
 });

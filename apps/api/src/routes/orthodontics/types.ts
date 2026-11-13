@@ -35,6 +35,7 @@ export const archwireChangeSchema = z.object({
 export const ligatureActivateSchema = z.object({
 	powerChain: z.boolean().default(false),
 	powerChainSpan: z.string().max(50).optional(),
+	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
 	note: z.string().max(300).optional(),
 });
 

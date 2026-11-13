@@ -1,8 +1,18 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../../db/client.js";
-import { auditEvents, patientInvoices, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
-import { LEDGER_ID_PREFIX_LENGTH } from "../../../odontogram/types.js";
+import {
+	auditEvents,
+	patientInvoices,
+	treatmentItems,
+	treatmentPlanItemsNew,
+	treatmentPlans,
+} from "../../../../db/schema.js";
+import {
+	ledgerRowId,
+	splitStoredPriceId,
+} from "../../../odontogram/planHelpers.js";
+import { LEDGER_ID_PREFIX_LENGTH, UUID_SHAPE } from "../../../odontogram/types.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
 
 /**
@@ -80,6 +90,78 @@ export async function handleApproveTreatmentPlan(
 					})
 					.returning();
 				createdInvoice = invoice ?? null;
+
+				if (invoice) {
+					// Проверяем существующие строки в treatmentItems по префиксу плана
+					const existingLedgerItems = await tx
+						.select({ id: treatmentItems.id })
+						.from(treatmentItems)
+						.where(
+							and(
+								eq(treatmentItems.organizationId, organizationId),
+								eq(treatmentItems.patientId, existing.patientId),
+								sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+							),
+						);
+
+					if (existingLedgerItems.length > 0) {
+						// Обновляем статус и связываем существующие позиции со счётом
+						await tx
+							.update(treatmentItems)
+							.set({
+								status: "approved",
+								notes: sql`CASE WHEN ${treatmentItems.notes} IS NULL OR ${treatmentItems.notes} = '' THEN ${'Счёт ' + invoice.id} ELSE ${treatmentItems.notes} || ' | Счёт ' || ${invoice.id} END`,
+							})
+							.where(
+								and(
+									eq(treatmentItems.organizationId, organizationId),
+									eq(treatmentItems.patientId, existing.patientId),
+									sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+								),
+							);
+					} else {
+						// Если в леджере строк не было — загружаем строки из treatmentPlanItemsNew и создаем детальные позиции счета
+						const planItems = await tx
+							.select()
+							.from(treatmentPlanItemsNew)
+							.where(
+								and(
+									eq(treatmentPlanItemsNew.planId, id),
+									eq(treatmentPlanItemsNew.organizationId, organizationId),
+								),
+							);
+
+						if (planItems.length > 0) {
+							let slot = 0;
+							const newLedgerItems = planItems.map((item) => {
+								const rowId = ledgerRowId(id, slot);
+								slot += 1;
+								const priceNum = Number(item.price || 0);
+								const discountNum = Number(item.discount || 0);
+								const lineTotalRub = Math.max(0, priceNum * item.quantity - discountNum);
+								const { priceId, name: legacyName } = splitStoredPriceId(item.priceId);
+								const title = item.name || legacyName || priceId;
+								return {
+									id: rowId,
+									organizationId,
+									patientId: existing.patientId,
+									visitId: null,
+									serviceId: UUID_SHAPE.test(priceId) ? priceId : null,
+									toothCode: item.toothNumber != null ? String(item.toothNumber) : null,
+									title,
+									quantity: String(item.quantity),
+									priceRub: lineTotalRub,
+									unitPriceRub: priceNum,
+									discountRub: discountNum,
+									status: "approved" as const,
+									plannedDoctorUserId: item.doctorId ?? null,
+									notes: `План лечения: ${updated.name || "Утвержденный"} | Счёт ${invoice.id}`,
+								};
+							});
+							await tx.insert(treatmentItems).values(newLedgerItems);
+						}
+					}
+				}
 			}
 		}
 

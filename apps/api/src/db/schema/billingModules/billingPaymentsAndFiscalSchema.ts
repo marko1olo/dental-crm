@@ -18,7 +18,7 @@ import {
 	paymentMethod,
 	paymentStatus,
 } from "../_common.js";
-import { organizations, users } from "../auth.js";
+import { organizations } from "../auth.js";
 import { visits } from "../clinical.js";
 import { patients } from "../patients.js";
 
@@ -314,69 +314,6 @@ export const cashLedger = pgTable(
 		invoiceIdIdx: index("cash_ledger_invoice_id_idx").on(table.invoiceId),
 		timestampIdx: index("cash_ledger_timestamp_idx").on(table.timestamp),
 		operatorIdIdx: index("cash_ledger_operator_id_idx").on(table.operatorId),
-	}),
-);
-
-export const cashShifts = pgTable(
-	"cash_shifts",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		openedByUserId: uuid("opened_by_user_id")
-			.notNull()
-			.references(() => users.id),
-		openedAt: timestamp("opened_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		closedAt: timestamp("closed_at", { withTimezone: true }),
-		startingBalance: numeric("starting_balance", { precision: 12, scale: 2 })
-			.notNull()
-			.default("0"),
-		expectedClosingBalance: numeric("expected_closing_balance", {
-			precision: 12,
-			scale: 2,
-		}),
-		actualClosingBalance: numeric("actual_closing_balance", {
-			precision: 12,
-			scale: 2,
-		}),
-		status: text("status").notNull().default("open"), // open, closing, closed, discrepancy_flagged
-		discrepancyReason: text("discrepancy_reason"),
-	},
-	(table) => ({
-		organizationIdIdx: index("cash_shifts_organization_id_idx").on(
-			table.organizationId,
-		),
-		statusIdx: index("cash_shifts_status_idx").on(table.status),
-		orgStatusIdx: index("cash_shifts_org_status_idx").on(
-			table.organizationId,
-			table.status,
-		),
-		openedByUserIdIdx: index("cash_shifts_opened_by_user_id_idx").on(
-			table.openedByUserId,
-		),
-		orgOpenedAtIdx: index("cash_shifts_org_opened_at_idx").on(
-			table.organizationId,
-			table.openedAt,
-		),
-	}),
-);
-
-export const shiftDiscrepancyReports = pgTable(
-	"shift_discrepancy_reports",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		shiftId: uuid("shift_id").notNull().references(() => cashShifts.id),
-		discrepancyAmount: numeric("discrepancy_amount", { precision: 12, scale: 2 }).notNull(),
-		reason: text("reason"),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-	},
-	(table) => ({
-		shiftIdIdx: index("shift_discrepancy_reports_shift_id_idx").on(
-			table.shiftId,
-		),
 	}),
 );
 

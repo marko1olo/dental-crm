@@ -8,22 +8,17 @@ import { Building2, ChevronDown, DoorOpen, Stethoscope } from "lucide-react";
 import React, { useId, useState } from "react";
 import type { BranchInfo, HeaderBrandingProps } from "./types";
 
-const DEFAULT_BRANCHES: BranchInfo[] = [
-	{ id: "main", name: "Центральный филиал", address: "ул. Ленина, 42", isCurrent: true, cabinetCount: 6 },
-	{ id: "north", name: "Северное отделение", address: "пр. Мира, 15", isCurrent: false, cabinetCount: 4 },
-];
-
 export function HeaderBranding({
 	className = "",
 	clinicName = "Клиника DENTE",
-	branches = DEFAULT_BRANCHES,
+	branches = [],
 	currentBranchId,
 	onBranchChange,
-	currentCabinet = "Кабинет 1 · Терапия",
+	currentCabinet,
 	onCabinetChange,
 }: HeaderBrandingProps) {
 	const [activeBranchId, setActiveBranchId] = useState(
-		currentBranchId || branches.find((b) => b.isCurrent)?.id || branches[0]?.id || "main",
+		currentBranchId || branches.find((b) => b.isCurrent)?.id || branches[0]?.id || "",
 	);
 	const [isBranchMenuOpen, setIsBranchMenuOpen] = useState(false);
 	const branchMenuId = useId();
@@ -58,63 +53,75 @@ export function HeaderBranding({
 					{clinicName}
 				</span>
 
-				{/* Branch Selector Pill */}
-				<div className="relative">
-					<button
-						type="button"
-						id={branchMenuId}
-						onClick={() => setIsBranchMenuOpen((prev) => !prev)}
-						className="inline-flex items-center gap-1 text-[11px] text-[var(--muted,#475569)] hover:text-[var(--teal,#0d9488)] transition-colors leading-none pt-0.5 max-w-full cursor-pointer focus:outline-none"
-						aria-expanded={isBranchMenuOpen}
-						aria-haspopup="listbox"
-						title={selectedBranch?.address ? `${selectedBranch.name} (${selectedBranch.address})` : selectedBranch?.name}
+				{/* Branch Selector Pill or Location Badge */}
+				{branches.length > 1 ? (
+					<div className="relative">
+						<button
+							type="button"
+							id={branchMenuId}
+							onClick={() => setIsBranchMenuOpen((prev) => !prev)}
+							className="inline-flex items-center gap-1 text-[11px] text-[var(--muted,#475569)] hover:text-[var(--teal,#0d9488)] transition-colors leading-none pt-0.5 max-w-full cursor-pointer focus:outline-none"
+							aria-expanded={isBranchMenuOpen}
+							aria-haspopup="listbox"
+							title={selectedBranch?.address ? `${selectedBranch.name} (${selectedBranch.address})` : selectedBranch?.name}
+						>
+							<Building2 size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
+							<span className="truncate max-w-[130px] sm:max-w-[160px] font-medium">
+								{selectedBranch?.name || "Основной филиал"}
+							</span>
+							<ChevronDown
+								size={11}
+								className={`shrink-0 opacity-60 transition-transform duration-150 ${isBranchMenuOpen ? "rotate-180" : ""}`}
+							/>
+						</button>
+
+						{/* Branch Dropdown Popover */}
+						{isBranchMenuOpen && (
+							<div
+								className="absolute top-full left-0 mt-1.5 w-64 p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] shadow-lg z-50 animate-in fade-in zoom-in-95 duration-150"
+								role="listbox"
+								aria-labelledby={branchMenuId}
+							>
+								<div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] border-b border-[var(--line-subtle,#f1f5f9)]">
+									Филиалы клиники
+								</div>
+								<div className="py-1">
+									{branches.map((b) => (
+										<button
+											key={b.id}
+											type="button"
+											role="option"
+											aria-selected={b.id === selectedBranch?.id}
+											onClick={() => handleSelectBranch(b.id)}
+											className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex flex-col transition-colors cursor-pointer ${
+												b.id === selectedBranch?.id
+													? "bg-[var(--teal-surface,#0d948814)] text-[var(--teal,#0d9488)] font-semibold"
+													: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
+											}`}
+										>
+											<span className="truncate">{b.name}</span>
+											{b.address && (
+												<span className="text-[10px] text-[var(--muted,#64748b)] truncate">
+													{b.address}
+												</span>
+											)}
+										</button>
+									))}
+								</div>
+							</div>
+						)}
+					</div>
+				) : branches.length === 1 && branches[0] ? (
+					<div
+						className="inline-flex items-center gap-1 text-[11px] text-[var(--muted,#475569)] leading-none pt-0.5 truncate max-w-full"
+						title={branches[0].address ? `${branches[0].name} (${branches[0].address})` : branches[0].name}
 					>
 						<Building2 size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
 						<span className="truncate max-w-[130px] sm:max-w-[160px] font-medium">
-							{selectedBranch?.name || "Основной филиал"}
+							{branches[0].name}
 						</span>
-						<ChevronDown
-							size={11}
-							className={`shrink-0 opacity-60 transition-transform duration-150 ${isBranchMenuOpen ? "rotate-180" : ""}`}
-						/>
-					</button>
-
-					{/* Branch Dropdown Popover */}
-					{isBranchMenuOpen && (
-						<div
-							className="absolute top-full left-0 mt-1.5 w-64 p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] shadow-lg z-50 animate-in fade-in zoom-in-95 duration-150"
-							role="listbox"
-							aria-labelledby={branchMenuId}
-						>
-							<div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] border-b border-[var(--line-subtle,#f1f5f9)]">
-								Филиалы клиники
-							</div>
-							<div className="py-1">
-								{branches.map((b) => (
-									<button
-										key={b.id}
-										type="button"
-										role="option"
-										aria-selected={b.id === selectedBranch?.id}
-										onClick={() => handleSelectBranch(b.id)}
-										className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex flex-col transition-colors cursor-pointer ${
-											b.id === selectedBranch?.id
-												? "bg-[var(--teal-surface,#0d948814)] text-[var(--teal,#0d9488)] font-semibold"
-												: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
-										}`}
-									>
-										<span className="truncate">{b.name}</span>
-										{b.address && (
-											<span className="text-[10px] text-[var(--muted,#64748b)] truncate">
-												{b.address}
-											</span>
-										)}
-									</button>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
+					</div>
+				) : null}
 			</div>
 
 			{/* Current Cabinet Indicator (Desktop only) */}

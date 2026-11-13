@@ -36,66 +36,61 @@ export interface CanonicalSettingsTabDefinition {
 }
 
 export const CANONICAL_SETTINGS_TABS: CanonicalSettingsTabDefinition[] = [
-	{
-		id: "clinic",
-		title: "Клиника и кресла",
-		description: "Профиль клиники, реквизиты, масштаб и мастер кресел",
-	},
-	{
-		id: "prices",
-		title: "Прайс-лист процедур",
-		description: "Каталог услуг, клинические шаблоны, себестоимость и тарифы",
-	},
-	{
-		id: "staff",
-		title: "Сотрудники и доступ",
-		description: "Персонал, права доступа, роли и ставки врачей",
-	},
-	{
-		id: "hardware",
-		title: "Оборудование и касса",
-		description: "Касса и чеки, ККТ, визиографы, датчики и оповещения",
-	},
-	{
-		id: "imports",
-		title: "Импорт данных",
-		description: "Экспресс-перенос из других МИС, 1С и Excel",
-	},
+	{ id: "clinic", title: "Клиника и кресла", description: "Профиль клиники, реквизиты, масштаб и мастер кресел" },
+	{ id: "prices", title: "Прайс-лист процедур", description: "Каталог услуг, клинические шаблоны, себестоимость и тарифы" },
+	{ id: "staff", title: "Сотрудники и доступ", description: "Персонал, права доступа, роли и ставки врачей" },
+	{ id: "hardware", title: "Оборудование и касса", description: "Касса и чеки, ККТ, визиографы, датчики и оповещения" },
+	{ id: "imports", title: "Импорт данных", description: "Экспресс-перенос из других МИС, 1С и Excel" },
 ];
 
+export interface SettingsStaffUser {
+	id?: string;
+	role?: string;
+	fullName?: string;
+	email?: string | null;
+	phone?: string | null;
+	specialties?: string[];
+	active?: boolean;
+}
+
+export interface SettingsViewFeatureFlags {
+	hasMarketingModule?: boolean;
+	hasAnalyticsModule?: boolean;
+	hasBpmWorkflows?: boolean;
+	hasClinicalRules?: boolean;
+	hasInsuranceCoPay?: boolean;
+	[key: string]: unknown;
+}
+
+export interface SettingsTabItem {
+	id: SettingsTabId;
+	title: string;
+	group: SettingsTabGroup;
+}
+
 export interface SettingsViewProps {
-	// biome-ignore lint/suspicious/noExplicitAny: universal props
-	activeStaffUser?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: universal props
-	[key: string]: any;
+	activeStaffUser?: SettingsStaffUser | null;
+	activePatient?: unknown;
+	[key: string]: unknown;
 }
 
 export interface SettingsNavigationSidebarProps {
-	typedSettingsTabs: Array<{
-		id: SettingsTabId;
-		title: string;
-		group: SettingsTabGroup;
-	}>;
+	typedSettingsTabs: Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }>;
 	settingsTab: SettingsTabId | string;
 	selectSettingsTab: (tabId: SettingsTabId | string) => void;
-	handleSettingsTabKeyDown: (
-		event: React.KeyboardEvent<HTMLButtonElement>,
-		tabId: SettingsTabId,
-	) => void;
+	handleSettingsTabKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>, tabId: SettingsTabId) => void;
 	activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null> | undefined;
 	settingsTabButtonId: (tabId: SettingsTabId) => string;
 	settingsTabPanelId: (tabId: SettingsTabId) => string;
 }
 
 export interface SettingsClinicGeneralTabProps {
-	// biome-ignore lint/suspicious/noExplicitAny: settings props bag
-	props: any;
+	props: Record<string, unknown>;
 	settingsTab?: string;
 }
 
 export interface SettingsSecurityAndBackupTabProps {
-	// biome-ignore lint/suspicious/noExplicitAny: settings props bag
-	settingsProps: any;
+	settingsProps: Record<string, unknown>;
 	telegramAdminSecretSession?: boolean;
 	setTelegramAdminSecretDraft?: (value: string) => void;
 	unlockTelegramAdminSession?: () => void;

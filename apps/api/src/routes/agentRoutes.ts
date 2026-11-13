@@ -32,7 +32,18 @@ import {
 import { db } from "../db/client.js";
 import { copilotHitlCards } from "../db/schema/copilot.js";
 import { patientDrugAllergies, patients } from "../db/schema/patients.js";
+import { visits } from "../db/schema/clinical/visitsSchema.js";
 import { and, desc, eq, sql } from "drizzle-orm";
+
+/** In-memory cache для скрытых клинических подсказок (resolvedOrgId:nudgeId) */
+const dismissedNudgeIds = new Set<string>();
+
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const tolerantUuid = z.string().optional().transform((val) => {
+	if (!val) return undefined;
+	const trimmed = val.trim();
+	return uuidRegex.test(trimmed) ? trimmed : undefined;
+});
 
 const chatMessageSchema = z.object({
 	role: z.enum(["system", "user", "assistant", "tool"]),
@@ -44,17 +55,18 @@ const chatMessageSchema = z.object({
 
 const agentChatBodySchema = z.object({
 	messages: z.array(chatMessageSchema).min(1, "Массив сообщений не может быть пустым"),
-	patientId: z.string().uuid().optional(),
-	activeVisitId: z.string().uuid().optional(),
+	patientId: tolerantUuid,
+	activeVisitId: tolerantUuid,
 	sessionId: z.string().optional(),
 	conversationId: z.string().optional(),
 	stream: z.boolean().optional().default(false),
 	runtimeMode: z.enum(["web_browser", "desktop_native", "chairside_tablet", "mobile_tablet"]).optional(),
+	maskPhiData: z.boolean().optional(),
 	enableAutoCompaction: z.boolean().optional(),
 	compactThresholdTokens: z.number().int().positive().optional(),
 	slidingWindowRetainedTurns: z.number().int().positive().optional(),
 	initialSummary: z.string().optional(),
-	trustLevel: z.enum(["confirm_all", "balanced", "autonomous", "cautious", "supervised"]).optional(),
+	trustLevel: z.enum(["confirm_all", "balanced", "autonomous"]).optional(),
 	granularPermissions: z.object({
 		autoApproveFileReads: z.boolean().optional(),
 		autoApproveFileWrites: z.boolean().optional(),
@@ -67,6 +79,9 @@ const agentChatBodySchema = z.object({
 	doctorSpecialization: z.string().optional(),
 	speedMode: z.enum(["turbo", "deep_reasoning"]).optional(),
 	activeTooth: z.number().int().min(11).max(85).nullable().optional(),
+	patientAllergies: z.array(z.string()).optional(),
+	allergies: z.array(z.string()).optional(),
+	somaticHistory: z.union([z.string(), z.array(z.string())]).optional(),
 	swarmRole: z.enum(["orchestrator", "triage", "odontogram_inquisitor", "billing_sentinel", "vision_specialist"]).optional(),
 	fallbackToDeterministicAgent: z.boolean().optional(),
 	modelRoutingMode: z.enum(["server_managed", "custom_byok"]).optional(),
@@ -162,10 +177,8 @@ export async function handleAgentChat(
 	const identity = getRequestIdentity(request);
 	const doctorId = identity.userId || undefined;
 
-	// Canonical SSOT Trust Level normalization (cautious, supervised, autonomous)
-	const normalizedTrust: "cautious" | "supervised" | "autonomous" | undefined =
-		body.trustLevel === "confirm_all" ? "cautious" :
-		body.trustLevel === "balanced" ? "supervised" :
+	// Canonical SSOT Trust Level normalization (confirm_all, balanced, autonomous)
+	const normalizedTrust: "confirm_all" | "balanced" | "autonomous" | undefined =
 		body.trustLevel;
 
 	const isSseRequested =
@@ -193,9 +206,12 @@ export async function handleAgentChat(
 					doctorId,
 					patientId: body.patientId,
 					activeVisitId: body.activeVisitId,
+					patientAllergies: body.patientAllergies || body.allergies,
+					somaticHistory: body.somaticHistory,
 					runtimeMode,
 				},
 				runtimeMode,
+				maskPhiData: body.maskPhiData,
 				enableAutoCompaction: body.enableAutoCompaction,
 				compactThresholdTokens: body.compactThresholdTokens,
 				slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
@@ -296,9 +312,12 @@ export async function handleAgentChat(
 				doctorId,
 				patientId: body.patientId,
 				activeVisitId: body.activeVisitId,
+				patientAllergies: body.patientAllergies || body.allergies,
+				somaticHistory: body.somaticHistory,
 				runtimeMode,
 			},
 			runtimeMode,
+			maskPhiData: body.maskPhiData,
 			enableAutoCompaction: body.enableAutoCompaction,
 			compactThresholdTokens: body.compactThresholdTokens,
 			slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
@@ -652,10 +671,109 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			);
 			if (!resolvedOrgId) return;
 
-			return reply.code(200).send({
-				ok: true,
-				nudges: [],
-			});
+			try {
+				const query = (request.query ?? {}) as { patientId?: string; visitId?: string };
+
+				// 1. Поиск незаполненных черновиков приёма текущей клиники
+				const visitFilters = [
+					eq(visits.organizationId, resolvedOrgId),
+					eq(visits.status, "draft"),
+				];
+				if (query.patientId) {
+					visitFilters.push(eq(visits.patientId, query.patientId));
+				}
+				if (query.visitId) {
+					visitFilters.push(eq(visits.id, query.visitId));
+				}
+
+				const draftVisits = await db
+					.select()
+					.from(visits)
+					.where(and(...visitFilters))
+					.orderBy(desc(visits.createdAt))
+					.limit(10);
+
+				// 2. Поиск активных аллергических стоп-факторов
+				const allergyFilters = [eq(patientDrugAllergies.organizationId, resolvedOrgId)];
+				if (query.patientId) {
+					allergyFilters.push(eq(patientDrugAllergies.patientId, query.patientId));
+				}
+
+				const allergies = await db
+					.select()
+					.from(patientDrugAllergies)
+					.where(and(...allergyFilters))
+					.orderBy(desc(patientDrugAllergies.createdAt))
+					.limit(10);
+
+				const nudges: Array<{
+					id: string;
+					kind: string;
+					title: string;
+					text: string;
+					priority: "low" | "medium" | "high";
+					payload?: Record<string, unknown>;
+					created_at: string;
+				}> = [];
+
+				for (const v of draftVisits) {
+					if (!v.diagnosis || !v.diagnosis.trim()) {
+						nudges.push({
+							id: `nudge_missing_diag_${v.id}`,
+							kind: "missing_diagnosis",
+							title: "Незаполнен диагноз в черновике приёма",
+							text: "В открытом черновике приёма пациента не указан диагноз по МКБ-10. Рекомендуется заполнить протокол.",
+							priority: "high",
+							payload: { visitId: v.id, patientId: v.patientId },
+							created_at: v.createdAt.toISOString(),
+						});
+					}
+					if (!v.complaint || !v.complaint.trim()) {
+						nudges.push({
+							id: `nudge_missing_complaint_${v.id}`,
+							kind: "missing_complaint",
+							title: "Отсутствуют жалобы пациента",
+							text: "Зафиксируйте жалобы пациента или подтвердите норму («Жалоб нет»).",
+							priority: "medium",
+							payload: { visitId: v.id, patientId: v.patientId },
+							created_at: v.createdAt.toISOString(),
+						});
+					}
+				}
+
+				for (const a of allergies) {
+					nudges.push({
+						id: `nudge_allergy_${a.id}`,
+						kind: "allergy_alert",
+						title: `⚠️ Аллергический стоп-фактор: ${a.allergenGroup}`,
+						text: `Зафиксирована реакция (${a.reactionSeverity}) на ${a.allergenGroup}${a.drugInnLatin ? ` (${a.drugInnLatin})` : ""}: ${a.clinicalManifestations || "соблюдайте осторожность при выборе анестезии и фармпрепаратов"}.`,
+						priority: "high",
+						payload: {
+							allergyId: a.id,
+							patientId: a.patientId,
+							allergenGroup: a.allergenGroup,
+							severity: a.reactionSeverity,
+						},
+						created_at: a.createdAt.toISOString(),
+					});
+				}
+
+				// Фильтрация скрытых подсказок текущей сессии
+				const activeNudges = nudges.filter(
+					(n) => !dismissedNudgeIds.has(`${resolvedOrgId}:${n.id}`),
+				);
+
+				return reply.code(200).send({
+					ok: true,
+					nudges: activeNudges,
+				});
+			} catch (err) {
+				request.log.warn({ err }, "[agentRoutes] Failed to generate dynamic copilot nudges");
+				return reply.code(200).send({
+					ok: true,
+					nudges: [],
+				});
+			}
 		},
 	);
 
@@ -671,6 +789,9 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			if (!resolvedOrgId) return;
 
 			const body = (request.body ?? {}) as { id?: string };
+			if (body.id) {
+				dismissedNudgeIds.add(`${resolvedOrgId}:${body.id}`);
+			}
 			return reply.code(200).send({
 				ok: true,
 				dismissedId: body.id,

@@ -1,6 +1,7 @@
 import {
 	type CuratorFunnelStage,
 	type CuratorPatientQueueItem,
+	type PatientAdministrativeProfile,
 	evaluatePatientUrgency,
 } from "@dental/shared";
 import type { CuratorStaffUser } from "./curatorTypes.js";
@@ -17,7 +18,7 @@ export interface RawCuratorPlanRecord {
 	readonly patientFullName: string | null;
 	readonly patientPhone: string | null;
 	readonly patientEmail: string | null;
-	readonly patientAdminProfile: unknown;
+	readonly patientAdminProfile: Partial<PatientAdministrativeProfile> | null;
 }
 
 export function buildCuratorQueueItem(
@@ -26,10 +27,13 @@ export function buildCuratorQueueItem(
 	doctorMap: Map<string, string>,
 	defaultCurator: CuratorStaffUser,
 ): CuratorPatientQueueItem {
-	const adminProf = plan.patientAdminProfile as Record<string, unknown> | null;
-	const curatorId = typeof adminProf?.curatorId === "string" ? adminProf.curatorId : defaultCurator.id;
+	const adminProf = plan.patientAdminProfile;
+	const curatorId =
+		typeof adminProf?.curatorId === "string" && adminProf.curatorId
+			? adminProf.curatorId
+			: defaultCurator.id;
 	const curatorName =
-		typeof adminProf?.curatorFullName === "string"
+		typeof adminProf?.curatorFullName === "string" && adminProf.curatorFullName
 			? adminProf.curatorFullName
 			: doctorMap.get(curatorId) || defaultCurator.fullName;
 
@@ -39,15 +43,20 @@ export function buildCuratorQueueItem(
 	const planPaid = Math.min(planPrice, paid);
 	const remaining = Math.max(0, planPrice - planPaid);
 
+	const planStages = adminProf?.curatorPlanStages;
+	const planStageEntry =
+		planStages && typeof planStages === "object" ? planStages[plan.id] : undefined;
+
 	let stage: CuratorFunnelStage = "consultation";
+	const candidateStage = planStageEntry?.stage ?? adminProf?.curatorFunnelStage;
 	if (
-		adminProf?.curatorFunnelStage === "consultation" ||
-		adminProf?.curatorFunnelStage === "plan_negotiation" ||
-		adminProf?.curatorFunnelStage === "prepayment" ||
-		adminProf?.curatorFunnelStage === "treatment_start" ||
-		adminProf?.curatorFunnelStage === "completed"
+		candidateStage === "consultation" ||
+		candidateStage === "plan_negotiation" ||
+		candidateStage === "prepayment" ||
+		candidateStage === "treatment_start" ||
+		candidateStage === "completed"
 	) {
-		stage = adminProf.curatorFunnelStage;
+		stage = candidateStage;
 	} else if (plan.status === "Completed") {
 		stage = "completed";
 	} else if (plan.status === "Active") {
@@ -58,9 +67,13 @@ export function buildCuratorQueueItem(
 		stage = "plan_negotiation";
 	}
 
+	const stageUpdatedAtRaw = planStageEntry?.updatedAt ?? adminProf?.curatorStageUpdatedAt ?? plan.createdAt;
+	const stageDate = typeof stageUpdatedAtRaw === "string" ? new Date(stageUpdatedAtRaw) : (stageUpdatedAtRaw instanceof Date ? stageUpdatedAtRaw : new Date(plan.createdAt));
+	const validStageDate = Number.isNaN(stageDate.getTime()) ? new Date(plan.createdAt) : stageDate;
+
 	const daysInStage = Math.max(
 		0,
-		Math.floor((Date.now() - new Date(plan.createdAt).getTime()) / (1000 * 60 * 60 * 24)),
+		Math.floor((Date.now() - validStageDate.getTime()) / (1000 * 60 * 60 * 24)),
 	);
 	const tier = planPrice >= 150_000 ? "premium" : planPrice < 50_000 ? "basic" : "optimum";
 	const isVip = adminProf?.loyaltyTier === "gold" || adminProf?.loyaltyTier === "platinum";
@@ -84,12 +97,17 @@ export function buildCuratorQueueItem(
 		curatorId,
 		curatorFullName: curatorName,
 		assignedAt: typeof adminProf?.curatorAssignedAt === "string" ? adminProf.curatorAssignedAt : plan.createdAt.toISOString(),
-		stageUpdatedAt: plan.createdAt.toISOString(),
+		stageUpdatedAt: validStageDate.toISOString(),
 		daysInStage,
 		doctorId: plan.doctorId,
 		doctorFullName: plan.doctorId ? doctorMap.get(plan.doctorId) : null,
 		priorityScore: urgency.priorityScore,
 		attentionFlags: urgency.attentionFlags,
-		notes: typeof adminProf?.curatorNotes === "string" ? adminProf.curatorNotes : null,
+		notes:
+			typeof planStageEntry?.notes === "string"
+				? planStageEntry.notes
+				: typeof adminProf?.curatorNotes === "string"
+					? adminProf.curatorNotes
+					: null,
 	};
 }

@@ -1,22 +1,21 @@
 import React from "react";
 import {
+	CreditCard,
+	FileText,
+	Layers,
 	QrCode,
+	Receipt,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
 	Syringe,
-	FileText,
-	Layers,
 } from "lucide-react";
 import { type FriendlyBillingGroup } from "../portal/patientCabinet/patientCareInstructionsEngine";
 import {
 	PatientBillingPlanStagePanel,
 	type PatientBillingPlanStagePanelProps,
 } from "./PatientBillingPlanStagePanel";
-import {
-	PatientBillingTenderPanel,
-	type PatientBillingTenderPanelProps,
-} from "./PatientBillingTenderPanel";
+import type { PatientBillingTenderPanelProps } from "./PatientBillingTenderPanel";
 
 import type {
 	PatientBillingPaymentMethod,
@@ -139,26 +138,33 @@ export const PatientBillingFriendlyTab: React.FC<PatientBillingFriendlyTabProps>
 				onTenderPlanStage={onTenderPlanStage}
 			/>
 
-			{/* Express Payment and Tender Controls */}
-			<PatientBillingTenderPanel
-				selectedTender={selectedTender}
-				onSelectTender={onSelectTender}
-				onFiscalizeAction={onFiscalizeAction}
-				totalNetRub={totalNetRub}
-				receivedCashRub={receivedCashRub}
-				onSetReceivedCashRub={onSetReceivedCashRub}
-				cashChangeResult={cashChangeResult}
-				primaryInputRef={primaryInputRef}
-				onInputEnterKeyDown={onInputEnterKeyDown}
-				installmentSchedule={installmentSchedule}
-				effectiveDeposit={effectiveDeposit}
-				effectiveFamilyBalance={effectiveFamilyBalance}
-				initialServicesCount={initialServicesCount}
-				customServiceName={customServiceName}
-				onSetCustomServiceName={onSetCustomServiceName}
-				customAmountRub={customAmountRub}
-				onSetCustomAmountRub={onSetCustomAmountRub}
-			/>
+			{/* Cashier Payment Delegation Panel (Mandate 8bf: SSOT CashRegisterStudioModal) */}
+			<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 flex-wrap" data-testid="patient-billing-payment-panel">
+				<div className="flex items-center gap-3 min-w-0">
+					<div className="w-10 h-10 rounded-xl bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/20 shrink-0">
+						<CreditCard className="w-5 h-5" />
+					</div>
+					<div>
+						<div className="text-xs sm:text-sm font-bold text-[var(--ink)]">
+							Оплата и фискализация (54-ФЗ)
+						</div>
+						<div className="text-[11px] text-[var(--muted)]">
+							Приём платежа (нал, карта, СБП, депозит, сплит) через кассовую студию DENTE
+						</div>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onClick={onFiscalizeAction}
+					className="min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 flex items-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95 shrink-0"
+					data-testid="btn-open-cashbox-from-act"
+					title="Перейти к оплате в кассовую студию"
+				>
+					<Receipt className="w-4 h-4 text-white shrink-0" />
+					<span>Принять оплату ({totalNetRub.toLocaleString("ru-RU")} ₽)</span>
+				</button>
+			</div>
 
 			{/* Grouped Friendly Blocks */}
 			<div className="space-y-3">

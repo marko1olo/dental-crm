@@ -6,5 +6,5 @@
 
 export * from "./pricelistCatalogData";
 export * from "./PricelistStudioModal";
-export * from "./PricelistItemDrawer";
+export { PriceItemEditModal } from "../settings/pricesTab/PriceItemEditModal";
 export * from "./DirectPricelistLauncher";

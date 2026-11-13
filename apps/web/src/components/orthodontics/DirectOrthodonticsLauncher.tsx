@@ -25,6 +25,24 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(true);
 	const instanceClaimedRef = useRef(false);
 
+	const storePatientId = usePatientStore((s) => s.selectedPatientId);
+	const storePatientCore = usePatientStore((s) => s.patientCoreDraft);
+	const dashboard = useAppStore((s) => s.dashboard);
+	const storeActiveDoctorName = useAppStore((s) => s.activeDoctorName);
+
+	const resolvedPatientName = useMemo(() => {
+		if (storePatientCore?.fullName?.trim()) return storePatientCore.fullName.trim();
+		return "Пациент ортодонтического приёма";
+	}, [storePatientCore?.fullName]);
+
+	const resolvedDoctorName = useMemo(() => {
+		if (storeActiveDoctorName?.trim()) return storeActiveDoctorName.trim();
+		const staff = dashboard?.clinicSettings?.staff ?? [];
+		const found = staff.find((d) => d.role === "doctor" || (d.specialties as readonly string[] | undefined)?.includes("orthodontist"));
+		if (found?.fullName?.trim()) return found.fullName.trim();
+		return "Врач-ортодонт";
+	}, [storeActiveDoctorName, dashboard?.clinicSettings?.staff]);
+
 	useEffect(() => {
 		const handleLocationChange = () => {
 			const active = checkIsOrthoActive();
@@ -67,31 +85,9 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 	}, []);
 
 	if (!isActive || !isOpen) return null;
-	if (isGlobalOrthoModalMounted && !instanceClaimedRef.current) return null;
-
-	isGlobalOrthoModalMounted = true;
-	instanceClaimedRef.current = true;
-
-	const storePatientId = usePatientStore((s) => s.selectedPatientId);
-	const storePatientCore = usePatientStore((s) => s.patientCoreDraft);
-	const dashboard = useAppStore((s) => s.dashboard);
-	const storeActiveDoctorName = useAppStore((s) => s.activeDoctorName);
 
 	const queryPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
 	const activePatientId = queryPatientId || storePatientId || dashboard?.activeVisit?.patientId || "pat-ortho-studio";
-
-	const resolvedPatientName = useMemo(() => {
-		if (storePatientCore?.fullName?.trim()) return storePatientCore.fullName.trim();
-		return "Пациент ортодонтического приёма";
-	}, [storePatientCore?.fullName]);
-
-	const resolvedDoctorName = useMemo(() => {
-		if (storeActiveDoctorName?.trim()) return storeActiveDoctorName.trim();
-		const staff = dashboard?.clinicSettings?.staff ?? [];
-		const found = staff.find((d) => d.role === "doctor" || d.specialties?.includes("orthodontics"));
-		if (found?.fullName?.trim()) return found.fullName.trim();
-		return "Врач-ортодонт";
-	}, [storeActiveDoctorName, dashboard?.clinicSettings?.staff]);
 
 	return (
 		<OrthodonticsStudioModal

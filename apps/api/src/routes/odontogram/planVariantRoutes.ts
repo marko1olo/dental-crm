@@ -29,7 +29,7 @@ import { UUID_SHAPE } from "./types.js";
 
 export function registerPlanVariantRoutes(app: FastifyInstance) {
 	/**
-	 * Выбор и утверждение конкретного плана из группы альтернатив (ст. 20 323-ФЗ и ПП РФ №659)
+	 * Выбор и утверждение конкретного плана из группы альтернатив (ст. 20 323-ФЗ)
 	 * При утверждении одного плана остальные в группе автоматически отклоняются (Declined / Rejected)
 	 */
 	app.post(
@@ -98,7 +98,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 	);
 
 	/**
-	 * Создание группы альтернативных планов лечения (ст. 20 323-ФЗ и ПП РФ №659)
+	 * Создание группы альтернативных планов лечения (ст. 20 323-ФЗ)
 	 */
 	app.post(
 		"/api/patients/:patientId/treatment-plans/alternative-group",

@@ -27,7 +27,7 @@ import {
 	getCategoryDisplayLabel,
 } from "../pricelistCatalogData";
 import { PricelistStudioModal, ServicePriceListStudioModal } from "../PricelistStudioModal";
-import { PricelistItemDrawer } from "../PricelistItemDrawer";
+import { PriceItemEditModal } from "../../settings/pricesTab/PriceItemEditModal";
 import { DirectPricelistLauncher } from "../DirectPricelistLauncher";
 
 describe("Канонический SSOT прейскуранта DENTE CRM", () => {
@@ -168,7 +168,7 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 
 		it("рендерит нативный Bottom Sheet формы добавления (Apple HIG, Мандат 8e)", () => {
 			const html = renderToString(
-				<PricelistItemDrawer
+				<PriceItemEditModal
 					isOpen={true}
 					editingItem={null}
 					formCode="ТЕР-99"

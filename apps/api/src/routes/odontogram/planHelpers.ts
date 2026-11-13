@@ -90,7 +90,8 @@ export function serializeTreatmentPlan(
 			completionPercentage: s.completionPercentage,
 		})),
 		items: items.map((item, index) => {
-			const { priceId, name } = splitStoredPriceId(item.priceId);
+			const { priceId, name: legacyName } = splitStoredPriceId(item.priceId);
+			const name = item.name || (legacyName !== priceId ? legacyName : (item.name || legacyName));
 			const docInfo =
 				item.doctorId && doctorsById
 					? doctorsById.get(item.doctorId)

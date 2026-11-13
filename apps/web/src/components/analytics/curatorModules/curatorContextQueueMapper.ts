@@ -1,18 +1,60 @@
-import type { CuratorFunnelStage, CuratorPatientQueueItem } from "@dental/shared";
+import type {
+	CuratorAttentionFlag,
+	CuratorFunnelStage,
+	CuratorPatientQueueItem,
+} from "@dental/shared";
+
+export interface ContextTreatmentPlan {
+	readonly id: string;
+	readonly patientId?: string | null;
+	readonly name?: string | null;
+	readonly title?: string | null;
+	readonly totalPriceRub?: number | string | null;
+	readonly totalPrice?: number | string | null;
+	readonly paidAmountRub?: number | string | null;
+	readonly status?: string | null;
+	readonly createdAt?: string | Date | null;
+	readonly doctorId?: string | null;
+}
+
+export interface ContextPatient {
+	readonly id: string;
+	readonly fullName?: string | null;
+	readonly phone?: string | null;
+	readonly email?: string | null;
+	readonly balanceRub?: number | string | null;
+	readonly administrativeProfile?: {
+		readonly curatorId?: string | null;
+		readonly curatorFullName?: string | null;
+		readonly curatorAssignedAt?: string | null;
+		readonly curatorFunnelStage?: CuratorFunnelStage | null;
+		readonly curatorNotes?: string | null;
+	} | null;
+}
+
+export interface ContextStaffMember {
+	readonly id: string;
+	readonly fullName?: string | null;
+	readonly name?: string | null;
+	readonly role?: string | null;
+	readonly active?: boolean;
+}
 
 export function mapDashboardContextToQueue(
-	plans: any[],
-	patients: any[],
-	staff: any[],
-	staffCurators: any[],
+	plans: readonly ContextTreatmentPlan[],
+	patients: readonly ContextPatient[],
+	staff: readonly ContextStaffMember[],
+	staffCurators: readonly ContextStaffMember[],
 ): CuratorPatientQueueItem[] {
 	if (!plans || plans.length === 0) return [];
 
-	const staffMap = new Map<string, string>(staff.map((s: any) => [s.id, s.fullName || s.name]));
-	const defaultCurator = staffCurators[0] || null;
+	const staffMap = new Map<string, string>(
+		staff.map((s) => [s.id, s.fullName || s.name || "Сотрудник"]),
+	);
+	const defaultCurator = staffCurators[0] ?? null;
 
-	return plans.map((plan: any) => {
-		const patient = patients.find((p: any) => p.id === plan.patientId);
+	return plans.map((plan) => {
+		const patient = patients.find((p) => p.id === plan.patientId);
 		const adminProf = patient?.administrativeProfile;
 		const curatorId = adminProf?.curatorId || defaultCurator?.id || null;
 		const curatorName =
@@ -43,7 +85,7 @@ export function mapDashboardContextToQueue(
 			Math.floor((Date.now() - new Date(plan.createdAt || Date.now()).getTime()) / (1000 * 60 * 60 * 24)),
 		);
 		const tier = priceRub >= 150_000 ? "premium" : priceRub < 50_000 ? "basic" : "optimum";
-		const attentionFlags: any[] = [];
+		const attentionFlags: CuratorAttentionFlag[] = [];
 		if (days > 5 && stage !== "completed") attentionFlags.push("stagnant_plan");
 		if (priceRub >= 150_000) attentionFlags.push("high_value_plan");
 		if (stage === "plan_negotiation" && days >= 3 && paidRub === 0) {

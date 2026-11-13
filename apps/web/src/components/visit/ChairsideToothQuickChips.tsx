@@ -6,7 +6,7 @@
 
 import React from "react";
 import { getToothBadgeColor, toAnatomicalToothState } from "./chairsideToothColors.js";
-import { AnatomicalTooth } from "../odontogram/AnatomicalTooth";
+import { AnatomicalTooth } from "../odontogram/gate0/AnatomicalTooth";
 import { toothDataToGate0Flags } from "../odontogram/gate0/gate0ToothFlagsConverter";
 import type { ToothState } from "../../store/visitStore";
 
@@ -56,7 +56,7 @@ export const ChairsideToothQuickChips: React.FC<ChairsideToothQuickChipsProps> =
 						<div className="w-4 h-6 flex items-center justify-center overflow-hidden pointer-events-none">
 							<AnatomicalTooth
 								toothNumber={t}
-								layers={toothDataToGate0Flags({ toothNumber: t, state: anatomicalState as any })}
+								layers={toothDataToGate0Flags({ toothNumber: t, state: anatomicalState })}
 								zoom={0.24}
 								showBadge={false}
 							/>

@@ -41,39 +41,40 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
     updateNewAppointmentDraft,
     showToast,
     loadDashboard,
-    setModalAppointment,
   } = props;
 
   return (
     <>
-      <DoctorFreeSlotsModal
-        isOpen={doctorFreeSlotsOpen}
-        onClose={() => {
-          setDoctorFreeSlotsOpen(false);
-          useUiSurfaceStore.getState().closePrimaryModal("doctor_free_slots");
-        }}
-        dashboard={dashboard as any}
-        initialDoctorId={scheduleDoctorFilterId}
-        onSelectSlot={(slot) => {
-          setDoctorFreeSlotsOpen(false);
-          useUiSurfaceStore
-            .getState()
-            .transitionModalToDrawer("doctor_free_slots", "quick_booking");
-          if (waitlistOpen) setWaitlistOpen(false);
-          if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
-          setQuickBookingSlot({
-            dateKey: slot.date,
-            startTime: slot.startTime,
-            startsAt: `${slot.date}T${slot.startTime}:00.000Z`,
-            doctorUserId: slot.doctorId || scheduleDoctorFilterId || null,
-            chairId: slot.chairId || null,
-            durationMinutes: slot.durationMinutes,
-          });
-          setQuickBookingOpen(true);
-        }}
-      />
+      {dashboard && (
+        <DoctorFreeSlotsModal
+          isOpen={doctorFreeSlotsOpen}
+          onClose={() => {
+            setDoctorFreeSlotsOpen(false);
+            useUiSurfaceStore.getState().closePrimaryModal("doctor_free_slots");
+          }}
+          dashboard={dashboard}
+          initialDoctorId={scheduleDoctorFilterId}
+          onSelectSlot={(slot) => {
+            setDoctorFreeSlotsOpen(false);
+            useUiSurfaceStore
+              .getState()
+              .transitionModalToDrawer("doctor_free_slots", "quick_booking");
+            if (waitlistOpen) setWaitlistOpen(false);
+            if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
+            setQuickBookingSlot({
+              dateKey: slot.date,
+              startTime: slot.startTime,
+              startsAt: `${slot.date}T${slot.startTime}:00.000Z`,
+              doctorUserId: slot.doctorId || scheduleDoctorFilterId || null,
+              chairId: slot.chairId || null,
+              durationMinutes: slot.durationMinutes,
+            });
+            setQuickBookingOpen(true);
+          }}
+        />
+      )}
 
-      {preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
+      {dashboard && preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
         <PreventiveInspectionModal
           isOpen={preventiveInspectionOpen}
           onClose={() => {
@@ -82,7 +83,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
               .getState()
               .closePrimaryModal("preventive_inspection");
           }}
-          dashboard={dashboard as any}
+          dashboard={dashboard}
           onBookPatient={(candidate) => {
             setPreventiveInspectionOpen(false);
             useUiSurfaceStore
@@ -107,18 +108,18 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
       )}
 
       <SlotConflictModal
-        isOpen={Boolean((logicContext as any)?.slotConflict)}
-        onClose={() => (logicContext as any)?.setSlotConflict?.(null)}
-        conflictMessage={(logicContext as any)?.slotConflict?.message}
-        suggestedSlots={(logicContext as any)?.slotConflict?.suggestedSlots ?? []}
+        isOpen={Boolean(logicContext?.slotConflict)}
+        onClose={() => logicContext?.setSlotConflict?.(null)}
+        conflictMessage={logicContext?.slotConflict?.message}
+        suggestedSlots={logicContext?.slotConflict?.suggestedSlots ?? []}
         onSelectSlot={(slotTime) => {
-          (logicContext as any)?.applySuggestedSlot?.(
+          logicContext?.applySuggestedSlot?.(
             slotTime,
-            (logicContext as any)?.slotConflict?.appointmentId,
+            logicContext?.slotConflict?.appointmentId,
           );
         }}
         onOverbook={() => {
-          const apptId = (logicContext as any)?.slotConflict?.appointmentId;
+          const apptId = logicContext?.slotConflict?.appointmentId;
           if (apptId) {
             void saveAppointmentSchedule(apptId, {
               allowOverbooking: true,
@@ -130,7 +131,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
               allowEmergencyOverride: true,
             });
           }
-          (logicContext as any)?.setSlotConflict?.(null);
+          logicContext?.setSlotConflict?.(null);
         }}
       />
 
@@ -211,15 +212,31 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
             if (setIsPendingOnlineBookingsOpen) {
               setIsPendingOnlineBookingsOpen(false);
             }
+            const dateKey = app.startsAt ? app.startsAt.slice(0, 10) : undefined;
+            const startTime = app.startsAt ? app.startsAt.slice(11, 16) : undefined;
+            const durationMinutes =
+              app.startsAt && app.endsAt
+                ? Math.max(
+                    15,
+                    Math.round(
+                      (new Date(app.endsAt).getTime() - new Date(app.startsAt).getTime()) /
+                        60000,
+                    ),
+                  )
+                : 30;
+            const patientName =
+              dashboard?.patients?.find((p) => p.id === app.patientId)?.fullName ??
+              undefined;
+
             setQuickBookingSlot({
-              dateKey: (app as any).date || (app.startsAt ? app.startsAt.slice(0, 10) : undefined),
-              startTime: (app as any).startTime || (app.startsAt ? app.startsAt.slice(11, 16) : undefined),
+              dateKey,
+              startTime,
               startsAt: app.startsAt,
               doctorUserId: app.doctorUserId || null,
               chairId: app.chairId || null,
               patientId: app.patientId || null,
-              patientName: (app as any).patientName,
-              durationMinutes: (app as any).durationMinutes || 30,
+              patientName,
+              durationMinutes,
               reason: app.reason,
               editingAppointment: app,
             });

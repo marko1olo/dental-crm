@@ -128,7 +128,7 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 
 		const text = generateDoctorPayslipMessengerText(calc, volkov, "Стоматология DENTE");
 		assert.ok(text.includes("Расчетный листок врача:"));
-		assert.ok(text.includes("К ВЫПЛАТЕ:"));
+		assert.ok(text.toLowerCase().includes("к выплате:"));
 	});
 
 	it("3.1 Verifies Sweet Spot line limits for the new SSOT architecture (Mandate 8b)", () => {

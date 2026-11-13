@@ -1,1 +1,1 @@
-export { MissingPriceBannerAlert, default } from "../MissingPriceBannerAlert";
+export { MissingPriceBannerAlert, default } from "../MissingPriceAlertHub";

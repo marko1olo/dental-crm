@@ -1,5 +1,5 @@
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
-import { enqueueOfflinePayment } from "../../../offline/offlinePaymentQueue.js";
+import { enqueueOfflinePayment, type PaymentMethodKind } from "../../../offline/offlinePaymentQueue.js";
 
 export interface RecordCrmPaymentParams {
 	patientId?: string | undefined;
@@ -54,7 +54,7 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 		}
 		if (!response || !response.ok) {
 			response = await fetch("/api/billing/payments", { method: "POST", headers, body: paymentPayload }).catch((err) => {
-				console.warn("[FastCheckoutModal] payments sync fallback error:", err);
+				console.warn("[CashboxPayment] payments sync fallback error:", err);
 				return null;
 			});
 		}
@@ -80,12 +80,25 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 		}
 
 		// Офлайн-устойчивость (Мандат 8e, 8n): если сервер недоступен, ставим платеж в IndexedDB offlinePaymentQueue
+		const resolvedPaymentType: PaymentMethodKind =
+			targetBillKop === 0
+				? "cash"
+				: isSplitPayment
+					? "mixed"
+					: primaryMethod === "cash"
+						? "cash"
+						: primaryMethod === "sbp" || primaryMethod === "online"
+							? "sbp"
+							: primaryMethod === "deposit" || primaryMethod === "family_wallet"
+								? "deposit"
+								: "card";
+
 		const queuedPayment = await enqueueOfflinePayment({
 			patientId,
 			patientName: "Пациент",
 			visitId: visitId || undefined,
 			totalKopecks: targetBillKop,
-			paymentType: targetBillKop === 0 ? "cash" : (isSplitPayment ? "mixed" : (primaryMethod as any)),
+			paymentType: resolvedPaymentType,
 			splitDetails: isSplitPayment
 				? {
 						cashKopecks: cashKop > 0 ? cashKop : undefined,
@@ -108,7 +121,7 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 			fiscalReceiptNumber: queuedPayment.fiscalQueueId || `OFF-${queuedPayment.id.slice(-6).toUpperCase()}`,
 		};
 	} catch (crmErr) {
-		console.warn("[FastCheckoutModal] Failed to record payment in CRM:", crmErr);
+		console.warn("[CashboxPayment] Failed to record payment in CRM:", crmErr);
 	}
 	return null;
 }

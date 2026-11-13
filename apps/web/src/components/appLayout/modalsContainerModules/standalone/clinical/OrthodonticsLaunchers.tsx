@@ -16,9 +16,6 @@ import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPati
 const CephalometricAnalysisModal = lazyWithRetry(() =>
 	import("../../../../radiology/CephalometricAnalysisModal").then((m) => ({ default: m.CephalometricAnalysisModal })),
 );
-const SmartOpgViewerModal = lazyWithRetry(() =>
-	import("../../../../orthodontics/SmartOpgViewerModal").then((m) => ({ default: m.SmartOpgViewerModal })),
-);
 const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
 	import("../../../../photography/ClinicalPhotoProtocolModal").then((m) => ({ default: m.ClinicalPhotoProtocolModal })),
 );
@@ -59,16 +56,9 @@ export function renderOrthodonticsLaunchers(props: StandaloneLaunchersProps): Re
 	}
 
 	if (isSmartOpgDirectModalOpen) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка панорамного анализа ОПТГ AI..." />}>
-				<StandaloneOpgHost
-					onClose={() => {
-						setIsSmartOpgDirectModalOpen?.(false);
-						clearUrlTokens(["opg"]);
-					}}
-				/>
-			</Suspense>
-		);
+		setIsSmartOpgDirectModalOpen?.(false);
+		clearUrlTokens(["opg"]);
+		return null;
 	}
 
 	if (hasUrlToken(["ortho-photo", "orthodontic-photo"])) {
@@ -92,19 +82,6 @@ function StandaloneCephHost({ tab, onClose }: { tab: "landmarks" | "metrics" | "
 			patientId={patientId || undefined}
 			patientName={patientName || undefined}
 			initialTab={tab}
-		/>
-	);
-}
-
-function StandaloneOpgHost({ onClose }: { onClose: () => void }) {
-	const { patientId, patientName, guard } = useOrthoGuard("standalone-opg-missing-state", onClose);
-	if (guard) return guard;
-	return (
-		<SmartOpgViewerModal
-			isOpen={true}
-			onClose={onClose}
-			patientId={patientId || undefined}
-			patientName={patientName || undefined}
 		/>
 	);
 }

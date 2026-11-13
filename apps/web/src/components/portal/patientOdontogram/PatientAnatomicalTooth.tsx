@@ -5,7 +5,8 @@
 
 import React, { memo } from "react";
 import { Check, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
-import { AnatomicalToothSVG } from "../../odontogram/AnatomicalToothSVG";
+import { AnatomicalTooth } from "../../odontogram/gate0/AnatomicalTooth";
+import { toothDataToGate0Flags } from "../../odontogram/gate0/gate0ToothFlagsConverter";
 import { getPatientToothStatusColor } from "../patientFriendlyOdontogramEngine";
 import {
 	type PatientAnatomicalToothProps,
@@ -61,16 +62,15 @@ export const PatientAnatomicalTooth: React.FC<PatientAnatomicalToothProps> = mem
 			</span>
 
 			<div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "54px", width: "100%", overflow: "hidden" }}>
-				<AnatomicalToothSVG
-					number={toothNumber}
-					state={visual.state}
-					material={visual.material}
-					scale={0.62}
-					isSelected={isSelected}
-					onClick={(_, num) => onSelect(tooth)}
-					showPulpAndCanals={visual.state === "Pulpitis" || visual.state === "Root_Canal_Treated"}
-					showPeriapicalHalos={visual.state === "Periodontitis"}
-					showPeriodontalBoneLoss={false}
+				<AnatomicalTooth
+					toothNumber={toothNumber}
+					layers={toothDataToGate0Flags({
+						toothNumber,
+						state: visual.state as any,
+						material: visual.material as any,
+					})}
+					zoom={0.62}
+					showBadge={false}
 				/>
 			</div>
 

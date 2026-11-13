@@ -43,7 +43,7 @@ import {
 	syncServiceItemToBackend,
 	batchSyncPricelistToBackend,
 } from "./pricelistCatalogData";
-import { PricelistItemDrawer } from "./PricelistItemDrawer";
+import { PriceItemEditModal } from "../settings/pricesTab/PriceItemEditModal";
 
 export interface PricelistStudioModalProps {
 	readonly isOpen: boolean;
@@ -765,8 +765,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 							bottom: "1rem",
 							left: "50%",
 							transform: "translateX(-50%)",
-							background: "#0f172a",
-							color: "#f8fafc",
+							background: "var(--ink)",
+							color: "var(--paper)",
 							padding: "0.5rem 1rem",
 							borderRadius: "9999px",
 							fontSize: "0.8125rem",
@@ -780,7 +780,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 				)}
 			</div>
 
-			<PricelistItemDrawer
+			<PriceItemEditModal
 				isOpen={isDrawerOpen}
 				editingItem={editingItem}
 				formCode={formCode}

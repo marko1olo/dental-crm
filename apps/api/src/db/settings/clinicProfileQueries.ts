@@ -25,6 +25,8 @@ import {
 	updateClinicMode as updateClinicModeInMemory,
 	updateClinicProfile as updateClinicProfileInMemory,
 } from "../../sampleData.js";
+import { integrationPresets, modeHints, workspaceProfiles } from "../../sampleData/integrationPresets.js";
+import { roleAccessPolicies } from "../../sampleData/staff.js";
 import { staffAuthorityFlags } from "../../security/permissions.js";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
@@ -318,9 +320,9 @@ export async function getClinicSettingsFromDb(
 				id: c.id,
 				organizationId: c.organizationId,
 				name: c.name,
-				room: roomMatch ? roomMatch[1]!.trim() : null,
-				color: colorMatch ? colorMatch[1]!.trim() : null,
-				defaultDoctorId: defaultDoctorMatch ? defaultDoctorMatch[1]!.trim() : null,
+				room: c.room || (roomMatch ? roomMatch[1]!.trim() : null),
+				color: c.color || (colorMatch ? colorMatch[1]!.trim() : null),
+				defaultDoctorId: c.defaultDoctorId || (defaultDoctorMatch ? defaultDoctorMatch[1]!.trim() : null),
 				specialization: narrowChairSpecialization(c.specializations),
 				active: c.isActive,
 				hasXraySensor: eq.toLowerCase().includes("рентген") || eq.toLowerCase().includes("xray"),
@@ -330,10 +332,10 @@ export async function getClinicSettingsFromDb(
 				workingHours: narrowWorkingHours(c.workingHours),
 			};
 		}),
-		integrationPresets: [],
-		workspaceProfiles: [],
-		roleAccessPolicies: [],
-		modeHints: [],
+		integrationPresets: integrationPresets ?? [],
+		workspaceProfiles: workspaceProfiles ?? [],
+		roleAccessPolicies: roleAccessPolicies ?? [],
+		modeHints: (modeHints && modeHints[resolvedMode]) ?? modeHints?.solo_doctor ?? [],
 		soloDoctorMode: isSoloDoctor,
 	};
 }

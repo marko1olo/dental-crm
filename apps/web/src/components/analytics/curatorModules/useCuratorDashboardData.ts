@@ -20,8 +20,8 @@ export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQue
 					return;
 				}
 			}
-		} catch {
-			// Fallback to local dashboard context
+		} catch (err) {
+			console.warn("[CuratorDashboard] Failed to fetch server queue, falling back to local context:", err);
 		} finally {
 			setIsLoading(false);
 		}
@@ -37,13 +37,13 @@ export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQue
 			const res = await fetch("/api/analytics/curators/stage", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-				body: JSON.stringify({ patientId, stage: nextStage }),
+				body: JSON.stringify({ patientId, treatmentPlanId, stage: nextStage }),
 			});
 			if (!res.ok) {
 				await fetch(`/api/patients/${encodeURIComponent(patientId)}/administrative-profile`, {
 					method: "PUT",
 					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-					body: JSON.stringify({ curatorFunnelStage: nextStage }),
+					body: JSON.stringify({ curatorFunnelStage: nextStage, treatmentPlanId }),
 				});
 			}
 		} catch (err) {

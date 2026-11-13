@@ -15,7 +15,6 @@ import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptur
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
-import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
 import { StandalonePatientCardHost } from "./components/appLayout/modalsContainerModules/standalone/clinical/StandalonePatientCardHost";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
@@ -34,13 +33,13 @@ import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrth
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
-import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
 import { DirectOdontogramModuleLauncher } from "./components/odontogram/DirectOdontogramModuleLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { DirectPhotoProtocolLauncher } from "./components/photography/DirectPhotoProtocolLauncher";
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
+import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
 import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairsideHudLauncher";
@@ -173,12 +172,18 @@ function isStandaloneActive(): boolean {
 		h.includes("rvg") ||
 		s.includes("implant-passport") ||
 		h.includes("implant-passport") ||
+		s.includes("implant_passport") ||
+		h.includes("implant_passport") ||
 		s.includes("implants") ||
 		h.includes("implants") ||
 		s.includes("surgery") ||
 		h.includes("surgery") ||
 		s.includes("extraction") ||
 		h.includes("extraction") ||
+		s.includes("resection") ||
+		h.includes("resection") ||
+		s.includes("sinus") ||
+		h.includes("sinus") ||
 		s.includes("copilot_standalone") ||
 		h.includes("copilot-standalone") ||
 		s.includes("copilot_workspace") ||
@@ -386,16 +391,15 @@ export function AppShell() {
 			<DirectPayrollLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
-			<DirectOdontogramLauncher />
 			<DirectOdontogramModuleLauncher />
 			<DirectTelephonyLauncher />
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />
 			<DirectPhotoProtocolLauncher />
 			<DirectOrthopedicsLauncher />
+			<DirectSurgeryLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
-			<DirectSettingsLauncher />
 			<DirectChairsideHudLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />

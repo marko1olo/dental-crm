@@ -29,6 +29,7 @@ import {
 	UserCheck,
 	Users,
 } from "lucide-react";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 
 const DoctorPayrollStudioModal = lazy(() =>
 	import("../payroll/DoctorPayrollStudioModal").then((m) => ({
@@ -128,8 +129,8 @@ export async function requestDoctorPayouts(
 	headers: Record<string, string>,
 ): Promise<Response> {
 	const query = new URLSearchParams({ from: bounds.from, to: bounds.to });
-	void "denteClinicalReadHeaders";
-	return fetch(`/api/billing/payouts?${query.toString()}`, { headers });
+	const authHeaders = denteClinicalReadHeaders(headers);
+	return fetch(`/api/billing/payouts?${query.toString()}`, { headers: authHeaders });
 }
 
 
@@ -171,12 +172,22 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 		setLoading(true);
 		try {
 			const [docRes, asstRes] = await Promise.allSettled([
-				fetch(`/api/reports/doctor-payroll?period=${encodeURIComponent(p)}`),
-				fetch(`/api/reports/assistant-payroll?period=${encodeURIComponent(p)}`),
+				fetch(`/api/reports/doctor-payroll?period=${encodeURIComponent(p)}`, {
+					headers: denteClinicalReadHeaders(),
+				}),
+				fetch(`/api/reports/assistant-payroll?period=${encodeURIComponent(p)}`, {
+					headers: denteClinicalReadHeaders(),
+				}),
 			]);
 
-			let docData: any = null;
-			let asstData: any = null;
+			let docData: {
+				rows?: DoctorPayrollItem[];
+				assistantRows?: AssistantPayrollItem[];
+				totals?: DoctorPayrollTotals | null;
+			} | null = null;
+			let asstData: {
+				rows?: AssistantPayrollItem[];
+			} | null = null;
 
 			if (docRes.status === "fulfilled" && docRes.value.ok) {
 				docData = await docRes.value.json();
@@ -198,7 +209,8 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				setAssistantRows([]);
 				setTotals(null);
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.error("[DoctorPayrollReport] Failed to fetch payroll data:", err);
 			setRows([]);
 			setAssistantRows([]);
 			setTotals(null);
@@ -287,7 +299,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					<button
 						type="button"
 						onClick={onPrint || (() => window.print())}
-						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary,#0d9488)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<Printer size={14} aria-hidden="true" />
 						<span>Печать ведомости</span>
@@ -297,7 +309,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						type="button"
 						onClick={() => setIsStudioOpen(true)}
 						data-testid="payroll-open-studio-cta"
-						className="min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
 					>
 						<Calculator size={14} aria-hidden="true" />
 						<span className="hidden sm:inline">Открыть ведомость / закрыть период</span>
@@ -459,7 +471,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 													<button
 														type="button"
 														onClick={() => setIsStudioOpen(true)}
-														className="mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
+														className="primary-button mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
 													>
 														<Calculator size={14} />
 														<span>Открыть ведомость / закрыть период</span>
@@ -576,7 +588,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 								<button
 									type="button"
 									onClick={() => setIsStudioOpen(true)}
-									className="mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+									className="primary-button mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all cursor-pointer"
 								>
 									Открыть ведомость
 								</button>

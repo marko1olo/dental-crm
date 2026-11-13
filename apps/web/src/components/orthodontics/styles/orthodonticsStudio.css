@@ -10,7 +10,9 @@
 .ortho-studio-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 9999;
+	width: 100vw;
+	height: 100dvh;
+	z-index: 10050;
 	display: flex;
 	align-items: flex-end;
 	justify-content: center;
@@ -127,40 +129,65 @@
 
 .ortho-tabs-bar {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 0.25rem 1rem 0;
+	flex-direction: column;
+	gap: 0.375rem;
+	padding: 0.5rem 1rem;
 	background-color: var(--paper-strong, #ffffff);
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	flex-shrink: 0;
-	overflow-x: auto;
+	overflow-x: clip;
+}
+@media (min-width: 640px) {
+	.ortho-tabs-bar {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.25rem 1rem 0;
+	}
 }
 
 .ortho-tab-btn {
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 0.375rem;
-	padding: 0.5rem 0.75rem;
+	padding: 0.5rem 0.625rem;
 	min-height: 40px;
 	font-size: 0.75rem;
 	font-weight: 600;
-	border: none;
-	border-bottom: 2px solid transparent;
-	border-radius: 0.5rem 0.5rem 0 0;
-	background: transparent;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 0.5rem;
+	background: var(--paper, #f8fafc);
 	color: var(--ink-muted, #64748b);
 	cursor: pointer;
 	white-space: nowrap;
 	flex-shrink: 0;
 	transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
+@media (min-width: 640px) {
+	.ortho-tab-btn {
+		justify-content: flex-start;
+		padding: 0.5rem 0.75rem;
+		border: none;
+		border-bottom: 2px solid transparent;
+		border-radius: 0.5rem 0.5rem 0 0;
+		background: transparent;
+	}
+}
 .ortho-tab-btn:hover {
 	color: var(--ink, #0f172a);
 }
 .ortho-tab-btn.active {
 	color: var(--teal, #0d9488);
-	border-bottom-color: var(--teal, #0d9488);
-	background-color: var(--paper, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	background-color: var(--teal-subtle, rgba(13, 148, 136, 0.12));
+}
+@media (min-width: 640px) {
+	.ortho-tab-btn.active {
+		border-color: transparent;
+		border-bottom-color: var(--teal, #0d9488);
+		background-color: var(--paper, #f8fafc);
+	}
 }
 
 .ortho-content-body {
@@ -273,6 +300,7 @@
 	justify-content: space-between;
 	gap: 0.75rem;
 	padding: 0.75rem 1rem;
+	padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 	background-color: var(--paper-strong, #ffffff);
 	border-top: 1px solid var(--line, #e2e8f0);
 	flex-shrink: 0;
@@ -310,8 +338,8 @@
 	font-weight: 600;
 	border-radius: 0.75rem;
 	border: none;
-	background-color: var(--teal, #0d9488);
-	color: #ffffff;
+	background-color: var(--teal-fill, var(--teal, #0d9488));
+	color: var(--on-teal, #ffffff);
 	cursor: pointer;
 	box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.25);
 	transition: opacity 0.15s ease, transform 0.1s ease, filter 0.15s ease;

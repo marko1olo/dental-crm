@@ -5,7 +5,18 @@
 
 import React from "react";
 import { Check, X } from "lucide-react";
-import type { MissingPriceInlineEditorProps } from "./missingPriceHub/types";
+
+export interface MissingPriceInlineEditorProps {
+	readonly itemId: string;
+	readonly inputRef: React.RefObject<HTMLInputElement | null>;
+	readonly inputPrice: string;
+	readonly setInputPrice: (val: string) => void;
+	readonly error: string | null;
+	readonly setError: (err: string | null) => void;
+	readonly handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+	readonly handleSavePrice: () => void;
+	readonly setIsEditing: (isEditing: boolean) => void;
+}
 
 export const MissingPriceInlineEditor: React.FC<MissingPriceInlineEditorProps> = ({
 	itemId,

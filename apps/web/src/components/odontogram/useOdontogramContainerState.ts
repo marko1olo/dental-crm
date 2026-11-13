@@ -58,7 +58,7 @@ export function useOdontogramContainerState({
 		(
 			teethMap: Record<
 				number,
-				import("../orthodontics/opgTopologicalEngine").OpgToothSlot
+				import("./OdontogramViewModals").OpgToothSlot
 			>,
 		) => {
 			applyOpgOdontogramAction(teethMap, onQuickStateChange);

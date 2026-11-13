@@ -13,8 +13,8 @@ import {
 	type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus, type DoctorPayrollSummary,
 	type PayrollServiceOrder, type ClosedPayrollPeriodItem, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS,
 	CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary, formatKopecksToRubles,
-	generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
 } from "./payrollCatalogData";
+import { printDoctorPayslip, copyPayslipToClipboard, exportDoctorPayrollToCsv, buildDoctorPayrollCalculation, calculateOrderNetAndFee, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./styles/doctorPayrollStudio.css";
@@ -27,7 +27,7 @@ export interface DoctorPayrollStudioModalProps {
 }
 
 export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> = ({
-	isOpen, onClose, clinicName = "Стоматологическая клиника DENTE", doctorsList,
+	isOpen, onClose, clinicName = "Стоматологическая клиника", doctorsList,
 	initialDoctorId, initialPeriodPreset = "current_month", orders: propsOrders, closedPeriods: propsClosedPeriods,
 }) => {
 	const isDemo = isDemoShowcaseMode();
@@ -89,14 +89,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	}, [isDemo, isOpen, activeDoctorId, periodDates, selectedDoctor]);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
-		if (!selectedDoctor) {
-			return {
-				doctorId: "", doctorName: "Врач не выбран", schemeType: "net_percentage",
-				totalGrossKopecks: 0, totalLabCostKopecks: 0, totalMaterialCostKopecks: 0, totalNetBaseKopecks: 0,
-				doctorAccruedKopecks: 0, chairRentalKopecks: 0, advanceKopecks: 0, ndfl13TaxKopecks: 0,
-				payoutKopecks: 0, payoutStatus: "accrued", servicesCount: 0, minimumGuaranteeApplied: false,
-			};
-		}
+		if (!selectedDoctor) return EMPTY_DOCTOR_PAYROLL_SUMMARY;
 		return calculateDoctorPayrollSummary({
 			orders: effectiveOrders, doctor: selectedDoctor, percent: customPercent ?? undefined,
 			shiftsCount, advanceKop: advanceRub * 100, isRkoPaid: payoutStatus === "paid_rko",
@@ -117,24 +110,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	const rub = formatKopecksToRubles;
 
-	const calcCompat = useMemo(() => ({
-		doctorId: summary.doctorId, doctorName: summary.doctorName, specialtyTitleRu: selectedDoctor?.specialtyTitleRu ?? "Врач-стоматолог",
-		periodLabelRu: `${periodDates.startIso} — ${periodDates.endIso}`, totalGrossKopecks: summary.totalGrossKopecks,
-		totalLabCostKopecks: summary.totalLabCostKopecks, totalMaterialCostKopecks: summary.totalMaterialCostKopecks,
-		totalNetBaseKopecks: summary.totalNetBaseKopecks, commissionPercent: customPercent ?? selectedDoctor?.commissionPercent ?? 25,
-		earnedDoctorKopecks: summary.doctorAccruedKopecks, chairRentalKopecks: summary.chairRentalKopecks,
-		advanceKopecks: summary.advanceKopecks, minimumGuaranteeApplied: summary.minimumGuaranteeApplied,
-		grossPayoutBeforeTaxKop: Math.max(summary.doctorAccruedKopecks, (summary.minimumGuaranteeApplied && selectedDoctor) ? selectedDoctor.minGuaranteeMonthlyKop : 0),
-		ndfl13TaxKopecks: summary.ndfl13TaxKopecks, netPayoutToDoctorKopecks: summary.payoutKopecks,
-		servicesCount: summary.servicesCount, isChairRental: selectedDoctor?.payoutModel === "chair_rental", payoutStatus: summary.payoutStatus,
-	}), [summary, selectedDoctor, periodDates, customPercent]);
+	const calcCompat = useMemo(
+		() => buildDoctorPayrollCalculation(summary, selectedDoctor, periodDates, customPercent),
+		[summary, selectedDoctor, periodDates, customPercent]
+	);
 
 	const handlePrintPayslip = (customCalc?: typeof calcCompat, customDoc?: PayrollDoctorProfile) => {
 		const targetDoc = customDoc || selectedDoctor;
-		if (!targetDoc) return;
-		const html = generateDoctorPayslipA5Html(customCalc || calcCompat, targetDoc, clinicName);
-		const win = window.open("", "_blank");
-		if (win) { win.document.write(html); win.document.close(); win.focus(); setTimeout(() => win.print(), 250); }
+		if (targetDoc) printDoctorPayslip(customCalc || calcCompat, targetDoc, clinicName);
 	};
 
 	const handlePayAdvance = async () => {
@@ -151,8 +134,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				setAdvanceRub((v) => v + advanceIncrement);
 				setFeedbackMsg("Аванс +5 000 ₽ выдан врачу по РКО");
 			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : "Касса отклонила операцию";
-				setFeedbackMsg(`Ошибка: ${errMsg}. Аванс не выдан.`);
+				setFeedbackMsg(`Ошибка: ${err instanceof Error ? err.message : "Касса отклонила операцию"}. Аванс не выдан.`);
 			}
 		} else {
 			setAdvanceRub((v) => v + advanceIncrement);
@@ -162,23 +144,16 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	};
 
 	const handleSendMessenger = () => {
-		if (!selectedDoctor) return;
-		if (navigator?.clipboard?.writeText) {
-			navigator.clipboard.writeText(generateDoctorPayslipMessengerText(calcCompat, selectedDoctor, clinicName));
+		if (selectedDoctor && copyPayslipToClipboard(calcCompat, selectedDoctor, clinicName)) {
 			setFeedbackMsg("Расчетный листок скопирован для мессенджера");
 			setTimeout(() => setFeedbackMsg(null), 3500);
 		}
 	};
 
 	const handleExportExcel = () => {
-		const header = "Табельный ID;Врач;Специальность;Период;Оплата приёма (руб);Вычет Лаб (руб);Вычет Мат (руб);Чистая база (руб);Ставка %;Начислено (руб);К выплате (руб)\n";
-		const rows = allDoctorsSummaries.map(({ doctor: d, summary: s }) => `${d.id};"${d.name}";"${d.specialtyTitleRu}";"${periodDates.labelRu}";${(s.totalGrossKopecks / 100).toFixed(2)};${(s.totalLabCostKopecks / 100).toFixed(2)};${(s.totalMaterialCostKopecks / 100).toFixed(2)};${(s.totalNetBaseKopecks / 100).toFixed(2)};${d.commissionPercent}%;${(s.doctorAccruedKopecks / 100).toFixed(2)};${(s.payoutKopecks / 100).toFixed(2)}`);
-		const blob = new Blob(["\uFEFF" + header + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url; a.download = `Ведомость_зарплаты_${periodDates.startIso}_${periodDates.endIso}.csv`; a.click();
-		URL.revokeObjectURL(url);
-		setFeedbackMsg("Экспорт в Excel (CSV) завершен"); setTimeout(() => setFeedbackMsg(null), 3500);
+		exportDoctorPayrollToCsv(allDoctorsSummaries, periodDates);
+		setFeedbackMsg("Экспорт в Excel (CSV) завершен");
+		setTimeout(() => setFeedbackMsg(null), 3500);
 	};
 
 	const handleCommitPayout = async () => {
@@ -221,7 +196,11 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									{payoutStatus === "paid_rko" ? <Check className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}<span>{payoutStatus === "paid_rko" ? "Выплачено (РКО)" : "Начислено"}</span>
 								</button>
 							</div>
-							<div className="text-xs text-[var(--muted)] truncate">{periodDates.labelRu} • {clinicName}</div>
+							<div className="text-xs text-[var(--muted)] flex flex-wrap items-center gap-x-1.5 gap-y-0.5 leading-tight">
+								<span>{periodDates.labelRu}</span>
+								<span className="opacity-40">•</span>
+								<span>{clinicName}</span>
+							</div>
 						</div>
 					</div>
 					<button type="button" onClick={onClose} className="payroll-studio-close-btn" aria-label="Закрыть"><X className="w-4 h-4" /></button>
@@ -234,12 +213,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 						<button type="button" onClick={() => setActiveTab("closed_periods")} className={`payroll-studio-tab-btn ${activeTab === "closed_periods" ? "active" : ""}`} data-testid="payroll-tab-closed-periods"><History className="w-3.5 h-3.5" /><span className="hidden sm:inline">Закрытые периоды и выплаты</span><span className="sm:hidden">Архив</span></button>
 					</div>
 					<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0">
-						{(["shift", "current_month", "previous_month"] as const).map((preset) => {
-							const labels: Record<string, string> = { shift: "Смена", current_month: "Месяц", previous_month: "Прошлый" };
-							return (
-								<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>{labels[preset]}</button>
-							);
-						})}
+						{(["shift", "current_month", "previous_month"] as const).map((preset) => (
+							<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>{preset === "shift" ? "Смена" : preset === "current_month" ? "Месяц" : "Прошлый"}</button>
+						))}
 					</div>
 				</div>
 
@@ -279,10 +255,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 												<tr key={doctor.id} className="hover:bg-[var(--paper-soft)]/50">
 													<td className="font-semibold text-[var(--ink)]"><div>{doctor.name}</div><div className="text-[10px] text-[var(--muted)]">{doctor.taxRegime === "self_employed" ? "Самозанятый (НПД)" : "Трудовой договор"}</div></td>
 													<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
-													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td>
-													<td className="text-right text-red-600 dark:text-red-400">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
-													<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td>
-													<td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
+													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td><td className="text-right text-red-600 dark:text-red-400">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
+													<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td><td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
 													<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</td>
 													<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
 												</tr>
@@ -387,17 +361,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 											<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
 										) : (
 											doctorOrders.map((ord) => {
-												const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-												const fee = selectedDoctor?.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor?.commissionPercent ?? 25)) / 100);
+												const { netBase, fee } = calculateOrderNetAndFee(ord, selectedDoctor, customPercent);
 												return (
 													<tr key={ord.id}>
 														<td className="font-mono font-medium"><div>{ord.orderNumber}</div><div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div></td>
 														<td className="font-medium"><div>{ord.patientName}</div><div className="text-[10px] text-[var(--muted)]">Карта: {ord.medicalCardNumber}</div></td>
 														<td><div className="truncate max-w-[200px]">{ord.serviceNameRu}</div><span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] text-[var(--muted)]">{ord.categoryLabelRu}</span></td>
-														<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td>
-														<td className="text-right text-red-600 dark:text-red-400">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
-														<td className="text-right text-amber-600 dark:text-amber-400">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td>
-														<td className="text-right font-medium">{rub(netBase)}</td>
+														<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td><td className="text-right text-red-600 dark:text-red-400">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
+														<td className="text-right text-amber-600 dark:text-amber-400">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td><td className="text-right font-medium">{rub(netBase)}</td>
 														<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(fee)}</td>
 													</tr>
 												);
@@ -412,8 +383,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									<div className="py-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">Нет закрытых нарядов за выбранный период</div>
 								) : (
 									doctorOrders.map((ord) => {
-										const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-										const fee = selectedDoctor?.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor?.commissionPercent ?? 25)) / 100);
+										const { netBase, fee } = calculateOrderNetAndFee(ord, selectedDoctor, customPercent);
 										return (
 											<div key={ord.id} className="payroll-studio-mobile-card">
 												<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div><span className="font-bold text-xs text-[var(--teal,#0d9488)]">{rub(fee)}</span></div>

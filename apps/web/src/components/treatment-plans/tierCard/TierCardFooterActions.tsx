@@ -35,15 +35,15 @@ export const TierCardFooterActions: React.FC<TierCardFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={(e) => onSignClick(e, tier)}
-					className={`w-full h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-semibold shadow-xs cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[var(--teal)] active:scale-[0.99] ${
+					className={`w-full h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-semibold cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[var(--teal)] active:scale-[0.99] secondary-button dente-btn dente-btn-secondary border ${
 						isSelected
-							? "primary-button dente-btn dente-btn-primary bg-[var(--teal,var(--brand-primary))] hover:brightness-105 text-white font-bold"
-							: "secondary-button dente-btn dente-btn-secondary bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
+							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] font-bold shadow-2xs"
+							: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border-[var(--line,var(--border,#cbd5e1))]"
 					}`}
 					data-testid={`approve-tier-btn-${tier.tierId}`}
 				>
-					<PenTool size={14} />
-					<span>{isSelected ? "Утвердить план" : "Выбрать этот вариант"}</span>
+					<PenTool size={14} className={isSelected ? "text-[var(--teal,#0d9488)]" : "text-current"} />
+					<span>{isSelected ? "Выбран для утверждения" : "Выбрать этот вариант"}</span>
 				</button>
 			)}
 

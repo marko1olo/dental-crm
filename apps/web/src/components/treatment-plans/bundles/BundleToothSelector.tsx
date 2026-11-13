@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
-import { AnatomicalTooth } from "../../odontogram/AnatomicalTooth";
+import { AnatomicalTooth } from "../../odontogram/gate0/AnatomicalTooth";
 
 export interface BundleToothSelectorProps {
 	readonly selectedTooth: number;

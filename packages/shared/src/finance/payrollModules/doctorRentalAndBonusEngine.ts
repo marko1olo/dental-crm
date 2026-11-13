@@ -6,6 +6,16 @@
 
 import { KPI_BONUS_TIERS } from "./payrollRules.js";
 
+/** Pure integer arithmetic: Net Base = Gross − Lab − Materials (Mandate 8n) */
+export function computeNetBaseKopecks(grossKop: number, labKop: number, matKop: number): number {
+	return Math.max(0, Math.round(grossKop) - Math.round(labKop) - Math.round(matKop));
+}
+
+/** Pure integer arithmetic: Doctor Commission = Base × Percent (Mandate 8b) */
+export function calculateDoctorCommissionKopecks(baseKop: number, percent: number): number {
+	return (baseKop <= 0 || percent <= 0) ? 0 : Math.round((baseKop * percent) / 100);
+}
+
 export interface DoctorChairRentalResult {
 	readonly chairRentalKop: number;
 	readonly totalNetBase: number;

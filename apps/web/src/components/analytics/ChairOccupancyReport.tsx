@@ -25,7 +25,16 @@ import {
 	RefreshCw,
 } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import { getOccupancyStatus } from "./analyticsCatalogData";
+
+export interface ChairLoadApiRow {
+	readonly chairId: string | null;
+	readonly chairName?: string | null;
+	readonly appointments?: number | null;
+	readonly bookedMinutes?: number | null;
+	readonly utilization?: number | null;
+}
 
 export interface ChairLoadItem {
 	readonly chairId: string | null;
@@ -82,7 +91,14 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 	const fetchChairs = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/reports/chairs?period=${encodeURIComponent(p)}`);
+			let res = await fetch(`/api/v1/manager/reports/chair-occupancy?period=${encodeURIComponent(p)}`, {
+				headers: denteClinicalReadHeaders(),
+			});
+			if (!res.ok) {
+				res = await fetch(`/api/reports/chairs?period=${encodeURIComponent(p)}`, {
+					headers: denteClinicalReadHeaders(),
+				});
+			}
 			if (res.ok) {
 				const json = await res.json();
 				const b: ChairLoadBasis = json.basis || {
@@ -93,16 +109,16 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 				};
 				const plannedH = Math.round(b.totalMinutesPerChair / 60);
 
-				const mappedRows: ChairLoadItem[] = (json.rows || []).map((r: any) => {
+				const mappedRows: ChairLoadItem[] = (json.rows || []).map((r: ChairLoadApiRow) => {
 					const workedH = Math.round(((r.bookedMinutes || 0) / 60) * 10) / 10;
-					const uPercent = r.utilization !== null ? Math.round(r.utilization * 100) : 0;
+					const uPercent = typeof r.utilization === "number" ? Math.round(r.utilization * 100) : 0;
 					const freeH = Math.max(0, Math.round((plannedH - workedH) * 10) / 10);
 					return {
 						chairId: r.chairId,
 						chairName: r.chairName || "Стоматологическое кресло",
 						appointments: Number(r.appointments || 0),
 						bookedMinutes: Number(r.bookedMinutes || 0),
-						utilization: r.utilization,
+						utilization: r.utilization ?? null,
 						plannedHours: plannedH,
 						workedHours: workedH,
 						freeHours: freeH,
@@ -116,8 +132,8 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 				setLoading(false);
 				return;
 			}
-		} catch {
-			// fallback
+		} catch (err: unknown) {
+			console.warn("[ChairOccupancyReport] Failed to fetch chair utilization from API:", err);
 		}
 
 		if (isDemoShowcaseMode()) {
@@ -382,11 +398,17 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 									<span
 										className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
 											chair.status === "optimal"
-												? "bg-emerald-500/10 text-emerald-600"
-												: "bg-amber-500/10 text-amber-600"
+												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+												: chair.status === "high"
+													? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+													: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
 										}`}
 									>
-										{chair.status === "optimal" ? "Норма" : "Резерв"}
+										{chair.status === "optimal"
+											? "Норма"
+											: chair.status === "high"
+												? "Перегруз"
+												: "Резерв"}
 									</span>
 									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-bold text-[var(--teal)]">
 										{chair.utilizationPercent}%

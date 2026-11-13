@@ -12,17 +12,14 @@ import { EndodonticStudioModal } from "../endo/EndodonticStudioModal";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import { showToast } from "../GlobalToast";
 
-import type { OpgToothSlot } from "../orthodontics/opgTopologicalEngine";
+export interface OpgToothSlot {
+	fdi?: number;
+	status: ToothState;
+}
 
 const ToothContextDrawer = React.lazy(() =>
 	import("../diagnostics/ToothContextDrawer").then((m) => ({
 		default: m.ToothContextDrawer,
-	})),
-);
-
-const SmartOpgViewerModal = React.lazy(() =>
-	import("../orthodontics/SmartOpgViewerModal").then((m) => ({
-		default: m.SmartOpgViewerModal,
 	})),
 );
 
@@ -36,9 +33,9 @@ const JawOcclusionModal = React.lazy(() =>
 		default: m.JawOcclusionModal,
 	})),
 );
-const TreatmentPlanWizard = React.lazy(() =>
-	import("../treatment-plans/TreatmentPlanWizard").then((m) => ({
-		default: m.TreatmentPlanWizard,
+const TreatmentPlanStudioModal = React.lazy(() =>
+	import("../treatment-plans/TreatmentPlanStudioModal").then((m) => ({
+		default: m.TreatmentPlanStudioModal,
 	})),
 );
 const OrthopedicsChairsidePanel = React.lazy(() =>
@@ -132,15 +129,15 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 			{/* 1-Click Treatment Plan Wizard (Mandates 8e, 8n) */}
 			{isPlanWizardOpen && (
 				<React.Suspense fallback={null}>
-					<TreatmentPlanWizard
+					<TreatmentPlanStudioModal
 						isOpen={isPlanWizardOpen}
 						onClose={onClosePlanWizard}
-						teethData={teethData}
+						teeth={teethData}
 						patientId={patientId}
 						patientName={patientId ? `Пациент #${patientId}` : undefined}
-						onPlanCreated={(planId, totalRub) => {
+						onApprovePlan={(selectedTier) => {
 							showToast(
-								`План лечения #${planId} сформирован (${totalRub} ₽)`,
+								`План лечения «${selectedTier.title}» утвержден (${selectedTier.totalRub} ₽)`,
 								"success",
 							);
 						}}
@@ -190,18 +187,6 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 						onClose={onCloseOrthoCeph}
 						patientId={patientId}
 						patientName={patientId ? `Пациент #${patientId}` : undefined}
-					/>
-				</React.Suspense>
-			)}
-
-			{/* Smart OPG Panoramic AI & Odontogram Auto-Mapping */}
-			{isSmartOpgOpen && (
-				<React.Suspense fallback={null}>
-					<SmartOpgViewerModal
-						isOpen={isSmartOpgOpen}
-						onClose={onCloseSmartOpg ?? (() => {})}
-						patientName={patientId ? `Пациент #${patientId}` : undefined}
-						onApplyOdontogram={onApplyOpgOdontogram}
 					/>
 				</React.Suspense>
 			)}

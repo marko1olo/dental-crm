@@ -3,14 +3,61 @@ import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 
+export interface ClinicPrintProfileDraft {
+	clinicName?: string | null | undefined;
+	legalName?: string | null | undefined;
+	fullName?: string | null | undefined;
+	shortName?: string | null | undefined;
+	inn?: string | null | undefined;
+	kpp?: string | null | undefined;
+	ogrn?: string | null | undefined;
+	licenseNumber?: string | null | undefined;
+	licenseDate?: string | null | undefined;
+	address?: string | null | undefined;
+	actualAddress?: string | null | undefined;
+	phone?: string | null | undefined;
+	directorTitle?: string | null | undefined;
+	directorFullName?: string | null | undefined;
+	city?: string | null | undefined;
+	website?: string | null | undefined;
+}
+
+export interface PrintablePatientAdministrativeProfile {
+	legalRepresentativeFullName?: string | null | undefined;
+	legalRepresentativeRelationship?: string | null | undefined;
+	legalRepresentativePhone?: string | null | undefined;
+	legalRepresentativeIdentityDocument?: string | null | undefined;
+	legalRepresentativeBasisDocument?: string | null | undefined;
+	snils?: string | null | undefined;
+	registrationAddress?: string | null | undefined;
+	residentialAddress?: string | null | undefined;
+	passportSeries?: string | null | undefined;
+	passportNumber?: string | null | undefined;
+	passportIssuedBy?: string | null | undefined;
+	passportIssuedDate?: string | null | undefined;
+	passportDepartmentCode?: string | null | undefined;
+}
+
+export interface PrintablePatient {
+	fullName: string;
+	birthDate?: string | null | undefined;
+	phone?: string | null | undefined;
+	gender?: "male" | "female" | "other" | string | null | undefined;
+	cardNumber?: string | null | undefined;
+	address?: string | null | undefined;
+	snils?: string | null | undefined;
+	administrativeProfile?: PrintablePatientAdministrativeProfile | null | undefined;
+	[key: string]: unknown;
+}
+
 interface UsePrimaryIntakePrintProps {
-	patient: Patient | null;
-	clinicProfileDraft?: any | undefined;
+	patient: PrintablePatient | Patient | null;
+	clinicProfileDraft?: ClinicPrintProfileDraft | null | undefined;
 	doctorFullName?: string | null | undefined;
 	isNormApplied: boolean;
 }
 
-function resolveClinicPrintPayload(c?: any) {
+function resolveClinicPrintPayload(c?: ClinicPrintProfileDraft | null) {
 	return {
 		clinicName: c?.clinicName || "Стоматологическая клиника",
 		legalName: c?.legalName || c?.clinicName || "",
@@ -41,34 +88,35 @@ export function usePrimaryIntakePrint({
 
 	const handleBatchPrint = () => {
 		const store = useDocumentStore.getState();
-		const adminProfile = (patient as any)?.administrativeProfile;
+		const pt = patient as PrintablePatient | null;
+		const adminProfile = pt?.administrativeProfile ?? null;
 		const repFullName = adminProfile?.legalRepresentativeFullName || store.minorRepresentativeFullName;
 		const representative = repFullName
 			? {
 					fullName: repFullName,
 					relationship: adminProfile?.legalRepresentativeRelationship || store.minorRepresentativeRelationship || "Законный представитель",
-					phone: adminProfile?.legalRepresentativePhone || store.minorRepresentativePhone || patient?.phone,
-					passport: adminProfile?.legalRepresentativeIdentityDocument || store.minorRepresentativeIdentityDocument,
-					basisDocument: adminProfile?.legalRepresentativeBasisDocument || store.minorRepresentativeAuthorityDocument,
+					phone: adminProfile?.legalRepresentativePhone || store.minorRepresentativePhone || pt?.phone || undefined,
+					passport: adminProfile?.legalRepresentativeIdentityDocument || store.minorRepresentativeIdentityDocument || undefined,
+					basisDocument: adminProfile?.legalRepresentativeBasisDocument || store.minorRepresentativeAuthorityDocument || undefined,
 				}
 			: null;
 
 		printPrimaryIntakePackage({
-			patient: patient
+			patient: pt
 				? {
-						fullName: patient.fullName,
-						birthDate: patient.birthDate,
-						phone: patient.phone,
-						snils: (patient as any)?.administrativeProfile?.snils || (patient as any)?.snils,
-						registrationAddress: (patient as any)?.administrativeProfile?.registrationAddress || (patient as any)?.address,
-						address: (patient as any)?.administrativeProfile?.registrationAddress || (patient as any)?.address,
-						passportSeries: (patient as any)?.administrativeProfile?.passportSeries,
-						passportNumber: (patient as any)?.administrativeProfile?.passportNumber,
-						passportIssuedBy: (patient as any)?.administrativeProfile?.passportIssuedBy,
-						passportIssuedDate: (patient as any)?.administrativeProfile?.passportIssuedDate,
-						passportDepartmentCode: (patient as any)?.administrativeProfile?.passportDepartmentCode,
-						gender: (patient as any)?.gender,
-						cardNumber: (patient as any)?.cardNumber,
+						fullName: pt.fullName,
+						birthDate: pt.birthDate,
+						phone: pt.phone,
+						snils: adminProfile?.snils || pt.snils,
+						registrationAddress: adminProfile?.registrationAddress || pt.address,
+						address: adminProfile?.registrationAddress || pt.address,
+						passportSeries: adminProfile?.passportSeries,
+						passportNumber: adminProfile?.passportNumber,
+						passportIssuedBy: adminProfile?.passportIssuedBy,
+						passportIssuedDate: adminProfile?.passportIssuedDate,
+						passportDepartmentCode: adminProfile?.passportDepartmentCode,
+						gender: pt.gender,
+						cardNumber: pt.cardNumber,
 					}
 				: null,
 			representative,

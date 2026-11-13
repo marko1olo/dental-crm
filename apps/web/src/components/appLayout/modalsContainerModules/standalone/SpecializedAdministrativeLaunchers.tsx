@@ -18,7 +18,6 @@ import { renderSanPinStandaloneLauncher } from "./administrative/SanPinStandalon
 import { renderLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
 import { renderRecallsStandaloneLauncher } from "./administrative/RecallsStandaloneLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
-import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
@@ -185,24 +184,6 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.search.includes("romi=1"))
 	) {
 		return <DirectMarketingLauncher />;
-	}
-
-	// 9. Студия настроек клиники и реквизитов (?settings=1, #settings, #clinic-setup, #clinic-requisites)
-	if (
-		typeof window !== "undefined" &&
-		(window.location.hash === "#settings" ||
-			window.location.hash.startsWith("#settings?") ||
-			window.location.hash.startsWith("#settings/") ||
-			window.location.hash === "#clinic-setup" ||
-			window.location.hash.startsWith("#clinic-setup?") ||
-			window.location.hash === "#clinic-requisites" ||
-			window.location.hash.startsWith("#clinic-requisites?") ||
-			window.location.hash === "#settings-studio" ||
-			window.location.search.includes("settings=1") ||
-			window.location.search.includes("clinic_setup=1") ||
-			window.location.search.includes("standalone=settings"))
-	) {
-		return <DirectSettingsLauncher />;
 	}
 
 	// 10. Студия рецептов и медикаментозных назначений (?prescriptions=1, ?rx=1, #prescriptions, #rx, #prescription-studio)

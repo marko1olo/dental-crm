@@ -77,7 +77,17 @@ export const CuratorQueueFiltersBar: React.FC<CuratorQueueFiltersBarProps> = ({
 
 			<select
 				value={sortBy}
-				onChange={(e) => onSortChange(e.target.value as any)}
+				onChange={(e) => {
+					const val = e.target.value;
+					if (
+						val === "priority" ||
+						val === "sum_desc" ||
+						val === "days_in_stage_desc" ||
+						val === "assigned_at_desc"
+					) {
+						onSortChange(val);
+					}
+				}}
 				className="curator-select-input"
 				style={{ minHeight: "34px", padding: "4px 10px", fontSize: "12px" }}
 			>
