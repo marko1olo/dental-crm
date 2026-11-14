@@ -5,6 +5,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	appointments,
+	chairs,
 	clinics,
 	crmLeads,
 	organizations,
@@ -16,6 +17,7 @@ import {
 	getActiveCodeForTesting,
 	requestPhoneVerification,
 } from "../../routes/publicBooking/smsVerificationAndSpamGate.js";
+import { isAnyChairAvailable } from "../../routes/publicBooking/slotAvailabilityEngine.js";
 import { OnlineBookingPlugin } from "../../services/bots/plugins/OnlineBookingPlugin.js";
 import {
 	fixtureUuid,
@@ -161,7 +163,8 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		assert.equal(bookRes.statusCode, 200, `Expected 200, got ${bookRes.statusCode}: ${bookRes.body}`);
 		const body = JSON.parse(bookRes.body);
 		assert.equal(body.success, true);
-		assert.equal(body.status, "unconfirmed");
+		assert.equal(body.status, "preliminary");
+		assert.equal(body.isPreliminary, true);
 		assert.ok(body.appointment?.id);
 
 		// Verify appointment in DB has status planned
@@ -306,5 +309,82 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		assert.ok(duplicateReply);
 		assert.equal(duplicateReply.actionExecuted, "booking_conflict");
 		assert.match(duplicateReply.text, /уже занято/);
+	});
+
+	it("5. Unit Test: isAnyChairAvailable correctly determines chair vacancy", () => {
+		const activeChairs = ["chair-1", "chair-2"];
+		const now = Date.now();
+		const slotStartMs = now + 3600_000;
+		const slotEndMs = slotStartMs + 1800_000;
+
+		// 1. Both chairs free
+		assert.equal(isAnyChairAvailable(activeChairs, [], slotStartMs, slotEndMs), true);
+
+		// 2. Only chair-1 occupied, chair-2 free
+		const oneOccupied = [
+			{ chairId: "chair-1", startMs: slotStartMs, endMs: slotEndMs },
+		];
+		assert.equal(isAnyChairAvailable(activeChairs, oneOccupied, slotStartMs, slotEndMs), true);
+
+		// 3. Both chairs occupied -> returns false
+		const bothOccupied = [
+			{ chairId: "chair-1", startMs: slotStartMs, endMs: slotEndMs },
+			{ chairId: "chair-2", startMs: slotStartMs, endMs: slotEndMs },
+		];
+		assert.equal(isAnyChairAvailable(activeChairs, bothOccupied, slotStartMs, slotEndMs), false);
+
+		// 4. Overlap boundary: previous appointment ends right when slot starts
+		const adjacent = [
+			{ chairId: "chair-1", startMs: slotStartMs - 1800_000, endMs: slotStartMs },
+			{ chairId: "chair-2", startMs: slotEndMs, endMs: slotEndMs + 1800_000 },
+		];
+		assert.equal(isAnyChairAvailable(activeChairs, adjacent, slotStartMs, slotEndMs), true);
+
+		// 5. Empty active chairs clinic -> returns true (unconstrained)
+		assert.equal(isAnyChairAvailable([], bothOccupied, slotStartMs, slotEndMs), true);
+	});
+
+	it("6. Chair pre-check in calculateAvailableSlots excludes time slots when all clinic chairs are occupied", async (t) => {
+		if (!databaseAvailable) return t.skip("Database not available");
+
+		const CHAIR_ID = fixtureUuid(NAMESPACE, 99);
+		const testDate = "2029-06-20";
+		const busyStart = "2029-06-20T10:00:00.000Z";
+		const busyEnd = "2029-06-20T10:30:00.000Z";
+
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			// Insert sole active physical chair
+			await tx.insert(chairs).values({
+				id: CHAIR_ID,
+				organizationId: ORG_ID,
+				clinicId: CLINIC_ID,
+				name: "Кресло 1 (Хирургия)",
+				isActive: true,
+			});
+
+			// Insert existing appointment occupying this sole chair from 10:00 to 10:30
+			await tx.insert(appointments).values({
+				organizationId: ORG_ID,
+				chairId: CHAIR_ID,
+				doctorUserId: DOCTOR_ID,
+				startsAt: new Date(busyStart),
+				endsAt: new Date(busyEnd),
+				status: "planned",
+			});
+		});
+
+		// Query available slots
+		const res = await app.inject({
+			method: "GET",
+			url: `/${ORG_ID}/slots?date=${testDate}`,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const slots = JSON.parse(res.body) as Array<{ startsAt: string }>;
+		assert.ok(Array.isArray(slots));
+
+		// Ensure 10:00-10:30 slot is NOT in the list because sole chair was occupied
+		const hasBusySlot = slots.some((s) => s.startsAt === busyStart);
+		assert.equal(hasBusySlot, false, "Slot with occupied physical chair must be excluded from available slots");
 	});
 });

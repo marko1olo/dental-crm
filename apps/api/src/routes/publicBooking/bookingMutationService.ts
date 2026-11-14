@@ -47,14 +47,17 @@ export type BookingMutationResult =
 			patientId?: string;
 	  };
 
+export type BookingTx =
+	| Parameters<Parameters<typeof import("../../db/client.js").db.transaction>[0]>[0]
+	| Parameters<Parameters<import("../../db/rls.js").TenantDb["transaction"]>[0]>[0]
+	| import("../../db/rls.js").TenantDb;
+
 /**
  * Executes the atomic booking transaction with canonical resource lock hierarchy:
  * Chair (Level 1) -> Doctor (Level 2) -> Patient (Level 3)
  */
 export async function executeBookingTransaction(
-	tx:
-		| Parameters<Parameters<typeof import("../../db/client.js").db.transaction>[0]>[0]
-		| import("../../db/rls.js").TenantDb,
+	tx: BookingTx,
 	params: BookingMutationParams,
 ): Promise<BookingMutationResult> {
 	const {
@@ -299,7 +302,7 @@ export async function executeBookingTransaction(
 					utmSource: params.utmSource || null,
 					utmCampaign: params.utmCampaign || null,
 					utmMedium: params.utmMedium || null,
-				} as any,
+				},
 			})
 			.returning({ id: patients.id });
 		if (!createdPatient) throw new Error("patient_insert_failed");
@@ -312,19 +315,19 @@ export async function executeBookingTransaction(
 			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
 			.limit(1);
 
-		const adminProf = existingPatient?.administrativeProfile as Record<string, any> | null;
-		if (existingPatient && !adminProf?.utmSource) {
-			const existingProfile = adminProf || {};
+		const existingProfile =
+			(existingPatient?.administrativeProfile as Record<string, unknown> | null) || {};
+		if (existingPatient && !existingProfile.utmSource) {
 			await tx
 				.update(patients)
 				.set({
 					administrativeProfile: {
 						...existingProfile,
-						leadSource: existingProfile.leadSource || params.utmSource || params.source || "online_booking",
-						utmSource: existingProfile.utmSource || params.utmSource || null,
-						utmCampaign: existingProfile.utmCampaign || params.utmCampaign || null,
-						utmMedium: existingProfile.utmMedium || params.utmMedium || null,
-					} as any,
+						leadSource: (existingProfile.leadSource as string | undefined) || params.utmSource || params.source || "online_booking",
+						utmSource: (existingProfile.utmSource as string | undefined) || params.utmSource || null,
+						utmCampaign: (existingProfile.utmCampaign as string | undefined) || params.utmCampaign || null,
+						utmMedium: (existingProfile.utmMedium as string | undefined) || params.utmMedium || null,
+					},
 					updatedAt: new Date(),
 				})
 				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)));

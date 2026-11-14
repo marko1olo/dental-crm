@@ -29,8 +29,34 @@ export const BookingPatientFormStep: React.FC<BookingPatientFormStepProps> = ({
 	isSubmitting,
 	onSubmit,
 }) => {
+	const isPreBookingMode = Boolean(!isTelegramContext && (!showSmsVerification || !isSmsVerified || isSmsFallbackActive));
+
 	return (
 		<div id="dbw-step-contacts" className="dbw-step-card">
+			{/* Индикатор статуса и доверия онлайн-записи (Мандат 8e, 8n) */}
+			<div
+				className="mb-4 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex items-center justify-between gap-3 text-[var(--ink)]"
+				data-testid="booking-trust-status-badge"
+			>
+				<span className="font-medium text-[var(--ink-muted)]">Формат бронирования:</span>
+				<span
+					className={`font-semibold px-2.5 py-0.5 rounded-full text-xs flex items-center gap-1.5 ${
+						!isPreBookingMode
+							? "bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/30"
+							: "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)]"
+					}`}
+				>
+					<span
+						className={`w-1.5 h-1.5 rounded-full ${
+							!isPreBookingMode ? "bg-teal-500" : "bg-amber-500"
+						}`}
+					/>
+					{!isPreBookingMode
+						? "Подтверждённая запись"
+						: "Предварительная (требует звонка)"}
+				</span>
+			</div>
+
 			<BookingContactsSection
 				isTelegramContext={isTelegramContext}
 				patientName={patientName}

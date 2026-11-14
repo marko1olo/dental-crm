@@ -34,9 +34,10 @@ import {
 	executeBookingTransaction,
 	type BookingMutationParams,
 	type BookingMutationResult,
+	type BookingTx,
 } from "../bookingMutationService.js";
 
-export type DatabaseTransaction = TenantDb;
+export type DatabaseTransaction = BookingTx;
 
 export interface CreateLeadFromIntakeParams {
 	organizationId: string;
@@ -113,7 +114,7 @@ export async function executePublicBookingAppointment(
 	tx: DatabaseTransaction,
 	params: BookingMutationParams,
 ): Promise<BookingMutationResult> {
-	const result = await executeBookingTransaction(tx as any, params);
+	const result = await executeBookingTransaction(tx, params);
 
 	if (!("blocked" in result) && !result.conflict && result.appointment) {
 		wsBroker.broadcastToOrganization(params.organizationId, {
@@ -128,30 +129,35 @@ export async function executePublicBookingAppointment(
 	return result;
 }
 
+export type BookAppointmentBody = {
+	organizationId?: string;
+	doctorId: string;
+	startsAt: string;
+	endsAt: string;
+	patientName: string;
+	patientPhone: string;
+	comment?: string;
+	verificationCode?: string;
+	source?: string;
+	utm_source?: string;
+	utmSource?: string;
+	utm_campaign?: string;
+	utm_medium?: string;
+	utm_content?: string;
+	utm_term?: string;
+	idempotencyKey?: string;
+};
+
+export type BookAppointmentRequest = FastifyRequest<{
+	Params: { organizationId: string };
+	Body: BookAppointmentBody;
+}>;
+
 /**
  * Full transactional handler for booking appointment endpoint POST /:organizationId/book.
  */
 export async function handleBookAppointment(
-	request: FastifyRequest<{
-		Params: { organizationId: string };
-		Body: {
-			doctorId: string;
-			startsAt: string;
-			endsAt: string;
-			patientName: string;
-			patientPhone: string;
-			comment?: string;
-			verificationCode?: string;
-			source?: string;
-			utm_source?: string;
-			utmSource?: string;
-			utm_campaign?: string;
-			utm_medium?: string;
-			utm_content?: string;
-			utm_term?: string;
-			idempotencyKey?: string;
-		};
-	}>,
+	request: BookAppointmentRequest,
 	reply: FastifyReply,
 ) {
 	if (isRateLimited(request.ip ?? "unknown")) {
@@ -324,7 +330,22 @@ export async function handleBookAppointment(
 					: undefined);
 			const effectiveIdempotencyKey = parsed.data.idempotencyKey || headerIdempotencyKey;
 
+			// Trust check: OTP verified OR authorized Telegram context
+			const isTelegramAuthorized =
+				effectiveSource === "telegram" ||
+				effectiveSource === "telegram_webapp" ||
+				parsed.data.source === "telegram" ||
+				parsed.data.source === "telegram_webapp" ||
+				parsed.data.utm_source === "telegram";
+
+			const isConfirmed = isVerified || isTelegramAuthorized;
+			const bookingStatus = isConfirmed ? "confirmed" : "preliminary";
+
 			const result = await tenantTx.transaction(async (tx) => {
+				const appointmentComment = isConfirmed
+					? comment
+					: [comment, "[Предварительная / Требует звонка]"].filter(Boolean).join(" ");
+
 				const bookingResult = await executePublicBookingAppointment(tx, {
 					organizationId,
 					doctorId,
@@ -332,13 +353,13 @@ export async function handleBookAppointment(
 					endDate,
 					patientName,
 					patientPhone,
-					comment,
+					comment: appointmentComment,
 					source: effectiveSource,
 					utmSource: parsed.data.utm_source || parsed.data.utmSource,
 					utmCampaign: parsed.data.utm_campaign,
 					utmMedium: parsed.data.utm_medium,
 					idempotencyKey: effectiveIdempotencyKey,
-					status: isVerified ? "confirmed" : "planned",
+					status: isConfirmed ? "confirmed" : "planned",
 				});
 
 				if (bookingResult.conflict || ("blocked" in bookingResult && bookingResult.blocked)) {
@@ -351,11 +372,11 @@ export async function handleBookAppointment(
 					patientName,
 					patientPhone,
 					source: effectiveSource,
-					receiptStatus: isVerified ? "CONFIRMED" : "UNCONFIRMED",
+					receiptStatus: isConfirmed ? "CONFIRMED" : "PRELIMINARY",
 					comment: comment
-						? `Приём врача: ${comment}`
-						: isVerified
-						? "Онлайн-запись подтверждена кодом"
+						? `Приём врача: ${comment}${isConfirmed ? "" : " [Предварительная / Требует звонка]"}`
+						: isConfirmed
+						? (isVerified ? "Онлайн-запись подтверждена кодом" : "Онлайн-запись авторизована через Telegram")
 						: "Предварительная бронь без СМС (требуется звонок администратора)",
 					doctorId,
 				});
@@ -378,8 +399,10 @@ export async function handleBookAppointment(
 
 			return {
 				success: true,
-				status: isVerified ? "confirmed" : "unconfirmed",
-				bookingStatus: "web_booking",
+				status: bookingStatus,
+				bookingStatus,
+				isPreliminary: !isConfirmed,
+				unconfirmed: !isConfirmed,
 				appointment: result.appointment,
 			};
 		} catch (error) {

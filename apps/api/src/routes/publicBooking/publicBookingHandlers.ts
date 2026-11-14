@@ -14,6 +14,7 @@ import {
 } from "./bookingModules/publicBookingSlotEngine.js";
 import {
 	handleBookAppointment,
+	type BookAppointmentBody,
 	type BookAppointmentRequest,
 } from "./bookingModules/publicBookingMutations.js";
 import {
@@ -233,73 +234,24 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	}>("/slots", slotsQueryHandler);
 
 	// 0c. Direct appointment creation endpoint: POST /api/public/booking/create or /appointments
-	const createAppointmentHandler = async (request: FastifyRequest<{
-		Body: {
-			organizationId?: string;
-			doctorId: string;
-			startsAt: string;
-			endsAt: string;
-			patientName: string;
-			patientPhone: string;
-			comment?: string;
-			verificationCode?: string;
-			source?: string;
-			utm_source?: string;
-			utmSource?: string;
-			utm_campaign?: string;
-			utm_medium?: string;
-			utm_content?: string;
-			utm_term?: string;
-			idempotencyKey?: string;
-		};
-	}>, reply: FastifyReply) => {
+	const createAppointmentHandler = async (
+		request: BookAppointmentRequest,
+		reply: FastifyReply,
+	) => {
 		const organizationId =
 			request.body?.organizationId || (await resolveDefaultClinicOrgId());
-		request.params = {
-			...((request.params as Record<string, string> | undefined) || {}),
-			organizationId,
-		};
-		return handleBookAppointment(request as unknown as BookAppointmentRequest, reply);
+		request.params.organizationId = organizationId;
+		return handleBookAppointment(request, reply);
 	};
 
 	server.post<{
-		Body: {
-			organizationId?: string;
-			doctorId: string;
-			startsAt: string;
-			endsAt: string;
-			patientName: string;
-			patientPhone: string;
-			comment?: string;
-			verificationCode?: string;
-			source?: string;
-			utm_source?: string;
-			utmSource?: string;
-			utm_campaign?: string;
-			utm_medium?: string;
-			utm_content?: string;
-			utm_term?: string;
-		};
+		Params: { organizationId: string };
+		Body: BookAppointmentBody;
 	}>("/create", createAppointmentHandler);
 
 	server.post<{
-		Body: {
-			organizationId?: string;
-			doctorId: string;
-			startsAt: string;
-			endsAt: string;
-			patientName: string;
-			patientPhone: string;
-			comment?: string;
-			verificationCode?: string;
-			source?: string;
-			utm_source?: string;
-			utmSource?: string;
-			utm_campaign?: string;
-			utm_medium?: string;
-			utm_content?: string;
-			utm_term?: string;
-		};
+		Params: { organizationId: string };
+		Body: BookAppointmentBody;
 	}>("/appointments", createAppointmentHandler);
 
 	// 1a. Get doctors with default organization fallback

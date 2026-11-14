@@ -244,3 +244,40 @@ export function normalizePhoneDigits(phone: string): string {
 			: digits;
 	return national.length > 10 ? national.slice(-10) : national;
 }
+
+export interface ChairOccupiedInterval {
+	chairId: string;
+	startMs: number;
+	endMs: number;
+}
+
+/**
+ * Checks whether at least one active physical chair in the clinic is free
+ * during the [slotStartMs, slotEndMs] window.
+ *
+ * If activeChairIds is empty, physical chairs do not constrain appointment scheduling.
+ * If activeChairIds has chairs, at least one chair must be free from conflicting appointments.
+ */
+export function isAnyChairAvailable(
+	activeChairIds: readonly string[],
+	occupiedChairIntervals: readonly ChairOccupiedInterval[],
+	slotStartMs: number,
+	slotEndMs: number,
+): boolean {
+	if (activeChairIds.length === 0) {
+		return true;
+	}
+	for (const chairId of activeChairIds) {
+		const isOccupied = occupiedChairIntervals.some(
+			(occ) =>
+				occ.chairId === chairId &&
+				slotStartMs < occ.endMs &&
+				slotEndMs > occ.startMs,
+		);
+		if (!isOccupied) {
+			return true;
+		}
+	}
+	return false;
+}
+

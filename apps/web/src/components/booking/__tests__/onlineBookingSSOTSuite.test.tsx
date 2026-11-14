@@ -124,4 +124,43 @@ describe("DENTE Public Online Booking SSOT Suite", () => {
 			`DirectPublicBookingLauncher.tsx lines must be 60-130, got ${launcherLines}`,
 		);
 	});
+
+	it("3.1. Эстетика десктопа: PublicBookingPage содержит десктопную витрину клиники, лицензию и контакты", () => {
+		const pagePath = path.resolve(import.meta.dirname, "../../../pages/PublicBookingPage.tsx");
+		const source = fs.readFileSync(pagePath, "utf-8");
+
+		assert.ok(
+			source.includes('data-testid="clinic-desktop-showcase"'),
+			"PublicBookingPage обязана содержать десктопную витрину clinic-desktop-showcase для экранов >= 1024px",
+		);
+		assert.ok(
+			source.includes("Лицензия №"),
+			"Витрина клиники обязана отображать номер лицензии",
+		);
+		assert.ok(
+			source.includes("Часы приёма"),
+			"Витрина клиники обязана отображать часы приёма",
+		);
+		assert.ok(
+			source.includes("var(--paper)") && source.includes("var(--primary)"),
+			"PublicBookingPage обязана использовать CSS-токены темы",
+		);
+	});
+
+	it("3.2. Статус предварительной брони: BookingPatientFormStep содержит бейдж доверия", () => {
+		const stepPath = path.resolve(
+			import.meta.dirname,
+			"../publicWidget/BookingPatientFormStep.tsx",
+		);
+		const source = fs.readFileSync(stepPath, "utf-8");
+
+		assert.ok(
+			source.includes('data-testid="booking-trust-status-badge"'),
+			"BookingPatientFormStep обязан содержать индикатор формата бронирования booking-trust-status-badge",
+		);
+		assert.ok(
+			source.includes("Предварительная (требует звонка)"),
+			"Форма обязана отображать статус предварительной брони без OTP",
+		);
+	});
 });

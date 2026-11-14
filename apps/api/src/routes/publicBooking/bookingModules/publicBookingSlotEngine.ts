@@ -1,8 +1,9 @@
-import { and, eq, gt, inArray, lt, notInArray } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, lt, notInArray } from "drizzle-orm";
 import type { FastifyReply } from "fastify";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
+	chairs,
 	clinics,
 	organizations,
 	users,
@@ -17,7 +18,9 @@ import {
 	organizationIdSchema,
 } from "./publicBookingSchemas.js";
 import {
+	type ChairOccupiedInterval,
 	intersectWorkingWindows,
+	isAnyChairAvailable,
 	localWallTimeToUtc,
 	resolveDaySchedule,
 	resolveDoctorDaySchedule,
@@ -138,6 +141,18 @@ export async function calculateAvailableSlots(
 		return { success: true, slots: [] };
 	}
 
+	// Load active physical clinic chairs to prevent chair double-booking 409 collisions
+	const activeChairs = await tx
+		.select({ id: chairs.id })
+		.from(chairs)
+		.where(
+			and(
+				eq(chairs.organizationId, organizationId),
+				eq(chairs.isActive, true),
+			),
+		);
+	const activeChairIds = activeChairs.map((c) => c.id);
+
 	// Load appointments on this date
 	const dayStartUtc = localWallTimeToUtc(date, 0, timeZone);
 	const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60_000);
@@ -159,6 +174,36 @@ export async function calculateAvailableSlots(
 				notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
 			),
 		);
+
+	const chairAppointments =
+		activeChairIds.length > 0
+			? await tx
+					.select({
+						chairId: appointments.chairId,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+					})
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, organizationId),
+							isNotNull(appointments.chairId),
+							lt(appointments.startsAt, dayEndUtc),
+							gt(appointments.endsAt, dayStartUtc),
+							notInArray(appointments.status, [
+								...FREED_APPOINTMENT_STATUSES,
+							]),
+						),
+					)
+			: [];
+
+	const occupiedChairIntervals: ChairOccupiedInterval[] = chairAppointments
+		.filter((a): a is { chairId: string; startsAt: Date; endsAt: Date } => Boolean(a.chairId))
+		.map((a) => ({
+			chairId: a.chairId,
+			startMs: new Date(a.startsAt).getTime(),
+			endMs: new Date(a.endsAt).getTime(),
+		}));
 
 	const nowMs = Date.now();
 	const slotUnionMap = new Map<
@@ -196,13 +241,27 @@ export async function calculateAvailableSlots(
 		) {
 			const slotStart = localWallTimeToUtc(date, minute, timeZone);
 			const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
+			const slotStartMs = slotStart.getTime();
+			const slotEndMs = slotEnd.getTime();
 
-			if (slotStart.getTime() <= nowMs) continue;
+			if (slotStartMs <= nowMs) continue;
+
+			// Chair availability pre-check: ensure at least one physical chair is unblocked during this slot
+			const chairAvailable = isAnyChairAvailable(
+				activeChairIds,
+				occupiedChairIntervals,
+				slotStartMs,
+				slotEndMs,
+			);
+			if (!chairAvailable) {
+				// All clinic chairs are occupied during this slot -> do not offer to avoid 409 Conflict
+				continue;
+			}
 
 			const isTaken = doctorApps.some((app) => {
 				const appStart = new Date(app.startsAt).getTime();
 				const appEnd = new Date(app.endsAt).getTime();
-				return slotStart.getTime() < appEnd && slotEnd.getTime() > appStart;
+				return slotStartMs < appEnd && slotEndMs > appStart;
 			});
 
 			if (!isTaken) {
