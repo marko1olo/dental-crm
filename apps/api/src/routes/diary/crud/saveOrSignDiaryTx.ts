@@ -45,6 +45,7 @@ export async function executeSaveOrSignDiaryTx(params: {
 			const updateData: Partial<typeof visitDiaries.$inferInsert> = { updatedAt: new Date(), draftAuthorId: userId };
 			if (!existing.authorId) updateData.authorId = userId;
 			if (!existing.doctorId) updateData.doctorId = userId;
+			if (data.complaint !== undefined) updateData.complaint = data.complaint;
 			if (data.anamnesis !== undefined) updateData.anamnesis = data.anamnesis;
 			if (data.statusLocalis !== undefined) updateData.statusLocalis = data.statusLocalis;
 			if (data.diagnosisIcd10 !== undefined) updateData.diagnosisIcd10 = data.diagnosisIcd10;
@@ -66,7 +67,7 @@ export async function executeSaveOrSignDiaryTx(params: {
 				.insert(visitDiaries)
 				.values({
 					organizationId: orgId, visitId: data.visitId, patientId: data.patientId,
-					anamnesis: data.anamnesis, statusLocalis: data.statusLocalis,
+					complaint: data.complaint, anamnesis: data.anamnesis, statusLocalis: data.statusLocalis,
 					diagnosisIcd10: data.diagnosisIcd10, diagnosisTooth: data.diagnosisTooth,
 					treatmentDescription: data.treatmentDescription, complications: data.complications,
 					comorbidities: data.comorbidities, draftAuthorId: userId, authorId: userId, doctorId: userId,
@@ -77,7 +78,37 @@ export async function executeSaveOrSignDiaryTx(params: {
 			diaryId = inserted[0].id;
 		}
 
-		const visitSyncData: Record<string, unknown> = { updatedAt: new Date() };
+		const [currentVisit] = await tx
+			.select({ draftAutosave: visits.draftAutosave, revision: visits.revision })
+			.from(visits)
+			.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+
+		const existingDraftAutosave = (currentVisit?.draftAutosave as Record<string, unknown> | null) || {};
+		const existingDraftObj = (existingDraftAutosave.draft as Record<string, unknown> | null) || {};
+		const updatedDraftAutosave = {
+			...existingDraftAutosave,
+			visitId: data.visitId,
+			patientId: data.patientId,
+			selectedSpecialty: existingDraftAutosave.selectedSpecialty || "therapist",
+			transcript: existingDraftAutosave.transcript || "",
+			draft: {
+				...existingDraftObj,
+				...(data.complaint !== undefined ? { complaint: data.complaint } : {}),
+				...(data.anamnesis !== undefined ? { anamnesis: data.anamnesis } : {}),
+				...(data.statusLocalis !== undefined ? { objectiveStatus: data.statusLocalis } : {}),
+				...(data.diagnosisIcd10 !== undefined ? { diagnosis: data.diagnosisIcd10 } : {}),
+				...(data.treatmentDescription !== undefined ? { treatmentPlan: data.treatmentDescription } : {}),
+			},
+			baseRevision: currentVisit?.revision ?? null,
+			serverSavedAt: new Date().toISOString(),
+		};
+
+		const visitSyncData: Record<string, unknown> = {
+			updatedAt: new Date(),
+			draftAutosave: updatedDraftAutosave,
+		};
+		if (data.complaint !== undefined) visitSyncData.complaint = data.complaint;
 		if (data.anamnesis !== undefined) visitSyncData.anamnesis = data.anamnesis;
 		if (data.statusLocalis !== undefined) visitSyncData.objectiveStatus = data.statusLocalis;
 		if (data.diagnosisIcd10 !== undefined) visitSyncData.diagnosis = data.diagnosisIcd10;
@@ -94,7 +125,7 @@ export async function executeSaveOrSignDiaryTx(params: {
 			);
 			await tx.update(visitDiaries).set({ diaryHash: draftHash, updatedAt: new Date() }).where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId), eq(visitDiaries.isLocked, false)));
 			await syncVisitEmkFromDiarySoap(tx, {
-				visitId: savedRow.visitId, organizationId: orgId, anamnesis: savedRow.anamnesis,
+				visitId: savedRow.visitId, organizationId: orgId, complaint: savedRow.complaint, anamnesis: savedRow.anamnesis,
 				statusLocalis: savedRow.statusLocalis, diagnosisIcd10: savedRow.diagnosisIcd10,
 				diagnosisTooth: savedRow.diagnosisTooth, treatmentDescription: savedRow.treatmentDescription,
 			});

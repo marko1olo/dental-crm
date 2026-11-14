@@ -32,7 +32,9 @@ export interface VisitTabContentProps {
 	dashboard?: Dashboard | null | undefined;
 	selectedToothForMenu?: { code: string; label?: string } | null | undefined;
 	handlePrintEstimateFast: () => void;
-	handlePrintForm043uFast: () => void;
+	handlePrintMedicalCardFast?: () => void;
+	/** @deprecated Канонический вызов: handlePrintMedicalCardFast («Медицинская карта приёма») */
+	handlePrintForm043uFast?: () => void;
 	handlePrintInformedConsentFast: () => void;
 	setIsInformedConsentModalOpen: (open: boolean) => void;
 	setIsWarrantyModalOpen: (open: boolean) => void;
@@ -49,12 +51,14 @@ export function VisitTabContent({
 	dashboard,
 	selectedToothForMenu,
 	handlePrintEstimateFast,
+	handlePrintMedicalCardFast,
 	handlePrintForm043uFast,
 	handlePrintInformedConsentFast,
 	setIsInformedConsentModalOpen,
 	setIsWarrantyModalOpen,
 }: VisitTabContentProps) {
 	const [isPresenterModalOpen, setIsPresenterModalOpen] = useState(false);
+	const onPrintMedicalCard = handlePrintMedicalCardFast ?? handlePrintForm043uFast ?? (() => {});
 
 	return (
 		<ClinicalErrorBoundary
@@ -183,8 +187,8 @@ export function VisitTabContent({
 					selectedToothForMenu={selectedToothForMenu}
 					onOpenInformedConsentModal={() => setIsInformedConsentModalOpen(true)}
 					onOpenWarrantyModal={() => setIsWarrantyModalOpen(true)}
-					onFastPrintMedicalCard={handlePrintForm043uFast}
-					onFastPrint043u={handlePrintForm043uFast}
+					onFastPrintMedicalCard={onPrintMedicalCard}
+					onFastPrint043u={onPrintMedicalCard}
 					onFastPrintInformedConsent={handlePrintInformedConsentFast}
 					/* data-testid="btn-visit-fast-print-consent-1051n" data-testid="btn-visit-consents-print-043u" */
 				/>

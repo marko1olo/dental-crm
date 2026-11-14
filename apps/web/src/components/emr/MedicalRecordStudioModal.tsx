@@ -11,10 +11,10 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { createPortal } from "react-dom";
 import {
 	Printer, Check, FileText, X, Maximize2, Minimize2, Sparkles, ZoomIn, ZoomOut, RotateCcw,
-	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy,
+	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy, Loader2,
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
-import type { MedicalRecordData, ClinicalVisitDiaryEntry } from "./types/recordDataTypes";
+import type { MedicalRecordData, ClinicalVisitDiaryEntry, ClinicalPassportData } from "./types/recordDataTypes";
 import {
 	DEFAULT_MEDICAL_CARD_DATA,
 	resolveClinicRequisites,
@@ -28,6 +28,7 @@ import {
 	generateMedicalRecordPrintHtml,
 } from "./clinicalDiaryMath";
 import { useRecordExports } from "./record/useRecordExports";
+import { useMedicalRecordSave } from "./record/useMedicalRecordSave";
 import { EmrProtocolGeneratorModal } from "./protocolGenerator/EmrProtocolGeneratorModal";
 import { RecordPassportTab } from "./record/tabs/RecordPassportTab";
 import { RecordAnamnesisTab } from "./record/tabs/RecordAnamnesisTab";
@@ -38,7 +39,8 @@ import "./emrStudioStyles.css";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 
-export interface ExtendedMedicalRecordInitialData extends Partial<MedicalRecordData> {
+export interface ExtendedMedicalRecordInitialData extends Partial<Omit<MedicalRecordData, "passport">> {
+	readonly passport?: Partial<ClinicalPassportData> | undefined;
 	readonly isLocked?: boolean | undefined;
 	readonly status?: string | undefined;
 }
@@ -47,13 +49,15 @@ export interface MedicalRecordStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly initialData?: ExtendedMedicalRecordInitialData | undefined;
-	readonly onSave?: ((updated: MedicalRecordData) => void) | undefined;
+	readonly onSave?: ((updated: MedicalRecordData) => void | Promise<void>) | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly onOpenProtocolGenerator?: (() => void) | undefined;
 	readonly isLocked?: boolean | undefined;
 	readonly isDraft?: boolean | undefined;
 	readonly status?: string | undefined;
 	readonly initialTab?: RecordTabType | undefined;
+	readonly visitId?: string | undefined;
+	readonly patientId?: string | undefined;
 }
 
 const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ className?: string }> }> = [
@@ -68,6 +72,7 @@ const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ cl
 export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> = React.memo(
 	function MedicalRecordStudioModal({
 		isOpen, onClose, initialData, onSave, onOpenProtocolGenerator, isLocked, isDraft, status, initialTab,
+		visitId, patientId,
 	}) {
 		const dashboard = useAppStore((s) => s.dashboard);
 		const profile = dashboard?.clinicSettings?.profile;
@@ -144,6 +149,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			formData, effectiveIsDraft, setCopiedToast,
 		});
 
+		const { isSaving, handleSaveForm } = useMedicalRecordSave({
+			formData, onSave, visitId, patientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft,
+		});
+
 		const handleApplyNorm = useCallback(() => {
 			setFormData((prev) => {
 				const updated = applyMedicalCardPhysiologicalNorm(prev);
@@ -151,8 +160,6 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 				return updated;
 			});
 		}, [onSave]);
-
-		const handleSaveForm = useCallback(() => onSave?.(formData), [onSave, formData]);
 
 		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => {
 			setFormData((prev) => {
@@ -200,7 +207,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			<div className="emr-studio-backdrop emr043-modal-backdrop" role="dialog" aria-modal="true">
 				<div
 					className="emr-studio-modal emr-studio-window emr043-modal-window"
-					style={{ maxWidth: isFullscreen ? "100%" : "1380px", height: isFullscreen ? "98vh" : "94vh" }}
+					style={{ maxWidth: isFullscreen ? "100%" : "1380px", ...(isFullscreen ? { height: "98vh" } : {}) }}
 				>
 					{/* Нативный Drag Handle для шторки смартфона (Apple HIG) */}
 					<div className="emr-studio-drag-handle sm:hidden" aria-hidden="true" />
@@ -328,9 +335,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								data-testid="btn-emr-save-card"
 								title="Сохранить и подписать медицинскую карту приёма"
 							>
-								<Check className="w-4 h-4 shrink-0" />
-								<span className="hidden sm:inline">Сохранить и подписать карту приёма</span>
-								<span className="sm:hidden">Сохранить</span>
+								{isSaving ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
+								<span className="hidden sm:inline">{isSaving ? "Сохранение в базу..." : "Сохранить и подписать карту приёма"}</span>
+								<span className="sm:hidden">{isSaving ? "Сохранение..." : "Сохранить"}</span>
 							</button>
 
 							<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-fullscreen" onClick={() => setIsFullscreen((v) => !v)} title={isFullscreen ? "Свернуть" : "На весь экран"}>
@@ -423,7 +430,8 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							<Sparkles className="w-4 h-4 shrink-0" /><span>Норма</span>
 						</button>
 						<button type="button" className="dente-btn dente-btn-primary emr-studio-btn emr-studio-btn-primary flex-[2]" onClick={handleSaveForm} disabled={false} title="Сохранить и подписать карту приёма">
-							<Check className="w-4 h-4 shrink-0" /><span>Подписать карту</span>
+							{isSaving ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
+							<span>{isSaving ? "Сохранение..." : "Подписать карту"}</span>
 						</button>
 					</footer>
 				</div>

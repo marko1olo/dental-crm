@@ -8,7 +8,6 @@ import { showToast } from "../../GlobalToast";
 import { PerioStudioModal } from "../../perio/PerioStudioModal";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { appendClinicalText } from "../emk";
-import { VisitClinicalDiaryPrintSheet } from "../emk/VisitClinicalDiaryPrintSheet";
 import type { VisitEmkModalsProps } from "./types";
 
 export function VisitEmkModals({
@@ -325,6 +324,26 @@ export function VisitEmkModals({
 			<MedicalRecordStudioModal
 				isOpen={isPrintModalOpen}
 				onClose={() => setIsPrintModalOpen(false)}
+				visitId={dashboard?.activeVisit?.id}
+				patientId={activePatient?.id}
+				onSave={async (updatedCard) => {
+					const primaryDiary = updatedCard.visitDiaries?.[0];
+					const complaint = updatedCard.anamnesis?.chiefComplaint || primaryDiary?.subjectiveComplaints;
+					const anamnesis = updatedCard.anamnesis?.historyOfPresentIllness;
+					const statusLocalis = primaryDiary?.objectiveStatusLocalis;
+					const diagnosis = updatedCard.passport?.primaryDiagnosisText || primaryDiary?.assessmentDiagnosisText;
+					const treatmentPlan = updatedCard.generalTreatmentPlan || primaryDiary?.procedureProtocol;
+					const recommendations = primaryDiary?.homeCareRecommendations;
+
+					if (complaint) updateVisitNoteField("complaint", complaint);
+					if (anamnesis) updateVisitNoteField("anamnesis", anamnesis);
+					if (statusLocalis) updateVisitNoteField("objectiveStatus", statusLocalis);
+					if (diagnosis) updateVisitNoteField("diagnosis", diagnosis);
+					if (treatmentPlan) updateVisitNoteField("treatmentPlan", treatmentPlan);
+					if (recommendations) updateVisitNoteField("recommendations", recommendations);
+
+					showToast("Медицинская карта приёма синхронизирована с приёмом", "success", 3000);
+				}}
 				initialData={{
 					passport: activePatient
 						? {
@@ -374,13 +393,6 @@ export function VisitEmkModals({
 				}}
 				isLocked={isSignedVisit}
 				status={isSignedVisit ? "signed" : "draft"}
-			/>
-
-			{/* Печатная форма медицинской карты */}
-			<VisitClinicalDiaryPrintSheet
-				patient={activePatient}
-				visitNoteForm={visitNoteForm}
-				isSignedVisit={isSignedVisit}
 			/>
 
 			{/* Модальное окно полной пародонтограммы */}

@@ -93,6 +93,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
 	const [isMedicalRecordStudioOpen, setIsMedicalRecordStudioOpen] = React.useState(false);
 
+	const isAnySubModalOpen = Boolean(
+		isMedicalRecordStudioOpen ||
+		isPhotoModalOpen ||
+		isDiplomaModalOpen ||
+		isDmsLetterModalOpen ||
+		isTaxDeductionModalOpen
+	);
+
 	// Состояние для режима создания пациента
 	const creationOptions = useMemo(
 		() => createPatientCreationOptions(props, isOpen, onClose),
@@ -116,16 +124,18 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		>
 			<div
 				data-testid="patient-card-modal"
-				className={`bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-t-[24px] sm:rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden text-[var(--ink)] print:border-none print:shadow-none print:max-h-none print:rounded-none ${className}`}
+				className={`bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-t-[24px] sm:rounded-2xl shadow-2xl max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden text-[var(--ink)] print:border-none print:shadow-none print:max-h-none print:rounded-none ${className}`}
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Алиас контейнера для канонической студии картотеки пациентов (SSOT) */}
 				<div data-testid="patient-studio-modal" style={{ display: "contents" }}>
 				{/* Мобильный хэндл шторки (Apple HIG Bottom Sheet: 36x4px / w-9 h-1) */}
-				<div className="sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0" aria-hidden="true" />
+				<div className={`sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0 ${isAnySubModalOpen ? "hidden" : ""}`} aria-hidden="true" />
 
 				{/* ── ШАПКА КАРТОЧКИ ПАЦИЕНТА ── */}
-				<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] gap-3 min-w-0 print:hidden">
+				<div className={`flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] gap-3 min-w-0 print:hidden ${
+					isAnySubModalOpen ? "max-sm:hidden" : ""
+				}`}>
 					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
 						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0 shadow-2xs">
 							<User className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -325,7 +335,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							safetyEvaluation.hasCriticalStopFlags
 								? "bg-rose-500/15 border-rose-500/30 text-rose-950 dark:text-rose-100"
 								: "bg-amber-500/15 border-amber-500/30 text-amber-950 dark:text-amber-100"
-						}`}
+						} ${isAnySubModalOpen ? "max-sm:hidden" : ""}`}
 						role="alert"
 						data-testid="patient-card-modal-somatic-banner"
 					>
@@ -368,8 +378,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 				{/* ── ТАБЫ НАВИГАЦИИ КАРТОЧКИ (С ФИКСИРОВАННОЙ НОРМОЙ В 1 КЛИК) ── */}
 				{!isCreateMode && (
-					<div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
-						<div className="flex items-center gap-1 sm:gap-2 shrink-0">
+					<div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden ${
+						isAnySubModalOpen ? "max-sm:hidden" : ""
+					}`}>
+						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:flex-wrap">
 							{TABS.map((tab) => {
 								const isActive = activeTab === tab.id;
 								const Icon = tab.Icon;
@@ -378,9 +390,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 										key={tab.id}
 										type="button"
 										data-testid={tab.testId}
-										className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-3 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
+										className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
 											isActive
-												? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs font-bold"
+												? "border border-[var(--teal)] bg-[var(--teal)] text-white shadow-xs font-bold"
 												: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] shadow-2xs font-semibold"
 										}`}
 										onClick={() => setActiveTab(tab.id as PatientCardTab)}
@@ -409,7 +421,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				{/* ── ТЕЛО МОДАЛКИ (ОСНОВНОЙ КОНТЕНТ) ── */}
 				<div
 					data-testid={isCreateMode ? "patient-express-registration-form" : "patient-studio-detail-view"}
-					className="p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1"
+					className={`p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1 ${
+						isAnySubModalOpen ? "hidden pointer-events-none opacity-0" : ""
+					}`}
 				>
 					{isCreateMode ? (
 						<PatientCreationModalBody
@@ -503,13 +517,13 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				</div>
 
 				{/* Плавающий бар сохранения в Зоне большого пальца */}
-				{!isCreateMode && (
+				{!isCreateMode && !isAnySubModalOpen && (
 					<PatientCardFloatingSaveBar isDirty={isDirty} saveState={saveState} onSave={handleSave} />
 				)}
 
 				{/* ── ФУТЕР МОДАЛКИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA КНОПКА) ── */}
 				<div className={`flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2.5 print:hidden ${
-					isMedicalRecordStudioOpen ? "hidden" : ""
+					isAnySubModalOpen ? "hidden pointer-events-none" : ""
 				}`}>
 					<span className="hidden sm:inline text-xs text-[var(--muted)] whitespace-normal">
 						{isCreateMode
@@ -551,7 +565,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							{/* Ровно ОДНА Primary CTA кнопка var(--teal) */}
 							<button
 								type="button"
-								className="border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[44px] h-11 px-5 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap"
+								className="border-0 bg-[var(--teal)] text-white hover:opacity-95 min-h-[44px] h-11 px-5 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap"
 								onClick={() => void creationForm.handleCreate()}
 								disabled={false}
 								data-testid="patient-creation-submit-btn"
@@ -568,7 +582,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<button
 								type="button"
 								onClick={onClose}
-								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[48px] h-12 text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
+								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
 							>
 								Закрыть
 							</button>
@@ -578,7 +592,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
 								disabled={false}
-								className="flex-1 sm:flex-none border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[48px] h-12 px-6 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
+								className="flex-1 sm:flex-none border-0 bg-[var(--teal)] text-white hover:opacity-95 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-6 text-xs sm:text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
 							>
 								<span data-testid="patient-studio-primary-cta">Сохранить</span>
 							</button>
@@ -609,6 +623,17 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<MedicalRecordStudioModal
 							isOpen={isMedicalRecordStudioOpen}
 							onClose={() => setIsMedicalRecordStudioOpen(false)}
+							patientId={patientData.id ?? undefined}
+							onSave={async (updatedCard) => {
+								if (updatedCard.passport.patientPhone && updatedCard.passport.patientPhone !== patientData.phone) {
+									handleUpdatePatientField("phone", updatedCard.passport.patientPhone);
+								}
+								if (updatedCard.passport.patientAddressRegistration && updatedCard.passport.patientAddressRegistration !== patientData.address) {
+									handleUpdatePatientField("address", updatedCard.passport.patientAddressRegistration);
+								}
+								await handleSave();
+								showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
+							}}
 							initialData={{
 								passport: {
 									patientFullName: patientData.fullName || "",

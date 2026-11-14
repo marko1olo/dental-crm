@@ -10,13 +10,28 @@
  */
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { MedicalRecordStudioModal } from "./MedicalRecordStudioModal";
 import { MedicalCardPrintModal } from "./MedicalCardPrintModal";
 import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalCardCatalogData";
 import type { MedicalRecordData } from "./types/recordDataTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { showToast } from "../GlobalToast";
 import type { Dashboard, Patient } from "@dental/shared";
+
+interface LauncherPatientRecord extends Patient {
+	cardNumber?: string | null;
+}
+
+interface LauncherStaffRecord {
+	id?: string;
+	fullName?: string;
+	name?: string;
+	specialty?: string;
+	role?: string;
+}
 
 const EMR_URL_TOKENS = [
 	"medical-card",
@@ -74,7 +89,7 @@ export const DirectEmrLauncher: React.FC = () => {
 		};
 
 		const handleCustomOpen = (event: Event) => {
-			const detail = (event as CustomEvent)?.detail;
+			const detail = (event as CustomEvent<Partial<MedicalRecordData>>)?.detail;
 			if (detail && typeof detail === "object") {
 				setCustomData(detail);
 			}
@@ -118,8 +133,8 @@ export const DirectEmrLauncher: React.FC = () => {
 
 	const initialCardData: MedicalRecordData = useMemo(() => {
 		const isDemo = isDemoShowcaseMode();
-		const patient: Patient | undefined = dashboard?.patients?.[0];
-		const staff = dashboard?.clinicSettings?.staff?.[0];
+		const patient = dashboard?.patients?.[0] as LauncherPatientRecord | undefined;
+		const staff = dashboard?.clinicSettings?.staff?.[0] as LauncherStaffRecord | undefined;
 		const clinicProfile = dashboard?.clinicSettings?.profile;
 
 		const requisites = resolveClinicRequisites(
@@ -136,7 +151,7 @@ export const DirectEmrLauncher: React.FC = () => {
 			},
 			passport: {
 				...DEFAULT_MEDICAL_CARD_DATA.passport,
-				medicalCardNumber: (patient as any)?.cardNumber || (isDemo ? "МК-001" : ""),
+				medicalCardNumber: patient?.cardNumber || (isDemo ? "МК-001" : ""),
 				cardOpenedDate: patient?.createdAt ? new Date(patient.createdAt).toLocaleDateString("ru-RU") : (isDemo ? "01.09.2026" : ""),
 				patientFullName: patient?.fullName || (isDemo ? "Смирнова Екатерина Васильевна" : ""),
 				patientBirthDate: patient?.birthDate || (isDemo ? "1988-04-12" : ""),
@@ -145,7 +160,7 @@ export const DirectEmrLauncher: React.FC = () => {
 				patientAddressRegistration: isDemo ? "г. Москва, ул. Арбат, д. 24, кв. 12" : "",
 				patientAddressResidence: isDemo ? "г. Москва, ул. Арбат, д. 24, кв. 12" : "",
 				attendingDoctorFullName: staff?.fullName || (isDemo ? "Д-р Соколов А. В." : ""),
-				attendingDoctorSpecialty: (staff as any)?.specialty || (isDemo ? "Врач-стоматолог-терапевт" : ""),
+				attendingDoctorSpecialty: staff?.specialty || (isDemo ? "Врач-стоматолог-терапевт" : ""),
 				primaryDiagnosisText: isDemo ? "K02.1 Кариес дентина зуба 16" : "",
 				primaryDiagnosisIcd10: isDemo ? "K02.1" : "",
 			},
@@ -159,20 +174,75 @@ export const DirectEmrLauncher: React.FC = () => {
 		clearEmrDeepLink();
 	}, []);
 
-	const handleSave = useCallback((updated: MedicalRecordData) => {
-		try {
-			if (typeof sessionStorage !== "undefined") {
-				sessionStorage.setItem(
-					`dente:medical_card_saved:${updated.passport.medicalCardNumber}`,
-					JSON.stringify(updated),
-				);
+	const handleSave = useCallback(
+		async (updated: MedicalRecordData) => {
+			try {
+				if (typeof sessionStorage !== "undefined") {
+					sessionStorage.setItem(
+						`dente:medical_card_saved:${updated.passport.medicalCardNumber}`,
+						JSON.stringify(updated),
+					);
+				}
+			} catch (err) {
+				console.warn("DirectEmrLauncher: не удалось сохранить черновик в sessionStorage", err);
 			}
-		} catch (err) {
-			console.warn("DirectEmrLauncher: не удалось сохранить черновик в sessionStorage", err);
-		}
-	}, []);
+
+			const patientId = dashboard?.patients?.[0]?.id;
+			const visitId = dashboard?.activeVisit?.id;
+
+			if (patientId && visitId) {
+				try {
+					const mutationId = generateUuidV7();
+					const primaryDiary = updated.visitDiaries?.[0];
+					const complaint = updated.anamnesis?.chiefComplaint || primaryDiary?.subjectiveComplaints || "";
+					const anamnesis = updated.anamnesis?.historyOfPresentIllness || "";
+					const statusLocalis = primaryDiary?.objectiveStatusLocalis || updated.dentalStatus?.oralMucosaStatus || "";
+					const diagnosisIcd10 = updated.passport?.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "Z01.2";
+					const diagnosisTooth = primaryDiary?.toothNumber || "";
+					const treatmentDescription = updated.generalTreatmentPlan || primaryDiary?.procedureProtocol || "";
+
+					const res = await fetch("/api/diaries", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Idempotency-Key": mutationId,
+							...denteAdminSecretRequestHeaders(),
+						},
+						credentials: "same-origin",
+						body: JSON.stringify({
+							visitId,
+							patientId,
+							complaint,
+							anamnesis,
+							statusLocalis,
+							diagnosisIcd10,
+							diagnosisTooth,
+							treatmentDescription,
+							status: "draft",
+						}),
+					});
+
+					if (res.ok) {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente:diary-saved", { detail: { visitId, patientId } }),
+							);
+							window.dispatchEvent(new CustomEvent("dente:emk-updated", { detail: updated }));
+						}
+						showToast("Медицинская карта приёма сохранена в базу данных", "success", 4000);
+					}
+				} catch (networkErr) {
+					console.warn("DirectEmrLauncher: ошибка сохранения в API", networkErr);
+				}
+			}
+		},
+		[dashboard],
+	);
 
 	if (!isOpen) return null;
+
+	const effectivePatientId = dashboard?.patients?.[0]?.id;
+	const effectiveVisitId = dashboard?.activeVisit?.id;
 
 	return (
 		<MedicalRecordStudioModal
@@ -180,6 +250,8 @@ export const DirectEmrLauncher: React.FC = () => {
 			onClose={handleClose}
 			initialData={initialCardData}
 			onSave={handleSave}
+			visitId={effectiveVisitId}
+			patientId={effectivePatientId}
 			isDraft={true}
 			initialTab={getInitialEmrTab()}
 		/>

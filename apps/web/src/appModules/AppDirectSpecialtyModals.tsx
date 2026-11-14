@@ -101,6 +101,10 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<MedicalRecordStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsEmrCardDirectModalOpen(false)}
+						patientId={patient?.id || "pat-demo-01"}
+						onSave={async () => {
+							showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
+						}}
 						initialData={{
 							patient: patient || { fullName: "Смирнова Екатерина Андреевна", birthDate: "1990-05-14", id: "pat-demo-01" },
 							diary: {

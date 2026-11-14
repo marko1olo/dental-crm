@@ -5,7 +5,9 @@
 
 import React, { useCallback, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { DentalLabStudioModal, type DentalLabOrderData, type DentalLabOrderEntry } from "../lab/DentalLabStudioModal";
 import {
 	ProtocolComplaintsAndAnamnesis,
@@ -30,11 +32,77 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(fu
 		setLastSaved, handleApplySomaticNorm, handleSelectIcd10Preset, handleApplyAnesthesia,
 	} = useVisitProtocolState(visitId, patientId, initialTooth, initialDate, initialDiagnosis, onSaveProtocol);
 
-	const handleSave = useCallback(() => {
+	const handleSave = useCallback(async () => {
 		if (onSaveProtocol) onSaveProtocol(protocol);
+
+		if (visitId && patientId) {
+			try {
+				const mutationId = generateUuidV7();
+				const toothStr = String(protocol.toothNumber || selectedTooth || "");
+
+				const res = await fetch("/api/diaries", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": mutationId,
+						...denteAdminSecretRequestHeaders(),
+					},
+					credentials: "same-origin",
+					body: JSON.stringify({
+						visitId,
+						patientId,
+						complaint: protocol.complaints,
+						anamnesis: protocol.anamnesis,
+						statusLocalis: protocol.statusLocalis,
+						diagnosisIcd10: protocol.diagnosisIcd10,
+						diagnosisTooth: toothStr,
+						treatmentDescription: protocol.treatmentProtocol,
+						status: protocol.isSigned ? "signed" : "draft",
+					}),
+				});
+
+				if (res.ok) {
+					try {
+						await fetch(`/api/visits/${visitId}/draft/autosave`, {
+							method: "PUT",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							credentials: "same-origin",
+							body: JSON.stringify({
+								patientId,
+								selectedSpecialty: "therapist",
+								transcript: "",
+								draft: {
+									complaint: protocol.complaints,
+									anamnesis: protocol.anamnesis,
+									objectiveStatus: protocol.statusLocalis,
+									diagnosis: protocol.diagnosisIcd10,
+									treatmentPlan: protocol.treatmentProtocol,
+									warnings: [],
+								},
+								clientDraftId: `visit-draft-${visitId}`,
+								clientSavedAt: new Date().toISOString(),
+							}),
+						});
+					} catch {}
+
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(
+							new CustomEvent("dente:diary-saved", { detail: { visitId, patientId } }),
+						);
+						window.dispatchEvent(new CustomEvent("dente:protocol-saved", { detail: protocol }));
+					}
+				}
+			} catch (err) {
+				console.warn("VisitProtocolView: ошибка сохранения протокола в API", err);
+			}
+		}
+
 		setLastSaved(new Date().toLocaleTimeString("ru-RU"));
 		showToast("Протокол приёма сохранен в карту пациента", "success", 3000);
-	}, [protocol, onSaveProtocol, setLastSaved]);
+	}, [protocol, onSaveProtocol, setLastSaved, visitId, patientId, selectedTooth]);
 
 	const handlePrint = useCallback(() => {
 		if (onPrint) onPrint();
