@@ -24,10 +24,10 @@ import {
 } from "@dental/shared";
 import { appointmentScheduleMissingFields } from "../../../AppHelpers";
 import {
-	AppointmentModal,
 	TECHNICAL_BREAK_PRESETS,
 	isTechnicalBreakAppointment,
-} from "../AppointmentModal";
+} from "../scheduleCatalogData";
+import { QuickBookingDrawer } from "../QuickBookingDrawer";
 
 interface MockDomNode {
 	nodeType: number;
@@ -419,12 +419,15 @@ async function clickNode(node: MockDomNode | null) {
 			if (reactPropKey) {
 				const props = (curr as any)[reactPropKey];
 				if (typeof props?.onClick === "function") {
-					props.onClick({
+					const res = props.onClick({
 						preventDefault: () => {},
 						stopPropagation: () => {},
 						target: curr,
 						currentTarget: curr,
 					});
+					if (res && typeof res.then === "function") {
+						await res;
+					}
 					return;
 				}
 			}
@@ -624,18 +627,14 @@ describe("Wave 110: StomX Refusal Reasons & Technical Breaks Autonomy", () => {
 
 		await act(async () => {
 			root.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
-					appointment={cancelledAppt}
+					editingAppointment={cancelledAppt}
 					dashboard={mockDashboard}
 					onClose={() => {}}
-					onSave={async () => true}
-					patientName={(_, id) => id || ""}
-					formatTime={(iso) => iso.slice(11, 16)}
+					onAppointmentUpdated={async () => true}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-					appointmentLabels={defaultAppointmentLabels}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});
@@ -709,18 +708,19 @@ describe("Wave 110: StomX Refusal Reasons & Technical Breaks Autonomy", () => {
 
 		await act(async () => {
 			root.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
-					appointment={emptyAppt}
+					editingAppointment={emptyAppt}
 					dashboard={mockDashboard}
 					onClose={() => {}}
-					onSave={onSaveMock}
-					patientName={(_, id) => id || ""}
-					formatTime={(iso) => iso.slice(11, 16)}
+					onAppointmentUpdated={async (appt) => {
+						await onSaveMock(appt.id, appt);
+					}}
+					onAppointmentCreated={async (appt) => {
+						await onSaveMock(appt.id, appt);
+					}}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-					appointmentLabels={defaultAppointmentLabels}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});
@@ -739,14 +739,16 @@ describe("Wave 110: StomX Refusal Reasons & Technical Breaks Autonomy", () => {
 
 		await clickNode(lunchBtn);
 
-		// Click save button
-		const saveBtn = findNodeByTestId(
-			document.body as unknown as MockDomNode,
-			"appointment-modal-save-btn",
-		);
+		// Click save button (QuickBookingDrawer SSOT)
+		const saveBtn =
+			findNodeByTestId(document.body as unknown as MockDomNode, "quick-drawer-save-btn") ||
+			findNodeByTestId(document.body as unknown as MockDomNode, "appointment-modal-save-btn");
 		assert.ok(saveBtn, "Must find save button");
 
 		await clickNode(saveBtn);
+		await act(async () => {
+			await new Promise((r) => setTimeout(r, 60));
+		});
 
 		// Assert onSave was called successfully with patientId: null or empty
 		assert.ok(savedDraft, "onSave must be called without error");

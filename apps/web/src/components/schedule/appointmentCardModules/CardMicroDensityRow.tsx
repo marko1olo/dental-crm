@@ -4,7 +4,7 @@ import { showToast } from "../../GlobalToast";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { AppointmentStatusBadgeSelector } from "../AppointmentPaymentBadges";
-import { AppointmentCardContextMenu } from "../AppointmentCardContextMenu";
+import { AppointmentCardContextMenu } from "../appointmentContextMenu/index";
 import { CardPatientMetadata } from "./CardPatientMetadata";
 
 export interface CardMicroDensityRowProps {

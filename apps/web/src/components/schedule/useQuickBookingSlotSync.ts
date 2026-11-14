@@ -26,14 +26,26 @@ export function useQuickBookingSlotSync({
   isSoloClinic,
   toLocal,
 }: UseQuickBookingSlotSyncParams) {
-  const [doctorUserId, setDoctorUserId] = useState<string>("");
+  const initialValues = useMemo(() => {
+    return resolveQuickBookingInitialValues({
+      initialSlot,
+      editingAppt,
+      doctors,
+      chairs,
+      chairDoctorAssignments,
+      isSoloClinic,
+      toLocal,
+    });
+  }, [initialSlot, editingAppt, doctors, chairs, chairDoctorAssignments, isSoloClinic, toLocal]);
+
+  const [doctorUserId, setDoctorUserId] = useState<string>(() => initialValues.initDoctor);
   const [assistantUserId, setAssistantUserId] = useState<string | null>(null);
-  const [chairId, setChairId] = useState<string>("");
-  const [startsAtLocal, setStartsAtLocal] = useState<string>("");
-  const [durationMinutes, setDurationMinutes] = useState<number>(30);
-  const [status, setStatus] = useState<Appointment["status"]>("planned");
-  const [reason, setReason] = useState<string>("");
-  const [comment, setComment] = useState<string>("");
+  const [chairId, setChairId] = useState<string>(() => initialValues.initChair);
+  const [startsAtLocal, setStartsAtLocal] = useState<string>(() => initialValues.initStartsAtLocal);
+  const [durationMinutes, setDurationMinutes] = useState<number>(() => initialValues.initDuration);
+  const [status, setStatus] = useState<Appointment["status"]>(() => initialValues.initStatus);
+  const [reason, setReason] = useState<string>(() => initialValues.initReason);
+  const [comment, setComment] = useState<string>(() => initialValues.initComment);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [slotConflict, setSlotConflict] = useState<any>(null);
 
@@ -65,19 +77,16 @@ export function useQuickBookingSlotSync({
 
   useEffect(() => {
     if (!isOpen) return;
-    const { initDoctor, initChair, initStartsAtLocal, initDuration, initReason, initComment, initStatus } =
-      resolveQuickBookingInitialValues({ initialSlot, editingAppt, doctors, chairs, chairDoctorAssignments, isSoloClinic, toLocal });
-
-    setDoctorUserId(initDoctor);
-    setChairId(initChair);
-    setStartsAtLocal(initStartsAtLocal);
-    setDurationMinutes(initDuration);
-    setReason(initReason);
-    setComment(initComment);
-    setStatus(initStatus);
+    setDoctorUserId(initialValues.initDoctor);
+    setChairId(initialValues.initChair);
+    setStartsAtLocal(initialValues.initStartsAtLocal);
+    setDurationMinutes(initialValues.initDuration);
+    setReason(initialValues.initReason);
+    setComment(initialValues.initComment);
+    setStatus(initialValues.initStatus);
     setSubmitError(null);
     setSlotConflict(null);
-  }, [isOpen, initialSlot, editingAppt, doctors, chairs, chairDoctorAssignments, toLocal, isSoloClinic]);
+  }, [isOpen, initialValues]);
 
   return {
     doctorUserId, setDoctorUserId, assistantUserId, setAssistantUserId, chairId, setChairId,

@@ -66,16 +66,21 @@
   height: 44px;
   padding: 0 18px;
   border-radius: 12px;
-  background: var(--teal, #0d9488);
-  color: #ffffff;
+  background: var(--paper-soft);
+  color: var(--ink);
   font-size: 14px;
-  font-weight: 700;
-  border: none;
+  font-weight: 600;
+  border: 1px solid var(--line);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: opacity 0.15s ease;
+  transition: all 0.15s ease;
+}
+
+.schedule-mobile-empty-btn:hover {
+  background: var(--paper);
+  border-color: var(--line-strong, var(--line));
 }
 
 .schedule-mobile-empty-btn:active {

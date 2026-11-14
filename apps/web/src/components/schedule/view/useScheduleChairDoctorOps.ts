@@ -158,7 +158,7 @@ export function useScheduleChairDoctorOps({
               id: doctorData.id || `doc-local-${Date.now()}`,
               organizationId:
                 prev.clinicSettings?.profile?.organizationId ||
-                "00000000-0000-4000-8000-000000000001",
+                undefined,
               fullName: doctorData.fullName,
               role: "doctor",
               specialties: [doctorData.specialty],

@@ -22,20 +22,20 @@ export function QuickDurationAndSlotsSection({
 }: Omit<SelectedServicesSummaryCardProps, "initialSlot">) {
   return (
     <div className="space-y-3 pt-1">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-          <Clock size={14} className="text-[var(--teal)]" />
-          <span>Время и длительность *</span>
+      <div className="flex items-center justify-between gap-2">
+        <label className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5 whitespace-nowrap min-w-0">
+          <Clock size={14} className="text-[var(--teal)] shrink-0" />
+          <span className="whitespace-nowrap">Время и длительность *</span>
         </label>
         <button
           type="button"
           onClick={handleFindFreeSlots}
-          className="text-xs font-bold text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--teal)]/30 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 transition-all cursor-pointer"
+          className="text-xs font-bold text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--teal)]/30 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 transition-all cursor-pointer shrink-0"
           data-testid="quick-booking-find-slots-btn"
           title="Интеллектуальный поиск свободных окон"
         >
           <Search size={12} className="shrink-0" />
-          <span>Найти варианты</span>
+          <span className="whitespace-nowrap">Найти варианты</span>
         </button>
       </div>
 

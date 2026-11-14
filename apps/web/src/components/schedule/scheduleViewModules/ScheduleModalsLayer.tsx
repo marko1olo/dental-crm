@@ -9,7 +9,7 @@ export function ScheduleModalsLayer(props: ScheduleModalsLayerProps) {
   }
 
   return createPortal(
-    <ScheduleViewModals {...(props as any)} />,
+    <ScheduleViewModals {...props} />,
     document.body
   );
 }

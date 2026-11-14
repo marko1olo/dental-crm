@@ -69,6 +69,10 @@ export interface QuickBookingDrawerProps {
     | ((value: string, timeZone?: string | null) => string)
     | undefined;
   chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
+  isAppointmentModalFacade?: boolean | undefined;
+  onQuickCreatePatient?:
+    | ((data: { fullName: string; phone?: string | null }) => Promise<{ id: string; fullName: string; phone?: string | null } | null | void>)
+    | undefined;
 }
 
 export const COMMON_REASONS = [

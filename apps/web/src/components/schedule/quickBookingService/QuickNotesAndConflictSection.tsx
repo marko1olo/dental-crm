@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import React from "react";
+import { APPOINTMENT_REFUSAL_REASONS_CATALOG } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { SlotConflictModal } from "../SlotConflictModal";
 import { QuickPresetChipsBar } from "./QuickPresetChipsBar";
@@ -69,6 +70,35 @@ export function QuickNotesAndConflictSection({
     <>
       <QuickStatusSelector status={status} setStatus={setStatus} />
       <QuickPresetChipsBar reason={reason} setReason={setReason} comment={comment} setComment={setComment} />
+
+      {(status === "cancelled" || status === "no_show") && (
+        <div
+          data-testid="appointment-refusal-reasons-block"
+          className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2"
+        >
+          <label className="text-xs font-bold text-[var(--muted)]">
+            Причина отмены / неявки:
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {APPOINTMENT_REFUSAL_REASONS_CATALOG.map((refuse) => (
+              <button
+                key={refuse.id}
+                type="button"
+                onClick={() => {
+                  const tag = `[Отмена: ${refuse.nameRu}]`;
+                  setComment((prev) => {
+                    const clean = prev.replace(/\[Отмена:[^\]]*\]/g, "").trim();
+                    return clean ? `${tag} ${clean}` : tag;
+                  });
+                }}
+                className="min-h-[36px] px-2.5 py-1 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all cursor-pointer"
+              >
+                {refuse.nameRu}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {submitError && (
         <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5" role="alert">

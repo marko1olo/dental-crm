@@ -13,7 +13,7 @@ export function QuickAppointmentTypeSelector({
   return (
     <div className="space-y-1.5" data-testid="quick-booking-type-selector">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+        <span className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
           <Sparkles size={14} className="text-[var(--teal)]" />
           <span>Тип приема *</span>
         </span>

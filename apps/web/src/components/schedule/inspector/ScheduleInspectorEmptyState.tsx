@@ -91,7 +91,7 @@ export const ScheduleInspectorEmptyState: React.FC<ScheduleInspectorEmptyStatePr
           <span className="font-extrabold text-[var(--ink)] tracking-tight">
             Приёмы на дату ({totalCount})
           </span>
-          <span className="text-[10px] text-[var(--muted)]">клик для выбора</span>
+          <span className="text-[10px] text-[var(--muted)]">Список визитов</span>
         </div>
 
         {dayAppointments.length === 0 ? (
@@ -146,7 +146,7 @@ export const ScheduleInspectorEmptyState: React.FC<ScheduleInspectorEmptyStatePr
       </div>
 
       <div className="p-2 rounded-lg bg-[var(--paper-soft)]/50 border border-[var(--line)] text-center text-[10px] text-[var(--muted)]">
-        Кликните по любому приёму на сетке для мгновенного просмотра телефона, звонка и смены статуса.
+        Выберите приём в сетке для просмотра телефона, связи с пациентом и смены статуса.
       </div>
     </div>
   );

@@ -247,6 +247,7 @@ export const updateAppointmentHandler = async (
 			request,
 			orgId,
 			appointmentId,
+			updatedAppt,
 		);
 	} catch (error) {
 		const conflictContext =

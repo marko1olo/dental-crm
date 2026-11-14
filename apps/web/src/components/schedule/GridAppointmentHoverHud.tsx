@@ -1,3 +1,4 @@
+import React from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { DoctorSpecialtyTheme } from "./appointmentCardHelpers";
 import {

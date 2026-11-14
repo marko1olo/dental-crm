@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { generateUuidV7, type Appointment, type Dashboard } from "@dental/shared";
+import { isTechnicalBreakAppointment } from "./scheduleCatalogData";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
@@ -28,17 +29,21 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
     inFlightRef.current = true;
 
     try {
-      const activePatientId = await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
-      if (!activePatientId && appointmentType !== "emergency") {
-        const msg = "Укажите пациента из списка или начните вводить фамилию/телефон для быстрой записи";
-        setSubmitError(msg);
-        showToast(msg, "warning");
-        if (patientSearch.showInlineNewPatient && patientSearch.newPatientFullNameInputRef?.current) {
-          patientSearch.newPatientFullNameInputRef.current.focus();
-        } else if (patientSearch.searchInputRef?.current) {
-          patientSearch.searchInputRef.current.focus();
+      const isTechBreak = isTechnicalBreakAppointment({ reason: params.reason, comment: params.comment });
+      const activePatientId = isTechBreak ? null : await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
+      const effectivePatientId = activePatientId;
+      if (!effectivePatientId && !isTechBreak) {
+        if (appointmentType !== "emergency") {
+          const msg = "Укажите пациента из списка или начните вводить фамилию/телефон для быстрой записи";
+          setSubmitError(msg);
+          showToast(msg, "warning");
+          if (patientSearch.showInlineNewPatient && patientSearch.newPatientFullNameInputRef?.current) {
+            patientSearch.newPatientFullNameInputRef.current.focus();
+          } else if (patientSearch.searchInputRef?.current) {
+            patientSearch.searchInputRef.current.focus();
+          }
+          return;
         }
-        return;
       }
 
       const startsAtIso = startsAtLocal ? fromLocal(startsAtLocal) : new Date(Math.ceil(Date.now() / 900000) * 900000).toISOString();
@@ -83,17 +88,46 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       if (result?.dashboard) {
         scheduleStore.setDashboard(result.dashboard);
         if (typeof setDashboard === "function") setDashboard(result.dashboard);
+      } else if (typeof loadDashboard === "function") {
+        await loadDashboard();
       }
-      if (typeof loadDashboard === "function") await loadDashboard();
 
-      const patientName = patientSearch.selectedPatient?.fullName || patientSearch.newPatientFullName.trim() || "Пациент";
+      const patientName = patientSearch.selectedPatient?.fullName || patientSearch.newPatientFullName.trim() || (isTechBreak ? "Технический перерыв" : "Пациент");
       if (isEditing) {
         showToast(`Запись для «${patientName}» обновлена!`, "success", 4000);
-        if (result?.appointment && typeof onAppointmentUpdated === "function") onAppointmentUpdated(result.appointment);
+        const updatedAppt =
+          result?.appointment ||
+          ({
+            id: editingAppointmentId!,
+            organizationId: dashboard?.clinicSettings?.profile?.organizationId || "",
+            patientId: payload.patientId,
+            doctorUserId: payload.doctorUserId,
+            chairId: payload.chairId,
+            startsAt: startsAtIso,
+            endsAt: endsAtIso,
+            status: payload.status,
+            reason: payload.reason,
+            comment: payload.comment,
+          } as Appointment);
+        if (typeof onAppointmentUpdated === "function") onAppointmentUpdated(updatedAppt);
       } else {
         showToast(`Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`, "success", 5000);
-        const createdAppt = result?.appointment || result?.dashboard?.appointments?.find((a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso);
-        if (createdAppt && typeof onAppointmentCreated === "function") onAppointmentCreated(createdAppt);
+        const createdAppt =
+          result?.appointment ||
+          result?.dashboard?.appointments?.find((a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso) ||
+          ({
+            id: `appt-${Date.now()}`,
+            organizationId: dashboard?.clinicSettings?.profile?.organizationId || "",
+            patientId: payload.patientId,
+            doctorUserId: payload.doctorUserId,
+            chairId: payload.chairId,
+            startsAt: startsAtIso,
+            endsAt: endsAtIso,
+            status: payload.status,
+            reason: payload.reason,
+            comment: payload.comment,
+          } as Appointment);
+        if (typeof onAppointmentCreated === "function") onAppointmentCreated(createdAppt);
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("dente-stage-appointment-booked", { detail: { appointmentId: result?.appointment?.id || createdAppt?.id || null, startsAt: startsAtIso } }));
         }

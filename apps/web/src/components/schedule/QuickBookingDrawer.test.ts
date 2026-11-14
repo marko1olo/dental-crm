@@ -313,7 +313,7 @@ describe("QuickBookingDrawer", () => {
 		assert.ok(html.includes("Новиков Сергей Васильевич"), "должно отображаться введенное имя");
 		assert.ok(html.includes("+7 999 777-88-99"), "должен отображаться введенный телефон");
 		assert.ok(html.includes("quick-booking-inline-print-contract-btn"), "должна быть кнопка печати договора в форме нового пациента");
-		assert.ok(html.includes("Печать договора (_______)"), "должен быть текст кнопки печати договора");
+		assert.ok(html.includes("Бланк договора") || html.includes("Печать договора"), "должен быть текст кнопки печати договора");
 	});
 
 	it("renders blank contract print button in header with underscores for empty contract", () => {

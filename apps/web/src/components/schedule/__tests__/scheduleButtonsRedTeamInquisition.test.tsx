@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { QuickBookingDrawerFooter } from "../QuickBookingDrawerFooter";
-import { AppointmentCardContextMenu } from "../AppointmentCardContextMenu";
+import { QuickBookingDrawerFooter } from "../QuickBookingDrawer";
+import { AppointmentCardContextMenu } from "../appointmentContextMenu/index";
 import { GridAppointmentQuickActions } from "../GridAppointmentQuickActions";
 
 describe("Schedule, Chair Grid & Quick Booking Button Primitives Inquisition (Red Team)", () => {

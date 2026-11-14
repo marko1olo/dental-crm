@@ -28,7 +28,6 @@ import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { ScheduleFilterStrip } from "../ScheduleFilterStrip";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
-import { AppointmentModal } from "../AppointmentModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -211,18 +210,11 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 
 			// Solo doctor mode
 			const soloHtml = renderToString(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
-					appointment: sampleAppt,
+					editingAppointment: sampleAppt,
 					dashboard: soloDoctorDashboard,
 					onClose: () => {},
-					onSave: async () => true,
-					patientName: () => "Иванов И.И.",
-					formatTime: (iso) => iso.slice(11, 16),
-					toDateTimeLocalValue: (iso) => iso.slice(0, 16),
-					fromDateTimeLocalValue: (val) => `${val}:00.000Z`,
-					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set<any>(),
 				}),
 			);
 
@@ -233,18 +225,11 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 
 			// Multi-staff mode
 			const multiHtml = renderToString(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
-					appointment: { ...sampleAppt, doctorUserId: "doc-1", chairId: "chair-1" },
+					editingAppointment: { ...sampleAppt, doctorUserId: "doc-1", chairId: "chair-1" },
 					dashboard: multiStaffDashboard,
 					onClose: () => {},
-					onSave: async () => true,
-					patientName: () => "Иванов И.И.",
-					formatTime: (iso) => iso.slice(11, 16),
-					toDateTimeLocalValue: (iso) => iso.slice(0, 16),
-					fromDateTimeLocalValue: (val) => `${val}:00.000Z`,
-					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set<any>(),
 				}),
 			);
 
@@ -438,9 +423,9 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 			} as Appointment;
 
 			const html = renderToString(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
-					appointment: sampleAppt,
+					editingAppointment: sampleAppt,
 					dashboard: {
 						...soloDoctorDashboard,
 						activeVisit: {
@@ -452,13 +437,6 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 						},
 					} as any,
 					onClose: () => {},
-					onSave: async () => true,
-					patientName: () => "Иванов И.И.",
-					formatTime: (iso) => iso.slice(11, 16),
-					toDateTimeLocalValue: (iso) => iso.slice(0, 16),
-					fromDateTimeLocalValue: (val) => `${val}:00.000Z`,
-					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set<any>(),
 				}),
 			);
 
@@ -532,11 +510,11 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 				"QuickBookingDrawer.tsx must contain zero cartoon emojis",
 			);
 
-			const modalPath = path.join(webRoot, "src/components/schedule/AppointmentModal.tsx");
+			const modalPath = path.join(webRoot, "src/components/schedule/scheduleCatalogData.ts");
 			const modalContent = fs.readFileSync(modalPath, "utf8");
 			assert.ok(
 				!CARTOON_EMOJI_REGEX.test(modalContent),
-				"AppointmentModal.tsx must contain zero cartoon emojis",
+				"scheduleCatalogData.ts must contain zero cartoon emojis",
 			);
 		});
 	});

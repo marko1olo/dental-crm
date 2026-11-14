@@ -65,7 +65,7 @@ export function PatientSearchModal({
 		const generatedId = generateUuidV7();
 		const newPatient: Patient = {
 			id: generatedId,
-			organizationId: "00000000-0000-0000-0000-000000000000",
+			organizationId: patients[0]?.organizationId ?? "",
 			status: "active",
 			fullName: trimmedName,
 			phone: trimmedPhone,
@@ -89,6 +89,10 @@ export function PatientSearchModal({
 				fullName: trimmedName,
 				phone: trimmedPhone,
 			}),
+		}).then((res) => {
+			if (!res.ok) {
+				console.warn("[PatientSearchModal] Background patient creation returned HTTP", res.status);
+			}
 		}).catch((err) => {
 			console.warn("[PatientSearchModal] Background patient creation failed, using local UUIDv7:", err);
 		});

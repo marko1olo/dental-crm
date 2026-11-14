@@ -64,7 +64,7 @@ export const RosterDoctorDayCell: React.FC<RosterDoctorDayCellProps> = ({
 							doctorId: staff.id,
 						});
 					}}
-					title="Кликните для быстрой смены или выбора пресета"
+					title="Выбрать смену или пресет"
 				>
 					<div style={{ fontWeight: 700, fontSize: "0.75rem" }}>
 						{s.startTime}–{s.endTime}

@@ -1,3 +1,4 @@
+import React from "react";
 import { AlertTriangle, User } from "lucide-react";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
@@ -6,7 +7,7 @@ import { showToast } from "../../GlobalToast";
 interface GridAppointmentHudHeaderProps {
 	pName: string;
 	pBalance: number | null;
-	patObj?: any;
+	patObj?: { id?: string } | null;
 	pAllergyAlert: string | null;
 }
 
@@ -45,7 +46,7 @@ export function GridAppointmentHudHeader({
 							pBalance > 0
 								? "Депозит пациента"
 								: pBalance < 0
-									? "Долг за лечение. Клик для оплаты"
+									? "Долг за лечение. Оформить оплату"
 									: "Баланс нулевой"
 						}
 					>

@@ -21,7 +21,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px 4px;
+  padding: 4px 12px;
   background: var(--paper, #ffffff);
   border-bottom: 1px solid var(--line-subtle, #f1f5f9);
 }

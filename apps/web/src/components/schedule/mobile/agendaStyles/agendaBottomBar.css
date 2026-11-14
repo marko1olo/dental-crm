@@ -5,15 +5,25 @@
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 50;
+  z-index: 40;
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  background: color-mix(in srgb, var(--paper, #ffffff) 88%, transparent);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--line, #e2e8f0);
+  padding: 8px 12px;
+  background: var(--paper-strong);
+  border-top: 1px solid var(--line);
   box-sizing: border-box;
+}
+
+/* Гарантированное перекрытие щелей между плавающей кнопкой и нижним таббаром */
+.schedule-mobile-bottom-bar::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background: var(--paper-strong);
+  pointer-events: none;
 }
 
 .schedule-mobile-primary-action-btn {

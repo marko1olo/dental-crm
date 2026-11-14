@@ -7,9 +7,9 @@ export * from "./AppointmentCardTypes";
 export * from "./AppointmentCardMemo";
 export * from "./AppointmentPaymentBadges";
 export * from "./AppointmentStatusPopup";
-export * from "./AppointmentCardPrimaryActions";
-export * from "./AppointmentCardContextMenu";
-export * from "./AppointmentCardEditor";
+export * from "./appointmentCardActions/index";
+export * from "./appointmentContextMenu/index";
+export * from "./appointmentEditor/index";
 export * from "./useAppointmentCardState";
 export * from "./appointmentCardModules";
 export {

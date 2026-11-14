@@ -26,35 +26,59 @@ export async function resolveOrAutoCreateSubmitPatient(
 
   const cleanPhone = rawPhone ? normalizePhoneToNational(rawPhone) : null;
   let inlinePat: Patient | null = null;
-  try {
-    const resp = await fetch("/api/patients", {
-      method: "POST",
-      headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
+
+  if (typeof (patientSearch as { onQuickCreatePatient?: unknown }).onQuickCreatePatient === "function") {
+    try {
+      const customCreated = await (patientSearch as { onQuickCreatePatient: (d: { fullName: string; phone?: string | null }) => Promise<{ id: string; fullName: string; phone?: string | null } | null | void> }).onQuickCreatePatient({
         fullName: fallbackName,
-        phone: rawPhone || null,
-        birthDate: patientSearch.newPatientBirthDate.trim() || null,
-        allowDuplicate: true,
-      }),
-    });
-    if (resp.ok) {
-      const body = await resp.json();
-      inlinePat = body.patient || body;
-    } else if (resp.status === 409) {
-      const errBody = await resp.json().catch(() => null);
-      const existingId = errBody?.existingPatient?.id || errBody?.existingPatientId;
-      if (existingId) {
-        inlinePat = (errBody?.existingPatient || {
-          id: existingId,
-          fullName: fallbackName,
-          phone: cleanPhone || rawPhone || null,
+        phone: cleanPhone || rawPhone || null,
+      });
+      if (customCreated && customCreated.id) {
+        inlinePat = {
+          id: customCreated.id,
+          fullName: customCreated.fullName || fallbackName,
+          phone: customCreated.phone || cleanPhone || rawPhone || null,
           status: "active",
-        }) as Patient;
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Patient;
       }
+    } catch (e) {
+      logger.error("[QuickBookingInlinePatient] onQuickCreatePatient error:", e);
     }
-  } catch (err) {
-    logger.error("[QuickBookingInlinePatient] Ошибка создания пациента:", err);
-    showToast("Не удалось создать пациента: проверьте сетевое соединение", "error");
+  }
+
+  if (!inlinePat) {
+    try {
+      const resp = await fetch("/api/patients", {
+        method: "POST",
+        headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          fullName: fallbackName,
+          phone: rawPhone || null,
+          birthDate: patientSearch.newPatientBirthDate.trim() || null,
+          allowDuplicate: true,
+        }),
+      });
+      if (resp.ok) {
+        const body = await resp.json();
+        inlinePat = body.patient || body;
+      } else if (resp.status === 409) {
+        const errBody = await resp.json().catch(() => null);
+        const existingId = errBody?.existingPatient?.id || errBody?.existingPatientId;
+        if (existingId) {
+          inlinePat = (errBody?.existingPatient || {
+            id: existingId,
+            fullName: fallbackName,
+            phone: cleanPhone || rawPhone || null,
+            status: "active",
+          }) as Patient;
+        }
+      }
+    } catch (err) {
+      logger.error("[QuickBookingInlinePatient] Ошибка создания пациента:", err);
+      showToast("Не удалось создать пациента: проверьте сетевое соединение", "error");
+    }
   }
 
   if (!inlinePat?.id) {

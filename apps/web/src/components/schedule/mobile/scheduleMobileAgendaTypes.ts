@@ -10,8 +10,8 @@ export interface ScheduleMobileAgendaViewProps {
   onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
   onAppointmentClick?: ((appointment: Appointment) => void) | undefined;
   onQuickStatusChange?: ((appointmentId: string, status: Appointment["status"]) => void) | undefined;
-  onAppointmentMove?: ((appointmentId: string, updates: { startsAt?: string; endsAt?: string; chairId?: string; doctorUserId?: string; allowOverbooking?: boolean }) => void | Promise<any>) | undefined;
-  patientName: (patients: any[], id: string | null) => string;
+  onAppointmentMove?: ((appointmentId: string, updates: { startsAt?: string; endsAt?: string; chairId?: string; doctorUserId?: string; allowOverbooking?: boolean; status?: Appointment["status"] }) => void | Promise<unknown>) | undefined;
+  patientName: (patients: Dashboard["patients"], id: string | null) => string;
   formatTime: (iso: string) => string;
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
   appointmentLabels: Record<Appointment["status"], string>;
@@ -19,7 +19,7 @@ export interface ScheduleMobileAgendaViewProps {
   onSelectChair?: ((id: string | null) => void) | undefined;
   selectedDoctorId?: string | null | undefined;
   onSelectDoctor?: ((id: string | null) => void) | undefined;
-  chairDoctorAssignments?: Record<string, any> | undefined;
+  chairDoctorAssignments?: Record<string, unknown> | undefined;
   onQuickBooking?: (() => void) | undefined;
   onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
   timezone?: string | undefined;
@@ -48,9 +48,9 @@ export const RUSSIAN_DAY_NAMES = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт"
 
 export const extractToothBadge = (appt: Appointment): string | null => {
   if (appt.toothNumber) return `Зуб ${appt.toothNumber}`;
-  const labTooth = (appt as any).labOrder?.toothFdi;
+  const labTooth = (appt as unknown as { labOrder?: { toothFdi?: string } }).labOrder?.toothFdi;
   if (labTooth) return `Зуб ${labTooth}`;
-  const text = `${appt.reason || ""} ${(appt as any).serviceTitle || ""}`;
+  const text = `${appt.reason || ""} ${(appt as unknown as { serviceTitle?: string }).serviceTitle || ""}`;
   const fdiMatch = text.match(/(?:зуб[аеы]?|fdi|#)\s*([1-4][1-8]|[5-8][1-5])/i);
   if (fdiMatch && fdiMatch[1]) return `Зуб ${fdiMatch[1]}`;
   const dottedMatch = text.match(/\b([1-4]\.[1-8]|[5-8]\.[1-5])\b/);
@@ -58,7 +58,7 @@ export const extractToothBadge = (appt: Appointment): string | null => {
   return null;
 };
 
-export const resolveMobileAllergyBadge = (appt: Appointment, pat: any): string | null => {
+export const resolveMobileAllergyBadge = (appt: Appointment, pat: Dashboard["patients"][number] | null | undefined): string | null => {
   const rawAllergies = pat?.allergies || pat?.anamnesis?.allergies;
   if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim() && !isNegativeAllergyStatement(rawAllergies)) {
     return rawAllergies.replace(/^аллерги[яи][: \t-]*/i, "").replace(/^на\s+/i, "").trim();

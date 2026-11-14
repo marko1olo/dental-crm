@@ -222,7 +222,7 @@ describe("Schedule Grid Slots & Quick Booking Drawer Suite (Mandates 8d, 8e, 8k)
 		const overrideNote = findNodeByTestId(bodyNode, "duty-doctor-override-note");
 		assert.ok(overrideNote, "Non-blocking override notice must appear when selecting different doctor");
 		assert.ok(
-			overrideNote.textContent.includes("Мандат 8e") || overrideNote.textContent.includes("не блокируется"),
+			overrideNote.textContent.includes("дежурит") || overrideNote.textContent.includes("выбранному врачу") || overrideNote.textContent.includes("не блокируется"),
 			"Override note must emphasize non-blocking doctor autonomy",
 		);
 

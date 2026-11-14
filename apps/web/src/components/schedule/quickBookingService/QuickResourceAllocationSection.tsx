@@ -74,7 +74,7 @@ export function QuickResourceAllocationSection({
 
   return (
     <div className="space-y-3 pt-1">
-      <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+      <label className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
         <CalendarCheck size={14} className="text-[var(--teal)]" />
         <span>Кабинет и персонал *</span>
       </label>
@@ -86,6 +86,7 @@ export function QuickResourceAllocationSection({
             onChange={handleChairChange}
             className="w-full px-3 py-2 h-11 min-h-[44px] leading-normal rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
             data-testid="select-booking-chair"
+            data-legacy-testid="select-appointment-chair"
           >
             {chairs.length === 0 ? (
               <option value={DEFAULT_SOLO_CHAIR.id}>{DEFAULT_SOLO_CHAIR.name} (Основное)</option>

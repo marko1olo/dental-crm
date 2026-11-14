@@ -27,8 +27,8 @@ export function ScheduleGridChairsHeaderRow({
     <div
       className="grid min-w-full border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-30"
       style={{
-        minWidth: duty.effectiveChairs.length > 1 ? `${Math.max(260, 72 + duty.effectiveChairs.length * 220)}px` : undefined,
-        gridTemplateColumns: `clamp(68px, 5.5vw, 76px) repeat(${duty.effectiveChairs.length}, minmax(180px, 1fr))`,
+        minWidth: duty.effectiveChairs.length > 1 ? `${Math.max(280, 108 + duty.effectiveChairs.length * 180)}px` : undefined,
+        gridTemplateColumns: `clamp(100px, 7vw, 112px) repeat(${duty.effectiveChairs.length}, minmax(180px, 1fr))`,
       }}
     >
       <ScheduleGridTimeCorner gridStep={interactions.gridStep} handleSetGridStep={interactions.handleSetGridStep} />

@@ -17,7 +17,6 @@ import { describe, it, beforeEach } from "node:test";
 import type { Dashboard } from "@dental/shared";
 import { resolveChairDutyDoctor, type ChairDoctorShiftAssignment } from "../ScheduleGrid";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
-import { AppointmentModal } from "../AppointmentModal";
 import {
 	type MockDomNode,
 	setupMockDom,
@@ -218,26 +217,13 @@ describe("Wave 43: QuickBooking Autonomy & Duty Doctor Resolution (Mandate 8e)",
 
 			await act(async () => {
 				root.render(
-					<AppointmentModal
+					<QuickBookingDrawer
 						isOpen={true}
 						onClose={() => {}}
-						appointment={appointmentWithOpenVisit}
-						onSave={async () => true}
+						editingAppointment={appointmentWithOpenVisit}
 						dashboard={mockDashboardWithActiveVisit}
-						patientName={(_p, id) => id || ""}
-						formatTime={(iso) => (iso ? iso.slice(11, 16) : "")}
 						toDateTimeLocalValue={(iso) => (iso ? iso.slice(0, 16) : "")}
 						fromDateTimeLocalValue={(val) => val}
-						appointmentLabels={{
-							planned: "Запланирован",
-							confirmed: "Подтвержден",
-							arrived: "Прибыл",
-							in_treatment: "В кресле",
-							completed: "Завершен",
-							cancelled: "Отменен",
-							no_show: "Не явился",
-						}}
-						activeVisitLockedAppointmentStatuses={new Set()}
 					/>,
 				);
 			});

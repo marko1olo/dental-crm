@@ -1,15 +1,15 @@
 import React from "react";
 import { Armchair, Plus } from "lucide-react";
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 
 export interface ScheduleMobileGridModeProps {
-	chairs: any[];
+	chairs: Array<{ id: string; name: string; room?: string; active?: boolean }>;
 	appointments: Appointment[];
 	effectiveDateKey: string;
 	selectedDoctorId: string | null;
-	dashboard: any;
-	patientName: (patients: any[], id: string | null) => string;
+	dashboard: Dashboard | null | undefined;
+	patientName: (patients: unknown[], id: string | null) => string;
 	appointmentLabels: Record<string, string>;
 	onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
 	onQuickBooking?: (() => void) | undefined;
@@ -38,7 +38,7 @@ export const ScheduleMobileGridMode: React.FC<ScheduleMobileGridModeProps> = ({
 					Кабинеты ещё не настроены
 				</div>
 			) : (
-				chairs.map((chair: any) => {
+				chairs.map((chair) => {
 					const chairAppts = appointments.filter(
 						(a) =>
 							a.chairId === chair.id &&

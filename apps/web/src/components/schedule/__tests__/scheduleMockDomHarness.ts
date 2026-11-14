@@ -378,8 +378,17 @@ export function findNodeByTestId(
 	testId: string,
 ): MockDomNode | null {
 	if (!node) return null;
-	if (node.getAttribute && typeof node.getAttribute === "function" && node.getAttribute("data-testid") === testId) {
-		return node;
+	if (node.getAttribute && typeof node.getAttribute === "function") {
+		const attr = node.getAttribute("data-testid");
+		const legacy = node.getAttribute("data-legacy-testid");
+		if (
+			attr === testId ||
+			(attr && attr.split(/\s+/).includes(testId)) ||
+			legacy === testId ||
+			(legacy && legacy.split(/\s+/).includes(testId))
+		) {
+			return node;
+		}
 	}
 	if (node.children && Array.isArray(node.children)) {
 		for (const child of node.children) {

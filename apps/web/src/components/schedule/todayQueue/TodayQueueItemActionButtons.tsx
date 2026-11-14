@@ -37,7 +37,7 @@ export function TodayQueueItemActionButtons({
           type="button"
           onClick={() => onOpenPayment(item.id)}
           className="inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-bold text-amber-800 hover:bg-amber-500/20 dark:text-amber-200 cursor-pointer select-none transition-colors"
-          title="Открыть кассу для оплаты"
+          title="Оформить оплату"
         >
           <CreditCard size={13} />
           Касса

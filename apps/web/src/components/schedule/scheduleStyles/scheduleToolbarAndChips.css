@@ -23,7 +23,7 @@
 	user-select: none;
 }
 
-/* 1-Click Primary Quick Booking Action */
+/* Secondary Quick Booking Action in Schedule Toolbar (Preserves single Primary CTA in AppTopBar) */
 .schedule-toolbar-primary-quick-booking-btn {
 	height: 32px;
 	min-height: 32px;
@@ -34,22 +34,23 @@
 	justify-content: center;
 	gap: 6px;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: 500;
 	border-radius: 8px;
-	background: var(--teal, var(--brand-primary, #0d9488));
-	color: var(--on-teal, #ffffff);
-	border: none;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	cursor: pointer;
 	flex-shrink: 0;
-	transition: opacity 0.15s ease, transform 0.1s ease;
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
 .schedule-toolbar-primary-quick-booking-btn:hover {
-	opacity: 0.92;
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
 }
 
 .schedule-toolbar-primary-quick-booking-btn:active {
-	transform: scale(0.96);
+	transform: scale(0.98);
 }
 
 /* Horizontal Filter Chips Strip */

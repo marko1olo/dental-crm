@@ -122,13 +122,16 @@ export async function sendDashboardResponseAfterCreate(
 
 /**
  * Формирует ответ с актуальной сводкой дашборда после изменения приёма.
+ * Возвращает единый симметричный контракт:
+ * { success: true, appointment: updatedRecord, dashboard: updatedDashboard }
  */
 export async function buildDashboardResponseAfterUpdate(
 	request: FastifyRequest,
 	orgId: string,
 	appointmentId: string,
+	updatedRecord?: unknown,
 ) {
-	let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>>;
+	let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>> | null = null;
 	try {
 		dashboard = await getDashboardFromDb(orgId);
 	} catch (dashErr) {
@@ -136,16 +139,10 @@ export async function buildDashboardResponseAfterUpdate(
 			{ err: dashErr, appointmentId, orgId },
 			"[Schedule] Приём изменён, но сводку прочитать не удалось",
 		);
-		return {
-			success: true,
-			appointmentId,
-			message:
-				"Запись изменена. Сводка не обновлена — перезагрузите страницу.",
-		};
 	}
 
-	const parsed = dashboardSchema.safeParse(dashboard);
-	if (!parsed.success) {
+	const parsed = dashboard ? dashboardSchema.safeParse(dashboard) : null;
+	if (parsed && !parsed.success) {
 		request.log.warn(
 			{
 				appointmentId,
@@ -154,14 +151,15 @@ export async function buildDashboardResponseAfterUpdate(
 			},
 			"[Schedule] Приём изменён, сводка прочиталась, но не прошла контракт",
 		);
-		return {
-			success: true,
-			appointmentId,
-			message:
-				"Запись изменена. Сводка не обновлена — перезагрузите страницу.",
-		};
 	}
-	return parsed.data;
+
+	const updatedDashboard = parsed?.success ? parsed.data : (dashboard ?? undefined);
+
+	return {
+		success: true,
+		appointment: updatedRecord ?? { id: appointmentId },
+		dashboard: updatedDashboard,
+	};
 }
 
 /**

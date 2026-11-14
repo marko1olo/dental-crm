@@ -1,7 +1,7 @@
 import type { Appointment } from "@dental/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
-import { isTechnicalBreakAppointment } from "./AppointmentModal";
+import { isTechnicalBreakAppointment } from "./scheduleCatalogData";
 import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 import {
 	getAppointmentDurationMinutes,

@@ -67,15 +67,15 @@ export function QuickBookingDrawerHeader({
 }: QuickBookingDrawerHeaderProps) {
   return (
     <div
-      className={`p-5 border-b flex items-center justify-between transition-colors ${
+      className={`p-4 sm:p-5 border-b flex items-center justify-between gap-3 transition-colors ${
         isEmergencyMode
           ? "bg-rose-500/15 dark:bg-rose-950/50 border-rose-500/40 text-rose-900 dark:text-rose-100"
           : "bg-[var(--paper-soft)] border-[var(--line)]"
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <div
-          className={`p-2.5 rounded-xl border transition-all ${
+          className={`p-2.5 rounded-xl border shrink-0 transition-all ${
             isEmergencyMode
               ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/50 ring-2 ring-rose-500/40 animate-pulse"
               : "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--brand-primary))]/20"
@@ -87,9 +87,9 @@ export function QuickBookingDrawerHeader({
             <Sparkles size={20} />
           )}
         </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-bold tracking-tight text-[var(--ink)] m-0 leading-tight">
               {isEmergencyMode
                 ? "Срочная запись: острая боль"
                 : isEditing
@@ -98,23 +98,27 @@ export function QuickBookingDrawerHeader({
             </h3>
             {isEmergencyMode && (
               <span
-                className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse shadow-xs"
+                className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse shadow-xs shrink-0"
                 data-testid="cito-header-badge"
               >
                 Острая боль
               </span>
             )}
           </div>
-          <p className="text-xs text-[var(--muted)] m-0 mt-0.5" data-testid="quick-booking-time-range">
-            {formatSlotRange(startsAtLocal, durationMinutes)}
-            {chairName ? ` · ${chairName}` : ""}
+          <p className="text-xs text-[var(--muted)] m-0 mt-0.5 leading-normal" data-testid="quick-booking-time-range">
+            <span className="font-medium text-[var(--ink)]">{formatSlotRange(startsAtLocal, durationMinutes)}</span>
+            {chairName ? (
+              <span className="block sm:inline sm:before:content-['·_'] text-[var(--muted)]">
+                {chairName.replace(/^Кабинет\s*/i, "Кресло ")}
+              </span>
+            ) : null}
           </p>
         </div>
       </div>
       <button
         type="button"
         onClick={onClose}
-        className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
+        className="min-h-[44px] min-w-[44px] shrink-0 inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
         aria-label="Закрыть"
         data-testid="quick-booking-close-btn"
       >
@@ -253,21 +257,22 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
 
   const [isLabSectionOpen, setIsLabSectionOpen] = React.useState<boolean>(() => {
     const rawAppt = initialSlot?.appointment || initialSlot?.editingAppointment;
+    const rawLabOrderId = initialSlot?.labOrderId || (rawAppt && "labOrderId" in rawAppt ? (rawAppt as { labOrderId?: string }).labOrderId : undefined);
+    const labOrders = dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; status?: string }> }).labOrders : undefined;
     return Boolean(
-      initialSlot?.labOrderId ||
-      (rawAppt as any)?.labOrderId ||
-      ((dashboard as any)?.labOrders || []).some(
-        (lo: any) => selectedPatient?.id && lo.patientId === selectedPatient.id && lo.status !== "delivered",
+      rawLabOrderId ||
+      labOrders?.some(
+        (lo) => selectedPatient?.id && lo.patientId === selectedPatient.id && lo.status !== "delivered",
       )
     );
   });
 
   const effectiveOrgId = React.useMemo(() => {
+    const clinicProfile = dashboard?.clinicSettings?.profile;
+    const rootOrgId = dashboard && "organizationId" in dashboard ? (dashboard as { organizationId?: string }).organizationId : undefined;
     return (
-      (dashboard as any)?.clinicSettings?.profile?.organizationId ||
-      (dashboard as any)?.organizationId ||
-      (dashboard as any)?.clinicSettings?.id ||
-      (dashboard as any)?.clinicSettings?.profile?.id ||
+      clinicProfile?.organizationId ||
+      rootOrgId ||
       initialSlot?.appointment?.organizationId ||
       ""
     );
@@ -291,13 +296,13 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
       reason: reason || "",
       comment: comment || "",
       organizationId: effectiveOrgId,
-    } as Appointment;
+    };
   }, [initialSlot, selectedPatient?.id, doctorUserId, chairId, startsAtLocal, durationMinutes, status, reason, comment, effectiveOrgId]);
 
   const activeLabOrders = React.useMemo(() => {
     if (!selectedPatient?.id) return [];
-    const allLab = (dashboard as any)?.labOrders || [];
-    return allLab.filter((lo: any) => lo.patientId === selectedPatient.id);
+    const allLab = (dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; [key: string]: unknown }> }).labOrders : []) || [];
+    return allLab.filter((lo) => lo.patientId === selectedPatient.id);
   }, [dashboard, selectedPatient?.id]);
 
   return (

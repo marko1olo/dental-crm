@@ -106,7 +106,6 @@ import {
 } from "../ScheduleGrid";
 import { QuickBookingDrawer, resolveChairDutyDoctor } from "../QuickBookingDrawer";
 import { buildChairDoctorAssignmentsFromShifts } from "../../../ScheduleView";
-import { AppointmentModal } from "../AppointmentModal";
 import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage";
 
 interface MockDomNode {
@@ -445,7 +444,14 @@ function findNodeByTestId(
 	testId: string,
 ): MockDomNode | null {
 	if (!node) return null;
-	if (node.getAttribute?.("data-testid") === testId) return node;
+	const attr = node.getAttribute?.("data-testid");
+	const legacy = node.getAttribute?.("data-legacy-testid");
+	if (
+		attr === testId ||
+		(attr && attr.split(/\s+/).includes(testId)) ||
+		legacy === testId ||
+		(legacy && legacy.split(/\s+/).includes(testId))
+	) return node;
 	if (node.children) {
 		for (const child of node.children) {
 			const res = findNodeByTestId(child, testId);
@@ -1065,7 +1071,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 			overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
 			expect(overrideNote).not.toBeNull();
 			expect(overrideNote?.textContent).toContain("На кресле «Кабинет 1 (Терапия)» дежурит Иванов И.И.");
-			expect(overrideNote?.textContent).toContain("Запись создается с подтверждением");
+			expect(overrideNote?.textContent).toContain("Запись создается к выбранному врачу");
 		} finally {
 			try {
 				document.body.removeChild(container as unknown as HTMLElement);
@@ -1603,28 +1609,15 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		await act(async () => {
 			root.render(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
-					appointment: unassignedAppt,
+					editingAppointment: unassignedAppt as any,
 					dashboard: multiChairDashboard,
 					chairDoctorAssignments: assignments,
 					onClose: vi.fn(),
-					onSave: vi.fn(async () => true),
-					repeatAppointment: vi.fn(),
-					patientName: () => "Пациент Тест",
-					formatTime: () => "15:00",
+					onAppointmentUpdated: vi.fn(),
 					toDateTimeLocalValue: () => "2026-09-07T15:00",
 					fromDateTimeLocalValue: () => "2026-09-07T15:00:00.000Z",
-					appointmentLabels: {
-						planned: "Запланирован",
-						confirmed: "Подтвержден",
-						arrived: "Пришел",
-						in_treatment: "В кресле",
-						completed: "Завершен",
-						cancelled: "Отменен",
-						no_show: "Не явился",
-					},
-					activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
 				}),
 			);
 		});
@@ -1754,20 +1747,15 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		await act(async () => {
 			root.render(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
-					appointment: appt,
+					editingAppointment: appt as any,
 					dashboard: multiChairDashboard,
 					chairDoctorAssignments: assignments,
 					onClose: vi.fn(),
-					onSave: vi.fn(async () => true),
-					repeatAppointment: vi.fn(),
-					patientName: () => "Пациент Тест",
-					formatTime: () => "10:00",
+					onAppointmentUpdated: vi.fn(),
 					toDateTimeLocalValue: () => "2026-09-07T10:00",
 					fromDateTimeLocalValue: () => "2026-09-07T10:00:00.000Z",
-					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
 				}),
 			);
 		});
@@ -1775,7 +1763,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		// Verify duty doctor badge exists
 		const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
 		expect(dutyBadge).not.toBeNull();
-		expect(dutyBadge?.textContent).toContain("Дежурный: Иванов И.И.");
+		expect(dutyBadge?.textContent).toContain("Иванов И.И.");
 
 		// Switch doctor to doc-2 (override duty doctor)
 		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-appointment-doctor");

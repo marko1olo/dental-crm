@@ -28,7 +28,6 @@ import {
 	type ChairDoctorShiftAssignment,
 } from "../ScheduleGrid";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
-import { AppointmentModal } from "../AppointmentModal";
 
 // Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
@@ -697,7 +696,7 @@ describe("Wave 57 (Feature 246) — Quick Add Doctor & Chair Binding Autonomy", 
 
 		await act(async () => {
 			reactRoot.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
 					onClose={() => {}}
 					dashboard={{
@@ -711,28 +710,15 @@ describe("Wave 57 (Feature 246) — Quick Add Doctor & Chair Binding Autonomy", 
 						inventory: [] as any,
 						invoices: [] as any,
 					} as any}
-					appointment={mockAppointment}
-					onSave={async () => true}
-					patientName={(_, id) => id || "Пациент"}
-					formatTime={(iso) => iso.slice(11, 16)}
+					editingAppointment={mockAppointment}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => new Date(val).toISOString()}
-					appointmentLabels={{
-						planned: "Запланирован",
-						confirmed: "Подтвержден",
-						arrived: "Прибыл",
-						in_treatment: "В кресле",
-						completed: "Завершен",
-						cancelled: "Отменен",
-						no_show: "Не явился",
-					}}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});
 
 		// Modal should render without throwing even when chairs is empty
-		const apptModal = findNodeByTestId(mockDoc.body, "appointment-modal");
-		assert.ok(apptModal, "AppointmentModal must mount safely with 0 chairs under solo doctor mode (Mandate 8n)");
+		const apptModal = findNodeByTestId(mockDoc.body, "quick-booking-drawer");
+		assert.ok(apptModal, "QuickBookingDrawer must mount safely with 0 chairs under solo doctor mode (Mandate 8n)");
 	});
 });

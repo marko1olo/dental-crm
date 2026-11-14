@@ -1,7 +1,10 @@
 import type React from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
+import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
+import type { ScheduleShiftWarning } from "../ScheduleShiftAnalytics";
+import type { DoctorShift } from "../roster/DoctorShiftRosterModal";
 
 export interface ScheduleViewToolbarProps {
   clinicToday: string;
@@ -15,10 +18,10 @@ export interface ScheduleViewToolbarProps {
   setScheduleDoctorFilterId: (id: string | null) => void;
   scheduleChairFilterId: string | null;
   setScheduleChairFilterId: (id: string | null) => void;
-  scheduleStatusFilter: string;
-  shiftQueueCounts: { all: number; arrived: number; inTreatment: number; awaitingPayment: number };
+  scheduleStatusFilter: Appointment["status"] | "all" | string;
+  shiftQueueCounts: Record<string, number>;
   setScheduleStatusFilter: (status: string | null) => void;
-  computedChairDoctorAssignments: any;
+  computedChairDoctorAssignments: Record<string, ChairDoctorShiftAssignment>;
   scheduleViewMode: "timeline" | "grid" | "chairs";
   setScheduleViewMode: (mode: "timeline" | "grid" | "chairs") => void;
   scheduleGridStep: 15 | 30 | 60;
@@ -50,11 +53,11 @@ export interface ScheduleViewToolbarProps {
   setQuickBookingOpen: (open: boolean) => void;
   todayScheduleDate: () => string;
   clipboardReloadToken: number;
-  loadDashboard?: () => void | Promise<void>;
-  shiftWarnings: any[];
-  openScheduleWarning: (w: any) => void;
-  onOpenDoctorShiftDrawer?: () => void;
-  onOpenChairDateRangeModal?: () => void;
+  loadDashboard?: ((options?: { adminSecret?: string }) => void | Promise<void>) | undefined;
+  shiftWarnings?: readonly ScheduleShiftWarning[] | ScheduleShiftWarning[] | Dashboard["shiftIntelligence"]["scheduleWarnings"] | undefined;
+  openScheduleWarning?: ((w: ScheduleShiftWarning) => void) | undefined;
+  onOpenDoctorShiftDrawer?: ((shiftToEdit?: Partial<DoctorShift> | null) => void) | undefined;
+  onOpenChairDateRangeModal?: (() => void) | undefined;
   pendingOnlineBookingsCount?: number;
   onOpenPendingOnlineBookings?: () => void;
 }

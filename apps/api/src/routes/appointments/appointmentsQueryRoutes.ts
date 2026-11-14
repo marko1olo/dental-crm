@@ -4,7 +4,50 @@ import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getAppointmentByIdInDb } from "../../db/appointmentsQuery.js";
 import { db } from "../../db/client.js";
 import { appointments, chairs, patients, users } from "../../db/schema.js";
+import {
+	DEFAULT_CLINIC_TIME_ZONE,
+	clinicTimeZone,
+} from "../../services/reports/managerReports/timezone.js";
+import { instantOfLocalTime } from "../../services/reports/managerReports/periodBounds.js";
 import { APPOINTMENT_ID_UUID_PATTERN } from "./appointmentsSchemas.js";
+
+/**
+ * Вычисляет границы суток [dayStart, dayEnd] в часовом поясе клиники.
+ * Защищает от срезания утренних приёмов в не-UTC регионах (Самара, Красноярск, Владивосток).
+ */
+export function resolveScheduleDateBounds(
+	cleanDate: string,
+	timeZone: string | null | undefined,
+): { dayStart: Date; dayEnd: Date } {
+	const parts = cleanDate.split("-").map(Number);
+	const year = parts[0];
+	const month = parts[1];
+	const day = parts[2];
+	const zone = timeZone || DEFAULT_CLINIC_TIME_ZONE;
+
+	if (year && month && day) {
+		const startMs = instantOfLocalTime(zone, year, month, day);
+		const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
+		const nextStartMs = instantOfLocalTime(
+			zone,
+			nextDate.getUTCFullYear(),
+			nextDate.getUTCMonth() + 1,
+			nextDate.getUTCDate(),
+		);
+
+		if (startMs !== null && nextStartMs !== null) {
+			return {
+				dayStart: new Date(startMs),
+				dayEnd: new Date(nextStartMs - 1),
+			};
+		}
+	}
+
+	return {
+		dayStart: new Date(`${cleanDate}T00:00:00.000Z`),
+		dayEnd: new Date(`${cleanDate}T23:59:59.999Z`),
+	};
+}
 
 // Ре-экспорт вспомогательных резолверов и подготовителей тела запроса
 export {
@@ -74,8 +117,8 @@ export async function handleGetAppointments(
 			});
 		}
 		const cleanDate = date.trim();
-		const dayStart = new Date(`${cleanDate}T00:00:00.000Z`);
-		const dayEnd = new Date(`${cleanDate}T23:59:59.999Z`);
+		const clinicZone = (await clinicTimeZone(orgId)) ?? DEFAULT_CLINIC_TIME_ZONE;
+		const { dayStart, dayEnd } = resolveScheduleDateBounds(cleanDate, clinicZone);
 		conditions.push(
 			sql`${appointments.startsAt} >= ${dayStart} AND ${appointments.startsAt} <= ${dayEnd}`,
 		);

@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Patient } from "@dental/shared";
 import { Check, CreditCard, Stethoscope } from "lucide-react";
 import React from "react";
 import { useAppStore } from "../../../store/appStore";
@@ -9,8 +9,8 @@ import { isAppointmentInChair } from "../appointmentCardHelpers";
 export interface GridAppointmentInChairActionsProps {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
-	onQuickStatusChange: (id: string, status: any) => void;
+	patObj?: Patient | null | undefined;
+	onQuickStatusChange: (id: string, status: Appointment["status"]) => void;
 }
 
 export function GridAppointmentInChairActions({

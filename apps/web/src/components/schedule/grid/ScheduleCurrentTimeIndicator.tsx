@@ -68,7 +68,7 @@ export const ScheduleCurrentTimeIndicator: React.FC<ScheduleCurrentTimeIndicator
   dateKey,
   timezone,
   baseSlotHeightPx = 52,
-  leftOffset = "clamp(68px, 5.5vw, 76px)",
+  leftOffset = "clamp(88px, 6.5vw, 96px)",
 }) => {
   const [timeInfo, setTimeInfo] = useState(() => getCurrentTimeInfo(dateKey, timezone));
 

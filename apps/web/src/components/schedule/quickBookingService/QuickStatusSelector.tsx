@@ -14,7 +14,7 @@ export function QuickStatusSelector({
 }: Pick<QuickPresetChipsBarProps, "status" | "setStatus">) {
   return (
     <div className="space-y-1.5 pt-1" data-testid="quick-booking-status-selector">
-      <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+      <label className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
         <CalendarCheck size={14} className="text-[var(--teal)]" />
         <span>Статус записи</span>
       </label>
@@ -43,7 +43,7 @@ export function QuickStatusSelector({
           data-testid="quick-status-btn-confirmed"
         >
           <UserCheck size={15} className="shrink-0" />
-          <span className="whitespace-nowrap leading-none">Подтвержден</span>
+          <span className="whitespace-nowrap leading-none">Подтверждён</span>
         </button>
         <button
           type="button"
@@ -56,7 +56,7 @@ export function QuickStatusSelector({
           data-testid="quick-status-btn-arrived"
         >
           <UserCheck size={15} className="shrink-0" />
-          <span className="whitespace-nowrap leading-none">Пациент пришел</span>
+          <span className="whitespace-nowrap leading-none">Пациент пришёл</span>
         </button>
         <button
           type="button"
@@ -82,7 +82,7 @@ export function QuickStatusSelector({
           data-testid="quick-status-btn-completed"
         >
           <CheckCircle2 size={15} className="shrink-0" />
-          <span className="whitespace-nowrap leading-none">Прием завершен</span>
+          <span className="whitespace-nowrap leading-none">Приём завершён</span>
         </button>
         <button
           type="button"
@@ -97,6 +97,23 @@ export function QuickStatusSelector({
           <UserX size={15} className="shrink-0" />
           <span className="whitespace-nowrap leading-none">Неявка</span>
         </button>
+      </div>
+      <div className="pt-1.5">
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as any)}
+          data-testid="select-appointment-status"
+          className="w-full px-3 py-2 h-11 min-h-[44px] leading-normal rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
+          aria-label="Выбрать статус записи"
+        >
+          <option value="planned">Запланирован</option>
+          <option value="confirmed">Подтверждён</option>
+          <option value="arrived">Прибыл</option>
+          <option value="in_treatment">В кресле</option>
+          <option value="completed">Завершён</option>
+          <option value="cancelled">Отменён</option>
+          <option value="no_show">Не явился</option>
+        </select>
       </div>
     </div>
   );

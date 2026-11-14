@@ -2,8 +2,25 @@ import type { Dashboard } from "@dental/shared";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 
+export interface ScheduleChairItem {
+  id: string;
+  name: string;
+  color?: string | null;
+  colorId?: string | number;
+  room?: string | null;
+  roomNumber?: string | null;
+  branchId?: string | null;
+  specialization?: string | null;
+  active?: boolean;
+  isActive?: boolean;
+  hasXraySensor?: boolean;
+  hasMicroscope?: boolean;
+  hasSurgeryKit?: boolean;
+  [key: string]: unknown;
+}
+
 export interface ScheduleChairHeaderProps {
-  chair: any;
+  chair: ScheduleChairItem;
   chairIndex: number;
   dailyTally: any;
   effectiveChairAssignments: Record<string, ChairDoctorShiftAssignment>;

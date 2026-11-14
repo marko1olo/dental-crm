@@ -15,6 +15,7 @@ export interface InlinePatientFormInputsProps {
   doctors: Array<{ id: string; fullName: string }>;
   doctorUserId: string;
   dashboard?: Dashboard | undefined;
+  handleCreateInlinePatient?: ((e: React.FormEvent) => Promise<void>) | undefined;
 }
 
 export function InlinePatientFormInputs({
@@ -29,6 +30,7 @@ export function InlinePatientFormInputs({
   doctors,
   doctorUserId,
   dashboard,
+  handleCreateInlinePatient,
 }: InlinePatientFormInputsProps) {
   const handlePrintContract = () => {
     void printBlankMedicalContract(
@@ -55,6 +57,7 @@ export function InlinePatientFormInputs({
             ref={newPatientFullNameInputRef}
             type="text"
             data-testid="quick-booking-new-patient-name-input"
+            data-legacy-testid="appointment-quick-patient-name"
             value={newPatientFullName}
             onChange={(e) => setNewPatientFullName(e.target.value)}
             placeholder="Фамилия Имя Отчество"
@@ -67,6 +70,7 @@ export function InlinePatientFormInputs({
             <input
               type="tel"
               data-testid="quick-booking-new-patient-phone-input"
+              data-legacy-testid="appointment-quick-patient-phone"
               value={newPatientPhone}
               onChange={(e) => setNewPatientPhone(e.target.value)}
               placeholder="+7 999 123-45-67"
@@ -97,8 +101,14 @@ export function InlinePatientFormInputs({
         </button>
         <button
           type="submit"
+          onClick={(e) => {
+            if (handleCreateInlinePatient) {
+              void handleCreateInlinePatient(e);
+            }
+          }}
           aria-busy={isCreatingPatient}
           data-testid="quick-booking-create-inline-patient-btn"
+          data-legacy-testid="appointment-quick-patient-save-btn"
           className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
         >
           <Check size={14} className="shrink-0" />

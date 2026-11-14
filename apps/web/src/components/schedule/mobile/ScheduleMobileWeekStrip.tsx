@@ -30,7 +30,7 @@ export const ScheduleMobileWeekStrip: React.FC<ScheduleMobileWeekStripProps> = (
           }}
         >
           <span className="schedule-mobile-day-label">
-            {day.isToday ? `★ ${day.dayLabel}` : day.dayLabel}
+            {day.dayLabel}
           </span>
           <span className="schedule-mobile-day-num">{day.dayNumber}</span>
           {day.hasAppointments ? (

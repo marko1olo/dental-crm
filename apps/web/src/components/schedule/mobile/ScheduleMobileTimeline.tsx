@@ -1,5 +1,5 @@
 import React from "react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard, Patient } from "@dental/shared";
 import type { TimelineItem } from "./scheduleMobileAgendaTypes";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import { ScheduleMobileEmptyDay } from "./ScheduleMobileEmptyDay";
@@ -11,7 +11,7 @@ export interface ScheduleMobileTimelineProps {
   selectedDoctorId: string | null;
   selectedChairId: string | null;
   dashboard: Dashboard;
-  patientName: (patients: any[], id: string | null) => string;
+  patientName: (patients: Patient[], id: string | null) => string;
   appointmentLabels: Record<Appointment["status"], string>;
   onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
   onSelectMobileAppt: (appt: Appointment) => void;

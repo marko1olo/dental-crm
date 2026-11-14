@@ -222,7 +222,8 @@ export function isTechnicalBreakAppointment(input: {
     combined.includes("учеба") ||
     combined.includes("отсутствует") ||
     combined.includes("другое") ||
-    combined.includes("санитарная обработка")
+    combined.includes("санитарная обработка") ||
+    combined.includes("санобработка")
   );
 }
 

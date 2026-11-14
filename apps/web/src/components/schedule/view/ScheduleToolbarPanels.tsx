@@ -3,7 +3,8 @@ import type { Dashboard } from "@dental/shared";
 import { DayConfirmationsPanel } from "../DayConfirmationsPanel";
 import { FreedSlotsPanel } from "../FreedSlotsPanel";
 import { ScheduleClipboardPanel } from "../ScheduleClipboardPanel";
-import { ScheduleShiftAnalytics } from "../ScheduleShiftAnalytics";
+import { ScheduleShiftAnalytics, type ScheduleShiftWarning } from "../ScheduleShiftAnalytics";
+import type { DoctorShift } from "../roster/DoctorShiftRosterModal";
 
 export interface ScheduleToolbarPanelsProps {
   showConfirmationsPanel: boolean;
@@ -11,11 +12,11 @@ export interface ScheduleToolbarPanelsProps {
   showClipboardPanel: boolean;
   showShiftAnalytics: boolean;
   clipboardReloadToken: number;
-  loadDashboard?: (() => void | Promise<void>) | undefined;
+  loadDashboard?: ((options?: { adminSecret?: string }) => void | Promise<void>) | undefined;
   dashboard: Dashboard | null | undefined;
-  shiftWarnings: any[];
-  openScheduleWarning: (w: any) => void;
-  onOpenDoctorShiftDrawer?: (() => void) | undefined;
+  shiftWarnings?: readonly ScheduleShiftWarning[] | ScheduleShiftWarning[] | Dashboard["shiftIntelligence"]["scheduleWarnings"] | undefined;
+  openScheduleWarning?: ((w: ScheduleShiftWarning) => void) | undefined;
+  onOpenDoctorShiftDrawer?: ((shiftToEdit?: Partial<DoctorShift> | null) => void) | undefined;
   onOpenChairDateRangeModal?: (() => void) | undefined;
 }
 

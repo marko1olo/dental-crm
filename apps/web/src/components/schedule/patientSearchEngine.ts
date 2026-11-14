@@ -6,6 +6,11 @@
 import { parseSearchQueryForQuickPatient as parseSearchQueryImpl } from "./patientSearchEngine/quickPatientPrefill";
 import type { QuickPatientPrefill } from "./patientSearchEngine/searchEngineTypes";
 
+export interface QuickPatientPrefill {
+	fullName: string;
+	phone: string;
+}
+
 export type {
 	SearchablePatient,
 	SearchMatchHighlightPart,
@@ -13,7 +18,6 @@ export type {
 	FindPotentialDuplicatesCriteria,
 	PotentialDuplicateItem,
 	PatientWithSearchableData,
-	QuickPatientPrefill,
 } from "./patientSearchEngine/searchEngineTypes";
 
 export type QuickPatientSearchResult = import("./patientSearchEngine/searchEngineTypes").PatientSearchResultItem;

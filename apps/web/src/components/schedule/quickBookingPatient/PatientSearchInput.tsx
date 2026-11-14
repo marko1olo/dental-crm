@@ -48,6 +48,7 @@ export function PatientSearchInput({
         ref={searchInputRef}
         type="text"
         data-testid="quick-booking-patient-search-input"
+        data-legacy-testid="select-appointment-patient"
         value={searchQuery}
         placeholder="Поиск по ФИО, телефону или дате рождения…"
         onChange={(e) => {

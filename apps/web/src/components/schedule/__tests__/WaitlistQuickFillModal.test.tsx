@@ -29,7 +29,7 @@ const mockAppLogicValue: any = {
 	},
 };
 
-describe("WaitlistQuickFillModal Match Scoring Engine", () => {
+describe("WaitlistDrawer Match Scoring Engine", () => {
 	const basePatient: WaitlistPatientEntry = {
 		id: "patient-1",
 		patientId: "pid-1",

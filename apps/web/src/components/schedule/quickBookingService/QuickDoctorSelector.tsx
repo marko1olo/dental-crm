@@ -40,6 +40,7 @@ export function QuickDoctorSelector({
         onChange={(e) => setDoctorUserId(e.target.value)}
         className="w-full px-3 py-2 h-11 min-h-[44px] leading-normal rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
         data-testid="select-booking-doctor"
+        data-legacy-testid="select-appointment-doctor"
       >
         <option value="">-- Выберите врача --</option>
         {doctors.map((d) => (
@@ -64,7 +65,7 @@ export function QuickDoctorSelector({
           title="Назначить врача на приём"
         >
           <span>
-            На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается к выбранному врачу.
+            На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись оформляется к выбранному врачу.
           </span>
         </div>
       )}

@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Patient } from "@dental/shared";
 import { CalendarCheck, Stethoscope, UserCheck } from "lucide-react";
 import React from "react";
 import { playIntercomChime } from "../../../lib/intercomSound";
@@ -9,8 +9,8 @@ import { showToast } from "../../GlobalToast";
 export interface GridAppointmentPlannedActionsProps {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
-	onQuickStatusChange: (id: string, status: any) => void;
+	patObj?: Patient | null | undefined;
+	onQuickStatusChange: (id: string, status: Appointment["status"]) => void;
 }
 
 export function GridAppointmentPlannedActions({

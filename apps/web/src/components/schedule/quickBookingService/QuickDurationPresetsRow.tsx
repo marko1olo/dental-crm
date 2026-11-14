@@ -8,11 +8,17 @@ export function QuickDurationPresetsRow({
   durationMinutes: number;
   handleSelectDuration: (mins: number) => void;
 }) {
+  const currentPreset = DURATION_PRESETS.find((p) => p.minutes === durationMinutes);
+  const currentHint = currentPreset ? (currentPreset as any).serviceHint || (currentPreset as any).hint : "";
+
   return (
     <div className="sm:col-span-2">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-semibold text-[var(--muted)]">
           Длительность: <strong className="text-[var(--ink)]">{durationMinutes} мин</strong>
+          {currentHint ? (
+            <span className="text-[var(--muted)] font-normal ml-1.5">({currentHint})</span>
+          ) : null}
         </span>
       </div>
       <div data-testid="quick-booking-duration-presets" className="mt-1">
@@ -20,40 +26,29 @@ export function QuickDurationPresetsRow({
           Быстрый выбор длительности:
         </span>
         <div
-          className="dente-segmented-bar w-full flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto gap-1"
+          className="dente-segmented-bar w-full grid grid-cols-3 sm:grid-cols-6 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1"
           role="group"
           aria-label="Быстрый выбор длительности"
         >
           {DURATION_PRESETS.map((preset) => {
             const isSelected = durationMinutes === preset.minutes;
             const displayHint = (preset as any).serviceHint || (preset as any).hint || "";
-            const displayLabel = (preset as any).label || `${preset.minutes} мин`;
             return (
               <button
                 key={preset.minutes}
                 type="button"
                 onClick={() => handleSelectDuration(preset.minutes)}
-                className={`dente-segmented-item flex-1 min-w-[54px] min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 rounded-lg text-xs font-medium transition-all inline-flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 cursor-pointer select-none active:scale-95 border ${
+                className={`dente-segmented-item w-full min-h-[44px] sm:min-h-[36px] sm:h-9 px-1 rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center cursor-pointer select-none active:scale-95 border ${
                   isSelected
-                    ? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line-strong,var(--line))] shadow-2xs font-semibold"
+                    ? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line-strong,var(--line))] shadow-2xs font-bold"
                     : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
                 }`}
                 data-testid={`duration-preset-${preset.minutes}`}
                 data-active={isSelected}
                 aria-pressed={isSelected}
+                title={`${preset.minutes} мин${displayHint ? ` (${displayHint})` : ""}`}
               >
-                <span className="font-semibold whitespace-nowrap">{displayLabel}</span>
-                {displayHint ? (
-                  <span
-                    className={`text-[10px] whitespace-nowrap ${
-                      isSelected
-                        ? "text-[var(--muted)] font-normal"
-                        : "text-[var(--muted)] opacity-80"
-                    }`}
-                  >
-                    <span className="hidden sm:inline">· </span>{displayHint}
-                  </span>
-                ) : null}
+                <span className="font-semibold whitespace-nowrap">{preset.minutes} мин</span>
               </button>
             );
           })}

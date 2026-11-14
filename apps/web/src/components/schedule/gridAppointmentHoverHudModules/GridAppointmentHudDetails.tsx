@@ -1,3 +1,4 @@
+import React from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { Clock, FileText, Stethoscope } from "lucide-react";
 import {

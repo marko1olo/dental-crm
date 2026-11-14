@@ -146,4 +146,43 @@
 8. 📱 **Mobile Quick Booking Bottom Sheet Dark (390×844):** [`schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png) (117 728 байт).
 - Вердикт автопсии: 0 дефектов, 0 наездов, 0 обрезаний слов многоточиями, 100% соблюдение эргономики Apple HIG.
 
+---
+
+## 6. Red Team Fixer Surgeon: Гармонизация контрактов расписания, таймлайна кресел и ликвидация мин
+
+### А. Симметрия контракта PATCH /api/appointments/:id
+- В `apps/api/src/routes/appointments/queries/appointmentDashboardQueries.ts` функция `buildDashboardResponseAfterUpdate` обновлена: бэкенд возвращает симметричный объект `{ success: true, appointment: updatedRecord, dashboard: updatedDashboard }`.
+- Фраза `"Запись изменена. Сводка не обновлена — перезагрузите страницу."` уничтожена навсегда.
+- Во фронтенде (`apps/web/src/components/schedule/useQuickBookingSubmit.ts`) устранен синтетический костыль `({ ... } as Appointment)` и лишний повторный `loadDashboard()`.
+
+### Б. Ликвидация срезания утренних приёмов в не-UTC регионах
+- В `apps/api/src/routes/appointments/appointmentsQueryRoutes.ts` добавлена функция `resolveScheduleDateBounds(cleanDate, timeZone)` с вычислением точных локальных границ суток клиники (`clinicTimeZone(orgId)`).
+- Утренние приёмы в часовых поясах от Самары (UTC+4) до Владивостока (UTC+10) и Камчатки (UTC+12) больше не выпадают из выборки.
+- Развернут стресс-тест `apps/api/src/tests/routes/scheduleTimeZoneBounds.test.ts` (4/4 passed, 100% green).
+
+### В. Чистый клинический язык без дев-утечек
+- В `apps/web/src/components/schedule/quickBookingService/QuickDoctorSelector.tsx` вырезано примечание ТЗ `(Запись не блокируется)`. Заменено на профессиональный клинический текст: `На кресле «...» дежурит ... Запись оформляется к выбранному врачу.`
+- Тест `chairDoctorDutyAssignmentWave60.test.tsx` синхронизирован (16/16 passed, 100% green).
+
+### Г. Искоренение any, двойных кастов и non-null assertions
+- `ScheduleMobileTimeline.tsx` и `ScheduleMobileTimelineRow.tsx`: строгие `Patient[]`, удалены `(pat as any)`, `(p: any)`, `(s: any)`, `(c: any)`, `(appt as any)`.
+- `ScheduleGrid.tsx`: `updates: any` заменено на `Partial<Appointment>`, устранен `props.onAppointmentMove!`.
+- `ScheduleHeaderToolbar.tsx`: устранен `props as unknown as ScheduleViewToolbarProps`, теперь чистый `{...props}`.
+- `scheduleViewToolbarTypes.ts` и `ScheduleToolbarPanels.tsx`: заменены все `any` на `Record<string, ChairDoctorShiftAssignment>`, `ScheduleShiftWarning`, `DoctorShift`, `Record<string, number>`.
+
+### Д. Ликвидация рудиментарного фасада листа ожидания
+- Удален неиспользуемый фасад-прокладка `WaitlistQuickFillModal.tsx`.
+- Тесты переведены на канонический `WaitlistDrawer.tsx`:
+  - `WaitlistQuickFillModal.test.tsx`: 11 passed (0 failed).
+  - `scheduleFastBookingInquisitorWave51.test.ts`: 7 passed (0 failed).
+  - `scheduleViewModulesDecomposition.test.tsx`: 5 passed (0 failed).
+
+### Е. Машинные гейты приёмки
+- `npm run check:encoding` -> **Exit Code 0** (20 991 файлов проверено).
+- `npm run check:buttons` -> **Exit Code 0** (4 858 TSX/JSX, 1 359 CSS проверено, 0 нарушений).
+- `npm run check:react-hooks` -> **Exit Code 0** (3 244 файлов с хуками, 0 нарушений).
+- `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2862 колонки, 0 дрифта).
+- 4-State Proofs: `schedule_pc_light_1440x900.png`, `schedule_pc_dark_1440x900.png`, `schedule_mobile_light_390x844.png`, `schedule_mobile_dark_390x844.png` лично осмотрены через `read_file` — верстка чистая, Apple HIG соблюден.
+
+
 

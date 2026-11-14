@@ -83,7 +83,7 @@ import {
 	QUICK_APPOINTMENT_REASONS,
 	TECHNICAL_BREAK_PRESETS,
 	isTechnicalBreakAppointment,
-} from "../AppointmentModal";
+} from "../scheduleCatalogData";
 
 import {
 	getRepresentativeLegalStatus,
@@ -231,17 +231,20 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			assert.equal(isTechnicalBreakAppointment({ reason: "Острая боль" }), false);
 		});
 
-		it("2.4 AppointmentModal.tsx source code contains 1-click chip buttons and touch target >= 44px", () => {
-			const modalPath = path.resolve(__dirname, "../AppointmentModal.tsx");
-			assert.ok(fs.existsSync(modalPath), "AppointmentModal.tsx must exist");
+		it("2.4 QuickBookingDrawer.tsx source code contains 1-click chip buttons and touch target >= 44px", () => {
+			const drawerPath = path.resolve(__dirname, "../QuickBookingDrawer.tsx");
+			assert.ok(fs.existsSync(drawerPath), "QuickBookingDrawer.tsx must exist");
+			const chipsPath = path.resolve(__dirname, "../quickBookingService/QuickPresetChipsBar.tsx");
 			const detailsPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentDetailsSection.tsx");
 			const patientPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentPatientSection.tsx");
 			const reasonsPath = path.resolve(__dirname, "../AppointmentModalQuickReasons.tsx");
 			const breakChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentTechnicalBreakChips.tsx");
 			const reasonChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentReasonChips.tsx");
+			const patientHeaderPath = path.resolve(__dirname, "../quickBookingPatient/PatientSectionHeader.tsx");
+			const submitPath = path.resolve(__dirname, "../useQuickBookingSubmit.ts");
 			const statePath = path.resolve(__dirname, "../useAppointmentModalState.ts");
 			const submitEntitiesPath = path.resolve(__dirname, "../appointmentModalStateModules/useAppointmentModalSubmitEntities.ts");
-			const content = [modalPath, detailsPath, patientPath, reasonsPath, breakChipsPath, reasonChipsPath, statePath, submitEntitiesPath]
+			const content = [drawerPath, chipsPath, patientHeaderPath, submitPath, detailsPath, patientPath, reasonsPath, breakChipsPath, reasonChipsPath, statePath, submitEntitiesPath]
 				.filter((p) => fs.existsSync(p))
 				.map((p) => fs.readFileSync(p, "utf-8"))
 				.join("\n");

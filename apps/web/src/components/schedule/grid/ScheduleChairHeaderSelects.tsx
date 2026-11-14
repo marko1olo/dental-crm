@@ -62,7 +62,7 @@ export const ScheduleChairHeaderSelects: React.FC<ScheduleChairHeaderSelectsProp
           {assignment?.doctorId ? "Снять врача (без назначения)" : "+ Врач..."}
         </option>
         {doctors.map((d) => (
-          <option key={d.id} value={d.id} title={d.fullName}>
+          <option key={d.id} value={d.id} title={d.fullName} data-testid={`chair-quick-doctor-chip-${chair.id}-${d.id}`}>
             {formatDoctorShortName(d.fullName)}
           </option>
         ))}

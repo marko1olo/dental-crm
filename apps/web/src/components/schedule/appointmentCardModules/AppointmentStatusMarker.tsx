@@ -71,7 +71,7 @@ export const AppointmentStatusMarker: React.FC<AppointmentStatusMarkerProps> = (
 							onToggleStatusPicker(a.id);
 						}
 					}}
-					className={`h-[22px] min-h-[22px] text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5 transition-all cursor-pointer hover:opacity-90 active:scale-95 touch-manipulation sm:h-[22px] sm:min-h-[22px] relative before:absolute before:-inset-2 before:content-[''] before:z-10 sm:before:hidden ${getAppointmentStatusBadgeClasses(
+					className={`h-[20px] min-h-[20px] text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5 transition-all cursor-pointer hover:opacity-90 active:scale-95 touch-manipulation sm:h-[20px] sm:min-h-[20px] relative before:absolute before:-inset-2 before:content-[''] before:z-10 sm:before:hidden ${getAppointmentStatusBadgeClasses(
 						a.status,
 					)}`}
 					title={`Статус: ${normalizedLabel}. Нажмите для смены`}
@@ -84,7 +84,7 @@ export const AppointmentStatusMarker: React.FC<AppointmentStatusMarkerProps> = (
 					{isCompleted && (
 						<Check size={10} className="shrink-0 text-current stroke-[2.5]" />
 					)}
-					<span className="whitespace-nowrap shrink-0">{normalizedLabel}</span>
+					<span className="truncate max-w-[68px] sm:max-w-[76px] whitespace-nowrap">{normalizedLabel}</span>
 				</button>
 
 				{/* Status Picker Popover */}

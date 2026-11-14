@@ -27,7 +27,7 @@ import {
 } from "../tomorrowRemindersEngine";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { CashShiftWidget } from "../../finance/CashShiftWidget";
-import { ShiftCloseZReportModal } from "../../finance/fiscal/ShiftCloseZReportModal";
+import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { DoctorShiftControlBar } from "../DoctorShiftControlBar";
 
@@ -219,7 +219,7 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 
 			assert.ok(html.includes("data-testid=\"cash-register-modal\""), "Renders cash register modal");
 			assert.ok(html.includes("Смена закрыта"), "Shows closed status");
-			assert.ok(html.includes("data-testid=\"btn-1click-open-shift\""), "Renders 1-click open shift button");
+			assert.ok(html.includes("data-testid=\"btn-open-shift\""), "Renders open shift button");
 
 			// Check Mandate 8e: ZERO disabled buttons
 			const buttonMatches = html.match(/<button[^>]*>/g) || [];
@@ -264,7 +264,7 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 			assert.ok(html.includes("data-testid=\"kpi-cash-in-drawer\""), "Shows cash in drawer KPI card");
 			assert.ok(html.includes("data-testid=\"kpi-electronic\""), "Shows card/SBP electronic KPI card");
 			assert.ok(html.includes("data-testid=\"kpi-advance-offset\""), "Shows advance offset KPI card");
-			assert.ok(html.includes("data-testid=\"btn-1click-close-shift\""), "Shows 1-click close shift button");
+			assert.ok(html.includes("data-testid=\"btn-close-shift-z-report\""), "Shows close shift button");
 			assert.ok(html.includes("data-testid=\"btn-print-x-report-footer\""), "Shows X-report print button");
 
 			// Check formatted revenue string representation
@@ -301,21 +301,21 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 			assert.ok(html.includes("data-testid=\"input-actual-drawer-cash\""), "Renders actual drawer input");
 		});
 
-		it("verifies ShiftCloseZReportModal enforces 0 disabled buttons and modal depth <= 1 (Mandate 8e, 8d pt 6)", () => {
+		it("verifies CashShiftClosingModal enforces 0 disabled buttons and modal depth <= 1 (Mandate 8e, 8d pt 6)", () => {
 			const html = renderToStaticMarkup(
-				React.createElement(ShiftCloseZReportModal, {
+				React.createElement(CashShiftClosingModal, {
 					isOpen: true,
 					onClose: () => {},
 					shiftNumber: 16,
-					cashierFullName: "Ковалева Ольга",
+					cashierName: "Ковалева Ольга",
 				}),
 			);
 
-			assert.ok(html.includes("data-testid=\"shift-close-zreport-modal\""), "Renders Z-report modal");
-			assert.ok(html.includes("data-testid=\"btn-confirm-close-shift-zreport\""), "Renders confirm close button");
+			assert.ok(html.includes("data-testid=\"cash-shift-closing-modal\""), "Renders Z-report closing modal");
+			assert.ok(html.includes("data-testid=\"btn-confirm-close-shift-z-report\""), "Renders confirm close button");
 
 			// Check Mandate 8e: submit button is NOT disabled
-			const submitBtnMatch = html.match(/<button[^>]*data-testid="btn-confirm-close-shift-zreport"[^>]*>/);
+			const submitBtnMatch = html.match(/<button[^>]*data-testid="btn-confirm-close-shift-z-report"[^>]*>/);
 			assert.ok(submitBtnMatch, "Submit button found");
 			assert.equal(
 				/disabled(?=[>\s=])/.test(submitBtnMatch[0]),
@@ -324,7 +324,7 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 			);
 
 			// Check Mandate 8d pt 7: Zero emojis
-			assert.equal(EMOJI_REGEX.test(html), false, "ShiftCloseZReportModal must contain ZERO emojis");
+			assert.equal(EMOJI_REGEX.test(html), false, "CashShiftClosingModal must contain ZERO emojis");
 		});
 
 		it("verifies CashShiftWidget buttons are NOT disabled per Mandate 8e", () => {

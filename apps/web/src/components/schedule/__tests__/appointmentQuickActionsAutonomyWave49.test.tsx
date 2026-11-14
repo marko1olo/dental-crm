@@ -593,9 +593,6 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 	const quickActionsPath = path.resolve(__dirname, "../AppointmentQuickActions.tsx");
 	const quickActionsSource = fs.readFileSync(quickActionsPath, "utf8");
 
-	const appointmentModalPath = path.resolve(__dirname, "../AppointmentModal.tsx");
-	const appointmentModalSource = fs.readFileSync(appointmentModalPath, "utf8");
-
 	let mockDomEnv: ReturnType<typeof setupMockDom>;
 
 	beforeEach(() => {

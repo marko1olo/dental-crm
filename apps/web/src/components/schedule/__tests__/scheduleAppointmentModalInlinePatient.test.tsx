@@ -14,7 +14,7 @@ import { createRoot, type Root } from "react-dom/client";
 import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
 import type { Appointment, Dashboard } from "@dental/shared";
-import { AppointmentModal } from "../AppointmentModal";
+import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import {
 	type MockDomNode,
 	setupMockDom,
@@ -141,18 +141,13 @@ describe("1. AppointmentModal: Inline Quick Patient Mode (Mandates 8e, 8k)", () 
 
 		await act(async () => {
 			root.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
-					appointment={appt as Appointment}
+					editingAppointment={appt as Appointment}
 					dashboard={mockDashboard}
 					onClose={() => {}}
-					onSave={async () => true}
-					patientName={(_, id) => id || ""}
-					formatTime={(iso) => iso.slice(11, 16)}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-					appointmentLabels={defaultAppointmentLabels}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});
@@ -186,18 +181,13 @@ describe("1. AppointmentModal: Inline Quick Patient Mode (Mandates 8e, 8k)", () 
 
 		await act(async () => {
 			root.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
-					appointment={appt as Appointment}
+					editingAppointment={appt as Appointment}
 					dashboard={mockDashboard}
 					onClose={() => {}}
-					onSave={async () => true}
-					patientName={(_, id) => id || ""}
-					formatTime={(iso) => iso.slice(11, 16)}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-					appointmentLabels={defaultAppointmentLabels}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});
@@ -262,19 +252,14 @@ describe("1. AppointmentModal: Inline Quick Patient Mode (Mandates 8e, 8k)", () 
 
 		await act(async () => {
 			root.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
-					appointment={appt as Appointment}
+					editingAppointment={appt as Appointment}
 					dashboard={mockDashboard}
 					onClose={() => {}}
-					onSave={async () => true}
 					onQuickCreatePatient={onQuickCreateMock}
-					patientName={(_, id) => id || ""}
-					formatTime={(iso) => iso.slice(11, 16)}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-					appointmentLabels={defaultAppointmentLabels}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});
@@ -333,19 +318,14 @@ describe("1. AppointmentModal: Inline Quick Patient Mode (Mandates 8e, 8k)", () 
 
 		await act(async () => {
 			root.render(
-				<AppointmentModal
+				<QuickBookingDrawer
 					isOpen={true}
-					appointment={appt as Appointment}
+					editingAppointment={appt as Appointment}
 					dashboard={mockDashboard}
 					onClose={() => {}}
-					onSave={onSaveMock}
 					onQuickCreatePatient={onQuickCreateMock}
-					patientName={(_, id) => id || ""}
-					formatTime={(iso) => iso.slice(11, 16)}
 					toDateTimeLocalValue={(iso) => iso.slice(0, 16)}
 					fromDateTimeLocalValue={(val) => `${val}:00.000Z`}
-					appointmentLabels={defaultAppointmentLabels}
-					activeVisitLockedAppointmentStatuses={new Set()}
 				/>,
 			);
 		});

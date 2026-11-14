@@ -35,10 +35,22 @@
   color: var(--ink, #f8fafc);
 }
 
+[data-theme="dark"] .schedule-mobile-filter-chip.active,
+.dark .schedule-mobile-filter-chip.active {
+  background: var(--teal-soft, rgba(13, 148, 136, 0.2)) !important;
+  border-color: var(--teal, #0d9488) !important;
+  color: var(--teal-light, #2dd4bf) !important;
+}
+
 [data-theme="dark"] .schedule-mobile-bottom-bar,
 .dark .schedule-mobile-bottom-bar {
-  background: color-mix(in srgb, var(--paper-strong, #0f172a) 90%, transparent);
+  background: var(--paper-strong, #0f172a) !important;
   border-top-color: var(--line, #1e293b);
+}
+
+[data-theme="dark"] .schedule-mobile-bottom-bar::after,
+.dark .schedule-mobile-bottom-bar::after {
+  background: var(--paper-strong, #0f172a) !important;
 }
 
 @keyframes quick-drawer-slide-in {

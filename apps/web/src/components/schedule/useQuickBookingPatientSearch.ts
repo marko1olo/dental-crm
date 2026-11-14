@@ -15,27 +15,34 @@ import {
   type PatientReliabilityAssessment,
 } from "./patientReliabilityScore";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
+import type { Appointment } from "@dental/shared";
 
 export interface UseQuickBookingPatientSearchOptions {
   dashboard?: Dashboard | null | undefined;
   initialSlot?: QuickBookingSlotInfo | null | undefined;
+  editingAppt?: Appointment | null | undefined;
   initialMatchedPatient?: Patient | null | undefined;
   setDashboard?: ((dashboard: Dashboard) => void) | undefined;
   isOpen: boolean;
+  onQuickCreatePatient?:
+    | ((data: { fullName: string; phone?: string | null }) => Promise<{ id: string; fullName: string; phone?: string | null } | null | void>)
+    | undefined;
 }
 
 export function useQuickBookingPatientSearch({
   dashboard,
   initialSlot,
+  editingAppt,
   initialMatchedPatient,
   setDashboard,
   isOpen,
+  onQuickCreatePatient,
 }: UseQuickBookingPatientSearchOptions) {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(
     () => initialMatchedPatient || null,
   );
   const [patientId, setPatientId] = useState<string>(
-    () => initialMatchedPatient?.id || initialSlot?.patientId || "",
+    () => initialMatchedPatient?.id || editingAppt?.patientId || initialSlot?.patientId || "",
   );
   const [searchQuery, setSearchQuery] = useState(() => {
     if (initialMatchedPatient) return initialMatchedPatient.fullName;
@@ -65,18 +72,19 @@ export function useQuickBookingPatientSearch({
   useEffect(() => {
     if (!isOpen) return;
 
-    if (initialSlot?.patientId) {
-      const found = (dashboard?.patients ?? []).find((p) => p.id === initialSlot.patientId);
+    const effPatientId = initialSlot?.patientId || editingAppt?.patientId;
+    if (effPatientId) {
+      const found = (dashboard?.patients ?? []).find((p) => p.id === effPatientId);
       if (found) {
         setPatientId(found.id);
         setSelectedPatient(found);
         setSearchQuery(found.fullName);
       } else {
-        setPatientId(initialSlot.patientId);
-        const fallbackName = initialSlot.patientName?.trim() || "";
+        setPatientId(effPatientId);
+        const fallbackName = initialSlot?.patientName?.trim() || "";
         if (fallbackName) {
           setSelectedPatient({
-            id: initialSlot.patientId,
+            id: effPatientId,
             fullName: fallbackName,
             status: "active",
             createdAt: new Date().toISOString(),
@@ -122,7 +130,7 @@ export function useQuickBookingPatientSearch({
       setNewPatientFullName("");
       setNewPatientPhone("");
     }
-  }, [isOpen, initialSlot, dashboard?.patients]);
+  }, [isOpen, initialSlot, editingAppt, dashboard?.patients]);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
 
@@ -165,9 +173,15 @@ export function useQuickBookingPatientSearch({
   }, [selectedPatient, dashboard?.appointments]);
 
   const hasActivePatientVisit = useMemo(() => {
-    if (!selectedPatient || !dashboard?.activeVisit) return false;
-    return dashboard.activeVisit.patientId === selectedPatient.id;
-  }, [selectedPatient, dashboard?.activeVisit]);
+    if (!dashboard?.activeVisit) return false;
+    const activeV = dashboard.activeVisit;
+    if (selectedPatient && activeV.patientId === selectedPatient.id) return true;
+    if (editingAppt?.patientId && activeV.patientId === editingAppt.patientId) return true;
+    if (editingAppt?.id && activeV.appointmentId === editingAppt.id) return true;
+    if (initialSlot?.patientId && activeV.patientId === initialSlot.patientId) return true;
+    if (initialSlot?.appointmentId && activeV.appointmentId === initialSlot.appointmentId) return true;
+    return false;
+  }, [selectedPatient, dashboard?.activeVisit, editingAppt, initialSlot]);
 
   const handleCreateInlinePatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,41 +203,64 @@ export function useQuickBookingPatientSearch({
         : null;
 
       let createdPatient: Patient | null = null;
-      try {
-        const resp = await fetch("/api/patients", {
-          method: "POST",
-          headers: denteAdminSecretRequestHeaders({
-            "Content-Type": "application/json",
-          }),
-          body: JSON.stringify({
+      if (typeof onQuickCreatePatient === "function") {
+        try {
+          const customCreated = await onQuickCreatePatient({
             fullName: nameCandidate,
-            phone: cleanPhone || newPatientPhone.trim() || null,
-            birthDate: newPatientBirthDate.trim() || null,
-            allowDuplicate: true,
-          }),
-        });
-        if (resp.ok) {
-          const body = await resp.json();
-          createdPatient = body.patient || body;
-        } else if (resp.status === 409) {
-          const errBody = await resp.json().catch(() => null);
-          const existing =
-            errBody?.existingPatient ||
-            (errBody?.existingPatientId
-              ? {
-                  id: errBody.existingPatientId,
-                  fullName: nameCandidate,
-                  phone: cleanPhone || newPatientPhone.trim() || null,
-                  birthDate: newPatientBirthDate.trim() || null,
-                  status: "active",
-                }
-              : null);
-          if (existing?.id) {
-            createdPatient = existing as Patient;
+            phone: newPatientPhone.trim() || cleanPhone || null,
+          });
+          if (customCreated && customCreated.id) {
+            createdPatient = {
+              id: customCreated.id,
+              fullName: customCreated.fullName || nameCandidate,
+              phone: customCreated.phone || cleanPhone || newPatientPhone.trim() || null,
+              status: "active",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            } as Patient;
           }
+        } catch (e) {
+          logger.error("[QuickBookingPatientSearch] onQuickCreatePatient custom handler error:", e);
         }
-      } catch {
-        // Fallback optimistic
+      }
+
+      if (!createdPatient) {
+        try {
+          const resp = await fetch("/api/patients", {
+            method: "POST",
+            headers: denteAdminSecretRequestHeaders({
+              "Content-Type": "application/json",
+            }),
+            body: JSON.stringify({
+              fullName: nameCandidate,
+              phone: cleanPhone || newPatientPhone.trim() || null,
+              birthDate: newPatientBirthDate.trim() || null,
+              allowDuplicate: true,
+            }),
+          });
+          if (resp.ok) {
+            const body = await resp.json();
+            createdPatient = body.patient || body;
+          } else if (resp.status === 409) {
+            const errBody = await resp.json().catch(() => null);
+            const existing =
+              errBody?.existingPatient ||
+              (errBody?.existingPatientId
+                ? {
+                    id: errBody.existingPatientId,
+                    fullName: nameCandidate,
+                    phone: cleanPhone || newPatientPhone.trim() || null,
+                    birthDate: newPatientBirthDate.trim() || null,
+                    status: "active",
+                  }
+                : null);
+            if (existing?.id) {
+              createdPatient = existing as Patient;
+            }
+          }
+        } catch {
+          // Fallback optimistic
+        }
       }
 
       if (!createdPatient || !createdPatient.id) {
@@ -287,5 +324,6 @@ export function useQuickBookingPatientSearch({
     patientReliability,
     hasActivePatientVisit,
     handleCreateInlinePatient,
+    onQuickCreatePatient,
   };
 }

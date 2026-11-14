@@ -9,7 +9,6 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { resolveChairDutyDoctor, QuickBookingDrawer } from "../QuickBookingDrawer";
-import { AppointmentModal } from "../AppointmentModal";
 import { DEFAULT_SOLO_CHAIR, type ChairDoctorShiftAssignment, ScheduleGrid } from "../ScheduleGrid";
 import { computeShiftAssignment } from "../scheduleShiftHelpers";
 import { applyCellShiftPreset } from "../chairRosterMath";
@@ -292,21 +291,16 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 		});
 	});
 
-	describe("3. AppointmentModal: Duty Doctor Resolution and Autonomy", () => {
+	describe("3. QuickBookingDrawer: Duty Doctor Resolution and Autonomy", () => {
 		it("3.1. Auto-populates chair default doctor and displays duty badge", () => {
 			const html = renderToString(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
 					onClose: () => {},
-					onSave: async () => true,
 					dashboard: mockDashboard,
-					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
-					patientName: (_p: any, id: string | null) => (id ? "Пациент" : "—"),
-					formatTime: (iso: string) => iso.slice(11, 16),
 					toDateTimeLocalValue: (iso: string) => iso?.slice(0, 16) || "",
 					fromDateTimeLocalValue: (val: string) => (val ? `${val}:00.000Z` : ""),
-					appointment: {
+					editingAppointment: {
 						chairId: "chair-2",
 						startsAt: "2026-09-10T14:00:00.000Z",
 						endsAt: "2026-09-10T14:30:00.000Z",
@@ -322,18 +316,13 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 
 		it("3.2. Displays non-blocking override note when chosen doctor differs from duty doctor", () => {
 			const html = renderToString(
-				React.createElement(AppointmentModal, {
+				React.createElement(QuickBookingDrawer, {
 					isOpen: true,
 					onClose: () => {},
-					onSave: async () => true,
 					dashboard: mockDashboard,
-					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
-					patientName: (_p: any, id: string | null) => (id ? "Пациент" : "—"),
-					formatTime: (iso: string) => iso.slice(11, 16),
 					toDateTimeLocalValue: (iso: string) => iso?.slice(0, 16) || "",
 					fromDateTimeLocalValue: (val: string) => (val ? `${val}:00.000Z` : ""),
-					appointment: {
+					editingAppointment: {
 						chairId: "chair-1",
 						doctorUserId: "doc-2",
 						startsAt: "2026-09-10T10:00:00.000Z",
@@ -345,7 +334,7 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 			);
 
 			expect(html).toContain("duty-doctor-override-note");
-			expect(html).toContain("Запись не блокируется");
+			expect(html).toContain("Запись оформляется к выбранному врачу");
 			assert.ok(!html.includes('data-testid="btn-save-appointment" disabled'));
 		});
 	});

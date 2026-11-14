@@ -14,11 +14,12 @@ import { createRoot, type Root } from "react-dom/client";
 import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
 import type { Dashboard } from "@dental/shared";
-import { AppointmentModal } from "../AppointmentModal";
+import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import {
 	type MockDomNode,
 	setupMockDom,
 	findNodeByTestId,
+	collectAllText,
 } from "./scheduleMockDomHarness";
 
 const mockDoctors = [
@@ -138,26 +139,13 @@ describe("Wave 42: AppointmentModal Active Visit Autonomy (Mandate 8e)", () => {
 
 			await act(async () => {
 				root.render(
-					<AppointmentModal
+					<QuickBookingDrawer
 						isOpen={true}
 						onClose={() => {}}
-						appointment={appointmentWithOpenVisit}
-						onSave={async () => true}
+						editingAppointment={appointmentWithOpenVisit}
 						dashboard={mockDashboardWithActiveVisit as any}
-						patientName={(_p, id) => id || ""}
-						formatTime={(iso) => (iso ? iso.slice(11, 16) : "")}
 						toDateTimeLocalValue={(iso) => (iso ? iso.slice(0, 16) : "")}
 						fromDateTimeLocalValue={(val) => val}
-						appointmentLabels={{
-							planned: "Запланирован",
-							confirmed: "Подтвержден",
-							arrived: "Прибыл",
-							in_treatment: "В кресле",
-							completed: "Завершен",
-							cancelled: "Отменен",
-							no_show: "Не явился",
-						}}
-						activeVisitLockedAppointmentStatuses={new Set()}
 					/>,
 				);
 			});

@@ -177,9 +177,9 @@ export function AppointmentTrackGridLines({
         style={{
           minWidth:
             props.effectiveChairs.length > 1
-              ? `${Math.max(260, 72 + props.effectiveChairs.length * 220)}px`
+              ? `${Math.max(280, 108 + props.effectiveChairs.length * 180)}px`
               : undefined,
-          gridTemplateColumns: `clamp(68px, 5.5vw, 76px) repeat(${props.effectiveChairs.length}, minmax(180px, 1fr))`,
+          gridTemplateColumns: `clamp(100px, 7vw, 112px) repeat(${props.effectiveChairs.length}, minmax(180px, 1fr))`,
           gridTemplateRows: `repeat(${props.timeSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
         }}
       >
@@ -235,7 +235,7 @@ export function AppointmentTrackGridLines({
           dateKey={props.dateKey}
           timezone={props.timezone}
           baseSlotHeightPx={baseSlotHeightPx}
-          leftOffset="clamp(68px, 5.5vw, 76px)"
+          leftOffset="clamp(88px, 6.5vw, 96px)"
         />
       </div>
     </>

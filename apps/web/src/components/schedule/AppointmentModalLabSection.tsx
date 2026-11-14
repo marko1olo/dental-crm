@@ -65,8 +65,9 @@ export function normalizeAppointmentLabItems(
       referenceDate,
     );
     if (apptLabInfo) {
+      const realOrderId = (appointment as any)?.labOrderId || (appointment as any)?.labOrder?.id || "";
       items.push({
-        id: (appointment as any)?.labOrderId || `appt-lab-${appointment.id}`,
+        id: realOrderId || `appt-lab-${appointment.id}`,
         orderNumber:
           apptLabInfo.orderNumber ||
           (appointment as any)?.labOrderNumber ||
@@ -130,24 +131,28 @@ export function AppointmentModalLabSection({
 
   const handleConfirmFitting = (item: NormalizedLabItem) => {
     if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("dente-lab-order-fitting-confirmed", {
-          detail: {
-            orderId: item.id,
-            orderNumber: item.orderNumber,
-            toothFdi: item.toothFdi,
-            construction: item.construction,
-            timestamp: new Date().toISOString(),
-          },
-        }),
-      );
+      const detail = {
+        orderId: item.id,
+        orderNumber: item.orderNumber,
+        toothFdi: item.toothFdi,
+        construction: item.construction,
+        timestamp: new Date().toISOString(),
+      };
+      window.dispatchEvent(new CustomEvent("dente:lab:order-fitting-confirmed", { detail }));
+      window.dispatchEvent(new CustomEvent("dente-lab-order-fitting-confirmed", { detail }));
     }
     if (item.id && !item.id.startsWith("appt-lab-")) {
-      fetch(`/api/lab/orders/${item.id}`, {
+      fetch(`/api/lab/orders/${item.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-        body: JSON.stringify({ stage: "fitting", notes: "Примерка успешно подтверждена у кресла" }),
-      }).catch(() => {});
+        body: JSON.stringify({
+          status: "fitted",
+          stage: "fitting_scheduled",
+          notes: "Примерка успешно подтверждена у кресла",
+        }),
+      }).catch((err) => {
+        console.warn("Failed to confirm fitting on server:", err);
+      });
     }
     showToast(`Примерка наряда ${item.orderNumber} успешно подтверждена!`, "success", 3000);
   };

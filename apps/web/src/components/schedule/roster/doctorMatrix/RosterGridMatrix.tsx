@@ -154,7 +154,7 @@ export const RosterGridMatrix: React.FC<RosterGridMatrixProps> = React.memo(
 																	doctorId: shift.doctorId,
 																});
 															}}
-															title="Кликните для быстрой смены или выбора пресета"
+															title="Выбрать смену или пресет"
 														>
 															<div className="roster-shift-time">
 																<span style={{ color: arch.color }}>

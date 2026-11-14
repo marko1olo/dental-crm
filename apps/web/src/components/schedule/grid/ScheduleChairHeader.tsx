@@ -3,7 +3,6 @@ import { getWorkplaceChairPalette } from "@dental/shared";
 import { ScheduleChairDoctorPopover } from "./ScheduleChairDoctorPopover";
 import { ScheduleChairDutySection } from "./ScheduleChairDutySection";
 import { ScheduleChairHeaderTopBar } from "./ScheduleChairHeaderTopBar";
-import { ScheduleChairHeaderHiddenButtons } from "./ScheduleChairHeaderHiddenButtons";
 import { ScheduleChairHeaderSelects } from "./ScheduleChairHeaderSelects";
 import type { ScheduleChairHeaderProps } from "./scheduleChairHeaderTypes";
 
@@ -20,7 +19,7 @@ export function ScheduleChairHeader(props: ScheduleChairHeaderProps) {
 
   const assignment = effectiveChairAssignments[chair.id];
   const hasDoctor = Boolean(assignment && assignment.doctorId);
-  const chairPalette = getWorkplaceChairPalette((chair as any).colorId ?? chair.id ?? chairIndex);
+  const chairPalette = getWorkplaceChairPalette(chair.colorId ?? chair.id ?? chairIndex);
   const chairAccentColor = chair.color || chairPalette.bright_code;
 
   return (
@@ -36,17 +35,6 @@ export function ScheduleChairHeader(props: ScheduleChairHeaderProps) {
         activeHeaderDoctorPopoverChairId={activeHeaderDoctorPopoverChairId}
         setActiveHeaderDoctorPopoverChairId={setActiveHeaderDoctorPopoverChairId}
         onEditChair={onEditChair} handleConfirmAssignDoctor={handleConfirmAssignDoctor}
-      />
-
-      <ScheduleChairHeaderHiddenButtons
-        chair={chair} assignment={assignment} suggestedDoctor={suggestedDoctor}
-        activeHeaderDoctorPopoverChairId={activeHeaderDoctorPopoverChairId}
-        setActiveHeaderDoctorPopoverChairId={setActiveHeaderDoctorPopoverChairId}
-        openAssignModal={openAssignModal} onEditChair={onEditChair}
-        handleUnassignDoctor={handleUnassignDoctor} handleAssignDoctorWeek={handleAssignDoctorWeek}
-        handleAssignDoctorMonth={handleAssignDoctorMonth}
-        handleQuickSubstituteDoctor={handleQuickSubstituteDoctor}
-        handleBindDoctorToChair={handleBindDoctorToChair}
       />
 
       <div className="flex items-center justify-between gap-1 w-full min-w-0">

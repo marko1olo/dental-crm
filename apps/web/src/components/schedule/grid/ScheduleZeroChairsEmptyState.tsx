@@ -64,21 +64,26 @@ export function ScheduleZeroChairsEmptyState({
           onAddChair={
             onAddChair ||
             (async (chairData) => {
-              const newChair = {
-                id: chairData.id || `chair-${Date.now()}`,
-                name: chairData.name,
-                room: chairData.room || chairData.roomNumber || "",
-                color: chairData.color || "#0d9488",
-                specialization: chairData.specialization,
-                active: chairData.isActive ?? true,
-                branchId: chairData.branchId,
-              };
-              if (dashboard?.clinicSettings?.chairs) {
-                dashboard.clinicSettings.chairs.push(newChair as any);
+              const newChairId = chairData.id || `chair-${Date.now()}`;
+              if (dashboard?.clinicSettings) {
+                const chairItem = {
+                  id: newChairId,
+                  organizationId: dashboard.clinicSettings.profile?.organizationId || "",
+                  name: chairData.name,
+                  room: chairData.room || chairData.roomNumber || "",
+                  color: chairData.color || "#0d9488",
+                  specialization: chairData.specialization || null,
+                  active: chairData.isActive ?? true,
+                  hasXraySensor: false,
+                  hasMicroscope: false,
+                  hasSurgeryKit: false,
+                  notes: null,
+                };
+                dashboard.clinicSettings.chairs = [...(dashboard.clinicSettings.chairs || []), chairItem];
               }
               if (chairData.defaultDoctorId) {
                 handleConfirmAssignDoctor(
-                  newChair.id,
+                  newChairId,
                   chairData.defaultDoctorId,
                   "full",
                 );

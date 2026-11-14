@@ -1,3 +1,4 @@
+import React from "react";
 import type { Appointment } from "@dental/shared";
 import {
 	CalendarPlus,

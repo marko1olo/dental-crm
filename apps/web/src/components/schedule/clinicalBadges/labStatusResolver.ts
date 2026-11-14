@@ -55,16 +55,5 @@ export function resolveAppointmentLabStatus(
 		return evaluateAppointmentLabStatus(candidate, referenceDate);
 	}
 
-	const reason = (appointment?.reason || "").toLowerCase();
-	if (/лаборат|наряд|слепок|коронк|протез|вкладк|примерк/i.test(reason)) {
-		return evaluateAppointmentLabStatus(
-			{
-				status: /готов|сдач|поступ/i.test(reason) ? "ready_in_clinic" : "in_progress",
-				workType: appointment?.reason ?? null,
-			},
-			referenceDate,
-		);
-	}
-
 	return null;
 }

@@ -42,7 +42,10 @@ export function ScheduleChairSingleShiftCard({
     (currentHour < sEnd || (sEnd >= 20 && currentHour <= 20));
 
   return (
-    <div className="w-full flex flex-col gap-0.5 text-left">
+    <div
+      className="w-full flex flex-col gap-0.5 text-left"
+      data-testid={`chair-header-doctor-badge-${chair.id}`}
+    >
       <button
         type="button"
         onClick={() => openAssignModal(chair.id)}
@@ -62,9 +65,11 @@ export function ScheduleChairSingleShiftCard({
           <span className="font-bold text-[var(--ink)] truncate text-xs">
             {formatDoctorShortName(assignment.doctorName)}
           </span>
-          <span className="text-[11px] text-[var(--muted)] truncate hidden xl:inline">
-            · {assignment.doctorSpecialty || "Врач"}
-          </span>
+          {assignment.doctorSpecialty && assignment.doctorSpecialty !== "Врач" && (
+            <span className="text-[11px] text-[var(--muted)] truncate hidden xl:inline">
+              · {assignment.doctorSpecialty}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           <span className="font-mono text-[11px] text-[var(--muted)] font-medium hidden sm:inline">
@@ -102,7 +107,7 @@ export function ScheduleChairSingleShiftCard({
         </div>
       )}
       {/* Сегментированный селектор смены */}
-      <details className="hidden">
+      <details className="group relative">
         <summary className="w-full h-7 min-h-[28px] px-2 py-0.5 flex items-center justify-between gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer select-none list-none transition-colors [&::-webkit-details-marker]:hidden">
           <span className="truncate flex items-center gap-1">
             <Clock

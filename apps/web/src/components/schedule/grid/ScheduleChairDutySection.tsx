@@ -104,16 +104,11 @@ export function ScheduleChairDutySection({
             data-testid={`chair-shift-strip-${chair.id}`}
           >
             <span
-              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)]"
+              className="sr-only"
               data-testid={`chair-status-morning-${chair.id}`}
-              title="Утренняя смена (08:00–14:00): Свободно"
+              title="Смена дежурного врача: не назначена"
             >
-              <Sun
-                size={10}
-                className="text-amber-500 shrink-0"
-                aria-hidden="true"
-              />
-              <span className="text-[10px] font-semibold">Свободно</span>
+              Смена не назначена
             </span>
             <span
               className="sr-only"

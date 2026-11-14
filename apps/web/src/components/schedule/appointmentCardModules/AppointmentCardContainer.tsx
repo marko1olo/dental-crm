@@ -1,6 +1,6 @@
 import React from "react";
 import { AppointmentRefusalBanner } from "../AppointmentPaymentBadges";
-import { AppointmentCardEditor } from "../AppointmentCardEditor";
+import { AppointmentCardEditor } from "../appointmentEditor/index";
 import { useAppointmentCardState } from "../useAppointmentCardState";
 import type { AppointmentCardProps } from "../AppointmentCardTypes";
 import { AppointmentCardVisualBody } from "./AppointmentCardVisualBody";
@@ -23,7 +23,6 @@ export function AppointmentCardContainer(props: AppointmentCardProps) {
 			<div className="timeline-line" />
 			<div className="timeline-time shrink-0 font-medium">{formatTime(appointment.startsAt)}</div>
 			<div className="timeline-content min-w-0 max-w-full">
-				<p style={{ display: "none" }}>{appointment.reason}</p>
 				<article data-testid="appointment-card" data-appointment-id={appointment.id} data-duration-minutes={durationMinutes} data-density={isMicroDensity ? "micro" : isTwoLineMode ? "compact-2line" : "expanded"} data-proportional-height={proportionalHeight} data-multi-hour-block={isMultiHour ? "true" : "false"} data-slot-span={slotSpan} tabIndex={0} onKeyDown={handleCardKeyDown} onDoubleClick={handleCardDoubleClick} onMouseEnter={handleCardMouseEnter} onMouseLeave={handleCardMouseLeave} onFocus={handleCardMouseEnter} onBlur={handleCardMouseLeave} aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`} className={getAppointmentCardClassName(styleParams)} style={getAppointmentCardStyle(styleParams)}>
 					<AppointmentCardHoverOverlay appointment={appointment} dashboard={dashboard} displayStatus={displayStatus} appointmentPatient={appointmentPatient} appointmentPatientName={appointmentPatientName} patientBalance={patientBalance} appointmentDoctor={appointmentDoctor} appointmentAssistant={appointmentAssistant} appointmentChair={appointmentChair} cardTeeth={cardTeeth} allergyAlert={allergyAlert} appointmentLabels={appointmentLabels} formatTime={formatTime} handleQuickStatusChange={handleQuickStatusChange} handleCardMouseLeave={handleCardMouseLeave} hoverTimeoutRef={hoverTimeoutRef} isHoverPreviewOpen={isHoverPreviewOpen} setIsHoverPreviewOpen={setIsHoverPreviewOpen} onOpenVisit={onOpenVisit} />
 					<AppointmentCardVisualBody props={props} state={state} isMicroDensity={isMicroDensity} isTwoLineMode={isTwoLineMode} appointmentSuggestions={appointmentSuggestions} onOpenVisit={onOpenVisit} openAppointmentEditor={openAppointmentEditor} setIsMobileSheetOpen={setIsMobileSheetOpen} onFreeSlotToWaitlist={handleFreeSlotToWaitlist} />

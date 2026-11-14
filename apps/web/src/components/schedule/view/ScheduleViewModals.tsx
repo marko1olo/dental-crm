@@ -99,7 +99,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         }}
         initialSlot={quickBookingSlot}
         editingAppointment={quickBookingSlot?.editingAppointment || null}
-        dashboard={dashboard as any}
+        dashboard={dashboard ?? undefined}
         auth={auth}
         loadDashboard={
           typeof loadDashboard === "function"

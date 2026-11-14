@@ -6,13 +6,14 @@ import type { UrgentScheduleRequest } from "@dental/shared";
 import { UrgentScheduleRequestsWidget } from "./UrgentScheduleRequestsWidget";
 
 describe("UrgentScheduleRequestsWidget", () => {
-	it("renders loading state by default", () => {
+	it("renders zero noise (null) during quiet loading state per Mandate 8ba", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(UrgentScheduleRequestsWidget, {}),
 		);
-		assert.ok(
-			html.includes("Загрузка срочных обращений..."),
-			"должно отображаться сообщение загрузки",
+		assert.equal(
+			html,
+			"",
+			"тихая загрузка возвращает 0px визуального шума (null)",
 		);
 	});
 

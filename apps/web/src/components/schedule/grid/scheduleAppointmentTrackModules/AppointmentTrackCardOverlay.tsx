@@ -5,6 +5,7 @@ import { GridAppointmentCard } from "../../AppointmentGridCard";
 import type { ChairMaintenanceBlock } from "../../../../utils/scheduleCollisionUtils";
 import type { ScheduleDensityMode } from "../../useScheduleState";
 import type { ScheduleAppointmentTrackProps } from "./types";
+import type { ScheduleChairSlotItem } from "./AppointmentTimeSlotCell";
 import {
   calcMaintenanceDuration,
   getMaintenanceReasonLabel,
@@ -63,7 +64,7 @@ export function TrackAppointmentCard({
   props,
 }: {
   appointment: Appointment;
-  chair: any;
+  chair: ScheduleChairSlotItem;
   isNearBottom: boolean;
   isNearRightEdge: boolean;
   effectiveDensityMode: ScheduleDensityMode;

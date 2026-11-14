@@ -49,7 +49,8 @@ export function buildQuantumBuckets(
       if (appt.status === "cancelled" || appt.status === "no_show" || !appt.startsAt) continue;
       if (toLocal(appt.startsAt, timezone).slice(0, 10) !== dateKey) continue;
       const startMin = parseTimeToMinutes(toLocal(appt.startsAt, timezone).slice(11, 16));
-      const rawDur = Number((appt as any).durationMinutes) || Math.round((Date.parse(appt.endsAt) - Date.parse(appt.startsAt)) / 60000) || 30;
+      const parsedDuration = appt && "durationMinutes" in appt ? Number((appt as { durationMinutes?: number }).durationMinutes) : 0;
+      const rawDur = parsedDuration || Math.round((Date.parse(appt.endsAt) - Date.parse(appt.startsAt)) / 60000) || 30;
       const sStart = snapMinutesTo15Min(startMin);
       const sEnd = Math.max(sStart + QUANTUM_MINUTES, snapMinutesTo15Min(startMin + Math.max(15, rawDur)));
 

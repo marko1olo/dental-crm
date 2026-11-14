@@ -2,6 +2,7 @@ import React from "react";
 import {
   WORKPLACE_CHAIR_PALETTES,
   getWorkplaceChairPalette,
+  type Appointment,
 } from "@dental/shared";
 export {
   WORKPLACE_CHAIR_PALETTES,
@@ -9,7 +10,6 @@ export {
 };
 export { resolveChairDutyDoctor, detectAppointmentCollisions, findAlternativeChairsForSlot, findShiftMinutesOptions } from "./chairRosterMath";
 export { getAppointmentDurationMinutes, calculateAppointmentSpan, calculateAppointmentCardHeight, validateQuickBookingFields } from "./appointmentCardHelpers";
-export type { ChairMaintenanceBlock } from "../../utils/scheduleCollisionUtils";
 export type { ChairDoctorSubShift, ChairDoctorShiftAssignment, ScheduleGridProps } from "./grid/gridTypes";
 export { CHAIR_SHIFT_PRESETS, HOURS, DEFAULT_SOLO_CHAIR } from "./grid/gridConstants";
 import { generateTimeSlots, safeBuildSlotIso, buildDoctorSlotAppointmentsMap } from "./grid/gridSlotMath";
@@ -55,7 +55,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
         onSlotClick={props.onSlotClick}
         onAppointmentClick={props.onAppointmentClick}
         onQuickStatusChange={props.onQuickStatusChange}
-        onAppointmentMove={props.onAppointmentMove ? (id: string, updates: any) => props.onAppointmentMove!(id, updates) : undefined}
+        onAppointmentMove={props.onAppointmentMove ? (id: string, updates: Partial<Appointment>) => props.onAppointmentMove?.(id, updates) : undefined}
         patientName={ctrl.patientName}
         formatTime={props.formatTime}
         toDateTimeLocalValue={ctrl.toDateTimeLocalValue}

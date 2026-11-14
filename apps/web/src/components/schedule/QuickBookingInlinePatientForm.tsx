@@ -50,6 +50,8 @@ export function QuickBookingInlinePatientForm(props: QuickBookingInlinePatientFo
     <form
       onSubmit={handleCreateInlinePatient}
       className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/40 space-y-3 mt-2"
+      data-testid="quick-booking-inline-patient-form"
+      data-legacy-testid="appointment-inline-new-patient-panel"
     >
       <div className="flex justify-between items-center">
         <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5 m-0">
@@ -60,6 +62,8 @@ export function QuickBookingInlinePatientForm(props: QuickBookingInlinePatientFo
           type="button"
           onClick={() => setShowInlineNewPatient(false)}
           className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] px-3 py-2 rounded-lg hover:bg-[var(--paper)] transition-colors cursor-pointer flex items-center justify-center"
+          data-testid="quick-booking-inline-cancel-btn"
+          data-legacy-testid="appointment-quick-patient-cancel-btn"
         >
           Отмена
         </button>
@@ -82,6 +86,7 @@ export function QuickBookingInlinePatientForm(props: QuickBookingInlinePatientFo
         doctors={doctors}
         doctorUserId={doctorUserId}
         dashboard={dashboard}
+        handleCreateInlinePatient={handleCreateInlinePatient}
       />
     </form>
   );

@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarCheck, Clock } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 
 export interface ScheduleDayZeroBannerProps {
   dayAppointmentsCount: number;
@@ -67,12 +67,12 @@ export function ScheduleGridTimeCorner({
   handleSetGridStep,
 }: ScheduleGridTimeCornerProps) {
   return (
-    <div className="px-1 h-full min-h-[58px] text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex flex-col justify-center items-center py-1 gap-1 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
-      <span className="text-[10px] font-bold text-[var(--muted)] tracking-tight shrink-0 select-none uppercase">
+    <div className="px-1.5 h-full min-h-[58px] text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex flex-col justify-center items-center py-1 gap-1 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
+      <span className="text-[10px] font-bold text-[var(--muted)] tracking-tight shrink-0 select-none">
         Сетка
       </span>
       <div
-        className="schedule-grid-step-segmented w-full max-w-[66px] justify-center shrink-0 select-none"
+        className="schedule-grid-step-segmented w-full max-w-[104px] p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] flex flex-row flex-nowrap items-center justify-between shrink-0 select-none gap-0.5 shadow-2xs"
         data-testid="schedule-grid-step-selector"
         role="group"
         aria-label="Шаг сетки расписания"
@@ -80,27 +80,36 @@ export function ScheduleGridTimeCorner({
         <button
           type="button"
           onClick={() => handleSetGridStep(15)}
-          className={`schedule-grid-step-btn ${gridStep === 15 ? "active" : ""}`}
+          className={`schedule-grid-step-btn flex-1 min-w-[28px] px-1 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            gridStep === 15 ? "active" : ""
+          }`}
           data-testid="btn-grid-step-15"
           title="Масштаб сетки: 15 минут"
+          aria-pressed={gridStep === 15}
         >
           15м
         </button>
         <button
           type="button"
           onClick={() => handleSetGridStep(30)}
-          className={`schedule-grid-step-btn ${gridStep === 30 ? "active" : ""}`}
+          className={`schedule-grid-step-btn flex-1 min-w-[28px] px-1 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            gridStep === 30 ? "active" : ""
+          }`}
           data-testid="btn-grid-step-30"
           title="Масштаб сетки: 30 минут"
+          aria-pressed={gridStep === 30}
         >
           30м
         </button>
         <button
           type="button"
           onClick={() => handleSetGridStep(60)}
-          className={`schedule-grid-step-btn ${gridStep === 60 ? "active" : ""}`}
+          className={`schedule-grid-step-btn flex-1 min-w-[28px] px-1 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            gridStep === 60 ? "active" : ""
+          }`}
           data-testid="btn-grid-step-60"
           title="Масштаб сетки: 60 минут"
+          aria-pressed={gridStep === 60}
         >
           60м
         </button>

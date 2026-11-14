@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Patient } from "@dental/shared";
 import React from "react";
 import { GridAppointmentInChairActions } from "./gridAppointmentQuickActions/GridAppointmentInChairActions";
 import { GridAppointmentPlannedActions } from "./gridAppointmentQuickActions/GridAppointmentPlannedActions";
@@ -6,9 +6,9 @@ import { GridAppointmentPlannedActions } from "./gridAppointmentQuickActions/Gri
 export interface GridAppointmentQuickActionsProps {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
+	patObj?: Patient | null | undefined;
 	isHovered: boolean;
-	onQuickStatusChange: (id: string, status: any) => void;
+	onQuickStatusChange: (id: string, status: Appointment["status"]) => void;
 }
 
 export function GridAppointmentQuickActions({

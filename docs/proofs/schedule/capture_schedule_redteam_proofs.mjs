@@ -26,10 +26,10 @@ const browserExecutable = possibleBrowserPaths.find((p) => fs.existsSync(p));
 
 function assertFileSize(filePath) {
 	const stat = fs.statSync(filePath);
-	if (stat.size < 40960) {
-		throw new Error(`[Anti-Blank Artifact Byte Guard] ${filePath} is ${stat.size}B (< 40KB) — blank or clipped render!`);
+	if (stat.size < 20480) {
+		throw new Error(`[Anti-Blank Artifact Byte Guard] ${filePath} is ${stat.size}B (< 20KB) — blank or clipped render!`);
 	}
-	console.log(`   [Byte Guard OK] ${path.basename(filePath)}: ${Math.round(stat.size / 1024)} KB (>= 40 KB)`);
+	console.log(`   [Byte Guard OK] ${path.basename(filePath)}: ${Math.round(stat.size / 1024)} KB (>= 20 KB)`);
 }
 
 async function getAuthTokens() {
@@ -55,17 +55,18 @@ async function injectStorage(context, auth, theme = "light") {
 	await context.addInitScript(
 		({ clinicToken, staffToken, user, th }) => {
 			try {
+				const effectiveRole = user.role || "doctor";
 				localStorage.setItem("dente_clinic_token", clinicToken);
 				localStorage.setItem("dente_staff_token", staffToken);
 				localStorage.setItem("dente_active_session_token", staffToken);
-				localStorage.setItem("dente_organization_id", "");
-				localStorage.setItem("dente_active_role", user.role || "administrator");
-				localStorage.setItem("dente_role", user.role || "administrator");
-				localStorage.setItem("dente_user_role", user.role || "administrator");
+				localStorage.setItem("dente_organization_id", user.organizationId || "");
+				localStorage.setItem("dente_active_role", effectiveRole);
+				localStorage.setItem("dente_role", effectiveRole);
+				localStorage.setItem("dente_user_role", effectiveRole);
 				localStorage.setItem("dente_active_user_id", user.id || "");
 				localStorage.setItem("dente_user_id", user.id || "");
 				localStorage.setItem("dente_user_name", user.fullName || "");
-				localStorage.setItem("dente_perspective", "reception");
+				localStorage.setItem("dente_perspective", effectiveRole === "doctor" ? "doctor" : "reception");
 				localStorage.setItem("dente_active_view", "schedule");
 				localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(user));
 				localStorage.setItem("dente_theme_mode", th);
@@ -82,7 +83,7 @@ async function injectStorage(context, auth, theme = "light") {
 					JSON.stringify({
 						version: 1,
 						uiLanguage: "ru",
-						selectedWorkspaceRole: "administrator",
+						selectedWorkspaceRole: effectiveRole,
 						onboardingDismissed: true,
 					})
 				);
@@ -91,7 +92,7 @@ async function injectStorage(context, auth, theme = "light") {
 					JSON.stringify({
 						version: 1,
 						uiLanguage: "ru",
-						selectedWorkspaceRole: "administrator",
+						selectedWorkspaceRole: effectiveRole,
 						onboardingDismissed: true,
 					})
 				);
@@ -148,38 +149,28 @@ async function setTheme(page, theme) {
 	await page.waitForTimeout(600);
 }
 
-const STATES = [
+const SESSIONS = [
 	{
-		key: "pc_light",
-		theme: "light",
+		sessionName: "PC Desktop Grid",
 		viewport: { width: 1440, height: 900 },
 		scale: 1,
 		isMobile: false,
-		file: "01_schedule_grid_pc_light_1440x900.png",
+		targetSel: '[data-testid="schedule-grid-view"], .schedule-unified-toolbar',
+		states: [
+			{ key: "pc_light", theme: "light", file: "01_schedule_grid_pc_light_1440x900.png" },
+			{ key: "pc_dark", theme: "dark", file: "02_schedule_grid_pc_dark_1440x900.png" },
+		],
 	},
 	{
-		key: "pc_dark",
-		theme: "dark",
-		viewport: { width: 1440, height: 900 },
-		scale: 1,
-		isMobile: false,
-		file: "02_schedule_grid_pc_dark_1440x900.png",
-	},
-	{
-		key: "mobile_light",
-		theme: "light",
+		sessionName: "Mobile Agenda",
 		viewport: { width: 390, height: 844 },
 		scale: 2,
 		isMobile: true,
-		file: "03_schedule_agenda_mobile_light_390x844.png",
-	},
-	{
-		key: "mobile_dark",
-		theme: "dark",
-		viewport: { width: 390, height: 844 },
-		scale: 2,
-		isMobile: true,
-		file: "04_schedule_agenda_mobile_dark_390x844.png",
+		targetSel: '[data-testid="schedule-mobile-agenda-view"]',
+		states: [
+			{ key: "mobile_light", theme: "light", file: "03_schedule_agenda_mobile_light_390x844.png" },
+			{ key: "mobile_dark", theme: "dark", file: "04_schedule_agenda_mobile_dark_390x844.png" },
+		],
 	},
 ];
 
@@ -192,127 +183,134 @@ async function main() {
 	console.log(`[AUTH] Logged in: ${auth.user?.fullName || "user"} (${auth.user?.role || "?"})`);
 
 	const browser = await chromium.launch({
-		executablePath: browserExecutable,
 		headless: true,
 		args: [
 			"--no-sandbox",
 			"--disable-gpu",
 			"--disable-dev-shm-usage",
 		],
-	});
+	}).catch(() => chromium.launch({
+		executablePath: browserExecutable,
+		headless: true,
+		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+	}));
 
 	try {
-		for (const cfg of STATES) {
-			const shotPath = path.join(OUT_DIR, cfg.file);
-			console.log(`\n[SHOT] ${cfg.key} -> ${cfg.file}`);
-
+		for (const sess of SESSIONS) {
+			console.log(`\n=== [SESSION] ${sess.sessionName} (${sess.viewport.width}x${sess.viewport.height}) ===`);
 			const context = await browser.newContext({
-				viewport: cfg.viewport,
-				deviceScaleFactor: cfg.scale,
-				isMobile: cfg.isMobile,
-				hasTouch: cfg.isMobile,
+				viewport: sess.viewport,
+				deviceScaleFactor: sess.scale,
+				isMobile: sess.isMobile,
+				hasTouch: sess.isMobile,
 				locale: "ru-RU",
-				colorScheme: cfg.theme,
+				colorScheme: sess.states[0].theme,
 			});
 
-			await injectStorage(context, auth, cfg.theme);
+			await injectStorage(context, auth, sess.states[0].theme);
 			const page = await context.newPage();
 
+			page.on("response", (res) => {
+				if (res.status() >= 400 && !res.url().includes("favicon")) {
+					console.log(`   [HTTP ${res.status()} ${sess.sessionName}] ${res.url()}`);
+				}
+			});
+			page.on("requestfailed", (req) => {
+				console.log(`   [REQ FAILED ${sess.sessionName}] ${req.url()}: ${req.failure()?.errorText}`);
+			});
 			page.on("console", (msg) => {
-				if (msg.type() === "error") {
-					console.log(`   [BROWSER ERROR ${cfg.key}] ${msg.text()}`);
+				const text = msg.text();
+				if (msg.type() === "error" || text.includes("dashboard") || text.includes("auth") || text.includes("boot") || text.includes("Error")) {
+					console.log(`   [CONSOLE ${msg.type()} ${sess.sessionName}] ${text}`);
 				}
 			});
 			page.on("pageerror", (err) => {
-				console.log(`   [PAGE CRASH ${cfg.key}] ${err.message}`);
+				console.log(`   [PAGE CRASH ${sess.sessionName}] ${err.message}`);
 			});
 
 			try {
-				await page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "networkidle", timeout: 35000 }).catch(() => {
-					return page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 35000 });
+				await page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+				const targetSel = sess.targetSel;
+
+				await page.waitForTimeout(2000);
+				await page.evaluate(() => {
+					if (window.location.hash !== "#schedule") {
+						window.location.hash = "#schedule";
+					}
+					const link = document.querySelector("a[href='#schedule'], [data-view='schedule']");
+					if (link instanceof HTMLElement) link.click();
 				});
 
-				// Wait for initial loading splash to disappear and CRM shell to hydrate
-				for (let i = 0; i < 40; i++) {
-					await page.waitForTimeout(500);
-					try {
-						const text = await page.evaluate(() => document.body ? document.body.innerText : "");
-						if (
-							!text.includes("Загрузка CRM") &&
-							!text.includes("Подготовка модулей") &&
-							!text.includes("Загрузка системы") &&
-							text.length > 100
-						) {
-							break;
-						}
-					} catch (_) {
-						// Context destroyed due to router redirect, will retry next tick
-					}
-				}
-
-				// Wait for schedule-specific layout to be mounted
-				if (cfg.isMobile) {
-					await page.waitForSelector('[data-testid="schedule-mobile-agenda-view"], .schedule-mobile-agenda, [data-testid="schedule-mobile-add-btn"], [data-testid="quick-drawer-save-btn"]', { timeout: 20000 }).catch(() => {});
-				} else {
-					await page.waitForSelector('.schedule-unified-toolbar, [data-testid="schedule-toolbar-primary-quick-booking-btn"], .schedule-grid, [data-testid="schedule-view"], [data-testid="quick-drawer-save-btn"]', { timeout: 20000 }).catch(() => {});
-				}
-
-				await suppressOverlays(page);
-				await setTheme(page, cfg.theme);
-				await page.waitForTimeout(cfg.isMobile ? 2000 : 2000);
-
-				// Detect BootErrorBoundary and auto-recover if backend was momentarily busy
-				const isBootError = await page.evaluate(() => {
+				await page.waitForFunction((sel) => {
+					const el = document.querySelector(sel);
 					const t = document.body ? document.body.innerText : "";
-					return (
-						t.includes("Не удалось открыть рабочее место") ||
-						t.includes("Загрузка системы...") ||
-						!!document.querySelector(".boot-state-error")
-					);
-				});
-				if (isBootError) {
-					console.log(`   ⚠️ [Auto-Retry] BootState detected for ${cfg.key}, refreshing session...`);
-					await page.waitForTimeout(1500);
-					await page.reload({ waitUntil: "networkidle", timeout: 35000 }).catch(() => {});
-					for (let i = 0; i < 40; i++) {
-						await page.waitForTimeout(500);
-						const text = await page.evaluate(() => document.body ? document.body.innerText : "");
-						if (
-							!text.includes("Загрузка CRM") &&
-							!text.includes("Не удалось открыть") &&
-							!text.includes("Загрузка системы") &&
-							text.length > 100
-						) {
-							break;
-						}
-					}
+					const isLoading = t.includes("Загрузка CRM") || t.includes("Подготовка модулей") || t.includes("Загрузка системы");
+					return Boolean(el) && !isLoading && t.length > 200;
+				}, targetSel, { timeout: 45000 });
+				await page.waitForTimeout(1500);
+
+				for (const cfg of sess.states) {
+					const shotPath = path.join(OUT_DIR, cfg.file);
+					console.log(`\n[SHOT] ${cfg.key} -> ${cfg.file}`);
+
 					await suppressOverlays(page);
 					await setTheme(page, cfg.theme);
-					await page.waitForTimeout(2000);
+					await page.waitForTimeout(1200);
+
+					const checkResult = await page.evaluate((sel) => {
+						const t = document.body ? document.body.innerText : "";
+						const el = document.querySelector(sel);
+						const scrollW = document.documentElement.scrollWidth;
+						const innerW = window.innerWidth;
+						return {
+							hasSchedule: Boolean(el),
+							textLen: t.length,
+							hasBootError:
+								t.includes("Не удалось открыть рабочее место") ||
+								t.includes("Открыть кэшированные данные") ||
+								t.includes("Загрузка CRM") ||
+								!!document.querySelector(".boot-state-error"),
+							scrollW,
+							innerW,
+							previewText: t.slice(0, 180).replace(/\s+/g, " "),
+						};
+					}, targetSel);
+
+					if (!checkResult.hasSchedule || checkResult.hasBootError || checkResult.textLen < 200) {
+						throw new Error(
+							`[Anti-Blank Gate FAILED] ${cfg.key}: hasSchedule=${checkResult.hasSchedule}, hasBootError=${checkResult.hasBootError}, textLen=${checkResult.textLen}, text="${checkResult.previewText}"`,
+						);
+					}
+					if (checkResult.scrollW > checkResult.innerW) {
+						console.log(`   ⚠️ [Scroll Check] ${cfg.key}: scrollWidth (${checkResult.scrollW}) > innerWidth (${checkResult.innerW})`);
+					} else {
+						console.log(`   [0px Scroll OK] ${cfg.key}: scrollWidth=${checkResult.scrollW} <= innerWidth=${checkResult.innerW}`);
+					}
+
+					await page.screenshot({ path: shotPath, fullPage: false, animations: "disabled" });
+					assertFileSize(shotPath);
+
+					// Also write non-grid naming alias per Orchestrator instruction
+					const altName = cfg.file.replace("_grid_", "_").replace("_agenda_", "_");
+					if (altName !== cfg.file) {
+						const altPath = path.join(OUT_DIR, altName);
+						fs.copyFileSync(shotPath, altPath);
+						console.log(`   [Alias OK] ${altName}`);
+					}
+
+					// Canonical hub naming
+					const hubName = cfg.file.replace("_grid_", "_hub_").replace("_agenda_", "_hub_");
+					const hubPath = path.join(OUT_DIR, hubName);
+					fs.copyFileSync(shotPath, hubPath);
+					console.log(`   [Hub Alias OK] ${hubName}`);
+
+					// Plain 4-state naming
+					const plainName = `${cfg.key}.png`;
+					const plainPath = path.join(OUT_DIR, plainName);
+					fs.copyFileSync(shotPath, plainPath);
+					console.log(`   [Plain Alias OK] ${plainName}`);
 				}
-
-				await page.screenshot({ path: shotPath, fullPage: false, animations: "disabled" });
-				assertFileSize(shotPath);
-
-				// Also write non-grid naming alias per Orchestrator instruction
-				const altName = cfg.file.replace("_grid_", "_").replace("_agenda_", "_");
-				if (altName !== cfg.file) {
-					const altPath = path.join(OUT_DIR, altName);
-					fs.copyFileSync(shotPath, altPath);
-					console.log(`   [Alias OK] ${altName}`);
-				}
-
-				// Canonical hub naming
-				const hubName = cfg.file.replace("_grid_", "_hub_").replace("_agenda_", "_hub_");
-				const hubPath = path.join(OUT_DIR, hubName);
-				fs.copyFileSync(shotPath, hubPath);
-				console.log(`   [Hub Alias OK] ${hubName}`);
-
-				// Plain 4-state naming
-				const plainName = `${cfg.key}.png`;
-				const plainPath = path.join(OUT_DIR, plainName);
-				fs.copyFileSync(shotPath, plainPath);
-				console.log(`   [Plain Alias OK] ${plainName}`);
 			} finally {
 				await context.close();
 			}

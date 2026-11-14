@@ -97,7 +97,7 @@ describe("Wave 51 Schedule & Fast Booking Inquisitor: Frictionless Booking & Ove
 		});
 	});
 
-	describe("3. WaitlistQuickFillModal: Chair & Doctor Solo Fallback & Overbooking Integrity", () => {
+	describe("3. WaitlistDrawer: Chair & Doctor Solo Fallback & Overbooking Integrity", () => {
 		it("provides DEFAULT_SOLO_CHAIR id as fallback when clinic has no configured chairs", () => {
 			const clinicSettings = { chairs: [] as Array<{ id: string; active?: boolean }>, staff: [] };
 			const activeChairs = (clinicSettings.chairs ?? []).filter((c: any) => c.active);

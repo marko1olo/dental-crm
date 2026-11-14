@@ -48,6 +48,7 @@ export function SelectedPatientCard({
         <button
           type="button"
           onClick={onClearPatient}
+          data-testid="select-appointment-patient"
           className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-xs text-[var(--muted)] hover:text-rose-600 rounded-lg hover:bg-[var(--paper)] transition-colors cursor-pointer"
           title="Выбрать другого пациента"
           aria-label="Сменить пациента"
@@ -77,16 +78,18 @@ export function SelectedPatientCard({
               <span className="text-[11px] text-rose-700 dark:text-rose-300">Напомнить об оплате</span>
             </div>
           )}
+        </div>
+      )}
 
-          {hasActivePatientVisit && (
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-100 text-xs flex items-start gap-2" data-testid="quick-booking-active-visit-warning">
-              <AlertCircle size={15} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p className="m-0 font-bold">По пациенту сейчас идет активный приём в кресле</p>
-                <p className="m-0 font-normal text-[11px] text-[var(--muted)]">(Запись на следующий приём не блокируется, врач или администратор может сразу забронировать слот)</p>
-              </div>
+      {hasActivePatientVisit && (
+        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-100 text-xs flex items-start gap-2" data-testid="quick-booking-active-visit-warning">
+          <div data-testid="appointment-open-visit-warning" className="contents">
+            <AlertCircle size={15} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="m-0 font-bold">По пациенту сейчас идет активный приём в кресле (активный визит не блокирует новую карту)</p>
+              <p className="m-0 font-normal text-[11px] text-[var(--muted)]">(Запись на следующий приём не блокируется, врач или администратор может сразу забронировать слот)</p>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

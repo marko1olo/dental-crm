@@ -24,25 +24,29 @@ if (typeof registerHooks === "function") {
   }
 }
 
+import { resolveChairDutyDoctor } from "../chairRosterMath";
+import * as catalogMod from "../scheduleCatalogData";
+import { ScheduleViewModals } from "../view/ScheduleViewModals";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const webSrcDir = path.resolve(__dirname, "../../..");
 
 describe("Schedule Modals & Appointment Monolith Decomposition Suite (/decomposer)", () => {
-  it("1. validates AppointmentModal.tsx exists and is decomposed", () => {
-    const file = path.join(
-      webSrcDir,
-      "components/schedule/AppointmentModal.tsx",
-    );
-    assert.ok(fs.existsSync(file), "AppointmentModal.tsx must exist");
-  });
-
-  it("2. validates QuickBookingDrawer.tsx exists and is decomposed", () => {
+  it("1. validates QuickBookingDrawer.tsx exists as canonical booking SSOT", () => {
     const file = path.join(
       webSrcDir,
       "components/schedule/QuickBookingDrawer.tsx",
     );
     assert.ok(fs.existsSync(file), "QuickBookingDrawer.tsx must exist");
+  });
+
+  it("2. validates scheduleCatalogData.ts exists and contains canonical presets", () => {
+    const file = path.join(
+      webSrcDir,
+      "components/schedule/scheduleCatalogData.ts",
+    );
+    assert.ok(fs.existsSync(file), "scheduleCatalogData.ts must exist");
   });
 
   it("3. validates ScheduleViewModals.tsx exists and is decomposed", () => {
@@ -63,17 +67,14 @@ describe("Schedule Modals & Appointment Monolith Decomposition Suite (/decompose
     assert.ok(files.length >= 4, "Must contain all decomposed modules");
   });
 
-  it("5. preserves AppointmentModal public runtime exports", { timeout: 30000 }, async () => {
-    const mod = await import("../AppointmentModal.js");
-    assert.equal(typeof mod.AppointmentModal, "function");
-    assert.equal(typeof mod.resolveChairDutyDoctor, "function");
-    assert.ok(Array.isArray(mod.QUICK_APPOINTMENT_REASONS));
-    assert.ok(Array.isArray(mod.TECHNICAL_BREAK_PRESETS));
-    assert.equal(typeof mod.isTechnicalBreakAppointment, "function");
+  it("5. preserves schedule catalog and duty doctor runtime exports", () => {
+    assert.equal(typeof resolveChairDutyDoctor, "function");
+    assert.ok(Array.isArray(catalogMod.QUICK_APPOINTMENT_REASONS));
+    assert.ok(Array.isArray(catalogMod.TECHNICAL_BREAK_PRESETS));
+    assert.equal(typeof catalogMod.isTechnicalBreakAppointment, "function");
   });
 
-  it("6. preserves ScheduleViewModals public runtime exports", { timeout: 30000 }, async () => {
-    const mod = await import("../view/ScheduleViewModals.js");
-    assert.equal(typeof mod.ScheduleViewModals, "function");
+  it("6. preserves ScheduleViewModals public runtime exports", () => {
+    assert.equal(typeof ScheduleViewModals, "function");
   });
 });

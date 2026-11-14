@@ -220,27 +220,19 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 				}}
 			>
 				<div
-					className="appointment-card-grid-unified w-full h-full min-w-0 flex-1 flex flex-col justify-between gap-1 select-none"
+					className="appointment-card-grid-unified w-full h-full min-w-0 flex-1 flex flex-col justify-between gap-1 select-none overflow-hidden"
 					data-density={densityMode || (durationMin <= 20 ? "micro" : durationMin <= 30 ? "compact" : "expanded")}
 				>
-					{/* ROW 1: HEADER (Slot Time 13px bold mono + Patient FIO 14px semibold + 1-Click Action + Status Marker) */}
+					{/* ROW 1: HEADER (Slot Time 13px bold mono + 1-Click Action + Status Marker) */}
 					<div
 						className="appointment-card-row-header flex items-center justify-between gap-1.5 w-full min-w-0"
 						data-testid={densityMode === "compact" || (!densityMode && durationMin <= 20)
 							? `appointment-card-grid-micro-${a.id}` : `appointment-card-header-${a.id}`}
 					>
-						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+						<div className="flex items-center gap-1.5 min-w-0 shrink-0">
 							<span className="font-mono text-[13px] font-bold text-[var(--ink)] tracking-tight shrink-0 select-text">
 								{aStart}
 							</span>
-							<span className="text-[14px] font-semibold text-[var(--ink)] truncate min-w-0 pl-0.5" title={pName}>
-								{pName}
-							</span>
-							{patientAgeLabel && (
-								<span className="text-[10px] text-[var(--muted)] shrink-0 hidden xl:inline opacity-75">
-									{patientAgeLabel}
-								</span>
-							)}
 							{isCito && (
 								<span
 									className="px-1 py-0.2 rounded text-[10px] font-black bg-rose-600 text-white shrink-0 shadow-2xs animate-pulse"
@@ -277,6 +269,21 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 								onReassignDoctor={onReassignDoctor} onFreeSlotToWaitlist={onFreeSlotToWaitlist}
 							/>
 						</div>
+					</div>
+
+					{/* ROW 1.5: PATIENT FIO (100% full width, prominent 13.5px bold, zero clipping) */}
+					<div
+						className="appointment-card-row-patient flex items-center justify-between gap-1.5 w-full min-w-0"
+						data-testid={`appointment-card-patient-row-${a.id}`}
+					>
+						<span className="text-[13.5px] font-bold text-[var(--ink)] truncate min-w-0 flex-1 pl-0.5 tracking-tight" title={pName}>
+							{pName}
+						</span>
+						{patientAgeLabel && (
+							<span className="text-[10px] text-[var(--muted)] shrink-0 opacity-75">
+								{patientAgeLabel}
+							</span>
+						)}
 					</div>
 
 					{isCancelledOrNoShow ? (

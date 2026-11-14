@@ -121,12 +121,6 @@ export function ScheduleGridModals({
                 active: chairData.isActive ?? true,
                 branchId: chairData.branchId,
               };
-              if (dashboard?.clinicSettings) {
-                dashboard.clinicSettings.chairs = [
-                  ...(dashboard.clinicSettings.chairs || []),
-                  newChair as any,
-                ];
-              }
               if (chairData.defaultDoctorId) {
                 handleConfirmAssignDoctor(
                   newChair.id,
@@ -158,8 +152,9 @@ export function ScheduleGridModals({
               const newStaffMember: any = {
                 id: docData.id || `doc-quick-${Date.now()}`,
                 organizationId:
+                  (dashboard as { organizationId?: string })?.organizationId ||
                   dashboard?.clinicSettings?.profile?.organizationId ||
-                  "00000000-0000-4000-8000-000000000001",
+                  undefined,
                 fullName: docData.fullName,
                 role: "doctor",
                 specialties: [docData.specialty],
@@ -170,17 +165,11 @@ export function ScheduleGridModals({
                 canManageMoney: false,
                 canManageImports: false,
                 color: docData.color,
-                preferredChairId: docData.preferredChairId || null,
+                preferredChairId: docData.preferredChairId || effectiveChairs[0]?.id || null,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               };
               createdDoctorId = newStaffMember.id;
-              if (dashboard?.clinicSettings) {
-                dashboard.clinicSettings.staff = [
-                  ...(dashboard.clinicSettings.staff || []),
-                  newStaffMember,
-                ];
-              }
             }
             if (docData.preferredChairId && createdDoctorId) {
               handleBindDoctorToChair(

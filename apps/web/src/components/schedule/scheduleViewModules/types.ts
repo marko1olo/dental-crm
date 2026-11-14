@@ -18,10 +18,13 @@ import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
 import type {
   DateRangeShiftPreset,
   DoctorShift,
+  StaffMember as RosterStaffMember,
+  CabinetDefinition as RosterCabinetDefinition,
 } from "../roster/DoctorShiftRosterModal";
 import type { DayGroupingAppointment } from "../scheduleDayGrouping";
 import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
 import type { ScheduleViewBodyProps } from "../view/ScheduleViewBody";
+import type { ScheduleViewToolbarProps } from "../view/scheduleViewToolbarTypes";
 
 // Re-export core types for consumers
 export type {
@@ -107,62 +110,12 @@ export type ScheduleViewProps = {
     | ((updater: (prev: Dashboard) => Dashboard) => void);
 };
 
-export type ScheduleHeaderToolbarProps = {
-  clinicToday: string;
-  scheduleDateFilter: string;
-  setScheduleDateFilter: (date: string) => void;
-  stepScheduleDay: (delta: number) => void;
-  activeScheduleFilterCount: number;
-  resetScheduleFilters: () => void;
+export type ScheduleHeaderToolbarProps = ScheduleViewToolbarProps & {
   dashboard: Dashboard;
-  scheduleDoctorFilterId: string | null;
-  setScheduleDoctorFilterId: (id: string | null) => void;
-  scheduleChairFilterId: string | null;
-  setScheduleChairFilterId: (id: string | null) => void;
   scheduleStatusFilter: Appointment["status"] | "all";
-  shiftQueueCounts: Record<string, number>;
   setScheduleStatusFilter: (status: string) => void;
-  computedChairDoctorAssignments: Record<string, ChairDoctorShiftAssignment>;
-  scheduleViewMode: "timeline" | "grid" | "chairs";
-  setScheduleViewMode: (mode: "timeline" | "grid" | "chairs") => void;
-  scheduleGridStep: 15 | 30 | 60;
-  setScheduleGridStep: (step: 15 | 30 | 60) => void;
-  scheduleFilterSummaryNode: ReactNode;
-  isSmartAiOpen: boolean;
-  setIsSmartAiOpen: (open: boolean) => void;
-  setDoctorFreeSlotsOpen: (open: boolean) => void;
   onOpenPreventiveInspection: () => void;
   preventiveInspectionCount: number;
-  setIsPatientSearchOpen: (open: boolean) => void;
-  handleEmergencyCitoBooking: () => void;
-  showShiftAnalytics: boolean;
-  setShowShiftAnalytics: (show: boolean) => void;
-  setIsRosterModalOpen: (open: boolean) => void;
-  setWaitlistOpen: (open: boolean) => void;
-  waitlistCount: number;
-  showConfirmationsPanel: boolean;
-  setShowConfirmationsPanel: (show: boolean) => void;
-  showFreedSlotsPanel: boolean;
-  setShowFreedSlotsPanel: (show: boolean) => void;
-  showClipboardPanel: boolean;
-  setShowClipboardPanel: (show: boolean) => void;
-  setIsCalendarSyncModalOpen: (open: boolean) => void;
-  setIsTomorrowRemindersOpen: (open: boolean) => void;
-  setIsQuickAddChairOpen: (open: boolean) => void;
-  handleAddChairFromSchedule: (chair: QuickAddChairData) => Promise<void>;
-  setQuickBookingSlot: (slot: QuickBookingSlotInfo | null) => void;
-  setQuickBookingOpen: (open: boolean) => void;
-  todayScheduleDate: () => string;
-  clipboardReloadToken: number;
-  loadDashboard?: ((options?: { adminSecret?: string }) => Promise<void>) | undefined;
-  shiftWarnings?: Dashboard["shiftIntelligence"]["scheduleWarnings"] | undefined;
-  openScheduleWarning?: ((
-    warning: Dashboard["shiftIntelligence"]["scheduleWarnings"][number],
-  ) => void) | undefined;
-  onOpenDoctorShiftDrawer?: ((shiftToEdit?: Partial<DoctorShift> | null) => void) | undefined;
-  onOpenChairDateRangeModal?: (() => void) | undefined;
-  pendingOnlineBookingsCount?: number | undefined;
-  onOpenPendingOnlineBookings?: (() => void) | undefined;
 
   // Admin secret props
   scheduleAdminSecretNeeded: boolean;
@@ -227,20 +180,22 @@ export type ScheduleModalsLayerProps = {
   setIsPendingOnlineBookingsOpen?: ((open: boolean) => void) | undefined;
   pendingOnlineBookings?: Appointment[] | undefined;
   dashboard: Dashboard;
-  auth: any;
+  auth?: { user?: { id?: string; name?: string; role?: string } | null } | null | undefined;
   loadDashboard?: ((options?: { adminSecret?: string }) => Promise<void>) | undefined;
-  logicContext: any;
+  logicContext?: {
+    setDashboard?: React.Dispatch<React.SetStateAction<Dashboard>> | ((updater: (prev: Dashboard) => Dashboard) => void);
+  } | null | undefined;
   scheduleDoctorFilterId: string | null;
   scheduleChairFilterId: string | null;
   scheduleDateFilter: string;
   clinicToday: string;
   todayScheduleDate: () => string;
-  computedChairDoctorAssignments: any;
+  computedChairDoctorAssignments: Record<string, ChairDoctorShiftAssignment>;
   savedDoctorShifts: DoctorShift[];
-  rosterStaffList: any[];
-  rosterCabinets: any[];
-  rosterAppointments: any[];
-  scheduleDoctors: any[];
+  rosterStaffList: RosterStaffMember[];
+  rosterCabinets: RosterCabinetDefinition[];
+  rosterAppointments: Appointment[];
+  scheduleDoctors: Array<{ id: string; name?: string; fullName?: string; role?: string }>;
   currentDateKey: string;
   formatTime: (value: string) => string;
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
@@ -275,8 +230,8 @@ export type ScheduleModalsLayerProps = {
     allowEmergencyOverride?: boolean;
   }) => Promise<boolean>;
   handleSaveDoctorShifts: (shifts: DoctorShift[]) => Promise<void>;
-  handleAddChairFromSchedule: any;
-  showToast: any;
+  handleAddChairFromSchedule: (chairData: QuickAddChairData) => Promise<void>;
+  showToast: (msg: string, type?: "success" | "error" | "info" | "warning", duration?: number) => void;
   editingDrawerShift: Partial<DoctorShift> | null;
   setEditingDrawerShift: (shift: Partial<DoctorShift> | null) => void;
   isNewDrawerShift: boolean;

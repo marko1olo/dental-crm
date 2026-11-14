@@ -1,7 +1,7 @@
 import React from "react";
 import { AppointmentMedicalBadges } from "../AppointmentPaymentBadges";
-import { AppointmentCardPrimaryActions } from "../AppointmentCardPrimaryActions";
-import { AppointmentCardContextMenu } from "../AppointmentCardContextMenu";
+import { AppointmentCardPrimaryActions } from "../appointmentCardActions/index";
+import { AppointmentCardContextMenu } from "../appointmentContextMenu/index";
 import { formatDoctorShortName } from "../appointmentCardHelpers";
 import { CardPatientMetadata } from "./CardPatientMetadata";
 import { CardStatusBadgeContainer } from "./CardStatusBadgeContainer";

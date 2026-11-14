@@ -17,7 +17,7 @@ export function QuickAssistantSelector({
 
   return (
     <div className="sm:col-span-2">
-      <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+      <label className="text-xs sm:text-sm font-semibold text-[var(--muted)] block mb-1">
         Ассистент
       </label>
       <select

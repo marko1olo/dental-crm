@@ -9,17 +9,33 @@ import {
   TrackAppointmentCard,
 } from "./AppointmentTrackCardOverlay";
 
+export interface ScheduleChairSlotItem {
+  id: string;
+  name: string;
+  color?: string | null;
+  colorId?: string | number;
+  isActive?: boolean;
+  active?: boolean;
+  [key: string]: unknown;
+}
+
+interface SlotCustomCssVars extends React.CSSProperties {
+  "--slot-position"?: number;
+  "--slot-size"?: number;
+  "--slot-step"?: number;
+}
+
 export interface AppointmentTimeSlotCellProps {
   hour: string;
   hIndex: number;
-  chair: any;
+  chair: ScheduleChairSlotItem;
   chairIndex: number;
   slotsList: string[];
   isLastCol: boolean;
   colIndex: number;
   cellData: SlotCellData;
   renderedApptIds: Set<string>;
-  onSlotDrop: (e: React.DragEvent, chair: any, hour: string) => void;
+  onSlotDrop: (e: React.DragEvent, chair: ScheduleChairSlotItem, hour: string) => void;
   effectiveDensityMode: ScheduleDensityMode;
   props: ScheduleAppointmentTrackProps;
 }
@@ -40,7 +56,7 @@ export function AppointmentTimeSlotCell({
 }: AppointmentTimeSlotCellProps) {
   const rowIndex = hIndex + 1;
   const chairPalette = getWorkplaceChairPalette(
-    (chair as any).colorId ?? chair.id ?? chairIndex,
+    chair.colorId ?? chair.id ?? chairIndex,
   );
   const { cellAppointments, continuingAppointments, cellMaintenance } = cellData;
 
@@ -72,10 +88,10 @@ export function AppointmentTimeSlotCell({
           gridColumn: colIndex,
           gridRow: `${rowIndex} / span ${clampedSpan}`,
           zIndex: isCellHovered ? 60 : 10,
-          ["--slot-position" as any]: hIndex,
-          ["--slot-size" as any]: clampedSpan,
-          ["--slot-step" as any]: props.gridStep,
-        }}
+          "--slot-position": hIndex,
+          "--slot-size": clampedSpan,
+          "--slot-step": props.gridStep,
+        } as SlotCustomCssVars}
         data-chair-id={chair.id}
         data-chair-palette={chairPalette.nameRu}
         onDragOver={(e) => {
@@ -148,10 +164,10 @@ export function AppointmentTimeSlotCell({
           gridColumn: colIndex,
           gridRow: `${rowIndex} / span ${clampedSpan}`,
           zIndex: isContinuingHovered ? 60 : 10,
-          ["--slot-position" as any]: hIndex,
-          ["--slot-size" as any]: clampedSpan,
-          ["--slot-step" as any]: props.gridStep,
-        }}
+          "--slot-position": hIndex,
+          "--slot-size": clampedSpan,
+          "--slot-step": props.gridStep,
+        } as SlotCustomCssVars}
         data-chair-id={chair.id}
         data-chair-palette={chairPalette.nameRu}
         onDragOver={(e) => {
@@ -207,10 +223,10 @@ export function AppointmentTimeSlotCell({
       style={{
         gridColumn: colIndex,
         gridRow: rowIndex,
-        ["--slot-position" as any]: hIndex,
-        ["--slot-size" as any]: 1,
-        ["--slot-step" as any]: props.gridStep,
-      }}
+        "--slot-position": hIndex,
+        "--slot-size": 1,
+        "--slot-step": props.gridStep,
+      } as SlotCustomCssVars}
       data-chair-id={chair.id}
       data-chair-palette={chairPalette.nameRu}
       data-tour="schedule-slot"
