@@ -14,6 +14,7 @@ import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 import {
 	ORGANIZATION_HEADER,
 	UNVERIFIED_MUTATION_REJECTION,
+	type DenteIdentityRequest,
 	type IdentityRejection,
 	type RequestIdentity,
 } from "./identityTypes.js";
@@ -44,9 +45,7 @@ export function isStateChangingRequest(request: FastifyRequest): boolean {
 }
 
 export function serverAcceptsNetworkConnections(request: FastifyRequest): boolean {
-	const httpServer = (
-		request as unknown as { server?: { server?: { listening?: unknown } } }
-	).server?.server;
+	const httpServer = request.server?.server;
 	if (!httpServer || typeof httpServer.listening !== "boolean") return true;
 	return httpServer.listening;
 }
@@ -59,19 +58,14 @@ export function unverifiedOrganizationUsable(request: FastifyRequest): boolean {
 export function identityRejectionOf(
 	request: FastifyRequest,
 ): IdentityRejection | null {
-	return (
-		(request as unknown as { __denteIdentityRejection?: IdentityRejection })
-			.__denteIdentityRejection ?? null
-	);
+	return request.__denteIdentityRejection ?? null;
 }
 
 export function setIdentityRejection(
 	request: FastifyRequest,
 	rejection: IdentityRejection,
 ): void {
-	(
-		request as unknown as { __denteIdentityRejection?: IdentityRejection }
-	).__denteIdentityRejection = rejection;
+	request.__denteIdentityRejection = rejection;
 }
 
 export function resolveDemoTokenIdentity(

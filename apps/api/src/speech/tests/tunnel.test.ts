@@ -243,8 +243,7 @@ describe("ensureSshTunnel", () => {
 		mock.method(fs, "existsSync", () => true);
 
 		mock.method(net, "createServer", () => ({
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			once: (evt: string, cb: any) => {
+			once: (evt: string, cb: () => void) => {
 				if (evt === "listening") cb();
 			},
 			listen: () => {},

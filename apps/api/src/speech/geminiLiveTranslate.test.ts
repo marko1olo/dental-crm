@@ -17,9 +17,9 @@ class MockWebSocket extends EventEmitter {
 	url: string;
 	sentMessages: string[] = [];
 
-	constructor(url: string) {
+	constructor(url: string | URL, _options?: unknown) {
 		super();
-		this.url = url;
+		this.url = typeof url === "string" ? url : url.toString();
 		setTimeout(() => {
 			this.readyState = MockWebSocket.OPEN;
 			this.emit("open");
@@ -96,8 +96,9 @@ describe("geminiLiveTranslate", () => {
 
 		// Simulate server setupComplete response after WS opens
 		await new Promise((r) => setTimeout(r, 25));
-		const wsInstance = (session as any).ws as MockWebSocket;
-		assert.ok(wsInstance);
+		const rawSocket = session.getRawSocket();
+		assert.ok(rawSocket);
+		const wsInstance = rawSocket as MockWebSocket;
 		assert.strictEqual(wsInstance.sentMessages.length, 1);
 
 		const setupMessage = JSON.parse(wsInstance.sentMessages[0] || "{}");

@@ -74,11 +74,19 @@ describe("taxPaymentSelectionErrorForDocument", () => {
 				kind: "tax_deduction_application",
 				payload: {
 					taxDeductionApplication: {
-						requestedTaxYear: 2023,
+						taxpayerFullName: "Иванов Иван Иванович",
 						taxpayerInn: "123456789012",
+						taxpayerBirthDate: "1990-01-01",
+						taxpayerIdentityDocument: "Паспорт 11 22 333444 выдан 01.01.2010",
+						relationshipToPatient: "self",
+						requestedTaxYear: 2023,
 						requestedForm: "knd_1151156",
 						selectedPaymentIds: [],
-					} as unknown as TaxDeductionApplicationPayload,
+						deliveryChannel: "paper",
+						contactForReadyDocument: "+79991234567",
+						requestedAt: "2024-01-01",
+						duplicateWarningAccepted: true,
+					},
 				},
 			},
 			basePayments,
@@ -426,9 +434,19 @@ describe("paidAmountRubForDocument", () => {
 			visitId: "visit-1",
 			payload: {
 				paymentReceipt: {
+					receiptNumber: "REC-001",
+					receiptDate: "2024-05-15",
 					selectedPaymentIds: ["payment-1", "payment-2", "payment-5"],
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				} as any,
+					totalPaidRub: 300,
+					payerFullName: "Иванов Иван Иванович",
+					taxSupportRequested: false,
+					paymentPurpose: "Оплата медицинских услуг",
+					fiscalReceiptNumbers: ["FISC-001"],
+					issuedByFullName: "Администратор",
+					paymentAndFiscalDataVerified: true,
+					payerIdentityVerified: true,
+					receiptDoesNotReplaceFiscalReceipt: true,
+				},
 			},
 		};
 		const amount = paidAmountRubForDocument(
@@ -446,11 +464,16 @@ describe("paidAmountRubForDocument", () => {
 			visitId: "visit-1",
 			payload: {
 				paymentRefundCorrection: {
+					action: "full_refund",
 					selectedPaymentIds: ["payment-1"],
 					amountRub: 50,
 					reason: "test",
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				} as any,
+					refundMethod: "card",
+					recipientFullName: "Иванов Иван Иванович",
+					recipientIdentityDocument: "Паспорт 11 22 333444",
+					originalFiscalReceiptNumber: "FISC-001",
+					accountantDecision: "Одобрено",
+				},
 			},
 		};
 		const amount = paidAmountRubForDocument(

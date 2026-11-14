@@ -414,7 +414,7 @@ export function baseDocument(
       <div class="form-badge">DENTE CLINICAL CRM</div>
       <div class="doc-meta-row">Документ №: <strong>${escapeHtml(docNum)}</strong></div>
       <div class="doc-meta-row">Дата: <strong>${escapeHtml(dateStr)}</strong></div>
-      <div class="doc-meta-row">Статус: <strong>${escapeHtml(documentStatusLabels[document.status])}</strong></div>
+      <div class="doc-meta-row">Статус: <strong>${escapeHtml(documentStatusLabels[document.status] ?? document.status)}</strong></div>
     </div>
   </div>
 
@@ -431,7 +431,7 @@ export function baseDocument(
     ${patientResidentialAddress(patient) ? `<p>Адрес проживания: ${escapeHtml(patientResidentialAddress(patient) ?? "")}</p>` : ""}
     ${patientInsurancePolicyNumber(patient) ? `<p>Полис/ДМС: ${escapeHtml(patientInsurancePolicyNumber(patient) ?? "")}</p>` : ""}
     ${patientSnils(patient) ? `<p>СНИЛС: ${escapeHtml(patientSnils(patient) ?? "")}</p>` : ""}
-    <p>Статус документа: ${escapeHtml(documentStatusLabels[document.status])}; дата выдачи: ${escapeHtml(issuedDate(document))}</p>
+    <p>Статус документа: ${escapeHtml(documentStatusLabels[document.status] ?? document.status)}; дата выдачи: ${escapeHtml(issuedDate(document))}</p>
   </div>
   ${issueSignatureAttestationBlock(document)}
   ${releaseJournalBlock(document)}

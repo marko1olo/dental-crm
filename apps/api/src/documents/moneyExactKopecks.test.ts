@@ -1,12 +1,20 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import type {
-	ClinicProfile,
-	GeneratedDocument,
-	Patient,
-	Payment,
-	TaxPaymentSnapshot,
+import {
+	type ClinicProfile,
+	type GeneratedDocument,
+	type Patient,
+	type Payment,
+	type TaxPaymentSnapshot,
+	patientAdministrativeProfileSchema,
 } from "@dental/shared";
+import {
+	createTestClinicProfile,
+	createTestGeneratedDocument,
+	createTestPatient,
+	createTestPayment,
+	createTestTaxPaymentSnapshot,
+} from "./testDocumentFixtures.js";
 import { transformRow } from "../migration/rowTransform.js";
 import {
 	normalizeMoneyRubles,
@@ -30,7 +38,7 @@ import { buildKnd1151156Xml, type Knd1151156XmlContext } from "./taxXml.js";
  */
 
 function paymentWith(id: string, amountRub: number): Payment {
-	return {
+	return createTestPayment({
 		id,
 		amountRub,
 		taxDeductionCode: "1",
@@ -41,21 +49,21 @@ function paymentWith(id: string, amountRub: number): Payment {
 		payerBirthDate: "1990-01-01",
 		payerInn: "123456789012",
 		payerRelationship: "self",
-	} as unknown as Payment;
+	});
 }
 
 function snapshotOf(amounts: number[]): TaxPaymentSnapshot {
 	const payments = amounts.map((amount, index) =>
 		paymentWith(`payment-${index + 1}`, amount),
 	);
-	return {
+	return createTestTaxPaymentSnapshot({
 		createdAt: "2024-05-15T12:00:00Z",
 		taxYear: 2024,
 		taxPayerInn: "123456789012",
 		paymentIds: payments.map((payment) => payment.id),
 		fiscalReceiptKeys: payments.map((payment) => payment.id),
 		payments,
-	} as unknown as TaxPaymentSnapshot;
+	});
 }
 
 describe("итог справки для налогового вычета", () => {
@@ -98,25 +106,26 @@ describe("итог справки для налогового вычета", () 
 });
 
 describe("суммы в выгрузке КНД 1184043 для ФНС", () => {
-	const baseDocument = {
+	const baseDocument: GeneratedDocument = createTestGeneratedDocument({
 		id: "doc-1",
 		patientId: "patient-1",
 		kind: "tax_deduction_certificate",
 		taxYear: 2024,
+		taxPayerInn: null,
 		issuedAt: "2024-05-15T12:00:00Z",
-	} as unknown as GeneratedDocument;
+	});
 
-	const basePatient = {
+	const basePatient: Patient = createTestPatient({
 		id: "patient-1",
 		fullName: "Иванов Иван Иванович",
 		birthDate: "1990-01-01",
-		administrativeProfile: {
+		administrativeProfile: patientAdministrativeProfileSchema.parse({
 			taxpayerInn: "123456789012",
 			identityDocument: "Паспорт 11 22 333444 выдан 01.01.2010",
-		},
-	} as unknown as Patient;
+		}),
+	});
 
-	const baseClinic = {
+	const baseClinic: ClinicProfile = createTestClinicProfile({
 		clinicName: "Тестовая клиника",
 		legalName: "ООО Тест",
 		inn: "1234567890",
@@ -126,20 +135,20 @@ describe("суммы в выгрузке КНД 1184043 для ФНС", () => {
 		phone: "88005553535",
 		email: "test@example.com",
 		signatoryName: "Петров Петр Петрович",
-	} as unknown as ClinicProfile;
+	});
 
 	function xmlFor(amounts: number[]): string {
 		const payments = amounts.map((amount, index) =>
 			paymentWith(`payment-${index + 1}`, amount),
 		);
-		const document = {
+		const document: GeneratedDocument = {
 			...baseDocument,
 			payload: {
 				taxPaymentSelection: {
 					selectedPaymentIds: payments.map((payment) => payment.id),
 				},
 			},
-		} as unknown as GeneratedDocument;
+		};
 		const context: Knd1151156XmlContext = {
 			clinicProfile: baseClinic,
 			payments,

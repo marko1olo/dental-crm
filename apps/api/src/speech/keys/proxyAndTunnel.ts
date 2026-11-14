@@ -1,6 +1,7 @@
 import tls from "node:tls";
 import http from "node:http";
 import https from "node:https";
+import { PassThrough } from "node:stream";
 import { SocksClient } from "socks";
 import type { RequestInfo, RequestInit } from "undici";
 import {
@@ -57,17 +58,17 @@ export function getProxyAgent(): Dispatcher | null {
 				const proxyPort = Number(parsed.port || 1080);
 				const proxyType = proxyUrl.includes("socks4") ? 4 : 5;
 
-				const socksProxyOpts: Record<string, unknown> = {
+				const socksProxyOpts: import("socks").SocksProxy = {
 					host: proxyHost,
 					port: proxyPort,
 					type: proxyType as 4 | 5,
+					...(parsed.username
+						? { userId: decodeURIComponent(parsed.username) }
+						: {}),
+					...(parsed.password
+						? { password: decodeURIComponent(parsed.password) }
+						: {}),
 				};
-				if (parsed.username) {
-					socksProxyOpts.userId = decodeURIComponent(parsed.username);
-				}
-				if (parsed.password) {
-					socksProxyOpts.password = decodeURIComponent(parsed.password);
-				}
 
 				cachedProxyAgent = new Agent({
 					connect: (opts, callback) => {
@@ -80,7 +81,7 @@ export function getProxyAgent(): Dispatcher | null {
 
 						SocksClient.createConnection(
 							{
-								proxy: socksProxyOpts as unknown as import("socks").SocksProxy,
+								proxy: socksProxyOpts,
 								command: "connect",
 								destination: {
 									host: destHost,
@@ -147,6 +148,13 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 	if (!proxyUrl) return null;
 	if (cachedWsAgent) return cachedWsAgent;
 
+	type CustomAgentOptions = https.AgentOptions & {
+		createConnection?: (
+			options: http.ClientRequestArgs & { servername?: string },
+			callback?: (err: Error | null, stream: import("node:stream").Duplex) => void,
+		) => import("node:stream").Duplex | undefined;
+	};
+
 	try {
 		const parsedProxy = new URL(proxyUrl);
 		if (proxyUrl.startsWith("socks")) {
@@ -154,26 +162,29 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 			const proxyHost = parsedProxy.hostname;
 			const proxyPort = Number(parsedProxy.port || 1080);
 
-			const socksProxyConfig: Record<string, unknown> = {
+			const socksProxyConfig: import("socks").SocksProxy = {
 				host: proxyHost,
 				port: proxyPort,
 				type: proxyType as 4 | 5,
+				...(parsedProxy.username
+					? { userId: decodeURIComponent(parsedProxy.username) }
+					: {}),
+				...(parsedProxy.password
+					? { password: decodeURIComponent(parsedProxy.password) }
+					: {}),
 			};
-			if (parsedProxy.username) {
-				socksProxyConfig.userId = decodeURIComponent(parsedProxy.username);
-			}
-			if (parsedProxy.password) {
-				socksProxyConfig.password = decodeURIComponent(parsedProxy.password);
-			}
 
-			const socksAgentOpts: any = {
-				createConnection: (options: any, callback: any) => {
-					const targetHost = options.host || options.hostname;
+			const socksAgentOpts: CustomAgentOptions = {
+				createConnection: (
+					options: http.ClientRequestArgs & { servername?: string },
+					callback?: (err: Error | null, stream: import("node:stream").Duplex) => void,
+				) => {
+					const targetHost = options.host || options.hostname || "";
 					const targetPort = Number(options.port || 443);
 
 					SocksClient.createConnection(
 						{
-							proxy: socksProxyConfig as unknown as import("socks").SocksProxy,
+							proxy: socksProxyConfig,
 							command: "connect",
 							destination: {
 								host: targetHost,
@@ -182,7 +193,12 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 						},
 						(err, info) => {
 							if (err || !info) {
-								callback(err || new Error("SOCKS connection failed"), null);
+								if (callback) {
+									callback(
+										err || new Error("SOCKS connection failed"),
+										info?.socket || new PassThrough(),
+									);
+								}
 								return;
 							}
 							const tlsSocket = tls.connect(
@@ -191,15 +207,18 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 									servername: options.servername || targetHost,
 								},
 								() => {
-									callback(null, tlsSocket);
+									if (callback) callback(null, tlsSocket);
 								},
 							);
-							tlsSocket.on("error", (tlsErr) => callback(tlsErr, null));
+							tlsSocket.on("error", (tlsErr) => {
+								if (callback) callback(tlsErr, tlsSocket);
+							});
 						},
 					);
+					return undefined;
 				},
 			};
-			cachedWsAgent = new https.Agent(socksAgentOpts);
+			cachedWsAgent = new https.Agent(socksAgentOpts as https.AgentOptions);
 		} else {
 			// HTTP / HTTPS CONNECT tunneling agent
 			const proxyHost = parsedProxy.hostname;
@@ -210,9 +229,12 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 				? `Basic ${Buffer.from(`${decodeURIComponent(parsedProxy.username)}:${decodeURIComponent(parsedProxy.password || "")}`).toString("base64")}`
 				: undefined;
 
-			const httpAgentOpts: any = {
-				createConnection: (options: any, callback: any) => {
-					const targetHost = options.host || options.hostname;
+			const httpAgentOpts: CustomAgentOptions = {
+				createConnection: (
+					options: http.ClientRequestArgs & { servername?: string },
+					callback?: (err: Error | null, stream: import("node:stream").Duplex) => void,
+				) => {
+					const targetHost = options.host || options.hostname || "";
 					const targetPort = Number(options.port || 443);
 
 					const req = http.request({
@@ -228,12 +250,14 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 
 					req.on("connect", (res, socket, _head) => {
 						if (res.statusCode !== 200) {
-							callback(
-								new Error(
-									`Proxy CONNECT failed with status: ${res.statusCode}`,
-								),
-								null,
-							);
+							if (callback) {
+								callback(
+									new Error(
+										`Proxy CONNECT failed with status: ${res.statusCode}`,
+									),
+									socket,
+								);
+							}
 							return;
 						}
 						const tlsSocket = tls.connect(
@@ -242,17 +266,24 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 								servername: options.servername || targetHost,
 							},
 							() => {
-								callback(null, tlsSocket);
+								if (callback) callback(null, tlsSocket);
 							},
 						);
-						tlsSocket.on("error", (tlsErr) => callback(tlsErr, null));
+						tlsSocket.on("error", (tlsErr) => {
+							if (callback) callback(tlsErr, tlsSocket);
+						});
 					});
 
-					req.on("error", (err) => callback(err, null));
+					req.on("error", (err) => {
+						if (callback) {
+							callback(err, new PassThrough());
+						}
+					});
 					req.end();
+					return undefined;
 				},
 			};
-			cachedWsAgent = new https.Agent(httpAgentOpts);
+			cachedWsAgent = new https.Agent(httpAgentOpts as https.AgentOptions);
 		}
 	} catch (err) {
 		console.error(`[WS Proxy Agent] Failed to create WebSocket proxy agent:`, err);
@@ -277,11 +308,16 @@ export async function fetchWithProviderTimeout(
 				signal: controller.signal,
 			});
 		}
-		return (await undiciFetch(input as URL | RequestInfo, {
-			...(init as unknown as RequestInit),
-			signal: controller.signal,
+		const undiciInit: RequestInit = {
 			dispatcher,
-		})) as unknown as Response;
+			signal: controller.signal,
+		};
+		if (init.method) undiciInit.method = init.method;
+		if (init.headers !== undefined) undiciInit.headers = init.headers as NonNullable<RequestInit["headers"]>;
+		if (init.body !== undefined && init.body !== null) undiciInit.body = init.body as NonNullable<RequestInit["body"]>;
+
+		const res = await undiciFetch(input as URL | RequestInfo, undiciInit);
+		return res as Response;
 	} catch (error) {
 		if (error instanceof Error && error.name === "AbortError") {
 			throw new SpeechProviderRequestError(
@@ -334,16 +370,12 @@ export async function fetchWithProviderTimeout(
 							(socksErr, info) => {
 								if (socksErr) {
 									callback(socksErr, null);
-									return;
-								}
-								if (!info) {
+								} else if (!info) {
 									callback(
 										new Error("SOCKS connection returned no info"),
 										null,
 									);
-									return;
-								}
-								if (opts.protocol === "https:") {
+								} else if (opts.protocol === "https:") {
 									const tlsSocket = tls.connect(
 										{
 											socket: info.socket,
@@ -367,12 +399,17 @@ export async function fetchWithProviderTimeout(
 				clearTimeout(timer);
 				const retryController = new AbortController();
 				const retryTimer = setTimeout(() => retryController.abort(), timeoutMs);
+				const retryInit: RequestInit = {
+					dispatcher: socksDispatcher,
+					signal: retryController.signal,
+				};
+				if (init.method) retryInit.method = init.method;
+				if (init.headers !== undefined) retryInit.headers = init.headers as NonNullable<RequestInit["headers"]>;
+				if (init.body !== undefined && init.body !== null) retryInit.body = init.body as NonNullable<RequestInit["body"]>;
+
 				try {
-					return (await undiciFetch(input as URL | RequestInfo, {
-						...(init as unknown as RequestInit),
-						signal: retryController.signal,
-						dispatcher: socksDispatcher,
-					})) as unknown as Response;
+					const retryRes = await undiciFetch(input as URL | RequestInfo, retryInit);
+					return retryRes as Response;
 				} catch (retryError) {
 					console.error(`[Speech Fetch] SOCKS5 retry also failed:`, retryError);
 				} finally {

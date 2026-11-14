@@ -99,7 +99,7 @@ describe("whisperCascade", () => {
 		it("succeeds on first provider (Google Gemini Batch) when Google key is present", async () => {
 			process.env.GOOGLE_API_KEY = "test-gemini-happy-key";
 
-			globalThis.fetch = async (input: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0]): Promise<Response> => {
 				const url = String(input);
 				if (url.includes("generativelanguage.googleapis.com")) {
 					return new Response(
@@ -144,7 +144,7 @@ describe("whisperCascade", () => {
 			let requestedUrl = "";
 			let formPrompt = "";
 
-			globalThis.fetch = async (input: any, init?: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit): Promise<Response> => {
 				requestedUrl = String(input);
 				const body = init?.body as FormData;
 				formPrompt = String(body.get("prompt") || "");
@@ -179,7 +179,7 @@ describe("whisperCascade", () => {
 
 			const visitedEndpoints: string[] = [];
 
-			globalThis.fetch = async (input: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0]): Promise<Response> => {
 				const url = String(input);
 				visitedEndpoints.push(url);
 
@@ -222,7 +222,7 @@ describe("whisperCascade", () => {
 			process.env.GROQ_API_KEY = "groq-halluc-unique-key";
 			process.env.OPENAI_API_KEY = "openai-halluc-unique-key";
 
-			globalThis.fetch = async (input: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0]): Promise<Response> => {
 				const url = String(input);
 				if (url.includes("api.groq.com")) {
 					// Hallucination output
@@ -267,7 +267,7 @@ describe("whisperCascade", () => {
 			process.env.CLOUDFLARE_API_TOKEN = "cf-token-cascade-key";
 			process.env.CLOUDFLARE_ACCOUNT_ID = "cf-account-123";
 
-			globalThis.fetch = async (input: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0]): Promise<Response> => {
 				const url = String(input);
 				if (url.includes("api.groq.com")) {
 					return new Response("Groq Error", { status: 503 });
@@ -306,7 +306,7 @@ describe("whisperCascade", () => {
 			process.env.DENTAL_LOCAL_WHISPER_URL = "http://127.0.0.1:8080";
 			process.env.DENTAL_ALLOW_REMOTE_LOCAL_BRIDGES = "true";
 
-			globalThis.fetch = async (input: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0]): Promise<Response> => {
 				const url = String(input);
 				if (url.includes("127.0.0.1:8080")) {
 					return new Response(

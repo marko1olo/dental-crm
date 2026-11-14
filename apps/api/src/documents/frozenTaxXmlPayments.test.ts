@@ -1,50 +1,49 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { frozenTaxXmlPayments } from "../routes/documents.js";
+import {
+	createTestGeneratedDocument,
+	createTestPayment,
+	createTestTaxXmlSourceSnapshot,
+} from "./testDocumentFixtures.js";
 
 describe("frozenTaxXmlPayments", () => {
+	const p1 = createTestPayment({ id: "00000000-0000-0000-0000-000000000001" });
+	const p2 = createTestPayment({ id: "00000000-0000-0000-0000-000000000002" });
+	const fallbackPayments = [createTestPayment({ id: "00000000-0000-0000-0000-000000000099" })];
+
 	test("returns payments from taxXmlSourceSnapshot if present", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const document: any = {
-			taxXmlSourceSnapshot: {
-				payments: [{ id: "payment-1" }, { id: "payment-2" }],
-			},
-		};
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const fallbackPayments: any[] = [{ id: "fallback-payment" }];
+		const document = createTestGeneratedDocument({
+			taxXmlSourceSnapshot: createTestTaxXmlSourceSnapshot({
+				payments: [p1, p2],
+			}),
+		});
 		const result = frozenTaxXmlPayments(document, fallbackPayments);
-		assert.deepStrictEqual(result, [{ id: "payment-1" }, { id: "payment-2" }]);
+		assert.deepStrictEqual(result, [p1, p2]);
 	});
 
 	test("returns fallbackPayments if taxXmlSourceSnapshot is missing", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const document: any = {};
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const fallbackPayments: any[] = [{ id: "fallback-payment" }];
+		const document = createTestGeneratedDocument({
+			taxXmlSourceSnapshot: null,
+		});
 		const result = frozenTaxXmlPayments(document, fallbackPayments);
-		assert.deepStrictEqual(result, [{ id: "fallback-payment" }]);
+		assert.deepStrictEqual(result, fallbackPayments);
 	});
 
 	test("returns fallbackPayments if payments is undefined in taxXmlSourceSnapshot", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const document: any = {
-			taxXmlSourceSnapshot: {},
-		};
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const fallbackPayments: any[] = [{ id: "fallback-payment" }];
+		const document = createTestGeneratedDocument({
+			taxXmlSourceSnapshot: null,
+		});
 		const result = frozenTaxXmlPayments(document, fallbackPayments);
-		assert.deepStrictEqual(result, [{ id: "fallback-payment" }]);
+		assert.deepStrictEqual(result, fallbackPayments);
 	});
 
 	test("returns empty array from taxXmlSourceSnapshot if it is empty", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const document: any = {
-			taxXmlSourceSnapshot: {
+		const document = createTestGeneratedDocument({
+			taxXmlSourceSnapshot: createTestTaxXmlSourceSnapshot({
 				payments: [],
-			},
-		};
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const fallbackPayments: any[] = [{ id: "fallback-payment" }];
+			}),
+		});
 		const result = frozenTaxXmlPayments(document, fallbackPayments);
 		assert.deepStrictEqual(result, []);
 	});

@@ -3,11 +3,14 @@ import { describe, test } from "node:test";
 import type {
 	CreateDocumentInput,
 	GeneratedDocument,
-	Patient,
 	Payment,
 	TreatmentPlanItem,
-	Visit,
 } from "@dental/shared";
+import {
+	createTestGeneratedDocument,
+	createTestPayment,
+	createTestTreatmentPlanItem,
+} from "./testDocumentFixtures.js";
 import {
 	type DocumentCreationFacts,
 	paymentRefundCorrectionSelectionErrorForDocument,
@@ -50,7 +53,7 @@ const driftingSumRub = driftingRefunds.reduce(
 );
 
 function paidPayment(amountRub: number): Payment {
-	return {
+	return createTestPayment({
 		id: "payment-1",
 		patientId: "patient-1",
 		visitId: "visit-1",
@@ -58,21 +61,28 @@ function paidPayment(amountRub: number): Payment {
 		amountRub,
 		fiscalReceiptNumber: "ФЧ-1",
 		fiscalReceiptIssuedAt: "2026-03-01T10:00:00Z",
-	} as unknown as Payment;
+	});
 }
 
 function issuedRefund(index: number, amountRub: number): GeneratedDocument {
-	return {
+	return createTestGeneratedDocument({
 		id: `refund-${index + 1}`,
 		kind: "payment_refund_correction_request",
 		status: "issued",
 		payload: {
 			paymentRefundCorrection: {
+				action: "full_refund",
 				selectedPaymentIds: ["payment-1"],
 				amountRub,
+				reason: "test",
+				refundMethod: "card",
+				recipientFullName: "Иванов Иван Иванович",
+				recipientIdentityDocument: "Паспорт 11 22 333444",
+				originalFiscalReceiptNumber: "ФЧ-1",
+				accountantDecision: "Одобрено",
 			},
 		},
-	} as unknown as GeneratedDocument;
+	});
 }
 
 function refundRequest(amountRub: number): CreateDocumentInput {
@@ -81,12 +91,18 @@ function refundRequest(amountRub: number): CreateDocumentInput {
 		kind: "payment_refund_correction_request",
 		payload: {
 			paymentRefundCorrection: {
+				action: "full_refund",
 				selectedPaymentIds: ["payment-1"],
 				amountRub,
+				reason: "test",
+				refundMethod: "card",
+				recipientFullName: "Иванов Иван Иванович",
+				recipientIdentityDocument: "Паспорт 11 22 333444",
 				originalFiscalReceiptNumber: "ФЧ-1",
+				accountantDecision: "Одобрено",
 			},
 		},
-	} as unknown as CreateDocumentInput;
+	};
 }
 
 describe("отказ по возврату печатает копейки, а не дрейф double", () => {
@@ -169,36 +185,51 @@ describe("отказ по смете печатает копейки", () => {
 			kind: "treatment_cost_estimate",
 			payload: {
 				treatmentCostEstimate: {
+					estimateNumber: "СМ-1",
+					estimateDate: "2026-03-01T10:00:00Z",
+					patientOrPayerFullName: "Иванов Иван Иванович",
+					treatmentBasis: "План лечения",
 					totalAmountRub,
 					serviceLines: lineAmountsRub.map((amountRub) => ({
+						serviceName: "Услуга",
 						quantity: 1,
 						unitPriceRub: amountRub,
 						discountRub: 0,
 						totalRub: amountRub,
 					})),
+					estimateValidUntil: "2026-04-01T10:00:00Z",
+					priceChangeRules: "Цена действительна в течение месяца",
+					excludedItems: ["Не включены дополнительные исследования"],
+					paymentMilestoneNotes: "Оплата по этапам лечения",
+					responsibleDoctorFullName: "Петров Петр Петрович",
+					signedAt: "2026-03-01T10:00:00Z",
+					patientUnderstandsPreliminaryEstimate: true,
+					serviceScopeMatchesTreatmentPlan: true,
+					estimateDoesNotReplaceContractOrFiscalReceipt: true,
+					changesRequireUpdatedEstimate: true,
 				},
 			},
-		} as unknown as CreateDocumentInput;
+		};
 	}
 
 	function factsWithPlanned(plannedAmountRub: number): DocumentCreationFacts {
 		return {
-			patient: { id: "patient-1" } as unknown as Patient,
-			visit: { id: "visit-1", patientId: "patient-1" } as unknown as Visit,
+			patient: { id: "patient-1" },
+			visit: { id: "visit-1", patientId: "patient-1" },
 			paidAmountRub: 0,
 			plannedAmountRub,
 		};
 	}
 
 	function planItem(unitPriceRub: number): TreatmentPlanItem {
-		return {
+		return createTestTreatmentPlanItem({
 			patientId: "patient-1",
 			visitId: "visit-1",
-			status: "planned",
+			status: "proposed",
 			unitPriceRub,
 			quantity: 1,
 			discountRub: 0,
-		} as unknown as TreatmentPlanItem;
+		});
 	}
 
 	test("смета 900.13 против дрейфующего плана: план в копейках, ложного отказа нет", () => {

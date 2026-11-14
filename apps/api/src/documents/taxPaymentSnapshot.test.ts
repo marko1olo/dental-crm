@@ -2,6 +2,11 @@ import assert from "node:assert";
 import { describe, test } from "node:test";
 import type { GeneratedDocument, Payment } from "@dental/shared";
 import {
+	createTestGeneratedDocument,
+	createTestPayment,
+	createTestTaxPaymentSnapshot,
+} from "./testDocumentFixtures.js";
+import {
 	taxDocumentDuplicateSensitive,
 	taxPaymentsForIssueSnapshot,
 	taxPaymentYear,
@@ -39,7 +44,10 @@ describe("taxDocumentDuplicateSensitive", () => {
 });
 
 describe("taxPaymentYear", () => {
-	const basePayment = {} as Payment;
+	const basePayment = createTestPayment({
+		paidAt: null,
+		fiscalReceiptIssuedAt: null,
+	});
 
 	test("returns null when neither fiscalReceiptIssuedAt nor paidAt are provided", () => {
 		assert.strictEqual(
@@ -128,28 +136,44 @@ describe("taxPaymentYear", () => {
 	});
 
 	test("returns null for missing/undefined fields", () => {
-		assert.strictEqual(taxPaymentYear({} as Payment), null);
-		assert.strictEqual(taxPaymentYear({ id: "payment-1" } as Payment), null);
+		assert.strictEqual(
+			taxPaymentYear(
+				createTestPayment({ paidAt: null, fiscalReceiptIssuedAt: null }),
+			),
+			null,
+		);
+		assert.strictEqual(
+			taxPaymentYear(
+				createTestPayment({
+					id: "payment-1",
+					paidAt: null,
+					fiscalReceiptIssuedAt: null,
+				}),
+			),
+			null,
+		);
 	});
 });
 
 describe("taxPaymentsForIssueSnapshot", () => {
-	const baseDocument: Partial<GeneratedDocument> = {
+	const baseDocument: GeneratedDocument = createTestGeneratedDocument({
 		id: "doc-1",
 		organizationId: "org-1",
 		patientId: "patient-1",
 		kind: "tax_deduction_certificate",
 		taxYear: 2023,
 		status: "draft",
-	};
+		taxPayerInn: null,
+		payload: null,
+	});
 
-	const basePayment: Partial<Payment> = {
+	const basePayment: Payment = createTestPayment({
 		id: "payment-1",
 		patientId: "patient-1",
 		status: "paid",
 		amountRub: 1000,
 		paidAt: "2023-05-10T10:00:00Z",
-	};
+	});
 
 	test("returns base selected payments when explicit payment IDs are selected", () => {
 		const document: GeneratedDocument = {
@@ -160,11 +184,11 @@ describe("taxPaymentsForIssueSnapshot", () => {
 					selectedPaymentIds: ["payment-1"],
 				},
 			},
-		} as GeneratedDocument;
+		};
 
 		const payments: Payment[] = [
-			{ ...basePayment, id: "payment-1" } as Payment,
-			{ ...basePayment, id: "payment-2" } as Payment,
+			{ ...basePayment, id: "payment-1" },
+			{ ...basePayment, id: "payment-2" },
 		];
 
 		const existingDocuments: GeneratedDocument[] = [];
@@ -183,29 +207,28 @@ describe("taxPaymentsForIssueSnapshot", () => {
 			...baseDocument,
 			kind: "completed_works_act",
 			taxYear: 2023,
-		} as GeneratedDocument;
+		};
 
 		const payments: Payment[] = [
-			{ ...basePayment, id: "payment-1", documentId: "doc-1" } as Payment,
+			{ ...basePayment, id: "payment-1", documentId: "doc-1" },
 		];
 
 		const existingDocuments: GeneratedDocument[] = [
-			{
+			createTestGeneratedDocument({
 				id: "doc-2",
 				organizationId: "org-1",
 				patientId: "patient-1",
 				kind: "completed_works_act",
 				taxYear: 2023,
 				status: "issued",
-				taxPaymentSnapshot: {
+				taxPaymentSnapshot: createTestTaxPaymentSnapshot({
 					paymentIds: ["payment-1"],
 					fiscalReceiptKeys: [],
 					payments: [],
-					createdAt: "",
 					taxYear: 2023,
 					taxPayerInn: null,
-				},
-			} as unknown as GeneratedDocument,
+				}),
+			}),
 		];
 
 		const result = taxPaymentsForIssueSnapshot(
@@ -228,13 +251,12 @@ describe("taxPaymentsForIssueSnapshot", () => {
 	 * выданную справку за тот же год.
 	 */
 	const withSelection = (
-		document: Partial<GeneratedDocument>,
+		document: GeneratedDocument,
 		selectedPaymentIds: string[],
-	): GeneratedDocument =>
-		({
-			...document,
-			payload: { taxPaymentSelection: { selectedPaymentIds } },
-		}) as GeneratedDocument;
+	): GeneratedDocument => ({
+		...document,
+		payload: { taxPaymentSelection: { selectedPaymentIds } },
+	});
 
 	test("filters out payments already used by other issued tax certificates in the same scope", () => {
 		const document = withSelection(
@@ -247,31 +269,30 @@ describe("taxPaymentsForIssueSnapshot", () => {
 				...basePayment,
 				id: "payment-1",
 				fiscalReceiptNumber: "rcpt-1",
-			} as Payment,
+			},
 			{
 				...basePayment,
 				id: "payment-2",
 				fiscalReceiptNumber: "rcpt-2",
-			} as Payment,
+			},
 		];
 
 		const existingDocuments: GeneratedDocument[] = [
-			{
+			createTestGeneratedDocument({
 				id: "doc-2",
 				organizationId: "org-1",
 				patientId: "patient-1",
 				kind: "tax_deduction_certificate",
 				taxYear: 2023,
 				status: "issued",
-				taxPaymentSnapshot: {
+				taxPaymentSnapshot: createTestTaxPaymentSnapshot({
 					paymentIds: ["payment-1"],
 					fiscalReceiptKeys: ["rcpt-1"],
 					payments: [],
-					createdAt: "",
 					taxYear: 2023,
 					taxPayerInn: null,
-				},
-			} as unknown as GeneratedDocument,
+				}),
+			}),
 		];
 
 		const result = taxPaymentsForIssueSnapshot(
@@ -290,27 +311,26 @@ describe("taxPaymentsForIssueSnapshot", () => {
 		);
 
 		const payments: Payment[] = [
-			{ ...basePayment, id: "payment-1" } as Payment,
-			{ ...basePayment, id: "payment-2" } as Payment,
+			{ ...basePayment, id: "payment-1" },
+			{ ...basePayment, id: "payment-2" },
 		];
 
 		const existingDocuments: GeneratedDocument[] = [
-			{
+			createTestGeneratedDocument({
 				id: "doc-2",
 				organizationId: "org-1",
 				patientId: "patient-1",
 				kind: "tax_deduction_certificate",
 				taxYear: 2023,
 				status: "issued",
-				taxPaymentSnapshot: {
+				taxPaymentSnapshot: createTestTaxPaymentSnapshot({
 					paymentIds: ["payment-3"],
 					fiscalReceiptKeys: [],
 					payments: [],
-					createdAt: "",
 					taxYear: 2023,
 					taxPayerInn: null,
-				},
-			} as unknown as GeneratedDocument,
+				}),
+			}),
 		];
 
 		const result = taxPaymentsForIssueSnapshot(
@@ -330,8 +350,8 @@ describe("taxPaymentsForIssueSnapshot", () => {
 		);
 
 		const payments: Payment[] = [
-			{ ...basePayment, id: "payment-1" } as Payment,
-			{ ...basePayment, id: "payment-2" } as Payment,
+			{ ...basePayment, id: "payment-1" },
+			{ ...basePayment, id: "payment-2" },
 		];
 
 		const existingDocuments: GeneratedDocument[] = [];
@@ -359,31 +379,30 @@ describe("taxPaymentsForIssueSnapshot", () => {
 				...basePayment,
 				id: "payment-1",
 				fiscalReceiptNumber: "rcpt-1",
-			} as Payment,
+			},
 			{
 				...basePayment,
 				id: "payment-2",
 				fiscalReceiptNumber: "rcpt-2",
-			} as Payment,
+			},
 		];
 
 		const existingDocuments: GeneratedDocument[] = [
-			{
+			createTestGeneratedDocument({
 				id: "doc-2",
 				organizationId: "org-1",
 				patientId: "patient-1",
 				kind: "tax_deduction_certificate",
 				taxYear: 2023,
 				status: "issued",
-				taxPaymentSnapshot: {
+				taxPaymentSnapshot: createTestTaxPaymentSnapshot({
 					paymentIds: ["payment-1"],
 					fiscalReceiptKeys: ["rcpt-1"],
 					payments: [],
-					createdAt: "",
 					taxYear: 2023,
 					taxPayerInn: null,
-				},
-			} as unknown as GeneratedDocument,
+				}),
+			}),
 		];
 
 		const result = taxPaymentsForIssueSnapshot(
@@ -413,21 +432,20 @@ describe("taxPaymentsForIssueSnapshot", () => {
 				...basePayment,
 				id: "payment-1",
 				fiscalReceiptNumber: "rcpt-1",
-			} as Payment,
+			},
 		];
 
 		const existingDocuments: GeneratedDocument[] = [
-			{
+			createTestGeneratedDocument({
 				...document,
-				taxPaymentSnapshot: {
+				taxPaymentSnapshot: createTestTaxPaymentSnapshot({
 					paymentIds: ["payment-1"],
 					fiscalReceiptKeys: ["rcpt-1"],
 					payments: [],
-					createdAt: "",
 					taxYear: 2023,
 					taxPayerInn: null,
-				},
-			} as unknown as GeneratedDocument,
+				}),
+			}),
 		];
 
 		const result = taxPaymentsForIssueSnapshot(

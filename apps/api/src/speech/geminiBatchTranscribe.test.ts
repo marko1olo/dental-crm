@@ -13,6 +13,16 @@ import {
 const SPEECH_ENV_PATTERN =
 	/^(DENTAL_SPEECH_|DENTAL_GEMINI_|GOOGLE_SPEECH_|GOOGLE_API_|GEMINI_API_)/;
 
+type CapturedGeminiRequestBody = {
+	contents: Array<{
+		parts: Array<{
+			text?: string;
+			inline_data?: { mime_type: string; data: string };
+			file_data?: { file_uri: string; mime_type: string };
+		}>;
+	}>;
+};
+
 describe("geminiBatchTranscribe", () => {
 	let originalEnv: NodeJS.ProcessEnv;
 	let originalFetch: typeof globalThis.fetch;
@@ -64,9 +74,17 @@ describe("geminiBatchTranscribe", () => {
 
 		it("performs batch transcription with inline base64 audio and parses diarization + timestamps", async () => {
 			const mockAudio = Buffer.from("RIFFtestwavcontent");
-			let requestBodyCaptured: any = null;
+			let requestBodyCaptured: {
+				contents: Array<{
+					parts: Array<{
+						text?: string;
+						inline_data?: { mime_type: string; data: string };
+						file_data?: { file_uri: string; mime_type: string };
+					}>;
+				}>;
+			} | null = null;
 
-			globalThis.fetch = async (input: any, init?: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit): Promise<Response> => {
 				const url = String(input);
 				assert.ok(url.includes("generativelanguage.googleapis.com"));
 				assert.ok(url.includes("key=test-gemini-key"));
@@ -201,21 +219,33 @@ describe("geminiBatchTranscribe", () => {
 			assert.strictEqual(result.words[2]?.word, "36");
 
 			// Check request payload verification
-			assert.ok(requestBodyCaptured);
-			const promptText = requestBodyCaptured.contents[0].parts[0].text;
+			const captured = requestBodyCaptured as CapturedGeminiRequestBody | null;
+			if (!captured) {
+				throw new Error("requestBodyCaptured was not set");
+			}
+			const promptText = captured.contents[0]?.parts[0]?.text ?? "";
 			assert.ok(promptText.includes("Диаризация спикеров"));
 			assert.ok(promptText.includes("Таймкоды слов"));
 			assert.ok(promptText.includes("зуб 36"));
 
-			const inlineData = requestBodyCaptured.contents[0].parts[1].inline_data;
+			const inlineData = captured.contents[0]?.parts[1]?.inline_data;
+			assert.ok(inlineData);
 			assert.strictEqual(inlineData.mime_type, "audio/wav");
 			assert.strictEqual(inlineData.data, mockAudio.toString("base64"));
 		});
 
 		it("supports Google File API URI for long recordings", async () => {
-			let requestBodyCaptured: any = null;
+			let requestBodyCaptured: {
+				contents: Array<{
+					parts: Array<{
+						text?: string;
+						inline_data?: { mime_type: string; data: string };
+						file_data?: { file_uri: string; mime_type: string };
+					}>;
+				}>;
+			} | null = null;
 
-			globalThis.fetch = async (input: any, init?: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit): Promise<Response> => {
 				requestBodyCaptured = JSON.parse(String(init?.body || "{}"));
 
 				const mockResponse = {
@@ -256,7 +286,12 @@ describe("geminiBatchTranscribe", () => {
 			});
 
 			assert.strictEqual(result.text, "Проведена операция имплантации.");
-			const fileData = requestBodyCaptured.contents[0].parts[1].file_data;
+			const captured = requestBodyCaptured as CapturedGeminiRequestBody | null;
+			if (!captured) {
+				throw new Error("requestBodyCaptured was not set");
+			}
+			const fileData = captured.contents[0]?.parts[1]?.file_data;
+			assert.ok(fileData);
 			assert.strictEqual(
 				fileData.file_uri,
 				"https://generativelanguage.googleapis.com/v1beta/files/sample-file-id-123",
@@ -321,7 +356,7 @@ describe("geminiBatchTranscribe", () => {
 			let callCount = 0;
 			const usedKeys: string[] = [];
 
-			globalThis.fetch = async (input: any) => {
+			globalThis.fetch = async (input: Parameters<typeof globalThis.fetch>[0]): Promise<Response> => {
 				callCount++;
 				const url = new URL(String(input));
 				const key = url.searchParams.get("key") || "";

@@ -24,6 +24,16 @@ import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 const WEBHOOK_SECRET_HEADER = "x-dente-webhook-secret";
 
+declare module "fastify" {
+	interface FastifyRequest {
+		rawBody?: Buffer | string | undefined;
+	}
+}
+
+export interface RawBodyFastifyRequest extends FastifyRequest {
+	rawBody?: Buffer | string | undefined;
+}
+
 export interface WebhookAuthOptions {
 	/** Имя канала для сообщений об ошибке, например "vk". */
 	channel: string;
@@ -139,9 +149,12 @@ export function verifyWebhookSecret(
 			rawCandidate = rawCandidate.slice(12).trim();
 		}
 
-		if (/^[0-9a-fA-F]{64}$/.test(rawCandidate) && (request.body || (request as unknown as { rawBody?: unknown }).rawBody)) {
+		if (
+			/^[0-9a-fA-F]{64}$/.test(rawCandidate) &&
+			(request.body || request.rawBody)
+		) {
 			try {
-				const rawPayload = (request as unknown as { rawBody?: Buffer | string }).rawBody;
+				const rawPayload = request.rawBody;
 				const bodyString =
 					typeof rawPayload === "string"
 						? rawPayload
@@ -150,7 +163,7 @@ export function verifyWebhookSecret(
 							: typeof request.body === "string"
 								? request.body
 								: Buffer.isBuffer(request.body)
-									? (request.body as Buffer).toString("utf8")
+									? request.body.toString("utf8")
 									: JSON.stringify(request.body ?? {});
 				const computedHmac = createHmac("sha256", expected)
 					.update(bodyString)

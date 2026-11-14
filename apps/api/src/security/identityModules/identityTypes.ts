@@ -21,6 +21,9 @@ export interface RequestIdentity {
 	sessionId: string | null;
 	/** true, если организация получена из проверенного токена, а не из dev-заголовка. */
 	verified: boolean;
+	clinicalRole?: string | null;
+	canSignMedicalRecords?: boolean;
+	specialties?: string[] | null;
 }
 
 export const EMPTY_IDENTITY: RequestIdentity = {
@@ -55,3 +58,13 @@ export const ADMIN_ROLES = ["owner", "admin", "administrator"] as const;
 /** Метка отказа: попытка мутации данных под непроверенным заголовком */
 export const UNVERIFIED_MUTATION_REJECTION = "unverified-organization-cannot-mutate";
 export type IdentityRejection = typeof UNVERIFIED_MUTATION_REJECTION;
+
+declare module "fastify" {
+	interface FastifyRequest {
+		__denteIdentityRejection?: IdentityRejection | undefined;
+	}
+}
+
+export interface DenteIdentityRequest extends FastifyRequest {
+	__denteIdentityRejection?: IdentityRejection | undefined;
+}

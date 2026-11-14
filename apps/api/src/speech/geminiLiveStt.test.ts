@@ -2,7 +2,7 @@ import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { Buffer } from "node:buffer";
-import WebSocket from "ws";
+import WebSocket, { type ClientOptions } from "ws";
 import {
 	buildGeminiLiveSetupFrame,
 	buildGeminiLiveMediaChunkFrame,
@@ -21,22 +21,23 @@ import {
 	getProviderKeyPoolSummary,
 	recordProviderKeyFailure,
 	recordProviderKeySuccess,
+	resetProviderKeyCooldowns,
 	selectProviderKey,
 } from "./keyPool.js";
 
 // Mock WebSocket implementation for controlled unit testing
-class MockWebSocket extends EventEmitter {
+class MockWebSocket extends WebSocket {
 	static readonly CONNECTING = 0;
 	static readonly OPEN = 1;
 	static readonly CLOSING = 2;
 	static readonly CLOSED = 3;
 
-	public readyState: number = MockWebSocket.CONNECTING;
+	public override readyState: number = MockWebSocket.CONNECTING;
 	public sentMessages: string[] = [];
-	public url: string;
+	public override url: string;
 
 	constructor(url: string) {
-		super();
+		super(null, [], {});
 		this.url = url;
 		// Auto-open on next tick
 		process.nextTick(() => {
@@ -47,7 +48,7 @@ class MockWebSocket extends EventEmitter {
 		});
 	}
 
-	public send(data: string): void {
+	public override send(data: string): void {
 		if (this.readyState !== MockWebSocket.OPEN) {
 			throw new Error("WebSocket is not open");
 		}
@@ -71,7 +72,7 @@ class MockWebSocket extends EventEmitter {
 		}
 	}
 
-	public close(code = 1000, reason = "Normal Closure"): void {
+	public override close(code = 1000, reason = "Normal Closure"): void {
 		this.readyState = MockWebSocket.CLOSED;
 		this.emit("close", code, Buffer.from(reason));
 	}
@@ -95,6 +96,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 	const originalEnv = { ...process.env };
 
 	beforeEach(() => {
+		resetProviderKeyCooldowns();
 		process.env.GOOGLE_API_KEY = "test-google-key-alpha-111111111111";
 		process.env.GOOGLE_API_KEYS =
 			"test-key-primary-111111111111,test-key-secondary-222222222222,test-key-tertiary-333333333333";
@@ -326,19 +328,19 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 
 	describe("4. Live WebSocket Session Lifecycle & Audio Streaming", () => {
 		it("should connect, send setup frame, stream audio, and receive transcripts", async () => {
-			let createdSocket: any = null;
+			let createdSocket: MockWebSocket | null = null;
 
 			const session = new GeminiLiveSession({
 				apiKey: "mock_live_test_key",
 				wsFactory: (url) => {
 					createdSocket = new MockWebSocket(url);
-					return createdSocket as unknown as WebSocket;
+					return createdSocket;
 				},
 			});
 
-			const transcriptEvents: any[] = [];
-			const interimTokens: any[] = [];
-			const finalTokens: any[] = [];
+			const transcriptEvents: Array<{ finalized?: boolean; isFinal?: boolean; text?: string }> = [];
+			const interimTokens: Array<{ isFinal?: boolean; text?: string }> = [];
+			const finalTokens: Array<{ isFinal?: boolean; text?: string }> = [];
 
 			session.on("transcript", (event) => transcriptEvents.push(event));
 			session.on("interim_token", (event) => interimTokens.push(event));
@@ -405,23 +407,24 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 		});
 
 		it("should send finish clientContent without destructive turns: [] array", async () => {
-			let createdSocket: any = null;
+			let createdSocket: MockWebSocket | null = null;
 
 			const session = new GeminiLiveSession({
 				apiKey: "test-api-key-finish",
 				wsFactory: (url) => {
 					createdSocket = new MockWebSocket(url);
-					return createdSocket as unknown as WebSocket;
+					return createdSocket;
 				},
 			});
 
 			await session.connect();
-			createdSocket.simulateServerMessage({ setupComplete: {} });
+			assert.ok(createdSocket);
+			(createdSocket as MockWebSocket).simulateServerMessage({ setupComplete: {} });
 
 			const finishPromise = session.finish(500);
 
 			// Find clientContent message
-			const finishMsgRaw = createdSocket.sentMessages.find((m: string) => m.includes("turnComplete"));
+			const finishMsgRaw = (createdSocket as MockWebSocket).sentMessages.find((m: string) => m.includes("turnComplete"));
 			assert.ok(finishMsgRaw, "Expected turnComplete message to be sent");
 			const finishMsg = JSON.parse(finishMsgRaw);
 			assert.equal(finishMsg.clientContent?.turnComplete, true);
@@ -441,7 +444,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s as unknown as WebSocket;
+					return s;
 				},
 			});
 
@@ -510,7 +513,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s as unknown as WebSocket;
+					return s;
 				},
 			});
 
@@ -546,7 +549,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s as unknown as WebSocket;
+					return s;
 				},
 			});
 
@@ -584,7 +587,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s as unknown as WebSocket;
+					return s;
 				},
 			});
 
@@ -644,13 +647,13 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 		it("should forward custom proxy agent to WebSocket options when PROXY_URL is configured", async () => {
 			process.env.PROXY_URL = "http://127.0.0.1:8080";
 
-			let capturedOptions: any = null;
+			let capturedOptions: ClientOptions | undefined = undefined;
 			const session = new GeminiLiveSession({
 				apiKey: "test-proxy-key",
-				wsFactory: (url, protocols, opts) => {
+				wsFactory: (url, _protocols, opts) => {
 					capturedOptions = opts;
 					const s = new MockWebSocket(url);
-					return s as unknown as WebSocket;
+					return s;
 				},
 			});
 
@@ -678,7 +681,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 						process.nextTick(() => {
 							socket!.simulateServerMessage({ setupComplete: {} });
 						});
-						return socket as unknown as WebSocket;
+						return socket;
 					},
 				},
 			});

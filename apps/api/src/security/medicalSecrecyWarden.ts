@@ -305,19 +305,11 @@ export function evaluateClinicalAccess(
  */
 export function shouldStripMedicalData(request: FastifyRequest): boolean {
 	const identity = getRequestIdentity(request);
-	const reqAny = request as unknown as {
-		user?: {
-			role?: string | null;
-			id?: string | null;
-			canSignMedicalRecords?: boolean;
-			clinicalRole?: string | null;
-			specialties?: string[] | null;
-		};
-	};
+	const reqUser = request.user;
 
 	// Роль сотрудника определяется ИСКЛЮЧИТЕЛЬНО из проверенного токена identity.role или request.user.
 	// Чтение недоверенных заголовков x-user-role / x-staff-role / x-forwarded-role категорически ЗАПРЕЩЕНО!
-	const rawRole = identity.role ?? reqAny.user?.role ?? null;
+	const rawRole = identity.role ?? reqUser?.role ?? null;
 	const normalizedRole = rawRole ? rawRole.trim().toLowerCase() : null;
 
 	// 1. Если запрос явно несёт токен неклинической роли (маркетолог, регистратор, бухгалтер, оператор),
@@ -339,8 +331,8 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 		(request.headers["x-dente-admin-secret"] as string | string[] | undefined) ??
 		(request.headers["x-admin-secret"] as string | string[] | undefined);
 	const normalizedAdminSecret = Array.isArray(adminSecretHeader)
-		? adminSecretHeader[0]
-		: adminSecretHeader;
+		? adminSecretHeader[0] ?? null
+		: adminSecretHeader ?? null;
 
 	if (normalizedAdminSecret) {
 		const configuredSecret = clinicalAdminSecret();
@@ -382,21 +374,20 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 	}
 
 	// Полномочия и клиническая роль берутся ТОЛЬКО из проверенного токена или БД.
-	const clinicalRoleClaim =
-		(identity as unknown as { clinicalRole?: string | null }).clinicalRole ??
-		reqAny.user?.clinicalRole ??
-		null;
+	const reqUserClinicalRole =
+		typeof reqUser?.clinicalRole === "string" ? reqUser.clinicalRole : null;
+	const reqUserCanSign =
+		typeof reqUser?.canSignMedicalRecords === "boolean"
+			? reqUser.canSignMedicalRecords
+			: false;
+	const reqUserSpecialties = Array.isArray(reqUser?.specialties)
+		? (reqUser.specialties as string[])
+		: null;
 
+	const clinicalRoleClaim = identity.clinicalRole ?? reqUserClinicalRole;
 	const canSignMedicalRecords =
-		(identity as unknown as { canSignMedicalRecords?: boolean })
-			.canSignMedicalRecords ??
-		reqAny.user?.canSignMedicalRecords ??
-		false;
-
-	const specialtiesClaim =
-		(identity as unknown as { specialties?: string[] | null }).specialties ??
-		reqAny.user?.specialties ??
-		null;
+		identity.canSignMedicalRecords ?? reqUserCanSign;
+	const specialtiesClaim = identity.specialties ?? reqUserSpecialties;
 
 	const evalResult = evaluateClinicalAccess(rawRole, {
 		clinicalRole: clinicalRoleClaim,
@@ -489,16 +480,20 @@ export function isClinicalSearchQuery(query: string): boolean {
  * Рекурсивно вырезает все поля медицинской тайны из объекта, массива или полезной нагрузки.
  */
 export function stripDiagnosisPayload<T>(payload: T): T {
+	return stripDiagnosisValue(payload) as T;
+}
+
+function stripDiagnosisValue(payload: unknown): unknown {
 	if (payload === null || payload === undefined) {
 		return payload;
 	}
 
 	if (Array.isArray(payload)) {
-		return payload.map((item) => stripDiagnosisPayload(item)) as unknown as T;
+		return payload.map((item) => stripDiagnosisValue(item));
 	}
 
 	if (typeof payload === "string") {
-		return sanitizeClinicalString(payload) as unknown as T;
+		return sanitizeClinicalString(payload);
 	}
 
 	if (typeof payload === "object") {
@@ -520,9 +515,9 @@ export function stripDiagnosisPayload<T>(payload: T): T {
 				// ФИЗИЧЕСКОЕ ИСКЛЮЧЕНИЕ: ключ просто не попадает в итоговый объект
 				continue;
 			}
-			result[key] = stripDiagnosisPayload(value);
+			result[key] = stripDiagnosisValue(value);
 		}
-		return result as T;
+		return result;
 	}
 
 	return payload;

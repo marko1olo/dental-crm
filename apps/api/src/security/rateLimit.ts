@@ -8,6 +8,12 @@ export interface RateLimitRule {
 	keyGenerator?: (request: FastifyRequest) => string | Promise<string>;
 }
 
+declare module "fastify" {
+	interface FastifyContextConfig {
+		rateLimit?: RateLimitRule | false | undefined;
+	}
+}
+
 const DEFAULT_RULES: Array<{ test: RegExp; rule: RateLimitRule }> = [
 	{
 		test: /^\/api\/auth\/(clinic\/login|staff\/unlock|login)$/,
@@ -47,19 +53,11 @@ const DEFAULT_RULES: Array<{ test: RegExp; rule: RateLimitRule }> = [
 ];
 
 function resolveRule(request: FastifyRequest): RateLimitRule | null {
-	const routeConfig = (
-		request as unknown as {
-			routeOptions?: { config?: { rateLimit?: RateLimitRule | false } };
-		}
-	).routeOptions?.config?.rateLimit;
+	const routeConfig = request.routeOptions?.config?.rateLimit;
 	if (routeConfig === false) return null;
 	if (routeConfig && typeof routeConfig.max === "number") return routeConfig;
 
-	const url =
-		(request as unknown as { routeOptions?: { url?: string } }).routeOptions
-			?.url ??
-		request.url.split("?")[0] ??
-		"";
+	const url = request.routeOptions?.url ?? request.url.split("?")[0] ?? "";
 	for (const entry of DEFAULT_RULES) {
 		if (entry.test.test(url)) return entry.rule;
 	}
@@ -72,9 +70,7 @@ function clientKey(request: FastifyRequest): string {
 		const customKey = rule.keyGenerator(request);
 		if (typeof customKey === "string") return customKey;
 	}
-	const routeId =
-		(request as unknown as { routeOptions?: { url?: string } }).routeOptions
-			?.url ?? request.url;
+	const routeId = request.routeOptions?.url ?? request.url;
 	return `${request.ip ?? "unknown"}|${request.method}|${routeId}`;
 }
 

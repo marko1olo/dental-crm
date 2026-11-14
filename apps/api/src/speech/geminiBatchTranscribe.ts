@@ -222,13 +222,28 @@ function parseTimeOffset(val: unknown): number {
 		}
 		if (str.includes(":")) {
 			const parts = str.split(":").map(Number);
-			if (parts.length === 2 && parts.every((p) => Number.isFinite(p))) {
-				return Math.floor((parts[0]! * 60 + parts[1]!) * 1000);
+			const p0 = parts[0];
+			const p1 = parts[1];
+			const p2 = parts[2];
+			if (
+				parts.length === 2 &&
+				typeof p0 === "number" &&
+				Number.isFinite(p0) &&
+				typeof p1 === "number" &&
+				Number.isFinite(p1)
+			) {
+				return Math.floor((p0 * 60 + p1) * 1000);
 			}
-			if (parts.length === 3 && parts.every((p) => Number.isFinite(p))) {
-				return Math.floor(
-					(parts[0]! * 3600 + parts[1]! * 60 + parts[2]!) * 1000,
-				);
+			if (
+				parts.length === 3 &&
+				typeof p0 === "number" &&
+				Number.isFinite(p0) &&
+				typeof p1 === "number" &&
+				Number.isFinite(p1) &&
+				typeof p2 === "number" &&
+				Number.isFinite(p2)
+			) {
+				return Math.floor((p0 * 3600 + p1 * 60 + p2) * 1000);
 			}
 		}
 		const direct = Number(str);

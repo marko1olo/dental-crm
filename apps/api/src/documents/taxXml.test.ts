@@ -1,37 +1,44 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import type {
-	ClinicProfile,
-	GeneratedDocument,
-	Patient,
-	Payment,
+import {
+	type ClinicProfile,
+	type GeneratedDocument,
+	type Patient,
+	type Payment,
+	patientAdministrativeProfileSchema,
 } from "@dental/shared";
+import {
+	createTestClinicProfile,
+	createTestGeneratedDocument,
+	createTestPatient,
+	createTestPayment,
+} from "./testDocumentFixtures.js";
 import { buildKnd1151156Xml, type Knd1151156XmlContext } from "./taxXml.js";
 
 describe("buildKnd1151156Xml", () => {
-	const baseDocument: Partial<GeneratedDocument> = {
+	const baseDocument: GeneratedDocument = createTestGeneratedDocument({
 		id: "doc-1",
 		patientId: "patient-1",
 		payload: {
 			taxPaymentSelection: { selectedPaymentIds: ["payment-1"] },
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} as any,
+		},
 		kind: "tax_deduction_certificate",
 		taxYear: 2024,
+		taxPayerInn: null,
 		issuedAt: "2024-05-15T12:00:00Z",
-	};
+	});
 
-	const basePatient = {
+	const basePatient: Patient = createTestPatient({
 		id: "patient-1",
 		fullName: "Иванов Иван Иванович",
 		birthDate: "1990-01-01",
-		administrativeProfile: {
+		administrativeProfile: patientAdministrativeProfileSchema.parse({
 			taxpayerInn: "123456789012",
 			identityDocument: "Паспорт 11 22 333444 выдан 01.01.2010",
-		},
-	};
+		}),
+	});
 
-	const baseClinic: ClinicProfile = {
+	const baseClinic: ClinicProfile = createTestClinicProfile({
 		clinicName: "Test Clinic",
 		legalName: "ООО Тест",
 		inn: "1234567890",
@@ -41,9 +48,9 @@ describe("buildKnd1151156Xml", () => {
 		phone: "88005553535",
 		email: "test@example.com",
 		signatoryName: "Петров Петр Петрович",
-	} as unknown as ClinicProfile;
+	});
 
-	const basePayment: Partial<Payment> = {
+	const basePayment: Payment = createTestPayment({
 		id: "payment-1",
 		amountRub: 1000,
 		taxDeductionCode: "1",
@@ -54,18 +61,18 @@ describe("buildKnd1151156Xml", () => {
 		patientId: "patient-1",
 		status: "paid",
 		paidAt: "2024-05-15T12:00:00Z",
-	};
+	});
 
 	const baseContext: Knd1151156XmlContext = {
 		clinicProfile: baseClinic,
-		payments: [basePayment as Payment],
+		payments: [basePayment],
 		taxOfficeCode: "7700",
 	};
 
 	test("happy path: generates valid XML for self payer", () => {
 		const result = buildKnd1151156Xml(
-			baseDocument as GeneratedDocument,
-			basePatient as Patient,
+			baseDocument,
+			basePatient,
 			baseContext,
 		);
 		assert.strictEqual(result.ok, true);
@@ -257,13 +264,13 @@ describe("buildKnd1151156Xml", () => {
 	});
 
 	test("error: invalid tax deduction code", () => {
-		const payment = {
+		const payment: Payment = {
 			...basePayment,
-			taxDeductionCode: "3",
-		} as unknown as Payment;
+			taxDeductionCode: "3" as "1" | "2",
+		};
 		const result = buildKnd1151156Xml(
-			baseDocument as GeneratedDocument,
-			basePatient as Patient,
+			baseDocument,
+			basePatient,
 			{ ...baseContext, payments: [payment] },
 		);
 		assert.strictEqual(result.ok, false);
@@ -276,14 +283,14 @@ describe("buildKnd1151156Xml", () => {
 	});
 
 	test("error: missing payer details (no INN or identity doc)", () => {
-		const payment = {
+		const payment: Payment = {
 			...basePayment,
 			payerInn: null,
 			payerIdentityDocument: null,
-		} as Payment;
+		};
 		const result = buildKnd1151156Xml(
-			baseDocument as GeneratedDocument,
-			basePatient as Patient,
+			baseDocument,
+			basePatient,
 			{ ...baseContext, payments: [payment] },
 		);
 		assert.strictEqual(result.ok, false);
@@ -296,14 +303,17 @@ describe("buildKnd1151156Xml", () => {
 	});
 
 	test("error: different patient but missing patient details", () => {
-		const payment = { ...basePayment, payerRelationship: "child" } as Payment;
-		const patient = {
+		const payment: Payment = { ...basePayment, payerRelationship: "child" };
+		const patient: Patient = {
 			...basePatient,
-			administrativeProfile: { taxpayerInn: null, identityDocument: null },
-		} as unknown as Patient;
+			administrativeProfile: patientAdministrativeProfileSchema.parse({
+				taxpayerInn: null,
+				identityDocument: null,
+			}),
+		};
 		const result = buildKnd1151156Xml(
-			baseDocument as GeneratedDocument,
-			patient as Patient,
+			baseDocument,
+			patient,
 			{ ...baseContext, payments: [payment] },
 		);
 		assert.strictEqual(result.ok, false);

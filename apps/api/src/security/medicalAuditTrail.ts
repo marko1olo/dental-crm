@@ -190,6 +190,12 @@ export async function recordMedicalRecordAccessAudit(
 	}
 }
 
+interface AuthenticatedAuditRequest extends FastifyRequest {
+	user?: FastifyRequest["user"] & {
+		fullName?: string | null;
+	};
+}
+
 /**
  * Извлекает контекст сотрудника из входящего HTTP-запроса Fastify и регистрирует аудит доступа.
  */
@@ -204,36 +210,27 @@ export async function auditMedicalAccessFromRequest(
 	},
 ): Promise<void> {
 	const identity = getRequestIdentity(request);
-	const reqAny = request as unknown as {
-		user?: {
-			id?: string | null;
-			fullName?: string | null;
-			role?: string | null;
-		};
-		headers: Record<string, string | string[] | undefined>;
-		ip?: string;
-	};
+	const authReq = request as AuthenticatedAuditRequest;
 
+	const forwardedFor = request.headers["x-forwarded-for"];
 	const ipAddress =
-		(typeof reqAny.headers["x-forwarded-for"] === "string"
-			? reqAny.headers["x-forwarded-for"].split(",")[0]?.trim()
+		(typeof forwardedFor === "string"
+			? forwardedFor.split(",")[0]?.trim()
 			: null) ??
-		reqAny.ip ??
+		request.ip ??
 		null;
 
+	const userAgentHeader = request.headers["user-agent"];
 	const userAgent =
-		typeof reqAny.headers["user-agent"] === "string"
-			? reqAny.headers["user-agent"]
-			: null;
+		typeof userAgentHeader === "string" ? userAgentHeader : null;
 
-	const actorUserId = identity.userId ?? reqAny.user?.id ?? null;
-	const actorLogin = identity.fullName ?? reqAny.user?.fullName ?? null;
+	const userRoleHeader = request.headers["x-user-role"];
+	const actorUserId = identity.userId ?? authReq.user?.id ?? null;
+	const actorLogin = identity.fullName ?? authReq.user?.fullName ?? null;
 	const actorRole =
 		identity.role ??
-		reqAny.user?.role ??
-		(typeof reqAny.headers["x-user-role"] === "string"
-			? reqAny.headers["x-user-role"]
-			: null) ??
+		authReq.user?.role ??
+		(typeof userRoleHeader === "string" ? userRoleHeader : null) ??
 		null;
 
 	// Если диагноз не передан явно, ищем активный диагноз пациента в базе

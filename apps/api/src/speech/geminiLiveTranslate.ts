@@ -24,8 +24,7 @@ export interface GeminiLiveTranslateOptions {
 	onClose?: ((code: number, reason: string) => void) | undefined;
 	onReady?: (() => void) | undefined;
 	// Dependency injection for testing/mocking
-	// biome-ignore lint/suspicious/noExplicitAny: generic WebSocket constructor type
-	WebSocketClass?: any;
+	WebSocketClass?: (new (url: string | URL, options?: ClientOptions) => WebSocket) | typeof WebSocket | undefined;
 }
 
 export interface GeminiLiveTranslateSessionState {
@@ -92,6 +91,10 @@ export class GeminiLiveTranslateSession {
 		return this.sessionId;
 	}
 
+	getRawSocket(): WebSocket | null {
+		return this.ws;
+	}
+
 	async connect(): Promise<void> {
 		if (this.ws && this.isConnectedState) {
 			return;
@@ -128,7 +131,7 @@ export class GeminiLiveTranslateSession {
 			let isResolved = false;
 
 			try {
-				this.ws = new WSImpl(wsUrl, wsOptions) as WebSocket;
+				this.ws = new WSImpl(wsUrl, wsOptions);
 			} catch (err) {
 				const error =
 					err instanceof Error

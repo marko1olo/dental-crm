@@ -40,7 +40,9 @@ export function clearSpeechKeyHealthMemoryForTests(): void {
 	if (filePath && existsSync(filePath)) {
 		try {
 			unlinkSync(filePath);
-		} catch {}
+		} catch (err) {
+			console.warn("[KeyRotation] Failed to unlink key health test file:", err);
+		}
 	}
 	clearModelHealthMemoryForTests();
 }

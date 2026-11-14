@@ -176,7 +176,8 @@ export function filterActiveModelCascade(cascade: readonly string[]): string[] {
 
 	// If all models in cascade are banned, return the last model as safe fallback (better to try than silence)
 	if (active.length === 0 && cascade.length > 0) {
-		return [cascade[cascade.length - 1]!];
+		const fallbackModel = cascade[cascade.length - 1];
+		return fallbackModel ? [fallbackModel] : [];
 	}
 	return active;
 }
@@ -188,6 +189,8 @@ export function clearModelHealthMemoryForTests(): void {
 	if (filePath && existsSync(filePath)) {
 		try {
 			unlinkSync(filePath);
-		} catch {}
+		} catch (err) {
+			console.warn("[ModelHealth] Failed to unlink model health test file:", err);
+		}
 	}
 }

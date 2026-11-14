@@ -240,7 +240,7 @@ describe("GeminiBidiBridge & Dental STT Protocol", () => {
 				apiKey: "mock_bidi_test_key",
 				wsFactory: (url, _protocols, options) => {
 					createdWs = new MockBridgeWebSocket(url, options);
-					return createdWs as unknown as WebSocket;
+					return createdWs;
 				},
 			});
 

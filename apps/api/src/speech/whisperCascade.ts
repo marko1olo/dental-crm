@@ -576,8 +576,9 @@ export async function transcribeWhisperCascade(
 	const warnings: string[] = [];
 	const cascadeStartTime = Date.now();
 
-	for (let i = 0; i < providersToTry.length; i++) {
-		const providerId = providersToTry[i]!;
+	let cascadeIndex = 0;
+	for (const providerId of providersToTry) {
+		cascadeIndex++;
 		const attemptStart = Date.now();
 
 		try {
@@ -682,7 +683,7 @@ export async function transcribeWhisperCascade(
 			const fallbackOccurred = attempts.filter((a) => !a.success).length > 0;
 			if (fallbackOccurred) {
 				warnings.push(
-					`Успешно распознано через резервный провайдер ${providerId} (уровень каскада ${i + 1}).`,
+					`Успешно распознано через резервный провайдер ${providerId} (уровень каскада ${cascadeIndex}).`,
 				);
 			}
 

@@ -104,18 +104,35 @@ describe("ворота отдают 409 с текстом, а не исключ�
 			kind: "installment_payment_schedule",
 			payload: {
 				installmentPaymentSchedule: {
+					scheduleNumber: "1",
+					scheduleDate: "2024-05-15",
+					baseDocumentTitle: "Договор",
+					payerFullName: "Иванов Иван Иванович",
 					totalAmountRub: 1000,
 					prepaidAmountRub: 0,
 					remainingAmountRub,
-					installments: [],
+					installments: [
+						{
+							label: "Платеж 1",
+							dueDate: "2024-06-15",
+							amountRub: 1000,
+							status: "planned",
+						},
+					],
+					latePaymentPolicy: "Штраф 0.1% в день",
+					paymentMethodNotes: "Оплата по графику",
+					responsibleStaffFullName: "Администратор",
+					patientAcceptedSchedule: true,
+					scheduleDoesNotReplaceFiscalReceipt: true,
+					changesRequireWrittenAgreement: true,
 				},
 			},
-		} as unknown as CreateDocumentInput;
+		};
 	}
 
 	const facts: DocumentCreationFacts = {
-		patient: { id: "patient-1" } as unknown as Patient,
-		visit: { id: "visit-1", patientId: "patient-1" } as unknown as Visit,
+		patient: { id: "patient-1" },
+		visit: { id: "visit-1", patientId: "patient-1" },
 		paidAmountRub: 0,
 		plannedAmountRub: 0,
 	};
