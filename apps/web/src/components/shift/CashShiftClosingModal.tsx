@@ -29,6 +29,25 @@ import {
 } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 
+export interface ZReportData {
+	readonly shiftNumber: number;
+	readonly cashierFullName: string;
+	readonly countedCashRub: number;
+	readonly expectedCashInDrawerRub: number;
+	readonly incomeCashRub: number;
+	readonly incomeElectronicRub: number;
+	readonly incomeSbpRub: number;
+	readonly advanceOffsetRub: number;
+	readonly netRevenueRub: number;
+	readonly differenceRub: number;
+	readonly isBalanced: boolean;
+	readonly encashmentAmountRub: number;
+	readonly force: boolean;
+	readonly allowUnfinishedVisits: boolean;
+	readonly idempotencyKey: string;
+	readonly [key: string]: unknown;
+}
+
 export interface CashShiftClosingModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -41,7 +60,7 @@ export interface CashShiftClosingModalProps {
 	readonly incomeElectronicRub?: number | undefined;
 	readonly incomeSbpRub?: number | undefined;
 	readonly advanceOffsetRub?: number | undefined;
-	readonly onShiftClosed?: ((zReportData: any) => void) | undefined;
+	readonly onShiftClosed?: ((zReportData: ZReportData) => void) | undefined;
 }
 
 export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
@@ -52,9 +71,9 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	initialChangeFundRub = 5000,
 	cashInDrawerRub,
-	incomeCashRub = 12500,
-	incomeElectronicRub = 28000,
-	incomeSbpRub = 4500,
+	incomeCashRub = 0,
+	incomeElectronicRub = 0,
+	incomeSbpRub = 0,
 	advanceOffsetRub = 0,
 	onShiftClosed,
 }) => {
@@ -84,7 +103,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	// Execution state
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const [closedSuccessData, setClosedSuccessData] = useState<any | null>(null);
+	const [closedSuccessData, setClosedSuccessData] = useState<ZReportData | null>(null);
 
 	useEffect(() => {
 		setCountedCashRub(expectedCashInDrawer);
@@ -148,7 +167,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			}
 
 			const json = await res.json().catch(() => null);
-			const zReport = json?.reconciliation || payload;
+			const zReport = (json?.reconciliation || payload) as ZReportData;
 
 			setClosedSuccessData(zReport);
 			setIsSubmitting(false);
@@ -156,8 +175,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			setTimeout(() => {
 				onClose();
 			}, 900);
-		} catch (err: any) {
-			const message = err?.message || "Ошибка соединения с сервером";
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Ошибка соединения с сервером";
 			setErrorMessage(`Сбой закрытия смены: ${message}. Проверьте подключение и повторите попытку.`);
 			setIsSubmitting(false);
 		}
@@ -285,7 +304,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								{isCashMatched ? (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
 										<CheckCircle2 className="w-4 h-4 text-emerald-600" />
-										Сходится ✓
+										Сходится
 									</span>
 								) : (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold">
@@ -386,12 +405,24 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 					{/* Error Alert */}
 					{errorMessage && (
-						<div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 text-red-700 dark:text-red-300 flex items-center justify-between text-xs">
-							<span>{errorMessage}</span>
+						<div
+							className="p-3 rounded-xl border flex items-center justify-between text-xs animate-in fade-in duration-150"
+							style={{
+								backgroundColor: "var(--danger-soft, rgba(239, 68, 68, 0.1))",
+								borderColor: "var(--danger, #ef4444)",
+								color: "var(--danger, #ef4444)",
+							}}
+							role="alert"
+						>
+							<div className="flex items-center gap-2 min-w-0">
+								<AlertTriangle className="w-4 h-4 shrink-0 text-[var(--danger,#ef4444)]" />
+								<span>{errorMessage}</span>
+							</div>
 							<button
 								type="button"
 								onClick={handleExecuteCloseShift}
-								className="px-2 py-1 bg-red-600 text-white rounded text-[11px] font-semibold shrink-0"
+								className="px-2.5 py-1 text-white rounded-lg text-[11px] font-semibold shrink-0 cursor-pointer shadow-xs hover:opacity-90 transition-opacity"
+								style={{ backgroundColor: "var(--danger, #ef4444)" }}
 							>
 								Повторить
 							</button>

@@ -1,5 +1,5 @@
 import type { Dashboard, Patient } from "@dental/shared";
-import { CashShiftWidget } from "../../components/finance/CashShiftWidget";
+import { CashShiftClosingModal } from "../../components/shift/CashShiftClosingModal";
 import { FinanceToolbar } from "../../components/finance/FinanceToolbar";
 import type { PendingCheckout } from "./types.js";
 import { PendingCheckoutBanner } from "./PendingCheckoutBanner.js";
@@ -87,23 +87,20 @@ export function FinanceOperationsToolbar(props: FinanceOperationsToolbarProps) {
 			/>
 
 			{isCashShiftOpen && (
-				<div className="relative mb-3 animate-in fade-in duration-150" data-testid="cash-shift-panel-container">
-					<CashShiftWidget
-						compact={true}
-						initialIsOpen={isShiftOpen}
-						shiftNumber={shiftNumber}
-						cashierName={paymentFiscalCashierName || undefined}
-						cashInDrawerRub={cashInDrawerRub}
-						cardSumRub={cardSumRub}
-						sbpSumRub={sbpSumRub}
-						advanceOffsetRub={advanceOffsetRub}
-						onOpenShift={onOpenShift}
-						onCloseShift={onCloseShift}
-						onCashIn={onCashIn}
-						onCashOut={onCashOut}
-						onPrintXReport={onPrintXReport}
-					/>
-				</div>
+				<CashShiftClosingModal
+					isOpen={isCashShiftOpen}
+					onClose={onToggleCashShift}
+					shiftNumber={shiftNumber}
+					cashierFullName={paymentFiscalCashierName || undefined}
+					cashInDrawerRub={cashInDrawerRub}
+					incomeElectronicRub={cardSumRub}
+					incomeSbpRub={sbpSumRub}
+					advanceOffsetRub={advanceOffsetRub}
+					onShiftClosed={async () => {
+						await onCloseShift();
+						onToggleCashShift();
+					}}
+				/>
 			)}
 		</>
 	);

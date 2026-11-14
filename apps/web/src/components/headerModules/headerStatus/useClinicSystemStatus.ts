@@ -8,7 +8,7 @@ import { useOfflineStore } from "../../../store/offlineStore.js";
 import { useTelephonyStore } from "../../../store/telephonyStore.js";
 import { useL2StorageStatus } from "../../../services/storage/clinicalIndexedDbL2.js";
 import { showToast } from "../../GlobalToast.js";
-import { executeCloseShiftDbTransaction, executeOpenShiftDbTransaction } from "../../finance/cashShiftWidget/cashShiftService.js";
+import { executeCloseShiftDbTransaction, executeOpenShiftDbTransaction } from "../../shift/cashShiftService.js";
 import type { AgentTelephonyState, ClinicSystemStatus } from "./headerStatusTypes.js";
 
 const SHIFT_STORAGE_KEY = "dente_active_shift";

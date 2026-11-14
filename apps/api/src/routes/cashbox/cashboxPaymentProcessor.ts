@@ -15,10 +15,12 @@ import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shar
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	advanceDepositTaggings,
+	bonusTransactions,
 	cashBoxes,
 	cashOperations,
 	familyGroups,
 	fiscalReceiptQueue,
+	patientBonusBalances,
 	patientInvoices,
 	payments,
 	patients,
@@ -28,6 +30,7 @@ import {
 import { buildPatientLedger, clinicOwesPatientKopecks } from "../../money/patientDebt.js";
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
+import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../loyaltyModules/bonusBalanceService.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
 export type CashboxPaymentOutcome =
@@ -126,12 +129,36 @@ export async function processCashboxPayment(
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const norm = normalizePaymentMethod(tender.method);
-			if (norm === "deposit" || norm === "family_wallet") {
+			const rawMethod = tender.method?.trim().toLowerCase();
+			if (norm === "family_wallet" || rawMethod === "deposit") {
 				const tk =
 					tender.amountKopecks !== undefined
 						? BigInt(tender.amountKopecks)
 						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
 				requiredDepositKopecks += tk;
+			}
+		}
+	}
+
+	// [FIN-06] Вычисление требуемой суммы списания бонусов лояльности
+	let requiredBonusKopecks = 0n;
+	const isBonusMethod =
+		body.method === "loyalty" ||
+		(body.method as string) === "bonus" ||
+		(body.method as string) === "loyalty_points";
+	if (isBonusMethod) {
+		requiredBonusKopecks = totalKopecks;
+	} else if (body.bonusAmountKopecks !== undefined && body.bonusAmountKopecks > 0) {
+		requiredBonusKopecks = BigInt(body.bonusAmountKopecks);
+	} else if (body.splitTenders && body.splitTenders.length > 0) {
+		for (const tender of body.splitTenders) {
+			const rawMethod = tender.method?.trim().toLowerCase();
+			if (rawMethod === "loyalty" || rawMethod === "bonus" || rawMethod === "loyalty_points") {
+				const tk =
+					tender.amountKopecks !== undefined
+						? BigInt(tender.amountKopecks)
+						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+				requiredBonusKopecks += tk;
 			}
 		}
 	}
@@ -143,6 +170,7 @@ export async function processCashboxPayment(
 		body.cashAmountKopecks !== undefined,
 		body.electronicAmountKopecks !== undefined,
 		body.depositAmountKopecks !== undefined,
+		body.bonusAmountKopecks !== undefined,
 	].filter(Boolean).length >= 2;
 
 	if (isSplitMethod || hasExplicitSplitTenders || hasMultipleTenderFields) {
@@ -166,6 +194,9 @@ export async function processCashboxPayment(
 			}
 			if (body.depositAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.depositAmountKopecks);
+			}
+			if (body.bonusAmountKopecks !== undefined) {
+				sumSplitKopecks += BigInt(body.bonusAmountKopecks);
 			}
 		}
 
@@ -194,6 +225,16 @@ export async function processCashboxPayment(
 				error: "DepositRequiresPatient",
 				message:
 					"Списание с депозита или семейного баланса возможно только для зарегистрированного пациента.",
+			},
+		};
+	}
+	if (!body.patientId && requiredBonusKopecks > 0n && !isWarrantyPayment) {
+		return {
+			statusCode: 400,
+			body: {
+				error: "BonusRequiresPatient",
+				message:
+					"Списание бонусов лояльности возможно только для зарегистрированного пациента.",
 			},
 		};
 	}
@@ -460,6 +501,44 @@ export async function processCashboxPayment(
 			}
 		}
 
+		// [FIN-06] Проверка и блокировка списания бонусов лояльности
+		let lockedBonusBalance: typeof patientBonusBalances.$inferSelect | null = null;
+		let pointsToDeduct = 0;
+		let newActiveBonusPoints = 0;
+
+		if (requiredBonusKopecks > 0n && !isWarrantyPayment && resolvedPatientId) {
+			await processPatientExpiredBonuses(tx, orgId, resolvedPatientId);
+
+			const [bonusBalance] = await tx
+				.select()
+				.from(patientBonusBalances)
+				.where(
+					and(
+						eq(patientBonusBalances.organizationId, orgId),
+						eq(patientBonusBalances.patientId, resolvedPatientId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			const currentActivePoints = Number(bonusBalance?.activePoints ?? 0);
+			const currentActiveKop = BigInt(rubToKopecks(currentActivePoints));
+
+			if (currentActiveKop < requiredBonusKopecks) {
+				const availableRub = (Number(currentActiveKop) / 100).toFixed(2);
+				const requiredRub = (Number(requiredBonusKopecks) / 100).toFixed(2);
+				return {
+					kind: "insufficient_bonus" as const,
+					availableRub,
+					requiredRub,
+				};
+			}
+
+			lockedBonusBalance = bonusBalance ?? null;
+			pointsToDeduct = Number((Number(requiredBonusKopecks) / 100).toFixed(2));
+			newActiveBonusPoints = Math.max(0, Number((currentActivePoints - pointsToDeduct).toFixed(2)));
+		}
+
 		// [FIN-02] Пессимистическая блокировка инвойса от двойной оплаты и связывание с приёмом
 		let effectiveVisitId = body.visitId || null;
 		let lockedInvoice: typeof patientInvoices.$inferSelect | null = null;
@@ -628,6 +707,46 @@ export async function processCashboxPayment(
 				.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)));
 		}
 
+		// 2.1. Списание бонусов лояльности (FIFO)
+		if (requiredBonusKopecks > 0n && lockedBonusBalance) {
+			const currentSpent = Number(lockedBonusBalance.lifetimeSpentPoints ?? 0);
+			const newLifetimeSpent = Number((currentSpent + pointsToDeduct).toFixed(2));
+
+			await tx
+				.update(patientBonusBalances)
+				.set({
+					activePoints: String(newActiveBonusPoints),
+					lifetimeSpentPoints: String(newLifetimeSpent),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(patientBonusBalances.organizationId, orgId),
+						eq(patientBonusBalances.patientId, resolvedPatientId),
+					),
+				);
+
+			await tx.insert(bonusTransactions).values({
+				organizationId: orgId,
+				patientId: resolvedPatientId,
+				amountPoints: String(-pointsToDeduct),
+				balanceAfterPoints: String(newActiveBonusPoints),
+				type: "redemption_payment",
+				relatedPaymentId: newPayment.id,
+				relatedInvoiceId: body.invoiceId || null,
+				clientMutationId: effectiveMutationId ? `${effectiveMutationId}:bonus` : null,
+				description:
+					body.note ||
+					`Списание бонусов лояльности в кассе (${pointsToDeduct} б.)`,
+			});
+
+			await deductUnspentPointsFifo(tx, {
+				orgId,
+				patientId: resolvedPatientId,
+				pointsToDeduct,
+			});
+		}
+
 		// 3. Инициализируем и находим кассовые счета клиники с упорядоченной блокировкой строк
 		await ensureOrganizationCashBoxes(tx, orgId);
 		const boxes = await tx
@@ -738,6 +857,22 @@ export async function processCashboxPayment(
 			});
 		}
 
+		if (requiredBonusKopecks > 0n && cashDeskBox) {
+			const bonusRub = Number(requiredBonusKopecks) / 100;
+			await tx.insert(cashOperations).values({
+				organizationId: orgId,
+				cashBoxId: cashDeskBox.id,
+				operationType: "income",
+				amountRub: bonusRub,
+				balanceBeforeRub: cashDeskBox.balanceRub || 0,
+				balanceAfterRub: cashDeskBox.balanceRub || 0,
+				patientId: resolvedPatientId,
+				kkmDocNumber: receiptNumber,
+				reasonText: `Зачёт бонусов лояльности пациента: оплата стоматологических услуг (${receiptNumber || "б/н"})`,
+				operatorName: body.cashierFullName || "Кассир",
+			});
+		}
+
 		// 5. Постановка чека в очередь фискализации (physical KKT printer spooler)
 		let enqueuedReceiptId: string | null = null;
 		if (!isWarrantyPayment && totalKopecks > 0n) {
@@ -757,6 +892,7 @@ export async function processCashboxPayment(
 						cashRub: kopecksToRub(resolvedCashKop),
 						electronicRub: kopecksToRub(resolvedElecKop),
 						advanceOffsetRub: kopecksToRub(Number(requiredDepositKopecks)),
+						bonusOffsetRub: kopecksToRub(Number(requiredBonusKopecks)),
 						fiscalReceiptNumber: receiptNumber,
 						patientId: resolvedPatientId,
 						patientName: patientRow?.fullName || patientName,
@@ -776,6 +912,7 @@ export async function processCashboxPayment(
 			id: newPayment.id,
 			amountKopecks: Number(totalKopecks),
 			amountRub: amountRubNumber,
+			bonusAmountKopecks: Number(requiredBonusKopecks),
 			method: newPayment.method,
 			status: "paid",
 			fiscalReceiptNumber: receiptNumber,
@@ -822,6 +959,16 @@ export async function processCashboxPayment(
 			body: {
 				error: "InsufficientDepositBalance",
 				message: `Недостаточно средств на депозите пациента. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "insufficient_bonus") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "InsufficientBonusBalance",
+				message: `Недостаточно бонусов на счете пациента. Доступно: ${result.availableRub} б., требуется: ${result.requiredRub} б.`,
 			},
 		};
 	}

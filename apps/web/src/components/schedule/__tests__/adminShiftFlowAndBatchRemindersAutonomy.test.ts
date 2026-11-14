@@ -26,7 +26,6 @@ import {
 	dispatchBatchReminders,
 } from "../tomorrowRemindersEngine";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
-import { CashShiftWidget } from "../../finance/CashShiftWidget";
 import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { DoctorShiftControlBar } from "../DoctorShiftControlBar";
@@ -325,26 +324,6 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 
 			// Check Mandate 8d pt 7: Zero emojis
 			assert.equal(EMOJI_REGEX.test(html), false, "CashShiftClosingModal must contain ZERO emojis");
-		});
-
-		it("verifies CashShiftWidget buttons are NOT disabled per Mandate 8e", () => {
-			const html = renderToStaticMarkup(
-				React.createElement(CashShiftWidget, {
-					initialIsOpen: true,
-					shiftNumber: 5,
-					cashierName: "Иванов И.И.",
-				}),
-			);
-
-			const toggleBtnMatches = html.match(/<button[^>]*data-testid="cash-shift-toggle-btn"[^>]*>/g) || [];
-			assert.ok(toggleBtnMatches.length > 0, "Found toggle buttons in CashShiftWidget");
-			for (const btn of toggleBtnMatches) {
-				assert.equal(
-					/disabled(?=[>\s=])/.test(btn),
-					false,
-					`cash-shift-toggle-btn must NOT be disabled: ${btn}`,
-				);
-			}
 		});
 	});
 

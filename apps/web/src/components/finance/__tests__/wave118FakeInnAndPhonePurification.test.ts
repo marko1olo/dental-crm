@@ -21,11 +21,9 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 	describe("1. Static Code Audit — Zero Hardcoded Fake INN ('7701234567')", () => {
 		const filesToCheckForInn = [
 			"apps/web/src/components/finance/Billing1CExportModal.tsx",
-			"apps/web/src/components/finance/CashDayTally.tsx",
-			"apps/web/src/components/finance/CashShiftWidget.tsx",
+			"apps/web/src/components/shift/CashShiftClosingModal.tsx",
 			"apps/web/src/components/finance/OneCExportButton.tsx",
-			"apps/web/src/components/finance/FastCheckoutModal.tsx",
-			"apps/web/src/components/finance/PaymentModal.tsx",
+			"apps/web/src/components/cashbox/CashRegisterStudioModal.tsx",
 		];
 
 		for (const relPath of filesToCheckForInn) {

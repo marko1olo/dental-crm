@@ -1,5 +1,4 @@
 import type { Dashboard, Payment, PaymentMethod } from "@dental/shared";
-import { CashDayTally } from "../../components/finance/CashDayTally";
 import { FinancePlanningOverview } from "../../FinancePlanning";
 import type { TreatmentPlanScenario } from "./types.js";
 
@@ -25,27 +24,17 @@ export function FinanceSummaryCards({
 	scenarios,
 	strategyLabels,
 	onOpenTaxCertificateModal,
-	dayPayments,
-	methodLabels,
 }: FinanceSummaryCardsProps) {
 	return (
-		<>
-			<FinancePlanningOverview
-				activePaymentsCount={activePaymentsCount}
-				billingSummary={billingSummary}
-				money={money}
-				onGoToVisit={onGoToVisit}
-				priorityLabels={priorityLabels}
-				scenarios={scenarios}
-				strategyLabels={strategyLabels}
-				onOpenTaxCertificateModal={onOpenTaxCertificateModal}
-			/>
-
-			<CashDayTally
-				payments={dayPayments}
-				methodLabels={methodLabels}
-				money={money}
-			/>
-		</>
+		<FinancePlanningOverview
+			activePaymentsCount={activePaymentsCount}
+			billingSummary={billingSummary}
+			money={money}
+			onGoToVisit={onGoToVisit}
+			priorityLabels={priorityLabels}
+			scenarios={scenarios}
+			strategyLabels={strategyLabels}
+			onOpenTaxCertificateModal={onOpenTaxCertificateModal}
+		/>
 	);
 }

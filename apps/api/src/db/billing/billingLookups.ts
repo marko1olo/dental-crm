@@ -99,6 +99,33 @@ export async function getPatientForBilling(
 	});
 }
 
+export async function ensureRetailPatientInDb(organizationId: string) {
+	return withTenantCtx(organizationId, async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.fullName, "Розничный покупатель"),
+				),
+			)
+			.limit(1);
+		if (existing) return existing;
+
+		const [created] = await tx
+			.insert(schema.patients)
+			.values({
+				organizationId,
+				fullName: "Розничный покупатель",
+				notes: "Системная запись для свободных кассовых чеков и розничных продаж (54-ФЗ ст. 1.2, 4.7)",
+				administrativeProfile: { isAnonymous: true },
+			})
+			.returning();
+		return created || null;
+	});
+}
+
 export async function getVisitForBilling(
 	organizationId: string,
 	visitId: string,

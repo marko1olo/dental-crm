@@ -112,19 +112,19 @@ export function validateFiscalReceiptPayload54Fz(input: unknown): FiscalValidati
 		const vatRate = (itemObj.vatRate as FiscalReceiptLineItem["vatRate"]) || "vat_none";
 		const validVatRates = ["vat_none", "vat_0", "vat_10", "vat_20", "vat_10_110", "vat_20_120"];
 		if (!validVatRates.includes(vatRate)) {
-			return { isValid: false, error: `Позиция #${idx + 1}: некорректная ставка НДС по ФФД 1.2 (${vatRate})` };
+			return { isValid: false, error: `Позиция #${idx + 1}: некорректная ставка НДС кассового чека (${vatRate})` };
 		}
 
 		const paymentMethod = (itemObj.paymentMethod as FiscalReceiptLineItem["paymentMethod"]) || "full_payment";
 		const validMethods = ["full_payment", "full_prepayment", "prepayment", "advance", "partial_payment_and_credit", "credit_handover", "credit_payment"];
 		if (!validMethods.includes(paymentMethod)) {
-			return { isValid: false, error: `Позиция #${idx + 1}: некорректный признак способа расчета по ФФД 1.2 (${paymentMethod})` };
+			return { isValid: false, error: `Позиция #${idx + 1}: некорректный признак способа расчета кассового чека (${paymentMethod})` };
 		}
 
 		const paymentSubject = (itemObj.paymentSubject as FiscalReceiptLineItem["paymentSubject"]) || "service";
 		const validSubjects = ["service", "commodity", "job", "payment", "goods_with_marking", "goods_without_marking"];
 		if (!validSubjects.includes(paymentSubject)) {
-			return { isValid: false, error: `Позиция #${idx + 1}: некорректный признак предмета расчета по ФФД 1.2 (${paymentSubject})` };
+			return { isValid: false, error: `Позиция #${idx + 1}: некорректный признак предмета расчета кассового чека (${paymentSubject})` };
 		}
 
 		const medicalCode804n = typeof itemObj.medicalServiceCode804n === "string" && itemObj.medicalServiceCode804n.trim()

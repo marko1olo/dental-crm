@@ -1,11 +1,12 @@
 /**
- * cashShiftService.ts — Реальная транзакция закрытия и открытия смены в БД (54-ФЗ).
- * Ликвидация потемкинских деревень: реальные вызовы /api/fiscal/shift/close
- * и /api/fiscal/shift/open с фиксацией в таблицах cash_shifts и cash_box_shifts.
+ * apps/web/src/components/shift/cashShiftService.ts
+ *
+ * Canonical SSOT for Cash Shift Database Transactions (54-FZ).
+ * Calls KKT / cashbox endpoints with persistence and staff audit logging.
  */
 
-import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService.js";
-import { safeLocalStorageGetItem } from "../../../lib/safeLocalStorage.js";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService.js";
+import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage.js";
 
 export interface CloseShiftPayload {
 	readonly shiftNumber: number;
@@ -57,8 +58,8 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 				succeeded = true;
 				break;
 			}
-		} catch {
-			// fallback к следующему эндпоинту
+		} catch (endpointErr: unknown) {
+			console.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${url}:`, endpointErr);
 		}
 	}
 
@@ -84,8 +85,8 @@ export async function executeOpenShiftDbTransaction(payload: OpenShiftPayload): 
 		try {
 			const res = await fetch(url, { method: "POST", headers: getAuthHeaders(), body });
 			if (res.ok) return true;
-		} catch {
-			// fallback к следующему эндпоинту
+		} catch (endpointErr: unknown) {
+			console.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${url}:`, endpointErr);
 		}
 	}
 	return false;

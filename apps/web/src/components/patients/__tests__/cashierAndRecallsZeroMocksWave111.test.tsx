@@ -4,18 +4,18 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CashShiftWidget } from "../../finance/CashShiftWidget";
+import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
 import { PatientRecallsHubModal } from "../../recalls/PatientRecallsHubModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-test("Wave 111 — CashShiftWidget renders 1-click cash-in preset buttons", () => {
+test("Wave 111 — CashShiftClosingModal renders canonical SSOT shift closing modal", () => {
 	const markup = renderToStaticMarkup(
-		<CashShiftWidget initialIsOpen={true} initialCashFlowModalOpen={true} initialCashFlowMode="cash_in" shiftNumber={101} cashierName="Кассир" />,
+		<CashShiftClosingModal isOpen={true} onClose={() => {}} shiftNumber={101} cashierFullName="Кассир" />,
 	);
-	assert.ok(markup.includes('data-testid="cash-shift-widget"'));
-	assert.ok(markup.includes("Внесение ДС"));
+	assert.ok(markup.includes('data-testid="cash-shift-closing-modal"'));
+	assert.ok(markup.includes("Закрытие смены и Z-отчёт"));
 });
 
 test("Wave 111 — PatientRecallsHubModal renders honest empty state without DEFAULT_REGISTRY mocks", () => {
@@ -40,7 +40,7 @@ test("Wave 111 — Static file verification: Zero synthetic mock patients in pro
 	const recallsContent = fs.readFileSync(recallsPath, "utf-8");
 	assert.ok(!recallsContent.includes("DEFAULT_REGISTRY"));
 
-	const cashModalPath = path.join(webComponentsDir, "finance/CashShiftWidget.tsx");
+	const cashModalPath = path.join(webComponentsDir, "shift/CashShiftClosingModal.tsx");
 	const cashModalContent = fs.readFileSync(cashModalPath, "utf-8");
 	assert.ok(!cashModalContent.includes("Смирновой"));
 

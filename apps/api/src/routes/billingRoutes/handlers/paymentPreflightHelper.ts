@@ -1,6 +1,7 @@
 import type { CreatePaymentInput } from "@dental/shared";
 import type { FastifyReply } from "fastify";
 import {
+	ensureRetailPatientInDb,
 	getDocumentForBilling,
 	getPatientForBilling,
 	getVisitForBilling,
@@ -18,7 +19,14 @@ export async function preflightValidatePaymentEntities(
 	reply: FastifyReply,
 ): Promise<PreflightResult> {
 	let paymentInput = input;
-	const patient = await getPatientForBilling(orgId, input.patientId);
+	let patient = await getPatientForBilling(orgId, input.patientId);
+	if (!patient && (!input.patientId || input.patientId === "pat-walkin" || input.patientId === "retail" || !input.patientId.includes("-"))) {
+		const retail = await ensureRetailPatientInDb(orgId);
+		if (retail) {
+			patient = retail;
+			paymentInput = { ...input, patientId: retail.id };
+		}
+	}
 	if (!patient) {
 		sendBillingPaymentScopeError(reply, 404, "Пациент для оплаты не найден.");
 		return { ok: false };
