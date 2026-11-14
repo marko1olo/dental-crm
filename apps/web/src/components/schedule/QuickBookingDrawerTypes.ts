@@ -89,6 +89,11 @@ export const COMMON_REASONS = [
   "Срочно! Острая боль",
 ];
 
+export interface QuickBookingSlotConflictData {
+  message: string;
+  suggestedSlots?: string[] | undefined;
+}
+
 export interface UseQuickBookingSubmitParams {
   patientSearch: any;
   appointmentType: any;
@@ -107,7 +112,7 @@ export interface UseQuickBookingSubmitParams {
   status: Appointment["status"];
   isSoloClinic: boolean;
   collision: any;
-  setSlotConflict: (conflict: any) => void;
+  setSlotConflict: (conflict: QuickBookingSlotConflictData | null) => void;
   setSubmitError: (err: string | null) => void;
   initialSlot: QuickBookingSlotInfo | null | undefined;
   isEditing: boolean;

@@ -9,7 +9,13 @@ export function QuickDurationPresetsRow({
   handleSelectDuration: (mins: number) => void;
 }) {
   const currentPreset = DURATION_PRESETS.find((p) => p.minutes === durationMinutes);
-  const currentHint = currentPreset ? (currentPreset as any).serviceHint || (currentPreset as any).hint : "";
+  const currentHint = currentPreset
+    ? ("serviceHint" in currentPreset && typeof currentPreset.serviceHint === "string"
+        ? currentPreset.serviceHint
+        : "hint" in currentPreset && typeof currentPreset.hint === "string"
+          ? currentPreset.hint
+          : "")
+    : "";
 
   return (
     <div className="sm:col-span-2">
@@ -32,7 +38,12 @@ export function QuickDurationPresetsRow({
         >
           {DURATION_PRESETS.map((preset) => {
             const isSelected = durationMinutes === preset.minutes;
-            const displayHint = (preset as any).serviceHint || (preset as any).hint || "";
+            const displayHint =
+              "serviceHint" in preset && typeof preset.serviceHint === "string"
+                ? preset.serviceHint
+                : "hint" in preset && typeof preset.hint === "string"
+                  ? preset.hint
+                  : "";
             return (
               <button
                 key={preset.minutes}

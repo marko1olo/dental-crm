@@ -81,4 +81,5 @@ export const DEFAULT_SOLO_CHAIR = {
   isActive: true,
   active: true,
   color: "var(--teal, #0d9488)",
+  defaultDoctorId: null as string | null,
 };

@@ -64,15 +64,28 @@ export function buildQuickBookingPayload(opts: BuildPayloadOptions) {
   };
 }
 
+export interface QuickBookingSlotConflictInfo {
+  message: string;
+  suggestedSlots?: string[] | undefined;
+}
+
+interface BookingErrorResponseBody {
+  message?: string;
+  error?: string;
+  code?: string;
+  reason?: string;
+  suggestedSlots?: string[];
+}
+
 export async function handleBookingError(
   res: Response,
   isEditing: boolean,
-  setSlotConflict: ((c: any) => void) | undefined,
+  setSlotConflict: ((c: QuickBookingSlotConflictInfo | null) => void) | undefined,
   setSubmitError: (e: string | null) => void,
 ) {
-  let errData: any = null;
+  let errData: BookingErrorResponseBody | null = null;
   try {
-    errData = await res.json();
+    errData = (await res.json()) as BookingErrorResponseBody;
   } catch {
     // Ignore JSON parse failure
   }

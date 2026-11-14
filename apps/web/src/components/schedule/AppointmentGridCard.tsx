@@ -1,4 +1,4 @@
-import { type Appointment } from "@dental/shared";
+import { type Appointment, type Dashboard, type MinimalLabOrderForSchedule } from "@dental/shared";
 import { AlertTriangle, ArrowUpRight, CheckCircle2, CreditCard, Stethoscope } from "lucide-react";
 import React, { memo, useCallback } from "react";
 import { useAppStore } from "../../store/appStore";
@@ -33,6 +33,23 @@ import { AppointmentCardWaitlistRecovery } from "./appointmentCardModules/Appoin
 export * from "./appointmentCardHelpers";
 export * from "./appointmentCardModules/appointmentCardTypes";
 
+interface AppointmentWithGridMeta extends Appointment {
+	readonly patient?: { readonly fullName?: string; readonly id?: string } | null;
+	readonly patientName?: string;
+	readonly labOrderId?: string | null;
+	readonly durationMinutes?: number;
+	readonly serviceTitle?: string;
+}
+
+interface ScheduleLabOrderMatch extends MinimalLabOrderForSchedule {
+	readonly appointmentId?: string | null;
+}
+
+interface DashboardWithLabOrders {
+	readonly labOrders?: readonly ScheduleLabOrderMatch[];
+	readonly patients?: unknown;
+}
+
 /**
  * AppointmentGridCard — Canonical SSOT for Desktop Schedule Grid Cards (Mandate 8b, 8e, 8am).
  * Consolidates slot time (13px bold mono), patient FIO (14px semibold), reason (12px muted),
@@ -49,10 +66,11 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 		onCloseStatusPicker, onCloseMenu,
 	} = props;
 
+	const extAppt = a as AppointmentWithGridMeta;
 	const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
-	const resolveNameFn = getPatientName || patientNameFn || ((_patients: any, _id?: string | null) => "Пациент");
-	const rawResolvedName = patObj?.fullName || (a as any).patient?.fullName || (a as any).patientName ||
-		(resolveNameFn ? resolveNameFn(dashboard?.patients, a.patientId ?? null) : undefined);
+	const resolveNameFn = getPatientName || patientNameFn || ((_patients: unknown, _id?: string | null) => "Пациент");
+	const rawResolvedName = patObj?.fullName || extAppt.patient?.fullName || extAppt.patientName ||
+		(resolveNameFn ? resolveNameFn((dashboard as DashboardWithLabOrders | undefined)?.patients, a.patientId ?? null) : undefined);
 	const rawName = rawResolvedName && rawResolvedName.trim() && rawResolvedName.trim() !== "Пациент"
 		? rawResolvedName.trim() : (patObj?.fullName || (a.patientId ? `Пациент (${a.patientId.slice(0, 6)})` : "Пациент"));
 	const pName = formatPatientDisplayFio(rawName);
@@ -66,18 +84,19 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 	const isCito = isAppointmentCito(a);
 	const pBalance = resolvePatientBalance(patObj);
 	const pAllergyAlert = getPatientAllergyAlert(patObj, a?.reason);
-	const matchedLabOrder = Array.isArray((dashboard as any)?.labOrders)
-		? (dashboard as any).labOrders.find(
-				(o: any) =>
-					(o?.appointmentId && o.appointmentId === a.id) ||
-					((a as any)?.labOrderId && o?.id === (a as any).labOrderId) ||
-					(a.patientId && o?.patientId === a.patientId),
+	const labOrders = (dashboard as DashboardWithLabOrders | undefined)?.labOrders;
+	const matchedLabOrder = Array.isArray(labOrders)
+		? labOrders.find(
+				(o: ScheduleLabOrderMatch) =>
+					(Boolean(o?.appointmentId) && o.appointmentId === a.id) ||
+					(Boolean(extAppt.labOrderId) && o?.id === extAppt.labOrderId) ||
+					(Boolean(a.patientId) && o?.patientId === a.patientId),
 			)
 		: undefined;
 	const labStatusInfo = resolveAppointmentLabStatus(a, matchedLabOrder);
 
 	const diffMs = Date.parse(a.endsAt) - Date.parse(a.startsAt);
-	const durationMin = (Number.isFinite(diffMs) && diffMs > 0 ? Math.round(diffMs / 60000) : 0) || (a as any).durationMinutes || 30;
+	const durationMin = (Number.isFinite(diffMs) && diffMs > 0 ? Math.round(diffMs / 60000) : 0) || extAppt.durationMinutes || 30;
 	const proportionalHeight = calculateProportionalCardHeight(durationMin);
 
 	let patientAgeLabel: string | null = null;
@@ -90,7 +109,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 	}
 
 	const teethList = extractTeethList(a);
-	const procedureLabel = sanitizeScheduleCardText(a.reason || (a as any).serviceTitle || "Приём") || "Приём";
+	const procedureLabel = sanitizeScheduleCardText(a.reason || extAppt.serviceTitle || "Приём") || "Приём";
 	const cleanComment = sanitizeScheduleCardText(a.comment);
 	const normalizedStatusLabel = getNormalizedAppointmentStatusLabel(a.status, appointmentLabels);
 	const isCommentRedundant = isRedundantScheduleComment(cleanComment, procedureLabel, normalizedStatusLabel);

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import type { QuickBookingDrawerProps } from "./QuickBookingDrawerTypes";
 import { useQuickBookingPatientSearch } from "./useQuickBookingPatientSearch";
@@ -85,6 +85,19 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
       slotSync.setDurationMinutes(60);
     }
   }, [slotSync]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOverbook = () => {
+      void submit.handleSubmitBooking(undefined, { overbookOverride: true });
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("dente-quick-booking-overbook", handleOverbook);
+      return () => {
+        window.removeEventListener("dente-quick-booking-overbook", handleOverbook);
+      };
+    }
+  }, [isOpen, submit.handleSubmitBooking]);
 
   return {
     timezone, toLocal, fromLocal, appointmentType, setAppointmentType, handleSelectAppointmentType,

@@ -138,7 +138,10 @@ export type AppointmentInvoiceItem = z.infer<typeof appointmentInvoiceItemSchema
 
 export const createAppointmentSchema = z
 	.object({
-		patientId: z.string().uuid().nullable().optional(),
+		patientId: z.preprocess(
+			(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+			z.string().uuid().nullable().optional(),
+		),
 		doctorUserId: z.string().uuid().nullable().optional(),
 		doctorId: z.string().uuid().nullable().optional(),
 		assistantUserId: z.string().uuid().nullable().optional(),
@@ -195,7 +198,10 @@ export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 
 export const updateAppointmentSchema = z
 	.object({
-		patientId: z.string().uuid().nullable().optional(),
+		patientId: z.preprocess(
+			(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+			z.string().uuid().nullable().optional(),
+		),
 		doctorUserId: z.string().uuid().nullable().optional(),
 		doctorId: z.string().uuid().nullable().optional(),
 		assistantUserId: z.string().uuid().nullable().optional(),

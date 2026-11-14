@@ -6,6 +6,8 @@ import type { Patient } from "@dental/shared";
 
 export interface SearchablePatient extends Patient {
 	readonly cardNumber?: string | null | undefined;
+	readonly balanceRub?: number | undefined;
+	readonly balance?: number | undefined;
 }
 
 export interface SearchMatchHighlightPart {

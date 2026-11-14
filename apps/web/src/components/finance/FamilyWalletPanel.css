@@ -1,8 +1,0 @@
-/* ── Family Wallet Panel Facade (Decomposed strictly <= 120 lines per Mandate 8b) ── */
-@import "./familyWalletStyles/familyWalletLayout.css";
-@import "./familyWalletStyles/familyWalletActions.css";
-@import "./familyWalletStyles/familyWalletPayerInfo.css";
-@import "./familyWalletStyles/familyWalletMembers.css";
-@import "./familyWalletStyles/familyMemberCard.css";
-@import "./familyWalletStyles/familyWalletTransfersAndChips.css";
-@import "./familyWalletStyles/familyWalletBonusChips.css";

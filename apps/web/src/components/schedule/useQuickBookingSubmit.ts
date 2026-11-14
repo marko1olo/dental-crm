@@ -64,7 +64,14 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
         overbookOverride: opts?.overbookOverride,
       });
 
-      const url = isEditing ? `/api/appointments/${encodeURIComponent(editingAppointmentId!)}` : "/api/appointments";
+      if (isEditing && !editingAppointmentId) {
+        const msg = "Не указан идентификатор редактируемой записи";
+        setSubmitError(msg);
+        showToast(msg, "warning");
+        return;
+      }
+
+      const url = isEditing && editingAppointmentId ? `/api/appointments/${encodeURIComponent(editingAppointmentId)}` : "/api/appointments";
       const mutationKey = (payload as { idempotencyKey?: string }).idempotencyKey || generateUuidV7();
       const res = await fetchWithHandling(url, {
         method: isEditing ? "PATCH" : "POST",
@@ -98,7 +105,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
         const updatedAppt =
           result?.appointment ||
           ({
-            id: editingAppointmentId!,
+            id: editingAppointmentId ?? generateUuidV7(),
             organizationId: dashboard?.clinicSettings?.profile?.organizationId || "",
             patientId: payload.patientId,
             doctorUserId: payload.doctorUserId,
@@ -116,7 +123,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
           result?.appointment ||
           result?.dashboard?.appointments?.find((a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso) ||
           ({
-            id: `appt-${Date.now()}`,
+            id: generateUuidV7(),
             organizationId: dashboard?.clinicSettings?.profile?.organizationId || "",
             patientId: payload.patientId,
             doctorUserId: payload.doctorUserId,

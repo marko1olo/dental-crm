@@ -51,7 +51,10 @@ export function resolveQuickBookingInitialValues({
 
   const initReason = editingAppt?.reason || initialSlot?.reason || initialSlot?.stageTitle || (initialSlot?.isCitoEmergency ? "Срочно! Острая боль" : "");
   const initComment = editingAppt?.comment || initialSlot?.comment || "";
-  const initStatus: Appointment["status"] = editingAppt?.status || (initialSlot?.status as any) || (initialSlot?.isCitoEmergency ? "confirmed" : "planned");
+  const initStatus: Appointment["status"] =
+    editingAppt?.status ||
+    (initialSlot?.status as Appointment["status"] | undefined) ||
+    (initialSlot?.isCitoEmergency ? "confirmed" : "planned");
 
   if (!initDoctor && initialSlot?.doctorName) {
     const m = doctors.find(
@@ -74,7 +77,7 @@ export function resolveQuickBookingInitialValues({
       chairDoctorAssignments,
       initStartsAtLocal.slice(0, 10),
       null,
-      (chairObj as any)?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
+      (chairObj as { defaultDoctorId?: string | null } | null)?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
     );
     if (duty.doctorId) initDoctor = duty.doctorId;
   }

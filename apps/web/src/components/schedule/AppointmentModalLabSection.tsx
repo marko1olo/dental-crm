@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, MinimalLabOrderForSchedule } from "@dental/shared";
 import { evaluateAppointmentLabStatus, getVitaShadeHex } from "@dental/shared";
 import {
   AlertTriangle,
@@ -19,6 +19,26 @@ import {
   resolveAppointmentLabStatus,
 } from "./appointmentCardHelpers";
 
+export interface ActiveLabOrderInput extends MinimalLabOrderForSchedule {
+  readonly title?: string | null | undefined;
+  readonly constructionType?: string | null | undefined;
+  readonly toothNumber?: string | number | null | undefined;
+  readonly vitaShade?: string | null | undefined;
+  readonly shade?: string | null | undefined;
+  readonly expectedDeliveryDate?: string | Date | null | undefined;
+  readonly [key: string]: unknown;
+}
+
+export interface AppointmentWithLabMeta extends Appointment {
+  readonly labOrderId?: string | undefined;
+  readonly labOrderNumber?: string | undefined;
+  readonly labWorkTitle?: string | undefined;
+  readonly labWorkType?: string | undefined;
+  readonly material?: string | undefined;
+  readonly colorVita?: string | undefined;
+  readonly labDueDate?: string | undefined;
+}
+
 export interface NormalizedLabItem {
   id: string;
   orderNumber: string;
@@ -31,7 +51,7 @@ export interface NormalizedLabItem {
 
 export function normalizeAppointmentLabItems(
   appointment: Appointment,
-  activeLabOrders: any[] = [],
+  activeLabOrders: readonly ActiveLabOrderInput[] = [],
   referenceDate: Date,
 ): NormalizedLabItem[] {
   const items: NormalizedLabItem[] = [];
@@ -40,9 +60,15 @@ export function normalizeAppointmentLabItems(
     for (const lo of activeLabOrders) {
       const statusInfo = evaluateAppointmentLabStatus(lo, referenceDate);
       if (!statusInfo) continue;
+      const rawTooth = lo.toothFdi ?? lo.toothNumber;
+      const toothFdi = rawTooth !== undefined && rawTooth !== null ? String(rawTooth) : null;
+      const colorVita = lo.colorVita ?? lo.vitaShade ?? lo.shade ?? null;
+      const rawDue = lo.dueDate ?? lo.expectedDeliveryDate ?? lo.expectedDate ?? null;
+      const dueDateIso = rawDue ? (typeof rawDue === "string" ? rawDue : rawDue.toISOString()) : null;
+
       items.push({
         id: String(lo.id || Math.random()),
-        orderNumber: lo.orderNumber || lo.id?.slice(0, 8) || "ЗТЛ",
+        orderNumber: lo.orderNumber || (lo.id ? String(lo.id).slice(0, 8) : "ЗТЛ"),
         statusInfo,
         construction:
           lo.workTypeRu ||
@@ -51,9 +77,9 @@ export function normalizeAppointmentLabItems(
           lo.title ||
           lo.constructionType ||
           "Ортопедическая конструкция",
-        toothFdi: lo.toothFdi || lo.toothNumber || null,
-        colorVita: lo.colorVita || lo.vitaShade || lo.shade || null,
-        dueDateIso: lo.dueDate || lo.expectedDeliveryDate || null,
+        toothFdi,
+        colorVita,
+        dueDateIso,
       });
     }
   }
@@ -65,27 +91,35 @@ export function normalizeAppointmentLabItems(
       referenceDate,
     );
     if (apptLabInfo) {
-      const realOrderId = (appointment as any)?.labOrderId || (appointment as any)?.labOrder?.id || "";
+      const extAppt = appointment as AppointmentWithLabMeta;
+      const realOrderId = extAppt.labOrderId || appointment.labOrder?.id || "";
       items.push({
         id: realOrderId || `appt-lab-${appointment.id}`,
         orderNumber:
           apptLabInfo.orderNumber ||
-          (appointment as any)?.labOrderNumber ||
+          extAppt.labOrderNumber ||
+          appointment.labOrder?.orderNumber ||
           "Наряд ЗТЛ",
         statusInfo: apptLabInfo,
         construction:
           apptLabInfo.workTypeRu ||
-          (appointment as any)?.labWorkTitle ||
-          (appointment as any)?.labWorkType ||
-          (appointment as any)?.material ||
+          extAppt.labWorkTitle ||
+          extAppt.labWorkType ||
+          extAppt.material ||
+          appointment.labOrder?.workType ||
           appointment.reason ||
           "Ортопедическая конструкция",
         toothFdi:
-          apptLabInfo.toothFdi || extractTeethList(appointment)[0] || null,
+          apptLabInfo.toothFdi ||
+          (appointment.labOrder?.toothFdi !== undefined && appointment.labOrder?.toothFdi !== null
+            ? String(appointment.labOrder.toothFdi)
+            : null) ||
+          extractTeethList(appointment)[0] ||
+          null,
         colorVita:
-          apptLabInfo.colorVita || (appointment as any)?.colorVita || null,
+          apptLabInfo.colorVita || extAppt.colorVita || appointment.labOrder?.colorVita || null,
         dueDateIso:
-          apptLabInfo.dueDateIso || (appointment as any)?.labDueDate || null,
+          apptLabInfo.dueDateIso || extAppt.labDueDate || appointment.labOrder?.dueDate || null,
       });
     }
   }
@@ -95,7 +129,7 @@ export function normalizeAppointmentLabItems(
 
 export interface AppointmentModalLabSectionProps {
   appointment: Appointment;
-  activeLabOrders?: any[];
+  activeLabOrders?: readonly ActiveLabOrderInput[];
   startsAtLocal?: string;
   setStartsAtLocal?: (val: string) => void;
   setEndsAtLocal?: (val: string) => void;

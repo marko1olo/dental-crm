@@ -51,13 +51,14 @@ export function QuickResourceAllocationSection({
     const targetChair =
       chairs.find((c) => c.id === nextChairId) ||
       (nextChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+    const chairWithDoc = targetChair as { defaultDoctorId?: string | null } | null;
     const duty = resolveChairDutyDoctor(
       nextChairId,
       startsAtLocal,
       chairDoctorAssignments,
       startsAtLocal ? startsAtLocal.slice(0, 10) : undefined,
       null,
-      (targetChair as any)?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
+      chairWithDoc?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
     );
     if (duty.doctorId) {
       setDoctorUserId(duty.doctorId);

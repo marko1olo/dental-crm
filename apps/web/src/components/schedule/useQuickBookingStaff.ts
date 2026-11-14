@@ -4,7 +4,14 @@ import { useMemo } from "react";
 export function useQuickBookingStaff(dashboard?: Dashboard | null) {
   const staff = dashboard?.clinicSettings?.staff ?? [];
   const doctors = useMemo(
-    () => staff.filter((m) => m.active && (m.role === "doctor" || m.role === "owner" || (m as any).role === "chief_doctor")) as Array<{ id: string; fullName: string; role?: string; specialties?: DentalSpecialty[] }>,
+    () =>
+      staff.filter(
+        (m) =>
+          m.active &&
+          (m.role === "doctor" ||
+            m.role === "owner" ||
+            (m.role as string) === "chief_doctor"),
+      ) as Array<{ id: string; fullName: string; role?: string; specialties?: DentalSpecialty[] }>,
     [staff],
   );
   const assistants = useMemo(() => staff.filter((m) => m.active && m.role === "assistant"), [staff]);

@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Dashboard, Patient } from "@dental/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { isTechnicalBreakAppointment } from "./scheduleCatalogData";
@@ -16,6 +16,29 @@ import { useAppointmentCardDrag } from "./useAppointmentCardDrag";
 export * from "./useAppointmentCardActions";
 export * from "./useAppointmentCardDrag";
 
+export interface PatientClinicalAnamnesis {
+	readonly balance?: number | string | null | undefined;
+	readonly allergies?: string | null | undefined;
+	readonly chronicDiseases?: string | null | undefined;
+	readonly anamnesis?: {
+		readonly allergies?: string | null | undefined;
+		readonly chronicDiseases?: string | null | undefined;
+	} | undefined;
+}
+
+export interface AppointmentScheduleMeta {
+	readonly durationMinutes?: number | undefined;
+	readonly isCito?: boolean | undefined;
+	readonly cito?: boolean | undefined;
+}
+
+export interface LabOrderLookupItem {
+	readonly id?: string | undefined;
+	readonly appointmentId?: string | number | undefined;
+	readonly patientId?: string | number | undefined;
+	readonly [key: string]: unknown;
+}
+
 export function useAppointmentCardState(props: AppointmentCardProps) {
 	const {
 		appointment, dashboard, appointmentLabels, appointmentDraft, appointmentEditing,
@@ -32,7 +55,8 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 	const appointmentPatient = (dashboard?.patients ?? []).find((p) => p?.id === appointment?.patientId);
 
 	const patientBalance = useMemo(() => {
-		const raw = appointmentPatient?.balanceRub ?? (appointmentPatient as any)?.balance;
+		const extPatient = appointmentPatient as (Patient & PatientClinicalAnamnesis) | undefined;
+		const raw = appointmentPatient?.balanceRub ?? extPatient?.balance;
 		if (raw === undefined || raw === null || raw === "") return null;
 		const num = Number(raw);
 		return Number.isFinite(num) ? num : null;
@@ -43,8 +67,9 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 		: (typeof patientName === "function" ? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null) : "") || "Пациент";
 
 	const durationMinutes = useMemo(() => {
-		return getAppointmentDurationMinutes(appointment?.startsAt, appointment?.endsAt, (appointment as any)?.durationMinutes || 30);
-	}, [appointment?.startsAt, appointment?.endsAt, (appointment as any)?.durationMinutes]);
+		const extAppt = appointment as (Appointment & AppointmentScheduleMeta) | undefined;
+		return getAppointmentDurationMinutes(appointment?.startsAt, appointment?.endsAt, extAppt?.durationMinutes || 30);
+	}, [appointment]);
 	const isMultiHour = durationMinutes >= 60;
 	const slotSpan = calculateAppointmentSpan(durationMinutes);
 
@@ -130,14 +155,16 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 	const cardTeeth = useMemo(() => extractTeethList(appointment), [appointment]);
 
 	const somaticAlert = useMemo(() => {
-		const chronic = (appointmentPatient as any)?.anamnesis?.chronicDiseases || (appointmentPatient as any)?.chronicDiseases;
+		const extPatient = appointmentPatient as (Patient & PatientClinicalAnamnesis) | undefined;
+		const chronic = extPatient?.anamnesis?.chronicDiseases || extPatient?.chronicDiseases;
 		if (chronic && typeof chronic === "string" && chronic.trim()) return `Соматика: ${chronic.trim()}`;
 		const match = (appointmentPatient?.notes || "").match(/(диабет|гипертони[яеи]|астм[аеы]|онколог|кардио|сердечн|гепатит|эпилепси)[^.;\n]*/i);
 		return match ? `Соматика: ${match[0].trim()}` : null;
 	}, [appointmentPatient]);
 
 	const allergyAlert = useMemo(() => {
-		const raw = (appointmentPatient as any)?.allergies || (appointmentPatient as any)?.anamnesis?.allergies;
+		const extPatient = appointmentPatient as (Patient & PatientClinicalAnamnesis) | undefined;
+		const raw = extPatient?.allergies || extPatient?.anamnesis?.allergies;
 		if (raw && typeof raw === "string" && raw.trim() && !isNegativeAllergyStatement(raw)) return `Внимание: ${raw.trim()}`;
 		const match = (appointmentPatient?.notes || "").match(/аллерги[яеи][^.;\n]*/i);
 		if (match && !isNegativeAllergyStatement(match[0])) return `Внимание: ${match[0].trim()}`;
@@ -147,9 +174,10 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 	}, [appointmentPatient, appointment?.reason]);
 
 	const labReadinessAlert = useMemo(() => {
-		const labOrders = Array.isArray((dashboard as any)?.labOrders) ? (dashboard as any).labOrders : [];
+		const extDashboard = dashboard as (Dashboard & { readonly labOrders?: readonly LabOrderLookupItem[] }) | undefined;
+		const labOrders = Array.isArray(extDashboard?.labOrders) ? extDashboard.labOrders : [];
 		const matchedLabOrder = labOrders.find(
-			(lo: any) =>
+			(lo: LabOrderLookupItem) =>
 				(appointment?.id && String(lo?.appointmentId) === String(appointment.id)) ||
 				(appointment?.patientId && String(lo?.patientId) === String(appointment.patientId)),
 		);
@@ -180,8 +208,9 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 	});
 
 	const displayStatus = optimisticStatus ?? appointment?.status;
+	const extAppt = appointment as (Appointment & AppointmentScheduleMeta) | undefined;
 	const isCito = Boolean(
-		(appointment as any)?.isCito || (appointment as any)?.cito ||
+		extAppt?.isCito || extAppt?.cito ||
 		(appointment?.reason ?? "").toLowerCase().includes("cito") ||
 		(appointment?.reason ?? "").toLowerCase().includes("острая боль") ||
 		(appointment?.reason ?? "").toLowerCase().includes("срочн"),

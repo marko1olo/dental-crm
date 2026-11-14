@@ -54,8 +54,8 @@ export function AppointmentCardHoverOverlay({
 	return (
 		<AppointmentHoverHud
 			appointment={appointment}
-			dashboard={dashboard as any}
-			displayStatus={displayStatus as any}
+			dashboard={dashboard}
+			displayStatus={displayStatus}
 			appointmentPatient={appointmentPatient}
 			appointmentPatientName={appointmentPatientName}
 			patientBalance={patientBalance ?? null}
@@ -66,7 +66,7 @@ export function AppointmentCardHoverOverlay({
 			allergyAlert={allergyAlert ?? null}
 			appointmentLabels={appointmentLabels}
 			formatTime={formatTime}
-			handleQuickStatusChange={handleQuickStatusChange as any}
+			handleQuickStatusChange={handleQuickStatusChange}
 			onCloseHover={handleCardMouseLeave}
 			onKeepHover={() => {
 				if (hoverTimeoutRef.current) {
@@ -127,10 +127,10 @@ export function AppointmentCardBottomPopups({
 			{/* Mobile Native Bottom Sheet for Progressive Disclosure on tap */}
 			<AppointmentMobileBottomSheet
 				appointment={appointment}
-				dashboard={dashboard as any}
+				dashboard={dashboard}
 				isOpen={isMobileSheetOpen}
 				onClose={() => setIsMobileSheetOpen(false)}
-				displayStatus={displayStatus as any}
+				displayStatus={displayStatus}
 				appointmentPatient={appointmentPatient}
 				appointmentPatientName={appointmentPatientName}
 				patientBalance={patientBalance ?? null}
@@ -141,7 +141,7 @@ export function AppointmentCardBottomPopups({
 				allergyAlert={allergyAlert ?? null}
 				appointmentLabels={appointmentLabels}
 				formatTime={formatTime}
-				handleQuickStatusChange={handleQuickStatusChange as any}
+				handleQuickStatusChange={handleQuickStatusChange}
 				onCloseHover={() => {}}
 				onKeepHover={() => {}}
 				openAppointmentEditor={openAppointmentEditor}
@@ -156,9 +156,9 @@ export function AppointmentCardBottomPopups({
 						startsAt: appointment.startsAt,
 						endsAt: appointment.endsAt,
 						doctorUserId: appointment.doctorUserId,
-						doctorName: appointmentDoctor?.fullName || null,
+						doctorName: (appointmentDoctor as { fullName?: string | null })?.fullName || null,
 						chairId: appointment.chairId,
-						chairName: appointmentChair?.name || null,
+						chairName: (appointmentChair as { name?: string | null })?.name || null,
 						freedBecause: appointment.reason || "Отмена приёма",
 						patientName: appointmentPatientName,
 					}}

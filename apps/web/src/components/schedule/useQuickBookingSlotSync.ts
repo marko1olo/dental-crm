@@ -2,16 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import type { Appointment, DentalSpecialty } from "@dental/shared";
 import { DEFAULT_SOLO_CHAIR } from "./grid/gridConstants";
 import { resolveChairDutyDoctor } from "./chairRosterMath";
-import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
+import type { QuickBookingSlotConflictData, QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 import { resolveQuickBookingInitialValues } from "./quickBookingSlotMath";
+import type { ChairDoctorShiftAssignment } from "./grid/gridTypes";
 
 export interface UseQuickBookingSlotSyncParams {
   isOpen: boolean;
   initialSlot: QuickBookingSlotInfo | null | undefined;
   editingAppt: Appointment | null;
   doctors: Array<{ id: string; fullName: string; role?: string; specialties?: DentalSpecialty[] }>;
-  chairs: any[];
-  chairDoctorAssignments?: Record<string, any> | undefined;
+  chairs: Array<{ id: string; name?: string }>;
+  chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
   isSoloClinic: boolean;
   toLocal: (iso: string) => string;
 }
@@ -47,7 +48,7 @@ export function useQuickBookingSlotSync({
   const [reason, setReason] = useState<string>(() => initialValues.initReason);
   const [comment, setComment] = useState<string>(() => initialValues.initComment);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [slotConflict, setSlotConflict] = useState<any>(null);
+  const [slotConflict, setSlotConflict] = useState<QuickBookingSlotConflictData | null>(null);
 
   const currentChair = useMemo(() => {
     return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
@@ -57,13 +58,16 @@ export function useQuickBookingSlotSync({
     const effChair = chairId || initialSlot?.chairId;
     const effStartsAt = startsAtLocal;
     const effChairObj = effChair === chairId ? currentChair : chairs.find((c) => c.id === effChair);
+    const chairDefaultDoc = effChairObj && "defaultDoctorId" in effChairObj && typeof effChairObj.defaultDoctorId === "string"
+      ? effChairObj.defaultDoctorId
+      : null;
     return resolveChairDutyDoctor(
       effChair,
       effStartsAt,
       chairDoctorAssignments,
       effStartsAt ? effStartsAt.slice(0, 10) : undefined,
       initialSlot?.chairId === effChair ? initialSlot?.doctorUserId : null,
-      (effChairObj as any)?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
+      chairDefaultDoc || (isSoloClinic && doctors[0] ? doctors[0].id : null),
     );
   }, [chairId, startsAtLocal, chairDoctorAssignments, initialSlot, currentChair, chairs, doctors, isSoloClinic]);
 

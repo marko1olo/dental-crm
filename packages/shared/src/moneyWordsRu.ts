@@ -241,3 +241,17 @@ export function legalMoneyInWordsRu(kopecksOrRubles: number | null | undefined):
 	const kopecks = parseKopecks(kopecksOrRubles);
 	return legalMoneyInWordsFromKopecksRu(kopecks);
 }
+
+/**
+ * Преобразует сумму в рублях в строку прописью с заглавной буквы (для договоров и смет).
+ * Пример: 38500 -> "Тридцать восемь тысяч пятьсот"
+ */
+export function formatAmountInWordsRu(rubles: number | null | undefined): string {
+	if (rubles === null || rubles === undefined || !Number.isFinite(rubles)) {
+		return "";
+	}
+	const abs = Math.abs(Math.round(rubles));
+	const words = integerToWordsRu(abs, undefined, false);
+	if (!words) return "";
+	return (rubles < 0 ? "минус " : "") + words.charAt(0).toUpperCase() + words.slice(1);
+}

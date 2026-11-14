@@ -101,7 +101,7 @@ export function QuickNotesAndConflictSection({
       )}
 
       {submitError && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5" role="alert">
+        <div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger)]/30 text-[var(--danger)] text-xs font-semibold flex items-center gap-1.5" role="alert">
           <AlertTriangle size={14} className="shrink-0" />
           <span>{submitError}</span>
         </div>

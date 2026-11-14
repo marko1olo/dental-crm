@@ -15,21 +15,21 @@ export interface AppointmentCardVisualBodyProps {
 
 export interface AppointmentCardPopupsProps {
 	appointment: Appointment;
-	dashboard?: Dashboard | null | undefined;
-	displayStatus: string;
-	appointmentPatient: any;
+	dashboard: Dashboard;
+	displayStatus: Appointment["status"];
+	appointmentPatient: unknown;
 	appointmentPatientName: string;
 	patientBalance?: number | null | undefined;
-	appointmentDoctor: any;
-	appointmentAssistant: any;
-	appointmentChair: any;
+	appointmentDoctor: unknown;
+	appointmentAssistant: unknown;
+	appointmentChair: unknown;
 	cardTeeth: string[];
 	allergyAlert?: string | null | undefined;
-	appointmentLabels: any;
+	appointmentLabels: Record<Appointment["status"], string>;
 	formatTime: (iso: string) => string;
-	handleQuickStatusChange: (status: any) => Promise<void> | void;
+	handleQuickStatusChange: (status: Appointment["status"], noteAppend?: string) => Promise<void>;
 	handleCardMouseLeave: () => void;
-	hoverTimeoutRef: React.MutableRefObject<any>;
+	hoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
 	isHoverPreviewOpen: boolean;
 	setIsHoverPreviewOpen: (open: boolean) => void;
 	isMobileSheetOpen: boolean;

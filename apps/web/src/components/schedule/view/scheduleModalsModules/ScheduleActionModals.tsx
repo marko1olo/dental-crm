@@ -31,6 +31,7 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
     clinicToday,
     todayScheduleDate,
     setQuickBookingSlot,
+    quickBookingOpen,
     setQuickBookingOpen,
     waitlistOpen,
     setWaitlistOpen,
@@ -125,6 +126,14 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
               allowOverbooking: true,
               allowEmergencyOverride: true,
             });
+          } else if (quickBookingOpen) {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("dente-quick-booking-overbook", {
+                  detail: { overbookOverride: true },
+                }),
+              );
+            }
           } else {
             void createAppointmentFromDraft({
               allowOverbooking: true,

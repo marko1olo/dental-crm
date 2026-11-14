@@ -17,8 +17,9 @@ export const PatientSearchResultCard: React.FC<Props> = ({
 	item, isSelected, onSelect, onHover, onOpenCard, notify,
 }) => {
 	const { patient } = item;
-	const balance = typeof (patient as any).balanceRub === "number" ? (patient as any).balanceRub : 0;
-	const cardNum = (patient as SearchablePatient).cardNumber || (patient as any).cardNumber;
+	const searchable = patient as SearchablePatient;
+	const balance = typeof searchable.balanceRub === "number" ? searchable.balanceRub : typeof searchable.balance === "number" ? searchable.balance : 0;
+	const cardNum = searchable.cardNumber;
 
 	return (
 		<div
