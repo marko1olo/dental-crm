@@ -27,7 +27,8 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 	const {
 		totals, searchQuery, setSearchQuery, discrepancyOnly, setDiscrepancyOnly,
 		isApplying, filteredLines, handleActualQtyChange, handleReconcileAllMatch,
-		handleConfirmShiftActuals, handlePrintInv3, handlePrintInv19, handlePrintTorg16, handleApplyAuditDoc,
+		handleConfirmShiftActuals, handlePrintStockCountSheet, handlePrintDiscrepancySheet, handlePrintWriteoffAct,
+		handlePrintInv3, handlePrintInv19, handlePrintTorg16, handleApplyAuditDoc,
 	} = useWarehouseInventoryState(organizationId, items, onApplyAudit, onRefresh);
 
 	return (
@@ -45,6 +46,9 @@ export const WarehouseInventoryTab: React.FC<WarehouseInventoryTabProps> = ({
 				totals={totals}
 				onReconcileAllMatch={handleReconcileAllMatch}
 				onConfirmShiftActuals={handleConfirmShiftActuals}
+				onPrintStockCountSheet={handlePrintStockCountSheet}
+				onPrintDiscrepancySheet={handlePrintDiscrepancySheet}
+				onPrintWriteoffAct={handlePrintWriteoffAct}
 				onPrintInv3={handlePrintInv3}
 				onPrintInv19={handlePrintInv19}
 				onPrintTorg16={handlePrintTorg16}

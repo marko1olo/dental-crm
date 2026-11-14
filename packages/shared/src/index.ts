@@ -44,6 +44,7 @@ export * from "./datetime/index.js";
 export * from "./demo/index.js";
 export type { Kopecks } from "./money.js";
 export { kopecksToRubles, formatRubles, formatKopecksToRubles, kopecksToNumericString, parseKopecks } from "./money.js";
+export { kopecksToRub, rubToKopecks } from "./fiscal/kopecksArithmetic.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
 export * from "./fiscal/index.js";
@@ -92,6 +93,7 @@ export {
 	PRIMARY_LOWER_TEETH,
 } from "./clinical/pediatric/constants.js";
 export { PATHOLOGY_STAMPS, type PathologyStampItem } from "./clinical/dentalFormulaStates.js";
+export { getLocusTransitionDescription } from "./clinical/dentalFormulaFdi.js";
 export {
 	DENTAL_ICD10_FULL_CATALOG,
 	normalizeDentalIcd10Code,
@@ -216,7 +218,6 @@ export * from "./treatment-plans/index.js";
 export * from "./diagnostics/index.js";
 export * from "./orthodontics/index.js";
 export * from "./branches/index.js";
-export * from "./warehouse/index.js";
 export * as inventory from "./inventory/index.js";
 export * from "./curator/index.js";
 export * from "./outpatient/index.js";
@@ -250,5 +251,4 @@ export {
 export * from "./types/ai.js";
 export * from "./marketing/index.js";
 export * from "./fuzzing/index.js";
-export * from "./finance/doctorPayoutCalculator.js";
 export { generateUuidV7 } from "./sync/hashing.js";

@@ -56,12 +56,17 @@ export function useWarehouseInventoryState(
 		branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 		molFullName: "Кузнецов А.В. (Врач-стоматолог)", molPosition: "Врач-стоматолог / Ответственный сотрудник", status: "reconciliation",
 		commission: [{ fullName: "Кузнецов А.В. (Врач-стоматолог)", position: "Врач-стоматолог", role: "mol", roleRu: "Материально ответственное лицо" }],
-		items: auditLines, organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701984512",
+		items: auditLines, organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701984512",
 	}), [todayDate, organizationId, auditLines]);
 
-	const handlePrintInv3 = () => { const w = window.open("", "_blank"); if (w) { w.document.write(generateInv3Html(currentDoc)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };
-	const handlePrintInv19 = () => { const w = window.open("", "_blank"); if (w) { w.document.write(generateInv19Html(currentDoc)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };
-	const handlePrintTorg16 = () => { const a = generateTorg16ActFromInventory(currentDoc, `Списание ${currentDoc.documentNumber}`); const w = window.open("", "_blank"); if (w) { w.document.write(generateTorg16Html(a)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };
+	const handlePrintStockCountSheet = () => { const w = window.open("", "_blank"); if (w) { w.document.write(generateInv3Html(currentDoc)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };
+	const handlePrintDiscrepancySheet = () => { const w = window.open("", "_blank"); if (w) { w.document.write(generateInv19Html(currentDoc)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };
+	const handlePrintWriteoffAct = () => { const a = generateTorg16ActFromInventory(currentDoc, `Списание ${currentDoc.documentNumber}`); const w = window.open("", "_blank"); if (w) { w.document.write(generateTorg16Html(a)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };
+
+	// Клинические алиасы вместо советских форм Госкомстата ИНВ-3/ИНВ-19/ТОРГ-16
+	const handlePrintInv3 = handlePrintStockCountSheet;
+	const handlePrintInv19 = handlePrintDiscrepancySheet;
+	const handlePrintTorg16 = handlePrintWriteoffAct;
 
 	const handleApplyAuditDoc = async () => {
 		setIsApplying(true);
@@ -88,6 +93,7 @@ export function useWarehouseInventoryState(
 	return {
 		auditLines, totals, searchQuery, setSearchQuery, discrepancyOnly, setDiscrepancyOnly,
 		isApplying, filteredLines, handleActualQtyChange, handleReconcileAllMatch,
-		handleConfirmShiftActuals, handlePrintInv3, handlePrintInv19, handlePrintTorg16, handleApplyAuditDoc,
+		handleConfirmShiftActuals, handlePrintStockCountSheet, handlePrintDiscrepancySheet, handlePrintWriteoffAct,
+		handlePrintInv3, handlePrintInv19, handlePrintTorg16, handleApplyAuditDoc,
 	};
 }

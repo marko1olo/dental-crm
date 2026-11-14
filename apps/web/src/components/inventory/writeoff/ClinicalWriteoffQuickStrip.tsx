@@ -95,11 +95,11 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 					<button
 						type="button"
 						onClick={onQuickHygieneWriteoff}
-						className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-emerald-500/40 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+						className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal,#0d9488)]/40 text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 						data-testid="btn-quick-hygiene-writeoff"
 						title="Пакетное списание расходников профгигиены (порошок Air-Flow, паста, щетки)"
 					>
-						<Sparkles size={16} className="text-emerald-600 shrink-0" />
+						<Sparkles size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<span>Пакет «Гигиена»</span>
 					</button>
 				)}

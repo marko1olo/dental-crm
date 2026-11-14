@@ -181,7 +181,14 @@ export interface DeductionOperationResult {
 	readonly lowStockAlerts: readonly LowStockAlert[];
 	readonly hasShortfall: boolean;
 	readonly shortfallItems?: readonly ShortfallItem[] | undefined;
+	/**
+	 * @deprecated Рудимент строгого списания. Безусловный дефолт CRM — softNegativeStockAllowed: true (Мандат 8v).
+	 */
 	readonly preventedNegativeStock?: boolean | undefined;
+	/**
+	 * Безусловный дефолт CRM по Мандату 8v: мягкий минусовой овердрафт разрешен, приём врача никогда не блокируется.
+	 */
+	readonly softNegativeStockAllowed?: boolean | undefined;
 	readonly purchaseOrder?: SupplierPurchaseOrder | null | undefined;
 }
 
@@ -190,11 +197,15 @@ export interface DeductionOperationResult {
  */
 export interface DeductMaterialsOptions {
 	/**
-	 * When true, prevents negative stock. If any requested material is insufficient,
-	 * the deduction is not committed (stock copy remains untouched), success is false,
-	 * and detailed shortfall records are returned.
+	 * @deprecated Рудимент строгого запрета минусового остатка. В стоматологии действует Мандат 8v:
+	 * задержка накладной никогда не блокирует лечение пациента, дефолт системы — softNegativeStockAllowed: true.
 	 */
 	readonly preventNegativeStock?: boolean | undefined;
+	/**
+	 * Безусловный дефолт CRM по Мандату 8v (Мягкий минусовой овердрафт партии).
+	 * По умолчанию true. Задержка оприходования накладной бухгалтером не блокирует оказание помощи.
+	 */
+	readonly softNegativeStockAllowed?: boolean | undefined;
 	/**
 	 * Automatically generate a supplier purchase order if any item has a shortfall or breaches critical threshold.
 	 */
@@ -264,6 +275,13 @@ export interface VisitAutoBomDeductionSummary {
 	readonly deductionResult: DeductionOperationResult;
 	readonly purchaseOrder: SupplierPurchaseOrder | null;
 	readonly hasShortfall: boolean;
+	/**
+	 * @deprecated Рудимент строгого запрета. В частной стоматологии действует Мандат 8v (softNegativeStockAllowed: true).
+	 */
 	readonly preventedNegativeStock: boolean;
+	/**
+	 * Безусловный дефолт CRM: мягкий овердрафт активен (Мандат 8v).
+	 */
+	readonly softNegativeStockAllowed: boolean;
 	readonly statusMessageRu: string;
 }

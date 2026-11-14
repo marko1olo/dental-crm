@@ -46,7 +46,7 @@ export const InventoryStockAdjustForm: React.FC<InventoryStockAdjustFormProps> =
 					Будет:{" "}
 					<strong
 						className={`font-mono ${
-							adjustExceedsStock ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"
+							adjustExceedsStock ? "text-[var(--danger)]" : "text-[var(--ink)]"
 						}`}
 					>
 						{adjustResultQuantity} {adjustingItem.unit || "шт."}
@@ -57,7 +57,7 @@ export const InventoryStockAdjustForm: React.FC<InventoryStockAdjustFormProps> =
 
 			{adjustExceedsStock && (
 				<div
-					className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs leading-relaxed"
+					className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger)]/30 text-[var(--danger)] text-xs leading-relaxed"
 					data-testid="adjust-stock-overdraft-warning"
 				>
 					Внимание: остаток отрицательный (списание с дефицитом). Задержка оприходования накладной поставщика не блокирует оказание помощи.
@@ -68,7 +68,7 @@ export const InventoryStockAdjustForm: React.FC<InventoryStockAdjustFormProps> =
 				type="submit"
 				aria-busy={isAdjusting}
 				className={`h-9 rounded-lg text-xs font-bold text-white cursor-pointer transition-all ${
-					adjustType === "in" ? "bg-[var(--teal)]" : "bg-rose-600 hover:bg-rose-700"
+					adjustType === "in" ? "bg-[var(--teal)] hover:opacity-90" : "bg-[var(--danger)] hover:opacity-90"
 				}`}
 			>
 				{isAdjusting

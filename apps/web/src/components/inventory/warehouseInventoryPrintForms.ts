@@ -150,12 +150,12 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
 </head>
 <body>
   <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
-    Инвентаризационная ведомость остатков материалов (ИНВ-3)<br>
+    Инвентаризационная ведомость остатков материалов (Опись ИНВ-3)<br>
     Стоматологическая клиника DENTE
   </div>
   <div class="header-box">
     <div>
-      <b>Организация:</b> ${doc.organizationNameRu} (ОКПО: ${doc.organizationOkpo}, ИНН: ${doc.organizationInn})<br>
+      <b>Организация:</b> ${doc.organizationNameRu}${doc.organizationInn ? ` (ИНН: ${doc.organizationInn})` : ""}<br>
       <b>Склад / Подразделение:</b> ${doc.warehouseNameRu} (${doc.branchNameRu})<br>
       <b>Материально ответственное лицо:</b> ${doc.molPosition} ${doc.molFullName}
     </div>
@@ -258,12 +258,12 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 </head>
 <body>
   <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
-    Сличительная ведомость инвентаризации материалов (ИНВ-19)<br>
+    Акт сличительной ведомости (Сличительная ведомость инвентаризации материалов ИНВ-19)<br>
     Стоматологическая клиника DENTE
   </div>
   <div class="header-box">
     <div>
-      <b>Организация:</b> ${doc.organizationNameRu} (ОКПО: ${doc.organizationOkpo}, ИНН: ${doc.organizationInn})<br>
+      <b>Организация:</b> ${doc.organizationNameRu}${doc.organizationInn ? ` (ИНН: ${doc.organizationInn})` : ""}<br>
       <b>Склад:</b> ${doc.warehouseNameRu} (${doc.branchNameRu})<br>
       <b>МОЛ:</b> ${doc.molPosition} ${doc.molFullName}
     </div>

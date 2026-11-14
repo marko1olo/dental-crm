@@ -402,7 +402,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 																	e.stopPropagation();
 																	onCreateDisposalAct?.(item);
 																}}
-																className="secondary-button px-1.5 py-0.2 text-[10px] text-rose-500 hover:text-rose-600 border border-rose-500/30 rounded"
+																className="secondary-button px-1.5 py-0.2 text-[10px] text-[var(--danger)] hover:opacity-90 border border-[var(--danger-soft)] rounded"
 															>
 																Акт утилизации
 															</button>

@@ -279,6 +279,7 @@ export function deductMaterialsFromCabinetStock(
 		hasShortfall,
 		...(shortfallItems.length > 0 ? { shortfallItems } : {}),
 		preventedNegativeStock: false,
+		softNegativeStockAllowed: true,
 		purchaseOrder,
 	};
 }
@@ -298,6 +299,7 @@ export function executeVisitAutoBomDeduction(
 		requirementsSummary.materials,
 		{
 			preventNegativeStock: false,
+			softNegativeStockAllowed: true,
 			autoGeneratePurchaseOrder: params.options?.autoGeneratePurchaseOrder ?? true,
 			...(params.options?.clinicNameRu ? { clinicNameRu: params.options.clinicNameRu } : {}),
 			visitId: params.visitId,
@@ -328,6 +330,7 @@ export function executeVisitAutoBomDeduction(
 		purchaseOrder: deductionResult.purchaseOrder ?? null,
 		hasShortfall: deductionResult.hasShortfall,
 		preventedNegativeStock: deductionResult.preventedNegativeStock ?? false,
+		softNegativeStockAllowed: true,
 		statusMessageRu,
 	};
 }

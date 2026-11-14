@@ -47,7 +47,7 @@ export function generateMaterialWaybillHtml(
 </style></head><body>
 	<div class="header">
 		<div><strong>Организация:</strong> ${info.clinicNameRu}<br><strong>Отправитель:</strong> Центральный склад клиники<br><strong>Получатель:</strong> ${doc.cabinetNameRu} (${doc.doctorFullName})</div>
-		<div style="text-align: right; font-size: 8.5pt; color: #475569;">Приходная накладная<br>ОКПО ${info.okpoCode}<br>Стоматологическая клиника DENTE</div>
+		<div style="text-align: right; font-size: 8.5pt; color: #475569;">Приходная накладная материалов<br>Стоматологическая клиника DENTE</div>
 	</div>
 	<div class="title">НАКЛАДНАЯ ПРИХОДА И ПЕРЕМЕЩЕНИЯ МАТЕРИАЛОВ № ${doc.actNumber}</div>
 	<div class="date">Дата: <strong>${doc.actDate} г.</strong></div>
@@ -98,7 +98,7 @@ export function generateFormM11Html(
 	}).join("\n");
 
 	return `<!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><title>Требование на выдачу материалов № ${doc.actNumber}</title>
+<html lang="ru"><head><meta charset="utf-8"><title>Требование-накладная на выдачу материалов № ${doc.actNumber}</title>
 <style>
 	@page { size: A4 landscape; margin: 10mm; }
 	body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 8pt; color: #000; line-height: 1.25; }
@@ -110,7 +110,7 @@ export function generateFormM11Html(
 	.signs { display: flex; justify-content: space-between; margin-top: 20px; font-size: 8pt; }
 </style></head><body>
 	<div class="form-header">
-		Требование на выдачу материалов клиники<br>
+		Требование-накладная на выдачу материалов клиники<br>
 		Стоматологическая клиника DENTE
 	</div>
 	<div style="margin-bottom: 8px;"><strong>Организация:</strong> ${clinicName}</div>

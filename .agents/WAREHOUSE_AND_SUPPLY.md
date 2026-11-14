@@ -280,8 +280,36 @@
 * **4-State Visual Proofs**:
   * ☀️ PC Light (1440×900, 138 KB): `docs/proofs/warehouse/01_warehouse_stock_table_pc_light.png`
   * 🌙 PC Dark (1440×900, 137 KB): `docs/proofs/warehouse/02_warehouse_stock_table_pc_dark.png`
-  * 📱 Mobile Light (390×844, 127 KB): `docs/proofs/warehouse/03_warehouse_stock_mobile_light.png`
-  * 🌙 Mobile Dark (390×844, 126 KB): `docs/proofs/warehouse/04_warehouse_stock_mobile_dark.png`
+  * 📱 Mobile Light (390×844, 203 KB): `docs/proofs/warehouse/03_warehouse_stock_mobile_light.png`
+  * 🌙 Mobile Dark (390×844, 201 KB): `docs/proofs/warehouse/04_warehouse_stock_mobile_dark.png`
+
+---
+
+## 🛠️ 13. Red Team Fixer: Ликвидация советского канцелярита, дедупликация shared и токенизация HIG (Мандаты 8bd, 8x, 8am, 8v, 8bi, 8bj)
+
+* **Шаг 1: Дедупликация экспорта `@dental/shared`**:
+  * В `packages/shared/src/index.ts` удален паразитный дубликат строки 221 (`export * from "./warehouse/index.js"`).
+* **Шаг 2: Ликвидация пустой директории `components/warehouse`**:
+  * Тест `warehouseModularFacade.test.ts` перенесен в каноническую директорию `apps/web/src/tests/warehouseModularFacade.test.ts`.
+  * Пустая директория `apps/web/src/components/warehouse/` удалена из Git (`git rm`).
+* **Шаг 3: Искоренение советских форм Госкомстата и кодов ОКПО**:
+  * В `useWarehouseInventoryState.ts` советские наименования Госкомстата («Печать ИНВ-3», «Печать ИНВ-19», «Печать ТОРГ-16») заменены на чистый медицинский язык: «Ведомость инвентаризации остатков», «Акт сличительной ведомости» и «Акт списания материалов клиники».
+  * Устранены советские коды ОКПО и искусственные комиссии из бланков инвентаризации.
+  * В `warehouseInventoryPrintForms.ts` и `printMaterialWaybill.ts` заголовки обновлены до чистого клинического языка: «Требование-накладная на выдачу материалов», «Инвентаризационная ведомость остатков», «Акт сличительной ведомости».
+* **Шаг 4: Замена хардкодных цветов на дизайн-токены HIG**:
+  * `WarehouseStockTable.tsx`: кнопки и рамки переведены на `var(--danger)` и `var(--danger-soft)`.
+  * `InventoryStockAdjustForm.tsx`: дефицит и кнопки списания переведены на `var(--danger)`.
+  * `BatchTrackingItemCard.tsx`: бейджи и кнопки списания просрочки переведены на `var(--danger)` и `var(--teal)`.
+  * `BatchWriteoffShiftStats.tsx`: хардкодные amber-стили переведены на `var(--warning)` и `var(--warning-soft)`.
+  * `ClinicalWriteoffQuickStrip.tsx`: пакет гигиены переведен на `var(--teal)` / `var(--primary)`.
+* **Шаг 5: Инвариант мягкого овердрафта по Мандату 8v**:
+  * В `packages/shared/src/inventory/procedureBom/types.ts` рудимент `preventNegativeStock` помечен `@deprecated`, а `softNegativeStockAllowed: true` гарантирован как безусловный дефолт CRM.
+* **Машинные гейты и 4-State Visual Proofs**:
+  * `npm run check:encoding`: 0 ошибок (20 970 файлов проверено).
+  * `npm run check:buttons` и `npm run check:react-hooks`: 0 нарушений (Exit Code 0).
+  * `npm run check:css-tokens`: Exit Code 0.
+  * Полный пакет тестов склада (61 файл, 222 теста) в `apps/web/src/components/inventory/__tests__/`: Exit Code 0.
+  * 4 скриншота высокого разрешения (Light/Dark x PC/Mobile) лично отсмотрены через `read_file`.
 
 
 

@@ -663,11 +663,10 @@ describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () 
 		status: "confirmed",
 	};
 
-	it("generateAct0504230Html формирует официальный Акт о списании по ОКУД 0504230", () => {
+	it("generateAct0504230Html формирует официальный Акт о списании материалов клиники", () => {
 		const html = generateAct0504230Html(sampleDoc);
 
-		assert.ok(html.includes("0504230"));
-		assert.ok(html.includes("АКТ О СПИСАНИИ МАТЕРИАЛЬНЫХ ЗАПАСОВ"));
+		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("АКТ-СПИС-2026/08-101"));
 		assert.ok(html.includes("Иванов Иван Иванович"));
 		assert.ok(html.includes("Кузнецов М.С."));
@@ -675,25 +674,21 @@ describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () 
 		assert.ok(html.includes("Нанокомпозит Filtek Ultimate"));
 		assert.ok(html.includes("LOT-FLT-8821"));
 		assert.ok(html.includes("405.00"));
-		assert.ok(html.includes("Приказ Минфина России № 52н"));
 	});
 
-	it("generateFormM11Html формирует Требование-накладную по форме М-11", () => {
+	it("generateFormM11Html формирует Требование-накладную на выдачу материалов", () => {
 		const html = generateFormM11Html(sampleDoc);
 
-		assert.ok(html.includes("0315003"));
-		assert.ok(html.includes("ТРЕБОВАНИЕ-НАКЛАДНАЯ"));
-		assert.ok(html.includes("М-11"));
+		assert.ok(html.includes("ТРЕБОВАНИЕ НА ВЫДАЧУ МАТЕРИАЛОВ"));
+		assert.ok(html.includes("Требование-накладная на выдачу материалов"));
 		assert.ok(html.includes("COMP-FILT-ULT"));
 		assert.ok(html.includes("405.00"));
 	});
 
-	it("generateTorg16Html формирует Акт о списании товаров ТОРГ-16", () => {
+	it("generateTorg16Html формирует Акт о списании материалов клиники", () => {
 		const html = generateTorg16Html(sampleDoc);
 
-		assert.ok(html.includes("0330216"));
-		assert.ok(html.includes("ТОРГ-16"));
-		assert.ok(html.includes("АКТ О СПИСАНИИ ТОВАРОВ"));
+		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Нанокомпозит Filtek Ultimate"));
 	});
 });

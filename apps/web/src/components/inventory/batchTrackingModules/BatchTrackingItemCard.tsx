@@ -21,10 +21,10 @@ export const BatchTrackingItemCard: React.FC<BatchTrackingItemCardProps> = ({
 		<div
 			className={`p-3 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 transition-colors ${
 				isExpired
-					? "bg-rose-500/5 border-rose-500/30"
+					? "bg-[var(--danger-soft)] border-[var(--danger)]/30"
 					: isWarning
 						? "bg-amber-500/5 border-amber-500/30"
-						: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/40"
+						: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]/40"
 			}`}
 			data-testid={`batch-card-${batch.item.id}`}
 		>
@@ -38,11 +38,11 @@ export const BatchTrackingItemCard: React.FC<BatchTrackingItemCardProps> = ({
 				</div>
 				<div className="flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap">
 					<span className="flex items-center gap-1 font-medium">
-						<Clock size={13} className={isExpired ? "text-rose-600" : isWarning ? "text-amber-600" : "text-teal-600"} />
+						<Clock size={13} className={isExpired ? "text-[var(--danger)]" : isWarning ? "text-amber-600" : "text-[var(--teal)]"} />
 						Срок годности: <strong>{batch.expirationDate}</strong>
 					</span>
 					<span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-						isExpired ? "bg-rose-500/20 text-rose-800 dark:text-rose-200" : isWarning ? "bg-amber-500/20 text-amber-800 dark:text-amber-200" : "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
+						isExpired ? "bg-[var(--danger-soft)] text-[var(--danger)]" : isWarning ? "bg-amber-500/20 text-amber-800 dark:text-amber-200" : "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
 					}`}>
 						{batch.fefoBadge}
 					</span>
@@ -60,7 +60,7 @@ export const BatchTrackingItemCard: React.FC<BatchTrackingItemCardProps> = ({
 					<button
 						type="button"
 						onClick={() => onWriteOffExpired?.(batch.item, batch.lotNumber)}
-						className="h-8 min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="h-8 min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--danger)] text-white hover:opacity-90 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
 						data-testid={`btn-writeoff-expired-${batch.item.id}`}
 						title="Списать просроченную серию по акту утилизации"
 					>
