@@ -13,6 +13,25 @@ import { db } from "../../db/client.js";
 import { dmsGuaranteeLetters } from "../../db/schema.js";
 import { guaranteeLetterQuerySchema, recordUsageBodySchema } from "./types.js";
 
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+function isValidUuid(id: unknown): id is string {
+	return typeof id === "string" && UUID_REGEX.test(id);
+}
+
+function safeToIsoString(date: unknown, fallback?: string): string {
+	if (date instanceof Date && !Number.isNaN(date.getTime())) {
+		return date.toISOString();
+	}
+	if (typeof date === "string" || typeof date === "number") {
+		const parsed = new Date(date);
+		if (!Number.isNaN(parsed.getTime())) {
+			return parsed.toISOString();
+		}
+	}
+	return fallback ?? new Date().toISOString();
+}
+
 export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 	// GET all guarantee letters for the organization with optional filters
 	app.get<{
@@ -48,14 +67,15 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 		}
 		if (search && search.trim()) {
 			const term = `%${search.trim().toLowerCase()}%`;
-			conditions.push(
-				or(
-					ilike(dmsGuaranteeLetters.letterNumber, term),
-					ilike(dmsGuaranteeLetters.patientFullName, term),
-					ilike(dmsGuaranteeLetters.insurerName, term),
-					ilike(dmsGuaranteeLetters.policyNumber, term),
-				)!,
+			const searchCondition = or(
+				ilike(dmsGuaranteeLetters.letterNumber, term),
+				ilike(dmsGuaranteeLetters.patientFullName, term),
+				ilike(dmsGuaranteeLetters.insurerName, term),
+				ilike(dmsGuaranteeLetters.policyNumber, term),
 			);
+			if (searchCondition) {
+				conditions.push(searchCondition);
+			}
 		}
 
 		const letters = await db
@@ -96,8 +116,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				approvedServiceCodes: (l.approvedServiceCodes as string[]) || [],
 				approvedTeethFdi: (l.approvedTeethFdi as string[]) || [],
 				approvedDiagnosisCodes: (l.approvedDiagnosisCodes as string[]) || [],
-				createdAt: l.createdAt ? l.createdAt.toISOString() : new Date().toISOString(),
-				updatedAt: l.updatedAt ? l.updatedAt.toISOString() : new Date().toISOString(),
+				createdAt: safeToIsoString(l.createdAt),
+				updatedAt: safeToIsoString(l.updatedAt),
 			};
 		});
 
@@ -116,6 +136,13 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
+			if (!isValidUuid(letterId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Параметр letterId должен быть валидным UUID.",
+				});
+			}
+
 			const [letter] = await db
 				.select()
 				.from(dmsGuaranteeLetters)
@@ -166,8 +193,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				approvedServiceCodes: (letter.approvedServiceCodes as string[]) || [],
 				approvedTeethFdi: (letter.approvedTeethFdi as string[]) || [],
 				approvedDiagnosisCodes: (letter.approvedDiagnosisCodes as string[]) || [],
-				createdAt: letter.createdAt ? letter.createdAt.toISOString() : new Date().toISOString(),
-				updatedAt: letter.updatedAt ? letter.updatedAt.toISOString() : new Date().toISOString(),
+				createdAt: safeToIsoString(letter.createdAt),
+				updatedAt: safeToIsoString(letter.updatedAt),
 			});
 		},
 	);
@@ -210,16 +237,12 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const isValidUuid =
-			typeof data.id === "string" &&
-			/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-				data.id,
-			);
+		const validLetterId = isValidUuid(data.id) ? data.id : undefined;
 
 		const [created] = await db
 			.insert(dmsGuaranteeLetters)
 			.values({
-				...(isValidUuid ? { id: data.id } : {}),
+				...(validLetterId ? { id: validLetterId } : {}),
 				organizationId: orgId,
 				contractId: data.contractId ?? null,
 				patientId: data.patientId,
@@ -278,8 +301,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			approvedServiceCodes: (created.approvedServiceCodes as string[]) || [],
 			approvedTeethFdi: (created.approvedTeethFdi as string[]) || [],
 			approvedDiagnosisCodes: (created.approvedDiagnosisCodes as string[]) || [],
-			createdAt: created.createdAt.toISOString(),
-			updatedAt: created.updatedAt.toISOString(),
+			createdAt: safeToIsoString(created.createdAt),
+			updatedAt: safeToIsoString(created.updatedAt),
 		});
 	});
 
@@ -295,6 +318,13 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
+			if (!isValidUuid(letterId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Параметр letterId должен быть валидным UUID.",
+				});
+			}
+
 			const [existing] = await db
 				.select()
 				.from(dmsGuaranteeLetters)
@@ -374,31 +404,38 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				)
 				.returning();
 
-			const updatedMaxRub = Number(updated!.maxCoverageRub);
-			const updatedUsedRub = Number(updated!.usedAmountRub);
+			if (!updated) {
+				return reply.code(404).send({
+					error: "guarantee_letter_not_found",
+					message: "Гарантийное письмо не найдено или не принадлежит организации",
+				});
+			}
+
+			const updatedMaxRub = Number(updated.maxCoverageRub);
+			const updatedUsedRub = Number(updated.usedAmountRub);
 			const updatedLimitKop = Math.round(updatedMaxRub * 100);
 			const updatedUsedKop = Math.round(updatedUsedRub * 100);
 
 			return reply.code(200).send({
 				...updated,
-				validTo: updated!.validUntil,
+				validTo: updated.validUntil,
 				limitKopecks: updatedLimitKop,
 				usedKopecks: updatedUsedKop,
 				remainingLimitKopecks: Math.max(0, updatedLimitKop - updatedUsedKop),
 				maxCoverageKopecks: updatedLimitKop,
 				usedAmountKopecks: updatedUsedKop,
-				status: updated!.status as DmsGuaranteeLetter["status"],
+				status: updated.status as DmsGuaranteeLetter["status"],
 				maxCoverageRub: updatedMaxRub,
 				usedAmountRub: updatedUsedRub,
-				franchisePct: Number(updated!.franchisePct),
-				franchiseType: (updated!.franchiseType as "percent" | "fixed_rub") || "percent",
-				franchiseFixedRub: Number(updated!.franchiseFixedRub),
-				programExclusions: (updated!.programExclusions as string[]) || [],
-				approvedServiceCodes: (updated!.approvedServiceCodes as string[]) || [],
-				approvedTeethFdi: (updated!.approvedTeethFdi as string[]) || [],
-				approvedDiagnosisCodes: (updated!.approvedDiagnosisCodes as string[]) || [],
-				createdAt: updated!.createdAt.toISOString(),
-				updatedAt: updated!.updatedAt.toISOString(),
+				franchisePct: Number(updated.franchisePct),
+				franchiseType: (updated.franchiseType as "percent" | "fixed_rub") || "percent",
+				franchiseFixedRub: Number(updated.franchiseFixedRub),
+				programExclusions: (updated.programExclusions as string[]) || [],
+				approvedServiceCodes: (updated.approvedServiceCodes as string[]) || [],
+				approvedTeethFdi: (updated.approvedTeethFdi as string[]) || [],
+				approvedDiagnosisCodes: (updated.approvedDiagnosisCodes as string[]) || [],
+				createdAt: safeToIsoString(updated.createdAt),
+				updatedAt: safeToIsoString(updated.updatedAt),
 			});
 		},
 	);
@@ -415,6 +452,13 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { letterId } = request.params;
+			if (!isValidUuid(letterId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Параметр letterId должен быть валидным UUID.",
+				});
+			}
+
 			const [existing] = await db
 				.select({ id: dmsGuaranteeLetters.id })
 				.from(dmsGuaranteeLetters)
@@ -486,6 +530,13 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 					status: "pending_letter",
 					warning: "Требуется досылка гарантийного письма ДМС",
 					isEmergency: true,
+				});
+			}
+
+			if (!isValidUuid(letterId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Параметр letterId должен быть валидным UUID.",
 				});
 			}
 
@@ -601,15 +652,25 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 							)
 							.returning();
 
+						if (!updated) {
+							return {
+								status: 404,
+								error: {
+									error: "guarantee_letter_not_found",
+									message: "Гарантийное письмо не найдено в транзакции",
+								},
+							};
+						}
+
 						return {
 							status: 200,
 							data: {
 								success: true,
-								letterId: updated!.id,
+								letterId: updated.id,
 								debitedAmountRub: amountRub,
-								usedAmountRub: Number(updated!.usedAmountRub),
+								usedAmountRub: Number(updated.usedAmountRub),
 								remainingCoverageRub: 0,
-								status: updated!.status,
+								status: updated.status,
 								warning: "Требуется досылка гарантийного письма ДМС",
 								isEmergency: true,
 							},
@@ -645,15 +706,25 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 					)
 					.returning();
 
+				if (!updated) {
+					return {
+						status: 404,
+						error: {
+							error: "guarantee_letter_not_found",
+							message: "Гарантийное письмо не найдено в транзакции",
+						},
+					};
+				}
+
 				return {
 					status: 200,
 					data: {
 						success: true,
-						letterId: updated!.id,
+						letterId: updated.id,
 						debitedAmountRub: amountRub,
-						usedAmountRub: Number(updated!.usedAmountRub),
+						usedAmountRub: Number(updated.usedAmountRub),
 						remainingCoverageRub: Math.max(0, Math.round((maxCoverage - newUsedAmount) * 100) / 100),
-						status: updated!.status,
+						status: updated.status,
 					},
 				};
 			});

@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { cashBoxes, labOrders, organizations, patients, users } from "../../db/schema.js";
-import { registerCashLabPaymentRoutes } from "../../routes/cashLabPaymentRoutes.js";
+import { registerCashLabPaymentRoutes } from "../../routes/lab/index.js";
 import { registerLabRoutes } from "../../routes/lab.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -23,6 +23,7 @@ const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 3);
 const CASHBOX_ID = fixtureUuid(NAMESPACE, 4);
 const ORDER_ID = fixtureUuid(NAMESPACE, 5);
+const ORDER_ID_2 = fixtureUuid(NAMESPACE, 6);
 
 describe("Связка наряда лаборатории с кассой (amountKopecks) и зарплатой Т-51", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
@@ -78,6 +79,20 @@ describe("Связка наряда лаборатории с кассой (amou
 				material: "ZrO2 Katana",
 				priceRub: 24000,
 				labCostRub: 7500,
+				status: "received",
+			}).onConflictDoNothing();
+
+			await db.insert(labOrders).values({
+				id: ORDER_ID_2,
+				organizationId: ORGANIZATION_ID,
+				patientId: PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				doctorName: "Д-р Ортопедов И. И.",
+				secureToken: "sec-token-ztl-002",
+				toothFdi: "17",
+				material: "E.max Press",
+				priceRub: 28000,
+				labCostRub: 8000,
 				status: "received",
 			}).onConflictDoNothing();
 		});
@@ -178,5 +193,39 @@ describe("Связка наряда лаборатории с кассой (amou
 		const json = JSON.parse(res.body);
 		assert.equal(json.labOrder.isLockedInstalled, true);
 		assert.equal(json.labOrder.status, "completed");
+	});
+
+	test("5. Симметричные алиасы /api/lab/orders/:id/pay и /api/lab/orders/:id/mark-installed работают без 404", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
+
+		const payRes = await app.inject({
+			method: "POST",
+			url: `/api/lab/orders/${ORDER_ID_2}/pay`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				cashBoxId: CASHBOX_ID,
+				amountKopecks: 800000,
+				notes: "Оплата вкладки E.max через алиас",
+			},
+		});
+		assert.equal(payRes.statusCode, 200, `Pay alias returned ${payRes.statusCode}: ${payRes.body}`);
+
+		const installRes = await app.inject({
+			method: "POST",
+			url: `/api/lab/orders/${ORDER_ID_2}/mark-installed`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				clinicalNotes: "Вкладка зафиксирована, окклюзия проверена",
+			},
+		});
+		assert.equal(installRes.statusCode, 200, `Install alias returned ${installRes.statusCode}: ${installRes.body}`);
+		const installJson = JSON.parse(installRes.body);
+		assert.equal(installJson.labOrder.isLockedInstalled, true);
 	});
 });

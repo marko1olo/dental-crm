@@ -82,31 +82,34 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 		},
 		handleTechnicianComment: (o: DentalLabOrderData) => {
 			modals.setOpenMenuOrderId(null);
-			if (!o.id) return;
+			const orderId = o.id;
+			if (!orderId) return;
 			modals.setPromptState(createTechnicianCommentPrompt(o, async (comment) => {
 				if (!comment.trim()) { modals.setPromptState(null); return; }
-				await actions.handleStatusChange(o.id!, o.status || "in_progress", comment.trim());
+				await actions.handleStatusChange(orderId, o.status || "in_progress", comment.trim());
 				modals.setPromptState(null);
 			}));
 		},
 		handleRepeatFitting: (o: DentalLabOrderData) => {
 			modals.setOpenMenuOrderId(null);
-			if (!o.id) return;
+			const orderId = o.id;
+			if (!orderId) return;
 			modals.setPromptState(createRepeatFittingPrompt(o, async (reason) => {
-				await actions.handleStatusChange(o.id!, "fitting", reason.trim() || "Повторная примерка конструкции");
+				await actions.handleStatusChange(orderId, "fitting", reason.trim() || "Повторная примерка конструкции");
 				modals.setPromptState(null);
 			}));
 		},
 		handleReclamation: (o: DentalLabOrderData) => {
 			modals.setOpenMenuOrderId(null);
-			if (!o.id) return;
+			const orderId = o.id;
+			if (!orderId) return;
 			modals.setPromptState(createReclamationPrompt(o, async (reason) => {
-				await actions.handleStatusChange(o.id!, "refitting", `Рекламация (0 ₽): ${reason.trim() || "Гарантийная переделка"}`);
+				await actions.handleStatusChange(orderId, "refitting", `Рекламация (0 ₽): ${reason.trim() || "Гарантийная переделка"}`);
 				modals.setPromptState(null);
 			}));
 		},
 		handleCreateOrderFromPriceMatrix: (item: LabPriceMatrixItem) => {
-			modals.setSelectedOrderForEdit({ patientId: "", patientName: "Пациент", material: item.material, constructionType: item.id, priceRub: item.suggestedCostRub, clinicalNotes: item.specialInstructions || "" });
+			modals.setSelectedOrderForEdit({ patientId: "", patientName: "", material: item.material, constructionType: item.id, priceRub: item.suggestedCostRub, clinicalNotes: item.specialInstructions || "" });
 			modals.setModalInitialTab("main");
 			modals.setIsOrderDrawerOpen(true);
 		},
