@@ -9,6 +9,12 @@ export type PatientReferenceColumn = {
 	readonly columnName: string;
 };
 
+type SchemaColumnRow = {
+	table_name?: string | null;
+	column_name?: string | null;
+	[key: string]: unknown;
+};
+
 /**
  * Все колонки базы данных, ссылающиеся на пациента: и по внешнему ключу, и по имени.
  * Список извлекается динамически из `information_schema` во избежание оставления сирот.
@@ -16,7 +22,7 @@ export type PatientReferenceColumn = {
 export async function patientReferenceColumns(): Promise<
 	PatientReferenceColumn[]
 > {
-	const result = await db.execute(sql`
+	const result = await db.execute<SchemaColumnRow>(sql`
 		select tc.table_name, kcu.column_name
 		from information_schema.table_constraints tc
 		join information_schema.key_column_usage kcu on kcu.constraint_name = tc.constraint_name
@@ -45,9 +51,9 @@ export async function patientReferenceColumns(): Promise<
 			)
 	`);
 
-	const rows =
-		(result as unknown as { rows?: Record<string, unknown>[] }).rows ??
-		(result as unknown as Record<string, unknown>[]);
+	const rows: readonly SchemaColumnRow[] = Array.isArray(result)
+		? result
+		: ((result as { rows?: SchemaColumnRow[] }).rows ?? []);
 	const columns: PatientReferenceColumn[] = [];
 	for (const row of rows) {
 		const tableName = String(row.table_name ?? "");

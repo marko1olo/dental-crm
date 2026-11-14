@@ -69,21 +69,11 @@ export function EmkPerioMeasurements({
 	// Экспресс-скрининг патологии и авто-план лечения (закрытый кюретаж)
 	const handleApplyPathologyJustification = useCallback(() => {
 		const makeSite = (pd: number, bop: boolean) => ({
-			probingDepthMm: pd,
-			gingivalMarginMm: 0,
-			bleedingOnProbing: bop,
-			suppuration: false,
-			plaque: false,
-			calculus: false,
-			calMm: pd,
+			probingDepthMm: pd, gingivalMarginMm: 0, bleedingOnProbing: bop, suppuration: false, plaque: false, calculus: false, calMm: pd,
 		});
 
 		const affectedRecords: PerioToothRecord[] = selectedTeeth.map((num) => ({
-			toothNumber: num,
-			isMissing: false,
-			isImplant: false,
-			mobility: mobilityLevel,
-			furcation: 0,
+			toothNumber: num, isMissing: false, isImplant: false, mobility: mobilityLevel, furcation: 0,
 			distoBuccal: makeSite(pocketDepthMm, hasBop),
 			midBuccal: makeSite(pocketDepthMm - 1 > 2 ? pocketDepthMm - 1 : 2, hasBop),
 			mesioBuccal: makeSite(pocketDepthMm, hasBop),
@@ -121,36 +111,23 @@ export function EmkPerioMeasurements({
 		}
 
 		// 3. Добавляем услуги кюретажа и гигиены в смету визита
-		const completedProphy = {
-			serviceId: prophyService.code804n,
-			title: prophyService.name,
-			unitPriceRub: prophyService.price,
-			quantity: 1,
-			code804n: prophyService.code804n,
-		};
-		useVisitStore.getState().addCompletedService(completedProphy as any);
-		for (const curService of curettageServices) {
+		useVisitStore.getState().addCompletedService({
+			serviceId: prophyService.code804n, code804n: prophyService.code804n, name: prophyService.name,
+			title: prophyService.name, priceRub: prophyService.price, price: prophyService.price, quantity: 1,
+		});
+		for (const cur of curettageServices) {
 			useVisitStore.getState().addCompletedService({
-				serviceId: curService.code804n,
-				title: curService.name,
-				unitPriceRub: curService.price,
-				quantity: 1,
-				code804n: curService.code804n,
-				toothCode: String(curService.toothNumber),
-			} as any);
+				serviceId: cur.code804n, code804n: cur.code804n, name: cur.name, title: cur.name,
+				priceRub: cur.price, price: cur.price, quantity: 1, toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
+			});
 		}
 
 		// 4. Диспатчим событие сметы для кассы и мягкого списания расходников
 		if (typeof window !== "undefined") {
 			const allServices = [
-				completedProphy,
+				{ serviceId: prophyService.code804n, title: prophyService.name, unitPriceRub: prophyService.price, quantity: 1, code804n: prophyService.code804n },
 				...curettageServices.map((cur) => ({
-					serviceId: cur.code804n,
-					title: cur.name,
-					unitPriceRub: cur.price,
-					quantity: 1,
-					code804n: cur.code804n,
-					toothCode: String(cur.toothNumber),
+					serviceId: cur.code804n, title: cur.name, unitPriceRub: cur.price, quantity: 1, code804n: cur.code804n, toothCode: String(cur.toothNumber),
 				})),
 			];
 

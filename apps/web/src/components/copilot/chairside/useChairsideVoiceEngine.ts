@@ -8,7 +8,11 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { showToast } from "../../GlobalToast";
-import { globalDentalVoiceEngine, type DentalVoiceIntent } from "../../../services/voice";
+import {
+  UnifiedAudioClient,
+  parseDentalVoiceSpeech,
+  type DentalVoiceIntent,
+} from "../../../services/voice";
 
 export interface UseChairsideVoiceEngineOptions {
   onTranscriptFinal: (text: string) => void;
@@ -23,31 +27,45 @@ export function useChairsideVoiceEngine({
   const [audioVolume, setAudioVolume] = useState(0);
 
   useEffect(() => {
-    const unsub = globalDentalVoiceEngine.addListener({
-      onListeningChange: (isL) => setIsListening(isL),
-      onVolumeChange: (vol) => setAudioVolume(vol),
-      onTranscriptChange: (_interim, final) => {
-        if (final) {
-          onTranscriptFinal(final);
+    const client = UnifiedAudioClient.getInstance();
+    const unsub = client.subscribe({
+      onStateChange: (state) => {
+        setIsListening(state === "listening" || state === "connecting");
+      },
+      onRmsUpdate: (rms) => {
+        setAudioVolume(Math.min(100, Math.round(rms * 250)));
+      },
+      onFinalText: (_final, accumulated) => {
+        const text = (accumulated || _final || "").trim();
+        if (text) {
+          onTranscriptFinal(text);
+          const intent = parseDentalVoiceSpeech(text);
+          if (intent) onIntentParsed(intent);
         }
       },
-      onIntentParsed: (intent) => {
-        if (intent) {
-          onIntentParsed(intent);
+      onInterimText: (interim) => {
+        if (interim.trim()) {
+          const intent = parseDentalVoiceSpeech(interim.trim());
+          if (intent) onIntentParsed(intent);
         }
       },
     });
     return () => unsub();
   }, [onTranscriptFinal, onIntentParsed]);
 
-  const handleToggleVoice = useCallback(() => {
+  const handleToggleVoice = useCallback(async () => {
+    const client = UnifiedAudioClient.getInstance();
     if (isListening) {
-      globalDentalVoiceEngine.stopListening();
+      await client.stop();
       setIsListening(false);
     } else {
-      globalDentalVoiceEngine.startListening();
-      setIsListening(true);
-      showToast("Диктовка включена: говорите в микрофон", "info");
+      try {
+        await client.start();
+        setIsListening(true);
+        showToast("Диктовка включена: говорите в микрофон", "info");
+      } catch {
+        showToast("Не удалось запустить микрофон", "warning");
+      }
     }
   }, [isListening]);
 

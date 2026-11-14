@@ -167,7 +167,7 @@ export function mapRowByColumnMapping<T extends string>(
 /**
  * Универсальный разбор CSV в типизированный результат
  */
-export function parseCsv<T = Record<string, string>>(
+export function parseCsv<T extends Record<string, string> = Record<string, string>>(
 	content: string,
 	options: CsvParseOptions = {},
 ): CsvParseResult<T> {
@@ -195,14 +195,14 @@ export function parseCsv<T = Record<string, string>>(
 		const rawRow = dataRows[i] ?? [];
 		if (options.skipEmptyLines && rawRow.every((c) => !c.trim())) continue;
 
-		const obj = {} as Record<string, string>;
+		const obj: Record<string, string> = {};
 		headers.forEach((h, colIdx) => {
 			const cell = rawRow[colIdx] ?? "";
 			const val = options.trimValues ? cell.trim() : cell;
 			obj[h] = val;
 			obj[h.toLowerCase()] = val;
 		});
-		rows.push(obj as unknown as T);
+		rows.push(obj as T);
 	}
 
 	return {

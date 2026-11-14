@@ -1,6 +1,6 @@
 /**
  * apps/api/src/routes/sanpin/temperatureModules/temperatureAutopilotHandler.ts
- * 1-клик фиксация нормы температуры и влажности за смену.
+ * Фиксация нормы температуры и влажности за смену.
  * Мандат 8b: строго <= 120 строк.
  */
 
@@ -12,6 +12,7 @@ import {
 	temperatureHumidityEquipments,
 	temperatureHumidityLogs,
 } from "../../../db/schema.js";
+import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
 async function ensureDefaultEquipments(organizationId: string) {
@@ -64,12 +65,13 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 	);
 	if (!organizationId) return;
 
-	const body = (req.body as Record<string, any>) || {};
-	const measurementDate = body.date || new Date().toISOString().slice(0, 10);
+	const body = (req.body as Record<string, unknown>) || {};
+	const measurementDate = typeof body.date === "string" ? body.date : new Date().toISOString().slice(0, 10);
 	const measurementPeriod: "morning" | "evening" = body.period === "evening" ? "evening" : "morning";
+	const operatorId = getRequestIdentity(req).userId ?? null;
 
 	const equips = await ensureDefaultEquipments(organizationId);
-	const createdLogs: any[] = [];
+	const createdLogs: Array<typeof temperatureHumidityLogs.$inferSelect> = [];
 
 	if (equips.length > 0) {
 		const logsToInsert = equips.map((tEquip) => {
@@ -83,8 +85,8 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 				relativeHumidityPercent: isFridge ? null : String(48),
 				isWithinNorm: true,
 				deviationReason: null,
-				operatorId: (req as any).user?.id || null,
-				notes: `⚡ 1-Клик норма смены (${measurementPeriod === "morning" ? "утро" : "вечер"}): санитарные нормы`,
+				operatorId,
+				notes: `Фиксация нормы смены (${measurementPeriod === "morning" ? "утро" : "вечер"}): санитарные нормы`,
 			};
 		});
 

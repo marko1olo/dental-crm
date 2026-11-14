@@ -108,7 +108,7 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 		});
 
 		it("PediatricTeethChart renders 20 teeth in primary mode and 24 teeth in mixed mode", () => {
-			// Primary mode: 20 teeth
+			// Primary mode: 20 teeth in Wheeler desktop arch + active quadrant on mobile
 			const primaryHtml = renderToString(
 				createElement(PediatricTeethChart, {
 					mode: "primary",
@@ -117,10 +117,17 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 			);
 			for (const tooth of [51, 52, 53, 54, 55, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 81, 82, 83, 84, 85]) {
 				assert.ok(
-					primaryHtml.includes(`data-testid="pediatric-tooth-btn-${tooth}"`),
-					`Primary chart must render tooth ${tooth}`,
+					primaryHtml.includes(`data-testid="anatomical-tooth-cell-${tooth}"`),
+					`Desktop primary chart must render tooth ${tooth}`,
 				);
 			}
+			for (const tooth of [51, 52, 53, 54, 55]) {
+				assert.ok(
+					primaryHtml.includes(`data-testid="pediatric-tooth-btn-${tooth}"`),
+					`Mobile active quadrant Q5 must render tooth ${tooth}`,
+				);
+			}
+			assert.ok(!primaryHtml.includes(`data-testid="anatomical-tooth-cell-16"`), "Primary mode must NOT render tooth 16");
 			assert.ok(!primaryHtml.includes(`data-testid="pediatric-tooth-btn-16"`), "Primary mode must NOT render tooth 16");
 
 			// Mixed mode: 24 teeth (+ 16, 26, 36, 46)
@@ -132,10 +139,14 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 			);
 			for (const six of [16, 26, 36, 46]) {
 				assert.ok(
-					mixedHtml.includes(`data-testid="pediatric-tooth-btn-${six}"`),
-					`Mixed chart must render permanent molar ${six}`,
+					mixedHtml.includes(`data-testid="anatomical-tooth-cell-${six}"`),
+					`Desktop mixed chart must render permanent molar ${six}`,
 				);
 			}
+			assert.ok(
+				mixedHtml.includes(`data-testid="pediatric-tooth-btn-16"`),
+				"Mobile mixed quadrant Q5 must render permanent molar 16",
+			);
 		});
 	});
 
@@ -156,39 +167,54 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 		});
 
 		it("renders resorption badges on deciduous teeth when resorption > 0", () => {
-			const html = renderToString(
+			const resorptionStages = {
+				74: 50,
+				85: 75,
+				51: 100,
+			} as const;
+
+			const htmlQ7 = renderToString(
 				createElement(PediatricTeethChart, {
 					mode: "primary",
 					activeTooth: 74,
-					resorptionStages: {
-						74: 50,
-						85: 75,
-						51: 100,
-					},
+					resorptionStages,
 				}),
 			);
-
 			assert.ok(
-				html.includes(`data-testid="tooth-resorption-badge-74"`),
+				htmlQ7.includes(`data-testid="tooth-resorption-badge-74"`),
 				"Tooth 74 must render resorption badge",
 			);
-			assert.ok(html.includes("R50%"), "Must display R50% on tooth 74");
+			assert.ok(htmlQ7.includes("R50%"), "Must display R50% on tooth 74");
 
+			const htmlQ8 = renderToString(
+				createElement(PediatricTeethChart, {
+					mode: "primary",
+					activeTooth: 85,
+					resorptionStages,
+				}),
+			);
 			assert.ok(
-				html.includes(`data-testid="tooth-resorption-badge-85"`),
+				htmlQ8.includes(`data-testid="tooth-resorption-badge-85"`),
 				"Tooth 85 must render resorption badge",
 			);
-			assert.ok(html.includes("R75%"), "Must display R75% on tooth 85");
+			assert.ok(htmlQ8.includes("R75%"), "Must display R75% on tooth 85");
 
+			const htmlQ5 = renderToString(
+				createElement(PediatricTeethChart, {
+					mode: "primary",
+					activeTooth: 51,
+					resorptionStages,
+				}),
+			);
 			assert.ok(
-				html.includes(`data-testid="tooth-resorption-badge-51"`),
+				htmlQ5.includes(`data-testid="tooth-resorption-badge-51"`),
 				"Tooth 51 must render resorption badge",
 			);
-			assert.ok(html.includes("R100%"), "Must display R100% on tooth 51");
+			assert.ok(htmlQ5.includes("R100%"), "Must display R100% on tooth 51");
 
 			// Tooth 54 has 0% resorption -> no badge rendered
 			assert.ok(
-				!html.includes(`data-testid="tooth-resorption-badge-54"`),
+				!htmlQ5.includes(`data-testid="tooth-resorption-badge-54"`),
 				"Tooth 54 (0% resorption) must NOT render resorption badge",
 			);
 		});

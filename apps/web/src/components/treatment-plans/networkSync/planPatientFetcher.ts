@@ -2,10 +2,17 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { logger } from "../../../utils/logger";
 import {
 	type CatalogServiceLookupItem,
+	type RawTreatmentPlanItemDto,
 	buildStagesFromPlanItems,
 } from "../treatmentPlanStagesEngine";
 import type { TreatmentPlanStage } from "../types";
 import type { LoadedPlanResult } from "./types";
+
+interface PatientPlanDto {
+	id: string;
+	status?: string;
+	items?: readonly RawTreatmentPlanItemDto[];
+}
 
 export async function fetchPatientTreatmentPlans(
 	patientId: string,
@@ -19,13 +26,14 @@ export async function fetchPatientTreatmentPlans(
 		});
 		if (!res.ok) return null;
 		const data = await res.json();
-		if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+		const plans: PatientPlanDto[] = Array.isArray(data?.plans) ? data.plans : [];
+		if (data?.success && plans.length > 0) {
 			const targetPlan = targetPlanId
-				? data.plans.find((p: any) => p.id === targetPlanId) ||
-				  data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
-				  data.plans[0]
-				: data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
-				  data.plans[0];
+				? plans.find((p) => p.id === targetPlanId) ||
+				  plans.find((p) => p.status === "Approved" || p.status === "Active") ||
+				  plans[0]
+				: plans.find((p) => p.status === "Approved" || p.status === "Active") ||
+				  plans[0];
 			if (targetPlan) {
 				const status: "draft" | "agreed" | "in_progress" | "completed" =
 					targetPlan.status === "Approved"
@@ -50,8 +58,8 @@ export async function fetchPatientTreatmentPlans(
 				};
 			}
 		}
-	} catch (e) {
-		logger.warn("[treatmentPlanNetworkSync] Ошибка загрузки планов пациента из БД", e);
+	} catch (e: unknown) {
+		logger.warn("[treatmentPlanNetworkSync] Ошибка загрузки планов пациента из БД", { error: e });
 	}
 	return null;
 }

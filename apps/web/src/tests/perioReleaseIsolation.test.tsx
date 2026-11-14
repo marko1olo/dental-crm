@@ -38,8 +38,8 @@ describe("192-Point Periodontal Probing Release Isolation & Runtime Contract Aud
 			"Chart container must render in DOM",
 		);
 		assert.ok(
-			html.includes("perio-toolbar-norm-1click-btn"),
-			"Toolbar must contain 1-click norm button",
+			html.includes("perio-toolbar-norm-btn"),
+			"Toolbar must contain norm button",
 		);
 		assert.ok(
 			html.includes("perio-save-draft-btn"),

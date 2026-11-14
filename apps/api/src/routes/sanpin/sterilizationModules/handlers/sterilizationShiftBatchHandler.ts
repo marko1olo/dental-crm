@@ -11,6 +11,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { computeSterilizationExpiration, generateSterilizationBarcode } from "../sterilizationCycleEngine.js";
 import type { SterilizationShiftBatchBody } from "../sterilizationSchemas.js";
@@ -20,6 +21,7 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization shift batch create");
 	if (!organizationId) return;
 
+	const operatorId = getRequestIdentity(req).userId ?? null;
 	const body = (req.body as SterilizationShiftBatchBody) || {};
 	const cyclesCount = Math.min(Math.max(Number(body.cyclesCount) || 1, 1), 5);
 	const deviceName = body.deviceName || "Melag Vacuklav 23 B+ (ЦСО №1)";
@@ -60,7 +62,7 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 			status: "passed" as const,
 			barcode: generatedBarcode,
 			expiresAt,
-			operatorId: (req as any).user?.id || null,
+			operatorId,
 			timestamp: new Date(now.getTime() + i * 60000),
 		});
 	}
@@ -69,7 +71,7 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 
 	void executeSterilizationConsumablesDeduction({
 		organizationId,
-		userId: (req as any).user?.id || null,
+		userId: operatorId,
 		count: cyclesCount * 20,
 		packagingType,
 		indicatorType: "class5_integrating",
@@ -87,7 +89,7 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 			isBatchApproved: true,
 			detergentBrand: "Биолот 0.5% + Аламинол 1%",
 			rejectionReason: null,
-			operatorId: (req as any).user?.id || null,
+			operatorId,
 			notes: `[Предстерилизационная очистка] Очистка партии смены (${cyclesCount} циклов, ${cyclesCount * 20} лотков): азопирам и фенолфталеин отрицательные, норма. Допущено.`,
 			timestamp: now,
 		})

@@ -227,6 +227,14 @@ export function buildAgentSystemPrompt(
 		? `\nТЕКУЩИЙ ВИЗИТ: #${resolvedVisitId}. Все назначения, дневники приёма и манипуляции привязываются к контексту этого визита.`
 		: "";
 
+	const allergiesLine = context?.patientAllergies && context.patientAllergies.length > 0
+		? `\n⚠️ АЛЛЕРГИЧЕСКИЙ СТАТУС ПАЦИЕНТА: ${context.patientAllergies.join(", ")}. СТРОГО учитывать при назначениях анестезии и антибиотикотерапии!`
+		: "";
+
+	const somaticLine = context?.somaticHistory
+		? `\nСОМАТИЧЕСКИЙ АНАМНЕЗ: ${Array.isArray(context.somaticHistory) ? context.somaticHistory.join(", ") : context.somaticHistory}.`
+		: "";
+
 	const planSection = activePlan
 		? `\n\n=== АКТИВНЫЙ ПЛАН ВЫПОЛНЕНИЯ ЗАДАЧИ ===\n${formatPlanForSystemPrompt(activePlan)}`
 		: "";
@@ -299,5 +307,5 @@ ${trustLevelDirective}
 ${runtimeSpecificDirective}
 
 === КЛИНИЧЕСКИЙ КОНТЕКСТ ТЕКУЩЕГО СЕАНСА ===
-${patientContextInfo}${toothContextLine}${visitContextLine}${procedureProtocolSection}${planSection}${doctorProfileSection}`;
+${patientContextInfo}${toothContextLine}${visitContextLine}${allergiesLine}${somaticLine}${procedureProtocolSection}${planSection}${doctorProfileSection}`;
 }

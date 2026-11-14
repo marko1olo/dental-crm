@@ -2,6 +2,7 @@ import { useVisitStore } from "../../../store/visitStore";
 import {
 	planLineQuantity,
 	planLineTotalRub,
+	type VisitPlanItemLike,
 } from "../completedServicesPlan";
 import { dispatchAddServicesToInvoice } from "./completedServicesEngine";
 import { completedLineOf, serviceTitleOf } from "./serviceChecklistHelpers";
@@ -22,11 +23,9 @@ export function useCompletedServicesPlanSync({
 }: PlanSyncParams) {
 	useCompletedServicesExternalListener({ planText, planLines, updateVisitNoteField });
 
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	const isMarked = (item: any) => planLines.includes(completedLineOf(item));
+	const isMarked = (item: VisitPlanItemLike) => planLines.includes(completedLineOf(item));
 
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	const togglePlanItem = (item: any) => {
+	const togglePlanItem = (item: VisitPlanItemLike) => {
 		if (!updateVisitNoteField) return;
 		const line = completedLineOf(item);
 		const tooth = item?.toothCode ?? item?.toothNumber ?? selectedTooth;
@@ -40,8 +39,7 @@ export function useCompletedServicesPlanSync({
 			const currentList = useVisitStore.getState().completedServices;
 			const targetTitle = serviceTitleOf(item);
 			const removeIdx = currentList.findIndex((cs) => {
-				// biome-ignore lint/suspicious/noExplicitAny: dynamic completedService item
-				const csTitle = cs.name || (cs as any).title || "";
+				const csTitle = cs.name || cs.title || "";
 				return csTitle === targetTitle;
 			});
 			if (removeIdx !== -1) {

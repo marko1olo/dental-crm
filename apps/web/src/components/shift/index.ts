@@ -6,11 +6,7 @@
  * and canonical cash register shift closing & Z-report views.
  */
 
-// Canonical SSOT Shift Studio & Fiscal Z-Report
-export {
-	ShiftStudioModal,
-	type ShiftStudioModalProps,
-} from "./ShiftStudioModal";
+// Canonical SSOT Cash Shift Closing, Journal & Fiscal Z-Report
 export { DirectShiftLauncher } from "./DirectShiftLauncher";
 export * from "./shiftCatalogData";
 
@@ -18,6 +14,7 @@ export * from "./shiftCatalogData";
 export {
 	CashShiftClosingModal,
 	type CashShiftClosingModalProps,
+	type ZReportData,
 } from "./CashShiftClosingModal";
 export {
 	CashShiftJournalView,

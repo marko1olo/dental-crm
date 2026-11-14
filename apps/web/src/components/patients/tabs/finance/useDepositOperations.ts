@@ -1,8 +1,26 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { showToast } from "../../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import type { DepositOperationRecord, OperationMode, PaymentMethod, TargetWallet } from "./types";
 import type { PatientGeneralInfo } from "../PatientGeneralInfoTab";
+
+function mapMethodToLabel(method: string): string {
+	switch (method) {
+		case "card":
+			return "Банковская карта";
+		case "cash":
+			return "Наличные";
+		case "sbp":
+			return "СБП (QR-код)";
+		case "family_wallet":
+		case "pool":
+			return "Семейный счёт";
+		case "other":
+			return "Бонусы / Зачёт";
+		default:
+			return "Безналичный расчёт";
+	}
+}
 
 export function useDepositOperations(
 	patient: PatientGeneralInfo | null | undefined,
@@ -15,6 +33,111 @@ export function useDepositOperations(
 	const [familyBalance, setFamilyBalance] = useState<number>(initialFamilyBalance);
 	const [operationsLog, setOperationsLog] = useState<DepositOperationRecord[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+	useEffect(() => {
+		setPersonalBalance(initialPersonalBalance);
+	}, [initialPersonalBalance]);
+
+	useEffect(() => {
+		setFamilyBalance(initialFamilyBalance);
+	}, [initialFamilyBalance]);
+
+	const loadOperationsHistory = useCallback(async () => {
+		if (!patient?.id) {
+			setOperationsLog([]);
+			return;
+		}
+
+		try {
+			const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+			const promises: Promise<unknown>[] = [
+				fetch(`/api/billing/payments?patientId=${encodeURIComponent(patient.id)}`, { headers })
+					.then((r) => (r.ok ? r.json() : null))
+					.catch(() => null),
+			];
+
+			if (patient.familyGroupId) {
+				promises.push(
+					fetch(`/api/finance/family/${encodeURIComponent(patient.familyGroupId)}/history`, { headers })
+						.then((r) => (r.ok ? r.json() : null))
+						.catch(() => null),
+				);
+			}
+
+			const [billingRes, familyRes] = await Promise.all(promises);
+			const records: DepositOperationRecord[] = [];
+			const seenIds = new Set<string>();
+
+			// 1. Семейная история операций
+			if (Array.isArray(familyRes)) {
+				for (const item of familyRes) {
+					if (!item?.id || seenIds.has(item.id)) continue;
+					seenIds.add(item.id);
+					const dateObj = new Date(item.date || Date.now());
+					const isTopup = item.operationType === "topup";
+					const isRefund = item.operationType === "refund";
+					const amtRub = Math.abs(Number(item.amountRub) || 0);
+
+					records.push({
+						id: String(item.id),
+						date: dateObj.toLocaleDateString("ru-RU"),
+						time: dateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+						type: isTopup ? "family_share" : isRefund ? "charge" : "charge",
+						typeLabelRu: isTopup ? "Семейный аванс (+)" : isRefund ? "Возврат аванса (-)" : "Списание аванса (-)",
+						amountRub: amtRub,
+						amountKopecks: Math.round(amtRub * 100),
+						method: item.method === "pool" ? "family_wallet" : item.method || "card",
+						methodLabelRu: mapMethodToLabel(item.method),
+						status: "completed",
+						note: item.note || (isTopup ? "Пополнение семейного счёта" : "Списание с семейного депозита"),
+					});
+				}
+			}
+
+			// 2. Персональные проводки пациента из billing
+			const billingItems = Array.isArray((billingRes as { data?: unknown[] })?.data)
+				? (billingRes as { data: Array<{ id: string; amountRub: number; method: string; status: string; note?: string; createdAt?: string; paidAt?: string }> }).data
+				: [];
+
+			for (const p of billingItems) {
+				if (!p?.id || seenIds.has(p.id)) continue;
+				seenIds.add(p.id);
+
+				const rawAmt = Number(p.amountRub) || 0;
+				const isNegative = rawAmt < 0 || p.status === "refunded";
+				const isPlanned = p.status === "planned";
+				const isDepositMethod = p.method === "family_wallet" || p.method === "deposit";
+				const amtRub = Math.abs(rawAmt);
+				const dateObj = new Date(p.paidAt || p.createdAt || Date.now());
+
+				// Классификация: положительный planned или внесение — topup, отрицательный или зачет family_wallet — charge
+				const isTopup = !isNegative && (isPlanned || (!isDepositMethod && rawAmt > 0));
+
+				records.push({
+					id: String(p.id),
+					date: dateObj.toLocaleDateString("ru-RU"),
+					time: dateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+					type: isTopup ? "deposit" : "charge",
+					typeLabelRu: isTopup ? "Внесение аванса (+)" : "Списание аванса (-)",
+					amountRub: amtRub,
+					amountKopecks: Math.round(amtRub * 100),
+					method: p.method as PaymentMethod,
+					methodLabelRu: mapMethodToLabel(p.method),
+					status: "completed",
+					note: p.note || (isTopup ? "Внесение аванса на лицевой счёт" : "Зачёт средств в счёт лечения"),
+				});
+			}
+
+			// Сортировка от свежих к старым
+			setOperationsLog(records);
+		} catch {
+			// Офлайн или сетевой сбой — не крашим компонент
+		}
+	}, [patient?.id, patient?.familyGroupId]);
+
+	useEffect(() => {
+		void loadOperationsHistory();
+	}, [loadOperationsHistory]);
 
 	const executeOperation = useCallback(
 		async (amount: number, mode: OperationMode, target: TargetWallet, method: PaymentMethod) => {
@@ -36,7 +159,6 @@ export function useDepositOperations(
 			const mutationId = `dep-${Date.now()}-${crypto.randomUUID()}`;
 			const isTopup = mode === "topup";
 			const delta = isTopup ? amount : -amount;
-
 			const amountKopecks = Math.round(amount * 100);
 
 			try {
@@ -46,24 +168,65 @@ export function useDepositOperations(
 						method: "POST",
 						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 						body: JSON.stringify({
-							familyGroupId: patient.familyGroupId, patientId: patient.id, amountRub: amount, amountKopecks,
-							method, clientMutationId: mutationId, note: isTopup ? "Пополнение семейного аванса" : "Списание семейного аванса",
+							familyGroupId: patient.familyGroupId,
+							patientId: patient.id,
+							amountRub: amount,
+							amountKopecks,
+							method,
+							clientMutationId: mutationId,
+							note: isTopup ? "Пополнение семейного аванса" : "Списание семейного аванса",
 						}),
 					});
 					if (!resp.ok) {
 						throw new Error(`Ошибка операции с семейным авансом (код ${resp.status})`);
 					}
 				} else if (patient?.id) {
-					const resp = await fetch("/api/finance/payments", {
-						method: "POST",
-						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-						body: JSON.stringify({
-							patientId: patient.id, amountRub: amount, amountKopecks, method, clientMutationId: mutationId,
-							note: isTopup ? "Внесение аванса на лицевой счёт" : "Зачёт аванса в счёт лечения",
-						}),
-					});
-					if (!resp.ok) {
-						throw new Error(`Ошибка проведения финансовой операции (код ${resp.status})`);
+					if (isTopup) {
+						// Пополнение личного аванса (входящий приходный платёж)
+						const resp = await fetch("/api/finance/payments", {
+							method: "POST",
+							headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+							body: JSON.stringify({
+								patientId: patient.id,
+								amountRub: amount,
+								amountKopecks,
+								method,
+								clientMutationId: mutationId,
+								note: "Внесение аванса на лицевой счёт",
+							}),
+						});
+						if (!resp.ok) {
+							throw new Error(`Ошибка проведения финансовой операции (код ${resp.status})`);
+						}
+					} else {
+						// Списание личного аванса (расходная операция, уменьшающая баланс)
+						const refundResp = await fetch("/api/cashbox/refund", {
+							method: "POST",
+							headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+							body: JSON.stringify({
+								amountRub: amount,
+								reasonText: `Списание аванса с лицевого счёта: ${patient.fullName || "Пациент"}`,
+								patientId: patient.id,
+							}),
+						});
+						if (!refundResp.ok) {
+							// Фолбек: списание через кассу с отрицательным знаком
+							const fallbackResp = await fetch("/api/finance/payments", {
+								method: "POST",
+								headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+								body: JSON.stringify({
+									patientId: patient.id,
+									amountRub: -amount,
+									amountKopecks: -amountKopecks,
+									method: "cash",
+									clientMutationId: mutationId,
+									note: "Списание / зачёт аванса с лицевого счёта",
+								}),
+							});
+							if (!fallbackResp.ok) {
+								throw new Error(`Ошибка списания аванса (код ${refundResp.status})`);
+							}
+						}
 					}
 				}
 
@@ -85,7 +248,7 @@ export function useDepositOperations(
 					amountRub: amount,
 					amountKopecks,
 					method,
-					methodLabelRu: method === "card" ? "Банковская карта" : method === "cash" ? "Наличные" : "СБП (QR-код)",
+					methodLabelRu: mapMethodToLabel(method),
 					status: "completed",
 					note: isTopup ? `Пополнение ${target === "family" ? "семейного" : "личного"} счёта` : "Зачёт средств в счёт лечения",
 				};
@@ -95,14 +258,15 @@ export function useDepositOperations(
 					? `Аванс +${amount.toLocaleString("ru-RU")} ₽ зачислен на ${target === "family" ? "семейный" : "личный"} счёт!`
 					: `Списано ${amount.toLocaleString("ru-RU")} ₽ с ${target === "family" ? "семейного" : "личного"} счёта.`;
 				showToast(msg, "success", 4000);
-			} catch (err: any) {
-				showToast(err?.message || "Ошибка финансовой операции", "error");
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : "Ошибка финансовой операции";
+				showToast(errMsg, "error");
 			} finally {
 				setIsSubmitting(false);
 			}
 		},
-		[disabled, isSubmitting, personalBalance, familyBalance, patient?.id, patient?.familyGroupId, onUpdateBalance],
+		[disabled, isSubmitting, personalBalance, familyBalance, patient?.id, patient?.fullName, patient?.familyGroupId, onUpdateBalance],
 	);
 
-	return { personalBalance, familyBalance, operationsLog, isSubmitting, executeOperation };
+	return { personalBalance, familyBalance, operationsLog, isSubmitting, executeOperation, reloadHistory: loadOperationsHistory };
 }

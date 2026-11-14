@@ -36,7 +36,6 @@ export interface IdentityResolutionResult {
 	breakdown: IdentityMatchBreakdown;
 }
 
-// biome-ignore lint/complexity/noStaticOnlyClass: automated suppression
 export class IdentityResolutionEngine {
 	/**
 	 * Calculates the Levenshtein distance between two strings.
@@ -107,18 +106,28 @@ export class IdentityResolutionEngine {
 			return trimmed;
 		}
 		const ruMatch = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(trimmed);
-		if (ruMatch && ruMatch[1] && ruMatch[2] && ruMatch[3]) {
-			const day = ruMatch[1].padStart(2, "0");
-			const month = ruMatch[2].padStart(2, "0");
-			const year = ruMatch[3];
-			return `${year}-${month}-${day}`;
+		if (ruMatch) {
+			const rawD = ruMatch[1];
+			const rawM = ruMatch[2];
+			const rawY = ruMatch[3];
+			if (rawD && rawM && rawY) {
+				const day = rawD.padStart(2, "0");
+				const month = rawM.padStart(2, "0");
+				const year = rawY;
+				return `${year}-${month}-${day}`;
+			}
 		}
 		const slashMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed);
-		if (slashMatch && slashMatch[1] && slashMatch[2] && slashMatch[3]) {
-			const day = slashMatch[1].padStart(2, "0");
-			const month = slashMatch[2].padStart(2, "0");
-			const year = slashMatch[3];
-			return `${year}-${month}-${day}`;
+		if (slashMatch) {
+			const rawD = slashMatch[1];
+			const rawM = slashMatch[2];
+			const rawY = slashMatch[3];
+			if (rawD && rawM && rawY) {
+				const day = rawD.padStart(2, "0");
+				const month = rawM.padStart(2, "0");
+				const year = rawY;
+				return `${year}-${month}-${day}`;
+			}
 		}
 
 		return null;

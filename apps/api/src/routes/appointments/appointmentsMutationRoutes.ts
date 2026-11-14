@@ -133,11 +133,11 @@ export const createAppointmentHandler = async (
 
 export const updateAppointmentHandler = async (
 	request: FastifyRequest<{
-		Params: AppointmentIdParams;
+		Params: AppointmentOptionalIdParams;
 	}>,
 	reply: FastifyReply,
 ) => {
-	const params = request.params as AppointmentOptionalIdParams;
+	const params = request.params;
 	const appointmentId = params?.appointmentId || params?.id;
 	if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
 		return reply.code(400).send({
@@ -177,18 +177,22 @@ export const updateAppointmentHandler = async (
 
 		try {
 			const auditAction = resolveUpdateAuditAction(input);
+			const reasonStr =
+				"reason" in input && typeof input.reason === "string"
+					? input.reason
+					: "cancelReason" in input && typeof input.cancelReason === "string"
+						? input.cancelReason
+						: null;
+			const doctorUserIdStr =
+				"doctorUserId" in input && typeof input.doctorUserId === "string"
+					? input.doctorUserId
+					: null;
 			await recordAuditEventInDb(orgId, {
 				entityType: "appointment",
 				entityId: appointmentId,
 				action: auditAction,
-				reason:
-					(input as { reason?: string }).reason ??
-					(input as { cancelReason?: string }).cancelReason ??
-					null,
-				actorUserId:
-					identity.userId ??
-					(input as { doctorUserId?: string }).doctorUserId ??
-					null,
+				reason: reasonStr,
+				actorUserId: identity.userId ?? doctorUserIdStr,
 			});
 		} catch (auditErr) {
 			request.log.warn(
@@ -260,7 +264,9 @@ export const updateAppointmentHandler = async (
 };
 
 export const createNextStageAppointmentHandler = async (
-	request: FastifyRequest,
+	request: FastifyRequest<{
+		Params: AppointmentOptionalIdParams;
+	}>,
 	reply: FastifyReply,
 ) => {
 	const context = await requireScheduleMutationContext(
@@ -271,7 +277,7 @@ export const createNextStageAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const params = request.params as AppointmentOptionalIdParams;
+	const params = request.params;
 	const appointmentId = params?.appointmentId || params?.id;
 	if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
 		return reply.code(400).send({

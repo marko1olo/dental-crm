@@ -4,6 +4,8 @@
  * Мандаты 8e (Автономия врача/кассира), 8n (соло-практика), 8b (Sweet Spot 300-350 строк), 8wy (amountKopecks).
  */
 
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+
 export type PaymentMethodId = "cash" | "card" | "sbp" | "deposit" | "b2b" | "split" | "warranty";
 
 export interface PaymentMethodOption {
@@ -38,12 +40,12 @@ export function createEmptySplitTenders(): SplitTenders {
 }
 
 export function rubToKopecks(rub: number): number {
-	return Number.isFinite(rub) ? Math.round(rub * 100) : 0;
+	return Number.isFinite(rub) ? rublesToKopecks(rub) : 0;
 }
 
 export function kopecksToRub(kopecks: number | bigint): number {
 	const n = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
-	return Number.isFinite(n) ? Math.round(n) / 100 : 0;
+	return Number.isFinite(n) ? kopecksToRubles(n) : 0;
 }
 
 export function formatKopecks(kopecks: number | bigint, options?: { showZeroKopecks?: boolean }): string {

@@ -1,6 +1,8 @@
 import { money } from "../../../AppHelpers";
 import { countLabel } from "../../../lib/russianPlural";
 import { useVisitStore } from "../../../store/visitStore";
+import type { ToothState } from "../../../store/visit/types";
+import type { ToothClinicalServicePayload } from "@dental/shared";
 import { showRollbackToast, showToast } from "../../GlobalToast";
 import {
 	type CompletedServicesSummary,
@@ -32,10 +34,8 @@ export function useCompletedServicesRemovalAction({
 			.filter((existing) => (existing ?? "").trim() !== rawLine.trim());
 		updateVisitNoteField("treatmentPlan", kept.join("\n").replace(/\n+$/, ""));
 
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic completedService restoration
-		let removedService: any = null;
-		// biome-ignore lint/suspicious/noExplicitAny: tooth state restoration
-		let previousToothState: any = null;
+		let removedService: ToothClinicalServicePayload | null = null;
+		let previousToothState: ToothState | string | null = null;
 
 		if (parsed) {
 			const currentList = useVisitStore.getState().completedServices;
@@ -43,8 +43,7 @@ export function useCompletedServicesRemovalAction({
 				const itemTooth = String(item.toothCode || item.toothNumber || "");
 				const parsedTooth = String(parsed.toothCode || "");
 				const codeMatch = item.code804n === parsed.code804n;
-				// biome-ignore lint/suspicious/noExplicitAny: dynamic completedService item
-				const titleMatch = item.name === parsed.title || (item as any).title === parsed.title;
+				const titleMatch = item.name === parsed.title || item.title === parsed.title;
 				const toothMatch = (!itemTooth && !parsedTooth) || itemTooth === parsedTooth;
 				return (codeMatch || titleMatch) && toothMatch;
 			});
@@ -62,8 +61,8 @@ export function useCompletedServicesRemovalAction({
 					const visitState = useVisitStore.getState();
 					previousToothState =
 						visitState.visitToothStateByCode?.[toothStr] ||
-						// biome-ignore lint/suspicious/noExplicitAny: dynamic tooth state
-						(visitState as any).teeth?.[toothStr]?.state;
+						(visitState as unknown as { teeth?: Record<string, { state?: ToothState | string }> }).teeth?.[toothStr]?.state ||
+						null;
 					visitState.setToothState(toothStr, "idle");
 				}
 			}

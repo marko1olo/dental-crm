@@ -17,7 +17,7 @@ import {
 	type EstimatorToothInput,
 } from "../../odontogram/treatmentEstimatorPricing";
 import type { PlanPriceCatalogItem } from "../../treatment-plans/planPricing";
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 
 describe("Clinical SOAP Diary & Medical Card Basics (clinicalSoapBasics)", () => {
 	describe("1. Non-Destructive SOAP Merging & Anesthesia / Recommendations", () => {

@@ -6,7 +6,7 @@
  * Типы шагов визита, сметы, смарт-протоколов и автономии врача (Мандат 8e).
  */
 
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import type { AutoVisitBomDeductionResult } from "@dental/shared";
 
 export type ProcedureCategory =

@@ -9,7 +9,7 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { treatmentPlanRoutes, default as defaultExport } from "../routes/treatmentPlans.js";
+import { treatmentPlanRoutes, default as defaultExport } from "../routes/treatmentPlanRoutes.js";
 import { treatmentPlanQuerySchema } from "../routes/treatmentPlan/pipelineTypes.js";
 
 describe("Treatment Plans API Routes & Types Facade (apps/api/src/routes/treatmentPlans.ts)", () => {
@@ -29,9 +29,20 @@ describe("Treatment Plans API Routes & Types Facade (apps/api/src/routes/treatme
 		assert.equal(result.success, true, "Valid query must parse successfully");
 	});
 
-	it("3. Upholds Mandate 8ap: Route definitions contain no Soviet law numbers", () => {
-		const routePluginString = treatmentPlanRoutes.toString();
-		assert.ok(!routePluginString.includes("54-ФЗ"), "Routes must not contain 54-ФЗ");
-		assert.ok(!routePluginString.includes("54Fz"), "Routes must not contain 54Fz");
+	it("3. Validates pipeline stage filtering and invalid input rejection", () => {
+		const invalidQuery = {
+			doctorId: "not-a-valid-uuid",
+			stage: "unsupported_fake_stage",
+		};
+		const result = treatmentPlanQuerySchema.safeParse(invalidQuery);
+		assert.equal(result.success, false, "Invalid doctorId and stage must fail validation");
+
+		const validStageQuery = {
+			stage: "awaiting_decision",
+			limit: 50,
+			offset: 0,
+		};
+		const validResult = treatmentPlanQuerySchema.safeParse(validStageQuery);
+		assert.equal(validResult.success, true, "Valid stage must pass validation");
 	});
 });

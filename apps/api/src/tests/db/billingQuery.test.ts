@@ -3,6 +3,9 @@ import { afterEach, describe, mock, test } from "node:test";
 import { createPaymentInDb, getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { db } from "../../db/client.js";
 
+const TEST_ORG_ID = "00000000-0000-0000-0000-000000000001";
+const TEST_PAT_ID = "00000000-0000-0000-0000-000000000002";
+
 describe("getPaymentsByPatientIdInDb", () => {
 	afterEach(() => {
 		mock.restoreAll();
@@ -15,7 +18,7 @@ describe("getPaymentsByPatientIdInDb", () => {
 			}),
 		}));
 
-		const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
+		const result = await getPaymentsByPatientIdInDb(TEST_ORG_ID, TEST_PAT_ID);
 		assert.deepStrictEqual(result, []);
 	});
 
@@ -25,8 +28,8 @@ describe("getPaymentsByPatientIdInDb", () => {
 				where: async () => [
 					{
 						id: "1",
-						organizationId: "org-1",
-						patientId: "patient-1",
+						organizationId: TEST_ORG_ID,
+						patientId: TEST_PAT_ID,
 						amountRub: 1000,
 						status: "paid",
 						createdAt: new Date("2023-10-01T12:00:00Z"),
@@ -34,8 +37,8 @@ describe("getPaymentsByPatientIdInDb", () => {
 					},
 					{
 						id: "2",
-						organizationId: "org-1",
-						patientId: "patient-1",
+						organizationId: TEST_ORG_ID,
+						patientId: TEST_PAT_ID,
 						amountRub: 500,
 						status: "pending",
 						createdAt: new Date("2023-10-03T12:00:00Z"),
@@ -45,7 +48,7 @@ describe("getPaymentsByPatientIdInDb", () => {
 			}),
 		}));
 
-		const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
+		const result = await getPaymentsByPatientIdInDb(TEST_ORG_ID, TEST_PAT_ID);
 
 		assert.strictEqual(result.length, 2);
 		const firstPayment = result[0];
@@ -113,13 +116,17 @@ function stubTransaction(options: {
 			return {
 				from: () => ({
 					where: () => {
-						const res = Object.assign(Promise.resolve([]), {
+						const chain = {
+							orderBy: () => ({
+								for: () => Promise.resolve([]),
+								limit: async () => [],
+							}),
 							for: () => ({
 								limit: async () => options.lockedPatients ?? [{ id: "pat-123" }],
 							}),
 							limit: async () => [],
-						});
-						return res;
+						};
+						return Object.assign(Promise.resolve([]), chain);
 					},
 					limit: async () => [],
 				}),
@@ -259,7 +266,11 @@ describe("createPaymentInDb", () => {
 			select: () => ({
 				from: () => ({
 					where: () => {
-						const res = Object.assign(Promise.resolve([]), {
+						const chain = {
+							orderBy: () => ({
+								for: () => Promise.resolve([]),
+								limit: async () => [],
+							}),
 							for: () => ({
 								limit: async () => [
 									{
@@ -271,8 +282,8 @@ describe("createPaymentInDb", () => {
 								],
 							}),
 							limit: async () => [],
-						});
-						return res;
+						};
+						return Object.assign(Promise.resolve([]), chain);
 					},
 					limit: async () => [],
 				}),

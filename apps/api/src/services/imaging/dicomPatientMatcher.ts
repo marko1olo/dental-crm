@@ -62,8 +62,7 @@ const RU_TO_EN_MAP: Record<string, string> = {
 export function transliterateRuToEn(text: string): string {
 	let res = "";
 	const lower = text.toLowerCase();
-	for (let i = 0; i < lower.length; i++) {
-		const ch = lower[i]!;
+	for (const ch of lower) {
 		res += RU_TO_EN_MAP[ch] !== undefined ? RU_TO_EN_MAP[ch] : ch;
 	}
 	return res;
@@ -106,8 +105,7 @@ export function transliterateEnToRu(text: string): string {
 		lower = lower.replace(re, sub);
 	}
 	let res = "";
-	for (let i = 0; i < lower.length; i++) {
-		const ch = lower[i]!;
+	for (const ch of lower) {
 		res += SINGLE_EN_TO_RU[ch] !== undefined ? SINGLE_EN_TO_RU[ch] : ch;
 	}
 	return res;
@@ -121,21 +119,28 @@ export function levenshteinDistance(a: string, b: string): number {
 	if (la === 0) return lb;
 	if (lb === 0) return la;
 
-	const dp: number[][] = [];
-	for (let i = 0; i <= la; i++) dp[i] = [i];
-	for (let j = 0; j <= lb; j++) dp[0]![j] = j;
+	const stride = lb + 1;
+	const dp = new Int32Array((la + 1) * stride);
+
+	const get = (i: number, j: number): number => dp[i * stride + j] ?? 0;
+	const set = (i: number, j: number, val: number): void => {
+		dp[i * stride + j] = val;
+	};
+
+	for (let i = 0; i <= la; i++) set(i, 0, i);
+	for (let j = 0; j <= lb; j++) set(0, j, j);
 
 	for (let i = 1; i <= la; i++) {
+		const aChar = a[i - 1] ?? "";
 		for (let j = 1; j <= lb; j++) {
-			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-			dp[i]![j] = Math.min(
-				dp[i - 1]![j]! + 1,
-				dp[i]![j - 1]! + 1,
-				dp[i - 1]![j - 1]! + cost,
-			);
+			const cost = aChar === (b[j - 1] ?? "") ? 0 : 1;
+			const del = get(i - 1, j) + 1;
+			const ins = get(i, j - 1) + 1;
+			const sub = get(i - 1, j - 1) + cost;
+			set(i, j, Math.min(del, ins, sub));
 		}
 	}
-	return dp[la]![lb]!;
+	return get(la, lb);
 }
 
 export function stringSimilarity(a: string, b: string): number {
@@ -419,7 +424,8 @@ export function compareFioTokens(dicomFio: string, patientFio: string): number {
 
 	// Если в источнике только одно слово (только фамилия, например "Иванов" или "Petrov")
 	if (dTokens.length === 1) {
-		const singleWord = dTokens[0]!;
+		const singleWord = dTokens[0];
+		if (!singleWord) return 0;
 		let bestScore = 0;
 		for (const pt of pTokens) {
 			const sc = matchWordsFuzzy(singleWord, pt);
@@ -439,12 +445,15 @@ export function compareFioTokens(dicomFio: string, patientFio: string): number {
 
 		for (let pi = 0; pi < pTokens.length; pi++) {
 			if (usedPatientIndices.has(pi)) continue;
-			const pt = pTokens[pi]!;
+			const pt = pTokens[pi];
+			if (!pt) continue;
 
 			// Инициал: если токен 1 символ (например "И" или "I")
 			if (dt.length === 1 && pt.length > 1) {
 				const charD = transliterateRuToEn(dt);
-				const charP = transliterateRuToEn(pt[0]!);
+				const firstChar = pt[0];
+				if (!firstChar) continue;
+				const charP = transliterateRuToEn(firstChar);
 				if (charD === charP) {
 					if (bestWordScore < 0.88) {
 						bestWordScore = 0.88;
@@ -634,12 +643,23 @@ export function matchStudyToPatients(
 		};
 	}
 
-	const best = scoredList[0]!;
+	const best = scoredList[0];
+	if (!best) {
+		return {
+			patientId: null,
+			patientFullName: null,
+			confidence: 0,
+			status: "unassigned",
+			matchMethod: "no_candidate_found",
+			matchDetails: "Кандидаты не найдены",
+			candidates: [],
+		};
+	}
 
 	// Если есть второй кандидат с близким скором (разница < 7%), требуем ручной подтверждения (pending_review)
 	if (scoredList.length > 1) {
-		const second = scoredList[1]!;
-		if (best.confidence - second.confidence < 7) {
+		const second = scoredList[1];
+		if (second && best.confidence - second.confidence < 7) {
 			return {
 				patientId: best.patientId,
 				patientFullName: best.patientFullName,

@@ -40,7 +40,7 @@ export function generateCompletedActAndWarrantyHtml(params: CompletedWorksActPar
 			<td class="lbl">Паспорт / Документ:</td><td>${params.patient.passportData || "Предъявлен при первичном приеме"}</td>
 		</tr>
 		<tr>
-			<td class="lbl">Медкарта №:</td><td>${params.patient.medicalCardNumber || "043/у"} (ID: ${params.patient.id || "—"})</td>
+			<td class="lbl">Медкарта №:</td><td>${params.patient.medicalCardNumber || "—"} (ID: ${params.patient.id || "—"})</td>
 			<td class="lbl">Контактный телефон:</td><td>${params.patient.phone || "—"}</td>
 		</tr>
 	</table>

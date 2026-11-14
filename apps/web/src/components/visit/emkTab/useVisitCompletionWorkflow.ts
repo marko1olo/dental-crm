@@ -9,12 +9,14 @@ import {
 import { assembleVisitStoreCompletedServices } from "../useVisitCompletion";
 import { executeVisitPostCompletionPipeline } from "../completionModules/visitCompletionPipeline";
 import { createVisitInvoiceInApi } from "../completionModules/visitInvoiceCreationService";
+import type { Dashboard, Patient } from "@dental/shared";
+import type { VisitPatientEntity } from "../view/VisitViewProps";
 
 export interface UseVisitCompletionWorkflowOptions {
 	openVisitId: string;
-	activePatient?: any;
-	dashboard?: any;
-	visitNoteForm: Record<string, any>;
+	activePatient?: VisitPatientEntity | Patient | { id?: string; fullName?: string; phone?: string; name?: string } | null | undefined;
+	dashboard?: (Dashboard & { activeVisit?: { treatmentPlanId?: string | null; stageNumber?: number | null; organizationId?: string }; activeAppointment?: { treatmentPlanId?: string | null; stageNumber?: number | null } }) | null | undefined;
+	visitNoteForm: Record<string, unknown>;
 	flushSoloPendingSave: () => Promise<void>;
 	acceptDraftToVisit?: (() => Promise<void>) | undefined;
 }
@@ -102,14 +104,14 @@ export function useVisitCompletionWorkflow({
 				},
 				effectiveCompletedPlan: [],
 				targetPlanId:
-					(dashboard as any)?.activeVisit?.treatmentPlanId ||
-					(dashboard as any)?.activeAppointment?.treatmentPlanId ||
+					dashboard?.activeVisit?.treatmentPlanId ||
+					dashboard?.activeAppointment?.treatmentPlanId ||
 					null,
 				stageNumber:
-					(dashboard as any)?.activeVisit?.stageNumber ??
-					(dashboard as any)?.activeAppointment?.stageNumber ??
+					dashboard?.activeVisit?.stageNumber ??
+					dashboard?.activeAppointment?.stageNumber ??
 					undefined,
-				activeVisit: (dashboard as any)?.activeVisit,
+				activeVisit: dashboard?.activeVisit,
 				dashboard,
 				result,
 			});
@@ -141,7 +143,11 @@ export function useVisitCompletionWorkflow({
 
 			const pendingCheckout = {
 				patientId: activePatient?.id || "pat-default",
-				patientName: activePatient?.fullName || (activePatient as any)?.name || "Пациент",
+				patientName:
+					activePatient?.fullName ||
+					(typeof (activePatient as { name?: string } | undefined)?.name === "string"
+						? (activePatient as { name?: string }).name
+						: "Пациент"),
 				visitId: openVisitId,
 				invoiceId: createdInvoice.invoiceId,
 				services: result.items,

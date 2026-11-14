@@ -10,6 +10,10 @@ import {
 } from "../../services/reports/managerReports/timezone.js";
 import { instantOfLocalTime } from "../../services/reports/managerReports/periodBounds.js";
 import { APPOINTMENT_ID_UUID_PATTERN } from "./appointmentsSchemas.js";
+import type {
+	AppointmentOptionalIdParams,
+	AppointmentQueryParams,
+} from "./types.js";
 
 /**
  * Вычисляет границы суток [dayStart, dayEnd] в часовом поясе клиники.
@@ -70,7 +74,9 @@ export {
  * Обработчик получения списка записей расписания с фильтрацией по дате/периоду/врачу/пациенту.
  */
 export async function handleGetAppointments(
-	request: FastifyRequest,
+	request: FastifyRequest<{
+		Querystring: AppointmentQueryParams;
+	}>,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedOrganizationId(
@@ -81,11 +87,7 @@ export async function handleGetAppointments(
 	if (reply.sent) return reply;
 	if (!orgId) return reply;
 
-	const query = request.query as Record<string, string | undefined> | undefined;
-	const period = query?.period;
-	const doctorId = query?.doctorId;
-	const date = query?.date;
-	const patientId = query?.patientId;
+	const { period, doctorId, date, patientId } = request.query ?? {};
 
 	const conditions = [eq(appointments.organizationId, orgId)];
 	if (doctorId) {
@@ -221,7 +223,9 @@ export async function handleGetAppointments(
  * Обработчик получения одиночной записи по идентификатору.
  */
 export async function handleGetAppointmentById(
-	request: FastifyRequest,
+	request: FastifyRequest<{
+		Params: AppointmentOptionalIdParams;
+	}>,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedOrganizationId(
@@ -232,10 +236,7 @@ export async function handleGetAppointmentById(
 	if (reply.sent) return reply;
 	if (!orgId) return reply;
 
-	const { appointmentId, id } = request.params as {
-		appointmentId?: string;
-		id?: string;
-	};
+	const { appointmentId, id } = request.params ?? {};
 	const targetId = appointmentId || id;
 	if (!targetId || !APPOINTMENT_ID_UUID_PATTERN.test(targetId)) {
 		return reply.code(400).send({

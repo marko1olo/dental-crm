@@ -322,10 +322,11 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 							type="button"
 							onClick={() => fileInputRef.current?.click()}
 							className="flex items-center gap-2 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:brightness-110 active:scale-95 transition-all shadow-md cursor-pointer border-0"
+							style={{ color: "#ffffff" }}
 							data-testid="btn-rvg-file-select"
 						>
-							<HardDrive className="h-4 w-4" />
-							<span>Выбрать файл снимка</span>
+							<HardDrive className="h-4 w-4 text-white" />
+							<span className="text-white" style={{ color: "#ffffff" }}>Выбрать файл снимка</span>
 						</button>
 					</div>
 				)}

@@ -60,8 +60,7 @@ export const PreliminaryTreatmentPlanSection: React.FC<
 				Позиции из плана лечения пациента:
 			</div>
 			<div className="flex flex-col gap-1.5">
-				{/* biome-ignore lint/suspicious/noExplicitAny: generic service item from plan */}
-				{(planItems ?? []).map((item: any, index: number) => (
+				{(planItems ?? []).map((item, index: number) => (
 					<CompletedServiceRowItem
 						key={
 							item?.id ??

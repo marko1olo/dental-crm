@@ -32,6 +32,8 @@ export function VisitActionFooter({
 	polishTranscript,
 	updateVisitNoteField,
 	visitNoteForm,
+	handlePrintClinicalDiaryFast,
+	handlePrintMedicalCardFast,
 	handlePrintForm043uFast,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
@@ -169,7 +171,7 @@ export function VisitActionFooter({
 						type="button"
 						data-testid="visit-footer-print-insert-btn"
 						onClick={() => {
-							setFastPrintDocType("partisan_insert_043u");
+							setFastPrintDocType("medical_card");
 							setIsFastPrintModalOpen(true);
 						}}
 						className="h-9 min-h-[36px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -240,7 +242,8 @@ export function VisitActionFooter({
 					type="button"
 					data-testid="visit-more-action-print-043u"
 					onClick={() => {
-						if (handlePrintForm043uFast) handlePrintForm043uFast();
+						const printAction = handlePrintClinicalDiaryFast ?? handlePrintMedicalCardFast ?? handlePrintForm043uFast;
+						if (printAction) printAction();
 						setFastPrintDocType("medical_card");
 						setIsFastPrintModalOpen(true);
 					}}

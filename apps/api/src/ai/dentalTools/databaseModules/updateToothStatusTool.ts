@@ -68,14 +68,15 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 		.where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, patientId), eq(toothStates.toothNumber, tooth)))
 		.limit(1);
 
-	const previousState = existing[0]?.state ?? null;
+	const [existingTooth] = existing;
+	const previousState = existingTooth?.state ?? null;
 	const now = new Date();
 
-	if (existing.length > 0) {
+	if (existingTooth) {
 		await activeDb
 			.update(toothStates)
 			.set({ state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, updatedAt: now })
-			.where(eq(toothStates.id, existing[0].id));
+			.where(eq(toothStates.id, existingTooth.id));
 	} else {
 		await activeDb.insert(toothStates).values({
 			organizationId: orgId, patientId, toothNumber: tooth, state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, createdAt: now, updatedAt: now,
@@ -84,7 +85,7 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 
 	// Аудит в историю зуба
 	await activeDb.insert(toothStateHistory).values({
-		organizationId: orgId, patientId, toothNumber: tooth, previousState, newState: args.state, previousSurfaces: existing[0]?.surfaces ?? null, newSurfaces: args.surfaces ?? null, changedByUserId: context.userId ?? null, reason: args.notes ?? "Обновление через клинический ИИ-ассистент", changedAt: now,
+		organizationId: orgId, patientId, toothNumber: tooth, previousState, newState: args.state, previousSurfaces: existingTooth?.surfaces ?? null, newSurfaces: args.surfaces ?? null, changedByUserId: context.userId ?? null, reason: args.notes ?? "Обновление через клинический ИИ-ассистент", changedAt: now,
 	});
 
 	return {

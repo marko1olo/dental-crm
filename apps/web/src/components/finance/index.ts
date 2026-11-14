@@ -8,14 +8,11 @@
 export * from "./cashierCatalogData.js";
 export { DirectCashboxLauncher } from "../cashbox/DirectCashboxLauncher.js";
 export * from "./cashShift/index.js";
-export * from "./PaymentModal.js";
-export * from "./FastCheckoutModal.js";
-export * from "./CashReceiptModal.js";
+export { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 export * from "./ServiceReceiptPrintDocument.js";
 export * from "./TaxExemptionBanner.js";
 export * from "./Billing1CExportModal.js";
 export * from "./FinanceView.js";
-export * from "./FamilyWalletPanel.js";
 export * from "./OneCExportButton.js";
 export * from "./fiscalReceiptEngine.js";
 export * from "./taxDeductionEngine.js";

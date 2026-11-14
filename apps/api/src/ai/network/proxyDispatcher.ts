@@ -333,14 +333,20 @@ export function createProxiedFetch(
 		input: FetchInput,
 		init?: RequestInit,
 	): Promise<Response> => {
-		const undiciInit = {
-			...init,
+		const { body, headers, method, signal } = init ?? {};
+		const undiciInit: Record<string, unknown> = {
 			dispatcher,
 		};
-		return (await undiciFetch(
+		if (method !== undefined) undiciInit.method = method;
+		if (headers !== undefined) undiciInit.headers = headers;
+		if (body !== undefined && body !== null) undiciInit.body = body;
+		if (signal !== undefined) undiciInit.signal = signal;
+
+		const res = await undiciFetch(
 			input as string | URL,
-			undiciInit as never,
-		)) as unknown as Response;
+			undiciInit as import("undici").RequestInit,
+		);
+		return res as Response;
 	}) as typeof fetch;
 
 	return customFetch;

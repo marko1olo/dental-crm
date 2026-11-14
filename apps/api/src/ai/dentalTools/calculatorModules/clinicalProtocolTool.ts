@@ -62,7 +62,7 @@ function getMkbTemplates(mkb: string, tooth: number) {
 	};
 }
 
-export async function handleGenerateForm043(args: GenerateForm043Input, _context: DentalToolContext): Promise<GenerateForm043Result> {
+export async function handleGenerateClinicalProtocolEntry(args: GenerateClinicalProtocolInput, _context: DentalToolContext): Promise<GenerateClinicalProtocolResult> {
 	const tooth = args.toothNumber;
 	const mkb = args.diagnosisMkb.toUpperCase();
 	const techName = args.anesthesiaTechnique === "conduction" ? "проводниковая (мандибулярная/торусальная)" : args.anesthesiaTechnique === "application" ? "аппликационная" : "инфильтрационная";
@@ -97,8 +97,8 @@ export async function handleGenerateForm043(args: GenerateForm043Input, _context
 	};
 }
 
-export const handleGenerateClinicalProtocol = handleGenerateForm043;
-export const handleGenerateClinicalProtocolEntry = handleGenerateForm043;
+export const handleGenerateClinicalProtocol = handleGenerateClinicalProtocolEntry;
+export const handleGenerateForm043 = handleGenerateClinicalProtocolEntry;
 
 export const generateClinicalProtocolEntryTool: DentalToolEntry<typeof generateClinicalProtocolSchema> = {
 	name: "generate_clinical_protocol_entry",
@@ -106,7 +106,7 @@ export const generateClinicalProtocolEntryTool: DentalToolEntry<typeof generateC
 	schema: generateClinicalProtocolSchema,
 	supportedModes: ["web_browser", "desktop_native"],
 	definition: createOpenAIToolDefinition("generate_clinical_protocol_entry", "Генерация протокола приёма в Медицинской карте стоматологического пациента по стандартам СтАР, SOAP и МКБ-10.", generateClinicalProtocolSchema),
-	handler: handleGenerateForm043,
+	handler: handleGenerateClinicalProtocolEntry,
 };
 
 export const generateForm043Tool: DentalToolEntry<typeof generateForm043Schema> = {

@@ -53,13 +53,13 @@ declare module "fastify" {
 }
 
 /**
- * Разбирает токены запроса. Результат кэшируется на объекте request,
- * чтобы не пересчитывать HMAC на каждой проверке внутри одного запроса.
+ * Разбирает токены клиники и сотрудника без привязки к объекту HTTP-запроса.
+ * Используется в HTTP-хэндлерах и полнодуплексных WebSocket-соединениях.
  */
-export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
-	const cached = request.__denteIdentity;
-	if (cached) return cached;
-
+export function resolveIdentityFromTokens(
+	clinicToken?: string | null,
+	staffToken?: string | null,
+): RequestIdentity {
 	let identity: RequestIdentity = { ...EMPTY_IDENTITY };
 
 	let secret: string;
@@ -67,23 +67,13 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 		secret = authTokenSecret();
 	} catch {
 		// Секрет не настроен в production — токены не принимаем вовсе.
-		request.__denteIdentity = identity;
 		return identity;
 	}
 
-	let clinicToken = headerValue(request, CLINIC_TOKEN_HEADER);
-	let staffToken = headerValue(request, STAFF_TOKEN_HEADER);
-
-	if (!clinicToken && !staffToken) {
-		const authHeader = headerValue(request, "authorization");
-		if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
-			const bearer = authHeader.slice(7).trim();
-			clinicToken = bearer;
-			staffToken = bearer;
-		}
-	}
-
-	const demoIdentity = resolveDemoTokenIdentity(clinicToken, staffToken);
+	const demoIdentity = resolveDemoTokenIdentity(
+		clinicToken ?? null,
+		staffToken ?? null,
+	);
 	if (demoIdentity) {
 		identity = { ...identity, ...demoIdentity };
 	} else {
@@ -119,6 +109,31 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 			}
 		}
 	}
+
+	return identity;
+}
+
+/**
+ * Разбирает токены запроса. Результат кэшируется на объекте request,
+ * чтобы не пересчитывать HMAC на каждой проверке внутри одного запроса.
+ */
+export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
+	const cached = request.__denteIdentity;
+	if (cached) return cached;
+
+	let clinicToken = headerValue(request, CLINIC_TOKEN_HEADER);
+	let staffToken = headerValue(request, STAFF_TOKEN_HEADER);
+
+	if (!clinicToken && !staffToken) {
+		const authHeader = headerValue(request, "authorization");
+		if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+			const bearer = authHeader.slice(7).trim();
+			clinicToken = bearer;
+			staffToken = bearer;
+		}
+	}
+
+	let identity = resolveIdentityFromTokens(clinicToken, staffToken);
 
 	applyAdminSecretBypass(request, identity);
 

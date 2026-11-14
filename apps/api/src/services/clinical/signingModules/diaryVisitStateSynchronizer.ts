@@ -11,6 +11,7 @@ export async function syncVisitEmkFromDiarySoap(
 	params: {
 		visitId: string;
 		organizationId: string;
+		complaint?: string | null;
 		anamnesis?: string | null;
 		statusLocalis?: string | null;
 		diagnosisIcd10?: string | null;
@@ -22,12 +23,16 @@ export async function syncVisitEmkFromDiarySoap(
 	if (!visitId) return;
 
 	const patch: {
+		complaint?: string;
 		anamnesis?: string;
 		objectiveStatus?: string;
 		diagnosis?: string;
 		treatmentPlan?: string;
 		updatedAt: Date;
 	} = { updatedAt: new Date() };
+
+	const complaint = (params.complaint ?? "").trim();
+	if (complaint) patch.complaint = complaint;
 
 	const anamnesis = (params.anamnesis ?? "").trim();
 	if (anamnesis) patch.anamnesis = anamnesis;
@@ -42,6 +47,7 @@ export async function syncVisitEmkFromDiarySoap(
 	if (treatment) patch.treatmentPlan = treatment;
 
 	if (
+		patch.complaint === undefined &&
 		patch.anamnesis === undefined &&
 		patch.objectiveStatus === undefined &&
 		patch.diagnosis === undefined &&

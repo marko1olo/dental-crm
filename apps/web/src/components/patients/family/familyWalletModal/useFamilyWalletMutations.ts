@@ -11,7 +11,6 @@ import type {
 } from "./types";
 import { useFamilySpendMutation } from "./useFamilySpendMutation";
 import { useFamilyTopupMutation } from "./useFamilyTopupMutation";
-import { useFamilyTransferMutation } from "./useFamilyTransferMutation";
 
 export interface FamilyWalletMutationArgs {
 	readonly patientId: string;
@@ -28,21 +27,22 @@ export function useFamilyWalletMutations({
 	patientId,
 	familyData,
 	familyBalanceNumeric,
-	membersList,
+	membersList: _membersList,
 	spendingPermissions,
 	loadFamilyDetails,
 	onFamilyDataChanged,
 	setActiveTab,
 }: FamilyWalletMutationArgs) {
-	const notifyChanged = useCallback(async () => {
+	const notifyChanged = useCallback(async (newBalanceRub?: number) => {
 		await loadFamilyDetails();
 		onFamilyDataChanged?.();
 		if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente-family-data-changed"));
-			window.dispatchEvent(new CustomEvent("dente-patient-balance-changed"));
+			const detail = { patientId, familyGroupId: familyData?.id, newBalanceRub };
+			window.dispatchEvent(new CustomEvent("dente-family-data-changed", { detail }));
+			window.dispatchEvent(new CustomEvent("dente-patient-balance-changed", { detail }));
 		}
-		setActiveTab("overview");
-	}, [loadFamilyDetails, onFamilyDataChanged, setActiveTab]);
+		setActiveTab("info");
+	}, [familyData?.id, loadFamilyDetails, onFamilyDataChanged, patientId, setActiveTab]);
 
 	const topup = useFamilyTopupMutation({
 		patientId,
@@ -55,13 +55,6 @@ export function useFamilyWalletMutations({
 		familyData,
 		familyBalanceNumeric,
 		spendingPermissions,
-		notifyChanged,
-	});
-
-	const transfer = useFamilyTransferMutation({
-		patientId,
-		familyData,
-		membersList,
 		notifyChanged,
 	});
 
@@ -81,16 +74,7 @@ export function useFamilyWalletMutations({
 		setSpendPatientId: spend.setSpendPatientId,
 		spendNote: spend.spendNote,
 		setSpendNote: spend.setSpendNote,
-		transferAmount: transfer.transferAmount,
-		setTransferAmount: transfer.setTransferAmount,
-		transferSourceId: transfer.transferSourceId,
-		setTransferSourceId: transfer.setTransferSourceId,
-		transferTargetId: transfer.transferTargetId,
-		setTransferTargetId: transfer.setTransferTargetId,
-		transferComment: transfer.transferComment,
-		setTransferComment: transfer.setTransferComment,
 		handleExecuteTopup: topup.handleExecuteTopup,
 		handleExecuteSpend: spend.handleExecuteSpend,
-		handleExecuteTransfer: transfer.handleExecuteTransfer,
 	};
 }

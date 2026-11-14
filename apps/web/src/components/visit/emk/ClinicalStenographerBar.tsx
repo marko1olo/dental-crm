@@ -63,8 +63,8 @@ export function ClinicalStenographerBar({
 					{/* Left: Animated Pulse Dot & Mic Status */}
 					<div className="flex items-center gap-2 min-w-0">
 						<div className="relative flex items-center justify-center shrink-0 w-3.5 h-3.5">
-							<span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
-							<span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+							<span className="absolute inline-flex h-full w-full rounded-full bg-[var(--danger,#ef4444)] opacity-75 animate-ping" />
+							<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--danger,#ef4444)]" />
 						</div>
 						<span className="text-[11px] font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider shrink-0">
 							Диктовка:
@@ -125,8 +125,8 @@ export function ClinicalStenographerBar({
 					<div className="flex items-center justify-between gap-2">
 						<div className="flex items-center gap-2">
 							<div className="relative flex items-center justify-center shrink-0 w-4 h-4">
-								<span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
-								<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+								<span className="absolute inline-flex h-full w-full rounded-full bg-[var(--danger,#ef4444)] opacity-75 animate-ping" />
+								<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--danger,#ef4444)]" />
 							</div>
 							<span className="text-xs font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider">
 								Стенографист у кресла

@@ -1,11 +1,11 @@
-import type { ClinicalDentalStatusData, Form043DentalStatusData } from "../../types/recordDataTypes.js";
+import type { ClinicalDentalStatusData } from "../../types/recordDataTypes.js";
 import { dentalBiteTypeLabels } from "@dental/shared";
 import { escapeHtml } from "../../math/recordMathFormatting.js";
 import { calculateDmftIndex, calculateCpitnIndex } from "../../math/recordMathIndices.js";
 import { renderFdiFormulaTableHtml } from "./recordHtmlFdiTable.js";
 
 /** Рендерер 3-й секции: Стоматологический статус, формула FDI и индексы */
-export function renderOdontogramSectionHtml(dental: Form043DentalStatusData): string {
+export function renderOdontogramSectionHtml(dental: ClinicalDentalStatusData): string {
 	const dmft = calculateDmftIndex(dental.odontogramTeeth);
 	const cpitn = calculateCpitnIndex(dental.cpitnIndex);
 

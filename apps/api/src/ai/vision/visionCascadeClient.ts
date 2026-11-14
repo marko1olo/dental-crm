@@ -112,8 +112,8 @@ export async function runCascade(
 	minLength = 80,
 ): Promise<{ text: string; slotIdx: number } | null> {
 	for (let slotIdx = 0; slotIdx < slots.length; slotIdx++) {
-		// biome-ignore lint/style/noNonNullAssertion: safe bounds
-		const slot = slots[slotIdx]!;
+		const slot = slots[slotIdx];
+		if (!slot) continue;
 		const providerId =
 			slot.provider === "groq" ? GROQ_PROVIDER_ID : GEMINI_PROVIDER_ID;
 		const triedFingerprints = new Set<string>();

@@ -14,6 +14,17 @@ export interface ActiveDmsLetterInfo {
 	availableCoverageRub: number;
 }
 
+export interface DmsLetterPayloadLike {
+	id?: string | undefined;
+	letterNumber?: string | undefined;
+	insurerName?: string | undefined;
+	patientId?: string | undefined;
+	status?: string | undefined;
+	maxCoverageRub?: number | undefined;
+	usedAmountRub?: number | undefined;
+	[key: string]: unknown;
+}
+
 export interface UseVisitBillingDmsParams {
 	patientId?: string | undefined;
 	dmsGuaranteeLetterId?: string | undefined;
@@ -35,7 +46,7 @@ export function useVisitBillingDms({
 
 	useEffect(() => {
 		const handleLetterAttached = (e: Event) => {
-			const customEvent = e as CustomEvent<{ letter?: any; patientId?: string }>;
+			const customEvent = e as CustomEvent<{ letter?: DmsLetterPayloadLike; patientId?: string }>;
 			const attached = customEvent.detail?.letter;
 			if (
 				attached &&
@@ -68,10 +79,11 @@ export function useVisitBillingDms({
 			headers: denteAdminSecretRequestHeaders(),
 		})
 			.then((r) => (r.ok ? r.json() : []))
-			.then((letters) => {
+			.then((letters: unknown) => {
 				if (!isMounted || !Array.isArray(letters) || letters.length === 0) return;
-				const active = letters.find((l: any) => l.status === "active") || letters[0];
-				if (active) {
+				const typedLetters = letters as DmsLetterPayloadLike[];
+				const active = typedLetters.find((l) => l.status === "active") || typedLetters[0];
+				if (active && active.id && active.letterNumber && active.insurerName) {
 					const available = Math.max(0, Number(active.maxCoverageRub || 0) - Number(active.usedAmountRub || 0));
 					setActiveDmsLetter({
 						id: active.id,
@@ -81,7 +93,9 @@ export function useVisitBillingDms({
 					});
 				}
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.warn("[useVisitBillingDms] Failed to fetch guarantee letters:", err);
+			});
 		return () => { isMounted = false; };
 	}, [patientId, availableDmsCoverageRub, isDemo]);
 

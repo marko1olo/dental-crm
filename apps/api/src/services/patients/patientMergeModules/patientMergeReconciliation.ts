@@ -1,5 +1,6 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq, or, sql } from "drizzle-orm";
+import type { TenantDb } from "../../../db/rls.js";
 import { familyGroups, patientReferrals, patients } from "../../../db/schema.js";
 import { rowCount, type UNIQUE_CONFLICT_TABLES } from "./patientReferenceInspector.js";
 
@@ -32,7 +33,7 @@ export interface PatientFillPayload {
  * При конфликте побеждает запись основной карточки.
  */
 export async function resolveUniqueConflicts(
-	inner: { execute: (query: any) => Promise<unknown> },
+	inner: TenantDb,
 	primaryPatientId: string,
 	duplicatePatientId: string,
 	existingConflictTables: typeof UNIQUE_CONFLICT_TABLES,
@@ -72,7 +73,7 @@ export async function resolveUniqueConflicts(
  * Объединение бонусных баллов перед удалением строки дубля.
  */
 export async function mergeBonusBalances(
-	inner: { execute: (query: any) => Promise<unknown> },
+	inner: TenantDb,
 	primaryPatientId: string,
 	duplicatePatientId: string,
 	organizationId: string,
@@ -97,7 +98,7 @@ export async function mergeBonusBalances(
  * Снятие кольцевых и самореферальных связей между объединяемыми карточками.
  */
 export async function removeSelfReferralLoops(
-	inner: any,
+	inner: TenantDb,
 	primaryPatientId: string,
 	duplicatePatientId: string,
 	organizationId: string,
@@ -125,7 +126,7 @@ export async function removeSelfReferralLoops(
  * Согласование семейных групп и балансов кошельков при слиянии.
  */
 export async function reconcileFamilyGroups(
-	inner: any,
+	inner: TenantDb,
 	primary: PatientRecord,
 	duplicate: PatientRecord,
 	organizationId: string,

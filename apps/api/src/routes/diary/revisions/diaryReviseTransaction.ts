@@ -54,6 +54,7 @@ export async function executeDiaryReviseTx(params: {
 		const updatedRows = await tx
 			.update(visitDiaries)
 			.set({
+				complaint: body.complaint ?? existing.complaint,
 				anamnesis: body.anamnesis ?? existing.anamnesis, statusLocalis: body.statusLocalis ?? existing.statusLocalis,
 				diagnosisIcd10: body.diagnosisIcd10 ?? existing.diagnosisIcd10, diagnosisTooth: body.diagnosisTooth ?? existing.diagnosisTooth,
 				treatmentDescription: body.treatmentDescription ?? existing.treatmentDescription,
@@ -67,7 +68,9 @@ export async function executeDiaryReviseTx(params: {
 		if (updatedRows.length === 0) return { kind: "update_lost" as const };
 
 		await tx.insert(visitDiaryRevisions).values({
-			organizationId: orgId, diaryId: existing.id, previousAnamnesis: existing.anamnesis,
+			organizationId: orgId, diaryId: existing.id,
+			previousComplaint: existing.complaint,
+			previousAnamnesis: existing.anamnesis,
 			previousStatusLocalis: existing.statusLocalis, previousDiagnosisIcd10: existing.diagnosisIcd10,
 			previousDiagnosisTooth: existing.diagnosisTooth, previousTreatmentDescription: existing.treatmentDescription,
 			previousComplications: existing.complications, previousComorbidities: existing.comorbidities,
@@ -75,7 +78,9 @@ export async function executeDiaryReviseTx(params: {
 		});
 
 		await syncVisitEmkFromDiarySoap(tx, {
-			visitId: existing.visitId, organizationId: orgId, anamnesis: body.anamnesis ?? existing.anamnesis,
+			visitId: existing.visitId, organizationId: orgId,
+			complaint: body.complaint ?? existing.complaint,
+			anamnesis: body.anamnesis ?? existing.anamnesis,
 			statusLocalis: body.statusLocalis ?? existing.statusLocalis, diagnosisIcd10: body.diagnosisIcd10 ?? existing.diagnosisIcd10,
 			diagnosisTooth: body.diagnosisTooth ?? existing.diagnosisTooth, treatmentDescription: body.treatmentDescription ?? existing.treatmentDescription,
 		});

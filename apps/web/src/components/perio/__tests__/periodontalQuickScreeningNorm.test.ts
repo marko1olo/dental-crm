@@ -1,5 +1,5 @@
 /**
- * periodontalQuickScreeningNorm.test.ts — Экспресс-скрининг нормы пародонта и дневник Формы 043/у.
+ * periodontalQuickScreeningNorm.test.ts — Экспресс-скрининг нормы пародонта и дневник ЭМК.
  * Мандат 8b: <= 120 строк.
  */
 

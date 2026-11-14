@@ -19,7 +19,7 @@ import {
 	type ClinicalVisitCompletionInput,
 	type ClinicalVisitCompletionResult,
 } from "./clinicalVisitWorkflow";
-import type { DiaryState } from "../useVisitDiaryLogic";
+import type { DiaryState } from "../../lib/protocols/protocolTypes";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";

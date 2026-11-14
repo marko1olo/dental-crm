@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/shift/DirectShiftLauncher.tsx
  *
- * Canonical UI Mount Launcher for ShiftStudioModal & Fiscal Z-Report.
+ * Canonical UI Mount Launcher for Cash Shift Closing & Cash Register Studio SSOT.
  * Governed by:
  * - Mandate 8aq: Mounted directly into live AppShell DOM tree.
  * - Mandate 8e: Doctor & Cashier Autonomy.
@@ -9,12 +9,12 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { ShiftStudioModal } from "./ShiftStudioModal";
-import { ACTIVE_SHIFT_PRESET } from "./shiftCatalogData";
+import { CashShiftClosingModal } from "./CashShiftClosingModal";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 
 export const DirectShiftLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
-	const [initialTab, setInitialTab] = useState<"current" | "closing" | "journal">("current");
+	const [launcherMode, setLauncherMode] = useState<"closing" | "studio">("studio");
 
 	const checkUrl = useCallback(() => {
 		if (typeof window === "undefined") return;
@@ -27,8 +27,6 @@ export const DirectShiftLauncher: React.FC = () => {
 			s.includes("shift_closing") ||
 			s.includes("z_report");
 
-		const isJournal = h.includes("shift-journal") || s.includes("shift_journal");
-
 		const isShift =
 			h === "#shift" ||
 			h.startsWith("#shift?") ||
@@ -37,17 +35,10 @@ export const DirectShiftLauncher: React.FC = () => {
 			h.includes("shift_studio") ||
 			s.includes("shift=1") ||
 			s.includes("shift_studio=1") ||
-			isClosing ||
-			isJournal;
+			isClosing;
 
 		if (isShift) {
-			if (isClosing) {
-				setInitialTab("closing");
-			} else if (isJournal) {
-				setInitialTab("journal");
-			} else {
-				setInitialTab("current");
-			}
+			setLauncherMode(isClosing ? "closing" : "studio");
 			setIsOpen(true);
 		}
 	}, []);
@@ -59,10 +50,10 @@ export const DirectShiftLauncher: React.FC = () => {
 
 		const handleCustomOpen = (e: Event) => {
 			const customEvent = e as CustomEvent<{ tab?: "current" | "closing" | "journal" }>;
-			if (customEvent.detail?.tab) {
-				setInitialTab(customEvent.detail.tab);
+			if (customEvent.detail?.tab === "closing") {
+				setLauncherMode("closing");
 			} else {
-				setInitialTab("current");
+				setLauncherMode("studio");
 			}
 			setIsOpen(true);
 		};
@@ -70,7 +61,7 @@ export const DirectShiftLauncher: React.FC = () => {
 		window.addEventListener("dente:open-shift", handleCustomOpen);
 		window.addEventListener("dente-open-shift", handleCustomOpen);
 		window.addEventListener("dente:open-z-report", () => {
-			setInitialTab("closing");
+			setLauncherMode("closing");
 			setIsOpen(true);
 		});
 
@@ -103,12 +94,21 @@ export const DirectShiftLauncher: React.FC = () => {
 		}
 	};
 
+	if (launcherMode === "closing") {
+		return (
+			<CashShiftClosingModal
+				isOpen={isOpen}
+				onClose={handleClose}
+			/>
+		);
+	}
+
 	return (
-		<ShiftStudioModal
+		<CashRegisterStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			initialTab={initialTab}
-			initialShift={ACTIVE_SHIFT_PRESET}
+			mode="shift"
+			initialTab="shift"
 		/>
 	);
 };

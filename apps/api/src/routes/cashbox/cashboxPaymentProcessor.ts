@@ -126,6 +126,8 @@ export async function processCashboxPayment(
 		requiredDepositKopecks = totalKopecks;
 	} else if (body.depositAmountKopecks !== undefined && body.depositAmountKopecks > 0) {
 		requiredDepositKopecks = BigInt(body.depositAmountKopecks);
+	} else if (body.depositAmountRub !== undefined && body.depositAmountRub > 0) {
+		requiredDepositKopecks = BigInt(Math.round(body.depositAmountRub * 100));
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const norm = normalizePaymentMethod(tender.method);
@@ -150,6 +152,8 @@ export async function processCashboxPayment(
 		requiredBonusKopecks = totalKopecks;
 	} else if (body.bonusAmountKopecks !== undefined && body.bonusAmountKopecks > 0) {
 		requiredBonusKopecks = BigInt(body.bonusAmountKopecks);
+	} else if (body.bonusAmountRub !== undefined && body.bonusAmountRub > 0) {
+		requiredBonusKopecks = BigInt(Math.round(body.bonusAmountRub * 100));
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const rawMethod = tender.method?.trim().toLowerCase();
@@ -167,10 +171,10 @@ export async function processCashboxPayment(
 	const isSplitMethod = body.method === "split";
 	const hasExplicitSplitTenders = Boolean(body.splitTenders && body.splitTenders.length > 0);
 	const hasMultipleTenderFields = [
-		body.cashAmountKopecks !== undefined,
-		body.electronicAmountKopecks !== undefined,
-		body.depositAmountKopecks !== undefined,
-		body.bonusAmountKopecks !== undefined,
+		body.cashAmountKopecks !== undefined || body.cashAmountRub !== undefined,
+		body.electronicAmountKopecks !== undefined || body.electronicAmountRub !== undefined,
+		body.depositAmountKopecks !== undefined || body.depositAmountRub !== undefined,
+		body.bonusAmountKopecks !== undefined || body.bonusAmountRub !== undefined,
 	].filter(Boolean).length >= 2;
 
 	if (isSplitMethod || hasExplicitSplitTenders || hasMultipleTenderFields) {
@@ -188,15 +192,23 @@ export async function processCashboxPayment(
 		} else {
 			if (body.cashAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.cashAmountKopecks);
+			} else if (body.cashAmountRub !== undefined) {
+				sumSplitKopecks += BigInt(Math.round(body.cashAmountRub * 100));
 			}
 			if (body.electronicAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.electronicAmountKopecks);
+			} else if (body.electronicAmountRub !== undefined) {
+				sumSplitKopecks += BigInt(Math.round(body.electronicAmountRub * 100));
 			}
 			if (body.depositAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.depositAmountKopecks);
+			} else if (body.depositAmountRub !== undefined) {
+				sumSplitKopecks += BigInt(Math.round(body.depositAmountRub * 100));
 			}
 			if (body.bonusAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.bonusAmountKopecks);
+			} else if (body.bonusAmountRub !== undefined) {
+				sumSplitKopecks += BigInt(Math.round(body.bonusAmountRub * 100));
 			}
 		}
 
@@ -344,7 +356,7 @@ export async function processCashboxPayment(
 
 		if (requiredDepositKopecks > 0n && !isWarrantyPayment && patientRow) {
 			// 1. Поиск и блокировка семейного баланса familyGroups
-			let targetFamilyGroupId = patientRow.familyGroupId || null;
+			let targetFamilyGroupId = body.familyGroupId || patientRow.familyGroupId || null;
 			if (!targetFamilyGroupId) {
 				const [headFamily] = await tx
 					.select({ id: familyGroups.id })
@@ -610,7 +622,8 @@ export async function processCashboxPayment(
 				paidAt: new Date(),
 				fiscalReceiptNumber: receiptNumber,
 				fiscalReceiptIssuedAt: issuedAt,
-				payerFullName: body.cashierFullName || "Кассир",
+				payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+				payerInn: body.buyerInn || null,
 				note:
 					body.note ||
 					(isWarrantyPayment
@@ -770,9 +783,11 @@ export async function processCashboxPayment(
 		// 4. Кассовые проводки в cashOperations
 		let resolvedCashKop =
 			body.cashAmountKopecks ??
+			(body.cashAmountRub !== undefined ? Math.round(body.cashAmountRub * 100) : undefined) ??
 			(body.method === "cash" ? Number(totalKopecks) : 0);
 		let resolvedElecKop =
 			body.electronicAmountKopecks ??
+			(body.electronicAmountRub !== undefined ? Math.round(body.electronicAmountRub * 100) : undefined) ??
 			(["card", "sbp", "online"].includes(body.method || "")
 				? Number(totalKopecks)
 				: 0);

@@ -16,7 +16,7 @@ import {
 	Tag,
 	Edit3,
 } from "lucide-react";
-import type { MedicalRecordData, ClinicalVisitDiaryEntry, Form043VisitDiaryEntry } from "../../types/recordDataTypes";
+import type { MedicalRecordData, ClinicalVisitDiaryEntry } from "../../types/recordDataTypes";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
 export interface RecordDiariesTabProps {
@@ -156,6 +156,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 
 			if (editingDiaryIndex !== null) {
 				const existing = formData.visitDiaries[editingDiaryIndex];
+				if (!existing) return;
 				const dateStamp = now.toLocaleDateString("ru-RU", {
 					day: "2-digit",
 					month: "2-digit",

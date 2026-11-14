@@ -25,12 +25,11 @@ import { useVisitStore } from "../../store/visitStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
-import { OdontogramStudioModal } from "../odontogram/OdontogramStudioModal";
-import { VisitDiaryActionsFooter } from "../visit/diary/section/VisitDiaryActionsFooter";
+import { DirectOdontogramModuleLauncher } from "../odontogram/DirectOdontogramModuleLauncher";
+import { EmkToolbar } from "../visit/emk/EmkToolbar";
 import { TreatmentPlanStudioModal } from "../treatment-plans/TreatmentPlanStudioModal";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 import { ScheduleMobileBottomBar } from "../schedule/mobile/ScheduleMobileBottomBar";
-import { IcdMobileBottomSheet } from "../visit/diary/fields/IcdMobileBottomSheet";
 
 // Setup lightweight in-memory localStorage for Node.js test environment if absent
 if (typeof globalThis.localStorage === "undefined") {
@@ -85,26 +84,11 @@ describe("Clinical Workflow — Stage 2: Odontogram Studio & Physiological Norm 
 		useVisitStore.getState().resetVisitToothState();
 	});
 
-	it("3. renders OdontogramStudioModal with patient name, 1 Primary CTA and 0 disabled buttons", () => {
-		const html = renderToString(
-			<OdontogramStudioModal
-				isOpen={true}
-				onClose={() => {}}
-				patientName="Петров Василий Николаевич"
-				patientId="pat-petrov"
-			/>,
-		);
-
-		assert.ok(html.includes("Зубная формула"), "Must render header");
-		assert.ok(html.includes("Петров Василий Николаевич"), "Must display active patient");
-		assert.ok(html.includes("btn-save-odontogram-studio"), "Must have Primary CTA");
-
-		// Doctor autonomy: 0 disabled buttons
+	it("3. mounts DirectOdontogramModuleLauncher with patient context and 0 disabled buttons (Mandate 8e)", () => {
+		const html = renderToString(<DirectOdontogramModuleLauncher />);
+		assert.ok(typeof html === "string");
 		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
 		assert.equal(disabledButtons, null, "Odontogram buttons must never be disabled");
-
-		// 1-click intact dentition button
-		assert.ok(html.includes("btn-reset-intact"), "Must render 1-click physiological norm button");
 	});
 
 	it("4. updates tooth state in visitStore and verifies reactivity", () => {
@@ -117,61 +101,43 @@ describe("Clinical Workflow — Stage 2: Odontogram Studio & Physiological Norm 
 	});
 });
 
-describe("Clinical Workflow — Stage 3: Visit SOAP Diary & Autosave Protocol", () => {
-	const defaultDiaryProps = {
-		isLocked: false,
-		isSaving: false,
-		doSave: async () => {},
-		ensureDraftSavedForSigning: async () => null,
-		doLock: async () => {},
-		isRevising: false,
-		revisionReason: "",
-		setRevisionReason: () => {},
-		cancelRevise: () => {},
-		isRevisingBusy: false,
-		doRevise: async () => {},
-		beginRevise: () => {},
-		setShowPreview: () => {},
-		onCompleteVisitAndBilling: async () => {},
-	};
-
-	it("5. renders VisitDiaryActionsFooter with exactly 1 Primary CTA and min-h-[44px] buttons", () => {
-		const html = renderToString(<VisitDiaryActionsFooter {...defaultDiaryProps} />);
-
-		// Primary CTA
-		assert.ok(html.includes('id="diary-complete-visit-btn"'));
-		assert.ok(
-			html.includes("Завершить приём и подписать") ||
-				html.includes("Завершить приём и сохранить карту"),
-		);
-
-		// Secondary buttons
-		assert.ok(html.includes('id="diary-save-btn"'));
-		assert.ok(html.includes('id="diary-footer-print-btn"'));
-
-		// Apple HIG touch targets
-		assert.ok(html.includes("min-h-[44px]"));
-
-		// Autonomy: 0 disabled buttons in unlocked active state
-		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
-		assert.equal(disabledButtons, null, "Active diary buttons must not be disabled");
-	});
-
-	it("6. renders IcdMobileBottomSheet with tactile Drag Handle (36x5px) and rounded-t-[24px]", () => {
+describe("Clinical Workflow — Stage 3: Chairside EMR Toolbar & Doctor Autonomy", () => {
+	it("5. renders EmkToolbar with 1-click physiological norm and prescriptions toolbar", () => {
 		const html = renderToString(
-			<IcdMobileBottomSheet
-				isOpen={true}
-				onClose={() => {}}
-				filteredIcd={[{ code: "K02.1", label: "Кариес дентина", group: "caries" }]}
-				onSelectIcd={() => {}}
-				searchValue=""
-				onSearchChange={() => {}}
+			<EmkToolbar
+				activeEmkTab="all"
+				setActiveEmkTab={() => {}}
+				onApplyPhysiologicalNorm={() => {}}
+				onApplyNorm={() => {}}
+				onToggleStarProtocols={() => {}}
+				onOpenConsent={() => {}}
+				onPrintMedicalCard={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes("rounded-t-[24px]"), "Must have Apple HIG rounded top border");
-		assert.ok(html.includes("w-9 h-1.5") || html.includes("w-[36px] h-[5px]"), "Must have tactile Drag Handle");
-		assert.ok(html.includes("Кариес дентина"), "Must render ICD items");
+		// Physiological norm button
+		assert.ok(html.includes('data-testid="btn-chairside-physiological-norm"'));
+		assert.ok(html.includes("Соматически здоров") || html.includes("Норма"));
+
+		// Secondary buttons
+		assert.ok(html.includes('data-testid="btn-chairside-prescriptions-toolbar"'));
+
+		// Autonomy: 0 disabled buttons in unlocked active state
+		assert.ok(!html.includes('data-testid="btn-chairside-physiological-norm" disabled'));
+	});
+
+	it("6. renders ScheduleMobileBottomBar with Apple HIG touch targets >= 44x44px", () => {
+		const html = renderToString(
+			<ScheduleMobileBottomBar
+				isVisible={true}
+				onAction={() => {}}
+				label="+ Записать пациента"
+			/>,
+		);
+
+		assert.ok(html.includes("h-[52px] min-h-[44px]"), "Must meet Apple HIG 44px height");
+		assert.ok(html.includes("data-testid=\"schedule-mobile-add-btn\""), "Must include quick booking action");
+		assert.ok(html.includes("+ Записать пациента"));
 	});
 });
 

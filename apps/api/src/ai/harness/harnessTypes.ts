@@ -111,6 +111,8 @@ export interface AgentHarnessParams {
 	requireConfirmationForDestructive?: boolean | undefined;
 	onEvent?: ((event: AgentHarnessEvent) => void | Promise<void>) | undefined;
 	signal?: AbortSignal | undefined;
+	/** Флаг 152-ФЗ РФ и ст. 13 323-ФЗ: маскирование ПДн (телефоны, паспорта, СНИЛС) перед отправкой в LLM */
+	maskPhiData?: boolean | undefined;
 	// Auto-compaction & Sliding window options
 	enableAutoCompaction?: boolean | undefined;
 	compactThresholdTokens?: number | undefined;

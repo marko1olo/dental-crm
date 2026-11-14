@@ -29,8 +29,9 @@ const initialUiPreferences = loadUiPreferences();
 const initialPostVisitCarePreset =
 	postVisitCarePresets[initialUiPreferences.postVisitCareTopic];
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const createClinicalSlice = (set: any): ClinicalSliceState => ({
+export const createClinicalSlice = (
+	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+): ClinicalSliceState => ({
 	completedActNumber: "",
 	setCompletedActNumber: createSetter(set, "completedActNumber"),
 	completedActDate: "",

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
-import type { RestorativeMaterialKey } from "../../odontogram/anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "../../odontogram/anatomicalGeometriesTypes";
 import { showToast } from "../../GlobalToast";
 import type { SurfaceKey, BlackClassificationMacro } from "../toothSurfacesConstants";
 

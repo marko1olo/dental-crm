@@ -45,148 +45,148 @@ export const PediatricQuickProtocols: React.FC<PediatricQuickProtocolsProps> = (
 				<button
 					type="button"
 					onClick={onApplyPrimaryNorm}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-emerald-500/40 hover:border-emerald-500 hover:bg-emerald-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Установить норму временного прикуса (3 года): 20 интактных молочных зубов (51–85), кариеса нет, резорбция 0%"
 					data-testid="pediatric-preset-3y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							3 года: Молочный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							51–85 интактны
 						</div>
 					</div>
-					<Check className="w-4 h-4 text-emerald-600 shrink-0" />
+					<Check className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 2. 6 лет: Первый моляр — норма */}
 				<button
 					type="button"
 					onClick={onApplyFirstMolarNorm}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-cyan-500/40 hover:border-cyan-500 hover:bg-cyan-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Установить норму (6 лет): прорезывание первых моляров (16, 26, 36, 46) + 20 молочных зубов"
 					data-testid="pediatric-preset-6y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							6 лет: 1-й моляр
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							16, 26, 36, 46 интактны
 						</div>
 					</div>
-					<Check className="w-4 h-4 text-cyan-600 shrink-0" />
+					<Check className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 3. 9 лет: Сменный прикус — норма */}
 				<button
 					type="button"
 					onClick={onApplyEarlyMixedNorm}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-teal-500/40 hover:border-teal-500 hover:bg-teal-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Установить норму сменного прикуса (9 лет): резцы 11..42, моляры 16..46, молочные 53..85"
 					data-testid="pediatric-preset-9y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-teal-700 dark:text-teal-400 whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							9 лет: Сменный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							11..42, моляры 16..46
 						</div>
 					</div>
-					<Check className="w-4 h-4 text-teal-600 shrink-0" />
+					<Check className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 4. 12 лет: Постоянный прикус — норма */}
 				<button
 					type="button"
 					onClick={onApplyPermanentNorm}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-[var(--teal)]/40 hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Установить норму постоянного прикуса (12 лет): 28 постоянных зубов 17..27, 47..37 без 8-ок"
 					data-testid="pediatric-preset-12y-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-[var(--teal-dark,var(--teal))] whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							12 лет: Постоянный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							28 зубов без 8-ок
 						</div>
 					</div>
-					<Check className="w-4 h-4 text-[var(--teal)] shrink-0" />
+					<Check className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 5. Серебрение Saforide (серебрение резцов) */}
 				<button
 					type="button"
 					onClick={() => onApplyProcedurePreset("saforide")}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Клинический протокол: Серебрение эмали Saforide 38% (51, 52, 61, 62)"
 					data-testid="pediatric-preset-saforide-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-amber-700 dark:text-amber-400 whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							Saforide серебро
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							Резцы 51, 52, 61, 62
 						</div>
 					</div>
-					<Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+					<Sparkles className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 6. Герметизация фиссур Fissurit (герметизация моляров) */}
 				<button
 					type="button"
 					onClick={() => onApplyProcedurePreset("fissurit")}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-sky-500/40 hover:border-sky-500 hover:bg-sky-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Клинический протокол: Запечатывание фиссур Fissurit FX (16, 26, 36, 46)"
 					data-testid="pediatric-preset-fissurit-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-sky-700 dark:text-sky-400 whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							Fissurit герметик
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							Моляры 16, 26, 36, 46
 						</div>
 					</div>
-					<ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
+					<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 7. Витальная пульпотомия Pulpotec */}
 				<button
 					type="button"
 					onClick={() => onApplyProcedurePreset("pulpotec")}
-					className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Клинический протокол: Пульпотомия (ампутация пульпы) препаратом Pulpotec"
 					data-testid="pediatric-preset-pulpotec-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold text-rose-700 dark:text-rose-400 whitespace-nowrap">
+						<div className="font-bold text-[var(--ink,#0f172a)] whitespace-nowrap">
 							Pulpotec витальный
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							Моляр 54 витальный
 						</div>
 					</div>
-					<Activity className="w-4 h-4 text-rose-600 shrink-0" />
+					<Activity className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 				</button>
 
 				{/* 8. Вставить протокол в медицинскую карту */}
 				<button
 					type="button"
 					onClick={handleInsertToCard}
-					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 					title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник приёма"
 					data-testid="pediatric-preset-insert-card-btn"
 				>
 					<div className="min-w-0">
-						<div className="font-extrabold whitespace-nowrap text-[var(--teal,#0d9488)]">
+						<div className="font-bold whitespace-nowrap text-[var(--teal,#0d9488)]">
 							В карту
 						</div>
-						<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] whitespace-nowrap">
+						<div className="text-[10px] text-[var(--ink-muted,#64748b)] whitespace-nowrap">
 							Перенос в дневник
 						</div>
 					</div>

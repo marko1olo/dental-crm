@@ -93,7 +93,7 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 			"components/visit/emk/EmkObjectiveStatusSection.tsx",
 			"components/visit/emk/EmkDiaryProtocolSection.tsx",
 			"components/visit/emk/EmkServicesSection.tsx",
-			"components/visit/emk/VisitClinicalDiaryPrintSheet.tsx",
+			"components/emr/record/html/recordPassportHtml.ts",
 		];
 
 		const forbiddenEmojis = ["🦷", "💉", "🩺", "📝", "🏥", "💊", "🚨"];
@@ -253,24 +253,24 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 	});
 
 	it("8. Ликвидация советского канцелярита и номеров приказов в ЭМК и бланке печати дневника (Мандат 8x, Мандат 8e)", () => {
-		const sheetCode = readSrcFile("components/visit/emk/VisitClinicalDiaryPrintSheet.tsx");
+		const sheetCode = readSrcFile("components/emr/record/html/recordPassportHtml.ts");
 
 		// Шапка печатного бланка использует чистый язык
 		assert.ok(
-			sheetCode.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПРИЁМА"),
-			"VisitClinicalDiaryPrintSheet должен содержать чистый заголовок 'МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПРИЁМА'",
+			sheetCode.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"),
+			"recordPassportHtml должен содержать чистый заголовок 'МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА'",
 		);
 		assert.ok(
-			sheetCode.includes("Дневник приёма и протокол лечения"),
-			"VisitClinicalDiaryPrintSheet должен содержать подзаголовок 'Дневник приёма и протокол лечения'",
+			sheetCode.includes("Медицинская карта приёма"),
+			"recordPassportHtml должен содержать подзаголовок 'Медицинская карта приёма'",
 		);
 		assert.ok(
 			!sheetCode.includes("Форма № 043/у"),
-			"В VisitClinicalDiaryPrintSheet не должно быть упоминания 'Форма № 043/у'",
+			"В recordPassportHtml не должно быть упоминания 'Форма № 043/у'",
 		);
 		assert.ok(
-			!sheetCode.includes("Приказом Минздрава России от 15.12.2014 № 834н"),
-			"В VisitClinicalDiaryPrintSheet не должно быть ссылки на советский/бюрократический приказ 834н",
+			!sheetCode.includes("834н"),
+			"В recordPassportHtml не должно быть ссылки на советский/бюрократический приказ 834н",
 		);
 
 		// fastPrintDiaryBuilder.ts

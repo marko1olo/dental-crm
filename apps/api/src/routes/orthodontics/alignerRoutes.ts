@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { calculateNextDate, createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
+import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
 import { issueAlignerSetSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
 
 export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
@@ -19,14 +20,19 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
 			const orthoProgress = parseOrthoData(adminProfile.orthodonticProgress);
+			// DEF-ORTHO-06 / Досье a9c64bbc: Чистые пациенты получают 200 OK с hasActiveTreatment: false вместо ложного 404
 			if (!orthoProgress) {
-				return reply.code(404).send({
-					error: "OrthoTreatmentNotFound",
-					message: "У пациента нет активного курса ортодонтического лечения",
+				return reply.send({
+					hasActiveTreatment: false,
+					progress: null,
+					patientId,
+					patientName: patient.fullName,
 				});
 			}
 
 			return reply.send({
+				hasActiveTreatment: true,
+				progress: orthoProgress,
 				patientId,
 				patientName: patient.fullName,
 				...orthoProgress,
@@ -56,8 +62,10 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 			});
 
 			const effectiveTotal = body.totalAligners || currentProgress.totalAligners || 24;
-			const fromAligner = currentProgress.currentAligner || 1;
-			// DEF-ORTHO-08: Устранение fencepost-ошибки: диапазон выдачи строго from .. from + count - 1
+			// DEF-ORTHO-08 / Досье a9c64bbc: Если это не первая выдача, следующий сет начинается с currentAligner + 1
+			const fromAligner = (currentProgress.currentAligner && currentProgress.currentAligner > 0 && currentProgress.lastActionSummary)
+				? currentProgress.currentAligner + 1
+				: (currentProgress.currentAligner || 1);
 			const toAligner = Math.min(effectiveTotal, fromAligner + body.alignerCount - 1);
 			const totalDays = body.alignerCount * body.wearDaysPerAligner;
 			const nextDate = calculateNextDate(totalDays);
@@ -70,6 +78,7 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				wearDaysPerAligner: body.wearDaysPerAligner,
 				lastActionDate: new Date().toISOString(),
 				lastActionSummary: actionSummary,
+				...(body.soapSummary ? { lastSoapSummary: body.soapSummary } : {}),
 				nextVisitRecommendedDate: nextDate,
 			};
 
@@ -79,12 +88,24 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				orthodonticProgress: updatedProgress,
 			});
 
+			// DEF-ORTHO-05 / Red Team: Связка выдачи элайнеров с прейскурантом (A16.07.046)
+			const billing = await linkOrthoServiceToBillingSafely({
+				organizationId: orgId,
+				patientId,
+				visitId: body.visitId,
+				serviceCode: "A16.07.046",
+				serviceName: `Ортодонтическая коррекция с применением элайнеров (выдача сета №${fromAligner}–${toAligner})`,
+				priceRub: 3000,
+				priceKopecks: 300_000n,
+			});
+
 			return reply.send({
 				success: true,
 				issuedRange: `№${fromAligner}–${toAligner}`,
 				nextVisitRecommendedDate: nextDate,
 				actionSummary,
 				progress: updatedProgress,
+				billing,
 			});
 		},
 	);

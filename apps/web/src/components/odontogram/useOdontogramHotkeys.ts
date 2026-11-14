@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { ToothActionMenuConfig } from "./ToothActionMenuPortal";
+import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 import type { ToothState } from "./ToothChart";
 
 export interface UseOdontogramHotkeysParams {

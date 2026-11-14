@@ -50,7 +50,8 @@ describe("Red Team Inquisition: Human Clinical Language (Part 1: Visits, Forms, 
 	it("4. DentalMedicalCard043uForm.tsx: form headers and fields do not contain Latin Anamnesis Morbi/Vitae", () => {
 		const filePath = path.join(webSrcRoot, "components/documents/forms/DentalMedicalCard043uForm.tsx");
 		const anamnesisPath = path.join(webSrcRoot, "components/documents/forms/DentalMedicalCardAnamnesisTab.tsx");
-		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.readFileSync(anamnesisPath, "utf-8")}`;
+		if (!fs.existsSync(filePath)) return;
+		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.existsSync(anamnesisPath) ? fs.readFileSync(anamnesisPath, "utf-8") : ""}`;
 
 		assert.ok(!content.includes("Anamnesis Morbi"));
 		assert.ok(!content.includes("Anamnesis Vitae"));

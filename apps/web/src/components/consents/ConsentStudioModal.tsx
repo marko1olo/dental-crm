@@ -541,7 +541,8 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							type="button"
 							data-testid="btn-batch-sign-consents"
 							onClick={handleBatchSign}
-							className="dente-btn dente-btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white shadow-sm transition-all active:scale-[0.99] cursor-pointer border-0"
+							style={{ backgroundColor: "var(--teal, #0d9488)" }}
+							className="dente-btn dente-btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.99] cursor-pointer border-0"
 							title="Утвердить и подписать выбранный пакет документов"
 						>
 							<UserCheck size={18} className="text-current shrink-0" aria-hidden="true" />

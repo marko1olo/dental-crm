@@ -9,19 +9,19 @@ import React from "react";
 import { ConsentStudioModal, type ConsentStudioModalProps } from "./ConsentStudioModal";
 import type { ConsentPartyContext, ConsentDocumentId } from "./consentCatalogData";
 
-export interface InformedConsentModalProps {
+export interface InformedConsentModalProps extends Partial<ConsentStudioModalProps> {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string;
-	readonly patientContext?: Partial<ConsentPartyContext>;
-	readonly patient?: ConsentStudioModalProps["patient"];
-	readonly initialDocId?: ConsentDocumentId;
-	readonly initialSelectedIds?: readonly ConsentDocumentId[];
-	readonly initialPackageKey?: string;
-	readonly initialMode?: "single" | "batch";
-	readonly onDocumentSigned?: ConsentStudioModalProps["onDocumentSigned"];
-	readonly onConsentSigned?: ConsentStudioModalProps["onConsentSigned"];
-	readonly [key: string]: any;
+	readonly patientName?: string | undefined;
+	readonly patientContext?: Partial<ConsentPartyContext> | undefined;
+	readonly patient?: ConsentStudioModalProps["patient"] | undefined;
+	readonly initialDocId?: ConsentDocumentId | undefined;
+	readonly initialSelectedIds?: readonly ConsentDocumentId[] | undefined;
+	readonly initialPackageKey?: string | undefined;
+	readonly initialMode?: "single" | "batch" | undefined;
+	readonly initialVerificationMethod?: string | undefined;
+	readonly onDocumentSigned?: ConsentStudioModalProps["onDocumentSigned"] | undefined;
+	readonly onConsentSigned?: ConsentStudioModalProps["onConsentSigned"] | undefined;
 }
 
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = (props) => {

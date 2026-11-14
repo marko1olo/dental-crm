@@ -1,4 +1,9 @@
-import type { Dashboard } from "@dental/shared";
+import {
+	type Appointment,
+	type Dashboard,
+	type DentalSpecialty,
+	dentalSpecialtySchema,
+} from "@dental/shared";
 import { useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../../AppConstants";
 import {
@@ -13,16 +18,17 @@ import {
 } from "../../../AppHelpers";
 import { showToast } from "../../../components/GlobalToast";
 import { DEFAULT_SOLO_CHAIR } from "../../../components/schedule/ScheduleGrid";
-import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
-import { useScheduleStore } from "../../../store/scheduleStore";
-import { useSettingsStore } from "../../../store/settingsStore";
-import { fetchWithHandling } from "../../../utils/networkUtils";
-import { scheduleAdminSecretRefusal } from "./scheduleAdminSecretRefusal";
 import {
 	enqueueOfflineAppointment,
 	generateOfflineAppointmentId,
 	type OfflineAppointmentItem,
 } from "../../../offline/offlineAppointmentQueue";
+import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
+import { type ScheduleStore, useScheduleStore } from "../../../store/scheduleStore";
+import { useSettingsStore } from "../../../store/settingsStore";
+import { emptyAppointmentScheduleDraft } from "../../../utils/draftDefaults";
+import { fetchWithHandling } from "../../../utils/networkUtils";
+import { scheduleAdminSecretRefusal } from "./scheduleAdminSecretRefusal";
 
 function isNetworkFailure(error: unknown, status?: number): boolean {
 	if (typeof navigator !== "undefined" && !navigator.onLine) return true;
@@ -39,20 +45,46 @@ function isNetworkFailure(error: unknown, status?: number): boolean {
 	);
 }
 
+function toOfflineAppointmentStatus(
+	status: string | undefined,
+): OfflineAppointmentItem["status"] {
+	switch (status) {
+		case "confirmed":
+			return "confirmed";
+		case "completed":
+			return "completed";
+		case "cancelled":
+			return "cancelled";
+		case "scheduled":
+		case "planned":
+		case "arrived":
+		case "in_treatment":
+		case "no_show":
+		default:
+			return "scheduled";
+	}
+}
+
 export interface UseAppointmentMutationsProps {
-	dashboard: any;
+	dashboard: Dashboard | null;
 	setError: (msg: string | null) => void;
-	auth: any;
-	setDashboard: (d: any) => void;
+	auth: {
+		user?: { id?: string; role?: string } | null;
+		scheduleMutationHeaders: (
+			extra?: Record<string, string>,
+			adminSecretOverride?: string,
+		) => Record<string, string>;
+	};
+	setDashboard: (d: Dashboard | null) => void;
 	selectedPatientId: string | null;
-	selectedSpecialty: string | null;
+	selectedSpecialty: DentalSpecialty | string | null;
 	setEditingAppointmentId: React.Dispatch<React.SetStateAction<string | null>>;
 	setSelectedPatientId: (id: string | null) => void;
 	setNewAppointmentError: (msg: string | null) => void;
 	appointmentScheduleDraftsRef: React.MutableRefObject<Record<string, AppointmentScheduleDraft>>;
 	newAppointmentDraftRef?: { current: AppointmentScheduleDraft };
 	newAppointmentDraftUserEditedRef: React.MutableRefObject<boolean>;
-	scheduleStore: any;
+	scheduleStore: ScheduleStore;
 }
 
 export function useAppointmentMutations({
@@ -103,22 +135,22 @@ export function useAppointmentMutations({
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
 			{
-				chairs: dashboard?.clinicSettings?.chairs,
-				patients: dashboard?.patients,
+				chairs: dashboard?.clinicSettings?.chairs ?? null,
+				patients: dashboard?.patients ?? null,
 			},
 		);
 	}
 
 	function fillDefaultResources(draft: AppointmentScheduleDraft) {
 		if (!draft.chairId) {
-			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c: any) => c.active);
+			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
 			draft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
 		if (!draft.doctorUserId) {
 			const activeDocs = (dashboard?.clinicSettings?.staff ?? []).filter(
-				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
+				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
-			draft.doctorUserId = activeDocs[0]?.id || auth?.user?.id || null;
+			draft.doctorUserId = activeDocs[0]?.id || auth?.user?.id || "";
 		}
 	}
 
@@ -134,7 +166,7 @@ export function useAppointmentMutations({
 			setError("Дождитесь завершения текущего сохранения записи.");
 			return false;
 		}
-		const sourceAppointment = dashboard?.appointments?.find((a: any) => a.id === appointmentId);
+		const sourceAppointment = dashboard?.appointments?.find((a) => a.id === appointmentId);
 		const rawDraft =
 			appointmentScheduleDraftsRef?.current?.[appointmentId] ??
 			useScheduleStore.getState().appointmentScheduleDrafts?.[appointmentId] ??
@@ -142,8 +174,8 @@ export function useAppointmentMutations({
 			(sourceAppointment ? appointmentScheduleDraftFromAppointment(sourceAppointment) : undefined);
 		if (!rawDraft) {
 			const message = "Откройте запись в расписании перед сохранением.";
-			setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: message }));
-			setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
+			setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
+			setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
 			setError(message);
 			return false;
 		}
@@ -157,7 +189,10 @@ export function useAppointmentMutations({
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
-			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
+			{
+				chairs: dashboard?.clinicSettings?.chairs ?? null,
+				patients: dashboard?.patients ?? null,
+			},
 		).filter((m) => {
 			// Mandate 8e: не блокируем сохранение, если не выбран врач/кресло при автодефолтах
 			if (m.includes("врач") && draft.doctorUserId) return false;
@@ -166,14 +201,14 @@ export function useAppointmentMutations({
 		});
 		if (missing.length) {
 			const message = `Перед сохранением записи: ${missing.join("; ")}.`;
-			setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: message }));
-			setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
+			setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
+			setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
 			setError(message);
 			return false;
 		}
 		const expectedSignature = appointmentScheduleDraftSignature(draft);
-		setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "saving" }));
-		setAppointmentScheduleErrors((current: any) => ({ ...current, [appointmentId]: null }));
+		setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "saving" }));
+		setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
 		try {
 			if (!appointmentMutationIdRef.current) {
 				appointmentMutationIdRef.current =
@@ -224,10 +259,10 @@ export function useAppointmentMutations({
 				? appointmentScheduleDraftSignature(latestDraft) === expectedSignature
 				: true;
 			if (savedAppointment && latestMatchesSaved) {
-				setAppointmentScheduleDrafts((current: any) => ({
+				const nextDraft = appointmentScheduleDraftFromAppointment(savedAppointment);
+				setAppointmentScheduleDrafts((current: Record<string, AppointmentScheduleDraft>): Record<string, AppointmentScheduleDraft> => ({
 					...current,
-					[appointmentId]:
-						appointmentScheduleDraftFromAppointment(savedAppointment),
+					[appointmentId]: nextDraft,
 				}));
 			}
 			if (savedAppointment) {
@@ -235,7 +270,7 @@ export function useAppointmentMutations({
 				if (isTimeChanged) {
 					StaffActionAuditService.logAppointmentReschedule({
 						appointmentId,
-						patientId: savedAppointment.patientId,
+						patientId: savedAppointment.patientId ?? "",
 						oldTime: latestDraft?.startsAt,
 						newTime: savedAppointment.startsAt,
 						reason: savedAppointment.reason,
@@ -251,7 +286,7 @@ export function useAppointmentMutations({
 					return next;
 				});
 			}
-			setAppointmentScheduleSaveStates((current: any) => ({
+			setAppointmentScheduleSaveStates((current) => ({
 				...current,
 				[appointmentId]: latestMatchesSaved ? "saved" : "idle",
 			}));
@@ -261,26 +296,38 @@ export function useAppointmentMutations({
 			return true;
 		} catch (saveError) {
 			if (isNetworkFailure(saveError)) {
+				const sourcePatient = dashboard?.patients?.find((p) => p.id === (draft.patientId || sourceAppointment?.patientId));
+				const patientName = sourcePatient?.fullName || "Пациент";
+				const sourceDoctor = dashboard?.clinicSettings?.staff?.find((s) => s.id === (draft.doctorUserId || sourceAppointment?.doctorUserId));
+				const doctorName = sourceDoctor?.fullName || "Врач";
+
 				const offlineAppt: OfflineAppointmentItem = {
 					id: appointmentId,
 					clientReferenceId: appointmentId,
 					patientId: draft.patientId || sourceAppointment?.patientId || "",
-					patientName: sourceAppointment?.patientName || "Пациент",
+					patientName,
 					doctorId: draft.doctorUserId || sourceAppointment?.doctorUserId || "",
-					chairId: draft.chairId || sourceAppointment?.chairId,
+					doctorName,
+					chairId: draft.chairId || sourceAppointment?.chairId || undefined,
 					startTime: draft.startsAt,
 					endTime: draft.endsAt,
-					status: (draft.status as any) || sourceAppointment?.status || "scheduled",
+					status: toOfflineAppointmentStatus(draft.status || sourceAppointment?.status),
 					notes: draft.reason,
-					organizationId: dashboard?.organizationId || "default_org",
+					organizationId: dashboard?.clinicSettings?.profile?.organizationId || "00000000-0000-0000-0000-000000000000",
 					createdAt: new Date().toISOString(),
 				};
 				await enqueueOfflineAppointment("UPDATE_APPOINTMENT", offlineAppt);
 
 				if (dashboard?.appointments) {
-					const updatedAppts = dashboard.appointments.map((a: any) =>
+					const updatedAppts: Appointment[] = dashboard.appointments.map((a) =>
 						a.id === appointmentId
-							? { ...a, ...offlineAppt, startsAt: offlineAppt.startTime, endsAt: offlineAppt.endTime }
+							? {
+									...a,
+									startsAt: offlineAppt.startTime,
+									endsAt: offlineAppt.endTime,
+									status: "planned",
+									reason: offlineAppt.notes ?? null,
+								}
 							: a,
 					);
 					setDashboard({ ...dashboard, appointments: updatedAppts });
@@ -291,7 +338,7 @@ export function useAppointmentMutations({
 					next.delete(appointmentId);
 					return next;
 				});
-				setAppointmentScheduleSaveStates((current: any) => ({
+				setAppointmentScheduleSaveStates((current) => ({
 					...current,
 					[appointmentId]: "saved",
 				}));
@@ -311,11 +358,11 @@ export function useAppointmentMutations({
 				saveError,
 			);
 			showToast(message, "error");
-			setAppointmentScheduleErrors((current: any) => ({
+			setAppointmentScheduleErrors((current) => ({
 				...current,
 				[appointmentId]: message,
 			}));
-			setAppointmentScheduleSaveStates((current: any) => ({
+			setAppointmentScheduleSaveStates((current) => ({
 				...current,
 				[appointmentId]: "error",
 			}));
@@ -345,15 +392,15 @@ export function useAppointmentMutations({
 		};
 		if (!activeNewDraft.chairId) {
 			const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
-				(c: any) => c.active,
+				(c) => c.active,
 			);
 			activeNewDraft.chairId = activeChairs[0]?.id || DEFAULT_SOLO_CHAIR.id;
 		}
 		if (!activeNewDraft.doctorUserId) {
 			const activeDocs = (dashboard?.clinicSettings?.staff ?? []).filter(
-				(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
+				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
-			activeNewDraft.doctorUserId = activeDocs[0]?.id || auth?.user?.id || null;
+			activeNewDraft.doctorUserId = activeDocs[0]?.id || auth?.user?.id || "";
 		}
 
 		const missing = newAppointmentMissingFields(activeNewDraft).filter((m) => {
@@ -371,7 +418,7 @@ export function useAppointmentMutations({
 		setNewAppointmentSaveState("saving");
 		setNewAppointmentError(null);
 		const previousIds = new Set(
-			(dashboard?.appointments ?? []).map((appointment: any) => appointment.id),
+			(dashboard?.appointments ?? []).map((appointment) => appointment.id),
 		);
 		try {
 			if (!appointmentMutationIdRef.current) {
@@ -435,22 +482,29 @@ export function useAppointmentMutations({
 				nextDashboard.appointments?.find(
 					(appointment) => !previousIds.has(appointment.id),
 				) ?? null;
-			const nextDraftPreferences = {
+			const parsedSpecialty = dentalSpecialtySchema.safeParse(selectedSpecialty).data;
+			const nextDraftPreferences: {
+				selectedPatientId?: string | null;
+				selectedSpecialty?: DentalSpecialty;
+				scheduleDefaultDoctorUserId?: string | null;
+				scheduleDefaultAssistantUserId?: string | null;
+				scheduleDefaultChairId?: string | null;
+			} = {
 				selectedPatientId: activeNewDraft.patientId || selectedPatientId,
-				selectedSpecialty: (selectedSpecialty as any) || undefined,
 				scheduleDefaultDoctorUserId: activeNewDraft.doctorUserId || null,
 				scheduleDefaultAssistantUserId:
 					activeNewDraft.assistantUserId || null,
 				scheduleDefaultChairId: activeNewDraft.chairId || null,
+				...(parsedSpecialty ? { selectedSpecialty: parsedSpecialty } : {}),
 			};
 			setSelectedPatientId(nextDraftPreferences.selectedPatientId ?? null);
 			setScheduleDefaultDoctorUserId(
-				nextDraftPreferences.scheduleDefaultDoctorUserId,
+				nextDraftPreferences.scheduleDefaultDoctorUserId ?? null,
 			);
 			setScheduleDefaultAssistantUserId(
-				nextDraftPreferences.scheduleDefaultAssistantUserId,
+				nextDraftPreferences.scheduleDefaultAssistantUserId ?? null,
 			);
-			setScheduleDefaultChairId(nextDraftPreferences.scheduleDefaultChairId);
+			setScheduleDefaultChairId(nextDraftPreferences.scheduleDefaultChairId ?? null);
 			setDashboard(nextDashboard);
 			newAppointmentDraftUserEditedRef.current = false;
 			const freshNewDraft = newAppointmentDraftFromDashboard(
@@ -463,18 +517,18 @@ export function useAppointmentMutations({
 			setNewAppointmentDraft(freshNewDraft);
 			setNewAppointmentSaveState("saved");
 			if (createdAppointment) {
-				setAppointmentScheduleDrafts((current: any) => ({
+				const nextCreatedDraft = appointmentScheduleDraftFromAppointment(createdAppointment);
+				setAppointmentScheduleDrafts((current: Record<string, AppointmentScheduleDraft>): Record<string, AppointmentScheduleDraft> => ({
 					...current,
-					[createdAppointment.id]:
-						appointmentScheduleDraftFromAppointment(createdAppointment),
+					[createdAppointment.id]: nextCreatedDraft,
 				}));
 				setEditingAppointmentId(createdAppointment.id);
 
 				StaffActionAuditService.logAppointmentCreate({
 					appointmentId: createdAppointment.id,
-					patientId: createdAppointment.patientId,
+					patientId: createdAppointment.patientId ?? "",
 					scheduledTime: createdAppointment.startsAt,
-					doctorUserId: createdAppointment.doctorUserId,
+					doctorUserId: createdAppointment.doctorUserId ?? "",
 					reason: createdAppointment.reason,
 					actorUserId: auth?.user?.id,
 					actorRole: auth?.user?.role,
@@ -485,12 +539,12 @@ export function useAppointmentMutations({
 		} catch (createError) {
 			if (isNetworkFailure(createError)) {
 				const clientRefId = generateOfflineAppointmentId();
-				const matchedPatient = dashboard?.patients?.find((p: any) => p.id === activeNewDraft.patientId);
+				const matchedPatient = dashboard?.patients?.find((p) => p.id === activeNewDraft.patientId);
 				const patientName = matchedPatient?.fullName || "Пациент (офлайн)";
 				const matchedDoctor = dashboard?.clinicSettings?.staff?.find(
-					(s: any) => s.id === activeNewDraft.doctorUserId,
+					(s) => s.id === activeNewDraft.doctorUserId,
 				);
-				const doctorName = matchedDoctor?.name || matchedDoctor?.fullName || "Врач";
+				const doctorName = matchedDoctor?.fullName || "Врач";
 
 				const offlineAppt: OfflineAppointmentItem = {
 					id: clientRefId,
@@ -504,35 +558,38 @@ export function useAppointmentMutations({
 					endTime: activeNewDraft.endsAt,
 					status: "scheduled",
 					notes: activeNewDraft.reason,
-					organizationId: dashboard?.organizationId || "default_org",
+					organizationId: dashboard?.clinicSettings?.profile?.organizationId || "00000000-0000-0000-0000-000000000000",
 					createdAt: new Date().toISOString(),
 					isOfflineCreated: true,
 				};
 				await enqueueOfflineAppointment("CREATE_APPOINTMENT", offlineAppt);
 
-				const createdAppointmentModel = {
+				const createdAppointmentModel: Appointment = {
 					id: clientRefId,
+					organizationId: dashboard?.clinicSettings?.profile?.organizationId || "00000000-0000-0000-0000-000000000000",
 					patientId: offlineAppt.patientId,
 					doctorUserId: offlineAppt.doctorId,
-					chairId: offlineAppt.chairId,
+					assistantUserId: activeNewDraft.assistantUserId ?? null,
+					chairId: offlineAppt.chairId ?? null,
 					startsAt: offlineAppt.startTime,
 					endsAt: offlineAppt.endTime,
-					status: "scheduled",
-					reason: offlineAppt.notes,
-					isOfflineCreated: true,
+					status: "planned",
+					reason: offlineAppt.notes ?? null,
+					comment: null,
 				};
 
 				const nextAppointments = [...(dashboard?.appointments ?? []), createdAppointmentModel];
-				const nextDashboard = { ...(dashboard ?? {}), appointments: nextAppointments };
+				const nextDashboard = { ...(dashboard ?? {}), appointments: nextAppointments } as Dashboard;
 				setDashboard(nextDashboard);
 
 				newAppointmentDraftUserEditedRef.current = false;
+				const parsedSpecialty = dentalSpecialtySchema.safeParse(selectedSpecialty).data;
 				const freshNewDraft = newAppointmentDraftFromDashboard(nextDashboard, {
 					selectedPatientId: activeNewDraft.patientId || selectedPatientId,
-					selectedSpecialty: (selectedSpecialty as any) || undefined,
 					scheduleDefaultDoctorUserId: activeNewDraft.doctorUserId || null,
 					scheduleDefaultAssistantUserId: activeNewDraft.assistantUserId || null,
 					scheduleDefaultChairId: activeNewDraft.chairId || null,
+					...(parsedSpecialty ? { selectedSpecialty: parsedSpecialty } : {}),
 				});
 				if (newAppointmentDraftRef) {
 					newAppointmentDraftRef.current = freshNewDraft;
@@ -585,19 +642,22 @@ export function useAppointmentMutations({
 				const newEndIso = new Date(d.getTime() + durationMs).toISOString();
 
 				const sourceAppointment = dashboard?.appointments?.find(
-					(appointment: any) => appointment.id === appointmentId,
+					(appointment) => appointment.id === appointmentId,
 				);
-				setAppointmentScheduleDrafts((current: any) => ({
-					...current,
-					[appointmentId]: {
-						...(current[appointmentId] ??
-							(sourceAppointment
-								? appointmentScheduleDraftFromAppointment(sourceAppointment)
-								: {})),
-						startsAt: newStartIso,
-						endsAt: newEndIso,
-					},
-				}));
+				setAppointmentScheduleDrafts((current: Record<string, AppointmentScheduleDraft>): Record<string, AppointmentScheduleDraft> => {
+					const fallbackDraft = sourceAppointment
+						? appointmentScheduleDraftFromAppointment(sourceAppointment)
+						: emptyAppointmentScheduleDraft();
+					const existingDraft = current[appointmentId] ?? fallbackDraft;
+					return {
+						...current,
+						[appointmentId]: {
+							...existingDraft,
+							startsAt: newStartIso,
+							endsAt: newEndIso,
+						},
+					};
+				});
 				setAppointmentScheduleDirtyIds((current: Set<string>) => {
 					const next = new Set(current);
 					next.add(appointmentId);
@@ -626,7 +686,7 @@ export function useAppointmentMutations({
 			const newEndIso = new Date(d.getTime() + durationMs).toISOString();
 
 			newAppointmentDraftUserEditedRef.current = true;
-			setNewAppointmentDraft((current: any) => ({
+			setNewAppointmentDraft((current: AppointmentScheduleDraft): AppointmentScheduleDraft => ({
 				...current,
 				startsAt: newStartIso,
 				endsAt: newEndIso,

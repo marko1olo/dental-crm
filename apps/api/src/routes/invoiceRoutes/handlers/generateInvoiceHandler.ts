@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { getServiceCatalogForOrganization } from "../../../db/pricelistQuery.js";
+import { getRequestIdentity } from "../../../security/identity.js";
 import {
 	buildEffectiveItemResolutionOverrides,
 	buildPlanItemsForValidation,
@@ -54,7 +55,8 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	const effectiveInflationThreshold = freezeToken?.inflationThresholdPercent ?? 10;
 	const effectiveItemResolutionOverrides = buildEffectiveItemResolutionOverrides(data.items);
 
-	const staffRole = (context as any).role || (request as any).user?.role || "";
+	const identity = getRequestIdentity(request);
+	const staffRole = identity.role ?? "";
 	const isDoctor = staffRole === "doctor" || staffRole === "dentist";
 
 	const validationReport = validatePlanToInvoice({

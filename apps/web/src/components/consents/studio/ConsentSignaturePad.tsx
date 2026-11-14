@@ -9,6 +9,7 @@
 
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { FileSignature, RotateCcw } from "lucide-react";
+import { exportSignatureToSvg, type SignatureStroke } from "../signaturePadMath";
 
 export interface ConsentSignaturePadProps {
 	readonly isPaperChecked: boolean;
@@ -31,9 +32,10 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 	selectedCount,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const pointsRef = useRef<Point[]>([]);
-	const [points, setPoints] = useState<Point[]>([]);
+	const strokesRef = useRef<SignatureStroke[]>([]);
+	const currentStrokeRef = useRef<Point[]>([]);
 	const [isDrawing, setIsDrawing] = useState<boolean>(false);
+	const [strokeCount, setStrokeCount] = useState<number>(0);
 
 	const redrawCanvas = useCallback(() => {
 		const canvas = canvasRef.current;
@@ -41,39 +43,79 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		const currentPoints = pointsRef.current.length > 0 ? pointsRef.current : points;
-		if (currentPoints.length < 2) return;
+		const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+		const displayWidth = 360;
+		const displayHeight = 120;
 
-		ctx.beginPath();
-		ctx.strokeStyle = "#0d9488";
-		ctx.lineWidth = 2.5;
-		ctx.lineCap = "round";
-		ctx.lineJoin = "round";
-		const firstPoint = currentPoints[0];
-		if (!firstPoint) return;
-		ctx.moveTo(firstPoint.x, firstPoint.y);
-
-		for (let i = 1; i < currentPoints.length; i++) {
-			const pt = currentPoints[i];
-			if (pt) {
-				ctx.lineTo(pt.x, pt.y);
-			}
+		// Поддержка четкого HiDPI рендеринга без блюра
+		if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+			canvas.width = displayWidth * dpr;
+			canvas.height = displayHeight * dpr;
 		}
-		ctx.stroke();
-	}, [points]);
+
+		ctx.save();
+		ctx.scale(dpr, dpr);
+		ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+		const allStrokes: SignatureStroke[] = [...strokesRef.current];
+		if (currentStrokeRef.current.length > 0) {
+			allStrokes.push({
+				points: currentStrokeRef.current.map((pt) => ({ x: pt.x, y: pt.y })),
+				color: "#0d9488",
+				width: 2.5,
+			});
+		}
+
+		for (const stroke of allStrokes) {
+			if (stroke.points.length === 0) continue;
+			const color = stroke.color || "#0d9488";
+			const width = stroke.width || 2.5;
+
+			if (stroke.points.length === 1) {
+				const p = stroke.points[0]!;
+				ctx.beginPath();
+				ctx.fillStyle = color;
+				ctx.arc(p.x, p.y, width / 2, 0, Math.PI * 2);
+				ctx.fill();
+				continue;
+			}
+
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			ctx.lineWidth = width;
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+
+			const first = stroke.points[0]!;
+			ctx.moveTo(first.x, first.y);
+
+			for (let i = 1; i < stroke.points.length - 1; i++) {
+				const current = stroke.points[i]!;
+				const next = stroke.points[i + 1]!;
+				const midX = (current.x + next.x) / 2;
+				const midY = (current.y + next.y) / 2;
+				ctx.quadraticCurveTo(current.x, current.y, midX, midY);
+			}
+
+			const last = stroke.points[stroke.points.length - 1]!;
+			ctx.lineTo(last.x, last.y);
+			ctx.stroke();
+		}
+
+		ctx.restore();
+	}, []);
 
 	useEffect(() => {
 		redrawCanvas();
-	}, [redrawCanvas]);
+	}, [redrawCanvas, strokeCount]);
 
 	const getScaledPoint = (e: React.PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement): Point => {
 		const rect = canvas.getBoundingClientRect();
-		const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
-		const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+		const scaleX = rect.width > 0 ? 360 / rect.width : 1;
+		const scaleY = rect.height > 0 ? 120 / rect.height : 1;
 		return {
-			x: (e.clientX - rect.left) * scaleX,
-			y: (e.clientY - rect.top) * scaleY,
+			x: Math.max(0, Math.min(360, (e.clientX - rect.left) * scaleX)),
+			y: Math.max(0, Math.min(120, (e.clientY - rect.top) * scaleY)),
 		};
 	};
 
@@ -83,8 +125,8 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		canvas.setPointerCapture(e.pointerId);
 		setIsDrawing(true);
 		const p = getScaledPoint(e, canvas);
-		pointsRef.current = [p];
-		setPoints([p]);
+		currentStrokeRef.current = [p];
+		redrawCanvas();
 	};
 
 	const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -92,8 +134,8 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const p = getScaledPoint(e, canvas);
-		pointsRef.current.push(p);
-		setPoints([...pointsRef.current]);
+		currentStrokeRef.current.push(p);
+		redrawCanvas();
 	};
 
 	const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -103,23 +145,36 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		if (canvas && canvas.hasPointerCapture(e.pointerId)) {
 			canvas.releasePointerCapture(e.pointerId);
 		}
-		const finalPoints = pointsRef.current;
-		if (finalPoints.length > 2) {
-			const d = finalPoints.reduce(
-				(acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`,
-				"",
-			);
-			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="100%" height="100%"><path d="${d.trim()}" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-			onSignatureChange(svg);
+		if (currentStrokeRef.current.length > 0) {
+			strokesRef.current.push({
+				points: currentStrokeRef.current.map((pt) => ({
+					x: pt.x,
+					y: pt.y,
+					time: Date.now(),
+				})),
+				color: "#0d9488",
+				width: 2.5,
+			});
+			currentStrokeRef.current = [];
 		}
+
+		if (strokesRef.current.length > 0) {
+			const svg = exportSignatureToSvg(strokesRef.current, 360, 120);
+			onSignatureChange(svg);
+			setStrokeCount(strokesRef.current.length);
+		}
+		redrawCanvas();
 	};
 
 	const handleClear = () => {
-		pointsRef.current = [];
-		setPoints([]);
+		strokesRef.current = [];
+		currentStrokeRef.current = [];
+		setStrokeCount(0);
 		onSignatureChange("");
 		redrawCanvas();
 	};
+
+	const hasDrawing = strokeCount > 0 || currentStrokeRef.current.length > 0;
 
 	return (
 		<div
@@ -165,20 +220,25 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 							<span>Очистить подпись</span>
 						</button>
 					</div>
-					<div className="relative touch-none border border-[var(--line,#cbd5e1)] rounded-xl bg-white dark:bg-slate-900/90 overflow-hidden shadow-2xs">
+					<div className="relative touch-none border border-[var(--line,#cbd5e1)] rounded-xl bg-[var(--paper-strong,#ffffff)] overflow-hidden shadow-2xs">
 						<canvas
 							ref={canvasRef}
-							width={360}
-							height={120}
+							style={{ width: "100%", height: "120px" }}
 							onPointerDown={handlePointerDown}
 							onPointerMove={handlePointerMove}
 							onPointerUp={handlePointerUp}
-							className="w-full h-[120px] cursor-crosshair"
+							className="cursor-crosshair block"
 						/>
-						{points.length === 0 && !signatureSvg && (
-							<div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+						{!hasDrawing && !signatureSvg && (
+							<div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-[var(--ink-muted,#64748b)]">
 								Поле для сенсорной подписи пациента (стилус или палец)
 							</div>
+						)}
+						{!hasDrawing && signatureSvg && (
+							<div
+								className="pointer-events-none absolute inset-0 flex items-center justify-center p-2 opacity-80"
+								dangerouslySetInnerHTML={{ __html: signatureSvg }}
+							/>
 						)}
 					</div>
 				</div>

@@ -20,7 +20,7 @@ export async function runDiaryRevisionCeremony(
 	tx: DiaryDbTransaction,
 	params: {
 		diaryId: string; organizationId: string; userId: string | null;
-		anamnesis?: string | null; statusLocalis?: string | null;
+		complaint?: string | null; anamnesis?: string | null; statusLocalis?: string | null;
 		diagnosisIcd10?: string | null; diagnosisTooth?: string | null;
 		treatmentDescription?: string | null; complications?: string | null;
 		comorbidities?: string | null; instrumentTrayBarcode?: string | null;
@@ -64,6 +64,7 @@ export async function runDiaryRevisionCeremony(
 	const updatedRows = await tx
 		.update(visitDiaries)
 		.set({
+			complaint: params.complaint !== undefined ? params.complaint : existing.complaint,
 			anamnesis: params.anamnesis !== undefined ? params.anamnesis : existing.anamnesis,
 			statusLocalis: params.statusLocalis !== undefined ? params.statusLocalis : existing.statusLocalis,
 			diagnosisIcd10: params.diagnosisIcd10 !== undefined ? params.diagnosisIcd10 : existing.diagnosisIcd10,
@@ -88,6 +89,7 @@ export async function runDiaryRevisionCeremony(
 
 	await tx.insert(visitDiaryRevisions).values({
 		organizationId, diaryId, revisionReason: reason,
+		previousComplaint: existing.complaint,
 		previousAnamnesis: existing.anamnesis, previousStatusLocalis: existing.statusLocalis,
 		previousDiagnosisIcd10: existing.diagnosisIcd10, previousDiagnosisTooth: existing.diagnosisTooth,
 		previousTreatmentDescription: existing.treatmentDescription, previousComplications: existing.complications,
@@ -99,6 +101,7 @@ export async function runDiaryRevisionCeremony(
 		await syncVisitEmkFromDiarySoap(tx, {
 			visitId: existing.visitId,
 			organizationId,
+			complaint: params.complaint !== undefined ? params.complaint : existing.complaint,
 			anamnesis: params.anamnesis !== undefined ? params.anamnesis : existing.anamnesis,
 			statusLocalis: params.statusLocalis !== undefined ? params.statusLocalis : existing.statusLocalis,
 			diagnosisIcd10: params.diagnosisIcd10 !== undefined ? params.diagnosisIcd10 : existing.diagnosisIcd10,

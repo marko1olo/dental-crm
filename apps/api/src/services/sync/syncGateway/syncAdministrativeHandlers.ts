@@ -17,7 +17,11 @@ import {
 	resolveAppointmentStatusConflict,
 } from "./syncConflictResolver.js";
 import { SyncQueueManager } from "./syncQueueManager.js";
-import type { EntityMutationHandlerResult } from "./types.js";
+import {
+	type EntityMutationHandlerResult,
+	ensureEntityRecord,
+	toEntityRecord,
+} from "./types.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function isValidUuid(val: unknown): val is string {
@@ -53,7 +57,7 @@ export class SyncAdministrativeHandlers {
 		if (existingPayment) {
 			return {
 				status: "duplicate",
-				entity: existingPayment as unknown as Record<string, unknown>,
+				entity: ensureEntityRecord(existingPayment),
 			};
 		}
 
@@ -111,7 +115,7 @@ export class SyncAdministrativeHandlers {
 
 		return {
 			status: "applied",
-			entity: createdPayment as unknown as Record<string, unknown>,
+			entity: ensureEntityRecord(createdPayment),
 		};
 	}
 
@@ -153,7 +157,7 @@ export class SyncAdministrativeHandlers {
 		const mergeResult = performFieldLevelCrdtMerge({
 			entityKind: "patient",
 			entityId: mutation.entityId,
-			serverEntity: (serverPatient as unknown as Record<string, unknown>) || null,
+			serverEntity: toEntityRecord(serverPatient),
 			serverVector,
 			clientPatch: mutation.payload,
 			clientVector: mutation.mutationVector,
@@ -203,7 +207,7 @@ export class SyncAdministrativeHandlers {
 				status: "applied",
 				mergedFields: mergeResult.changedFields,
 				conflicts: [],
-				entity: inserted as unknown as Record<string, unknown>,
+				entity: ensureEntityRecord(inserted),
 			};
 		}
 
@@ -250,7 +254,7 @@ export class SyncAdministrativeHandlers {
 			status,
 			mergedFields: mergeResult.changedFields,
 			conflicts: mergeResult.conflicts,
-			entity: (updated || merged) as unknown as Record<string, unknown>,
+			entity: ensureEntityRecord(updated || merged),
 		};
 	}
 
@@ -313,8 +317,7 @@ export class SyncAdministrativeHandlers {
 		const mergeResult = performFieldLevelCrdtMerge({
 			entityKind: "appointment",
 			entityId: mutation.entityId,
-			serverEntity:
-				(serverAppointment as unknown as Record<string, unknown>) || null,
+			serverEntity: toEntityRecord(serverAppointment),
 			serverVector,
 			clientPatch: effectivePayload,
 			clientVector: mutation.mutationVector,
@@ -387,7 +390,7 @@ export class SyncAdministrativeHandlers {
 				status: "applied",
 				mergedFields: mergeResult.changedFields,
 				conflicts: [],
-				entity: inserted as unknown as Record<string, unknown>,
+				entity: ensureEntityRecord(inserted),
 			};
 		}
 
@@ -456,7 +459,7 @@ export class SyncAdministrativeHandlers {
 			status,
 			mergedFields: mergeResult.changedFields,
 			conflicts: mergeResult.conflicts,
-			entity: (updated || merged) as unknown as Record<string, unknown>,
+			entity: ensureEntityRecord(updated || merged),
 		};
 	}
 }

@@ -10,12 +10,12 @@
  * - StaffRoleCommissionCard.tsx: базовые ставки по ключевым ролям персонала.
  * - DoctorSpecialtyRatesTable.tsx: детальная таблица процентов и вычетов врачей (Desktop + Mobile).
  * - MaterialDeductionRulesCard.tsx: прозрачные правила вычета ЗТЛ и материалов.
- * - DoctorMotivationCalculator: интерактивный калькулятор сдельной оплаты.
+ * - DoctorPieceRateCalculatorSection: интерактивный калькулятор сдельной оплаты.
  */
 
 import { Percent } from "lucide-react";
 import type React from "react";
-import { DoctorMotivationCalculator } from "./commissions/DoctorMotivationCalculator";
+import { DoctorPieceRateCalculatorSection } from "./owner/DoctorPieceRateCalculatorSection";
 import { DoctorSpecialtyRatesTable } from "./commissionsModules/DoctorSpecialtyRatesTable";
 import { MaterialDeductionRulesCard } from "./commissionsModules/MaterialDeductionRulesCard";
 import { StaffRoleCommissionCard } from "./commissionsModules/StaffRoleCommissionCard";
@@ -157,7 +157,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 
 						{/* 4. Интерактивный калькулятор сдельной оплаты */}
 						<div className="mt-2">
-							<DoctorMotivationCalculator />
+							<DoctorPieceRateCalculatorSection />
 						</div>
 					</>
 				) : null}

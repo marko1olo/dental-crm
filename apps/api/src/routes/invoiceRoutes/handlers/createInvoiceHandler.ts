@@ -4,8 +4,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { patientInvoices } from "../../../db/schema/billing.js";
-import { treatmentItems } from "../../../db/schema/clinical.js";
+import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { patients } from "../../../db/schema/patients.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { formatInvoiceNumber } from "../invoiceCalculationHelpers.js";
@@ -92,33 +91,30 @@ export async function handleCreateInvoice(
 				: new Date().getFullYear();
 			const invoiceNumber = `СЧ-${year}-${existingInvoice.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
-			const existingTreatmentItems = await db
+			const existingItemsRows = await db
 				.select()
-				.from(treatmentItems)
+				.from(invoiceItems)
 				.where(
 					and(
-						eq(treatmentItems.organizationId, orgId),
-						or(
-							effectiveVisitId ? eq(treatmentItems.visitId, effectiveVisitId) : sql`FALSE`,
-							sql`${treatmentItems.notes} LIKE ${`%${existingInvoice.id}%`}`,
-						),
+						eq(invoiceItems.organizationId, orgId),
+						eq(invoiceItems.invoiceId, existingInvoice.id),
 					),
 				);
 
-			const existingItems = existingTreatmentItems.map((it) => ({
+			const existingItems = existingItemsRows.map((it) => ({
 				id: it.id,
-				serviceId: it.serviceId,
-				serviceCode: it.serviceId || undefined,
-				code: it.serviceId || undefined,
+				serviceId: it.priceListItemId || it.serviceCode || undefined,
+				serviceCode: it.serviceCode || undefined,
+				code: it.serviceCode || undefined,
 				toothCode: it.toothCode,
 				toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
-				title: it.title,
-				name: it.title,
+				title: it.name,
+				name: it.name,
 				quantity: Number(it.quantity) || 1,
-				unitPriceRub: Number(it.unitPriceRub) || Number(it.priceRub) || 0,
-				priceRub: Number(it.priceRub) || 0,
-				discountRub: Number(it.discountRub) || 0,
-				totalAmountRub: Number(it.priceRub) || 0,
+				unitPriceRub: Number((it.unitPriceKopecks / 100).toFixed(2)),
+				priceRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
+				discountRub: 0,
+				totalAmountRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
 			}));
 
 			return reply.code(200).send({
@@ -196,6 +192,9 @@ export async function handleCreateInvoice(
 			toothCode,
 			title,
 			quantity: qty,
+			unitKopecks: Number(unitKopecks),
+			netLineKopecks: Number(netLineKopecks),
+			discountPercent: item.discountPercent ?? 0,
 			unitPriceRub: Number((Number(unitKopecks) / 100).toFixed(2)),
 			discountRub: Number((Number(itemDiscountKopecks) / 100).toFixed(2)),
 			priceRub: Number((Number(netLineKopecks) / 100).toFixed(2)),
@@ -231,23 +230,17 @@ export async function handleCreateInvoice(
 
 		if (preparedItems.length > 0) {
 			for (const it of preparedItems) {
-				const itemNotes = data.notes
-					? `${data.notes} | Счёт ${invoiceId}`
-					: `Счёт ${invoiceId}`;
-				await tx.insert(treatmentItems).values({
+				await tx.insert(invoiceItems).values({
 					organizationId: orgId,
-					patientId: data.patientId,
-					visitId: effectiveVisitId,
-					serviceId: it.serviceId,
-					toothCode: it.toothCode,
-					title: it.title,
+					invoiceId: invoiceId,
+					priceListItemId: it.serviceId || null,
+					name: it.title,
 					quantity: String(it.quantity),
-					unitPriceRub: it.unitPriceRub,
-					priceRub: it.priceRub,
-					discountRub: it.discountRub,
-					status: "completed",
-					plannedDoctorUserId: data.doctorId ?? null,
-					notes: itemNotes,
+					unitPriceKopecks: it.unitKopecks,
+					discountPercent: String(it.discountPercent),
+					totalPriceKopecks: it.netLineKopecks,
+					serviceCode: it.serviceId || null,
+					toothCode: it.toothCode || null,
 				});
 			}
 		}

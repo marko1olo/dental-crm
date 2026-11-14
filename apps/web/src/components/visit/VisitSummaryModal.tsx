@@ -20,7 +20,7 @@ export type { VisitSummaryModalProps };
 // Retains test anchors in facade: summary-quick-memo-btn, summary-print-memo-btn
 // Plain clinical term contract: "Электронная карта (Госуслуги)"
 export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
-	const appLogic = useAppLogicContext() as any;
+	const appLogic = useAppLogicContext();
 	const state = useVisitSummaryModalState(props, appLogic);
 
 	if (!props.isOpen) return null;

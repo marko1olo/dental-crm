@@ -22,7 +22,8 @@ export async function callCashShiftApi(
 				body: JSON.stringify(payload),
 			});
 		}
-	} catch {
+	} catch (primaryErr: unknown) {
+		console.warn(`[callCashShiftApi] Ошибка вызова основного URL ${primaryUrl}:`, primaryErr);
 		if (fallbackUrl) {
 			try {
 				await fetch(fallbackUrl, {
@@ -30,8 +31,8 @@ export async function callCashShiftApi(
 					headers,
 					body: JSON.stringify(payload),
 				});
-			} catch {
-				// Non-blocking: offline or standalone client resilience
+			} catch (fallbackErr: unknown) {
+				console.warn(`[callCashShiftApi] Ошибка вызова резервного URL ${fallbackUrl}:`, fallbackErr);
 			}
 		}
 	}

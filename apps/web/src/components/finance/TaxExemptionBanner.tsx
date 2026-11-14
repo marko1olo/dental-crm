@@ -5,7 +5,7 @@
 
 import { formatKopecksRu } from "@dental/shared";
 import { FileText, ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface TaxExemptionUnapprovedItem {
 	readonly itemId: string;

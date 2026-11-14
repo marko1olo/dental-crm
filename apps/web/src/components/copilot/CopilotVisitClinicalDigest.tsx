@@ -136,7 +136,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 		return Array.from(map.values()).sort((a, b) => a.tooth - b.tooth);
 	}, [visitToothStateByCode, visitToothRecordsByCode, patientId, digestVersion]);
 
-	// Комплексное применение по всем найденным зубам (1-клик мандат 8e)
+	// Комплексное применение по всем найденным зубам (Пакетное оформление, Мандат 8e)
 	const handleBatchApplyAllTeeth = () => {
 		if (findings.length === 0) return;
 
@@ -192,7 +192,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 		showToast(`Оформлен приём по ${findings.length} зубам (SOAP + Смета)`, "success");
 	};
 
-	// 1-клик вставка только в дневник SOAP
+	// Вставка протокола в дневник SOAP
 	const handleApplySoapOnly = () => {
 		for (const f of findings) {
 			window.dispatchEvent(
@@ -211,7 +211,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 		showToast(`Дневник приёма SOAP обновлён по ${findings.length} зубам`, "success");
 	};
 
-	// 1-клик вставка только в смету
+	// Вставка позиций в смету
 	const handleApplyInvoiceOnly = () => {
 		const billableServices = findings
 			.filter((f) => f.priceKopecks > 0)

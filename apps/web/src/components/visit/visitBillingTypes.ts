@@ -25,6 +25,8 @@ export interface VisitBillingServiceItem {
 	materialName?: string | undefined;
 	warrantyPassport?: string | undefined;
 	fittingConfirmed?: boolean | undefined;
+	isOverdraft?: boolean | undefined;
+	hasOverdraft?: boolean | undefined;
 }
 
 export interface VisitBillingTotals {

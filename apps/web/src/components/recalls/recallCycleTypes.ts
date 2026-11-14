@@ -17,10 +17,16 @@ export type RecallCycleType =
 	| "orthodontic_braces"
 	| "orthodontic_aligners"
 	| "orthodontic_retention"
+	| "orthodontic_adjustment"
 	| "pediatric_fluoridation"
+	| "pediatric_checkup"
+	| "pediatric"
 	| "caries_high_risk"
 	| "prosthetic_check"
-	| "endodontic_check";
+	| "endodontic_check"
+	| "hygiene"
+	| "implants"
+	| "orthodontics";
 
 export type RecallUrgencyStatus =
 	| "upcoming"

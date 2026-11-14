@@ -42,6 +42,19 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = React.memo(
 
 		if (!isOpen) return null;
 
+		if (props.inline) {
+			return (
+				<div className={`family-wallet-inline-view mt-3 border border-[var(--line)] rounded-2xl overflow-hidden bg-[var(--paper-strong)] shadow-xs ${className}`}>
+					<FamilyWalletModalView
+						logic={logic}
+						patientId={patientId}
+						patientName={patientName}
+						className="!max-h-none !border-0 !rounded-none !shadow-none"
+					/>
+				</div>
+			);
+		}
+
 		const modalContent = (
 			<div
 				className="fixed inset-0 z-[10060] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs"

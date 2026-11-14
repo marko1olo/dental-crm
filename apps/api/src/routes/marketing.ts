@@ -206,7 +206,9 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 						customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
 					}
 				}
-			} catch (_) {}
+			} catch (romiSeedErr) {
+				request.log.warn({ romiSeedErr }, "[Marketing] Non-critical: could not load persisted custom budgets, using CRM default aggregation");
+			}
 
 			const romiChannels = aggregateCrmMarketingMetrics({
 				patients: allPatients.map((p) => ({

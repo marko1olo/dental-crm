@@ -1,8 +1,8 @@
-import type { ClinicalAnamnesisData, Form043AnamnesisData } from "../../types/recordDataTypes.js";
+import type { ClinicalAnamnesisData } from "../../types/recordDataTypes.js";
 import { escapeHtml } from "../../math/recordMathFormatting.js";
 
 /** Рендерер 2-й секции: Анамнез жизни и заболевания */
-export function renderAnamnesisSectionHtml(anamnesis: Form043AnamnesisData): string {
+export function renderAnamnesisSectionHtml(anamnesis: ClinicalAnamnesisData): string {
 	return `
   <div class="section-title">2. Анамнез жизни и настоящего заболевания (Anamnesis vitae et morbi)</div>
   <table class="data-table">

@@ -29,22 +29,31 @@ export async function findFollowUpCandidates(
 			conditions.push(eq(treatmentPlans.organizationId, organizationId));
 		}
 
-		const runner = organizationId
-			? (fn: (tx: any) => Promise<any>) => withTenantCtx(organizationId, fn)
-			: (fn: (tx: any) => Promise<any>) => withSuperuserBypass(fn);
-
-		const candidates = await runner(async (tx) => {
-			return await tx
-				.select({
-					id: treatmentPlans.id,
-					patientId: treatmentPlans.patientId,
-					organizationId: treatmentPlans.organizationId,
+		const candidates = await (organizationId
+			? withTenantCtx(organizationId, async (tx) => {
+					return tx
+						.select({
+							id: treatmentPlans.id,
+							patientId: treatmentPlans.patientId,
+							organizationId: treatmentPlans.organizationId,
+						})
+						.from(treatmentPlans)
+						.where(and(...conditions))
+						.orderBy(desc(treatmentPlans.createdAt))
+						.limit(50);
 				})
-				.from(treatmentPlans)
-				.where(and(...conditions))
-				.orderBy(desc(treatmentPlans.createdAt))
-				.limit(50);
-		});
+			: withSuperuserBypass(async (tx) => {
+					return tx
+						.select({
+							id: treatmentPlans.id,
+							patientId: treatmentPlans.patientId,
+							organizationId: treatmentPlans.organizationId,
+						})
+						.from(treatmentPlans)
+						.where(and(...conditions))
+						.orderBy(desc(treatmentPlans.createdAt))
+						.limit(50);
+				}));
 
 		const results: PendingTreatmentPlanSummary[] = [];
 		for (const cand of candidates) {

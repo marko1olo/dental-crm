@@ -8,6 +8,5 @@ export * from "./EmkAnesthesiaSection";
 export * from "./EmkEndoSection";
 export * from "./EmkPerioSection";
 export * from "./EmkServicesSection";
-export * from "./VisitClinicalDiaryPrintSheet";
 export * from "./EmkToolbar";
 export * from "./EmkSoapVisibilityTracker";

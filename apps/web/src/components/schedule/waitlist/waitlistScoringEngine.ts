@@ -131,24 +131,35 @@ export function scoreWaitlistCandidate(
 // Алиас для обратной совместимости
 export const calculateMatchScore = scoreWaitlistCandidate;
 
+export interface WaitlistCandidateFilters {
+  searchQuery?: string;
+  query?: string;
+  urgencyFilter?: string;
+  urgency?: string;
+  doctorFilter?: string;
+  onlySameDoctor?: boolean;
+  sameDoctorOnly?: boolean;
+  targetSlot?: TargetSlotInfo | null;
+}
+
 /**
  * Фильтрация и сортировка кандидатов для заполнения окна.
  */
 export function filterWaitlistCandidates(
   items: WaitlistCandidateItem[],
-  targetSlotOrFilters: any,
-  maybeFilters?: any,
+  targetSlotOrFilters?: TargetSlotInfo | WaitlistCandidateFilters | null,
+  maybeFilters?: WaitlistCandidateFilters,
 ): Array<{ item: WaitlistCandidateItem; candidate: WaitlistCandidateItem; scoring: CandidateScoreResult }> {
   let targetSlot: TargetSlotInfo | null | undefined = null;
-  let filters: any = {};
+  let filters: WaitlistCandidateFilters = {};
 
   if (maybeFilters !== undefined) {
-    targetSlot = targetSlotOrFilters as TargetSlotInfo;
+    targetSlot = (targetSlotOrFilters as TargetSlotInfo) ?? null;
     filters = maybeFilters;
   } else if (targetSlotOrFilters && "startsAt" in targetSlotOrFilters) {
     targetSlot = targetSlotOrFilters as TargetSlotInfo;
   } else if (targetSlotOrFilters) {
-    filters = targetSlotOrFilters;
+    filters = targetSlotOrFilters as WaitlistCandidateFilters;
     targetSlot = filters.targetSlot;
   }
 

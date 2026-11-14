@@ -66,14 +66,11 @@ export function browserGeneratedId(prefix: string): string {
 
 export function createLocalQueueId(): string {
 	if (typeof crypto !== "undefined") {
-		if ("randomUUID" in crypto) return crypto.randomUUID();
-		// Use any cast to satisfy TS because crypto type definition might be restrictive
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const cryptoAny = crypto as any;
-		if (typeof cryptoAny.getRandomValues === "function") {
+		if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+		if (typeof crypto.getRandomValues === "function") {
 			const array = new Uint32Array(1);
-			cryptoAny.getRandomValues(array);
-			return `local-${Date.now()}-${(array[0] || 0).toString(16)}`;
+			crypto.getRandomValues(array);
+			return `local-${Date.now()}-${(array[0] ?? 0).toString(16)}`;
 		}
 	}
 	// Fallback if crypto is completely unavailable (very rare in modern environments)

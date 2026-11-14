@@ -7,6 +7,15 @@ import { canonicalTenderTypeSchema } from "@dental/shared";
 import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 
+export interface FiscalReceiptRawItem {
+	name?: string | null | undefined;
+	priceKopecks?: number | null | undefined;
+	priceRub?: number | string | null | undefined;
+	quantity?: number | string | null | undefined;
+	amountKopecks?: number | null | undefined;
+	amountRub?: number | string | null | undefined;
+}
+
 export async function handleAtolCall(
 	toolName: string,
 	args: Record<string, unknown>,
@@ -81,7 +90,7 @@ export async function handleAtolCall(
 			};
 		}
 
-		const rawItems = Array.isArray(args.items) ? args.items : [];
+		const rawItems: FiscalReceiptRawItem[] = Array.isArray(args.items) ? (args.items as FiscalReceiptRawItem[]) : [];
 		const fallbackPatientId =
 			typeof args.patientId === "string" && args.patientId.trim()
 				? args.patientId.trim()
@@ -103,21 +112,24 @@ export async function handleAtolCall(
 				paymentType === "deposit" || paymentType === "prepaid" ? totalKopecks : 0,
 			items:
 				rawItems.length > 0
-					? rawItems.map((item: any) => ({
-							name: String(item.name || "Стоматологические услуги"),
-							priceKopecks: Number.isInteger(item.priceKopecks)
-								? item.priceKopecks
-								: Math.round(Number(item.priceRub || 0) * 100),
-							quantity: Number(item.quantity || 1),
-							amountKopecks: Number.isInteger(item.amountKopecks)
-								? item.amountKopecks
-								: Math.round(
-										Number(item.priceRub || 0) * 100 * Number(item.quantity || 1),
-									),
-							method: "full_payment",
-							subject: "service",
-							vatRate: "vat_none",
-						}))
+					? rawItems.map((item: FiscalReceiptRawItem) => {
+							const priceKop = Number.isInteger(item.priceKopecks)
+								? Number(item.priceKopecks)
+								: Math.round(Number(item.priceRub || 0) * 100);
+							const qty = Number(item.quantity || 1);
+							const amountKop = Number.isInteger(item.amountKopecks)
+								? Number(item.amountKopecks)
+								: Math.round(Number(item.priceRub || 0) * 100 * qty);
+							return {
+								name: String(item.name || "Стоматологические услуги"),
+								priceKopecks: priceKop,
+								quantity: qty,
+								amountKopecks: amountKop,
+								method: "full_payment" as const,
+								subject: "service" as const,
+								vatRate: "vat_none" as const,
+							};
+						})
 					: [
 							{
 								name: "Стоматологические услуги",

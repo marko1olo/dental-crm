@@ -1,6 +1,6 @@
 /**
  * apps/api/src/routes/sanpin/cleaningModules/cleaningAutopilotHandler.ts
- * Формирование месячного графика генеральных уборок в 1 клик.
+ * Формирование месячного графика генеральных уборок.
  * Мандат 8b: строго <= 120 строк.
  */
 
@@ -8,6 +8,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { generalCleaningLogs } from "../../../db/schema.js";
+import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
 const DEFAULT_CLINIC_ROOMS = [
@@ -57,7 +58,7 @@ export async function handlePostCleaningAutopilotMonth(req: FastifyRequest, repl
 				exposureTimeMinutes: 60,
 				uvIrradiationMinutes: 60,
 				ventilationMinutes: 15,
-				operatorId: (req as any).user?.id ?? null,
+				operatorId: getRequestIdentity(req).userId ?? null,
 				status: isPastOrToday ? "completed" : "scheduled",
 				notes: "График генеральных уборок (интервал 7 дней)",
 			});

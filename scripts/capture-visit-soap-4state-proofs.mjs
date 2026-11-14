@@ -2,8 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
+const CONV_ID = process.env.CONV_ID || "6c433a6b-33a0-46b5-aeff-2042fc76cb4c";
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/emr");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a418917c-1bc5-4537-b72d-2c4a3442dfec");
+const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

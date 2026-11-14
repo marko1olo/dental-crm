@@ -1,5 +1,5 @@
 import React from "react";
-import { AutoclaveSterilizationLogModal } from "../../../sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
+import { SanpinStudioModal } from "../../../sanpin/SanpinStudioModal";
 import { TaxDeductionCertificateModal } from "../../../finance/TaxDeductionCertificateModal";
 import { EgiszRemdHubModal } from "../../../egisz/EgiszRemdHubModal";
 import { SickLeaveElnModal } from "../../sickLeave/SickLeaveElnModal";
@@ -57,12 +57,13 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 				)}
 
 				{(isAutoclaveLogOpen || isSanpinRegistryOpen) && (
-					<AutoclaveSterilizationLogModal
+					<SanpinStudioModal
 						isOpen={isAutoclaveLogOpen || isSanpinRegistryOpen}
 						onClose={() => {
 							setIsAutoclaveLogOpen(false);
 							setIsSanpinRegistryOpen(false);
 						}}
+						initialTab="autoclave"
 					/>
 				)}
 

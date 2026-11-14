@@ -9,7 +9,7 @@ import {
 	isValidServiceCatalogCodeFormat,
 	isValidOrder804nCodeFormat,
 	validateTreatmentPlanStarProtocols,
-} from "../validation/starProtocolValidationEngine";
+} from "../starProtocolValidationEngine";
 import { generateTreatmentPlanStages } from "../treatmentPlanStagesEngine";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { TreatmentPlanStage } from "../types";
@@ -114,6 +114,10 @@ describe("starProtocolValidationEngine — Формат кодов катало�
 
 		const summary = validateTreatmentPlanStarProtocols([stageWithBadCode]);
 		assert.equal(summary.overallStatus, "COMPLIANT_WITH_RECOMMENDATIONS");
-		assert.ok(summary.clinicalRecommendations.some((d) => d.ruleId === "service-code-format-bad-item"));
+		const codeCheck = summary.clinicalRecommendations.find((d) => d.ruleId === "service-code-format-bad-item");
+		assert.ok(codeCheck);
+		assert.ok(codeCheck.messageRu.includes("кода услуги прейскуранта"));
+		assert.ok(!codeCheck.messageRu.includes("804н"));
+		assert.ok(!codeCheck.normativeRefRu.includes("804н"));
 	});
 });

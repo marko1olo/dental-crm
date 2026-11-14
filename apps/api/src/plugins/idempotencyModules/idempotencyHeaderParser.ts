@@ -11,23 +11,15 @@ export function isValidUuid(id: string): boolean {
 	);
 }
 
-interface RequestTenantProbe {
-	tenantId?: unknown;
-	user?: { organizationId?: unknown };
-	params?: Record<string, unknown>;
-	body?: Record<string, unknown>;
-}
-
 /**
  * Extracts organization/tenant ID from Fastify request identity.
  */
 export function extractTenantId(request: FastifyRequest): string | null {
-	const req = request as unknown as RequestTenantProbe;
-	if (typeof req.tenantId === "string" && req.tenantId.trim()) {
-		return req.tenantId.trim();
+	if (typeof request.tenantId === "string" && request.tenantId.trim()) {
+		return request.tenantId.trim();
 	}
-	if (typeof req.user?.organizationId === "string" && req.user.organizationId.trim()) {
-		return req.user.organizationId.trim();
+	if (typeof request.user?.organizationId === "string" && request.user.organizationId.trim()) {
+		return request.user.organizationId.trim();
 	}
 	try {
 		const identity = getRequestIdentity(request);
@@ -40,15 +32,17 @@ export function extractTenantId(request: FastifyRequest): string | null {
 	if (typeof orgStr === "string" && orgStr.trim()) {
 		return orgStr.trim();
 	}
-	if (req.params && typeof req.params.organizationId === "string" && req.params.organizationId.trim()) {
-		return req.params.organizationId.trim();
+	const params = request.params as Record<string, unknown> | undefined;
+	if (params && typeof params.organizationId === "string" && params.organizationId.trim()) {
+		return params.organizationId.trim();
 	}
-	if (req.body && typeof req.body === "object") {
-		if (typeof req.body.organizationId === "string" && req.body.organizationId.trim()) {
-			return req.body.organizationId.trim();
+	const body = request.body as Record<string, unknown> | undefined;
+	if (body && typeof body === "object") {
+		if (typeof body.organizationId === "string" && body.organizationId.trim()) {
+			return body.organizationId.trim();
 		}
-		if (typeof req.body.clinicId === "string" && req.body.clinicId.trim()) {
-			return req.body.clinicId.trim();
+		if (typeof body.clinicId === "string" && body.clinicId.trim()) {
+			return body.clinicId.trim();
 		}
 	}
 	return null;

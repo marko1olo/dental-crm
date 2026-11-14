@@ -40,16 +40,18 @@ export const initialStaffPinSlice: StaffPinSliceState = {
 	scheduleAdminSecretDemand: "",
 };
 
-export function createStaffPinSlice(set: any): StaffPinSliceActions {
+export function createStaffPinSlice(
+	set: (fn: (s: StaffPinSliceState) => Partial<StaffPinSliceState>) => void,
+): StaffPinSliceActions {
 	return {
-		setClinicalAdminSecretDraft: (val) => set((s: any) => ({ clinicalAdminSecretDraft: resolveUpdater(val, s.clinicalAdminSecretDraft) })),
-		setSettingsAdminSecretDraft: (val) => set((s: any) => ({ settingsAdminSecretDraft: resolveUpdater(val, s.settingsAdminSecretDraft) })),
-		setScheduleAdminSecretDraft: (val) => set((s: any) => ({ scheduleAdminSecretDraft: resolveUpdater(val, s.scheduleAdminSecretDraft) })),
-		setTelegramAdminSecretDraft: (val) => set((s: any) => ({ telegramAdminSecretDraft: resolveUpdater(val, s.telegramAdminSecretDraft) })),
-		setClinicalAdminSecretSession: (val) => set((s: any) => ({ clinicalAdminSecretSession: resolveUpdater(val, s.clinicalAdminSecretSession) })),
-		setSettingsAdminSecretSession: (val) => set((s: any) => ({ settingsAdminSecretSession: resolveUpdater(val, s.settingsAdminSecretSession) })),
-		setScheduleAdminSecretSession: (val) => set((s: any) => ({ scheduleAdminSecretSession: resolveUpdater(val, s.scheduleAdminSecretSession) })),
-		setTelegramAdminSecretSession: (val) => set((s: any) => ({ telegramAdminSecretSession: resolveUpdater(val, s.telegramAdminSecretSession) })),
-		setScheduleAdminSecretDemand: (val) => set((s: any) => ({ scheduleAdminSecretDemand: resolveUpdater(val, s.scheduleAdminSecretDemand) })),
+		setClinicalAdminSecretDraft: (val) => set((s) => ({ clinicalAdminSecretDraft: resolveUpdater(val, s.clinicalAdminSecretDraft) })),
+		setSettingsAdminSecretDraft: (val) => set((s) => ({ settingsAdminSecretDraft: resolveUpdater(val, s.settingsAdminSecretDraft) })),
+		setScheduleAdminSecretDraft: (val) => set((s) => ({ scheduleAdminSecretDraft: resolveUpdater(val, s.scheduleAdminSecretDraft) })),
+		setTelegramAdminSecretDraft: (val) => set((s) => ({ telegramAdminSecretDraft: resolveUpdater(val, s.telegramAdminSecretDraft) })),
+		setClinicalAdminSecretSession: (val) => set((s) => ({ clinicalAdminSecretSession: resolveUpdater(val, s.clinicalAdminSecretSession) })),
+		setSettingsAdminSecretSession: (val) => set((s) => ({ settingsAdminSecretSession: resolveUpdater(val, s.settingsAdminSecretSession) })),
+		setScheduleAdminSecretSession: (val) => set((s) => ({ scheduleAdminSecretSession: resolveUpdater(val, s.scheduleAdminSecretSession) })),
+		setTelegramAdminSecretSession: (val) => set((s) => ({ telegramAdminSecretSession: resolveUpdater(val, s.telegramAdminSecretSession) })),
+		setScheduleAdminSecretDemand: (val) => set((s) => ({ scheduleAdminSecretDemand: resolveUpdater(val, s.scheduleAdminSecretDemand) })),
 	};
 }

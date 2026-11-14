@@ -36,7 +36,7 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 	const isItemWarranty = item.isWarranty || isWarranty100;
 	const rowDueRub = isItemWarranty ? 0 : rowGrossRub;
 	const bomMaterials = getServiceBomMaterials(item.code804n, item.title, item.quantity);
-	const showOverdraft = Boolean(hasOverdraftWarning || (item as any).isOverdraft || (item as any).hasOverdraft || bomMaterials.some((m) => m.isOverdraft));
+	const showOverdraft = Boolean(hasOverdraftWarning || item.isOverdraft || item.hasOverdraft || bomMaterials.some((m) => m.isOverdraft));
 	const [isCollapsing, setIsCollapsing] = useState(false);
 	const [isFittingDone, setIsFittingDone] = useState(Boolean(item.fittingConfirmed));
 

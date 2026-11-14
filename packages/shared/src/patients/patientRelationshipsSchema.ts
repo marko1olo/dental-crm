@@ -153,7 +153,7 @@ export const createPatientRelationshipDtoSchema = z
 		isLegalRepresentative: z.boolean().optional().default(false),
 		canViewMedicalRecord: z.boolean().optional().default(false),
 		canSignConsents: z.boolean().optional().default(false),
-		canSpendFamilyWallet: z.boolean().optional().default(false),
+		canSpendFamilyWallet: z.boolean().optional(),
 		spendLimitKopecks: z.number().int().nonnegative().optional(),
 		documentProofNumber: z.string().max(255).optional().nullable(),
 		notes: z.string().max(2000).optional().nullable(),
@@ -161,13 +161,17 @@ export const createPatientRelationshipDtoSchema = z
 		isPrimaryPayer: z.boolean().optional(),
 		canViewRecords: z.boolean().optional(),
 	})
-	.transform((data) => ({
-		...data,
-		canViewMedicalRecord:
-			data.canViewMedicalRecord || (data.canViewRecords ?? false),
-		canSpendFamilyWallet:
-			data.canSpendFamilyWallet || (data.isPrimaryPayer ?? false),
-	}));
+	.transform((data) => {
+		const isCloseRelative = ["parent", "child", "spouse", "guardian", "ward"].includes(data.relationshipType);
+		const defaultCanSpend = isCloseRelative ? true : (data.isPrimaryPayer ?? false);
+		return {
+			...data,
+			canViewMedicalRecord:
+				data.canViewMedicalRecord || (data.canViewRecords ?? false),
+			canSpendFamilyWallet:
+				data.canSpendFamilyWallet !== undefined ? data.canSpendFamilyWallet : defaultCanSpend,
+		};
+	});
 
 export type CreatePatientRelationshipDto = z.infer<
 	typeof createPatientRelationshipDtoSchema
@@ -395,7 +399,9 @@ export function validateFamilyWalletSpend(params: {
 		relationship?.canSpendFamilyWallet === true ||
 		relationship?.isLegalRepresentative === true ||
 		relationship?.relationshipType === "parent" ||
+		relationship?.relationshipType === "child" ||
 		relationship?.relationshipType === "guardian" ||
+		relationship?.relationshipType === "ward" ||
 		relationship?.relationshipType === "spouse";
 
 	if (!hasSpendPermission) {

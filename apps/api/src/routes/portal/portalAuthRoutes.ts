@@ -537,15 +537,14 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				.limit(1);
 
 			if (patientRow) {
-				const currentProfile =
-					(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+				const currentProfile = patientRow.administrativeProfile ?? {};
 				await db
 					.update(patients)
 					.set({
 						administrativeProfile: {
 							...currentProfile,
 							portalSessionRevokedAt: nowIso,
-						} as any,
+						},
 						updatedAt: new Date(),
 					})
 					.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));

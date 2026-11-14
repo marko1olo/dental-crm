@@ -44,6 +44,14 @@ export const CURATOR_ROLE_LABELS: Record<string, string> = {
 	pediatric: "Детский стоматолог",
 };
 
+export interface CuratorStaffMember {
+	readonly id: string;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly role: string;
+	readonly active?: boolean | undefined;
+}
+
 export interface CuratorPlanAssignmentModalProps {
 	readonly isOpen: boolean;
 	readonly patientId: string;

@@ -1,5 +1,5 @@
 import React from "react";
-import { ScheduleFilterStrip } from "../ScheduleFilterStrip";
+import { ScheduleUnifiedToolbar } from "../ScheduleUnifiedToolbar";
 import type { ScheduleViewToolbarProps } from "./scheduleViewToolbarTypes";
 
 export function ScheduleViewFilterStripSection({ props }: { props: ScheduleViewToolbarProps }) {
@@ -56,7 +56,7 @@ export function ScheduleViewFilterStripSection({ props }: { props: ScheduleViewT
   } = props;
 
   return (
-    <ScheduleFilterStrip
+    <ScheduleUnifiedToolbar
       todayIso={clinicToday}
       scheduleDateFilter={scheduleDateFilter}
       setScheduleDateFilter={setScheduleDateFilter}

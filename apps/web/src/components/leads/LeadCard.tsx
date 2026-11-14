@@ -44,7 +44,6 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	const dropReasonMatch = lead.dropReason || null;
 	const targetPatientId =
 		lead.patientId ||
-		(lead as unknown as { patientId?: string | null }).patientId ||
 		lead.existingPatient?.id;
 
 	const handleOpenPatient = (e: React.MouseEvent, patientId: string) => {
@@ -76,8 +75,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			animate={{ opacity: 1, y: 0 }}
 			exit={{ opacity: 0, scale: 0.95 }}
 			draggable
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			onDragStart={(e: any) => onDragStart(e, lead.id)}
+			onDragStart={(e: React.DragEvent<HTMLDivElement>) => onDragStart(e, lead.id)}
 			onClick={handleCardClick}
 			title={targetPatientId ? "Открыть медицинскую карту пациента" : "Открыть детали обращения"}
 			style={computeLeadCardStyle({ cardBg, borderColor, sla, isDragged })}

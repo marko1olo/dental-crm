@@ -84,7 +84,7 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 
 			// Аппаратный запрос Х-отчета без гашения на ККТ (54-ФЗ)
 			let kktResult: Awaited<ReturnType<typeof LanKktDriverService.printXReport>> | undefined;
-			if (request.method === "POST" || (queryOrBody as Record<string, unknown>).print) {
+			if (request.method === "POST" || (parsed.success && parsed.data.print)) {
 				try {
 					kktResult = await LanKktDriverService.printXReport({
 						cashierName: cashierFullName,

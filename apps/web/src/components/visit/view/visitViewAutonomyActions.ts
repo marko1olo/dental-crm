@@ -6,6 +6,26 @@ import {
 } from "../../patients/safetyMath";
 import { formatSafetyProfileToDiaryText } from "../../patients/patientSafetyEvaluation";
 
+export interface AutonomyVisitNoteForm {
+	complaint?: string | null | undefined;
+	complaints?: string | null | undefined;
+	anamnesis?: string | null | undefined;
+	objectiveStatus?: string | null | undefined;
+	objectiveInspection?: string | null | undefined;
+	treatment?: string | null | undefined;
+	treatmentPlan?: string | null | undefined;
+	recommendations?: string | null | undefined;
+	diagnosis?: string | null | undefined;
+	[key: string]: unknown;
+}
+
+export interface AutonomyPatient {
+	allergies?: string | readonly string[] | null | undefined;
+	somaticNotes?: string | null | undefined;
+	concomitantDiseases?: string | null | undefined;
+	[key: string]: unknown;
+}
+
 export async function executePolishTranscriptAutonomy({
 	hasVisitTranscriptText,
 	setTranscript,
@@ -17,7 +37,7 @@ export async function executePolishTranscriptAutonomy({
 	hasVisitTranscriptText: boolean;
 	setTranscript?: (val: string) => void;
 	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
+	visitNoteForm?: AutonomyVisitNoteForm | null | undefined;
 	polishTranscript?: () => Promise<void> | void;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
 }) {
@@ -28,7 +48,7 @@ export async function executePolishTranscriptAutonomy({
 			setTranscript(standardClinicalDraft);
 		}
 		if (typeof updateVisitNoteField === "function") {
-			const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
+			const currentObj = visitNoteForm?.objectiveInspection || visitNoteForm?.objectiveStatus || "";
 			if (!currentObj) {
 				const objNorm = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 				updateVisitNoteField("objectiveInspection", objNorm);
@@ -59,10 +79,9 @@ export function executeApplySomaticNormAutonomy({
 	activePatient,
 }: {
 	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
+	visitNoteForm?: AutonomyVisitNoteForm | null | undefined;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	activePatient?: any;
+	activePatient?: AutonomyPatient | null | undefined;
 }) {
 	const rawAllergies = activePatient?.allergies || "";
 	const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
@@ -86,7 +105,7 @@ export function executeApplySomaticNormAutonomy({
 		"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 	if (typeof updateVisitNoteField === "function") {
 		updateVisitNoteField("anamnesis", normText);
-		const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
+		const currentObj = visitNoteForm?.objectiveInspection || visitNoteForm?.objectiveStatus || "";
 		if (!currentObj) {
 			updateVisitNoteField("objectiveInspection", objNorm);
 			updateVisitNoteField("objectiveStatus", objNorm);
@@ -106,8 +125,8 @@ export function executeApplySomaticNormAutonomy({
 					},
 				}),
 			);
-		} catch {
-			// ignore in SSR or test environments
+		} catch (err) {
+			console.warn("[executeApplySomaticNormAutonomy] Event dispatch skipped in non-browser context:", err);
 		}
 	}
 	showToastFn(toastMessage, "success");
@@ -120,31 +139,25 @@ export function executeApplyHygienePresetAutonomy({
 	showToastFn = showToast,
 }: {
 	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: {
-		complaints?: string;
-		objectiveInspection?: string;
-		treatment?: string;
-		recommendations?: string;
-		diagnosis?: string;
-	} | null;
+	visitNoteForm?: AutonomyVisitNoteForm | null | undefined;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
 }) {
 	if (typeof updateVisitNoteField === "function") {
 		if (!visitNoteForm?.diagnosis) {
 			updateVisitNoteField("diagnosis", "K03.6 Отложения [наросты] на зубах (зубной камень, пигментированный налёт)");
 		}
-		if (!visitNoteForm?.complaints && !(visitNoteForm as any)?.complaint) {
+		if (!visitNoteForm?.complaints && !visitNoteForm?.complaint) {
 			const hygieneComplaints = "Жалобы на наличие мягкого и твёрдого зубного налёта, шероховатость зубов, косметический дефект.";
 			updateVisitNoteField("complaints", hygieneComplaints);
 			updateVisitNoteField("complaint", hygieneComplaints);
 		}
 		const hygieneObj = "Индекс гигиены OHI-S = 1.8. Обильный пигментированный налёт и наддесневой зубной камень во фронтальном отделе нижней челюсти. Слизистая десны умеренно гиперемирована в области десневых сосочков.";
-		if (!visitNoteForm?.objectiveInspection && !(visitNoteForm as any)?.objectiveStatus) {
+		if (!visitNoteForm?.objectiveInspection && !visitNoteForm?.objectiveStatus) {
 			updateVisitNoteField("objectiveInspection", hygieneObj);
 			updateVisitNoteField("objectiveStatus", hygieneObj);
 		}
 		const hygieneTreatment = "Проведена комплексная профессиональная гигиена полости рта: ультразвуковое удаление над- и поддесневых зубных отложений (скалер Woodpecker), воздушно-абразивная полировка Air-Flow (порошок на основе глицина), полировка пастой Kerr Cleanic. Антисептическая обработка десневого края 0.05% раствором хлоргексидина. Глубокое фторирование эмали фторлаком Bifluorid 12.";
-		const currentTreatment = visitNoteForm?.treatment || (visitNoteForm as any)?.treatmentPlan || "";
+		const currentTreatment = visitNoteForm?.treatment || visitNoteForm?.treatmentPlan || "";
 		const updatedTreatment = currentTreatment ? `${currentTreatment}\n\n${hygieneTreatment}` : hygieneTreatment;
 		updateVisitNoteField("treatment", updatedTreatment);
 		updateVisitNoteField("treatmentPlan", updatedTreatment);
@@ -165,10 +178,9 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	activePatient,
 }: {
 	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { treatment?: string } | null;
+	visitNoteForm?: AutonomyVisitNoteForm | null | undefined;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	activePatient?: any;
+	activePatient?: AutonomyPatient | null | undefined;
 }) {
 	const rawAllergies = activePatient?.allergies || "";
 	const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
@@ -214,7 +226,7 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	}
 
 	if (typeof updateVisitNoteField === "function") {
-		const current = visitNoteForm?.treatment || (visitNoteForm as any)?.treatmentPlan || "";
+		const current = visitNoteForm?.treatment || visitNoteForm?.treatmentPlan || "";
 		const updatedTreatment = current ? `${current}\n\n${anesthesiaText}` : anesthesiaText;
 		updateVisitNoteField("treatment", updatedTreatment);
 		updateVisitNoteField("treatmentPlan", updatedTreatment);

@@ -3,8 +3,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
-import { patientInvoices } from "../../../db/schema/billing.js";
-import { treatmentItems } from "../../../db/schema/clinical.js";
+import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { patients } from "../../../db/schema/patients.js";
 import { invoiceListQuerySchema } from "../types.js";
 
@@ -58,16 +57,34 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 		.orderBy(desc(patientInvoices.createdAt))
 		.limit(limit);
 
-	const rawItems = await db
-		.select()
-		.from(treatmentItems)
-		.where(and(eq(treatmentItems.organizationId, orgId), patientId ? eq(treatmentItems.patientId, patientId) : sql`TRUE`))
-		.orderBy(desc(treatmentItems.id))
-		.limit(limit * 5);
+	const invoiceIds = invoiceRows.map((inv) => inv.id);
+	const rawItems = invoiceIds.length > 0
+		? await db
+			.select()
+			.from(invoiceItems)
+			.where(
+				and(
+					eq(invoiceItems.organizationId, orgId),
+					inArray(invoiceItems.invoiceId, invoiceIds),
+				),
+			)
+			.orderBy(desc(invoiceItems.createdAt))
+		: [];
 
 	const items = rawItems.map((item) => ({
-		...item,
-		totalAmountRub: resolveInvoiceTotalAmountRub({ totalRub: item.priceRub }),
+		id: item.id,
+		serviceId: item.priceListItemId || item.serviceCode || undefined,
+		serviceCode: item.serviceCode || undefined,
+		code: item.serviceCode || undefined,
+		toothCode: item.toothCode,
+		toothNumber: item.toothCode ? Number(item.toothCode) || undefined : undefined,
+		title: item.name,
+		name: item.name,
+		quantity: Number(item.quantity) || 1,
+		unitPriceRub: Number((item.unitPriceKopecks / 100).toFixed(2)),
+		priceRub: Number((item.totalPriceKopecks / 100).toFixed(2)),
+		discountRub: 0,
+		totalAmountRub: Number((item.totalPriceKopecks / 100).toFixed(2)),
 	}));
 
 	const invoices = invoiceRows.map((inv) => {
@@ -76,21 +93,21 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 		const invoiceNumber = `СЧ-${year}-${inv.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
 		const matchingItems = rawItems
-			.filter((it) => (inv.visitId && it.visitId === inv.visitId) || (it.notes && it.notes.includes(inv.id)))
+			.filter((it) => it.invoiceId === inv.id)
 			.map((it) => ({
 				id: it.id,
-				serviceId: it.serviceId,
-				serviceCode: it.serviceId || undefined,
-				code: it.serviceId || undefined,
+				serviceId: it.priceListItemId || it.serviceCode || undefined,
+				serviceCode: it.serviceCode || undefined,
+				code: it.serviceCode || undefined,
 				toothCode: it.toothCode,
 				toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
-				title: it.title,
-				name: it.title,
+				title: it.name,
+				name: it.name,
 				quantity: Number(it.quantity) || 1,
-				unitPriceRub: Number(it.unitPriceRub) || Number(it.priceRub) || 0,
-				priceRub: Number(it.priceRub) || 0,
-				discountRub: Number(it.discountRub) || 0,
-				totalAmountRub: Number(it.priceRub) || 0,
+				unitPriceRub: Number((it.unitPriceKopecks / 100).toFixed(2)),
+				priceRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
+				discountRub: 0,
+				totalAmountRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
 			}));
 
 		return {

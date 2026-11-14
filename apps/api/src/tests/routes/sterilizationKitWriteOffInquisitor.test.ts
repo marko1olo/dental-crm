@@ -164,7 +164,8 @@ describe("Sterilization Kit 1-Click Write-Off & Soft Negative Stock Inquisitor G
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.deductedItems.length, 4);
-		const kraft = res.deductedItems.find((i: any) => i.itemName.includes("Крафт-пакет"));
+		const kraft = res.deductedItems.find((i) => i.itemName.includes("Крафт-пакет"));
+		assert.ok(kraft, "Kraft pouches must be deducted");
 		assert.strictEqual(kraft.quantity, 1);
 		// Было -2, списали 1 -> стало -3
 		assert.strictEqual(kraft.remainingStock, -3);

@@ -31,7 +31,7 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 				</span>
 
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end shrink-0">
-					{activeTab === "overview" && (
+					{(activeTab === "info" || activeTab === "overview") && (
 						<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
 							<button
 								type="button"
@@ -42,7 +42,7 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 								{savingPermissions ? (
 									<Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
 								) : (
-									<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<Check className="w-3.5 h-3.5 shrink-0" />
 								)}
 								<span>{savingPermissions ? "Сохранение..." : "Сохранить права"}</span>
 							</button>

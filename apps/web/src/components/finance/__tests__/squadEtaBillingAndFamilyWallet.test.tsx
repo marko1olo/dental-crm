@@ -7,46 +7,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { PatientBillingModal } from "../PatientBillingModal";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
-import { FamilyWalletPanel } from "../FamilyWalletPanel";
+import { FamilyWalletModal } from "../../patients/family/FamilyWalletModal";
 import { calculateCashChange, getCashPresetSuggestions } from "../fiscal/fiscal54fzEngine";
 
 describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () => {
-	it("PatientBillingModal: delegates payment execution to CashRegisterStudioModal without nested tender button sprawl", () => {
-		const html = renderToString(
-			<PatientBillingModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={{
-					id: "pat-1",
-					fullName: "Иванов Иван Иванович",
-					depositRub: 15000,
-					familyBalanceRub: 50000,
-				}}
-				initialServices={[
-					{
-						id: "srv-1",
-						name: "Лечение кариеса",
-						priceRub: 7500,
-						quantity: 1,
-						code804n: "A16.07.002",
-						category: "therapy",
-					},
-				]}
-			/>,
-		);
-
-		// Assert payment delegation panel is present with single clear CTA to cashbox
-		assert.ok(html.includes('data-testid="patient-billing-payment-panel"'), "Payment delegation panel must be rendered");
-		assert.ok(html.includes('data-testid="btn-open-cashbox-from-act"'), "Open cashbox CTA must be present");
-		assert.ok(html.includes('data-testid="btn-fiscalize-54fz"'), "Footer 54-FZ fiscalize button must be present");
-
-		// Mandate 8bf: Anti-Matryoshka — nested tender buttons sprawl is amputated from act view
-		assert.ok(!html.includes('data-testid="tender-btn-card"'), "Nested card button must NOT be sprawled inside act form");
-		assert.ok(!html.includes('data-testid="tender-btn-installment"'), "Nested installment button must NOT be sprawled inside act form");
-	});
-
 	it("Exact Cash Change Engine: calculates change down to kopecks without float drift", () => {
 		// Required: 7 450.50 ₽, Received: 10 000.00 ₽ -> Change: 2 549.50 ₽
 		const res1 = calculateCashChange(7450.5, 10000);
@@ -98,14 +63,17 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 		assert.ok(html.includes('data-testid="btn-submit-checkout-54fz"'), "Fiscalize submit button must be present");
 	});
 
-	it("FamilyWalletPanel: renders balance allocation and family wallet controls", () => {
+	it("FamilyWalletModal: renders balance allocation and family wallet controls", () => {
 		const html = renderToString(
-			<FamilyWalletPanel
+			<FamilyWalletModal
+				isOpen={true}
+				onClose={() => {}}
+				inline={true}
 				patientId="pat-1"
-				remainingDebtRub={60000}
+				patientName="Иванов Алексей Сергеевич"
 			/>,
 		);
 
-		assert.ok(html.includes("family-wallet"), "Family wallet panel must be rendered");
+		assert.ok(html.includes("family-wallet"), "Family wallet modal must be rendered");
 	});
 });

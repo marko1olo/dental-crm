@@ -59,7 +59,7 @@ export const StudioInstallmentTab: React.FC<StudioInstallmentTabProps> = ({
 
 			{/* Сетка выбора срока рассрочки */}
 			<div>
-				<h4 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+				<h4 className="text-xs font-bold text-[var(--muted)] tracking-wider mb-3 flex items-center gap-1.5">
 					<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 					<span>Срок беспроцентной рассрочки</span>
 				</h4>
@@ -100,7 +100,7 @@ export const StudioInstallmentTab: React.FC<StudioInstallmentTabProps> = ({
 			<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] space-y-3 shadow-2xs">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+						<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft)] text-[var(--teal,#0d9488)] flex items-center justify-center">
 							<ShieldCheck className="w-5 h-5" />
 						</div>
 						<div>
@@ -112,7 +112,7 @@ export const StudioInstallmentTab: React.FC<StudioInstallmentTabProps> = ({
 					</div>
 					<div className="text-right">
 						<span className="text-xs text-[var(--muted)] block">Возврат пациенту:</span>
-						<span className="text-base sm:text-lg font-black text-emerald-600 font-mono">
+						<span className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)] font-mono">
 							+{formatRubles(ndflRefundRub)}
 						</span>
 					</div>
@@ -126,7 +126,7 @@ export const StudioInstallmentTab: React.FC<StudioInstallmentTabProps> = ({
 				</div>
 
 				<p className="text-[11px] text-[var(--muted)] m-0 leading-relaxed">
-					Справку об оплате медицинских услуг по утвержденной форме ФНС КНД 1151156 клиника выдает бесплатно в день обращения или онлайн по завершении приёма.
+					Справку об оплате медицинских услуг для оформления налогового вычета клиника выдает бесплатно в день обращения или онлайн по завершении приёма.
 				</p>
 			</div>
 		</div>

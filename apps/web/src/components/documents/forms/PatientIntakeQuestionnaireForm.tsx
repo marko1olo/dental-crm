@@ -1,4 +1,5 @@
 import React from "react";
+import type { PatientIntakePregnancyStatus } from "@dental/shared";
 import { FileEdit, Zap } from "lucide-react";
 import { AnamnesisField } from "../AnamnesisField";
 import { useDocumentStore } from "../../../store/documentStore";
@@ -106,11 +107,11 @@ export const PatientIntakeQuestionnaireForm: React.FC<
 				<button
 					type="button"
 					onClick={handleFillNormInOneClick}
-					className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+					className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
 					data-testid="btn-intake-fill-norm"
 					title="Заполнить все поля анкеты физиологической нормой (соматически здоров)"
 				>
-					<Zap size={16} />
+					<Zap size={16} className="text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 					<span>Пациент соматически здоров / Противопоказаний нет</span>
 				</button>
 			</div>
@@ -188,15 +189,16 @@ export const PatientIntakeQuestionnaireForm: React.FC<
 								value={intakePregnancyStatus}
 								onChange={(event) =>
 									setIntakePregnancyStatus(
-										event.target.value as any,
+										event.target.value as PatientIntakePregnancyStatus,
 									)
 								}
 							>
 								<option value="not_applicable">Не применимо / отрицает</option>
-								<option value="pregnant_first_trimester">Беременность 1 триместр</option>
-								<option value="pregnant_second_trimester">Беременность 2 триместр</option>
-								<option value="pregnant_third_trimester">Беременность 3 триместр</option>
-								<option value="lactating">Период грудного вскармливания</option>
+								<option value="denied">Отрицает</option>
+								<option value="possible">Возможна</option>
+								<option value="confirmed">Подтверждена</option>
+								<option value="lactation">Период грудного вскармливания (лактация)</option>
+								<option value="unknown">Неизвестно</option>
 							</select>
 						</label>
 						<label>

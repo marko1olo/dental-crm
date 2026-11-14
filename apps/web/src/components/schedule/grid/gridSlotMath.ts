@@ -2,12 +2,17 @@ import type { Appointment } from "@dental/shared";
 
 export function extractTeethList(appointment: Appointment): string[] {
   if (!appointment) return [];
-  const explicitTeeth = (appointment as any)?.teeth;
+  const extendedAppt = appointment as Appointment & {
+    teeth?: unknown[];
+    toothNumber?: unknown;
+    tooth?: unknown;
+  };
+  const explicitTeeth = extendedAppt?.teeth;
   if (Array.isArray(explicitTeeth) && explicitTeeth.length > 0) {
     return explicitTeeth.map(String);
   }
   const singleTooth =
-    (appointment as any)?.toothNumber || (appointment as any)?.tooth;
+    extendedAppt?.toothNumber || extendedAppt?.tooth;
   if (singleTooth) {
     return [String(singleTooth)];
   }
@@ -20,11 +25,17 @@ export function extractTeethList(appointment: Appointment): string[] {
   return [];
 }
 
-export function generateTimeSlots(stepMinutes: 15 | 30 | 60 = 60): string[] {
+export function generateTimeSlots(
+  stepMinutes: 15 | 30 | 60 = 60,
+  startHour = 8,
+  endHour = 21,
+): string[] {
   const slots: string[] = [];
-  for (let h = 8; h <= 20; h++) {
+  const safeStart = Math.max(0, Math.min(23, Math.floor(startHour)));
+  const safeEnd = Math.max(safeStart, Math.min(24, Math.floor(endHour)));
+  for (let h = safeStart; h <= safeEnd; h++) {
     for (let m = 0; m < 60; m += stepMinutes) {
-      if (h === 20 && m > 0) break;
+      if (h === safeEnd && m > 0) break;
       const hh = h < 10 ? `0${h}` : `${h}`;
       const mm = m < 10 ? `0${m}` : `${m}`;
       slots.push(`${hh}:${mm}`);

@@ -9,6 +9,9 @@ import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "../components/GlobalToast";
 import { useVisitStore } from "../store/visitStore";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
+import type { ToothData } from "../components/odontogram/ToothChart";
+import { normalizeToothState } from "../components/treatment-plans/tierStages/toothStateHelpers";
+import type { ExtendedMedicalRecordInitialData } from "../components/emr/MedicalRecordStudioModal";
 
 const ClinicalTasksPanel = lazyWithRetry(() =>
 	import("../ClinicalTasksPanel").then((m) => ({ default: m.ClinicalTasksPanel })),
@@ -35,10 +38,17 @@ const ConsentStudioModal = lazyWithRetry(() =>
 	import("../components/consents/ConsentStudioModal").then((m) => ({ default: m.ConsentStudioModal })),
 );
 
+export interface SpecialtyModalsAppLogic {
+	readonly activePatient?: { id: string; fullName?: string; name?: string; birthDate?: string; cardNumber?: string; cardId?: string } | null | undefined;
+	readonly activeVisitPatient?: { id: string; fullName?: string; name?: string; birthDate?: string; cardNumber?: string; cardId?: string } | null | undefined;
+	readonly activeDoctor?: { id: string; fullName?: string; name?: string } | null | undefined;
+	readonly activeTooth?: number | null | undefined;
+}
+
 interface AppDirectSpecialtyModalsProps {
 	routing: AppHashRoutingState;
 	sessionAuth: AppSessionAuthState;
-	appLogic: any;
+	appLogic: SpecialtyModalsAppLogic;
 }
 
 export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: AppDirectSpecialtyModalsProps) {
@@ -47,8 +57,8 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 	const patient = activePatient || activeVisitPatient;
 	const activeToothNumber = useVisitStore((s) => s.activeToothNumber) ?? (typeof appLogic?.activeTooth === "number" ? appLogic.activeTooth : 11);
 	const visitToothRecord = useVisitStore((s) => s.visitToothRecordsByCode[String(activeToothNumber)]);
-	const reactiveToothData = visitToothRecord
-		? { toothNumber: activeToothNumber, state: visitToothRecord.state ?? "Healthy", surfaces: visitToothRecord.surfaces ?? [] }
+	const reactiveToothData: ToothData = visitToothRecord
+		? { toothNumber: activeToothNumber, state: normalizeToothState(visitToothRecord.state), surfaces: visitToothRecord.surfaces ?? [] }
 		: { toothNumber: activeToothNumber, state: "Healthy", surfaces: [] };
 
 	return (
@@ -69,9 +79,9 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<OrthodonticsStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)}
-						patientName={patient?.fullName || patient?.name}
-						patientId={patient?.id}
-						doctorName={staffUser?.name || activeDoctor?.fullName || activeDoctor?.name}
+						patientName={patient?.fullName || patient?.name || "Пациент"}
+						patientId={patient?.id || "pat-demo-01"}
+						doctorName={staffUser?.fullName || activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач"}
 						clinicName="DENTE Clinic"
 					/>
 				</Suspense>
@@ -82,7 +92,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						isOpen={true}
 						onClose={() => routing.setIsToothDrawerDirectModalOpen(false)}
 						toothNumber={activeToothNumber}
-						toothData={reactiveToothData as any}
+						toothData={reactiveToothData}
 					/>
 				</Suspense>
 			)}
@@ -106,14 +116,27 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 							showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
 						}}
 						initialData={{
-							patient: patient || { fullName: "Смирнова Екатерина Андреевна", birthDate: "1990-05-14", id: "pat-demo-01" },
-							diary: {
-								complaint: "Ноющая боль в области зуба 4.6 при накусывании",
-								objectiveStatus: "Зуб 4.6: глубокая кариозная полость, зондирование болезненно по дну",
-								diagnosis: "K04.0 Пульпит (зуб 4.6)",
-								treatmentPlan: "Анестезия, препарирование кариозной полости, пломбирование каналов",
+							passport: {
+								patientFullName: patient?.fullName || patient?.name || "Смирнова Екатерина Андреевна",
+								patientBirthDate: patient?.birthDate || "1990-05-14",
+								medicalCardNumber: patient?.cardNumber || patient?.cardId || "pat-demo-01",
 							},
-						} as any}
+							visitDiaries: [
+								{
+									id: "diary-demo-01",
+									entryDate: new Date().toISOString().slice(0, 10),
+									entryTime: "12:00",
+									doctorFullName: staffUser?.fullName || activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
+									doctorSpecialty: "Стоматолог-терапевт",
+									toothNumber: "46",
+									subjectiveComplaints: "Ноющая боль в области зуба 4.6 при накусывании",
+									objectiveStatusLocalis: "Зуб 4.6: глубокая кариозная полость, зондирование болезненно по дну",
+									assessmentDiagnosisText: "Пульпит (зуб 4.6)",
+									assessmentIcd10Code: "K04.0",
+									procedureProtocol: "Анестезия, препарирование кариозной полости, пломбирование каналов",
+								},
+							],
+						}}
 						isLocked={false}
 						isDraft={true}
 					/>

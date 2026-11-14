@@ -43,7 +43,7 @@ import {
 	normalizeAnatomicalSurfaces,
 	normalizeSurfaceKey,
 	isSurfaceActive,
-} from "../components/odontogram/anatomicalToothGeometries";
+} from "../components/odontogram/anatomicalMaterialsAndSurfaces";
 
 import {
 	DEFAULT_SOMATIC_HEALTHY_NORM,

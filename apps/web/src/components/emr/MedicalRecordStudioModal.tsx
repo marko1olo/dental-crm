@@ -39,11 +39,11 @@ import "./emrStudioStyles.css";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 
-export interface ExtendedMedicalRecordInitialData extends Partial<Omit<MedicalRecordData, "passport">> {
+export type ExtendedMedicalRecordInitialData = Partial<Omit<MedicalRecordData, "passport">> & {
 	readonly passport?: Partial<ClinicalPassportData> | undefined;
 	readonly isLocked?: boolean | undefined;
 	readonly status?: string | undefined;
-}
+};
 
 export interface MedicalRecordStudioModalProps {
 	readonly isOpen: boolean;
@@ -204,9 +204,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		}
 
 		const modalElement = (
-			<div className="emr-studio-backdrop emr043-modal-backdrop" role="dialog" aria-modal="true">
+			<div className="emr-studio-backdrop" role="dialog" aria-modal="true">
 				<div
-					className="emr-studio-modal emr-studio-window emr043-modal-window"
+					className="emr-studio-modal emr-studio-window"
 					style={{ maxWidth: isFullscreen ? "100%" : "1380px", ...(isFullscreen ? { height: "98vh" } : {}) }}
 				>
 					{/* Нативный Drag Handle для шторки смартфона (Apple HIG) */}
@@ -442,8 +442,8 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 	},
 );
 
-export const DEFAULT_043_DATA = DEFAULT_MEDICAL_CARD_DATA;
-export type Form043PrintModalProps = MedicalRecordStudioModalProps;
-export const Form043PrintModal = MedicalRecordStudioModal;
+export const DEFAULT_CLINICAL_RECORD_DATA = DEFAULT_MEDICAL_CARD_DATA;
+export type ClinicalRecordPrintModalProps = MedicalRecordStudioModalProps;
+export const ClinicalRecordPrintModal = MedicalRecordStudioModal;
 
 export default MedicalRecordStudioModal;

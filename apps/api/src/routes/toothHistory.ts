@@ -393,13 +393,19 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					let endoDetail = "";
 					if (s.notes) {
 						try {
-							const parsed = JSON.parse(s.notes);
+							interface CanalData {
+								canalName?: string;
+								workingLengthMm?: number | string;
+							}
+							interface ParsedNotes {
+								canals?: CanalData[];
+							}
+							const parsed = JSON.parse(s.notes) as ParsedNotes;
 							if (Array.isArray(parsed.canals) && parsed.canals.length > 0) {
 								const canalSummaries = parsed.canals
 									.map(
-										// biome-ignore lint/suspicious/noExplicitAny: generic canal row
-										(c: any) =>
-											`${c.canalName}: ${c.workingLengthMm || "—"}мм`,
+										(c: CanalData) =>
+											`${c.canalName ?? "Канал"}: ${c.workingLengthMm ?? "—"}мм`,
 									)
 									.join(", ");
 								endoDetail = ` (Каналы: ${canalSummaries})`;

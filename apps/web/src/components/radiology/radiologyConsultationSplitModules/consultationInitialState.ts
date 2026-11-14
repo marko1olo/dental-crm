@@ -13,6 +13,22 @@ import type { ViewportState } from "../consultationCanvasRenderers.js";
 import type { ConsultationSplitMode } from "../ConsultationTopToolbar.js";
 import type { ConsultationNoteItem } from "./types.js";
 
+type StudyWithTitleFields = {
+	readonly title?: string | undefined;
+	readonly studyDescription?: string | undefined;
+};
+
+function getStudyTitle(
+	study: RadiologyStudy | RadiologyFilmstripItem | undefined,
+	fallback: string,
+): string {
+	if (!study) return fallback;
+	const candidate = study as (RadiologyStudy | RadiologyFilmstripItem) & StudyWithTitleFields;
+	if (candidate.title) return candidate.title;
+	if (candidate.studyDescription) return candidate.studyDescription;
+	return fallback;
+}
+
 export function createDefaultEffectivePatientStudies(
 	history: readonly (RadiologyStudy | RadiologyFilmstripItem)[],
 ): readonly (RadiologyStudy | RadiologyFilmstripItem)[] {
@@ -46,12 +62,10 @@ export function createInitialLeftViewport(options: {
 }): ViewportState {
 	const { initialLeftStudy, effectiveStudies, activeToothFdi } = options;
 	const s = initialLeftStudy || effectiveStudies[0];
+	const fallbackTitle = s?.teethFdi?.[0] ? `Снимок зуба ${s.teethFdi[0]} (ДО)` : "Снимок ДО лечения";
 	return {
 		imageSrc: s?.imageUrl || s?.thumbnailUrl || "/radiology/sample_rvg_pathology.jpg",
-		title:
-			(s as any)?.title ||
-			(s as any)?.studyDescription ||
-			(s?.teethFdi?.[0] ? `Снимок зуба ${s.teethFdi[0]} (ДО)` : "Снимок ДО лечения"),
+		title: getStudyTitle(s, fallbackTitle),
 		subtitle: s?.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "12.01.2024",
 		toothCode: s?.teethFdi?.[0] || (activeToothFdi ? String(activeToothFdi) : "16"),
 		zoom: 1.0,
@@ -75,10 +89,7 @@ export function createInitialRightViewport(options: {
 		const s = initialRightStudy;
 		return {
 			imageSrc: s.imageUrl || s.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg",
-			title:
-				(s as any)?.title ||
-				(s as any)?.studyDescription ||
-				"Контроль ПОСЛЕ лечения (Обтурация)",
+			title: getStudyTitle(s, "Контроль ПОСЛЕ лечения (Обтурация)"),
 			subtitle: s.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "16.05.2024",
 			toothCode: s.teethFdi?.[0] || (activeToothFdi ? String(activeToothFdi) : "16"),
 			zoom: 1.0,
@@ -91,8 +102,19 @@ export function createInitialRightViewport(options: {
 	}
 
 	if (splitMode === "atlas") {
+		const fallbackPathology: ConsultationPathologyItem = {
+			id: "periapical-periodontitis",
+			code: "K04.5",
+			titleRu: "Хронический апикальный периодонтит",
+			titleEn: "Chronic apical periodontitis",
+			previewUrl: "/radiology/sample_rvg_tooth16.jpg",
+			imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+			differentialHighlights: [],
+		};
 		const defaultPathology =
-			CONSULTATION_PATHOLOGY_CATALOG[1] || CONSULTATION_PATHOLOGY_CATALOG[0]!;
+			CONSULTATION_PATHOLOGY_CATALOG[1] ??
+			CONSULTATION_PATHOLOGY_CATALOG[0] ??
+			fallbackPathology;
 		return {
 			imageSrc:
 				defaultPathology.imageUrl ||
@@ -114,10 +136,7 @@ export function createInitialRightViewport(options: {
 		effectiveStudies.length >= 2 ? effectiveStudies[effectiveStudies.length - 1] : undefined;
 	return {
 		imageSrc: s?.imageUrl || s?.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg",
-		title:
-			(s as any)?.title ||
-			(s as any)?.studyDescription ||
-			"Контроль ПОСЛЕ лечения (Обтурация каналов)",
+		title: getStudyTitle(s, "Контроль ПОСЛЕ лечения (Обтурация каналов)"),
 		subtitle: s?.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "16.05.2024",
 		toothCode: s?.teethFdi?.[0] || (activeToothFdi ? String(activeToothFdi) : "16"),
 		zoom: 1.0,

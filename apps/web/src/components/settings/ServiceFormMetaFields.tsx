@@ -15,7 +15,7 @@ export interface ServiceFormMetaFieldsProps {
 		materialsCostRub?: number;
 		durationMinutes: number;
 		taxDeductible: boolean;
-		vatRate: "vat_exempt" | "vat_0" | "vat_20";
+		vatRate?: "vat_exempt" | "vat_0" | "vat_20" | undefined;
 		active: boolean;
 	};
 	readonly setEditServiceForm: React.Dispatch<
@@ -101,25 +101,14 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 					</select>
 				</div>
 				<div className="staff-form-group">
-					<label htmlFor="service-vat-select">Ставка НДС</label>
-					<select
-						id="service-vat-select"
-						value={editServiceForm.vatRate || "vat_exempt"}
-						onChange={(e) =>
-							setEditServiceForm((prev: any) => ({
-								...prev,
-								vatRate: e.target.value as "vat_exempt" | "vat_0" | "vat_20",
-							}))
-						}
+					<label htmlFor="service-tax-status">Налогообложение (НДС)</label>
+					<div
+						id="service-tax-status"
+						className="flex items-center h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)] font-medium"
+						title="Медицинские услуги освобождены от налогообложения НДС на основании пп. 2 п. 2 ст. 149 НК РФ"
 					>
-						<option value="vat_exempt">
-							Без НДС (Медицинские услуги)
-						</option>
-						<option value="vat_0">НДС 0%</option>
-						<option value="vat_20">
-							НДС 20% (косметология, отбеливание, товары)
-						</option>
-					</select>
+						Без НДС (пп. 2 п. 2 ст. 149 НК РФ)
+					</div>
 				</div>
 			</div>
 

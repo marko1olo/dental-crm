@@ -26,8 +26,8 @@ export const ImagingToothFilterBar: React.FC<ImagingToothFilterBarProps> = ({
 					type="button"
 					className={`h-6 min-h-[24px] px-2 rounded text-[11px] font-semibold shrink-0 transition-colors cursor-pointer ${
 						effectiveToothFilter === "all"
-							? "bg-[var(--teal)] text-white shadow-2xs"
-							: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-teal-500"
+							? "bg-[var(--primary)] text-white shadow-2xs"
+							: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 					}`}
 					onClick={() => onToothChange("all")}
 					data-testid="tooth-filter-all"
@@ -42,8 +42,8 @@ export const ImagingToothFilterBar: React.FC<ImagingToothFilterBarProps> = ({
 							type="button"
 							className={`h-6 min-h-[24px] px-2 rounded text-[11px] font-semibold font-mono shrink-0 transition-colors cursor-pointer ${
 								isSelected
-									? "bg-[var(--teal)] text-white shadow-2xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-teal-500"
+									? "bg-[var(--primary)] text-white shadow-2xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 							onClick={() => onToothChange(isSelected ? "all" : tooth)}
 							data-testid={`tooth-filter-${tooth}`}

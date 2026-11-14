@@ -50,7 +50,7 @@ describe("Zero-Mock Chairside Diary, Odontogram & Clinical Protocol Inquisition"
 			"../components/visit/doctorChairSessions.ts",
 			"../components/visit/CompletedServicesChecklist.tsx",
 			"../components/odontogram/OdontogramModule.tsx",
-			"../components/odontogram/ToothActionMenuPortal.tsx",
+			"../components/odontogram/ToothRadialMenu.tsx",
 			"../components/odontogram/useOdontogramSync.ts",
 			"../components/visit/diary/useVisitDiaryPatientInfo.ts",
 		];

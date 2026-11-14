@@ -79,7 +79,6 @@ export function useMissingPriceAlert({
 		if (onUpdatePrice) onUpdatePrice(item.id, updatedPriceRub);
 		if (onUpdateItem) {
 			const updated = createPriceUpdatedPlanItem(item, updatedPriceRub);
-			(updated as any).amountKopecks = parsed.kopecks;
 			onUpdateItem(updated);
 		}
 	}, [inputPrice, item, onUpdatePrice, onUpdateItem]);

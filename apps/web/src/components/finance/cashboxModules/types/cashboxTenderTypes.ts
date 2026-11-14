@@ -4,6 +4,16 @@
  * DENTE Dental CRM — Cash Register 54-FZ, Discounts & Staff Autonomy Operations.
  */
 
+export type PaymentMethodTab =
+	| "card"
+	| "cash"
+	| "sbp"
+	| "deposit"
+	| "family"
+	| "split"
+	| "warranty"
+	| "installment";
+
 export type TenderAllocationTarget =
 	| "card"
 	| "cash"

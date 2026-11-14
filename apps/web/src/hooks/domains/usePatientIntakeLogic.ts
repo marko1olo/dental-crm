@@ -368,8 +368,8 @@ export function usePatientIntakeLogic({
 			recordExtractTreatmentProvidedValue() ||
 			"";
 		const sexRaw = (
-			(documentPatient as any)?.gender ??
-			(documentPatient?.administrativeProfile as any)?.gender ??
+			documentPatient?.gender ??
+			documentPatient?.administrativeProfile?.gender ??
 			(patientProfile as { sex?: string } | null | undefined)?.sex ??
 			""
 		)

@@ -5,7 +5,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { cashBoxes, labOrders, organizations, patients, users } from "../../db/schema.js";
 import { registerCashLabPaymentRoutes } from "../../routes/lab/index.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

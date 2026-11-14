@@ -24,9 +24,10 @@ export async function resolveOrAutoCreateItems(
 			? allOrgItems.find((i) => i.id === def.exactItemId)
 			: undefined;
 
-		if (!matched && def.patterns && def.patterns.length > 0) {
+		const patterns = def.patterns;
+		if (!matched && patterns && patterns.length > 0) {
 			matched = allOrgItems.find((inv) =>
-				def.patterns!.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())),
+				patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())),
 			);
 		}
 

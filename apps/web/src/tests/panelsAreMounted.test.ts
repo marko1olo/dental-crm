@@ -310,10 +310,11 @@ test("устаревших фасадов-дубликатов представ�
 		"components/radiology/index.ts",
 		"components/telephony/index.ts",
 		"components/patients/index.ts",
+		"pages/AnalyticsDashboardView.tsx",
 	]);
 
 	assertFilesExist([
-		"pages/AnalyticsDashboardView.tsx",
+		"pages/analyticsDashboard/AnalyticsDashboardView.tsx",
 		"pages/LabOrdersPage.tsx",
 		"components/billing/InvoicesView.tsx",
 		"components/InventoryView.tsx",

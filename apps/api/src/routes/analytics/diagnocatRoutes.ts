@@ -1,5 +1,5 @@
 import { and, eq, gte, sql } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
@@ -55,7 +55,7 @@ export async function fetchAiDiagnosticStats(
 export const fetchDiagnocatStats = fetchAiDiagnosticStats;
 
 export async function registerDiagnocatRoutes(app: FastifyInstance) {
-	const handler = async (request: any, reply: any) => {
+	const handler = async (request: FastifyRequest<{ Querystring: { range?: string } }>, reply: FastifyReply) => {
 		const readAllowed = await requireClinicalReadAccess(
 			request,
 			reply,
@@ -71,7 +71,7 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const { range } = request.query as { range?: string };
+			const { range } = request.query;
 			let startDate: Date | undefined;
 			const now = new Date();
 

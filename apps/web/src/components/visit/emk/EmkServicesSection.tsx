@@ -1,5 +1,6 @@
 import React from "react";
 import { Boxes, ChevronDown, Search, Tag, Zap } from "lucide-react";
+import type { ServiceCatalogItem } from "@dental/shared";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import {
 	CLINICAL_SERVICE_BUNDLES,
@@ -10,6 +11,11 @@ import { resolveClinicalServiceBundlesAgainstCatalog } from "../clinicalServiceB
 import { VisitServiceBillingWidget } from "../VisitServiceBillingWidget";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import { showToast } from "../../GlobalToast";
+
+type LiveCatalogItemLike = ServiceCatalogItem & {
+	code804n?: string;
+	priceRub?: number;
+};
 
 export interface EmkServicesSectionProps extends EmkSectionProps {
 	visitId?: string | undefined;
@@ -44,13 +50,12 @@ export function EmkServicesSection({
 	activeDoctorName,
 	clinicLegalName,
 }: EmkServicesSectionProps) {
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic context access
-	const appLogic = useOptionalAppLogicContext() as any;
+	const appLogic = useOptionalAppLogicContext();
 	const liveCatalog = React.useMemo(
 		() =>
 			Array.isArray(appLogic?.dashboard?.serviceCatalog)
-				? appLogic.dashboard.serviceCatalog
-				: [],
+				? (appLogic.dashboard.serviceCatalog as LiveCatalogItemLike[])
+				: ([] as LiveCatalogItemLike[]),
 		[appLogic?.dashboard?.serviceCatalog],
 	);
 
@@ -58,8 +63,7 @@ export function EmkServicesSection({
 		return BASE_QUICK_PRICE_SERVICES.map((srv) => {
 			if (liveCatalog.length === 0) return { ...srv };
 			const codeUpper = srv.code804n.toUpperCase();
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog row
-			const match = liveCatalog.find((c: any) => {
+			const match = liveCatalog.find((c) => {
 				if (c?.active === false) return false;
 				const cCode = String(c?.code || c?.code804n || "").trim().toUpperCase();
 				if (cCode === codeUpper) return true;

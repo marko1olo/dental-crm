@@ -108,12 +108,12 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = (pr
 				/>
 			)}
 
-			{/* Вкладыш 043/у для амбулаторной карты (1 клик из смены врача) */}
+			{/* Вкладыш для амбулаторной карты (1 клик из смены врача) */}
 			{printingAppointment && (
 				<FastClinicalPrintEngine
 					isOpen={Boolean(printingAppointment)}
 					onClose={() => setPrintingAppointment(null)}
-					initialDocType="partisan_insert_043u"
+					initialDocType="clinical_protocol_entry"
 					patient={{
 						fullName: printingAppointment.patientFullName,
 						birthDate: printingAppointment.patientBirthDate,

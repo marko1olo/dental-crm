@@ -140,7 +140,11 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				})
 				.returning();
 
-			return { kind: "ok" as const, operation: operation!, cashBox: updatedBox! };
+			if (!operation || !updatedBox) {
+				throw new Error("Не удалось зафиксировать операцию служебного внесения в кассу");
+			}
+
+			return { kind: "ok" as const, operation, cashBox: updatedBox };
 		});
 
 		if (result.kind === "box_not_found") {
@@ -275,7 +279,11 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				})
 				.returning();
 
-			return { kind: "ok" as const, operation: operation!, cashBox: updatedBox! };
+			if (!operation || !updatedBox) {
+				throw new Error("Не удалось зафиксировать операцию служебного изъятия из кассы");
+			}
+
+			return { kind: "ok" as const, operation, cashBox: updatedBox };
 		});
 
 		if (result.kind === "box_not_found") {

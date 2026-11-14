@@ -87,10 +87,10 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 			.then((res) => (res.ok ? res.json() : []))
 			.then((data) => {
 				if (!active || !Array.isArray(data) || data.length === 0) return;
-				const mapped: SterilizationBatchCycleRecord[] = data.map((item: any, idx: number) => ({
+				const mapped: SterilizationBatchCycleRecord[] = (data as Record<string, unknown>[]).map((item, idx: number) => ({
 					id: String(item.id || `cycle-${idx}`), cycleNumber: Number(item.cycleNumber) || idx + 1,
-					date: item.timestamp ? new Date(item.timestamp).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
-					time: item.timestamp ? new Date(item.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "",
+					date: item.timestamp ? new Date(item.timestamp as string).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
+					time: item.timestamp ? new Date(item.timestamp as string).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "",
 					autoclaveId: String(item.autoclaveId || "АК-01"), autoclaveName: String(item.deviceName || selectedAutoclave),
 					programId: (item.regime === "delicate_121" || item.regime === "flash_134" ? item.regime : "standard_134") as AutoclaveRegimeId,
 					temperatureCelsius: Number(item.temperatureCelsius) || 134, pressureBar: Number(item.pressureBar) || 2.1,
@@ -193,7 +193,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 		setCycles((prev) => [cycle2, cycle1, ...prev]);
 		if (onCycleCreated) onCycleCreated(cycle1);
 		if (onCycleCompleted) onCycleCompleted({ cycle1, cycle2 });
-		setToastMessage("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + ПСО Норма. Расходники списаны.");
+		setToastMessage("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + контроль очистки. Расходники списаны.");
 		setTimeout(() => setToastMessage(null), 4500);
 	}, [operatorName, selectedAutoclave, resolvedInitialOperator, onCycleCreated, onCycleCompleted]);
 
@@ -300,7 +300,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								</div>
 
 								<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 text-xs border-t border-[var(--line,#e2e8f0)] dark:border-slate-700 pt-2.5 sm:pt-3">
-									<div className="flex items-center gap-2 text-[var(--ink-muted,#64748b)]"><Box className="w-4 h-4 text-teal-600 shrink-0" /><span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор 5 класса</strong> (Soft Negative Stock).</span></div>
+									<div className="flex items-center gap-2 text-[var(--ink-muted,#64748b)]"><Box className="w-4 h-4 text-teal-600 shrink-0" /><span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор 5 класса</strong>.</span></div>
 									<div className="flex items-center gap-1.5 shrink-0 text-[var(--ink,#0f172a)] dark:text-slate-200">
 										<User className="w-3.5 h-3.5 text-teal-600 shrink-0" /><span>Ответственный:</span>
 										<input type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} data-testid="sanpin-operator-input" aria-label="Ответственный сотрудник" className="h-8 px-2 text-xs rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 max-w-[210px] truncate" />
@@ -310,10 +310,11 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								<div className="pt-1 sm:pt-2 flex flex-col gap-2">
 									<button type="button" onClick={handleLaunchShiftMacroBatch} data-testid="sanpin-shift-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)" className="sanpin-primary-cta w-full min-h-[46px] font-bold text-xs sm:text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-md rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all">
 										<CheckCircle className="w-4 h-4 shrink-0" />
-										<span>Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
+										<span>Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
 										<span className="sr-only">Зафиксировать автоклавирование смены</span>
 										<span className="sr-only">Зарегистрировать цикл стерилизации</span>
 										<span className="sr-only">Запустить цикл стерилизации</span>
+										<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
 									</button>
 									<button type="button" onClick={handleRunCycle} data-testid="sanpin-run-cycle-cta" title="Зафиксировать единичный цикл автоклавирования" className="w-full min-h-[38px] text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50 hover:bg-[var(--line,#e2e8f0)]/50 border border-[var(--line,#e2e8f0)] rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors">
 										<span>Зафиксировать единичный цикл ({packagesCount} пакетов)</span>
@@ -387,7 +388,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 								{[
 									{ title: "Журнал автоклавирования", desc: "Регламентный лист контроля работы паровых и воздушных стерилизаторов клиники за текущий период.", icon: FileText, color: "text-teal-600", btnText: "Печать журнала", action: handlePrintJournal },
-									{ title: "Термоэтикеки на крафт-пакеты", desc: "Печать маркировочных этикеток с датой, номером цикла, автоклавом и сроком стерильности (+50 суток).", icon: Tag, color: "text-blue-600", btnText: "Печать наклеек", action: handlePrintStickers },
+									{ title: "Термоэтикетки на крафт-пакеты", desc: "Печать маркировочных этикеток с датой, номером цикла, автоклавом и сроком стерильности (+50 суток).", icon: Tag, color: "text-blue-600", btnText: "Печать наклеек", action: handlePrintStickers },
 									{ title: "Журнал предстерилизационной очистки", desc: "Учет качества предстерилизационной очистки: контроль скрытой крови (азопирам) и моющих средств.", icon: ShieldCheck, color: "text-emerald-600", btnText: "Печать журнала очистки", action: handlePrintJournal },
 									{ title: "График генеральных уборок и режим УФ", desc: "Журнал учета работы бактерицидных установок, кварцевания и графика генеральных уборок кабинетов.", icon: CalendarCheck, color: "text-amber-500", btnText: "Печать графика уборок", action: handlePrintJournal },
 								].map((form) => (
@@ -405,7 +406,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 				</div>
 
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink-muted,#64748b)]">
-					<div className="flex items-center gap-2"><Box className="w-4 h-4 text-teal-600 shrink-0" /><span className="hidden sm:inline">Пакетное списание расходников: крафт-пакеты, индикаторы 5 класса (Soft Negative Stock)</span><span className="sm:hidden">Списание со склада авто</span></div>
+					<div className="flex items-center gap-2"><Box className="w-4 h-4 text-teal-600 shrink-0" /><span className="hidden sm:inline">Пакетное списание расходников: крафт-пакеты, индикаторы 5 класса</span><span className="sm:hidden">Списание со склада авто</span></div>
 					<button type="button" onClick={onClose} className="sanpin-secondary-btn min-h-[44px]">Закрыть</button>
 				</div>
 			</div>

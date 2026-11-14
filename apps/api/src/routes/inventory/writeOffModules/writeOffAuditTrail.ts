@@ -51,7 +51,8 @@ export async function registerAuditTrailRoutes(server: FastifyInstance): Promise
 		server.post<{ Params?: { organizationId?: string } }>(path, async (request, reply) => {
 			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "inventory deduct visit");
 			if (!resolvedOrgId) return;
-			const bodyOrg = (request.body as any)?.organizationId;
+			const body = request.body && typeof request.body === "object" ? (request.body as { organizationId?: unknown }) : undefined;
+			const bodyOrg = typeof body?.organizationId === "string" ? body.organizationId : undefined;
 			const targetOrgId = request.params?.organizationId || (bodyOrg && /^[0-9a-f-]{36}$/i.test(bodyOrg) ? bodyOrg : resolvedOrgId);
 			if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
 			return handleDeductVisitRequest(targetOrgId, request.body, request, reply);

@@ -53,9 +53,9 @@
 }
 
 /* Apple HIG Touch Target & Mobile Zero Horizontal Drift */
-.mobile-radiology-viewer,
-.mobile-radiology-topbar,
-.mobile-radiology-bottom-bar {
+[data-theme="dark"] .mobile-radiology-viewer,
+[data-theme="dark"] .mobile-radiology-topbar,
+[data-theme="dark"] .mobile-radiology-bottom-bar {
 	background: #020617 !important;
 	border-color: #1e293b !important;
 }

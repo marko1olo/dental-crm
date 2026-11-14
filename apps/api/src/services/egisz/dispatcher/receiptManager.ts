@@ -60,7 +60,9 @@ export async function getReceiptByOutboxId(
 	}
 
 	if (row.status === "registered_in_remd" && row.remdDocumentId && row.remdTransactionId) {
+		const rawReceiptId = typeof json?.receiptId === "string" ? json.receiptId : `RCP-REMD-${row.remdDocumentId}`;
 		return createEgiszRemdReceipt({
+			receiptId: rawReceiptId,
 			remdDocumentId: row.remdDocumentId,
 			transactionId: row.remdTransactionId,
 			registeredAt: row.updatedAt?.toISOString(),

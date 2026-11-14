@@ -12,9 +12,7 @@
 }
 
 [data-theme="dark"] .PublicBookingWidget-root .dente-booking-widget,
-.dark .PublicBookingWidget-root .dente-booking-widget,
-[data-theme="dark"] .dente-booking-widget,
-.dark .dente-booking-widget {
+.dark .PublicBookingWidget-root .dente-booking-widget {
 	background: #090d16 !important;
 	border-color: #1e293b !important;
 	box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.7);

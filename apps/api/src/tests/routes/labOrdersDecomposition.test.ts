@@ -8,7 +8,6 @@ import {
 import {
 	CANONICAL_DENTAL_LAB_PRESETS,
 	colorVitaSchema,
-	createLabOrderSchema,
 	expressLabOrderSchema,
 	normalizeRestorationMaterial,
 	normalizeRestorationType,
@@ -23,7 +22,7 @@ import {
 	estimateDeliveryAndFittingSchedule,
 } from "../../routes/lab/ordersCrudModules/labOrderCostCalculator.js";
 import {
-	cadCamCrownOrderSchema,
+	createLabOrderSchema,
 	updateLabOrderSchema,
 } from "../../routes/lab/ordersCrudModules/labOrderValidationSchemas.js";
 
@@ -55,33 +54,28 @@ describe("Dental Lab Orders Decomposition — Layer 0 Schemas & Types Parity", (
 		assert.equal(resInvalid.success, false);
 	});
 
-	it("validates CAD/CAM crown order schema for Zirconia and E.max", () => {
-		const validZirconia = cadCamCrownOrderSchema.safeParse({
+	it("validates canonical createLabOrderSchema for Zirconia and E.max orders", () => {
+		const validZirconia = createLabOrderSchema.safeParse({
 			patientId: "0192e2b0-8451-789a-bcde-000000000001",
 			toothFdi: "16",
 			material: "zirconia_ml",
 			colorVita: "A2",
-			shadeSystem: "VITA_CLASSICAL",
-			occlusalClearanceMm: 1.5,
-			finishLineType: "chamfer",
 			priceRub: 24000,
 		});
 		assert.ok(validZirconia.success);
 		assert.equal(validZirconia.data.material, "zirconia_ml");
 		assert.equal(validZirconia.data.colorVita, "A2");
 
-		const validEmax = cadCamCrownOrderSchema.safeParse({
+		const validEmax = createLabOrderSchema.safeParse({
 			patientId: "0192e2b0-8451-789a-bcde-000000000002",
 			toothFdi: "21",
 			material: "emax_press",
 			colorVita: "A1",
-			shadeSystem: "VITA_3D_MASTER",
-			stumpShade: "ND1",
 			priceRub: 26000,
 		});
 		assert.ok(validEmax.success);
 		assert.equal(validEmax.data.material, "emax_press");
-		assert.equal(validEmax.data.stumpShade, "ND1");
+		assert.equal(validEmax.data.colorVita, "A1");
 	});
 
 	it("validates updateLabOrderSchema allows partial clinical updates", () => {
@@ -167,8 +161,8 @@ describe("Dental Lab Orders Decomposition — Layer 0/2 Stage & Status Mapping",
 		assert.equal(mapStageToLabOrderStatus("Слепок/Скан"), "sent");
 		assert.equal(mapStageToLabOrderStatus("model_cad_design"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("shipped_to_clinic"), "shipped");
-		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "received");
-		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "refitting");
+		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "ready_in_clinic");
+		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "fitted");
 		assert.equal(mapStageToLabOrderStatus("Фиксация"), "completed");
 		assert.equal(mapStageToLabOrderStatus("cancelled"), "cancelled");
 		assert.equal(mapStageToLabOrderStatus("unknown_stage"), null);

@@ -76,12 +76,12 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 			);
 		});
 
-		it("AppointmentModal: Zero requirement for assistant or branch selection", () => {
+		it("QuickBookingDrawer: Zero requirement for assistant or branch selection", () => {
 			const modalFilePath = path.resolve(
 				process.cwd(),
-				"apps/web/src/components/schedule/AppointmentModal.tsx",
+				"apps/web/src/components/schedule/QuickBookingDrawer.tsx",
 			);
-			assert.ok(fs.existsSync(modalFilePath), "AppointmentModal.tsx must exist");
+			assert.ok(fs.existsSync(modalFilePath), "QuickBookingDrawer.tsx must exist");
 			const content = fs.readFileSync(modalFilePath, "utf8");
 
 			// Must not disable save button because assistant is missing

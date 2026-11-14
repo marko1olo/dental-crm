@@ -87,8 +87,7 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 				} else {
 					// Офлайн-деградация: при сбое бэкенда строим аналитику по локальным данным
 					const fallbackData = computeLocalAnalyticsData(
-						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-						(appLogic?.dashboard as any) ?? null,
+						(appLogic?.dashboard as Record<string, unknown> | null) ?? null,
 						dateRange,
 					);
 					setData(fallbackData);
@@ -99,8 +98,7 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 				// Сюда попадают сбои сети и отмена запроса. Строим локальную аналитику без красных экранов.
 				if (!mounted || controller.signal.aborted) return;
 				const fallbackData = computeLocalAnalyticsData(
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					(appLogic?.dashboard as any) ?? null,
+					(appLogic?.dashboard as Record<string, unknown> | null) ?? null,
 					dateRange,
 				);
 				setData(fallbackData);
@@ -145,6 +143,7 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 		authContext?.denteClinicalReadHeaders,
 		authContext,
 		appLogic?.dashboard,
+		_retryToken,
 	]);
 
 	const handleExportExecutiveCsv = useCallback(() => {
@@ -168,14 +167,14 @@ export function useAnalyticsDashboardData(dateRange: string, branchFilter: strin
 
 			if (Array.isArray(data?.doctorProfitabilityJson) && data.doctorProfitabilityJson.length > 0) {
 				rows.push([]);
-				rows.push(["ВЫРАБОТКА ВРАЧЕЙ", "Выручка (₽)", "Маржа клиники (₽)", "Успешность (%)", "Услуг", "Нарядов ЗТЛ"]);
+				rows.push(["ВЫРАБОТКА ВРАЧЕЙ", "Выручка (₽)", "Маржа клиники (₽)", "Успешность (%)", "Услуг выполнено", "Нарядов ЗТЛ"]);
 				for (const doc of data.doctorProfitabilityJson) {
 					rows.push([
 						doc.name,
 						doc.revenue ?? 0,
 						doc.clinicMarginRub ? doc.clinicMarginRub : "—",
 						doc.completionRate !== null && doc.completionRate !== undefined ? `${doc.completionRate}%` : "—",
-						doc.services804nCount ?? 0,
+						doc.servicesCount ?? doc.services804nCount ?? 0,
 						doc.labOrdersCount ?? 0,
 					]);
 				}

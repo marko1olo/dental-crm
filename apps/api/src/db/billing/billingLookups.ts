@@ -195,7 +195,7 @@ interface MockableSelect {
 }
 
 function isMockedSelect(fn: typeof db.select): fn is typeof db.select & MockableSelect {
-	return "mock" in fn && (fn as typeof db.select & MockableSelect).mock !== undefined;
+	return Boolean((fn as typeof db.select & MockableSelect).mock);
 }
 
 export async function getPaymentsByPatientIdInDb(

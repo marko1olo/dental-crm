@@ -43,13 +43,13 @@ export function OnlineSelfBookingCard({
 				</div>
 				<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 					<span className="text-[var(--muted)]">Доходимость (Явка):</span>
-					<span className="font-bold text-blue-600 dark:text-blue-400">
+					<span className="font-bold text-[var(--ink)]">
 						{comparison.onlineAttendancePercent}% ({onlineSummary.totalAttended} чел.)
 					</span>
 				</div>
 				<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 					<span className="text-[var(--muted)]">Неявка (No-show):</span>
-					<span className="font-bold text-rose-500">
+					<span className="font-bold text-[var(--danger,#e11d48)]">
 						{Number.isFinite(onlineSummary.noShowRatePercent) ? onlineSummary.noShowRatePercent.toFixed(1) : "0.0"}% ({onlineSummary.totalNoShow} чел.)
 					</span>
 				</div>
@@ -67,7 +67,7 @@ export function OnlineSelfBookingCard({
 				</div>
 				<div className="flex justify-between py-1.5">
 					<span className="text-[var(--muted)]">Человеко-часов сэкономлено:</span>
-					<span className="font-bold text-emerald-600 dark:text-emerald-400">
+					<span className="font-bold text-[var(--teal)]">
 						~{comparison.savedHours} часов работы
 					</span>
 				</div>

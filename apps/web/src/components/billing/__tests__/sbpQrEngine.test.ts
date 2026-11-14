@@ -26,7 +26,7 @@ import {
 	copySbpUrlToClipboard,
 } from "../sbpQrEngine.js";
 import { SbpDynamicQrCard } from "../SbpDynamicQrCard.js";
-import { FastCheckoutModal } from "../../finance/FastCheckoutModal.js";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -102,23 +102,20 @@ describe("Honest SBP QR contour", () => {
 	describe("5. SplitPaymentModal Integration", () => {
 		it("renders quick split chips, 36px segmented switcher, and SBP widget when allocated", () => {
 			const html = renderToString(
-				React.createElement(FastCheckoutModal, {
+				React.createElement(CashRegisterStudioModal, {
 					isOpen: true,
 					onClose: () => {},
 					defaultMethod: "split",
-					containerTestId: "split-payment-modal",
-					totalBillRub: 18000,
-					totalBillKop: 1800000,
+					mode: "checkout",
+					totalDueRub: 18000,
 					patientId: "pat-101",
 					patientName: "Козлова Мария",
 				})
 			);
 
-			assert.ok(html.includes('data-testid="split-payment-modal"'), "Renders split modal");
 			assert.ok(html.includes('data-testid="quick-presets-section"'), "Renders quick presets section");
 			assert.ok(html.includes('data-testid="btn-checkout-split-50-50"'), "Renders 50/50 preset");
-			assert.ok(html.includes('data-testid="split-payment-section"'), "Renders tender split section");
-			assert.ok(html.includes('data-testid="execute-fast-checkout-btn"'), "Renders single primary checkout CTA");
+			assert.ok(html.includes('data-testid="split-tender-panel"'), "Renders tender split section");
 		});
 	});
 });

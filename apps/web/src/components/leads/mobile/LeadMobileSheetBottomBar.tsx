@@ -29,8 +29,8 @@ export const LeadMobileSheetBottomBar: React.FC<
 }) => {
 	const handleScheduleClick = () => {
 		onClose();
-		if (onQuickSchedule) onQuickSchedule(lead.id);
-		else if (onSchedule) onSchedule(lead.id);
+		if (onSchedule) onSchedule(lead.id);
+		else if (onQuickSchedule) onQuickSchedule(lead.id);
 	};
 
 	return (

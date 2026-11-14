@@ -2,7 +2,7 @@ import type { PsoBatchItem, SterilizationBatchItem } from "../shiftAutofillSchem
 
 export * from "./shiftAutofillEquipments.js";
 
-export function getShiftPsoBatches(providedRecords?: PsoBatchItem[] | any[]): any[] {
+export function getShiftPsoBatches(providedRecords?: PsoBatchItem[] | Record<string, unknown>[]): (PsoBatchItem | Record<string, unknown>)[] {
 	if (Array.isArray(providedRecords) && providedRecords.length > 0) {
 		return providedRecords;
 	}
@@ -32,9 +32,9 @@ export function getShiftPsoBatches(providedRecords?: PsoBatchItem[] | any[]): an
 }
 
 export function getShiftSterilizationRecords(
-	sterilizationRecords?: SterilizationBatchItem[] | any[],
-	form257Fallback?: any[],
-): any[] {
+	sterilizationRecords?: SterilizationBatchItem[] | Record<string, unknown>[],
+	form257Fallback?: Record<string, unknown>[],
+): (SterilizationBatchItem | Record<string, unknown>)[] {
 	if (Array.isArray(sterilizationRecords) && sterilizationRecords.length > 0) {
 		return sterilizationRecords;
 	}

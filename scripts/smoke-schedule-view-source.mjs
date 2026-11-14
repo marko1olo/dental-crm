@@ -111,9 +111,6 @@ const scheduleQuickActionsSource = existsSync(scheduleQuickActionsFile)
 		]
 	: [];
 const scheduleCardFiles = [
-	"apps/web/src/components/schedule/AppointmentCardEditor.tsx",
-	"apps/web/src/components/schedule/AppointmentCardPrimaryActions.tsx",
-	"apps/web/src/components/schedule/AppointmentCardContextMenu.tsx",
 	"apps/web/src/components/schedule/AppointmentPaymentBadges.tsx",
 	"apps/web/src/components/schedule/AppointmentStatusPopup.tsx",
 	"apps/web/src/components/schedule/useAppointmentCardState.ts",

@@ -7,13 +7,20 @@ import { wsBroker } from "../../../services/websocketBroker.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../odontogram/types.js";
 import { handleOtpRequest, verifyOtpCode } from "./pepOtpService.js";
 import { activeOtpCache, signTreatmentPlanPepSchema } from "./pepTypes.js";
+import { isValidUuid } from "@dental/shared";
 
 export async function handleSignTreatmentPlanPep(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
 ) {
-	const planId = request.params.id;
+	const planId = request.params.id?.trim();
+	if (!planId || !isValidUuid(planId)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Идентификатор плана лечения должен быть валидным UUID.",
+		});
+	}
 	const parsed = signTreatmentPlanPepSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({

@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import type { PaymentMethodTab } from "../finance/PaymentModal.js";
+export type PaymentMethodTab = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment";
 
 export interface GlobalPaymentModalContext {
 	patientId?: string | undefined;
@@ -19,7 +19,7 @@ export interface GlobalPaymentModalContext {
 	clinicLegalName?: string | undefined;
 	patientDepositRub?: number | undefined;
 	patientFamilyBalanceRub?: number | undefined;
-	items?: import("../finance/PaymentModal.js").PaymentModalProps["items"];
+	items?: Array<{ name: string; priceRub: number; quantity?: number; code804n?: string }>;
 	invoiceId?: string | undefined;
 }
 

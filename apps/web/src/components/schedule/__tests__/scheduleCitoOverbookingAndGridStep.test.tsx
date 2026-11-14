@@ -201,23 +201,29 @@ describe("Feature 192: CITO Overbooking & Configurable Grid Step", () => {
 
 	it("generateTimeSlots generates correct intervals for 15, 30, and 60 minutes", () => {
 		const slots60 = generateTimeSlots(60);
-		assert.strictEqual(slots60.length, 13);
+		assert.strictEqual(slots60.length, 14);
 		assert.strictEqual(slots60[0], "08:00");
-		assert.strictEqual(slots60[slots60.length - 1], "20:00");
+		assert.strictEqual(slots60[slots60.length - 1], "21:00");
 
 		const slots30 = generateTimeSlots(30);
-		assert.strictEqual(slots30.length, 25);
+		assert.strictEqual(slots30.length, 27);
 		assert.strictEqual(slots30[0], "08:00");
 		assert.strictEqual(slots30[1], "08:30");
-		assert.strictEqual(slots30[slots30.length - 1], "20:00");
+		assert.strictEqual(slots30[slots30.length - 1], "21:00");
 
 		const slots15 = generateTimeSlots(15);
-		assert.strictEqual(slots15.length, 49);
+		assert.strictEqual(slots15.length, 53);
 		assert.strictEqual(slots15[0], "08:00");
 		assert.strictEqual(slots15[1], "08:15");
 		assert.strictEqual(slots15[2], "08:30");
 		assert.strictEqual(slots15[3], "08:45");
-		assert.strictEqual(slots15[slots15.length - 1], "20:00");
+		assert.strictEqual(slots15[slots15.length - 1], "21:00");
+
+		// Adaptive startHour and endHour (evening / 24h coverage)
+		const customShiftSlots = generateTimeSlots(60, 9, 20);
+		assert.strictEqual(customShiftSlots[0], "09:00");
+		assert.strictEqual(customShiftSlots[customShiftSlots.length - 1], "20:00");
+		assert.strictEqual(customShiftSlots.length, 12);
 	});
 
 	it("ScheduleGrid renders grid step selector with 15/30/60 buttons and appointment-cito-overbooking-badge", () => {

@@ -182,14 +182,22 @@ async function run() {
 
 		const pcPage = await pcContext.newPage();
 		await loginAndMountWorkspace(pcPage);
+		await pcPage.waitForSelector('[data-testid="copilot-context-telemetry-bar"]', { state: "visible", timeout: 15000 });
 
-		// 1. PC Light
+		// 1. PC Light (Live Clinical Dialog + 1 Primary CTA)
 		console.log("Capturing 01_copilot_studio_pc_light_1440x900.png...");
 		await setTheme(pcPage, "light");
 		await saveProof(pcPage, "01_copilot_studio_pc_light_1440x900.png");
 
+		// 2. PC Dark (Live Clinical Dialog + 1 Primary CTA)
+		console.log("Capturing 02_copilot_studio_pc_dark_1440x900.png...");
+		await setTheme(pcPage, "dark");
+		await pcPage.waitForTimeout(500);
+		await saveProof(pcPage, "02_copilot_studio_pc_dark_1440x900.png");
+
 		// Memory Tab PC Light
 		console.log("Capturing 08_copilot_memory_tab_pc_light_1440x900.png...");
+		await setTheme(pcPage, "light");
 		const memoryBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Память")').first();
 		if (await memoryBtn.isVisible()) {
 			await memoryBtn.click({ force: true });
@@ -198,8 +206,20 @@ async function run() {
 			await saveProof(pcPage, "08_copilot_memory_tab_pc_light_1440x900.png");
 		}
 
+		// Actions Tab PC Dark
+		console.log("Capturing 09_copilot_actions_tab_pc_dark_1440x900.png...");
+		await setTheme(pcPage, "dark");
+		const actionsBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Действия")').first();
+		if (await actionsBtn.isVisible()) {
+			await actionsBtn.click({ force: true });
+			await pcPage.waitForSelector('.copilot-actions-grid', { state: "visible", timeout: 5000 }).catch(() => {});
+			await pcPage.waitForTimeout(500);
+			await saveProof(pcPage, "09_copilot_actions_tab_pc_dark_1440x900.png");
+		}
+
 		// Dialog Empty Starters PC Light
 		console.log("Capturing 05_copilot_empty_starters_pc_light_1440x900.png...");
+		await setTheme(pcPage, "light");
 		const dialogTabBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Диалог")').first();
 		if (await dialogTabBtn.isVisible()) await dialogTabBtn.click({ force: true });
 		const historyTrigger = pcPage.locator('[data-testid="copilot-history-trigger"]').first();
@@ -214,36 +234,14 @@ async function run() {
 			}
 		}
 
-		// 2. PC Dark
-		console.log("Capturing 02_copilot_studio_pc_dark_1440x900.png...");
-		await setTheme(pcPage, "dark");
-		await pcPage.waitForTimeout(500);
-		await saveProof(pcPage, "02_copilot_studio_pc_dark_1440x900.png");
-
-		// Actions Tab PC Dark
-		console.log("Capturing 09_copilot_actions_tab_pc_dark_1440x900.png...");
-		const actionsBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Действия")').first();
-		if (await actionsBtn.isVisible()) {
-			await actionsBtn.click({ force: true });
-			await pcPage.waitForSelector('.copilot-actions-grid', { state: "visible", timeout: 5000 }).catch(() => {});
-			await pcPage.waitForTimeout(500);
-			await saveProof(pcPage, "09_copilot_actions_tab_pc_dark_1440x900.png");
-		}
-
 		// Thinking CoT Indicator PC Dark & Light
 		console.log("Capturing copilot_thinking_indicator_pc_dark_1440x900.png...");
-		const dialogTabDark = pcPage.locator('.copilot-tabs-segmented button:has-text("Диалог")').first();
-		if (await dialogTabDark.isVisible()) await dialogTabDark.click({ force: true });
+		await setTheme(pcPage, "dark");
 		await pcPage.evaluate(() => {
-			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
-				detail: {
-					tooth: 36,
-					patientName: "Кузнецов Михаил Павлович",
-					patientId: "pat-36",
-					isThinking: true,
-					thoughtProcess: "1. Клинический аудит снимка: кариозное поражение в пределах околопульпарного дентина.\n2. Дифференциальный диагноз: исключен пульпит К04.0.\n3. Синтез протокола: препарирование, OptiBond FL, Estelite Asteria."
-				}
-			}));
+			if (window.__denteCopilot?.setBusy) {
+				window.__denteCopilot.setBusy(true);
+				window.__denteCopilot.setPhase("1. Клинический аудит снимка: кариозное поражение в пределах околопульпарного дентина.\n2. Дифференциальный диагноз: исключен пульпит К04.0.\n3. Синтез протокола: препарирование, OptiBond FL, Estelite Asteria.");
+			}
 		});
 		await pcPage.waitForSelector('.copilot-thinking-card, .copilot-thinking-indicator, [data-testid="copilot-thinking-indicator"]', { state: "visible", timeout: 5000 }).catch(() => {});
 		await pcPage.waitForTimeout(600);
@@ -252,38 +250,64 @@ async function run() {
 		await setTheme(pcPage, "light");
 		await pcPage.waitForTimeout(500);
 		await saveProof(pcPage, "copilot_thinking_indicator_pc_light_1440x900.png");
+		await pcContext.close();
 
-		// 2. Mobile 390x844 (Resize viewport on live mounted workspace)
-		console.log("\n--- Switching to Mobile Viewport (390x844) ---");
-		await pcPage.setViewportSize({ width: 390, height: 844 });
-		await pcPage.waitForTimeout(1000);
+		// 2. Native Mobile 390x844 Context (Live Clinical Dialog + Full 3-word Patient Name Zero-Clipping Telemetry Bar)
+		console.log("\n--- Launching Mobile Viewport Context (390x844) ---");
+		const mobContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+		await setupPageAuth(mobContext);
+
+		const mobPage = await mobContext.newPage();
+		await loginAndMountWorkspace(mobPage);
+		await mobPage.waitForSelector('[data-testid="copilot-context-telemetry-bar"]', { state: "visible", timeout: 15000 });
+		await mobPage.evaluate(() => {
+			if (window.__denteCopilot?.setContext) {
+				window.__denteCopilot.setContext({
+					patientName: "Кузнецов Михаил Павлович",
+					patientId: "pat-36",
+					activeTooth: 36,
+				});
+			}
+		});
+		await mobPage.waitForTimeout(600);
+
+		const mobileAudit = await mobPage.evaluate(() => {
+			const bar = document.querySelector('[data-testid="copilot-context-telemetry-bar"]');
+			const panel = document.querySelector('[data-testid="copilot-workspace-panel"]');
+			const replies = document.querySelector('[data-testid="copilot-smart-replies"]');
+			const overflowX = document.documentElement.scrollWidth - window.innerWidth;
+			const barClip = bar && panel ? bar.scrollWidth - bar.clientWidth : -1;
+			const repliesScrollLeft = replies ? replies.scrollLeft : -1;
+			return { overflowX, barScrollW: bar?.scrollWidth, barClientW: bar?.clientWidth, barClip, repliesScrollLeft };
+		});
+		console.log("[Mobile Layout Audit 390px]:", JSON.stringify(mobileAudit));
 
 		// Mobile Light
 		console.log("Capturing 03_copilot_studio_mobile_light_390x844.png...");
-		await setTheme(pcPage, "light");
-		await saveProof(pcPage, "03_copilot_studio_mobile_light_390x844.png");
+		await setTheme(mobPage, "light");
+		await saveProof(mobPage, "03_copilot_studio_mobile_light_390x844.png");
 
 		// Mobile Dark
 		console.log("Capturing 04_copilot_studio_mobile_dark_390x844.png...");
-		await setTheme(pcPage, "dark");
-		await saveProof(pcPage, "04_copilot_studio_mobile_dark_390x844.png");
+		await setTheme(mobPage, "dark");
+		await saveProof(mobPage, "04_copilot_studio_mobile_dark_390x844.png");
 
 		// Mobile Empty Starters Light
 		console.log("Capturing 06_copilot_empty_starters_mobile_light_390x844.png...");
-		await setTheme(pcPage, "light");
-		const mobHistoryTrigger = pcPage.locator('[data-testid="copilot-history-trigger"]').first();
+		await setTheme(mobPage, "light");
+		const mobHistoryTrigger = mobPage.locator('[data-testid="copilot-history-trigger"]').first();
 		if (await mobHistoryTrigger.isVisible()) {
 			await mobHistoryTrigger.click({ force: true });
-			await pcPage.waitForTimeout(400);
-			const mobNewThreadBtn = pcPage.locator('button:has-text("Новый диалог")').first();
+			await mobPage.waitForTimeout(400);
+			const mobNewThreadBtn = mobPage.locator('button:has-text("Новый диалог")').first();
 			if (await mobNewThreadBtn.isVisible()) {
 				await mobNewThreadBtn.click({ force: true });
-				await pcPage.waitForTimeout(600);
-				await saveProof(pcPage, "06_copilot_empty_starters_mobile_light_390x844.png");
+				await mobPage.waitForTimeout(600);
+				await saveProof(mobPage, "06_copilot_empty_starters_mobile_light_390x844.png");
 			}
 		}
 
-		await pcContext.close();
+		await mobContext.close();
 		console.log("[Studio Proof Runner] Completed successfully!");
 	} finally {
 		await browser.close();

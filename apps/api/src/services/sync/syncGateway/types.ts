@@ -121,3 +121,23 @@ export interface SyncPullResult {
 	toothStates: unknown[];
 	vectors: unknown[];
 }
+
+/**
+ * Safely converts an entity model to a Record<string, unknown> without double casting.
+ */
+export function toEntityRecord(entity: unknown): Record<string, unknown> | null {
+	if (!entity || typeof entity !== "object" || Array.isArray(entity)) return null;
+	const record: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(entity)) {
+		record[key] = value;
+	}
+	return record;
+}
+
+/**
+ * Safely ensures an entity model is returned as a plain Record<string, unknown>.
+ */
+export function ensureEntityRecord(entity: unknown): Record<string, unknown> {
+	return toEntityRecord(entity) ?? {};
+}
+

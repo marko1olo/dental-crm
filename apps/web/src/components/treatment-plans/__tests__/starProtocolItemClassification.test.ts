@@ -8,7 +8,7 @@ import test, { describe } from "node:test";
 import {
 	isToothExtractionItem,
 	isToothPreservationOrProstheticItem,
-} from "../validation/starProtocolValidationEngine";
+} from "../starProtocolValidationEngine";
 import type { TreatmentPlanItem } from "../types";
 
 describe("starProtocolValidationEngine — Классификация манипуляций", () => {

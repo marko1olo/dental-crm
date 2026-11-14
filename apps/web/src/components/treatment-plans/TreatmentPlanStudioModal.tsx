@@ -58,6 +58,7 @@ export interface TreatmentPlanStudioModalProps {
 	readonly className?: string;
 	readonly teeth?: unknown;
 	readonly isDemoMode?: boolean;
+	readonly initialActiveTab?: StudioTab;
 	readonly planId?: string | null;
 	readonly clinicName?: string | null;
 	readonly clinicAddress?: string | null;
@@ -78,6 +79,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	doctorSpecialty,
 	initialSelectedTierId = "optimum",
 	initialDepthMode = "express",
+	initialActiveTab = "tiers",
 	initialStages,
 	onApprovePlan,
 	onConfirmSelection,
@@ -96,7 +98,13 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	const patientId = propPatientId ?? (isDemo ? "00000000-0000-0000-0000-000000000001" : undefined);
 	const doctorFullName = propDoctorFullName ?? (isDemo ? "Дежурный врач" : "");
 	const [depthMode, setDepthMode] = useState<StudioDepthMode>(initialDepthMode);
-	const [activeTab, setActiveTab] = useState<StudioTab>("tiers");
+	const [activeTab, setActiveTab] = useState<StudioTab>(initialActiveTab);
+
+	useEffect(() => {
+		if (initialActiveTab) {
+			setActiveTab(initialActiveTab);
+		}
+	}, [initialActiveTab]);
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
 	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(() => {
 		if (initialStages && initialStages.length > 0) return initialStages;

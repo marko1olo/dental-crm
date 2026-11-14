@@ -176,6 +176,7 @@ export function useInvoicesData({
 				if ((err as Error)?.name === "AbortError") {
 					return;
 				}
+				console.warn("[useInvoicesData] Сбой синхронизации счетов с сервером, продолжение с локальными данными:", err);
 				// Soft fallback: continue working with local data (Mandates 8e, 8n)
 			}
 		};

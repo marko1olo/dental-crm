@@ -211,7 +211,14 @@ export const usePatientStore = create<PatientStore>((set) => ({
 		})),
 }));
 
+declare global {
+	interface Window {
+		__PATIENT_STORE__?: typeof usePatientStore;
+		__usePatientStore?: typeof usePatientStore;
+	}
+}
+
 if (typeof window !== "undefined") {
-	(window as unknown as { __PATIENT_STORE__?: typeof usePatientStore }).__PATIENT_STORE__ = usePatientStore;
-	(window as any).__usePatientStore = usePatientStore;
+	window.__PATIENT_STORE__ = usePatientStore;
+	window.__usePatientStore = usePatientStore;
 }

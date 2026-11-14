@@ -3,6 +3,7 @@ import { z } from "zod";
 export const diaryUpsertSchema = z.object({
 	visitId: z.string().uuid(),
 	patientId: z.string().uuid(),
+	complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),
 	anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
 	statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
 	diagnosisIcd10: z.string().max(200).optional(),
@@ -21,6 +22,7 @@ export const diaryLockBodySchema = z.object({
 });
 
 export const diaryReviseBodySchema = z.object({
+	complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),
 	anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
 	statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
 	diagnosisIcd10: z.string().max(200).optional(),

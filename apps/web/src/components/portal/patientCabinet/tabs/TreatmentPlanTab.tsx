@@ -182,7 +182,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 					className="pc-btn-secondary"
 					data-testid="pc-plan-tax-1click-btn"
 					onClick={() => {
-						downloadPatientTaxCertificate1151156(data, 2026);
+						downloadPatientTaxCertificate1151156(data, new Date().getFullYear());
 						if (onShowToast) onShowToast("Справка для налогового вычета (13% НДФЛ) сформирована!");
 					}}
 					style={{ minHeight: "44px", touchAction: "manipulation", display: "inline-flex", alignItems: "center", gap: "6px" }}

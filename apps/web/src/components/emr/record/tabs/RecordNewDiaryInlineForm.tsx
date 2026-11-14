@@ -97,9 +97,19 @@ export const RecordNewDiaryInlineForm: React.FC<RecordNewDiaryInlineFormProps> =
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
 					<div>
-						<label className="text-[11px] font-bold text-[var(--muted)] block mb-1">
-							S (Жалобы):
-						</label>
+						<div className="flex items-center justify-between mb-1">
+							<label className="text-[11px] font-bold text-[var(--muted)]">
+								Жалобы (Subjective):
+							</label>
+							<button
+								type="button"
+								onClick={() => setSubjective("Жалоб на момент осмотра активно не предъявляет (плановый осмотр).")}
+								className="dente-btn-pill text-[11px] py-0.5 px-2 hover:border-[var(--teal)] transition-colors"
+								data-testid="btn-inline-diary-complaint-norm"
+							>
+								Жалоб нет (плановый осмотр)
+							</button>
+						</div>
 						<input
 							type="text"
 							value={subjective}

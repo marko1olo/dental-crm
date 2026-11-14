@@ -31,7 +31,7 @@ export const DEMO_SHOWCASE_DOCTOR: DoctorPayoutRow = {
 	withheldMaterialRub: 0,
 	payoutRub: 55200,
 	note: "Сдельная оплата 30% от фактически оплаченных терапевтических услуг (184 000 ₽)",
-	visits: DEMO_DOCTOR_VISITS as any,
+	visits: [...DEMO_DOCTOR_VISITS],
 	labOrders: [],
 };
 

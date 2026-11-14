@@ -27,10 +27,8 @@ import {
 } from "../components/perio/perioCatalogData.js";
 import {
 	process100PercentDiscountCheckout,
-} from "../components/finance/cashboxOperations.js";
-import {
 	calculatePaymentDiscount,
-} from "../components/finance/PaymentModal.js";
+} from "../components/finance/cashboxOperations.js";
 import {
 	createForm043PhysiologicalNorm,
 	createIntactOdontogramRecords,
@@ -152,17 +150,17 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			}
 		});
 
-		it("2.2. Медсестра и анестетики: списание пустых карпул в 1 клик без комиссии из 3 человек", () => {
-			const visitDiaryPath = path.join(webSrcRoot, "components/visit/VisitDiarySection.tsx");
-			const diaryContent = fs.readFileSync(visitDiaryPath, "utf-8");
+		it("2.2. Медсестра и анестетики: быстрое внесение анестезии в протокол и счёт без комиссии из 3 человек", () => {
+			const anesPath = path.join(webSrcRoot, "components/visit/emk/EmkAnesthesiaSection.tsx");
+			const anesContent = fs.readFileSync(anesPath, "utf-8");
 
 			assert.ok(
-				diaryContent.includes("onDisposalCarpules"),
-				"VisitDiarySection обязан содержать коллбэк 1-клик списания карпул",
+				anesContent.includes("handleApplyPreset"),
+				"EmkAnesthesiaSection обязан содержать быстрое применение пресета анестезии",
 			);
 			assert.ok(
-				diaryContent.includes("дезинфекция 1 клик без комиссии"),
-				"Списание карпул должно проходить в 1 клик без бюрократических комиссий",
+				anesContent.includes("dente-add-services-to-invoice"),
+				"Анестезия вносится в протокол и счёт без бюрократических комиссий",
 			);
 		});
 
@@ -251,11 +249,11 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			assert.equal(emojiCount, 0, `В MedicalRecordStudioModal.tsx обнаружено ${emojiCount} эмодзи! Должно быть 0.`);
 		});
 
-		it("4.2. ServiceReceiptPrintDocument.tsx, CashReceiptPrintModal.tsx и CashReceiptModal.tsx (Кассовые чеки) содержат 0 мультяшных эмодзи", () => {
+		it("4.2. ServiceReceiptPrintDocument.tsx, CashReceiptPrintModal.tsx и CashRegisterStudioModal.tsx (Кассовые чеки) содержат 0 мультяшных эмодзи", () => {
 			const files = [
 				path.join(webSrcRoot, "components/finance/ServiceReceiptPrintDocument.tsx"),
 				path.join(webSrcRoot, "components/finance/CashReceiptPrintModal.tsx"),
-				path.join(webSrcRoot, "components/finance/CashReceiptModal.tsx"),
+				path.join(webSrcRoot, "components/cashbox/CashRegisterStudioModal.tsx"),
 			];
 
 			for (const fp of files) {
@@ -275,10 +273,10 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			}
 		});
 
-		it("4.3. Зубная формула (ToothChart.tsx и ClassicGostOdontogram.tsx) содержит 0 мультяшных эмодзи", () => {
+		it("4.3. Зубная формула (ToothChart.tsx и WheelerToothArch.tsx) содержит 0 мультяшных эмодзи", () => {
 			const files = [
 				path.join(webSrcRoot, "components/odontogram/ToothChart.tsx"),
-				path.join(webSrcRoot, "components/odontogram/ClassicGostOdontogram.tsx"),
+				path.join(webSrcRoot, "components/odontogram/WheelerToothArch.tsx"),
 			];
 
 			for (const fp of files) {

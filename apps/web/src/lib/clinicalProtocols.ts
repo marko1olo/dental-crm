@@ -116,7 +116,10 @@ export {
 
 export {
 	type Form043PhysiologicalNormData,
+	type Form043PhysiologicalNormData as MedicalCardPhysiologicalNormData,
 	FORM_043_PHYSIOLOGICAL_NORM,
+	FORM_043_PHYSIOLOGICAL_NORM as MEDICAL_CARD_PHYSIOLOGICAL_NORM,
+	createMedicalCardPhysiologicalNorm,
 	createForm043PhysiologicalNorm,
 	createIntactOdontogramRecords,
 	createSanitizedOdontogramRecords,
@@ -150,9 +153,6 @@ import { resolveServicePriceFromCatalog } from "./protocols/multiStageEndoEngine
 
 /** Чистые доменные алиасы медицинской карты и информированного согласия (Мандат 8ap) */
 export type ClinicalProtocol = ClinicalProtocolSoap;
-export type MedicalCardPhysiologicalNormData = Form043PhysiologicalNormData;
-export const MEDICAL_CARD_PHYSIOLOGICAL_NORM = FORM_043_PHYSIOLOGICAL_NORM;
-export const createMedicalCardPhysiologicalNorm = createForm043PhysiologicalNorm;
 export const generateInformedConsentText: typeof generateInformedConsent1051nText = (...args) =>
 	generateInformedConsent1051nText(...args);
 export const generateInformedConsentHtml: typeof generateInformedConsent1051nHtml = (...args) =>

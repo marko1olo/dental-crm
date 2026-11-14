@@ -60,7 +60,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs select-none">
+		<div className="fixed inset-0 z-[10060] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs select-none">
 			<div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
 				<AnamnesisModalHeader patientName={patientName} evaluation={evaluation} onApplyNorm={() => applyPreset("clean")} onClose={onClose} />
 				<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex flex-wrap items-center gap-2 overflow-x-auto">

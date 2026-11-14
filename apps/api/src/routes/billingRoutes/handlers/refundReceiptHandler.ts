@@ -81,9 +81,11 @@ export async function handlePartialRefund(
 	} catch (err) {
 		if (err instanceof PartialRefundValidationError) {
 			if (err.code === "DuplicateRefundMutation") {
+				const paymentId =
+					typeof err.details?.paymentId === "string" ? err.details.paymentId : undefined;
 				return reply.code(200).send({
 					success: true,
-					paymentId: (err.details as any)?.paymentId,
+					paymentId,
 					isIdempotentReplay: true,
 					message: err.message,
 				});

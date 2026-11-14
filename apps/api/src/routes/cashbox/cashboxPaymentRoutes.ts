@@ -22,7 +22,7 @@ import {
 } from "../../db/seeds/seed_cash_and_reasons.js";
 import { FiscalResilienceService } from "../../services/fiscalResilienceService.js";
 import { registerCashInstallmentsRoutes } from "../cashInstallmentsRoutes.js";
-import { registerCashLabPaymentRoutes } from "../cashLabPaymentRoutes.js";
+import { registerCashLabPaymentRoutes } from "../lab/index.js";
 import { processCashboxPayment } from "./cashboxPaymentProcessor.js";
 import { cashOperationListQuerySchema } from "./cashboxSchemas.js";
 
@@ -56,51 +56,72 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 	 * 1b. PATCH /api/cash/cash-box/:id
 	 * Обновление параметров кассового аппарата (модель, заводской номер, филиал, активность) в PostgreSQL.
 	 */
-	app.patch("/api/cash/cash-box/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"cash box update",
-		);
-		if (reply.sent) return reply;
-		if (!orgId) return reply;
+	app.patch(
+		"/api/cash/cash-box/:id",
+		async (
+			request: FastifyRequest<{
+				Params: { id: string };
+				Body: {
+					name?: string;
+					kkmModel?: string | null;
+					kkmSerialNumber?: string | null;
+					branchId?: string | null;
+					kkmActive?: boolean;
+				};
+			}>,
+			reply: FastifyReply,
+		) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"cash box update",
+			);
+			if (reply.sent) return reply;
+			if (!orgId) return reply;
 
-		const { id } = request.params as { id: string };
-		const body = (request.body ?? {}) as Record<string, unknown>;
+			const { id } = request.params;
+			const body = request.body ?? {};
 
-		const updated = await withTenantCtx(orgId, async (tx) => {
-			// biome-ignore lint/suspicious/noExplicitAny: dynamic update fields
-			const setFields: Record<string, any> = { updatedAt: new Date() };
-			if (typeof body.name === "string" && body.name.trim())
-				setFields.name = body.name.trim();
-			if (body.kkmModel !== undefined)
-				setFields.kkmModel =
-					typeof body.kkmModel === "string" ? body.kkmModel.trim() : null;
-			if (body.kkmSerialNumber !== undefined)
-				setFields.kkmSerialNumber =
-					typeof body.kkmSerialNumber === "string"
-						? body.kkmSerialNumber.trim()
-						: null;
-			if (body.branchId !== undefined)
-				setFields.branchId =
-					typeof body.branchId === "string" ? body.branchId.trim() : null;
-			if (typeof body.kkmActive === "boolean") setFields.kkmActive = body.kkmActive;
+			const updated = await withTenantCtx(orgId, async (tx) => {
+				const setFields: {
+					updatedAt: Date;
+					name?: string;
+					kkmModel?: string | null;
+					kkmSerialNumber?: string | null;
+					branchId?: string | null;
+					kkmActive?: boolean;
+				} = { updatedAt: new Date() };
+				if (typeof body.name === "string" && body.name.trim())
+					setFields.name = body.name.trim();
+				if (body.kkmModel !== undefined)
+					setFields.kkmModel =
+						typeof body.kkmModel === "string" ? body.kkmModel.trim() : null;
+				if (body.kkmSerialNumber !== undefined)
+					setFields.kkmSerialNumber =
+						typeof body.kkmSerialNumber === "string"
+							? body.kkmSerialNumber.trim()
+							: null;
+				if (body.branchId !== undefined)
+					setFields.branchId =
+						typeof body.branchId === "string" ? body.branchId.trim() : null;
+				if (typeof body.kkmActive === "boolean") setFields.kkmActive = body.kkmActive;
 
-			const [row] = await tx
-				.update(cashBoxes)
-				.set(setFields)
-				.where(and(eq(cashBoxes.id, id), eq(cashBoxes.organizationId, orgId)))
-				.returning();
-			return row ?? null;
-		});
+				const [row] = await tx
+					.update(cashBoxes)
+					.set(setFields)
+					.where(and(eq(cashBoxes.id, id), eq(cashBoxes.organizationId, orgId)))
+					.returning();
+				return row ?? null;
+			});
 
-		if (!updated) {
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: "Кассовый аппарат не найден" });
-		}
-		return reply.send({ data: updated });
-	});
+			if (!updated) {
+				return reply
+					.code(404)
+					.send({ error: "NotFound", message: "Кассовый аппарат не найден" });
+			}
+			return reply.send({ data: updated });
+		},
+	);
 
 	/**
 	 * 2. GET /api/cash/expense-reasons & GET /api/cash/expense-reason
@@ -232,9 +253,10 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const headerIdemp =
-			(request.headers["idempotency-key"] as string | undefined) ||
-			(request.headers["x-idempotency-key"] as string | undefined);
+		const rawKey =
+			request.headers["idempotency-key"] ??
+			request.headers["x-idempotency-key"];
+		const headerIdemp = typeof rawKey === "string" ? rawKey : undefined;
 
 		const result = await processCashboxPayment(
 			orgId,
@@ -246,7 +268,8 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			"data" in result.body &&
 			typeof result.body.data === "object" &&
 			result.body.data !== null &&
-			(result.body.data as Record<string, unknown>).isReplay
+			"isReplay" in result.body.data &&
+			Boolean((result.body.data as { isReplay?: unknown }).isReplay)
 		) {
 			reply.header("idempotency-replayed", "true");
 			reply.header("x-idempotency-replayed", "true");

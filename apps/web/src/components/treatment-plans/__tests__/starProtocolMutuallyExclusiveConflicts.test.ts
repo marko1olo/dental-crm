@@ -8,7 +8,7 @@ import test, { describe } from "node:test";
 import {
 	detectMutuallyExclusiveToothProcedures,
 	validateTreatmentPlanStarProtocols,
-} from "../validation/starProtocolValidationEngine";
+} from "../starProtocolValidationEngine";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
 
 function createItem(id: string, tooth: number, code: string, name: string, cat: string, price: number, stage: any): TreatmentPlanItem {

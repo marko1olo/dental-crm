@@ -24,7 +24,7 @@ export async function handleDicomwebStow(
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	if (!evaluateClinicalAccess(staffRole).hasClinicalAccess) {
 		return reply.code(403).send({
 			error: "PermissionDenied", permission: "clinical.dicom.store", role: staffRole,
@@ -77,7 +77,12 @@ export async function handleDicomwebStow(
 		return reply.code(409).send({ error: "StudyUidMismatch", message: `StudyInstanceUID в URL (${pathStudyUid}) не совпадает со значением в файле (${parsed.studyUid}).` });
 	}
 
-	const explicitPatientId = request.query?.patientId || request.query?.patient_id || (request.headers["x-patient-id"] as string | undefined) || (request.headers["x-dente-patient-id"] as string | undefined) || null;
+	const explicitPatientId =
+		request.query?.patientId ||
+		request.query?.patient_id ||
+		(typeof request.headers["x-patient-id"] === "string" ? request.headers["x-patient-id"] : undefined) ||
+		(typeof request.headers["x-dente-patient-id"] === "string" ? request.headers["x-dente-patient-id"] : undefined) ||
+		null;
 	const binding = await resolveStowBinding(organizationId, explicitPatientId, parsed);
 
 	const normalizedRelativePath = path.posix.join("uploads", "dicom", organizationId, parsed.studyUid, parsed.seriesUid, `${parsed.sopInstanceUid}.dcm`);
@@ -90,12 +95,22 @@ export async function handleDicomwebStow(
 		fileSizeOnDisk = (await fs.stat(permanentDiskPath)).size;
 	} catch { /* fallback */ }
 
-	const explicitDoctorId = request.query?.doctorId || request.query?.doctor_id || (request.headers["x-doctor-id"] as string | undefined) || identity.userId || null;
+	const explicitDoctorId =
+		request.query?.doctorId ||
+		request.query?.doctor_id ||
+		(typeof request.headers["x-doctor-id"] === "string" ? request.headers["x-doctor-id"] : undefined) ||
+		identity.userId ||
+		null;
 	const validDoctorId = explicitDoctorId && UUID_SHAPE.test(explicitDoctorId.trim()) ? explicitDoctorId.trim() : null;
-	const explicitVisitId = request.query?.visitId || request.query?.visit_id || (request.headers["x-visit-id"] as string | undefined) || null;
+	const explicitVisitId =
+		request.query?.visitId ||
+		request.query?.visit_id ||
+		(typeof request.headers["x-visit-id"] === "string" ? request.headers["x-visit-id"] : undefined) ||
+		null;
 	const validVisitId = explicitVisitId && UUID_SHAPE.test(explicitVisitId.trim()) ? explicitVisitId.trim() : null;
 	const doctorId = validDoctorId ?? identity.userId ?? null;
-	const staffId = (request as unknown as { user?: { staffId?: string | null } }).user?.staffId ?? doctorId;
+	const userStaffId = request.user?.staffId;
+	const staffId = typeof userStaffId === "string" ? userStaffId : doctorId;
 	const operatorLabel = identity.fullName ? ` [${identity.role === "doctor" ? "Врач" : "Сотрудник"}: ${identity.fullName}]` : doctorId ? ` [ID: ${doctorId}]` : "";
 
 	const result = await persistStowDicomEntities({

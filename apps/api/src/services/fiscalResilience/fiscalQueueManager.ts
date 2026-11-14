@@ -194,16 +194,20 @@ export class FiscalQueueManager {
 						cashierName: cashierFullName,
 						calculationMethod: "full_settlement",
 						calculationSubject: "service",
-					} as unknown as FiscalReceiptDetails,
+					},
 				})
 				.returning();
+
+			if (!newPayment) {
+				throw new Error("Не удалось создать запись платежа в БД");
+			}
 
 			// Insert into fiscalReceiptQueue with initial pending status
 			const [newQueueItem] = await targetDb
 				.insert(fiscalReceiptQueue)
 				.values({
 					organizationId,
-					paymentId: newPayment!.id,
+					paymentId: newPayment.id,
 					visitId: visitId || null,
 					receiptType: "sell",
 					status: "pending_print",
@@ -215,9 +219,13 @@ export class FiscalQueueManager {
 				})
 				.returning();
 
+			if (!newQueueItem) {
+				throw new Error("Не удалось поставить фискальный чек в очередь печати");
+			}
+
 			return {
-				payment: newPayment!,
-				queueItem: newQueueItem!,
+				payment: newPayment,
+				queueItem: newQueueItem,
 			};
 		});
 
@@ -390,15 +398,15 @@ export class FiscalQueueManager {
 					fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
 					fiscalReceiptUrl: printResult.ofdVerificationUrl || null,
 					fiscalReceipt: {
-						fn: printResult.fnSerial,
-						fd: printResult.fiscalDocumentNumber,
-						fpd: printResult.fiscalSign,
-						receiptUrl: printResult.ofdVerificationUrl,
+						fn: printResult.fnSerial ?? null,
+						fd: printResult.fiscalDocumentNumber ?? null,
+						fpd: printResult.fiscalSign ?? null,
+						receiptUrl: printResult.ofdVerificationUrl ?? null,
 						operationType: "income",
 						cashierName: cashierFullName,
 						calculationMethod: "full_settlement",
 						calculationSubject: "service",
-					} as unknown as FiscalReceiptDetails,
+					},
 					updatedAt: now,
 				})
 				.where(

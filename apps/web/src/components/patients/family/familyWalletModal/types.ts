@@ -52,11 +52,11 @@ export interface FamilySpendingPermission {
 }
 
 export type FamilyWalletTab =
-	| "overview"
+	| "info"
 	| "topup"
 	| "spend"
-	| "transfer"
-	| "history";
+	| "history"
+	| "overview";
 
 export type TopupPaymentMethod = "cash" | "card" | "sbp";
 
@@ -68,6 +68,7 @@ export interface FamilyWalletModalProps {
 	readonly familyData?: FamilyGroupDetails | null | undefined;
 	readonly onFamilyDataChanged?: (() => void) | undefined;
 	readonly className?: string | undefined;
+	readonly inline?: boolean | undefined;
 }
 
 export interface UseFamilySpendMutationArgs {
@@ -76,19 +77,6 @@ export interface UseFamilySpendMutationArgs {
 	readonly familyBalanceNumeric: number;
 	readonly spendingPermissions: Record<string, boolean>;
 	readonly notifyChanged: () => Promise<void>;
-}
-
-export interface FamilyWalletTransferSectionProps {
-	readonly transferSourceId: string;
-	readonly setTransferSourceId: (val: string) => void;
-	readonly transferTargetId: string;
-	readonly setTransferTargetId: (val: string) => void;
-	readonly transferAmount: string;
-	readonly setTransferAmount: (val: string) => void;
-	readonly membersList: readonly FamilyMemberItem[];
-	readonly submitting: boolean;
-	readonly transferAmountInputId: string;
-	readonly onSubmitTransfer: () => void;
 }
 
 export interface FamilyDepositTopupSectionProps {

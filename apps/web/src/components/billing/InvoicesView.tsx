@@ -91,8 +91,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 						generatedNumber = payload.invoice.number || payload.invoice.invoiceNumber || invoiceNumber;
 					}
 				}
-			} catch {
-				// Офлайн/фоллбек режим: валидный UUIDv7/v4
+			} catch (syncErr: unknown) {
+				console.warn("[InvoicesView] Не удалось создать счет через API, переключение на локальный автономный режим:", syncErr);
 			}
 		}
 

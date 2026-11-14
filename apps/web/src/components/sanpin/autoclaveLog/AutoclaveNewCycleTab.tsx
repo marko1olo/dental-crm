@@ -11,7 +11,6 @@ import { NewCycleExpressModes } from "./newCycle/NewCycleExpressModes";
 import { NewCycleRegimesSelector } from "./newCycle/NewCycleRegimesSelector";
 import { NewCyclePrimaryFields } from "./newCycle/NewCyclePrimaryFields";
 import { NewCycleSensorsSection } from "./newCycle/NewCycleSensorsSection";
-import { NewCycleChamberPointsSection } from "./newCycle/NewCycleChamberPointsSection";
 import { NewCycleFooterSection } from "./newCycle/NewCycleFooterSection";
 
 export {
@@ -57,11 +56,6 @@ export function AutoclaveNewCycleTab({
 				actualPressure={state.actualPressure} onActualPressureChange={state.setActualPressure}
 				actualTime={state.actualTime} onActualTimeChange={state.setActualTime}
 				compliance={state.compliance}
-			/>
-			<NewCycleChamberPointsSection
-				chamberPoints={state.chamberPoints}
-				onTogglePoint={state.togglePointStatus}
-				onSetAllPointsStatus={state.setAllPointsStatus}
 			/>
 			<NewCycleFooterSection
 				itemsDescription={state.itemsDescription} onItemsDescriptionChange={state.setItemsDescription}

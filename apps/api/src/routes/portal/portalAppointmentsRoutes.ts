@@ -22,6 +22,7 @@ import type {
 	BookAppointmentBody,
 	CancelAppointmentBody,
 } from "./types.js";
+import { isValidUuid } from "@dental/shared";
 
 export async function registerPortalAppointmentsRoutes(server: FastifyInstance): Promise<void> {
 	// 14. Get Patient X-Rays and Diagnostic Scans (Fast 2D Lightweight Access)
@@ -144,6 +145,14 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			return {
 				error: "MissingRequiredFields",
 				message: "Укажите врача, время начала и окончания приёма.",
+			};
+		}
+
+		if (!isValidUuid(doctorId)) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Идентификатор врача должен быть валидным UUID.",
 			};
 		}
 
@@ -403,7 +412,14 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			return { error: "Unauthorized" };
 		}
 
-		const appointmentId = request.params.id;
+		const appointmentId = request.params.id?.trim();
+		if (!appointmentId || !isValidUuid(appointmentId)) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Идентификатор записи на приём должен быть валидным UUID.",
+			};
+		}
 		const cancelReason =
 			typeof request.body?.reason === "string" && request.body.reason.trim()
 				? request.body.reason.trim()

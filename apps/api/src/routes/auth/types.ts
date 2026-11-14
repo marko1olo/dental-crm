@@ -1,18 +1,15 @@
 import { z } from "zod";
 
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 export interface ClinicLoginBody {
 	email?: string;
 	password?: string;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 export interface StaffUnlockBody {
 	userId?: string;
 	pinCode?: string;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 export interface SetupInitBody {
 	clinicName?: string;
 	email?: string;
@@ -34,7 +31,7 @@ export interface PreTenantRead<T> {
 }
 
 /**
- * SaaS-тела auth раньше разбирались как `(request.body as any)`.
+ * SaaS-тела auth разбираются через строгие схемы валидации Zod.
  * Схемы ниже повторяют прежние ручные проверки (длина пароля, форма PIN,
  * обязательные поля) через safeParse — тот же узор, что parseSettingsPayload.
  * Сообщения отказов сохранены дословно, чтобы клиент и существующие тесты

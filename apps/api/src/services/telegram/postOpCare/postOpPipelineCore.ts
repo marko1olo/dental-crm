@@ -7,7 +7,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -49,8 +49,7 @@ const activeCarePlans = new Map<string, PostOpCarePlan>();
 const scheduledVisitIds = new Set<string>();
 
 async function resolveOptimalPostVisitChannel(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
-	tx: any,
+	tx: TenantDb,
 	organizationId: string,
 	patientId: string,
 ): Promise<"telegram" | "whatsapp" | "sms"> {
@@ -163,28 +162,33 @@ export class TelegramPostOpCarePipeline {
 				if (cRow) validClinicId = cRow.id;
 			}
 
+			const stage0Due = stages[0]?.dueAt ?? (surgeryCompletedAt + 3 * 3600 * 1000);
+			const stage1Due = stages[1]?.dueAt ?? (surgeryCompletedAt + 24 * 3600 * 1000);
+			const stage2Due = stages[2]?.dueAt ?? (surgeryCompletedAt + 72 * 3600 * 1000);
+			const stage3Due = stages[3]?.dueAt ?? (surgeryCompletedAt + 7 * 24 * 3600 * 1000);
+
 			const stageConfigs = [
 				{
 					workflowCode: "POST_OP_CARE_3H",
-					dueAt: new Date(stages[0]!.dueAt),
+					dueAt: new Date(stage0Due),
 					title: `Теле-уход: 3 часа после (${params.surgeryTitle})`,
 					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 1: через 3 часа (контроль гемостаза и анестезии).`,
 				},
 				{
 					workflowCode: "POST_OP_CARE_DAY_1",
-					dueAt: new Date(stages[1]!.dueAt),
+					dueAt: new Date(stage1Due),
 					title: `Теле-уход: День 1 (${params.surgeryTitle})`,
 					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 2: через 24 часа (контроль боли, отёка и температуры).`,
 				},
 				{
 					workflowCode: "POST_OP_CARE_DAY_3",
-					dueAt: new Date(stages[2]!.dueAt),
+					dueAt: new Date(stage2Due),
 					title: `Теле-уход: День 3 (${params.surgeryTitle})`,
 					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 3: через 72 часа (пик реактивного отёка, динамика заживления).`,
 				},
 				{
 					workflowCode: "POST_OP_CARE_DAY_7",
-					dueAt: new Date(stages[3]!.dueAt),
+					dueAt: new Date(stage3Due),
 					title: `Теле-уход: День 7 (${params.surgeryTitle})`,
 					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 4: через 7 дней (контрольный осмотр, снятие швов).`,
 				},
@@ -424,7 +428,8 @@ export class TelegramPostOpCarePipeline {
 				};
 			});
 
-			const firstRow = postOpRows[0]!;
+			const firstRow = postOpRows[0];
+			if (!firstRow) return null;
 			const planId = `plan_${visitId}`;
 			const reconstructed: PostOpCarePlan = {
 				id: planId,
@@ -464,7 +469,7 @@ export class TelegramPostOpCarePipeline {
 									status: "pending",
 								},
 							],
-				createdAt: firstRow.createdAt.getTime(),
+				createdAt: firstRow.createdAt ? new Date(firstRow.createdAt).getTime() : Date.now(),
 			};
 
 			activeCarePlans.set(planId, reconstructed);

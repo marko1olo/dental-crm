@@ -207,34 +207,12 @@ export async function executeDraftAutosave(
 }
 
 /**
- * 3. Фоновое закрытие наряда приёма на бэкенде
+ * 3. Фоновое закрытие наряда приёма на бэкенде (делегирует в канонический эндпоинт завершения)
  */
 export async function executeWorkOrderCompletion(
 	ctx: VisitPostCompletionContext,
 ): Promise<void> {
-	if (!isUuid(ctx.effectiveVisitId)) return;
-
-	try {
-		await fetchWithHandling(
-			`/api/visits/${ctx.effectiveVisitId}/complete-work-order`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"Idempotency-Key": `complete-work-order-${ctx.effectiveVisitId}`,
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({ status: "signed" }),
-			},
-		).catch((workErr) => {
-			logger.warn(
-				"[visitCompletionPipeline] Фоновое закрытие наряда на бэкенде:",
-				workErr,
-			);
-		});
-	} catch {
-		// Мягкий режим: сбой сети не блокирует работу врача
-	}
+	await executeVisitCompletionEndpoint(ctx);
 }
 
 /**
@@ -587,9 +565,8 @@ export async function executeVisitPostCompletionPipeline(
 		executeDraftAutosave(ctx),
 	]);
 
-	// 2. Закрытие наряда, завершение визита в API/БД, закрытие позиций плана лечения и синхронизация одонтограммы
+	// 2. Завершение визита в API/БД, закрытие позиций плана лечения и синхронизация одонтограммы
 	Promise.allSettled([
-		executeWorkOrderCompletion(ctx),
 		executeVisitCompletionEndpoint(ctx),
 		executeTreatmentPlanItemCompletion(ctx),
 		executeOdontogramToothHistorySync(ctx),

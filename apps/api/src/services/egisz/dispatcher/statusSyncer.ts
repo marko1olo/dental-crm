@@ -45,7 +45,7 @@ export async function syncPendingStatuses(
 
 				let receipt: EgiszRemdRegistrationReceipt | null = null;
 				if (isRegistered) {
-					const rawObj = (statusRes as unknown as Record<string, unknown>) ?? {};
+					const rawObj: Record<string, unknown> = { ...statusRes };
 					const serverReceiptId =
 						typeof rawObj.receiptId === "string" ? rawObj.receiptId : undefined;
 					receipt = createEgiszRemdReceipt({
@@ -69,7 +69,7 @@ export async function syncPendingStatuses(
 				}
 
 				const responsePayload: Record<string, unknown> = {
-					...((statusRes as unknown as Record<string, unknown>) ?? {}),
+					...statusRes,
 					...(receipt ? { receipt } : {}),
 				};
 
@@ -111,7 +111,7 @@ export async function syncPendingStatuses(
 						entityType: "egisz_outbox",
 						entityId: row.id,
 						patientId: row.patientId,
-						payload: receipt as unknown as Record<string, unknown>,
+						payload: { ...receipt },
 					});
 				}
 

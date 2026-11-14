@@ -20,7 +20,6 @@ import {
 	DocumentsView,
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
-import { DentalMedicalCard043uForm } from "../forms/DentalMedicalCard043uForm";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";
 
@@ -351,38 +350,6 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 
 		// Verify action button in document card
 		expect(html).toContain("doc-link min-h-[44px] sm:min-h-[36px]");
-	});
-
-	it("DentalMedicalCard043uForm renders form043-stamp-badge and btn-043-print-blank without blocking doctor", () => {
-		// Draft state
-		const draftHtml = renderToStaticMarkup(
-			<DentalMedicalCard043uForm
-				initialPayload={{
-					medicalCardNumber: "043-99",
-					patientFullName: "Кузнецов Иван",
-					isSigned: false,
-				}}
-			/>,
-		);
-
-		expect(draftHtml).toContain('data-testid="form043-stamp-badge"');
-		expect(draftHtml).toContain("ЧЕРНОВИК");
-		expect(draftHtml).toContain('data-testid="btn-043-print-blank"');
-		expect(draftHtml).toContain('data-testid="btn-043-fast-print"');
-
-		// Signed state
-		const signedHtml = renderToStaticMarkup(
-			<DentalMedicalCard043uForm
-				initialPayload={{
-					medicalCardNumber: "043-100",
-					patientFullName: "Кузнецов Иван",
-					isSigned: true,
-				}}
-			/>,
-		);
-
-		expect(signedHtml).toContain('data-testid="form043-stamp-badge"');
-		expect(signedHtml).toContain("ПОДПИСАНО ВРАЧОМ");
 	});
 
 	it("TaxDeductionCertificateModal renders tax-certificate-stamp-badge and btn-tax-print-blank", () => {

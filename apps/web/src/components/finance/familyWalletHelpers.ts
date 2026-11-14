@@ -20,13 +20,17 @@ export interface FamilyMember {
 export interface FamilyLedgerEntry {
 	id: string;
 	createdAt: string;
+	date?: string | undefined;
 	entryType: "deposit" | "debit" | "refund_deposit" | "refund_payout";
+	operationType?: "topup" | "debit" | "refund" | string | undefined;
 	amountRub: number;
 	amountKopecks: number;
 	payerPatientId?: string | undefined;
 	payerFullName?: string | undefined;
+	payerName?: string | undefined;
 	targetPatientId?: string | undefined;
 	targetPatientFullName?: string | undefined;
+	targetName?: string | undefined;
 	visitId?: string | undefined;
 	documentId?: string | undefined;
 	invoiceNumber?: string | undefined;
@@ -34,6 +38,7 @@ export interface FamilyLedgerEntry {
 	fiscalReceiptNumber?: string | undefined;
 	method?: string | undefined;
 	notes?: string | undefined;
+	note?: string | undefined;
 	clientMutationId?: string | undefined;
 }
 

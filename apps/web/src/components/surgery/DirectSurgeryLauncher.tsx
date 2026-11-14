@@ -11,27 +11,38 @@ import { useAppStore } from "../../store/appStore";
 export const DirectSurgeryLauncher: React.FC = () => {
 	const checkUrlMatches = () => {
 		if (typeof window === "undefined") return false;
-		const s = window.location.search || "";
-		const h = window.location.hash || "";
+		const s = (window.location.search || "").toLowerCase();
+		const h = (window.location.hash || "").toLowerCase();
 		return (
 			s.includes("surgery") ||
 			h.includes("surgery") ||
 			s.includes("implant") ||
 			h.includes("implant") ||
-			h.includes("extraction") ||
 			s.includes("extraction") ||
-			h.includes("resection") ||
+			h.includes("extraction") ||
 			s.includes("resection") ||
-			h.includes("sinus") ||
-			s.includes("sinus")
+			h.includes("resection") ||
+			s.includes("sinus") ||
+			h.includes("sinus")
 		);
+	};
+
+	const parseUrlTooth = (): number => {
+		if (typeof window === "undefined") return 46;
+		const full = window.location.search + window.location.hash;
+		const match = full.match(/[?&#]tooth(?:Fdi)?=(\d{2})/i);
+		if (match?.[1]) {
+			const num = parseInt(match[1], 10);
+			if (num >= 11 && num <= 48) return num;
+		}
+		return 46;
 	};
 
 	const [isOpen, setIsOpen] = useState<boolean>(checkUrlMatches);
 	const [initialScenario, setInitialScenario] = useState<SurgeryScenarioType>(() => {
 		if (typeof window !== "undefined") {
-			const h = window.location.hash || "";
-			const s = window.location.search || "";
+			const h = (window.location.hash || "").toLowerCase();
+			const s = (window.location.search || "").toLowerCase();
 			if (h.includes("extraction") || s.includes("extraction")) return "extraction";
 			if (h.includes("resection") || s.includes("resection")) return "resection_periostotomy";
 			if (h.includes("sinus") || s.includes("sinus")) return "sinus_gbr";
@@ -40,13 +51,22 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	});
 	const [initialTab, setInitialTab] = useState<SurgeryHubTab>(() => {
 		if (typeof window !== "undefined") {
-			const h = window.location.hash || "";
-			const s = window.location.search || "";
-			if (h.includes("implant-passport") || s.includes("implant-passport")) return "passport";
+			const h = (window.location.hash || "").toLowerCase();
+			const s = (window.location.search || "").toLowerCase();
+			if (
+				h.includes("implant-passport") ||
+				s.includes("implant-passport") ||
+				h.includes("implant_passport") ||
+				s.includes("implant_passport") ||
+				h.includes("passport") ||
+				s.includes("passport")
+			) {
+				return "passport";
+			}
 		}
 		return "protocol";
 	});
-	const [initialTooth, setInitialTooth] = useState<number>(46);
+	const [initialTooth, setInitialTooth] = useState<number>(parseUrlTooth);
 
 	const storeActivePatient = useAppStore((s) => {
 		const activeId = s.activePatientId;
@@ -98,6 +118,32 @@ export const DirectSurgeryLauncher: React.FC = () => {
 		setIsOpen(true);
 	}, []);
 
+	const handleClose = useCallback(() => {
+		setIsOpen(false);
+		if (typeof window !== "undefined") {
+			const h = (window.location.hash || "").toLowerCase();
+			const s = (window.location.search || "").toLowerCase();
+			const tokens = ["implant", "surgery", "extraction", "resection", "sinus"];
+			const matches = tokens.some((t) => h.includes(t) || s.includes(t));
+			if (matches) {
+				const cleanSearch = s ? s.replace(/[?&](implant|surgery|extraction|resection|sinus|tooth)[^&]*/gi, "").replace(/^[?&]/, "") : "";
+				const newUrl = window.location.pathname + (cleanSearch ? `?${cleanSearch}` : "");
+				window.history.replaceState(null, "", newUrl);
+				window.dispatchEvent(new HashChangeEvent("hashchange"));
+			}
+		}
+	}, []);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, handleClose]);
+
 	useEffect(() => {
 		window.addEventListener("dente:open-surgery", handleOpenEvent);
 		window.addEventListener("dente-open-surgery", handleOpenEvent);
@@ -107,9 +153,17 @@ export const DirectSurgeryLauncher: React.FC = () => {
 
 		const handleHash = () => {
 			if (checkUrlMatches()) {
-				const h = window.location.hash || "";
-				const s = window.location.search || "";
-				if (h.includes("implant-passport") || s.includes("implant-passport")) {
+				const h = (window.location.hash || "").toLowerCase();
+				const s = (window.location.search || "").toLowerCase();
+				setInitialTooth(parseUrlTooth());
+				if (
+					h.includes("implant-passport") ||
+					s.includes("implant-passport") ||
+					h.includes("implant_passport") ||
+					s.includes("implant_passport") ||
+					h.includes("passport") ||
+					s.includes("passport")
+				) {
 					setInitialScenario("implant");
 					setInitialTab("passport");
 				} else if (h.includes("extraction") || s.includes("extraction")) {
@@ -147,7 +201,7 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	return (
 		<ChairsideSurgeryHubModal
 			isOpen={isOpen}
-			onClose={() => setIsOpen(false)}
+			onClose={handleClose}
 			patientName={effectivePatient.fullName}
 			patientId={effectivePatient.id}
 			doctorName={effectivePatient.doctorName}

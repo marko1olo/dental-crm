@@ -1,11 +1,23 @@
+import type { Dashboard, CreateAppointmentInput } from "@dental/shared";
+import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
 import type { WaitlistCandidateItem } from "../../waitlist/waitlistTypes";
 import type { TargetSlotInfo } from "./scheduleModalsTypes";
+import { useScheduleStore } from "../../../../store/scheduleStore";
+
+export interface BookWaitlistDashboard {
+  clinicSettings?: {
+    staff?: Array<{ id: string; role?: string; specialties?: string[] }>;
+  };
+  appointments?: Array<{ doctorUserId?: string | null }>;
+  reloadAppointments?: () => Promise<void> | void;
+  showNotification?: (msg: string, type?: string) => void;
+}
 
 export interface BookWaitlistSlotParams {
   candidate: WaitlistCandidateItem;
   slot: TargetSlotInfo;
-  dashboard: any;
-  auth: any;
+  dashboard?: Dashboard | BookWaitlistDashboard | null | undefined;
+  auth?: AppLogicContextType["auth"] | null | undefined;
   loadDashboard?: (() => Promise<void> | void) | undefined;
   showToast?: ((msg: string, type?: "success" | "error" | "warning" | "info", duration?: number) => void) | undefined;
   onSuccess: () => void;
@@ -58,26 +70,33 @@ export async function handleBookWaitlistSlot({
       }
     } else {
       // 2. Если appointmentId нет — создаем новую полноценную запись приема через POST /api/appointments
+      const defaultDocFromStore = useScheduleStore.getState().scheduleDefaultDoctorUserId;
+      const filterDocFromStore = useScheduleStore.getState().scheduleDoctorFilterId;
       const doctorUserId =
         slot.doctorUserId ||
         candidate.preferredDoctorId ||
+        defaultDocFromStore ||
+        filterDocFromStore ||
         dashboard?.clinicSettings?.staff?.find(
-          (s: any) => s.role === "doctor" || s.role === "dentist",
+          (s: { id: string; role?: string }) => s.role === "doctor" || s.role === "dentist",
         )?.id ||
-        dashboard?.appointments?.[0]?.doctorUserId;
+        (dashboard?.appointments as Array<{ doctorUserId?: string | null }> | undefined)?.[0]?.doctorUserId ||
+        auth?.user?.id;
 
-      const payload: Record<string, any> = {
+      if (!doctorUserId) {
+        throw new Error("Не удалось определить врача для записи. Пожалуйста, укажите врача в расписании.");
+      }
+
+      const payload: CreateAppointmentInput = {
         patientId: candidate.patientId,
         doctorUserId,
         startsAt: slot.startsAt,
         endsAt: slot.endsAt,
         status: "planned",
         reason: candidate.treatmentCategory || "Запись из листа ожидания",
-        notes: candidate.notes || undefined,
+        comment: candidate.notes || undefined,
+        ...(slot.chairId && slot.chairId.trim() ? { chairId: slot.chairId.trim() } : {}),
       };
-      if (slot.chairId) {
-        payload.chairId = slot.chairId;
-      }
 
       const createRes = await fetch("/api/appointments", {
         method: "POST",
@@ -128,12 +147,13 @@ export async function handleBookWaitlistSlot({
     }
 
     onSuccess();
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg =
+      err instanceof Error
+        ? err.message
+        : (err as { message?: string })?.message || "Не удалось записать пациента из листа ожидания";
     if (typeof showToast === "function") {
-      showToast(
-        err?.message || "Не удалось записать пациента из листа ожидания",
-        "error",
-      );
+      showToast(errorMsg, "error");
     }
     throw err;
   }

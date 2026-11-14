@@ -1,4 +1,5 @@
 import type {
+	ConsentSignatureAudit,
 	GeneratedDocumentSummary,
 	PatientAppointment,
 	PatientCabinetFamilyMember,
@@ -10,6 +11,18 @@ import type {
 	PatientTreatmentPlan,
 	TreatmentPlanStage,
 } from "./patientCabinetEngine";
+
+interface PrescriptionDocPayload {
+	readonly prescriptionMedicationOrder?: {
+		readonly drugNameRu?: string;
+		readonly dosageFormRu?: string;
+		readonly dosageAndAdministrationRu?: string;
+		readonly treatmentDurationRu?: string;
+		readonly prescribingDoctorFullName?: string;
+		readonly validityDays?: number;
+		readonly prescriptionSeriesAndNumber?: string;
+	};
+}
 
 export function mapServerPortalMeToCabinetData(
 	payload: {
@@ -28,6 +41,7 @@ export function mapServerPortalMeToCabinetData(
 		familyMembers?: Array<PatientCabinetFamilyMember>;
 		doctors?: Array<{ id: string; fullName: string; specialties?: string[] | null }>;
 		scans?: Array<Record<string, unknown>>;
+		prescriptions?: Array<Record<string, unknown>>;
 	},
 	serverConsents?: Array<Record<string, unknown>>,
 ): PatientPersonalCabinetData {
@@ -135,6 +149,19 @@ export function mapServerPortalMeToCabinetData(
 				? vDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
 				: "12:00";
 			const isPast = vDate < new Date();
+			const vStatus = typeof v.status === "string" ? v.status : undefined;
+			const status: PatientAppointment["status"] =
+				vStatus === "cancelled"
+					? "cancelled"
+					: vStatus === "completed"
+						? "completed"
+						: vStatus === "confirmed"
+							? "confirmed"
+							: vStatus === "reschedule_requested"
+								? "reschedule_requested"
+								: isPast
+									? "completed"
+									: "scheduled";
 			return {
 				id: (v.id as string) || `visit-${index}`,
 				dateIso,
@@ -146,7 +173,7 @@ export function mapServerPortalMeToCabinetData(
 				clinicName: "Стоматологическая клиника ДЕНТЕ",
 				clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
 				titleRu: (v.treatmentRendered as string) || (v.complaints as string) || "Приём стоматолога",
-				status: (v.status as any) || (isPast ? "completed" : "scheduled"),
+				status,
 				priceRub: v.priceRub ? Number(v.priceRub) : undefined,
 				reminderSent: true,
 				reminderChannel: "sms",
@@ -163,6 +190,12 @@ export function mapServerPortalMeToCabinetData(
 		const rawCreated = inv.createdAt;
 		const cDate = rawCreated ? new Date(rawCreated as string) : new Date();
 		const dateIso = !Number.isNaN(cDate.getTime()) ? cDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+		const rawMethod = typeof inv.paymentMethod === "string" ? inv.paymentMethod : "";
+		const paymentMethod: PatientInvoiceItem["paymentMethod"] = isPaid
+			? rawMethod === "card_online" || rawMethod === "pos_terminal" || rawMethod === "cash"
+				? rawMethod
+				: "sbp"
+			: undefined;
 
 		return {
 			id: (inv.id as string) || `inv-${index}`,
@@ -174,7 +207,7 @@ export function mapServerPortalMeToCabinetData(
 			paidAmountRub: paidRub,
 			remainingAmountRub: remainingRub,
 			status: isPaid ? "paid" : inv.status === "partially_paid" ? "partially_paid" : "unpaid",
-			paymentMethod: isPaid ? ((inv.paymentMethod as any) || "sbp") : undefined,
+			paymentMethod,
 			paidAtIso: inv.paidAt ? new Date(inv.paidAt as string).toISOString() : undefined,
 			fiscalReceiptNumber: (inv.fiscalReceiptNumber as string) || (isPaid ? `ФД-${String(inv.id).slice(-6).toUpperCase()}` : undefined),
 			fiscalReceiptUrl: (inv.fiscalReceiptUrl as string) || undefined,
@@ -232,16 +265,18 @@ export function mapServerPortalMeToCabinetData(
 	let mappedConsents: PatientStatutoryConsent[] = [];
 	if (Array.isArray(serverConsents) && serverConsents.length > 0) {
 		mappedConsents = serverConsents.map((sc) => ({
-			id: sc.id as string,
-			code: (sc.code as string) || (sc.id as string),
+			id: (sc.id as string) || "consent",
+			code: (sc.code as string) || (sc.id as string) || "ИДС",
 			titleRu: (sc.titleRu as string) || (sc.title as string) || "Информированное согласие",
-			categoryRu: (sc.categoryRu as any) || "Терапия",
-			statutoryBasis: (sc.statutoryBasis as any) || "323-ФЗ",
-			status: (sc.status as any) || (sc.isSigned ? "signed" : "pending_signature"),
+			categoryRu: (typeof sc.categoryRu === "string" ? sc.categoryRu : "Терапия"),
+			statutoryBasis: (typeof sc.statutoryBasis === "string" ? sc.statutoryBasis : "323-ФЗ"),
+			status: (typeof sc.status === "string" ? sc.status : sc.isSigned ? "signed" : "pending_signature"),
 			summaryTextRu: (sc.summaryTextRu as string) || (sc.summaryRu as string) || "",
 			fullTextContent: (sc.fullTextContent as string) || (sc.fullTextRu as string) || "",
-			signedAtIso: sc.signedAtIso as string | undefined,
-			signatureAudit: sc.signatureAudit as any,
+			signedAtIso: typeof sc.signedAtIso === "string" ? sc.signedAtIso : undefined,
+			signatureAudit: typeof sc.signatureAudit === "object" && sc.signatureAudit !== null
+				? (sc.signatureAudit as ConsentSignatureAudit)
+				: undefined,
 		}));
 	} else {
 		const signedPd = documents.some((d) => d.documentType === "pd_152" || (typeof d.title === "string" && d.title.includes("152-ФЗ")));
@@ -311,40 +346,40 @@ export function mapServerPortalMeToCabinetData(
 
 	// Map prescriptions from documents or payload
 	const mappedPrescriptions: PatientPrescriptionItem[] = [];
-	if (Array.isArray((payload as any).prescriptions)) {
-		for (const rx of (payload as any).prescriptions) {
+	if (Array.isArray(payload.prescriptions)) {
+		for (const rx of payload.prescriptions) {
 			mappedPrescriptions.push({
-				id: rx.id || `rx-${mappedPrescriptions.length}`,
-				medicationName: rx.medicationName || rx.name || "Лекарственный препарат",
-				dosageRu: rx.dosageRu || rx.dosage || "",
-				instructionRu: rx.instructionRu || rx.instructions || "По назначению врача",
-				durationRu: rx.durationRu || rx.duration || "5–7 дней",
-				dateIso: rx.dateIso || new Date().toISOString().slice(0, 10),
+				id: (rx.id as string) || `rx-${mappedPrescriptions.length}`,
+				medicationName: (rx.medicationName as string) || (rx.name as string) || "Лекарственный препарат",
+				dosageRu: (rx.dosageRu as string) || (rx.dosage as string) || "",
+				instructionRu: (rx.instructionRu as string) || (rx.instructions as string) || "По назначению врача",
+				durationRu: (rx.durationRu as string) || (rx.duration as string) || "5–7 дней",
+				dateIso: (rx.dateIso as string) || new Date().toISOString().slice(0, 10),
 				doctorName:
-					rx.doctorName || (adminProfile.curatorFullName as string) || "Лечащий врач",
+					(rx.doctorName as string) || (adminProfile.curatorFullName as string) || "Лечащий врач",
 				validityDays: rx.validityDays ? Number(rx.validityDays) : 60,
-				status: rx.status || "active",
-				orderNumber: rx.orderNumber,
+				status: (rx.status as string) || "active",
+				orderNumber: typeof rx.orderNumber === "string" ? rx.orderNumber : undefined,
 			});
 		}
 	}
 	for (const doc of documents) {
 		if (doc.kind === "prescription_medication_order") {
-			const payloadObj =
-				typeof doc.payloadJson === "string"
-					? (() => {
-							try {
-								return JSON.parse(doc.payloadJson);
-							} catch {
-								return null;
-							}
-						})()
-					: (doc.payload as any) || null;
+			let payloadObj: PrescriptionDocPayload | null = null;
+			if (typeof doc.payloadJson === "string") {
+				try {
+					payloadObj = JSON.parse(doc.payloadJson) as PrescriptionDocPayload;
+				} catch {
+					payloadObj = null;
+				}
+			} else if (typeof doc.payload === "object" && doc.payload !== null) {
+				payloadObj = doc.payload as PrescriptionDocPayload;
+			}
 			if (payloadObj?.prescriptionMedicationOrder) {
 				const pmo = payloadObj.prescriptionMedicationOrder;
 				mappedPrescriptions.push({
 					id: (doc.id as string) || `rx-${mappedPrescriptions.length}`,
-					medicationName: pmo.drugNameRu || doc.title,
+					medicationName: pmo.drugNameRu || (typeof doc.title === "string" ? doc.title : "Препарат"),
 					dosageRu: pmo.dosageFormRu || "",
 					instructionRu:
 						pmo.dosageAndAdministrationRu || "Принимать по назначению врача",
@@ -358,7 +393,7 @@ export function mapServerPortalMeToCabinetData(
 						"Лечащий врач",
 					validityDays: pmo.validityDays ? Number(pmo.validityDays) : 60,
 					status: doc.status === "issued" ? "active" : "draft",
-					orderNumber: pmo.prescriptionSeriesAndNumber || doc.documentNumber,
+					orderNumber: pmo.prescriptionSeriesAndNumber || (typeof doc.documentNumber === "string" ? doc.documentNumber : undefined),
 				});
 			}
 		}
@@ -374,6 +409,9 @@ export function mapServerPortalMeToCabinetData(
 					: "Базовый";
 
 	const bonusPoints = Number(p.bonusPoints || 0);
+	const patientFamilyMembers = Array.isArray(p.familyMembers)
+		? (p.familyMembers as PatientCabinetFamilyMember[])
+		: undefined;
 
 	return {
 		patientId: (p.id as string) || "live-patient",
@@ -396,7 +434,7 @@ export function mapServerPortalMeToCabinetData(
 					: undefined,
 		familyBonusPool:
 			p.familyBonusPool !== undefined ? Number(p.familyBonusPool) : undefined,
-		familyMembers: payload.familyMembers ?? (p.familyMembers as any) ?? undefined,
+		familyMembers: payload.familyMembers ?? patientFamilyMembers ?? undefined,
 		familyMembersCount:
 			payload.familyMembers?.length ??
 			(p.familyMembersCount !== undefined ? Number(p.familyMembersCount) : undefined),

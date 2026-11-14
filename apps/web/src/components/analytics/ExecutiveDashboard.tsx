@@ -159,7 +159,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary,#0d9488)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 						title="Распечатать отчёт"
 					>
 						<Printer size={13} aria-hidden="true" />
@@ -173,7 +173,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 							else if (onNavigateToSection) onNavigateToSection("financial_analytics");
 							else setIsPnlModalOpen(true);
 						}}
-						className="primary-button h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
+						className="primary-button h-8 px-3 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
 					>
 						<Calculator size={13} aria-hidden="true" />
 						<span>Управленческий P&amp;L</span>

@@ -77,7 +77,7 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 
 
 export type AppointmentScheduleDraft = {
-	patientId: string;
+	patientId?: string | null;
 	doctorUserId: string;
 	assistantUserId?: string | null;
 	chairId: string;

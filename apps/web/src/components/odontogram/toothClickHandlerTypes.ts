@@ -1,5 +1,5 @@
 import type React from "react";
-import type { ToothActionMenuConfig } from "./ToothActionMenuPortal";
+import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 import type { ToothState } from "./ToothChart";
 
 export interface UseOdontogramToothClickHandlerParams {

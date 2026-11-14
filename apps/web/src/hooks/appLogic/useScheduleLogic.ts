@@ -9,18 +9,19 @@ import type {
 	AppointmentScheduleDraft,
 	StaffScheduleDraft,
 } from "../../AppHelpers";
+import type { ClinicProfileDraft } from "../../AppConstants";
 import type { ScheduleLogicSlice } from "./types";
 
 interface UseScheduleLogicProps {
 	dashboard: Dashboard | null;
 	setDashboard: (dashboard: Dashboard | null) => void;
-	auth: any;
+	auth: unknown;
 	setError: (err: string | null) => void;
 	selectedPatientId: string;
 	setSelectedPatientId: (id: string) => void;
 	loadDashboard: () => Promise<void>;
 	selectedSpecialty: string;
-	clinicProfileDraft: any;
+	clinicProfileDraft: ClinicProfileDraft;
 	setSettingsTab: (tab: string) => void;
 }
 
@@ -57,6 +58,9 @@ export function useScheduleLogic({
 		setNewStaffRole,
 		newStaffSpecialty,
 		setNewStaffSpecialty,
+		setClinicProfileDraft,
+		setClinicProfileDirty,
+		setClinicProfileSaveState,
 	} = useAppStore();
 
 	const {
@@ -66,8 +70,8 @@ export function useScheduleLogic({
 
 	const newAppointmentDraftUserEditedRef = useRef<boolean>(false);
 	const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
-	const chairScheduleDraftsRef = useRef<Record<string, any>>({});
-	const appointmentScheduleDraftsRef = useRef<Record<string, any>>({});
+	const chairScheduleDraftsRef = useRef<Record<string, unknown>>({});
+	const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
 
 	const activeAppointment = useMemo(() => {
 		if (!dashboard) return null;
@@ -98,14 +102,7 @@ export function useScheduleLogic({
 
 	const todayDoctorSlots = useMemo(() => {
 		if (!dashboard?.appointments || !activeDoctor?.id) return [];
-		return (
-			dashboard.appointments as {
-				doctorUserId?: string;
-				status?: string;
-				startsAt?: string;
-				endsAt?: string;
-			}[]
-		)
+		return dashboard.appointments
 			.filter(
 				(app) =>
 					app.doctorUserId === activeDoctor.id &&
@@ -166,16 +163,17 @@ export function useScheduleLogic({
 		toggleClinicWorkingDay,
 		toggleStaffWorkingDay,
 	} = useScheduleSettingsLogic({
-		clinicProfileDraft,
+		setClinicProfileDraft,
+		setClinicProfileDirty,
+		setClinicProfileSaveState,
 		staffScheduleDrafts,
 		chairScheduleDrafts: domainSchedule.chairScheduleDrafts,
-		updateClinicProfileDraft: () => {},
-		updateStaffScheduleDay,
-		updateChairScheduleDay,
-	} as any);
+		updateStaffScheduleDraft,
+		updateChairScheduleDraft,
+	});
 
-	const appointmentReadinessById = useMemo(() => {
-		const result: Record<string, any> = {};
+	const appointmentReadinessById = useMemo((): Record<string, { isReady: boolean }> => {
+		const result: Record<string, { isReady: boolean }> = {};
 		for (const app of dashboard?.appointments ?? []) {
 			result[app.id] = {
 				isReady: Boolean(app.patientId && app.doctorUserId && app.startsAt),
@@ -206,7 +204,7 @@ export function useScheduleLogic({
 		newStaffName,
 		setNewStaffName,
 		newStaffRole: newStaffRole as StaffRole,
-		setNewStaffRole: (r: StaffRole) => setNewStaffRole(r as any),
+		setNewStaffRole: (r: StaffRole) => setNewStaffRole(r),
 		newStaffSpecialty,
 		setNewStaffSpecialty,
 		activeAppointment,

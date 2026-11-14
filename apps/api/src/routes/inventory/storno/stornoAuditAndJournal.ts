@@ -12,6 +12,7 @@ import {
 	procedureMaterialRules,
 } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
+import type { DbExecutor } from "../../../services/treatmentConsumables/types.js";
 import {
 	inventoryOverdraftAlertBodySchema,
 	toValidUuid,
@@ -71,7 +72,7 @@ export async function resolveServiceStornoMaterials(
 		quantity?: number | null | undefined;
 	},
 	organizationId: string,
-	tx: any,
+	tx: DbExecutor,
 ): Promise<StornoMaterialTarget[]> {
 	const materials: StornoMaterialTarget[] = [];
 	const srvQty = srv.quantity ?? 1;

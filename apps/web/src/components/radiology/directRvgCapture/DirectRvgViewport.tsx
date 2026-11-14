@@ -71,7 +71,7 @@ export const DirectRvgViewport: React.FC<DirectRvgViewportProps> = ({
 					<div className="rvg-scanner-beam" />
 					<Scan className="w-16 h-16 animate-pulse text-teal-400" />
 					<div className="text-center">
-						<p className="text-sm font-bold tracking-wide text-teal-200 uppercase">
+						<p className="text-sm font-bold tracking-wide text-teal-200">
 							Получение снимка с датчика...
 						</p>
 						<p className="text-xs font-mono text-teal-400/80 mt-1">

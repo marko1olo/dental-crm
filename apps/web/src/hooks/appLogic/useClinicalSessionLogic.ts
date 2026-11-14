@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard, Patient, StaffMember } from "@dental/shared";
 import { useClinicalVisitLogic } from "../domains/useClinicalVisitLogic";
 import { useVisitLogic } from "../domains/useVisitLogic";
+import type { UseVisitLogicParams, UseVisitLogicReturn } from "../domains/visit/types";
 import {
 	toothRows,
 	visitDraftMissingFieldLabel,
@@ -12,61 +13,35 @@ import {
 } from "../../AppHelpers";
 import type { ClinicalSessionLogicSlice } from "./types";
 
-interface UseClinicalSessionLogicProps {
-	dashboard: Dashboard | null;
-	query: string;
+export interface UseClinicalSessionLogicProps {
+	dashboard?: Dashboard | null;
+	query?: string;
 	setError: (err: string | null) => void;
-	auth: any;
-	setDashboard: (dashboard: Dashboard | null) => void;
-	setQuery: (query: string) => void;
-	selectedPatientId: string;
-	documentPatient: any;
-	activePatient: any;
-	activeAppointment: any;
-	activeDoctor: any;
-	activeChair: any;
-	paymentPatientContextReady: boolean;
-	paymentPatientContextMessage: string;
-	loadDashboard: () => Promise<void>;
-	clinicProfileDraft: any;
-	patientCoreDraft: any;
-	documentPatientMatchesActiveVisit: boolean;
-	activeOrganizationId: string | null;
-	importSourceKind: any;
-	setImportSourceKind: (val: any) => void;
-	importText: string;
-	setImportText: (val: string) => void;
-	setImportPreview: (val: any) => void;
-	setImportCommit: (val: any) => void;
+	auth: unknown;
+	setDashboard?: ((dashboard: Dashboard | null) => void) | React.Dispatch<React.SetStateAction<Dashboard | null>>;
+	setQuery?: (query: string) => void;
+	selectedPatientId?: string;
+	documentPatient?: Patient | null;
+	activePatient?: unknown;
+	activeAppointment?: Appointment | null;
+	activeDoctor?: StaffMember | null;
+	activeChair?: unknown;
+	paymentPatientContextReady?: boolean;
+	paymentPatientContextMessage?: string;
+	loadDashboard?: () => Promise<void>;
+	clinicProfileDraft?: unknown;
+	patientCoreDraft?: unknown;
+	documentPatientMatchesActiveVisit?: boolean;
+	activeOrganizationId?: string | null;
+	importSourceKind?: unknown;
+	setImportSourceKind?: (val: unknown) => void;
+	importText?: string;
+	setImportText?: React.Dispatch<React.SetStateAction<string>> | ((val: string) => void);
+	setImportPreview?: (val: unknown) => void;
+	setImportCommit?: (val: unknown) => void;
 }
 
-export function useClinicalSessionLogic({
-	dashboard,
-	query,
-	setError,
-	auth,
-	setDashboard,
-	setQuery,
-	selectedPatientId,
-	documentPatient,
-	activePatient,
-	activeAppointment,
-	activeDoctor,
-	activeChair,
-	paymentPatientContextReady,
-	paymentPatientContextMessage,
-	loadDashboard,
-	clinicProfileDraft,
-	patientCoreDraft,
-	documentPatientMatchesActiveVisit,
-	activeOrganizationId,
-	importSourceKind,
-	setImportSourceKind,
-	importText,
-	setImportText,
-	setImportPreview,
-	setImportCommit,
-}: UseClinicalSessionLogicProps): ClinicalSessionLogicSlice {
+export function useClinicalSessionLogic(props: UseClinicalSessionLogicProps): ClinicalSessionLogicSlice {
 	const clinicalVisitLogic = useClinicalVisitLogic();
 	const {
 		odontogramUseSurfaces,
@@ -75,33 +50,35 @@ export function useClinicalSessionLogic({
 		setOdontogramViewMode,
 	} = clinicalVisitLogic;
 
-	const visitLogic: any = useVisitLogic({
-		dashboard,
-		query,
-		setError,
-		auth,
-		setDashboard: setDashboard as any,
-		setQuery: setQuery as any,
-		selectedPatientId,
-		documentPatient,
-		activePatient,
-		activeAppointment,
-		activeDoctor,
-		activeChair,
-		paymentPatientContextReady,
-		paymentPatientContextMessage,
-		loadDashboard,
-		clinicProfileDraft,
-		patientCoreDraft,
-		documentPatientMatchesActiveVisit,
-		activeOrganizationId,
-		importSourceKind,
-		setImportSourceKind,
-		importText,
-		setImportText,
-		setImportPreview,
-		setImportCommit,
-	} as any);
+	const visitParams: UseVisitLogicParams = {
+		setError: props.setError,
+		auth: props.auth,
+		setDashboard: (props.setDashboard as React.Dispatch<React.SetStateAction<Dashboard | null>>) ?? (() => {}),
+		dashboard: props.dashboard ?? null,
+		query: props.query ?? "",
+		setQuery: props.setQuery ?? (() => {}),
+		selectedPatientId: props.selectedPatientId ?? "",
+		paymentPatientContextReady: props.paymentPatientContextReady ?? false,
+		paymentPatientContextMessage: props.paymentPatientContextMessage ?? "",
+		loadDashboard: props.loadDashboard ?? (async () => {}),
+		documentPatientMatchesActiveVisit: props.documentPatientMatchesActiveVisit ?? false,
+		activeOrganizationId: props.activeOrganizationId ?? null,
+		...(props.documentPatient ? { documentPatient: props.documentPatient } : {}),
+		...(props.activePatient ? { activePatient: props.activePatient } : {}),
+		...(props.activeAppointment ? { activeAppointment: props.activeAppointment } : {}),
+		...(props.activeDoctor ? { activeDoctor: props.activeDoctor } : {}),
+		...(props.activeChair ? { activeChair: props.activeChair } : {}),
+		...(props.clinicProfileDraft ? { clinicProfileDraft: props.clinicProfileDraft } : {}),
+		...(props.patientCoreDraft ? { patientCoreDraft: props.patientCoreDraft } : {}),
+		...(props.importSourceKind ? { importSourceKind: props.importSourceKind } : {}),
+		...(props.setImportSourceKind ? { setImportSourceKind: props.setImportSourceKind } : {}),
+		...(props.importText ? { importText: props.importText } : {}),
+		...(props.setImportText ? { setImportText: props.setImportText as React.Dispatch<React.SetStateAction<string>> } : {}),
+		...(props.setImportPreview ? { setImportPreview: props.setImportPreview } : {}),
+		...(props.setImportCommit ? { setImportCommit: props.setImportCommit } : {}),
+	};
+
+	const visitLogic: UseVisitLogicReturn = useVisitLogic(visitParams);
 
 	const {
 		visitNoteForm,

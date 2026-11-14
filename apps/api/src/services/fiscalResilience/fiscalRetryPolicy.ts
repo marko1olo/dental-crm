@@ -181,7 +181,18 @@ export class FiscalRetryPolicy {
 			}
 
 			// Attempt physical print
-			const payload = (queueItem?.payloadJson || {}) as unknown as Ffd12ReceiptPayload;
+			const rawPayload = queueItem?.payloadJson;
+			if (!rawPayload || typeof rawPayload !== "object") {
+				return {
+					success: false,
+					status: "hardware_offline",
+					paymentId: targetPaymentId,
+					queueItemId: queueItem?.id,
+					error: "Отсутствует корректный payload фискального чека в очереди",
+					deviceStatus,
+				};
+			}
+			const payload = rawPayload as Ffd12ReceiptPayload;
 			let printResult: KktPrintResult;
 			try {
 				printResult = await LanKktDriverService.printFiscalReceipt(
@@ -268,12 +279,12 @@ export class FiscalRetryPolicy {
 					fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
 					fiscalReceiptUrl: printResult.ofdVerificationUrl || null,
 					fiscalReceipt: {
-						fn: printResult.fnSerial,
-						fd: printResult.fiscalDocumentNumber,
-						fpd: printResult.fiscalSign,
-						receiptUrl: printResult.ofdVerificationUrl,
+						fn: printResult.fnSerial ?? null,
+						fd: printResult.fiscalDocumentNumber ?? null,
+						fpd: printResult.fiscalSign ?? null,
+						receiptUrl: printResult.ofdVerificationUrl ?? null,
 						operationType: "income",
-					} as unknown as FiscalReceiptDetails,
+					},
 					note: `[54-ФЗ] Фискализация успешно завершена повтором: ФД ${printResult.fiscalDocumentNumber}`,
 					updatedAt: now,
 				})

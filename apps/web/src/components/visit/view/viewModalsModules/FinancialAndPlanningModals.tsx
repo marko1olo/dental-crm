@@ -8,8 +8,7 @@
  */
 
 import React from "react";
-import { StagePaymentPlanModal } from "../../../treatment-plans/stagePayment/StagePaymentPlanModal";
-import { TreatmentPlanPriceValidatorModal } from "../../../treatment-plans/validation/TreatmentPlanPriceValidatorModal";
+import { TreatmentPlanStudioModal } from "../../../treatment-plans/TreatmentPlanStudioModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { showToast } from "../../../GlobalToast";
 
@@ -40,10 +39,11 @@ export const FinancialAndPlanningModals: React.FC<FinancialAndPlanningModalsProp
 }) => {
 	return (
 		<>
-			{/* Stage Payment & Milestone Escrow Modal */}
+			{/* Stage Payment & Milestone Escrow via Canonical TreatmentPlanStudioModal */}
 			{effectiveActiveModal === "stage_payment" && (
-				<StagePaymentPlanModal
+				<TreatmentPlanStudioModal
 					isOpen={isStagePaymentModalOpen}
+					initialActiveTab="installment"
 					onClose={() => {
 						setIsStagePaymentModalOpen(false);
 						useUiSurfaceStore.getState().closePrimaryModal("stage_payment");
@@ -54,33 +54,24 @@ export const FinancialAndPlanningModals: React.FC<FinancialAndPlanningModalsProp
 				/>
 			)}
 
-			{/* Treatment Plan Price Lock & Pricelist Validator Modal */}
+			{/* Canonical 3-Tier Treatment Plan Presenter & Studio (Mandates 8e, 8n) */}
 			{effectiveActiveModal === "price_validator" && isPriceValidatorModalOpen && (
-				<TreatmentPlanPriceValidatorModal
+				<TreatmentPlanStudioModal
 					isOpen={isPriceValidatorModalOpen}
 					onClose={() => {
 						setIsPriceValidatorModalOpen(false);
 						useUiSurfaceStore.getState().closePrimaryModal("price_validator");
 					}}
-					planPayload={priceValidatorPlanPayload}
-					catalogPricelist={priceValidatorCatalogList}
-					onExportWorkOrder={(exportData) => {
+					patientId={activePatient?.id}
+					patientName={activePatient?.fullName}
+					doctorFullName={activeDoctor?.fullName}
+					onApprovePlan={(selectedTier) => {
 						appendToEMKField(
 							"treatmentPlan",
-							`Сформирован наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽. Фиксация цен: ${exportData.isApprovedByManager ? "Согласовано управляющим" : "По гарантии"}.`,
+							`Утвержден план лечения «${selectedTier.title}» на сумму ${selectedTier.totalRub.toLocaleString("ru-RU")} ₽.`,
 						);
 						showToast(
-							`Зуботехнический наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ добавлен в протокол приема.`,
-							"success",
-						);
-					}}
-					onExportCompletedAct={(exportData) => {
-						appendToEMKField(
-							"treatmentPlan",
-							`Сформирован счёт и акт услуг ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
-						);
-						showToast(
-							`Счёт и акт услуг ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
+							`План лечения «${selectedTier.title}» (${selectedTier.totalRub.toLocaleString("ru-RU")} ₽) утвержден и добавлен в протокол приема.`,
 							"success",
 						);
 					}}

@@ -41,22 +41,22 @@ export function OnlineBookingChannelRow({ channel }: ChannelRowProps) {
 			<td className="py-2.5 px-3 text-right font-bold text-[var(--teal)]">
 				{channel.bookingsCount}
 			</td>
-			<td className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+			<td className="py-2.5 px-3 text-right font-semibold text-[var(--teal)]">
 				{convPercent.toFixed(1)}%
 			</td>
-			<td className="py-2.5 px-3 text-right font-medium text-blue-600 dark:text-blue-400">
+			<td className="py-2.5 px-3 text-right font-medium text-[var(--ink)]">
 				{channel.attendedCount}{" "}
 				<span className="text-xs text-[var(--muted)]">
 					({attendPercent.toFixed(0)}%)
 				</span>
 			</td>
-			<td className="py-2.5 px-3 text-right font-medium text-rose-500">
+			<td className="py-2.5 px-3 text-right font-medium text-[var(--danger,#e11d48)]">
 				{channel.noShowCount}
 			</td>
 			<td className="py-2.5 px-3 text-right font-bold text-[var(--ink)]">
 				{formatKopecksRu(channel.revenueKopecks)}
 			</td>
-			<td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+			<td className="py-2.5 px-3 text-right font-bold text-[var(--teal)]">
 				{channel.spentKopecks > 0 ? (romi > 0 ? `+${romi}%` : `${romi}%`) : "—"}
 			</td>
 		</tr>

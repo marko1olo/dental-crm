@@ -90,7 +90,7 @@ export async function executeFiscalizeReceiptTransaction(params: {
 		ffd12Tags: {
 			tag1054_operationType: resolveTag1054(input.operationType),
 			tag1055_taxationSystem: resolveTag1055(input.taxationSystem),
-			tag1008_customerContact: input.customerContact,
+			tag1008_customerContact: input.customerContact || "",
 			tag1021_cashier: input.cashierFullName,
 			tag1031_cashSumKopecks: input.cashKopecks,
 			tag1081_electronicSumKopecks: input.electronicCardKopecks + input.sbpKopecks,

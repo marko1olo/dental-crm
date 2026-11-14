@@ -71,6 +71,10 @@ async function captureProof(page, filename) {
 
   // Copy to imaging dir as well
   fs.copyFileSync(targetPath, path.join(IMAGING_DIR, filename));
+  const brainDir = "C:/Users/Admin/.gemini/antigravity/brain/8a65cf86-3dec-4481-8ffb-b5c83ca88257";
+  if (fs.existsSync(brainDir)) {
+    fs.copyFileSync(targetPath, path.join(brainDir, filename));
+  }
 
   return { filename, sizeKb, hash, bytes: buf.length };
 }

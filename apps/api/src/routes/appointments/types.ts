@@ -31,6 +31,13 @@ export type AppointmentOptionalIdParams = {
 	id?: string;
 };
 
+export type AppointmentQueryParams = {
+	period?: string;
+	doctorId?: string;
+	date?: string;
+	patientId?: string;
+};
+
 export type AppointmentConflictContext = {
 	orgId: string;
 	doctorUserId?: string | null;

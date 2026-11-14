@@ -1,17 +1,31 @@
 import { useMemo } from "react";
+import type { Dashboard, Patient } from "@dental/shared";
 import {
 	buildStageCompletedActData,
 	buildTreatmentPlanValidationPayload,
 	calculatePlanAgeDays,
 	formatPlanContractNumber,
 	resolveDoctorOptions,
+	type PlanStaffMemberInput,
 } from "./planFinancialCalculators.js";
-import type { TreatmentPlanStage, TreatmentPlanTier } from "./types.js";
+import type { PlanAuthContext, TreatmentPlanStage, TreatmentPlanTier } from "./types.js";
+
+export interface PlanDashboardContext {
+	readonly clinicSettings?: {
+		readonly profile?: {
+			readonly brandName?: string | undefined;
+		} | undefined;
+		readonly staff?: readonly PlanStaffMemberInput[] | undefined;
+	} | undefined;
+	readonly inventoryItems?: Dashboard["inventoryItems"] | undefined;
+	readonly patients?: readonly (Patient & { balanceRub?: number | null | undefined })[] | undefined;
+	readonly serviceCatalog?: Dashboard["serviceCatalog"] | undefined;
+}
 
 interface ContextDataParams {
 	readonly planCreatedAtIso?: string | undefined;
-	readonly dashboard: any;
-	readonly auth: any;
+	readonly dashboard: PlanDashboardContext | Dashboard | null | undefined;
+	readonly auth: PlanAuthContext | null | undefined;
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly stages: readonly TreatmentPlanStage[];
@@ -31,11 +45,12 @@ export function usePlanContextData({
 	discountPercent,
 	selectedActStage,
 }: ContextDataParams) {
+	const planDashboard = dashboard as PlanDashboardContext | null | undefined;
 	const planAgeDays = useMemo(() => calculatePlanAgeDays(planCreatedAtIso), [planCreatedAtIso]);
 	const contractNumber = formatPlanContractNumber(patientId);
 	const doctorOptions = useMemo(
-		() => resolveDoctorOptions(dashboard?.clinicSettings?.staff as any[] | undefined),
-		[dashboard?.clinicSettings?.staff],
+		() => resolveDoctorOptions(planDashboard?.clinicSettings?.staff),
+		[planDashboard?.clinicSettings?.staff],
 	);
 
 	const completedActData = useMemo(
@@ -46,10 +61,10 @@ export function usePlanContextData({
 				patientId,
 				patientName,
 				doctorFullName: auth?.currentUser?.name,
-				clinicName: dashboard?.clinicSettings?.profile?.brandName,
-				inventoryItems: dashboard?.inventoryItems,
+				clinicName: planDashboard?.clinicSettings?.profile?.brandName,
+				inventoryItems: planDashboard?.inventoryItems,
 			}),
-		[selectedActStage, contractNumber, patientId, patientName, auth, dashboard],
+		[selectedActStage, contractNumber, patientId, patientName, auth, planDashboard],
 	);
 
 	const validationPayload = useMemo(

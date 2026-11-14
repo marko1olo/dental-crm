@@ -1,7 +1,7 @@
 /**
  * apps/api/src/routes/sanpin/sterilizationModules/handlers/createAutoclaveBatchCycleHandler.ts
  *
- * 1-клик запуск нормативного батча автоклава (134°C / 2.15 бар или 121°C / 1.15 бар)
+ * Экспресс-запуск нормативного батча автоклава (134°C / 2.15 бар или 121°C / 1.15 бар)
  * с пакетным списанием расходников со склада и автоматической фиксацией 100% нормы очистки.
  * Мандат 8b: строго <= 120 строк.
  */
@@ -12,6 +12,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
 
@@ -19,6 +20,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization quick norm");
 	if (!organizationId) return;
 
+	const operatorId = getRequestIdentity(req).userId ?? null;
 	const body = (req.body as Record<string, unknown>) || {};
 	const isDelicate = body.regime === "delicate_121";
 	const isPrion = body.regime === "prion_134";
@@ -66,7 +68,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 			status: "passed",
 			barcode,
 			expiresAt,
-			operatorId: (req as any).user?.id ?? null,
+			operatorId,
 			timestamp: now,
 		})
 		.returning();
@@ -84,7 +86,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 			isBatchApproved: true,
 			detergentBrand: "Биолот 0.5% + Аламинол 1%",
 			rejectionReason: null,
-			operatorId: (req as any).user?.id ?? null,
+			operatorId,
 			notes: `[Предстерилизационная очистка] Очистка партии автоклава №${cycleNumber} (${batchSize} шт): азопирамовая и фенолфталеиновая пробы отрицательные, 100% норма. Партия допущена.`,
 			timestamp: now,
 		})
@@ -94,7 +96,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 
 	const stockDeduction = await executeSterilizationConsumablesDeduction({
 		organizationId,
-		userId: (req as any).user?.id ?? null,
+		userId: operatorId,
 		count: batchSize,
 		packagingType,
 		indicatorType,

@@ -35,11 +35,18 @@ export interface PlanPersistenceEffectsParams {
 	readonly setCustomStages: Dispatch<SetStateAction<TreatmentPlanStage[] | null>>;
 }
 
+export interface PlanAuthContext {
+	readonly currentUser?: {
+		readonly id?: string | undefined;
+		readonly name?: string | undefined;
+	} | null | undefined;
+}
+
 export interface PlanPersistenceAndSyncContext {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly patientPhone: string;
-	readonly auth: any;
+	readonly auth: PlanAuthContext | null | undefined;
 	readonly stages: readonly TreatmentPlanStage[];
 	readonly currentTier: TreatmentPlanTier;
 	readonly loyaltyDeduction: LoyaltyBonusCalculationResult;

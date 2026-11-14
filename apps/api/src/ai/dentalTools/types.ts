@@ -7,6 +7,8 @@
  */
 
 import { z } from "zod";
+import type { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 
 export type AgentRuntimeMode = "web_browser" | "desktop_native";
 
@@ -29,8 +31,9 @@ export interface DentalToolContext {
 	activeVisitId?: string | undefined;
 	activeTooth?: number | null | undefined;
 	runtimeMode?: AgentRuntimeMode | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle database instance
-	db?: any;
+	patientAllergies?: string[] | undefined;
+	somaticHistory?: string[] | string | undefined;
+	db?: TenantDb | typeof db | undefined;
 	allowLocalExecution?: boolean | undefined;
 	requireConfirmation?: boolean | undefined;
 }
@@ -73,12 +76,10 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 				current instanceof z.ZodNullable
 			) {
 				isOptional = true;
-				// biome-ignore lint/suspicious/noExplicitAny: unwrap helper
-				current = (current as any).unwrap();
+				current = (current as z.ZodOptional<z.ZodTypeAny> | z.ZodNullable<z.ZodTypeAny>).unwrap();
 			} else if (current instanceof z.ZodDefault) {
 				isOptional = true;
-				// biome-ignore lint/suspicious/noExplicitAny: default helper
-				current = (current as any)._def.innerType;
+				current = (current as z.ZodDefault<z.ZodTypeAny>)._def.innerType;
 			}
 
 			if (!isOptional) {
@@ -131,8 +132,7 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 	}
 
 	if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) {
-		// biome-ignore lint/suspicious/noExplicitAny: unwrap helper
-		return zodToJsonSchema((schema as any).unwrap());
+		return zodToJsonSchema((schema as z.ZodOptional<z.ZodTypeAny> | z.ZodNullable<z.ZodTypeAny>).unwrap());
 	}
 
 	if (schema instanceof z.ZodRecord) {

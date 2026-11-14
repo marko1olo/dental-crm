@@ -6,6 +6,7 @@ import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,
 } from "../../../../db/schema.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { calculateBactericidalLampResource } from "../bactericidalHoursCalculator.js";
 import { eveningShiftBodySchema } from "../bactericidalSchemas.js";
@@ -24,12 +25,13 @@ export async function handleCloseEveningShift(
 	const parsed = eveningShiftBodySchema.safeParse(req.body || {});
 	const body = parsed.success
 		? parsed.data
-		: ((req.body as any) || {});
-	const dateStr = body.date || new Date().toISOString().slice(0, 10);
+		: ((req.body as Record<string, unknown>) || {});
+	const dateStr = (body.date as string) || new Date().toISOString().slice(0, 10);
 	const shiftHours = typeof body.shiftHours === "number" ? body.shiftHours : 6;
 	const finalDisinfectionMinutes = 30;
 	const totalSessionHours = Number((shiftHours + finalDisinfectionMinutes / 60).toFixed(2));
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
+	const operatorId = getRequestIdentity(req).userId ?? null;
 
 	const activeEquipments = await db
 		.select()
@@ -86,8 +88,8 @@ export async function handleCloseEveningShift(
 				durationMinutes: shiftHours * 60,
 				operatingMode: "continuous_presence",
 				cumulativeHoursAfterSession: String(intermediateHours),
-				operatorId: req.user?.id ?? null,
-				notes: `⚡ Рабочая смена (${shiftHours} ч): непрерывное обеззараживание воздуха рециркулятором по СанПиН 3.3686-21`,
+				operatorId,
+				notes: `Рабочая смена (${shiftHours} ч): непрерывное обеззараживание воздуха рециркулятором по СанПиН 3.3686-21`,
 			});
 
 			const finalStart = new Date(`${dateStr}T19:30:00`);
@@ -102,8 +104,8 @@ export async function handleCloseEveningShift(
 				durationMinutes: finalDisinfectionMinutes,
 				operatingMode: "post_cleaning",
 				cumulativeHoursAfterSession: String(newTotalHours),
-				operatorId: req.user?.id ?? null,
-				notes: "⚡ Закрыть вечернюю смену: заключительное обеззараживание помещений перед закрытием клиники по СанПиН 3.3686-21",
+				operatorId,
+				notes: "Закрыть вечернюю смену: заключительное обеззараживание помещений перед закрытием клиники по СанПиН 3.3686-21",
 			});
 
 			results.push({
@@ -123,7 +125,7 @@ export async function handleCloseEveningShift(
 	return reply.code(201).send({
 		success: true,
 		action: "close_evening_shift",
-		message: `⚡ Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы для ${results.length} аппаратов (+${totalSessionHours} ч)`,
+		message: `Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы для ${results.length} аппаратов (+${totalSessionHours} ч)`,
 		results,
 	});
 }

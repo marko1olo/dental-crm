@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../../db/client.js";
 import {
@@ -61,13 +61,19 @@ export async function handleApproveTreatmentPlan(
 		if (updated) {
 			await tx
 				.update(treatmentItems)
-				.set({ status: "approved" })
+				.set({
+					status: "approved",
+					treatmentPlanId: id,
+				})
 				.where(
 					and(
 						eq(treatmentItems.organizationId, organizationId),
 						eq(treatmentItems.patientId, existing.patientId),
 						eq(treatmentItems.status, "proposed"),
-						sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+						or(
+							eq(treatmentItems.treatmentPlanId, id),
+							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+						),
 					),
 				);
 
@@ -92,7 +98,7 @@ export async function handleApproveTreatmentPlan(
 				createdInvoice = invoice ?? null;
 
 				if (invoice) {
-					// Проверяем существующие строки в treatmentItems по префиксу плана
+					// Проверяем существующие строки в treatmentItems по честному FK treatmentPlanId (или легаси-префиксу)
 					const existingLedgerItems = await tx
 						.select({ id: treatmentItems.id })
 						.from(treatmentItems)
@@ -100,23 +106,30 @@ export async function handleApproveTreatmentPlan(
 							and(
 								eq(treatmentItems.organizationId, organizationId),
 								eq(treatmentItems.patientId, existing.patientId),
-								sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+								or(
+									eq(treatmentItems.treatmentPlanId, id),
+									sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+								),
 							),
 						);
 
 					if (existingLedgerItems.length > 0) {
-						// Обновляем статус и связываем существующие позиции со счётом
+						// Обновляем статус и связываем существующие позиции со счётом через честный invoiceId FK
 						await tx
 							.update(treatmentItems)
 							.set({
 								status: "approved",
-								notes: sql`CASE WHEN ${treatmentItems.notes} IS NULL OR ${treatmentItems.notes} = '' THEN ${'Счёт ' + invoice.id} ELSE ${treatmentItems.notes} || ' | Счёт ' || ${invoice.id} END`,
+								treatmentPlanId: id,
+								invoiceId: invoice.id,
 							})
 							.where(
 								and(
 									eq(treatmentItems.organizationId, organizationId),
 									eq(treatmentItems.patientId, existing.patientId),
-									sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+									or(
+										eq(treatmentItems.treatmentPlanId, id),
+										sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+									),
 								),
 							);
 					} else {
@@ -145,6 +158,8 @@ export async function handleApproveTreatmentPlan(
 									id: rowId,
 									organizationId,
 									patientId: existing.patientId,
+									treatmentPlanId: id,
+									invoiceId: invoice.id,
 									visitId: null,
 									serviceId: UUID_SHAPE.test(priceId) ? priceId : null,
 									toothCode: item.toothNumber != null ? String(item.toothNumber) : null,
@@ -155,7 +170,7 @@ export async function handleApproveTreatmentPlan(
 									discountRub: discountNum,
 									status: "approved" as const,
 									plannedDoctorUserId: item.doctorId ?? null,
-									notes: `План лечения: ${updated.name || "Утвержденный"} | Счёт ${invoice.id}`,
+									notes: `План лечения: ${updated.name || "Утвержденный"}`,
 								};
 							});
 							await tx.insert(treatmentItems).values(newLedgerItems);

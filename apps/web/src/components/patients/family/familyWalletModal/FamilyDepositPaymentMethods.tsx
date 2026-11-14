@@ -29,8 +29,8 @@ export const FamilyDepositPaymentMethods: React.FC<FamilyDepositPaymentMethodsPr
 						onClick={() => setTopupMethod("card")}
 						className={`min-h-[44px] sm:min-h-[36px] h-9 p-2 text-xs font-semibold rounded-xl border inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
 							topupMethod === "card"
-								? "border-[var(--teal)] bg-[var(--teal)] text-white shadow-xs"
-								: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
+								? "border-[var(--teal,#0d9488)] bg-[rgba(13,148,136,0.12)] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#0d9488)] shadow-xs"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
 						}`}
 					>
 						<CreditCard className="w-4 h-4 shrink-0" />
@@ -42,8 +42,8 @@ export const FamilyDepositPaymentMethods: React.FC<FamilyDepositPaymentMethodsPr
 						onClick={() => setTopupMethod("cash")}
 						className={`min-h-[44px] sm:min-h-[36px] h-9 p-2 text-xs font-semibold rounded-xl border inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
 							topupMethod === "cash"
-								? "border-[var(--teal)] bg-[var(--teal)] text-white shadow-xs"
-								: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
+								? "border-[var(--teal,#0d9488)] bg-[rgba(13,148,136,0.12)] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#0d9488)] shadow-xs"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
 						}`}
 					>
 						<Coins className="w-4 h-4 shrink-0" />
@@ -55,8 +55,8 @@ export const FamilyDepositPaymentMethods: React.FC<FamilyDepositPaymentMethodsPr
 						onClick={() => setTopupMethod("sbp")}
 						className={`min-h-[44px] sm:min-h-[36px] h-9 p-2 text-xs font-semibold rounded-xl border inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
 							topupMethod === "sbp"
-								? "border-[var(--teal)] bg-[var(--teal)] text-white shadow-xs"
-								: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
+								? "border-[var(--teal,#0d9488)] bg-[rgba(13,148,136,0.12)] text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal,#0d9488)] shadow-xs"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
 						}`}
 					>
 						<QrCode className="w-4 h-4 shrink-0" />

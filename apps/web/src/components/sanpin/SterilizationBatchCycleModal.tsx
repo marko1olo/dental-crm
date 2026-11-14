@@ -143,8 +143,8 @@ export function SterilizationBatchCycleModal({
 		const payloadMacro = {
 			regime: "standard_134" as const, packagesCount: 27, batchSize: 27, deviceName, autoclaveId,
 			operatorName, temperatureCelsius: 134, pressureBar: 2.1, durationMin: 5, cyclesCount: 2,
-			packagingType: "kraft_self_adhesive" as const, cycleName: "Автоклавирование смены (2 цикла 134°C + ПСО Норма)",
-			itemsDescription: "Автоклавирование смены: 2 цикла (27 наборов) + ПСО Норма",
+			packagingType: "kraft_self_adhesive" as const, cycleName: "Автоклавирование смены (2 цикла 134°C + контроль очистки)",
+			itemsDescription: "Автоклавирование смены: 2 цикла (27 наборов) + контроль очистки",
 			indicatorClass: "5" as const, indicatorType: "class5_integrating" as const,
 		};
 		try {
@@ -159,7 +159,7 @@ export function SterilizationBatchCycleModal({
 					instrumentName: "Стоматологический инструментарий смены (108 шт.)", detergentBrand: "Биолот 0.5% + Аламинол 1%", operatorName,
 				}),
 			}).catch(() => null);
-			setFeedbackToast("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + ПСО Норма. Списано со склада.");
+			setFeedbackToast("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + контроль очистки. Списано со склада.");
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);
 		} catch (err) {
 			console.warn("[SanPiN] Soft fallback on macro batch:", err);
@@ -250,7 +250,7 @@ export function SterilizationBatchCycleModal({
 						</div>
 						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
 							<PackageCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор {indicatorClass} класса</strong> (Soft Negative Stock).</span>
+							<span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор {indicatorClass} класса</strong>.</span>
 						</div>
 					</div>
 					{feedbackToast && (<div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-semibold text-center">{feedbackToast}</div>)}
@@ -260,7 +260,8 @@ export function SterilizationBatchCycleModal({
 					<div className="flex items-center gap-2 w-full sm:w-auto">
 						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sterilization-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)" className="flex-1 sm:flex-initial h-10 min-h-[44px] px-3.5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]">
 							<CheckCircle2 size={15} className="text-white" />
-							<span>Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
+							<span>Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
+							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
 						</button>
 						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] px-3 rounded-xl font-semibold text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-[0.98]">
 							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>

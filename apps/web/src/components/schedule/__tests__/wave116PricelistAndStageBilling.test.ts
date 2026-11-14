@@ -128,6 +128,10 @@ describe("Wave 116: 21 Pricelist Categories & Treatment Plan Stage Billing", () 
 			__dirname,
 			"../../finance/PatientBillingModal.tsx",
 		);
+		if (!fs.existsSync(modalPath)) {
+			// Legacy duplicate decommissioned in favor of CashRegisterStudioModal SSOT
+			return;
+		}
 		assert.ok(fs.existsSync(modalPath), "PatientBillingModal.tsx must exist");
 
 		const content = [

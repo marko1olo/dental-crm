@@ -8,11 +8,8 @@
  * Размер строго 300–350 строк (Мандат 8b/8zi Sweet Spot).
  */
 
-export type RecallCycleType =
-	| "standard_prophylaxis" | "implant_monitoring" | "orthodontic_adjustment" | "pediatric_fluoridation"
-	| "periodontal_maintenance" | "hygiene" | "implants" | "orthodontics" | "pediatric"
-	| "orthodontic_braces" | "orthodontic_aligners" | "orthodontic_retention" | "pediatric_checkup"
-	| "caries_high_risk" | "prosthetic_check";
+import type { RecallCycleType } from "./recallCycleTypes.js";
+export type { RecallCycleType };
 
 export type CanonicalRecallWorkflowStatus = "not_called" | "reached" | "declined" | "scheduled";
 
@@ -24,7 +21,7 @@ export interface PatientRecallRecord {
 	readonly id: string;
 	readonly patientId: string;
 	readonly fullName: string;
-	readonly phone: string;
+	readonly phone: string | null;
 	readonly cycleType?: RecallCycleType;
 	readonly cycleLabel?: string;
 	readonly lastVisitDate: string;

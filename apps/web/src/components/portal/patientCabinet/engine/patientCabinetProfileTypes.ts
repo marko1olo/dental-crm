@@ -20,9 +20,12 @@ export interface PatientPersonalCabinetData {
 		readonly legalName?: string | undefined;
 		readonly licenseNumber?: string | undefined;
 		readonly inn?: string | undefined;
+		readonly kpp?: string | undefined;
 		readonly ogrn?: string | undefined;
 		readonly address?: string | undefined;
 		readonly phone?: string | undefined;
+		readonly kktZn?: string | undefined;
+		readonly fnNumber?: string | undefined;
 	} | undefined;
 	readonly curatingDoctor: string;
 	readonly curatingDoctorSpecialtyRu?: string | undefined;

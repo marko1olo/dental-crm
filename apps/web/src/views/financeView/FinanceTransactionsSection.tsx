@@ -1,5 +1,5 @@
 import React from "react";
-import { FamilyWalletPanel } from "../../components/finance/FamilyWalletPanel";
+import { FamilyWalletModal } from "../../components/patients/family/FamilyWalletModal";
 import { ServiceCatalogStrip } from "../../FinancePlanning";
 import { FinanceTransactionsTable } from "./FinanceTransactionsTable";
 import type { FinanceViewState } from "./useFinanceView";
@@ -35,10 +35,13 @@ export function FinanceTransactionsSection({ s }: FinanceTransactionsSectionProp
 			/>
 
 			<div className="mt-6">
-				<FamilyWalletPanel
+				<FamilyWalletModal
+					isOpen={Boolean(s.effectivePatient?.id || s.documentPatient?.id)}
+					onClose={() => {}}
+					inline={true}
 					patientId={s.effectivePatient?.id || s.documentPatient?.id || ""}
-					remainingDebtRub={s.effectiveBillingSummary?.totalDueRub ?? s.billingSummary?.totalDueRub ?? 0}
-					onPaymentSuccess={s.reloadAfterFamilyPayment}
+					patientName={s.effectivePatient?.fullName || s.documentPatient?.fullName || ""}
+					onFamilyDataChanged={s.reloadAfterFamilyPayment}
 				/>
 			</div>
 		</>

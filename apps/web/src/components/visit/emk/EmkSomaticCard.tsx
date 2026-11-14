@@ -1,10 +1,11 @@
 import React from "react";
+import type { Patient } from "@dental/shared";
 import type { EmkSectionProps } from "./EmkTypes";
 
 export interface EmkSomaticCardProps extends Partial<EmkSectionProps> {
 	onApplyPhysiologicalNorm?: (() => void) | undefined;
 	onFillNormQuick?: (() => void) | undefined;
-	patient?: any;
+	patient?: Patient | Record<string, unknown> | null;
 	allergies?: string[];
 	somaticAlerts?: string[];
 	isCardioRisk?: boolean;

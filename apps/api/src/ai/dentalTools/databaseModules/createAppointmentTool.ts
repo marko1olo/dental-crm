@@ -73,16 +73,19 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		.values({
 			organizationId: orgId,
 			patientId,
-			doctorId,
+			doctorUserId: doctorId,
 			chairId: args.chairId ?? null,
-			startTime: start,
-			endTime: end,
-			durationMinutes: duration,
-			status: "scheduled",
-			serviceTitle: args.serviceTitle ?? "Стоматологический приём",
-			notes: args.notes ?? null,
+			startsAt: start,
+			endsAt: end,
+			status: "planned",
+			reason: args.serviceTitle ?? "Стоматологический приём",
+			comment: args.notes ?? null,
 		})
 		.returning({ id: appointments.id });
+
+	if (!inserted) {
+		throw new Error("Не удалось создать запись на приём");
+	}
 
 	return {
 		success: true,
@@ -92,7 +95,7 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		startTime: start.toISOString(),
 		endTime: end.toISOString(),
 		durationMinutes: duration,
-		status: "scheduled",
+		status: "planned",
 		message: `Запись успешно добавлена в расписание клиники на ${start.toLocaleString("ru-RU")}.`,
 	};
 }

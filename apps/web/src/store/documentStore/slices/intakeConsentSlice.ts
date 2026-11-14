@@ -4,9 +4,8 @@ import type { IntakeConsentSliceState } from "../types/intakeConsentTypes";
 
 const initialUiPreferences = loadUiPreferences();
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export const createIntakeAndConsentSlice = (
-	set: any,
+	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
 ): IntakeConsentSliceState => ({
 	intakeChiefComplaint: "",
 	setIntakeChiefComplaint: createSetter(set, "intakeChiefComplaint"),

@@ -20,7 +20,7 @@ export function computeDiaryHashForTrayLink(row: DiaryHashInput): string {
  * Мандат 8e / 8n: Запись мягкого клинического допуска в дневник по экстренным показаниям.
  */
 export function buildEmergencySterilizationAdmissionNote(barcode: string): string {
-	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21)]`;
+	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям (СанПиН 3.3686-21)]`;
 }
 
 /**

@@ -1,13 +1,17 @@
 import assert from "node:assert";
 import { after, afterEach, before, describe, it, mock, test } from "node:test";
 import type { ImagingSourceKind, Patient } from "@dental/shared";
-import { db } from "../db/client.js";
+import { db, dbRaw } from "../db/client.js";
 import { patients } from "../sampleData.js";
 import { commitImagingImport, parseDicomSeriesManifest } from "./imaging.js";
 
 describe("parseDicomSeriesManifest", () => {
 	afterEach(() => {
-		mock.restoreAll();
+		if (typeof (mock as { restoreAll?: () => void })?.restoreAll === "function") {
+			(mock as { restoreAll: () => void }).restoreAll();
+		} else if (typeof (mock as { reset?: () => void })?.reset === "function") {
+			(mock as { reset: () => void }).reset();
+		}
 	});
 
 	test("returns default preview response when rawText yields no lines", async () => {
@@ -74,23 +78,40 @@ describe("commitImagingImport", () => {
 	});
 
 	afterEach(() => {
-		mock.restoreAll();
+		if (typeof (mock as { restoreAll?: () => void })?.restoreAll === "function") {
+			(mock as { restoreAll: () => void }).restoreAll();
+		} else if (typeof (mock as { reset?: () => void })?.reset === "function") {
+			(mock as { reset: () => void }).reset();
+		}
 	});
 
 	it("processes valid records only and maps properties to the created study correctly", async () => {
 		const patient = testPatient;
 
-		mock.method(db, "select", () => ({
+		const mockSelect = () => ({
 			from: () => ({
-				where: () =>
-					Object.assign(Promise.resolve([testPatientRow]), {
-						limit: () => Promise.resolve([testPatientRow]),
-					}),
+				where: () => {
+					const promise = Promise.resolve([testPatientRow]);
+					const dynamicChain = {
+						orderBy: () => dynamicChain,
+						limit: () => dynamicChain,
+						offset: () => dynamicChain,
+						then: promise.then.bind(promise),
+						catch: promise.catch.bind(promise),
+					};
+					return Object.assign(promise, {
+						limit: () => promise,
+						$dynamic: () => dynamicChain,
+					});
+				},
 			}),
-		}));
+		});
+
+		mock.method(dbRaw, "transaction", async (fn: any) => fn(dbRaw));
+		mock.method(dbRaw, "select", mockSelect);
 
 		const insertedValues: Array<Record<string, unknown>> = [];
-		mock.method(db, "insert", () => ({
+		const mockInsert = () => ({
 			values: (values: Record<string, unknown>) => {
 				insertedValues.push(values);
 				return {
@@ -103,7 +124,8 @@ describe("commitImagingImport", () => {
 					],
 				};
 			},
-		}));
+		});
+		mock.method(dbRaw, "insert", mockInsert);
 
 		const input = {
 			sourceName: "test_import",
@@ -126,7 +148,8 @@ describe("commitImagingImport", () => {
 		assert.strictEqual(result.skippedCount, 2);
 		assert.strictEqual(result.createdStudyIds.length, 1);
 
-		assert.strictEqual(insertedValues.length, 1);
+		// 1 исследование + 1 серия + 1 инстанс в рамках канонической DICOM-иерархии
+		assert.strictEqual(insertedValues.length, 3);
 		// biome-ignore lint/style/noNonNullAssertion: automated suppression
 		const stored = insertedValues[0]!;
 		assert.strictEqual(stored.organizationId, ORG_ID);
@@ -148,10 +171,20 @@ describe("commitImagingImport", () => {
 	it("не пишет в базу, если готовых строк нет", async () => {
 		mock.method(db, "select", () => ({
 			from: () => ({
-				where: () =>
-					Object.assign(Promise.resolve([testPatientRow]), {
-						limit: () => Promise.resolve([testPatientRow]),
-					}),
+				where: () => {
+					const promise = Promise.resolve([testPatientRow]);
+					const dynamicChain = {
+						orderBy: () => dynamicChain,
+						limit: () => dynamicChain,
+						offset: () => dynamicChain,
+						then: promise.then.bind(promise),
+						catch: promise.catch.bind(promise),
+					};
+					return Object.assign(promise, {
+						limit: () => promise,
+						$dynamic: () => dynamicChain,
+					});
+				},
 			}),
 		}));
 

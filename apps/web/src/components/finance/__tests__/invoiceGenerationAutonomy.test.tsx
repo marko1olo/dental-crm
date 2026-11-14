@@ -58,9 +58,28 @@ interface MockDomNode {
 	[key: string]: unknown;
 }
 
+interface MockDomDocument {
+	nodeType: number;
+	createElement: (tag?: string) => MockDomNode;
+	createElementNS: (_ns: string, tag: string) => MockDomNode;
+	createTextNode: (text: string) => {
+		nodeType: number;
+		textContent: string;
+		style: Record<string, string>;
+		parentNode: MockDomNode | null;
+		ownerDocument: MockDomDocument | null;
+	};
+	createComment: () => { nodeType: number; parentNode: MockDomNode | null; ownerDocument: MockDomDocument | null };
+	addEventListener: () => void;
+	removeEventListener: () => void;
+	documentElement: MockDomNode | null;
+	body: MockDomNode | null;
+	activeElement: MockDomNode | null;
+	defaultView?: unknown;
+}
+
 function setupMockDom() {
-	// biome-ignore lint/suspicious/noExplicitAny: forward declaration
-	let doc: any;
+	let doc: MockDomDocument;
 
 	function createMockElement(tag = "div"): MockDomNode {
 		const children: MockDomNode[] = [];
@@ -182,8 +201,8 @@ function setupMockDom() {
 		createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: doc }),
 		addEventListener: () => {},
 		removeEventListener: () => {},
-		documentElement: null as any,
-		body: null as any,
+		documentElement: null,
+		body: null,
 		activeElement: null,
 	};
 	doc.documentElement = createMockElement("html");
@@ -197,7 +216,7 @@ function setupMockDom() {
 		document: doc,
 		addEventListener: () => {},
 		removeEventListener: () => {},
-		dispatchEvent: (ev: any) => {
+		dispatchEvent: (ev: { type?: string; detail?: { text: string; type: string; duration?: number } }) => {
 			if (ev?.type === "dente-toast" && ev?.detail) {
 				toastEvents.push(ev.detail);
 			}
@@ -211,8 +230,7 @@ function setupMockDom() {
 	};
 	doc.defaultView = win;
 
-	// biome-ignore lint/suspicious/noExplicitAny: polyfill test DOM globals
-	const g = globalThis as any;
+	const g = globalThis as unknown as Record<string, unknown>;
 	g.document = doc;
 	g.window = win;
 	g.HTMLIFrameElement = MockHTMLIFrameElement;
@@ -245,10 +263,12 @@ function isNodeDisabled(node: MockDomNode | null): boolean {
 		k.startsWith("__reactProps$"),
 	);
 	if (reactPropKey) {
-		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
-		const props = (node as any)[reactPropKey];
-		if (props && props.disabled !== undefined) {
-			return Boolean(props.disabled);
+		const rawProps = node[reactPropKey];
+		if (typeof rawProps === "object" && rawProps !== null) {
+			const props = rawProps as Record<string, unknown>;
+			if (props.disabled !== undefined) {
+				return Boolean(props.disabled);
+			}
 		}
 	}
 	return Boolean(node.disabled || node.getAttribute?.("disabled") !== null);
@@ -260,15 +280,17 @@ async function clickNode(node: MockDomNode) {
 			k.startsWith("__reactProps$"),
 		);
 		if (reactPropKey) {
-			// biome-ignore lint/suspicious/noExplicitAny: access React internal props
-			const props = (node as any)[reactPropKey];
-			if (props && typeof props.onClick === "function") {
-				props.onClick({
-					type: "click",
-					preventDefault: () => {},
-					stopPropagation: () => {},
-				});
-				return;
+			const rawProps = node[reactPropKey];
+			if (typeof rawProps === "object" && rawProps !== null) {
+				const props = rawProps as Record<string, unknown>;
+				if (typeof props.onClick === "function") {
+					(props.onClick as (e: unknown) => void)({
+						type: "click",
+						preventDefault: () => {},
+						stopPropagation: () => {},
+					});
+					return;
+				}
 			}
 		}
 		node.dispatchEvent({ type: "click" });
@@ -313,12 +335,11 @@ const mockAppContext = {
 describe("InvoiceGenerationModal Autonomy & Doctor Autonomy (Mandates 8e, 8k, 8n, 8aq)", () => {
 	beforeEach(() => {
 		clearToastEvents();
-		// biome-ignore lint/suspicious/noExplicitAny: mock fetch
-		(globalThis as any).fetch = async () => ({
+		(globalThis as unknown as { fetch?: typeof fetch }).fetch = (async () => ({
 			ok: true,
 			status: 200,
 			json: async () => [],
-		});
+		})) as unknown as typeof fetch;
 	});
 
 	it("renders static markup with 1-click doctor clinical decision button in footer without admin PIN drawer barrier", () => {

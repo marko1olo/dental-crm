@@ -164,52 +164,25 @@ async function main() {
     await setTheme(pcPage, "dark");
     await captureProof(pcPage, "schedule_pc_dark_1440x900.png");
 
-    await pcContext.close();
-
     // ----------------------------------------------------
     // PHASE 2: Mobile Apple HIG Agenda View (390x844)
     // ----------------------------------------------------
     console.log("\n--- Phase 2: Mobile Apple HIG Agenda View (390x844) ---");
-    const mobileContext = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
-    await mobileContext.addInitScript(() => {
-      localStorage.setItem("dente_theme_mode", "light");
-      localStorage.setItem("dente_onboarding_completed", "true");
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_tour_dismissed", "true");
-      localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-      localStorage.setItem("dente_demo_banner_dismissed", "true");
-      localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
-    });
-
-    const mobilePage = await mobileContext.newPage();
-    console.log("  -> Navigating Mobile to " + WEB_URL + " ...");
-    await mobilePage.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 35000 });
-
-    // Wait for boot state to clear
-    for (let i = 0; i < 30; i++) {
-      await mobilePage.waitForTimeout(400);
-      const text = await mobilePage.evaluate(() => document.body ? document.body.innerText : "");
-      if (!text.includes("Загрузка системы") && text.length > 200) break;
-    }
-    await mobilePage.waitForSelector('[data-testid="schedule-mobile-agenda-view"]', { timeout: 25000, state: "visible" }).catch(() => {});
-    await mobilePage.waitForTimeout(1000);
+    await pcPage.setViewportSize({ width: 390, height: 844 });
+    await pcPage.waitForTimeout(1000);
+    await suppressTransientOverlays(pcPage);
 
     // Mobile Light
     console.log("  -> Capturing Mobile Light (390x844)...");
-    await setTheme(mobilePage, "light");
-    await captureProof(mobilePage, "schedule_mobile_light_390x844.png");
+    await setTheme(pcPage, "light");
+    await captureProof(pcPage, "schedule_mobile_light_390x844.png");
 
     // Mobile Dark
     console.log("  -> Capturing Mobile Dark (390x844)...");
-    await setTheme(mobilePage, "dark");
-    await captureProof(mobilePage, "schedule_mobile_dark_390x844.png");
+    await setTheme(pcPage, "dark");
+    await captureProof(pcPage, "schedule_mobile_dark_390x844.png");
 
-    await mobileContext.close();
+    await pcContext.close();
 
     console.log("\n[Visual Proof] ALL 4 PROOFS CAPTURED & VALIDATED (>25 KB) SUCCESSFULLY!");
   } finally {

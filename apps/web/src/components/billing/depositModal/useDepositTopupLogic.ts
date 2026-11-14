@@ -77,9 +77,10 @@ export function useDepositTopupLogic(props: DepositTopupModalProps) {
 			setIsCompleted(true);
 			showToast(`Депозит пополнен на ${formatDisplayCurrency(amountRub)}! Кассовый чек аванса пробит.`, "success");
 			onSuccess?.(payload);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("[DepositTopupModal] Network error during deposit topup:", err);
-			showToast(`Ошибка сети при пополнении депозита: ${err?.message || "неизвестная ошибка"}`, "error");
+			const message = err instanceof Error ? err.message : String(err ?? "неизвестная ошибка");
+			showToast(`Ошибка сети при пополнении депозита: ${message}`, "error");
 		} finally {
 			inFlightRef.current = false;
 			setIsSubmitting(false);

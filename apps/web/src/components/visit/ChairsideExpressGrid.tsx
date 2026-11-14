@@ -44,8 +44,7 @@ export function getExpressIcon(id: string) {
 export interface ChairsideExpressGridProps {
 	selectedTooth: string | null;
 	onAddExpressService: (service: ChairsideExpressService) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog array
-	catalog?: readonly any[] | undefined;
+	catalog?: readonly unknown[] | undefined;
 }
 
 export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
@@ -53,8 +52,7 @@ export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 	onAddExpressService,
 	catalog,
 }) => {
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic context access
-	const appLogic = useOptionalAppLogicContext() as any;
+	const appLogic = useOptionalAppLogicContext();
 	const effectiveCatalog =
 		Array.isArray(catalog) && catalog.length > 0
 			? catalog

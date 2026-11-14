@@ -22,21 +22,34 @@ export function VisitEmkServicesBilling({
 }: VisitEmkServicesBillingProps) {
 	const { hasDentalLab } = useWorkspaceProfile();
 	const linkedLabOrder = React.useMemo(() => {
-		const appts = Array.isArray(dashboard?.appointments) ? dashboard.appointments : [];
-		const currentAppt = appts.find((a: any) => String(a?.id) === String(openVisitId));
+		interface AppointmentWithLab {
+			id?: string | number;
+			patientId?: string | number;
+			labOrder?: unknown;
+		}
+		interface LabOrderRecord {
+			id?: string | number;
+			patientId?: string | number;
+		}
+		const appts: AppointmentWithLab[] = Array.isArray(dashboard?.appointments)
+			? (dashboard.appointments as AppointmentWithLab[])
+			: [];
+		const currentAppt = appts.find((a) => String(a?.id) === String(openVisitId));
 		if (currentAppt?.labOrder) {
 			return currentAppt.labOrder;
 		}
 		if (activePatient?.id) {
 			const patientApptWithLab = appts.find(
-				(a: any) => String(a?.patientId) === String(activePatient.id) && a?.labOrder,
+				(a) => String(a?.patientId) === String(activePatient.id) && a?.labOrder,
 			);
 			if (patientApptWithLab?.labOrder) {
 				return patientApptWithLab.labOrder;
 			}
-			const labOrders = Array.isArray(dashboard?.labOrders) ? dashboard.labOrders : [];
+			const labOrders: LabOrderRecord[] = Array.isArray(dashboard?.labOrders)
+				? (dashboard.labOrders as LabOrderRecord[])
+				: [];
 			const foundOrder = labOrders.find(
-				(lo: any) => String(lo?.patientId) === String(activePatient.id),
+				(lo) => String(lo?.patientId) === String(activePatient.id),
 			);
 			if (foundOrder) {
 				return foundOrder;

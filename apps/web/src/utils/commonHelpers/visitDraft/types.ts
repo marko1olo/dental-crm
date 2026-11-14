@@ -1,5 +1,5 @@
 import type { DentalSpecialty, VisitNoteDraft } from "@dental/shared";
-import type { VisitNoteForm } from "../../SpeechHelpers";
+import type { VisitNoteForm } from "../../../helpers/speechHelpers";
 import type {
 	ClinicProfileDraft,
 	PatientAdministrativeProfileDraft,

@@ -43,7 +43,7 @@ export function LostPatientActionsMenu({
 							}}
 							className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
 						>
-							<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+							<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 							<span>Спецпредложение</span>
 						</button>
 						<button
@@ -65,7 +65,7 @@ export function LostPatientActionsMenu({
 							}}
 							className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
 						>
-							<Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+							<Calendar className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 							<span>Записать на приём</span>
 						</button>
 					</div>

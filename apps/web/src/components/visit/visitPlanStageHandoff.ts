@@ -9,33 +9,98 @@
  * invoice and medical diary (Mandates 8e, 8i, 8n).
  */
 
+export interface PlanStageItem {
+	id?: string | undefined;
+	toothNumber?: number | string | null | undefined;
+	toothCode?: string | number | null | undefined;
+	name?: string | undefined;
+	title?: string | undefined;
+	nameRu?: string | undefined;
+	medicalTitleRu?: string | undefined;
+	patientFriendlyTitleRu?: string | undefined;
+	code804n?: string | undefined;
+	priceId?: string | undefined;
+	serviceCode?: string | undefined;
+	quantity?: number | undefined;
+	unitPriceRub?: number | undefined;
+	price?: number | undefined;
+	priceRub?: number | undefined;
+	priceKopecks?: number | undefined;
+	discountRub?: number | undefined;
+	discount?: number | undefined;
+	discountPercent?: number | undefined;
+	phase?: number | undefined;
+	stageNumber?: number | undefined;
+	stageTitle?: string | undefined;
+	status?: string | undefined;
+	planStatus?: string | undefined;
+	isCompleted?: boolean | undefined;
+	[key: string]: unknown;
+}
+
 export interface AppointmentStageTargeting {
 	treatmentPlanId: string | null;
 	stageId: string | null;
 	stageNumber: number | null;
 	stageTitle: string | null;
-	services: any[];
+	services: PlanStageItem[];
 	durationMinutes: number | null;
 }
 
 export interface PlanStageOption {
 	stageNumber: number;
-	stageId?: string;
+	stageId?: string | undefined;
 	title: string;
-	subtitle?: string;
-	items: any[];
+	subtitle?: string | undefined;
+	items: PlanStageItem[];
 	totalPriceRub: number;
 	servicesCount: number;
-	isCurrentTarget?: boolean;
-	status?: "planned" | "in_progress" | "completed";
-	isCompleted?: boolean;
+	isCurrentTarget?: boolean | undefined;
+	status?: "planned" | "in_progress" | "completed" | undefined;
+	isCompleted?: boolean | undefined;
+}
+
+export interface TreatmentPlanStageLike {
+	stageNumber?: number | undefined;
+	title?: string | undefined;
+	titleRu?: string | undefined;
+	name?: string | undefined;
+	items?: PlanStageItem[] | undefined;
+	[key: string]: unknown;
+}
+
+export interface TreatmentPlanLike {
+	id?: string | undefined;
+	name?: string | undefined;
+	status?: string | undefined;
+	items?: PlanStageItem[] | undefined;
+	stages?: TreatmentPlanStageLike[] | undefined;
+	[key: string]: unknown;
+}
+
+export interface AppointmentStageLike {
+	treatmentPlanId?: string | null | undefined;
+	planId?: string | null | undefined;
+	stageNumber?: number | string | null | undefined;
+	stageId?: string | number | null | undefined;
+	stageTitle?: string | null | undefined;
+	comment?: string | null | undefined;
+	services?: PlanStageItem[] | unknown[] | undefined;
+	items?: PlanStageItem[] | unknown[] | undefined;
+	invoice_items?: PlanStageItem[] | unknown[] | undefined;
+	invoiceItems?: PlanStageItem[] | unknown[] | undefined;
+	completedServices?: PlanStageItem[] | unknown[] | undefined;
+	procedures?: PlanStageItem[] | unknown[] | undefined;
+	durationMinutes?: number | null | undefined;
+	estimatedDurationMinutes?: number | null | undefined;
+	[key: string]: unknown;
 }
 
 /**
  * Extracts stage targeting metadata from an appointment object.
  * Checks direct properties, stage id prefixes, and structured comment tags.
  */
-export function extractAppointmentStageInfo(appointment: any | null | undefined): AppointmentStageTargeting {
+export function extractAppointmentStageInfo(appointment: AppointmentStageLike | null | undefined): AppointmentStageTargeting {
 	if (!appointment) {
 		return {
 			treatmentPlanId: null,
@@ -48,7 +113,8 @@ export function extractAppointmentStageInfo(appointment: any | null | undefined)
 	}
 
 	const treatmentPlanId: string | null =
-		appointment.treatmentPlanId || appointment.planId || null;
+		(typeof appointment.treatmentPlanId === "string" ? appointment.treatmentPlanId : null) ||
+		(typeof appointment.planId === "string" ? appointment.planId : null);
 
 	// Extract stageNumber
 	let stageNumber: number | null = null;
@@ -105,7 +171,7 @@ export function extractAppointmentStageInfo(appointment: any | null | undefined)
 	}
 
 	// Extract services attached to appointment
-	const services: any[] = Array.isArray(appointment.services) && appointment.services.length > 0
+	const rawServices = Array.isArray(appointment.services) && appointment.services.length > 0
 		? appointment.services
 		: Array.isArray(appointment.items) && appointment.items.length > 0
 			? appointment.items
@@ -118,6 +184,8 @@ export function extractAppointmentStageInfo(appointment: any | null | undefined)
 						: Array.isArray(appointment.procedures) && appointment.procedures.length > 0
 							? appointment.procedures
 							: [];
+
+	const services: PlanStageItem[] = rawServices as PlanStageItem[];
 
 	const durationMinutes: number | null =
 		typeof appointment.durationMinutes === "number"
@@ -161,24 +229,24 @@ export function getStandardStageTitle(stageNumber: number): string {
  * Incorporates target stage information from the active appointment.
  */
 export function groupTreatmentPlanByStages(
-	loadedPlan: any | null | undefined,
+	loadedPlan: TreatmentPlanLike | null | undefined,
 	targetStageInfo?: AppointmentStageTargeting | null,
 ): {
 	stages: PlanStageOption[];
-	allPlanItems: any[];
+	allPlanItems: PlanStageItem[];
 	hasMultipleStages: boolean;
 	totalPlanPriceRub: number;
 } {
-	let allPlanItems: any[] = [];
+	let allPlanItems: PlanStageItem[] = [];
 	if (Array.isArray(loadedPlan?.items) && loadedPlan.items.length > 0) {
 		allPlanItems = loadedPlan.items;
 	} else if (Array.isArray(loadedPlan?.stages)) {
-		allPlanItems = loadedPlan.stages.flatMap((st: any, sIdx: number) => {
+		allPlanItems = loadedPlan.stages.flatMap((st: TreatmentPlanStageLike, sIdx: number) => {
 			const sNum = typeof st.stageNumber === "number" ? st.stageNumber : sIdx + 1;
-			return (st.items || []).map((it: any) => ({
+			return (st.items || []).map((it: PlanStageItem) => ({
 				...it,
 				stageNumber: typeof it.stageNumber === "number" ? it.stageNumber : sNum,
-				stageTitle: it.stageTitle || st.title,
+				stageTitle: it.stageTitle || st.title || st.titleRu || st.name,
 			}));
 		});
 	}
@@ -261,9 +329,10 @@ export function groupTreatmentPlanByStages(
 		} else {
 			// Try to find stage name in loadedPlan.stages if present
 			const planStageObj = Array.isArray(loadedPlan.stages)
-				? loadedPlan.stages.find((s: any) => s.stageNumber === phaseNum)
+				? loadedPlan.stages.find((s: TreatmentPlanStageLike) => s.stageNumber === phaseNum)
 				: null;
-			title = planStageObj?.titleRu || planStageObj?.title || planStageObj?.name || getStandardStageTitle(phaseNum);
+			const foundTitle = planStageObj?.titleRu || planStageObj?.title || planStageObj?.name;
+			title = typeof foundTitle === "string" ? foundTitle : getStandardStageTitle(phaseNum);
 		}
 
 		return {
@@ -286,10 +355,7 @@ export function groupTreatmentPlanByStages(
 	};
 }
 
-/**
- * Transforms stage item to canonical 804n billing item detail
- */
-export function formatStageItemForBilling(it: any): {
+export interface FormattedStageBillingItem {
 	code804n: string;
 	title: string;
 	toothNumber?: number | undefined;
@@ -298,7 +364,12 @@ export function formatStageItemForBilling(it: any): {
 	unitPriceRub: number;
 	discountRub: number;
 	discountPercent?: number | undefined;
-} {
+}
+
+/**
+ * Transforms stage item to canonical 804n billing item detail
+ */
+export function formatStageItemForBilling(it: PlanStageItem): FormattedStageBillingItem {
 	const toothNum =
 		typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber)
 			? it.toothNumber
@@ -312,9 +383,12 @@ export function formatStageItemForBilling(it: any): {
 	const discountVal = Number(it.discountRub ?? it.discount ?? 0);
 	const discountPercent = Number(it.discountPercent ?? (priceVal > 0 && discountVal > 0 ? Math.round((discountVal / priceVal) * 100) : 0));
 
+	const codeCandidate = it.code804n || it.priceId || it.serviceCode;
+	const titleCandidate = it.name || it.title || it.nameRu || it.medicalTitleRu || it.patientFriendlyTitleRu;
+
 	return {
-		code804n: it.code804n || it.priceId || "A16.07.001",
-		title: it.name || it.title || it.medicalTitleRu || it.patientFriendlyTitleRu || "Услуга плана лечения",
+		code804n: typeof codeCandidate === "string" ? codeCandidate : "A16.07.001",
+		title: typeof titleCandidate === "string" ? titleCandidate : "Услуга плана лечения",
 		...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
 		...(toothCandidate ? { toothCode: toothCandidate } : {}),
 		quantity: Number(it.quantity || 1),
@@ -327,10 +401,10 @@ export function formatStageItemForBilling(it: any): {
 /**
  * Builds structured medical diary text from stage items
  */
-export function buildStageMedicalDiaryText(stageTitle: string, stageItems: any[]): string {
+export function buildStageMedicalDiaryText(stageTitle: string, stageItems: readonly PlanStageItem[]): string {
 	const descriptions = stageItems.map((it) => {
 		const tooth = it.toothNumber || it.toothCode ? ` (зуб #${it.toothNumber || it.toothCode})` : "";
-		const name = it.name || it.title || it.medicalTitleRu || it.patientFriendlyTitleRu || it.priceId || "Услуга";
+		const name = it.name || it.title || it.nameRu || it.medicalTitleRu || it.patientFriendlyTitleRu || it.priceId || "Услуга";
 		return `${name}${tooth}`;
 	});
 

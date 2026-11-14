@@ -1,9 +1,10 @@
 import type React from "react";
-import type { DentitionMode } from "@dental/shared";
+import type { Dashboard, DentitionMode } from "@dental/shared";
 import type { VisitToothUiState } from "../../../store/visitStore";
 import type { ClinicalVisitCompletionResult } from "../clinicalVisitWorkflow";
 import type { VisitNoteFieldsPatch } from "../clinicalCatalog/clinicalProtocolsCatalog";
 import type { VisitDoctorEntity, VisitPatientEntity } from "../view/VisitViewProps";
+import type { ClinicalSoapPreset } from "../clinicalSoapPresets";
 
 export type { DentitionMode };
 
@@ -18,10 +19,10 @@ export interface VisitEmkTabProps {
 	patientHistory?: VisitEmkOdontogramBarProps["patientHistory"];
 	activePatient?: VisitPatientEntity | null | undefined;
 	activeDoctor?: VisitDoctorEntity | null | undefined;
-	dashboard?: any;
+	dashboard?: Dashboard | null | undefined;
 	openVisitId?: string;
 	isDraftAccepting?: boolean | undefined;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export interface VisitEmkOdontogramBarProps {
@@ -71,10 +72,10 @@ export interface VisitEmkModalsProps {
 	setIsConsentModalOpen: (open: boolean) => void;
 	isPrintModalOpen: boolean;
 	setIsPrintModalOpen: (open: boolean) => void;
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (field: string, value: any) => void;
+	visitNoteForm: Record<string, unknown>;
+	updateVisitNoteField: (field: string, value: unknown) => void;
 	isSignedVisit: boolean;
-	dashboard?: any;
+	dashboard?: Dashboard | null | undefined;
 	onApplyCatalogPatch: (patch: VisitNoteFieldsPatch, successMessage: string) => void;
 }
 
@@ -95,25 +96,25 @@ export interface VisitEmkCompletionSectionProps {
 
 export interface VisitEmkServicesBillingProps {
 	openVisitId: string;
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (field: string, value: any) => void;
+	visitNoteForm: Record<string, unknown>;
+	updateVisitNoteField: (field: string, value: unknown) => void;
 	isLocked: boolean;
-	activePatient?: any;
-	dashboard?: any;
+	activePatient?: VisitPatientEntity | null | undefined;
+	dashboard?: Dashboard | null | undefined;
 	effectiveActiveTooth: number | null;
 }
 
 export interface VisitEmkCanvasProps {
 	activeEmkTab: string;
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (field: string, value: any) => void;
+	visitNoteForm: Record<string, unknown>;
+	updateVisitNoteField: (field: string, value: unknown) => void;
 	isLocked: boolean;
 	effectiveActiveTooth: number | null;
-	activePatient?: any;
-	dashboard?: any;
+	activePatient?: VisitPatientEntity | null | undefined;
+	dashboard?: Dashboard | null | undefined;
 	openVisitId: string;
 	setIsSoapTemplatesModalOpen: (open: boolean) => void;
 	handleCompleteVisitAndGenerateReceipt: () => Promise<void>;
 	isCompletingVisit: boolean;
-	onApplySoapPreset?: (preset: any, targetTooth?: number | null) => void;
+	onApplySoapPreset?: (preset: ClinicalSoapPreset, targetTooth?: number | null) => void;
 }

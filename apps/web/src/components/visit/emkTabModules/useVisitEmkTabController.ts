@@ -19,6 +19,7 @@ import { CLINICAL_SOAP_PRESETS } from "../clinicalSoapPresets";
 import type { VisitNoteFieldsPatch as VisitNoteFieldPatch } from "../clinicalCatalog/clinicalProtocolsCatalog";
 import { useVisitEmkAutosave } from "../emkTab/useVisitEmkAutosave";
 import { useVisitCompletionWorkflow } from "../emkTab/useVisitCompletionWorkflow";
+import type { VisitNoteForm } from "../../../AppHelpers";
 import type { VisitEmkTabProps } from "./emkTabTypes";
 
 export function useVisitEmkTabController(props: VisitEmkTabProps) {
@@ -30,8 +31,8 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		isDraftAccepting,
 		onSaveVisitNote,
 	} = props;
-	const visitNoteForm: Record<string, any> = props.visitNoteForm ?? {};
-	const updateVisitNoteField: (field: string, value: any) => void =
+	const visitNoteForm: Record<string, unknown> = props.visitNoteForm ?? {};
+	const updateVisitNoteField: (field: string, value: unknown) => void =
 		props.updateVisitNoteField ?? (() => {});
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
 	const [isPrintModalOpen, setIsPrintModalOpen] = React.useState(false);
@@ -128,10 +129,10 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 	} = useVisitSave({
 		visitId: openVisitId ?? dashboard?.activeVisit?.id ?? null,
 		patientId: activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null,
-		visitNoteForm: visitNoteForm as any,
+		visitNoteForm: visitNoteForm as unknown as VisitNoteForm,
 		onSaveSuccess: () => {
 			if (typeof onSaveVisitNote === "function") {
-				void (onSaveVisitNote as () => any)();
+				void (onSaveVisitNote as () => Promise<void> | void)();
 			}
 		},
 		debounceMs: 600,
@@ -165,6 +166,9 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		updateVisitNoteField("objectiveInspection", normObjective);
 		updateVisitNoteField("objective", normObjective);
 		updateVisitNoteField("diagnosis", normDiagnosis);
+		updateVisitNoteField("diagnosisIcd10", "Z01.2");
+		updateVisitNoteField("diagnosisCode", "Z01.2");
+		updateVisitNoteField("diagnosisIcd", "Z01.2");
 		updateVisitNoteField("treatmentPlan", normPlan);
 		updateVisitNoteField("treatment", normPlan);
 		updateVisitNoteField("recommendations", normRecs);
@@ -180,6 +184,8 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 						objectiveStatus: normObjective,
 						objectiveInspection: normObjective,
 						diagnosis: normDiagnosis,
+						diagnosisIcd10: "Z01.2",
+						diagnosisCode: "Z01.2",
 						treatmentPlan: normPlan,
 						treatment: normPlan,
 						treatmentDone: normPlan,
@@ -203,11 +209,12 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 				setIsRevisingVisitNote(true);
 			}
 			const toothPrefix = targetTooth ? `Зуб ${targetTooth}: ` : "";
-			const statusLocalis = (preset as any).statusLocalis || (preset as any).objectiveStatus || "";
-			const diagnosisText = (preset as any).icd10Label || (preset as any).diagnosis || "";
-			const treatmentText = (preset as any).treatmentDescription || (preset as any).treatmentPlan || "";
+			const p = preset as unknown as Record<string, string | undefined>;
+			const statusLocalis = p.statusLocalis || p.objectiveStatus || "";
+			const diagnosisText = p.icd10Label || p.diagnosis || "";
+			const treatmentText = p.treatmentDescription || p.treatmentPlan || "";
 			const recommendationsText = preset.recommendations || "";
-			const shortTitle = (preset as any).shortBadge || (preset as any).shortLabel || (preset as any).title || "";
+			const shortTitle = p.shortBadge || p.shortLabel || p.title || "";
 
 			updateVisitNoteField(
 				"complaint",
@@ -287,7 +294,7 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		}
 		await flushSoloPendingSave();
 		if (typeof onSaveVisitNote === "function") {
-			await (onSaveVisitNote as () => any)();
+			await (onSaveVisitNote as () => Promise<void> | void)();
 		}
 		if (isRevisingVisitNote) {
 			setIsRevisingVisitNote(false);

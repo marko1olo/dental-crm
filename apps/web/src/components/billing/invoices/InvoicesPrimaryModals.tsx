@@ -91,7 +91,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 						if (invoices[0] && onUpdateInvoice) {
 							onUpdateInvoice({
 								...invoices[0],
-								status: "paid" as any,
+								status: "paid",
 								paidAmountRub: invoices[0].totalAmountRub,
 								paidAt: new Date().toISOString(),
 							});

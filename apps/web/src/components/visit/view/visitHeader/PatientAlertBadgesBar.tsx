@@ -38,8 +38,8 @@ export function PatientAlertBadgesBar({
 					title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 				>
 					<AlertTriangle size={13} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
-					<span className="sm:hidden text-[10px] whitespace-nowrap">{chipText || activePatientCriticalBadges[0].shortLabel}</span>
-					<span className="hidden sm:inline whitespace-nowrap shrink-0">{chipText || activePatientCriticalBadges[0].fullLabel}</span>
+					<span className="sm:hidden text-[10px] whitespace-nowrap">{chipText || activePatientCriticalBadges[0]?.shortLabel || "Аллергия"}</span>
+					<span className="hidden sm:inline whitespace-nowrap shrink-0">{chipText || activePatientCriticalBadges[0]?.fullLabel || "Аллергия"}</span>
 				</span>
 			) : (
 				<span className="sr-only" data-testid="visit-focus-allergy-clean" title="Отягощенный аллергоанамнез не выявлен">

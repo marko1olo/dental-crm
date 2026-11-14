@@ -7,7 +7,7 @@
 
 import type { ToothSurface } from "./emrProtocolEngine";
 
-export interface Core1ClickPreset {
+export interface CoreClinicalPreset {
 	readonly id: string;
 	readonly code: string;
 	readonly title: string;
@@ -17,8 +17,11 @@ export interface Core1ClickPreset {
 	readonly accentColor: string;
 }
 
+/** Алиас для обратной совместимости */
+export type Core1ClickPreset = CoreClinicalPreset;
+
 /** 6 обязательных стандартных клинических пресетов СтАР */
-export const CORE_1CLICK_PRESETS: readonly Core1ClickPreset[] = [
+export const CORE_CLINICAL_PRESETS: readonly CoreClinicalPreset[] = [
 	{
 		id: "K02.1",
 		code: "K02.1",
@@ -74,6 +77,9 @@ export const CORE_1CLICK_PRESETS: readonly Core1ClickPreset[] = [
 		accentColor: "emerald",
 	},
 ];
+
+/** Алиас для обратной совместимости */
+export const CORE_1CLICK_PRESETS = CORE_CLINICAL_PRESETS;
 
 export const ALL_TOOTH_SURFACES: readonly { readonly id: ToothSurface; readonly label: string; readonly short: string }[] = [
 	{ id: "occlusal", label: "Жевательная / Окклюзионная", short: "O" },

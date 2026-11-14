@@ -45,7 +45,8 @@ export const ServiceReceiptPrintDocument: React.FC<ServiceReceiptPrintDocumentPr
 				backgroundColor: "#ffffff",
 				title: `ФНС Чек №${receipt.receiptNumber}`,
 			});
-		} catch {
+		} catch (qrErr: unknown) {
+			console.warn("[ServiceReceiptPrintDocument] Ошибка генерации QR для чека:", qrErr);
 			return null;
 		}
 	}, [receipt.isWarrantyZeroAct, receipt.ofdUrl, receipt.receiptNumber]);

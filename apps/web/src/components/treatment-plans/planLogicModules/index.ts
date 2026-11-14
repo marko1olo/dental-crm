@@ -1,7 +1,7 @@
 import { useAppLogicContext } from "../../../contexts/AppLogicContext.js";
 import { useTreatmentPlanTeeth } from "../useTreatmentPlanTeeth.js";
 import { extractPatientFinancialContext } from "./planFinancialCalculators.js";
-import { usePlanContextData } from "./planLogicContextData.js";
+import { type PlanDashboardContext, usePlanContextData } from "./planLogicContextData.js";
 import { usePlanModals } from "./planLogicModals.js";
 import { usePlanTiersComputation } from "./planLogicTiers.js";
 import { createPlanPersistenceAndSyncHandlers, useTreatmentPlanPersistenceEffects } from "./planPersistenceAndSync.js";
@@ -17,8 +17,9 @@ export * from "./planPersistenceAndSync.js";
 export function useTreatmentPlanLogic(props: UseTreatmentPlanLogicProps) {
 	const { dashboard, auth } = useAppLogicContext();
 	const effectiveTeethData = useTreatmentPlanTeeth(props.patientId, props.teethData);
-	const catalog = dashboard?.serviceCatalog as CatalogServiceLookupItem[] | undefined;
-	const patientFin = extractPatientFinancialContext(dashboard?.patients as any[] | undefined, props.patientId);
+	const planDashboard = dashboard as PlanDashboardContext | null | undefined;
+	const catalog = planDashboard?.serviceCatalog as CatalogServiceLookupItem[] | undefined;
+	const patientFin = extractPatientFinancialContext(planDashboard?.patients, props.patientId);
 
 	const core = usePlanCoreState(props.initialViewTab, props.initialStatus);
 	const modals = usePlanModals();

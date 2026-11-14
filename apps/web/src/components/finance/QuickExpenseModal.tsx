@@ -121,8 +121,8 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 			showToast("Расход успешно внесен в кассу и P&L", "success");
 			onSuccess?.();
 			onClose();
-		} catch (err: any) {
-			const msg = err.message || "Ошибка при сохранении расхода";
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err ?? "Ошибка при сохранении расхода");
 			setErrorMessage(msg);
 			showToast(msg, "error");
 		} finally {

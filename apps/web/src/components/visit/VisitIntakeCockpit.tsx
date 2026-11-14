@@ -39,29 +39,36 @@ export function VisitIntakeCockpit({
 	const [isChairsideTriageOpen, setIsChairsideTriageOpen] = useState(false);
 
 	const todayAppointments = useMemo(() => {
-		const list = dashboard?.appointments || [];
-		const todayIso = (dashboard as any)?.todayIso || new Date().toISOString().slice(0, 10);
+		const list = (dashboard?.appointments || []) as Array<{
+			id: string;
+			patientId?: string;
+			startsAt?: string;
+			status?: string;
+			patientName?: string;
+			[key: string]: unknown;
+		}>;
+		const todayIso = (typeof dashboard?.todayIso === "string" ? dashboard.todayIso : null) || new Date().toISOString().slice(0, 10);
 		return list
-			.filter((app: any) => {
+			.filter((app) => {
 				const appDate = (app.startsAt || "").slice(0, 10);
 				return !appDate || appDate === todayIso;
 			})
-			.sort((a: any, b: any) => (a.startsAt || "").localeCompare(b.startsAt || ""));
-	}, [dashboard?.appointments, (dashboard as any)?.todayIso]);
+			.sort((a, b) => (a.startsAt || "").localeCompare(b.startsAt || ""));
+	}, [dashboard?.appointments, dashboard?.todayIso]);
 
 	const handleStartNextInQueue = () => {
-		const waiting = todayAppointments.find((a: any) => {
+		const waiting = todayAppointments.find((a) => {
 			const s = String(a.status || "").toLowerCase();
 			return s === "arrived" || s === "waiting" || s === "in_progress";
 		});
 		if (waiting && waiting.patientId) {
 			onSelectPatient(waiting.patientId, waiting.id);
-			showToast(`Открыт приём: ${(waiting as any).patientName || "Пациент"}`, "success");
+			showToast(`Открыт приём: ${waiting.patientName || "Пациент"}`, "success");
 			return;
 		}
 		if (todayAppointments.length > 0 && todayAppointments[0]?.patientId) {
 			onSelectPatient(todayAppointments[0].patientId, todayAppointments[0].id);
-			showToast(`Открыт приём: ${(todayAppointments[0] as any)?.patientName || "Пациент"}`, "success");
+			showToast(`Открыт приём: ${todayAppointments[0]?.patientName || "Пациент"}`, "success");
 			return;
 		}
 		const allPatients = dashboard?.patients || [];
@@ -98,7 +105,7 @@ export function VisitIntakeCockpit({
 
 			<section className="rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs overflow-hidden">
 				<IntakeQueueAndSearchSection
-					dashboard={dashboard as any}
+					dashboard={dashboard}
 					activeDoctor={activeDoctor}
 					searchQuery={searchQuery}
 					setSearchQuery={setSearchQuery}

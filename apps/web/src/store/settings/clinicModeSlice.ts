@@ -8,26 +8,26 @@
 
 import type { OnboardingStep } from "../../AppConstants.js";
 import { defaultUiPreferences, loadUiPreferences } from "../../utils/preferencesUtils.js";
-import { resolveUpdater } from "../updater.js";
+import { resolveUpdater, type Updater } from "../updater.js";
 
 export type ClinicMode = "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
 
 export interface ClinicModeSliceState {
 	clinicMode: ClinicMode | null;
-	onboardingDismissed: any;
+	onboardingDismissed: boolean;
 	onboardingDismissedAt: string | null;
 	onboardingStep: OnboardingStep;
-	onboardingDraftMode: any;
-	onboardingGuideExpanded: any;
+	onboardingDraftMode: boolean;
+	onboardingGuideExpanded: boolean;
 }
 
 export interface ClinicModeSliceActions {
-	setClinicMode: (val: ClinicMode | null | ((prev: ClinicMode | null) => ClinicMode | null)) => void;
-	setOnboardingDismissed: (val: any | ((prev: any) => any)) => void;
-	setOnboardingDismissedAt: (val: string | null | ((prev: string | null) => string | null)) => void;
-	setOnboardingStep: (val: OnboardingStep | ((prev: OnboardingStep) => OnboardingStep)) => void;
-	setOnboardingDraftMode: (val: any | ((prev: any) => any)) => void;
-	setOnboardingGuideExpanded: (val: any | ((prev: any) => any)) => void;
+	setClinicMode: (val: Updater<ClinicMode | null>) => void;
+	setOnboardingDismissed: (val: Updater<boolean>) => void;
+	setOnboardingDismissedAt: (val: Updater<string | null>) => void;
+	setOnboardingStep: (val: Updater<OnboardingStep>) => void;
+	setOnboardingDraftMode: (val: Updater<boolean>) => void;
+	setOnboardingGuideExpanded: (val: Updater<boolean>) => void;
 }
 
 export const initialClinicModeSlice: ClinicModeSliceState = {
@@ -39,13 +39,15 @@ export const initialClinicModeSlice: ClinicModeSliceState = {
 	onboardingGuideExpanded: false,
 };
 
-export function createClinicModeSlice(set: any): ClinicModeSliceActions {
+export function createClinicModeSlice(
+	set: (fn: (s: ClinicModeSliceState) => Partial<ClinicModeSliceState>) => void,
+): ClinicModeSliceActions {
 	return {
-		setClinicMode: (val) => set((s: any) => ({ clinicMode: resolveUpdater(val, s.clinicMode) })),
-		setOnboardingDismissed: (val) => set((s: any) => ({ onboardingDismissed: resolveUpdater(val, s.onboardingDismissed) })),
-		setOnboardingDismissedAt: (val) => set((s: any) => ({ onboardingDismissedAt: resolveUpdater(val, s.onboardingDismissedAt) })),
-		setOnboardingStep: (val) => set((s: any) => ({ onboardingStep: resolveUpdater(val, s.onboardingStep) })),
-		setOnboardingDraftMode: (val) => set((s: any) => ({ onboardingDraftMode: resolveUpdater(val, s.onboardingDraftMode) })),
-		setOnboardingGuideExpanded: (val) => set((s: any) => ({ onboardingGuideExpanded: resolveUpdater(val, s.onboardingGuideExpanded) })),
+		setClinicMode: (val) => set((s) => ({ clinicMode: resolveUpdater(val, s.clinicMode) })),
+		setOnboardingDismissed: (val) => set((s) => ({ onboardingDismissed: resolveUpdater(val, s.onboardingDismissed) })),
+		setOnboardingDismissedAt: (val) => set((s) => ({ onboardingDismissedAt: resolveUpdater(val, s.onboardingDismissedAt) })),
+		setOnboardingStep: (val) => set((s) => ({ onboardingStep: resolveUpdater(val, s.onboardingStep) })),
+		setOnboardingDraftMode: (val) => set((s) => ({ onboardingDraftMode: resolveUpdater(val, s.onboardingDraftMode) })),
+		setOnboardingGuideExpanded: (val) => set((s) => ({ onboardingGuideExpanded: resolveUpdater(val, s.onboardingGuideExpanded) })),
 	};
 }

@@ -3,7 +3,7 @@
  * Grid, Modal, Canvas Viewport, HUD, Controls Dock & Footer. Mandate 8b (<=120 lines).
  */
 .rvg-capture-overlay {
-	position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+	position: fixed; inset: 0; z-index: 100060; display: flex; align-items: center; justify-content: center;
 	background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); padding: 0.75rem; animation: rvgFadeIn 0.2s ease-out;
 }
 @keyframes rvgFadeIn {
@@ -73,7 +73,7 @@
 	overflow-y: auto; min-height: 0; color: var(--ink, #f8fafc);
 }
 .rvg-dock-section { padding: 0.75rem 1rem; border-bottom: 1px solid var(--line, #1e293b); display: flex; flex-direction: column; gap: 0.5rem; }
-.rvg-section-header { display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: var(--ink, #ffffff); text-transform: uppercase; letter-spacing: 0.04em; }
+.rvg-section-header { display: flex; align-items: center; justify-content: space-between; font-size: 0.8125rem; font-weight: 600; color: var(--ink, #ffffff); letter-spacing: 0.01em; }
 .rvg-section-header-title { display: flex; align-items: center; gap: 0.375rem; color: var(--teal, #14b8a6); }
 .rvg-capture-footer {
 	display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem;

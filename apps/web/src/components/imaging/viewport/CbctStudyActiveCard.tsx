@@ -4,7 +4,7 @@
 
 import React, { Suspense } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { DicomArchiveUploader } from "../../radiology/DicomArchiveUploader";
+import { DicomArchiveUploader } from "../../dicom/DicomArchiveUploader";
 import type { ImagingStudy } from "../types";
 
 interface Props {

@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import type { useMemoryLeakGuard } from "../../../hooks/useMemoryLeakGuard.js";
 import { DEFAULT_DOM_PAGE_SIZE, DEFAULT_DOM_CHUNK_STEP, sliceDomList } from "../../../utils/domVirtualizationHelper.js";
 import { saveStoredInvoices } from "../invoicesStorage.js";
 import { showToast } from "../../GlobalToast.js";
@@ -14,7 +15,7 @@ import type { BillingInvoice, InvoiceFilterTab } from "../invoiceTypes.js";
 export function useInvoicesViewLogic(
 	invoices: BillingInvoice[],
 	setInvoices: React.Dispatch<React.SetStateAction<BillingInvoice[]>>,
-	memoryGuard: any,
+	memoryGuard: ReturnType<typeof useMemoryLeakGuard>,
 ) {
 	const [filterTab, setFilterTab] = useState<InvoiceFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");

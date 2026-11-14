@@ -62,6 +62,7 @@ export function GlobalToast() {
 	const [toast, setToast] = useState<ToastEventDetail | null>(null);
 	const [remainingSeconds, setRemainingSeconds] = useState<number>(5);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
 	useEffect(() => {
 		const checkModal = () => {
@@ -71,6 +72,10 @@ export function GlobalToast() {
 					'[role="dialog"], [aria-modal="true"], .payment-modal-backdrop, .payment-modal, .modal-backdrop',
 				);
 			setIsModalOpen(hasDialog);
+			setIsCopilotOpen(
+				typeof document !== "undefined" &&
+					document.body.classList.contains("copilot-studio-open"),
+			);
 		};
 		checkModal();
 		const observer = new MutationObserver(checkModal);
@@ -138,7 +143,7 @@ export function GlobalToast() {
 	// Clean theme-token styles without heavy animation libraries (optimized for low-end Celeron/Core i3)
 	return (
 		<div
-			className={`sa-toast sa-toast--${toast.type} ${isModalOpen ? "sa-toast--modal-active" : ""} fixed sm:bottom-[88px] sm:right-6 sm:top-auto max-sm:top-[max(10px,env(safe-area-inset-top,10px))] max-sm:bottom-auto max-sm:inset-x-3 flex items-center gap-2.5 px-3.5 py-2.5 max-w-md max-h-24 sm:max-h-32 text-xs sm:text-sm overflow-hidden text-ellipsis shadow-lg rounded-xl transition-all select-none border font-medium pointer-events-auto`}
+			className={`sa-toast sa-toast--${toast.type} ${isModalOpen ? "sa-toast--modal-active" : ""} fixed ${isCopilotOpen ? "sm:bottom-6 sm:left-6 sm:right-auto" : "sm:bottom-[88px] sm:right-6"} sm:top-auto max-sm:top-[max(10px,env(safe-area-inset-top,10px))] max-sm:bottom-auto max-sm:inset-x-3 flex items-center gap-2.5 px-3.5 py-2.5 max-w-md max-h-24 sm:max-h-32 text-xs sm:text-sm overflow-hidden text-ellipsis shadow-lg rounded-xl transition-all select-none border font-medium pointer-events-auto`}
 			data-testid="global-toast"
 			role="status"
 			aria-live="polite"

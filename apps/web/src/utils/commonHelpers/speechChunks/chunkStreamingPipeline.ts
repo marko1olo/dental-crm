@@ -13,15 +13,17 @@ import {
 import { logger } from "../../logger";
 import {
 	openSpeechChunkDb,
-	type PendingSpeechChunk as SharedPendingSpeechChunk,
+	pendingVisitSaveStoreName,
+	speechChunkIndexedDbAvailable,
+	speechChunkStoreName,
+} from "../../../helpers/offlineStorageEngine";
+import {
 	pendingSpeechChunkQueueKey,
 	pendingSpeechChunkQueueLocalKey,
 	savePendingSpeechChunksToLocalStorage,
 	speechAudioQueueRetentionMs,
-	speechChunkIndexedDbAvailable,
-	speechChunkStoreName,
-} from "../../SpeechHelpers";
-import { pendingVisitSaveStoreName } from "../visitDraftHelpers";
+	type PendingSpeechChunk as SharedPendingSpeechChunk,
+} from "../../../helpers/speechHelpers";
 import { createLocalQueueId, localQueueOrganizationMatches } from "./domainGuards";
 import { int16PcmToBase64, pcmToWavArrayBuffer } from "./pcmAudioUtils";
 import type {

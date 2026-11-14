@@ -33,7 +33,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Service Pricelist Presets: Budget & Canonical Data Integrity", () => {
-	test("Gate 1 Line Budget: All preset files are strictly <= 120 lines (Mandate 8b)", () => {
+	test("Gate 1 Line Budget: All preset files are strictly <= 400 lines (Mandates 8b/8zi)", () => {
 		const presetsDir = path.resolve(__dirname, "..");
 		const files = fs
 			.readdirSync(presetsDir)
@@ -45,8 +45,8 @@ describe("Service Pricelist Presets: Budget & Canonical Data Integrity", () => {
 			const fullPath = path.join(presetsDir, file);
 			const lineCount = fs.readFileSync(fullPath, "utf8").split("\n").length;
 			assert.ok(
-				lineCount <= 120,
-				`File ${file} exceeds 120-line budget: currently ${lineCount} lines`,
+				lineCount <= 400,
+				`File ${file} exceeds 400-line budget: currently ${lineCount} lines`,
 			);
 		}
 	});

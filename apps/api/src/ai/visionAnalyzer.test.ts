@@ -20,6 +20,25 @@ import {
 	type RadiographAnalysisResult,
 } from "./visionAnalyzer.js";
 
+interface ToothUpdateFinding {
+	code: string;
+	state: string;
+	diagnosisOrFinding?: string;
+}
+
+function isToothUpdateArray(val: unknown): val is ToothUpdateFinding[] {
+	return (
+		Array.isArray(val) &&
+		val.every(
+			(item) =>
+				typeof item === "object" &&
+				item !== null &&
+				typeof item.code === "string" &&
+				typeof item.state === "string",
+		)
+	);
+}
+
 describe("Vision Subsystem Decomposition (Mandate 8b)", () => {
 	it("1. ImagePreprocessor: Converts buffer to data URL correctly", () => {
 		const sampleBuffer = Buffer.from("fake-png-data");
@@ -65,9 +84,12 @@ describe("Vision Subsystem Decomposition (Mandate 8b)", () => {
 
 		const parsed = extractJson(modelRaw);
 		assert.equal(parsed.summary, "Выявлен глубокий кариес дентина 36 зуба.");
+		assert.ok(isToothUpdateArray(parsed.toothUpdates));
 		assert.equal(parsed.toothUpdates.length, 1);
-		assert.equal(parsed.toothUpdates[0].code, "36");
-		assert.equal(parsed.toothUpdates[0].state, "caries");
+		const firstUpdate = parsed.toothUpdates[0];
+		assert.ok(firstUpdate);
+		assert.equal(firstUpdate.code, "36");
+		assert.equal(firstUpdate.state, "caries");
 	});
 
 	it("5. VisionCascadeClient: extractJson throws descriptive error on completely non-JSON output", () => {

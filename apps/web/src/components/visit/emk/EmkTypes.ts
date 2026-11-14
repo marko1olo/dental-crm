@@ -1,8 +1,8 @@
 import type React from "react";
 
 export interface EmkSectionProps {
-	visitNoteForm: Record<string, any>;
-	updateVisitNoteField: (fieldKey: string, value: any) => void;
+	visitNoteForm: Record<string, unknown>;
+	updateVisitNoteField: (fieldKey: string, value: unknown) => void;
 	isLocked?: boolean | undefined;
 	disabled?: boolean | undefined;
 	isRevising?: boolean | undefined;

@@ -1,5 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
+
+declare module "fastify" {
+	interface FastifyReply {
+		_sendInitiated?: boolean;
+	}
+	interface FastifyRequest {
+		tenantId?: string;
+	}
+}
 import {
 	startMigrationWorker,
 	stopMigrationWorker,
@@ -81,9 +90,9 @@ export function publicApiErrorMessage(error: unknown, statusCode: number): strin
 export function registerLifecycleHooks(app: FastifyInstance): void {
 	app.addHook("onRequest", async (request, reply) => {
 		const originalSend = reply.send;
-		(reply as unknown as Record<string, unknown>)._sendInitiated = false;
+		reply._sendInitiated = false;
 		reply.send = function (payload?: unknown) {
-			(reply as unknown as Record<string, unknown>)._sendInitiated = true;
+			reply._sendInitiated = true;
 			return originalSend.call(this, payload);
 		};
 
@@ -101,10 +110,8 @@ export function registerLifecycleHooks(app: FastifyInstance): void {
 		// через withTenantCtx (apps/api/src/db/rls.ts). Не делаем здесь вызова базы —
 		// withTenantCtx открывает транзакцию самостоятельно, чтобы set_config и
 		// последующий запрос попали на одно и то же pg-соединение из пула.
-		const _req = request as unknown as Record<string, unknown>;
-		const _identity = _req.user as
-			| { organizationId?: string | null }
-			| undefined;
+		const _req = request;
+		const _identity = _req.user;
 		if (_identity?.organizationId) {
 			_req.tenantId = _identity.organizationId;
 		}
@@ -117,8 +124,7 @@ export function registerLifecycleHooks(app: FastifyInstance): void {
 		const originalHandler = routeOptions.handler;
 		if (originalHandler) {
 			routeOptions.handler = async function (request, reply) {
-				const _req = request as unknown as Record<string, unknown>;
-				const tenantId = _req.tenantId;
+				const tenantId = request.tenantId;
 				let res: unknown;
 				if (typeof tenantId === "string" && tenantId.length > 0) {
 					// Динамический импорт, чтобы избежать циклических зависимостей при старте
@@ -131,7 +137,7 @@ export function registerLifecycleHooks(app: FastifyInstance): void {
 				}
 				if (
 					res === undefined &&
-					(reply as unknown as Record<string, unknown>)._sendInitiated
+					reply._sendInitiated
 				) {
 					return reply;
 				}

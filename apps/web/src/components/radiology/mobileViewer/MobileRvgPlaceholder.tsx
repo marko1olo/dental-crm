@@ -11,14 +11,14 @@ export const MobileRvgPlaceholder: React.FC<{
 
 	return (
 		<div
-			className="w-72 h-80 rounded-2xl border-2 border-dashed border-teal-500/30 bg-slate-900/80 p-5 flex flex-col items-center justify-center text-center gap-3 select-none"
+			className="mobile-radiology-empty-card w-72 h-80 rounded-2xl border-2 border-dashed border-[var(--primary)]/30 bg-[var(--paper-soft)] p-5 flex flex-col items-center justify-center text-center gap-3 select-none"
 			data-testid="mobile-rvg-vector-placeholder"
 		>
-			<div className="relative w-14 h-14 rounded-2xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
+			<div className="relative w-14 h-14 rounded-2xl bg-[var(--primary)]/15 border border-[var(--primary)]/30 flex items-center justify-center text-[var(--primary)]">
 				{isEmptyState ? (
 					<>
 						<Film size={26} aria-hidden="true" />
-						<div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-teal-500 text-slate-950">
+						<div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-[var(--primary)] text-white">
 							<Scan size={10} aria-hidden="true" />
 						</div>
 					</>
@@ -26,10 +26,10 @@ export const MobileRvgPlaceholder: React.FC<{
 					<UploadCloud size={28} />
 				)}
 			</div>
-			<div className="text-sm font-bold text-white leading-snug">
+			<div className="text-sm font-bold text-[var(--ink)] leading-snug">
 				{isEmptyState ? "У выбранного пациента нет рентгеновских снимков" : (study?.title || "Интраоральный RVG снимок")}
 			</div>
-			<div className="text-xs text-slate-400">
+			<div className="text-xs text-[var(--muted)]">
 				{isEmptyState
 					? "Загрузите снимок (DICOM, RVG, ОПТГ) или сделайте снимок с камеры."
 					: hasFile
@@ -39,7 +39,7 @@ export const MobileRvgPlaceholder: React.FC<{
 			<button
 				type="button"
 				onClick={onPickFiles}
-				className="mt-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+				className="primary-button mt-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] active:scale-95 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
 				data-testid="btn-mobile-attach-xray"
 			>
 				<UploadCloud size={14} />

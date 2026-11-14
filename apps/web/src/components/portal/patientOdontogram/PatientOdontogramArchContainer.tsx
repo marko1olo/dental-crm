@@ -4,7 +4,6 @@
  */
 
 import React, { memo } from "react";
-import { DenteToothSvgDefs } from "../../odontogram/ToothChart";
 import type { PatientToothInfo, PatientToothStatus } from "../patientFriendlyOdontogramEngine";
 import { PatientOdontogramQuadrant } from "./PatientOdontogramQuadrant";
 import { PATIENT_ODONTOGRAM_CSS } from "./patientOdontogramStyles";
@@ -31,7 +30,6 @@ export const PatientOdontogramArchContainer: React.FC<PatientOdontogramArchConta
 	testIdPrefix = "tooth-btn",
 }) => (
 	<div className="patient-odontogram-arch-container" data-testid="patient-odontogram-arch-container">
-		<DenteToothSvgDefs />
 		<style>{PATIENT_ODONTOGRAM_CSS}</style>
 		<div className="patient-odontogram-arch">
 			<div className="patient-odontogram-jaw-title">ВЕРХНЯЯ ЧЕЛЮСТЬ (ПРАВАЯ И ЛЕВАЯ СТОРОНЫ)</div>

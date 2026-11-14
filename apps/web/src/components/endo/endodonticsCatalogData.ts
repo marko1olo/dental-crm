@@ -146,10 +146,10 @@ export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[
 	}
 	if (isLowerMolar) {
 		return [
-			{ id: `c-mb-${Date.now()}-1`, name: "MB", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-mb-${Date.now()}-1`, name: "MB", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 			{ id: `c-ml-${Date.now()}-2`, name: "ML", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 			{ id: `c-db-${Date.now()}-3`, name: "DB", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-dl-${Date.now()}-4`, name: "DL", workingLengthMm: 21.5, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-dl-${Date.now()}-4`, name: "DL", workingLengthMm: 21.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 		];
 	}
 	if (isUpperPremolar) {

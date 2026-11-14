@@ -3,6 +3,34 @@ import { useAppStore } from '../../../store/appStore';
 import type { CopilotUiMessage, PendingConfirmation } from '../copilotTypes';
 import type { SpecialtyCategoryKey } from '../../visit/clinicalCatalog/clinicalProtocolsCatalog';
 
+export interface DenteCopilotGlobalBridge {
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+  openHud: () => void;
+  closeHud: () => void;
+  toggleHud: () => void;
+  openVoiceModal: () => void;
+  closeVoiceModal: () => void;
+  openTreatmentPlanCopilot: () => void;
+  closeTreatmentPlanCopilot: () => void;
+  openAiSettings: () => void;
+  setContext: (ctx: { patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null) => void;
+  setMessages: (msgs: CopilotUiMessage[]) => void;
+  setPending: (pend: PendingConfirmation | null) => void;
+  setBusy: (b: boolean) => void;
+  setPhase: (p: string | null) => void;
+  setActiveTab: (tab: 'chat' | 'pending') => void;
+  setProactiveAlerts?: (alerts: unknown[]) => void;
+  setWhatsappHitLCards?: (cards: unknown[]) => void;
+}
+
+declare global {
+  interface Window {
+    __denteCopilot?: DenteCopilotGlobalBridge;
+  }
+}
+
 export interface UseCopilotGlobalEventsOptions {
   openDrawer: () => void;
   closeDrawer: () => void;
@@ -47,7 +75,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
 
     checkAndTrigger();
 
-    (window as any).__denteCopilot = {
+    window.__denteCopilot = {
       open: () => optsRef.current.openDrawer(),
       close: () => optsRef.current.closeDrawer(),
       toggle: () => optsRef.current.toggle(),
@@ -158,7 +186,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       window.removeEventListener('dente:close-treatment-plan-copilot', handleCloseTreatmentPlan);
       window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);
       window.removeEventListener('keydown', handleKeyDown);
-      delete (window as any).__denteCopilot;
+      delete window.__denteCopilot;
     };
   }, []);
 }

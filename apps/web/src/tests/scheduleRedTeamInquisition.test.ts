@@ -18,7 +18,7 @@ import type { Appointment, Dashboard, Patient } from "@dental/shared";
 
 import { ScheduleDayZeroBanner } from "../components/schedule/grid/ScheduleGridToolbar";
 import { ScheduleFilterStrip } from "../components/schedule/ScheduleFilterStrip";
-import { AppointmentCardPrimaryActions } from "../components/schedule/AppointmentCardPrimaryActions";
+import { AppointmentCardPrimaryActions } from "../components/schedule/appointmentCardActions/index";
 import { AppointmentCard } from "../components/schedule/AppointmentCard";
 import { AppointmentAlertBadges } from "../components/schedule/AppointmentPaymentBadges";
 import { QuickBookingDrawer } from "../components/schedule/QuickBookingDrawer";

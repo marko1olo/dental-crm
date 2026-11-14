@@ -86,8 +86,8 @@ describe("Mandate 8l: Ez3D-i Clinical Tooling & HU Bone Density Math", () => {
 	it("should enforce Mandate 8b line-budget invariant (strictly <= 800 lines per file)", () => {
 		const filesToAudit = [
 			"apps/web/src/components/imaging/DicomToolboxRibbon.tsx",
-			"apps/web/src/components/imaging/DicomMprCockpit.tsx",
-			"apps/web/src/components/imaging/DicomSectioningView.tsx",
+			"apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+			"apps/web/src/components/radiology/SensorStudyViewer.tsx",
 			"apps/web/src/components/imaging/DicomViewerModal.tsx",
 			"apps/web/src/components/imaging/DicomAiFindingsDrawer.tsx",
 			"apps/web/src/components/imaging/rvgViewerEngine.ts",

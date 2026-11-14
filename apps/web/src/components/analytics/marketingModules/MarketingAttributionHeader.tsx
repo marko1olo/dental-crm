@@ -14,7 +14,7 @@ export const MarketingAttributionHeader: React.FC<MarketingAttributionHeaderProp
 		<header className="flex flex-wrap items-center justify-between gap-3 p-5 rounded-3xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 			<div className="space-y-1">
 				<div className="flex items-center gap-2.5">
-					<div className="p-2.5 rounded-2xl bg-teal-500/10 text-[var(--teal)]">
+					<div className="p-2.5 rounded-2xl bg-[var(--teal)]/10 text-[var(--teal)]">
 						<Megaphone size={22} />
 					</div>
 					<div>
@@ -51,7 +51,7 @@ export const MarketingAttributionHeader: React.FC<MarketingAttributionHeaderProp
 					data-active={activeSection === "romi"}
 					data-testid="tab-romi-table"
 				>
-					<DollarSign size={14} className="text-emerald-500" />
+					<DollarSign size={14} className="text-[var(--teal)]" />
 					<span>ROMI и Затраты</span>
 				</button>
 
@@ -64,7 +64,7 @@ export const MarketingAttributionHeader: React.FC<MarketingAttributionHeaderProp
 					data-active={activeSection === "field_settings"}
 					data-testid="tab-field-requirements"
 				>
-					<Settings size={14} className="text-indigo-500" />
+					<Settings size={14} className="text-[var(--teal)]" />
 					<span>Обязательность полей карты</span>
 				</button>
 			</div>

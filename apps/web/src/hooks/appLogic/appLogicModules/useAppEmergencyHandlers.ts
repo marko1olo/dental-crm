@@ -1,12 +1,13 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import { useMemo } from "react";
+import type { AppView } from "../../../utils/routeUtils";
 import type { AppLogicEmergencyTriage } from "./appLogicStateTypes";
 
 export interface UseAppEmergencyHandlersProps {
 	dashboard: Dashboard | null | undefined;
 	documentPatient?: Patient | null;
-	setCurrentView?: any;
-	setSelectedPatientId?: any;
+	setCurrentView?: (view: AppView | ((prev: AppView) => AppView) | string) => void;
+	setSelectedPatientId?: (id: string | null) => void;
 }
 
 export const CRITICAL_ALLERGEN_PATTERNS = [
@@ -29,15 +30,22 @@ export function useAppEmergencyHandlers({
 	documentPatient,
 }: UseAppEmergencyHandlersProps): AppLogicEmergencyTriage {
 	return useMemo(() => {
+		const adminMedicalNotes = (
+			documentPatient?.administrativeProfile as
+				| { medicalNotes?: string | null }
+				| null
+				| undefined
+		)?.medicalNotes;
+
 		const rawAnamnesis =
-			(documentPatient?.administrativeProfile as any)?.medicalNotes ??
-			(documentPatient as any)?.notes ??
+			(typeof adminMedicalNotes === "string" ? adminMedicalNotes : null) ??
+			documentPatient?.notes ??
 			"";
 
 		const criticalAllergies: string[] = [];
 		for (const pattern of CRITICAL_ALLERGEN_PATTERNS) {
 			const match = rawAnamnesis.match(pattern);
-			if (match) {
+			if (match?.[0]) {
 				criticalAllergies.push(match[0]);
 			}
 		}
@@ -45,10 +53,13 @@ export function useAppEmergencyHandlers({
 		const hasCriticalAllergy = criticalAllergies.length > 0;
 
 		const activeVisit = dashboard?.activeVisit;
+		const visitNotesProp = (
+			activeVisit as { notes?: string | null } | null | undefined
+		)?.notes;
 		const visitNotes =
 			activeVisit?.complaint ||
 			activeVisit?.doctorSummary ||
-			(activeVisit as any)?.notes ||
+			visitNotesProp ||
 			"";
 		const isCitoVisit = Boolean(
 			visitNotes.toLowerCase().includes("cito") ||

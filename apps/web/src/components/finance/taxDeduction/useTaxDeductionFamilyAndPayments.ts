@@ -5,7 +5,34 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import type { TaxDeductionCertificateModalProps } from "./types";
 
-export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateModalProps, appLogic: any, selectedYear: number) {
+interface RawTaxReceipt {
+	readonly id: string;
+	readonly receiptNumber: string;
+	readonly fiscalDocumentNumber?: string;
+	readonly serviceName: string;
+	readonly receiptDate: string;
+	readonly amountRub: number;
+	readonly deductionCode?: string;
+	readonly isExcluded?: boolean;
+}
+
+interface RawFamilyMemberApi {
+	readonly id: string;
+	readonly relationship?: string;
+	readonly fullName?: string;
+	readonly inn?: string;
+	readonly birthDate?: string;
+	readonly identityDocumentSeries?: string;
+	readonly identityDocumentNumber?: string;
+}
+
+interface AppLogicAuthContext {
+	readonly auth?: {
+		readonly denteClinicalReadHeaders?: () => Record<string, string>;
+	} | undefined;
+}
+
+export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateModalProps, appLogic: AppLogicAuthContext | null | undefined, selectedYear: number) {
 	const { isOpen, patientId, payments = [] } = props;
 	const [fetchedPayments, setFetchedPayments] = useState<readonly TaxDeductionPaymentItem[]>([]);
 	const [isLoadingPayments, setIsLoadingPayments] = useState<boolean>(false);
@@ -19,9 +46,9 @@ export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateM
 				.then((res) => (res.ok ? res.json() : null))
 				.then((data) => {
 					if (data?.receipts && Array.isArray(data.receipts)) {
-						const mapped: TaxDeductionPaymentItem[] = data.receipts
-							.filter((r: any) => !r.isExcluded)
-							.map((r: any) => ({ id: r.id, receiptNumber: r.receiptNumber, fiscalDocumentNumber: r.fiscalDocumentNumber || "", fiscalSign: "", serviceName: r.serviceName, dateIso: r.receiptDate, amountRub: r.amountRub, taxCode: r.deductionCode === "2" ? "2" : "1" }));
+						const mapped: TaxDeductionPaymentItem[] = (data.receipts as readonly RawTaxReceipt[])
+							.filter((r) => !r.isExcluded)
+							.map((r) => ({ id: r.id, receiptNumber: r.receiptNumber, fiscalDocumentNumber: r.fiscalDocumentNumber || "", fiscalSign: "", serviceName: r.serviceName, dateIso: r.receiptDate, amountRub: r.amountRub, taxCode: r.deductionCode === "2" ? "2" : "1" }));
 						setFetchedPayments(mapped);
 					}
 				})
@@ -37,14 +64,14 @@ export function useTaxDeductionFamilyAndPayments(props: TaxDeductionCertificateM
 				.then((res) => (res.ok ? res.json() : null))
 				.then((data) => {
 					if (data?.members && Array.isArray(data.members)) {
-						const mapped: FamilyMemberPayerConfig[] = data.members.filter((m: any) => m.id !== patientId).map((m: any) => ({
+						const mapped: FamilyMemberPayerConfig[] = (data.members as readonly RawFamilyMemberApi[]).filter((m) => m.id !== patientId).map((m) => ({
 							id: m.id, relationship: (m.relationship === "child" ? "child" : m.relationship === "parent" ? "parent" : "spouse") as TaxDeductionRelationship,
 							person: { fullName: m.fullName || "Член семьи", inn: m.inn || "", birthDate: m.birthDate ? m.birthDate.slice(0, 10) : "", identityDocumentSeries: m.identityDocumentSeries || "", identityDocumentNumber: m.identityDocumentNumber || "" },
 						}));
 						if (mapped.length > 0) setFetchedFamilyMembers(mapped);
 					}
 				})
-				.catch(() => {});
+				.catch((err) => console.warn("[tax-deduction] failed to fetch family members:", err));
 		}
 	}, [isOpen, patientId, appLogic?.auth]);
 

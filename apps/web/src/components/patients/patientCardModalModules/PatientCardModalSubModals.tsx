@@ -18,7 +18,7 @@ interface PatientCardModalSubModalsProps {
 	readonly isTaxDeductionModalOpen: boolean;
 	readonly setIsTaxDeductionModalOpen: (open: boolean) => void;
 	readonly patientData: PatientGeneralInfo;
-	readonly onUpdatePatientField: (field: keyof PatientGeneralInfo, value: any) => void;
+	readonly onUpdatePatientField: (field: keyof PatientGeneralInfo, value: unknown) => void;
 }
 
 export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps> = ({

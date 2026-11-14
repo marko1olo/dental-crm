@@ -5,11 +5,13 @@ import { beforeEach, describe, test } from "node:test";
 import {
 	type DiaryState,
 	EMPTY_DIARY,
+} from "../lib/protocols/protocolTypes";
+import {
 	soapPrefillFromVisitNote,
 	splitDiaryAnamnesis,
 	soapDiaryFromVisitNote,
 	visitNoteFromSoapDiary,
-} from "../components/useVisitDiaryLogic";
+} from "../lib/protocols/protocolMerge";
 
 describe("Diary Draft Resilience & LocalStorage Protection (Medical Diary)", () => {
 	const storageMock = new Map<string, string>();

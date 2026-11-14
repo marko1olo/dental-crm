@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patients, payments } from "../../db/schema.js";
 
@@ -77,8 +77,7 @@ export async function getFamilyHistoryRecords(
 					eq(payments.method, "family_wallet"),
 					eq(payments.status, "planned"),
 					eq(payments.status, "refunded"),
-					ilike(payments.note, "%семейный%"),
-					ilike(payments.note, "%депозит%"),
+					sql`${payments.amountRub} < 0`,
 				),
 			),
 		)
@@ -86,10 +85,8 @@ export async function getFamilyHistoryRecords(
 		.limit(100);
 
 	return paymentRows.map((p) => {
-		const isPlanned = p.status === "planned";
-		const isVoided = p.status === "voided" || p.status === "refunded" || Number(p.amountRub) < 0;
-		const isTopup = isPlanned || (p.note ? p.note.toLowerCase().includes("пополнение") : false);
-		const isRefund = isVoided || (p.note ? p.note.toLowerCase().includes("возврат") : false);
+		const isRefund = p.status === "refunded" || Number(p.amountRub) < 0;
+		const isTopup = !isRefund && p.status === "planned";
 		const operationType: "topup" | "spend" | "refund" = isRefund ? "refund" : isTopup ? "topup" : "spend";
 		const patientName = memberMap.get(p.patientId) || p.payerFullName || "Член семьи";
 		const headName = (family.headPatientId && memberMap.get(family.headPatientId)) || "Семейный счёт";
@@ -104,7 +101,7 @@ export async function getFamilyHistoryRecords(
 			targetPatientId: p.patientId,
 			targetName: patientName,
 			method: p.method === "family_wallet" ? "pool" : p.method,
-			note: p.note || (isRefund ? "Возврат с семейного депозита" : isTopup ? "Пополнение семейного счёта" : "Оплата стоматологических услуг"),
+			note: p.note || (isRefund ? "Возврат средств с семейного депозита" : isTopup ? "Пополнение семейного счёта" : "Оплата стоматологических услуг"),
 		};
 	});
 }

@@ -1,7 +1,8 @@
 import React from "react";
 import type { Patient } from "@dental/shared";
-import { FileText, Printer, ShieldCheck } from "lucide-react";
+import { FileText, Printer, Share2, ShieldCheck } from "lucide-react";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../../blankContractPrint";
+import { printPatientBranchTransferAct } from "../../transfer/branchTransferEngine";
 import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
 
 interface PatientDocumentsBlanksMenuProps {
@@ -39,7 +40,7 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 			</button>
 			<button
 				type="button"
-				onClick={() => { onClose(); onOpenFastPrint("partisan_insert_043u"); }}
+				onClick={() => { onClose(); onOpenFastPrint("clinical_protocol_entry"); }}
 				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-patient-print-insert"
 			>
@@ -58,6 +59,18 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 			>
 				<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
 				<span className="truncate">Выписка из карты</span>
+			</button>
+			<button
+				type="button"
+				onClick={() => {
+					onClose();
+					printPatientBranchTransferAct(patient);
+				}}
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				data-testid="btn-print-branch-transfer-act"
+			>
+				<Share2 size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<span className="truncate">Акт перевода в филиал</span>
 			</button>
 		</div>
 	);

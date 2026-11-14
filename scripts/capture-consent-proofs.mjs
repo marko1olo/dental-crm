@@ -8,6 +8,7 @@ fs.mkdirSync(PROOFS_DIR, { recursive: true });
 async function capture() {
 	const browser = await chromium.launch({
 		headless: true,
+		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 	});
 
@@ -76,8 +77,8 @@ async function capture() {
 		let loaded = false;
 		for (let attempt = 1; attempt <= 3 && !loaded; attempt++) {
 			try {
-				console.log(`[CAPTURE] Attempt ${attempt}: Navigating to http://127.0.0.1:5173/#consents (${cfg.theme}, ${cfg.viewport.width}x${cfg.viewport.height})...`);
-				await page.goto("http://127.0.0.1:5173/#consents", { waitUntil: "domcontentloaded", timeout: 30000 });
+				console.log(`[CAPTURE] Attempt ${attempt}: Navigating to http://127.0.0.1:5174/#consents (${cfg.theme}, ${cfg.viewport.width}x${cfg.viewport.height})...`);
+				await page.goto("http://127.0.0.1:5174/#consents", { waitUntil: "domcontentloaded", timeout: 30000 });
 				await page.waitForTimeout(1000);
 				loaded = true;
 			} catch (e) {

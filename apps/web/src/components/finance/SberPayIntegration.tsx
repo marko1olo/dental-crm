@@ -162,7 +162,8 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 				activeSlipTab === "customer" ? lastResponse.customerSlip : lastResponse.merchantSlip;
 			await hardwarePrinter.printBankSlip(slipToPrint);
 			showToast("Банковский слип отправлен на печать", "info");
-		} catch (e) {
+		} catch (printErr: unknown) {
+			console.error("[SberPayIntegration] Ошибка печати слипа на принтере:", printErr);
 			showToast("Ошибка печати слипа на принтере", "error");
 		} finally {
 			setIsPrinting(false);
@@ -208,7 +209,8 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 			setTerminalStatus("ready");
 			setStatusMessage("Транзакция отменена. Терминал готов к новому расчету.");
 			setLastResponse(null);
-		} catch (e) {
+		} catch (voidErr: unknown) {
+			console.error("[SberPayIntegration] Ошибка отправки отмены транзакции:", voidErr);
 			showToast("Ошибка отправки отмены транзакции", "error");
 		}
 	};

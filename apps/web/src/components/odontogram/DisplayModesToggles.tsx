@@ -24,8 +24,8 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 				onClick={() => setShowWisdomTeeth((prev) => !prev)}
 				className={`min-h-[44px] sm:min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
 					showWisdomTeeth
-						? "bg-indigo-500/10 border-indigo-400/40 shadow-xs"
-						: "bg-slate-500/10 border-slate-500/20 hover:bg-slate-500/20"
+						? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)]/40 shadow-2xs"
+						: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 				}`}
 				title="Показать или скрыть зубы мудрости (18, 28, 38, 48)"
 				data-testid="btn-odontogram-wisdom-missing"
@@ -34,24 +34,24 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 					{showWisdomTeeth ? (
 						<Eye
 							size={16}
-							className="shrink-0 text-indigo-600 dark:text-indigo-400"
+							className="shrink-0 text-[var(--teal,#0d9488)]"
 						/>
 					) : (
 						<EyeOff
 							size={16}
-							className="shrink-0 text-slate-500 dark:text-slate-400"
+							className="shrink-0 text-[var(--ink-muted,#64748b)]"
 						/>
 					)}
 					<div className="flex flex-col text-left min-w-0">
-						<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
+						<span className="font-bold text-[12px] leading-tight text-[var(--ink,#0f172a)]">
 							Зубы мудрости (8-ки)
 						</span>
-						<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
+						<span className="text-[10px] font-normal text-[var(--ink-muted,#64748b)] truncate">
 							Третьи моляры (18, 28, 38, 48)
 						</span>
 					</div>
 				</span>
-				<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 shrink-0 ml-2">
+				<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] shrink-0 ml-2 border border-[var(--line,#e2e8f0)]">
 					{showWisdomTeeth ? "ВКЛ" : "ВЫКЛ"}
 				</span>
 			</button>
@@ -62,8 +62,8 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 					onClick={() => setShowPulpAndCanals((prev) => !prev)}
 					className={`min-h-[44px] sm:min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
 						showPulpAndCanals
-							? "bg-rose-500/15 border-rose-400/40 shadow-xs"
-							: "bg-slate-500/10 border-slate-500/20 hover:bg-slate-500/20"
+							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)]/40 shadow-2xs"
+							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 					}`}
 					title="Рентген-прозрачность эмали для просмотра корневых каналов и пульпы"
 					data-testid="btn-odontogram-pulp-canals"
@@ -71,18 +71,18 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 					<span className="flex items-center gap-2.5 min-w-0">
 						<Activity
 							size={16}
-							className={`shrink-0 ${showPulpAndCanals ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}
+							className={`shrink-0 ${showPulpAndCanals ? "text-[var(--teal,#0d9488)]" : "text-[var(--ink-muted,#64748b)]"}`}
 						/>
 						<div className="flex flex-col text-left min-w-0">
-							<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
+							<span className="font-bold text-[12px] leading-tight text-[var(--ink,#0f172a)]">
 								Каналы и пульпа
 							</span>
-							<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
+							<span className="text-[10px] font-normal text-[var(--ink-muted,#64748b)] truncate">
 								Рентген-прозрачность эмали для эндодонтии
 							</span>
 						</div>
 					</span>
-					<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 shrink-0 ml-2">
+					<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] shrink-0 ml-2 border border-[var(--line,#e2e8f0)]">
 						{showPulpAndCanals ? "ВКЛ" : "ВЫКЛ"}
 					</span>
 				</button>

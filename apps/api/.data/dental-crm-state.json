@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-17T19:00:34.174Z",
+  "savedAt": "2026-11-11T18:37:54.688Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -36,7 +36,7 @@
       },
       "networkEnabled": true,
       "egiszEnabled": false,
-      "updatedAt": "2026-10-17T19:00:09.933Z",
+      "updatedAt": "2026-11-11T18:37:01.116Z",
       "currency": "₽",
       "themeColor": "teal",
       "logoUrl": null,
@@ -1029,6 +1029,46 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "208852fb-0a61-45b7-8c6d-2e7878cab3e8",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-11-11T18:37:54.680Z"
+      },
+      {
+        "id": "b31a50fb-468c-4a20-b2f7-48ff71818326",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: network_center.",
+        "createdAt": "2026-11-11T18:37:01.116Z"
+      },
+      {
+        "id": "4a3895d8-10b7-4f52-953d-31387fafb034",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: standard_clinic.",
+        "createdAt": "2026-11-11T18:37:01.114Z"
+      },
+      {
+        "id": "a6769826-7e53-48a0-902a-a5291b2eaee1",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: solo_doctor.",
+        "createdAt": "2026-11-11T18:37:01.109Z"
+      },
+      {
         "id": "5e4843a1-08ea-462b-a631-9115b595cffc",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -1183,5 +1223,5 @@
       "updatedAt": "2026-10-17T18:58:22.968Z"
     }
   },
-  "checksum": "97c41780d657971c5cea89b9c3b76b48a18979c991cd6189f3f2b8bbe069428a"
+  "checksum": "46c0f9ebd25e6a107c9faf0aac3a573822e0cf175c000ad50e37e9eea8f39ef4"
 }

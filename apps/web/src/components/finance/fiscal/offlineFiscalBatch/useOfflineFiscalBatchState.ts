@@ -85,8 +85,9 @@ export function useOfflineFiscalBatchState({
 			FiscalReceiptQueueManager.flushAllPending();
 			onBatchProcessed?.(result);
 			showToast(`Успешно фискализировано ${result.processedCount} чеков! Сформировано ${result.shifts.length} смен.`, "success");
-		} catch (e: any) {
-			showToast(`Ошибка пакетной фискализации: ${e?.message || e}`, "error");
+		} catch (e: unknown) {
+			const message = e instanceof Error ? e.message : String(e ?? "неизвестная ошибка");
+			showToast(`Ошибка пакетной фискализации: ${message}`, "error");
 		} finally {
 			setIsProcessing(false);
 		}

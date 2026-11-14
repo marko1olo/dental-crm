@@ -107,3 +107,6 @@ export function denteAdminSecretRequestHeaders(
 /** Совместимость для клинических мутаций (студия визиографа, ЭМК, диагностика) */
 export const denteClinicalMutationHeaders = getDenteAuthHeaders;
 
+/** Совместимость для клинических запросов чтения */
+export const denteClinicalReadHeaders = getDenteAuthHeaders;
+

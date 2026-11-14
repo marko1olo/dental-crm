@@ -38,11 +38,6 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			description: "Договор возмездного оказания стоматологических услуг (ПП РФ № 736)",
 		},
 		{
-			name: "DailyDentistWorkSheet037uForm.tsx",
-			relativePath: "components/documents/forms/DailyDentistWorkSheet037uForm.tsx",
-			description: "Листок ежедневного учета работы врача-стоматолога Форма 037/у",
-		},
-		{
 			name: "SettingsTelegramTab.tsx",
 			relativePath: "components/settings/SettingsTelegramTab.tsx",
 			description: "Шаблоны превью уведомлений Telegram",
@@ -84,19 +79,6 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			defaultContract.patient.fullName,
 			"",
 			"В договоре по умолчанию patient.fullName обязан быть пустой строкой, а не фейковым ФИО",
-		);
-	});
-
-	test("Functional verification: DailyDentistWorkSheet037uForm defaults doctorFullName to empty string", () => {
-		const fullPath = path.join(
-			webSrcDir,
-			"components/documents/forms/DailyDentistWorkSheet037uForm.tsx",
-		);
-		const content = fs.readFileSync(fullPath, "utf-8");
-
-		assert.ok(
-			content.includes('initialPayload?.doctorFullName ?? ""'),
-			"В DailyDentistWorkSheet037uForm doctorFullName обязан инициализироваться пустой строкой",
 		);
 	});
 

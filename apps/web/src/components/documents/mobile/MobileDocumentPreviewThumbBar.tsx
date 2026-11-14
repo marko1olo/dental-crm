@@ -19,13 +19,15 @@ export function MobileDocumentPreviewThumbBar({
 	onSendWhatsApp,
 	onShare,
 }: MobileDocumentPreviewThumbBarProps) {
+	const hasIssuePrimary = Boolean(isDraft && onVerifyAndIssue);
+
 	return (
 		<div className="p-4 border-t border-[var(--line-subtle)] bg-[var(--paper)] pb-[max(16px,env(safe-area-inset-bottom))] space-y-2">
-			{isDraft && onVerifyAndIssue && (
+			{hasIssuePrimary && onVerifyAndIssue && (
 				<button
 					type="button"
 					onClick={() => onVerifyAndIssue(document)}
-					className="w-full min-h-[48px] py-2.5 px-4 rounded-[14px] bg-amber-500 hover:bg-amber-600 text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-transform"
+					className="w-full min-h-[48px] py-2.5 px-4 rounded-[14px] bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
 					data-testid="mobile-btn-verify-issue"
 				>
 					<FileSignature size={18} aria-hidden="true" />
@@ -37,18 +39,18 @@ export function MobileDocumentPreviewThumbBar({
 				<button
 					type="button"
 					onClick={() => onPrint(document)}
-					className="mobile-print-secondary-btn min-h-[48px] py-2 px-2.5 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+					className="mobile-print-secondary-btn min-h-[48px] py-2 px-2.5 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform cursor-pointer"
 					data-testid="mobile-btn-print-doc"
 					aria-label="Печать документа"
 				>
-					<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<Printer size={16} className="shrink-0" aria-hidden="true" />
 					<span>Печать</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onSendWhatsApp}
-					className="min-h-[48px] py-2 px-2.5 rounded-[14px] bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-[13px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-transform"
+					className="mobile-whatsapp-secondary-btn min-h-[48px] py-2 px-2.5 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform cursor-pointer"
 					data-testid="mobile-btn-whatsapp-doc"
 					aria-label="Отправить документ в WhatsApp"
 				>
@@ -59,7 +61,11 @@ export function MobileDocumentPreviewThumbBar({
 				<button
 					type="button"
 					onClick={onShare}
-					className="mobile-share-pdf-cta-btn min-h-[48px] py-2 px-2.5 rounded-[14px] bg-[var(--teal,#0d9488)] text-white font-bold text-[13px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-transform"
+					className={`mobile-share-pdf-cta-btn min-h-[48px] py-2 px-2.5 rounded-[14px] ${
+						hasIssuePrimary
+							? "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							: "bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-sm"
+					} font-bold text-[13px] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform cursor-pointer`}
 					data-testid="mobile-btn-share-doc"
 				>
 					<Share2 size={16} aria-hidden="true" className="shrink-0" />

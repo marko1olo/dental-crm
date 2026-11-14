@@ -122,17 +122,17 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 			>
 				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)]">
 					<div className="flex items-center gap-2">
-						<Award className="h-6 w-6 text-amber-500 shrink-0" />
+						<Award className="h-5 w-5 text-[var(--primary,#0d9488)] shrink-0" />
 						<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">Диплом за храбрость</h3>
 					</div>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-transparent bg-transparent hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
 							data-testid="btn-print-bravery-diploma"
 						>
-							<Printer className="h-4 w-4 text-[var(--muted,#64748b)]" />
+							<Printer className="h-4 w-4 shrink-0" />
 							<span>Распечатать (Enter)</span>
 						</button>
 						<button
@@ -173,22 +173,22 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<button
 							type="button"
 							onClick={handleWhatsApp}
-							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs font-bold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold hover:bg-[var(--paper-soft,#f8fafc)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="btn-whatsapp-diploma"
 							title="Отправить родителям в WhatsApp"
 						>
-							<MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+							<MessageCircle className="w-4 h-4 shrink-0" />
 							<span>WhatsApp</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleTelegram}
-							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200 text-xs font-bold hover:bg-sky-100 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold hover:bg-[var(--paper-soft,#f8fafc)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="btn-telegram-diploma"
 							title="Отправить в Telegram"
 						>
-							<Send className="w-3.5 h-3.5 text-sky-600" />
+							<Send className="w-4 h-4 shrink-0" />
 							<span>Telegram</span>
 						</button>
 
@@ -198,17 +198,17 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 							className="min-h-[44px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="btn-copy-diploma-text"
 						>
-							<Copy className="w-3.5 h-3.5" />
+							<Copy className="w-4 h-4 shrink-0" />
 							<span>Копировать</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer select-none active:scale-95"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] px-5 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer select-none active:scale-95"
 							data-testid="btn-modal-print-diploma"
 						>
-							<Printer className="h-4 w-4" />
+							<Printer className="h-4 w-4 shrink-0" />
 							<span>Распечатать диплом (Enter)</span>
 						</button>
 					</div>

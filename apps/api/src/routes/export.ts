@@ -44,13 +44,14 @@ export async function registerExportRoutes(app: FastifyInstance) {
 	 * Маркетологам экспорт пациентов ЗАПРЕЩЕН.
 	 * Клинические поля исключены даже для администратора.
 	 */
-	app.get("/api/export/patients", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "export patients");
-		if (!orgId) return;
+	app.get<{ Querystring: { format?: string } }>(
+		"/api/export/patients",
+		async (request, reply) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "export patients");
+			if (!orgId) return;
 
-		const identity = getRequestIdentity(request);
-		const reqAny = request as unknown as { user?: { role?: string | null } };
-		const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
 
 		// Маркетологам экспорт базы пациентов категорически запрещен
 		if (staffRole === "marketer" || staffRole === "marketing") {
@@ -68,7 +69,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 			// Аппаратная очистка от медицинской тайны
 			const sanitizedPatients = stripDiagnosisPayload(dbPatients);
 
-			const format = ((request.query as { format?: string })?.format || "json").toLowerCase();
+			const format = (request.query?.format || "json").toLowerCase();
 			if (format === "csv") {
 				const headers = "id,fullName,phone,birthDate,status,notes,balanceRub\n";
 				const rows = sanitizedPatients
@@ -123,7 +124,9 @@ export async function registerExportRoutes(app: FastifyInstance) {
 	 * Доступен маркетингу и регистратуре, однако любые клинические термины,
 	 * диагнозы МКБ-10 и номера зубов в примечаниях (notes) аппаратно маскируются.
 	 */
-	app.get("/api/export/leads", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get<{ Querystring: { format?: string } }>(
+		"/api/export/leads",
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "export leads");
 		if (!orgId) return;
 
@@ -133,7 +136,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 				.from(crmLeads)
 				.where(eq(crmLeads.organizationId, orgId));
 
-			const format = ((request.query as { format?: string })?.format || "json").toLowerCase();
+			const format = (request.query?.format || "json").toLowerCase();
 
 			if (format === "csv") {
 				const headers = "id,name,phone,source,status,notes,expectedRevenue\n";
@@ -186,7 +189,9 @@ export async function registerExportRoutes(app: FastifyInstance) {
 	 * GET /api/export/pricelist
 	 * Экспорт прейскуранта услуг клиники в CSV (с UTF-8 BOM \uFEFF и точкой с запятой для Excel) или JSON.
 	 */
-	app.get("/api/export/pricelist", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get<{ Querystring: { format?: string } }>(
+		"/api/export/pricelist",
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "export pricelist");
 		if (!orgId) return;
 

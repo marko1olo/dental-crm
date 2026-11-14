@@ -125,10 +125,10 @@ export interface ClinicalSliceState {
 	setTreatmentEstimateChangeRulesConfirmed: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalToothRowsText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClinicalToothRowsText: (val: any | ((prev: any) => any)) => void;
+	clinicalToothRowsText: string;
+	setClinicalToothRowsText: (
+		val: string | ((prev: string) => string),
+	) => void;
 	treatmentPlanClinicalReason: string;
 	setTreatmentPlanClinicalReason: (
 		val: string | ((prev: string) => string),
@@ -269,10 +269,8 @@ export interface ClinicalSliceState {
 			| PostVisitCareTopic
 			| ((prev: PostVisitCareTopic) => PostVisitCareTopic),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitProcedureName: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitProcedureName: (val: any | ((prev: any) => any)) => void;
+	postVisitProcedureName: string;
+	setPostVisitProcedureName: (val: string | ((prev: string) => string)) => void;
 	postVisitToothOrArea: string;
 	setPostVisitToothOrArea: (val: string | ((prev: string) => string)) => void;
 	postVisitPerformedAt: string;
@@ -289,42 +287,36 @@ export interface ClinicalSliceState {
 	setPostVisitPresetFeedback: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitAllowedAfter: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitAllowedAfter: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitRestrictions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitRestrictions: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitMedicationAndRinsePlan: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitMedicationAndRinsePlan: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitHygieneInstructions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitHygieneInstructions: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitNutritionInstructions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitNutritionInstructions: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitUrgentWarningSigns: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitUrgentWarningSigns: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitFollowUpAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitFollowUpAt: (val: any | ((prev: any) => any)) => void;
+	postVisitAllowedAfter: string;
+	setPostVisitAllowedAfter: (val: string | ((prev: string) => string)) => void;
+	postVisitRestrictions: string;
+	setPostVisitRestrictions: (val: string | ((prev: string) => string)) => void;
+	postVisitMedicationAndRinsePlan: string;
+	setPostVisitMedicationAndRinsePlan: (
+		val: string | ((prev: string) => string),
+	) => void;
+	postVisitHygieneInstructions: string;
+	setPostVisitHygieneInstructions: (
+		val: string | ((prev: string) => string),
+	) => void;
+	postVisitNutritionInstructions: string;
+	setPostVisitNutritionInstructions: (
+		val: string | ((prev: string) => string),
+	) => void;
+	postVisitUrgentWarningSigns: string;
+	setPostVisitUrgentWarningSigns: (
+		val: string | ((prev: string) => string),
+	) => void;
+	postVisitFollowUpAt: string;
+	setPostVisitFollowUpAt: (val: string | ((prev: string) => string)) => void;
 	postVisitClinicContactInstruction: string;
 	setPostVisitClinicContactInstruction: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	postVisitTelegramSummary: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPostVisitTelegramSummary: (val: any | ((prev: any) => any)) => void;
+	postVisitTelegramSummary: string;
+	setPostVisitTelegramSummary: (
+		val: string | ((prev: string) => string),
+	) => void;
 	postVisitPrintedCopyReceived: boolean;
 	setPostVisitPrintedCopyReceived: (
 		val: boolean | ((prev: boolean) => boolean),

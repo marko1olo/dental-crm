@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { AutoclaveSterilizationLogModal } from "./components/sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
+import { SanpinStudioModal as AutoclaveSterilizationLogModal } from "./components/sanpin/SanpinStudioModal";
 import { SanpinRegisters, SanpinRegisters as SanpinRegistersView } from "./components/sanpin/SanpinRegisters";
 import { DocumentCameraScannerModal } from "./components/scanner/DocumentCameraScannerModal";
 import { ScannerHeaderBar } from "./components/scanner/ScannerHeaderBar";

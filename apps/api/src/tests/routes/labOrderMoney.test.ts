@@ -16,7 +16,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients, users } from "../../db/schema.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -199,5 +199,76 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 			400,
 			`отрицательная цена дала HTTP ${refused.statusCode}: ${refused.body}`,
 		);
+	});
+
+	test("PUT наряд с isLockedInstalled=true блокируется (409 locked_installed), при гарантии разблокируется", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
+
+		// 1. Создаем наряд
+		const created = await createOrder({
+			patientId: PATIENT_ID,
+			doctorId: DOCTOR_ID,
+			toothFdi: "11",
+			material: "ZrO2 Multi",
+			priceRub: 25000,
+		});
+		assert.equal(created.statusCode, 201);
+		const orderId = String(created.json.id);
+
+		// 2. Имитируем фиксацию во рту (isLockedInstalled = true, status = 'completed')
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.execute(sql`
+				update lab_orders
+				   set is_locked_installed = true,
+				       status = 'completed'
+				 where id = ${orderId}::uuid
+			`);
+		});
+
+		// 3. Пытаемся перезаписать через PUT без гарантии -> отказ 409 locked_installed
+		const putBlocked = await app.inject({
+			method: "PUT",
+			url: `/api/lab/orders/${orderId}`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				clinicalNotes: "Попытка перезаписи установленного наряда",
+				priceRub: 30000,
+			},
+		});
+
+		assert.equal(putBlocked.statusCode, 409, `Ожидали 409, получили ${putBlocked.statusCode}`);
+		const blockedJson = JSON.parse(putBlocked.body) as { error?: string };
+		assert.equal(blockedJson.error, "locked_installed");
+
+		// 4. Оформляем гарантийную рекламацию / переделку через PUT с stage='warranty_rework' и isWarranty=true
+		const putWarranty = await app.inject({
+			method: "PUT",
+			url: `/api/lab/orders/${orderId}`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				stage: "warranty_rework",
+				isWarranty: true,
+				clinicalNotes: "Гарантийная доработка окклюзии",
+			},
+		});
+
+		assert.equal(putWarranty.statusCode, 200, `Гарантийный PUT вернул ${putWarranty.statusCode}: ${putWarranty.body}`);
+
+		// 5. Проверяем в БД: блокировка снята (is_locked_installed = false)
+		const checkRow = await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			return tx.execute<{ is_locked_installed: boolean; status: string }>(sql`
+				select is_locked_installed, status
+				  from lab_orders
+				 where id = ${orderId}::uuid
+			`);
+		});
+		assert.equal(checkRow.rows[0]?.is_locked_installed, false, "Гарантийная рекламация должна разблокировать наряд");
+		assert.equal(checkRow.rows[0]?.status, "refitting", "Статус должен перейти в refitting");
 	});
 });

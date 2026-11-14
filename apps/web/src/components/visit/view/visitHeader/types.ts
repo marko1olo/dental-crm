@@ -4,14 +4,23 @@ import type { VisitSubViewTab } from "../../VisitMainTabs";
 export type { VisitSubViewTab };
 
 /**
+ * Элемент ожидающего пациента в очереди смены
+ */
+export interface ArrivedPatientItem {
+	id: string;
+	patientId?: string | null | undefined;
+	name: string;
+	time?: string | undefined;
+}
+
+/**
  * Очередь смены врача по стадиям (DENTE)
  */
 export interface ShiftDayQueue {
 	arrived: number;
 	inTreatment: number;
 	awaitingPayment: number;
-	// biome-ignore lint/suspicious/noExplicitAny: patient list
-	arrivedPatients: any[];
+	arrivedPatients: ArrivedPatientItem[];
 }
 
 /**
@@ -19,26 +28,62 @@ export interface ShiftDayQueue {
  */
 export interface PatientCriticalBadge {
 	id: string;
-	testId?: string;
-	shortLabel?: string;
+	testId?: string | undefined;
+	shortLabel?: string | undefined;
 	fullLabel: string;
 	title: string;
-	severity?: "critical" | "warning" | "info";
+	severity?: "critical" | "warning" | "info" | undefined;
+}
+
+/**
+ * Структурный контракт пациента для шапки визита
+ */
+export interface PatientLike {
+	id?: string | undefined;
+	patientId?: string | undefined;
+	fullName?: string | null | undefined;
+	name?: string | null | undefined;
+	phone?: string | null | undefined;
+	allergies?: readonly string[] | string[] | null | undefined;
+	birthDate?: string | null | undefined;
+	[key: string]: unknown;
+}
+
+/**
+ * Структурный контракт приёма для шапки визита
+ */
+export interface AppointmentLike {
+	id?: string | undefined;
+	appointmentId?: string | undefined;
+	startTime?: string | null | undefined;
+	startAt?: string | null | undefined;
+	startsAt?: string | null | undefined;
+	createdAt?: string | null | undefined;
+	services?: readonly unknown[] | unknown[] | undefined;
+	[key: string]: unknown;
+}
+
+/**
+ * Структурный контракт врача для шапки визита
+ */
+export interface DoctorLike {
+	id?: string | undefined;
+	userId?: string | undefined;
+	fullName?: string | null | undefined;
+	name?: string | null | undefined;
+	specialty?: string | null | undefined;
+	[key: string]: unknown;
 }
 
 /**
  * Пропсы канонической шапки приёма врача VisitHeaderMonolith
  */
 export interface VisitHeaderMonolithProps {
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	activePatient: any;
+	activePatient: PatientLike | null | undefined;
 	patientAge: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment & doctor
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: doctor
-	activeDoctor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: badges
-	activePatientCriticalBadges: any[];
+	activeAppointment: AppointmentLike | null | undefined;
+	activeDoctor: DoctorLike | null | undefined;
+	activePatientCriticalBadges: readonly PatientCriticalBadge[];
 	visitSubViewTab: VisitSubViewTab;
 	setVisitSubViewTab: (tab: VisitSubViewTab) => void;
 	handleApplySomaticNormQuick: () => void;
@@ -70,29 +115,24 @@ export interface VisitHeaderMonolithProps {
  * Пропсы полосы критических медицинских предупреждений
  */
 export interface PatientAlertBadgesBarProps {
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	activePatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: badges
-	activePatientCriticalBadges: any[];
-	consolidatedAllergyChip?: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment
-	activeAppointment?: any;
+	activePatient: PatientLike | null | undefined;
+	activePatientCriticalBadges: readonly PatientCriticalBadge[];
+	consolidatedAllergyChip?: string | null | undefined;
+	activeAppointment?: AppointmentLike | null | undefined;
 }
 
 /**
  * Пропсы секундомера и оперативной очереди смены
  */
 export interface VisitTimerAndStatusControlsProps {
-	// biome-ignore lint/suspicious/noExplicitAny: appointment
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: doctor
-	activeDoctor: any;
-	activePeers?: string[];
-	summaryText?: string;
-	shiftDayQueue?: ShiftDayQueue;
-	isQueueLobbyDropdownOpen?: boolean;
-	setIsQueueLobbyDropdownOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-	queueLobbyDropdownRef?: React.RefObject<HTMLDivElement | null>;
+	activeAppointment: AppointmentLike | null | undefined;
+	activeDoctor: DoctorLike | null | undefined;
+	activePeers?: readonly string[] | string[] | undefined;
+	summaryText?: string | null | undefined;
+	shiftDayQueue?: ShiftDayQueue | undefined;
+	isQueueLobbyDropdownOpen?: boolean | undefined;
+	setIsQueueLobbyDropdownOpen?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
+	queueLobbyDropdownRef?: React.RefObject<HTMLDivElement | null> | undefined;
 }
 
 /**

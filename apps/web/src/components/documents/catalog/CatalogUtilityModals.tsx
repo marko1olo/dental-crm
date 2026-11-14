@@ -1,6 +1,6 @@
 import React from "react";
 import type { Patient } from "@dental/shared";
-import { ConsentModal } from "../../consents/ConsentModal";
+import { ConsentStudioModal } from "../../consents/ConsentStudioModal";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
 import { PediatricBraveryDiplomaModal } from "../../pediatric/PediatricBraveryDiplomaModal";
@@ -59,7 +59,7 @@ export function CatalogUtilityModals({
 				/>
 			)}
 			{isConsentModalOpen && (
-				<ConsentModal
+				<ConsentStudioModal
 					isOpen={isConsentModalOpen}
 					onClose={() => setIsConsentModalOpen(false)}
 					patient={{
@@ -67,9 +67,10 @@ export function CatalogUtilityModals({
 						phone: patient?.phone,
 						birthDate: patient?.birthDate,
 					}}
-					doctorName={doctorName}
-					clinicName={clinicName}
-					isMinorPatient={typeof patientAgeYears === "number" && patientAgeYears < 15}
+					patientContext={{
+						doctorName: doctorName,
+						clinicName: clinicName,
+					}}
 				/>
 			)}
 			{isLocalTaxModalOpen && (

@@ -81,6 +81,7 @@ export function PatientFamilyAndInsuranceWidget({
 				onClose={() => setIsFamilyWalletModalOpen(false)}
 				patientId={patient?.id}
 				patientName={patient?.fullName}
+				inline={true}
 				familyData={
 					familyData
 						? {

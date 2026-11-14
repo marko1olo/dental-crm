@@ -454,7 +454,8 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.ok(html.includes("Налоговый вычет 13% НДФЛ"));
 		assert.ok(html.includes("Возврат пациенту:"));
 		assert.ok(html.includes("Фактическая стоимость лечения с учетом вычета:"));
-		assert.ok(html.includes("КНД 1151156"));
+		assert.ok(html.includes("налогового вычета"));
+		assert.ok(!html.includes("КНД 1151156"));
 	});
 
 	it("24. Обратная совместимость: экспорт канонического алиаса TreatmentPlanPresenterModal", async () => {

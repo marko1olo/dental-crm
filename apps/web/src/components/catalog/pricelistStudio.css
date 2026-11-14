@@ -950,3 +950,75 @@
 	color: #2dd4bf;
 	border-color: rgba(20, 184, 166, 0.35);
 }
+
+/* ==========================================================================
+   Стили печати А4 для студии прейскуранта (DEF-PRICE-05)
+   ========================================================================== */
+@media print {
+	body > *:not(#portal-root):not(.pricelist-studio-overlay) {
+		display: none !important;
+	}
+
+	.pricelist-studio-overlay {
+		position: static !important;
+		inset: auto !important;
+		background: none !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		padding: 0 !important;
+		overflow: visible !important;
+		display: block !important;
+	}
+
+	.pricelist-studio-modal {
+		position: static !important;
+		max-width: 100% !important;
+		width: 100% !important;
+		height: auto !important;
+		max-height: none !important;
+		box-shadow: none !important;
+		border: none !important;
+		border-radius: 0 !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		overflow: visible !important;
+	}
+
+	.pricelist-header-actions,
+	.pricelist-toolbar,
+	.pricelist-floating-bottom-bar,
+	.pricelist-form-drawer,
+	.pricelist-drawer-overlay,
+	.pricelist-toast,
+	.pricelist-quick-bundles-shelf,
+	.pricelist-actions-cell,
+	.pricelist-drag-handle,
+	.pricelist-btn {
+		display: none !important;
+	}
+
+	.pricelist-table-container {
+		overflow: visible !important;
+		height: auto !important;
+	}
+
+	.pricelist-table {
+		width: 100% !important;
+		border-collapse: collapse !important;
+		font-size: 9pt !important;
+	}
+
+	.pricelist-table th,
+	.pricelist-table td {
+		border: 1px solid #cbd5e1 !important;
+		padding: 4px 6px !important;
+		color: #000000 !important;
+		page-break-inside: avoid !important;
+	}
+
+	.pricelist-table th {
+		background: #f1f5f9 !important;
+		font-weight: 700 !important;
+	}
+}
+

@@ -1,5 +1,6 @@
 import React from "react";
 import { showToast } from "../../GlobalToast";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import type { VisitEmkCanvasProps } from "./types";
 import {
 	buildPatientPreviousVisitsEndoIndex,
@@ -77,7 +78,7 @@ export function VisitEmkCanvas({
 				snapshot,
 				toothNumber: snapshot.toothNumber,
 				serviceCatalog,
-				currentDiary: visitNoteForm as any,
+				currentDiary: visitNoteForm as unknown as DiaryState,
 			});
 
 			// 1. Анамнез заболевания, диагноз, жалобы, осмотр, протокол дневника приёма (Медицинская карта)
@@ -93,8 +94,8 @@ export function VisitEmkCanvas({
 			window.dispatchEvent(
 				new CustomEvent("dente-remove-billing-items", {
 					detail: {
-						items: result.servicesToRemove.map((s: any) => s.serviceCode ?? s.code804n),
-						serviceCodes: result.servicesToRemove.map((s: any) => s.serviceCode ?? s.code804n),
+						items: result.servicesToRemove.map((s) => s.code804n),
+						serviceCodes: result.servicesToRemove.map((s) => s.code804n),
 					},
 				}),
 			);
@@ -102,10 +103,10 @@ export function VisitEmkCanvas({
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
-						services: result.servicesToAdd.map((s: any) => ({
+						services: result.servicesToAdd.map((s) => ({
 							...s,
-							serviceCode: s.serviceCode ?? s.code804n,
-							code: s.serviceCode ?? s.code804n,
+							serviceCode: s.code804n,
+							code: s.code804n,
 						})),
 					},
 				}),
@@ -117,9 +118,9 @@ export function VisitEmkCanvas({
 				state: result.targetToothState,
 				diagnosis: result.soap.diagnosis,
 				treatmentPlan: result.soap.treatmentPlan,
-				services: result.servicesToAdd.map((s: any) => ({
-					code: s.serviceCode ?? s.code804n,
-					serviceCode: s.serviceCode ?? s.code804n,
+				services: result.servicesToAdd.map((s) => ({
+					code: s.code804n,
+					serviceCode: s.code804n,
 					title: s.title,
 					price: s.unitPriceRub,
 				})),

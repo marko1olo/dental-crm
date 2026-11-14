@@ -23,7 +23,7 @@ export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq"
 export type AiSpeedMode = "turbo" | "deep_reasoning";
 export type ModelRoutingMode = "server_managed" | "custom_byok";
 export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "perio" | "pediatric";
-export type DiaryTemplate = "soap" | "treatment_diary" | "form043" | "express";
+export type DiaryTemplate = "soap" | "treatment_diary" | "clinical_protocol" | "express";
 export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chairside_tablet" | "mobile_tablet";
 export type WebSpeechSensitivity = "high" | "normal" | "low";
 export type SpeechEngine = "gemini_live" | "whisper" | "web_speech";
@@ -66,13 +66,19 @@ export interface ToolExecutionLog {
 	timestamp: string;
 }
 
+export interface CopilotMessage {
+	id?: string;
+	role: "user" | "assistant" | "system";
+	text?: string;
+	content?: string;
+	timestamp?: string;
+	createdAt?: string;
+	toolCalls?: unknown;
+	actionProposal?: unknown;
+}
+
 export interface ActiveDiff {
-	id: string;
-	title: string;
-	targetEntity: string;
-	beforeText: string;
-	afterText: string;
-	applied?: boolean;
+	id: string; title: string; targetEntity: string; beforeText: string; afterText: string; applied?: boolean;
 }
 
 export interface CopilotSettings {
@@ -94,7 +100,6 @@ export interface CopilotSettings {
 	temperature: number;
 	contextLimitTokens?: number;
 	runtimeMode: CopilotRuntimeEnvironment;
-	// Браузер и Голос (Web Speech API, 152-ФЗ)
 	speechEngine?: SpeechEngine;
 	autoSaveDrafts: boolean;
 	webSpeechSensitivity: WebSpeechSensitivity;
@@ -102,9 +107,7 @@ export interface CopilotSettings {
 	apiKeyMasked?: string;
 	globalDictationHotkey: string;
 	autoMicOnAppointmentOpen: boolean;
-	// Рабочая станция (чтение снимков DICOM / экспорт)
 	localDropzonePath: string;
-	// Мобилка / Планшет у кресла
 	gloveModeTouchTarget: boolean;
 	screenWakeLock: boolean;
 	hapticFeedbackEnabled: boolean;
@@ -118,7 +121,7 @@ export interface CopilotStoreState {
 	threadSearchQuery: string;
 	toolExecutionLogs: ToolExecutionLog[];
 	activeDiff: ActiveDiff | null;
-	threadMessages: Record<string, any[]>;
+	threadMessages: Record<string, CopilotMessage[]>;
 	isSettingsOpen: boolean;
 	isHistoryOpen: boolean;
 	telemetry: ContextTelemetryData;
@@ -140,9 +143,9 @@ export interface CopilotStoreState {
 	togglePinThread: (id: string) => void;
 	renameThread: (id: string, title: string) => void;
 	setThreadSearchQuery: (query: string) => void;
-	saveThreadMessages: (threadId: string, messages: any[]) => void;
+	saveThreadMessages: (threadId: string, messages: CopilotMessage[]) => void;
 	hydrateSessionsFromBackend: () => Promise<void>;
-	loadThreadMessages: (threadId: string) => Promise<any[]>;
+	loadThreadMessages: (threadId: string) => Promise<CopilotMessage[]>;
 	addToolLog: (log: Omit<ToolExecutionLog, "id" | "timestamp">) => void;
 	setActiveDiff: (diff: ActiveDiff | null) => void;
 	applyActiveDiff: () => void;
@@ -351,16 +354,16 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		}
 	},
 
-	loadThreadMessages: async (threadId: string) => {
+	loadThreadMessages: async (threadId: string): Promise<CopilotMessage[]> => {
 		const cached = get().threadMessages[threadId];
 		if (cached && cached.length > 0) return cached;
 		if (isDemoShowcaseMode() || !isSessionUuid(threadId)) return [];
 		try {
 			const remoteMsgs = await fetchRemoteMessages(threadId);
 			if (remoteMsgs && remoteMsgs.length > 0) {
-				const parsed = remoteMsgs.map((m: any, idx: number) => ({
+				const parsed: CopilotMessage[] = remoteMsgs.map((m: { id?: string; role?: "user" | "assistant" | "system"; content?: string; text?: string; createdAt?: string; toolCalls?: unknown }, idx: number): CopilotMessage => ({
 					id: m.id || `msg-${idx}`,
-					role: m.role || "user",
+					role: (m.role === "assistant" || m.role === "system") ? m.role : "user",
 					text: m.content || m.text || "",
 					timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
 					toolCalls: m.toolCalls,

@@ -3,6 +3,7 @@
  * (DOMAIN: PATIENT PORTAL - LAYER 2 DATA ACCESS)
  */
 
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../../accessGuard.js";
@@ -94,15 +95,15 @@ export async function fetchSanitizedPatient(
 	if (!patient) return null;
 
 	const { notes: _internalNotes, ...safePatient } = patient;
-	let safeAdminProfile = patient.administrativeProfile;
+	let safeAdminProfile: Partial<PatientAdministrativeProfile> | null = patient.administrativeProfile;
 	if (safeAdminProfile && typeof safeAdminProfile === "object") {
 		const {
 			curatorCommissionPercent: _comm,
 			curatorNotes: _curNotes,
 			dataProcessingBasisNote: _dpNote,
 			...cleanProfile
-		} = safeAdminProfile as Record<string, unknown>;
-		safeAdminProfile = cleanProfile as any;
+		} = safeAdminProfile;
+		safeAdminProfile = cleanProfile;
 	}
 
 	return {

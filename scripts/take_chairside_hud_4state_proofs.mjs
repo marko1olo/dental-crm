@@ -25,11 +25,12 @@ const __dirname = path.dirname(__filename);
 const webRoot = path.resolve(__dirname, "../apps/web");
 const configFile = path.resolve(webRoot, "vite.config.ts");
 
-const CURRENT_CONV_ID = "99a9f3b2-d4ef-4954-9dc6-6e073376abbf";
+const CURRENT_CONV_ID = process.env.CONV_ID || "21c29954-8771-47c6-8949-588c579ca0c2";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
-const OUT_COPILOT = path.resolve(__dirname, "../docs/proofs/ai_assistant");
+const OUT_COPILOT = path.resolve(__dirname, "../docs/proofs/copilot");
+const OUT_AI_ASSISTANT = path.resolve(__dirname, "../docs/proofs/ai_assistant");
 
-[OUT_CONV, OUT_COPILOT].forEach((d) => {
+[OUT_CONV, OUT_COPILOT, OUT_AI_ASSISTANT].forEach((d) => {
 	if (!existsSync(d)) mkdirSync(d, { recursive: true });
 });
 
@@ -118,6 +119,7 @@ async function main() {
 	const targets = [
 		{
 			file: "01_chairside_hud_pc_light_1440x900.png",
+			shortAlias: "01_copilot_hud_pc_light.png",
 			presetFile: "05_chairside_hud_preset_pc_light_1440x900.png",
 			width: 1440,
 			height: 900,
@@ -126,6 +128,7 @@ async function main() {
 		},
 		{
 			file: "02_chairside_hud_pc_dark_1440x900.png",
+			shortAlias: "02_copilot_hud_pc_dark.png",
 			presetFile: "06_chairside_hud_preset_pc_dark_1440x900.png",
 			width: 1440,
 			height: 900,
@@ -134,6 +137,7 @@ async function main() {
 		},
 		{
 			file: "03_chairside_hud_mobile_light_390x844.png",
+			shortAlias: "03_copilot_hud_mobile_light.png",
 			presetFile: "07_chairside_hud_preset_mobile_light_390x844.png",
 			width: 390,
 			height: 844,
@@ -142,6 +146,7 @@ async function main() {
 		},
 		{
 			file: "04_chairside_hud_mobile_dark_390x844.png",
+			shortAlias: "04_copilot_hud_mobile_dark.png",
 			presetFile: "08_chairside_hud_preset_mobile_dark_390x844.png",
 			width: 390,
 			height: 844,
@@ -171,14 +176,28 @@ async function main() {
 			page.on("console", (msg) => {
 				if (msg.type() === "error") console.log("[PAGE CONSOLE ERROR]:", msg.text());
 			});
+			page.on("response", (res) => {
+				if (res.status() >= 400) console.log(`[HTTP ${res.status()}]: ${res.url()}`);
+			});
 
 			await page.goto(`${baseUrl}/?stand=chairside-hud&demo=true&hud=open#copilot-hud`, {
 				waitUntil: "commit",
 				timeout: 60000,
 			});
+			await sleep(4000);
 
 			// Ожидаем появления кресельного копайлота
-			await page.waitForSelector('[data-testid="chairside-copilot-hud"]', { timeout: 45000 });
+			try {
+				await page.waitForSelector('[data-testid="chairside-copilot-hud"]', { timeout: 15000 });
+			} catch (_) {
+				console.log("Triggering __denteCopilot.openHud() fallback...");
+				await page.evaluate(() => {
+					if (window.__denteCopilot?.openHud) window.__denteCopilot.openHud();
+					window.location.hash = "#chairside-hud";
+					window.dispatchEvent(new HashChangeEvent("hashchange"));
+				});
+				await page.waitForSelector('[data-testid="chairside-copilot-hud"]', { timeout: 25000 });
+			}
 
 			await page.evaluate((th) => {
 				if (document.documentElement) {
@@ -200,6 +219,14 @@ async function main() {
 
 			await page.screenshot({ path: copilotPath, fullPage: false, animations: "disabled" });
 			copyFileSync(copilotPath, convPath);
+			copyFileSync(copilotPath, path.join(OUT_AI_ASSISTANT, t.file));
+
+			if (t.shortAlias) {
+				const shortPath = path.join(OUT_COPILOT, t.shortAlias);
+				copyFileSync(copilotPath, shortPath);
+				copyFileSync(copilotPath, path.join(OUT_CONV, t.shortAlias));
+				copyFileSync(copilotPath, path.join(OUT_AI_ASSISTANT, t.shortAlias));
+			}
 
 			const stat = statSync(copilotPath);
 			if (stat.size < 20480) {
@@ -214,8 +241,10 @@ async function main() {
 				await sleep(600);
 				const presetCopilotPath = path.join(OUT_COPILOT, t.presetFile);
 				const presetConvPath = path.join(OUT_CONV, t.presetFile);
+				const presetAiPath = path.join(OUT_AI_ASSISTANT, t.presetFile);
 				await page.screenshot({ path: presetCopilotPath, fullPage: false, animations: "disabled" });
 				copyFileSync(presetCopilotPath, presetConvPath);
+				copyFileSync(presetCopilotPath, presetAiPath);
 				const presetStat = statSync(presetCopilotPath);
 				console.log(`[PRESET PROOF VERIFIED]: ${t.presetFile} (${presetStat.size} bytes / ${(presetStat.size / 1024).toFixed(1)} KB)`);
 			}

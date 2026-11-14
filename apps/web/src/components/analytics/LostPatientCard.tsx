@@ -4,6 +4,7 @@ import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { classifyChurnRisk } from "./analyticsWidgetData.js";
 import { LostPatientActionsMenu } from "./lostPatientsModules/LostPatientActionsMenu";
 import type { LostPatientRow } from "./lostPatientsModules/lostPatientTypes";
+import "./styles/analyticsStudio.css";
 
 export interface LostPatientCardProps {
 	readonly patient: LostPatientRow;
@@ -28,10 +29,10 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 
 	const badgeClass =
 		risk.badgeTone === "bad"
-			? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+			? "studio-badge-norm-overload"
 			: risk.badgeTone === "warn"
-				? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-				: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+				? "studio-badge-norm-reserve"
+				: "studio-badge-norm-optimal";
 
 	const categoryTitle =
 		patient.lastTreatmentCategory === "implantation"

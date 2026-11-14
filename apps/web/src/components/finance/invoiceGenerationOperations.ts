@@ -192,7 +192,8 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 			onInvoiceCreated(createdData);
 		}
 		onClose();
-	} catch {
+	} catch (createErr: unknown) {
+		console.warn("[executeInvoiceCreation] Ошибка вызова API создания счета, переключение на локальный автономный fallback:", createErr);
 		// Fallback for offline / network failure (Mandates 8e, 8n)
 		const fallbackNetRub = Number((effectiveReport.effectiveInvoiceNetKopecks / 100).toFixed(2));
 		const fallbackStatus: BillingInvoice["status"] =

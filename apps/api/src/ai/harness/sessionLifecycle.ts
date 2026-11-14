@@ -2,7 +2,14 @@
  * sessionLifecycle.ts — ReAct Loop Runner and Agent Session Lifecycle
  */
 
-import { type TaskPlan, sanitizeClinicalAiOutput, stripReasoning } from "@dental/shared";
+import {
+	type TaskPlan,
+	sanitizeClinicalAiOutput,
+	stripReasoning,
+	maskRussianPhone,
+	maskRussianPassport,
+	maskRussianSnils,
+} from "@dental/shared";
 import {
 	type AgentRouterChatMessage,
 	type AgentRouterChatResponse,
@@ -53,24 +60,46 @@ export function isCloudLlmFailoverError(turnErr: unknown): boolean {
 	const errName = (turnErr as { name?: string })?.name || "";
 	if (
 		errName === "AgentRouterAllKeysExhaustedError" ||
-		errName === "AgentRouterModelOverloadedError"
+		errName === "AgentRouterModelOverloadedError" ||
+		errName === "AllKeysExhaustedError"
 	) {
+		return true;
+	}
+	const statusCode =
+		(turnErr as { status?: number; statusCode?: number })?.status ||
+		(turnErr as { status?: number; statusCode?: number })?.statusCode;
+	if (statusCode === 429 || statusCode === 402 || statusCode === 503) {
 		return true;
 	}
 	const msg = (turnErr instanceof Error ? turnErr.message : String(turnErr)).toLowerCase();
 	return (
 		msg.includes("agentrouterallkeysexhaustederror") ||
 		msg.includes("agentroutermodeloverloadederror") ||
+		msg.includes("allkeysexhaustederror") ||
 		msg.includes("exhausted all keys") ||
 		msg.includes("all agentrouter api keys are currently cooling down") ||
 		msg.includes("failed to select agentrouter api key") ||
+		msg.includes("all keys in pool are currently cooling down") ||
 		msg.includes("model is currently in 402") ||
 		msg.includes("budget pool") ||
 		msg.includes("quota") ||
 		msg.includes("rate limit") ||
 		msg.includes("ratelimit") ||
+		msg.includes("too many requests") ||
 		/429|402|503|502|504|server error|auth error|401|403|unauthorized|forbidden|invalid api key|enotfound|econnrefused|etimedout|fetch failed|network|timed out|timeout|исчерпали лимиты|все 0 ключей/i.test(msg)
 	);
+}
+
+/**
+ * Маскирует персональные данные пациента (152-ФЗ) в тексте сообщения перед отправкой в LLM.
+ */
+function maskPhiInText(text: string): string {
+	if (!text || typeof text !== "string") return "";
+	let masked = text;
+	masked = masked.replace(/(?:\+7|8)[\s(-]*\d{3}[\s)-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/g, (m) => maskRussianPhone(m));
+	masked = masked.replace(/\b\d{3}-\d{3}-\d{3}[\s-]*\d{2}\b/g, (m) => maskRussianSnils(m));
+	masked = masked.replace(/\b\d{2}[\s-]*\d{2}[\s-]*\d{6}\b/g, (m) => maskRussianPassport(m));
+	return masked;
 }
 
 /**
@@ -108,13 +137,13 @@ export async function runAgentHarness(
 
 	const tools = getDentalTools(runtimeMode);
 	const normalizedTrustLevel: "confirm_all" | "balanced" | "autonomous" | undefined =
-		params.trustLevel === "autonomous"
-			? "autonomous"
-			: params.trustLevel === "confirm_all" || params.trustLevel === "supervised" || params.trustLevel === "cautious"
-				? "confirm_all"
-				: params.trustLevel === "balanced"
-					? "balanced"
-					: undefined;
+		!params.trustLevel
+			? undefined
+			: params.trustLevel === "autonomous"
+				? "autonomous"
+				: params.trustLevel === "confirm_all" || params.trustLevel === "cautious"
+					? "confirm_all"
+					: "balanced";
 
 	const systemPrompt = buildAgentSystemPrompt(
 		runtimeMode,
@@ -130,10 +159,20 @@ export async function runAgentHarness(
 		normalizedTrustLevel,
 	);
 
+	// 152-ФЗ: маскирование ПДн в пользовательских сообщениях перед отправкой в LLM
+	const effectiveMessages = params.maskPhiData
+		? messages.map((m) => {
+				if (m.role === "user" && typeof m.content === "string") {
+					return { ...m, content: maskPhiInText(m.content) };
+				}
+				return m;
+			})
+		: messages;
+
 	// Working history for this ReAct execution turn
 	let history: AgentRouterChatMessage[] = [
 		{ role: "system", content: systemPrompt },
-		...messages,
+		...effectiveMessages,
 	];
 
 	let hasCompacted = false;

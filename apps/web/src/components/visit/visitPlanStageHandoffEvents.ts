@@ -1,12 +1,14 @@
+import type { PlanStageItem } from "./visitPlanStageHandoff";
+
 export interface StageHandoffPayload {
 	readonly title: string;
 	readonly stageNumber: number;
-	readonly items: any[];
+	readonly items: readonly PlanStageItem[] | PlanStageItem[];
 }
 
 export function dispatchTakeStageToVisit(
 	stagePayload: StageHandoffPayload,
-	items: any[],
+	items: readonly PlanStageItem[] | PlanStageItem[],
 	patientId?: string | undefined,
 ): void {
 	if (typeof window !== "undefined") {
@@ -22,20 +24,27 @@ export function dispatchTakeStageToVisit(
 	}
 }
 
+export interface HandoffPatientLike {
+	id?: string | undefined;
+	fullName?: string | null | undefined;
+	name?: string | null | undefined;
+	[key: string]: unknown;
+}
+
 export function dispatchOpenLabOrderForStage(
 	stagePayload: StageHandoffPayload,
-	items: any[],
+	items: readonly PlanStageItem[] | PlanStageItem[],
 	treatmentPlanId?: string | undefined,
-	patient?: any | null | undefined,
+	patient?: HandoffPatientLike | null | undefined,
 ): void {
 	if (typeof window !== "undefined") {
 		const stageItems = items || stagePayload?.items || [];
 		const teeth = stageItems
-			.map((it: any) => it.toothNumber ?? it.toothCode)
-			.filter((t: any): t is number | string => t !== undefined && t !== null && t !== "");
+			.map((it: PlanStageItem) => it.toothNumber ?? it.toothCode)
+			.filter((t: unknown): t is number | string => t !== undefined && t !== null && t !== "");
 		const uniqueTeeth = Array.from(new Set(teeth));
 		const teethStr = uniqueTeeth.join(", ");
-		const totalPriceRub = stageItems.reduce((acc: number, it: any) => {
+		const totalPriceRub = stageItems.reduce((acc: number, it: PlanStageItem) => {
 			const price = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
 			const qty = Number(it.quantity || 1);
 			const discount = Number(it.discountRub ?? it.discount ?? 0);

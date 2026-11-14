@@ -19,10 +19,10 @@ export const PediatricParentMemoFooter: React.FC<PediatricParentMemoFooterProps>
 			<button
 				type="button"
 				onClick={onCopy}
-				className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95"
+				className="min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95"
 				data-testid="pediatric-memo-copy-btn"
 			>
-				<Copy className="h-4 w-4" />
+				<Copy className="h-4 w-4 shrink-0" />
 				<span>Скопировать текст</span>
 			</button>
 
@@ -30,28 +30,28 @@ export const PediatricParentMemoFooter: React.FC<PediatricParentMemoFooterProps>
 				<button
 					type="button"
 					onClick={onWhatsApp}
-					className="min-h-[44px] px-3 py-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95"
+					className="min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95"
 					data-testid="pediatric-memo-whatsapp-btn"
 				>
-					<MessageCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+					<MessageCircle className="h-4 w-4 shrink-0" />
 					<span>WhatsApp</span>
 				</button>
 				<button
 					type="button"
 					onClick={onTelegram}
-					className="min-h-[44px] px-3 py-2 rounded-xl border border-sky-500/40 bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/25 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95"
+					className="min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95"
 					data-testid="pediatric-memo-telegram-btn"
 				>
-					<Send className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+					<Send className="h-4 w-4 shrink-0" />
 					<span>Telegram</span>
 				</button>
 				<button
 					type="button"
 					onClick={onPrint}
-					className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition shadow-xs active:scale-95"
+					className="min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition shadow-xs active:scale-95"
 					data-testid="pediatric-memo-print-btn"
 				>
-					<Printer className="h-4 w-4" />
+					<Printer className="h-4 w-4 shrink-0" />
 					<span>Печать памятки</span>
 				</button>
 			</div>

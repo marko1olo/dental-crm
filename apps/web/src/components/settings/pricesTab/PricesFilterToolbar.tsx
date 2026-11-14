@@ -34,6 +34,7 @@ export function PricesFilterToolbar({
 	isNativeScannerDropzoneOpen,
 	onToggleNativeScannerDropzone,
 	onOpenServicePricelistModal,
+	onPrintPricelist,
 	onOpenNewServiceModal,
 }: PricesFilterToolbarProps) {
 	const isMenuOpen = isCodesMenuOpen ?? is804nCodesMenuOpen ?? false;
@@ -223,7 +224,7 @@ export function PricesFilterToolbar({
 					<button
 						type="button"
 						className="secondary-button shrink-0"
-						onClick={onOpenServicePricelistModal}
+						onClick={onPrintPricelist ?? onOpenServicePricelistModal}
 						data-testid="open-service-pricelist-modal-btn"
 						title="Печать официального прейскуранта клиники (А4)"
 					>

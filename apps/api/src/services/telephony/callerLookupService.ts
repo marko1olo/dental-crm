@@ -17,12 +17,13 @@
  * - Associated CRM Lead if unknown patient
  */
 
-import { and, desc, eq, gt, gte, ilike, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, ilike, lt, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
 	crmLeads,
 	patients,
+	treatmentPlanItemsNew,
 	treatmentPlans,
 	treatmentPlanStages,
 	users,
@@ -116,8 +117,7 @@ export class CallerLookupService {
 		};
 
 		const normalized = phone ? normalizePhoneNumber(phone) : null;
-		// biome-ignore lint/suspicious/noExplicitAny: SQL condition array
-		const searchConditions: any[] = [];
+		const searchConditions: SQL<unknown>[] = [];
 
 		if (patientId && UUID_REGEX.test(patientId)) {
 			searchConditions.push(eq(patients.id, patientId));
@@ -319,16 +319,71 @@ export class CallerLookupService {
 
 			if (activePlans.length > 0 && activePlans[0]) {
 				const plan = activePlans[0];
+
+				const stages = await db
+					.select()
+					.from(treatmentPlanStages)
+					.where(
+						and(
+							eq(treatmentPlanStages.organizationId, organizationId),
+							eq(treatmentPlanStages.planId, plan.id),
+						),
+					)
+					.orderBy(treatmentPlanStages.stageOrder);
+
+				let totalCostRub = Number(plan.totalPriceRub || plan.totalPrice || 0);
+
+				if (totalCostRub === 0) {
+					const items = await db
+						.select({
+							price: treatmentPlanItemsNew.price,
+							quantity: treatmentPlanItemsNew.quantity,
+							discount: treatmentPlanItemsNew.discount,
+						})
+						.from(treatmentPlanItemsNew)
+						.where(
+							and(
+								eq(treatmentPlanItemsNew.organizationId, organizationId),
+								eq(treatmentPlanItemsNew.planId, plan.id),
+							),
+						);
+
+					if (items.length > 0) {
+						totalCostRub = items.reduce((sum, it) => {
+							const price = Number(it.price || 0);
+							const qty = Number(it.quantity || 1);
+							const disc = Number(it.discount || 0);
+							return sum + Math.max(0, price * qty - disc);
+						}, 0);
+					}
+				}
+
+				const itemsCount = stages.length > 0 ? stages.length : 1;
+				const completedCount = stages.filter(
+					(s) => (s.completionPercentage ?? 0) >= 100 || Boolean(s.autoArchived),
+				).length;
+				const pendingCount = stages.length > 0 ? Math.max(0, stages.length - completedCount) : 1;
+				const progressPercent = stages.length > 0
+					? Math.round(
+							stages.reduce((acc, s) => acc + (s.completionPercentage ?? 0), 0) / stages.length,
+						)
+					: 0;
+
+				const nextStage = stages.find(
+					(s) => (s.completionPercentage ?? 0) < 100 && !s.autoArchived,
+				);
+				const nextService = nextStage?.stageName || stages[0]?.stageName || plan.title || null;
+
 				activeTreatmentPlan = {
 					hasActivePlan: true,
-					planTitle: plan.title || "План лечения",
-					totalCostRub: 0,
-					formattedTotalCost: "0 ₽",
-					itemsCount: 1,
-					completedCount: 0,
-					pendingCount: 1,
-					progressPercent: 0,
-					nextService: plan.title || null,
+					planTitle: plan.title || plan.name || "План лечения",
+					totalCostRub: Math.round(totalCostRub),
+					formattedTotalCost: `${Math.round(totalCostRub).toLocaleString("ru-RU")} ₽`,
+					itemsCount,
+					completedCount,
+					pendingCount,
+					progressPercent,
+					nextService,
 				};
 			}
 		} catch (planErr) {

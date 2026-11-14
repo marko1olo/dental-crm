@@ -107,6 +107,14 @@
 	margin: 0 !important;
 }
 
+.topbar .top-actions .primary-button.hidden,
+.topbar .top-actions .primary-button[data-hidden="true"],
+.topbar .top-actions #topbar-booking-action-btn.hidden,
+.topbar .top-actions #topbar-booking-action-btn[data-hidden="true"],
+.topbar .top-actions #topbar-booking-action-btn[style*="display: none"] {
+	display: none !important;
+}
+
 /* -------------------------------------------------------------------------
    4. COPILOT / CLINICAL AI ASSISTANT (✨ ДЕНТА) — CALM SECONDARY BUTTON
    Neutralized: no neon glow, no carnival mint background competing for focus.

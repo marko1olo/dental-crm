@@ -64,7 +64,6 @@ export async function cleanDemoShowcaseTables(tx: DbTx): Promise<void> {
 		"patient_communication_timelines",
 		"portal_otp_codes",
 		"tooth_state_history",
-		"patient_tooth_defects",
 		"clinical_tasks",
 		"patient_duplicate_decisions",
 		"crm_leak_detector_leads",

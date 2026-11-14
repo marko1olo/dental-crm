@@ -21,6 +21,7 @@ import { patients } from "../../patients.js";
 import { chairs } from "../../schedule.js";
 import { visits } from "../visitsSchema.js";
 import { treatmentPlans, treatmentPlanStages } from "./treatmentPlansTable.js";
+import { patientInvoices } from "../../billingModules/billingInvoicesSchema.js";
 
 /**
  * treatmentPlanItemsTable.ts — Позиции смет планов лечения, каталог услуг
@@ -107,6 +108,14 @@ export const treatmentItems = pgTable(
 		visitId: uuid("visit_id").references(() => visits.id, {
 			onDelete: "set null",
 		}),
+		treatmentPlanId: uuid("treatment_plan_id").references(
+			() => treatmentPlans.id,
+			{ onDelete: "set null" },
+		),
+		invoiceId: uuid("invoice_id").references(
+			() => patientInvoices.id,
+			{ onDelete: "set null" },
+		),
 		serviceId: uuid("service_id").references(() => serviceCatalogItems.id, {
 			onDelete: "restrict",
 		}),
@@ -155,6 +164,10 @@ export const treatmentItems = pgTable(
 		),
 		patientIdIdx: index("treatment_items_patient_id_idx").on(t.patientId),
 		visitIdIdx: index("treatment_items_visit_id_idx").on(t.visitId),
+		treatmentPlanIdIdx: index("treatment_items_treatment_plan_id_idx").on(
+			t.treatmentPlanId,
+		),
+		invoiceIdIdx: index("treatment_items_invoice_id_idx").on(t.invoiceId),
 		serviceIdIdx: index("treatment_items_service_id_idx").on(t.serviceId),
 		plannedDoctorUserIdIdx: index(
 			"treatment_items_planned_doctor_user_id_idx",

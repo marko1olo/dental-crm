@@ -63,7 +63,8 @@ th { background: #f8fafc; font-weight: 700; }
 		.then(() => {
 			showToast(`Счет ${inv.number} отправлен на печать`, "success");
 		})
-		.catch(() => {
+		.catch((printErr: unknown) => {
+			console.error("[handlePrintInvoice] Ошибка отправки счета на принтер:", printErr);
 			showToast("Ошибка отправки счета на принтер", "error");
 		});
 };
@@ -130,7 +131,8 @@ th { background: #f8fafc; font-weight: 700; }
 		.then(() => {
 			showToast(`Акт по счету ${inv.number} отправлен на печать`, "success");
 		})
-		.catch(() => {
+		.catch((printErr: unknown) => {
+			console.error("[handlePrintAct] Ошибка отправки акта на принтер:", printErr);
 			showToast("Ошибка отправки акта на принтер", "error");
 		});
 };

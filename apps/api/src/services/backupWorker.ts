@@ -710,14 +710,14 @@ export function startBackupDaemon(): void {
 		Math.max(0, firstRunDelayMs),
 	);
 	// unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
-	(firstRunTimeout as unknown as { unref?: () => void }).unref?.();
+	firstRunTimeout?.unref();
 
 	backupInterval = setInterval(() => {
 		void createEncryptedBackup().catch((err) => {
 			console.error("[BackupWorker] Uncaught error during scheduled backup cycle:", err);
 		});
 	}, backupIntervalMs());
-	(backupInterval as unknown as { unref?: () => void }).unref?.();
+	backupInterval?.unref();
 }
 
 export function stopBackupDaemon(): void {

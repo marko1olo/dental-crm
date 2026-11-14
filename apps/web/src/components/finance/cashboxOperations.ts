@@ -16,7 +16,7 @@
 
 export * from "./cashboxInnValidation.js";
 export { broadcastPatientBalanceChange } from "../../services/storage/index.js";
-export type { PaymentMethodTab } from "./modal/payment/paymentModalTypes.js";
+export type { PaymentMethodTab } from "./cashboxModules/types/cashboxTenderTypes.js";
 
 // Re-export all cashbox modules transparently to preserve 100% call-site compatibility
 export * from "./cashboxModules/index.js";

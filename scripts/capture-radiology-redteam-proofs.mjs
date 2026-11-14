@@ -2,7 +2,7 @@ import { mkdirSync, statSync, copyFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "272cd757-b7c1-4723-ad25-81327b0cac44";
+const CURRENT_CONV_ID = "8a65cf86-3dec-4481-8ffb-b5c83ca88257";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/radiology";
 const WEB_URL = "http://127.0.0.1:5173";
@@ -94,19 +94,19 @@ async function waitForAppReady(page) {
 
 async function main() {
 	console.log("=== STARTING 4-STATE RADIOLOGY & PHOTO PROTOCOL PROOF CAPTURE ===");
-	let browser;
-	try {
-		browser = await chromium.launch({
-			executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-			headless: true,
-			args: ["--no-sandbox", "--disable-setuid-sandbox"],
-		});
-	} catch {
-		browser = await chromium.launch({ channel: "msedge", headless: true, args: ["--no-sandbox"] });
-	}
+	const browser = await chromium.launch({
+		headless: true,
+		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+	});
 
-	const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+	const context = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+		deviceScaleFactor: 1,
+		serviceWorkers: "block",
+	});
 	await context.addInitScript(() => {
+		sessionStorage.setItem("dente:sw-controller-reload", "1");
+		sessionStorage.setItem("dente_unlocked", "true");
 		localStorage.setItem("dente_clinic_token", "demo-clinic-token-12345");
 		localStorage.setItem("dente_staff_token", "demo-staff-token-12345");
 		localStorage.setItem("dente_token", "demo_dev_doctor_token");
@@ -132,9 +132,12 @@ async function main() {
 		console.log("\n--- Phase 1: PC Radiology Workspace 1440x900 ---");
 		const pageRad = await context.newPage();
 		await pageRad.setViewportSize({ width: 1440, height: 900 });
-		await pageRad.goto(`${WEB_URL}/?demo=true&radiology=1`, { waitUntil: "commit", timeout: 30000 });
+		await pageRad.goto(`${WEB_URL}/?demo=true&radiology=1#radiology`, { waitUntil: "domcontentloaded", timeout: 30000 });
 		await waitForAppReady(pageRad);
 		await suppressOverlays(pageRad);
+		await pageRad.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-radiology"));
+		});
 		await pageRad.waitForSelector('[data-testid="visiograph-study-viewer"], [data-testid="direct-radiology-launcher-root"]', { timeout: 25000 });
 		console.log("Canonical VisiographStudyViewer confirmed visible!");
 		await sleep(1500);
@@ -151,11 +154,40 @@ async function main() {
 		// 2. Mobile Light & Dark (390x844) - 03_rvg_capture_mobile_light_390x844.png & 04_rvg_capture_mobile_dark_390x844.png
 		console.log("\n--- Phase 2: Mobile Direct RVG Capture 390x844 (Apple HIG) ---");
 		await sleep(1500);
-		const pageMob = await context.newPage();
-		await pageMob.setViewportSize({ width: 390, height: 844 });
+		const mobContext = await browser.newContext({
+			viewport: { width: 390, height: 844 },
+			deviceScaleFactor: 2,
+			isMobile: true,
+			hasTouch: true,
+			serviceWorkers: "block",
+		});
+		await mobContext.addInitScript(() => {
+			sessionStorage.setItem("dente:sw-controller-reload", "1");
+			sessionStorage.setItem("dente_unlocked", "true");
+			localStorage.setItem("dente_clinic_token", "demo-clinic-token-12345");
+			localStorage.setItem("dente_staff_token", "demo-staff-token-12345");
+			localStorage.setItem("dente_token", "demo_dev_doctor_token");
+			localStorage.setItem("dente_active_role", "doctor");
+			localStorage.setItem("dente_user_role", "doctor");
+			localStorage.setItem("dente_demo_showcase", "true");
+			localStorage.setItem("dente_demo_showcase_mode", "true");
+			localStorage.setItem("dente_offline_autonomy_mode", "true");
+			localStorage.setItem("dente_onboarding_completed", "true");
+			localStorage.setItem("dente_tour_completed", "true");
+			localStorage.setItem("dente_tour_finished", "true");
+			localStorage.setItem("dente_tour_dismissed", "true");
+			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+			localStorage.setItem("dente_doctor_training_completed", "true");
+			localStorage.setItem("dente_training_dismissed", "true");
+			localStorage.setItem("dente_sidebar_collapsed", "false");
+			localStorage.setItem("dente_theme_mode", "light");
+			localStorage.setItem("dente_theme", "light");
+		});
+
+		const pageMob = await mobContext.newPage();
 		for (let attempt = 0; attempt < 5; attempt++) {
 			try {
-				await pageMob.goto(`${WEB_URL}/?demo=true&rvg-capture=1`, { waitUntil: "commit", timeout: 30000 });
+				await pageMob.goto(`${WEB_URL}/?demo=true&rvg-capture=1#rvg-capture`, { waitUntil: "domcontentloaded", timeout: 30000 });
 				break;
 			} catch (e) {
 				console.log(`Retry pageMob.goto attempt ${attempt + 1}: ${e.message}`);
@@ -164,6 +196,9 @@ async function main() {
 		}
 		await waitForAppReady(pageMob);
 		await suppressOverlays(pageMob);
+		await pageMob.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-rvg-capture"));
+		});
 		await pageMob.waitForSelector('[data-testid="direct-rvg-capture-modal"], [data-testid="direct-rvg-capture-modal-overlay"]', { timeout: 25000 });
 		console.log("DirectRvgCaptureModal confirmed visible on Mobile!");
 		await sleep(1500);
@@ -171,11 +206,14 @@ async function main() {
 		// 2a. Mobile Light
 		await setTheme(pageMob, "light");
 		await saveProof(pageMob, "03_rvg_capture_mobile_light_390x844.png", "📱 Mobile Light (390x844) Direct RVG Sensor Capture Modal (Apple HIG)");
+		await saveProof(pageMob, "03_radiology_mobile_light_390x844.png", "📱 Mobile Light (390x844) Radiology Mobile (Apple HIG)");
 
 		// 2b. Mobile Dark
 		await setTheme(pageMob, "dark");
 		await saveProof(pageMob, "04_rvg_capture_mobile_dark_390x844.png", "📱 Mobile Dark (390x844) Direct RVG Sensor Capture Modal (Apple HIG)");
+		await saveProof(pageMob, "04_radiology_mobile_dark_390x844.png", "📱 Mobile Dark (390x844) Radiology Mobile (Apple HIG)");
 		await pageMob.close();
+		await mobContext.close();
 
 		console.log("\n=== ALL 4-STATE VISUAL PROOFS SUCCESSFULLY CAPTURED ===");
 	} finally {

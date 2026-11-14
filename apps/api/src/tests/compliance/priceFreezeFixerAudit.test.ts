@@ -63,6 +63,8 @@ describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
 				nameRu: "Прицельный снимок визиографа",
 				toothNumber: 36,
 				quantity: 1,
+				surfaces: [] as string[],
+				resolutionPolicy: "LOCK_ORIGINAL_PRICE" as const,
 			},
 		];
 
@@ -118,6 +120,8 @@ describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
 				nameRu: "Коронка диоксид циркония",
 				toothNumber: 36,
 				quantity: 1,
+				surfaces: [] as string[],
+				resolutionPolicy: "LOCK_ORIGINAL_PRICE" as const,
 			},
 		];
 

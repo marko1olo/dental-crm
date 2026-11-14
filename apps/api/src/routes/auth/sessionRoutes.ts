@@ -74,8 +74,12 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 				parseDemoStaffPayload(staffToken) ??
 				(staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null);
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let activeUser: any = null;
+			interface ActiveUserSummary {
+				id: string;
+				fullName: string;
+				role: string;
+			}
+			let activeUser: ActiveUserSummary | null = null;
 			if (staffPayload?.userId && clinicPayload?.organizationId) {
 				const [user] = await db
 					.select({ id: users.id, fullName: users.fullName, role: users.role })

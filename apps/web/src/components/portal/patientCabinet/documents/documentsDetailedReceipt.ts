@@ -7,11 +7,15 @@ export function generateDetailedReceiptHtml(
 	invoice: PatientInvoiceItem,
 	data: PatientPersonalCabinetData,
 ): string {
-	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicName = data.clinicInfo?.legalName || data.clinicInfo?.nameRu || "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicInn = data.clinicInfo?.inn || "7841098765";
+	const kktZn = (data.clinicInfo as { kktZn?: string })?.kktZn || "05481900010924";
+	const fnNumber = (data.clinicInfo as { fnNumber?: string })?.fnNumber || "9960440301984210";
+	const license = data.clinicInfo?.licenseNumber || "ЛО-78-01-011842";
 	const receiptNum = invoice.fiscalReceiptNumber || `ФД-${invoice.invoiceNumber}`;
 	const formattedDate = formatRussianDateIso(invoice.paidAtIso?.slice(0, 10) || invoice.issueDateIso);
 	const qrCodeSvg = generateQrCodeSvg(
-		`https://receipt.nalog.ru/v1/check/${invoice.id}?t=${invoice.paidAtIso || invoice.issueDateIso}&s=${invoice.totalAmountRub}&fn=9960440301&i=98241&fp=319841209&n=1`,
+		`https://receipt.nalog.ru/v1/check/${invoice.id}?t=${invoice.paidAtIso || invoice.issueDateIso}&s=${invoice.totalAmountRub}&fn=${fnNumber.slice(0, 10)}&i=98241&fp=319841209&n=1`,
 		{ size: 140 },
 	);
 
@@ -48,7 +52,7 @@ th { background: #f1f5f9; padding: 8px; text-align: left; font-weight: 700; bord
 <div class="receipt-container">
   <div class="header">
     <h2 style="margin:0 0 4px 0; font-size:16px; font-weight:800; text-transform:uppercase;">${clinicName}</h2>
-    <p style="margin:2px 0; font-size:12px; color:#64748b;">ИНН: 7841098765 • СНО: УСН (Доходы) • Лицензия: ЛО-78-01-011842</p>
+    <p style="margin:2px 0; font-size:12px; color:#64748b;">ИНН: ${clinicInn} • СНО: УСН (Доходы) • Лицензия: ${license}</p>
     <div style="margin-top: 8px; font-size: 14px; font-weight: 800; color: #0d9488;">КАССОВЫЙ ЧЕК / ПРИХОД</div>
   </div>
   <div class="meta-grid">
@@ -69,7 +73,7 @@ th { background: #f1f5f9; padding: 8px; text-align: left; font-weight: 700; bord
   </div>
   <div class="footer">
     <div>
-      <div>ЗН ККТ: 05481900010924 • ФН: 9960440301984210</div>
+      <div>ЗН ККТ: ${kktZn} • ФН: ${fnNumber}</div>
       <div>ФД: ${receiptNum.replace(/\D/g, "") || "98241"} • ФПД: 3198412095</div>
       <div>Сайт ФНС: nalog.gov.ru</div>
     </div>

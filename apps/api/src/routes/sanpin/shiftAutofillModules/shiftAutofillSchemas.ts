@@ -34,12 +34,12 @@ export const autofillShiftSchema = z
 		autoclaveId: z.string().optional(),
 		psoRecords: z.array(psoBatchItemSchema).optional(),
 		sterilizationRecords: z.array(sterilizationBatchItemSchema).optional(),
-		form257: z.array(z.any()).optional(),
+		form257: z.array(z.record(z.string(), z.unknown())).optional(),
 		bactericidalDurationMinutes: z.number().int().positive().optional(),
 		operatingMode: z.string().optional(),
 		temperatures: z.record(z.string(), z.number()).optional(),
 		humidities: z.record(z.string(), z.number()).optional(),
-		batchDays: z.array(z.any()).optional(),
+		batchDays: z.array(z.record(z.string(), z.unknown())).optional(),
 	})
 	.passthrough();
 
@@ -49,7 +49,7 @@ export const autofillMonthSchema = z
 		month: z.number().int().min(1).max(12).optional(),
 		nurseFullName: z.string().optional(),
 		operatorFullName: z.string().optional(),
-		batchDays: z.array(z.any()).optional(),
+		batchDays: z.array(z.record(z.string(), z.unknown())).optional(),
 	})
 	.passthrough();
 

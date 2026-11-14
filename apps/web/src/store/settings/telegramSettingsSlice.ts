@@ -49,11 +49,14 @@ export const initialTelegramSettingsSlice: TelegramSettingsState = {
 	telegramSettingsSaveError: null,
 };
 
-export function createTelegramSettingsSlice(set: any): TelegramSettingsActions {
-	const actions: Record<string, any> = {};
-	for (const key of Object.keys(initialTelegramSettingsSlice)) {
+export function createTelegramSettingsSlice(
+	set: (fn: (s: TelegramSettingsState) => Partial<TelegramSettingsState>) => void,
+): TelegramSettingsActions {
+	const actions: Record<string, unknown> = {};
+	for (const key of Object.keys(initialTelegramSettingsSlice) as Array<keyof TelegramSettingsState>) {
 		const actionName = `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-		actions[actionName] = (val: any) => set((s: any) => ({ [key]: resolveUpdater(val, s[key]) }));
+		actions[actionName] = (val: unknown) =>
+			set((s) => ({ [key]: resolveUpdater(val as never, s[key]) }));
 	}
-	return actions as TelegramSettingsActions;
+	return actions as unknown as TelegramSettingsActions;
 }

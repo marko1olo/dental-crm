@@ -20,10 +20,10 @@ export const FamilyWalletModalHeader: React.FC<FamilyWalletModalHeaderProps> =
 		patientName,
 		onClose,
 	}) {
-		const title = familyData?.name?.trim() || "Семейный кошелек";
+		const title = familyData?.name?.trim() || "Семейный депозит";
 		const subtitle = patientName
 			? `Пациент: ${patientName}`
-			: "Общий семейный счет и баланс родственников";
+			: "Общий семейный депозит и баланс родственников";
 
 		return (
 			<div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] gap-3 shrink-0">

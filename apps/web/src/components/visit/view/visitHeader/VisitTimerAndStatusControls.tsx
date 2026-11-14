@@ -7,7 +7,7 @@ import { usePatientStore } from "../../../../store/patientStore";
 import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
 import type { SoftPeerPresence } from "../../../../hooks/useSoftPresence";
-import type { ShiftDayQueue } from "./types";
+import type { ShiftDayQueue, AppointmentLike, DoctorLike } from "./types";
 
 export interface VisitShiftQueueControlsProps {
 	shiftDayQueue: ShiftDayQueue;
@@ -30,7 +30,7 @@ export function VisitShiftQueueControls({
 		<div
 			className="!hidden xl:!inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 text-xs font-semibold select-none relative"
 			data-testid="visit-shift-queue-tabs"
-			ref={queueLobbyDropdownRef as any}
+			ref={queueLobbyDropdownRef}
 			role="group"
 			aria-label="Оперативная очередь смены врача"
 		>
@@ -146,10 +146,8 @@ export function VisitShiftQueueControls({
 }
 
 export interface VisitTimerAndPresenceControlsProps {
-	// biome-ignore lint/suspicious/noExplicitAny: appointment
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: doctor
-	activeDoctor: any;
+	activeAppointment: AppointmentLike | null | undefined;
+	activeDoctor: DoctorLike | null | undefined;
 	activePeers?: readonly SoftPeerPresence[] | undefined;
 	summaryText?: string | null | undefined;
 }
@@ -166,11 +164,18 @@ export function VisitTimerAndPresenceControls({
 	const appointmentStartTime =
 		activeAppointment?.startTime ||
 		activeAppointment?.startAt ||
+		activeAppointment?.startsAt ||
 		activeAppointment?.createdAt ||
 		null;
 
-	const doctorId = activeDoctor?.id || activeDoctor?.userId || "doc-1";
-	const doctorName = activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач";
+	const doctorId =
+		(typeof activeDoctor?.id === "string" && activeDoctor.id) ||
+		(typeof activeDoctor?.userId === "string" && activeDoctor.userId) ||
+		"doc-1";
+	const doctorName =
+		(typeof activeDoctor?.fullName === "string" && activeDoctor.fullName) ||
+		(typeof activeDoctor?.name === "string" && activeDoctor.name) ||
+		"Лечащий врач";
 
 	return (
 		<>

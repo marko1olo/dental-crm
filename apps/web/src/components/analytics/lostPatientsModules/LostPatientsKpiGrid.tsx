@@ -2,6 +2,7 @@ import React from "react";
 import { ShieldCheck, TrendingUp, Users } from "lucide-react";
 import { formatKopecksToRub } from "../analyticsWidgetData.js";
 import type { LostPatientsKpis } from "./lostPatientTypes";
+import "../styles/analyticsStudio.css";
 
 interface LostPatientsKpiGridProps {
 	readonly kpis: LostPatientsKpis;
@@ -34,13 +35,13 @@ export function LostPatientsKpiGrid({ kpis }: LostPatientsKpiGridProps) {
 						Recall 6м (Санация)
 					</span>
 					<span
-						className={`px-2 py-0.5 rounded text-xs font-bold ${
+						className={
 							kpis.sanRecall6m >= 65
-								? "bg-emerald-500/10 text-[var(--ok-fg)]"
+								? "studio-badge-norm-optimal"
 								: kpis.sanRecall6m > 0
-									? "bg-amber-500/10 text-[var(--warn-fg)]"
-									: "bg-[var(--line)] text-[var(--muted)]"
-						}`}
+									? "studio-badge-norm-reserve"
+									: "px-2 py-0.5 rounded text-xs font-bold bg-[var(--line)] text-[var(--muted)]"
+						}
 					>
 						{kpis.sanRecall6m >= 65 ? "Норма" : kpis.sanRecall6m > 0 ? "Внимание" : "Нет данных"}
 					</span>
@@ -57,13 +58,13 @@ export function LostPatientsKpiGrid({ kpis }: LostPatientsKpiGridProps) {
 						Recall 12м (Импланты)
 					</span>
 					<span
-						className={`px-2 py-0.5 rounded text-xs font-bold ${
+						className={
 							kpis.implRecall12m >= 60
-								? "bg-emerald-500/10 text-[var(--ok-fg)]"
+								? "studio-badge-norm-optimal"
 								: kpis.implRecall12m > 0
-									? "bg-amber-500/10 text-[var(--warn-fg)]"
-									: "bg-[var(--line)] text-[var(--muted)]"
-						}`}
+									? "studio-badge-norm-reserve"
+									: "px-2 py-0.5 rounded text-xs font-bold bg-[var(--line)] text-[var(--muted)]"
+						}
 					>
 						{kpis.implRecall12m >= 60 ? "Норма" : kpis.implRecall12m > 0 ? "Внимание" : "Нет данных"}
 					</span>

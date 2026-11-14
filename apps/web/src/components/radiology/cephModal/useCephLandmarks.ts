@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { SoundFeedbackService } from "../../../services/audio/SoundFeedbackService";
-import { globalDentalVoiceEngine } from "../../../services/voice";
+import { UnifiedAudioClient, parseDentalVoiceSpeech } from "../../../services/voice";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
 import {
 	loadLatestCephalometricStudy,
@@ -229,28 +229,44 @@ export function useCephLandmarks({
 
 	useEffect(() => {
 		if (!isOpen) return;
-		const unsub = globalDentalVoiceEngine.addListener({
-			onListeningChange: (isL) => {
+		const handleIntent = (intentText: string) => {
+			const intent = parseDentalVoiceSpeech(intentText);
+			if (intent.cephLandmarks && intent.cephLandmarks.length > 0) {
+				const firstL = intent.cephLandmarks[0];
+				if (firstL) {
+					const matchedDef = CEPHALOMETRIC_LANDMARKS.find((l) => l.key.toLowerCase() === firstL.landmarkKey.toLowerCase());
+					if (matchedDef) {
+						if (firstL.action === "clear") {
+							handleRemoveLandmark(matchedDef.key);
+							showToast(`Голос: Сброшена ${matchedDef.nameRu}`, "info");
+						} else {
+							setActiveTargetKey(matchedDef.key);
+							void SoundFeedbackService.getInstance().playActionSuccess();
+							showToast(`Голос: Выбран ориентир ${matchedDef.nameRu}`, "success");
+						}
+					}
+				}
+			}
+		};
+
+		const client = UnifiedAudioClient.getInstance();
+		const unsub = client.subscribe({
+			onStateChange: (state) => {
+				const isL = state === "listening" || state === "connecting";
 				setIsVoiceListening(isL);
 				if (!isL) setVoiceInterimText("");
 			},
-			onTranscriptChange: (interim, final) => setVoiceInterimText(interim || final || ""),
-			onIntentParsed: (intent) => {
-				if (intent.cephLandmarks && intent.cephLandmarks.length > 0) {
-					const firstL = intent.cephLandmarks[0];
-					if (firstL) {
-						const matchedDef = CEPHALOMETRIC_LANDMARKS.find((l) => l.key.toLowerCase() === firstL.landmarkKey.toLowerCase());
-						if (matchedDef) {
-							if (firstL.action === "clear") {
-								handleRemoveLandmark(matchedDef.key);
-								showToast(`Голос: Сброшена ${matchedDef.nameRu}`, "info");
-							} else {
-								setActiveTargetKey(matchedDef.key);
-								void SoundFeedbackService.getInstance().playActionSuccess();
-								showToast(`Голос: Выбран ориентир ${matchedDef.nameRu}`, "success");
-							}
-						}
-					}
+			onInterimText: (interim) => {
+				setVoiceInterimText(interim || "");
+				if (interim && interim.trim()) {
+					handleIntent(interim.trim());
+				}
+			},
+			onFinalText: (_final, accumulated) => {
+				const full = (accumulated || _final || "").trim();
+				setVoiceInterimText(full);
+				if (full) {
+					handleIntent(full);
 				}
 			},
 		});
@@ -433,11 +449,15 @@ export function useCephLandmarks({
 	};
 
 	const toggleVoiceListening = useCallback(async () => {
+		const client = UnifiedAudioClient.getInstance();
 		if (isVoiceListening) {
-			globalDentalVoiceEngine.stop();
+			await client.stop();
 		} else {
-			const started = await globalDentalVoiceEngine.start();
-			if (!started) showToast("Не удалось запустить микрофон", "warning");
+			try {
+				await client.start();
+			} catch {
+				showToast("Не удалось запустить микрофон", "warning");
+			}
 		}
 	}, [isVoiceListening]);
 

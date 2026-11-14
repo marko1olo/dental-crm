@@ -1,44 +1,55 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { organizations, warrantyCertificates } from "../../db/schema.js";
 import { requireClinicalReadContext } from "../../accessGuard.js";
+import { isValidUuid } from "@dental/shared";
 
 export function registerReadCertificateRoutes(app: FastifyInstance) {
+	const handleGetPatientCertificates = async (
+		request: FastifyRequest<{ Params: { patientId: string } }>,
+		reply: FastifyReply,
+	) => {
+		const context = await requireClinicalReadContext(
+			request,
+			reply,
+			"warranty certificates read",
+		);
+		if (!context) return;
+
+		const patientId = (request.params as { patientId?: string }).patientId?.trim();
+		if (!patientId || !isValidUuid(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор пациента должен быть валидным UUID",
+			});
+		}
+
+		const list = await db
+			.select()
+			.from(warrantyCertificates)
+			.where(
+				and(
+					eq(warrantyCertificates.organizationId, context.organizationId),
+					eq(warrantyCertificates.patientId, patientId),
+				),
+			)
+			.orderBy(desc(warrantyCertificates.issuedAt));
+
+		return reply.send({
+			success: true,
+			certificates: list,
+		});
+	};
+
 	app.get<{ Params: { patientId: string } }>(
 		"/api/warranty/certificates/:patientId",
-		async (request, reply) => {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"warranty certificates read",
-			);
-			if (!context) return;
+		handleGetPatientCertificates,
+	);
 
-			const patientId = request.params.patientId;
-			if (!patientId) {
-				return reply.code(400).send({
-					error: "MissingPatientId",
-					message: "Укажите ID пациента",
-				});
-			}
-
-			const list = await db
-				.select()
-				.from(warrantyCertificates)
-				.where(
-					and(
-						eq(warrantyCertificates.organizationId, context.organizationId),
-						eq(warrantyCertificates.patientId, patientId),
-					),
-				)
-				.orderBy(desc(warrantyCertificates.issuedAt));
-
-			return reply.send({
-				success: true,
-				certificates: list,
-			});
-		},
+	app.get<{ Params: { patientId: string } }>(
+		"/api/warranty/patient/:patientId",
+		handleGetPatientCertificates,
 	);
 
 	app.get<{ Params: { certificateNumber: string } }>(

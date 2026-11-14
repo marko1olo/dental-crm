@@ -1,16 +1,27 @@
 import { showToast } from "../../GlobalToast";
 import { hardwarePrinter } from "../../../services/hardware/HardwarePrinter.js";
-import { downloadFnsBatchNoMedoplXmlFile, downloadFnsBatchTaxXmlFile, downloadFnsNoMedoplXmlFile, downloadFnsTaxXmlFile, renderOfficialTaxCertificateKnd1151156Html, renderTaxDeductionBatchCertificateHtml, type TaxDeductionCertificateParams } from "../taxDeductionEngine";
+import {
+	downloadFnsBatchNoMedoplXmlFile,
+	downloadFnsBatchTaxXmlFile,
+	downloadFnsNoMedoplXmlFile,
+	downloadFnsTaxXmlFile,
+	renderOfficialTaxCertificateKnd1151156Html,
+	renderTaxDeductionBatchCertificateHtml,
+	type FamilyTaxDeductionBatchResult,
+	type TaxDeductionCertificateParams,
+	type TaxDeductionPaymentItem,
+	type TaxDeductionRelationship,
+} from "../taxDeductionEngine";
 
 export interface ExportActionParams {
 	readonly getCertificateParams: () => TaxDeductionCertificateParams;
 	readonly patientId?: string | undefined;
 	readonly selectedYear: number;
 	readonly payerInn: string;
-	readonly yearPayments: readonly any[];
+	readonly yearPayments: readonly TaxDeductionPaymentItem[];
 	readonly totalRub: number;
-	readonly appLogic: any;
-	readonly familyBatchResult: any;
+	readonly appLogic: { readonly auth?: { readonly denteClinicalMutationHeaders?: Record<string, string> } } | null | undefined;
+	readonly familyBatchResult: FamilyTaxDeductionBatchResult;
 	readonly xmlRepresentation: { fileName: string; xmlContent: string };
 	readonly setIsCopiedXml: (v: boolean) => void;
 	readonly payerFullName?: string | undefined;
@@ -41,7 +52,8 @@ export function useTaxDeductionExportActions(p: ExportActionParams) {
 		}
 		try {
 			await hardwarePrinter.printHtmlWithPopupFallback(html, { title: `Справка для налоговой (вычет 13%) за ${selectedYear} г.`, downloadFilename: `tax_certificate_knd1151156_${selectedYear}.html` });
-		} catch {
+		} catch (printErr: unknown) {
+			console.warn("[useTaxDeductionExportActions] Печать через hardwarePrinter не удалась, фоллбек на окно браузера:", printErr);
 			const win = window.open("", "_blank");
 			if (win) { win.document.write(html); win.document.close(); win.focus(); setTimeout(() => win.print(), 300); }
 		}
@@ -55,7 +67,13 @@ export function useTaxDeductionExportActions(p: ExportActionParams) {
 	const handlePrintBatch = async () => {
 		if (!familyBatchResult.totalPaymentsCount) { showToast("Нет подтвержденных оплат для печати пакета", "warning"); return; }
 		const html = renderTaxDeductionBatchCertificateHtml(familyBatchResult.batch);
-		try { await hardwarePrinter.printHtmlWithPopupFallback(html, { title: `Пакет справок для налогового вычета (${familyBatchResult.certificatesCount} чел.)`, downloadFilename: `tax_batch_certificates_${familyBatchResult.batch.taxYear}.html` }); } catch { const win = window.open("", "_blank"); if (win) { win.document.write(html); win.document.close(); win.focus(); setTimeout(() => win.print(), 300); } }
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, { title: `Пакет справок для налогового вычета (${familyBatchResult.certificatesCount} чел.)`, downloadFilename: `tax_batch_certificates_${familyBatchResult.batch.taxYear}.html` });
+		} catch (batchPrintErr: unknown) {
+			console.warn("[useTaxDeductionExportActions] Печать пакета через hardwarePrinter не удалась, фоллбек на окно браузера:", batchPrintErr);
+			const win = window.open("", "_blank");
+			if (win) { win.document.write(html); win.document.close(); win.focus(); setTimeout(() => win.print(), 300); }
+		}
 	};
 
 	const handlePrintBlank = async () => {
@@ -66,7 +84,7 @@ export function useTaxDeductionExportActions(p: ExportActionParams) {
 				fullName: p.payerFullName || "________________________________________",
 				inn: payerInn || "____________",
 				birthDate: p.payerBirthDate || "«___» _________ _____ г.",
-				relationship: (p.payerRelationship as any) || "patient",
+				relationship: (p.payerRelationship as TaxDeductionRelationship) || "patient",
 			},
 			patient: {
 				fullName: p.patientName || "________________________________________",
@@ -80,7 +98,8 @@ export function useTaxDeductionExportActions(p: ExportActionParams) {
 				title: "Бланк справки для налоговой",
 				downloadFilename: "blank_tax_certificate.html",
 			});
-		} catch {
+		} catch (blankPrintErr: unknown) {
+			console.warn("[useTaxDeductionExportActions] Печать бланка через hardwarePrinter не удалась, фоллбек на окно браузера:", blankPrintErr);
 			const win = window.open("", "_blank");
 			if (win) {
 				win.document.write(html);

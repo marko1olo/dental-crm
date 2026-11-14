@@ -273,6 +273,39 @@ function buildSystemPrompt(): string {
 ${DEFAULT_HYGIENE_GUIDELINES}`;
 }
 
+interface RawPersonalizedPlanPayload {
+	patientFriendlyExplanation?: unknown;
+	patientHygieneAdvice?: unknown;
+	scenarios?: unknown;
+}
+
+function isClinicalScenario(value: unknown): value is ClinicalScenarioPlan {
+	if (typeof value !== "object" || value === null) return false;
+	const candidate = value as Record<string, unknown>;
+	return (
+		typeof candidate["title"] === "string" &&
+		typeof candidate["description"] === "string" &&
+		typeof candidate["materials"] === "string" &&
+		typeof candidate["estimatedTotalRub"] === "number" &&
+		typeof candidate["warrantyYears"] === "number" &&
+		Array.isArray(candidate["advantages"])
+	);
+}
+
+function isClinicalScenariosGroup(value: unknown): value is {
+	readonly economy: ClinicalScenarioPlan;
+	readonly optimum: ClinicalScenarioPlan;
+	readonly premium: ClinicalScenarioPlan;
+} {
+	if (typeof value !== "object" || value === null) return false;
+	const candidate = value as Record<string, unknown>;
+	return (
+		isClinicalScenario(candidate["economy"]) &&
+		isClinicalScenario(candidate["optimum"]) &&
+		isClinicalScenario(candidate["premium"])
+	);
+}
+
 async function callOpenAiCompatiblePlanPersonalize(input: {
 	config: AIPlanNeuralConfig;
 	payload: TreatmentPlanPayload;
@@ -320,41 +353,61 @@ ${input.payload.plannedStages.map((s) => `  * ${s.stageName}: ${s.plannedService
 		numberFromEnv("DENTAL_SPEECH_POLISH_TIMEOUT_MS", 45_000),
 	);
 
-	const data = await response.json().catch(() => ({}));
+	const rawData: unknown = await response.json().catch(() => ({}));
 	if (!response.ok) {
+		const errorResponse =
+			typeof rawData === "object" && rawData !== null
+				? (rawData as OpenAiErrorResponse)
+				: undefined;
 		throw providerHttpError(
 			response.status,
 			response.statusText,
-			(data as OpenAiErrorResponse).error?.message,
+			errorResponse?.error?.message,
 		);
 	}
 
-	const content = (data as OpenAiCompletionResponse).choices?.[0]?.message
-		?.content;
+	const completionResponse =
+		typeof rawData === "object" && rawData !== null
+			? (rawData as OpenAiCompletionResponse)
+			: undefined;
+	const content = completionResponse?.choices?.[0]?.message?.content;
 	if (typeof content !== "string") {
 		throw new Error("ИИ-модель вернула неожиданный ответ.");
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let parsed: any;
+	let parsedUnknown: unknown;
 	try {
-		parsed = JSON.parse(content.trim());
+		parsedUnknown = JSON.parse(content.trim());
 	} catch {
 		const match = content.match(/\{[\s\S]*\}/);
 		if (!match?.[0]) {
 			throw new Error("ИИ-модель вернула ответ не в формате JSON.");
 		}
-		parsed = JSON.parse(match[0]);
+		parsedUnknown = JSON.parse(match[0]);
 	}
 
+	const parsed =
+		typeof parsedUnknown === "object" && parsedUnknown !== null
+			? (parsedUnknown as RawPersonalizedPlanPayload)
+			: {};
+
+	const explanation =
+		typeof parsed.patientFriendlyExplanation === "string"
+			? parsed.patientFriendlyExplanation.trim()
+			: "";
+	const hygieneAdvice =
+		typeof parsed.patientHygieneAdvice === "string"
+			? parsed.patientHygieneAdvice.trim()
+			: "";
+
+	const scenarios = isClinicalScenariosGroup(parsed.scenarios)
+		? parsed.scenarios
+		: buildDeterministicClinicalScenarios(input.payload.estimatedTotalRub);
+
 	return {
-		patientFriendlyExplanation: String(
-			parsed.patientFriendlyExplanation ?? "",
-		).trim(),
-		patientHygieneAdvice: String(parsed.patientHygieneAdvice ?? "").trim(),
-		scenarios: parsed.scenarios && typeof parsed.scenarios === "object"
-			? parsed.scenarios
-			: buildDeterministicClinicalScenarios(input.payload.estimatedTotalRub),
+		patientFriendlyExplanation: explanation,
+		patientHygieneAdvice: hygieneAdvice,
+		scenarios,
 	};
 }
 

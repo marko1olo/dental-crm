@@ -340,23 +340,26 @@ test("ClinicalQuestTourEngine — Interactive Guided Game Tour Verification", as
 		}
 	});
 
-	await t.test("9. Selector wiring: PaymentCapture and FinanceToolbar have verified tour targets", () => {
-		const paymentCapturePath = path.resolve(__dirname, "../PaymentCapture.tsx");
-		const paymentContent = fs.readFileSync(paymentCapturePath, "utf8");
+	await t.test("9. Selector wiring: VisitBillingActionsFooter, SidebarNavList and FinanceToolbar have verified tour targets", () => {
+		const billingFooterPath = path.resolve(__dirname, "../components/visit/billing/VisitBillingActionsFooter.tsx");
+		const billingContent = fs.readFileSync(billingFooterPath, "utf8");
 		assert.ok(
-			paymentContent.includes('data-tour="cashier-pay"'),
-			"PaymentCapture submit button must have data-tour='cashier-pay'",
+			billingContent.includes('data-tour="cashier-pay"'),
+			"VisitBillingActionsFooter submit button must have data-tour='cashier-pay'",
 		);
 
-		const financeToolbarPath = path.resolve(__dirname, "../components/finance/FinanceToolbar.tsx");
-		const financeContent = fs.readFileSync(financeToolbarPath, "utf8");
+		const sidebarNavPath = path.resolve(__dirname, "../workspaceShellModules/SidebarNavList.tsx");
+		const sidebarContent = fs.readFileSync(sidebarNavPath, "utf8");
 		assert.ok(
-			financeContent.includes('data-tour="fast-cashier"'),
-			"FinanceToolbar cashbox button must have data-tour='fast-cashier'",
+			sidebarContent.includes('fast-cashier'),
+			"SidebarNavList cashbox item must have fast-cashier tour selector",
 		);
+
+		const financeActionsPath = path.resolve(__dirname, "../components/finance/toolbar/FinanceToolbarActions.tsx");
+		const financeActionsContent = fs.readFileSync(financeActionsPath, "utf8");
 		assert.ok(
-			financeContent.includes('data-tour="cashier-pay"'),
-			"FinanceToolbar pay debt button must have data-tour='cashier-pay'",
+			financeActionsContent.includes('data-tour="cashier-pay"'),
+			"FinanceToolbarActions pay debt button must have data-tour='cashier-pay'",
 		);
 	});
 

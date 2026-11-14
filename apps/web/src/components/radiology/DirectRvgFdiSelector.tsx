@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, User, Baby } from "lucide-react";
+import { Grid, User, Baby } from "lucide-react";
 import { ADULT_FDI_TEETH, FDI_TOOTH_NAMES } from "./radiologyMath";
 
 export const CHILD_FDI_TEETH = {
@@ -45,7 +45,7 @@ export const DirectRvgFdiSelector: React.FC<DirectRvgFdiSelectorProps> = ({
 			{/* Section Header */}
 			<div className="rvg-section-header">
 				<span className="rvg-section-header-title">
-					<Sparkles className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" />
+					<Grid className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" />
 					Зубная формула ({activeCategory === "adult" ? "FDI 11–48" : "FDI 51–85"})
 				</span>
 				<span className="font-mono text-xs text-teal-600 dark:text-teal-400 font-bold px-1.5 py-0.5 rounded bg-teal-500/10 border border-teal-500/20">

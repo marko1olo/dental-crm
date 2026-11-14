@@ -96,12 +96,3 @@ export {
 	transcribeSpeechChunk,
 	transcribeWithProvider,
 } from "./transcriptionEngine.js";
-
-export {
-	handleSpeechGatewayHealth,
-	handleSpeechGatewayTranscribeChunk,
-	handleSpeechProvidersRuntime,
-	handleSpeechRecordingStrategy,
-	handleSpeechStatus,
-	registerSpeechGatewayRoutes,
-} from "./speechRoutes.js";

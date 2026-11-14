@@ -21,8 +21,8 @@ import type { PatientInstallmentsModalProps, InstallmentsSubView } from "./insta
 
 export function usePatientInstallmentsState(props: PatientInstallmentsModalProps) {
 	const {
-		isOpen, patientId = "pat-demo-1", patientName = "Смирнова Елена Васильевна",
-		patientPhone = "+7 (926) 345-67-89", clinicName = "ООО «ДЕНТЕ»",
+		isOpen, patientId = "", patientName = "",
+		patientPhone = "", clinicName = "",
 		initialPlan, onPlanUpdate,
 	} = props;
 
@@ -102,7 +102,7 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 			id: `inst-plan-${selectedPreset}-${patientId}-${Date.now()}`, contractNumber: generateInstallmentContractNumber(patientId, new Date().toISOString(), 1),
 			patientId, patientName, patientPhone, doctorName: "Лечащий врач", treatmentTitle: presetCfg.title,
 			totalAmountKopecks: totalKop, downPaymentKopecks: downPaymentKop, monthsCount: newMonthsCount,
-			monthlyPaymentKopecks: schedule.length > 1 ? schedule[1]!.amountKopecks : 0, startDateIso: new Date().toISOString(),
+			monthlyPaymentKopecks: schedule[1]?.amountKopecks ?? 0, startDateIso: new Date().toISOString(),
 			schedule: evalResult.updatedSchedule, paidAmountKopecks: evalResult.paidAmountKopecks, remainingDebtKopecks: evalResult.remainingDebtKopecks,
 			overdueDebtKopecks: evalResult.overdueDebtKopecks, status: evalResult.status, nextPaymentDueItem: evalResult.nextPaymentDueItem,
 			daysUntilNextPayment: evalResult.daysUntilNextPayment, createdAtIso: new Date().toISOString(), notes: presetCfg.notes,

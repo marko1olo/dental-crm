@@ -42,7 +42,7 @@ export function OnlineBookingFunnelView({
 							onlineSummary.totalViews > 0
 								? `${((onlineSummary.totalSlotSelected / onlineSummary.totalViews) * 100).toFixed(0)}% перешли`
 								: "0% перешли",
-						color: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
+						color: "bg-[var(--paper-soft)] text-[var(--ink)]",
 					},
 					{
 						step: "2. Выбор слота",
@@ -52,7 +52,7 @@ export function OnlineBookingFunnelView({
 							onlineSummary.totalSlotSelected > 0
 								? `${((onlineSummary.totalBookings / onlineSummary.totalSlotSelected) * 100).toFixed(0)}% ввели контакты`
 								: "0% ввели контакты",
-						color: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+						color: "bg-[var(--paper-soft)] text-[var(--ink)]",
 					},
 					{
 						step: "3. Бронь создана",
@@ -62,7 +62,7 @@ export function OnlineBookingFunnelView({
 							onlineSummary.totalBookings > 0
 								? `${((onlineSummary.totalAttended / onlineSummary.totalBookings) * 100).toFixed(0)}% явились`
 								: "0% явились",
-						color: "bg-teal-500/10 text-teal-700 dark:text-teal-300",
+						color: "bg-[var(--paper-soft)] text-[var(--ink)]",
 					},
 					{
 						step: "4. Явка в клинику",
@@ -72,23 +72,21 @@ export function OnlineBookingFunnelView({
 							onlineSummary.totalAttended > 0
 								? `${((onlineSummary.totalPaid / onlineSummary.totalAttended) * 100).toFixed(0)}% оплатили`
 								: "0% оплатили",
-						color: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+						color: "bg-[var(--paper-soft)] text-[var(--ink)]",
 					},
 					{
 						step: "5. Оплата лечения",
 						count: onlineSummary.totalPaid,
 						label: "Оплачено в кассе",
 						dropoff: "100% конверсия",
-						color:
-							"bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+						color: "bg-[var(--paper-soft)] text-[var(--ink)]",
 					},
 					{
 						step: "6. Выручка",
 						count: formatKopecksRu(onlineSummary.totalRevenueKopecks || (0 as Kopecks)),
 						label: "Итоговая выручка",
 						dropoff: `Ср. чек ${formatKopecksRu(onlineSummary.avgCheckKopecks || (0 as Kopecks))}`,
-						color:
-							"bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold",
+						color: "bg-[var(--teal)]/10 text-[var(--teal)] font-bold border-[var(--teal)]/30",
 					},
 				].map((item) => (
 					<div

@@ -1,5 +1,5 @@
 import React from "react";
-import { EMPTY_DIARY } from "../../useVisitDiaryLogic";
+import { EMPTY_DIARY } from "../../../lib/protocols/protocolTypes";
 import {
 	type ClinicalPhotoAttachment,
 	generatePhotoProtocolAttachmentsStatement,

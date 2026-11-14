@@ -69,7 +69,7 @@ export const PaidContractToolbar: React.FC<PaidContractToolbarProps> = React.mem
 						data-testid="btn-paid-contract-fill-norm"
 						title="Заполнить стандартные реквизиты клиники по умолчанию"
 					>
-						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+						<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 						<span>Типовой</span>
 					</button>
 
@@ -86,14 +86,14 @@ export const PaidContractToolbar: React.FC<PaidContractToolbarProps> = React.mem
 						{isMoreMenuOpen && (
 							<div className="absolute right-0 top-full mt-1.5 w-60 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 py-1.5 text-xs text-[var(--ink)]">
 								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onGenNumber(); }} className="w-full px-3 py-2 text-left hover:bg-[var(--line-subtle)] flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-gen-number">
-									<RefreshCw className="w-4 h-4 text-slate-500 shrink-0" /><span>Новый номер договора</span>
+									<RefreshCw className="w-4 h-4 shrink-0" /><span>Новый номер договора</span>
 								</button>
 								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onCopyText(); }} className="w-full px-3 py-2 text-left hover:bg-[var(--line-subtle)] flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-copy-text">
-									<Copy className="w-4 h-4 text-slate-500 shrink-0" /><span>Копировать текст</span>
+									<Copy className="w-4 h-4 shrink-0" /><span>Копировать текст</span>
 								</button>
 								<div className="my-1 border-t border-[var(--line)]" />
-								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onReset(); }} className="w-full px-3 py-2 text-left hover:bg-rose-500/10 text-rose-600 flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-reset">
-									<RotateCcw className="w-4 h-4 text-rose-500 shrink-0" /><span>Очистить поля</span>
+								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onReset(); }} className="w-full px-3 py-2 text-left hover:bg-[var(--danger-soft)] text-[var(--danger)] flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-reset">
+									<RotateCcw className="w-4 h-4 text-[var(--danger)] shrink-0" /><span>Очистить поля</span>
 								</button>
 							</div>
 						)}

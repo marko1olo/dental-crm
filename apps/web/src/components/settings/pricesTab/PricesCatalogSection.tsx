@@ -32,6 +32,7 @@ export const PricesCatalogSection: React.FC<Props> = ({ prices, serviceCategoryL
 				isNativeScannerDropzoneOpen={prices.isNativeScannerDropzoneOpen}
 				onToggleNativeScannerDropzone={() => prices.setIsNativeScannerDropzoneOpen((p) => !p)}
 				onOpenServicePricelistModal={() => prices.setIsServicePricelistModalOpen(true)}
+				onPrintPricelist={prices.handlePrintPricelist}
 				onOpenNewServiceModal={prices.openNewServiceModal}
 			/>
 

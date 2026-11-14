@@ -6,11 +6,11 @@
 
 import React from "react";
 import { CURATOR_STAGE_DEFINITIONS, type CuratorFunnelStage } from "@dental/shared";
-import { DOCTOR_SELF_CURATOR_ID, CURATOR_ROLE_LABELS } from "./curatorConstants";
+import { DOCTOR_SELF_CURATOR_ID, CURATOR_ROLE_LABELS, type CuratorStaffMember } from "./curatorConstants";
 import { CuratorNotesField } from "./CuratorNotesField";
 
 export interface CuratorFormBodyProps {
-	readonly staffList: readonly any[];
+	readonly staffList: readonly CuratorStaffMember[];
 	readonly selectedCuratorId: string;
 	readonly onSelectCuratorId: (id: string) => void;
 	readonly selectedStage: CuratorFunnelStage;
@@ -72,7 +72,7 @@ export const CuratorFormBody: React.FC<CuratorFormBodyProps> = ({
 				<select
 					id="curator-stage"
 					value={selectedStage}
-					onChange={(e: any) => onSelectStage(e.target.value)}
+					onChange={(e) => onSelectStage(e.target.value as CuratorFunnelStage)}
 					className="curator-form-input"
 					style={{ minHeight: "44px" }}
 				>

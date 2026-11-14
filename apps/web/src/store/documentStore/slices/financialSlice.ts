@@ -4,8 +4,9 @@ import type { FinancialSliceState } from "../types/financialTypes";
 
 const initialUiPreferences = loadUiPreferences();
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const createFinancialSlice = (set: any): FinancialSliceState => ({
+export const createFinancialSlice = (
+	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+): FinancialSliceState => ({
 	paidContractNumber: "",
 	setPaidContractNumber: createSetter(set, "paidContractNumber"),
 	paidContractDate: "",

@@ -4,7 +4,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { SanPiNRegulatoryEngine, createTemperatureHumidityLogDtoSchema } from "@dental/shared";
+import { SanPiNRegulatoryEngine, createTemperatureHumidityLogDtoSchema, type TemperatureEquipmentType } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
@@ -75,7 +75,7 @@ export async function handlePostTemperatureLog(req: FastifyRequest, reply: Fasti
 	}
 
 	const evalResult = SanPiNRegulatoryEngine.evaluateTemperatureHumidity({
-		equipmentType: equipment.equipmentType as any,
+		equipmentType: equipment.equipmentType as TemperatureEquipmentType,
 		targetTempMin: Number(equipment.targetTempMinCelsius),
 		targetTempMax: Number(equipment.targetTempMaxCelsius),
 		actualTemp: data.temperatureCelsius,

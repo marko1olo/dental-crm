@@ -1,8 +1,9 @@
 import { createSetter } from "../createSetter";
 import type { MiscSliceState } from "../types/miscTypes";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const createMiscSlice = (set: any): MiscSliceState => ({
+export const createMiscSlice = (
+	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+): MiscSliceState => ({
 	minorRepresentativeFullName: "",
 	setMinorRepresentativeFullName: createSetter(
 		set,

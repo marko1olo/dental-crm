@@ -75,7 +75,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		await app.close();
 	});
 
-	it("1. GET /api/orthodontics/:patientId/progress returns 404 when no active ortho treatment exists (DEF-ORTHO-02)", async (t) => {
+	it("1. GET /api/orthodontics/:patientId/progress returns 200 with hasActiveTreatment: false when no active ortho treatment exists (DEF-ORTHO-02 / Мандат 8aj)", async (t) => {
 		if (!databaseAvailable) return t.skip("Database is unavailable");
 
 		const res = await app.inject({
@@ -84,9 +84,11 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 			headers: ORG_HEADERS,
 		});
 
-		assert.equal(res.statusCode, 404);
+		assert.equal(res.statusCode, 200);
 		const body = JSON.parse(res.body);
-		assert.equal(body.error, "OrthoTreatmentNotFound");
+		assert.equal(body.hasActiveTreatment, false);
+		assert.equal(body.progress, null);
+		assert.equal(body.patientId, PATIENT_ID);
 	});
 
 	it("2. POST /api/orthodontics/:patientId/aligners/issue-set issues aligner set in 1 click (Mandate 8e)", async (t) => {
@@ -167,7 +169,41 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const plateBody = JSON.parse(plateRes.body);
 		assert.equal(plateBody.success, true);
 		assert.equal(plateBody.archwire, 'NiTi .014" (ВЧ)');
-		assert.equal(plateBody.deduction, null);
+		// DEF-ORTHO-01 / Red Team Досье: Проверка отсутствия перетирания раздельных дуг ВЧ и НЧ
+		const upperRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: ORG_HEADERS,
+			payload: {
+				material: "CuNiTi",
+				section: ".018",
+				arch: "upper",
+				note: "Установка рабочей дуги ВЧ",
+			},
+		});
+		assert.equal(upperRes.statusCode, 200);
+		const upperBody = JSON.parse(upperRes.body);
+		assert.equal(upperBody.upperArchwire, 'CuNiTi .018" (ВЧ)');
+
+		const lowerRes = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: ORG_HEADERS,
+			payload: {
+				material: "SS",
+				section: ".019x.025",
+				arch: "lower",
+				note: "Установка стальной дуги НЧ",
+			},
+		});
+		assert.equal(lowerRes.statusCode, 200);
+		const lowerBody = JSON.parse(lowerRes.body);
+		assert.equal(lowerBody.lowerArchwire, 'SS .019x.025" (НЧ)');
+		// Проверяем, что дуга ВЧ не перетерлась, а сохранилась!
+		assert.equal(lowerBody.progress.upperArchwire, 'CuNiTi .018" (ВЧ)');
+		assert.equal(lowerBody.progress.lowerArchwire, 'SS .019x.025" (НЧ)');
+		assert.ok(lowerBody.progress.archwire.includes("CuNiTi .018\" (ВЧ)"));
+		assert.ok(lowerBody.progress.archwire.includes("SS .019x.025\" (НЧ)"));
 	});
 
 	it("4. POST /api/orthodontics/:patientId/ligatures-activate records activation & Power Chain", async (t) => {

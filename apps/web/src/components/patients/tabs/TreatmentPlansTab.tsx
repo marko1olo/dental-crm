@@ -10,7 +10,7 @@
  * 6. Мандат 8b: Золотой стандарт размера файла (200-300 строк).
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	Plus,
 	Printer,
@@ -22,10 +22,12 @@ import {
 	CreditCard,
 	Copy,
 	ClipboardList,
+	RefreshCw,
+	AlertCircle,
+	FolderArchive,
 } from "lucide-react";
 import type { TreatmentPlanItem } from "@dental/shared";
 import { TreatmentPlansList } from "../TreatmentPlansList";
-import { TreatmentPlanDiscountsModal } from "../../treatment-plans/TreatmentPlanDiscountsModal";
 import type { PatientGeneralInfo } from "./PatientGeneralInfoTab";
 
 export type TierCategory = "economy" | "optimum" | "premium";
@@ -41,11 +43,48 @@ export interface TreatmentTierOption {
 	badgeText: string;
 }
 
+export interface PatientTreatmentPlanStageDto {
+	id?: string;
+	stageOrder: number;
+	stageName: string;
+	completionPercentage?: number;
+}
+
+export interface PatientTreatmentPlanItemDto {
+	id: string;
+	toothNumber?: number | null;
+	priceId?: string;
+	name?: string;
+	quantity?: number;
+	price?: number;
+	discount?: number;
+	phase?: number;
+	status?: string;
+	isCompleted?: boolean;
+	doctorName?: string | null;
+	doctorSpecialty?: string | null;
+}
+
+export interface PatientTreatmentPlanDto {
+	id: string;
+	patientId: string;
+	name: string;
+	status: string;
+	totalPrice: number;
+	createdAt: string;
+	updatedAt?: string;
+	stages?: PatientTreatmentPlanStageDto[];
+	items?: PatientTreatmentPlanItemDto[];
+	isAlternative?: boolean;
+	alternativeTier?: string | null;
+	alternativeStatus?: string;
+}
+
 export interface TreatmentPlansTabProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	patientId?: string;
 	items?: TreatmentPlanItem[];
-	plans?: any[];
+	plans?: PatientTreatmentPlanDto[];
 	tiers?: TreatmentTierOption[];
 	onOpenPlanPresenter?: (planId?: string) => void;
 	onSendToCheckout?: (tierId: string, amountRub: number) => void;
@@ -56,19 +95,131 @@ export interface TreatmentPlansTabProps {
 export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 	function TreatmentPlansTab({
 		patient,
-		items = [],
-		plans = [],
+		patientId: propPatientId,
+		items: propItems = [],
+		plans: propPlans = [],
 		tiers: propTiers,
 		onOpenPlanPresenter,
 		onSendToCheckout,
 		onPrintPlan,
 		className = "",
 	}) {
+		const effectivePatientId = propPatientId || patient?.id;
+		const [loadedPlans, setLoadedPlans] = useState<PatientTreatmentPlanDto[]>(propPlans);
+		const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+		const [isLoading, setIsLoading] = useState<boolean>(false);
+		const [fetchError, setFetchError] = useState<string | null>(null);
+		const [reloadTrigger, setReloadTrigger] = useState<number>(0);
+
 		const [selectedTier, setSelectedTier] = useState<TierCategory>("optimum");
 		const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
 		const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
-		const [isDiscountsModalOpen, setIsDiscountsModalOpen] = useState(false);
 		const [copiedFeedback, setCopiedFeedback] = useState(false);
+
+		// Асинхронная гидратация планов лечения пациента из PostgreSQL 18
+		useEffect(() => {
+			if (propPlans && propPlans.length > 0) {
+				setLoadedPlans(propPlans);
+				setSelectedPlanId((prev) => prev ?? propPlans[0]?.id ?? null);
+				return;
+			}
+			if (!effectivePatientId) {
+				setIsLoading(false);
+				return;
+			}
+
+			let isMounted = true;
+			setIsLoading(true);
+			setFetchError(null);
+
+			fetch(`/api/patients/${effectivePatientId}/treatment-plans`)
+				.then(async (res) => {
+					if (!res.ok) {
+						const altRes = await fetch(`/api/treatment-plans/patient/${effectivePatientId}`);
+						if (!altRes.ok) {
+							throw new Error(`Ошибка загрузки планов лечения: HTTP ${res.status}`);
+						}
+						return altRes.json();
+					}
+					return res.json();
+				})
+				.then((data: { success?: boolean; plans?: PatientTreatmentPlanDto[] } | PatientTreatmentPlanDto[]) => {
+					if (!isMounted) return;
+					const fetchedPlans: PatientTreatmentPlanDto[] = Array.isArray((data as { plans?: PatientTreatmentPlanDto[] })?.plans)
+						? (data as { plans: PatientTreatmentPlanDto[] }).plans
+						: (Array.isArray(data) ? data : []);
+					setLoadedPlans(fetchedPlans);
+					if (fetchedPlans.length > 0) {
+						setSelectedPlanId((prev) => {
+							if (prev && fetchedPlans.some((p) => p.id === prev)) return prev;
+							return fetchedPlans[0]?.id ?? null;
+						});
+					}
+				})
+				.catch((err: unknown) => {
+					if (!isMounted) return;
+					setFetchError(err instanceof Error ? err.message : "Не удалось загрузить планы лечения");
+				})
+				.finally(() => {
+					if (isMounted) setIsLoading(false);
+				});
+
+			return () => {
+				isMounted = false;
+			};
+		}, [effectivePatientId, propPlans, reloadTrigger]);
+
+		const activePlan = useMemo(() => {
+			if (loadedPlans.length === 0) return null;
+			return loadedPlans.find((p) => p.id === selectedPlanId) || loadedPlans[0] || null;
+		}, [loadedPlans, selectedPlanId]);
+
+		// Динамические позиции плана лечения
+		const effectiveItems: TreatmentPlanItem[] = useMemo(() => {
+			if (propItems && propItems.length > 0) {
+				return propItems;
+			}
+			if (!activePlan || !activePlan.items) return [];
+
+			return activePlan.items.map((it) => {
+				const unitPrice = it.price !== undefined ? Number(it.price) : 0;
+				const discount = it.discount !== undefined ? Number(it.discount) : 0;
+				const quantity = it.quantity || 1;
+				const grossCostKopecks = Math.round(unitPrice * quantity * 100);
+				const discountKopecks = Math.round(discount * quantity * 100);
+				const netCostKopecks = Math.max(0, grossCostKopecks - discountKopecks);
+
+				const itemRecord: unknown = {
+					id: it.id,
+					planId: activePlan.id,
+					toothNumber: it.toothNumber ?? null,
+					surfaces: [],
+					code804n: it.priceId || "A16.07",
+					serviceCode: it.priceId || "A16.07",
+					nameRu: it.name || "Услуга плана лечения",
+					snapshotServiceName: it.name || "Услуга плана лечения",
+					toothCode: it.toothNumber,
+					categoryRu: "Терапевтический протокол",
+					stageKind: "stage_1_therapy" as const,
+					stageNumber: (it.phase as 1 | 2 | 3) || 1,
+					tierKey: "optimum" as const,
+					unitPriceKopecks: Math.round(unitPrice * 100),
+					unitPriceRub: unitPrice,
+					quantity,
+					grossCostKopecks,
+					discountKopecks,
+					discountRub: discount,
+					netCostKopecks,
+					laborKopecks: Math.round(netCostKopecks * 0.6),
+					materialsKopecks: Math.round(netCostKopecks * 0.4),
+					totalCostKopecks: netCostKopecks,
+					status: it.status || (it.isCompleted ? "completed" : "proposed"),
+					doctorName: it.doctorName || null,
+					doctorSpecialty: it.doctorSpecialty || null,
+				};
+				return itemRecord as TreatmentPlanItem;
+			});
+		}, [propItems, activePlan]);
 
 		// Динамический расчет тарифов на основе реальных позиций или переданных тарифов
 		const effectiveTiers: TreatmentTierOption[] = useMemo(() => {
@@ -78,28 +229,53 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					tagline: t.tagline.replace(/E\.max/gi, "Премиальная безметалловая керамика"),
 				}));
 			}
-			if (items && items.length > 0) {
-				const baseTotal = items.reduce(
-					(sum, it) => sum + (it.priceRub || it.unitPriceRub || 0) * (it.quantity || 1),
+			if (effectiveItems && effectiveItems.length > 0) {
+				const baseTotal = effectiveItems.reduce(
+					(sum, it) => {
+						const itAny = it as unknown as { priceRub?: number; unitPriceRub?: number; unitPriceKopecks?: number; quantity?: number };
+						const price = itAny.priceRub || itAny.unitPriceRub || (itAny.unitPriceKopecks ? itAny.unitPriceKopecks / 100 : 0);
+						return sum + price * (itAny.quantity || 1);
+					},
 					0,
 				);
+				const planTitle = activePlan?.name || "Утверждённый план";
 				return [
 					{
+						id: "economy",
+						title: "Базовый вариант",
+						tagline: "Качественная санация и сертифицированные композитные реставрации",
+						totalRub: Math.round(baseTotal * 0.85),
+						warrantyYears: 1,
+						isRecommended: false,
+						accentClass: "border-[var(--line)] bg-[var(--paper-soft)]",
+						badgeText: "Эконом",
+					},
+					{
 						id: "optimum",
-						title: "Утверждённый план",
-						tagline: "Согласованный комплекс процедур: премиальная безметалловая керамика и прецизионный протокол",
+						title: planTitle,
+						tagline: "Согласованный комплекс процедур: цельная пресс-керамика и прецизионный протокол",
 						totalRub: baseTotal,
 						warrantyYears: 3,
 						isRecommended: true,
 						accentClass: "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/5 ring-1 ring-[var(--teal)]/30",
-						badgeText: "План лечения",
+						badgeText: "Рекомендация клиники",
+					},
+					{
+						id: "premium",
+						title: "Премиум VIP",
+						tagline: "CAD/CAM индивидуализация, микроскопное лечение и пожизненная остеоинтеграция",
+						totalRub: Math.round(baseTotal * 1.35),
+						warrantyYears: 10,
+						isRecommended: false,
+						accentClass: "border-purple-300 dark:border-purple-800 bg-purple-50/20 dark:bg-purple-950/20",
+						badgeText: "Премиум",
 					},
 				];
 			}
 			return [];
-		}, [propTiers, items]);
+		}, [propTiers, effectiveItems, activePlan]);
 
-		const hasActivePlans = effectiveTiers.length > 0 || (plans && plans.length > 0);
+		const hasActivePlans = effectiveTiers.length > 0 || loadedPlans.length > 0;
 
 		const activeTierData = useMemo(() => {
 			if (effectiveTiers.length === 0) return null;
@@ -133,6 +309,54 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 			},
 			[onPrintPlan],
 		);
+
+		// Индикатор загрузки планов лечения
+		if (isLoading) {
+			return (
+				<div
+					className={`treatment-plans-tab flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl border border-[var(--line)] bg-[var(--paper)] ${className}`}
+					data-testid="treatment-plans-tab-loading"
+				>
+					<div className="w-12 h-12 rounded-2xl bg-[var(--teal)]/10 text-[var(--teal,var(--brand-primary))] flex items-center justify-center mb-3">
+						<RefreshCw className="w-6 h-6 animate-spin text-[var(--teal)]" />
+					</div>
+					<h3 className="text-sm font-bold text-[var(--ink)] mb-1">
+						Загрузка планов лечения...
+					</h3>
+					<p className="text-xs text-[var(--muted)]">
+						Синхронизация с историей приёма и базой данных
+					</p>
+				</div>
+			);
+		}
+
+		// Состояние ошибки загрузки с кнопкой повтора
+		if (fetchError && loadedPlans.length === 0) {
+			return (
+				<div
+					className={`treatment-plans-tab flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/20 ${className}`}
+					data-testid="treatment-plans-tab-error"
+				>
+					<div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+						<AlertCircle className="w-6 h-6" />
+					</div>
+					<h3 className="text-sm font-bold text-[var(--ink)] mb-1">
+						Не удалось загрузить планы лечения
+					</h3>
+					<p className="text-xs text-[var(--muted)] max-w-sm mb-4">
+						{fetchError}
+					</p>
+					<button
+						type="button"
+						onClick={() => setReloadTrigger((n) => n + 1)}
+						className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-2 cursor-pointer shadow-xs"
+					>
+						<RefreshCw className="w-3.5 h-3.5" />
+						<span>Повторить попытку</span>
+					</button>
+				</div>
+			);
+		}
 
 		// Честный Empty State при отсутствии сохраненных планов
 		if (!hasActivePlans) {
@@ -174,6 +398,64 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				className={`treatment-plans-tab flex flex-col gap-4 w-full text-[var(--ink)] ${className}`}
 				data-testid="treatment-plans-tab"
 			>
+				{/* 0. СЕЛЕКТОР СОХРАНЕННЫХ ПЛАНОВ ПАЦИЕНТА */}
+				{loadedPlans.length > 1 && (
+					<div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-3 shadow-xs space-y-2">
+						<div className="flex items-center justify-between text-xs text-[var(--muted)] font-medium px-1">
+							<span>Сохраненные планы пациента ({loadedPlans.length}):</span>
+							<button
+								type="button"
+								onClick={() => {
+									if (onOpenPlanPresenter) {
+										onOpenPlanPresenter();
+									} else if (typeof window !== "undefined") {
+										window.location.hash = "#treatment-plan";
+									}
+								}}
+								className="text-[var(--teal)] hover:underline inline-flex items-center gap-1 font-semibold cursor-pointer border-0 bg-transparent text-xs"
+							>
+								<Plus className="w-3.5 h-3.5" />
+								<span>Новый план</span>
+							</button>
+						</div>
+						<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+							{loadedPlans.map((pl) => {
+								const isCurrent = pl.id === selectedPlanId;
+								const statusMap: Record<string, { label: string; badgeClass: string }> = {
+									Approved: { label: "Утверждён", badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" },
+									Active: { label: "Активный", badgeClass: "bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300" },
+									Draft: { label: "Черновик", badgeClass: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+									Completed: { label: "Завершён", badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300" },
+								};
+								const currentStatus = statusMap[pl.status] ?? { label: pl.status, badgeClass: "bg-slate-100 text-slate-700" };
+								return (
+									<button
+										key={pl.id}
+										type="button"
+										onClick={() => setSelectedPlanId(pl.id)}
+										className={`min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl border text-left shrink-0 transition-all cursor-pointer flex items-center gap-2.5 ${
+											isCurrent
+												? "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/10 text-[var(--ink)] ring-1 ring-[var(--teal)]/40 shadow-xs"
+												: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
+										}`}
+									>
+										<div className="flex flex-col">
+											<span className="font-bold text-xs truncate max-w-[200px] text-[var(--ink)]">
+												{pl.name || "План лечения"}
+											</span>
+											<span className="text-[10px] text-[var(--muted)]">
+												{Number(pl.totalPrice || 0).toLocaleString("ru-RU")} ₽
+											</span>
+										</div>
+										<span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${currentStatus.badgeClass}`}>
+											{currentStatus.label}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				)}
 				{/* 1. ВЕРХНИЙ БЛОК: 3-TIER ВЫБОР АЛЬТЕРНАТИВ В 1 КЛИК */}
 				{activeTierData && (
 					<div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-4 shadow-sm space-y-3">
@@ -353,7 +635,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				<div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-4 shadow-sm">
 					<div className="flex items-center justify-between mb-3 flex-wrap gap-2">
 						<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
-							Позиции процедур ({items.length})
+							Позиции процедур ({effectiveItems.length})
 						</h4>
 						<button
 							type="button"
@@ -367,25 +649,11 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					</div>
 
 					<TreatmentPlansList
-						items={items}
+						items={effectiveItems}
 						onOpenPlan={(planId) => onOpenPlanPresenter && onOpenPlanPresenter(planId)}
 						onNewPlanItem={() => onOpenPlanPresenter && onOpenPlanPresenter()}
 					/>
 				</div>
-
-				{/* МОДАЛКА СКИДОК ВРАЧА (0-100% БЕЗ ПАРОЛЕЙ) */}
-				{activeTierData && (
-					<TreatmentPlanDiscountsModal
-						isOpen={isDiscountsModalOpen}
-						onClose={() => setIsDiscountsModalOpen(false)}
-						discountPercent={doctorDiscountPercent}
-						setDiscountPercent={setDoctorDiscountPercent}
-						bonusPointsToUseRub={bonusPointsToUseRub}
-						setBonusPointsToUseRub={setBonusPointsToUseRub}
-						patientBalanceRub={patient?.patientBalanceRub ?? 0}
-						planGrossKopecks={activeTierData.totalRub * 100}
-					/>
-				)}
 			</div>
 		);
 	},

@@ -29,7 +29,10 @@ import {
 	type ExistingCatalogReference,
 	type IngestedMappingItem,
 } from "../../catalog/mappingDiff/PriceListMappingDiffView";
-import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
+import {
+	syncPricelistItemsToCatalog,
+	type SyncableCatalogItemInput,
+} from "../catalogSyncHelper";
 import {
 	NEW_SERVICE_TEMPLATE,
 	rubToPriceInput,
@@ -166,12 +169,18 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			const normalizedCategory = normalizeCategoryToBackend(editServiceForm.category || "therapy");
 			const normalizedSpecialty = editServiceForm.specialty || getSpecialtyForCategory(editServiceForm.category || "therapy");
 			const servicePayload = {
-				...editServiceForm,
+				title: editServiceForm.title,
+				code: editServiceForm.code || "",
 				category: normalizedCategory,
 				specialty: normalizedSpecialty,
 				basePriceRub,
+				durationMinutes: editServiceForm.durationMinutes || 30,
+				taxDeductible: editServiceForm.taxDeductible !== false,
+				active: editServiceForm.active !== false,
 				materialsCostRub: Number(editServiceForm.materialsCostRub) || 0,
-				order804nCode: statutoryCode, catalogCode: statutoryCode, standardCode: statutoryCode,
+				order804nCode: statutoryCode,
+				catalogCode: statutoryCode,
+				standardCode: statutoryCode,
 			};
 
 			if (editServiceId === "new") {
@@ -247,7 +256,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 	const modalInitialItems: readonly ServicePricelistItem[] = useMemo(() => buildModalInitialItems(typedServiceCatalog), [typedServiceCatalog]);
 
-	const handleSaveCatalog = async (items: readonly ServicePricelistItem[]) => {
+	const handleSaveCatalog = async (items: readonly (SyncableCatalogItemInput | ServicePricelistItem)[]) => {
 		await syncPricelistItemsToCatalog({
 			items, existingServices: (dashboard?.serviceCatalog ?? []) as ServiceCatalogItem[],
 			createServiceCatalogItem, updateServiceCatalogItem,

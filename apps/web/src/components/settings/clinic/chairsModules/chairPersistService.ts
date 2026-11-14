@@ -2,9 +2,13 @@ import type { Chair } from "@dental/shared";
 import type { SettingsAccessHeaders } from "../../staffMutationRequest";
 import { staffMutationHeaders } from "../../staffMutationRequest";
 
+export interface ChairPersistPatch extends Partial<Chair> {
+	readonly isActive?: boolean;
+}
+
 export async function persistChairDetails(
 	chairId: string,
-	patch: Partial<Chair>,
+	patch: ChairPersistPatch,
 	accessHeaders?: SettingsAccessHeaders,
 ): Promise<void> {
 	try {
@@ -12,26 +16,36 @@ export async function persistChairDetails(
 			"Content-Type": "application/json",
 			...(accessHeaders ? staffMutationHeaders(accessHeaders) : {}),
 		};
-		if (
-			patch.name ||
-			(patch as any).isActive !== undefined ||
-			(patch as any).room !== undefined ||
-			(patch as any).color !== undefined
-		) {
+
+		const hasChanges =
+			patch.name !== undefined ||
+			patch.active !== undefined ||
+			patch.isActive !== undefined ||
+			patch.room !== undefined ||
+			patch.color !== undefined ||
+			patch.specialization !== undefined ||
+			patch.hasXraySensor !== undefined ||
+			patch.hasMicroscope !== undefined ||
+			patch.hasSurgeryKit !== undefined ||
+			patch.notes !== undefined ||
+			patch.defaultDoctorId !== undefined;
+
+		if (hasChanges) {
+			const resolvedActive = patch.active ?? patch.isActive;
 			await fetch(`/api/settings/chairs/${chairId}`, {
 				method: "PUT",
 				headers,
 				body: JSON.stringify({
 					name: patch.name,
-					active: (patch as any).isActive,
-					room: (patch as any).room,
-					color: (patch as any).color,
-					specialization: (patch as any).specialization,
-					hasXraySensor: (patch as any).hasXraySensor,
-					hasMicroscope: (patch as any).hasMicroscope,
-					hasSurgeryKit: (patch as any).hasSurgeryKit,
-					notes: (patch as any).notes,
-					defaultDoctorId: (patch as any).defaultDoctorId,
+					active: resolvedActive,
+					room: patch.room,
+					color: patch.color,
+					specialization: patch.specialization,
+					hasXraySensor: patch.hasXraySensor,
+					hasMicroscope: patch.hasMicroscope,
+					hasSurgeryKit: patch.hasSurgeryKit,
+					notes: patch.notes,
+					defaultDoctorId: patch.defaultDoctorId,
 				}),
 			});
 		}

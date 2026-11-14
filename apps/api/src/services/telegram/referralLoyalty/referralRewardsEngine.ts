@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	bonusTransactions,
 	denteTelegramChatLinks,
@@ -36,10 +36,10 @@ export async function awardBonusPoints(
 	amountPoints: number,
 	description: string,
 	transactionType = "accrual",
-	dbClient: any = db,
+	dbClient: TenantDb | typeof db = db,
 ): Promise<number> {
 	return withTenantCtx(organizationId, async () => {
-		const execute = async (tx: any) => {
+		const execute = async (tx: TenantDb) => {
 			const [balance] = await tx
 				.select()
 				.from(patientBonusBalances)
@@ -90,7 +90,7 @@ export async function awardBonusPoints(
 		if (dbClient === db) {
 			return await db.transaction(execute);
 		}
-		return await execute(dbClient);
+		return await execute(dbClient as TenantDb);
 	});
 }
 

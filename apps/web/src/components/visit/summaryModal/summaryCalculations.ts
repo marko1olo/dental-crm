@@ -1,6 +1,6 @@
 import { DEFAULT_CHAIRSIDE_SERVICES } from "../visitBillingTypes.js";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
-import type { VisitSummaryPatient, VisitSummaryToothItem } from "./types";
+import type { ChairsideSummaryServiceItem, VisitSummaryPatient, VisitSummaryToothItem } from "./types";
 
 export function formatPatientFullName(p: VisitSummaryPatient | null): string {
 	if (!p) return "—";
@@ -12,11 +12,11 @@ export function formatPatientFullName(p: VisitSummaryPatient | null): string {
 }
 
 export function resolveChairsideServices(
-	servicesProp?: readonly any[],
-	storeServices?: readonly any[],
-	activeVisitServices?: any[],
+	servicesProp?: readonly ChairsideSummaryServiceItem[],
+	storeServices?: readonly ChairsideSummaryServiceItem[],
+	activeVisitServices?: readonly ChairsideSummaryServiceItem[],
 	patientId?: string,
-): readonly any[] {
+): readonly ChairsideSummaryServiceItem[] {
 	if (Array.isArray(servicesProp) && servicesProp.length > 0) return servicesProp;
 	if (Array.isArray(storeServices) && storeServices.length > 0) return storeServices;
 	if (Array.isArray(activeVisitServices) && activeVisitServices.length > 0) return activeVisitServices;
@@ -24,8 +24,8 @@ export function resolveChairsideServices(
 	return [];
 }
 
-export function calculateServicesTotalRub(services: readonly any[]): number {
-	return services.reduce((sum: number, it: any) => {
+export function calculateServicesTotalRub(services: readonly ChairsideSummaryServiceItem[]): number {
+	return services.reduce((sum: number, it: ChairsideSummaryServiceItem) => {
 		const price = Number(it.priceRub ?? it.unitPriceRub ?? it.price ?? 0);
 		const qty = Number(it.quantity ?? 1);
 		const total = Number(it.totalRub ?? price * qty);
@@ -45,27 +45,25 @@ export function resolveEffectiveTotalDueRub(
 
 export function resolveEffectiveDepositRub(
 	patientDepositRubProp?: number,
-	patient?: any,
+	patient?: VisitSummaryPatient | null,
 	activePatientBalanceRub?: number,
 ): number {
 	if (typeof patientDepositRubProp === "number") return patientDepositRubProp;
-	const p = patient as any;
 	const balance = Number(
-		p?.depositRub ??
-		p?.balanceRub ??
-		(typeof p?.balanceKopecks === "number" ? p.balanceKopecks / 100 : undefined) ??
-		(activePatientBalanceRub ?? 0)
+		patient?.depositRub ??
+		patient?.balanceRub ??
+		(typeof patient?.balanceKopecks === "number" ? patient.balanceKopecks / 100 : undefined) ??
+		(activePatientBalanceRub ?? 0),
 	);
 	return Math.max(0, balance);
 }
 
 export function resolveEffectiveFamilyBalanceRub(
 	patientFamilyBalanceRubProp?: number,
-	patient?: any,
+	patient?: VisitSummaryPatient | null,
 ): number {
 	if (typeof patientFamilyBalanceRubProp === "number") return patientFamilyBalanceRubProp;
-	const p = patient as any;
-	return Number(p?.familyBalanceRub ?? 0);
+	return Number(patient?.familyBalanceRub ?? 0);
 }
 
 export function extractAbnormalTeeth(teethData?: readonly VisitSummaryToothItem[]): readonly VisitSummaryToothItem[] {

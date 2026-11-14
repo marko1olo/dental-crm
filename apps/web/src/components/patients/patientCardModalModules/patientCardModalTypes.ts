@@ -1,6 +1,8 @@
 import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
+import type { Patient } from "@dental/shared";
+import type { UsePatientCreationFormOptions } from "../patientCreation/types";
 import {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
@@ -91,4 +93,41 @@ export interface PatientCardModalProps {
 	readonly customRequirements?: any | undefined;
 	readonly initialBirthDate?: string | undefined;
 	readonly initialIsChild?: boolean | undefined;
+}
+
+export function toCanonicalPatient(patientData: Partial<PatientGeneralInfo> & Record<string, unknown>): Patient {
+	return {
+		id: patientData.id || "",
+		fullName: patientData.fullName || "",
+		phone: patientData.phone || "",
+		birthDate: patientData.birthDate || "",
+		gender: patientData.gender === "female" ? "female" : "male",
+		cardNumber: (patientData.cardNumber || patientData.medicalCardNumber || "") as string,
+		medicalCardNumber: (patientData.cardNumber || patientData.medicalCardNumber || "") as string,
+		address: patientData.address || "",
+		snils: patientData.snils || "",
+		inn: patientData.inn || "",
+		email: patientData.email || "",
+		createdAt: patientData.createdAt ? String(patientData.createdAt) : new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+		isArchived: false,
+		status: "active",
+		...patientData,
+	} as unknown as Patient;
+}
+
+export function createPatientCreationOptions(
+	props: PatientCardModalProps,
+	isOpen: boolean,
+	onClose: () => void,
+): UsePatientCreationFormOptions {
+	return {
+		isOpen,
+		onClose,
+		createPatient: props.createPatient ?? (async () => null),
+		updatePatientCoreDraft: props.updatePatientCoreDraft,
+		customRequirements: props.customRequirements,
+		initialBirthDate: props.initialBirthDate,
+		initialIsChild: props.initialIsChild,
+	};
 }

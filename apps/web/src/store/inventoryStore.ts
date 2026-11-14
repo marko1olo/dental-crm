@@ -95,21 +95,27 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 			const res = await fetcher(`/api/inventory/${organizationId}`, { headers });
 			if (res.ok) {
 				const data = await res.json();
-				const rawList: any[] = Array.isArray(data) ? data : (data?.items || []);
-				const mapped: InventoryStockItem[] = rawList.map((item) => ({
-					id: String(item.id || item.inventoryItemId || ""),
-					name: String(item.name || item.title || "Материал"),
-					sku: item.sku ? String(item.sku) : null,
-					barcode: item.barcode ? String(item.barcode) : null,
-					stockQuantity: Number(item.stockQuantity ?? item.quantity ?? 0),
-					criticalThreshold: Number(item.criticalThreshold ?? item.minStock ?? 5),
-					unitCostRub: Number(item.unitCostRub ?? (item.purchasePriceKopecks ? item.purchasePriceKopecks / 100 : 0)),
-					unit: item.unit ? String(item.unit) : "шт",
-					lotNumber: item.lotNumber ? String(item.lotNumber) : null,
-					expirationDate: item.expirationDate ? String(item.expirationDate) : null,
-					category: item.category ? String(item.category) : null,
-					isOverdraft: Number(item.stockQuantity ?? item.quantity ?? 0) <= 0,
-				}));
+				const rawList: unknown[] = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+				const mapped: InventoryStockItem[] = rawList.map((entry) => {
+					const item = typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : {};
+					const quantity = Number(item.stockQuantity ?? item.quantity ?? 0);
+					const threshold = Number(item.criticalThreshold ?? item.minStock ?? 5);
+					const unitCost = Number(item.unitCostRub ?? (typeof item.purchasePriceKopecks === "number" ? item.purchasePriceKopecks / 100 : 0));
+					return {
+						id: String(item.id || item.inventoryItemId || ""),
+						name: String(item.name || item.title || "Материал"),
+						sku: item.sku ? String(item.sku) : null,
+						barcode: item.barcode ? String(item.barcode) : null,
+						stockQuantity: quantity,
+						criticalThreshold: threshold,
+						unitCostRub: unitCost,
+						unit: item.unit ? String(item.unit) : "шт",
+						lotNumber: item.lotNumber ? String(item.lotNumber) : null,
+						expirationDate: item.expirationDate ? String(item.expirationDate) : null,
+						category: item.category ? String(item.category) : null,
+						isOverdraft: quantity <= 0,
+					};
+				});
 
 				set({ items: mapped, lastFetchedOrgId: organizationId, isLoading: false, error: null });
 			} else {

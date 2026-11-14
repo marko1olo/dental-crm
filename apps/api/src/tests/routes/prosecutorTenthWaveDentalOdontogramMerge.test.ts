@@ -9,7 +9,7 @@ import {
 	imagingStudies,
 	organizations,
 	patients,
-	perioCharts,
+	periodontogramSnapshots,
 	toothStateHistory,
 	toothStates,
 	users,
@@ -129,8 +129,8 @@ describe("PROSECUTOR 2: ДЕСЯТАЯ ВОЛНА (DENTAL ODONTOGRAM & CLINICAL 
 					.delete(imagingStudies)
 					.where(eq(imagingStudies.organizationId, ORG_ID));
 				await db
-					.delete(perioCharts)
-					.where(eq(perioCharts.organizationId, ORG_ID));
+					.delete(periodontogramSnapshots)
+					.where(eq(periodontogramSnapshots.organizationId, ORG_ID));
 				await db
 					.delete(toothStateHistory)
 					.where(eq(toothStateHistory.organizationId, ORG_ID));
@@ -277,26 +277,26 @@ describe("PROSECUTOR 2: ДЕСЯТАЯ ВОЛНА (DENTAL ODONTOGRAM & CLINICAL 
 					},
 				]);
 
-				// 4. Пародонтологические карты (Perio Charts):
-				await db.insert(perioCharts).values([
+				// 4. Пародонтологические карты (Perio Snapshots):
+				await db.insert(periodontogramSnapshots).values([
 					{
 						id: PERIO_PRIMARY_ID,
 						organizationId: ORG_ID,
 						patientId: PATIENT_PRIMARY_ID,
-						doctorId: DOCTOR_ID,
-						chartDate: new Date("2026-01-15T10:00:00.000Z"),
-						teethData: { "36": { probingDepthMm: [3, 4, 3] } },
-						summaryData: { activePocketsCount: 1 },
+						recordedByUserId: DOCTOR_ID,
+						status: "closed",
+						recordedAt: new Date("2026-01-15T10:00:00.000Z"),
+						indices: { activePocketsCount: 1 },
 						notes: "Пародонтальная карта Primary",
 					},
 					{
 						id: PERIO_DUPLICATE_ID,
 						organizationId: ORG_ID,
 						patientId: PATIENT_DUPLICATE_ID,
-						doctorId: DOCTOR_ID,
-						chartDate: new Date("2025-08-10T11:00:00.000Z"),
-						teethData: { "14": { probingDepthMm: [2, 2, 2] } },
-						summaryData: { activePocketsCount: 0 },
+						recordedByUserId: DOCTOR_ID,
+						status: "closed",
+						recordedAt: new Date("2025-08-10T11:00:00.000Z"),
+						indices: { activePocketsCount: 0 },
 						notes: "Пародонтальная карта Duplicate",
 					},
 				]);
@@ -356,8 +356,8 @@ describe("PROSECUTOR 2: ДЕСЯТАЯ ВОЛНА (DENTAL ODONTOGRAM & CLINICAL 
 						.delete(imagingStudies)
 						.where(eq(imagingStudies.organizationId, ORG_ID));
 					await db
-						.delete(perioCharts)
-						.where(eq(perioCharts.organizationId, ORG_ID));
+						.delete(periodontogramSnapshots)
+						.where(eq(periodontogramSnapshots.organizationId, ORG_ID));
 					await db
 						.delete(toothStateHistory)
 						.where(eq(toothStateHistory.organizationId, ORG_ID));
@@ -380,11 +380,11 @@ describe("PROSECUTOR 2: ДЕСЯТАЯ ВОЛНА (DENTAL ODONTOGRAM & CLINICAL 
 	test("ВЕКТОР 10.1 [ТООTH STATES]: Разрешение конфликта зуба 36: отсутствие дублей зуба в tooth_states", async (context) => {
 		if (!databaseAvailable) return context.skip("База данных недоступна");
 
-		// Запуск слияния Duplicate в Primary
+		// Запуск слияния Duplicate в Primary (под токеном сотрудника / врача)
 		const mergeRes = await app.inject({
 			method: "POST",
 			url: "/api/patients/duplicates/merge",
-			headers: clinicHeaders,
+			headers: doctorHeaders,
 			payload: {
 				primaryPatientId: PATIENT_PRIMARY_ID,
 				duplicatePatientId: PATIENT_DUPLICATE_ID,
@@ -553,13 +553,13 @@ describe("PROSECUTOR 2: ДЕСЯТАЯ ВОЛНА (DENTAL ODONTOGRAM & CLINICAL 
 		const perioRows = await withFixtureTenant(ORG_ID, async () =>
 			db
 				.select({
-					id: perioCharts.id,
-					chartDate: perioCharts.chartDate,
-					notes: perioCharts.notes,
+					id: periodontogramSnapshots.id,
+					recordedAt: periodontogramSnapshots.recordedAt,
+					notes: periodontogramSnapshots.notes,
 				})
-				.from(perioCharts)
-				.where(eq(perioCharts.patientId, PATIENT_PRIMARY_ID))
-				.orderBy(desc(perioCharts.chartDate)),
+				.from(periodontogramSnapshots)
+				.where(eq(periodontogramSnapshots.patientId, PATIENT_PRIMARY_ID))
+				.orderBy(desc(periodontogramSnapshots.recordedAt)),
 		);
 
 		assert.equal(

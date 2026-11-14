@@ -31,7 +31,7 @@ import {
 	organizationScopedLocalStorageKey,
 } from "../../localStorageHelpers";
 import { logger } from "../../logger";
-import { openSpeechChunkDb } from "../../SpeechHelpers";
+import { openSpeechChunkDb } from "../../../helpers/speechHelpers";
 import {
 	normalizeLocalDicomWorkbenchDraft,
 	normalizeMprWorkbenchDraft,

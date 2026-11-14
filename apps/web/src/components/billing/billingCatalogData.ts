@@ -11,6 +11,8 @@
  * - Sweet Spot target: 250-350 lines.
  */
 
+import { rublesToKopecks as sharedRublesToKopecks, kopecksToRubles as sharedKopecksToRubles } from "@dental/shared";
+
 export type BillingPaymentMethod =
 	| "cash"
 	| "card"
@@ -96,17 +98,17 @@ export interface CashChangeResult {
 // 1. EXACT INTEGER KOPECK ARITHMETIC HELPERS (ZERO FLOAT DRIFT)
 // ============================================================================
 
-/** Convert rubles (float or int) to integer kopecks safely as BigInt */
+/** Convert rubles (float or int) to integer kopecks safely as BigInt via @dental/shared */
 export function rublesToKopecks(rubles: number): bigint {
 	if (!Number.isFinite(rubles) || rubles <= 0) return 0n;
-	return BigInt(Math.round(rubles * 100));
+	return BigInt(sharedRublesToKopecks(rubles));
 }
 
-/** Convert BigInt or number kopecks to float rubles */
+/** Convert BigInt or number kopecks to float rubles via @dental/shared */
 export function kopecksToRubles(kopecks: bigint | number): number {
 	const kop = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
 	if (!Number.isFinite(kop) || kop <= 0) return 0;
-	return kop / 100;
+	return sharedKopecksToRubles(kop);
 }
 
 /** Format kopecks to Russian currency string (e.g. "4 500 ₽" or "4 500,50 ₽") */

@@ -64,7 +64,8 @@ export interface EmkAppliedDiagnosisProtocol {
 	readonly objectiveStatus: string;
 	readonly treatmentPlan: string;
 	readonly recommendations: string;
-	readonly order804nServices?: readonly any[];
+	readonly order804nServices?: readonly unknown[];
+	readonly procedureServices?: readonly unknown[];
 }
 
 export interface EmkDiagnosisAndProtocolSectionProps {

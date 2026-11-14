@@ -27,14 +27,9 @@ import {
 } from "../cashboxOperations.js";
 import { generateFiscalReceipt } from "../fiscalReceiptEngine.js";
 import {
-	validateTreatmentPlanPrices,
-	generateWorkOrderExportPayload,
-} from "../../treatment-plans/validation/planPriceValidationEngine.js";
-import {
-	PLAN_PRICE_POLICY_PRESETS,
-	SAMPLE_CURRENT_PRICELIST,
-	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-} from "../../treatment-plans/validation/planPriceValidationPresets.js";
+	applyDoctorDiscountToTiers,
+	buildCanonical3TierPlans,
+} from "../../treatment-plans/treatmentPlanCatalogData.js";
 
 describe("Cashier Autonomy — Buyer INN Validation (Mandate 8e, 8n, 8ap: Clean Domain API)", () => {
 	it("Physical person without INN is 100% valid and never blocks receipt", () => {
@@ -144,15 +139,15 @@ describe("Cashier Autonomy — Buyer INN Validation (Mandate 8e, 8n, 8ap: Clean 
 					code804n: "B01.065.001",
 					quantity: 1,
 					unitPriceRub: 2000,
-					unitPriceKopecks: 200000 as any,
+					unitPriceKopecks: 200000,
 					discountRub: 0,
-					discountKopecks: 0 as any,
+					discountKopecks: 0,
 					grossRub: 2000,
-					grossKopecks: 200000 as any,
+					grossKopecks: 200000,
 					amountRub: 2000,
-					amountKopecks: 200000 as any,
+					amountKopecks: 200000,
 					vatRate: "vat_none",
-					taxRateKopecks: 0 as any,
+					taxRateKopecks: 0,
 					paymentSubject: "service",
 					paymentMethod: "full_settlement",
 					quantityMeasure: "piece",
@@ -372,46 +367,12 @@ describe("Doctor Autonomy on Warranty & Staff Discounts (Mandate 8e Item 7)", ()
 	});
 });
 
-describe("Treatment Plan Doctor Autonomy & 30-Day Non-Blocking Guarantee (Mandates 8e Item 7 & 8n)", () => {
-	it("Plan older than 30 days is marked expired but NEVER blocks ZTL work orders or payments", () => {
-		const oldDate = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
-		const oldPlan = {
-			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-			items: SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.items.filter((i) => i.itemId !== "item_5"),
-			createdAtIso: oldDate,
-		};
-		const report = validateTreatmentPlanPrices(
-			oldPlan,
-			SAMPLE_CURRENT_PRICELIST,
-			PLAN_PRICE_POLICY_PRESETS.standard_30,
-		);
-		assert.equal(report.isPlanExpired, true);
-		assert.equal(report.canGenerateWorkOrder, true, "ZTL work order creation must be allowed");
-		assert.equal(report.canGenerateCompletedAct, true, "Completed work act must be allowed");
-		assert.equal(report.overallStatus, "APPROVED_PRICE_LOCKED");
-		assert.match(report.validationMessages.join(" "), /не блокируются/);
-
-		const workOrder = generateWorkOrderExportPayload(report, "work_order");
-		assert.ok(workOrder.orderNumber.startsWith("НЗ-"));
-		assert.ok(workOrder.totalPayableRub > 0);
-	});
-
+describe("Treatment Plan Doctor Autonomy & 100% Warranty Guarantee (Mandates 8e Item 7 & 8n)", () => {
 	it("Doctor has 100% discount autonomy for warranty reworks and staff without admin pin", () => {
-		const planWith100Discount = {
-			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-			items: SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.items.map((item) => ({
-				...item,
-				planDiscountPercent: 100,
-				planDiscountRub: item.planUnitPriceRub,
-			})),
-		};
-		const report = validateTreatmentPlanPrices(
-			planWith100Discount,
-			SAMPLE_CURRENT_PRICELIST,
-			PLAN_PRICE_POLICY_PRESETS.standard_30,
-		);
-		assert.equal(report.canGenerateWorkOrder, true);
-		assert.equal(report.canGenerateCompletedAct, true);
-		assert.equal(report.resolvedNetRub, 0);
+		const tiers = buildCanonical3TierPlans([]);
+		const discounted = applyDoctorDiscountToTiers(tiers, 100);
+		for (const tier of discounted) {
+			assert.equal(tier.totalRub, 0, "100% discount must result in 0 RUB");
+		}
 	});
 });

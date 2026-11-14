@@ -3,7 +3,7 @@
  * Types for Doctor 1-click clinical autopilot, templates and presets.
  */
 
-import type { DiaryState } from "../useVisitDiaryLogic";
+import type { DiaryState } from "../../lib/protocols/protocolTypes";
 import type {
 	ClinicalSoapPreset,
 	ClinicalService804n,

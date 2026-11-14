@@ -4,8 +4,9 @@ import type { TaxSliceState } from "../types/coreTypes";
 
 const initialUiPreferences = loadUiPreferences();
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const createTaxSlice = (set: any): TaxSliceState => ({
+export const createTaxSlice = (
+	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+): TaxSliceState => ({
 	taxDocumentPayerInn: "",
 	setTaxDocumentPayerInn: createSetter(set, "taxDocumentPayerInn"),
 	taxApplicationTaxpayerFullName: "",
@@ -54,9 +55,5 @@ export const createTaxSlice = (set: any): TaxSliceState => ({
 	),
 	taxDocumentYear:
 		initialUiPreferences?.taxDocumentYear ?? new Date().getFullYear(),
-	setTaxDocumentYear: (val) =>
-		set((state: any) => ({
-			taxDocumentYear:
-				typeof val === "function" ? val(state.taxDocumentYear) : val,
-		})),
+	setTaxDocumentYear: createSetter(set, "taxDocumentYear"),
 });

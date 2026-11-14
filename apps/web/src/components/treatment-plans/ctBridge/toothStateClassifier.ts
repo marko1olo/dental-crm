@@ -1,16 +1,25 @@
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { CbctBoneDefectFinding, CbctImplantFinding, CbctToothDestructionFinding } from "./types";
 
+export interface ToothClassifierInput {
+	readonly toothNumber?: number | undefined;
+	readonly id?: number | string | undefined;
+	readonly state?: string | undefined;
+	readonly status?: string | undefined;
+}
+
 export function processToothData(
-	tooth: ToothData,
+	tooth: ToothData | ToothClassifierInput,
 	implants: CbctImplantFinding[],
 	boneDefects: CbctBoneDefectFinding[],
 	toothDestructions: CbctToothDestructionFinding[],
 ) {
-	const rawNum = tooth.toothNumber ?? (typeof (tooth as any).id === "number" ? (tooth as any).id : Number.parseInt(String((tooth as any).id), 10));
+	const rawId = "id" in tooth ? tooth.id : undefined;
+	const rawNum = tooth.toothNumber ?? (typeof rawId === "number" ? rawId : Number.parseInt(String(rawId || ""), 10));
 	if (!rawNum || Number.isNaN(rawNum)) return;
 	const num = rawNum;
-	const state = ((tooth as any).state || (tooth as any).status || "").toLowerCase();
+	const toothState = tooth.state || ("status" in tooth ? tooth.status : "") || "";
+	const state = toothState.toLowerCase();
 
 	if (state.includes("implant") || state.includes("planned_implant")) {
 		if (!implants.some((i) => i.toothFdi === num)) {

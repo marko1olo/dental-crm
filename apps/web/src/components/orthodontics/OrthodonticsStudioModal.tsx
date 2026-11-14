@@ -333,9 +333,11 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		if (patientId) {
 			try {
 				if (protocol.applianceCategory === "aligners") {
+					// DEF-ORTHO-08 / Red Team Досье: Исправление бага скачка элайнеров.
+					// Количество выдаваемых кап берется строго из issuedSetsCount (пар на руки), а не из currentStep!
 					const alignerCount = protocol.alignerTracking.issuedSetsCount > 0
 						? protocol.alignerTracking.issuedSetsCount
-						: (protocol.alignerTracking.currentStep > 0 ? protocol.alignerTracking.currentStep : 1);
+						: 1;
 					await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
 						method: "POST",
 						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
@@ -344,6 +346,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							wearDaysPerAligner: protocol.alignerTracking.wearDaysPerStep || 14,
 							totalAligners: protocol.alignerTracking.totalSteps || 24,
 							note: `Выдача комплекта элайнеров (актуальный шаг ${protocol.alignerTracking.currentStep} из ${protocol.alignerTracking.totalSteps})`,
+							visitId,
+							soapSummary,
 						}),
 					});
 				} else if (protocol.applianceCategory === "plate") {
@@ -354,6 +358,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							nextStage: Math.max(1, protocol.currentMonth || 1),
 							stageTitle: `Активация аппарата / винта: ${protocol.applianceName}`,
 							note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
+							visitId,
+							soapSummary,
 						}),
 					});
 				} else {
@@ -381,10 +387,12 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								applianceCategory: "brackets",
 								isWireChange: true,
 								note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
+								visitId,
+								soapSummary,
 							}),
 						});
 					} else {
-						// Сохраняем параметры обеих дуг: ВЧ и НЧ
+						// Сохраняем параметры обеих дуг: ВЧ и НЧ раздельно без взаимного затирания
 						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
 							method: "POST",
 							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
@@ -395,6 +403,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								applianceCategory: "brackets",
 								isWireChange: true,
 								note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
+								visitId,
+								soapSummary,
 							}),
 						});
 						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
@@ -407,6 +417,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								applianceCategory: "brackets",
 								isWireChange: true,
 								note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
+								visitId,
+								soapSummary,
 							}),
 						});
 					}
@@ -418,8 +430,35 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							powerChain: protocol.selectedActionIds.includes("power_chain"),
 							applianceCategory: "brackets",
 							note: "Активация лигатур",
+							visitId,
+							soapSummary,
 						}),
 					});
+				}
+
+				// DEF-ORTHO-04: Реальное сохранение протокола в ЭМК через API приёма
+				if (visitId) {
+					try {
+						await fetch(`/api/visits/${visitId}/draft/autosave`, {
+							method: "PUT",
+							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+							body: JSON.stringify({
+								visitId,
+								patientId,
+								selectedSpecialty: "orthodontics",
+								transcript: "",
+								draft: {
+									complaint: "Плановый визит по ортодонтическому лечению",
+									anamnesis: `Ортодонтическое лечение: ${protocol.applianceName}. Месяц ${protocol.currentMonth} из ${protocol.totalMonths}.`,
+									objectiveStatus: `Аппарат: ${protocol.applianceName}. Скелетный класс ${skeletalClassInfo.skeletalClass}.`,
+									diagnosis: "K07.4 Аномалии положения зубов",
+									treatmentPlan: soapSummary,
+								},
+							}),
+						});
+					} catch (vErr) {
+						console.warn("[OrthodonticsStudioModal] Autosave visit draft error:", vErr);
+					}
 				}
 
 				if (typeof window !== "undefined") {
@@ -427,12 +466,25 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						new CustomEvent("dente:emr-entry-added", {
 							detail: {
 								patientId,
+								visitId,
 								type: "orthodontic_protocol",
 								text: soapSummary,
 								savedAt: new Date().toISOString(),
 							},
 						}),
 					);
+					window.dispatchEvent(
+						new CustomEvent("dente:patient-updated", {
+							detail: { patientId },
+						}),
+					);
+					if (visitId) {
+						window.dispatchEvent(
+							new CustomEvent("dente:visit-updated", {
+								detail: { visitId, patientId },
+							}),
+						);
+					}
 				}
 				showToast("✓ Активация этапа успешно зафиксирована в ЭМК", "success");
 			} catch (err) {

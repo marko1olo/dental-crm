@@ -73,10 +73,11 @@ export function useMarketingRomiChannels() {
 	}, [draftInputs, handleUpdateField]);
 
 	const handleSyncWithCrm = useCallback(() => {
-		const patients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as any[];
-		const appointments = (appLogic?.dashboard?.appointments ?? appLogic?.appointments ?? appLogic?.sortedAppointments ?? []) as any[];
-		const payments = (appLogic?.dashboard?.payments ?? appLogic?.payments ?? appLogic?.activePayments ?? []) as any[];
-		const communicationEvents = (appLogic?.dashboard?.communicationEvents ?? []) as any[];
+		type CrmMarketingMetricsParams = Parameters<typeof aggregateCrmMarketingMetrics>[0];
+		const patients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as CrmMarketingMetricsParams["patients"];
+		const appointments = (appLogic?.dashboard?.appointments ?? appLogic?.appointments ?? appLogic?.sortedAppointments ?? []) as CrmMarketingMetricsParams["appointments"];
+		const payments = (appLogic?.dashboard?.payments ?? appLogic?.payments ?? appLogic?.activePayments ?? []) as CrmMarketingMetricsParams["payments"];
+		const communicationEvents = (appLogic?.dashboard?.communicationEvents ?? []) as CrmMarketingMetricsParams["communicationEvents"];
 		const customBudgetsKopecks: Record<string, number> = {};
 		for (const ch of channels) if (ch.spentKopecks > 0) customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
 		const aggregated = aggregateCrmMarketingMetrics({ patients, appointments, payments, communicationEvents, customBudgetsKopecks });

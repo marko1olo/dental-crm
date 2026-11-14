@@ -3,6 +3,7 @@ import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
 import { EmrProtocolGeneratorModal, type ToothSurface } from "../../emr";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import type { CashboxTenderType } from "../../cashbox/cashRegisterCatalogData.js";
+import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
 import type { VisitSummaryModalProps } from "./types";
 import type { useVisitSummaryModalState } from "./useVisitSummaryModalState";
 import { buildEnrichedReceiptItems } from "./summaryReceiptEnricher";
@@ -10,7 +11,7 @@ import { buildEnrichedReceiptItems } from "./summaryReceiptEnricher";
 export interface VisitSummarySequentialFlowProps {
 	readonly props: VisitSummaryModalProps;
 	readonly state: ReturnType<typeof useVisitSummaryModalState>;
-	readonly appLogic: any;
+	readonly appLogic?: Partial<AppLogicContextType> | null;
 }
 
 export function VisitSummarySequentialFlow({

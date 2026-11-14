@@ -67,44 +67,6 @@ export const mkbCategories = pgTable(
 	}),
 );
 
-/**
- * 4. Множественные дефекты на зубе/челюсти пациента
- * Позволяет хранить на одном зубе одновременно: пломбу, рецессию, вторичный кариес и т.д.
- */
-export const patientToothDefects = pgTable(
-	"patient_tooth_defects",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id, { onDelete: "cascade" }),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id, { onDelete: "cascade" }),
-		toothCode: varchar("tooth_code", { length: 8 })
-			.notNull()
-			.references(() => clinicalTeethCatalog.code),
-		defectId: integer("defect_id")
-			.notNull()
-			.references(() => toothDefectsCatalog.id),
-		visitId: uuid("visit_id").references(() => visits.id, { onDelete: "set null" }),
-		diagnosedByDoctorId: uuid("diagnosed_by_doctor_id").references(() => users.id, {
-			onDelete: "set null",
-		}),
-		diagnosedAt: timestamp("diagnosed_at", { withTimezone: true }).notNull().defaultNow(),
-		resolvedAt: timestamp("resolved_at", { withTimezone: true }), // Дата снятия / излечения
-		comment: text("comment"),
-	},
-	(t) => ({
-		patientToothIdx: index("idx_patient_tooth_defects_patient_tooth").on(
-			t.organizationId,
-			t.patientId,
-			t.toothCode,
-		),
-		patientIdIdx: index("idx_patient_tooth_defects_patient_id").on(t.patientId),
-		orgIdIdx: index("idx_patient_tooth_defects_organization_id").on(t.organizationId),
-	}),
-);
 
 /**
  * 5. Рубрики клинических шаблонов 043/у (33 рубрики)
@@ -175,40 +137,6 @@ export const outpatientVerifications = pgTable(
 );
 
 // Drizzle Relations
-export const clinicalTeethCatalogRelations = relations(clinicalTeethCatalog, ({ many }) => ({
-	patientDefects: many(patientToothDefects),
-}));
-
-export const toothDefectsCatalogRelations = relations(toothDefectsCatalog, ({ many }) => ({
-	patientDefects: many(patientToothDefects),
-}));
-
-export const patientToothDefectsRelations = relations(patientToothDefects, ({ one }) => ({
-	organization: one(organizations, {
-		fields: [patientToothDefects.organizationId],
-		references: [organizations.id],
-	}),
-	patient: one(patients, {
-		fields: [patientToothDefects.patientId],
-		references: [patients.id],
-	}),
-	tooth: one(clinicalTeethCatalog, {
-		fields: [patientToothDefects.toothCode],
-		references: [clinicalTeethCatalog.code],
-	}),
-	defect: one(toothDefectsCatalog, {
-		fields: [patientToothDefects.defectId],
-		references: [toothDefectsCatalog.id],
-	}),
-	visit: one(visits, {
-		fields: [patientToothDefects.visitId],
-		references: [visits.id],
-	}),
-	doctor: one(users, {
-		fields: [patientToothDefects.diagnosedByDoctorId],
-		references: [users.id],
-	}),
-}));
 
 export const outpatientTemplateCategoriesRelations = relations(
 	outpatientTemplateCategories,

@@ -189,8 +189,8 @@ test("ссылка записи без клиники остаётся публ�
 test("страницу записи рендерит точка монтирования, а не только разбор", () => {
 	const entry = readSource("main.tsx");
 	assert.ok(
-		entry.includes("<PublicBookingWidget"),
-		"main.tsx больше не рендерит PublicBookingWidget. Онлайн-записи у клиники снова нет: " +
+		entry.includes("<PublicBookingPage") || entry.includes("<PublicBookingWidget"),
+		"main.tsx больше не рендерит PublicBookingPage / PublicBookingWidget. Онлайн-записи у клиники снова нет: " +
 			"три живых серверных адреса (apps/api/src/routes/publicBooking.ts) отвечают в пустоту, " +
 			"а по ссылке записи пациент открывает рабочее место клиники.",
 	);
@@ -338,11 +338,15 @@ test("ссылка личного кабинета пациента разбир
 	});
 });
 
-test("main.tsx монтирует MobileSelfCheckinModal для kiosk и PublicBookingWidget для cabinet", () => {
+test("main.tsx монтирует MobileSelfCheckinModal для kiosk и PublicBookingPage для cabinet", () => {
 	const entry = readSource("main.tsx");
 	assert.ok(
 		entry.includes("<MobileSelfCheckinModal"),
 		"main.tsx обязан рендерить MobileSelfCheckinModal для терминала киоска/самочекина",
+	);
+	assert.ok(
+		entry.includes("<PublicBookingPage") || entry.includes("<PublicBookingWidget"),
+		"main.tsx обязан рендерить PublicBookingPage для cabinet",
 	);
 	assert.ok(
 		entry.includes('kind === "kiosk"'),

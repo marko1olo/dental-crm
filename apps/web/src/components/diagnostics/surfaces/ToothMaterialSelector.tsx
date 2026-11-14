@@ -1,5 +1,5 @@
 import React from "react";
-import type { RestorativeMaterialKey } from "../../odontogram/anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "../../odontogram/anatomicalGeometriesTypes";
 import type { ToothData } from "../../odontogram/ToothChart";
 import { RESTORATIVE_MATERIALS } from "../toothSurfacesConstants";
 

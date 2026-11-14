@@ -77,11 +77,12 @@ export async function fetchAndReconcileMedicalServices(params: {
 		const totalKop = Math.max(0, priceKop * qty - discKop);
 		totalRevenueKop += totalKop;
 		totalDiscountKop += discKop;
-		const toothNum = tr.toothCode ? parseInt(tr.toothCode, 10) : undefined;
+		const parsedTooth = tr.toothCode ? Number.parseInt(tr.toothCode, 10) : undefined;
+		const toothNumber = parsedTooth !== undefined && Number.isInteger(parsedTooth) ? parsedTooth : undefined;
 
 		const baseItem = {
 			id: tr.id, code804n, name: tr.title,
-			toothNumber: isNaN(toothNum as any) ? undefined : toothNum,
+			toothNumber,
 			unitCode: DEFAULT_OKEI_PIECE_CODE, unitName: DEFAULT_OKEI_PIECE_NAME,
 			quantity: qty, priceKopecks: priceKop, discountKopecks: discKop, totalKopecks: totalKop,
 			vatRate: "Без НДС" as const, vatAmountKopecks: 0,
@@ -89,8 +90,12 @@ export async function fetchAndReconcileMedicalServices(params: {
 		retailSaleItems.push({ ...baseItem, doctorName, nomenclatureGroup: "Стоматологические услуги" });
 
 		const patId = tr.patientId || "pat-default";
-		if (!medicalActsMap.has(patId)) medicalActsMap.set(patId, []);
-		medicalActsMap.get(patId)!.push({ ...baseItem, attendingDoctorName: doctorName });
+		let patientActs = medicalActsMap.get(patId);
+		if (!patientActs) {
+			patientActs = [];
+			medicalActsMap.set(patId, patientActs);
+		}
+		patientActs.push({ ...baseItem, attendingDoctorName: doctorName });
 	}
 
 	const medicalActs: OneCMedicalActDocument[] = [];

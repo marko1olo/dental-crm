@@ -45,7 +45,7 @@ export function HeaderGlobalSearch({
 		}
 	}, []);
 
-	// Global shortcut: Cmd/Ctrl + K to focus search
+	// Global shortcut: Cmd/Ctrl + K to focus search & CustomEvent bridge
 	useEffect(() => {
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -55,8 +55,24 @@ export function HeaderGlobalSearch({
 			}
 		};
 
+		const handleOpenCommandPalette = () => {
+			inputRef.current?.focus();
+			setIsOpen(true);
+		};
+
+		const handleCloseCommandPalette = () => {
+			setIsOpen(false);
+			inputRef.current?.blur();
+		};
+
 		window.addEventListener("keydown", handleGlobalKeyDown);
-		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+		window.addEventListener("dente:open-command-palette", handleOpenCommandPalette);
+		window.addEventListener("dente:close-command-palette", handleCloseCommandPalette);
+		return () => {
+			window.removeEventListener("keydown", handleGlobalKeyDown);
+			window.removeEventListener("dente:open-command-palette", handleOpenCommandPalette);
+			window.removeEventListener("dente:close-command-palette", handleCloseCommandPalette);
+		};
 	}, []);
 
 	// Click outside and Esc handler
@@ -274,8 +290,8 @@ export function HeaderGlobalSearch({
 					}
 					className={`w-full h-8 pl-8 pr-20 text-xs rounded-lg border transition-all ${
 						isRecording
-							? "border-rose-500 ring-1 ring-rose-500 bg-rose-50/10 text-[var(--ink,#0f172a)] placeholder:text-rose-500"
-							: "border-[var(--line,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] placeholder:text-[var(--muted,#94a3b8)] focus:outline-none focus:border-[var(--teal,#0d9488)] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+							? "border-[var(--danger)] ring-1 ring-[var(--danger)] bg-[var(--danger-soft)] text-[var(--ink)] placeholder:text-[var(--danger)]"
+							: "border-[var(--line,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] placeholder:text-[var(--muted,#94a3b8)] focus:outline-none focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal)]"
 					}`}
 					aria-label="Глобальный поиск пациента и навигация"
 					aria-autocomplete="list"
@@ -291,8 +307,8 @@ export function HeaderGlobalSearch({
 						onClick={toggleDictation}
 						className={`w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer ${
 							isRecording
-								? "bg-rose-500 text-white animate-pulse shadow-2xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft,#f1f5f9)]"
+								? "bg-[var(--danger)] text-white animate-pulse shadow-2xs"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#f1f5f9)]"
 						}`}
 						title={
 							isRecording
@@ -316,7 +332,7 @@ export function HeaderGlobalSearch({
 					{isLoading ? (
 						<Loader2
 							size={12}
-							className="animate-spin text-[var(--teal,#0d9488)]"
+							className="animate-spin text-[var(--teal)]"
 						/>
 					) : query ? (
 						<button
@@ -354,7 +370,7 @@ export function HeaderGlobalSearch({
 						{isLoading && (
 							<Loader2
 								size={10}
-								className="animate-spin text-[var(--teal,#0d9488)]"
+								className="animate-spin text-[var(--teal)]"
 							/>
 						)}
 					</div>
@@ -370,7 +386,7 @@ export function HeaderGlobalSearch({
 								className="w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer group"
 							>
 								<div className="flex items-center gap-2 min-w-0">
-									<div className="w-6 h-6 rounded-full bg-[var(--teal-surface,#0d948814)] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
+									<div className="w-6 h-6 rounded-full bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal)] flex items-center justify-center shrink-0">
 										<User size={12} />
 									</div>
 									<div className="min-w-0">
@@ -393,7 +409,7 @@ export function HeaderGlobalSearch({
 						<div className="py-4 text-center text-xs text-[var(--muted,#64748b)] flex items-center justify-center gap-2">
 							<Loader2
 								size={14}
-								className="animate-spin text-[var(--teal,#0d9488)]"
+								className="animate-spin text-[var(--teal)]"
 							/>
 							<span>Поиск в базе пациентов...</span>
 						</div>

@@ -8,6 +8,7 @@ import {
 	formatKopecksToRub,
 	type RecallCohortData,
 } from "./analyticsWidgetData.js";
+import "./styles/analyticsStudio.css";
 
 export interface LostPatientsRecallCohortsTableProps {
 	readonly recallCohorts: RecallCohortData[];
@@ -96,10 +97,10 @@ export const LostPatientsRecallCohortsTable: React.FC<
 									<span
 										className={`px-2 py-0.5 rounded text-xs font-bold ${
 											rates.healthTone === "ok"
-												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+												? "studio-badge-norm-optimal"
 												: rates.healthTone === "warn"
-													? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-													: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+													? "studio-badge-norm-reserve"
+													: "studio-badge-norm-overload"
 										}`}
 									>
 										{rates.healthTone === "ok"

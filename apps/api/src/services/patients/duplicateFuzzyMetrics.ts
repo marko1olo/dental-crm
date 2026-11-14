@@ -214,41 +214,45 @@ export function damerauLevenshteinDistance(a: string, b: string): number {
 
 	const maxDist = aLen + bLen;
 	const da = new Map<string, number>();
-	const d: number[][] = Array.from({ length: aLen + 2 }, () =>
-		new Array<number>(bLen + 2).fill(0),
-	);
+	const stride = bLen + 2;
+	const d = new Int32Array((aLen + 2) * stride);
 
-	d[0]![0] = maxDist;
+	const get = (r: number, c: number): number => d[r * stride + c] ?? 0;
+	const set = (r: number, c: number, v: number): void => {
+		d[r * stride + c] = v;
+	};
+
+	set(0, 0, maxDist);
 	for (let i = 0; i <= aLen; i += 1) {
-		d[i + 1]![0] = maxDist;
-		d[i + 1]![1] = i;
+		set(i + 1, 0, maxDist);
+		set(i + 1, 1, i);
 	}
 	for (let j = 0; j <= bLen; j += 1) {
-		d[0]![j + 1] = maxDist;
-		d[1]![j + 1] = j;
+		set(0, j + 1, maxDist);
+		set(1, j + 1, j);
 	}
 
 	for (let i = 1; i <= aLen; i += 1) {
 		let dbCol = 0;
-		const aChar = a[i - 1]!;
+		const aChar = a[i - 1] ?? "";
 		for (let j = 1; j <= bLen; j += 1) {
-			const bChar = b[j - 1]!;
+			const bChar = b[j - 1] ?? "";
 			const k = da.get(bChar) ?? 0;
 			const l = dbCol;
 			const cost = aChar === bChar ? 0 : 1;
 			if (cost === 0) dbCol = j;
 
-			d[i + 1]![j + 1] = Math.min(
-				d[i]![j + 1]! + 1, // удаление
-				d[i + 1]![j]! + 1, // вставка
-				d[i]![j]! + cost, // замена
-				d[k]![l]! + (i - k - 1) + 1 + (j - l - 1), // транспозиция
-			);
+			const del = get(i, j + 1) + 1;
+			const ins = get(i + 1, j) + 1;
+			const sub = get(i, j) + cost;
+			const trans = get(k, l) + (i - k - 1) + 1 + (j - l - 1);
+
+			set(i + 1, j + 1, Math.min(del, ins, sub, trans));
 		}
 		da.set(aChar, i);
 	}
 
-	return d[aLen + 1]![bLen + 1]!;
+	return get(aLen + 1, bLen + 1);
 }
 
 /** Сходство строк по Дамерау — Левенштейну (0..1). */
@@ -360,8 +364,9 @@ export function phoneFuzzySimilarity(
 	}
 
 	// Проверяем Левенштейн для опечатки в 1 цифру между первыми номерами
-	const primaryA = keysA[0]!;
-	const primaryB = keysB[0]!;
+	const primaryA = keysA[0];
+	const primaryB = keysB[0];
+	if (!primaryA || !primaryB) return 0.0;
 	if (damerauLevenshteinDistance(primaryA, primaryB) === 1) return 0.85;
 
 	return 0.0;

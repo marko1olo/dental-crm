@@ -48,16 +48,10 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 				: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽${effectiveLoyaltyRub > 0 ? `, бонусы: ${effectiveLoyaltyRub} б.` : ""})` : primaryMethod}`,
 		});
 
-		let response = await fetch("/api/cashbox/receipt", { method: "POST", headers, body: paymentPayload }).catch(() => null);
-		if (!response || !response.ok) {
-			response = await fetch("/api/cashbox/payments", { method: "POST", headers, body: paymentPayload }).catch(() => null);
-		}
-		if (!response || !response.ok) {
-			response = await fetch("/api/billing/payments", { method: "POST", headers, body: paymentPayload }).catch((err) => {
-				console.warn("[CashboxPayment] payments sync fallback error:", err);
-				return null;
-			});
-		}
+		const response = await fetch("/api/cashbox/payments", { method: "POST", headers, body: paymentPayload }).catch((err) => {
+			console.warn("[CashboxPayment] payment recording error:", err);
+			return null;
+		});
 
 		if (response && response.ok) {
 			const data = (await response.json().catch(() => null)) as { fiscalReceiptNumber?: string } | null;

@@ -53,7 +53,8 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 			if (!res.ok) throw new Error("Payouts api error");
 			const data = (await res.json()) as DoctorPayoutReport;
 			setReport(data);
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[DirectDoctorWalletLauncher] Не удалось загрузить отчет по выплатам врачей:", err);
 			setReport({
 				scope: "all",
 				period: { from: `${selectedMonth}-01`, to: `${selectedMonth}-28` },

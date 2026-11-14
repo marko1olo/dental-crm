@@ -88,7 +88,7 @@ export function PatientFieldRequirementsSettings() {
 							<div className="flex items-center gap-2">
 								<span className="font-bold text-sm text-[var(--ink)]">{f.label}</span>
 								{requirements[f.key] && (
-									<span className="text-xs px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold">{f.badge}</span>
+									<span className="text-xs px-2 py-0.5 rounded bg-[var(--danger-soft,rgba(225,29,72,0.1))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/20 font-bold">{f.badge}</span>
 								)}
 							</div>
 							<p className="text-xs text-[var(--muted)] m-0">{f.desc}</p>

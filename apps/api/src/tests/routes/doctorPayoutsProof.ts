@@ -245,9 +245,9 @@ async function proveOverRealHttp(
 			);
 		}
 		check(
-			"по сети те же 203,27 у врача со ставкой",
+			"по сети те же 376,1 у врача со ставкой",
 			body.rows.find((r) => r.commissionPct === 30)?.payoutRub,
-			203.27,
+			376.1,
 		);
 	} finally {
 		await app.close();
@@ -728,9 +728,9 @@ async function proveFullFormula(
 	check("списаний у врача со ставкой", withRate?.materialMovements, 2);
 	check("списаний без цены", withRate?.materialMovementsUnpriced, 1);
 	check("состояние себестоимости", withRate?.materialsState, "cost_missing");
-	check("начислено (1500,55 × 30 %)", withRate?.accruedRub, 450.17);
+	check("начислено ((1500,55 − 246,90) × 30 %)", withRate?.accruedRub, 376.1);
 	check("удержано (246,90 × 100 %)", withRate?.withheldMaterialRub, 246.9);
-	check("к выплате (450,17 − 246,90)", withRate?.payoutRub, 203.27);
+	check("к выплате (Net Revenue)", withRate?.payoutRub, 376.1);
 	check("состояние расчёта", withRate?.state, "computed");
 
 	// Врач без ставки: касса видна, выплата не выдумана.
@@ -740,14 +740,14 @@ async function proveFullFormula(
 	check("30 % не подставлены (было бы 210)", withoutRate?.accruedRub, null);
 	console.log(`  причина у врача без ставки: ${withoutRate?.note}`);
 
-	// Материалы дороже начисленного: 1000 × 10 % = 100, удержано 500 → выплата 0 по ТК РФ.
-	check("начислено врачу с дорогими материалами", inDebt?.accruedRub, 100);
+	// Расчет по Net Revenue: (1000 - 500) × 10 % = 50 ₽.
+	check("начислено врачу с материалами", inDebt?.accruedRub, 50);
 	check(
-		"удержано врачу с дорогими материалами",
+		"удержано врачу с материалами",
 		inDebt?.withheldMaterialRub,
 		500,
 	);
-	check("отрицательная выплата ограничена нулём по ТК РФ", inDebt?.payoutRub, 0);
+	check("выплата по Net Revenue", inDebt?.payoutRub, 50);
 
 	// Итоги и изоляция.
 	check("касса периода целиком", owner.report.totals.revenueRub, 3500.55);
@@ -760,7 +760,7 @@ async function proveFullFormula(
 	check(
 		"итог к выплате только по врачам со ставкой",
 		owner.report.totals.payoutRub,
-		203.27,
+		426.1,
 	);
 	check("врачей посчитано", owner.report.totals.doctorsCounted, 2);
 	check("врачей без ставки", owner.report.totals.doctorsWithoutRate, 1);
@@ -811,7 +811,7 @@ async function proveFullFormula(
 	check(
 		"итог врача — только его выплата",
 		own.report?.totals.payoutRub,
-		203.27,
+		376.1,
 	);
 
 	const denied = await callPayouts(app, {

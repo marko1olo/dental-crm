@@ -7,18 +7,22 @@ import React from "react";
 import { Check, Receipt } from "lucide-react";
 import { money } from "../../AppHelpers";
 import { countLabel } from "../../lib/russianPlural";
-import { useDiagnosisPackage } from "./useDiagnosisPackage.js";
+import {
+	useDiagnosisPackage,
+	type DiagnosisPackageCatalogItem,
+	type DiagnosisPackageInvoicePayload,
+} from "./useDiagnosisPackage.js";
 import { ChairsidePackageHeader } from "./ChairsidePackageHeader.js";
 import { ChairsidePackageServiceList } from "./ChairsidePackageServiceList.js";
 import type { Cashier54FzBundleExport } from "@dental/shared";
 
 export interface ChairsideDiagnosisPackageCardProps {
 	selectedTooth: string | null;
-	patientId?: string | null;
-	visitId?: string | null;
-	catalog?: readonly any[];
-	onApplyPackageToPlan?: (formattedLines: string[], invoicePayload: any) => void;
-	onExportDirectToCashier?: (exportData: Cashier54FzBundleExport) => void;
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
+	catalog?: readonly DiagnosisPackageCatalogItem[] | undefined;
+	onApplyPackageToPlan?: ((formattedLines: string[], invoicePayload: DiagnosisPackageInvoicePayload) => void) | undefined;
+	onExportDirectToCashier?: ((exportData: Cashier54FzBundleExport) => void) | undefined;
 }
 
 export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCardProps> = ({

@@ -11,8 +11,9 @@ import type { DocumentSliceState } from "../types/coreTypes";
 
 const initialUiPreferences = loadUiPreferences();
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const createDocumentSlice = (set: any): DocumentSliceState => ({
+export const createDocumentSlice = (
+	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+): DocumentSliceState => ({
 	documentCreateSavingKind: null,
 	setDocumentCreateSavingKind: createSetter(set, "documentCreateSavingKind"),
 	documentStatusSavingId: null,
@@ -116,17 +117,9 @@ export const createDocumentSlice = (set: any): DocumentSliceState => ({
 	),
 	documentAuditFacts: null,
 	selectedDocumentKind: "treatment_plan",
-	setSelectedDocumentKind: (val) =>
-		set((state: any) => ({
-			selectedDocumentKind:
-				typeof val === "function" ? val(state.selectedDocumentKind) : val,
-		})),
+	setSelectedDocumentKind: createSetter(set, "selectedDocumentKind"),
 	isDocumentIngesting: false,
-	setIsDocumentIngesting: (val) =>
-		set((state: any) => ({
-			isDocumentIngesting:
-				typeof val === "function" ? val(state.isDocumentIngesting) : val,
-		})),
+	setIsDocumentIngesting: createSetter(set, "isDocumentIngesting"),
 	setDocumentAuditFacts: createSetter(set, "documentAuditFacts"),
 	documentAuditFactsLoadingId: null,
 	setDocumentAuditFactsLoadingId: createSetter(

@@ -1,19 +1,28 @@
+import type {
+	bactericidalEquipments,
+	bactericidalIrradiatorLogs,
+	medicalWasteLogs,
+	preSterilizationCleaningLogs,
+	sterilizationLogs,
+	temperatureHumidityEquipments,
+	temperatureHumidityLogs,
+} from "../../../../db/schema.js";
 import { generateDailySterilAndPsoRows } from "./shiftAutofillSterilAndPsoBatch.js";
 
 export function generateMonthBatchRows(params: {
 	workingDates: string[];
 	organizationId: string;
-	activeEquips: any[];
-	tempEquips: any[];
+	activeEquips: Array<typeof bactericidalEquipments.$inferSelect>;
+	tempEquips: Array<typeof temperatureHumidityEquipments.$inferSelect>;
 	operatorId: string | null;
 }) {
 	const { workingDates, organizationId, activeEquips, tempEquips, operatorId } = params;
 
-	const allSterilRows: any[] = [];
-	const allPsoRows: any[] = [];
-	const allBactLogs: any[] = [];
-	const allTempLogs: any[] = [];
-	const allWasteLogs: any[] = [];
+	const allSterilRows: Array<typeof sterilizationLogs.$inferInsert> = [];
+	const allPsoRows: Array<typeof preSterilizationCleaningLogs.$inferInsert> = [];
+	const allBactLogs: Array<typeof bactericidalIrradiatorLogs.$inferInsert> = [];
+	const allTempLogs: Array<typeof temperatureHumidityLogs.$inferInsert> = [];
+	const allWasteLogs: Array<typeof medicalWasteLogs.$inferInsert> = [];
 
 	for (const dateStr of workingDates) {
 		const { sterilRows, psoRows } = generateDailySterilAndPsoRows(dateStr, organizationId, operatorId);
@@ -33,7 +42,7 @@ export function generateMonthBatchRows(params: {
 				operatingMode: "continuous_presence" as const,
 				cumulativeHoursAfterSession: (Number(eq.totalOperatingHours || 0) + 0.5).toFixed(2),
 				operatorId,
-				notes: "⚡ 1-Клик автопилот месяца: предсменная дезинфекция воздуха",
+				notes: "Автопилот месяца: предсменная дезинфекция воздуха",
 			});
 		}
 
@@ -49,7 +58,7 @@ export function generateMonthBatchRows(params: {
 				isWithinNorm: true,
 				deviationReason: null,
 				operatorId,
-				notes: "⚡ 1-Клик автопилот месяца: норма СанПиН 3.3686-21",
+				notes: "Автопилот месяца: норма СанПиН 3.3686-21",
 			});
 		}
 
@@ -65,7 +74,7 @@ export function generateMonthBatchRows(params: {
 			disinfectantUsed: "Оптимакс Про 1.5%",
 			transferActNumber: `АКТ-М-${dateStr.replace(/-/g, "")}`,
 			responsibleStaffId: operatorId,
-			notes: "⚡ 1-Клик автопилот месяца: сбор и обеззараживание отходов класса Б",
+			notes: "Автопилот месяца: сбор и обеззараживание отходов класса Б",
 		});
 	}
 

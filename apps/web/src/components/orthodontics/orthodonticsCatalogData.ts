@@ -290,7 +290,7 @@ export function createDefaultOrthoProtocolState(): OrthoProtocolState {
 			currentStep: 0,
 			totalSteps: 24,
 			wearDaysPerStep: 14,
-			issuedSetsCount: 0,
+			issuedSetsCount: 1,
 			nextPlannedDate: "",
 			iprCompleted: false,
 			attachmentsVerified: false,

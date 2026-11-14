@@ -147,14 +147,14 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 				<main className="p-3 sm:p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-120px)] pb-8 sm:pb-6">
 					{hasError && (
 						<div
-							className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 flex items-center justify-between text-xs"
+							className="p-3.5 rounded-xl border border-[var(--danger,#e11d48)]/30 bg-[var(--danger-soft,rgba(225,29,72,0.1))] text-[var(--danger,#e11d48)] flex items-center justify-between text-xs"
 							role="alert"
 						>
 							<span>Не удалось загрузить данные аналитики с сервера. Проверьте соединение.</span>
 							<button
 								type="button"
 								onClick={refreshData}
-								className="secondary-button h-7 px-2.5 rounded-md border border-rose-500/40 bg-[var(--paper)] text-xs font-medium cursor-pointer"
+								className="secondary-button h-7 px-2.5 rounded-md border border-[var(--danger,#e11d48)]/40 bg-[var(--paper)] text-xs font-medium cursor-pointer"
 							>
 								Повторить
 							</button>

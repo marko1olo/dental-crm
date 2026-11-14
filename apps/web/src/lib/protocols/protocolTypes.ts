@@ -1,10 +1,11 @@
 /**
- * Базовые типы клинических протоколов Формы 043/у.
+ * Базовые типы клинических протоколов и дневника приёма.
  * Декомпозиция по Мандату 8b (модуль <= 500 строк).
  */
 
 export interface DiaryState {
 	patientId?: string | undefined;
+	complaint?: string | undefined;
 	anamnesis: string;
 	statusLocalis: string;
 	diagnosisIcd10: string;
@@ -13,6 +14,17 @@ export interface DiaryState {
 	complications: string;
 	comorbidities: string;
 }
+
+export const EMPTY_DIARY: DiaryState = {
+	complaint: "",
+	anamnesis: "",
+	statusLocalis: "",
+	diagnosisIcd10: "",
+	diagnosisTooth: "",
+	treatmentDescription: "",
+	complications: "",
+	comorbidities: "",
+};
 
 /** Поверхности зуба по стандарту стоматологической карты */
 export type ToothSurfaceKey = "O" | "M" | "D" | "B" | "V" | "L" | "P";

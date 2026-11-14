@@ -6,6 +6,7 @@ import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,
 } from "../../../../db/schema.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import {
 	calculateBactericidalLampResource,
@@ -27,10 +28,11 @@ export async function handleOpenMorningShift(
 	const parsed = morningShiftBodySchema.safeParse(req.body || {});
 	const body = parsed.success
 		? parsed.data
-		: ((req.body as any) || {});
-	const dateStr = body.date || new Date().toISOString().slice(0, 10);
+		: ((req.body as Record<string, unknown>) || {});
+	const dateStr = (body.date as string) || new Date().toISOString().slice(0, 10);
 	const durationMinutes = 30;
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
+	const operatorId = getRequestIdentity(req).userId ?? null;
 
 	const activeEquipments = await db
 		.select()
@@ -78,8 +80,8 @@ export async function handleOpenMorningShift(
 			const endTime = new Date(`${dateStr}T08:00:00`);
 
 			const notesText =
-				body.notes ||
-				"⚡ Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): предоперационная подготовка воздуха по СанПиН 3.3686-21 и Р 3.5.1904-04.";
+				(body.notes as string) ||
+				"Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): предоперационная подготовка воздуха по СанПиН 3.3686-21 и Р 3.5.1904-04.";
 
 			await tx.insert(bactericidalIrradiatorLogs).values({
 				organizationId,
@@ -90,7 +92,7 @@ export async function handleOpenMorningShift(
 				durationMinutes,
 				operatingMode: "pre_op_preparation",
 				cumulativeHoursAfterSession: String(newTotalHours),
-				operatorId: req.user?.id ?? null,
+				operatorId,
 				notes: notesText,
 			});
 
@@ -111,7 +113,7 @@ export async function handleOpenMorningShift(
 	return reply.code(201).send({
 		success: true,
 		action: "open_morning_shift",
-		message: `⚡ Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы для ${results.length} аппаратов клиники (+0.5 ч наработки)`,
+		message: `Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы для ${results.length} аппаратов клиники (+0.5 ч наработки)`,
 		results,
 	});
 }

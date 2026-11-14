@@ -1,7 +1,7 @@
 import type React from "react";
 import { AlertTriangle } from "lucide-react";
 import { getIcdColor, ICD10_DICTIONARY } from "../../lib/icd10";
-import type { DiaryState } from "../useVisitDiaryLogic";
+import type { DiaryState } from "../../lib/protocols/protocolTypes";
 import type { VisitDiaryEntry043 } from "../emr";
 
 export interface VisitSummaryDiarySectionsProps {

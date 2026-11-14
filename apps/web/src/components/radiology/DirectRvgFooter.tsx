@@ -52,7 +52,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 						title="Повторный захват кадра с датчика (Space)"
 						data-testid="rvg-retake-btn"
 					>
-						<RotateCcw className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+						<RotateCcw className="w-3.5 h-3.5 text-current opacity-80" />
 						<span>Переснять (Space)</span>
 					</button>
 				)}
@@ -66,7 +66,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 						title="Прикрепить снимок к активному плану лечения пациента"
 						data-testid="rvg-send-plan-btn"
 					>
-						<ClipboardList className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+						<ClipboardList className="w-3.5 h-3.5 text-current opacity-80" />
 						<span>В план лечения</span>
 					</button>
 				)}
@@ -79,7 +79,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					title="Прикрепить снимок к текущему заказу зуботехнической лаборатории"
 					data-testid="rvg-send-lab-btn"
 				>
-					<Truck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+					<Truck className="w-3.5 h-3.5 text-current opacity-80" />
 					<span>В лабораторию (ЗТЛ)</span>
 				</button>
 
@@ -91,7 +91,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					title="Экспортировать снимок в DICOM 3.0 / TIFF / JPEG"
 					data-testid="rvg-export-dicom-btn"
 				>
-					<Download className="w-3.5 h-3.5 text-[var(--muted,#94a3b8)]" />
+					<Download className="w-3.5 h-3.5 text-current opacity-80" />
 					<span>Экспорт DICOM/JPEG</span>
 				</button>
 
@@ -104,7 +104,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 						title="Печать заключения и рентгенологического протокола"
 						data-testid="rvg-print-report-btn"
 					>
-						<Printer className="w-3.5 h-3.5 text-[var(--muted,#94a3b8)]" />
+						<Printer className="w-3.5 h-3.5 text-current opacity-80" />
 						<span>Печать заключения</span>
 					</button>
 				)}

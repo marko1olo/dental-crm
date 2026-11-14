@@ -32,6 +32,18 @@ export function useFamilyGroupData(patientId?: string | null) {
 
 	useEffect(() => {
 		loadFamily();
+
+		const handleFamilyChanged = () => {
+			loadFamily();
+		};
+
+		window.addEventListener("dente-family-data-changed", handleFamilyChanged);
+		window.addEventListener("dente-patient-balance-changed", handleFamilyChanged);
+
+		return () => {
+			window.removeEventListener("dente-family-data-changed", handleFamilyChanged);
+			window.removeEventListener("dente-patient-balance-changed", handleFamilyChanged);
+		};
 	}, [loadFamily]);
 
 	return { familyData, isLoadingFamily, loadFamily };

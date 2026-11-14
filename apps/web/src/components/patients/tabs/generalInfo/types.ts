@@ -67,9 +67,18 @@ export interface PatientGeneralInfo {
 
 	// 4. Краткая история приёмов и финансовый статус
 	patientBalanceRub?: number | string | null | undefined;
+	balanceRub?: number | string | null | undefined;
+	balanceKopecks?: number | null | undefined;
 	familyBalanceRub?: number | string | null | undefined;
+	familyBalanceKopecks?: number | null | undefined;
 	familyGroupId?: string | null | undefined;
 	familyGroupName?: string | null | undefined;
+	familyGroup?: {
+		id?: string | null | undefined;
+		name?: string | null | undefined;
+		totalBalanceRub?: number | null | undefined;
+		totalBalanceKopecks?: number | null | undefined;
+	} | null | undefined;
 	visitsHistory?: PatientVisitHistoryItem[] | null | undefined;
 
 	// 5. Законные представители и семейные связи

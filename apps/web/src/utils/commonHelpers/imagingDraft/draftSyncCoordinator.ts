@@ -10,7 +10,7 @@ import {
 	mprWorkbenchLocalKey,
 } from "../../ImagingHelpers";
 import { logger } from "../../logger";
-import { speechChunkIndexedDbAvailable } from "../../SpeechHelpers";
+import { speechChunkIndexedDbAvailable } from "../../../helpers/speechHelpers";
 import {
 	deleteLocalDicomWorkbenchDraftFromIndexedDb,
 	loadLocalDicomWorkbenchDraftFromLocalStorage,

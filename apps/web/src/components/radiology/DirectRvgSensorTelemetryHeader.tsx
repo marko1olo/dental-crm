@@ -68,13 +68,13 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 	const sensorDisplayName = currentSensor?.name
 		? (currentSensor.name.split("(")[0]?.trim() || "Визиограф RVG")
 		: "Визиограф RVG";
-	const formattedCard = patientCardNumber
-		? (patientCardNumber.startsWith("ЭМК №")
+	const formattedCard = (!patientCardNumber || patientCardNumber === "Карта не выбрана")
+		? "—"
+		: patientCardNumber.startsWith("ЭМК №")
 			? patientCardNumber
-			: (patientCardNumber.startsWith("043/") || patientCardNumber.startsWith("043/у-")
+			: patientCardNumber.startsWith("043/") || patientCardNumber.startsWith("043/у-")
 				? `ЭМК №${patientCardNumber.replace(/^043\/[уy]-?/, "")}`
-				: `ЭМК №${patientCardNumber}`))
-		: "—";
+				: `ЭМК №${patientCardNumber}`;
 
 	return (
 		<div className="rvg-capture-header">
@@ -227,7 +227,7 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 						data-testid="rvg-upload-file-btn"
 						title="Загрузить снимок с диска (DICOM, TIFF, PNG, JPG)"
 					>
-						<UploadCloud className="w-3.5 h-3.5 text-teal-600 dark:text-teal-300" />
+						<UploadCloud className="w-3.5 h-3.5 text-[var(--muted)]" />
 						<span>Загрузить</span>
 					</button>
 				)}

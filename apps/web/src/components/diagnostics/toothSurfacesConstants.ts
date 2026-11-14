@@ -1,5 +1,5 @@
 import type { ToothState } from "../odontogram/ToothChart";
-import type { RestorativeMaterialKey } from "../odontogram/anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "../odontogram/anatomicalGeometriesTypes";
 
 export type SurfaceKey = "M" | "O" | "D" | "V" | "L";
 

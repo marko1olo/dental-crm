@@ -21,8 +21,8 @@ export const DisplayModesSelection: React.FC<DisplayModesSelectionProps> = ({
 				onClick={() => setIsFastExtractMode((prev) => !prev)}
 				className={`min-h-[44px] sm:min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
 					isFastExtractMode
-						? "bg-rose-600 border-rose-700 shadow-md animate-pulse"
-						: "bg-slate-500/10 border-slate-500/20 hover:bg-slate-500/20"
+						? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)] shadow-2xs"
+						: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 				}`}
 				title="Режим быстрого удаления зубов (экспресс-экстракция)"
 				data-testid="btn-odontogram-fast-extract"
@@ -30,22 +30,22 @@ export const DisplayModesSelection: React.FC<DisplayModesSelectionProps> = ({
 				<span className="flex items-center gap-2.5 min-w-0">
 					<Trash2
 						size={16}
-						className={`shrink-0 ${isFastExtractMode ? "text-white" : "text-amber-600 dark:text-amber-400"}`}
+						className={`shrink-0 ${isFastExtractMode ? "text-[var(--teal,#0d9488)]" : "text-[var(--ink-muted,#64748b)]"}`}
 					/>
 					<div className="flex flex-col text-left min-w-0">
 						<span
-							className={`font-bold text-[12px] leading-tight ${isFastExtractMode ? "text-white" : "text-slate-900 dark:text-slate-100"}`}
+							className={`font-bold text-[12px] leading-tight ${isFastExtractMode ? "text-[var(--teal-dark,#0f766e)]" : "text-[var(--ink,#0f172a)]"}`}
 						>
 							Быстрое удаление зубов
 						</span>
 						<span
-							className={`text-[10px] font-normal truncate ${isFastExtractMode ? "text-rose-100" : "text-slate-700 dark:text-slate-300"}`}
+							className={`text-[10px] font-normal truncate ${isFastExtractMode ? "text-[var(--teal,#0d9488)]" : "text-[var(--ink-muted,#64748b)]"}`}
 						>
 							Экспресс-экстракция кликом по зубу
 						</span>
 					</div>
 				</span>
-				<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 shrink-0 ml-2">
+				<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] shrink-0 ml-2 border border-[var(--line,#e2e8f0)]">
 					{isFastExtractMode ? "ВКЛ" : "ВЫКЛ"}
 				</span>
 			</button>
@@ -54,21 +54,21 @@ export const DisplayModesSelection: React.FC<DisplayModesSelectionProps> = ({
 				<label
 					className={`flex items-center justify-between min-h-[44px] sm:min-h-[38px] cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-colors ${
 						isMultiSelectMode
-							? "bg-indigo-500/15 border-indigo-500/30"
-							: "bg-slate-500/10 border-slate-500/20 hover:bg-slate-500/20"
+							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)]"
+							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 					}`}
 					data-testid="label-odontogram-multiselect"
 				>
 					<span className="flex items-center gap-2.5 min-w-0">
 						<SlidersHorizontal
 							size={16}
-							className="text-indigo-600 dark:text-indigo-400 shrink-0"
+							className="text-[var(--teal,#0d9488)] shrink-0"
 						/>
 						<div className="flex flex-col text-left min-w-0">
-							<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
+							<span className="font-bold text-[12px] leading-tight text-[var(--ink,#0f172a)]">
 								Групповое выделение (Shift)
 							</span>
-							<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
+							<span className="text-[10px] font-normal text-[var(--ink-muted,#64748b)] truncate">
 								Выбор нескольких зубов кликом
 							</span>
 						</div>
@@ -77,7 +77,7 @@ export const DisplayModesSelection: React.FC<DisplayModesSelectionProps> = ({
 						type="checkbox"
 						checked={isMultiSelectMode ?? false}
 						onChange={(e) => onToggleMultiSelect(e.target.checked)}
-						className="accent-indigo-500 rounded cursor-pointer shrink-0 ml-2 w-4 h-4"
+						className="accent-[var(--teal,#0d9488)] rounded cursor-pointer shrink-0 ml-2 w-4 h-4"
 						data-testid="checkbox-odontogram-multiselect"
 					/>
 				</label>

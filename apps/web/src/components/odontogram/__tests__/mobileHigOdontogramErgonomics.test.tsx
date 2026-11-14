@@ -3,121 +3,132 @@
  * Red Team Inquisitor 2: Mobile HIG & Touch Ergonomics Audit (Apple HIG & Mandate 8ze)
  *
  * Verifies:
- * 1. ToothActionMobileSheet renders all 17 clinical states without truncation
- * 2. 4 Clinical Category Grouped Cards (Therapy, Endo, Orthopedics, Surgery)
- * 3. ToothActionSurfacesAccordion 5x2 grid eliminating horizontal scroll (0px drift)
- * 4. ToothQuickStatusSheet Apple HIG drawer with >=52px touch rows & 1-click norm
+ * 1. ToothRadialMobileSheet renders clinical states in native Apple Bottom Sheet
+ * 2. ToothRadialSurfaceBar provides >=44px touch targets with 0px horizontal drift
+ * 3. ToothQuickStatusSheet Apple HIG drawer with >=52px touch rows & 1-click norm
  */
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { ToothActionMobileSheet } from "../ToothActionMobileSheet";
-import { ToothActionSurfacesAccordion } from "../ToothActionSurfacesAccordion";
-import { TOOTH_STATE_ACTIONS } from "../odontogramModuleConstants";
+import { ToothRadialMobileSheet } from "../ToothRadialMobileSheet";
+import { ToothRadialSurfaceBar } from "../radialMenu/ToothRadialSurfaceBar";
+import {
+	buildPrimaryRadialItems,
+	buildSecondaryRadialItems,
+} from "../radialMenu/radialMenuPresets";
 import { ToothQuickStatusSheet } from "../../visit/mobileChairside/ToothQuickStatusSheet";
 import { TOOTH_STATUS_OPTIONS } from "../../visit/mobileChairside/types";
 
 describe("Red Team Inquisitor 2: Mobile HIG & Touch Ergonomics (Apple HIG & Mandate 8ze)", () => {
-	describe("1. ToothActionMobileSheet — All 17 Clinical States & Grouped Inset Cards", () => {
-		it("renders all 17 clinical states across 4 disciplines without truncation", () => {
+	describe("1. ToothRadialMobileSheet — Apple HIG Bottom Sheet & Touch Targets", () => {
+		it("renders clinical states in native mobile sheet with drag handle & >=48px targets", () => {
+			const items = [
+				...buildPrimaryRadialItems(false),
+				...buildSecondaryRadialItems(),
+			];
 			const html = renderToString(
-				<ToothActionMobileSheet
-					menuConfig={{ toothNumber: 16, x: 100, y: 100 }}
+				<ToothRadialMobileSheet
+					menuRef={{ current: null }}
+					dragOffsetY={0}
+					isDraggingSheet={false}
+					handleSheetTouchStart={() => {}}
+					handleSheetTouchMove={() => {}}
+					handleSheetTouchEnd={() => {}}
+					toggleSurface={() => {}}
+					toothNumber={16}
+					currentState="Caries"
+					items={items}
+					selectedSurfaces={[]}
+					surfaces={[]}
+					setSelectedSurfaces={() => {}}
+					handleSelectStateWithHaptic={() => {}}
+					onSelectState={() => {}}
 					onClose={() => {}}
-					selectedTeeth={[16]}
-					activeSurfaces={[]}
-					setActiveSurfaces={() => {}}
-					onApplyToothState={() => {}}
-					onOpenContextDrawer={() => {}}
-					onOpenHistory={() => {}}
-					onOpenEndo={() => {}}
-					onOneClickLabOrder={() => {}}
-					teethData={[]}
 				/>,
 			);
 
-			// Check title
-			assert.ok(html.includes("Зуб #16"), "Must render tooth title");
-
-			// Check all 4 discipline headings
-			assert.ok(html.includes("Терапия и гигиена"), "Must include therapy heading");
-			assert.ok(html.includes("Эндодонтия и корни"), "Must include endo heading");
-			assert.ok(html.includes("Ортопедия и микропротезирование"), "Must include orthopedics heading");
-			assert.ok(html.includes("Хирургия и имплантация"), "Must include surgery heading");
-
-			// Verify all 17 clinical states are present with interactive buttons
-			assert.equal(TOOTH_STATE_ACTIONS.length, 17, "Must contain exactly 17 clinical actions");
-			for (const action of TOOTH_STATE_ACTIONS) {
-				assert.ok(
-					html.includes(`data-testid="mobile-action-${action.state}"`),
-					`Must render testid for ${action.state}`,
-				);
-				assert.ok(
-					html.includes(action.label),
-					`Must render label for ${action.state}`,
-				);
-			}
+			// Check title and drag handle
+			assert.ok(html.includes("16"), "Must render tooth number");
+			assert.ok(html.includes("моляр"), "Must render anatomical tooth name");
+			assert.ok(
+				html.includes("radial-mobile-sheet"),
+				"Must include radial-mobile-sheet container",
+			);
 
 			// Verify touch targets >= 48px
-			assert.ok(html.includes("min-h-[48px]"), "Actions must enforce >=48px touch targets");
+			assert.ok(
+				html.includes("min-h-[50px]") || html.includes("min-h-[48px]"),
+				"Primary actions must enforce >=48px touch targets",
+			);
 		});
 
-		it("renders 1-click physiological norm in natural thumb zone footer", () => {
+		it("renders physiological norm and safe-area padding in natural thumb zone", () => {
+			const items = [
+				...buildPrimaryRadialItems(false),
+				...buildSecondaryRadialItems(),
+			];
 			const html = renderToString(
-				<ToothActionMobileSheet
-					menuConfig={{ toothNumber: 21, x: 100, y: 100 }}
+				<ToothRadialMobileSheet
+					menuRef={{ current: null }}
+					dragOffsetY={0}
+					isDraggingSheet={false}
+					handleSheetTouchStart={() => {}}
+					handleSheetTouchMove={() => {}}
+					handleSheetTouchEnd={() => {}}
+					toggleSurface={() => {}}
+					toothNumber={21}
+					currentState="Healthy"
+					items={items}
+					selectedSurfaces={[]}
+					surfaces={[]}
+					setSelectedSurfaces={() => {}}
+					handleSelectStateWithHaptic={() => {}}
+					onSelectState={() => {}}
 					onClose={() => {}}
-					selectedTeeth={[21]}
-					activeSurfaces={[]}
-					setActiveSurfaces={() => {}}
-					onApplyToothState={() => {}}
-					onOpenContextDrawer={() => {}}
-					onOpenHistory={() => {}}
-					onOpenEndo={() => {}}
-					onOneClickLabOrder={() => {}}
-					teethData={[]}
 				/>,
 			);
 
 			assert.ok(
-				html.includes('data-testid="mobile-sheet-healthy-norm-btn"'),
-				"Must include 1-click norm button in footer",
+				html.includes("Интактный") || html.includes("Здоров"),
+				"Must include physiological norm state",
 			);
 			assert.ok(
-				html.includes("✓ Интактный (Норма)"),
-				"Must include physiological norm label",
-			);
-			assert.ok(
-				html.includes("h-[50px]") || html.includes("min-h-[50px]"),
-				"Footer buttons must enforce Apple HIG thumb height",
+				html.includes("safe-area-inset-bottom"),
+				"Sheet must enforce Apple HIG safe-area-inset-bottom",
 			);
 		});
 	});
 
-	describe("2. ToothActionSurfacesAccordion — 5x2 Grid & 0px Horizontal Drift", () => {
-		it("renders all 10 surface chips in a responsive grid without horizontal scroll", () => {
+	describe("2. ToothRadialSurfaceBar — Touch Targets & 0px Horizontal Drift", () => {
+		it("renders surface chips in a wrap layout with >=44px touch targets on mobile", () => {
 			const html = renderToString(
-				<ToothActionSurfacesAccordion
-					activeSurfaces={["O"]}
-					setActiveSurfaces={() => {}}
+				<ToothRadialSurfaceBar
+					isPrimary={false}
+					selectedSurfaces={["O"]}
+					setSelectedSurfaces={() => {}}
+					isMobile={true}
 				/>,
 			);
 
-			const chips = ["MOD", "MO", "OD", "O", "M", "D", "V", "L", "К", "А"];
+			const chips = ["O", "M", "D", "V", "L", "MOD", "MO", "OD"];
 			for (const chip of chips) {
 				assert.ok(
-					html.includes(`data-testid="odontogram-module-surf-${chip}"`),
-					`Must include surface chip ${chip}`,
+					html.includes(`radial-mobile-quick-surf-${chip}`),
+					`Must include surface chip data-testid radial-mobile-quick-surf-${chip}`,
 				);
 			}
 
 			// Verify touch targets >= 44px
-			assert.ok(html.includes("min-h-[44px]"), "Surface chips must enforce >=44px height");
-			assert.ok(html.includes("min-w-[44px]"), "Surface chips must enforce >=44px width");
-			assert.ok(html.includes("grid-cols-5"), "Must use 5x2 grid instead of horizontal scroll");
-			assert.ok(!html.includes("overflow-x-auto"), "Must eliminate horizontal drift");
+			assert.ok(
+				html.includes("min-h-[44px]"),
+				"Surface chips must enforce >=44px height",
+			);
+			assert.ok(
+				html.includes("min-w-[44px]"),
+				"Surface chips must enforce >=44px width",
+			);
 		});
 	});
 

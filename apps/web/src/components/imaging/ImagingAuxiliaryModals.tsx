@@ -8,11 +8,10 @@ import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
 import { RadiologyModule } from "../radiology/RadiologyModule.js";
 import { ImagingExportModal } from "./ImagingExportModal.js";
 import { VisiographComparisonModal } from "../radiology/VisiographComparisonModal.js";
-import { getActivePanoramicVolume } from "./panoramicVolumeResolver.js";
 
-const PanoramicRendererWindow = lazyWithRetry(() =>
-	import("../dicom/PanoramicRendererWindow.js").then((m) => ({
-		default: m.PanoramicRendererWindow,
+const CbctMprImplantStudioModal = lazyWithRetry(() =>
+	import("../radiology/CbctMprImplantStudioModal.js").then((m) => ({
+		default: m.CbctMprImplantStudioModal,
 	})),
 );
 
@@ -23,15 +22,16 @@ export interface ImagingAuxiliaryModalsProps {
 	setIsRadiologyModuleOpen: (open: boolean) => void;
 	isExportModalOpen: boolean;
 	setIsExportModalOpen: (open: boolean) => void;
-	isComparisonOpen?: boolean;
-	setIsComparisonOpen?: (open: boolean) => void;
-	activeImagingStudies?: any[];
+	isComparisonOpen?: boolean | undefined;
+	setIsComparisonOpen?: ((open: boolean) => void) | undefined;
+	activeImagingStudies?: any[] | undefined;
 	selectedImagingStudy?: any;
 	activePatient?: any;
 	activeAppointment?: any;
 	authClinicName?: string | undefined;
 	effectivePreviewUrl?: string | null | undefined;
 	selectedStudySummary?: string | null | undefined;
+	localImageIds?: string[] | undefined;
 }
 
 export function ImagingAuxiliaryModals({
@@ -43,6 +43,7 @@ export function ImagingAuxiliaryModals({
 	activePatient, activeAppointment,
 	authClinicName, effectivePreviewUrl,
 	selectedStudySummary,
+	localImageIds,
 }: ImagingAuxiliaryModalsProps) {
 	return (
 		<>
@@ -54,11 +55,14 @@ export function ImagingAuxiliaryModals({
 						</div>
 					}
 				>
-					<PanoramicRendererWindow
-						splinePoints={[]}
-						volume={getActivePanoramicVolume()}
-						patientId={activePatient?.id}
+					<CbctMprImplantStudioModal
+						isOpen={isPanoramicWindowOpen}
 						onClose={() => setIsPanoramicWindowOpen(false)}
+						study={selectedImagingStudy}
+						patientId={activePatient?.id ?? null}
+						patientName={activePatient?.name ?? activePatient?.fullName}
+						initialStudioMode="panoramic"
+						initialImageIds={localImageIds}
 					/>
 				</Suspense>
 			)}

@@ -108,7 +108,7 @@ export function computePsrSummary(screeningMap: PsrScreeningMap): PerioScreening
 	return { maxPsrCode: maxCode, hasAsterisk, psrFormula, suggestedDiagnosisRu: d.diag, icd10Code: d.icd, hygienePlanRu: d.plan, requiresDetailedCharting: d.req };
 }
 
-// 2. ЧЕТЫРЕ КАНОНИЧЕСКИХ 1-КЛИК ПРОТОКОЛА ПАРОДОНТОЛОГИИ
+// 2. ЧЕТЫРЕ КАНОНИЧЕСКИХ КЛИНИЧЕСКИХ ПРОТОКОЛА ПАРОДОНТОЛОГИИ И ГИГИЕНЫ
 export interface PerioTreatmentProtocol {
 	readonly id: string;
 	readonly titleRu: string;
@@ -133,11 +133,11 @@ export const PERIO_EXPRESS_PRESETS: Record<string, { id: string; titleRu: string
 export type PerioExpressPresetId = keyof typeof PERIO_EXPRESS_PRESETS;
 export type PerioExpressPreset = typeof PERIO_EXPRESS_PRESETS[PerioExpressPresetId];
 
-export function generateComprehensivePerio043Text(teeth: readonly PerioToothRecord[]): string {
+export function generateComprehensivePerioProtocolText(teeth: readonly PerioToothRecord[]): string {
 	const summary = calculatePerioIndices(teeth as PerioToothRecord[]);
 	const deepCount = summary.deepPocketsCount;
 	const bop = summary.fmbsPercent;
-	return `Объективный пародонтальный статус: обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость десневой борозды (BOP): ${bop}%. Глубоких патологических карманов (>= 4 мм): ${deepCount}.`;
+	return `Объективный пародонтальный статус (Медицинская карта приёма): обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость десневой борозды (BOP): ${bop}%. Глубоких патологических карманов (>= 4 мм): ${deepCount}.`;
 }
 
 export const PERIO_TREATMENT_PROTOCOLS: readonly PerioTreatmentProtocol[] = [
@@ -207,7 +207,7 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 	return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (локальный овердрафт)` };
 }
 
-// 4. МАТЕМАТИЧЕСКИЕ ПРЕСЕТЫ И 1-КЛИК ПРИМЕНЕНИЕ (LAYER 1/2)
+// 4. МАТЕМАТИЧЕСКИЕ ПРЕСЕТЫ И МАКРО-ПРИМЕНЕНИЕ (LAYER 1/2)
 const makePerioSite = (depth: number, bop = false, gm = 0, plq = false, calc = false, pus = false) => ({
 	probingDepthMm: depth,
 	gingivalMarginMm: gm,

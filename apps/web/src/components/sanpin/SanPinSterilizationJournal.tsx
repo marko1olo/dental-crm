@@ -278,7 +278,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					</div>
 
 					<div className="space-y-1.5">
-						<label htmlFor="cycle-autoclave-select" className="text-xs font-semibold text-[var(--ink,#1e293b)] uppercase tracking-wider">Автоклав клиники:</label>
+						<label htmlFor="cycle-autoclave-select" className="text-xs font-semibold text-[var(--ink,#1e293b)]">Автоклав клиники:</label>
 						<select id="cycle-autoclave-select" value={selectedAutoclaveId} onChange={(e) => setSelectedAutoclaveId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs sm:text-sm font-medium text-[var(--ink,#1e293b)]">
 							<option value="АК-01">АК-01 — Melag Vacuklav 23 B+ (22 л, Класс B, ЦСО №1)</option>
 							<option value="АК-02">АК-02 — W&H Lina 17 (17 л, Класс B, ЦСО №2)</option>
@@ -286,7 +286,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					</div>
 
 					<div className="space-y-1.5">
-						<span className="text-xs font-semibold text-[var(--ink,#1e293b)] uppercase tracking-wider">Режим стерилизации:</span>
+						<span className="text-xs font-semibold text-[var(--ink,#1e293b)]">Режим стерилизации:</span>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 							<button type="button" onClick={() => setSelectedRegime("standard_134")} className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer min-h-[52px] ${selectedRegime === "standard_134" ? "border-[var(--teal,#0d9488)] bg-teal-500/10 shadow-xs" : "border-[var(--line,#e2e8f0)] dark:border-[#334155]"}`}>
 								<strong className="text-xs text-[var(--ink,#1e293b)]">134°C • Универсальный</strong><span className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • 5 мин • Упакованные инструменты</span>
@@ -301,7 +301,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					</div>
 
 					<div className="space-y-1.5">
-						<div className="flex items-center justify-between"><span className="text-xs font-semibold text-[var(--ink,#1e293b)] uppercase tracking-wider">Количество крафт-пакетов:</span><strong className="text-xs text-[var(--teal,#0d9488)]">{packagesCount} упаковок</strong></div>
+						<div className="flex items-center justify-between"><span className="text-xs font-semibold text-[var(--ink,#1e293b)]">Количество крафт-пакетов:</span><strong className="text-xs text-[var(--teal,#0d9488)]">{packagesCount} упаковок</strong></div>
 						<div className="grid grid-cols-5 gap-2">
 							{PRESET_PACK_COUNTS.map((cnt) => (
 								<button key={cnt} type="button" onClick={() => setPackagesCount(cnt)} className={`py-2 text-xs font-bold rounded-xl border transition-colors min-h-[44px] cursor-pointer touch-manipulation ${packagesCount === cnt ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "border-[var(--line,#e2e8f0)] dark:border-[#334155] text-[var(--ink,#1e293b)] hover:bg-[var(--paper-soft)]"}`}>
@@ -312,12 +312,12 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					</div>
 
 					<div className="space-y-1.5">
-						<label htmlFor="cycle-items-input" className="text-xs font-semibold text-[var(--ink,#1e293b)] uppercase tracking-wider">Содержимое партии инструментов:</label>
+						<label htmlFor="cycle-items-input" className="text-xs font-semibold text-[var(--ink,#1e293b)]">Содержимое партии инструментов:</label>
 						<input id="cycle-items-input" type="text" value={itemsSummaryInput} onChange={(e) => setItemsSummaryInput(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs sm:text-sm text-[var(--ink,#1e293b)]" placeholder="Лотки смотровые, зеркала, боры, турбинные наконечники" />
 					</div>
 
 					<div className="space-y-1.5">
-						<label htmlFor="cycle-operator-input" className="text-xs font-semibold text-[var(--ink,#1e293b)] uppercase tracking-wider">Ответственный сотрудник (медсестра ЦСО):</label>
+						<label htmlFor="cycle-operator-input" className="text-xs font-semibold text-[var(--ink,#1e293b)]">Ответственный сотрудник (медсестра ЦСО):</label>
 						<div className="relative">
 							<input id="cycle-operator-input" type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} className="w-full h-10 px-3 pr-9 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs sm:text-sm text-[var(--ink,#1e293b)]" />
 							<UserCheck size={16} className="absolute right-3 top-3 text-[var(--muted,#64748b)] pointer-events-none" />
@@ -325,7 +325,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					</div>
 
 					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] flex flex-col gap-2">
-						<span className="text-xs font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">Фоновое списание со склада (Soft Negative Stock):</span>
+						<span className="text-xs font-semibold text-[var(--muted,#64748b)]">Фоновое списание со склада:</span>
 						<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
 							<div className="p-2 rounded-lg bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#e2e8f0)] dark:border-[#334155]"><div className="text-[11px] text-[var(--muted,#64748b)]">Крафт-пакеты (100×200)</div><strong className="text-[var(--teal,#0d9488)]">-{packagesCount} шт</strong></div>
 							<div className="p-2 rounded-lg bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#e2e8f0)] dark:border-[#334155]"><div className="text-[11px] text-[var(--muted,#64748b)]">Индикатор 5 класса</div><strong className="text-[var(--teal,#0d9488)]">-1 шт</strong></div>
@@ -341,10 +341,11 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 							data-testid="primary-batch-sterilization-btn"
 							style={{ backgroundColor: "#0d9488" }}
 							className="w-full sm:w-auto h-11 min-h-[44px] px-6 rounded-xl font-bold text-sm text-white shadow-md flex items-center justify-center gap-2 cursor-pointer touch-manipulation hover:opacity-95 active:scale-[0.99] transition-all"
-							title="Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)"
+							title="Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)"
 						>
 							<CheckCircle2 size={16} className="text-white" />
-							<span>{isBatchSubmitting ? "Проведение смены..." : "Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)"}</span>
+							<span>{isBatchSubmitting ? "Проведение смены..." : "Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)"}</span>
+							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
 							<span className="sr-only">Провести цикл стерилизации</span>
 							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>

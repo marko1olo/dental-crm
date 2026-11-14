@@ -176,9 +176,11 @@
 }
 
 .tp-segmented-btn.is-selected {
-	background: var(--teal, #0d9488);
-	color: #ffffff;
-	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	font-weight: 700;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
 }
 
 /* ==========================================================================
@@ -321,22 +323,22 @@
 	}
 }
 
-/* СТРОГО ОДНА Primary CTA кнопка #0d9488 var(--teal) по Мандату 8am */
+/* СТРОГО ОДНА Primary CTA кнопка #0d9488 по Мандату 8am (благородный глубокий тил, белый текст) */
 .tp-primary-cta-btn {
 	min-height: 52px;
 	width: 100%;
 	padding: 0.625rem 1.5rem;
 	font-size: 0.875rem;
-	font-weight: 900;
+	font-weight: 700;
 	border-radius: 0.75rem;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
 	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-	border: none;
-	background: var(--teal, #0d9488);
-	color: #ffffff;
+	border: none !important;
+	background: #0d9488 !important;
+	color: #ffffff !important;
 	cursor: pointer;
 	transition: background-color 0.15s ease, transform 0.1s ease;
 	box-sizing: border-box;
@@ -351,7 +353,8 @@
 }
 
 .tp-primary-cta-btn:hover {
-	background: #0f766e;
+	background: #0f766e !important;
+	color: #ffffff !important;
 }
 
 .tp-primary-cta-btn:active {

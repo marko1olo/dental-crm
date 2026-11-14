@@ -182,13 +182,19 @@ export class DicomStoragePackagingService {
 				const st = await fsp.stat(targetVolumePath);
 				totalSizeBytes += st.size;
 			} else if (options.sliceBuffers && options.sliceBuffers.length === 1) {
-				const buf = options.sliceBuffers[0]!.buffer;
-				await fsp.writeFile(targetVolumePath, buf);
-				totalSizeBytes += buf.length;
+				const firstSlice = options.sliceBuffers[0];
+				if (firstSlice) {
+					const buf = firstSlice.buffer;
+					await fsp.writeFile(targetVolumePath, buf);
+					totalSizeBytes += buf.length;
+				}
 			} else if (options.sliceFilePaths && options.sliceFilePaths.length === 1) {
-				await fsp.copyFile(options.sliceFilePaths[0]!, targetVolumePath);
-				const st = await fsp.stat(targetVolumePath);
-				totalSizeBytes += st.size;
+				const firstSlicePath = options.sliceFilePaths[0];
+				if (firstSlicePath) {
+					await fsp.copyFile(firstSlicePath, targetVolumePath);
+					const st = await fsp.stat(targetVolumePath);
+					totalSizeBytes += st.size;
+				}
 			}
 		}
 
@@ -205,7 +211,8 @@ export class DicomStoragePackagingService {
 				);
 
 				for (let i = 0; i < sorted.length; i++) {
-					const item = sorted[i]!;
+					const item = sorted[i];
+					if (!item) continue;
 					const pad = String(i + 1).padStart(4, "0");
 					const sliceFileName = `slice_${pad}.dcm`;
 					const slicePath = path.join(slicesFolder, sliceFileName);
@@ -218,8 +225,8 @@ export class DicomStoragePackagingService {
 				}
 			} else if (options.sliceFilePaths && options.sliceFilePaths.length > 0) {
 				for (let i = 0; i < options.sliceFilePaths.length; i++) {
-					const srcPath = options.sliceFilePaths[i]!;
-					if (!fs.existsSync(srcPath)) continue;
+					const srcPath = options.sliceFilePaths[i];
+					if (!srcPath || !fs.existsSync(srcPath)) continue;
 					const pad = String(i + 1).padStart(4, "0");
 					const sliceFileName = `slice_${pad}.dcm`;
 					const slicePath = path.join(slicesFolder, sliceFileName);

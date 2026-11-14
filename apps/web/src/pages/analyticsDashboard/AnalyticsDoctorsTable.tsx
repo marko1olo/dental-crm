@@ -39,7 +39,7 @@ export function DoctorProfitabilityTable({
 						<th scope="col" className="whitespace-nowrap">Выручка</th>
 						<th scope="col" className="whitespace-nowrap min-w-[110px]">Прибыль</th>
 						<th scope="col" className="whitespace-nowrap">Успешность</th>
-						<th scope="col" className="whitespace-nowrap">Услуг</th>
+						<th scope="col" className="whitespace-nowrap">Услуг выполнено</th>
 						<th scope="col" className="whitespace-nowrap">Нарядов ЗТЛ</th>
 					</tr>
 				</thead>
@@ -127,7 +127,7 @@ export function AnalyticsDoctorsTable({ rows }: AnalyticsDoctorsTableProps) {
 				(rows ?? []).filter(
 					(x) =>
 						(x?.revenue ?? 0) > 0 ||
-						((x as any)?.servicesCount ?? x?.services804nCount ?? 0) > 0 ||
+						(x?.servicesCount ?? x?.services804nCount ?? 0) > 0 ||
 						(x?.labOrdersCount ?? 0) > 0 ||
 						(x?.appointmentsCount ?? 0) > 0,
 				).length > 0 ? (

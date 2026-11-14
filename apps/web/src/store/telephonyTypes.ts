@@ -72,6 +72,7 @@ export interface IncomingCallPayload {
 	direction?: CallDirection | undefined;
 	actionTaken?: string | undefined;
 	outcome?: CallOutcome | undefined;
+	acutePain?: boolean | undefined;
 }
 
 export type TelephonyCallPayload = IncomingCallPayload;
@@ -363,7 +364,7 @@ export type PatientTreatmentPlanSummary = PatientActiveTreatmentPlanSummary;
 
 export interface CallerIdentificationResult {
 	readonly isKnownPatient: boolean;
-	readonly patient: any | null;
+	readonly patient: TelephonyPatientLike | null;
 	readonly matchedBy: "e164" | "national10" | "representative" | "none";
 	readonly formattedPhone: string;
 	readonly initials: string;

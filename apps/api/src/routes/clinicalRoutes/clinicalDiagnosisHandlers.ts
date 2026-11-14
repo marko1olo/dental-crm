@@ -64,15 +64,19 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity) return reply;
+			if (!identity.organizationId || !identity.userId) {
+				return reply.status(401).send({
+					error: "Unauthorized",
+					message: "Не удалось определить организацию или идентификатор сотрудника.",
+				});
+			}
 			const { getRecentPatientHistoryFromDb } = await import(
 				"../../db/recentPatientHistoryQuery.js"
 			);
 			return reply.status(200).send(
 				await getRecentPatientHistoryFromDb(
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					identity.organizationId!,
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					identity.userId!,
+					identity.organizationId,
+					identity.userId,
 				),
 			);
 		} catch (error: unknown) {
@@ -96,6 +100,12 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity) return reply;
+			if (!identity.organizationId || !identity.userId) {
+				return reply.status(401).send({
+					error: "Unauthorized",
+					message: "Не удалось определить организацию или идентификатор сотрудника.",
+				});
+			}
 			const parsedBody = recentPatientViewBodySchema.safeParse(
 				request.body ?? {},
 			);
@@ -119,10 +129,8 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 				"../../db/recentPatientHistoryQuery.js"
 			);
 			const result = await recordPatientViewInDb(
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				identity.organizationId!,
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				identity.userId!,
+				identity.organizationId,
+				identity.userId,
 				patientId,
 			);
 			if (!result.recorded) {

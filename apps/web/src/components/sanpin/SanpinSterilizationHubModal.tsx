@@ -8,12 +8,13 @@
 
 import React from "react";
 import { SanpinStudioModal } from "./SanpinStudioModal";
+import type { SterilizationBatchCycleRecord } from "./sanpinCatalogData";
 
 export interface SanpinSterilizationHubModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onCycleCompleted?: ((result?: unknown) => void) | undefined;
-	readonly onCycleCreated?: ((cycle?: unknown) => void) | undefined;
+	readonly onCycleCreated?: ((cycle: SterilizationBatchCycleRecord) => void) | undefined;
 	readonly isDemo?: boolean | undefined;
 	readonly initialTab?: "express" | "autoclave" | "pso" | "print" | string | undefined;
 }
@@ -35,7 +36,7 @@ export const SanpinSterilizationHubModal: React.FC<SanpinSterilizationHubModalPr
 			isDemo={isDemo}
 			initialTab={initialTab === "express" ? "autoclave" : initialTab}
 			onCycleCompleted={onCycleCompleted}
-			onCycleCreated={onCycleCreated as any}
+			onCycleCreated={onCycleCreated}
 		/>
 	);
 };

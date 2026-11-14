@@ -13,6 +13,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { preSterilizationCleaningLogs, users } from "../../../db/schema.js";
+import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
 export async function handleGetPso(req: FastifyRequest, reply: FastifyReply) {
@@ -93,7 +94,7 @@ export async function handlePostPso(req: FastifyRequest, reply: FastifyReply) {
 			isBatchApproved: evaluation.isBatchApproved,
 			detergentBrand: data.detergentBrand ?? null,
 			rejectionReason: evaluation.rejectionReason,
-			operatorId: data.operatorId ?? (req as any).user?.id ?? null,
+			operatorId: data.operatorId ?? getRequestIdentity(req).userId ?? null,
 			notes: data.notes ? `${data.instrumentName} | ${data.notes}` : data.instrumentName,
 			timestamp: new Date(),
 		})

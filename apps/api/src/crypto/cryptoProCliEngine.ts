@@ -303,7 +303,8 @@ function parseDateTimeString(raw: string): string | null {
 	// Формат YYYY-MM-DD
 	const isoMatch = cleaned.match(/^(\d{4}-\d{2}-\d{2}(?:T|\s)\d{2}:\d{2}:\d{2})/);
 	if (isoMatch) {
-		const d = new Date(isoMatch[1]!.replace(" ", "T") + "Z");
+		const isoStr = isoMatch[1] ?? "";
+		const d = new Date(isoStr.replace(" ", "T") + "Z");
 		if (!Number.isNaN(d.getTime())) {
 			return d.toISOString();
 		}
@@ -347,21 +348,21 @@ export function parseCertificatesOutput(rawText: string): CryptoProCertInfo[] {
 		const thumbMatch = block.match(/(?:SHA1 Hash|SHA1-отпечаток|Отпечаток\s*(?:\(SHA1\))?|Хэш)\s*[:=]\s*([a-f0-9\s:-]+?)(?=\r?\n|$)/i);
 		if (!thumbMatch) continue;
 
-		const rawThumb = thumbMatch[1]!.replace(/[\s:-]/g, "").toUpperCase();
+		const rawThumb = (thumbMatch[1] ?? "").replace(/[\s:-]/g, "").toUpperCase();
 		if (rawThumb.length < 32) continue;
 		const thumbprint = rawThumb;
 
 		// 2. Серийный номер
 		const serialMatch = block.match(/(?:Serial(?:\s*Number)?|Серийный\s*номер)\s*[:=]\s*(?:0x)?([a-f0-9\s:-]+)/i);
-		const serialNumber = serialMatch ? serialMatch[1]!.replace(/[\s:-]/g, "").toUpperCase() : "";
+		const serialNumber = serialMatch?.[1] ? serialMatch[1].replace(/[\s:-]/g, "").toUpperCase() : "";
 
 		// 3. Субъект
 		const subjectMatch = block.match(/(?:Subject|Субъект)\s*[:=]\s*(.+?)(?=(?:Issuer|Издатель|Serial|Серийный|Not valid|Действителен|$))/is);
-		const subjectName = subjectMatch ? subjectMatch[1]!.replace(/[\r\n]+/g, " ").trim() : "";
+		const subjectName = subjectMatch?.[1] ? subjectMatch[1].replace(/[\r\n]+/g, " ").trim() : "";
 
 		// 4. Издатель
 		const issuerMatch = block.match(/(?:Issuer|Издатель)\s*[:=]\s*(.+?)(?=(?:Subject|Субъект|Serial|Серийный|Not valid|Действителен|$))/is);
-		const issuerName = issuerMatch ? issuerMatch[1]!.replace(/[\r\n]+/g, " ").trim() : "";
+		const issuerName = issuerMatch?.[1] ? issuerMatch[1].replace(/[\r\n]+/g, " ").trim() : "";
 
 		// 5. Атрибуты из субъекта
 		const commonName = extractDnValue(subjectName, "CN") || "";
@@ -385,8 +386,8 @@ export function parseCertificatesOutput(rawText: string): CryptoProCertInfo[] {
 		const validFromMatch = block.match(/(?:Not valid before|Valid from|Действителен\s*с)\s*[:=]\s*([^\r\n]+)/i);
 		const validToMatch = block.match(/(?:Not valid after|Valid to|Действителен\s*по)\s*[:=]\s*([^\r\n]+)/i);
 
-		const validFrom = parseDateTimeString(validFromMatch ? validFromMatch[1]! : "") || new Date().toISOString();
-		const validTo = parseDateTimeString(validToMatch ? validToMatch[1]! : "") || new Date(Date.now() + 365 * 86400000).toISOString();
+		const validFrom = parseDateTimeString(validFromMatch?.[1] ?? "") || new Date().toISOString();
+		const validTo = parseDateTimeString(validToMatch?.[1] ?? "") || new Date(Date.now() + 365 * 86400000).toISOString();
 
 		// 7. Наличие закрытого ключа
 		const hasPrivateKey =
@@ -403,7 +404,7 @@ export function parseCertificatesOutput(rawText: string): CryptoProCertInfo[] {
 
 		// 9. Алгоритм
 		const algMatch = block.match(/(?:Algorithm|Алгоритм(?: ключа)?)\s*[:=]\s*([^\r\n]+)/i);
-		const algorithmRaw = algMatch ? algMatch[1]!.trim() : "";
+		const algorithmRaw = algMatch?.[1]?.trim() ?? "";
 		const algorithmOid = algorithmRaw.includes("1.2.643.7.1.1.1.2")
 			? "1.2.643.7.1.1.1.2"
 			: "1.2.643.7.1.1.1.1";
@@ -413,7 +414,7 @@ export function parseCertificatesOutput(rawText: string): CryptoProCertInfo[] {
 		const containerMatch =
 			block.match(/(?:Container name|Имя контейнера|FQCN)\s*[:=]\s*([^\r\n]+)/i) ||
 			block.match(/(?:^|\r?\n)\s*([^\r\n]+?)\s*\r?\nCertificate in container:/i);
-		const containerName = containerMatch ? containerMatch[1]!.trim() : undefined;
+		const containerName = containerMatch?.[1]?.trim() ?? undefined;
 
 		certificates.push({
 			thumbprint,
@@ -591,7 +592,17 @@ export async function signDetachedGost(
 		await fs.promises.writeFile(tmpFile, dataBuffer);
 
 		// Выбираем бинарник: prefer csptest или cryptcp
-		const execBin = paths.csptest || paths.cryptcp!;
+		const execBin = paths.csptest ?? paths.cryptcp;
+		if (!execBin) {
+			throw new CryptoProCliError(
+				"CSP_NOT_INSTALLED",
+				"КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.",
+				{
+					paperFallbackAvailable: true,
+					searchedStandardPaths: STANDARD_WINDOWS_PATHS,
+				},
+			);
+		}
 
 		// Аргументы команды подписания (StomX стандарт: -sign -detached -nochain -thumbprint ... -dir ... ...)
 		const args = [

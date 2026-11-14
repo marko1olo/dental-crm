@@ -21,6 +21,7 @@ import {
 	PORTAL_TOKEN_KIND,
 	type SelectTierBody,
 } from "./types.js";
+import { isValidUuid } from "@dental/shared";
 
 export async function registerPortalDocumentsRoutes(server: FastifyInstance): Promise<void> {
 	// 4. View Document HTML (Protected)
@@ -353,12 +354,11 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			}
 
 			// Update administrative profile with signature audit
-			const currentProfile =
-				(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+			const currentProfile = patientRow.administrativeProfile ?? {};
 			const currentConsentAudit =
 				(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
 
-			const updatedAudit = {
+			const updatedAudit: Record<string, unknown> = {
 				...currentConsentAudit,
 				[consentId]: {
 					consentId,
@@ -381,7 +381,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					administrativeProfile: {
 						...currentProfile,
 						consentSignatures: updatedAudit,
-					} as any,
+					},
 					updatedAt: now,
 				})
 				.where(
@@ -577,6 +577,10 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			reply.status(400);
 			return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
 		}
+		if (!isValidUuid(planId)) {
+			reply.status(400);
+			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
+		}
 
 		const tierId =
 			typeof request.body?.tierId === "string" ? request.body.tierId.trim() : "";
@@ -622,8 +626,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				return { error: "PatientNotFound" };
 			}
 
-			const currentProfile =
-				(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+			const currentProfile = patientRow.administrativeProfile ?? {};
 
 			await db
 				.update(patients)
@@ -632,7 +635,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 						...currentProfile,
 						selectedTreatmentTier: tierId,
 						treatmentTierSelectedAt: new Date().toISOString(),
-					} as any,
+					},
 					updatedAt: new Date(),
 				})
 				.where(
@@ -668,6 +671,10 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		if (!planId) {
 			reply.status(400);
 			return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
+		}
+		if (!isValidUuid(planId)) {
+			reply.status(400);
+			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
 		}
 
 		return withTenantCtx(auth.organizationId, async () => {

@@ -13,7 +13,7 @@ import {
 	toothStates,
 	users,
 } from "../../db/schema.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerLeadsRoutes } from "../../routes/leads.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
 import { registerPatientRoutes } from "../../routes/patients.js";

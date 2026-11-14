@@ -12,6 +12,23 @@ import { PediatricSomaticNormSection } from "./somatic/PediatricSomaticNormSecti
 
 export * from "./somatic/pediatricSomaticTypes";
 
+function resolveRepresentativeRole(
+	initialRole?: LegalRepresentativeData["role"] | string | undefined,
+	defaultRole?: string | undefined,
+): LegalRepresentativeData["role"] {
+	const candidate = initialRole || defaultRole;
+	if (
+		candidate === "Мать" ||
+		candidate === "Отец" ||
+		candidate === "Опекун" ||
+		candidate === "Усыновитель" ||
+		candidate === "Родитель"
+	) {
+		return candidate;
+	}
+	return "Мать";
+}
+
 export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepProps> = ({
 	initialSomatic,
 	onSomaticChange,
@@ -40,7 +57,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 		...initialRepresentative,
 		fullName: initialRepresentative?.fullName || defaultRepresentativeFullName,
 		phone: initialRepresentative?.phone || defaultRepresentativePhone,
-		role: (initialRepresentative?.role || defaultRepresentativeRole || "Мать") as any,
+		role: resolveRepresentativeRole(initialRepresentative?.role, defaultRepresentativeRole),
 	}));
 
 	useEffect(() => {

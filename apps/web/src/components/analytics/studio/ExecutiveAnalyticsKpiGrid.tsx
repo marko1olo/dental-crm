@@ -44,7 +44,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			<article className="studio-kpi-card" data-testid="kpi-card-revenue">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+						<span className="text-xs font-semibold text-[var(--muted)]">
 							Выручка кассы
 						</span>
 						<span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal)]">
@@ -65,7 +65,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			<article className="studio-kpi-card" data-testid="kpi-card-chairs">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+						<span className="text-xs font-semibold text-[var(--muted)]">
 							Загрузка кресел ({data.totalChairsCount} шт)
 						</span>
 						<span className={chairBadgeClass}>
@@ -94,7 +94,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			<article className="studio-kpi-card" data-testid="kpi-card-average-check">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+						<span className="text-xs font-semibold text-[var(--muted)]">
 							Средний чек и Recall
 						</span>
 						<span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${rebookingBadgeClass}`}>

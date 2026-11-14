@@ -4,6 +4,8 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import type { Dashboard } from "@dental/shared";
+import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
 import type { TargetSlotInfo, WaitlistCandidateItem, WaitlistUrgency } from "./waitlistTypes";
 import { filterWaitlistCandidates, generateWaitlistOfferMessage } from "./waitlistTypes";
 
@@ -12,8 +14,8 @@ export interface UseWaitlistOptions {
   targetSlot?: TargetSlotInfo | null | undefined;
   onBookSlot?: ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void) | undefined;
   onClose?: (() => void) | undefined;
-  dashboard?: any;
-  auth?: any;
+  dashboard?: Dashboard | null | undefined;
+  auth?: AppLogicContextType["auth"] | null | undefined;
 }
 
 export function useWaitlistState(options: UseWaitlistOptions) {
@@ -75,8 +77,9 @@ export function useWaitlistState(options: UseWaitlistOptions) {
       if (Array.isArray(data)) {
         setItems(data);
       }
-    } catch (err: any) {
-      setError(err?.message || "Не удалось загрузить лист ожидания");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Не удалось загрузить лист ожидания";
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -122,8 +125,9 @@ export function useWaitlistState(options: UseWaitlistOptions) {
           prev.map((it) => (it.id === candidate.id ? { ...it, status: "booked" } : it)),
         );
         if (onClose) onClose();
-      } catch (err: any) {
-        setError(err?.message || "Ошибка при записи пациента в слот");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Ошибка при записи пациента в слот";
+        setError(msg);
       }
     },
     [targetSlot, onBookSlot, onClose],
@@ -194,8 +198,9 @@ export function useWaitlistState(options: UseWaitlistOptions) {
         setNewPatientPhone("");
         setNewNotes("");
         setActiveTab(targetSlot ? "smart_match" : "all_patients");
-      } catch (err: any) {
-        setError(err?.message || "Не удалось сохранить заявку в лист ожидания");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Не удалось сохранить заявку в лист ожидания";
+        setError(msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -216,7 +221,10 @@ export function useWaitlistState(options: UseWaitlistOptions) {
   // Копирование вежливого сообщения в буфер
   const handleCopyOfferMessage = useCallback(
     (candidate: WaitlistCandidateItem) => {
-      const clinicName = dashboard?.clinicSettings?.name || "Стоматология DENTE";
+      const clinicName =
+        dashboard?.clinicName ||
+        dashboard?.clinicSettings?.profile?.clinicName ||
+        "Стоматология DENTE";
       const message = generateWaitlistOfferMessage({
         patientName: candidate.patientName,
         doctorName: targetSlot?.doctorName || candidate.preferredDoctorName,

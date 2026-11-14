@@ -8,7 +8,8 @@ import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
 
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/copilot';
-const BRAIN_THIS_SESSION = 'C:/Users/Admin/.gemini/antigravity/brain/44bbc679-c31c-4905-9c0b-3bfc8be4108e';
+const CONV_ID = process.env.CONV_ID || '8def0238-0bb7-484e-8af4-ef5d7f86ed9c';
+const BRAIN_THIS_SESSION = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 
 const TARGET_DIRS = [PROOFS_DIR, BRAIN_THIS_SESSION];
 for (const dir of TARGET_DIRS) {
@@ -30,7 +31,7 @@ if (!executablePath) {
   process.exit(1);
 }
 
-const PORT = 5173;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 5174;
 const DEV_URL = `http://127.0.0.1:${PORT}`;
 
 async function isServerUp(url) {
@@ -558,6 +559,22 @@ const capturedFiles = [];
 }
 
 await browser.close();
+
+// Sync canonical 4-state proof aliases
+const proofAliases = {
+  '01_copilot_drawer_pc_light_1440.png': '01_copilot_pc_light_1440x900.png',
+  '01_copilot_drawer_pc_dark_1440.png': '02_copilot_pc_dark_1440x900.png',
+  '03_copilot_drawer_mobile_light_390.png': '03_copilot_mobile_light_390x844.png',
+  '03_copilot_drawer_mobile_dark_390.png': '04_copilot_mobile_dark_390x844.png',
+};
+
+for (const [srcName, aliasName] of Object.entries(proofAliases)) {
+  const srcPath = path.join(PROOFS_DIR, srcName);
+  if (existsSync(srcPath)) {
+    copyFileSync(srcPath, path.join(PROOFS_DIR, aliasName));
+    capturedFiles.push(aliasName);
+  }
+}
 
 console.log('\n[COPY] Distributing visual proofs to artifact directories...');
 for (const fname of capturedFiles) {

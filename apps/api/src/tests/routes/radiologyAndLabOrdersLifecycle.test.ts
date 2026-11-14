@@ -38,7 +38,7 @@ import {
 	estimateDeliveryAndFittingSchedule,
 	createLabItemSchema,
 	validateFdiToothNotation,
-} from "../../routes/lab.js";
+} from "../../routes/lab/index.js";
 
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 

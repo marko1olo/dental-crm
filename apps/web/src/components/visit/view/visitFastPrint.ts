@@ -18,13 +18,16 @@ export * from "./fastPrintModules/fastPrintDiaryBuilder";
 export * from "./fastPrintModules/fastPrintConsentAndMemoBuilder";
 export * from "./fastPrintModules";
 
-import { executeFastPrint043u } from "./fastPrintModules/fastPrintDiaryBuilder";
+import {
+	executeFastPrint043u,
+	type FastPrintClinicalDiaryParams,
+} from "./fastPrintModules/fastPrintDiaryBuilder";
 
 /**
  * Канонический хендлер быстрой печати медицинской карты приёма со штампом (ЧЕРНОВИК / ПОДПИСАНО ВРАЧОМ).
  * Мандат 8e / 8x: Чистый клинический язык без советского канцелярита.
  */
-export const handlePrintMedicalCardFast = (params?: any) => {
+export const handlePrintMedicalCardFast = (params?: FastPrintClinicalDiaryParams) => {
 	if (params) {
 		return executeFastPrint043u(params);
 	}

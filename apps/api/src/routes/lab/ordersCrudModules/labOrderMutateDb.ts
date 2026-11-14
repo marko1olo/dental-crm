@@ -53,6 +53,18 @@ export async function updateLabOrderInDb(
 		if (mapped) targetStatus = mapped;
 	}
 
+	const isWarranty =
+		Boolean(updateData.isWarranty || updateData.isWarrantyRemake || updateData.isWarrantyRework) ||
+		updateData.stage === "warranty_rework" ||
+		updateData.stage === "correction_remake" ||
+		updateData.stage === "correction_required" ||
+		updateData.stage === "refitting" ||
+		targetStatus === "refitting";
+
+	if (currentOrder.isLockedInstalled && !isWarranty) {
+		return { kind: "locked_installed" as const };
+	}
+
 	if (targetStatus && targetStatus !== currentOrder.status) {
 		const currentStatus = toLabOrderStatus(currentOrder.status);
 		if (!isPermittedLabStatusTransition(currentStatus, targetStatus)) {
@@ -76,11 +88,12 @@ export async function updateLabOrderInDb(
 				? null
 				: undefined;
 
-	const effectiveMaterial = updateData.material ?? updateData.materialName ?? updateData.construction;
+	const effectiveMaterial = updateData.material ?? updateData.materialName ?? updateData.construction ?? updateData.materialId;
 	const effectiveNotes = updateData.clinicalNotes ?? updateData.doctorNotes;
 	const effectiveTooth = updateData.toothFdi ?? updateData.teethFdi;
 
 	const updatePayload: Record<string, unknown> = { ...auditFields, updatedAt: now };
+	if (isWarranty) updatePayload.isLockedInstalled = false;
 	if (updateData.doctorId !== undefined) updatePayload.doctorId = updateData.doctorId;
 	if (effectiveTooth !== undefined) updatePayload.toothFdi = effectiveTooth;
 	if (effectiveMaterial !== undefined) updatePayload.material = effectiveMaterial;

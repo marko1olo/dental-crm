@@ -111,7 +111,9 @@ export function useLanP2P() {
 
 	useEffect(() => {
 		const unsubCito = lanP2PDispatcher.onAssistantCitoCall((event) => {
-			const alertId = `${event.doctorId}_${event.cabinetNumber}_${(event as any).timestamp || (event as any).calledAt || Date.now()}`;
+			const alertId =
+				event.callId ||
+				`${event.doctorId}_${event.cabinetNumber}_${event.calledAt || Date.now()}`;
 			setActiveCitoAlerts((prev) => {
 				if (prev.some((a) => a.alertId === alertId)) return prev;
 				return [

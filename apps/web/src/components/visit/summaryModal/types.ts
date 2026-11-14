@@ -1,10 +1,27 @@
-import type { DiaryState } from "../diaryLogic/diaryLogicTypes";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import type { VisitDiaryEntry043 } from "../../emr";
 import type { RadiologySnapshotItem } from "../VisitSummaryRadiologyGallery";
 import type { PaymentMethodTab } from "../../finance/modal/payment/paymentModalTypes.js";
 import type { ConsumablesReconciliationResult } from "../../odontogram/treatmentEstimatorReconciler";
 
 export type { RadiologySnapshotItem, ConsumablesReconciliationResult };
+
+export interface ChairsideSummaryServiceItem {
+	readonly id?: string;
+	readonly serviceId?: string;
+	readonly code804n?: string;
+	readonly code?: string;
+	readonly name?: string;
+	readonly title?: string;
+	readonly priceRub?: number;
+	readonly unitPriceRub?: number;
+	readonly price?: number;
+	readonly quantity?: number;
+	readonly totalRub?: number;
+	readonly toothNumber?: number;
+	readonly toothCode?: string;
+	[key: string]: unknown;
+}
 
 export interface VisitSummaryPatient {
 	id?: string;
@@ -65,17 +82,17 @@ export interface VisitSummaryModalProps {
 	onOpenProtocolGenerator?: () => void;
 	onScheduleNextVisit?: () => void;
 	onCompleteVisit?: () => void;
-	services?: readonly any[];
+	services?: readonly ChairsideSummaryServiceItem[];
 	totalDueRub?: number;
 	patientDepositRub?: number;
 	patientFamilyBalanceRub?: number;
 	isPaid?: boolean;
 	defaultDocsDropupOpen?: boolean;
-	onPaymentSuccess?: (paymentData: any) => void;
+	onPaymentSuccess?: (paymentData: unknown) => void;
 }
 
 export interface ChairsideBillingCalculationResult {
-	chairsideServices: readonly any[];
+	chairsideServices: readonly ChairsideSummaryServiceItem[];
 	calculatedServicesTotalRub: number;
 	effectiveTotalDueRub: number;
 	effectiveDepositRub: number;

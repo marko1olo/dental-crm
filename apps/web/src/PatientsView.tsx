@@ -68,6 +68,11 @@ const ClinicalPhotoProtocolModal = lazy(() =>
 		default: module.ClinicalPhotoProtocolModal,
 	})),
 );
+const FamilyWalletModal = lazy(() =>
+	import("./components/patients/family/FamilyWalletModal").then((module) => ({
+		default: module.FamilyWalletModal,
+	})),
+);
 
 export type {
 	PatientInsight,
@@ -129,6 +134,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
+	const [isFamilyWalletModalOpen, setIsFamilyWalletModalOpen] = useState(false);
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
 	const [showTactileSearch, setShowTactileSearch] = useState(false);
 	const [tactileFilters, setTactileFilters] =
@@ -216,6 +222,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		setIsRecallsHubOpen,
 		setIsPatientCardModalOpen,
 		handleSelectPatient,
+		setIsFamilyWalletModalOpen,
 	});
 
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
@@ -235,6 +242,20 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			window.removeEventListener("dente:open-photo-protocol", handleOpenPhotoProtocol);
 		};
 	}, [handleSelectPatient]);
+
+	useEffect(() => {
+		const handleBalanceChange = () => {
+			if (typeof logicContext?.loadDashboard === "function") {
+				void logicContext.loadDashboard();
+			}
+		};
+		window.addEventListener("dente-patient-balance-changed", handleBalanceChange);
+		window.addEventListener("dente-family-data-changed", handleBalanceChange);
+		return () => {
+			window.removeEventListener("dente-patient-balance-changed", handleBalanceChange);
+			window.removeEventListener("dente-family-data-changed", handleBalanceChange);
+		};
+	}, [logicContext]);
 
 	const featureSalience = useMemo(
 		() =>
@@ -521,6 +542,22 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						patientId={selectedPatient.id}
 						patientName={selectedPatient.fullName}
 						patientCardNumber={selectedPatient.cardNumber || selectedPatient.medicalCardNumber}
+					/>
+				</Suspense>
+			)}
+
+			{isFamilyWalletModalOpen && (
+				<Suspense fallback={null}>
+					<FamilyWalletModal
+						isOpen={isFamilyWalletModalOpen}
+						onClose={() => setIsFamilyWalletModalOpen(false)}
+						patientId={selectedPatient?.id || selectedPatientId || ""}
+						patientName={selectedPatient?.fullName || ""}
+						onFamilyDataChanged={() => {
+							if (typeof logicContext?.loadDashboard === "function") {
+								void logicContext.loadDashboard();
+							}
+						}}
 					/>
 				</Suspense>
 			)}

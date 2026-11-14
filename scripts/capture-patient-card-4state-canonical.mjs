@@ -1,11 +1,20 @@
-import { mkdirSync, statSync } from "node:fs";
+import { mkdirSync, statSync, copyFileSync, existsSync } from "node:fs";
 import { chromium } from "playwright";
 
 const OUT_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/patient-card";
-const WEB_URL = "http://127.0.0.1:5173";
+const ALT_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/patient_card";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/93774532-8e43-4f61-9703-5fb3190efcad";
 const browserExecutable = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const WEB_URL = "http://127.0.0.1:5175";
 
-mkdirSync(OUT_DIR, { recursive: true });
+[OUT_DIR, ALT_DIR, BRAIN_DIR].forEach((dir) => {
+	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+});
+
+function replicateFile(srcPath, filename) {
+	try { copyFileSync(srcPath, `${ALT_DIR}/${filename}`); } catch (_) {}
+	try { copyFileSync(srcPath, `${BRAIN_DIR}/${filename}`); } catch (_) {}
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -202,6 +211,7 @@ async function runCapture() {
 	const mobLightPath = `${OUT_DIR}/patient_card_mobile_light_390x844.png`;
 	await mobPage.screenshot({ path: mobLightPath, fullPage: false });
 	const mobLightSize = statSync(mobLightPath).size;
+	replicateFile(mobLightPath, "patient_card_mobile_light_390x844.png");
 	console.log(`[Mobile] Saved: ${mobLightPath} (${mobLightSize} bytes)`);
 	if (mobLightSize < 20480) throw new Error("Mobile Light screenshot < 20KB");
 
@@ -211,6 +221,7 @@ async function runCapture() {
 	const mobDarkPath = `${OUT_DIR}/patient_card_mobile_dark_390x844.png`;
 	await mobPage.screenshot({ path: mobDarkPath, fullPage: false });
 	const mobDarkSize = statSync(mobDarkPath).size;
+	replicateFile(mobDarkPath, "patient_card_mobile_dark_390x844.png");
 	console.log(`[Mobile] Saved: ${mobDarkPath} (${mobDarkSize} bytes)`);
 	if (mobDarkSize < 20480) throw new Error("Mobile Dark screenshot < 20KB");
 

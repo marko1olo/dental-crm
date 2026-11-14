@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { generateQrCodeSvg } from "@dental/shared";
-import { detectMutuallyExclusiveToothProcedures } from "../validation/starProtocolValidationEngine";
+import { detectMutuallyExclusiveToothProcedures } from "../starProtocolValidationEngine";
 import { SignatureLegalAndConflicts } from "./SignatureLegalAndConflicts";
 import { SignatureMethodTabs } from "./SignatureMethodTabs";
 import { SignatureModalFooter } from "./SignatureModalFooter";

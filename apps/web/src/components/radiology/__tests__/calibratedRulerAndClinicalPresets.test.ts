@@ -6,7 +6,7 @@ import {
 	computeVoiRange,
 	huToGrayscale,
 	VISIOGRAPH_WINDOW_PRESETS,
-} from "../../visiograph/VisiographWindowPresets.js";
+} from "../../dicom/VisiographWindowPresets.js";
 import {
 	calculateAngle3Points,
 	calculateRuler,
@@ -14,7 +14,7 @@ import {
 	DENTAL_SENSOR_PRESETS,
 	distance2D,
 	recalculateRulersWithScale,
-} from "../../visiograph/VisiographMeasurementMath.js";
+} from "../radiologyMeasurementMath.js";
 
 describe("2D RVG Calibrated Ruler Measurements & Clinical Window Preset Switching", () => {
 	test("calibrated ruler measures apex to orifice length with 0.1 mm precision", () => {

@@ -87,8 +87,10 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 				);
 			}
 			onClose();
-		} catch {
-			showToast("Ошибка при фиксации кассовой операции", "error");
+		} catch (flowErr: unknown) {
+			console.error("[useCashFlowLogic] Ошибка при фиксации кассовой операции:", flowErr);
+			const msg = flowErr instanceof Error ? flowErr.message : "Ошибка при фиксации кассовой операции";
+			showToast(msg, "error");
 		} finally {
 			setIsProcessing(false);
 		}

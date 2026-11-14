@@ -1,3 +1,4 @@
+import "../AnalyticsDashboardView.css";
 import { AlertTriangle, Calendar, RefreshCw } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { EmptyState } from "../../components/EmptyState.js";

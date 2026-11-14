@@ -16,6 +16,7 @@ import { and, eq, or } from "drizzle-orm";
 import type { TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../../routes/loyaltyModules/bonusBalanceService.js";
+import { buildPatientLedgers, patientAccountBalanceKopecks } from "../../money/patientDebt.js";
 import type { ResolvedPaymentSplit } from "./paymentSplitValidation.js";
 import type { LockedPatientForBilling } from "./types.js";
 
@@ -30,6 +31,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 	},
 ): Promise<typeof schema.payments.$inferSelect> {
 	const { organizationId, input, lockedPatient, split, effectivePaymentNote } = params;
+	const patientId = lockedPatient.id;
 	const {
 		isSplit,
 		resolvedCashKop,
@@ -52,7 +54,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 			await verifyFamilySpendPermission(tx, {
 				organizationId,
 				familyGroupId: lockedPatient.familyGroupId,
-				patientId: input.patientId,
+				patientId,
 				deductionKop: resolvedDepositKop,
 			});
 		}
@@ -61,7 +63,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 		if ((resolvedBonusKop ?? 0) > 0) {
 			preLockedBonusBalance = await holdAndVerifyBonusBalance(tx, {
 				organizationId,
-				patientId: input.patientId,
+				patientId,
 				bonusKopecks: resolvedBonusKop,
 			});
 		}
@@ -78,7 +80,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 				.insert(schema.payments)
 				.values({
 					organizationId,
-					patientId: input.patientId,
+					patientId,
 					visitId: input.visitId || null,
 					documentId: input.documentId || null,
 					amountRub: cashAmountRub,
@@ -111,7 +113,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 				.insert(schema.payments)
 				.values({
 					organizationId,
-					patientId: input.patientId,
+					patientId,
 					visitId: input.visitId || null,
 					documentId: input.documentId || null,
 					amountRub: electronicAmountRub,
@@ -144,7 +146,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 				.insert(schema.payments)
 				.values({
 					organizationId,
-					patientId: input.patientId,
+					patientId,
 					visitId: input.visitId || null,
 					documentId: input.documentId || null,
 					amountRub: dmsAmountRub,
@@ -204,7 +206,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 				.insert(schema.payments)
 				.values({
 					organizationId,
-					patientId: input.patientId,
+					patientId,
 					visitId: input.visitId || null,
 					documentId: input.documentId || null,
 					amountRub: depositAmountRub,
@@ -233,7 +235,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 			await deductFamilyWalletBalance(tx, {
 				organizationId,
 				familyGroupId: lockedPatient.familyGroupId,
-				patientId: input.patientId,
+				patientId,
 				deductionKop: resolvedDepositKop,
 			});
 		}
@@ -244,7 +246,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 				.insert(schema.payments)
 				.values({
 					organizationId,
-					patientId: input.patientId,
+					patientId,
 					visitId: input.visitId || null,
 					documentId: input.documentId || null,
 					amountRub: bonusAmountRub,
@@ -273,7 +275,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 			// Phase 2 (Commit): Commit bonus deduction
 			await commitBonusDeduction(tx, {
 				organizationId,
-				patientId: input.patientId,
+				patientId,
 				bonusKopecks: resolvedBonusKop,
 				lockedBalance: preLockedBonusBalance,
 				invoiceId: input.documentId,
@@ -319,13 +321,13 @@ export async function executePaymentInsertAndBalanceDeductions(
 		await verifyFamilySpendPermission(tx, {
 			organizationId,
 			familyGroupId: lockedPatient.familyGroupId,
-			patientId: input.patientId,
+			patientId,
 			deductionKop: singleDepositKop,
 		});
 		await deductFamilyWalletBalance(tx, {
 			organizationId,
 			familyGroupId: lockedPatient.familyGroupId,
-			patientId: input.patientId,
+			patientId,
 			deductionKop: singleDepositKop,
 		});
 	}
@@ -337,7 +339,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 			: Math.round(input.amountRub * 100);
 		singleLockedBonus = await holdAndVerifyBonusBalance(tx, {
 			organizationId,
-			patientId: input.patientId,
+			patientId,
 			bonusKopecks: singleBonusKop,
 		});
 	}
@@ -346,7 +348,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 		.insert(schema.payments)
 		.values({
 			organizationId,
-			patientId: input.patientId,
+			patientId,
 			visitId: input.visitId || null,
 			documentId: input.documentId || null,
 			amountRub: input.amountRub,
@@ -377,7 +379,7 @@ export async function executePaymentInsertAndBalanceDeductions(
 			: Math.round(input.amountRub * 100);
 		await commitBonusDeduction(tx, {
 			organizationId,
-			patientId: input.patientId,
+			patientId,
 			bonusKopecks: singleBonusKop,
 			lockedBalance: singleLockedBonus,
 			invoiceId: input.documentId,
@@ -458,8 +460,68 @@ async function verifyFamilySpendPermission(
 		}
 	}
 
+	// Соло-пациент без семейной группы: оплата производится с индивидуального депозитного счета пациента (Мандат 8e, 8n)
 	if (!targetFamilyGroupId) {
-		throw new Error("Не найдена семейная группа для списания средств с семейного депозита.");
+		const [chargeRows, paymentRows] = await Promise.all([
+			tx
+				.select({
+					patientId: schema.treatmentItems.patientId,
+					status: schema.treatmentItems.status,
+					unitPriceRub: schema.treatmentItems.unitPriceRub,
+					quantity: schema.treatmentItems.quantity,
+					discountRub: schema.treatmentItems.discountRub,
+				})
+				.from(schema.treatmentItems)
+				.where(
+					and(
+						eq(schema.treatmentItems.organizationId, organizationId),
+						eq(schema.treatmentItems.patientId, patientId),
+					),
+				),
+			tx
+				.select({
+					patientId: schema.payments.patientId,
+					status: schema.payments.status,
+					amountRub: schema.payments.amountRub,
+				})
+				.from(schema.payments)
+				.where(
+					and(
+						eq(schema.payments.organizationId, organizationId),
+						eq(schema.payments.patientId, patientId),
+					),
+				),
+		]);
+
+		const ledger = buildPatientLedgers(chargeRows, paymentRows).get(patientId);
+		const personalBalanceKop = ledger ? patientAccountBalanceKopecks(ledger) : 0;
+
+		const advanceTaggings = await tx
+			.select({ depositAmountRub: schema.advanceDepositTaggings.depositAmountRub })
+			.from(schema.advanceDepositTaggings)
+			.where(
+				and(
+					eq(schema.advanceDepositTaggings.organizationId, organizationId),
+					eq(schema.advanceDepositTaggings.patientId, patientId),
+					eq(schema.advanceDepositTaggings.allocationStatus, "unallocated"),
+				),
+			);
+		const taggedAdvanceKop = advanceTaggings.reduce(
+			(acc, t) => acc + Math.round(Number(t.depositAmountRub || 0) * 100),
+			0,
+		);
+
+		const effectiveAvailableKop = Math.max(personalBalanceKop, taggedAdvanceKop);
+
+		if (effectiveAvailableKop < deductionKop && personalBalanceKop < deductionKop) {
+			const availableRub = ((effectiveAvailableKop > 0 ? effectiveAvailableKop : 0) / 100).toFixed(2);
+			const requiredRub = (deductionKop / 100).toFixed(2);
+			throw new Error(
+				`Недостаточно средств на личном депозите пациента. Доступно: ${availableRub} ₽, требуется: ${requiredRub} ₽.`,
+			);
+		}
+		// Индивидуальный депозит соло-пациента успешно проверен
+		return;
 	}
 
 	const [famGroup] = await tx
@@ -507,7 +569,9 @@ async function verifyFamilySpendPermission(
 				rel.isPrimaryPayer === true ||
 				rel.isLegalRepresentative === true ||
 				rel.relationshipType === "parent" ||
+				rel.relationshipType === "child" ||
 				rel.relationshipType === "guardian" ||
+				rel.relationshipType === "ward" ||
 				rel.relationshipType === "spouse");
 
 		if (!canSpend) {
@@ -554,12 +618,15 @@ async function deductFamilyWalletBalance(
 		}
 	}
 
+	// Для соло-пациента без семейной группы списание фиксируется записью в payments, семейный баланс не трогаем
+	if (!targetFamilyGroupId) return;
+
 	const [famGroup] = await tx
 		.select()
 		.from(schema.familyGroups)
 		.where(
 			and(
-				eq(schema.familyGroups.id, targetFamilyGroupId!),
+				eq(schema.familyGroups.id, targetFamilyGroupId),
 				eq(schema.familyGroups.organizationId, organizationId),
 			),
 		)

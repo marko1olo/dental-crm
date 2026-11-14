@@ -1,9 +1,16 @@
 import type { Patient } from "@dental/shared";
 import type { MergedPatientResult } from "./types";
+import type { PatientClinicalSafetyProfile } from "../safetyMath";
+
+export interface PatientWithMergeContext extends Patient {
+	readonly allergies?: string | null;
+	readonly balance?: number | null;
+	readonly clinicalSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null;
+}
 
 function unionAllergies(primary: Patient, duplicate: Patient): string {
-	const a = ((primary as any).allergies as string | undefined) ?? "";
-	const b = ((duplicate as any).allergies as string | undefined) ?? "";
+	const a = (primary as PatientWithMergeContext).allergies ?? "";
+	const b = (duplicate as PatientWithMergeContext).allergies ?? "";
 	const split = (str: string) => str.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
 	return Array.from(new Set([...split(a), ...split(b)])).join("; ");
 }
@@ -12,8 +19,8 @@ function unionSafetyProfile(primary: Patient, duplicate: Patient): {
 	unitedProfile: Record<string, unknown>;
 	safetyFlags: string[];
 } {
-	const a = (primary as any).clinicalSafetyProfile || {};
-	const b = (duplicate as any).clinicalSafetyProfile || {};
+	const a = ((primary as PatientWithMergeContext).clinicalSafetyProfile || {}) as Record<string, unknown>;
+	const b = ((duplicate as PatientWithMergeContext).clinicalSafetyProfile || {}) as Record<string, unknown>;
 	const p: Record<string, unknown> = {
 		...a,
 		hasLidocaineAllergy: Boolean(a.hasLidocaineAllergy || b.hasLidocaineAllergy),
@@ -56,8 +63,8 @@ export function mergePatientRecordsNonDestructive(
 	reason: string = "Объединение дубликата карты",
 ): MergedPatientResult {
 	if (primary.id === duplicate.id) throw new Error("Невозможно объединить карточку саму с собой");
-	const primBalKop = Math.round(Number(primary.balanceRub ?? (primary as any).balance ?? 0) * 100);
-	const dupBalKop = Math.round(Number(duplicate.balanceRub ?? (duplicate as any).balance ?? 0) * 100);
+	const primBalKop = Math.round(Number(primary.balanceRub ?? (primary as PatientWithMergeContext).balance ?? 0) * 100);
+	const dupBalKop = Math.round(Number(duplicate.balanceRub ?? (duplicate as PatientWithMergeContext).balance ?? 0) * 100);
 	const combinedBalanceRub = (primBalKop + dupBalKop) / 100;
 
 	const unitedAllergies = unionAllergies(primary, duplicate);
@@ -71,12 +78,13 @@ export function mergePatientRecordsNonDestructive(
 			unitedAdmin[k] = v;
 		}
 	}
+	unitedAdmin.clinicalSafetyProfile = unitedProfile;
 
 	const auditNote = `[Аудит объединения карт: ${new Date().toISOString()}] Карточка объединена с дубликатом «${duplicate.fullName}» (ID: ${duplicate.id}). Причина: ${reason}.`;
 	const combinedNotes = [primary.notes?.trim() || "", duplicate.notes?.trim() ? `Заметки из дубликата: ${duplicate.notes.trim()}` : "", auditNote]
 		.filter(Boolean).join("\n\n");
 
-	const primaryPatient: Patient = {
+	const primaryPatient: Patient & { allergies?: string; clinicalSafetyProfile?: Record<string, unknown> } = {
 		...primary,
 		phone: primary.phone || duplicate.phone,
 		birthDate: primary.birthDate || duplicate.birthDate,
@@ -84,13 +92,14 @@ export function mergePatientRecordsNonDestructive(
 		balanceRub: combinedBalanceRub,
 		familyGroupId: primary.familyGroupId || duplicate.familyGroupId,
 		notes: combinedNotes,
-		administrativeProfile: unitedAdmin as any,
-		...({ allergies: unitedAllergies, clinicalSafetyProfile: unitedProfile } as any),
+		administrativeProfile: unitedAdmin as Patient["administrativeProfile"],
+		allergies: unitedAllergies,
+		clinicalSafetyProfile: unitedProfile,
 	};
 
 	const archivedDuplicatePatient: Patient = {
 		...duplicate,
-		status: "archived" as any,
+		status: "archived",
 		mergedIntoPatientId: primary.id,
 		notes: `[Объединение] Карточка объединена в основную карту «${primary.fullName}» (ID: ${primary.id}).`,
 	};

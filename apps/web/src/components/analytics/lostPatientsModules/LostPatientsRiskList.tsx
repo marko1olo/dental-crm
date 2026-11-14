@@ -35,7 +35,7 @@ export function LostPatientsRiskList({
 		return (
 			<div
 				role="alert"
-				className="p-3 rounded-lg border text-xs bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800 flex items-center gap-2"
+				className="p-3 rounded-lg border border-[var(--danger,#e11d48)]/25 text-xs bg-[var(--danger-soft,rgba(225,29,72,0.08))] text-[var(--danger,#e11d48)] flex items-center gap-2"
 			>
 				<AlertTriangle className="w-4 h-4 flex-shrink-0" />
 				<span>{error}</span>

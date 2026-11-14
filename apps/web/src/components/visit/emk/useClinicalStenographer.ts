@@ -294,3 +294,6 @@ export function useClinicalStenographer({
 		insertVoiceText,
 	};
 }
+
+export type UseClinicalStenographerResult = ReturnType<typeof useClinicalStenographer>;
+

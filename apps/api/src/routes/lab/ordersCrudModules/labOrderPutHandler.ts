@@ -60,6 +60,13 @@ export async function putLabOrderHandler(request: FastifyRequest<{ Params: { id:
 		return reply.code(404).send({ error: "LabOrderNotFound", message: "Заказ ЗТЛ не найден." });
 	}
 
+	if (result.kind === "locked_installed") {
+		return reply.code(409).send({
+			error: "locked_installed",
+			message: "Заказ ЗТЛ уже зафиксирован в полости рта (установлен) и заблокирован от прямых изменений. Для доработки оформите гарантийную переделку или рекламацию.",
+		});
+	}
+
 	if (result.kind === "invalid_transition") {
 		return reply.code(409).send({
 			error: "InvalidStateTransition",

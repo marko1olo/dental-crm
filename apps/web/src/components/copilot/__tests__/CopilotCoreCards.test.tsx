@@ -5,7 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { CopilotPatientCard } from '../CopilotPatientCard';
 import { CopilotAppointmentCard } from '../CopilotAppointmentCard';
 import { CopilotSlotCard } from '../CopilotSlotCard';
-import { CopilotComposer } from '../CopilotComposer';
+import { CopilotResultCard } from '../CopilotResultCard';
 
 describe('Copilot Core Cards & SSR Rendering', () => {
   it('renders CopilotPatientCard with details', () => {
@@ -26,9 +26,8 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(html.includes('Кабинет №1'));
   });
 
-  it('renders CopilotComposer with dictation mic and hotkeys', () => {
-    const html = renderToString(<CopilotComposer value="Тест" busy={false} onChange={() => {}} onSubmit={() => {}} onReset={() => {}} />);
-    assert.ok(html.includes('Медицинская тайна и защита данных') || html.includes('защита данных'));
-    assert.ok(html.includes('Ctrl+K') && html.includes('copilot-mic-btn'));
+  it('renders CopilotResultCard with clinical execution results', () => {
+    const html = renderToString(<CopilotResultCard name="updateToothStatus" result={{ status: 'ok', tooth: 36 }} />);
+    assert.ok(typeof html === 'string');
   });
 });

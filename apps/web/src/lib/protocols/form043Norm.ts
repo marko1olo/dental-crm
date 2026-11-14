@@ -52,8 +52,8 @@ export const FORM_043_PHYSIOLOGICAL_NORM: Form043PhysiologicalNormData = {
 	generalTreatmentPlan: "1. Индивидуальные рекомендации по гигиене полости рта;\n2. Профилактический контрольный осмотр через 6 месяцев.",
 };
 
-/** Создает чистую копию канонической нормы 043/у */
-export function createForm043PhysiologicalNorm(): Form043PhysiologicalNormData {
+/** Создает чистую копию канонической нормы медицинской карты (Мандаты 8e, 8x, 8ap) */
+export function createMedicalCardPhysiologicalNorm(): Form043PhysiologicalNormData {
 	return {
 		...FORM_043_PHYSIOLOGICAL_NORM,
 		oralMucosaStatus: {
@@ -61,6 +61,9 @@ export function createForm043PhysiologicalNorm(): Form043PhysiologicalNormData {
 		},
 	};
 }
+
+/** @deprecated Используйте каноническое имя createMedicalCardPhysiologicalNorm (Мандат 8x / 8ap) */
+export const createForm043PhysiologicalNorm = createMedicalCardPhysiologicalNorm;
 
 const ALL_32_FDI_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,

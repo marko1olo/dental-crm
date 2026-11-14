@@ -95,7 +95,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
           <button
             type="button"
             onClick={onApplyAll}
-            className="chairside-hud-btn-primary h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-all btn-proposals-macro-apply shrink-0"
+            className="dente-btn-secondary h-8 px-3 rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-transparent hover:bg-[var(--teal,#0d9488)]/10 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all btn-proposals-macro-apply shrink-0"
             data-testid="chairside-btn-macro-apply-all"
             aria-label="Применить все предложения к схеме"
           >

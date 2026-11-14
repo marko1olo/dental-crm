@@ -21,7 +21,7 @@ export interface ServiceEditFormData {
 	materialsCostRub?: number;
 	durationMinutes: number;
 	taxDeductible: boolean;
-	vatRate: "vat_exempt" | "vat_0" | "vat_20";
+	vatRate?: "vat_exempt" | "vat_0" | "vat_20" | undefined;
 	active: boolean;
 }
 
@@ -52,6 +52,7 @@ export interface PricesFilterToolbarProps {
 	isNativeScannerDropzoneOpen: boolean;
 	onToggleNativeScannerDropzone: () => void;
 	onOpenServicePricelistModal: () => void;
+	onPrintPricelist?: () => void;
 	onOpenNewServiceModal: () => void;
 }
 

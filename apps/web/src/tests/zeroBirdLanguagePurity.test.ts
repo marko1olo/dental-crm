@@ -84,10 +84,9 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!visCode.includes("Норма (043/у)"), "Visiograph button must not say 043/у");
 	});
 
-	it("5. CtStudyViewer & CbctImplantModal: eliminated '043/у' from diary buttons", () => {
-		const ctCode = readComponent("components/imaging/CtStudyViewer.tsx");
-		assert.ok(ctCode.includes("В медицинскую карту"), "CtStudyViewer button must be 'В медицинскую карту'");
-		assert.ok(!ctCode.includes("В карту 043/у"), "CtStudyViewer must not have 'В карту 043/у'");
+	it("5. CbctMprImplantStudioModal & CbctImplantModal: eliminated '043/у' from diary buttons", () => {
+		const ctCode = readComponent("components/radiology/CbctMprImplantStudioModal.tsx");
+		assert.ok(!ctCode.includes("В карту 043/у"), "CbctMprImplantStudioModal must not have 'В карту 043/у'");
 
 		const cbctCode = readComponent("components/radiology/CbctImplantModal.tsx");
 		assert.ok(cbctCode.includes("В дневник приёма"), "CbctImplantModal button must be 'В дневник приёма'");
@@ -245,8 +244,8 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!historyCode.includes("Выписка 043/у"), "PatientHistoryTab must not have Выписка 043/у");
 		assert.ok(historyCode.includes("Выписка из карты"), "PatientHistoryTab must have clean label Выписка из карты");
 
-		const classicGostCode = readComponent("components/odontogram/classicGostTypes.ts");
-		assert.ok(!classicGostCode.includes("Форма 043/у"), "classicGostTypes must not cite Форма 043/у");
+		const gostHistoryCode = readComponent("components/odontogram/gost/gostHistoryTypes.ts");
+		assert.ok(!gostHistoryCode.includes("Форма 043/у"), "gostHistoryTypes must not cite Форма 043/у");
 
 		const odontogramLayerCode = readComponent("components/odontogram/OdontogramModalsLayer.tsx");
 		assert.ok(!odontogramLayerCode.includes("фискализирован (54-ФЗ)"), "OdontogramModalsLayer must not have 54-ФЗ");

@@ -1,6 +1,6 @@
 import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
 import type { ToothData } from "../../odontogram/ToothChart";
-import type { RootResorptionStage } from "../../odontogram/anatomicalToothGeometries";
+import type { RootResorptionStage } from "../../odontogram/anatomicalGeometriesTypes";
 
 export interface ToothPediatricContextProps {
 	toothNumber: number;

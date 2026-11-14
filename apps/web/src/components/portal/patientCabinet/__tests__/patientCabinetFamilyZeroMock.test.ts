@@ -4,7 +4,7 @@
  * ZERO-MOCK PATIENT PORTAL & FAMILY LEDGER INQUISITION TEST SUITE
  *
  * Verifies:
- * 1. Absolute zero Math.random in FamilyTab and FamilyWalletPanel.
+ * 1. Absolute zero Math.random in FamilyTab and FamilyWalletModal.
  * 2. Deterministic canonical card number assignment for family members (Форма 043/у)
  *    tied to parent patientId / cardNumber instead of random pseudo-numbers.
  * 3. Mobile touch targets >= 44px on primary buttons.
@@ -43,14 +43,14 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 		);
 	});
 
-	it("1.2 File Purity: FamilyWalletPanel.tsx contains ZERO calls to Math.random()", () => {
-		const walletPanelPath = resolve(testDir, "../../../finance/FamilyWalletPanel.tsx");
-		const content = readFileSync(walletPanelPath, "utf8");
+	it("1.2 File Purity: FamilyWalletModal.tsx contains ZERO calls to Math.random()", () => {
+		const walletModalPath = resolve(testDir, "../../../patients/family/FamilyWalletModal.tsx");
+		const content = readFileSync(walletModalPath, "utf8");
 		const codeWithoutComments = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "");
 		assert.equal(
 			codeWithoutComments.includes("Math.random"),
 			false,
-			"FamilyWalletPanel.tsx must contain ZERO Math.random() invocations in active code!",
+			"FamilyWalletModal.tsx must contain ZERO Math.random() invocations in active code!",
 		);
 	});
 

@@ -1,3 +1,4 @@
+import type { Patient } from "@dental/shared";
 import type {
 	PatientFinancialContextSummary,
 	StageCompletionProgressSummary,
@@ -28,15 +29,15 @@ export function resolveInitialActiveViewTab(initialViewTab?: TreatmentPlanViewTa
 }
 
 export function extractPatientFinancialContext(
-	patients: any[] | undefined,
+	patients: readonly (Patient & { balanceRub?: number | null | undefined })[] | undefined,
 	patientId: string,
 ): PatientFinancialContextSummary {
-	const patient = patients?.find((p: any) => p.id === patientId);
+	const patient = patients?.find((p) => p.id === patientId);
 	return {
 		patient,
 		patientBalanceRub: Math.max(0, Number(patient?.balanceRub) || 0),
 		patientPhone: patient?.phone || "+7 (___) ___-__-__",
-		patientBirthDate: patient?.birthDate,
+		patientBirthDate: patient?.birthDate ?? undefined,
 	};
 }
 

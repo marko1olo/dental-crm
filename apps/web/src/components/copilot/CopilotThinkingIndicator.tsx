@@ -29,11 +29,14 @@ export function getClinicalThinkingPhase(
 ): string {
 	if (toolName) return `Исполнение инструмента: ${toolName}`;
 	if (phaseOverride) return phaseOverride;
-	if (thoughtProcess && thoughtProcess.trim().length > 0) {
+	if (thoughtProcess && thoughtProcess.trim().length > 0 && thoughtProcess.trim() !== "Анализ клинического контекста...") {
 		const firstLine = thoughtProcess.trim().split("\n")[0];
 		return firstLine || thoughtProcess.trim();
 	}
-	const p = "Формирование клинического протокола и расчет сметы...";
+	let p = "ИИ формирует клинический протокол...";
+	if (elapsed >= 3.0) p = "Синтез рекомендаций и сметы...";
+	else if (elapsed >= 2.0) p = "Проверка противопоказаний и СтАР...";
+	else if (elapsed >= 1.0) p = "Дифференциальный диагноз по МКБ-10...";
 	return includeSeconds && elapsed > 0 ? `${p} (${elapsed.toFixed(1)}с)` : p;
 }
 

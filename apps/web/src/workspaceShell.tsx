@@ -77,7 +77,10 @@ export function WorkspaceShell({
 	};
 
 	return (
-		<div className="workspace-shell flex h-screen w-screen overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
+		<div
+			className={`workspace-shell view-${currentView} flex h-screen w-screen overflow-hidden bg-[var(--paper)] text-[var(--ink)]`}
+			data-current-view={currentView}
+		>
 			<WorkspaceSidebar
 				currentView={currentView}
 				onViewIntent={onViewIntent}

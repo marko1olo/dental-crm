@@ -135,7 +135,13 @@ export function useInvoiceGenerationState(props: InvoiceGenerationModalProps) {
 			const res = await fetch("/api/auth/staff/unlock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pinCode: rawPin }) }).catch(() => null);
 			if (res && !res.ok && res.status === 401) { showToast("Неверный PIN-код администратора. Отказано в согласовании.", "warning", 4000); setIsVerifyingPin(false); return; }
 			setAdminOverrideAuthorized(true); setAdminStaffName(auth?.currentUser?.name || "Управляющий клиники"); setShowAdminPinDrawer(false); showToast("Согласование фиксации/пересчета цен успешно авторизовано!", "success", 4000);
-		} catch { setAdminOverrideAuthorized(true); setAdminStaffName(auth?.currentUser?.name || "Управляющий клиники"); setShowAdminPinDrawer(false); showToast("Согласование авторизовано в автономном режиме", "info", 3000); } finally { setIsVerifyingPin(false); }
+		} catch (pinErr: unknown) {
+			console.warn("[handleVerifyAdminPin] Сетевой сбой при валидации PIN администратора, автономная авторизация:", pinErr);
+			setAdminOverrideAuthorized(true);
+			setAdminStaffName(auth?.currentUser?.name || "Управляющий клиники");
+			setShowAdminPinDrawer(false);
+			showToast("Согласование авторизовано в автономном режиме", "info", 3000);
+		} finally { setIsVerifyingPin(false); }
 	};
 
 	const handleDoctorClinicalOverride = () => { const docName = doctorFullName || auth?.currentUser?.name || "Лечащий врач"; setAdminOverrideAuthorized(true); setAdminStaffName(`${docName} (клиническое решение врача)`); setShowAdminPinDrawer(false); showToast(`Цены согласованы лечащим врачом (${docName}) в рамках клинической автономии`, "success", 4000); };

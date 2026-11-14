@@ -45,7 +45,7 @@ import {
 	validateCheckoutSplit,
 	type CheckoutSplitItem,
 } from "../components/payments/checkout/fastCheckoutEngine";
-import { formatMoneyRu } from "../components/finance/modal/fiscal/fiscalModalRefundLogic";
+import { formatMoneyRu } from "../components/finance/cashFlowModalModules/types";
 
 describe("FINANCIAL INQUISITION: Total Transactional & 54-FZ Cashbox Audit", () => {
 	const TOTAL_BILL_RUB = 14500.5; // 14 500.50 ₽

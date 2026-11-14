@@ -26,37 +26,37 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 	const materialStandards =
 		activeTier.tierId === "premium"
 			? [
-					{ name: "Имплантационная система Straumann Roxolid SLActive (Швейцария)", cert: "ISO 13485 / CE 0123", warranty: "Пожизненная гарантия завода" },
-					{ name: "Высокотранслюцентный диоксид циркония Katana ML (Япония)", cert: "Многослойный градиент прочности 1100 МПа", warranty: "10 лет клинической стойкости" },
-					{ name: "Премиальная прессованная керамика IPS e.max Ivoclar", cert: "Медицинский дисиликат лития 530 МПа", warranty: "10 лет клинической гарантии" },
+					{ name: "Премиальная имплантационная система с гидрофильной поверхностью", cert: "ISO 13485 / CE 0123", warranty: "Пожизненная гарантия завода" },
+					{ name: "Высокотранслюцентный диоксид циркония с многослойным градиентом", cert: "Многослойный градиент прочности 1100 МПа", warranty: "10 лет клинической стойкости" },
+					{ name: "Прессованная керамика из дисиликата лития высокой прочности", cert: "Медицинский дисиликат лития 530 МПа", warranty: "10 лет клинической гарантии" },
 				]
 			: activeTier.tierId === "optimum"
 				? [
-						{ name: "Керамические коронки и виниры Ivoclar Vivadent e.max CAD", cert: "Дисиликат лития / CAD-CAM фрезерование", warranty: "3 года гарантии клиники" },
-						{ name: "Дентальные имплантаты с гидрофильной поверхностью (Osstem / Dentium)", cert: "SLA поверхность / ISO 13485", warranty: "Гарантия производителя 15 лет" },
-						{ name: "Наногибридный японский композит светового отверждения (Estelite Quick / Filtek)", cert: "Субмикронный сферический наполнитель 82%", warranty: "3 года гарантии клиники" },
+						{ name: "Керамические коронки и виниры из дисиликата лития CAD/CAM", cert: "Дисиликат лития / CAD-CAM фрезерование", warranty: "3 года гарантии клиники" },
+						{ name: "Дентальные имплантаты с микропористой SLA-поверхностью", cert: "SLA поверхность / ISO 13485", warranty: "Гарантия производителя 15 лет" },
+						{ name: "Наногибридный композит светового отверждения повышенной полируемости", cert: "Субмикронный сферический наполнитель 82%", warranty: "3 года гарантии клиники" },
 					]
 				: [
-						{ name: "Светоотверждаемый наногибридный композит (GC Gradia Direct)", cert: "ГОСТ Р 56924-2016 / CE", warranty: "1 год клинической гарантии" },
-						{ name: "Металлокерамические коронки с Co-Cr каркасом без никеля (Duceram Plus)", cert: "Медицинский сплав Co-Cr", warranty: "1 год клинической гарантии" },
+						{ name: "Светоотверждаемый микрогибридный композит", cert: "ГОСТ Р 56924-2016 / CE", warranty: "1 год клинической гарантии" },
+						{ name: "Металлокерамические коронки на биосовместимом Co-Cr каркасе", cert: "Медицинский сплав Co-Cr", warranty: "1 год клинической гарантии" },
 						{ name: "Стандартная имплантационная система базового класса", cert: "Остеокондуктивная титановая резьба", warranty: "1 год гарантии" },
 					];
 
 	return (
 		<div className="space-y-5 max-w-3xl mx-auto" data-testid="studio-warranty-passport-tab">
 			{/* 1. Главная карточка гарантийного статуса */}
-			<div className="p-5 rounded-2xl border-2 border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-xs space-y-4">
+			<div className="p-5 rounded-2xl border border-[var(--teal,#0d9488)]/40 bg-[var(--paper-soft)] shadow-xs space-y-4">
 				<div className="flex items-center justify-between flex-wrap gap-3">
 					<div className="flex items-center gap-3">
 						<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
 							<ShieldCheck className="w-6 h-6" />
 						</div>
 						<div>
-							<span className="text-[11px] font-bold text-[var(--teal,#0d9488)] uppercase tracking-wider block">
+							<span className="text-[11px] font-bold text-[var(--teal,#0d9488)] tracking-wider block">
 								Гарантийный сертификат качества DENTE
 							</span>
 							<h3 className="text-base sm:text-lg font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
-								{activeTier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
+								{activeTier.isRecommended && <ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />}
 								<span>Тариф «{sanitizedTitle}»</span>
 							</h3>
 						</div>

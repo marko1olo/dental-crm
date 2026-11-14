@@ -1,5 +1,6 @@
 import {
 	type Kopecks,
+	type PlanServiceItemForTax,
 	parseKopecks,
 	percentageOfKopecks,
 	calculatePlanTaxDeductionBreakdown,
@@ -70,7 +71,30 @@ export function calculateNdflDeduction(
 export function calculatePlanNdflDeduction(
 	items: readonly TreatmentPlanItem[] | readonly { readonly code804n?: string; readonly serviceName?: string; readonly priceRub?: number; readonly unitPriceRub?: number; readonly quantity?: number; readonly name?: string }[],
 ) {
-	return calculatePlanTaxDeductionBreakdown(items as any);
+	const taxItems: PlanServiceItemForTax[] = items.map((it) => {
+		const itemRecord = it as Record<string, unknown>;
+		const code804n = typeof itemRecord["code804n"] === "string" ? itemRecord["code804n"] : undefined;
+		const serviceName = typeof itemRecord["serviceName"] === "string"
+			? itemRecord["serviceName"]
+			: typeof itemRecord["name"] === "string"
+				? itemRecord["name"]
+				: "";
+		const priceRub = typeof itemRecord["priceRub"] === "number"
+			? itemRecord["priceRub"]
+			: typeof itemRecord["unitPriceRub"] === "number"
+				? itemRecord["unitPriceRub"]
+				: 0;
+		const quantity = typeof itemRecord["quantity"] === "number" ? itemRecord["quantity"] : 1;
+		const id = typeof itemRecord["id"] === "string" ? itemRecord["id"] : undefined;
+		return {
+			id,
+			code804n,
+			serviceName,
+			priceRub,
+			quantity,
+		};
+	});
+	return calculatePlanTaxDeductionBreakdown(taxItems);
 }
 
 export function calculateChairsideTaxDeduction(

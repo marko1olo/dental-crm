@@ -44,9 +44,9 @@ export async function buildOffersXml(params: ExportOffersParams): Promise<OneCOf
 
 		if (org) {
 			orgName = org.name || orgName;
-			orgInn = (org as any).inn || orgInn;
-			orgKpp = (org as any).kpp || orgKpp;
-			orgOgrn = (org as any).ogrn || orgOgrn;
+			orgInn = org.inn || orgInn;
+			orgKpp = org.kpp || orgKpp;
+			orgOgrn = org.ogrn || orgOgrn;
 		}
 	} catch (dbErr) {
 		// Honest fallback to clinic defaults if database connection fails

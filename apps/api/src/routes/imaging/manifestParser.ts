@@ -418,11 +418,25 @@ export async function parseImagingManifest(
 			headers.forEach((field, cellIndex) => {
 				if (!field) return;
 				const value = cells[cellIndex]?.trim() || null;
-				if (field === "phone") draft.phone = normalizePhone(value);
-				else if (field === "kind") draft.kind = detectKind(value);
-				else if (field === "capturedAt")
+				if (field === "phone") {
+					draft.phone = normalizePhone(value);
+				} else if (field === "kind") {
+					draft.kind = detectKind(value);
+				} else if (field === "capturedAt") {
 					draft.capturedAt = normalizeDate(value);
-				else draft[field] = value as never;
+				} else if (field === "patientName") {
+					draft.patientName = value;
+				} else if (field === "title") {
+					draft.title = value;
+				} else if (field === "toothCode") {
+					draft.toothCode = value;
+				} else if (field === "region") {
+					draft.region = value;
+				} else if (field === "filePath") {
+					draft.filePath = value;
+				} else if (field === "sourceName") {
+					if (value) draft.sourceName = value;
+				}
 			});
 			const { patient, ambiguous, weakMatch } = matchPatient(
 				patients,

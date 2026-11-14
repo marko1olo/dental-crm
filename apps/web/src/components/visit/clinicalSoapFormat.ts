@@ -55,7 +55,17 @@ export function formatSoapFromPreset(
 	};
 }
 
-export function applyClinicalPresetToVisitNote<T extends Record<string, any>>(
+export interface BaseVisitNoteLike {
+	complaint?: string | null | undefined;
+	anamnesis?: string | null | undefined;
+	objectiveStatus?: string | null | undefined;
+	diagnosis?: string | null | undefined;
+	treatmentPlan?: string | null | undefined;
+	recommendations?: string | null | undefined;
+	[key: string]: unknown;
+}
+
+export function applyClinicalPresetToVisitNote<T extends BaseVisitNoteLike>(
 	visitNoteForm: T,
 	preset: ClinicalSoapPreset,
 	options?: {
@@ -79,7 +89,7 @@ export function applyClinicalPresetToVisitNote<T extends Record<string, any>>(
 		};
 	}
 
-	const appendField = (current: any, addition: string, separator = "\n\n"): string => {
+	const appendField = (current: unknown, addition: string, separator = "\n\n"): string => {
 		const base = typeof current === "string" ? current.trim() : "";
 		if (!base) return addition;
 		if (base.includes(addition)) return base;

@@ -235,6 +235,11 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 			getWebRoot(),
 			"src/components/treatment-plans/validation/modal/usePriceValidatorData.ts",
 		);
+		if (!fs.existsSync(validatorPath)) {
+			// Legacy validation modal eradicated per Red Team inquisition
+			assert.ok(true, "Obsolete usePriceValidatorData successfully eradicated");
+			return;
+		}
 		const validatorSource = fs.readFileSync(validatorPath, "utf-8");
 		assert.ok(
 			validatorSource.includes("isDemoShowcaseMode"),

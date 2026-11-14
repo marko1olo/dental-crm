@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 
 export type ModalDialogKind =
-	| "appointment_editor"
 	| "patient_editor"
 	| "schedule_warning"
 	| "visit_warning"
@@ -11,7 +10,6 @@ export type ModalDialogKind =
 	| "document_void"
 	| "payment_terminal"
 	| "quick_consult"
-	| "command_palette"
 	| "voice_dictation"
 	| "unlock_pinpad"
 	| "telegram_qr"
@@ -111,9 +109,6 @@ export function useModalOrchestrator(options: ModalOrchestratorOptions = {}) {
 	}, []);
 
 	// Specialized dialog controls
-	const openAppointmentModal = useCallback((appointmentId?: string) => openModal("appointment_editor", { appointmentId }), [openModal]);
-	const closeAppointmentModal = useCallback(() => closeModal("appointment_editor"), [closeModal]);
-
 	const openPatientModal = useCallback((patientId?: string) => openModal("patient_editor", { patientId }), [openModal]);
 	const closePatientModal = useCallback(() => closeModal("patient_editor"), [closeModal]);
 
@@ -141,9 +136,21 @@ export function useModalOrchestrator(options: ModalOrchestratorOptions = {}) {
 	const openQuickConsultModal = useCallback(() => openModal("quick_consult"), [openModal]);
 	const closeQuickConsultModal = useCallback(() => closeModal("quick_consult"), [closeModal]);
 
-	const openCommandPalette = useCallback(() => openModal("command_palette"), [openModal]);
-	const closeCommandPalette = useCallback(() => closeModal("command_palette"), [closeModal]);
-	const toggleCommandPalette = useCallback(() => toggleModal("command_palette"), [toggleModal]);
+	const openCommandPalette = useCallback(() => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:open-command-palette"));
+		}
+	}, []);
+	const closeCommandPalette = useCallback(() => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:close-command-palette"));
+		}
+	}, []);
+	const toggleCommandPalette = useCallback(() => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:open-command-palette"));
+		}
+	}, []);
 
 	const openVoiceDictation = useCallback(() => openModal("voice_dictation"), [openModal]);
 	const closeVoiceDictation = useCallback(() => closeModal("voice_dictation"), [closeModal]);
@@ -162,9 +169,6 @@ export function useModalOrchestrator(options: ModalOrchestratorOptions = {}) {
 		toggleModal,
 		closeAllModals,
 		// Specialized modal helpers
-		isAppointmentEditorOpen: isModalOpen("appointment_editor"),
-		openAppointmentModal,
-		closeAppointmentModal,
 		isPatientModalOpen: isModalOpen("patient_editor"),
 		openPatientModal,
 		closePatientModal,
@@ -192,7 +196,7 @@ export function useModalOrchestrator(options: ModalOrchestratorOptions = {}) {
 		isQuickConsultModalOpen: isModalOpen("quick_consult"),
 		openQuickConsultModal,
 		closeQuickConsultModal,
-		isCommandPaletteOpen: isModalOpen("command_palette"),
+		isCommandPaletteOpen: false,
 		openCommandPalette,
 		closeCommandPalette,
 		toggleCommandPalette,

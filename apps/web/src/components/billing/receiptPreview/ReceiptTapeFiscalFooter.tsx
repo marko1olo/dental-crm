@@ -36,7 +36,8 @@ export const ReceiptTapeFiscalFooter: React.FC<ReceiptTapeFiscalFooterProps> = (
 		try {
 			const qrText = `t=${new Date().toISOString()}&s=${totalDueRub.toFixed(2)}&fn=${fnSerial}&i=${fiscalDocumentNumber || "1"}&fp=${fiscalSign || "12345678"}&n=1`;
 			return generateQrCodeSvg(qrText, { size: 120, margin: 1 });
-		} catch {
+		} catch (qrErr: unknown) {
+			console.warn("[ReceiptTapeFiscalFooter] Ошибка генерации QR-кода фискального чека:", qrErr);
 			return null;
 		}
 	}, [isPrecheck, totalDueRub, fnSerial, fiscalDocumentNumber, fiscalSign]);

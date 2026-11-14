@@ -38,6 +38,10 @@ export interface MemoryMetrics {
 	statusMessage: string;
 }
 
+type PoolWithOptions = pg.Pool & {
+	options?: { max?: number } | undefined;
+};
+
 export interface DatabasePoolMetrics {
 	totalCount: number;
 	idleCount: number;
@@ -192,7 +196,7 @@ export class ServerHealthWatchdog {
 			heapTotal: mem.heapTotal,
 			rss: mem.rss,
 			external: mem.external,
-			arrayBuffers: (mem as unknown as { arrayBuffers?: number }).arrayBuffers ?? 0,
+			arrayBuffers: mem.arrayBuffers ?? 0,
 			heapSizeLimit,
 			heapUsageRatio: evalResult.ratio,
 			heapUsagePercent: evalResult.percent,
@@ -220,7 +224,7 @@ export class ServerHealthWatchdog {
 		const waitingCount = targetPool?.waitingCount ?? 0;
 		const activeCount = Math.max(0, totalCount - idleCount);
 
-		const parsedMax = (targetPool as unknown as { options?: { max?: number } })?.options?.max;
+		const parsedMax = (targetPool as PoolWithOptions | undefined)?.options?.max;
 		const maxConnections = typeof parsedMax === "number" && parsedMax > 0 ? parsedMax : 30;
 		const utilizationRatio = maxConnections > 0 ? activeCount / maxConnections : 0;
 

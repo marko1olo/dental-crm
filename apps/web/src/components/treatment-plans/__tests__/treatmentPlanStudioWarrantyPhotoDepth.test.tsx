@@ -83,7 +83,7 @@ describe("TreatmentPlanStudioModal — Depth Modes, Warranty Passport & Photo Pr
 		);
 		assert.ok(htmlOpt.includes("3 года"), "Оптимум: 3 года клинической гарантии");
 		assert.ok(htmlOpt.includes("10 лет"), "Оптимум: 10 лет службы");
-		assert.ok(htmlOpt.includes("Ivoclar Vivadent e.max CAD"), "Сертификат e.max");
+		assert.ok(htmlOpt.includes("дисиликата лития CAD/CAM"), "Сертификат керамики");
 
 		// Премиум
 		const htmlPrem = renderToString(
@@ -95,7 +95,7 @@ describe("TreatmentPlanStudioModal — Depth Modes, Warranty Passport & Photo Pr
 		);
 		assert.ok(htmlPrem.includes("10 лет"), "Премиум: 10 лет клинической гарантии");
 		assert.ok(htmlPrem.includes("25 лет"), "Премиум: 25 лет службы");
-		assert.ok(htmlPrem.includes("Straumann Roxolid SLActive"), "Сертификат Straumann");
+		assert.ok(htmlPrem.includes("Премиальная имплантационная система"), "Сертификат премиальной имплантации");
 		assert.ok(htmlPrem.includes("Пожизненная"), "Пожизненная гарантия завода");
 	});
 

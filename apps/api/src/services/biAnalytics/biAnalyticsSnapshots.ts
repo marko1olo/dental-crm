@@ -31,19 +31,20 @@ export async function computeBiAnalyticsSnapshots(
 	targetOrgId?: string,
 ): Promise<BiAnalyticsSnapshotRun> {
 	try {
-		const orgs = targetOrgId
-			? [{ id: targetOrgId } as any]
-			: await withSuperuserBypass((tx) =>
-					tx.select().from(organizations),
-				);
-		if (!orgs.length) return { organizations: 0, succeeded: 0, failed: [] };
+		const orgIds: string[] = targetOrgId
+			? [targetOrgId]
+			: (
+					await withSuperuserBypass((tx) =>
+						tx.select({ id: organizations.id }).from(organizations),
+					)
+				).map((o) => o.id);
+		if (!orgIds.length) return { organizations: 0, succeeded: 0, failed: [] };
 
 		const snapshotDate = new Date();
 		const failed: string[] = [];
 		let succeeded = 0;
 
-		for (const org of orgs) {
-			const orgId = org.id;
+		for (const orgId of orgIds) {
 			try {
 				await withTenantCtx(orgId, async (tx) => {
 					const [
@@ -87,11 +88,11 @@ export async function computeBiAnalyticsSnapshots(
 
 		if (failed.length > 0) {
 			console.error(
-				`[BI Worker] Снимки не записаны у ${failed.length} организаций из ${orgs.length}: ${failed.join(", ")}`,
+				`[BI Worker] Снимки не записаны у ${failed.length} организаций из ${orgIds.length}: ${failed.join(", ")}`,
 			);
 		}
 
-		return { organizations: orgs.length, succeeded, failed };
+		return { organizations: orgIds.length, succeeded, failed };
 	} catch (err) {
 		console.error("[BI Worker] Error generating snapshots:", err);
 		throw err;

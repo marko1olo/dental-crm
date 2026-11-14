@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	calculateBusinessDaysDueDate,
 	CANONICAL_DENTAL_LAB_PRESETS,
-} from "../../routes/lab.js";
+} from "../../routes/lab/index.js";
 import {
 	getLabScanDownloadPresignedUrl,
 	getLabScanUploadPresignedUrl,
@@ -14,7 +14,7 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 	it("contains standard 1-click preset for ZrO2 crown (5 business days, A2, anatomical shape)", () => {
 		const stdPreset = CANONICAL_DENTAL_LAB_PRESETS.find((p) => p.id === "zirconia_a2_std");
 		assert.ok(stdPreset, "Expected standard zirconia preset to exist");
-		assert.equal(stdPreset.isOneClickDefault, true);
+		assert.equal(stdPreset.isDefaultPreset, true);
 		assert.equal(stdPreset.turnaroundBusinessDays, 5);
 		assert.equal(stdPreset.colorVita, "A2");
 		assert.equal(stdPreset.constructionType, "crown_zirconia");
@@ -110,6 +110,11 @@ describe("Lab 3D Scans Direct Upload & Tenant Protection (Mandate 8c & 8s)", () 
 		assert.throws(() => {
 			getLabScanDownloadPresignedUrl({ storageKey: "" });
 		}, /storageKey обязателен/);
+	});
+
+	it("batch-status route definition and handler exist in orderStatusPatchRoutes", async () => {
+		const { batchPatchLabOrdersHandler } = await import("../../routes/lab/patchModules/labOrderBatchPatchHandler.js");
+		assert.equal(typeof batchPatchLabOrdersHandler, "function");
 	});
 });
 

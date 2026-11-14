@@ -5,5 +5,12 @@
  * Preserves 100% backward compatibility for all public exports.
  */
 
-export * from "./speechChunks";
-export type * from "./speechChunks";
+export * from "./speechChunks/types";
+export type * from "./speechChunks/types";
+export * from "./speechChunks/domainLabels";
+export * from "./speechChunks/domainGuards";
+export * from "./speechChunks/telegramUtils";
+export * from "./speechChunks/pcmAudioUtils";
+export * from "./speechChunks/vadSilenceDetector";
+export * from "./speechChunks/chunkStreamingPipeline";
+export * from "./speechChunks/reexports";

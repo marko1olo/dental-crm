@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { usePatientStore } from "../../store/patientStore";
 import { PerioStudioModal } from "./PerioStudioModal";
 
 function checkIsPerioActive(): boolean {
@@ -21,16 +22,65 @@ function checkIsPerioActive(): boolean {
 	);
 }
 
-export const DirectPerioLauncher: React.FC = () => {
+function readPatientParamFromUrl(paramName: "patientId" | "patientName"): string | undefined {
+	if (typeof window === "undefined") return undefined;
+	const value = new URLSearchParams(window.location.search || "").get(paramName)?.trim();
+	return value || undefined;
+}
+
+export interface DirectPerioPatientInput {
+	readonly propPatientId?: string | undefined;
+	readonly propPatientName?: string | undefined;
+	readonly eventPatientId?: string | undefined;
+	readonly eventPatientName?: string | undefined;
+	readonly storePatientId?: string | null | undefined;
+	readonly storePatientName?: string | null | undefined;
+	readonly urlPatientId?: string | undefined;
+	readonly urlPatientName?: string | undefined;
+}
+
+export function resolveDirectPerioPatientContext(input: DirectPerioPatientInput): {
+	patientId: string | undefined;
+	patientName: string;
+} {
+	const patientId =
+		input.propPatientId?.trim() ||
+		input.eventPatientId?.trim() ||
+		input.storePatientId?.trim() ||
+		input.urlPatientId?.trim() ||
+		undefined;
+
+	const patientName =
+		input.propPatientName?.trim() ||
+		input.eventPatientName?.trim() ||
+		input.storePatientName?.trim() ||
+		input.urlPatientName?.trim() ||
+		"Пациент приёма";
+
+	return { patientId, patientName };
+}
+
+export interface DirectPerioLauncherProps {
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+}
+
+export const DirectPerioLauncher: React.FC<DirectPerioLauncherProps> = ({
+	patientId: propPatientId,
+	patientName: propPatientName,
+}) => {
+	const activePatientId = usePatientStore((s) => s.selectedPatientId);
+	const activePatientName = usePatientStore((s) => s.patientCoreDraft.fullName);
+
 	const [isOpen, setIsOpen] = useState<boolean>(() => checkIsPerioActive());
-	const [patientId, setPatientId] = useState<string>("demo_perio_patient");
-	const [patientName, setPatientName] = useState<string>("Пациент приёма");
+	const [eventPatientId, setEventPatientId] = useState<string | undefined>(undefined);
+	const [eventPatientName, setEventPatientName] = useState<string | undefined>(undefined);
 
 	useEffect(() => {
 		const handleOpen = (e?: Event) => {
-			const detail = (e as CustomEvent)?.detail;
-			if (detail?.patientId) setPatientId(String(detail.patientId));
-			if (detail?.patientName) setPatientName(String(detail.patientName));
+			const detail = (e as CustomEvent<{ patientId?: unknown; patientName?: unknown }> | undefined)?.detail;
+			setEventPatientId(detail?.patientId ? String(detail.patientId) : undefined);
+			setEventPatientName(detail?.patientName ? String(detail.patientName) : undefined);
 			setIsOpen(true);
 		};
 
@@ -57,6 +107,8 @@ export const DirectPerioLauncher: React.FC = () => {
 
 	const handleClose = useCallback(() => {
 		setIsOpen(false);
+		setEventPatientId(undefined);
+		setEventPatientName(undefined);
 		if (typeof window !== "undefined" && checkIsPerioActive()) {
 			history.replaceState(null, "", window.location.pathname);
 		}
@@ -64,13 +116,24 @@ export const DirectPerioLauncher: React.FC = () => {
 
 	if (!isOpen) return null;
 
+	const { patientId: resolvedPatientId, patientName: resolvedPatientName } = resolveDirectPerioPatientContext({
+		propPatientId,
+		propPatientName,
+		eventPatientId,
+		eventPatientName,
+		storePatientId: activePatientId,
+		storePatientName: activePatientName,
+		urlPatientId: readPatientParamFromUrl("patientId"),
+		urlPatientName: readPatientParamFromUrl("patientName"),
+	});
+
 	return (
 		<PerioStudioModal
 			isOpen={isOpen}
 			isModal={true}
 			onClose={handleClose}
-			patientId={patientId}
-			patientName={patientName}
+			patientId={resolvedPatientId}
+			patientName={resolvedPatientName}
 		/>
 	);
 };

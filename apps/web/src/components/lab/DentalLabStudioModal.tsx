@@ -208,9 +208,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		try {
 			const payload = {
 				orderNumber: newEntry.orderNumber, patientId: effectiveId || undefined, patientName: effectiveName || undefined,
-				doctorId: effectiveDoctorId, doctorName: effectiveDoctorName || undefined, teethFdi: teethToSave, selectedTeeth: teethToSave,
-				toothFdi: teethToSave[0] ?? undefined, materialId: selectedMaterialId, material: selectedMaterial.titleRu, workTypeId: selectedMaterialId,
-				shadeVita: selectedShade, shadeCode: selectedShade, colorVita: selectedShade, laboratoryName: selectedLab, labName: selectedLab,
+				doctorId: effectiveDoctorId, doctorName: effectiveDoctorName || undefined, teethFdi: teethToSave.join(","),
+				materialId: selectedMaterialId, shadeCode: selectedShade, laboratoryName: selectedLab,
 				dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks, isUrgent,
 				notes: notes.trim() || undefined, status: "sent",
 			};

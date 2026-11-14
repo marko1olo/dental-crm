@@ -10,15 +10,21 @@ import {
 	parseKopecks,
 	sumKopecks,
 	type TreatmentPlanStageCategory,
+	type TreatmentPlanStage as SharedTreatmentPlanStage,
 	type Kopecks,
 } from "@dental/shared";
-import type { TreatmentPlanStage } from "../types";
+import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
 import {
 	type CategorizedPhasedPlanData,
 	type PhasedStageCategoryBucket,
 } from "./phasedContracts";
 import { CATEGORY_ORDER, STAGE_TIMELINE_LABELS } from "./phasedConstants";
 import { resolvePhasedItemCategory } from "./resolvePhasedCategory";
+
+type PhasedPlanItemInput = TreatmentPlanItem & {
+	readonly totalPriceRub?: number | undefined;
+	readonly code?: string | undefined;
+};
 
 export function categorizePhasedPlanStages(
 	stages: readonly TreatmentPlanStage[],
@@ -31,11 +37,11 @@ export function categorizePhasedPlanStages(
 	};
 
 	for (const stage of stages) {
-		for (const item of stage.items) {
+		for (const item of stage.items as readonly PhasedPlanItemInput[]) {
 			const cat = resolvePhasedItemCategory(item, stage.stageKind);
-			const rawPrice = (item as any).priceRub ?? (item as any).unitPriceRub ?? (item as any).totalPriceRub ?? 0;
-			const qty = (item as any).quantity || 1;
-			const discount = (item as any).discountRub || 0;
+			const rawPrice = item.priceRub ?? item.unitPriceRub ?? item.totalPriceRub ?? 0;
+			const qty = item.quantity || 1;
+			const discount = item.discountRub || 0;
 			const unitKop = parseKopecks(rawPrice);
 			const discKop = parseKopecks(discount);
 			const lineTotalKop = Math.max(0, unitKop * qty - discKop) as Kopecks;
@@ -44,8 +50,8 @@ export function categorizePhasedPlanStages(
 			map[cat].items.push({
 				id: item.id,
 				name: item.name,
-				serviceCode: (item as any).serviceCode || item.code804n || (item as any).code || "",
-				code804n: item.code804n || (item as any).serviceCode || (item as any).code || "",
+				serviceCode: item.serviceCode || item.code804n || item.code || "",
+				code804n: item.code804n || item.serviceCode || item.code || "",
 				toothNumber: item.toothNumber,
 				category: cat,
 				priceKopecks: lineTotalKop,
@@ -56,23 +62,29 @@ export function categorizePhasedPlanStages(
 		}
 	}
 
-	const stagesInput = CATEGORY_ORDER.map((cat, idx) => ({
+	const stagesInput: SharedTreatmentPlanStage[] = CATEGORY_ORDER.map((cat, idx) => ({
 		id: `stage-${idx + 1}`,
+		planId: "plan-phased-preview",
+		stageNumber: idx + 1,
 		category: cat,
-		items: map[cat].items.map((i) => ({
+		titleRu: STAGE_CATEGORY_META[cat].defaultTitleRu,
+		items: map[cat].items.map((i, itemIdx) => ({
+			id: i.id || `item-${idx}-${itemIdx}`,
+			code804n: i.code804n || i.serviceCode || "A16.07.001",
+			nameRu: i.name || "Услуга",
 			unitPriceKopecks: i.priceKopecks,
 			quantity: 1,
-			discountKopecks: 0 as Kopecks,
+			discountKopecks: 0,
 			totalPriceKopecks: i.priceKopecks,
 			status: "pending" as const,
 		})),
 	}));
 
-	const recalc = recalculateTreatmentPlanTotals(stagesInput as any);
+	const recalc = recalculateTreatmentPlanTotals(stagesInput);
 	for (const stageRes of recalc.stages) {
-		const stageCat = (stageRes as any).category as TreatmentPlanStageCategory;
+		const stageCat = stageRes.category;
 		if (stageCat && map[stageCat]) {
-			const kop = (stageRes as any).totalPriceKopecks ?? (stageRes as any).subtotalKopecks ?? 0;
+			const kop = (stageRes.totalPriceKopecks ?? stageRes.subtotalKopecks ?? 0) as Kopecks;
 			map[stageCat].subtotalKopecks = kop;
 			map[stageCat].subtotalRub = Math.round(kop / 100);
 		}

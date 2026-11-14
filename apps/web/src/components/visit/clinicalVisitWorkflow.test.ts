@@ -24,7 +24,7 @@ import {
 } from "../odontogram/treatmentEstimatorPricing";
 import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import { DENTAL_FAST_PRESCRIPTION_SETS } from "../prescriptions/PrescriptionPrintModal";
-import type { DiaryState } from "../useVisitDiaryLogic";
+import type { DiaryState } from "../../lib/protocols/protocolTypes";
 import {
 	completeClinicalVisitAndAssembleEstimate,
 	extractProceduresFromDiary,

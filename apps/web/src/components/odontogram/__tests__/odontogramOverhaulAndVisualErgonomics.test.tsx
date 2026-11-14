@@ -198,24 +198,19 @@ describe("CLIN-05: 3-Tier Architecture & Elimination of Giant Checkout Ribbon (M
 
 describe("CLIN-03: Radial Menu Height Calibration & 7 Compact Surface Row", () => {
 	it("verifies OdontogramModule.tsx renders all 7 surfaces in one compact row", () => {
-		const modulePath = path.resolve(
+		const presetsPath = path.resolve(
 			__dirname,
-			"../../../../src/components/odontogram/OdontogramModule.tsx",
+			"../../../../src/components/odontogram/radialMenu/radialMenuPresets.tsx",
 		);
-		const menuPath = path.resolve(
+		const surfaceBarPath = path.resolve(
 			__dirname,
-			"../../../../src/components/odontogram/ToothActionMenuPortal.tsx",
-		);
-		const accordionPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/ToothActionSurfacesAccordion.tsx",
+			"../../../../src/components/odontogram/radialMenu/ToothRadialSurfaceBar.tsx",
 		);
 		const content =
-			fs.readFileSync(modulePath, "utf-8") +
-			(fs.existsSync(menuPath) ? fs.readFileSync(menuPath, "utf-8") : "") +
-			(fs.existsSync(accordionPath) ? fs.readFileSync(accordionPath, "utf-8") : "");
+			(fs.existsSync(presetsPath) ? fs.readFileSync(presetsPath, "utf-8") : "") +
+			(fs.existsSync(surfaceBarPath) ? fs.readFileSync(surfaceBarPath, "utf-8") : "");
 
-		const requiredSurfaces = ["O", "M", "D", "V", "L", "К", "А"];
+		const requiredSurfaces = ["O", "M", "D", "V", "L", "MOD", "MO", "OD"];
 		for (const surf of requiredSurfaces) {
 			assert.ok(
 				content.includes(`label: "${surf}"`),
@@ -223,7 +218,7 @@ describe("CLIN-03: Radial Menu Height Calibration & 7 Compact Surface Row", () =
 			);
 		}
 		assert.ok(
-			content.includes("data-testid={`odontogram-module-surf-${chip.label}`}"),
+			content.includes("testIdPrefix"),
 			"Must contain dynamic data-testid for surface chips",
 		);
 	});
@@ -259,23 +254,30 @@ describe("CLIN-06: WCAG AAA High Contrast & Zero Emojis", () => {
 	});
 });
 
-describe("CLIN-07: Fast Action Presets & ToothActionMobileSheet (Mandates 8d, 8e, 8ze)", () => {
-	it("verifies ToothActionMobileSheet includes Periodontitis & Implant in Quick Action Presets", () => {
-		const sheetPath = path.resolve(
+describe("CLIN-07: Fast Action Presets & ToothRadialMobileSheet (Mandates 8d, 8e, 8ze)", () => {
+	it("verifies ToothRadialMobileSheet includes Periodontitis & Implant in Quick Action Presets", () => {
+		const presetsPath = path.resolve(
 			__dirname,
-			"../../../../src/components/odontogram/ToothActionMobileSheet.tsx",
+			"../../../../src/components/odontogram/radialMenu/radialMenuPresets.tsx",
 		);
-		const content = fs.existsSync(sheetPath)
-			? fs.readFileSync(sheetPath, "utf-8")
+		const gridPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx",
+		);
+		const presetsContent = fs.existsSync(presetsPath)
+			? fs.readFileSync(presetsPath, "utf-8")
+			: "";
+		const gridContent = fs.existsSync(gridPath)
+			? fs.readFileSync(gridPath, "utf-8")
 			: "";
 
 		assert.ok(
-			content.includes("Periodontitis") && content.includes("Implant"),
-			"Must include Periodontitis & Implant in ToothActionMobileSheet",
+			presetsContent.includes("Periodontitis") && presetsContent.includes("Implant"),
+			"Must include Periodontitis & Implant in radialMenuPresets",
 		);
 		assert.ok(
-			content.includes("min-h-[50px]") || content.includes("min-h-[44px]"),
-			"ToothActionMobileSheet must enforce Apple HIG touch targets >= 44px",
+			gridContent.includes("min-h-[50px]") || gridContent.includes("min-h-[44px]"),
+			"ToothRadialMobileSheet primary items must enforce Apple HIG touch targets >= 44px",
 		);
 	});
 

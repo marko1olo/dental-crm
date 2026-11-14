@@ -73,4 +73,5 @@ export interface LeadConvertAppointmentFieldsProps {
 	setAppointmentTime: (time: string) => void;
 	colBg: string;
 	borderColor: string;
+	inputStyle?: React.CSSProperties | undefined;
 }

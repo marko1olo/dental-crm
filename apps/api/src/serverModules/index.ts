@@ -47,7 +47,7 @@ export async function createDenteApiApp(
 	options: CreateDenteApiAppOptions = {},
 ): Promise<FastifyInstance> {
 	const app = Fastify({
-		logger: getHddFastifyLoggerConfig() as FastifyServerOptions["logger"],
+		logger: getHddFastifyLoggerConfig() as NonNullable<FastifyServerOptions["logger"]>,
 		// За обратным прокси (nginx) реальный IP приходит в X-Forwarded-For.
 		// Без trustProxy rate-limit видит один и тот же адрес контейнера у всех
 		// клиентов. Включается явно, чтобы напрямую доступный API не доверял

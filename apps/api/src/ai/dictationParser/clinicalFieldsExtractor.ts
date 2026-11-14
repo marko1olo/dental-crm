@@ -134,11 +134,14 @@ export function extractTime(text: string): string | null {
 	// Prevent matching phone numbers like 8 999 123 by ensuring negative lookahead for extra digits
 	let m = text.match(/(?:в|на)?\s*(\d{1,2})[:.\s]([0-5]\d)(?!\s*\d)/);
 	if (m) {
-		let h = parseInt(m[1] as string, 10);
+		const rawH = m[1];
 		const min = m[2];
-		if (text.includes("дня") && h < 12) h += 12;
-		if (text.includes("вечера") && h < 12) h += 12;
-		return `${h.toString().padStart(2, "0")}:${min}`;
+		if (rawH && min) {
+			let h = parseInt(rawH, 10);
+			if (text.includes("дня") && h < 12) h += 12;
+			if (text.includes("вечера") && h < 12) h += 12;
+			return `${h.toString().padStart(2, "0")}:${min}`;
+		}
 	}
 
 	// Fix 'полпервого' / 'пол первого'
@@ -201,8 +204,10 @@ export function extractTime(text: string): string | null {
 		/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:часов|часа|час|утра|дня|вечера))?(?!\s*\d)/gi,
 	);
 	for (const match of matches) {
-		let h = parseInt(match[1] as string, 10);
-		if (Number.isNaN(h)) h = parseWordNumber(match[1] as string) || 0;
+		const rawGroup = match[1];
+		if (!rawGroup) continue;
+		let h = parseInt(rawGroup, 10);
+		if (Number.isNaN(h)) h = parseWordNumber(rawGroup) || 0;
 		if (h > 0 && h <= 24) {
 			if ((text.includes("дня") || text.includes("вечера")) && h < 12) h += 12;
 			return `${h.toString().padStart(2, "0")}:00`;
@@ -218,29 +223,33 @@ export function extractDate(text: string): DateExtractionResult | null {
 
 	const m = text.match(/(\d{1,2}|[а-яё]+)\s*([а-яё]+)/i);
 	if (m) {
-		let day = parseInt(m[1] as string, 10);
-		if (Number.isNaN(day)) day = parseWordNumber(m[1] as string) || 0;
+		const rawDay = m[1];
+		const rawMonth = m[2];
+		if (rawDay && rawMonth) {
+			let day = parseInt(rawDay, 10);
+			if (Number.isNaN(day)) day = parseWordNumber(rawDay) || 0;
 
-		if (day > 0 && day <= 31) {
-			const monthWord = (m[2] ?? "").substring(0, 5);
-			let month = -1;
-			for (const [key, val] of Object.entries(MONTHS)) {
-				if (key.startsWith(monthWord)) {
-					month = val;
-					break;
+			if (day > 0 && day <= 31) {
+				const monthWord = rawMonth.substring(0, 5);
+				let month = -1;
+				for (const [key, val] of Object.entries(MONTHS)) {
+					if (key.startsWith(monthWord)) {
+						month = val;
+						break;
+					}
 				}
-			}
-			if (month !== -1) {
-				const year = new Date().getFullYear();
-				return {
-					dayString: `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`,
-				};
-			}
-			if ((m[2] ?? "").startsWith("числ")) {
-				const d = new Date();
-				return {
-					dayString: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`,
-				};
+				if (month !== -1) {
+					const year = new Date().getFullYear();
+					return {
+						dayString: `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`,
+					};
+				}
+				if (rawMonth.startsWith("числ")) {
+					const d = new Date();
+					return {
+						dayString: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`,
+					};
+				}
 			}
 		}
 	}
@@ -293,39 +302,47 @@ export function extractCost(text: string): number | null {
 		/(?:стоимость|цена|оплата|взяли|с пациента|оплатила|оплатил)\s*(\d+(?:[.,]\d+)?)\s*(тысяч|тыс|руб|р|₽)?/i,
 	);
 	if (m) {
-		let val = parseFloat((m[1] as string).replace(",", "."));
-		if (m[2]?.startsWith("тыс")) val *= 1000;
-		if (val < 100 && !m[2]) val *= 1000;
-		return val;
+		const rawVal = m[1];
+		if (rawVal) {
+			let val = parseFloat(rawVal.replace(",", "."));
+			if (m[2]?.startsWith("тыс")) val *= 1000;
+			if (val < 100 && !m[2]) val *= 1000;
+			return val;
+		}
 	}
 
 	const mWord = text.match(
 		/(?:стоимость|цена|оплата|взяли|с пациента|оплатила|оплатил)\s+([а-яё\s]+)\s*(тысяч|тыс|руб|р|₽)/i,
 	);
 	if (mWord) {
-		let sum = 0;
-		let hasHalf = false;
-		for (const w of (mWord[1] as string).split(/\s+/)) {
-			if (w.startsWith("полов")) hasHalf = true;
-			const num = parseWordNumber(w);
-			if (num) sum += num;
-		}
-		if (sum > 0) {
-			if (hasHalf) sum += 0.5;
-			if (
-				(mWord[2] as string).startsWith("тыс") ||
-				(mWord[1] as string).includes("тысяч") ||
-				(mWord[1] as string).includes("тыс")
-			) {
-				sum *= 1000;
+		const rawWords = mWord[1];
+		const rawUnit = mWord[2] ?? "";
+		if (rawWords) {
+			let sum = 0;
+			let hasHalf = false;
+			for (const w of rawWords.split(/\s+/)) {
+				if (w.startsWith("полов")) hasHalf = true;
+				const num = parseWordNumber(w);
+				if (num) sum += num;
 			}
-			return sum;
+			if (sum > 0) {
+				if (hasHalf) sum += 0.5;
+				if (
+					rawUnit.startsWith("тыс") ||
+					rawWords.includes("тысяч") ||
+					rawWords.includes("тыс")
+				) {
+					sum *= 1000;
+				}
+				return sum;
+			}
 		}
 	}
 
 	const standalone = text.match(/\b([1-9]\d{2,5})\b/);
 	if (standalone) {
-		return parseInt(standalone[1] ?? "", 10);
+		const rawDigits = standalone[1];
+		return rawDigits ? parseInt(rawDigits, 10) : null;
 	}
 	return null;
 }

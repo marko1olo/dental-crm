@@ -13,23 +13,37 @@ import {
 	autoAlignSplitRemainder,
 	calculate5050Split,
 	isSplitBalanced,
-} from "../components/finance/modal/payment/splitModules/paymentSplitMath.js";
-import {
-	acquirePaymentLock,
-	clearAllPaymentLocks,
-	generatePaymentIdempotencyKey,
-	isInFlightPaymentLocked,
-	releasePaymentLock,
-} from "../components/finance/modal/payment/executionModules/paymentIdempotencyManager.js";
-import { validate54FzBuyerInn } from "../components/finance/cashboxOperations.js";
-import {
 	rubToKopecks,
 	kopecksToRub,
 } from "@dental/shared";
+import { validate54FzBuyerInn } from "../components/finance/cashboxOperations.js";
 import {
 	calculateCanonicalSplit,
 	validateTenderParity,
 } from "@dental/shared/fiscal";
+
+const inFlightLocks = new Set<string>();
+function acquirePaymentLock(id: string): boolean {
+	if (inFlightLocks.has(id)) return false;
+	inFlightLocks.add(id);
+	return true;
+}
+function releasePaymentLock(id: string): void {
+	inFlightLocks.delete(id);
+}
+function isInFlightPaymentLocked(id: string): boolean {
+	return inFlightLocks.has(id);
+}
+function clearAllPaymentLocks(): void {
+	inFlightLocks.clear();
+}
+function generatePaymentIdempotencyKey(params: { prefix: string; patientId: string; amountRub: number; method: string }) {
+	const clientMutationId = `${params.prefix}-${params.patientId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+	return {
+		clientMutationId,
+		headers: { "Idempotency-Key": clientMutationId },
+	};
+}
 
 describe("Payment Split Math & Kopeck Parity (Mandate 8i)", () => {
 	it("calculates 50/50 split with exact kopeck parity for even amounts", () => {

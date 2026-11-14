@@ -34,6 +34,7 @@ import {
 	formatKopecksToRubles,
 	getCategoryDisplayLabel,
 	getMatchedTag,
+	getSpecialtyForCategory,
 	kopecksToRublesExact,
 	loadCanonicalPricelist,
 	normalizeCategoryFromBackend,
@@ -44,6 +45,11 @@ import {
 	batchSyncPricelistToBackend,
 } from "./pricelistCatalogData";
 import { PriceItemEditModal } from "../settings/pricesTab/PriceItemEditModal";
+import { printPricelistA4 } from "../settings/pricesTab/pricesExportPrintHelpers";
+import {
+	STATUTORY_VAT_EXEMPTION_NOTE,
+	type ServicePricelistItem,
+} from "./pricelist/servicePricelistPresets";
 
 export interface PricelistStudioModalProps {
 	readonly isOpen: boolean;
@@ -375,6 +381,43 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 		e.target.value = "";
 	};
 
+	const handlePrintA4 = () => {
+		const printableItems: ServicePricelistItem[] = items.map((it) => {
+			const priceRub = Math.round(it.priceKopecks) / 100;
+			return {
+				id: it.id,
+				code804n: it.regulatoryCode || it.serviceCode || it.code || "A16.07.002",
+				commercialTitle: it.title,
+				statutoryTitle804n: it.title,
+				// biome-ignore lint/suspicious/noExplicitAny: category mapping
+				category: (it.category === "orthopedics" ? "orthopedics" : it.category) as any,
+				specialty: getSpecialtyForCategory(it.category),
+				basePriceRub: priceRub,
+				basePriceKopecks: it.priceKopecks,
+				materialCostRub: Math.round(it.costKopecks) / 100,
+				labCostRub: 0,
+				estimatedDurationMin: it.durationMin,
+				vatRate: 0 as const,
+				vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+				icd10Indications: [],
+				isActive: it.isActive,
+				isArchived: !it.isActive,
+				tags: (it.tags as string[]) || [],
+			};
+		});
+
+		printPricelistA4(
+			{
+				name: clinicName || "Стоматологическая клиника",
+				address: clinicAddress || "",
+				phone: clinicPhone || "",
+				license: clinicLicense || "",
+				chiefDoctor: chiefDoctorName || "Главный врач",
+			},
+			printableItems,
+		);
+	};
+
 	if (!isOpen) return null;
 
 	const modalContent = (
@@ -420,8 +463,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 						<button
 							type="button"
 							className="pricelist-btn dente-btn dente-btn-secondary"
-							onClick={() => window.print()}
-							title="Печать прейскуранта"
+							onClick={handlePrintA4}
+							title="Печать официального бланка прейскуранта А4"
 						>
 							<Printer size={16} className="text-current shrink-0" />
 							<span className="hidden sm:inline">Печать A4</span>

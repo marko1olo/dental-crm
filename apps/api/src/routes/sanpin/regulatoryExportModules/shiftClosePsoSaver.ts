@@ -4,28 +4,27 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import type { ExtractTablesWithRelations } from "drizzle-orm";
-import type { PgTransaction } from "drizzle-orm/pg-core";
+import { db } from "../../../db/client.js";
 import { preSterilizationCleaningLogs } from "../../../db/schema.js";
 
-type TxType = PgTransaction<any, any, ExtractTablesWithRelations<any>>;
+type TxType = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export async function saveShiftPsoRecords(
 	tx: TxType,
 	organizationId: string,
-	body: Record<string, any>,
+	body: Record<string, unknown>,
 	operatorId: string | null,
 	defaultOperatorName: string,
 ): Promise<number> {
 	const psoList = Array.isArray(body.psoRecords)
-		? body.psoRecords
+		? (body.psoRecords as Record<string, unknown>[])
 		: Array.isArray(body.psoBatches)
-			? body.psoBatches
+			? (body.psoBatches as Record<string, unknown>[])
 			: [];
 
 	if (psoList.length === 0) return 0;
 
-	const psoInserts = psoList.map((p: any) => ({
+	const psoInserts = psoList.map((p) => ({
 		organizationId,
 		testType: (p.testType === "phenolphthalein"
 			? "phenolphthalein"
@@ -43,9 +42,9 @@ export async function saveShiftPsoRecords(
 		isPhenolphthaleinNegative: true,
 		isBatchApproved:
 			p.qualityTestPassed != null ? Boolean(p.qualityTestPassed) : true,
-		detergentBrand: p.detergentBrand || "Биолот 0.5% + Аламинол 1%",
+		detergentBrand: (p.detergentBrand as string) || "Биолот 0.5% + Аламинол 1%",
 		operatorId,
-		notes: `Предстерилизационная очистка. Пробы отрицательны. ${p.operatorStaffName || defaultOperatorName}`,
+		notes: `Предстерилизационная очистка. Пробы отрицательны. ${(p.operatorStaffName as string) || defaultOperatorName}`,
 	}));
 
 	await tx.insert(preSterilizationCleaningLogs).values(psoInserts);

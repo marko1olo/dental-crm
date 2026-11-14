@@ -27,6 +27,7 @@ import {
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import { getOccupancyStatus } from "./analyticsCatalogData";
+import "./styles/analyticsStudio.css";
 
 export interface ChairLoadApiRow {
 	readonly chairId: string | null;
@@ -251,10 +252,10 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 						<span
 							className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
 								clinicStatus === "optimal"
-									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+									? "studio-badge-norm-optimal"
 									: clinicStatus === "high"
-										? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-										: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+										? "studio-badge-norm-overload"
+										: "studio-badge-norm-reserve"
 							}`}
 						>
 							{clinicStatus === "optimal"
@@ -348,10 +349,10 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 											<span
 												className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
 													chair.status === "optimal"
-														? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+														? "studio-badge-norm-optimal"
 														: chair.status === "high"
-															? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-															: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+															? "studio-badge-norm-overload"
+															: "studio-badge-norm-reserve"
 												}`}
 											>
 												{chair.status === "optimal"
@@ -398,10 +399,10 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 									<span
 										className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
 											chair.status === "optimal"
-												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+												? "studio-badge-norm-optimal"
 												: chair.status === "high"
-													? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-													: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+													? "studio-badge-norm-overload"
+													: "studio-badge-norm-reserve"
 										}`}
 									>
 										{chair.status === "optimal"

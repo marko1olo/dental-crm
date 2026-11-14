@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "savedAt": "2026-11-10T22:35:42.619Z",
+  "savedAt": "2026-11-14T18:32:46.052Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 29,
-      "lastUsedAt": 1794350142616,
+      "successes": 33,
+      "lastUsedAt": 1794681166048,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -51,17 +51,17 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 4,
-      "lastUsedAt": 1794350142574,
+      "successes": 8,
+      "lastUsedAt": 1794681166010,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1794350622619,
-      "failures": 27,
-      "consecutiveFailures": 27,
+      "cooldownUntil": 1794681646052,
+      "failures": 30,
+      "consecutiveFailures": 30,
       "successes": 0,
-      "lastUsedAt": 1794350142619,
+      "lastUsedAt": 1794681166052,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -69,8 +69,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 29,
-      "lastUsedAt": 1794350142610,
+      "successes": 33,
+      "lastUsedAt": 1794681166044,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -78,26 +78,26 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 29,
-      "lastUsedAt": 1794350142588,
+      "successes": 33,
+      "lastUsedAt": 1794681166024,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1794350622607,
-      "failures": 27,
-      "consecutiveFailures": 27,
+      "cooldownUntil": 1794681646028,
+      "failures": 30,
+      "consecutiveFailures": 30,
       "successes": 0,
-      "lastUsedAt": 1794350142607,
+      "lastUsedAt": 1794681166028,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1794350622613,
-      "failures": 27,
-      "consecutiveFailures": 27,
+      "cooldownUntil": 1794681646046,
+      "failures": 30,
+      "consecutiveFailures": 30,
       "successes": 0,
-      "lastUsedAt": 1794350142613,
+      "lastUsedAt": 1794681166046,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -165,11 +165,11 @@
       "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw6zfm8cfaav523xyhct4bs9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 195130, Requested 25197. Please"
     },
     "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1794351102615,
-      "failures": 25,
-      "consecutiveFailures": 25,
+      "cooldownUntil": 1794682126047,
+      "failures": 28,
+      "consecutiveFailures": 28,
       "successes": 0,
-      "lastUsedAt": 1794350142615,
+      "lastUsedAt": 1794681166047,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -177,8 +177,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 29,
-      "lastUsedAt": 1794350142609,
+      "successes": 33,
+      "lastUsedAt": 1794681166029,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -186,8 +186,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 29,
-      "lastUsedAt": 1794350142611,
+      "successes": 33,
+      "lastUsedAt": 1794681166044,
       "lastStatusCode": null,
       "lastError": null
     }

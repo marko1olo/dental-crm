@@ -122,12 +122,12 @@ export class ChatLockService {
 					Boolean(existing.processing_agent) &&
 					existing.processing_agent !== agentName;
 
-				if (isHeldByAnother) {
+				if (isHeldByAnother && existing.processing_agent && currentLockExpires) {
 					return {
 						success: false,
 						reason: "already_locked",
-						lockedByAgent: existing.processing_agent!,
-						expiresAtIso: currentLockExpires!.toISOString(),
+						lockedByAgent: existing.processing_agent,
+						expiresAtIso: currentLockExpires.toISOString(),
 						message: `Чат уже заблокирован оператором ${existing.processing_agent}.`,
 					};
 				}

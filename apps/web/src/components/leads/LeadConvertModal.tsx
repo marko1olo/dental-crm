@@ -10,6 +10,7 @@ import { User, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import type { Lead } from "../../store/leadsStore";
 import { isLeadBookingDisabled } from "./LeadsKanbanView";
+import { LeadConvertAppointmentFields } from "./leadConvertModules/LeadConvertAppointmentFields";
 import { LeadConvertAttributionCard } from "./leadConvertModules/LeadConvertAttributionCard";
 import { LeadConvertConsentSection } from "./leadConvertModules/LeadConvertConsentSection";
 import type {
@@ -255,105 +256,27 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 
 					{/* Поля записи на приём */}
 					{mode === "patient_and_appointment" && (
-						<>
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-								<div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-									<label htmlFor="convert-lead-doctor" style={{ fontSize: 11.5, color: "var(--muted)" }}>
-										Врач
-									</label>
-									<select
-										id="convert-lead-doctor"
-										value={selectedDoctorId}
-										onChange={(e) => setSelectedDoctorId(e.target.value)}
-										style={inputStyle}
-									>
-										{effectiveStaff.map((doc) => (
-											<option key={doc.id} value={doc.id}>{doc.fullName}</option>
-										))}
-									</select>
-								</div>
-
-								<div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-									<label htmlFor="convert-lead-chair" style={{ fontSize: 11.5, color: "var(--muted)" }}>
-										Кресло
-									</label>
-									<select
-										id="convert-lead-chair"
-										value={selectedChairId}
-										onChange={(e) => setSelectedChairId(e.target.value)}
-										style={inputStyle}
-									>
-										{effectiveChairs.map((ch) => (
-											<option key={ch.id} value={ch.id}>{ch.name}</option>
-										))}
-									</select>
-								</div>
-							</div>
-
-							<div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 6 }}>
-								<div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-									<label htmlFor="convert-lead-date" style={{ fontSize: 11.5, color: "var(--muted)" }}>
-										Дата приёма
-									</label>
-									<input
-										id="convert-lead-date"
-										type="date"
-										value={appointmentDate}
-										onChange={(e) => setAppointmentDate(e.target.value)}
-										style={inputStyle}
-									>
-									</input>
-								</div>
-
-								<div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-									<label htmlFor="convert-lead-time" style={{ fontSize: 11.5, color: "var(--muted)" }}>
-										Время
-									</label>
-									<select
-										id="convert-lead-time"
-										value={appointmentTime}
-										onChange={(e) => setAppointmentTime(e.target.value)}
-										style={inputStyle}
-									>
-										{["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00"].map((t) => (
-											<option key={t} value={t}>{t}</option>
-										))}
-									</select>
-								</div>
-							</div>
-
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-								<div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-									<label htmlFor="convert-lead-reason" style={{ fontSize: 11, color: "var(--muted)" }}>
-										Причина приёма
-									</label>
-									<input
-										id="convert-lead-reason"
-										type="text"
-										value={reason}
-										onChange={(e) => setReason(e.target.value)}
-										placeholder="Первичная консультация"
-										style={inputStyle}
-										data-testid="convert-lead-reason-input"
-									/>
-								</div>
-
-								<div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-									<label htmlFor="convert-lead-comment" style={{ fontSize: 11, color: "var(--muted)" }}>
-										Клинический комментарий
-									</label>
-									<input
-										id="convert-lead-comment"
-										type="text"
-										value={comment}
-										onChange={(e) => setComment(e.target.value)}
-										placeholder="Анамнез, жалобы..."
-										style={inputStyle}
-										data-testid="convert-lead-comment-input"
-									/>
-								</div>
-							</div>
-						</>
+						<LeadConvertAppointmentFields
+							staff={staff}
+							chairs={chairs}
+							effectiveStaff={effectiveStaff}
+							effectiveChairs={effectiveChairs}
+							selectedDoctorId={selectedDoctorId}
+							setSelectedDoctorId={setSelectedDoctorId}
+							selectedChairId={selectedChairId}
+							setSelectedChairId={setSelectedChairId}
+							reason={reason}
+							setReason={setReason}
+							comment={comment}
+							setComment={setComment}
+							appointmentDate={appointmentDate}
+							setAppointmentDate={setAppointmentDate}
+							appointmentTime={appointmentTime}
+							setAppointmentTime={setAppointmentTime}
+							colBg={colBg}
+							borderColor={borderColor}
+							inputStyle={inputStyle}
+						/>
 					)}
 
 					{/* Согласия и уведомления пациента (Мандаты 8x и 8ap: чистый человеческий язык без 152-ФЗ / 38-ФЗ) */}

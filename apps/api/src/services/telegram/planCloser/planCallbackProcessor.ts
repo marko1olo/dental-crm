@@ -205,20 +205,20 @@ export async function getPendingTreatmentPlansForPatient(
 					stages,
 					installments: {
 						3: {
-							monthlyPaymentRub: installments[3].monthlyPaymentRub,
-							monthlyPaymentFormatted: installments[3].monthlyPaymentRu,
+							monthlyPaymentRub: installments[3]?.monthlyPaymentRub ?? 0,
+							monthlyPaymentFormatted: installments[3]?.monthlyPaymentRu ?? "0 ₽/мес",
 						},
 						6: {
-							monthlyPaymentRub: installments[6].monthlyPaymentRub,
-							monthlyPaymentFormatted: installments[6].monthlyPaymentRu,
+							monthlyPaymentRub: installments[6]?.monthlyPaymentRub ?? 0,
+							monthlyPaymentFormatted: installments[6]?.monthlyPaymentRu ?? "0 ₽/мес",
 						},
 						12: {
-							monthlyPaymentRub: installments[12].monthlyPaymentRub,
-							monthlyPaymentFormatted: installments[12].monthlyPaymentRu,
+							monthlyPaymentRub: installments[12]?.monthlyPaymentRub ?? 0,
+							monthlyPaymentFormatted: installments[12]?.monthlyPaymentRu ?? "0 ₽/мес",
 						},
 						24: {
-							monthlyPaymentRub: installments[24].monthlyPaymentRub,
-							monthlyPaymentFormatted: installments[24].monthlyPaymentRu,
+							monthlyPaymentRub: installments[24]?.monthlyPaymentRub ?? 0,
+							monthlyPaymentFormatted: installments[24]?.monthlyPaymentRu ?? "0 ₽/мес",
 						},
 					},
 				});
@@ -263,20 +263,20 @@ export function getSyntheticFallbackPlan(
 		stages: buildDefaultStages(total),
 		installments: {
 			3: {
-				monthlyPaymentRub: installments[3].monthlyPaymentRub,
-				monthlyPaymentFormatted: installments[3].monthlyPaymentRu,
+				monthlyPaymentRub: installments[3]?.monthlyPaymentRub ?? 0,
+				monthlyPaymentFormatted: installments[3]?.monthlyPaymentRu ?? "0 ₽/мес",
 			},
 			6: {
-				monthlyPaymentRub: installments[6].monthlyPaymentRub,
-				monthlyPaymentFormatted: installments[6].monthlyPaymentRu,
+				monthlyPaymentRub: installments[6]?.monthlyPaymentRub ?? 0,
+				monthlyPaymentFormatted: installments[6]?.monthlyPaymentRu ?? "0 ₽/мес",
 			},
 			12: {
-				monthlyPaymentRub: installments[12].monthlyPaymentRub,
-				monthlyPaymentFormatted: installments[12].monthlyPaymentRu,
+				monthlyPaymentRub: installments[12]?.monthlyPaymentRub ?? 0,
+				monthlyPaymentFormatted: installments[12]?.monthlyPaymentRu ?? "0 ₽/мес",
 			},
 			24: {
-				monthlyPaymentRub: installments[24].monthlyPaymentRub,
-				monthlyPaymentFormatted: installments[24].monthlyPaymentRu,
+				monthlyPaymentRub: installments[24]?.monthlyPaymentRub ?? 0,
+				monthlyPaymentFormatted: installments[24]?.monthlyPaymentRu ?? "0 ₽/мес",
 			},
 		},
 	};
@@ -290,18 +290,23 @@ export async function getPendingPlanById(
 	organizationId?: string,
 ): Promise<PendingTreatmentPlanSummary | null> {
 	try {
-		const runner = organizationId
-			? (fn: (tx: any) => Promise<any>) => withTenantCtx(organizationId, fn)
-			: (fn: (tx: any) => Promise<any>) => withSuperuserBypass(fn);
-
-		const planRow = await runner(async (tx) => {
-			const [row] = await tx
-				.select()
-				.from(treatmentPlans)
-				.where(eq(treatmentPlans.id, planId))
-				.limit(1);
-			return row;
-		});
+		const planRow = await (organizationId
+			? withTenantCtx(organizationId, async (tx) => {
+					const [row] = await tx
+						.select()
+						.from(treatmentPlans)
+						.where(eq(treatmentPlans.id, planId))
+						.limit(1);
+					return row;
+				})
+			: withSuperuserBypass(async (tx) => {
+					const [row] = await tx
+						.select()
+						.from(treatmentPlans)
+						.where(eq(treatmentPlans.id, planId))
+						.limit(1);
+					return row;
+				}));
 
 		if (!planRow) {
 			// Если плана нет в базе (например, при синтетическом тесте в памяти), возвращаем эталонный пресет
@@ -336,7 +341,8 @@ export async function createInstallmentLead(input: CreateInstallmentLeadInput): 
 	const orgId = input.organizationId || plan.organizationId;
 	const leadId = randomUUID();
 	const provider = input.bankProvider || "tinkoff";
-	const providerName = BANK_PROVIDERS[provider].nameRu;
+	const bankMeta = BANK_PROVIDERS[provider as keyof typeof BANK_PROVIDERS] ?? BANK_PROVIDERS.tinkoff;
+	const providerName = bankMeta?.nameRu ?? "Банк-партнер";
 	const option = calculateInstallmentOption(
 		plan.totalPriceRub,
 		input.monthsCount,
@@ -488,9 +494,9 @@ export async function handleCallbackQuery(
 	}
 
 	const parts = callbackData.split(":");
-	const action = parts[1] || "";
-	const planId = parts[2] || "";
-	const extraArg = parts[3] || "";
+	const action = parts[1] ?? "";
+	const planId = parts[2] ?? "";
+	const extraArg = parts[3] ?? "";
 
 	const plan = await getPendingPlanById(planId, organizationId ? organizationId : undefined);
 	if (!plan) {

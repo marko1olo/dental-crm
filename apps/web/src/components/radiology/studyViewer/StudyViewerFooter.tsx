@@ -70,10 +70,11 @@ export const StudyViewerFooter: React.FC<StudyViewerFooterProps> = ({
 					type="button"
 					onClick={onPrimaryAttach}
 					className="flex items-center justify-center gap-1.5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:brightness-105 active:scale-95 transition-all shadow-sm select-none whitespace-nowrap shrink-0"
+					style={{ color: "#ffffff" }}
 					data-testid="btn-primary-attach"
 				>
-					<Check className="h-4 w-4 stroke-[2.5] shrink-0" />
-					<span className="whitespace-nowrap">
+					<Check className="h-4 w-4 stroke-[2.5] shrink-0 text-white" />
+					<span className="whitespace-nowrap text-white" style={{ color: "#ffffff" }}>
 						{isSaved ? `Привязано к зубу ${selectedTooth}` : `Привязать к зубу ${selectedTooth}`}
 					</span>
 				</button>

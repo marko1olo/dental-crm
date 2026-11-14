@@ -51,7 +51,7 @@ export interface FiscalExecutionParams {
 	stageCalc: StageAdvanceCalculation;
 	items?: readonly FiscalExecutionItem[] | undefined;
 	onPaymentComplete?: ((payload: FiscalReceiptPayload) => void) | undefined;
-	onSuccess?: ((payload: any) => void) | undefined;
+	onSuccess?: ((payload: FiscalReceiptPayload) => void) | undefined;
 	onClose: () => void;
 	inFlightRef: React.MutableRefObject<boolean>;
 	lastClickTimeRef: React.MutableRefObject<number>;
@@ -89,7 +89,7 @@ export interface ManualCardTerminalParams {
 	stageCalc: StageAdvanceCalculation;
 	items?: readonly FiscalExecutionItem[] | undefined;
 	onPaymentComplete?: ((payload: FiscalReceiptPayload) => void) | undefined;
-	onSuccess?: ((payload: any) => void) | undefined;
+	onSuccess?: ((payload: FiscalReceiptPayload) => void) | undefined;
 	onClose: () => void;
 	setIsSubmittingManualCard: (val: boolean) => void;
 	setIsOfflineBuffered: (val: boolean) => void;

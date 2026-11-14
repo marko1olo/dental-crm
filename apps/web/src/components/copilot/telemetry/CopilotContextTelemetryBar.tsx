@@ -54,8 +54,8 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 
 	return (
 		<div
-			className={`copilot-context-bar copilot-context-telemetry-bar w-full px-3 py-1.5 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink,#0f172a)] flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap transition-colors ${
-				compact ? "text-[11px] py-1" : ""
+			className={`copilot-context-bar copilot-context-telemetry-bar w-full px-3 py-1.5 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink,#0f172a)] flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors ${
+				compact ? "text-[11px] py-1.5" : ""
 			}`}
 			data-testid="copilot-context-telemetry-bar"
 		>
@@ -67,18 +67,14 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 			)}
 
 			{/* Пациент и Зуб FDI */}
-			<div className="flex items-center gap-1.5 shrink-0">
-				<div className="flex items-center gap-1 font-medium text-[var(--ink)]">
+			<div className="flex items-center gap-1.5 min-w-0 max-w-full flex-wrap">
+				<div className="flex items-center gap-1 font-medium text-[var(--ink)] min-w-0">
 					<User size={12} className="text-[var(--teal,#0d9488)] shrink-0" />
-					<span>{resolvedPatientName ? <>Пациент: {resolvedPatientName}</> : <span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>}</span>
+					<span className="break-words">
+						{resolvedPatientName ? (<><span className="hidden sm:inline">Пациент: </span>{resolvedPatientName}</>) : <span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>}
+					</span>
 					{resolvedPatientId && (
-						<span
-							className="sr-only"
-							data-testid="telemetry-patient-id"
-							style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}
-						>
-							{`#${resolvedPatientId}`}
-						</span>
+						<span className="sr-only" data-testid="telemetry-patient-id" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>{`#${resolvedPatientId}`}</span>
 					)}
 				</div>
 				{resolvedActiveTooth && (resolvedPatientName || propActiveTooth !== undefined) ? (
@@ -94,10 +90,7 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				const realAllergies = (allergies || []).filter((a) => !isNegativeAllergyStatement(a));
 				if (realAllergies.length === 0) return null;
 				return (
-					<span
-						className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/25 flex items-center gap-1 shrink-0"
-						title={realAllergies.join(", ")}
-					>
+					<span className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/25 flex items-center gap-1 shrink-0" title={realAllergies.join(", ")}>
 						<ShieldAlert size={11} className="shrink-0" />
 						<span>{`Аллергии (${realAllergies.length})`}</span>
 					</span>
@@ -106,22 +99,20 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 
 			{/* Врач на смене */}
 			{activeDoctor && (
-				<span className="copilot-context-chip doctor text-[10px] text-[var(--muted,#64748b)] font-medium shrink-0">
-					{activeDoctor}
-				</span>
+				<span className="copilot-context-chip doctor text-[10px] text-[var(--muted,#64748b)] font-medium shrink-0">{activeDoctor}</span>
 			)}
 
-			<span className="text-[var(--line,rgba(15,118,110,0.2))] shrink-0 select-none">•</span>
+			<span className="hidden sm:inline text-[var(--line,rgba(15,118,110,0.2))] shrink-0 select-none">•</span>
 
 			{/* Клиническая модель и индикатор отклика */}
 			<div
-				className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,rgba(15,118,110,0.15))] text-[11px] font-semibold text-[var(--ink)] shrink-0"
+				className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,rgba(15,118,110,0.15))] text-[11px] font-semibold text-[var(--ink)] shrink-0 ml-auto sm:ml-0"
 				title={`Активная клиническая модель: ${settings.modelRoutingMode === "custom_byok" ? settings.byokModel : "Google Gemini"} • ${modelLabel}`}
 			>
 				<Sparkles size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
 				<span className="hidden sm:inline">{modelLabel}</span>
 				<span className="sm:hidden">Gemini</span>
-				<span className="text-[10px] text-[var(--muted,#64748b)] font-normal">• {latencyLabel}</span>
+				<span className="text-[10px] text-[var(--muted,#64748b)] font-normal whitespace-nowrap">• {latencyLabel}</span>
 			</div>
 
 			{/* В режиме compact для врача не захламляем экран сырыми токенами и шлюзами */}

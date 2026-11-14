@@ -8,7 +8,6 @@ import { FamilyDepositTopupSection } from "./FamilyDepositTopupSection";
 import { FamilyMembersBalanceList } from "./FamilyMembersBalanceList";
 import { FamilyWalletHistoryTable } from "./FamilyWalletHistoryTable";
 import { FamilyWalletSpendSection } from "./FamilyWalletSpendSection";
-import { FamilyWalletTransferSection } from "./FamilyWalletTransferSection";
 import type { FamilyWalletLogic } from "./useFamilyWalletLogic";
 
 export interface FamilyWalletTabBodyProps {
@@ -19,10 +18,11 @@ export interface FamilyWalletTabBodyProps {
 export const FamilyWalletTabBody: React.FC<FamilyWalletTabBodyProps> =
 	React.memo(function FamilyWalletTabBody({ logic, patientId }) {
 		const { activeTab } = logic;
+		const isInfoTab = activeTab === "info" || activeTab === "overview";
 
 		return (
 			<div className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-4">
-				{activeTab === "overview" && (
+				{isInfoTab && (
 					<FamilyMembersBalanceList
 						familyData={logic.familyData}
 						familyBalanceNumeric={logic.familyBalanceNumeric}
@@ -62,21 +62,6 @@ export const FamilyWalletTabBody: React.FC<FamilyWalletTabBodyProps> =
 						submitting={logic.submitting}
 						spendAmountInputId={logic.spendAmountInputId}
 						onSubmitSpend={logic.handleExecuteSpend}
-					/>
-				)}
-
-				{activeTab === "transfer" && (
-					<FamilyWalletTransferSection
-						transferSourceId={logic.transferSourceId}
-						setTransferSourceId={logic.setTransferSourceId}
-						transferTargetId={logic.transferTargetId}
-						setTransferTargetId={logic.setTransferTargetId}
-						transferAmount={logic.transferAmount}
-						setTransferAmount={logic.setTransferAmount}
-						membersList={logic.membersList}
-						submitting={logic.submitting}
-						transferAmountInputId={logic.transferAmountInputId}
-						onSubmitTransfer={logic.handleExecuteTransfer}
 					/>
 				)}
 

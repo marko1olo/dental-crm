@@ -184,4 +184,8 @@ export interface MedicalRecordData {
 	generalTreatmentPlan: string;
 	visitDiaries: ClinicalVisitDiaryEntry[];
 	epicrisis: ClinicalEpicrisisData;
+	isDraft?: boolean | undefined;
+	status?: "draft" | "signed" | string | undefined;
+	isLocked?: boolean | undefined;
+	revisionCount?: number | undefined;
 }

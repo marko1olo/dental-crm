@@ -28,20 +28,13 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 	const visitEmkCompletionPath = path.resolve(__dirname, "../emkTab/VisitEmkCompletionSection.tsx");
 	const visitEmkAutosavePath = path.resolve(__dirname, "../emkTab/useVisitEmkAutosave.ts");
 	const visitEmkControllerPath = path.resolve(__dirname, "../emkTabModules/useVisitEmkTabController.ts");
+	const visitEmkToolbarPath = path.resolve(__dirname, "../emk/emkToolbarModules/EmkQuickActionButtons.tsx");
 	const visitEmkTabSource = [
 		fs.readFileSync(visitEmkTabPath, "utf8"),
 		fs.existsSync(visitEmkCompletionPath) ? fs.readFileSync(visitEmkCompletionPath, "utf8") : "",
 		fs.existsSync(visitEmkAutosavePath) ? fs.readFileSync(visitEmkAutosavePath, "utf8") : "",
 		fs.existsSync(visitEmkControllerPath) ? fs.readFileSync(visitEmkControllerPath, "utf8") : "",
-	].join("\n");
-
-	const visitDiarySectionPath = path.resolve(__dirname, "../VisitDiarySection.tsx");
-	const visitDiarySectionDir = path.resolve(__dirname, "../diary/section");
-	const visitDiarySectionSource = [
-		fs.readFileSync(visitDiarySectionPath, "utf8"),
-		...(fs.existsSync(visitDiarySectionDir)
-			? fs.readdirSync(visitDiarySectionDir).map((f) => fs.readFileSync(path.join(visitDiarySectionDir, f), "utf8"))
-			: []),
+		fs.existsSync(visitEmkToolbarPath) ? fs.readFileSync(visitEmkToolbarPath, "utf8") : "",
 	].join("\n");
 
 	const form043PrintModalPath = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
@@ -115,30 +108,22 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 		);
 	});
 
-	it("2. VisitDiarySection: 1-click physiological norm and draft save buttons exist and are non-blocking", () => {
-		// 1-Click norm direct button exists
+	it("2. VisitEmkTab: 1-click chairside physiological norm button exists and handles auto-revision", () => {
+		// 1-Click norm direct button exists in EmkToolbar / EmkQuickActionButtons
 		assert.ok(
-			visitDiarySectionSource.includes('data-testid="diary-norm-direct-btn"'),
-			"Must have data-testid='diary-norm-direct-btn'",
+			visitEmkTabSource.includes('data-testid="btn-chairside-physiological-norm"') ||
+			visitEmkTabSource.includes("onApplyPhysiologicalNorm"),
+			"Must have physiological norm action wired up",
 		);
 		assert.ok(
-			visitDiarySectionSource.includes("handleApplyFullPhysiologicalNorm") ||
-			visitDiarySectionSource.includes("handleApplyNorm") ||
-			visitDiarySectionSource.includes("applyFullPhysiologicalNorm"),
-			"Must wire up physiological norm handler",
+			visitEmkTabSource.includes("handleApplyPhysiologicalNorm"),
+			"Must wire up handleApplyPhysiologicalNorm handler",
 		);
 		// Auto beginRevise if locked
 		assert.ok(
-			visitDiarySectionSource.includes("logic.beginRevise()") ||
-			visitDiarySectionSource.includes("beginRevise()") ||
-			visitDiarySectionSource.includes("ensureRevisingIfLocked"),
-			"Must invoke beginRevise() automatically if locked when doctor clicks 1-Click norm",
-		);
-
-		// Draft save button exists
-		assert.ok(
-			visitDiarySectionSource.includes('data-testid="diary-save-btn"'),
-			"Must have data-testid='diary-save-btn'",
+			visitEmkTabSource.includes("isRevisingVisitNote") ||
+			visitEmkTabSource.includes("setIsRevisingVisitNote"),
+			"Must manage revision state when doctor edits or clicks norm",
 		);
 	});
 
@@ -193,10 +178,6 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 		assert.ok(
 			!emojiRegex.test(visitEmkTabSource),
 			"VisitEmkTab.tsx must contain 0 cartoon emojis",
-		);
-		assert.ok(
-			!emojiRegex.test(visitDiarySectionSource),
-			"VisitDiarySection.tsx must contain 0 cartoon emojis",
 		);
 		assert.ok(
 			!emojiRegex.test(form043PrintModalSource),

@@ -56,7 +56,8 @@ export const ProfessionalDocumentA4Sheet: React.FC<
 	const effectiveConsentData = rawConsentData || informedConsentData;
 	const effectivePersonalDataConsent =
 		rawPersonalDataConsent || personalDataConsentData;
-	const isInformedConsentTab = activeTab === "informed_consent";
+	const isInformedConsentTab =
+		activeTab === "informed_consent" || activeTab === "consent_1051n";
 	const zoomClass =
 		zoom === "80%" ? "zoom-80" : zoom === "fit" ? "zoom-fit" : "zoom-100";
 

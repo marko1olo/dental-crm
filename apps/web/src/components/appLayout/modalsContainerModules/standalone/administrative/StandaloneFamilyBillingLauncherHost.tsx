@@ -17,9 +17,9 @@ import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import { readPatientIdFromUrl } from "../useLauncherPatientDebt";
 import { type LauncherFamilyGroup, fetchLauncherFamilyGroup, fetchLauncherPatient } from "../launcherFinanceApi";
 
-const FamilyCombinedBillingModal = lazyWithRetry(() =>
-	import("../../../../finance/FamilyCombinedBillingModal").then((m) => ({
-		default: m.FamilyCombinedBillingModal,
+const CashRegisterStudioModal = lazyWithRetry(() =>
+	import("../../../../cashbox/CashRegisterStudioModal").then((m) => ({
+		default: m.CashRegisterStudioModal,
 	})),
 );
 
@@ -70,17 +70,14 @@ export const StandaloneFamilyBillingLauncherHost: React.FC<{ onClose: () => void
 	if (!family) return null;
 
 	return (
-		<FamilyCombinedBillingModal
+		<CashRegisterStudioModal
 			isOpen={true}
-			familyGroupId={family.id}
-			familyGroupName={family.name?.trim() || "Семейная группа"}
-			availableFamilyWalletRub={family.balanceRub}
-			initialPayer={{
-				payerId: patientId,
-				payerFullName: payerName || "Ответственный плательщик",
-			}}
+			mode="checkout"
+			patientId={patientId}
+			patientName={payerName || family.headPatientName || "Ответственный плательщик"}
+			patientFamilyBalanceRub={family.balanceRub}
 			clinicName={profile?.legalName || profile?.clinicName || ""}
-			clinicInn={profile?.inn || ""}
+			clinicLegalName={profile?.legalName}
 			onClose={onClose}
 		/>
 	);

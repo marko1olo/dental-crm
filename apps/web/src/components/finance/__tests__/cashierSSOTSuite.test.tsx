@@ -24,21 +24,23 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 
 // Бронебойный перехват CSS для автономного запуска через `node --import tsx --test`
-try {
-	registerHooks({
-		resolve(specifier, context, nextResolve) {
-			if (specifier.endsWith(".css") || specifier.includes(".css")) {
-				return {
-					format: "module",
-					shortCircuit: true,
-					url: "data:text/javascript," + encodeURIComponent("export default {};"),
-				};
-			}
-			return nextResolve(specifier, context);
-		},
-	});
-} catch {
-	// Hooks already registered by test runner harness
+if (!process.env.VITEST) {
+	try {
+		registerHooks({
+			resolve(specifier, context, nextResolve) {
+				if (specifier.endsWith(".css") || specifier.includes(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						url: "data:text/javascript," + encodeURIComponent("export default {};"),
+					};
+				}
+				return nextResolve(specifier, context);
+			},
+		});
+	} catch {
+		// Hooks already registered by test runner harness
+	}
 }
 
 import {
@@ -55,14 +57,15 @@ import {
 	type CashierReceiptRecord,
 } from "../cashierCatalogData.js";
 import { validateBuyerInn } from "../cashboxInnValidation.js";
+import type { CashRegisterStudioModalProps } from "../../cashbox/CashRegisterStudioModal.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () => {
 	const financeDir = path.resolve(__dirname, "..");
-	let CashierStudioModal: React.FC<any>;
-	let DirectCashboxLauncher: React.FC<any>;
+	let CashierStudioModal: React.FC<CashRegisterStudioModalProps>;
+	let DirectCashboxLauncher: React.FC;
 
 	before(async () => {
 		const modalMod = await import("../../cashbox/CashRegisterStudioModal.js");

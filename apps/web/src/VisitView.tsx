@@ -62,30 +62,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	return (
 		<>
 			<VisitViewDesktopLayout s={s} />
-			{/* Static allergy and lab scan anchors: data-testid="btn-visit-lab-order-fast" data-testid="visit-more-action-lab-order" handleOpenLabOrder "dente-open-lab-order-modal" data-testid="visit-focus-allergy-alert" data-testid="visit-focus-allergy-clean" "Аллергии не выявлены" */}
-			{/* Mandates 8e/8n/Wave 310 contracts (delegated to VisitViewHeader, VisitViewModals and useVisitViewState):
-				display: visitSubViewTab === "odontogram" ? "none" : "block"
-				smoke-compat-container sr-only
-				position: "absolute"
-				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
-				new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } })
-				window.addEventListener("beforeunload", flushAll)
-				window.addEventListener("pagehide", flushAll)
-				data-testid="btn-complete-visit-header"
-				data-testid="btn-somatic-norm-one-click"
-				handleApplySomaticNormQuick
-				data-testid="btn-visit-fast-print-medical-card"
-				data-testid="btn-visit-fast-print-043u"
-				btn-visit-fast-print-medical-card
-				btn-visit-fast-print-043u
-				btn-visit-fast-print-consent-1051n
-				visit-more-action-print-consent
-				visit-plan-expired-soft-notice
-				debounced autosave draft protection
-				"Z01.2 Стоматологическое обследование (Здоров)"
-				"Соматически здоров. Аллергоанамнез не отягощен."
-				"ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ"
-			*/}
 		</>
 	);
 }

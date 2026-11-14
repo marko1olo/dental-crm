@@ -1,5 +1,5 @@
 /**
- * periodontalNormAutonomy.test.tsx — Физиологическая норма в 1 клик и автономия врача (Мандат 8e).
+ * periodontalNormAutonomy.test.tsx — Физиологическая норма пародонта и автономия врача (Мандат 8e).
  * Мандат 8b: <= 120 строк.
  */
 
@@ -11,7 +11,7 @@ import { renderToString } from "react-dom/server";
 import { applyHealthyPeriodontiumPreset } from "../perioCatalogData";
 import { PerioStudioModal } from "../PerioStudioModal";
 
-describe("3. 1-Click Healthy Gingiva Norm Autonomy (Mandates 8e, 8k)", () => {
+describe("3. Healthy Gingiva Norm Autonomy (Mandates 8e, 8k)", () => {
 	it("applyHealthyPeriodontiumPreset sets all 32 teeth (192 sites) to physiological norm", () => {
 		const dirtyTeeth: PerioToothRecord[] = createDefaultPerioTeeth(2).map((t) => ({
 			...t,
@@ -46,20 +46,20 @@ describe("3. 1-Click Healthy Gingiva Norm Autonomy (Mandates 8e, 8k)", () => {
 		}
 	});
 
-	it("PeriodontogramChart renders 1-click norm buttons with touch target >= 44px", () => {
+	it("PerioStudioModal renders norm buttons with touch target >= 44px", () => {
 		const html = renderToString(<PerioStudioModal isModal={false} />);
 		const cleanHtml = html.replace(/<!-- -->/g, "");
 
 		assert.ok(
-			cleanHtml.includes("data-testid=\"perio-toolbar-norm-1click-btn\""),
-			"Must render toolbar norm 1-click button",
+			cleanHtml.includes("data-testid=\"perio-toolbar-norm-btn\""),
+			"Must render toolbar norm button",
 		);
 		assert.ok(
-			cleanHtml.includes("Пародонт в норме") || cleanHtml.includes("Норма (PSR 0)") || cleanHtml.includes("Пародонт интактен"),
-			"Must contain 1-click norm label",
+			cleanHtml.includes("Здоровый пародонт (Норма)"),
+			"Must contain clean clinical norm label",
 		);
 		assert.ok(
-			cleanHtml.includes("min-h-[44px]") || cleanHtml.includes("min-h-[48px]"),
+			cleanHtml.includes("min-h-[44px]") && cleanHtml.includes("min-w-[44px]"),
 			"Must enforce touch target >= 44px for gloved chairside operation",
 		);
 	});

@@ -142,17 +142,17 @@ export function matchesEtag(
  * Определение ключа изоляции арендатора из запроса.
  */
 function extractTenantId(request: FastifyRequest): string {
-	const _req = request as unknown as Record<string, unknown>;
-	if (typeof _req.tenantId === "string" && _req.tenantId.length > 0) {
-		return _req.tenantId;
+	const req = request as FastifyRequest & { tenantId?: string };
+	if (typeof req.tenantId === "string" && req.tenantId.length > 0) {
+		return req.tenantId;
 	}
-	const identity = _req.user as { organizationId?: string | null } | undefined;
-	if (identity?.organizationId) {
-		return identity.organizationId;
+	if (request.user?.organizationId) {
+		return request.user.organizationId;
 	}
 	const headerOrg = request.headers["x-organization-id"];
-	if (typeof headerOrg === "string" && headerOrg.trim()) {
-		return headerOrg.trim();
+	const orgStr = Array.isArray(headerOrg) ? headerOrg[0] : headerOrg;
+	if (typeof orgStr === "string" && orgStr.trim()) {
+		return orgStr.trim();
 	}
 	return "global";
 }

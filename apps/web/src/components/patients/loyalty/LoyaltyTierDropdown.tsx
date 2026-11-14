@@ -18,7 +18,7 @@ export const LoyaltyTierDropdown: React.FC<LoyaltyTierDropdownProps> = React.mem
 		<>
 			<button
 				type="button"
-				className="fixed inset-0 z-50 bg-transparent border-0 p-0 cursor-default"
+				className="fixed inset-0 z-[10060] bg-transparent border-0 p-0 cursor-default"
 				onClick={onClose}
 				onKeyDown={(e) => {
 					if (e.key === "Enter" || e.key === " ") onClose();
@@ -29,7 +29,7 @@ export const LoyaltyTierDropdown: React.FC<LoyaltyTierDropdownProps> = React.mem
 				animate={{ opacity: 1, y: 0, scale: 1 }}
 				exit={{ opacity: 0, y: 5, scale: 0.95 }}
 				transition={{ duration: 0.15 }}
-				className="absolute top-full left-0 mt-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-xl p-1 z-50 min-w-[160px] flex flex-col gap-0.5"
+				className="absolute top-full left-0 mt-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-xl p-1 z-[10061] min-w-[160px] flex flex-col gap-0.5"
 			>
 				{(Object.entries(LOYALTY_CONFIG) as [LoyaltyTier, (typeof LOYALTY_CONFIG)[LoyaltyTier]][]).map(
 					([tierKey, config]) => (

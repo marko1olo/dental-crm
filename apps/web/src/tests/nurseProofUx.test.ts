@@ -14,7 +14,7 @@ import {
 	appendRecommendationToSoap,
 	POST_OP_PATIENT_MEMOS,
 } from "../lib/clinicalProtocols";
-import type { DiaryState } from "../components/useVisitDiaryLogic";
+import type { DiaryState } from "../lib/protocols/protocolTypes";
 import { CLINICAL_PRESETS } from "../components/visit/ClinicalQuickPresetsBar";
 import { TOOTH_STATE_LABELS } from "../components/odontogram/ToothChart";
 import { getDefaultCanalsForTooth } from "../components/endo/endodonticsCatalogData";

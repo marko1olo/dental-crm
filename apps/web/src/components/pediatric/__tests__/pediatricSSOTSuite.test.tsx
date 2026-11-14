@@ -180,7 +180,7 @@ describe("4. Canonical Pediatric Dentition Modal Ergonomics & Autonomy (Mandates
 
 		assert.ok(html.includes("Готово"));
 		assert.ok(html.includes("Детский и сменный прикус"));
-		assert.ok(html.includes("bg-emerald-600"), "Primary CTA has distinctive accent");
+		assert.ok(html.includes("bg-[var(--primary)]"), "Primary CTA uses canonical var(--primary) token");
 	});
 
 	it("guarantees ZERO disabled buttons across PediatricMixedDentitionModal (Mandate 8e)", () => {

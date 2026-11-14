@@ -60,13 +60,22 @@ export const ViewerCanvasViewport: React.FC<ViewerCanvasViewportProps> = ({ stat
 			{/* Fullscreen Clinical HUD (Top-Left) — Telemetry without kV/mA */}
 			{(!isMobile || isFullscreen) && (
 				<RadiologyClinicalHud
-					patientName={(activeStudy as any)?.patientName || patientName}
-					patientBirthDate={(activeStudy as any)?.patientBirthDate || patientBirthDate}
+					patientName={
+						(activeStudy && "patientName" in activeStudy ? activeStudy.patientName : undefined) ||
+						patientName
+					}
+					patientBirthDate={
+						(activeStudy && "patientBirthDate" in activeStudy ? activeStudy.patientBirthDate : undefined) ||
+						patientBirthDate
+					}
 					patientAge={patientAge}
 					patientGender={patientGender}
-					medicalCardNumber={(activeStudy as any)?.medicalCardNumber || medicalCardNumber}
+					medicalCardNumber={
+						(activeStudy && "medicalCardNumber" in activeStudy ? activeStudy.medicalCardNumber : undefined) ||
+						medicalCardNumber
+					}
 					toothFdi={effectiveTooth}
-					modalityLabel={(activeStudy as any)?.modalityLabel || "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"}
+					modalityLabel={activeStudy?.modalityLabel || "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"}
 					studyDate={activeStudy?.studyDate}
 					isFullscreen={isFullscreen}
 					onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
@@ -78,7 +87,11 @@ export const ViewerCanvasViewport: React.FC<ViewerCanvasViewportProps> = ({ stat
 			<RadiologyCalibratedScaleRuler
 				zoom={zoom}
 				pixelPitchMicrons={pixelPitchMicrons}
-				sensorModelOrDevice={(activeStudy as any)?.apparatusModel || "vatech_ezsensor"}
+				sensorModelOrDevice={
+					(activeStudy && "apparatusModel" in activeStudy && activeStudy.apparatusModel) ||
+					(activeStudy && "metadata" in activeStudy && activeStudy.metadata?.apparatusModel) ||
+					"vatech_ezsensor"
+				}
 				targetLengthMm={5.0}
 				position="left"
 			/>

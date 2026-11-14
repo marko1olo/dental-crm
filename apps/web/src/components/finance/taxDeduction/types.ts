@@ -24,15 +24,29 @@ export type {
 export interface TaxDeductionCertificateModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patient?: any | undefined;
-	readonly clinicProfileDraft?: any | undefined;
+	readonly patient?: {
+		readonly id?: string;
+		readonly fullName?: string;
+		readonly birthDate?: string;
+		readonly inn?: string;
+		readonly snils?: string;
+		readonly [key: string]: unknown;
+	} | undefined;
+	readonly clinicProfileDraft?: {
+		readonly clinicName?: string;
+		readonly inn?: string;
+		readonly kpp?: string;
+		readonly ogrn?: string;
+		readonly licenseNumber?: string;
+		readonly [key: string]: unknown;
+	} | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientBirthDate?: string | undefined;
 	readonly patientInn?: string | undefined;
 	readonly payerInn?: string | undefined;
 	readonly patientSnils?: string | undefined;
 	readonly payerSnils?: string | undefined;
-	readonly payments?: readonly TaxDeductionPaymentItem[] | readonly any[] | undefined;
+	readonly payments?: readonly TaxDeductionPaymentItem[] | undefined;
 	readonly selectedYear?: number | undefined;
 	readonly initialYear?: number | undefined;
 	readonly defaultTaxYear?: number | undefined;

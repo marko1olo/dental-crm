@@ -10,11 +10,16 @@ export const useAppStore = create<AppStore>((...a) => ({
 	...createNotificationsAndSyncSlice(...a),
 }));
 
+declare global {
+	interface Window {
+		__APP_STORE__?: typeof useAppStore;
+		__useAppStore?: typeof useAppStore;
+	}
+}
+
 if (typeof window !== "undefined") {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	(window as any).__APP_STORE__ = useAppStore;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	(window as any).__useAppStore = useAppStore;
+	window.__APP_STORE__ = useAppStore;
+	window.__useAppStore = useAppStore;
 }
 
 export * from "../inventoryStore.js";

@@ -45,7 +45,7 @@ export const CuratorPlanAssignmentModal: React.FC<CuratorPlanAssignmentModalProp
 	const { dashboard } = useAppLogicContext();
 
 	const staffList = useMemo(() => {
-		const staff = (dashboard?.clinicSettings?.staff ?? []) as any[];
+		const staff = (dashboard?.clinicSettings?.staff ?? []) as readonly CuratorStaffMember[];
 		return staff.filter((s) => s.active && CURATOR_ALLOWED_STAFF_ROLES.has(s.role));
 	}, [dashboard?.clinicSettings?.staff]);
 

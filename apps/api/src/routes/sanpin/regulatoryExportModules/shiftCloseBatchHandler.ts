@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
+import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { saveShiftAutoclaveRecords } from "./shiftCloseAutoclaveSaver.js";
 import { saveShiftMicroclimateRecords } from "./shiftCloseMicroclimateSaver.js";
@@ -22,8 +23,8 @@ export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: Fas
 	);
 	if (!organizationId) return;
 
-	const body = (req.body as Record<string, any>) || {};
-	const dateStr = body.shiftDate || body.date;
+	const body = (req.body as Record<string, unknown>) || {};
+	const dateStr = (body.shiftDate as string) || (body.date as string);
 	if (!dateStr || typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr.slice(0, 10))) {
 		return reply.status(400).send({
 			error: "ValidationError",
@@ -31,10 +32,10 @@ export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: Fas
 		});
 	}
 
-	const operatorName = body.responsibleStaffName || body.operatorStaffFullName || "Дежурная медсестра / ассистент";
+	const operatorName = (body.responsibleStaffName as string) || (body.operatorStaffFullName as string) || "Дежурная медсестра / ассистент";
 	const digitalStampHash =
-		body.digitalStampHash || `DENTE-SANPIN-${dateStr}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
-	const operatorId = (req as any).user?.id || null;
+		(body.digitalStampHash as string) || `DENTE-SANPIN-${dateStr}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+	const operatorId = getRequestIdentity(req).userId || null;
 
 	try {
 		const result = await db.transaction(async (tx) => {

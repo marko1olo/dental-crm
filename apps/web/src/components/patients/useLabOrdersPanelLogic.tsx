@@ -11,6 +11,16 @@ import {
 	transitionLabOrderStatus,
 } from "./labOrders/labOrderActions";
 
+export interface LabOrderPromptState {
+	title: string;
+	description?: string;
+	placeholder?: string;
+	defaultValue?: string;
+	confirmLabel?: string;
+	onConfirm: (value: string) => void | Promise<void>;
+	onCancel: () => void;
+}
+
 export function useLabOrdersPanelLogic(patientId?: string) {
 	const appLogic = useOptionalAppLogicContext();
 	const [orders, setOrders] = useState<LabOrder[]>([]);
@@ -28,7 +38,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
 	const cardMenuRef = useRef<HTMLDivElement | null>(null);
 	const presetsMenuRef = useRef<HTMLDivElement | null>(null);
-	const [promptState, setPromptState] = useState<any | null>(null);
+	const [promptState, setPromptState] = useState<LabOrderPromptState | null>(null);
 	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
 	const [showQuickForm, setShowQuickForm] = useState(false);
 
@@ -194,21 +204,110 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		handleOpenEditOrder,
 		handleOpenPrintOrder,
 		handleOpenTrackingDrawer,
-		handleAttachBitePhoto: () => {
+		handleAttachBitePhoto: async (orderOrId?: DentalLabOrderData | LabOrder | string, photoUrl?: string) => {
+			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
 			setOpenMenuOrderId(null);
-			showToast("Фото прикуса прикреплено", "success");
+			if (!targetId) {
+				showToast("Выберите наряд ЗТЛ для прикрепления фото", "warning");
+				return;
+			}
+			if (photoUrl?.trim()) {
+				try {
+					const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+						method: "PATCH",
+						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+						body: JSON.stringify({ notes: `Фото прикуса: ${photoUrl.trim()}` }),
+					});
+					if (!res.ok) throw new Error("Ошибка сохранения фото");
+					showToast("Фото прикуса сохранено в аудит-логе наряда", "success");
+					void fetchOrders();
+				} catch {
+					showToast("Сбой сети при сохранении фото прикуса", "error");
+				}
+			} else {
+				showToast("Фото прикуса зафиксировано", "info");
+			}
 		},
-		handleTechnicianComment: () => {
+		handleTechnicianComment: async (orderOrId?: DentalLabOrderData | LabOrder | string, comment?: string) => {
+			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
 			setOpenMenuOrderId(null);
-			showToast("Комментарий технику сохранен", "success");
+			if (!targetId) {
+				showToast("Выберите наряд ЗТЛ для отправки комментария", "warning");
+				return;
+			}
+			const noteText = comment?.trim() || "Комментарий клиники передан технику ЗТЛ";
+			try {
+				const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					body: JSON.stringify({ notes: noteText, labComments: noteText }),
+				});
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(err.message || "Ошибка отправки комментария технику");
+				}
+				showToast("Комментарий технику сохранен в наряде и журнале аудита", "success");
+				void fetchOrders();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Сбой сети при сохранении комментария";
+				showToast(msg, "error");
+			}
 		},
-		handleRepeatFitting: () => {
+		handleRepeatFitting: async (orderOrId?: DentalLabOrderData | LabOrder | string, reason?: string) => {
+			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
 			setOpenMenuOrderId(null);
-			showToast("Назначена повторная примерка", "info");
+			if (!targetId) {
+				showToast("Выберите наряд ЗТЛ для повторной примерки", "warning");
+				return;
+			}
+			try {
+				const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					body: JSON.stringify({
+						status: "fitting",
+						stage: "correction_required",
+						notes: reason?.trim() ? `Повторная примерка: ${reason.trim()}` : "Назначена повторная примерка (требуется коррекция конструкции)",
+					}),
+				});
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(err.message || "Ошибка перевода статуса наряда");
+				}
+				showToast("Наряд переведен на повторную примерку (статус: fitting)", "info");
+				void fetchOrders();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Сбой сети при назначении повторной примерки";
+				showToast(msg, "error");
+			}
 		},
-		handleReclamation: () => {
+		handleReclamation: async (orderOrId?: DentalLabOrderData | LabOrder | string, reason?: string) => {
+			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
 			setOpenMenuOrderId(null);
-			showToast("Рекламация направлена в ЗТЛ", "warning");
+			if (!targetId) {
+				showToast("Выберите наряд ЗТЛ для рекламации", "warning");
+				return;
+			}
+			try {
+				const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					body: JSON.stringify({
+						status: "refitting",
+						stage: "correction_remake",
+						notes: reason?.trim() ? `Рекламация в ЗТЛ (0 ₽): ${reason.trim()}` : "Рекламация: гарантийная переделка конструкции в ЗТЛ (0 ₽)",
+					}),
+				});
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(err.message || "Ошибка отправки рекламации в ЗТЛ");
+				}
+				showToast("Рекламация успешно направлена в ЗТЛ (статус: переделка / refitting)", "warning");
+				void fetchOrders();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Сбой сети при отправке рекламации";
+				showToast(msg, "error");
+			}
 		},
 	};
 }

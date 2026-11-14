@@ -8,7 +8,7 @@ import {
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { CuratorConversionFunnel } from "./CuratorConversionFunnel";
 import { CuratorQueueCard } from "./CuratorQueueCard";
-import { CuratorPlanAssignmentModal } from "../treatment-plans/CuratorPlanAssignmentModal";
+import { TreatmentPlanStudioModal } from "../treatment-plans/TreatmentPlanStudioModal";
 import { CuratorHeader } from "./curatorModules/CuratorHeader";
 import { CuratorKpiCardsGrid } from "./curatorModules/CuratorKpiCardsGrid";
 import { CuratorQueueFiltersBar } from "./curatorModules/CuratorQueueFiltersBar";
@@ -116,14 +116,13 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 			</div>
 
 			{assignmentTarget && (
-				<CuratorPlanAssignmentModal
+				<TreatmentPlanStudioModal
 					isOpen={Boolean(assignmentTarget)}
 					onClose={() => setAssignmentTarget(null)}
 					patientId={assignmentTarget.patientId}
 					patientName={assignmentTarget.patientName}
-					treatmentPlanId={assignmentTarget.planId}
-					treatmentPlanTitle={assignmentTarget.planTitle}
-					currentCuratorId={assignmentTarget.currentCuratorId}
+					planId={assignmentTarget.planId}
+					initialActiveTab="curator"
 				/>
 			)}
 		</div>

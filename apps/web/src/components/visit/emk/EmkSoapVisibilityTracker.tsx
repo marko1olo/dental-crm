@@ -6,8 +6,12 @@ import {
 	getUnfinishedEndoSnapshot,
 } from "../../../lib/clinicalProtocols";
 
+export interface EmkSoapVisitNoteLike extends Partial<VisitNoteForm> {
+	readonly treatmentDescription?: string;
+}
+
 export interface EmkSoapVisibilityTrackerProps {
-	readonly visitNoteForm?: VisitNoteForm | Record<string, any> | null | undefined;
+	readonly visitNoteForm?: EmkSoapVisitNoteLike | null | undefined;
 	readonly activeTooth?: number | null | undefined;
 	readonly endoSnapshot?: LastVisitSoapSnapshot | null | undefined;
 	readonly onContinueEndoStage?: ((snapshot: LastVisitSoapSnapshot) => void) | undefined;
@@ -81,8 +85,8 @@ export const EmkSoapVisibilityTracker: React.FC<
 	const hasObjective = Boolean(visitNoteForm?.objectiveStatus?.trim());
 	const hasDiagnosis = Boolean(visitNoteForm?.diagnosis?.trim());
 	const treatmentDesc =
-		visitNoteForm && "treatmentDescription" in visitNoteForm && typeof (visitNoteForm as Record<string, unknown>).treatmentDescription === "string"
-			? (visitNoteForm as Record<string, unknown>).treatmentDescription as string
+		visitNoteForm && typeof visitNoteForm.treatmentDescription === "string"
+			? visitNoteForm.treatmentDescription
 			: undefined;
 	const hasTreatment = Boolean(
 		visitNoteForm?.treatmentPlan?.trim() || treatmentDesc?.trim(),
@@ -203,7 +207,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 					}`}
 					title={
-						(visitNoteForm as any)?.treatmentDescription ||
+						treatmentDesc ||
 						visitNoteForm?.treatmentPlan ||
 						"Лечение не заполнено"
 					}

@@ -83,11 +83,11 @@ export function OnlineBookingChannelsTable({
 								<td className="py-2.5 px-3" colSpan={2}>ИТОГО ПО САМОЗАПИСИ:</td>
 								<td className="py-2.5 px-3 text-right">{onlineSummary.totalViews.toLocaleString("ru-RU")}</td>
 								<td className="py-2.5 px-3 text-right text-[var(--teal)]">{onlineSummary.totalBookings}</td>
-								<td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">{onlineSummary.conversionRatePercent.toFixed(1)}%</td>
-								<td className="py-2.5 px-3 text-right text-blue-600 dark:text-blue-400">{onlineSummary.totalAttended} ({onlineSummary.attendanceRatePercent.toFixed(0)}%)</td>
-								<td className="py-2.5 px-3 text-right text-rose-500">{onlineSummary.totalNoShow}</td>
+								<td className="py-2.5 px-3 text-right text-[var(--teal)]">{onlineSummary.conversionRatePercent.toFixed(1)}%</td>
+								<td className="py-2.5 px-3 text-right text-[var(--ink)]">{onlineSummary.totalAttended} ({onlineSummary.attendanceRatePercent.toFixed(0)}%)</td>
+								<td className="py-2.5 px-3 text-right text-[var(--danger,#e11d48)]">{onlineSummary.totalNoShow}</td>
 								<td className="py-2.5 px-3 text-right text-[var(--teal)]">{formatKopecksRu(onlineSummary.totalRevenueKopecks)}</td>
-								<td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">
+								<td className="py-2.5 px-3 text-right text-[var(--teal)]">
 									{onlineSummary.romiPercent !== null ? (onlineSummary.romiPercent > 0 ? `+${onlineSummary.romiPercent}%` : `${onlineSummary.romiPercent}%`) : "—"}
 								</td>
 							</tr>

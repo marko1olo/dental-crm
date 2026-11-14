@@ -8,7 +8,7 @@ import { localSavedAtFresh } from "../../localStorageHelpers";
 import {
 	speechAudioQueueRetentionMs,
 	speechChunkStoreName,
-} from "../../SpeechHelpers";
+} from "../../../helpers/speechHelpers";
 import { pendingVisitSaveStoreName } from "../visitDraftHelpers";
 import { localQueueOrganizationMatches } from "./domainGuards";
 import type { PendingSpeechChunk } from "./types";

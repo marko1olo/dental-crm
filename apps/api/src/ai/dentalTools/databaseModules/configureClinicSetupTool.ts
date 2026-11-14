@@ -45,11 +45,14 @@ export async function handleConfigureClinicSetup(args: ConfigureClinicSetupInput
 
 	let targetClinicId: string;
 	const existingClinics = await activeDb.select().from(clinics).where(eq(clinics.organizationId, orgId)).limit(1);
-	if (existingClinics.length > 0) {
+	if (existingClinics.length > 0 && existingClinics[0]) {
 		targetClinicId = existingClinics[0].id;
 		await activeDb.update(clinics).set({ name: parsedArgs.clinicName, address: parsedArgs.legalAddress ?? null, phone: parsedArgs.phone ?? null, timezone: parsedArgs.schedule.timezone }).where(eq(clinics.id, targetClinicId));
 	} else {
 		const [c] = await activeDb.insert(clinics).values({ organizationId: orgId, name: parsedArgs.clinicName, address: parsedArgs.legalAddress ?? null, phone: parsedArgs.phone ?? null, timezone: parsedArgs.schedule.timezone }).returning({ id: clinics.id });
+		if (!c) {
+			throw new Error("Не удалось инициализировать профиль клиники");
+		}
 		targetClinicId = c.id;
 	}
 

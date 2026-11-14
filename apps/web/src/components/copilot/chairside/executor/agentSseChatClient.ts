@@ -13,6 +13,14 @@ import type {
 } from "../chairsideTypes";
 import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
 import { showToast } from "../../../GlobalToast";
+import { useCopilotStore } from "../../../../store/copilotStore";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function toCleanUuid(val?: string | null): string | undefined {
+  if (!val) return undefined;
+  const trimmed = val.trim();
+  return UUID_REGEX.test(trimmed) ? trimmed : undefined;
+}
 
 export interface StreamAgentChatParams {
   promptText: string;
@@ -22,12 +30,16 @@ export interface StreamAgentChatParams {
   headers: Record<string, string>;
   trustLevel?: "confirm_all" | "balanced" | "autonomous" | undefined;
   onThoughtChunk?: ((chunk: string) => void) | undefined;
+  maskPhiData?: boolean | undefined;
+  patientAllergies?: readonly string[] | string[] | undefined;
+  somaticHistory?: string | readonly string[] | string[] | undefined;
 }
 
 export async function requestAgentSseStream(
   params: StreamAgentChatParams
 ): Promise<CopilotExecutionResult | null> {
   const { promptText, activeTooth, patientId, visitId, headers, trustLevel, onThoughtChunk } = params;
+  const effectiveMaskPhi = params.maskPhiData ?? useCopilotStore.getState().settings.maskPhiData ?? true;
 
   try {
     const sseHeaders: Record<string, string> = {
@@ -35,13 +47,20 @@ export async function requestAgentSseStream(
       Accept: "text/event-stream",
     };
 
+    const cleanPatientId = toCleanUuid(patientId);
+    const cleanVisitId = toCleanUuid(visitId);
+
     const sseBody = {
       messages: [{ role: "user", content: promptText }],
-      patientId: patientId?.trim() || undefined,
-      activeVisitId: visitId || undefined,
+      patientId: cleanPatientId,
+      activeVisitId: cleanVisitId,
       activeTooth: activeTooth ?? undefined,
+      patientAllergies: params.patientAllergies && params.patientAllergies.length > 0 ? [...params.patientAllergies] : undefined,
+      allergies: params.patientAllergies && params.patientAllergies.length > 0 ? [...params.patientAllergies] : undefined,
+      somaticHistory: params.somaticHistory,
       stream: true,
       trustLevel: trustLevel || "balanced",
+      maskPhiData: effectiveMaskPhi,
     };
 
     const res = await fetch("/api/agent/chat", {
@@ -172,6 +191,14 @@ export async function requestAgentSseStream(
       }
     }
 
+    for (const t of thoughts) {
+      if (t.status === "running") {
+        t.status = "done";
+      }
+    }
+
+    const isLocalFallback = finalVerdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]");
+
     if (thoughts.length > 0 || finalVerdict || toothProposal || soapProposal) {
       return {
         thoughts,
@@ -181,6 +208,10 @@ export async function requestAgentSseStream(
         soapProposal,
         anestheticProposal,
         safetyAlert,
+        ...(isLocalFallback ? {
+          isLocalFallback: true,
+          fallbackMessage: "Локальный автономный режим (API-ключ не настроен)",
+        } : {}),
       };
     }
     return null;

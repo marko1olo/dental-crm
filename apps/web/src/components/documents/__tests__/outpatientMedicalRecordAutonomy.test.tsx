@@ -1,16 +1,15 @@
 /**
  * outpatientForm043AndPatientCardAutonomy.test.tsx
  *
- * Test suite for Form 043/u and Clinical Records Doctor Autonomy (Mandates 8e, 8d, 8g, 8n).
+ * Test suite for EMR Medical Record Studio and Clinical Records Doctor Autonomy (Mandates 8e, 8d, 8g, 8n).
  *
  * Verifies:
- * 1. Mandate 8e item 3: 1-click physiological norm button in Form 043/u (btn-043-global-norm-1click)
+ * 1. Mandate 8e item 3: 1-click physiological norm button in MedicalRecordStudioModal (btn-emr-apply-norm)
  *    and Patient Card / General Info tab (btn-somatic-healthy-norm).
- * 2. Mandate 8e item 4: Zero permanent locks; 1-click revision mode («Исправленному верить»)
- *    with version audit in Form 043/u and visit diary.
- * 3. Mandate 8e item 5: Print Form 043/u and Patient Card available at any time
- *    (watermarks: «ЧЕРНОВИК», «ПОДПИСАНО ВРАЧОМ», «ИСПРАВЛЕННОМУ ВЕРИТЬ»).
- * 4. Mandate 8d item 7: STRICTLY 0 cartoon emojis in 043/u, diaries, and patient cards (Lucide icons only).
+ * 2. Mandate 8e item 4: Zero permanent locks; effectiveIsDraft and doctor non-blocking mode in MedicalRecordStudioModal.
+ * 3. Mandate 8e item 5: Print EMR available at any time with watermarks («ЧЕРНОВИК», «ПОДПИСАНО ВРАЧОМ»).
+ * 4. Mandate 8s: Elimination of legacy Soviet facades (DentalMedicalCard043uForm, OutpatientForm043Editor)
+ *    in favor of canonical MedicalRecordStudioModal.
  * 5. Touch target ergonomics: interactive buttons meet >= 44x44px.
  * 6. Barrel exports in patient domain index.
  */
@@ -24,16 +23,24 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
-	const form043Path = path.resolve(
+describe("EMR Medical Record Studio & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
+	const emrStudioPath = path.resolve(
 		__dirname,
-		"../forms/DentalMedicalCard043uForm.tsx",
+		"../../emr/MedicalRecordStudioModal.tsx",
 	);
-	const medicalCardDir = path.resolve(__dirname, "../forms/medicalCard");
-	const medicalCardFiles = fs.existsSync(medicalCardDir)
-		? fs.readdirSync(medicalCardDir).map((f) => fs.readFileSync(path.join(medicalCardDir, f), "utf8")).join("\n")
-		: "";
-	const form043Source = fs.readFileSync(form043Path, "utf8") + "\n" + medicalCardFiles;
+	const emrStudioSource = fs.readFileSync(emrStudioPath, "utf8");
+
+	const medicalCatalogPath = path.resolve(
+		__dirname,
+		"../../emr/medicalCardCatalogData.ts",
+	);
+	const medicalCatalogSource = fs.readFileSync(medicalCatalogPath, "utf8");
+
+	const recordHtmlGenPath = path.resolve(
+		__dirname,
+		"../../emr/record/html/recordHtmlGenerator.ts",
+	);
+	const recordHtmlGenSource = fs.readFileSync(recordHtmlGenPath, "utf8");
 
 	const patientModalPath = path.resolve(
 		__dirname,
@@ -55,17 +62,11 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		: "";
 	const generalInfoTabSource = fs.readFileSync(generalInfoTabPath, "utf8") + "\n" + generalInfoModulesFiles;
 
-	const patientIndexPath = path.resolve(
+	const emkControllerPath = path.resolve(
 		__dirname,
-		"../../../../../../packages/shared/src/patients/index.ts",
+		"../../visit/emkTabModules/useVisitEmkTabController.ts",
 	);
-	const patientIndexSource = fs.readFileSync(patientIndexPath, "utf8");
-
-	const diaryLogicPath = path.resolve(
-		__dirname,
-		"../../useVisitDiaryLogic.ts",
-	);
-	const diaryLogicSource = fs.readFileSync(diaryLogicPath, "utf8");
+	const emkControllerSource = fs.readFileSync(emkControllerPath, "utf8");
 
 	const visitViewPath = path.resolve(
 		__dirname,
@@ -81,96 +82,83 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		: "";
 	const visitViewSource = fs.readFileSync(visitViewPath, "utf8") + "\n" + visitViewModulesFiles;
 
-	const visitDiarySectionPath = path.resolve(
+	const visitEmkTabPath = path.resolve(
 		__dirname,
-		"../../visit/VisitDiarySection.tsx",
+		"../../visit/VisitEmkTab.tsx",
 	);
-	const visitDiarySectionDir = path.resolve(__dirname, "../../visit/diary/section");
-	const visitDiarySectionFiles = fs.existsSync(visitDiarySectionDir)
-		? fs.readdirSync(visitDiarySectionDir).map((f) => fs.readFileSync(path.join(visitDiarySectionDir, f), "utf8")).join("\n")
+	const visitEmkTabDir = path.resolve(__dirname, "../../visit/emkTabModules");
+	const visitEmkTabFiles = fs.existsSync(visitEmkTabDir)
+		? fs.readdirSync(visitEmkTabDir).map((f) => fs.readFileSync(path.join(visitEmkTabDir, f), "utf8")).join("\n")
 		: "";
-	const visitDiarySectionSource = fs.readFileSync(visitDiarySectionPath, "utf8") + "\n" + visitDiarySectionFiles;
+	const visitEmkTabSource = fs.readFileSync(visitEmkTabPath, "utf8") + "\n" + visitEmkTabFiles;
 
-	it("1. Form 043/u: exposes 1-click global physiological norm button (btn-043-global-norm-1click)", () => {
+	it("1. MedicalRecordStudioModal: exposes 1-click global physiological norm button (btn-emr-apply-norm)", () => {
 		assert.ok(
-			form043Source.includes('data-testid="btn-043-global-norm-1click"'),
-			"Must include btn-043-global-norm-1click button in DentalMedicalCard043uForm",
+			emrStudioSource.includes('data-testid="btn-emr-apply-norm"'),
+			"Must include btn-emr-apply-norm button in MedicalRecordStudioModal",
 		);
 		assert.ok(
-			form043Source.includes("handleApplyGlobalNorm"),
-			"Must implement handleApplyGlobalNorm function in DentalMedicalCard043uForm",
-		);
-		// Check that global norm fills odontogram, mucosa, bite, lymph nodes, somatic status
-		assert.ok(
-			form043Source.includes("createIntactOdontogramRecords"),
-			"handleApplyGlobalNorm must populate intact odontogram (32 teeth intact)",
+			emrStudioSource.includes("handleApplyNorm"),
+			"Must implement handleApplyNorm function in MedicalRecordStudioModal",
 		);
 		assert.ok(
-			form043Source.includes("createForm043PhysiologicalNorm"),
-			"handleApplyGlobalNorm must call createForm043PhysiologicalNorm",
+			medicalCatalogSource.includes("applyMedicalCardPhysiologicalNorm"),
+			"Must export applyMedicalCardPhysiologicalNorm function in medicalCardCatalogData",
 		);
 		assert.ok(
-			form043Source.includes("setOralMucosa(norm.oralMucosaStatus)"),
-			"handleApplyGlobalNorm must set oral mucosa to physiological norm",
+			medicalCatalogSource.includes("DEFAULT_32_PERMANENT_TEETH"),
+			"medicalCardCatalogData must populate intact permanent dentition FDI 11-48",
 		);
 	});
 
-	it("2. Form 043/u: exposes revision mode button («Исправленному верить») and effectiveDisabled unlock", () => {
+	it("2. MedicalRecordStudioModal: exposes non-blocking draft/signed state with effectiveIsDraft", () => {
 		assert.ok(
-			form043Source.includes('data-testid="btn-043-revise"'),
-			"Must include btn-043-revise button in DentalMedicalCard043uForm",
+			emrStudioSource.includes("effectiveIsDraft"),
+			"Must compute effectiveIsDraft to allow editing without permanent lock out",
 		);
 		assert.ok(
-			form043Source.includes("effectiveDisabled"),
-			"Must use effectiveDisabled instead of rigid disabled to allow revision mode",
-		);
-		assert.ok(
-			form043Source.includes("Boolean(disabled && !rev.isRevising)") ||
-				form043Source.includes("Boolean(disabled && !isRevising)"),
-			"effectiveDisabled must be false when isRevising is active even if parent passed disabled",
-		);
-		assert.ok(
-			form043Source.includes("form043-revision-banner"),
-			"Must render revision banner when isRevising is active",
+			emrStudioSource.includes('data-testid="badge-emr-draft-status"'),
+			"Must render draft/signed status badge",
 		);
 	});
 
-	it("3. Form 043/u: fast print and blank print are always available with watermark audit", () => {
+	it("3. EMR Print: generateMedicalRecordPrintHtml supports draft and signed watermark stamps", () => {
 		assert.ok(
-			form043Source.includes('data-testid="btn-043-fast-print"'),
-			"Must expose btn-043-fast-print",
+			recordHtmlGenSource.includes("generateMedicalRecordPrintHtml"),
+			"Must export generateMedicalRecordPrintHtml function",
 		);
 		assert.ok(
-			form043Source.includes('data-testid="btn-043-print-blank"'),
-			"Must expose btn-043-print-blank for empty card with underscores",
+			recordHtmlGenSource.includes("ЧЕРНОВИК"),
+			"Watermark must support draft stamp ЧЕРНОВИК",
 		);
 		assert.ok(
-			form043Source.includes("ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ"),
-			"Watermark must support revision count stamp",
-		);
-		assert.ok(
-			form043Source.includes("ПОДПИСАНО ВРАЧОМ"),
-			"Watermark must support signed stamp",
-		);
-		assert.ok(
-			form043Source.includes("ЧЕРНОВИК"),
-			"Watermark must support draft stamp",
+			recordHtmlGenSource.includes("ПОДПИСАНО ВРАЧОМ"),
+			"Watermark must support signed stamp ПОДПИСАНО ВРАЧОМ",
 		);
 	});
 
-	it("4. DentalMedicalCard043uForm is canonical form and OutpatientForm043Editor facade is eliminated (Mandate 8s)", () => {
+	it("4. Legacy facades (DentalMedicalCard043uForm, OutpatientForm043Editor) are eliminated (Mandate 8s)", () => {
+		const form043Path = path.resolve(
+			__dirname,
+			"../forms/DentalMedicalCard043uForm.tsx",
+		);
 		const editorFacadePath = path.resolve(
 			__dirname,
 			"../forms/OutpatientForm043Editor.tsx",
 		);
 		assert.strictEqual(
+			fs.existsSync(form043Path),
+			false,
+			"DentalMedicalCard043uForm must be eliminated in favor of MedicalRecordStudioModal",
+		);
+		assert.strictEqual(
 			fs.existsSync(editorFacadePath),
 			false,
-			"OutpatientForm043Editor facade must be eliminated in favor of DentalMedicalCard043uForm",
+			"OutpatientForm043Editor facade must be eliminated",
 		);
 		assert.ok(
-			form043Source.includes("export const DentalMedicalCard043uForm"),
-			"Must export canonical DentalMedicalCard043uForm component",
+			emrStudioSource.includes("export const MedicalRecordStudioModal"),
+			"Must export canonical MedicalRecordStudioModal component",
 		);
 	});
 
@@ -200,35 +188,33 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		);
 	});
 
-	it("7. useVisitDiaryLogic: implements and exports applySomaticNorm with auto-revision", () => {
+	it("7. useVisitEmkTabController: implements and exports handleApplyPhysiologicalNorm with auto-revision", () => {
 		assert.ok(
-			diaryLogicSource.includes("applySomaticNorm"),
-			"useVisitDiaryLogic must define applySomaticNorm",
+			emkControllerSource.includes("handleApplyPhysiologicalNorm"),
+			"useVisitEmkTabController must define handleApplyPhysiologicalNorm",
 		);
 		assert.ok(
-			diaryLogicSource.includes("if (isLocked && !isRevising)"),
-			"applySomaticNorm must trigger beginRevise() if locked",
+			emkControllerSource.includes("if (isSignedVisit && !isRevisingVisitNote)"),
+			"handleApplyPhysiologicalNorm must trigger revision mode if signed",
 		);
 		assert.ok(
-			diaryLogicSource.includes("applySomaticNorm,\n\t};"),
-			"useVisitDiaryLogic must export applySomaticNorm in its return block",
+			emkControllerSource.includes("handleApplyPhysiologicalNorm,"),
+			"useVisitEmkTabController must export handleApplyPhysiologicalNorm in its return block",
 		);
 	});
 
-	it("8. VisitDiarySection: exposes 1-click norm buttons that auto-initiate revision when locked", () => {
+	it("8. VisitEmkTab: exposes 1-click physiological norm with ICD-10 Z01.2", () => {
 		assert.ok(
-			visitDiarySectionSource.includes('data-testid="diary-1click-norm-btn"'),
-			"VisitDiarySection must include diary-1click-norm-btn",
+			visitEmkTabSource.includes("handleApplyPhysiologicalNorm"),
+			"VisitEmkTab must define handleApplyPhysiologicalNorm",
 		);
 		assert.ok(
-			visitDiarySectionSource.includes('data-testid="diary-norm-043-btn"'),
-			"VisitDiarySection must include diary-norm-043-btn",
+			visitEmkTabSource.includes("Z01.2"),
+			"handleApplyPhysiologicalNorm must set ICD-10 Z01.2 Стоматологическое обследование",
 		);
 		assert.ok(
-			visitDiarySectionSource.includes("handleApplyFullPhysiologicalNorm") ||
-				visitDiarySectionSource.includes("handleApplyNorm") ||
-				visitDiarySectionSource.includes("applyFullPhysiologicalNorm"),
-			"VisitDiarySection must handle applying full physiological norm",
+			visitEmkTabSource.includes('data-testid="visit-emk-tab"'),
+			"VisitEmkTab must render data-testid visit-emk-tab",
 		);
 	});
 
@@ -246,10 +232,10 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 	it("10. Zero cartoon emojis in all clinical records and patient card files (Mandate 8d item 7)", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const filesToCheck = [
-			{ name: "DentalMedicalCard043uForm.tsx", content: form043Source },
+			{ name: "MedicalRecordStudioModal.tsx", content: emrStudioSource },
 			{ name: "PatientCardModal.tsx", content: patientModalSource },
 			{ name: "PatientGeneralInfoTab.tsx", content: generalInfoTabSource },
-			{ name: "useVisitDiaryLogic.ts", content: diaryLogicSource },
+			{ name: "useVisitEmkTabController.ts", content: emkControllerSource },
 		];
 
 		for (const file of filesToCheck) {
@@ -272,26 +258,14 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		);
 	});
 
-	it("12. Form 043/u: undo norm button (btn-043-undo-norm) is available in active draft mode when reviseSnapshot !== null", () => {
+	it("12. MedicalRecordStudioModal: print and export buttons are always available (Mandate 8e)", () => {
 		assert.ok(
-			form043Source.includes('data-testid="btn-043-undo-norm"'),
-			"Must include btn-043-undo-norm button in DentalMedicalCard043uForm",
+			emrStudioSource.includes('data-testid="btn-emr-print-card"'),
+			"Must include btn-emr-print-card button in MedicalRecordStudioModal",
 		);
 		assert.ok(
-			form043Source.includes("handleCancelRevise"),
-			"btn-043-undo-norm must trigger handleCancelRevise",
-		);
-		assert.ok(
-			form043Source.includes("<Undo2"),
-			"btn-043-undo-norm must use Undo2 Lucide icon",
-		);
-		// Verify btn-043-undo-norm is displayed when reviseSnapshot !== null and NOT blocked by disabled || isSigned
-		const undoBlockMatch =
-			form043Source.match(/reviseSnapshot\s*!==\s*null[\s\S]*?data-testid="btn-043-undo-norm"/) ||
-			(form043Source.includes("hasReviseSnapshot") && form043Source.includes('data-testid="btn-043-undo-norm"'));
-		assert.ok(
-			undoBlockMatch,
-			"btn-043-undo-norm must be guarded by reviseSnapshot !== null, allowing active draft undo (disabled=false, isSigned=false)",
+			emrStudioSource.includes("handlePrint"),
+			"Must implement handlePrint in MedicalRecordStudioModal",
 		);
 	});
 });

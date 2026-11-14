@@ -45,7 +45,7 @@ export const QueueBoardModal: React.FC<QueueBoardModalProps> = ({
 				</div>
 				<div className="flex-1 overflow-y-auto">
 					<TodayQueueBoard
-						appointments={todayAppointments as unknown as Parameters<typeof TodayQueueBoard>[0]["appointments"]}
+						appointments={todayAppointments}
 						onStatusChange={(appointmentId, newStatus) => {
 							onUpdateAppointmentStatus?.(appointmentId, newStatus);
 						}}

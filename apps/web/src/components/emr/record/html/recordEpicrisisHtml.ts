@@ -1,10 +1,10 @@
-import type { ClinicalEpicrisisData, Form043EpicrisisData, ClinicalPassportData, Form043PassportData, MedicalRecordPrintConfig } from "../../types/recordDataTypes.js";
+import type { ClinicalEpicrisisData, ClinicalPassportData, MedicalRecordPrintConfig } from "../../types/recordDataTypes.js";
 import { escapeHtml } from "../../math/recordMathFormatting.js";
 
 /** Рендерер 5-й секции: Эпикриз, план наблюдения, УКЭП и подписи */
 export function renderEpicrisisAndSignaturesHtml(
-	epicrisis: Form043EpicrisisData,
-	passport: Form043PassportData,
+	epicrisis: ClinicalEpicrisisData,
+	passport: ClinicalPassportData,
 	generalTreatmentPlan: string,
 	cfg: MedicalRecordPrintConfig,
 ): string {

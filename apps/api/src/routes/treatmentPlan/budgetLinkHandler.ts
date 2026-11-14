@@ -4,13 +4,20 @@ import { db } from "../../db/client.js";
 import { auditEvents, treatmentPlans } from "../../db/schema.js";
 import { PortalBudgetService } from "../../services/portalBudgetService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { isValidUuid } from "@dental/shared";
 
 export async function handleCreateBudgetLink(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
 ) {
-	const planId = request.params.id;
+	const planId = request.params.id?.trim();
+	if (!planId || !isValidUuid(planId)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Идентификатор плана лечения должен быть валидным UUID.",
+		});
+	}
 	const [plan] = await db
 		.select({
 			id: treatmentPlans.id,

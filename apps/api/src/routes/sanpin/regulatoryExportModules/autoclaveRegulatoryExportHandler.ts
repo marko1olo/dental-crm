@@ -91,6 +91,6 @@ export async function handleGetRegulatoryExport(req: FastifyRequest, reply: Fast
 			allPassed: true,
 			complianceStatusRu: "100% Соответствие санитарным нормам",
 		},
-		messageRu: "Журналы автоклавирования и предстерилизационной очистки готовы к проверкам в 1 клик",
+		messageRu: "Журналы автоклавирования и предстерилизационной очистки сформированы и готовы к проверкам",
 	});
 }

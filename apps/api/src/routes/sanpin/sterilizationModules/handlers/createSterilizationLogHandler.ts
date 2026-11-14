@@ -9,6 +9,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import {
 	computeSterilizationExpiration,
@@ -62,6 +63,8 @@ export async function handleCreateSterilizationLog(
 	const rawNotes = typeof rawBody.notes === "string" ? rawBody.notes.trim() : "";
 	const combinedItemsDesc = rawNotes ? `${data.itemsDescription} | ${rawNotes}` : data.itemsDescription;
 
+	const operatorId = data.operatorId ?? getRequestIdentity(req).userId ?? null;
+
 	const [log] = await db
 		.insert(sterilizationLogs)
 		.values({
@@ -82,19 +85,19 @@ export async function handleCreateSterilizationLog(
 			status,
 			barcode: generatedBarcode,
 			expiresAt,
-			operatorId: data.operatorId ?? (req as any).user?.id ?? null,
+			operatorId,
 			timestamp: now,
 		})
 		.returning();
 
 	const batchCount = Math.max(
 		1,
-		Number((rawBody as any).packagesCount ?? (rawBody as any).batchSize ?? 1),
+		Number(rawBody.packagesCount ?? rawBody.batchSize ?? 1),
 	);
 
 	void executeSterilizationConsumablesDeduction({
 		organizationId,
-		userId: data.operatorId ?? (req as any).user?.id ?? null,
+		userId: operatorId,
 		count: batchCount,
 		packagingType: data.packagingType,
 		indicatorType: data.indicatorType,

@@ -13,7 +13,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

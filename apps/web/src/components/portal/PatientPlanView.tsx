@@ -334,8 +334,9 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 			onDownloadTaxCertificate();
 			return;
 		}
+		const currentYear = new Date().getFullYear();
 		if (fullCabinetData) {
-			downloadPatientTaxCertificate1151156(fullCabinetData, 2026);
+			downloadPatientTaxCertificate1151156(fullCabinetData, currentYear);
 		} else {
 			const fallbackData: PatientPersonalCabinetData = {
 				patientId: "pat-fallback",
@@ -380,7 +381,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				diagnosticScans: [],
 				statutoryConsents: [],
 			};
-			downloadPatientTaxCertificate1151156(fallbackData, 2026);
+			downloadPatientTaxCertificate1151156(fallbackData, currentYear);
 		}
 	};
 

@@ -22,7 +22,7 @@ import {
 } from "../ctImplantIntegrationBridge";
 import { useVisitStore } from "../../../store/visitStore";
 import { useDocumentStore } from "../../../store/documentStore";
-import { validateTreatmentPlanStarProtocols } from "../../treatment-plans/validation/starProtocolValidationEngine";
+import { validateTreatmentPlanStarProtocols } from "../../treatment-plans/starProtocolValidationEngine";
 import type { TreatmentPlanStage, TreatmentPlanItem } from "../../treatment-plans/types";
 
 const normalizeSpaces = (s: string) => (s || "").replace(/[\u00a0\u202f]/g, " ");

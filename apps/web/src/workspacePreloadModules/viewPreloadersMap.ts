@@ -26,7 +26,7 @@ export const workspaceViewPreloaders: Partial<
 	 * «Аналитика» — самый тяжёлый экран приложения (recharts).
 	 * Предзагружается при наличии ресурсов или explicit переходе.
 	 */
-	analytics: () => import("../pages/AnalyticsDashboardView"),
+	analytics: () => import("../pages/analyticsDashboard/AnalyticsDashboardView"),
 };
 
 export type ClinicalHotModule =
@@ -64,6 +64,7 @@ export const clinicalHotModulePreloaders: Record<
 	visitEmkTab: () => import("../components/visit/VisitEmkTab"),
 	odontogramViewContainer: () =>
 		import("../components/odontogram/OdontogramViewContainer"),
-	paymentCapture: () => import("../PaymentCapture"),
+	paymentCapture: () =>
+		import("../components/cashbox/CashRegisterStudioModal"),
 	documentsView: () => import("../DocumentsView"),
 };

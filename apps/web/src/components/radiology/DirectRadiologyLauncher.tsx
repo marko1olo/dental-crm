@@ -42,6 +42,10 @@ export const DirectRadiologyLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(checkShouldOpen);
 
 	useEffect(() => {
+		if (checkShouldOpen()) {
+			setIsOpen(true);
+		}
+
 		const handleOpen = () => setIsOpen(true);
 		window.addEventListener("dente:open-radiology", handleOpen);
 		window.addEventListener("dente-open-radiology", handleOpen);

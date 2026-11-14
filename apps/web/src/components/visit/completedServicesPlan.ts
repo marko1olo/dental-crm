@@ -35,6 +35,25 @@ export {
 	calculateCompletedServicesSummary,
 } from "./completedServicesAggregator";
 
+export interface VisitPlanItemLike {
+	readonly id?: string;
+	readonly serviceId?: string;
+	readonly patientId?: string;
+	readonly status?: string;
+	readonly name?: string;
+	readonly title?: string;
+	readonly code?: string;
+	readonly serviceCode?: string;
+	readonly code804n?: string;
+	readonly price?: number | string;
+	readonly priceRub?: number | string;
+	readonly unitPriceRub?: number | string;
+	readonly tooth?: string | number | null;
+	readonly toothCode?: string | null;
+	readonly toothNumber?: number | string | null;
+	[key: string]: unknown;
+}
+
 /**
  * Позиции плана, которые принадлежат пациенту ОТКРЫТОГО приёма и ещё не
  * отменены. Без идентификатора пациента приёма отмечать нельзя ничего: строка
@@ -44,13 +63,16 @@ export {
 export function visitOwnedPlanItems(
 	treatmentPlanItems: unknown,
 	visitPatientId: string | null,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-): any[] {
+): VisitPlanItemLike[] {
 	if (!visitPatientId) return [];
 	if (!Array.isArray(treatmentPlanItems)) return [];
 	return treatmentPlanItems.filter(
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(item: any) =>
-			item?.patientId === visitPatientId && item?.status !== "cancelled",
+		(item): item is VisitPlanItemLike =>
+			Boolean(
+				item &&
+				typeof item === "object" &&
+				(item as VisitPlanItemLike).patientId === visitPatientId &&
+				(item as VisitPlanItemLike).status !== "cancelled",
+			),
 	);
 }

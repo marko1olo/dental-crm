@@ -1,13 +1,8 @@
 /**
  * apps/web/src/components/sanpin/DirectSanpinLauncher.tsx
- *
- * Автономный лаунчер Санитарной Студии и журналов стерилизации (Мандаты 8b, 8e, 8n, 8aq):
- * - Слушатели URL хешей: #sanpin, #autoclave, #sterilization, #sterilizer, ?sanpin=1, ?sterilization=1
- * - Слушатели глобальных событий: "dente:open-sanpin", "dente:open-autoclave", "dente:open-sterilization"
- * - Монтирует живой канонический мастер-контейнер SanpinStudioModal.
- * - Диапазон размера строго 60–80 строк (Мандат 8b/8zi).
+ * Автономный лаунчер Санитарной Студии и журналов стерилизации (Мандаты 8b, 8e, 8n, 8aq).
+ * Диапазон размера строго 70–80 строк (Мандат 8b/8zi).
  */
-
 import React, { useState, useEffect, useCallback } from "react";
 import { SanpinStudioModal, type SanpinStudioTab } from "./SanpinStudioModal";
 
@@ -22,8 +17,17 @@ function checkIsSanpinActive(): boolean {
 	const p = new URLSearchParams(s);
 	return (
 		h.includes("sanpin") || h.includes("sterilization") || h.includes("autoclave") || h.includes("sterilizer") ||
-		p.get("sanpin") === "1" || p.get("sterilization") === "1" || p.get("autoclave") === "1" || p.get("sterilizer") === "1"
+		p.get("sanpin") === "1" || p.get("sterilization") === "1" || p.get("autoclave") === "1" || p.get("sterilizer") === "1" ||
+		p.get("tab") === "sanpin" || p.get("tab") === "sterilization"
 	);
+}
+
+function clearSanpinLocation(): void {
+	if (typeof window === "undefined") return;
+	const url = new URL(window.location.href);
+	["sanpin", "sterilization", "autoclave", "sterilizer"].forEach((k) => url.searchParams.delete(k));
+	if (/sanpin|sterilization|autoclave|sterilizer/i.test(url.hash)) url.hash = "";
+	window.history.replaceState(null, "", url.toString());
 }
 
 function resolveInitialTab(): SanpinStudioTab {
@@ -36,38 +40,40 @@ function resolveInitialTab(): SanpinStudioTab {
 }
 
 export const DirectSanpinLauncher: React.FC<DirectSanpinLauncherProps> = ({ forceOpen = false }) => {
-	const [isActive, setIsActive] = useState(() => forceOpen || checkIsSanpinActive());
-	const [isStudioOpen, setIsStudioOpen] = useState(() => forceOpen || checkIsSanpinActive());
+	const [isOpen, setIsOpen] = useState(() => forceOpen || checkIsSanpinActive());
 	const [activeTab, setActiveTab] = useState<SanpinStudioTab>(resolveInitialTab);
 
 	const handleLocationChange = useCallback(() => {
 		const active = forceOpen || checkIsSanpinActive();
-		setIsActive(active);
-		setIsStudioOpen(active);
-		setActiveTab(resolveInitialTab());
+		setIsOpen(active);
+		if (active) setActiveTab(resolveInitialTab());
 	}, [forceOpen]);
 
-	const handleClose = useCallback(() => setIsStudioOpen(false), []);
+	const handleClose = useCallback(() => {
+		setIsOpen(false);
+		clearSanpinLocation();
+	}, []);
 
 	useEffect(() => {
-		const handleOpen = () => { setIsActive(true); setIsStudioOpen(true); };
-		const handleOpenAutoclave = () => { setIsActive(true); setIsStudioOpen(true); setActiveTab("autoclave"); };
 		const events: [string, () => void][] = [
-			["hashchange", handleLocationChange], ["popstate", handleLocationChange],
-			["dente:open-sanpin", handleOpen], ["dente:open-autoclave", handleOpenAutoclave],
-			["dente:open-sterilization", handleOpenAutoclave],
+			["hashchange", () => handleLocationChange()],
+			["popstate", () => handleLocationChange()],
+			["dente:open-sanpin", () => setIsOpen(true)],
+			["dente:open-autoclave", () => { setIsOpen(true); setActiveTab("autoclave"); }],
+			["dente:open-sterilization", () => { setIsOpen(true); setActiveTab("autoclave"); }],
+			["dente:open-sterilization-hub", () => { setIsOpen(true); setActiveTab("autoclave"); }],
+			["dente:open-kraft", () => { setIsOpen(true); setActiveTab("kraft"); }],
+			["dente:open-cleaning", () => { setIsOpen(true); setActiveTab("cleaning"); }],
 		];
 		events.forEach(([ev, fn]) => window.addEventListener(ev, fn));
 		return () => events.forEach(([ev, fn]) => window.removeEventListener(ev, fn));
 	}, [handleLocationChange]);
 
-	if (!isActive && !isStudioOpen) return null;
-
+	if (!isOpen) return null;
 	return (
 		<div data-testid="direct-sanpin-launcher" className="fixed inset-0 z-[9998] pointer-events-auto">
-			<SanpinStudioModal isOpen={isStudioOpen} onClose={handleClose} initialTab={activeTab} />
+			<SanpinStudioModal isOpen={isOpen} onClose={handleClose} initialTab={activeTab} />
 		</div>
 	);
 };
-
 export default DirectSanpinLauncher;

@@ -20,7 +20,7 @@ export interface LostPatientsPanelProps {
 }
 
 export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
-	recallCohorts = [],
+	recallCohorts: propRecallCohorts = [],
 }) => {
 	const { setSelectedPatientId, clinicName } = useAppLogicContext();
 	const [activeTab, setActiveTab] = useState<TabMode>("risk_list");
@@ -37,8 +37,9 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 		setRiskBandFilter,
 		filteredPatients,
 		kpis,
+		recallCohorts,
 		fetchLostPatients,
-	} = useLostPatientsData(recallCohorts);
+	} = useLostPatientsData(propRecallCohorts);
 
 	const {
 		selectedOfferPatient,

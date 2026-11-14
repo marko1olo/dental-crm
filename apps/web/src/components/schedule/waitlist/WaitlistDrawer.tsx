@@ -6,14 +6,13 @@
 import React, { useId } from "react";
 import { createPortal } from "react-dom";
 import { Inbox, X } from "lucide-react";
-import type { Dashboard, CreateAppointmentInput } from "@dental/shared";
+import type { Dashboard } from "@dental/shared";
 import { useOptionalAppLogicContext, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
-import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
-import { useScheduleStore } from "../../../store/scheduleStore";
 import type { TargetSlotInfo, WaitlistCandidateItem } from "./waitlistTypes";
 import { useWaitlistState } from "./useWaitlistState";
 import type { AppointmentScheduleDraft } from "../view/scheduleViewTypes";
+import { handleBookWaitlistSlot } from "../view/scheduleModalsModules/waitlistSlotBookingHandler";
 
 // Decomposed Waitlist Modules (Mandate 8b Sweet Spot)
 import { WaitlistSlotBanner } from "./modules/WaitlistSlotBanner";
@@ -50,147 +49,42 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
   const dashboard = propDashboard || ctx?.dashboard;
   const auth = propAuth || ctx?.auth;
 
-  // [SCH-02]: Боевой обработчик бронирования слота из листа ожидания с реальным запросом в БД
+  // [SCH-02]: Канонический обработчик бронирования слота из листа ожидания (SSOT: handleBookWaitlistSlot)
   const handleSlotBooking = async (candidate: WaitlistCandidateItem, slot: TargetSlotInfo) => {
     if (onBookSlot) {
       await onBookSlot(candidate, slot);
     } else {
-      // Автономный фоллбек: боевой запрос к API без фейковых симуляций
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-      if (typeof auth?.denteClinicalMutationHeaders === "function") {
-        Object.assign(headers, auth.denteClinicalMutationHeaders());
-      } else {
-        Object.assign(headers, denteClinicalMutationHeaders());
-      }
-
-      let appointmentConfirmed = false;
-      const isRealUuid = Boolean(
-        slot.appointmentId &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slot.appointmentId),
-      );
-
-      if (isRealUuid && slot.appointmentId) {
-        const patchRes = await fetch(
-          `/api/appointments/${encodeURIComponent(slot.appointmentId)}`,
-          {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify({
-              patientId: candidate.patientId,
-              status: "planned",
-              reason: candidate.treatmentCategory || "Запись из листа ожидания",
-              comment: `Окно занято из листа ожидания: ${candidate.patientName}`,
-              expectedCurrentStatus: ["cancelled", "no_show"],
-            }),
-          },
-        );
-        if (patchRes.ok) {
-          appointmentConfirmed = true;
-        }
-      }
-
-      if (!appointmentConfirmed) {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const defaultDocFromStore = useScheduleStore.getState().scheduleDefaultDoctorUserId;
-        const filterDocFromStore = useScheduleStore.getState().scheduleDoctorFilterId;
-        const staffList = (dashboard?.clinicSettings?.staff || dashboard?.staff || []);
-        const staffDoctor = staffList.find((s: { role?: string; id?: string }) => s.role === "doctor" || s.role === "dentist")?.id;
-        const firstDoctor = (dashboard?.doctors || [])[0]?.id;
-        const authUserId = auth?.user?.id;
-
-        const candidateDoctor =
-          (slot.doctorUserId && uuidRegex.test(slot.doctorUserId) ? slot.doctorUserId : null) ||
-          (candidate.preferredDoctorId && uuidRegex.test(candidate.preferredDoctorId) ? candidate.preferredDoctorId : null) ||
-          (defaultDocFromStore && uuidRegex.test(defaultDocFromStore) ? defaultDocFromStore : null) ||
-          (filterDocFromStore && uuidRegex.test(filterDocFromStore) ? filterDocFromStore : null) ||
-          (staffDoctor && uuidRegex.test(staffDoctor) ? staffDoctor : null) ||
-          (firstDoctor && uuidRegex.test(firstDoctor) ? firstDoctor : null) ||
-          (authUserId && uuidRegex.test(authUserId) ? authUserId : null);
-
-        if (!candidateDoctor) {
-          throw new Error("Не удалось определить врача для записи. Пожалуйста, укажите врача в расписании.");
-        }
-
-        const doctorUserId = candidateDoctor;
-
-        const payload: Partial<CreateAppointmentInput> & Record<string, unknown> = {
-          patientId: candidate.patientId,
-          doctorUserId,
-          startsAt: slot.startsAt,
-          endsAt: slot.endsAt,
-          status: "planned",
-          reason: candidate.treatmentCategory || "Запись из листа ожидания",
-          notes: candidate.notes || undefined,
-        };
-        if (
-          slot.chairId &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slot.chairId)
-        ) {
-          payload.chairId = slot.chairId;
-        }
-
-        const createRes = await fetch("/api/appointments", {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        });
-        if (!createRes.ok) {
-          const errData = await createRes.json().catch(() => ({}));
-          throw new Error(errData?.message || `Ошибка создания записи (${createRes.status})`);
-        }
-      }
-
-      const entryId = candidate.id;
-      if (entryId) {
-        await fetch(`/api/waitlist/${encodeURIComponent(entryId)}/status`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ status: "booked" }),
-        }).catch(() => {
-          return fetch(`/api/waitlist/${encodeURIComponent(entryId)}`, {
-            method: "PUT",
-            headers,
-            body: JSON.stringify({ status: "booked" }),
-          }).catch(() => {
-            return fetch(`/api/waitlist/${encodeURIComponent(entryId)}/status`, {
-              method: "PATCH",
-              headers,
-              body: JSON.stringify({ status: "fulfilled" }),
-            }).catch(() => {});
-          });
-        });
-      }
-
-      showToast(`Пациент «${candidate.patientName}» успешно записан в окно!`, "success", 4000);
-
-      if (updateNewAppointmentDraft) {
-        updateNewAppointmentDraft("patientId", candidate.patientId);
-        updateNewAppointmentDraft("patientName", candidate.patientName);
-        updateNewAppointmentDraft("patientPhone", candidate.patientPhone);
-        if (candidate.treatmentCategory) {
-          updateNewAppointmentDraft("reason", candidate.treatmentCategory);
-        }
-        if (slot.doctorUserId) {
-          updateNewAppointmentDraft("doctorUserId", slot.doctorUserId);
-        }
-        if (slot.startsAt) {
-          updateNewAppointmentDraft("startsAt", slot.startsAt);
-        }
-        if (slot.endsAt) {
-          updateNewAppointmentDraft("endsAt", slot.endsAt);
-        }
-        if (focusNewAppointmentEditor) {
-          focusNewAppointmentEditor();
-        }
-      }
-
-      if (ctx?.loadDashboard) {
-        void ctx.loadDashboard();
-      }
-      onClose();
+      await handleBookWaitlistSlot({
+        candidate,
+        slot,
+        dashboard,
+        auth,
+        loadDashboard: ctx?.loadDashboard,
+        showToast,
+        onSuccess: () => {
+          if (updateNewAppointmentDraft) {
+            updateNewAppointmentDraft("patientId", candidate.patientId);
+            updateNewAppointmentDraft("patientName", candidate.patientName);
+            updateNewAppointmentDraft("patientPhone", candidate.patientPhone);
+            if (candidate.treatmentCategory) {
+              updateNewAppointmentDraft("reason", candidate.treatmentCategory);
+            }
+            if (slot.doctorUserId) {
+              updateNewAppointmentDraft("doctorUserId", slot.doctorUserId);
+            }
+            if (slot.startsAt) {
+              updateNewAppointmentDraft("startsAt", slot.startsAt);
+            }
+            if (slot.endsAt) {
+              updateNewAppointmentDraft("endsAt", slot.endsAt);
+            }
+            if (focusNewAppointmentEditor) {
+              focusNewAppointmentEditor();
+            }
+          }
+          onClose();
+        },
+      });
     }
 
     if (onAppointmentCreated) {

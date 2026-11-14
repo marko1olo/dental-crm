@@ -124,7 +124,8 @@ export class PatientArchiveReasonService {
 				.from(patientArchiveReasons)
 				.where(eq(patientArchiveReasons.organizationId, organizationId));
 
-			if ((existing[0]?.count ?? 0) === 0) {
+			const firstExisting = existing[0];
+			if ((firstExisting?.count ?? 0) === 0) {
 				const values = DEFAULT_323_FZ_ARCHIVE_REASONS.map((r) => ({
 					organizationId,
 					code: r.code,
@@ -193,11 +194,12 @@ export class PatientArchiveReasonService {
 				)
 				.limit(1);
 
-			if (!rows[0]) return null;
+			const firstRow = rows[0];
+			if (!firstRow) return null;
 			return {
-				...rows[0],
-				createdAt: new Date(rows[0].createdAt),
-				updatedAt: new Date(rows[0].updatedAt),
+				...firstRow,
+				createdAt: new Date(firstRow.createdAt),
+				updatedAt: new Date(firstRow.updatedAt),
 			};
 		});
 	}
@@ -428,13 +430,14 @@ export class PatientArchiveReasonService {
 				)
 				.limit(1);
 
-			if (rows[0]) {
+			const blockedRow = rows[0];
+			if (blockedRow) {
 				inMemoryBlacklist.add(`${organizationId}:${patientId}`);
 				return {
 					isBlocked: true,
-					reason: rows[0].archiveReason || rows[0].blacklistReason || "Архив",
+					reason: blockedRow.archiveReason || blockedRow.blacklistReason || "Архив",
 					legalBasis:
-						rows[0].legalBasis ||
+						blockedRow.legalBasis ||
 						"Федеральный закон от 21.11.2011 № 323-ФЗ",
 				};
 			}

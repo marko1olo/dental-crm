@@ -368,16 +368,90 @@ export interface CompletedServicesSummary {
 	}>;
 }
 
+/** Типизированная сущность оказанной услуги у кресла (DEF-PRICE-04) */
+export interface CompletedServiceEntity {
+	readonly id?: string | undefined;
+	readonly code?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly title?: string | undefined;
+	readonly name?: string | undefined;
+	readonly price?: number | undefined;
+	readonly priceRub?: number | undefined;
+	readonly unitPriceRub?: number | undefined;
+	readonly quantity?: number | undefined;
+	readonly toothCode?: string | number | undefined;
+	readonly toothNumber?: number | undefined;
+	readonly isCompleted?: boolean | undefined;
+	readonly status?: string | undefined;
+}
+
 /**
- * Считает сводку по всем выполненным услугам в тексте карты приёма
- * (как отмеченным по предварительному плану, так и добавленным экспресс-услугам,
- * пакетам и позициям прейскуранта).
+ * Агрегирует выполненные услуги напрямую из типизированных доменных сущностей (DEF-PRICE-04).
+ */
+export function aggregateCompletedStructuredEntities(
+	entities: readonly CompletedServiceEntity[],
+): CompletedServicesSummary {
+	let totalRub = 0;
+	let unpricedCount = 0;
+	const servicesForInvoice: CompletedServicesSummary["servicesForInvoice"] = [];
+
+	for (const item of entities) {
+		if (item.status && item.status !== "completed" && item.status !== "done" && item.isCompleted !== true) {
+			continue;
+		}
+		const rawPrice = item.priceRub ?? item.unitPriceRub ?? item.price;
+		const priceRub = typeof rawPrice === "number" && Number.isFinite(rawPrice) ? rawPrice : null;
+		const code = item.code804n || item.code || "Услуга";
+		const title = item.title || item.name || "Стоматологическая услуга";
+		const quantity = typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1;
+		const toothCode =
+			item.toothCode !== undefined && item.toothCode !== null
+				? String(item.toothCode)
+				: item.toothNumber !== undefined && item.toothNumber !== null
+					? String(item.toothNumber)
+					: undefined;
+
+		if (priceRub === null) {
+			unpricedCount++;
+		} else {
+			totalRub += priceRub * quantity;
+		}
+
+		const unitPrice = priceRub ?? 0;
+		servicesForInvoice.push({
+			code,
+			code804n: code,
+			title,
+			price: unitPrice,
+			priceRub: unitPrice,
+			unitPriceRub: unitPrice,
+			quantity,
+			toothCode,
+		});
+	}
+
+	return {
+		totalRub: roundToKopecks(totalRub),
+		count: servicesForInvoice.length,
+		unpricedCount,
+		servicesForInvoice,
+	};
+}
+
+/**
+ * Считает сводку по всем выполненным услугам (поддерживает как типизированные сущности,
+ * так и текстовый протокол приёма со строками «Выполнено: ...»).
  */
 export function calculateCompletedServicesSummary(
-	treatmentPlanText: unknown,
+	treatmentPlanInput: unknown,
+	structuredEntities?: readonly CompletedServiceEntity[],
 ): CompletedServicesSummary {
+	if (Array.isArray(treatmentPlanInput)) {
+		return aggregateCompletedStructuredEntities(treatmentPlanInput as CompletedServiceEntity[]);
+	}
+
 	const rawText =
-		typeof treatmentPlanText === "string" ? treatmentPlanText : "";
+		typeof treatmentPlanInput === "string" ? treatmentPlanInput : "";
 	const lines = rawText.split("\n").map((l) => (l ?? "").trim());
 
 	const completedLines: string[] = [];
@@ -408,6 +482,10 @@ export function calculateCompletedServicesSummary(
 			quantity: parsed.quantity,
 			toothCode: parsed.toothCode,
 		});
+	}
+
+	if (completedLines.length === 0 && structuredEntities && structuredEntities.length > 0) {
+		return aggregateCompletedStructuredEntities(structuredEntities);
 	}
 
 	return {

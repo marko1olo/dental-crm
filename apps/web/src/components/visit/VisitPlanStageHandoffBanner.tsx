@@ -9,13 +9,16 @@ import { useVisitPlanStageHandoff } from "./useVisitPlanStageHandoff";
 import { VisitPlanStageHandoffChips } from "./VisitPlanStageHandoffChips";
 import { VisitPlanStageHandoffItemsPreview } from "./VisitPlanStageHandoffItemsPreview";
 
+import type { TreatmentPlanLike, AppointmentStageLike, PlanStageItem } from "./visitPlanStageHandoff";
+import type { HandoffPatientLike } from "./visitPlanStageHandoffEvents";
+
 export interface VisitPlanStageHandoffBannerProps {
-	readonly loadedTreatmentPlan: any;
-	readonly activeAppointment?: any;
-	readonly activePatient?: any;
-	readonly style?: React.CSSProperties;
-	readonly onTakeStage?: (stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void;
-	readonly onOpenLabOrder?: (stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void;
+	readonly loadedTreatmentPlan: TreatmentPlanLike | null | undefined;
+	readonly activeAppointment?: AppointmentStageLike | null | undefined;
+	readonly activePatient?: HandoffPatientLike | null | undefined;
+	readonly style?: React.CSSProperties | undefined;
+	readonly onTakeStage?: ((stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] }, items: readonly PlanStageItem[] | PlanStageItem[]) => void) | undefined;
+	readonly onOpenLabOrder?: ((stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] }, items: readonly PlanStageItem[] | PlanStageItem[]) => void) | undefined;
 }
 
 export function VisitPlanStageHandoffBanner(props: VisitPlanStageHandoffBannerProps) {

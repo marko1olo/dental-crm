@@ -20,6 +20,33 @@ import { type Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
 import { LanKktDriverService } from "./lanKktDriverService.js";
 import type { KktDeviceStatus, KktLanConfig, KktPrintResult } from "./types.js";
 
+function parseFfd12Payload(val: unknown): Ffd12ReceiptPayload {
+	if (val && typeof val === "object" && !Array.isArray(val)) {
+		return val as Ffd12ReceiptPayload;
+	}
+	return {} as Ffd12ReceiptPayload;
+}
+
+function buildFiscalReceiptDetails(
+	payload: Ffd12ReceiptPayload,
+	printResult: KktPrintResult,
+): FiscalReceiptDetails {
+	const opTypeMap: Record<number, FiscalReceiptDetails["operationType"]> = {
+		1: "income",
+		2: "income_return",
+		3: "expense",
+		4: "expense_return",
+	};
+	return {
+		fn: printResult.fnSerial ?? null,
+		fd: printResult.fiscalDocumentNumber ?? null,
+		fpd: printResult.fiscalSign ?? null,
+		receiptUrl: printResult.ofdVerificationUrl ?? null,
+		cashierName: payload.tag1021_cashierName ?? null,
+		operationType: opTypeMap[payload.tag1054_operationType] ?? "income",
+	};
+}
+
 export class FiscalQueueRetryWorker {
 	private static isRunning = false;
 	private static intervalTimer: NodeJS.Timeout | null = null;
@@ -144,9 +171,9 @@ export class FiscalQueueRetryWorker {
 			}
 
 			// Execute actual hardware print
+			const payload = parseFfd12Payload(queueItem.payloadJson);
 			let printResult: KktPrintResult;
 			try {
-				const payload = (queueItem.payloadJson || {}) as unknown as Ffd12ReceiptPayload;
 				printResult = await LanKktDriverService.printFiscalReceipt(payload, config);
 			} catch (err: unknown) {
 				const printErrorMsg = err instanceof Error ? err.message : "LanKktDriver print error";
@@ -220,13 +247,14 @@ export class FiscalQueueRetryWorker {
 			// If attached to a payment, sync fiscal attributes to the payment record
 			if (queueItem.paymentId) {
 				try {
+					const payload = parseFfd12Payload(queueItem.payloadJson);
 					await targetDb
 						.update(payments)
 						.set({
 							fiscalReceiptNumber: printResult.fiscalDocumentNumber ?? null,
 							fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
 							fiscalReceiptUrl: printResult.ofdVerificationUrl ?? null,
-							fiscalReceipt: updatedPayload as unknown as FiscalReceiptDetails,
+							fiscalReceipt: buildFiscalReceiptDetails(payload, printResult),
 							updatedAt: now,
 						})
 						.where(
@@ -326,8 +354,8 @@ export class FiscalQueueRetryWorker {
 
 				// Attempt hardware print
 				let printResult: KktPrintResult;
+				const payload = parseFfd12Payload(item.payloadJson);
 				try {
-					const payload = (item.payloadJson || {}) as unknown as Ffd12ReceiptPayload;
 					printResult = await LanKktDriverService.printFiscalReceipt(payload, config);
 				} catch (err: unknown) {
 					const printErrorMsg = err instanceof Error ? err.message : "LAN print error";
@@ -394,7 +422,7 @@ export class FiscalQueueRetryWorker {
 									fiscalReceiptNumber: printResult.fiscalDocumentNumber ?? null,
 									fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
 									fiscalReceiptUrl: printResult.ofdVerificationUrl ?? null,
-									fiscalReceipt: updatedPayload as unknown as FiscalReceiptDetails,
+									fiscalReceipt: buildFiscalReceiptDetails(payload, printResult),
 									updatedAt: now,
 								})
 								.where(

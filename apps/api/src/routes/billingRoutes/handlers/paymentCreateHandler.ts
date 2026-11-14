@@ -80,7 +80,7 @@ export async function handleCreatePayment(
 
 	try {
 		const payment = await createPaymentInDb(orgId, paymentInput);
-		if ((payment as unknown as { isReplay?: boolean }).isReplay) {
+		if (payment.isReplay) {
 			reply.header("idempotency-replayed", "true");
 			reply.header("x-idempotency-replayed", "true");
 			return reply.code(200).send(paymentSchema.parse(payment));

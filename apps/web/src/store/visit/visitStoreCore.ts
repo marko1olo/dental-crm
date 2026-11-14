@@ -10,18 +10,23 @@ export const useVisitStore = create<VisitStore>((set) => ({
 	...createBillingInvoiceSlice(set),
 }));
 
+declare global {
+	interface Window {
+		__useVisitStore?: typeof useVisitStore;
+	}
+}
+
 if (typeof window !== "undefined") {
-	(window as any).__useVisitStore = useVisitStore;
+	window.__useVisitStore = useVisitStore;
 
 	// Сквозная реактивность одонтограммы: автоматическое обновление статуса зуба при начислении услуг
-	window.addEventListener("dente-add-services-to-invoice", ((event: Event) => {
+	window.addEventListener("dente-add-services-to-invoice", (event: Event) => {
 		try {
-			const detail = (event as CustomEvent)?.detail;
-			if (detail) {
-				useVisitStore.getState().applyServicesToToothState(detail);
+			if (event instanceof CustomEvent && event.detail) {
+				useVisitStore.getState().applyServicesToToothState(event.detail);
 			}
 		} catch (err) {
 			console.warn("Failed to apply services to tooth state from event:", err);
 		}
-	}) as EventListener);
+	});
 }

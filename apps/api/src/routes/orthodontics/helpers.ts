@@ -40,6 +40,8 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		hasAlignerSignals ||
 		(Number.isFinite(currentStage) && currentStage > 0) ||
 		Boolean(parsed.archwire) ||
+		Boolean(parsed.upperArchwire) ||
+		Boolean(parsed.lowerArchwire) ||
 		Boolean(parsed.elastics) ||
 		Boolean(parsed.stageTitle) ||
 		Boolean(parsed.lastActionSummary);
@@ -59,9 +61,12 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		currentStage: Number.isFinite(currentStage) && currentStage > 0 ? currentStage : 1,
 		stageTitle: parsed.stageTitle ? String(parsed.stageTitle) : "Диагностика и начало нивелирования",
 		archwire: parsed.archwire ? String(parsed.archwire) : undefined,
+		upperArchwire: parsed.upperArchwire ? String(parsed.upperArchwire) : undefined,
+		lowerArchwire: parsed.lowerArchwire ? String(parsed.lowerArchwire) : undefined,
 		elastics: parsed.elastics ? String(parsed.elastics) : undefined,
 		lastActionDate: parsed.lastActionDate ? String(parsed.lastActionDate) : undefined,
 		lastActionSummary: parsed.lastActionSummary ? String(parsed.lastActionSummary) : undefined,
+		lastSoapSummary: parsed.lastSoapSummary ? String(parsed.lastSoapSummary) : undefined,
 		wearDaysPerAligner: hasAlignerSignals ? (Number(parsed.wearDaysPerAligner) || 14) : undefined,
 		nextVisitRecommendedDate: parsed.nextVisitRecommendedDate ? String(parsed.nextVisitRecommendedDate) : undefined,
 	};

@@ -5,7 +5,7 @@
  * - CRM Leak Detector Drawer renders lead inspection card and direct patient workspace trigger
  * - Anti-Matryoshka createPortal wrapping (document.body) with non-browser SSR safety
  * - Funnel Analytics modal links to leak detector (header and body retention card)
- * - CrmView canonical export exists and wraps LeadsKanbanView
+ * - CrmLeakDetectorDrawer canonical export exists
  * - PatientDetailModal and PatientCardModal provide direct workspace navigation
  */
 
@@ -187,14 +187,14 @@ describe("CRM Leak Funnel to Patient Workspace Highway & Anti-Matryoshka Portals
 		);
 	});
 
-	it("6. CrmView and PatientCard exports integrity", () => {
+	it("6. CrmLeakDetectorDrawer and PatientCard exports integrity", () => {
 		const crmIndex = fs.readFileSync(
 			path.resolve(__dirname, "../index.ts"),
 			"utf8",
 		);
 		assert.ok(
-			crmIndex.includes("CrmView"),
-			"crm/index.ts must export CrmView",
+			crmIndex.includes("CrmLeakDetectorDrawer"),
+			"crm/index.ts must export CrmLeakDetectorDrawer",
 		);
 
 		const patientsIndex = fs.readFileSync(

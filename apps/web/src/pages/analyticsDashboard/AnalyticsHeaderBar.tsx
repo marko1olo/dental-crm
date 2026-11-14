@@ -284,7 +284,7 @@ export function AnalyticsHeaderBar({
 									title="Открыть управленческую аналитику и кассу"
 								>
 									<TrendingUp size={14} className="text-[var(--teal)]" />
-									<span>Управленческая студия (SSOT)</span>
+									<span>Управленческая студия</span>
 								</button>
 
 								<button
@@ -347,7 +347,7 @@ export function AnalyticsHeaderBar({
 					))}
 				</div>
 
-				{/* Период (Compact 32px SegmentedControl: Сегодня, Неделя, Месяц, Квартал в 1 клик per Mandate 8e) */}
+				{/* Период (Compact 32px SegmentedControl: Сегодня, Неделя, Месяц, Квартал per Mandate 8e) */}
 				<div
 					className="analytics-segmented flex"
 					role="radiogroup"
@@ -454,7 +454,6 @@ export function AnalyticsHeaderBar({
 						type="button"
 						className="secondary-button analytics-action-btn"
 						onClick={onRetry}
-						disabled={loading}
 						title="Обновить данные аналитики"
 						aria-label="Обновить данные аналитики"
 						data-testid="analytics-refresh-btn"

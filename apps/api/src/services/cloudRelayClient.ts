@@ -49,6 +49,23 @@ export interface TunnelResponsePayload {
 	readonly isBase64?: boolean | undefined;
 }
 
+export type RelayOutboundMessage =
+	| { readonly type: "EDGE_HELLO"; readonly clinicId: string; readonly appVersion: string }
+	| { readonly type: "PONG"; readonly timestamp: number }
+	| { readonly type: "PING"; readonly timestamp: number }
+	| TunnelResponsePayload;
+
+function isTunnelRequestPayload(msg: Record<string, unknown>): msg is Record<string, unknown> & TunnelRequestPayload {
+	return (
+		msg.type === "HTTP_REQUEST" &&
+		typeof msg.id === "string" &&
+		typeof msg.method === "string" &&
+		typeof msg.url === "string" &&
+		typeof msg.headers === "object" &&
+		msg.headers !== null
+	);
+}
+
 /** Разрешенные маршруты для туннелирования техникам (защита от SSRF и обхода директорий) */
 export const ALLOWED_TUNNEL_ROUTES: readonly { readonly path: string; readonly exact?: boolean }[] = [
 	{ path: "/health", exact: true },
@@ -68,7 +85,7 @@ export const ALLOWED_TUNNEL_ROUTE_PREFIXES = ALLOWED_TUNNEL_ROUTES.map((r) => r.
  */
 export function isRouteAllowedForTunnel(urlPath: string): boolean {
 	if (!urlPath || typeof urlPath !== "string") return false;
-	const rawPath = urlPath.split("?")[0] || "/";
+	const rawPath = urlPath.split("?")?.[0] ?? "/";
 	let decodedPath: string;
 	try {
 		decodedPath = decodeURIComponent(rawPath);
@@ -288,7 +305,7 @@ export class CloudRelayClient {
 		}, delay);
 	}
 
-	private sendMessage(msg: Record<string, unknown>): void {
+	private sendMessage(msg: RelayOutboundMessage): void {
 		if (this.ws && this.ws.readyState === WebSocket.OPEN) {
 			this.ws.send(JSON.stringify(msg));
 		}
@@ -318,9 +335,8 @@ export class CloudRelayClient {
 			return;
 		}
 
-		if (message.type === "HTTP_REQUEST") {
-			const req = message as unknown as TunnelRequestPayload;
-			await this.processTunnelRequest(req);
+		if (isTunnelRequestPayload(message)) {
+			await this.processTunnelRequest(message);
 		}
 	}
 
@@ -338,7 +354,7 @@ export class CloudRelayClient {
 						"Доступ через туннель разрешен только к порталу зуботехнической лаборатории.",
 				}),
 			};
-			this.sendMessage(forbiddenResponse as unknown as Record<string, unknown>);
+			this.sendMessage(forbiddenResponse);
 			return;
 		}
 
@@ -422,9 +438,9 @@ export class CloudRelayClient {
 				isBase64,
 			};
 
-			this.sendMessage(reply as unknown as Record<string, unknown>);
+			this.sendMessage(reply);
 		} catch (err: unknown) {
-			const error = err as Error;
+			const errorMsg = err instanceof Error ? err.message : String(err);
 			const errorReply: TunnelResponsePayload = {
 				type: "HTTP_RESPONSE",
 				id: req.id,
@@ -432,10 +448,10 @@ export class CloudRelayClient {
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({
 					error: "LocalExecutionError",
-					message: `Ошибка обработки запроса локальным Fastify: ${error.message}`,
+					message: `Ошибка обработки запроса локальным Fastify: ${errorMsg}`,
 				}),
 			};
-			this.sendMessage(errorReply as unknown as Record<string, unknown>);
+			this.sendMessage(errorReply);
 		}
 	}
 }

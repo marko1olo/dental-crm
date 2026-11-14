@@ -8,7 +8,7 @@ import { downloadHtmlFile } from "./documentsDownloadUtils.js";
 
 export function generatePatientTaxCertificate1151156(
 	data: PatientPersonalCabinetData,
-	taxYear = 2026,
+	taxYear = new Date().getFullYear(),
 ): string {
 	const nameParts = data.fullName.trim().split(/\s+/);
 	const family = nameParts[0] || "Пациент";
@@ -93,14 +93,15 @@ export function generatePatientTaxCertificate1151156(
 
 export async function downloadPatientTaxCertificate1151156(
 	data: PatientPersonalCabinetData,
-	taxYear = 2026,
+	taxYear = new Date().getFullYear(),
+	tokenOverride?: string | null,
 ): Promise<void> {
 	const sanitizedName = data.fullName.replace(/\s+/g, "_");
 	const filename = `Spravka_FNS_KND_1151156_${sanitizedName}_${taxYear}.html`;
 
 	// Попытка гидратации с канонического API бэкенда при наличии сессии
 	try {
-		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
+		const token = tokenOverride || (typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
 		const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 		const resp = await fetch(`/api/portal/tax-certificate/html?year=${taxYear}`, { headers });
 		if (resp.ok) {

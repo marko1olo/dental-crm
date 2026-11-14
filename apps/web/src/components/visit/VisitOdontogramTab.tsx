@@ -1,17 +1,10 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
-import { VisitDiarySection } from "./VisitDiarySection";
 import type { VisitOdontogramTabProps } from "./odontogramTab/visitOdontogramTabTypes";
-import { useVisitOdontogramIds } from "./odontogramTab/useVisitOdontogramIds";
 import { useVisitOdontogramDentition } from "./odontogramTab/useVisitOdontogramDentition";
-import { useVisitAutoOpen } from "./odontogramTab/useVisitAutoOpen";
 import { DentitionStatusBanner } from "./odontogramTab/DentitionStatusBanner";
-import { VisitDiaryInitializer } from "./odontogramTab/VisitDiaryInitializer";
-
 import { OdontogramModule } from "../odontogram/OdontogramModule";
-
 import { OdontogramSkeleton } from "./odontogramTab/OdontogramSkeleton";
 
 export { OdontogramSkeleton };
@@ -22,18 +15,6 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 	function VisitOdontogramTab(props: VisitOdontogramTabProps = {}) {
 		const ctx = useAppLogicContext();
 		const activePatient = props?.activePatient ?? ctx?.activePatient;
-		const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
-		const dashboard = props?.dashboard ?? ctx?.dashboard;
-		const workspaceFlags = useWorkspaceProfile();
-
-		const { openVisitId, appointmentId, diaryVisitId, diaryPatientId } =
-			useVisitOdontogramIds({ activePatient, activeAppointment, dashboard });
-
-		const { isOpeningVisit, handleOpenVisitNow } = useVisitAutoOpen({
-			appointmentId,
-			rawAppointmentId: activeAppointment?.id,
-			openVisitId,
-		});
 
 		const { dentitionPhaseBadge, smartDentitionMode, isPediatric } =
 			useVisitOdontogramDentition(activePatient);
@@ -70,22 +51,6 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 							dentitionMode={smartDentitionMode}
 						/>
 					</React.Suspense>
-				</div>
-
-				<div className="w-full">
-					{diaryVisitId && diaryPatientId ? (
-						<VisitDiarySection
-							key={diaryVisitId}
-							visitId={diaryVisitId}
-							patientId={diaryPatientId}
-						/>
-					) : (
-						<VisitDiaryInitializer
-							appointmentId={appointmentId}
-							isOpeningVisit={isOpeningVisit}
-							onOpenVisitNow={() => void handleOpenVisitNow()}
-						/>
-					)}
 				</div>
 			</div>
 		);

@@ -1,4 +1,4 @@
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import type {
 	DoctorAutopilotPreset,
 	Apply1ClickAutopilotOptions,

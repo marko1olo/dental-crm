@@ -218,7 +218,17 @@ export function exportSignatureToSvg(
 	let paths = "";
 
 	for (const stroke of strokes) {
-		if (stroke.points.length < 2) continue;
+		if (stroke.points.length === 0) continue;
+		const strokeColor = stroke.color || "#0d9488";
+		const strokeWidth = stroke.width || 2.5;
+
+		if (stroke.points.length === 1) {
+			const p = stroke.points[0]!;
+			const r = (strokeWidth / 2).toFixed(1);
+			paths += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${strokeColor}"/>`;
+			continue;
+		}
+
 		let d = `M ${stroke.points[0]!.x.toFixed(1)} ${stroke.points[0]!.y.toFixed(1)}`;
 		for (let i = 1; i < stroke.points.length - 1; i++) {
 			const current = stroke.points[i]!;
@@ -229,8 +239,6 @@ export function exportSignatureToSvg(
 		const last = stroke.points[stroke.points.length - 1]!;
 		d += ` L ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
 
-		const strokeColor = stroke.color || "#0f172a";
-		const strokeWidth = stroke.width || 2.5;
 		paths += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`;
 	}
 

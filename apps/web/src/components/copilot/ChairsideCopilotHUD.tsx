@@ -16,6 +16,7 @@ import type {
 } from "./chairside/chairsideTypes";
 import type { DentalVoiceIntent } from "../../services/voice";
 import { executeCopilotAgentRequest } from "./chairside/chairsideAgentExecutor";
+import { useCopilotStore } from "../../store/copilotStore";
 import "./ChairsideCopilotHUD.css";
 
 export {
@@ -24,6 +25,29 @@ export {
   type ChairsideConsentProposal, type ChairsideSafetyAlert, type ClinicalPreset,
   CLINICAL_PRESETS, mapToCanonicalToothState,
 };
+
+interface ChairsidePresetAnesthetic {
+  drugName: string;
+  carpulesCount: number;
+  patientWeightKg?: number;
+  maxCarpules?: number;
+  epinephrineMcg?: number;
+  isCardiovascularRisk?: boolean;
+  notes?: string;
+}
+
+function parseChairsideAnesthetic(a: ChairsidePresetAnesthetic): ChairsideAnestheticProposal {
+  return {
+    applied: false,
+    drugName: a.drugName,
+    carpulesCount: a.carpulesCount,
+    patientWeightKg: a.patientWeightKg ?? 70,
+    maxCarpules: a.maxCarpules ?? 4,
+    epinephrineMcg: a.epinephrineMcg ?? 18,
+    isCardiovascularRisk: Boolean(a.isCardiovascularRisk),
+    ...(a.notes ? { notes: a.notes } : {}),
+  };
+}
 
 export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) => {
   const {
@@ -44,6 +68,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
   const [isDrawerOpen, setIsDrawerOpen] = useState(!initialCompact);
   const [promptInput, setPromptInput] = useState("");
   const [activePresetIndex, setActivePresetIndex] = useState<number | null>(initialPresetIndex ?? null);
+  const [fallbackBanner, setFallbackBanner] = useState<string | null>(null);
 
   const [toothProposal, setToothProposal] = useState<ChairsideToothProposal | null>(() => {
     if (initialToothProposal !== undefined) return initialToothProposal;
@@ -122,17 +147,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     if (initialPresetIndex !== undefined && initialPresetIndex !== null) {
       const preset = CLINICAL_PRESETS[initialPresetIndex];
       if (preset?.anesthetic) {
-        const a = preset.anesthetic;
-        return {
-          applied: false,
-          drugName: a.drugName,
-          carpulesCount: a.carpulesCount,
-          patientWeightKg: (a as any).patientWeightKg ?? 70,
-          maxCarpules: (a as any).maxCarpules ?? 4,
-          epinephrineMcg: (a as any).epinephrineMcg ?? 18,
-          isCardiovascularRisk: Boolean((a as any).isCardiovascularRisk),
-          ...(a.notes ? { notes: a.notes } : {}),
-        };
+        return parseChairsideAnesthetic(preset.anesthetic);
       }
     }
     return null;
@@ -217,6 +232,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         if (result.safetyAlert !== undefined) setSafetyAlert(result.safetyAlert);
         if (result.thoughts && result.thoughts.length > 0) setThoughts(result.thoughts);
         if (result.activePresetIndex !== undefined) setActivePresetIndex(result.activePresetIndex);
+        if (result.isLocalFallback) {
+          setFallbackBanner(result.fallbackMessage || "Локальный автономный режим (API-ключ не настроен)");
+        } else if (result.verdict || result.toothProposal || result.soapProposal) {
+          setFallbackBanner(null);
+        }
       } catch (err) {
         console.warn("[ChairsideCopilotHUD] Agent execution failed:", err);
       } finally {
@@ -302,6 +322,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     setSafetyAlert(null);
     setAnestheticProposal(null);
     setActivePresetIndex(null);
+    setFallbackBanner(null);
   }, []);
 
   const handleSelectPreset = useCallback((index: number) => {
@@ -324,16 +345,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       ? (p.toothNumber ? p.soap.diagnosis.replace(new RegExp(`зуб\\s*${p.toothNumber}`, "i"), `зуб ${effectiveTooth}`) : p.soap.diagnosis)
       : p.soap.diagnosis;
     setSoapProposal({ ...p.soap, diagnosis, applied: false });
-    setAnestheticProposal(p.anesthetic ? {
-      applied: false,
-      drugName: p.anesthetic.drugName,
-      carpulesCount: p.anesthetic.carpulesCount,
-      patientWeightKg: (p.anesthetic as any).patientWeightKg ?? 70,
-      maxCarpules: (p.anesthetic as any).maxCarpules ?? 4,
-      epinephrineMcg: (p.anesthetic as any).epinephrineMcg ?? 18,
-      isCardiovascularRisk: Boolean((p.anesthetic as any).isCardiovascularRisk),
-      ...(p.anesthetic.notes ? { notes: p.anesthetic.notes } : {}),
-    } : null);
+    setAnestheticProposal(p.anesthetic ? parseChairsideAnesthetic(p.anesthetic) : null);
     setSafetyAlert(p.safetyAlert ? {
       id: p.safetyAlert.id,
       severity: (p.safetyAlert.severity === "danger" ? "critical" : p.safetyAlert.severity) as "critical" | "warning" | "info",
@@ -386,6 +398,17 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       data-testid="chairside-copilot-hud"
     >
       <div className={`chairside-hud-panel ${!isDrawerOpen ? "chairside-hud-panel--compact" : ""}`}>
+        {/* Mobile Apple Bottom Sheet Drag Handle */}
+        <div
+          className="chairside-hud-drag-handle-wrap sm:hidden flex justify-center pt-2 pb-1 cursor-grab"
+          onClick={() => setIsDrawerOpen((d) => !d)}
+          role="button"
+          tabIndex={0}
+          aria-label="Свернуть или развернуть панель копайлота"
+        >
+          <div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line-strong,rgba(15,118,110,0.25))]" />
+        </div>
+
         {/* Capsule 1-Line Bar */}
         <ChairsideHUDCapsule
           displayPatientName={displayPatientName}
@@ -421,6 +444,26 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               </div>
             )}
 
+            {/* Local Fallback Banner (DEF-AI-03: clear notice + direct settings trigger) */}
+            {fallbackBanner && (
+              <div
+                className="chairside-hud-alert flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[var(--warn)]/10 border border-[var(--warn)]/30 text-xs text-[var(--ink)]"
+                data-testid="chairside-local-fallback-banner"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={14} className="text-[var(--warn)] shrink-0" />
+                  <span className="font-medium">{fallbackBanner}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => useCopilotStore.getState().setSettingsOpen(true)}
+                  className="px-2.5 py-1 text-xs font-medium rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer transition-colors"
+                >
+                  Настройки
+                </button>
+              </div>
+            )}
+
             {/* Quick Clinical Presets Chips */}
             <div className="chairside-hud-presets flex flex-row overflow-x-auto no-scrollbar gap-2 py-1 max-sm:flex-nowrap shrink-0" role="toolbar" aria-label="Клинические сценарии">
               <button
@@ -449,7 +492,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
             {/* Collapsible Thought Stream (ReAct reasoning steps) */}
             <ChairsideThoughtStream thoughts={thoughts} isExecutingAgent={isExecutingAgent} />
 
-            {/* Decomposed Proposal Cards: Odontogram, 804n, SOAP, Anesthetic, Consent, Safety Alert */}
+            {/* Decomposed Proposal Cards: Odontogram, Услуги, SOAP, Anesthetic, Consent, Safety Alert */}
             <ChairsideHUDProposals
               toothProposal={toothProposal}
               servicesProposal={servicesProposal}

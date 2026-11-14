@@ -114,7 +114,8 @@ export async function fetchSbpDynamicQr(config: SbpDynamicQrConfig): Promise<Sbp
 			},
 			errorRu: null,
 		};
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[requestDynamicSbpQr] Не удалось получить динамический СБП QR:", err);
 		return {
 			qr: null,
 			errorRu: "Нет связи с сервером кассы. Проверьте сеть и обновите QR-код.",
@@ -159,8 +160,8 @@ export async function copySbpUrlToClipboard(url: string): Promise<boolean> {
 			await navigator.clipboard.writeText(url);
 			return true;
 		}
-	} catch {
-		// Fallback for older browsers / non-HTTPS
+	} catch (clipErr: unknown) {
+		console.warn("[copySbpUrlToClipboard] navigator.clipboard.writeText недоступен, фоллбек на execCommand:", clipErr);
 	}
 
 	try {
@@ -175,7 +176,8 @@ export async function copySbpUrlToClipboard(url: string): Promise<boolean> {
 			document.body.removeChild(textArea);
 			return success;
 		}
-	} catch {
+	} catch (fallbackErr: unknown) {
+		console.warn("[copySbpUrlToClipboard] Fallback execCommand('copy') завершился с ошибкой:", fallbackErr);
 		return false;
 	}
 	return false;

@@ -46,12 +46,9 @@ export async function executeManualCardTerminalConfirm(params: ManualCardTermina
 				electronicAmountKopecks: Math.round(amountRub * 100), clientMutationId: compositeIdempotencyKey,
 				note: `Оплата картой подтверждена на терминале вручную (${effectiveCashierFullName}): ${amountRub} ₽ [Без повторного списания с карты]`,
 			});
-			let res = await fetch("/api/cashbox/payments", { method: "POST", headers, body: manualBody }).catch(() => null);
-			if (!res || !res.ok) {
-				await fetch("/api/billing/payments", { method: "POST", headers, body: manualBody }).catch((err) => {
-					console.warn("[CashboxPayment] Manual card payment recording warning:", err);
-				});
-			}
+			await fetch("/api/cashbox/payments", { method: "POST", headers, body: manualBody }).catch((err) => {
+				console.warn("[CashboxPayment] Manual card payment recording warning:", err);
+			});
 		}
 
 		showToast(`Оплата картой на сумму ${amountRub} ₽ подтверждена вручную на терминале. Чек поставлен в очередь фискализации, визит закрыт!`, "success", 5000);

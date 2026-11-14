@@ -55,7 +55,10 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 			laboratoryName: "Основная лаборатория",
 			dueDate: state.dueDate, patientId: props.patientId || undefined,
 			priceRub: state.isWarrantyRework ? 0 : state.grossPriceRub,
-			costRub: state.isWarrantyRework ? 0 : state.ztlCostRub,
+			costRub: state.isWarrantyRework && state.warrantyLiabilityType === "lab_defect" ? 0 : state.ztlCostRub,
+			isWarrantyRework: state.isWarrantyRework,
+			isWarranty: state.isWarrantyRework,
+			warrantyLiabilityType: state.isWarrantyRework ? state.warrantyLiabilityType : undefined,
 		};
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: labOrderPayload }));

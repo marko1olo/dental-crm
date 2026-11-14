@@ -19,7 +19,7 @@ export async function preflightValidatePaymentEntities(
 	reply: FastifyReply,
 ): Promise<PreflightResult> {
 	let paymentInput = input;
-	let patient = await getPatientForBilling(orgId, input.patientId);
+	let patient = input.patientId ? await getPatientForBilling(orgId, input.patientId) : null;
 	if (!patient && (!input.patientId || input.patientId === "pat-walkin" || input.patientId === "retail" || !input.patientId.includes("-"))) {
 		const retail = await ensureRetailPatientInDb(orgId);
 		if (retail) {

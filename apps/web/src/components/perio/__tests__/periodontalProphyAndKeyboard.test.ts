@@ -28,7 +28,7 @@ describe("8. Prophy Protocol & PSR Screening Invariants (Mandates 8e, 8k)", () =
 			}),
 		);
 
-		assert.ok(html.includes("data-testid=\"perio-toolbar-norm-1click-btn\""));
+		assert.ok(html.includes("data-testid=\"perio-toolbar-norm-btn\""));
 		assert.ok(html.includes("data-testid=\"psr-all-intact-btn\""));
 		assert.ok(html.includes("data-testid=\"psr-hygiene-preset-btn\""));
 		assert.ok(html.includes("Кузнецов Петр Сергеевич"));

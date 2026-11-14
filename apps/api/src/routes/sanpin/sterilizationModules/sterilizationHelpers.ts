@@ -71,7 +71,7 @@ export function evaluateSterilizationLogForLinking(
 		return {
 			allowed: true,
 			isExpired: true,
-			emergencyLogNote: `[Мягкий допуск по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21 п. 3632, ${now.toLocaleDateString("ru-RU")})]`,
+			emergencyLogNote: `[Мягкий допуск по экстренным показаниям (СанПиН 3.3686-21 п. 3632, ${now.toLocaleDateString("ru-RU")})]`,
 		};
 	}
 

@@ -356,7 +356,7 @@ export function appointmentCreateInputFromDraft(
 	draft: AppointmentScheduleDraft,
 ): CreateAppointmentInput {
 	return {
-		patientId: draft.patientId,
+		patientId: draft.patientId && draft.patientId.trim() !== "" ? draft.patientId.trim() : null,
 		doctorUserId: draft.doctorUserId,
 		assistantUserId: draft.assistantUserId || null,
 		chairId: draft.chairId,

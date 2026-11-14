@@ -2,13 +2,15 @@ import { mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "cfe33864-2b4f-4fe4-bfae-3f6faf5ebba5";
+const CURRENT_CONV_ID = "885e5f8b-4972-428a-a653-d8d4e2a3e28a";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/insurance";
-const WEB_URL = "http://127.0.0.1:5173";
+const OUT_DMS = "C:/Clinic_MVP/dental-crm/docs/proofs/dms";
+const WEB_URL = "http://127.0.0.1:5174";
 
 mkdirSync(OUT_CONV, { recursive: true });
 mkdirSync(OUT_DOCS, { recursive: true });
+mkdirSync(OUT_DMS, { recursive: true });
 
 function injectStorage(context, theme = "light") {
 	return context.addInitScript(
@@ -55,11 +57,12 @@ async function saveProof(page, filename, description) {
 	const outPath = path.join(OUT_DOCS, filename);
 	await page.screenshot({ path: outPath, fullPage: false });
 	const stat = statSync(outPath);
-	if (stat.size < 20000) {
-		throw new Error(`[BLANK PROOF] ${filename} size is only ${stat.size} bytes`);
+	if (stat.size < 40000) {
+		throw new Error(`[BLANK PROOF] ${filename} size is only ${stat.size} bytes (required >= 40KB)`);
 	}
 	console.log(`[CAPTURED] ${filename} (${stat.size} bytes) -> ${description}`);
 	copyFileSync(outPath, path.join(OUT_CONV, filename));
+	copyFileSync(outPath, path.join(OUT_DMS, filename));
 }
 
 async function main() {

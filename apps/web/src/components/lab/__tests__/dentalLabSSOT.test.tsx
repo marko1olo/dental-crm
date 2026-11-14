@@ -232,7 +232,7 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 		it("4.2. ordersCrudRoutes.ts preserves backward compatibility with /api/clinical/lab-orders", () => {
 			const content = fs.readFileSync(routesFile, "utf-8");
 			assert.ok(content.includes("/api/clinical/lab-orders"), "Must preserve /api/clinical/lab-orders");
-			assert.ok(content.includes("/api/dental-lab/orders"), "Must preserve /api/dental-lab/orders");
+			assert.ok(content.includes("/api/lab/orders"), "Must preserve /api/lab/orders");
 		});
 
 		it("4.3. insertLabOrderInDb prevents quiet patient hijacking [LAB-01]", () => {

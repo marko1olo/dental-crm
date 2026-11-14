@@ -1,6 +1,6 @@
 /**
  * periodontalCharting.test.tsx — Unit-тесты для пародонтологической карты,
- * расчета клинических индексов (OHI-S, PLI, SBI/BOP, CPITN/PSR) и генерации протокола 043/у.
+ * расчета клинических индексов (OHI-S, PLI, SBI/BOP, CPITN/PSR) и генерации клинического протокола ЭМК.
  */
 
 import { describe, it } from "node:test";
@@ -12,7 +12,7 @@ import {
 	calculatePsrSextants,
 	formatPsrSextantsSummary,
 	createDefaultPerioTeeth,
-	generateComprehensivePerio043Text,
+	generateComprehensivePerioProtocolText,
 } from "@dental/shared";
 import { PerioStudioModal } from "../components/perio/PerioStudioModal";
 
@@ -67,15 +67,15 @@ describe("Periodontal Charting & Clinical Indices (PerioStudioModal)", () => {
 		});
 	});
 
-	describe("2. Comprehensive Form 043/u Periodontal Protocol Generation", () => {
-		it("generates structured text conforming to Order 834n/804n with PSR sextants and indices", () => {
+	describe("2. Comprehensive Periodontal Clinical Protocol Generation", () => {
+		it("generates structured clinical text with PSR sextants and indices", () => {
 			const teeth = createDefaultPerioTeeth();
 			const tooth16 = teeth.find((t) => t.toothNumber === 16)!;
 			tooth16.mesioBuccal.probingDepthMm = 5;
 			tooth16.mesioBuccal.bleedingOnProbing = true;
 
 			const indices = calculatePerioIndices(teeth);
-			const text = generateComprehensivePerio043Text(teeth, indices, {
+			const text = generateComprehensivePerioProtocolText(teeth, indices, {
 				doctorName: "Д-р Иванов А.С.",
 			});
 
@@ -83,6 +83,7 @@ describe("Periodontal Charting & Clinical Indices (PerioStudioModal)", () => {
 				text.includes("ПРОТОКОЛ ПАРОДОНТОЛОГИЧЕСКОГО ОБСЛЕДОВАНИЯ") ||
 				text.includes("ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС"),
 			);
+			assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА ПРИЁМА"));
 			assert.ok(text.includes("Д-р Иванов А.С."));
 		});
 	});
@@ -101,7 +102,7 @@ describe("Periodontal Charting & Clinical Indices (PerioStudioModal)", () => {
 			assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
 		});
 
-		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Mild/Moderate/Severe Periodontitis, Prophy, Form 043/u) without cartoon emojis", () => {
+		it("renders clinical presets toolbar (Norm, Gingivitis, Mild/Moderate/Severe Periodontitis, Prophy, Clinical Protocol) without cartoon emojis", () => {
 			const html = renderToString(
 				<PerioStudioModal
 					isModal={true}
@@ -110,9 +111,9 @@ describe("Periodontal Charting & Clinical Indices (PerioStudioModal)", () => {
 			);
 
 			// Check all clinical presets and actions
-			assert.ok(html.includes("data-testid=\"perio-toolbar-norm-1click-btn\""));
+			assert.ok(html.includes("data-testid=\"perio-toolbar-norm-btn\""));
 			assert.ok(html.includes("data-testid=\"psr-gingivitis-preset-btn\""));
-			assert.ok(html.includes("data-testid=\"perio-toolbar-prophy-1click-btn\""));
+			assert.ok(html.includes("data-testid=\"perio-toolbar-prophy-btn\""));
 			assert.ok(html.includes("data-testid=\"psr-periodontitis-preset-btn\""));
 			assert.ok(html.includes("data-testid=\"perio-preset-severe-btn\""));
 			assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));

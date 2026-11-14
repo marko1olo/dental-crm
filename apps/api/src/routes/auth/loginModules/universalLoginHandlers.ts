@@ -101,10 +101,19 @@ export async function handleUniversalLogin(
 			rawInput,
 		);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let user: any = null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let matchedOrg: any = null;
+	type AuthUser = typeof users.$inferSelect | {
+		id: string;
+		organizationId: string;
+		fullName: string;
+		role: string;
+		email: string;
+		passwordHash: string | null;
+	};
+
+	type MatchedOrg = typeof organizations.$inferSelect;
+
+	let user: AuthUser | null = null;
+	let matchedOrg: MatchedOrg | null = null;
 
 	try {
 		if (isPhoneLike) {

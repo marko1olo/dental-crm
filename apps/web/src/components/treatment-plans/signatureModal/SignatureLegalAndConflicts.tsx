@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle, AlertTriangle, ShieldCheck } from "lucide-react";
-import type { ConflictToothGroup } from "../validation/starProtocolValidationEngine";
+import type { ConflictToothGroup } from "../starProtocolValidationEngine";
 
 export interface SignatureLegalAndConflictsProps {
 	readonly clinicName: string;

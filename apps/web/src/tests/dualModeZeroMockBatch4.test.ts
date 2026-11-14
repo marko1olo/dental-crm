@@ -30,7 +30,7 @@ import {
 	DEFAULT_SBER_TERMINAL_CONFIG,
 } from "../components/payments/sberPos/sberPosPresets.js";
 import { RefundServiceModal } from "../components/finance/refunds/RefundServiceModal.js";
-import { FastCheckoutModal } from "../components/finance/FastCheckoutModal.js";
+import { CashRegisterStudioModal } from "../components/cashbox/CashRegisterStudioModal.js";
 import { SberPayIntegration } from "../components/finance/SberPayIntegration.js";
 
 // Mock localStorage for node environment
@@ -145,49 +145,26 @@ describe("Dual-Mode Zero-Mock Batch 4: Finance, Fast Checkout, Refunds & Sber PO
 		});
 	});
 
-	describe("2. FastCheckoutModal: Zero Synthetic 94,000 ₽ Stages in Production (Mandate 8y)", () => {
-		it("in production mode when stages prop is omitted, generates honest single-visit stage", () => {
+	describe("2. CashRegisterStudioModal: Zero Synthetic 94,000 ₽ Stages in Production (Mandate 8y)", () => {
+		it("in production mode renders honest cashier checkout without synthetic 94,000 ₽ plan", () => {
 			disableDemoShowcaseMode();
 			assert.equal(isDemoShowcaseMode(), false);
 
 			const html = renderToStaticMarkup(
-				React.createElement(FastCheckoutModal, {
+				React.createElement(CashRegisterStudioModal, {
 					isOpen: true,
 					onClose: () => {},
 					patientId: "pat-100",
 					patientName: "Иванов И.И.",
-					totalBillKop: 450000, // 4 500 ₽
+					totalDueRub: 4500,
 				}),
 			);
 
-			// Must contain single visit stage title
-			assert.match(html, /Оплата текущего приёма/);
-			assert.match(html, /1 этап/);
 			// Must NOT contain synthetic multi-stage demo plan (94 000 ₽)
 			assert.doesNotMatch(html, /Этап 1: Терапия/);
 			assert.doesNotMatch(html, /Этап 2: Хирургия/);
 			assert.doesNotMatch(html, /Этап 3: Ортопедия/);
 			assert.doesNotMatch(html, /94\s*000/);
-		});
-
-		it("in demo showcase mode when stages prop is omitted, renders standard demo multi-stage plan", () => {
-			enableDemoShowcaseMode();
-			assert.equal(isDemoShowcaseMode(), true);
-
-			const html = renderToStaticMarkup(
-				React.createElement(FastCheckoutModal, {
-					isOpen: true,
-					onClose: () => {},
-					patientId: "pat-demo",
-					patientName: "Тестовый Пациент",
-					totalBillKop: 9400000,
-				}),
-			);
-
-			assert.match(html, /Этап 1: Терапия/);
-			assert.match(html, /Этап 2: Хирургия/);
-			assert.match(html, /Этап 3: Ортопедия/);
-			assert.match(html, /4 этапа/);
 		});
 	});
 

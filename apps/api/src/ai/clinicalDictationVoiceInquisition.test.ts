@@ -22,7 +22,25 @@ import {
 	extractDentalProcedures,
 	synthesizeSoapRecord,
 } from "./dentalSpeechGrammar.js";
-import { parseDictationLocally } from "./localDictationParser.js";
+import {
+	parseDictationLocally,
+	type CancelSchedulePayload,
+	type SchedulePayload,
+	type SmartActionPayload,
+	type UpdateToothPayload,
+} from "./localDictationParser.js";
+
+function isUpdateToothPayload(payload: SmartActionPayload | undefined): payload is UpdateToothPayload {
+	return typeof payload === "object" && payload !== null && ("toothUpdates" in payload || "anesthesia" in payload || "procedures" in payload);
+}
+
+function isSchedulePayload(payload: SmartActionPayload | undefined): payload is SchedulePayload {
+	return typeof payload === "object" && payload !== null && "time" in payload && "dayOffset" in payload;
+}
+
+function isCancelSchedulePayload(payload: SmartActionPayload | undefined): payload is CancelSchedulePayload {
+	return typeof payload === "object" && payload !== null && "patientName" in payload;
+}
 
 describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 8l)", () => {
 	describe("1. FDI / ISO Tooth Number Recognition from Russian Spoken Text", () => {
@@ -371,7 +389,10 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 
 				// Check tooth
 				totalChecks++;
-				const primaryTooth = result.toothUpdates?.[0]?.code || result.payload?.toothUpdates?.[0]?.code;
+				const toothUpdates =
+					result.toothUpdates ??
+					(isUpdateToothPayload(result.payload) ? result.payload.toothUpdates : undefined);
+				const primaryTooth = toothUpdates?.[0]?.code;
 				assert.strictEqual(primaryTooth, sc.expectedTooth);
 				passedChecks++;
 
@@ -379,7 +400,7 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 				if (sc.expectedDiagCode) {
 					totalChecks++;
 					const diagCode =
-						result.toothUpdates?.[0]?.diagnosisCode ||
+						toothUpdates?.[0]?.diagnosisCode ||
 						result.emkUpdates?.diagnosisIcd10;
 					assert.strictEqual(diagCode, sc.expectedDiagCode);
 					passedChecks++;
@@ -388,7 +409,9 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 				// Check anesthesia
 				if (sc.expectedAnesthesia) {
 					totalChecks++;
-					const anDrug = result.anesthesia?.drugKey || result.payload?.anesthesia?.drugKey;
+					const anDrug =
+						result.anesthesia?.drugKey ??
+						(isUpdateToothPayload(result.payload) ? result.payload.anesthesia?.drugKey : undefined);
 					assert.strictEqual(anDrug, sc.expectedAnesthesia);
 					passedChecks++;
 				}
@@ -396,7 +419,10 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 				// Check procedures
 				if (sc.expectedProcsCount > 0) {
 					totalChecks++;
-					const procs = result.procedures || result.payload?.procedures || [];
+					const procs =
+						result.procedures ??
+						(isUpdateToothPayload(result.payload) ? result.payload.procedures : undefined) ??
+						[];
 					assert.ok(procs.length >= sc.expectedProcsCount);
 					passedChecks++;
 				}
@@ -424,6 +450,7 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 			);
 			assert.ok(res !== null);
 			assert.strictEqual(res.action, "schedule");
+			assert.ok(isSchedulePayload(res.payload));
 			assert.ok(res.payload.patientName?.includes("Смирнова Елена"));
 			assert.strictEqual(res.payload.time, "15:30");
 			assert.strictEqual(res.payload.dayOffset, 1);
@@ -433,6 +460,7 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 			const res = parseDictationLocally("отмени прием для Петрова Ивана", "schedule");
 			assert.ok(res !== null);
 			assert.strictEqual(res.action, "cancel_schedule");
+			assert.ok(isCancelSchedulePayload(res.payload));
 			assert.ok(res.payload.patientName?.includes("Петрова"));
 		});
 	});

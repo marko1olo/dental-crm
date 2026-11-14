@@ -17,8 +17,11 @@ import {
 	PSR_SEXTANTS_CATALOG,
 	type PsrScreeningMap,
 } from "../perioCatalogData";
+import { createDefaultPerioTeeth } from "@dental/shared";
 import { PerioStudioModal } from "../PerioStudioModal";
-import { DirectPerioLauncher } from "../DirectPerioLauncher";
+import { PerioDetailedProbeSection } from "../PerioDetailedProbeSection";
+import { DirectPerioLauncher, resolveDirectPerioPatientContext } from "../DirectPerioLauncher";
+import { usePatientStore } from "../../../store/patientStore";
 
 describe("Канонический SSOT пародонтологии и экспресс-скрининга PSR", () => {
 	it("1. 6 секстантов PSR соответствуют международным стандартам ВОЗ / СтАР", () => {
@@ -80,7 +83,7 @@ describe("Канонический SSOT пародонтологии и эксп
 		assert.strictEqual(perioSummary.requiresDetailedCharting, true);
 	});
 
-	it("4. 4 канонических 1-клик протокола гигиены со списанием расходников", () => {
+	it("4. 4 канонических протокола гигиены со списанием расходников", () => {
 		assert.strictEqual(PERIO_TREATMENT_PROTOCOLS.length, 4);
 
 		const p1 = PERIO_TREATMENT_PROTOCOLS[0];
@@ -155,5 +158,68 @@ describe("Канонический SSOT пародонтологии и эксп
 
 		const emojiRegex = /(?![✓\u2713\u2714])[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.strictEqual(emojiRegex.test(html), false, "В HTML не должно быть мультяшных эмодзи");
+	});
+
+	it("10. DirectPerioLauncher берёт активного пациента из patientStore/пропсов и не хардкодит demo_perio_patient", () => {
+		const prevSelectedId = usePatientStore.getState().selectedPatientId;
+		const prevDraft = usePatientStore.getState().patientCoreDraft;
+		const globalWithWindow = globalThis as unknown as { window?: unknown };
+		const prevWindow = globalWithWindow.window;
+
+		try {
+			usePatientStore.setState({
+				selectedPatientId: "patient-active-real-uuid",
+				patientCoreDraft: { ...prevDraft, fullName: "Смирнова Елена Викторовна" },
+			});
+			const storeState = usePatientStore.getState();
+			const fromStore = resolveDirectPerioPatientContext({
+				storePatientId: storeState.selectedPatientId,
+				storePatientName: storeState.patientCoreDraft.fullName,
+			});
+			assert.strictEqual(fromStore.patientId, "patient-active-real-uuid");
+			assert.strictEqual(fromStore.patientName, "Смирнова Елена Викторовна");
+
+			const emptyCtx = resolveDirectPerioPatientContext({});
+			assert.strictEqual(emptyCtx.patientId, undefined);
+			assert.strictEqual(emptyCtx.patientName, "Пациент приёма");
+
+			globalWithWindow.window = {
+				location: { search: "?perio=1", hash: "#perio", pathname: "/" },
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			};
+
+			const html = renderToString(
+				<DirectPerioLauncher patientId="patient-active-real-uuid" patientName="Смирнова Елена Викторовна" />,
+			);
+			assert.ok(html.includes("data-testid=\"perio-chart-modal\""), "Лаунчер должен открыть модалку по ?perio=1");
+			assert.ok(html.includes("Смирнова Елена Викторовна"), "Лаунчер обязан отобразить ФИО активного пациента");
+			assert.strictEqual(html.includes("demo_perio_patient"), false, "demo_perio_patient запрещен в UI");
+		} finally {
+			globalWithWindow.window = prevWindow;
+			usePatientStore.setState({ selectedPatientId: prevSelectedId, patientCoreDraft: prevDraft });
+		}
+	});
+
+	it("11. PerioDetailedProbeSection соблюдает Apple HIG тач >= 44x44px и десктоп 36px", () => {
+		const noop = () => {};
+		const probeHtml = renderToString(
+			<PerioDetailedProbeSection
+				isDetailedExpanded={true}
+				onToggleDetailedExpanded={noop}
+				teeth={createDefaultPerioTeeth(2)}
+				selectedToothNum={16}
+				onSelectToothNum={noop}
+				selectedSiteKey="distoBuccal"
+				onSelectSiteKey={noop}
+				onUpdateMobility={noop}
+				onUpdateDepth={noop}
+				onToggleBop={noop}
+				onTogglePlaque={noop}
+			/>,
+		);
+		assert.ok(probeHtml.includes("data-testid=\"perio-tooth-btn-16\""));
+		assert.ok(probeHtml.includes("min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]"));
+		assert.strictEqual(probeHtml.includes("sm:min-h-[32px]"), false, "В углубленном зондировании не должно оставаться кнопок 32px");
 	});
 });

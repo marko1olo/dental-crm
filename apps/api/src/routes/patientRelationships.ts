@@ -299,8 +299,8 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		const validation = validateRelationshipLink(
 			patientId,
 			relatedPatientId,
-			existingLinks as any,
-			relationshipType as any,
+			existingLinks,
+			relationshipType,
 		);
 
 		if (!validation.isValid) {
@@ -311,6 +311,10 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		}
 
 		// Insert into database
+		const isCloseRelative = ["parent", "child", "spouse", "guardian", "ward"].includes(relationshipType);
+		const defaultCanSpend = isCloseRelative;
+		const effectiveCanSpend = canSpendFamilyWallet ?? defaultCanSpend;
+
 		const [created] = await db
 			.insert(patientRelationships)
 			.values({
@@ -321,9 +325,9 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				isLegalRepresentative: isLegalRepresentative ?? false,
 				canViewMedicalRecord: canViewMedicalRecord ?? false,
 				canSignConsents: canSignConsents ?? false,
-				canSpendFamilyWallet: canSpendFamilyWallet ?? false,
+				canSpendFamilyWallet: effectiveCanSpend,
 				documentProofNumber: documentProofNumber ?? null,
-				isPrimaryPayer: canSpendFamilyWallet ?? false,
+				isPrimaryPayer: effectiveCanSpend,
 				canViewRecords: canViewMedicalRecord ?? false,
 				notes: notes ?? null,
 			})

@@ -64,7 +64,28 @@ export {
 	requiredSpeechChunkDbStoreNames,
 	speechChunkDbPromise,
 };
-export { pendingVisitSaveQueueKey } from "./storageHelpers";
+export {
+	pendingVisitSaveQueueKey,
+	buildOfflineVisitDraftFromTranscript,
+	savePendingVisitSavesToLocalStorage,
+} from "./storageHelpers";
+export {
+	visitNoteFieldDefinitions,
+	visitDraftQualityLabels,
+	visitDraftSignalLabels,
+	visitDraftMissingFieldLabels,
+	visitDraftSignalLabel,
+	visitDraftMissingFieldLabel,
+	visitNoteFormFromVisit,
+	visitNoteFormFromDraft,
+	visitNoteDraftFromForm,
+	type VisitNoteField,
+	type VisitNoteForm,
+} from "./clinicalCalculations";
+export type {
+	BrowserSpeechRecognition,
+	BrowserWindowWithSpeech,
+} from "./types";
 import {
 	createLocalQueueId,
 	localQueueOrganizationMatches,

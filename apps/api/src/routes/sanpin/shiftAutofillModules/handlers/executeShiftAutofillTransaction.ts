@@ -43,7 +43,7 @@ export async function executeShiftAutofillTransaction(
 	const psoRows = await tx
 		.insert(preSterilizationCleaningLogs)
 		.values(
-			psoBatches.map((p: any) => ({
+			psoBatches.map((p) => ({
 				organizationId,
 				testType: "both" as const,
 				batchItemCount: Number(p.batchItemCount) || 100,
@@ -51,11 +51,11 @@ export async function executeShiftAutofillTransaction(
 				isAzopyramNegative: true,
 				isPhenolphthaleinNegative: true,
 				isBatchApproved: true,
-				detergentBrand: p.detergentBrand || "Биолот 0.5%",
+				detergentBrand: (p.detergentBrand as string) || "Биолот 0.5%",
 				operatorId,
 				notes: p.instrumentName
-					? `${p.instrumentName} | ${p.notes || "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21"}`
-					: p.notes || "Стоматологический инструментарий | ⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
+					? `${p.instrumentName} | ${(p.notes as string) || "Автопилот смены: норма СанПиН 3.3686-21"}`
+					: (p.notes as string) || "Стоматологический инструментарий | Автопилот смены: норма СанПиН 3.3686-21",
 			})),
 		)
 		.returning();
@@ -64,17 +64,18 @@ export async function executeShiftAutofillTransaction(
 	const sterilRows = await tx
 		.insert(sterilizationLogs)
 		.values(
-			form257.map((f: any, idx: number) => ({
+			form257.map((f, idx: number) => ({
 				organizationId,
-				deviceName: f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)",
-				autoclaveId: f.sterilizerId || body.autoclaveId || "АК-01",
+				deviceName: String(f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)"),
+				autoclaveId: String(f.sterilizerId || body.autoclaveId || "АК-01"),
 				cycleNumber: Number(f.cycleNumber) || idx + 1,
-				itemsDescription:
+				itemsDescription: String(
 					f.itemsDescriptionRu || f.itemsDescription || f.sterilizedPacksSummary || "Стоматологический инструментарий смены",
-				packagingType: normalizePackagingType(f.packagingType),
-				temperatureCelsius: String(f.actualTemperatureCelsius || f.temperatureCelsius || f.temperatureC || "134"),
+				),
+				packagingType: normalizePackagingType(typeof f.packagingType === "string" ? f.packagingType : undefined),
+				temperatureCelsius: String(f.actualTemperatureCelsius ?? (f as Record<string, unknown>)["temperatureCelsius"] ?? (f as Record<string, unknown>)["temperatureC"] ?? "134"),
 				pressureBar: String(f.actualPressureBar || f.pressureBar || "2.15"),
-				durationMin: Number(f.actualExposureMinutes || f.durationMin || f.exposureMinutes) || 5,
+				durationMin: Number(f.actualExposureMinutes ?? (f as Record<string, unknown>)["durationMin"] ?? f.exposureMinutes ?? 5),
 				indicatorType: "class5_integrating",
 				cycleMode: "B",
 				passedIndicator: true,

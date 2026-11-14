@@ -701,11 +701,12 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			results,
 			message: `Пакетная обработка напоминаний завершена: новых в очереди ${dispatched}, ранее создано ${alreadyQueued}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
 		});
-	} catch (err: any) {
+	} catch (err: unknown) {
 		request.log.error(err, "Ошибка пакетной отправки напоминаний на завтра");
+		const message = err instanceof Error ? err.message : "Внутренняя ошибка пакетной рассылки";
 		return reply.status(500).send({
 			error: "BatchDispatchError",
-			message: err?.message ?? "Внутренняя ошибка пакетной рассылки",
+			message,
 		});
 	}
 	};

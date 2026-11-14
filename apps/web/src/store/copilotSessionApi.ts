@@ -58,15 +58,17 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 		const data = await res.json();
 		const rawSessions = Array.isArray(data?.sessions) ? data.sessions : [];
 
-		return rawSessions.map((s: any): CopilotThread => ({
-			id: s.id,
-			title: s.summary || "Клинический диалог",
-			updatedAt: s.updatedAt ? new Date(s.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Только что",
-			createdAt: s.createdAt || new Date().toISOString(),
-			patientId: s.patientId || undefined,
-			patientName: s.patientName || (s.patientId ? "Пациент" : undefined),
-			messageCount: typeof s.messageCount === "number" ? s.messageCount : 0,
-		}));
+		return rawSessions.map((s: unknown): CopilotThread => {
+			const item = typeof s === "object" && s !== null ? (s as Record<string, unknown>) : {};
+			const id = typeof item.id === "string" ? item.id : "";
+			const title = typeof item.summary === "string" && item.summary ? item.summary : "Клинический диалог";
+			const updatedAt = typeof item.updatedAt === "string" ? new Date(item.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Только что";
+			const createdAt = typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString();
+			const patientId = typeof item.patientId === "string" ? item.patientId : undefined;
+			const patientName = typeof item.patientName === "string" ? item.patientName : (patientId ? "Пациент" : undefined);
+			const messageCount = typeof item.messageCount === "number" ? item.messageCount : 0;
+			return { id, title, updatedAt, createdAt, patientId, patientName, messageCount };
+		});
 	} catch {
 		return null;
 	}
@@ -123,7 +125,7 @@ export async function deleteRemoteSession(id: string): Promise<boolean> {
 	}
 }
 
-export async function fetchRemoteMessages(sessionId: string): Promise<any[] | null> {
+export async function fetchRemoteMessages(sessionId: string): Promise<unknown[] | null> {
 	if (!isSessionUuid(sessionId)) return null;
 	try {
 		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
@@ -141,7 +143,7 @@ export async function fetchRemoteMessages(sessionId: string): Promise<any[] | nu
 export async function appendRemoteMessage(sessionId: string, message: {
 	role: "user" | "assistant" | "system" | "tool";
 	content: string;
-	toolCalls?: any[] | null;
+	toolCalls?: unknown[] | null;
 }): Promise<boolean> {
 	if (!isSessionUuid(sessionId)) return false;
 	try {

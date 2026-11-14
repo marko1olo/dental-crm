@@ -6,6 +6,7 @@ import { Buffer } from "node:buffer";
 import * as http from "node:http";
 import * as https from "node:https";
 import * as net from "node:net";
+import * as stream from "node:stream";
 import * as tls from "node:tls";
 import { URL } from "node:url";
 import { type SocksClientOptions, SocksClient } from "socks";
@@ -155,15 +156,209 @@ export function getNetworkShieldStatus(
 	};
 }
 
-interface NetworkShieldAgentOptions
-	extends Omit<https.AgentOptions, "createConnection"> {
-	createConnection?: (
-		connOpts: Record<string, unknown>,
-		callback: (
-			err: Error | null,
-			socket?: net.Socket | tls.TLSSocket | null,
-		) => void,
-	) => void;
+class NetworkShieldSocksAgent extends https.Agent {
+	constructor(
+		private readonly socksParsed: ReturnType<typeof parseProxyUrl> & object,
+		private readonly socksTypeVal: 4 | 5,
+		private readonly agentTimeout: number,
+		private readonly tlsRejectUnauthorized: boolean,
+	) {
+		super({ timeout: agentTimeout });
+	}
+
+	override createConnection(
+		connOpts: http.ClientRequestArgs,
+		callback?: ((err: Error | null, stream: stream.Duplex) => void) | undefined,
+	): stream.Duplex | undefined {
+		const emitErr = (err: Error) => {
+			if (callback) {
+				(callback as (err: Error, stream?: stream.Duplex) => void)(err);
+			}
+		};
+		const targetHost = String(
+			connOpts.host || connOpts.hostname || "localhost",
+		);
+		const targetPort = Number(connOpts.port || 443);
+		const isSecure =
+			connOpts.protocol === "https:" ||
+			connOpts.protocol === "wss:" ||
+			targetPort === 443;
+
+		const socksOptions: SocksClientOptions = {
+			proxy: {
+				host: this.socksParsed.host,
+				port: this.socksParsed.port,
+				type: this.socksTypeVal,
+				...(this.socksParsed.username ? { userId: this.socksParsed.username } : {}),
+				...(this.socksParsed.password ? { password: this.socksParsed.password } : {}),
+			},
+			command: "connect",
+			destination: {
+				host: targetHost,
+				port: targetPort,
+			},
+			timeout: this.agentTimeout,
+		};
+
+		SocksClient.createConnection(socksOptions)
+			.then((info) => {
+				const socket = info.socket;
+
+				if (!isSecure) {
+					callback?.(null, socket);
+					return;
+				}
+
+				const connOptsRecord = connOpts as Record<string, unknown>;
+				const candidateServername =
+					typeof connOptsRecord["servername"] === "string"
+						? connOptsRecord["servername"]
+						: undefined;
+				const candidateHost =
+					typeof connOptsRecord["host"] === "string"
+						? connOptsRecord["host"]
+						: undefined;
+				const servername =
+					candidateServername || candidateHost || targetHost;
+
+				const tlsSocket = tls.connect({
+					socket,
+					host: targetHost,
+					servername,
+					rejectUnauthorized: this.tlsRejectUnauthorized,
+					ALPNProtocols: ["http/1.1"],
+				});
+
+				const onSecureConnect = () => {
+					tlsSocket.removeListener("error", onError);
+					callback?.(null, tlsSocket);
+				};
+
+				const onError = (err: Error) => {
+					tlsSocket.removeListener("secureConnect", onSecureConnect);
+					try {
+						socket.destroy();
+					} catch {
+						// cleanup
+					}
+					emitErr(err);
+				};
+
+				tlsSocket.once("secureConnect", onSecureConnect);
+				tlsSocket.once("error", onError);
+			})
+			.catch((err) => {
+				const errorInstance =
+					err instanceof Error ? err : new Error(String(err));
+				emitErr(errorInstance);
+			});
+
+		return undefined;
+	}
+}
+
+class NetworkShieldHttpConnectAgent extends https.Agent {
+	constructor(
+		private readonly httpParsed: ReturnType<typeof parseProxyUrl> & object,
+		private readonly authHeaderVal: string | undefined,
+		private readonly agentTimeout: number,
+		private readonly tlsRejectUnauthorized: boolean,
+	) {
+		super({ timeout: agentTimeout });
+	}
+
+	override createConnection(
+		connOpts: http.ClientRequestArgs,
+		callback?: ((err: Error | null, stream: stream.Duplex) => void) | undefined,
+	): stream.Duplex | undefined {
+		const emitErr = (err: Error) => {
+			if (callback) {
+				(callback as (err: Error, stream?: stream.Duplex) => void)(err);
+			}
+		};
+		const targetHost = String(
+			connOpts.host || connOpts.hostname || "localhost",
+		);
+		const targetPort = Number(connOpts.port || 443);
+		const isSecure =
+			connOpts.protocol === "https:" ||
+			connOpts.protocol === "wss:" ||
+			targetPort === 443;
+
+		const req = http.request({
+			host: this.httpParsed.host,
+			port: this.httpParsed.port,
+			method: "CONNECT",
+			path: `${targetHost}:${targetPort}`,
+			headers: {
+				Host: `${targetHost}:${targetPort}`,
+				...(this.authHeaderVal ? { "Proxy-Authorization": this.authHeaderVal } : {}),
+			},
+			timeout: this.agentTimeout,
+		});
+
+		req.on("connect", (res, socket, _head) => {
+			if (res.statusCode !== 200) {
+				emitErr(
+					new Error(
+						`Proxy CONNECT tunnel failed with status: ${res.statusCode} ${res.statusMessage || ""}`,
+					),
+				);
+				return;
+			}
+
+			if (!isSecure) {
+				callback?.(null, socket);
+				return;
+			}
+
+			const connOptsRecord = connOpts as Record<string, unknown>;
+			const candidateServername =
+				typeof connOptsRecord["servername"] === "string"
+					? connOptsRecord["servername"]
+					: undefined;
+			const candidateHost =
+				typeof connOptsRecord["host"] === "string"
+					? connOptsRecord["host"]
+					: undefined;
+			const servername =
+				candidateServername || candidateHost || targetHost;
+
+			const tlsSocket = tls.connect({
+				socket,
+				host: targetHost,
+				servername,
+				rejectUnauthorized: this.tlsRejectUnauthorized,
+				ALPNProtocols: ["http/1.1"],
+			});
+
+			const onSecureConnect = () => {
+				tlsSocket.removeListener("error", onError);
+				callback?.(null, tlsSocket);
+			};
+
+			const onError = (err: Error) => {
+				tlsSocket.removeListener("secureConnect", onSecureConnect);
+				try {
+					socket.destroy();
+				} catch {
+					// cleanup
+				}
+				emitErr(err);
+			};
+
+			tlsSocket.once("secureConnect", onSecureConnect);
+			tlsSocket.once("error", onError);
+		});
+
+		req.on("error", (err) => emitErr(err));
+		req.on("timeout", () => {
+			req.destroy(new Error(`Proxy CONNECT connection timed out after ${this.agentTimeout}ms`));
+		});
+		req.end();
+
+		return undefined;
+	}
 }
 
 export function createNetworkShieldWsAgent(
@@ -186,89 +381,7 @@ export function createNetworkShieldWsAgent(
 		const socksType: 4 | 5 =
 			parsed.socksType ?? (parsed.protocol.startsWith("socks4") ? 4 : 5);
 
-		const agentOptions: NetworkShieldAgentOptions = {
-			timeout,
-			createConnection: (connOpts: Record<string, unknown>, callback: (err: Error | null, socket?: net.Socket | tls.TLSSocket | null) => void) => {
-				const targetHost = String(
-					connOpts.host || connOpts.hostname || "localhost",
-				);
-				const targetPort = Number(connOpts.port || 443);
-				const isSecure =
-					connOpts.protocol === "https:" ||
-					connOpts.protocol === "wss:" ||
-					targetPort === 443;
-
-				const socksOptions: SocksClientOptions = {
-					proxy: {
-						host: parsed.host,
-						port: parsed.port,
-						type: socksType,
-						...(parsed.username ? { userId: parsed.username } : {}),
-						...(parsed.password ? { password: parsed.password } : {}),
-					},
-					command: "connect",
-					destination: {
-						host: targetHost,
-						port: targetPort,
-					},
-					timeout,
-				};
-
-				SocksClient.createConnection(socksOptions)
-					.then((info) => {
-						const socket = info.socket;
-
-						if (!isSecure) {
-							callback(null, socket);
-							return;
-						}
-
-						const candidateServername =
-							typeof connOpts["servername"] === "string"
-								? connOpts["servername"]
-								: undefined;
-						const candidateHost =
-							typeof connOpts["host"] === "string"
-								? connOpts["host"]
-								: undefined;
-						const servername =
-							candidateServername || candidateHost || targetHost;
-
-						const tlsSocket = tls.connect({
-							socket,
-							host: targetHost,
-							servername,
-							rejectUnauthorized,
-							ALPNProtocols: ["http/1.1"],
-						});
-
-						const onSecureConnect = () => {
-							tlsSocket.removeListener("error", onError);
-							callback(null, tlsSocket);
-						};
-
-						const onError = (err: Error) => {
-							tlsSocket.removeListener("secureConnect", onSecureConnect);
-							try {
-								socket.destroy();
-							} catch {
-								// cleanup
-							}
-							callback(err, null);
-						};
-
-						tlsSocket.once("secureConnect", onSecureConnect);
-						tlsSocket.once("error", onError);
-					})
-					.catch((err) => {
-						const errorInstance =
-							err instanceof Error ? err : new Error(String(err));
-						callback(errorInstance, null);
-					});
-			},
-		};
-
-		return new https.Agent(agentOptions as unknown as https.AgentOptions);
+		return new NetworkShieldSocksAgent(parsed, socksType, timeout, rejectUnauthorized);
 	}
 
 	const authHeader = parsed.username
@@ -277,93 +390,7 @@ export function createNetworkShieldWsAgent(
 			).toString("base64")}`
 		: undefined;
 
-	const agentOptions: NetworkShieldAgentOptions = {
-		timeout,
-		createConnection: (connOpts: Record<string, unknown>, callback: (err: Error | null, socket?: net.Socket | tls.TLSSocket | null) => void) => {
-			const targetHost = String(
-				connOpts.host || connOpts.hostname || "localhost",
-			);
-			const targetPort = Number(connOpts.port || 443);
-			const isSecure =
-				connOpts.protocol === "https:" ||
-				connOpts.protocol === "wss:" ||
-				targetPort === 443;
-
-			const req = http.request({
-				host: parsed.host,
-				port: parsed.port,
-				method: "CONNECT",
-				path: `${targetHost}:${targetPort}`,
-				headers: {
-					Host: `${targetHost}:${targetPort}`,
-					...(authHeader ? { "Proxy-Authorization": authHeader } : {}),
-				},
-				timeout,
-			});
-
-			req.on("connect", (res, socket, _head) => {
-				if (res.statusCode !== 200) {
-					callback(
-						new Error(
-							`Proxy CONNECT tunnel failed with status: ${res.statusCode} ${res.statusMessage || ""}`,
-						),
-						null,
-					);
-					return;
-				}
-
-				if (!isSecure) {
-					callback(null, socket);
-					return;
-				}
-
-				const candidateServername =
-					typeof connOpts["servername"] === "string"
-						? connOpts["servername"]
-						: undefined;
-				const candidateHost =
-					typeof connOpts["host"] === "string"
-						? connOpts["host"]
-						: undefined;
-				const servername =
-					candidateServername || candidateHost || targetHost;
-
-				const tlsSocket = tls.connect({
-					socket,
-					host: targetHost,
-					servername,
-					rejectUnauthorized,
-					ALPNProtocols: ["http/1.1"],
-				});
-
-				const onSecureConnect = () => {
-					tlsSocket.removeListener("error", onError);
-					callback(null, tlsSocket);
-				};
-
-				const onError = (err: Error) => {
-					tlsSocket.removeListener("secureConnect", onSecureConnect);
-					try {
-						socket.destroy();
-					} catch {
-						// cleanup
-					}
-					callback(err, null);
-				};
-
-				tlsSocket.once("secureConnect", onSecureConnect);
-				tlsSocket.once("error", onError);
-			});
-
-			req.on("error", (err) => callback(err, null));
-			req.on("timeout", () => {
-				req.destroy(new Error(`Proxy CONNECT connection timed out after ${timeout}ms`));
-			});
-			req.end();
-		},
-	};
-
-	return new https.Agent(agentOptions as unknown as https.AgentOptions);
+	return new NetworkShieldHttpConnectAgent(parsed, authHeader, timeout, rejectUnauthorized);
 }
 
 let cachedWsAgent: https.Agent | http.Agent | null = null;

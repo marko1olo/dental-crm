@@ -11,13 +11,12 @@ import {
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import {
 	ClinicalRouter,
-	isClinicalPhaseCode,
 } from "../../services/clinical/ClinicalRouter.js";
 import {
-	UUID_PATTERN,
+	clinicalPhaseCompletionSchema,
 	clinicalPhaseCompletionValidationMessage,
-	optionalUuid,
 	resolveClinicalStaffRole,
+	UUID_PATTERN,
 } from "./types.js";
 
 /**
@@ -57,47 +56,33 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const body = (
-			request.body && typeof request.body === "object" ? request.body : {}
-		) as Record<string, unknown>;
-		const patientId =
-			typeof body.patientId === "string" && UUID_PATTERN.test(body.patientId)
-				? body.patientId
-				: null;
-		const treatmentPlanId = optionalUuid(body.treatmentPlanId);
-		const assignedDoctorId = optionalUuid(body.assignedDoctorId);
-		const toothCodesRaw = body.toothCodes;
-		const toothCodesValid =
-			toothCodesRaw === undefined ||
-			(Array.isArray(toothCodesRaw) &&
-				toothCodesRaw.every((c) => typeof c === "string"));
-		const notesValid =
-			body.notes === undefined ||
-			body.notes === null ||
-			typeof body.notes === "string";
-
-		if (
-			!patientId ||
-			!isClinicalPhaseCode(body.completedPhaseCode) ||
-			treatmentPlanId === undefined ||
-			assignedDoctorId === undefined ||
-			!toothCodesValid ||
-			!notesValid
-		) {
+		const parsed = clinicalPhaseCompletionSchema.safeParse(
+			request.body ?? {},
+		);
+		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ClinicalPhaseValidationError",
 				message: clinicalPhaseCompletionValidationMessage,
 			});
 		}
 
+		const {
+			patientId,
+			completedPhaseCode,
+			treatmentPlanId,
+			assignedDoctorId,
+			toothCodes,
+			notes,
+		} = parsed.data;
+
 		try {
 			const task = await new ClinicalRouter().handlePhaseCompletion(orgId, {
 				patientId,
-				completedPhaseCode: body.completedPhaseCode,
-				notes: typeof body.notes === "string" ? body.notes : null,
-				toothCodes: (toothCodesRaw as string[] | undefined) ?? [],
-				treatmentPlanId,
-				assignedDoctorId,
+				completedPhaseCode,
+				notes: notes ?? null,
+				toothCodes,
+				treatmentPlanId: treatmentPlanId ?? null,
+				assignedDoctorId: assignedDoctorId ?? null,
 			});
 			if (!task) {
 				return reply.code(400).send({

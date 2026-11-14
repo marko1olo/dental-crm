@@ -9,6 +9,7 @@
 
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
+import type { TenantDb } from "../db/client.js";
 import {
 	createAppointmentTool,
 	createInvoiceDraftTool,
@@ -25,17 +26,50 @@ import {
 
 const TEST_ORG_ID = "11111111-1111-1111-1111-111111111111";
 
-describe("Dental Tool Arsenal — CRM, База данных и Прейскурант услуг", () => {
-	test("search_clinic_services_and_prices: находит услуги по нормативному каталогу через мягкий фолбек", async () => {
-		const mockDb = {
-			select: () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
+interface MockDbHandlers {
+	select?: () => {
+		from: () => {
+			where: () => {
+				limit: () => Promise<unknown[]>;
+			};
+		};
+	};
+	insert?: () => {
+		values: () => unknown;
+	};
+	update?: () => {
+		set: () => {
+			where: () => Promise<void>;
+		};
+	};
+}
+
+function createMockDb(overrides?: Partial<MockDbHandlers>): TenantDb {
+	return {
+		select: () => ({
+			from: () => ({
+				where: () => ({
+					limit: async () => [],
 				}),
 			}),
-		};
+		}),
+		insert: () => ({
+			values: () => ({
+				returning: async () => [{ id: "inv-123" }],
+			}),
+		}),
+		update: () => ({
+			set: () => ({
+				where: async () => {},
+			}),
+		}),
+		...overrides,
+	} as unknown as TenantDb;
+}
+
+describe("Dental Tool Arsenal — CRM, База данных и Прейскурант услуг", () => {
+	test("search_clinic_services_and_prices: находит услуги по нормативному каталогу через мягкий фолбек", async () => {
+		const mockDb = createMockDb();
 
 		const res = await handleSearchServices(
 			{ codeOrName: "A16.07.002", category: "all" },
@@ -50,43 +84,19 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 	});
 
 	test("get_patient_emr_and_odontogram: при отсутствии пациента возвращает честное found: false", async () => {
-		const mockDb = {
-			select: () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
-				}),
-			}),
-		};
+		const mockDb = createMockDb();
 
 		const res = (await getPatientEmrTool.handler(
 			{ patientId: "22222222-2222-2222-2222-222222222222" },
 			{ organizationId: TEST_ORG_ID, db: mockDb },
-		)) as any;
+		)) as { found: boolean; message?: string };
 
 		assert.strictEqual(res.found, false);
 		assert.ok(res.message?.includes("не найден в базе данных"));
 	});
 
 	test("update_tooth_status: валидирует номера зубов FDI 11-48 и 51-85", async () => {
-		const mockDb = {
-			select: () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [],
-					}),
-				}),
-			}),
-			insert: () => ({
-				values: async () => {},
-			}),
-			update: () => ({
-				set: () => ({
-					where: async () => {},
-				}),
-			}),
-		};
+		const mockDb = createMockDb();
 
 		// Корректный зуб 26
 		const validRes = await handleUpdateToothStatus(
@@ -118,13 +128,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 	});
 
 	test("create_invoice_draft: вычисляет сумму и применяет скидку врача", async () => {
-		const mockDb = {
-			insert: () => ({
-				values: () => ({
-					returning: async () => [{ id: "inv-123" }],
-				}),
-			}),
-		};
+		const mockDb = createMockDb();
 
 		const res = (await createInvoiceDraftTool.handler(
 			{
@@ -137,7 +141,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 				discountRub: 300,
 			},
 			{ organizationId: TEST_ORG_ID, db: mockDb },
-		)) as any;
+		)) as { success: boolean; subtotalRub: number; discountRub: number; totalAmountRub: number };
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.subtotalRub, 5300);

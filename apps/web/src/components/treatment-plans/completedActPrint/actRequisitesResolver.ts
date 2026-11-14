@@ -6,9 +6,19 @@
 
 import type { TreatmentPlanCompletedActPrintProps } from "./types";
 
+export interface DocumentBrandingRequisites {
+	readonly clinicLegalName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly licenseNumber?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly clinicWebsite?: string | undefined;
+}
+
 export function resolveActRequisites(
 	props: TreatmentPlanCompletedActPrintProps,
-	branding: any,
+	branding: DocumentBrandingRequisites | Partial<DocumentBrandingRequisites>,
 ) {
 	const {
 		actData,

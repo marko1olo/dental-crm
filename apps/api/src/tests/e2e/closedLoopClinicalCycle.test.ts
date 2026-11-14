@@ -49,7 +49,7 @@ import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerCashboxRoutes } from "../../routes/cashbox.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
 import { registerInvoiceRoutes } from "../../routes/invoices.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";

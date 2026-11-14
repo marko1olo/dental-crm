@@ -5,7 +5,6 @@
  */
 
 import React, { memo, useCallback, useMemo, useState } from "react";
-import { DenteToothSvgDefs } from "../../odontogram/ToothChart";
 import {
 	type PatientToothInfo,
 	type PatientToothStatus,
@@ -60,7 +59,6 @@ export const PatientPlanDentalFormula: React.FC<PatientPlanDentalFormulaProps> =
 
 	return (
 		<div className="pc-dental-formula-container" data-testid="patient-plan-dental-formula" style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", boxSizing: "border-box" }}>
-			<DenteToothSvgDefs />
 			{showHealthIndex && <PatientHealthIndexCard healthIndex={healthIndex} />}
 			<PatientStatusFilterBar statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} healthIndex={healthIndex} />
 			<div className="pc-svg-arch-wrapper" data-testid="pc-svg-arch-wrapper" style={{ backgroundColor: "var(--pc-bg, #0f172a)", border: "1px solid var(--pc-border, #334155)", borderRadius: "12px", padding: "12px 8px", width: "100%", boxSizing: "border-box", overflow: "hidden" }}>

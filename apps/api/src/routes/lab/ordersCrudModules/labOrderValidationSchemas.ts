@@ -27,6 +27,7 @@ export const updateLabOrderSchema = z.object({
 	visitId: z.string().uuid().optional().nullable(),
 	toothFdi: toothFdiSchema.optional().nullable(),
 	teethFdi: toothFdiSchema.optional().nullable(),
+	materialId: z.string().trim().optional().nullable(),
 	material: z.string().trim().optional().nullable(),
 	materialName: z.string().trim().optional().nullable(),
 	construction: z.string().trim().optional().nullable(),
@@ -50,6 +51,9 @@ export const updateLabOrderSchema = z.object({
 	overrideReason: z.string().trim().optional().nullable(),
 	labComments: z.string().trim().optional().nullable(),
 	attachedImageUrl: z.string().trim().optional().nullable(),
+	isWarranty: z.boolean().optional().nullable(),
+	isWarrantyRemake: z.boolean().optional().nullable(),
+	isWarrantyRework: z.boolean().optional().nullable(),
 });
 export type UpdateLabOrderInput = z.infer<typeof updateLabOrderSchema>;
 

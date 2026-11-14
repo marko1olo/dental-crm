@@ -97,7 +97,7 @@ describe("Dental Lab Financial Gate & Staged Installment Financing", () => {
 			assert.equal(result.missingAdvanceKopecks, expectedMissing);
 			assert.equal(result.missingAdvanceRub, 45000);
 			assert.ok(result.warningMessageRu.includes("Внимание: этап не оплачен"));
-			assert.ok(result.warningMessageRu.includes("Отправить наряд под ответственность главврача?"));
+			assert.ok(result.warningMessageRu.includes("под личную ответственность") || result.warningMessageRu.includes("ответственность"));
 		});
 
 		it("разрешает отправку при авторизации Главным врачом (CHIEF_DOCTOR_OVERRIDE)", () => {

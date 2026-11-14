@@ -78,10 +78,8 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 	}
 
 	const evaluation = evaluateSterilizationLogForLinking(log);
-	const isEmergencyAdmission = !evaluation.allowed || evaluation.isExpired;
-	const emergencyAdmissionNote = !evaluation.allowed
-		? `[Экстренный допуск лотка ${trimmedBarcode} под личную ответственность врача (СанПиН 3.3686-21)]`
-		: (evaluation.emergencyLogNote || "");
+	const isEmergencyAdmission = evaluation.isExpired;
+	const emergencyAdmissionNote = evaluation.emergencyLogNote || "";
 
 	const diaryResult = await executeLinkDiaryTransaction({
 		organizationId,

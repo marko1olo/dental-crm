@@ -54,11 +54,11 @@ export function buildCategoryBreakdown(
 			category: cat,
 			categoryNameRu: DENTAL_SPECIALTY_NAMES_RU[cat] ?? cat,
 			appliedPercent: appliedPct,
-			grossRevenueKop: grossKop as any,
+			grossRevenueKop: grossKop,
 			grossRevenueRub: grossRub,
-			netBaseKop: grossKop as any,
+			netBaseKop: grossKop,
 			netBaseRub: grossRub,
-			accruedKop: accruedKop as any,
+			accruedKop: accruedKop,
 			accruedRub,
 		});
 	}

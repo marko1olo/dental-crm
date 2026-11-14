@@ -97,12 +97,6 @@ export const DECLARED_UNMOUNTED: ReadonlyArray<DeclaredUnmountedItem> = [
 		reason:
 			"Модальное окно конфигурации аппаратных интеграций клиники (фискальные регистраторы АТОЛ/Штрих-М, рентген-датчики Visiograph TWAIN, эквайринг-терминалы). В активном веб-клиенте вызывается из контекстной вкладки настроек оборудования по требованию оператора.",
 	},
-	{
-		file: "components/imaging/CtStudyViewer.tsx",
-		name: "CtStudyViewer",
-		reason:
-			"Специализированный вьюер КТ-исследований пациента. В активном интерфейсе заменен канонической мультипланарной реконструкцией CbctMprImplantStudioModal.tsx. Сохранен для обратной совместимости с PatientRadiologyTab.tsx и zeroBirdLanguagePurity.test.ts.",
-	},
 ];
 
 /**

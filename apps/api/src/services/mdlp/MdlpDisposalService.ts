@@ -376,8 +376,9 @@ export class MdlpDisposalService {
 								notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
 							});
 
-							if (fefoRes.batchesUsed.length > 0) {
-								batchId = fefoRes.batchesUsed[0]!.batchId;
+							const firstBatch = fefoRes.batchesUsed[0];
+							if (firstBatch) {
+								batchId = firstBatch.batchId;
 							}
 						}
 					} catch (stockErr) {

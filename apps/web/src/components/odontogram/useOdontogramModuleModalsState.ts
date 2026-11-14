@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
-import type { ToothActionMenuConfig } from "./ToothActionMenuPortal";
+import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 
 export function useOdontogramModuleModalsState() {
 	const [menuConfig, setMenuConfig] = useState<ToothActionMenuConfig | null>(

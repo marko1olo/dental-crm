@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, Pill, Check } from 'lucide-react';
+import { AlertCircle, Pill, Check, AlertTriangle } from 'lucide-react';
 import type { DrugInteractionItem } from './copilotTypes';
 
 export interface CopilotDrugInteractionCardProps {
@@ -38,7 +38,7 @@ export const CopilotDrugInteractionCard: React.FC<CopilotDrugInteractionCardProp
       {/* Passive unobtrusive bar (Mandates 8e, 8y) */}
       <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
         <div className="flex items-center gap-1.5 text-[var(--ink)] font-medium">
-          <span>⚠️</span>
+          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
           <span>Возможна чувствительность к препарату</span>
         </div>
         <button

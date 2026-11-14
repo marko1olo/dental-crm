@@ -32,8 +32,6 @@ export const DOCUMENT_CATEGORY_KINDS: Record<
 		"anesthesia_consent_log",
 		"post_visit_recommendations",
 		"prescription_medication_order",
-		"daily_dentist_diary_037u",
-		"summary_dentist_statement_039u",
 		"medical_record_extract",
 	]),
 	finance_tax: new Set<DocumentKind>([

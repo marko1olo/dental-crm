@@ -21,14 +21,14 @@ export function ClinicChairCardHeader({
 				<div
 					className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
 					style={{
-						backgroundColor: (chair as any).color ? `${(chair as any).color}22` : "rgba(13, 148, 136, 0.1)",
-						color: (chair as any).color || "var(--primary)",
+						backgroundColor: chair.color ? `${chair.color}22` : "rgba(13, 148, 136, 0.1)",
+						color: chair.color || "var(--primary)",
 					}}
 				>
 					<span
 						className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm border border-white/50"
-						style={{ backgroundColor: (chair as any).color || "#AEA7D3" }}
-						title={`Цветовой маркер в расписании: ${(chair as any).color || "Лаванда (#AEA7D3)"}`}
+						style={{ backgroundColor: chair.color || "#AEA7D3" }}
+						title={`Цветовой маркер в расписании: ${chair.color || "Лаванда (#AEA7D3)"}`}
 					/>
 				</div>
 				<div>
@@ -49,7 +49,7 @@ export function ClinicChairCardHeader({
 					<p className="text-xs text-[var(--muted)] m-0">
 						{chair.room ?? "кабинет не указан"} ·{" "}
 						{chair.specialization ? specialtyLabels[chair.specialization] : "универсально"}
-						{(chair as any).defaultDoctorId && " · Врач закреплён"}
+						{chair.defaultDoctorId && " · Врач закреплён"}
 					</p>
 				</div>
 			</div>

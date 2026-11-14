@@ -9,6 +9,7 @@ import type {
 } from "@dental/shared";
 import { type ClinicProfileDraft, type VisitNoteForm } from "../../../../AppConstants";
 import { toDateInputValue } from "../../../../AppHelpers";
+import type { DocumentState } from "../../../../store/documentStore";
 import { compactDocumentText } from "../../../../utils/documentPayloadUtils";
 
 export interface UseDocumentMedicalCardProps {
@@ -18,7 +19,7 @@ export interface UseDocumentMedicalCardProps {
 	activeDoctor: StaffMember | null;
 	visitNoteForm: VisitNoteForm;
 	clinicProfileDraft: ClinicProfileDraft;
-	documentState: any;
+	documentState: DocumentState;
 	clinicalToothRowsValue: () => ClinicalToothRow[];
 }
 
@@ -113,8 +114,8 @@ export function useDocumentMedicalCardValues({
 			recordExtractTreatmentProvidedValue() ||
 			"";
 		const sexRaw = (
-			(documentPatient as any)?.gender ??
-			(documentPatient?.administrativeProfile as any)?.gender ??
+			documentPatient?.gender ??
+			documentPatient?.administrativeProfile?.gender ??
 			(patientProfile as { sex?: string } | null | undefined)?.sex ??
 			""
 		).toString().toLowerCase();
@@ -130,6 +131,10 @@ export function useDocumentMedicalCardValues({
 			clinicProfileDraft?.clinicName?.trim() ||
 			"Стоматологическая клиника";
 		const identityDocument = patientProfile?.identityDocument?.trim() || null;
+		const patientWithCard = documentPatient as (Patient & {
+			medicalCardNumber?: string | null;
+			cardNumber?: string | null;
+		}) | null;
 
 		return {
 			formNumber: "043/у",
@@ -156,8 +161,8 @@ export function useDocumentMedicalCardValues({
 				documentSeriesNumber: identityDocument,
 				snils: patientProfile?.snils?.trim() || null,
 				medicalCardNumber:
-					(documentPatient as any)?.medicalCardNumber?.trim() ||
-					(documentPatient as any)?.cardNumber?.trim() ||
+					patientWithCard?.medicalCardNumber?.trim() ||
+					patientWithCard?.cardNumber?.trim() ||
 					`043/у-${new Date().getFullYear()}-${documentPatient?.id?.slice(0, 8).toUpperCase() ?? "PATIENT"}`,
 			},
 			doctor: {

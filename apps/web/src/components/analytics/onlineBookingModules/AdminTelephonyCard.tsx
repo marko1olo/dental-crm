@@ -24,7 +24,7 @@ export function AdminTelephonyCard({
 		<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
+					<div className="p-1.5 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)]">
 						<PhoneCall size={18} />
 					</div>
 					<div>
@@ -36,7 +36,7 @@ export function AdminTelephonyCard({
 						</p>
 					</div>
 				</div>
-				<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
+				<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[var(--teal)]/15 text-[var(--teal)]">
 					{comparison.adminSharePercent}% потока
 				</span>
 			</div>
@@ -54,7 +54,7 @@ export function AdminTelephonyCard({
 				</div>
 				<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 					<span className="text-[var(--muted)]">Доходимость (Явка):</span>
-					<span className="font-bold text-blue-600 dark:text-blue-400">
+					<span className="font-bold text-[var(--ink)]">
 						{comparison.adminAttendancePercent}% ({adminFunnel.attendedCount} чел.)
 					</span>
 				</div>
@@ -72,7 +72,7 @@ export function AdminTelephonyCard({
 				</div>
 				<div className="flex justify-between py-1.5">
 					<span className="text-[var(--muted)]">Конверсия звонок → запись:</span>
-					<span className="font-bold text-emerald-600 dark:text-emerald-400">
+					<span className="font-bold text-[var(--teal)]">
 						{callToBookingConversion}%
 					</span>
 				</div>

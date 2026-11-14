@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { FranklRating, FranklRatingDefinition } from "../../odontogram/pediatricDentitionEngine";
 import { getFranklDefinition } from "../../odontogram/pediatricDentitionEngine";
 import type { ToothData } from "../../odontogram/ToothChart";
-import type { RootResorptionStage } from "../../odontogram/anatomicalToothGeometries";
+import type { RootResorptionStage } from "../../odontogram/anatomicalGeometriesTypes";
 import { showToast } from "../../GlobalToast";
 import { RESORPTION_STAGES } from "./pediatricTypes";
 

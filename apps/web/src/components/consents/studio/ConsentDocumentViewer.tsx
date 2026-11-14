@@ -81,7 +81,7 @@ export const ConsentDocumentViewer: React.FC<ConsentDocumentViewerProps> = ({
 							{record.signedAt ? ` • Время: ${record.signedAt}` : ""}
 						</div>
 						{record.integrityHash && (
-							<div className="mt-1 font-mono text-[10px] text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 p-1.5 rounded border border-teal-200 dark:border-teal-900 truncate">
+							<div className="mt-1 font-mono text-[10px] text-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 p-1.5 rounded border border-[var(--teal,#0d9488)]/25 truncate">
 								Хеш целостности: {record.integrityHash}
 							</div>
 						)}

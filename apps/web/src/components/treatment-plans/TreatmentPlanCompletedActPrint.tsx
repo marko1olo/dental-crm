@@ -51,10 +51,10 @@ export const TreatmentPlanCompletedActPrint: React.FC<
 			aria-modal="true"
 			aria-label="Печатная форма акта сдачи-приемки оказанных стоматологических услуг"
 		>
-			<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 rounded-3xl shadow-2xl overflow-hidden border border-[var(--line,#cbd5e1)] dark:border-slate-800 print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none print:bg-white print:text-black">
+			<div className="relative w-full max-w-5xl bg-[var(--paper)] text-[var(--ink)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--line)] print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none print:bg-white print:text-black">
 				<ActPrintActionBar {...data.actionBarProps} />
 
-				<div className="p-3 sm:p-6 lg:p-8 bg-slate-200/60 dark:bg-slate-950 flex justify-center overflow-x-auto print:p-0 print:bg-transparent print:overflow-visible">
+				<div className="p-3 sm:p-6 lg:p-8 bg-[var(--paper-soft)] flex justify-center overflow-x-auto print:p-0 print:bg-transparent print:overflow-visible">
 					<div
 						className={`premium-doc-sheet print-paper-sheet bg-white text-slate-900 doc-palette-${data.branding.brandAccentColor} doc-density-${data.branding.layoutDensity} doc-font-${data.branding.fontFamily} p-4 sm:p-8 md:p-12 print:p-0 relative`}
 						data-paper-sheet

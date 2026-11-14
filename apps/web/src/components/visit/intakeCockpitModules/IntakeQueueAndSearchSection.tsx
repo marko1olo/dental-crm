@@ -20,7 +20,7 @@ import {
 import { IntakePatientsCardGridColumn } from "./IntakePatientsCardGridColumn";
 
 export interface IntakeQueueAndSearchSectionProps {
-	readonly dashboard?: Dashboard | any;
+	readonly dashboard?: Dashboard | null | undefined;
 	readonly activeDoctor?: IntakeDoctorInfo | null | undefined;
 	readonly searchQuery: string;
 	readonly setSearchQuery: (val: string) => void;
@@ -96,7 +96,8 @@ export function IntakeQueueAndSearchSection({
 				);
 			}
 			if (queueFilter === "my_doctor" && activeDoctor?.id) {
-				return item.apt.doctorUserId === activeDoctor.id || (item.apt as any).doctorId === activeDoctor.id;
+				const altDoctorId = "doctorId" in item.apt && typeof item.apt.doctorId === "string" ? item.apt.doctorId : undefined;
+				return item.apt.doctorUserId === activeDoctor.id || altDoctorId === activeDoctor.id;
 			}
 			return true;
 		});

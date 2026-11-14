@@ -232,7 +232,8 @@ describe("Red Team UI Mounting & Apple HIG Accessibility", () => {
 		];
 
 		// Симуляция алгоритма слияния из useInvoicesData.ts
-		const map = new Map<string, any>();
+		type SimulatedInvoice = (typeof freshServer)[number] | (typeof staleLocal)[number];
+		const map = new Map<string, SimulatedInvoice>();
 		for (const inv of staleLocal) {
 			map.set(inv.id, inv);
 			if (inv.number) map.set(inv.number, inv);
@@ -244,9 +245,9 @@ describe("Red Team UI Mounting & Apple HIG Accessibility", () => {
 		const merged = Array.from(new Set(map.values()));
 
 		assert.equal(merged.length, 1);
-		assert.equal(merged[0].totalAmountRub, 5500, "Server totalAmountRub must overwrite stale cache");
-		assert.equal(merged[0].status, "paid", "Server status must overwrite stale cache");
-		assert.equal(merged[0].items.length, 1, "Server items must be preserved");
-		assert.equal(merged[0].patientName, "Актуальное имя из PostgreSQL");
+		assert.equal(merged[0]?.totalAmountRub, 5500, "Server totalAmountRub must overwrite stale cache");
+		assert.equal(merged[0]?.status, "paid", "Server status must overwrite stale cache");
+		assert.equal(merged[0]?.items.length, 1, "Server items must be preserved");
+		assert.equal(merged[0]?.patientName, "Актуальное имя из PostgreSQL");
 	});
 });

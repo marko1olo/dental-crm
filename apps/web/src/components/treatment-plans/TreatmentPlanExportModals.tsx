@@ -10,8 +10,8 @@ const LabWorkOrderModal = React.lazy(() =>
 const InvoiceGenerationModal = React.lazy(() =>
 	import("../finance/InvoiceGenerationModal").then((m) => ({ default: m.InvoiceGenerationModal })),
 );
-const ClinicalServiceBundlesModal = React.lazy(() =>
-	import("./ClinicalServiceBundlesModal").then((m) => ({ default: m.ClinicalServiceBundlesModal })),
+const TreatmentPlanStudioModal = React.lazy(() =>
+	import("./TreatmentPlanStudioModal").then((m) => ({ default: m.TreatmentPlanStudioModal })),
 );
 
 export interface TreatmentPlanExportModalsProps {
@@ -162,15 +162,13 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 
 			{logic.isChairsideBundlesModalOpen && (
 				<Suspense fallback={null}>
-					<ClinicalServiceBundlesModal
+					<TreatmentPlanStudioModal
 						isOpen={logic.isChairsideBundlesModalOpen}
 						onClose={() => logic.setIsChairsideBundlesModalOpen(false)}
-						initialToothNumber={logic.orthopedicTeeth?.[0] || 16}
 						patientId={logic.patientId}
 						patientName={logic.patientName}
-						onApplyToPlan={logic.handleApplyChairsideBundlePlan}
-						onApplyToInvoice={logic.handleApplyChairsideBundleInvoice}
-						targetMode="both"
+						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
+						initialActiveTab="bundles"
 					/>
 				</Suspense>
 			)}

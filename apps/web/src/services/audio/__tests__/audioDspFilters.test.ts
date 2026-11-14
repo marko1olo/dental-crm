@@ -16,7 +16,6 @@ import {
 	DentalCabinetAcousticSimulator,
 } from "../../voice/audioFilters";
 import { parseDentalVoiceSpeech } from "../../voice/dentalGrammarParser";
-import { VoiceAudioProcessor } from "../../voice/voiceProcessor";
 
 describe("Dental DSP Presets & Configurations", () => {
 	it("provides all 4 canonical clinical profiles with specialized parameters", () => {
@@ -184,38 +183,6 @@ describe("DentalCabinetAcousticSimulator & Far-Field Stress Test", () => {
 	});
 });
 
-describe("VoiceAudioProcessor: State, Telemetry & Profile Management", () => {
-	it("initializes with default profile and responds to profile changes", () => {
-		const processor = new VoiceAudioProcessor("dental_balanced");
-		assert.strictEqual(processor.getProfile(), "dental_balanced");
-
-		let notifiedProfile = "";
-		processor.subscribe({
-			onProfileChange: (p) => {
-				notifiedProfile = p;
-			},
-		});
-
-		processor.setProfile("far_field_boost");
-		assert.strictEqual(processor.getProfile(), "far_field_boost");
-		assert.strictEqual(notifiedProfile, "far_field_boost");
-		assert.strictEqual(processor.getDspConfig().profile, "far_field_boost");
-
-		processor.dispose();
-	});
-
-	it("processOfflinePcm applies soft clipping with AGC drive", () => {
-		const processor = new VoiceAudioProcessor("far_field_boost");
-		const input = new Float32Array([0.1, 0.4, 0.9, -0.9]);
-		const output = processor.processOfflinePcm(input, 16000);
-
-		assert.strictEqual(output.length, input.length);
-		for (let i = 0; i < output.length; i++) {
-			assert.ok(Math.abs(output[i] ?? 0) <= 1.0, "All samples must be bounded within [-1.0, 1.0]");
-		}
-		processor.dispose();
-	});
-});
 
 describe("Dental Formula Recognition Robustness (Noise & Distance Scenarios)", () => {
 	it("accurately extracts teeth numbers and clinical statuses from clinical phrases", () => {

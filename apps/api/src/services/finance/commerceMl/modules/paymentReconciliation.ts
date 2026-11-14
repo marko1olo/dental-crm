@@ -104,9 +104,10 @@ export function balancePaymentBreakdowns(
 ): void {
 	const totalPaymentsKop = breakdowns.reduce((s, p) => s + p.amountKopecks, 0);
 	if (totalPaymentsKop !== totalRevenueKop) {
-		if (breakdowns.length > 0) {
+		const firstBreakdown = breakdowns[0];
+		if (firstBreakdown) {
 			const diff = totalRevenueKop - totalPaymentsKop;
-			(breakdowns[0] as any).amountKopecks = Math.max(0, breakdowns[0]!.amountKopecks + diff);
+			firstBreakdown.amountKopecks = Math.max(0, Math.round(firstBreakdown.amountKopecks + diff));
 		} else if (totalRevenueKop > 0) {
 			breakdowns.push({
 				id: `pay-auto-${cleanDate}`,

@@ -1,5 +1,5 @@
 /**
- * CashShiftCompactActions.tsx — Кнопки внесения, изъятия и 1-клик Z-отчета (Мандат 8e, 8b <= 120 строк).
+ * CashShiftCompactActions.tsx — Кнопки внесения, изъятия и формирования Z-отчета (Мандат 8e, 8b <= 120 строк).
  */
 
 import React from "react";

@@ -24,6 +24,9 @@ export const DocumentsTaxWidget: React.FC<DocumentsTaxWidgetProps> = ({
 	onDownloadTaxCertificateDirect,
 	onShowToast,
 }) => {
+	const currentYear = new Date().getFullYear();
+	const availableTaxYears = [currentYear, currentYear - 1, currentYear - 2];
+
 	const handlePrint = () => {
 		openPrintWindow(generatePatientTaxCertificate1151156(data, selectedTaxYear));
 		onShowToast(`Справка для налогового вычета (ФНС) за ${selectedTaxYear} год готова к печати!`);
@@ -41,7 +44,7 @@ export const DocumentsTaxWidget: React.FC<DocumentsTaxWidgetProps> = ({
 					</p>
 				</div>
 				<div className="pc-tax-year-selector" role="group" aria-label="Выбор года">
-					{[2026, 2025, 2024].map((year) => (
+					{availableTaxYears.map((year) => (
 						<button
 							key={year}
 							type="button"

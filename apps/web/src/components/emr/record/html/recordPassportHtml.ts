@@ -1,8 +1,8 @@
-import type { ClinicRequisites043, Form043PassportData, ClinicRequisitesData, ClinicalPassportData } from "../../types/recordDataTypes.js";
+import type { ClinicRequisitesData, ClinicalPassportData } from "../../types/recordDataTypes.js";
 import { escapeHtml, formatPatientAge } from "../../math/recordMathFormatting.js";
 
 /** Рендерер шапки клиники и реквизитов медицинской карты */
-export function renderClinicHeaderHtml(clinic: ClinicRequisites043, formOrderName?: string): string {
+export function renderClinicHeaderHtml(clinic: ClinicRequisitesData, formOrderName?: string): string {
 	return `
   <div class="header-grid">
     <div class="clinic-info">
@@ -21,7 +21,7 @@ export function renderClinicHeaderHtml(clinic: ClinicRequisites043, formOrderNam
 }
 
 /** Рендерер заголовка документа и статуса подписания */
-export function renderCardTitleBlockHtml(passport: Form043PassportData, isDocDraft: boolean, revisionCount = 0): string {
+export function renderCardTitleBlockHtml(passport: ClinicalPassportData, isDocDraft: boolean, revisionCount = 0): string {
 	const statusBadge = isDocDraft
 		? '<span style="display:inline-block; border: 1pt dashed #d97706; background: #fffbeb; color: #b45309; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)</span>'
 		: revisionCount > 0
@@ -37,7 +37,7 @@ export function renderCardTitleBlockHtml(passport: Form043PassportData, isDocDra
 }
 
 /** Рендерер 1-й секции: Паспортная часть */
-export function renderPassportSectionHtml(passport: Form043PassportData): string {
+export function renderPassportSectionHtml(passport: ClinicalPassportData): string {
 	const ageFormatted = formatPatientAge(passport.patientBirthDate, passport.cardOpenedDate);
 
 	return `

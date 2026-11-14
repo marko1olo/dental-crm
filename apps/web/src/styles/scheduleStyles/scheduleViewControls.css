@@ -5,6 +5,52 @@
 	}
 }
 
+/* Schedule View: exactly 1 Primary CTA on schedule screen (Mandates 8am, 8c, 8d) */
+.workspace-shell.view-schedule #topbar-booking-action-btn,
+.workspace-shell[data-current-view="schedule"] #topbar-booking-action-btn,
+body:has(#schedule-view) #topbar-booking-action-btn,
+body:has(.workspace.view-schedule) #topbar-booking-action-btn,
+body:has([data-testid="schedule-grid-view"]) #topbar-booking-action-btn,
+body:has([data-testid="schedule-toolbar"]) #topbar-booking-action-btn,
+body:has([data-testid="schedule-mobile-agenda-view"]) #topbar-booking-action-btn,
+.view-schedule #topbar-booking-action-btn,
+[data-current-view="schedule"] #topbar-booking-action-btn,
+.workspace.view-schedule .top-actions #topbar-booking-action-btn {
+	display: none !important;
+}
+
+/* Ensure schedule filter chips stay strictly on a single horizontal row without wrapping */
+.schedule-filter-chips,
+.schedule-filter-chips.dente-filter-chips,
+.schedule-unified-toolbar .schedule-filter-chips,
+.schedule-unified-toolbar .dente-filter-chips {
+	display: flex !important;
+	flex-wrap: nowrap !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	overflow-x: auto !important;
+	overflow-y: hidden !important;
+	white-space: nowrap !important;
+}
+.schedule-filter-chips > *,
+.schedule-unified-toolbar .schedule-filter-chips > * {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+}
+
+/* Remove outer card border/padding on mobile schedule wrapper (anti-Matryoshka, Apple HIG) */
+.panel.schedule-mobile-panel,
+.schedule-mobile-panel {
+	border: none !important;
+	border-radius: 0 !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+	padding-top: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	margin: 0 !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    HARMONIZED SCHEDULE CONTROLS & TIMELINE STYLIST (BIBLE AUDIT)
    Native Segmented Controls

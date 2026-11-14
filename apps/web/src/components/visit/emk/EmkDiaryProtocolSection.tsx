@@ -42,9 +42,40 @@ export function EmkDiaryProtocolSection({
 					label="Диагноз МКБ-10"
 					value={visitNoteForm?.diagnosis || ""}
 					onCommit={updateVisitNoteField}
-					placeholder="Код МКБ-10 и клинический развернутый диагноз..."
+					placeholder="Код МКБ-10 и клинический развернутый диагноз (например, K02.1 Кариес дентина или K04.0 Пульпит)..."
 					className="w-full min-h-[60px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
+
+				<div className="flex flex-wrap gap-1.5 text-[11px] pt-1">
+					<button
+						type="button"
+						onClick={() => updateVisitNoteField("diagnosis", "K02.1 Кариес дентина")}
+						className="dente-btn-pill text-[10px] py-0.5 px-2"
+					>
+						K02.1 Кариес дентина
+					</button>
+					<button
+						type="button"
+						onClick={() => updateVisitNoteField("diagnosis", "K04.0 Пульпит")}
+						className="dente-btn-pill text-[10px] py-0.5 px-2"
+					>
+						K04.0 Пульпит
+					</button>
+					<button
+						type="button"
+						onClick={() => updateVisitNoteField("diagnosis", "K04.5 Хронический периодонтит")}
+						className="dente-btn-pill text-[10px] py-0.5 px-2"
+					>
+						K04.5 Хронический периодонтит
+					</button>
+					<button
+						type="button"
+						onClick={() => updateVisitNoteField("diagnosis", "K05.1 Хронический катаральный гингивит")}
+						className="dente-btn-pill text-[10px] py-0.5 px-2"
+					>
+						K05.1 Хронический катаральный гингивит
+					</button>
+				</div>
 			</div>
 
 			{/* Протокол лечения / Дневник */}

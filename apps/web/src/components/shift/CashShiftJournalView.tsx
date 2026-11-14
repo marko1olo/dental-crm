@@ -57,83 +57,12 @@ export interface CashShiftJournalViewProps {
 	readonly onOpenNewShift?: (() => void) | undefined;
 }
 
-const DEFAULT_SHIFTS_FIXTURE: CashShiftItem[] = [
-	{
-		id: "sh-104",
-		shiftNumber: 104,
-		status: "open",
-		openedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
-		cashierName: "Администратор / Кассир",
-		startBalanceRub: 5000,
-		incomeTotalRub: 45000,
-		expenseTotalRub: 0,
-		incomeCashRub: 12500,
-		incomeElectronicRub: 28000,
-		incomeSbpRub: 4500,
-		advanceOffsetRub: 0,
-		ofdStatus: "delivered",
-		zReportNumber: null,
-	},
-	{
-		id: "sh-103",
-		shiftNumber: 103,
-		status: "closed",
-		openedAt: new Date(Date.now() - 28 * 3600000).toISOString(),
-		closedAt: new Date(Date.now() - 18 * 3600000).toISOString(),
-		cashierName: "Иванова Е. С.",
-		startBalanceRub: 5000,
-		closingBalanceRub: 5000,
-		incomeTotalRub: 84200,
-		expenseTotalRub: 1500,
-		incomeCashRub: 24200,
-		incomeElectronicRub: 52000,
-		incomeSbpRub: 8000,
-		advanceOffsetRub: 0,
-		ofdStatus: "delivered",
-		zReportNumber: "Z-103",
-	},
-	{
-		id: "sh-102",
-		shiftNumber: 102,
-		status: "closed",
-		openedAt: new Date(Date.now() - 52 * 3600000).toISOString(),
-		closedAt: new Date(Date.now() - 42 * 3600000).toISOString(),
-		cashierName: "Иванова Е. С.",
-		startBalanceRub: 5000,
-		closingBalanceRub: 5000,
-		incomeTotalRub: 71000,
-		expenseTotalRub: 0,
-		incomeCashRub: 18500,
-		incomeElectronicRub: 43000,
-		incomeSbpRub: 6500,
-		advanceOffsetRub: 3000,
-		ofdStatus: "delivered",
-		zReportNumber: "Z-102",
-	},
-	{
-		id: "sh-101",
-		shiftNumber: 101,
-		status: "closed",
-		openedAt: new Date(Date.now() - 76 * 3600000).toISOString(),
-		closedAt: new Date(Date.now() - 66 * 3600000).toISOString(),
-		cashierName: "Петрова О. Д.",
-		startBalanceRub: 5000,
-		closingBalanceRub: 5000,
-		incomeTotalRub: 50000,
-		expenseTotalRub: 0,
-		incomeCashRub: 15000,
-		incomeElectronicRub: 31000,
-		incomeSbpRub: 4000,
-		advanceOffsetRub: 0,
-		ofdStatus: "delivered",
-		zReportNumber: "Z-101",
-	},
-];
+const DEFAULT_EMPTY_SHIFTS: CashShiftItem[] = [];
 
 export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	cashierFullName = "Администратор / Кассир",
-	initialShifts = DEFAULT_SHIFTS_FIXTURE,
+	initialShifts = DEFAULT_EMPTY_SHIFTS,
 	onOpenShiftCloseModal,
 	onOpenNewShift,
 }) => {
@@ -157,7 +86,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 			if (res && res.ok) {
 				const json = await res.json().catch(() => null);
 				const list = json?.data ?? json?.shifts;
-				if (Array.isArray(list) && list.length > 0) {
+				if (Array.isArray(list)) {
 					setShifts(list);
 				}
 			}
@@ -202,7 +131,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 						type="button"
 						onClick={handleRefresh}
 						disabled={isRefreshing}
-						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-1.5"
+						className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-1.5"
 						title="Обновить список смен"
 					>
 						<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -246,7 +175,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
 								filterStatus === filter
 									? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									: "bg-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							{filter === "all" ? "Все" : filter === "open" ? "Открытые" : "Закрытые"}
@@ -261,166 +190,227 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 
 			{/* Desktop Table View */}
 			<div className="hidden md:block rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] overflow-hidden shadow-xs">
-				<table className="w-full text-left text-xs border-collapse">
-					<thead>
-						<tr className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] font-semibold">
-							<th className="py-3 px-4">Смена</th>
-							<th className="py-3 px-4">Статус</th>
-							<th className="py-3 px-4">Открыта / Закрыта</th>
-							<th className="py-3 px-4">Кассир</th>
-							<th className="py-3 px-4 text-right">Наличные</th>
-							<th className="py-3 px-4 text-right">Безнал / карта</th>
-							<th className="py-3 px-4 text-right">СБП QR</th>
-							<th className="py-3 px-4 text-right">Выручка</th>
-							<th className="py-3 px-4 text-center">ОФД</th>
-							<th className="py-3 px-4 text-right">Действия</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-						{filteredShifts.map((shift) => (
-							<tr key={shift.id} className="hover:bg-[var(--paper-soft,#f8fafc)]/60 transition-colors">
-								<td className="py-3.5 px-4 font-bold text-[var(--ink,#0f172a)]">
-									№{shift.shiftNumber}
-								</td>
-								<td className="py-3.5 px-4">
-									{shift.status === "open" ? (
-										<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] border border-emerald-200 dark:border-emerald-800">
-											<span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-											Открыта
-										</span>
-									) : (
-										<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
-											Закрыта
-										</span>
-									)}
-								</td>
-								<td className="py-3.5 px-4 text-[var(--muted,#64748b)]">
-									<div>{new Date(shift.openedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</div>
-									{shift.closedAt && (
-										<div className="text-[10px] opacity-80">
-											до {new Date(shift.closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-										</div>
-									)}
-								</td>
-								<td className="py-3.5 px-4 font-medium text-[var(--ink,#0f172a)]">
-									{shift.cashierName}
-								</td>
-								<td className="py-3.5 px-4 text-right font-medium">
-									{shift.incomeCashRub.toLocaleString("ru-RU")} ₽
-								</td>
-								<td className="py-3.5 px-4 text-right font-medium">
-									{shift.incomeElectronicRub.toLocaleString("ru-RU")} ₽
-								</td>
-								<td className="py-3.5 px-4 text-right font-medium">
-									{shift.incomeSbpRub.toLocaleString("ru-RU")} ₽
-								</td>
-								<td className="py-3.5 px-4 text-right font-bold text-[var(--ink,#0f172a)]">
-									{shift.incomeTotalRub.toLocaleString("ru-RU")} ₽
-								</td>
-								<td className="py-3.5 px-4 text-center">
-									<span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-										<CheckCircle2 className="w-3.5 h-3.5" />
-										Доставлен ✓
-									</span>
-								</td>
-								<td className="py-3.5 px-4 text-right">
-									{shift.status === "closed" ? (
-										<button
-											type="button"
-											onClick={() => handlePrintReport(shift, "Z")}
-											className="min-h-[30px] px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] text-[11px] font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors inline-flex items-center gap-1"
-											title="Печать Z-отчёта"
-										>
-											<Printer className="w-3 h-3 text-[var(--teal,#0d9488)]" />
-											<span>Z-отчёт</span>
-										</button>
-									) : (
-										<button
-											type="button"
-											onClick={() => handlePrintReport(shift, "X")}
-											className="min-h-[30px] px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] text-[11px] font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors inline-flex items-center gap-1"
-											title="Печать промежуточного X-отчёта"
-										>
-											<Printer className="w-3 h-3 text-[var(--muted,#64748b)]" />
-											<span>X-отчёт</span>
-										</button>
-									)}
-								</td>
+				{filteredShifts.length === 0 ? (
+					<div
+						className="py-12 px-4 flex flex-col items-center justify-center text-center space-y-3"
+						data-testid="cash-shifts-empty-state"
+					>
+						<div className="w-12 h-12 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)]">
+							<Layers className="w-6 h-6" />
+						</div>
+						<div className="space-y-1">
+							<h3 className="text-sm font-bold text-[var(--ink,#0f172a)]">
+								Кассовые смены ещё не открывались
+							</h3>
+							<p className="text-xs text-[var(--muted,#64748b)] max-w-sm">
+								После открытия первой кассовой смены здесь появится журнал операций, сверка Z-отчётов и статус передачи в ОФД.
+							</p>
+						</div>
+						{onOpenNewShift && (
+							<button
+								type="button"
+								onClick={onOpenNewShift}
+								data-testid="btn-empty-open-shift"
+								className="mt-2 min-h-[38px] px-4 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+							>
+								<Plus className="w-3.5 h-3.5" />
+								<span>Открыть новую смену</span>
+							</button>
+						)}
+					</div>
+				) : (
+					<table className="w-full text-left text-xs border-collapse">
+						<thead>
+							<tr className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] font-semibold">
+								<th className="py-3 px-4">Смена</th>
+								<th className="py-3 px-4">Статус</th>
+								<th className="py-3 px-4">Открыта / Закрыта</th>
+								<th className="py-3 px-4">Кассир</th>
+								<th className="py-3 px-4 text-right">Наличные</th>
+								<th className="py-3 px-4 text-right">Безнал / карта</th>
+								<th className="py-3 px-4 text-right">СБП QR</th>
+								<th className="py-3 px-4 text-right">Выручка</th>
+								<th className="py-3 px-4 text-center">ОФД</th>
+								<th className="py-3 px-4 text-right">Действия</th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+							{filteredShifts.map((shift) => (
+								<tr key={shift.id} className="hover:bg-[var(--paper-soft,#f8fafc)]/60 transition-colors">
+									<td className="py-3.5 px-4 font-bold text-[var(--ink,#0f172a)]">
+										{`№${shift.shiftNumber}`}
+									</td>
+									<td className="py-3.5 px-4">
+										{shift.status === "open" ? (
+											<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] border border-emerald-200 dark:border-emerald-800">
+												<span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+												Открыта
+											</span>
+										) : (
+											<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
+												Закрыта
+											</span>
+										)}
+									</td>
+									<td className="py-3.5 px-4 text-[var(--muted,#64748b)]">
+										<div>{new Date(shift.openedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</div>
+										{shift.closedAt && (
+											<div className="text-[10px] opacity-80">
+												до {new Date(shift.closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+											</div>
+										)}
+									</td>
+									<td className="py-3.5 px-4 font-medium text-[var(--ink,#0f172a)]">
+										{shift.cashierName}
+									</td>
+									<td className="py-3.5 px-4 text-right font-medium">
+										{shift.incomeCashRub.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="py-3.5 px-4 text-right font-medium">
+										{shift.incomeElectronicRub.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="py-3.5 px-4 text-right font-medium">
+										{shift.incomeSbpRub.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="py-3.5 px-4 text-right font-bold text-[var(--ink,#0f172a)]">
+										{shift.incomeTotalRub.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="py-3.5 px-4 text-center">
+										<span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+											<CheckCircle2 className="w-3.5 h-3.5" />
+											Доставлен ✓
+										</span>
+									</td>
+									<td className="py-3.5 px-4 text-right">
+										{shift.status === "closed" ? (
+											<button
+												type="button"
+												onClick={() => handlePrintReport(shift, "Z")}
+												className="min-h-[30px] px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[11px] font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors inline-flex items-center gap-1"
+												title="Печать Z-отчёта"
+											>
+												<Printer className="w-3 h-3 text-[var(--teal,#0d9488)]" />
+												<span>Z-отчёт</span>
+											</button>
+										) : (
+											<button
+												type="button"
+												onClick={() => handlePrintReport(shift, "X")}
+												className="min-h-[30px] px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[11px] font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors inline-flex items-center gap-1"
+												title="Печать промежуточного X-отчёта"
+											>
+												<Printer className="w-3 h-3 text-[var(--muted,#64748b)]" />
+												<span>X-отчёт</span>
+											</button>
+										)}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				)}
 			</div>
 
 			{/* Mobile iOS Grouped List Cards (Apple HIG: >=44x44px touch targets) */}
 			<div className="md:hidden space-y-3">
-				{filteredShifts.map((shift) => (
+				{filteredShifts.length === 0 ? (
 					<div
-						key={shift.id}
-						className="p-4 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-2.5 shadow-xs"
+						className="p-6 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center text-center space-y-3 shadow-xs"
+						data-testid="cash-shifts-mobile-empty-state"
 					>
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<span className="text-base font-bold text-[var(--ink,#0f172a)]">
-									Смена №{shift.shiftNumber}
-								</span>
-								<span
-									className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-										shift.status === "open"
-											? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-											: "bg-slate-100 text-slate-700"
-									}`}
-								>
-									{shift.status === "open" ? "Открыта" : "Закрыта"}
-								</span>
-							</div>
-							<span className="text-base font-extrabold text-[var(--ink,#0f172a)]">
-								{shift.incomeTotalRub.toLocaleString("ru-RU")} ₽
-							</span>
+						<div className="w-12 h-12 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)]">
+							<Layers className="w-6 h-6" />
 						</div>
-
-						<div className="text-xs text-[var(--muted,#64748b)] space-y-0.5">
-							<div>Кассир: {shift.cashierName}</div>
-							<div>
-								Открыта: {new Date(shift.openedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-								{shift.closedAt && ` • Закрыта: ${new Date(shift.closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`}
-							</div>
+						<div className="space-y-1">
+							<h3 className="text-sm font-bold text-[var(--ink,#0f172a)]">
+								Кассовые смены ещё не открывались
+							</h3>
+							<p className="text-xs text-[var(--muted,#64748b)]">
+								После открытия первой кассовой смены здесь появится журнал операций.
+							</p>
 						</div>
-
-						{/* 4 Tenders row */}
-						<div className="grid grid-cols-3 gap-1 pt-1 border-t border-[var(--line-subtle,#f1f5f9)] text-[11px]">
-							<div>
-								<span className="text-[var(--muted,#64748b)] block">Нал:</span>
-								<b>{shift.incomeCashRub.toLocaleString("ru-RU")} ₽</b>
-							</div>
-							<div>
-								<span className="text-[var(--muted,#64748b)] block">Карта:</span>
-								<b>{shift.incomeElectronicRub.toLocaleString("ru-RU")} ₽</b>
-							</div>
-							<div>
-								<span className="text-[var(--muted,#64748b)] block">СБП:</span>
-								<b>{shift.incomeSbpRub.toLocaleString("ru-RU")} ₽</b>
-							</div>
-						</div>
-
-						{/* Action & OFD Status */}
-						<div className="flex items-center justify-between pt-2">
-							<span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-								<CheckCircle2 className="w-3.5 h-3.5" />
-								ОФД: Доставлен ✓
-							</span>
-
+						{onOpenNewShift && (
 							<button
 								type="button"
-								onClick={() => handlePrintReport(shift, shift.status === "closed" ? "Z" : "X")}
-								className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 active:bg-[var(--paper-soft,#f1f5f9)]"
+								onClick={onOpenNewShift}
+								className="min-h-[44px] w-full px-4 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2"
+								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
 							>
-								<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-								<span>{shift.status === "closed" ? "Печать Z-отчёта" : "Печать X-отчёта"}</span>
+								<Plus className="w-4 h-4" />
+								<span>Открыть новую смену</span>
 							</button>
-						</div>
+						)}
 					</div>
-				))}
+				) : (
+					filteredShifts.map((shift) => (
+						<div
+							key={shift.id}
+							className="p-4 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-2.5 shadow-xs"
+						>
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<span className="text-base font-bold text-[var(--ink,#0f172a)]">
+										{`Смена №${shift.shiftNumber}`}
+									</span>
+									<span
+										className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+											shift.status === "open"
+												? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+												: "bg-slate-100 text-slate-700"
+										}`}
+									>
+										{shift.status === "open" ? "Открыта" : "Закрыта"}
+									</span>
+								</div>
+								<span className="text-base font-extrabold text-[var(--ink,#0f172a)]">
+									{shift.incomeTotalRub.toLocaleString("ru-RU")} ₽
+								</span>
+							</div>
+
+							<div className="text-xs text-[var(--muted,#64748b)] space-y-0.5">
+								<div>Кассир: {shift.cashierName}</div>
+								<div>
+									Открыта: {new Date(shift.openedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+									{shift.closedAt && ` • Закрыта: ${new Date(shift.closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`}
+								</div>
+							</div>
+
+							{/* 4 Tenders row */}
+							<div className="grid grid-cols-3 gap-1 pt-1 border-t border-[var(--line-subtle,#f1f5f9)] text-[11px]">
+								<div>
+									<span className="text-[var(--muted,#64748b)] block">Нал:</span>
+									<b>{shift.incomeCashRub.toLocaleString("ru-RU")} ₽</b>
+								</div>
+								<div>
+									<span className="text-[var(--muted,#64748b)] block">Карта:</span>
+									<b>{shift.incomeElectronicRub.toLocaleString("ru-RU")} ₽</b>
+								</div>
+								<div>
+									<span className="text-[var(--muted,#64748b)] block">СБП:</span>
+									<b>{shift.incomeSbpRub.toLocaleString("ru-RU")} ₽</b>
+								</div>
+							</div>
+
+							{/* Action & OFD Status */}
+							<div className="flex items-center justify-between pt-2">
+								<span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+									<CheckCircle2 className="w-3.5 h-3.5" />
+									ОФД: Доставлен ✓
+								</span>
+
+								<button
+									type="button"
+									onClick={() => handlePrintReport(shift, shift.status === "closed" ? "Z" : "X")}
+									className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 active:bg-[var(--paper-soft,#f1f5f9)]"
+								>
+									<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+									<span>{shift.status === "closed" ? "Печать Z-отчёта" : "Печать X-отчёта"}</span>
+								</button>
+							</div>
+						</div>
+					))
+				)}
 			</div>
 		</div>
 	);

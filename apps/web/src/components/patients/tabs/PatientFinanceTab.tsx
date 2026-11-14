@@ -25,30 +25,30 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 		disabled = false,
 	}) {
 		const initialPersonalBalance = useMemo(() => {
-			if (typeof (patient as any)?.balanceKopecks === "number") {
-				return Math.round((patient as any).balanceKopecks / 100);
+			if (typeof patient?.balanceKopecks === "number") {
+				return Math.round(patient.balanceKopecks / 100);
 			}
 			if (typeof patient?.patientBalanceRub === "number") {
 				return Math.round(patient.patientBalanceRub);
 			}
-			if (typeof (patient as any)?.balanceRub === "number") {
-				return Math.round((patient as any).balanceRub);
+			if (typeof patient?.balanceRub === "number") {
+				return Math.round(patient.balanceRub);
 			}
 			return 0;
-		}, [patient?.patientBalanceRub, (patient as any)?.balanceRub, (patient as any)?.balanceKopecks]);
+		}, [patient?.patientBalanceRub, patient?.balanceRub, patient?.balanceKopecks]);
 
 		const initialFamilyBalance = useMemo(() => {
-			if (typeof (patient as any)?.familyBalanceKopecks === "number") {
-				return Math.round((patient as any).familyBalanceKopecks / 100);
+			if (typeof patient?.familyBalanceKopecks === "number") {
+				return Math.round(patient.familyBalanceKopecks / 100);
 			}
 			if (typeof patient?.familyBalanceRub === "number") {
-				return Math.round(patient.familyBalanceRub);
+				return Math.round(Number(patient.familyBalanceRub));
 			}
-			if (typeof (patient as any)?.familyGroup?.totalBalanceRub === "number") {
-				return Math.round((patient as any).familyGroup.totalBalanceRub);
+			if (typeof patient?.familyGroup?.totalBalanceRub === "number") {
+				return Math.round(patient.familyGroup.totalBalanceRub);
 			}
 			return 0;
-		}, [patient?.familyBalanceRub, (patient as any)?.familyGroup?.totalBalanceRub, (patient as any)?.familyBalanceKopecks]);
+		}, [patient?.familyBalanceRub, patient?.familyGroup?.totalBalanceRub, patient?.familyBalanceKopecks]);
 
 		const {
 			personalBalance,

@@ -50,10 +50,10 @@ export function extractFromUnstructuredLine(rawLine: string): UnstructuredPriceL
 	}
 
 	if (!rawPriceString) {
-		const zeroRegex = /\b(бесплатно|по гарантии|включено|0(?:\.00)?\s*(?:₽|руб)?)\b/i;
+		const zeroRegex = /(?:^|[\s,;—–|])(бесплатно|по гарантии|включено|0(?:\.00)?\s*(?:₽|руб)?)(?:[\s,;—–|]|$)/i;
 		if (zeroRegex.test(line)) {
 			rawPriceString = "0";
-			cleanedTitle = line.replace(zeroRegex, "").trim();
+			cleanedTitle = line.replace(zeroRegex, " ").trim();
 		}
 	}
 

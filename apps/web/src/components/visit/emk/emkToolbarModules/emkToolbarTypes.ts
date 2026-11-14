@@ -4,7 +4,7 @@ import type { ClinicalSoapPreset } from "../../clinicalSoapPresets";
 export interface EmkToolbarProps {
 	activeEmkTab?: string | undefined;
 	setActiveEmkTab?: ((tabId: string) => void) | undefined;
-	onTabChange?: ((tabId: any) => void) | undefined;
+	onTabChange?: ((tabId: string) => void) | undefined;
 	onApplyPhysiologicalNorm?: (() => void) | undefined;
 	onApplyNorm?: (() => void) | undefined;
 	onApplyOrthoNorm?: (() => void) | undefined;
@@ -27,14 +27,14 @@ export interface EmkToolbarProps {
 	isSignedVisit?: boolean | undefined;
 	isRevisingVisitNote?: boolean | undefined;
 	onBeginRevise?: (() => void) | undefined;
-	visitNoteForm?: Record<string, any> | undefined;
-	updateVisitNoteField?: ((field: string, value: any) => void) | undefined;
-	autosaveState?: any;
+	visitNoteForm?: Record<string, unknown> | undefined;
+	updateVisitNoteField?: ((field: string, value: string) => void) | undefined;
+	autosaveState?: "idle" | "saving" | "saved" | "queued" | "error" | string | undefined;
 	lastSavedAt?: Date | null | undefined;
 	hasUnsavedChanges?: boolean | undefined;
 	voicePilotNode?: React.ReactNode | undefined;
 	specialtyFocusNode?: React.ReactNode | undefined;
-	noteForm?: Record<string, any> | undefined;
+	noteForm?: Record<string, unknown> | undefined;
 	onUndo?: (() => boolean) | undefined;
 	onRedo?: (() => boolean) | undefined;
 }
@@ -66,7 +66,7 @@ export const MOBILE_EMK_STEPS: MobileStepItem[] = [
 	{ id: "treatmentPlan", label: "4. Лечение", shortLabel: "4. План" },
 ];
 
-export function isEmkTabFilled(tabId: string, noteForm: Record<string, any> = {}): boolean {
+export function isEmkTabFilled(tabId: string, noteForm: Record<string, unknown> = {}): boolean {
 	if (tabId === "all") return false;
 	if (tabId === "complaints") {
 		return Boolean(
@@ -100,7 +100,7 @@ export function isEmkTabFilled(tabId: string, noteForm: Record<string, any> = {}
 	return Boolean(String(noteForm[tabId] ?? "").trim().length > 0);
 }
 
-export function isEmkTabActive(tabId: string, activeEmkTab: string, noteForm: Record<string, any> = {}): boolean {
+export function isEmkTabActive(tabId: string, activeEmkTab: string, noteForm: Record<string, unknown> = {}): boolean {
 	if (activeEmkTab === tabId) return true;
 	if (tabId === "complaints" && (activeEmkTab === "complaint" || activeEmkTab === "anamnesis")) return true;
 	if (tabId === "objectiveStatus" && (activeEmkTab === "status" || activeEmkTab === "objective")) return true;

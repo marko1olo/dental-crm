@@ -19,7 +19,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ChairsideCopilotHUD } from "../ChairsideCopilotHUD";
-import { VisitServiceBillingWidget, DEFAULT_CHAIRSIDE_SERVICES } from "../../visit/VisitServiceBillingWidget";
 import { ToothContextDrawer } from "../../diagnostics/ToothContextDrawer";
 
 interface MockFn {
@@ -336,24 +335,6 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
 
     onUpdateToothStatus(16, "Caries");
     expect(onUpdateToothStatus).toHaveBeenCalledWith(16, "Caries");
-  });
-
-  it("6. verifies event-driven sync with VisitServiceBillingWidget (dente-add-billing-item & remove)", () => {
-    // Render VisitServiceBillingWidget
-    const html = renderToString(
-      <VisitServiceBillingWidget
-        visitId="vis-1"
-        patientId="pat-1"
-        patientName="Петров В.В."
-        initialServices={DEFAULT_CHAIRSIDE_SERVICES}
-      />
-    );
-
-    expect(html).toContain("visit-service-billing-widget");
-    expect(html).toContain("Услуги и биллинг у кресла");
-    // Verify services are present
-    expect(html).toContain("Препарирование и медикаментозная обработка");
-    expect(html).toContain("Восстановление зуба пломбой");
   });
 
   it("7. verifies event-driven sync with ToothContextDrawer (dente-odontogram-update & onUpdateToothStatus)", () => {

@@ -3,18 +3,22 @@ import {
 	extractAppointmentStageInfo,
 	groupTreatmentPlanByStages,
 	type PlanStageOption,
+	type PlanStageItem,
+	type TreatmentPlanLike,
+	type AppointmentStageLike,
 } from "./visitPlanStageHandoff";
 import {
 	dispatchTakeStageToVisit,
 	dispatchOpenLabOrderForStage,
+	type HandoffPatientLike,
 } from "./visitPlanStageHandoffEvents";
 
 export interface UseVisitPlanStageHandoffProps {
-	readonly loadedTreatmentPlan: any;
-	readonly activeAppointment?: any | null | undefined;
-	readonly activePatient?: any | null | undefined;
-	readonly onTakeStage?: ((stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void) | undefined;
-	readonly onOpenLabOrder?: ((stage: { title: string; stageNumber: number; items: any[] }, items: any[]) => void) | undefined;
+	readonly loadedTreatmentPlan: TreatmentPlanLike | null | undefined;
+	readonly activeAppointment?: AppointmentStageLike | null | undefined;
+	readonly activePatient?: HandoffPatientLike | null | undefined;
+	readonly onTakeStage?: ((stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] }, items: readonly PlanStageItem[] | PlanStageItem[]) => void) | undefined;
+	readonly onOpenLabOrder?: ((stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] }, items: readonly PlanStageItem[] | PlanStageItem[]) => void) | undefined;
 }
 
 export function useVisitPlanStageHandoff({
@@ -54,7 +58,7 @@ export function useVisitPlanStageHandoff({
 		return stages.find((s) => s.stageNumber === selectedStageKey) || null;
 	}, [stages, selectedStageKey]);
 
-	const selectedItems = useMemo<any[]>(() => {
+	const selectedItems = useMemo<PlanStageItem[]>(() => {
 		if (selectedStageKey === "all" || !activeStage) return allPlanItems;
 		return activeStage.items;
 	}, [selectedStageKey, activeStage, allPlanItems]);

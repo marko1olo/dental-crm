@@ -80,18 +80,18 @@ export function VisitHeaderMonolith({
 			<div className="min-h-[32px] h-8 sm:h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 				<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
 					<PatientAvatar
-						fullName={activePatient.fullName}
+						fullName={activePatient?.fullName || activePatient?.name || "Пациент"}
 						size={22}
 						className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0"
 					/>
 					<span
 						className="min-w-0 flex-1 truncate text-xs sm:text-sm font-bold text-[var(--ink)]"
-						title={activePatient.fullName || activePatient.name}
+						title={activePatient?.fullName || activePatient?.name || "Пациент"}
 					>
 						<span className="sm:hidden text-[11px] leading-tight font-semibold block truncate">
 							{(() => {
 								const fullName =
-									activePatient.fullName || activePatient.name || "";
+									activePatient?.fullName || activePatient?.name || "Пациент";
 								const parts = fullName.trim().split(/\s+/);
 								if (parts.length >= 2) {
 									const initials = parts
@@ -105,7 +105,7 @@ export function VisitHeaderMonolith({
 							})()}
 						</span>
 						<span className="hidden sm:inline truncate">
-							{activePatient.fullName || activePatient.name}
+							{activePatient?.fullName || activePatient?.name || "Пациент"}
 						</span>
 					</span>
 					{patientAge && (
@@ -113,7 +113,7 @@ export function VisitHeaderMonolith({
 							· {patientAge}
 						</span>
 					)}
-					{activePatient.phone && (
+					{activePatient?.phone && (
 						<span className="text-xs text-[var(--muted)] shrink-0 hidden md:inline">
 							· {activePatient.phone}
 						</span>

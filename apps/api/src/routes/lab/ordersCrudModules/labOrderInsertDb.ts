@@ -113,7 +113,7 @@ export async function insertLabOrderInDb(
 			: calculateBusinessDaysDueDate(new Date(), 5);
 
 	const effectiveToothFdi = data.toothFdi || data.teethFdi || null;
-	const effectiveMaterial = data.material || data.materialName || data.construction || null;
+	const effectiveMaterial = data.material || data.materialName || data.construction || data.materialId || null;
 	const effectiveNotes = data.clinicalNotes || data.doctorNotes || null;
 	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? "draft";
 

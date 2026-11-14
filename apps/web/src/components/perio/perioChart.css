@@ -8,7 +8,7 @@
 }
 
 .perio-mobile-floating-bar {
-	display: none;
+	display: none !important;
 }
 
 .perio-primary-cta-btn {
@@ -48,4 +48,10 @@
 	.perio-toolbar-actions::-webkit-scrollbar {
 		display: none;
 	}
+}
+
+body:has([data-testid="perio-chart-modal"]) .copilot-trigger-btn {
+	opacity: 0 !important;
+	pointer-events: none !important;
+	visibility: hidden !important;
 }

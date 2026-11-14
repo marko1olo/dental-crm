@@ -37,14 +37,14 @@ export interface TelegramSettingsState {
 	telegramLinkCodeLedger: DenteTelegramLinkCodeListResponse | null;
 	telegramChatLinkLedger: DenteTelegramChatLinkListResponse | null;
 	telegramLinkSubjectType: TelegramLinkSubjectType;
-	telegramLinkStaffId: any;
+	telegramLinkStaffId: string;
 	telegramLinkCode: DenteTelegramLinkCodeCreated | null;
 	telegramLinkActionState: string | null;
 	telegramPreview: DenteTelegramMessagePreview | null;
 	telegramModeDraft: DenteTelegramBotMode;
 	telegramBotUsernameDraft: string;
 	telegramOwnBotUsernameDraft: string;
-	telegramBotConfigId: any;
+	telegramBotConfigId: string;
 	telegramWebhookBaseUrlDraft: string;
 	telegramPatientPortalBaseUrlDraft: string;
 	telegramWelcomeImageUrlDraft: string;

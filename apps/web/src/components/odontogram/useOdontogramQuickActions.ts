@@ -13,12 +13,7 @@ import {
 	type ToothData,
 	type ToothState,
 } from "./ToothChart";
-import {
-	ONE_CLICK_LAB_DEFAULTS,
-	addWorkingDays,
-	calculateMaterialTotalCostKopecks,
-} from "../lab/labMath";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { submitExpressLabOrder } from "../lab/expressLabOrderHelper";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { showToast } from "../GlobalToast";
 import { generateSoapFromOdontogramStates } from "../../lib/clinicalProtocols";
@@ -185,66 +180,17 @@ export function useOdontogramQuickActions({
 		showToast("Клинический статус зубной формулы внесен в дневник приёма", "success", 4000);
 	}, [teethData, teethDataRef]);
 
-	const handleOneClickLabOrder = useCallback(async (targetTeeth: number[]) => {
-		if (targetTeeth.length === 0) {
-			showToast("Выберите зубы для наряда ЗТЛ", "warning");
-			return;
-		}
-		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
-		const dueDateIso = due.toISOString();
-		const dueDateFormatted = due.toLocaleDateString("ru-RU");
-		const isBridge = targetTeeth.length > 1;
-		const construction = isBridge
-			? ONE_CLICK_LAB_DEFAULTS.restorationTypeBridge
-			: ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle;
-		const priceRub =
-			(calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) ||
-				650000 * targetTeeth.length) / 100;
-		const toothFdiStr = targetTeeth.join(", ");
-
-		try {
-			showToast(`Оформление наряда ЗТЛ для зубов ${toothFdiStr}...`, "info", 2000);
-			const res = await fetch("/api/clinical/lab-orders", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					patientId,
-					doctorId: activeDoctor?.id || null,
-					toothFdi: toothFdiStr,
-					material: ONE_CLICK_LAB_DEFAULTS.materialName,
-					colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
-					dueDate: dueDateIso,
-					clinicalNotes: `• Экспресс-наряд ЗТЛ из одонтограммы\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
-					priceRub,
-				}),
+	const handleOneClickLabOrder = useCallback(
+		async (targetTeeth: number[]) => {
+			await submitExpressLabOrder({
+				patientId,
+				doctorId: activeDoctor?.id || null,
+				targetTeeth,
+				sourceContext: "odontogram",
 			});
-
-			if (!res.ok) {
-				const err = (await res.json().catch(() => ({}))) as { message?: string };
-				throw new Error(err.message || "Ошибка создания наряда ЗТЛ");
-			}
-
-			const savedOrder = await res.json();
-
-			showToast(
-				`Наряд ЗТЛ успешно оформлен для зубов ${toothFdiStr} (Цирконий A2, сдача: ${dueDateFormatted})!`,
-				"success",
-				6000,
-			);
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", { detail: { order: savedOrder } }),
-			);
-		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: "Не удалось оформить наряд в ЗТЛ";
-			showToast(message, "error");
-		}
-	}, [patientId, activeDoctor]);
+		},
+		[patientId, activeDoctor],
+	);
 
 	return {
 		handleMarkAllHealthy,

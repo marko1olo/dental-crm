@@ -27,7 +27,7 @@ export const FamilyPooledBalanceCard: React.FC<FamilyPooledBalanceCardProps> =
 				<div>
 					<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] font-medium">
 						<Wallet className="w-4 h-4 text-[var(--teal)]" />
-						<span>Общий семейный аванс (депозит):</span>
+						<span>Общий семейный депозит:</span>
 					</div>
 					<div className="text-2xl font-black text-[var(--teal)] tracking-tight mt-1">
 						{money(familyBalanceNumeric)}

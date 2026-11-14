@@ -95,6 +95,11 @@ export async function createPaymentInDb(
 			}
 		}
 
+		if (!input.patientId) {
+			throw new Error("Идентификатор пациента (patientId) обязателен для создания платежа в биллинге.");
+		}
+		const targetPatientId = input.patientId;
+
 		// Pessimistic lock on the target patient to prevent concurrent balance race conditions
 		const [lockedPatient] = await tx
 			.select({
@@ -107,7 +112,7 @@ export async function createPaymentInDb(
 			.where(
 				and(
 					eq(schema.patients.organizationId, organizationId),
-					eq(schema.patients.id, input.patientId),
+					eq(schema.patients.id, targetPatientId),
 				),
 			)
 			.for("update")

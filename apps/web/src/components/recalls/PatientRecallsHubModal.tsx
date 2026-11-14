@@ -22,67 +22,107 @@ export interface PatientRecallsHubModalProps {
 	readonly onSendWhatsApp?: (c: PatientRecallRecord, m: string) => Promise<void> | void;
 	readonly onSendTelegram?: (c: PatientRecallRecord, m: string) => Promise<void> | void;
 	readonly onStatusChange?: (id: string, s: RecallContactStatus) => void;
+	readonly embedded?: boolean;
 }
 
 export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
-	isOpen = true, onClose, clinicName = "DENTE Clinic", initialCandidates,
-	onBookAppointment, onSendWhatsApp, onSendTelegram, onStatusChange,
+	isOpen = true,
+	onClose,
+	clinicName = "DENTE Clinic",
+	initialCandidates,
+	onBookAppointment,
+	onSendWhatsApp,
+	onSendTelegram,
+	onStatusChange,
+	embedded = false,
 }) => {
 	const appLogic = useOptionalAppLogicContext();
 	const authHeaders = appLogic?.auth ? appLogic.auth.denteClinicalReadHeaders() : undefined;
 	const hub = useRecallHubState(isOpen, initialCandidates ?? [], authHeaders);
 	const actions = useRecallHubActions({
-		clinicName, setCandidates: hub.setCandidates, setStatusNotice: hub.setStatusNotice,
-		setActivePreviewCandidate: hub.setActivePreviewCandidate, setBookingSlot: hub.setBookingSlot,
-		onStatusChange, onBookAppointment, onSendWhatsApp, onSendTelegram,
+		clinicName,
+		setCandidates: hub.setCandidates,
+		setStatusNotice: hub.setStatusNotice,
+		setActivePreviewCandidate: hub.setActivePreviewCandidate,
+		setBookingSlot: hub.setBookingSlot,
+		onStatusChange,
+		onBookAppointment,
+		onSendWhatsApp,
+		onSendTelegram,
 		authHeaders: appLogic?.auth ? appLogic.auth.denteClinicalMutationHeaders() : undefined,
 	});
 
 	if (!isOpen) return null;
 
+	const containerContent = (
+		<div
+			className="recall-manager-container"
+			data-testid="patient-recalls-hub-modal"
+			style={embedded ? { width: "100%", maxWidth: "100%", maxHeight: "none", boxShadow: "none" } : undefined}
+		>
+			<div className="recall-drag-handle-wrap" aria-hidden="true">
+				<div className="recall-drag-handle" />
+			</div>
+			<RecallHubHeader
+				activeTab={hub.activeTab}
+				onTabChange={hub.setActiveTab}
+				onClose={embedded ? undefined : onClose}
+			/>
+			<RecallCycleSegmentedBar selectedCycle={hub.selectedCycle} onSelectedCycleChange={hub.setSelectedCycle} />
+
+			<main className="recall-content-area">
+				<PatientRecallsHubTabRouter
+					activeTab={hub.activeTab}
+					candidates={hub.candidates}
+					filteredCandidates={hub.filteredCandidates}
+					activeScriptCandidateId={hub.activeScriptCandidate?.id ?? null}
+					uniqueDoctors={hub.uniqueDoctors}
+					selectedDoctorId={hub.selectedDoctorId}
+					onDoctorChange={hub.setSelectedDoctorId}
+					selectedPeriod={hub.selectedPeriod}
+					onPeriodChange={hub.setSelectedPeriod}
+					selectedWorkflowStatus={hub.selectedWorkflowStatus}
+					onStatusChangeFilter={hub.setSelectedWorkflowStatus}
+					statusCounts={hub.statusCounts}
+					selectedTaskCallType={hub.selectedTaskCallType}
+					onSelectTaskCallType={hub.setSelectedTaskCallType}
+					activeTaskCallScriptType={hub.activeTaskCallScriptType}
+					onToggleTaskCallScriptType={hub.setActiveTaskCallScriptType}
+					searchQuery={hub.searchQuery}
+					onSearchChange={hub.setSearchQuery}
+					onBook={actions.handleBook}
+					onToggleScript={(c) => hub.setActiveScriptCandidate(hub.activeScriptCandidate?.id === c.id ? null : c)}
+					onTogglePreview={(c) => hub.setActivePreviewCandidate(c)}
+					onWhatsApp={actions.handleWhatsApp}
+					onTelegram={actions.handleTelegram}
+					onCopySms={actions.handleCopySms}
+					onStatusUpdate={actions.handleStatusUpdate}
+				/>
+			</main>
+
+			{hub.bookingSlot && (
+				<QuickBookingDrawer
+					isOpen={Boolean(hub.bookingSlot)}
+					initialSlot={hub.bookingSlot}
+					dashboard={appLogic?.dashboard}
+					auth={appLogic?.auth}
+					onClose={() => hub.setBookingSlot(null)}
+					onAppointmentCreated={() => {
+						if (hub.bookingSlot?.patientId) actions.handleStatusUpdate(hub.bookingSlot.patientId, "scheduled");
+						hub.setBookingSlot(null);
+					}}
+				/>
+			)}
+		</div>
+	);
+
+	if (embedded) {
+		return containerContent;
+	}
+
 	const modalContent = (
 		<div className="recall-manager-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="recalls-hub-title">
-			<div className="recall-manager-container" data-testid="patient-recalls-hub-modal">
-				<div className="recall-drag-handle-wrap" aria-hidden="true">
-					<div className="recall-drag-handle" />
-				</div>
-				<RecallHubHeader activeTab={hub.activeTab} onTabChange={hub.setActiveTab} onClose={onClose} />
-				<RecallCycleSegmentedBar selectedCycle={hub.selectedCycle} onSelectedCycleChange={hub.setSelectedCycle} />
-
-				<main className="recall-content-area">
-					<PatientRecallsHubTabRouter
-						activeTab={hub.activeTab}
-						candidates={hub.candidates}
-						filteredCandidates={hub.filteredCandidates}
-						activeScriptCandidateId={hub.activeScriptCandidate?.id ?? null}
-						uniqueDoctors={hub.uniqueDoctors}
-						selectedDoctorId={hub.selectedDoctorId}
-						onDoctorChange={hub.setSelectedDoctorId}
-						selectedPeriod={hub.selectedPeriod}
-						onPeriodChange={hub.setSelectedPeriod}
-						selectedWorkflowStatus={hub.selectedWorkflowStatus}
-						onStatusChangeFilter={hub.setSelectedWorkflowStatus}
-						statusCounts={hub.statusCounts}
-						selectedTaskCallType={hub.selectedTaskCallType}
-						onSelectTaskCallType={hub.setSelectedTaskCallType}
-						activeTaskCallScriptType={hub.activeTaskCallScriptType}
-						onToggleTaskCallScriptType={hub.setActiveTaskCallScriptType}
-						searchQuery={hub.searchQuery}
-						onSearchChange={hub.setSearchQuery}
-						onBook={actions.handleBook}
-						onToggleScript={(c) => hub.setActiveScriptCandidate(hub.activeScriptCandidate?.id === c.id ? null : c)}
-						onTogglePreview={(c) => hub.setActivePreviewCandidate(c)}
-						onWhatsApp={actions.handleWhatsApp}
-						onTelegram={actions.handleTelegram}
-						onCopySms={actions.handleCopySms}
-						onStatusUpdate={actions.handleStatusUpdate}
-					/>
-				</main>
-
-				{hub.bookingSlot && (
-					<QuickBookingDrawer isOpen={Boolean(hub.bookingSlot)} initialSlot={hub.bookingSlot} dashboard={appLogic?.dashboard} auth={appLogic?.auth} onClose={() => hub.setBookingSlot(null)} onAppointmentCreated={() => { if (hub.bookingSlot?.patientId) actions.handleStatusUpdate(hub.bookingSlot.patientId, "scheduled"); hub.setBookingSlot(null); }} />
-				)}
-			</div>
+			{containerContent}
 		</div>
 	);
 

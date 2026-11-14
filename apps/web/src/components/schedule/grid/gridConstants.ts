@@ -71,6 +71,7 @@ export const HOURS = [
   "18:00",
   "19:00",
   "20:00",
+  "21:00",
 ];
 
 export const DEFAULT_SOLO_CHAIR = {

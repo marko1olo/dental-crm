@@ -19,10 +19,10 @@ export function registerSanpinChairReadinessRoutes(app: FastifyInstance) {
 			req.log.warn({ err }, "Non-blocking fallback for direct chairside doctor workstation");
 		}
 
-		const body = (req.body as Record<string, any>) || {};
-		const chairNumber = body.chairNumber || "Установка 1";
-		const doctorName = body.doctorName || "Врач";
-		const notes = body.notes || "Готов по умолчанию (СанПиН 3.3686-21 / бумажный журнал)";
+		const body = (req.body as Record<string, unknown>) || {};
+		const chairNumber = (body.chairNumber as string) || "Установка 1";
+		const doctorName = (body.doctorName as string) || "Врач";
+		const notes = (body.notes as string) || "Готов по умолчанию (СанПиН 3.3686-21 / бумажный журнал)";
 
 		if (organizationId) {
 			wsBroker.broadcastToOrganization(organizationId, {
@@ -78,13 +78,13 @@ export function registerSanpinChairReadinessRoutes(app: FastifyInstance) {
 			req.log.warn({ err }, "Non-blocking cabinet readiness tenant resolution");
 		}
 
-		const body = (req.body as Record<string, any>) || {};
+		const body = (req.body as Record<string, unknown>) || {};
 
 		if (organizationId) {
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "SANPIN_CABINET_READINESS_RECORDED",
 				payload: {
-					cabinetNumber: body.cabinetNumber || "Кабинет",
+					cabinetNumber: (body.cabinetNumber as string) || "Кабинет",
 					isReady: true,
 					presumedSterile: true,
 					traySterileByDefault: true,
@@ -102,7 +102,7 @@ export function registerSanpinChairReadinessRoutes(app: FastifyInstance) {
 				...body,
 				id: `readiness-${Date.now()}`,
 				timestamp: new Date().toISOString(),
-				operatorStaffFullName: body.operatorStaffFullName || "Персонал клиники",
+				operatorStaffFullName: (body.operatorStaffFullName as string) || "Персонал клиники",
 				summaryBadgeRu: "Инструменты стерильны по умолчанию (бумажный журнал)",
 			},
 		});

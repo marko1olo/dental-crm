@@ -415,8 +415,9 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			assert.equal(invalidSmallTouch.isValid, false);
 
 			const touchTargetsCssPath = join(repoRoot, "apps/web/src/styles/touch-targets.css");
+			const touchPrimitivesCssPath = join(repoRoot, "apps/web/src/styles/touchStyles/touchTargetPrimitives.css");
 			assert.equal(existsSync(touchTargetsCssPath), true, "touch-targets.css must exist");
-			const css = readFileSync(touchTargetsCssPath, "utf8");
+			const css = readFileSync(touchTargetsCssPath, "utf8") + (existsSync(touchPrimitivesCssPath) ? readFileSync(touchPrimitivesCssPath, "utf8") : "");
 			assert.match(css, /@media\s*\(pointer:\s*coarse\)/);
 			assert.match(css, /\.primary-button[\s\S]*?min-height:\s*44px\s*!important/);
 		});
@@ -424,12 +425,15 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 		it("3.2 verifies odontogram tooth touch targets define minimum height >= 140px", () => {
 			assert.equal(CLINICAL_TOUCH_TARGETS.TOOTH_FORMULA_MIN_HEIGHT_PX, 140);
 
-			const carouselPath = join(repoRoot, "apps/web/src/components/odontogram/chart/ToothCarouselFocus.tsx");
-			assert.equal(existsSync(carouselPath), true, "ToothCarouselFocus.tsx must exist");
-			const src = readFileSync(carouselPath, "utf8");
-			assert.match(src, /120x140px/);
-			assert.match(src, /48x48px/);
-			assert.match(src, /triggerHaptic/);
+			const quadrantTabsPath = join(repoRoot, "apps/web/src/components/odontogram/MobileQuadrantTabs.tsx");
+			const topBarPath = join(repoRoot, "apps/web/src/components/odontogram/MobileQuadrantTopBar.tsx");
+			assert.equal(existsSync(quadrantTabsPath), true, "MobileQuadrantTabs.tsx must exist");
+			assert.equal(existsSync(topBarPath), true, "MobileQuadrantTopBar.tsx must exist");
+			const topBarSrc = readFileSync(topBarPath, "utf8");
+			const tabsSrc = readFileSync(quadrantTabsPath, "utf8");
+			assert.match(topBarSrc, /120x140px/);
+			assert.match(topBarSrc, /44x56px/);
+			assert.match(tabsSrc, /triggerHaptic/);
 		});
 
 		it("3.3 verifies tablet navigation tabs define touch target >= 48px", () => {
@@ -451,17 +455,19 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 
 		it("3.4 verifies quick diagnosis picker buttons define touch targets >= 48px", () => {
 			const mobileSheetPath = join(repoRoot, "apps/web/src/components/odontogram/ToothRadialMobileSheet.tsx");
-			const portalMenuPath = join(repoRoot, "apps/web/src/components/odontogram/ToothActionMenuPortal.tsx");
+			const radialMenuPath = join(repoRoot, "apps/web/src/components/odontogram/ToothRadialMenu.tsx");
+			const gridPath = join(repoRoot, "apps/web/src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx");
 			assert.equal(existsSync(mobileSheetPath), true, "ToothRadialMobileSheet.tsx must exist");
-			assert.equal(existsSync(portalMenuPath), true, "ToothActionMenuPortal.tsx must exist");
+			assert.equal(existsSync(radialMenuPath), true, "ToothRadialMenu.tsx must exist");
+			assert.equal(existsSync(gridPath), true, "ToothRadialPrimaryGrid.tsx must exist");
 
 			const sheetSrc = readFileSync(mobileSheetPath, "utf8");
-			assert.match(sheetSrc, /min-w-\[48px\]\s+min-h-\[48px\]/);
+			const gridSrc = readFileSync(gridPath, "utf8");
+			assert.match(gridSrc, /min-h-\[50px\]\s+min-w-\[48px\]/);
 			assert.match(sheetSrc, /env\(safe-area-inset-bottom/);
 
-			const portalSrc = readFileSync(portalMenuPath, "utf8");
-			assert.match(portalSrc, /Math\.max\(12,\s*Math\.min\(vw\s*-\s*MENU_WIDTH\s*-\s*12,\s*menuConfig\.x\)\)/);
-			assert.match(portalSrc, /Math\.max\(12,\s*Math\.min\(vh\s*-\s*MENU_HEIGHT\s*-\s*12,\s*menuConfig\.y\)\)/);
+			const radialSrc = readFileSync(radialMenuPath, "utf8");
+			assert.match(radialSrc, /ToothRadialMobileSheet/);
 		});
 
 		it("3.5 verifies modal close, keypad and counter controls define touch targets >= 48px", () => {

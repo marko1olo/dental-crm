@@ -101,7 +101,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					coalesce(
 						sum(
 							case
-								when coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)'
+								when coalesce(${inventoryItems}."is_overhead", false) = true
 								then 0
 								else coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
 							end
@@ -113,7 +113,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					coalesce(
 						sum(
 							case
-								when coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)'
+								when coalesce(${inventoryItems}."is_overhead", false) = true
 								then coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
 								else 0
 							end
@@ -127,7 +127,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					   or ${inventoryTransactions}."unit_cost_rub" = 0
 					   or ${inventoryTransactions}."quantity_changed" is null
 					   or ${inventoryTransactions}."quantity_changed" = 0)
-					  and not (coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)')
+					  and coalesce(${inventoryItems}."is_overhead", false) = false
 				)::int`.as("movements_unpriced"),
 			})
 			.from(inventoryTransactions)
@@ -179,7 +179,7 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				and(
 					eq(labOrders.organizationId, organizationId),
 					isNotNull(labOrders.doctorId),
-					inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed"]),
+					inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed", "installed"]),
 					eq(labOrders.isWarranty, false),
 					gte(
 						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,

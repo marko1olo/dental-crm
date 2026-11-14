@@ -25,7 +25,7 @@ export const EmrProtocolModalContainer: React.FC<EmrProtocolGeneratorModalProps>
 
 		return createPortal(
 			<div
-				className="fixed inset-0 z-50 flex items-center justify-center max-sm:items-end p-0 sm:p-4 lg:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+				className="fixed inset-0 z-[10060] flex items-center justify-center max-sm:items-end p-0 sm:p-4 lg:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Генератор клинических протоколов"

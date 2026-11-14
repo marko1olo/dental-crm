@@ -29,16 +29,16 @@ export function generateMedicalRecordPrintHtml(data: MedicalRecordData, config?:
 		cfg.isDraft ||
 		cfg.status === "draft" ||
 		cfg.isLocked === false ||
-		(data as any)?.isDraft ||
-		(data as any)?.status === "draft" ||
-		(data as any)?.isLocked === false,
+		data.isDraft ||
+		data.status === "draft" ||
+		data.isLocked === false,
 	);
 
 	const watermarkHtml = isDocDraft
 		? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'
 		: '<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>';
 
-	const revisionCount = (data as any)?.revisionCount ?? cfg.revisionCount ?? 0;
+	const revisionCount = data.revisionCount ?? cfg.revisionCount ?? 0;
 
 	return `<!DOCTYPE html>
 <html lang="ru">

@@ -8,7 +8,6 @@ import {
 	organizations,
 	outpatientVerifications,
 	patients,
-	patientToothDefects,
 	toothDefectsCatalog,
 	users,
 	visits,
@@ -106,7 +105,6 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		if (app) await app.close();
 		// Очистка тестовых записей
 		if (testPatientId) {
-			await db.delete(patientToothDefects).where(eq(patientToothDefects.patientId, testPatientId));
 			await db.delete(outpatientVerifications).where(eq(outpatientVerifications.patientId, testPatientId));
 			await db.delete(visits).where(eq(visits.patientId, testPatientId));
 			await db.delete(patients).where(eq(patients.id, testPatientId));
@@ -235,107 +233,6 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		const bodyCaries = JSON.parse(resCaries.body);
 		assert.ok(bodyCaries.count > 0);
 		assert.ok(bodyCaries.templates.every((t: any) => t.categoryId === 60));
-	});
-
-	test("Клинический контур пациента: назначение множественных патологий на зуб и челюсть, снятие и излечение", async () => {
-		// 1. Назначаем Кариес (defectId: 6) на зуб 16
-		const resCaries = await app.inject({
-			method: "POST",
-			url: `/api/patients/${testPatientId}/tooth-defects`,
-			headers: TEST_HEADERS,
-			payload: {
-				toothCode: "16",
-				defectId: 6, // Кариес
-				visitId: testVisitId,
-				comment: "Глубокая кариозная полость на дистальной поверхности",
-			},
-		});
-		assert.strictEqual(resCaries.statusCode, 201);
-		const bodyCaries = JSON.parse(resCaries.body);
-		assert.strictEqual(bodyCaries.success, true);
-		assert.strictEqual(bodyCaries.defect.toothCode, "16");
-
-		// 2. Назначаем Пломбу (defectId: 3) на ТОТ ЖЕ САМЫЙ зуб 16 (доказываем сосуществование множественных дефектов)
-		const resFilling = await app.inject({
-			method: "POST",
-			url: `/api/patients/${testPatientId}/tooth-defects`,
-			headers: TEST_HEADERS,
-			payload: {
-				toothCode: "16",
-				defectId: 3, // Пломба
-				visitId: testVisitId,
-				comment: "Старая несостоятельная композитная пломба на окклюзии",
-			},
-		});
-		assert.strictEqual(resFilling.statusCode, 201);
-
-		// 3. Назначаем дефект на всю челюсть "JU" (Верхняя челюсть)
-		const resJaw = await app.inject({
-			method: "POST",
-			url: `/api/patients/${testPatientId}/tooth-defects`,
-			headers: TEST_HEADERS,
-			payload: {
-				toothCode: "JU",
-				defectId: 10, // Пародонтит легкий
-				visitId: testVisitId,
-				comment: "Генерализованный процесс верхней челюсти",
-			},
-		});
-		assert.strictEqual(resJaw.statusCode, 201);
-
-		// 4. Проверяем активную одонтограмму пациента
-		const resGet = await app.inject({
-			method: "GET",
-			url: `/api/patients/${testPatientId}/tooth-defects`,
-			headers: TEST_HEADERS,
-		});
-		assert.strictEqual(resGet.statusCode, 200);
-		const bodyGet = JSON.parse(resGet.body);
-		assert.strictEqual(bodyGet.count, 3);
-
-		// Фильтр по зубу 16 — должно быть ровно 2 дефекта одновременно
-		const resTooth16 = await app.inject({
-			method: "GET",
-			url: `/api/patients/${testPatientId}/tooth-defects?toothCode=16`,
-			headers: TEST_HEADERS,
-		});
-		assert.strictEqual(resTooth16.statusCode, 200);
-		const bodyTooth16 = JSON.parse(resTooth16.body);
-		assert.strictEqual(bodyTooth16.count, 2);
-
-		// 5. Проверка отклонения невалидного номера зуба
-		const resInvalidTooth = await app.inject({
-			method: "POST",
-			url: `/api/patients/${testPatientId}/tooth-defects`,
-			headers: TEST_HEADERS,
-			payload: {
-				toothCode: "99",
-				defectId: 6,
-			},
-		});
-		assert.strictEqual(resInvalidTooth.statusCode, 400);
-
-		// 6. Излечение дефекта (resolveOnly = true)
-		const defectToResolve = bodyCaries.defect.id;
-		const resResolve = await app.inject({
-			method: "DELETE",
-			url: `/api/patients/${testPatientId}/tooth-defects/${defectToResolve}?resolveOnly=true`,
-			headers: TEST_HEADERS,
-		});
-		assert.strictEqual(resResolve.statusCode, 200);
-		const bodyResolve = JSON.parse(resResolve.body);
-		assert.strictEqual(bodyResolve.action, "resolved");
-		assert.ok(bodyResolve.defect.resolvedAt);
-
-		// После излечения в активных дефектах зуба 16 остался только 1 дефект (пломба)
-		const resActive = await app.inject({
-			method: "GET",
-			url: `/api/patients/${testPatientId}/tooth-defects?toothCode=16&activeOnly=true`,
-			headers: TEST_HEADERS,
-		});
-		const bodyActive = JSON.parse(resActive.body);
-		assert.strictEqual(bodyActive.count, 1);
-		assert.strictEqual(bodyActive.defects[0].defectId, 3);
 	});
 
 	test("Контур клинического аудита качества главным врачом: очередь, индикативный дедлайн и аудит карты", async () => {

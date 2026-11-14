@@ -88,8 +88,8 @@ export function EmkDiagnosisAndProtocolSection(
 	props: EmkDiagnosisAndProtocolSectionProps,
 ) {
 	const { isLocked, activeTooth, onOpenTemplatesModal } = props;
-	const visitNoteForm: Record<string, any> = props.visitNoteForm ?? {};
-	const updateVisitNoteField: (field: string, value: any) => void =
+	const visitNoteForm: Record<string, unknown> = props.visitNoteForm ?? {};
+	const updateVisitNoteField: (field: string, value: unknown) => void =
 		props.updateVisitNoteField ?? (() => {});
 	const quickSsotEntries = React.useMemo(
 		() => getAllOutpatientDentalDiagnoses().slice(0, 6),

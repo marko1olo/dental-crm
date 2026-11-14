@@ -39,14 +39,19 @@ describe("Pediatric FDI Numbering & Quadrants (Teeth 51..85)", () => {
 	it("PediatricTeethChart renders 20 teeth in primary mode and 24 teeth in mixed mode", () => {
 		const primaryHtml = renderToString(createElement(PediatricTeethChart, { mode: "primary", activeTooth: 54 }));
 		for (const tooth of [51, 52, 53, 54, 55, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 81, 82, 83, 84, 85]) {
-			assert.ok(primaryHtml.includes(`data-testid="pediatric-tooth-btn-${tooth}"`), `Primary renders ${tooth}`);
+			assert.ok(primaryHtml.includes(`data-testid="anatomical-tooth-cell-${tooth}"`), `Desktop primary arch renders ${tooth}`);
 		}
+		for (const tooth of [51, 52, 53, 54, 55]) {
+			assert.ok(primaryHtml.includes(`data-testid="pediatric-tooth-btn-${tooth}"`), `Mobile active quadrant Q5 renders ${tooth}`);
+		}
+		assert.ok(!primaryHtml.includes('data-testid="anatomical-tooth-cell-16"'), "Primary mode must NOT render 16");
 		assert.ok(!primaryHtml.includes('data-testid="pediatric-tooth-btn-16"'), "Primary mode must NOT render 16");
 
 		const mixedHtml = renderToString(createElement(PediatricTeethChart, { mode: "mixed", activeTooth: 16 }));
 		for (const six of [16, 26, 36, 46]) {
-			assert.ok(mixedHtml.includes(`data-testid="pediatric-tooth-btn-${six}"`), `Mixed renders ${six}`);
+			assert.ok(mixedHtml.includes(`data-testid="anatomical-tooth-cell-${six}"`), `Desktop mixed arch renders ${six}`);
 		}
+		assert.ok(mixedHtml.includes('data-testid="pediatric-tooth-btn-16"'), "Mobile mixed quadrant Q5 renders 16");
 	});
 });
 
@@ -64,17 +69,25 @@ describe("Milk Teeth Root Resorption Stages & Visualization", () => {
 	});
 
 	it("renders resorption badges on deciduous teeth when resorption > 0", () => {
-		const html = renderToString(createElement(PediatricTeethChart, {
-			mode: "primary", activeTooth: 74,
-			resorptionStages: { 74: 50, 85: 75, 51: 100 },
+		const resorptionStages = { 74: 50, 85: 75, 51: 100 } as const;
+		const htmlQ7 = renderToString(createElement(PediatricTeethChart, {
+			mode: "primary", activeTooth: 74, resorptionStages,
 		}));
-		assert.ok(html.includes('data-testid="tooth-resorption-badge-74"'));
-		assert.ok(html.includes("R50%"));
-		assert.ok(html.includes('data-testid="tooth-resorption-badge-85"'));
-		assert.ok(html.includes("R75%"));
-		assert.ok(html.includes('data-testid="tooth-resorption-badge-51"'));
-		assert.ok(html.includes("R100%"));
-		assert.ok(!html.includes('data-testid="tooth-resorption-badge-54"'));
+		assert.ok(htmlQ7.includes('data-testid="tooth-resorption-badge-74"'));
+		assert.ok(htmlQ7.includes("R50%"));
+
+		const htmlQ8 = renderToString(createElement(PediatricTeethChart, {
+			mode: "primary", activeTooth: 85, resorptionStages,
+		}));
+		assert.ok(htmlQ8.includes('data-testid="tooth-resorption-badge-85"'));
+		assert.ok(htmlQ8.includes("R75%"));
+
+		const htmlQ5 = renderToString(createElement(PediatricTeethChart, {
+			mode: "primary", activeTooth: 51, resorptionStages,
+		}));
+		assert.ok(htmlQ5.includes('data-testid="tooth-resorption-badge-51"'));
+		assert.ok(htmlQ5.includes("R100%"));
+		assert.ok(!htmlQ5.includes('data-testid="tooth-resorption-badge-54"'));
 	});
 
 	it("renders 1-click resorption selector buttons in active tooth toolbar for primary teeth", () => {

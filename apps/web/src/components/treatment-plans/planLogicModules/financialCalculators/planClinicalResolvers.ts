@@ -1,6 +1,22 @@
 import type { ToothData, TreatmentPlanDoctorOption, TreatmentPlanStage } from "../types.js";
 
-export function resolveDoctorOptions(staffRaw: any[] | undefined): readonly TreatmentPlanDoctorOption[] {
+export interface PlanStaffMemberInput {
+	readonly id: string;
+	readonly active?: boolean | undefined;
+	readonly role: string;
+	readonly name?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly specialties?: readonly string[] | undefined;
+	readonly specialty?: string | undefined;
+}
+
+type ToothWithLegacyFields = ToothData & {
+	readonly isCrown?: boolean | undefined;
+	readonly isBridge?: boolean | undefined;
+	readonly id?: number | undefined;
+};
+
+export function resolveDoctorOptions(staffRaw: readonly PlanStaffMemberInput[] | undefined): readonly TreatmentPlanDoctorOption[] {
 	const staff = staffRaw ?? [];
 	const activeStaff = staff.filter(
 		(s) =>
@@ -46,17 +62,21 @@ export function resolveOrthopedicTeeth(
 
 	const teethFromOdontogram = (effectiveTeethData || [])
 		.filter((t) => {
+			const legacy = t as ToothWithLegacyFields;
 			const s = String(t.state || "").toLowerCase();
 			return (
 				s.includes("crown") ||
 				s.includes("bridge") ||
 				s.includes("denture") ||
 				s.includes("implant") ||
-				Boolean((t as any).isCrown) ||
-				Boolean((t as any).isBridge)
+				Boolean(legacy.isCrown) ||
+				Boolean(legacy.isBridge)
 			);
 		})
-		.map((t) => (t as any).toothNumber ?? (t as any).id)
+		.map((t) => {
+			const legacy = t as ToothWithLegacyFields;
+			return t.toothNumber ?? legacy.id;
+		})
 		.filter((id): id is number => typeof id === "number" && id > 0);
 
 	if (teethFromOdontogram.length > 0) {

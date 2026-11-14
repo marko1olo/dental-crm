@@ -83,9 +83,11 @@ export function WorkspaceTopBarActions({
 
 	return (
 		<div className="top-actions">
-			{/* 1. Единственный Primary CTA всей клиники — «+ Запись» (на мобилках иконка 44x44px) */}
+			{/* 1. Единственный Primary CTA всей клиники — «+ Запись» (на мобилках иконка 44x44px, скрыта на экране расписания по Мандату 8am) */}
 			<button
-				className="primary-button min-h-[44px] min-w-[44px] px-2.5 sm:px-3 flex items-center justify-center gap-1.5"
+				className={`primary-button min-h-[44px] min-w-[44px] px-2.5 sm:px-3 flex items-center justify-center gap-1.5 ${effectiveView === "schedule" ? "hidden" : ""}`}
+				style={effectiveView === "schedule" ? { display: "none" } : undefined}
+				data-hidden={effectiveView === "schedule" ? "true" : undefined}
 				type="button"
 				id="topbar-booking-action-btn"
 				data-tour="schedule-booking"

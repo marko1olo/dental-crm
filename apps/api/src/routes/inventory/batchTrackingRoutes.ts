@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import {
 	requireResolvedOrganizationId,
@@ -135,8 +135,8 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 	const handleReceiveBatchRequest = async (
 		targetOrgId: string,
 		rawBody: unknown,
-		request: any,
-		reply: any,
+		request: FastifyRequest,
+		reply: FastifyReply,
 	) => {
 		const parsed = inventoryReceiveBatchBodySchema.safeParse(rawBody);
 		if (!parsed.success) {

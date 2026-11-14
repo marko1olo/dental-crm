@@ -346,7 +346,7 @@ export type PatientAdministrativeProfileSaveState =
 export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
 
 export type AppointmentScheduleDraft = {
-	patientId: string;
+	patientId?: string | null;
 	doctorUserId: string;
 	assistantUserId?: string | null;
 	chairId: string;

@@ -59,6 +59,33 @@ export function optionalUuid(value: unknown): string | null | undefined {
 
 export const clinicalPhaseCompletionValidationMessage = `Ошибка валидации: нужен patientId в формате UUID и completedPhaseCode из списка: ${CLINICAL_PHASE_CODES.join(", ")}.`;
 
+export const FDI_TOOTH_CODE_REGEX =
+	/^(1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])$/;
+
+export const clinicalPhaseCompletionSchema = z.object({
+	patientId: z.string().regex(UUID_PATTERN),
+	completedPhaseCode: z.enum(CLINICAL_PHASE_CODES),
+	treatmentPlanId: z
+		.string()
+		.regex(UUID_PATTERN)
+		.nullable()
+		.optional(),
+	assignedDoctorId: z
+		.string()
+		.regex(UUID_PATTERN)
+		.nullable()
+		.optional(),
+	toothCodes: z
+		.array(z.string().regex(FDI_TOOTH_CODE_REGEX))
+		.optional()
+		.default([]),
+	notes: z.string().nullable().optional(),
+});
+
+export type ClinicalPhaseCompletionInput = z.infer<
+	typeof clinicalPhaseCompletionSchema
+>;
+
 /**
  * POST /api/hr/recent-patients: тело раньше — bare cast
  * `request.body as { patientId?: unknown } | undefined`.

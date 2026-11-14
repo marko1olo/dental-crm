@@ -515,7 +515,7 @@ export class EgiszOutboxDispatcher {
 							entityType: "egisz_outbox",
 							entityId: row.id,
 							patientId: row.patientId,
-							payload: receipt as unknown as Record<string, unknown>,
+							payload: { ...receipt },
 						});
 					}
 

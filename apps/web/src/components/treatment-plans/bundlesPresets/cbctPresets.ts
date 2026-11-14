@@ -8,7 +8,7 @@ import { bundle, item, type ClinicalBundleDefinition } from "./types";
 
 export const cbctBundles: readonly ClinicalBundleDefinition[] = [
 	bundle({
-		id: "sinus_lift_closed_turnkey" as any,
+		id: "sinus_lift_closed_turnkey",
 		title: "Пакет: Закрытый синус-лифтинг под ключ (транскрестальный доступ + остеопластика Bio-Oss + анестезия)",
 		shortTitle: "Закрытый синус-лифтинг",
 		description: "Малоинвазивный подъем дна гайморовой пазухи через остеотомическое ложе имплантата при высоте кости 5-8 мм с внесением остеопластического биоматериала.",
@@ -29,7 +29,7 @@ export const cbctBundles: readonly ClinicalBundleDefinition[] = [
 	}),
 
 	bundle({
-		id: "sinus_lift_open_turnkey" as any,
+		id: "sinus_lift_open_turnkey",
 		title: "Пакет: Открытый синус-лифтинг под ключ (латеральное окно + остеопластика Bio-Oss + мембрана Bio-Gide + швы)",
 		shortTitle: "Открытый синус-лифтинг",
 		description: "Пьезохирургический латеральный синус-лифтинг при критической атрофии кости (< 5 мм) с аугментацией костным гранулятом и барьерной мембраной.",
@@ -52,7 +52,7 @@ export const cbctBundles: readonly ClinicalBundleDefinition[] = [
 	}),
 
 	bundle({
-		id: "crown_implant_zirconia_turnkey" as any,
+		id: "crown_implant_zirconia_turnkey",
 		title: "Пакет: Коронка ZrO2 на имплантате с винтовой фиксацией (скан + Ti-Base + коронка ZrO2 Katana ML)",
 		shortTitle: "Коронка на импланте ZrO2",
 		description: "Ортопедическая реабилитация на дентальном имплантате: 3D интраоральное сканирование со скан-боди, индивидуальное основание Ti-Base, фрезерованный диоксид циркония и винтовая фиксация.",

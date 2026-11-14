@@ -8,7 +8,7 @@
 
 import React from "react";
 import { showToast } from "../GlobalToast.js";
-import { PaymentModal } from "../finance/PaymentModal.js";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 import type { BillingInvoice } from "./invoiceTypes.js";
 import { InvoicesPrimaryModals } from "./invoices/InvoicesPrimaryModals.js";
 import { InvoicesSecondaryModals } from "./invoices/InvoicesSecondaryModals.js";
@@ -80,27 +80,47 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = (props) =
 			/>
 
 			{activePaymentInvoice && (
-				<PaymentModal
+				<CashRegisterStudioModal
 					isOpen={Boolean(activePaymentInvoice)}
 					onClose={() => setActivePaymentInvoice(null)}
+					mode="checkout"
+					initialTab="checkout"
+					totalDueRub={activePaymentInvoice.totalAmountRub}
 					amountRub={activePaymentInvoice.totalAmountRub}
+					amountKopecks={Math.round(activePaymentInvoice.totalAmountRub * 100)}
 					patientId={activePaymentInvoice.patientId}
 					patientName={activePaymentInvoice.patientName}
 					patientPhone={activePaymentInvoice.patientPhone}
-					doctorName={activePaymentInvoice.doctorName}
-					cashierName={currentDoctorName}
+					doctorFullName={activePaymentInvoice.doctorName}
+					cashierFullName={currentDoctorName}
 					clinicLegalName={clinicLegalName}
 					invoiceId={activePaymentInvoice.id}
-					onSuccess={(payload) => {
-						const isOffline = Boolean((payload as any)?.offlineBuffered);
+					onSuccess={(payload: unknown) => {
+						const result = typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : null;
+						const isOffline = Boolean(result?.offlineBuffered);
+						const method = typeof result?.method === "string" ? result.method : undefined;
+						const paidRub = typeof result?.totalRub === "number" ? result.totalRub : activePaymentInvoice.totalAmountRub;
+						const invoiceStatus: BillingInvoice["status"] = method === "warranty_100" || paidRub === 0 ? "warranty_100" : "paid";
+
 						onUpdateInvoice?.({
 							...activePaymentInvoice,
-							status: ((payload as any)?.method === "warranty_100" || (payload as any)?.totalRub === 0 ? "warranty_100" : "paid") as any,
-							paidAmountRub: (payload as any)?.totalRub ?? activePaymentInvoice.totalAmountRub,
+							status: invoiceStatus,
+							paidAmountRub: paidRub,
 							paidAt: new Date().toISOString(),
-							paymentMethod: (payload as any)?.method,
+							paymentMethod: method,
 							fiscalStatus: isOffline ? "pending_fiscal_sync" : "fiscalized",
 							isOfflineQueued: isOffline,
+						});
+						setActivePaymentInvoice(null);
+						showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
+					}}
+					onPaymentComplete={() => {
+						onUpdateInvoice?.({
+							...activePaymentInvoice,
+							status: "paid",
+							paidAmountRub: activePaymentInvoice.totalAmountRub,
+							paidAt: new Date().toISOString(),
+							fiscalStatus: "fiscalized",
 						});
 						setActivePaymentInvoice(null);
 						showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");

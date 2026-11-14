@@ -79,7 +79,7 @@ export function MarketingView({
 				<div className="marketing-recalls-container" data-testid="marketing-recalls-container">
 					<PatientRecallsHubModal
 						isOpen={true}
-						onClose={() => setActiveTab("promos")}
+						embedded={true}
 						clinicName={clinicName}
 					/>
 				</div>

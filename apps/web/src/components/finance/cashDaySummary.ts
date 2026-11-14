@@ -117,7 +117,8 @@ function paymentKopecks(payment: Payment): number {
 		)
 			return 0;
 		return parseKopecks(payment.amountRub);
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[paymentKopecks] Ошибка вычисления копеек для платежа:", err);
 		return 0;
 	}
 }

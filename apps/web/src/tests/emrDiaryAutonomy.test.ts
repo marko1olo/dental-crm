@@ -311,11 +311,11 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 			assert.ok(source.includes("clearTimeout"), "VisitAnamnesisTab обязан очищать таймер при размонтировании");
 		});
 
-		it("3.4. TreatmentEstimator.tsx кнопка 'В кассу (54-ФЗ)' не имеет мертвого disabled блокировщика", () => {
-			const estPath = path.resolve(webSrcDir, "components/odontogram/TreatmentEstimator.tsx");
+		it("3.4. TreatmentPlanPrimaryActions.tsx кнопка 'В кассу' не имеет мертвого disabled блокировщика", () => {
+			const estPath = path.resolve(webSrcDir, "components/treatment-plans/toolbar/TreatmentPlanPrimaryActions.tsx");
 			const source = fs.readFileSync(estPath, "utf-8");
-			assert.ok(!source.includes("disabled={treatmentPlanItemsForFiscalModal.length === 0}"), "Кнопка фискализации 54-ФЗ не должна быть заблокирована disabled");
-			assert.ok(source.includes("В смете нет позиций с подтвержденной ценой"), "Кнопка должна выводить информативное уведомление при нажатии");
+			assert.ok(!source.includes("disabled"), "Кнопка фискализации/кассы не должна быть заблокирована disabled");
+			assert.ok(source.includes("tp-quick-cashier-btn"), "Кнопка 'В кассу' обязана присутствовать в тулбаре");
 		});
 
 		it("3.5. VisiographAnalyzer.tsx перенос находок не заблокирован при пустом выделении", () => {

@@ -1,5 +1,5 @@
 /**
- * periodontalDetailedProbeInquisition.test.ts — Детальное зондирование и синтез протокола Формы 043/у.
+ * periodontalDetailedProbeInquisition.test.ts — Детальное зондирование и синтез клинического протокола ЭМК.
  * Мандат 8b: <= 120 строк.
  */
 
@@ -8,7 +8,7 @@ import {
 	calculateClinicalAttachmentLevel,
 	calculatePerioIndices,
 	createDefaultPerioTeeth,
-	generateComprehensivePerio043Text,
+	generateComprehensivePerioProtocolText,
 	PERIO_SITE_KEYS,
 } from "@dental/shared";
 import assert from "node:assert/strict";
@@ -19,7 +19,7 @@ import {
 	applyPeriodontitisSeverePreset,
 } from "../perioCatalogData";
 
-describe("12. Detailed Probing & 043 Protocol Synthesis", () => {
+describe("12. Detailed Probing & Clinical Protocol Synthesis", () => {
 	it("isolated pathology on tooth 16 does not require entering all 192 points", () => {
 		const teeth = applyHealthyPeriodontiumPreset(createDefaultPerioTeeth());
 		const updated = teeth.map((tooth) => {
@@ -50,10 +50,10 @@ describe("12. Detailed Probing & 043 Protocol Synthesis", () => {
 		assert.ok(summary.deepPocketsCount > 0);
 	});
 
-	it("generateComprehensivePerio043Text synthesizes structured summary", () => {
+	it("generateComprehensivePerioProtocolText synthesizes structured summary", () => {
 		const teeth = applyPeriodontitisModeratePreset(createDefaultPerioTeeth());
 		const summary = calculatePerioIndices(teeth);
-		const protocol = generateComprehensivePerio043Text(teeth, summary, {
+		const protocol = generateComprehensivePerioProtocolText(teeth, summary, {
 			doctorName: "Д-р Смирнова Е.А.",
 			customNotes: "SRP в области секстанта S1",
 		});

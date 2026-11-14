@@ -72,6 +72,8 @@ export function calculateInstallmentOption(
 	// 13% социальный налоговый вычет по лечению (ст. 219 НК РФ)
 	const ndflRefundRub = Math.round(safeTotalRub * 0.13);
 
+	const providerMeta = BANK_PROVIDERS[bankProvider] ?? BANK_PROVIDERS.tinkoff;
+
 	return {
 		months,
 		monthlyPaymentRub,
@@ -83,7 +85,7 @@ export function calculateInstallmentOption(
 		overpaymentRub: 0,
 		interestRatePercent: 0,
 		bankProvider,
-		bankNameRu: BANK_PROVIDERS[bankProvider].nameRu,
+		bankNameRu: providerMeta?.nameRu ?? "Банк-партнер",
 		ndflRefundRub,
 	};
 }
@@ -212,7 +214,8 @@ export function getPlanCloserRootScreen(plan: PendingTreatmentPlanSummary): Clos
 		"Выберите действие, чтобы ознакомиться с деталями:",
 	].join("\n");
 
-	const replyMarkup = buildRootScreenKeyboard(plan.planId, plan.installments[12].monthlyPaymentFormatted);
+	const monthlyFormatted = plan.installments[12]?.monthlyPaymentFormatted ?? "";
+	const replyMarkup = buildRootScreenKeyboard(plan.planId, monthlyFormatted);
 
 	return { text, replyMarkup };
 }
@@ -224,7 +227,7 @@ export function getPlanStagesScreen(plan: PendingTreatmentPlanSummary): CloserSc
 	const teethList = plan.teeth.length > 0 ? plan.teeth.join(", ") : "16, 26, 46";
 	const totalFormatted = formatRub(plan.totalPriceRub);
 
-	const stagesLines = plan.stages.map((st) => {
+	const stagesLines = (plan.stages ?? []).map((st) => {
 		const priceFormatted = formatRub(st.priceRub);
 		return [
 			`<b>Этап ${st.stageIndex}: ${st.name}</b> (${priceFormatted} ₽)`,
@@ -246,7 +249,8 @@ export function getPlanStagesScreen(plan: PendingTreatmentPlanSummary): CloserSc
 		"Вам не нужно оплачивать весь план сразу! Вы можете начать только с первого этапа, а остальные подключать по мере готовности и удобного вам графика.",
 	].join("\n");
 
-	const replyMarkup = buildStagesScreenKeyboard(plan.planId, plan.installments[12].monthlyPaymentFormatted);
+	const monthlyFormatted = plan.installments[12]?.monthlyPaymentFormatted ?? "";
+	const replyMarkup = buildStagesScreenKeyboard(plan.planId, monthlyFormatted);
 
 	return { text, replyMarkup };
 }
@@ -287,7 +291,8 @@ export function getInstallmentCalcScreen(
 	// Кнопки переключения срока с визуальным выделением выбранного
 	const termButtons: TelegramInlineButton[] = ([6, 12, 24] as const).map((m) => {
 		const isCurrent = m === selectedMonths;
-		const amount = formatRub(allOptions[m].monthlyPaymentRub);
+		const option = allOptions[m];
+		const amount = option ? formatRub(option.monthlyPaymentRub) : "0";
 		return {
 			text: isCurrent ? `• ${m} мес (${amount} ₽/м) •` : `${m} мес (${amount} ₽/м)`,
 			callback_data: `closer:calc:${plan.planId}:${m}`,
@@ -374,8 +379,11 @@ export function getObjectionFearScreen(plan: PendingTreatmentPlanSummary): Close
  * Экран 7: Отработка возражения «Дорого / не рассчитывал на такую сумму».
  */
 export function getObjectionCostScreen(plan: PendingTreatmentPlanSummary): CloserScreenResult {
-	const stage1 = formatRub(plan.stages[0]?.priceRub ?? 12000);
+	const firstStage = plan.stages[0];
+	const stage1 = formatRub(firstStage?.priceRub ?? 12000);
 	const ndflAmount = formatRub(Math.round(plan.totalPriceRub * 0.13));
+	const inst24Formatted = plan.installments[24]?.monthlyPaymentFormatted ?? "0 ₽/мес";
+	const inst12Formatted = plan.installments[12]?.monthlyPaymentFormatted ?? "0 ₽/мес";
 
 	const text = [
 		"💰 <b>Смета выглядит весомо, если смотреть на всю сумму сразу</b>",
@@ -384,7 +392,7 @@ export function getObjectionCostScreen(plan: PendingTreatmentPlanSummary): Close
 		"",
 		`1. <b>Поэтапная оплата:</b> начните только с Этапа 1 (всего ${stage1} ₽) для устранения воспаления и купирования рисков.`,
 		"",
-		`2. <b>Беспроцентная рассрочка 0%:</b> от ${plan.installments[24].monthlyPaymentFormatted} без первого взноса и переплат (проценты банку оплачивает клиника).`,
+		`2. <b>Беспроцентная рассрочка 0%:</b> от ${inst24Formatted} без первого взноса и переплат (проценты банку оплачивает клиника).`,
 		"",
 		`3. <b>Налоговый вычет 13%:</b> государство вернет вам до <b>${ndflAmount} ₽</b> на счет. Мы бесплатно подготовим весь пакет справок КНД 1151156.`,
 		"",
@@ -394,7 +402,7 @@ export function getObjectionCostScreen(plan: PendingTreatmentPlanSummary): Close
 	const replyMarkup = buildObjectionCostKeyboard(
 		plan.planId,
 		stage1,
-		plan.installments[12].monthlyPaymentFormatted,
+		inst12Formatted,
 	);
 
 	return { text, replyMarkup };

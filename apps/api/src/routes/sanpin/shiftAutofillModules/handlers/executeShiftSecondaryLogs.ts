@@ -42,7 +42,7 @@ export async function executeShiftBactericidalAndClimateLogs(
 				operatingMode: "continuous_presence" as const,
 				cumulativeHoursAfterSession: nextHours,
 				operatorId,
-				notes: "⚡ 1-Клик автопилот смены: предсменная дезинфекция воздуха",
+				notes: "Автопилот смены: предсменная дезинфекция воздуха",
 			};
 		});
 		await tx.insert(bactericidalIrradiatorLogs).values(bactLogsToInsert);
@@ -72,7 +72,7 @@ export async function executeShiftBactericidalAndClimateLogs(
 				isWithinNorm: true,
 				deviationReason: null,
 				operatorId,
-				notes: "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
+				notes: "Автопилот смены: норма СанПиН 3.3686-21",
 			})),
 		);
 	}
@@ -90,6 +90,6 @@ export async function executeShiftBactericidalAndClimateLogs(
 		disposalCompany: "ООО «ЭкоМедСервис»",
 		transferActNumber: `АКТ-Б-${todayStr.replace(/-/g, "")}`,
 		responsibleStaffId: operatorId,
-		notes: "⚡ 1-Клик автопилот смены: сбор и обеззараживание отходов класса Б",
+		notes: "Автопилот смены: сбор и обеззараживание отходов класса Б",
 	});
 }

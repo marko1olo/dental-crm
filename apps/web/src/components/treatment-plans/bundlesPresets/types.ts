@@ -18,7 +18,8 @@ export type ClinicalBundleId =
 	| "crown_metalloceramic_turnkey"
 	| "crown_zirconia_turnkey"
 	| "impression_asilicone_2jaws"
-	| string;
+	| CbctBundleId
+	| (string & {});
 
 export type ClinicalBundleCategory =
 	| "therapy"

@@ -38,10 +38,6 @@ export {
 	type FamilyWalletSpendSectionProps,
 } from "./FamilyWalletSpendSection";
 
-export {
-	FamilyWalletTransferSection,
-	type FamilyWalletTransferSectionProps,
-} from "./FamilyWalletTransferSection";
 export type {
 	FamilyCertificateItem,
 	FamilyGroupDetails,

@@ -1,4 +1,4 @@
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, AppointmentLabStatusInfo, Dashboard } from "@dental/shared";
 import type { ScheduleDensityMode, DoctorSpecialtyTheme } from "../appointmentCardHelpers";
 
 export type AppointmentStatusType =
@@ -95,7 +95,7 @@ export interface AppointmentProcedureBadgeProps {
 	teethList: string[];
 	docTheme: DoctorSpecialtyTheme | null;
 	durationMin: number;
-	labStatusInfo?: any;
+	labStatusInfo?: AppointmentLabStatusInfo | null | undefined;
 }
 
 export interface AppointmentQuickActionsMenuProps {

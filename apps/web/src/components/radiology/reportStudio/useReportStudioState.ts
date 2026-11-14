@@ -3,7 +3,8 @@
  * Manages layout presets, sheet frames, drag/resize math, print settings and hotkeys.
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { showToast } from "../../GlobalToast.js";
 import {
 	DEFAULT_PRINT_SETTINGS,
@@ -18,8 +19,11 @@ import {
 export function useReportStudioState({
 	isOpen,
 	onClose,
+	patientName = "",
 	initialImages = [],
-}: Pick<RadiologyReportStudioModalProps, "isOpen" | "onClose" | "initialImages">) {
+}: Pick<RadiologyReportStudioModalProps, "isOpen" | "onClose" | "initialImages"> & {
+	patientName?: string | undefined;
+}) {
 	// Print & Page Settings
 	const [settings, setSettings] = useState<ReportPrintSettings>(DEFAULT_PRINT_SETTINGS);
 	const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -27,110 +31,154 @@ export function useReportStudioState({
 	const [activeLayout, setActiveLayout] = useState<RadiologyReportLayoutPreset>("two_vertical");
 
 	// Clinical Conclusion & Doctor Findings
-	const [conclusionText, setConclusionText] = useState<string>(
-		"Зуб 16: Корневые каналы обтурированы до физиологического апекса, деструкции костной ткани не выявлено. Периодонтальная щель равномерная.",
-	);
+	const [conclusionText, setConclusionText] = useState<string>(() => {
+		const firstTooth = initialImages[0]?.toothFdi;
+		if (firstTooth) {
+			return `Зуб ${firstTooth}: Корневые каналы обтурированы до физиологического апекса, деструкции костной ткани не выявлено. Периодонтальная щель равномерная.`;
+		}
+		if (isDemoShowcaseMode()) {
+			return "Зуб 16: Корневые каналы обтурированы до физиологического апекса, деструкции костной ткани не выявлено. Периодонтальная щель равномерная.";
+		}
+		return "Рентгенологическое заключение: Патологических изменений костной ткани в периапикальной области не выявлено. Периодонтальная щель равномерная.";
+	});
 
-	// Layout frames state (Default: 2 stacked frames matching clinical protocol)
+	// Layout frames state (Default: frames matching clinical studies)
 	const [frames, setFrames] = useState<ReportFrameItem[]>(() => {
-		const defaultDate = "16.05.2024";
-		const sample1 = initialImages[0]?.imageUrl || "/radiology/sample_rvg_tooth16.jpg";
-		const sample2 = initialImages[1]?.imageUrl || "/radiology/sample_rvg_tooth16.jpg";
+		const today = new Date().toLocaleDateString("ru-RU");
 
-		return [
-			{
-				id: "frame-1",
+		if (initialImages.length > 0) {
+			return initialImages.slice(0, 2).map((img, idx) => ({
+				id: `frame-${idx + 1}`,
 				type: "image",
 				x: 5,
-				y: 2,
+				y: idx === 0 ? 2 : 50,
 				width: 90,
 				height: 44,
-				imageUrl: sample1,
-				toothFdi: initialImages[0]?.toothFdi || "16",
-				modalityLabel: initialImages[0]?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
-				dapDoseDgyCm2: initialImages[0]?.dapDoseDgyCm2 ?? 0.024,
-				capturedAt: initialImages[0]?.capturedAt || defaultDate,
+				imageUrl: img.imageUrl,
+				toothFdi: img.toothFdi || "",
+				modalityLabel: img.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+				dapDoseDgyCm2: img.dapDoseDgyCm2 ?? 0.024,
+				capturedAt: img.capturedAt ? img.capturedAt.split(" ")[0] : today,
 				zoomRatioPercent: 100.0,
-			},
-			{
-				id: "frame-2",
-				type: "image",
-				x: 5,
-				y: 50,
-				width: 90,
-				height: 44,
-				imageUrl: sample2,
-				toothFdi: initialImages[1]?.toothFdi || "13",
-				modalityLabel: initialImages[1]?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
-				dapDoseDgyCm2: initialImages[1]?.dapDoseDgyCm2 ?? 0.024,
-				capturedAt: initialImages[1]?.capturedAt || "13.05.2024",
-				zoomRatioPercent: 100.0,
-			},
-		];
+			}));
+		}
+
+		if (isDemoShowcaseMode()) {
+			return [
+				{
+					id: "frame-1",
+					type: "image",
+					x: 5,
+					y: 2,
+					width: 90,
+					height: 44,
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "16",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+					zoomRatioPercent: 100.0,
+				},
+				{
+					id: "frame-2",
+					type: "image",
+					x: 5,
+					y: 50,
+					width: 90,
+					height: 44,
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "13",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+					zoomRatioPercent: 100.0,
+				},
+			];
+		}
+
+		return [];
 	});
 
 	const [selectedFrameId, setSelectedFrameId] = useState<string | null>("frame-1");
 
 	// Available Patient Studies for Bottom Filmstrip
-	const availableStudies: PatientStudyThumbnail[] =
-		initialImages.length > 0
-			? initialImages.map((img, idx) => ({
-					id: `study-${idx}`,
-					imageUrl: img.imageUrl,
-					toothFdi: img.toothFdi || "16",
-					modalityLabel: img.modalityLabel || "IO-сенсор",
-					dapDoseDgyCm2: img.dapDoseDgyCm2 ?? 0.024,
-					capturedAt: img.capturedAt || "16.05.2024 08:46:21",
-				}))
-			: [
-					{
-						id: "study-0",
-						imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-						toothFdi: "16",
-						modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-						dapDoseDgyCm2: 0.024,
-						capturedAt: "16.05.2024 08:46:21",
-					},
-					{
-						id: "study-1",
-						imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-						toothFdi: "13",
-						modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-						dapDoseDgyCm2: 0.024,
-						capturedAt: "13.05.2024 08:37:25",
-					},
-					{
-						id: "study-2",
-						imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-						toothFdi: "26",
-						modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-						dapDoseDgyCm2: 0.024,
-						capturedAt: "15.04.2024 15:00:52",
-					},
-					{
-						id: "study-3",
-						imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-						toothFdi: "36",
-						modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-						dapDoseDgyCm2: 0.024,
-						capturedAt: "11.08.2023 13:41:01",
-					},
-					{
-						id: "study-4",
-						imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-						toothFdi: "46",
-						modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-						dapDoseDgyCm2: 0.024,
-						capturedAt: "13.07.2023 12:48:40",
-					},
-				];
+	const availableStudies: PatientStudyThumbnail[] = useMemo(() => {
+		const today = new Date().toLocaleString("ru-RU");
+		if (initialImages.length > 0) {
+			return initialImages.map((img, idx) => ({
+				id: `study-${idx}`,
+				imageUrl: img.imageUrl,
+				toothFdi: img.toothFdi || "",
+				modalityLabel: img.modalityLabel || "IO-сенсор",
+				dapDoseDgyCm2: img.dapDoseDgyCm2 ?? 0.024,
+				capturedAt: img.capturedAt || today,
+			}));
+		}
 
-	const [selectedStudyIndex, setSelectedStudyIndex] = useState<number>(1);
+		if (isDemoShowcaseMode()) {
+			return [
+				{
+					id: "study-0",
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "16",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+				},
+				{
+					id: "study-1",
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "13",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+				},
+				{
+					id: "study-2",
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "26",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+				},
+				{
+					id: "study-3",
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "36",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+				},
+				{
+					id: "study-4",
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					toothFdi: "46",
+					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: 0.024,
+					capturedAt: today,
+				},
+			];
+		}
+
+		return [];
+	}, [initialImages]);
+
+	const [selectedStudyIndex, setSelectedStudyIndex] = useState<number>(0);
 
 	const handleSelectStudyFromFilmstrip = useCallback((index: number) => {
 		setSelectedStudyIndex(index);
 		const study = availableStudies[index];
 		if (!study) return;
+
+		// Hydrate clinical conclusion with tooth FDI
+		if (study.toothFdi) {
+			setConclusionText((prev) => {
+				if (prev.includes("Корневые каналы обтурированы") || prev.includes("Рентгенологическое заключение")) {
+					return `Зуб ${study.toothFdi}: Корневые каналы обтурированы до физиологического апекса, деструкции костной ткани не выявлено. Периодонтальная щель равномерная.`;
+				}
+				return prev;
+			});
+		}
 
 		if (selectedFrameId) {
 			setFrames((prev) =>
@@ -146,7 +194,7 @@ export function useReportStudioState({
 					};
 				}),
 			);
-			showToast(`Снимок зуба #${study.toothFdi} помещен в активную рамку`, "info");
+			showToast(`Снимок ${study.toothFdi ? `зуба #${study.toothFdi}` : ""} помещен в активную рамку`, "info");
 		} else {
 			const newId = `frame-${Date.now()}`;
 			setFrames((prev) => [
@@ -167,7 +215,7 @@ export function useReportStudioState({
 				},
 			]);
 			setSelectedFrameId(newId);
-			showToast(`Добавлен снимок зуба #${study.toothFdi}`, "info");
+			showToast(`Добавлен снимок ${study.toothFdi ? `зуба #${study.toothFdi}` : ""}`, "info");
 		}
 	}, [availableStudies, selectedFrameId]);
 
@@ -178,10 +226,12 @@ export function useReportStudioState({
 	// Apply Pre-configured Template Layouts
 	const handleApplyLayout = useCallback((type: RadiologyReportLayoutPreset) => {
 		setActiveLayout(type);
-		const sample1 = availableStudies[0]?.imageUrl || "/radiology/sample_rvg_tooth16.jpg";
-		const sample2 = availableStudies[1]?.imageUrl || "/radiology/sample_rvg_tooth16.jpg";
-		const sample3 = availableStudies[2]?.imageUrl || "/radiology/sample_rvg_tooth16.jpg";
-		const sample4 = availableStudies[3]?.imageUrl || "/radiology/sample_rvg_tooth16.jpg";
+		const today = new Date().toLocaleDateString("ru-RU");
+		const s1 = availableStudies[0];
+		const s2 = availableStudies[1];
+		const s3 = availableStudies[2];
+		const s4 = availableStudies[3];
+		const fallbackImg = isDemoShowcaseMode() ? "/radiology/sample_rvg_tooth16.jpg" : "";
 
 		if (type === "single") {
 			setFrames([
@@ -192,11 +242,11 @@ export function useReportStudioState({
 					y: 2,
 					width: 88,
 					height: 92,
-					imageUrl: sample1,
-					toothFdi: "16",
-					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-					dapDoseDgyCm2: 0.024,
-					capturedAt: "16.05.2024",
+					imageUrl: s1?.imageUrl || fallbackImg,
+					toothFdi: s1?.toothFdi || "",
+					modalityLabel: s1?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: s1?.dapDoseDgyCm2 ?? 0.024,
+					capturedAt: s1?.capturedAt ? s1.capturedAt.split(" ")[0] : today,
 					zoomRatioPercent: 100.0,
 				},
 			]);
@@ -209,11 +259,11 @@ export function useReportStudioState({
 					y: 2,
 					width: 90,
 					height: 45,
-					imageUrl: sample1,
-					toothFdi: "16",
-					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-					dapDoseDgyCm2: 0.024,
-					capturedAt: "16.05.2024",
+					imageUrl: s1?.imageUrl || fallbackImg,
+					toothFdi: s1?.toothFdi || "",
+					modalityLabel: s1?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: s1?.dapDoseDgyCm2 ?? 0.024,
+					capturedAt: s1?.capturedAt ? s1.capturedAt.split(" ")[0] : today,
 					zoomRatioPercent: 100.0,
 				},
 				{
@@ -223,11 +273,11 @@ export function useReportStudioState({
 					y: 50,
 					width: 90,
 					height: 45,
-					imageUrl: sample2,
-					toothFdi: "13",
-					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-					dapDoseDgyCm2: 0.024,
-					capturedAt: "13.05.2024",
+					imageUrl: s2?.imageUrl || s1?.imageUrl || fallbackImg,
+					toothFdi: s2?.toothFdi || "",
+					modalityLabel: s2?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: s2?.dapDoseDgyCm2 ?? 0.024,
+					capturedAt: s2?.capturedAt ? s2.capturedAt.split(" ")[0] : today,
 					zoomRatioPercent: 100.0,
 				},
 			]);
@@ -240,11 +290,11 @@ export function useReportStudioState({
 					y: 10,
 					width: 45,
 					height: 78,
-					imageUrl: sample1,
-					toothFdi: "16",
-					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-					dapDoseDgyCm2: 0.024,
-					capturedAt: "16.05.2024",
+					imageUrl: s1?.imageUrl || fallbackImg,
+					toothFdi: s1?.toothFdi || "",
+					modalityLabel: s1?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: s1?.dapDoseDgyCm2 ?? 0.024,
+					capturedAt: s1?.capturedAt ? s1.capturedAt.split(" ")[0] : today,
 					zoomRatioPercent: 100.0,
 				},
 				{
@@ -254,20 +304,20 @@ export function useReportStudioState({
 					y: 10,
 					width: 45,
 					height: 78,
-					imageUrl: sample2,
-					toothFdi: "26",
-					modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-					dapDoseDgyCm2: 0.024,
-					capturedAt: "15.04.2024",
+					imageUrl: s2?.imageUrl || s1?.imageUrl || fallbackImg,
+					toothFdi: s2?.toothFdi || "",
+					modalityLabel: s2?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+					dapDoseDgyCm2: s2?.dapDoseDgyCm2 ?? 0.024,
+					capturedAt: s2?.capturedAt ? s2.capturedAt.split(" ")[0] : today,
 					zoomRatioPercent: 100.0,
 				},
 			]);
 		} else if (type === "grid_four") {
 			setFrames([
-				{ id: "frame-1", type: "image", x: 3, y: 2, width: 45, height: 45, imageUrl: sample1, toothFdi: "16", modalityLabel: "IO-сенсор", dapDoseDgyCm2: 0.024, capturedAt: "16.05.2024", zoomRatioPercent: 100.0 },
-				{ id: "frame-2", type: "image", x: 52, y: 2, width: 45, height: 45, imageUrl: sample2, toothFdi: "13", modalityLabel: "IO-сенсор", dapDoseDgyCm2: 0.024, capturedAt: "13.05.2024", zoomRatioPercent: 100.0 },
-				{ id: "frame-3", type: "image", x: 3, y: 50, width: 45, height: 45, imageUrl: sample3, toothFdi: "26", modalityLabel: "IO-сенсор", dapDoseDgyCm2: 0.024, capturedAt: "15.04.2024", zoomRatioPercent: 100.0 },
-				{ id: "frame-4", type: "image", x: 52, y: 50, width: 45, height: 45, imageUrl: sample4, toothFdi: "36", modalityLabel: "IO-сенсор", dapDoseDgyCm2: 0.024, capturedAt: "11.08.2023", zoomRatioPercent: 100.0 },
+				{ id: "frame-1", type: "image", x: 3, y: 2, width: 45, height: 45, imageUrl: s1?.imageUrl || fallbackImg, toothFdi: s1?.toothFdi || "", modalityLabel: s1?.modalityLabel || "IO-сенсор", dapDoseDgyCm2: s1?.dapDoseDgyCm2 ?? 0.024, capturedAt: s1?.capturedAt ? s1.capturedAt.split(" ")[0] : today, zoomRatioPercent: 100.0 },
+				{ id: "frame-2", type: "image", x: 52, y: 2, width: 45, height: 45, imageUrl: s2?.imageUrl || fallbackImg, toothFdi: s2?.toothFdi || "", modalityLabel: s2?.modalityLabel || "IO-сенсор", dapDoseDgyCm2: s2?.dapDoseDgyCm2 ?? 0.024, capturedAt: s2?.capturedAt ? s2.capturedAt.split(" ")[0] : today, zoomRatioPercent: 100.0 },
+				{ id: "frame-3", type: "image", x: 3, y: 50, width: 45, height: 45, imageUrl: s3?.imageUrl || fallbackImg, toothFdi: s3?.toothFdi || "", modalityLabel: s3?.modalityLabel || "IO-сенсор", dapDoseDgyCm2: s3?.dapDoseDgyCm2 ?? 0.024, capturedAt: s3?.capturedAt ? s3.capturedAt.split(" ")[0] : today, zoomRatioPercent: 100.0 },
+				{ id: "frame-4", type: "image", x: 52, y: 50, width: 45, height: 45, imageUrl: s4?.imageUrl || fallbackImg, toothFdi: s4?.toothFdi || "", modalityLabel: s4?.modalityLabel || "IO-сенсор", dapDoseDgyCm2: s4?.dapDoseDgyCm2 ?? 0.024, capturedAt: s4?.capturedAt ? s4.capturedAt.split(" ")[0] : today, zoomRatioPercent: 100.0 },
 			]);
 		}
 		setSelectedFrameId("frame-1");
@@ -276,6 +326,8 @@ export function useReportStudioState({
 
 	const handleAddImageFrame = useCallback(() => {
 		const newId = `frame-${Date.now()}`;
+		const currentStudy = availableStudies[selectedStudyIndex] || availableStudies[0];
+		const today = new Date().toLocaleDateString("ru-RU");
 		const newFrame: ReportFrameItem = {
 			id: newId,
 			type: "image",
@@ -283,16 +335,16 @@ export function useReportStudioState({
 			y: 15,
 			width: 70,
 			height: 42,
-			imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-			toothFdi: "16",
-			modalityLabel: "IO-сенсор (Внутриротовой сенсор)",
-			dapDoseDgyCm2: 0.024,
-			capturedAt: new Date().toLocaleDateString("ru-RU"),
+			imageUrl: currentStudy?.imageUrl || (isDemoShowcaseMode() ? "/radiology/sample_rvg_tooth16.jpg" : ""),
+			toothFdi: currentStudy?.toothFdi || "",
+			modalityLabel: currentStudy?.modalityLabel || "IO-сенсор (Внутриротовой сенсор)",
+			dapDoseDgyCm2: currentStudy?.dapDoseDgyCm2 ?? 0.024,
+			capturedAt: currentStudy?.capturedAt ? currentStudy.capturedAt.split(" ")[0] : today,
 			zoomRatioPercent: 100.0,
 		};
 		setFrames((prev) => [...prev, newFrame]);
 		setSelectedFrameId(newId);
-	}, []);
+	}, [availableStudies, selectedStudyIndex]);
 
 	const handleAddTextFrame = useCallback(() => {
 		const newId = `frame-${Date.now()}`;

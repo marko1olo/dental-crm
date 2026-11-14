@@ -39,10 +39,12 @@ export class CopilotStreamManager {
 	}
 
 	public subscribe(organizationId: string, callback: (alert: ProactiveAlertCard) => void): () => void {
-		if (!this.subscribers.has(organizationId)) {
-			this.subscribers.set(organizationId, new Set());
+		let orgSubs = this.subscribers.get(organizationId);
+		if (!orgSubs) {
+			orgSubs = new Set();
+			this.subscribers.set(organizationId, orgSubs);
 		}
-		this.subscribers.get(organizationId)!.add(callback);
+		orgSubs.add(callback);
 		return () => {
 			this.subscribers.get(organizationId)?.delete(callback);
 		};

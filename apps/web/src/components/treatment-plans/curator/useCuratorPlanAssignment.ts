@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { type CuratorFunnelStage, type CuratorPlanAssignmentPayload, curatorPlanAssignmentPayloadSchema } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { DOCTOR_SELF_CURATOR_ID, isDoctorSelfCurator } from "./curatorConstants";
+import { DOCTOR_SELF_CURATOR_ID, isDoctorSelfCurator, type CuratorStaffMember } from "./curatorConstants";
 import { persistCuratorAdministrativeProfile } from "./curatorApi";
 
 export interface UseCuratorPlanAssignmentParams {
@@ -16,7 +16,7 @@ export interface UseCuratorPlanAssignmentParams {
 	readonly treatmentPlanId: string;
 	readonly currentCuratorId?: string | null | undefined;
 	readonly currentStage?: CuratorFunnelStage | undefined;
-	readonly staffList: readonly any[];
+	readonly staffList: readonly CuratorStaffMember[];
 	readonly onClose: () => void;
 	readonly onAssigned?: ((payload: CuratorPlanAssignmentPayload) => void) | undefined;
 	readonly onApprovePlan?: (() => void) | undefined;

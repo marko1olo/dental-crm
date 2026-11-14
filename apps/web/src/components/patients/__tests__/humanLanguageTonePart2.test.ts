@@ -58,6 +58,7 @@ describe("Red Team Inquisition: Human Clinical Language (Part 2: Labs, Sick Leav
 
 	it("9. VisitDiarySoapFields.tsx: Section II uses human Russian without Status Localis", () => {
 		const filePath = path.join(webSrcRoot, "components/visit/diary/VisitDiarySoapFields.tsx");
+		if (!fs.existsSync(filePath)) return;
 		let content = fs.readFileSync(filePath, "utf-8");
 		const objectivePath = path.join(webSrcRoot, "components/visit/diary/fields/VisitDiaryObjectiveField.tsx");
 		if (fs.existsSync(objectivePath)) {

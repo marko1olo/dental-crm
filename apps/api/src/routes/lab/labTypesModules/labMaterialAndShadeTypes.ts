@@ -45,8 +45,10 @@ export function validateFdiToothNotation(value: string | null | undefined): bool
 }
 
 export const toothFdiSchema = z
-	.string()
-	.trim()
+	.union([
+		z.string().trim(),
+		z.array(z.union([z.string(), z.number()])).transform((arr) => arr.map(String).join(",")),
+	])
 	.refine(validateFdiToothNotation, {
 		message: "Недопустимый номер зуба в заказе ЗТЛ. Используйте номера FDI (11–48, 51–85, 91–98).",
 	})
@@ -82,6 +84,7 @@ export const createLabOrderSchema = z.object({
 	doctorName: z.string().trim().optional().nullable(),
 	toothFdi: toothFdiSchema.optional().nullable(),
 	teethFdi: toothFdiSchema.optional().nullable(),
+	materialId: z.string().trim().optional().nullable(),
 	material: z.string().trim().optional().nullable(),
 	materialName: z.string().trim().optional().nullable(),
 	construction: z.string().trim().optional().nullable(),

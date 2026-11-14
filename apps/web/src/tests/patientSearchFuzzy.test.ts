@@ -469,9 +469,9 @@ describe("Fuzzy Levenshtein Patient Search & Duplication Guard Suite", () => {
 			assert.equal(dups[0]?.score >= 90, true);
 		});
 
-		it("exports PatientDuplicateMergeModal component", async () => {
-			const modalsModule = await import("../components/patients/workspaceModals/duplicateMerge/PatientDuplicateMergeModal");
-			assert.equal(typeof modalsModule.PatientDuplicateMergeModal, "object");
+		it("exports PatientDuplicateMergeQueuesWidget component", async () => {
+			const crmModule = await import("../components/crm/PatientDuplicateMergeQueuesWidget");
+			assert.equal(typeof crmModule.PatientDuplicateMergeQueuesWidget, "function");
 		});
 	});
 

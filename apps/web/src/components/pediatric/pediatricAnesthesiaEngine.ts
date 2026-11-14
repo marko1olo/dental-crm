@@ -52,7 +52,6 @@ export interface PediatricAnesthesiaCalculationResult {
 	readonly contraindicationReasonRu?: string | undefined;
 	readonly alertMessageRu?: string | undefined;
 	readonly formattedClinicalNote: string;
-	readonly formattedText043: string;
 }
 
 export function checkPediatricAnesthesiaContraindications(somaticProfile?: SomaticRiskProfile, allergies?: string) {
@@ -109,6 +108,6 @@ export function calculatePediatricAnesthesia(params: {
 		maxAllowedTotalDoseMg, totalDoseAdministeredMg, maxSafeCarpulesCount, doseUtilizationPercent,
 		isSafe: !isOverdose && !isUnderAge && !isContraindicated, isOverdose, isUnderAge, isContraindicated,
 		contraindicationReasonRu, alertMessageRu: contraindicationReasonRu || (isOverdose ? "Превышение расчетной дозы" : undefined),
-		formattedClinicalNote: note, formattedText043: note,
+		formattedClinicalNote: note,
 	};
 }

@@ -1,7 +1,8 @@
 /**
  * blankContractPrint.ts — Instant Receptionist Blank Contract Printing.
  * Mandate 8e item 8 & Mandate 8d item 7.
- * Facade file. See ./blankContract/ for implementation.
+ * Facade file connected to canonical documents/paidContract/blankContract (SSOT).
  */
-export * from "./blankContract/index";
-export { printBlankMedicalContract, printBlankMedicalConsent } from "./blankContract/index";
+export * from "../documents/paidContract/blankContract";
+export { printBlankMedicalContract, printBlankMedicalConsent } from "../documents/paidContract/blankContract";
+

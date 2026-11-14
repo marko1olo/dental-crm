@@ -69,7 +69,7 @@ export function useMobileShiftCashOperations({
 				encashedRub: withdrawAmount,
 			});
 
-			showToast(`Z-отчёт 54-ФЗ снят. Инкассировано: ${withdrawAmount} ₽`, "success");
+			showToast(`Фискальный Z-отчёт смены снят. Инкассировано: ${withdrawAmount} ₽`, "success");
 			setIsCashOutSheetOpen(false);
 		} catch {
 			showToast("Z-отчёт и инкассация зафиксированы локально", "info");

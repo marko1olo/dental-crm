@@ -156,7 +156,7 @@ async function findPatientByExternalMark(
 async function revokeConsentForChannel(
 	organizationId: string,
 	patientId: string,
-	channel: string,
+	channel: CommunicationChannelCode,
 	evidence: string,
 ) {
 	const now = new Date();
@@ -166,7 +166,7 @@ async function revokeConsentForChannel(
 			.values({
 				organizationId,
 				patientId,
-				channel: channel as never,
+				channel: channel as (typeof patientCommunicationConsents.$inferInsert)["channel"],
 				scope,
 				state: "revoked",
 				source: "inbound_stop",
@@ -199,7 +199,7 @@ async function revokeConsentForChannel(
 async function restoreServiceConsent(
 	organizationId: string,
 	patientId: string,
-	channel: string,
+	channel: CommunicationChannelCode,
 	evidence: string,
 ) {
 	const now = new Date();
@@ -208,7 +208,7 @@ async function restoreServiceConsent(
 		.values({
 			organizationId,
 			patientId,
-			channel: channel as never,
+			channel: channel as (typeof patientCommunicationConsents.$inferInsert)["channel"],
 			scope: "service",
 			state: "granted",
 			source: "inbound_start",
@@ -363,9 +363,14 @@ async function processSingleEvent(
 	let messageText = event.messageText?.trim();
 	if (!messageText) {
 		if (event.eventKind === "message") {
-			const payload = event.rawPayload as Record<string, unknown> | null;
-			const type = typeof payload?.type === "string" ? payload.type : "вложение";
-			messageText = `[Входящее медиавложение: ${type}]`;
+			const rawPayload = event.rawPayload;
+			const payload =
+				typeof rawPayload === "object" && rawPayload !== null
+					? (rawPayload as Record<string, unknown>)
+					: null;
+			const payloadType =
+				typeof payload?.["type"] === "string" ? payload["type"] : "вложение";
+			messageText = `[Входящее медиавложение: ${payloadType}]`;
 		} else {
 			// Статусы доставки и служебные события текста не несут.
 			await markAsProcessed(event.id);
@@ -440,7 +445,7 @@ async function processSingleEvent(
 			organizationId,
 			patientId,
 			// Канал записывается как есть: раньше MAX подменялся телеграмом.
-			channel: channel as never,
+			channel: channel as (typeof communicationEvents.$inferInsert)["channel"],
 			direction: "inbound",
 			status: "delivered",
 			message:
@@ -479,7 +484,7 @@ async function processSingleEvent(
 						organizationId,
 						patientId,
 						assignedRole: "receptionist",
-						channel: channel as never,
+						channel: channel as (typeof communicationTasks.$inferInsert)["channel"],
 						intent: "general",
 						status: "needs_call",
 						priority: "urgent",

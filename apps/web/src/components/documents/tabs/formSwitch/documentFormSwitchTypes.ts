@@ -6,8 +6,16 @@
 import type { DocumentKind, Patient, Payment, StaffMember } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../../AppHelpers";
 
+export type DocumentKindWithAliases =
+	| DocumentKind
+	| "dental_medical_card"
+	| "medical_card_extract_003vu"
+	| "prescription_order"
+	| "paid_service_contract"
+	| "installment_schedule";
+
 export interface DocumentFormSwitchProps {
-	selectedDocumentKind: DocumentKind;
+	selectedDocumentKind: DocumentKindWithAliases;
 	activeDoctor?: StaffMember | null;
 	activePatient?: Patient | null;
 	documentPatient?: Patient | null;

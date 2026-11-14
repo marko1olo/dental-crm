@@ -1,4 +1,4 @@
-import { paymentSchema } from "@dental/shared";
+import { type CreatePaymentInput, paymentSchema } from "@dental/shared";
 import type { FastifyReply } from "fastify";
 import {
 	BillingOverpaymentError,
@@ -13,7 +13,7 @@ import {
 export async function handlePaymentCreationError(
 	error: unknown,
 	orgId: string,
-	paymentInput: { clientMutationId?: string | null | undefined; patientId: string; [key: string]: any },
+	paymentInput: CreatePaymentInput,
 	reply: FastifyReply,
 ) {
 	if (
@@ -56,7 +56,7 @@ export async function handlePaymentCreationError(
 		if (alreadyStored) {
 			if (
 				alreadyStored.patientId !== paymentInput.patientId ||
-				!paymentRetryMatchesExisting(alreadyStored, paymentInput as any)
+				!paymentRetryMatchesExisting(alreadyStored, paymentInput)
 			) {
 				return sendBillingPaymentScopeError(
 					reply,

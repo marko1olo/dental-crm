@@ -323,7 +323,7 @@ function _createPayment(input: CreatePaymentInput): Payment {
 	const payment: Payment = {
 		id: randomUUID(),
 		organizationId,
-		patientId: input.patientId,
+		patientId: input.patientId ?? "retail-walk-in",
 		visitId: input.visitId ?? null,
 		documentId: input.documentId ?? null,
 		amountRub: input.amountRub,

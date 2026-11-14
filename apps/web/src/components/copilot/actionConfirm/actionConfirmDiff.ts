@@ -1,7 +1,7 @@
 import { FileText } from 'lucide-react';
 import { formatDateTime } from '../useCopilotFormat';
 import type { ArgHumanized, ClinicalDiff } from './actionConfirmTypes';
-import { ARG_LABELS } from './actionConfirmTitles';
+import { ARG_LABELS } from './actionConfirmSSOT';
 
 export function getClinicalDiff(
   rawName: string,

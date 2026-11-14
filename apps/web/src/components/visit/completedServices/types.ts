@@ -7,6 +7,7 @@ import type {
 	CompletedServicesSummary,
 	FilteredCatalogService,
 	ParsedCompletedServiceLine,
+	VisitPlanItemLike,
 } from "../completedServicesPlan";
 
 export {
@@ -16,6 +17,7 @@ export {
 	type CompletedServicesSummary,
 	type FilteredCatalogService,
 	type ParsedCompletedServiceLine,
+	type VisitPlanItemLike,
 };
 
 export interface CompletedServicesChecklistProps {
@@ -35,29 +37,22 @@ export interface QuickServiceSearchAndPresetsProps {
 	onAddCatalogService: (item: FilteredCatalogService) => void;
 	visitPatientId: string | null;
 	visitId: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog items
-	effectiveCatalog: readonly any[];
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic invoice payload
-	onApplyDiagnosisPackage: (newLines: string[], invoicePayload: any) => void;
+	effectiveCatalog: readonly unknown[];
+	onApplyDiagnosisPackage: (newLines: string[], invoicePayload: unknown) => void;
 	bundlesExpanded: boolean;
 	onToggleBundlesExpanded: () => void;
 	onAddBundle: (bundle: ClinicalServiceBundle) => void;
 }
 
 export interface CompletedServiceRowItemProps {
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	item: any;
+	item: VisitPlanItemLike;
 	index: number;
 	marked: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	onToggle: (item: any) => void;
+	onToggle: (item: VisitPlanItemLike) => void;
 }
 
 export interface PreliminaryTreatmentPlanSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	planItems: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	isMarked: (item: any) => boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
-	onTogglePlanItem: (item: any) => void;
+	planItems: readonly VisitPlanItemLike[];
+	isMarked: (item: VisitPlanItemLike) => boolean;
+	onTogglePlanItem: (item: VisitPlanItemLike) => void;
 }

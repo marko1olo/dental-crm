@@ -41,9 +41,11 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			if (res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data)) setTransactions(data);
+			} else {
+				logger.warn(`Failed to fetch family wallet history: status ${res.status}`);
 			}
-		} catch {
-			// Мягкий фолбек без срыва сценария
+		} catch (err) {
+			logger.warn("Failed to load family wallet history", err);
 		}
 	}, []);
 
@@ -57,7 +59,10 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 				}),
 				fetch(`/api/patients/${patientId}/relationships`, {
 					headers: denteAdminSecretRequestHeaders(),
-				}).catch(() => null),
+				}).catch((err) => {
+					logger.warn("Failed to fetch patient relationships for family wallet", err);
+					return null;
+				}),
 			]);
 
 			let activeRels: RelationshipRecord[] = [];
@@ -198,10 +203,10 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			showToast("Права распоряжения семейным авансом сохранены", "success");
 			await loadFamilyDetails();
 			props.onFamilyDataChanged?.();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.error("Failed to save family wallet permissions", err);
 			showToast(
-				err?.message || "Не удалось сохранить права. Нажмите для повтора",
+				err instanceof Error ? err.message : "Не удалось сохранить права. Нажмите для повтора",
 				"error",
 			);
 		} finally {

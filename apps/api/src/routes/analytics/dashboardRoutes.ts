@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql, type Column } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalReadAccess,
@@ -68,9 +68,8 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const withDate = (orgCol: any, dateCol?: any) =>
-				startDate
+			const withDate = (orgCol: Column, dateCol?: Column) =>
+				startDate && dateCol
 					? and(eq(orgCol, orgId), gte(dateCol, startDate))
 					: eq(orgCol, orgId);
 

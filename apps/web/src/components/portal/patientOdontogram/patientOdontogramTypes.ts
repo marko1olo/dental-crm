@@ -4,7 +4,7 @@
  */
 
 import type { ToothState } from "../../odontogram/ToothChart";
-import type { RestorativeMaterialKey } from "../../odontogram/anatomicalToothGeometries";
+import type { RestorativeMaterialKey } from "../../odontogram/anatomicalGeometriesTypes";
 import type { PatientToothInfo, PatientToothStatus } from "../patientFriendlyOdontogramEngine";
 
 export interface PatientAnatomicalToothProps {

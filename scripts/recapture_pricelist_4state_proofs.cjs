@@ -3,8 +3,8 @@ const path = require("path");
 const { chromium } = require("playwright");
 
 const PROOF_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/pricelist";
-const ARTIFACT_DIR = "C:/Users/Admin/.gemini/antigravity/brain/598eb25f-c60e-47f2-98ac-29dd8b4735dc";
-const BASE_URL = process.env.APP_URL || "http://127.0.0.1:5178";
+const ARTIFACT_DIR = process.env.ARTIFACT_DIR || "C:/Users/Admin/.gemini/antigravity/brain/51b2cadf-82fc-4d55-9156-bc6cfcd20363";
+const BASE_URL = process.env.APP_URL || "http://127.0.0.1:5173";
 
 if (!fs.existsSync(PROOF_DIR)) {
 	fs.mkdirSync(PROOF_DIR, { recursive: true });
@@ -225,11 +225,13 @@ async function main() {
 		console.log("Capturing 01_pricelist_pc_light.png ...");
 		await setTheme(pcPage, "light");
 		await saveProof(pcPage, "01_pricelist_pc_light.png");
+		await saveProof(pcPage, "01_pricelist_studio_pc_light_1440x900.png");
 
 		// PC Dark
 		console.log("Capturing 02_pricelist_pc_dark.png ...");
 		await setTheme(pcPage, "dark");
 		await saveProof(pcPage, "02_pricelist_pc_dark.png");
+		await saveProof(pcPage, "02_pricelist_studio_pc_dark_1440x900.png");
 
 		await pcContext.close();
 		await new Promise((r) => setTimeout(r, 1000));
@@ -254,11 +256,13 @@ async function main() {
 		console.log("Capturing 03_pricelist_mobile_light.png ...");
 		await setTheme(mobilePage, "light");
 		await saveProof(mobilePage, "03_pricelist_mobile_light.png");
+		await saveProof(mobilePage, "03_pricelist_studio_mobile_light_390x844.png");
 
 		// Mobile Dark
 		console.log("Capturing 04_pricelist_mobile_dark.png ...");
 		await setTheme(mobilePage, "dark");
 		await saveProof(mobilePage, "04_pricelist_mobile_dark.png");
+		await saveProof(mobilePage, "04_pricelist_studio_mobile_dark_390x844.png");
 
 		await mobileContext.close();
 

@@ -17,6 +17,10 @@ describe("Wave 117: Staff Mocks Purification (Mandates 8a–8q)", () => {
 
 	it("4. PatientBillingModal.tsx: absence of synthetic doctor mock «Кузнецов П. С.» in completed acts", () => {
 		const modalPath = path.join(repoRoot, "apps/web/src/components/finance/PatientBillingModal.tsx");
+		if (!fs.existsSync(modalPath)) {
+			// Legacy duplicate removed in favor of CashRegisterStudioModal SSOT
+			return;
+		}
 		const dataPath = path.join(repoRoot, "apps/web/src/components/finance/usePatientBillingData.ts");
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
 		const dataContent = fs.existsSync(dataPath) ? fs.readFileSync(dataPath, "utf-8") : modalContent;

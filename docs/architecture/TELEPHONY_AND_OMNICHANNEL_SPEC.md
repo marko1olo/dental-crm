@@ -32,16 +32,16 @@
 
 | Компонент | Путь | Назначение |
 |---|---|---|
-| `IncomingCallModal` | `apps/web/src/components/telephony/IncomingCallModal.tsx` | Центральное модальное окно входящего звонка для администратора с авто-подавлением в стерильной зоне врача. |
-| `TelephonyFloatingDialer` | `apps/web/src/components/telephony/TelephonyFloatingDialer.tsx` | Плавающий софтфон/диалер с авто-сворачиванием на экранах приёма. |
+| `IncomingCallPopup` | `apps/web/src/components/telephony/IncomingCallPopup.tsx` | Верхняя амбиентная капсула входящего вызова (Top Ambient Event Capsule) по центру вверху экрана с авто-подавлением в стерильной зоне врача. |
+| `TelephonySoftphonePopover` | `apps/web/src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx` | Компактный всплывающий софтфон/диалер в шапке с авто-сворачиванием на экранах приёма и быстрым набором номера. |
 | `useTelephonyState` | `apps/web/src/components/telephony/useTelephonyState.ts` | Хук состояния телефонии, отслеживающий стерильную зону, активные линии L1/L2, DND и CTI статус. |
-| `CallHistoryDrawer` | `apps/web/src/components/telephony/CallHistoryDrawer.tsx` | Выдвижная шторка журнала звонков с плеером аудиозаписей и таймлайном. |
+| `TelephonyDrawer` | `apps/web/src/components/telephony/TelephonyDrawer.tsx` | Выдвижная шторка журнала звонков с плеером аудиозаписей, таймлайном переговоров и быстрой записью. |
+| `TelephonyStudioModal` | `apps/web/src/components/telephony/TelephonyStudioModal.tsx` | Полноэкранная студия телефонии и единый журнал звонков клиники со сплит-панелями и софтфоном. |
 | `WhatsAppChatPanel` | `apps/web/src/components/chat/WhatsAppChatPanel.tsx` | Панель WhatsApp чата с быстрыми шаблонами, вложениями до 16 МБ и неблокирующей кнопкой отправки. |
 | `OmnichannelOperatorDesk` | `apps/web/src/components/chat/OmnichannelOperatorDesk.tsx` | Единый пульт оператора ботов (Telegram, ВКонтакте, WhatsApp, MAX) с перехватом диалогов. |
 | `PatientOmnichannelHubModal` | `apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx` | Центральный омниканальный хаб сообщений, лояльности и динамических платежей СБП. |
 | `SbpPaymentQrModal` | `apps/web/src/components/messaging/SbpPaymentQrModal.tsx` | Экспресс-генерация QR-кода СБП с фискальным чеком, покрытием семейным депозитом и копированием ссылки. |
 | `TelegramBotIntegrationModal` | `apps/web/src/components/chat/TelegramBotIntegrationModal.tsx` | Модальное окно Telegram-бота с неблокирующим мягким фолбэком и шаблонами напоминаний. |
-| `IncomingCallPopup` | `apps/web/src/components/telephony/IncomingCallPopup.tsx` | Верхняя амбиентная капсула вызова (Top Ambient Event Capsule) по центру вверху экрана без перекрытия рабочей зоны врача. |
 | `OmnichannelChatView` | `apps/web/src/components/omnichannel_chat/OmnichannelChatView.tsx` | Единый канонический модуль омниканального чата (WhatsApp, Telegram, SMS, VK) с декомпозицией на модули <= 120 строк. |
 
 ---

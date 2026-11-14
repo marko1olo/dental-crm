@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { DiaryState } from "../components/useVisitDiaryLogic";
+import type { DiaryState } from "./protocols/protocolTypes";
 import {
 	formatSurfacesRu,
 	generateSoapFromOdontogramFinding,

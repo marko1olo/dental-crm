@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from "react";
 import { Check, ClipboardList, Loader2, Zap } from "lucide-react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import { showToast } from "../../GlobalToast";
+import { handleBookWaitlistSlot } from "../view/scheduleModalsModules/waitlistSlotBookingHandler";
 import type { WaitlistCandidateItem, TargetSlotInfo } from "./waitlistTypes";
 import {
   generateWaitlistOfferMessage,
@@ -192,18 +194,32 @@ export function WaitlistMatchesBlock({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     if (onBookCandidate) {
                       onBookCandidate(candidate);
                     } else if (targetSlot) {
-                      window.dispatchEvent(
-                        new CustomEvent("dente:book-waitlist-candidate", {
-                          detail: { candidate, slot: targetSlot },
-                        }),
-                      );
+                      try {
+                        await handleBookWaitlistSlot({
+                          candidate,
+                          slot: targetSlot,
+                          dashboard: ctx?.dashboard,
+                          auth: ctx?.auth,
+                          loadDashboard: ctx?.loadDashboard,
+                          showToast,
+                          onSuccess: () => {
+                            window.dispatchEvent(
+                              new CustomEvent("dente:book-waitlist-candidate", {
+                                detail: { candidate, slot: targetSlot },
+                              }),
+                            );
+                          },
+                        });
+                      } catch {
+                        // Handled inside handleBookWaitlistSlot with toast
+                      }
                     }
                   }}
-                  className="h-7 px-2.5 rounded bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-semibold text-[11px] shadow-sm transition-colors"
+                  className="h-7 px-2.5 rounded bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-semibold text-[11px] shadow-sm transition-colors cursor-pointer"
                 >
                   Записать
                 </button>

@@ -85,7 +85,13 @@ export async function handlePsoQuickNorm(req: FastifyRequest, reply: FastifyRepl
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization pso quick norm");
 	if (!organizationId) return;
 
-	const body = (req.body as any) || {};
+	const body = (req.body as {
+		batchItemCount?: number;
+		testedSampleCount?: number;
+		detergentBrand?: string;
+		notes?: string;
+		operatorId?: string;
+	}) || {};
 	const batchItemCount = typeof body.batchItemCount === "number" ? body.batchItemCount : 100;
 	const testedSampleCount = typeof body.testedSampleCount === "number" ? body.testedSampleCount : Math.max(3, Math.ceil(batchItemCount * 0.01));
 	const detergentBrand = body.detergentBrand || "Биолот 0.5% + Аламинол 1%";

@@ -94,22 +94,32 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 	// Expose global automation hooks for Playwright & E2E proof captures
 	useEffect(() => {
 		if (typeof window !== "undefined") {
-			(window as any).__denteCopilot = {
+			const existing = window.__denteCopilot;
+			window.__denteCopilot = {
 				open: () => setIsOpen(true),
 				close: () => setIsOpen(false),
 				toggle: () => setIsOpen((prev) => !prev),
+				openHud: existing?.openHud || (() => {}),
+				closeHud: existing?.closeHud || (() => {}),
+				toggleHud: existing?.toggleHud || (() => {}),
+				openVoiceModal: existing?.openVoiceModal || (() => {}),
+				closeVoiceModal: existing?.closeVoiceModal || (() => {}),
+				openTreatmentPlanCopilot: existing?.openTreatmentPlanCopilot || (() => {}),
+				closeTreatmentPlanCopilot: existing?.closeTreatmentPlanCopilot || (() => {}),
+				openAiSettings: existing?.openAiSettings || (() => {}),
+				setContext: existing?.setContext || (() => {}),
 				setMessages: (msgs: CopilotUiMessage[]) => setMessages(msgs),
 				setPending: (pend: PendingConfirmation | null) => setPending(pend),
 				setBusy: (b: boolean) => setBusy(b),
 				setPhase: (p: CopilotPhase) => setPhase(p),
 				setActiveTab: (tab: "chat" | "pending") => setActiveTab(tab),
-				setProactiveAlerts: (alerts: ProactiveAlertCardData[]) => setProactiveAlerts(alerts),
-				setWhatsappHitLCards: (cards: WhatsAppApprovalCard[]) => setWhatsappHitLCards(cards),
+				setProactiveAlerts: (alerts: unknown[]) => setProactiveAlerts(alerts as ProactiveAlertCardData[]),
+				setWhatsappHitLCards: (cards: unknown[]) => setWhatsappHitLCards(cards as WhatsAppApprovalCard[]),
 			};
 		}
 		return () => {
-			if (typeof window !== "undefined" && (window as any).__denteCopilot) {
-				delete (window as any).__denteCopilot;
+			if (typeof window !== "undefined" && window.__denteCopilot) {
+				delete window.__denteCopilot;
 			}
 		};
 	}, [setMessages]);

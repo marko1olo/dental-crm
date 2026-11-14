@@ -85,7 +85,7 @@ export const CRM_FASTIFY_TOOLS_REGISTRY = {
   scanHotfolder: "search_workstation_files",
 } as const;
 
-/** Реестр быстрых клинических промптов в 1 клик (Мандат 8e & Voice-First) */
+/** Реестр быстрых клинических промптов (Мандат 8e & Voice-First) */
 export const CLINICAL_QUICK_PRESETS: ClinicalQuickPreset[] = [
   { id: "preset-phys-norm", label: "Протокол осмотра (норма)", prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы", actionBadge: "Норма", category: "soap" },
   { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },

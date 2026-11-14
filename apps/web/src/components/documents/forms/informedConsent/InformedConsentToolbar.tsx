@@ -33,17 +33,17 @@ export const InformedConsentToolbar: React.FC<InformedConsentToolbarProps> = Rea
 						onClick={onPrintConsent}
 						title={isClosedOrSigned ? "Печать бланка ИДС (ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ)" : "Печать бланка ИДС (ЧЕРНОВИК)"}
 					>
-						<Printer className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+						<Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
 						<span>Печать бланка ИДС</span>
 					</button>
 					<button
 						type="button"
-						className={`${btnClass} text-emerald-700 dark:text-emerald-400 border-emerald-500/40`}
+						className={btnClass}
 						data-testid="btn-open-consent-modal"
 						onClick={onOpenModal}
 						title="Открыть консоль ИДС: пакеты (терапия, ортопедия, хирургия) и подписание"
 					>
-						<FileCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<FileCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
 						<span>Подписать на планшете</span>
 					</button>
 				</div>
@@ -73,7 +73,7 @@ export const InformedConsentToolbar: React.FC<InformedConsentToolbarProps> = Rea
 							data-testid="btn-informed-consent-fill-norm"
 							onClick={() => { setIsMoreMenuOpen(false); onFillNorm(); }}
 						>
-							<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+							<ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
 							<span>Заполнить нормой</span>
 						</button>
 						<button
@@ -83,7 +83,7 @@ export const InformedConsentToolbar: React.FC<InformedConsentToolbarProps> = Rea
 							onClick={() => { setIsMoreMenuOpen(false); onPrintBlank(); }}
 							title="Печать чистого бланка ИДС со строками «________» для ручного заполнения"
 						>
-							<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
+							<FileText className="w-4 h-4 shrink-0" aria-hidden="true" />
 							<span>Печать чистого бланка («________»)</span>
 						</button>
 						<button
@@ -93,7 +93,7 @@ export const InformedConsentToolbar: React.FC<InformedConsentToolbarProps> = Rea
 							onClick={() => { setIsMoreMenuOpen(false); onCopySummary(); }}
 							title="Скопировать выжимку ИДС для отправки пациенту"
 						>
-							<Copy className="w-4 h-4 text-blue-600 shrink-0" />
+							<Copy className="w-4 h-4 shrink-0" aria-hidden="true" />
 							<span>Копировать выжимку для пациента</span>
 						</button>
 					</div>

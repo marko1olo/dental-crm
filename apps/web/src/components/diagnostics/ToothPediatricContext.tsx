@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { FranklBehaviorBadge } from "../pediatric/FranklBehaviorBadge";
+import { PediatricParentMemoModal } from "../pediatric/PediatricParentMemoModal";
 import {
 	type ToothPediatricContextProps,
 	useToothPediatricState,
@@ -21,6 +22,8 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 	onInsertToProtocol,
 	onOpenParentMemo,
 }) => {
+	const [isLocalMemoOpen, setIsLocalMemoOpen] = useState(false);
+
 	const {
 		franklRating,
 		selectedResorption,
@@ -48,11 +51,21 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 				onPrintMemo={() => {
 					if (onOpenParentMemo) {
 						onOpenParentMemo();
-					} else if (typeof window !== "undefined") {
-						window.print();
+					} else {
+						setIsLocalMemoOpen(true);
 					}
 				}}
 			/>
+			{isLocalMemoOpen && (
+				<PediatricParentMemoModal
+					isOpen={isLocalMemoOpen}
+					onClose={() => setIsLocalMemoOpen(false)}
+					patientName={patientName}
+					patientAgeYears={patientAgeYears}
+					doctorName={doctorName}
+					initialFrankl={franklRating}
+				/>
+			)}
 		</div>
 	);
 };

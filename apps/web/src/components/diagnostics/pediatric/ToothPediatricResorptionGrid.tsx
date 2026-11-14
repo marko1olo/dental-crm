@@ -1,7 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import { DentalForm043 } from "../../icons/DentalIcons";
-import type { RootResorptionStage } from "../../odontogram/anatomicalToothGeometries";
+import type { RootResorptionStage } from "../../odontogram/anatomicalGeometriesTypes";
 import { RESORPTION_STAGES } from "./pediatricTypes";
 
 export interface ToothPediatricResorptionGridProps {

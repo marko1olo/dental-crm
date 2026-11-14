@@ -128,15 +128,15 @@ const sampleServices = [
 
 async function run() {
 	const proofDir = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/pricelist");
-	const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/888e031f-2125-40cb-9054-10b2e5870f1f");
+	const brainDir = path.resolve(process.env.ARTIFACT_DIR || "C:/Users/Admin/.gemini/antigravity/brain/51b2cadf-82fc-4d55-9156-bc6cfcd20363");
 
 	for (const d of [proofDir, brainDir]) {
 		if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 	}
 
-	console.log("Launching browser with channel: chrome...");
+	console.log("Launching browser with channel: msedge...");
 	const browser = await chromium.launch({
-		channel: "chrome",
+		channel: "msedge",
 		headless: true,
 		args: ["--no-sandbox", "--disable-setuid-sandbox"],
 	});
@@ -206,6 +206,17 @@ async function run() {
 		fs.writeFileSync(p1, buffer);
 		fs.writeFileSync(p2, buffer);
 		console.log(`Saved proof: ${filename} (${Math.round(buffer.length / 1024)} KB)`);
+
+		const aliasMap = {
+			"01_pricelist_studio_pc_light_1440x900.png": "01_pricelist_pc_light.png",
+			"02_pricelist_studio_pc_dark_1440x900.png": "02_pricelist_pc_dark.png",
+			"03_pricelist_studio_mobile_light_390x844.png": "03_pricelist_mobile_light.png",
+			"04_pricelist_studio_mobile_dark_390x844.png": "04_pricelist_mobile_dark.png",
+		};
+		if (aliasMap[filename]) {
+			fs.writeFileSync(path.join(proofDir, aliasMap[filename]), buffer);
+			fs.writeFileSync(path.join(brainDir, aliasMap[filename]), buffer);
+		}
 	}
 
 	console.log("=== 1. PC Light (1440x900) ===");

@@ -15,7 +15,7 @@ import type { FamilyGroupDetails, TopupPaymentMethod } from "./types";
 export interface UseFamilyTopupMutationArgs {
 	readonly patientId: string;
 	readonly familyData: FamilyGroupDetails | null;
-	readonly notifyChanged: () => Promise<void>;
+	readonly notifyChanged: (newBalanceRub?: number) => Promise<void>;
 }
 
 export function useFamilyTopupMutation({
@@ -63,14 +63,16 @@ export function useFamilyTopupMutation({
 				}),
 			});
 
+			const resJson = (await res.json().catch(() => null)) as {
+				newBalance?: string;
+				message?: string;
+				error?: string;
+			} | null;
+
 			if (!res.ok) {
-				const errorJson = (await res.json().catch(() => null)) as {
-					message?: string;
-					error?: string;
-				} | null;
 				throw new Error(
-					errorJson?.message ||
-						errorJson?.error ||
+					resJson?.message ||
+						resJson?.error ||
 						`Ошибка пополнения (${res.status})`,
 				);
 			}
@@ -78,7 +80,8 @@ export function useFamilyTopupMutation({
 			showToast(`Семейный счет пополнен на ${money(num)}`, "success");
 			setTopupAmount("");
 			setTopupComment("");
-			await notifyChanged();
+			const parsedBalance = resJson?.newBalance ? parseFloat(resJson.newBalance) : undefined;
+			await notifyChanged(parsedBalance);
 		} catch (err: unknown) {
 			const msg =
 				err instanceof Error ? err.message : "Не удалось пополнить счет";

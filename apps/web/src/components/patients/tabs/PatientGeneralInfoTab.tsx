@@ -72,10 +72,10 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 					/>
 				)}
 
-				{(activeSection === "all" || activeSection === "family") && (
+				{(activeSection === "all" || activeSection === "family" || Boolean(patient?.representativeType)) && (
 					<div className="flex flex-col gap-4">
 						<PatientFamilyAndInsuranceWidget
-							patient={patient as any}
+							patient={patient}
 							patientBalance={Number(patient?.patientBalanceRub ?? 0) || 0}
 							insurancePolicyNumber={patient?.omsPolicyNumber || undefined}
 							onUpdateInsurancePolicy={(policy) => onUpdatePatient?.("omsPolicyNumber", policy)}

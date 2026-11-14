@@ -18,17 +18,67 @@ import {
 	type Cashier54FzBundleExport,
 } from "@dental/shared";
 
+export interface DiagnosisPackageCatalogItem {
+	id?: string | undefined;
+	code?: string | undefined;
+	code804n?: string | undefined;
+	title?: string | undefined;
+	name?: string | undefined;
+	price?: number | undefined;
+	priceRub?: number | undefined;
+	basePriceRub?: number | undefined;
+	priceKopecks?: number | undefined;
+	[key: string]: unknown;
+}
+
+export interface DiagnosisPackageInvoiceService {
+	id: string;
+	code: string;
+	code804n: string;
+	title: string;
+	price: number;
+	priceRub: number;
+	unitPriceRub: number;
+	priceKopecks: number;
+	quantity: number;
+	toothCode?: string | undefined;
+	toothNumber?: number | undefined;
+}
+
+export interface DiagnosisPackageInvoicePayload {
+	bundleId: string;
+	bundleTitle: string;
+	diagnosisIcd10: string;
+	toothNumber?: number | undefined;
+	toothCode?: string | undefined;
+	patientId?: string | undefined;
+	visitId?: string | undefined;
+	source: "chairside_diagnosis_package";
+	services: DiagnosisPackageInvoiceService[];
+}
+
+interface AppLogicDashboardWithCatalog {
+	dashboard?: {
+		serviceCatalog?: readonly DiagnosisPackageCatalogItem[] | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
+	[key: string]: unknown;
+}
+
 export function useDiagnosisPackage(
 	selectedTooth: string | null,
-	patientId?: string | null,
-	visitId?: string | null,
-	catalog: readonly any[] = [],
-	onApplyPackageToPlan?: (formattedLines: string[], invoicePayload: any) => void,
-	onExportDirectToCashier?: (exportData: Cashier54FzBundleExport) => void,
+	patientId?: string | null | undefined,
+	visitId?: string | null | undefined,
+	catalog: readonly DiagnosisPackageCatalogItem[] = [],
+	onApplyPackageToPlan?: ((formattedLines: string[], invoicePayload: DiagnosisPackageInvoicePayload) => void) | undefined,
+	onExportDirectToCashier?: ((exportData: Cashier54FzBundleExport) => void) | undefined,
 ) {
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic context
-	const appLogic = useOptionalAppLogicContext() as any;
-	const effectiveCatalog = useMemo(() => Array.isArray(catalog) && catalog.length > 0 ? catalog : Array.isArray(appLogic?.dashboard?.serviceCatalog) ? appLogic.dashboard.serviceCatalog : [], [catalog, appLogic?.dashboard?.serviceCatalog]);
+	const appLogic = useOptionalAppLogicContext() as AppLogicDashboardWithCatalog | null;
+	const effectiveCatalog = useMemo(() => {
+		if (Array.isArray(catalog) && catalog.length > 0) return catalog;
+		if (Array.isArray(appLogic?.dashboard?.serviceCatalog)) return appLogic.dashboard.serviceCatalog;
+		return [];
+	}, [catalog, appLogic?.dashboard?.serviceCatalog]);
 	const toothNumber = selectedTooth ? Number(selectedTooth) : null;
 
 	const detectedToothState = useMemo(() => {
@@ -76,7 +126,7 @@ export function useDiagnosisPackage(
 		if (activeItems.length === 0) { showToast("Выберите хотя бы одну услугу из пакета", "warning", 2500); return; }
 		const toothSuffix = selectedTooth ? ` (зуб ${selectedTooth})` : "";
 		const lines = activeItems.map((it) => `Выполнено: [${it.code804n}] ${it.title}${toothSuffix} — ${money(it.priceRub)}`);
-		const invoicePayload = {
+		const invoicePayload: DiagnosisPackageInvoicePayload = {
 			bundleId: activeBundle.id, bundleTitle: activeBundle.title, diagnosisIcd10: activeBundle.diagnosisIcd10,
 			toothNumber: toothNumber ?? undefined, toothCode: selectedTooth ?? undefined, patientId: patientId ?? undefined, visitId: visitId ?? undefined,
 			source: "chairside_diagnosis_package",

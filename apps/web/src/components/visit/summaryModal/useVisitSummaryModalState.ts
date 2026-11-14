@@ -20,11 +20,12 @@ import {
 	convertUnbilledConsumableToChairsideService,
 	type ConsumablesReconciliationResult,
 } from "../../odontogram/treatmentEstimatorReconciler";
-import type { VisitSummaryModalProps } from "./types";
+import type { ChairsideSummaryServiceItem, VisitSummaryModalProps } from "./types";
+import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 export function useVisitSummaryModalState(
 	props: VisitSummaryModalProps,
-	appLogic: any,
+	appLogic: Partial<AppLogicContextType> | null | undefined,
 ) {
 	const {
 		isOpen,
@@ -70,11 +71,11 @@ export function useVisitSummaryModalState(
 		}
 	}, [isPaidProp]);
 
-	const [appendedServices, setAppendedServices] = useState<readonly any[]>([]);
+	const [appendedServices, setAppendedServices] = useState<readonly ChairsideSummaryServiceItem[]>([]);
 
 	const chairsideServices = useMemo(() => {
-		const storeServices = assembleVisitStoreCompletedServices();
-		const activeVisitServices = appLogic?.dashboard?.activeVisit?.completedServices;
+		const storeServices = assembleVisitStoreCompletedServices() as readonly ChairsideSummaryServiceItem[];
+		const activeVisitServices = appLogic?.dashboard?.activeVisit?.completedServices as readonly ChairsideSummaryServiceItem[] | undefined;
 		return resolveChairsideServices(servicesProp, storeServices, activeVisitServices, patient?.id);
 	}, [servicesProp, patient?.id, appLogic?.dashboard?.activeVisit?.completedServices]);
 
@@ -104,15 +105,17 @@ export function useVisitSummaryModalState(
 
 	const consumablesReconciliation = useMemo(() => {
 		const catalog =
-			(appLogic?.catalog as any[]) ||
-			(appLogic?.dashboard?.clinicSettings?.priceList as any[]) ||
+			(Array.isArray(appLogic?.catalog) ? appLogic.catalog : undefined) ||
+			(Array.isArray(appLogic?.dashboard?.clinicSettings?.priceList) ? appLogic.dashboard.clinicSettings.priceList : undefined) ||
 			[];
 		return detectUnbilledConsumables(protocolSource, effectiveChairsideServices, catalog);
 	}, [protocolSource, effectiveChairsideServices, appLogic?.catalog, appLogic?.dashboard?.clinicSettings?.priceList]);
 
 	const handleAddAllUnbilledToBill = () => {
 		if (!consumablesReconciliation.hasUnbilled) return;
-		const newServices = consumablesReconciliation.unbilledItems.map(convertUnbilledConsumableToChairsideService);
+		const newServices = consumablesReconciliation.unbilledItems.map(
+			convertUnbilledConsumableToChairsideService,
+		) as ChairsideSummaryServiceItem[];
 		setAppendedServices((prev) => [...prev, ...newServices]);
 		showToast(
 			`В счёт добавлено: ${consumablesReconciliation.detectedMarkers.join(", ")} (+${consumablesReconciliation.totalUnbilledRub.toLocaleString("ru-RU")} ₽)`,
@@ -147,7 +150,7 @@ export function useVisitSummaryModalState(
 	const mappedOdontogramTeeth = useMemo<FdiToothRecord[]>(() => {
 		return (teethData ?? []).map((t) => ({
 			toothNumber: t.toothNumber,
-			statusCode: (t.state as any) || "healthy",
+			statusCode: (t.state as FdiToothRecord["statusCode"]) || "healthy",
 			surfaces: (t.surfaces as ToothSurface[]) || [],
 			mobility: "none",
 			furcationInvolvement: "none",
@@ -256,11 +259,11 @@ export function useVisitSummaryModalState(
 				id: `new-stage-${Date.now()}`,
 				organizationId: appLogic?.dashboard?.activeVisit?.organizationId || "org-1",
 				patientId: patient?.id || "",
-				doctorUserId: (appLogic?.dashboard?.clinicSettings?.staff || []).find(
-					(s: any) => s.active && (s.role === "doctor" || s.role === "owner"),
+				doctorUserId: ((appLogic?.dashboard?.clinicSettings?.staff || []) as Array<{ active?: boolean; role?: string; id?: string }>).find(
+					(s) => s.active && (s.role === "doctor" || s.role === "owner"),
 				)?.id || "",
 				assistantUserId: null,
-				chairId: (appLogic?.dashboard?.clinicSettings?.chairs || []).find((c: any) => c.active)?.id || "",
+				chairId: ((appLogic?.dashboard?.clinicSettings?.chairs || []) as Array<{ active?: boolean; id?: string }>).find((c) => c.active)?.id || "",
 				startsAt: d.toISOString(),
 				endsAt: new Date(d.getTime() + 45 * 60 * 1000).toISOString(),
 				status: "planned",
@@ -272,7 +275,7 @@ export function useVisitSummaryModalState(
 		}
 	};
 
-	const handleSaveNextStageAppointment = async (_appointmentId: string, draft: any) => {
+	const handleSaveNextStageAppointment = async (_appointmentId: string, draft: Partial<Appointment>) => {
 		try {
 			const res = await fetch("/api/appointments", {
 				method: "POST",
@@ -301,13 +304,14 @@ export function useVisitSummaryModalState(
 			showToast("Пациент успешно записан на следующий этап!", "success", 4000);
 			setIsNextStageModalOpen(false);
 			return true;
-		} catch {
+		} catch (err) {
+			logger.error("[VisitSummaryModal] Ошибка сохранения записи на прием:", err);
 			showToast("Ошибка сохранения записи", "error");
 			return false;
 		}
 	};
 
-	const handlePaymentSuccessCallback = (paymentData: any) => {
+	const handlePaymentSuccessCallback = (paymentData: unknown) => {
 		setIsPaymentModalOpen(false);
 		setIsVisitPaid(true);
 		setPaidAmountRub(effectiveTotalDueRub);

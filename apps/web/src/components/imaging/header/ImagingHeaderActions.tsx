@@ -69,30 +69,6 @@ export const ImagingHeaderActions: React.FC<Props> = (props) => {
 				</button>
 			)}
 
-			<button
-				className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
-				type="button"
-				data-testid="imaging-camera-capture-btn"
-				onClick={onCaptureCamera}
-				disabled={isCapturingCameraPhoto || isBrowserImagingFolderPicking}
-				title="Сделать снимок с камеры"
-			>
-				<Camera aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
-				<span>{isCapturingCameraPhoto ? "Загрузка..." : "Камера"}</span>
-			</button>
-
-			<button
-				className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors shadow-xs"
-				type="button"
-				data-testid="imaging-pick-dicom-folder"
-				onClick={onPickFolder}
-				disabled={isBrowserImagingFolderPicking}
-				title="Выбрать папку DICOM/КТ"
-			>
-				<FileText aria-hidden="true" size={16} className="shrink-0 text-[var(--ink-muted)]" />
-				<span>{isBrowserImagingFolderPicking ? "Сканирую..." : "Папка КТ"}</span>
-			</button>
-
 			<div className="relative shrink-0" ref={moreMenuRef}>
 				<button
 					className={`secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl border transition-colors cursor-pointer shadow-xs ${

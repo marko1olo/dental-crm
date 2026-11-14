@@ -15,7 +15,7 @@ import {
 	ENDO_OBTURATION_METHOD_OPTIONS,
 	type EndoWorkingLengthEntry,
 } from "../../../lib/clinicalProtocols";
-import type { DiaryState } from "../../useVisitDiaryLogic";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 
 describe("Clinical Templates & SOAP Protocol Synchronization (clinicalSoapTemplatesSync)", () => {
 	describe("1. Top 5 Clinical Procedures (generateSoapFromOdontogramFinding)", () => {

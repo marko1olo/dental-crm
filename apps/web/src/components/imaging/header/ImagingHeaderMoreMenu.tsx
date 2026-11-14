@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { Columns2, Download, ExternalLink, Layers, Scan, Sparkles } from "lucide-react";
+import { Camera, Columns2, Download, ExternalLink, FileText, Layers, Scan, Sparkles } from "lucide-react";
 
 interface Props {
 	isOpen: boolean;
@@ -15,14 +15,17 @@ interface Props {
 	onOpenRadiologyModule: () => void;
 	onOpenComparison?: (() => void) | undefined;
 	onOpenExport?: (() => void) | undefined;
+	onPickFolder?: (() => void) | undefined;
+	onCaptureCamera?: (() => void) | undefined;
+	isBrowserImagingFolderPicking?: boolean | undefined;
+	isCapturingCameraPhoto?: boolean | undefined;
 }
 
 export const ImagingHeaderMoreMenu: React.FC<Props> = ({
 	isOpen, onClose, onOpenRvgCapture, onOpenCtSelector, onOpenPopoutStudio,
 	onOpenPanoramic, onOpenRadiologyModule, onOpenComparison, onOpenExport,
+	onPickFolder, onCaptureCamera, isBrowserImagingFolderPicking, isCapturingCameraPhoto,
 }) => {
-	if (!isOpen) return null;
-
 	const act = (fn?: () => void) => {
 		onClose();
 		fn?.();
@@ -30,10 +33,46 @@ export const ImagingHeaderMoreMenu: React.FC<Props> = ({
 
 	return (
 		<div
-			className="absolute right-0 top-full mt-1.5 w-60 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-1 duration-150"
+			className={
+				isOpen
+					? "absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-1 duration-150"
+					: "hidden"
+			}
 			role="menu"
 			aria-label="Дополнительные модули снимков"
 		>
+			{onCaptureCamera && (
+				<button
+					className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
+					type="button"
+					role="menuitem"
+					data-testid="imaging-camera-capture-btn"
+					onClick={() => act(onCaptureCamera)}
+					disabled={isCapturingCameraPhoto}
+				>
+					<Camera aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
+					<div className="flex flex-col">
+						<span>Камера</span>
+						<span className="text-[10px] text-[var(--ink-muted)] font-normal">{isCapturingCameraPhoto ? "Загрузка..." : "Снимок с камеры / смартфона"}</span>
+					</div>
+				</button>
+			)}
+			{onPickFolder && (
+				<button
+					className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors"
+					type="button"
+					role="menuitem"
+					data-testid="imaging-pick-dicom-folder"
+					onClick={() => act(onPickFolder)}
+					disabled={isBrowserImagingFolderPicking}
+				>
+					<FileText aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
+					<div className="flex flex-col">
+						<span>Папка КТ</span>
+						<span className="text-[10px] text-[var(--ink-muted)] font-normal">{isBrowserImagingFolderPicking ? "Сканирую..." : "Выбрать папку DICOM / КТ"}</span>
+					</div>
+				</button>
+			)}
 			{onOpenRvgCapture && (
 				<button className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-2.5 cursor-pointer transition-colors" type="button" role="menuitem" data-testid="btn-open-rvg-capture" onClick={() => act(onOpenRvgCapture)}>
 					<Scan aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />

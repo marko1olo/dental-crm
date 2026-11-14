@@ -40,6 +40,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 		activeControlStudy,
 		setActiveControlStudy,
 		filteredStudies,
+		refetchStudies,
 	} = useRadiologyArchiveLogic(initialStudies, initialLoading);
 
 	return (
@@ -75,7 +76,10 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 					isOpen={Boolean(activeControlStudy)}
 					study={activeControlStudy}
 					onClose={() => setActiveControlStudy(null)}
-					onStudyUpdated={() => setActiveControlStudy(null)}
+					onStudyUpdated={() => {
+						setActiveControlStudy(null);
+						void refetchStudies();
+					}}
 				/>
 			)}
 		</div>

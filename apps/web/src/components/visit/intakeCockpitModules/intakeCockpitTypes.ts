@@ -14,8 +14,8 @@ import type {
 } from "@dental/shared";
 
 export type CanonicalSomaticProfile = CanonicalHealthySomaticProfile;
-export type DentalAllergenEntry = any;
-export type DentalSomaticStopFactorEntry = any;
+export type DentalAllergenEntry = { id: string; nameRu: string; [key: string]: unknown };
+export type DentalSomaticStopFactorEntry = { id: string; nameRu: string; [key: string]: unknown };
 
 export interface IntakePatientExtended extends Omit<Partial<Patient>, "fullName"> {
 	readonly id: string;
@@ -39,7 +39,7 @@ export interface IntakeDoctorInfo {
 }
 
 export interface VisitIntakeCockpitProps {
-	readonly dashboard?: Dashboard | any;
+	readonly dashboard?: Dashboard | null | undefined;
 	readonly activeDoctor?: IntakeDoctorInfo | null | undefined;
 	readonly onSelectPatient: (patientId: string, appointmentId?: string) => void;
 	readonly onEmergencyIntake: () => void;

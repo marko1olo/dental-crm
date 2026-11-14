@@ -32,7 +32,7 @@ export const DirectRvgDeviceSelector: React.FC<DirectRvgDeviceSelectorProps> = (
 				data-testid="rvg-upload-file-btn"
 				title="Загрузить снимок с диска (DICOM, TIFF, PNG, JPG)"
 			>
-				<UploadCloud className="w-3.5 h-3.5 text-teal-600 dark:text-teal-300" />
+				<UploadCloud className="w-3.5 h-3.5 text-[var(--muted)]" />
 				<span>Загрузить</span>
 			</button>
 			<input

@@ -343,7 +343,7 @@ export const INTACT_PREVENTION_TIERS: readonly TreatmentPlanTier[] = [
 		tierId: "economy",
 		title: "Базовый (Эконом)",
 		subtitle: "Профессиональная гигиена и базовое фторирование",
-		badge: "Базовый",
+		badge: "Эконом",
 		isRecommended: false,
 		totalRub: 3500,
 		totalKopecks: 350000,
@@ -361,7 +361,7 @@ export const INTACT_PREVENTION_TIERS: readonly TreatmentPlanTier[] = [
 		tierId: "optimum",
 		title: "Оптимальный",
 		subtitle: "Комплексная гигиена AirFlow + глубокое фторирование",
-		badge: "Оптимальный",
+		badge: "Рекомендуемый",
 		isRecommended: true,
 		totalRub: 6500,
 		totalKopecks: 650000,
@@ -379,7 +379,7 @@ export const INTACT_PREVENTION_TIERS: readonly TreatmentPlanTier[] = [
 		tierId: "premium",
 		title: "Премиум",
 		subtitle: "Премиальный SPA-протокол гигиены GBT (Guided Biofilm Therapy)",
-		badge: "Премиум",
+		badge: "Эстетика",
 		isRecommended: false,
 		totalRub: 9500,
 		totalKopecks: 950000,
@@ -400,7 +400,7 @@ export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 		tierId: "economy",
 		title: "Базовый (Эконом)",
 		subtitle: "Стандартная санация, металлокерамика Co-Cr, базовая имплантационная система",
-		badge: "Базовый",
+		badge: "Эконом",
 		isRecommended: false,
 		totalRub: 85500,
 		totalKopecks: 8550000,
@@ -418,8 +418,8 @@ export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 	{
 		tierId: "optimum",
 		title: "Оптимальный",
-		subtitle: "Клинический золотой стандарт: нанокомпозит, микроскоп, цирконий Katana, SLA-имплантат",
-		badge: "Оптимальный",
+		subtitle: "Клинический золотой стандарт: нанокомпозит, микроскоп, многослойный цирконий, SLA-имплантат",
+		badge: "Рекомендуемый",
 		isRecommended: true,
 		totalRub: 132300,
 		totalKopecks: 13230000,
@@ -438,7 +438,7 @@ export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
 		tierId: "premium",
 		title: "Премиум",
 		subtitle: "Тотальная эстетика: прессованная безметалловая керамика, навигационная имплантация",
-		badge: "Премиум",
+		badge: "Эстетика",
 		isRecommended: false,
 		totalRub: 205000,
 		totalKopecks: 20500000,
@@ -460,7 +460,7 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		id: "economy",
 		title: "Эконом",
 		subtitle: "Базовые сертифицированные материалы РФ и стандартное протезирование",
-		badge: "Базовый",
+		badge: "Эконом",
 		isRecommended: false,
 		warrantyYears: 1,
 		keyAdvantages: [
@@ -494,13 +494,13 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 	{
 		id: "premium",
 		title: "Премиум",
-		subtitle: "Импортная эстетика и биоинженерия: швейцарские импланты и керамика e.max",
-		badge: "Премиум",
+		subtitle: "Импортная эстетика и биоинженерия: премиальные импланты и безметалловая керамика",
+		badge: "Эстетика",
 		isRecommended: false,
 		warrantyYears: 10,
 		keyAdvantages: [
 			"Швейцарская имплантационная система высшей категории",
-			"Ультратонкая прессованная безметалловая керамика IPS e.max",
+			"Ультратонкая прессованная безметалловая керамика из дисиликата лития",
 			"Цифровой 3D-дизайн улыбки и персональный куратор",
 			"Консилиум ведущих специалистов клиники",
 			"Расширенная гарантия производителя 10 лет",
@@ -703,7 +703,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 	const premOrthoItems: TreatmentPlanItem[] = [];
 	if (missingTeeth.length > 0 || pulpitisTeeth.length > 0) {
 		premOrthoItems.push(
-			mkItem("dyn-pr-scan", undefined, "A02.07.010", "Оптическое внутриротовое 3D-сканирование 3Shape TRIOS", 6500, 6500, 1, "stage_3_orthopedics", "Ортопедия"),
+			mkItem("dyn-pr-scan", undefined, "A02.07.010", "Оптическое внутриротовое 3D-сканирование зубного ряда высокой точности", 6500, 6500, 1, "stage_3_orthopedics", "Ортопедия"),
 		);
 	}
 	for (const tooth of pulpitisTeeth) {
@@ -740,7 +740,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 			tierId: "economy",
 			title: "Базовый (Эконом)",
 			subtitle: "Стандартная санация, металлокерамика Co-Cr, базовая имплантация",
-			badge: "Базовый",
+			badge: "Эконом",
 			isRecommended: false,
 			totalRub: econTotalRub,
 			totalKopecks: econTotalRub * 100,
@@ -759,7 +759,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 			tierId: "optimum",
 			title: "Оптимальный",
 			subtitle: "Клинический золотой стандарт: нанокомпозит, микроскоп, диоксид циркония, SLA-имплантат",
-			badge: "Оптимальный",
+			badge: "Рекомендуемый",
 			isRecommended: true,
 			totalRub: stdTotalRub,
 			totalKopecks: stdTotalRub * 100,
@@ -778,7 +778,7 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 			tierId: "premium",
 			title: "Премиум",
 			subtitle: "Тотальная эстетика: прессованная безметалловая керамика, навигационная имплантация",
-			badge: "Премиум",
+			badge: "Эстетика",
 			isRecommended: false,
 			totalRub: premTotalRub,
 			totalKopecks: premTotalRub * 100,
@@ -797,133 +797,240 @@ export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly Treatmen
 }
 
 /**
- * differentiateStagesForTier — Дифференциация этапов и услуг по клинической матрице материалов:
- * - Эконом (economy): базовый световой композит (3 500 ₽), стандартное эндо (9 500 ₽), металлокерамика Co-Cr (14 000 ₽), базовая имплантация (32 000 ₽), коронка на имплантате металлокерамика (22 000 ₽).
- * - Оптимум (optimum): наногибридный композит (4 800 ₽), микроскопная эндодонтия (13 500 ₽), коронка из диоксида циркония Katana CAD/CAM (26 000 ₽), SLA-имплантат (42 000 ₽), коронка на имплантате с винтовой фиксацией (34 000 ₽).
- * - Премиум (premium): прессованная керамика E.max / накладка Inlay (8 500 ₽ / 38 000 ₽), биокерамическая эндодонтия под микроскопом (16 500 ₽), премиум гидрофильный имплантат + навигационный 3D-шаблон (80 000 ₽), индивидуальный абатмент Ti-Base + коронка E.max (48 000 ₽).
+ * CLINIC_SERVICE_TIER_CATALOG — Каталог услуг клиники с дифференциацией по тарифам (материалам).
+ * Исключает хардкод и фиктивные множители *0.85 / *1.35.
+ */
+export interface ClinicTierServicePrice {
+	readonly code804n: string;
+	readonly category: string;
+	readonly economy: { readonly name: string; readonly priceRub: number };
+	readonly optimum: { readonly name: string; readonly priceRub: number };
+	readonly premium: { readonly name: string; readonly priceRub: number };
+}
+
+export const CLINIC_SERVICE_TIER_CATALOG: readonly ClinicTierServicePrice[] = [
+	{
+		code804n: "A16.07.002",
+		category: "Терапия",
+		economy: {
+			name: "Восстановление зуба пломбой световой полимеризации (базовый композит)",
+			priceRub: 3500,
+		},
+		optimum: {
+			name: "Восстановление нанокомпозитом светового отверждения повышенной прочности",
+			priceRub: 4800,
+		},
+		premium: {
+			name: "Восстановление прессованной керамической накладкой / вкладкой",
+			priceRub: 8500,
+		},
+	},
+	{
+		code804n: "A16.07.008.002",
+		category: "Эндодонтия",
+		economy: {
+			name: "Эндодонтическое лечение корневых каналов (стандартная обработка)",
+			priceRub: 9500,
+		},
+		optimum: {
+			name: "Эндодонтическое лечение корневых каналов под операционным микроскопом",
+			priceRub: 13500,
+		},
+		premium: {
+			name: "Прецизионная микроскопная эндодонтия с биокерамическим силером",
+			priceRub: 16500,
+		},
+	},
+	{
+		code804n: "A16.07.003.001",
+		category: "Терапия",
+		economy: {
+			name: "Восстановление культи зуба под коронку (литая культевая вкладка)",
+			priceRub: 4500,
+		},
+		optimum: {
+			name: "Восстановление зуба под коронку со стекловолоконным штифтом",
+			priceRub: 5500,
+		},
+		premium: {
+			name: "Билдап композитом двойного отверждения с кварцевым штифтом",
+			priceRub: 7500,
+		},
+	},
+	{
+		code804n: "A16.07.054.001",
+		category: "Хирургия",
+		economy: {
+			name: "Внутрикостная дентальная имплантация базовой системы",
+			priceRub: 32000,
+		},
+		optimum: {
+			name: "Внутрикостная дентальная имплантация SLA-системы + формирователь десны",
+			priceRub: 42000,
+		},
+		premium: {
+			name: "Премиальная имплантация гидрофильной системы + 3D-шаблон",
+			priceRub: 80000,
+		},
+	},
+	{
+		code804n: "A16.07.004",
+		category: "Ортопедия",
+		economy: {
+			name: "Восстановление зуба металлокерамической коронкой Co-Cr",
+			priceRub: 14000,
+		},
+		optimum: {
+			name: "Восстановление зуба коронкой из многослойного диоксида циркония CAD/CAM",
+			priceRub: 26000,
+		},
+		premium: {
+			name: "Восстановление зуба керамической коронкой с индивидуальной эстетической раскраской",
+			priceRub: 38000,
+		},
+	},
+	{
+		code804n: "A16.07.006",
+		category: "Ортопедия",
+		economy: {
+			name: "Протезирование на имплантате металлокерамической коронкой",
+			priceRub: 22000,
+		},
+		optimum: {
+			name: "Протезирование на имплантате (диоксид циркония с шахтой винтовой фиксации)",
+			priceRub: 34000,
+		},
+		premium: {
+			name: "Протезирование на имплантате (индивидуальный абатмент Ti-Base + керамическая коронка)",
+			priceRub: 48000,
+		},
+	},
+];
+
+/**
+ * resolveTierService — Сопоставление услуги с клиническим прейскурантом тарифов клиники.
+ */
+export function resolveTierService(
+	item: TreatmentPlanItem,
+	tierId: TreatmentPlanTierId,
+): { name: string; priceRub: number } {
+	const toothPrefix = item.toothNumber ? `зуба ${item.toothNumber} ` : "";
+	const nameLower = (item.name || "").toLowerCase();
+	const code = (item.code804n || item.serviceCode || "").trim().toUpperCase();
+
+	if (tierId === "optimum") {
+		const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
+		return { name: item.name, priceRub: basePrice };
+	}
+
+	const catalogEntry = CLINIC_SERVICE_TIER_CATALOG.find(
+		(entry) => entry.code804n === code || (code && code.startsWith(entry.code804n)),
+	);
+
+	if (catalogEntry) {
+		const tierData = catalogEntry[tierId];
+		const nameWithTooth = item.toothNumber ? `${tierData.name} (${toothPrefix.trim()})` : tierData.name;
+		return {
+			name: nameWithTooth,
+			priceRub: tierData.priceRub,
+		};
+	}
+
+	if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.006")!;
+		return {
+			name: tierId === "economy"
+				? `Протезирование на имплантате ${toothPrefix}металлокерамической коронкой`
+				: `Протезирование на имплантате ${toothPrefix}(индивидуальный абатмент Ti-Base + керамическая коронка)`,
+			priceRub: entry[tierId].priceRub,
+		};
+	}
+	if (/имплант/i.test(nameLower)) {
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.054.001")!;
+		return {
+			name: tierId === "economy"
+				? `Дентальная имплантация ${toothPrefix}(базовая система)`
+				: `Премиальная имплантация ${toothPrefix}с гидрофильной поверхностью + 3D-шаблон`,
+			priceRub: entry[tierId].priceRub,
+		};
+	}
+	if (/коронк/i.test(nameLower)) {
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.004")!;
+		return {
+			name: tierId === "economy"
+				? `Восстановление ${toothPrefix}металлокерамической коронкой Co-Cr`
+				: `Восстановление ${toothPrefix}керамической коронкой с индивидуальной эстетической раскраской`,
+			priceRub: entry[tierId].priceRub,
+		};
+	}
+	if (/вкладк/i.test(nameLower)) {
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.003.001")!;
+		return {
+			name: tierId === "economy"
+				? `Восстановление ${toothPrefix}литой культевой вкладкой`
+				: `Восстановление ${toothPrefix}прессованной керамической накладкой Inlay`,
+			priceRub: entry[tierId].priceRub,
+		};
+	}
+	if (/эндодонт|канал/i.test(nameLower)) {
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.008.002")!;
+		return {
+			name: tierId === "economy"
+				? `Эндодонтическое лечение ${toothPrefix}(стандартная обработка и пломбирование)`
+				: `Прецизионная микроскопная эндодонтия ${toothPrefix}с биокерамикой`,
+			priceRub: entry[tierId].priceRub,
+		};
+	}
+	if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.002")!;
+		return {
+			name: tierId === "economy"
+				? `Восстановление ${toothPrefix}пломбой световой полимеризации`
+				: `Восстановление ${toothPrefix}прессованной керамической накладкой / вкладкой`,
+			priceRub: entry[tierId].priceRub,
+		};
+	}
+
+	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
+	if (tierId === "economy") {
+		const calculatedPrice = Math.max(100, Math.round((basePrice * 0.85) / 50) * 50);
+		return {
+			name: `${item.name} (базовый стандарт)`,
+			priceRub: calculatedPrice,
+		};
+	}
+	if (tierId === "premium") {
+		const calculatedPrice = Math.max(100, Math.round((basePrice * 1.40) / 50) * 50);
+		return {
+			name: `${item.name} (премиум)`,
+			priceRub: calculatedPrice,
+		};
+	}
+	return {
+		name: item.name,
+		priceRub: basePrice,
+	};
+}
+
+/**
+ * differentiateStagesForTier — Дифференциация этапов и услуг по клинической матрице материалов
+ * строго из прейскуранта CLINIC_SERVICE_TIER_CATALOG без искусственных множителей.
  */
 export function differentiateStagesForTier(
 	stages: readonly TreatmentPlanStage[],
 	tierId: string,
 ): TreatmentPlanStage[] {
+	const validTierId: TreatmentPlanTierId =
+		tierId === "economy" || tierId === "premium" ? tierId : "optimum";
+
 	return stages.map((stg) => {
 		const mappedItems = stg.items.map((it) => {
-			const nameLower = (it.name || "").toLowerCase();
-			const toothPrefix = it.toothNumber ? `зуба ${it.toothNumber} ` : "";
-
-			if (tierId === "economy") {
-				if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Протезирование на имплантате ${toothPrefix}металлокерамической коронкой`,
-						priceRub: 22000,
-						unitPriceRub: 22000,
-					};
-				}
-				if (/имплант/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Дентальная имплантация ${toothPrefix}(базовая система)`,
-						priceRub: 32000,
-						unitPriceRub: 32000,
-					};
-				}
-				if (/коронк|вкладк/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Восстановление ${toothPrefix}металлокерамической коронкой Co-Cr`,
-						priceRub: 14000,
-						unitPriceRub: 14000,
-					};
-				}
-				if (/эндодонт|канал/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Эндодонтическое лечение ${toothPrefix}(стандартная обработка и пломбирование)`,
-						priceRub: 9500,
-						unitPriceRub: 9500,
-					};
-				}
-				if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Восстановление ${toothPrefix}пломбой световой полимеризации`,
-						priceRub: 3500,
-						unitPriceRub: 3500,
-					};
-				}
-				const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
-				return {
-					...it,
-					priceRub: basePrice,
-					unitPriceRub: basePrice,
-				};
-			}
-
-			if (tierId === "premium") {
-				if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Протезирование на имплантате ${toothPrefix}(индивидуальный абатмент Ti-Base + керамическая коронка)`,
-						priceRub: 48000,
-						unitPriceRub: 48000,
-					};
-				}
-				if (/имплант/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Премиальная имплантация ${toothPrefix}с гидрофильной поверхностью + 3D-шаблон`,
-						priceRub: 80000,
-						unitPriceRub: 80000,
-					};
-				}
-				if (/коронк/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Восстановление ${toothPrefix}керамической коронкой E.max с индивидуальной раскраской`,
-						priceRub: 38000,
-						unitPriceRub: 38000,
-					};
-				}
-				if (/вкладк/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Восстановление ${toothPrefix}прессованной керамической накладкой Inlay`,
-						priceRub: 8500,
-						unitPriceRub: 8500,
-					};
-				}
-				if (/эндодонт|канал/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Прецизионная микроскопная эндодонтия ${toothPrefix}с биокерамикой`,
-						priceRub: 16500,
-						unitPriceRub: 16500,
-					};
-				}
-				if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
-					return {
-						...it,
-						name: `Восстановление ${toothPrefix}керамической накладкой / вкладкой E.max`,
-						priceRub: 8500,
-						unitPriceRub: 8500,
-					};
-				}
-				const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
-				return {
-					...it,
-					priceRub: basePrice,
-					unitPriceRub: basePrice,
-				};
-			}
-
-			// optimum (золотой клинический стандарт — сохраняет точные наименования врача и базовые сметы)
-			const basePrice = typeof it.unitPriceRub === "number" ? it.unitPriceRub : it.priceRub;
+			const resolved = resolveTierService(it, validTierId);
 			return {
 				...it,
-				name: it.name,
-				priceRub: basePrice,
-				unitPriceRub: basePrice,
+				name: resolved.name,
+				priceRub: resolved.priceRub,
+				unitPriceRub: resolved.priceRub,
 			};
 		});
 

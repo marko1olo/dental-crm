@@ -72,6 +72,10 @@ export async function handleTreatmentRecord(args: TreatmentRecordInput, context:
 		})
 		.returning({ id: treatmentItems.id });
 
+	if (!inserted) {
+		throw new Error("Не удалось зафиксировать процедуру в карте приёма");
+	}
+
 	return {
 		success: true,
 		recordId: inserted.id,

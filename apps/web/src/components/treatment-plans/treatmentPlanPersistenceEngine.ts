@@ -4,7 +4,7 @@
 
 import type { TreatmentPlanStage } from "./types.js";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine.js";
-import { hydrateRawPlanItem } from "./persistence/rawItemHydrator.js";
+import { hydrateRawPlanItem, type RawTreatmentPlanItemDto } from "./persistence/rawItemHydrator.js";
 import { assembleStageFromItems } from "./persistence/stageAssembler.js";
 
 export * from "./persistence/stageKindClassifier.js";
@@ -16,8 +16,7 @@ export * from "./persistence/stageAssembler.js";
  * Восстановление структурированных этапов плана лечения из плоских записей БД (treatment_plan_items).
  */
 export function buildStagesFromPlanItems(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	rawItems: readonly any[],
+	rawItems: readonly RawTreatmentPlanItemDto[],
 	catalog?: readonly CatalogServiceLookupItem[],
 ): TreatmentPlanStage[] {
 	if (!Array.isArray(rawItems) || rawItems.length === 0) {
@@ -25,8 +24,7 @@ export function buildStagesFromPlanItems(
 	}
 
 	// Группируем элементы по номеру фазы/этапа (phase: 1, 2, 3, 4, 5...)
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const phaseGroups = new Map<number, any[]>();
+	const phaseGroups = new Map<number, RawTreatmentPlanItemDto[]>();
 	for (const raw of rawItems) {
 		const phase = Math.max(1, Number(raw.phase) || 1);
 		const list = phaseGroups.get(phase) || [];

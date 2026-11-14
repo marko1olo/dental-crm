@@ -15,7 +15,7 @@ export function createWarrantyPlanItem(item: TreatmentPlanItem): TreatmentPlanIt
 		isWarranty: true,
 		warrantyDiscountPercent: 100,
 		warrantyPriceRub: 0,
-		amountKopecks: 0 as any,
+		amountKopecks: 0,
 	};
 }
 
@@ -42,6 +42,6 @@ export function createPriceUpdatedPlanItem(
 		isWarranty: isZero ? (item.isWarranty ?? true) : false,
 		warrantyDiscountPercent: isZero ? 100 : undefined,
 		warrantyPriceRub: isZero ? 0 : undefined,
-		amountKopecks: kopecks as any,
+		amountKopecks: kopecks,
 	};
 }

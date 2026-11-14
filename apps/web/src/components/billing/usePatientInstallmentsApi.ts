@@ -159,7 +159,8 @@ export function usePatientInstallmentsApi(options: {
 			};
 
 			return mapServerContractToInstallmentPlan(detailJson.data);
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[usePatientInstallmentsApi] Не удалось загрузить активный договор рассрочки:", err);
 			return null;
 		} finally {
 			setIsLoading(false);
@@ -201,7 +202,8 @@ export function usePatientInstallmentsApi(options: {
 					contract: json.contract,
 					tranches: json.tranches,
 				});
-			} catch {
+			} catch (err: unknown) {
+				console.warn("[usePatientInstallmentsApi] Не удалось создать договор рассрочки:", err);
 				return null;
 			} finally {
 				setIsLoading(false);
@@ -230,7 +232,8 @@ export function usePatientInstallmentsApi(options: {
 					body: JSON.stringify({ cashBoxId, amountPaidKopecks }),
 				});
 				return res.ok;
-			} catch {
+			} catch (err: unknown) {
+				console.warn("[usePatientInstallmentsApi] Не удалось оплатить транш рассрочки:", err);
 				return false;
 			} finally {
 				setIsLoading(false);

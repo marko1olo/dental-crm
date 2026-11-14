@@ -41,9 +41,12 @@ export async function analyzeVisiographImage(imageBase64: string): Promise<Visio
 
 		for (let i = candidates.length - 1; i > 0; i--) {
 			const j = randomInt(0, i + 1);
-			const temp = candidates[i]!;
-			candidates[i] = candidates[j]!;
-			candidates[j] = temp;
+			const itemI = candidates[i];
+			const itemJ = candidates[j];
+			if (itemI !== undefined && itemJ !== undefined) {
+				candidates[i] = itemJ;
+				candidates[j] = itemI;
+			}
 		}
 
 		for (const candidate of candidates) {

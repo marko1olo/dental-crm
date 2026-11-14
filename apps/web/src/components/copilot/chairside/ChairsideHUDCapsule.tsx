@@ -117,7 +117,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         <button
           type="button"
           onClick={onApplyAllActions}
-          className="chairside-hud-btn-quick-apply chairside-capsule-btn-apply btn-capsule-apply-scheme bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)] border border-[var(--teal,#0d9488)] shadow-sm hidden sm:inline-flex"
+          className="chairside-hud-btn-quick-apply chairside-capsule-btn-apply btn-capsule-apply-scheme dente-btn-secondary border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-sm hidden sm:inline-flex"
           data-testid="chairside-btn-quick-apply"
         >
           <Check size={14} />

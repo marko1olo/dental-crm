@@ -21,7 +21,7 @@ export const LeadFormPatientAndAudioBadges: React.FC<LeadFormPatientAndAudioBadg
 }) => {
 	return (
 		<>
-			{(currentLead?.existingPatient || (currentLead as any)?.patientId) && (
+			{(currentLead?.existingPatient || currentLead?.patientId) && (
 				<div
 					style={{
 						display: "inline-flex",
@@ -40,7 +40,7 @@ export const LeadFormPatientAndAudioBadges: React.FC<LeadFormPatientAndAudioBadg
 					onClick={() =>
 						onOpenPatient(
 							currentLead?.existingPatient?.id ||
-								(currentLead as any)?.patientId,
+								currentLead?.patientId || "",
 						)
 					}
 					title={

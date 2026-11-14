@@ -12,6 +12,7 @@ import {
 	periodontogramSnapshots,
 	periodontogramTeeth,
 	toothStates,
+	users,
 } from "../db/schema.js";
 import {
 	computeSnapshotIndices,
@@ -140,6 +141,7 @@ export async function createDraftWithInitialTeeth(
 	patientId: string,
 	recordedByUserId: string | null,
 ) {
+	const validUserId = await resolveExistingPerioUserId(orgId, recordedByUserId);
 	const existingStates = await db
 		.select({
 			toothNumber: toothStates.toothNumber,
@@ -166,7 +168,7 @@ export async function createDraftWithInitialTeeth(
 				patientId,
 				status: "draft",
 				recordedAt: new Date(),
-				recordedByUserId,
+				recordedByUserId: validUserId,
 			})
 			.returning();
 
@@ -343,6 +345,29 @@ export async function resolvePerioPatientId(
 }
 
 /**
+ * Разрешает идентификатор пользователя/врача (staff), проверяя наличие в таблице users.
+ * Если передан ID организации (например admin@clinic.ru) или несуществующий пользователь, возвращает null
+ * для исключения ошибки PostgreSQL 23503 foreign_key_violation на periodontogram_snapshots.
+ */
+export async function resolveExistingPerioUserId(
+	orgId: string,
+	rawUserId?: string | null,
+): Promise<string | null> {
+	const trimmed = typeof rawUserId === "string" ? rawUserId.trim() : "";
+	if (!trimmed) return null;
+	try {
+		const [user] = await db
+			.select({ id: users.id })
+			.from(users)
+			.where(and(eq(users.id, trimmed), eq(users.organizationId, orgId)))
+			.limit(1);
+		return user?.id ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Fetches the active draft or latest closed periodontogram snapshot for a patient.
  */
 export async function fetchPatientLatestPeriodontogram(
@@ -407,6 +432,10 @@ export interface UpsertPatientFullPeriodontogramParams {
 	psrData?: Record<string, unknown> | undefined;
 }
 
+export type PeriodontogramSnapshotWithTeeth = typeof periodontogramSnapshots.$inferSelect & {
+	teeth: ReturnType<typeof formatSnapshotTeethWithSites>;
+};
+
 /**
  * Upserts a full periodontogram draft or closed record for a patient (Форма 043/у).
  * Creates draft if none exists, updates teeth, upserts sites, and calculates indices on close.
@@ -423,9 +452,14 @@ export async function upsertPatientFullPeriodontogram({
 	psrData,
 }: UpsertPatientFullPeriodontogramParams) {
 	try {
+		const validRecordedByUserId = await resolveExistingPerioUserId(
+			orgId,
+			recordedByUserId,
+		);
+
 		// Find existing draft snapshot or create a new one
-	let [activeDraft] = await db
-		.select()
+		let [activeDraft] = await db
+			.select()
 			.from(periodontogramSnapshots)
 			.where(
 				and(
@@ -440,7 +474,7 @@ export async function upsertPatientFullPeriodontogram({
 			activeDraft = await createDraftWithInitialTeeth(
 				orgId,
 				patientId,
-				recordedByUserId,
+				validRecordedByUserId,
 			);
 		}
 
@@ -526,7 +560,7 @@ export async function upsertPatientFullPeriodontogram({
 
 			// 4. Close examination if requested
 			const shouldClose = status === "closed" || autoClose;
-			let finalRecord: any;
+			let finalRecord: PeriodontogramSnapshotWithTeeth;
 			if (shouldClose) {
 				const { teeth: currentTeeth, sites: currentSites } =
 					await fetchSnapshotTeethAndSites(activeDraft.id, tx);
@@ -541,7 +575,7 @@ export async function upsertPatientFullPeriodontogram({
 					.set({
 						status: "closed",
 						closedAt: new Date(),
-						closedByUserId: recordedByUserId,
+						closedByUserId: validRecordedByUserId,
 						indices: mergedIndices,
 						...(notes !== undefined ? { notes } : {}),
 						updatedAt: new Date(),
@@ -549,6 +583,9 @@ export async function upsertPatientFullPeriodontogram({
 					.where(eq(periodontogramSnapshots.id, activeDraft.id))
 					.returning();
 
+				if (!closedSnap) {
+					throw new Error("FailedToClosePeriodontogramSnapshot");
+				}
 				const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id, tx);
 				finalRecord = {
 					...closedSnap,
@@ -560,7 +597,7 @@ export async function upsertPatientFullPeriodontogram({
 						.update(periodontogramSnapshots)
 						.set({
 							indices: {
-								...((activeDraft.indices as any) || {}),
+								...((activeDraft.indices as Record<string, unknown>) || {}),
 								psrData,
 							},
 							updatedAt: new Date(),
@@ -574,6 +611,9 @@ export async function upsertPatientFullPeriodontogram({
 					.where(eq(periodontogramSnapshots.id, activeDraft.id))
 					.limit(1);
 
+				if (!updatedSnap) {
+					throw new Error("PeriodontogramSnapshotNotFound");
+				}
 				const { formattedTeeth } = await fetchSnapshotTeethAndSites(activeDraft.id, tx);
 				finalRecord = {
 					...updatedSnap,
@@ -584,17 +624,21 @@ export async function upsertPatientFullPeriodontogram({
 			return finalRecord;
 		});
 	} catch (err: unknown) {
-		const pgCode = (err as any)?.code || (err as any)?.cause?.code;
-		const errMsg = String((err as any)?.message || err);
+		const pgErr = err as { code?: string; message?: string; cause?: { code?: string } };
+		const pgCode = pgErr?.code || pgErr?.cause?.code;
+		const errMsg = String(pgErr?.message || err);
 		const isForeignKey =
 			pgCode === "23503" ||
 			errMsg.includes("foreign key") ||
 			errMsg.includes("violates foreign key");
 
 		if (isForeignKey) {
-			const error = new Error("Пациент или организация не найдены");
-			(error as any).statusCode = 404;
-			(error as any).code = "PatientNotFound";
+			const error = new Error("Пациент или организация не найдены") as Error & {
+				statusCode?: number;
+				code?: string;
+			};
+			error.statusCode = 404;
+			error.code = "PatientNotFound";
 			throw error;
 		}
 

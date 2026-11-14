@@ -5,26 +5,29 @@
  */
 
 import { eq } from "drizzle-orm";
-import type { ExtractTablesWithRelations } from "drizzle-orm";
-import type { PgTransaction } from "drizzle-orm/pg-core";
+import { db } from "../../../db/client.js";
 import {
 	temperatureHumidityEquipments,
 	temperatureHumidityLogs,
 } from "../../../db/schema.js";
 
-type TxType = PgTransaction<any, any, ExtractTablesWithRelations<any>>;
+type TxType = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export async function saveShiftMicroclimateRecords(
 	tx: TxType,
 	organizationId: string,
-	body: Record<string, any>,
+	body: Record<string, unknown>,
 	operatorId: string | null,
 	dateStr: string,
 ): Promise<number> {
-	if (Array.isArray(body.microclimateRecords) && body.microclimateRecords.length > 0) {
-		const microInserts = body.microclimateRecords.map((m: any) => ({
+	const microclimateRecords = Array.isArray(body.microclimateRecords)
+		? (body.microclimateRecords as Record<string, unknown>[])
+		: [];
+
+	if (microclimateRecords.length > 0) {
+		const microInserts = microclimateRecords.map((m) => ({
 			organizationId,
-			equipmentId: m.equipmentId,
+			equipmentId: String(m.equipmentId),
 			measurementDate: dateStr,
 			measurementPeriod: (m.controlTimeOfDay === "evening" ? "evening" : "morning") as "evening" | "morning",
 			temperatureCelsius: String(m.temperatureValueC ?? "4.2"),
@@ -38,7 +41,8 @@ export async function saveShiftMicroclimateRecords(
 		return microInserts.length;
 	}
 
-	if (body.microclimate) {
+	const microclimate = body.microclimate as Record<string, Record<string, unknown>> | undefined;
+	if (microclimate) {
 		const tempEquips = await tx
 			.select()
 			.from(temperatureHumidityEquipments)
@@ -48,11 +52,11 @@ export async function saveShiftMicroclimateRecords(
 			const tempLogsToInsert: Array<typeof temperatureHumidityLogs.$inferInsert> = tempEquips.map((te) => {
 				const isFridge = te.equipmentType.includes("refrigerator");
 				const temp = isFridge
-					? String(body.microclimate?.refrigeratorLog?.morningTempCelsius || "4.2")
-					: String(body.microclimate?.psychrometerLog?.morningTempCelsius || "21.5");
+					? String(microclimate.refrigeratorLog?.morningTempCelsius || "4.2")
+					: String(microclimate.psychrometerLog?.morningTempCelsius || "21.5");
 				const humidity = isFridge
 					? null
-					: String(body.microclimate?.psychrometerLog?.morningHumidityPercent || "55");
+					: String(microclimate.psychrometerLog?.morningHumidityPercent || "55");
 				return {
 					organizationId,
 					equipmentId: te.id,

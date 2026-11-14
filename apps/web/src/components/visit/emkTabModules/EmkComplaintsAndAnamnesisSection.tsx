@@ -29,8 +29,8 @@ export {
 
 export function EmkComplaintsAndAnamnesisSection(props: EmkComplaintsAndAnamnesisSectionProps) {
 	const { isLocked, onApplyHealthyNorm } = props;
-	const visitNoteForm: Record<string, any> = props.visitNoteForm ?? {};
-	const updateVisitNoteField: (field: string, value: any) => void = props.updateVisitNoteField ?? (() => {});
+	const visitNoteForm: Record<string, unknown> = props.visitNoteForm ?? {};
+	const updateVisitNoteField: (field: string, value: unknown) => void = props.updateVisitNoteField ?? (() => {});
 	const currentAnamnesis = String(visitNoteForm?.anamnesis || "");
 	const isNormActive = currentAnamnesis.trim().length > 0 && isSomaticTextPhysiologicalNorm(currentAnamnesis);
 

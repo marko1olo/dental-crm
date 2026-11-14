@@ -1,11 +1,219 @@
 /**
- * DENTE Dental CRM — Therapy Baseline Services Facade
- * Mandate 8b Architecture: 100% Modular Decomposition (< 120 lines per file)
+ * DENTE Dental CRM — Therapy Baseline Services Presets (SSOT)
+ *
+ * Implements Mandates 8b/8zi (Sweet Spot ~210 lines), 8e, 8n.
+ * Baseline clinical services: Anesthesia, Dam, Caries, and Endodontics (srv-base-01 to srv-base-11).
  */
 
-import { THERAPY_BASELINE_PART1 } from "./therapyBaselinePart1";
-import { THERAPY_BASELINE_PART2 } from "./therapyBaselinePart2";
+import { STATUTORY_VAT_EXEMPTION_NOTE } from "./constants";
 import type { ServicePricelistItem } from "./types";
+
+export const THERAPY_BASELINE_PART1: readonly ServicePricelistItem[] = [
+	{
+		id: "srv-base-01",
+		code804n: "A11.07.012",
+		statutoryTitle804n:
+			"Инъекционное введение лекарственных препаратов в челюстно-лицевую область (инфильтрационная анестезия)",
+		commercialTitle: "Инфильтрационная анестезия (Артикаин/Ультракаин)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 950,
+		basePriceKopecks: 95000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K02.1", "K04.0"],
+		estimatedDurationMin: 15,
+		isActive: true,
+		isArchived: false,
+		tags: ["анестезия", "инфильтрационная", "укол", "обезболивание"],
+	},
+	{
+		id: "srv-base-02",
+		code804n: "A11.07.010",
+		statutoryTitle804n:
+			"Введение лекарственных препаратов в область периферического нерва (проводниковая анестезия)",
+		commercialTitle: "Проводниковая анестезия (Торусальная / Мандибулярная)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 1100,
+		basePriceKopecks: 110000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K02.1", "K04.0"],
+		estimatedDurationMin: 15,
+		isActive: true,
+		isArchived: false,
+		tags: ["анестезия", "проводниковая", "мандибулярная"],
+	},
+	{
+		id: "srv-base-03",
+		code804n: "A16.07.002.009",
+		statutoryTitle804n:
+			"Изоляция операционного поля (наложение коффердама / раббердама)",
+		commercialTitle: "Изоляция зуба коффердамом / раббердамом (Sanctuary / OptiDam)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 650,
+		basePriceKopecks: 65000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K02.1", "K04.0"],
+		estimatedDurationMin: 15,
+		isActive: true,
+		isArchived: false,
+		tags: ["коффердам", "раббердам", "изоляция"],
+	},
+	{
+		id: "srv-base-04",
+		code804n: "A16.07.002.010",
+		statutoryTitle804n:
+			"Восстановление зуба пломбой при лечении поверхностного кариеса (светоотверждаемый композит)",
+		commercialTitle: "Лечение поверхностного кариеса светоотверждаемым композитом",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 3500,
+		basePriceKopecks: 350000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K02.0"],
+		estimatedDurationMin: 30,
+		isActive: true,
+		isArchived: false,
+		tags: ["кариес", "пломба", "поверхностный кариес"],
+	},
+	{
+		id: "srv-base-05",
+		code804n: "A16.07.002.011",
+		statutoryTitle804n:
+			"Восстановление зуба пломбой при лечении среднего кариеса (светоотверждаемый композит)",
+		commercialTitle:
+			"Лечение среднего кариеса светоотверждаемым композитом (Estelite / Filtek)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 4200,
+		basePriceKopecks: 420000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K02.1"],
+		estimatedDurationMin: 45,
+		isActive: true,
+		isArchived: false,
+		tags: ["кариес", "пломба", "средний кариес", "композит"],
+	},
+	{
+		id: "srv-base-06",
+		code804n: "A16.07.002.012",
+		statutoryTitle804n:
+			"Восстановление зуба пломбой при лечении глубокого кариеса с наложением лечебной прокладки",
+		commercialTitle: "Лечение глубокого кариеса с изолирующей и лечебной прокладкой",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 4800,
+		basePriceKopecks: 480000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K02.1", "K02.2"],
+		estimatedDurationMin: 45,
+		isActive: true,
+		isArchived: false,
+		tags: ["глубокий кариес", "прокладка", "пломба"],
+	},
+];
+
+export const THERAPY_BASELINE_PART2: readonly ServicePricelistItem[] = [
+	{
+		id: "srv-base-07",
+		code804n: "A16.07.030.001",
+		statutoryTitle804n:
+			"Инструментальная и медикаментозная обработка 1 корневого канала",
+		commercialTitle:
+			"Эндодонтическая обработка 1 корневого канала (машинные Ni-Ti файлы)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 2100,
+		basePriceKopecks: 210000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K04.0", "K04.1"],
+		estimatedDurationMin: 30,
+		isActive: true,
+		isArchived: false,
+		tags: ["эндодонтия", "канал", "обработка канала"],
+	},
+	{
+		id: "srv-base-08",
+		code804n: "A16.07.030.002",
+		statutoryTitle804n:
+			"Инструментальная и медикаментозная обработка 2 корневых каналов",
+		commercialTitle: "Эндодонтическая обработка 2 корневых каналов",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 3800,
+		basePriceKopecks: 380000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K04.0", "K04.1"],
+		estimatedDurationMin: 45,
+		isActive: true,
+		isArchived: false,
+		tags: ["эндодонтия", "2 канала"],
+	},
+	{
+		id: "srv-base-09",
+		code804n: "A16.07.030.003",
+		statutoryTitle804n:
+			"Инструментальная и медикаментозная обработка 3 корневых каналов",
+		commercialTitle: "Эндодонтическая обработка 3 корневых каналов",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 5200,
+		basePriceKopecks: 520000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K04.0", "K04.1"],
+		estimatedDurationMin: 60,
+		isActive: true,
+		isArchived: false,
+		tags: ["эндодонтия", "3 канала"],
+	},
+	{
+		id: "srv-base-10",
+		code804n: "A16.07.030.004",
+		statutoryTitle804n:
+			"Инструментальная и медикаментозная обработка 4 корневых каналов",
+		commercialTitle: "Эндодонтическая обработка 4 корневых каналов",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 6500,
+		basePriceKopecks: 650000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K04.0", "K04.1"],
+		estimatedDurationMin: 60,
+		isActive: true,
+		isArchived: false,
+		tags: ["эндодонтия", "4 канала"],
+	},
+	{
+		id: "srv-base-11",
+		code804n: "A16.07.008.002",
+		statutoryTitle804n:
+			"Пломбирование корневого канала зуба гуттаперчевыми штифтами (1 канал)",
+		commercialTitle:
+			"Пломбирование корневого канала гуттаперчей и силером (1 канал)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 2400,
+		basePriceKopecks: 240000,
+		vatRate: 0,
+		vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+		icd10Indications: ["K04.0", "K04.1"],
+		estimatedDurationMin: 30,
+		isActive: true,
+		isArchived: false,
+		tags: ["гуттаперча", "пломбирование канала"],
+	},
+];
 
 export const THERAPY_BASELINE_SERVICES: readonly ServicePricelistItem[] = [
 	...THERAPY_BASELINE_PART1,

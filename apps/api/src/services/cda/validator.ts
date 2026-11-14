@@ -18,34 +18,77 @@ export {
 	validateRussianOgrn,
 };
 
-export function validateCdaParams(p: any): CdaValidationResult {
+export interface FlatCdaPersonName {
+	first?: string | undefined;
+	last?: string | undefined;
+	middle?: string | undefined;
+}
+
+export interface LegacyFlatCdaParams {
+	docKind?: string | undefined;
+	documentId?: string | undefined;
+	visitDate?: string | Date | undefined;
+	patientId?: string | undefined;
+	patientName?: FlatCdaPersonName | undefined;
+	patientSnils?: string | undefined;
+	patientBirthDate?: string | Date | undefined;
+	patientGender?: "1" | "2" | undefined;
+	doctorName?: FlatCdaPersonName | undefined;
+	doctorSnils?: string | undefined;
+	doctorPosition?: string | undefined;
+	doctorPositionCode?: string | undefined;
+	clinicOid?: string | undefined;
+	clinicName?: string | undefined;
+	clinicOgrn?: string | undefined;
+	clinicInn?: string | undefined;
+	icd10Code?: string | undefined;
+	diagnosisText?: string | undefined;
+	diagnosisTooth?: number | undefined;
+	dentalStatus?: unknown;
+	odontogram?: unknown;
+	services?: unknown;
+	servicesRendered?: unknown;
+	patient?: unknown;
+	doctor?: unknown;
+	clinic?: unknown;
+	diagnoses?: unknown;
+}
+
+export type CdaValidationInput = LegacyFlatCdaParams | Record<string, unknown> | unknown;
+
+export function validateCdaParams(p: CdaValidationInput): CdaValidationResult {
 	if (!p || typeof p !== "object") return canonicalValidateCdaParams(p);
-	const c = (p.patient && p.doctor) ? p : {
-		docKind: "108",
-		documentId: p.documentId || "00000000-0000-0000-0000-000000000000",
-		visitDate: p.visitDate ? new Date(p.visitDate) : new Date(),
+	const obj = p as Record<string, unknown>;
+	if (obj["patient"] && obj["doctor"]) {
+		return canonicalValidateCdaParams(obj);
+	}
+	const flat = obj as LegacyFlatCdaParams;
+	const c = {
+		docKind: flat.docKind || "108",
+		documentId: flat.documentId || "00000000-0000-0000-0000-000000000000",
+		visitDate: flat.visitDate ? new Date(flat.visitDate) : new Date(),
 		patient: {
-			patientId: p.patientId,
-			name: p.patientName || { first: "", last: "" },
-			snils: p.patientSnils,
-			birthDate: typeof p.patientBirthDate === "string" ? p.patientBirthDate : (p.patientBirthDate ? new Date(p.patientBirthDate).toISOString().slice(0, 10) : "1980-01-01"),
-			gender: p.patientGender,
+			patientId: flat.patientId,
+			name: flat.patientName || { first: "", last: "" },
+			snils: flat.patientSnils,
+			birthDate: typeof flat.patientBirthDate === "string" ? flat.patientBirthDate : (flat.patientBirthDate ? new Date(flat.patientBirthDate).toISOString().slice(0, 10) : "1980-01-01"),
+			gender: flat.patientGender,
 		},
 		doctor: {
-			name: p.doctorName || { first: "", last: "" },
-			snils: p.doctorSnils,
-			position: p.doctorPosition,
-			positionCode: p.doctorPositionCode,
+			name: flat.doctorName || { first: "", last: "" },
+			snils: flat.doctorSnils,
+			position: flat.doctorPosition,
+			positionCode: flat.doctorPositionCode,
 		},
 		clinic: {
-			oid: p.clinicOid,
-			name: p.clinicName || "",
-			ogrn: p.clinicOgrn,
-			inn: p.clinicInn,
+			oid: flat.clinicOid,
+			name: flat.clinicName || "",
+			ogrn: flat.clinicOgrn,
+			inn: flat.clinicInn,
 		},
-		diagnoses: p.icd10Code ? [{ icd10Code: p.icd10Code, diagnosisText: p.diagnosisText || "", tooth: p.diagnosisTooth }] : [],
-		dentalStatus: p.dentalStatus || p.odontogram,
-		services: p.services || p.servicesRendered,
+		diagnoses: flat.icd10Code ? [{ icd10Code: flat.icd10Code, diagnosisText: flat.diagnosisText || "", tooth: flat.diagnosisTooth }] : [],
+		dentalStatus: flat.dentalStatus || flat.odontogram,
+		services: flat.services || flat.servicesRendered,
 	};
 	return canonicalValidateCdaParams(c);
 }

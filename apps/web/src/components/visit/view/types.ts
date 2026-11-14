@@ -97,7 +97,8 @@ export interface VisitActionFooterProps {
 	updateVisitNoteField?: ((field: string, val: string) => void) | undefined;
 	visitNoteForm?: VisitNoteFormExtended | undefined;
 	handlePrintClinicalDiaryFast?: (() => void) | undefined;
-	handlePrintForm043uFast: () => void;
+	handlePrintMedicalCardFast?: (() => void) | undefined;
+	handlePrintForm043uFast?: (() => void) | undefined;
 	setIsPriceValidatorModalOpen: (open: boolean) => void;
 	setIsStagePaymentModalOpen: (open: boolean) => void;
 	openCloseChecklistSection?: ((task: VisitCloseChecklistItem) => void) | undefined;

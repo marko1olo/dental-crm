@@ -45,14 +45,12 @@ export async function executeFiscalPayment(params: FiscalExecutionParams, forceO
 	const electronicKop = Math.round((eff.card + eff.sbp) * 100);
 
 	// 54-ФЗ (Тег 1030 — Наименование предмета расчета): честная номенклатура процедур
-	const rawItems = params.items && params.items.length > 0
+	const rawItems: readonly FiscalExecutionItem[] | null = params.items && params.items.length > 0
 		? params.items
-		: Array.isArray((stageCalc as any)?.items) && (stageCalc as any).items.length > 0
-			? (stageCalc as any).items
-			: null;
+		: null;
 
 	const compiledItems = rawItems && rawItems.length > 0
-		? rawItems.map((it: any) => {
+		? rawItems.map((it: FiscalExecutionItem) => {
 				const qty = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1;
 				const priceKop =
 					typeof it.priceKopecks === "number"

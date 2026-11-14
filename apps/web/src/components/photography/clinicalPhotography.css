@@ -18,6 +18,7 @@
 	position: fixed;
 	inset: 0;
 	z-index: 10060;
+	pointer-events: auto;
 	background: rgba(15, 23, 42, 0.75);
 	backdrop-filter: blur(8px);
 	-webkit-backdrop-filter: blur(8px);

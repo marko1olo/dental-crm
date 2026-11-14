@@ -151,11 +151,9 @@ export interface FinancialSliceState {
 	setPaymentReceiptPayerRelationship: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	paymentReceiptTaxSupportRequested: any;
+	paymentReceiptTaxSupportRequested: boolean;
 	setPaymentReceiptTaxSupportRequested: (
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		val: any | ((prev: any) => any),
+		val: boolean | ((prev: boolean) => boolean),
 	) => void;
 	paymentReceiptPurpose: string;
 	setPaymentReceiptPurpose: (val: string | ((prev: string) => string)) => void;
@@ -283,10 +281,8 @@ export interface FinancialSliceState {
 					prev: PaymentRefundCorrectionAction,
 			  ) => PaymentRefundCorrectionAction),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	refundAmountRub: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setRefundAmountRub: (val: any | ((prev: any) => any)) => void;
+	refundAmountRub: string;
+	setRefundAmountRub: (val: string | ((prev: string) => string)) => void;
 	refundReason: string;
 	setRefundReason: (val: string | ((prev: string) => string)) => void;
 	refundMethod: PaymentRefundCorrectionMethod;

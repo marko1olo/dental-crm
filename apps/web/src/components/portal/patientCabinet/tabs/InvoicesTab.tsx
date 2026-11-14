@@ -132,7 +132,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 						type="button"
 						className="pc-btn-secondary pc-tax-knd-shortcut-btn"
 						onClick={() => {
-							openPrintWindow(generatePatientTaxCertificate1151156(data, 2026));
+							openPrintWindow(generatePatientTaxCertificate1151156(data, new Date().getFullYear()));
 							onShowToast(
 								"Официальная справка для налогового вычета (13% НДФЛ) готова к печати!",
 							);

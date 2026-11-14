@@ -241,6 +241,10 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		{ organizationId, userId: ownerId, role: "owner" },
 		authTokenSecret(),
 	);
+	const doctorToken = signToken(
+		{ organizationId, userId: doctorId, role: "doctor" },
+		authTokenSecret(),
+	);
 	const clinicToken = signToken({ organizationId }, authTokenSecret());
 	const commissionUrl = `/api/settings/staff/${doctorId}/commission`;
 
@@ -255,14 +259,14 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	console.log(`  причина с сервера: ${before?.note ?? "(строки нет)"}`);
 
 	console.log("\n=== 2. ЗАПРОС БЕЗ СЕКРЕТА АДМИНИСТРАТОРА КЛИНИКИ ===");
-	// Тот класс дефекта, что трижды встречался в проекте: запрос без заголовков
-	// молча получает отказ, и экран выглядит пустым, а не сломанным.
+	// Тот класс дефекта, что трижды встречался в проекте: запрос без прав
+	// получает отказ, и экран защищен от несанкционированного изменения.
 	const unguarded = await app.inject({
 		method: "PUT",
 		url: commissionUrl,
 		headers: {
 			"Content-Type": "application/json",
-			"x-dente-clinic-token": clinicToken,
+			"x-dente-staff-token": doctorToken,
 		},
 		payload: { commissionPct: 45 },
 	});
@@ -282,6 +286,7 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 			"Content-Type": "application/json",
 			"x-dente-clinic-token": clinicToken,
 			"x-dente-admin-secret": PROOF_ADMIN_SECRET,
+			"x-dente-staff-token": ownerToken,
 		},
 		payload: { commissionPct: 45 },
 	});
@@ -332,6 +337,7 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 			"Content-Type": "application/json",
 			"x-dente-clinic-token": clinicToken,
 			"x-dente-admin-secret": PROOF_ADMIN_SECRET,
+			"x-dente-staff-token": ownerToken,
 		},
 		payload: { commissionPct: 32.5 },
 	});
@@ -362,6 +368,7 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		"Content-Type": "application/json",
 		"x-dente-clinic-token": clinicToken,
 		"x-dente-admin-secret": PROOF_ADMIN_SECRET,
+		"x-dente-staff-token": ownerToken,
 	};
 	for (const bad of [-1, 101, Number.NaN]) {
 		const rejected = await app.inject({
@@ -400,6 +407,7 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 		headers: {
 			"x-dente-clinic-token": clinicToken,
 			"x-dente-admin-secret": PROOF_ADMIN_SECRET,
+			"x-dente-staff-token": ownerToken,
 		},
 	});
 	check("список ставок отдан", listed.statusCode, 200);

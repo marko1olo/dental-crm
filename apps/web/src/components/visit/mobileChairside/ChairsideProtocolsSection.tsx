@@ -16,7 +16,7 @@ import { showToast } from "../../GlobalToast";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
-import { VisitDiaryAnesthesiaBar } from "../diary/VisitDiaryAnesthesiaBar";
+import { VisitDiaryAnesthesiaBar } from "../anesthesiaBar/VisitDiaryAnesthesiaBar";
 import { postQuickCarpuleWriteoff } from "../../anesthesia/anesthesiaEngine";
 import { ChairsideTeethQuickSelector } from "./ChairsideTeethQuickSelector";
 import { EmkEndoSection } from "../emk/EmkEndoSection";

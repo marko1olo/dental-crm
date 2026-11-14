@@ -171,7 +171,7 @@ describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {
 	it("6. Split payment with Gift Certificate redemption: Mapped to Tag 1215 advance offset", () => {
 		// Total: 6200 ₽ (620 000 kop)
 		// Patient pays with Certificate 3000 ₽ + Cash 1200 ₽ + Card 2000 ₽
-		const totalKopecks = 620000 as any;
+		const totalKopecks = 620000;
 		const allocation = calculateSplitPaymentAllocation(totalKopecks, {
 			cashRub: 1200,
 			cardRub: 2000,

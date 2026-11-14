@@ -15,7 +15,7 @@ import {
 	openSpeechChunkDb,
 	savePendingVisitSavesToLocalStorage,
 	speechChunkIndexedDbAvailable,
-} from "../../SpeechHelpers";
+} from "../../../helpers/speechHelpers";
 import { sensitiveLocalDraftRetentionMs } from "../documentDraftHelpers";
 import {
 	pendingVisitSaveQueueKey,

@@ -152,7 +152,8 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 			)
 			.limit(1);
 
-		if (existing.length > 0) {
+		const existingRecord = existing[0];
+		if (existingRecord) {
 			await db
 				.update(denteVkBotConfigs)
 				.set({
@@ -165,7 +166,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 					isEnabled: body.isActive,
 					updatedAt: new Date(),
 				})
-				.where(eq(denteVkBotConfigs.id, existing[0]!.id));
+				.where(eq(denteVkBotConfigs.id, existingRecord.id));
 		} else {
 			await db.insert(denteVkBotConfigs).values({
 				organizationId: orgId,
@@ -187,7 +188,8 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (existing.length > 0) {
+		const existingRecord = existing[0];
+		if (existingRecord) {
 			await db
 				.update(denteWhatsappBotConfigs)
 				.set({
@@ -200,7 +202,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 					isEnabled: body.isActive,
 					updatedAt: new Date(),
 				})
-				.where(eq(denteWhatsappBotConfigs.id, existing[0]!.id));
+				.where(eq(denteWhatsappBotConfigs.id, existingRecord.id));
 		} else {
 			await db.insert(denteWhatsappBotConfigs).values({
 				organizationId: orgId,
@@ -226,7 +228,8 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 			)
 			.limit(1);
 
-		if (existing.length > 0) {
+		const existingRecord = existing[0];
+		if (existingRecord) {
 			await db
 				.update(denteTelegramBotConfigs)
 				.set({
@@ -235,7 +238,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 					...(encryptedToken ? { tokenSecretRef: encryptedToken } : {}),
 					updatedAt: new Date(),
 				})
-				.where(eq(denteTelegramBotConfigs.id, existing[0]!.id));
+				.where(eq(denteTelegramBotConfigs.id, existingRecord.id));
 		} else {
 			await db.insert(denteTelegramBotConfigs).values({
 				organizationId: orgId,
@@ -252,7 +255,8 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 			.where(eq(denteMaxBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (existing.length > 0) {
+		const existingRecord = existing[0];
+		if (existingRecord) {
 			await db
 				.update(denteMaxBotConfigs)
 				.set({
@@ -262,7 +266,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 					isEnabled: body.isActive,
 					updatedAt: new Date(),
 				})
-				.where(eq(denteMaxBotConfigs.id, existing[0]!.id));
+				.where(eq(denteMaxBotConfigs.id, existingRecord.id));
 		} else {
 			await db.insert(denteMaxBotConfigs).values({
 				organizationId: orgId,

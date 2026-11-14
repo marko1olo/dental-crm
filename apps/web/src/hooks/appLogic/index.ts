@@ -23,10 +23,10 @@ import { usePatientSelectionState } from "./usePatientSelectionState";
 import { useScheduleLogic } from "./useScheduleLogic";
 import { useSettingsAndIntegrationsLogic } from "./useSettingsAndIntegrationsLogic";
 
+import type { UseAppLogicReturn } from "./types";
 export type * from "./types";
 
-// biome-ignore lint/suspicious/noExplicitAny: master coordinator hook facade
-export function useAppLogic(): any {
+export function useAppLogic(): UseAppLogicReturn {
 	const appStore = useAppStore();
 	const settingsStore = useSettingsStore();
 	const imagingStore = useImagingStore();
@@ -44,9 +44,9 @@ export function useAppLogic(): any {
 		[soundNotificationsMuted],
 	);
 
-	const authRef = useRef<any>(null);
-	const loadPersistenceHealthRef = useRef<any>(null);
-	const refreshSpeechRuntimeRef = useRef<any>(null);
+	const authRef = useRef<ReturnType<typeof useAuthLogic> | null>(null);
+	const loadPersistenceHealthRef = useRef<(() => Promise<void>) | null>(null);
+	const refreshSpeechRuntimeRef = useRef<((options?: { silent?: boolean }) => Promise<void> | void) | null>(null);
 	const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
 	const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
 	const paymentMutationIdRef = useRef<string | null>(null);
@@ -77,10 +77,12 @@ export function useAppLogic(): any {
 	const patientSelection = usePatientSelectionState({
 		auth,
 		dashboard: appStore.dashboard,
-		loadDashboard,
 		setError: appStore.setError,
 		setDashboard: appStore.setDashboard,
-	} as any);
+		clinicProfileDraft: appStore.clinicProfileDraft,
+		activeOrganizationId:
+			appStore.dashboard?.clinicSettings?.profile?.organizationId ?? null,
+	});
 
 	const scheduleLogic = useScheduleLogic({
 		dashboard: appStore.dashboard,
@@ -100,12 +102,13 @@ export function useAppLogic(): any {
 		dashboard: appStore.dashboard,
 		loadDashboard,
 		setError: appStore.setError,
+		setDashboard: appStore.setDashboard,
 		documentPatient: patientSelection.patient.documentPatient,
 		activeAppointment: scheduleLogic.activeAppointment,
 		activeDoctor: scheduleLogic.activeDoctor,
 		activePatient: patientSelection.activePatient,
 		selectedPatientId: patientSelection.selectedPatientId ?? "",
-	} as any);
+	});
 
 	const billingModal = useBillingModalLogic({
 		auth,
@@ -119,22 +122,19 @@ export function useAppLogic(): any {
 	});
 
 	const modalController = useModalController({
-		auth,
 		dashboard: appStore.dashboard,
-		loadDashboard,
-		setError: appStore.setError,
 		currentView,
+		settingsTab,
 		setCurrentView,
-		activePatient: patientSelection.activePatient,
-		clinicProfileDraft: appStore.clinicProfileDraft,
-	} as any);
+		setSettingsTab,
+		setError: appStore.setError,
+		setUiPreferencesSyncError: appStore.setUiPreferencesSyncError,
+	});
 
 	useHotkeysController({
-		currentView,
 		setCurrentView,
-		onboardingStep: modalController.onboardingStep,
-		onboardingDismissed: modalController.onboardingDismissed,
-	} as any);
+		setQuery: patientSelection.setQuery,
+	});
 
 	const offlineSync = useOfflineSyncLogic({
 		auth,
@@ -215,5 +215,5 @@ export function useAppLogic(): any {
 		refreshSpeechRuntimeRef,
 		paymentMutationIdRef,
 		recentPatientViewsVersion,
-	});
+	}) as UseAppLogicReturn;
 }

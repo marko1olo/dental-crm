@@ -8,6 +8,7 @@ import { computeSnapshotIndices } from "../../services/periodontogramIndices.js"
 import {
 	closeSnapshotBodySchema,
 	fetchSnapshotTeethAndSites,
+	resolveExistingPerioUserId,
 } from "../../services/periodontogramService.js";
 
 const UUID_REGEX =
@@ -63,7 +64,8 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 		const { teeth, sites, formattedTeeth } = await fetchSnapshotTeethAndSites(id);
 		const computedIndices = computeSnapshotIndices(teeth, sites);
 		const identity = getRequestIdentity(req);
-		const closedByUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
+		const rawUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
+		const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId);
 
 		const [closed] = await db
 			.update(periodontogramSnapshots)

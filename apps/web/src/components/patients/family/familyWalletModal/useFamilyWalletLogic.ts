@@ -10,11 +10,10 @@ import { useFamilyWalletMutations } from "./useFamilyWalletMutations";
 
 export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 	const { onClose, patientId, onFamilyDataChanged } = props;
-	const [activeTab, setActiveTab] = useState<FamilyWalletTab>("overview");
+	const [activeTab, setActiveTab] = useState<FamilyWalletTab>("info");
 
 	const topupAmountInputId = useId();
 	const spendAmountInputId = useId();
-	const transferAmountInputId = useId();
 
 	const data = useFamilyWalletData(props);
 	const mutations = useFamilyWalletMutations({
@@ -54,21 +53,11 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 		setSpendPatientId: mutations.setSpendPatientId,
 		spendNote: mutations.spendNote,
 		setSpendNote: mutations.setSpendNote,
-		transferAmount: mutations.transferAmount,
-		setTransferAmount: mutations.setTransferAmount,
-		transferSourceId: mutations.transferSourceId,
-		setTransferSourceId: mutations.setTransferSourceId,
-		transferTargetId: mutations.transferTargetId,
-		setTransferTargetId: mutations.setTransferTargetId,
-		transferComment: mutations.transferComment,
-		setTransferComment: mutations.setTransferComment,
 		transactions: data.transactions,
 		topupAmountInputId,
 		spendAmountInputId,
-		transferAmountInputId,
 		handleExecuteTopup: mutations.handleExecuteTopup,
 		handleExecuteSpend: mutations.handleExecuteSpend,
-		handleExecuteTransfer: mutations.handleExecuteTransfer,
 		onClose,
 	};
 }

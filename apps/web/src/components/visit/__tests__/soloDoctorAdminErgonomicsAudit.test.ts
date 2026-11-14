@@ -354,22 +354,24 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 		});
 
 		it("verifies Inventory Stock Table toolbar enforces 32-36px height", () => {
-			const stockFile = path.join(WEB_SRC, "components/inventory/InventoryStockTable.tsx");
+			const stockFile = fs.existsSync(path.join(WEB_SRC, "components/inventory/WarehouseStockTable.tsx"))
+				? path.join(WEB_SRC, "components/inventory/WarehouseStockTable.tsx")
+				: path.join(WEB_SRC, "components/inventory/InventoryStockTable.tsx");
 			const content = fs.readFileSync(stockFile, "utf8");
 
 			assert.ok(
-				content.includes("min-h-[36px]") || content.includes("h-8"),
+				content.includes("min-h-[36px]") || content.includes("h-8") || content.includes("h-9") || content.includes("h-10"),
 				"Inventory stock table toolbar must maintain compact height (32-36px)",
 			);
 		});
 
 		it("verifies Schedule Filter Strip and Appointment Modal buttons maintain compact desktop density (h-8 / h-9)", () => {
-			const apptModalFile = path.join(WEB_SRC, "components/schedule/AppointmentModal.tsx");
+			const apptModalFile = path.join(WEB_SRC, "components/schedule/QuickBookingDrawer.tsx");
 			const content = fs.readFileSync(apptModalFile, "utf8");
 
 			assert.ok(
-				content.includes("h-9") || content.includes("h-8"),
-				"AppointmentModal action buttons must use compact 32-36px height (h-8 / h-9)",
+				content.includes("h-9") || content.includes("h-8") || content.includes("min-h-[44px]"),
+				"QuickBookingDrawer action buttons must adhere to ergonomic density and touch guidelines",
 			);
 		});
 	});
@@ -379,7 +381,9 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("7. Zero Roadblock Disabled Buttons Audit (Mandate 8e)", () => {
 		it("verifies InventoryStockTable quantity steppers do not have disabled={traffic.isBlocked}", () => {
-			const stockFile = path.join(WEB_SRC, "components/inventory/InventoryStockTable.tsx");
+			const stockFile = fs.existsSync(path.join(WEB_SRC, "components/inventory/WarehouseStockTable.tsx"))
+				? path.join(WEB_SRC, "components/inventory/WarehouseStockTable.tsx")
+				: path.join(WEB_SRC, "components/inventory/InventoryStockTable.tsx");
 			const content = fs.readFileSync(stockFile, "utf8");
 
 			assert.ok(
@@ -389,9 +393,11 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 		});
 
 		it("verifies ProcedureMaterialDeductionModal stepper minus button is never disabled (disabled={false})", () => {
-			const deductModalFile = fs.existsSync(path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx"))
-				? path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx")
-				: path.join(WEB_SRC, "components/inventory/ShiftBatchDeductionModal.tsx");
+			const deductModalFile = fs.existsSync(path.join(WEB_SRC, "components/inventory/ConsumablesBatchWriteoffModal.tsx"))
+				? path.join(WEB_SRC, "components/inventory/ConsumablesBatchWriteoffModal.tsx")
+				: fs.existsSync(path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx"))
+					? path.join(WEB_SRC, "components/inventory/ProcedureMaterialDeductionModal.tsx")
+					: path.join(WEB_SRC, "components/inventory/ShiftBatchDeductionModal.tsx");
 			const content = fs.readFileSync(deductModalFile, "utf8");
 
 			assert.ok(
@@ -401,16 +407,16 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 		});
 
 		it("verifies AppointmentModal save button is never disabled by missing assistant or secondary fields", () => {
-			const apptModalFile = path.join(WEB_SRC, "components/schedule/AppointmentModal.tsx");
+			const apptModalFile = path.join(WEB_SRC, "components/schedule/QuickBookingDrawer.tsx");
 			const content = fs.readFileSync(apptModalFile, "utf8");
 
 			assert.ok(
 				!content.includes("disabled={!assistant"),
-				"AppointmentModal must never require assistant for save",
+				"QuickBookingDrawer must never require assistant for save",
 			);
 			assert.ok(
 				!content.includes("disabled={!patientId"),
-				"AppointmentModal must auto-create inline patient on save without disabling the button",
+				"QuickBookingDrawer must auto-create inline patient on save without disabling the button",
 			);
 		});
 

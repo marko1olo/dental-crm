@@ -3,6 +3,7 @@ import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "..
 import { requireOrganizationId } from "../../security/identity.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
+import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
 import { archwireChangeSchema, ligatureActivateSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
 
 export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
@@ -20,14 +21,40 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
 			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 			const archLabel = body.arch === "upper" ? "ВЧ" : body.arch === "lower" ? "НЧ" : "ВЧ + НЧ";
-			const archwireStr = `${body.material} ${body.section}" (${archLabel})`;
+			const wireSpec = `${body.material} ${body.section}"`;
+			const archwireStr = `${wireSpec} (${archLabel})`;
 			const actionSummary = `Смена дуги: ${archwireStr}${body.note ? ` · ${body.note}` : ""}`;
+
+			// DEF-ORTHO-01 / Досье a9c64bbc: Раздельное хранение дуг ВЧ и НЧ (исключение взаимного затирания)
+			let upperArchwire = currentProgress.upperArchwire;
+			let lowerArchwire = currentProgress.lowerArchwire;
+
+			if (body.arch === "upper") {
+				upperArchwire = `${wireSpec} (ВЧ)`;
+			} else if (body.arch === "lower") {
+				lowerArchwire = `${wireSpec} (НЧ)`;
+			} else {
+				upperArchwire = `${wireSpec} (ВЧ)`;
+				lowerArchwire = `${wireSpec} (НЧ)`;
+			}
+
+			let combinedArchwire = archwireStr;
+			if (body.arch === "both") {
+				combinedArchwire = archwireStr;
+			} else if (upperArchwire && lowerArchwire) {
+				combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
+			} else {
+				combinedArchwire = upperArchwire || lowerArchwire || archwireStr;
+			}
 
 			const updatedProgress: OrthodonticProgressRecord = {
 				...currentProgress,
-				archwire: archwireStr,
+				upperArchwire,
+				lowerArchwire,
+				archwire: combinedArchwire,
 				lastActionDate: new Date().toISOString(),
 				lastActionSummary: actionSummary,
+				...(body.soapSummary ? { lastSoapSummary: body.soapSummary } : {}),
 			};
 
 			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
@@ -53,10 +80,41 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 						unitCostKopecks: 120_000n,
 						unitCostRub: 1200,
 						notes: `Смена дуги: ${archwireStr}`,
+						visitId: body.visitId,
 				  })
 				: null;
 
-			return reply.send({ success: true, archwire: archwireStr, actionSummary, progress: updatedProgress, deduction });
+			// DEF-ORTHO-05 / Red Team: Связка активации дуги с прейскурантом услуг
+			const serviceName = isPlate
+				? "Активация съемного ортодонтического аппарата (пластинки)"
+				: body.arch === "both"
+					? "Активация брекет-системы и замена ортодонтических дуг (ВЧ + НЧ)"
+					: `Активация брекет-системы и замена ортодонтической дуги (${archLabel})`;
+			const serviceCode = isPlate ? "A16.07.047" : "A16.07.048.002";
+			const priceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
+			const priceKopecks = BigInt(priceRub * 100);
+
+			const billing = await linkOrthoServiceToBillingSafely({
+				organizationId: orgId,
+				patientId,
+				visitId: body.visitId,
+				serviceCode,
+				serviceName,
+				priceRub,
+				priceKopecks,
+			});
+
+			return reply.send({
+				success: true,
+				archwire: archwireStr,
+				upperArchwire,
+				lowerArchwire,
+				combinedArchwire,
+				actionSummary,
+				progress: updatedProgress,
+				deduction,
+				billing,
+			});
 		},
 	);
 

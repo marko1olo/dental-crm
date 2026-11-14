@@ -9,17 +9,17 @@ interface ChannelIconProps {
 export function OnlineBookingChannelIcon({ type }: ChannelIconProps) {
 	switch (type) {
 		case "globe":
-			return <Globe size={16} className="text-blue-500" />;
+			return <Globe size={16} className="text-[var(--teal)]" />;
 		case "yandex":
-			return <MapPin size={16} className="text-red-500" />;
+			return <MapPin size={16} className="text-[var(--teal)]" />;
 		case "gis":
-			return <MapPin size={16} className="text-emerald-500" />;
+			return <MapPin size={16} className="text-[var(--teal)]" />;
 		case "prodoc":
-			return <Activity size={16} className="text-indigo-500" />;
+			return <Activity size={16} className="text-[var(--teal)]" />;
 		case "tg":
-			return <Send size={16} className="text-sky-500" />;
+			return <Send size={16} className="text-[var(--teal)]" />;
 		case "wa":
-			return <MessageSquare size={16} className="text-teal-500" />;
+			return <MessageSquare size={16} className="text-[var(--teal)]" />;
 		default:
 			return <Globe size={16} className="text-[var(--teal)]" />;
 	}

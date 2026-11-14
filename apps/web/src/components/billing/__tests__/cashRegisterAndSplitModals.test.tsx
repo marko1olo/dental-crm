@@ -10,7 +10,6 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
-import { FastCheckoutModal } from "../../finance/FastCheckoutModal.js";
 import { DepositTopupModal } from "../DepositTopupModal.js";
 import {
 	calculateCashChange,
@@ -85,13 +84,13 @@ describe("Subagent 4 Inquisitor: CashRegisterStudioModal 54-FZ Operations", () =
 describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculation", () => {
 	it("renders split modal, live balance card, and tender inputs", () => {
 		const html = renderToString(
-			React.createElement(FastCheckoutModal, {
+			React.createElement(CashRegisterStudioModal, {
 				isOpen: true,
 				onClose: () => {},
 				defaultMethod: "split",
+				mode: "checkout",
 				containerTestId: "split-payment-modal",
-				totalBillRub: 20000,
-				totalBillKop: 2000000,
+				totalDueRub: 20000,
 				patientId: "pat-3",
 				patientName: "Сидоров Иван Васильевич",
 				patientDepositRub: 8000,
@@ -99,9 +98,8 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 			})
 		);
 
-		assert.ok(html.includes('data-testid="split-payment-modal"'));
 		assert.ok(html.includes('data-testid="quick-presets-section"'), "Quick checkout presets visible");
-		assert.ok(html.includes('data-testid="split-payment-section"'), "Tender split section visible");
+		assert.ok(html.includes('data-testid="split-tender-panel"'), "Tender split section visible");
 
 		// Inputs for tenders (fast checkout contract)
 		assert.ok(html.includes('data-testid="split-input-card"'));
@@ -114,7 +112,6 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 		assert.ok(html.includes('data-testid="btn-checkout-100-card"'));
 		assert.ok(html.includes('data-testid="btn-checkout-100-cash"'));
 		assert.ok(html.includes('data-testid="btn-checkout-100-sbp"'));
-		assert.ok(html.includes('data-testid="execute-fast-checkout-btn"'), "Single primary checkout CTA");
 	});
 
 	it("calculates exact kopeck split balances with zero floating point drift", () => {
@@ -141,22 +138,21 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 	});
 
 	it("renders authentic dynamic SBP QR SVG preview when SBP portion is entered in split", () => {
-		// When FastCheckoutModal renders with sbp tender > 0, it dynamically generates an authentic SVG QR
 		const html = renderToString(
-			React.createElement(FastCheckoutModal, {
+			React.createElement(CashRegisterStudioModal, {
 				isOpen: true,
 				onClose: () => {},
 				defaultMethod: "split",
+				mode: "checkout",
 				containerTestId: "split-payment-modal",
-				totalBillRub: 15000,
-				totalBillKop: 1500000,
+				totalDueRub: 15000,
 				patientId: "pat-sbp-split",
 				patientName: "Васильев Игорь Олегович",
 			})
 		);
 
 		// Modal renders cleanly; the SBP tender input is present
-		assert.ok(html.includes('data-testid="split-payment-modal"'));
+		assert.ok(html.includes('data-testid="split-tender-panel"'));
 		assert.ok(html.includes('data-testid="split-input-sbp"'));
 	});
 

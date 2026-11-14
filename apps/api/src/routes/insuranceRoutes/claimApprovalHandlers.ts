@@ -193,12 +193,19 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			)
 			.returning();
 
+		if (!updated) {
+			return reply.code(404).send({
+				error: "guarantee_letter_not_found",
+				message: "Гарантийное письмо не найдено или не принадлежит организации",
+			});
+		}
+
 		return reply.code(200).send({
 			success: true,
-			letterId: updated!.id,
-			status: updated!.status,
-			notes: updated!.notes,
-			updatedAt: updated!.updatedAt.toISOString(),
+			letterId: updated.id,
+			status: updated.status,
+			notes: updated.notes,
+			updatedAt: updated.updatedAt.toISOString(),
 		});
 	});
 
@@ -267,12 +274,19 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				)
 				.returning();
 
+			if (!updated) {
+				return reply.code(404).send({
+					error: "guarantee_letter_not_found",
+					message: "Гарантийное письмо не найдено или не принадлежит организации",
+				});
+			}
+
 			return reply.code(200).send({
 				success: true,
-				letterId: updated!.id,
-				status: updated!.status,
-				curatorFullName: updated!.curatorFullName,
-				curatorPhone: updated!.curatorPhone,
+				letterId: updated.id,
+				status: updated.status,
+				curatorFullName: updated.curatorFullName,
+				curatorPhone: updated.curatorPhone,
 				message: "Запрос на предварительное согласование отправлен куратору страховой компании.",
 			});
 		} else {
@@ -311,12 +325,19 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				})
 				.returning();
 
+			if (!created) {
+				return reply.code(500).send({
+					error: "guarantee_letter_creation_failed",
+					message: "Не удалось создать гарантийное письмо",
+				});
+			}
+
 			return reply.code(201).send({
 				success: true,
-				letterId: created!.id,
-				status: created!.status,
-				curatorFullName: created!.curatorFullName,
-				curatorPhone: created!.curatorPhone,
+				letterId: created.id,
+				status: created.status,
+				curatorFullName: created.curatorFullName,
+				curatorPhone: created.curatorPhone,
 				message: "Создан запрос на предварительное согласование со статусом ожидания ответа куратора.",
 			});
 		}

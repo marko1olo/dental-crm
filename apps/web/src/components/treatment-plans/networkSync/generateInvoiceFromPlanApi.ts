@@ -63,9 +63,10 @@ export async function callGenerateInvoiceFromPlanApi(
 					? createdData.totalNetRub
 					: undefined,
 		};
-	} catch (networkErr: any) {
-		logger.error("[treatmentPlanNetworkSync] Ошибка сети при генерации счёта", networkErr);
-		showToast(`Сетевая ошибка при отправке счета в кассу: ${networkErr?.message || networkErr}`, "error", 5000);
+	} catch (networkErr: unknown) {
+		const msg = networkErr instanceof Error ? networkErr.message : String(networkErr);
+		logger.error("[treatmentPlanNetworkSync] Ошибка сети при генерации счёта", { error: networkErr });
+		showToast(`Сетевая ошибка при отправке счета в кассу: ${msg}`, "error", 5000);
 		return null;
 	}
 }

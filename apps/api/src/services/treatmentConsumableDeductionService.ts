@@ -55,13 +55,13 @@ export class TreatmentConsumableDeductionService {
 			)
 			.limit(1);
 
-		if (existingLog.length > 0 && existingLog[0]) {
-			const record = existingLog[0];
+		const [record] = existingLog;
+		if (record) {
 			const previousDeductions = Array.isArray(record.deductions)
-				? (record.deductions as unknown as TreatmentConsumableDeductionRecord[])
+				? record.deductions
 				: [];
 			const previousWarnings = Array.isArray(record.warnings)
-				? (record.warnings as unknown as TreatmentConsumableDeductionWarning[])
+				? record.warnings
 				: [];
 
 			return {
@@ -412,12 +412,12 @@ export class TreatmentConsumableDeductionService {
 			await tx.insert(treatmentConsumableDeductions).values({
 				organizationId,
 				treatmentReferenceId: refId,
-				visitId: request.visit_id ? (request.visit_id as unknown as string) : null,
-				doctorId: request.doctor_id ? (request.doctor_id as unknown as string) : null,
+				visitId: request.visit_id ? String(request.visit_id) : null,
+				doctorId: request.doctor_id ? String(request.doctor_id) : null,
 				status: "completed",
 				isOverdraft: hasOverdraft,
-				deductions: deductions as unknown as Record<string, unknown>[],
-				warnings: warnings as unknown as Record<string, unknown>[],
+				deductions,
+				warnings,
 				notes: request.notes ?? null,
 			});
 		});

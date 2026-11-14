@@ -28,11 +28,15 @@ export async function handleBactericidalShiftAutopilot(
 	const parsed = bactericidalAutopilotBodySchema.safeParse(req.body || {});
 	const body = parsed.success
 		? parsed.data
-		: ((req.body as any) || {});
+		: ((req.body as Record<string, unknown>) || {});
 	const durationMinutes = typeof body.durationMinutes === "number" ? body.durationMinutes : 360;
-	const dateStr = body.date || new Date().toISOString().slice(0, 10);
-	const operatingMode =
-		body.operatingMode || (durationMinutes <= 60 ? "pre_op_preparation" : "continuous_presence");
+	const dateStr: string = typeof body.date === "string" && body.date.trim() ? body.date : new Date().toISOString().slice(0, 10);
+	const operatingMode: string =
+		typeof body.operatingMode === "string" && body.operatingMode.trim()
+			? body.operatingMode
+			: durationMinutes <= 60
+				? "pre_op_preparation"
+				: "continuous_presence";
 	const sessionHours = calculateSessionHours(durationMinutes);
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
 
@@ -81,11 +85,12 @@ export async function handleBactericidalShiftAutopilot(
 			const startTime = new Date(`${dateStr}T08:00:00`);
 			const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
-			const notesText =
-				body.notes ||
-				(durationMinutes <= 30 && operatingMode === "pre_op_preparation"
-					? "⚡ Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21."
-					: `⚡ Автоматический учет смены (${sessionHours} ч / ${durationMinutes} мин) по Р 3.5.1904-04 / СанПиН 3.3686-21.`);
+			const notesText: string =
+				typeof body.notes === "string" && body.notes.trim()
+					? body.notes
+					: durationMinutes <= 30 && operatingMode === "pre_op_preparation"
+						? "Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21."
+						: `Автоматический учет смены (${sessionHours} ч / ${durationMinutes} мин) по Р 3.5.1904-04 / СанПиН 3.3686-21.`;
 
 			await tx.insert(bactericidalIrradiatorLogs).values({
 				organizationId,

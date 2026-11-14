@@ -15,7 +15,7 @@ import {
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { registerCashboxRoutes } from "./cashbox.js";
-import { registerLabRoutes } from "./lab.js";
+import { registerLabRoutes } from "./lab/index.js";
 import {
 	fixtureUuid,
 	withFixtureTenant,

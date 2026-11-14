@@ -11,6 +11,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { scanSchema } from "../sterilizationSchemas.js";
 import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
@@ -73,7 +74,7 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 
 	void executeSterilizationConsumablesDeduction({
 		organizationId,
-		userId: data.operatorId || (req as any).user?.id || null,
+		userId: data.operatorId || getRequestIdentity(req).userId || null,
 		count: 20,
 		packagingType: data.packagingType || "kraft_heat_sealed",
 		indicatorType: data.indicatorType || "class5_integrating",

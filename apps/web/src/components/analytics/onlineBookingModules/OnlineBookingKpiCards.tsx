@@ -33,9 +33,9 @@ export function OnlineBookingKpiCards({
 			<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 				<div className="flex items-center justify-between text-xs text-[var(--muted)]">
 					<span>Конверсия виджета</span>
-					<TrendingUp size={16} className="text-emerald-500" />
+					<TrendingUp size={16} className="text-[var(--teal)]" />
 				</div>
-				<div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+				<div className="text-2xl font-extrabold text-[var(--teal)]">
 					{Number.isFinite(onlineSummary.conversionRatePercent)
 						? onlineSummary.conversionRatePercent.toFixed(1)
 						: "0.0"}%
@@ -48,9 +48,9 @@ export function OnlineBookingKpiCards({
 			<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 				<div className="flex items-center justify-between text-xs text-[var(--muted)]">
 					<span>Доходимость (Явка)</span>
-					<UserCheck size={16} className="text-blue-500" />
+					<UserCheck size={16} className="text-[var(--teal)]" />
 				</div>
-				<div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
+				<div className="text-2xl font-extrabold text-[var(--ink)]">
 					{Number.isFinite(onlineSummary.attendanceRatePercent)
 						? onlineSummary.attendanceRatePercent.toFixed(1)
 						: "0.0"}%

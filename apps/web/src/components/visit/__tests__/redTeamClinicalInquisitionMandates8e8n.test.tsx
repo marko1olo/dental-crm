@@ -4,11 +4,11 @@ import fs from "node:fs";
 import path from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { VisitDiaryHeaderActions } from "../diary/section/VisitDiaryHeaderActions.js";
-import { VisitDiaryPresetsAccordion } from "../diary/section/VisitDiaryPresetsAccordion.js";
+import { EmkToolbar } from "../emk/EmkToolbar.js";
+import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm.js";
 import { InstallmentsActionBar } from "../../billing/installments/InstallmentsActionBar.js";
 import { DepositFooterActions } from "../../billing/depositModal/DepositFooterActions.js";
-import { PaymentBuyerRequisitesSection } from "../../finance/paymentModalModules/PaymentBuyerRequisitesSection.js";
+import { CheckoutDiscountAndPayerControls } from "../../cashbox/studioModules/checkout/CheckoutDiscountAndPayerControls.js";
 
 import { fileURLToPath } from "node:url";
 
@@ -17,53 +17,52 @@ const __dirname = path.dirname(__filename);
 const WEB_SRC = path.resolve(__dirname, "../../../");
 
 describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
-	it("1.1 confirms diary-norm-direct-btn is visible, beautiful, and not hidden with sr-only in VisitDiaryHeaderActions", () => {
+	it("1.1 confirms btn-chairside-physiological-norm is visible, beautiful, and not hidden with sr-only in EmkToolbar", () => {
 		const html = renderToString(
-			<VisitDiaryHeaderActions
-				isLocked={false}
-				isRevising={false}
-				beginRevise={() => {}}
+			<EmkToolbar
+				activeEmkTab="all"
+				setActiveEmkTab={() => {}}
+				onApplyPhysiologicalNorm={() => {}}
 				onApplyNorm={() => {}}
-				onOpenTemplates={() => {}}
-				onOpenPrintPreview={() => {}}
-				onOpenSummary={() => {}}
-				onOpenPrescription={() => {}}
-				onOpenRadiology={() => {}}
-				onOpenTier3Perio={() => {}}
-				onOpenEgisz={() => {}}
-				onOpenBranding={() => {}}
+				onToggleStarProtocols={() => {}}
+				onOpenConsent={() => {}}
+				onPrintMedicalCard={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="diary-norm-direct-btn"'), "Must render diary-norm-direct-btn");
-		assert.ok(!html.includes('id="diary-norm-direct-btn" data-testid="diary-norm-direct-btn" onClick="undefined" class="sr-only"'), "Must NOT hide diary-norm-direct-btn with sr-only");
-		assert.ok(html.includes("Норма (здоров)"), "Must display human visible clinical label 'Норма (здоров)'");
-		assert.ok(!html.includes('class="sr-only" tabIndex="-1" aria-hidden="true"'), "Must not be blind screen-reader only stub");
+		assert.ok(html.includes('data-testid="btn-chairside-physiological-norm"'), "Must render btn-chairside-physiological-norm");
+		assert.ok(!html.includes('class="sr-only"'), "Must NOT hide physiological norm button with sr-only");
+		assert.ok(html.includes("Соматически здоров") || html.includes("Норма"), "Must display human visible clinical label 'Соматически здоров / Норма'");
+		assert.ok(!html.includes('data-testid="btn-chairside-physiological-norm" disabled'), "Physiological norm must not be disabled");
 	});
 
-	it("1.2 confirms diary-norm-043-btn is visible in VisitDiaryPresetsAccordion", () => {
+	it("1.2 confirms btn-inline-diary-norm and btn-inline-diary-complaint-norm are visible in RecordNewDiaryInlineForm", () => {
 		const html = renderToString(
-			<VisitDiaryPresetsAccordion
-				fieldsDisabled={false}
-				onPopulateFromOdontogram={() => {}}
+			<RecordNewDiaryInlineForm
+				selectedTooth="16"
+				setSelectedTooth={() => {}}
+				commonTeeth={[16, 26, 36, 46]}
+				subjective=""
+				setSubjective={() => {}}
+				objective=""
+				setObjective={() => {}}
+				diagnosisText=""
+				setDiagnosisText={() => {}}
+				icd10Code=""
+				setIcd10Code={() => {}}
+				protocol=""
+				setProtocol={() => {}}
 				onApplyNorm={() => {}}
-				handleInsertPerioStatus={() => {}}
-				handleApplyPerioPathology={() => {}}
-				handleInsertPediatricStatus={() => {}}
-				applyClinicalPreset={() => {}}
-				onOpenTemplatesModal={() => {}}
-				isLocked={false}
-				isRevising={false}
-				beginRevise={() => {}}
-				setDiary={() => {}}
-				setIcdSearch={() => {}}
-				scheduleDebouncedSave={() => {}}
+				onClear={() => {}}
+				onSave={() => {}}
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="diary-norm-043-btn"'), "Must render diary-norm-043-btn");
-		assert.ok(html.includes("Физиологическая норма"), "Must have physiological norm label");
-		assert.ok(!html.includes('data-testid="diary-norm-043-btn" class="sr-only"'), "Must not be sr-only");
+		assert.ok(html.includes('data-testid="btn-inline-diary-norm"'), "Must render btn-inline-diary-norm");
+		assert.ok(html.includes("Интактный ряд"), "Must have physiological norm label 'Интактный ряд'");
+		assert.ok(html.includes('data-testid="btn-inline-diary-complaint-norm"'), "Must render btn-inline-diary-complaint-norm");
+		assert.ok(html.includes("Жалоб нет (плановый осмотр)"), "Must state 'Жалоб нет (плановый осмотр)'");
+		assert.ok(!html.includes('class="sr-only"'), "Must not be sr-only");
 	});
 
 	it("2.1 confirms InstallmentsActionBar 'Принять очередной взнос' button is never disabled when plan is completed", () => {
@@ -96,22 +95,27 @@ describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
 		assert.ok(!html.includes('disabled=""') && !html.includes("disabled="), "Button must not have disabled attribute when amount is 0 (shows soft guiding toast instead)");
 	});
 
-	it("3.1 confirms PaymentBuyerRequisitesSection does not mandate INN for citizens and cleans statutory codes", () => {
-		const dummyTendersHook: any = {
-			payerType: "physical",
-			buyerInn: "",
-			handleInnChange: () => {},
-			buyerInnError: null,
-			setPayerType: () => {},
-		};
-
+	it("3.1 confirms CheckoutDiscountAndPayerControls does not mandate INN for citizens and cleans statutory codes", () => {
 		const html = renderToString(
-			<PaymentBuyerRequisitesSection tendersHook={dummyTendersHook} />,
+			<CheckoutDiscountAndPayerControls
+				isWarranty={false}
+				setIsWarranty={() => {}}
+				discountPercent={0}
+				setDiscountPercent={() => {}}
+				setCashReceivedRub={() => {}}
+				setSplitCashRub={() => {}}
+				setSplitCardRub={() => {}}
+				setMethod={() => {}}
+				payerType="physical_person"
+				setPayerType={() => {}}
+				buyerInn=""
+				setBuyerInn={() => {}}
+			/>,
 		);
 
 		assert.ok(html.includes('data-testid="inn-physical-not-required-badge"'), "Must render physical person optional badge");
-		assert.ok(html.includes("Для физлиц не требуется"), "Must state clearly that INN is not required for citizens");
-		assert.ok(!html.includes("По 54-ФЗ для физлиц"), "Must not leak raw 54-FZ statute citation onto badge");
+		assert.ok(html.includes("Пациент (физлицо)"), "Must state clearly that payer is citizen");
+		assert.ok(!html.includes("54-ФЗ"), "Must not leak raw 54-FZ statute citation onto badge");
 	});
 
 	it("4.1 verifies source files purged of raw regulatory acronyms in UI strings", () => {

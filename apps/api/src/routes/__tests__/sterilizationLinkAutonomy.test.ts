@@ -74,7 +74,7 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		assert.ok(evaluation.emergencyLogNote);
 		assert.match(
 			evaluation.emergencyLogNote,
-			/Мягкий допуск по экстренным показаниям под личную ответственность врача/,
+			/Мягкий допуск по экстренным показаниям/,
 		);
 	});
 

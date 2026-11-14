@@ -24,7 +24,7 @@ import {
 	createCertificateAndCardComboTenders,
 	createBonusAndCardComboTenders,
 } from "../cashboxOperations.js";
-import { PaymentModal } from "../PaymentModal.js";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import { InvoicesView, type BillingInvoice } from "../../billing/InvoicesView.js";
 
 describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8k, 8n)", () => {
@@ -157,28 +157,18 @@ describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8
 		});
 	});
 
-	describe("4. PaymentModal Solo Doctor Autonomy & Quick Presets", () => {
-		it("Renders 100% warranty preset button and quick print buttons in header", () => {
+	describe("4. CashRegisterStudioModal Solo Doctor Autonomy & Quick Presets", () => {
+		it("Renders 100% warranty preset button in CashRegisterStudioModal", () => {
 			const html = renderToString(
-				<PaymentModal
+				<CashRegisterStudioModal
 					isOpen={true}
 					onClose={() => {}}
 					amountKopecks={650000}
+					totalDueRub={6500}
 					patientId="pat-test-1"
 					patientName="Иванов И.И."
-					doctorName="Д-р Смирнов А.В."
-					invoiceId="inv-test-1"
+					mode="checkout"
 				/>,
-			);
-
-			// Fast print buttons in header
-			assert.ok(
-				html.includes('data-testid="btn-payment-modal-print-invoice"'),
-				"Must render quick print invoice button in header",
-			);
-			assert.ok(
-				html.includes('data-testid="btn-payment-modal-print-act"'),
-				"Must render quick print act button in header",
 			);
 
 			// 100% Warranty preset button
@@ -187,53 +177,8 @@ describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8
 				"Must render 100% warranty preset button",
 			);
 			assert.ok(
-				html.includes("Гарантия 100% (0 ₽)"),
-				"Must show warranty label",
-			);
-
-			// Quick presets: Exact cash and full card
-			assert.ok(html.includes('data-testid="preset-exact-cash"'));
-			assert.ok(html.includes('data-testid="preset-full-card"'));
-
-			// Solo doctor fallback: doctorName or clinic is used without requiring cashier
-			assert.ok(html.includes("54-ФЗ"));
-		});
-
-		it("Renders Certificate and Bonus inputs and remainder buttons in Split tab", () => {
-			const html = renderToString(
-				<PaymentModal
-					isOpen={true}
-					onClose={() => {}}
-					defaultMethod="split"
-					amountKopecks={1000000}
-					patientId="pat-test-2"
-					patientName="Петрова А.С."
-					doctorName="Д-р Васильев И.П."
-				/>,
-			);
-
-			// Certificate & Bonus inputs
-			assert.ok(
-				html.includes('data-testid="input-split-certificate"'),
-				"Must render split certificate input",
-			);
-			assert.ok(
-				html.includes('data-testid="input-split-bonus"'),
-				"Must render split bonus input",
-			);
-
-			// Remainder buttons
-			assert.ok(
-				html.includes('data-testid="btn-payment-remainder-certificate"'),
-				"Must render remainder certificate button",
-			);
-			assert.ok(
-				html.includes('data-testid="btn-payment-remainder-bonus"'),
-				"Must render remainder bonus button",
-			);
-			assert.ok(
-				html.includes('data-testid="btn-payment-remainder-sbp"'),
-				"Must render remainder SBP button",
+				html.includes('data-testid="preset-discount-0"'),
+				"Must render 0% discount button",
 			);
 		});
 	});

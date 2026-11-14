@@ -12,11 +12,11 @@ export function useVisitHeaderNormHandler(
 			if (!visitNoteForm?.diagnosis) {
 				updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
 			}
-			if (!visitNoteForm?.complaint && !(visitNoteForm as any)?.complaints) {
+			if (!visitNoteForm?.complaint && !visitNoteForm?.complaints) {
 				updateVisitNoteField("complaint", "Жалоб на момент осмотра активно не предъявляет.");
 				updateVisitNoteField("complaints", "Жалоб на момент осмотра активно не предъявляет.");
 			}
-			if (!visitNoteForm?.treatmentPlan && !(visitNoteForm as any)?.treatment) {
+			if (!visitNoteForm?.treatmentPlan && !visitNoteForm?.treatment) {
 				const plan = "Осмотр полости рта проведен, патологий не выявлено. Полость рта здорова, гигиена удовлетворительная.";
 				updateVisitNoteField("treatmentPlan", plan);
 				updateVisitNoteField("treatment", plan);

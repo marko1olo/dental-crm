@@ -1,6 +1,6 @@
 import React from "react";
 import { Zap, Activity, ShieldCheck, Scissors, Award, Sparkles, CheckCircle2 } from "lucide-react";
-import { CORE_1CLICK_PRESETS } from "../protocolGeneratorPresets";
+import { CORE_CLINICAL_PRESETS } from "../protocolGeneratorPresets";
 import { COMPANION_ICD10_CODES, clinicalSpecialtyLabels } from "../emrProtocolEngine";
 
 export interface EmrProtocolPresetSelectorProps {
@@ -17,7 +17,7 @@ export const EmrProtocolPresetSelector: React.FC<EmrProtocolPresetSelectorProps>
 					1. Клинические пресеты по МКБ-10
 				</label>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-					{CORE_1CLICK_PRESETS.map((preset) => {
+					{CORE_CLINICAL_PRESETS.map((preset) => {
 						const isSelected = selectedPresetCode === preset.id;
 						return (
 							<button
@@ -64,7 +64,7 @@ export const EmrProtocolPresetSelector: React.FC<EmrProtocolPresetSelectorProps>
 						className="w-full px-3 py-2 min-h-[44px] rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] font-medium focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
 					>
 						<optgroup label="Основные клинические протоколы (СтАР)">
-							{CORE_1CLICK_PRESETS.map((p) => (
+							{CORE_CLINICAL_PRESETS.map((p) => (
 								<option key={p.id} value={p.id}>
 									{p.code} — {p.title}
 								</option>

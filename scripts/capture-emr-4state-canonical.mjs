@@ -15,15 +15,13 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = process.env.CONV_ID || "30ca2fc3-98e1-452b-87b1-4ca83549286c";
+const CONV_ID = process.env.CONV_ID || "6c433a6b-33a0-46b5-aeff-2042fc76cb4c";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}/screenshots/emr`;
-const OUT_DOCS = path.resolve(__dirname, "../docs/screenshots/emr");
+const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/emr");
+const OUT_SCREENSHOTS = path.resolve(__dirname, "../docs/screenshots/emr");
 
-if (!existsSync(OUT_DOCS)) {
-	mkdirSync(OUT_DOCS, { recursive: true });
-}
-if (!existsSync(OUT_CONV)) {
-	mkdirSync(OUT_CONV, { recursive: true });
+for (const d of [OUT_DOCS, OUT_CONV, OUT_SCREENSHOTS]) {
+	if (!existsSync(d)) mkdirSync(d, { recursive: true });
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -183,24 +181,33 @@ async function waitForRealUI(page) {
 
 async function openEmrModal(page) {
 	console.log("  [EMR] Opening Medical Record Studio Modal...");
-	// Try hash first
+	await page.waitForSelector(".boot-subtitle", { state: "detached", timeout: 25000 }).catch(() => {});
 	await page.evaluate(() => {
-		window.location.hash = "medical-card";
-		window.dispatchEvent(new CustomEvent("dente:open-medical-card"));
+		if (!document.querySelector(".emr-studio-window, .emr043-modal-window")) {
+			window.dispatchEvent(new CustomEvent("dente:open-medical-card"));
+			window.location.hash = "medical-card";
+		}
 	});
 	await sleep(1000);
 
-	const modal = page.locator(".emr-studio-backdrop, .emr043-modal-backdrop").first();
-	const isVisible = await modal.isVisible({ timeout: 3000 }).catch(() => false);
+	const modal = page.locator(".emr-studio-window, .emr043-modal-window, .emr-studio-backdrop, .emr043-modal-backdrop").first();
+	const isVisible = await modal.isVisible({ timeout: 4000 }).catch(() => false);
 	if (!isVisible) {
 		console.log("  [EMR] Trying direct event dispatch...");
 		await page.evaluate(() => {
 			window.dispatchEvent(new CustomEvent("dente:open-emr"));
+			window.dispatchEvent(new CustomEvent("dente:open-medical-card"));
 		});
 		await sleep(1000);
 	}
-	await modal.waitFor({ state: "visible", timeout: 8000 });
+	await modal.waitFor({ state: "visible", timeout: 25000 });
 	console.log("  [EMR] Modal is visible!");
+
+	const diariesTab = page.locator("button:has-text('Дневники визитов'), button:has-text('Дневники'), button:has-text('4. Дневники визитов')").first();
+	if (await diariesTab.isVisible({ timeout: 3000 }).catch(() => false)) {
+		await diariesTab.click();
+		await sleep(600);
+	}
 }
 
 async function run() {
@@ -211,112 +218,39 @@ async function run() {
 	});
 
 	try {
-		// --- PC LIGHT (1440x900) ---
-		{
-			console.log("\n[STATE 1/4] Capturing PC Light (1440x900)...");
-			const context = await browser.newContext({
-				viewport: { width: 1440, height: 900 },
-				deviceScaleFactor: 1,
-			});
-			const page = await context.newPage();
-			await setupPageSession(context, page, "doctor");
-			await page.goto("http://127.0.0.1:5173/?demo=true#medical-card", { waitUntil: "domcontentloaded", timeout: 45000 });
-			await waitForRealUI(page);
-			await setTheme(page, "light");
-			await openEmrModal(page);
-			await suppressOverlays(page);
-			await sleep(500);
+		const context = await browser.newContext({
+			viewport: { width: 1440, height: 900 },
+			deviceScaleFactor: 1,
+		});
+		const page = await context.newPage();
+		await setupPageSession(context, page, "doctor");
+		console.log("Navigating to http://127.0.0.1:5174/?demo=true#medical-card ...");
+		await page.goto("http://127.0.0.1:5174/?demo=true#medical-card", { waitUntil: "domcontentloaded", timeout: 45000 });
+		await waitForRealUI(page);
+		await openEmrModal(page);
+		await suppressOverlays(page);
 
-			const targetFile = path.join(OUT_DOCS, "01_emr_studio_pc_light_1440x900.png");
+		const states = [
+			{ name: "01_emr_studio_pc_light_1440x900.png", width: 1440, height: 900, theme: "light" },
+			{ name: "02_emr_studio_pc_dark_1440x900.png", width: 1440, height: 900, theme: "dark" },
+			{ name: "03_emr_studio_mobile_light_390x844.png", width: 390, height: 844, theme: "light" },
+			{ name: "04_emr_studio_mobile_dark_390x844.png", width: 390, height: 844, theme: "dark" },
+		];
+
+		for (const s of states) {
+			console.log(`\nCapturing ${s.name} (${s.width}x${s.height}, ${s.theme})...`);
+			await page.setViewportSize({ width: s.width, height: s.height });
+			await setTheme(page, s.theme);
+			await sleep(800);
+
+			const targetFile = path.join(OUT_DOCS, s.name);
 			await page.screenshot({ path: targetFile, fullPage: false });
-			const convTarget = path.join(OUT_CONV, "01_emr_studio_pc_light_1440x900.png");
+			const convTarget = path.join(OUT_CONV, s.name);
 			copyFileSync(targetFile, convTarget);
+			copyFileSync(targetFile, path.join(OUT_SCREENSHOTS, s.name));
 
 			const sz = statSync(targetFile).size;
 			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
-			await context.close();
-		}
-
-		// --- PC DARK (1440x900) ---
-		{
-			console.log("\n[STATE 2/4] Capturing PC Dark (1440x900)...");
-			const context = await browser.newContext({
-				viewport: { width: 1440, height: 900 },
-				deviceScaleFactor: 1,
-			});
-			const page = await context.newPage();
-			await setupPageSession(context, page, "doctor");
-			await page.goto("http://127.0.0.1:5173/?demo=true#medical-card", { waitUntil: "domcontentloaded", timeout: 45000 });
-			await waitForRealUI(page);
-			await setTheme(page, "dark");
-			await openEmrModal(page);
-			await suppressOverlays(page);
-			await sleep(500);
-
-			const targetFile = path.join(OUT_DOCS, "02_emr_studio_pc_dark_1440x900.png");
-			await page.screenshot({ path: targetFile, fullPage: false });
-			const convTarget = path.join(OUT_CONV, "02_emr_studio_pc_dark_1440x900.png");
-			copyFileSync(targetFile, convTarget);
-
-			const sz = statSync(targetFile).size;
-			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
-			await context.close();
-		}
-
-		// --- MOBILE LIGHT (390x844) ---
-		{
-			console.log("\n[STATE 3/4] Capturing Mobile Light (390x844)...");
-			const context = await browser.newContext({
-				viewport: { width: 390, height: 844 },
-				deviceScaleFactor: 2,
-				isMobile: true,
-				hasTouch: true,
-			});
-			const page = await context.newPage();
-			await setupPageSession(context, page, "doctor");
-			await page.goto("http://127.0.0.1:5173/?demo=true#medical-card", { waitUntil: "domcontentloaded", timeout: 45000 });
-			await waitForRealUI(page);
-			await setTheme(page, "light");
-			await openEmrModal(page);
-			await suppressOverlays(page);
-			await sleep(500);
-
-			const targetFile = path.join(OUT_DOCS, "03_emr_studio_mobile_light_390x844.png");
-			await page.screenshot({ path: targetFile, fullPage: false });
-			const convTarget = path.join(OUT_CONV, "03_emr_studio_mobile_light_390x844.png");
-			copyFileSync(targetFile, convTarget);
-
-			const sz = statSync(targetFile).size;
-			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
-			await context.close();
-		}
-
-		// --- MOBILE DARK (390x844) ---
-		{
-			console.log("\n[STATE 4/4] Capturing Mobile Dark (390x844)...");
-			const context = await browser.newContext({
-				viewport: { width: 390, height: 844 },
-				deviceScaleFactor: 2,
-				isMobile: true,
-				hasTouch: true,
-			});
-			const page = await context.newPage();
-			await setupPageSession(context, page, "doctor");
-			await page.goto("http://127.0.0.1:5173/?demo=true#medical-card", { waitUntil: "domcontentloaded", timeout: 45000 });
-			await waitForRealUI(page);
-			await setTheme(page, "dark");
-			await openEmrModal(page);
-			await suppressOverlays(page);
-			await sleep(500);
-
-			const targetFile = path.join(OUT_DOCS, "04_emr_studio_mobile_dark_390x844.png");
-			await page.screenshot({ path: targetFile, fullPage: false });
-			const convTarget = path.join(OUT_CONV, "04_emr_studio_mobile_dark_390x844.png");
-			copyFileSync(targetFile, convTarget);
-
-			const sz = statSync(targetFile).size;
-			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
-			await context.close();
 		}
 
 		console.log("\n=== ALL 4 STATES CAPTURED SUCCESSFULLY ===");

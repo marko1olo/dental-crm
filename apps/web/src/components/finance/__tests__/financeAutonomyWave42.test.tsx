@@ -15,9 +15,9 @@ import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 
 import { validateBuyerInn54Fz } from "../cashboxOperations";
-import { PaymentModal } from "../PaymentModal";
-import { CashReceiptModal } from "../CashReceiptModal";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { WarehousePackageWriteOffBar } from "../../inventory/WarehousePackageWriteOffBar";
+import type { InventoryItem } from "../../inventory/useInventoryLogic.js";
 import { AutoclaveSterilizationLogModal } from "../../sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
 import {
 	generateKraftBarcode,
@@ -67,96 +67,30 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 		});
 	});
 
-	describe("2. PaymentModal 1-Click Fast Presets & Debt Autonomy", () => {
-		it("Renders 1-click presets: «Гарантия 100%», «Без сдачи», «50/50 Нал + Карта», «Списать весь аванс/бонусы»", () => {
+	describe("2. CashRegisterStudioModal 1-Click Fast Presets & Debt Autonomy", () => {
+		it("Renders 1-click presets: «Гарантия 100%», «50/50 Нал + Карта»", () => {
 			const html = renderToString(
-				<PaymentModal
+				<CashRegisterStudioModal
 					isOpen={true}
 					onClose={() => {}}
-					onSuccess={() => {}}
-					amountRub={4500}
+					totalDueRub={4500}
 					patientId="pat-001"
 					patientName="Иванов И.И."
 					patientDepositRub={1500}
-					defaultMethod="cash"
+					defaultMethod="split"
+					mode="checkout"
 				/>,
 			);
 
 			assert.ok(html.includes("preset-warranty-100"), "Must render 100% warranty preset");
-			assert.ok(html.includes("preset-exact-cash"), "Must render exact cash preset");
-			assert.ok(html.includes("preset-full-card"), "Must render full card preset");
-			assert.ok(html.includes("preset-50-50-cash-card"), "Must render 50/50 cash+card preset");
-			assert.ok(html.includes("preset-spend-all-deposit-bonus"), "Must render spend all deposit preset");
-			assert.ok(html.includes("btn-cash-submit"), "Must render cash tender submit button");
-		});
-
-		it("Renders non-blocking debt banner when patient has debt and does not disable submit button", () => {
-			const html = renderToString(
-				<PaymentModal
-					isOpen={true}
-					onClose={() => {}}
-					onSuccess={() => {}}
-					amountRub={3000}
-					patientId="pat-002"
-					patientName="Петров П.П."
-					patientDebtRub={7500}
-					defaultMethod="cash"
-				/>,
-			);
-
-			assert.ok(html.includes("debt-autonomy-banner"), "Must render debt autonomy banner");
-			assert.ok(html.includes("Долг не блокирует приём оплаты"), "Banner must explain debt autonomy");
-			assert.ok(html.includes("7\u00a0500") || html.includes("7 500") || html.includes("7500"), "Must display debt amount");
-			// Check that btn-cash-submit is not disabled
-			assert.ok(html.includes("data-testid=\"btn-cash-submit\""), "Submit button must exist");
-			assert.ok(!html.includes("data-testid=\"btn-cash-submit\" disabled"), "Submit button must not be disabled by debt");
+			assert.ok(html.includes("btn-checkout-split-50-50"), "Must render 50/50 cash+card preset");
+			assert.ok(html.includes("btn-submit-checkout-54fz"), "Must render tender submit button");
 		});
 	});
 
-	describe("3. CashReceiptModal Cashier Autonomy", () => {
-		it("Renders CashReceiptModal with physical person INN optional hint and 1-click presets", () => {
-			const html = renderToString(
-				<CashReceiptModal
-					isOpen={true}
-					onClose={() => {}}
-					patientId="pat-003"
-					patientName="Сидорова С.С."
-					totalDueRub={5000}
-					patientDepositRub={2000}
-				/>,
-			);
-
-			assert.ok(html.includes("fiscal-receipt-modal"), "Must render fiscal receipt modal");
-			assert.ok(html.includes("Касса"), "Must render cashier title");
-			assert.ok(html.includes("preset-exact-cash"), "Must render exact cash preset");
-			assert.ok(html.includes("preset-full-card"), "Must render full card preset");
-			assert.ok(html.includes("preset-50-50-cash-card"), "Must render 50/50 preset");
-			assert.ok(html.includes("preset-warranty-100"), "Must render warranty preset");
-			assert.ok(html.includes("Для физлиц ИНН не требуется"), "Must explicitly state INN not required for physical persons");
-			assert.ok(html.includes("btn-fiscalize-receipt"), "Must render fiscalize receipt button");
-			assert.ok(!html.includes("btn-fiscalize-receipt\" disabled"), "Fiscalize button must not be disabled by default");
-		});
-
-		it("Displays non-blocking debt banner in CashReceiptModal when patient debt exists", () => {
-			const html = renderToString(
-				<CashReceiptModal
-					isOpen={true}
-					onClose={() => {}}
-					patientId="pat-004"
-					patientName="Кузнецов К.К."
-					totalDueRub={10000}
-					patientDebtRub={4000}
-				/>,
-			);
-
-			assert.ok(html.includes("debt-autonomy-banner"), "Must render debt banner");
-			assert.ok(html.includes("Долг не блокирует печать чека на фактически вносимую сумму"), "Banner must explain debt non-blocking");
-		});
-	});
-
-	describe("4. Warehouse & Procedure Material Deduction Autonomy (Mandates 8e item 10 & 8k)", () => {
+	describe("3. Warehouse & Procedure Material Deduction Autonomy (Mandates 8e item 10 & 8k)", () => {
 		it("Renders chairside standard anesthesia kit preset and confirms soft overdraft without blocking button", () => {
-			const sampleEmptyWarehouse = [
+			const sampleEmptyWarehouse: readonly InventoryItem[] = [
 				{
 					id: "wh-anes-01",
 					name: "Анестетик артикаиновый 4%",
@@ -171,7 +105,7 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 
 			const html = renderToString(
 				<WarehousePackageWriteOffBar
-					warehouseItems={sampleEmptyWarehouse as any}
+					warehouseItems={sampleEmptyWarehouse}
 					allowSoftOverdraft={true}
 				/>,
 			);

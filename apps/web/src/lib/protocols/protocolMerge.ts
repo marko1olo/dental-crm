@@ -5,6 +5,7 @@ import type {
 	MergeSoapOptions,
 } from "./protocolTypes.js";
 import { normalizeFdiToothList } from "./fdiAnatomy.js";
+import { ICD10_DICTIONARY } from "../icd10.js";
 
 /**
  * Неразрушающее слияние (Non-Destructive Merge) данных SOAP-дневника.
@@ -173,5 +174,246 @@ export function appendRecommendationToSoap(
 	return {
 		...diary,
 		treatmentDescription: nextTreatment,
+	};
+}
+
+/**
+ * Код МКБ-10 из текста диагноза ЭМК.
+ */
+export function icd10CodeFromDiagnosisText(diagnosis: string): string {
+	const trimmed = diagnosis.trim();
+	if (!trimmed) return "";
+	const exact = trimmed.match(/^([A-TV-Z]\d{2}(?:\.\d{1,4})?)$/i);
+	const exactCode = exact?.[1];
+	if (exactCode) return exactCode.toUpperCase();
+	const leading = trimmed.match(/^([A-TV-Z]\d{2}(?:\.\d{1,4})?)\b/i);
+	const leadingCode = leading?.[1];
+	if (leadingCode) return leadingCode.toUpperCase();
+	const embedded = trimmed.match(/\b([A-TV-Z]\d{2}(?:\.\d{1,4})?)\b/i);
+	const embeddedCode = embedded?.[1];
+	return embeddedCode ? embeddedCode.toUpperCase() : "";
+}
+
+/** Зуб по FDI (постоянные 11–48, молочные 51–85) из текста диагноза ЭМК, если указан. */
+export function fdiToothFromText(text: string): string {
+	const m = text.trim().match(/\b([1-4][1-8]|[5-8][1-5])\b/);
+	const tooth = m?.[1];
+	return tooth ?? "";
+}
+
+/**
+ * SOAP-поля дневника из формы ЭМК приёма (visits / visitNoteForm).
+ */
+export function soapPrefillFromVisitNote(form: {
+	complaint?: string | null;
+	anamnesis?: string | null;
+	objectiveStatus?: string | null;
+	diagnosis?: string | null;
+	treatmentPlan?: string | null;
+}): Partial<DiaryState> {
+	const complaint = (form.complaint ?? "").trim();
+	const anamnesis = (form.anamnesis ?? "").trim();
+	const sParts: string[] = [];
+	if (complaint) sParts.push(complaint);
+	if (anamnesis && anamnesis !== complaint) sParts.push(anamnesis);
+
+	const out: Partial<DiaryState> = {};
+	if (sParts.length > 0) out.anamnesis = sParts.join("\n");
+
+	const objective = (form.objectiveStatus ?? "").trim();
+	if (objective) out.statusLocalis = objective;
+
+	const plan = (form.treatmentPlan ?? "").trim();
+	if (plan) out.treatmentDescription = plan;
+
+	const diagnosis = (form.diagnosis ?? "").trim();
+	const icd = icd10CodeFromDiagnosisText(diagnosis);
+	if (icd) out.diagnosisIcd10 = icd;
+	const tooth = fdiToothFromText(diagnosis);
+	if (tooth) out.diagnosisTooth = tooth;
+
+	return out;
+}
+
+/**
+ * Разделяет один абзац анамнеза по знакам препинания или семантическим маркерам.
+ */
+export function splitSingleParagraphAnamnesis(
+	text: string,
+	currentComplaint?: string,
+	currentAnamnesis?: string,
+): { complaint: string; anamnesis: string } {
+	const cComp = (currentComplaint ?? "").trim();
+	const cAnam = (currentAnamnesis ?? "").trim();
+
+	const match = text.match(/^([^.!?]+[.!?]+)\s+([\s\S]+)$/);
+	if (match) {
+		const firstSentence = (match[1] ?? "").trim();
+		const rest = (match[2] ?? "").trim();
+		if (firstSentence && rest) {
+			return {
+				complaint: firstSentence,
+				anamnesis: rest,
+			};
+		}
+	}
+
+	const isAnamnesisOnly =
+		/\b(соматическ|хроническ|здоров|аллерг|анамнез|ранее)\b/i.test(text);
+
+	if (isAnamnesisOnly && cComp) {
+		return { complaint: cComp, anamnesis: text };
+	}
+	if (isAnamnesisOnly && !cComp) {
+		return { complaint: "", anamnesis: text };
+	}
+
+	return {
+		complaint: text,
+		anamnesis: cAnam,
+	};
+}
+
+/**
+ * Разделяет поле `anamnesis` дневника (где жалобы и анамнез объединены)
+ * обратно на `complaint` (жалобы) и `anamnesis` (анамнез) для формы ЭМК приёма.
+ */
+export function splitDiaryAnamnesis(
+	text: string,
+	currentComplaint?: string,
+	currentAnamnesis?: string,
+): { complaint: string; anamnesis: string } {
+	const trimmed = (text ?? "").trim();
+	if (!trimmed) {
+		return { complaint: "", anamnesis: "" };
+	}
+
+	const cComp = (currentComplaint ?? "").trim();
+	const cAnam = (currentAnamnesis ?? "").trim();
+
+	if (cComp && cAnam) {
+		if (trimmed === `${cComp}\n${cAnam}`) {
+			return { complaint: cComp, anamnesis: cAnam };
+		}
+		if (trimmed === cComp) {
+			return { complaint: cComp, anamnesis: cAnam };
+		}
+		if (trimmed === cAnam) {
+			return { complaint: cComp, anamnesis: cAnam };
+		}
+		if (trimmed.startsWith(cComp)) {
+			const remainder = trimmed
+				.slice(cComp.length)
+				.replace(/^[\n\r\s,;.]+/, "")
+				.trim();
+			return { complaint: cComp, anamnesis: remainder || cAnam };
+		}
+	}
+
+	if (trimmed.includes("\n")) {
+		const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+		if (lines.length >= 2) {
+			return {
+				complaint: lines[0] ?? "",
+				anamnesis: lines.slice(1).join("\n"),
+			};
+		}
+		if (lines.length === 1) {
+			return splitSingleParagraphAnamnesis(lines[0] ?? "", cComp, cAnam);
+		}
+	}
+
+	return splitSingleParagraphAnamnesis(trimmed, cComp, cAnam);
+}
+
+/**
+ * Преобразует поля формы ЭМК приёма (visits / visitNoteForm) в структуру дневника.
+ */
+export function soapDiaryFromVisitNote(form: {
+	complaint?: string | null;
+	anamnesis?: string | null;
+	objectiveStatus?: string | null;
+	diagnosis?: string | null;
+	treatmentPlan?: string | null;
+}): Partial<DiaryState> {
+	const complaint = (form.complaint ?? "").trim();
+	const anamnesis = (form.anamnesis ?? "").trim();
+	const sParts: string[] = [];
+	if (complaint) sParts.push(complaint);
+	if (anamnesis && anamnesis !== complaint) sParts.push(anamnesis);
+
+	const out: Partial<DiaryState> = {
+		anamnesis: sParts.join("\n"),
+		statusLocalis: (form.objectiveStatus ?? "").trim(),
+		treatmentDescription: (form.treatmentPlan ?? "").trim(),
+	};
+
+	const diagnosis = (form.diagnosis ?? "").trim();
+	const icd = icd10CodeFromDiagnosisText(diagnosis);
+	if (icd) out.diagnosisIcd10 = icd;
+	const tooth = fdiToothFromText(diagnosis);
+	if (tooth) out.diagnosisTooth = tooth;
+
+	return out;
+}
+
+/**
+ * Преобразует состояние дневника (SOAP) в поля формы ЭМК приёма (visits / visitNoteForm).
+ */
+export function visitNoteFromSoapDiary(
+	diary: DiaryState,
+	currentForm?: Partial<
+		Record<
+			| "complaint"
+			| "anamnesis"
+			| "objectiveStatus"
+			| "diagnosis"
+			| "treatmentPlan",
+			string
+		>
+	>,
+): {
+	complaint: string;
+	anamnesis: string;
+	objectiveStatus: string;
+	diagnosis: string;
+	treatmentPlan: string;
+} {
+	const currentComplaint = currentForm?.complaint ?? "";
+	const currentAnamnesis = currentForm?.anamnesis ?? "";
+	const { complaint, anamnesis } = splitDiaryAnamnesis(
+		diary.anamnesis ?? "",
+		currentComplaint,
+		currentAnamnesis,
+	);
+
+	const objectiveStatus = (diary.statusLocalis ?? "").trim();
+	const treatmentPlan = (diary.treatmentDescription ?? "").trim();
+
+	let diagnosis = (currentForm?.diagnosis ?? "").trim();
+	const icd = (diary.diagnosisIcd10 ?? "").trim().toUpperCase();
+	const tooth = (diary.diagnosisTooth ?? "").trim();
+
+	if (icd) {
+		const existingIcd = icd10CodeFromDiagnosisText(diagnosis);
+		if (!diagnosis || existingIcd !== icd) {
+			const icdEntry = (ICD10_DICTIONARY ?? []).find(
+				(entry) => entry.code === icd,
+			);
+			const label = icdEntry?.label ? ` ${icdEntry.label}` : "";
+			diagnosis = tooth ? `${icd}${label} (зуб ${tooth})` : `${icd}${label}`;
+		} else if (tooth && !diagnosis.includes(tooth)) {
+			diagnosis = `${diagnosis} (зуб ${tooth})`;
+		}
+	} else if (!diagnosis && tooth) {
+		diagnosis = `Зуб ${tooth}`;
+	}
+
+	return {
+		complaint,
+		anamnesis,
+		objectiveStatus,
+		diagnosis,
+		treatmentPlan,
 	};
 }

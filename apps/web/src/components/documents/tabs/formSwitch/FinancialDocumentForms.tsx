@@ -3,6 +3,11 @@
  * Financial and warranty document forms dispatcher (Mandate 8b <= 120 lines, Mandate 8e, Mandate 8x)
  */
 
+import type {
+	TaxDeductionApplicationDeliveryChannel,
+	TaxDeductionApplicationForm as TaxDeductionApplicationFormKind,
+	TaxDeductionApplicationRelationship,
+} from "@dental/shared";
 import React from "react";
 import { CompletedWorksActForm } from "../../forms/CompletedWorksActForm";
 import { InstallmentScheduleForm } from "../../forms/InstallmentScheduleForm";
@@ -22,7 +27,7 @@ export const FinancialDocumentForms: React.FC<DocumentFormSwitchProps> = React.m
 
 		return (
 			<>
-				{((selectedDocumentKind as any) === "paid_medical_services_contract" || (selectedDocumentKind as any) === "paid_service_contract") && (
+				{(selectedDocumentKind === "paid_medical_services_contract" || selectedDocumentKind === "paid_service_contract") && (
 					<PaidServiceContractForm
 						documentPatientFullName={props.documentPatient?.fullName ?? props.activePatient?.fullName ?? null}
 						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
@@ -53,7 +58,7 @@ export const FinancialDocumentForms: React.FC<DocumentFormSwitchProps> = React.m
 						selectedPaymentReceiptTotalRub={props.selectedPaymentReceiptTotalRub}
 					/>
 				)}
-				{((selectedDocumentKind as any) === "installment_payment_schedule" || (selectedDocumentKind as any) === "installment_schedule") && (
+				{(selectedDocumentKind === "installment_payment_schedule" || selectedDocumentKind === "installment_schedule") && (
 					<InstallmentScheduleForm
 						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 						documentPatient={props.documentPatient ?? props.activePatient ?? null}
@@ -97,9 +102,21 @@ export const FinancialDocumentForms: React.FC<DocumentFormSwitchProps> = React.m
 					<TaxDeductionApplicationForm
 						relationshipOptions={props.taxApplicationRelationshipOptions ?? []} formOptions={props.taxApplicationFormOptions ?? []}
 						deliveryChannelOptions={props.taxApplicationDeliveryChannelOptions ?? []}
-						normalizeRelationship={props.normalizedTaxApplicationRelationshipSelect ?? ((v) => v as any)}
-						normalizeForm={props.normalizedTaxApplicationForm ?? ((v) => v as any)}
-						normalizeDeliveryChannel={props.normalizedTaxApplicationDeliveryChannel ?? ((v) => v as any)}
+						normalizeRelationship={
+							props.normalizedTaxApplicationRelationshipSelect ??
+							((v: string): TaxDeductionApplicationRelationship =>
+								v === "spouse" || v === "child" || v === "parent" || v === "ward" ? v : "self")
+						}
+						normalizeForm={
+							props.normalizedTaxApplicationForm ??
+							((v: string): TaxDeductionApplicationFormKind =>
+								v === "knd_1151156" || v === "legacy_2021_2023" ? v : "knd_1151156")
+						}
+						normalizeDeliveryChannel={
+							props.normalizedTaxApplicationDeliveryChannel ??
+							((v: string): TaxDeductionApplicationDeliveryChannel =>
+								v === "email" || v === "paper" || v === "portal" ? v : "paper")
+						}
 					/>
 				)}
 				{selectedDocumentKind === "warranty_service_memo" && (

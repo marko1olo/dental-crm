@@ -58,7 +58,7 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 		const docViewPath = path.join(webSrcDir, "DocumentsView.tsx");
 		const navTabsPath = path.join(
 			webSrcDir,
-			"components/documents/DocumentNavTabs.tsx",
+			"components/documents/navTabs/constants.tsx",
 		);
 		const docViewContent = fs.readFileSync(docViewPath, "utf-8");
 		const navTabsContent = fs.readFileSync(navTabsPath, "utf-8");

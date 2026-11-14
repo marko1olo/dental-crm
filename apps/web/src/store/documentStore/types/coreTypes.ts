@@ -101,10 +101,8 @@ export interface DocumentSliceState {
 			| DocumentIssueSignatureMode
 			| ((prev: DocumentIssueSignatureMode) => DocumentIssueSignatureMode),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	documentIssueSignedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setDocumentIssueSignedAt: (val: any | ((prev: any) => any)) => void;
+	documentIssueSignedAt: string;
+	setDocumentIssueSignedAt: (val: string | ((prev: string) => string)) => void;
 	documentIssueRecipientFullName: string;
 	setDocumentIssueRecipientFullName: (
 		val: string | ((prev: string) => string),
@@ -113,14 +111,10 @@ export interface DocumentSliceState {
 	setDocumentIssueRecipientRole: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	documentIssueStaffFullName: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setDocumentIssueStaffFullName: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	documentIssueStaffRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setDocumentIssueStaffRole: (val: any | ((prev: any) => any)) => void;
+	documentIssueStaffFullName: string;
+	setDocumentIssueStaffFullName: (val: string | ((prev: string) => string)) => void;
+	documentIssueStaffRole: string;
+	setDocumentIssueStaffRole: (val: string | ((prev: string) => string)) => void;
 	documentIssueNote: string;
 	setDocumentIssueNote: (val: string | ((prev: string) => string)) => void;
 	documentIssueIdentityChecked: boolean;
@@ -151,14 +145,10 @@ export interface DocumentSliceState {
 	) => void;
 	documentVoidReasonText: string;
 	setDocumentVoidReasonText: (val: string | ((prev: string) => string)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	documentVoidStaffFullName: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setDocumentVoidStaffFullName: (val: any | ((prev: any) => any)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	documentVoidStaffRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setDocumentVoidStaffRole: (val: any | ((prev: any) => any)) => void;
+	documentVoidStaffFullName: string;
+	setDocumentVoidStaffFullName: (val: string | ((prev: string) => string)) => void;
+	documentVoidStaffRole: string;
+	setDocumentVoidStaffRole: (val: string | ((prev: string) => string)) => void;
 	documentVoidCorrectionDocumentId: string;
 	setDocumentVoidCorrectionDocumentId: (
 		val: string | ((prev: string) => string),

@@ -62,6 +62,20 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		}
 	}, [initP, initPAlias, effS]);
 
+	useEffect(() => {
+		const handleBalanceChange = (e: Event) => {
+			const detail = (e as CustomEvent<{ patientId?: string; newBalanceRub?: number }>)?.detail;
+			if (!detail) return;
+			if (!detail.patientId || detail.patientId === patientData.id) {
+				if (typeof detail.newBalanceRub === "number") {
+					setPatientData((prev) => ({ ...prev, patientBalanceRub: detail.newBalanceRub }));
+				}
+			}
+		};
+		window.addEventListener("dente-patient-balance-changed", handleBalanceChange);
+		return () => window.removeEventListener("dente-patient-balance-changed", handleBalanceChange);
+	}, [patientData.id]);
+
 	const safetyEvaluation = useMemo(() => evaluatePatientSafetyFlags(safetyProfile), [safetyProfile]);
 	const [isDirty, setIsDirty] = useState(false);
 	const [saveState, setSaveState] = useState<PatientSectionSaveState>("idle");

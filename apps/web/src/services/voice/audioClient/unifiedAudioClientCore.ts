@@ -33,6 +33,26 @@ import {
 import { VadDetector } from "./vadDetector";
 
 export class UnifiedAudioClient {
+	private static instance: UnifiedAudioClient | null = null;
+
+	public static getInstance(options?: UnifiedAudioClientOptions): UnifiedAudioClient {
+		if (!UnifiedAudioClient.instance || UnifiedAudioClient.instance.isDisposed) {
+			UnifiedAudioClient.instance = new UnifiedAudioClient({
+				preferredMode: "gemini_live",
+				autoFallback: true,
+				...options,
+			});
+		} else if (options) {
+			UnifiedAudioClient.instance.updateContext({
+				patientId: options.patientId ?? undefined,
+				visitId: options.visitId ?? undefined,
+				specialty: options.specialty,
+				adminSecret: options.adminSecret,
+			});
+		}
+		return UnifiedAudioClient.instance;
+	}
+
 	private options: InternalUnifiedAudioClientOptions;
 	private offlineQueue: VoiceOfflineQueue;
 	private currentMode: UnifiedAudioMode;

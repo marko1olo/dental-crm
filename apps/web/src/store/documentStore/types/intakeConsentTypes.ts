@@ -215,10 +215,10 @@ export interface IntakeConsentSliceState {
 	setPersonalDataAutomatedDecisionAllowed: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	personalDataConsentGivenAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setPersonalDataConsentGivenAt: (val: any | ((prev: any) => any)) => void;
+	personalDataConsentGivenAt: string;
+	setPersonalDataConsentGivenAt: (
+		val: string | ((prev: string) => string),
+	) => void;
 	personalDataVoluntaryConsentConfirmed: boolean;
 	setPersonalDataVoluntaryConsentConfirmed: (
 		val: boolean | ((prev: boolean) => boolean),
@@ -255,10 +255,8 @@ export interface IntakeConsentSliceState {
 	setRefusalPatientReason: (val: string | ((prev: string) => string)) => void;
 	refusalDoctorFullName: string;
 	setRefusalDoctorFullName: (val: string | ((prev: string) => string)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	refusalConfirmedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setRefusalConfirmedAt: (val: any | ((prev: any) => any)) => void;
+	refusalConfirmedAt: string;
+	setRefusalConfirmedAt: (val: string | ((prev: string) => string)) => void;
 	refusalConsequencesUnderstood: boolean;
 	setRefusalConsequencesUnderstood: (
 		val: boolean | ((prev: boolean) => boolean),

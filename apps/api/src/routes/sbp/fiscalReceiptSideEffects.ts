@@ -88,15 +88,17 @@ export async function applyFiscalSideEffects(params: {
 	}
 
 	// Record digital receipt dispatch
-	const isEmail = input.customerContact.includes("@");
-	await tx.insert(digitalReceiptDispatches).values({
-		organizationId: orgId,
-		paymentId,
-		patientName: patientFullName,
-		dispatchChannel: isEmail ? "email" : "sms",
-		targetDestination: input.customerContact,
-		fiscalReceiptNumber,
-		receiptAmountRub: kopecksToNumericString(input.totalKopecks),
-		paperPrintSkipped: true,
-	});
+	if (input.customerContact) {
+		const isEmail = input.customerContact.includes("@");
+		await tx.insert(digitalReceiptDispatches).values({
+			organizationId: orgId,
+			paymentId,
+			patientName: patientFullName,
+			dispatchChannel: isEmail ? "email" : "sms",
+			targetDestination: input.customerContact,
+			fiscalReceiptNumber,
+			receiptAmountRub: kopecksToNumericString(input.totalKopecks),
+			paperPrintSkipped: true,
+		});
+	}
 }

@@ -18,7 +18,7 @@ export function generateDailySterilAndPsoRows(dateStr: string, organizationId: s
 			status: "passed" as const,
 			barcode: `DNT-STER-${dateStr.replace(/-/g, "")}-1-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
 			operatorId,
-			notes: "⚡ 1-Клик автопилот месяца: норма СанПиН 3.3686-21, 5 точек КТ подтверждены",
+			notes: "Автопилот месяца: норма СанПиН 3.3686-21, химический контроль пройден",
 			createdAt: new Date(`${dateStr}T09:30:00Z`),
 		},
 		{
@@ -37,7 +37,7 @@ export function generateDailySterilAndPsoRows(dateStr: string, organizationId: s
 			status: "passed" as const,
 			barcode: `DNT-STER-${dateStr.replace(/-/g, "")}-2-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
 			operatorId,
-			notes: "⚡ 1-Клик автопилот месяца: норма СанПиН 3.3686-21, 5 точек КТ подтверждены",
+			notes: "Автопилот месяца: норма СанПиН 3.3686-21, химический контроль пройден",
 			createdAt: new Date(`${dateStr}T14:30:00Z`),
 		},
 	];

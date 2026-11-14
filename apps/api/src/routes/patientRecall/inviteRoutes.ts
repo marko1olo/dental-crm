@@ -23,17 +23,19 @@ export function registerInviteRoutes(app: FastifyInstance) {
 		if (!parsed.success)
 			return badRequest(reply, "Укажите пациента, канал и текст приглашения.");
 
-		if (!isMachineDeliverableChannel(parsed.data.channel)) {
+		const { channel, patientId, body } = parsed.data;
+
+		if (!isMachineDeliverableChannel(channel)) {
 			return badRequest(
 				reply,
-				`Канал «${parsed.data.channel}» не отправляется автоматически — по нему нужно позвонить или пригласить лично.`,
+				`Канал «${channel}» не отправляется автоматически — по нему нужно позвонить или пригласить лично.`,
 			);
 		}
 
 		if (
 			!(await recallCandidateBelongsTo(
 				context.organizationId,
-				parsed.data.patientId,
+				patientId,
 			))
 		) {
 			return reply.code(404).send({
@@ -47,12 +49,12 @@ export function registerInviteRoutes(app: FastifyInstance) {
 
 		const result = await enqueueMessage({
 			organizationId: context.organizationId,
-			patientId: parsed.data.patientId,
-			channel: parsed.data.channel as never,
+			patientId,
+			channel,
 			intent: "recall",
 			scope: "marketing",
-			body: parsed.data.body,
-			dedupeKey: `recall:${parsed.data.patientId}:${period}`,
+			body,
+			dedupeKey: `recall:${patientId}:${period}`,
 		});
 
 		if (!result.ok) return badRequest(reply, result.reason);

@@ -1,6 +1,5 @@
 import type React from "react";
-import { FamilyCombinedBillingModal } from "../../../components/finance/FamilyCombinedBillingModal";
-import { PatientBillingModal } from "../../../components/finance/PatientBillingModal";
+import { CashRegisterStudioModal } from "../../../components/cashbox/CashRegisterStudioModal";
 import { TaxDeductionCertificateModal } from "../../../components/finance/TaxDeductionCertificateModal";
 import { DoctorPayrollStudioModal } from "../../../components/payroll/DoctorPayrollStudioModal";
 import type { FinanceViewState } from "../useFinanceView";
@@ -76,29 +75,17 @@ export const FinancePatientModalsSubhost: React.FC<
 	return (
 		<>
 			{s.isBillingActOpen && (
-				<PatientBillingModal
+				<CashRegisterStudioModal
 					isOpen={s.isBillingActOpen}
 					onClose={() => s.setIsBillingActOpen(false)}
-					patient={
-						docPat
-							? {
-									id: docPat.id,
-									fullName: docPat.fullName,
-									birthDate: docPat.birthDate,
-									phone: docPat.phone,
-									address: resolvePatientAddress(docPat),
-									medicalCardNumber: "cardNumber" in docPat && typeof (docPat as { cardNumber?: unknown }).cardNumber === "string"
-										? (docPat as { cardNumber: string }).cardNumber
-										: null,
-									depositRub: resolvePatientDeposit(docPat),
-									familyBalanceRub: resolvePatientFamilyBalance(docPat),
-								}
-							: null
-					}
+					mode="checkout"
+					patientId={docPat?.id}
+					patientName={docPat?.fullName}
+					patientPhone={docPat?.phone}
 					patientDepositRub={resolvePatientDeposit(docPat)}
 					patientFamilyBalanceRub={resolvePatientFamilyBalance(docPat)}
 					clinicName={s.dashboard?.clinicSettings?.name}
-					clinicInn={s.dashboard?.clinicSettings?.inn}
+					clinicLegalName={s.dashboard?.clinicSettings?.legalName}
 				/>
 			)}
 
@@ -136,19 +123,17 @@ export const FinancePatientModalsSubhost: React.FC<
 			)}
 
 			{s.isFamilyBillingOpen && (
-				<FamilyCombinedBillingModal
+				<CashRegisterStudioModal
 					isOpen={s.isFamilyBillingOpen}
 					onClose={() => s.setIsFamilyBillingOpen(false)}
-					familyGroupId={docPat?.familyGroupId ?? undefined}
-					familyGroupName="Семейная группа"
-					availableFamilyWalletRub={resolvePatientFamilyBalance(docPat)}
-					initialPayer={{
-						payerId: docPat?.id || "",
-						payerFullName: docPat?.fullName || "Ответственный плательщик",
-					}}
+					mode="checkout"
+					patientId={docPat?.id}
+					patientName={docPat?.fullName}
+					patientPhone={docPat?.phone}
+					patientFamilyBalanceRub={resolvePatientFamilyBalance(docPat)}
 					clinicName={s.dashboard?.clinicSettings?.name}
-					clinicInn={s.dashboard?.clinicSettings?.inn}
-					onCheckoutComplete={() => {
+					clinicLegalName={s.dashboard?.clinicSettings?.legalName}
+					onPaymentComplete={() => {
 						void s.loadDashboard?.();
 						s.setIsFamilyBillingOpen(false);
 					}}

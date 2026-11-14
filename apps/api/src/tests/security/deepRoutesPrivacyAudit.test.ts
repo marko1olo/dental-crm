@@ -47,7 +47,7 @@ import { registerClinicalImplantRoutes } from "../../routes/clinicalImplants.js"
 import registerDiaryRoutes from "../../routes/diary.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerInvoiceRoutes } from "../../routes/invoices.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
 import { registerXrayRoutes } from "../../routes/xray.js";

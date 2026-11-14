@@ -64,7 +64,7 @@ export function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
 		(seriesRows, index): DicomSeriesPreviewGroup => {
 			const first = seriesRows[0];
 
-			let kind: string | null | undefined;
+			let kind: DicomSeriesPreviewGroup["kind"] | undefined;
 			let modality: string | null | undefined;
 			let patientId: string | null | undefined;
 			let patientName: string | null | undefined;
@@ -115,7 +115,7 @@ export function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
 				}
 			}
 
-			const kindNull = (kind ?? null) as DicomSeriesPreviewGroup["kind"];
+			const kindNull = kind ?? null;
 			const modalityNull = modality ?? null;
 			const patientIdNull = patientId ?? null;
 			const patientNameNull = patientName ?? null;
@@ -442,7 +442,17 @@ export async function parseDicomSeriesManifest(
 					field === "sopInstanceUid"
 				) {
 					draft[field] = normalizeDicomUid(value);
-				} else draft[field] = value as never;
+				} else if (field === "patientName") {
+					draft.patientName = value;
+				} else if (field === "studyDescription") {
+					draft.studyDescription = value;
+				} else if (field === "seriesDescription") {
+					draft.seriesDescription = value;
+				} else if (field === "filePath") {
+					draft.filePath = value;
+				} else if (field === "sourceName") {
+					if (value) draft.sourceName = value;
+				}
 			});
 			const lineFallback = await parseDicomManifestLine(
 				patients,

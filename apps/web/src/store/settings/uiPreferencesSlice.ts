@@ -23,10 +23,12 @@ export const initialUiPreferencesSlice: UiPreferencesSliceState = {
 	telegramRevokingLinkId: null,
 };
 
-export function createUiPreferencesSlice(set: any): UiPreferencesSliceActions {
+export function createUiPreferencesSlice(
+	set: (fn: (s: UiPreferencesSliceState) => Partial<UiPreferencesSliceState>) => void,
+): UiPreferencesSliceActions {
 	return {
-		setCbctDefaults: (val) => set((s: any) => ({ cbctDefaults: resolveUpdater(val, s.cbctDefaults) })),
-		setTelegramSendingItemId: (val) => set((s: any) => ({ telegramSendingItemId: resolveUpdater(val, s.telegramSendingItemId) })),
-		setTelegramRevokingLinkId: (val) => set((s: any) => ({ telegramRevokingLinkId: resolveUpdater(val, s.telegramRevokingLinkId) })),
+		setCbctDefaults: (val) => set((s) => ({ cbctDefaults: resolveUpdater(val, s.cbctDefaults) })),
+		setTelegramSendingItemId: (val) => set((s) => ({ telegramSendingItemId: resolveUpdater(val, s.telegramSendingItemId) })),
+		setTelegramRevokingLinkId: (val) => set((s) => ({ telegramRevokingLinkId: resolveUpdater(val, s.telegramRevokingLinkId) })),
 	};
 }

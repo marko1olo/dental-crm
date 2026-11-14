@@ -29,15 +29,7 @@ export const PatientIdentityFields: React.FC<PatientIdentityFieldsProps> = ({
 			/>
 		</label>
 		<label>
-			<span className="flex items-center justify-between gap-1">
-				<span>ИНН пациента</span>
-				<span
-					className="text-[11px] font-normal text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20"
-					data-testid="inn-patient-admin-optional-badge"
-				>
-					(не требуется при оплате)
-				</span>
-			</span>
+			ИНН пациента
 			<input
 				inputMode="numeric"
 				autoComplete="off"

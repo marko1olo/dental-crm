@@ -17,7 +17,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { PatientBillingModal } from "../PatientBillingModal";
 import {
 	type InvoiceServiceItem,
 	compileCompletedWorksAct,
@@ -37,11 +36,12 @@ const repoRoot = path.resolve(webRoot, "../..");
 
 describe("Wave 108: StomX Warranty Reworks & Consumables Soft Overdraft Autonomy", () => {
 	it("1. StomX sample invoice schema compatibility: verified against sample_full_invoice.json", () => {
-		const samplePath = path.resolve(
-			repoRoot,
-			"РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС НОВЫЙ ЗАВОЗ/data/invoices/sample_full_invoice.json",
-		);
-		assert.ok(fs.existsSync(samplePath), `Sample invoice must exist at ${samplePath}`);
+		const candidatePaths = [
+			path.resolve(repoRoot, "docs/reference_dumps/РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС НОВЫЙ ЗАВОЗ/data/invoices/sample_full_invoice.json"),
+			path.resolve(repoRoot, "РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС НОВЫЙ ЗАВОЗ/data/invoices/sample_full_invoice.json"),
+		];
+		const samplePath = candidatePaths.find((p) => fs.existsSync(p));
+		assert.ok(samplePath, `Sample invoice must exist at one of candidate paths`);
 
 		const rawContent = fs.readFileSync(samplePath, "utf-8");
 		const sample = JSON.parse(rawContent);
@@ -199,109 +199,6 @@ describe("Wave 108: StomX Warranty Reworks & Consumables Soft Overdraft Autonomy
 		assert.equal(result.totalNetRub, 1800);
 		assert.equal(result.hasWarrantyRework, true);
 		assert.equal(result.totalWarrantyPriceRub, 20000);
-	});
-
-	it("5. PatientBillingModal: renders 1-click warranty toggle button and [ГАРАНТИЯ] badge with clinical styling", () => {
-		const initialServices: InvoiceServiceItem[] = [
-			{
-				id: "srv-101",
-				name: "Лечение кариеса и эстетическая реставрация",
-				code804n: "A16.07.002",
-				toothNumber: 36,
-				quantity: 1,
-				priceRub: 6000,
-				category: "therapy",
-				isWarranty: true, // Pre-flagged as warranty rework
-				warrantyDiscountPercent: 100,
-				warrantyPriceRub: 6000,
-			},
-		];
-
-		const html = renderToString(
-			<PatientBillingModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={{
-					id: "pat-101",
-					fullName: "Михайлов Денис Игоревич",
-				}}
-				doctor={{
-					fullName: "Д-р Кузнецов П. С.",
-				}}
-				initialServices={initialServices}
-			/>,
-		);
-
-		// Verify 1-click toggle button exists
-		assert.ok(
-			html.includes("data-testid=\"btn-item-warranty-srv-101\""),
-			"Must render data-testid btn-item-warranty-srv-101",
-		);
-
-		// Verify [ГАРАНТИЯ] badge with required styling
-		assert.ok(html.includes("[ГАРАНТИЯ]"), "Must render badge text [ГАРАНТИЯ]");
-		assert.ok(
-			html.includes("text-teal-700"),
-			"Badge must have text-teal-700",
-		);
-		assert.ok(
-			html.includes("bg-teal-50"),
-			"Badge must have bg-teal-50",
-		);
-
-		// Verify payable amount is 0 ₽
-		assert.ok(html.includes("0 ₽"), "Net payable price must be 0 ₽");
-
-		// Mandate 8e: zero disabled buttons without reason
-		assert.ok(
-			!html.includes("disabled=\"\"") || !html.includes("btn-item-warranty"),
-			"Warranty button must never be disabled",
-		);
-	});
-
-	it("6. PatientBillingModal: multiple items group renders individual warranty buttons per item", () => {
-		const initialServices: InvoiceServiceItem[] = [
-			{
-				id: "srv-c-1",
-				name: "Лечение глубокого кариеса",
-				code804n: "A16.07.002",
-				toothNumber: 46,
-				quantity: 1,
-				priceRub: 5500,
-				category: "therapy",
-				isWarranty: true,
-			},
-			{
-				id: "srv-c-2",
-				name: "Лечение среднего кариеса",
-				code804n: "A16.07.002",
-				toothNumber: 47,
-				quantity: 1,
-				priceRub: 4500,
-				category: "therapy",
-				isWarranty: false,
-			},
-		];
-
-		const html = renderToString(
-			<PatientBillingModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={{
-					id: "pat-102",
-					fullName: "Соколова Анна Владимировна",
-				}}
-				initialServices={initialServices}
-			/>,
-		);
-
-		// Both items in the multi-item caries group must render warranty buttons
-		assert.ok(html.includes("data-testid=\"btn-item-warranty-srv-c-1\""));
-		assert.ok(html.includes("data-testid=\"btn-item-warranty-srv-c-2\""));
-
-		// Only srv-c-1 has [ГАРАНТИЯ] badge
-		assert.ok(html.includes("data-testid=\"badge-warranty-srv-c-1\""));
-		assert.ok(!html.includes("data-testid=\"badge-warranty-srv-c-2\""));
 	});
 
 	it("7. Warehouse soft overdraft (Mandate 8e, 8n): zero stock does NOT block write-off, emits warning toast", async () => {

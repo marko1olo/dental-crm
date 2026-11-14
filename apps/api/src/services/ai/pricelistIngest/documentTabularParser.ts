@@ -100,15 +100,16 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 
 	// Try Regex 1 (highest precision)
 	const match1 = line.match(endCurrencyKopecksRegex);
-	if (match1 && match1[1]) {
-		const rawDigits = match1[1].replace(/\s+/g, "").replace("-00", ".00").replace(",", ".");
+	const rawMatch1 = match1?.[1];
+	if (match1 && rawMatch1) {
+		const rawDigits = rawMatch1.replace(/\s+/g, "").replace("-00", ".00").replace(",", ".");
 		try {
 			const kopecks = parseKopecks(rawDigits);
 			if (kopecks > 0 && kopecks <= 10_000_000 * 100) {
 				priceKopecks = kopecks;
 				priceRub = Number(formatKopecksToRubles(kopecks));
-				rawPriceString = match1[0].trim();
-				cleanTitle = line.slice(0, match1.index).trim();
+				rawPriceString = (match1[0] ?? "").trim();
+				cleanTitle = match1.index !== undefined ? line.slice(0, match1.index).trim() : cleanTitle;
 			}
 		} catch {
 			// ignore parse failure, proceed to fallback regexes
@@ -118,14 +119,15 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 	// Try Regex 2 if Regex 1 did not extract valid price
 	if (priceRub === 0) {
 		const match2 = line.match(endCurrencyIntegerRegex);
-		if (match2 && match2[1]) {
-			const rawDigits = match2[1].replace(/[\s\.]/g, "");
+		const rawMatch2 = match2?.[1];
+		if (match2 && rawMatch2) {
+			const rawDigits = rawMatch2.replace(/[\s\.]/g, "");
 			const parsed = parseInt(rawDigits, 10);
 			if (Number.isFinite(parsed) && parsed >= 50 && parsed <= 10_000_000) {
 				priceRub = parsed;
 				priceKopecks = parsed * 100;
-				rawPriceString = match2[0].trim();
-				cleanTitle = line.slice(0, match2.index).trim();
+				rawPriceString = (match2[0] ?? "").trim();
+				cleanTitle = match2.index !== undefined ? line.slice(0, match2.index).trim() : cleanTitle;
 			}
 		}
 	}
@@ -133,15 +135,16 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 	// Try Regex 3 if still not found (tabulated numbers without currency)
 	if (priceRub === 0) {
 		const match3 = line.match(endPlainNumberRegex);
-		if (match3 && match3[1]) {
-			const rawDigits = match3[1].replace(/\s+/g, "").replace(",", ".");
+		const rawMatch3 = match3?.[1];
+		if (match3 && rawMatch3) {
+			const rawDigits = rawMatch3.replace(/\s+/g, "").replace(",", ".");
 			try {
 				const kopecks = parseKopecks(rawDigits);
 				if (kopecks >= 50 * 100 && kopecks <= 10_000_000 * 100) {
 					priceKopecks = kopecks;
 					priceRub = Number(formatKopecksToRubles(kopecks));
-					rawPriceString = match3[1].trim();
-					cleanTitle = line.slice(0, match3.index).trim();
+					rawPriceString = rawMatch3.trim();
+					cleanTitle = match3.index !== undefined ? line.slice(0, match3.index).trim() : cleanTitle;
 				}
 			} catch {
 				// ignore parse failure

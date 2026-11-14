@@ -1,7 +1,7 @@
 import type React from "react";
 import { useCallback } from "react";
 import { dispatchOdontogramSoapAndBundle } from "./odontogramModuleConstants";
-import type { ToothActionMenuConfig } from "./ToothActionMenuPortal";
+import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 import type { ToothState } from "./ToothChart";
 
 export interface UseOdontogramApplyToothStateParams {

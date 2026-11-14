@@ -63,6 +63,8 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	const hasGetPatientPlans = checkHasRoute(server, "GET", "/api/patients/:patientId/treatment-plans");
 	if (!hasGetPatientPlans) {
 		server.get("/api/patients/:patientId/treatment-plans", handleListPatientTreatmentPlans);
+		server.get("/api/treatment-plans/patient/:patientId", handleListPatientTreatmentPlans);
+		server.get("/api/v1/treatment-plans/patient/:patientId", handleListPatientTreatmentPlans);
 	}
 
 	// 0c. POST /api/patients/:patientId/treatment-plans — Сохранение / создание ревизии плана лечения

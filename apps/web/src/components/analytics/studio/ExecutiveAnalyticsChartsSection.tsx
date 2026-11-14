@@ -16,7 +16,7 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
-import type { ClinicAnalyticsSSOT } from "../analyticsCatalogData";
+import { type ClinicAnalyticsSSOT, normalizeServiceCategoryRu } from "../analyticsCatalogData";
 
 export interface ExecutiveAnalyticsChartsSectionProps {
 	readonly data: ClinicAnalyticsSSOT;
@@ -79,7 +79,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 									key={s.category}
 									className="p-1.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)]/40 flex flex-col justify-between"
 								>
-									<span className="text-[11px] text-[var(--muted)] truncate">{s.category}</span>
+									<span className="text-[11px] text-[var(--muted)] truncate">{normalizeServiceCategoryRu(s.category)}</span>
 									<span className="font-semibold text-[var(--ink)] mt-0.5">{s.formattedRevenue}</span>
 								</div>
 							))}
@@ -120,7 +120,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 									<span>{doc.specialty}</span>
 									<div className="flex items-center gap-3">
 										<span>{doc.visitsCount} визитов ({doc.chairHours}ч)</span>
-										<span className="font-medium text-emerald-600 dark:text-emerald-400">
+										<span className="font-medium text-[var(--teal)]">
 											Recall {doc.rebookingPercent}%
 										</span>
 									</div>
@@ -188,7 +188,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 									>
 										{isCopied ? (
 											<>
-												<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+												<CheckCircle2 className="w-3.5 h-3.5 text-[var(--teal)]" />
 												<span>Скопировано в буфер!</span>
 											</>
 										) : (

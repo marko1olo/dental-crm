@@ -117,10 +117,10 @@ export interface MiscSliceState {
 	setRecordExtractThirdPartyDataChecked: (
 		val: boolean | ((prev: boolean) => boolean),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	copyRequestDocumentTypes: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCopyRequestDocumentTypes: (val: any | ((prev: any) => any)) => void;
+	copyRequestDocumentTypes: string;
+	setCopyRequestDocumentTypes: (
+		val: string | ((prev: string) => string),
+	) => void;
 	copyRequestPeriodStart: string;
 	setCopyRequestPeriodStart: (val: string | ((prev: string) => string)) => void;
 	copyRequestPeriodEnd: string;
@@ -141,18 +141,18 @@ export interface MiscSliceState {
 	setCopyRequestRecipientIdentityDocument: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	copyRequestRecipientAuthority: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCopyRequestRecipientAuthority: (val: any | ((prev: any) => any)) => void;
+	copyRequestRecipientAuthority: string;
+	setCopyRequestRecipientAuthority: (
+		val: string | ((prev: string) => string),
+	) => void;
 	copyRequestRepresentativeAuthorityDocument: string;
 	setCopyRequestRepresentativeAuthorityDocument: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	copyRequestRequestedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCopyRequestRequestedAt: (val: any | ((prev: any) => any)) => void;
+	copyRequestRequestedAt: string;
+	setCopyRequestRequestedAt: (
+		val: string | ((prev: string) => string),
+	) => void;
 	copyRequestContactForDelivery: string;
 	setCopyRequestContactForDelivery: (
 		val: string | ((prev: string) => string),
@@ -177,26 +177,20 @@ export interface MiscSliceState {
 	setAttendanceStartedAt: (val: string | ((prev: string) => string)) => void;
 	attendanceEndedAt: string;
 	setAttendanceEndedAt: (val: string | ((prev: string) => string)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	attendancePurpose: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setAttendancePurpose: (val: any | ((prev: any) => any)) => void;
+	attendancePurpose: string;
+	setAttendancePurpose: (val: string | ((prev: string) => string)) => void;
 	attendanceRecipientOrganization: string;
 	setAttendanceRecipientOrganization: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	attendanceIssuedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setAttendanceIssuedAt: (val: any | ((prev: any) => any)) => void;
+	attendanceIssuedAt: string;
+	setAttendanceIssuedAt: (val: string | ((prev: string) => string)) => void;
 	attendanceSignedByFullName: string;
 	setAttendanceSignedByFullName: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	attendanceSignedByRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setAttendanceSignedByRole: (val: any | ((prev: any) => any)) => void;
+	attendanceSignedByRole: string;
+	setAttendanceSignedByRole: (val: string | ((prev: string) => string)) => void;
 	attendanceDiagnosisDisclosureExcluded: boolean;
 	setAttendanceDiagnosisDisclosureExcluded: (
 		val: boolean | ((prev: boolean) => boolean),
@@ -213,10 +207,10 @@ export interface MiscSliceState {
 	setReleaseRecipientIdentityDocument: (
 		val: string | ((prev: string) => string),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	releaseRecipientAuthority: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setReleaseRecipientAuthority: (val: any | ((prev: any) => any)) => void;
+	releaseRecipientAuthority: string;
+	setReleaseRecipientAuthority: (
+		val: string | ((prev: string) => string),
+	) => void;
 	releaseSourceRequestDocumentId: string;
 	setReleaseSourceRequestDocumentId: (
 		val: string | ((prev: string) => string),
@@ -229,18 +223,16 @@ export interface MiscSliceState {
 					prev: MedicalDocumentReleaseChannel,
 			  ) => MedicalDocumentReleaseChannel),
 	) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	releaseDocumentTypes: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setReleaseDocumentTypes: (val: any | ((prev: any) => any)) => void;
+	releaseDocumentTypes: string;
+	setReleaseDocumentTypes: (
+		val: string | ((prev: string) => string),
+	) => void;
 	releasePeriodStart: string;
 	setReleasePeriodStart: (val: string | ((prev: string) => string)) => void;
 	releasePeriodEnd: string;
 	setReleasePeriodEnd: (val: string | ((prev: string) => string)) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	releaseDeliveredAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setReleaseDeliveredAt: (val: any | ((prev: any) => any)) => void;
+	releaseDeliveredAt: string;
+	setReleaseDeliveredAt: (val: string | ((prev: string) => string)) => void;
 	releaseAccessExpiresAt: string;
 	setReleaseAccessExpiresAt: (val: string | ((prev: string) => string)) => void;
 	releaseThirdPartyDataChecked: boolean;

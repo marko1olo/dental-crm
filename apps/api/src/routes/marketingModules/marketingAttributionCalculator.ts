@@ -98,9 +98,12 @@ export function calculateMarketingAttributionReport(params: {
 	const patientToChannel = new Map<string, string>();
 	for (const p of allPatients) {
 		const cp = cleanPhoneDigits(p.phone);
-		if (cp && phoneToChannel.has(cp)) {
-			patientToChannel.set(p.id, phoneToChannel.get(cp)!);
-			continue;
+		if (cp) {
+			const ch = phoneToChannel.get(cp);
+			if (ch) {
+				patientToChannel.set(p.id, ch);
+				continue;
+			}
 		}
 
 		const adminProfile = p.administrativeProfile as {

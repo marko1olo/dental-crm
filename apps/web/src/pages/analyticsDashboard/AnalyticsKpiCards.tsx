@@ -75,7 +75,11 @@ export function AnalyticsKpiCards({ data }: AnalyticsKpiCardsProps) {
 				color="var(--warn-fg, #f59e0b)"
 				subtitle={
 					<span>
-						Выручка / пац: {formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}
+						{(data?.kpis?.avgRevenuePerPatient ?? 0) !== (data?.kpis?.averageCheck ?? 0) && (data?.kpis?.avgRevenuePerPatient ?? 0) > 0 ? (
+							<>На пациента: {formatRub(data?.kpis?.avgRevenuePerPatient ?? 0)}</>
+						) : (
+							<>На один визит: {formatRub(Math.round((data?.kpis?.totalRevenue ?? 0) / Math.max(1, data?.kpis?.totalAppointments ?? 1)))}</>
+						)}
 					</span>
 				}
 			/>

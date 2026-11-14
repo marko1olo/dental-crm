@@ -69,14 +69,15 @@ export interface QuickWriteoffPackageBody {
  */
 export function normalizeVisitDeductionBody(rawBody: unknown): unknown {
 	if (!rawBody || typeof rawBody !== "object") return rawBody;
-	const b = rawBody as Record<string, any>;
+	const b = rawBody as Record<string, unknown>;
 	const rawVisitId = b.visitId ?? b.treatment_reference_id ?? b.visit_id;
 	const rawItems = b.items ?? b.materials;
-	let items: any[] | undefined = undefined;
+	let items: Array<{ inventoryItemId: string; quantity: number; reason?: unknown }> | undefined = undefined;
 
 	if (Array.isArray(rawItems)) {
 		items = rawItems
-			.filter((it) => it && (it.inventoryItemId || it.inventory_item_id || it.id))
+			.filter((it): it is Record<string, unknown> => Boolean(it && typeof it === "object"))
+			.filter((it) => Boolean(it.inventoryItemId || it.inventory_item_id || it.id))
 			.map((it) => ({
 				inventoryItemId: String(it.inventoryItemId ?? it.inventory_item_id ?? it.id).trim(),
 				quantity: Number(it.quantity),
@@ -84,15 +85,19 @@ export function normalizeVisitDeductionBody(rawBody: unknown): unknown {
 			}));
 	}
 
-	let services: any[] | undefined = undefined;
+	let services: Array<{ serviceId: string; quantity: number }> | undefined = undefined;
 	if (Array.isArray(b.services)) {
 		services = b.services
 			.filter(Boolean)
-			.map((srv: any) => {
+			.map((srv: unknown) => {
 				if (typeof srv === "string") return { serviceId: srv.trim(), quantity: 1 };
-				const sid = String(srv.serviceId ?? srv.code804n ?? srv.serviceCode ?? srv.code ?? srv.id ?? srv.titleRu ?? srv.name ?? "").trim();
-				const qty = Number(srv.quantity ?? 1);
-				return { serviceId: sid, quantity: Number.isFinite(qty) && qty > 0 ? qty : 1 };
+				if (srv && typeof srv === "object") {
+					const obj = srv as Record<string, unknown>;
+					const sid = String(obj.serviceId ?? obj.code804n ?? obj.serviceCode ?? obj.code ?? obj.id ?? obj.titleRu ?? obj.name ?? "").trim();
+					const qty = Number(obj.quantity ?? 1);
+					return { serviceId: sid, quantity: Number.isFinite(qty) && qty > 0 ? qty : 1 };
+				}
+				return { serviceId: "", quantity: 1 };
 			})
 			.filter((srv) => srv.serviceId.length > 0);
 	}

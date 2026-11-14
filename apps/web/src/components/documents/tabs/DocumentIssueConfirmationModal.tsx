@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentIssueSignatureMode, DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import { DocumentIssueModalHeader } from "./issueConfirmation/DocumentIssueModalHeader";
 import { DocumentIssueParamsCard } from "./issueConfirmation/DocumentIssueParamsCard";
 import { DocumentIssueAttestationGrid } from "./issueConfirmation/DocumentIssueAttestationGrid";
@@ -13,8 +13,9 @@ export interface DocumentIssueConfirmationModalProps {
 	patientName?: (patients: Patient[] | undefined, id: string | null | undefined) => string;
 	patients?: Patient[];
 	money?: (val: number | null | undefined) => string;
-	documentIssueSignatureMode: string; setDocumentIssueSignatureMode: (mode: any) => void;
-	normalizedDocumentIssueSignatureMode: (val: string) => any;
+	documentIssueSignatureMode: DocumentIssueSignatureMode;
+	setDocumentIssueSignatureMode: (mode: DocumentIssueSignatureMode) => void;
+	normalizedDocumentIssueSignatureMode: (val: string) => DocumentIssueSignatureMode;
 	documentIssueSignatureModeLabels: Record<string, string>;
 	documentIssueSignedAt: string; setDocumentIssueSignedAt: (val: string) => void;
 	documentIssueRecipientFullName: string; setDocumentIssueRecipientFullName: (val: string) => void;

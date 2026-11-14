@@ -164,6 +164,8 @@ export async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope
 			material: labOrders.material,
 			status: labOrders.status,
 			priceRub: labOrders.priceRub,
+			labCostRub: labOrders.labCostRub,
+			isWarranty: labOrders.isWarranty,
 			clinicalNotes: labOrders.clinicalNotes,
 			dueDate: labOrders.dueDate,
 			completedAt: labOrders.completedAt,
@@ -181,7 +183,7 @@ export async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope
 			and(
 				eq(labOrders.organizationId, organizationId),
 				isNotNull(labOrders.doctorId),
-				inArray(labOrders.status, ["received", "completed"]),
+				inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed", "installed"]),
 				gte(
 					sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
 					from,

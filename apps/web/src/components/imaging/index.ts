@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "../radiology/DicomArchiveUploader";
+export * from "../dicom/DicomArchiveUploader";
 export * from "./DicomViewerModal";
 export * from "./DicomViewport";
 export * from "./ClinicalImageViewer";
@@ -29,13 +29,9 @@ export * from "./rvgViewerEngine";
 export * from "./visiographFindings";
 export * from "./DicomAutoDetectStatusBadge";
 export * from "./DicomImportManagerModal";
-export * from "./CtStudyViewer";
-export * from "./DicomMprCockpit";
 export * from "./dicomMprTypes";
-export * from "./DicomSectioningView";
 export * from "./DicomToolboxRibbon";
 export * from "./DicomMprSidebar";
-export * from "./DicomQuadrant3d";
 export * from "./DicomAiFindingsDrawer";
 export * from "./types";
 export * from "./ImagingToolbar";

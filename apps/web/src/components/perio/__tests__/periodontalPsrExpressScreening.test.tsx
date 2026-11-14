@@ -69,7 +69,7 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 		assert.ok(summary.psrFormula.includes("4*"));
 	});
 
-	it("4. PerioPsrExpressScreening renders 6 sextants and 1-click intact button cleanly via SSR", () => {
+	it("4. PerioPsrExpressScreening renders 6 sextants and intact norm button cleanly via SSR", () => {
 		const screeningMap: PsrScreeningMap = {
 			S1: { code: 0 },
 			S2: { code: 0 },
@@ -86,7 +86,7 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"psr-all-intact-btn\""), "Must contain intact 1-click button");
+		assert.ok(html.includes("data-testid=\"psr-all-intact-btn\""), "Must contain intact norm button");
 		assert.ok(html.includes("data-testid=\"psr-hygiene-preset-btn\""), "Must contain hygiene preset button");
 		assert.ok(html.includes("data-testid=\"psr-periodontitis-preset-btn\""), "Must contain perio preset button");
 		assert.ok(html.includes("data-testid=\"psr-sextant-card-S1\""), "Must render sextant S1");
@@ -115,7 +115,10 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"perio-toolbar-norm-1click-btn\""), "Must contain 1-click intact button");
+		assert.ok(
+			html.includes("data-testid=\"perio-toolbar-norm-btn\""),
+			"Must contain intact button",
+		);
 		assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""), "Must contain save CTA button");
 		assert.ok(html.includes("data-testid=\"psr-all-intact-btn\""), "Must contain PSR intact button");
 

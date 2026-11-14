@@ -1,6 +1,6 @@
 import type React from "react";
 import { Activity, Calendar, FileText, Sparkles } from "lucide-react";
-import type { DiaryState } from "../diaryLogic/diaryLogicTypes";
+import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import { TOOTH_STATE_LABELS, type ToothState } from "../../odontogram/ToothChart";
 import type { VisitSummaryToothItem } from "./types";
 

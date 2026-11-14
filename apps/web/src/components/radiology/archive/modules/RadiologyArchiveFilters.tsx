@@ -45,10 +45,10 @@ export const RadiologyArchiveFilters: React.FC<RadiologyArchiveFiltersProps> = (
 				<button
 					type="button" data-testid="btn-open-tactile-matrix" onClick={onOpenTactileMatrix}
 					className="h-7 px-2.5 rounded-md font-semibold text-xs bg-teal-600/10 text-teal-400 hover:bg-teal-600/20 border border-teal-500/30 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-					title="Тактильная матрица поиска (Снимок 19)"
+					title="Тактильная матрица поиска"
 				>
 					<Search className="w-3.5 h-3.5" />
-					<span>Матрица поиска (Снимок 19)</span>
+					<span>Матрица поиска</span>
 				</button>
 
 				<div className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg p-0.5" data-testid="archive-date-presets-bar">

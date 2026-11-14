@@ -2,7 +2,7 @@ import React from "react";
 import { PrimaryIntakePackageModal } from "../../PrimaryIntakePackageModal";
 import { SurgicalPackageModal } from "../../SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "../../ClinicalVisitPackageModal";
-import { ConsentModal } from "../../../consents/ConsentModal";
+import { ConsentStudioModal } from "../../../consents/ConsentStudioModal";
 import type { DocumentModalsContainerProps } from "./types";
 
 export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = React.memo(
@@ -68,12 +68,14 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 				)}
 
 				{props.isPatientConsentSignDrawerOpen && props.setIsPatientConsentSignDrawerOpen && (
-					<ConsentModal
+					<ConsentStudioModal
 						isOpen={props.isPatientConsentSignDrawerOpen}
 						onClose={() => props.setIsPatientConsentSignDrawerOpen!(false)}
-						patient={activePatient ?? null}
-						doctorFullName={activeDoctor?.fullName ?? null}
-						clinicName={clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName}
+						patient={activePatient ?? undefined}
+						patientContext={{
+							doctorName: activeDoctor?.fullName ?? undefined,
+							clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
+						}}
 					/>
 				)}
 			</>

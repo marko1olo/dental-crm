@@ -390,7 +390,7 @@
 	background: var(--line-strong, rgba(148, 163, 184, 0.4));
 	margin: 10px auto 4px;
 	cursor: grab;
-	shrink: 0;
+	flex-shrink: 0;
 }
 
 .mobile-radiology-drawer-header {

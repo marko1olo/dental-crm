@@ -41,7 +41,22 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	const visitEmkTabSource = loadedEmkTab;
 
 	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
-	const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+	const viewDir = path.resolve(__dirname, "../view");
+	let loadedVisitView = fs.readFileSync(visitViewPath, "utf8");
+	if (fs.existsSync(viewDir)) {
+		const readDirRecursive = (dir: string) => {
+			for (const file of fs.readdirSync(dir, { withFileTypes: true })) {
+				const full = path.join(dir, file.name);
+				if (file.isDirectory()) {
+					readDirRecursive(full);
+				} else if (/\.(tsx|ts)$/.test(file.name)) {
+					loadedVisitView += "\n" + fs.readFileSync(full, "utf8");
+				}
+			}
+		};
+		readDirRecursive(viewDir);
+	}
+	const visitViewSource = loadedVisitView;
 
 	const visitViewReexportPath = path.resolve(__dirname, "../VisitView.tsx");
 	const visitViewReexportSource = fs.readFileSync(visitViewReexportPath, "utf8");
@@ -139,7 +154,8 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 		// VisitView dispatches tab change and flushes saves on tab switch (including X-ray / diagnostics)
 		assert.ok(
 			visitViewSource.includes('window.dispatchEvent(\n\t\t\t\tnew CustomEvent("dente:visit-tab-change"') ||
-			visitViewSource.includes('new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } })'),
+			visitViewSource.includes('new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } })') ||
+			visitViewSource.includes('new CustomEvent("dente:visit-tab-change", { detail: { tab: newTab'),
 			"VisitView must dispatch dente:visit-tab-change on tab switch",
 		);
 		// VisitView flushes pending visit saves on unmount / beforeunload

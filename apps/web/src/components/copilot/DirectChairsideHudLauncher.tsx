@@ -18,7 +18,7 @@ const HUD_URL_TOKENS = [
   "copilot_hud",
   "hud=open",
   "hud",
-  "copilot",
+  "chairside",
   "standalone=hud",
 ];
 
@@ -47,7 +47,7 @@ export const DirectChairsideHudLauncher: React.FC = () => {
 
   const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const toothFromQuery = searchParams?.get("tooth") ? Number(searchParams.get("tooth")) : undefined;
-  const effectiveTooth = toothFromQuery ?? visitState.activeToothNumber ?? null;
+  const effectiveTooth = toothFromQuery ?? visitState.activeToothNumber ?? undefined;
 
   const patientNameFromQuery = searchParams?.get("patient");
   const effectivePatientName =
@@ -64,8 +64,10 @@ export const DirectChairsideHudLauncher: React.FC = () => {
         <ChairsideCopilotHUD
           initialOpen={true}
           initialDocked={true}
+          initialPresetIndex={null}
           activeTooth={effectiveTooth}
           patientName={effectivePatientName}
+          patientAllergies={[]}
           onClose={() => {
             clearUrlTokens(HUD_URL_TOKENS);
             setIsOpen(false);

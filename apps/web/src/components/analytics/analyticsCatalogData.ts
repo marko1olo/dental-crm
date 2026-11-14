@@ -114,6 +114,25 @@ export function formatKopecksToRubles(kopecks: number): string {
 }
 
 /**
+ * Нормализация категории медицинских услуг и направлений на чистый клинический русский язык (Мандат 8x).
+ */
+export function normalizeServiceCategoryRu(rawCategory?: string | null): string {
+	const c = (rawCategory || "").toLowerCase().trim();
+	if (!c) return "Процедура";
+	if (c.includes("consult") || c.includes("консуль")) return "Консультация";
+	if (c.includes("therap") || c.includes("терап")) return "Терапия";
+	if (c.includes("surg") || c.includes("хирург")) return "Хирургия";
+	if (c.includes("orthoped") || c.includes("ортопед")) return "Ортопедия";
+	if (c.includes("orthodont") || c.includes("ортодонт")) return "Ортодонтия";
+	if (c.includes("pediatric") || c.includes("детств") || c.includes("детск")) return "Детская";
+	if (c.includes("hygiene") || c.includes("гигиен")) return "Гигиена";
+	if (c.includes("implant") || c.includes("имплант")) return "Имплантация";
+	if (c.includes("periodont") || c.includes("пародонт")) return "Пародонтология";
+	if (c.includes("diagnost") || c.includes("диагност")) return "Диагностика";
+	return rawCategory || "Процедура";
+}
+
+/**
  * Расчет статуса загрузки кресла: норма стоматологической практики 65–85%.
  */
 export function getOccupancyStatus(percent: number): "low" | "optimal" | "high" {
@@ -290,8 +309,8 @@ export async function fetchClinicAnalyticsSSOT(
 		const occPercent = Number(kpis.chairOccupancyRatePercent ?? 0);
 		const periodLabel = ANALYTICS_PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? "Текущий период";
 
-		const rawDocs = Array.isArray(payload.topDoctors) ? payload.topDoctors : [];
-		const doctors: DoctorPerformanceSSOT[] = rawDocs.map((d: any, idx: number) => {
+		const rawDocs = Array.isArray(payload.topDoctors) ? (payload.topDoctors as Record<string, unknown>[]) : [];
+		const doctors: DoctorPerformanceSSOT[] = rawDocs.map((d, idx: number) => {
 			const docBilled = Number(d.billedRub || d.revenueRub || 0);
 			const docKop = Math.round(docBilled * 100);
 			const visits = Number(d.visits || d.visitsCount || 0);
@@ -320,14 +339,14 @@ export async function fetchClinicAnalyticsSSOT(
 			};
 		});
 
-		const rawProcs = Array.isArray(payload.topProcedures) ? payload.topProcedures : [];
-		const totalProcCount = rawProcs.reduce((acc: number, p: any) => acc + Number(p.count || 0), 0);
-		const serviceStructure: ServiceCategoryDistribution[] = rawProcs.map((p: any) => {
+		const rawProcs = Array.isArray(payload.topProcedures) ? (payload.topProcedures as Record<string, unknown>[]) : [];
+		const totalProcCount = rawProcs.reduce((acc: number, p) => acc + Number(p.count || 0), 0);
+		const serviceStructure: ServiceCategoryDistribution[] = rawProcs.map((p) => {
 			const revKop = Math.round(Number(p.revenueRub || 0) * 100);
 			const count = Number(p.count || 0);
 			const sharePct = totalProcCount > 0 ? Math.round((count / totalProcCount) * 100) : 0;
 			return {
-				category: String(p.title || p.category || "Процедура"),
+				category: normalizeServiceCategoryRu(String(p.title || p.category || "Процедура")),
 				count,
 				revenueKopecks: revKop,
 				sharePercent: sharePct,
@@ -337,6 +356,8 @@ export async function fetchClinicAnalyticsSSOT(
 
 		const repeatPct = Number(kpis.repeatPatientsPercent || 0);
 		const isEmpty = Boolean(payload.isEmpty) || (totalRevenueKop === 0 && totalVisits === 0);
+
+		const kpiRecallCohorts = (kpis as { recallCohorts?: PatientRecallCohort[] }).recallCohorts;
 
 		return {
 			period,
@@ -366,7 +387,12 @@ export async function fetchClinicAnalyticsSSOT(
 			},
 			serviceStructure,
 			doctors,
-			recallCohorts: [],
+			recallCohorts:
+				Array.isArray(payload.recallCohorts) && payload.recallCohorts.length > 0
+					? payload.recallCohorts
+					: Array.isArray(kpiRecallCohorts)
+						? kpiRecallCohorts
+						: [],
 			isLiveApi: true,
 			updatedAtIso: payload.updatedAtIso || new Date().toISOString(),
 			isEmpty,
@@ -382,11 +408,12 @@ export async function fetchClinicAnalyticsSSOT(
 /**
  * Экспорт финансового отчета в формате CSV с UTF-8 BOM для безупречного открытия в Excel.
  */
-export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT): void {
+export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT, clinicName?: string): void {
 	if (typeof window === "undefined" && typeof globalThis.document === "undefined") return;
 
+	const resolvedClinicName = (clinicName || "").trim() || "DENTE CRM";
 	const lines: string[] = [
-		`"DENTE CRM — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА И ФИНАНСОВЫЙ ОТЧЕТ"`,
+		`"${resolvedClinicName} — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА И ФИНАНСОВЫЙ ОТЧЕТ"`,
 		`"Период:","${data.periodLabel}"`,
 		`"Дата выгрузки:","${new Date().toLocaleDateString("ru-RU")} ${new Date().toLocaleTimeString("ru-RU")}"`,
 		`"Выручка кассы (₽):",${Math.round(data.revenueKopecks / 100)}`,

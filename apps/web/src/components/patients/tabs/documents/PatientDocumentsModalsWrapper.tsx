@@ -23,6 +23,20 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 	fastPrintDocType, tabletSignDoc, setTabletSignDoc, activeIssueDoc, onTabletSignatureConfirm,
 }) => {
 	const dashboard = appLogic.dashboard;
+	const adminProfile = patient.administrativeProfile;
+	const safety = adminProfile?.clinicalSafetyProfile as Record<string, unknown> | null | undefined;
+	const patientAddress = adminProfile?.residentialAddress || adminProfile?.registrationAddress || undefined;
+	const patientCardNumber = patient.id ? `МК-${patient.id.slice(0, 8).toUpperCase()}` : "МК-2026-01";
+	const patientAllergies = typeof safety?.allergies === "string"
+		? safety.allergies
+		: typeof safety?.customAllergyNotes === "string"
+			? safety.customAllergyNotes
+			: undefined;
+	const patientSomaticNotes = typeof safety?.somaticNotes === "string"
+		? safety.somaticNotes
+		: typeof safety?.chronicDiseases === "string"
+			? safety.chronicDiseases
+			: (typeof patient.notes === "string" ? patient.notes : undefined);
 
 	return (
 		<>
@@ -86,11 +100,14 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 				onClose={() => setIsFastPrintOpen(false)}
 				initialDocType={fastPrintDocType}
 				patient={{
-					id: patient.id, fullName: patient.fullName, birthDate: patient.birthDate, phone: patient.phone,
-					address: (patient as any).address || undefined,
-					cardNumber: (patient as any).cardNumber || (patient.id ? `МК-${patient.id.slice(0, 8).toUpperCase()}` : "МК-2026-01"),
-					allergies: (patient as any).allergies || (patient as any).allergyHistory,
-					somaticNotes: (patient as any).somaticHistory || (patient as any).chronicDiseases,
+					id: patient.id,
+					fullName: patient.fullName,
+					birthDate: patient.birthDate || undefined,
+					phone: patient.phone || undefined,
+					address: patientAddress,
+					cardNumber: patientCardNumber,
+					allergies: patientAllergies,
+					somaticNotes: patientSomaticNotes,
 				}}
 				clinic={dashboard?.clinicSettings?.profile || dashboard?.organization}
 				doctor={dashboard?.activeDoctor}

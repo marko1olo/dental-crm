@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const webRoot = path.resolve(__dirname, "../apps/web");
 const configFile = path.resolve(webRoot, "vite.config.ts");
 
-const CURRENT_CONV_ID = "85a479ca-3847-45e0-97f7-2b13b3ca6da6";
+const CURRENT_CONV_ID = process.env.CONVERSATION_ID || "82bc2589-107e-4778-acbc-75bd9ab53b54";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_PROOF = path.resolve(__dirname, "../docs/proofs/odontogram");
 

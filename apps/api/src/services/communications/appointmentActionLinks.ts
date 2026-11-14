@@ -173,14 +173,15 @@ async function issueCode(
 		)
 		.limit(1);
 
-	if (existing[0]) {
+	const firstExisting = existing[0];
+	if (firstExisting) {
 		// Приём мог быть перенесён — срок ссылки продлевается под новое время,
 		// а сам код остаётся тем же, чтобы старое сообщение не перестало работать.
 		await db
 			.update(appointmentActionCodes)
 			.set({ expiresAt })
-			.where(eq(appointmentActionCodes.code, existing[0].code));
-		return existing[0].code;
+			.where(eq(appointmentActionCodes.code, firstExisting.code));
+		return firstExisting.code;
 	}
 
 	// Столкновение кодов практически невероятно, но несколько попыток дешевле
@@ -192,7 +193,8 @@ async function issueCode(
 			.values({ code, organizationId, appointmentId, action, expiresAt })
 			.onConflictDoNothing()
 			.returning({ code: appointmentActionCodes.code });
-		if (inserted[0]) return inserted[0].code;
+		const firstInserted = inserted[0];
+		if (firstInserted) return firstInserted.code;
 
 		// Конфликт мог случиться и по уникальности пары «приём + действие»:
 		// код выдали параллельно, и его нужно просто прочитать.
@@ -206,7 +208,8 @@ async function issueCode(
 				),
 			)
 			.limit(1);
-		if (concurrent[0]) return concurrent[0].code;
+		const firstConcurrent = concurrent[0];
+		if (firstConcurrent) return firstConcurrent.code;
 	}
 	return null;
 }

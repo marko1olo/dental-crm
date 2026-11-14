@@ -35,7 +35,7 @@ export async function handleEgiszJournalQuery(
 			conditions.push(eq(schema.egiszOutbox.status, "queued"));
 		} else if (query.status === "error") {
 			conditions.push(inArray(schema.egiszOutbox.status, ["failed", "rejected_by_remd"]));
-		} else if (schema.egiszOutboxStatus.enumValues.includes(query.status as any)) {
+		} else if ((schema.egiszOutboxStatus.enumValues as readonly string[]).includes(query.status)) {
 			conditions.push(eq(schema.egiszOutbox.status, query.status as (typeof schema.egiszOutboxStatus.enumValues)[number]));
 		}
 	}

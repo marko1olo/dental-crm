@@ -21,8 +21,9 @@ export interface CashFlowModalProps {
 }
 
 export function formatMoneyRu(value: number): string {
-	return `${value.toLocaleString("ru-RU", {
-		minimumFractionDigits: value % 1 !== 0 ? 2 : 0,
+	const safeVal = Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : 0;
+	return `${safeVal.toLocaleString("ru-RU", {
+		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	})} ₽`;
 }

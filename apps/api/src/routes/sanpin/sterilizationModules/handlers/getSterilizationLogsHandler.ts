@@ -96,6 +96,15 @@ export async function handleGetSterilizationLogs(
 	return logs;
 }
 
-export async function handleGetSanpinCycles(req: FastifyRequest, reply: FastifyReply) {
-	return handleGetSterilizationLogs(req as any, reply);
+export async function handleGetSanpinCycles(
+	req: FastifyRequest<{
+		Querystring: {
+			period?: "day" | "week" | "month" | "all";
+			autoclaveId?: string;
+			search?: string;
+		};
+	}>,
+	reply: FastifyReply,
+) {
+	return handleGetSterilizationLogs(req, reply);
 }

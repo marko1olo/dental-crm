@@ -15,8 +15,8 @@
  *    - btn-print-043-card has disabled={false} (no bureaucratic gates blocking medical card export).
  * 3. Sanctity of Medical Records & Zero Emojis (Mandate 8d item 7):
  *    - Zero cartoon emojis (⚡, ⏳) or raw glyphs (✕, ✓) in ToothStatusPalette, OdontogramViewContainer,
- *      PediatricMixedDentitionModal, ToothChart, ClassicGostOdontogram, OdontogramModule, PatientOverviewTab,
- *      TreatmentEstimator, and VisitView.
+ *      PediatricMixedDentitionModal, ToothChart, WheelerToothArch, OdontogramModule, PatientOverviewTab,
+ *      and VisitView.
  * 4. Financial Autonomy & No Obstacles (Mandate 8e item 7):
  *    - 100% discount freedom on warranty rework and staff without admin master password blocks.
  *    - 30-day treatment plan expiration NEVER blocks creating lab orders, providing care, or taking payments.
@@ -254,10 +254,10 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 	describe("3. Sanctity of Medical Records & Zero Cartoon Emojis (Mandate 8d item 7)", () => {
 		const filesToCheckForLightning = [
 			"components/odontogram/OdontogramViewContainer.tsx",
-			"components/odontogram/TreatmentEstimator.tsx",
+			"components/odontogram/OdontogramBatchBar.tsx",
 			"components/odontogram/PediatricMixedDentitionModal.tsx",
 			"components/odontogram/ToothChart.tsx",
-			"components/odontogram/ClassicGostOdontogram.tsx",
+			"components/odontogram/WheelerToothArch.tsx",
 			"components/odontogram/OdontogramModule.tsx",
 			"VisitView.tsx",
 		];
@@ -310,18 +310,18 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 			);
 		});
 
-		it("TreatmentEstimator.tsx uses Lucide X instead of raw text ✕ glyph", () => {
-			const estimatorPath = path.join(webSrcRoot, "components/odontogram/TreatmentEstimator.tsx");
-			const estimatorContent = fs.readFileSync(estimatorPath, "utf8");
+		it("OdontogramBatchBar.tsx uses Lucide X instead of raw text ✕ glyph", () => {
+			const batchBarPath = path.join(webSrcRoot, "components/odontogram/OdontogramBatchBar.tsx");
+			const batchBarContent = fs.readFileSync(batchBarPath, "utf8");
 
 			assert.strictEqual(
-				estimatorContent.includes("✕"),
+				batchBarContent.includes("✕"),
 				false,
-				"TreatmentEstimator must not use raw text ✕ glyph",
+				"OdontogramBatchBar must not use raw text ✕ glyph",
 			);
 			assert.ok(
-				estimatorContent.includes("<X size={16}"),
-				"TreatmentEstimator must use Lucide X icon",
+				batchBarContent.includes("<X size="),
+				"OdontogramBatchBar must use Lucide X icon",
 			);
 		});
 	});

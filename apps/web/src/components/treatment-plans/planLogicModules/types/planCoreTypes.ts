@@ -1,3 +1,4 @@
+import type { Patient } from "@dental/shared";
 import type {
 	CashierInvoiceExportData,
 	ToothData,
@@ -28,7 +29,7 @@ export interface UseTreatmentPlanLogicProps {
 }
 
 export interface PatientFinancialContextSummary {
-	readonly patient: any;
+	readonly patient: (Patient & { balanceRub?: number | null | undefined }) | undefined;
 	readonly patientBalanceRub: number;
 	readonly patientPhone: string;
 	readonly patientBirthDate: string | undefined;

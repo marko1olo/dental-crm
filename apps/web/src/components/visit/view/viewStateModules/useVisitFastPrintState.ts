@@ -179,6 +179,8 @@ export function useVisitFastPrintState({
 		activePlan,
 		treatmentPlanAgeDays,
 		isTreatmentPlanExpiredSoft,
+		handlePrintClinicalDiaryFast: handlePrintForm043uFast,
+		handlePrintMedicalCardFast: handlePrintForm043uFast,
 		handlePrintForm043uFast,
 		handlePrintInformedConsentFast,
 		handlePrintCompletedActFast,

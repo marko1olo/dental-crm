@@ -24,6 +24,24 @@ const CATEGORY_LABELS: Record<string, string> = {
 	implantology: "Имплантация",
 };
 
+const formatProceduresCount = (n: number) => {
+	const mod10 = n % 10;
+	const mod100 = n % 100;
+	if (mod100 >= 11 && mod100 <= 19) return `${n} процедур`;
+	if (mod10 === 1) return `${n} процедура`;
+	if (mod10 >= 2 && mod10 <= 4) return `${n} процедуры`;
+	return `${n} процедур`;
+};
+
+const formatVisitsCount = (n: number) => {
+	const mod10 = n % 10;
+	const mod100 = n % 100;
+	if (mod100 >= 11 && mod100 <= 19) return `${n} визитов`;
+	if (mod10 === 1) return `${n} визит`;
+	if (mod10 >= 2 && mod10 <= 4) return `${n} визита`;
+	return `${n} визитов`;
+};
+
 export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> = ({
 	onAddBundleToStages,
 	selectedToothNumber: initialTooth,
@@ -60,7 +78,7 @@ export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> =
 							onClick={() => setActiveCategory(cat)}
 							className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 ${
 								activeCategory === cat
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+									? "bg-[var(--teal-soft)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs"
 									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line-subtle)]"
 							}`}
 						>
@@ -119,12 +137,12 @@ export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> =
 									</div>
 									<div className="min-w-0">
 										<h4 className="text-xs sm:text-sm font-black text-[var(--ink)] truncate m-0">{bundle.title}</h4>
-										<span className="text-[10px] text-[var(--muted)]">{CATEGORY_LABELS[bundle.category]} · {bundle.items.length} процедур</span>
+										<span className="text-[10px] text-[var(--muted)]">{CATEGORY_LABELS[bundle.category]} · {formatProceduresCount(bundle.items.length)}</span>
 									</div>
 								</div>
 								<div className="text-right shrink-0">
 									<div className="text-xs sm:text-sm font-black text-[var(--ink)]">{formatRubles(bundle.totalRub || 0)}</div>
-									<div className="text-[10px] text-[var(--muted)]">{bundle.estimatedVisits} визит</div>
+									<div className="text-[10px] text-[var(--muted)]">{formatVisitsCount(bundle.estimatedVisits)}</div>
 								</div>
 							</div>
 
@@ -159,7 +177,7 @@ export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> =
 									onClick={() => handleAdd(bundle)}
 									className={`min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
 										isRecent
-											? "bg-[var(--teal,#0d9488)] text-white"
+											? "bg-[var(--teal-soft)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40"
 											: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)]"
 									}`}
 								>

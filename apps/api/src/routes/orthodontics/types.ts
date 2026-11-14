@@ -9,6 +9,8 @@ export const issueAlignerSetSchema = z.object({
 	wearDaysPerAligner: z.number().int().min(3).max(30).default(14),
 	totalAligners: z.number().int().min(1).max(100).optional(),
 	note: z.string().max(300).optional(),
+	visitId: z.string().optional(),
+	soapSummary: z.string().optional(),
 });
 
 export const archwireChangeSchema = z.object({
@@ -30,6 +32,8 @@ export const archwireChangeSchema = z.object({
 	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
 	isWireChange: z.boolean().default(true),
 	note: z.string().max(300).optional(),
+	visitId: z.string().optional(),
+	soapSummary: z.string().optional(),
 });
 
 export const ligatureActivateSchema = z.object({
@@ -103,9 +107,12 @@ export interface OrthodonticProgressRecord extends Record<string, unknown> {
 	currentStage: number;
 	stageTitle?: string | undefined;
 	archwire?: string | undefined;
+	upperArchwire?: string | undefined;
+	lowerArchwire?: string | undefined;
 	elastics?: string | undefined;
 	lastActionDate?: string | undefined;
 	lastActionSummary?: string | undefined;
+	lastSoapSummary?: string | undefined;
 	wearDaysPerAligner?: number | undefined;
 	nextVisitRecommendedDate?: string | undefined;
 }

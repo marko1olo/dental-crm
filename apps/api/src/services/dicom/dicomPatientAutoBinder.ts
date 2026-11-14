@@ -154,10 +154,10 @@ export async function resolveOrAutoCreatePatientForDicom(
 				: `Пациент карты ${patientChartNumber ?? new Date().toLocaleDateString("ru-RU")}`;
 
 		const adminProfile = (patientChartNumber || patientSex) ? {
-			chartNumber: patientChartNumber ?? undefined,
-			medicalCardNumber: patientChartNumber ?? undefined,
-			vatechPatId: patientChartNumber ?? undefined,
-			gender: patientSex ?? undefined,
+			chartNumber: patientChartNumber ?? null,
+			medicalCardNumber: patientChartNumber ?? null,
+			vatechPatId: patientChartNumber ?? null,
+			gender: patientSex ?? null,
 		} : null;
 
 		const [newPatient] = await db

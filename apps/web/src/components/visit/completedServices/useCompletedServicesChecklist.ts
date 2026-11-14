@@ -4,6 +4,7 @@ import { useVisitStore } from "../../../store/visitStore";
 import {
 	calculateCompletedServicesSummary,
 	visitOwnedPlanItems,
+	type VisitPlanItemLike,
 } from "../completedServicesPlan";
 import { realVisitFieldId } from "../visitIdentity";
 import { extractParsedCompletedLines } from "./serviceChecklistHelpers";
@@ -11,10 +12,20 @@ import { useCompletedServicesAddActions } from "./useCompletedServicesAddActions
 import { useCompletedServicesCatalogSearch } from "./useCompletedServicesCatalogSearch";
 import { useCompletedServicesPlanSync } from "./useCompletedServicesPlanSync";
 import { useCompletedServicesRemovalAction } from "./useCompletedServicesRemovalAction";
+import type { VisitNoteForm } from "../../../hooks/domains/visit/types";
+import type { Dashboard, Patient } from "@dental/shared";
 
-export function useCompletedServicesChecklist(overrideCatalog?: readonly any[]) {
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic context shape
-	const context = useAppLogicContext() as any;
+interface CompletedServicesContextBridge {
+	visitNoteForm?: Partial<VisitNoteForm>;
+	updateVisitNoteField?: (field: string, value: string) => void;
+	dashboard?: Dashboard | null;
+	activeVisitPatient?: Patient | null;
+	selectedTooth?: string | number | null;
+	activeToothNumber?: string | number | null;
+}
+
+export function useCompletedServicesChecklist(overrideCatalog?: readonly unknown[]) {
+	const context = useAppLogicContext() as unknown as CompletedServicesContextBridge;
 	const {
 		visitNoteForm = {},
 		updateVisitNoteField,

@@ -21,9 +21,13 @@ const __dirname = path.dirname(__filename);
 function resolveDumpPath(relativePath: string): string {
 	const candidates = [
 		path.resolve(process.cwd(), relativePath),
+		path.resolve(process.cwd(), "docs/reference_dumps", relativePath),
 		path.resolve(__dirname, "../../../../../", relativePath),
+		path.resolve(__dirname, "../../../../../docs/reference_dumps", relativePath),
 		path.resolve(__dirname, "../../../../", relativePath),
+		path.resolve(__dirname, "../../../../docs/reference_dumps", relativePath),
 		path.resolve("C:/Clinic_MVP/dental-crm", relativePath),
+		path.resolve("C:/Clinic_MVP/dental-crm/docs/reference_dumps", relativePath),
 	];
 	for (const candidate of candidates) {
 		if (fs.existsSync(candidate)) {

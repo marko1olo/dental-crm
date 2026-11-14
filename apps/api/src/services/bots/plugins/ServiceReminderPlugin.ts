@@ -112,8 +112,9 @@ export class ServiceReminderPlugin implements BotPlugin {
 					.orderBy(appointments.startsAt)
 					.limit(1);
 
-				if (recentApps.length > 0) {
-					appointmentId = recentApps[0]!.id;
+				const firstApp = recentApps[0];
+				if (firstApp) {
+					appointmentId = firstApp.id;
 				}
 			}
 

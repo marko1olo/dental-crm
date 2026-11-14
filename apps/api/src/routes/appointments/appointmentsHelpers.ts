@@ -86,6 +86,13 @@ export function normalizeAppointmentFieldAliases(
 	}
 
 	if (
+		typeof rawBody.patientId === "string" &&
+		!rawBody.patientId.trim()
+	) {
+		rawBody.patientId = null;
+	}
+
+	if (
 		(typeof rawBody.assistantUserId === "string" &&
 			(DEFAULT_ASSISTANT_PLACEHOLDERS.has(rawBody.assistantUserId) ||
 				!rawBody.assistantUserId.trim()))
@@ -218,16 +225,19 @@ export function buildNextStageCreatePayload(
 		doctorUserId,
 		chairId,
 		assistantUserId:
-			(rawBody.assistantUserId as string | null) ??
-			parent.assistantUserId ??
-			null,
+			(typeof rawBody.assistantUserId === "string"
+				? rawBody.assistantUserId
+				: parent.assistantUserId ?? null),
 		startsAt: startsAtDate.toISOString(),
 		endsAt: endsAtDate.toISOString(),
 		status: "planned" as const,
 		reason,
 		comment:
-			(rawBody.comment as string | null) ??
-			(parent.comment ? `Наследован от приёма ${parent.id}` : null),
+			(typeof rawBody.comment === "string"
+				? rawBody.comment
+				: parent.comment
+					? `Наследован от приёма ${parent.id}`
+					: null),
 		parentAppointmentId: parent.id,
 		stageIndex,
 		clinicalStage,

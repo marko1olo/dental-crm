@@ -127,8 +127,9 @@ export function handleClinicalSpeechOrText(
 
 	// СЦЕНАРИЙ 2: Патологии зубов, процедуры и анестезия
 	let pendingAction: DictationPendingAction | undefined;
+	const priceListProcedures = intent.procedures804n;
 
-	if (targetNumbers.length > 0 || intent.teethUpdates.length > 0 || intent.procedures804n.length > 0 || intent.anesthesia) {
+	if (targetNumbers.length > 0 || intent.teethUpdates.length > 0 || priceListProcedures.length > 0 || intent.anesthesia) {
 		const applyMutations = () => {
 			const nextVisitStates: Record<string, VisitToothUiState> = {};
 			for (const tNum of targetNumbers) {
@@ -204,12 +205,13 @@ export function handleClinicalSpeechOrText(
 					toothCode?: string | undefined;
 				}
 				const billableServices: BillableItem[] = [];
-				if (intent.procedures804n && intent.procedures804n.length > 0) {
-					for (const p of intent.procedures804n) {
+				if (priceListProcedures && priceListProcedures.length > 0) {
+					for (const p of priceListProcedures) {
 						const resolvedPrice = Number(p.priceRub ?? (p as any).price ?? 0);
 						const resolvedTooth = p.toothNumber || firstTooth;
+						const procedureCode = p.code804n;
 						billableServices.push({
-							code: p.code804n, code804n: p.code804n, name: p.name, title: p.name,
+							code: procedureCode, code804n: procedureCode, name: p.name, title: p.name,
 							price: resolvedPrice, priceRub: resolvedPrice,
 							...(resolvedTooth ? { toothNumber: resolvedTooth, toothCode: String(resolvedTooth) } : {}),
 						});

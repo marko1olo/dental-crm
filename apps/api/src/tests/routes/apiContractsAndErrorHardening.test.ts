@@ -8,7 +8,7 @@ import { registerConsentRoutes } from "../../routes/consents.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { registerLabRoutes } from "../../routes/lab.js";
+import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { registerStaffRoutes } from "../../routes/staff.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
@@ -210,7 +210,7 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/billing/payments",
-				headers: clinicHeaders,
+				headers: staffHeaders,
 				payload: {
 					patientId: "123e4567-e89b-12d3-a456-426614174001",
 					amountRub: 2500,
@@ -227,7 +227,7 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			const res = await app.inject({
 				method: "POST",
 				url: "/api/billing/payments",
-				headers: clinicHeaders,
+				headers: staffHeaders,
 				payload: {
 					patientId: "123e4567-e89b-12d3-a456-426614174001",
 					amountRub: -500,

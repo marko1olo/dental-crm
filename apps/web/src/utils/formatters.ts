@@ -134,6 +134,9 @@ export function kopecksToRubles(kopecks: number): number {
 	return kopecksToRublesShared(kopecks);
 }
 
+export const rubToKopecks = rublesToKopecks;
+export const kopecksToRub = kopecksToRubles;
+
 // ============================================================================
 // 2. DATE & TIME FORMATTING (ГОСТ И КЛИНИЧЕСКИЙ РУССКИЙ ФОРМАТ)
 // ============================================================================

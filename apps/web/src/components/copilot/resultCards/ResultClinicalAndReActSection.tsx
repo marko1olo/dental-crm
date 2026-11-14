@@ -2,7 +2,7 @@ import React from 'react';
 import type { Protocol043Data, ReactStepItem } from '../copilotTypes';
 import { CopilotReactTracker } from '../cards/CopilotReactTracker';
 import { CopilotClinicalProtocolCard } from '../cards/CopilotClinicalProtocolCard';
-import { CopilotSoapDiaryCard } from '../cards/CopilotSoapDiaryCard';
+import { CopilotVisitCardConfirm } from '../cards/CopilotVisitCardConfirm';
 import {
   CopilotSurgeryPassportCard,
   type CopilotSurgeryPassportData,
@@ -96,13 +96,21 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
   if (
     tool.includes('examination') ||
     tool.includes('diary') ||
+    tool.includes('clinical_protocol') ||
+    tool.includes('emr_protocol') ||
     tool.includes('043') ||
     (obj.complaints !== undefined && obj.treatment !== undefined) ||
+    obj.clinicalProtocol !== undefined ||
+    obj.protocolEmr !== undefined ||
     obj.protocol_043 !== undefined ||
     obj.examination_protocol !== undefined
   ) {
     const pObj = (obj.examination_protocol && typeof obj.examination_protocol === 'object'
       ? obj.examination_protocol
+      : obj.clinicalProtocol && typeof obj.clinicalProtocol === 'object'
+      ? obj.clinicalProtocol
+      : obj.protocolEmr && typeof obj.protocolEmr === 'object'
+      ? obj.protocolEmr
       : obj.protocol_043 && typeof obj.protocol_043 === 'object'
       ? obj.protocol_043
       : obj) as Obj;
@@ -119,7 +127,7 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
       treatment: typeof pObj.treatment === 'string' ? pObj.treatment : undefined,
       recommendations: typeof pObj.recommendations === 'string' ? pObj.recommendations : undefined,
     };
-    return <CopilotSoapDiaryCard data={p043Data} />;
+    return <CopilotVisitCardConfirm data={p043Data} />;
   }
 
   return null;

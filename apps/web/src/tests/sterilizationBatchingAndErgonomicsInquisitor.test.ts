@@ -40,9 +40,9 @@ describe("Red Team Inquisitor: Стерилизация и пакетное ав
 		it("проверяет отсутствие назойливых спам-тостов и блокировок в useVisitDiaryTrayHandlers.ts", () => {
 			const filePath = path.resolve(
 				REPO_ROOT,
-				"apps/web/src/components/visit/diaryLogic/useVisitDiaryTrayHandlers.ts",
+				"apps/web/src/components/visit/hooks/useVisitDiaryTrayHandlers.ts",
 			);
-			assert.ok(fs.existsSync(filePath), "useVisitDiaryTrayHandlers.ts должен существовать");
+			assert.ok(fs.existsSync(filePath), "useVisitDiaryTrayHandlers.ts должен существовать в hooks/");
 			const content = fs.readFileSync(filePath, "utf-8");
 
 			// Проверяем, что в linkSterilizationTray нет назойливых тостов при сетевой ошибке или 400
@@ -63,14 +63,14 @@ describe("Red Team Inquisitor: Стерилизация и пакетное ав
 			assert.ok(linkFnBody.includes("return { ok: true"), "Подписание карты никогда не блокируется");
 		});
 
-		it("проверяет наличие канонического фасада useVisitDiaryTrayHandlers в директории hooks", () => {
+		it("проверяет наличие канонического хука useVisitDiaryTrayHandlers в директории hooks", () => {
 			const facadePath = path.resolve(
 				REPO_ROOT,
 				"apps/web/src/components/visit/hooks/useVisitDiaryTrayHandlers.ts",
 			);
-			assert.ok(fs.existsSync(facadePath), "Фасад hooks/useVisitDiaryTrayHandlers.ts обязан существовать");
+			assert.ok(fs.existsSync(facadePath), "Хук hooks/useVisitDiaryTrayHandlers.ts обязан существовать");
 			const content = fs.readFileSync(facadePath, "utf-8");
-			assert.ok(content.includes("export * from \"../diaryLogic/useVisitDiaryTrayHandlers\""));
+			assert.ok(content.includes("export function useVisitDiaryTrayHandlers"));
 		});
 	});
 
@@ -203,7 +203,7 @@ describe("Red Team Inquisitor: Стерилизация и пакетное ав
 		it("проверяет размер ключевых компонентов (Sweet Spot: до 400 строк)", () => {
 			const files = [
 				"apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx",
-				"apps/web/src/components/visit/diaryLogic/useVisitDiaryTrayHandlers.ts",
+				"apps/web/src/components/visit/hooks/useVisitDiaryTrayHandlers.ts",
 				"apps/web/src/components/sanpin/sanpinCatalogData.ts",
 			];
 

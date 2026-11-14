@@ -4,12 +4,14 @@ export interface UsePatientsRouteAndEventsOptions {
 	setIsRecallsHubOpen: (open: boolean) => void;
 	setIsPatientCardModalOpen: (open: boolean) => void;
 	handleSelectPatient: (patientId: string) => void;
+	setIsFamilyWalletModalOpen?: (open: boolean) => void;
 }
 
 export function usePatientsRouteAndEvents({
 	setIsRecallsHubOpen,
 	setIsPatientCardModalOpen,
 	handleSelectPatient,
+	setIsFamilyWalletModalOpen,
 }: UsePatientsRouteAndEventsOptions) {
 	useEffect(() => {
 		const checkRoute = () => {
@@ -19,6 +21,9 @@ export function usePatientsRouteAndEvents({
 					: "";
 			if (hash.includes("recall") || hash.includes("prevention")) {
 				setIsRecallsHubOpen(true);
+			}
+			if (hash.includes("family-wallet") || hash.includes("family")) {
+				setIsFamilyWalletModalOpen?.(true);
 			}
 		};
 		checkRoute();
@@ -50,11 +55,20 @@ export function usePatientsRouteAndEvents({
 				setIsPatientCardModalOpen(true);
 			}
 		};
+		const handleOpenFamily = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			if (detail?.patientId) {
+				handleSelectPatient(detail.patientId);
+			}
+			setIsFamilyWalletModalOpen?.(true);
+		};
 		window.addEventListener("dente-open-patient-card-modal", handleOpenCard);
 		window.addEventListener(
 			"dente-open-backoffice-modal",
 			handleBackofficeModal,
 		);
+		window.addEventListener("dente-open-family-wallet", handleOpenFamily);
+		window.addEventListener("dente:open-family-wallet", handleOpenFamily);
 		return () => {
 			window.removeEventListener(
 				"dente-open-patient-card-modal",
@@ -64,6 +78,8 @@ export function usePatientsRouteAndEvents({
 				"dente-open-backoffice-modal",
 				handleBackofficeModal,
 			);
+			window.removeEventListener("dente-open-family-wallet", handleOpenFamily);
+			window.removeEventListener("dente:open-family-wallet", handleOpenFamily);
 		};
-	}, [handleSelectPatient, setIsPatientCardModalOpen]);
+	}, [handleSelectPatient, setIsPatientCardModalOpen, setIsFamilyWalletModalOpen]);
 }

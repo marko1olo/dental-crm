@@ -1,12 +1,31 @@
-import React from "react";
+import type { Appointment } from "@dental/shared";
 import { AlertTriangle, Check, Clock, FileText, Globe } from "lucide-react";
-import { DentalToothIcon } from "../DentalToothIcon";
+import React from "react";
 import { useAppStore } from "../../../store/appStore";
 import { showToast } from "../../GlobalToast";
+import { DentalToothIcon } from "../DentalToothIcon";
 import type { AppointmentProcedureBadgeProps } from "./appointmentCardTypes";
 
+type AppointmentWithPlanInfo = Appointment & {
+	readonly treatmentPlanId?: string | null | undefined;
+	readonly planNumber?: string | number | null | undefined;
+};
+
+const DEFAULT_PREVIEW_APPOINTMENT: Appointment = {
+	id: "preview-appt-00000000-0000-0000-0000-000000000000",
+	organizationId: "00000000-0000-0000-0000-000000000000",
+	patientId: null,
+	doctorUserId: null,
+	chairId: null,
+	status: "planned",
+	startsAt: "",
+	endsAt: "",
+	reason: null,
+	comment: null,
+};
+
 export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps> = ({
-	appointment: a = { id: "preview-appt" } as any,
+	appointment: a = DEFAULT_PREVIEW_APPOINTMENT,
 	procedureLabel = "",
 	teethList = [],
 	docTheme = null,
@@ -25,11 +44,14 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 		);
 	};
 
+	const apptPlan = a as AppointmentWithPlanInfo;
+	const planBadgeTitle = apptPlan.planNumber || apptPlan.treatmentPlanId;
+	const hasTreatmentPlan = Boolean(apptPlan.treatmentPlanId || apptPlan.planNumber);
+
 	const hasBadges = Boolean(
 		teethList.length > 0 ||
 		docTheme ||
-		(a as any)?.treatmentPlanId ||
-		(a as any)?.planNumber ||
+		hasTreatmentPlan ||
 		(a?.comment && /онлайн|виджет|online|сайт/i.test(a.comment)) ||
 		(a?.reason && /онлайн|виджет|online|сайт/i.test(a.reason)) ||
 		labStatusInfo
@@ -77,10 +99,10 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 					)}
 
 					{/* Treatment Plan Badge */}
-					{Boolean((a as any).treatmentPlanId || (a as any).planNumber) && (
+					{hasTreatmentPlan && (
 						<span
 							className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25 font-bold shrink-0 flex items-center gap-0.5"
-							title={`План лечения: ${(a as any).planNumber || (a as any).treatmentPlanId}`}
+							title={`План лечения: ${planBadgeTitle}`}
 							data-testid={`appointment-treatment-plan-badge-${a.id}`}
 						>
 							<FileText size={9} className="shrink-0" />

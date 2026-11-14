@@ -17,13 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { TreatmentPlanPriceValidatorModal } from "../../treatment-plans/validation/TreatmentPlanPriceValidatorModal";
-import { validateTreatmentPlanPrices } from "../../treatment-plans/validation/planPriceValidationEngine";
-import {
-	PLAN_PRICE_POLICY_PRESETS,
-	SAMPLE_CURRENT_PRICELIST,
-	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-} from "../../treatment-plans/validation/planPriceValidationPresets";
+import { TreatmentPlanStudioModal } from "../../treatment-plans/TreatmentPlanStudioModal";
 import { generateInformedConsent1051nHtml } from "../../../lib/clinicalProtocols";
 import { renderForm043uHtml } from "@dental/shared";
 
@@ -31,33 +25,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("АРМ Врача: Автономия смет, согласий и Формы 043/у (Мандаты 8d, 8e, 8k, 8n)", () => {
-	test("1. Канонический TreatmentPlanPriceValidatorModal доступен из домена treatment-plans/validation (Мандат 8s SSOT)", () => {
-		assert.ok(TreatmentPlanPriceValidatorModal, "Канонический компонент модального окна должен существовать");
+	test("1. Канонический TreatmentPlanStudioModal доступен из домена treatment-plans (Мандат 8s SSOT)", () => {
+		assert.ok(TreatmentPlanStudioModal, "Канонический компонент презентера планов лечения должен существовать");
 	});
 
-	test("2. Мандат 8e: Срок плана > 30 дней НЕ БЛОКИРУЕТ создание нарядов ЗТЛ или оплату", () => {
-		const expiredDateIso = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
-		const expiredPlan = {
-			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-			createdAtIso: expiredDateIso,
-			items: SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.items.slice(0, 3),
-		};
-
-		const report = validateTreatmentPlanPrices(
-			expiredPlan,
-			SAMPLE_CURRENT_PRICELIST,
-			PLAN_PRICE_POLICY_PRESETS.standard_30,
-		);
-
-		assert.strictEqual(report.isPlanExpired, true, "План старше 30 дней помечается как expired");
-		assert.ok(report.planAgeDays >= 40, "Возраст плана корректно рассчитан");
-		assert.strictEqual(report.canGenerateWorkOrder, true, "Создание нарядов ЗТЛ разрешено (true)");
-		assert.strictEqual(report.canGenerateCompletedAct, true, "Формирование акта выполненных работ разрешено (true)");
-		assert.strictEqual(report.overallStatus, "APPROVED_PRICE_LOCKED", "Статус сметы зафиксирован по гарантии");
-		assert.ok(
-			report.validationMessages.some((msg) => msg.includes("не блокируются")),
-			"Информационное сообщение подтверждает отсутствие блокировок для врача",
-		);
+	test("2. Мандат 8e: Автономия врача и отсутствие блокировок при утверждении планов лечения", () => {
+		const studioPath = path.resolve(__dirname, "../../treatment-plans/TreatmentPlanStudioModal.tsx");
+		const studioSource = fs.readFileSync(studioPath, "utf8");
+		assert.ok(studioSource.includes("approve-treatment-plan-btn"), "Кнопка утверждения плана присутствует в StudioModal");
+		assert.ok(!studioSource.includes("disabled={isPlanExpired}"), "План лечения не блокируется по истечении срока");
 	});
 
 	test("3. Мандат 8e: Печать ИДС 1051н со штампом «ЧЕРНОВИК» при открытом приёме", () => {
@@ -105,7 +81,22 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 
 	test("6. Инспекция исходного кода VisitView: кнопки печати и предупреждений не заблокированы", () => {
 		const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
-		const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+		const viewDir = path.resolve(__dirname, "../view");
+		const visitFiles = [
+			visitViewPath,
+			path.resolve(viewDir, "VisitViewHeader.tsx"),
+			path.resolve(viewDir, "VisitViewDesktopLayout.tsx"),
+			path.resolve(viewDir, "VisitViewMobileLayout.tsx"),
+			path.resolve(viewDir, "VisitActionFooter.tsx"),
+			path.resolve(viewDir, "visitHeaderModules/VisitHeaderFastPrintCluster.tsx"),
+			path.resolve(viewDir, "visitHeaderModules/VisitHeaderMoreActionsDocItems.tsx"),
+			path.resolve(viewDir, "visitHeader/toolbar/VisitToolbarMoreMenuItems.tsx"),
+			path.resolve(viewDir, "visitHeader/toolbar/VisitToolbarDocumentPrinting.tsx"),
+			path.resolve(__dirname, "../consents/ConsentItemRow.tsx"),
+		];
+		const visitViewSource = visitFiles
+			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
+			.join("\n");
 
 		// Проверка кнопок быстрого доступа к согласиям и 043/у
 		assert.ok(visitViewSource.includes("btn-visit-fast-print-043u"), "Кнопка быстрой печати 043/у присутствует в шапке");
@@ -117,30 +108,12 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 		assert.ok(!visitViewSource.includes("disabled={isPlanExpired}"), "Истечение срока плана никогда не дизейблит кнопки в VisitView");
 	});
 
-	test("7. Инспекция исходного кода TreatmentPlanPriceValidatorModal: мягкое предупреждение и автономия врача", () => {
-		const validatorDir = path.resolve(
-			__dirname,
-			"../../treatment-plans/validation",
-		);
-		const validatorPath = path.resolve(
-			validatorDir,
-			"TreatmentPlanPriceValidatorModal.tsx",
-		);
-		const headerPath = path.resolve(validatorDir, "PriceValidatorHeader.tsx");
-		const pricesPath = path.resolve(validatorDir, "PriceValidatorPricesTab.tsx");
-		const bannersPath = path.resolve(validatorDir, "pricesTab/PriceValidatorPricesBanners.tsx");
-		const adminDrawerPath = path.resolve(validatorDir, "pricesTab/PriceValidatorAdminDrawer.tsx");
-		const footerPath = path.resolve(validatorDir, "PriceValidatorFooter.tsx");
-
-		const validatorSource = [validatorPath, headerPath, pricesPath, bannersPath, adminDrawerPath, footerPath]
-			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
-			.join("\n");
-
-		assert.ok(validatorSource.includes("validator-expired-unblocked-badge"), "Бейдж истечения плана присутствует");
-		assert.ok(validatorSource.includes("validator-plan-expired-soft-banner"), "Мягкий баннер без блокировок присутствует");
-		assert.ok(validatorSource.includes("btn-doctor-autonomy-approve"), "Кнопка автономии врача в 1 клик присутствует");
-		assert.ok(validatorSource.includes("btn-generate-lab-work-order"), "Кнопка создания наряда ЗТЛ присутствует");
-		assert.ok(validatorSource.includes("btn-generate-completed-act"), "Кнопка формирования акта присутствует");
+	test("7. Инспекция исходного кода TreatmentPlanStudioModal: автономия врача и 100% скидки", () => {
+		const studioPath = path.resolve(__dirname, "../../treatment-plans/TreatmentPlanStudioModal.tsx");
+		const studioSource = fs.readFileSync(studioPath, "utf8");
+		assert.ok(studioSource.includes("doctor-discount-bar"), "Панель скидки врача присутствует");
+		assert.ok(studioSource.includes("DISCOUNT_PRESETS") && studioSource.includes("100"), "Скидка врача доступна до 100% (Мандат 8e)");
+		assert.ok(studioSource.includes("approve-treatment-plan-btn"), "Кнопка утверждения плана присутствует");
 	});
 
 	test("8. Мандаты 8e, 8p: Если у пациента нет аллергий — аллергические плашки скрыты, ноль кричащих зеленых баннеров", () => {
@@ -164,7 +137,18 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 
 	test("9. Мандаты 8e, 8k: 1-клик заполнение физиологической нормой по умолчанию («Соматически здоров / норма»)", () => {
 		const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
-		const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+		const viewDir = path.resolve(__dirname, "../view");
+		const visitFiles = [
+			visitViewPath,
+			path.resolve(viewDir, "VisitViewHeader.tsx"),
+			path.resolve(viewDir, "VisitViewDesktopLayout.tsx"),
+			path.resolve(viewDir, "visitHeaderModules/VisitHeaderActionsToolbar.tsx"),
+			path.resolve(viewDir, "visitHeader/toolbar/VisitToolbarSomaticNorm.tsx"),
+			path.resolve(viewDir, "viewStateModules/useVisitFastPrintState.ts"),
+		];
+		const visitViewSource = visitFiles
+			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
+			.join("\n");
 
 		// Кнопка 1-клик нормы в шапке VisitView всегда присутствует и не заблокирована
 		assert.ok(

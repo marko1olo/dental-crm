@@ -22,7 +22,14 @@ export const useDocumentStore = create<DocumentState>(
 		}) as DocumentState,
 );
 
+declare global {
+	interface Window {
+		__DOCUMENT_STORE__?: typeof useDocumentStore;
+		__useDocumentStore?: typeof useDocumentStore;
+	}
+}
+
 if (typeof window !== "undefined") {
-	(window as any).__DOCUMENT_STORE__ = useDocumentStore;
-	(window as any).__useDocumentStore = useDocumentStore;
+	window.__DOCUMENT_STORE__ = useDocumentStore;
+	window.__useDocumentStore = useDocumentStore;
 }

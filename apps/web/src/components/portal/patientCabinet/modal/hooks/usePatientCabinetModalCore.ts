@@ -33,7 +33,7 @@ export function usePatientCabinetModal({
 	const [isBookingOpen, setIsBookingOpen] = useState(false);
 	const [isSelfCheckinOpen, setIsSelfCheckinOpen] = useState(false);
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
-	const [selectedTaxYear, setSelectedTaxYear] = useState<number>(2026);
+	const [selectedTaxYear, setSelectedTaxYear] = useState<number>(() => new Date().getFullYear());
 	const [showClinicalPlanDetail, setShowClinicalPlanDetail] = useState(false);
 
 	const hydr = useCabinetDataHydration(initialData, token);
@@ -47,8 +47,8 @@ export function usePatientCabinetModal({
 	}, [hydr.data]);
 
 	const handleDownloadTaxCertificate = useCallback(() => {
-		downloadPatientTaxCertificate1151156(hydr.data, selectedTaxYear);
-	}, [hydr.data, selectedTaxYear]);
+		downloadPatientTaxCertificate1151156(hydr.data, selectedTaxYear, token);
+	}, [hydr.data, selectedTaxYear, token]);
 
 	const handlePrintCareMemo = useCallback(() => {
 		openPrintWindow(views.careMemo.printHtml);

@@ -94,11 +94,13 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 			visitId: args.visitId ?? null,
 			totalRub: String(totalAmountRub),
 			totalAmountRub,
-			discountAmountRub: discountRub,
-			paidAmountRub: 0,
 			status: "pending",
 		})
 		.returning({ id: patientInvoices.id });
+
+	if (!inserted) {
+		throw new Error("Не удалось создать счет");
+	}
 
 	for (const item of processedItems) {
 		await activeDb.insert(treatmentItems).values({

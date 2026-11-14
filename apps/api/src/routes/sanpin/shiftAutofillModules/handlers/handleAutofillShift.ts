@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantCtx } from "../../../../db/rls.js";
+import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { executeSterilizationConsumablesDeduction } from "../../sterilizationModules/sterilizationStockDeduction.js";
 import { autofillShiftSchema } from "../shiftAutofillSchemas.js";
@@ -17,15 +18,16 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 	const parsed = autofillShiftSchema.safeParse(req.body || {});
 	const body = parsed.success
 		? parsed.data
-		: ((req.body as any) || {});
+		: ((req.body as Record<string, unknown>) || {});
 	const now = new Date();
-	const todayStr = body.shiftDate || body.date || now.toISOString().slice(0, 10);
+	const todayStr = (body.shiftDate as string) || (body.date as string) || now.toISOString().slice(0, 10);
+	const resolvedUserId = getRequestIdentity(req).userId ?? null;
 
 	const { insertedPso, insertedSteril } = await withTenantCtx(organizationId, async (tx) => {
 		return executeShiftAutofillTransaction(tx, {
 			organizationId,
 			body,
-			operatorId: body.operatorId || req.user?.id || null,
+			operatorId: (body.operatorId as string) || resolvedUserId,
 			todayStr,
 		});
 	});
@@ -34,7 +36,7 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 	for (const steril of insertedSteril) {
 		void executeSterilizationConsumablesDeduction({
 			organizationId,
-			userId: req.user?.id || null,
+			userId: resolvedUserId,
 			count: 14,
 			packagingType: steril.packagingType,
 			indicatorType: steril.indicatorType,

@@ -64,7 +64,7 @@ export function extractDoctorScreenContext(
 		return { doctorContext: null, cleanText: text };
 	}
 
-	const rawHeader = headerMatch[0];
+	const rawHeader = headerMatch[0] ?? "";
 	const headerBody = headerMatch[1] ?? "";
 
 	const viewMatch = headerBody.match(/View='([^']*)'/i);
@@ -76,28 +76,32 @@ export function extractDoctorScreenContext(
 	const form043Match = headerBody.match(/Form043='([^']*)'/i);
 	const allergiesMatch = headerBody.match(/Allergies='([^']*)'/i);
 
+	const rawPatientId = patientIdMatch?.[1];
 	const patientId =
-		patientIdMatch?.[1] && patientIdMatch[1] !== "null"
-			? patientIdMatch[1].replace(/^'|'$/g, "").replace(/\\'/g, "'")
+		rawPatientId && rawPatientId !== "null"
+			? rawPatientId.replace(/^'|'$/g, "").replace(/\\'/g, "'")
 			: null;
 
 	let activeTooth: number | string | null = null;
-	if (activeToothMatch?.[1] && activeToothMatch[1] !== "null") {
-		const unquoted = activeToothMatch[1]
+	const rawActiveTooth = activeToothMatch?.[1];
+	if (rawActiveTooth && rawActiveTooth !== "null") {
+		const unquoted = rawActiveTooth
 			.replace(/^'|'$/g, "")
 			.replace(/\\'/g, "'");
 		const num = Number(unquoted);
 		activeTooth = !Number.isNaN(num) && num > 0 ? num : unquoted;
 	}
 
+	const rawActiveDoctor = activeDoctorMatch?.[1];
 	const activeDoctor =
-		activeDoctorMatch?.[1] && activeDoctorMatch[1] !== "null"
-			? activeDoctorMatch[1].replace(/^'|'$/g, "").replace(/\\'/g, "'")
+		rawActiveDoctor && rawActiveDoctor !== "null"
+			? rawActiveDoctor.replace(/^'|'$/g, "").replace(/\\'/g, "'")
 			: null;
 
 	let toothFormula: Record<string, string> | undefined = undefined;
-	if (toothFormulaMatch?.[1]) {
-		const raw = toothFormulaMatch[1].replace(/\\'/g, "'");
+	const rawToothFormula = toothFormulaMatch?.[1];
+	if (rawToothFormula) {
+		const raw = rawToothFormula.replace(/\\'/g, "'");
 		try {
 			const parsed = JSON.parse(raw);
 			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -113,8 +117,9 @@ export function extractDoctorScreenContext(
 	}
 
 	let diagnosesByTooth: Record<string, string> | undefined = undefined;
-	if (diagnosesMatch?.[1]) {
-		const raw = diagnosesMatch[1].replace(/\\'/g, "'");
+	const rawDiagnoses = diagnosesMatch?.[1];
+	if (rawDiagnoses) {
+		const raw = rawDiagnoses.replace(/\\'/g, "'");
 		try {
 			const parsed = JSON.parse(raw);
 			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -129,13 +134,15 @@ export function extractDoctorScreenContext(
 		}
 	}
 
-	const clinicalEmrContext = form043Match?.[1]
-		? parseClinicalEmrContext(form043Match[1].replace(/\\'/g, "'"))
+	const rawForm043 = form043Match?.[1];
+	const clinicalEmrContext = rawForm043
+		? parseClinicalEmrContext(rawForm043.replace(/\\'/g, "'"))
 		: null;
 
 	let allergies: string[] | undefined = undefined;
-	if (allergiesMatch?.[1]) {
-		const raw = allergiesMatch[1].replace(/\\'/g, "'");
+	const rawAllergies = allergiesMatch?.[1];
+	if (rawAllergies) {
+		const raw = rawAllergies.replace(/\\'/g, "'");
 		try {
 			const parsed = JSON.parse(raw);
 			if (Array.isArray(parsed)) {
@@ -155,8 +162,10 @@ export function extractDoctorScreenContext(
 		}
 	}
 
+	const rawView = viewMatch?.[1];
+
 	const doctorContext: DoctorScreenContext = {
-		view: viewMatch?.[1] || null,
+		view: rawView || null,
 		patientId,
 		activeTooth,
 		activeDoctor,

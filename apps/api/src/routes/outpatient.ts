@@ -5,14 +5,11 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { assignPatientToothDefectHandler } from "./outpatient/outpatientAssignDefectHandler.js";
 import {
 	getTeethCatalogHandler,
 	getToothDefectsHandler,
 	getToothDefectsTreeHandler,
 } from "./outpatient/outpatientCatalogsHandlers.js";
-import { getPatientToothDefectsHandler } from "./outpatient/outpatientDefectsQueryHandler.js";
-import { deletePatientToothDefectHandler } from "./outpatient/outpatientDeleteDefectHandler.js";
 import { checkLockStatusHandler } from "./outpatient/outpatientLockStatusHandler.js";
 import { getMkbCategoriesTreeHandler } from "./outpatient/outpatientMkbHandlers.js";
 import { handleGetOutpatientTemplates } from "./outpatient/outpatientTemplatesHandlers.js";
@@ -30,12 +27,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 	app.get("/api/outpatient/templates", handleGetOutpatientTemplates);
 	app.get("/api/clinical/outpatient-templates", handleGetOutpatientTemplates);
 
-	// 3. Активная одонтограмма пациента (дефекты зубов и челюстей)
-	app.get("/api/patients/:patientId/tooth-defects", getPatientToothDefectsHandler);
-	app.post("/api/patients/:patientId/tooth-defects", assignPatientToothDefectHandler);
-	app.delete("/api/patients/:patientId/tooth-defects/:id", deletePatientToothDefectHandler);
-
-	// 4. Клинический аудит качества и экспертиза ЭМК главным врачом (Мандат 8e)
+	// 3. Клинический аудит качества и экспертиза ЭМК главным врачом (Мандат 8e)
 	app.get("/api/outpatient/verify", getVerifyQueueHandler);
 	app.put("/api/outpatient/verify/:id/status", updateVerificationStatusHandler);
 	app.get("/api/outpatient/verify/visit/:visitId/lock-status", checkLockStatusHandler);

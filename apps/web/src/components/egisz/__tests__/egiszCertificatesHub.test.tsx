@@ -15,7 +15,7 @@ import {
 } from "../egiszRemdPrintTemplates";
 import type { RemdDocumentRecord } from "../egiszJournalData";
 import { setRuntimeDemoMode } from "../../../lib/demoMode.js";
-import { InsuranceBillSplitCard } from "../../insurance/InsuranceBillSplitCard.js";
+import { DmsStudioModal } from "../../insurance/DmsStudioModal.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -206,22 +206,22 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		assert.ok(html.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"));
 	});
 
-	it("5.1 InsuranceBillSplitCard in production mode renders honest empty state without leaks (Mandate 8wy)", () => {
+	it("5.1 DmsStudioModal in production mode renders honest empty state without leaks (Mandate 8wy)", () => {
 		setRuntimeDemoMode(false);
 		const html = renderToString(
-			createElement(InsuranceBillSplitCard, {}),
+			createElement(DmsStudioModal, { isOpen: true }),
 		);
 		assert.ok(html.includes("Нет позиций для распределения счёта"), "Must render honest empty state notice in production");
 		assert.ok(html.includes("0 ₽"), "Amounts must be 0 ₽ when no bill items exist");
 		assert.ok(!html.includes("22 250"), "Must NOT calculate total of 22 250 ₽ from demo items in prod");
 	});
 
-	it("5.2 InsuranceBillSplitCard in demo mode uses sample bill items (Mandate 8wy)", () => {
+	it("5.2 DmsStudioModal in demo mode uses sample bill items (Mandate 8wy)", () => {
 		setRuntimeDemoMode(true);
 		const html = renderToString(
-			createElement(InsuranceBillSplitCard, {}),
+			createElement(DmsStudioModal, { isOpen: true }),
 		);
 		assert.ok(!html.includes("Нет позиций для распределения счёта"), "Demo mode must not show empty notice");
-		assert.ok(html.includes("СТРАХОВАЯ") && html.includes("ПАЦИЕНТ"));
+		assert.ok(html.includes("Страховая") && html.includes("Пациент"));
 	});
 });

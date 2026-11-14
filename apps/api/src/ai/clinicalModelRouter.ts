@@ -44,7 +44,8 @@ function resolveCascadeModel(
 		});
 
 	for (let i = 0; i < cascade.length; i++) {
-		const candidate = cascade[i]!;
+		const candidate = cascade[i];
+		if (!candidate) continue;
 		if (!checkBanned(candidate)) {
 			const isGroq = isGroqModel(candidate);
 			return {

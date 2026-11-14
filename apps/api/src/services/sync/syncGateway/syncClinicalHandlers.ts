@@ -20,7 +20,11 @@ import {
 	resolveOdontogramToothConflict,
 } from "./syncConflictResolver.js";
 import { SyncQueueManager } from "./syncQueueManager.js";
-import type { EntityMutationHandlerResult } from "./types.js";
+import {
+	type EntityMutationHandlerResult,
+	ensureEntityRecord,
+	toEntityRecord,
+} from "./types.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function isValidUuid(val: unknown): boolean {
@@ -70,7 +74,7 @@ export class SyncClinicalHandlers {
 			const mergeResult = performFieldLevelCrdtMerge({
 				entityKind: "visit_diary",
 				entityId: mutation.entityId,
-				serverEntity: (serverDiary as unknown as Record<string, unknown>) || null,
+				serverEntity: toEntityRecord(serverDiary),
 				serverVector,
 				clientPatch: mutation.payload,
 				clientVector: mutation.mutationVector,
@@ -128,7 +132,7 @@ export class SyncClinicalHandlers {
 					status: "applied",
 					mergedFields: mergeResult.changedFields,
 					conflicts: [],
-					entity: inserted as unknown as Record<string, unknown>,
+					entity: ensureEntityRecord(inserted),
 				};
 			}
 
@@ -180,7 +184,7 @@ export class SyncClinicalHandlers {
 				status,
 				mergedFields: mergeResult.changedFields,
 				conflicts: mergeResult.conflicts,
-				entity: (updated || merged) as unknown as Record<string, unknown>,
+				entity: ensureEntityRecord(updated || merged),
 			};
 		}
 
@@ -213,7 +217,7 @@ export class SyncClinicalHandlers {
 		const mergeResult = performFieldLevelCrdtMerge({
 			entityKind: "visit",
 			entityId: mutation.entityId,
-			serverEntity: (serverVisit as unknown as Record<string, unknown>) || null,
+			serverEntity: toEntityRecord(serverVisit),
 			serverVector,
 			clientPatch: mutation.payload,
 			clientVector: mutation.mutationVector,
@@ -270,7 +274,7 @@ export class SyncClinicalHandlers {
 				status: "applied",
 				mergedFields: mergeResult.changedFields,
 				conflicts: [],
-				entity: inserted as unknown as Record<string, unknown>,
+				entity: ensureEntityRecord(inserted),
 			};
 		}
 
@@ -323,7 +327,7 @@ export class SyncClinicalHandlers {
 			status,
 			mergedFields: mergeResult.changedFields,
 			conflicts: mergeResult.conflicts,
-			entity: (updated || merged) as unknown as Record<string, unknown>,
+			entity: ensureEntityRecord(updated || merged),
 		};
 	}
 
@@ -351,7 +355,7 @@ export class SyncClinicalHandlers {
 		} else if (isValidUuid(mutation.entityId)) {
 			patientId = mutation.entityId;
 		} else {
-			const candidate = mutation.entityId.split(":")[0];
+			const candidate = mutation.entityId.split(":")?.[0]?.trim();
 			if (candidate && isValidUuid(candidate)) {
 				patientId = candidate;
 			}
@@ -432,7 +436,7 @@ export class SyncClinicalHandlers {
 						})
 						.returning();
 					updatedTeethStates.push(
-						(inserted as unknown as Record<string, unknown>) || {
+						toEntityRecord(inserted) ?? {
 							patientId,
 							toothNumber: toothItem.toothNumber,
 							state: conflictCheck.effectiveState,
@@ -457,7 +461,7 @@ export class SyncClinicalHandlers {
 						.where(eq(toothStates.id, serverTooth.id))
 						.returning();
 					updatedTeethStates.push(
-						(updated as unknown as Record<string, unknown>) || {
+						toEntityRecord(updated) ?? {
 							...serverTooth,
 							state: conflictCheck.effectiveState,
 							surfaces: conflictCheck.effectiveSurfaces,
@@ -492,7 +496,7 @@ export class SyncClinicalHandlers {
 					allConflicts.push(conflictCheck.conflictDetail);
 				}
 				updatedTeethStates.push(
-					serverTooth as unknown as Record<string, unknown>,
+					ensureEntityRecord(serverTooth),
 				);
 			}
 		}

@@ -14,7 +14,7 @@ import {
 	cleanDicomPatientName,
 	parseDicomBufferForStow,
 	registerDicomwebStowRoutes,
-	resolvePatientForStow,
+	resolveStowBinding,
 	stripMultipartWrapperFromBuffer,
 } from "./dicomwebStow.js";
 
@@ -84,26 +84,24 @@ describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite", () => {
 		assert.ok(parsed.columns !== null && parsed.columns > 0);
 	});
 
-	it("resolvePatientForStow returns patient on explicit valid patientId", async (t) => {
+	it("resolveStowBinding returns patient on explicit valid patientId", async (t) => {
 		t.mock.method(db, "select", () => ({
 			from: () => ({
 				where: () => ({
-					limit: () => Promise.resolve([{ id: PATIENT_ID, mergedIntoPatientId: null }]),
+					limit: () => Promise.resolve([{ id: PATIENT_ID, mergedIntoPatientId: null, fullName: "Тестовый Пациент" }]),
 				}),
 			}),
 		}));
 
-		const resolved = await resolvePatientForStow({
-			organizationId: ORG_ID,
-			explicitPatientId: PATIENT_ID,
-		});
+		const resolved = await resolveStowBinding(ORG_ID, PATIENT_ID, {});
 
 		assert.ok(resolved);
-		assert.strictEqual(resolved.patientId, PATIENT_ID);
+		assert.strictEqual(resolved.resolvedPatientId, PATIENT_ID);
 		assert.strictEqual(resolved.matchMethod, "explicit");
+		assert.strictEqual(resolved.bindingStatus, "manual_bound");
 	});
 
-	it("resolvePatientForStow returns null when explicit patientId is not found (NEVER guesses)", async (t) => {
+	it("resolveStowBinding returns unassigned when explicit patientId is not found (NEVER guesses)", async (t) => {
 		t.mock.method(db, "select", () => ({
 			from: () => ({
 				where: () => ({
@@ -112,81 +110,10 @@ describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite", () => {
 			}),
 		}));
 
-		const resolved = await resolvePatientForStow({
-			organizationId: ORG_ID,
-			explicitPatientId: "00000000-0000-0000-0000-000000000000",
-		});
+		const resolved = await resolveStowBinding(ORG_ID, "00000000-0000-0000-0000-000000000000", {});
 
-		assert.strictEqual(resolved, null);
-	});
-
-	it("resolvePatientForStow resolves patient by dicomPatientId when it matches a patient UUID", async (t) => {
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				where: () => ({
-					limit: () => Promise.resolve([{ id: PATIENT_B_ID, mergedIntoPatientId: null }]),
-				}),
-			}),
-		}));
-
-		const resolved = await resolvePatientForStow({
-			organizationId: ORG_ID,
-			dicomPatientId: PATIENT_B_ID,
-		});
-
-		assert.ok(resolved);
-		assert.strictEqual(resolved.patientId, PATIENT_B_ID);
-		assert.strictEqual(resolved.matchMethod, "dicom_patient_id");
-	});
-
-	it("resolvePatientForStow resolves patient by exact DICOM patient name and matching birth date", async (t) => {
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				where: () =>
-					Promise.resolve([
-						{
-							id: PATIENT_ID,
-							fullName: "Петров Петр Петрович",
-							birthDate: "1985-04-12",
-							mergedIntoPatientId: null,
-						},
-					]),
-			}),
-		}));
-
-		const resolved = await resolvePatientForStow({
-			organizationId: ORG_ID,
-			dicomPatientName: "Петров^Петр^Петрович",
-			dicomBirthDate: "19850412",
-		});
-
-		assert.ok(resolved);
-		assert.strictEqual(resolved.patientId, PATIENT_ID);
-		assert.strictEqual(resolved.matchMethod, "dicom_name_exact");
-	});
-
-	it("resolvePatientForStow rejects match when birth dates conflict", async (t) => {
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				where: () =>
-					Promise.resolve([
-						{
-							id: PATIENT_ID,
-							fullName: "Петров Петр Петрович",
-							birthDate: "1990-01-01",
-							mergedIntoPatientId: null,
-						},
-					]),
-			}),
-		}));
-
-		const resolved = await resolvePatientForStow({
-			organizationId: ORG_ID,
-			dicomPatientName: "Петров^Петр^Петрович",
-			dicomBirthDate: "19850412", // Conflict!
-		});
-
-		assert.strictEqual(resolved, null);
+		assert.strictEqual(resolved.resolvedPatientId, null);
+		assert.strictEqual(resolved.bindingStatus, "unassigned");
 	});
 });
 

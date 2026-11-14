@@ -6,7 +6,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { executeDentalTool, type DentalToolContext } from "./dentalTools.js";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../db/rls.js";
 import { copilotPendingActions } from "../db/schema/copilot.js";
 
 export interface PendingAction {
@@ -241,7 +241,7 @@ export class CopilotActionManager {
 			runtimeMode:
 				(ctx.metadata?.runtimeMode as "web_browser" | "desktop_native") ||
 				"web_browser",
-			db: ctx.db,
+			db: (ctx.db as TenantDb | undefined) ?? undefined,
 			allowLocalExecution: true,
 		};
 

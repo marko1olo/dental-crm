@@ -198,8 +198,8 @@ async function main() {
 			await page.waitForTimeout(1000);
 			await suppressOverlays(page);
 
-			// Нажимаем на норму обтурации в 1 клик, чтобы продемонстрировать заполненный клинический протокол
-			const normBtn = await page.$('[data-testid="btn-endo-1click-obturation-norm"]');
+			// Нажимаем на норму обтурации (физиологическая норма), чтобы продемонстрировать заполненный клинический протокол
+			const normBtn = await page.$('[data-testid="btn-endo-obturation-norm"], [data-testid="btn-endo-1click-obturation-norm"]');
 			if (normBtn) {
 				await normBtn.click();
 				await page.waitForTimeout(500);

@@ -3,7 +3,6 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
 import { OneCExportButton } from '../OneCExportButton';
-import { CashReceiptModal } from '../CashReceiptModal';
 import { Billing1CExportModal } from '../Billing1CExportModal';
 import { generateOneCEnterpriseXml } from '@dental/shared';
 import type { TreatmentPlanItem } from '../../treatment-plans/types';
@@ -114,53 +113,6 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     assert.ok(xml.includes('АКТ-2026-880'));
     assert.ok(xml.includes('Иванов Иван Иванович'));
     assert.ok(xml.includes('5000.00'));
-  });
-
-  it('renders CashReceiptModal with 1C:Enterprise XML Export Tab', () => {
-    const html = renderToString(
-      <CashReceiptModal
-        isOpen={true}
-        onClose={() => {}}
-        items={SAMPLE_ITEMS}
-        patientId="PAT-2026-0891"
-        patientName="Смирнова Екатерина Васильевна"
-        initialTab="oneC"
-      />
-    );
-
-    // Verify 1C Tab active and content rendered
-    assert.ok(html.includes('data-testid="1c-enterprise-export-panel"'));
-    assert.ok(html.includes('1С:Предприятие 8.3 / Бухгалтерия &amp; УТ') || html.includes('1С:Предприятие 8.3 / Бухгалтерия & УТ'));
-    assert.ok(html.includes('CommerceML 2.09'));
-    assert.ok(html.includes('149 НК РФ'));
-    assert.ok(html.includes('ОКЕИ 796'));
-    assert.ok(html.includes('КНД 1151156'));
-    assert.ok(html.includes('data-testid="1c-export-xml-button"'));
-    assert.ok(html.includes('Предпросмотр XML-пакета CommerceML 2.09'));
-  });
-
-  it('renders CashReceiptModal header without ellipsis truncation classes', () => {
-    const html = renderToString(
-      <CashReceiptModal
-        isOpen={true}
-        onClose={() => {}}
-        items={SAMPLE_ITEMS}
-        patientId="PAT-2026-0891"
-        patientName="Смирнова Екатерина Васильевна"
-        initialTab="payment"
-      />
-    );
-
-    // Verify exact non-truncated text and flex containers
-    assert.ok(
-      html.includes('Фискализация 54-ФЗ &amp; Прием платежей') ||
-      html.includes('Фискализация 54-ФЗ & Прием платежей') ||
-      html.includes('Касса · Прием платежей и печать чеков')
-    );
-    assert.ok(html.includes('Смирнова Екатерина Васильевна'));
-    assert.ok(html.includes('min-w-0 max-w-full flex-1'));
-    assert.ok(html.includes('whitespace-normal break-normal'));
-    assert.ok(html.includes('data-testid="tab-1c-export"'));
   });
 
   it('renders 1C XML export button with statutory CommerceML 2.09 integration', () => {

@@ -188,7 +188,7 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		await purgeFixtureOrganizations([ORG_ID]);
 		await app.close();
 		process.env = originalEnv;
-		mock.restoreAll();
+		mock.reset?.();
 	});
 
 	it("GET /api/periodontogram/patients/:patientId/snapshots rejects without auth token (401)", async () => {

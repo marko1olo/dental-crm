@@ -10,8 +10,8 @@
 	border-radius: 12px;
 	font-size: 13px;
 	font-weight: 700;
-	background-color: var(--primary, var(--teal));
-	color: var(--on-primary);
+	background-color: var(--teal, #0d9488);
+	color: #ffffff;
 	border: 1px solid transparent;
 	display: inline-flex;
 	align-items: center;

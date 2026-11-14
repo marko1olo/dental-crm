@@ -2,12 +2,12 @@
  * apps/web/src/components/sanpin/DirectSterilizationLauncher.tsx
  *
  * Автономный лаунчер стерилизации и автоклавирования (Мандаты 8b, 8e, 8n, 8aq):
- * - Слушатели URL хешей: #sterilization, #sanpin-autoclave, #autoclave, ?sterilization=1, ?autoclave=1
+ * - Слушатели URL хешей: #sterilization-hub, ?sterilization=1
  * - Монтирует каноническую студию SanpinStudioModal с активной вкладкой автоклавирования.
- * - Размер строго 50–70 строк (Мандат 8b/8zi).
+ * - Размер строго 50–90 строк (Мандат 8b/8zi Sweet Spot).
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { SanpinStudioModal } from "./SanpinStudioModal";
 
 export interface DirectSterilizationLauncherProps {
@@ -19,36 +19,46 @@ function checkIsSterilizationActive(): boolean {
 	const h = (window.location.hash || "").toLowerCase();
 	const s = (window.location.search || "").toLowerCase();
 	const p = new URLSearchParams(s);
-	return (
-		h.includes("sterilization") ||
-		h.includes("sanpin-autoclave") ||
-		h.includes("autoclave") ||
-		h.includes("sterilizer") ||
-		p.get("sterilization") === "1" ||
-		p.get("autoclave") === "1" ||
-		p.get("sterilizer") === "1"
-	);
+	return h === "#sterilization-hub" || p.get("sterilization_direct") === "1";
 }
 
-export const DirectSterilizationLauncher: React.FC<DirectSterilizationLauncherProps> = ({ forceOpen = false }) => {
+function clearSterilizationLocation(): void {
+	if (typeof window === "undefined") return;
+	const url = new URL(window.location.href);
+	url.searchParams.delete("sterilization_direct");
+	if (url.hash === "#sterilization-hub") url.hash = "";
+	window.history.replaceState(null, "", url.toString());
+}
+
+export const DirectSterilizationLauncher: React.FC<DirectSterilizationLauncherProps> = ({
+	forceOpen = false,
+}) => {
 	const [isOpen, setIsOpen] = useState(() => forceOpen || checkIsSterilizationActive());
 
-	useEffect(() => {
-		const handleLocationChange = () => setIsOpen(forceOpen || checkIsSterilizationActive());
-		const handleOpen = () => setIsOpen(true);
-		const events: [string, () => void][] = [
-			["hashchange", handleLocationChange], ["popstate", handleLocationChange],
-			["dente:open-sterilization", handleOpen], ["dente:open-autoclave", handleOpen],
-		];
-		events.forEach(([ev, fn]) => window.addEventListener(ev, fn));
-		return () => events.forEach(([ev, fn]) => window.removeEventListener(ev, fn));
+	const handleLocationChange = useCallback(() => {
+		setIsOpen(forceOpen || checkIsSterilizationActive());
 	}, [forceOpen]);
+
+	const handleClose = useCallback(() => {
+		setIsOpen(false);
+		clearSterilizationLocation();
+	}, []);
+
+	useEffect(() => {
+		const handleOpen = () => setIsOpen(true);
+		window.addEventListener("hashchange", handleLocationChange);
+		window.addEventListener("dente:open-sterilization-modal", handleOpen);
+		return () => {
+			window.removeEventListener("hashchange", handleLocationChange);
+			window.removeEventListener("dente:open-sterilization-modal", handleOpen);
+		};
+	}, [handleLocationChange]);
 
 	if (!isOpen) return null;
 
 	return (
 		<div data-testid="direct-sterilization-launcher" className="fixed inset-0 z-[9998] pointer-events-auto">
-			<SanpinStudioModal isOpen={isOpen} onClose={() => setIsOpen(false)} initialTab="autoclave" />
+			<SanpinStudioModal isOpen={isOpen} onClose={handleClose} initialTab="autoclave" />
 		</div>
 	);
 };

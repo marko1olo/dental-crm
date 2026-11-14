@@ -5,6 +5,7 @@ import { patientRecalls } from "../../db/schema/patientsSchema/patientMedicalDat
 import { patients } from "../../db/schema/patients.js";
 import { treatmentPlans } from "../../db/schema/clinical/treatmentPlansSchema.js";
 import { wsBroker } from "../websocketBroker.js";
+import { isValidUuid } from "@dental/shared";
 
 export interface DropoutPreventionResult {
 	evaluatedPlans: number;
@@ -219,6 +220,15 @@ export async function createSinglePlanDropoutRecall(
 	planId: string,
 	curatorNotes?: string,
 ): Promise<{ success: boolean; recallId?: string; message: string }> {
+	const trimmedPlanId = planId?.trim();
+	if (!trimmedPlanId || !isValidUuid(trimmedPlanId)) {
+		return { success: false, message: "Некорректный идентификатор плана лечения" };
+	}
+	const trimmedOrgId = organizationId?.trim();
+	if (!trimmedOrgId || !isValidUuid(trimmedOrgId)) {
+		return { success: false, message: "Некорректный идентификатор организации" };
+	}
+
 	const [plan] = await db
 		.select({
 			id: treatmentPlans.id,
@@ -232,8 +242,8 @@ export async function createSinglePlanDropoutRecall(
 		.from(treatmentPlans)
 		.where(
 			and(
-				eq(treatmentPlans.id, planId),
-				eq(treatmentPlans.organizationId, organizationId),
+				eq(treatmentPlans.id, trimmedPlanId),
+				eq(treatmentPlans.organizationId, trimmedOrgId),
 			),
 		)
 		.limit(1);

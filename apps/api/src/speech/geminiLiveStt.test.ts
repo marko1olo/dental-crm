@@ -26,18 +26,18 @@ import {
 } from "./keyPool.js";
 
 // Mock WebSocket implementation for controlled unit testing
-class MockWebSocket extends WebSocket {
+class MockWebSocket extends EventEmitter {
 	static readonly CONNECTING = 0;
 	static readonly OPEN = 1;
 	static readonly CLOSING = 2;
 	static readonly CLOSED = 3;
 
-	public override readyState: number = MockWebSocket.CONNECTING;
+	public readyState: number = MockWebSocket.CONNECTING;
 	public sentMessages: string[] = [];
-	public override url: string;
+	public url: string;
 
 	constructor(url: string) {
-		super(null, [], {});
+		super();
 		this.url = url;
 		// Auto-open on next tick
 		process.nextTick(() => {
@@ -48,7 +48,7 @@ class MockWebSocket extends WebSocket {
 		});
 	}
 
-	public override send(data: string): void {
+	public send(data: string): void {
 		if (this.readyState !== MockWebSocket.OPEN) {
 			throw new Error("WebSocket is not open");
 		}
@@ -72,7 +72,7 @@ class MockWebSocket extends WebSocket {
 		}
 	}
 
-	public override close(code = 1000, reason = "Normal Closure"): void {
+	public close(code = 1000, reason = "Normal Closure"): void {
 		this.readyState = MockWebSocket.CLOSED;
 		this.emit("close", code, Buffer.from(reason));
 	}
@@ -352,30 +352,33 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 			});
 
 			await session.connect();
-			assert.ok(createdSocket);
-			assert.ok(createdSocket.url.includes("key=mock_live_test_key"));
+			const socket = createdSocket as MockWebSocket | null;
+			if (!socket) {
+				throw new Error("Socket was not created");
+			}
+			assert.ok(socket.url.includes("key=mock_live_test_key"));
 
 			// Verify setup frame was sent
-			assert.equal(createdSocket.sentMessages.length, 1);
-			const setupMsg = JSON.parse(createdSocket.sentMessages[0]!);
+			assert.equal(socket.sentMessages.length, 1);
+			const setupMsg = JSON.parse(socket.sentMessages[0]!);
 			assert.ok(setupMsg.setup);
 			assert.equal(setupMsg.setup.model, DEFAULT_GEMINI_LIVE_MODEL);
 
 			// Server sends setupComplete
-			createdSocket.simulateServerMessage({ setupComplete: {} });
+			socket.simulateServerMessage({ setupComplete: {} });
 			assert.equal(setupCompleteFired, true);
 
 			// Client sends audio chunks
 			const chunk1 = Buffer.alloc(3200, 0x11);
 			session.sendAudioChunk(chunk1);
 
-			assert.equal(createdSocket.sentMessages.length, 2);
-			const mediaMsg = JSON.parse(createdSocket.sentMessages[1]!);
+			assert.equal(socket.sentMessages.length, 2);
+			const mediaMsg = JSON.parse(socket.sentMessages[1]!);
 			assert.ok(mediaMsg.realtimeInput);
-			assert.equal(mediaMsg.realtimeInput.mediaChunks[0].mimeType, "audio/pcm;rate=16000");
+			assert.equal(mediaMsg.realtimeInput.mediaChunks[0]?.mimeType, "audio/pcm;rate=16000");
 
 			// Server returns interim transcript via interimInputTranscription
-			createdSocket.simulateServerMessage({
+			socket.simulateServerMessage({
 				serverContent: {
 					interimInputTranscription: { text: "Жалобы на боль в зубе" },
 				},
@@ -383,11 +386,11 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 
 			assert.equal(session.getTranscript(), "Жалобы на боль в зубе");
 			assert.equal(interimTokens.length, 1);
-			assert.equal(interimTokens[0].text, "Жалобы на боль в зубе");
-			assert.equal(interimTokens[0].isFinal, false);
+			assert.equal(interimTokens[0]?.text, "Жалобы на боль в зубе");
+			assert.equal(interimTokens[0]?.isFinal, false);
 
 			// Server returns finalized turn via inputTranscription
-			createdSocket.simulateServerMessage({
+			socket.simulateServerMessage({
 				serverContent: {
 					inputTranscription: { text: "Жалобы на боль в зубе 46." },
 					turnComplete: true,
@@ -396,11 +399,11 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 
 			assert.equal(session.getFinalizedTranscript(), "Жалобы на боль в зубе 46.");
 			assert.equal(finalTokens.length, 1);
-			assert.equal(finalTokens[0].text, "Жалобы на боль в зубе 46.");
-			assert.equal(finalTokens[0].isFinal, true);
+			assert.equal(finalTokens[0]?.text, "Жалобы на боль в зубе 46.");
+			assert.equal(finalTokens[0]?.isFinal, true);
 			assert.equal(transcriptEvents.length, 2);
-			assert.equal(transcriptEvents[1].finalized, true);
-			assert.equal(transcriptEvents[1].isFinal, true);
+			assert.equal(transcriptEvents[1]?.finalized, true);
+			assert.equal(transcriptEvents[1]?.isFinal, true);
 
 			session.close();
 			assert.equal(session.isActive(), false);

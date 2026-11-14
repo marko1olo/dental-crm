@@ -39,13 +39,16 @@ export function useTodayQueueState(props: TodayQueueBoardProps) {
   }, [chairsList]);
 
   const queueResult: PatientShiftQueueResult = useMemo(() => {
-    return buildPatientShiftQueue(appointments, {
-      targetDateKey,
-      selectedDoctorId: doctorFilter,
-      selectedChairId: chairFilter,
-      staffById,
-      chairsById,
-    });
+    return buildPatientShiftQueue(
+      appointments as Parameters<typeof buildPatientShiftQueue>[0],
+      {
+        targetDateKey,
+        selectedDoctorId: doctorFilter,
+        selectedChairId: chairFilter,
+        staffById,
+        chairsById,
+      },
+    );
   }, [appointments, targetDateKey, doctorFilter, chairFilter, staffById, chairsById]);
 
   const displayedItems = useMemo(() => {

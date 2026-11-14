@@ -11,7 +11,7 @@ import {
 	compactMessageHistory,
 	DEFAULT_COMPACTION_THRESHOLD,
 	type CompactorOptions,
-} from "../copilotContextCompactor.js";
+} from "@dental/shared";
 import { getOrCreateSessionInDb, getSessionFromDb, updateSessionInDb } from "./copilotSessionDb.js";
 import {
 	type AddMessageParams,

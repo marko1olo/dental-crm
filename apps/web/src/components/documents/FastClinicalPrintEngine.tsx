@@ -14,7 +14,8 @@ import type { ProfessionalA4DocumentTab } from "./professionalA4/types";
 
 export type FastPrintDocType =
 	| "medical_card"
-	| "partisan_insert_043u"
+	| "clinical_protocol_entry"
+	| "clinicalProtocolEntry"
 	| "form043u"
 	| "act_and_receipt"
 	| "treatment_estimate";
@@ -107,6 +108,7 @@ function mapDocTypeToA4Tab(docType?: string): ProfessionalA4DocumentTab {
 		case "treatment_estimate":
 			return "treatment_plan";
 		case "medical_card":
+		case "clinical_protocol_entry":
 		case "partisan_insert_043u":
 		case "form043u":
 		default:

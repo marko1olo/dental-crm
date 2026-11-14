@@ -7,7 +7,6 @@ import React, { useState } from "react";
 import type { TreatmentPlanStatus } from "../types";
 import type { CopilotCommandType } from "../../../services/ai/treatmentPlanCopilot";
 import type { ClinicalBundleId } from "../treatmentPlanBundlesEngine";
-import { TreatmentPlanDiscountsModal } from "../TreatmentPlanDiscountsModal";
 import { TreatmentPlanHeaderBar } from "./TreatmentPlanHeaderBar";
 import { TreatmentPlanStatusControl } from "./TreatmentPlanStatusControl";
 import { TreatmentPlanViewTabs } from "./TreatmentPlanViewTabs";
@@ -70,7 +69,6 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = (props)
 	} = props;
 
 	const [isOptionsOpen, setIsOptionsOpen] = useState(initialOptionsMenuOpen);
-	const [isDiscountsOpen, setIsDiscountsOpen] = useState(false);
 
 	return (
 		<>
@@ -84,13 +82,12 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = (props)
 						isOpen={isOptionsOpen} onToggle={() => setIsOptionsOpen((p) => !p)} onClose={() => setIsOptionsOpen(false)}
 						onExportCashier={onExportCashier} onOpenInvoiceModal={onOpenInvoiceModal} onOpenFiscalModal={onOpenFiscalModal}
 						onSavePlanToDatabase={onSavePlanToDatabase} isSaving={isSaving} onOpenStagePaymentModal={onOpenStagePaymentModal}
-						onOpenDiscountsModal={() => setIsDiscountsOpen(true)}
+						onOpenDiscountsModal={onOpenPresenterModal}
 						onOpenContractPrint={onOpenContractPrint} onOpenPresenterModal={onOpenPresenterModal} onOpenComparatorModal={onOpenComparatorModal}
 						onResetPlan={onResetPlan}
 					/>
 				</div>
 			</div>
-			<TreatmentPlanDiscountsModal isOpen={isDiscountsOpen} onClose={() => setIsDiscountsOpen(false)} discountPercent={discountPercent} setDiscountPercent={setDiscountPercent} bonusPointsToUseRub={bonusPointsToUseRub} setBonusPointsToUseRub={setBonusPointsToUseRub} patientBalanceRub={patientBalanceRub} planGrossKopecks={planGrossKopecks} />
 		</>
 	);
 };
