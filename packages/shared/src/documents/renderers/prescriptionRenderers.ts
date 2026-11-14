@@ -16,29 +16,43 @@ import type {
 	Form107_1uPayload,
 	Form148_1u88Payload,
 	Form148_1u04lPayload,
+	UkepDigitalSignaturePayload,
 } from "./types.js";
 
-/** 7. Рендерер Рецептурного бланка № 107-1/у (Приказ Минздрава России от 24.11.2021 N 1094н) */
-export function renderForm107_1uHtml(payload: Form107_1uPayload | any): string {
-	const clinicName = payload.clinicLegalName || payload.organization?.fullName || "Стоматологическая клиника";
-	const clinicAddress = payload.clinicAddress || payload.organization?.address || "—";
-	const clinicPhone = payload.clinicPhone || payload.organization?.phone || "—";
-	const clinicOgrn = payload.clinicOgrn || payload.organization?.ogrn || "—";
-	const clinicInn = payload.clinicInn || payload.organization?.inn || "—";
-	const medLic = payload.medicalLicenseNumber ? `Лицензия: № ${escapeHtml(payload.medicalLicenseNumber)}` : "";
-	const recNum = payload.prescriptionSeriesNumber || "—";
-	const recDate = payload.prescriptionDate || new Date().toISOString().slice(0, 10);
-	const patientName = payload.patientFullName || payload.patient?.fullName || "—";
-	const patientBirth = payload.patientBirthDate || payload.patient?.birthDate || "—";
-	const patientAge = payload.patientAgeYears != null ? `${payload.patientAgeYears} лет` : "";
-	const cardNum = payload.medicalCardNumber || payload.patient?.medicalCardNumber || "—";
-	const doctorName = payload.doctorFullName || "Врач-стоматолог";
-	const doctorSpecialty = payload.doctorSpecialty || "Врач-стоматолог";
-	const validity = String(payload.validityDays || "60");
-	const items: any[] = payload.items || [];
-	const withStamp = payload.withStampAndSignature !== false;
+/** Интерфейс лекарственной позиции в печатном бланке рецепта */
+export interface PrescriptionItemPrintLike {
+	readonly latinName?: string | undefined;
+	readonly latinRp?: string | undefined;
+	readonly dispenseLatin?: string | undefined;
+	readonly signaRussian?: string | undefined;
+	readonly signaRu?: string | undefined;
+	readonly tradeName?: string | undefined;
+	readonly form?: string | undefined;
+	readonly [key: string]: unknown;
+}
 
-	const itemsHtml = items.map((item, idx) => `
+/** 7. Рендерер Рецептурного бланка № 107-1/у (Приказ Минздрава России от 24.11.2021 N 1094н) */
+export function renderForm107_1uHtml(payload: Form107_1uPayload | Record<string, unknown>): string {
+	const p = payload as Record<string, unknown>;
+	const clinicName = (p.clinicLegalName || (p.organization as { fullName?: string })?.fullName || "Стоматологическая клиника") as string;
+	const clinicAddress = (p.clinicAddress || (p.organization as { address?: string })?.address || "—") as string;
+	const clinicPhone = (p.clinicPhone || (p.organization as { phone?: string })?.phone || "—") as string;
+	const clinicOgrn = (p.clinicOgrn || (p.organization as { ogrn?: string })?.ogrn || "—") as string;
+	const clinicInn = (p.clinicInn || (p.organization as { inn?: string })?.inn || "—") as string;
+	const medLic = p.medicalLicenseNumber ? `Лицензия: № ${escapeHtml(String(p.medicalLicenseNumber))}` : "";
+	const recNum = String(p.prescriptionSeriesNumber || "—");
+	const recDate = String(p.prescriptionDate || new Date().toISOString().slice(0, 10));
+	const patientName = String(p.patientFullName || (p.patient as { fullName?: string })?.fullName || "—");
+	const patientBirth = String(p.patientBirthDate || (p.patient as { birthDate?: string })?.birthDate || "—");
+	const patientAge = p.patientAgeYears != null ? `${p.patientAgeYears} лет` : "";
+	const cardNum = String(p.medicalCardNumber || (p.patient as { medicalCardNumber?: string })?.medicalCardNumber || "—");
+	const doctorName = String(p.doctorFullName || "Врач-стоматолог");
+	const doctorSpecialty = String(p.doctorSpecialty || "Врач-стоматолог");
+	const validity = String(p.validityDays || "60");
+	const items: readonly PrescriptionItemPrintLike[] = (p.items || []) as readonly PrescriptionItemPrintLike[];
+	const withStamp = p.withStampAndSignature !== false;
+
+	const itemsHtml = items.map((item: PrescriptionItemPrintLike, idx: number) => `
     <div style="margin-bottom:10px; font-family:'Times New Roman', serif; font-size:10pt; line-height:1.35;">
       <div style="font-weight:bold; font-style:italic; font-size:10.5pt;">${idx + 1}. ${escapeHtml(item.latinName || item.latinRp || "Rp.:")}</div>
       <div style="margin-left:24px; font-style:italic;">${escapeHtml(item.dispenseLatin || "D.t.d.")}</div>
@@ -118,7 +132,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
     </div>
     <div>Ф.И.О. лечащего врача: <strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(doctorSpecialty)})</div>
-    ${payload.diagnosisIcd10Code ? `<div style="font-size:7.5pt; color:#64748b;">Диагноз (МКБ-10): <strong>${escapeHtml(payload.diagnosisIcd10Code)}</strong></div>` : ""}
+    ${p.diagnosisIcd10Code ? `<div style="font-size:7.5pt; color:#64748b;">Диагноз (МКБ-10): <strong>${escapeHtml(String(p.diagnosisIcd10Code))}</strong></div>` : ""}
   </div>
 
   <div style="min-height:50mm; padding:3px 0;">
@@ -136,9 +150,9 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <div style="font-size:6.5pt; color:#64748b;">(нужное подчеркнуть)</div>
     </div>
 
-    ${payload.isChronicSpecialCare ? `
+    ${p.isChronicSpecialCare ? `
       <div style="border:1px solid #cbd5e1; background:#f8fafc; padding:3px 5px; margin-bottom:4px; font-size:7pt;">
-        [X] <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})
+        [X] <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(String(p.chronicPeriodicity || "ежемесячно"))})
       </div>
     ` : ""}
 
@@ -153,7 +167,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
       <div style="width:28%; display:flex; flex-direction:column; align-items:center;">
         <div style="width:64px; height:64px; border:1px solid #cbd5e1; padding:2px; background:#fff;">
-          ${generateQrCodeSvg(payload.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`, { size: 60, margin: 1, title: `QR-код рецепта № ${recNum}` })}
+          ${generateQrCodeSvg(String(p.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`), { size: 60, margin: 1, title: `QR-код рецепта № ${recNum}` })}
         </div>
         <div style="font-size:5.5pt; color:#64748b; margin-top:2px; text-align:center;">QR для аптеки / ЕГИСЗ</div>
       </div>
@@ -172,7 +186,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
     </div>
 
-    ${renderUkepDigitalSignatureBlock(payload.ukepSignature)}
+    ${renderUkepDigitalSignatureBlock(p.ukepSignature as UkepDigitalSignaturePayload | undefined)}
   </div>
 </div>
 </body>
@@ -180,23 +194,25 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 }
 
 /** 8. Рендерер Рецептурного бланка строгой отчетности № 148-1/у-88 (ПКУ) */
-export function renderForm148_1u88Html(payload: Form148_1u88Payload | any): string {
-	const clinicName = payload.clinicLegalName || payload.organization?.fullName || "Стоматологическая клиника";
-	const clinicAddress = payload.clinicAddress || payload.organization?.address || "—";
-	const clinicPhone = payload.clinicPhone || payload.organization?.phone || "—";
-	const clinicOgrn = payload.clinicOgrn || payload.organization?.ogrn || "—";
-	const clinicInn = payload.clinicInn || payload.organization?.inn || "—";
-	const medLic = payload.medicalLicenseNumber ? `Лицензия: № ${escapeHtml(payload.medicalLicenseNumber)}` : "";
-	const recNum = payload.prescriptionSeriesNumber || "—";
-	const recDate = payload.prescriptionDate || new Date().toISOString().slice(0, 10);
-	const patientName = payload.patientFullName || payload.patient?.fullName || "—";
-	const patientBirth = payload.patientBirthDate || payload.patient?.birthDate || "—";
-	const patientAddress = payload.patientAddress || payload.patient?.address || "—";
-	const cardNum = payload.medicalCardNumber || payload.patient?.medicalCardNumber || "—";
-	const doctorName = payload.doctorFullName || "Врач-стоматолог";
-	const doctorSpecialty = payload.doctorSpecialty || "Врач-стоматолог";
-	const headOfDept = payload.headOfDepartmentFullName || "—";
-	const item = payload.items?.[0] || {
+export function renderForm148_1u88Html(payload: Form148_1u88Payload | Record<string, unknown>): string {
+	const p = payload as Record<string, unknown>;
+	const clinicName = (p.clinicLegalName || (p.organization as { fullName?: string })?.fullName || "Стоматологическая клиника") as string;
+	const clinicAddress = (p.clinicAddress || (p.organization as { address?: string })?.address || "—") as string;
+	const clinicPhone = (p.clinicPhone || (p.organization as { phone?: string })?.phone || "—") as string;
+	const clinicOgrn = (p.clinicOgrn || (p.organization as { ogrn?: string })?.ogrn || "—") as string;
+	const clinicInn = (p.clinicInn || (p.organization as { inn?: string })?.inn || "—") as string;
+	const medLic = p.medicalLicenseNumber ? `Лицензия: № ${escapeHtml(String(p.medicalLicenseNumber))}` : "";
+	const recNum = String(p.prescriptionSeriesNumber || "—");
+	const recDate = String(p.prescriptionDate || new Date().toISOString().slice(0, 10));
+	const patientName = String(p.patientFullName || (p.patient as { fullName?: string })?.fullName || "—");
+	const patientBirth = String(p.patientBirthDate || (p.patient as { birthDate?: string })?.birthDate || "—");
+	const patientAddress = String(p.patientAddress || (p.patient as { address?: string })?.address || "—");
+	const cardNum = String(p.medicalCardNumber || (p.patient as { medicalCardNumber?: string })?.medicalCardNumber || "—");
+	const doctorName = String(p.doctorFullName || "Врач-стоматолог");
+	const doctorSpecialty = String(p.doctorSpecialty || "Врач-стоматолог");
+	const headOfDept = String(p.headOfDepartmentFullName || "—");
+	const rawItems = (p.items || []) as readonly PrescriptionItemPrintLike[];
+	const item: PrescriptionItemPrintLike = rawItems[0] || {
 		latinName: "Rp.: Tramadoli 50 mg",
 		tradeName: "Трамадол",
 		dispenseLatin: "D.t.d. N 10 in caps.",
@@ -273,7 +289,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     <div>Адрес проживания: <strong>${escapeHtml(patientAddress)}</strong></div>
     <div style="display:flex; justify-content:space-between;">
       <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
-      ${payload.diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(payload.diagnosisIcd10Code)}</strong></span>` : ""}
+      ${p.diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(String(p.diagnosisIcd10Code))}</strong></span>` : ""}
     </div>
     <div>Ф.И.О. лечащего врача: <strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(doctorSpecialty)})</div>
   </div>
@@ -301,7 +317,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
       <div style="width:20%; display:flex; flex-direction:column; align-items:center;">
         <div style="width:58px; height:58px; border:1px solid #cbd5e1; padding:2px; background:#fff;">
-          ${generateQrCodeSvg(payload.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&pku=1&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`, { size: 54, margin: 1, title: `QR-код ПКУ № ${recNum}` })}
+          ${generateQrCodeSvg(String(p.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&pku=1&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`), { size: 54, margin: 1, title: `QR-код ПКУ № ${recNum}` })}
         </div>
         <div style="font-size:5pt; color:#64748b; margin-top:1px; text-align:center;">QR ЕГИСЗ / ПКУ</div>
       </div>
@@ -318,7 +334,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
     </div>
 
-    ${renderUkepDigitalSignatureBlock(payload.ukepSignature)}
+    ${renderUkepDigitalSignatureBlock(p.ukepSignature as UkepDigitalSignaturePayload | undefined)}
   </div>
 </div>
 </body>
@@ -326,29 +342,30 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 }
 
 /** 9. Рендерер Льготного рецептурного бланка № 148-1/у-04(л) */
-export function renderForm148_1u04lHtml(payload: Form148_1u04lPayload | any): string {
-	const clinicName = payload.clinicLegalName || payload.organization?.fullName || "Стоматологическая клиника";
-	const clinicAddress = payload.clinicAddress || payload.organization?.address || "—";
-	const clinicPhone = payload.clinicPhone || payload.organization?.phone || "—";
-	const clinicOgrn = payload.clinicOgrn || payload.organization?.ogrn || "—";
-	const clinicInn = payload.clinicInn || payload.organization?.inn || "—";
-	const recNum = payload.prescriptionSeriesNumber || "—";
-	const recDate = payload.prescriptionDate || new Date().toISOString().slice(0, 10);
-	const patientName = payload.patientFullName || payload.patient?.fullName || "—";
-	const patientBirth = payload.patientBirthDate || payload.patient?.birthDate || "—";
-	const cardNum = payload.medicalCardNumber || payload.patient?.medicalCardNumber || "—";
-	const pref = payload.preferentialDetails || {};
-	const snils = pref.patientSnils || "—";
-	const oms = pref.patientOmsPolicy || "—";
-	const benefitCode = pref.preferentialBenefitCode || "081";
-	const benefitName = pref.preferentialBenefitNameRu || "Инвалиды I группы";
-	const discount = pref.preferentialDiscountPercent ?? 100;
+export function renderForm148_1u04lHtml(payload: Form148_1u04lPayload | Record<string, unknown>): string {
+	const p = payload as Record<string, unknown>;
+	const clinicName = (p.clinicLegalName || (p.organization as { fullName?: string })?.fullName || "Стоматологическая клиника") as string;
+	const clinicAddress = (p.clinicAddress || (p.organization as { address?: string })?.address || "—") as string;
+	const clinicPhone = (p.clinicPhone || (p.organization as { phone?: string })?.phone || "—") as string;
+	const clinicOgrn = (p.clinicOgrn || (p.organization as { ogrn?: string })?.ogrn || "—") as string;
+	const clinicInn = (p.clinicInn || (p.organization as { inn?: string })?.inn || "—") as string;
+	const recNum = String(p.prescriptionSeriesNumber || "—");
+	const recDate = String(p.prescriptionDate || new Date().toISOString().slice(0, 10));
+	const patientName = String(p.patientFullName || (p.patient as { fullName?: string })?.fullName || "—");
+	const patientBirth = String(p.patientBirthDate || (p.patient as { birthDate?: string })?.birthDate || "—");
+	const cardNum = String(p.medicalCardNumber || (p.patient as { medicalCardNumber?: string })?.medicalCardNumber || "—");
+	const pref = (p.preferentialDetails || {}) as Record<string, unknown>;
+	const snils = String(pref.patientSnils || "—");
+	const oms = String(pref.patientOmsPolicy || "—");
+	const benefitCode = String(pref.preferentialBenefitCode || "081");
+	const benefitName = String(pref.preferentialBenefitNameRu || "Инвалиды I группы");
+	const discount = typeof pref.preferentialDiscountPercent === "number" ? pref.preferentialDiscountPercent : 100;
 	const funding = pref.fundingSource === "regional" ? "Бюджет субъекта РФ" : "Федеральный бюджет";
-	const doctorName = payload.doctorFullName || "Врач-стоматолог";
-	const validity = String(payload.validityDays || "30");
-	const items: any[] = payload.items || [];
+	const doctorName = String(p.doctorFullName || "Врач-стоматолог");
+	const validity = String(p.validityDays || "30");
+	const items: readonly PrescriptionItemPrintLike[] = (p.items || []) as readonly PrescriptionItemPrintLike[];
 
-	const itemsHtml = items.map((item, idx) => `
+	const itemsHtml = items.map((item: PrescriptionItemPrintLike, idx: number) => `
     <div style="margin-bottom:8px; font-family:'Times New Roman', serif; font-size:9.5pt; line-height:1.3;">
       <div style="font-weight:bold; font-style:italic;">${idx + 1}. ${escapeHtml(item.latinName || item.latinRp || "Rp.:")}</div>
       <div style="margin-left:20px; font-style:italic;">${escapeHtml(item.dispenseLatin || "D.t.d.")}</div>
@@ -425,7 +442,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     <div>Ф.И.О. пациента: <strong>${escapeHtml(patientName)}</strong> (д.р. ${escapeHtml(patientBirth)})</div>
     <div style="display:flex; justify-content:space-between;">
       <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
-      ${payload.diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(payload.diagnosisIcd10Code)}</strong></span>` : ""}
+      ${p.diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(String(p.diagnosisIcd10Code))}</strong></span>` : ""}
     </div>
     <div>Лечащий врач: <strong>${escapeHtml(doctorName)}</strong></div>
   </div>
@@ -442,7 +459,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
         <span style="${validity === "30" ? "text-decoration:underline; font-weight:bold; color:#047857;" : "font-weight:bold;"}">30 дней</span> /
         <span style="${validity === "365" ? "text-decoration:underline; font-weight:bold;" : ""}">1 год</span>
       </div>
-      <div>${payload.isChronicSpecialCare ? `[X] По спец. назначению (${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})` : ""}</div>
+      <div>${p.isChronicSpecialCare ? `[X] По спец. назначению (${escapeHtml(String(p.chronicPeriodicity || "ежемесячно"))})` : ""}</div>
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;">
@@ -460,7 +477,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
     </div>
 
-    ${renderUkepDigitalSignatureBlock(payload.ukepSignature)}
+    ${renderUkepDigitalSignatureBlock(p.ukepSignature as UkepDigitalSignaturePayload | undefined)}
   </div>
 </div>
 </body>
@@ -468,13 +485,14 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 }
 
 /** Универсальный маршрутизатор рендера рецепта */
-export function renderPrescriptionUniversalHtml(payload: any): string {
-	const form = payload?.formNumber || payload?.formType;
+export function renderPrescriptionUniversalHtml(payload: Form107_1uPayload | Form148_1u88Payload | Form148_1u04lPayload | Record<string, unknown>): string {
+	const p = payload as Record<string, unknown>;
+	const form = p.formNumber || p.formType;
 	if (form === "148-1/у-88" || form === "148-1u-88" || form === "148-1u") {
-		return renderForm148_1u88Html(payload);
+		return renderForm148_1u88Html(p);
 	}
 	if (form === "148-1/у-04(л)" || form === "148-1u-04l" || form === "148-1u-preferential") {
-		return renderForm148_1u04lHtml(payload);
+		return renderForm148_1u04lHtml(p);
 	}
-	return renderForm107_1uHtml(payload);
+	return renderForm107_1uHtml(p);
 }

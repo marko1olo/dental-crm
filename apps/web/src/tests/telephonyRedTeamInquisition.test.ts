@@ -256,17 +256,20 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 
 	// ── 4. AUDIO PLAYER LIFECYCLE & WAVEFORM MEMORY SAFETY ───────────────────
 	describe("4. Audio Player Lifecycle & Memory Safety", () => {
-		it("generateWaveformBars produces bounded, non-empty amplitudes", () => {
+		it("generateWaveformBars produces bounded, non-empty amplitudes and realistic variance", () => {
 			const bars1 = generateWaveformBars("rec-test-call-1", 44);
 			assert.strictEqual(bars1.length, 44);
 			bars1.forEach((val) => {
-				assert.ok(val >= 0.1);
-				assert.ok(val <= 1.0);
+				assert.ok(val >= 0.1 && val <= 1.0, `Amplitude ${val} out of bounds`);
 			});
 
 			// Deterministic for same seed
 			const bars2 = generateWaveformBars("rec-test-call-1", 44);
 			assert.deepStrictEqual(bars1, bars2);
+
+			// Not a flat uniform fence: amplitude must exhibit realistic speech modulations
+			const uniqueValues = new Set(bars1);
+			assert.ok(uniqueValues.size >= 10, "Waveform bars must not be a flat fence, must contain realistic variance");
 		});
 
 		it("URL.revokeObjectURL is invoked when blob URLs are cleaned up", () => {

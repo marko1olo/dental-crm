@@ -4,7 +4,7 @@
  * DENTE Dental CRM — Canonical 54-FZ (FFD 1.2) Fiscal Validation SSOT Facade.
  *
  * Consolidates:
- * 1. Line items & marking validation (Order 804n, Chestny ZNAK, Decree 659)
+ * 1. Line items & marking validation (Order 804n, Chestny ZNAK, Art. 709 GK RF)
  * 2. Receipt totals & tender parity assertions (Tag 1031, 1081, 1215, 1216, 1217)
  * 3. Canonical tender breakdown verification using CanonicalTenderType SSOT
  * 4. FTS rules, FPD calculation & non-blocking cashier validation (Mandate 8e)

@@ -10,3 +10,4 @@
 export * from "./dmsFranchiseEngine.js";
 export * from "./dmsGuaranteeLetters.js";
 export * from "./dmsRegistryExport.js";
+export * from "./dmsPresetsAndCatalogs.js";

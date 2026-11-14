@@ -184,13 +184,12 @@ export async function createGeneratedDocumentInDb(
 	input: {
 		patientId: string;
 		visitId?: string | null | undefined;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		kind: any;
+		kind: GeneratedDocument["kind"];
 		title?: string | undefined;
 		totalAmountRub?: number | null | undefined;
 		taxYear?: number | null | undefined;
 		taxPayerInn?: string | null | undefined;
-		payload?: any | null | undefined;
+		payload?: Record<string, unknown> | null | undefined;
 		signatureSvg?: string | null | undefined;
 	},
 ): Promise<GeneratedDocument> {
@@ -551,8 +550,7 @@ export async function storeTaxXmlSnapshotInDb(
 	documentId: string,
 	snapshot: Omit<TaxXmlSnapshot, "createdAt" | "sha256"> &
 		Partial<Pick<TaxXmlSnapshot, "createdAt" | "sha256">>,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-): Promise<any> {
+): Promise<GeneratedDocument | null> {
 	if (useInMemory()) {
 		const inMemoryDocument = inMemoryDocuments.find(
 			(document) => document.organizationId === organizationId && document.id === documentId,
@@ -588,7 +586,7 @@ export async function storeTaxXmlSnapshotInDb(
 			),
 		)
 		.returning();
-	return doc;
+	return doc ? mapDocument(doc) : null;
 }
 
 export async function getDocumentRenderContextFromDb(

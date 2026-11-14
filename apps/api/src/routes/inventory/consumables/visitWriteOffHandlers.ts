@@ -9,6 +9,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
+import { getRequestIdentity } from "../../../security/identity.js";
 import { TreatmentConsumableDeductionService } from "../../../services/treatmentConsumableDeductionService.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
 import {
@@ -100,7 +101,7 @@ export async function registerVisitWriteOffHandlers(
 						null,
 					...(parsedBody.data.userId !== undefined
 						? { userId: parsedBody.data.userId }
-						: { userId: (request.user as any)?.id ?? null }),
+						: { userId: getRequestIdentity(request).userId }),
 					...(parsedBody.data.transactionType !== undefined
 						? { transactionType: parsedBody.data.transactionType }
 						: {}),
@@ -195,7 +196,7 @@ export async function registerVisitWriteOffHandlers(
 						: {}),
 					...(parsedBody.data.userId !== undefined
 						? { userId: parsedBody.data.userId }
-						: { userId: (request.user as any)?.id ?? null }),
+						: { userId: getRequestIdentity(request).userId }),
 					...(parsedBody.data.transactionType !== undefined
 						? { transactionType: parsedBody.data.transactionType }
 						: {}),
@@ -329,7 +330,7 @@ export async function registerVisitWriteOffHandlers(
 					organizationId,
 					items: parsedBody.data.items,
 					visitId: parsedBody.data.visitId,
-					userId: parsedBody.data.userId ?? (request.user as any)?.id ?? null,
+					userId: parsedBody.data.userId ?? getRequestIdentity(request).userId,
 					notes: parsedBody.data.notes,
 					allowOverdraft: true,
 				});
@@ -384,7 +385,7 @@ export async function registerVisitWriteOffHandlers(
 				carpulesCount: body.carpulesCount,
 				drugName: body.drugName,
 				visitId: body.visitId ?? null,
-				userId: body.userId ?? (request.user as any)?.id ?? null,
+				userId: body.userId ?? getRequestIdentity(request).userId,
 				notes: body.notes ?? null,
 			});
 		});
@@ -429,7 +430,7 @@ export async function registerVisitWriteOffHandlers(
 				organizationId,
 				visitType: body.visitType || "therapy",
 				visitId: body.visitId ?? null,
-				userId: body.userId ?? (request.user as any)?.id ?? null,
+				userId: body.userId ?? getRequestIdentity(request).userId,
 				notes: body.notes ?? null,
 			});
 		});
@@ -464,7 +465,7 @@ export async function registerVisitWriteOffHandlers(
 			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
 				organizationId,
 				visitId: body.visitId ?? null,
-				userId: body.userId ?? (request.user as any)?.id ?? null,
+				userId: body.userId ?? getRequestIdentity(request).userId,
 				notes: body.notes ?? null,
 			});
 		});

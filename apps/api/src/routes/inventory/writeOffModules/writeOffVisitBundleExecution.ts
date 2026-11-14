@@ -3,7 +3,11 @@
  * Реализует 1-клик списание у кресла и СанПиН 3.3686-21.
  */
 
-import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
+import {
+	TreatmentConsumablesService,
+	type QuickWriteoffVisitBundleType,
+} from "../../../services/treatmentConsumablesService.js";
+import type { UnifiedStockDeductionResult } from "../../../services/treatmentConsumables/unifiedStockDeductionTypes.js";
 import type { DatabaseTransaction } from "./writeOffTypes.js";
 
 export { handleDeductVisitRequest } from "./writeOffAuditTrail.js";
@@ -20,7 +24,7 @@ export interface QuickPackageWriteOffParams {
 export async function executeQuickPackageWriteOff(
 	tx: DatabaseTransaction,
 	params: QuickPackageWriteOffParams,
-): Promise<any> {
+): Promise<UnifiedStockDeductionResult> {
 	const { organizationId, packageId = "anesthesia", quantityMultiplier = 1, effectiveUserId, visitId = null, notes = null } = params;
 	const multiplier = Math.max(1, quantityMultiplier);
 
@@ -35,14 +39,21 @@ export async function executeQuickPackageWriteOff(
 		});
 	}
 	if (packageId === "surgery" || packageId === "implant" || packageId === "sinus_gbr" || packageId === "implant_gbr") {
-		const vType = packageId === "implant_gbr" ? "sinus_gbr" : (packageId as any);
+		const vType: QuickWriteoffVisitBundleType = packageId === "implant_gbr" ? "sinus_gbr" : packageId;
 		return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 			organizationId, visitType: vType, userId: effectiveUserId, visitId, notes: notes ?? `Списание хирургического пакета (${packageId}) x${multiplier}`,
 		});
 	}
 	if (packageId.startsWith("orthopedics_")) {
+		const vType: QuickWriteoffVisitBundleType =
+			packageId === "orthopedics_prep" ||
+			packageId === "orthopedics_impression" ||
+			packageId === "orthopedics_temporary" ||
+			packageId === "orthopedics_cementation"
+				? packageId
+				: "orthopedics_prep";
 		return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-			organizationId, visitType: packageId as any, userId: effectiveUserId, visitId, notes: notes ?? `Списание ортопедического пакета (${packageId}) x${multiplier}`,
+			organizationId, visitType: vType, userId: effectiveUserId, visitId, notes: notes ?? `Списание ортопедического пакета (${packageId}) x${multiplier}`,
 		});
 	}
 	return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {

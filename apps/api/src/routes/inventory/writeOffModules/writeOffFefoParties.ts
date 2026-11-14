@@ -13,7 +13,11 @@ import { inventoryDeductBatchBodySchema, type inventoryDeductItemSchema } from "
 import { executeFefoBatchDeduction } from "./writeOffFefoExecution.js";
 
 export async function handleDeductRequest(organizationId: string, rawBody: unknown, request: FastifyRequest, reply: FastifyReply) {
-	const rawIdemKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"] ?? (rawBody && typeof rawBody === "object" ? (rawBody as any).idempotencyKey : null);
+	const bodyIdemKey =
+		rawBody && typeof rawBody === "object" && "idempotencyKey" in rawBody
+			? (rawBody as { idempotencyKey?: unknown }).idempotencyKey
+			: null;
+	const rawIdemKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"] ?? bodyIdemKey;
 	const idemKeyStr = Array.isArray(rawIdemKey) ? rawIdemKey[0] : rawIdemKey;
 	if (idemKeyStr && typeof idemKeyStr === "string" && idemKeyStr.trim() && !isValidUuid(idemKeyStr.trim())) {
 		return reply.status(400).send({ error: "InvalidIdempotencyKey", message: "Idempotency-Key должен содержать валидный UUID" });
@@ -59,7 +63,7 @@ export async function handleDeductRequest(organizationId: string, rawBody: unkno
 			warning: hasOverdraft ? "Зафиксирован технический перерасход (мягкий овердрафт). Клинический процесс не блокируется." : undefined,
 			message: `Списано позиций по FEFO: ${results.length}`,
 		});
-	} catch (error: any) {
+	} catch (error: unknown) {
 		// Мандат 8n: Soft Negative Stock при нехватке остатка у кресла не блокирует врача и не возвращает 422
 		request.log.warn(error, "Inventory FEFO overdraft notice");
 		return reply.status(200).send({
@@ -75,10 +79,10 @@ export async function handleDeductRequest(organizationId: string, rawBody: unkno
 
 export async function registerFefoPartiesRoutes(server: FastifyInstance): Promise<void> {
 	const registerDeduct = (path: string) => {
-		server.post<{ Params?: { organizationId?: string } }>(path, async (request, reply) => {
+		server.post<{ Params?: { organizationId?: string }; Body?: { organizationId?: string } }>(path, async (request, reply) => {
 			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "inventory deduct");
 			if (!resolvedOrgId) return;
-			const targetOrgId = request.params?.organizationId || (request.body as any)?.organizationId || resolvedOrgId;
+			const targetOrgId = request.params?.organizationId || request.body?.organizationId || resolvedOrgId;
 			if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
 			return handleDeductRequest(targetOrgId, request.body, request, reply);
 		});

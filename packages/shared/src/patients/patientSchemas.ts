@@ -8,7 +8,7 @@
  * Compliant with:
  * - Order of Minzdrav RF 804n & Form 043/u
  * - Federal Law 152-FZ & 323-FZ (Medical Confidentiality & Payload Stripping)
- * - Decree 659 (Anonymous Patient Regime, Rules of 2026)
+ * - Anonymous Patient Protocol (Rules of 2026)
  * - Exact Kopecks Money Arithmetic (moneyRubSchema)
  */
 
@@ -151,7 +151,6 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	 */
 	isAnonymous: z.boolean().nullable().optional(),
 	anonymousCode: z.string().trim().max(80).nullable().optional(),
-	decree659Compliance: z.record(z.unknown()).nullable().optional(),
 	consentSignatures: z.record(z.unknown()).nullable().optional(),
 	clinicalSafetyProfile: z.record(z.unknown()).nullable().optional(),
 	gender: z.enum(["male", "female", "other"]).nullable().optional().default(null),

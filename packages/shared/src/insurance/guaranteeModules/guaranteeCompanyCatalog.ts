@@ -49,6 +49,12 @@ export const DMS_INSURANCE_COMPANIES_CATALOG: readonly DmsInsuranceCompany[] = [
 		websiteUrl: "https://www.kaplife.ru", defaultFranchiseRates: [0, 10, 20],
 		descriptionRu: "Специализированный страховщик жизни и здоровья со стоматологическими программами.",
 	},
+	{
+		id: "ugoria", shortNameRu: "АО «ГСК «Югория»", fullNameRu: "Акционерное общество «Группа страховых компаний «Югория»",
+		inn: "8601023568", ogrn: "1028600510696", kpp: "860101001", phone: "8 800 100-82-00", email: "dms@ugsk.ru",
+		websiteUrl: "https://www.ugsk.ru", defaultFranchiseRates: [0, 10, 20],
+		descriptionRu: "Федеральная государственная страховая компания с программами ДМС в регионах РФ.",
+	},
 ];
 
 export function getDmsInsuranceCompanyById(id: string): DmsInsuranceCompany | undefined {

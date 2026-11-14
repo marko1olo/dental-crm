@@ -73,7 +73,7 @@ export const createFiscalReceiptPayloadSchema = z
 		creditKopecks: z.number().int().min(0).default(0),
 		totalKopecks: z.number().int().min(0, "Общая сумма чека не может быть отрицательной"),
 		taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
-		/** Decree 659: Upsell Consent Shield attributes (Rules of 2026) */
+		/** Art. 709 GK RF: Upsell Consent Shield attributes */
 		treatmentPlanId: z.string().uuid().optional().nullable(),
 		addendumNumber: z
 			.preprocess(

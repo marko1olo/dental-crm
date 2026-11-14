@@ -11,10 +11,10 @@ import {
 	DEFAULT_CLINIC_PROFILE,
 	formatKopecksToRub,
 	formatRubInt,
-	generateDmsRegistryXml,
-	generateDmsRegistryCsv,
+	generateDmsLegacyRegistryXml as generateDmsRegistryXml,
+	generateDmsLegacyRegistryCsv as generateDmsRegistryCsv,
 	generateDmsA4PrintableHtml,
-} from "./dmsClaimRegistryExport.js";
+} from "@dental/shared";
 
 describe("DmsClaimRegistryExport — Statutory Insurance Contracts Catalog", () => {
 	it("1.1 Contains top Russian insurance companies with contract numbers and franchise rates", () => {

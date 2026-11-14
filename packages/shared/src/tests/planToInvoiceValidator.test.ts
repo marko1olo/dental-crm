@@ -254,7 +254,7 @@ describe("planToInvoiceValidator (Feature #41)", () => {
 		assert.equal(report.adminOverrideInfo.staffName, "Главный врач Сидоров В. П.");
 	});
 
-	it("should enforce 10% default inflation threshold per Decree 659 and art. 709 GK RF", () => {
+	it("should enforce 10% default inflation threshold per art. 709 GK RF", () => {
 		const items: PlanItemForValidation[] = [
 			{
 				itemId: "item-12-percent",

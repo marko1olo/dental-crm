@@ -663,9 +663,8 @@ export async function updateClinicProfileInDb(
 	input: UpdateClinicProfileInput,
 ) {
 	if (useInMemory()) return updateClinicProfileInMemory(input);
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const updateData: any = { updatedAt: new Date() };
-	if (input.legalName !== undefined) updateData.name = input.legalName;
+	const updateData: Partial<typeof schema.organizations.$inferInsert> = { updatedAt: new Date() };
+	if (input.legalName !== undefined && input.legalName !== null) updateData.name = input.legalName;
 	if (input.inn !== undefined) updateData.inn = input.inn;
 	if (input.kpp !== undefined) updateData.kpp = input.kpp;
 	if (input.ogrn !== undefined) updateData.ogrn = input.ogrn;
@@ -718,8 +717,7 @@ export async function updateClinicProfileInDb(
 		.set(updateData)
 		.where(eq(schema.organizations.id, organizationId));
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const clinicUpdateData: any = {};
+	const clinicUpdateData: Partial<typeof schema.clinics.$inferInsert> = {};
 	if (input.clinicName !== undefined) clinicUpdateData.name = input.clinicName;
 	if (input.address !== undefined) clinicUpdateData.address = input.address;
 	if (input.phone !== undefined) clinicUpdateData.phone = input.phone;

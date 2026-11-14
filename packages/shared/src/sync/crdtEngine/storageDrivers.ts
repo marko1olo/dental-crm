@@ -131,7 +131,7 @@ export class MemoryCrdtStorageDriver implements CrdtStorageDriver {
 export class IndexedDbCrdtStorageDriver implements CrdtStorageDriver {
 	public readonly name = "indexeddb";
 	private readonly fallback = new MemoryCrdtStorageDriver();
-	private dbInstance: unknown = null;
+	private dbInstance: IDBDatabase | null = null;
 	private readonly dbName: string;
 	private readonly dbVersion: number;
 
@@ -141,19 +141,20 @@ export class IndexedDbCrdtStorageDriver implements CrdtStorageDriver {
 	}
 
 	public isAvailable(): boolean {
-		const g = globalThis as { indexedDB?: unknown };
+		const g = globalThis as unknown as { indexedDB?: IDBFactory };
 		return Boolean(g && g.indexedDB);
 	}
 
-	private async getDb(): Promise<any> {
+	private async getDb(): Promise<IDBDatabase> {
 		if (this.dbInstance) return this.dbInstance;
-		const g = globalThis as { indexedDB?: any };
-		if (!g.indexedDB) {
+		const g = globalThis as unknown as { indexedDB?: IDBFactory };
+		const idb = g.indexedDB;
+		if (!idb) {
 			throw new Error("IndexedDB is not available");
 		}
 
-		return new Promise<any>((resolve, reject) => {
-			const req = g.indexedDB.open(this.dbName, this.dbVersion);
+		return new Promise<IDBDatabase>((resolve, reject) => {
+			const req = idb.open(this.dbName, this.dbVersion);
 			req.onupgradeneeded = () => {
 				const db = req.result;
 				if (!db.objectStoreNames.contains("crdt_entities")) {

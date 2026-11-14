@@ -452,7 +452,7 @@ export function validatePlanToInvoice(
 			if (effectiveUnitPrice > planUnitPrice) {
 				patientSurcharge = multiplyKopecks((effectiveUnitPrice - planUnitPrice) as Kopecks, qty);
 				if (isPriceLocked) {
-					// Повышение твердой сметы договора (ст. 709 ГК РФ, ст. 33 ЗоЗПП, ПП РФ №659):
+					// Повышение твердой сметы договора (ст. 709 ГК РФ, ст. 33 ЗоЗПП):
 					// Твердая смета не может изменяться клиникой в одностороннем порядке.
 					// Требуется обязательная авторизация руководства и оформление Дополнительного соглашения.
 					requiresAdminOverride = true;

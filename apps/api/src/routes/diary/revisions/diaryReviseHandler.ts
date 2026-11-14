@@ -51,6 +51,7 @@ export async function handleDiaryRevisePost(req: FastifyRequest, reply: FastifyR
 	}
 
 	const body: ReviseInputData = {
+		complaint: typeof parsedReviseBody.data.complaint === "string" ? parsedReviseBody.data.complaint : undefined,
 		anamnesis: typeof parsedReviseBody.data.anamnesis === "string" ? parsedReviseBody.data.anamnesis : undefined,
 		statusLocalis: typeof parsedReviseBody.data.statusLocalis === "string" ? parsedReviseBody.data.statusLocalis : undefined,
 		diagnosisIcd10: typeof parsedReviseBody.data.diagnosisIcd10 === "string" ? parsedReviseBody.data.diagnosisIcd10 : undefined,

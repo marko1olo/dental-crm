@@ -1,9 +1,13 @@
-import type { CreateStaffMemberInput, StaffMember } from "@dental/shared";
+import type {
+	CreateStaffMemberInput,
+	StaffMember,
+	UpdateStaffWorkingHoursInput,
+} from "@dental/shared";
 import {
 	checkStaffDuplicates,
 	validateStaffSnils,
 } from "@dental/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import {
 	createStaffMember as createStaffMemberInMemory,
 	deactivateStaffMember as deactivateStaffMemberInMemory,
@@ -78,16 +82,14 @@ export async function createStaffMemberInDb(
 		id: inserted.id,
 		organizationId: inserted.organizationId,
 		fullName: inserted.fullName,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		role: inserted.role as any,
+		role: inserted.role as StaffMember["role"],
 		specialties: ["universal"],
 		phone: inserted.phone,
 		email: inserted.email,
 		active: inserted.isActive,
 		...staffAuthorityFlags(inserted.role),
 		color: "#000000",
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		workingHours: inserted.workingHours as any,
+		workingHours: (inserted.workingHours as StaffMember["workingHours"]) ?? undefined,
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	} as StaffMember;
@@ -96,14 +98,16 @@ export async function createStaffMemberInDb(
 export async function updateStaffWorkingHoursInDb(
 	organizationId: string,
 	staffId: string,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	workingHours: any,
+	input: UpdateStaffWorkingHoursInput | StaffMember["workingHours"] | null | undefined,
 ) {
+	if (!input) return;
+	const workingHoursInput: UpdateStaffWorkingHoursInput =
+		Array.isArray(input) ? { workingHours: input } : input;
 	if (useInMemory())
-		return updateStaffWorkingHoursInMemory(staffId, workingHours);
+		return updateStaffWorkingHoursInMemory(staffId, workingHoursInput);
 	await db
 		.update(schema.users)
-		.set({ workingHours })
+		.set({ workingHours: workingHoursInput.workingHours })
 		.where(
 			and(
 				eq(schema.users.id, staffId),
@@ -210,8 +214,7 @@ export async function updateStaffCredentialsInDb(
 ) {
 	if (useInMemory()) return;
 
-	// biome-ignore lint/suspicious/noExplicitAny: DB update payload
-	const userUpdates: any = { ...updates };
+	const userUpdates: Partial<typeof schema.users.$inferInsert> & { passwordEntropyBits?: number } = { ...updates };
 	delete userUpdates.passwordEntropyBits;
 
 	if (updates.passwordEntropyBits !== undefined) {
@@ -269,7 +272,9 @@ export async function listDoctorCommissionRatesInDb(
 	const rows = await db
 		.select({
 			userId: schema.doctorCommissions.userId,
+			doctorId: schema.doctorCommissions.doctorId,
 			commissionPct: schema.doctorCommissions.commissionPct,
+			commissionPercent: schema.doctorCommissions.commissionPercent,
 			materialCostDeductionPct:
 				schema.doctorCommissions.materialCostDeductionPct,
 			labCostDeductionPct: schema.doctorCommissions.labCostDeductionPct,
@@ -289,12 +294,12 @@ export async function listDoctorCommissionRatesInDb(
 
 	const rates: DoctorCommissionRate[] = [];
 	for (const row of rows) {
-		// user_id в схеме допускает NULL, а платить по строке без врача нельзя:
-		// такая ставка не принадлежит никому и в расчёт выплат тоже не попадает.
-		if (!row.userId) continue;
+		// user_id / doctor_id fallback для абсолютной надежности
+		const resolvedUserId = row.userId || row.doctorId;
+		if (!resolvedUserId) continue;
 		rates.push({
-			userId: row.userId,
-			commissionPct: row.commissionPct,
+			userId: resolvedUserId,
+			commissionPct: row.commissionPct || row.commissionPercent || "25.00",
 			materialCostDeductionPct: row.materialCostDeductionPct,
 			labCostDeductionPct: row.labCostDeductionPct ?? "0",
 			effectiveFrom: row.effectiveFrom.toISOString(),
@@ -364,7 +369,10 @@ export async function setDoctorCommissionRateInDb(
 			.where(
 				and(
 					eq(schema.doctorCommissions.organizationId, organizationId),
-					eq(schema.doctorCommissions.userId, staffId),
+					or(
+						eq(schema.doctorCommissions.userId, staffId),
+						eq(schema.doctorCommissions.doctorId, staffId),
+					),
 					eq(schema.doctorCommissions.isActive, true),
 				),
 			)
@@ -380,7 +388,10 @@ export async function setDoctorCommissionRateInDb(
 			.where(
 				and(
 					eq(schema.doctorCommissions.organizationId, organizationId),
-					eq(schema.doctorCommissions.userId, staffId),
+					or(
+						eq(schema.doctorCommissions.userId, staffId),
+						eq(schema.doctorCommissions.doctorId, staffId),
+					),
 					eq(schema.doctorCommissions.isActive, true),
 				),
 			);
@@ -400,6 +411,7 @@ export async function setDoctorCommissionRateInDb(
 			.values({
 				organizationId,
 				userId: staffId,
+				doctorId: staffId,
 				specialty: "universal",
 				serviceCategory: "other",
 				commissionPct: normalizedPct,

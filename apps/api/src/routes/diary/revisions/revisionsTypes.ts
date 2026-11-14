@@ -7,6 +7,7 @@ export type ReviseTxResult =
 	| { kind: "ok"; hash: string; revisionCount: number };
 
 export interface ReviseInputData {
+	complaint?: string | undefined;
 	anamnesis?: string | undefined;
 	statusLocalis?: string | undefined;
 	diagnosisIcd10?: string | undefined;

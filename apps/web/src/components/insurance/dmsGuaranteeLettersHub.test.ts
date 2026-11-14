@@ -12,7 +12,7 @@ import {
 	FDI_ADULT_TEETH_UPPER,
 	FDI_ADULT_TEETH_LOWER,
 	EXPRESS_GUARANTEE_LETTER_PRESETS,
-} from "./dmsInsurancePresets.js";
+} from "@dental/shared";
 
 const TEST_PATIENT_GUARANTEE_LETTERS: readonly PatientGuaranteeLetter[] = [
 	{

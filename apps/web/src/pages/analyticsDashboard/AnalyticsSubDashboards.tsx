@@ -1,9 +1,9 @@
 import { lazy, Suspense } from "react";
+import { Sparkles } from "lucide-react";
 import { CuratorDashboard } from "../../components/analytics/CuratorDashboard";
 import { ExecutiveDashboard } from "../../components/analytics/ExecutiveDashboard";
 import { LostPatientsPanel } from "../../components/analytics/LostPatientsPanel";
 import { MarketingAttributionDashboard } from "../../components/analytics/MarketingAttributionDashboard";
-import { RecallListPanel } from "../../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../../components/schedule/FreedSlotsPanel";
 import type { AnalyticsSubDashboardsProps } from "./types";
 
@@ -100,7 +100,27 @@ export function AnalyticsSubDashboards({
 			{analyticsSection === "lost_patients" && (
 				<div className="space-y-6">
 					<LostPatientsPanel />
-					<RecallListPanel />
+					<div
+						className="p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+						data-testid="analytics-recalls-hub-cta"
+					>
+						<div className="space-y-1">
+							<h3 className="font-semibold text-base flex items-center gap-2">
+								<Sparkles className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+								Централизованный хаб профосмотров и реколлов
+							</h3>
+							<p className="text-xs sm:text-sm text-[var(--muted)]">
+								Единый клинический центр повторных вызовов, контроля имплантации и приглашений пациентов.
+							</p>
+						</div>
+						<button
+							type="button"
+							className="dente-btn-primary shrink-0"
+							onClick={() => window.dispatchEvent(new CustomEvent("dente:open-recalls"))}
+						>
+							Открыть хаб профосмотров
+						</button>
+					</div>
 				</div>
 			)}
 

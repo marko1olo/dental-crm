@@ -2,6 +2,8 @@
  * Constants and reference dictionaries for insurance and VHI/DMS routes
  */
 
+import { DMS_INSURANCE_COMPANIES_CATALOG } from "@dental/shared";
+
 /**
  * Название страховой компании — единственное обязательное поле договора ДМС.
  *
@@ -19,27 +21,24 @@ export const INSURANCE_COMPANY_NAME_REQUIRED =
 export const INSURANCE_CONTRACT_NOT_FOUND =
 	"Этот договор ДМС в вашей клинике не найден: возможно, его уже убрали из работы с другого рабочего места. Обновите список договоров — если договор нужен, добавьте его заново.";
 
-export const INSURER_DIRECTORY: Record<string, { name: string; inn: string }> = {
-	sogaz: { name: "АО «СОГАЗ»", inn: "7736035485" },
-	ingosstrakh: { name: "СПАО «Ингосстрах»", inn: "7705042179" },
-	reso: { name: "СПАО «РЕСО-Гарантия»", inn: "7710045520" },
-	reso_garantiya: { name: "СПАО «РЕСО-Гарантия»", inn: "7710045520" },
-	alfastrakh: { name: "АО «АльфаСтрахование»", inn: "7713056834" },
-	alfastrakhovanie: { name: "АО «АльфаСтрахование»", inn: "7713056834" },
-	vsk: { name: "САО «ВСК»", inn: "7710026574" },
-	soglasie: { name: "ООО «СК «Согласие»", inn: "7706070733" },
-	rosgosstrakh: { name: "ПАО СК «Росгосстрах»", inn: "7707067683" },
-	ugoria: { name: "АО «ГСК «Югория»", inn: "8601023568" },
-};
+/**
+ * Справочник страховых компаний ДМС (SSOT: DMS_INSURANCE_COMPANIES_CATALOG из @dental/shared)
+ */
+export const INSURER_DIRECTORY: Record<string, { name: string; inn: string }> = (() => {
+	const dir: Record<string, { name: string; inn: string }> = {};
+	for (const comp of DMS_INSURANCE_COMPANIES_CATALOG) {
+		dir[comp.id] = { name: comp.shortNameRu, inn: comp.inn };
+	}
+	// Historical short aliases for backward compatibility
+	if (dir.reso_garantiya) dir.reso = dir.reso_garantiya;
+	if (dir.alfastrakhovanie) dir.alfastrakh = dir.alfastrakhovanie;
+	return dir;
+})();
 
-export const INSURER_NAMES: Record<string, string> = {
-	sogaz: "АО «СОГАЗ»",
-	ingosstrakh: "СПАО «Ингосстрах»",
-	reso: "СПАО «РЕСО-Гарантия»",
-	reso_garantiya: "СПАО «РЕСО-Гарантия»",
-	alfastrakh: "АО «АльфаСтрахование»",
-	alfastrakhovanie: "АО «АльфаСтрахование»",
-	vsk: "САО «ВСК»",
-	soglasie: "ООО «СК «Согласие»",
-	rosgosstrakh: "ПАО СК «Росгосстрах»",
-};
+export const INSURER_NAMES: Record<string, string> = (() => {
+	const names: Record<string, string> = {};
+	for (const [k, v] of Object.entries(INSURER_DIRECTORY)) {
+		names[k] = v.name;
+	}
+	return names;
+})();

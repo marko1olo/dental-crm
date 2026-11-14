@@ -24,8 +24,8 @@ export const RECALL_CYCLE_PRESETS: readonly RecallCyclePresetItem[] = [
 	{
 		id: "standard_prophylaxis",
 		testId: "preset-hygiene-6m",
-		title: "Пациенты на плановую профгигиену 6 мес.",
-		labelFull: "Профгигиена (6 мес.)",
+		title: "Профгигиена через 6 мес.",
+		labelFull: "Профгигиена через 6 мес.",
 		labelShort: "Профгигиена (6м)",
 		icon: ShieldCheck,
 		getCountKey: (c) => c?.standard_prophylaxis,
@@ -33,8 +33,8 @@ export const RECALL_CYCLE_PRESETS: readonly RecallCyclePresetItem[] = [
 	{
 		id: "implant_monitoring",
 		testId: "preset-implants-1y",
-		title: "Пациенты с имплантами на годовой рентген-контроль",
-		labelFull: "Импланты (1 год)",
+		title: "Контроль имплантации (1 год)",
+		labelFull: "Контроль имплантации (1 год)",
 		labelShort: "Импланты (1г)",
 		icon: Sparkles,
 		getCountKey: (c) => c?.implant_monitoring,

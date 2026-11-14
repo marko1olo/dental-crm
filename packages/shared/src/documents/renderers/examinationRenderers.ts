@@ -20,42 +20,42 @@ import {
 } from "../dentalFormulaRenderer.js";
 
 interface SoapDiaryLike {
-	readonly entryDate?: string | undefined;
-	readonly visitDate?: string | undefined;
-	readonly doctorFullName?: string | undefined;
-	readonly doctorSpecialty?: string | undefined;
-	readonly clinicalDiagnosisIcd10?: string | undefined;
-	readonly assessmentDiagnosisText?: string | undefined;
-	readonly diagnosisDetailed?: string | undefined;
-	readonly assessmentDiagnosis?: string | undefined;
-	readonly subjectiveComplaints?: string | undefined;
-	readonly subjectiveComplaint?: string | undefined;
-	readonly objectiveStatusLocalis?: string | undefined;
-	readonly objectiveStatus?: string | undefined;
-	readonly treatmentProtocol804n?: string | undefined;
-	readonly procedureProtocol?: string | undefined;
-	readonly planAndTreatment?: string | undefined;
-	readonly usedMaterials?: string | undefined;
-	readonly homeCareRecommendations?: string | undefined;
+	readonly entryDate?: string | null | undefined;
+	readonly visitDate?: string | null | undefined;
+	readonly doctorFullName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
+	readonly clinicalDiagnosisIcd10?: string | null | undefined;
+	readonly assessmentDiagnosisText?: string | null | undefined;
+	readonly diagnosisDetailed?: string | null | undefined;
+	readonly assessmentDiagnosis?: string | null | undefined;
+	readonly subjectiveComplaints?: string | null | undefined;
+	readonly subjectiveComplaint?: string | null | undefined;
+	readonly objectiveStatusLocalis?: string | null | undefined;
+	readonly objectiveStatus?: string | null | undefined;
+	readonly treatmentProtocol804n?: string | null | undefined;
+	readonly procedureProtocol?: string | null | undefined;
+	readonly planAndTreatment?: string | null | undefined;
+	readonly usedMaterials?: string | null | undefined;
+	readonly homeCareRecommendations?: string | null | undefined;
 	readonly [key: string]: unknown;
 }
 
 interface ExposureEntryLike {
-	readonly studyDate?: string | undefined;
-	readonly date?: string | undefined;
-	readonly studyType?: string | undefined;
-	readonly procedureName?: string | undefined;
-	readonly anatomicalArea?: string | undefined;
-	readonly toothNumber?: string | number | undefined;
-	readonly apparatusModel?: string | undefined;
-	readonly xrayApparatus?: string | undefined;
-	readonly tubeVoltageKv?: number | undefined;
-	readonly tubeCurrentMa?: number | undefined;
-	readonly exposureTimeSeconds?: number | undefined;
-	readonly effectiveDoseMsv?: number | undefined;
-	readonly effectiveDoseMicrosieverts?: number | undefined;
-	readonly radiologistFullName?: string | undefined;
-	readonly operatorName?: string | undefined;
+	readonly studyDate?: string | null | undefined;
+	readonly date?: string | null | undefined;
+	readonly studyType?: string | null | undefined;
+	readonly procedureName?: string | null | undefined;
+	readonly anatomicalArea?: string | null | undefined;
+	readonly toothNumber?: string | number | null | undefined;
+	readonly apparatusModel?: string | null | undefined;
+	readonly xrayApparatus?: string | null | undefined;
+	readonly tubeVoltageKv?: number | null | undefined;
+	readonly tubeCurrentMa?: number | null | undefined;
+	readonly exposureTimeSeconds?: number | null | undefined;
+	readonly effectiveDoseMsv?: number | null | undefined;
+	readonly effectiveDoseMicrosieverts?: number | null | undefined;
+	readonly radiologistFullName?: string | null | undefined;
+	readonly operatorName?: string | null | undefined;
 	readonly [key: string]: unknown;
 }
 
@@ -71,36 +71,40 @@ interface DmftStatsLike {
 }
 
 export interface Form043uRenderPayload {
-	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly ogrn?: string; readonly inn?: string; readonly medicalLicenseNumber?: string } | undefined;
-	readonly clinicLegalName?: string | undefined;
+	readonly organization?: { readonly fullName?: string | null; readonly address?: string | null; readonly ogrn?: string | null; readonly inn?: string | null; readonly medicalLicenseNumber?: string | null } | undefined;
+	readonly clinicLegalName?: string | null | undefined;
 	readonly clinicAddress?: string | null | undefined;
-	readonly clinicOgrn?: string | undefined;
-	readonly clinicInn?: string | undefined;
-	readonly clinicMedicalLicenseNumber?: string | undefined;
-	readonly medicalLicenseNumber?: string | undefined;
+	readonly clinicOgrn?: string | null | undefined;
+	readonly clinicInn?: string | null | undefined;
+	readonly clinicMedicalLicenseNumber?: string | null | undefined;
+	readonly clinicLicenseNumber?: string | null | undefined;
+	readonly clinicLicenseDate?: string | null | undefined;
+	readonly clinicLicenseIssuer?: string | null | undefined;
+	readonly medicalLicenseNumber?: string | null | undefined;
 	readonly patient?: {
-		readonly medicalCardNumber?: string | undefined;
-		readonly cardOpenedAt?: string | undefined;
-		readonly fullName?: string | undefined;
-		readonly birthDate?: string | undefined;
-		readonly gender?: string | undefined;
-		readonly phone?: string | undefined;
-		readonly address?: string | undefined;
-		readonly snils?: string | undefined;
-		readonly passport?: string | undefined;
+		readonly medicalCardNumber?: string | null | undefined;
+		readonly cardOpenedAt?: string | null | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly gender?: string | null | undefined;
+		readonly phone?: string | null | undefined;
+		readonly address?: string | null | undefined;
+		readonly snils?: string | null | undefined;
+		readonly passport?: string | null | undefined;
 	} | undefined;
-	readonly medicalCardNumber?: string | undefined;
-	readonly cardOpenedDate?: string | undefined;
-	readonly patientFullName?: string | undefined;
-	readonly patientBirthDate?: string | undefined;
-	readonly patientSex?: string | undefined;
-	readonly patientPhone?: string | undefined;
-	readonly patientAddressRegistration?: string | undefined;
-	readonly patientAddressResidence?: string | undefined;
-	readonly snils?: string | undefined;
-	readonly passportDetails?: string | undefined;
-	readonly attendingDoctorFullName?: string | undefined;
-	readonly attendingDoctorSpecialty?: string | undefined;
+	readonly medicalCardNumber?: string | null | undefined;
+	readonly cardOpenedDate?: string | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly patientSex?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
+	readonly patientAddressRegistration?: string | null | undefined;
+	readonly patientAddressResidence?: string | null | undefined;
+	readonly patientIdentityDocument?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly passportDetails?: string | null | undefined;
+	readonly attendingDoctorFullName?: string | null | undefined;
+	readonly attendingDoctorSpecialty?: string | null | undefined;
 	readonly anamnesisAndHealth?: {
 		readonly mainComplaints?: string | undefined;
 		readonly anamnesisMorbi?: string | undefined;
@@ -324,31 +328,33 @@ export function renderForm043uHtml(payload: Form043uRenderPayload): string {
 }
 
 export interface OrthodonticCardRenderPayload {
-	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly ogrn?: string; readonly inn?: string } | undefined;
-	readonly clinicLegalName?: string | undefined;
-	readonly clinic?: { readonly name?: string; readonly address?: string } | undefined;
+	readonly organization?: { readonly fullName?: string | null; readonly address?: string | null; readonly ogrn?: string | null; readonly inn?: string | null } | undefined;
+	readonly clinicLegalName?: string | null | undefined;
+	readonly clinic?: { readonly name?: string | null; readonly address?: string | null } | undefined;
 	readonly clinicAddress?: string | null | undefined;
-	readonly clinicOgrn?: string | undefined;
-	readonly clinicInn?: string | undefined;
+	readonly clinicOgrn?: string | null | undefined;
+	readonly clinicInn?: string | null | undefined;
+	readonly clinicLicenseNumber?: string | null | undefined;
 	readonly patient?: {
-		readonly medicalCardNumber?: string | undefined;
-		readonly cardOpenedAt?: string | undefined;
-		readonly fullName?: string | undefined;
-		readonly birthDate?: string | undefined;
-		readonly gender?: string | undefined;
-		readonly phone?: string | undefined;
-		readonly address?: string | undefined;
+		readonly medicalCardNumber?: string | null | undefined;
+		readonly cardOpenedAt?: string | null | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly gender?: string | null | undefined;
+		readonly phone?: string | null | undefined;
+		readonly address?: string | null | undefined;
 	} | undefined;
-	readonly medicalCardNumber?: string | undefined;
-	readonly cardOpenedDate?: string | undefined;
-	readonly patientFullName?: string | undefined;
-	readonly patientBirthDate?: string | undefined;
-	readonly patientSex?: string | undefined;
-	readonly patientPhone?: string | undefined;
-	readonly patientAddress?: string | undefined;
-	readonly treatingOrthodontist?: { readonly fullName?: string } | undefined;
-	readonly doctor?: { readonly fullName?: string } | undefined;
-	readonly orthodontistFullName?: string | undefined;
+	readonly medicalCardNumber?: string | null | undefined;
+	readonly cardOpenedDate?: string | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly patientSex?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
+	readonly patientAddress?: string | null | undefined;
+	readonly legalRepresentativeFullName?: string | null | undefined;
+	readonly treatingOrthodontist?: { readonly fullName?: string | null } | undefined;
+	readonly doctor?: { readonly fullName?: string | null } | undefined;
+	readonly orthodontistFullName?: string | null | undefined;
 	readonly treatmentPlan?: {
 		readonly applianceType?: string | undefined;
 		readonly applianceName?: string | undefined;
@@ -554,21 +560,22 @@ export function renderForm043_1uHtml(payload: OrthodonticCardRenderPayload): str
 }
 
 export interface RadiationDoseSheetRenderPayload {
-	readonly organization?: { readonly fullName?: string; readonly address?: string } | undefined;
-	readonly clinicLegalName?: string | undefined;
-	readonly clinic?: { readonly name?: string } | undefined;
+	readonly organization?: { readonly fullName?: string | null; readonly address?: string | null } | undefined;
+	readonly clinicLegalName?: string | null | undefined;
+	readonly clinic?: { readonly name?: string | null } | undefined;
 	readonly clinicAddress?: string | null | undefined;
-	readonly clinicLicenseNumber?: string | undefined;
+	readonly clinicOgrn?: string | null | undefined;
+	readonly clinicLicenseNumber?: string | null | undefined;
 	readonly patient?: {
-		readonly fullName?: string | undefined;
-		readonly birthDate?: string | undefined;
-		readonly gender?: string | undefined;
-		readonly medicalCardNumber?: string | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly gender?: string | null | undefined;
+		readonly medicalCardNumber?: string | null | undefined;
 	} | undefined;
-	readonly patientFullName?: string | undefined;
-	readonly patientBirthDate?: string | undefined;
-	readonly patientSex?: string | undefined;
-	readonly medicalCardNumber?: string | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly patientSex?: string | null | undefined;
+	readonly medicalCardNumber?: string | null | undefined;
 	readonly reportingYear?: number | string | undefined;
 	readonly year?: number | string | undefined;
 	readonly exposureEntries?: readonly ExposureEntryLike[] | undefined;
@@ -577,8 +584,8 @@ export interface RadiationDoseSheetRenderPayload {
 	readonly annualSummary?: { readonly totalDoseYearMsv?: number | undefined } | undefined;
 	readonly summaryAnnualDose?: { readonly totalDoseYearMsv?: number | undefined } | undefined;
 	readonly cumulativeDoseMsv?: number | undefined;
-	readonly responsibleOfficerFullName?: string | undefined;
-	readonly chiefSafetyOfficer?: string | undefined;
+	readonly responsibleOfficerFullName?: string | null | undefined;
+	readonly chiefSafetyOfficer?: string | null | undefined;
 	readonly [key: string]: unknown;
 }
 

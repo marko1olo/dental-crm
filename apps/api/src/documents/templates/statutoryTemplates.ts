@@ -29,12 +29,22 @@ import {
 } from "./baseRenderUtils.js";
 import { baseDocument } from "./baseDocument.js";
 
+function stripNullProperties<T extends object>(obj: T): { [K in keyof T]: Exclude<T[K], null> } {
+	const result = { ...obj } as Record<string, unknown>;
+	for (const key of Object.keys(result)) {
+		if (result[key] === null) {
+			delete result[key];
+		}
+	}
+	return result as { [K in keyof T]: Exclude<T[K], null> };
+}
+
 export function dentalMedicalCard043u(
 	document: GeneratedDocument,
 	patient: Patient,
 ): string {
 	if (document.payload?.fullForm043u) {
-		return renderForm043uHtml(document.payload.fullForm043u);
+		return renderForm043uHtml(stripNullProperties(document.payload.fullForm043u));
 	}
 	const payload = document.payload?.dentalMedicalCard043u;
 	const title = "Медицинская карта стоматологического больного (Форма 043/у)";
@@ -95,7 +105,7 @@ export function orthodonticMedicalCard043_1u(
 ): string {
 	const payload = document.payload?.orthodonticCard043_1u;
 	if (payload) {
-		return renderForm043_1uHtml(payload);
+		return renderForm043_1uHtml(stripNullProperties(payload));
 	}
 	return `<section><h2>Медицинская карта ортодонтического пациента (форма 043-1/у)</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные ортодонтической карты не заполнены.</p></section>`;
 }
@@ -122,7 +132,7 @@ export function radiationDoseSheet(
 ): string {
 	const payload = document.payload?.radiationDoseSheet;
 	if (payload) {
-		return renderRadiationDoseSheetHtml(payload);
+		return renderRadiationDoseSheetHtml(stripNullProperties(payload));
 	}
 	return `<section><h2>Лист учета дозовых нагрузок при рентгенологических исследованиях</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные лучевых нагрузок не заполнены.</p></section>`;
 }

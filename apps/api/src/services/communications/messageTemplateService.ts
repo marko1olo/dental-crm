@@ -47,7 +47,7 @@ export async function ensureDefaultMessageTemplatesSeeded(
 				channel: seed.channel,
 				intent: seed.intent,
 				templateText: seed.templateText,
-				variables: seed.variables as any,
+				variables: [...seed.variables],
 				isActive: true,
 			});
 			insertedCount++;
@@ -196,7 +196,7 @@ export async function createMessageTemplate(
 			channel: input.channel ?? "telegram",
 			intent: input.intent ?? "general",
 			templateText: input.templateText,
-			variables: extractedVariables as any,
+			variables: extractedVariables,
 			isActive: input.isActive ?? true,
 		})
 		.returning();
@@ -216,7 +216,7 @@ export async function updateMessageTemplate(
 	templateId: string,
 	input: UpdateMessageTemplateInput,
 ): Promise<MessageTemplate> {
-	const updateData: Record<string, any> = {};
+	const updateData: Partial<typeof schema.messageTemplateCatalogs.$inferInsert> = {};
 
 	if (input.title !== undefined) updateData.title = input.title.trim();
 	if (input.channel !== undefined) updateData.channel = input.channel;

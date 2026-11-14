@@ -29,15 +29,15 @@ import {
 	DMS_INSURANCE_COMPANIES_CATALOG,
 	type DmsGuaranteeLetter,
 	type DmsSplitCalculationItem,
+	type DmsBillableItem,
+	type DmsRegistryServiceRecord,
+	type PatientPaymentMethod,
 } from "@dental/shared";
 import {
 	DEFAULT_CLINIC_PROFILE,
 	exportRegistryToCsv,
 	formatCurrencyRub,
 	generateBilateralAcceptanceActHtml,
-	type DmsBillableItem,
-	type DmsRegistryServiceRecord,
-	type PatientPaymentMethod,
 } from "./dmsCatalogData.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";

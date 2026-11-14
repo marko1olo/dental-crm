@@ -39,7 +39,7 @@ export const fiscalReceiptItemSchema = z
 		toothFdiNumber: z.number().int().min(11).max(85).optional().nullable(),
 		/** Честный ЗНАК / МДЛП DataMatrix marking barcode (Тег 1162 / Тег 1163 / Тег 2000) */
 		markingCode: z.string().trim().max(200).optional().nullable(),
-		/** Decree 659: Upsell Consent Shield attributes (Rules of 2026) */
+		/** Art. 709 GK RF: Upsell Consent Shield attributes */
 		isUpsell: z.boolean().optional().default(false),
 		requiresAddendum: z.boolean().optional().default(false),
 		addendumId: z.string().uuid().optional().nullable(),

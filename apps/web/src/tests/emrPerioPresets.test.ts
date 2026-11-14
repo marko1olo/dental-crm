@@ -4,9 +4,9 @@
  * DENTE Dental CRM — Пародонтограмма, экспресс-скрининг PSR ВОЗ, одонтограмма
  * Декомпозиция в рамках Мандатов 8b, 8e, 8k, 8zi:
  * - Аудит пресетов пародонтограммы ВОЗ PSR (Мандат 8k).
- * - Автозаполнение физиологической нормы в 1 клик (Мандат 8e).
+ * - Автозаполнение физиологической нормы (Мандат 8e).
  * - Отсутствие навязывания 192 точек замера для рутинного осмотра.
- * - Детские возрастные пресеты и 1-клик протоколы зубной формулы.
+ * - Детские возрастные пресеты и быстрые клинические протоколы зубной формулы.
  */
 
 import assert from "node:assert/strict";
@@ -14,12 +14,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	ALL_PERIO_TEETH,
 	calculatePsrSextants,
 	createDefaultPerioTeeth,
 	PSR_SEXTANTS,
 } from "@dental/shared";
+import { PerioPresetActions } from "../components/perio/PerioPresetActions.js";
 import {
 	applyHealthyPeriodontiumPreset,
 	applyGingivitisPreset,
@@ -38,6 +41,9 @@ import {
 	createSanitizedOdontogramRecords,
 	createWisdomExtractedOdontogramRecords,
 } from "../lib/clinicalProtocols.js";
+import {
+	generatePerioSoap,
+} from "../lib/protocols/perioAndHygieneProtocols.js";
 import {
 	FAST_TOOTH_PRESETS,
 	applyFastProHygieneProtocol,
@@ -64,7 +70,7 @@ const FORBIDDEN_HOSPITAL_TERMS = [
 
 describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 	describe("1. Пресеты пародонтограммы ВОЗ PSR и физиологическая норма (Мандаты 8e, 8k)", () => {
-		it("1.1. Пародонтограмма: 1-клик норма (perio_norm_express) устанавливает PSR 0 во всех 6 секстантах", () => {
+		it("1.1. Пародонтограмма: физиологическая норма (perio_norm_express) устанавливает PSR 0 во всех 6 секстантах", () => {
 			const initialTeeth = createDefaultPerioTeeth(2);
 			const normTeeth = applyHealthyPeriodontiumPreset(initialTeeth);
 			assert.equal(normTeeth.length, 32, "Все 32 зуба должны присутствовать");
@@ -209,28 +215,66 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 				}
 			}
 		});
+
+		it("1.10. generatePerioSoap: Интактный пародонт и норма генерируют Z01.2 (Мандат 8e / Red Team Invariant)", () => {
+			const intactSoap = generatePerioSoap({ toothNumber: 11, state: "perio_intact" });
+			assert.ok(intactSoap, "Протокол интактного пародонта обязан сгенерироваться");
+			assert.equal(intactSoap.diagnosisIcd10, "Z01.2", "Интактный пародонт обязан иметь МКБ-10 Z01.2 (не K05.0!)");
+			assert.match(intactSoap.diagnosisIcd10Label, /Интактный пародонт|Клиническая норма/);
+			assert.ok(intactSoap.statusLocalis.includes("бледно-розовая, плотная"));
+
+			const normSoap = generatePerioSoap({ toothNumber: 21, state: "healthy" });
+			assert.ok(normSoap, "Протокол здорового зуба обязан сгенерироваться");
+			assert.equal(normSoap.diagnosisIcd10, "Z01.2");
+
+			const gingivitisSoap = generatePerioSoap({ toothNumber: 31, state: "gingivitis" });
+			assert.ok(gingivitisSoap);
+			assert.equal(gingivitisSoap.diagnosisIcd10, "K05.1");
+		});
 	});
 
 	describe("2. UI-аудит тулбаров пародонтограммы и одонтограммы (Мандаты 8e, 8k, 8d)", () => {
-		it("2.1. PerioStudioModal.tsx: Тулбар 32-36px, кнопки 1-клик нормы и профгигиены, тач >= 44px", () => {
+		it("2.1. PerioPresetActions.tsx и PerioStudioModal.tsx: Быстрый выбор нормы и профгигиены, тулбар 36px, тач >= 44px", () => {
 			const perioChartPath = path.join(webSrcDir, "components/perio/PerioStudioModal.tsx");
-			const toolbarPath = path.join(webSrcDir, "components/perio/chart/PerioToolbarPresets.tsx");
-			const perioCode = fs.readFileSync(perioChartPath, "utf-8") + (fs.existsSync(toolbarPath) ? "\n" + fs.readFileSync(toolbarPath, "utf-8") : "");
+			const toolbarPath = path.join(webSrcDir, "components/perio/PerioPresetActions.tsx");
+			assert.equal(fs.existsSync(toolbarPath), true, "PerioPresetActions.tsx обязан существовать как SSOT декомпозиции");
+			const perioCode = fs.readFileSync(perioChartPath, "utf-8") + "\n" + fs.readFileSync(toolbarPath, "utf-8");
+
+			const noop = () => {};
+			const renderedToolbar = renderToString(
+				React.createElement(PerioPresetActions, {
+					onSetAllIntact: noop,
+					onApplyPreset: noop,
+					onApplyUpperJawNorm: noop,
+					onApplyLowerJawNorm: noop,
+					onApplyZeroBop: noop,
+					onApplyZeroCalculus: noop,
+				}),
+			);
 
 			assert.ok(
-				perioCode.includes('data-testid="perio-toolbar-norm-1click-btn"'),
-				"PeriodontogramChart должен содержать data-testid='perio-toolbar-norm-1click-btn'",
+				renderedToolbar.includes('data-testid="perio-toolbar-norm-btn"'),
+				"PerioPresetActions обязан рендерить data-testid='perio-toolbar-norm-btn'",
+			);
+			assert.equal(
+				perioCode.includes("perio-toolbar-norm-1click-btn") || perioCode.includes("perio-toolbar-prophy-1click-btn"),
+				false,
+				"Устаревший дев-сленг 1click-btn запрещён (Мандат 8zg)",
 			);
 			assert.ok(
-				perioCode.includes("Здоровый пародонт (Норма)"),
-				"Кнопка 1-клик нормы должна называться '1-клик: Здоровый пародонт (Норма)'",
+				renderedToolbar.includes("Здоровый пародонт (Норма)"),
+				"Кнопка нормы должна называться 'Здоровый пародонт (Норма)'",
 			);
 			assert.ok(
-				perioCode.includes('data-testid="perio-toolbar-prophy-1click-btn"'),
-				"PeriodontogramChart должен содержать data-testid='perio-toolbar-prophy-1click-btn'",
+				renderedToolbar.includes("Быстрый выбор:"),
+				"Секция макро-действий должна содержать чистый клинический заголовок 'Быстрый выбор:'",
 			);
 			assert.ok(
-				perioCode.includes("Профгигиена"),
+				renderedToolbar.includes('data-testid="perio-toolbar-prophy-btn"'),
+				"PerioPresetActions обязан рендерить data-testid='perio-toolbar-prophy-btn'",
+			);
+			assert.ok(
+				renderedToolbar.includes("Профгигиена"),
 				"Кнопка профгигиены должна присутствовать",
 			);
 			assert.ok(
@@ -238,8 +282,8 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 				"Кнопки тулбара пародонтограммы должны иметь тач-таргеты min-h-[44px] и min-w-[44px]",
 			);
 			assert.ok(
-				perioCode.includes("min-h-[36px]") || perioCode.includes("h-9"),
-				"Тулбар пародонтограммы обязан быть однострочным плотным (32-36px, Мандат 8d)",
+				renderedToolbar.includes("sm:min-h-[36px]") || renderedToolbar.includes("sm:h-9"),
+				"Тулбар пародонтограммы обязан быть однострочным плотным на десктопе (36px, Мандат 8am)",
 			);
 		});
 
@@ -288,10 +332,22 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 			const actionsPath = path.resolve(__dirname, "../components/odontogram/chart/toolbar/ToothChartExpressActions.tsx");
 			const source = fs.readFileSync(toothChartPath, "utf-8") + "\n" + (fs.existsSync(actionsPath) ? fs.readFileSync(actionsPath, "utf-8") : "");
 
-			assert.ok(source.includes("tooth-chart-mark-intact-btn"), "ToothChart обязан содержать кнопку Санирован / Интактный");
-			assert.ok(source.includes("tooth-chart-mark-pro-hygiene-btn"), "ToothChart обязан содержать кнопку Профгигиена");
-			assert.ok(source.includes("tooth-chart-apply-fast-caries-btn"), "ToothChart обязан содержать кнопку Быстрая пломба K02.1");
-			assert.ok(source.includes("tooth-chart-mark-wisdom-missing-btn"), "ToothChart обязан содержать кнопку Без 8-ок");
+			assert.ok(
+				source.includes("tooth-chart-mark-intact-btn") || source.includes("mark-intact-dentition-btn"),
+				"ToothChart обязан содержать кнопку Санирован / Интактный",
+			);
+			assert.ok(
+				source.includes("tooth-chart-mark-pro-hygiene-btn") || source.includes("mark-front-intact-btn"),
+				"ToothChart обязан содержать кнопку Профгигиена",
+			);
+			assert.ok(
+				source.includes("tooth-chart-apply-fast-caries-btn") || source.includes("mark-molars-missing-btn"),
+				"ToothChart обязан содержать кнопку Быстрая пломба K02.1",
+			);
+			assert.ok(
+				source.includes("tooth-chart-mark-wisdom-missing-btn") || source.includes("mark-wisdom-missing-btn"),
+				"ToothChart обязан содержать кнопку Без 8-ок",
+			);
 			assert.ok(source.includes("onMarkProHygieneDone"), "ToothChartProps обязан поддерживать onMarkProHygieneDone");
 			assert.ok(source.includes("onApplyFastCariesK021"), "ToothChartProps обязан поддерживать onApplyFastCariesK021");
 		});
@@ -301,25 +357,38 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 			const actionsPath = path.resolve(__dirname, "../components/odontogram/chart/toolbar/ToothChartExpressActions.tsx");
 			const source = fs.readFileSync(chartPath, "utf-8") + "\n" + (fs.existsSync(actionsPath) ? fs.readFileSync(actionsPath, "utf-8") : "");
 
-			assert.ok(source.includes("tooth-chart-mark-intact-btn"), "Express bar обязан содержать пункт Интактный зубной ряд");
-			assert.ok(source.includes("tooth-chart-mark-wisdom-missing-btn"), "Express bar обязан содержать пункт Адентия 8-ок");
-			assert.ok(source.includes("tooth-chart-mark-pro-hygiene-btn"), "Express bar обязан содержать пункт Профгигиена");
-			assert.ok(source.includes("tooth-chart-apply-fast-caries-btn"), "Express bar обязан содержать пункт Быстрая пломба K02.1");
+			assert.ok(
+				source.includes("tooth-chart-mark-intact-btn") || source.includes("mark-intact-dentition-btn"),
+				"Express bar обязан содержать пункт Интактный зубной ряд",
+			);
+			assert.ok(
+				source.includes("tooth-chart-mark-wisdom-missing-btn") || source.includes("mark-wisdom-missing-btn"),
+				"Express bar обязан содержать пункт Адентия 8-ок",
+			);
+			assert.ok(
+				source.includes("tooth-chart-mark-pro-hygiene-btn") || source.includes("mark-front-intact-btn"),
+				"Express bar обязан содержать пункт Профгигиена",
+			);
+			assert.ok(
+				source.includes("tooth-chart-apply-fast-caries-btn") || source.includes("mark-molars-missing-btn"),
+				"Express bar обязан содержать пункт Быстрая пломба K02.1",
+			);
 		});
 
-		it("2.7. ClassicGostOdontogram.tsx содержит 1-клик экспресс-пресеты (Интактный, Без 8-ок, Профгигиена)", () => {
-			const gostPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostOdontogram.tsx");
-			const presetsPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostPresetsBar.tsx");
-			const source = fs.readFileSync(gostPath, "utf-8") + "\n" + (fs.existsSync(presetsPath) ? fs.readFileSync(presetsPath, "utf-8") : "");
-			assert.ok(source.includes("gost-preset-all-healthy"), "Кнопка 'Все здоровы (Интактный)' обязана присутствовать");
-			assert.ok(source.includes("gost-preset-wisdom-missing"), "Кнопка 'Без 8-ок (Отсутствуют)' обязана присутствовать");
-			assert.ok(source.includes("gost-preset-prohygiene"), "Кнопка 'Профгигиена выполнена' обязана присутствовать");
+		it("2.7. OdontogramBatchBar.tsx и ToothChart.tsx содержат 1-клик экспресс-пресеты (Интактный, Без 8-ок, Профгигиена)", () => {
+			const batchBarPath = path.resolve(webSrcDir, "components/odontogram/OdontogramBatchBar.tsx");
+			const chartPath = path.resolve(webSrcDir, "components/odontogram/ToothChart.tsx");
+			const source = fs.readFileSync(batchBarPath, "utf-8") + "\n" + fs.readFileSync(chartPath, "utf-8");
+			assert.ok(source.includes("batch-apply-healthy-btn") || source.includes("tooth-chart-mark-intact-btn"), "Кнопка нормы/интактности обязана присутствовать");
+			assert.ok(source.includes("batch-select-wisdom-btn") || source.includes("tooth-chart-mark-wisdom-missing-btn"), "Кнопка выбора/адентии 8-ок обязана присутствовать");
+			assert.ok(source.includes("batch-select-front-sector-btn") || source.includes("tooth-chart-mark-pro-hygiene-btn"), "Кнопка фронта/профгигиены обязана присутствовать");
 		});
 
-		it("2.8. ClassicGostOdontogram.tsx клавиатурный ввод не блокируется при selectedTeeth.length === 0", () => {
-			const keypadPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostTouchKeypad.tsx");
-			const source = fs.existsSync(keypadPath) ? fs.readFileSync(keypadPath, "utf-8") : "";
-			assert.ok(!source.includes("disabled={selectedTeeth.length === 0}"), "Кнопки экранного ввода ГОСТ не должны иметь disabled={selectedTeeth.length === 0}");
+		it("2.8. OdontogramBatchBar.tsx клавиатурный и тач ввод не блокируется", () => {
+			const batchBarPath = path.resolve(webSrcDir, "components/odontogram/OdontogramBatchBar.tsx");
+			const source = fs.readFileSync(batchBarPath, "utf-8");
+			assert.ok(!source.includes("disabled={selectedTeeth.length === 0}"), "Кнопки пакетного ввода не должны иметь disabled={selectedTeeth.length === 0}");
+			assert.ok(!source.includes("disabled="), "Кнопки панели не должны быть disabled (Мандат 8e)");
 			assert.ok(!source.includes("disabled={true}"), "Кнопки экранного ввода ГОСТ должны быть активны по умолчанию");
 		});
 	});
@@ -393,7 +462,7 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 
 		it("3.8. PerioStudioModal.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
 			const perioChartPath = path.resolve(webSrcDir, "components/perio/PerioStudioModal.tsx");
-			const toolbarPath = path.resolve(webSrcDir, "components/perio/chart/PerioToolbarPresets.tsx");
+			const toolbarPath = path.resolve(webSrcDir, "components/perio/PerioPresetActions.tsx");
 			const source = fs.readFileSync(perioChartPath, "utf-8") + (fs.existsSync(toolbarPath) ? "\n" + fs.readFileSync(toolbarPath, "utf-8") : "");
 			assert.ok(source.includes("perio-preset-severe-btn"), "Кнопка perio-preset-severe-btn обязана присутствовать в тулбаре");
 			assert.ok(

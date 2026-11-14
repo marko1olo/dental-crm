@@ -1,6 +1,7 @@
 import { and, asc, eq, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { communicationTemplates } from "../../db/schema.js";
+import { communicationChannel, communicationIntent } from "../../db/schema/_common.js";
 import {
 	calculateSmsSegments,
 	checkChannelLimits,
@@ -22,21 +23,21 @@ import type {
 
 export * from "./templateEngine/index.js";
 
-const VALID_INTENTS = new Set([
-	"appointment_confirmation",
-	"payment_reminder",
-	"post_visit_instruction",
-	"recall",
-	"document_ready",
-	"imaging_review",
-	"general",
-	"transactional_reply",
-]);
+type DbCommunicationChannel = (typeof communicationChannel.enumValues)[number];
+type DbCommunicationIntent = (typeof communicationIntent.enumValues)[number];
 
-function normalizeIntent(intent: string | undefined): any {
+const VALID_INTENTS: ReadonlySet<string> = new Set(communicationIntent.enumValues);
+const VALID_CHANNELS: ReadonlySet<string> = new Set(communicationChannel.enumValues);
+
+function normalizeIntent(intent: string | undefined): DbCommunicationIntent {
 	if (!intent) return "general";
 	if (intent === "appointment_reminder") return "appointment_confirmation";
-	return VALID_INTENTS.has(intent) ? intent : "general";
+	return VALID_INTENTS.has(intent) ? (intent as DbCommunicationIntent) : "general";
+}
+
+function normalizeChannel(channel: string | undefined): DbCommunicationChannel {
+	if (!channel) return "telegram";
+	return VALID_CHANNELS.has(channel) ? (channel as DbCommunicationChannel) : "telegram";
 }
 
 export class MessageTemplateEngine {
@@ -57,7 +58,7 @@ export class MessageTemplateEngine {
 	}
 
 	public static checkChannelLimits(channel: string, renderedText: string) {
-		return checkChannelLimits(channel as any, renderedText);
+		return checkChannelLimits(channel, renderedText);
 	}
 
 	public static async resolveContextVariables(
@@ -79,8 +80,12 @@ export class MessageTemplateEngine {
 		filter: { channel?: string | undefined; intent?: string | undefined; isActive?: boolean | undefined } = {},
 	): Promise<MessageTemplateRecord[]> {
 		const conditions: SQL[] = [eq(communicationTemplates.organizationId, organizationId)];
-		if (filter.channel && filter.channel !== "all") conditions.push(eq(communicationTemplates.channel, filter.channel as any));
-		if (filter.intent && filter.intent !== "all") conditions.push(eq(communicationTemplates.intent, filter.intent as any));
+		if (filter.channel && filter.channel !== "all" && VALID_CHANNELS.has(filter.channel)) {
+			conditions.push(eq(communicationTemplates.channel, filter.channel as DbCommunicationChannel));
+		}
+		if (filter.intent && filter.intent !== "all" && VALID_INTENTS.has(filter.intent)) {
+			conditions.push(eq(communicationTemplates.intent, filter.intent as DbCommunicationIntent));
+		}
 		if (filter.isActive !== undefined) conditions.push(eq(communicationTemplates.isActive, filter.isActive));
 
 		const rows = await db.select().from(communicationTemplates).where(and(...conditions))
@@ -144,7 +149,7 @@ export class MessageTemplateEngine {
 		const [row] = await db.insert(communicationTemplates).values({
 			organizationId,
 			title: input.title.trim(),
-			channel: (input.channel ?? "telegram") as any,
+			channel: normalizeChannel(input.channel),
 			intent: normalizeIntent(input.intent),
 			audienceRole: "patient",
 			body: input.templateText,
@@ -176,9 +181,9 @@ export class MessageTemplateEngine {
 				throw new Error(`Недопустимо сохранять шаблон с врачебной тайной (152-ФЗ / 323-ФЗ ст. 13): обнаружены клинические термины (${leakCheck.detectedTerms.join(", ")}).`);
 			}
 		}
-		const updateData: Record<string, unknown> = {};
+		const updateData: Partial<typeof communicationTemplates.$inferInsert> = {};
 		if (input.title !== undefined) updateData.title = input.title.trim();
-		if (input.channel !== undefined) updateData.channel = input.channel as any;
+		if (input.channel !== undefined) updateData.channel = normalizeChannel(input.channel);
 		if (input.intent !== undefined) updateData.intent = normalizeIntent(input.intent);
 		if (input.templateText !== undefined) {
 			updateData.body = input.templateText;
