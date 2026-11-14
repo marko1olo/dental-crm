@@ -9,6 +9,26 @@
 
 import type { ArchwireMaterial } from "@dental/shared";
 
+// SSOT реэкспорт канонических клинических справочников из @dental/shared
+export {
+	UPPER_TEETH,
+	LOWER_TEETH,
+	ANTERIOR_TEETH,
+	ANGLE_CLASS_OPTIONS,
+	ANB_CLASS_OPTIONS,
+	WORKHORSE_ARCHWIRES,
+	BRACKET_SYSTEMS,
+	ARCHWIRE_MATERIALS,
+	ROUND_SECTIONS,
+	RECT_SECTIONS,
+	ELASTIC_SCHEMES,
+	ELASTIC_SIZES,
+	CLINICAL_ACTIONS,
+	ALIGNER_ATTACHMENT_PRESETS,
+	ORTHODONTIC_QUICK_PRESETS,
+	generateOrthodonticSoapNote,
+} from "@dental/shared";
+
 export type ApplianceCategory = "brackets" | "aligners" | "plate";
 export type ArchwireAlloy = "niti" | "cuniti" | "ss" | "tma" | ArchwireMaterial;
 export type ArchwireSection = "0.012" | "0.014" | "0.016" | "0.018" | "16x22" | "17x25" | "19x25";

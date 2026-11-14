@@ -1,5 +1,8 @@
 /**
- * cephalometricMath.ts — Канонический фасад цефалометрического анализа (Мандат 8b <= 120 строк).
+ * @dental/web/components/orthodontics/cephalometricMath.ts
+ *
+ * Канонический фасад цефалометрического анализа (Мандат 8b, 8bf).
+ * SSOT для всех потребителей в радиологии, ортодонтии и ЭМК.
  */
 
 export type {
@@ -26,16 +29,10 @@ export {
 	CLASS_I_NORMAL_LANDMARKS_PRESET,
 	CLASS_II_DISTAL_LANDMARKS_PRESET,
 	CLASS_III_MESIAL_LANDMARKS_PRESET,
+	LANDMARK_CLINICAL_ROLES,
+	getRequiredLandmarksForMeasurement,
 	calculateCephalometrics,
 	generateOrthodonticProtocolText,
 	generateForm043OrthodonticProtocolText,
-} from "./cephalometric";
-
-export {
-	LANDMARK_CLINICAL_ROLES,
-	getRequiredLandmarksForMeasurement,
-} from "./cephalometric/landmarkRoles";
-
-export {
 	generateConsultationNoteWithoutCeph,
-} from "./cephalometric/consultationNote";
+} from "./cephalometric";

@@ -7,7 +7,7 @@
  */
 
 import type { LandmarkMap } from "./cephalometric";
-import { DEFAULT_CEPH_LANDMARKS_PRESET } from "./cephalometric/landmarkPresets";
+import { DEFAULT_CEPH_LANDMARKS_PRESET } from "./cephalometric";
 
 export type CephAiBackendPreference = "auto" | "template_norm" | "class_1" | "manual";
 

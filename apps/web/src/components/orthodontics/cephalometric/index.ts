@@ -1,6 +1,8 @@
 /**
- * DENTE CRM — Cephalometric Analysis Module Barrel Export (Layer 5)
- * Re-exports all 22 public types, geometry utilities, landmark presets, and calculation engines.
+ * @dental/web/components/orthodontics/cephalometric/index.ts
+ *
+ * Канонический barrel-экспорт цефалометрического анализа (Мандат 8b, 8bf).
+ * Консолидирует 2 чистых модуля: cephalometricLandmarks и cephalometricEngine.
  */
 
 export type {
@@ -11,7 +13,17 @@ export type {
 	CephalometricMeasurement,
 	CephalometricDiagnosis,
 	CephalometricAnalysisResult,
-} from "./types";
+} from "./cephalometricLandmarks";
+
+export {
+	CEPHALOMETRIC_LANDMARKS,
+	DEFAULT_CEPH_LANDMARKS_PRESET,
+	CLASS_I_NORMAL_LANDMARKS_PRESET,
+	CLASS_II_DISTAL_LANDMARKS_PRESET,
+	CLASS_III_MESIAL_LANDMARKS_PRESET,
+	LANDMARK_CLINICAL_ROLES,
+	getRequiredLandmarksForMeasurement,
+} from "./cephalometricLandmarks";
 
 export {
 	distance,
@@ -22,16 +34,8 @@ export {
 	angle3Points,
 	angleBetweenLines,
 	projectPointOntoLine,
-} from "./geometry";
-
-export {
-	CEPHALOMETRIC_LANDMARKS,
-	DEFAULT_CEPH_LANDMARKS_PRESET,
-	CLASS_I_NORMAL_LANDMARKS_PRESET,
-	CLASS_II_DISTAL_LANDMARKS_PRESET,
-	CLASS_III_MESIAL_LANDMARKS_PRESET,
-} from "./landmarks";
-
-export { calculateCephalometrics } from "./analysisEngine";
-
-export { generateOrthodonticProtocolText, generateForm043OrthodonticProtocolText } from "./protocolGenerator";
+	calculateCephalometrics,
+	generateOrthodonticProtocolText,
+	generateForm043OrthodonticProtocolText,
+	generateConsultationNoteWithoutCeph,
+} from "./cephalometricEngine";
