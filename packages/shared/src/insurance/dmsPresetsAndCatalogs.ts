@@ -336,15 +336,28 @@ const BASE_PROGRAM_LIST: readonly DmsProgramDefinition[] = [
 	{ key: "economy_emergency_only", id: "economy_emergency_only", name: "Экстренная помощь", description: "Только острая боль", coversImplantation: false, coversVeneers: false, coversBleaching: false, maxHygienePerYear: 0, defaultLimitKopecks: 2000000 },
 ];
 
-export const STATUTORY_DMS_PROGRAMS: Record<string, DmsProgramDefinition> & readonly DmsProgramDefinition[] = Object.assign(
+const standard_therapy = BASE_PROGRAM_LIST[0];
+const vip_full_coverage = BASE_PROGRAM_LIST[1];
+const extended_surgery_hygiene = BASE_PROGRAM_LIST[2];
+const economy_emergency_only = BASE_PROGRAM_LIST[3];
+
+if (!standard_therapy || !vip_full_coverage || !extended_surgery_hygiene || !economy_emergency_only) {
+	throw new Error("Invalid base program list configuration");
+}
+
+const programsRecord: Record<string, DmsProgramDefinition> = {
+	standard_therapy,
+	vip_full_coverage,
+	extended_surgery_hygiene,
+	economy_emergency_only,
+};
+
+export type StatutoryDmsProgramsMap = Record<string, DmsProgramDefinition> & readonly DmsProgramDefinition[];
+
+export const STATUTORY_DMS_PROGRAMS: StatutoryDmsProgramsMap = Object.assign(
 	[...BASE_PROGRAM_LIST],
-	{
-		standard_therapy: BASE_PROGRAM_LIST[0]!,
-		vip_full_coverage: BASE_PROGRAM_LIST[1]!,
-		extended_surgery_hygiene: BASE_PROGRAM_LIST[2]!,
-		economy_emergency_only: BASE_PROGRAM_LIST[3]!,
-	},
-) as unknown as Record<string, DmsProgramDefinition> & readonly DmsProgramDefinition[];
+	programsRecord,
+);
 
 export const DMS_PROGRAMS = {
 	base: { id: "base", name: "Базовая терапия", defaultLimitKopecks: 5000000 },

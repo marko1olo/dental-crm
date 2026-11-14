@@ -155,7 +155,8 @@ export const visitDiaries = pgTable(
 		draftAuthorId: uuid("draft_author_id"),
 		authorId: uuid("author_id"),
 		doctorId: uuid("doctor_id"),
-		// clinical structured sections
+		// clinical structured sections (SOAP: Subjective, Objective, Assessment, Plan)
+		complaint: text("complaint"),
 		anamnesis: text("anamnesis"),
 		statusLocalis: text("status_localis"),
 		diagnosisIcd10: text("diagnosis_icd10"),
@@ -212,6 +213,7 @@ export const visitDiaryRevisions = pgTable(
 			.references(() => organizations.id),
 		diaryId: uuid("diary_id").notNull(),
 		revisedContent: text("revised_content").notNull().default(""),
+		previousComplaint: text("previous_complaint"),
 		previousAnamnesis: text("previous_anamnesis"),
 		previousStatusLocalis: text("previous_status_localis"),
 		previousDiagnosisIcd10: text("previous_diagnosis_icd10"),

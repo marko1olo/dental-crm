@@ -84,6 +84,7 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "rework":
 		case "rejected_remake":
 		case "correction_remake":
+		case "correction_required":
 		case "warranty_rework":
 		case "переделка":
 		case "рекламация":

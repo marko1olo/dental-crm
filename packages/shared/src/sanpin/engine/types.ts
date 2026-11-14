@@ -388,7 +388,7 @@ export interface ConsolidatedSanpinJournalData {
 	readonly responsibleHeadNurseRu?: string | undefined;
 	readonly psoRecords?: readonly PsoJournalRecord[] | undefined;
 	readonly form257Records?: readonly Form257Record[] | undefined;
-	readonly sterilizationCycles?: readonly any[] | undefined;
+	readonly sterilizationCycles?: readonly (Form257Record | Record<string, unknown>)[] | undefined;
 	readonly sterilizerEquipments?: readonly SterilizerEquipmentRecord[] | undefined;
 	readonly bactericidalSessions?: readonly BactericidalSessionRecord[] | undefined;
 	readonly bactericidalEquipments?: readonly BactericidalEquipmentRecord[] | undefined;

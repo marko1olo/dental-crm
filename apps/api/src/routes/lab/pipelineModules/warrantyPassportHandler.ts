@@ -8,15 +8,12 @@ import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 
-export async function handleGetWarrantyPassport(request: FastifyRequest, reply: FastifyReply) {
+export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply, "lab orders passport read");
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -27,7 +24,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest, reply: 
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const id = request.params.id;
 
 	const orderWithDetails = await withTenantCtx(orgId, async (tx) => {
 		const [order] = await tx

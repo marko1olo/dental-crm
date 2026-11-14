@@ -11,6 +11,25 @@ import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { mapStageOrStatusToMilestone } from "../types.js";
 
+const VALID_LAB_ORDER_STATUSES = new Set<string>([
+	"draft",
+	"sent",
+	"in_progress",
+	"shipped",
+	"received",
+	"ready",
+	"ready_in_clinic",
+	"refitting",
+	"fitted",
+	"completed",
+	"cancelled",
+	"rejected_remake",
+]);
+
+function toLabOrderStatus(status: string): LabOrderStatus {
+	return VALID_LAB_ORDER_STATUSES.has(status) ? (status as LabOrderStatus) : "draft";
+}
+
 const technicianAllowedStatuses = z.enum([
 	"in_progress",
 	"shipped",
@@ -26,8 +45,11 @@ const portalStatusBodySchema = z.object({
 	labComments: z.string().trim().max(1000).optional().nullable(),
 });
 
-export async function handlePostPortalOrderStatus(request: FastifyRequest, reply: FastifyReply) {
-	const { token } = request.params as { token: string };
+export async function handlePostPortalOrderStatus(
+	request: FastifyRequest<{ Params: { token: string } }>,
+	reply: FastifyReply,
+) {
+	const token = request.params.token;
 
 	const parsedBody = portalStatusBodySchema.safeParse(request.body);
 
@@ -49,10 +71,10 @@ export async function handlePostPortalOrderStatus(request: FastifyRequest, reply
 			});
 		}
 
-		const currentStatus = order.status as LabOrderStatus;
+		const currentStatus = toLabOrderStatus(order.status);
 		const allowed = LAB_ORDER_TECHNICIAN_TRANSITIONS[currentStatus];
 
-		if (!allowed || !allowed.includes(targetStatus as LabOrderStatus)) {
+		if (!allowed || !allowed.includes(targetStatus)) {
 			return reply.code(409).send({
 				error: "InvalidTechnicianStateTransition",
 				message: `Техник не может перевести заказ из статуса «${currentStatus}» в «${targetStatus}».`,
@@ -117,7 +139,7 @@ export async function handlePostPortalOrderStatus(request: FastifyRequest, reply
 		});
 
 		return { success: true, status: updated.status };
-	} catch (e) {
+	} catch (e: unknown) {
 		request.log.error({ err: e }, "[LabPortal] POST status error");
 		return reply.code(500).send({
 			error: "LabPortalError",

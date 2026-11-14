@@ -26,12 +26,12 @@ export function calculateOhiSScore(
 	let totalCalculus = 0;
 	let debrisCount = 0;
 	let calculusCount = 0;
-	const teethEntries = Array.isArray(teethMap)
+	const teethEntries: readonly HygieneToothAssessment[] = Array.isArray(teethMap)
 		? teethMap
 		: Object.entries(teethMap).map(([num, val]) => ({ toothNumber: Number(num), ...val }));
 
 	for (const entry of teethEntries) {
-		if ((entry as any).isMissing) continue;
+		if (entry.isMissing) continue;
 		if (typeof entry.debrisScore === "number" && Number.isFinite(entry.debrisScore)) {
 			totalDebris += Math.max(0, Math.min(3, entry.debrisScore));
 			debrisCount++;

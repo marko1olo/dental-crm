@@ -113,9 +113,7 @@ export async function getPatientByIdFromDb(
 	id: string,
 ): Promise<Patient | null> {
 	if (useInMemory()) {
-		return (
-			(inMemoryPatients.find((p) => p.id === id) as unknown as Patient) ?? null
-		);
+		return inMemoryPatients.find((p) => p.id === id) ?? null;
 	}
 	try {
 		const [p] = await db
@@ -149,12 +147,20 @@ export async function getPatientByIdFromDb(
 	}
 }
 
+interface PatientWithLegacyProps extends Patient {
+	snils?: string;
+	omsPolicyNumber?: string;
+	insurancePolicyNumber?: string;
+	cardNumber?: string;
+	medicalCardNumber?: string;
+}
+
 export async function getPatientsFromDb(
 	organizationId: string,
 	options: GetPatientsOptions = {},
 ): Promise<Patient[]> {
 	if (useInMemory()) {
-		let list = inMemoryPatients as unknown as Patient[];
+		let list: Patient[] = inMemoryPatients;
 		if (!options.includeMerged) {
 			list = list.filter((p) => !p.mergedIntoPatientId);
 		}
@@ -190,13 +196,7 @@ export async function getPatientsFromDb(
 					(pBirth.toLowerCase().includes(qLower) ||
 						(searchDigits.length >= 4 && pBirth.replace(/\D/g, "").includes(searchDigits)));
 
-				const legacyProps = p as unknown as {
-					snils?: string;
-					omsPolicyNumber?: string;
-					insurancePolicyNumber?: string;
-					cardNumber?: string;
-					medicalCardNumber?: string;
-				};
+				const legacyProps = p as PatientWithLegacyProps;
 				const adminProf = p.administrativeProfile && typeof p.administrativeProfile === "object"
 					? (p.administrativeProfile as Record<string, unknown>)
 					: null;
@@ -263,7 +263,10 @@ export async function getPatientsFromDb(
 				searchOr.push(sql`regexp_replace(coalesce(${schema.patients.administrativeProfile}->>'snils', ''), '\\D', '', 'g') ILIKE ${`%${rawDigits}%`}`);
 				searchOr.push(sql`regexp_replace(coalesce(${schema.patients.administrativeProfile}->>'insurancePolicyNumber', ''), '\\D', '', 'g') ILIKE ${`%${rawDigits}%`}`);
 			}
-			conditions.push(or(...searchOr)!);
+			const searchCondition = or(...searchOr);
+			if (searchCondition) {
+				conditions.push(searchCondition);
+			}
 		}
 		const whereClause = and(...conditions);
 		let ptsQuery = db

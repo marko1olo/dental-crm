@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -76,7 +77,7 @@ export const treatmentPlans = pgTable(
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
 		approvedAt: timestamp("approved_at", { withTimezone: true }),
-		// Альтернативные планы лечения (ПП РФ №659 и ст. 20 323-ФЗ)
+		// Альтернативные планы лечения (ст. 20 323-ФЗ)
 		planGroupId: uuid("plan_group_id"),
 		groupName: text("group_name"),
 		isAlternative: boolean("is_alternative").notNull().default(false),
@@ -99,6 +100,11 @@ export const treatmentPlans = pgTable(
 			scale: 2,
 			mode: "number",
 		}).default(0),
+		// Опциональные параметры рассрочки
+		isInstallment: boolean("is_installment").default(false),
+		installmentMonths: integer("installment_months"),
+		downPaymentKopecks: bigint("down_payment_kopecks", { mode: "number" }),
+		monthlyPaymentKopecks: bigint("monthly_payment_kopecks", { mode: "number" }),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

@@ -10,7 +10,7 @@ import {
 	toothStateHistory,
 	toothStates,
 } from "../../db/schema.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -22,6 +22,24 @@ import {
 	parseClinicalDataFromNotes,
 } from "./types.js";
 
+interface ExtendedRequestIdentity extends RequestIdentity {
+	clinicalRole?: string | null;
+	canSignMedicalRecords?: boolean;
+}
+
+interface AuthenticatedUserContext {
+	role?: string | null;
+	canSignMedicalRecords?: boolean;
+	clinicalRole?: string | null;
+}
+
+function extractRequestUser(request: FastifyRequest): AuthenticatedUserContext | undefined {
+	if ("user" in request && typeof request.user === "object" && request.user !== null) {
+		return request.user as AuthenticatedUserContext;
+	}
+	return undefined;
+}
+
 async function applyToothStateMutation(
 	organizationId: string,
 	patientId: string,
@@ -31,7 +49,7 @@ async function applyToothStateMutation(
 		state: string;
 		surfaces?: string[] | null | undefined;
 		notes?: string | null | undefined;
-		clinicalData?: any;
+		clinicalData?: Record<string, unknown> | null | undefined;
 		visitId?: string | null | undefined;
 		updatedAt?: string | null | undefined;
 		version?: number | null | undefined;
@@ -362,16 +380,10 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		}
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Доступ к зубной формуле и диагнозам разрешен ТОЛЬКО клиническому персоналу
-		const identity = getRequestIdentity(request);
-		const reqAny = request as unknown as {
-			user?: {
-				role?: string | null;
-				canSignMedicalRecords?: boolean;
-				clinicalRole?: string | null;
-			};
-		};
+		const identity = getRequestIdentity(request) as ExtendedRequestIdentity;
+		const reqUser = extractRequestUser(request);
 		// Роль определяется ИСКЛЮЧИТЕЛЬНО из подписанного токена или проверенного контекста request.user.
-		const staffRole = identity.role ?? reqAny.user?.role ?? null;
+		const staffRole = identity.role ?? reqUser?.role ?? null;
 
 		// Fail-closed: если токен сотрудника отсутствует (голый токен клиники), немедленно 403 Forbidden!
 		if (!staffRole) {
@@ -390,16 +402,8 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		}
 
 		const evalAccess = evaluateClinicalAccess(staffRole, {
-			clinicalRole:
-				(identity as unknown as { clinicalRole?: string | null })
-					.clinicalRole ??
-				reqAny.user?.clinicalRole ??
-				null,
-			canSignMedicalRecords:
-				(identity as unknown as { canSignMedicalRecords?: boolean })
-					.canSignMedicalRecords ??
-				reqAny.user?.canSignMedicalRecords ??
-				false,
+			clinicalRole: identity.clinicalRole ?? reqUser?.clinicalRole ?? null,
+			canSignMedicalRecords: identity.canSignMedicalRecords ?? reqUser?.canSignMedicalRecords ?? false,
 		});
 
 		if (!evalAccess.hasClinicalAccess) {

@@ -8,8 +8,14 @@ import {
 	isS3DirectUploadConfigured,
 } from "../../services/labScanDirectUpload.js";
 
-export async function handleLabScanDownloadUrl(request: FastifyRequest, reply: FastifyReply) {
-	const { id } = request.params as { id: string };
+export async function handleLabScanDownloadUrl(
+	request: FastifyRequest<{
+		Params: { id: string };
+		Querystring: { storageKey?: string; expiresInSeconds?: string };
+	}>,
+	reply: FastifyReply,
+) {
+	const id = request.params.id;
 	const identity = getRequestIdentity(request);
 	const orgId = identity?.organizationId;
 	if (!orgId) {
@@ -19,7 +25,7 @@ export async function handleLabScanDownloadUrl(request: FastifyRequest, reply: F
 		});
 	}
 
-	const query = request.query as { storageKey?: string; expiresInSeconds?: string } | undefined;
+	const query = request.query;
 	const storageKey = query?.storageKey;
 	if (!storageKey || typeof storageKey !== "string" || !storageKey.trim()) {
 		return reply.code(400).send({

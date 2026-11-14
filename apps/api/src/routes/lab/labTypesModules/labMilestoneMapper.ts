@@ -40,6 +40,7 @@ export function mapStageOrStatusToMilestone(stageOrStatus: string): z.infer<type
 			return "clinical_try_in";
 		case "refitting":
 		case "correction_remake":
+		case "correction_required":
 		case "warranty_rework":
 		case "refitting_remake":
 			return "refitting_remake";

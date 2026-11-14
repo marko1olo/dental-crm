@@ -164,7 +164,7 @@ export async function withResilientTransaction<T>(
 	let options: ResilientTransactionOptions;
 
 	if (typeof dbOrFn === "function") {
-		targetDb = dbRaw as unknown as TenantDb;
+		targetDb = dbRaw;
 		fn = dbOrFn;
 		options = (fnOrOptions as ResilientTransactionOptions) ?? {};
 	} else {

@@ -56,6 +56,10 @@ export async function executeLabOrderMarkInstalled(
 			notes: "Ортопедическая конструкция успешно установлена и сдана пациенту. Наряд намертво заблокирован от редактирования.",
 		});
 
-		return { kind: "ok" as const, labOrder: updated! };
+		if (!updated) {
+			throw new Error("Не удалось зафиксировать установку ортопедической конструкции");
+		}
+
+		return { kind: "ok" as const, labOrder: updated };
 	});
 }

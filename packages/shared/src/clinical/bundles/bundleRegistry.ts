@@ -352,20 +352,34 @@ export function getDiagnosisBundleByIcd10(icd10: string): CanonicalDiagnosisBund
 	return CANONICAL_DIAGNOSIS_BUNDLES.find((b) => b.diagnosisIcd10.toUpperCase() === c) ?? null;
 }
 
+export interface CatalogItemLike {
+	readonly id?: string | null | undefined;
+	readonly title?: string | null | undefined;
+	readonly serviceCode?: string | null | undefined;
+	readonly code?: string | null | undefined;
+	readonly code804n?: string | null | undefined;
+	readonly active?: boolean | null | undefined;
+	readonly basePriceRub?: number | string | null | undefined;
+	readonly priceRub?: number | string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
 export function resolveServicePriceAgainstCatalog(
 	service: CanonicalDiagnosisService,
-	// biome-ignore lint/suspicious/noExplicitAny: loose catalog row shape
-	catalog: readonly any[] = [],
+	catalog: readonly CatalogItemLike[] = [],
 ) {
-	// biome-ignore lint/suspicious/noExplicitAny: loose catalog row shape
-	const extractValidRub = (row: any, fallback: number): number => {
-		for (const k of ["basePriceRub", "priceRub"]) {
-			const v = row?.[k];
-			if (typeof v === "number" && Number.isFinite(v) && v > 0) return v;
-			if (typeof v === "string" && v.trim()) {
-				const n = Number(v.replace(",", ".").trim());
-				if (Number.isFinite(n) && n > 0) return n;
-			}
+	const extractValidRub = (row: CatalogItemLike, fallback: number): number => {
+		const v1 = row.basePriceRub;
+		if (typeof v1 === "number" && Number.isFinite(v1) && v1 > 0) return v1;
+		if (typeof v1 === "string" && v1.trim()) {
+			const n = Number(v1.replace(",", ".").trim());
+			if (Number.isFinite(n) && n > 0) return n;
+		}
+		const v2 = row.priceRub;
+		if (typeof v2 === "number" && Number.isFinite(v2) && v2 > 0) return v2;
+		if (typeof v2 === "string" && v2.trim()) {
+			const n = Number(v2.replace(",", ".").trim());
+			if (Number.isFinite(n) && n > 0) return n;
 		}
 		return fallback;
 	};
@@ -383,7 +397,7 @@ export function resolveServicePriceAgainstCatalog(
 
 export function createCustomizedBundle(
 	bundle: CanonicalDiagnosisBundle,
-	options: { toothCode?: string | number | null | undefined; checkedServiceCodes?: readonly string[] | undefined; catalog?: readonly any[] | undefined } = {},
+	options: { toothCode?: string | number | null | undefined; checkedServiceCodes?: readonly string[] | undefined; catalog?: readonly CatalogItemLike[] | undefined } = {},
 ): CustomizedBundleResult {
 	const tooth = options.toothCode !== undefined && options.toothCode !== null ? String(options.toothCode) : null;
 	const checkedSet = options.checkedServiceCodes ? new Set(options.checkedServiceCodes) : null;

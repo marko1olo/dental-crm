@@ -23,8 +23,6 @@ export interface GenerateClinicalPerioProtocolOptions extends AapClassificationO
 	readonly customNotes?: string | undefined;
 }
 
-export type GenerateProtocol043Options = GenerateClinicalPerioProtocolOptions;
-
 export function generateComprehensivePerioProtocolText(
 	teeth: readonly PerioToothRecord[],
 	summary?: PerioChartSummary,
@@ -105,5 +103,3 @@ export function generateComprehensivePerioProtocolText(
 
 	return lines.join("\n");
 }
-
-export const generateComprehensivePerio043Text = generateComprehensivePerioProtocolText;

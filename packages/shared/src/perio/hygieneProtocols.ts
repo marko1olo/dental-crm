@@ -1,7 +1,7 @@
 /**
  * packages/shared/src/perio/hygieneProtocols.ts
  *
- * Clinical protocol generators for 1-click norm and pro-hygiene.
+ * Clinical protocol generators for physiological norm and pro-hygiene.
  * Mandate 8b: File <= 120 lines. Mandates 8x, 8ap: Clean clinical wording.
  */
 
@@ -55,7 +55,7 @@ export const CLINICAL_PRO_HYGIENE_SUMMARY_RU =
 
 export function createClinicalPerioNormProtocolText(): string {
 	return [
-		"ПРОТОКОЛ ОСМОТРА ПАРОДОНТА И ГИГИЕНЫ ПОЛОСТИ РТА (Медицинская карта приёма / Форма 043/у):",
+		"ПРОТОКОЛ ОСМОТРА ПАРОДОНТА И ГИГИЕНЫ ПОЛОСТИ РТА (Медицинская карта приёма):",
 		`• Статус пародонта: ${CLINICAL_PERIO_NORM_SUMMARY_RU}.`,
 		"• Жалобы: Отсутствуют.",
 		"• Status localis: Десна бледно-розового цвета, плотная, плотно прилежит к шейкам зубов, фестончатость сохранена. Десневые сосочки не гипертрофированы, не отечны. Кровоточивость при зондировании отсутствует (BOP 0%). Глубина клинических карманов во всех секстантах 1-2 мм (физиологическая борозда). Патологическая подвижность зубов отсутствует. Назубные отложения (мягкий налет, над- и поддесневой зубной камень) не определяются. Скрининг пародонта PSR во всех секстантах = 0.",
@@ -67,7 +67,7 @@ export function createClinicalPerioNormProtocolText(): string {
 
 export function createClinicalProHygieneProtocolText(): string {
 	return [
-		"ПРОТОКОЛ КОМПЛЕКСНОЙ ПРОФЕССИОНАЛЬНОЙ ГИГИЕНЫ ПОЛОСТИ РТА (Медицинская карта приёма / Форма 043/у):",
+		"ПРОТОКОЛ КОМПЛЕКСНОЙ ПРОФЕССИОНАЛЬНОЙ ГИГИЕНЫ ПОЛОСТИ РТА (Медицинская карта приёма):",
 		`• Процедура: ${CLINICAL_PRO_HYGIENE_SUMMARY_RU}.`,
 		"• Протокол вмешательства:",
 		"1. Антисептическая обработка полости рта 0.05% раствором хлоргексидина биглюконата.",

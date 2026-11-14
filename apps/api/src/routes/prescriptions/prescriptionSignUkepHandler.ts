@@ -8,19 +8,23 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { signUkepBodySchema } from "./prescriptionSchemas.js";
 import { validateUkepSignaturePayload } from "./prescriptionUkepValidator.js";
 
+interface SignUkepParams {
+	id: string;
+}
+
 /**
  * 7. POST /api/prescriptions/:id/sign-ukep
  * Apply Doctor Electronic Digital Signature (УКЭП)
  */
-export async function handleSignUkepPrescription(request: FastifyRequest, reply: FastifyReply) {
+export async function handleSignUkepPrescription(
+	request: FastifyRequest<{ Params: SignUkepParams }>,
+	reply: FastifyReply,
+) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "sign prescription ukep");
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -31,7 +35,7 @@ export async function handleSignUkepPrescription(request: FastifyRequest, reply:
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 	const parsedBody = signUkepBodySchema.safeParse(request.body);
 	if (!parsedBody.success) {
 		return reply.code(400).send({
@@ -66,7 +70,10 @@ export async function handleSignUkepPrescription(request: FastifyRequest, reply:
 		return reply.code(409).send({ error: "AlreadySigned", message: "Рецепт уже подписан УКЭП врача." });
 	}
 
-	const currentSnapshot = (doc.safetyAuditSnapshotJson as Record<string, unknown>) || {};
+	const currentSnapshot =
+		doc.safetyAuditSnapshotJson && typeof doc.safetyAuditSnapshotJson === "object"
+			? (doc.safetyAuditSnapshotJson as Record<string, unknown>)
+			: {};
 	const [updated] = await db
 		.update(electronicPrescriptions)
 		.set({

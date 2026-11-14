@@ -114,6 +114,11 @@ export const treatmentPlanBaseZodSchema = z.object({
 	discountMode: discountModeZodSchema.optional().default("plan_fixed"),
 	planDiscountPercent: z.number().min(0).max(100).optional().default(0),
 	planDiscountRub: z.number().nonnegative().optional().default(0),
+	// Опциональные параметры рассрочки
+	isInstallment: z.boolean().optional().default(false),
+	installmentMonths: z.number().int().min(1).max(60).optional().nullable(),
+	downPaymentKopecks: z.number().int().nonnegative().optional().nullable(),
+	monthlyPaymentKopecks: z.number().int().nonnegative().optional().nullable(),
 	allowClinicalBlockerOverride: z.boolean().optional().default(true),
 	clinicalBlockerOverrideReason: z.string().trim().max(1000).optional().nullable(),
 });

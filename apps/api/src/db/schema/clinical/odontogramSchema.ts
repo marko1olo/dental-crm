@@ -9,9 +9,8 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { organizations, users } from "../auth.js";
+import { organizations } from "../auth.js";
 import { patients } from "../patients.js";
-import { visits } from "./visitsSchema.js";
 
 // #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
 export const extendedOdontogramStates = pgTable(
@@ -156,46 +155,3 @@ export const toothStateHistory = pgTable(
 	}),
 );
 
-/**
- * Пародонтологические карты (Perio Chart) — зондирование 6 точек, CAL, рецессия,
- * кровоточивость (BOP), налёт (FMPS), фуркация, подвижность и PSR/CPITN.
- */
-export const perioCharts = pgTable(
-	"perio_charts",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id, { onDelete: "cascade" }),
-		visitId: uuid("visit_id").references(() => visits.id, {
-			onDelete: "set null",
-		}),
-		doctorId: uuid("doctor_id").references(() => users.id, {
-			onDelete: "set null",
-		}),
-		chartDate: timestamp("chart_date", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		teethData: jsonb("teeth_data").notNull(),
-		summaryData: jsonb("summary_data").notNull(),
-		psrData: jsonb("psr_data"),
-		notes: text("notes"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => [
-		index("perio_charts_organization_id_idx").on(t.organizationId),
-		index("perio_charts_patient_id_idx").on(t.patientId),
-		index("perio_charts_chart_date_idx").on(t.patientId, t.chartDate),
-		index("perio_charts_visit_id_idx").on(t.visitId),
-		index("perio_charts_doctor_id_idx").on(t.doctorId),
-		index("perio_charts_org_patient_idx").on(t.organizationId, t.patientId),
-	],
-);

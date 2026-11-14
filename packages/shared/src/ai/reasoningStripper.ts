@@ -13,6 +13,8 @@ const UNCLOSED_TAG_REGEX = /<(?:think|thought|reasoning)>(?![\s\S]*?<\/(?:think|
 
 const OPENING_TAGS = ["<think>", "<thought>", "<reasoning>"] as const;
 const CLOSING_TAGS = ["</think>", "</thought>", "</reasoning>"] as const;
+const OPENING_TAG_SET: ReadonlySet<string> = new Set<string>(OPENING_TAGS);
+const CLOSING_TAG_SET: ReadonlySet<string> = new Set<string>(CLOSING_TAGS);
 
 function isOpeningTagPrefix(s: string): boolean {
 	const lower = s.toLowerCase();
@@ -120,7 +122,7 @@ export class StreamingReasoningFilter {
 					i++;
 
 					const lowerBuf = this.tagBuffer.toLowerCase();
-					if (OPENING_TAGS.includes(lowerBuf as any)) {
+					if (OPENING_TAG_SET.has(lowerBuf)) {
 						this.inReasoning = true;
 						this.tagBuffer = "";
 					} else if (!isOpeningTagPrefix(this.tagBuffer)) {
@@ -150,7 +152,7 @@ export class StreamingReasoningFilter {
 					i++;
 
 					const lowerBuf = this.tagBuffer.toLowerCase();
-					if (CLOSING_TAGS.includes(lowerBuf as any)) {
+					if (CLOSING_TAG_SET.has(lowerBuf)) {
 						this.inReasoning = false;
 						this.tagBuffer = "";
 					} else if (!isClosingTagPrefix(this.tagBuffer)) {

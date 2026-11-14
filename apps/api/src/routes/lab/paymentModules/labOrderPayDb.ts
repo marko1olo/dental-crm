@@ -90,16 +90,24 @@ export async function executeLabOrderPayment(
 			})
 			.returning();
 
+		if (!operation) {
+			throw new Error("Не удалось создать кассовую операцию списания ЗТЛ");
+		}
+
 		const [updatedOrder] = await tx
 			.update(labOrders)
-			.set({ paidFromCashOperationId: operation!.id, updatedAt: new Date() })
+			.set({ paidFromCashOperationId: operation.id, updatedAt: new Date() })
 			.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, orgId)))
 			.returning();
 
+		if (!updatedOrder) {
+			throw new Error("Не удалось обновить статус оплаты наряда лаборатории");
+		}
+
 		return {
 			kind: "ok" as const,
-			operation: operation!,
-			labOrder: updatedOrder!,
+			operation,
+			labOrder: updatedOrder,
 			amountKopecks: amountToPayKopecks,
 		};
 	});

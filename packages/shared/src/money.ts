@@ -166,6 +166,13 @@ export function sumKopecks(values: readonly Kopecks[]): Kopecks {
 	return total;
 }
 
+/** Сумма двух значений копеек. Точная: складываются целые. */
+export function addKopecks(a: Kopecks, b: Kopecks): Kopecks {
+	assertWholeKopecks(a);
+	assertWholeKopecks(b);
+	return (a + b) as Kopecks;
+}
+
 /** Цена за единицу × количество. Количество обязано быть целым. */
 export function multiplyKopecks(unit: Kopecks, quantity: number): Kopecks {
 	assertWholeKopecks(unit);

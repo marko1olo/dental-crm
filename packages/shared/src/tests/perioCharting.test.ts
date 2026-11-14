@@ -11,7 +11,7 @@ import {
 	estimateBoneLossPercentFromTeeth,
 	formatPsrSextantsSummary,
 	FURCATION_GRADES,
-	generateComprehensivePerio043Text,
+	generateComprehensivePerioProtocolText,
 	getProbingDepthColor,
 	isFurcationEligibleTooth,
 	MOBILITY_GRADES,
@@ -273,7 +273,7 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.ok(summaryStr.includes("S2: 0"));
 	});
 
-	it("11. Form 043/u clinical protocol text generation with AAP/EFP & PRA", () => {
+	it("11. Clinical periodontal protocol text generation with AAP/EFP & PRA", () => {
 		const teeth = ALL_PERIO_TEETH.map(createDefaultTooth);
 		const t16 = teeth.find((t) => t.toothNumber === 16);
 		if (t16) {
@@ -281,7 +281,7 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 			t16.distoBuccal.bleedingOnProbing = true;
 		}
 
-		const text = generateComprehensivePerio043Text(teeth, undefined, {
+		const text = generateComprehensivePerioProtocolText(teeth, undefined, {
 			doctorName: "Д-р Иванов А.С.",
 			customNotes: "SRP в области 1.6",
 		});

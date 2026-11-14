@@ -18,7 +18,7 @@ const pipelineStageBodySchema = z.object({
 	scheduledDate: z.string().optional().nullable(),
 });
 
-export async function handleUpdatePipelineStage(request: FastifyRequest, reply: FastifyReply) {
+export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -27,10 +27,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest, reply: 
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -41,7 +38,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest, reply: 
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const id = request.params.id;
 	const parsed = pipelineStageBodySchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({

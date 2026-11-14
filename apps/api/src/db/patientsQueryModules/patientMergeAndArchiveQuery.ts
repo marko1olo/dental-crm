@@ -42,9 +42,14 @@ export async function createPatientSafeInDb(
 			.sort()
 			.join(" ");
 
+		const directSnils =
+			"snils" in input &&
+			typeof (input as CreatePatientInput & { snils?: string | null }).snils === "string"
+				? (input as CreatePatientInput & { snils?: string | null }).snils
+				: null;
 		const snilsDigits = (
-			(input as unknown as { snils?: string | null })?.snils ??
-			(input.administrativeProfile as Record<string, unknown> | null | undefined)?.snils ??
+			directSnils ??
+			input.administrativeProfile?.snils ??
 			""
 		)
 			.toString()

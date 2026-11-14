@@ -5,8 +5,14 @@ import {
 	isS3DirectUploadConfigured,
 } from "../../services/labScanDirectUpload.js";
 
-export async function handlePortalLabScanDownloadUrl(request: FastifyRequest, reply: FastifyReply) {
-	const { token } = request.params as { token: string };
+export async function handlePortalLabScanDownloadUrl(
+	request: FastifyRequest<{
+		Params: { token: string };
+		Querystring: { storageKey?: string; expiresInSeconds?: string };
+	}>,
+	reply: FastifyReply,
+) {
+	const token = request.params.token;
 	if (!token) {
 		return reply.code(400).send({
 			error: "TokenRequired",
@@ -22,7 +28,7 @@ export async function handlePortalLabScanDownloadUrl(request: FastifyRequest, re
 		});
 	}
 
-	const query = request.query as { storageKey?: string; expiresInSeconds?: string } | undefined;
+	const query = request.query;
 	const storageKey = query?.storageKey;
 	if (!storageKey || typeof storageKey !== "string" || !storageKey.trim()) {
 		return reply.code(400).send({

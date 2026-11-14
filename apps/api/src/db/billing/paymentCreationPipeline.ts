@@ -34,10 +34,12 @@ export * from "./paymentSplitValidation.js";
 export * from "./paymentRecordExecutor.js";
 export * from "./paymentVisitSettlement.js";
 
+export type PaymentWithReplay = Payment & { isReplay?: boolean };
+
 export async function createPaymentInDb(
 	organizationId: string,
 	input: CreatePaymentInput,
-): Promise<Payment> {
+): Promise<PaymentWithReplay> {
 	const split = validateAndResolvePaymentSplit(input);
 	const { incomingPaymentKopecks, isWarrantyOrFullDiscount } = split;
 

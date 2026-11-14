@@ -4,6 +4,15 @@ import type {
 	ToothStateData,
 } from "./formulaTypes.js";
 
+interface GenericToothRow {
+	readonly toothOrArea?: unknown;
+	readonly toothNumber?: unknown;
+	readonly status?: unknown;
+	readonly diagnosisOrFinding?: unknown;
+	readonly statusCode?: unknown;
+	readonly diagnosisText?: unknown;
+}
+
 /**
  * Преобразует произвольный ввод данных зубной формулы в унифицированную карту зубов Map<number, ToothStateData>.
  */
@@ -22,22 +31,36 @@ export function extractTeethMapFromInput(
 	// Если передан массив строк
 	if (Array.isArray(input)) {
 		for (const row of input) {
+			const item = row as GenericToothRow;
 			const toothNum =
-				typeof (row as ClinicalToothRowInput).toothOrArea === "string"
-					? Number.parseInt((row as ClinicalToothRowInput).toothOrArea, 10)
-					: Number((row as unknown as Record<string, unknown>).toothNumber);
+				typeof item.toothOrArea === "string"
+					? Number.parseInt(item.toothOrArea, 10)
+					: typeof item.toothNumber === "number" || typeof item.toothNumber === "string"
+						? Number(item.toothNumber)
+						: Number.NaN;
 			if (Number.isFinite(toothNum)) {
+				const status =
+					typeof item.status === "string" && item.status
+						? item.status
+						: typeof item.diagnosisOrFinding === "string" && item.diagnosisOrFinding
+							? item.diagnosisOrFinding
+							: "sound";
+				const statusCode =
+					typeof item.statusCode === "string" && item.statusCode
+						? item.statusCode
+						: undefined;
+				const diagnosisText =
+					typeof item.diagnosisOrFinding === "string" && item.diagnosisOrFinding
+						? item.diagnosisOrFinding
+						: typeof item.diagnosisText === "string" && item.diagnosisText
+							? item.diagnosisText
+							: undefined;
+
 				map.set(toothNum, {
 					toothNumber: toothNum,
-					status:
-						((row as ClinicalToothRowInput).status as string) ||
-						((row as ClinicalToothRowInput).diagnosisOrFinding as string) ||
-						"sound",
-					statusCode: (row as unknown as ToothStateData).statusCode || undefined,
-					diagnosisText:
-						((row as ClinicalToothRowInput).diagnosisOrFinding as string) ||
-						((row as unknown as ToothStateData).diagnosisText as string) ||
-						undefined,
+					status,
+					statusCode,
+					diagnosisText,
 				});
 			}
 		}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STOMX_SPECIALIZED_CONSENT_PRESETS } from "./clinicalConsentPresets.js";
+import { CLINICAL_SPECIALIZED_CONSENT_PRESETS } from "./clinicalConsentPresets.js";
 
 export const procedureSpecificConsentProcedureSchema = z.enum([
 	// Специализированные процедуры StomX
@@ -118,7 +118,7 @@ export const BASE_INFORMED_CONSENT_PRESET: BaseInformedConsentPreset = {
 export const CLINICAL_CONSENT_PRESETS: Record<
 	ProcedureSpecificConsentProcedure,
 	ClinicalProcedureConsentPreset
-> = STOMX_SPECIALIZED_CONSENT_PRESETS;
+> = CLINICAL_SPECIALIZED_CONSENT_PRESETS;
 
 /**
  * 3. ИДС на стоматологическое лечение несовершеннолетнего (ст. 20 ФЗ № 323-ФЗ, Приказ № 1051н).
@@ -418,6 +418,5 @@ export const WARRANTY_POLICY_PRESETS: Record<string, WarrantyPresetItem> = {
 	},
 };
 
-export { STOMX_SPECIALIZED_CONSENT_PRESETS } from "./clinicalConsentPresets.js";
 export * from "./clinicalConsentPresets.js";
 export * from "./clinicalLegalConsentsCatalog.js";

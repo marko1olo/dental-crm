@@ -43,6 +43,10 @@ export function calculateDynamicWorkerPoolSize(cores?: number): number {
 	return 4;
 }
 
+interface NavigatorWithDeviceMemory extends Navigator {
+	readonly deviceMemory?: number | undefined;
+}
+
 /**
  * Detects hardware capabilities from WebGL context and browser navigator APIs.
  */
@@ -55,7 +59,10 @@ export function detectCbctHardwareCapabilities(
 	const windowObj = win ?? (typeof window !== "undefined" ? window : null);
 
 	const hardwareConcurrency = navigatorObj?.hardwareConcurrency ?? 4;
-	const deviceMemoryGb = (navigatorObj as unknown as { deviceMemory?: number })?.deviceMemory ?? 8;
+	const deviceMemoryGb =
+		navigatorObj && "deviceMemory" in navigatorObj && typeof (navigatorObj as NavigatorWithDeviceMemory).deviceMemory === "number"
+			? (navigatorObj as NavigatorWithDeviceMemory).deviceMemory ?? 8
+			: 8;
 	const devicePixelRatio = windowObj?.devicePixelRatio ?? 1.0;
 
 	let max3DTextureSize = 2048;

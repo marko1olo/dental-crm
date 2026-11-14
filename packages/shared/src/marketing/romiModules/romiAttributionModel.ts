@@ -46,7 +46,18 @@ export function matchDenteMarketingChannel(rawSource?: string | null): string {
 }
 
 export function aggregateCrmMarketingMetrics(params: {
-	patients: ReadonlyArray<{ id: string; source?: string | null | undefined; administrativeProfile?: any; notes?: string | null | undefined }>;
+	patients: ReadonlyArray<{
+		id: string;
+		source?: string | null | undefined;
+		administrativeProfile?: {
+			advertisingSource?: string | null | undefined;
+			marketingSource?: string | null | undefined;
+			leadSource?: string | null | undefined;
+			utmSource?: string | null | undefined;
+			[key: string]: unknown;
+		} | null | undefined;
+		notes?: string | null | undefined;
+	}>;
 	appointments: ReadonlyArray<{ id: string; patientId: string; status: string; costRub?: number | undefined }>;
 	payments: ReadonlyArray<{ id: string; patientId: string; amount?: number | undefined; amountRub?: number | undefined; amountKopecks?: number | undefined; status?: string | undefined }>;
 	communicationEvents?: ReadonlyArray<{ id: string; patientId?: string | undefined; type?: string | undefined; channel?: string | undefined; source?: string | undefined }> | undefined;

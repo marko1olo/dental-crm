@@ -19,18 +19,29 @@ import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { buildPrescriptionPrintPayload } from "./prescriptionPrintPayloadBuilder.js";
 
+interface PrescriptionPrintParams {
+	id: string;
+}
+
+interface PrescriptionPrintQuery {
+	withStamp?: string;
+}
+
+interface PatientAddressProfile {
+	residentialAddress?: string | null;
+	passportAddress?: string | null;
+	address?: string | null;
+}
+
 export async function handlePrescriptionPrintHtml(
-	request: FastifyRequest,
+	request: FastifyRequest<{ Params: PrescriptionPrintParams; Querystring: PrescriptionPrintQuery }>,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -42,7 +53,7 @@ export async function handlePrescriptionPrintHtml(
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 
 	const [presc] = await db
 		.select()
@@ -89,14 +100,15 @@ export async function handlePrescriptionPrintHtml(
 			.orderBy(electronicPrescriptionItems.itemIndex),
 	]);
 
-	const patientProfile = patient?.administrativeProfile as {
-		residentialAddress?: string | null; passportAddress?: string | null; address?: string | null;
-	} | null;
+	const rawAdminProfile = patient?.administrativeProfile;
+	const patientProfile: PatientAddressProfile | null =
+		rawAdminProfile && typeof rawAdminProfile === "object"
+			? (rawAdminProfile as PatientAddressProfile)
+			: null;
 
 	const resolvedPatientAddress =
 		patientProfile?.residentialAddress || patientProfile?.passportAddress || patientProfile?.address || "—";
-	const query = request.query as { withStamp?: string };
-	const withStampAndSignature = query.withStamp !== "false";
+	const withStampAndSignature = request.query.withStamp !== "false";
 
 	const payload = buildPrescriptionPrintPayload({
 		presc,

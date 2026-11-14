@@ -8,12 +8,20 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 
+interface PrescriptionListQuery {
+	patientId?: string;
+	visitId?: string;
+	formType?: string;
+	status?: string;
+}
+
+interface PrescriptionParams {
+	id: string;
+}
+
 function checkClinicalReadAccess(request: FastifyRequest, reply: FastifyReply): boolean {
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		reply.code(403).send({
@@ -28,7 +36,10 @@ function checkClinicalReadAccess(request: FastifyRequest, reply: FastifyReply): 
 }
 
 /** 4. GET /api/prescriptions — List prescriptions for organization with filters */
-export async function handleListPrescriptions(request: FastifyRequest, reply: FastifyReply) {
+export async function handleListPrescriptions(
+	request: FastifyRequest<{ Querystring: PrescriptionListQuery }>,
+	reply: FastifyReply,
+) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 	if (!checkClinicalReadAccess(request, reply)) return;
@@ -39,12 +50,7 @@ export async function handleListPrescriptions(request: FastifyRequest, reply: Fa
 		diagnosis: "Реестр электронных рецептов",
 	});
 
-	const query = request.query as {
-		patientId?: string;
-		visitId?: string;
-		formType?: string;
-		status?: string;
-	};
+	const query = request.query;
 
 	const conditions = [eq(electronicPrescriptions.organizationId, orgId)];
 	if (query.patientId) conditions.push(eq(electronicPrescriptions.patientId, query.patientId));
@@ -63,12 +69,15 @@ export async function handleListPrescriptions(request: FastifyRequest, reply: Fa
 }
 
 /** 5. GET /api/prescriptions/:id — Get single prescription with drug items */
-export async function handleGetPrescriptionById(request: FastifyRequest, reply: FastifyReply) {
+export async function handleGetPrescriptionById(
+	request: FastifyRequest<{ Params: PrescriptionParams }>,
+	reply: FastifyReply,
+) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 	if (!checkClinicalReadAccess(request, reply)) return;
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 	const [prescription] = await db
 		.select()
 		.from(electronicPrescriptions)

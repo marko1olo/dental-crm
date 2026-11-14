@@ -11,6 +11,10 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
 
+interface PatientAttachmentParams {
+	patientId: string;
+}
+
 /*
  * Список вложений карточки пациента (не приёма).
  *
@@ -21,13 +25,13 @@ import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
  * направление, скан договора и прочие файлы именно карточки.
  */
 export const getPatientAttachmentsHandler = async (
-	request: FastifyRequest,
+	request: FastifyRequest<{ Params: PatientAttachmentParams }>,
 	reply: FastifyReply,
 ) => {
 	try {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
-		const { patientId } = request.params as { patientId: string };
+		const { patientId } = request.params;
 
 		const [patient] = await db
 			.select({ id: patients.id, status: patients.status })
@@ -47,8 +51,7 @@ export const getPatientAttachmentsHandler = async (
 		// 152-ФЗ / 323-ФЗ ст. 13: Защита вложений архивированного пациента
 		if (patient.status === "archived") {
 			const identity = getRequestIdentity(request);
-			const reqAny = request as unknown as { user?: { role?: string | null } };
-			const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -89,13 +92,13 @@ export const getPatientAttachmentsHandler = async (
 };
 
 export const postPatientAttachmentsHandler = async (
-	request: FastifyRequest,
+	request: FastifyRequest<{ Params: PatientAttachmentParams }>,
 	reply: FastifyReply,
 ) => {
 	try {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
-		const { patientId } = request.params as { patientId: string };
+		const { patientId } = request.params;
 
 		const [patient] = await db
 			.select({ id: patients.id, status: patients.status })
@@ -115,8 +118,7 @@ export const postPatientAttachmentsHandler = async (
 		// 152-ФЗ / 323-ФЗ: Защита от модификации вложений архивированного пациента
 		if (patient.status === "archived") {
 			const identity = getRequestIdentity(request);
-			const reqAny = request as unknown as { user?: { role?: string | null } };
-			const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -129,11 +131,13 @@ export const postPatientAttachmentsHandler = async (
 			}
 		}
 
-		const data = await (
-			request as unknown as {
-				file: () => Promise<MultipartFilePayload | undefined>;
-			}
-		).file();
+		if (typeof request.file !== "function") {
+			return reply.code(400).send({
+				error: "MissingFilePayload",
+				message: "Файл не получен: выберите снимок и повторите загрузку.",
+			});
+		}
+		const data = await request.file();
 		if (!data) {
 			return reply.code(400).send({
 				error: "MissingFilePayload",

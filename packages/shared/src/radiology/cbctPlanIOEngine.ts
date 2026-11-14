@@ -216,7 +216,7 @@ export function parseAndSanitizePlanCase(
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(rawJson);
-	} catch (err) {
+	} catch (err: unknown) {
 		return {
 			isValid: false,
 			plan: null,
@@ -486,7 +486,8 @@ export function formatSurgicalPlanForm043A4Protocol(plan: PlanCase): string {
 		lines.push("");
 
 		for (let i = 0; i < plan.implants.length; i++) {
-			const imp = plan.implants[i]!;
+			const imp = plan.implants[i];
+			if (!imp) continue;
 			lines.push(`Позиция №${i + 1} | Зуб по FDI: ${imp.toothNumber} | ID: ${imp.id}`);
 			lines.push(`  Модель имплантата                 : ${imp.implantModel}`);
 			lines.push(`  Длина тела (L)                    : ${f1(imp.lengthMm)} мм`);
@@ -516,7 +517,8 @@ export function formatSurgicalPlanForm043A4Protocol(plan: PlanCase): string {
 	} else {
 		lines.push(`Всего трассировано каналов: ${plan.nerveCanals.length}`);
 		for (let i = 0; i < plan.nerveCanals.length; i++) {
-			const canal = plan.nerveCanals[i]!;
+			const canal = plan.nerveCanals[i];
+			if (!canal) continue;
 			const sideLabel = canal.side === "left" ? "Левая сторона (Left)" : "Правая сторона (Right)";
 			lines.push(`Канал №${i + 1} [ID: ${canal.id}] | Сторона: ${sideLabel}`);
 			lines.push(`  Количество опорных точек сплайна  : ${canal.points.length}`);

@@ -163,6 +163,14 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	leadSource: z.string().trim().max(240).nullable().optional(),
 	telegramUserId: z.string().trim().max(80).nullable().optional(),
 	telegramUsername: z.string().trim().max(120).nullable().optional(),
+	portalSessionRevokedAt: z.string().nullable().optional(),
+	selectedTreatmentTier: z.string().nullable().optional(),
+	treatmentTierSelectedAt: z.string().nullable().optional(),
+	somaticQuestionnaire: z.record(z.unknown()).nullable().optional(),
+	somaticRiskProfile: z.record(z.unknown()).nullable().optional(),
+	somaticAlerts: z.array(z.unknown()).nullable().optional(),
+	somaticRiskLevel: z.string().nullable().optional(),
+	somaticUpdatedAt: z.string().nullable().optional(),
 });
 
 export const patientAdministrativeProfileSchema =

@@ -54,8 +54,9 @@ export {
 
 
 export function escapeHtml(value: unknown): string {
-	const s = String(value ?? "");
-	return s
+	if (value === null || value === undefined) return "";
+	return String(value)
+		.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")

@@ -6,6 +6,24 @@
 
 import type { SlidaPatientDescriptor, SlidaResponse } from "./types.js";
 
+const VALID_SLIDA_MODALITIES = new Set([
+	"IO",
+	"DX",
+	"PX",
+	"CT",
+	"CR",
+	"3D_SCAN",
+	"DOC",
+	"PHOTO",
+] as const);
+type SlidaModality = "IO" | "DX" | "PX" | "CT" | "CR" | "3D_SCAN" | "DOC" | "PHOTO";
+
+function normalizeSlidaModality(raw?: string): SlidaModality | undefined {
+	if (!raw) return undefined;
+	const upper = raw.trim().toUpperCase();
+	return VALID_SLIDA_MODALITIES.has(upper as SlidaModality) ? (upper as SlidaModality) : undefined;
+}
+
 function escapeXml(str: string): string {
 	return str
 		.replace(/&/g, "&amp;")
@@ -113,7 +131,7 @@ export function parseSlidaIniResponse(iniContent: string): SlidaResponse {
 		status,
 		patientId,
 		toothCode,
-		modality: modality as any,
+		modality: normalizeSlidaModality(modality),
 		imagePaths,
 	};
 }
@@ -146,7 +164,8 @@ export function parseSlidaXmlResponse(xmlContent: string): SlidaResponse {
 	}
 
 	const modalityMatch = xmlContent.match(/modality=["']([^"']+)["']/i) || xmlContent.match(/<Modality>([^<]+)<\/Modality>/i);
-	const modality = modalityMatch ? (modalityMatch[1]!.trim().toUpperCase() as any) : undefined;
+	const rawModality = modalityMatch ? modalityMatch[1] : undefined;
+	const modality = normalizeSlidaModality(rawModality);
 
 	return {
 		success: status === "OK" || status === "SUCCESS",

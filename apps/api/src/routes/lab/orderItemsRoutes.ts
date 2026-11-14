@@ -14,16 +14,13 @@ import { insertLabItem } from "./orderItemsCrud.js";
 export async function registerOrderItemsRoutes(app: FastifyInstance) {
 	// ─── Multi-Unit Restoration Items CRUD ───────────────────────────────────
 
-	app.get("/api/clinical/lab-orders/:id/items", async (request, reply) => {
+	app.get<{ Params: { id: string } }>("/api/clinical/lab-orders/:id/items", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
 		// 152-ФЗ / 323-ФЗ: Единицы протезирования ЗТЛ содержат формулу зубов и параметры препарирования (врачебная тайна)
 		const identity = getRequestIdentity(request);
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -34,7 +31,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { id: labOrderId } = request.params as { id: string };
+		const labOrderId = request.params.id;
 
 		const items = await db
 			.select()
@@ -45,7 +42,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		return reply.send({ items });
 	});
 
-	app.post("/api/clinical/lab-orders/:id/items", async (request, reply) => {
+	app.post<{ Params: { id: string } }>("/api/clinical/lab-orders/:id/items", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -54,10 +51,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 
 		// 152-ФЗ / 323-ФЗ: Добавление единиц протезирования ЗТЛ разрешено только клиническому персоналу
 		const identity = getRequestIdentity(request);
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -68,7 +62,7 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { id: labOrderId } = request.params as { id: string };
+		const labOrderId = request.params.id;
 
 		const [order] = await db
 			.select({ id: labOrders.id })

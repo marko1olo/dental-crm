@@ -23,8 +23,15 @@ export type DentalSpecialtyCategory =
  * Определяет, относится ли расходный материал к общеклиническим накладным расходам
  * (салфетки, ватные валики, слюноотсосы, перчатки, маски, стаканчики, нагрудники, бахилы).
  * Общеклинические расходники оплачиваются клиникой и НЕ подлежат удержанию из зарплаты врача!
+ * При наличии реляционного флага `isOverhead` приоритет отдается ему.
  */
-export function isGeneralClinicOverheadConsumable(materialName: string): boolean {
+export function isGeneralClinicOverheadConsumable(
+	materialName?: string | null,
+	isOverhead?: boolean | null,
+): boolean {
+	if (isOverhead !== undefined && isOverhead !== null) {
+		return Boolean(isOverhead);
+	}
 	if (!materialName || typeof materialName !== "string") return false;
 	return /салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк/i.test(
 		materialName.trim(),
@@ -124,7 +131,7 @@ export function computeItemCostsAndCommission(
 		itemOverheadCovered = Math.max(0, item.materialCostKop || 0);
 	} else if (item.materialItems && item.materialItems.length > 0) {
 		for (const m of item.materialItems) {
-			if (isGeneralClinicOverheadConsumable(m.name)) {
+			if (isGeneralClinicOverheadConsumable(m.name, m.isOverhead)) {
 				itemOverheadCovered += Math.max(0, m.costKop);
 			} else {
 				itemMaterialCost += Math.max(0, m.costKop);

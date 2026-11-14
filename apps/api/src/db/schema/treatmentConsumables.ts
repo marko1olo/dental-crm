@@ -7,6 +7,10 @@
  * 2. treatment_consumable_deductions: tracks idempotent deductions by treatment_reference_id.
  */
 
+import type {
+	TreatmentConsumableDeductionRecord,
+	TreatmentConsumableDeductionWarning,
+} from "@dental/shared";
 import { sql } from "drizzle-orm";
 import {
 	boolean,
@@ -84,8 +88,14 @@ export const treatmentConsumableDeductions = pgTable(
 		}),
 		status: text("status").notNull().default("completed"),
 		isOverdraft: boolean("is_overdraft").notNull().default(false),
-		deductions: jsonb("deductions").notNull().default(sql`'[]'::jsonb`),
-		warnings: jsonb("warnings").notNull().default(sql`'[]'::jsonb`),
+		deductions: jsonb("deductions")
+			.$type<TreatmentConsumableDeductionRecord[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		warnings: jsonb("warnings")
+			.$type<TreatmentConsumableDeductionWarning[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

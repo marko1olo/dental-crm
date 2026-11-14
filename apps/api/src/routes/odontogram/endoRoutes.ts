@@ -112,7 +112,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		const identity = getRequestIdentity(request);
 		const staffRole =
 			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			request.user?.role ??
 			null;
 
 		// Fail-closed для анонимов без токена сотрудника
@@ -188,7 +188,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			canalMeasurements: EndoToothClinicalData["canals"] | null;
 		} | undefined;
 		try {
-			const rows = await db
+			const [firstRow] = await db
 				.select({
 					toothNumber: toothStates.toothNumber,
 					state: toothStates.state,
@@ -205,7 +205,17 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					),
 				)
 				.limit(1);
-			tooth = rows[0] as typeof tooth;
+			if (firstRow) {
+				tooth = {
+					toothNumber: firstRow.toothNumber,
+					state: firstRow.state,
+					surfaces: Array.isArray(firstRow.surfaces) ? (firstRow.surfaces as string[]) : null,
+					notes: firstRow.notes,
+					canalMeasurements: Array.isArray(firstRow.canalMeasurements)
+						? (firstRow.canalMeasurements as EndoToothClinicalData["canals"])
+						: null,
+				};
+			}
 		} catch (dbErr) {
 			if (!isDbUnavailable(dbErr)) {
 				throw dbErr;
@@ -237,7 +247,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 				irrigation: resolvedClinicalData?.irrigation || "NaOCl 3% + EDTA 17%",
 				rotarySystem: resolvedClinicalData?.rotarySystem || "WaveOne Gold / ProTaper Gold",
 				radiologyControl: resolvedClinicalData?.radiologyControl || "Рентген-контроль: гуттаперча до апекса",
-				apexLocator: resolvedClinicalData?.apexLocator || tooth.canalMeasurements[0]?.apexLocatorReading || "0.0 (Apex)",
+				apexLocator: resolvedClinicalData?.apexLocator || tooth.canalMeasurements?.[0]?.apexLocatorReading || "0.0 (Apex)",
 				notes: tooth.notes && !tooth.notes.startsWith("{") ? tooth.notes : (resolvedClinicalData?.notes || ""),
 				stageStamp: tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED",
 				updatedAt: new Date().toISOString(),
@@ -268,7 +278,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		const identity = getRequestIdentity(request);
 		const staffRole =
 			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			request.user?.role ??
 			null;
 
 		if (!staffRole) {
@@ -342,7 +352,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 
 		// Нормализация каналов с сохранением флага облитерации, апекслокатора и инструментов (Мандаты 8e, 8n)
 		const sanitizedCanals = parsed.data.canals.map((c) => {
-			const isObliterated = Boolean((c as unknown as { isObliterated?: boolean }).isObliterated);
+			const isObliterated = Boolean(c.isObliterated);
 			let workingLength: number;
 			if (isObliterated) {
 				workingLength = 0;
@@ -443,7 +453,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 
 				const canalSummary = sanitizedCanals
 					.map((c) => {
-						const obli = (c as unknown as { isObliterated?: boolean }).isObliterated ? " [облитерирован]" : "";
+						const obli = c.isObliterated ? " [облитерирован]" : "";
 						const apex = c.apexLocatorReading ? ` [Apex: ${c.apexLocatorReading}]` : "";
 						return `${c.canalName}: WL ${c.workingLengthMm || "—"} мм (${c.masterFile || c.masterApicalFile || "MAF"}/${c.taper || ""}, ${c.obturationTechnique || "обтурация"})${apex}${obli}`;
 					})

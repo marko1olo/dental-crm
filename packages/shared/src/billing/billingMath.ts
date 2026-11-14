@@ -5,6 +5,8 @@
  * Zero floating-point drifts (Mandate 8b, Mandate 8i).
  */
 
+import { rublesToKopecks, kopecksToRubles } from "../money.js";
+
 export { calculateCashChange, type CashChangeResult } from "../fiscal/index.js";
 
 export const DEPOSIT_QUICK_PRESETS_RUB: readonly number[] = [
@@ -24,12 +26,12 @@ export const CASH_QUICK_BILLS_RUB: readonly number[] = [
 
 export function rubToKopecksStrict(rub: number): number {
 	if (!Number.isFinite(rub)) return 0;
-	return Math.round(rub * 100);
+	return rublesToKopecks(rub);
 }
 
 export function kopecksToRubStrict(kopecks: number): number {
 	if (!Number.isFinite(kopecks)) return 0;
-	return Math.round(kopecks) / 100;
+	return kopecksToRubles(kopecks);
 }
 
 export interface SplitBalancesResult {

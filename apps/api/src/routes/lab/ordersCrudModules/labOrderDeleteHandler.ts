@@ -10,7 +10,7 @@ import { deleteLabOrderInDb } from "./labOrderDbOperations.js";
  * DELETE /api/clinical/lab-orders/:id, /api/lab/orders/:id, /api/dental-lab/orders/:id
  * Удаление заказа ЗТЛ (только черновики или отмененные).
  */
-export async function deleteLabOrderHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function deleteLabOrderHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -19,10 +19,7 @@ export async function deleteLabOrderHandler(request: FastifyRequest, reply: Fast
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -33,7 +30,7 @@ export async function deleteLabOrderHandler(request: FastifyRequest, reply: Fast
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const id = request.params.id;
 	const UUID_REGEX =
 		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 	if (!id || !UUID_REGEX.test(id)) {

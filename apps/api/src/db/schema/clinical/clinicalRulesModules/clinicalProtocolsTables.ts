@@ -355,7 +355,7 @@ export const patientImplantInstallations = pgTable(
 			precision: 5,
 			scale: 2,
 		}).notNull(),
-		baselineIsq: integer("baseline_isq").notNull().default(70),
+		baselineIsq: integer("baseline_isq"),
 		initialProtocol: text("initial_protocol")
 			.notNull()
 			.default("delayed_loading"),

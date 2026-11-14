@@ -72,12 +72,21 @@ export interface WebGlDisposalReport {
 	readonly estimatedVramFreedMb: number;
 }
 
+export interface WebGlRenderingContextLike {
+	deleteTexture?(texture: unknown): void;
+	deleteBuffer?(buffer: unknown): void;
+	deleteProgram?(program: unknown): void;
+	deleteFramebuffer?(framebuffer: unknown): void;
+	getExtension?(name: string): unknown;
+	[key: string]: unknown;
+}
+
 /**
  * Safely unloads and deletes an array of WebGL textures in batch from GPU VRAM.
  */
 export function disposeCbctSeriesTextures(
-	gl: any,
-	textures: readonly (any | null | undefined)[],
+	gl: WebGlRenderingContextLike | null | undefined,
+	textures: readonly (unknown | null | undefined)[],
 	width = 512,
 	height = 512,
 	bytesPerPixel = 2,
@@ -113,12 +122,12 @@ export function disposeCbctSeriesTextures(
  * and triggers loseContext to prevent GPU memory leaks across sessions.
  */
 export function disposeFullWebGlPipeline(
-	gl: any,
+	gl: WebGlRenderingContextLike | null | undefined,
 	resources?: {
-		readonly textures?: readonly (any | null | undefined)[];
-		readonly buffers?: readonly (any | null | undefined)[];
-		readonly programs?: readonly (any | null | undefined)[];
-		readonly framebuffers?: readonly (any | null | undefined)[];
+		readonly textures?: readonly (unknown | null | undefined)[];
+		readonly buffers?: readonly (unknown | null | undefined)[];
+		readonly programs?: readonly (unknown | null | undefined)[];
+		readonly framebuffers?: readonly (unknown | null | undefined)[];
 		readonly sliceWidth?: number;
 		readonly sliceHeight?: number;
 		readonly bytesPerPixel?: number;
@@ -199,7 +208,7 @@ export function disposeFullWebGlPipeline(
 
 	// 5. Trigger loseContext
 	try {
-		const loseExt = gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null;
+		const loseExt = (gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null) as { loseContext?: () => void } | null;
 		if (loseExt && typeof loseExt.loseContext === "function") {
 			loseExt.loseContext();
 			contextLostTriggered = true;

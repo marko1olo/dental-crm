@@ -24,7 +24,6 @@ export * from "./planToInvoiceValidator.js";
 export * from "./priceLockEngine.js";
 export * from "./doctorNetSalaryEngine.js";
 export * from "./doctorShiftEarnings.js";
-export * from "./doctorPayoutCalculator.js";
 export * from "./managerialPnlEngine.js";
 export * from "./cashFlowCatalogs.js";
 export * from "./cashFlowCategories.js";

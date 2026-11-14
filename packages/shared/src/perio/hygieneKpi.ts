@@ -23,12 +23,12 @@ export function calculateKpiScore(
 ): KpiResult {
 	let totalPoints = 0;
 	let assessedTeethCount = 0;
-	const teethEntries = Array.isArray(teethMap)
+	const teethEntries: readonly HygieneToothAssessment[] = Array.isArray(teethMap)
 		? teethMap
 		: Object.entries(teethMap).map(([num, val]) => ({ toothNumber: Number(num), ...val }));
 
 	for (const entry of teethEntries) {
-		if ((entry as any).isMissing) continue;
+		if (entry.isMissing) continue;
 		if (typeof entry.kpiScore === "number" && Number.isFinite(entry.kpiScore)) {
 			totalPoints += Math.max(0, Math.min(4, entry.kpiScore));
 			assessedTeethCount++;

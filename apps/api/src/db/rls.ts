@@ -106,7 +106,7 @@ export async function withTenantCtx<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return callback({} as unknown as TenantDb);
+		return callback(dbRaw);
 	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
@@ -114,12 +114,13 @@ export async function withTenantCtx<T>(
 		// new one. This is not a no-op: the inner scope may target a different
 		// tenant than the outer, and the value must be restored afterwards so the
 		// remainder of the outer transaction keeps its own tenant context.
-		const previous = await existingTx.execute(
+		interface TenantSettingRow extends Record<string, unknown> {
+			tenant: string | null;
+		}
+		const previous = await existingTx.execute<TenantSettingRow>(
 			sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
 		);
-		const rawTenant =
-			(previous as unknown as { rows?: Array<{ tenant: string | null }> })
-				.rows?.[0]?.tenant ?? null;
+		const rawTenant = previous.rows[0]?.tenant ?? null;
 		// Reset value of a user-defined GUC is '' rather than NULL. Writing ''
 		// back would make the `::uuid` casts in the policies raise 22P02; NULL
 		// casts cleanly. Normalize on read so the restore below passes NULL.
@@ -190,7 +191,7 @@ export async function withSuperuserBypass<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		return callback({} as unknown as TenantDb);
+		return callback(dbRaw);
 	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {

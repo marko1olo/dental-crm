@@ -331,11 +331,17 @@ export interface WebGlDisposalStats {
 }
 
 export function disposeWebGlRenderingContext(
-	gl: any,
+	gl: {
+		deleteTexture?(texture: unknown): void;
+		deleteBuffer?(buffer: unknown): void;
+		deleteProgram?(program: unknown): void;
+		getExtension?(name: string): unknown;
+		[key: string]: unknown;
+	} | null | undefined,
 	resources?: {
-		readonly textures?: readonly any[];
-		readonly buffers?: readonly any[];
-		readonly programs?: readonly any[];
+		readonly textures?: readonly (unknown | null | undefined)[];
+		readonly buffers?: readonly (unknown | null | undefined)[];
+		readonly programs?: readonly (unknown | null | undefined)[];
 	},
 ): WebGlDisposalStats {
 	let texturesDisposed = 0;
@@ -376,7 +382,7 @@ export function disposeWebGlRenderingContext(
 
 	// Trigger loose extension loseContext if available to release GPU VRAM immediately
 	try {
-		const loseExt = gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null;
+		const loseExt = (gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null) as { loseContext?: () => void } | null;
 		if (loseExt && typeof loseExt.loseContext === "function") {
 			loseExt.loseContext();
 			contextLostTriggered = true;

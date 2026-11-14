@@ -62,8 +62,8 @@ export async function fetchLabPriceFromDb(
 			)
 			.limit(5);
 
-		if (foundServices.length > 0) {
-			const matched = foundServices[0]!;
+		const matched = foundServices[0];
+		if (matched) {
 
 			const basePrice = Number(matched.basePriceRub) || 0;
 			const labCost = Number(matched.labCostRub) || 0;

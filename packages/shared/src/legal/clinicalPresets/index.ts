@@ -1,12 +1,12 @@
 import type { ClinicalProcedureConsentPreset } from "./types.js";
 import { THERAPY_CONSENT_PRESETS } from "./therapyConsents.js";
-import { SURGERY_AND_IMPLANT_CONSENT_PRESETS } from "./surgeryAndImplantConsents.js";
+import { SURGERY_AND_IMPLANT_CONSENT_PRESETS } from "../clinicalConsents/surgeryAndImplantConsents.js";
 import { ORTHO_AND_PROSTHETIC_CONSENT_PRESETS } from "./orthoAndProstheticConsents.js";
 import { ANESTHESIA_AND_GENERAL_CONSENT_PRESETS } from "./anesthesiaAndGeneralConsents.js";
 
 export * from "./types.js";
 export * from "./therapyConsents.js";
-export * from "./surgeryAndImplantConsents.js";
+export { SURGERY_AND_IMPLANT_CONSENT_PRESETS } from "../clinicalConsents/surgeryAndImplantConsents.js";
 export * from "./orthoAndProstheticConsents.js";
 export * from "./anesthesiaAndGeneralConsents.js";
 

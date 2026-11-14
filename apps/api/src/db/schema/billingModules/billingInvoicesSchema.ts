@@ -1,5 +1,6 @@
 import { sql, relations } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -228,7 +229,7 @@ export const ndflTaxCalculators = pgTable(
 	}),
 );
 
-export const patientInvoicesRelations = relations(patientInvoices, ({ one }) => ({
+export const patientInvoicesRelations = relations(patientInvoices, ({ one, many }) => ({
 	organization: one(organizations, {
 		fields: [patientInvoices.organizationId],
 		references: [organizations.id],
@@ -236,5 +237,55 @@ export const patientInvoicesRelations = relations(patientInvoices, ({ one }) => 
 	patient: one(patients, {
 		fields: [patientInvoices.patientId],
 		references: [patients.id],
+	}),
+	items: many(invoiceItems),
+}));
+
+export const invoiceItems = pgTable(
+	"invoice_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		invoiceId: uuid("invoice_id")
+			.notNull()
+			.references(() => patientInvoices.id, { onDelete: "cascade" }),
+		priceListItemId: uuid("price_list_item_id"),
+		name: text("name").notNull(),
+		quantity: numeric("quantity", { precision: 10, scale: 2 })
+			.notNull()
+			.default("1"),
+		unitPriceKopecks: bigint("unit_price_kopecks", { mode: "number" })
+			.notNull()
+			.default(sql`0`),
+		discountPercent: numeric("discount_percent", { precision: 5, scale: 2 })
+			.notNull()
+			.default("0"),
+		totalPriceKopecks: bigint("total_price_kopecks", { mode: "number" })
+			.notNull()
+			.default(sql`0`),
+		serviceCode: text("service_code"),
+		toothCode: text("tooth_code"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("invoice_items_organization_id_idx").on(
+			t.organizationId,
+		),
+		invoiceIdIdx: index("invoice_items_invoice_id_idx").on(t.invoiceId),
+	}),
+);
+
+export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
+	organization: one(organizations, {
+		fields: [invoiceItems.organizationId],
+		references: [organizations.id],
+	}),
+	invoice: one(patientInvoices, {
+		fields: [invoiceItems.invoiceId],
+		references: [patientInvoices.id],
 	}),
 }));

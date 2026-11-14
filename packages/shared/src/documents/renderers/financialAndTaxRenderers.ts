@@ -8,28 +8,196 @@
 import type {
 	DailyDentistDiary037uPayload,
 	SummaryDentistStatement039uPayload,
+	UkepDigitalSignaturePayload,
 } from "./types.js";
 import { escapeHtml, CLINICAL_DOCUMENT_PRINT_STYLES } from "./sharedStyles.js";
+
+/** Вспомогательный интерфейс записи пациента для формы 037/у */
+export interface Form037uPatientRecordLike {
+	sequenceNumber?: number;
+	orderNumber?: number;
+	entryNumber?: number;
+	appointmentTime?: string;
+	visitTime?: string;
+	time?: string;
+	patientFullName?: string;
+	fullName?: string;
+	name?: string;
+	isChildUnder18?: boolean;
+	patientCategory?: string;
+	patientAge?: number | string;
+	age?: number | string;
+	birthYear?: number;
+	patientSex?: string;
+	gender?: string;
+	medicalCardNumber?: string;
+	cardNumber?: string;
+	cardNum?: string;
+	isRuralResident?: boolean;
+	residenceType?: string;
+	isPrimaryVisit?: boolean;
+	isRepeatVisit?: boolean;
+	visitType?: string;
+	isSanatedInVisit?: boolean;
+	isSanated?: boolean;
+	sanated?: boolean;
+	diagnosisIcd10?: string;
+	mkb10?: string;
+	diagnosis?: string;
+	diagnosisText?: string;
+	performedProceduresSummary?: string;
+	procedures?: string;
+	treatment?: string;
+	workDone?: string;
+	cariesBlackClass?: string;
+	blackClass?: string;
+	endodonticsCanalsTreated?: number;
+	canalsTreated?: number;
+	isSurgicalExtraction?: boolean;
+	isHygieneProcedure?: boolean;
+	isAnesthesiaConducted?: boolean;
+	uetCaries?: number;
+	uetPulpitisPeriodontitis?: number;
+	uetSurgeryExtractions?: number;
+	uetHygienePeriodontology?: number;
+	uetAnesthesia?: number;
+	totalUetForVisit?: number;
+	uetTotal?: number;
+	uet?: number;
+	[key: string]: unknown;
+}
+
+/** Вспомогательный интерфейс записи календарного дня для формы 039/у */
+export interface CalendarDayRecordLike {
+	day?: number;
+	date?: string;
+	visits?: number;
+	patientsCount?: number;
+	adults?: number;
+	children?: number;
+	adolescents?: number;
+	rural?: number;
+	primary?: number;
+	repeat?: number;
+	preventive?: number;
+	sanated?: number;
+	fillings?: number;
+	pulpitisPerio?: number;
+	canals?: number;
+	extractions?: number;
+	hygiene?: number;
+	uet?: number;
+	[key: string]: unknown;
+}
+
+/** Вспомогательный интерфейс полезной нагрузки формы 037/у */
+export interface Form037uRenderPayload {
+	organization?: { fullName?: string; address?: string; ogrn?: string; inn?: string };
+	clinicLegalName?: string;
+	clinic?: { name?: string };
+	clinicAddress?: string;
+	clinicOgrn?: string;
+	clinicInn?: string;
+	clinicDepartment?: string;
+	department?: string;
+	doctor?: { fullName?: string; specialty?: string };
+	doctorFullName?: string;
+	doctorSpecialty?: string;
+	date?: string;
+	workDate?: string;
+	shiftDate?: string;
+	shiftNumber?: string;
+	shift?: string;
+	shiftWorkingHours?: string;
+	patientRecords?: Form037uPatientRecordLike[];
+	patients?: Form037uPatientRecordLike[];
+	records?: Form037uPatientRecordLike[];
+	summaryTotals?: Record<string, unknown>;
+	totals?: Record<string, unknown>;
+	dailyTotals?: Record<string, unknown>;
+	watermarkText?: string;
+	withStampAndSignature?: boolean;
+	qrVerificationUrl?: string;
+	ukepSignature?: UkepDigitalSignaturePayload;
+	notesAndObservations?: string;
+	[key: string]: unknown;
+}
+
+/** Вспомогательный интерфейс полезной нагрузки формы 039/у */
+export interface Form039uRenderPayload {
+	organization?: { fullName?: string; address?: string; ogrn?: string; inn?: string };
+	clinicLegalName?: string;
+	clinic?: { name?: string };
+	clinicAddress?: string;
+	clinicOgrn?: string;
+	clinicInn?: string;
+	clinicDepartment?: string;
+	department?: string;
+	reportingDoctor?: { fullName?: string; specialty?: string };
+	doctor?: { fullName?: string; specialty?: string };
+	doctorFullName?: string;
+	doctorSpecialty?: string;
+	period?: string;
+	periodLabel?: string;
+	reportingPeriodMonthYear?: string;
+	workingDaysCount?: number;
+	workingDays?: number;
+	workingHoursCount?: number;
+	consolidatedMetrics?: Record<string, number>;
+	metrics?: Record<string, number>;
+	uetBreakdown?: Record<string, number>;
+	uetGrandTotal?: number;
+	totalVisits?: number;
+	adultsCount?: number;
+	childrenCount?: number;
+	ruralResidentsCount?: number;
+	primaryVisitsCount?: number;
+	repeatVisitsCount?: number;
+	sanatedTotal?: number;
+	fillingsByBlackClass?: Record<string, number>;
+	endodonticsCanalsCount?: number;
+	surgicalExtractionsCount?: number;
+	implantsPlaced?: number;
+	orthopedicCrownsCount?: number;
+	calendarDays?: CalendarDayRecordLike[];
+	days?: CalendarDayRecordLike[];
+	dailyBreakdown?: CalendarDayRecordLike[];
+	watermarkText?: string;
+	withStampAndSignature?: boolean;
+	qrVerificationUrl?: string;
+	ukepSignature?: UkepDigitalSignaturePayload;
+	uetBySpecialty?: {
+		therapy?: number;
+		endodontics?: number;
+		surgery?: number;
+		hygiene?: number;
+		prosthetics?: number;
+		orthodontics?: number;
+		anesthesia?: number;
+	};
+	[key: string]: unknown;
+}
 
 /**
  * 3. Рендерер Формы № 037/у-88 — Листок ежедневного учета работы врача-стоматолога (зубного врача)
  * Приказ Минздрава СССР от 25.01.1988 № 50 / Приказ Минздрава РФ № 804н
  * A4 Landscape, 20+ columns register table, daily totals summary row, shift KPI block
  */
-export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая поликлиника";
-	const clinicAddress = payload.organization?.address || payload.clinicAddress || "";
-	const clinicOgrn = payload.organization?.ogrn || payload.clinicOgrn || "—";
-	const clinicInn = payload.organization?.inn || payload.clinicInn || "—";
-	const department = payload.clinicDepartment || payload.department || "Стоматологическое отделение";
-	const doctorName = payload.doctor?.fullName || payload.doctorFullName || "Врач-стоматолог";
-	const doctorSpecialty = payload.doctorSpecialty || payload.doctor?.specialty || "Врач-стоматолог-терапевт";
-	const workDate = payload.date || payload.workDate || payload.shiftDate || new Date().toISOString().slice(0, 10);
-	const shift = payload.shiftNumber === "shift_2_evening" ? "2 смена (вечерняя)" : (payload.shiftNumber === "full_day" ? "Полный день" : (payload.shift || "1 смена (утренняя)"));
-	const workingHours = payload.shiftWorkingHours || "08:00 - 14:36 (6.6 ч)";
+export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | Form037uRenderPayload): string {
+	const p = payload as Form037uRenderPayload;
+	const clinicName = p.organization?.fullName || p.clinicLegalName || p.clinic?.name || "Стоматологическая поликлиника";
+	const clinicAddress = p.organization?.address || p.clinicAddress || "";
+	const clinicOgrn = p.organization?.ogrn || p.clinicOgrn || "—";
+	const clinicInn = p.organization?.inn || p.clinicInn || "—";
+	const department = p.clinicDepartment || p.department || "Стоматологическое отделение";
+	const doctorName = p.doctor?.fullName || p.doctorFullName || "Врач-стоматолог";
+	const doctorSpecialty = p.doctorSpecialty || p.doctor?.specialty || "Врач-стоматолог-терапевт";
+	const workDate = p.date || p.workDate || p.shiftDate || new Date().toISOString().slice(0, 10);
+	const shift = p.shiftNumber === "shift_2_evening" ? "2 смена (вечерняя)" : (p.shiftNumber === "full_day" ? "Полный день" : (p.shift || "1 смена (утренняя)"));
+	const workingHours = p.shiftWorkingHours || "08:00 - 14:36 (6.6 ч)";
 
-	const rawRecords: any[] = payload.patientRecords || payload.patients || payload.records || [];
-	const totals = payload.summaryTotals || payload.totals || payload.dailyTotals || {};
+	const rawRecords: Form037uPatientRecordLike[] = p.patientRecords || p.patients || p.records || [];
+	const totals = (p.summaryTotals || p.totals || p.dailyTotals || {}) as Record<string, unknown>;
 
 	// Aggregate column metrics
 	let sumAdults = 0;
@@ -52,7 +220,7 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 	let sumAnesthesia = 0;
 	let sumUet = 0;
 
-	const patientRows = rawRecords.map((p: any, idx: number) => {
+	const patientRows = rawRecords.map((p: Form037uPatientRecordLike, idx: number) => {
 		const orderNum = p.sequenceNumber ?? p.orderNumber ?? p.entryNumber ?? (idx + 1);
 		const time = p.appointmentTime || p.visitTime || p.time || "—";
 		const name = p.patientFullName || p.fullName || p.name || "—";
@@ -88,8 +256,10 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 		const sanStr = isSan ? "Да" : "—";
 
 		// Diagnosis & Teeth
-		const diag = p.diagnosisIcd10 || (Array.isArray(p.diagnoses) ? p.diagnoses.join(", ") : p.diagnoses) || p.diagnosisText || "—";
-		const teeth = Array.isArray(p.treatedTeethNumbers) ? p.treatedTeethNumbers.join(",") : (p.treatedTeethNumbers || p.toothNumber || p.diagnosisTooth || "—");
+		const rawDiagnoses = p.diagnoses as readonly string[] | string | undefined;
+		const diag = String(p.diagnosisIcd10 || (Array.isArray(rawDiagnoses) ? rawDiagnoses.join(", ") : rawDiagnoses) || p.diagnosisText || "—");
+		const rawTreatedTeeth = p.treatedTeethNumbers as readonly string[] | string | undefined;
+		const teeth = Array.isArray(rawTreatedTeeth) ? rawTreatedTeeth.join(",") : String(rawTreatedTeeth || p.toothNumber || p.diagnosisTooth || "—");
 
 		// Black classes (I–V)
 		const b1 = p.blackClassI ?? p.fillingsClassI ?? (diag.includes("K02") && !p.blackClassII ? 1 : 0);
@@ -104,7 +274,7 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 		sumBlackV += Number(b5) || 0;
 
 		// Endodontics canals
-		const cCount = p.endodonticsCanalsCount ?? (p.uetPulpitisPeriodontitis > 0 ? 1 : 0);
+		const cCount = Number(p.endodonticsCanalsCount ?? ((p.uetPulpitisPeriodontitis ?? 0) > 0 ? 1 : 0));
 		const c1 = p.canals1 ?? (cCount === 1 ? 1 : 0);
 		const c2 = p.canals2 ?? (cCount === 2 ? 1 : 0);
 		const c3 = p.canals3Plus ?? (cCount >= 3 ? 1 : 0);
@@ -113,16 +283,18 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 		sumCanals3Plus += Number(c3) || 0;
 
 		// Surgery, Hygiene, Anesthesia
-		const surg = (p.extractionsSimpleCount ?? 0) + (p.extractionsComplicatedCount ?? 0) + (p.extractionsCount ?? 0) + (p.surgeryOperationsCount ?? 0) + (p.uetSurgeryExtractions > 0 ? 1 : 0);
-		const hyg = p.hygieneProcedures ?? p.hygieneCount ?? (p.uetHygienePeriodontology > 0 ? 1 : 0);
-		const anesth = p.anesthesiaCount ?? (p.uetAnesthesia > 0 ? 1 : (p.anesthesiaUsed ? 1 : 0));
+		const surg = Number(p.extractionsSimpleCount ?? 0) + Number(p.extractionsComplicatedCount ?? 0) + Number(p.extractionsCount ?? 0) + Number(p.surgeryOperationsCount ?? 0) + ((p.uetSurgeryExtractions ?? 0) > 0 ? 1 : 0);
+		const hyg = p.hygieneProcedures ?? p.hygieneCount ?? ((p.uetHygienePeriodontology ?? 0) > 0 ? 1 : 0);
+		const anesth = p.anesthesiaCount ?? ((p.uetAnesthesia ?? 0) > 0 ? 1 : (p.anesthesiaUsed ? 1 : 0));
 		sumSurgery += Number(surg) || 0;
 		sumHygiene += Number(hyg) || 0;
 		sumAnesthesia += Number(anesth) || 0;
 
 		// Description & UET
-		const desc = p.performedProceduresSummary || (Array.isArray(p.procedures) ? p.procedures.join("; ") : p.procedures) || p.proceduresPerformed || p.treatmentDescription || "—";
-		const uet = Number(p.totalUetForVisit ?? p.uetTotal ?? p.uetEarned?.totalUet ?? p.uetEarned ?? 0);
+		const rawProcedures = p.procedures as readonly string[] | string | undefined;
+		const desc = p.performedProceduresSummary || (Array.isArray(rawProcedures) ? rawProcedures.join("; ") : rawProcedures) || p.proceduresPerformed || p.treatmentDescription || "—";
+		const rawUetEarned = p.uetEarned as { totalUet?: number } | number | undefined;
+		const uet = Number(p.totalUetForVisit ?? p.uetTotal ?? (typeof rawUetEarned === "object" && rawUetEarned !== null ? rawUetEarned.totalUet : rawUetEarned) ?? 0);
 		sumUet += uet;
 
 		return `
@@ -155,18 +327,20 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
 	}).join("");
 
 	// Fallback totals from summaryTotals if raw records were empty
-	const totalPatients = rawRecords.length || totals.totalPatientsCount || totals.totalPatientsSeen || totals.totalPatients || 0;
-	const totalAdults = sumAdults || totals.totalAdultsCount || totals.adultsCount || 0;
-	const totalChildren = sumChildren || totals.totalChildrenUnder14Count || totals.childrenCount || 0;
-	const totalAdol = sumAdolescents || totals.totalAdolescents15_17Count || 0;
-	const totalRural = sumRural || totals.ruralResidentsCount || 0;
-	const totalPrimary = sumPrimary || totals.totalPrimaryVisitsCount || totals.primaryVisitsCount || totals.primaryCount || 0;
-	const totalRepeat = sumRepeat || totals.totalRepeatVisitsCount || totals.repeatVisitsCount || 0;
-	const totalSanated = sumSanated || totals.totalSanatedCount || totals.sanatedPatientsCount || totals.sanatedCount || 0;
-	const totalFillings = (sumBlackI + sumBlackII + sumBlackIII + sumBlackIV + sumBlackV) || totals.totalFillingsPlaced || totals.fillingsTotal || 0;
-	const totalExtractions = sumSurgery || totals.totalTeethExtracted || totals.extractionsTotal || 0;
-	const grandTotalUet = sumUet > 0 ? sumUet : Number(totals.totalUetAccumulated ?? totals.uetGrandTotal ?? totals.uetTotals?.totalUet ?? 0);
-	const quotaUet = totals.shiftStandardQuotaUet ?? totals.shiftTargetUet ?? 21.0;
+	const t = totals as Record<string, unknown>;
+	const totalPatients = Number(rawRecords.length || t.totalPatientsCount || t.totalPatientsSeen || t.totalPatients || 0);
+	const totalAdults = Number(sumAdults || t.totalAdultsCount || t.adultsCount || 0);
+	const totalChildren = Number(sumChildren || t.totalChildrenUnder14Count || t.childrenCount || 0);
+	const totalAdol = Number(sumAdolescents || t.totalAdolescents15_17Count || 0);
+	const totalRural = Number(sumRural || t.ruralResidentsCount || 0);
+	const totalPrimary = Number(sumPrimary || t.totalPrimaryVisitsCount || t.primaryVisitsCount || t.primaryCount || 0);
+	const totalRepeat = Number(sumRepeat || t.totalRepeatVisitsCount || t.repeatVisitsCount || 0);
+	const totalSanated = Number(sumSanated || t.totalSanatedCount || t.sanatedPatientsCount || t.sanatedCount || 0);
+	const totalFillings = Number((sumBlackI + sumBlackII + sumBlackIII + sumBlackIV + sumBlackV) || t.totalFillingsPlaced || t.fillingsTotal || 0);
+	const totalExtractions = Number(sumSurgery || t.totalTeethExtracted || t.extractionsTotal || 0);
+	const rawUetTotals = t.uetTotals as { totalUet?: number } | undefined;
+	const grandTotalUet = sumUet > 0 ? sumUet : Number(t.totalUetAccumulated ?? t.uetGrandTotal ?? rawUetTotals?.totalUet ?? 0);
+	const quotaUet = Number(t.shiftStandardQuotaUet ?? t.shiftTargetUet ?? 21.0);
 	const planPct = quotaUet > 0 ? Number(((grandTotalUet / quotaUet) * 100).toFixed(1)) : 100.0;
 
 	return `<!DOCTYPE html>
@@ -346,56 +520,57 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
  * Приказ Минздрава СССР от 25.01.1988 № 50 / Приказ Минздрава РФ № 804н
  * Monthly summary table with 31 calendar days + Month Total + Specialty UET breakdown
  */
-export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая поликлиника";
-	const department = payload.clinicDepartment || payload.department || "Стоматологическое отделение";
-	const doctorName = payload.reportingDoctor?.fullName || payload.doctor?.fullName || payload.doctorFullName || "Врач-стоматолог";
-	const doctorSpecialty = payload.doctorSpecialty || "Врач-стоматолог-терапевт";
-	const period = payload.period || payload.periodLabel || payload.reportingPeriodMonthYear || "Отчетный месяц";
-	const workingDays = payload.workingDaysCount || payload.workingDays || 21;
-	const workingHours = payload.workingHoursCount || Number((workingDays * 6.6).toFixed(1));
+export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload | Form039uRenderPayload): string {
+	const p = payload as Form039uRenderPayload;
+	const clinicName = p.organization?.fullName || p.clinicLegalName || p.clinic?.name || "Стоматологическая поликлиника";
+	const department = p.clinicDepartment || p.department || "Стоматологическое отделение";
+	const doctorName = p.reportingDoctor?.fullName || p.doctor?.fullName || p.doctorFullName || "Врач-стоматолог";
+	const doctorSpecialty = p.doctorSpecialty || "Врач-стоматолог-терапевт";
+	const period = p.period || p.periodLabel || p.reportingPeriodMonthYear || "Отчетный месяц";
+	const workingDays = p.workingDaysCount || p.workingDays || 21;
+	const workingHours = p.workingHoursCount || Number((workingDays * 6.6).toFixed(1));
 
-	const m = payload.consolidatedMetrics || payload.metrics || {};
-	const uetBreakdown = payload.uetBreakdown || {};
-	const totalUet = payload.uetGrandTotal ?? uetBreakdown.totalUetAccumulated ?? uetBreakdown.totalUetEarned ?? 0;
+	const m = (p.consolidatedMetrics || p.metrics || {}) as Record<string, number>;
+	const uetBreakdown = (p.uetBreakdown || {}) as Record<string, number>;
+	const totalUet = p.uetGrandTotal ?? uetBreakdown.totalUetAccumulated ?? uetBreakdown.totalUetEarned ?? 0;
 	const quotaUet = uetBreakdown.periodStandardQuotaUet ?? Number((workingDays * 21.0).toFixed(1));
 	const planPct = uetBreakdown.planExecutionPercentage ?? (quotaUet > 0 ? Number(((totalUet / quotaUet) * 100).toFixed(1)) : 100.0);
 
-	const visitsTotal = m.visitsTotal ?? payload.totalVisits ?? 0;
-	const visitsAdults = m.visitsAdults ?? payload.adultsCount ?? 0;
-	const visitsChildren = m.visitsChildrenUnder14 ?? payload.childrenCount ?? 0;
+	const visitsTotal = m.visitsTotal ?? p.totalVisits ?? 0;
+	const visitsAdults = m.visitsAdults ?? p.adultsCount ?? 0;
+	const visitsChildren = m.visitsChildrenUnder14 ?? p.childrenCount ?? 0;
 	const visitsAdolescents = m.visitsAdolescents15_17 ?? 0;
-	const visitsRural = m.visitsRuralResidents ?? payload.ruralResidentsCount ?? 0;
-	const visitsPrimary = m.visitsPrimary ?? payload.primaryVisitsCount ?? 0;
-	const visitsRepeat = m.visitsRepeat ?? payload.repeatVisitsCount ?? (visitsTotal - visitsPrimary);
+	const visitsRural = m.visitsRuralResidents ?? p.ruralResidentsCount ?? 0;
+	const visitsPrimary = m.visitsPrimary ?? p.primaryVisitsCount ?? 0;
+	const visitsRepeat = m.visitsRepeat ?? p.repeatVisitsCount ?? (visitsTotal - visitsPrimary);
 	const visitsPreventive = m.visitsPreventativeExam ?? 0;
-	const sanatedTotal = m.sanatedTotal ?? payload.sanatedTotal ?? 0;
+	const sanatedTotal = m.sanatedTotal ?? p.sanatedTotal ?? 0;
 	const sanatedAdults = m.sanatedAdults ?? 0;
 	const sanatedChildren = m.sanatedChildren ?? 0;
 
-	const fillingsCaries = m.fillingsCariesTotal ?? (payload.fillingsByBlackClass ? (Object.values(payload.fillingsByBlackClass).reduce((a: any, b: any) => Number(a) + Number(b), 0) as number) : 0);
+	const fillingsCaries = m.fillingsCariesTotal ?? (p.fillingsByBlackClass ? (Object.values(p.fillingsByBlackClass).reduce((a: number, b: number) => Number(a) + Number(b), 0)) : 0);
 	const fillingsComposite = m.fillingsCompositePhotopolymer ?? fillingsCaries;
 	const fillingsSic = m.fillingsGlassIonomer ?? 0;
 	const pulpitis = m.pulpitisTreatedTotal ?? 0;
 	const periodontitis = m.periodontitisTreatedTotal ?? 0;
-	const canalsFilled = m.canalsFilledTotal ?? payload.endodonticsCanalsCount ?? 0;
+	const canalsFilled = m.canalsFilledTotal ?? p.endodonticsCanalsCount ?? 0;
 	const hygiene = m.hygieneProceduresTotal ?? 0;
-	const extractionsSimple = m.extractionsSimple ?? payload.surgicalExtractionsCount ?? 0;
+	const extractionsSimple = m.extractionsSimple ?? p.surgicalExtractionsCount ?? 0;
 	const extractionsComplex = m.extractionsComplex ?? 0;
 	const extractionsWisdom = m.extractionsImpactedWisdom ?? 0;
 	const surgeries = m.outpatientOperationsCount ?? 0;
-	const implants = m.implantsInstalledCount ?? payload.implantsPlaced ?? 0;
-	const crowns = m.crownsDeliveredCount ?? payload.orthopedicCrownsCount ?? 0;
+	const implants = m.implantsInstalledCount ?? p.implantsPlaced ?? 0;
+	const crowns = m.crownsDeliveredCount ?? p.orthopedicCrownsCount ?? 0;
 	const anesthesiaInfiltration = m.anesthesiaInfiltrationCount ?? 0;
 	const anesthesiaConduction = m.anesthesiaConductionCount ?? 0;
 	const xrays = m.radiographsCount ?? 0;
 
 	// Build 31-day calendar matrix
 	const calendarRows = [];
-	const customDays: any[] = payload.calendarDays || payload.days || payload.dailyBreakdown || [];
+	const customDays: CalendarDayRecordLike[] = p.calendarDays || p.days || p.dailyBreakdown || [];
 
 	for (let day = 1; day <= 31; day++) {
-		const existing = customDays.find((d: any) => d.day === day || d.date?.endsWith(`-${String(day).padStart(2, "0")}`));
+		const existing = customDays.find((d: CalendarDayRecordLike) => d.day === day || d.date?.endsWith(`-${String(day).padStart(2, "0")}`));
 		if (existing) {
 			calendarRows.push({
 				day,
@@ -461,10 +636,10 @@ export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload |
     </tr>
   `).join("");
 
-	const specTherapy = uetBreakdown.uetTherapy ?? payload.uetBySpecialty?.therapy ?? (totalUet * 0.6);
-	const specEndo = uetBreakdown.uetEndodontics ?? payload.uetBySpecialty?.endodontics ?? (totalUet * 0.2);
-	const specSurg = uetBreakdown.uetSurgery ?? payload.uetBySpecialty?.surgery ?? (totalUet * 0.1);
-	const specHyg = uetBreakdown.uetHygieneAndPerio ?? payload.uetBySpecialty?.hygiene ?? (totalUet * 0.1);
+	const specTherapy = uetBreakdown.uetTherapy ?? p.uetBySpecialty?.therapy ?? (totalUet * 0.6);
+	const specEndo = uetBreakdown.uetEndodontics ?? p.uetBySpecialty?.endodontics ?? (totalUet * 0.2);
+	const specSurg = uetBreakdown.uetSurgery ?? p.uetBySpecialty?.surgery ?? (totalUet * 0.1);
+	const specHyg = uetBreakdown.uetHygieneAndPerio ?? p.uetBySpecialty?.hygiene ?? (totalUet * 0.1);
 	const specOrtho = uetBreakdown.uetProsthetics ?? uetBreakdown.uetOrthodontics ?? 0;
 	const specAnesth = uetBreakdown.uetAnesthesiaAndDiagnostics ?? 0;
 

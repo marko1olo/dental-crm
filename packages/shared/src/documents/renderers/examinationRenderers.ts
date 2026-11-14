@@ -861,14 +861,14 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetRenderPa
 export interface RadiologyReferralRenderPayload {
 	readonly clinicLegalName?: string | undefined;
 	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly phone?: string } | undefined;
-	readonly clinicAddress?: string | undefined;
-	readonly clinicPhone?: string | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly clinicPhone?: string | null | undefined;
 	readonly referralNumber?: string | undefined;
 	readonly referralDate?: string | undefined;
 	readonly patientFullName?: string | undefined;
 	readonly patient?: { readonly fullName?: string; readonly birthDate?: string; readonly phone?: string; readonly medicalCardNumber?: string } | undefined;
 	readonly patientBirthDate?: string | undefined;
-	readonly patientPhone?: string | undefined;
+	readonly patientPhone?: string | null | undefined;
 	readonly medicalCardNumber?: string | undefined;
 	readonly doctorFullName?: string | undefined;
 	readonly doctorSpecialty?: string | undefined;

@@ -6,8 +6,11 @@ import { getLabOrderByToken } from "../../../db/labQuery.js";
 import { labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
-export async function handleGetPortalOrder(request: FastifyRequest, reply: FastifyReply) {
-	const { token } = request.params as { token: string };
+export async function handleGetPortalOrder(
+	request: FastifyRequest<{ Params: { token: string } }>,
+	reply: FastifyReply,
+) {
+	const token = request.params.token;
 	if (!token) return reply.code(400).send({ error: "TokenRequired", message: "Токен наряда обязателен." });
 
 	try {
@@ -31,7 +34,7 @@ export async function handleGetPortalOrder(request: FastifyRequest, reply: Fasti
 			dueDate: order.dueDate,
 			createdAt: order.createdAt,
 		};
-	} catch (e) {
+	} catch (e: unknown) {
 		request.log.error({ err: e }, "[LabPortal] GET error");
 		return reply.code(500).send({
 			error: "LabPortalError",
@@ -45,8 +48,11 @@ const photoBodySchema = z.object({
 	attachedImageUrl: z.string().trim().max(500000).optional(),
 });
 
-export async function handlePostPortalOrderPhoto(request: FastifyRequest, reply: FastifyReply) {
-	const { token } = request.params as { token: string };
+export async function handlePostPortalOrderPhoto(
+	request: FastifyRequest<{ Params: { token: string } }>,
+	reply: FastifyReply,
+) {
+	const token = request.params.token;
 
 	const parsedBody = photoBodySchema.safeParse(request.body);
 
@@ -95,7 +101,7 @@ export async function handlePostPortalOrderPhoto(request: FastifyRequest, reply:
 		});
 
 		return { success: true, attachedImageUrl: photoUrl };
-	} catch (e) {
+	} catch (e: unknown) {
 		request.log.error({ err: e }, "[LabPortal] POST photo error");
 		return reply.code(500).send({
 			error: "LabPortalError",

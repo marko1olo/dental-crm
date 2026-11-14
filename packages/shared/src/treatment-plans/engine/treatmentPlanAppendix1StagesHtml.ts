@@ -40,7 +40,7 @@ export function renderAppendix1StagesHtml(stages: readonly TreatmentPlanStageSum
 					<thead>
 						<tr style="background-color: #f8fafc; font-size: 10px; text-transform: uppercase; color: #475569;">
 							<th style="border: 1px solid #cbd5e1; padding: 6px; width: 30px;">№</th>
-							<th style="border: 1px solid #cbd5e1; padding: 6px; width: 90px;">Код Приказа МЗ РФ № 804н</th>
+							<th style="border: 1px solid #cbd5e1; padding: 6px; width: 90px;">Код услуги</th>
 							<th style="border: 1px solid #cbd5e1; padding: 6px;">Наименование медицинской услуги</th>
 							<th style="border: 1px solid #cbd5e1; padding: 6px; width: 60px;">Зуб</th>
 							<th style="border: 1px solid #cbd5e1; padding: 6px; width: 40px;">Кол-во</th>

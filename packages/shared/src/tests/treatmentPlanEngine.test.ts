@@ -521,7 +521,8 @@ describe("Wave 19: Multi-Option Treatment Plan & Phased Clinical Estimate Engine
 			// Assertions on statutory contents of Decree No. 736
 			assert.ok(html.includes("ПРЕДВАРИТЕЛЬНЫЙ ПЛАН ЛЕЧЕНИЯ И СМЕТА РАСХОДОВ"));
 			assert.ok(html.includes("Постановлением Правительства РФ от 11.05.2023 № 736"));
-			assert.ok(html.includes("Приказа МЗ РФ № 804н"));
+			assert.ok(html.includes("Код услуги"));
+			assert.ok(!html.includes("804н"));
 			assert.ok(html.includes("A16.07.002.001"));
 			assert.ok(html.includes("A16.07.001.002"));
 			assert.ok(html.includes("A16.07.004.002"));

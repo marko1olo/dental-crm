@@ -7,15 +7,12 @@ import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { createLabOrderEventSchema } from "../types.js";
 
-export async function handleGetLabOrderEvents(request: FastifyRequest, reply: FastifyReply) {
+export async function handleGetLabOrderEvents(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -26,7 +23,7 @@ export async function handleGetLabOrderEvents(request: FastifyRequest, reply: Fa
 		});
 	}
 
-	const { id: labOrderId } = request.params as { id: string };
+	const labOrderId = request.params.id;
 
 	const events = await db
 		.select()
@@ -42,15 +39,12 @@ export async function handleGetLabOrderEvents(request: FastifyRequest, reply: Fa
 	return reply.send({ events });
 }
 
-export async function handleCreateLabOrderEvent(request: FastifyRequest, reply: FastifyReply) {
+export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -61,7 +55,7 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest, reply: 
 		});
 	}
 
-	const { id: labOrderId } = request.params as { id: string };
+	const labOrderId = request.params.id;
 	const parsed = createLabOrderEventSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({

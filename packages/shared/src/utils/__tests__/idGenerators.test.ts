@@ -14,6 +14,7 @@ import {
 	generatePurchaseOrderNumber,
 	generatePurchaseOrderId,
 	generatePurchaseReceiptId,
+	generateWarehouseTransferId,
 	generateTransferM11Id,
 	generateClassBWasteSealAndBarcode,
 	generateSecureUuid,
@@ -108,9 +109,12 @@ test("packages/shared/utils/idGenerators: Purchase Order numbers and IDs", () =>
 	assert.match(rcptId, /^rcpt-\d+-[a-z0-9]{6}$/);
 });
 
-test("packages/shared/utils/idGenerators: Transfer M-11 document IDs", () => {
+test("packages/shared/utils/idGenerators: Warehouse Transfer document IDs", () => {
+	const trfId = generateWarehouseTransferId();
+	assert.match(trfId, /^trf_\d+_[a-z0-9]{6}$/);
+
 	const m11Id = generateTransferM11Id();
-	assert.match(m11Id, /^m11_\d+_[a-z0-9]{6}$/);
+	assert.match(m11Id, /^trf_\d+_[a-z0-9]{6}$/);
 });
 
 test("packages/shared/utils/idGenerators: Class B Medical Waste seal and barcode (SanPiN 2.1.3684-21)", () => {

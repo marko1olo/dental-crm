@@ -12,15 +12,27 @@ import {
 import { validatePrescriptionAllergiesAndSafety } from "../../services/clinical/prescriptionValidationService.js";
 import { FORBIDDEN_NARCOTIC_INN_PATTERNS } from "./prescriptionSchemas.js";
 
+type StatutoryValidationPayload = Parameters<typeof verifyPrescriptionStatutoryValidity>[0] & {
+	patientAllergies?: string[];
+	patientId?: string;
+};
+
+interface VerifyPrescriptionParams {
+	id: string;
+}
+
 /**
  * 2. POST /api/prescriptions/validate
  * Statutory rules engine validation per Order 1094n
  */
-export async function handleValidatePrescription(request: FastifyRequest, reply: FastifyReply) {
+export async function handleValidatePrescription(
+	request: FastifyRequest<{ Body: StatutoryValidationPayload }>,
+	reply: FastifyReply,
+) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const body = request.body as Parameters<typeof verifyPrescriptionStatutoryValidity>[0] | null | undefined;
+	const body = request.body;
 	if (!body || typeof body !== "object") {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -32,7 +44,7 @@ export async function handleValidatePrescription(request: FastifyRequest, reply:
 	const narcoticErrors: string[] = [];
 	if (Array.isArray(body.items)) {
 		for (const item of body.items) {
-			const itemObj = item as { latinName?: string; tradeName?: string } | null;
+			const itemObj = item && typeof item === "object" ? (item as { latinName?: string; tradeName?: string }) : null;
 			const name = itemObj?.latinName || itemObj?.tradeName || "";
 			if (name && FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(name))) {
 				narcoticErrors.push(
@@ -52,18 +64,18 @@ export async function handleValidatePrescription(request: FastifyRequest, reply:
 	const proposedDrugs: string[] = [];
 	if (Array.isArray(body.items)) {
 		for (const item of body.items) {
-			const itemObj = item as { latinName?: string; tradeName?: string } | null;
+			const itemObj = item && typeof item === "object" ? (item as { latinName?: string; tradeName?: string }) : null;
 			const name = itemObj?.latinName || itemObj?.tradeName || "";
 			if (name) proposedDrugs.push(name);
 		}
 	}
 
 	let patientAllergies: string[] = [];
-	const customAllergies = (body as unknown as { patientAllergies?: string[] }).patientAllergies;
+	const customAllergies = body.patientAllergies;
 	if (Array.isArray(customAllergies)) {
 		patientAllergies = customAllergies.filter(Boolean);
 	}
-	const maybePatientId = (body as unknown as { patientId?: string }).patientId;
+	const maybePatientId = body.patientId;
 	if (maybePatientId && typeof maybePatientId === "string") {
 		const dbAllergies = await db
 			.select()
@@ -109,11 +121,14 @@ export async function handleValidatePrescription(request: FastifyRequest, reply:
  * 8. POST /api/prescriptions/:id/verify
  * Verify statutory validity and expiration status
  */
-export async function handleVerifyPrescription(request: FastifyRequest, reply: FastifyReply) {
+export async function handleVerifyPrescription(
+	request: FastifyRequest<{ Params: VerifyPrescriptionParams }>,
+	reply: FastifyReply,
+) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 	const [presc] = await db
 		.select()
 		.from(electronicPrescriptions)

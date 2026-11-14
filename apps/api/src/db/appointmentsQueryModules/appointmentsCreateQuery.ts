@@ -21,17 +21,18 @@ import {
 	type DbClientOrTransaction,
 } from "./appointmentValidationHelpers.js";
 
+export type CreateAppointmentDbInput = CreateAppointmentInput & {
+	allowEmergencyOverride?: boolean | undefined;
+	urgency?: "routine" | "urgent" | "emergency" | undefined;
+};
+
 export async function createAppointmentInDb(
 	organizationId: string,
-	input: Omit<CreateAppointmentInput, "chairId"> & {
-		chairId?: string | null | undefined;
-		allowEmergencyOverride?: boolean | undefined;
-		urgency?: "routine" | "urgent" | "emergency" | undefined;
-	},
+	input: CreateAppointmentDbInput,
 	tx?: DbClientOrTransaction,
 ): Promise<Appointment> {
 	if (useInMemory()) {
-		return createAppointmentInMemory(input as unknown as CreateAppointmentInput);
+		return createAppointmentInMemory(input);
 	}
 	if (input.patientId) {
 		const client = tx || db;

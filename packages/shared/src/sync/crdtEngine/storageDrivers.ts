@@ -141,14 +141,18 @@ export class IndexedDbCrdtStorageDriver implements CrdtStorageDriver {
 	}
 
 	public isAvailable(): boolean {
-		const g = globalThis as unknown as { indexedDB?: IDBFactory };
-		return Boolean(g && g.indexedDB);
+		if (typeof indexedDB !== "undefined") {
+			return Boolean(indexedDB);
+		}
+		const g = globalThis as { indexedDB?: IDBFactory | undefined };
+		return Boolean(g.indexedDB);
 	}
 
 	private async getDb(): Promise<IDBDatabase> {
 		if (this.dbInstance) return this.dbInstance;
-		const g = globalThis as unknown as { indexedDB?: IDBFactory };
-		const idb = g.indexedDB;
+		const idb = typeof indexedDB !== "undefined"
+			? indexedDB
+			: (globalThis as { indexedDB?: IDBFactory | undefined }).indexedDB;
 		if (!idb) {
 			throw new Error("IndexedDB is not available");
 		}

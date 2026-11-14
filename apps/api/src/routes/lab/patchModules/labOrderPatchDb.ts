@@ -6,6 +6,25 @@ import { isPermittedLabStatusTransition } from "../ordersCrudModules/labOrderSta
 import { mapStageOrStatusToMilestone } from "../types.js";
 import type { LabOrderPatchBody } from "./labOrderPatchSchema.js";
 
+const VALID_LAB_ORDER_STATUSES = new Set<string>([
+	"draft",
+	"sent",
+	"in_progress",
+	"shipped",
+	"received",
+	"ready",
+	"ready_in_clinic",
+	"refitting",
+	"fitted",
+	"completed",
+	"cancelled",
+	"rejected_remake",
+]);
+
+function toLabOrderStatus(status: string): LabOrderStatus {
+	return VALID_LAB_ORDER_STATUSES.has(status) ? (status as LabOrderStatus) : "draft";
+}
+
 export type PatchDbResult =
 	| { kind: "not_found" }
 	| { kind: "locked_installed" }
@@ -31,6 +50,7 @@ export async function executeLabOrderPatch(
 			targetStatus === "refitting" ||
 			body.stage === "warranty_rework" ||
 			body.stage === "correction_remake" ||
+			body.stage === "correction_required" ||
 			body.stage === "refitting";
 
 		if (currentOrder.isLockedInstalled && !isWarrantyRequest) {
@@ -38,7 +58,7 @@ export async function executeLabOrderPatch(
 		}
 
 		if (targetStatus && targetStatus !== currentOrder.status) {
-			const currentStatus = currentOrder.status as LabOrderStatus;
+			const currentStatus = toLabOrderStatus(currentOrder.status);
 			if (!isPermittedLabStatusTransition(currentStatus, targetStatus)) {
 				return { kind: "invalid_transition", currentStatus, targetStatus };
 			}
@@ -86,6 +106,6 @@ export async function executeLabOrderPatch(
 			photoUrls: [],
 		});
 
-		return { kind: "ok", updated: updated as typeof labOrders.$inferSelect };
+		return { kind: "ok", updated };
 	});
 }

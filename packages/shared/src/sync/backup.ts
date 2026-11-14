@@ -265,10 +265,8 @@ function bytesToBase64(bytes: Uint8Array): string {
 	}
 	if (typeof btoa === "function") {
 		let binary = "";
-		const chunkSize = 8192;
-		for (let i = 0; i < bytes.length; i += chunkSize) {
-			const chunk = bytes.subarray(i, i + chunkSize);
-			binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+		for (let i = 0; i < bytes.length; i++) {
+			binary += String.fromCharCode(bytes[i] ?? 0);
 		}
 		return btoa(binary);
 	}
@@ -292,7 +290,7 @@ function base64ToBytes(base64: string): Uint8Array {
 			}
 			return bytes;
 		}
-	} catch (err) {
+	} catch (err: unknown) {
 		throw new Error(`Ошибка декодирования Base64: ${err instanceof Error ? err.message : "поврежденные данные"}`);
 	}
 	throw new Error("No base64 decoder available in current environment");
@@ -565,7 +563,7 @@ export function restoreEncryptedDenteBackup<
 				container.header.ivHex,
 				container.header.authTagHex,
 			);
-		} catch (err) {
+		} catch (err: unknown) {
 			throw new Error(
 				err instanceof Error && err.message.includes("аутентификационный тег")
 					? err.message

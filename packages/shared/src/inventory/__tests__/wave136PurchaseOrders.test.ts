@@ -663,16 +663,16 @@ describe("Wave 136 — Procurement & Purchase Orders Engine (DentalPin Adapter)"
 				supplierDocumentNumber: "ТОРГ12-7788",
 			});
 
-			assert.ok(printM7.includes("ТИПОВАЯ МЕЖОТРАСЛЕВАЯ ФОРМА № М-7"));
+			assert.ok(printM7.includes("ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ"));
 			assert.ok(printM7.includes("АКТ О ПРИЕМКЕ МАТЕРИАЛОВ № М7-2026/089"));
+			assert.ok(!printM7.includes("Госкомстата"));
 			assert.ok(printM7.includes('ООО "ДЕНТЕ КЛИНИК"'));
 			assert.ok(printM7.includes('АО "РосДентХим"'));
 			assert.ok(printM7.includes("Септанест с адреналином"));
 			assert.ok(printM7.includes("Иглы карпульные"));
 			assert.ok(printM7.includes("Принято годных: 9 шт. | Брак/дефект: 1 шт."));
-			assert.ok(printM7.includes("Петров С.В."));
-			assert.ok(printM7.includes("Ковалева Е.А."));
-			assert.ok(printM7.includes("ПОДПИСИ ЧЛЕНОВ КОМИССИИ"));
+			assert.ok(printM7.includes("Ильин М.А."));
+			assert.ok(printM7.includes("ПОДПИСИ СТОРОН"));
 
 			// MANDATE 8d ITEM 7 INVARIANT: STRICTLY 0 EMOJIS!
 			// Unicode emoji blocks: Emoticons, Misc Symbols, Transport, Dingbats, Supplemental, Pictographs

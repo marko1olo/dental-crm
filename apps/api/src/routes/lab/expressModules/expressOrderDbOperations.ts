@@ -104,6 +104,6 @@ export async function insertExpressLabOrder(params: ExpressOrderDbParams): Promi
 			}
 		}
 
-		return { kind: "ok", order: createdOrder, patientName: patient.fullName } as ExpressDbResult;
+		return { kind: "ok", order: createdOrder, patientName: patient.fullName };
 	});
 }

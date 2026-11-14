@@ -10,8 +10,14 @@ import {
 	validateScanFileMeta,
 } from "../../services/labScanDirectUpload.js";
 
-export async function handleLabScanUploadUrl(request: FastifyRequest, reply: FastifyReply) {
-	const { id } = request.params as { id: string };
+export async function handleLabScanUploadUrl(
+	request: FastifyRequest<{
+		Params: { id: string };
+		Body: { fileName?: string; fileSizeBytes?: number; expiresInSeconds?: number };
+	}>,
+	reply: FastifyReply,
+) {
+	const id = request.params.id;
 	const identity = getRequestIdentity(request);
 	const orgId = identity?.organizationId;
 	if (!orgId) {
@@ -21,7 +27,7 @@ export async function handleLabScanUploadUrl(request: FastifyRequest, reply: Fas
 		});
 	}
 
-	const body = request.body as { fileName?: string; fileSizeBytes?: number; expiresInSeconds?: number } | undefined;
+	const body = request.body;
 	if (!body || !body.fileName) {
 		return reply.code(400).send({
 			error: "BadRequest",

@@ -94,8 +94,9 @@ export function executeDryRunRestoreCheck(
 	try {
 		const restoreResult = restoreEncryptedDenteBackup(rawBackupText, passphrase);
 		decryptedPayload = restoreResult.payload;
-	} catch (err: any) {
-		errors.push(err?.message || "Ошибка дешифрования архива (неверный мастер-пароль или повреждение данных)");
+	} catch (err: unknown) {
+		const errMsg = err instanceof Error ? err.message : String(err);
+		errors.push(errMsg || "Ошибка дешифрования архива (неверный мастер-пароль или повреждение данных)");
 		const duration = (performance ? performance.now() : Date.now()) - startTime;
 		return {
 			dryRunSuccess: false,
@@ -130,8 +131,8 @@ export function executeDryRunRestoreCheck(
 	// Inspect mutations payload records
 	if (Array.isArray(decryptedPayload.mutations)) {
 		let invalidMutations = 0;
-		for (const m of decryptedPayload.mutations as any[]) {
-			if (!m || typeof m !== "object" || (!m.id && !m.mutationId)) {
+		for (const m of decryptedPayload.mutations as readonly Record<string, unknown>[]) {
+			if (!m || typeof m !== "object" || (!m["id"] && !m["mutationId"])) {
 				invalidMutations++;
 			}
 		}

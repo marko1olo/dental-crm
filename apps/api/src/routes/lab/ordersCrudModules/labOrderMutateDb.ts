@@ -7,6 +7,25 @@ import { mapStageToLabOrderStatus } from "../types.js";
 import type { UpdateLabOrderInput } from "./labOrderValidationSchemas.js";
 import { isPermittedLabStatusTransition } from "./labOrderStatusTransitions.js";
 
+const VALID_LAB_ORDER_STATUSES = new Set<string>([
+	"draft",
+	"sent",
+	"in_progress",
+	"shipped",
+	"received",
+	"ready",
+	"ready_in_clinic",
+	"refitting",
+	"fitted",
+	"completed",
+	"cancelled",
+	"rejected_remake",
+]);
+
+function toLabOrderStatus(status: string): LabOrderStatus {
+	return VALID_LAB_ORDER_STATUSES.has(status) ? (status as LabOrderStatus) : "draft";
+}
+
 /**
  * DB query helper: Update lab order in database with state transition checks.
  */
@@ -26,7 +45,8 @@ export async function updateLabOrderInDb(
 
 	let targetStatus: LabOrderStatus | undefined = undefined;
 	if (updateData.status) {
-		targetStatus = mapStageToLabOrderStatus(updateData.status) ?? (updateData.status as LabOrderStatus);
+		const mapped = mapStageToLabOrderStatus(updateData.status);
+		targetStatus = mapped ?? (VALID_LAB_ORDER_STATUSES.has(updateData.status) ? (updateData.status as LabOrderStatus) : undefined);
 	}
 	if (!targetStatus && updateData.stage) {
 		const mapped = mapStageToLabOrderStatus(updateData.stage);
@@ -34,7 +54,7 @@ export async function updateLabOrderInDb(
 	}
 
 	if (targetStatus && targetStatus !== currentOrder.status) {
-		const currentStatus = currentOrder.status as LabOrderStatus;
+		const currentStatus = toLabOrderStatus(currentOrder.status);
 		if (!isPermittedLabStatusTransition(currentStatus, targetStatus)) {
 			return { kind: "invalid_transition" as const, currentStatus, targetStatus };
 		}

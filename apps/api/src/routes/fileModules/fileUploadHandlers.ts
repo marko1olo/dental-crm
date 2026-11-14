@@ -26,13 +26,17 @@ import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
  * Обход RLS не применяется: строка ищется по organization_id из
  * проверенного токена и под политикой арендатора.
  */
+interface DownloadAttachmentParams {
+	attachmentId: string;
+}
+
 export const downloadAttachmentHandler = async (
-	request: FastifyRequest,
+	request: FastifyRequest<{ Params: DownloadAttachmentParams }>,
 	reply: FastifyReply,
 ) => {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
-	const { attachmentId } = request.params as { attachmentId: string };
+	const { attachmentId } = request.params;
 
 	const [attachment] = await withTenantCtx(orgId, (tx) =>
 		tx
@@ -56,8 +60,7 @@ export const downloadAttachmentHandler = async (
 
 	// 152-ФЗ / 323-ФЗ ст. 13: Защита при скачивании вложений
 	const identity = getRequestIdentity(request);
-	const reqAny = request as unknown as { user?: { role?: string | null } };
-	const staffRole = identity.role ?? reqAny.user?.role ?? null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 
 	// Если вложение привязано к приёму — это медицинские фото/снимки лечебного процесса
@@ -117,7 +120,8 @@ export const downloadAttachmentHandler = async (
 		);
 		reply.type(attachment.mimeType);
 		return reply.send(createReadStream(filePath));
-	} catch (_e) {
+	} catch (error: unknown) {
+		request.log.warn({ err: error, attachmentId, filePath }, "Attachment file missing on disk");
 		return reply.code(404).send({
 			error: "FileNotFoundOnDisk",
 			message:
@@ -137,11 +141,13 @@ export const decodeHeicHandler = async (
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const data = await (
-			request as unknown as {
-				file: () => Promise<MultipartFilePayload | undefined>;
-			}
-		).file();
+		if (typeof request.file !== "function") {
+			return reply.code(400).send({
+				error: "MissingFilePayload",
+				message: "Файл HEIC не получен для декодирования.",
+			});
+		}
+		const data = await request.file();
 
 		if (!data) {
 			return reply.code(400).send({

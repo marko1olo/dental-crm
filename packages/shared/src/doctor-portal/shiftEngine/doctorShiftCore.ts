@@ -33,19 +33,91 @@ import {
 } from "./shiftTimeMath.js";
 import { filterDoctorShiftAppointments } from "./shiftConflictDetector.js";
 
+export interface RawServiceInput {
+	readonly id?: string | null | undefined;
+	readonly code804n?: string | null | undefined;
+	readonly nameRu?: string | null | undefined;
+	readonly category?: string | null | undefined;
+	readonly quantity?: number | null | undefined;
+	readonly unitPriceKop?: number | null | undefined;
+	readonly totalCostKop?: number | null | undefined;
+	readonly discountKop?: number | null | undefined;
+	readonly finalRevenueKop?: number | null | undefined;
+	readonly directLabZtlCostKop?: number | null | undefined;
+	readonly directMaterialCostKop?: number | null | undefined;
+	readonly commissionPercent?: number | null | undefined;
+	readonly earnedDoctorPayoutKop?: number | null | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface RawPatientInput {
+	readonly id?: string | number | null | undefined;
+	readonly fullName?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+	readonly card?: string | null | undefined;
+	readonly birthDate?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface RawChairInput {
+	readonly id?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface RawAppointmentInput {
+	readonly id?: string | number | null | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorUserId?: string | null | undefined;
+	readonly doctorFullName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
+	readonly patientId?: string | number | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+	readonly startsAtIso?: string | null | undefined;
+	readonly startsAt?: string | null | undefined;
+	readonly endsAtIso?: string | null | undefined;
+	readonly endsAt?: string | null | undefined;
+	readonly actualStartsAtIso?: string | null | undefined;
+	readonly actualEndsAtIso?: string | null | undefined;
+	readonly actualDurationMinutes?: number | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly chairId?: string | null | undefined;
+	readonly chairName?: string | null | undefined;
+	readonly diagnosisIcd10?: string | null | undefined;
+	readonly diagnosisTooth?: string | null | undefined;
+	readonly treatmentDescription?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+	readonly services?: readonly RawServiceInput[] | null | undefined;
+	readonly emrCard043uStatus?: Emr043CardStatus | null | undefined;
+	readonly emrSignedAtIso?: string | null | undefined;
+	readonly emrPepProtocolHash?: string | null | undefined;
+	readonly emrSignerInfo?: {
+		readonly name: string;
+		readonly phoneMasked: string;
+		readonly snils?: string | undefined;
+		readonly lawBasis?: string | undefined;
+	} | null | undefined;
+	readonly [key: string]: unknown;
+}
+
 /**
  * Adapts raw dashboard appointments into strictly typed DoctorShiftAppointment records
  * filtered for the active doctor and current shift date.
  * Mandate 8e: Guarantees zero fake fallback appointments in empty shifts.
  */
 export function adaptToDoctorShiftAppointments(params: {
-	appointments?: readonly any[] | undefined;
+	appointments?: readonly RawAppointmentInput[] | undefined;
 	doctorId?: string | undefined;
 	doctorName?: string | undefined;
 	doctorSpecialty?: string | undefined;
 	shiftDateIso?: string | undefined;
-	patients?: readonly any[] | undefined;
-	chairs?: readonly any[] | undefined;
+	patients?: readonly RawPatientInput[] | undefined;
+	chairs?: readonly RawChairInput[] | undefined;
 }): DoctorShiftAppointment[] {
 	const rawList = Array.isArray(params.appointments) ? params.appointments : [];
 	if (rawList.length === 0) {
@@ -160,18 +232,20 @@ export function adaptToDoctorShiftAppointments(params: {
 				diagnosisTooth: apt.diagnosisTooth,
 				treatmentDescription: apt.treatmentDescription || apt.notes,
 				services: Array.isArray(apt.services)
-					? apt.services.map((s: any, sIdx: number) => {
-							const finalRev = s.finalRevenueKop !== undefined && s.finalRevenueKop > 0
-								? s.finalRevenueKop
-								: s.totalCostKop !== undefined && s.totalCostKop > 0
-									? Math.max(0, s.totalCostKop - (s.discountKop || 0))
+					? apt.services.map((s: RawServiceInput, sIdx: number) => {
+							const revKop = typeof s.finalRevenueKop === "number" && s.finalRevenueKop > 0 ? s.finalRevenueKop : undefined;
+							const costKop = typeof s.totalCostKop === "number" && s.totalCostKop > 0 ? s.totalCostKop : undefined;
+							const finalRev: number = revKop !== undefined
+								? revKop
+								: costKop !== undefined
+									? Math.max(0, costKop - (s.discountKop || 0))
 									: Math.max(0, (s.unitPriceKop || 0) * (s.quantity || 1) - (s.discountKop || 0));
 							const { earnedPayoutKop } = calculateServicePieceRateAccrual(
 								{
 									finalRevenueKop: finalRev,
-									directLabZtlCostKop: s.directLabZtlCostKop || 0,
-									directMaterialCostKop: s.directMaterialCostKop || 0,
-									commissionPercent: s.commissionPercent,
+									directLabZtlCostKop: s.directLabZtlCostKop ?? 0,
+									directMaterialCostKop: s.directMaterialCostKop ?? 0,
+									commissionPercent: s.commissionPercent ?? undefined,
 									category: s.category || "therapy",
 								},
 								25,

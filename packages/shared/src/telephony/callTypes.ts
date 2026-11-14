@@ -42,6 +42,7 @@ export interface IncomingCallPayload {
 	endedAt?: number | undefined;
 	lineId?: 1 | 2 | undefined;
 	direction?: "inbound" | "outbound" | undefined;
+	acutePain?: boolean | undefined;
 }
 
 export interface CallHistoryItem extends IncomingCallPayload {

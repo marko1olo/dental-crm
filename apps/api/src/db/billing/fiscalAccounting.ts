@@ -66,8 +66,9 @@ export async function recordCashAndFiscalAccounting(
 		if (!box) {
 			box = allBoxes.find((b) => b.isMain) || allBoxes[0];
 		}
-		const shift = box
-			? openShifts.find((s) => s.cashBoxId === box!.id) || openShifts[0] || null
+		const targetBox = box;
+		const shift = targetBox
+			? openShifts.find((s) => s.cashBoxId === targetBox.id) || openShifts[0] || null
 			: openShifts[0] || null;
 		return { box, shift };
 	};

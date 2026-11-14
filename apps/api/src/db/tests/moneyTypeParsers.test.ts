@@ -113,8 +113,8 @@ describe('parseBigIntMoney', () => {
 describe('registerMoneyTypeParsers', () => {
   test('registers both NUMERIC_OID (1700) and BIGINT_OID (20)', () => {
     registerMoneyTypeParsers();
-    const numericParser = pg.types.getTypeParser(NUMERIC_OID as never);
-    const bigintParser = pg.types.getTypeParser(BIGINT_OID as never);
+    const numericParser = pg.types.getTypeParser(NUMERIC_OID);
+    const bigintParser = pg.types.getTypeParser(BIGINT_OID);
     assert.strictEqual(typeof numericParser, 'function');
     assert.strictEqual(typeof bigintParser, 'function');
     assert.strictEqual((numericParser as (v: string) => unknown)('1500.50'), 1500.5);

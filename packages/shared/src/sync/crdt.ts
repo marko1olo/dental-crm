@@ -349,8 +349,9 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 			}
 		}
 
+		const created: Record<string, unknown> = { ...clientPatch, id: entityId };
 		return {
-			mergedEntity: { ...clientPatch, id: entityId } as unknown as T,
+			mergedEntity: created as T,
 			updatedVector: newVector,
 			changedFields,
 			conflicts: [],
@@ -512,7 +513,7 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 		(c) => c.strategy === "somatic_safety_union",
 	);
 	return {
-		mergedEntity: merged as unknown as T,
+		mergedEntity: merged as T,
 		updatedVector: mergedVector,
 		changedFields,
 		conflicts,
@@ -556,8 +557,9 @@ export function incrementVectorClock(clock: VectorClock, nodeId: string): Vector
 	if (!safeNodeId || safeNodeId === "__proto__" || safeNodeId === "constructor" || safeNodeId === "prototype") {
 		return { ...clock };
 	}
-	const currentSeq = typeof clock[safeNodeId] === "number" && Number.isFinite(clock[safeNodeId])
-		? Math.max(0, Math.floor(clock[safeNodeId]!))
+	const existingVal = clock[safeNodeId];
+	const currentSeq = typeof existingVal === "number" && Number.isFinite(existingVal)
+		? Math.max(0, Math.floor(existingVal))
 		: 0;
 	return {
 		...clock,
@@ -584,8 +586,10 @@ export function compareVectorClocks(
 	let hasLesser = false;
 
 	for (const key of allKeys) {
-		const valA = typeof clockA[key] === "number" && Number.isFinite(clockA[key]) ? Math.max(0, Math.floor(clockA[key]!)) : 0;
-		const valB = typeof clockB[key] === "number" && Number.isFinite(clockB[key]) ? Math.max(0, Math.floor(clockB[key]!)) : 0;
+		const rawA = clockA[key];
+		const rawB = clockB[key];
+		const valA = typeof rawA === "number" && Number.isFinite(rawA) ? Math.max(0, Math.floor(rawA)) : 0;
+		const valB = typeof rawB === "number" && Number.isFinite(rawB) ? Math.max(0, Math.floor(rawB)) : 0;
 
 		if (valA > valB) {
 			hasGreater = true;
@@ -619,8 +623,10 @@ export function mergeVectorClocks(
 	const allKeys = new Set([...safeKeysA, ...safeKeysB]);
 
 	for (const key of allKeys) {
-		const valA = typeof clockA[key] === "number" && Number.isFinite(clockA[key]) ? Math.max(0, Math.floor(clockA[key]!)) : 0;
-		const valB = typeof clockB[key] === "number" && Number.isFinite(clockB[key]) ? Math.max(0, Math.floor(clockB[key]!)) : 0;
+		const rawA = clockA[key];
+		const rawB = clockB[key];
+		const valA = typeof rawA === "number" && Number.isFinite(rawA) ? Math.max(0, Math.floor(rawA)) : 0;
+		const valB = typeof rawB === "number" && Number.isFinite(rawB) ? Math.max(0, Math.floor(rawB)) : 0;
 		merged[key] = Math.max(valA, valB);
 	}
 	return merged;

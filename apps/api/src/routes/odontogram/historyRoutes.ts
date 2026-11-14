@@ -8,11 +8,20 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { ensurePatientInOrganization } from "./planHelpers.js";
 import { UUID_SHAPE } from "./types.js";
 
+interface ToothHistoryParams {
+	patientId: string;
+	toothNumber: string;
+}
+
+interface PatientHistoryParams {
+	patientId: string;
+}
+
 export function registerHistoryRoutes(app: FastifyInstance) {
 	/**
 	 * Получение хронологии изменений конкретного зуба (аудит Формы 043/у)
 	 */
-	app.get(
+	app.get<{ Params: ToothHistoryParams }>(
 		"/api/patients/:patientId/tooth-states/:toothNumber/history",
 		async (request, reply) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -23,10 +32,7 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -37,10 +43,7 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId, toothNumber: toothParam } = request.params as {
-				patientId: string;
-				toothNumber: string;
-			};
+			const { patientId, toothNumber: toothParam } = request.params;
 			const toothNumber = parseInt(toothParam, 10);
 			if (!UUID_SHAPE.test(patientId) || Number.isNaN(toothNumber)) {
 				return reply.code(400).send({ error: "InvalidParameters" });
@@ -86,7 +89,7 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 	/**
 	 * Получение полного таймлайна эволюции зубной формулы пациента
 	 */
-	app.get(
+	app.get<{ Params: PatientHistoryParams }>(
 		"/api/patients/:patientId/tooth-states/history",
 		async (request, reply) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -97,10 +100,7 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -111,7 +111,7 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId } = request.params as { patientId: string };
+			const { patientId } = request.params;
 			if (!UUID_SHAPE.test(patientId)) {
 				return reply.code(400).send({ error: "InvalidPatientId" });
 			}

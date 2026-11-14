@@ -301,8 +301,8 @@ export const exportCommerceMlParamsSchema = z.object({
 	includeMedicalActs: z.boolean().default(true),
 	includeMaterials: z.boolean().default(true),
 	includePayroll: z.boolean().default(true),
-	chartOfAccountsOverrides: z.record(z.string()).optional(),
-	clinicProfileOverrides: z.record(z.any()).optional(),
+	chartOfAccountsOverrides: oneCChartOfAccountsSchema.partial().optional(),
+	clinicProfileOverrides: oneCClinicProfileSchema.partial().optional(),
 });
 export type ExportCommerceMlParams = z.infer<typeof exportCommerceMlParamsSchema>;
 

@@ -11,7 +11,7 @@ import { updateLabOrderSchema } from "./labOrderValidationSchemas.js";
  * PUT /api/clinical/lab-orders/:id, /api/lab/orders/:id, /api/dental-lab/orders/:id
  * Обновление заказа ЗТЛ клиникой с проверкой допустимости переходов состояний.
  */
-export async function putLabOrderHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function putLabOrderHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -20,10 +20,7 @@ export async function putLabOrderHandler(request: FastifyRequest, reply: Fastify
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -34,7 +31,7 @@ export async function putLabOrderHandler(request: FastifyRequest, reply: Fastify
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const id = request.params.id;
 	const UUID_REGEX =
 		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 	if (!id || !UUID_REGEX.test(id)) {

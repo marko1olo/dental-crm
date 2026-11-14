@@ -9,50 +9,123 @@
 import type { MedicalCardExtract003vuPayload } from "./types.js";
 import { escapeHtml, CLINICAL_DOCUMENT_PRINT_STYLES } from "./sharedStyles.js";
 
+/** Интерфейс строки этапа лечения в медицинской выписке */
+export interface MedicalCardExtractStageLike {
+	readonly treatmentDate?: string | undefined;
+	readonly date?: string | undefined;
+	readonly stageDate?: string | undefined;
+	readonly toothOrAnatomicalArea?: string | number | undefined;
+	readonly toothNumber?: string | number | undefined;
+	readonly diagnosisIcd10?: string | undefined;
+	readonly diagnosisText?: string | undefined;
+	readonly diagnosis?: string | undefined;
+	readonly performedIntervention?: string | undefined;
+	readonly intervention?: string | undefined;
+	readonly interventionSummary?: string | undefined;
+	readonly anesthesiaUsed?: string | undefined;
+	readonly attendingDoctorFullName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface Form003vuRenderPayload {
+	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly ogrn?: string; readonly inn?: string } | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinic?: { readonly name?: string } | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicLicenseNumber?: string | undefined;
+	readonly clinicLicenseDate?: string | undefined;
+	readonly clinicLicenseIssuer?: string | undefined;
+	readonly extractRegistrationNumber?: string | undefined;
+	readonly extractIssueDate?: string | undefined;
+	readonly extractDestinationInstitution?: string | undefined;
+	readonly patient?: {
+		readonly fullName?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly gender?: string | undefined;
+		readonly address?: string | undefined;
+		readonly phone?: string | undefined;
+		readonly medicalCardNumber?: string | undefined;
+	} | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly patientSex?: string | undefined;
+	readonly patientAddress?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly treatmentPeriodStartDate?: string | undefined;
+	readonly treatmentPeriod?: string | undefined;
+	readonly treatmentPeriodEndDate?: string | undefined;
+	readonly primaryDiagnosisIcd10?: string | undefined;
+	readonly primaryDiagnosisText?: string | undefined;
+	readonly clinicalDiagnosisDetailed?: string | undefined;
+	readonly diagnosis?: string | undefined;
+	readonly concomitantDiagnosisIcd10?: string | undefined;
+	readonly concomitantDiagnosisText?: string | undefined;
+	readonly briefAnamnesisAndClinicalCourse?: string | undefined;
+	readonly diagnosticStudiesSummary?: string | undefined;
+	readonly treatmentStagesTimeline?: readonly MedicalCardExtractStageLike[] | undefined;
+	readonly treatmentStages?: readonly MedicalCardExtractStageLike[] | undefined;
+	readonly chronology?: readonly MedicalCardExtractStageLike[] | undefined;
+	readonly treatmentOutcomeStatus?: string | undefined;
+	readonly conditionAtDischarge?: string | undefined;
+	readonly followUpRecommendations?: string | undefined;
+	readonly warrantyConditions?: string | undefined;
+	readonly attendingDoctorFullName?: string | undefined;
+	readonly attendingDoctor?: string | undefined;
+	readonly attendingDoctorSpecialty?: string | undefined;
+	readonly headOfDepartmentFullName?: string | undefined;
+	readonly headOfDepartment?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
 /**
  * 5. Рендерер выписки из медицинской карты стоматологического пациента (Форма 043/у)
  * Порядок выдачи медицинских выписок (Приказ Минздрава России № 834н / Форма 043/у)
  * Formal medical extract with clinic angular stamp, patient info, ICD-10 diagnosis, chronologic treatment stages, recommendations, Chief Physician signature and seal
  */
-export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | any): string {
-	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
-	const clinicAddress = payload.organization?.address || payload.clinicAddress || "г. Москва";
-	const clinicOgrn = payload.organization?.ogrn || payload.clinicOgrn || "—";
-	const clinicInn = payload.organization?.inn || payload.clinicInn || "—";
-	const licenseNumber = payload.clinicLicenseNumber || "ЛО-77-01-012345";
-	const licenseDate = payload.clinicLicenseDate || "01.01.2022";
-	const licenseIssuer = payload.clinicLicenseIssuer || "Департамент здравоохранения г. Москвы";
+export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | Form003vuRenderPayload): string {
+	const p = payload as Form003vuRenderPayload;
+	const clinicName = p.organization?.fullName || p.clinicLegalName || p.clinic?.name || "Стоматологическая клиника";
+	const clinicAddress = p.organization?.address || p.clinicAddress || "г. Москва";
+	const clinicOgrn = p.organization?.ogrn || p.clinicOgrn || "—";
+	const clinicInn = p.organization?.inn || p.clinicInn || "—";
+	const licenseNumber = p.clinicLicenseNumber || "ЛО-77-01-012345";
+	const licenseDate = p.clinicLicenseDate || "01.01.2022";
+	const licenseIssuer = p.clinicLicenseIssuer || "Департамент здравоохранения г. Москвы";
 
-	const regNumber = payload.extractRegistrationNumber || "ВЫП-2026/001";
-	const issueDate = payload.extractIssueDate || new Date().toISOString().slice(0, 10);
-	const destination = payload.extractDestinationInstitution || "По месту требования";
+	const regNumber = p.extractRegistrationNumber || "ВЫП-2026/001";
+	const issueDate = p.extractIssueDate || new Date().toISOString().slice(0, 10);
+	const destination = p.extractDestinationInstitution || "По месту требования";
 
-	const patientName = payload.patient?.fullName || payload.patientFullName || "—";
-	const patientBirth = payload.patient?.birthDate || payload.patientBirthDate || "—";
-	const patientSex = (payload.patient?.gender || payload.patientSex || "male") === "male" ? "Мужской" : "Женский";
-	const patientAddress = payload.patient?.address || payload.patientAddress || "—";
-	const patientPhone = payload.patient?.phone || payload.patientPhone || "—";
-	const cardNum = payload.patient?.medicalCardNumber || payload.medicalCardNumber || "—";
-	const periodStart = payload.treatmentPeriodStartDate || payload.treatmentPeriod?.slice(0, 10) || "—";
-	const periodEnd = payload.treatmentPeriodEndDate || payload.treatmentPeriod?.slice(-10) || issueDate;
+	const patientName = p.patient?.fullName || p.patientFullName || "—";
+	const patientBirth = p.patient?.birthDate || p.patientBirthDate || "—";
+	const patientSex = (p.patient?.gender || p.patientSex || "male") === "male" ? "Мужской" : "Женский";
+	const patientAddress = p.patient?.address || p.patientAddress || "—";
+	const patientPhone = p.patient?.phone || p.patientPhone || "—";
+	const cardNum = p.patient?.medicalCardNumber || p.medicalCardNumber || "—";
+	const periodStart = p.treatmentPeriodStartDate || p.treatmentPeriod?.slice(0, 10) || "—";
+	const periodEnd = p.treatmentPeriodEndDate || p.treatmentPeriod?.slice(-10) || issueDate;
 
-	const primaryDiagCode = payload.primaryDiagnosisIcd10 || "K02.1";
-	const primaryDiagText = payload.primaryDiagnosisText || payload.clinicalDiagnosisDetailed || payload.diagnosis || "Кариес дентина";
-	const concomitantDiagCode = payload.concomitantDiagnosisIcd10 || "";
-	const concomitantDiagText = payload.concomitantDiagnosisText || "";
+	const primaryDiagCode = p.primaryDiagnosisIcd10 || "K02.1";
+	const primaryDiagText = p.primaryDiagnosisText || p.clinicalDiagnosisDetailed || p.diagnosis || "Кариес дентина";
+	const concomitantDiagCode = p.concomitantDiagnosisIcd10 || "";
+	const concomitantDiagText = p.concomitantDiagnosisText || "";
 
-	const anamnesis = payload.briefAnamnesisAndClinicalCourse || "Пациент обратился в клинику в плановом порядке с жалобами на эстетический и функциональный дефект, кратковременные боли от температурных раздражителей.";
-	const diagnosticStudies = payload.diagnosticStudiesSummary || "Прицельная радиовизиография, ортопантомограмма (ОПТГ): периапикальные ткани интактны, деструктивных изменений костной ткани не обнаружено, каналы проходимы.";
+	const anamnesis = p.briefAnamnesisAndClinicalCourse || "Пациент обратился в клинику в плановом порядке с жалобами на эстетический и функциональный дефект, кратковременные боли от температурных раздражителей.";
+	const diagnosticStudies = p.diagnosticStudiesSummary || "Прицельная радиовизиография, ортопантомограмма (ОПТГ): периапикальные ткани интактны, деструктивных изменений костной ткани не обнаружено, каналы проходимы.";
 
-	const stages: any[] = payload.treatmentStagesTimeline || payload.treatmentStages || payload.chronology || [];
-	const stagesRows = stages.map((st: any, idx: number) => {
+	const stages: readonly MedicalCardExtractStageLike[] = p.treatmentStagesTimeline || p.treatmentStages || p.chronology || [];
+	const stagesRows = stages.map((st: MedicalCardExtractStageLike, idx: number) => {
 		const d = st.treatmentDate || st.date || st.stageDate || issueDate;
 		const tooth = st.toothOrAnatomicalArea || st.toothNumber || "—";
 		const diag = st.diagnosisIcd10 ? `${st.diagnosisIcd10} ${st.diagnosisText || ""}` : (st.diagnosis || st.diagnosisText || "—");
 		const interv = st.performedIntervention || st.intervention || st.interventionSummary || "—";
 		const anesth = st.anesthesiaUsed ? `Анестезия: ${st.anesthesiaUsed}` : "";
 		const fullInterv = anesth ? `${interv}<br/><span style="color:#64748b; font-size:7pt;">${anesth}</span>` : interv;
-		const doc = st.attendingDoctorFullName || st.doctorName || payload.attendingDoctorFullName || "Лечащий врач";
+		const doc = st.attendingDoctorFullName || st.doctorName || p.attendingDoctorFullName || "Лечащий врач";
 
 		return `
       <tr>
@@ -70,9 +143,9 @@ export function renderForm003vuHtml(payload: MedicalCardExtract003vuPayload | an
 	const recommendations = payload.followUpRecommendations || "1. Соблюдение индивидуальной гигиены полости рта (щетка средней жесткости, зубная нить/ершики, ирригатор).\n2. Контрольный диспансерный осмотр через 6 месяцев.\n3. Проведение профессиональной гигиены полости рта не реже 2 раз в год.";
 	const warranty = payload.warrantyConditions || "Гарантийный срок на терапевтические пломбы и реставрации — 12 месяцев со дня постановки при условии регулярной гигиены и контрольных осмотров.";
 
-	const attendingDoc = payload.attendingDoctorFullName || payload.attendingDoctor || "Врач-стоматолог";
+	const attendingDoc = payload.attendingDoctorFullName || ("attendingDoctor" in payload ? String((payload as { attendingDoctor?: unknown }).attendingDoctor || "") : "") || "Врач-стоматолог";
 	const attendingSpec = payload.attendingDoctorSpecialty || "Врач-стоматолог-терапевт";
-	const headDoc = payload.headOfDepartmentFullName || payload.headOfDepartment || "Главный врач";
+	const headDoc = payload.headOfDepartmentFullName || ("headOfDepartment" in payload ? String((payload as { headOfDepartment?: unknown }).headOfDepartment || "") : "") || "Главный врач";
 
 	return `<!DOCTYPE html>
 <html lang="ru">

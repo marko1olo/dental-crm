@@ -62,12 +62,19 @@ export function generateTelegramConfirmationUrl(phone: string, text: string): st
 	return `https://t.me/share/url?url=${encodeURIComponent(e164)}&text=${encodeURIComponent(text)}`;
 }
 
+interface GlobalWithWindow {
+	window?: { open?: (url: string, target: string) => void | null } | undefined;
+}
+
 export function openWhatsAppChat(phone: string, text: string): void {
-	if (typeof globalThis !== "undefined") {
-		const g = globalThis as unknown as { window?: { open?: (url: string, target: string) => void } };
-		if (g.window?.open) {
-			const url = generateWhatsAppConfirmationUrl(phone, text);
-			g.window.open(url, "_blank");
-		}
+	if (typeof window !== "undefined" && typeof window.open === "function") {
+		const url = generateWhatsAppConfirmationUrl(phone, text);
+		window.open(url, "_blank");
+		return;
+	}
+	const g = globalThis as GlobalWithWindow;
+	if (typeof g.window?.open === "function") {
+		const url = generateWhatsAppConfirmationUrl(phone, text);
+		g.window.open(url, "_blank");
 	}
 }

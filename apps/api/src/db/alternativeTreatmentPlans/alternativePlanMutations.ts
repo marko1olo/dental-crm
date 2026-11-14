@@ -73,7 +73,8 @@ export async function createAlternativePlanGroup(
 	);
 
 	for (let i = 0; i < input.variants.length; i++) {
-		const variant = input.variants[i]!;
+		const variant = input.variants[i];
+		if (!variant) continue;
 		const isApproved = approvedVariantIndex === i;
 		const status = isApproved ? "Approved" : "Draft";
 		const alternativeStatus = isApproved ? "approved" : "proposed";

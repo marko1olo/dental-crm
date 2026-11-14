@@ -13,13 +13,17 @@ import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { UUID_REGEX } from "./schemas.js";
 
+interface PatientAnesthesiaLogsParams {
+	patientId: string;
+}
+
 export function registerLogsListRoute(app: FastifyInstance): void {
-	app.get("/api/anesthesia/patients/:patientId/logs", async (request, reply) => {
+	app.get<{ Params: PatientAnesthesiaLogsParams }>("/api/anesthesia/patients/:patientId/logs", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -30,7 +34,7 @@ export function registerLogsListRoute(app: FastifyInstance): void {
 			});
 		}
 
-		const { patientId } = request.params as { patientId: string };
+		const { patientId } = request.params;
 		if (!patientId || !UUID_REGEX.test(patientId)) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -82,7 +86,7 @@ export function registerLogsListRoute(app: FastifyInstance): void {
 					vitalsPost: r.vitalsPost,
 					notes: r.notes,
 					complications: r.complications,
-					createdAt: r.createdAt.toISOString(),
+					createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : new Date(r.createdAt).toISOString(),
 				})),
 			});
 		});

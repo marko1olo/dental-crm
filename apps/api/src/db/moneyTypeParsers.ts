@@ -26,8 +26,8 @@ import pg from "pg";
  *    если значение помещается в [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER].
  *    Если выходит за пределы safe integer — отдаём строку.
  */
-export const NUMERIC_OID = 1700;
-export const BIGINT_OID = 20;
+export const NUMERIC_OID: number = pg.types.builtins.NUMERIC;
+export const BIGINT_OID: number = pg.types.builtins.INT8;
 
 /** Максимум, до которого число JavaScript представляет копейки точно. */
 const SAFE_KOPECKS = Number.MAX_SAFE_INTEGER;
@@ -101,7 +101,7 @@ let registered = false;
 /** Включает разбор денежных типов (NUMERIC и BIGINT) на весь процесс. Повторный вызов безвреден. */
 export function registerMoneyTypeParsers(): void {
 	if (registered) return;
-	pg.types.setTypeParser(NUMERIC_OID as never, parseNumericMoney as never);
-	pg.types.setTypeParser(BIGINT_OID as never, parseBigIntMoney as never);
+	pg.types.setTypeParser(NUMERIC_OID, (val: string) => parseNumericMoney(val));
+	pg.types.setTypeParser(BIGINT_OID, (val: string) => parseBigIntMoney(val));
 	registered = true;
 }

@@ -98,14 +98,9 @@ export function validateAndResolvePaymentSplit(
 
 		const totalAllocatedKop = resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop + resolvedBonusKop + rawCertificateKop;
 		if (totalAllocatedKop !== incomingPaymentKopecks) {
-			const hasOtherMentionedTenders = Boolean(
-				input.note && /(аванс|депозит|family|сертификат|бонус|дмс|dms)/i.test(input.note),
+			throw new Error(
+				`Сумма частей смешанной оплаты (${formatKopecksRu(totalAllocatedKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
 			);
-			if (!hasOtherMentionedTenders) {
-				throw new Error(
-					`Сумма частей смешанной оплаты (${formatKopecksRu(totalAllocatedKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
-				);
-			}
 		}
 		if (resolvedCashKop < 0 || resolvedElectronicKop < 0 || resolvedDmsKop < 0 || resolvedDepositKop < 0 || resolvedBonusKop < 0) {
 			throw new Error("Части смешанной оплаты не могут быть отрицательными.");

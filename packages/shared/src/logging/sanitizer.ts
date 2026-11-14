@@ -110,37 +110,46 @@ export function sanitizePayload<T>(
 	seen: WeakSet<object> = new WeakSet(),
 	isParentSensitive = false,
 ): T {
+	return sanitizePayloadInternal(payload, maxDepth, seen, isParentSensitive) as T;
+}
+
+function sanitizePayloadInternal(
+	payload: unknown,
+	maxDepth = 6,
+	seen: WeakSet<object> = new WeakSet(),
+	isParentSensitive = false,
+): unknown {
 	if (payload === null || payload === undefined) {
 		return payload;
 	}
 
 	if (typeof payload === "string") {
 		if (isParentSensitive) {
-			return (payload.length > 0 ? "[СКРЫТО]" : "") as unknown as T;
+			return payload.length > 0 ? "[СКРЫТО]" : "";
 		}
-		return sanitizeString(payload) as unknown as T;
+		return sanitizeString(payload);
 	}
 
 	if (typeof payload === "number" || typeof payload === "boolean") {
 		if (isParentSensitive) {
-			return "[СКРЫТО]" as unknown as T;
+			return "[СКРЫТО]";
 		}
 		return payload;
 	}
 
 	if (typeof payload === "bigint") {
 		if (isParentSensitive) {
-			return "[СКРЫТО]" as unknown as T;
+			return "[СКРЫТО]";
 		}
-		return `${payload.toString()}n` as unknown as T;
+		return `${payload.toString()}n`;
 	}
 
 	if (typeof payload === "symbol") {
-		return payload.toString() as unknown as T;
+		return payload.toString();
 	}
 
 	if (typeof payload === "function") {
-		return `[Function: ${(payload as Function).name || "anonymous"}]` as unknown as T;
+		return `[Function: ${(payload as Function).name || "anonymous"}]`;
 	}
 
 	if (typeof payload !== "object") {
@@ -150,34 +159,34 @@ export function sanitizePayload<T>(
 	// DoS prevention: Handle Binary Buffers and TypedArrays without iterating millions of index keys
 	if (typeof ArrayBuffer !== "undefined") {
 		if (payload instanceof ArrayBuffer) {
-			return `[Binary Data: ${payload.byteLength} bytes]` as unknown as T;
+			return `[Binary Data: ${payload.byteLength} bytes]`;
 		}
 		if (ArrayBuffer.isView(payload)) {
-			return `[Binary Data: ${(payload as ArrayBufferView).byteLength} bytes]` as unknown as T;
+			return `[Binary Data: ${(payload as ArrayBufferView).byteLength} bytes]`;
 		}
 	}
 
 	// Handle Date objects
 	if (payload instanceof Date) {
 		if (isParentSensitive) {
-			return "[СКРЫТО]" as unknown as T;
+			return "[СКРЫТО]";
 		}
-		return (isNaN(payload.getTime()) ? "[Invalid Date]" : payload.toISOString()) as unknown as T;
+		return isNaN(payload.getTime()) ? "[Invalid Date]" : payload.toISOString();
 	}
 
 	// Handle RegExp objects
 	if (payload instanceof RegExp) {
-		return payload.toString() as unknown as T;
+		return payload.toString();
 	}
 
 	// Check recursion depth limit
 	if (maxDepth <= 0) {
-		return "[MAX_DEPTH_REACHED]" as unknown as T;
+		return "[MAX_DEPTH_REACHED]";
 	}
 
 	// Check circular reference
 	if (seen.has(payload as object)) {
-		return "[CIRCULAR_REFERENCE]" as unknown as T;
+		return "[CIRCULAR_REFERENCE]";
 	}
 
 	seen.add(payload as object);
@@ -194,13 +203,13 @@ export function sanitizePayload<T>(
 		// Capture custom enumerable properties attached to Error
 		for (const key of Object.keys(payload)) {
 			try {
-				const val = (payload as unknown as Record<string, unknown>)[key];
-				errRecord[key] = sanitizePayload(val, maxDepth - 1, seen, isSensitiveKey(key));
+				const val: unknown = Reflect.get(payload, key);
+				errRecord[key] = sanitizePayloadInternal(val, maxDepth - 1, seen, isSensitiveKey(key));
 			} catch {
 				errRecord[key] = "[UNREADABLE_PROPERTY]";
 			}
 		}
-		return errRecord as unknown as T;
+		return errRecord;
 	}
 
 	// Handle Map instances
@@ -209,23 +218,23 @@ export function sanitizePayload<T>(
 		for (const [k, v] of payload.entries()) {
 			const strKey = String(k);
 			const childSensitive = isSensitiveKey(strKey) || isParentSensitive;
-			mapObj[strKey] = sanitizePayload(v, maxDepth - 1, seen, childSensitive);
+			mapObj[strKey] = sanitizePayloadInternal(v, maxDepth - 1, seen, childSensitive);
 		}
-		return mapObj as unknown as T;
+		return mapObj;
 	}
 
 	// Handle Set instances
 	if (payload instanceof Set) {
 		return Array.from(payload).map((item) =>
-			sanitizePayload(item, maxDepth - 1, seen, isParentSensitive),
-		) as unknown as T;
+			sanitizePayloadInternal(item, maxDepth - 1, seen, isParentSensitive),
+		);
 	}
 
 	// Handle Arrays
 	if (Array.isArray(payload)) {
 		return payload.map((item) =>
-			sanitizePayload(item, maxDepth - 1, seen, isParentSensitive),
-		) as unknown as T;
+			sanitizePayloadInternal(item, maxDepth - 1, seen, isParentSensitive),
+		);
 	}
 
 	// Handle Standard Objects
@@ -249,7 +258,7 @@ export function sanitizePayload<T>(
 				continue;
 			}
 			if (typeof value === "object") {
-				result[key] = sanitizePayload(value, maxDepth - 1, seen, true);
+				result[key] = sanitizePayloadInternal(value, maxDepth - 1, seen, true);
 				continue;
 			}
 			if (typeof value === "string") {
@@ -260,8 +269,8 @@ export function sanitizePayload<T>(
 			continue;
 		}
 
-		result[key] = sanitizePayload(value, maxDepth - 1, seen, false);
+		result[key] = sanitizePayloadInternal(value, maxDepth - 1, seen, false);
 	}
 
-	return result as unknown as T;
+	return result;
 }

@@ -26,12 +26,17 @@ import {
 	UUID_SHAPE,
 } from "./types.js";
 
+interface PlanCompletionParams {
+	patientId: string;
+	planId: string;
+}
+
 export function registerPlanCompletionRoutes(app: FastifyInstance) {
 	/**
 	 * Завершение позиций плана лечения (или целого этапа) при проведении приема
 	 * (Closed Loop Lifecycle: useVisitCompletion -> complete-items -> TreatmentPlanRoadmap)
 	 */
-	app.post(
+	app.post<{ Params: PlanCompletionParams }>(
 		"/api/patients/:patientId/treatment-plans/:planId/complete-items",
 		async (request, reply) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -42,10 +47,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -56,10 +58,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId, planId } = request.params as {
-				patientId: string;
-				planId: string;
-			};
+			const { patientId, planId } = request.params;
 			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 				return reply.code(400).send({ error: "InvalidParameters" });
 			}

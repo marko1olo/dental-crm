@@ -644,24 +644,32 @@ export function deductBatchStockWithSoftOverdraft<T extends GenericStockBatch>(
 	}
 
 	const overdraftQuantity = fifoResult.remainingQuantityNeeded;
+	const lastDeduction = fifoResult.deductions[fifoResult.deductions.length - 1];
 	const unitCostKopecks =
 		options?.defaultUnitCostKopecks ??
-		(fifoResult.deductions.length > 0
-			? Math.round(
-					fifoResult.deductions[fifoResult.deductions.length - 1]!.costKopecks /
-						(fifoResult.deductions[fifoResult.deductions.length - 1]!.deductedQuantity || 1),
-				)
+		(lastDeduction && lastDeduction.deductedQuantity > 0
+			? Math.round(lastDeduction.costKopecks / lastDeduction.deductedQuantity)
 			: 0);
 
 	const overdraftCost = Math.round(unitCostKopecks * overdraftQuantity);
 
-	const overdraftBatch = {
-		batchId: `overdraft-${Date.now()}`,
-		quantityAvailable: -overdraftQuantity,
-		receiptDate: new Date().toISOString().slice(0, 10),
-		unitCostKopecks,
-		lotNumber: "ОФ-НАКЛАДНАЯ-В-ПУТИ",
-	} as unknown as T;
+	const templateBatch = batches[0];
+	const overdraftBatch: T = templateBatch
+		? {
+				...templateBatch,
+				batchId: `overdraft-${Date.now()}`,
+				quantityAvailable: -overdraftQuantity,
+				receiptDate: new Date().toISOString().slice(0, 10),
+				unitCostKopecks,
+				lotNumber: "ОФ-НАКЛАДНАЯ-В-ПУТИ",
+			}
+		: ({
+				batchId: `overdraft-${Date.now()}`,
+				quantityAvailable: -overdraftQuantity,
+				receiptDate: new Date().toISOString().slice(0, 10),
+				unitCostKopecks,
+				lotNumber: "ОФ-НАКЛАДНАЯ-В-ПУТИ",
+			} as T);
 
 	const deductions = [
 		...fifoResult.deductions,

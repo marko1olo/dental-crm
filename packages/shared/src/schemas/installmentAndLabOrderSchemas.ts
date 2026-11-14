@@ -489,7 +489,7 @@ export function normalizeVitaShade(shade: string): string {
 	return s;
 }
 
-export function isValidVitaShade(shade: string): boolean {
+export function isValidVitaShade(shade?: string | null | undefined): boolean {
 	if (!shade) return false;
 	return ALL_VALID_VITA_SHADES.has(normalizeVitaShade(shade));
 }

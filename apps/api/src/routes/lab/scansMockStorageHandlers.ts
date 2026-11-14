@@ -37,9 +37,11 @@ export function validateAndResolveStoragePath(rawKey: string): { resolvedPath: s
 	return { resolvedPath, ext, safeFileName };
 }
 
-export async function handleMockStorageUpload(request: FastifyRequest, reply: FastifyReply) {
-	const query = request.query as { key?: string };
-	const rawKey = query.key;
+export async function handleMockStorageUpload(
+	request: FastifyRequest<{ Querystring: { key?: string } }>,
+	reply: FastifyReply,
+) {
+	const rawKey = request.query?.key;
 	if (!rawKey) {
 		return reply.code(400).send({ error: "BadRequest", message: "Параметр key обязателен." });
 	}
@@ -75,9 +77,11 @@ export async function handleMockStorageUpload(request: FastifyRequest, reply: Fa
 	});
 }
 
-export async function handleMockStorageDownload(request: FastifyRequest, reply: FastifyReply) {
-	const query = request.query as { key?: string };
-	const rawKey = query.key;
+export async function handleMockStorageDownload(
+	request: FastifyRequest<{ Querystring: { key?: string } }>,
+	reply: FastifyReply,
+) {
+	const rawKey = request.query?.key;
 	if (!rawKey) {
 		return reply.code(400).send({ error: "BadRequest", message: "Параметр key обязателен." });
 	}

@@ -185,4 +185,4 @@ export function generateClinicalConsentHtml(
 
 /** @deprecated Use generateClinicalConsentHtml */
 export const generateStomxConsentHtml = generateClinicalConsentHtml;
-export const STOMX_SPECIALIZED_CONSENT_PRESETS = CLINICAL_SPECIALIZED_CONSENT_PRESETS;
+

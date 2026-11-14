@@ -28,15 +28,24 @@ export class SyncQueueBufferManager {
 		storageDriver?: SnapshotDriverType | undefined;
 		organizationId?: string | undefined;
 		initialItems?: OfflineSyncQueueItem[] | undefined;
+		sequenceCounter?: number | undefined;
+		lastReplicatedTimestampMs?: number | null | undefined;
 	}) {
 		this.storageDriver = options?.storageDriver || "indexeddb";
 		this.organizationId = options?.organizationId;
+		if (typeof options?.lastReplicatedTimestampMs === "number") {
+			this.lastReplicatedTimestampMs = options.lastReplicatedTimestampMs;
+		}
 		if (Array.isArray(options?.initialItems)) {
 			this.queue = [...options.initialItems];
-			this.sequenceCounter = this.queue.reduce(
-				(max, item) => Math.max(max, item.sequenceNumber || 0),
-				0,
-			);
+			this.sequenceCounter = typeof options?.sequenceCounter === "number"
+				? options.sequenceCounter
+				: this.queue.reduce(
+						(max, item) => Math.max(max, item.sequenceNumber || 0),
+						0,
+					);
+		} else if (typeof options?.sequenceCounter === "number") {
+			this.sequenceCounter = options.sequenceCounter;
 		}
 	}
 
@@ -209,17 +218,12 @@ export class SyncQueueBufferManager {
 	public static deserialize(serialized: string, driver: SnapshotDriverType = "indexeddb"): SyncQueueBufferManager {
 		try {
 			const parsed = JSON.parse(serialized);
-			const manager = new SyncQueueBufferManager({
+			return new SyncQueueBufferManager({
 				storageDriver: driver,
-				initialItems: parsed.queue,
+				initialItems: Array.isArray(parsed?.queue) ? parsed.queue : undefined,
+				sequenceCounter: typeof parsed?.sequenceCounter === "number" ? parsed.sequenceCounter : undefined,
+				lastReplicatedTimestampMs: typeof parsed?.lastReplicatedTimestampMs === "number" ? parsed.lastReplicatedTimestampMs : undefined,
 			});
-			if (typeof parsed.sequenceCounter === "number") {
-				(manager as any).sequenceCounter = parsed.sequenceCounter;
-			}
-			if (typeof parsed.lastReplicatedTimestampMs === "number") {
-				(manager as any).lastReplicatedTimestampMs = parsed.lastReplicatedTimestampMs;
-			}
-			return manager;
 		} catch {
 			return new SyncQueueBufferManager({ storageDriver: driver });
 		}

@@ -13,13 +13,17 @@ import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { UUID_REGEX } from "./schemas.js";
 
+interface DeleteAnesthesiaLogParams {
+	logId: string;
+}
+
 export function registerLogsDeleteRoute(app: FastifyInstance): void {
-	app.delete("/api/anesthesia/logs/:logId", async (request, reply) => {
+	app.delete<{ Params: DeleteAnesthesiaLogParams }>("/api/anesthesia/logs/:logId", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -30,7 +34,7 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 			});
 		}
 
-		const { logId } = request.params as { logId: string };
+		const { logId } = request.params;
 		if (!logId || !UUID_REGEX.test(logId)) {
 			return reply.code(400).send({
 				error: "ValidationError",

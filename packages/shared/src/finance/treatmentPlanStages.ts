@@ -589,6 +589,12 @@ export function map3StageKindTo4StageCategory(
 	nameRu?: string | null,
 	categoryRu?: string | null,
 ): TreatmentPlanStageCategory {
+	if (stageKind === "hygiene_sanitation" || stageKind.includes("hygien") || stageKind.includes("sanit")) {
+		return "hygiene_sanitation";
+	}
+	if (stageKind === "endo_therapy" || stageKind.includes("endo")) {
+		return "endo_therapy";
+	}
 	if (stageKind === "stage_3_orthopedics" || stageKind.includes("ortho") || stageKind.includes("prosthet")) {
 		return "ortho_prosthetics";
 	}
@@ -596,7 +602,10 @@ export function map3StageKindTo4StageCategory(
 		return "surgery_implant";
 	}
 	if (stageKind === "stage_1_therapy" || stageKind.includes("therap")) {
-		return classifyProcedure4StageCategory(code804n, nameRu, categoryRu);
+		if (code804n || nameRu || categoryRu) {
+			return classifyProcedure4StageCategory(code804n, nameRu, categoryRu);
+		}
+		return "endo_therapy";
 	}
 	return classifyProcedure4StageCategory(code804n, nameRu, categoryRu);
 }

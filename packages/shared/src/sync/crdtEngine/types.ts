@@ -155,6 +155,7 @@ export interface SoapMedicalDiaryRecord {
 	prescriptions?: string[] | undefined;
 	updatedAt?: string | undefined;
 	authorUserId?: string | undefined;
+	[key: string]: unknown;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

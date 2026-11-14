@@ -348,7 +348,13 @@ function formatTurnForExecutiveSummary(msg: ChatMessageLike): string | null {
 
 	if (Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) {
 		const toolNames = msg.tool_calls
-			.map((tc: any) => tc.function?.name || tc.name || "tool")
+			.map((tc: unknown) => {
+				if (typeof tc === "object" && tc !== null) {
+					const item = tc as { name?: string; function?: { name?: string } };
+					return item.function?.name || item.name || "tool";
+				}
+				return "tool";
+			})
 			.join(", ");
 		lines.push(`  ↳ Вызовы инструментов: ${toolNames}`);
 	}
@@ -552,10 +558,12 @@ export function compactConversationHistory<TMessage extends ChatMessageLike>(
 
 	// Construct structured summary message
 	const summaryMessageContent = `<conversation_summary>\n${executiveSummaryText}\n</conversation_summary>`;
-	const summaryMessage = {
+	const baseMsg = pinnedSystemPromptMsg ?? messages[0];
+	const summaryMessage: TMessage = {
+		...(baseMsg as TMessage),
 		role: "system",
 		content: `[РЕЗЮМЕ ПРЕДЫДУЩЕГО ЭТАПА ВИЗИТА И ДИАЛОГА]:\n${summaryMessageContent}`,
-	} as unknown as TMessage;
+	};
 
 	// Assemble final compacted history:
 	// [Pinned System Prompt] -> [Context Summary] -> [...Hot Context]

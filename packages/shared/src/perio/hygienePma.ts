@@ -24,12 +24,12 @@ export function calculatePmaScore(
 ): PmaResult {
 	let totalPoints = 0;
 	let assessedTeethCount = 0;
-	const teethEntries = Array.isArray(teethMap)
+	const teethEntries: readonly HygieneToothAssessment[] = Array.isArray(teethMap)
 		? teethMap
 		: Object.entries(teethMap).map(([num, val]) => ({ toothNumber: Number(num), ...val }));
 
 	for (const entry of teethEntries) {
-		if ((entry as any).isMissing) continue;
+		if (entry.isMissing) continue;
 		if (typeof entry.pmaScore === "number" && Number.isFinite(entry.pmaScore)) {
 			totalPoints += Math.max(0, Math.min(3, entry.pmaScore));
 			assessedTeethCount++;

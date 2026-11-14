@@ -74,6 +74,12 @@ interface PgPoolInternals {
 	readonly [key: string]: unknown;
 }
 
+type InspectablePgPool = pg.Pool & PgPoolInternals;
+
+function asInspectablePool(pool: pg.Pool): InspectablePgPool {
+	return pool as InspectablePgPool;
+}
+
 class ConnectionPoolWatchdog {
 	private timer: NodeJS.Timeout | null = null;
 	private targetPool: pg.Pool;
@@ -234,7 +240,7 @@ class ConnectionPoolWatchdog {
 	 */
 	public drainDeadSockets(): { drainedCount: number } {
 		let drained = 0;
-		const p = this.targetPool as unknown as PgPoolInternals;
+		const p = asInspectablePool(this.targetPool);
 
 		try {
 			// 1. Evict all idle connections that might have closed or hung
@@ -370,7 +376,7 @@ class ConnectionPoolWatchdog {
 	 * Returns current health telemetry snapshot.
 	 */
 	public getHealthReport(): PoolHealthReport {
-		const p = this.targetPool as unknown as PgPoolInternals;
+		const p = asInspectablePool(this.targetPool);
 		return {
 			status: this.status,
 			lastCheckAt: this.lastCheckAt,

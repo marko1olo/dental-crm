@@ -20,7 +20,8 @@ export async function seedDemoLabOrdersIfEmpty(tx: TenantDb, orgId: string) {
 	if (orgPatients.length > 0) {
 		const now = new Date();
 		const doc0 = orgUsers[0];
-		const p0 = orgPatients[0]!;
+		const p0 = orgPatients[0];
+		if (!p0) return;
 		const p1 = orgPatients[1] ?? p0;
 		const p2 = orgPatients[2] ?? p0;
 		const p3 = orgPatients[3] ?? p0;

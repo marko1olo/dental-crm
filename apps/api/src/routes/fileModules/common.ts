@@ -6,4 +6,11 @@ export type MultipartFilePayload = {
 	filename: string;
 	mimetype: string;
 	file: NodeJS.ReadableStream;
+	fields?: Record<string, { value?: string }>;
 };
+
+declare module "fastify" {
+	interface FastifyRequest {
+		file?: () => Promise<MultipartFilePayload | undefined>;
+	}
+}

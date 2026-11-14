@@ -34,7 +34,7 @@ export interface DoctorCompletedServiceItem {
 	readonly warrantyFixedCompensationKop?: number | undefined;
 	readonly deductMaterialFromDoctor?: boolean | undefined;
 	readonly materialName?: string | undefined;
-	readonly materialItems?: readonly { readonly name: string; readonly costKop: number }[] | undefined;
+	readonly materialItems?: readonly { readonly name: string; readonly costKop: number; readonly isOverhead?: boolean | undefined }[] | undefined;
 	readonly paymentSource?: "cash" | "card" | "sbp" | "deposit" | "family_deposit" | "split" | undefined;
 	readonly isDepositAdvanceOnly?: boolean | undefined;
 	readonly isPaid?: boolean | undefined;

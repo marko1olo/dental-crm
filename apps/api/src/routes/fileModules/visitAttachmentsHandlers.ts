@@ -12,14 +12,18 @@ import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
 
+interface VisitAttachmentParams {
+	visitId: string;
+}
+
 export const getVisitAttachmentsHandler = async (
-	request: FastifyRequest,
+	request: FastifyRequest<{ Params: VisitAttachmentParams }>,
 	reply: FastifyReply,
 ) => {
 	try {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
-		const { visitId: rawVisitId } = request.params as { visitId: string };
+		const { visitId: rawVisitId } = request.params;
 		const visitId = rawVisitId.startsWith("visit-") ? rawVisitId.slice(6) : rawVisitId;
 		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitId);
 		if (!isUuid) {
@@ -48,8 +52,7 @@ export const getVisitAttachmentsHandler = async (
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Вложения приёма (снимки, фото зубов) доступны только клиническому персоналу
 		const identity = getRequestIdentity(request);
-		const reqAny = request as unknown as { user?: { role?: string | null } };
-		const staffRole = identity.role ?? reqAny.user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -98,13 +101,13 @@ export const getVisitAttachmentsHandler = async (
 };
 
 export const postVisitAttachmentsHandler = async (
-	request: FastifyRequest,
+	request: FastifyRequest<{ Params: VisitAttachmentParams }>,
 	reply: FastifyReply,
 ) => {
 	try {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
-		const { visitId: rawVisitId } = request.params as { visitId: string };
+		const { visitId: rawVisitId } = request.params;
 		const visitId = rawVisitId.startsWith("visit-") ? rawVisitId.slice(6) : rawVisitId;
 		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitId);
 		if (!isUuid) {
@@ -163,11 +166,13 @@ export const postVisitAttachmentsHandler = async (
 			});
 		}
 
-		const data = await (
-			request as unknown as {
-				file: () => Promise<MultipartFilePayload | undefined>;
-			}
-		).file();
+		if (typeof request.file !== "function") {
+			return reply.code(400).send({
+				error: "MissingFilePayload",
+				message: "Файл не получен: выберите снимок и повторите загрузку.",
+			});
+		}
+		const data = await request.file();
 		if (!data) {
 			return reply.code(400).send({
 				error: "MissingFilePayload",

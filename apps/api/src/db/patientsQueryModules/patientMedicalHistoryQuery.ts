@@ -1,6 +1,7 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { patients as inMemoryPatients } from "../../sampleData.js";
+import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
 import { useInMemory } from "./patientSearchCore.js";
@@ -20,10 +21,9 @@ export async function recordPatientConsentInDb(
 		);
 		if (!patient) return null;
 
-		const currentProfile =
-			(patient.administrativeProfile as Record<string, unknown> | null) || {};
+		const currentProfile = patient.administrativeProfile;
 		const currentConsentAudit =
-			(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
+			(currentProfile?.consentSignatures as Record<string, unknown> | undefined) ?? {};
 		const updatedAudit = {
 			...currentConsentAudit,
 			[consentKind]: {
@@ -32,10 +32,10 @@ export async function recordPatientConsentInDb(
 				signedAtIso: now.toISOString(),
 			},
 		};
-		patient.administrativeProfile = {
-			...currentProfile,
+		patient.administrativeProfile = normalizePatientAdministrativeProfile({
+			...(currentProfile ?? {}),
 			consentSignatures: updatedAudit,
-		} as unknown as PatientAdministrativeProfile;
+		});
 		patient.updatedAt = now.toISOString();
 
 		return {

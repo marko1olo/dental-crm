@@ -320,9 +320,9 @@ export async function getClinicSettingsFromDb(
 				id: c.id,
 				organizationId: c.organizationId,
 				name: c.name,
-				room: c.room || (roomMatch ? roomMatch[1]!.trim() : null),
-				color: c.color || (colorMatch ? colorMatch[1]!.trim() : null),
-				defaultDoctorId: c.defaultDoctorId || (defaultDoctorMatch ? defaultDoctorMatch[1]!.trim() : null),
+				room: c.room || roomMatch?.[1]?.trim() || null,
+				color: c.color || colorMatch?.[1]?.trim() || null,
+				defaultDoctorId: c.defaultDoctorId || defaultDoctorMatch?.[1]?.trim() || null,
 				specialization: narrowChairSpecialization(c.specializations),
 				active: c.isActive,
 				hasXraySensor: eq.toLowerCase().includes("рентген") || eq.toLowerCase().includes("xray"),
@@ -544,16 +544,22 @@ export async function applyClinicScalePresetInDb(
 					});
 				}
 			} else {
-				await tx
-					.update(schema.chairs)
-					.set({ isActive: true })
-					.where(eq(schema.chairs.id, currentChairs[0]!.id));
-
-				for (let i = 1; i < currentChairs.length; i++) {
+				const firstChair = currentChairs[0];
+				if (firstChair) {
 					await tx
 						.update(schema.chairs)
-						.set({ isActive: false })
-						.where(eq(schema.chairs.id, currentChairs[i]!.id));
+						.set({ isActive: true })
+						.where(eq(schema.chairs.id, firstChair.id));
+				}
+
+				for (let i = 1; i < currentChairs.length; i++) {
+					const otherChair = currentChairs[i];
+					if (otherChair) {
+						await tx
+							.update(schema.chairs)
+							.set({ isActive: false })
+							.where(eq(schema.chairs.id, otherChair.id));
+					}
 				}
 			}
 		} else if (preset === "standard_clinic") {
@@ -576,10 +582,13 @@ export async function applyClinicScalePresetInDb(
 			];
 
 			for (let i = 0; i < currentChairs.length; i++) {
-				await tx
-					.update(schema.chairs)
-					.set({ isActive: i < 3 })
-					.where(eq(schema.chairs.id, currentChairs[i]!.id));
+				const chair = currentChairs[i];
+				if (chair) {
+					await tx
+						.update(schema.chairs)
+						.set({ isActive: i < 3 })
+						.where(eq(schema.chairs.id, chair.id));
+				}
 			}
 
 			if (clinicId) {
@@ -629,10 +638,13 @@ export async function applyClinicScalePresetInDb(
 			];
 
 			for (let i = 0; i < Math.min(currentChairs.length, 5); i++) {
-				await tx
-					.update(schema.chairs)
-					.set({ isActive: true })
-					.where(eq(schema.chairs.id, currentChairs[i]!.id));
+				const chair = currentChairs[i];
+				if (chair) {
+					await tx
+						.update(schema.chairs)
+						.set({ isActive: true })
+						.where(eq(schema.chairs.id, chair.id));
+				}
 			}
 
 			if (clinicId) {

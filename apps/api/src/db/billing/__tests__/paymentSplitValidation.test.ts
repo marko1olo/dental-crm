@@ -57,4 +57,20 @@ describe("Backend Payment Creation Pipeline Split Resolver", () => {
 			(err: unknown) => (err as Error).message.includes("не совпадает с общей суммой"),
 		);
 	});
+
+	it("throws if split parts sum does not match even when note contains 'аванс'", () => {
+		assert.throws(
+			() => {
+				validateAndResolvePaymentSplit({
+					patientId: TEST_PATIENT_ID,
+					amountRub: 5000,
+					method: "split",
+					cashAmountRub: 2000,
+					electronicAmountRub: 2000, // 4000 != 5000
+					note: "Аванс за будущие услуги",
+				});
+			},
+			(err: unknown) => (err as Error).message.includes("не совпадает с общей суммой"),
+		);
+	});
 });

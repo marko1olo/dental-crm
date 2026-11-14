@@ -79,7 +79,8 @@ export async function executeHydrationQueries(
 			const dueSoon = new Date(now.getTime() + 90 * 60_000);
 			const dueLater = new Date(now.getTime() + 180 * 60_000);
 			const clinicId = clinicRows[0]?.id ?? null;
-			const p0 = patientRows[0]!;
+			const p0 = patientRows[0];
+			if (!p0) throw new Error("Demo patient not found");
 			const p1 = patientRows[1] ?? p0;
 			const p2 = patientRows[2] ?? p0;
 			const p3 = patientRows[3] ?? p0;
@@ -214,7 +215,8 @@ export async function executeHydrationQueries(
 		try {
 			const now = new Date();
 			const doc0 = userRows[0];
-			const p0 = patientRows[0]!;
+			const p0 = patientRows[0];
+			if (!p0) throw new Error("Demo patient not found");
 			const p1 = patientRows[1] ?? p0;
 			const p2 = patientRows[2] ?? p0;
 			const p3 = patientRows[3] ?? p0;

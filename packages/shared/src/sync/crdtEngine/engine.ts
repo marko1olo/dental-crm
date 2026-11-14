@@ -260,7 +260,7 @@ export class CrdtSyncEngine {
 		const existing = await this.storage.loadEntity<Record<string, unknown>>("visit_diary", diary.id);
 		const resolved = resolveForm043DiaryCrdt({
 			existingDiary: existing ? existing.data : null,
-			incomingDiary: diary as unknown as Record<string, unknown>,
+			incomingDiary: diary,
 			existingClock: this.vectorClock,
 			incomingClock: this.vectorClock,
 			existingUpdatedAt: existing?.data?.updatedAt as string | undefined,
@@ -586,7 +586,7 @@ export class CrdtSyncEngine {
 				conflicts: applyResult.conflicts,
 			});
 			return summary;
-		} catch (err) {
+		} catch (err: unknown) {
 			const errorMsg = err instanceof Error ? err.message : String(err);
 			this.lastSyncError = errorMsg;
 			this.emit("sync_error", { error: errorMsg, status: this.getStatus() });

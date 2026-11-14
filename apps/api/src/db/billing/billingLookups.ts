@@ -190,6 +190,14 @@ export async function getDocumentForBilling(
 	});
 }
 
+interface MockableSelect {
+	readonly mock?: unknown;
+}
+
+function isMockedSelect(fn: typeof db.select): fn is typeof db.select & MockableSelect {
+	return "mock" in fn && (fn as typeof db.select & MockableSelect).mock !== undefined;
+}
+
 export async function getPaymentsByPatientIdInDb(
 	organizationId: string,
 	patientId: string,
@@ -233,8 +241,7 @@ export async function getPaymentsByPatientIdInDb(
 		);
 	};
 
-	const dbSelectWithMock = db.select as unknown as { mock?: unknown };
-	if (Boolean(dbSelectWithMock?.mock)) {
+	if (isMockedSelect(db.select)) {
 		return runQuery(db);
 	}
 
