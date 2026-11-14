@@ -44,7 +44,7 @@ export interface PayrollServiceOrder {
 	readonly labCostKopecks: number; // Зуботехническая лаборатория (ЗТЛ)
 	readonly materialCostKopecks: number; // Дорогие материалы (Импланты)
 	readonly isPaid54Fz: boolean;
-	readonly paidKopecks: number;
+	readonly paidKopecks?: number;
 	readonly doctorId: string;
 }
 
@@ -177,7 +177,7 @@ export function calculateDoctorPayrollSummary(params: {
 	isRkoPaid?: boolean | undefined;
 }): DoctorPayrollSummary {
 	const docOrders = params.orders.filter((o) => o.doctorId === params.doctor.id && o.isPaid54Fz);
-	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + o.paidKopecks, 0);
+	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + (o.paidKopecks ?? o.grossKopecks ?? 0), 0);
 	const totalLabCostKopecks = docOrders.reduce((sum, o) => sum + o.labCostKopecks, 0);
 	const totalMaterialCostKopecks = docOrders.reduce((sum, o) => sum + o.materialCostKopecks, 0);
 	const totalNetBaseKopecks = computeNetBaseKopecks(totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks);
@@ -190,7 +190,7 @@ export function calculateDoctorPayrollSummary(params: {
 	let chairRentalKopecks = 0;
 
 	if (scheme === "chair_rental") {
-		const shifts = params.shiftsCount ?? 12;
+		const shifts = params.shiftsCount ?? 0;
 		const rate = params.shiftRateKop ?? params.doctor.defaultShiftRateKop;
 		const hours = params.hoursWorked ?? 0;
 		const hourlyRate = params.hourlyRateKop ?? 0;
@@ -199,7 +199,7 @@ export function calculateDoctorPayrollSummary(params: {
 	} else if (scheme === "gross_percentage") {
 		doctorAccruedKopecks = calculateDoctorCommissionKopecks(totalGrossKopecks, effectivePercent);
 	} else if (scheme === "fixed_shift") {
-		const shifts = params.shiftsCount ?? 12;
+		const shifts = params.shiftsCount ?? 0;
 		const rate = params.shiftRateKop ?? params.doctor.defaultShiftRateKop;
 		doctorAccruedKopecks = Math.round(shifts * rate);
 	} else {

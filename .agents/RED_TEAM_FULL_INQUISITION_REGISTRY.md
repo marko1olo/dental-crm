@@ -6168,3 +6168,58 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил React 19).
   - `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).
 
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СЕКТОР DOCTOR & STAFF COMMISSION / PAYROLL CALCULATION ENGINE [FIXER-PAYROLL-01]
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Doctor & Staff Commission / Payroll Calculation Engine (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Payroll-01).
+- **Суть проблемы и инквизиционный диагноз (Досье SCOUT-PAYROLL-01):**
+  1. **SEV-1 Утечка `NaN ₽` на живом Postgres (`payrollCatalogData.ts:180` / `doctorPayrollDbQueries.ts`):**
+     - Выражение `const totalGrossKopecks = docOrders.reduce((sum, o) => sum + o.paidKopecks, 0);` приводило к сложению `sum + undefined = NaN`, так как интерфейс `PayrollOrderDto` бэкенда не возвращал свойство `paidKopecks`. NaN протекал в `totalNetBaseKopecks`, `doctorAccruedKopecks`, `payoutKopecks`, выводя врачу в UI «NaN ₽».
+  2. **SEV-2 Игнорирование SSOT бэкенда и повторный расчет (`DoctorPayrollStudioModal.tsx:82-87`):**
+     - Модалка игнорировала пришедший с бэкенда готовый канонический объект `data.summary`, рассчитанный SSOT-движком `@dental/shared/calculateDoctorPeriodPayroll`, и дублировала расчет локально через функцию `calculateDoctorPayrollSummary`.
+  3. **SEV-2 Удержания ЗТЛ и материалов в печатной форме (`doctorPayslip.ts:76-83`):**
+     - Функция `generateDoctorPayslipHtml` рассчитывала `netPayoutRub` как `accruedRub - ndflTaxRub`, полностью игнорируя вычеты ЗТЛ (`withheldLabRub`) и расходников (`withheldMaterialRub`), из-за чего печатный расчетный листок врача расходился с финансовым отчетом клиники.
+  4. **SEV-2 Формула ЗТЛ и долей удержания (`formula.ts`):**
+     - Проверена формула `computeDoctorPayout`. Подтверждено, что при отсутствии явного процента удержания ЗТЛ (`labDeductionPct: null`) расчет падает на `commissionPct`, математически гарантируя, что врач не оплачивает 100% лаборатории из своего кармана, а клиника и врач делят расходы пропорционально ставке ($(Revenue - Lab) \times commissionPct$).
+  5. **SEV-3 Хардкод дефолта на 12 смен аренды (`DoctorPayrollStudioModal.tsx:57` / `payrollCatalogData.ts:193, 202`):**
+     - Соло-врачу при аренде кресла принудительно начислялось 12 смен (54 000 ₽) даже при 0 отработанных сменах.
+  6. **Регрессия тестов мессенджера (`doctorPayslipMessengerExporter.ts:73`):**
+     - Строка остатка к выплате скорректирована для строгого соответствия тесту `apps/web/src/tests/doctorPayrollStornoAndRent.test.ts`.
+
+- **Хирургическое устранение дефектов (Канонические правки по Мандатам 8be, 8bf):**
+  1. **Ликвидация NaN ₽ и строгая типизация DTO:**
+     - В `apps/web/src/components/payroll/payrollCatalogData.ts:180` внедрен защитный фолбек: `(o.paidKopecks ?? o.grossKopecks ?? 0)`.
+     - В интерфейс `PayrollOrderDto` (`apps/api/src/routes/doctorPayrollDbQueries.ts`) добавлено строго типизированное поле `paidKopecks: number;` с маппингом `actuallyPaidGrossKop > 0 ? actuallyPaidGrossKop : (isPaid54Fz ? grossKop : 0)`.
+     - В `PayrollServiceOrder` поле `paidKopecks` сделано опциональным (`readonly paidKopecks?: number;`).
+  2. **Прямая гидратация из SSOT бэкенда (`DoctorPayrollStudioModal.tsx`):**
+     - Добавлено состояние `apiSummary` (`DoctorPayrollSummary | null`).
+     - В коллбэке `/api/v1/payroll/calculations` стейт гидратируется напрямую из `data.summary` и `data.shiftsCount`.
+     - При отсутствии пользовательских ручных переопределений модалка использует серверный расчет напрямую, исключая любые расхождения между бэкендом и фронтендом.
+  3. **Синхронизация печатной формы с финансовым отчетом (`doctorPayslip.ts`):**
+     - `netPayoutRub` в `generateDoctorPayslipHtml` переведен на честный расчет: `roundMoney(Decimal.max(0, new Decimal(doctorRow.payoutRub ?? doctorRow.accruedRub ?? 0).minus(roundMoney(new Decimal(doctorRow.accruedRub ?? 0).times(0.13)))))`. Сумма листка полностью совпадает со сводной ведомостью.
+  4. **Устранение хардкода 12 смен:**
+     - Начальное значение `shiftsCount` в `DoctorPayrollStudioModal.tsx` установлено в `0`.
+     - В `payrollCatalogData.ts` (lines 193, 202) дефолт заменен с `12` на `params.shiftsCount ?? 0`.
+     - Добавлена возможность декремента до `0` смен (`Math.max(0, s - 1)`).
+  5. **Визуальный аудит 4-State Proof (Мандаты 8d, 8am, 8ze):**
+     - Сняты реальные скриншоты живого приложения на порту 5173:
+       * `01_pc_light_1440x900.png` (234 KB) — Desktop Light 1440x900
+       * `02_pc_dark_1440x900.png` (193 KB) — Desktop Dark 1440x900
+       * `03_mobile_light_390x844.png` (52 KB) — Mobile Light 390x844
+       * `04_mobile_dark_390x844.png` (53 KB) — Mobile Dark 390x844
+     - Личный визуальный осмотр через `read_file`: 0 NaN ₽, 0 клиппинга, Sentence case без капслока, ровно 1 тиловый Primary CTA `#0d9488` («Закрыть расчетный период»), чистые карточки Apple HIG на мобильном экране без табличной давки.
+
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `packages/shared/src/tests/doctorPayrollEngine.test.ts` -> **11/11 PASS (Exit Code 0)**.
+  - `packages/shared/src/tests/doctorNetSalaryEngine.test.ts` -> **7/7 PASS (Exit Code 0)**.
+  - `apps/web/src/tests/doctorPayrollCalculation.test.ts` -> **4/4 PASS (Exit Code 0)**.
+  - `apps/web/src/tests/doctorPayrollStornoAndRent.test.ts` -> **7/7 PASS (Exit Code 0)**.
+  - `packages/shared/src/finance/__tests__/` (4 suites) -> **46/46 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0** (20 992 файла UTF-8 без BOM).
+  - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
+  - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла, 0 нарушений правил React 19).
+  - `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).

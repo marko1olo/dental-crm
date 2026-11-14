@@ -72,11 +72,11 @@ export function generateDoctorPayslipHtml(
 		withheldLabRub: doctorRow.withheldLabRub ?? 0,
 		withheldMaterialRub: doctorRow.withheldMaterialRub ?? 0,
 		overheadConsumablesCoveredRub: doctorRow.overheadCostRub ?? 0,
-		// PAY-02 [SEV-1]: netPayoutRub обязана честно вычитать рассчитанный НДФЛ 13% из начисления (netPayoutRub = accruedRub - ndflTaxRub)
+		// PAY-02: netPayoutRub обязана честно вычитать рассчитанный НДФЛ 13% из фактической суммы к выплате с учетом вычетов ЗТЛ и материалов
 		netPayoutRub: roundMoney(
 			Decimal.max(
 				0,
-				new Decimal(doctorRow.accruedRub ?? 0).minus(
+				new Decimal(doctorRow.payoutRub ?? doctorRow.accruedRub ?? 0).minus(
 					roundMoney(new Decimal(doctorRow.accruedRub ?? 0).times(0.13)),
 				),
 			),

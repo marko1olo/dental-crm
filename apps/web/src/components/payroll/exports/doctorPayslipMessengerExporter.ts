@@ -70,7 +70,7 @@ export function generateDoctorPayslipMessengerText(
 		const advanceRub = ((payrollResult.advancePayoutKop ?? 0) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		const mainRub = ((payrollResult.mainPayoutKop ?? (payrollResult.netPayoutToDoctorKop - (payrollResult.advancePayoutKop ?? 0))) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
 		lines.push(`• Выплаченный аванс: -${advanceRub} ₽`);
-		lines.push(`• Остаток к перечислению: ${mainRub} ₽`);
+		lines.push(`• ОСТАТОК К ПЕРЕЧИСЛЕНИЮ: ${mainRub} ₽`);
 	}
 
 	return lines.join("\n");

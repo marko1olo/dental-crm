@@ -34,6 +34,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [apiDoctors, setApiDoctors] = useState<PayrollDoctorProfile[]>([]);
 	const [apiOrders, setApiOrders] = useState<PayrollServiceOrder[] | null>(null);
 	const [apiClosedPeriods, setApiClosedPeriods] = useState<ClosedPayrollPeriodItem[] | null>(null);
+	const [apiSummary, setApiSummary] = useState<DoctorPayrollSummary | null>(null);
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
@@ -54,7 +55,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => initialDoctorId || (doctors[0]?.id ?? ""));
 	const [periodPreset, setPeriodPreset] = useState<PayrollPeriodPreset>(initialPeriodPreset);
-	const [shiftsCount, setShiftsCount] = useState<number>(12);
+	const [shiftsCount, setShiftsCount] = useState<number>(0);
 	const [advanceRub, setAdvanceRub] = useState<number>(0);
 	const [customPercent, setCustomPercent] = useState<number | null>(null);
 	const [payoutStatus, setPayoutStatus] = useState<PayrollPayoutStatus>("accrued");
@@ -83,18 +84,31 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			if (cancelled || !data) return;
 			if (Array.isArray(data.orders)) setApiOrders(data.orders);
 			if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);
-			if (typeof data.shiftsCount === "number" && data.shiftsCount > 0) setShiftsCount(data.shiftsCount);
+			if (typeof data.shiftsCount === "number") setShiftsCount(data.shiftsCount);
+			if (data.summary && typeof data.summary === "object") setApiSummary(data.summary);
 		}).catch(() => {});
 		return () => { cancelled = true; };
 	}, [isDemo, isOpen, activeDoctorId, periodDates, selectedDoctor]);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
 		if (!selectedDoctor) return EMPTY_DOCTOR_PAYROLL_SUMMARY;
+		if (
+			apiSummary &&
+			!isDemo &&
+			customPercent === null &&
+			advanceRub === 0 &&
+			apiSummary.doctorId === selectedDoctor.id
+		) {
+			return {
+				...apiSummary,
+				payoutStatus,
+			};
+		}
 		return calculateDoctorPayrollSummary({
 			orders: effectiveOrders, doctor: selectedDoctor, percent: customPercent ?? undefined,
 			shiftsCount, advanceKop: advanceRub * 100, isRkoPaid: payoutStatus === "paid_rko",
 		});
-	}, [selectedDoctor, effectiveOrders, customPercent, shiftsCount, advanceRub, payoutStatus]);
+	}, [selectedDoctor, effectiveOrders, customPercent, shiftsCount, advanceRub, payoutStatus, apiSummary, isDemo]);
 
 	const doctorOrders = useMemo(() => !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz), [selectedDoctor, effectiveOrders]);
 
@@ -326,7 +340,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 										<div className="flex items-center gap-2">
 											<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
 											<span className="text-[var(--muted)]">{shiftsCount} смен × 4 000 ₽ = {rub(summary.chairRentalKopecks)}</span>
-											<button type="button" onClick={() => setShiftsCount((s) => Math.max(1, s - 1))} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">-</button>
+											<button type="button" onClick={() => setShiftsCount((s) => Math.max(0, s - 1))} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">-</button>
 											<span className="font-bold">{shiftsCount}</span>
 											<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">+</button>
 										</div>
