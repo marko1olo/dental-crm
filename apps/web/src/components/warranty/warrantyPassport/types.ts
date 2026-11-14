@@ -94,6 +94,8 @@ export interface WarrantyPassportModalProps {
 	initialDiagnosis?: string | undefined;
 	completedStages?: CompletedTreatmentStage[] | undefined;
 	onCertificateIssued?: ((certificate: WarrantyCertificateData) => void) | undefined;
+	onAttachToClinicalNote?: ((payload: AttachedWarrantyPayload) => void) | undefined;
+	/** @deprecated Use onAttachToClinicalNote (Mandate 8x) */
 	onAttachToForm043u?: ((payload: AttachedWarrantyPayload) => void) | undefined;
 	onRemediationCreated?: ((order: WarrantyRemediationOrder) => void) | undefined;
 }

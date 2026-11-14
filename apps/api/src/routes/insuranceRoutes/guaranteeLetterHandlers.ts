@@ -73,11 +73,22 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			} else if ((l.status === "active" || l.status === "approved") && Number(l.usedAmountRub) >= Number(l.maxCoverageRub)) {
 				computedStatus = "exhausted";
 			}
+			const maxRub = Number(l.maxCoverageRub);
+			const usedRub = Number(l.usedAmountRub);
+			const limitKop = Math.round(maxRub * 100);
+			const usedKop = Math.round(usedRub * 100);
+			const remainingLimitKop = Math.max(0, limitKop - usedKop);
 			return {
 				...l,
+				validTo: l.validUntil,
+				limitKopecks: limitKop,
+				usedKopecks: usedKop,
+				remainingLimitKopecks: remainingLimitKop,
+				maxCoverageKopecks: limitKop,
+				usedAmountKopecks: usedKop,
 				status: computedStatus as DmsGuaranteeLetter["status"],
-				maxCoverageRub: Number(l.maxCoverageRub),
-				usedAmountRub: Number(l.usedAmountRub),
+				maxCoverageRub: maxRub,
+				usedAmountRub: usedRub,
 				franchisePct: Number(l.franchisePct),
 				franchiseType: (l.franchiseType as "percent" | "fixed_rub") || "percent",
 				franchiseFixedRub: Number(l.franchiseFixedRub),
@@ -131,11 +142,23 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				computedStatus = "exhausted";
 			}
 
+			const maxRub = Number(letter.maxCoverageRub);
+			const usedRub = Number(letter.usedAmountRub);
+			const limitKop = Math.round(maxRub * 100);
+			const usedKop = Math.round(usedRub * 100);
+			const remainingLimitKop = Math.max(0, limitKop - usedKop);
+
 			return reply.code(200).send({
 				...letter,
+				validTo: letter.validUntil,
+				limitKopecks: limitKop,
+				usedKopecks: usedKop,
+				remainingLimitKopecks: remainingLimitKop,
+				maxCoverageKopecks: limitKop,
+				usedAmountKopecks: usedKop,
 				status: computedStatus as DmsGuaranteeLetter["status"],
-				maxCoverageRub: Number(letter.maxCoverageRub),
-				usedAmountRub: Number(letter.usedAmountRub),
+				maxCoverageRub: maxRub,
+				usedAmountRub: usedRub,
 				franchisePct: Number(letter.franchisePct),
 				franchiseType: (letter.franchiseType as "percent" | "fixed_rub") || "percent",
 				franchiseFixedRub: Number(letter.franchiseFixedRub),
@@ -168,14 +191,19 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 		}
 
 		const data = parsed.data;
-		if (data.maxCoverageRub <= 0) {
+		const effectiveMaxRub = data.maxCoverageRub > 0
+			? data.maxCoverageRub
+			: (data.limitKopecks ? data.limitKopecks / 100 : (data.maxCoverageKopecks ? data.maxCoverageKopecks / 100 : 0));
+
+		if (effectiveMaxRub <= 0) {
 			return reply.code(400).send({
 				error: "InvalidLimit",
 				message: "Лимит покрытия по гарантийному письму должен быть больше 0 ₽.",
 			});
 		}
 
-		if (data.validFrom > data.validUntil) {
+		const effectiveValidUntil = data.validUntil || data.validTo || "";
+		if (data.validFrom > effectiveValidUntil) {
 			return reply.code(400).send({
 				error: "InvalidDateRange",
 				message: "Дата начала действия гарантийного письма не может быть позже даты окончания.",
@@ -203,9 +231,9 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				letterNumber: data.letterNumber.trim(),
 				issueDate: data.issueDate,
 				validFrom: data.validFrom,
-				validUntil: data.validUntil,
-				maxCoverageRub: data.maxCoverageRub,
-				usedAmountRub: data.usedAmountRub ?? 0,
+				validUntil: effectiveValidUntil,
+				maxCoverageRub: effectiveMaxRub,
+				usedAmountRub: data.usedAmountRub ?? (data.usedKopecks ? data.usedKopecks / 100 : 0),
 				franchisePct: data.franchisePct ?? 0,
 				franchiseType: data.franchiseType ?? "percent",
 				franchiseFixedRub: data.franchiseFixedRub ?? 0,
@@ -227,11 +255,22 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const createdMaxRub = Number(created.maxCoverageRub);
+		const createdUsedRub = Number(created.usedAmountRub);
+		const createdLimitKop = Math.round(createdMaxRub * 100);
+		const createdUsedKop = Math.round(createdUsedRub * 100);
+
 		return reply.code(201).send({
 			...created,
+			validTo: created.validUntil,
+			limitKopecks: createdLimitKop,
+			usedKopecks: createdUsedKop,
+			remainingLimitKopecks: Math.max(0, createdLimitKop - createdUsedKop),
+			maxCoverageKopecks: createdLimitKop,
+			usedAmountKopecks: createdUsedKop,
 			status: created.status as DmsGuaranteeLetter["status"],
-			maxCoverageRub: Number(created.maxCoverageRub),
-			usedAmountRub: Number(created.usedAmountRub),
+			maxCoverageRub: createdMaxRub,
+			usedAmountRub: createdUsedRub,
 			franchisePct: Number(created.franchisePct),
 			franchiseType: (created.franchiseType as "percent" | "fixed_rub") || "percent",
 			franchiseFixedRub: Number(created.franchiseFixedRub),
@@ -299,8 +338,13 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			if (d.issueDate !== undefined) updateData.issueDate = d.issueDate;
 			if (d.validFrom !== undefined) updateData.validFrom = d.validFrom;
 			if (d.validUntil !== undefined) updateData.validUntil = d.validUntil;
+			else if (d.validTo !== undefined) updateData.validUntil = d.validTo;
 			if (d.maxCoverageRub !== undefined) updateData.maxCoverageRub = d.maxCoverageRub;
+			else if (d.limitKopecks !== undefined) updateData.maxCoverageRub = d.limitKopecks / 100;
+			else if (d.maxCoverageKopecks !== undefined) updateData.maxCoverageRub = d.maxCoverageKopecks / 100;
 			if (d.usedAmountRub !== undefined) updateData.usedAmountRub = d.usedAmountRub;
+			else if (d.usedKopecks !== undefined) updateData.usedAmountRub = d.usedKopecks / 100;
+			else if (d.usedAmountKopecks !== undefined) updateData.usedAmountRub = d.usedAmountKopecks / 100;
 			if (d.franchisePct !== undefined) updateData.franchisePct = d.franchisePct;
 			if (d.franchiseType !== undefined) updateData.franchiseType = d.franchiseType;
 			if (d.franchiseFixedRub !== undefined) updateData.franchiseFixedRub = d.franchiseFixedRub;
@@ -330,11 +374,22 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				)
 				.returning();
 
+			const updatedMaxRub = Number(updated!.maxCoverageRub);
+			const updatedUsedRub = Number(updated!.usedAmountRub);
+			const updatedLimitKop = Math.round(updatedMaxRub * 100);
+			const updatedUsedKop = Math.round(updatedUsedRub * 100);
+
 			return reply.code(200).send({
 				...updated,
+				validTo: updated!.validUntil,
+				limitKopecks: updatedLimitKop,
+				usedKopecks: updatedUsedKop,
+				remainingLimitKopecks: Math.max(0, updatedLimitKop - updatedUsedKop),
+				maxCoverageKopecks: updatedLimitKop,
+				usedAmountKopecks: updatedUsedKop,
 				status: updated!.status as DmsGuaranteeLetter["status"],
-				maxCoverageRub: Number(updated!.maxCoverageRub),
-				usedAmountRub: Number(updated!.usedAmountRub),
+				maxCoverageRub: updatedMaxRub,
+				usedAmountRub: updatedUsedRub,
 				franchisePct: Number(updated!.franchisePct),
 				franchiseType: (updated!.franchiseType as "percent" | "fixed_rub") || "percent",
 				franchiseFixedRub: Number(updated!.franchiseFixedRub),

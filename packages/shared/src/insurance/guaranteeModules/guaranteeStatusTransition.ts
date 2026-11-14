@@ -1,8 +1,9 @@
 import type { DmsGuaranteeLetterStatus } from "./guaranteeTypes.js";
 
 const VALID_STATUS_TRANSITIONS: Record<DmsGuaranteeLetterStatus, readonly DmsGuaranteeLetterStatus[]> = {
-	draft: ["pending_approval", "active", "cancelled"],
+	draft: ["pending_approval", "pending_letter", "active", "cancelled"],
 	pending_approval: ["approved", "active", "cancelled"],
+	pending_letter: ["approved", "active", "cancelled"],
 	approved: ["active", "cancelled"],
 	active: ["billed", "exhausted", "expired", "cancelled"],
 	billed: ["paid", "cancelled"],
@@ -41,6 +42,7 @@ export function getAvailableStatusTransitions(
 export const DMS_STATUS_DESCRIPTIONS: Record<DmsGuaranteeLetterStatus, string> = {
 	draft: "Черновик гарантийного письма формируется в клинике",
 	pending_approval: "Письмо направлено на рассмотрение куратору страховой организации",
+	pending_letter: "Ожидает гарантийного письма от страховой компании",
 	approved: "Страховая компания подтвердила гарантийное обязательство",
 	active: "Письмо активно и готово к списанию согласованных сумм",
 	billed: "Счет-реестр за оказанные услуги выставлен в страховую компанию",

@@ -5408,8 +5408,8 @@ ead_file по 8 осям качества Хаммера:
 
 ---
 
-### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 3 (ДМС, СТРАХОВЫЕ ГАРАНТИЙНЫЕ ПИСЬМА, СПЛИТ-БИЛЛИНГ И ГАРАНТИЙНЫЕ ПАСПОРТА)
-- **Статус домена:** `[ПРОВЕРЕНО И ОЧИЩЕНО: ПОЛНЫЙ ПАРИТЕТ И СТРОГИЙ SSOT]`
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 18 / ДОМЕН 3 (ДМС, СТРАХОВЫЕ ГАРАНТИЙНЫЕ ПИСЬМА, СПЛИТ-БИЛЛИНГ И ГАРАНТИЙНЫЕ ПАСПОРТА)
+- **Статус домена:** `[ЗАКРЫТО: ПОЛНЫЙ ПАРИТЕТ И СТРОГИЙ SSOT]`
 - **Канонический SSOT ядра (Сохранен и защищен по Мандату 8bj):**
   - Фронтенд-студия ДМС: [`apps/web/src/components/insurance/DmsStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsStudioModal.tsx)
   - Стили ДМС: [`apps/web/src/components/insurance/insurance.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/insurance.css)
@@ -5417,34 +5417,49 @@ ead_file по 8 осям качества Хаммера:
   - Модальное окно гарантийного письма: [`apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx)
   - Каталог и утилиты экспорта ДМС: [`apps/web/src/components/insurance/dmsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/dmsCatalogData.ts)
   - 100% Гарантийный паспорт врача: [`apps/web/src/components/warranty/WarrantyPassportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/WarrantyPassportModal.tsx)
+  - Стили гарантийного паспорта: [`apps/web/src/components/warranty/warrantyPassport.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/warrantyPassport.css)
   - Калькулятор франшизы и сплита: [`packages/shared/src/insurance/dmsFranchiseEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/insurance/dmsFranchiseEngine.ts)
   - Чекаут гарантийного приёма врача: [`packages/shared/src/billing/warranty100Checkout.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/billing/warranty100Checkout.ts)
-- **Физический снос клонов-дубликатов через `git rm -f` (DEF-DMS-01/02):**
+  - Схемы гарантийных писем: [`packages/shared/src/schemas/documentChainAndDmsSchemas.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/schemas/documentChainAndDmsSchemas.ts)
+  - Модули валидации и переходов статусов ДМС: [`packages/shared/src/insurance/guaranteeModules/`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/insurance/guaranteeModules/)
+  - Бэкенд-обработчики гарантийных писем: [`apps/api/src/routes/insuranceRoutes/guaranteeLetterHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/insuranceRoutes/guaranteeLetterHandlers.ts)
+- **Физический снос клонов-дубликатов через `git rm -f` (DEF-DMS-01..03):**
   1. `apps/web/src/components/insurance/InsuranceBillSplitCard.tsx` (Мертвый дубликат карточки сплита с `any`) — СНЕСЕН.
   2. `apps/web/src/components/insurance/dmsSplitEngine.ts` (Устаревший калькулятор сплита) — СНЕСЕН.
   3. `apps/web/src/components/insurance/dmsInsuranceEngine.ts` (Клон-движок со стабами) — СНЕСЕН.
   4. `apps/web/src/components/insurance/dmsInsurancePresets.ts` (Дублирующий каталог страховых) — СНЕСЕН.
   5. `apps/web/src/components/insurance/dmsClaimRegistryExport.ts` (Дубликат реестра) — СНЕСЕН.
   6. `apps/web/src/components/insurance/insuranceCatalogs.ts` (Параллельный каталог с моками) — СНЕСЕН.
-- **Устранённые дефекты (100% ликвидация DEF-DMS-01..05):**
+  7. `packages/shared/src/insurance/guaranteeModules/guaranteePersistence.ts` (Потемкинский дубликат хранилища) — СНЕСЕН.
+  8. `packages/shared/src/tests/guaranteeModules.test.ts` (Устаревший тест с моками) — СНЕСЕН.
+  9. `apps/web/src/tests/dmsPreAuth.test.ts` (Мертвый дубликат пре-авторизации) — СНЕСЕН.
+- **Устранённые дефекты (100% ликвидация DEF-DMS-01..07):**
   1. **DEF-DMS-01 и DEF-DMS-02 (Консолидация ДМС в единый SSOT и ликвидация `any`-кастов):** Потребители переведены на канонические `@dental/shared` и `dmsCatalogData.ts`. Устранены все касты `any` в компонентах страхования.
   2. **DEF-DMS-03 (Искоренение канцелярита):** Метод `handleAttachTo043u` в `useWarrantyExportActions.ts` и `WarrantyPassportModal.tsx` переименован в `handleAttachToClinicalNote`, а на кнопке UI текст очищен до естественного «Сохранить в карту» (Мандаты 8x, 8ap).
   3. **DEF-DMS-04 (Ликвидация хардкодных цветов и токенизация CSS):** В `DmsStudioModal.tsx` и `insurance.css` устранены цвета `#0d9488` и `#1e293b`. Назначены канонические дизайн-токены `var(--teal)`, `var(--paper)`, `var(--ink)`, `var(--line)`. Реализован Apple Segmented Control для табов и скроллер чипов страховых компаний.
   4. **DEF-DMS-05 (Изоляция демо-режима):** В `DirectInsuranceLauncher.tsx` пациент «Соколова Анна Викторовна» строго изолирован за вызовом `isDemoShowcaseMode()`. В боевом режиме лаунчер запрашивает активного пациента из контекста или открывает форму поиска.
-  5. **Анти-скролл и эргономика Apple HIG (Мандаты 8al, 8ze):** Исправлен сжатый флекс-контейнер `.dms-body` (`min-height: 0;`), добавлены адаптивные метки табов (`.dms-tab-label-short` на смартфонах), высота чипов зафиксирована $\ge 40$px, обеспечен нативный Bottom Sheet с тач-зоной $\ge 44\times 44$px и 0px горизонтального дрифта.
+  5. **DEF-DMS-06 (Синхронизация схем ДМС и копеечных сумм `amountKopecks`):** Устранен рассинхрон `validTo`/`validUntil`, схемы поддерживают статус `pending_letter` для неотложного приёма с острой болью у кресла без блокировки врача. В `DmsInsuranceCompanyId` добавлена компания `"ugoria"`, устранена ошибка TS2322. Бэкенд в `guaranteeLetterHandlers.ts` возвращает строго нормализованные копеечные поля (`limitKopecks`, `usedKopecks`, `remainingLimitKopecks`).
+  6. **DEF-DMS-07 (Устранение эффекта «матрёшки» на смартфонах):** В `warrantyPassport.css` и `MobileTabBar.css` изолирован нижний таб-бар (`.mobile-tab-bar`) при открытых модалках гарантийного паспорта и ДМС (`body:has(.warranty-modal-overlay) .mobile-tab-bar { display: none !important; }`), модалка гарантий имеет `z-index: 100000 !important` и плотный Bottom Sheet на мобильных.
 - **Машинные гейты Definition of Done (100% Exit Code 0):**
-  - Юнит-тесты ДМС (`apps/web/src/components/insurance/`): **8 suites / 60 тестов PASSED (Exit Code 0)**.
-  - Юнит-тесты Гарантийного паспорта (`apps/web/src/components/warranty/`): **9 suites / 23 теста PASSED (Exit Code 0)**.
-  - `npm run check:encoding` -> **Exit Code 0 (21 415 файлов проверено, 0 замечаний)**.
-  - `npm run check:buttons` -> **Exit Code 0 (5 062 TSX, 1 369 CSS, 0 нарушений)**.
-  - `npm run check:react-hooks` -> **Exit Code 0 (3 437 файлов с хуками, 0 нарушений)**.
-  - `npm run check:css-tokens` -> **Exit Code 0 (1 369 CSS, 0 критических нарушений)**.
+  - Сборка `@dental/shared`: `npm --workspace=@dental/shared run build` -> **Exit Code 0**.
+  - Юнит-тесты ДМС и Гарантийного паспорта (`apps/web/src/components/insurance/` и `apps/web/src/components/warranty/`): **17 test files / 83 теста PASSED (Exit Code 0)**.
+  - Тесты бэкенда ДМС (`apps/api/src/tests/routes/insuranceDmsCoverage.test.ts`): **6 тестов PASSED (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0 (21 004 файлов проверено, 0 замечаний)**.
+  - `npm run check:buttons` -> **Exit Code 0 (4 859 TSX, 1 359 CSS, 0 нарушений)**.
+  - `npm run check:react-hooks` -> **Exit Code 0 (3 243 файла с хуками, 0 нарушений)**.
 - **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
-  - ☀️ PC Light (1440x900): [`docs/proofs/insurance/01_dms_insurance_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/insurance/01_dms_insurance_pc_light_1440x900.png) (136.6 KB $\ge 20$KB) — Канонический студийный экран ДМС, Apple Segmented Control, 1 noble teal Primary CTA «Утвердить ДМС-сплит», карточки покрытия и доплаты, таблица с tabular-nums.
-  - 🌙 PC Dark (1440x900): [`docs/proofs/insurance/02_dms_insurance_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/insurance/02_dms_insurance_pc_dark_1440x900.png) (161.3 KB $\ge 20$KB) — 100% тёмные токены `var(--paper)`, чистый контраст WCAG AAA, отсутствие слепящих белых пятен и синих гробовых рамок.
-  - 📱 Mobile Light (390x844): [`docs/proofs/insurance/03_dms_insurance_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/insurance/03_dms_insurance_mobile_light_390x844.png) (166.5 KB $\ge 20$KB) — Нативный Apple HIG Bottom Sheet, тактильный Drag Handle, компактные табы [Сплит | Гарантии | Реестр], горизонтальный скроллер страховых компаний 40px без клиппинга, sticky Primary CTA в Natural Thumb Zone.
-  - 🌙 Mobile Dark (390x844): [`docs/proofs/insurance/04_dms_insurance_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/insurance/04_dms_insurance_mobile_dark_390x844.png) (168.0 KB $\ge 20$KB) — Мобильная темная тема ДМС, контрастный Drag Handle, идеальная читаемость цен и сумм сплита.
-  - 📱 Mobile Warranty Proofs: [`docs/proofs/insurance/03_warranty_passport_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/insurance/03_warranty_passport_mobile_light_390x844.png) (131.6 KB $\ge 20$KB) и [`docs/proofs/insurance/04_warranty_passport_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/insurance/04_warranty_passport_mobile_dark_390x844.png) (129.7 KB $\ge 20$KB) — Очищенная кнопка «Сохранить в карту» без канцелярита.
+  - **ДМС (`docs/proofs/dms/`):**
+    - ☀️ PC Light (1440x900): [`docs/proofs/dms/01_insurance_dms_guarantee_letter_pc_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/dms/01_insurance_dms_guarantee_letter_pc_light.png) (152.3 KB $\ge 40$KB) — Живой пациент, Apple Segmented Control, 1 noble teal Primary CTA «Утвердить ДМС-сплит», таблица покрытия услуг с tabular-nums.
+    - 🌙 PC Dark (1440x900): [`docs/proofs/dms/02_insurance_dms_guarantee_letter_pc_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/dms/02_insurance_dms_guarantee_letter_pc_dark.png) (177.1 KB $\ge 40$KB) — 100% тёмные токены `var(--paper)`, чистый контраст WCAG AAA, отсутствие белых пятен и гробовых синих рамок.
+    - 📱 Mobile Light (390x844): [`docs/proofs/dms/03_insurance_dms_guarantee_letter_mobile_light.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/dms/03_insurance_dms_guarantee_letter_mobile_light.png) (60.8 KB $\ge 40$KB) — Нативный Apple HIG Bottom Sheet, тактильный Drag Handle, компактные табы, горизонтальный скроллер страховых 40px без клиппинга, sticky Primary CTA в Natural Thumb Zone.
+    - 🌙 Mobile Dark (390x844): [`docs/proofs/dms/04_insurance_dms_guarantee_letter_mobile_dark.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/dms/04_insurance_dms_guarantee_letter_mobile_dark.png) (62.4 KB $\ge 40$KB) — Мобильная тёмная тема ДМС, контрастный Drag Handle, идеальная читаемость сплита.
+  - **Гарантии (`docs/proofs/warranty/`):**
+    - ☀️ PC Light (1440x900): [`docs/proofs/warranty/01_warranty_passport_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warranty/01_warranty_passport_pc_light_1440x900.png) (183.5 KB $\ge 40$KB) — Канонический паспорт гарантий врача, OHI-S калькулятор рисков, выбор зубов FDI, 1 Primary CTA «Выдать стандартную гарантию».
+    - 🌙 PC Dark (1440x900): [`docs/proofs/warranty/02_warranty_passport_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warranty/02_warranty_passport_pc_dark_1440x900.png) (160.5 KB $\ge 40$KB) — Гарантийная переделка (0 ₽), 100% скидка врача без блокировки счетов и ККТ.
+    - ☀️ PC Public Verification (1440x900): [`docs/proofs/warranty/03_warranty_public_verification_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warranty/03_warranty_public_verification_pc_light_1440x900.png) (31.2 KB) — Публичная страница валидации гарантийного сертификата по QR-коду в светлой теме.
+    - 🌙 PC Public Verification (1440x900): [`docs/proofs/warranty/04_warranty_public_verification_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warranty/04_warranty_public_verification_pc_dark_1440x900.png) (31.7 KB) — Публичная валидация сертификата в тёмной теме.
+    - 📱 Mobile Light (390x844): [`docs/proofs/warranty/05_warranty_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warranty/05_warranty_mobile_light_390x844.png) (134.7 KB $\ge 40$KB) — Мобильный Bottom Sheet гарантийного паспорта, полная изоляция от фонового таб-бара.
+    - 🌙 Mobile Dark (390x844): [`docs/proofs/warranty/06_warranty_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warranty/06_warranty_mobile_dark_390x844.png) (130.8 KB $\ge 40$KB) — Мобильный тёмный Bottom Sheet гарантий, 0px просвечивания нижнего бара.
 
 ---
 

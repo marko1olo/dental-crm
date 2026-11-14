@@ -41,7 +41,8 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 	const exportActions = useWarrantyExportActions({
 		certificateData: certBuild.certificateData, certificateHtml: certBuild.certificateHtml,
 		patient: props.patient, doctorName: props.doctorName,
-		onAttachToForm043u: props.onAttachToForm043u, onCertificateIssued: props.onCertificateIssued,
+		onAttachToClinicalNote: props.onAttachToClinicalNote || props.onAttachToForm043u,
+		onCertificateIssued: props.onCertificateIssued,
 	});
 
 	useEffect(() => {

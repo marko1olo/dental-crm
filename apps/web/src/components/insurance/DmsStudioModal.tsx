@@ -38,7 +38,7 @@ import {
 	exportRegistryToCsv,
 	formatCurrencyRub,
 	generateBilateralAcceptanceActHtml,
-} from "./dmsCatalogData.js";
+} from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { showToast } from "../GlobalToast.js";

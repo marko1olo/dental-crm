@@ -454,6 +454,7 @@ export function calculateDmsCoverage(
 
 export const dmsGuaranteeLetterStatusSchema = z.enum([
 	"draft",
+	"pending_letter",
 	"pending_approval",
 	"approved",
 	"active",
@@ -482,7 +483,7 @@ export const dmsGuaranteeLetterSchema = z.object({
 	letterNumber: z.string().trim().min(1),
 	issueDate: z.string().min(1),
 	validFrom: z.string().min(1),
-	validUntil: z.string().min(1),
+	validUntil: z.string().min(1).optional(),
 	validTo: z.string().min(1).optional(),
 	maxCoverageRub: nonNegativeMoneyRubSchema.optional().default(0),
 	maxCoverageKopecks: z.number().int().nonnegative().optional(),

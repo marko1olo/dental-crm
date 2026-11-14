@@ -43,7 +43,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 			diabetes: "none",
 			periodontitis: "none",
 		}));
-		s.handleAttachTo043u();
+		s.handleAttachToClinicalNote();
 		s.handlePrint();
 	};
 
@@ -88,7 +88,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					patientPhone={patient?.phone}
 					shareMenuProps={s.shareMenuProps}
 					onPrint={s.handlePrint}
-					onAttachTo043u={s.handleAttachTo043u}
+					onAttachToClinicalNote={s.handleAttachToClinicalNote}
+					onAttachTo043u={s.handleAttachToClinicalNote}
 					onIssueStandardOneClick={handleIssueStandardOneClick}
 					attachedStatus={s.attachedStatus}
 				/>

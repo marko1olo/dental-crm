@@ -3,7 +3,7 @@ import test, { describe } from "node:test";
 import { generateQrCodeSvg as warrantyGenerateQrCodeSvg } from "../../warrantyEngine.js";
 import { generateQrCodeSvg as labWorkflowGenerateQrCodeSvg } from "../../../lab/dentalLabWorkflowEngine.js";
 import { generateQrCodeSvg as labMathGenerateQrCodeSvg } from "../../../lab/labMath.js";
-import { generateQrCodeSvg as labWorkOrderGenerateQrCodeSvg } from "../../../lab/orders/labWorkOrderEngine.js";
+import { generateQrCodeSvg as labWorkOrderGenerateQrCodeSvg } from "../../../lab/labBarcodeQr.js";
 
 describe("3. Dental Lab QR Purity across all 3 Lab Engines", () => {
 	test("dentalLabWorkflowEngine.generateQrCodeSvg generates canonical ISO/IEC 18004 SVG", () => {

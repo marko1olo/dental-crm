@@ -45,6 +45,14 @@
 		display: none !important;
 	}
 
+	/* Изоляция полноэкранных модалок и Bottom Sheets (Мандат 8al / Apple HIG) */
+	body:has(.warranty-modal-overlay) .mobile-tab-bar,
+	body:has(.warranty-modal-overlay) .dnt-bottom-nav,
+	body:has(.dms-modal-backdrop) .mobile-tab-bar,
+	body:has(.dms-modal-backdrop) .dnt-bottom-nav {
+		display: none !important;
+	}
+
 	/* 3. TAB BAR ITEMS */
 	.mobile-tab-item {
 		display: flex !important;

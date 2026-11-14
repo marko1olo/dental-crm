@@ -7,5 +7,4 @@ export * from "./guaranteeQuotaTracker.js";
 export * from "./guaranteeDeduction.js";
 export * from "./guaranteeServiceScope.js";
 export * from "./guaranteeParser.js";
-export * from "./guaranteePersistence.js";
 export * from "./guaranteeStatusTransition.js";

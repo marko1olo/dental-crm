@@ -31,9 +31,16 @@ export const DirectInsuranceLauncher: React.FC = () => {
 			h.includes("dms")
 		);
 	});
+	const [activePatient, setActivePatient] = useState<typeof DEMO_INSURANCE_PATIENT | undefined>(undefined);
 
 	useEffect(() => {
-		const handleOpen = () => setIsOpen(true);
+		const handleOpen = (e?: Event) => {
+			const customEvent = e as CustomEvent<{ patient?: typeof DEMO_INSURANCE_PATIENT }>;
+			if (customEvent?.detail?.patient) {
+				setActivePatient(customEvent.detail.patient);
+			}
+			setIsOpen(true);
+		};
 		window.addEventListener("dente:open-insurance", handleOpen);
 		window.addEventListener("dente-open-insurance", handleOpen);
 		window.addEventListener("dente:open-dms", handleOpen);
@@ -66,6 +73,7 @@ export const DirectInsuranceLauncher: React.FC = () => {
 
 	const handleClose = () => {
 		setIsOpen(false);
+		setActivePatient(undefined);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("insurance");
@@ -79,11 +87,16 @@ export const DirectInsuranceLauncher: React.FC = () => {
 		}
 	};
 
+	// Мандат 8wy: демо-пациент Соколова Анна Викторовна СТРОГО за isDemoShowcaseMode()
+	const targetPatient = isDemoShowcaseMode()
+		? DEMO_INSURANCE_PATIENT
+		: activePatient;
+
 	return (
 		<DmsStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			patient={DEMO_INSURANCE_PATIENT}
+			patient={targetPatient}
 			onApplySplitToCashbox={(splitData) => {
 				// Применение сплита в кассу и оповещение кассового модуля
 				window.dispatchEvent(

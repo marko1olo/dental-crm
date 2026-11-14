@@ -8,12 +8,14 @@ export interface UseWarrantyExportActionsParams {
 	certificateHtml: string;
 	patient?: WarrantyPatientMeta | null | undefined;
 	doctorName?: string | null | undefined;
+	onAttachToClinicalNote?: ((payload: AttachedWarrantyPayload) => void) | undefined;
+	/** @deprecated Use onAttachToClinicalNote */
 	onAttachToForm043u?: ((payload: AttachedWarrantyPayload) => void) | undefined;
 	onCertificateIssued?: ((data: WarrantyCertificateData) => void) | undefined;
 }
 
 export function useWarrantyExportActions({
-	certificateData, certificateHtml, patient, doctorName, onAttachToForm043u, onCertificateIssued,
+	certificateData, certificateHtml, patient, doctorName, onAttachToClinicalNote, onAttachToForm043u, onCertificateIssued,
 }: UseWarrantyExportActionsParams) {
 	const [copiedLink, setCopiedLink] = useState(false);
 	const [copiedMemo, setCopiedMemo] = useState(false);
@@ -103,9 +105,9 @@ export function useWarrantyExportActions({
 		setIsShareMenuOpen(false);
 	};
 
-	const handleAttachTo043u = async () => {
+	const handleAttachToClinicalNote = async () => {
 		setAttachedStatus(true);
-		onAttachToForm043u?.({
+		(onAttachToClinicalNote || onAttachToForm043u)?.({
 			certificateId: certificateData.certificateId,
 			attachedAt: new Date().toISOString(),
 			fullHtml: certificateHtml,
@@ -119,6 +121,6 @@ export function useWarrantyExportActions({
 	return {
 		copiedLink, copiedMemo, isShareMenuOpen, setIsShareMenuOpen, attachedStatus, setAttachedStatus,
 		handlePrint, handlePrintRemediationAct, handleCopyLink, handleCopyMemo, handleShareWhatsApp,
-		handleShareTelegram, handleAttachTo043u,
+		handleShareTelegram, handleAttachToClinicalNote, handleAttachTo043u: handleAttachToClinicalNote,
 	};
 }

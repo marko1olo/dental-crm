@@ -72,6 +72,7 @@ export function isGuaranteeLetterUsable(
 export const DMS_STATUS_HUMAN_LABELS: Record<DmsGuaranteeLetterStatus, string> = {
 	draft: "Черновик (гарантия в пути)",
 	pending_approval: "На согласовании в страховой",
+	pending_letter: "Ожидание гарантийного письма",
 	approved: "Согласовано",
 	active: "Действует",
 	billed: "Счёт выставлен",

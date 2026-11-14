@@ -19,7 +19,7 @@ import type {
 import {
 	RUSSIAN_DMS_INSURERS,
 	STANDARD_DMS_LIMITS_RUB,
-} from "./dmsCatalogData";
+} from "@dental/shared";
 import { DmsStudioModal } from "./DmsStudioModal";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
