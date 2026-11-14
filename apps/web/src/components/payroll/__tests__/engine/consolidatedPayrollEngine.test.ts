@@ -7,6 +7,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	calculateConsolidatedStaffPayroll,
+	generateStaffPayrollLedgerCsv,
+	generateStaffPayrollLedgerHtml,
 	generateStaffPayrollT51Csv,
 } from "../../staffPayrollEngine";
 
@@ -90,7 +92,7 @@ describe("Staff Multi-Role: Consolidated Payroll & Ledger Summary", () => {
 			}],
 		});
 
-		const csv = generateStaffPayrollT51Csv(summary);
+		const csv = generateStaffPayrollLedgerCsv(summary);
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("Гонорарная ведомость начислений персонала клиники"));
 		assert.ok(csv.includes("ООО «Денте Стоматология»"));
@@ -98,5 +100,9 @@ describe("Staff Multi-Role: Consolidated Payroll & Ledger Summary", () => {
 		assert.ok(csv.includes("ИТОГО ПО КЛИНИКЕ"));
 		assert.ok(!csv.includes("Удержано НДФЛ"));
 		assert.ok(!csv.includes("Страховые взносы СФР"));
+
+		const html = generateStaffPayrollLedgerHtml(summary);
+		assert.ok(html.includes("Сдельная зарплатная ведомость персонала клиники"));
+		assert.ok(html.includes("Соколова Елена Викторовна"));
 	});
 });

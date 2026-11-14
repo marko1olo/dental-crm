@@ -2,66 +2,41 @@
  * payroll.ts — Fastify API-маршруты расчета и закрытия зарплатной ведомости врачей (SSOT).
  * Соответствие: Мандат 8e (Автономия врача), Мандат 8n (Целочисленные копейки, Net Revenue),
  * Мандат 8wy (100% реальный PostgreSQL без синтетических подделок).
- * Sweet Spot: <= 200 строк.
+ * Декомпозирован в рамках Мандата 8b: тяжелые SQL-запросы вынесены в doctorPayrollDbQueries.ts.
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { withTenantCtx } from "../db/rls.js";
-import {
-	appointments,
-	doctorCommissions,
-	doctorPayrollStatements,
-	doctorShiftRosters,
-	inventoryItems,
-	inventoryTransactions,
-	labOrders,
-	patients,
-	payments,
-	serviceCatalogItems,
-	treatmentItems,
-	users,
-	visits,
-} from "../db/schema.js";
-import { calculateDoctorPeriodPayroll, type DoctorCompletedServiceItem } from "@dental/shared";
+import { doctorCommissions, users } from "../db/schema.js";
+import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import { getRequestIdentity } from "../security/identity.js";
 import {
 	closeSettlementPeriodInDb,
-	findPayrollStatement,
 	reopenSettlementPeriodInDb,
 	resolveDoctorUserUuid,
 } from "./payrollSettlementDbQueries.js";
+import {
+	fetchActiveDoctorProfiles,
+	fetchClosedPayrollStatements,
+	fetchDoctorPayrollDataset,
+} from "./doctorPayrollDbQueries.js";
 
-interface PayrollOrderDto {
-	id: string;
-	orderNumber: string;
-	dateIso: string;
-	patientName: string;
-	medicalCardNumber: string;
-	serviceNameRu: string;
-	category: string;
-	categoryLabelRu: string;
-	grossKopecks: number;
-	labCostKopecks: number;
-	materialCostKopecks: number;
-	doctorId: string;
-	isPaid54Fz: boolean;
-}
+const payrollCalculationsQuerySchema = z.object({
+	doctorId: z.string().optional(),
+	from: z.string().optional(),
+	to: z.string().optional(),
+	startDateIso: z.string().optional(),
+	endDateIso: z.string().optional(),
+	percent: z.union([z.string(), z.number()]).optional(),
+	payoutModel: z.enum(["percentage", "chair_rental"]).optional(),
+	shiftRateKop: z.union([z.string(), z.number()]).optional(),
+	advanceRub: z.union([z.string(), z.number()]).optional(),
+	taxRegime: z.enum(["employee", "self_employed"]).optional(),
+});
 
-interface PayrollCalculationsQuery {
-	doctorId?: string;
-	from?: string;
-	to?: string;
-	startDateIso?: string;
-	endDateIso?: string;
-	percent?: string | number;
-	payoutModel?: "percentage" | "chair_rental";
-	shiftRateKop?: string | number;
-	advanceRub?: string | number;
-	taxRegime?: "employee" | "self_employed";
-}
+type PayrollCalculationsQuery = z.infer<typeof payrollCalculationsQuerySchema>;
 
 const closeSettlementSchema = z.object({
 	doctorId: z.string().min(1),
@@ -96,50 +71,11 @@ const closeSettlementSchema = z.object({
 	markPaid: z.boolean().optional().default(true),
 });
 
-type CloseSettlementBody = z.infer<typeof closeSettlementSchema>;
-
-const SPECIALTY_TITLES: Record<string, string> = {
-	therapy: "Врач-стоматолог-терапевт",
-	orthopedics: "Врач-стоматолог-ортопед",
-	surgery: "Врач-стоматолог-хирург",
-	orthodontics: "Врач-ортодонт",
-	hygiene: "Гигиенист стоматологический",
-	pediatric: "Детский стоматолог",
-	general_dentist: "Врач-стоматолог общей практики",
-};
-
-const CATEGORY_LABELS_RU: Record<string, string> = {
-	therapy: "Терапия",
-	orthopedics: "Ортопедия",
-	surgery: "Хирургия",
-	orthodontics: "Ортодонтия",
-	hygiene: "Гигиена",
-	retail_hygiene: "Товары профгигиены",
-	pediatric: "Детская стоматология",
-};
-
-function normalizeClinicalCategory(
-	cat?: string | null,
-	specialty?: string | null,
-): "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric" {
-	const c = (cat || "").toLowerCase();
-	if (c === "prosthetics" || c === "orthopedics" || c === "orthopedic") return "orthopedics";
-	if (c === "surgery" || c === "surgical") return "surgery";
-	if (c === "orthodontics" || c === "orthodontic") return "orthodontics";
-	if (c === "hygiene" || c === "prevention") return "hygiene";
-	if (c === "pediatric" || c === "children") return "pediatric";
-	if (c === "retail" || c === "retail_hygiene") return "retail_hygiene";
-	if (c === "therapy" || c === "therapeutic" || c === "periodontology" || c === "consultation" || c === "imaging") return "therapy";
-
-	const s = (specialty || "").toLowerCase();
-	if (s === "orthopedist") return "orthopedics";
-	if (s === "surgeon" || s === "implantologist") return "surgery";
-	if (s === "orthodontist") return "orthodontics";
-	if (s === "hygienist") return "hygiene";
-	if (s === "pediatric") return "pediatric";
-
-	return "therapy";
-}
+const reopenSettlementSchema = z.object({
+	doctorId: z.string().min(1),
+	periodStart: z.string().min(1),
+	periodEnd: z.string().min(1),
+});
 
 export async function registerPayrollRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -150,59 +86,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
 
 		try {
-			const docUsers = await db
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					specialties: users.specialties,
-					role: users.role,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.organizationId, orgId),
-						eq(users.isActive, true),
-						or(eq(users.role, "doctor"), eq(users.role, "owner")),
-					),
-				);
-
-			const commRows = await db
-				.select({
-					userId: doctorCommissions.userId,
-					commissionPct: doctorCommissions.commissionPct,
-				})
-				.from(doctorCommissions)
-				.where(
-					and(
-						eq(doctorCommissions.organizationId, orgId),
-						eq(doctorCommissions.isActive, true),
-					),
-				);
-			const commMap = new Map(commRows.map((c) => [c.userId, Number(c.commissionPct)]));
-
-			const mapped = docUsers.map((u) => {
-				const name = u.fullName || "Врач-стоматолог";
-				const parts = name.trim().split(/\s+/);
-				const initials = parts.length >= 2 ? `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase() : "ВС";
-				const specId = Array.isArray(u.specialties) && u.specialties[0] ? String(u.specialties[0]) : "therapy";
-				const specTitle = SPECIALTY_TITLES[specId] || "Врач-стоматолог";
-
-				return {
-					id: u.id,
-					name,
-					initials,
-					specialtyId: specId,
-					specialtyTitleRu: specTitle,
-					commissionPercent: commMap.get(u.id) ?? 25,
-					payoutModel: "percentage" as const,
-					motivationScheme: "net_percentage" as const,
-					defaultShiftRateKop: 400000,
-					minGuaranteeMonthlyKop: 6000000,
-					taxRegime: "employee" as const,
-				};
-			});
-
-			return reply.send({ ok: true, doctors: mapped });
+			const doctors = await fetchActiveDoctorProfiles(orgId);
+			return reply.send({ ok: true, doctors });
 		} catch (err: unknown) {
 			request.log.error(err, "Failed to fetch doctors list");
 			return reply.send({ ok: true, doctors: [] });
@@ -213,7 +98,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	 * GET /api/v1/payroll/calculations — Расчет начислений в целочисленных копейках
 	 */
 	app.get("/api/v1/payroll/calculations", async (request: FastifyRequest, reply: FastifyReply) => {
-		const q = (request.query || {}) as PayrollCalculationsQuery;
+		const parsedQuery = payrollCalculationsQuerySchema.safeParse(request.query);
+		const q: PayrollCalculationsQuery = parsedQuery.success ? parsedQuery.data : {};
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
 		const rawDocId = q.doctorId || identity.userId || "";
@@ -243,6 +129,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const [activeComm] = await db
 			.select({
 				commissionPct: doctorCommissions.commissionPct,
+				commissionPercent: doctorCommissions.commissionPercent,
 				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
 				labDeductionPct: doctorCommissions.labCostDeductionPct,
 			})
@@ -257,285 +144,23 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			.orderBy(sql`${doctorCommissions.effectiveFrom} desc`)
 			.limit(1);
 
-		const basePercent = Number(q.percent) || (activeComm ? Number(activeComm.commissionPct) : 25);
+		const resolvedPct = activeComm?.commissionPct || activeComm?.commissionPercent;
+		const basePercent = Number(q.percent) || (resolvedPct ? Number(resolvedPct) : 25);
 
 		const fromStr = q.from || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 		const toStr = q.to || q.endDateIso || new Date().toISOString().slice(0, 10);
 		const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
 		const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
 
-		// 1. Считаем фактические смены из doctor_shift_rosters
-		let shiftsCount = 0;
-		try {
-			const shifts = await db
-				.select({ id: doctorShiftRosters.id })
-				.from(doctorShiftRosters)
-				.where(
-					and(
-						eq(doctorShiftRosters.organizationId, orgId),
-						eq(doctorShiftRosters.doctorId, resolvedDocId),
-						gte(doctorShiftRosters.dateIso, fromStr.slice(0, 10)),
-						lte(doctorShiftRosters.dateIso, toStr.slice(0, 10)),
-					),
-				);
-			shiftsCount = shifts.length;
-		} catch {
-			shiftsCount = 0;
-		}
-
-		// 2. Читаем закрытые приемы за период
-		const cardNumSql = sql<string>`coalesce(
-			${patients.administrativeProfile}->>'cardNumber',
-			${patients.administrativeProfile}->>'medicalCardNumber',
-			'К-0'
-		)`;
-
-		const appts = await db
-			.select({
-				id: appointments.id,
-				patientId: appointments.patientId,
-				status: appointments.status,
-				startsAt: appointments.startsAt,
-				patientName: patients.fullName,
-				cardNumber: cardNumSql,
-			})
-			.from(appointments)
-			.leftJoin(patients, eq(appointments.patientId, patients.id))
-			.where(
-				and(
-					eq(appointments.organizationId, orgId),
-					eq(appointments.doctorUserId, resolvedDocId),
-					gte(appointments.startsAt, fromDate),
-					lte(appointments.startsAt, toDate),
-				),
-			);
-
-		const orders: PayrollOrderDto[] = [];
-		const completedServices: DoctorCompletedServiceItem[] = [];
-
-		if (appts.length > 0) {
-			const apptIds = appts.map((a) => a.id);
-			const clinicVisits = await db
-				.select({ id: visits.id, appointmentId: visits.appointmentId })
-				.from(visits)
-				.where(and(eq(visits.organizationId, orgId), inArray(visits.appointmentId, apptIds)));
-
-			const visitIds = clinicVisits.map((v) => v.id);
-			const visitToAppt = new Map(clinicVisits.map((v) => [v.id, v.appointmentId]));
-
-			// Реальные фактические оплаты из таблицы payments (проверяя status = 'paid')
-			const paidVisitRows = visitIds.length > 0
-				? await db
-					.select({
-						visitId: payments.visitId,
-						amountRub: payments.amountRub,
-						fiscalReceiptNumber: payments.fiscalReceiptNumber,
-					})
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, orgId),
-							inArray(payments.visitId, visitIds),
-							eq(payments.status, "paid"),
-						),
-					)
-				: [];
-
-			const paidKopByVisit = new Map<string, number>();
-			const fiscalReceiptByVisit = new Map<string, string>();
-			for (const p of paidVisitRows) {
-				if (!p.visitId) continue;
-				const amtKop = Math.round(Number(p.amountRub || 0) * 100);
-				paidKopByVisit.set(p.visitId, (paidKopByVisit.get(p.visitId) || 0) + amtKop);
-				if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.visitId)) {
-					fiscalReceiptByVisit.set(p.visitId, p.fiscalReceiptNumber);
-				}
-			}
-
-			// Услуги с категориями из каталога
-			const treats = visitIds.length > 0
-				? await db
-					.select({
-						id: treatmentItems.id,
-						visitId: treatmentItems.visitId,
-						priceRub: treatmentItems.priceRub,
-						quantity: treatmentItems.quantity,
-						title: treatmentItems.title,
-						category: serviceCatalogItems.category,
-						specialty: serviceCatalogItems.specialty,
-						code: serviceCatalogItems.code,
-						order804nCode: serviceCatalogItems.order804nCode,
-					})
-					.from(treatmentItems)
-					.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
-					.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.visitId, visitIds)))
-				: [];
-
-			// Суммарная стоимость услуг по визитам для пропорционального распределения фактических оплат
-			const totalGrossByVisit = new Map<string, number>();
-			for (const t of treats) {
-				if (t.visitId) {
-					const qty = Math.max(1, Number(t.quantity || 1));
-					const gKop = Math.round(Number(t.priceRub || 0) * 100 * qty);
-					totalGrossByVisit.set(t.visitId, (totalGrossByVisit.get(t.visitId) || 0) + gKop);
-				}
-			}
-			const remainingPaidKopByVisit = new Map<string, number>(paidKopByVisit);
-
-			// Заказы ЗТЛ для доктора за период (исключая гарантии и отмененные)
-			const docLabOrders = await db
-				.select({
-					id: labOrders.id,
-					patientId: labOrders.patientId,
-					labCostRub: labOrders.labCostRub,
-				})
-				.from(labOrders)
-				.where(
-					and(
-						eq(labOrders.organizationId, orgId),
-						eq(labOrders.doctorId, resolvedDocId),
-						eq(labOrders.isWarranty, false),
-						inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed", "installed"]),
-						gte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, fromDate),
-						lte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, toDate),
-					),
-				);
-
-			const labCostPoolByPatient = new Map<string, number>();
-			for (const lo of docLabOrders) {
-				const costKop = Math.round(Number(lo.labCostRub || 0) * 100);
-				if (costKop > 0) {
-					labCostPoolByPatient.set(
-						lo.patientId,
-						(labCostPoolByPatient.get(lo.patientId) || 0) + costKop,
-					);
-				}
-			}
-
-			// Списание материалов (только списываемые на пациента, без общеклинических накладных)
-			const invDeductions = visitIds.length > 0
-				? await db
-					.select({
-						visitId: inventoryTransactions.visitId,
-						unitCostRub: inventoryTransactions.unitCostRub,
-						quantityChanged: inventoryTransactions.quantityChanged,
-						isOverhead: inventoryItems.isOverhead,
-					})
-					.from(inventoryTransactions)
-					.leftJoin(
-						inventoryItems,
-						and(
-							or(
-								eq(inventoryTransactions.itemId, inventoryItems.id),
-								eq(inventoryTransactions.inventoryItemId, inventoryItems.id),
-							),
-							eq(inventoryItems.organizationId, orgId),
-						),
-					)
-					.where(
-						and(
-							eq(inventoryTransactions.organizationId, orgId),
-							inArray(inventoryTransactions.visitId, visitIds),
-							eq(inventoryTransactions.transactionType, "auto_deduct"),
-						),
-					)
-				: [];
-
-			const matCostByVisit = new Map<string, number>();
-			for (const inv of invDeductions) {
-				if (!inv.visitId || inv.isOverhead) continue;
-				const cKop = Math.round(Number(inv.unitCostRub || 0) * Math.abs(Number(inv.quantityChanged || 0)) * 100);
-				matCostByVisit.set(inv.visitId, (matCostByVisit.get(inv.visitId) || 0) + cKop);
-			}
-
-			for (const t of treats) {
-				const qty = Math.max(1, Number(t.quantity || 1));
-				const grossKop = Math.round(Number(t.priceRub || 0) * 100 * qty);
-				const visitId = t.visitId;
-				const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
-				const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
-
-				let actuallyPaidGrossKop = 0;
-				if (visitId && visitTotalGross > 0 && visitPaidTotal > 0) {
-					if (visitPaidTotal >= visitTotalGross) {
-						actuallyPaidGrossKop = grossKop;
-					} else {
-						const remaining = remainingPaidKopByVisit.get(visitId) || 0;
-						actuallyPaidGrossKop = Math.min(grossKop, remaining);
-						remainingPaidKopByVisit.set(visitId, Math.max(0, remaining - actuallyPaidGrossKop));
-					}
-				}
-
-				const isPaid = actuallyPaidGrossKop > 0;
-				const isPartiallyPaid = actuallyPaidGrossKop > 0 && actuallyPaidGrossKop < grossKop;
-				const isDebt = actuallyPaidGrossKop <= 0 && grossKop > 0;
-				const invoiceStatus: "paid" | "partially_paid" | "unpaid" = actuallyPaidGrossKop >= grossKop
-					? "paid"
-					: actuallyPaidGrossKop > 0
-						? "partially_paid"
-						: "unpaid";
-				const receiptNum = visitId ? fiscalReceiptByVisit.get(visitId) : undefined;
-				const isPaid54Fz = Boolean(receiptNum) || isPaid || isPartiallyPaid;
-
-				const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
-				const appt = appts.find((a) => a.id === linkedApptId);
-				const patientId = appt?.patientId;
-
-				let labKop = 0;
-				if (patientId && (labCostPoolByPatient.get(patientId) || 0) > 0) {
-					const pool = labCostPoolByPatient.get(patientId)!;
-					labKop = Math.min(pool, grossKop);
-					labCostPoolByPatient.set(patientId, pool - labKop);
-				}
-
-				const visitMatTotal = t.visitId ? (matCostByVisit.get(t.visitId) || 0) : 0;
-				const matKop = Math.min(visitMatTotal, grossKop);
-				if (t.visitId && matKop > 0) {
-					matCostByVisit.set(t.visitId, Math.max(0, visitMatTotal - matKop));
-				}
-
-				const cat = normalizeClinicalCategory(t.category, t.specialty);
-				const catLabelRu = CATEGORY_LABELS_RU[cat] || "Терапия";
-				const serviceTitle = t.title || "Стоматологическая услуга";
-
-				completedServices.push({
-					id: t.id,
-					dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
-					patientName: appt?.patientName || "Пациент",
-					medicalCardNumber: appt?.cardNumber || "—",
-					serviceNameRu: serviceTitle,
-					category: cat,
-					grossRevenueKop: grossKop,
-					labCostKop: labKop,
-					materialCostKop: matKop,
-					doctorId: resolvedDocId,
-					order804nCode: t.order804nCode ?? undefined,
-					serviceCode: t.code ?? undefined,
-					isPaid,
-					isDebt,
-					invoiceStatus,
-					paidAmountKop: actuallyPaidGrossKop,
-					actuallyPaidGrossKop,
-					fiscalReceiptNumber: receiptNum,
-				});
-
-				orders.push({
-					id: t.id,
-					orderNumber: `ОРД-${t.id.slice(0, 6).toUpperCase()}`,
-					dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
-					patientName: appt?.patientName || "Пациент",
-					medicalCardNumber: appt?.cardNumber || "—",
-					serviceNameRu: serviceTitle,
-					category: cat,
-					categoryLabelRu: catLabelRu,
-					grossKopecks: grossKop,
-					labCostKopecks: labKop,
-					materialCostKopecks: matKop,
-					doctorId: resolvedDocId,
-					isPaid54Fz,
-				});
-			}
-		}
+		// Сбор клинического датасета (смены, приемы, оплаты, услуги, ЗТЛ, материалы)
+		const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+			orgId,
+			resolvedDocId,
+			fromStr,
+			toStr,
+			fromDate,
+			toDate,
+		});
 
 		// Расчет через канонический калькулятор пакета @dental/shared
 		const payrollResult = calculateDoctorPeriodPayroll({
@@ -552,26 +177,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
 		});
 
-		// 3. Закрытые периоды
-		const statements = await db
-			.select()
-			.from(doctorPayrollStatements)
-			.where(and(eq(doctorPayrollStatements.organizationId, orgId), eq(doctorPayrollStatements.doctorId, resolvedDocId)))
-			.orderBy(sql`${doctorPayrollStatements.createdAt} DESC`);
-
-		const closedPeriods = statements.map((s) => ({
-			id: s.id,
-			periodLabelRu: s.period,
-			dateClosedIso: s.createdAt.toISOString().slice(0, 10),
-			doctorName,
-			rkoReceiptNumber: `РКО-${s.id.slice(0, 8).toUpperCase()}`,
-			grossKopecks: Math.round(Number(s.grossRevenueKopecks || Math.round(Number(s.grossRevenueRub) * 100))),
-			labCostKopecks: Math.round(Number(s.labCostKopecks || Math.round(Number(s.labCostRub) * 100))),
-			materialCostKopecks: Math.round(Number(s.materialsCostKopecks || Math.round(Number(s.materialsCostRub) * 100))),
-			netBaseKopecks: Math.round(Number(s.netBaseRevenueRub) * 100),
-			payoutKopecks: Math.round(Number(s.netPayoutKopecks || Math.round(Number(s.netPayoutRub) * 100))),
-			isPaidRko: Boolean(s.paidAt),
-		}));
+		// Закрытые периоды
+		const { closedPeriods, statements } = await fetchClosedPayrollStatements(orgId, resolvedDocId, doctorName);
 
 		return reply.send({
 			ok: true,
@@ -692,12 +299,17 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	};
 
 	const reopenSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const parsed = reopenSettlementSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Не указаны параметры периода",
+				details: parsed.error.format(),
+			});
+		}
+		const body = parsed.data;
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const body = (request.body || {}) as { doctorId?: string; periodStart?: string; periodEnd?: string };
-		if (!body.doctorId || !body.periodStart || !body.periodEnd) {
-			return reply.code(400).send({ error: "ValidationError", message: "Не указаны параметры периода" });
-		}
 		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
 		if (!resolvedDocId) {
 			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });

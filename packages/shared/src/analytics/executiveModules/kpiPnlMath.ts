@@ -16,6 +16,9 @@ export interface KpiPnlAndDoctorIncome {
 	readonly labKop: number;
 	readonly docPayrollKop: number;
 	readonly docNetIncomeKop: number;
+	readonly hasActualMaterialsCost?: boolean;
+	readonly hasActualLabCost?: boolean;
+	readonly hasActualDoctorPayroll?: boolean;
 }
 
 export function calculatePnlAndDoctorIncome(
@@ -32,21 +35,30 @@ export function calculatePnlAndDoctorIncome(
 		? params.netMarginPercent
 		: (revKop > 0 ? Number(((netProfitKop / revKop) * 100).toFixed(1)) : 0.0);
 
-	const materialsKop = params.materialsCostKopecks !== undefined
+	// Mandates 8ap, 8z, 8f: Zero synthetic percentage guesses (no fake 35% materials, 25% lab, 28% payroll).
+	// If actual accounting figures are not provided, return exact 0 kopecks without fabricating clinic expenses.
+	const hasActualMaterialsCost = params.materialsCostKopecks !== undefined;
+	const materialsKop = hasActualMaterialsCost && typeof params.materialsCostKopecks === "number"
 		? Math.max(0, Math.round(params.materialsCostKopecks))
-		: Math.round(cogsKop * 0.35);
-	const labKop = params.labCostKopecks !== undefined
+		: 0;
+
+	const hasActualLabCost = params.labCostKopecks !== undefined;
+	const labKop = hasActualLabCost && typeof params.labCostKopecks === "number"
 		? Math.max(0, Math.round(params.labCostKopecks))
-		: Math.round(cogsKop * 0.25);
-	const docPayrollKop = params.doctorPayrollKopecks !== undefined
+		: 0;
+
+	const hasActualDoctorPayroll = params.doctorPayrollKopecks !== undefined;
+	const docPayrollKop = hasActualDoctorPayroll && typeof params.doctorPayrollKopecks === "number"
 		? Math.max(0, Math.round(params.doctorPayrollKopecks))
-		: Math.round(revKop * 0.28);
-	const docNetIncomeKop = params.doctorNetIncomeKopecks !== undefined
+		: 0;
+
+	const docNetIncomeKop = params.doctorNetIncomeKopecks !== undefined && typeof params.doctorNetIncomeKopecks === "number"
 		? Math.max(0, Math.round(params.doctorNetIncomeKopecks))
 		: Math.max(0, docPayrollKop);
 
 	return {
 		cogsKop, opexKop, netProfitKop, netProfitRub, netMarginPercent,
 		materialsKop, labKop, docPayrollKop, docNetIncomeKop,
+		hasActualMaterialsCost, hasActualLabCost, hasActualDoctorPayroll,
 	};
 }

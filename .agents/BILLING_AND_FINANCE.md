@@ -59,8 +59,8 @@ const shortageKopecks = Math.max(0, requiredCashKopecks - receivedCashKopecks);
 * Вместо «Постановление 659» -> **«Освобождение от НДС по медицинским услугам»**
 
 ### 2.0. Канонические компоненты Единого чекаута и кассы:
-1. **`CashRegisterStudioModal.tsx` & `DirectCashierLauncher.tsx`**: Каноническая Студия кассы, чеков и смены DENTE CRM (Cashier Studio SSOT). Sweet Spot 400–480 строк (`CashRegisterStudioModal.tsx`) + 70–90 строк (`DirectCashierLauncher.tsx`). Полноценный тест-сьют `cashierSSOTSuite.test.tsx` на нативном `node:test` (18/18 тестов зеленые).
-2. **`CashReceiptModal.tsx`**: Каноническое модальное окно кассового чека, фискализации и приема платежей (ранее `FiscalReceipt54FzModal.tsx`).
+1. **`CashRegisterStudioModal.tsx` & `DirectCashboxLauncher.tsx`**: Каноническая Студия кассы, чеков и смены DENTE CRM (Cashier Studio SSOT). Sweet Spot 400–480 строк (`CashRegisterStudioModal.tsx`) + 70–90 строк (`DirectCashboxLauncher.tsx`). Полноценный тест-сьют `cashierSSOTSuite.test.tsx` на нативном `node:test` (18/18 тестов зеленые).
+2. **`CashReceiptPrintModal.tsx`**: Каноническое модальное окно предпросмотра и печати кассового товарного чека.
 3. **`ServiceReceiptPrintDocument.tsx`**: Товарный чек / Акт оказанных стоматологических услуг и печать фискального чека (ранее `Order804nFiscalReceiptPrint.tsx`).
 4. **`TaxExemptionBanner.tsx`**: Информационный баннер освобождения от НДС медицинских услуг и согласования манипуляций у кресла (ранее `InvoiceDecree659Banner.tsx` / `InvoiceTaxDecreeBanner.tsx`).
 5. **Единый чекаут и запрет карнавала кнопок (Мандат 8am)**:
@@ -70,7 +70,7 @@ const shortageKopecks = Math.max(0, requiredCashKopecks - receivedCashKopecks);
 
 ### 2.1. Законное отсутствие требования ИНН у физических лиц (Zero Barrier Law):
 * **Физические лица (пациенты розницы)**: По ст. 4.7 Федерального закона № 54-ФЗ реквизит «ИНН покупателя (клиента)» (Тег 1228) **НЕ ТРЕБУЕТСЯ** при наличных и безналичных расчетах с физическими лицами!
-* **Кодовая гарантия (`validateBuyerInn` в `fastCheckoutEngine.ts` и `CashRegisterModal.tsx`)**:
+* **Кодовая гарантия (`validateBuyerInn` в `fastCheckoutEngine.ts` и `CashRegisterStudioModal.tsx`)**:
   ```typescript
   // Note: Buyer INN is strictly NOT required for physical persons (FFD 1.2 tag 1228 only applies to B2B legal entities).
   export function validateBuyerInn(params: { clientType?: ClientLegalType; buyerInn?: string }) {
@@ -210,7 +210,7 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 | Назначение | Frontend компонент | Backend маршрут |
 | :--- | :--- | :--- |
-| **Кассовый чек** | [`CashReceiptModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashReceiptModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
+| **Печать чека / Товарный чек** | [`CashReceiptPrintModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashReceiptPrintModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
 | **Единый SSOT Кассы (Кассовая студия)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/cashbox/payments`, `POST /api/fiscal/receipts` |
 | **Единый лаунчер кассы (Диплинки `#cashbox`, `#checkout`)** | [`DirectCashboxLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/DirectCashboxLauncher.tsx) | Единый перехват всех алиасов `#cashbox`, `#cashbox_ssot`, `#cash_register`, `#shift_closing` |
 | **Журнал счетов (UI SSOT)** | [`InvoicesView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/InvoicesView.tsx) | `GET /api/invoices`, `POST /api/invoices` (UUIDv7 в `patient_invoices`) |
@@ -218,7 +218,7 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 | **Офлайн-очередь платежей** | [`offlinePaymentQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlinePaymentQueue.ts) | Сквозная синхронизация с `/api/cashbox/payments` |
 | **Кассовая смена и Z-отчёт SSOT** | [`CashShiftClosingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/shift/CashShiftClosingModal.tsx) | `POST /api/cashbox/shifts/close`, `POST /api/cash/cash-box-all-closing` |
 | **Журнал кассовых смен SSOT** | [`CashShiftJournalView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/shift/CashShiftJournalView.tsx) | `GET /api/cashbox/shifts` |
-| **1-Клик касса / Split** | [`CashRegisterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashRegisterModal.tsx) | `POST /api/fiscal/receipts` |
+| **Комбинированная оплата семьи** | [`FamilyCombinedBillingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FamilyCombinedBillingModal.tsx) | `POST /api/cashbox/payments` (единый атомарный мульти-тендер) |
 | **Fast Checkout Engine** | [`fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts) | `POST /api/billing/payments` |
 | **Семейный кошелек** | [`FamilyWalletModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FamilyWalletModal.tsx) | [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts) |
 | **Справка ФНС КНД 1151156**| [`TaxDeductionCertificateModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/TaxDeductionCertificateModal.tsx) | [`taxDeductionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/taxDeductionEngine.ts) |
@@ -230,7 +230,7 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 ---
 
-## 🛡️ 7. Реестр устранённых дефектов кассово-финансового контура (DEF-FIN-01...07)
+## 🛡️ 7. Реестр устранённых дефектов кассово-финансового контура (DEF-FIN-01...13)
 
 1. **DEF-FIN-01 [ЗАКРЫТО]**: Мокап счетов в LocalStorage в обход БД в `InvoicesView.tsx` полностью заменен на реальное взаимодействие с `POST /api/invoices` и `GET /api/invoices`. Создание счета генерирует UUIDv7 в PostgreSQL (`patient_invoices`), исключая ошибку `BillingValidationError: invalid uuid` при последующей оплате.
 2. **DEF-FIN-02 [ЗАКРЫТО]**: В `useInvoicesData.ts` исправлен приоритет разбора ответа сервера (`data.invoices ?? (Array.isArray(data) ? data : data.items ?? [])`), что гарантирует корректную загрузку счетов, а не позиций услуг.
@@ -240,13 +240,17 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 6. **DEF-FIN-06 [ЗАКРЫТО]**: Сигнатуры роутов получения счетов `GET /api/invoices` и `GET /api/billing/invoices` взаимно унифицированы (`{ success: true, data, invoices, items }`).
 7. **DEF-FIN-07 [ЗАКРЫТО]**: Канцелярит и сырые регуляторные теги («ФФД 1.2», теги 1214/1054) полностью устранены из пользовательского UI в пользу чистого клинического русского языка.
 8. **DEF-FIN-08 [ЗАКРЫТО]**: Свободный чек (Walk-In payment) и розничная продажа без карты пациента (ст. 1.2 и 4.7 54-ФЗ). В `useCashRegisterStudioState.ts` разрешена продажа физлицам без `patientId` (`isRetailSale: true`), а в `cashboxPaymentProcessor.ts` снята блокировка `400 PatientRequired` — операция фискализируется и связывается с системным розничным покупателем в PostgreSQL 18.
-9. **DEF-FIN-09 [ЗАКРЫТО]**: Восстановление позиций услуг в счетах (`createInvoiceHandler.ts`, `getInvoiceByIdHandler.ts`, `listInvoicesHandler.ts`). Позиции сохраняются в `treatment_items` с привязкой к счёту и возвращаются в `invoice.items`. В `useInvoicesData.ts` исправлен порядок слияния кэша: свежие данные сервера перезаписывают устаревший `localStorage`, устранены заглушки «A16.07.002».
-10. **Сироты и дубликаты [ЗАКРЫТО]**: Физически удалены через `git rm`:
+9. **DEF-FIN-09 [ЗАКРЫТО]**: Восстановление позиций услуг в счетах (`createInvoiceHandler.ts`, `getInvoiceByIdHandler.ts`, `listInvoicesHandler.ts`).
+10. **DEF-FIN-10 [ЗАКРЫТО]**: Ликвидация раскола платежных пайплайнов (Мандат 8bf). Вызовы проведения платежей на фронтенде унифицированы на единый канонический роут `POST /api/cashbox/payments` без костыльных цепочек фолбеков (`recordCrmPayment.ts`, `executeManualCardTerminalConfirm.ts`, `familyCombinedCheckoutApi.ts`). `cashboxPaymentRequestSchema` расширена поддержкой `familyGroupId`, `payerFullName` и раздельных рублей/копеек по тендерам (`cashAmountRub`, `electronicAmountRub`, `depositAmountRub`, `bonusAmountRub`).
+11. **DEF-FIN-11 [ЗАКРЫТО]**: Реляционная таблица `invoice_items` (Мандат 8bf). Устранен антипаттерн парсинга `treatment_items.notes LIKE '%invoiceId%'`. Добавлена физическая таблица `invoice_items` с RLS-изоляцией, внешними ключами и индексами, выполнена DDL-миграция `0244_invoice_items_table.sql`. Создание и чтение счетов в `createInvoiceHandler.ts`, `getInvoiceByIdHandler.ts` и `listInvoicesHandler.ts` переведено на прямую реляционную связь.
+12. **DEF-FIN-12 [ЗАКРЫТО]**: Атомарный комбинированный сплит с семейным кошельком (Мандат 8bf). Исключен сценарий рассинхрона из двух последовательных сетевых запросов (`/api/finance/family/pay` с последующим `/api/billing/payments`). Клиент совершает ровно 1 сетевой вызов с мульти-тендером, сервер атомарно в одной транзакции блокирует строку кошелька `FOR UPDATE`, дебетует баланс, проводит платеж и ставит чек в очередь 54-ФЗ.
+13. **DEF-FIN-13 [ЗАКРЫТО]**: Устранение фиктивных ФД/ФПД и хардкодного ФН (Мандаты 8e, 8n). В `fiscalAccounting.ts` удалена генерация фиктивных номеров ФД и хэш-функции ФПД до реальной печати на ККТ. Удален хардкод ФН `"9960440300123456"`. Подлинные фискальные атрибуты сохраняются только из ответа ККТ/драйвера, а чеки до печати ставятся в `fiscalReceiptQueue` со статусом `pending_print`.
+14. **Сироты и дубликаты [ЗАКРЫТО]**: Физически удалены через `git rm`:
    - 9 файлов мёртвой папки `apps/web/src/components/cashbox/checkout/`
    - 5 фасадов-пустышек (`CashCheckoutStudioModal.tsx`, `CashRegisterCheckoutModal.tsx` и др.)
    - 10 тестов к Постановлению №659 и файл `decree659Audit.ts`
    - Тесты и каталоги бренда StomX
-11. **4-State Visual Proof [ЗАКРЫТО]**: Сняты реальные скриншоты живого приложения и лично отсмотрены через `read_file`:
+15. **4-State Visual Proof [ЗАКРЫТО]**: Сняты реальные скриншоты живого приложения и лично отсмотрены через `read_file`:
    - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 80.5 KB)
    - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 79.9 KB)
    - 📱 Mobile Light 390x844 (`03_cashbox_studio_mobile_light_390x844.png` — 128.7 KB)
@@ -260,7 +264,9 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 2. **DEF-PAYROLL-02 [ЗАКРЫТО]**: Ликвидировано двойное монтирование модалки в `FinancePatientModalsSubhost.tsx` (ранее рендерилась дважды под `s.isTimesheetT13Open` и `isDoctorPayrollOpen`).
 3. **DEF-PAYROLL-03 [ЗАКРЫТО]**: Искоренен советский птичий язык и канцелярит Т-51 / Т-13 в пользовательском UI. Заменены на естественные клинические термины: **«Ведомость начисления зарплаты»** и **«Табель рабочего времени»** (Мандат 8x).
 4. **DEF-PAYROLL-04 [ЗАКРЫТО]**: Консолидирован расчет процентов и комиссий вокруг канонического `doctorPayrollEngine.ts` из `@dental/shared`. Устранен тройной раскол логики, обеспечена формула Net Revenue = Услуги - ЗТЛ - Материалы.
-5. **4-State Visual Proof [ЗАКРЫТО]**:
+5. **DEF-PAYROLL-05 [ЗАКРЫТО]**: Полная синхронизация расчета зарплат между `payroll.ts`, `doctorPerformancePayrollRoutes.ts` (`financialExecutiveReports.ts`) и `payoutsHandler.ts` (`doctorPayouts/formula.ts`). Расчёт выплат переведён на стандарт PAY-01 (Net Revenue = Выручка - Материалы - ЗТЛ, Начислено = Net Base × Ставка). Устранены `as any` и небезопасные касты `request.query / request.body`, внедрены строгие Zod-схемы `payrollCalculationsQuerySchema` и `reopenSettlementSchema`. Восстановлены и успешно пройдены 21/21 тестов `doctorPayouts.test.ts`. В `staffPayrollExports.ts` введены канонические функции клинических ведомостей `generateStaffPayrollLedgerCsv` и `generateStaffPayrollLedgerHtml`.
+6. **DEF-PNL-01 [ЗАКРЫТО]**: В `kpiPnlMath.ts` (`@dental/shared`) полностью ликвидированы синтетические захардкоженные проценты расходов клиники (ранее 35% материалы, 25% лаборатория, 28% ФОТ). При отсутствии первичных проводок из базы данных возвращается строго 0 копеек и флаги фактического наличия данных (`hasActualMaterialsCost`, `hasActualLabCost`, `hasActualDoctorPayroll`) без галлюцинаций затрат из воздуха. Закреплено юнит-тестом `prevents DEFECT-PNL-SYNTHETIC-COSTS` в `executiveDashboard.test.ts`.
+7. **4-State Visual Proof [ЗАКРЫТО]**:
    - ☀️ PC Light 1440x900 (`01_doctor_payroll_pc_light_1440x900.png` — 151.1 KB)
    - 🌙 PC Dark 1440x900 (`02_doctor_payroll_pc_dark_1440x900.png` — 187.5 KB)
    - 📱 Mobile Light 390x844 (`03_doctor_payroll_mobile_light_390x844.png` — 148.0 KB)

@@ -250,4 +250,35 @@ describe("Executive Dashboard — Unit Economics, LTV, CAC & Chair Occupancy", (
 		assert.equal(kpis.cacKopecks, 0);
 		assert.equal(kpis.ltvToCacRatio, 0);
 	});
+
+	it("prevents DEFECT-PNL-SYNTHETIC-COSTS: Returns exact 0 kopecks when materials, lab and doctor payroll are not provided", () => {
+		const paramsWithoutCosts: CalculateExecutiveKpisParams = {
+			period: "month",
+			totalRevenueKopecks: 100000000,     // 1 000 000 ₽
+			totalRevenuePlanKopecks: 100000000,
+			primaryRevenueKopecks: 50000000,
+			repeatRevenueKopecks: 50000000,
+			primaryPatientsCount: 20,
+			repeatPatientsCount: 30,
+			totalMarketingSpendKopecks: 0,
+			historicalCohortLtvKopecks: 0,
+			totalOccupiedMinutes: 600,
+			totalAvailableMinutes: 1200,
+			totalChairsCount: 2,
+			totalLeadsCount: 50,
+			aiExaminedLeadsCount: 10,
+			totalSanitationCount: 15,
+			totalCompletedVisits: 50,
+			activeDoctorsCount: 3,
+			cogsKopecks: 20000000,              // 200 000 ₽
+			opexKopecks: 10000000,
+		};
+
+		const kpis = calculateExecutiveKpisSummary(paramsWithoutCosts);
+
+		// Zero synthetic percentages: must NOT fabricate 35% materials, 25% lab, 28% doctor payroll
+		assert.equal(kpis.materialsCostKopecks, 0, "Materials cost must be 0 without factual data");
+		assert.equal(kpis.labCostKopecks, 0, "Lab cost must be 0 without factual data");
+		assert.equal(kpis.doctorPayrollKopecks, 0, "Doctor payroll must be 0 without factual data");
+	});
 });

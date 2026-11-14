@@ -15,6 +15,7 @@ import {
 	appointments,
 	doctorCommissions,
 	doctorPayrollStatements,
+	inventoryItems,
 	inventoryTransactions,
 	invoices,
 	patientInvoices,
@@ -27,7 +28,7 @@ import {
 	assistantPayrollReport,
 	type AssistantPayrollRow,
 } from "./assistantPayrollReports.js";
-import { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "@dental/shared";
+import { DEFAULT_CATEGORY_COMMISSION_PERCENT, calculateDoctorPeriodPayroll } from "@dental/shared";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -401,14 +402,14 @@ export async function doctorPayrollReport(
 	const labOrderRows = await db
 		.select({
 			doctorId: labOrders.doctorId,
-			labCostRub: sql<number>`coalesce(sum(case when ${labOrders.isWarranty} = false and ${labOrders.status} in ('completed', 'received', 'installed') then coalesce(${labOrders.labCostRub}, 0) else 0 end), 0)::numeric(12,2)`,
+			labCostRub: sql<number>`coalesce(sum(case when ${labOrders.isWarranty} = false and ${labOrders.status} in ('completed', 'received', 'ready', 'ready_in_clinic', 'fitted', 'installed') then coalesce(${labOrders.labCostRub}, 0) else 0 end), 0)::numeric(12,2)`,
 		})
 		.from(labOrders)
 		.where(
 			and(
 				eq(labOrders.organizationId, scope.organizationId),
-				gte(labOrders.completedAt, scope.from),
-				lte(labOrders.completedAt, scope.to),
+				gte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, scope.from),
+				lte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, scope.to),
 				isNotNull(labOrders.doctorId),
 			),
 		)
@@ -422,11 +423,21 @@ export async function doctorPayrollReport(
 	const materialUsageRows = await db
 		.select({
 			doctorId: appointments.doctorUserId,
-			totalCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.quantityChanged}, ${inventoryTransactions.qty}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)::numeric(12,2)`,
+			totalCostRub: sql<number>`coalesce(sum(case when coalesce(${inventoryItems.isOverhead}, false) = false then abs(coalesce(${inventoryTransactions.quantityChanged}, ${inventoryTransactions.qty}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0) else 0 end), 0)::numeric(12,2)`,
 		})
 		.from(inventoryTransactions)
 		.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
 		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.leftJoin(
+			inventoryItems,
+			and(
+				or(
+					eq(inventoryTransactions.itemId, inventoryItems.id),
+					eq(inventoryTransactions.inventoryItemId, inventoryItems.id),
+				),
+				eq(inventoryItems.organizationId, scope.organizationId),
+			),
+		)
 		.where(
 			and(
 				eq(inventoryTransactions.organizationId, scope.organizationId),
@@ -492,14 +503,36 @@ export async function doctorPayrollReport(
 		const commissionPercent =
 			commissionRateMap.get(docId) ?? (st?.percent && st.percent > 0 ? st.percent : (DEFAULT_CATEGORY_COMMISSION_PERCENT.orthodontics ?? 25.0));
 
-		// Расчёты в целочисленных копейках
+		// Расчёты в целочисленных копейках через канонический SSOT @dental/shared
 		const servicesRenderedKopecks = Math.round(revRub * 100);
 		const materialsCostKopecks = Math.round(materialsCostRub * 100);
-		const netRevenueKopecks = Math.max(
-			0,
-			servicesRenderedKopecks - materialsCostKopecks - labCostKopecks,
-		);
-		const payoutKopecks = Math.round((netRevenueKopecks * commissionPercent) / 100);
+
+		const periodPayroll = calculateDoctorPeriodPayroll({
+			doctorId: docId,
+			doctorName: docMeta.name,
+			specialtyId: "therapy",
+			periodStartIso: scope.from.toISOString().slice(0, 10),
+			periodEndIso: scope.to.toISOString().slice(0, 10),
+			services: [
+				{
+					id: `service-agg-${docId}`,
+					dateIso: scope.from.toISOString().slice(0, 10),
+					patientName: "Пациент",
+					medicalCardNumber: "МК-000",
+					serviceNameRu: "Стоматологический приём",
+					category: "therapy",
+					grossRevenueKop: servicesRenderedKopecks,
+					actuallyPaidGrossKop: servicesRenderedKopecks,
+					labCostKop: labCostKopecks,
+					materialCostKop: materialsCostKopecks,
+					isPaid: true,
+				},
+			],
+			customBasePercentage: commissionPercent,
+		});
+
+		const netRevenueKopecks = periodPayroll.totalNetBaseKop;
+		const payoutKopecks = periodPayroll.grossPayoutBeforeTaxKop;
 		const payoutRub = Math.round(payoutKopecks / 100);
 
 		totalServicesRenderedKopecks += servicesRenderedKopecks;

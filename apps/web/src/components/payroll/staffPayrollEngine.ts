@@ -505,6 +505,7 @@ export {
 export {
 	generateDoctorPayrollCsv,
 	generateStaffPayrollCsv,
+	generateStaffPayrollLedgerCsv,
 	generateStaffPayrollT51Csv,
 	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,

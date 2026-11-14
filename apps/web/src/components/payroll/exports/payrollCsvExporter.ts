@@ -83,6 +83,9 @@ export function generateStaffPayrollCsv(summary: ConsolidatedStaffPayrollSummary
 	return headerLines.join("\n") + "\n" + rows.join("\n") + "\n" + totalLine;
 }
 
+// Canonical Clinical Exports
+export const generateStaffPayrollLedgerCsv = generateStaffPayrollCsv;
+
 // Backward Compatibility Aliases
 export const generatePayrollT51Csv = generateDoctorPayrollCsv;
 export const generateStaffPayrollT51Csv = generateStaffPayrollCsv;
