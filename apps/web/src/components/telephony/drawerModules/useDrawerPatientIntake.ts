@@ -1,4 +1,7 @@
 import { useState } from "react";
+import type { IncomingCallPayload } from "../../../store/telephonyTypes";
+import type { UseIncomingCallDataResult } from "../useIncomingCallData";
+import type { AppLogicContextValue } from "../../../contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { usePatientStore } from "../../../store/patientStore";
 import { useTelephonyStore } from "../../../store/telephonyStore";
@@ -6,7 +9,9 @@ import { showToast } from "../../GlobalToast";
 import { captureLeadFromIncomingCall } from "../telephonyAttribution";
 
 export function useDrawerPatientIntake(params: {
-	currentCall: any; callData: any; ctx: any;
+	currentCall: IncomingCallPayload | null;
+	callData: UseIncomingCallDataResult;
+	ctx: AppLogicContextValue | null | undefined;
 }) {
 	const { currentCall, callData, ctx } = params;
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
@@ -43,7 +48,7 @@ export function useDrawerPatientIntake(params: {
 			const active = useTelephonyStore.getState().activeCall;
 			if (active) triggerIncomingCall({ ...active, patientId: createdPatient.id, patientName: createdPatient.fullName });
 			if (ctx?.setDashboard) {
-				ctx.setDashboard((curr: any) => curr ? { ...curr, patients: [createdPatient, ...curr.patients.filter((p: any) => p.id !== createdPatient.id)] } : curr);
+				ctx.setDashboard((curr) => curr ? { ...curr, patients: [createdPatient, ...curr.patients.filter((p) => p.id !== createdPatient.id)] } : curr);
 			}
 			showToast(`Создана амбулаторная карта: ${createdPatient.fullName} (${callData.formattedPhone})`, "success");
 		} catch (err: unknown) {

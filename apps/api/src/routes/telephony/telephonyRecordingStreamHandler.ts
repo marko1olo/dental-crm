@@ -16,13 +16,33 @@ import {
 
 export type StreamRecordingRouteGeneric = {
 	Params: { eventId?: string; id?: string; organizationId?: string };
-	Querystring: { eventId?: string; id?: string; url?: string };
+	Querystring: {
+		eventId?: string;
+		id?: string;
+		url?: string;
+		token?: string;
+		clinicToken?: string;
+		staffToken?: string;
+		adminSecret?: string;
+	};
 };
 
 export async function handleStreamRecording(
 	request: FastifyRequest<StreamRecordingRouteGeneric>,
 	reply: FastifyReply,
 ) {
+	// Поддержка авторизации через query-параметры для HTML5 <audio> и <video> тегов
+	const queryToken = request.query?.token || request.query?.clinicToken;
+	if (queryToken && !request.headers["x-dente-clinic-token"]) {
+		request.headers["x-dente-clinic-token"] = queryToken;
+	}
+	if (request.query?.staffToken && !request.headers["x-dente-staff-token"]) {
+		request.headers["x-dente-staff-token"] = request.query.staffToken;
+	}
+	if (request.query?.adminSecret && !request.headers["x-dente-admin-secret"]) {
+		request.headers["x-dente-admin-secret"] = request.query.adminSecret;
+	}
+
 	if (!(await requireClinicalReadAccess(request, reply, "stream call recording"))) return;
 	const orgId = await requireResolvedOrganizationId(request, reply, "stream call recording");
 	if (!orgId) return;

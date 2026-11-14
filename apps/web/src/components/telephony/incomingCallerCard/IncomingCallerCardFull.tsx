@@ -1,13 +1,16 @@
 import React from "react";
 import { CalendarCheck, Check, Clock, Copy, Send, UserPlus } from "lucide-react";
 import type { IncomingCallerCardProps } from "./types";
+import type { TelephonyPatientCategory } from "../../../store/telephonyTypes";
 import { IncomingCallerStatusBadge } from "./IncomingCallerStatusBadge";
 import { IncomingCallerFinancialStatus } from "./IncomingCallerFinancialStatus";
 import { IncomingCallerSomaticAlerts } from "./IncomingCallerSomaticAlerts";
 import { IncomingCallerLeadCapture } from "./IncomingCallerLeadCapture";
 
 interface FullProps extends IncomingCallerCardProps {
-	resolvedCategory: any; hasDebt: boolean; hasDms: boolean;
+	resolvedCategory: TelephonyPatientCategory;
+	hasDebt: boolean;
+	hasDms: boolean;
 }
 
 export const IncomingCallerCardFull: React.FC<FullProps> = ({

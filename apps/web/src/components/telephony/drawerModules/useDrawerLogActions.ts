@@ -1,3 +1,4 @@
+import type { Dashboard } from "@dental/shared";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
@@ -5,7 +6,7 @@ import { type CallHistoryItem, type PatientRecord } from "../../../store/telepho
 import { showToast } from "../../GlobalToast";
 import { initiateOutboundCall } from "../initiateOutboundCall";
 
-export function useDrawerLogActions(params: { dashboard: any; handleClose: () => void }) {
+export function useDrawerLogActions(params: { dashboard: Dashboard | null | undefined; handleClose: () => void }) {
 	const { dashboard, handleClose } = params;
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
@@ -26,7 +27,7 @@ export function useDrawerLogActions(params: { dashboard: any; handleClose: () =>
 		else setNewPatientPhone(item.phone);
 
 		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
-		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "doctor")?.id || "";
+		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
 		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 
 		setNewAppointmentDraft({

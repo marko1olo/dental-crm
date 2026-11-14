@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, TelephonyPatientLike, TelephonyPatientInsightLike } from "@dental/shared";
 import type {
 	CallerLookupResult,
 	PatientFinancialSummary,
@@ -15,8 +15,7 @@ import {
 } from "../../../store/telephonyStore";
 
 export interface ResolvedClinicalSummaries {
-	// biome-ignore lint/suspicious/noExplicitAny: insight like compatibility
-	patientInsight: any;
+	patientInsight: TelephonyPatientInsightLike | null;
 	financialSummary: PatientFinancialSummary;
 	lastVisitSummary: PatientLastVisitSummary | null;
 	upcomingAppointment: PatientUpcomingAppointmentSummary | null;
@@ -25,8 +24,7 @@ export interface ResolvedClinicalSummaries {
 
 export function useResolvedClinicalSummaries(
 	serverLookup: CallerLookupResult | null,
-	// biome-ignore lint/suspicious/noExplicitAny: patient like compatibility
-	resolvedPatient: any | null,
+	resolvedPatient: TelephonyPatientLike | null,
 	dashboard: Dashboard | undefined,
 ): ResolvedClinicalSummaries {
 	const patientInsight = useMemo(() => {

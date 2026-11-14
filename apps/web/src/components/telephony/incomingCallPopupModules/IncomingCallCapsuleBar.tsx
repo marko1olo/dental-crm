@@ -12,7 +12,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 		lastVisitSummary, isKnownPatient, handleToggleCardDrawer, handleQuickBook,
 	} = ctrl;
 
-	const hasAcutePain = Boolean(ctrl.acutePainAlerts?.length) || Boolean((ctrl.currentCall as any)?.acutePain);
+	const hasAcutePain = Boolean(ctrl.acutePainAlerts?.length) || Boolean(ctrl.currentCall?.acutePain);
 	const lastVisitDateVal = lastVisitSummary?.formattedLastVisit || lastVisitSummary?.lastVisitDate;
 	const lastVisitText = lastVisitDateVal
 		? `Визит: ${lastVisitDateVal}`
@@ -31,7 +31,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 				</span>
 				<div className="flex items-center gap-1 min-w-0 shrink-0">
 					<span className="text-xs font-black text-[var(--ink,#0f172a)] truncate max-w-[110px] sm:max-w-[200px] whitespace-nowrap" title={callerName}>
-						{isCallAnswered ? `РАЗГОВОР ${formatDurationTimer(elapsedSeconds)} • ${formatShortCallerName(callerName)}` : formatShortCallerName(callerName)}
+						{isCallAnswered ? `Разговор ${formatDurationTimer(elapsedSeconds)} • ${formatShortCallerName(callerName)}` : formatShortCallerName(callerName)}
 					</span>
 					{!isCallAnswered && <span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden lg:inline shrink-0 whitespace-nowrap">{formattedPhone}</span>}
 				</div>

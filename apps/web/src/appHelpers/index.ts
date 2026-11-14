@@ -47,6 +47,15 @@ export {
 	loadVisitLocalDraft,
 	saveVisitLocalDraft,
 	buildOfflineVisitDraftFromTranscript,
+	visitNoteDraftFromForm,
+	visitNoteFieldDefinitions,
+	visitDraftQualityLabels,
+	visitDraftSignalLabels,
+	visitDraftMissingFieldLabels,
+	visitDraftSignalLabel,
+	visitDraftMissingFieldLabel,
+	visitNoteFormFromVisit,
+	visitNoteFormFromDraft,
 } from "./appointmentHelpers.js";
 
 export {

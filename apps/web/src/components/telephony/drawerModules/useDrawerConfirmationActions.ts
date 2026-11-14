@@ -1,11 +1,14 @@
 import { useState } from "react";
+import type { Dashboard } from "@dental/shared";
+import type { IncomingCallPayload } from "../../../store/telephonyTypes";
+import type { UseIncomingCallDataResult } from "../useIncomingCallData";
 import { generateAppointmentConfirmationMessage, openWhatsAppChat } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
 
 export function useDrawerConfirmationActions(params: {
-	currentCall: any;
-	callData: any;
-	dashboard: any;
+	currentCall: IncomingCallPayload | null;
+	callData: UseIncomingCallDataResult;
+	dashboard: Dashboard | null | undefined;
 }) {
 	const { currentCall, callData, dashboard } = params;
 	const [smsCopied, setSmsCopied] = useState(false);

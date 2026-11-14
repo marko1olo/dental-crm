@@ -45,6 +45,7 @@ function onnxMimePlugin() {
 }
 
 export default defineConfig({
+	root: __dirname,
 	plugins: [
 		react(),
 		tailwindcss(),
@@ -85,15 +86,17 @@ export default defineConfig({
 			"react/jsx-runtime",
 			"react/jsx-dev-runtime",
 		],
-		alias: {
-			react: path.join(rootNodeModules, "react"),
-			"react-dom": path.join(rootNodeModules, "react-dom"),
-			"react/jsx-runtime": path.join(rootNodeModules, "react/jsx-runtime"),
-			"react/jsx-dev-runtime": path.join(
-				rootNodeModules,
-				"react/jsx-dev-runtime",
-			),
-		},
+		alias: [
+			{ find: /^@dental\/shared$/, replacement: path.resolve(__dirname, "../../packages/shared/src/index.ts") },
+			{ find: /^@dental\/shared\/(.*)$/, replacement: path.resolve(__dirname, "../../packages/shared/src/$1") },
+			{ find: "react", replacement: path.join(rootNodeModules, "react") },
+			{ find: "react-dom", replacement: path.join(rootNodeModules, "react-dom") },
+			{ find: "react/jsx-runtime", replacement: path.join(rootNodeModules, "react/jsx-runtime") },
+			{
+				find: "react/jsx-dev-runtime",
+				replacement: path.join(rootNodeModules, "react/jsx-dev-runtime"),
+			},
+		],
 	},
 	optimizeDeps: {
 		include: ["react", "react-dom"],
@@ -520,6 +523,7 @@ export default defineConfig({
 					// Изоляция аналитических панелей и графиков от основного бандла приёма врача
 					if (
 						normalizedId.includes("/apps/web/src/components/analytics/") ||
+						normalizedId.includes("/apps/web/src/pages/analyticsDashboard/") ||
 						normalizedId.includes("/apps/web/src/pages/AnalyticsDashboardView")
 					)
 						return "analytics-components";

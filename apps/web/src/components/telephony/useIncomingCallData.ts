@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, TelephonyPatientLike, TelephonyPatientInsightLike } from "@dental/shared";
 import type {
 	IncomingCallPayload,
 	PatientFinancialSummary,
@@ -20,10 +20,8 @@ import { useResolvedCallerIdentity } from "./incomingCallDataModules/useResolved
 export interface UseIncomingCallDataResult {
 	currentCall: IncomingCallPayload | null;
 	elapsedSeconds: number;
-	// biome-ignore lint/suspicious/noExplicitAny: patient like compatibility
-	resolvedPatient: any | null;
-	// biome-ignore lint/suspicious/noExplicitAny: insight like compatibility
-	patientInsight: any;
+	resolvedPatient: TelephonyPatientLike | null;
+	patientInsight: TelephonyPatientInsightLike | null;
 	financialSummary: PatientFinancialSummary;
 	lastVisitSummary: PatientLastVisitSummary | null;
 	upcomingAppointment: PatientUpcomingAppointmentSummary | null;

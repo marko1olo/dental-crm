@@ -50,7 +50,7 @@ export function IncomingCallPatientContextCard({
 						data-testid="answer-secondary-line-btn"
 						title={`Ответить со 2-й линии с удержанием Линии ${activeLineId}`}
 					>
-						Ответить (Hold Л{activeLineId})
+						Ответить (Удержание Л{activeLineId})
 					</button>
 				</div>
 			)}
@@ -62,7 +62,7 @@ export function IncomingCallPatientContextCard({
 				>
 					<div className="flex items-center gap-1.5 min-w-0">
 						<span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-						<span className="font-bold shrink-0">Л{secondaryLine.lineId} [Hold]:</span>
+						<span className="font-bold shrink-0">Л{secondaryLine.lineId} [Удержание]:</span>
 						<span className="truncate">{secondaryLine.call.patientName || secondaryLine.call.phone}</span>
 					</div>
 					<button

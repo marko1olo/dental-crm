@@ -4,8 +4,8 @@ export interface PatientFastPhoneIndex<T> {
 	byCleanDigits: Map<string, T>;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic index cache
-const patientFastIndexCache = new WeakMap<object, PatientFastPhoneIndex<any>>();
+// WeakMap cache for memoized indexed patient maps by list reference
+const patientFastIndexCache = new WeakMap<object, PatientFastPhoneIndex<never>>();
 
 export function getOrCreatePatientFastIndex<
 	T extends {

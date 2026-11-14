@@ -3,7 +3,7 @@ import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 
 export function useCallDurationTimer(
 	activeCall: IncomingCallPayload | null,
-	dismissCall: () => void,
+	_dismissCall?: () => void,
 ): number {
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -67,23 +67,8 @@ export function useCallDurationTimer(
 		};
 	}, [activeCall]);
 
-	// Auto-dismiss call after 45 seconds if unhandled and still ringing
-	useEffect(() => {
-		if (
-			!activeCall ||
-			activeCall.status === "answered" ||
-			activeCall.status === "connected" ||
-			activeCall.status === "ended"
-		) {
-			return;
-		}
-
-		const timer = setTimeout(() => {
-			dismissCall();
-		}, 45000);
-
-		return () => clearTimeout(timer);
-	}, [activeCall, dismissCall]);
+	// Call lifecycle (hangup/missed/dismiss) is strictly governed by server PBX / WebSocket events.
+	// Client-side 45-second auto-drop timer has been completely dismantled (Mandate 8e: Doctor & Reception Autonomy).
 
 	return elapsedSeconds;
 }

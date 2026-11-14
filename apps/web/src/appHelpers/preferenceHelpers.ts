@@ -659,4 +659,4 @@ export const onboardingSteps: Array<{
 	{ id: "done", title: "Готово", detail: "проверка и старт" },
 ];
 
-export const initialUiPreferences = {} as any;
+export const initialUiPreferences: UiPreferences = defaultUiPreferences;

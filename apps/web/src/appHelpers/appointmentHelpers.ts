@@ -316,8 +316,7 @@ export function newAppointmentDraftFromDashboard(
 		scheduleDefaultChairId?: string | null;
 	} = {},
 ): AppointmentScheduleDraft {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const profile = dashboard?.clinicSettings?.profile || ({} as any);
+	const profile = dashboard?.clinicSettings?.profile;
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const chairs = dashboard?.clinicSettings?.chairs || [];
 	const patients = dashboard?.patients || [];
@@ -398,7 +397,7 @@ export function newAppointmentDraftFromDashboard(
 		patientId: patient?.id ?? "",
 		doctorUserId: doctor?.id ?? "",
 		assistantUserId:
-			profile.mode === "solo_doctor" ? "" : (assistant?.id ?? ""),
+			profile?.mode === "solo_doctor" ? "" : (assistant?.id ?? ""),
 		chairId: chair?.id ?? "",
 		status: "planned",
 		startsAt: fromDateTimeLocalValue(startsAtLocal, timezone),
@@ -433,7 +432,7 @@ export function appointmentCreateInputFromDraft(
 	draft: AppointmentScheduleDraft,
 ): CreateAppointmentInput {
 	return {
-		patientId: draft.patientId,
+		patientId: draft.patientId && draft.patientId.trim() !== "" ? draft.patientId.trim() : null,
 		doctorUserId: draft.doctorUserId,
 		assistantUserId: draft.assistantUserId || null,
 		chairId: draft.chairId,

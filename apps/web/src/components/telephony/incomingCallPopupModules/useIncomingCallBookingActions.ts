@@ -53,7 +53,7 @@ export function useIncomingCallBookingActions({
 		}
 
 		setNewAppointmentDraft({
-			patientId: resolvedPatient?.id || "", doctorUserId: defaultDoctorId,
+			patientId: resolvedPatient?.id || null, doctorUserId: defaultDoctorId,
 			status: "confirmed", chairId: defaultChairId, startsAt, endsAt,
 			reason: QUICK_BOOKING_REASON_BY_SLOT[slotType], notes: comment, assistantUserId: "",
 		});

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, TelephonyPatientLike, TelephonyPatientInsightLike } from "@dental/shared";
 import type {
 	CallerLookupResult,
 	PatientSomaticAlert,
@@ -19,10 +19,8 @@ export interface ResolvedPatientAlertsResult {
 
 export function useResolvedPatientAlerts(
 	serverLookup: CallerLookupResult | null,
-	// biome-ignore lint/suspicious/noExplicitAny: patient like compatibility
-	resolvedPatient: any | null,
-	// biome-ignore lint/suspicious/noExplicitAny: insight like compatibility
-	patientInsight: any,
+	resolvedPatient: TelephonyPatientLike | null,
+	patientInsight: TelephonyPatientInsightLike | null | undefined,
 	dashboard: Dashboard | undefined,
 ): ResolvedPatientAlertsResult {
 	const somaticAlerts: PatientSomaticAlert[] = useMemo(() => {

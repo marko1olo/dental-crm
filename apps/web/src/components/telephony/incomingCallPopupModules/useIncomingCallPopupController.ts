@@ -145,7 +145,7 @@ export function useIncomingCallPopupController(
 		}
 
 		setNewAppointmentDraft({
-			patientId: resolvedPatient?.id || "", doctorUserId: defaultDoctorId,
+			patientId: resolvedPatient?.id || null, doctorUserId: defaultDoctorId,
 			status: "confirmed", chairId: defaultChairId, startsAt, endsAt,
 			reason: QUICK_BOOKING_REASON_BY_SLOT[slotType], notes: comment, assistantUserId: "",
 		});
@@ -183,8 +183,8 @@ export function useIncomingCallPopupController(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					"x-clinic-id": readDenteClinicToken(),
-					"x-staff-id": readDenteStaffToken(),
+					"x-dente-clinic-token": readDenteClinicToken(),
+					"x-dente-staff-token": readDenteStaffToken(),
 				},
 				body: JSON.stringify({ fullName: targetName, phone: currentCall.phone }),
 			});
@@ -239,7 +239,7 @@ export function useIncomingCallPopupController(
 		const msg = generateAppointmentConfirmationMessage({
 			patientName: callerName, doctorName: upcomingAppointment?.doctorName || null,
 			appointmentStartsAt: upcomingAppointment?.startsAt || new Date().toISOString(),
-			clinicName: dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || DEFAULT_CLINIC_BRAND_NAME,
+			clinicName: dashboard?.clinicSettings?.profile?.clinicName || DEFAULT_CLINIC_BRAND_NAME,
 		});
 		openWhatsAppChat(currentCall.phone, msg);
 		if (resolvedPatient?.id) {
@@ -259,7 +259,7 @@ export function useIncomingCallPopupController(
 		const msg = generateAppointmentConfirmationMessage({
 			patientName: callerName, doctorName: upcomingAppointment.doctorName,
 			appointmentStartsAt: upcomingAppointment.startsAt,
-			clinicName: dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || DEFAULT_CLINIC_BRAND_NAME,
+			clinicName: dashboard?.clinicSettings?.profile?.clinicName || DEFAULT_CLINIC_BRAND_NAME,
 		});
 		navigator.clipboard?.writeText(msg).then(() => {
 			setSmsCopied(true);

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, TelephonyPatientLike } from "@dental/shared";
 import type { CallerLookupResult, IncomingCallPayload } from "../../../store/telephonyTypes";
 import { resolvePatientFromPhone } from "../../../store/telephonyStore";
 import { isDemoShowcaseMode, getDemoShowcasePatients } from "../../../lib/demoMode";
@@ -9,8 +9,7 @@ export function useResolvedPatient(
 	serverLookup: CallerLookupResult | null,
 	currentCall: IncomingCallPayload | null,
 	dashboard: Dashboard | undefined,
-	// biome-ignore lint/suspicious/noExplicitAny: patient like compatibility
-): any | null {
+): TelephonyPatientLike | null {
 	return useMemo(() => {
 		if (serverLookup?.found && serverLookup.patient) {
 			return serverLookup.patient;

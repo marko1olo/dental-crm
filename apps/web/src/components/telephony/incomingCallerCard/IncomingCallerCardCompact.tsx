@@ -12,13 +12,14 @@ import React from "react";
 import { CHANNEL_BADGE_COLORS } from "../telephonyAttribution";
 import { IncomingCallerStatusBadge } from "./IncomingCallerStatusBadge";
 import type { IncomingCallerCardProps } from "./types";
+import type { TelephonyPatientCategory, PatientSomaticAlert } from "../../../store/telephonyTypes";
 
 interface CompactProps extends IncomingCallerCardProps {
-	resolvedCategory: any;
+	resolvedCategory: TelephonyPatientCategory;
 	hasDebt: boolean;
 	hasDms: boolean;
-	allergyAlerts: any[];
-	acutePainAlerts: any[];
+	allergyAlerts: PatientSomaticAlert[];
+	acutePainAlerts: PatientSomaticAlert[];
 }
 
 export const IncomingCallerCardCompact: React.FC<CompactProps> = ({

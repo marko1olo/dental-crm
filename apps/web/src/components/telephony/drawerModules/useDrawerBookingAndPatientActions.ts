@@ -1,3 +1,7 @@
+import type { Dashboard } from "@dental/shared";
+import type { IncomingCallPayload } from "../../../store/telephonyTypes";
+import type { UseIncomingCallDataResult } from "../useIncomingCallData";
+import type { AppLogicContextValue } from "../../../contexts/AppLogicContext";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
@@ -9,8 +13,12 @@ import { useDrawerConfirmationActions } from "./useDrawerConfirmationActions";
 import { useDrawerPatientIntake } from "./useDrawerPatientIntake";
 
 export function useDrawerBookingAndPatientActions(params: {
-	currentCall: any; callData: any; dashboard: any; ctx: any;
-	handleClose: () => void; isCallAnswered: boolean;
+	currentCall: IncomingCallPayload | null;
+	callData: UseIncomingCallDataResult;
+	dashboard: Dashboard | null | undefined;
+	ctx: AppLogicContextValue | null | undefined;
+	handleClose: () => void;
+	isCallAnswered: boolean;
 }) {
 	const { currentCall, callData, dashboard, ctx, handleClose } = params;
 	const activeCall = useTelephonyStore((s) => s.activeCall);
@@ -47,7 +55,7 @@ export function useDrawerBookingAndPatientActions(params: {
 
 	const handleQuickBook = (slotType: QuickSlotType) => {
 		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
-		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "doctor")?.id || "";
+		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
 		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 		let targetDate = todayIso;
 		const startTime = slotType === "today_urgent" ? "10:00:00" : slotType === "tomorrow" ? "11:00:00" : "14:30:00";
@@ -67,7 +75,7 @@ export function useDrawerBookingAndPatientActions(params: {
 		} else if (currentCall?.phone) {
 			setNewPatientPhone(currentCall.phone);
 			setNewAppointmentDraft({
-				patientId: "", doctorUserId: defaultDoctorId, assistantUserId: "",
+				patientId: null, doctorUserId: defaultDoctorId, assistantUserId: "",
 				chairId: defaultChairId, startsAt: `${targetDate}T${startTime}`, endsAt: `${targetDate}T${endTime}`,
 				status: "planned", reason, comment: `Новый пациент с телефона ${callData.formattedPhone}`,
 			});

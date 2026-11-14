@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { TelephonyPatientLike } from "@dental/shared";
 import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 import { formatPatientInitials, formatPhoneDisplay, getAvatarColor } from "../../../store/telephonyStore";
 import { resolveCallAdvertisingAttribution, type CallAttribution } from "../telephonyAttribution";
@@ -16,8 +17,7 @@ export interface ResolvedCallerIdentityResult {
 
 export function useResolvedCallerIdentity(
 	currentCall: IncomingCallPayload | null,
-	// biome-ignore lint/suspicious/noExplicitAny: patient like compatibility
-	resolvedPatient: any | null,
+	resolvedPatient: TelephonyPatientLike | null,
 ): ResolvedCallerIdentityResult {
 	const callAttribution = useMemo(() => {
 		if (!currentCall) return null;
