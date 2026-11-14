@@ -13,7 +13,7 @@ import type {
 import {
 	resolveRequiredMaterialsForServices,
 	resolveServicesMetadata,
-} from "./stockFefoBatchSelector.js";
+} from "./serviceBomRulesMatcher.js";
 import {
 	acquireVisitDeductionLock,
 	checkIdempotentVisitDeduction,

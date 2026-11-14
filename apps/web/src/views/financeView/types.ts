@@ -7,15 +7,31 @@ export type TreatmentPlanItem = Dashboard["treatmentPlanItems"][number];
 export type TreatmentPlanScenario = Dashboard["treatmentPlanScenarios"][number];
 export type TaxDeductionCode = "" | "1" | "2";
 
+export interface PendingCheckoutService {
+	id?: string;
+	serviceId?: string;
+	name?: string;
+	title?: string;
+	priceRub?: number;
+	costRub?: number;
+	quantity?: number;
+	amountRub?: number;
+	amountKopecks?: number;
+	toothNumber?: number | string | null;
+	code?: string;
+}
+
 export interface PendingCheckout {
 	patientId: string;
 	patientName: string;
-	visitId?: string;
-	invoiceId?: string;
-	services: any[];
+	patientPhone?: string | undefined;
+	visitId?: string | undefined;
+	invoiceId?: string | undefined;
+	services: PendingCheckoutService[];
 	totalDueRub: number;
-	receiptNumber?: string;
-	timestamp?: number;
+	receiptNumber?: string | undefined;
+	timestamp?: number | undefined;
+	autoOpen?: boolean | undefined;
 }
 
 export interface TaxDeductionPayment {
@@ -105,6 +121,15 @@ export type FinanceViewProps = {
 	setPaymentTaxDeductionCode: (value: TaxDeductionCode) => void;
 	staffRoleLabels: Record<ClinicalRuleEvaluation["ownerRole"], string>;
 	treatmentStatusLabels: Record<TreatmentPlanItem["status"], string>;
+	activePatient?: Patient | null;
+	selectedPatientId?: string | null;
+	setSelectedPatientId?: (id: string | null) => void;
+	patientBillingSummary?: Dashboard["billingSummary"] | null;
+	patientClinicalRuleEvaluations?: ClinicalRuleEvaluation[];
+	patientClinicalRuleSummary?: Dashboard["clinicalRuleSummary"];
+	recordPayment?: () => void | Promise<void>;
+	paymentFiscalReceiptLabelForUi?: (payment: Pick<Payment, "id" | "fiscalReceiptNumber" | "fiscalReceipt">) => string;
+	setSettingsTab?: (tab: string) => void;
 };
 
 export type FinanceViewComponentProps = Partial<FinanceViewProps>;

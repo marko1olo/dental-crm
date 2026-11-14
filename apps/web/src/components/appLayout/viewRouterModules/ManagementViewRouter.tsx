@@ -12,7 +12,7 @@ import { BusinessOperationsViewRouter } from "./BusinessOperationsViewRouter";
 import type { AppViewRouterProps } from "../types";
 
 const AnalyticsDashboardView = lazyWithRetry(() =>
-	import("../../../pages/AnalyticsDashboardView").then((m) => ({ default: m.AnalyticsDashboardView })),
+	import("../../../pages/analyticsDashboard/AnalyticsDashboardView").then((m) => ({ default: m.AnalyticsDashboardView })),
 );
 const LeadsKanbanView = lazyWithRetry(() =>
 	import("../../leads/LeadsKanbanView").then((m) => ({ default: m.LeadsKanbanView })),

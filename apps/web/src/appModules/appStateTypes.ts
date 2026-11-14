@@ -5,14 +5,6 @@
 
 import type { Dispatch, SetStateAction } from "react";
 
-export interface ImplantPassportConfig {
-	patientName?: string;
-	patientId?: string;
-	doctorName?: string;
-	doctorId?: string;
-	toothNumber?: number;
-}
-
 export interface AppHashRoutingState {
 	isPrescriptionBlankOpen: boolean;
 	setIsPrescriptionBlankOpen: Dispatch<SetStateAction<boolean>>;
@@ -20,16 +12,14 @@ export interface AppHashRoutingState {
 	setIsPrescriptionForm107Open?: Dispatch<SetStateAction<boolean>> | undefined;
 	prescriptionInitialMedId: string | null;
 	prescriptionInitialMedIds: string[] | null;
-	isImplantPassportDirectOpen: boolean;
-	setIsImplantPassportDirectOpen: Dispatch<SetStateAction<boolean>>;
-	implantPassportConfig: ImplantPassportConfig | null;
-	setImplantPassportConfig: Dispatch<SetStateAction<ImplantPassportConfig | null>>;
 	isRecallsHubOpen: boolean;
 	setIsRecallsHubOpen: Dispatch<SetStateAction<boolean>>;
 	isLoyaltyProgramOpen: boolean;
 	setIsLoyaltyProgramOpen: Dispatch<SetStateAction<boolean>>;
 	isFastCheckoutDirectOpen: boolean;
 	setIsFastCheckoutDirectOpen: Dispatch<SetStateAction<boolean>>;
+	fastCheckoutInitialAmountRub?: number | undefined;
+	setFastCheckoutInitialAmountRub?: Dispatch<SetStateAction<number | undefined>> | undefined;
 	isOrthoPhotoDirectModalOpen: boolean;
 	setIsOrthoPhotoDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isOrthoProtocolDirectModalOpen: boolean;
@@ -75,6 +65,8 @@ export interface AppHashRoutingState {
 	setIsWarrantyPassportOpen: Dispatch<SetStateAction<boolean>>;
 	isShiftCloseZReportDirectOpen: boolean;
 	setIsShiftCloseZReportDirectOpen: Dispatch<SetStateAction<boolean>>;
+	shiftNumber?: number | undefined;
+	setShiftNumber?: Dispatch<SetStateAction<number | undefined>> | undefined;
 	isEmrCardDirectModalOpen: boolean;
 	setIsEmrCardDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 }

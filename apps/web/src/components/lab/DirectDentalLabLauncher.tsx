@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { DentalLabStudioModal, DentalLabOrderModal } from "./DentalLabStudioModal";
+import { DentalLabStudioModal } from "./DentalLabStudioModal";
 import { DentalLabOrdersView } from "./DentalLabOrdersView";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
@@ -64,7 +64,7 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
 			{isOrderModal ? (
-				<DentalLabOrderModal
+				<DentalLabStudioModal
 					isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi}
 					patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
 					doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}

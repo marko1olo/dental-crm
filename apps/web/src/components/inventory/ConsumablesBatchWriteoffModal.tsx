@@ -26,14 +26,24 @@ import { BatchWriteoffFooterActions } from "./writeoff/BatchWriteoffFooterAction
 
 export type { ShiftConsumableItem, ShiftBatchWriteoffData };
 
+export interface ClinicalServiceItem {
+	readonly id?: string | undefined;
+	readonly serviceId?: string | undefined;
+	readonly serviceCode?: string | undefined;
+	readonly serviceName?: string | undefined;
+	readonly serviceTitle?: string | undefined;
+	readonly toothNumber?: number | string | null | undefined;
+	readonly quantity?: number | undefined;
+}
+
 export interface ConsumablesBatchWriteoffModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly organizationId?: string | undefined;
 	readonly onWriteoffCompleted?: (() => void | Promise<void>) | undefined;
-	readonly onDeductionComplete?: (() => void | Promise<void>) | undefined;
-	readonly onConfirmDeduction?: ((items?: any) => void | Promise<void>) | undefined;
-	readonly onConfirmWriteoff?: ((doc?: any) => void | Promise<void>) | undefined;
+	readonly onDeductionComplete?: ((items?: readonly ConsumablesDeductionModalItem[] | ShiftBatchWriteoffData) => void | Promise<void>) | undefined;
+	readonly onConfirmDeduction?: ((items?: readonly ConsumablesDeductionModalItem[] | ShiftBatchWriteoffData) => void | Promise<void>) | undefined;
+	readonly onConfirmWriteoff?: ((doc?: ShiftBatchWriteoffData | readonly ConsumablesDeductionModalItem[]) => void | Promise<void>) | undefined;
 	readonly warehouseItems?: readonly unknown[] | undefined;
 	readonly currentStockMap?: Record<string, number> | undefined;
 	readonly getHeaders?: ((extra?: Record<string, string> | undefined) => Record<string, string>) | undefined;
@@ -51,7 +61,7 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly toothNumber?: number | string | null | undefined;
 	readonly visitId?: string | undefined;
 	readonly isDeducting?: boolean | undefined;
-	readonly initialServices?: readonly unknown[] | undefined;
+	readonly initialServices?: readonly ClinicalServiceItem[] | undefined;
 	readonly stockBatches?: readonly unknown[] | undefined;
 	readonly doctorFullName?: string | undefined;
 	readonly patientId?: string | undefined;
@@ -89,7 +99,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 	confirmLabel,
 }) => {
 	const effectiveDoctor = doctorFullName || doctorName;
-	const firstService = Array.isArray(initialServices) && initialServices.length > 0 ? (initialServices[0] as any) : null;
+	const firstService = Array.isArray(initialServices) && initialServices.length > 0 ? initialServices[0] : null;
 	const effectiveTooth = toothNumber ?? firstService?.toothNumber;
 	const effectiveTitle = procedureTitle || serviceName || firstService?.serviceTitle || firstService?.serviceName;
 	const effectiveConfirm = onConfirmWriteoff || onConfirmDeduction;
@@ -194,7 +204,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 										<span>Выполненные клинические услуги</span>
 										{effectiveDoctor && <span className="text-[var(--muted,#64748b)]">{effectiveDoctor}</span>}
 									</div>
-									{initialServices.map((srv: any, idx) => (
+									{initialServices.map((srv, idx) => (
 										<div key={srv.id || idx} className="flex items-center justify-between text-[var(--ink,#0f172a)]">
 											<div className="flex items-center gap-1.5">
 												{srv.serviceCode && <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--line,#e2e8f0)]/50">{srv.serviceCode}</span>}

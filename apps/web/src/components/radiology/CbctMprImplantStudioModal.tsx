@@ -15,7 +15,7 @@ import { CbctHeaderBar } from "./mpr/CbctHeaderBar";
 import { CbctRightSidebar } from "./mpr/CbctRightSidebar";
 import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
-import { DentalLabOrderModal } from "../lab/DentalLabStudioModal";
+import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
 import type { CbctVoxelVolume } from "./cbctMprMath";
 import { useCbctStudioModalState } from "./studioModal/useCbctStudioModalState";
 import { useCbctStudioController } from "./studioModal/useCbctStudioController";
@@ -359,7 +359,7 @@ export const CbctMprImplantStudioModal: React.FC<
 				)}
 
 				{ctrl.isLabOrderModalOpen && ctrl.labOrderDraft && (
-					<DentalLabOrderModal
+					<DentalLabStudioModal
 						isOpen={ctrl.isLabOrderModalOpen}
 						onClose={() => ctrl.setIsLabOrderModalOpen(false)}
 						initialOrder={ctrl.labOrderDraft}

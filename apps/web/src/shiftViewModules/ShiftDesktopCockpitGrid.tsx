@@ -1,33 +1,33 @@
 import type { Dashboard } from "@dental/shared";
 import React from "react";
 import { ShiftViewChairStatusCard } from "./ShiftViewChairStatusCard";
-import type { ShiftFinancialMode } from "./shiftViewTypes";
+import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats } from "./shiftViewTypes";
 import { ShiftViewVisitsQueue } from "./ShiftViewVisitsQueue";
 import { ShiftDesktopRightColumn } from "./ShiftDesktopRightColumn";
 
 export interface ShiftDesktopCockpitGridProps {
 	dashboard?: Dashboard | undefined;
 	activeDoctorFullName: string;
-	inChairAppointment: any;
-	currentPatient: any;
+	inChairAppointment: unknown;
+	currentPatient: unknown;
 	currentPatientHasCallablePhone: boolean;
 	currentPatientCallablePhone: string | null;
 	currentAppointmentReason: string;
-	nextAppointment: any;
-	nextAppointmentPatient: any;
-	todayAppointments: any[];
-	inChairAppointments: any[];
-	waitingAppointments: any[];
-	awaitingPaymentAppointments: any[];
-	patientsById: Map<string, any>;
-	staffById: Map<string, any>;
+	nextAppointment: unknown;
+	nextAppointmentPatient: unknown;
+	todayAppointments: readonly unknown[];
+	inChairAppointments: readonly unknown[];
+	waitingAppointments: readonly unknown[];
+	awaitingPaymentAppointments: readonly unknown[];
+	patientsById: Map<string, unknown>;
+	staffById: Map<string, unknown>;
 	manyDoctors: boolean;
-	shiftStats: any;
+	shiftStats: ShiftViewStats;
 	shiftFinancialMode: ShiftFinancialMode;
 	chairRentalNetIncomeRub: number;
 	chairRentalRentExpenseRub: number;
 	chairRentalActTrigger: number;
-	visibleRecommendedActions?: any[] | undefined;
+	visibleRecommendedActions?: readonly unknown[] | undefined;
 	recommendedActionPriorityLabels?: Record<string, string> | undefined;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 	setError?: ((err: unknown) => void) | undefined;
@@ -35,7 +35,7 @@ export interface ShiftDesktopCockpitGridProps {
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
-	runRecommendedAction: (action: any) => void;
+	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
 	userRole?: string | undefined;
 }
 

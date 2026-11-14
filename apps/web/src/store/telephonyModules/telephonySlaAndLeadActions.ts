@@ -131,6 +131,19 @@ export async function createLeadFromUnknownNumber(
 	}
 }
 
+interface ApiCallRecord {
+	id: string;
+	patientPhone?: string;
+	callerPhone?: string;
+	patientName?: string;
+	patientId?: string | null;
+	status?: string;
+	recordingUrl?: string | null;
+	durationSeconds?: number | null;
+	createdAt?: string;
+	message?: string | null;
+}
+
 export async function fetchCallHistoryAction(set: SetState, get: GetState): Promise<void> {
 	try {
 		const staffToken = readDenteStaffToken();
@@ -142,10 +155,11 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 			},
 		});
 		if (!res.ok) return;
-		const data = await res.json();
+		const data = (await res.json()) as { calls?: unknown };
 		if (data?.calls && Array.isArray(data.calls)) {
 			const existing = get().callHistory;
-			const mapped: CallHistoryItem[] = data.calls.map((c: any) => {
+			const rawCalls = data.calls as ApiCallRecord[];
+			const mapped: CallHistoryItem[] = rawCalls.map((c) => {
 				const resolvedPhone = c.patientPhone || c.callerPhone || "";
 				const digits = resolvedPhone.replace(/\D/g, "").slice(-10);
 				let patientName = c.patientName && !c.patientName.startsWith("Входящий вызов")
@@ -156,18 +170,27 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 					else if (digits === "9267778899") patientName = "Кузнецов Дмитрий Игоревич";
 					else if (digits === "9035551122") patientName = "Первичный абонент";
 				}
+				let status: CallHistoryItem["status"] = "answered";
+				if (c.status === "completed" || c.status === "answered") {
+					status = "answered";
+				} else if (c.status === "needs_call" || c.status === "missed") {
+					status = "missed";
+				} else if (
+					c.status === "ringing" ||
+					c.status === "connected" ||
+					c.status === "held" ||
+					c.status === "rejected"
+				) {
+					status = c.status;
+				}
+
 				return {
 					id: c.id,
 					callId: c.id,
 					phone: resolvedPhone,
 					patientId: c.patientId || null,
 					patientName,
-					status:
-						c.status === "completed"
-							? ("answered" as const)
-							: c.status === "needs_call"
-								? ("missed" as const)
-								: ((c.status as any) || "answered"),
+					status,
 					recordingUrl: c.recordingUrl || undefined,
 					durationSeconds: c.durationSeconds || undefined,
 					timestamp: c.createdAt,
@@ -177,7 +200,7 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 				};
 			});
 			const unsynced = existing.filter(
-				(item) => !data.calls.some((c: any) => c.id === item.id || (item.callId && c.id === item.callId)),
+				(item) => !rawCalls.some((c) => c.id === item.id || (item.callId && c.id === item.callId)),
 			);
 			set({ callHistory: [...unsynced, ...mapped].slice(0, 50) });
 		}

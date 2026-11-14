@@ -3,7 +3,7 @@ import { Smartphone } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";
 import { CbctHotkeysStatusBar } from "../CbctHotkeysStatusBar.js";
 import { RadiologyConsultationSplit } from "../RadiologyConsultationSplit.js";
-import { DentalLabOrderModal } from "../../lab/DentalLabStudioModal.js";
+import { DentalLabStudioModal } from "../../lab/DentalLabStudioModal.js";
 import { useCbctStandaloneStudio } from "./useCbctStandaloneStudio.js";
 import { StudioTopToolbar } from "./StudioTopToolbar.js";
 import { StudioViewportGrid } from "./StudioViewportGrid.js";
@@ -298,7 +298,7 @@ export const CbctStandaloneStudioView: React.FC<CbctStandaloneStudioViewProps> =
 			)}
 
 			{studio.isLabOrderModalOpen && studio.labOrderDraft && (
-				<DentalLabOrderModal
+				<DentalLabStudioModal
 					isOpen={studio.isLabOrderModalOpen}
 					onClose={() => studio.setIsLabOrderModalOpen(false)}
 					initialOrder={studio.labOrderDraft}

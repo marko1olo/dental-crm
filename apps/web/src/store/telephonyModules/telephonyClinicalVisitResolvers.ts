@@ -6,6 +6,64 @@ import type {
 } from "../telephonyTypes";
 
 /**
+ * Safely extracts startsAt date string from Appointment or legacy runtime object.
+ * Supports canonical Appointment.startsAt as well as legacy startIso or date.
+ */
+export function getAppointmentStartsAt(appointment: unknown): string | null {
+	if (!appointment || typeof appointment !== "object") return null;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.startsAt === "string" && candidate.startsAt.trim()) {
+		return candidate.startsAt.trim();
+	}
+	if (typeof candidate.startIso === "string" && candidate.startIso.trim()) {
+		return candidate.startIso.trim();
+	}
+	if (typeof candidate.date === "string" && candidate.date.trim()) {
+		return candidate.date.trim();
+	}
+	return null;
+}
+
+/**
+ * Safely extracts endsAt date string from Appointment or legacy runtime object.
+ * Supports canonical Appointment.endsAt as well as legacy endIso.
+ */
+export function getAppointmentEndsAt(appointment: unknown): string | null {
+	if (!appointment || typeof appointment !== "object") return null;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.endsAt === "string" && candidate.endsAt.trim()) {
+		return candidate.endsAt.trim();
+	}
+	if (typeof candidate.endIso === "string" && candidate.endIso.trim()) {
+		return candidate.endIso.trim();
+	}
+	return null;
+}
+
+/**
+ * Safely extracts doctor identifier from Appointment or legacy runtime object.
+ * Supports canonical Appointment.doctorUserId as well as legacy doctorId.
+ */
+export function getAppointmentDoctorId(appointment: unknown): string | null {
+	if (!appointment || typeof appointment !== "object") return null;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.doctorUserId === "string" && candidate.doctorUserId.trim()) {
+		return candidate.doctorUserId.trim();
+	}
+	if (typeof candidate.doctorId === "string" && candidate.doctorId.trim()) {
+		return candidate.doctorId.trim();
+	}
+	return null;
+}
+
+function getAppointmentTimestamp(appointment: unknown): number {
+	const startsAt = getAppointmentStartsAt(appointment);
+	if (!startsAt) return 0;
+	const time = new Date(startsAt).getTime();
+	return Number.isFinite(time) ? time : 0;
+}
+
+/**
  * Resolves the last completed/past visit and attending doctor for a patient.
  */
 export function resolvePatientLastVisit(
@@ -28,14 +86,12 @@ export function resolvePatientLastVisit(
 	const patientAppointments = appointments
 		.filter((a) => a.patientId === patientId)
 		.filter((a) => {
-			const dateStr = a.startsAt || (a as any).startIso || (a as any).date;
-			return a.status === "completed" || (dateStr && dateStr <= nowIso);
+			const dateStr = getAppointmentStartsAt(a);
+			return a.status === "completed" || Boolean(dateStr && dateStr <= nowIso);
 		})
 		.sort((a, b) => {
-			const timeA =
-				new Date(a.startsAt || (a as any).startIso || 0).getTime() || 0;
-			const timeB =
-				new Date(b.startsAt || (b as any).startIso || 0).getTime() || 0;
+			const timeA = getAppointmentTimestamp(a);
+			const timeB = getAppointmentTimestamp(b);
 			return timeB - timeA;
 		});
 
@@ -54,7 +110,7 @@ export function resolvePatientLastVisit(
 	let doctorName: string | null = null;
 	let doctorSpecialty: string | null = null;
 
-	const doctorId = latest.doctorUserId || (latest as any).doctorId;
+	const doctorId = getAppointmentDoctorId(latest);
 	if (doctorId && staff) {
 		const doctor = staff.find((s) => s.id === doctorId);
 		if (doctor) {
@@ -65,7 +121,7 @@ export function resolvePatientLastVisit(
 		}
 	}
 
-	const rawDateStr = latest.startsAt || (latest as any).startIso;
+	const rawDateStr = getAppointmentStartsAt(latest);
 	const dateObj = rawDateStr ? new Date(rawDateStr) : null;
 	const isValidDate = dateObj && !isNaN(dateObj.getTime());
 
@@ -104,14 +160,12 @@ export function resolvePatientUpcomingAppointment(
 		.filter((a) => a.patientId === patientId)
 		.filter((a) => a.status === "planned" || a.status === "confirmed")
 		.filter((a) => {
-			const dateStr = a.startsAt || (a as any).startIso || (a as any).date;
+			const dateStr = getAppointmentStartsAt(a);
 			return Boolean(dateStr && dateStr >= nowIso);
 		})
 		.sort((a, b) => {
-			const timeA =
-				new Date(a.startsAt || (a as any).startIso || 0).getTime() || 0;
-			const timeB =
-				new Date(b.startsAt || (b as any).startIso || 0).getTime() || 0;
+			const timeA = getAppointmentTimestamp(a);
+			const timeB = getAppointmentTimestamp(b);
 			return timeA - timeB;
 		});
 
@@ -119,14 +173,14 @@ export function resolvePatientUpcomingAppointment(
 	if (!nextAppt) return null;
 
 	let doctorName: string | null = null;
-	const doctorId = nextAppt.doctorUserId || (nextAppt as any).doctorId;
+	const doctorId = getAppointmentDoctorId(nextAppt);
 	if (doctorId && staff) {
 		const doctor = staff.find((s) => s.id === doctorId);
 		if (doctor) doctorName = doctor.fullName;
 	}
 
-	const rawStartsAt = nextAppt.startsAt || (nextAppt as any).startIso || nowIso;
-	const rawEndsAt = nextAppt.endsAt || (nextAppt as any).endIso || rawStartsAt;
+	const rawStartsAt = getAppointmentStartsAt(nextAppt) || nowIso;
+	const rawEndsAt = getAppointmentEndsAt(nextAppt) || rawStartsAt;
 	const dateObj = new Date(rawStartsAt);
 	const nowDate = new Date(nowIso);
 
@@ -203,11 +257,15 @@ export function resolvePatientNextVisit(
 	const upcoming = appointments
 		.filter((a) => a.patientId === patientId)
 		.filter((a) => a.status === "planned" || a.status === "confirmed")
-		.filter((a) => a.startsAt >= nowIso)
-		.sort(
-			(a, b) =>
-				new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-		);
+		.filter((a) => {
+			const dateStr = getAppointmentStartsAt(a);
+			return Boolean(dateStr && dateStr >= nowIso);
+		})
+		.sort((a, b) => {
+			const timeA = getAppointmentTimestamp(a);
+			const timeB = getAppointmentTimestamp(b);
+			return timeA - timeB;
+		});
 
 	const nextAppt = upcoming[0];
 	if (!nextAppt) {
@@ -228,8 +286,9 @@ export function resolvePatientNextVisit(
 
 	let doctorName: string | null = null;
 	let doctorSpecialty: string | null = null;
-	if (nextAppt.doctorUserId && staff) {
-		const doctor = staff.find((s) => s.id === nextAppt.doctorUserId);
+	const doctorId = getAppointmentDoctorId(nextAppt);
+	if (doctorId && staff) {
+		const doctor = staff.find((s) => s.id === doctorId);
 		if (doctor) {
 			doctorName = doctor.fullName;
 			if (doctor.specialties && doctor.specialties.length > 0) {
@@ -238,7 +297,8 @@ export function resolvePatientNextVisit(
 		}
 	}
 
-	const dateObj = new Date(nextAppt.startsAt);
+	const rawStartsAt = getAppointmentStartsAt(nextAppt) || nowIso;
+	const dateObj = new Date(rawStartsAt);
 	const nowDate = new Date(nowIso);
 
 	const isToday =
@@ -279,7 +339,7 @@ export function resolvePatientNextVisit(
 		reason: nextAppt.reason || nextAppt.comment || null,
 		isToday,
 		isTomorrow,
-		startsAt: nextAppt.startsAt,
+		startsAt: rawStartsAt,
 		fullTextRu,
 	};
 }

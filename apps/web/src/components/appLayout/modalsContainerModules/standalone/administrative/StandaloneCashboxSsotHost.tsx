@@ -9,11 +9,15 @@
  * Governed by Mandate 8e (Doctor/Cashier Autonomy), Mandate 8am (1 Primary CTA), Apple HIG.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CreditCard, FileText, Plus, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
 import { CashRegisterStudioModal } from "../../../../cashbox/CashRegisterStudioModal";
 import { CashShiftClosingModal } from "../../../../shift/CashShiftClosingModal";
 import { CashShiftJournalView } from "../../../../shift/CashShiftJournalView";
+import { showToast } from "../../../../GlobalToast";
+import { readPatientIdFromUrl, readLauncherParamFromUrl, useLauncherPatientDebt } from "../useLauncherPatientDebt";
+import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
+import { getDemoUnpaidInvoices } from "../../../../cashbox/cashRegisterCatalogData";
 
 export interface StandaloneCashboxSsotHostProps {
 	readonly onClose?: () => void;
@@ -22,6 +26,45 @@ export interface StandaloneCashboxSsotHostProps {
 export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps> = ({ onClose }) => {
 	const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
 	const [isShiftClosingOpen, setIsShiftClosingOpen] = useState<boolean>(false);
+
+	const patientId = useMemo(() => readPatientIdFromUrl(), []);
+	const { state: debtState, patient, debtRub, family } = useLauncherPatientDebt(patientId);
+
+	// Честное извлечение параметров визита и сметы из URL (search и hash)
+	const queryAmount = useMemo(() => {
+		const raw = readLauncherParamFromUrl("amount") ||
+			readLauncherParamFromUrl("amountRub") ||
+			readLauncherParamFromUrl("amount_rub") ||
+			readLauncherParamFromUrl("totalDueRub") ||
+			readLauncherParamFromUrl("sum");
+		return raw ? Number(raw) : 0;
+	}, []);
+
+	const visitId = useMemo(() => readLauncherParamFromUrl("visitId") || readLauncherParamFromUrl("visit_id") || undefined, []);
+	const invoiceId = useMemo(() => readLauncherParamFromUrl("invoiceId") || readLauncherParamFromUrl("invoice_id") || undefined, []);
+	const serviceTitleFromUrl = useMemo(() => readLauncherParamFromUrl("serviceTitle") || readLauncherParamFromUrl("service") || readLauncherParamFromUrl("serviceName") || undefined, []);
+	const doctorFullNameFromUrl = useMemo(() => readLauncherParamFromUrl("doctorFullName") || readLauncherParamFromUrl("doctorName") || readLauncherParamFromUrl("doctor") || undefined, []);
+	const patientNameFromUrl = useMemo(() => readLauncherParamFromUrl("patientName") || readLauncherParamFromUrl("patient_name") || undefined, []);
+	const patientPhoneFromUrl = useMemo(() => readLauncherParamFromUrl("patientPhone") || readLauncherParamFromUrl("patient_phone") || readLauncherParamFromUrl("phone") || undefined, []);
+
+	// Демо-счет для витрины без мертвого «0 ₽»
+	const demoFallback = useMemo(() => {
+		return isDemoShowcaseMode() ? getDemoUnpaidInvoices()[0] : undefined;
+	}, []);
+
+	const effectiveAmountRub = debtRub > 0
+		? debtRub
+		: queryAmount > 0
+			? queryAmount
+			: demoFallback?.amountRub;
+
+	const effectivePatientId = patient?.id || patientId || demoFallback?.patientId;
+	const effectivePatientName = patient?.fullName || patientNameFromUrl || demoFallback?.patientName;
+	const effectivePatientPhone = patient?.phone || patientPhoneFromUrl || demoFallback?.patientPhone;
+	const effectiveDoctorFullName = doctorFullNameFromUrl || demoFallback?.doctorName;
+	const effectiveServiceTitle = serviceTitleFromUrl || demoFallback?.serviceTitle || (effectiveAmountRub ? "Оказанные стоматологические услуги" : undefined);
+	const effectiveDepositRub = family?.balanceRub ?? demoFallback?.depositRub ?? 0;
+	const effectiveFamilyBalanceRub = demoFallback?.familyBalanceRub ?? 0;
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -33,7 +76,11 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 		} else if (hash.includes("shift-close") || search.includes("shift-close") || hash.includes("z-report") || search.includes("zreport")) {
 			setIsShiftClosingOpen(true);
 		}
-	}, []);
+	}, [patientId, debtState]);
+
+	const handleOpenCheckout = () => {
+		setIsCheckoutOpen(true);
+	};
 
 	return (
 		<div
@@ -47,7 +94,7 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper,#ffffff)] text-xs font-semibold flex items-center gap-1.5 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
+							className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold flex items-center gap-1.5 text-[var(--ink,#0f172a)] transition-colors"
 						>
 							<ArrowLeft className="w-4 h-4" />
 							Назад
@@ -67,7 +114,7 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
-						onClick={() => setIsCheckoutOpen(true)}
+						onClick={handleOpenCheckout}
 						data-testid="btn-open-checkout-modal"
 						className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center gap-2 active:scale-[0.98]"
 						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
@@ -94,7 +141,7 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 					clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
 					cashierFullName="Администратор / Кассир"
 					onOpenShiftCloseModal={() => setIsShiftClosingOpen(true)}
-					onOpenNewShift={() => setIsCheckoutOpen(true)}
+					onOpenNewShift={handleOpenCheckout}
 				/>
 			</div>
 
@@ -108,13 +155,18 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 					containerTestId="cash-register-checkout-modal"
 					submitButtonTestId="btn-confirm-checkout-payment"
 					title="Касса · Оплата приёма"
-					totalDueRub={7500}
-					patientId="pat-sample-1"
-					patientName="Алексеев Максим Дмитриевич"
-					patientPhone="+7 (999) 234-56-78"
-					patientDepositRub={2500}
-					doctorFullName="Смирнов А. В."
 					clinicLegalName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					patientId={effectivePatientId}
+					patientName={effectivePatientName}
+					patientPhone={effectivePatientPhone}
+					doctorFullName={effectiveDoctorFullName}
+					serviceTitle={effectiveServiceTitle}
+					visitId={visitId}
+					invoiceId={invoiceId}
+					patientDepositRub={effectiveDepositRub}
+					patientFamilyBalanceRub={effectiveFamilyBalanceRub}
+					totalDueRub={effectiveAmountRub}
+					amountRub={effectiveAmountRub}
 					onSuccess={() => setIsCheckoutOpen(false)}
 				/>
 			)}
@@ -124,13 +176,13 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 				<CashShiftClosingModal
 					isOpen={isShiftClosingOpen}
 					onClose={() => setIsShiftClosingOpen(false)}
-					shiftNumber={104}
+					shiftNumber={1}
 					cashierFullName="Администратор / Кассир"
 					clinicLegalName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-					initialChangeFundRub={5000}
-					incomeCashRub={12500}
-					incomeElectronicRub={28000}
-					incomeSbpRub={4500}
+					initialChangeFundRub={0}
+					incomeCashRub={0}
+					incomeElectronicRub={0}
+					incomeSbpRub={0}
 					advanceOffsetRub={0}
 					onShiftClosed={() => setIsShiftClosingOpen(false)}
 				/>

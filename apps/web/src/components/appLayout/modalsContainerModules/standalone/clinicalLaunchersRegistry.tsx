@@ -14,7 +14,6 @@ import { DirectVisitLauncher } from "../../../visit/DirectVisitLauncher";
 import { EmkComplaintsSection } from "../../../visit/emk/EmkComplaintsSection";
 import { StandaloneEmrMedicalRecordHost } from "./clinical/StandaloneEmrMedicalRecordHost";
 import { StandaloneClinicalTemplatesHost } from "./clinical/StandaloneClinicalTemplatesHost";
-import { DirectOdontogramLauncher } from "../../../odontogram/DirectOdontogramLauncher";
 import { DirectOdontogramModuleLauncher } from "../../../odontogram/DirectOdontogramModuleLauncher";
 import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46InspectionStand";
 import { DirectRadiologyLauncher } from "../../../radiology/DirectRadiologyLauncher";
@@ -121,7 +120,7 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 					"odontogram-mandible",
 				],
 			},
-			render: () => <DirectOdontogramLauncher />,
+			render: () => <DirectOdontogramModuleLauncher />,
 		},
 
 		// 5b. Живой интерактивный модуль зубной формулы OdontogramModule (SSOT)
@@ -371,14 +370,25 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				const visitState = useVisitStore.getState();
 				const patientName =
 					patientState.patientCoreDraft?.fullName?.trim() ||
-					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : undefined);
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Пациент не выбран");
 				return (
-					<ChairsideCopilotHUD
-						initialOpen={true}
-						patientId={patientState.selectedPatientId || undefined}
-						patientName={patientName}
-						activeTooth={visitState.activeToothNumber ?? undefined}
-					/>
+					<div
+						className="direct-chairside-hud-standalone fixed inset-0 z-[9999] flex flex-col items-center justify-end p-3 sm:p-6 bg-[var(--paper)]/85 backdrop-blur-md pointer-events-auto overflow-y-auto"
+						data-testid="chairside-hud-standalone-host"
+					>
+						<div className="w-full max-w-3xl my-auto">
+							<ChairsideCopilotHUD
+								initialOpen={true}
+								initialDocked={true}
+								initialPresetIndex={undefined}
+								patientId={patientState.selectedPatientId || undefined}
+								patientName={patientName}
+								patientAllergies={[]}
+								activeTooth={visitState.activeToothNumber ?? undefined}
+								onClose={() => clearUrlTokens(["chairside-hud", "hud", "copilot-hud"])}
+							/>
+						</div>
+					</div>
 				);
 			},
 		},

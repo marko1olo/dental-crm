@@ -2,6 +2,8 @@
  * orthopedicWorkTypes.ts — Orthopedic Work Types Definitions and IDs.
  */
 
+import type { DentalLabConstructionType, DentalLabConstructionDef } from "@dental/shared";
+
 export type OrthopedicWorkTypeId =
 	| "crown_zirconia" // #1 Коронка из диоксида циркония (Katana ML / Prettau)
 	| "crown_emax" // #2 Коронка IPS e.max Press / CAD (дисиликат лития)
@@ -26,4 +28,6 @@ export interface OrthopedicWorkTypeDefinition {
 	readonly requiresImplantSystem: boolean;
 	readonly defaultPriceKopecks: number;
 	readonly defaultCostKopecks: number;
+	readonly canonicalConstructionId?: DentalLabConstructionType | undefined;
+	readonly canonicalDef?: DentalLabConstructionDef | undefined;
 }

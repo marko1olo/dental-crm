@@ -6,12 +6,9 @@ import { EmkControlBoard } from "../components/visit/EmkControlBoard";
 
 export interface ShiftSecondaryAccordionProps {
 	dashboard?: Dashboard;
-	// biome-ignore lint/suspicious/noExplicitAny: resources
-	mostLoadedResource?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: role
-	activeQueueRole?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: roles
-	rolesWorthShowing?: any;
+	mostLoadedResource?: string | undefined;
+	activeQueueRole?: string | undefined;
+	rolesWorthShowing?: boolean | undefined;
 	staffRoleLabels?: Record<string, string>;
 }
 

@@ -32,8 +32,8 @@ export function resolvePatientSomaticAlerts(
 	};
 
 	// 1. Check direct allergies property if present
-	if (patient && (patient as any).allergies) {
-		const rawAllergies = (patient as any).allergies;
+	if (patient && typeof patient === "object" && "allergies" in patient) {
+		const rawAllergies = (patient as { allergies?: unknown }).allergies;
 		if (Array.isArray(rawAllergies)) {
 			for (const a of rawAllergies) {
 				if (typeof a === "string" && a.trim()) {

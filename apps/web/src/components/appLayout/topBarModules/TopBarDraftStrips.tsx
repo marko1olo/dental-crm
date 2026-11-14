@@ -8,9 +8,9 @@ export interface TopBarDraftStripsProps {
 	onboardingDismissed: boolean;
 	onboardingDraftMode: boolean;
 	onboardingReadyToFinish: boolean;
-	onboardingBlockingIssues: string[];
+	onboardingBlockingIssues: readonly string[];
 	onboardingDocumentsReady: boolean;
-	onboardingDocumentReadinessIssues: string[];
+	onboardingDocumentReadinessIssues: readonly string[];
 	reopenOnboarding: () => void;
 	setCurrentView: (view: string) => void;
 	setSettingsTab: (tab: string) => void;

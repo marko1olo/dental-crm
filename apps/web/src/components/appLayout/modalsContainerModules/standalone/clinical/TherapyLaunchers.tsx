@@ -20,6 +20,7 @@ import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
 import { PediatricMixedDentitionModal } from "../../../../odontogram/PediatricMixedDentitionModal";
+import { useVisitStore } from "../../../../../store/visitStore";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderTherapyLaunchers(): React.ReactElement | null {
@@ -84,12 +85,22 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 
 
 	if (hasUrlToken(["tooth-drawer", "tooth-card", "chairside-tooth"])) {
+		const searchParams = new URLSearchParams(window.location.search || "");
+		const urlTooth = Number.parseInt(searchParams.get("tooth") || searchParams.get("fdi") || "", 10);
+		const effectiveToothNumber = (!Number.isNaN(urlTooth) && urlTooth > 0)
+			? urlTooth
+			: (useVisitStore.getState().activeToothNumber ?? 11);
+		const visitRecord = useVisitStore.getState().visitToothRecordsByCode[String(effectiveToothNumber)];
+		const reactiveToothData = visitRecord
+			? { toothNumber: effectiveToothNumber, state: visitRecord.state ?? "Healthy", surfaces: visitRecord.surfaces ?? [] }
+			: { toothNumber: effectiveToothNumber, state: "Healthy", surfaces: [] };
+
 		return (
 			<ToothContextDrawer
 				isOpen={true}
 				onClose={() => clearUrlTokens(["tooth-drawer", "tooth-card", "chairside-tooth"])}
-				toothNumber={16}
-				toothData={{ toothNumber: 16, state: "Healthy", surfaces: ["O", "M"], mobility: 0 }}
+				toothNumber={effectiveToothNumber}
+				toothData={reactiveToothData as any}
 			/>
 		);
 	}

@@ -129,15 +129,17 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 	};
 
 	const handleCommitAnesthesia = () => {
-		const techInfo = INJECTION_TECHNIQUES[techniqueId] || INJECTION_TECHNIQUES.infiltration;
+		const techInfo = INJECTION_TECHNIQUES[techniqueId] ?? INJECTION_TECHNIQUES.infiltration;
+		const techNameRu = (techInfo?.nameRu ?? "Инфильтрационная").toLowerCase();
 		const drugInfo = DENTAL_ANESTHETICS[effDrugId];
+		const substanceRu = drugInfo?.activeSubstanceRu ?? "Артикаин 4% с эпинефрином";
 		const toothStr = targetToothNumberFdi ? ` в области зуба ${targetToothNumberFdi}` : "";
 		const volStr = `${(carpulesCount * 1.7).toFixed(1)} мл`;
 		const carpSuffix = carpulesCount === 1 ? "1 карпула" : `${carpulesCount} карп.`;
 
 		const diaryEntry = selectedDrugId === "none"
 			? "Анестезия не проводилась. Процедура выполнена без анестезии по согласию пациента."
-			: `Проведена ${techInfo.nameRu.toLowerCase()} анестезия${toothStr}: ${drugInfo.activeSubstanceRu} — ${volStr} (${carpSuffix}). ${isAspirationNegative ? "Аспирационная проба отрицательная. " : ""}Осложнений нет.`;
+			: `Проведена ${techNameRu} анестезия${toothStr}: ${substanceRu} — ${volStr} (${carpSuffix}). ${isAspirationNegative ? "Аспирационная проба отрицательная. " : ""}Осложнений нет.`;
 
 		onApplyAnesthesia?.(diaryEntry, safety);
 

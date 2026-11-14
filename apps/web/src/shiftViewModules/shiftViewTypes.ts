@@ -1,22 +1,82 @@
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, StaffRole } from "@dental/shared";
+
+export interface ShiftViewStats {
+	readonly totalAppointments: number;
+	readonly completedCount: number;
+	readonly inProgressCount?: number;
+	readonly totalRevenueRub: number;
+	readonly plannedRevenueRub?: number;
+	readonly directPaymentsRub?: number;
+	readonly appointmentBilledRub?: number;
+	readonly cashBreakdown?: {
+		readonly cashRub: number;
+		readonly cardRub: number;
+		readonly sbpRub: number;
+		readonly depositRub: number;
+	};
+	readonly doctorCommissionPct?: number;
+	readonly estimatedDoctorPayoutRub?: number;
+	readonly hasActiveOvertime?: boolean;
+}
+
+export interface ShiftDashboardRuntimeMeta {
+	readonly activeDoctor?: {
+		readonly fullName?: string;
+		readonly specialty?: string;
+	};
+	readonly activeAppointment?: {
+		readonly doctorId?: string;
+		readonly doctorName?: string;
+	};
+	readonly shiftNumber?: number;
+	readonly shiftOpenedAt?: string;
+}
+
+export function getDashboardRuntimeMeta(dashboard: Dashboard | undefined): ShiftDashboardRuntimeMeta | null {
+	if (!dashboard || typeof dashboard !== "object") return null;
+	return dashboard as unknown as ShiftDashboardRuntimeMeta;
+}
+
+export function getAppointmentCabinetName(appointment: unknown, defaultName = "Кабинет №1"): string {
+	if (!appointment || typeof appointment !== "object") return defaultName;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.cabinetName === "string" && candidate.cabinetName.trim()) {
+		return candidate.cabinetName.trim();
+	}
+	if (typeof candidate.room === "string" && candidate.room.trim()) {
+		return candidate.room.trim();
+	}
+	return defaultName;
+}
+
+export interface ShiftCloseSummary {
+	readonly calculatedPayoutRub?: number;
+	readonly countedCashRub?: number;
+	readonly printZReport?: boolean;
+}
+
+export interface ShiftRecommendedAction {
+	readonly patientId?: string;
+	readonly section?: string;
+	readonly [key: string]: unknown;
+}
 
 export type ShiftViewProps = {
 	activePatientHasCallablePhone?: boolean;
 	activePatientCallablePhone?: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visibleRecommendedActions?: any[];
+	visibleRecommendedActions?: readonly unknown[];
 	recommendedActionPriorityLabels?: Record<string, string>;
 	staffRoleLabels?: Record<string, string>;
 	dashboard?: Dashboard;
 	forceMobile?: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeQueueRole?: any;
+	activeQueueRole?: unknown;
 	setError?: (err: unknown) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	mostLoadedResource?: any;
+	mostLoadedResource?: unknown;
 	setSelectedPatientId?: (id: string | null) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: allow extra props
-	[key: string]: any;
+	onSelectAppointment?: (appointmentId: string) => void;
+	onUpdateAppointmentStatus?: (appointmentId: string, status: string) => void;
+	selectedWorkspaceRole?: StaffRole | string;
+	[key: string]: unknown;
 };
 
 export type CockpitPatient = Dashboard["patients"][number];
@@ -40,8 +100,7 @@ export interface ShiftMetricsHeaderProps {
 	onToggleShift: () => void;
 	onOpenPayrollModal: () => void;
 	onOpenT13Timesheet: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: shift stats shape
-	shiftStats: any;
+	shiftStats: ShiftViewStats;
 	financialMode: ShiftFinancialMode;
 	onChangeFinancialMode: (mode: ShiftFinancialMode) => void;
 	chairRentalNetIncomeRub: number;
@@ -50,22 +109,14 @@ export interface ShiftMetricsHeaderProps {
 }
 
 export interface ShiftVisitsQueueProps {
-	// biome-ignore lint/suspicious/noExplicitAny: appointments array
-	todayAppointments: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: appointments array
-	inChairAppointments: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: appointments array
-	waitingAppointments: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: appointments array
-	awaitingPaymentAppointments: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: patient map
-	patientsById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: staff map
-	staffById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: patient object
-	currentPatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment object
-	inChairAppointment: any;
+	todayAppointments: readonly unknown[];
+	inChairAppointments: readonly unknown[];
+	waitingAppointments: readonly unknown[];
+	awaitingPaymentAppointments: readonly unknown[];
+	patientsById: Map<string, unknown>;
+	staffById: Map<string, unknown>;
+	currentPatient: unknown;
+	inChairAppointment: unknown;
 	manyDoctors: boolean;
 	onSelectPatient: (patientId: string) => void;
 	onOpenAppointmentEmk: (patientId: string) => void;
@@ -75,21 +126,17 @@ export interface ShiftVisitsQueueProps {
 }
 
 export interface ShiftChairStatusCardProps {
-	// biome-ignore lint/suspicious/noExplicitAny: appointment object
-	inChairAppointment: any;
+	inChairAppointment: unknown;
 	doctorFullName: string;
 	cabinetName?: string;
 	isSterilized?: boolean;
 	assistantReady?: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: patient object
-	currentPatient?: any;
+	currentPatient?: unknown;
 	currentPatientHasCallablePhone?: boolean;
 	currentPatientCallablePhone?: string | null;
 	currentAppointmentReason?: string;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment object
-	nextAppointment?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient object
-	nextAppointmentPatient?: any;
+	nextAppointment?: unknown;
+	nextAppointmentPatient?: unknown;
 	todayAppointmentsCount?: number;
 	formatClockTime?: (isoString?: string) => string;
 	onOpenVisit?: (patientId: string) => void;

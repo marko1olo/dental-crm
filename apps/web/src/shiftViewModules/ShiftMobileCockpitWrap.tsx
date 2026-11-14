@@ -1,6 +1,7 @@
 import type { Dashboard } from "@dental/shared";
 import React from "react";
-import { MobileShiftCockpit } from "../components/shift";
+import { MobileShiftCockpit, type MobileShiftAppointmentSummary } from "../components/shift";
+import { type ShiftViewStats, getDashboardRuntimeMeta } from "./shiftViewTypes";
 
 export interface ShiftMobileCockpitWrapProps {
 	dashboard?: Dashboard;
@@ -8,11 +9,9 @@ export interface ShiftMobileCockpitWrapProps {
 	isShiftOpen: boolean;
 	onToggleShift: () => void;
 	activeDoctorFullName: string;
-	// biome-ignore lint/suspicious/noExplicitAny: room
 	cabinetName: string;
-	// biome-ignore lint/suspicious/noExplicitAny: shift stats
-	shiftStats: any;
-	mobileAppointments: readonly any[];
+	shiftStats: ShiftViewStats;
+	mobileAppointments: readonly MobileShiftAppointmentSummary[];
 	onSelectAppointment?: ((appId: string) => void) | undefined;
 	onOpenPatientEmk?: ((patientId: string) => void) | undefined;
 	onOpenCashCheckout?: ((patientId: string) => void) | undefined;
@@ -42,6 +41,8 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 		depositRub: 0,
 	};
 
+	const meta = getDashboardRuntimeMeta(dashboard);
+
 	return (
 		<div
 			className="mobile-shift-cockpit-view-wrapper"
@@ -57,11 +58,11 @@ export const ShiftMobileCockpitWrap: React.FC<ShiftMobileCockpitWrapProps> = ({
 			<MobileShiftCockpit
 				isShiftOpen={isShiftOpen}
 				onToggleShift={onToggleShift}
-				shiftNumber={(dashboard as any)?.shiftNumber ?? 104}
+				shiftNumber={meta?.shiftNumber ?? 104}
 				doctorName={activeDoctorFullName}
-				doctorSpecialty={(dashboard as any)?.activeDoctor?.specialty || "Стоматолог-терапевт"}
+				doctorSpecialty={meta?.activeDoctor?.specialty || "Стоматолог-терапевт"}
 				cabinetName={cabinetName}
-				shiftOpenedAtIso={(dashboard as any)?.shiftOpenedAt || `${todayIso}T08:30:00.000Z`}
+				shiftOpenedAtIso={meta?.shiftOpenedAt || `${todayIso}T08:30:00.000Z`}
 				totalAppointmentsCount={shiftStats.totalAppointments}
 				completedCount={shiftStats.completedCount}
 				inChairCount={shiftStats.inProgressCount}

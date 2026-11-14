@@ -3,6 +3,7 @@ import { CreditCard, FileText, Phone } from "lucide-react";
 import { patientInsightRiskLabels } from "../AppConstants";
 import { formatShortDate, money } from "../AppHelpers";
 import { countLabel } from "../lib/russianPlural";
+import type { CockpitPatientInsight } from "./shiftViewTypes";
 
 export interface PatientInsightData {
 	riskLevel: "high" | "watch" | "low";
@@ -14,8 +15,7 @@ export interface PatientInsightData {
 }
 
 export interface PatientCockpitInsightPanelProps {
-	// biome-ignore lint/suspicious/noExplicitAny: insight
-	readonly activePatientInsight: any;
+	readonly activePatientInsight: CockpitPatientInsight | null | undefined;
 }
 
 export const PatientCockpitInsightPanel: React.FC<PatientCockpitInsightPanelProps> = ({ activePatientInsight }) => {

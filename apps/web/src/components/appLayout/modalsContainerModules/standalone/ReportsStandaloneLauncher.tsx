@@ -7,7 +7,7 @@ import { AppLoadingState } from "../../../../AppBootState";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
 
 const AnalyticsDashboardView = lazyWithRetry(() =>
-	import("../../../../pages/AnalyticsDashboardView").then((module) => ({
+	import("../../../../pages/analyticsDashboard/AnalyticsDashboardView").then((module) => ({
 		default: module.AnalyticsDashboardView,
 	})),
 );

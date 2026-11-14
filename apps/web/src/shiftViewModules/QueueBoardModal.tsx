@@ -1,12 +1,12 @@
 import React from "react";
 import { Monitor, X } from "lucide-react";
+import type { Appointment } from "@dental/shared";
 import { TodayQueueBoard } from "../components/schedule/TodayQueueBoard";
 
 export interface QueueBoardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: appointments
-	readonly todayAppointments: readonly any[];
+	readonly todayAppointments: readonly (Partial<Appointment> & Record<string, unknown>)[];
 	readonly onUpdateAppointmentStatus?: ((appointmentId: string, newStatus: string) => void) | undefined;
 	readonly onSelectAppointment?: ((appId: string) => void) | undefined;
 }
@@ -45,7 +45,7 @@ export const QueueBoardModal: React.FC<QueueBoardModalProps> = ({
 				</div>
 				<div className="flex-1 overflow-y-auto">
 					<TodayQueueBoard
-						appointments={todayAppointments as any}
+						appointments={todayAppointments as unknown as Parameters<typeof TodayQueueBoard>[0]["appointments"]}
 						onStatusChange={(appointmentId, newStatus) => {
 							onUpdateAppointmentStatus?.(appointmentId, newStatus);
 						}}

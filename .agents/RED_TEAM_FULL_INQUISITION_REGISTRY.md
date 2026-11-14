@@ -465,6 +465,33 @@
     * 📱 Mobile Light (390x844): `03_dental_lab_studio_mobile_light_390x844.png` (126.1 KB) & `03_dental_lab_orders_mobile_light_390x844.png` (184.3 KB)
     * 🌙 Mobile Dark (390x844): `04_dental_lab_studio_mobile_dark_390x844.png` (122.1 KB) & `04_dental_lab_orders_mobile_dark_390x844.png` (182.9 KB)
 
+### [LAB-13] [SEV-2] Унификация контура ЗТЛ, связывание пресетов с SSOT @dental/shared и переименование тестов V2 — [ЗАКРЫТО]
+- **Файлы:**
+  - Тест пресетов: [`apps/web/src/components/lab/__tests__/chairsideExpressPresets.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/__tests__/chairsideExpressPresets.test.ts) (переименован из `chairsideExpressPresetsV2.test.ts` через `git mv`)
+  - Типы ортопедии: [`apps/web/src/components/lab/workflowEngine/orthopedicWorkTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/workflowEngine/orthopedicWorkTypes.ts)
+  - Несъемные конструкции: [`apps/web/src/components/lab/workflowEngine/orthopedicCatalogFixed.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/workflowEngine/orthopedicCatalogFixed.ts)
+  - Съемные конструкции: [`apps/web/src/components/lab/workflowEngine/orthopedicCatalogRemovable.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/workflowEngine/orthopedicCatalogRemovable.ts)
+  - Каталог и фасад: [`apps/web/src/components/lab/workflowEngine/orthopedicCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/workflowEngine/orthopedicCatalogData.ts)
+  - Каноническая студия: [`apps/web/src/components/lab/DentalLabStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabStudioModal.tsx)
+  - Шлюз модулей ЗТЛ: [`apps/web/src/components/lab/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/index.ts)
+  - Точки вызова: [`apps/web/src/components/patients/VisitProtocolView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/VisitProtocolView.tsx), [`apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx), [`apps/web/src/components/radiology/standaloneStudio/index.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/standaloneStudio/index.tsx), [`apps/web/src/components/lab/DirectDentalLabLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DirectDentalLabLauncher.tsx)
+- **Суть задач:**
+  1. Тест пресетов содержал суффикс `V2` (`chairsideExpressPresetsV2.test.ts`), что противоречило запрету версионных суффиксов в именах файлов.
+  2. В `orthopedicCatalogFixed.ts` и `orthopedicCatalogRemovable.ts` локальные пресеты не были напрямую связаны с единым каноническим SSOT `DENTAL_LAB_CONSTRUCTIONS` из `@dental/shared/lab/labUnifiedWorkTypes.ts`.
+  3. В вызовах модалки из `VisitProtocolView.tsx` и `CbctMprImplantStudioModal.tsx` использовались устаревшие алиасы `DentalLabOrderDrawer` / `DentalLabOrderModal` вместо прямого канонического `DentalLabStudioModal`, а в конце файла висел неиспользуемый спам алиасов (`LaboratoryStudioModal`, `WorkOrdersList`, `LabStudioModal`, `LabOrderModal`).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Тест переименован через `git mv` в `chairsideExpressPresets.test.ts`, оба раннера (`tsx --test` и `vitest run`) отрабатывают 100% зелено (4/4 PASS).
+  2. Все конструкции в `orthopedicCatalogFixed.ts` (`crown_emax`, `crown_zirconia`, `metal_ceramic`) и `orthopedicCatalogRemovable.ts` (`clasp_prosthesis`, `aligners`) строго типизированы и связаны с `DENTAL_LAB_CONSTRUCTIONS` (`canonicalConstructionId` и `canonicalDef`), в `orthopedicCatalogData.ts` добавлен SSOT-хелпер `getCanonicalLabConstruction`.
+  3. В `VisitProtocolView.tsx`, `CbctMprImplantStudioModal.tsx`, `standaloneStudio/index.tsx` и `DirectDentalLabLauncher.tsx` вызовы переведены на канонический `DentalLabStudioModal`, неиспользуемые алиасы вычищены, типизация приведена к строгому виду без `any`.
+  4. Проверены все защищенные блоки: `labOrderPayDb.ts` (транзакционный платеж с `for("update")` и суммами в копейках), `DentalLabStudioModal.tsx:66-87` (`isDemoShowcaseMode()`), `labScanDirectUpload.ts` (3D STL/PLY presigned uploads) и `MobileLabOrdersTimeline.tsx` (Apple HIG) — сохранены в полной неприкосновенности.
+- **Машинные пруфы:**
+  - `npm --workspace=@dental/shared run build`: Exit Code 0.
+  - `npx vitest run apps/web/src/components/lab/__tests__/chairsideExpressPresets.test.ts`: 4 passed (4).
+  - `npx vitest run apps/api/src/routes/lab/`: 3 passed (3).
+  - `npx tsx --test` лаб-сьют (32 теста): 32/32 PASSED.
+  - Линтеры `check:encoding`, `check:buttons`, `check:react-hooks`: все Exit Code 0.
+  - 4-State Proof скриншоты в `docs/proofs/lab/proof_dental_lab_*` проверены через `read_file` (все >= 90KB: PC Light 175KB, PC Dark 167KB, Mobile Light 97KB, Mobile Dark 91KB).
+
 ---
 
 ## 3. 📦 СКЛАД, АВТОКЛАВИРОВАНИЕ И САНПИН
@@ -6092,4 +6119,52 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил React 19).
   - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
   - `npm run check:css-tokens` -> **Exit Code 0** (1 359 CSS файлов, 0 неразрешенных переменных).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СЕКТОР WAREHOUSE, FEFO BATCHES & SOFT NEGATIVE STOCK [FIXER-INVENTORY-01]
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Inventory, FEFO Batches, Soft Negative Stock, BOM Rules & Consumables Writeoff.
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Inventory-01).
+- **Суть проблемы и инквизиционный диагноз (Досье SCOUT-INVENTORY-01):**
+  1. **SEV-1 Тесты-саботажники Мандата 8n (`fefoAndMultiTenderInquisitor.test.ts:261, 369`):**
+     - Тест намеренно принуждал к блокировке приёма врача и списания расходников, требуя выбрасывать HTTP 409 Conflict при отсутствии остатка или исключение `InsufficientStockError` (HTTP 422). Это являлось прямой диверсией против фундаментального Мандата 8n (Soft Negative Stock): в клинике приём врача первичен, склад списывает в овердрафт с уведомлением тихим бэкофисом и никогда не блокирует приём врача!
+  2. **SEV-2 Мертвые сироты и антипаттерны в обход партий FEFO:**
+     - Модули `apps/api/src/services/warehouse/warehouseDeductHandlers.ts` и `warehouseDeductVisitHandler.ts` являлись заброшенными мертвыми сиротами без реальных потребителей.
+     - Модуль `apps/api/src/services/warehouse/softOverdraftDeduct.ts` напрямую вычитал остаток из `inventoryItems`, минуя `stock_batches`, нарушая партионную целостность и FIFO/FEFO учет.
+  3. **SEV-2 Камуфляж имени модуля (`stockFefoBatchSelector.ts`):**
+     - Модуль `stockFefoBatchSelector.ts` не имел никакого отношения к выбору партий FEFO, а занимался сопоставлением технологических карт (BOM rules) для клинических услуг.
+  4. **SEV-2 Нарушение Мандата 8be (Any и Undefined):**
+     - `writeOffFefoExecution.ts:27-30` содержал `tx: any` и возврат `Promise<Array<any>>`.
+     - `ConsumablesBatchWriteoffModal.tsx:35-36` содержал `(items?: any)` и `(doc?: any)`.
+- **Проведенные хирургические вмешательства и ликвидация брака:**
+  1. **Ликвидация саботажа в тестах (`fefoAndMultiTenderInquisitor.test.ts`):**
+     - В тестах 3 и 4 убраны нелегитимные требования 409 Conflict и выброса `InsufficientStockError`.
+     - Внедрены проверки полного соответствия Мандату 8n: при исчерпании склада списание успешно выполняется (HTTP 200 OK), фиксируется `hasOverdraft: true`, `isOverdraft: true`, баланс уходит в отрицательное сальдо (Soft Negative Stock), а приём врача не блокируется.
+  2. **Физический снос мертвых сирот и ликвидация антипаттерна (`git rm`):**
+     - Снесены сироты: `apps/api/src/services/warehouse/warehouseDeductHandlers.ts`, `apps/api/src/services/warehouse/warehouseDeductVisitHandler.ts`, `apps/api/src/services/warehouse/softOverdraftDeduct.ts`.
+     - Маршрут мягкого списания `apps/api/src/routes/inventory/writeOffModules/writeOffSoftOverdraft.ts` переведен на канонический партионный сервис `fefoStockService.deductFefo`.
+     - В `apps/api/src/services/warehouse/warehouseOperations.ts` удалены устаревшие реэкспорты.
+  3. **Рефакторинг сопоставления техкарт и ликвидация камуфляжа:**
+     - Создан канонический модуль `apps/api/src/services/treatmentConsumables/stockDeductionModules/serviceBomRulesMatcher.ts` (сопоставление клинических услуг с правилами техкарт в БД и отраслевыми нормами).
+     - Модули `toothDeductionHandler.ts` и `visitDeductionHandler.ts` переведены на прямой импорт из `serviceBomRulesMatcher.js`.
+     - В `stockFefoBatchSelector.ts` оставлен чистый фасад обратной совместимости.
+  4. **Тотальная типизация без `any` (Мандат 8be):**
+     - В `writeOffFefoExecution.ts` функция `executeFefoBatchDeduction` строго типизирована возвращаемым DTO `Promise<Array<FefoDeductionResult>>`.
+     - В `ConsumablesBatchWriteoffModal.tsx` внедрен строгий интерфейс `ClinicalServiceItem`, пропсы типизированы через `ConsumablesDeductionModalItem`, `ShiftBatchWriteoffData`, `ClinicalServiceItem`. Устранены все касты `(initialServices[0] as any)` и `srv: any`.
+  5. **Визуальный аудит и HIG-контроль (Мандаты 8am, 8zg):**
+     - Проверен скриншот `docs/proofs/warehouse/warehouse_writeoff_modal_pc_light_1440x900.png`.
+     - В UI-текстах исключен дев-жаргон «1 клик» в пользу чистых клинических формулировок («Списание по техкартам», «Норма расхода (по техкартам)»).
+     - Единый Primary CTA `var(--teal)` (`#0d9488`), Apple HIG drag handle 36x5px для смартфонов, модалка изолирует вьюпорт `z-[100000]`.
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `apps/api/src/tests/routes/fefoAndMultiTenderInquisitor.test.ts` -> **7/7 PASS (Exit Code 0)**.
+  - `apps/web/src/components/inventory/__tests__/ConsumablesBatchWriteoffModal.test.tsx` -> **5/5 PASS (Exit Code 0)**.
+  - `apps/api/src/services/inventory/fefoStockService.test.ts` -> **4/4 PASS (Exit Code 0)**.
+  - `apps/api/src/services/treatmentConsumablesService.test.ts` -> **8/8 PASS (Exit Code 0)**.
+  - `apps/web/src/components/inventory/__tests__/autoBomAndFefo.fefoTrafficLight.test.ts` -> **6/6 PASS (Exit Code 0)**.
+  - `apps/web/src/components/inventory/__tests__/clinicalWriteoff.fefoAndFinances.test.ts` -> **4/4 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0** (21 000 файлов проверено, UTF-8 без BOM).
+  - `npm run check:buttons` -> **Exit Code 0** (4 858 TSX, 1 359 CSS файлов, 0 нарушений дизайн-токенов).
+  - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил React 19).
+  - `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).
 

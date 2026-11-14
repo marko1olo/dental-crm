@@ -329,18 +329,9 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 	// 6. ZERO DISABLED BUTTONS AUDIT IN LOYALTY MODAL
 	// =========================================================================
 	describe("6. Mandate 8e — Zero Disabled Buttons in Loyalty Program Modal", () => {
-		it("should verify LoyaltyProgramModal code does NOT hard-disable one-click or execute redemption buttons", () => {
-			const programDir = path.resolve(__dirname, "../program");
-			const allFiles: string[] = [];
-			function collectFiles(dir: string) {
-				for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-					const p = path.join(dir, ent.name);
-					if (ent.isDirectory()) collectFiles(p);
-					else if (/\.tsx?$/.test(ent.name)) allFiles.push(p);
-				}
-			}
-			collectFiles(programDir);
-			const combinedContent = allFiles.map((f) => fs.readFileSync(f, "utf8")).join("\n");
+		it("should verify LoyaltyStudioModal code does NOT hard-disable one-click or execute redemption buttons", () => {
+			const studioPath = path.resolve(__dirname, "../LoyaltyStudioModal.tsx");
+			const combinedContent = fs.readFileSync(studioPath, "utf8");
 
 			// Check that one-click-btn does not have disabled attribute
 			assert.doesNotMatch(

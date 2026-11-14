@@ -29,20 +29,31 @@ export function useFinanceTransactionsData(params: UseFinanceTransactionsDataPar
 	} = params;
 
 	const taxDeductionPayments: TaxDeductionPayment[] = useMemo(() => {
-		return (activePayments ?? []).map((p: any) => ({
-			id: p.id,
-			receiptNumber: p.fiscalReceiptNumber || (p.id ? String(p.id).slice(0, 8) : ""),
-			fiscalDocumentNumber: p.fiscalFd || p.fiscalReceiptNumber || "",
-			fiscalSign: p.fiscalFpd || "",
-			serviceName: p.serviceName || p.description || "Медицинские стоматологические услуги",
-			dateIso: p.paidAt || p.createdAt || new Date().toISOString(),
-			amountRub: Number(p.amountRub ?? (p.amountKopecks ? p.amountKopecks / 100 : 0)),
-			taxCode: (p.taxDeductionCode === "2" || p.taxCode === "2"
-				? "2"
-				: p.taxDeductionCode === "1" || p.taxCode === "1"
-					? "1"
-					: resolveTaxDeductionCategoryShared(p.serviceName || p.description || "")) as "1" | "2",
-		}));
+		return (activePayments ?? []).map((p) => {
+			const ext = p as Payment & {
+				fiscalFd?: string | undefined;
+				fiscalFpd?: string | undefined;
+				serviceName?: string | undefined;
+				description?: string | undefined;
+				amountKopecks?: number | undefined;
+				taxDeductionCode?: string | null | undefined;
+				taxCode?: string | null | undefined;
+			};
+			return {
+				id: ext.id,
+				receiptNumber: ext.fiscalReceiptNumber || (ext.id ? String(ext.id).slice(0, 8) : ""),
+				fiscalDocumentNumber: ext.fiscalFd || ext.fiscalReceiptNumber || "",
+				fiscalSign: ext.fiscalFpd || "",
+				serviceName: ext.serviceName || ext.description || "Медицинские стоматологические услуги",
+				dateIso: ext.paidAt || ext.createdAt || new Date().toISOString(),
+				amountRub: Number(ext.amountRub ?? (ext.amountKopecks ? ext.amountKopecks / 100 : 0)),
+				taxCode: (ext.taxDeductionCode === "2" || ext.taxCode === "2"
+					? "2"
+					: ext.taxDeductionCode === "1" || ext.taxCode === "1"
+						? "1"
+						: resolveTaxDeductionCategoryShared(ext.serviceName || ext.description || "")) as "1" | "2",
+			};
+		});
 	}, [activePayments]);
 
 	const hasActiveClinicalRules = Boolean(

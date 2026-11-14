@@ -2,9 +2,29 @@ import type React from "react";
 import { lazy, Suspense } from "react";
 import { CashRegisterStudioModal } from "../../../components/cashbox/CashRegisterStudioModal";
 import { FinanceInvoicesModal } from "../../../components/finance/FinanceInvoicesModal";
-import { PaymentModal } from "../../../components/finance/PaymentModal";
 import { QuickExpenseModal } from "../../../components/finance/QuickExpenseModal";
 import { FinancePatientModalsSubhost } from "./FinancePatientModalsSubhost";
+import type { FinanceViewState } from "../useFinanceView";
+
+function resolvePatientDepositRub(patient: unknown): number {
+	if (!patient || typeof patient !== "object") return 0;
+	if ("depositRub" in patient && typeof (patient as { depositRub?: unknown }).depositRub === "number") {
+		return (patient as { depositRub: number }).depositRub;
+	}
+	if ("balanceRub" in patient && typeof (patient as { balanceRub?: unknown }).balanceRub === "number") {
+		const bal = (patient as { balanceRub: number }).balanceRub;
+		return bal > 0 ? bal : 0;
+	}
+	return 0;
+}
+
+function resolvePatientFamilyBalanceRub(patient: unknown): number {
+	if (!patient || typeof patient !== "object") return 0;
+	if ("familyBalanceRub" in patient && typeof (patient as { familyBalanceRub?: unknown }).familyBalanceRub === "number") {
+		return (patient as { familyBalanceRub: number }).familyBalanceRub;
+	}
+	return 0;
+}
 
 const ManagerialPnlDashboardModal = lazy(() =>
 	import("../../../components/finance/pnl/ManagerialPnlDashboardModal").then(
@@ -13,7 +33,7 @@ const ManagerialPnlDashboardModal = lazy(() =>
 );
 
 export interface FinanceModalsHostProps {
-	readonly s: any;
+	readonly s: FinanceViewState;
 	readonly isDoctorPayrollOpen?: boolean;
 	readonly onCloseDoctorPayroll?: () => void;
 }
@@ -33,10 +53,8 @@ export function FinanceModalsHost({
 	const effPat = s.effectivePatient;
 	const clinic = s.dashboard?.clinicSettings;
 	const clinicName = clinic?.name || "Стоматология ДЕНТЕ Премиум";
-	const depositRub =
-		docPat?.balanceRub && docPat.balanceRub > 0 ? docPat.balanceRub : 0;
-	const effDepositRub =
-		typeof effPat?.depositRub === "number" ? effPat.depositRub : 0;
+	const depositRub = resolvePatientDepositRub(docPat);
+	const effDepositRub = resolvePatientDepositRub(effPat);
 
 	return (
 		<>
@@ -70,6 +88,9 @@ export function FinanceModalsHost({
 				clinicName={clinicName}
 				clinicLegalName={clinicName}
 				cashierInn={clinic?.inn}
+				totalDueRub={totalBill}
+				amountRub={totalBill}
+				amountKopecks={Math.round(totalBill * 100)}
 				patientId={docPat?.id}
 				patientName={docPat?.fullName}
 				patientPhone={docPat?.phone ?? undefined}
@@ -91,18 +112,26 @@ export function FinanceModalsHost({
 			)}
 
 			{s.isSplitPaymentOpen && (
-				<PaymentModal
+				<CashRegisterStudioModal
 					isOpen={s.isSplitPaymentOpen}
 					onClose={() => s.setIsSplitPaymentOpen(false)}
+					mode="checkout"
+					initialTab="checkout"
+					defaultMethod="split"
+					totalDueRub={totalBill}
 					amountRub={totalBill}
+					amountKopecks={Math.round(totalBill * 100)}
 					patientId={effPat?.id}
 					patientName={effPat?.fullName}
 					patientPhone={effPat?.phone ?? undefined}
 					patientDepositRub={effDepositRub}
-					patientFamilyBalanceRub={effPat?.familyBalanceRub ?? 0}
-					cashierName={s.paymentFiscalCashierName || undefined}
-					defaultMethod="split"
+					patientFamilyBalanceRub={resolvePatientFamilyBalanceRub(effPat)}
+					cashierFullName={s.paymentFiscalCashierName || undefined}
 					onSuccess={() => {
+						void s.loadDashboard?.();
+						s.setIsSplitPaymentOpen(false);
+					}}
+					onPaymentComplete={() => {
 						void s.loadDashboard?.();
 						s.setIsSplitPaymentOpen(false);
 					}}

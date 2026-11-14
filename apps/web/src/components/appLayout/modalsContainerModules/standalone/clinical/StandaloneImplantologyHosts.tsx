@@ -13,9 +13,6 @@ import { AppLoadingState } from "../../../../../AppBootState";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 
-const ImplantPassportModal = lazyWithRetry(() =>
-	import("../../../../implants/ImplantPassportModal").then((m) => ({ default: m.ImplantPassportModal })),
-);
 const DirectRvgCaptureModal = lazyWithRetry(() =>
 	import("../../../../radiology/DirectRvgCaptureModal").then((m) => ({ default: m.DirectRvgCaptureModal })),
 );
@@ -43,19 +40,6 @@ function usePatientGuard(
 	}
 	return { patientId, patientName, guard };
 }
-
-export const StandaloneImplantPassportHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-	const { patientId, patientName, guard } = usePatientGuard("standalone-implant-missing-state", onClose);
-	if (guard && !isDemoShowcaseMode()) return guard;
-	return (
-		<ImplantPassportModal
-			isOpen={true}
-			onClose={onClose}
-			patientId={patientId || "demo-patient-01"}
-			patientName={patientName || "Иванов Иван Иванович"}
-		/>
-	);
-};
 
 export const StandaloneRvgHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const { patientId, patientName, guard } = usePatientGuard("standalone-rvg-missing-state", onClose);

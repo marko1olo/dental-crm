@@ -11,9 +11,7 @@ import { useMemo } from "react";
 import { InformedConsentModal } from "../../../../consents/InformedConsentModal";
 import { ClinicalPhotoProtocolModal } from "../../../../photography/ClinicalPhotoProtocolModal";
 import { ChairsideAnesthesiaQuickBar } from "../../../../anesthesia/AnesthesiaQuickBar";
-import { VisitSurgeryProtocolTab } from "../../../../visit/surgery/VisitSurgeryProtocolTab";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
-import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWorkspaceShell";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 
 export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
@@ -36,7 +34,7 @@ export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = ({ o
 				</div>
 				<ChairsideAnesthesiaQuickBar
 					patientWeightKg={70}
-					activeTooth={16}
+					targetToothNumberFdi={16}
 					onApplyAnesthesia={(text, res) => console.log("Applied anesthesia:", text, res)}
 				/>
 			</div>
@@ -70,7 +68,7 @@ export const StandaloneConsentHost: React.FC<{ onClose: () => void }> = ({ onClo
 		<InformedConsentModal
 			isOpen={true}
 			onClose={onClose}
-			initialMode="packages"
+			initialMode="batch"
 			initialPackageKey="PACKAGE_PRIMARY_VISIT"
 			initialVerificationMethod="tablet_stylus"
 			patientId={patientId}
@@ -92,22 +90,4 @@ export const StandalonePhotoProtocolHost: React.FC<{ onClose: () => void }> = ({
 	}
 	const effectiveName = patientName || "Смирнова Екатерина Васильевна";
 	return <ClinicalPhotoProtocolModal isOpen={true} onClose={onClose} patientId={patientId} patientName={effectiveName} />;
-};
-
-export const StandaloneSurgeryProtocolHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-	const patientId = useMemo(() => readPatientIdFromUrl() || "01a00000-0000-0000-0000-000000000001", []);
-	const patientName = useLauncherPatientName(patientId) || "Смирнова Анна Сергеевна";
-	return (
-		<StandaloneTreatmentPlanWorkspaceShell title="Хирургический протокол и удаление зубов" onClose={onClose}>
-			<div className="w-full p-3 sm:p-6 overflow-y-auto" data-testid="surgery-standalone-workspace">
-				<div className="max-w-5xl mx-auto">
-					<VisitSurgeryProtocolTab
-						activeTooth={48}
-						patientName={patientName}
-						onAddToInvoice={(item) => console.log("Added to invoice:", item)}
-					/>
-				</div>
-			</div>
-		</StandaloneTreatmentPlanWorkspaceShell>
-	);
 };

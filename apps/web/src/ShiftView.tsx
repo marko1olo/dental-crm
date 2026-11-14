@@ -6,12 +6,13 @@ import { ShiftDesktopViewWrap } from "./shiftViewModules/ShiftDesktopViewWrap";
 import { ShiftMobileCockpitWrap } from "./shiftViewModules/ShiftMobileCockpitWrap";
 import { ShiftViewModals } from "./shiftViewModules/ShiftViewModals";
 import { useShiftViewController } from "./shiftViewModules/useShiftViewController";
-import type {
-	CockpitPatient,
-	CockpitPatientInsight,
-	PatientCockpitProps,
-	ShiftFinancialMode,
-	ShiftViewProps,
+import {
+	type CockpitPatient,
+	type CockpitPatientInsight,
+	type PatientCockpitProps,
+	type ShiftFinancialMode,
+	type ShiftViewProps,
+	getAppointmentCabinetName,
 } from "./shiftViewModules/shiftViewTypes";
 
 export { PatientCockpit } from "./shiftViewModules/PatientCockpit";
@@ -23,7 +24,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 	const { visibleRecommendedActions, recommendedActionPriorityLabels, staffRoleLabels, dashboard, activeQueueRole, setError, mostLoadedResource, setSelectedPatientId, forceMobile } = props;
 	const detectedMobile = useIsMobile(768);
 	const isMobile = forceMobile ?? detectedMobile;
-	const userRole = (props as any).selectedWorkspaceRole || "doctor";
+	const userRole = (props.selectedWorkspaceRole as string | undefined) || "doctor";
 
 	const shiftData = useDoctorShiftData({ dashboard });
 
@@ -36,8 +37,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		setSelectedPatientId,
 	});
 
-	// biome-ignore lint/suspicious/noExplicitAny: cabinet name
-	const cabinetName = (shiftData.inChairAppointment as any)?.cabinetName || (shiftData.inChairAppointment as any)?.room || "Кабинет №1";
+	const cabinetName = getAppointmentCabinetName(shiftData.inChairAppointment);
 
 	const modalsNode = (
 		<ShiftViewModals
@@ -68,8 +68,8 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 				}
 			}}
 			todayAppointments={shiftData.todayAppointments}
-			onUpdateAppointmentStatus={(id, s) => { (props as any).onUpdateAppointmentStatus?.(id, s); }}
-			onSelectAppointment={(id) => { (props as any).onSelectAppointment?.(id); }}
+			onUpdateAppointmentStatus={(id, s) => { props.onUpdateAppointmentStatus?.(id, s); }}
+			onSelectAppointment={(id) => { props.onSelectAppointment?.(id); }}
 		/>
 	);
 
@@ -84,7 +84,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 				cabinetName={cabinetName}
 				shiftStats={shiftData.shiftStats}
 				mobileAppointments={[...shiftData.mobileAppointments]}
-				onSelectAppointment={(appId) => { (props as any).onSelectAppointment?.(appId); }}
+				onSelectAppointment={(appId) => { props.onSelectAppointment?.(appId); }}
 				onOpenPatientEmk={(patientId) => { setSelectedPatientId?.(patientId); window.location.hash = "emk"; }}
 				onOpenCashCheckout={(patientId) => { setSelectedPatientId?.(patientId); window.location.hash = "invoices"; }}
 				modalsNode={modalsNode}

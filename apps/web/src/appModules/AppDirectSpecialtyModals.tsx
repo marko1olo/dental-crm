@@ -7,6 +7,7 @@ import React, { Suspense } from "react";
 import { lazyWithRetry } from "../lib/lazyWithRetry";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "../components/GlobalToast";
+import { useVisitStore } from "../store/visitStore";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 
 const ClinicalTasksPanel = lazyWithRetry(() =>
@@ -44,6 +45,11 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 	const { activePatient, activeVisitPatient, activeDoctor } = appLogic;
 	const staffUser = sessionAuth.activeStaffUser;
 	const patient = activePatient || activeVisitPatient;
+	const activeToothNumber = useVisitStore((s) => s.activeToothNumber) ?? (typeof appLogic?.activeTooth === "number" ? appLogic.activeTooth : 11);
+	const visitToothRecord = useVisitStore((s) => s.visitToothRecordsByCode[String(activeToothNumber)]);
+	const reactiveToothData = visitToothRecord
+		? { toothNumber: activeToothNumber, state: visitToothRecord.state ?? "Healthy", surfaces: visitToothRecord.surfaces ?? [] }
+		: { toothNumber: activeToothNumber, state: "Healthy", surfaces: [] };
 
 	return (
 		<>
@@ -72,7 +78,12 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			)}
 			{routing.isToothDrawerDirectModalOpen && (
 				<Suspense fallback={null}>
-					<ToothContextDrawer isOpen={true} onClose={() => routing.setIsToothDrawerDirectModalOpen(false)} toothNumber={16} toothData={{ toothNumber: 16, state: "Healthy", surfaces: ["O", "M"], mobility: 0 }} />
+					<ToothContextDrawer
+						isOpen={true}
+						onClose={() => routing.setIsToothDrawerDirectModalOpen(false)}
+						toothNumber={activeToothNumber}
+						toothData={reactiveToothData as any}
+					/>
 				</Suspense>
 			)}
 			{routing.isClinicalTasksOpen && (

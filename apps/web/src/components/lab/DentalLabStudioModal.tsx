@@ -9,6 +9,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 if (typeof document !== "undefined") { void import("./styles/dentalLabStudio.css"); }
+import { generateUuidV7 } from "@dental/shared";
 import {
 	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES,
 	UPPER_JAW_TEETH, LOWER_JAW_TEETH, SEED_LAB_ORDERS, type DentalLabOrderEntry, type DentalLabStage,
@@ -26,7 +27,8 @@ import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import type { DentalLabOrderData } from "./labMath";
 
-export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue"; export type LabStudioMainTab = "new_order" | "registry" | "print_blank";
+export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue";
+export type LabStudioMainTab = "new_order" | "registry" | "print_blank";
 
 export { buildLabOrderMessengerSummary, type LabOrderMessengerParams } from "./dentalLabDefinitions";
 export * from "./dentalLabCatalogData"; export * from "./labMath";
@@ -104,7 +106,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => isDemoShowcaseMode() ? [...SEED_LAB_ORDERS] : []);
 	const normalizedInitialTab: LabStudioMainTab =
-		initialTab === "print" ? "print_blank" : initialTab === "shades" || initialTab === "stages" || initialTab === "main" ? "new_order" : (initialTab as LabStudioMainTab) || "new_order";
+		initialTab === "print" || initialTab === "print_blank" ? "print_blank" : initialTab === "registry" ? "registry" : "new_order";
 	const [activeMainTab, setActiveMainTab] = useState<LabStudioMainTab>(normalizedInitialTab);
 	const [activeFilter, setActiveFilter] = useState<LabFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -200,7 +202,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		const effectiveName = currentPatientName;
 		const effectiveId = currentPatientId;
 		const newEntry: DentalLabOrderEntry = {
-			id: `lab-ord-${Date.now()}`, orderNumber: nextOrderNumber, patientName: effectiveName, doctorName: effectiveDoctorName,
+			id: generateUuidV7(), orderNumber: nextOrderNumber, patientName: effectiveName, doctorName: effectiveDoctorName,
 			teeth: teethToSave, materialId: selectedMaterialId, shadeCode: selectedShade, stage: "scan_sent",
 			labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks,
 			laboratoryName: selectedLab, createdAt: new Date().toISOString(), dueDate: effectiveDueDate,
@@ -234,7 +236,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
 				}
 				if (typeof window !== "undefined") {
-					window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: { ...payload, id: effectiveSavedId } }));
+					const eventDetail = { ...payload, id: effectiveSavedId };
+					window.dispatchEvent(new CustomEvent("dente:lab:order-created", { detail: eventDetail }));
+					window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: eventDetail }));
 				}
 				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно создан и сохранен в базе данных`);
 			} else {
@@ -258,6 +262,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: nextStage } : ord)));
 		setFeedbackToast(`Статус обновлен: ${CANONICAL_LAB_STAGES[nextIdx]?.labelRu ?? "Зафиксировано"}`);
 		setTimeout(() => setFeedbackToast(null), 2500);
+		if (typeof window !== "undefined") {
+			const evtDetail = { orderId, stage: nextStage, status: STAGE_TO_DB_STATUS[nextStage] || "in_progress" };
+			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
+			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: evtDetail }));
+		}
 		try {
 			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: STAGE_TO_DB_STATUS[nextStage] || "in_progress", stage: nextStage }) };
 			const res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
@@ -272,6 +281,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const handleMarkInClinic = useCallback(async (orderId: string) => {
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: "in_clinic" } : ord)));
 		setFeedbackToast("Заказ отмечен: готов в клинике"); setTimeout(() => setFeedbackToast(null), 2500);
+		if (typeof window !== "undefined") {
+			const evtDetail = { orderId, stage: "in_clinic", status: "received" };
+			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
+			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: evtDetail }));
+			window.dispatchEvent(new CustomEvent("dente-lab-order-ready", { detail: { orderId } }));
+		}
 		try {
 			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: "received", stage: "in_clinic" }) };
 			const res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
@@ -340,11 +355,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					</div>
 					<nav className="w-full sm:w-auto flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] shrink-0" aria-label="Вкладки студии">
 						<button type="button" data-testid="tab-new-order" onClick={() => setActiveMainTab("new_order")}
-							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 max-sm:min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all text-center whitespace-nowrap border ${activeMainTab === "new_order" ? "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] shadow-xs" : "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">1. Новый заказ-наряд</span><span className="sm:hidden">1. Наряд</span></button>
+							className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 max-sm:min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all text-center whitespace-nowrap border ${activeMainTab === "new_order" ? "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] shadow-xs" : "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">1. Новый заказ-наряд</span><span className="sm:hidden">1. Наряд</span></button>
 						<button type="button" data-testid="tab-registry" onClick={() => setActiveMainTab("registry")}
-							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 max-sm:min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all text-center whitespace-nowrap border ${activeMainTab === "registry" ? "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] shadow-xs" : "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">2. Реестр нарядов</span><span className="sm:hidden">2. Реестр</span></button>
+							className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 max-sm:min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all text-center whitespace-nowrap border ${activeMainTab === "registry" ? "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] shadow-xs" : "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">2. Реестр нарядов</span><span className="sm:hidden">2. Реестр</span></button>
 						<button type="button" data-testid="tab-print-blank" onClick={() => setActiveMainTab("print_blank")}
-							className={`flex-1 sm:flex-initial px-2.5 py-1.5 sm:py-1 max-sm:min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all text-center whitespace-nowrap border ${activeMainTab === "print_blank" ? "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] shadow-xs" : "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">3. Печатный бланк</span><span className="sm:hidden">3. Бланк</span></button>
+							className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 max-sm:min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all text-center whitespace-nowrap border ${activeMainTab === "print_blank" ? "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)] shadow-xs" : "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}><span className="hidden sm:inline">3. Печатный бланк</span><span className="sm:hidden">3. Бланк</span></button>
 					</nav>
 				</header>
 				{feedbackToast && (
@@ -464,7 +479,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	);
 };
 
-export const LaboratoryStudioModal = DentalLabStudioModal; export const WorkOrdersList = DentalLabStudioModal; export const LabStudioModal = DentalLabStudioModal;
-export const LabOrderModal = DentalLabStudioModal; export const DentalLabOrderModal = DentalLabStudioModal; export const DentalLabOrdersModal = DentalLabStudioModal;
-export const DentalLabHubModal = DentalLabStudioModal; export const DentalLabOrdersHubModal = DentalLabStudioModal; export const DentalLabOrderDrawer = DentalLabStudioModal;
+export const DentalLabOrderModal = DentalLabStudioModal;
+export const DentalLabOrdersModal = DentalLabStudioModal;
+export const DentalLabHubModal = DentalLabStudioModal;
+export const DentalLabOrdersHubModal = DentalLabStudioModal;
+export const DentalLabOrderDrawer = DentalLabStudioModal;
 export default DentalLabStudioModal;

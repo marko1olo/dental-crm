@@ -1,4 +1,5 @@
-import type { OrthopedicWorkTypeId, OrthopedicWorkTypeDefinition } from "./orthopedicWorkTypes";
+import { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
+import type { OrthopedicWorkTypeDefinition } from "./orthopedicWorkTypes";
 
 export const FIXED_ORTHOPEDIC_WORK_TYPES: Record<
 	"crown_emax" | "crown_zirconia" | "metal_ceramic" | "temporary_pmma",
@@ -12,12 +13,14 @@ export const FIXED_ORTHOPEDIC_WORK_TYPES: Record<
 		descriptionRu: "Высокоэстетичная цельнокерамическая реставрация из дисиликата лития с естественной опалесценцией и флюоресценцией.",
 		icon: "diamond",
 		defaultMaterialRu: "IPS e.max Press (Ivoclar Vivadent)",
-		standardTurnaroundWorkingDays: 5,
+		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_emax.standardTurnaroundDays,
 		requiresFittingStage: true,
-		requiresStumpShade: true,
+		requiresStumpShade: DENTAL_LAB_CONSTRUCTIONS.crown_emax.requiresStumpShade,
 		requiresImplantSystem: false,
 		defaultPriceKopecks: 2400000,
 		defaultCostKopecks: 800000,
+		canonicalConstructionId: "crown_emax",
+		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.crown_emax,
 	},
 	crown_zirconia: {
 		id: "crown_zirconia",
@@ -27,12 +30,14 @@ export const FIXED_ORTHOPEDIC_WORK_TYPES: Record<
 		descriptionRu: "Анатомическая монолитная коронка из многослойного диоксида циркония с плавным градиентом прозрачности и прочностью > 1100 МПа.",
 		icon: "crown",
 		defaultMaterialRu: "Katana Zirconia HTML (Kuraray Noritake)",
-		standardTurnaroundWorkingDays: 5,
+		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
 		requiresFittingStage: false,
-		requiresStumpShade: true,
+		requiresStumpShade: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.requiresStumpShade,
 		requiresImplantSystem: false,
 		defaultPriceKopecks: 2200000,
 		defaultCostKopecks: 700000,
+		canonicalConstructionId: "crown_zirconia",
+		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia,
 	},
 	metal_ceramic: {
 		id: "metal_ceramic",
@@ -42,12 +47,14 @@ export const FIXED_ORTHOPEDIC_WORK_TYPES: Record<
 		descriptionRu: "Классическая металлокерамическая коронка на фрезерованном или литом кобальт-хромовом каркасе с послойной керамической облицовкой.",
 		icon: "shield",
 		defaultMaterialRu: "Co-Cr сплав Bego Wiron light + Noritake EX-3",
-		standardTurnaroundWorkingDays: 6,
+		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.standardTurnaroundDays,
 		requiresFittingStage: true,
-		requiresStumpShade: false,
+		requiresStumpShade: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.requiresStumpShade,
 		requiresImplantSystem: false,
 		defaultPriceKopecks: 1400000,
 		defaultCostKopecks: 450000,
+		canonicalConstructionId: "metal_ceramic",
+		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic,
 	},
 	temporary_pmma: {
 		id: "temporary_pmma",

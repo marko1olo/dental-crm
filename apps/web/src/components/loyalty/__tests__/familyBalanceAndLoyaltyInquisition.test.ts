@@ -27,7 +27,7 @@ import {
 } from "../loyaltyCatalogData.js";
 import {
 	EXPRESS_GUARANTEE_LETTER_PRESETS,
-} from "../../insurance/dmsInsurancePresets.js";
+} from "@dental/shared";
 
 describe("1. Family Shared Balance (Единый семейный кошелек)", () => {
 	it("1.1 Debits child treatment costs from shared family wallet by parent sponsor without manual transfer fees", () => {

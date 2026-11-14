@@ -1,3 +1,4 @@
+import { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
 import type { OrthopedicWorkTypeDefinition } from "./orthopedicWorkTypes";
 
 export const REMOVABLE_ORTHOPEDIC_WORK_TYPES: Record<
@@ -18,6 +19,8 @@ export const REMOVABLE_ORTHOPEDIC_WORK_TYPES: Record<
 		requiresImplantSystem: false,
 		defaultPriceKopecks: 4800000,
 		defaultCostKopecks: 1650000,
+		canonicalConstructionId: "clasp_denture",
+		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.clasp_denture,
 	},
 	removable_acrylic: {
 		id: "removable_acrylic",
@@ -63,5 +66,7 @@ export const REMOVABLE_ORTHOPEDIC_WORK_TYPES: Record<
 		requiresImplantSystem: false,
 		defaultPriceKopecks: 1800000,
 		defaultCostKopecks: 550000,
+		canonicalConstructionId: "aligner_splint",
+		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.aligner_splint,
 	},
 };

@@ -32,11 +32,6 @@ export {
 	DentalLabOrdersHubModal,
 	type DentalLabHubModalProps,
 	type DentalLabOrdersHubModalProps,
-	LaboratoryStudioModal,
-	WorkOrdersList,
-	LabStudioModal,
-	type LabStudioModalProps,
-	LabOrderModal,
 	DentalLabOrderModal,
 	DentalLabOrdersModal,
 	DentalLabOrderModal as DentalLabWorkOrderModal,
@@ -155,5 +150,6 @@ export * from "./labMath";
 export * from "./guestLabPortalHelpers";
 export * from "./dentalLabWorkflowEngine";
 export * from "./dentalLabApiMapper";
+export * from "./dentalLabEvents";
 export * from "./ordersView";
 export * from "./mobile/MobileLabOrdersTimeline";

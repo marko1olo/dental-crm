@@ -6,7 +6,7 @@
 import React, { useCallback, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import { DentalLabOrderDrawer } from "../lab/DentalLabStudioModal";
+import { DentalLabStudioModal, type DentalLabOrderData, type DentalLabOrderEntry } from "../lab/DentalLabStudioModal";
 import {
 	ProtocolComplaintsAndAnamnesis,
 	ProtocolHeader,
@@ -41,12 +41,15 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(fu
 		else if (typeof window !== "undefined") window.print();
 	}, [onPrint]);
 
-	const handleLabOrderSaved = useCallback((savedOrder: any) => {
+	const handleLabOrderSaved = useCallback((savedOrder?: DentalLabOrderData | DentalLabOrderEntry | null) => {
 		setIsLabOrderOpen(false);
 		if (!savedOrder) return;
-		const teeth = savedOrder.teethFdi ? (Array.isArray(savedOrder.teethFdi) ? savedOrder.teethFdi.join(", ") : savedOrder.teethFdi) : selectedTooth || "16";
-		const mat = savedOrder.materialRu || savedOrder.constructionType || "Ортопедическая коронка";
-		const shade = savedOrder.vitaShade || "A2";
+		const orderRecord = savedOrder as Record<string, unknown>;
+		const teeth = orderRecord.teethFdi
+			? (Array.isArray(orderRecord.teethFdi) ? orderRecord.teethFdi.join(", ") : String(orderRecord.teethFdi))
+			: (Array.isArray(orderRecord.teeth) ? (orderRecord.teeth as number[]).join(", ") : String(selectedTooth || "16"));
+		const mat = String(orderRecord.materialRu || orderRecord.constructionType || orderRecord.materialId || "Ортопедическая коронка");
+		const shade = String(orderRecord.vitaShade || orderRecord.shadeCode || "A2");
 		const ztlNote = `Наряд ЗТЛ оформлен: зуб ${teeth}, конструкция: ${mat}, цвет: ${shade}.`;
 		setProtocol((prev) => ({ ...prev, treatmentProtocol: prev.treatmentProtocol ? `${prev.treatmentProtocol}\n${ztlNote}` : ztlNote }));
 		showToast("Наряд ЗТЛ привязан к протоколу визита", "success");
@@ -70,7 +73,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(fu
 				{lastSaved && <span className="text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /><span>Сохранено в {lastSaved}</span></span>}
 			</div>
 			{isLabOrderOpen && (
-				<DentalLabOrderDrawer isOpen={isLabOrderOpen} onClose={() => setIsLabOrderOpen(false)} patientId={patientId || undefined} patientName={patientName || undefined} doctorName={doctorName || undefined} currentToothNumber={selectedTooth || initialTooth || "16"} initialToothFdi={selectedTooth || initialTooth || "16"} onOrderSaved={handleLabOrderSaved} />
+				<DentalLabStudioModal isOpen={isLabOrderOpen} onClose={() => setIsLabOrderOpen(false)} patientId={patientId || undefined} patientName={patientName || undefined} doctorName={doctorName || undefined} currentToothNumber={selectedTooth || initialTooth || "16"} initialToothFdi={selectedTooth || initialTooth || "16"} onOrderSaved={handleLabOrderSaved} />
 			)}
 		</div>
 	);

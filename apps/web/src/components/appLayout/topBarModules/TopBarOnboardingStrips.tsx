@@ -8,6 +8,7 @@ import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
 import { TopBarDraftStrips } from "./TopBarDraftStrips";
 import type { Dispatch, SetStateAction } from "react";
+import type { OnboardingStepItem } from "../../onboarding/wizard/types";
 
 export interface TopBarOnboardingStripsProps {
 	onboardingDismissed: boolean;
@@ -17,16 +18,16 @@ export interface TopBarOnboardingStripsProps {
 	setIsStripDismissedLocally: Dispatch<SetStateAction<boolean>>;
 	currentView: string;
 	currentOnboardingIndex: number;
-	onboardingSteps: any[];
+	onboardingSteps: readonly OnboardingStepItem[];
 	legalReadinessPercent: number;
 	continueOnboardingInDraftMode: (view?: string) => Promise<void> | void;
 	openOnboardingGuide: () => void;
 	dismissOnboarding: () => void;
 	onboardingDraftMode: boolean;
 	onboardingReadyToFinish: boolean;
-	onboardingBlockingIssues: string[];
+	onboardingBlockingIssues: readonly string[];
 	onboardingDocumentsReady: boolean;
-	onboardingDocumentReadinessIssues: string[];
+	onboardingDocumentReadinessIssues: readonly string[];
 	reopenOnboarding: () => void;
 	setCurrentView: (view: string) => void;
 	setSettingsTab: (tab: string) => void;

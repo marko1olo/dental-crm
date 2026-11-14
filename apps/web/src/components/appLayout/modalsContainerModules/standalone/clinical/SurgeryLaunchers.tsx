@@ -14,7 +14,6 @@ import {
 	StandaloneAnesthesiaHost,
 	StandaloneConsentHost,
 	StandalonePhotoProtocolHost,
-	StandaloneSurgeryProtocolHost,
 } from "./StandaloneSurgeryHosts";
 
 export function renderSurgeryLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
@@ -72,20 +71,6 @@ export function renderSurgeryLaunchers(props: StandaloneLaunchersProps): React.R
 					onClose={() => clearUrlTokens(["photo-protocol", "photo"])}
 				/>
 			</Suspense>
-		);
-	}
-
-	const isSurgery =
-		s.includes("surgery") ||
-		s.includes("extraction") ||
-		h.includes("surgery") ||
-		h.includes("extraction");
-
-	if (isSurgery) {
-		return (
-			<StandaloneSurgeryProtocolHost
-				onClose={() => clearUrlTokens(["surgery", "extraction"])}
-			/>
 		);
 	}
 

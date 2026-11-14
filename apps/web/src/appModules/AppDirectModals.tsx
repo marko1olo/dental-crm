@@ -9,9 +9,6 @@ import { lazyWithRetry } from "../lib/lazyWithRetry";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 import { AppDirectSpecialtyModals } from "./AppDirectSpecialtyModals";
 
-const ImplantPassportModal = lazyWithRetry(() =>
-	import("../components/implants/ImplantPassportModal").then((m) => ({ default: m.ImplantPassportModal })),
-);
 const PatientRecallsHubModal = lazyWithRetry(() =>
 	import("../components/recalls/PatientRecallsHubModal").then((m) => ({ default: m.PatientRecallsHubModal })),
 );
@@ -21,11 +18,11 @@ const WarrantyPassportModal = lazyWithRetry(() =>
 const LoyaltyStudioModal = lazyWithRetry(() =>
 	import("../components/loyalty/LoyaltyStudioModal").then((m) => ({ default: m.LoyaltyStudioModal })),
 );
-const FastCheckoutModal = lazyWithRetry(() =>
-	import("../components/finance/FastCheckoutModal").then((m) => ({ default: m.FastCheckoutModal })),
+const CashRegisterStudioModal = lazyWithRetry(() =>
+	import("../components/cashbox/CashRegisterStudioModal").then((m) => ({ default: m.CashRegisterStudioModal })),
 );
-const ShiftCloseZReportModal = lazyWithRetry(() =>
-	import("../components/finance/fiscal/ShiftCloseZReportModal").then((m) => ({ default: m.ShiftCloseZReportModal })),
+const CashShiftClosingModal = lazyWithRetry(() =>
+	import("../components/shift/CashShiftClosingModal").then((m) => ({ default: m.CashShiftClosingModal })),
 );
 
 interface AppDirectModalsProps {
@@ -53,19 +50,6 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 					doctorName={doctorName}
 					initialSelectedDrugIds={routing.prescriptionInitialMedIds ?? (routing.prescriptionInitialMedId ? [routing.prescriptionInitialMedId] : undefined)}
 				/>
-			)}
-			{routing.isImplantPassportDirectOpen && (
-				<Suspense fallback={null}>
-					<ImplantPassportModal
-						isOpen={true}
-						onClose={() => { routing.setIsImplantPassportDirectOpen(false); routing.setImplantPassportConfig(null); }}
-						patientName={routing.implantPassportConfig?.patientName || patient?.fullName || "Пациент"}
-						patientId={routing.implantPassportConfig?.patientId || patient?.id || ""}
-						doctorName={routing.implantPassportConfig?.doctorName || doctorName}
-						doctorId={routing.implantPassportConfig?.doctorId || staffUser?.id || activeDoctor?.id || ""}
-						initialTooth={routing.implantPassportConfig?.toothNumber ?? 46}
-					/>
-				</Suspense>
 			)}
 			{routing.isRecallsHubOpen && (
 				<Suspense fallback={null}>
@@ -112,33 +96,35 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 			)}
 			{routing.isFastCheckoutDirectOpen && (
 				<Suspense fallback={null}>
-					<FastCheckoutModal
+					<CashRegisterStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsFastCheckoutDirectOpen(false)}
-						totalBillRub={4500}
-						totalBillKop={450000}
-						patientId={patient?.id || "pat-demo-01"}
-						patientName={patient?.fullName || "Воронова Светлана Николаевна"}
-						patientPhone={patient?.phone || "+7 (926) 555-01-92"}
-						patientFamilyBalanceRub={1200}
-						patientBonusPointsRub={1500}
-						patientLoyaltyPoints={1500}
-						orderId="CHK-DEMO-001"
+						mode="checkout"
+						initialTab="checkout"
+						totalDueRub={appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0}
+						amountRub={appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0}
+						amountKopecks={Math.round((appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0) * 100)}
+						patientId={patient?.id || undefined}
+						patientName={patient?.fullName || undefined}
+						patientPhone={patient?.phone || undefined}
+						patientDepositRub={patient?.depositRub ?? 0}
+						patientFamilyBalanceRub={patient?.familyBalanceRub ?? 0}
+						cashierFullName={staffUser?.fullName || doctorName}
+						clinicLegalName={activeWorkspaceProfile?.title || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+						onSuccess={() => routing.setIsFastCheckoutDirectOpen(false)}
+						onPaymentComplete={() => routing.setIsFastCheckoutDirectOpen(false)}
 					/>
 				</Suspense>
 			)}
 			{routing.isShiftCloseZReportDirectOpen && (
 				<Suspense fallback={null}>
-					<ShiftCloseZReportModal
+					<CashShiftClosingModal
 						isOpen={true}
 						onClose={() => routing.setIsShiftCloseZReportDirectOpen(false)}
-						shiftNumber={42}
-						cashierFullName={staffUser?.fullName || "Сидорова Анна Павловна"}
+						shiftNumber={routing.shiftNumber ?? 1}
+						cashierFullName={staffUser?.fullName || "Кассир"}
 						clinicLegalName={activeWorkspaceProfile?.title || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-						kktRegNumber="0004829104058291"
-						onConfirmCloseShift={async () => {
-							routing.setIsShiftCloseZReportDirectOpen(false);
-						}}
+						onShiftClosed={() => routing.setIsShiftCloseZReportDirectOpen(false)}
 					/>
 				</Suspense>
 			)}

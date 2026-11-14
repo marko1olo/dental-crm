@@ -32,15 +32,31 @@ export interface LauncherPatientDebt {
 	family: LauncherFamilyGroup | null;
 }
 
-/** patientId из ?patientId= в search или в hash (#/...?patientId=). */
-export function readPatientIdFromUrl(): string | null {
+/** Чтение параметра из search или hash (#/...?param=). */
+export function readLauncherParamFromUrl(key: string): string | null {
 	if (typeof window === "undefined") return null;
 	const search = new URLSearchParams(window.location.search || "");
-	const fromSearch = search.get("patientId");
+	const fromSearch = search.get(key);
 	if (fromSearch) return fromSearch;
-	const match = /[?&]patientId=([^&]+)/.exec(window.location.hash || "");
-	const captured = match?.[1];
-	return captured ? decodeURIComponent(captured) : null;
+
+	let hashQueryString = "";
+	const h = window.location.hash || "";
+	if (h.includes("?")) {
+		hashQueryString = h.slice(h.indexOf("?") + 1);
+	} else if (h.includes("&")) {
+		hashQueryString = h.slice(h.indexOf("&") + 1);
+	}
+	if (hashQueryString) {
+		const hashParams = new URLSearchParams(hashQueryString);
+		const fromHash = hashParams.get(key);
+		if (fromHash) return fromHash;
+	}
+	return null;
+}
+
+/** patientId из ?patientId= в search или в hash (#/...?patientId=). */
+export function readPatientIdFromUrl(): string | null {
+	return readLauncherParamFromUrl("patientId") || readLauncherParamFromUrl("patient_id");
 }
 
 /**
@@ -92,9 +108,13 @@ export function useLauncherPatientDebt(rawPatientId: string | null): LauncherPat
 				fetchLauncherFamilyGroup(rawPatientId),
 			]);
 			if (cancelled) return;
-			const queryAmount = typeof window !== "undefined"
-				? Number(new URLSearchParams(window.location.search || "").get("amount") || new URLSearchParams(window.location.search || "").get("sum") || 0)
-				: 0;
+			const rawAmount =
+				readLauncherParamFromUrl("amount") ||
+				readLauncherParamFromUrl("amountRub") ||
+				readLauncherParamFromUrl("amount_rub") ||
+				readLauncherParamFromUrl("totalDueRub") ||
+				readLauncherParamFromUrl("sum");
+			const queryAmount = rawAmount ? Number(rawAmount) : 0;
 			const effectiveDebt = debt > 0 ? debt : (queryAmount > 0 ? queryAmount : 0);
 			setPatient(resolvedPatient);
 			setDebtRub(effectiveDebt);

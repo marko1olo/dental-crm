@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import type { AppHashRoutingState, ImplantPassportConfig } from "./appStateTypes";
+import type { AppHashRoutingState } from "./appStateTypes";
 import { hasLocationToken, isCbctDirectActive, isCbctTunerActive } from "./appRoutingHelpers";
 import { useAppRoutingEvents } from "./useAppRoutingEvents";
 
@@ -18,12 +18,12 @@ export function useAppHashRouting(
 	const [isPrescriptionBlankOpen, setIsPrescriptionBlankOpen] = useState(false);
 	const [prescriptionInitialMedId, setPrescriptionInitialMedId] = useState<string | null>(null);
 	const [prescriptionInitialMedIds, setPrescriptionInitialMedIds] = useState<string[] | null>(null);
-	const [isImplantPassportDirectOpen, setIsImplantPassportDirectOpen] = useState(() => hasLocationToken(s, h, ["implant_passport", "implant-passport", "implants"]));
-	const [implantPassportConfig, setImplantPassportConfig] = useState<ImplantPassportConfig | null>(null);
 	const [isWarrantyPassportOpen, setIsWarrantyPassportOpen] = useState(() => hasLocationToken(s, h, ["warranty-passport", "warranty_passport", "warranty-studio", "warranty=1", "warranty=true"]));
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(() => hasLocationToken(s, h, ["recalls", "prophylaxis", "preventive"]));
 	const [isLoyaltyProgramOpen, setIsLoyaltyProgramOpen] = useState(() => hasLocationToken(s, h, ["loyalty", "bonus", "family-pool", "points"]));
 	const [isFastCheckoutDirectOpen, setIsFastCheckoutDirectOpen] = useState(() => hasLocationToken(s, h, ["bonus-payment", "direct-cashier-bonus"]));
+	const [fastCheckoutInitialAmountRub, setFastCheckoutInitialAmountRub] = useState<number | undefined>(undefined);
+	const [shiftNumber, setShiftNumber] = useState<number | undefined>(undefined);
 	const [isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ortho-photo", "orthodontic-photo"]));
 	const [isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ortho-protocol", "orthodontic-protocol", "ortho=protocol"]));
 	const [isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen] = useState(() => hasLocationToken(s, h, ["tooth-drawer", "tooth-card"]));
@@ -52,11 +52,10 @@ export function useAppHashRouting(
 		isPrescriptionBlankOpen, setIsPrescriptionBlankOpen,
 		isPrescriptionForm107Open: isPrescriptionBlankOpen, setIsPrescriptionForm107Open: setIsPrescriptionBlankOpen,
 		prescriptionInitialMedId, prescriptionInitialMedIds,
-		isImplantPassportDirectOpen, setIsImplantPassportDirectOpen,
-		implantPassportConfig, setImplantPassportConfig,
 		isRecallsHubOpen, setIsRecallsHubOpen,
 		isLoyaltyProgramOpen, setIsLoyaltyProgramOpen,
 		isFastCheckoutDirectOpen, setIsFastCheckoutDirectOpen,
+		fastCheckoutInitialAmountRub, setFastCheckoutInitialAmountRub,
 		isOrthoPhotoDirectModalOpen, setIsOrthoPhotoDirectModalOpen,
 		isOrthoProtocolDirectModalOpen, setIsOrthoProtocolDirectModalOpen,
 		isToothDrawerDirectModalOpen, setIsToothDrawerDirectModalOpen,
@@ -80,6 +79,7 @@ export function useAppHashRouting(
 		isEmergencyDirectModalOpen, setIsEmergencyDirectModalOpen,
 		isWarrantyPassportOpen, setIsWarrantyPassportOpen,
 		isShiftCloseZReportDirectOpen, setIsShiftCloseZReportDirectOpen,
+		shiftNumber, setShiftNumber,
 		isEmrCardDirectModalOpen, setIsEmrCardDirectModalOpen,
 	};
 

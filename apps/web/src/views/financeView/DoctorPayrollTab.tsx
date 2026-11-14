@@ -4,10 +4,10 @@ import { PayrollTabHeader } from "./payrollTabModules/PayrollTabHeader";
 import { PayrollStatCards } from "./payrollTabModules/PayrollStatCards";
 import { PayrollChecksTable } from "./payrollTabModules/PayrollChecksTable";
 import { PayrollChecksMobileCards } from "./payrollTabModules/PayrollChecksMobileCards";
-import { useDoctorPayrollTabData, DEFAULT_DOCTORS } from "./payrollTabModules/useDoctorPayrollTabData";
+import { useDoctorPayrollTabData } from "./payrollTabModules/useDoctorPayrollTabData";
 
 export function DoctorPayrollTab({
-	clinicName = "ООО «Денте Стоматология»",
+	clinicName,
 	doctorsList,
 	services = [],
 }: DoctorPayrollTabProps): React.JSX.Element {

@@ -58,6 +58,8 @@ export function useAppModalsEventBridge() {
 		window.addEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 		window.addEventListener("dente-open-imaging-export", onOpenImagingExport);
 		window.addEventListener("dente-open-create-lab-order", onOpenLabCreate);
+		window.addEventListener("dente:lab:open-order", onOpenLabCreate);
+		window.addEventListener("dente-open-lab-order-modal", onOpenLabCreate);
 		window.addEventListener("dente-open-loyalty", onOpenLoyalty);
 		window.addEventListener("dente-open-egisz-certificates", onOpenEgisz);
 		window.addEventListener("dente:open-egisz-certificates", onOpenEgisz);
@@ -68,6 +70,8 @@ export function useAppModalsEventBridge() {
 			window.removeEventListener("dente-open-visiograph-comparison", onOpenVisiograph);
 			window.removeEventListener("dente-open-imaging-export", onOpenImagingExport);
 			window.removeEventListener("dente-open-create-lab-order", onOpenLabCreate);
+			window.removeEventListener("dente:lab:open-order", onOpenLabCreate);
+			window.removeEventListener("dente-open-lab-order-modal", onOpenLabCreate);
 			window.removeEventListener("dente-open-loyalty", onOpenLoyalty);
 			window.removeEventListener("dente-open-egisz-certificates", onOpenEgisz);
 			window.removeEventListener("dente:open-egisz-certificates", onOpenEgisz);

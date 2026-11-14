@@ -17,11 +17,10 @@ import {
 import "./loyaltyStudio.css";
 
 export interface LoyaltyStudioModalProps {
-	readonly isOpen: boolean; readonly onClose: () => void; readonly clinicName?: string;
-	readonly patientId?: string; readonly patientName?: string; readonly medicalCardNumber?: string;
-	readonly initialPointsBalance?: number; readonly initialLifetimeSpentKop?: number;
-	readonly currentInvoiceAmountKop?: number;
-	readonly onRedeemSuccess?: (redeemedPointsRub: number, fiscalSplit: Fiscal54FzSplitResult) => void;
+	readonly isOpen: boolean; readonly onClose: () => void; readonly clinicName?: string | undefined;
+	readonly patientId?: string | undefined; readonly patientName?: string | undefined; readonly medicalCardNumber?: string | undefined;
+	readonly initialPointsBalance?: number | undefined; readonly initialLifetimeSpentKop?: number | undefined; readonly currentInvoiceAmountKop?: number | undefined;
+	readonly onRedeemSuccess?: ((redeemedPointsRub: number, fiscalSplit: Fiscal54FzSplitResult) => void) | undefined;
 }
 
 const DEFAULT_FAMILY_MEMBERS: readonly FamilyMember[] = [

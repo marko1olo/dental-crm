@@ -236,13 +236,14 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 		});
 	});
 
-	it("3. [Negative Stock Protection] blocks unauthorized overdraft with 409 Conflict, allows overdraft when confirmed", async () => {
+	it("3. [Negative Stock Protection & Mandate 8n] permits soft negative stock overdraft with 200 OK, never blocks doctor care", async () => {
 		const app = await buildTestApp();
 		const headers = createStaffHeaders(orgId, userId);
 		const itemId = fixtureUuid(FIXTURE, 10);
 
 		// Current stock is 13 units.
-		// Attempting to deduct 20 units with allowOverdraft: false must return 409 Conflict!
+		// Deducting 20 units under Mandate 8n (Soft Negative Stock) must succeed with 200 OK,
+		// recording deficit/overdraft in back-office without blocking doctor!
 		const failRes = await app.inject({
 			method: "POST",
 			url: `/api/warehouse/${orgId}/deduct`,
@@ -258,21 +259,18 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 			},
 		});
 
-		assert.equal(failRes.statusCode, 409, "Must reject deduction with 409 Conflict when overdraft is not allowed");
+		assert.equal(failRes.statusCode, 200, "Mandate 8n: Must complete with 200 OK without blocking doctor care");
 		const failBody = JSON.parse(failRes.payload);
-		assert.equal(failBody.success, false);
-		assert.equal(failBody.code, "INSUFFICIENT_STOCK");
-		assert.equal(failBody.availableStock, 13);
-		assert.equal(failBody.requiredStock, 20);
-		assert.equal(failBody.deficitQty, 7);
+		assert.equal(failBody.success, true);
+		assert.equal(failBody.hasOverdraft, true, "Must flag overdraft for silent back-office fulfillment");
 
-		// Stock in DB must remain unchanged at 13
+		// Stock in DB must decrement to 13 - 20 = -7
 		await withFixtureTenant(orgId, async (tx) => {
 			const [item] = await tx.select().from(inventoryItems).where(eq(inventoryItems.id, itemId));
-			assert.equal(Number(item!.stockQuantity), 13);
+			assert.equal(Number(item!.stockQuantity), -7, "Overdrafted stock must decrement to -7");
 		});
 
-		// Now deduct with explicit allowOverdraft: true -> must succeed with 200 OK
+		// Now deduct with explicit allowOverdraft: true -> must also succeed with 200 OK
 		const successRes = await app.inject({
 			method: "POST",
 			url: `/api/warehouse/${orgId}/deduct`,
@@ -293,10 +291,10 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 		assert.equal(successBody.success, true);
 		assert.equal(successBody.hasOverdraft, true);
 
-		// Stock in DB must now be 13 - 15 = -2
+		// Stock in DB must now be -7 - 15 = -22
 		await withFixtureTenant(orgId, async (tx) => {
 			const [item] = await tx.select().from(inventoryItems).where(eq(inventoryItems.id, itemId));
-			assert.equal(Number(item!.stockQuantity), -2, "Overdrafted stock must decrement to -2");
+			assert.equal(Number(item!.stockQuantity), -22, "Overdrafted stock must decrement to -22");
 
 			const overdraftTx = await tx
 				.select()
@@ -365,21 +363,23 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 			assert.equal(Number(item!.stockQuantity), 0);
 		});
 
-		// A 6th deduction without overdraft MUST fail with InsufficientStockError
-		await assert.rejects(
-			async () => {
-				await withFixtureTenant(orgId, async (tx) => {
-					await fefoStockService.deductFefo(tx, {
-						organizationId: orgId,
-						inventoryItemId: raceItemId,
-						requiredQty: 1,
-						allowOverdraft: false,
-					});
-				});
-			},
-			(err: any) => err.code === "INSUFFICIENT_STOCK" || err.name === "InsufficientStockError",
-			"6th deduction on exhausted stock must throw InsufficientStockError",
-		);
+		// Mandate 8n (Soft Negative Stock): A 6th deduction on exhausted stock must succeed with overdraft status
+		await withFixtureTenant(orgId, async (tx) => {
+			const r6 = await fefoStockService.deductFefo(tx, {
+				organizationId: orgId,
+				inventoryItemId: raceItemId,
+				requiredQty: 1,
+				allowOverdraft: false,
+			});
+			assert.equal(r6.deductedQty, 1, "Must deduct requested quantity");
+			assert.equal(r6.isOverdraft, true, "Exhausted stock deduction must record overdraft");
+			assert.equal(r6.deficitQty, 1, "Deficit must be exactly 1 unit");
+		});
+
+		await withFixtureTenant(orgId, async (tx) => {
+			const [item] = await tx.select().from(inventoryItems).where(eq(inventoryItems.id, raceItemId));
+			assert.equal(Number(item!.stockQuantity), -1, "Exhausted stock must decrement to -1 without blocking care");
+		});
 	});
 
 	it("5. [Multi-Tender POS Split] validates kopeck precision across Cash, Card, SBP, Deposit, Insurance", () => {

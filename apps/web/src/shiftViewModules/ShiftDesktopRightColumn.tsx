@@ -3,25 +3,21 @@ import {
 	DoctorShiftCashSection,
 	ShiftTodoListSection,
 } from "../components/shift";
-import type { ShiftFinancialMode } from "./shiftViewTypes";
+import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats } from "./shiftViewTypes";
 
 export interface ShiftDesktopRightColumnProps {
 	shiftFinancialMode: ShiftFinancialMode;
 	activeDoctorFullName: string;
 	clinicName?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: stats
-	shiftStats: any;
+	shiftStats: ShiftViewStats;
 	chairRentalActTrigger: number;
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
 	setIsShiftCloseModalOpen: (open: boolean) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: actions
-	visibleRecommendedActions?: any[] | undefined;
+	visibleRecommendedActions?: readonly unknown[] | undefined;
 	recommendedActionPriorityLabels?: Record<string, string> | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: patients
-	patientsById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: action
-	runRecommendedAction: (action: any) => void;
+	patientsById: Map<string, unknown>;
+	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
 	userRole?: string | undefined;
 }
 

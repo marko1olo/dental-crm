@@ -2,7 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import type { Dashboard } from "@dental/shared";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../lib/safeLocalStorage";
 import { staffTelemetryService } from "./../services/logging/staffTelemetryService";
-import type { ShiftFinancialMode } from "./shiftViewTypes";
+import {
+	type ShiftCloseSummary,
+	type ShiftFinancialMode,
+	type ShiftRecommendedAction,
+	type ShiftViewStats,
+	getDashboardRuntimeMeta,
+} from "./shiftViewTypes";
+import { getAppointmentDoctorId } from "../store/telephonyModules/telephonyClinicalVisitResolvers";
 import { useShiftFinancialModeState } from "./useShiftFinancialModeState";
 
 export const DEFAULT_MAX_SHIFT_DURATION_HOURS = 12;
@@ -11,14 +18,10 @@ export const SHIFT_START_TIME_KEY = "dente_doctor_shift_start_time";
 
 export interface UseShiftViewControllerOptions {
 	dashboard?: Dashboard;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	inChairAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	staffById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	shiftStats: any;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	patientsById: Map<string, any>;
+	inChairAppointment: unknown;
+	staffById: Map<string, unknown>;
+	shiftStats: ShiftViewStats;
+	patientsById: Map<string, unknown>;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
 	maxShiftDurationMs?: number;
 }
@@ -33,11 +36,17 @@ export function useShiftViewController({
 	const fin = useShiftFinancialModeState();
 
 	const activeDoctorFullName = useMemo(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: runtime prop
-		const dashAny = dashboard as any;
-		if (dashAny?.activeDoctor?.fullName) return dashAny.activeDoctor.fullName;
-		const docId = String((inChairAppointment as any)?.doctorId || (inChairAppointment as any)?.doctorUserId || "");
-		return (docId && staffById.has(docId)) ? (staffById.get(docId)?.fullName || "Лечащий врач") : "Лечащий врач";
+		const meta = getDashboardRuntimeMeta(dashboard);
+		if (meta?.activeDoctor?.fullName) return meta.activeDoctor.fullName;
+		const docId = getAppointmentDoctorId(inChairAppointment) || "";
+		if (docId && staffById.has(docId)) {
+			const staffMember = staffById.get(docId);
+			if (typeof staffMember === "object" && staffMember && "fullName" in staffMember) {
+				const name = (staffMember as { fullName?: unknown }).fullName;
+				if (typeof name === "string" && name.trim()) return name.trim();
+			}
+		}
+		return "Лечащий врач";
 	}, [dashboard, inChairAppointment, staffById]);
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
@@ -51,9 +60,8 @@ export function useShiftViewController({
 			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
 			safeLocalStorageRemoveItem(SHIFT_START_TIME_KEY);
 		} catch {}
-		// biome-ignore lint/suspicious/noExplicitAny: runtime prop
-		const dashAny = dashboard as any;
-		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName, {
+		const meta = getDashboardRuntimeMeta(dashboard);
+		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", meta?.activeAppointment?.doctorId, meta?.activeAppointment?.doctorName, {
 			totalAppointments: shiftStats?.totalAppointments ?? 0,
 			completedCount: shiftStats?.completedCount ?? 0,
 			totalRevenueRub: shiftStats?.totalRevenueRub ?? 0,
@@ -67,7 +75,7 @@ export function useShiftViewController({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					force: true,
-					closedByUserId: dashAny?.activeAppointment?.doctorId,
+					closedByUserId: meta?.activeAppointment?.doctorId,
 					autoClosedByTimeout: true,
 					reason,
 				}),
@@ -145,33 +153,30 @@ export function useShiftViewController({
 				safeLocalStorageSetItem("dente_doctor_shift_active", "true");
 				safeLocalStorageSetItem(SHIFT_START_TIME_KEY, String(now));
 			} catch {}
-			// biome-ignore lint/suspicious/noExplicitAny: runtime prop
-			const dashAny = dashboard as any;
-			staffTelemetryService.logShiftOpen("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName);
+			const meta = getDashboardRuntimeMeta(dashboard);
+			staffTelemetryService.logShiftOpen("SHIFT-ACTIVE", meta?.activeAppointment?.doctorId, meta?.activeAppointment?.doctorName);
 			try {
 				await fetch("/api/fiscal/shift/open", {
 					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ openedByUserId: dashAny?.activeAppointment?.doctorId }),
+					body: JSON.stringify({ openedByUserId: meta?.activeAppointment?.doctorId }),
 				});
 			} catch {}
 		}
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: close shift summary
-	const handleConfirmCloseShift = async (summary?: any) => {
+	const handleConfirmCloseShift = async (summary?: ShiftCloseSummary) => {
 		setIsShiftOpen(false);
 		setIsShiftCloseModalOpen(false);
 		try {
 			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
 			safeLocalStorageRemoveItem(SHIFT_START_TIME_KEY);
 		} catch {}
-		// biome-ignore lint/suspicious/noExplicitAny: runtime prop
-		const dashAny = dashboard as any;
-		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", dashAny?.activeAppointment?.doctorId, dashAny?.activeAppointment?.doctorName, {
+		const meta = getDashboardRuntimeMeta(dashboard);
+		staffTelemetryService.logShiftClose("SHIFT-ACTIVE", meta?.activeAppointment?.doctorId, meta?.activeAppointment?.doctorName, {
 			totalAppointments: shiftStats.totalAppointments,
 			completedCount: shiftStats.completedCount,
 			totalRevenueRub: shiftStats.totalRevenueRub,
-			estimatedDoctorPayoutRub: summary?.calculatedPayoutRub ?? shiftStats.estimatedDoctorPayoutRub,
+			estimatedDoctorPayoutRub: summary?.calculatedPayoutRub ?? shiftStats.estimatedDoctorPayoutRub ?? 0,
 			countedCashRub: summary?.countedCashRub,
 		});
 		try {
@@ -180,7 +185,7 @@ export function useShiftViewController({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					force: true,
-					closedByUserId: dashAny?.activeAppointment?.doctorId,
+					closedByUserId: meta?.activeAppointment?.doctorId,
 					countedCashRub: summary?.countedCashRub,
 					printZReport: summary?.printZReport,
 					incomeCashRub: shiftStats?.cashBreakdown?.cashRub,
@@ -193,7 +198,7 @@ export function useShiftViewController({
 		} catch {}
 	};
 
-	function runRecommendedAction(action: any) {
+	function runRecommendedAction(action: ShiftRecommendedAction | null | undefined) {
 		if (action?.patientId && action.patientId !== "00000000-0000-0000-0000-000000000000" && patientsById.has(action.patientId)) {
 			setSelectedPatientId?.(action.patientId);
 		}

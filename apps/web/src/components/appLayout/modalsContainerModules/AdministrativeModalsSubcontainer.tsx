@@ -54,8 +54,8 @@ export function AdministrativeModalsSubcontainer({
 						onClose={() => setIsGlobalLoyaltyOpen?.(false)}
 						patientId={loyaltyModalContext.patientId}
 						patientName={loyaltyModalContext.patientName || "Пациент"}
-						initialPointsBalance={loyaltyModalContext.initialPointsBalance}
-						currentInvoiceAmountKop={loyaltyModalContext.currentInvoiceAmountKop}
+						initialPointsBalance={loyaltyModalContext.initialPointsBalance ?? 0}
+						currentInvoiceAmountKop={loyaltyModalContext.currentInvoiceAmountKop ?? 0}
 						medicalCardNumber={loyaltyModalContext.medicalCardNumber || ""}
 					/>
 				</React.Suspense>

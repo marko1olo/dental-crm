@@ -6,7 +6,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { inventoryItems } from "../../../db/schema.js";
-import { fefoStockService } from "../../../services/inventory/fefoStockService.js";
+import { fefoStockService, type FefoDeductionResult } from "../../../services/inventory/fefoStockService.js";
 import type { inventoryDeductItemSchema } from "../types.js";
 import type { DatabaseTransaction } from "./writeOffTypes.js";
 
@@ -24,9 +24,9 @@ export interface FefoBatchDeductionParams {
 export async function executeFefoBatchDeduction(
 	tx: DatabaseTransaction,
 	params: FefoBatchDeductionParams,
-): Promise<Array<any>> {
+): Promise<Array<FefoDeductionResult>> {
 	const { organizationId, items, commonReason, visitId, allowOverdraftDefault = true, effectiveUserId } = params;
-	const results: Array<any> = [];
+	const results: Array<FefoDeductionResult> = [];
 
 	for (const item of items) {
 		let itemId = item.inventoryItemId || item.id;

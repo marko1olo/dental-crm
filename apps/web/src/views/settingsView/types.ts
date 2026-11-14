@@ -89,10 +89,17 @@ export interface SettingsClinicGeneralTabProps {
 	settingsTab?: string;
 }
 
+export interface SettingsSecuritySettingsProps {
+	readonly adminSecretScopeWarning?: React.ReactNode;
+	readonly telegramAdminSecretDraft?: string;
+	readonly adminSecretReady?: boolean;
+	readonly [key: string]: unknown;
+}
+
 export interface SettingsSecurityAndBackupTabProps {
-	settingsProps: Record<string, unknown>;
-	telegramAdminSecretSession?: boolean;
-	setTelegramAdminSecretDraft?: (value: string) => void;
-	unlockTelegramAdminSession?: () => void;
-	lockTelegramAdminSession?: () => void;
+	settingsProps: SettingsSecuritySettingsProps;
+	telegramAdminSecretSession?: boolean | undefined;
+	setTelegramAdminSecretDraft?: ((value: string) => void) | undefined;
+	unlockTelegramAdminSession?: (() => void) | undefined;
+	lockTelegramAdminSession?: (() => void) | undefined;
 }

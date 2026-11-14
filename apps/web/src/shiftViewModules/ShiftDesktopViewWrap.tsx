@@ -1,9 +1,10 @@
 import React from "react";
 import type { Dashboard } from "@dental/shared";
+import type { useDoctorShiftData } from "../components/shift";
 import { ShiftDesktopCockpitGrid } from "./ShiftDesktopCockpitGrid";
 import { ShiftSecondaryAccordion } from "./ShiftSecondaryAccordion";
 import { ShiftViewMetricsHeader } from "./ShiftViewMetricsHeader";
-import type { ShiftFinancialMode } from "./shiftViewTypes";
+import type { ShiftFinancialMode, ShiftRecommendedAction } from "./shiftViewTypes";
 
 export interface ShiftDesktopViewWrapProps {
 	dashboard?: Dashboard;
@@ -13,16 +14,14 @@ export interface ShiftDesktopViewWrapProps {
 	handleToggleShift: () => void;
 	setIsPayrollModalOpen: (open: boolean) => void;
 	setIsTimesheetT13ModalOpen?: ((open: boolean) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	shiftData: any;
+	shiftData: ReturnType<typeof useDoctorShiftData>;
 	shiftFinancialMode: ShiftFinancialMode;
 	handleChangeFinancialMode: (mode: ShiftFinancialMode) => void;
 	chairRentalNetIncomeRub: number;
 	chairRentalRentExpenseRub: number;
 	setChairRentalActTrigger: React.Dispatch<React.SetStateAction<number>>;
 	chairRentalActTrigger: number;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	visibleRecommendedActions?: any[];
+	visibleRecommendedActions?: readonly unknown[];
 	recommendedActionPriorityLabels?: Record<string, string>;
 	setSelectedPatientId?: (id: string | null) => void;
 	setError?: (err: unknown) => void;
@@ -30,8 +29,7 @@ export interface ShiftDesktopViewWrapProps {
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	setChairRentalNetIncomeRub: (val: number) => void;
 	setChairRentalRentExpenseRub: (val: number) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: generic
-	runRecommendedAction: (action: any) => void;
+	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
 	mostLoadedResource?: string;
 	activeQueueRole?: string;
 	staffRoleLabels?: Record<string, string>;
@@ -57,7 +55,7 @@ export const ShiftDesktopViewWrap: React.FC<ShiftDesktopViewWrapProps> = (p) => 
 		/>
 
 		<ShiftDesktopCockpitGrid
-			dashboard={p.dashboard as any}
+			dashboard={p.dashboard}
 			activeDoctorFullName={p.activeDoctorFullName}
 			inChairAppointment={p.shiftData.inChairAppointment}
 			currentPatient={p.shiftData.currentPatient}
@@ -91,7 +89,7 @@ export const ShiftDesktopViewWrap: React.FC<ShiftDesktopViewWrapProps> = (p) => 
 		/>
 
 		<ShiftSecondaryAccordion
-			dashboard={p.dashboard as any}
+			dashboard={p.dashboard}
 			mostLoadedResource={p.mostLoadedResource}
 			activeQueueRole={p.activeQueueRole}
 			rolesWorthShowing={p.shiftData.rolesWorthShowing}

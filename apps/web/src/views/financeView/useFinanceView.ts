@@ -1,4 +1,4 @@
-import type { Dashboard, Payment, PaymentMethod } from "@dental/shared";
+import type { Dashboard, Patient, Payment, PaymentMethod } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { money as formatMoney } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -13,36 +13,48 @@ import { useFinanceModalsNavigation } from "./hooks/useFinanceModalsNavigation.j
 import { useFinanceCashShift } from "./hooks/useFinanceCashShift.js";
 import { useFinanceTransactionsData } from "./hooks/useFinanceTransactionsData.js";
 
-export function resolveEffectiveBillingSummary({ pendingCheckout, billingSummary }: { pendingCheckout?: PendingCheckout | null | undefined; billingSummary?: any }) {
+export function resolveEffectiveBillingSummary({ pendingCheckout, billingSummary }: { pendingCheckout?: PendingCheckout | null | undefined; billingSummary?: Partial<NonNullable<Dashboard["billingSummary"]>> | null | undefined }): Dashboard["billingSummary"] | null {
 	if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
 		return {
 			totalDueRub: pendingCheckout.totalDueRub,
 			totalPlannedRub: pendingCheckout.totalDueRub + (billingSummary?.totalPaidRub ?? 0),
 			totalPaidRub: billingSummary?.totalPaidRub ?? 0,
-			totalInvoicedRub: pendingCheckout.totalDueRub,
+			totalDiscountRub: billingSummary?.totalDiscountRub ?? 0,
+			draftDocumentAmountRub: billingSummary?.draftDocumentAmountRub ?? 0,
+			insuranceCoverageRub: billingSummary?.insuranceCoverageRub ?? 0,
 			taxDeductionEligibleRub: billingSummary?.taxDeductionEligibleRub || pendingCheckout.totalDueRub,
 			openTreatmentItems: (pendingCheckout.services || []).length || 1,
 			unpaidDocuments: 1,
-			unpaidInvoicesCount: 1,
 		};
 	}
-	return billingSummary ?? null;
+	if (!billingSummary) return null;
+	return {
+		totalDueRub: billingSummary.totalDueRub ?? 0,
+		totalPaidRub: billingSummary.totalPaidRub ?? 0,
+		totalPlannedRub: billingSummary.totalPlannedRub ?? 0,
+		totalDiscountRub: billingSummary.totalDiscountRub ?? 0,
+		draftDocumentAmountRub: billingSummary.draftDocumentAmountRub ?? 0,
+		insuranceCoverageRub: billingSummary.insuranceCoverageRub ?? 0,
+		taxDeductionEligibleRub: billingSummary.taxDeductionEligibleRub ?? 0,
+		openTreatmentItems: billingSummary.openTreatmentItems ?? 0,
+		unpaidDocuments: billingSummary.unpaidDocuments ?? 0,
+	};
 }
 
-export function resolveEffectivePatient({ pendingCheckout, dashboard, documentPatient, activePatient, selectedPatientId }: { pendingCheckout?: PendingCheckout | null | undefined; dashboard?: any; documentPatient?: any; activePatient?: any; selectedPatientId?: string | null | undefined }) {
+export function resolveEffectivePatient({ pendingCheckout, dashboard, documentPatient, activePatient, selectedPatientId }: { pendingCheckout?: PendingCheckout | null | undefined; dashboard?: Dashboard | null | undefined; documentPatient?: Partial<Patient> | { id: string; fullName: string; [key: string]: unknown } | null | undefined; activePatient?: Partial<Patient> | { id: string; fullName: string; [key: string]: unknown } | null | undefined; selectedPatientId?: string | null | undefined }): Patient | null {
 	if (pendingCheckout?.patientId) {
-		const found = dashboard?.patients?.find((p: any) => p.id === pendingCheckout.patientId);
+		const found = dashboard?.patients?.find((p) => p.id === pendingCheckout.patientId);
 		if (found) return found;
-		if (documentPatient?.id === pendingCheckout.patientId) return documentPatient;
-		return { id: pendingCheckout.patientId, fullName: pendingCheckout.patientName || "Пациент", name: pendingCheckout.patientName || "Пациент", phone: (pendingCheckout as any).patientPhone };
+		if (documentPatient?.id === pendingCheckout.patientId) return documentPatient as Patient;
+		return { id: pendingCheckout.patientId, fullName: pendingCheckout.patientName || "Пациент", phone: pendingCheckout.patientPhone || "" } as unknown as Patient;
 	}
-	if (documentPatient) return documentPatient;
-	if (activePatient) return activePatient;
+	if (documentPatient) return documentPatient as Patient;
+	if (activePatient) return activePatient as Patient;
 	if (selectedPatientId && dashboard?.patients) {
-		const found = dashboard.patients.find((p: any) => p.id === selectedPatientId);
+		const found = dashboard.patients.find((p) => p.id === selectedPatientId);
 		if (found) return found;
 	}
-	return (dashboard as any)?.patient ?? (dashboard?.patients?.[0] ?? null);
+	return dashboard?.patients?.[0] ?? null;
 }
 
 /**
@@ -56,17 +68,17 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		activePayments = (props.activePayments ?? props.dashboard?.payments ?? []) as Payment[],
 		activeTreatmentPlanItems = (props.activeTreatmentPlanItems ?? props.dashboard?.treatmentPlanItems ?? []) as TreatmentPlanItem[],
 		activeTreatmentPlanScenarios = (props.activeTreatmentPlanScenarios ?? props.dashboard?.treatmentPlanScenarios ?? []) as TreatmentPlanScenario[],
-		billingSummary = props.billingSummary ?? (props as any).patientBillingSummary ?? null,
-		clinicalRuleEvaluations = props.clinicalRuleEvaluations ?? (props as any).patientClinicalRuleEvaluations ?? [],
+		billingSummary = props.billingSummary ?? props.patientBillingSummary ?? null,
+		clinicalRuleEvaluations = props.clinicalRuleEvaluations ?? props.patientClinicalRuleEvaluations ?? [],
 		clinicalRuleActionLabels = props.clinicalRuleActionLabels ?? noLabels(),
 		clinicalRuleSeverityLabels = props.clinicalRuleSeverityLabels ?? noLabels(),
-		clinicalRuleSummary = props.clinicalRuleSummary ?? (props as any).patientClinicalRuleSummary ?? EMPTY_CLINICAL_RULE_SUMMARY,
+		clinicalRuleSummary = props.clinicalRuleSummary ?? props.patientClinicalRuleSummary ?? EMPTY_CLINICAL_RULE_SUMMARY,
 		dashboard = props.dashboard,
 		documentPatient = props.documentPatient ?? null,
 		formatDateTime = props.formatDateTime ?? ((val: string) => val || ""),
 		isPaymentSaving = props.isPaymentSaving ?? false,
 		money = props.money ?? formatMoney,
-		onRecordPayment = props.onRecordPayment ?? (props as any).recordPayment ?? (() => {}),
+		onRecordPayment = props.onRecordPayment ?? props.recordPayment ?? (() => {}),
 		paymentAmount = props.paymentAmount ?? "",
 	} = props;
 
@@ -114,8 +126,8 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 				pendingCheckout,
 				dashboard,
 				documentPatient,
-				activePatient: (props as any).activePatient || logicContext?.activePatient,
-				selectedPatientId: (props as any).selectedPatientId || logicContext?.selectedPatientId,
+				activePatient: props.activePatient || logicContext?.activePatient,
+				selectedPatientId: props.selectedPatientId || logicContext?.selectedPatientId,
 			}),
 		[documentPatient, pendingCheckout, props, logicContext, dashboard],
 	);
@@ -128,14 +140,24 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!res.ok) return;
-				const data = await res.json();
+				const data = (await res.json()) as {
+					invoices?: Array<{
+						id: string;
+						patientId: string;
+						patientName?: string;
+						visitId?: string | null;
+						invoiceNumber?: string;
+						number?: string;
+						totalAmountRub: number;
+					}>;
+				};
 				if (!isMounted) return;
 				const invoices = Array.isArray(data.invoices) ? data.invoices : [];
 				if (invoices.length === 0) return;
 
 				const targetPatientId = effectivePatient?.id;
 				const matchedInvoice = targetPatientId
-					? invoices.find((inv: any) => inv.patientId === targetPatientId)
+					? invoices.find((inv) => inv.patientId === targetPatientId)
 					: invoices[0];
 
 				if (matchedInvoice) {
@@ -211,7 +233,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 
 	useEffect(() => {
 		if (effectivePatient?.id && logicContext?.selectedPatientId !== effectivePatient.id) {
-			((props as any).setSelectedPatientId ?? logicContext?.setSelectedPatientId)?.(effectivePatient.id);
+			(props.setSelectedPatientId ?? logicContext?.setSelectedPatientId)?.(effectivePatient.id);
 		}
 	}, [effectivePatient, logicContext, props]);
 
@@ -297,7 +319,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		loadDashboard,
 		money,
 		onGoToDocuments: props.onGoToDocuments ?? (() => { window.location.hash = "documents"; }),
-		onGoToPrices: props.onGoToPrices ?? (() => { (props as any).setSettingsTab?.("prices"); window.location.hash = "settings/prices"; }),
+		onGoToPrices: props.onGoToPrices ?? (() => { props.setSettingsTab?.("prices"); window.location.hash = "settings/prices"; }),
 		onGoToVisit: props.onGoToVisit ?? (() => { window.location.hash = "visit"; }),
 		onRecordPayment: handleRecordPayment,
 		paymentAmount: effectivePaymentAmount,
@@ -307,7 +329,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		paymentFiscalFn: props.paymentFiscalFn ?? "",
 		paymentFiscalFpd: props.paymentFiscalFpd ?? "",
 		paymentFiscalReceiptIssuedAt: props.paymentFiscalReceiptIssuedAt ?? "",
-		paymentFiscalReceiptLabel: props.paymentFiscalReceiptLabel ?? (props as any).paymentFiscalReceiptLabelForUi ?? (() => ""),
+		paymentFiscalReceiptLabel: props.paymentFiscalReceiptLabel ?? props.paymentFiscalReceiptLabelForUi ?? (() => ""),
 		paymentFiscalReceiptNumber: props.paymentFiscalReceiptNumber ?? "",
 		paymentFiscalReceiptUrl: props.paymentFiscalReceiptUrl ?? "",
 		paymentMethod: props.paymentMethod ?? "cash",
@@ -356,3 +378,5 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		treatmentStatusLabels: props.treatmentStatusLabels ?? noLabels(),
 	};
 }
+
+export type FinanceViewState = ReturnType<typeof useFinanceView>;

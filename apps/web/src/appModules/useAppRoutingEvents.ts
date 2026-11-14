@@ -47,7 +47,6 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["sbp"])) st.setIsSbpDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["receipt"])) st.setIsReceiptDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["recalls", "prophylaxis", "preventive"])) st.setIsRecallsHubOpen(true);
-			if (hasLocationToken(s, h, ["implants", "implant_passport", "implant-passport"])) st.setIsImplantPassportDirectOpen(true);
 			if (hasLocationToken(s, h, ["warranty-passport", "warranty_passport", "warranty-studio", "warranty=1", "warranty=true"])) st.setIsWarrantyPassportOpen(true);
 			if (hasLocationToken(s, h, ["ortho-photo", "orthodontic-photo"])) st.setIsOrthoPhotoDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["tooth-drawer", "tooth-card"])) st.setIsToothDrawerDirectModalOpen(true);
@@ -109,12 +108,52 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente-open-loyalty", () => stateRef.current.setIsLoyaltyProgramOpen(true));
 		window.addEventListener("dente:open-loyalty", () => stateRef.current.setIsLoyaltyProgramOpen(true));
 		window.addEventListener("dente-open-loyalty-program", () => stateRef.current.setIsLoyaltyProgramOpen(true));
-		window.addEventListener("dente-open-fast-checkout", () => stateRef.current.setIsFastCheckoutDirectOpen(true));
-		window.addEventListener("dente:open-fast-checkout", () => stateRef.current.setIsFastCheckoutDirectOpen(true));
-		window.addEventListener("dente-open-zreport", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
-		window.addEventListener("dente:open-zreport", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
-		window.addEventListener("dente-open-shift-close", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
-		window.addEventListener("dente:open-shift-close", () => stateRef.current.setIsShiftCloseZReportDirectOpen(true));
+		window.addEventListener("dente-open-fast-checkout", (e: Event) => {
+			const d = (e as CustomEvent<{ amountRub?: number; amountKopecks?: number }>).detail;
+			if (typeof d?.amountRub === "number") {
+				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountRub);
+			} else if (typeof d?.amountKopecks === "number") {
+				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountKopecks / 100);
+			}
+			stateRef.current.setIsFastCheckoutDirectOpen(true);
+		});
+		window.addEventListener("dente:open-fast-checkout", (e: Event) => {
+			const d = (e as CustomEvent<{ amountRub?: number; amountKopecks?: number }>).detail;
+			if (typeof d?.amountRub === "number") {
+				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountRub);
+			} else if (typeof d?.amountKopecks === "number") {
+				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountKopecks / 100);
+			}
+			stateRef.current.setIsFastCheckoutDirectOpen(true);
+		});
+		window.addEventListener("dente-open-zreport", (e: Event) => {
+			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
+			if (typeof d?.shiftNumber === "number") {
+				stateRef.current.setShiftNumber?.(d.shiftNumber);
+			}
+			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
+		});
+		window.addEventListener("dente:open-zreport", (e: Event) => {
+			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
+			if (typeof d?.shiftNumber === "number") {
+				stateRef.current.setShiftNumber?.(d.shiftNumber);
+			}
+			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
+		});
+		window.addEventListener("dente-open-shift-close", (e: Event) => {
+			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
+			if (typeof d?.shiftNumber === "number") {
+				stateRef.current.setShiftNumber?.(d.shiftNumber);
+			}
+			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
+		});
+		window.addEventListener("dente:open-shift-close", (e: Event) => {
+			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
+			if (typeof d?.shiftNumber === "number") {
+				stateRef.current.setShiftNumber?.(d.shiftNumber);
+			}
+			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
+		});
 		return () => {
 			window.removeEventListener("dente:open-prescriptions", onRx);
 			window.removeEventListener("dente-open-medical-card", onEmrCard);

@@ -11,13 +11,3 @@ export {
 } from "./warehouseSchemas.js";
 
 export { executeQuickCarpuleDisposal } from "./quickCarpuleDisposal.js";
-export { executeSoftOverdraftDeduct } from "./softOverdraftDeduct.js";
-export {
-	executeWarehouseDeductBatch,
-	executeWarehouseDeductSingleItem,
-	handleWarehouseDeductRequest,
-} from "./warehouseDeductHandlers.js";
-export {
-	executeWarehouseDeductVisit,
-	handleWarehouseDeductVisitRequest,
-} from "./warehouseDeductVisitHandler.js";

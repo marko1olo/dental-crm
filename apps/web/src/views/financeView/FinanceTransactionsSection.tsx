@@ -2,9 +2,10 @@ import React from "react";
 import { FamilyWalletPanel } from "../../components/finance/FamilyWalletPanel";
 import { ServiceCatalogStrip } from "../../FinancePlanning";
 import { FinanceTransactionsTable } from "./FinanceTransactionsTable";
+import type { FinanceViewState } from "./useFinanceView";
 
 export interface FinanceTransactionsSectionProps {
-	readonly s: any;
+	readonly s: FinanceViewState;
 }
 
 export function FinanceTransactionsSection({ s }: FinanceTransactionsSectionProps): React.JSX.Element {

@@ -8,7 +8,6 @@ import { AppLoadingState } from "../../../../../AppBootState";
 import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
 import { isPatientPresentationRoute } from "../../../../photography/presentationSyncProtocol";
 import { OrthopedicsChairsidePanel } from "../../../../orthopedics/OrthopedicsChairsidePanel";
-import { DentalLabStudioModal } from "../../../../lab/DentalLabStudioModal";
 
 const PatientPresentationStandaloneView = lazyWithRetry(() =>
 	import("../../../../photography/PatientPresentationStandaloneView").then((m) => ({
@@ -21,41 +20,6 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 
 	const search = window.location.search || "";
 	const hash = window.location.hash || "";
-
-	if (
-		search.includes("standalone=dental_lab_hub") ||
-		search.includes("standalone=lab_hub") ||
-		hash.includes("dental_lab_hub") ||
-		hash.includes("lab_hub")
-	) {
-		return (
-			<DentalLabStudioModal
-				isOpen={true}
-				onClose={() => {
-					window.location.hash = "";
-				}}
-			/>
-		);
-	}
-
-	if (
-		search.includes("standalone=dental_lab") ||
-		search.includes("standalone=lab_order") ||
-		hash.includes("dental_lab") ||
-		hash.includes("lab_order")
-	) {
-		return (
-			<DentalLabStudioModal
-				isOpen={true}
-				onClose={() => {
-					window.location.hash = "";
-				}}
-				patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
-				doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
-				initialToothFdi={isDemoShowcaseMode() ? "16" : undefined}
-			/>
-		);
-	}
 
 	if (search.includes("standalone=orthopedics") || hash.includes("orthopedics")) {
 		return (

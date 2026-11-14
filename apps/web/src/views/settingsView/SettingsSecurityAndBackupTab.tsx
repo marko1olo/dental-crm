@@ -32,19 +32,21 @@ export function SettingsSecurityAndBackupTab({
 					изменений профиля, команды, кресел, источников, импорта и
 					аудита. В браузере он не сохраняется.
 				</p>
-				<p>{settingsProps.adminSecretScopeWarning}</p>
+				{settingsProps.adminSecretScopeWarning ? (
+					<p>{settingsProps.adminSecretScopeWarning}</p>
+				) : null}
 				<div className="telegram-link-controls">
 					<label>
 						Секрет администратора клиники для настроек
 						<input
 							type="password"
 							autoComplete="current-password"
-							value={settingsProps.telegramAdminSecretDraft ?? ""}
+							value={typeof settingsProps.telegramAdminSecretDraft === "string" ? settingsProps.telegramAdminSecretDraft : ""}
 							onChange={(event) => {
 								setTelegramAdminSecretDraft?.(event.target.value);
 							}}
 							onKeyDown={(event) => {
-								if (event.key === "Enter" && settingsProps.adminSecretReady) {
+								if (event.key === "Enter" && Boolean(settingsProps.adminSecretReady)) {
 									event.preventDefault();
 									unlockTelegramAdminSession?.();
 								}

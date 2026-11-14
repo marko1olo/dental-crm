@@ -28,7 +28,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		logic as { activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null>; reopenOnboarding?: () => void; setSettingsTab?: (tab: string) => void; settingsTab?: string; settingsTabs?: SettingsTabItem[] };
 	const settingsProps = buildSettingsProps(logic, settingsStore, derivations, activeStaffUser);
 	const [roleMode, setRoleMode] = useState<SettingsRoleMode>("all");
-	useSettingsRoleModeSync(settingsTab, roleMode, setRoleMode);
+	const effectiveSettingsTab = settingsTab || "clinic";
+	useSettingsRoleModeSync(effectiveSettingsTab, roleMode, setRoleMode);
 
 	const flags = useWorkspaceProfile();
 	let typedSettingsTabs = (Array.isArray(rawSettingsTabs) && rawSettingsTabs.length > 0 ? rawSettingsTabs : settingsTabs) as Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }>;
@@ -57,7 +58,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		<SettingsDesktopLayout
 			roleMode={roleMode} setRoleMode={setRoleMode} selectSettingsTab={selectSettingsTab}
 			reopenOnboarding={reopenOnboarding} activeStaffUser={activeStaffUser} settingsProps={settingsProps}
-			settingsTab={settingsTab} appLogic={appLogic} logic={logic} flags={flags}
+			settingsTab={effectiveSettingsTab} appLogic={appLogic} logic={logic} flags={flags}
 			typedSettingsTabs={typedSettingsTabs} handleSettingsTabKeyDown={handleSettingsTabKeyDown}
 			activeSettingsTabButtonRef={activeSettingsTabButtonRef}
 		/>

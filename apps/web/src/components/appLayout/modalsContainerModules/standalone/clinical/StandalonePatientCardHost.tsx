@@ -14,7 +14,7 @@ import { isDemoShowcaseMode } from "../../../../../lib/demoMode.js";
 
 export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
-	const effectivePatientId = patientId || DEMO_SHOWCASE_MODAL_PATIENT.id;
+	const effectivePatientId: string = patientId || DEMO_SHOWCASE_MODAL_PATIENT.id || "00000000-0000-0000-0000-000000000001";
 	const launcherPatientName = useLauncherPatientName(effectivePatientId);
 
 	const fallbackName = DEMO_SHOWCASE_MODAL_PATIENT.fullName;

@@ -2,10 +2,10 @@ import React from "react";
 import { Calendar, Info, Phone } from "lucide-react";
 import { formatBirthDate, formatPhoneDisplay } from "../AppHelpers";
 import { PatientAvatar } from "../components/PatientAvatar";
+import type { CockpitPatient } from "./shiftViewTypes";
 
 export interface PatientCockpitInfoCardProps {
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	readonly activePatient: any;
+	readonly activePatient: CockpitPatient;
 }
 
 export const PatientCockpitInfoCard: React.FC<PatientCockpitInfoCardProps> = ({ activePatient }) => (

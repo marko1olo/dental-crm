@@ -57,7 +57,7 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 			<div className="hidden md:block">
 				<EmkPerioSection
 					visitNoteForm={diaryForm as any}
-					updateVisitNoteField={(f, v) => setDiaryForm((p) => ({ ...p, [f]: v }))}
+					updateVisitNoteField={(f, v) => setDiaryForm((p) => ({ ...p, [f]: String(v ?? "") }))}
 					patientId={patientId}
 					patientName={patientName}
 					activeTooth={16}

@@ -14,7 +14,6 @@ import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 import {
 	StandaloneCtSelectorHost,
-	StandaloneImplantPassportHost,
 	StandaloneRvgHost,
 } from "./StandaloneImplantologyHosts";
 
@@ -31,14 +30,6 @@ const CbctMprImplantStudioModal = lazyWithRetry(() =>
 export function renderImplantologyLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
 	const { isCbctTunerOpen, setIsCbctTunerOpen, isCbctDirectModalOpen, setIsCbctDirectModalOpen, isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen } = props;
 	if (typeof window === "undefined") return null;
-
-	if (hasUrlToken(["implant_passport", "implant-passport", "implants"])) {
-		return (
-			<Suspense fallback={<AppLoadingState message="Загрузка паспорта имплантации..." />}>
-				<StandaloneImplantPassportHost onClose={() => clearUrlTokens(["implant_passport", "passport", "implants"])} />
-			</Suspense>
-		);
-	}
 
 	if (hasUrlToken(["rvg", "radiology"])) {
 		return (

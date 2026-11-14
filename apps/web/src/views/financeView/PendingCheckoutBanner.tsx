@@ -1,5 +1,5 @@
 import React from "react";
-import type { PendingCheckout } from "./types.js";
+import type { PendingCheckout, PendingCheckoutService } from "./types.js";
 
 export interface PendingCheckoutBannerProps {
 	readonly pendingCheckout: PendingCheckout;
@@ -14,7 +14,7 @@ export function PendingCheckoutBanner({
 	onOpenSplitPayment,
 	money,
 }: PendingCheckoutBannerProps): React.JSX.Element {
-	const list = (pendingCheckout.services || []).map((s: any) => s.name || s.title).filter(Boolean);
+	const list = (pendingCheckout.services || []).map((s: PendingCheckoutService) => s.name || s.title).filter(Boolean);
 	const count = list.length;
 	const serviceText = count === 0
 		? "Консультация и обследование"
