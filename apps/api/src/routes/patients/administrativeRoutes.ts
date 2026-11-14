@@ -168,7 +168,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				);
 				if (!patient) return sendPatientNotFound(reply);
 				return patientSchema.parse(patient);
-			} catch (e) {
+			} catch (e: unknown) {
 				// См. комментарий выше: 404 после успешной записи вводил оператора в
 				// заблуждение и приводил к повторному вводу тех же данных.
 				request.log.error(
@@ -212,7 +212,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				.send(
 					selectPatientArchiveRows(clinicRows, patientId, patient.fullName),
 				);
-		} catch (e) {
+		} catch (e: unknown) {
 			// Пустой список вместо отказа читается виджетом как «пациент чист», и
 			// администратор запишет на приём того, кому запись запрещена.
 			request.log.error(
@@ -310,7 +310,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				return reply
 					.status(200)
 					.send({ success: true, isBlacklisted: requestedBlacklisted });
-			} catch (e) {
+			} catch (e: unknown) {
 				request.log.error(
 					{ err: e },
 					"[Patients] Ошибка сохранения запрета записи",
@@ -338,10 +338,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const allowedArchiveRoles = new Set([
 			"admin",
 			"administrator",
@@ -407,7 +404,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				legalBasis: result.legalBasis,
 				reasonName: result.reasonName,
 			});
-		} catch (e) {
+		} catch (e: unknown) {
 			request.log.error({ err: e }, "[Patients] Ошибка при архивации пациента");
 			return reply.code(500).send({
 				error: "PatientArchiveError",
@@ -451,10 +448,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const allowedArchiveRoles = new Set([
 			"admin",
 			"administrator",

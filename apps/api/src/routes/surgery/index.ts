@@ -62,10 +62,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -347,7 +344,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			.map((i) => i.name);
 
 		const status = evaluateWarehouseOverdraft(
-			CANONICAL_SURGICAL_OPERATION_NORMS[0]!.requiredMaterials,
+			CANONICAL_SURGICAL_OPERATION_NORMS[0]?.requiredMaterials ?? [],
 			overdraftItems.length > 0,
 		);
 

@@ -164,7 +164,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 
 			const tasks = await getAllTaskTicketsFromDb(orgId, filters);
 			return reply.code(200).send(tasks);
-		} catch (error) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -192,9 +192,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 
 		const body = parsed.data;
 		// Если assignedToId не передан, берем текущего пользователя (соло-врач автономия)
-		const currentUserId = (
-			request as unknown as { user?: { id?: string } }
-		).user?.id;
+		const currentUserId = request.user?.id;
 		const effectiveAssignedToId =
 			body.assignedToId ??
 			(currentUserId && UUID_REGEX.test(currentUserId) ? currentUserId : null);
@@ -207,7 +205,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 				priority: body.priority,
 			});
 			return reply.code(201).send(task);
-		} catch (error) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -257,7 +255,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 				});
 			}
 			return reply.code(200).send(updated);
-		} catch (error) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -295,7 +293,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 				});
 			}
 			return reply.code(200).send({ success: true, id });
-		} catch (error) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",

@@ -45,13 +45,19 @@ export {
 	type StaffRole,
 };
 
+declare module "fastify" {
+	interface FastifyRequest {
+		__denteIdentity?: RequestIdentity;
+		user?: { id: string; role?: string; organizationId?: string; [key: string]: unknown };
+	}
+}
+
 /**
  * Разбирает токены запроса. Результат кэшируется на объекте request,
  * чтобы не пересчитывать HMAC на каждой проверке внутри одного запроса.
  */
 export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
-	const cached = (request as unknown as { __denteIdentity?: RequestIdentity })
-		.__denteIdentity;
+	const cached = request.__denteIdentity;
 	if (cached) return cached;
 
 	let identity: RequestIdentity = { ...EMPTY_IDENTITY };
@@ -61,9 +67,7 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 		secret = authTokenSecret();
 	} catch {
 		// Секрет не настроен в production — токены не принимаем вовсе.
-		(
-			request as unknown as { __denteIdentity?: RequestIdentity }
-		).__denteIdentity = identity;
+		request.__denteIdentity = identity;
 		return identity;
 	}
 
@@ -134,25 +138,20 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 	) {
 		identity = { ...identity, organizationId: null };
 		setIdentityRejection(request, UNVERIFIED_MUTATION_REJECTION);
-		const log = (
-			request as unknown as { log?: { warn?: (message: string) => void } }
-		).log;
-		log?.warn?.(
+		request.log?.warn?.(
 			`[security] Заголовок ${ORGANIZATION_HEADER} отклонён для ${request.method} ${request.url}: ` +
 				"непроверенная организация не может изменять данные на работающем сервере.",
 		);
 	}
 
-	(
-		request as unknown as { __denteIdentity?: RequestIdentity }
-	).__denteIdentity = identity;
+	request.__denteIdentity = identity;
 
 	// Совместимость: код, читающий request.user, продолжает работать.
 	if (identity.organizationId) {
-		(request as unknown as { user?: unknown }).user = {
+		request.user = {
 			organizationId: identity.organizationId,
-			id: identity.userId,
-			role: identity.role,
+			id: identity.userId ?? "",
+			...(identity.role ? { role: identity.role } : {}),
 			fullName: identity.fullName,
 			canSignMedicalRecords: true,
 			canManageMoney:
@@ -217,6 +216,8 @@ export async function requireStaffIdentity(
 		}
 	}
 	if (identity.sessionId) {
+		const checkedUserId = identity.userId;
+		const checkedOrgId = identity.organizationId;
 		const { db } = await import("../db/client.js");
 		const { users } = await import("../db/schema.js");
 		const { eq, and } = await import("drizzle-orm");
@@ -225,10 +226,8 @@ export async function requireStaffIdentity(
 			.from(users)
 			.where(
 				and(
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					eq(users.id, identity.userId!),
-					// biome-ignore lint/style/noNonNullAssertion: automated suppression
-					eq(users.organizationId, identity.organizationId!),
+					eq(users.id, checkedUserId),
+					eq(users.organizationId, checkedOrgId),
 				),
 			)
 			.limit(1);

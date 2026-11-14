@@ -69,10 +69,7 @@ export async function register(app: FastifyInstance) {
 
 		// Выдача клинических медицинских документов разрешена только клиническому персоналу
 		const identity = getRequestIdentity(request);
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (
 			clinicalDocKinds.has(existing.kind) &&
@@ -179,9 +176,7 @@ export async function register(app: FastifyInstance) {
 				),
 			]);
 			const refundLimitError = paymentRefundCorrectionSelectionErrorForDocument(
-				issueCandidate as unknown as Parameters<
-					typeof paymentRefundCorrectionSelectionErrorForDocument
-				>[0],
+				issueCandidate,
 				refundPayments,
 				refundDocuments,
 				existing.id,

@@ -99,10 +99,7 @@ export async function register(app: FastifyInstance) {
 
 			// Медицинские документы могут подписываться электронной подписью только медицинским персоналом (врачом/главным врачом)
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (clinicalDocKinds.has(doc.kind) && !evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -255,7 +252,7 @@ export async function register(app: FastifyInstance) {
 				// Если документ уже был выдан и имел архивный снимок на диске —
 				// накладываем динамический штамп ГОСТ Р 7.0.97-2016 и обновляем хэш снимка
 				if (doc.status === "issued" && doc.issuedSnapshotSha256) {
-					const snapshotHtml = readIssuedDocumentSnapshot(doc as any);
+					const snapshotHtml = readIssuedDocumentSnapshot(doc);
 					if (snapshotHtml) {
 						const validFrom =
 							parsedBody.data.validFrom ??
@@ -308,8 +305,8 @@ export async function register(app: FastifyInstance) {
 			}
 
 			return { success: true, id: signResult.id };
-		} catch (e) {
-			console.error("[DocumentSignUkep] Error:", e);
+		} catch (e: unknown) {
+			request.log.error(e, "[DocumentSignUkep] Error");
 			return reply.code(500).send({
 				error: "DatabaseError",
 				message: "Не удалось сохранить электронную подпись документа. Повторите попытку.",

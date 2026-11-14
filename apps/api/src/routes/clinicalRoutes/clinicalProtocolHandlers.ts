@@ -72,8 +72,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 				});
 			}
 			return clinicalRuleEvaluationResponseSchema.parse(evaluation);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -103,7 +102,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 
 			const rules = await getClinicalRules(orgId);
 			return reply.status(200).send(rules);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -150,8 +149,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 			return clinicalRuleSchema.parse(
 				await createClinicalRuleInDb(orgId, input),
 			);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -202,8 +200,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 			return clinicalRuleSchema.parse(
 				await updateClinicalRuleInDb(orgId, input),
 			);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -273,8 +270,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 				});
 			}
 			return reply.code(200).send({ id: ruleId, deleted: true });
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -297,8 +293,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 			return reply
 				.status(200)
 				.send(await getSingleSessionEnforcementsFromDb(orgId));
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -321,8 +316,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 			return reply
 				.status(200)
 				.send(await getDadataGeocodedAddressesFromDb(orgId));
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -347,8 +341,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 				return reply
 					.status(200)
 					.send(await getLandingFieldMappingsFromDb(orgId));
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			} catch (error: any) {
+			} catch (error: unknown) {
 				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",
@@ -374,8 +367,7 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 				return reply
 					.status(200)
 					.send(await getDadataGeocodedAddressesFromDb(orgId));
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			} catch (error: any) {
+			} catch (error: unknown) {
 				request.log.error(error);
 				return reply.status(500).send({
 					error: "InternalServerError",

@@ -14,6 +14,13 @@ import {
 import { normalizeInnDigits } from "./taxGuards.js";
 import type { PaymentRefundSettlement } from "./types.js";
 
+export type DocumentRefundCorrectionInput = {
+	kind: string;
+	patientId: string;
+	visitId?: string | null | undefined;
+	payload?: CreateDocumentInput["payload"] | GeneratedDocument["payload"] | undefined;
+};
+
 export function selectedPaymentReceiptIds(
 	input: Pick<CreateDocumentInput, "payload">,
 ): string[] {
@@ -21,7 +28,7 @@ export function selectedPaymentReceiptIds(
 }
 
 export function selectedPaymentRefundCorrectionIds(
-	input: Pick<CreateDocumentInput, "payload">,
+	input: Pick<DocumentRefundCorrectionInput, "payload">,
 ): string[] {
 	return input.payload?.paymentRefundCorrection?.selectedPaymentIds ?? [];
 }
@@ -288,7 +295,7 @@ export function paymentRefundSettlements(
 }
 
 export function paymentRefundCorrectionSelectionErrorForDocument(
-	input: CreateDocumentInput,
+	input: DocumentRefundCorrectionInput,
 	payments: readonly Payment[],
 	/** Ранее выданные документы пациента — нужны для учёта прошлых возвратов. */
 	issuedDocuments?: readonly GeneratedDocument[] | null,

@@ -1,4 +1,4 @@
-import { hygieneIndicesSchema } from "@dental/shared";
+import { hygieneIndicesSchema, type HygieneIndices } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
@@ -36,8 +36,12 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 				.orderBy(desc(visits.createdAt))
 				.limit(1);
 
+			const parsedLatest: HygieneIndices | null = latest?.hygieneIndices
+				? (hygieneIndicesSchema.safeParse(latest.hygieneIndices).data ?? null)
+				: null;
+
 			return {
-				latest: (latest?.hygieneIndices as any) ?? null,
+				latest: parsedLatest,
 				visitId: latest?.id ?? null,
 				createdAt: latest?.createdAt ? latest.createdAt.toISOString() : null,
 			};

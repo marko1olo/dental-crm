@@ -6,7 +6,15 @@ import type {
 } from "@dental/shared";
 
 export type DocumentVisit = Pick<Visit, "id" | "patientId">;
-export type DocumentPatient = Pick<Patient, "id">;
+export type DocumentPatient = Pick<Patient, "id"> & {
+	fullName?: string | null | undefined;
+	name?: string | null | undefined;
+	isAnonymous?: boolean | null | undefined;
+	administrativeProfile?: Record<string, unknown> | null | undefined;
+};
+export type DocumentCheckInput = CreateDocumentInput & {
+	requestedForm?: string | null | undefined;
+};
 export type DocumentTreatmentPlanItem = Pick<
 	TreatmentPlanItem,
 	| "patientId"
@@ -22,9 +30,9 @@ export type DocumentCreationFacts = {
 	visit: DocumentVisit | null;
 	paidAmountRub: number;
 	plannedAmountRub: number;
-	taxPaymentSelectionError?: string | null;
-	paymentReceiptSelectionError?: string | null;
-	paymentRefundCorrectionSelectionError?: string | null;
+	taxPaymentSelectionError?: string | null | undefined;
+	paymentReceiptSelectionError?: string | null | undefined;
+	paymentRefundCorrectionSelectionError?: string | null | undefined;
 };
 
 export type DocumentCreationGuardResult =

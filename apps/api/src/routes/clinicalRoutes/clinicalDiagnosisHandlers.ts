@@ -75,8 +75,7 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 					identity.userId!,
 				),
 			);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -133,8 +132,7 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 				});
 			}
 			return reply.status(200).send({ recorded: true });
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -155,8 +153,7 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 				"../../db/lostPatientsFiltersQuery.js"
 			);
 			return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",

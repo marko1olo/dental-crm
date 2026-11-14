@@ -4,7 +4,7 @@ import { db as database } from "../../db/client.js";
 import { createPatientInDb } from "../../db/patientsQuery.js";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
-import type { RequestIdentity } from "../../security/identity.js";
+import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
 import { findOrCreateActiveChair } from "./ensureActiveChair.js";
 
 function isOverlapError(error: unknown): boolean {
@@ -42,9 +42,8 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 		if (!context) return;
 		const orgId = context.organizationId;
 
-		const identity = (request as unknown as { __denteIdentity?: RequestIdentity })
-			.__denteIdentity;
-		const doctorUserId = identity?.userId;
+		const identity = getRequestIdentity(request);
+		const doctorUserId = identity.userId ?? request.user?.id;
 
 		if (!doctorUserId) {
 			reply.code(400);
@@ -101,7 +100,7 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 
 			reply.code(201);
 			return result;
-		} catch (error) {
+		} catch (error: unknown) {
 			if (isOverlapError(error)) {
 				return reply.code(409).send({
 					code: "CHAIR_OVERBOOKING_COLLISION",

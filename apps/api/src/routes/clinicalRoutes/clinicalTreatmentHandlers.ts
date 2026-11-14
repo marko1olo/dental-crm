@@ -106,7 +106,7 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 				});
 			}
 			return reply.code(201).send(task);
-		} catch (error) {
+		} catch (error: unknown) {
 			if (error instanceof ClinicalTaskOwnershipError) {
 				return reply.code(404).send({
 					error: "ClinicalTaskReferenceNotFound",
@@ -134,10 +134,7 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 
 			// 152-ФЗ / 323-ФЗ: Задачи передачи между клиническими этапами содержат врачебную тайну
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (staffRole && !evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -158,8 +155,7 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 			return reply
 				.code(200)
 				.send(await new ClinicalRouter().listTasks(orgId, patientId));
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -223,7 +219,7 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 				});
 			}
 			return reply.code(200).send(updated);
-		} catch (error) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -247,8 +243,7 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 				"../../db/customCrmTaskTypesQuery.js"
 			);
 			return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -269,8 +264,7 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 				"../../db/customCrmTaskTypesQuery.js"
 			);
 			return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",

@@ -3,7 +3,7 @@ import {
 	patientSchema,
 	updatePatientSchema,
 } from "@dental/shared";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import {
 	createPatientInDb,
 	createPatientSafeInDb,
@@ -11,7 +11,7 @@ import {
 	getPatientsFromDb,
 	updatePatientInDb,
 } from "../../db/patientsQuery.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import {
 	evaluateClinicalAccess,
@@ -38,6 +38,24 @@ import {
 import { filterPatientsBySearchQuery } from "./patientSearchFilter.js";
 import { registerPatientRecordsRoutes } from "./patientRecordsRoutes.js";
 
+interface ExtendedRequestIdentity extends RequestIdentity {
+	clinicalRole?: string | null;
+	canSignMedicalRecords?: boolean;
+}
+
+interface AuthenticatedUserContext {
+	role?: string | null;
+	canSignMedicalRecords?: boolean;
+	clinicalRole?: string | null;
+}
+
+function extractRequestUser(request: FastifyRequest): AuthenticatedUserContext | undefined {
+	if ("user" in request && typeof request.user === "object" && request.user !== null) {
+		return request.user as AuthenticatedUserContext;
+	}
+	return undefined;
+}
+
 export function registerPatientCrudRoutes(app: FastifyInstance) {
 	// Регистрация суб-маршрутов клинических записей медицинской карты приёма
 	registerPatientRecordsRoutes(app);
@@ -60,8 +78,8 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			const isMedicalSearch = isClinicalSearchQuery(searchRaw);
 			if (isMedicalSearch) {
 				const identity = getRequestIdentity(request);
-				const reqAny = request as unknown as { user?: { role?: string | null } };
-				const staffRole = identity.role ?? reqAny.user?.role ?? null;
+				const reqUser = extractRequestUser(request);
+				const staffRole = identity.role ?? reqUser?.role ?? null;
 				const evalAccess = evaluateClinicalAccess(staffRole);
 				if (!evalAccess.hasClinicalAccess) {
 					return reply.code(403).send({
@@ -148,47 +166,29 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			}
 
 			// 152-ФЗ / 323-ФЗ ст. 13: Аудит доступа к медицинской карте
-			const identity = getRequestIdentity(request);
-			const reqAny = request as unknown as {
-				user?: {
-					role?: string | null;
-					canSignMedicalRecords?: boolean;
-					clinicalRole?: string | null;
-				};
-				headers: Record<string, string | string[] | undefined>;
-			};
-			const authenticatedRole = identity.role ?? reqAny.user?.role ?? null;
+			const identity = getRequestIdentity(request) as ExtendedRequestIdentity;
+			const reqUser = extractRequestUser(request);
+			const authenticatedRole = identity.role ?? reqUser?.role ?? null;
 			const isSuperAdmin =
 				authenticatedRole === "super_admin" ||
 				authenticatedRole === "system" ||
 				authenticatedRole === "owner" ||
 				authenticatedRole === "admin";
-			const staffRole =
-				(isSuperAdmin
-					? (typeof reqAny.headers["x-user-role"] === "string"
-							? reqAny.headers["x-user-role"]
-							: null) ??
-						(typeof reqAny.headers["x-staff-role"] === "string"
-							? reqAny.headers["x-staff-role"]
-							: null)
-					: null) ?? authenticatedRole;
+			const headerUserRole = typeof request.headers["x-user-role"] === "string" ? request.headers["x-user-role"] : null;
+			const headerStaffRole = typeof request.headers["x-staff-role"] === "string" ? request.headers["x-staff-role"] : null;
+			const headerClinicalRole = typeof request.headers["x-clinical-role"] === "string" ? request.headers["x-clinical-role"] : null;
+			const staffRole = (isSuperAdmin ? (headerUserRole ?? headerStaffRole) : null) ?? authenticatedRole;
 
 			if (staffRole) {
 				const evalAccess = evaluateClinicalAccess(staffRole, {
 					clinicalRole:
-						(identity as unknown as { clinicalRole?: string | null })
-							.clinicalRole ??
-						reqAny.user?.clinicalRole ??
-						(isSuperAdmin &&
-						typeof reqAny.headers["x-clinical-role"] === "string"
-							? reqAny.headers["x-clinical-role"]
-							: null),
+						identity.clinicalRole ??
+						reqUser?.clinicalRole ??
+						(isSuperAdmin ? headerClinicalRole : null),
 					canSignMedicalRecords:
-						(identity as unknown as { canSignMedicalRecords?: boolean })
-							.canSignMedicalRecords ??
-						reqAny.user?.canSignMedicalRecords ??
-						(isSuperAdmin &&
-							reqAny.headers["x-can-sign-medical-records"] === "true"),
+						identity.canSignMedicalRecords ??
+						reqUser?.canSignMedicalRecords ??
+						(isSuperAdmin && request.headers["x-can-sign-medical-records"] === "true"),
 				});
 
 				if (evalAccess.hasClinicalAccess) {
@@ -211,17 +211,15 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				const evalAccess = staffRole
 					? evaluateClinicalAccess(staffRole, {
 							clinicalRole:
-								(identity as unknown as { clinicalRole?: string | null })
-									.clinicalRole ??
-								reqAny.user?.clinicalRole ??
-								(typeof reqAny.headers["x-clinical-role"] === "string"
-									? reqAny.headers["x-clinical-role"]
+								identity.clinicalRole ??
+								reqUser?.clinicalRole ??
+								(typeof request.headers["x-clinical-role"] === "string"
+									? request.headers["x-clinical-role"]
 									: null),
 							canSignMedicalRecords:
-								(identity as unknown as { canSignMedicalRecords?: boolean })
-									.canSignMedicalRecords ??
-								reqAny.user?.canSignMedicalRecords ??
-								reqAny.headers["x-can-sign-medical-records"] === "true",
+								identity.canSignMedicalRecords ??
+								reqUser?.canSignMedicalRecords ??
+								request.headers["x-can-sign-medical-records"] === "true",
 						})
 					: { hasClinicalAccess: false, reason: "Анонимный запрос без роли медработника" };
 
@@ -323,13 +321,18 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			}
 
 			return reply.code(201).send(patientSchema.parse(safeResult.patient));
-		} catch (e: any) {
+		} catch (e: unknown) {
 			console.error("[Patients] Create error:", e);
+			const errObj = typeof e === "object" && e !== null ? (e as Record<string, unknown>) : null;
+			const errCause = errObj?.cause && typeof errObj.cause === "object" ? (errObj.cause as Record<string, unknown>) : null;
+			const code = String(errObj?.code ?? "");
+			const causeCode = String(errCause?.code ?? "");
+			const errMsg = e instanceof Error ? e.message : String(e ?? "");
 			const isUniqueViolation =
-				e?.code === "23505" ||
-				e?.cause?.code === "23505" ||
-				String(e?.message ?? "").includes("unique constraint") ||
-				String(e?.message ?? "").includes("duplicate key value");
+				code === "23505" ||
+				causeCode === "23505" ||
+				errMsg.includes("unique constraint") ||
+				errMsg.includes("duplicate key value");
 
 			if (isUniqueViolation) {
 				try {

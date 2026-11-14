@@ -72,7 +72,7 @@ export function resolveClinicalStaffRole(request: FastifyRequest): string | null
 	const identity = getRequestIdentity(request);
 	return (
 		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
+		request.user?.role ??
 		(unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS")
 			? "doctor"
 			: null)

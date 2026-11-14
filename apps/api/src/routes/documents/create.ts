@@ -44,10 +44,7 @@ export async function register(app: FastifyInstance) {
 
 		// 152-ФЗ / 323-ФЗ: Создание медицинских документов запрещено маркетологам
 		const identity = getRequestIdentity(request);
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		if (staffRole === "marketer" || staffRole === "marketing") {
 			return reply.code(403).send({
 				error: "PermissionDenied",
@@ -111,7 +108,12 @@ export async function register(app: FastifyInstance) {
 		);
 
 		const validation = validateDocumentCreation(input, {
-			patient: patient ?? null,
+			patient: patient
+				? {
+						...patient,
+						isAnonymous: patient.isAnonymous ?? null,
+					}
+				: null,
 			visit: visit ?? null,
 			paidAmountRub: paidAmountRubForDocument(
 				input.kind,

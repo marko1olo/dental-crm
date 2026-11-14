@@ -1,6 +1,10 @@
 import type { CreateDocumentInput } from "@dental/shared";
 import { documentKindMetadata } from "@dental/shared";
-import type { DocumentCreationFacts, DocumentCreationGuardResult } from "./types.js";
+import type {
+	DocumentCheckInput,
+	DocumentCreationFacts,
+	DocumentCreationGuardResult,
+} from "./types.js";
 
 /**
  * Гард проверки существования пациента и визита, а также их взаимной привязки.
@@ -52,23 +56,17 @@ export function checkPatientAndVisitAccess(
  * Гард проверки запрета выдачи налоговых справок анонимным пациентам без паспортных данных и ИНН по ст. 219 НК РФ.
  */
 export function checkTaxDeductionIdentificationRestriction(
-	input: CreateDocumentInput,
+	input: DocumentCheckInput,
 	facts: DocumentCreationFacts,
 ): DocumentCreationGuardResult | null {
 	const metadata = documentKindMetadata[input.kind];
-	const patientAny = facts.patient as unknown as {
-		fullName?: string;
-		name?: string;
-		isAnonymous?: boolean;
-		administrativeProfile?: Record<string, unknown>;
-	};
-	const inputAny = input as unknown as { requestedForm?: string };
+	const patient = facts.patient;
 
 	const isAnonPatient =
-		Boolean(patientAny?.isAnonymous) ||
-		Boolean((patientAny?.fullName ?? patientAny?.name)?.startsWith("UUID_ANON")) ||
-		Boolean((patientAny?.fullName ?? patientAny?.name)?.toLowerCase().includes("аноним")) ||
-		Boolean(patientAny?.administrativeProfile?.["isAnonymous"]);
+		Boolean(patient?.isAnonymous) ||
+		Boolean((patient?.fullName ?? patient?.name)?.startsWith("UUID_ANON")) ||
+		Boolean((patient?.fullName ?? patient?.name)?.toLowerCase().includes("аноним")) ||
+		Boolean(patient?.administrativeProfile?.["isAnonymous"]);
 
 	if (
 		isAnonPatient &&
@@ -76,7 +74,7 @@ export function checkTaxDeductionIdentificationRestriction(
 			input.kind === "tax_deduction_certificate" ||
 			input.kind === "tax_deduction_application" ||
 			input.kind === "tax_deduction_registry" ||
-			inputAny.requestedForm === "knd_1151156")
+			input.requestedForm === "knd_1151156")
 	) {
 		return {
 			ok: false,

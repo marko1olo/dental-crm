@@ -289,7 +289,7 @@ export async function registerQuery(app: FastifyInstance) {
 					label: meta?.label ?? kind,
 					isClinical: clinicalDocKinds.has(kind),
 					group:
-						(meta as unknown as { group?: string })?.group ??
+						meta?.group ??
 						(clinicalDocKinds.has(kind) ? "clinical" : "general"),
 				};
 			});

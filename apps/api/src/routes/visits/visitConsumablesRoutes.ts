@@ -14,6 +14,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { db as database } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { inventoryTransactions, visits } from "../../db/schema.js";
@@ -112,9 +113,8 @@ async function handlePostVisitConsumables(
 	);
 	if (!context) return;
 	const orgId = context.organizationId;
-	const identity = (request as unknown as { __denteIdentity?: { userId?: string } })
-		.__denteIdentity;
-	const doctorUserId = identity?.userId ?? request.user?.id ?? null;
+	const identity = getRequestIdentity(request);
+	const doctorUserId = identity.userId ?? request.user?.id ?? null;
 
 	const [visit] = await database
 		.select({ id: visits.id })
@@ -153,12 +153,13 @@ async function handlePostVisitConsumables(
 					notes: body.notes ?? null,
 				});
 			});
-		} else if (body.carpulesCount && body.carpulesCount > 0) {
+		} else if (typeof body.carpulesCount === "number" && body.carpulesCount > 0) {
+			const carpulesCount = body.carpulesCount;
 			result = await withTenantCtx(orgId, async (tx) => {
 				return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 					organizationId: orgId,
 					visitId: targetVisitId,
-					carpulesCount: body.carpulesCount!,
+					carpulesCount,
 					drugName: body.drugName ?? "Артикаин 1:100 000 (карпула)",
 					userId: doctorUserId,
 					notes: body.notes ?? null,
@@ -218,7 +219,7 @@ async function handlePostVisitConsumables(
 		});
 
 		return reply.status(200).send(result);
-	} catch (error) {
+	} catch (error: unknown) {
 		if (isInsufficientStockError(error)) {
 			// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
 			// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.

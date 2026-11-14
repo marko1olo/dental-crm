@@ -49,8 +49,7 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 			// 152-ФЗ / 323-ФЗ ст. 13: Защита рекламаций и осложнений архивированного пациента
 			if (patient.status === "archived") {
 				const identity = getRequestIdentity(request);
-				const reqAny = request as unknown as { user?: { role?: string | null } };
-				const staffRole = identity.role ?? reqAny.user?.role ?? null;
+				const staffRole = identity.role ?? request.user?.role ?? null;
 				const evalAccess = evaluateClinicalAccess(staffRole);
 				if (!evalAccess.hasClinicalAccess) {
 					return reply.code(403).send({
@@ -68,7 +67,7 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 			return reply
 				.status(200)
 				.send(await getPatientReclamationsFromDb(orgId, patientId.trim()));
-		} catch (e) {
+		} catch (e: unknown) {
 			// Отказ базы НЕ выдаём за пустой журнал: экран умеет показать отказ отдельно
 			// от пустоты, и эта способность держится на коде ответа.
 			request.log.error(
@@ -148,7 +147,7 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				},
 			);
 			return reply.status(201).send(created);
-		} catch (e) {
+		} catch (e: unknown) {
 			request.log.error({ err: e }, "[Patients] Ошибка фиксации рекламации");
 			return reply.code(500).send({
 				error: "PatientReclamationCreateFailed",
@@ -221,7 +220,7 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 					});
 				}
 				return reply.status(200).send(updated);
-			} catch (e) {
+			} catch (e: unknown) {
 				request.log.error(
 					{ err: e },
 					"[Patients] Ошибка смены состояния рекламации",
@@ -273,7 +272,7 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 					});
 				}
 				return reply.status(200).send({ success: true });
-			} catch (e) {
+			} catch (e: unknown) {
 				request.log.error({ err: e }, "[Patients] Ошибка удаления рекламации");
 				return reply.code(500).send({
 					error: "PatientReclamationDeleteFailed",

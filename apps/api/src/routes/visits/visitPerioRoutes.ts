@@ -10,6 +10,8 @@ import { visits } from "../../db/schema.js";
 import {
 	fetchPatientLatestPeriodontogram,
 	upsertPatientFullPeriodontogram,
+	type PatchToothInput,
+	type SiteItemInput,
 } from "../../services/periodontogramService.js";
 
 const UUID_REGEX =
@@ -108,12 +110,13 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		}
 
 		const body = (request.body as Record<string, unknown>) || {};
-		const teeth = Array.isArray(body.teeth)
+		const rawTeeth = Array.isArray(body.teeth)
 			? body.teeth
 			: Array.isArray(body.teethData)
-				? (body.teethData as any[])
+				? body.teethData
 				: [];
-		const sites = Array.isArray(body.sites) ? (body.sites as any[]) : [];
+		const teeth = rawTeeth as PatchToothInput[];
+		const sites = (Array.isArray(body.sites) ? body.sites : []) as SiteItemInput[];
 		const summary = body.summary ?? body.summaryData ?? {};
 		const psr = body.psr ?? body.psrData ?? null;
 		const notes = typeof body.notes === "string" ? body.notes : null;
