@@ -140,10 +140,10 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 
 	// 2. POST /api/v1/public/budgets/:token/verify & /verify-pin — 2FA подтверждение по последним 4 цифрам телефона или PIN
 	const verifyHandler = async (
-		request: any,
-		reply: any,
+		request: FastifyRequest<{ Params: { token: string } }>,
+		reply: FastifyReply,
 	) => {
-		const token = (request.params as { token?: string })?.token?.trim();
+		const token = request.params.token?.trim();
 		if (!token) {
 			return reply.code(400).send({ error: "TokenRequired", message: "Укажите токен сметы." });
 		}
@@ -176,10 +176,13 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			});
 		}
 
+		const forwardedHeader = request.headers["x-forwarded-for"];
 		const rawIp =
-			(request.headers["x-forwarded-for"] as string) ||
-			request.ip ||
-			"127.0.0.1";
+			typeof forwardedHeader === "string"
+				? forwardedHeader
+				: Array.isArray(forwardedHeader) && forwardedHeader.length > 0 && typeof forwardedHeader[0] === "string"
+					? forwardedHeader[0]
+					: request.ip || "127.0.0.1";
 		const clientIp = rawIp.split(",")[0]?.trim() || "127.0.0.1";
 		const clientIpHash = hashIp(clientIp);
 
@@ -366,13 +369,17 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				}
 			}
 
+			const forwardedHeader = request.headers["x-forwarded-for"];
 			const rawIp =
-				(request.headers["x-forwarded-for"] as string) ||
-				request.ip ||
-				"127.0.0.1";
+				typeof forwardedHeader === "string"
+					? forwardedHeader
+					: Array.isArray(forwardedHeader) && forwardedHeader.length > 0 && typeof forwardedHeader[0] === "string"
+						? forwardedHeader[0]
+						: request.ip || "127.0.0.1";
 			const clientIp = rawIp.split(",")[0]?.trim() || "127.0.0.1";
 			const clientIpHash = hashIp(clientIp);
-			const userAgent = request.headers["user-agent"] || "unknown";
+			const rawUserAgent = request.headers["user-agent"];
+			const userAgent = typeof rawUserAgent === "string" ? rawUserAgent : "unknown";
 
 			const signingResult = await completeBudgetSigning({
 				budget,

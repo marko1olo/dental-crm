@@ -5,6 +5,7 @@
 
 import { and, eq, ilike, lt, ne, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
+import type { TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -17,9 +18,8 @@ import {
 import { wsBroker } from "../../../services/websocketBroker.js";
 import type { BookingResponseData, WebhookPayload } from "./types.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: generic drizzle transaction
 export async function processProdoctorovBookingWebhook(
-	tx: any,
+	tx: TenantDb,
 	req: FastifyRequest,
 	payload: WebhookPayload,
 	organizationId: string,

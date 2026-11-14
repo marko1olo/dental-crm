@@ -12,7 +12,35 @@ import {
 	splitFullName,
 } from "../helpers.js";
 
-export async function fetchVisitRow(visitId: string, orgId: string) {
+export type VisitCdaRow = {
+	visit: typeof schema.visits.$inferSelect;
+	patient: typeof schema.patients.$inferSelect;
+	organization: typeof schema.organizations.$inferSelect;
+};
+
+export type VisitCdaDiaryRow = {
+	anamnesis: string | null;
+	statusLocalis: string | null;
+	diagnosisIcd10: string | null;
+	diagnosisTooth: number | null | string;
+	treatmentDescription: string | null;
+	complications: string | null;
+	comorbidities: string | null;
+	instrumentTrayBarcode: string | null;
+	doctorId: string | null;
+	lockedByUserId: string | null;
+	authorId: string | null;
+	isLocked: boolean;
+	version: number;
+	lockedAt: Date | null;
+};
+
+export type VisitCdaClinicRow = {
+	address?: string | null | undefined;
+	phone?: string | null | undefined;
+};
+
+export async function fetchVisitRow(visitId: string, orgId: string): Promise<VisitCdaRow | null> {
 	const [row] = await db
 		.select({ visit: schema.visits, patient: schema.patients, organization: schema.organizations })
 		.from(schema.visits)
@@ -23,7 +51,7 @@ export async function fetchVisitRow(visitId: string, orgId: string) {
 	return row || null;
 }
 
-export async function fetchDiaryRow(visitId: string, orgId: string) {
+export async function fetchDiaryRow(visitId: string, orgId: string): Promise<VisitCdaDiaryRow | null> {
 	const [diaryRow] = await db
 		.select({
 			anamnesis: schema.visitDiaries.anamnesis, statusLocalis: schema.visitDiaries.statusLocalis,
@@ -42,7 +70,7 @@ export async function fetchDiaryRow(visitId: string, orgId: string) {
 
 export async function resolveDoctorFromAppointmentOrDiary(
 	appointmentId: string | null | undefined,
-	diaryRow: any,
+	diaryRow: VisitCdaDiaryRow | null | undefined,
 	orgId: string,
 ) {
 	let doctorName: { first: string; last: string; middle?: string } = { first: "", last: "Не указан" };

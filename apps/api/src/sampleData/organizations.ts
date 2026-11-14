@@ -19,7 +19,31 @@ const defaultClinicScheduleDefaults: ClinicScheduleDefaults = {
 	appointmentBufferMinutes: 10,
 };
 
-const clinicProfile: ClinicProfile & Record<string, any> = {
+export interface SampleClinicProfile extends ClinicProfile {
+	hasOrthodontics?: boolean;
+	hasGnathology?: boolean;
+	hasCsoScanner?: boolean;
+	hasLeadsKanban?: boolean;
+	hasOmnichannel?: boolean;
+	hasTasks?: boolean;
+	hasReclamations?: boolean;
+	workspacePreset?: string;
+	onboardingCompleted?: boolean;
+	hasPediatricMode?: boolean;
+	isOmniRole?: boolean;
+	hasPayrollModule?: boolean;
+	hasMarketingModule?: boolean;
+	hasAnalyticsModule?: boolean;
+	hasInventoryModule?: boolean;
+	aiEnableTreatmentPlan?: boolean;
+	aiEnableRecommendations?: boolean;
+	aiEnableDocuments?: boolean;
+	numberOfDoctors?: number;
+	hasEngineeringStatus?: boolean;
+	hasClinicalRules?: boolean;
+}
+
+const clinicProfile: SampleClinicProfile = {
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -70,8 +94,7 @@ const clinicProfile: ClinicProfile & Record<string, any> = {
 	aiEnableTreatmentPlan: true,
 	aiEnableRecommendations: true,
 	aiEnableDocuments: true,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-} as any;
+};
 
 const chairs: Chair[] = [
 	{

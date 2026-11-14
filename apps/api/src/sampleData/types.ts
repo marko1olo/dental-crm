@@ -4,7 +4,7 @@
  */
 
 import type { DomainState } from "../types/domainState.js";
-import type { PatientAdministrativeProfile, StaffMember } from "@dental/shared";
+import type { DentalSpecialty, PatientAdministrativeProfile, StaffMember } from "@dental/shared";
 
 export type { DomainState };
 
@@ -41,7 +41,7 @@ export type UpdateChairProfileInput = {
 	name?: string | undefined;
 	room?: string | null | undefined;
 	color?: string | null | undefined;
-	specialization?: string | null | undefined;
+	specialization?: DentalSpecialty | null | undefined;
 	active?: boolean | undefined;
 	hasXraySensor?: boolean | undefined;
 	hasMicroscope?: boolean | undefined;

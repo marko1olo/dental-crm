@@ -136,12 +136,12 @@ export interface AgentRouterChatResponse {
 
 export interface AgentRouterToolCallDelta {
 	index: number;
-	id?: string;
-	type?: "function";
+	id?: string | undefined;
+	type?: "function" | undefined;
 	function?: {
-		name?: string;
-		arguments?: string;
-	};
+		name?: string | undefined;
+		arguments?: string | undefined;
+	} | undefined;
 }
 
 export interface AgentRouterStreamCallbacks {

@@ -360,7 +360,7 @@ export function updateChairProfile(
 	if (input.active !== undefined) chair.active = input.active;
 	if (input.room !== undefined) chair.room = input.room ? input.room.trim() : null;
 	if (input.color !== undefined) chair.color = input.color ? input.color.trim() : null;
-	if (input.specialization !== undefined) chair.specialization = (input.specialization as any) ?? null;
+	if (input.specialization !== undefined) chair.specialization = input.specialization ?? null;
 	if (input.hasXraySensor !== undefined) chair.hasXraySensor = input.hasXraySensor;
 	if (input.hasMicroscope !== undefined) chair.hasMicroscope = input.hasMicroscope;
 	if (input.hasSurgeryKit !== undefined) chair.hasSurgeryKit = input.hasSurgeryKit;

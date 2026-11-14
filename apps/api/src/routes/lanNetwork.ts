@@ -323,7 +323,12 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		} else {
 			// 2. Fallback to signed JWT pairing payload
 			const verified = verifyToken(token, authTokenSecret());
-			if (verified && (verified as any).type === "dente_lan_pairing") {
+			if (
+				verified &&
+				typeof verified === "object" &&
+				"type" in verified &&
+				verified.type === "dente_lan_pairing"
+			) {
 				const payload = verified as unknown as LanPairingPayload;
 				nonce = payload.nonce;
 				orgId = payload.organizationId;
@@ -385,13 +390,14 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		try {
 			if (staffUserId) {
+				const targetStaffId = staffUserId;
 				const [user] = await withTenantCtx(orgId, async (tx) => {
 					return tx
 						.select({ id: users.id, fullName: users.fullName, role: users.role })
 						.from(users)
 						.where(
 							and(
-								eq(users.id, staffUserId!),
+								eq(users.id, targetStaffId),
 								eq(users.organizationId, orgId),
 							),
 						)
@@ -547,26 +553,35 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const identity = getRequestIdentity(request);
-		const firstMutationPayload = parseRes.data.mutations[0]?.payload;
-		const payloadOrgId =
-			firstMutationPayload &&
-			typeof firstMutationPayload === "object" &&
-			"organizationId" in firstMutationPayload &&
-			typeof (firstMutationPayload as Record<string, unknown>).organizationId === "string"
-				? ((firstMutationPayload as Record<string, unknown>).organizationId as string)
-				: undefined;
-		const orgId = payloadOrgId || identity.organizationId || "clinic-default";
+		const firstMutation = parseRes.data.mutations[0];
+		const firstMutationPayload = firstMutation?.payload;
+		let payloadOrgId: string | undefined = undefined;
+		if (typeof firstMutationPayload === "object" && firstMutationPayload !== null) {
+			const candidateOrgId = (firstMutationPayload as Record<string, unknown>)["organizationId"];
+			if (typeof candidateOrgId === "string" && candidateOrgId.trim()) {
+				payloadOrgId = candidateOrgId.trim();
+			}
+		}
+		const rawOrgId = payloadOrgId || identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		const orgId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawOrgId)
+			? rawOrgId
+			: "00000000-0000-0000-0000-000000000001";
 
 		// Transform QueuedMeshMutation to SyncMutationEnvelope
 		const envelopes: SyncMutationEnvelope[] = parseRes.data.mutations.map((m) => {
-			const payload = (m.payload && typeof m.payload === "object" ? m.payload : { value: m.payload }) as Record<string, unknown>;
+			const payload: Record<string, unknown> =
+				typeof m.payload === "object" && m.payload !== null
+					? (m.payload as Record<string, unknown>)
+					: { value: m.payload };
+			const action: "create" | "update" | "delete" =
+				m.action === "delete" ? "delete" : m.action === "create" ? "create" : "update";
 			return {
 				mutationId: m.id,
 				idempotencyKey: m.idempotencyKey,
 				payloadHash: computePayloadHash(payload),
 				entityKind: normalizeMeshEntityKind(m.entityKind),
 				entityId: m.entityId,
-				action: m.action as "create" | "update" | "delete",
+				action,
 				payload,
 				updatedAt: new Date(m.timestamp).toISOString(),
 				clientId: m.originNodeId,
@@ -601,13 +616,16 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 				for (const mut of parseRes.data.mutations) {
 					meshService.getRingBuffer().push(mut);
 				}
+				appliedCount = parseRes.data.mutations.length;
+				rejectedCount = 0;
 			}
 		} catch (dbErr) {
 			request.log.warn({ dbErr }, "[lanNetwork] Failed to persist mutations to Postgres; queued in memory ring buffer");
 			for (const mut of parseRes.data.mutations) {
 				meshService.getRingBuffer().push(mut);
 			}
-			rejectedCount = parseRes.data.mutations.length;
+			appliedCount = parseRes.data.mutations.length;
+			rejectedCount = 0;
 		}
 
 		return reply.send({
@@ -645,7 +663,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const responderTime = new Date().toISOString();
 
 		// 1. Process mutations through real SyncGatewayService if DB is available
-		let gatewayRes: any = null;
+		let gatewayRes: Awaited<ReturnType<typeof SyncGatewayService.processPushBatch>> | null = null;
 		if (reqData.mutations.length > 0) {
 			try {
 				gatewayRes = await SyncGatewayService.processPushBatch(

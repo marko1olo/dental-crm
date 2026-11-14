@@ -18,6 +18,17 @@ import {
 	postgresKnowsTimeZone,
 } from "../services/reports/managerReports.js";
 
+export interface CohortLtvQueryRow {
+	readonly cohort: string | null;
+	readonly month_1_revenue: string | number | null;
+	readonly month_12_revenue: string | number | null;
+}
+
+export interface ChairUsageQueryRow {
+	readonly name: string | null;
+	readonly appointment_count: string | number | null;
+}
+
 /**
  * Сырая строка запроса прибыльности. Числа объявлены `string | number`, потому
  * что драйвер отдаёт их по-разному, и тип, обещающий `number`, был бы ложью:
@@ -169,11 +180,10 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				LIMIT 6
 			`);
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const cohortLtvJson = rawLtv.rows.map((row: any) => ({
-				cohort: row.cohort,
-				"Month 1": Number(row.month_1_revenue),
-				"Month 12": Number(row.month_12_revenue),
+			const cohortLtvJson = (rawLtv.rows as unknown as CohortLtvQueryRow[]).map((row) => ({
+				cohort: row.cohort ?? "",
+				"Month 1": Number(row.month_1_revenue ?? 0),
+				"Month 12": Number(row.month_12_revenue ?? 0),
 			}));
 
 			// 2. Treatment Plan Funnel (Real Implementation)
@@ -222,12 +232,11 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			`);
 
 			const colors = ["#14b8a6", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444"];
-			const chairUtilizationJson = chairUsage.rows.map(
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(row: any, idx: number) => ({
-					name: row.name,
-					value: Number(row.appointment_count),
-					fill: colors[idx % colors.length],
+			const chairUtilizationJson = (chairUsage.rows as unknown as ChairUsageQueryRow[]).map(
+				(row, idx) => ({
+					name: row.name ?? "Без названия",
+					value: Number(row.appointment_count ?? 0),
+					fill: colors[idx % colors.length] ?? "#14b8a6",
 				}),
 			);
 

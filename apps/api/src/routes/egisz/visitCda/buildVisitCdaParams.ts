@@ -4,6 +4,56 @@
  */
 
 import type { EgiszCdaParams } from "../../../services/egiszCdaGenerator.js";
+import type {
+	VisitCdaClinicRow,
+	VisitCdaDiaryRow,
+	VisitCdaRow,
+} from "./fetchVisitCdaData.js";
+
+export interface AssembleVisitCdaParamsInput {
+	row: VisitCdaRow;
+	clinicRow?: VisitCdaClinicRow | null | undefined;
+	diaryRow?: VisitCdaDiaryRow | null | undefined;
+	doctorName: { first: string; last: string; middle?: string };
+	doctorContact?: { phone?: string | null; email?: string | null } | undefined;
+	doctorPosition?: string | undefined;
+	doctorPositionCode?: string | undefined;
+	resolvedIcd10: string;
+	effectiveDiagnosis: string;
+	encounterDate: Date;
+	clinicOid: string;
+	clinicName: string;
+	patientNameParts: { first: string; last: string; middle?: string };
+	patientSnilsDigits: string;
+	birthStr: string;
+	patientGender: "male" | "female";
+	anamnesis?: string | undefined;
+	objectiveStatus?: string | undefined;
+	complications?: string | undefined;
+	comorbidities?: string | undefined;
+	instrumentTrayBarcode?: string | undefined;
+	diagnosisTooth?: string | undefined;
+	treatmentPlan?: string | undefined;
+}
+
+interface PatientAddressProfile {
+	residentialAddress?: string | null;
+	registrationAddress?: string | null;
+}
+
+function extractPatientAddress(profile: unknown): string | undefined {
+	if (typeof profile !== "object" || profile === null) return undefined;
+	const candidate = profile as PatientAddressProfile;
+	const residential =
+		typeof candidate.residentialAddress === "string" && candidate.residentialAddress.trim()
+			? candidate.residentialAddress.trim()
+			: null;
+	const registration =
+		typeof candidate.registrationAddress === "string" && candidate.registrationAddress.trim()
+			? candidate.registrationAddress.trim()
+			: null;
+	return residential || registration || undefined;
+}
 
 export function assembleVisitCdaParams({
 	row, clinicRow, diaryRow, doctorName, doctorContact, doctorPosition,
@@ -11,17 +61,8 @@ export function assembleVisitCdaParams({
 	clinicOid, clinicName, patientNameParts, patientSnilsDigits, birthStr,
 	patientGender, anamnesis, objectiveStatus, complications, comorbidities,
 	instrumentTrayBarcode, diagnosisTooth, treatmentPlan,
-}: {
-	row: any; clinicRow: any; diaryRow: any; doctorName: any; doctorContact: any;
-	doctorPosition?: string | undefined; doctorPositionCode?: string | undefined; resolvedIcd10: string;
-	effectiveDiagnosis: string; encounterDate: Date; clinicOid: string;
-	clinicName: string; patientNameParts: any; patientSnilsDigits: string;
-	birthStr: string; patientGender: "male" | "female"; anamnesis?: string | undefined;
-	objectiveStatus?: string | undefined; complications?: string | undefined; comorbidities?: string | undefined;
-	instrumentTrayBarcode?: string | undefined; diagnosisTooth?: string | undefined; treatmentPlan?: string | undefined;
-}): EgiszCdaParams {
-	const pContact = row.patient.administrativeProfile as { residentialAddress?: string | null; registrationAddress?: string | null } | undefined;
-	const pAddress = pContact?.residentialAddress || pContact?.registrationAddress || undefined;
+}: AssembleVisitCdaParamsInput): EgiszCdaParams {
+	const pAddress = extractPatientAddress(row.patient.administrativeProfile);
 
 	return {
 		patientId: row.patient.id, patientName: patientNameParts, patientSnils: patientSnilsDigits,

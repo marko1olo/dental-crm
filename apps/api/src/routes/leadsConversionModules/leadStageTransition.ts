@@ -3,14 +3,15 @@
  * Mandate 8b (Strict <= 120 lines). Mandates 8e, 8n (Zero-friction & Full Audit Trail).
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, type Table } from "drizzle-orm";
+import type { PgTable } from "drizzle-orm/pg-core";
 import { crmLeads, crmLeadStageHistory } from "../../db/schema.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
 import type { DbExecutor } from "./patientCreationBridge.js";
 
 export interface StageTransitionDbExecutor {
-	insert: (table: any) => { values: (vals: Record<string, unknown>) => Promise<unknown> | void };
-	update: (table: any) => { set: (vals: Record<string, unknown>) => { where: (clause?: unknown) => Promise<unknown> | void } };
+	insert: (table: PgTable | Table) => { values: (vals: Record<string, unknown>) => Promise<unknown> | void };
+	update: (table: PgTable | Table) => { set: (vals: Record<string, unknown>) => { where: (clause?: unknown) => Promise<unknown> | void } };
 }
 
 export interface RecordStageTransitionParams {

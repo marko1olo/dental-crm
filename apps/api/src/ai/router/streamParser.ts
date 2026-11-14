@@ -10,7 +10,35 @@ import type {
 	AgentRouterChatResponse,
 	AgentRouterStreamCallbacks,
 	AgentRouterToolCall,
+	AgentRouterToolCallDelta,
+	AgentRouterUsage,
 } from "./routerTypes.js";
+
+interface SseChatChunk {
+	id?: string;
+	created?: number;
+	model?: string;
+	usage?: AgentRouterUsage;
+	choices?: Array<{
+		index?: number;
+		finish_reason?: string | null;
+		delta?: {
+			content?: string | null;
+			reasoning_content?: string | null;
+			reasoning?: string | null;
+			thinking?: string | null;
+			tool_calls?: Array<{
+				index?: number;
+				id?: string;
+				type?: "function";
+				function?: {
+					name?: string;
+					arguments?: string;
+				};
+			}>;
+		};
+	}>;
+}
 
 /**
  * Reads and accumulates Server-Sent Events (SSE) stream from response body.
@@ -30,7 +58,7 @@ export async function readSseStream(
 	let finishReason: string | null = null;
 	let fullContent = "";
 	let fullReasoning = "";
-	let capturedUsage: any = undefined;
+	let capturedUsage: AgentRouterUsage | undefined = undefined;
 
 	// Tool calls accumulator indexed by tool call index
 	const toolCallsMap = new Map<
@@ -57,10 +85,11 @@ export async function readSseStream(
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) break;
+			if (!value) continue;
 
 			buffer += decoder.decode(value, { stream: true });
 			const lines = buffer.split("\n");
-			buffer = lines.pop() || "";
+			buffer = lines.pop() ?? "";
 
 			for (const rawLine of lines) {
 				const line = rawLine.trim();
@@ -72,7 +101,7 @@ export async function readSseStream(
 					break;
 				}
 
-				let parsedChunk: any;
+				let parsedChunk: SseChatChunk | null = null;
 				try {
 					parsedChunk = JSON.parse(dataStr);
 				} catch {
@@ -115,6 +144,7 @@ export async function readSseStream(
 				// 3. Tool call deltas
 				if (Array.isArray(delta.tool_calls)) {
 					for (const tcDelta of delta.tool_calls) {
+						if (!tcDelta) continue;
 						const idx = tcDelta.index ?? 0;
 						let current = toolCallsMap.get(idx);
 						if (!current) {
@@ -138,9 +168,9 @@ export async function readSseStream(
 
 						callbacks.onToolCallDelta?.({
 							index: idx,
-							id: tcDelta.id,
+							...(tcDelta.id ? { id: tcDelta.id } : {}),
 							type: "function",
-							function: tcDelta.function,
+							...(tcDelta.function ? { function: tcDelta.function } : {}),
 						});
 					}
 				}

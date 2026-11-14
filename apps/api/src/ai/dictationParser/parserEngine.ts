@@ -6,7 +6,12 @@ import {
 	extractDentalProcedures,
 	synthesizeSoapRecord,
 } from "../dentalSpeechGrammar.js";
-import type { EmkUpdates, SmartAction, ToothUpdate } from "./types.js";
+import type {
+	DictationActionType,
+	EmkUpdates,
+	SmartAction,
+	ToothUpdate,
+} from "./types.js";
 import {
 	extractTime,
 	extractDate,
@@ -62,8 +67,7 @@ export function parseDictationLocally(
 				/(?:\+7|8)[\s-]*\(?\d{3}\)?[\s-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/,
 			);
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let action: any = "schedule";
+			let action: DictationActionType = "schedule";
 			if (text.includes("новый пациент")) action = "create_patient";
 
 			const pName = extractPatientName(
@@ -72,16 +76,17 @@ export function parseDictationLocally(
 			);
 			if (!pName) return null; // Without a patient name, scheduling is impossible locally. Fallback to LLM.
 
+			const rawPhone = phoneMatch?.[0];
 			return {
 				action: action,
 				payload: {
 					patientName: pName,
-					phone: phoneMatch ? phoneMatch[0].replace(/[\s-()]/g, "") : undefined,
+					phone: rawPhone ? rawPhone.replace(/[\s-()]/g, "") : undefined,
 					dayOffset: dateInfo?.relativeDays,
 					targetWeekday: dateInfo?.targetWeekday,
 					exactDate: dateInfo?.dayString,
 					time: timeStr,
-					doctorOrSpecialty: doctorMatch ? doctorMatch[1] : null,
+					doctorOrSpecialty: doctorMatch?.[1] ?? null,
 				},
 			};
 		}
@@ -90,10 +95,11 @@ export function parseDictationLocally(
 	const openCardMatch = text.match(
 		/(?:открой карточку|карточка|открой)\s+(.*)/i,
 	);
-	if (openCardMatch && ((openCardMatch[1] as string)?.length ?? 0) > 3) {
+	const targetCardName = openCardMatch?.[1]?.trim();
+	if (targetCardName && targetCardName.length > 3) {
 		return {
 			action: "open_card",
-			payload: { patientName: (openCardMatch[1] as string)?.trim() },
+			payload: { patientName: targetCardName },
 		};
 	}
 
@@ -101,15 +107,13 @@ export function parseDictationLocally(
 		/(?:поставь|добавь)?\s*имплант(?:ат)?\s*(\d+[.,]?\d*)\s*(?:на|x|х)\s*(\d+[.,]?\d*)/i,
 	);
 	if (implantMatch && !text.includes("зуб")) {
+		const rawDiameter = implantMatch[1]?.replace(",", ".") ?? "0";
+		const rawLength = implantMatch[2]?.replace(",", ".") ?? "0";
 		return {
 			action: "add_implant",
 			payload: {
-				diameter: parseFloat(
-					(implantMatch[1] as string)?.replace(",", ".") || "0",
-				),
-				length: parseFloat(
-					(implantMatch[2] as string)?.replace(",", ".") || "0",
-				),
+				diameter: parseFloat(rawDiameter),
+				length: parseFloat(rawLength),
 			},
 		};
 	}
@@ -125,9 +129,10 @@ export function parseDictationLocally(
 		if (cost) emkUpdates.costRub = cost;
 
 		const anesthesia = extractDentalAnesthesia(text);
+		const firstToothCode = teethCodes[0];
 		const procedures = extractDentalProcedures(
 			text,
-			teethCodes.length > 0 ? Number(teethCodes[0]) : undefined,
+			firstToothCode !== undefined ? Number(firstToothCode) : undefined,
 		);
 		const globalSurfaces = extractToothSurfaces(text);
 		const globalDiag = matchDentalDiagnosis(text);
@@ -165,7 +170,7 @@ export function parseDictationLocally(
 						) {
 							toothUpdates.push({
 								code,
-								state: foundState!,
+								state: foundState,
 								surfaces: effectiveSurfaces,
 								clinicalState,
 								diagnosisCode: diagCode,
@@ -250,11 +255,13 @@ export function parseDictationLocally(
 		);
 		const nameMatch = text.match(/([А-ЯЁ][а-яё]+(?: [А-ЯЁ][а-яё]+){1,2})/);
 		if (phoneMatch || nameMatch) {
+			const fullName = nameMatch?.[1] ?? null;
+			const phone = phoneMatch?.[0] ? phoneMatch[0].replace(/[\s-()]/g, "") : null;
 			return {
 				action: "create_patient",
 				payload: {
-					fullName: nameMatch ? (nameMatch[1] as string) : null,
-					phone: phoneMatch ? phoneMatch[0].replace(/[\s-()]/g, "") : null,
+					fullName,
+					phone,
 					notes: text,
 				},
 			};

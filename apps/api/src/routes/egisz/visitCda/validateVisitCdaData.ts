@@ -4,9 +4,10 @@
  */
 
 import { isValidSnils } from "../../../utils/snils.js";
+import type { VisitCdaDiaryRow } from "./fetchVisitCdaData.js";
 
 export interface ValidateVisitCdaInput {
-	diaryRow: any;
+	diaryRow?: VisitCdaDiaryRow | null | undefined;
 	effectiveDiagnosis: string;
 	clinicOid: string | null;
 	doctorName: { first: string; last: string };

@@ -1,4 +1,8 @@
 import type { ClinicalToothState } from "../dentalSpeechGrammar.js";
+import type {
+	AnesthesiaResult,
+	ClinicalProcedureResult,
+} from "../grammar/clinicalGrammarTypes.js";
 
 export interface ToothUpdate {
 	code: string;
@@ -26,30 +30,81 @@ export interface EmkUpdates {
 	treatmentPlan?: string | undefined;
 	recommendations?: string | undefined;
 	costRub?: number | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
-	anesthesia?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
-	procedures?: any[] | undefined;
+	anesthesia?: AnesthesiaResult | undefined;
+	procedures?: ClinicalProcedureResult[] | undefined;
 }
 
-export interface SmartAction {
-	action:
-		| "update_tooth"
-		| "schedule"
-		| "reschedule"
-		| "cancel_schedule"
-		| "open_card"
-		| "add_implant"
-		| "create_patient"
-		| "complex_llm_fallback";
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	payload?: any;
+export type DictationActionType =
+	| "update_tooth"
+	| "schedule"
+	| "reschedule"
+	| "cancel_schedule"
+	| "open_card"
+	| "add_implant"
+	| "create_patient"
+	| "complex_llm_fallback";
+
+export interface SchedulePayload {
+	patientName: string;
+	phone?: string | undefined;
+	dayOffset?: number | undefined;
+	targetWeekday?: number | undefined;
+	exactDate?: string | undefined;
+	time?: string | undefined;
+	doctorOrSpecialty?: string | null | undefined;
+}
+
+export interface ReschedulePayload {
+	patientName: string;
+	dayOffset?: number | undefined;
+	targetWeekday?: number | undefined;
+	exactDate?: string | undefined;
+	time?: string | undefined;
+}
+
+export interface CancelSchedulePayload {
+	patientName: string;
+}
+
+export interface OpenCardPayload {
+	patientName: string;
+}
+
+export interface AddImplantPayload {
+	diameter: number;
+	length: number;
+}
+
+export interface CreatePatientPayload {
+	fullName?: string | null | undefined;
+	phone?: string | null | undefined;
+	notes?: string | undefined;
+}
+
+export interface UpdateToothPayload {
 	toothUpdates?: ToothUpdate[] | undefined;
 	emkUpdates?: EmkUpdates | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
-	anesthesia?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
-	procedures?: any[] | undefined;
+	anesthesia?: AnesthesiaResult | undefined;
+	procedures?: ClinicalProcedureResult[] | undefined;
+}
+
+export type SmartActionPayload =
+	| SchedulePayload
+	| ReschedulePayload
+	| CancelSchedulePayload
+	| OpenCardPayload
+	| AddImplantPayload
+	| CreatePatientPayload
+	| UpdateToothPayload
+	| Record<string, unknown>;
+
+export interface SmartAction {
+	action: DictationActionType;
+	payload?: SmartActionPayload | undefined;
+	toothUpdates?: ToothUpdate[] | undefined;
+	emkUpdates?: EmkUpdates | undefined;
+	anesthesia?: AnesthesiaResult | undefined;
+	procedures?: ClinicalProcedureResult[] | undefined;
 }
 
 /** Алиасы предметной области разбора диктовки врача у кресла */

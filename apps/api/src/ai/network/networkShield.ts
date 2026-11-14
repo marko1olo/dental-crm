@@ -155,6 +155,17 @@ export function getNetworkShieldStatus(
 	};
 }
 
+interface NetworkShieldAgentOptions
+	extends Omit<https.AgentOptions, "createConnection"> {
+	createConnection?: (
+		connOpts: Record<string, unknown>,
+		callback: (
+			err: Error | null,
+			socket?: net.Socket | tls.TLSSocket | null,
+		) => void,
+	) => void;
+}
+
 export function createNetworkShieldWsAgent(
 	options?: NetworkShieldWsAgentOptions,
 ): https.Agent | http.Agent | null {
@@ -175,7 +186,7 @@ export function createNetworkShieldWsAgent(
 		const socksType: 4 | 5 =
 			parsed.socksType ?? (parsed.protocol.startsWith("socks4") ? 4 : 5);
 
-		const agentOptions: any = {
+		const agentOptions: NetworkShieldAgentOptions = {
 			timeout,
 			createConnection: (connOpts: Record<string, unknown>, callback: (err: Error | null, socket?: net.Socket | tls.TLSSocket | null) => void) => {
 				const targetHost = String(
@@ -212,10 +223,16 @@ export function createNetworkShieldWsAgent(
 							return;
 						}
 
+						const candidateServername =
+							typeof connOpts["servername"] === "string"
+								? connOpts["servername"]
+								: undefined;
+						const candidateHost =
+							typeof connOpts["host"] === "string"
+								? connOpts["host"]
+								: undefined;
 						const servername =
-							(connOpts.servername as string | undefined) ||
-							(connOpts.host as string | undefined) ||
-							targetHost;
+							candidateServername || candidateHost || targetHost;
 
 						const tlsSocket = tls.connect({
 							socket,
@@ -251,7 +268,7 @@ export function createNetworkShieldWsAgent(
 			},
 		};
 
-		return new https.Agent(agentOptions);
+		return new https.Agent(agentOptions as unknown as https.AgentOptions);
 	}
 
 	const authHeader = parsed.username
@@ -260,7 +277,7 @@ export function createNetworkShieldWsAgent(
 			).toString("base64")}`
 		: undefined;
 
-	const agentOptions: any = {
+	const agentOptions: NetworkShieldAgentOptions = {
 		timeout,
 		createConnection: (connOpts: Record<string, unknown>, callback: (err: Error | null, socket?: net.Socket | tls.TLSSocket | null) => void) => {
 			const targetHost = String(
@@ -300,10 +317,16 @@ export function createNetworkShieldWsAgent(
 					return;
 				}
 
+				const candidateServername =
+					typeof connOpts["servername"] === "string"
+						? connOpts["servername"]
+						: undefined;
+				const candidateHost =
+					typeof connOpts["host"] === "string"
+						? connOpts["host"]
+						: undefined;
 				const servername =
-					(connOpts.servername as string | undefined) ||
-					(connOpts.host as string | undefined) ||
-					targetHost;
+					candidateServername || candidateHost || targetHost;
 
 				const tlsSocket = tls.connect({
 					socket,
@@ -340,7 +363,7 @@ export function createNetworkShieldWsAgent(
 		},
 	};
 
-	return new https.Agent(agentOptions);
+	return new https.Agent(agentOptions as unknown as https.AgentOptions);
 }
 
 let cachedWsAgent: https.Agent | http.Agent | null = null;
@@ -489,11 +512,11 @@ export async function probeProxyConnectivity(
 			}
 		});
 
-		req.on("error", (err) => {
+		req.on("error", (err: unknown) => {
 			resolve({
 				success: false,
 				latencyMs: Date.now() - startTime,
-				error: err.message,
+				error: err instanceof Error ? err.message : String(err),
 			});
 		});
 
