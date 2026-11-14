@@ -310,13 +310,27 @@ export function parseContainerHeader(buffer: Buffer): { header: CloudBackupMetad
 		throw new Error(`Invalid backup magic header: expected '${DENTE_ZK_MAGIC.trim()}', got '${magic.trim()}'`);
 	}
 	const jsonLength = buffer.readUInt32BE(magicBuf.length);
+	if (jsonLength <= 0 || jsonLength > 1024 * 1024) {
+		throw new Error("INVALID_HEADER_LENGTH");
+	}
 	const offset = magicBuf.length + 4 + jsonLength;
 	if (buffer.length < offset) {
 		throw new Error(`Incomplete backup header: expected ${offset} bytes, available ${buffer.length}`);
 	}
 	const headerBuffer = buffer.subarray(0, offset);
 	const jsonBytes = buffer.subarray(magicBuf.length + 4, offset);
-	const header = JSON.parse(jsonBytes.toString("utf8")) as CloudBackupMetadata;
+	let header: CloudBackupMetadata;
+	try {
+		header = JSON.parse(jsonBytes.toString("utf8")) as CloudBackupMetadata;
+	} catch {
+		throw new Error("CORRUPTED_BACKUP_HEADER");
+	}
+	if (!header || typeof header !== "object") {
+		throw new Error("CORRUPTED_BACKUP_HEADER");
+	}
+	if (!header.ivHex || typeof header.ivHex !== "string" || (header.ivHex.length !== 24 && header.ivHex.length !== 32)) {
+		throw new Error("CORRUPTED_BACKUP_HEADER: invalid ivHex");
+	}
 	return { header, headerBuffer, offset };
 }
 

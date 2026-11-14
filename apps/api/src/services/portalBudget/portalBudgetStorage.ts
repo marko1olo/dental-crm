@@ -10,6 +10,22 @@ import type {
 // Fast L1 memory cache (backed by PostgreSQL portal_budget_tokens)
 export const memoryCache = new Map<string, StoredPortalBudget>();
 
+function safeJsonParse<T>(raw: unknown, fallback: T): T {
+	if (!raw) return fallback;
+	if (typeof raw !== "string") return (raw as T) ?? fallback;
+	try {
+		return JSON.parse(raw) as T;
+	} catch {
+		return fallback;
+	}
+}
+
+function toSafeIsoString(date: unknown, fallbackIso: string | null = null): string | null {
+	if (!date) return fallbackIso;
+	const d = date instanceof Date ? date : new Date(String(date));
+	return Number.isNaN(d.getTime()) ? fallbackIso : d.toISOString();
+}
+
 export async function persistBudget(budget: StoredPortalBudget): Promise<void> {
 	memoryCache.set(budget.token, budget);
 
@@ -87,8 +103,9 @@ export async function persistBudget(budget: StoredPortalBudget): Promise<void> {
 }
 
 export async function loadBudget(token: string): Promise<StoredPortalBudget | null> {
-	if (memoryCache.has(token)) {
-		return memoryCache.get(token)!;
+	const cached = memoryCache.get(token);
+	if (cached) {
+		return cached;
 	}
 
 	try {
@@ -98,12 +115,9 @@ export async function loadBudget(token: string): Promise<StoredPortalBudget | nu
 		);
 		if (res.rows.length > 0) {
 			const row = res.rows[0];
-			const parsedItems: PortalBudgetItem[] =
-				typeof row.items === "string" ? JSON.parse(row.items) : (row.items || []);
+			const parsedItems: PortalBudgetItem[] = safeJsonParse<PortalBudgetItem[]>(row.items, []);
 			const parsedSignature: PortalBudgetSignature | undefined =
-				row.signature
-					? (typeof row.signature === "string" ? JSON.parse(row.signature) : row.signature)
-					: undefined;
+				row.signature ? safeJsonParse<PortalBudgetSignature | undefined>(row.signature, undefined) : undefined;
 
 			const budget: StoredPortalBudget = {
 				token: row.token,
@@ -129,14 +143,14 @@ export async function loadBudget(token: string): Promise<StoredPortalBudget | nu
 				failedAttempts: Number(row.failed_attempts) || 0,
 				totalFailures: Number(row.total_failures) || 0,
 				isLocked: Boolean(row.is_locked),
-				lockedUntil: row.locked_until ? new Date(row.locked_until) : null,
-				viewedAt: row.viewed_at ? new Date(row.viewed_at).toISOString() : null,
-				signedAt: row.signed_at ? new Date(row.signed_at).toISOString() : null,
+				lockedUntil: row.locked_until ? (Number.isNaN(new Date(row.locked_until).getTime()) ? null : new Date(row.locked_until)) : null,
+				viewedAt: toSafeIsoString(row.viewed_at),
+				signedAt: toSafeIsoString(row.signed_at),
 				signerName: row.signer_name ?? null,
 				documentHash: row.document_hash ?? null,
 				signature: parsedSignature,
-				validUntil: row.valid_until ? new Date(row.valid_until).toISOString() : null,
-				createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+				validUntil: toSafeIsoString(row.valid_until),
+				createdAt: toSafeIsoString(row.created_at, new Date().toISOString()) ?? new Date().toISOString(),
 			};
 
 			memoryCache.set(token, budget);

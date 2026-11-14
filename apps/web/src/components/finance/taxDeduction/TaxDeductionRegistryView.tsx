@@ -19,6 +19,31 @@ import { TaxDeductionRegistryMobileCards } from "./TaxDeductionRegistryMobileCar
 
 export type { TaxCertificateRegistryItem, TaxCertificateStatus };
 
+interface RawTaxCertificateDoc {
+	readonly id: string;
+	readonly taxYear?: number;
+	readonly totalAmountRub?: number | string;
+	readonly status?: string;
+	readonly issuedAt?: string;
+	readonly createdAt?: string;
+	readonly patientName?: string;
+	readonly taxPayerInn?: string;
+	readonly payload?: {
+		readonly certificateNumber?: string;
+		readonly taxpayerName?: string;
+		readonly relationshipRu?: string;
+		readonly relationshipCode?: string;
+		readonly taxPaymentSelection?: {
+			readonly selectedPaymentIds?: readonly string[];
+		};
+		readonly taxParams?: TaxDeductionCertificateParams;
+		readonly certificateParams?: TaxDeductionCertificateParams;
+		readonly params?: TaxDeductionCertificateParams;
+		readonly [key: string]: unknown;
+	};
+	readonly [key: string]: unknown;
+}
+
 export interface TaxDeductionRegistryViewProps {
 	readonly onOpenNewCertificate?: () => void;
 	readonly selectedPatientId?: string;
@@ -49,14 +74,22 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
 				if (isMounted) {
-					if (Array.isArray(data) && data.length > 0) {
-						const mapped: TaxCertificateRegistryItem[] = data.map((d: any) => {
+					const docList: readonly RawTaxCertificateDoc[] = Array.isArray(data)
+						? (data as readonly RawTaxCertificateDoc[])
+						: Array.isArray((data as { documents?: readonly RawTaxCertificateDoc[] })?.documents)
+							? (data as { documents: readonly RawTaxCertificateDoc[] }).documents
+							: [];
+					if (docList.length > 0) {
+						const mapped: TaxCertificateRegistryItem[] = docList.map((d) => {
 							const year = d.taxYear || new Date().getFullYear();
 							const total = Number(d.totalAmountRub) || 0;
 							const c1 = Math.min(total, year >= 2024 ? 150000 : 120000);
 							const c2 = Math.max(0, total - c1);
 							const status: TaxCertificateStatus =
 								d.status === "issued" ? "ISSUED" : d.status === "sent_to_fns" ? "SENT_TO_FNS" : "DRAFT";
+							const rawRel = d.payload?.relationshipCode;
+							const relCode: "1" | "2" | "3" | "4" =
+								rawRel === "2" || rawRel === "3" || rawRel === "4" ? rawRel : "1";
 							return {
 								id: d.id,
 								certificateNumber: String(d.payload?.certificateNumber || d.id.slice(0, 6).toUpperCase()),
@@ -67,7 +100,7 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 								taxpayerName: d.payload?.taxpayerName || d.patientName || "Налогоплательщик",
 								taxpayerInn: d.taxPayerInn || undefined,
 								relationshipRu: d.payload?.relationshipRu || "Пациент (лично)",
-								relationshipCode: d.payload?.relationshipCode || "1",
+								relationshipCode: relCode,
 								code01Rub: c1,
 								code02Rub: c2,
 								totalRub: total,
@@ -85,7 +118,8 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 					}
 				}
 			})
-			.catch(() => {
+			.catch((fetchErr: unknown) => {
+				console.warn("[TaxDeductionRegistryView] Не удалось загрузить справки из API:", fetchErr);
 				if (isMounted) {
 					setItems(isDemoShowcaseMode() ? DEMO_REGISTRY_ITEMS : []);
 				}
@@ -183,7 +217,8 @@ export const TaxDeductionRegistryView: React.FC<TaxDeductionRegistryViewProps> =
 				downloadFilename: `tax_cert_${item.certificateNumber}_${item.taxYear}.html`,
 			});
 			showToast(`Справка № ${item.certificateNumber} отправлена на печать`, "success");
-		} catch {
+		} catch (printErr: unknown) {
+			console.warn("[TaxDeductionRegistryView] Прямая печать через hardwarePrinter не удалась, фоллбек на окно браузера:", printErr);
 			const win = window.open("", "_blank");
 			if (win) {
 				win.document.write(html);

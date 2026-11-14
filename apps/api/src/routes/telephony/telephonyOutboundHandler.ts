@@ -26,6 +26,7 @@ export async function telephonyOutboundCallHandler(
 		resolvedOrgId = await requireResolvedOrganizationId(request, reply, "outbound call");
 	}
 	if (!resolvedOrgId) return;
+	const orgId = resolvedOrgId;
 
 	const body = request.body || ({} as { phone?: string; patientId?: string; patientName?: string });
 	const callerPhone = normalizePhoneNumber(body.phone);
@@ -41,16 +42,16 @@ export async function telephonyOutboundCallHandler(
 
 	// Real dispatch to PBX gateway
 	const outboundResult = await TelephonyGatewayService.initiateOutboundCall({
-		organizationId: resolvedOrgId,
+		organizationId: orgId,
 		callerPhone,
 		patientId,
 		patientName,
 	});
 
 	if (!outboundResult.dispatched) {
-		await withTenantCtx(resolvedOrgId, async () => {
+		await withTenantCtx(orgId, async () => {
 			await db.insert(communicationEvents).values({
-				organizationId: resolvedOrgId!,
+				organizationId: orgId,
 				patientId,
 				callerPhone: callerPhone.e164,
 				channel: "phone",
@@ -72,9 +73,9 @@ export async function telephonyOutboundCallHandler(
 	const callId = outboundResult.callId;
 
 	// In progress call recorded as queued, never fake completed before talk
-	await withTenantCtx(resolvedOrgId, async () => {
+	await withTenantCtx(orgId, async () => {
 		await db.insert(communicationEvents).values({
-			organizationId: resolvedOrgId!,
+			organizationId: orgId,
 			patientId,
 			callerPhone: callerPhone.e164,
 			channel: "phone",

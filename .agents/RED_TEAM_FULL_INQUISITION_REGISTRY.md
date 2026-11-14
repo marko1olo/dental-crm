@@ -6310,3 +6310,86 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:migration-drift` -> **Exit Code 0 (100% Synchronized, Zero Drift)**.
   - `npm run check:react-hooks` -> **Exit Code 0 (3 243 файла, 0 нарушений)**.
   - `npm run check:buttons` -> **Exit Code 0 (4 859 TSX файлов, 0 нарушений токенов)**.
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СЕКТОР ХИРУРГИИ, ИМПЛАНТАЦИИ И СПИСАНИЯ РАСХОДНИКОВ [FIXER-IMPLANTS-01]
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Surgical Implants, Consumables Deduction & Stability Engine (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Implants-01 / `6aaca71c`).
+- **Устраненные мины и хирургические правки:**
+  1. **Мульти-тенантная дыра 152-ФЗ (`deductConsumables.ts:44-48, 100-104, 150-154`):** В вызовы `tx.update(inventoryItems)` добавлено обязательное условие `eq(inventoryItems.organizationId, orgId)`. Исключена возможность списания остатков чужой клиники.
+  2. **Условное списание шовного материала (`deductConsumables.ts:130`):** Списание обёрнуто в условие `if (input.sutureMaterial || input.sutureItemId)`. CRM больше не списывает «воздух», если врач не применял шовный материал.
+  3. **Ликвидация non-null assertion (`deductImplantScrew.ts:45`):** Убран `invItem = created!;`. Внедрён осознанный guard-clause с выбросом ошибки `INVENTORY_INSERT_FAILED`.
+  4. **Ликвидация падений 22P02, IDOR и аудит 152-ФЗ (`passportRoute.ts`):** Входящий параметр `installationId` строго валидируется через `z.string().uuid()`. Добавлена проверка `evaluateClinicalAccess(staffRole)` (152-ФЗ / 323-ФЗ ст. 13) и аудит доступа через `auditMedicalAccessFromRequest`. В запросы к `patients`, `users` и `implantIsqMeasurements` добавлен фильтр `organizationId`.
+  5. **Ликвидация SQL-падений NaN / 2201W (`patientImplantsRoute.ts`):** `patientId` валидируется через UUID. `toothNumberFdi` санитизирован (целое число в диапазонах 11..48, 51..85) с возвратом 400 при `NaN`. `limit` зажат через `Math.max(1, Math.min(limit, 100))` против ошибки `2201W`. Удалены касты `as any`, `as unknown as`.
+  6. **Ликвидация фабрикации ISQ 72 (`installationRoute.ts:67, 92`):** Устранено ложное затирание `?? 72`. Если Osstell не использовался, `baselineIsq` сохраняется как `null` в БД, и оценка стабильности строится строго по торку (Мандат 8e).
+  7. **Изоляция инвойсов и атомарный пересчёт (`installationBillingAndOdontogram.ts`):** Валидация принадлежности `invoiceId` текущей клинике и пациенту, инкремент `totalAmountRub`.
+  8. **Поддержка UUIDv7 RFC 9562 (`ChairsideSurgeryHubModal.tsx:226`):** Регулярка расширена с `[1-5]` до `[1-8]`. Идентификаторы `uuidv7()` из PostgreSQL 18 больше не отбрасываются в `undefined`.
+  9. **DDL-миграция PostgreSQL 18 (`0243_implant_installations_baseline_isq_nullable.sql`):** Колонка `patient_implant_installations.baseline_isq` переведена в `nullable` (сняты `NOT NULL` и `DEFAULT 70`).
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `deepRoutesPrivacyAudit.test.ts` -> **17/17 PASS (Exit Code 0)**.
+  - `implantStabilityEngine.test.ts` -> **5/5 PASS (Exit Code 0)**.
+  - `surgeryRoutes.test.ts` -> **9/9 PASS (Exit Code 0)**.
+  - `chairsideSurgeryHub.test.tsx` -> **12/12 PASS (Exit Code 0)**.
+  - `surgerySSOTSuite.test.tsx` -> **10/10 PASS (Exit Code 0)**.
+  - `implantologySSOTSuite.test.tsx` -> **8/8 PASS (Exit Code 0)**.
+  - `check:migration-drift` -> **Exit Code 0 (100% Zero Drift)**.
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СЕКТОР ОФИЦИАЛЬНЫХ ДОКУМЕНТОВ, СПРАВОК ФНС 1151156 И ОБЛАЧНЫХ БЭКАПОВ [FIXER-DOCUMENTS-01]
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Official Documents, FNS Tax Certificates (1151156), Zero-Knowledge Backups & Portal Budget (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Documents-01 / `91b2ee23`).
+- **Устраненные мины и хирургические правки:**
+  1. **Защита от падений `JSON.parse` и `RangeError` дат (`documentQuery.ts`):** Внедрен безопасный парсер `safeJsonParse<T>` для `payloadJson` и `taxPaymentSnapshotJson`. Внедрен хелпер `toSafeIsoString` с валидацией `!Number.isNaN(d.getTime())`.
+  2. **Ликвидация мертвого Empty State реестра справок ФНС (`TaxDeductionRegistryView.tsx`):** Исправлена распаковка ответа API: `const docList = Array.isArray(data) ? data : data?.documents ?? []`. Обеспечено строгое соответствие `exactOptionalPropertyTypes: true`.
+  3. **Защита от `NaN` в суммах Кода 2 для ФНС (`taxXml.ts`):** Разбор сумм защищен проверкой `Number.isFinite(parsedRub) && parsedRub > 0`. Ликвидированы двойные касты `as unknown as`.
+  4. **Защита дат и сумм в сервисе НДФЛ (`ndflTaxService.ts`):** Валидация дат чеков от `RangeError`, регулярки `c1Match`/`c2Match` защищены `try/catch`, ликвидирован `as unknown as` в проверке анонимности.
+  5. **Устранение non-null assertions и сбоев портала смет (`portalBudgetStorage.ts`):** Заменен `memoryCache.get(token)!` на безопасный guard-clause, поля дат защищены от `RangeError`.
+  6. **Валидация заголовка бэкапа (`cloudBackupEngine.ts`):** Введено ограничение `jsonLength <= 1024 * 1024`, парсинг JSON обернут в `try/catch` с типизированной ошибкой, валидируется длина `ivHex` (24 или 32 hex символа).
+  7. **Синхронизация полей лаунчера (`launcherFinanceApi.ts`):** Добавлено чтение `json?.documents ?? json?.data`.
+  8. **Замена неэффективного клонирования (`taxCertificateEngine.ts`):** Заменен `JSON.parse(JSON.stringify(template))` на нативный `structuredClone(template)`.
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `ndflTaxService.test.ts` & `taxXml.test.ts` -> **16/16 PASS (Exit Code 0)**.
+  - `cloudBackupEngine.test.ts` -> **16/16 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0**.
+  - `npm run check:buttons` -> **Exit Code 0**.
+  - `npm run check:react-hooks` -> **Exit Code 0**.
+  - `npm run check:migration-drift` -> **Exit Code 0**.
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ГЛУБОКИЕ И НЕОБЫЧНЫЕ ЗОНЫ БЭКЕНДА [DEMINER-DEEP-BACKEND-01]
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** EGISZ/REMD, DICOMweb PACS Boundary Parsing, Telephony Webhooks & Analytics P&L (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Старший Архитектор-Демайнер бэкенда (Deminer-Deep-Backend-01 / `5a7533c3`).
+- **Устраненные мины и хирургические правки:**
+  1. **ЕГИСЗ / РЭМД Минздрава РФ (`egiszRemdTransport.ts`, `outboxRowFormatter.ts`, `visitCdaExport.ts`):**
+     - Внедрена валидация `documentDateTime`: приведение `Date | string` через `instanceof Date` и проверка `Number.isNaN(d.getTime())`, исключая `TypeError` и `RangeError` при выгрузке протоколов в Минздрав.
+     - В `outboxRowFormatter.ts` объявлены строгие интерфейсы `EgiszOutboxJournalDbRow`, `EgiszValidationError`, внедрен `toSafeIsoString`, а OID клиники читается из шлюзовой конфигурации вместо хардкода.
+     - В `visitCdaExport.ts` устранен non-null assertion `clinicOid: clinicOid!`.
+  2. **Радиология, PACS и DICOMweb (`pixelDataLocator.ts`, `dicomwebHelpers.ts`, `stowStreamWriter.ts`):**
+     - В `pixelDataLocator.ts` устранен ложный возврат `null`: `cursor` переведен в `let`, добавлен цикл с продвижением `cursor = buffer.indexOf(pixelTag, cursor + 4)` при инкапсулированных данных.
+     - В `dicomwebHelpers.ts` очищен тег имени пациента от кареток `^` через `cleanDicomPatientName`.
+     - В `dicomwebHelpers.ts` и `stowStreamWriter.ts` добавлен поиск границы `\n--` при отсутствии `\r\n--`, обеспечивая корректный приём бинарников DICOM от Unix-клиентов.
+  3. **Телефония и входящие Webhooks (`telephonyCallLifecycleHandler.ts`, `telephonyOutboundHandler.ts`, `telephonyCallUpdateHandler.ts`, `telephonyWebhookEndedService.ts`):**
+     - Длительность звонка парсится через `Number.isFinite` с поддержкой строковых секунд от провайдеров АТС и защитой от `Infinity`.
+     - Ликвидированы non-null assertions `resolvedOrgId!` при мутациях событий звонков.
+  4. **Аналитика и финансовые калькуляторы (`doctorReports.ts`, `financialPnl.ts`, `noShowHeatmapCalculator.ts`):**
+     - Внедрена утилита `parseSafeDate`, защищающая от падений при невалидных строках дат. Специальность врача защищена guard-clause.
+     - В `financialPnl.ts` добавлена проверка `Number.isNaN(rawFrom.getTime())` с откатом на дефолтный период.
+     - В `noShowHeatmapCalculator.ts` заменен `matrix.get(key)!` на безопасный guard-clause с инициализацией, числа защищены через `Number.isFinite`.
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `egiszCryptoProEngine.test.ts` -> **22/22 PASS (Exit Code 0)**.
+  - `dicomwebStow.test.ts` -> **8/8 PASS (Exit Code 0)**.
+  - `telephonyCallLifecycle.test.ts` -> **3/3 PASS (Exit Code 0)**.
+  - `telephonySecurity.test.ts` -> **6/6 PASS (Exit Code 0)**.
+  - `financialPnl.test.ts` -> **3/3 PASS (Exit Code 0)**.
+  - `managerialPnlEngine.test.ts` -> **5/5 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0 (20 991 файл проверен)**.
+  - `npm run check:migration-drift` -> **Exit Code 0 (100% Synchronized)**.

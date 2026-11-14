@@ -27,14 +27,68 @@ export async function linkBillingAndOdontogram(
 	const doctorGrossMarginRub = operationPriceRub - totalMaterialsCostRub;
 	const netDoctorIncomeRub = Math.max(0, doctorGrossMarginRub);
 
-	let linkedInvoiceId = input.invoiceId ?? null;
+	let linkedInvoiceId: string | null = null;
+
+	if (input.invoiceId) {
+		const [existingInvoice] = await tx
+			.select()
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.id, input.invoiceId),
+					eq(patientInvoices.organizationId, orgId),
+					eq(patientInvoices.patientId, input.patientId),
+				),
+			)
+			.limit(1);
+
+		if (existingInvoice) {
+			linkedInvoiceId = existingInvoice.id;
+			const updatedTotal = Number(existingInvoice.totalAmountRub || 0) + operationPriceRub;
+			await tx
+				.update(patientInvoices)
+				.set({
+					totalAmountRub: updatedTotal,
+					totalRub: String(updatedTotal),
+				})
+				.where(
+					and(
+						eq(patientInvoices.id, existingInvoice.id),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				);
+		}
+	}
+
 	if (!linkedInvoiceId && input.visitId) {
 		const [existing] = await tx
 			.select()
 			.from(patientInvoices)
-			.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.visitId, input.visitId)))
+			.where(
+				and(
+					eq(patientInvoices.organizationId, orgId),
+					eq(patientInvoices.visitId, input.visitId),
+					eq(patientInvoices.patientId, input.patientId),
+				),
+			)
 			.limit(1);
-		if (existing) linkedInvoiceId = existing.id;
+
+		if (existing) {
+			linkedInvoiceId = existing.id;
+			const updatedTotal = Number(existing.totalAmountRub || 0) + operationPriceRub;
+			await tx
+				.update(patientInvoices)
+				.set({
+					totalAmountRub: updatedTotal,
+					totalRub: String(updatedTotal),
+				})
+				.where(
+					and(
+						eq(patientInvoices.id, existing.id),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				);
+		}
 	}
 
 	if (!linkedInvoiceId) {
@@ -64,7 +118,7 @@ export async function linkBillingAndOdontogram(
 		unitPriceRub: operationPriceRub,
 		quantity: "1",
 		status: "completed",
-		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см. ISQ: ${Math.round(isqMean ?? 70)}.`,
+		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см.${isqMean !== null ? ` ISQ: ${Math.round(isqMean)}.` : ""}`,
 	});
 
 	const financialSummary = {

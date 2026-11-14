@@ -2,12 +2,12 @@ import { and, eq } from "drizzle-orm";
 import type { createImplantInstallationSchema } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
+import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 
 type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
 
 export async function deductImplantScrew(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	tx: any,
+	tx: DbExecutor,
 	orgId: string,
 	userId: string | null,
 	input: InstallationInput,
@@ -42,7 +42,10 @@ export async function deductImplantScrew(
 				expirationDate: input.expirationDate ?? "2028-12-31",
 			})
 			.returning();
-		invItem = created!;
+		if (!created) {
+			throw new Error("INVENTORY_INSERT_FAILED: Не удалось создать номенклатурную карточку имплантата.");
+		}
+		invItem = created;
 	}
 
 	const effectiveLotNumber = input.lotNumber || invItem.lotNumber || "LOT-REAL-STOCK";

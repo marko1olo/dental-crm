@@ -10,16 +10,34 @@ import { db } from "../db/client.js";
 import { appointments, doctorShiftRosters, users } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 
+interface DoctorReportsQuery {
+	from?: string;
+	to?: string;
+}
+
+interface DoctorShiftsQuery {
+	doctorId?: string;
+	from?: string;
+	to?: string;
+}
+
+function parseSafeDate(raw: string | undefined, defaultTimeSuffix: string, fallback: Date): Date {
+	if (!raw) return fallback;
+	const formatted = raw.includes("T") ? raw : `${raw}${defaultTimeSuffix}`;
+	const d = new Date(formatted);
+	return Number.isNaN(d.getTime()) ? fallback : d;
+}
+
 export async function registerDoctorReportsRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * GET /api/v1/doctor/reports — Сводный отчет результативности и выработки врачей
 	 */
-	app.get("/api/v1/doctor/reports", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get<{ Querystring: DoctorReportsQuery }>("/api/v1/doctor/reports", async (request, reply) => {
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const q = request.query as any;
-		const fromDate = q.from ? new Date(`${q.from}T00:00:00.000Z`) : new Date(Date.now() - 30 * 86400000);
-		const toDate = q.to ? new Date(`${q.to}T23:59:59.999Z`) : new Date();
+		const q = request.query;
+		const fromDate = parseSafeDate(q.from, "T00:00:00.000Z", new Date(Date.now() - 30 * 86400000));
+		const toDate = parseSafeDate(q.to, "T23:59:59.999Z", new Date());
 
 		try {
 			const doctors = await db
@@ -65,7 +83,7 @@ export async function registerDoctorReportsRoutes(app: FastifyInstance): Promise
 					return {
 						doctorId: doc.id,
 						doctorName: doc.fullName || "Врач-стоматолог",
-						specialty: Array.isArray(doc.specialties) ? doc.specialties[0] : "therapy",
+						specialty: (Array.isArray(doc.specialties) && doc.specialties[0]) ? doc.specialties[0] : "therapy",
 						appointmentsCount: appts.length,
 						shiftsCount: shifts.length,
 					};
@@ -77,7 +95,7 @@ export async function registerDoctorReportsRoutes(app: FastifyInstance): Promise
 				period: { from: fromDate.toISOString().slice(0, 10), to: toDate.toISOString().slice(0, 10) },
 				doctors: rows,
 			});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			request.log.error(err, "Failed to get doctor reports");
 			return reply.send({ ok: true, doctors: [] });
 		}
@@ -86,10 +104,10 @@ export async function registerDoctorReportsRoutes(app: FastifyInstance): Promise
 	/**
 	 * GET /api/v1/doctor/shifts — График и закрытые смены врачей из PostgreSQL doctor_shifts
 	 */
-	app.get("/api/v1/doctor/shifts", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get<{ Querystring: DoctorShiftsQuery }>("/api/v1/doctor/shifts", async (request, reply) => {
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const q = request.query as any;
+		const q = request.query;
 
 		try {
 			const conditions = [eq(doctorShiftRosters.organizationId, orgId)];
@@ -117,7 +135,7 @@ export async function registerDoctorReportsRoutes(app: FastifyInstance): Promise
 					role: s.role,
 				})),
 			});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			request.log.error(err, "Failed to fetch doctor shifts");
 			return reply.send({ ok: true, shifts: [] });
 		}

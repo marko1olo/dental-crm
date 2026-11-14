@@ -619,7 +619,13 @@ export function buildRemdSoapEnvelope(params: RemdSoapEnvelopeParams): {
 	const endpoint = params.endpointUrl || "https://remd.egisz.rosminzdrav.ru/ws/remd";
 	const docOid = params.docTypeOid || EGISZ_OIDS.SEMD_TEMPLATE_101;
 	const docVer = params.documentVersion ?? 1;
-	const nowHl7 = formatHl7DateTime(params.documentDateTime ?? new Date());
+	const validDocDate = params.documentDateTime
+		? params.documentDateTime instanceof Date
+			? params.documentDateTime
+			: new Date(params.documentDateTime)
+		: new Date();
+	const safeDocDate = Number.isNaN(validDocDate.getTime()) ? new Date() : validDocDate;
+	const nowHl7 = formatHl7DateTime(safeDocDate);
 
 	const patientSnilsXml = params.patientSnils
 		? `<remd:patientSnils>${escapeXml(params.patientSnils)}</remd:patientSnils>`
@@ -727,7 +733,11 @@ export function buildRemdRestSubmissionPayload(params: RemdSoapEnvelopeParams): 
 			birthDate: params.patientBirthDate ? String(params.patientBirthDate) : null,
 			gender: params.patientGender || null,
 		},
-		documentDateTime: new Date(params.documentDateTime ?? Date.now()).toISOString(),
+		documentDateTime: (() => {
+			if (!params.documentDateTime) return new Date().toISOString();
+			const d = params.documentDateTime instanceof Date ? params.documentDateTime : new Date(params.documentDateTime);
+			return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+		})(),
 		checksums: {
 			sha256Hex: sha256,
 			gost3411Hex: gostDigest,

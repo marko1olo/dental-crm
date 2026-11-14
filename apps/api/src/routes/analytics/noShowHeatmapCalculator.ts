@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, sql, type Column } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { appointments } from "../../db/schema.js";
 import { inClinicZone } from "../../services/reports/managerReports.js";
@@ -20,9 +20,8 @@ export interface NoShowHeatmap {
 	cells: HeatmapCell[];
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic column matching helper
-function withDateFilter(orgId: string, orgCol: any, dateCol?: any, startDate?: Date) {
-	return startDate
+function withDateFilter(orgId: string, orgCol: Column, dateCol?: Column, startDate?: Date) {
+	return startDate && dateCol
 		? and(eq(orgCol, orgId), gte(dateCol, startDate))
 		: eq(orgCol, orgId);
 }
@@ -74,14 +73,18 @@ export async function calculateNoShowHeatmap(
 	let totalNoShow = 0;
 
 	for (const row of noShowRaw) {
-		const dow = Number(row.dayOfWeek || 1);
-		const hr = Number(row.hour || 0);
-		const cnt = Number(row.count || 0);
+		const rawDow = Number(row.dayOfWeek);
+		const dow = Number.isFinite(rawDow) ? rawDow : 1;
+		const rawHr = Number(row.hour);
+		const hr = Number.isFinite(rawHr) ? rawHr : 0;
+		const rawCnt = Number(row.count);
+		const cnt = Number.isFinite(rawCnt) && rawCnt > 0 ? Math.floor(rawCnt) : 0;
 		const key = `${dow}_${hr}`;
-		if (!matrix.has(key)) {
-			matrix.set(key, { cancelled: 0, noShow: 0 });
+		let cell = matrix.get(key);
+		if (!cell) {
+			cell = { cancelled: 0, noShow: 0 };
+			matrix.set(key, cell);
 		}
-		const cell = matrix.get(key)!;
 		if (row.status === "cancelled") {
 			cell.cancelled += cnt;
 			totalCancelled += cnt;

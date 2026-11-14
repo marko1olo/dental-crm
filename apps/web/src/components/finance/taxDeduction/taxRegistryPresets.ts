@@ -8,9 +8,9 @@ export interface TaxCertificateRegistryItem {
 	readonly issueDateIso: string;
 	readonly taxYear: number;
 	readonly patientName: string;
-	readonly patientInn?: string;
+	readonly patientInn?: string | undefined;
 	readonly taxpayerName: string;
-	readonly taxpayerInn?: string;
+	readonly taxpayerInn?: string | undefined;
 	readonly relationshipRu: string;
 	readonly relationshipCode: "1" | "2" | "3" | "4";
 	readonly code01Rub: number;
@@ -19,7 +19,7 @@ export interface TaxCertificateRegistryItem {
 	readonly refund13Rub: number;
 	readonly status: TaxCertificateStatus;
 	readonly receiptsCount: number;
-	readonly rawParams?: TaxDeductionCertificateParams;
+	readonly rawParams?: TaxDeductionCertificateParams | undefined;
 }
 
 export const DEMO_REGISTRY_ITEMS: readonly TaxCertificateRegistryItem[] = [

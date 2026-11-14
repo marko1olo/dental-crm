@@ -7,23 +7,26 @@ export function locateLittleEndianPixelData(
 	buffer: Buffer,
 ): { valueOffset: number; valueLength: number } | null {
 	const pixelTag = Buffer.from([0xe0, 0x7f, 0x10, 0x00]);
-	const cursor = buffer.indexOf(pixelTag);
+	let cursor = buffer.indexOf(pixelTag);
 	while (cursor >= 0 && cursor + 8 <= buffer.length) {
 		const vr = buffer.subarray(cursor + 4, cursor + 6).toString("latin1");
 		const explicitLongVr = ["OB", "OD", "OF", "OL", "OV", "OW", "SQ", "UC", "UR", "UT", "UN"].includes(vr);
 		if (explicitLongVr && cursor + 12 <= buffer.length) {
 			const valueLength = buffer.readUInt32LE(cursor + 8);
-			if (valueLength !== 0xffffffff) return { valueOffset: cursor + 12, valueLength };
-			return null;
+			if (valueLength !== 0xffffffff && valueLength > 0) return { valueOffset: cursor + 12, valueLength };
+			cursor = buffer.indexOf(pixelTag, cursor + 4);
+			continue;
 		}
 		const explicitShortVr = /^[A-Z]{2}$/.test(vr);
 		if (explicitShortVr && cursor + 8 <= buffer.length) {
 			const valueLength = buffer.readUInt16LE(cursor + 6);
-			return { valueOffset: cursor + 8, valueLength };
+			if (valueLength > 0) return { valueOffset: cursor + 8, valueLength };
+			cursor = buffer.indexOf(pixelTag, cursor + 4);
+			continue;
 		}
 		const valueLength = buffer.readUInt32LE(cursor + 4);
-		if (valueLength !== 0xffffffff) return { valueOffset: cursor + 8, valueLength };
-		return null;
+		if (valueLength !== 0xffffffff && valueLength > 0) return { valueOffset: cursor + 8, valueLength };
+		cursor = buffer.indexOf(pixelTag, cursor + 4);
 	}
 	return null;
 }

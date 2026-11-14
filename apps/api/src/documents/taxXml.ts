@@ -59,6 +59,45 @@ export {
 	preflightValidatePayload,
 };
 
+type ExtendedClinicProfile = Partial<ClinicProfile> & {
+	signatoryName?: string | null;
+	directorName?: string | null;
+	signatorySnils?: string | null;
+	licenseNumber?: string | null;
+	medicalLicenseNumber?: string | null;
+	licenseDate?: string | null;
+	medicalLicenseIssuedAt?: string | null;
+};
+
+type ExtendedTaxPayment = Partial<Payment> & {
+	code1AmountKopecks?: number;
+	code2AmountKopecks?: number;
+	code1AmountRub?: number;
+	code2AmountRub?: number;
+	items?: Array<{
+		name?: string;
+		amountRub?: number;
+		amountKopecks?: number;
+		code804n?: string;
+		category?: string;
+	}>;
+	fiscalReceipt?: {
+		items?: Array<{
+			name?: string;
+			amountRub?: number;
+			amountKopecks?: number;
+			code804n?: string;
+			category?: string;
+		}>;
+	} | null;
+	amountKopecks?: number;
+	amount?: number | string;
+	serviceName?: string;
+	note?: string;
+	code804n?: string;
+	payerSnils?: string | null;
+};
+
 function cleanString(str?: string | null): string | undefined {
 	if (!str) return undefined;
 	const trimmed = repairMojibakeText(str).trim();
@@ -66,11 +105,14 @@ function cleanString(str?: string | null): string | undefined {
 }
 
 function compactDocumentNumber(doc: GeneratedDocument): string {
-	const raw = cleanDigits(
-		(doc as unknown as { number?: string; documentNumber?: string }).number ||
-			(doc as unknown as { number?: string; documentNumber?: string }).documentNumber ||
-			doc.id,
-	);
+	const docRecord = doc as Record<string, unknown>;
+	const candidate =
+		typeof docRecord.number === "string"
+			? docRecord.number
+			: typeof docRecord.documentNumber === "string"
+				? docRecord.documentNumber
+				: doc.id;
+	const raw = cleanDigits(candidate);
 	return raw.length > 0 ? raw : "1";
 }
 
@@ -147,20 +189,7 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	const clinicProfileAny = context.clinicProfile as unknown as {
-		inn?: string | null;
-		kpp?: string | null;
-		ogrn?: string | null;
-		legalName?: string | null;
-		clinicName?: string | null;
-		signatoryName?: string | null;
-		directorName?: string | null;
-		signatorySnils?: string | null;
-		licenseNumber?: string | null;
-		medicalLicenseNumber?: string | null;
-		licenseDate?: string | null;
-		medicalLicenseIssuedAt?: string | null;
-	};
+	const clinicProfileAny = context.clinicProfile as ExtendedClinicProfile;
 
 	const clinicInn = cleanDigits(clinicProfileAny.inn);
 	if (clinicInn.length !== 10 && clinicInn.length !== 12) {
@@ -273,21 +302,7 @@ export function buildKnd1151156Xml(
 	let code2Kopecks = 0;
 
 	for (const p of scopedPayments) {
-		const pAny = p as unknown as {
-			code1AmountKopecks?: number;
-			code2AmountKopecks?: number;
-			code1AmountRub?: number;
-			code2AmountRub?: number;
-			items?: Array<{ name?: string; amountRub?: number; amountKopecks?: number; code804n?: string; category?: string }>;
-			fiscalReceipt?: { items?: Array<{ name?: string; amountRub?: number; amountKopecks?: number; code804n?: string; category?: string }> };
-			amountKopecks?: number;
-			amountRub?: number | string;
-			amount?: number | string;
-			taxDeductionCode?: string;
-			serviceName?: string;
-			note?: string;
-			code804n?: string;
-		};
+		const pAny = p as ExtendedTaxPayment;
 
 		const rawAmountKop = typeof pAny.amountKopecks === "number"
 			? pAny.amountKopecks
@@ -321,8 +336,16 @@ export function buildKnd1151156Xml(
 				}
 			}
 		} else if (c2Match && c2Match[1]) {
-			const c2Rub = parseFloat(c2Match[1].replace(",", "."));
-			const c2Kop = Math.min(rawAmountKop, parseKopecks(c2Rub));
+			const cleanVal = c2Match[1].replace(",", ".").trim();
+			const parsedRub = parseFloat(cleanVal);
+			let c2Kop = 0;
+			if (Number.isFinite(parsedRub) && parsedRub > 0) {
+				try {
+					c2Kop = Math.max(0, Math.min(rawAmountKop, parseKopecks(parsedRub)));
+				} catch {
+					c2Kop = 0;
+				}
+			}
 			const c1Kop = Math.max(0, rawAmountKop - c2Kop);
 			code1Kopecks += c1Kop;
 			code2Kopecks += c2Kop;
@@ -364,7 +387,7 @@ export function buildKnd1151156Xml(
 	const clinicLicenseNumber = cleanString(clinicProfileAny.licenseNumber) || cleanString(clinicProfileAny.medicalLicenseNumber);
 	const clinicLicenseDate = cleanString(clinicProfileAny.licenseDate) || cleanString(clinicProfileAny.medicalLicenseIssuedAt);
 
-	const firstPaymentAny = firstPayment as unknown as { payerSnils?: string | null };
+	const firstPaymentAny = firstPayment as ExtendedTaxPayment | undefined;
 
 	const payload: FnsTaxPayload = {
 		documentNumber: compactDocumentNumber(document),
@@ -393,7 +416,7 @@ export function buildKnd1151156Xml(
 			inn: payerInn,
 			birthDate: payerBirthDate,
 			identityDocument: payerIdentity,
-			snils: cleanString(firstPaymentAny.payerSnils),
+			snils: cleanString(firstPaymentAny?.payerSnils),
 		},
 		patient: {
 			patientKinshipCode: kinshipCode,

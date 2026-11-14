@@ -12,6 +12,8 @@ import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 
 /** DICOM Standard Data Dictionary Tags */
+export const TAG_SOP_CLASS_UID = "x00080016";
+export const TAG_MEDIA_STORAGE_SOP_CLASS_UID = "x00020002";
 export const TAG_SOP_INSTANCE_UID = "x00080018";
 export const TAG_STUDY_INSTANCE_UID = "x0020000d";
 export const TAG_SERIES_INSTANCE_UID = "x0020000e";
@@ -418,6 +420,7 @@ export function parseDicomBufferForStow(buffer: Buffer): {
 	studyUid: string | null;
 	seriesUid: string | null;
 	sopInstanceUid: string | null;
+	sopClassUid: string | null;
 	dicomPatientId: string | null;
 	dicomPatientName: string | null;
 	dicomBirthDate: string | null;
@@ -429,6 +432,7 @@ export function parseDicomBufferForStow(buffer: Buffer): {
 			studyUid: null,
 			seriesUid: null,
 			sopInstanceUid: null,
+			sopClassUid: null,
 			dicomPatientId: null,
 			dicomPatientName: null,
 			dicomBirthDate: null,
@@ -443,8 +447,9 @@ export function parseDicomBufferForStow(buffer: Buffer): {
 			studyUid: normalizeUid(dataSet.string(TAG_STUDY_INSTANCE_UID)),
 			seriesUid: normalizeUid(dataSet.string(TAG_SERIES_INSTANCE_UID)),
 			sopInstanceUid: normalizeUid(dataSet.string(TAG_SOP_INSTANCE_UID)),
+			sopClassUid: normalizeUid(dataSet.string(TAG_SOP_CLASS_UID) ?? dataSet.string(TAG_MEDIA_STORAGE_SOP_CLASS_UID)),
 			dicomPatientId: normalizeUid(dataSet.string(TAG_PATIENT_ID)),
-			dicomPatientName: normalizeUid(dataSet.string(TAG_PATIENT_NAME)),
+			dicomPatientName: cleanDicomPatientName(dataSet.string(TAG_PATIENT_NAME)),
 			dicomBirthDate: normalizeUid(dataSet.string(TAG_PATIENT_BIRTH_DATE)),
 			rows: dataSet.uint16(TAG_ROWS) ?? null,
 			columns: dataSet.uint16(TAG_COLUMNS) ?? null,
@@ -454,6 +459,7 @@ export function parseDicomBufferForStow(buffer: Buffer): {
 			studyUid: null,
 			seriesUid: null,
 			sopInstanceUid: null,
+			sopClassUid: null,
 			dicomPatientId: null,
 			dicomPatientName: null,
 			dicomBirthDate: null,
@@ -477,7 +483,10 @@ export function stripMultipartWrapperFromBuffer(buffer: Buffer): Buffer {
 	}
 
 	let endOffset = buffer.length;
-	const lastBoundary = buffer.lastIndexOf("\r\n--");
+	let lastBoundary = buffer.lastIndexOf("\r\n--");
+	if (lastBoundary === -1) {
+		lastBoundary = buffer.lastIndexOf("\n--");
+	}
 	if (lastBoundary !== -1 && lastBoundary > startOffset) {
 		endOffset = lastBoundary;
 	}

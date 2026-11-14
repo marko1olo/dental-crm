@@ -16,6 +16,7 @@ import { z } from "zod";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
+import { doctorPayrollReport } from "../services/reports/managerReports/financialExecutiveReports.js";
 import {
 	appointments,
 	cashBoxes,
@@ -64,8 +65,10 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 		const defaultFrom = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0));
 		const defaultTo = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
 
-		const fromDate = parsed.data.from ? new Date(parsed.data.from) : defaultFrom;
-		const toDate = parsed.data.to ? new Date(parsed.data.to) : defaultTo;
+		const rawFrom = parsed.data.from ? new Date(parsed.data.from) : defaultFrom;
+		const fromDate = Number.isNaN(rawFrom.getTime()) ? defaultFrom : rawFrom;
+		const rawTo = parsed.data.to ? new Date(parsed.data.to) : defaultTo;
+		const toDate = Number.isNaN(rawTo.getTime()) ? defaultTo : rawTo;
 
 		if (toDate.getUTCHours() === 0 && toDate.getUTCMinutes() === 0) {
 			toDate.setUTCHours(23, 59, 59, 999);
@@ -217,16 +220,17 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				amountRub: e.amountRub,
 			}));
 
-			// 3a. Учитываем фактические заказы ЗТЛ (labOrders), не проведенные через кассовую операцию
+			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostRub), не проведенных через кассовую операцию
 			const [unpaidLabOrders] = await tx
 				.select({
-					totalRub: sql<number>`coalesce(sum(${labOrders.priceRub}), 0)`,
+					totalRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 				})
 				.from(labOrders)
 				.where(
 					and(
 						eq(labOrders.organizationId, orgId),
 						ne(labOrders.status, "cancelled"),
+						eq(labOrders.isWarranty, false),
 						sql`${labOrders.paidFromCashOperationId} IS NULL`,
 						gte(labOrders.createdAt, fromDate),
 						lte(labOrders.createdAt, toDate),
@@ -319,14 +323,27 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				})),
 			};
 
+			let doctorPieceRatePayrollRub = 0;
+			try {
+				const doctorPayroll = await doctorPayrollReport({
+					organizationId: orgId,
+					from: fromDate,
+					to: toDate,
+				});
+				doctorPieceRatePayrollRub = Number(doctorPayroll?.totals?.totalClinicPayrollRub || doctorPayroll?.totals?.totalPayoutRub || 0);
+			} catch (err) {
+				req.log.warn({ err }, "Не удалось рассчитать сдельную зарплату врачей для P&L");
+			}
+
 			const pnlInput: CalculateManagerialPnlInput = {
 				period: {
 					from: fromDateStr,
 					to: toDateStr,
 				},
-				clinicName: clinic?.name || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				clinicName: clinic?.name || "Стоматологическая клиника",
 				payments: paymentRows,
 				expenses: expenseRows,
+				doctorPieceRatePayrollRub,
 				chairEconomics: chairEconomicsConfig,
 			};
 

@@ -83,24 +83,28 @@ export async function handleEndCall(
 		resolvedOrgId = await requireResolvedOrganizationId(request, reply, "end call");
 	}
 	if (!resolvedOrgId) return;
+	const orgId = resolvedOrgId;
 
 	const body = request.body || ({} as EndCallBody);
 	const callerPhone = normalizePhoneNumber(body.phone);
 	const callId = body.callId || `call-${Date.now()}`;
-	const durationSeconds = typeof body.durationSeconds === "number" && body.durationSeconds > 0
-		? Math.floor(body.durationSeconds)
+	const parsedDuration = typeof body.durationSeconds === "number"
+		? body.durationSeconds
+		: (typeof body.durationSeconds === "string" ? Number(body.durationSeconds) : NaN);
+	const durationSeconds = Number.isFinite(parsedDuration) && parsedDuration > 0
+		? Math.min(Math.floor(parsedDuration), 86400 * 7)
 		: null;
 	const isCompleted = durationSeconds !== null && durationSeconds > 0;
 	const phoneStr = callerPhone.isValid ? callerPhone.e164 : (body.phone || "не указан");
 
-	await withTenantCtx(resolvedOrgId, async () => {
+	await withTenantCtx(orgId, async () => {
 		let targetPatientId: string | null = null;
 		if (body.patientId && UUID_REGEX.test(body.patientId)) {
 			targetPatientId = body.patientId;
 		} else if (callerPhone.isValid && callerPhone.national10.length >= 7) {
 			const found = await db.select({ id: patients.id }).from(patients).where(
 				and(
-					eq(patients.organizationId, resolvedOrgId!),
+					eq(patients.organizationId, orgId),
 					or(
 						eq(patients.phone, callerPhone.e164),
 						ilike(patients.phone, `%${callerPhone.national10}%`),
@@ -115,7 +119,7 @@ export async function handleEndCall(
 
 		// Всегда производим запись в communicationEvents (Мандат 8ap, [TEL-04])
 		await db.insert(communicationEvents).values({
-			organizationId: resolvedOrgId!,
+			organizationId: orgId,
 			patientId: targetPatientId || null,
 			callerPhone: callerPhone.isValid ? callerPhone.e164 : (body.phone || null),
 			channel: "phone",
@@ -136,7 +140,7 @@ export async function handleEndCall(
 					.from(crmLeads)
 					.where(
 						and(
-							eq(crmLeads.organizationId, resolvedOrgId!),
+							eq(crmLeads.organizationId, orgId),
 							or(
 								eq(crmLeads.phone, callerPhone.e164),
 								ilike(crmLeads.phone, `%${callerPhone.national10}%`),
@@ -155,7 +159,7 @@ export async function handleEndCall(
 						.where(eq(crmLeads.id, existing[0].id));
 				} else {
 					await db.insert(crmLeads).values({
-						organizationId: resolvedOrgId!,
+						organizationId: orgId,
 						phone: callerPhone.e164,
 						patientName: "Новый лид",
 						name: "Новый лид",
@@ -171,7 +175,7 @@ export async function handleEndCall(
 		}
 	});
 
-	wsBroker.broadcastToOrganization(resolvedOrgId, {
+	wsBroker.broadcastToOrganization(orgId, {
 		type: "TELEPHONY_CALL_ENDED",
 		payload: {
 			callId,

@@ -57,7 +57,9 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 			? `Звонок завершён (call_id: ${p.callId}${!p.matchedPatient ? ", первичный звонок" : ""})`
 			: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
 		recordingUrl: verifiedRecUrl,
-		durationSeconds: p.durationSeconds > 0 ? p.durationSeconds : null,
+		durationSeconds: Number.isFinite(p.durationSeconds) && p.durationSeconds > 0
+			? Math.min(Math.floor(p.durationSeconds), 86400 * 7)
+			: null,
 	});
 
 	if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {

@@ -115,10 +115,10 @@ export interface LauncherDocument {
 
 /** Реальные документы пациента из базы (GET /api/documents?patientId=). */
 export async function fetchLauncherPatientDocuments(patientId: string): Promise<LauncherDocument[]> {
-	const json = await getJson<{ data?: Array<Record<string, unknown>> } | null>(
+	const json = await getJson<{ data?: Array<Record<string, unknown>>; documents?: Array<Record<string, unknown>> } | null>(
 		`/api/documents?patientId=${encodeURIComponent(patientId)}&limit=100`,
 	);
-	const rows = json?.data ?? [];
+	const rows = json?.documents ?? json?.data ?? [];
 	return rows.map((row) => ({
 		id: String(row.id ?? ""),
 		kind: String(row.kind ?? ""),

@@ -1,6 +1,7 @@
 import { ImplantStabilityCalculator, recordIsqMeasurementSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { implantIsqMeasurements, patientImplantInstallations } from "../../db/schema.js";
@@ -13,7 +14,7 @@ export function registerIsqRoute(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -24,8 +25,18 @@ export function registerIsqRoute(app: FastifyInstance) {
 			});
 		}
 
-		const { installationId } = request.params as { installationId: string };
-		const parsed = recordIsqMeasurementSchema.safeParse({ ...((request.body as object) || {}), installationId });
+		const rawParams = (request.params && typeof request.params === "object" ? request.params : {}) as { installationId?: string };
+		const paramValidation = z.string().uuid().safeParse(rawParams.installationId);
+		if (!paramValidation.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор установки имплантата (ожидается UUID).",
+			});
+		}
+		const installationId = paramValidation.data;
+
+		const bodyObj = typeof request.body === "object" && request.body !== null ? request.body : {};
+		const parsed = recordIsqMeasurementSchema.safeParse({ ...bodyObj, installationId });
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "IsqMeasurementValidationError",
@@ -62,13 +73,13 @@ export function registerIsqRoute(app: FastifyInstance) {
 			.values({
 				organizationId: orgId,
 				installationId,
-				measuredByDoctorId: null,
+				measuredByDoctorId: identity.userId ?? null,
 				visitId: input.visitId ?? null,
 				daysPostOp: input.daysPostOp,
 				isqMesiodistal: input.isqMesiodistal,
 				isqBuccolingual: input.isqBuccolingual,
 				isqDistopalatal: input.isqDistopalatal ?? null,
-				isqMean: String(isqMean ?? 70),
+				isqMean: isqMean != null ? String(isqMean) : "70",
 				isqAnisotropyDelta: isqAnisotropyDelta ?? 0,
 				stabilityStatus: status,
 				recommendedLoadingDecision: decisionRationale,

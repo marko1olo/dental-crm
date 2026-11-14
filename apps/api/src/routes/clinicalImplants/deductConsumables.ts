@@ -2,6 +2,7 @@ import { and, eq, ilike, or } from "drizzle-orm";
 import type { createImplantInstallationSchema } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
+import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 
 type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
 
@@ -14,8 +15,7 @@ export interface DeductedMaterial {
 }
 
 export async function deductConsumables(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	tx: any,
+	tx: DbExecutor,
 	orgId: string,
 	userId: string | null,
 	input: InstallationInput,
@@ -34,14 +34,48 @@ export async function deductConsumables(
 			const cost = Number(graftItem.unitCostRub || 0);
 			const newStock = Number((Number(graftItem.currentQty || 0) - 1).toFixed(4));
 			const isOver = newStock < 0;
-			await tx.update(inventoryItems).set({ currentQty: String(newStock), stockQuantity: String(newStock) }).where(eq(inventoryItems.id, graftItem.id));
+			await tx
+				.update(inventoryItems)
+				.set({
+					currentQty: String(newStock),
+					stockQuantity: String(newStock),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(inventoryItems.id, graftItem.id),
+						eq(inventoryItems.organizationId, orgId),
+					),
+				);
 			await tx.insert(inventoryTransactions).values({
-				organizationId: orgId, itemId: graftItem.id, inventoryItemId: graftItem.id, visitId: input.visitId ?? null, transactionType: isOver ? "emergency_overdraft" : "auto_deduct", isOverdraft: isOver, qty: "-1.000", quantityChanged: "-1.000", unitCostRub: String(cost), userId, notes: `Списание графта зуба FDI #${input.toothNumberFdi}`,
+				organizationId: orgId,
+				itemId: graftItem.id,
+				inventoryItemId: graftItem.id,
+				visitId: input.visitId ?? null,
+				transactionType: isOver ? "emergency_overdraft" : "auto_deduct",
+				isOverdraft: isOver,
+				qty: "-1.000",
+				quantityChanged: "-1.000",
+				unitCostRub: String(cost),
+				userId,
+				notes: `Списание графта зуба FDI #${input.toothNumberFdi}`,
 			});
-			deductedMaterials.push({ name: graftItem.name, lotNumber: graftItem.lotNumber, unitCostRub: cost, quantity: 1, isOverdraft: isOver });
+			deductedMaterials.push({
+				name: graftItem.name,
+				lotNumber: graftItem.lotNumber,
+				unitCostRub: cost,
+				quantity: 1,
+				isOverdraft: isOver,
+			});
 			consumablesCostTotal += cost;
 		} else {
-			deductedMaterials.push({ name: graftName, lotNumber: null, unitCostRub: 0, quantity: 1, isOverdraft: true });
+			deductedMaterials.push({
+				name: graftName,
+				lotNumber: null,
+				unitCostRub: 0,
+				quantity: 1,
+				isOverdraft: true,
+			});
 		}
 	}
 
@@ -56,35 +90,126 @@ export async function deductConsumables(
 			const cost = Number(memItem.unitCostRub || 0);
 			const newStock = Number((Number(memItem.currentQty || 0) - 1).toFixed(4));
 			const isOver = newStock < 0;
-			await tx.update(inventoryItems).set({ currentQty: String(newStock), stockQuantity: String(newStock) }).where(eq(inventoryItems.id, memItem.id));
+			await tx
+				.update(inventoryItems)
+				.set({
+					currentQty: String(newStock),
+					stockQuantity: String(newStock),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(inventoryItems.id, memItem.id),
+						eq(inventoryItems.organizationId, orgId),
+					),
+				);
 			await tx.insert(inventoryTransactions).values({
-				organizationId: orgId, itemId: memItem.id, inventoryItemId: memItem.id, visitId: input.visitId ?? null, transactionType: isOver ? "emergency_overdraft" : "auto_deduct", isOverdraft: isOver, qty: "-1.000", quantityChanged: "-1.000", unitCostRub: String(cost), userId, notes: `Списание мембраны зуба FDI #${input.toothNumberFdi}`,
+				organizationId: orgId,
+				itemId: memItem.id,
+				inventoryItemId: memItem.id,
+				visitId: input.visitId ?? null,
+				transactionType: isOver ? "emergency_overdraft" : "auto_deduct",
+				isOverdraft: isOver,
+				qty: "-1.000",
+				quantityChanged: "-1.000",
+				unitCostRub: String(cost),
+				userId,
+				notes: `Списание мембраны зуба FDI #${input.toothNumberFdi}`,
 			});
-			deductedMaterials.push({ name: memItem.name, lotNumber: memItem.lotNumber, unitCostRub: cost, quantity: 1, isOverdraft: isOver });
+			deductedMaterials.push({
+				name: memItem.name,
+				lotNumber: memItem.lotNumber,
+				unitCostRub: cost,
+				quantity: 1,
+				isOverdraft: isOver,
+			});
 			consumablesCostTotal += cost;
 		} else {
-			deductedMaterials.push({ name: memName, lotNumber: null, unitCostRub: 0, quantity: 1, isOverdraft: true });
+			deductedMaterials.push({
+				name: memName,
+				lotNumber: null,
+				unitCostRub: 0,
+				quantity: 1,
+				isOverdraft: true,
+			});
 		}
 	}
 
-	// 3. Шовный материал
-	const sutureName = input.sutureMaterial || "Шовный материал Ethicon Викрил 4-0";
-	const [sutureItem] = input.sutureItemId
-		? await tx.select().from(inventoryItems).where(and(eq(inventoryItems.id, input.sutureItemId), eq(inventoryItems.organizationId, orgId))).limit(1)
-		: await tx.select().from(inventoryItems).where(and(eq(inventoryItems.organizationId, orgId), or(ilike(inventoryItems.name, "%викрил%"), ilike(inventoryItems.name, "%vicryl%")))).limit(1);
+	// 3. Шовный материал (только если врач указал шовный материал или выбран айтем)
+	if (input.sutureMaterial || input.sutureItemId) {
+		const sutureName = input.sutureMaterial || "Шовный материал Ethicon Викрил 4-0";
+		const [sutureItem] = input.sutureItemId
+			? await tx
+					.select()
+					.from(inventoryItems)
+					.where(
+						and(
+							eq(inventoryItems.id, input.sutureItemId),
+							eq(inventoryItems.organizationId, orgId),
+						),
+					)
+					.limit(1)
+			: await tx
+					.select()
+					.from(inventoryItems)
+					.where(
+						and(
+							eq(inventoryItems.organizationId, orgId),
+							or(
+								ilike(inventoryItems.name, "%викрил%"),
+								ilike(inventoryItems.name, "%vicryl%"),
+							),
+						),
+					)
+					.limit(1);
 
-	if (sutureItem) {
-		const cost = Number(sutureItem.unitCostRub || 0);
-		const newStock = Number((Number(sutureItem.currentQty || 0) - 1).toFixed(4));
-		const isOver = newStock < 0;
-		await tx.update(inventoryItems).set({ currentQty: String(newStock), stockQuantity: String(newStock) }).where(eq(inventoryItems.id, sutureItem.id));
-		await tx.insert(inventoryTransactions).values({
-			organizationId: orgId, itemId: sutureItem.id, inventoryItemId: sutureItem.id, visitId: input.visitId ?? null, transactionType: isOver ? "emergency_overdraft" : "auto_deduct", isOverdraft: isOver, qty: "-1.000", quantityChanged: "-1.000", unitCostRub: String(cost), userId, notes: `Списание швов зуба FDI #${input.toothNumberFdi}`,
-		});
-		deductedMaterials.push({ name: sutureItem.name, lotNumber: sutureItem.lotNumber, unitCostRub: cost, quantity: 1, isOverdraft: isOver });
-		consumablesCostTotal += cost;
-	} else {
-		deductedMaterials.push({ name: sutureName, lotNumber: null, unitCostRub: 0, quantity: 1, isOverdraft: true });
+		if (sutureItem) {
+			const cost = Number(sutureItem.unitCostRub || 0);
+			const newStock = Number((Number(sutureItem.currentQty || 0) - 1).toFixed(4));
+			const isOver = newStock < 0;
+			await tx
+				.update(inventoryItems)
+				.set({
+					currentQty: String(newStock),
+					stockQuantity: String(newStock),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(inventoryItems.id, sutureItem.id),
+						eq(inventoryItems.organizationId, orgId),
+					),
+				);
+			await tx.insert(inventoryTransactions).values({
+				organizationId: orgId,
+				itemId: sutureItem.id,
+				inventoryItemId: sutureItem.id,
+				visitId: input.visitId ?? null,
+				transactionType: isOver ? "emergency_overdraft" : "auto_deduct",
+				isOverdraft: isOver,
+				qty: "-1.000",
+				quantityChanged: "-1.000",
+				unitCostRub: String(cost),
+				userId,
+				notes: `Списание швов зуба FDI #${input.toothNumberFdi}`,
+			});
+			deductedMaterials.push({
+				name: sutureItem.name,
+				lotNumber: sutureItem.lotNumber,
+				unitCostRub: cost,
+				quantity: 1,
+				isOverdraft: isOver,
+			});
+			consumablesCostTotal += cost;
+		} else {
+			deductedMaterials.push({
+				name: sutureName,
+				lotNumber: null,
+				unitCostRub: 0,
+				quantity: 1,
+				isOverdraft: true,
+			});
+		}
 	}
 
 	return { deductedMaterials, consumablesCostTotal };

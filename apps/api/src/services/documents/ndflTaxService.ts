@@ -55,6 +55,11 @@ export class TaxPayerRequisitesRequiredError extends Error {
 export const TaxDeductionIdentificationRequiredError = TaxPayerRequisitesRequiredError;
 export type TaxDeductionIdentificationRequiredError = TaxPayerRequisitesRequiredError;
 
+function isEntityAnonymous(entity: unknown): boolean {
+	if (!entity || typeof entity !== "object") return false;
+	return Boolean((entity as Record<string, unknown>).isAnonymous);
+}
+
 export interface NdflTaxPreviewOptions {
 	taxYear?: number | undefined;
 	startDate?: string | undefined;
@@ -115,7 +120,7 @@ export class NdflTaxService {
 		}
 
 		const isPatientAnonymous =
-			Boolean((patient as unknown as { isAnonymous?: boolean }).isAnonymous) ||
+			isEntityAnonymous(patient) ||
 			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
 			Boolean(
@@ -207,15 +212,17 @@ export class NdflTaxService {
 				serviceLines?: ReceiptItemLike[];
 				fiscalReceipt?: { fd?: string; items?: ReceiptItemLike[] } | null;
 			}
-			const payMeta = pay as unknown as PaymentSplitMetadata;
+			const payMeta = pay as typeof pay & PaymentSplitMetadata;
 
 			const serviceName =
 				payMeta.serviceName || "Стоматологические медицинские услуги";
 			const note = pay.note || "";
 			const method = pay.method || "";
-			const receiptDate = pay.paidAt
-				? new Date(pay.paidAt).toISOString().split("T")[0] || ""
-				: "";
+			let receiptDate = "";
+			if (pay.paidAt) {
+				const d = new Date(pay.paidAt);
+				receiptDate = Number.isNaN(d.getTime()) ? "" : (d.toISOString().split("T")[0] || "");
+			}
 			const fiscalDocNum =
 				pay.fiscalReceipt?.fd ||
 				pay.fiscalReceiptNumber ||
@@ -383,7 +390,15 @@ export class NdflTaxService {
 				}
 			} else if (c2Match && c2Match[1]) {
 				// 3. Расщепление по примечанию (note)
-				const c2Kop = Math.min(amountKop, parseKopecks(c2Match[1].replace(",", ".")));
+				let c2Kop = 0;
+				try {
+					const num = Number(c2Match[1].replace(",", ".").trim());
+					if (Number.isFinite(num) && num > 0) {
+						c2Kop = Math.max(0, Math.min(amountKop, parseKopecks(num)));
+					}
+				} catch {
+					c2Kop = 0;
+				}
 				const c1Kop = Math.max(0, amountKop - c2Kop);
 
 				if (c1Kop > 0) {
@@ -413,7 +428,15 @@ export class NdflTaxService {
 					});
 				}
 			} else if (c1Match && c1Match[1]) {
-				const c1Kop = Math.min(amountKop, parseKopecks(c1Match[1].replace(",", ".")));
+				let c1Kop = 0;
+				try {
+					const num = Number(c1Match[1].replace(",", ".").trim());
+					if (Number.isFinite(num) && num > 0) {
+						c1Kop = Math.max(0, Math.min(amountKop, parseKopecks(num)));
+					}
+				} catch {
+					c1Kop = 0;
+				}
 				const c2Kop = Math.max(0, amountKop - c1Kop);
 
 				if (c1Kop > 0) {
@@ -556,12 +579,8 @@ export class NdflTaxService {
 			payerName.toLowerCase().includes("аноним") ||
 			patientName.startsWith("UUID_ANON") ||
 			patientName.toLowerCase().includes("аноним") ||
-			Boolean(
-				(payload.patient as unknown as { isAnonymous?: boolean })?.isAnonymous,
-			) ||
-			Boolean(
-				(payload.payer as unknown as { isAnonymous?: boolean })?.isAnonymous,
-			);
+			isEntityAnonymous(payload.patient) ||
+			isEntityAnonymous(payload.payer);
 
 		if (isAnonymous) {
 			throw new TaxDeductionIdentificationRequiredError(

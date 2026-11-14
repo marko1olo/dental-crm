@@ -65,6 +65,21 @@ export function readIssuedDocumentSnapshot(
 
 import { recordAuditEvent } from "../audit.js";
 
+function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+	if (!raw || typeof raw !== "string" || !raw.trim()) return fallback;
+	try {
+		return JSON.parse(raw) as T;
+	} catch {
+		return fallback;
+	}
+}
+
+function toSafeIsoString(date: unknown, fallbackIso: string | null = null): string | null {
+	if (!date) return fallbackIso;
+	const d = date instanceof Date ? date : new Date(String(date));
+	return Number.isNaN(d.getTime()) ? fallbackIso : d.toISOString();
+}
+
 // Basic mapping from schema to type
 function mapDocument(
 	record: typeof schema.generatedDocuments.$inferSelect,
@@ -81,29 +96,29 @@ function mapDocument(
 		totalAmountRub: record.totalAmountRub,
 		taxYear: record.taxYear,
 		taxPayerInn: record.taxPayerInn,
-		payload: record.payloadJson ? JSON.parse(record.payloadJson) : null,
-		taxPaymentSnapshot: record.taxPaymentSnapshotJson
-			? JSON.parse(record.taxPaymentSnapshotJson)
-			: null,
+		payload: safeJsonParse<Record<string, unknown> | null>(record.payloadJson, null),
+		taxPaymentSnapshot: safeJsonParse<TaxPaymentSnapshot | null>(
+			record.taxPaymentSnapshotJson,
+			null,
+		),
 		taxXmlSourceSnapshot: record.taxXmlSourceSnapshot,
 		taxXmlSnapshot: record.taxXmlSnapshot,
 		signatureAttestation: record.signatureAttestation,
 		voidAttestation: record.voidAttestation,
 		releaseJournalEntry: record.releaseJournalEntry,
-		issuedAt: record.issuedAt?.toISOString() ?? null,
+		issuedAt: toSafeIsoString(record.issuedAt),
 		issuedSnapshotSha256: record.issuedSnapshotSha256,
-		issuedSnapshotCreatedAt:
-			record.issuedSnapshotCreatedAt?.toISOString() ?? null,
+		issuedSnapshotCreatedAt: toSafeIsoString(record.issuedSnapshotCreatedAt),
 		issuedByUserId: record.issuedByUserId,
-		voidedAt: record.voidedAt?.toISOString() ?? null,
+		voidedAt: toSafeIsoString(record.voidedAt),
 		voidedByUserId: record.voidedByUserId,
 		signatureSvg: record.signatureSvg ?? null,
 		cryptoSignaturePkcs7: record.cryptoSignaturePkcs7 ?? null,
 		doctorSignaturePkcs7: record.doctorSignaturePkcs7 ?? null,
 		doctorCertSerial: record.doctorCertSerial ?? null,
 		doctorCertSubject: record.doctorCertSubject ?? null,
-		doctorSignedAt: record.doctorSignedAt?.toISOString() ?? null,
-		createdAt: record.createdAt.toISOString(),
+		doctorSignedAt: toSafeIsoString(record.doctorSignedAt),
+		createdAt: toSafeIsoString(record.createdAt, new Date().toISOString()) ?? new Date().toISOString(),
 	} as GeneratedDocument;
 }
 
@@ -446,7 +461,7 @@ export async function issueGeneratedDocumentInDb(
 			documentSha256:
 				updated.issuedSnapshotSha256 ||
 				createHash("sha256")
-					.update(`${updated.id}:${updated.issuedAt?.toISOString() ?? ""}`)
+					.update(`${updated.id}:${toSafeIsoString(updated.issuedAt, "") ?? ""}`)
 					.digest("hex"),
 			signedAt: updated.issuedAt ?? new Date(),
 		});

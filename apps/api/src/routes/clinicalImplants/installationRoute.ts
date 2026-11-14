@@ -1,6 +1,6 @@
 import { ImplantStabilityCalculator, createImplantInstallationSchema } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { implantIsqMeasurements, patientImplantInstallations, patients, visits } from "../../db/schema.js";
@@ -12,12 +12,12 @@ import { deductImplantScrew } from "./deductImplantScrew.js";
 import { linkBillingAndOdontogram } from "./installationBillingAndOdontogram.js";
 
 export function registerInstallationRoute(app: FastifyInstance) {
-	const handleInstallation = async (request: any, reply: any) => {
+	const handleInstallation = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -29,7 +29,10 @@ export function registerInstallationRoute(app: FastifyInstance) {
 		}
 
 		// Нормализация наименования бренда для устойчивости к пробелам и регистрам
-		const rawBody = typeof request.body === "object" && request.body !== null ? { ...request.body } : {};
+		const rawBody: Record<string, unknown> =
+			typeof request.body === "object" && request.body !== null
+				? { ...(request.body as Record<string, unknown>) }
+				: {};
 		if (typeof rawBody.implantBrand === "string") {
 			rawBody.implantBrand = rawBody.implantBrand.trim().toLowerCase().replace(/[\s-]+/g, "_");
 		}
@@ -61,9 +64,20 @@ export function registerInstallationRoute(app: FastifyInstance) {
 
 		const effectiveInput = { ...input, patientId: targetPatientId };
 
-		const { isqMean, isqAnisotropyDelta } = ImplantStabilityCalculator.calculateMeanIsq(effectiveInput.baselineIsqMesiodistal ?? 72, effectiveInput.baselineIsqBuccolingual ?? 72, effectiveInput.baselineIsqDistopalatal);
-		const { protocol, decisionRationale } = ImplantStabilityCalculator.evaluateLoadingProtocol(isqMean, effectiveInput.finalInsertionTorqueNcm, 0);
-		const isImmediateLoadingFeasible = (isqMean !== null ? isqMean >= 70 : false) && effectiveInput.finalInsertionTorqueNcm >= 35 && effectiveInput.finalInsertionTorqueNcm <= 55;
+		const { isqMean, isqAnisotropyDelta } = ImplantStabilityCalculator.calculateMeanIsq(
+			effectiveInput.baselineIsqMesiodistal,
+			effectiveInput.baselineIsqBuccolingual,
+			effectiveInput.baselineIsqDistopalatal,
+		);
+		const { protocol, decisionRationale } = ImplantStabilityCalculator.evaluateLoadingProtocol(
+			isqMean,
+			effectiveInput.finalInsertionTorqueNcm,
+			0,
+		);
+		const isImmediateLoadingFeasible =
+			(isqMean !== null ? isqMean >= 70 : false) &&
+			effectiveInput.finalInsertionTorqueNcm >= 35 &&
+			effectiveInput.finalInsertionTorqueNcm <= 55;
 
 		const result = await db.transaction(async (tx) => {
 			const screw = await deductImplantScrew(tx, orgId, identity.userId ?? null, effectiveInput);
@@ -86,7 +100,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				boneDensityClass: effectiveInput.boneDensityClass,
 				averageHounsfieldUnits: effectiveInput.averageHounsfieldUnits ? String(effectiveInput.averageHounsfieldUnits) : null,
 				finalInsertionTorqueNcm: String(effectiveInput.finalInsertionTorqueNcm),
-				baselineIsq: isqMean !== null ? Math.round(isqMean) : 70,
+				baselineIsq: isqMean !== null ? Math.round(isqMean) : null,
 				initialProtocol: protocol,
 				corticalTapUsed: effectiveInput.corticalTapUsed,
 				underdrillingUsed: effectiveInput.underdrillingUsed,
@@ -124,7 +138,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					.limit(1);
 				if (visit) {
 					const existingObj = visit.objectiveStatus || "";
-					const soapNote = effectiveInput.notes || `[ПРОТОКОЛ ИМПЛАНТАЦИИ: Зуб FDI #${effectiveInput.toothNumberFdi}]\nУстановлен имплантат ${effectiveInput.implantBrand} Ø${effectiveInput.implantDiameterMm}×${effectiveInput.implantLengthMm} мм (LOT: ${screw.effectiveLotNumber}). Торк: ${effectiveInput.finalInsertionTorqueNcm} Н·см, ISQ: ${Math.round(isqMean ?? 72)}. Протокол: ${protocol}.`;
+					const soapNote = effectiveInput.notes || `[ПРОТОКОЛ ИМПЛАНТАЦИИ: Зуб FDI #${effectiveInput.toothNumberFdi}]\nУстановлен имплантат ${effectiveInput.implantBrand} Ø${effectiveInput.implantDiameterMm}×${effectiveInput.implantLengthMm} мм (LOT: ${screw.effectiveLotNumber}). Торк: ${effectiveInput.finalInsertionTorqueNcm} Н·см${isqMean !== null ? `, ISQ: ${Math.round(isqMean)}` : ""}. Протокол: ${protocol}.`;
 					const updatedObj = existingObj ? `${existingObj}\n\n${soapNote}` : soapNote;
 					await tx
 						.update(visits)

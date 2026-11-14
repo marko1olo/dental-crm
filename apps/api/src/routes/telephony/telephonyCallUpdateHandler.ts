@@ -36,6 +36,7 @@ export async function telephonyCallUpdateHandler(
 		resolvedOrgId = await requireResolvedOrganizationId(request, reply, "update call note");
 	}
 	if (!resolvedOrgId) return;
+	const orgId = resolvedOrgId;
 
 	const callId = request.params.id;
 	if (!callId) {
@@ -64,7 +65,7 @@ export async function telephonyCallUpdateHandler(
 	} | null = null;
 
 	if (UUID_REGEX.test(callId)) {
-		updatedCall = await withTenantCtx(resolvedOrgId, async () => {
+		updatedCall = await withTenantCtx(orgId, async () => {
 			const res = await db
 				.update(communicationEvents)
 				.set({
@@ -73,7 +74,7 @@ export async function telephonyCallUpdateHandler(
 				.where(
 					and(
 						eq(communicationEvents.id, callId),
-						eq(communicationEvents.organizationId, resolvedOrgId!),
+						eq(communicationEvents.organizationId, orgId),
 					),
 				)
 				.returning({

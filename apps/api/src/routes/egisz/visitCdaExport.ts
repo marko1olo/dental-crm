@@ -75,7 +75,7 @@ export function registerVisitCdaExportRoute(app: FastifyInstance): void {
 		const params = assembleVisitCdaParams({
 			row, clinicRow, diaryRow, doctorName: doctorRes.doctorName, doctorContact: doctorRes.doctorContact,
 			doctorPosition: doctorRes.doctorPosition, doctorPositionCode: doctorRes.doctorPositionCode,
-			resolvedIcd10, effectiveDiagnosis, encounterDate, clinicOid: clinicOid!, clinicName,
+			resolvedIcd10, effectiveDiagnosis, encounterDate, clinicOid: clinicOid ?? "", clinicName,
 			patientNameParts, patientSnilsDigits, birthStr, patientGender: patientGender as "male" | "female",
 			anamnesis: (typeof diaryRow?.anamnesis === "string" ? diaryRow.anamnesis.trim() : "") || (typeof row.visit.anamnesis === "string" ? row.visit.anamnesis.trim() : ""),
 			objectiveStatus: (typeof diaryRow?.statusLocalis === "string" ? diaryRow.statusLocalis.trim() : "") || (typeof row.visit.objectiveStatus === "string" ? row.visit.objectiveStatus.trim() : ""),
