@@ -112,15 +112,15 @@ export async function buildCommerceMlPackage(params: ExportCommerceMlParams): Pr
 		const xml = generateCommerceMl209PackageXml(pkg);
 		const sha256 = pkg.sha256Hash;
 		const integrity = validatePackageIntegrity(pkg);
-		registerExportedPackage(sha256, { exportedAtIso: pkg.generatedAtIso, packageId: pkg.packageId });
+		registerExportedPackage(orgId, sha256, { exportedAtIso: pkg.generatedAtIso, packageId: pkg.packageId });
 		return { package: pkg, xml, sha256, integrity };
 	} catch (_dbError) {
-		return buildEmptyCommerceMlPackageFallback({ startDateIso, endDateIso: params.endDateIso, clinic, chartOfAccounts, prefix, cleanDate });
+		return buildEmptyCommerceMlPackageFallback({ orgId, startDateIso, endDateIso: params.endDateIso, clinic, chartOfAccounts, prefix, cleanDate });
 	}
 }
 
-function buildEmptyCommerceMlPackageFallback(ctx: { startDateIso: string; endDateIso: string; clinic: OneCClinicProfile; chartOfAccounts: OneCChartOfAccounts; prefix: string; cleanDate: string }): CommerceMlPackageResult {
-	const { startDateIso, endDateIso, clinic, chartOfAccounts, prefix, cleanDate } = ctx;
+function buildEmptyCommerceMlPackageFallback(ctx: { orgId: string; startDateIso: string; endDateIso: string; clinic: OneCClinicProfile; chartOfAccounts: OneCChartOfAccounts; prefix: string; cleanDate: string }): CommerceMlPackageResult {
+	const { orgId, startDateIso, endDateIso, clinic, chartOfAccounts, prefix, cleanDate } = ctx;
 	const emptySalesDoc: OneCRetailSalesDocument = {
 		id: `doc-sales-${cleanDate}`, documentNumber: `${prefix}-РОЗН-${cleanDate}`, documentDateIso: startDateIso, documentTime: "20:00:00",
 		periodLabelRu: `Смена ${startDateIso}`, cashRegisterName: clinic.defaultCashRegisterName || "Касса №1 (АТОЛ 27Ф)", warehouseName: clinic.defaultWarehouseName || "Основной склад клиники",
@@ -143,6 +143,6 @@ function buildEmptyCommerceMlPackageFallback(ctx: { startDateIso: string; endDat
 	const xml = generateCommerceMl209PackageXml(pkg);
 	const sha256 = pkg.sha256Hash;
 	const integrity = validatePackageIntegrity(pkg);
-	registerExportedPackage(sha256, { exportedAtIso: pkg.generatedAtIso, packageId: pkg.packageId });
+	registerExportedPackage(orgId, sha256, { exportedAtIso: pkg.generatedAtIso, packageId: pkg.packageId });
 	return { package: pkg, xml, sha256, integrity };
 }

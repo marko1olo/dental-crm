@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import type { BookingSlotItem } from "../contracts/bookingContracts";
 
+interface RawSlotDto {
+	time: string;
+	startsAt: string;
+	endsAt: string;
+	availableDoctorIds: string[];
+}
+
 export function useBookingSlotsQuery(
 	effectiveOrgId: string | null,
 	apiBaseUrl: string,
@@ -44,8 +51,8 @@ export function useBookingSlotsQuery(
 					throw new Error(data?.message || data?.error || "На выбранную дату приём не ведётся");
 				}
 				return data;
-			} catch (err: any) {
-				if (err?.name === "AbortError") {
+			} catch (err: unknown) {
+				if (err instanceof Error && err.name === "AbortError") {
 					throw new Error("Таймаут соединения с клиникой. Проверьте интернет или позвоните администратору.");
 				}
 				if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -59,7 +66,7 @@ export function useBookingSlotsQuery(
 			.then((data) => {
 				if (isCancelled) return;
 				if (Array.isArray(data) && data.length > 0) {
-					const mapped: BookingSlotItem[] = data.map((item: any) => {
+					const mapped: BookingSlotItem[] = (data as RawSlotDto[]).map((item) => {
 						const hour = Number.parseInt(item.time.split(":")[0] ?? "10", 10) || 10;
 						const period: "morning" | "afternoon" | "evening" = hour < 12 ? "morning" : hour < 16 ? "afternoon" : "evening";
 						return { time: item.time, startsAt: item.startsAt, endsAt: item.endsAt, period, availableDoctorIds: item.availableDoctorIds };

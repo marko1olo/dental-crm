@@ -12,7 +12,10 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerPublicBookingRoutes } from "../../routes/publicBooking/publicBookingHandlers.js";
-import { publicBookingQueueService } from "../../services/publicBookingQueueService.js";
+import {
+	getActiveCodeForTesting,
+	requestPhoneVerification,
+} from "../../routes/publicBooking/smsVerificationAndSpamGate.js";
 import { OnlineBookingPlugin } from "../../services/bots/plugins/OnlineBookingPlugin.js";
 import {
 	fixtureUuid,
@@ -115,7 +118,7 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		assert.ok(sendData.challengeId);
 
 		// 2. Fetch active code
-		const code = publicBookingQueueService.getActiveCodeForTesting(testPhone);
+		const code = getActiveCodeForTesting(testPhone);
 		assert.ok(code, "Generated code must exist in challenge store");
 
 		// 3. Verify OTP via alias
@@ -195,8 +198,8 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 
 		const testPhone = "+7 (916) 123-45-67";
 		// Request OTP
-		publicBookingQueueService.requestPhoneVerification(testPhone, "sms", "127.0.0.1", ORG_ID);
-		const code = publicBookingQueueService.getActiveCodeForTesting(testPhone);
+		requestPhoneVerification(testPhone, "sms", "127.0.0.1", ORG_ID);
+		const code = getActiveCodeForTesting(testPhone);
 		assert.ok(code);
 
 		const startsAt = "2029-06-15T11:00:00.000Z";

@@ -232,6 +232,34 @@
   - 📱 Mobile Light 390x844 (`05_cashbox_studio_mobile_light_390x844.png` — 130.5 KB)
   - 📱 Mobile Dark 390x844 (`06_cashbox_studio_mobile_dark_390x844.png` — 130.7 KB)
 
+### [FIXER-PRICEFREEZE-01] [ЗАКРЫТО: 100% GREEN / EXIT CODE 0] Дефекты токенов фиксации цен (Price Freeze Tokens), IDOR планов лечения и CommerceML 2.09
+- **Роль**: Старший Red Team Чинильщик-Хирург (Fixer Surgeon) сектора Price Freeze Tokens, Commercial Quotations & CommerceML
+- **Основание**: Досье Разведчика `[SCOUT-PRICEFREEZE-01]`, Мандаты 8be, 8bf, 8bj, Закон №0
+- **Устранённые дефекты Досье Разведчика:**
+  1. `[SEV-1]` **Ликвидация опасного tooth-only матчинга в `planItemsValidationBuilder.ts:52-58`**: Устранена уязвимость, при которой любая услуга на зубе (например, прицельный снимок за 350 ₽ на зубе 36) получала цену коронки за 38 000 ₽ из-за слепого совпадения `pi.toothNumber === resolvedToothNumber`. Теперь совпадение номера зуба — строго дополнительный дискриминатор, а первичное сопоставление позиции требует строгого совпадения услуги (`it.itemId === pi.id`, `serviceId === pi.priceId` с префиксами или совпадения наименования).
+  2. `[SEV-2]` **Сохранение `code804n` и `toothNumber` в `frozenPricesJson` (`priceFreezeTokensQuery.ts:137-160`)**: В функции `issuePriceFreezeToken` реализована выборка кодов услуг из `serviceCatalogItems` по `organizationId` и `inArray(serviceIds)`. Теперь в слепок цен надежно записываются `code804n: catalogEntry?.code`, `title`, `toothNumber: item.toothNumber`, гарантируя 100% совпадение в `planItemsValidationBuilder.ts:40`.
+  3. `[SEV-2]` **Закрытие IDOR-уязвимости в `planVariantRoutes.ts:393-415`**: Эндпоинт `GET /api/patients/:patientId/treatment-plans/:planId/price-freeze` теперь строго проверяет принадлежность `planId` пациенту `patientId` и организации `organizationId` через SQL-запрос к `treatmentPlans`. Чужой план немедленно возвращает HTTP 404 (`TreatmentPlanNotFound`).
+  4. `[SEV-2]` **Удаление вымышленного норматива «Постановление № 659» (`priceFreezeTokensQuery.ts:8`)**: Удалена галлюцинация «Постановление Правительства РФ № 659 от 30.05.2026», сохранена легитимная нормативно-правовая база РФ: Постановление № 736 от 11.05.2023, ст. 10, 16, 33 ЗОЗПП, ст. 20 323-ФЗ.
+  5. `[SEV-2]` **Регистрация Fastify XML Content-Type парсера в `commerceMl.ts:66-73`**: Добавлен нативный обработчик `app.addContentTypeParser(["application/xml", "text/xml"], { parseAs: "string" })`, ликвидировавший ошибку HTTP 415 Unsupported Media Type при получении входящих пакетов синхронизации от 1С:Предприятие.
+  6. `[SEV-2]` **Мульти-тенантная изоляция `reconciliationStore.ts` по `organizationId`**: In-memory структуры `processedSyncHashesByOrg` и `exportedPackageHashesByOrg` изолированы по ключу клиники `organizationId`. Предотвращены блокировки и ложные срабатывания `checkDoublePosting` между независимыми арендаторами.
+  7. `[SEV-3 / СИРОТЫ]` **Физический снос 7 мертвых файлов-дубликатов через `git rm` (1115+ строк)**: Удалены мертвые сироты в `apps/web/src/components/finance/one-c/` (`oneCCommerceMlXmlGenerators.ts`, `oneCCommerceMlTypes.ts`, `oneCCommerceMlEngine.ts`, `oneCCommerceMlCsvGenerators.ts`, `index.ts`, `__tests__/oneCCommerceMlEngine.test.ts`, `__tests__/oneCTestPackageFixture.ts`), замененные каноническим SSOT в `@dental/shared/src/finance/commerceMl209/`.
+- **Машинные пруфы и гейты DoD:**
+  - `npx tsx --test apps/api/src/tests/compliance/priceFreezeFixerAudit.test.ts`: **4/4 PASS (100% GREEN)**.
+  - `npx tsx --test apps/api/src/services/finance/commerceMl/commerceMlDecomposed.test.ts`: **5/5 PASS (100% GREEN)**.
+  - `npx tsx --test apps/api/src/tests/compliance/priceFreezeTokensAndDiscountsAudit.test.ts`: **7/7 PASS (100% GREEN)**.
+  - `npx tsx --test apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts`: **4/4 PASS (100% GREEN)**.
+  - `npm run check:encoding`: проверено 20 987 файлов, **Exit Code 0**.
+  - `npm run check:migration-drift`: **100% SYNCHRONIZED — ZERO DRIFT**, 213 таблиц, 2858 колонок, 48 энумов, **Exit Code 0**.
+  - `npm run check:react-hooks`: проверено 3243 файла с хуками, **0 нарушений, Exit Code 0**.
+  - `npm run check:buttons`: проверено 4859 TSX/JSX, 1359 CSS, **0 нарушений, Exit Code 0**.
+  - `npx tsc --project apps/api/tsconfig.json --noEmit`: **Exit Code 0**.
+  - `npx tsc --project apps/web/tsconfig.json --noEmit`: 0 ошибок в `one-c` и `Billing1C`.
+- **4-State Visual Proofs (Лично отсмотрены через `read_file` в `docs/proofs/audit/`):**
+  - ☀️ PC Light 1440x900 (`03_billing_1c_export_modal_pc_light.png` — 290.1 KB)
+  - 🌙 PC Dark 1440x900 (`03_billing_1c_export_modal_pc_dark.png` — 289.8 KB)
+  - 📱 Mobile Light 390x844 (`03_billing_1c_export_modal_mobile_light.png` — 212.0 KB)
+  - 🌙 Mobile Dark 390x844 (`03_billing_1c_export_modal_mobile_dark.png` — 212.5 KB)
+
 ### [FIN-13] [ИСПРАВЛЕНО] [SEV-1] Ликвидация матрёшечного полигона оплаты в PatientBillingModal и физический снос 60+ зомби-файлов устаревших касс
 - **Роль**: Red Team Fixer Surgeon по домену Кассы 54-ФЗ, Биллинга и Эквайринга
 - **Файлы модифицированные и очищенные:**
@@ -6223,3 +6251,62 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
   - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла, 0 нарушений правил React 19).
   - `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: СЕКТОР PUBLIC BOOKING, PATIENT PORTAL & KIOSK SECURITY [FIXER-BOOKING-01]
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Public Booking, Patient Portal & Kiosk Security (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Booking-01).
+- **Суть проблемы и инквизиционный диагноз (Досье SCOUT-BOOKING-01):**
+  1. **Дефект 1 (SEV-1): Краш Fastify с HTTP 500 (Postgres 22P02 `invalid input syntax for type uuid`) в Kiosk (`kioskPatientLookupHandlers.ts:53-68`, `kioskCheckinHandlers.ts`):**
+     - Параметр `organizationId` принимался как сырая строка без Zod UUID валидации. Передача невалидного UUID приводила к обращению Drizzle к Postgres с сырой строкой, вызывая ошибку 22P02 и необработанный 500 Internal Server Error вместо 400 Bad Request.
+  2. **Дефект 2 (SEV-2): Утечка ПДн `patientId` и преждевременная мутация явки в 'arrived' при 4 цифрах телефона (`kioskCheckinHandlers.ts:212-228`):**
+     - Сервер возвращал клиенту терминала открытый `patientId: targetPatient.id` и мгновенно переводил статус визита в `arrived` при совпадении только 4 последних цифр без подтверждения полного номера телефона или кода записи, создавая угрозу дезинформации расписания и раскрытия идентификаторов пациентов.
+  3. **Дефект 3 (SEV-2): Портал: запись в 3 ночи, бронирование в прошлое и chairId: null (`portalAppointmentsRoutes.ts:136-232`):**
+     - Эндпоинт `POST /appointments` в личном кабинете пациента не проверял `startDate <= Date.now()` (запись в прошлое) и не валидировал рабочие часы клиники и врача, а также оставлял `chairId: null` без автоназначения стоматологического кресла.
+  4. **Дефект 4 (Сироты и мертвый академический контур): 892 строки мертвого кода в `apps/api/src/services/publicBookingQueue/`:**
+     - Вымышленная академическая 'ночная очередь с 10% скидкой' (`bookingQueueProcessor.ts`, `slotHoldLockEngine.ts`, `bookingVerificationEngine.ts`, `bookingRateLimiter.ts`, `publicBookingQueueService.ts`, `publicBookingQueue.test.ts`), а также мертвые эндпоинты `/cloud-intake` и `/accept-bump` в `publicBookingHandlers.ts`.
+  5. **Дефект 5 (Мандат 8be): Использование `any` в хуках витрины онлайн-записи (`useBookingDoctorsQuery.ts:47`, `useBookingSlotsQuery.ts:47, 62`):**
+     - Использовались сырые касты `data.map((d: any) => ...)` и `catch (err: any)`.
+
+- **Хирургическое устранение дефектов (Канонические правки по Мандатам 8be, 8bf):**
+  1. **Ликвидация SEV-1 (Postgres crash 22P02) и внедрение Zod-схем в Kiosk:**
+     - В `apps/api/src/routes/portal/kiosk/kioskPatientLookupHandlers.ts` создана и экспортирована строгая Zod-схема `kioskCheckinSchema` с `organizationId: z.string().uuid()`.
+     - В `resolveOrganizationId` внедрена проверка регулярным выражением UUID. При невалидном идентификаторе возвращается `null`.
+     - В `apps/api/src/routes/portal/kiosk/kioskCheckinHandlers.ts` на входе запроса внедрена валидация через `kioskCheckinSchema.safeParse()`. При передаче некорректного UUID Fastify немедленно возвращает HTTP 400 Bad Request (`ValidationError`) без падения базы данных.
+  2. **Ликвидация SEV-2 (Утечка patientId и ложная явка в Kiosk):**
+     - Из возвращаемого JSON-ответа `handleKioskCheckinRequest` полностью удалено поле `patientId`.
+     - Введена строгая проверка верификации личности: при поиске только по 4 цифрам телефона (`rawPhoneLast4`) без ввода полного номера телефона (`patientPhone`) и без кода записи (`checkinCode`) статус приёма НЕ переводится в `arrived`. Киоск возвращает `arrived: false, requiresVerification: true, patientName: maskPatientName(...)` с требованием ввести подтверждающие данные.
+     - Мутация в `arrived` и оповещение WebSocket происходят строго при подтверждении (полный телефон / код записи / экстренный или первичный приём).
+  3. **Ликвидация SEV-2 (Запись в прошлое, ночные слоты и chairId в Portal):**
+     - В `apps/api/src/routes/portal/portalAppointmentsRoutes.ts` внедрен строгий барьер: `startDate.getTime() <= Date.now()` -> HTTP 400 Bad Request `InvalidAppointmentTime` («Нельзя записаться на прошедшее время»).
+     - Введена проверка длительности приёма (от 15 минут до 8 часов).
+     - Внедрена каноническая проверка рабочего графика клиники (`organizations.clinicSchedule`) и врача (`users.workingHours`) через утилиты `slotAvailabilityEngine.ts` (`resolveDaySchedule`, `resolveDoctorDaySchedule`, `intersectWorkingWindows`). Попытка записи вне рабочих часов отклоняется с HTTP 409 Conflict (`OutsideWorkingHours` / `ClinicClosed` / `DoctorNotWorking`).
+     - Реализовано автоназначение активного свободного стоматологического кресла (`chairs.id`) с блокировкой кресла `FOR UPDATE` в строгом каноническом порядке (`Chair` -> `Doctor` -> `Patient`) и записью `chairId: selectedChairId` в создаваемый приём.
+  4. **Физический снос мертвого контура `publicBookingQueue/` (`git rm -rf`):**
+     - Самодостаточный криптографический in-memory движок OTP-верификации (`BookingVerificationEngine`, `requestPhoneVerification`, `verifyPhoneOtp`, `getActiveCodeForTesting`) перенесен напрямую в `apps/api/src/routes/publicBooking/smsVerificationAndSpamGate.ts`.
+     - Все внешние вызовы (`portalTelegramAuthRoutes.ts`, `telegramWebAppBolaProtection.test.ts`, `publicBookingFixerVerified.test.ts`) переведены на чистый модуль `smsVerificationAndSpamGate.ts`.
+     - Удалены мертвые эндпоинты `/cloud-intake` и `/accept-bump`, а также неиспользуемые схемы `cloudIntakeSchema`, `acceptBumpSchema`.
+     - Выполнен `git rm -rf` для:
+       * `apps/api/src/services/publicBookingQueue/` (892 строки сиротского кода: `bookingQueueProcessor.ts`, `slotHoldLockEngine.ts`, `bookingVerificationEngine.ts`, `bookingRateLimiter.ts`, `types.ts`, `index.ts`)
+       * `apps/api/src/services/publicBookingQueueService.ts`
+       * `apps/api/src/tests/publicBookingQueue.test.ts`
+  5. **Разминирование `any` по Мандату 8be:**
+     - В `apps/web/src/components/booking/hooks/useBookingDoctorsQuery.ts` внедрен строгий интерфейс `RawDoctorDto`, каст `(d: any)` заменен на типизированный маппинг с защитой `exactOptionalPropertyTypes`.
+     - В `apps/web/src/components/booking/hooks/useBookingSlotsQuery.ts` внедрен строгий интерфейс `RawSlotDto`, каст `(item: any)` заменен на типизированный маппинг, а `catch (err: any)` заменен на `catch (err: unknown)` с guard-проверкой `err instanceof Error`.
+
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `apps/api/src/tests/routes/portalSelfCheckin.test.ts` -> **6/6 PASS (Exit Code 0)**.
+  - `apps/api/src/tests/routes/telegramWebAppBolaProtection.test.ts` -> **4/4 PASS (Exit Code 0)**.
+  - `apps/api/src/tests/routes/publicBookingFixerVerified.test.ts` -> **4/4 PASS (Exit Code 0)**.
+  - `apps/api/src/tests/routes/portalRoutes.test.ts` -> **6/6 PASS (Exit Code 0)**.
+  - `apps/api/src/tests/routes/portalSecurityAnd152FzAudit.test.ts` -> **11/11 PASS (Exit Code 0)**.
+  - `apps/api/src/tests/routes/publicBookingWorkHoursProof.ts` -> **PASS: Все сверки сошлись**.
+  - `npx tsc --project apps/api/tsconfig.json --noEmit` -> **Exit Code 0 (0 ошибок)**.
+  - `npx tsc --noEmit` booking hooks -> **Exit Code 0 (0 ошибок)**.
+  - `npm run check:encoding` -> **Exit Code 0 (20 987 файлов проверено)**.
+  - `npm run check:migration-drift` -> **Exit Code 0 (100% Synchronized, Zero Drift)**.
+  - `npm run check:react-hooks` -> **Exit Code 0 (3 243 файла, 0 нарушений)**.
+  - `npm run check:buttons` -> **Exit Code 0 (4 859 TSX файлов, 0 нарушений токенов)**.

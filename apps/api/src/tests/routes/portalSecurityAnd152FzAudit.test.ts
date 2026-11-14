@@ -459,8 +459,8 @@ describe("Patient Portal Security, Multi-Tenant Isolation & 152-FZ Audit", () =>
 	test("8. Double-Booking Prevention & Pessimistic Concurrency Locking in Patient Portal", async (context) => {
 		if (!databaseAvailable) return context.skip("База данных недоступна");
 
-		const startsAt = "2026-10-20T10:00:00.000Z";
-		const endsAt = "2026-10-20T11:00:00.000Z";
+		const startsAt = "2029-10-23T10:00:00.000Z";
+		const endsAt = "2029-10-23T11:00:00.000Z";
 
 		// 1. Patient A books slot with DOCTOR_A
 		const bookRes1 = await app.inject({
@@ -480,8 +480,8 @@ describe("Patient Portal Security, Multi-Tenant Isolation & 152-FZ Audit", () =>
 		assert.ok(bookBody1.appointment.id);
 
 		// 2. Overlapping booking attempt with the same doctor (starts 10:30, ends 11:30)
-		const overlappingStarts = "2026-10-20T10:30:00.000Z";
-		const overlappingEnds = "2026-10-20T11:30:00.000Z";
+		const overlappingStarts = "2029-10-23T10:30:00.000Z";
+		const overlappingEnds = "2029-10-23T11:30:00.000Z";
 
 		const conflictRes = await app.inject({
 			method: "POST",
@@ -702,5 +702,53 @@ describe("Patient Portal Security, Multi-Tenant Isolation & 152-FZ Audit", () =>
 			headers: { authorization: `Bearer ${sessionToken}` },
 		});
 		assert.equal(reLogoutRes.statusCode, 401, "Second logout with revoked token must return 401");
+	});
+
+	test("11. Portal Booking Invariants: Rejects past time and night slots outside working hours (SEV-2)", async (context) => {
+		if (!databaseAvailable) return context.skip("База данных недоступна");
+
+		// Reset revocation for patient A to allow authenticated booking check
+		resetPortalRevokedTokensForTesting();
+		await withFixtureTenant(ORG_A, async () => {
+			await db.update(patients).set({ administrativeProfile: null }).where(eq(patients.id, PATIENT_A));
+		});
+
+		const freshToken = signToken(
+			{ sub: PATIENT_A, organizationId: ORG_A, kind: "portal" },
+			requireAuthTokenSecret(),
+			3600,
+		);
+
+		// 1. Попытка записи в прошлое должна отвергаться с 400
+		const pastRes = await app.inject({
+			method: "POST",
+			url: "/api/portal/appointments",
+			headers: { authorization: `Bearer ${freshToken}` },
+			payload: {
+				doctorId: DOCTOR_A,
+				startsAt: "2020-01-01T10:00:00.000Z",
+				endsAt: "2020-01-01T10:30:00.000Z",
+				reason: "Запись в прошлое",
+			},
+		});
+		assert.equal(pastRes.statusCode, 400, "Booking in the past must be rejected with 400");
+		const pastJson = pastRes.json() as { error: string };
+		assert.equal(pastJson.error, "InvalidAppointmentTime");
+
+		// 2. Попытка записи глубокой ночью (03:00) должна отвергаться с 409 OutsideWorkingHours
+		const nightRes = await app.inject({
+			method: "POST",
+			url: "/api/portal/appointments",
+			headers: { authorization: `Bearer ${freshToken}` },
+			payload: {
+				doctorId: DOCTOR_A,
+				startsAt: "2029-10-23T03:00:00.000Z",
+				endsAt: "2029-10-23T03:30:00.000Z",
+				reason: "Ночная запись",
+			},
+		});
+		assert.equal(nightRes.statusCode, 409, "Night booking outside working hours must be rejected with 409");
+		const nightJson = nightRes.json() as { error: string };
+		assert.equal(nightJson.error, "OutsideWorkingHours");
 	});
 });

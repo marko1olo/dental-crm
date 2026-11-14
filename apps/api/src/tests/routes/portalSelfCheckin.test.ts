@@ -136,7 +136,37 @@ test("Portal Kiosk Self-Checkin & 152-FZ Privacy Security Invariants", async (t)
 				assert.equal(json.isFirstTime, true);
 				assert.ok(json.queueTicket.startsWith("Талон № П-"), `Expected ticket to start with 'Талон № П-', got: ${json.queueTicket}`);
 				assert.ok(json.visitStatus.includes("первичного осмотра") || json.visitStatus.includes("В холле"));
+				// SEV-2: patientId must NOT leak in response
+				assert.equal(json.patientId, undefined, "patientId must never be exposed in kiosk checkin response");
 			}
+		} finally {
+			await server.close();
+			resetKioskRateLimitsForTesting();
+		}
+	});
+
+	await t.test("5. Invalid organizationId UUID format returns 400 ValidationError without Postgres 22P02 crash (SEV-1)", async () => {
+		resetKioskRateLimitsForTesting();
+
+		const server: FastifyInstance = fastify();
+		await registerPortalKioskRoutes(server);
+		await server.ready();
+
+		try {
+			const res = await server.inject({
+				method: "POST",
+				url: "/kiosk/checkin",
+				headers: { "x-forwarded-for": "10.0.0.52" },
+				payload: {
+					organizationId: "not-a-valid-uuid",
+					phoneLast4: "1234",
+				},
+			});
+
+			assert.equal(res.statusCode, 400, "Must return HTTP 400 for non-UUID organizationId");
+			const json = JSON.parse(res.body);
+			assert.equal(json.error, "ValidationError");
+			assert.ok(json.message.includes("Некорректные параметры"));
 		} finally {
 			await server.close();
 			resetKioskRateLimitsForTesting();

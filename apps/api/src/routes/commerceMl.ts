@@ -17,7 +17,9 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	COMMERCEML_VERSION_209,
-	OneCCommerceMlPackage,
+	type OneCChartOfAccounts,
+	type OneCClinicProfile,
+	type OneCCommerceMlPackage,
 	validatePackageIntegrity,
 } from "@dental/shared";
 import {
@@ -62,6 +64,15 @@ const exportQuerySchema = z.object({
 });
 
 export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<void> {
+	if (!app.hasContentTypeParser("application/xml")) {
+		app.addContentTypeParser(
+			["application/xml", "text/xml"],
+			{ parseAs: "string" },
+			(_req, body, done) => {
+				done(null, body);
+			},
+		);
+	}
 	// ═════════════════════════════════════════════════════════════════════════
 	// 1. EXPORT ENDPOINTS (GET & POST)
 	// ═════════════════════════════════════════════════════════════════════════
@@ -127,12 +138,12 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 			chartOfAccountsOverrides:
 				typeof inputData.chartOfAccountsOverrides === "object" &&
 				inputData.chartOfAccountsOverrides !== null
-					? (inputData.chartOfAccountsOverrides as any)
+					? (inputData.chartOfAccountsOverrides as Partial<OneCChartOfAccounts>)
 					: undefined,
 			clinicProfileOverrides:
 				typeof inputData.clinicProfileOverrides === "object" &&
 				inputData.clinicProfileOverrides !== null
-					? (inputData.clinicProfileOverrides as any)
+					? (inputData.clinicProfileOverrides as Partial<OneCClinicProfile>)
 					: undefined,
 		});
 
@@ -160,7 +171,7 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	// Primary v1 statutory path
 	app.get("/api/v1/integrations/1c/commerceml/export", async (request, reply) => {
 		const parsedQuery = exportQuerySchema.parse(request.query || {});
-		return handleExport(request, reply, parsedQuery as any);
+		return handleExport(request, reply, parsedQuery);
 	});
 
 	app.post("/api/v1/integrations/1c/commerceml/export", async (request, reply) => {
@@ -174,7 +185,7 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	// Direct alias paths for web client
 	app.get("/api/commerceml/export", async (request, reply) => {
 		const parsedQuery = exportQuerySchema.parse(request.query || {});
-		return handleExport(request, reply, parsedQuery as any);
+		return handleExport(request, reply, parsedQuery);
 	});
 
 	app.post("/api/commerceml/export", async (request, reply) => {
@@ -192,10 +203,25 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	const handleSync = async (request: FastifyRequest, reply: FastifyReply) => {
 		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
 		if (reply.sent) return;
-		const rawBody =
-			typeof request.body === "object" && request.body !== null
-				? (request.body as Record<string, unknown>)
-				: {};
+
+		let rawBody: Record<string, unknown> = {};
+		if (typeof request.body === "string") {
+			const trimmed = request.body.trim();
+			if (trimmed.startsWith("{")) {
+				try {
+					rawBody = JSON.parse(trimmed) as Record<string, unknown>;
+				} catch {
+					rawBody = {};
+				}
+			} else {
+				// XML payload received from 1C (Content-Type: application/xml or text/xml)
+				rawBody = {
+					syncTransactionId: `1c-xml-sync-${Date.now()}`,
+				};
+			}
+		} else if (typeof request.body === "object" && request.body !== null) {
+			rawBody = request.body as Record<string, unknown>;
+		}
 
 		const resolvedOrgId =
 			verifiedOrgId ||
@@ -209,6 +235,8 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		const payload = oneCSyncPayloadSchema.parse({
 			...rawBody,
 			organizationId: resolvedOrgId,
+			syncTransactionId:
+				(rawBody.syncTransactionId as string) || `sync-${Date.now()}`,
 		});
 
 		const syncResult = await CommerceMlService.syncFrom1C(payload, actorUserId);

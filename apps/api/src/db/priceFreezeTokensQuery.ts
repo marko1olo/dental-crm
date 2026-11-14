@@ -5,7 +5,7 @@
  * и режимов скидок (GAP_REPORT строка 165).
  *
  * Соответствие нормативам:
- * - Постановление Правительства РФ № 659 от 30.05.2026 и № 736 от 11.05.2023 (Платные мед. услуги)
+ * - Постановление Правительства РФ № 736 от 11.05.2023 (Платные мед. услуги)
  * - Закон РФ «О защите прав потребителей» (ст. 10, ст. 16, ст. 33)
  * - Федеральный закон № 323-ФЗ (ст. 20)
  *
@@ -134,14 +134,45 @@ export async function issuePriceFreezeToken(
 		);
 
 	// 3. Формируем слепок зафиксированных цен (frozen_prices_json)
+	const serviceIds = Array.from(
+		new Set(
+			planItems
+				.map((item) => {
+					const separatorIndex = (item.priceId || "").indexOf("::");
+					return separatorIndex >= 0 ? item.priceId.slice(0, separatorIndex) : item.priceId;
+				})
+				.filter((id): id is string => Boolean(id && id.trim().length > 0)),
+		),
+	);
+
+	const catalogRows =
+		serviceIds.length > 0
+			? await tx
+					.select({
+						id: serviceCatalogItems.id,
+						code: serviceCatalogItems.code,
+						name: serviceCatalogItems.title,
+					})
+					.from(serviceCatalogItems)
+					.where(
+						and(
+							eq(serviceCatalogItems.organizationId, input.organizationId),
+							inArray(serviceCatalogItems.id, serviceIds),
+						),
+					)
+			: [];
+
+	const catalogMap = new Map(catalogRows.map((c) => [c.id, c]));
+
 	const frozenPrices: FrozenPriceItem[] = planItems.map((item) => {
 		const separatorIndex = (item.priceId || "").indexOf("::");
 		const pureServiceId =
 			separatorIndex >= 0 ? item.priceId.slice(0, separatorIndex) : item.priceId;
+		const catalogEntry = pureServiceId ? catalogMap.get(pureServiceId) : undefined;
 		const title =
 			separatorIndex >= 0
 				? item.priceId.slice(separatorIndex + 2)
-				: item.priceId;
+				: (catalogEntry?.name || item.priceId);
 
 		const priceNum = Number(item.price || 0);
 		const discountNum = Number(item.discount || 0);
@@ -149,8 +180,9 @@ export async function issuePriceFreezeToken(
 		return {
 			priceId: item.priceId,
 			serviceId: pureServiceId && pureServiceId.length > 0 ? pureServiceId : null,
+			code804n: catalogEntry?.code ?? null,
 			title,
-			toothNumber: item.toothNumber,
+			toothNumber: item.toothNumber ?? null,
 			quantity: item.quantity,
 			lockedUnitPriceRub: priceNum,
 			lockedUnitPriceKopecks: Math.round(priceNum * 100),
@@ -233,17 +265,21 @@ export async function getActivePriceFreezeToken(
 	dbClient: TenantDb,
 	organizationId: string,
 	planId: string,
+	patientId?: string,
 ) {
+	const conditions = [
+		eq(treatmentPlanPriceFreezeTokens.planId, planId),
+		eq(treatmentPlanPriceFreezeTokens.organizationId, organizationId),
+		inArray(treatmentPlanPriceFreezeTokens.status, ["active", "expired"]),
+	];
+	if (patientId) {
+		conditions.push(eq(treatmentPlanPriceFreezeTokens.patientId, patientId));
+	}
+
 	const [tokenRow] = await dbClient
 		.select()
 		.from(treatmentPlanPriceFreezeTokens)
-		.where(
-			and(
-				eq(treatmentPlanPriceFreezeTokens.planId, planId),
-				eq(treatmentPlanPriceFreezeTokens.organizationId, organizationId),
-				inArray(treatmentPlanPriceFreezeTokens.status, ["active", "expired"]),
-			),
-		)
+		.where(and(...conditions))
 		.orderBy(desc(treatmentPlanPriceFreezeTokens.createdAt))
 		.limit(1);
 

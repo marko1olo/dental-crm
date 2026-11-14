@@ -93,10 +93,17 @@ describe("CommerceML Decomposed Modular Architecture Tests", () => {
 		assert.equal(res.integrity.isValid, true);
 		assert.equal(res.integrity.errors.length, 0);
 
-		// Check facade integration
+		// Check facade integration with strict tenant isolation
 		const doubleCheck = CommerceMlService.checkDoublePosting(TEST_ORG_ID, res.sha256);
 		assert.equal(doubleCheck.isDoublePosting, true);
 		assert.ok(doubleCheck.message.includes("уже выгружался ранее"));
+
+		const otherOrgCheck = CommerceMlService.checkDoublePosting(
+			"11111111-2222-3333-4444-555555555555",
+			res.sha256,
+		);
+		assert.equal(otherOrgCheck.isDoublePosting, false);
+		assert.equal(otherOrgCheck.message, "Пакет уникален, двойное проведение отсутствует.");
 	});
 
 	it("schemas validate parameters strictly per CommerceML contracts", () => {

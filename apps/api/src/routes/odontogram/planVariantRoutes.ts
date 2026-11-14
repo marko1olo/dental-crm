@@ -1,5 +1,6 @@
 import { nonNegativeMoneyRubSchema } from "@dental/shared";
-import type { FastifyInstance } from "fastify";
+import { and, eq } from "drizzle-orm";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
@@ -16,6 +17,7 @@ import {
 	issuePriceFreezeToken,
 	setPlanDiscountMode,
 } from "../../db/priceFreezeTokensQuery.js";
+import { treatmentPlans } from "../../db/schema.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -26,6 +28,25 @@ import {
 	verifyPlanWriteAccess,
 } from "./planHelpers.js";
 import { UUID_SHAPE } from "./types.js";
+
+interface CustomHttpError {
+	statusCode?: number;
+	message?: string;
+}
+
+const approveVariantSchema = z.object({
+	reason: z.string().nullable().optional(),
+});
+
+function resolveStaffRole(request: FastifyRequest): string | null {
+	const identity = getRequestIdentity(request);
+	if (identity.role) return identity.role;
+	if ("user" in request && typeof request.user === "object" && request.user !== null && "role" in request.user) {
+		const role = (request.user as { role?: unknown }).role;
+		return typeof role === "string" ? role : null;
+	}
+	return null;
+}
 
 export function registerPlanVariantRoutes(app: FastifyInstance) {
 	/**
@@ -43,7 +64,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const staffRole = resolveStaffRole(request);
 			const access = verifyPlanWriteAccess(staffRole);
 			if (!access.allowed) {
 				return reply.code(403).send({
@@ -65,7 +86,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
-			const body = (request.body as { reason?: string | null } | undefined) ?? {};
+			const body = approveVariantSchema.safeParse(request.body).data ?? {};
 
 			try {
 				const result = await withTenantCtx(organizationId, async (tx) => {
@@ -84,12 +105,12 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 				});
 
 				return reply.send(result);
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			} catch (err: any) {
-				if (err.statusCode) {
-					return reply.code(err.statusCode).send({
+			} catch (err: unknown) {
+				const httpErr = typeof err === "object" && err !== null ? (err as CustomHttpError) : undefined;
+				if (typeof httpErr?.statusCode === "number") {
+					return reply.code(httpErr.statusCode).send({
 						error: "TreatmentPlanVariantSelectionError",
-						message: err.message,
+						message: httpErr.message,
 					});
 				}
 				throw err;
@@ -111,7 +132,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const staffRole = resolveStaffRole(request);
 			const access = verifyPlanWriteAccess(staffRole);
 			if (!access.allowed) {
 				return reply.code(403).send({
@@ -202,12 +223,12 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 				});
 
 				return reply.send({ success: true, ...result });
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			} catch (err: any) {
-				if (err.statusCode) {
-					return reply.code(err.statusCode).send({
+			} catch (err: unknown) {
+				const httpErr = typeof err === "object" && err !== null ? (err as CustomHttpError) : undefined;
+				if (typeof httpErr?.statusCode === "number") {
+					return reply.code(httpErr.statusCode).send({
 						error: "AlternativePlanGroupError",
-						message: err.message,
+						message: httpErr.message,
 					});
 				}
 				throw err;
@@ -229,7 +250,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+			const staffRole = resolveStaffRole(request);
 			const access = verifyPlanReadAccess(staffRole);
 			if (!access.allowed) {
 				return reply.code(403).send({
@@ -272,10 +293,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = resolveStaffRole(request);
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -349,12 +367,12 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 				});
 
 				return reply.code(201).send({ success: true, ...result });
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			} catch (err: any) {
-				if (err.statusCode) {
-					return reply.code(err.statusCode).send({
+			} catch (err: unknown) {
+				const httpErr = typeof err === "object" && err !== null ? (err as CustomHttpError) : undefined;
+				if (typeof httpErr?.statusCode === "number") {
+					return reply.code(httpErr.statusCode).send({
 						error: "PriceFreezeError",
-						message: err.message,
+						message: httpErr.message,
 					});
 				}
 				throw err;
@@ -376,10 +394,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = resolveStaffRole(request);
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -401,10 +416,30 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
+			const [planRow] = await db
+				.select({ id: treatmentPlans.id })
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, planId),
+						eq(treatmentPlans.patientId, patientId),
+						eq(treatmentPlans.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!planRow) {
+				return reply.code(404).send({
+					error: "TreatmentPlanNotFound",
+					message: "План лечения не найден для указанного пациента",
+				});
+			}
+
 			const tokenStatus = await getActivePriceFreezeToken(
 				db,
 				organizationId,
 				planId,
+				patientId,
 			);
 
 			return reply.send({
@@ -429,10 +464,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = resolveStaffRole(request);
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -502,12 +534,12 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 				});
 
 				return reply.send(result);
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			} catch (err: any) {
-				if (err.statusCode) {
-					return reply.code(err.statusCode).send({
+			} catch (err: unknown) {
+				const httpErr = typeof err === "object" && err !== null ? (err as CustomHttpError) : undefined;
+				if (typeof httpErr?.statusCode === "number") {
+					return reply.code(httpErr.statusCode).send({
 						error: "DiscountModeError",
-						message: err.message,
+						message: httpErr.message,
 					});
 				}
 				throw err;

@@ -11,7 +11,7 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 	const computedHash = computeCommerceMlSha256(parsed);
 	const hash = parsed.sha256Hash || computedHash;
 
-	if (isSyncHashProcessed(hash)) {
+	if (isSyncHashProcessed(orgId, hash)) {
 		return {
 			success: true, processedDocumentsCount: parsed.postedDocumentConfirmations.length,
 			updatedStockItemsCount: parsed.inventoryStockUpdates.length, reconciledPaymentsCount: parsed.reconciledPayments.length,
@@ -50,7 +50,7 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 						transactionType: diff >= 0 ? "receipt_1c" : "writeoff_1c",
 						qty: String(Math.abs(diff)), quantityChanged: String(diff),
 						unitCostRub: stock.unitCostRub ? String(stock.unitCostRub) : targetItem.unitCostRub,
-						userId: actorUserId ? (actorUserId as any) : null,
+						userId: actorUserId ?? null,
 						notes: `Синхронизация остатков из 1С:Предприятие (Транзакция ${parsed.syncTransactionId})`,
 					});
 					updatedStockCount++;
@@ -70,17 +70,17 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 			}
 
 			await tx.insert(auditEvents).values({
-				organizationId: orgId, actorUserId: actorUserId ? (actorUserId as any) : null,
+				organizationId: orgId, actorUserId: actorUserId ?? null,
 				entityType: "1c_commerceml_sync", entityId: parsed.syncTransactionId, action: "sync_applied",
 				reason: `1C CommerceML 2.09 Sync: ${updatedStockCount} stock updates, ${reconciledPaymentsCount} reconciled payments (SHA-256: ${hash.slice(0, 16)}...)`,
 			});
 		});
-	} catch (_txError) {
-		updatedStockCount = parsed.inventoryStockUpdates.length;
-		reconciledPaymentsCount = parsed.reconciledPayments.length;
+	} catch (txError) {
+		console.error("[CommerceML 1C Sync] Transaction failed:", txError);
+		throw txError;
 	}
 
-	markSyncHashProcessed(hash);
+	markSyncHashProcessed(orgId, hash);
 	return {
 		success: true, processedDocumentsCount: parsed.postedDocumentConfirmations.length,
 		updatedStockItemsCount: updatedStockCount, reconciledPaymentsCount,

@@ -6,6 +6,7 @@
  */
 
 import { and, eq, gte, lt, notInArray, or, sql } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
@@ -16,20 +17,22 @@ import {
 	users,
 } from "../../../db/schema.js";
 
-export interface SelfCheckinBody {
-	organizationId?: unknown;
-	phoneLast4?: unknown;
-	patientPhone?: unknown;
-	patientId?: unknown;
-	checkinCode?: unknown;
-	signedConsents?: unknown;
-	somaticProfile?: unknown;
-	isEmergency?: unknown;
-	emergencyChiefComplaint?: unknown;
-	isFirstTime?: unknown;
-	patientFullName?: unknown;
-	kioskMode?: unknown;
-}
+export const kioskCheckinSchema = z.object({
+	organizationId: z.string().uuid("Некорректный формат идентификатора клиники (UUID)").optional().nullable(),
+	phoneLast4: z.string().regex(/^\d{4}$/, "Требуются 4 цифры").optional().nullable(),
+	patientPhone: z.string().max(30).optional().nullable(),
+	patientId: z.string().uuid("Некорректный идентификатор пациента").optional().nullable(),
+	checkinCode: z.string().max(20).optional().nullable(),
+	signedConsents: z.array(z.string()).optional().nullable(),
+	somaticProfile: z.record(z.unknown()).optional().nullable(),
+	isEmergency: z.boolean().optional().nullable(),
+	emergencyChiefComplaint: z.string().max(500).optional().nullable(),
+	isFirstTime: z.boolean().optional().nullable(),
+	patientFullName: z.string().max(200).optional().nullable(),
+	kioskMode: z.string().max(50).optional().nullable(),
+});
+
+export type SelfCheckinBody = z.infer<typeof kioskCheckinSchema>;
 
 export interface KioskPatientRecord {
 	id: string;
@@ -47,11 +50,16 @@ export interface KioskAppointmentRecord {
 	chairId: string | null;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * 1. Определение организации (клиники) с изоляцией тенанта
  */
-export async function resolveOrganizationId(rawOrgId: string): Promise<string | null> {
-	let organizationId = rawOrgId;
+export async function resolveOrganizationId(rawOrgId?: string | null): Promise<string | null> {
+	let organizationId = rawOrgId?.trim() || "";
+	if (organizationId && !UUID_REGEX.test(organizationId)) {
+		return null;
+	}
 	if (!organizationId) {
 		const firstOrg = await withSuperuserBypass(async () => {
 			const [org] = await db

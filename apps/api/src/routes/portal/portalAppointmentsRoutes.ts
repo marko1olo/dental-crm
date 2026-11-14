@@ -2,7 +2,21 @@ import { and, desc, eq, gt, lt, notInArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { appointments, patients, users, xrayScans } from "../../db/schema.js";
+import {
+	appointments,
+	chairs,
+	organizations,
+	patients,
+	users,
+	xrayScans,
+} from "../../db/schema.js";
+import { DEFAULT_TIMEZONE } from "../publicBooking/types.js";
+import {
+	intersectWorkingWindows,
+	resolveDaySchedule,
+	resolveDoctorDaySchedule,
+	utcToLocalWallTime,
+} from "../publicBooking/slotAvailabilityEngine.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 import type {
 	BookAppointmentBody,
@@ -147,11 +161,41 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			};
 		}
 
+		// SEV-2: Запрет бронирования в прошлое
+		if (startDate.getTime() <= Date.now()) {
+			reply.status(400);
+			return {
+				error: "InvalidAppointmentTime",
+				message: "Нельзя записаться на прошедшее время.",
+			};
+		}
+
+		// SEV-2: Защита от абсурдной длительности приёма
+		const durationMs = endDate.getTime() - startDate.getTime();
+		if (durationMs < 15 * 60 * 1000 || durationMs > 8 * 60 * 60 * 1000) {
+			reply.status(400);
+			return {
+				error: "InvalidAppointmentTime",
+				message: "Длительность приёма должна составлять от 15 минут до 8 часов.",
+			};
+		}
+
 		return withTenantCtx(auth.organizationId, async () => {
 			return db.transaction(async (tx) => {
-				// 1. Pessimistic hierarchy locking: Lock Doctor row FOR UPDATE
+				// 1. Проверка рабочего графика клиники и врача (Мандат 8a, 8k: исключить запись в 3 ночи)
+				const [orgRow] = await tx
+					.select({
+						clinicSchedule: organizations.clinicSchedule,
+					})
+					.from(organizations)
+					.where(eq(organizations.id, auth.organizationId))
+					.limit(1);
+
 				const [doctorRow] = await tx
-					.select({ id: users.id })
+					.select({
+						id: users.id,
+						workingHours: users.workingHours,
+					})
 					.from(users)
 					.where(
 						and(
@@ -170,7 +214,116 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					};
 				}
 
-				// 2. Lock Patient row FOR UPDATE
+				const tz =
+					(orgRow?.clinicSchedule as { timezone?: string } | null)?.timezone ||
+					DEFAULT_TIMEZONE;
+				const localStart = utcToLocalWallTime(startDate, tz);
+				const localEnd = utcToLocalWallTime(endDate, tz);
+
+				const clinicDaySchedule = resolveDaySchedule(
+					orgRow?.clinicSchedule as unknown,
+					localStart.weekday,
+				);
+				if (!clinicDaySchedule.isWorking) {
+					reply.status(409);
+					return {
+						error: "ClinicClosed",
+						message: "В этот день клиника не работает. Пожалуйста, выберите другую дату.",
+					};
+				}
+
+				const doctorWindow = resolveDoctorDaySchedule(
+					doctorRow.workingHours,
+					localStart.weekday,
+					clinicDaySchedule,
+				);
+				const effectiveWindow = intersectWorkingWindows(
+					clinicDaySchedule,
+					doctorWindow,
+					1,
+				);
+				if (!effectiveWindow.isWorking) {
+					reply.status(409);
+					return {
+						error: "DoctorNotWorking",
+						message: "В этот день выбранный врач не ведёт приём. Пожалуйста, выберите другую дату.",
+					};
+				}
+
+				const startMinute = localStart.hours * 60 + localStart.minutes;
+				const endMinute = localEnd.hours * 60 + localEnd.minutes;
+				if (
+					startMinute < effectiveWindow.startMinute ||
+					endMinute > effectiveWindow.endMinute ||
+					endMinute <= startMinute
+				) {
+					reply.status(409);
+					return {
+						error: "OutsideWorkingHours",
+						message: "Выбранное время находится вне рабочих часов приёма. Пожалуйста, выберите рабочее окно врача.",
+					};
+				}
+
+				// 2. SEV-2: Автоматическое определение и назначение свободного стоматологического кресла (chairId)
+				const activeChairs = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, auth.organizationId),
+							eq(chairs.isActive, true),
+						),
+					);
+
+				let selectedChairId: string | null = null;
+				if (activeChairs.length > 0) {
+					const sortedChairs = [...activeChairs].sort((a, b) =>
+						a.id.localeCompare(b.id),
+					);
+					for (const chair of sortedChairs) {
+						const [occupied] = await tx
+							.select({ id: appointments.id })
+							.from(appointments)
+							.where(
+								and(
+									eq(appointments.organizationId, auth.organizationId),
+									eq(appointments.chairId, chair.id),
+									lt(appointments.startsAt, endDate),
+									gt(appointments.endsAt, startDate),
+									notInArray(appointments.status, ["cancelled", "no_show"]),
+								),
+							)
+							.limit(1);
+
+						if (!occupied) {
+							selectedChairId = chair.id;
+							break;
+						}
+					}
+
+					if (!selectedChairId) {
+						reply.status(409);
+						return {
+							error: "NoAvailableChairs",
+							message: "На выбранное время нет свободных стоматологических кресел. Пожалуйста, выберите другой интервал.",
+						};
+					}
+
+					// Блокируем выбранное кресло FOR UPDATE в каноническом порядке Chair -> Doctor -> Patient
+					await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.organizationId, auth.organizationId),
+								eq(chairs.id, selectedChairId),
+							),
+						)
+						.limit(1)
+						.for("update");
+				}
+
+				// 3. Lock Patient row FOR UPDATE
 				await tx
 					.select({ id: patients.id })
 					.from(patients)
@@ -183,17 +336,22 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					.limit(1)
 					.for("update");
 
-				// 3. Collision / Overlap check across active appointments
+				// 4. Collision / Overlap check across active appointments
+				const resourceMatchConditions = [
+					eq(appointments.doctorUserId, doctorId),
+					eq(appointments.patientId, auth.patientId),
+				];
+				if (selectedChairId) {
+					resourceMatchConditions.push(eq(appointments.chairId, selectedChairId));
+				}
+
 				const overlapping = await tx
 					.select({ id: appointments.id })
 					.from(appointments)
 					.where(
 						and(
 							eq(appointments.organizationId, auth.organizationId),
-							or(
-								eq(appointments.doctorUserId, doctorId),
-								eq(appointments.patientId, auth.patientId),
-							),
+							or(...resourceMatchConditions),
 							lt(appointments.startsAt, endDate),
 							gt(appointments.endsAt, startDate),
 							notInArray(appointments.status, ["cancelled", "no_show"]),
@@ -210,13 +368,14 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					};
 				}
 
-				// 4. Atomic insertion
+				// 5. Atomic insertion с гарантированным chairId
 				const [created] = await tx
 					.insert(appointments)
 					.values({
 						organizationId: auth.organizationId,
 						patientId: auth.patientId,
 						doctorUserId: doctorId,
+						chairId: selectedChairId,
 						status: "planned",
 						startsAt: startDate,
 						endsAt: endDate,

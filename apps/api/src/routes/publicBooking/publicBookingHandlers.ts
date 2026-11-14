@@ -3,10 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, users } from "../../db/schema.js";
-import { publicBookingQueueService } from "../../services/publicBookingQueueService.js";
 import {
-	acceptBumpSchema,
-	cloudIntakeSchema,
 	optionalDoctorIdSchema,
 	sendOtpSchema,
 	verifyOtpSchema,
@@ -16,8 +13,8 @@ import {
 	handleSlotsQuery,
 } from "./bookingModules/publicBookingSlotEngine.js";
 import {
-	createCrmLeadFromPublicIntake,
 	handleBookAppointment,
+	type BookAppointmentRequest,
 } from "./bookingModules/publicBookingMutations.js";
 import {
 	isRateLimited,
@@ -125,65 +122,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		Body: { phone: string; code: string; organizationId?: string };
 	}>("/:organizationId/verify-otp", verifyOtpHandler);
 
-	// Cloud Relay / 24/7 intake endpoint (supports daytime direct or nighttime soft-hold queue)
-	server.post("/cloud-intake", async (request, reply) => {
-		const parsed = cloudIntakeSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.status(400).send({
-				error: "Некорректные данные заявки",
-				details: parsed.error.issues,
-			});
-		}
 
-		try {
-			const receipt = await publicBookingQueueService.submitBooking(parsed.data);
-
-			// Фиксация в CRM-конвейере обращений клиники (Мандат 8e / 8n)
-			if (receipt.status !== "REJECTED_CONFLICT") {
-				try {
-					await withTenantCtx(parsed.data.organizationId, async (tx) => {
-						await createCrmLeadFromPublicIntake(tx, {
-							organizationId: parsed.data.organizationId,
-							patientName: parsed.data.patientName,
-							patientPhone: parsed.data.patientPhone,
-							source: parsed.data.source,
-							receiptStatus: receipt.status,
-							comment: parsed.data.comment,
-							doctorId: parsed.data.doctorId,
-						});
-					});
-				} catch (leadErr) {
-					request.log.warn({ leadErr }, "Failed to create CRM lead from public intake");
-				}
-			}
-
-			return reply.status(receipt.status === "REJECTED_CONFLICT" ? 409 : 200).send(receipt);
-		} catch (err) {
-			return reply.status(400).send({ error: (err as Error).message });
-		}
-	});
-
-	// Graceful Bump 1-click accept endpoint
-	server.post("/accept-bump", async (request, reply) => {
-		const parsed = acceptBumpSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.status(400).send({
-				error: "Некорректные параметры переноса",
-				details: parsed.error.issues,
-			});
-		}
-
-		try {
-			const receipt = await publicBookingQueueService.acceptBumpedSlot(
-				parsed.data.organizationId,
-				parsed.data.bookingId,
-				parsed.data.chosenSlot,
-			);
-			return reply.status(receipt.status === "REJECTED_CONFLICT" ? 409 : 200).send(receipt);
-		} catch (err) {
-			return reply.status(400).send({ error: (err as Error).message });
-		}
-	});
 
 	// Helper: resolve default clinic organization ID
 	const resolveDefaultClinicOrgId = async (): Promise<string> => {
@@ -311,15 +250,16 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			utm_medium?: string;
 			utm_content?: string;
 			utm_term?: string;
+			idempotencyKey?: string;
 		};
 	}>, reply: FastifyReply) => {
 		const organizationId =
 			request.body?.organizationId || (await resolveDefaultClinicOrgId());
-		(request.params as Record<string, string>) = {
-			...(request.params as Record<string, string> || {}),
+		request.params = {
+			...((request.params as Record<string, string> | undefined) || {}),
 			organizationId,
 		};
-		return handleBookAppointment(request as any, reply);
+		return handleBookAppointment(request as unknown as BookAppointmentRequest, reply);
 	};
 
 	server.post<{

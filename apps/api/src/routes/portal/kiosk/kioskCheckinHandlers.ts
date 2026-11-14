@@ -6,6 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
@@ -26,6 +27,7 @@ import {
 	createEmergencyAppointment,
 	createFirstTimeAppointment,
 	getDoctorAndCabinetInfo,
+	kioskCheckinSchema,
 	lookupPatient,
 	lookupTodayAppointment,
 	resolveOrganizationId,
@@ -48,30 +50,44 @@ export async function handleKioskCheckinRequest(
 		};
 	}
 
-	const rawBody = request.body || {};
+	// 0a. Строгая валидация входящих параметров через Zod (Мандат 8be: предотвратить Postgres 22P02)
+	const parseResult = kioskCheckinSchema.safeParse(request.body ?? {});
+	if (!parseResult.success) {
+		reply.status(400);
+		return {
+			success: false,
+			error: "ValidationError",
+			message: "Некорректные параметры запроса к терминалу самообслуживания.",
+			details: parseResult.error.issues,
+		};
+	}
+	const validBody = parseResult.data;
+
 	const rawPhoneLast4 =
-		typeof rawBody.phoneLast4 === "string" ? rawBody.phoneLast4.trim().replace(/\D/g, "") : "";
+		typeof validBody.phoneLast4 === "string" ? validBody.phoneLast4.trim().replace(/\D/g, "") : "";
 	const rawPhone =
-		typeof rawBody.patientPhone === "string" ? rawBody.patientPhone.trim() : "";
+		typeof validBody.patientPhone === "string" ? validBody.patientPhone.trim() : "";
+	const rawCheckinCode =
+		typeof validBody.checkinCode === "string" ? validBody.checkinCode.trim() : "";
 	const rawPatientId =
-		typeof rawBody.patientId === "string" ? rawBody.patientId.trim() : "";
+		typeof validBody.patientId === "string" ? validBody.patientId.trim() : "";
 	const rawOrgId =
-		typeof rawBody.organizationId === "string" ? rawBody.organizationId.trim() : "";
-	const isEmergency = isEmergencyOverride || Boolean(rawBody.isEmergency);
-	const isFirstTime = Boolean(rawBody.isFirstTime) || rawBody.kioskMode === "first_time";
+		typeof validBody.organizationId === "string" ? validBody.organizationId.trim() : "";
+	const isEmergency = isEmergencyOverride || Boolean(validBody.isEmergency);
+	const isFirstTime = Boolean(validBody.isFirstTime) || validBody.kioskMode === "first_time";
 	const patientFullName =
-		typeof rawBody.patientFullName === "string" ? rawBody.patientFullName.trim() : "";
+		typeof validBody.patientFullName === "string" ? validBody.patientFullName.trim() : "";
 	const emergencyChiefComplaint =
-		typeof rawBody.emergencyChiefComplaint === "string"
-			? rawBody.emergencyChiefComplaint.trim()
+		typeof validBody.emergencyChiefComplaint === "string" && validBody.emergencyChiefComplaint.trim()
+			? validBody.emergencyChiefComplaint.trim()
 			: "Острая зубная боль / Экстренный приём";
 
-	const signedConsents = Array.isArray(rawBody.signedConsents)
-		? rawBody.signedConsents.filter((c): c is string => typeof c === "string")
+	const signedConsents = Array.isArray(validBody.signedConsents)
+		? validBody.signedConsents.filter((c): c is string => typeof c === "string")
 		: [];
 	const somaticProfile =
-		rawBody.somaticProfile && typeof rawBody.somaticProfile === "object"
-			? (rawBody.somaticProfile as Record<string, unknown>)
+		validBody.somaticProfile && typeof validBody.somaticProfile === "object"
+			? (validBody.somaticProfile as Record<string, unknown>)
 			: null;
 
 	// 1. Определение клиники
@@ -142,6 +158,31 @@ export async function handleKioskCheckinRequest(
 		appointment.chairId,
 	);
 
+	const apptTimeStr = isEmergency
+		? `Экстренный приём прямо сейчас (${cabinetName})`
+		: isFirstTime
+			? `Первичный приём прямо сейчас (${cabinetName})`
+			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
+
+	// SEV-2: Защита от ложной явки при совпадении только 4 цифр телефона
+	// Требуем подтверждения: полный номер телефона, код подтверждения, либо экстренный/первичный поток
+	const hasFullPhone = Boolean(rawPhone && rawPhone.replace(/\D/g, "").length >= 10);
+	const hasCheckinCode = Boolean(rawCheckinCode && rawCheckinCode.length >= 4);
+	const isVerifiedIdentity = isEmergency || isFirstTime || Boolean(rawPatientId) || hasFullPhone || hasCheckinCode;
+
+	if (!isVerifiedIdentity) {
+		return {
+			success: true,
+			arrived: false,
+			requiresVerification: true,
+			patientName: maskPatientName(targetPatient.fullName),
+			appointmentTime: apptTimeStr,
+			doctorName,
+			cabinetName,
+			message: "Для подтверждения явки введите полный номер телефона или 4-значный код записи из SMS.",
+		};
+	}
+
 	// 5. Генерация талона очереди (Э-xx для острой боли, П-xx для первичных, А-xx для плановых)
 	const ticketPrefix = isEmergency ? "Э" : isFirstTime ? "П" : "А";
 	const ticketSuffix = appointment.id.slice(-2).toUpperCase();
@@ -201,18 +242,12 @@ export async function handleKioskCheckinRequest(
 		await persistKioskAllergies(organizationId, targetPatient.id, somaticProfile);
 	}
 
-	const apptTimeStr = isEmergency
-		? `Экстренный приём прямо сейчас (${cabinetName})`
-		: isFirstTime
-			? `Первичный приём прямо сейчас (${cabinetName})`
-			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
-
+	// SEV-2: Ноль утечки сырого patientId в клиентский ответ терминала
 	return {
 		success: true,
 		arrived: true,
 		isEmergency,
 		isFirstTime,
-		patientId: targetPatient.id,
 		patientName: maskPatientName(targetPatient.fullName),
 		appointmentTime: apptTimeStr,
 		doctorName,
@@ -353,12 +388,12 @@ async function persistKioskConsents(
 			)
 			.limit(1);
 
-		const currentProfile =
-			(patientRow?.administrativeProfile as Record<string, unknown> | null) || {};
+		const currentProfile: Partial<PatientAdministrativeProfile> =
+			patientRow?.administrativeProfile ?? {};
 		const currentConsentSignatures =
 			(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
 
-		const updatedSignatures = { ...currentConsentSignatures };
+		const updatedSignatures: Record<string, unknown> = { ...currentConsentSignatures };
 		for (const consentKind of signedConsents) {
 			const integrityHash = createHash("sha256")
 				.update(`${targetPatient.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
@@ -381,7 +416,7 @@ async function persistKioskConsents(
 				administrativeProfile: {
 					...currentProfile,
 					consentSignatures: updatedSignatures,
-				} as any,
+				},
 				updatedAt: nowConsent,
 			})
 			.where(

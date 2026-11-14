@@ -5,7 +5,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
 import { portalRoutes } from "../../routes/portal.js";
-import { bookingVerificationEngine } from "../../services/publicBookingQueue/bookingVerificationEngine.js";
+import { bookingVerificationEngine } from "../../routes/publicBooking/smsVerificationAndSpamGate.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,

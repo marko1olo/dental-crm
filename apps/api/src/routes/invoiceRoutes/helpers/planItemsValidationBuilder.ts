@@ -50,9 +50,39 @@ export function buildPlanItemsForValidation(params: {
 					: null;
 
 		const matchingDbPlanItem = targetPlanDbItems.find((pi) => {
-			if (it.serviceId && pi.priceId?.startsWith(it.serviceId)) return true;
-			if (it.nameRu && pi.priceId?.includes(it.nameRu)) return true;
-			if (resolvedToothNumber !== null && pi.toothNumber === resolvedToothNumber) return true;
+			const piTooth =
+				pi.toothNumber !== undefined && pi.toothNumber !== null
+					? Number(pi.toothNumber) || null
+					: null;
+
+			// Если у обоих указан зуб, и они не совпадают — это разные клинические позиции
+			if (resolvedToothNumber !== null && piTooth !== null && resolvedToothNumber !== piTooth) {
+				return false;
+			}
+
+			// 1. Прямое совпадение по ID позиции плана лечения
+			if (it.itemId && pi.id === it.itemId) {
+				return true;
+			}
+
+			// 2. Строгое совпадение по идентификатору услуги (serviceId / priceId)
+			const candidateServiceId = it.serviceId || it.analogueServiceId;
+			if (candidateServiceId && pi.priceId) {
+				if (
+					pi.priceId === candidateServiceId ||
+					pi.priceId.startsWith(`${candidateServiceId}:`) ||
+					pi.priceId.startsWith(`${candidateServiceId}_`) ||
+					pi.priceId.startsWith(candidateServiceId)
+				) {
+					return true;
+				}
+			}
+
+			// 3. Совпадение по клиническому наименованию услуги
+			if (it.nameRu && (pi.name === it.nameRu || pi.priceId?.includes(it.nameRu))) {
+				return true;
+			}
+
 			return false;
 		});
 

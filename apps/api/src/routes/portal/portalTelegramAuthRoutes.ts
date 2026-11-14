@@ -6,7 +6,7 @@ import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../../access
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
-import { bookingVerificationEngine } from "../../services/publicBookingQueue/bookingVerificationEngine.js";
+import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSpamGate.js";
 import { signToken, verifyCredential } from "../../utils/cryptoHelper.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "./types.js";

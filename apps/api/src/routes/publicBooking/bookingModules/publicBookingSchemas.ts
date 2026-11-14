@@ -94,31 +94,7 @@ export const verifyOtpSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 });
 
-export const cloudIntakeSchema = z.object({
-	organizationId: z.string().uuid("Некорректный ID клиники"),
-	doctorId: z.string().uuid("Некорректный ID врача"),
-	startsAt: z.string().datetime({ offset: true }),
-	endsAt: z.string().datetime({ offset: true }),
-	patientName: z.string().trim().min(2).max(120),
-	patientPhone: z
-		.string()
-		.trim()
-		.regex(russianPhoneRegex, "Неверный формат номера телефона РФ (ожидается +7XXXXXXXXXX)"),
-	comment: z.string().trim().max(500).optional(),
-	chairId: z.string().uuid().optional(),
-	serviceName: z.string().trim().max(100).optional(),
-	verificationCode: z.string().trim().min(4, "Код подтверждения должен быть от 4 до 8 символов").max(8).optional(),
-	source: z.enum(["widget", "telegram", "tilda", "wordpress", "site"]).optional(),
-});
 
-export const acceptBumpSchema = z.object({
-	organizationId: z.string().uuid(),
-	bookingId: z.string().uuid(),
-	chosenSlot: z.object({
-		startsAt: z.string().datetime({ offset: true }),
-		endsAt: z.string().datetime({ offset: true }),
-	}),
-});
 
 export const slotsQuerySchema = z.object({
 	date: dateSchema,

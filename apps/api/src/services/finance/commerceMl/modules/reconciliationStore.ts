@@ -1,25 +1,54 @@
 import type { DoublePostingCheckResult } from "../types.js";
 
-const processedSyncHashes = new Set<string>();
-const exportedPackageHashes = new Map<string, { exportedAtIso: string; packageId: string }>();
+// Multi-tenant stores partitioned by organizationId
+const processedSyncHashesByOrg = new Map<string, Set<string>>();
+const exportedPackageHashesByOrg = new Map<
+	string,
+	Map<string, { exportedAtIso: string; packageId: string }>
+>();
 
-export function isSyncHashProcessed(hash: string): boolean {
-	return processedSyncHashes.has(hash);
+function getProcessedSyncSet(organizationId: string): Set<string> {
+	let set = processedSyncHashesByOrg.get(organizationId);
+	if (!set) {
+		set = new Set<string>();
+		processedSyncHashesByOrg.set(organizationId, set);
+	}
+	return set;
 }
 
-export function markSyncHashProcessed(hash: string): void {
-	processedSyncHashes.add(hash);
+function getExportedMap(
+	organizationId: string,
+): Map<string, { exportedAtIso: string; packageId: string }> {
+	let map = exportedPackageHashesByOrg.get(organizationId);
+	if (!map) {
+		map = new Map<string, { exportedAtIso: string; packageId: string }>();
+		exportedPackageHashesByOrg.set(organizationId, map);
+	}
+	return map;
 }
 
-export function registerExportedPackage(sha256: string, info: { exportedAtIso: string; packageId: string }): void {
-	exportedPackageHashes.set(sha256, info);
+export function isSyncHashProcessed(organizationId: string, hash: string): boolean {
+	return getProcessedSyncSet(organizationId).has(hash);
+}
+
+export function markSyncHashProcessed(organizationId: string, hash: string): void {
+	getProcessedSyncSet(organizationId).add(hash);
+}
+
+export function registerExportedPackage(
+	organizationId: string,
+	sha256: string,
+	info: { exportedAtIso: string; packageId: string },
+): void {
+	getExportedMap(organizationId).set(sha256, info);
 }
 
 export function checkDoublePosting(
-	_organizationId: string,
+	organizationId: string,
 	sha256Hash: string,
 ): DoublePostingCheckResult {
-	const existing = exportedPackageHashes.get(sha256Hash);
+	const orgMap = getExportedMap(organizationId);
+	const existing = orgMap.get(sha256Hash);
 	if (existing) {
 		return {
 			isDoublePosting: true,
@@ -31,4 +60,9 @@ export function checkDoublePosting(
 		isDoublePosting: false,
 		message: "Пакет уникален, двойное проведение отсутствует.",
 	};
+}
+
+export function clearReconciliationStoreForTests(): void {
+	processedSyncHashesByOrg.clear();
+	exportedPackageHashesByOrg.clear();
 }

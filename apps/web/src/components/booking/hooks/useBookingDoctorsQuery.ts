@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import type { BookingDoctorData } from "../contracts/bookingContracts";
 
+interface RawDoctorDto {
+	id: string;
+	fullName: string;
+	specialties?: string[] | null;
+	experienceYears?: number | null;
+	rating?: number | null;
+	reviewsCount?: number | null;
+	bio?: string | null;
+	avatarUrl?: string | null;
+}
+
 export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl: string) {
 	const [loadedDoctors, setLoadedDoctors] = useState<BookingDoctorData[]>([]);
 	const [doctorsLoading, setDoctorsLoading] = useState(false);
@@ -44,7 +55,7 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 			.then((data) => {
 				if (isCancelled) return;
 				if (Array.isArray(data)) {
-					const mapped: BookingDoctorData[] = data.map((d: any) => ({
+					const mapped: BookingDoctorData[] = (data as RawDoctorDto[]).map((d) => ({
 						id: d.id,
 						fullName: d.fullName,
 						specialties: Array.isArray(d.specialties) && d.specialties.length > 0
@@ -54,8 +65,8 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 						rating: d.rating ?? 0,
 						reviewsCount: d.reviewsCount ?? 0,
 						categoryIds: ["all"],
-						bio: d.bio,
-						avatarUrl: d.avatarUrl,
+						bio: d.bio ?? undefined,
+						avatarUrl: d.avatarUrl ?? undefined,
 					}));
 					setLoadedDoctors(mapped);
 				} else {

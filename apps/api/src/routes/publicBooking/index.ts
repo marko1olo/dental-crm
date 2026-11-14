@@ -29,8 +29,6 @@ export {
 	bookingRequestSchema,
 	publicBookingFieldLabels,
 	sendOtpSchema,
-	cloudIntakeSchema,
-	acceptBumpSchema,
 } from "./types.js";
 
 export {
