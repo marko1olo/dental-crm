@@ -19,6 +19,15 @@ export interface PendingAction {
 	readonly userId?: string | undefined;
 }
 
+export interface ActionManagerToolsRegistry {
+	has?: (name: string) => boolean;
+	call?: (
+		ctx: ActionManagerContext,
+		name: string,
+		args: Record<string, unknown>,
+	) => Promise<ActionToolResult>;
+}
+
 export interface ActionManagerContext {
 	readonly organizationId: string;
 	readonly clinicId?: string;
@@ -26,11 +35,10 @@ export interface ActionManagerContext {
 	readonly sessionId: string;
 	readonly mode?: "autonomous" | "supervised" | "cautious";
 	readonly permissions?: string[];
-	// biome-ignore lint/suspicious/noExplicitAny: DB client or tx
-	readonly db?: any;
+	readonly db?: unknown;
 	readonly role?: string | undefined;
 	readonly metadata?: Record<string, unknown>;
-	readonly tools?: any;
+	readonly tools?: ActionManagerToolsRegistry | undefined;
 }
 
 export interface ActionToolResult {
@@ -38,6 +46,13 @@ export interface ActionToolResult {
 	readonly data?: unknown;
 	readonly error?: string;
 	readonly executionTimeMs: number;
+}
+
+interface DentalToolResultEnvelope {
+	success?: boolean;
+	code?: string;
+	error?: string;
+	[key: string]: unknown;
 }
 
 export const COPILOT_ACTION_TTL_MS = 15 * 60 * 1000; // 15 minutes
@@ -231,17 +246,22 @@ export class CopilotActionManager {
 		};
 
 		try {
-			const res = (await executeDentalTool(
+			const rawRes = await executeDentalTool(
 				action.toolName,
 				effectiveArgs,
 				dentalContext,
-			)) as any;
+			);
+			const res = (
+				typeof rawRes === "object" && rawRes !== null ? rawRes : {}
+			) as DentalToolResultEnvelope;
 			const executionTimeMs = Date.now() - startTime;
-			if (res && typeof res === "object" && res.success === false) {
+			if (res.success === false) {
 				// Fallback to legacy registry if tool not found in dentalTools
 				if (
 					res.code === "TOOL_NOT_FOUND" &&
-					ctx.tools?.has?.(action.toolName)
+					typeof ctx.tools?.has === "function" &&
+					ctx.tools.has(action.toolName) &&
+					typeof ctx.tools?.call === "function"
 				) {
 					return await ctx.tools.call(
 						approvedCtx,
@@ -264,7 +284,11 @@ export class CopilotActionManager {
 		} catch (err: unknown) {
 			const executionTimeMs = Date.now() - startTime;
 			// Fallback to legacy registry if error
-			if (ctx.tools?.has?.(action.toolName)) {
+			if (
+				typeof ctx.tools?.has === "function" &&
+				ctx.tools.has(action.toolName) &&
+				typeof ctx.tools?.call === "function"
+			) {
 				try {
 					return await ctx.tools.call(
 						approvedCtx,

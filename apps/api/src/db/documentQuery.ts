@@ -47,7 +47,10 @@ export function writeIssuedDocumentSnapshot(
 }
 
 export function readIssuedDocumentSnapshot(
-	document: import("@dental/shared").GeneratedDocument,
+	document: Pick<
+		import("@dental/shared").GeneratedDocument,
+		"id" | "status" | "issuedSnapshotSha256" | "storagePath"
+	>,
 ): string | null {
 	if (document.status !== "issued" && document.status !== "voided") return null;
 	if (!document.issuedSnapshotSha256) return null;

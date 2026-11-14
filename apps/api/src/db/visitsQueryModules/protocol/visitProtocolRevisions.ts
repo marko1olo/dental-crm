@@ -197,8 +197,8 @@ export async function acceptVisitDraftInDb(
 					: input.doctorSummary,
 				draftAutosave: updatedDraftAutosave,
 				hygieneIndices:
-					(input as any).hygieneIndices ??
-					(input.draft as any).hygieneIndices ??
+					input.hygieneIndices ??
+					(input.draft as { hygieneIndices?: unknown })?.hygieneIndices ??
 					visit.hygieneIndices ??
 					null,
 				signedAt: visit.signedAt ?? savedAt,

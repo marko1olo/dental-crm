@@ -1,6 +1,7 @@
 import type { DomainStateHydrationReport } from "../types.js";
 import { db } from "../../client.js";
-import { eq } from "drizzle-orm";
+import { eq, type Column } from "drizzle-orm";
+import type { PgTable } from "drizzle-orm/pg-core";
 
 export function iso(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
@@ -91,8 +92,7 @@ export function parseJsonObject<T>(value: unknown, fallback: T): T {
 export function collect<T>(
 	rows: unknown[],
 	validator: {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		safeParse: (input: unknown) => { success: boolean; data?: any };
+		safeParse: (input: unknown) => { success: boolean; data?: unknown };
 	},
 	label: string,
 	report: DomainStateHydrationReport,
@@ -114,12 +114,13 @@ export function collect<T>(
 	return accepted;
 }
 
+export type OrganizationScopedPgTable = PgTable & { organizationId: Column };
+
 /**
  * Читает один срез клиники.
  */
 export async function selectByOrganization<T>(
-	// biome-ignore lint/suspicious/noExplicitAny: drizzle-таблицы типизируются по-разному
-	table: any,
+	table: OrganizationScopedPgTable,
 	organizationId: string,
 	label: string,
 	report: DomainStateHydrationReport,

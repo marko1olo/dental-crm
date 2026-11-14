@@ -6,6 +6,7 @@ import type {
 	SyncPushBatchRequest,
 	SyncPushBatchResponse,
 } from "@dental/shared";
+import { sql } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { SyncEntityHandlers } from "./syncEntityHandlers.js";
@@ -70,6 +71,10 @@ export class SyncGatewayService {
 			const nowIso = new Date().toISOString();
 
 			for (const mutation of request.mutations) {
+				const safeSpId = mutation.mutationId.replace(/[^a-zA-Z0-9_]/g, "_");
+				const spName = `sp_${safeSpId}`;
+				await tx.execute(sql.raw(`SAVEPOINT ${spName}`));
+
 				try {
 					const mutationResult = await this.processSingleMutation(
 						tx,
@@ -79,6 +84,7 @@ export class SyncGatewayService {
 						authorUserId,
 					);
 
+					await tx.execute(sql.raw(`RELEASE SAVEPOINT ${spName}`));
 					results.push(mutationResult);
 
 					if (mutationResult.status === "applied") {
@@ -122,6 +128,11 @@ export class SyncGatewayService {
 						);
 					}
 				} catch (err: unknown) {
+					try {
+						await tx.execute(sql.raw(`ROLLBACK TO SAVEPOINT ${spName}`));
+					} catch (rbErr) {
+						logger?.error({ rbErr }, `[SyncGateway] Failed to rollback savepoint ${spName}`);
+					}
 					const errorMessage =
 						err instanceof Error ? err.message : "Unknown sync mutation error";
 					rejectedCount++;
@@ -190,6 +201,24 @@ export class SyncGatewayService {
 				entityId: mutation.entityId,
 				appliedAt: nowIso,
 				error: integrityCheck.error,
+			};
+		}
+
+		// 1a. Tenant Boundary Check: Guarantee zero cross-tenant contamination
+		const payloadOrgId =
+			mutation.payload && typeof mutation.payload === "object" && "organizationId" in mutation.payload
+				? String((mutation.payload as Record<string, unknown>).organizationId)
+				: undefined;
+
+		if (!SyncSecurityEnforcer.enforceTenantBoundary(organizationId, payloadOrgId)) {
+			return {
+				mutationId: mutation.mutationId,
+				idempotencyKey: mutation.idempotencyKey,
+				status: "rejected",
+				entityKind: mutation.entityKind,
+				entityId: mutation.entityId,
+				appliedAt: nowIso,
+				error: `Tenant boundary violation: payload organizationId (${payloadOrgId}) does not match authenticated tenant (${organizationId})`,
 			};
 		}
 

@@ -245,7 +245,7 @@ export function documentIssueBlockReasonRaw(
 		document.status === "draft" ||
 		Boolean((document.payload as Record<string, unknown> | undefined)?.isDraft) ||
 		Boolean((document.payload as Record<string, unknown> | undefined)?.isBlank) ||
-		Boolean((context as any)?.isDraft);
+		Boolean(context.isDraft);
 
 	if (documentRequiresClinicLegalProfile(document.kind) && !isDraftOrBlank) {
 		const missingClinicFields = clinicLegalProfileMissingFields(
@@ -391,7 +391,7 @@ export function documentIssueBlockReasonRaw(
 		document.status === "draft" ||
 		Boolean((document.payload as Record<string, unknown> | undefined)?.isDraft) ||
 		Boolean((document.payload as Record<string, unknown> | undefined)?.isBlank) ||
-		Boolean((context as any)?.isDraft) ||
+		Boolean(context.isDraft) ||
 		isBlankPaidContract ||
 		isBlankInformedConsent;
 

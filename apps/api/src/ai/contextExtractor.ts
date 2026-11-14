@@ -4,17 +4,55 @@
  * Extracts structured DoctorScreenContext from UI header text or request body.
  */
 
-import type { DoctorScreenContext } from "./copilotContextCompactor.js";
+import type { DoctorScreenContext } from "@dental/shared";
 
-export { type DoctorScreenContext } from "./copilotContextCompactor.js";
+export { type DoctorScreenContext } from "@dental/shared";
+
+type ClinicalEmrRecord = NonNullable<DoctorScreenContext["clinicalEmrContext"]>;
+
+function isDoctorScreenContext(value: unknown): value is DoctorScreenContext {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseClinicalEmrContext(raw: string): ClinicalEmrRecord | null {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			return null;
+		}
+		const obj = parsed as Record<string, unknown>;
+		return {
+			complaints: typeof obj.complaints === "string" ? obj.complaints : undefined,
+			anamnesis: typeof obj.anamnesis === "string" ? obj.anamnesis : undefined,
+			objectiveStatus:
+				typeof obj.objectiveStatus === "string"
+					? obj.objectiveStatus
+					: undefined,
+			diagnosis: typeof obj.diagnosis === "string" ? obj.diagnosis : undefined,
+			treatmentPlan:
+				typeof obj.treatmentPlan === "string" ? obj.treatmentPlan : undefined,
+			recommendations:
+				typeof obj.recommendations === "string"
+					? obj.recommendations
+					: undefined,
+		};
+	} catch (err) {
+		console.warn(
+			"[Copilot extractDoctorScreenContext] Failed to parse clinicalEmrContext JSON:",
+			raw,
+			err,
+		);
+		return null;
+	}
+}
 
 export function extractDoctorScreenContext(
 	text: string,
 	bodyContext?: unknown,
 ): { doctorContext: DoctorScreenContext | null; cleanText: string } {
-	if (bodyContext && typeof bodyContext === "object") {
+	if (isDoctorScreenContext(bodyContext)) {
 		return {
-			doctorContext: bodyContext as DoctorScreenContext,
+			doctorContext: bodyContext,
 			cleanText: text,
 		};
 	}
@@ -61,7 +99,14 @@ export function extractDoctorScreenContext(
 	if (toothFormulaMatch?.[1]) {
 		const raw = toothFormulaMatch[1].replace(/\\'/g, "'");
 		try {
-			toothFormula = JSON.parse(raw);
+			const parsed = JSON.parse(raw);
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				toothFormula = Object.fromEntries(
+					Object.entries(parsed as Record<string, unknown>).map(
+						([key, val]) => [key, String(val ?? "")],
+					),
+				);
+			}
 		} catch (err) {
 			console.warn("[Copilot extractDoctorScreenContext] Failed to parse toothFormula JSON:", raw, err);
 		}
@@ -71,21 +116,22 @@ export function extractDoctorScreenContext(
 	if (diagnosesMatch?.[1]) {
 		const raw = diagnosesMatch[1].replace(/\\'/g, "'");
 		try {
-			diagnosesByTooth = JSON.parse(raw);
+			const parsed = JSON.parse(raw);
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				diagnosesByTooth = Object.fromEntries(
+					Object.entries(parsed as Record<string, unknown>).map(
+						([key, val]) => [key, String(val ?? "")],
+					),
+				);
+			}
 		} catch (err) {
 			console.warn("[Copilot extractDoctorScreenContext] Failed to parse diagnosesByTooth JSON:", raw, err);
 		}
 	}
 
-	let clinical043Context: Record<string, string> | undefined = undefined;
-	if (form043Match?.[1]) {
-		const raw = form043Match[1].replace(/\\'/g, "'");
-		try {
-			clinical043Context = JSON.parse(raw);
-		} catch (err) {
-			console.warn("[Copilot extractDoctorScreenContext] Failed to parse clinical043Context JSON:", raw, err);
-		}
-	}
+	const clinicalEmrContext = form043Match?.[1]
+		? parseClinicalEmrContext(form043Match[1].replace(/\\'/g, "'"))
+		: null;
 
 	let allergies: string[] | undefined = undefined;
 	if (allergiesMatch?.[1]) {
@@ -116,7 +162,8 @@ export function extractDoctorScreenContext(
 		activeDoctor,
 		toothFormula: toothFormula ?? null,
 		diagnosesByTooth: diagnosesByTooth ?? null,
-		clinical043Context: (clinical043Context as any) ?? null,
+		clinicalEmrContext,
+		clinical043Context: clinicalEmrContext,
 		allergies: allergies ?? null,
 	};
 

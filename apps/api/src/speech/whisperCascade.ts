@@ -159,6 +159,23 @@ export interface WhisperCascadeResult {
 	durationMs: number;
 }
 
+interface WhisperTranscriptionApiResponse {
+	text?: unknown;
+	error?: {
+		message?: string;
+		code?: string | number;
+	};
+}
+
+interface CloudflareTranscriptionApiResponse {
+	success?: boolean;
+	result?: {
+		text?: unknown;
+	};
+	text?: unknown;
+	errors?: Array<{ message?: string }>;
+}
+
 function fileNameForMime(mimeType?: string | undefined): string {
 	const base = mimeType?.split(";")[0]?.toLowerCase() || "";
 	if (base.includes("wav")) return "recording.wav";
@@ -269,8 +286,9 @@ async function callGroqWhisper(
 				timeoutMs,
 			);
 
-			// biome-ignore lint/suspicious/noExplicitAny: json response
-			const payload = (await response.json().catch(() => ({}))) as any;
+			const payload = (await response
+				.json()
+				.catch(() => ({}))) as WhisperTranscriptionApiResponse;
 			if (!response.ok) {
 				throw providerHttpError(
 					response.status,
@@ -347,8 +365,9 @@ async function callOpenAiWhisper(
 				timeoutMs,
 			);
 
-			// biome-ignore lint/suspicious/noExplicitAny: json response
-			const payload = (await response.json().catch(() => ({}))) as any;
+			const payload = (await response
+				.json()
+				.catch(() => ({}))) as WhisperTranscriptionApiResponse;
 			if (!response.ok) {
 				throw providerHttpError(
 					response.status,
@@ -423,8 +442,9 @@ async function callCloudflareWhisper(
 				timeoutMs,
 			);
 
-			// biome-ignore lint/suspicious/noExplicitAny: response json
-			const payload = (await response.json().catch(() => ({}))) as any;
+			const payload = (await response
+				.json()
+				.catch(() => ({}))) as CloudflareTranscriptionApiResponse;
 			if (!response.ok || payload?.success === false) {
 				throw providerHttpError(
 					response.status,
@@ -497,8 +517,9 @@ async function callLocalWhisper(
 		timeoutMs,
 	);
 
-	// biome-ignore lint/suspicious/noExplicitAny: response json
-	const payload = (await response.json().catch(() => ({}))) as any;
+	const payload = (await response
+		.json()
+		.catch(() => ({}))) as WhisperTranscriptionApiResponse;
 	if (!response.ok) {
 		throw providerHttpError(
 			response.status,

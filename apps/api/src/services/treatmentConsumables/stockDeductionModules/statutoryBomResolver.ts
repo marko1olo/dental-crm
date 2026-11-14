@@ -14,7 +14,7 @@ export function resolveStatutoryBomForService(
 	srvQty: number,
 ): RawRequiredMaterial[] {
 	const materials: RawRequiredMaterial[] = [];
-	const effectiveServiceCode = meta.serviceCode || (meta as any).statutoryCode || meta.order804nCode;
+	const effectiveServiceCode = meta.serviceCode || meta.statutoryCode || meta.order804nCode;
 
 	// 4a. CANONICAL_PROCEDURE_RECIPES (@dental/shared)
 	const canonicalRecipe = CANONICAL_PROCEDURE_RECIPES.find((rec) => {
@@ -24,8 +24,8 @@ export function resolveStatutoryBomForService(
 			rec.code804n === meta.order804nCode ||
 			rec.code804n === meta.rawToken ||
 			rec.aliases804n.includes(meta.rawToken) ||
-			(effectiveServiceCode && rec.aliases804n.includes(effectiveServiceCode)) ||
-			(meta.title && rec.titleRu.toLowerCase().includes(meta.title.toLowerCase()))
+			(effectiveServiceCode ? rec.aliases804n.includes(effectiveServiceCode) : false) ||
+			(meta.title ? rec.titleRu.toLowerCase().includes(meta.title.toLowerCase()) : false)
 		);
 	});
 
@@ -49,7 +49,7 @@ export function resolveStatutoryBomForService(
 			s.serviceCode === meta.serviceCode ||
 			s.serviceCode === meta.order804nCode ||
 			s.serviceCode === meta.rawToken ||
-			(meta.title && s.serviceTitle.toLowerCase().includes(meta.title.toLowerCase()))
+			(meta.title ? s.serviceTitle.toLowerCase().includes(meta.title.toLowerCase()) : false)
 		);
 	});
 
@@ -68,7 +68,7 @@ export function resolveStatutoryBomForService(
 
 	// 4c. DEFAULT_804N_CONSUMABLE_LINKS (@dental/shared)
 	const links = DEFAULT_804N_CONSUMABLE_LINKS.filter((l) => {
-		const linkCode = (l as any).serviceCode || (l as any).statutoryCode || l.service804nCode;
+		const linkCode = l.service804nCode;
 		return (
 			linkCode === effectiveServiceCode ||
 			linkCode === meta.serviceCode ||
@@ -79,13 +79,12 @@ export function resolveStatutoryBomForService(
 
 	if (links.length > 0) {
 		for (const link of links) {
-			const linkAny = link as any;
 			materials.push({
 				key: link.inventoryItemId,
-				name: linkAny.itemName ?? linkAny.name ?? "Расходник",
-				quantity: Number(linkAny.quantityToDeduct ?? linkAny.quantityPerService ?? 1) * srvQty,
+				name: link.itemName || "Расходник",
+				quantity: Number(link.quantityPerService ?? 1) * srvQty,
 				unit: link.unit,
-				defaultCostRub: Number(linkAny.defaultUnitCostRub ?? 0),
+				defaultCostRub: Number((link.costPriceKopecks / 100).toFixed(2)),
 			});
 		}
 	}

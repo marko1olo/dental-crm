@@ -8,7 +8,7 @@
  */
 
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { TenantDb } from "../client.js";
 import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
@@ -36,8 +36,7 @@ export interface AlternativePlanGroupRecord {
  * Получить группы альтернативных планов для пациента
  */
 export async function getAlternativePlanGroupsForPatient(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	dbClient: NodePgDatabase<any>,
+	dbClient: TenantDb,
 	organizationId: string,
 	patientId: string,
 ): Promise<AlternativePlanGroupRecord[]> {

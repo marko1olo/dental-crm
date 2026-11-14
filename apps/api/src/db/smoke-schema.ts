@@ -79,10 +79,13 @@ export async function runSmokeSchema(connectionString?: string): Promise<boolean
 
 		const declaredEnums = new Set<string>();
 		for (const [key, val] of Object.entries(schema)) {
-			if (val && typeof val === "function" && "enumName" in val && "enumValues" in val) {
-				declaredEnums.add((val as any).enumName);
-			} else if (val && typeof val === "object" && "enumName" in val && "enumValues" in val) {
-				declaredEnums.add((val as any).enumName);
+			if (
+				val &&
+				(typeof val === "function" || typeof val === "object") &&
+				"enumName" in val &&
+				typeof (val as { enumName: unknown }).enumName === "string"
+			) {
+				declaredEnums.add((val as { enumName: string }).enumName);
 			}
 		}
 

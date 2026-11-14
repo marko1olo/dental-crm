@@ -21,8 +21,7 @@ export interface PatientConsentRecordInput {
 	toothNumbers?: string | undefined;
 	signatureSvg: string;
 	signaturePngBase64?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: vector math points
-	vectorData?: any;
+	vectorData?: unknown;
 	integrityHash: string;
 	signedAt?: string | undefined;
 	verificationMethod?: string | undefined;
@@ -32,5 +31,5 @@ export interface PatientConsentRecordInput {
 }
 
 export type CreatePatientSafeResult =
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	{ type: "duplicate"; duplicate: any } | { type: "success"; patient: Patient };
+	| { type: "duplicate"; duplicate: unknown }
+	| { type: "success"; patient: Patient };

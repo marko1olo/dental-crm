@@ -15,7 +15,7 @@ import {
 	startEgiszQueueWorker,
 	stopEgiszQueueWorker,
 } from "../services/egisz/EgiszQueueWorker.js";
-import { dicomWatcherDaemon } from "../services/imaging/dicomFolderWatcherDaemon.js";
+import { dicomCrawlerDaemon } from "../services/dicom/DicomCrawlerDaemon.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
 import { resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { stopCommunicationDispatchWorker } from "../services/communications/dispatchWorker.js";
@@ -251,7 +251,7 @@ export async function setupBackgroundWorkers(
 		}
 		await vatechDirectBridgeService.stop();
 		persistentOutboxService.stop();
-		dicomWatcherDaemon.stop();
+		dicomCrawlerDaemon.stop();
 		stopCloudRelayClient();
 		stopCommunicationDispatchWorker();
 		stopBiAnalyticsWorker();

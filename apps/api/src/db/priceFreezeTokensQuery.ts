@@ -21,7 +21,17 @@
 
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { TenantDb } from "./client.js";
+
+interface HttpError extends Error {
+	statusCode?: number;
+}
+
+function createHttpError(message: string, statusCode: number): HttpError {
+	const err = new Error(message) as HttpError;
+	err.statusCode = statusCode;
+	return err;
+}
 import {
 	patients,
 	serviceCatalogItems,
@@ -79,8 +89,7 @@ export interface SetPlanDiscountModeInput {
  * Сформировать токен закрепления цен на дату утверждения плана лечения (GAP_REPORT строка 164)
  */
 export async function issuePriceFreezeToken(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle tx or db
-	tx: NodePgDatabase<any>,
+	tx: TenantDb,
 	input: IssuePriceFreezeTokenInput,
 ) {
 	const policyKind = input.policyKind ?? "standard_30_days";
@@ -110,10 +119,7 @@ export async function issuePriceFreezeToken(
 		.limit(1);
 
 	if (!plan) {
-		const err = new Error("План лечения не найден для закрепления цен.");
-		// biome-ignore lint/suspicious/noExplicitAny: error mapping
-		(err as any).statusCode = 404;
-		throw err;
+		throw createHttpError("План лечения не найден для закрепления цен.", 404);
 	}
 
 	// 2. Получаем позиции плана лечения
@@ -224,8 +230,7 @@ export async function issuePriceFreezeToken(
  * Получить активный токен закрепления цен и оценить его статус
  */
 export async function getActivePriceFreezeToken(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle tx or db
-	dbClient: NodePgDatabase<any>,
+	dbClient: TenantDb,
 	organizationId: string,
 	planId: string,
 ) {
@@ -280,8 +285,7 @@ export async function getActivePriceFreezeToken(
  * Установить и пересчитать режим скидок плана лечения (GAP_REPORT строка 165: none | plan_fixed | on_selection)
  */
 export async function setPlanDiscountMode(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle tx or db
-	tx: NodePgDatabase<any>,
+	tx: TenantDb,
 	input: SetPlanDiscountModeInput,
 ) {
 	const now = new Date();
@@ -300,10 +304,7 @@ export async function setPlanDiscountMode(
 		.limit(1);
 
 	if (!plan) {
-		const err = new Error("План лечения не найден.");
-		// biome-ignore lint/suspicious/noExplicitAny: error mapping
-		(err as any).statusCode = 404;
-		throw err;
+		throw createHttpError("План лечения не найден.", 404);
 	}
 
 	const discountMode = input.discountMode;

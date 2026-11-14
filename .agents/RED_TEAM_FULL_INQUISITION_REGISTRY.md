@@ -5961,3 +5961,120 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
   - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил хуков React 19).
   - Тесты радиологии (`panoramicReconstruction.test.ts`, `cbctVolume3DQuadrant.test.ts`, `cbctDicomMathAndUsabilityParity.test.ts`, `cbctArchStressEdgeCases.test.ts`, `cbctNerveAnd3dMprIntegration.test.ts`) -> **84/84 PASS (Exit Code 0)**.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: DICOMWEB, PACS-СЕРВЕР, STOW/WADO И РАДИОЛОГИЧЕСКИЙ INGEST-ПАЙПЛАЙН [FIXER-DICOM-01]
+- **Статус:** `[ЗАКРЫТО]`
+- **Домен 16.2:** DICOMweb (STOW-RS, WADO-RS, QIDO-RS), PACS-сервер, локальный демонический мониторинг КТ и радиологический ingest-пайплайн.
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Dicom-01).
+- **Суть проблемы и инквизиционный диагноз (Досье SCOUT-DICOM-01):**
+  1. **Расщепление на два параллельных мира:**
+     - Существование канонического Ingest-сервиса `studyIngestCore.ts` и одновременно неполных, половинчатых роутов (`stowDbStorage.ts` с 3 раздельными инсертами вне транзакции, `sensorOfflineRoutes.ts` и `pacsCommitImport.ts`, создававших только `imaging_studies` без `imaging_series` и `imaging_instances`).
+  2. **Мёртвые дубликаты и сироты:**
+     - `stowPatientResolver.ts` (дубликат-сирота в STOW).
+     - `dicomFolderWatcherDaemon.ts` (параллельный дубликат канонического `DicomCrawlerDaemon.ts`).
+  3. **Мины `as any`, `undefined` и падения в рантайме:**
+     - `stowHandler.ts:102`: `parsed: parsed as any` и захардкоженный SOP Class UID `1.2.840.10008.5.1.4.1.1.1` (CR Image Storage) вместо реального из метаданных.
+     - `stowStreamWriter.ts:39`: `typeof (request.body as any).pipe === "function"`.
+     - `sensorOfflineRoutes.ts`: `(request as any).isMultipart()`, `dicomMetadata: any`, отсутствие привязки серий/инстансов.
+     - `dicomParsing.ts:675`: `createDicomPixelSampler` читал по смещению `pixelDataOffset + index * bytesPerPixel` без guard-проверки границ буфера (`RangeError: offset is out of range`).
+     - `aiAnalysisRoutes.ts:111-124`: фальшивый fallback при сбое первичной/вторичной ИИ-модели возвращал вымышленное синтетическое заключение для зуба 16 («признаков верхушечного периодонтита не обнаружено»).
+     - `imagingStudyBatchMutations.ts:43-65`: отсутствие валидации `visitId` по `organizationId` и `patientId` (multi-tenant утечка).
+- **Проведенные хирургические вмешательства и ликвидация брака:**
+  1. **Физический снос мёртвых дубликатов (`git rm`):**
+     - `apps/api/src/routes/dicomweb/stowModules/stowPatientResolver.ts` (85 строк) — удален.
+     - `apps/api/src/services/imaging/dicomFolderWatcherDaemon.ts` (521 строка) — удален.
+     - Все зависимости в `serverModules/index.ts`, `serverModules/lifecycleHooks.ts` и `routes/imaging/dicomRoutes.ts` переведены на канонический `dicomCrawlerDaemon`.
+  2. **Атомарная триада PACS (Studies -> Series -> Instances):**
+     - В `stowDbStorage.ts`: `persistStowDicomEntities` консолидирован внутри единой транзакции `withTenantCtx` с атомарным созданием исследования, серии и инстанса через `persistStowSeriesAndInstance`.
+     - В `imagingStudyMutations.ts`: `createImagingStudyInDb` переведен на транзакцию `db.transaction()` с обязательным созданием `imaging_series` и `imaging_instances` (при наличии `storagePath`).
+     - В `imagingStudyBatchMutations.ts`: внедрена строгая проверка принадлежности `visitId` организации `organizationId` и пациенту (защита от multi-tenant утечек).
+  3. **Ликвидация мин типизации и рантайма (Мандат 8be):**
+     - `stowHandler.ts`: `parsed as any` полностью ликвидирован, внедрен динамический `sopClassUid` из метаданных P10 (`dicomwebHelpers.ts` извлекает `TAG_SOP_CLASS_UID` и `TAG_MEDIA_STORAGE_SOP_CLASS_UID`).
+     - `stowStreamWriter.ts`: небезопасный `as any` заменен на типобезопасный `isStreamLike`.
+     - `sensorOfflineRoutes.ts`: multipart-запрос и `dicomMetadata` типизированы через строгий `DicomHeaderMetadata`, устранены все `as any`, добавлены `dicomSeriesUid` и `dicomSopInstanceUid`.
+     - `dicomRoutes.ts`: устранен конфликт с `exactOptionalPropertyTypes: true` при обновлении конфига `DicomCrawlerDaemonConfig`.
+     - `dicomParsing.ts`: в `createDicomPixelSampler` добавлен защитный guard `if (offset < 0 || offset + requiredBytes > bufLen) return rescaleIntercept;`, исключающий падение с `RangeError`.
+     - `aiAnalysisRoutes.ts`: фальшивый мок для зуба 16 полностью вырезан, при сбое моделей возвращается честная ошибка 503 `AI_ANALYSIS_FAILED` без подделки клинических данных.
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `npm run check:encoding` -> **Exit Code 0** (21 002 файла проверено, UTF-8 без BOM).
+  - `npm run check:buttons` -> **Exit Code 0** (0 нарушений дизайн-токенов).
+  - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил React 19).
+  - `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).
+  - `apps/api/src/routes/dicomwebStow.test.ts` -> **8/8 PASS (Exit Code 0)**.
+  - `apps/api/src/routes/dicomweb.test.ts` -> **25/25 PASS (Exit Code 0)**.
+  - `apps/api/src/routes/imagingPatientBinding.test.ts` -> **12/12 PASS (Exit Code 0)**.
+  - `apps/api/src/routes/xrayStorageAndDicomIndexing.test.ts` -> **9/9 PASS (Exit Code 0)**.
+  - Сервисы DICOM (`dicomCrawlerDaemon.test.ts`, `dicomStoragePackaging.test.ts`, `patientDicomAutoBinding.test.ts`, `dicomPatientMatcher.test.ts`, `localPacsStorageService.test.ts`, `DicomProcessorService.test.ts`, `previewFormats.test.ts`) -> **77/77 PASS (Exit Code 0)**.
+  - `npx tsc --noEmit -p apps/api/tsconfig.json` -> **0 ошибок в затронутых модулях**.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: OFFLINE SYNC GATEWAY, РЕПЛИКАЦИЯ, CRDT И ТРАНЗАКЦИОННАЯ ПАКЕТНАЯ ДОСТАВКА МУТАЦИЙ [FIXER-SYNC-01]
+- **Статус:** `[ЗАКРЫТО]`
+- **Домен 16.3:** Offline Sync Gateway, 3-Tier Multi-Level Synchronization, P2P LAN Mesh Replication, CRDT Conflict Resolution.
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Sync-01).
+- **Суть проблемы и инквизиционный диагноз (Досье SCOUT-SYNC-01):**
+  1. **SEV-1 Катастрофа: Безвозвратная потеря клинических данных при частичных сбоях батча (`syncGateway/index.ts`):**
+     - Метод открывал единую транзакцию `withTenantCtx`. При сбое одной мутации (например, мутации №6 из 10) драйвер PostgreSQL переводил соединение в статус `25P02: current transaction is aborted`. Блок try/catch в Node.js перехватывал ошибку и продолжал цикл, но в конце `withTenantCtx` выполнял `ROLLBACK` абсолютно всех изменений!
+     - При этом Node.js возвращал клиенту статус `success: true` со списком результатов, где первые 5 мутаций значились как `applied`. Офлайн-клиент на планшете/ноутбуке навсегда удалял их из очереди IndexedDB, считая сохраненными, в то время как на сервере они были полностью стерты.
+  2. **Сбой параллелизма в `syncQueueManager.ts`:**
+     - Вставка в `syncIdempotencyRecords` при гонке ловила дубликат ключа в JS try/catch, но транзакция Postgres срывалась в `25P02`, гарантированно ломая последующий вызов `tx.select()`.
+  3. **Минное поле `undefined`, слепые касты и UUID-дыры:**
+     - `syncClinicalHandlers.ts:222`: `patientId: String(p.patientId)` превращалось в `"undefined"`, база падала с `22P02: invalid input syntax for type uuid: "undefined"`.
+     - `syncClinicalHandlers.ts:88`: `visitId: String(p.visitId || mutation.entityId)` подставляло ID дневника вместо visitId.
+     - `syncClinicalHandlers.ts:326-330`: `mutation.entityId.split(":")[0]` ломало UUID плана лечения.
+     - `syncAdministrativeHandlers.ts`: отсутствие валидации UUID для `patientId`, `doctorUserId`, `assistantUserId`, `chairId` в `appointments` и `payments` приводило к срыву транзакций при битых данных.
+     - `syncConflictResolver.ts`: каст `as Array<Record<string, unknown>>` без поэлементной guard-проверки бросал TypeError при поврежденных данных.
+  4. **Тихий рассинхрон расписания в `syncStreamTransport.ts`:**
+     - Фильтрация `gte(patientAppointments.startsAt, since)` проводилась по дате начала приёма вместо времени изменения сущности. Отмененные или перенесенные приемы в прошлом никогда не долетали до офлайн-клиентов при повторной синхронизации.
+  5. **Бутафорская безопасность и ложный успех:**
+     - `lanNetwork.ts:596-610`: при любых сбоях возвращался фиктивный `appliedCount = mutations.length` с `ok: true`.
+     - `syncGatewayService.test.ts`: тест-симулякр самопроверял захардкоженный объект `samplePullResult` без вызова реального `pullChanges`.
+  6. **Нарушение SSOT и дублирование CRDT в `packages/shared/src/sync/`:**
+     - Параллельные реализации `VectorClock` и `CashOperationCrdt` в `mesh/vector-clock.ts` и `mesh/cash-crdt.ts` при наличии канонического `crdt.ts`.
+     - Забытый мертвый дубликат `packages/shared/src/sync/lanMeshSync/reconciliation.ts`.
+- **Проведенные хирургические вмешательства и ликвидация брака:**
+  1. **Внедрение PostgreSQL `SAVEPOINT` изоляции мутаций (`syncGateway/index.ts`):**
+     - Перед обработкой каждой мутации батча генерируется защитная точка сохранения: `await tx.execute(sql.raw(`SAVEPOINT ${spName}`));`.
+     - При успешной мутации: `await tx.execute(sql.raw(`RELEASE SAVEPOINT ${spName}`));`.
+     - При ошибке мутации: `await tx.execute(sql.raw(`ROLLBACK TO SAVEPOINT ${spName}`));`, мутация помечается статусом `rejected`, а транзакция PostgreSQL сохраняет полную работоспособность для остальных мутаций батча!
+     - Внедрен строгий барьер изоляции арендатора: `SyncSecurityEnforcer.enforceTenantBoundary(organizationId, payloadOrgId)`.
+  2. **Идемпотентная бесконфликтная очередь (`syncQueueManager.ts`):**
+     - Заменен взрывоопасный `try/catch` на атомарный `.onConflictDoNothing({ target: [organizationId, idempotencyKey] }).returning()`, исключающий падение транзакции Postgres в `25P02`.
+     - Добавлено жесткое FIFO-ограничение локальной очереди `offlineQueue` (до 1000 записей) и метод `clearOfflineQueue()`.
+  3. **Тотальная типизация, ликвидация `undefined` и валидация UUID (Мандат 8be):**
+     - Внедрен канонический валидатор `isValidUuid(val)`.
+     - В `syncClinicalHandlers.ts`:
+       * `visitDiaries`: `visitId` валидируется как UUID, исключена слепая подстановка ID дневника; при отсутствии привязки мутация отклоняется без повреждения БД.
+       * `visits`: `patientId` валидируется как UUID, исключена подстановка строки `"undefined"`.
+       * `treatmentPlans`: канонический парсинг составных ключей `entityId`.
+       * `odontogram_state`: извлечение и валидация `patientId` из нескольких источников.
+     - В `syncAdministrativeHandlers.ts`:
+       * `payments`: валидация `patientId` с отклонением битых мутаций.
+       * `appointments`: строгая валидация `patientId`, `doctorUserId`, `assistantUserId`, `chairId` с подстановкой `null` вместо невалидных строковых литералов.
+     - В `syncConflictResolver.ts`:
+       * `parseTeethFromPayload`: добавлена поэлементная проверка `if (!rawTooth || typeof rawTooth !== "object") continue;`.
+  4. **Честный расчет изменений расписания (`syncStreamTransport.ts`):**
+     - При синхронизации расписания сервер запрашивает измененные ID приемов через `syncEntityVectors` (`entityKind = 'appointment'`, `updatedAt >= since`).
+     - Выборка включает как актуальные будущие приемы, так и все исторические приемы, подвергшиеся изменениям или отмене: `or(gte(startsAt, since), inArray(id, changedAppointmentIds))`.
+  5. **Ликвидация ложного успеха и честные тесты:**
+     - В `apps/api/src/routes/lanNetwork.ts` возвращаются реальные `appliedCount`, `rejectedCount` и `ok: rejectedCount === 0`.
+     - В `apps/api/src/tests/syncGatewayService.test.ts` ликвидирован тест-симулякр, внедрен вызов живого сервиса `await SyncGatewayService.pullChanges(orgId)`.
+     - Добавлен стресс-тест `Push Batch SAVEPOINT Isolation` (тест №10), физически подтверждающий, что ошибка мутации отклоняется без отката остальных мутаций батча.
+  6. **Консолидация SSOT CRDT (Мандат 8bf):**
+     - Модуль `packages/shared/src/sync/crdt.ts` утвержден как единственный канонический SSOT для векторных часов (`createVectorClock`, `incrementVectorClock`, `compareVectorClocks`, `mergeVectorClocks`, `dominatesVectorClock`, `vectorClockToString`, `parseVectorClock`) и финансового CRDT (`resolveCashOperationCrdt`).
+     - Файлы `packages/shared/src/sync/mesh/vector-clock.ts` и `packages/shared/src/sync/mesh/cash-crdt.ts` превращены в тонкие прозрачные фасады.
+     - Модули `vectorClock/ordering.ts`, `vectorClock/engine.ts` и `vectorClock/reconciliation.ts` перелинкованы на прямой импорт из `../crdt.js`.
+     - Удален мертвый untracked дубликат `packages/shared/src/sync/lanMeshSync/reconciliation.ts`.
+- **Машинные гейты и верификация тестами (100% Exit Code 0):**
+  - `apps/api/src/tests/syncGatewayService.test.ts` -> **10/10 PASS (Exit Code 0)**.
+  - `packages/shared/src/tests/syncCrdt.test.ts` -> **25/25 PASS (Exit Code 0)**.
+  - `packages/shared/src/sync/__tests__/lanFailoverAndSplitBrain.test.ts` + `crdtSyncEngine.test.ts` -> **40/40 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0** (21 003 файла UTF-8 без BOM).
+  - `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).
+  - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил React 19).
+  - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
+  - `npm run check:css-tokens` -> **Exit Code 0** (1 359 CSS файлов, 0 неразрешенных переменных).
+

@@ -59,8 +59,14 @@ export const radiationExposureEntrySchema = z.object({
 	notes: z.string().trim().max(500).nullable().optional(),
 });
 export type RadiationExposureEntry = z.infer<typeof radiationExposureEntrySchema>;
-export type PatientRadiationExposureRecord = any;
+export type PatientRadiationExposureRecord = RadiationExposureEntry;
 export const STANDARD_DENTAL_RADIATION_DOSES: Record<string, number> = DEFAULT_EFFECTIVE_DOSES_MSV;
+
+export interface RadiationExposureLike {
+	readonly studyDate?: string | null | undefined;
+	readonly effectiveDoseMsv?: number | null | undefined;
+	readonly [key: string]: unknown;
+}
 
 /** Калькулятор суммарной годовой дозы и уровня безопасности */
 export interface RadiationSafetyAssessment {
@@ -80,7 +86,7 @@ export interface RadiationSafetyAssessment {
 }
 
 export function calculateAnnualRadiationDose(
-	entries: readonly any[],
+	entries: readonly RadiationExposureLike[],
 	calendarYear = new Date().getFullYear(),
 ): RadiationSafetyAssessment {
 	let sumMsv = 0;

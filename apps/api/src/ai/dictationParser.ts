@@ -9,6 +9,52 @@ import {
 
 export type ParserContext = "schedule" | "patient" | "visit";
 
+export interface DictationScheduleResult {
+	patientName?: string;
+	doctorName?: string;
+	date?: string;
+	startTime?: string;
+	reason?: string;
+	note?: string;
+}
+
+export interface DictationPatientResult {
+	fullName?: string;
+	phone?: string;
+	birthDate?: string;
+	notes?: string;
+	email?: string;
+}
+
+export interface DictationVisitResult {
+	toothUpdates?: Array<{ code: string; state: string }>;
+	emkUpdates?: {
+		complaint?: string;
+		anamnesis?: string;
+		objectiveStatus?: string;
+		diagnosis?: string;
+		treatmentPlan?: string;
+	};
+}
+
+export type DictationParseResult =
+	| DictationScheduleResult
+	| DictationPatientResult
+	| DictationVisitResult
+	| Record<string, unknown>;
+
+interface OpenAiChatCompletionPayload {
+	choices?: Array<{
+		message?: {
+			content?: string | null;
+		};
+	}>;
+	error?: {
+		message?: string;
+		code?: string | number;
+	};
+}
+
 /**
  * СЕГОДНЯШНЯЯ ДАТА ДЛЯ ПОДСКАЗКИ МОДЕЛИ — ДЕНЬ КЛИНИКИ, А НЕ ДЕНЬ ПО UTC.
  *
@@ -118,8 +164,7 @@ export async function parseDictationWithLLM(
 	transcript: string,
 	context: ParserContext = "schedule",
 	timeZone?: string | null,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-): Promise<any> {
+): Promise<DictationParseResult> {
 	const modelName =
 		process.env.DENTAL_DICTATION_MODEL?.trim() || "qwen/qwen3.8-27b";
 	const baseUrl = "https://api.groq.com/openai/v1";
@@ -175,21 +220,24 @@ export async function parseDictationWithLLM(
 					15000,
 				);
 
-				const payload = await response.json().catch(() => ({}));
+				const payload = (await response
+					.json()
+					.catch(() => ({}))) as OpenAiChatCompletionPayload;
 				if (!response.ok) throw new Error("Ошибка сервиса распознавания диктовки");
 
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				const content = (payload as any).choices?.[0]?.message?.content;
+				const content = payload.choices?.[0]?.message?.content;
 				if (!content) throw new Error("Пустой ответ сервиса распознавания диктовки");
 
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				let parsed: any;
+				let parsed: DictationParseResult;
 				try {
-					parsed = JSON.parse(content.trim());
+					parsed = JSON.parse(content.trim()) as DictationParseResult;
 				} catch {
 					const match = content.match(/\{[\s\S]*\}/);
-					if (match) parsed = JSON.parse(match[0]);
-					else throw new Error("Некорректный формат JSON в ответе распознавания");
+					if (match?.[0]) {
+						parsed = JSON.parse(match[0]) as DictationParseResult;
+					} else {
+						throw new Error("Некорректный формат JSON в ответе распознавания");
+					}
 				}
 
 				recordProviderKeySuccess(providerConfig.keyProviderId, keyCandidate);

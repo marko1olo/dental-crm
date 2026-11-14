@@ -13,13 +13,14 @@
 
 import { type CreatePaymentInput, normalizePaymentMethod } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
+import type { TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../../routes/loyaltyModules/bonusBalanceService.js";
 import type { ResolvedPaymentSplit } from "./paymentSplitValidation.js";
 import type { LockedPatientForBilling } from "./types.js";
 
 export async function executePaymentInsertAndBalanceDeductions(
-	tx: any,
+	tx: TenantDb,
 	params: {
 		readonly organizationId: string;
 		readonly input: CreatePaymentInput;
@@ -429,7 +430,7 @@ export async function executePaymentInsertAndBalanceDeductions(
  * BEFORE any records or deductions are performed.
  */
 async function verifyFamilySpendPermission(
-	tx: any,
+	tx: TenantDb,
 	params: {
 		readonly organizationId: string;
 		readonly familyGroupId: string | null;
@@ -525,7 +526,7 @@ async function verifyFamilySpendPermission(
 }
 
 async function deductFamilyWalletBalance(
-	tx: any,
+	tx: TenantDb,
 	params: {
 		readonly organizationId: string;
 		readonly familyGroupId: string | null;
@@ -582,7 +583,7 @@ async function deductFamilyWalletBalance(
  * holdAndVerifyBonusBalance (Phase 1 of Two-Phase Hold/Commit)
  */
 async function holdAndVerifyBonusBalance(
-	tx: any,
+	tx: TenantDb,
 	params: {
 		readonly organizationId: string;
 		readonly patientId: string;
@@ -607,7 +608,11 @@ async function holdAndVerifyBonusBalance(
 		.for("update")
 		.limit(1);
 
-	const activePoints = Number(balance?.activePoints ?? 0);
+	if (!balance) {
+		throw new Error("Счет бонусов пациента не найден.");
+	}
+
+	const activePoints = Number(balance.activePoints ?? 0);
 	if (activePoints < pointsToDeduct) {
 		throw new Error(
 			`Недостаточно бонусов на счете пациента. Доступно: ${activePoints} б., требуется: ${pointsToDeduct} б.`,
@@ -621,7 +626,7 @@ async function holdAndVerifyBonusBalance(
  * commitBonusDeduction (Phase 2 of Two-Phase Hold/Commit)
  */
 async function commitBonusDeduction(
-	tx: any,
+	tx: TenantDb,
 	params: {
 		readonly organizationId: string;
 		readonly patientId: string;

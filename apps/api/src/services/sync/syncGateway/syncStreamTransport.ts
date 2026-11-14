@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, inArray, or, sql } from "drizzle-orm";
 import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -108,8 +108,39 @@ export class SyncStreamTransport {
 		sinceIso?: string,
 	): Promise<SyncPullResult> {
 		const since = sinceIso ? new Date(sinceIso) : new Date(0);
+		const isInitialSync = since.getTime() === 0;
 
 		return await withTenantCtx(organizationId, async (tx: TenantDb) => {
+			// Query changed vectors first to capture historical entity mutations (e.g. past appointment cancellations)
+			const changedVectors = await tx
+				.select()
+				.from(syncEntityVectors)
+				.where(
+					and(
+						eq(syncEntityVectors.organizationId, organizationId),
+						isInitialSync ? sql`TRUE` : gte(syncEntityVectors.updatedAt, since),
+					),
+				);
+
+			const changedAppointmentIds = changedVectors
+				.filter((v) => v.entityKind === "appointment")
+				.map((v) => v.entityId);
+
+			const appointmentCondition = isInitialSync
+				? eq(appointments.organizationId, organizationId)
+				: changedAppointmentIds.length > 0
+					? and(
+							eq(appointments.organizationId, organizationId),
+							or(
+								gte(appointments.startsAt, since),
+								inArray(appointments.id, changedAppointmentIds),
+							),
+						)
+					: and(
+							eq(appointments.organizationId, organizationId),
+							gte(appointments.startsAt, since),
+						);
+
 			const [
 				changedPatients,
 				changedVisits,
@@ -117,7 +148,6 @@ export class SyncStreamTransport {
 				changedPayments,
 				changedAppointments,
 				changedToothStates,
-				changedVectors,
 			] = await Promise.all([
 				tx
 					.select()
@@ -125,7 +155,7 @@ export class SyncStreamTransport {
 					.where(
 						and(
 							eq(patients.organizationId, organizationId),
-							gte(patients.updatedAt, since),
+							isInitialSync ? sql`TRUE` : gte(patients.updatedAt, since),
 						),
 					),
 				tx
@@ -134,7 +164,7 @@ export class SyncStreamTransport {
 					.where(
 						and(
 							eq(visits.organizationId, organizationId),
-							gte(visits.updatedAt, since),
+							isInitialSync ? sql`TRUE` : gte(visits.updatedAt, since),
 						),
 					),
 				tx
@@ -143,7 +173,7 @@ export class SyncStreamTransport {
 					.where(
 						and(
 							eq(visitDiaries.organizationId, organizationId),
-							gte(visitDiaries.updatedAt, since),
+							isInitialSync ? sql`TRUE` : gte(visitDiaries.updatedAt, since),
 						),
 					),
 				tx
@@ -152,34 +182,17 @@ export class SyncStreamTransport {
 					.where(
 						and(
 							eq(payments.organizationId, organizationId),
-							gte(payments.updatedAt, since),
+							isInitialSync ? sql`TRUE` : gte(payments.updatedAt, since),
 						),
 					),
-				tx
-					.select()
-					.from(appointments)
-					.where(
-						and(
-							eq(appointments.organizationId, organizationId),
-							gte(appointments.startsAt, since),
-						),
-					),
+				tx.select().from(appointments).where(appointmentCondition),
 				tx
 					.select()
 					.from(toothStates)
 					.where(
 						and(
 							eq(toothStates.organizationId, organizationId),
-							gte(toothStates.updatedAt, since),
-						),
-					),
-				tx
-					.select()
-					.from(syncEntityVectors)
-					.where(
-						and(
-							eq(syncEntityVectors.organizationId, organizationId),
-							gte(syncEntityVectors.updatedAt, since),
+							isInitialSync ? sql`TRUE` : gte(toothStates.updatedAt, since),
 						),
 					),
 			]);

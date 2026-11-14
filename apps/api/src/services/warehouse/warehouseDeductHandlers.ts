@@ -2,11 +2,12 @@
  * warehouseDeductHandlers.ts — Layer 4: Fastify handler for batch warehouse item deduction.
  */
 
-import { and, eq, ilike, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
 import { inventoryItems } from "../../db/schema.js";
+import type { FefoDeductionResult } from "../inventory/fefo/types.js";
 import { FefoStockService } from "../inventory/fefoStockService.js";
 import { InsufficientStockError } from "../treatmentConsumablesService.js";
 import { warehouseDeductBatchBodySchema, type warehouseDeductItemSchema } from "./warehouseSchemas.js";
@@ -24,21 +25,22 @@ export async function handleWarehouseDeductRequest(
 		return reply.status(400).send({ error: "ValidationError", message: "Неверный формат данных", details: parsed.error.errors });
 	}
 
-	let itemsList: z.infer<typeof warehouseDeductItemSchema>[] = [];
+	type DeductItem = z.infer<typeof warehouseDeductItemSchema>;
+	let itemsList: DeductItem[] = [];
 	let commonReason: string | undefined;
 	let visitId: string | undefined;
 	let allowOverdraftDefault = true;
 
 	if (Array.isArray(parsed.data)) {
 		itemsList = parsed.data;
-	} else if ("items" in parsed.data || "materials" in parsed.data) {
-		const d = parsed.data as any;
+	} else if ("quantity" in parsed.data) {
+		itemsList = [parsed.data];
+	} else {
+		const d = parsed.data;
 		itemsList = d.materials && d.materials.length > 0 ? d.materials : (d.items ?? []);
 		commonReason = d.reason || d.notes || (d.operationTitle ? `Списание под «${d.operationTitle}»` : undefined);
 		visitId = d.visitId ? String(d.visitId) : undefined;
 		if (d.allowOverdraft !== undefined) allowOverdraftDefault = d.allowOverdraft;
-	} else {
-		itemsList = [parsed.data as z.infer<typeof warehouseDeductItemSchema>];
 	}
 
 	if (itemsList.length === 0) return reply.status(400).send({ error: "EmptyDeduction", message: "Список материалов пуст" });
@@ -46,7 +48,7 @@ export async function handleWarehouseDeductRequest(
 
 	try {
 		const deductionResults = await db.transaction(async (tx) => {
-			const results: any[] = [];
+			const results: FefoDeductionResult[] = [];
 			for (const item of itemsList) {
 				let itemId = item.inventoryItemId || item.itemId || item.id;
 				const searchName = (item.name || item.itemName || "").trim();
@@ -84,15 +86,18 @@ export async function handleWarehouseDeductRequest(
 			message: hasOverdraft ? `Списано по FEFO: ${deductionResults.length} (мягкий овердрафт)` : `Списано по FEFO: ${deductionResults.length}`,
 		});
 	} catch (error) {
-		const isInsufficient = error instanceof InsufficientStockError || (error as any)?.error === "InsufficientStock";
+		const isInsufficientError = error instanceof InsufficientStockError;
+		const errorObject = typeof error === "object" && error !== null ? (error as { error?: unknown; requiredStock?: unknown; availableStock?: unknown; inventoryItemId?: unknown; inventoryItemName?: unknown }) : null;
+		const isInsufficient = isInsufficientError || errorObject?.error === "InsufficientStock";
 		if (isInsufficient) {
-			const e = error as any;
-			const req = Number(e.requiredStock ?? 1);
-			const avail = Number(e.availableStock ?? 0);
+			const req = Number(isInsufficientError ? error.requiredStock : errorObject?.requiredStock ?? 1);
+			const avail = Number(isInsufficientError ? error.availableStock : errorObject?.availableStock ?? 0);
+			const itemId = isInsufficientError ? error.inventoryItemId : String(errorObject?.inventoryItemId ?? "unknown");
+			const itemName = isInsufficientError ? error.inventoryItemName : String(errorObject?.inventoryItemName ?? "Материал");
 			return reply.status(200).send({
 				success: true, count: 1, hasOverdraft: true, isOverdraft: true, is_overdraft: true,
 				allowOverdraft: true,
-				items: [{ inventoryItemId: e.inventoryItemId ?? "unknown", inventoryItemName: e.inventoryItemName ?? "Материал", requiredQty: req, deductedQty: req, isOverdraft: true, deficitQty: req - avail }],
+				items: [{ inventoryItemId: itemId, inventoryItemName: itemName, requiredQty: req, deductedQty: req, isOverdraft: true, deficitQty: req - avail }],
 				message: `Списание со склада проведено (зафиксирован мягкий овердрафт: дефицит ${req - avail} ед.).`,
 			});
 		}

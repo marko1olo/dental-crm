@@ -7,6 +7,7 @@ import {
 	convertInventoryUnit,
 	normalizeInventoryUnit,
 } from "@dental/shared";
+import type { DbTransaction } from "../../inventory/fefo/types.js";
 import { fefoStockService } from "../../inventory/fefoStockService.js";
 import type { DbExecutor } from "../types.js";
 import type {
@@ -63,7 +64,7 @@ export async function executeFefoDeductionStep(
 	const threshold = Number(inv.criticalThreshold ?? inv.minQty ?? 0);
 	const note = noteText(newStock, inv.unit ?? "шт");
 
-	const fefoRes = await fefoStockService.deductFefo(tx as any, {
+	const fefoRes = await fefoStockService.deductFefo(tx as DbTransaction, {
 		organizationId,
 		inventoryItemId: inv.id,
 		requiredQty: convertedRequiredQty,

@@ -1,6 +1,7 @@
 import {
 	type CreatePatientInput,
 	type Patient,
+	type PatientAdministrativeProfile,
 	patientSchema,
 	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
@@ -17,7 +18,7 @@ import {
 	updatePatientAdministrativeProfile as updatePatientAdministrativeProfileInMemory,
 	updatePatient as updatePatientInMemory,
 } from "../../sampleData.js";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { patientAccountBalancesRub } from "./patientBalanceAndDebtsQuery.js";
 import type { GetPatientsOptions } from "./types.js";
@@ -164,7 +165,7 @@ export async function getPatientsFromDb(
 			const searchDigits = qLower.replace(/\D/g, "");
 			const searchPk = phoneKey(qLower);
 
-			list = list.filter((p: any) => {
+			list = list.filter((p) => {
 				const nameStr = typeof p.fullName === "string" ? p.fullName : "";
 				const nameLower = nameStr.toLowerCase();
 				const nameMatch =
@@ -189,24 +190,31 @@ export async function getPatientsFromDb(
 					(pBirth.toLowerCase().includes(qLower) ||
 						(searchDigits.length >= 4 && pBirth.replace(/\D/g, "").includes(searchDigits)));
 
+				const legacyProps = p as unknown as {
+					snils?: string;
+					omsPolicyNumber?: string;
+					insurancePolicyNumber?: string;
+					cardNumber?: string;
+					medicalCardNumber?: string;
+				};
 				const adminProf = p.administrativeProfile && typeof p.administrativeProfile === "object"
 					? (p.administrativeProfile as Record<string, unknown>)
 					: null;
-				const pSnils = String(adminProf?.snils || p.snils || "");
+				const pSnils = String(adminProf?.snils || legacyProps.snils || "");
 				const snilsDigits = pSnils.replace(/\D/g, "");
 				const snilsMatch =
 					pSnils.length > 0 &&
 					(pSnils.toLowerCase().includes(qLower) ||
 						(searchDigits.length >= 4 && snilsDigits.includes(searchDigits)));
 
-				const pOms = String(adminProf?.insurancePolicyNumber || p.omsPolicyNumber || p.insurancePolicyNumber || "");
+				const pOms = String(adminProf?.insurancePolicyNumber || legacyProps.omsPolicyNumber || legacyProps.insurancePolicyNumber || "");
 				const omsDigits = pOms.replace(/\D/g, "");
 				const omsMatch =
 					pOms.length > 0 &&
 					(pOms.toLowerCase().includes(qLower) ||
 						(searchDigits.length >= 4 && omsDigits.includes(searchDigits)));
 
-				const pCard = String(adminProf?.cardNumber || p.cardNumber || p.medicalCardNumber || p.id || "");
+				const pCard = String(adminProf?.cardNumber || legacyProps.cardNumber || legacyProps.medicalCardNumber || p.id || "");
 				const cardMatch = pCard.length > 0 && pCard.toLowerCase().includes(qLower);
 
 				return Boolean(nameMatch || phoneMatch || emailMatch || birthMatch || snilsMatch || omsMatch || cardMatch);
@@ -258,18 +266,19 @@ export async function getPatientsFromDb(
 			conditions.push(or(...searchOr)!);
 		}
 		const whereClause = and(...conditions);
-		let ptsQuery: any = db
+		let ptsQuery = db
 			.select()
 			.from(schema.patients)
-			.where(whereClause);
+			.where(whereClause)
+			.$dynamic();
 
-		if (typeof ptsQuery.orderBy === "function" && (options.limit !== undefined || options.search)) {
+		if (options.limit !== undefined || options.search) {
 			ptsQuery = ptsQuery.orderBy(desc(schema.patients.createdAt));
 		}
-		if (options.limit !== undefined && options.limit > 0 && typeof ptsQuery.limit === "function") {
+		if (options.limit !== undefined && options.limit > 0) {
 			ptsQuery = ptsQuery.limit(options.limit);
 		}
-		if (options.offset !== undefined && options.offset > 0 && typeof ptsQuery.offset === "function") {
+		if (options.offset !== undefined && options.offset > 0) {
 			ptsQuery = ptsQuery.offset(options.offset);
 		}
 
@@ -300,7 +309,7 @@ export async function getPatientsFromDb(
 export async function createPatientInDb(
 	organizationId: string,
 	input: CreatePatientInput,
-	tx?: any,
+	tx?: TenantDb,
 ): Promise<Patient> {
 	if (useInMemory()) {
 		return createPatientInMemory(input);
@@ -325,7 +334,7 @@ export async function createPatientInDb(
 				email: input.email ?? null,
 				notes: input.notes ?? null,
 				weightKg: input.weightKg !== undefined && input.weightKg !== null ? String(input.weightKg) : null,
-				administrativeProfile: (mergedAdminProfile as any) ?? null,
+				administrativeProfile: (mergedAdminProfile as Partial<PatientAdministrativeProfile>) ?? null,
 			})
 			.returning();
 

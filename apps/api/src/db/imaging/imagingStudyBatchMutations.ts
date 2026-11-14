@@ -40,6 +40,31 @@ export async function createImagingStudiesInDb(
 		throw new Error("Не все пациенты принадлежат организации: создание снимка отклонено");
 	}
 
+	const visitIds = Array.from(new Set(inputs.map((i) => i.visitId).filter((v): v is string => Boolean(v))));
+	if (visitIds.length > 0) {
+		const ownedVisits = await db
+			.select({ id: schema.visits.id, patientId: schema.visits.patientId })
+			.from(schema.visits)
+			.where(
+				and(
+					eq(schema.visits.organizationId, organizationId),
+					inArray(schema.visits.id, visitIds),
+				),
+			);
+		if (ownedVisits.length !== visitIds.length) {
+			throw new Error("Не все приёмы принадлежат организации: создание снимка отклонено");
+		}
+		const visitPatientMap = new Map(ownedVisits.map((v) => [v.id, v.patientId]));
+		for (const input of inputs) {
+			if (input.visitId) {
+				const expectedPatient = visitPatientMap.get(input.visitId);
+				if (expectedPatient !== input.patientId) {
+					throw new Error("Приём не принадлежит указанному пациенту: создание снимка отклонено");
+				}
+			}
+		}
+	}
+
 	const records = await db
 		.insert(schema.imagingStudies)
 		.values(

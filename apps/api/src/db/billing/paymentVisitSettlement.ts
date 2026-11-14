@@ -14,11 +14,12 @@
 import type { CreatePaymentInput, Kopecks } from "@dental/shared";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { deductMaterialsForVisit } from "../../services/inventory/materialDeduction.js";
+import type { TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import type { LockedVisitForBilling } from "./types.js";
 
 export async function settleDocumentsVisitsAndMaterials(
-	tx: any,
+	tx: TenantDb,
 	params: {
 		readonly organizationId: string;
 		readonly input: CreatePaymentInput;

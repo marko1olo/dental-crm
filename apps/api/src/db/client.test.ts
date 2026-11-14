@@ -9,9 +9,9 @@ test("client throws error when DATABASE_URL is missing", () => {
     try {
         requireDatabaseUrl();
         assert.fail("Should have thrown an error");
-    } catch (error: any) {
+    } catch (error: unknown) {
         assert.strictEqual(
-            error.message,
+            (error as Error).message,
             "DATABASE_URL не задан. Укажите строку подключения к PostgreSQL в .env — тот же адрес использует npm run db:migrate."
         );
     } finally {
@@ -30,9 +30,9 @@ test("client throws error when DATABASE_URL is empty string", () => {
     try {
         requireDatabaseUrl();
         assert.fail("Should have thrown an error");
-    } catch (error: any) {
+    } catch (error: unknown) {
         assert.strictEqual(
-            error.message,
+            (error as Error).message,
             "DATABASE_URL не задан. Укажите строку подключения к PostgreSQL в .env — тот же адрес использует npm run db:migrate."
         );
     } finally {

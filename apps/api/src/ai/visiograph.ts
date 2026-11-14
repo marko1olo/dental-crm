@@ -4,6 +4,7 @@
  */
 
 import { randomInt } from "node:crypto";
+import type { SpeechGatewayProvider } from "@dental/shared";
 import {
 	fetchWithProviderTimeout,
 	getProviderKeyCandidates,
@@ -22,7 +23,10 @@ const DEFAULT_TIMEOUT_MS = 8_000;
 
 export async function analyzeVisiographImage(imageBase64: string): Promise<VisiographAiResult> {
 	const warnings: string[] = [];
-	const providers = ["groq_whisper", "google_speech"];
+	const providers: readonly SpeechGatewayProvider[] = [
+		"groq_whisper",
+		"google_speech",
+	];
 	let lastError: unknown;
 	let rawContent = "";
 
@@ -32,7 +36,7 @@ export async function analyzeVisiographImage(imageBase64: string): Promise<Visio
 	const timeoutMs = Number(process.env.DENTE_VISIOGRAPH_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
 
 	for (const provider of providers) {
-		const candidates = getProviderKeyCandidates(provider as any);
+		const candidates = getProviderKeyCandidates(provider);
 		if (!candidates.length) continue;
 
 		for (let i = candidates.length - 1; i > 0; i--) {
@@ -73,11 +77,11 @@ export async function analyzeVisiographImage(imageBase64: string): Promise<Visio
 				rawContent = data.choices?.[0]?.message?.content || "";
 				if (!rawContent) throw new Error("Пустой ответ модели анализа визиограммы");
 
-				recordProviderKeySuccess(provider as any, candidate);
+				recordProviderKeySuccess(provider, candidate);
 				break;
 			} catch (err) {
 				lastError = err;
-				recordProviderKeyFailure(provider as any, candidate, err);
+				recordProviderKeyFailure(provider, candidate, err);
 			}
 		}
 		if (rawContent) break;
@@ -100,7 +104,18 @@ export async function analyzeVisiographImage(imageBase64: string): Promise<Visio
 		}
 	}
 
-	const toothStates = (resultObj?.toothStates as Record<string, string>) || {};
+	let toothStates: Record<string, string> = {};
+	if (
+		resultObj.toothStates &&
+		typeof resultObj.toothStates === "object" &&
+		!Array.isArray(resultObj.toothStates)
+	) {
+		toothStates = Object.fromEntries(
+			Object.entries(resultObj.toothStates as Record<string, unknown>).map(
+				([key, val]) => [key, String(val ?? "")],
+			),
+		);
+	}
 	let report = rawContent;
 	if (report.includes("```json")) {
 		report = report.split("```json")[0]?.trim() || report;

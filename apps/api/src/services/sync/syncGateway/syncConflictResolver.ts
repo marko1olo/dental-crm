@@ -111,7 +111,11 @@ export function parseTeethFromPayload(
 	const teethList: OdontogramParsedTooth[] = [];
 
 	if (Array.isArray(payload.teeth)) {
-		for (const t of payload.teeth as Array<Record<string, unknown>>) {
+		for (const rawTooth of payload.teeth) {
+			if (!rawTooth || typeof rawTooth !== "object") {
+				continue;
+			}
+			const t = rawTooth as Record<string, unknown>;
 			const num = Number(t.toothNumber || t.tooth || 0);
 			if (num > 0) {
 				teethList.push({

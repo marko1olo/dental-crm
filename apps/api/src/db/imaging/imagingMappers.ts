@@ -1,4 +1,4 @@
-import type { ImagingStudy } from "@dental/shared";
+import type { ImagingStudy, ImagingStudyBindingStatus } from "@dental/shared";
 import { browserRenderableImageMimeType } from "../../imaging/previewFormats.js";
 import * as schema from "../schema.js";
 
@@ -42,8 +42,7 @@ export function mapImagingStudy(
 		dimensions: record.dimensions,
 		voxelSpacing: record.voxelSpacing,
 		fileSizeBytes: record.fileSizeBytes,
-		// biome-ignore lint/suspicious/noExplicitAny: domain schema contract
-		bindingStatus: (record.bindingStatus as any) || "unassigned",
+		bindingStatus: (record.bindingStatus as ImagingStudyBindingStatus) || "unassigned",
 		bindingConfidence: record.bindingConfidence ?? 0,
 		dicomPatientName: record.dicomPatientName,
 		dicomPatientId: record.dicomPatientId,

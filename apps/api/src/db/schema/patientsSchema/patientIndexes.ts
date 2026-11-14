@@ -1,5 +1,17 @@
 import { sql } from "drizzle-orm";
-import { index } from "drizzle-orm/pg-core";
+import { index, type pgTable } from "drizzle-orm/pg-core";
+
+type ExtraColumn = NonNullable<Parameters<NonNullable<Parameters<typeof pgTable>[2]>>[0][string]>;
+
+export interface PatientTableColumns {
+	readonly organizationId: ExtraColumn;
+	readonly createdAt: ExtraColumn;
+	readonly fullName: ExtraColumn;
+	readonly phone: ExtraColumn;
+	readonly status: ExtraColumn;
+	readonly familyGroupId: ExtraColumn;
+	readonly mergedIntoPatientId: ExtraColumn;
+}
 
 /**
  * Индексы базовой таблицы patients (PostgreSQL 18).
@@ -7,7 +19,7 @@ import { index } from "drizzle-orm/pg-core";
  * фильтрации по статусу, быстрого поиска по номеру телефона
  * и полнотекстового/триграммного GIN поиска по ФИО и контактам.
  */
-export function getPatientTableIndexes(table: any) {
+export function getPatientTableIndexes(table: PatientTableColumns) {
 	return {
 		idxPatientsOrgCreated: index("idx_patients_org_created").on(
 			table.organizationId,

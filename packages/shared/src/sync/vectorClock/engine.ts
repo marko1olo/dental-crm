@@ -1,5 +1,5 @@
 import { computePayloadHash } from "../hashing.js";
-import { incrementVectorClock } from "../mesh.js";
+import { incrementVectorClock } from "../crdt.js";
 import { compareEntityVectors } from "./ordering.js";
 import { reconcileSplitBrainEntity } from "./reconciliation.js";
 import type {

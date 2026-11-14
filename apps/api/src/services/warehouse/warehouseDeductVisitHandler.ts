@@ -15,16 +15,19 @@ export async function handleWarehouseDeductVisitRequest(
 ) {
 	let normalizedBody = rawBody;
 	if (rawBody && typeof rawBody === "object") {
-		const b = rawBody as Record<string, any>;
+		const b = rawBody as Record<string, unknown>;
 		const rawVisitId = b.visitId ?? b.treatment_reference_id ?? b.visit_id;
 		const rawItems = b.items ?? b.materials;
-		let items: any[] | undefined = undefined;
+		let items: Array<{ inventoryItemId?: unknown; quantity?: unknown; reason?: unknown }> | undefined = undefined;
 		if (Array.isArray(rawItems)) {
-			items = rawItems.map((it) => ({
-				inventoryItemId: it.inventoryItemId ?? it.inventory_item_id ?? it.id,
-				quantity: it.quantity,
-				reason: it.reason ?? it.notes ?? b.notes,
-			}));
+			items = rawItems.map((it) => {
+				const itemObj = typeof it === "object" && it !== null ? (it as Record<string, unknown>) : {};
+				return {
+					inventoryItemId: itemObj.inventoryItemId ?? itemObj.inventory_item_id ?? itemObj.id,
+					quantity: itemObj.quantity,
+					reason: itemObj.reason ?? itemObj.notes ?? b.notes,
+				};
+			});
 		}
 		normalizedBody = {
 			...b,
@@ -42,13 +45,14 @@ export async function handleWarehouseDeductVisitRequest(
 		});
 	}
 
+	const userObj = request.user as { id?: string } | undefined;
 	try {
 		const result = await db.transaction(async (tx) => {
 			return TreatmentConsumablesService.deductForVisit(tx, {
 				organizationId,
 				visitId: parsedBody.data.visitId,
 				clientMutationId: parsedBody.data.clientMutationId ?? (request.headers["idempotency-key"] as string | undefined) ?? null,
-				userId: parsedBody.data.userId !== undefined ? parsedBody.data.userId : ((request.user as any)?.id ?? null),
+				userId: parsedBody.data.userId !== undefined ? parsedBody.data.userId : (userObj?.id ?? null),
 				...(parsedBody.data.transactionType !== undefined ? { transactionType: parsedBody.data.transactionType } : {}),
 				...(parsedBody.data.services !== undefined ? { services: parsedBody.data.services } : {}),
 				...(parsedBody.data.items !== undefined ? { items: parsedBody.data.items } : {}),
@@ -60,16 +64,19 @@ export async function handleWarehouseDeductVisitRequest(
 		});
 		return reply.send({ success: true, ...result, is_overdraft: Boolean(result.isOverdraft) });
 	} catch (err: unknown) {
-		const isInsufficient = err instanceof InsufficientStockError || (err as any)?.error === "InsufficientStock";
+		const isInsufficientError = err instanceof InsufficientStockError;
+		const errorObject = typeof err === "object" && err !== null ? (err as { error?: unknown; requiredStock?: unknown; availableStock?: unknown; inventoryItemId?: unknown; inventoryItemName?: unknown }) : null;
+		const isInsufficient = isInsufficientError || errorObject?.error === "InsufficientStock";
 		if (isInsufficient) {
-			const e = err as any;
-			const avail = Number(e.availableStock ?? 0);
-			const req = Number(e.requiredStock ?? 1);
+			const avail = Number(isInsufficientError ? err.availableStock : errorObject?.availableStock ?? 0);
+			const req = Number(isInsufficientError ? err.requiredStock : errorObject?.requiredStock ?? 1);
+			const itemId = isInsufficientError ? err.inventoryItemId : String(errorObject?.inventoryItemId ?? "unknown");
+			const itemName = isInsufficientError ? err.inventoryItemName : String(errorObject?.inventoryItemName ?? "Материал");
 			return reply.status(200).send({
 				success: true, isOverdraft: true, is_overdraft: true, hasOverdraft: true,
-				inventoryItemId: e.inventoryItemId ?? "unknown", inventoryItemName: e.inventoryItemName ?? "Материал",
+				inventoryItemId: itemId, inventoryItemName: itemName,
 				availableStock: avail, requiredStock: req, deductions: [],
-				warnings: [{ type: "out_of_stock", itemId: e.inventoryItemId, itemName: e.inventoryItemName, message: `Дефицит: ${req - avail}`, currentStock: avail - req, criticalThreshold: 0 }],
+				warnings: [{ type: "out_of_stock", itemId, itemName, message: `Дефицит: ${req - avail}`, currentStock: avail - req, criticalThreshold: 0 }],
 			});
 		}
 		request.log.error(err, "Failed to deduct visit inventory from warehouse");

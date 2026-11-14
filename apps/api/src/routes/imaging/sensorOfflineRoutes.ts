@@ -53,6 +53,7 @@ import {
 	isDicomOrRadiographFile,
 } from "../../imaging/previewFormats.js";
 import { DicomProcessorService } from "../../services/imaging/DicomProcessorService.js";
+import type { DicomHeaderMetadata } from "../../services/imaging/dicomProcessor/types.js";
 import {
 	LocalPacsStorageService,
 	InvalidMagicBytesError,
@@ -155,9 +156,18 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			let visitId: string | undefined;
 
 			// Handle multipart or raw stream
-			const isMulti = typeof (request as any).isMultipart === "function" && (request as any).isMultipart();
-			if (isMulti) {
-				const part = await (request as any).file();
+			type MultipartRequestCandidate = FastifyRequest & {
+				isMultipart?: () => boolean;
+				file?: () => Promise<{
+					file: NodeJS.ReadableStream;
+					filename: string;
+					fields?: Record<string, { value?: unknown }>;
+				} | undefined>;
+			};
+			const reqMulti = request as MultipartRequestCandidate;
+			const isMulti = typeof reqMulti.isMultipart === "function" && reqMulti.isMultipart();
+			if (isMulti && typeof reqMulti.file === "function") {
+				const part = await reqMulti.file();
 				if (!part) {
 					return reply.status(400).send({
 						error: "MissingFilePayload",
@@ -185,7 +195,12 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				if (Buffer.isBuffer(request.body)) {
 					const { Readable } = await import("node:stream");
 					fileStream = Readable.from(request.body);
-				} else if (request.body && typeof (request.body as any).pipe === "function") {
+				} else if (
+					request.body !== null &&
+					typeof request.body === "object" &&
+					"pipe" in request.body &&
+					typeof (request.body as { pipe: unknown }).pipe === "function"
+				) {
 					fileStream = request.body as NodeJS.ReadableStream;
 				} else {
 					fileStream = request.raw;
@@ -223,7 +238,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 					{ maxSizeBytes: 2 * 1024 * 1024 * 1024 }, // 2 GB limit per scan
 				);
 
-				let dicomMetadata: any = null;
+				let dicomMetadata: DicomHeaderMetadata | null = null;
 				let localThumbnailDataUri: string | null = null;
 
 				// If DICOM, parse header safe
@@ -266,7 +281,9 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 					sourceKind: "dicom_file",
 					sourceName: filename,
 					storagePath: stored.relativePath,
-					dicomStudyUid: dicomMetadata?.studyInstanceUid || undefined,
+					dicomStudyUid: dicomMetadata?.studyInstanceUid ?? undefined,
+					dicomSeriesUid: dicomMetadata?.seriesInstanceUid ?? undefined,
+					dicomSopInstanceUid: dicomMetadata?.sopInstanceUid ?? undefined,
 					aiSummary: localThumbnailDataUri ? "Снимок загружен. Сформировано превью." : null,
 				});
 

@@ -14,7 +14,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { dicomWatcherDaemon } from "../../services/imaging/dicomFolderWatcherDaemon.js";
+import { dicomCrawlerDaemon, type DicomCrawlerDaemonConfig } from "../../services/dicom/DicomCrawlerDaemon.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
@@ -27,7 +27,7 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/imaging/daemon/status", async (request, reply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "dicom daemon status"))) return;
-		const status = dicomWatcherDaemon.getStatus();
+		const status = dicomCrawlerDaemon.getStatus();
 		return reply.send({ success: true, status });
 	});
 
@@ -36,11 +36,11 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	 */
 	app.post("/api/imaging/daemon/start", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "start dicom daemon"))) return;
-		dicomWatcherDaemon.start();
+		dicomCrawlerDaemon.start();
 		return reply.send({
 			success: true,
 			message: "Фоновый автопоиск КТ томографов запущен.",
-			status: dicomWatcherDaemon.getStatus(),
+			status: dicomCrawlerDaemon.getStatus(),
 		});
 	});
 
@@ -49,11 +49,11 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	 */
 	app.post("/api/imaging/daemon/stop", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "stop dicom daemon"))) return;
-		dicomWatcherDaemon.stop();
+		dicomCrawlerDaemon.stop();
 		return reply.send({
 			success: true,
 			message: "Фоновый автопоиск КТ томографов остановлен.",
-			status: dicomWatcherDaemon.getStatus(),
+			status: dicomCrawlerDaemon.getStatus(),
 		});
 	});
 
@@ -69,12 +69,12 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 		const parsed = bodySchema.safeParse(request.body ?? {});
 		const explicitPaths = parsed.success ? parsed.data.paths : undefined;
 
-		const result = await dicomWatcherDaemon.scanNow(explicitPaths);
+		const result = await dicomCrawlerDaemon.scanNow(explicitPaths);
 		return reply.send({
 			success: true,
-			message: `Сканирование завершено: обнаружено ${result.newStudiesDiscovered} новых серий КТ (${result.autoBound} автопривязано, ${result.pendingReview} требуют подтверждения).`,
+			message: `Сканирование завершено: обнаружено ${result.newStudiesDiscovered} новых серий КТ (${result.archivesFound} архивов найдено, ${result.archivesUnpacked} распаковано).`,
 			result,
-			status: dicomWatcherDaemon.getStatus(),
+			status: dicomCrawlerDaemon.getStatus(),
 		});
 	});
 
@@ -86,8 +86,9 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 
 		const configSchema = z.object({
 			watchPaths: z.array(z.string()).optional(),
+			pollIntervalMinutes: z.number().int().min(1).max(1440).optional(),
 			pollIntervalMs: z.number().int().min(5000).max(3600000).optional(),
-			debounceDelayMs: z.number().int().min(1000).max(60000).optional(),
+			autoUnpack: z.boolean().optional(),
 			enabled: z.boolean().optional(),
 		});
 
@@ -100,7 +101,17 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const updatedStatus = dicomWatcherDaemon.updateConfig(parsed.data);
+		const updatePayload: Partial<DicomCrawlerDaemonConfig> = {};
+		if (parsed.data.watchPaths !== undefined) updatePayload.watchPaths = parsed.data.watchPaths;
+		if (parsed.data.autoUnpack !== undefined) updatePayload.autoUnpack = parsed.data.autoUnpack;
+		if (parsed.data.enabled !== undefined) updatePayload.enabled = parsed.data.enabled;
+		if (parsed.data.pollIntervalMinutes !== undefined) {
+			updatePayload.pollIntervalMinutes = parsed.data.pollIntervalMinutes;
+		} else if (parsed.data.pollIntervalMs !== undefined) {
+			updatePayload.pollIntervalMinutes = Math.max(1, Math.round(parsed.data.pollIntervalMs / 60000));
+		}
+
+		const updatedStatus = dicomCrawlerDaemon.updateConfig(updatePayload);
 		return reply.send({
 			success: true,
 			message: "Настройки автопоиска томографов сохранены.",

@@ -1,5 +1,5 @@
 import { isSomaticSafetyFieldOrRisk } from "../crdt.js";
-import { incrementVectorClock, mergeVectorClocks } from "../mesh.js";
+import { incrementVectorClock, mergeVectorClocks } from "../crdt.js";
 import type { FieldConflictDetail } from "../types.js";
 import {
 	getAnesthesiaRiskRank,
@@ -189,9 +189,19 @@ export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Re
 				("surfaces" in localVal || "surfaces" in remoteVal || "surfaceStates" in localVal || "surfaceStates" in remoteVal))
 		) {
 			if (field === "surfaces" || field === "surfaceStates") {
+				const localToothState: OdontogramToothCrdtState = {
+					surfaces: localVal as string[] | Record<string, import("./types.js").PerSurfaceState> | undefined,
+					toothNumber: (safeLocal.toothNumber as number) ?? 0,
+					statusCode: (safeLocal.condition as string) ?? "treated",
+				};
+				const remoteToothState: OdontogramToothCrdtState = {
+					surfaces: remoteVal as string[] | Record<string, import("./types.js").PerSurfaceState> | undefined,
+					toothNumber: (safeRemote.toothNumber as number) ?? 0,
+					statusCode: (safeRemote.condition as string) ?? "treated",
+				};
 				const toothMerged = mergeOdontogramToothPerSurface(
-					{ surfaces: localVal as any, toothNumber: (safeLocal.toothNumber as number) ?? 0, statusCode: (safeLocal.condition as string) ?? "treated" },
-					{ surfaces: remoteVal as any, toothNumber: (safeRemote.toothNumber as number) ?? 0, statusCode: (safeRemote.condition as string) ?? "treated" },
+					localToothState,
+					remoteToothState,
 					localUpdatedAtMs,
 					remoteUpdatedAtMs,
 				);
@@ -238,8 +248,8 @@ export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Re
 			}
 
 			const toothMerged = mergeOdontogramToothPerSurface(
-				localVal as any,
-				remoteVal as any,
+				(localVal || {}) as OdontogramToothCrdtState,
+				(remoteVal || {}) as OdontogramToothCrdtState,
 				localUpdatedAtMs,
 				remoteUpdatedAtMs,
 			);

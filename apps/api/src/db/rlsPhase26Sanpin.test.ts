@@ -32,7 +32,7 @@ const PHASE26_SANPIN_TABLES = [
 	"patient_implant_installations",
 	"patient_referral_codes",
 	"patient_referrals",
-	"perio_charts",
+	"periodontogram_snapshots",
 	"pre_sterilization_cleaning_logs",
 	"referral_campaigns",
 	"shift_discrepancy_reports",
@@ -380,8 +380,8 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 					 VALUES (gen_random_uuid(), $1, gen_random_uuid(), 'infiltration', 'articaine', 68.0, 500.0)`,
 					[orgB],
 				),
-				(err: any) => {
-					assert.equal(err.code, "42501");
+				(err: unknown) => {
+					assert.equal((err as { code?: string })?.code, "42501");
 					return true;
 				},
 			);
@@ -396,8 +396,8 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 					 VALUES (gen_random_uuid(), $1, $2, 'pending', now())`,
 					[orgB, orgC],
 				),
-				(err: any) => {
-					assert.equal(err.code, "42501");
+				(err: unknown) => {
+					assert.equal((err as { code?: string })?.code, "42501");
 					return true;
 				},
 			);
@@ -410,8 +410,8 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 					`INSERT INTO "shift_discrepancy_reports" ("id", "shift_id", "discrepancy_amount", "reason", "created_at")
 					 VALUES (gen_random_uuid(), gen_random_uuid(), -100, 'Взлом', now())`,
 				),
-				(err: any) => {
-					assert.equal(err.code, "42501");
+				(err: unknown) => {
+					assert.equal((err as { code?: string })?.code, "42501");
 					return true;
 				},
 			);

@@ -573,9 +573,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			};
 		});
 
-		let appliedCount = parseRes.data.mutations.length;
+		let appliedCount = 0;
 		let duplicateCount = 0;
 		let mergedCount = 0;
+		let rejectedCount = 0;
 
 		try {
 			const pushResult = await SyncGatewayService.processPushBatch(
@@ -592,29 +593,30 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			appliedCount = pushResult.appliedCount;
 			duplicateCount = pushResult.duplicateCount;
 			mergedCount = pushResult.mergedCount;
+			rejectedCount = pushResult.rejectedCount;
 
-			// If mutations were rejected or not applied to DB directly (e.g. test non-UUID or schema constraint),
+			// If mutations were rejected or not applied to DB directly,
 			// buffer in memory ring buffer to guarantee zero data loss and grant resilience
 			if (appliedCount === 0 && parseRes.data.mutations.length > 0 && duplicateCount === 0) {
 				for (const mut of parseRes.data.mutations) {
 					meshService.getRingBuffer().push(mut);
 				}
-				appliedCount = parseRes.data.mutations.length;
 			}
 		} catch (dbErr) {
 			request.log.warn({ dbErr }, "[lanNetwork] Failed to persist mutations to Postgres; queued in memory ring buffer");
 			for (const mut of parseRes.data.mutations) {
 				meshService.getRingBuffer().push(mut);
 			}
-			appliedCount = parseRes.data.mutations.length;
+			rejectedCount = parseRes.data.mutations.length;
 		}
 
 		return reply.send({
-			ok: true,
+			ok: rejectedCount === 0,
 			processedCount: parseRes.data.mutations.length,
 			appliedCount,
 			duplicateCount,
 			mergedCount,
+			rejectedCount,
 			appliedAt: new Date().toISOString(),
 		});
 	});

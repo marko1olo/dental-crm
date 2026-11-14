@@ -1,4 +1,4 @@
-import { compareVectorClocks } from "../mesh.js";
+import { compareVectorClocks } from "../crdt.js";
 import type { VectorClock } from "../types.js";
 import type { VectorComparisonResult } from "./types.js";
 

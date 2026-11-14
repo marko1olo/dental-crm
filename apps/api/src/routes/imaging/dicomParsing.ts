@@ -671,8 +671,13 @@ export function createDicomPixelSampler(
 	rescaleSlope: number,
 	rescaleIntercept: number,
 ): (index: number) => number {
+	const requiredBytes = bitsAllocated === 16 ? 2 : 1;
+	const bufLen = buffer.length;
 	return (index: number) => {
 		const offset = pixelDataOffset + index * bytesPerPixel;
+		if (offset < 0 || offset + requiredBytes > bufLen) {
+			return rescaleIntercept;
+		}
 		const raw =
 			bitsAllocated === 16
 				? pixelRepresentation === 1

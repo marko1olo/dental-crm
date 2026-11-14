@@ -1,3 +1,4 @@
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { patients as inMemoryPatients } from "../../sampleData.js";
 import { db } from "../client.js";
@@ -34,8 +35,7 @@ export async function recordPatientConsentInDb(
 		patient.administrativeProfile = {
 			...currentProfile,
 			consentSignatures: updatedAudit,
-			// biome-ignore lint/suspicious/noExplicitAny: in-memory profile
-		} as any;
+		} as unknown as PatientAdministrativeProfile;
 		patient.updatedAt = now.toISOString();
 
 		return {
@@ -88,8 +88,7 @@ export async function recordPatientConsentInDb(
 				administrativeProfile: {
 					...currentProfile,
 					consentSignatures: updatedAudit,
-					// biome-ignore lint/suspicious/noExplicitAny: jsonb update
-				} as any,
+				} as Partial<PatientAdministrativeProfile>,
 				updatedAt: now,
 			})
 			.where(

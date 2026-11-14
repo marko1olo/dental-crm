@@ -10,6 +10,7 @@ export type DocumentRenderContext = {
 	payments?: Payment[];
 	serviceCatalog?: ServiceCatalogItem[];
 	treatmentPlanItems?: TreatmentPlanItem[];
+	isDraft?: boolean;
 };
 
 export * from "./renderUtilsModules/renderTypographyAndCss.js";

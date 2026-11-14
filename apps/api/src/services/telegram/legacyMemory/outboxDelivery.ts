@@ -341,7 +341,7 @@ export async function findDenteTelegramOutboxDeliveryReceiptDb(
 		}
 		return {
 			outboxItemId: row.outboxItemId,
-			status: row.status as any,
+			status: row.status as DenteTelegramOutboxDeliveryReceipt["status"],
 			outboxItem: parsedItem,
 			taskId: row.taskId,
 			eventId: row.eventId,
@@ -397,7 +397,7 @@ export async function claimDenteTelegramOutboxDeliveryReceiptDb(
 			}
 			return {
 				outboxItemId: existing.outboxItemId,
-				status: existing.status as any,
+				status: existing.status as DenteTelegramOutboxDeliveryReceipt["status"],
 				outboxItem: parsedItem ?? item,
 				taskId: existing.taskId ?? item.taskId,
 				eventId: existing.eventId,

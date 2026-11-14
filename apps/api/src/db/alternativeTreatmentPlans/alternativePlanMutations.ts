@@ -12,7 +12,7 @@
 
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, sql } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { TenantDb } from "../client.js";
 import {
 	auditEvents,
 	treatmentItems,
@@ -33,21 +33,28 @@ import {
 	ledgerRowId,
 } from "./alternativePlanCalculations.js";
 
+interface HttpError extends Error {
+	statusCode?: number;
+}
+
+function createHttpError(message: string, statusCode: number): HttpError {
+	const err = new Error(message) as HttpError;
+	err.statusCode = statusCode;
+	return err;
+}
+
 /**
  * Создать группу альтернативных планов лечения (ст. 20 и 84 Федерального закона № 323-ФЗ, ПП РФ № 736 от 11.05.2023)
  */
 export async function createAlternativePlanGroup(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	tx: NodePgDatabase<any>,
+	tx: TenantDb,
 	input: CreateAlternativePlanGroupInput,
 ) {
 	if (!input.variants || input.variants.length < 2) {
-		const err = new Error(
+		throw createHttpError(
 			"Группа альтернативных планов должна содержать минимум 2 варианта лечения (ст. 20 323-ФЗ).",
+			400,
 		);
-		// biome-ignore lint/suspicious/noExplicitAny: error mapping
-		(err as any).statusCode = 400;
-		throw err;
 	}
 
 	const planGroupId = randomUUID();
@@ -209,8 +216,7 @@ export async function createAlternativePlanGroup(
  * Все остальные планы в группе переводятся в статус Declined / Alternative.
  */
 export async function selectAndApprovePlanVariant(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	tx: NodePgDatabase<any>,
+	tx: TenantDb,
 	input: SelectPlanVariantInput,
 ) {
 	const now = new Date();
@@ -233,10 +239,7 @@ export async function selectAndApprovePlanVariant(
 		.limit(1);
 
 	if (!planRow) {
-		const err = new Error("План лечения не найден.");
-		// biome-ignore lint/suspicious/noExplicitAny: error mapping
-		(err as any).statusCode = 404;
-		throw err;
+		throw createHttpError("План лечения не найден.", 404);
 	}
 
 	const planGroupId = planRow.planGroupId;
@@ -261,10 +264,7 @@ export async function selectAndApprovePlanVariant(
 
 		const found = siblingPlans.find((p) => p.id === input.planId);
 		if (!found) {
-			const err = new Error("План лечения не найден в группе альтернатив.");
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			(err as any).statusCode = 404;
-			throw err;
+			throw createHttpError("План лечения не найден в группе альтернатив.", 404);
 		}
 		targetPlan = found;
 
@@ -318,10 +318,7 @@ export async function selectAndApprovePlanVariant(
 			.limit(1);
 
 		if (!single) {
-			const err = new Error("План лечения не найден.");
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			(err as any).statusCode = 404;
-			throw err;
+			throw createHttpError("План лечения не найден.", 404);
 		}
 		targetPlan = single;
 	}

@@ -99,18 +99,71 @@ export async function handleDicomwebStow(
 	const operatorLabel = identity.fullName ? ` [${identity.role === "doctor" ? "Врач" : "Сотрудник"}: ${identity.fullName}]` : doctorId ? ` [ID: ${doctorId}]` : "";
 
 	const result = await persistStowDicomEntities({
-		organizationId, parsed: parsed as any, resolvedPatientId: binding.resolvedPatientId, validDoctorId, validVisitId,
-		staffId, operatorLabel, bindingStatus: binding.bindingStatus, bindingConfidence: binding.bindingConfidence,
-		matchMethod: binding.matchMethod, matchDetailsText: binding.matchDetailsText, normalizedRelativePath, fileSizeOnDisk,
+		organizationId,
+		parsed: {
+			studyUid: parsed.studyUid,
+			seriesUid: parsed.seriesUid,
+			sopInstanceUid: parsed.sopInstanceUid,
+			sopClassUid: parsed.sopClassUid,
+			rows: parsed.rows,
+			columns: parsed.columns,
+			dicomPatientName: parsed.dicomPatientName,
+			dicomPatientId: parsed.dicomPatientId,
+			dicomBirthDate: parsed.dicomBirthDate,
+		},
+		resolvedPatientId: binding.resolvedPatientId,
+		validDoctorId,
+		validVisitId,
+		staffId,
+		operatorLabel,
+		bindingStatus: binding.bindingStatus,
+		bindingConfidence: binding.bindingConfidence,
+		matchMethod: binding.matchMethod,
+		matchDetailsText: binding.matchDetailsText,
+		normalizedRelativePath,
+		fileSizeOnDisk,
 	});
 
 	await auditMedicalAccessFromRequest(request, {
-		organizationId, action: "dicom_stow_stored",
-		metadata: { resource: "imaging_instances", resourceId: result.instanceId, studyUid: result.studyUid, seriesUid: result.seriesUid, sopInstanceUid: result.sopInstanceUid, patientId: result.patientId ?? undefined, doctorId: doctorId ?? undefined, staffId: staffId ?? undefined, matchMethod: result.matchMethod },
+		organizationId,
+		action: "dicom_stow_stored",
+		metadata: {
+			resource: "imaging_instances",
+			resourceId: result.instanceId,
+			studyUid: result.studyUid,
+			seriesUid: result.seriesUid,
+			sopInstanceUid: result.sopInstanceUid,
+			patientId: result.patientId ?? undefined,
+			doctorId: doctorId ?? undefined,
+			staffId: staffId ?? undefined,
+			matchMethod: result.matchMethod,
+		},
 	});
 
+	const sopClassUid = result.sopClassUid || parsed.sopClassUid || "1.2.840.10008.5.1.4.1.1.1";
+
 	return reply.code(200).send({
-		"00081199": { vr: "SQ", Value: [{ "00081150": { vr: "UI", Value: ["1.2.840.10008.5.1.4.1.1.1"] }, "00081155": { vr: "UI", Value: [result.sopInstanceUid] }, "00081190": { vr: "UR", Value: [`/api/dicomweb/studies/${result.studyUid}/series/${result.seriesUid}/instances/${result.sopInstanceUid}`] } }] },
-		studyId: result.studyId, instanceId: result.instanceId, patientId: result.patientId, bindingStatus: result.bindingStatus, bindingConfidence: result.bindingConfidence, matchMethod: result.matchMethod, status: "stored",
+		"00081199": {
+			vr: "SQ",
+			Value: [
+				{
+					"00081150": { vr: "UI", Value: [sopClassUid] },
+					"00081155": { vr: "UI", Value: [result.sopInstanceUid] },
+					"00081190": {
+						vr: "UR",
+						Value: [
+							`/api/dicomweb/studies/${result.studyUid}/series/${result.seriesUid}/instances/${result.sopInstanceUid}`,
+						],
+					},
+				},
+			],
+		},
+		studyId: result.studyId,
+		instanceId: result.instanceId,
+		patientId: result.patientId,
+		bindingStatus: result.bindingStatus,
+		bindingConfidence: result.bindingConfidence,
+		matchMethod: result.matchMethod,
+		status: "stored",
 	});
 }

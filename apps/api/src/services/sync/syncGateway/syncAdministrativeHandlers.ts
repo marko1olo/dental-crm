@@ -19,6 +19,11 @@ import {
 import { SyncQueueManager } from "./syncQueueManager.js";
 import type { EntityMutationHandlerResult } from "./types.js";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidUuid(val: unknown): val is string {
+	return typeof val === "string" && UUID_REGEX.test(val);
+}
+
 /**
  * Administrative mutation handlers (Financial Payments, Patient records, Appointments).
  */
@@ -53,9 +58,14 @@ export class SyncAdministrativeHandlers {
 		}
 
 		const amountRub = Number(payload.amountRub ?? 0);
+		if (!isValidUuid(payload.patientId)) {
+			throw new Error(
+				`Invalid or missing patientId UUID for payment mutation: ${String(payload.patientId)}`,
+			);
+		}
 		const patientId = String(payload.patientId);
-		const visitId = payload.visitId ? String(payload.visitId) : null;
-		const documentId = payload.documentId ? String(payload.documentId) : null;
+		const visitId = isValidUuid(payload.visitId) ? String(payload.visitId) : null;
+		const documentId = isValidUuid(payload.documentId) ? String(payload.documentId) : null;
 		const method =
 			(payload.method as
 				| "cash"
@@ -74,8 +84,7 @@ export class SyncAdministrativeHandlers {
 		const fiscalReceiptUrl = payload.fiscalReceiptUrl
 			? String(payload.fiscalReceiptUrl)
 			: null;
-		// biome-ignore lint/suspicious/noExplicitAny: fiscalReceipt payload
-		const fiscalReceipt = (payload.fiscalReceipt as any) ?? null;
+		const fiscalReceipt = payload.fiscalReceipt ?? null;
 
 		const [createdPayment] = await tx
 			.insert(payments)
@@ -177,9 +186,7 @@ export class SyncAdministrativeHandlers {
 					notes: newPatientPayload.notes
 						? String(newPatientPayload.notes)
 						: null,
-					// biome-ignore lint/suspicious/noExplicitAny: administrativeProfile
-					administrativeProfile:
-						(newPatientPayload.administrativeProfile as any) ?? null,
+					administrativeProfile: newPatientPayload.administrativeProfile ?? null,
 				})
 				.returning();
 
@@ -355,10 +362,10 @@ export class SyncAdministrativeHandlers {
 				.values({
 					id: mutation.entityId,
 					organizationId,
-					patientId: p.patientId ? String(p.patientId) : null,
-					doctorUserId: p.doctorUserId ? String(p.doctorUserId) : null,
-					assistantUserId: p.assistantUserId ? String(p.assistantUserId) : null,
-					chairId: p.chairId ? String(p.chairId) : null,
+					patientId: isValidUuid(p.patientId) ? String(p.patientId) : null,
+					doctorUserId: isValidUuid(p.doctorUserId) ? String(p.doctorUserId) : null,
+					assistantUserId: isValidUuid(p.assistantUserId) ? String(p.assistantUserId) : null,
+					chairId: isValidUuid(p.chairId) ? String(p.chairId) : null,
 					status: appointmentState,
 					startsAt,
 					endsAt,
@@ -387,13 +394,13 @@ export class SyncAdministrativeHandlers {
 		const merged = mergeResult.mergedEntity;
 		const updateData: Record<string, unknown> = {};
 		if ("patientId" in merged)
-			updateData.patientId = merged.patientId ? String(merged.patientId) : null;
+			updateData.patientId = isValidUuid(merged.patientId) ? String(merged.patientId) : null;
 		if ("doctorUserId" in merged)
-			updateData.doctorUserId = merged.doctorUserId
+			updateData.doctorUserId = isValidUuid(merged.doctorUserId)
 				? String(merged.doctorUserId)
 				: null;
 		if ("chairId" in merged)
-			updateData.chairId = merged.chairId ? String(merged.chairId) : null;
+			updateData.chairId = isValidUuid(merged.chairId) ? String(merged.chairId) : null;
 		if ("status" in merged && merged.status) {
 			const rawStat = String(merged.status);
 			updateData.status = (

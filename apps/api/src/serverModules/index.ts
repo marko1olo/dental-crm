@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 import { loadAdditionalServerEnv } from "../env/loadServerEnv.js";
 import {
 	applyHddPerformanceDefaults,
@@ -16,7 +16,7 @@ import {
 	type WorkerHandle,
 } from "../services/TaskQueueService.js";
 import { persistentOutboxService } from "../services/outbox/persistentOutboxService.js";
-import { dicomWatcherDaemon } from "../services/imaging/dicomFolderWatcherDaemon.js";
+import { dicomCrawlerDaemon } from "../services/dicom/DicomCrawlerDaemon.js";
 import { stopCloudRelayClient } from "../services/cloudRelayClient.js";
 import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
 import { getLanMeshService, resetLanMeshServiceForTest } from "../services/lanMeshService.js";
@@ -47,8 +47,7 @@ export async function createDenteApiApp(
 	options: CreateDenteApiAppOptions = {},
 ): Promise<FastifyInstance> {
 	const app = Fastify({
-		// biome-ignore lint/suspicious/noExplicitAny: Fastify logger config mapping
-		logger: getHddFastifyLoggerConfig() as any,
+		logger: getHddFastifyLoggerConfig() as FastifyServerOptions["logger"],
 		// За обратным прокси (nginx) реальный IP приходит в X-Forwarded-For.
 		// Без trustProxy rate-limit видит один и тот же адрес контейнера у всех
 		// клиентов. Включается явно, чтобы напрямую доступный API не доверял
@@ -84,10 +83,18 @@ export async function startDenteApiServer(): Promise<void> {
 		process.exit(1);
 	});
 	process.on("unhandledRejection", (reason, promise) => {
-		// biome-ignore lint/suspicious/noExplicitAny: error code inspection
+		const reasonObj =
+			typeof reason === "object" && reason !== null
+				? (reason as { code?: unknown; message?: unknown })
+				: null;
+		const reasonCode = typeof reasonObj?.code === "string" ? reasonObj.code : undefined;
+		const reasonMsg =
+			typeof reasonObj?.message === "string"
+				? reasonObj.message
+				: String(reason ?? "");
 		if (
-			(reason as any)?.code === "ERR_HTTP_HEADERS_SENT" ||
-			(reason as any)?.message?.includes?.("Cannot set headers after they are sent")
+			reasonCode === "ERR_HTTP_HEADERS_SENT" ||
+			reasonMsg.includes("Cannot set headers after they are sent")
 		) {
 			app.log.error(
 				{ reason, promise },
@@ -132,7 +139,7 @@ export async function startDenteApiServer(): Promise<void> {
 				stopLanDiscoveryService();
 				defaultDaemonScheduler.stop();
 				persistentOutboxService.stop();
-				dicomWatcherDaemon.stop();
+				dicomCrawlerDaemon.stop();
 				stopCloudRelayClient();
 				stopBiAnalyticsWorker();
 				resetLanMeshServiceForTest();

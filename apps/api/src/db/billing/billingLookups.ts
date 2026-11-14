@@ -1,9 +1,20 @@
 import type { Payment } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
-import { db } from "../client.js";
+import { db, type TenantDb } from "../client.js";
 import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import { narrowTaxDeductionCode } from "./types.js";
+
+export interface BillingDocumentLookupResult {
+	id: string;
+	organizationId: string;
+	patientId: string;
+	visitId: string | null;
+	kind: string;
+	status: string;
+	totalAmountRub: number | null;
+	[key: string]: unknown;
+}
 
 export async function getDefaultOrganizationId(): Promise<string | null> {
 	const [org] = await db.select().from(schema.organizations).limit(1);
@@ -137,7 +148,7 @@ export async function getDocumentForBilling(
 			)
 			.limit(1);
 		if (inv) {
-			return {
+			const invoiceDoc: BillingDocumentLookupResult = {
 				id: inv.id,
 				organizationId: inv.organizationId,
 				patientId: inv.patientId,
@@ -145,7 +156,8 @@ export async function getDocumentForBilling(
 				kind: "payment_invoice",
 				status: inv.status === "paid" ? "settled" : "issued",
 				totalAmountRub: inv.totalAmountRub ?? Number(inv.totalRub || 0),
-			} as any;
+			};
+			return invoiceDoc;
 		}
 		return null;
 	});
@@ -156,7 +168,7 @@ export async function getPaymentsByPatientIdInDb(
 	patientId: string,
 ): Promise<Payment[]> {
 	if (!patientId || !UUID_PATTERN.test(patientId.trim())) return [];
-	const runQuery = async (client: any) => {
+	const runQuery = async (client: TenantDb) => {
 		const res = await client
 			.select()
 			.from(schema.payments)
@@ -167,7 +179,7 @@ export async function getPaymentsByPatientIdInDb(
 				),
 			);
 		return res.map(
-			(p: any): Payment => ({
+			(p): Payment => ({
 				id: p.id,
 				organizationId: p.organizationId,
 				patientId: p.patientId,
@@ -187,14 +199,15 @@ export async function getPaymentsByPatientIdInDb(
 				payerRelationship: p.payerRelationship,
 				taxDeductionCode: narrowTaxDeductionCode(p.taxDeductionCode),
 				note: p.note,
-				createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
-				paidAt: p.paidAt instanceof Date ? p.paidAt.toISOString() : p.paidAt,
+				createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt),
+				paidAt: p.paidAt instanceof Date ? p.paidAt.toISOString() : String(p.paidAt),
 				status: p.status,
 			}),
 		);
 	};
 
-	if ((db.select as any)?.mock) {
+	const dbSelectWithMock = db.select as unknown as { mock?: unknown };
+	if (Boolean(dbSelectWithMock?.mock)) {
 		return runQuery(db);
 	}
 

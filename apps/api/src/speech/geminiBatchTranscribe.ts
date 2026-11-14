@@ -378,6 +378,20 @@ function parseGeminiBatchResponse(
 	}
 }
 
+interface GeminiGenerateContentBatchResponse {
+	candidates?: Array<{
+		content?: {
+			parts?: Array<{
+				text?: string;
+			}>;
+		};
+	}>;
+	error?: {
+		message?: string;
+		code?: number | string;
+	};
+}
+
 export async function transcribeGeminiBatch(
 	input: GeminiBatchTranscribeInput,
 ): Promise<GeminiBatchTranscribeResult> {
@@ -453,8 +467,9 @@ export async function transcribeGeminiBatch(
 			timeoutMs,
 		);
 
-		// biome-ignore lint/suspicious/noExplicitAny: JSON parsing from Google API
-		const payload = (await response.json().catch(() => ({}))) as any;
+		const payload = (await response
+			.json()
+			.catch(() => ({}))) as GeminiGenerateContentBatchResponse;
 		if (!response.ok) {
 			throw providerHttpError(
 				response.status,
@@ -508,8 +523,9 @@ export async function transcribeGeminiBatch(
 				timeoutMs,
 			);
 
-			// biome-ignore lint/suspicious/noExplicitAny: API json payload
-			const payload = (await response.json().catch(() => ({}))) as any;
+			const payload = (await response
+				.json()
+				.catch(() => ({}))) as GeminiGenerateContentBatchResponse;
 			if (!response.ok) {
 				throw providerHttpError(
 					response.status,

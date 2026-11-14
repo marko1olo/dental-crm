@@ -183,22 +183,19 @@ describe("SyncGatewayService & 3-Tier Multi-Level Synchronization Engine", () =>
 	});
 
 	// ── 5. Pull Changes Contract ─────────────────────────────────────────────
-	test("5. Pull Changes: query and response structure conforms to Sync contract", () => {
-		const samplePullResult = {
-			serverTime: new Date().toISOString(),
-			patients: [{ id: "p-1", fullName: "Тест" }],
-			visits: [{ id: "v-1", status: "draft" }],
-			visitDiaries: [{ id: "d-1", content: "Дневник" }],
-			payments: [{ id: "pay-1", amountRub: 1000 }],
-			vectors: [{ entityId: "p-1", currentVersion: 1 }],
-		};
+	test("5. Pull Changes: query and response structure conforms to Sync contract", async () => {
+		const orgId = "00000000-0000-0000-0000-000000000000";
+		const pullResult = await SyncGatewayService.pullChanges(orgId);
 
-		assert.ok(samplePullResult.serverTime);
-		assert.ok(Array.isArray(samplePullResult.patients));
-		assert.ok(Array.isArray(samplePullResult.visits));
-		assert.ok(Array.isArray(samplePullResult.visitDiaries));
-		assert.ok(Array.isArray(samplePullResult.payments));
-		assert.ok(Array.isArray(samplePullResult.vectors));
+		assert.ok(pullResult);
+		assert.ok(pullResult.serverTime);
+		assert.ok(Array.isArray(pullResult.patients));
+		assert.ok(Array.isArray(pullResult.visits));
+		assert.ok(Array.isArray(pullResult.visitDiaries));
+		assert.ok(Array.isArray(pullResult.payments));
+		assert.ok(Array.isArray(pullResult.appointments));
+		assert.ok(Array.isArray(pullResult.toothStates));
+		assert.ok(Array.isArray(pullResult.vectors));
 	});
 
 	// ── 6. LWW Fallback & Anti-Blind-Overwrite Invariant ──────────────────────
@@ -399,6 +396,75 @@ describe("SyncGatewayService & 3-Tier Multi-Level Synchronization Engine", () =>
 		assert.strictEqual(mergeResult.mergedEntity.complications, "Без осложнений");
 		// 3. Changed fields count exactly 3
 		assert.strictEqual(mergeResult.changedFields.length, 3);
+	});
+
+	// ── 10. SAVEPOINT Transaction Isolation Invariant ───────────────────────
+	test("10. Push Batch SAVEPOINT Isolation: failed mutation in batch is rejected without aborting remaining mutations", async () => {
+		const orgId = "dce70000-546f-4147-878f-3bcf77790001";
+		const validPatientId = `a1b2c3d4-0000-4000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+
+		// Mutation 1: Valid patient creation
+		const payload1 = { fullName: "Петров Пётр", phone: "+79991234567" };
+		const hash1 = computePayloadHash(payload1);
+		const mut1 = {
+			mutationId: `mut-savepoint-1-${Date.now()}`,
+			idempotencyKey: createCompositeIdempotencyKey(`mut-savepoint-1-${Date.now()}`, payload1),
+			payloadHash: hash1,
+			entityKind: "patient" as const,
+			entityId: validPatientId,
+			action: "create" as const,
+			payload: payload1,
+			updatedAt: new Date().toISOString(),
+		};
+
+		// Mutation 2: Invalid mutation (broken non-UUID patientId for payment) -> triggers rejection
+		const payload2 = { patientId: "not-a-uuid", amountRub: 1000 };
+		const hash2 = computePayloadHash(payload2);
+		const mut2 = {
+			mutationId: `mut-savepoint-2-${Date.now()}`,
+			idempotencyKey: createCompositeIdempotencyKey(`mut-savepoint-2-${Date.now()}`, payload2),
+			payloadHash: hash2,
+			entityKind: "payment" as const,
+			entityId: "22222222-2222-4222-8222-222222222222",
+			action: "create" as const,
+			payload: payload2,
+			updatedAt: new Date().toISOString(),
+		};
+
+		// Mutation 3: Valid patient update
+		const payload3 = { fullName: "Петров Пётр Сергеевич" };
+		const hash3 = computePayloadHash(payload3);
+		const mut3 = {
+			mutationId: `mut-savepoint-3-${Date.now()}`,
+			idempotencyKey: createCompositeIdempotencyKey(`mut-savepoint-3-${Date.now()}`, payload3),
+			payloadHash: hash3,
+			entityKind: "patient" as const,
+			entityId: validPatientId,
+			action: "update" as const,
+			payload: payload3,
+			updatedAt: new Date().toISOString(),
+		};
+
+		const batchResponse = await SyncGatewayService.processPushBatch(orgId, {
+			syncBatchId: `batch-savepoint-${Date.now()}`,
+			clientId: "offline-tablet-test",
+			mutations: [mut1, mut2, mut3],
+			sentAt: new Date().toISOString(),
+		});
+
+		assert.strictEqual(batchResponse.processedCount, 3);
+		assert.strictEqual(batchResponse.appliedCount, 1);
+		assert.strictEqual(batchResponse.mergedCount, 1);
+		assert.strictEqual(batchResponse.rejectedCount, 1);
+
+		const res1 = batchResponse.results.find((r) => r.mutationId === mut1.mutationId);
+		const res2 = batchResponse.results.find((r) => r.mutationId === mut2.mutationId);
+		const res3 = batchResponse.results.find((r) => r.mutationId === mut3.mutationId);
+
+		assert.strictEqual(res1?.status, "applied");
+		assert.strictEqual(res2?.status, "rejected");
+		assert.strictEqual(res3?.status, "conflict_resolved");
+		assert.ok(res2?.error?.includes("Invalid or missing patientId UUID"));
 	});
 });
 

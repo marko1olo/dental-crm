@@ -344,7 +344,7 @@ export const STATUTORY_DMS_PROGRAMS: Record<string, DmsProgramDefinition> & read
 		extended_surgery_hygiene: BASE_PROGRAM_LIST[2]!,
 		economy_emergency_only: BASE_PROGRAM_LIST[3]!,
 	},
-) as any;
+) as unknown as Record<string, DmsProgramDefinition> & readonly DmsProgramDefinition[];
 
 export const DMS_PROGRAMS = {
 	base: { id: "base", name: "Базовая терапия", defaultLimitKopecks: 5000000 },
@@ -664,12 +664,28 @@ export function calculateDmsCoPaymentSplitWithPayment(
 	};
 }
 
+export type ExtendedDmsSplitCalculationResult = DmsSplitCalculationResult & {
+	readonly totalBillKopecks?: number | undefined;
+	readonly totalInsuranceCoveredKopecks?: number | undefined;
+	readonly totalDmsCoveredKopecks?: number | undefined;
+	readonly dmsCoveredKopecks?: number | undefined;
+	readonly totalPatientOutOfPocketKopecks?: number | undefined;
+	readonly totalPatientCoPayKopecks?: number | undefined;
+	readonly patientTotalKopecks?: number | undefined;
+	readonly totalBillRubles?: number | undefined;
+	readonly totalInsuranceCoveredRubles?: number | undefined;
+	readonly totalPatientOutOfPocketRubles?: number | undefined;
+	readonly balanceInvariantHolds?: boolean | undefined;
+	readonly isBalanced?: boolean | undefined;
+	readonly [key: string]: unknown;
+};
+
 export function calculateDmsSplitInvoice(
 	items: readonly DmsBillableItem[],
 	programOrOptions?: { franchisePercent?: number | undefined } | unknown,
 	_policy?: DmsPolicy | unknown,
 	extraOptions?: { franchisePercent?: number | undefined; franchiseFixedKopecks?: number | undefined } | undefined,
-): DmsSplitCalculationResult {
+): ExtendedDmsSplitCalculationResult {
 	const franchisePercent = extraOptions?.franchisePercent ?? (typeof programOrOptions === "object" && programOrOptions !== null && "franchisePercent" in programOrOptions ? Number((programOrOptions as { franchisePercent?: number }).franchisePercent) : 0);
 	const res = calculateDmsCoPaymentSplit(items, { franchisePercent });
 	const totalBillKopecks = res.totalBillKopecks;
@@ -723,7 +739,7 @@ export function calculateDmsSplitInvoice(
 		totalPatientOutOfPocketRubles: kopecksToRub(patientOutOfPocketKopecks),
 		balanceInvariantHolds: totalBillKopecks === insuranceCoveredKopecks + patientOutOfPocketKopecks,
 		isBalanced: totalBillKopecks === insuranceCoveredKopecks + patientOutOfPocketKopecks,
-	} as any;
+	};
 }
 
 export function verifyServiceForDms(

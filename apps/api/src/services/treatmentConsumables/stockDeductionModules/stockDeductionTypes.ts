@@ -22,6 +22,7 @@ export interface ServiceDescriptor {
 	readonly rawToken: string;
 	readonly serviceId?: string | null;
 	readonly serviceCode?: string | null;
+	readonly statutoryCode?: string | null;
 	readonly order804nCode?: string | null;
 	readonly title?: string | null;
 }

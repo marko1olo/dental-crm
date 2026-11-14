@@ -78,8 +78,7 @@ export function decryptTelegramChatTransportRef(
 			"aes-256-gcm",
 			key,
 			Buffer.from(ivRaw, "base64url"),
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			{ authTagLength: 16 } as any,
+			{ authTagLength: 16 },
 		);
 		decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
 		return Buffer.concat([

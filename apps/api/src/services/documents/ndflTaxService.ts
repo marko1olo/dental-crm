@@ -151,7 +151,7 @@ export class NdflTaxService {
 			end = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
 		}
 
-		// 1. Проверка задолженности и анонимности (ст. 219 НК РФ, ПП РФ №659)
+		// 1. Проверка задолженности и анонимности (ст. 219 НК РФ, Приказ ФНС от 08.11.2023 № ЕА-7-11/824@)
 		const debtRub = patient.balanceRub < 0 ? Math.abs(patient.balanceRub) : 0;
 		let isBlocked = false;
 		let blockReason: string | null = null;
@@ -159,7 +159,7 @@ export class NdflTaxService {
 		if (isPatientAnonymous) {
 			isBlocked = true;
 			blockReason =
-				"Формирование справки для налогового вычета по форме КНД 1151156 для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено по ст. 219 НК РФ, Приказу ФНС от 08.11.2023 № ЕА-7-11/824@ и ПП РФ №659 (отсутствуют обязательные паспортные данные и ИНН налогоплательщика).";
+				"Формирование справки для налогового вычета по форме КНД 1151156 для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено по ст. 219 НК РФ и Приказу ФНС от 08.11.2023 № ЕА-7-11/824@ (отсутствуют обязательные паспортные данные и ИНН налогоплательщика).";
 		}
 
 		// 2. Получение оплат и выданных документов пациента (для учета частичных возвратов по ст. 219 НК РФ)
@@ -184,7 +184,17 @@ export class NdflTaxService {
 		const receipts: NdflTaxPreviewReceipt[] = [];
 
 		for (const pay of periodPayments) {
-			const payAny = pay as unknown as {
+			interface ReceiptItemLike {
+				id?: string;
+				name?: string;
+				category?: string;
+				code804n?: string;
+				amountKopecks?: number;
+				amountRub?: number | string;
+				priceRub?: number;
+				quantity?: number;
+			}
+			interface PaymentSplitMetadata {
 				serviceName?: string;
 				category?: string;
 				code804n?: string;
@@ -192,28 +202,29 @@ export class NdflTaxService {
 				code1AmountRub?: number;
 				code2AmountKopecks?: number;
 				code2AmountRub?: number;
-				items?: any[];
-				positions?: any[];
-				serviceLines?: any[];
-				fiscalReceipt?: { items?: any[] };
-			};
+				items?: ReceiptItemLike[];
+				positions?: ReceiptItemLike[];
+				serviceLines?: ReceiptItemLike[];
+				fiscalReceipt?: { fd?: string; items?: ReceiptItemLike[] } | null;
+			}
+			const payMeta = pay as unknown as PaymentSplitMetadata;
 
 			const serviceName =
-				payAny.serviceName || "Стоматологические медицинские услуги";
+				payMeta.serviceName || "Стоматологические медицинские услуги";
 			const note = pay.note || "";
 			const method = pay.method || "";
 			const receiptDate = pay.paidAt
 				? new Date(pay.paidAt).toISOString().split("T")[0] || ""
 				: "";
 			const fiscalDocNum =
-				(pay as Record<string, any>).fiscalReceipt?.fd ||
-				(pay as Record<string, any>).fiscalReceiptNumber ||
+				pay.fiscalReceipt?.fd ||
+				pay.fiscalReceiptNumber ||
 				null;
 
 			const rawAmountKop = parseKopecks(pay.amountRub);
 			const alreadyRefundedKop = alreadyRefundedKopecksForPayment(
 				pay.id,
-				patientDocuments as any,
+				patientDocuments,
 			);
 			const amountKop = Math.max(0, rawAmountKop - alreadyRefundedKop);
 
@@ -253,7 +264,7 @@ export class NdflTaxService {
 			}
 
 			// Проверка на немедицинский товар
-			if (isNonMedicalGood(serviceName, payAny.category)) {
+			if (isNonMedicalGood(serviceName, payMeta.category)) {
 				excludedNonMedicalKopecks += amountKop;
 				excludedNonMedicalCount += 1;
 				receipts.push({
@@ -272,9 +283,9 @@ export class NdflTaxService {
 			}
 
 			// [DOC-07 Fix]: Автоматическое разделение смешанного чека на Код 1 и Код 2 (ПП РФ №458)
-			const c1Explicit = payAny.code1AmountKopecks ?? (payAny.code1AmountRub != null ? parseKopecks(payAny.code1AmountRub) : undefined);
-			const c2Explicit = payAny.code2AmountKopecks ?? (payAny.code2AmountRub != null ? parseKopecks(payAny.code2AmountRub) : undefined);
-			const items: any[] = payAny.items || payAny.positions || payAny.serviceLines || payAny.fiscalReceipt?.items || [];
+			const c1Explicit = payMeta.code1AmountKopecks ?? (payMeta.code1AmountRub != null ? parseKopecks(payMeta.code1AmountRub) : undefined);
+			const c2Explicit = payMeta.code2AmountKopecks ?? (payMeta.code2AmountRub != null ? parseKopecks(payMeta.code2AmountRub) : undefined);
+			const items: ReceiptItemLike[] = payMeta.items || payMeta.positions || payMeta.serviceLines || payMeta.fiscalReceipt?.items || [];
 			const noteText = typeof pay.note === "string" ? pay.note : "";
 			const c2Match = noteText.match(/код\s*2\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
 			const c1Match = noteText.match(/код\s*1\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
@@ -435,7 +446,7 @@ export class NdflTaxService {
 				// 4. Обычная классификация чека целиком
 				const deductionCode =
 					pay.taxDeductionCode === "2" ||
-					classifyNdflServiceCode(serviceName, payAny.code804n) === "2"
+					classifyNdflServiceCode(serviceName, payMeta.code804n) === "2"
 						? "2"
 						: "1";
 

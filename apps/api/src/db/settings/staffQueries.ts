@@ -101,13 +101,14 @@ export async function updateStaffWorkingHoursInDb(
 	input: UpdateStaffWorkingHoursInput | StaffMember["workingHours"] | null | undefined,
 ) {
 	if (!input) return;
-	const workingHoursInput: UpdateStaffWorkingHoursInput =
-		Array.isArray(input) ? { workingHours: input } : input;
+	const workingHours = Array.isArray(input) ? input : input.workingHours;
+	if (!workingHours) return;
+	const workingHoursInput: UpdateStaffWorkingHoursInput = { workingHours };
 	if (useInMemory())
 		return updateStaffWorkingHoursInMemory(staffId, workingHoursInput);
 	await db
 		.update(schema.users)
-		.set({ workingHours: workingHoursInput.workingHours })
+		.set({ workingHours })
 		.where(
 			and(
 				eq(schema.users.id, staffId),

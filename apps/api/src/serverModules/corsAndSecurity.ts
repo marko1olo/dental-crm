@@ -113,8 +113,8 @@ export async function setupProxyAndTunnels() {
 	}
 
 	// Register global agent for direct undici fetches
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	(globalThis as any)._dentalProxyAgent = getProxyAgent() || undefined;
+	(globalThis as typeof globalThis & { _dentalProxyAgent?: unknown })._dentalProxyAgent =
+		getProxyAgent() || undefined;
 }
 
 export function resolveWebOrigins(): (string | RegExp)[] {

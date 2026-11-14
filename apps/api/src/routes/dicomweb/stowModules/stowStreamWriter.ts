@@ -36,8 +36,11 @@ export async function streamDicomPayloadToDisk(
 		return { bytesWritten: await writeSyncBufferPayload(targetPath, Buffer.from(bodyObj.data as number[]), maxBytes) };
 	}
 
-	const sourceStream = request.body && typeof (request.body as any).pipe === "function"
-		? (request.body as NodeJS.ReadableStream)
+	const isStreamLike = (val: unknown): val is NodeJS.ReadableStream =>
+		val !== null && typeof val === "object" && "pipe" in val && typeof (val as { pipe: unknown }).pipe === "function";
+
+	const sourceStream = isStreamLike(request.body)
+		? request.body
 		: (request.raw as NodeJS.ReadableStream);
 
 	const writeStream = createWriteStream(targetPath);

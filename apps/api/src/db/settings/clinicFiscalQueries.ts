@@ -312,8 +312,7 @@ export async function updateClinicFiscalSettingsInDb(
 		boxes[0];
 
 	if (targetBox) {
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic columns update
-		const boxUpdate: Record<string, any> = {
+		const boxUpdate: Partial<typeof schema.cashBoxes.$inferInsert> = {
 			updatedAt: new Date(),
 		};
 		if (input.cashBoxName !== undefined && input.cashBoxName.trim().length > 0) {

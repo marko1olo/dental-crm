@@ -54,7 +54,7 @@ describe("Backend Payment Creation Pipeline Split Resolver", () => {
 					electronicAmountRub: 2000, // 4000 != 5000
 				});
 			},
-			(err: any) => err.message.includes("не совпадает с общей суммой"),
+			(err: unknown) => (err as Error).message.includes("не совпадает с общей суммой"),
 		);
 	});
 });

@@ -7,14 +7,21 @@ export interface StowSeriesInstanceParams {
 	studyId: string;
 	seriesUid: string;
 	sopInstanceUid: string;
+	sopClassUid?: string | null | undefined;
 	normalizedRelativePath: string;
 	rows?: number | undefined;
 	columns?: number | undefined;
+	tx?: {
+		select: typeof db.select;
+		insert: typeof db.insert;
+		update: typeof db.update;
+	};
 }
 
 export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams): Promise<{ seriesId: string; instanceId: string }> {
+	const dbClient = p.tx ?? db;
 	// 1. Series
-	let [series] = await db
+	let [series] = await dbClient
 		.select({ id: schema.imagingSeries.id })
 		.from(schema.imagingSeries)
 		.where(
@@ -27,7 +34,7 @@ export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams):
 		.limit(1);
 
 	if (!series) {
-		const [createdSeries] = await db
+		const [createdSeries] = await dbClient
 			.insert(schema.imagingSeries)
 			.values({
 				organizationId: p.organizationId,
@@ -42,7 +49,7 @@ export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams):
 	}
 
 	// 2. Instance
-	let [instance] = await db
+	let [instance] = await dbClient
 		.select({ id: schema.imagingInstances.id })
 		.from(schema.imagingInstances)
 		.where(
@@ -55,12 +62,14 @@ export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams):
 		.limit(1);
 
 	if (!instance) {
-		const [createdInstance] = await db
+		const [createdInstance] = await dbClient
 			.insert(schema.imagingInstances)
 			.values({
 				organizationId: p.organizationId,
 				seriesId: series.id,
 				dicomSopInstanceUid: p.sopInstanceUid,
+				sopInstanceUid: p.sopInstanceUid,
+				sopClassUid: p.sopClassUid ?? "1.2.840.10008.5.1.4.1.1.1",
 				storagePath: p.normalizedRelativePath,
 				rows: p.rows,
 				columns: p.columns,
@@ -69,10 +78,11 @@ export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams):
 		if (!createdInstance) throw new Error("Не удалось создать запись экземпляра");
 		instance = createdInstance;
 	} else {
-		await db
+		await dbClient
 			.update(schema.imagingInstances)
 			.set({
 				storagePath: p.normalizedRelativePath,
+				sopClassUid: p.sopClassUid ?? schema.imagingInstances.sopClassUid,
 				rows: p.rows,
 				columns: p.columns,
 			})

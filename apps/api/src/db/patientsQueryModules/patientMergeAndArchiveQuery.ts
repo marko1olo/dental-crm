@@ -1,6 +1,9 @@
-import type { CreatePatientInput, Patient } from "@dental/shared";
+import type { CreatePatientInput, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import { eq, sql } from "drizzle-orm";
-import { canonicalizeHomoglyphs } from "../../services/patients/duplicateDetection.js";
+import {
+	canonicalizeHomoglyphs,
+	type PatientDuplicateCandidate,
+} from "../../services/patients/duplicateDetection.js";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
 import {
@@ -14,8 +17,7 @@ import type { CreatePatientSafeResult } from "./types.js";
 export async function createPatientSafeInDb(
 	organizationId: string,
 	input: CreatePatientInput,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	duplicateCheckFn: (patients: any[], input: CreatePatientInput) => any,
+	duplicateCheckFn: (patients: readonly PatientDuplicateCandidate[], input: CreatePatientInput) => unknown,
 ): Promise<CreatePatientSafeResult> {
 	if (useInMemory()) {
 		const dbPatients = await getPatientsFromDb(organizationId);
@@ -103,7 +105,7 @@ export async function createPatientSafeInDb(
 					input.weightKg !== undefined && input.weightKg !== null
 						? String(input.weightKg)
 						: null,
-				administrativeProfile: (mergedAdminProfile as any) ?? null,
+				administrativeProfile: (mergedAdminProfile as Partial<PatientAdministrativeProfile>) ?? null,
 			})
 			.returning();
 

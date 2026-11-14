@@ -89,7 +89,7 @@ export function dentalMedicalCard043u(
 		: "";
 	const toothFormula = renderGraphicalDentalFormulaHtml({
 		clinicalToothRows: payload.clinicalToothRows,
-		dentalFormula: (payload as any).dentalFormula,
+		dentalFormula: (payload as { dentalFormula?: Record<string, unknown> }).dentalFormula,
 		title: "Графическая зубная формула (FDI 11–48 / 51–85)",
 	});
 	const toothSection =

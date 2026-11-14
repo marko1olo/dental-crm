@@ -51,6 +51,29 @@ export interface PoolWatchdogOptions {
 	};
 }
 
+interface PgClientConnectionStream {
+	readonly destroyed?: boolean;
+	readonly writable?: boolean;
+	readonly readable?: boolean;
+	readonly destroy?: () => void;
+}
+
+interface PgClientInternals {
+	readonly end?: () => void;
+	readonly connection?: { readonly stream?: PgClientConnectionStream };
+	readonly [key: string]: unknown;
+}
+
+interface PgPoolInternals {
+	readonly _idle?: readonly (PgClientInternals | { readonly client?: PgClientInternals } | null | undefined)[];
+	readonly _clients?: readonly (PgClientInternals | null | undefined)[];
+	readonly _remove?: (client: unknown) => void;
+	readonly totalCount?: number;
+	readonly idleCount?: number;
+	readonly waitingCount?: number;
+	readonly [key: string]: unknown;
+}
+
 class ConnectionPoolWatchdog {
 	private timer: NodeJS.Timeout | null = null;
 	private targetPool: pg.Pool;
@@ -211,8 +234,7 @@ class ConnectionPoolWatchdog {
 	 */
 	public drainDeadSockets(): { drainedCount: number } {
 		let drained = 0;
-		// biome-ignore lint/suspicious/noExplicitAny: pg.Pool internals access
-		const p = this.targetPool as any;
+		const p = this.targetPool as unknown as PgPoolInternals;
 
 		try {
 			// 1. Evict all idle connections that might have closed or hung
@@ -348,8 +370,7 @@ class ConnectionPoolWatchdog {
 	 * Returns current health telemetry snapshot.
 	 */
 	public getHealthReport(): PoolHealthReport {
-		// biome-ignore lint/suspicious/noExplicitAny: pg.Pool metric access
-		const p = this.targetPool as any;
+		const p = this.targetPool as unknown as PgPoolInternals;
 		return {
 			status: this.status,
 			lastCheckAt: this.lastCheckAt,

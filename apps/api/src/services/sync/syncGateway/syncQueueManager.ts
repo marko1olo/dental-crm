@@ -91,8 +91,10 @@ export class SyncQueueManager {
 	}): Promise<SyncMutationResult | null> {
 		const { tx, organizationId, mutation, calculatedHash, currentServerEntity } = params;
 
-		try {
-			await tx.insert(syncIdempotencyRecords).values({
+		// Use PostgreSQL ON CONFLICT DO NOTHING to prevent aborting transaction (25P02) on race condition
+		const [inserted] = await tx
+			.insert(syncIdempotencyRecords)
+			.values({
 				organizationId,
 				idempotencyKey: mutation.idempotencyKey,
 				payloadHash: calculatedHash,
@@ -102,36 +104,42 @@ export class SyncQueueManager {
 				responseStatus: 200,
 				responseJson: currentServerEntity ?? null,
 				clientMutationVector: mutation.mutationVector ?? null,
-			});
-			return null;
-		} catch {
-			// Concurrent race: If another worker inserted the same idempotency key simultaneously,
-			// query the existing record and return duplicate status.
-			const [raceRecord] = await tx
-				.select()
-				.from(syncIdempotencyRecords)
-				.where(
-					and(
-						eq(syncIdempotencyRecords.organizationId, organizationId),
-						eq(syncIdempotencyRecords.idempotencyKey, mutation.idempotencyKey),
-					),
-				)
-				.limit(1);
+			})
+			.onConflictDoNothing({
+				target: [syncIdempotencyRecords.organizationId, syncIdempotencyRecords.idempotencyKey],
+			})
+			.returning();
 
-			if (raceRecord) {
-				return {
-					mutationId: mutation.mutationId,
-					idempotencyKey: mutation.idempotencyKey,
-					status: "duplicate",
-					entityKind: mutation.entityKind,
-					entityId: mutation.entityId,
-					appliedAt: raceRecord.createdAt.toISOString(),
-					currentServerEntity: raceRecord.responseJson ?? undefined,
-				};
-			}
-
+		if (inserted) {
 			return null;
 		}
+
+		// Concurrent race: Another worker inserted the same idempotency key simultaneously.
+		// Query the existing record safely without transaction abort.
+		const [raceRecord] = await tx
+			.select()
+			.from(syncIdempotencyRecords)
+			.where(
+				and(
+					eq(syncIdempotencyRecords.organizationId, organizationId),
+					eq(syncIdempotencyRecords.idempotencyKey, mutation.idempotencyKey),
+				),
+			)
+			.limit(1);
+
+		if (raceRecord) {
+			return {
+				mutationId: mutation.mutationId,
+				idempotencyKey: mutation.idempotencyKey,
+				status: "duplicate",
+				entityKind: mutation.entityKind,
+				entityId: mutation.entityId,
+				appliedAt: raceRecord.createdAt.toISOString(),
+				currentServerEntity: (raceRecord.responseJson as Record<string, unknown> | null) ?? undefined,
+			};
+		}
+
+		return null;
 	}
 
 	/**
@@ -180,10 +188,20 @@ export class SyncQueueManager {
 	}
 
 	/**
-	 * Enqueues mutation into in-memory offline buffer for retry policies.
+	 * Enqueues mutation into in-memory offline buffer for retry policies with bounded FIFO retention.
 	 */
 	public static enqueueOfflineMutation(item: SyncQueueItem): void {
+		if (this.offlineQueue.length >= 1000) {
+			this.offlineQueue.shift(); // Evict oldest entry to prevent memory exhaustion
+		}
 		this.offlineQueue.push(item);
+	}
+
+	/**
+	 * Clears offline queue buffer for test isolation and cache lifecycle management.
+	 */
+	public static clearOfflineQueue(): void {
+		this.offlineQueue = [];
 	}
 
 	/**

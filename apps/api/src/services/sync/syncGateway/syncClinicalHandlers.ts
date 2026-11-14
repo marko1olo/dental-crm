@@ -22,6 +22,11 @@ import {
 import { SyncQueueManager } from "./syncQueueManager.js";
 import type { EntityMutationHandlerResult } from "./types.js";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidUuid(val: unknown): boolean {
+	return typeof val === "string" && UUID_REGEX.test(val);
+}
+
 /**
  * Clinical mutation handlers (Medical Visits, Visit Diaries, Odontogram & Tooth States).
  */
@@ -80,13 +85,22 @@ export class SyncClinicalHandlers {
 
 			if (!serverDiary) {
 				const p = mergeResult.mergedEntity;
+				const rawVisitId = p.visitId ?? (mutation.payload as Record<string, unknown> | undefined)?.visitId;
+				if (!isValidUuid(rawVisitId)) {
+					throw new Error(
+						`Invalid or missing visitId UUID for visit_diary mutation: ${String(rawVisitId)}`,
+					);
+				}
+				const validVisitId = String(rawVisitId);
+				const validPatientId = isValidUuid(p.patientId) ? String(p.patientId) : null;
+
 				const [inserted] = await tx
 					.insert(visitDiaries)
 					.values({
 						id: mutation.entityId,
 						organizationId,
-						visitId: String(p.visitId || mutation.entityId),
-						patientId: p.patientId ? String(p.patientId) : null,
+						visitId: validVisitId,
+						patientId: validPatientId,
 						authorId: authorUserId || mutation.authorUserId || null,
 						anamnesis: p.anamnesis ? String(p.anamnesis) : null,
 						statusLocalis: p.statusLocalis ? String(p.statusLocalis) : null,
@@ -214,13 +228,22 @@ export class SyncClinicalHandlers {
 
 		if (!serverVisit) {
 			const p = mergeResult.mergedEntity;
+			const rawPatientId = p.patientId ?? (mutation.payload as Record<string, unknown> | undefined)?.patientId;
+			if (!isValidUuid(rawPatientId)) {
+				throw new Error(
+					`Invalid or missing patientId UUID for visit mutation: ${String(rawPatientId)}`,
+				);
+			}
+			const validPatientId = String(rawPatientId);
+			const validAppointmentId = isValidUuid(p.appointmentId) ? String(p.appointmentId) : null;
+
 			const [inserted] = await tx
 				.insert(visits)
 				.values({
 					id: mutation.entityId,
 					organizationId,
-					patientId: String(p.patientId),
-					appointmentId: p.appointmentId ? String(p.appointmentId) : null,
+					patientId: validPatientId,
+					appointmentId: validAppointmentId,
 					status: (p.status as "draft" | "signed" | "voided") || "draft",
 					complaint: p.complaint ? String(p.complaint) : null,
 					anamnesis: p.anamnesis ? String(p.anamnesis) : null,
@@ -229,8 +252,7 @@ export class SyncClinicalHandlers {
 					treatmentPlan: p.treatmentPlan ? String(p.treatmentPlan) : null,
 					doctorSummary: p.doctorSummary ? String(p.doctorSummary) : null,
 					transcript: p.transcript ? String(p.transcript) : null,
-					// biome-ignore lint/suspicious/noExplicitAny: draftAutosave
-					draftAutosave: (p.draftAutosave as any) ?? null,
+					draftAutosave: p.draftAutosave ?? null,
 					revision: 1,
 				})
 				.returning();
@@ -323,11 +345,23 @@ export class SyncClinicalHandlers {
 
 		const teethList = parseTeethFromPayload(payload, mutation.entityId);
 
-		const patientId = String(
-			payload.patientId ||
-				mutation.entityId.split(":")[0] ||
-				mutation.entityId,
-		);
+		let patientId: string | null = null;
+		if (isValidUuid(payload.patientId)) {
+			patientId = String(payload.patientId);
+		} else if (isValidUuid(mutation.entityId)) {
+			patientId = mutation.entityId;
+		} else {
+			const candidate = mutation.entityId.split(":")[0];
+			if (candidate && isValidUuid(candidate)) {
+				patientId = candidate;
+			}
+		}
+
+		if (!patientId) {
+			throw new Error(
+				`Invalid or missing patientId UUID for odontogram_state mutation: ${String(payload.patientId || mutation.entityId)}`,
+			);
+		}
 
 		const [vectorRow] = await tx
 			.select()
@@ -374,8 +408,7 @@ export class SyncClinicalHandlers {
 					previousState: serverTooth?.state ?? null,
 					newState: conflictCheck.effectiveState,
 					previousSurfaces: serverTooth?.surfaces ?? null,
-					// biome-ignore lint/suspicious/noExplicitAny: surfaces
-					newSurfaces: (conflictCheck.effectiveSurfaces as any) ?? null,
+					newSurfaces: conflictCheck.effectiveSurfaces ?? null,
 					changedByUserId: effectiveAuthorId,
 					reason: conflictCheck.isMerged
 						? "Оффлайн-синхронизация одонтограммы (Surface Union Merge)"
@@ -391,8 +424,7 @@ export class SyncClinicalHandlers {
 							patientId,
 							toothNumber: toothItem.toothNumber,
 							state: conflictCheck.effectiveState,
-							// biome-ignore lint/suspicious/noExplicitAny: surfaces
-							surfaces: (conflictCheck.effectiveSurfaces as any) ?? null,
+							surfaces: conflictCheck.effectiveSurfaces ?? null,
 							notes: toothItem.notes,
 							updatedAt: incomingDate,
 							isSynced: true,
@@ -413,8 +445,7 @@ export class SyncClinicalHandlers {
 						.update(toothStates)
 						.set({
 							state: conflictCheck.effectiveState,
-							// biome-ignore lint/suspicious/noExplicitAny: surfaces
-							surfaces: (conflictCheck.effectiveSurfaces as any) ?? null,
+							surfaces: conflictCheck.effectiveSurfaces ?? null,
 							notes:
 								toothItem.notes !== null
 									? toothItem.notes
@@ -451,8 +482,7 @@ export class SyncClinicalHandlers {
 					previousState: null,
 					newState: toothItem.state,
 					previousSurfaces: null,
-					// biome-ignore lint/suspicious/noExplicitAny: surfaces
-					newSurfaces: (toothItem.surfaces as any) ?? null,
+					newSurfaces: toothItem.surfaces ?? null,
 					changedByUserId: effectiveAuthorId,
 					reason: "Оффлайн-синхронизация (LWW архив)",
 					changedAt: incomingDate,

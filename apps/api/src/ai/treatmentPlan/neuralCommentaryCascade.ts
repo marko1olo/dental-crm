@@ -130,12 +130,52 @@ ${s.items.map((it) => `    * [Зуб ${it.toothNumber || "—"}] ${it.code804n ?
 	return { system, user };
 }
 
-export async function callLlmJson(
+interface ChatCompletionResponsePayload {
+	choices?: Array<{
+		message?: {
+			content?: string | null;
+		};
+	}>;
+	error?: {
+		message?: string;
+		code?: string | number;
+	};
+}
+
+export interface NeuralTreatmentPlanLlmResponse {
+	clinicalValidation?: {
+		criticalWarnings?: string[];
+		clinicalRecommendations?: string[];
+	};
+	chairsideCommentary?: {
+		patientFriendlySummary?: string;
+		urgencyArgument?: string;
+		hygieneAndCareAdvice?: string;
+		stageByStageExplanation?: Array<{
+			stageNumber: number;
+			stageTitle: string;
+			plainRussianDescription: string;
+			patientBenefit: string;
+		}>;
+	};
+	copilotSuggestions?: {
+		budgetOptimizationAdvice?: string;
+		suggestedModifications?: Array<{
+			type: string;
+			title: string;
+			description: string;
+			estimatedDeltaRub: number;
+		}>;
+	};
+	[key: string]: unknown;
+}
+
+export async function callLlmJson<T = NeuralTreatmentPlanLlmResponse>(
 	systemPrompt: string,
 	userPrompt: string,
 	providerInfo: (typeof AI_MODEL_CASCADE)[0],
 	apiKey: string,
-): Promise<any> {
+): Promise<T> {
 	const requestBody = {
 		model: providerInfo.model,
 		temperature: 0.2,
@@ -159,7 +199,9 @@ export async function callLlmJson(
 		numberFromEnv("DENTAL_SPEECH_POLISH_TIMEOUT_MS", 45_000),
 	);
 
-	const data = (await response.json().catch(() => ({}))) as any;
+	const data = (await response
+		.json()
+		.catch(() => ({}))) as ChatCompletionResponsePayload;
 	if (!response.ok) {
 		throw providerHttpError(
 			response.status,
@@ -174,10 +216,10 @@ export async function callLlmJson(
 	}
 
 	try {
-		return JSON.parse(content.trim());
+		return JSON.parse(content.trim()) as T;
 	} catch {
 		const match = content.match(/\{[\s\S]*\}/);
-		if (match?.[0]) return JSON.parse(match[0]);
+		if (match?.[0]) return JSON.parse(match[0]) as T;
 		throw new Error("Ответ модели не содержит валидного JSON.");
 	}
 }

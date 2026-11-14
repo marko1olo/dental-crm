@@ -459,6 +459,18 @@ export function recordProviderKeySuccess(
 	saveKeyHealthToDisk();
 }
 
+function extractErrorStatusCode(error: unknown): number | null {
+	if (error instanceof SpeechProviderRequestError) {
+		return error.statusCode;
+	}
+	if (typeof error === "object" && error !== null) {
+		const rec = error as Record<string, unknown>;
+		if (typeof rec.statusCode === "number") return rec.statusCode;
+		if (typeof rec.status === "number") return rec.status;
+	}
+	return null;
+}
+
 export function recordProviderKeyFailure(
 	providerId: KeyPoolProviderId,
 	candidate: SpeechProviderKeyCandidate,
@@ -467,11 +479,7 @@ export function recordProviderKeyFailure(
 	const previous = healthFor(providerId, candidate);
 	const requestError =
 		error instanceof SpeechProviderRequestError ? error : null;
-	const statusCode =
-		requestError?.statusCode ??
-		(typeof (error as any)?.statusCode === "number"
-			? (error as any).statusCode
-			: null);
+	const statusCode = extractErrorStatusCode(error);
 	const errorMessage = sanitizeProviderErrorMessage(
 		error instanceof Error ? error.message : String(error ?? ""),
 	);

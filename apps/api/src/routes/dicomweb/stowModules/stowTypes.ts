@@ -20,6 +20,7 @@ export interface StowStoreResult {
 	studyUid: string;
 	seriesUid: string;
 	sopInstanceUid: string;
+	sopClassUid?: string | null;
 	storagePath: string;
 	studyId: string;
 	seriesId: string;

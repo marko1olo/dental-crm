@@ -54,7 +54,7 @@ describe("Inventory Query & FEFO Goods Receipt Pipeline (Mandate 8s, 8x)", () =>
 		};
 
 		// Mock transaction executor to verify pre-flight guard
-		const dummyTx = {} as any;
+		const dummyTx = {} as unknown as Parameters<typeof inventoryQuery.receiveGoodsReceiptInvoice>[0];
 		await assert.rejects(
 			async () => {
 				await inventoryQuery.receiveGoodsReceiptInvoice(dummyTx, emptyInvoice);

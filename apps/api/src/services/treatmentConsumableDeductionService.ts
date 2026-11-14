@@ -28,6 +28,7 @@ import {
 } from "../db/schema.js";
 import { DEFAULT_804N_BOM_SEEDS } from "./inventory/defaultBomSeeds.js";
 import { fefoStockService } from "./inventory/fefoStockService.js";
+import type { DbTransaction } from "./inventory/fefo/types.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -368,7 +369,7 @@ export class TreatmentConsumableDeductionService {
 				}
 
 				// Execute FEFO batch deduction
-				await fefoStockService.deductFefo(tx as any, {
+				await fefoStockService.deductFefo(tx as DbTransaction, {
 					organizationId,
 					inventoryItemId: item.id,
 					requiredQty: convertedRequestedQty,

@@ -203,10 +203,10 @@ export function projectServiceCatalogRows(
 			durationMinutes,
 			taxDeductible: row.taxDeductible,
 			active: row.isActive,
-			order804nCode: row.order804nCode ?? (row as any).order_804n_code ?? null,
+			order804nCode: row.order804nCode ?? null,
 			materialsCostRub: row.materialsCostRub !== null && row.materialsCostRub !== undefined ? Number(row.materialsCostRub) : 0,
-			labCostRub: (row as any).labCostRub !== null && (row as any).labCostRub !== undefined ? Number((row as any).labCostRub) : 0,
-			tierPrices: ((row as any).tierPrices && typeof (row as any).tierPrices === "object") ? (row as any).tierPrices : {},
+			labCostRub: row.labCostRub !== null && row.labCostRub !== undefined ? Number(row.labCostRub) : 0,
+			tierPrices: (row.tierPrices && typeof row.tierPrices === "object") ? (row.tierPrices as Record<string, unknown>) : {},
 			priceKopecks: Math.round(basePriceRub * 100),
 		});
 

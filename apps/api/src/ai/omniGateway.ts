@@ -6,9 +6,22 @@
 
 import { z } from "zod";
 import { createChatCompletion } from "./agentRouterClient.js";
+import type { AgentRouterRole } from "./router/routerTypes.js";
 import type { ChatOptions } from "./omniGatewayTypes.js";
 
 export * from "./omniGatewayTypes.js";
+
+function normalizeAgentRouterRole(role: string): AgentRouterRole {
+	if (
+		role === "system" ||
+		role === "user" ||
+		role === "assistant" ||
+		role === "tool"
+	) {
+		return role;
+	}
+	return "user";
+}
 
 export class OmniLlmGateway {
 	public async generateStructuredJson<T>(
@@ -25,7 +38,10 @@ export class OmniLlmGateway {
 		const res = await createChatCompletion({
 			messages: [
 				{ role: "system", content: systemInstruction },
-				...messages.map((m) => ({ role: m.role as any, content: m.content })),
+				...messages.map((m) => ({
+					role: normalizeAgentRouterRole(m.role),
+					content: m.content,
+				})),
 			],
 			temperature: options.temperature ?? 0.1,
 		});

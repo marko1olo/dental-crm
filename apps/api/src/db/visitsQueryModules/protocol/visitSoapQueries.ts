@@ -164,8 +164,8 @@ export async function upsertVisitDraftAutosaveInDb(
 				diagnosis: nextDiagnosis,
 				treatmentPlan: nextTreatmentPlan,
 				hygieneIndices:
-					(input as any).hygieneIndices ??
-					(input.draft as any).hygieneIndices ??
+					input.hygieneIndices ??
+					(input.draft as { hygieneIndices?: unknown })?.hygieneIndices ??
 					visit.hygieneIndices ??
 					null,
 				updatedAt: now,

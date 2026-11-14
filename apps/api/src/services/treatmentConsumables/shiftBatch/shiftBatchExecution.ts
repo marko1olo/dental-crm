@@ -8,6 +8,19 @@ import { executeUnifiedStockDeduction } from "../unifiedStockDeductionEngine.js"
 import { getShiftConsumablesSummary } from "./shiftSummaryQueries.js";
 import type { ExecuteShiftBatchDeductionParams, ExecuteShiftBatchDeductionResult } from "./shiftBatchTypes.js";
 
+interface ShiftBatchTargetItem {
+	itemId?: string | null | undefined;
+	id?: string | null | undefined;
+	inventoryItemId?: string | null | undefined;
+	qty?: number | string | null | undefined;
+	quantity?: number | string | null | undefined;
+	qtyToDeduct?: number | string | null | undefined;
+	name?: string | null | undefined;
+	itemName?: string | null | undefined;
+	category?: string | null | undefined;
+	unit?: string | null | undefined;
+}
+
 export async function executeShiftBatchDeduction(
 	tx: DbExecutor,
 	params: ExecuteShiftBatchDeductionParams,
@@ -20,7 +33,7 @@ export async function executeShiftBatchDeduction(
 		sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':shift_deduct:' || ${effectiveDate}))`,
 	);
 
-	let targets = items ?? [];
+	let targets: ShiftBatchTargetItem[] = items ?? [];
 	if (targets.length === 0) {
 		const summary = await getShiftConsumablesSummary(tx, organizationId, effectiveDate);
 		targets = summary.consumablesSummary.map((c) => ({
@@ -34,10 +47,10 @@ export async function executeShiftBatchDeduction(
 		return { success: true, isOverdraft: false, date: effectiveDate, deductedItems: [], warnings: [], message: "Нет позиций для списания." };
 	}
 
-	const unifiedItems = targets.map((t: any) => {
+	const unifiedItems = targets.map((t: ShiftBatchTargetItem) => {
 		const rawQty = Number(t.qty ?? t.quantity ?? t.qtyToDeduct ?? 1);
 		const effectiveQty = Number.isFinite(rawQty) && rawQty > 0 ? rawQty : 1;
-		const effectiveId = t.itemId || t.id || t.inventoryItemId || null;
+		const effectiveId = t.itemId || t.id || t.inventoryItemId || undefined;
 		return {
 			exactItemId: effectiveId,
 			defaultName: t.name || t.itemName || `Материал ${effectiveId || "без ID"}`,

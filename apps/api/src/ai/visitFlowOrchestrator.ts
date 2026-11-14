@@ -1,4 +1,5 @@
 import type {
+	PostVisitCareTopic,
 	PostVisitRecommendationsPayload,
 	TreatmentPlanPayload,
 	VisitFlowRequest,
@@ -24,8 +25,7 @@ function extractPlanPayload(
 	if (!hasPlanText && !hasServices) return null;
 
 	// Build a minimal TreatmentPlanPayload based on available data
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const plannedStages: any[] = [];
+	const plannedStages: TreatmentPlanPayload["plannedStages"] = [];
 	if (request.completedServices) {
 		for (const service of request.completedServices) {
 			plannedStages.push({
@@ -61,10 +61,8 @@ function extractPlanPayload(
 		),
 		alternatives: [],
 		risksAndLimitations: [],
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		prognosisAndLimits: null as any,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		controlPlan: null as any,
+		prognosisAndLimits: null,
+		controlPlan: null,
 		doctorFullName: request.doctorFullName || null, // No fallback to "Лечащий врач"
 		plannedAt: new Date().toISOString(),
 		patientQuestionsAnswered: true,
@@ -86,8 +84,7 @@ function extractRecommendationsPayload(
 		draft.treatmentPlan && draft.treatmentPlan.trim().length > 0;
 	if (!hasServices && !hasPlanText) return null;
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let careTopic: any = "other";
+	let careTopic: PostVisitCareTopic = "other";
 	let procedureName = "Прием стоматолога";
 
 	if (hasServices && request.completedServices) {

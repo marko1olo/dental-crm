@@ -267,6 +267,20 @@ export async function transcribeCloudflareWhisper(input: {
 	};
 }
 
+interface GeminiMultimodalResponsePayload {
+	candidates?: Array<{
+		content?: {
+			parts?: Array<{
+				text?: string;
+			}>;
+		};
+	}>;
+	error?: {
+		message?: string;
+		code?: number | string;
+	};
+}
+
 export async function transcribeGeminiMultimodal(input: {
 	apiKey: string;
 	audio: Buffer;
@@ -300,8 +314,9 @@ export async function transcribeGeminiMultimodal(input: {
 		}),
 	});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const payload = (await response.json().catch(() => ({}))) as any;
+	const payload = (await response
+		.json()
+		.catch(() => ({}))) as GeminiMultimodalResponsePayload;
 	if (!response.ok) {
 		throw providerHttpError(
 			response.status,

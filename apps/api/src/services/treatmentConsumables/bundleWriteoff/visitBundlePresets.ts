@@ -28,9 +28,18 @@ export const VISIT_BUNDLE_NAMES: Record<QuickWriteoffVisitBundleType, string> = 
 	hygiene: "Профессиональная гигиена полости рта (Air-Flow + УЗ)",
 };
 
+function isOrthopedicsVisitType(type: string): type is Parameters<typeof getOrthopedicsVisitDefinitions>[0] {
+	return (
+		type === "orthopedics_prep" ||
+		type === "orthopedics_impression" ||
+		type === "orthopedics_temporary" ||
+		type === "orthopedics_cementation"
+	);
+}
+
 export function getVisitBundleDefinitions(visitType: QuickWriteoffVisitBundleType = "therapy"): UnifiedStockItemDefinition[] {
-	if (visitType.startsWith("orthopedics_")) {
-		return getOrthopedicsVisitDefinitions(visitType as any);
+	if (isOrthopedicsVisitType(visitType)) {
+		return getOrthopedicsVisitDefinitions(visitType);
 	}
 	const map: Partial<Record<QuickWriteoffVisitBundleType, UnifiedStockItemDefinition[]>> = {
 		therapy: [
