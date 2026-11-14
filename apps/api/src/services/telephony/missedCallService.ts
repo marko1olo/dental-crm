@@ -34,10 +34,11 @@ export interface MissedCallEventParams {
 export interface MissedCallResult {
 	success: boolean;
 	taskId?: string | undefined;
-	patientId: string;
+	patientId?: string | null | undefined;
 	patientName: string;
 	phone: string;
 	isNewLead: boolean;
+	leadId?: string | undefined;
 	alertCardId?: string | undefined;
 	duplicate?: boolean | undefined;
 }
@@ -143,109 +144,199 @@ export class MissedCallService {
 				}
 			}
 
-			let patientId: string;
+			let patientId: string | null = null;
 			let patientDisplayName: string;
 			let createdLeadRecord: typeof crmLeads.$inferSelect | null = null;
+			let taskId: string | undefined = undefined;
+
+			const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
 
 			if (matchedPatient) {
 				patientId = matchedPatient.id;
 				patientDisplayName =
 					matchedPatient.fullName.trim() || `Пациент (${callerPhoneE164})`;
 
-				// Also record in crmLeads for marketing funnel so missed calls from existing patients are tracked
+				// Check existing lead for constant patient — update lastContactedAt without creating duplicates
 				try {
-					const [createdLead] = await tx
-						.insert(crmLeads)
-						.values({
-							organizationId,
-							name: `Пропущенный звонок: ${patientDisplayName}`,
-							patientName: patientDisplayName,
-							phone: callerPhoneE164,
-							source: "telephony_missed",
-							status: "new",
-							notes: `Пропущенный звонок от постоянного пациента ${patientDisplayName} (${callerPhoneE164}). Норматив перезвона 60 секунд.`,
-						})
-						.returning();
-					createdLeadRecord = createdLead || null;
+					const existingLeads = await tx
+						.select()
+						.from(crmLeads)
+						.where(
+							and(
+								eq(crmLeads.organizationId, organizationId),
+								or(
+									eq(crmLeads.patientId, matchedPatient.id),
+									eq(crmLeads.phone, callerPhoneE164),
+								),
+							),
+						)
+						.orderBy(desc(crmLeads.createdAt))
+						.limit(1);
+
+					if (existingLeads.length > 0 && existingLeads[0]) {
+						const existingLead = existingLeads[0];
+						const [updatedLead] = await tx
+							.update(crmLeads)
+							.set({
+								lastContactedAt: new Date(),
+								notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Пропущенный звонок от пациента ${patientDisplayName}: ${new Date().toLocaleString("ru-RU")}`}`,
+							})
+							.where(eq(crmLeads.id, existingLead.id))
+							.returning();
+						createdLeadRecord = updatedLead || existingLead;
+					} else {
+						const [createdLead] = await tx
+							.insert(crmLeads)
+							.values({
+								organizationId,
+								name: `Пропущенный звонок: ${patientDisplayName}`,
+								patientName: patientDisplayName,
+								patientId: matchedPatient.id,
+								phone: callerPhoneE164,
+								source: "telephony_missed",
+								status: "new",
+								notes: `Пропущенный звонок от постоянного пациента ${patientDisplayName} (${callerPhoneE164}). Норматив перезвона 60 секунд.`,
+								lastContactedAt: new Date(),
+							})
+							.returning();
+						createdLeadRecord = createdLead || null;
+					}
 				} catch (err) {
-					console.warn("[MissedCallService] Existing patient lead mirror notice:", err);
+					console.warn("[MissedCallService] Existing patient lead handling notice:", err);
 				}
-			} else {
-				// Create a patient entry for the missed call
-				const newFullName = `Пропущенный вызов ${callerPhoneE164}`;
-				const [createdPatient] = await tx
-					.insert(patients)
+
+				// 3. Suppress duplicate task cascade if an active callback task already exists within 60 seconds
+				const recentTasks = await tx
+					.select({ id: communicationTasks.id })
+					.from(communicationTasks)
+					.where(
+						and(
+							eq(communicationTasks.organizationId, organizationId),
+							eq(communicationTasks.patientId, patientId),
+							eq(communicationTasks.workflowCode, "MISSED_CALL_CALLBACK"),
+							eq(communicationTasks.status, "needs_call"),
+							gt(communicationTasks.createdAt, sixtySecondsAgo),
+						),
+					)
+					.limit(1);
+
+				const existingTask = recentTasks[0];
+				if (existingTask) {
+					return {
+						success: true,
+						duplicate: true,
+						taskId: existingTask.id,
+						patientId,
+						patientName: patientDisplayName,
+						phone: callerPhoneE164,
+						isNewLead: false,
+						leadId: createdLeadRecord?.id,
+					};
+				}
+
+				// Create URGENT task in communicationTasks for registered patient (60-second callback SLA)
+				const dueAt = new Date(Date.now() + 60 * 1000);
+				const [createdTask] = await tx
+					.insert(communicationTasks)
 					.values({
 						organizationId,
-						fullName: newFullName,
-						phone: callerPhoneE164,
-						notes: `Автоматически создан из пропущенного звонка АТС (${params.provider || "телефония"}${callId ? `, call_id: ${callId}` : ""})`,
-						status: "active",
+						patientId,
+						assignedRole: "receptionist",
+						channel: "phone",
+						intent: "general",
+						status: "needs_call",
+						priority: "urgent",
+						dueAt,
+						title: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
+						body: `🚨 Пропущенный вызов от ${callerPhoneE164}. Срочно перезвонить!`,
+						workflowCode: "MISSED_CALL_CALLBACK",
 					})
 					.returning();
-
-				if (!createdPatient) {
-					throw new Error(
-						"Не удалось сохранить запись пациента для пропущенного звонка",
-					);
-				}
-
-				patientId = createdPatient.id;
-				patientDisplayName = createdPatient.fullName;
+				taskId = createdTask?.id;
+			} else {
+				// SANE DOMAIN RULE: DO NOT POLLUTE PATIENTS TABLE WITH UNKNOWN SPAM CALLS!
+				// Only create/update crmLeads entry for the marketing & reception desk funnel.
 				isNewLead = true;
 
-				// Also record in crmLeads for marketing funnel
 				try {
-					const [createdLead] = await tx
-						.insert(crmLeads)
-						.values({
-							organizationId,
-							name: `Пропущенный звонок ${callerPhoneE164}`,
-							patientName: newFullName,
-							phone: callerPhoneE164,
-							source: "telephony_missed",
-							status: "new",
-							notes: `Пропущенный звонок от ${callerPhoneE164}. Норматив перезвона 60 секунд.`,
-						})
-						.returning();
-					createdLeadRecord = createdLead || null;
+					const existingLeads = await tx
+						.select()
+						.from(crmLeads)
+						.where(
+							and(
+								eq(crmLeads.organizationId, organizationId),
+								eq(crmLeads.phone, callerPhoneE164),
+							),
+						)
+						.orderBy(desc(crmLeads.createdAt))
+						.limit(1);
+
+					if (existingLeads.length > 0 && existingLeads[0]) {
+						const existingLead = existingLeads[0];
+						const wasRecent =
+							existingLead.lastContactedAt &&
+							new Date(existingLead.lastContactedAt) > sixtySecondsAgo;
+
+						const [updatedLead] = await tx
+							.update(crmLeads)
+							.set({
+								lastContactedAt: new Date(),
+								status:
+									existingLead.status === "won" || existingLead.status === "archived"
+										? "new"
+										: existingLead.status,
+								notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Повторный пропущенный звонок от ${callerPhoneE164} (${new Date().toLocaleString("ru-RU")})`}`,
+							})
+							.where(eq(crmLeads.id, existingLead.id))
+							.returning();
+						createdLeadRecord = updatedLead || existingLead;
+						patientDisplayName =
+							existingLead.patientName || existingLead.name || `Лид (${callerPhoneE164})`;
+						taskId = existingLead.id;
+
+						if (wasRecent) {
+							return {
+								success: true,
+								duplicate: true,
+								taskId: existingLead.id,
+								patientId: null,
+								patientName: patientDisplayName,
+								phone: callerPhoneE164,
+								isNewLead: true,
+								leadId: existingLead.id,
+							};
+						}
+					} else {
+						const newLeadName = `Лид ${callerPhoneE164}`;
+						const [createdLead] = await tx
+							.insert(crmLeads)
+							.values({
+								organizationId,
+								name: newLeadName,
+								patientName: newLeadName,
+								phone: callerPhoneE164,
+								source: "telephony_missed",
+								status: "new",
+								priority: "urgent",
+								notes: `Пропущенный звонок от ${callerPhoneE164}. Норматив перезвона 60 секунд.`,
+								lastContactedAt: new Date(),
+							})
+							.returning();
+						createdLeadRecord = createdLead || null;
+						patientDisplayName = newLeadName;
+						taskId = createdLead?.id;
+					}
 				} catch (err) {
-					console.warn("[MissedCallService] Lead mirror notice:", err);
+					console.warn("[MissedCallService] Unknown caller lead handling notice:", err);
+					patientDisplayName = `Лид (${callerPhoneE164})`;
 				}
 			}
 
-			// 3. Suppress duplicate task cascade if an active callback task already exists within 60 seconds
-			const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
-			const recentTasks = await tx
-				.select({ id: communicationTasks.id })
-				.from(communicationTasks)
-				.where(
-					and(
-						eq(communicationTasks.organizationId, organizationId),
-						eq(communicationTasks.patientId, patientId),
-						eq(communicationTasks.workflowCode, "MISSED_CALL_CALLBACK"),
-						eq(communicationTasks.status, "needs_call"),
-						gt(communicationTasks.createdAt, sixtySecondsAgo),
-					),
-				)
-				.limit(1);
-
-			if (recentTasks.length > 0) {
-				return {
-					success: true,
-					duplicate: true,
-					taskId: recentTasks[0]!.id,
-					patientId,
-					patientName: patientDisplayName,
-					phone: callerPhoneE164,
-					isNewLead,
-				};
-			}
-
-			// 4. Insert into communicationEvents
+			// 4. Insert into communicationEvents (patientId is null for unknown leads, callerPhone is preserved)
 			await tx.insert(communicationEvents).values({
 				organizationId,
 				patientId,
+				callerPhone: callerPhoneE164,
 				channel: "phone",
 				direction: "inbound",
 				status: "failed",
@@ -254,27 +345,6 @@ export class MissedCallService {
 					: `🚨 Пропущенный звонок от ${callerPhoneE164}`,
 				durationSeconds: 0,
 			});
-
-			// 5. Create URGENT task in communicationTasks (60-second callback SLA)
-			const dueAt = new Date(Date.now() + 60 * 1000);
-			const [createdTask] = await tx
-				.insert(communicationTasks)
-				.values({
-					organizationId,
-					patientId,
-					assignedRole: "receptionist",
-					channel: "phone",
-					intent: "general",
-					status: "needs_call",
-					priority: "urgent",
-					dueAt,
-					title: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
-					body: `🚨 Пропущенный вызов от ${callerPhoneE164}. Срочно перезвонить!`,
-					workflowCode: "MISSED_CALL_CALLBACK",
-				})
-				.returning();
-
-			const taskId = createdTask?.id;
 
 			// 6. WebSocket Broadcast for Reception Desk
 			wsBroker.broadcastToOrganization(organizationId, {
@@ -310,7 +380,7 @@ export class MissedCallService {
 				subtitle: `${patientDisplayName} • ${callerPhoneE164}`,
 				description: `Входящий звонок от ${callerPhoneE164} был сброшен или остался без ответа. Норматив перезвона: 60 секунд!`,
 				timestamp: new Date().toISOString(),
-				patientId,
+				...(patientId ? { patientId } : {}),
 				patientName: patientDisplayName,
 				patientPhone: callerPhoneE164,
 				category: "clinical_alert",
@@ -322,8 +392,8 @@ export class MissedCallService {
 						actionType: "call_patient",
 						payload: {
 							phone: callerPhoneE164,
-							patientId,
-							taskId,
+							...(patientId ? { patientId } : {}),
+							...(taskId ? { taskId } : {}),
 						},
 					},
 				],

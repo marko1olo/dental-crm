@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useWebsocket } from "./useWebsocket";
 import { useAppStore } from "../store/appStore";
 import {
+	type IncomingCallPayload,
 	resolveTelephonyFallbackWsUrl,
 	resolveTelephonyWsUrl,
 	useTelephonyStore,
@@ -82,7 +83,7 @@ export function useTelephonyRealtime() {
 
 	useEffect(() => {
 		const handleMock = (e: Event) => {
-			const custom = e as CustomEvent<any>;
+			const custom = e as CustomEvent<IncomingCallPayload>;
 			if (custom.detail) triggerIncomingCall(custom.detail);
 		};
 		window.addEventListener("dente:telephony-mock-incoming", handleMock);

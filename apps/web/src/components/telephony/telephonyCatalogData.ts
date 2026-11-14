@@ -156,6 +156,20 @@ export const DIALPAD_KEYS: readonly DialpadKeyDef[] = [
 	{ digit: "#", sub: "" },
 ];
 
+export interface TelephonyCallApiRecord {
+	id: string | number;
+	direction?: "inbound" | "outbound" | string;
+	status?: string;
+	durationSeconds?: number;
+	patientPhone?: string;
+	callerPhone?: string;
+	patientName?: string;
+	patientId?: string | number | null;
+	createdAt?: string | Date;
+	message?: string;
+	recordingUrl?: string | null;
+}
+
 export interface TelephonyCatalogCall {
 	id: string;
 	callType: TelephonyCallType;

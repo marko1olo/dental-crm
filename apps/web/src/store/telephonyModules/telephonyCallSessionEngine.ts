@@ -14,17 +14,29 @@ import type {
 import type {
 	TelephonyCallerCard,
 } from "./telephonyClinicalTypes";
-import { resolvePatientCategory } from "@dental/shared";
-import { resolvePatientSomaticAlerts } from "./telephonyClinicalSomaticAlerts";
 import {
+	resolvePatientCategory,
+	resolvePatientSomaticAlerts,
 	resolvePatientLastVisit,
 	resolvePatientNextVisit,
 	resolvePatientUpcomingAppointment,
-} from "./telephonyClinicalVisitResolvers";
+	getAppointmentDoctorId,
+	getAppointmentStartsAt,
+	getAppointmentEndsAt,
+	getAppointmentTimestamp,
+} from "@dental/shared";
 
 export * from "./telephonyMessagingEngine";
-export * from "./telephonyClinicalSomaticAlerts";
-export * from "./telephonyClinicalVisitResolvers";
+export {
+	resolvePatientSomaticAlerts,
+	resolvePatientLastVisit,
+	resolvePatientNextVisit,
+	resolvePatientUpcomingAppointment,
+	getAppointmentDoctorId,
+	getAppointmentStartsAt,
+	getAppointmentEndsAt,
+	getAppointmentTimestamp,
+} from "@dental/shared";
 
 /**
  * Computes structured financial metrics for a patient.

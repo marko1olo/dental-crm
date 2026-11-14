@@ -6,20 +6,29 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import { TelephonyStudioModal } from "../TelephonyStudioModal";
 import { initiateOutboundCall } from "../initiateOutboundCall";
 import { useTelephonyStore } from "../../../store/telephonyStore";
+import { enableDemoShowcaseMode, disableDemoShowcaseMode } from "../../../lib/demoMode";
 
 describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 	it("1. Renders direct call patient button in call card header", () => {
-		const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
-		assert.ok(
-			html.includes('data-testid="telephony-call-patient-btn"'),
-			"Card must include direct call button to eliminate friction",
-		);
+		enableDemoShowcaseMode();
+		try {
+			const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
+			assert.ok(
+				html.includes('data-testid="telephony-call-patient-btn"'),
+				"Card must include direct call button to eliminate friction",
+			);
+		} finally {
+			disableDemoShowcaseMode();
+		}
 	});
 
 	it("2. initiateOutboundCall validates phone, activates softphone HUD and dispatches outbound call", async () => {
@@ -71,17 +80,37 @@ describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 	});
 
 	it("4. TelephonyStudioModal maintains 400-470 line sweet spot (Mandate 8b)", () => {
-		const fs = require("node:fs");
-		const path = require("node:path");
-		const filePath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/telephony/TelephonyStudioModal.tsx",
-		);
+		const __dirname = path.dirname(fileURLToPath(import.meta.url));
+		const filePath = path.resolve(__dirname, "../TelephonyStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 		const lineCount = content.split("\n").length;
 		assert.ok(
 			lineCount >= 400 && lineCount <= 470,
 			`TelephonyStudioModal line count (${lineCount}) must be within 400..470 sweet spot`,
+		);
+	});
+
+	it("5. useCallDurationTimer confirms complete removal of 45-second auto-drop timeout", () => {
+		const __dirname = path.dirname(fileURLToPath(import.meta.url));
+		const filePath = path.resolve(__dirname, "../incomingCallDataModules/useCallDurationTimer.ts");
+		const content = fs.readFileSync(filePath, "utf-8");
+		assert.ok(
+			!content.includes("45000"),
+			"useCallDurationTimer must NOT contain 45-second auto-dismiss timeout",
+		);
+		assert.ok(
+			!content.includes("setTimeout"),
+			"useCallDurationTimer must NOT contain client-side dismiss setTimeout",
+		);
+	});
+
+	it("6. TelephonyStudioModal eliminates typeof window === 'undefined' demo data leak risk", () => {
+		const __dirname = path.dirname(fileURLToPath(import.meta.url));
+		const filePath = path.resolve(__dirname, "../TelephonyStudioModal.tsx");
+		const content = fs.readFileSync(filePath, "utf-8");
+		assert.ok(
+			!content.includes('isDemoShowcaseMode() || typeof window === "undefined"'),
+			"TelephonyStudioModal must strictly use isDemoShowcaseMode()",
 		);
 	});
 });

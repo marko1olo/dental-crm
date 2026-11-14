@@ -34,6 +34,20 @@ export function resolvePatientSomaticAlerts(
 		});
 	};
 
+	// 1. Check direct allergies property if present
+	if (patient && typeof patient === "object" && "allergies" in patient) {
+		const rawAllergies = (patient as { allergies?: unknown }).allergies;
+		if (Array.isArray(rawAllergies)) {
+			for (const a of rawAllergies) {
+				if (typeof a === "string" && a.trim()) {
+					addAlert(a.trim(), "allergy", "high", "AlertTriangle");
+				}
+			}
+		} else if (typeof rawAllergies === "string" && rawAllergies.trim()) {
+			addAlert(rawAllergies.trim(), "allergy", "high", "AlertTriangle");
+		}
+	}
+
 	if (patient?.notes) {
 		const lower = patient.notes.toLowerCase();
 		if (
@@ -80,10 +94,25 @@ export function resolvePatientSomaticAlerts(
 	if (insight?.clinicalFlags && Array.isArray(insight.clinicalFlags)) {
 		for (const flag of insight.clinicalFlags) {
 			const lower = flag.toLowerCase();
-			const severity: PatientSomaticAlert["severity"] =
-				lower.includes("аллерг") || lower.includes("кардио") || lower.includes("беремен") ? "high" : "medium";
-			const cat: PatientSomaticAlert["category"] = lower.includes("аллерг") ? "allergy" : "alert";
-			addAlert(flag, cat, severity, "AlertTriangle");
+			const isPain =
+				lower.includes("бол") ||
+				lower.includes("пульпит") ||
+				lower.includes("периодонтит") ||
+				lower.includes("экстрен");
+			const isAllergy = lower.includes("аллерг");
+			const isHigh =
+				isAllergy ||
+				isPain ||
+				lower.includes("кардио") ||
+				lower.includes("беремен");
+			const severity: PatientSomaticAlert["severity"] = isHigh ? "high" : "medium";
+			const cat: PatientSomaticAlert["category"] = isPain
+				? "pain"
+				: isAllergy
+					? "allergy"
+					: "alert";
+			const icon = isPain ? "Zap" : isAllergy ? "AlertTriangle" : "ShieldAlert";
+			addAlert(flag, cat, severity, icon);
 		}
 	}
 

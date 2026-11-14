@@ -47,6 +47,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	appointments,
+	communicationEvents,
 	communicationOutbox,
 	communicationSettings,
 	communicationTemplates,
@@ -587,6 +588,37 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 			const parsed = JSON.parse(clientOrgA1.sentMessages[0]);
 			assert.equal(parsed.type, "TELEPHONY_INCOMING_CALL");
 			assert.equal(parsed.payload.callId, "call-999");
+		});
+
+		it("persists call notes physically in PostgreSQL for non-UUID provider callId tokens", async () => {
+			if (!databaseReady) return;
+
+			const providerCallId = `mango-call-session-${Date.now()}`;
+			const noteText = "Пациент жалуется на острую боль в области зуба 46, записан на 15:00";
+
+			const response = await app.inject({
+				method: "PATCH",
+				url: `/api/telephony/${ORG_A_ID}/calls/${providerCallId}`,
+				payload: {
+					note: noteText,
+					callerPhone: "+79161112233",
+					patientId: PATIENT_A_ID,
+				},
+			});
+
+			assert.equal(response.statusCode, 200);
+			const json = response.json();
+			assert.equal(json.success, true);
+			assert.equal(json.note, noteText);
+			assert.ok(json.call?.id, "Must return real persisted communicationEvent ID");
+
+			// Check physical DB record
+			const [dbRecord] = await db
+				.select()
+				.from(communicationEvents)
+				.where(eq(communicationEvents.id, json.call.id));
+			assert.ok(dbRecord, "Record must physically exist in communicationEvents table");
+			assert.ok(dbRecord.message.includes(noteText));
 		});
 	});
 

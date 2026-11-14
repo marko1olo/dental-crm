@@ -5,7 +5,7 @@
  * Mandates 8e (Doctor Autonomy), 8x (Domain Purity), 8ba (Disruptive Reality).
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -19,6 +19,8 @@ export interface UpdateCallNoteBody {
 	clinicalNote?: string;
 	message?: string;
 	patientId?: string;
+	callerPhone?: string;
+	phone?: string;
 }
 
 export async function telephonyCallUpdateHandler(
@@ -88,21 +90,97 @@ export async function telephonyCallUpdateHandler(
 
 			return res.length > 0 && res[0] ? res[0] : null;
 		});
+	} else {
+		// Non-UUID call identifier (e.g. Mango, Zadarma, UIS, Asterisk string tokens)
+		// Search in communicationEvents by callId in message or by callerPhone
+		const callerPhone = body.callerPhone ?? body.phone ?? null;
+
+		updatedCall = await withTenantCtx(orgId, async () => {
+			// 1. Try to find existing event mentioning this provider callId
+			const matchedEvents = await db
+				.select({ id: communicationEvents.id })
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, orgId),
+						ilike(communicationEvents.message, `%${callId}%`),
+					),
+				)
+				.orderBy(desc(communicationEvents.createdAt))
+				.limit(1);
+
+			let targetEventId: string | null = matchedEvents[0]?.id ?? null;
+
+			// 2. If not found by callId and phone is provided, match latest call with this phone
+			if (!targetEventId && callerPhone) {
+				const matchedByPhone = await db
+					.select({ id: communicationEvents.id })
+					.from(communicationEvents)
+					.where(
+						and(
+							eq(communicationEvents.organizationId, orgId),
+							eq(communicationEvents.callerPhone, callerPhone),
+						),
+					)
+					.orderBy(desc(communicationEvents.createdAt))
+					.limit(1);
+
+				targetEventId = matchedByPhone[0]?.id ?? null;
+			}
+
+			if (targetEventId) {
+				const res = await db
+					.update(communicationEvents)
+					.set({
+						message: noteText,
+					})
+					.where(
+						and(
+							eq(communicationEvents.id, targetEventId),
+							eq(communicationEvents.organizationId, orgId),
+						),
+					)
+					.returning({
+						id: communicationEvents.id,
+						patientId: communicationEvents.patientId,
+						callerPhone: communicationEvents.callerPhone,
+						message: communicationEvents.message,
+						status: communicationEvents.status,
+						createdAt: communicationEvents.createdAt,
+					});
+
+				return res[0] ?? null;
+			}
+
+			// 3. If no communicationEvent exists yet for this in-flight call, physically create it
+			const [created] = await db
+				.insert(communicationEvents)
+				.values({
+					organizationId: orgId,
+					callerPhone,
+					patientId: body.patientId && UUID_REGEX.test(body.patientId) ? body.patientId : null,
+					channel: "phone",
+					direction: "inbound",
+					status: "completed",
+					message: `${noteText} [call_id: ${callId}]`,
+				})
+				.returning({
+					id: communicationEvents.id,
+					patientId: communicationEvents.patientId,
+					callerPhone: communicationEvents.callerPhone,
+					message: communicationEvents.message,
+					status: communicationEvents.status,
+					createdAt: communicationEvents.createdAt,
+				});
+
+			return created ?? null;
+		});
 	}
 
 	if (!updatedCall) {
-		if (UUID_REGEX.test(callId)) {
-			return reply.status(404).send({
-				error: "CallNotFound",
-				message: `Запись звонка с ID ${callId} не найдена`,
-			});
-		}
-
-		return reply.status(200).send({
-			success: true,
-			callId,
-			note: noteText,
-			isSynthetic: true,
+		return reply.status(404).send({
+			error: "CallNotFound",
+			message: `Запись звонка с ID ${callId} не найдена`,
 		});
 	}
 
@@ -118,7 +196,8 @@ export async function telephonyCallUpdateHandler(
 	return reply.status(200).send({
 		success: true,
 		call: updatedCall,
-		callId: updatedCall.id,
+		callId: callId,
+		eventId: updatedCall.id,
 		note: noteText,
 	});
 }

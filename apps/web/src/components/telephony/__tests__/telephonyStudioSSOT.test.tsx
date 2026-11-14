@@ -20,6 +20,7 @@ const expect = (actual: any) => ({
 });
 import { TelephonyStudioModal } from "../TelephonyStudioModal";
 import { DirectTelephonyLauncher } from "../DirectTelephonyLauncher";
+import { setRuntimeDemoMode } from "../../../lib/demoMode.js";
 import {
 	TELEPHONY_CATALOG_DATA,
 	TELEPHONY_CALL_TYPES,
@@ -83,22 +84,27 @@ describe("TelephonyStudioModal & SSOT Architecture", () => {
 	});
 
 	it("renders call log items, dialpad grid and quick note presets", () => {
-		const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
+		setRuntimeDemoMode(true);
+		try {
+			const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
 
-		// Call records from SSOT catalog
-		expect(html).toContain(TELEPHONY_CATALOG_DATA[0].callerName);
-		expect(html).toContain(formatPhoneRu(TELEPHONY_CATALOG_DATA[0].phone));
+			// Call records from SSOT catalog
+			expect(html).toContain(TELEPHONY_CATALOG_DATA[0].callerName);
+			expect(html).toContain(formatPhoneRu(TELEPHONY_CATALOG_DATA[0].phone));
 
-		// Dialpad keys
-		expect(html).toContain('data-testid="dialpad-key-1"');
-		expect(html).toContain('data-testid="dialpad-key-5"');
-		expect(html).toContain('data-testid="dialpad-key-9"');
-		expect(html).toContain('data-testid="dialpad-key-0"');
+			// Dialpad keys
+			expect(html).toContain('data-testid="dialpad-key-1"');
+			expect(html).toContain('data-testid="dialpad-key-5"');
+			expect(html).toContain('data-testid="dialpad-key-9"');
+			expect(html).toContain('data-testid="dialpad-key-0"');
 
-		// Note presets
-		expect(html).toContain("Записан на приём");
-		expect(html).toContain("Уточнение стоимости");
-		expect(html).toContain("Острая боль");
+			// Note presets
+			expect(html).toContain("Записан на приём");
+			expect(html).toContain("Уточнение стоимости");
+			expect(html).toContain("Острая боль");
+		} finally {
+			setRuntimeDemoMode(null);
+		}
 	});
 
 	it("validates Russian phone normalizers, masks and duration formatters", () => {

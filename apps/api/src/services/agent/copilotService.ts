@@ -4,22 +4,22 @@
 
 export interface ProactiveAlertCard {
 	id: string;
-	urgency?: string;
+	urgency?: string | undefined;
 	title: string;
-	subtitle?: string;
-	description?: string;
-	timestamp?: string;
-	patientId?: string;
-	patientName?: string;
-	patientPhone?: string;
-	category?: string;
+	subtitle?: string | undefined;
+	description?: string | undefined;
+	timestamp?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientPhone?: string | undefined;
+	category?: string | undefined;
 	actions?: Array<{
 		id: string;
 		label: string;
-		kind?: string;
-		actionType?: string;
-		payload?: Record<string, unknown>;
-	}>;
+		kind?: string | undefined;
+		actionType?: string | undefined;
+		payload?: Record<string, unknown> | undefined;
+	}> | undefined;
 }
 
 export class CopilotStreamManager {

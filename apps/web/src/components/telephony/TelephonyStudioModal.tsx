@@ -11,10 +11,11 @@ import {
 	Phone, PhoneCall, X, Delete, User, MessageCircle, AlertTriangle, Calendar, Check,
 } from "lucide-react";
 import {
-	type TelephonyCatalogCall, type TelephonyCallType, type TelephonyFilterType, TELEPHONY_CATALOG_DATA,
+	type TelephonyCatalogCall, type TelephonyCallApiRecord, type TelephonyCallType, type TelephonyFilterType, TELEPHONY_CATALOG_DATA,
 	TELEPHONY_CALL_TYPES, DIALPAD_KEYS, formatPhoneRu, getWhatsAppUrl, playSafeWebAudioTone,
 	triggerOpenPatientCard, triggerBookAppointment, triggerCreatePatient,
 } from "./telephonyCatalogData";
+export type { TelephonyCallApiRecord } from "./telephonyCatalogData";
 import { TelephonyCallList } from "./TelephonyCallList";
 import { CallAudioPlayer } from "./CallAudioPlayer";
 import { initiateOutboundCall } from "./initiateOutboundCall";
@@ -293,7 +294,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 			headers: { ...(staffToken ? { "x-dente-staff-token": staffToken } : {}), ...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}) },
 		})
 			.then((res) => (res.ok ? res.json() : null))
-			.then((data: { success?: boolean; calls?: any[] } | null) => {
+			.then((data: { success?: boolean; calls?: TelephonyCallApiRecord[] } | null) => {
 				if (!isMounted) return;
 				if (data?.calls && Array.isArray(data.calls)) {
 					const mapped: TelephonyCatalogCall[] = data.calls.map((c) => {
@@ -330,7 +331,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		};
 	}, [isOpen, selectedCallId]);
 
-	const isDemo = isDemoShowcaseMode() || typeof window === "undefined";
+	const isDemo = isDemoShowcaseMode();
 
 	const baseCalls = useMemo(() => {
 		if (dbCalls.length > 0) return dbCalls;
@@ -418,23 +419,13 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				},
 				body: JSON.stringify({ note: noteToSave, clinicalNote: noteToSave, patientId: selectedCall.patientId }),
 			})
-				.then((res) => {
-					if (res.ok) {
-						showToast("Заметка к звонку сохранена", "info");
-					} else {
-						showToast("Не удалось сохранить заметку к звонку", "error");
-					}
-				})
-				.catch(() => {
-					showToast("Ошибка сети при сохранении заметки", "error");
-				});
+				.then((res) => showToast(res.ok ? "Заметка к звонку сохранена" : "Не удалось сохранить заметку к звонку", res.ok ? "info" : "error"))
+				.catch(() => showToast("Ошибка сети при сохранении заметки", "error"));
 		}
 
-		window.dispatchEvent(
-			new CustomEvent("dente:telephony-note-saved", {
-				detail: { callId: selectedCall?.id, patientId: selectedCall?.patientId, note: noteToSave, timestamp: new Date().toISOString() },
-			}),
-		);
+		window.dispatchEvent(new CustomEvent("dente:telephony-note-saved", {
+			detail: { callId: selectedCall?.id, patientId: selectedCall?.patientId, note: noteToSave, timestamp: new Date().toISOString() },
+		}));
 		setTimeout(() => setIsNoteSaved(false), 2500);
 	}, [dialedNumber, selectedCall, callNote, onClose]);
 

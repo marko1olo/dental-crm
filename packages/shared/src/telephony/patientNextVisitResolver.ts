@@ -32,7 +32,7 @@ export function resolvePatientNextVisit(
 	const upcoming = appointments
 		.filter((a) => a.patientId === patientId)
 		.filter((a) => a.status === "planned" || a.status === "confirmed")
-		.filter((a) => a.startsAt >= nowIso)
+		.filter((a): a is TelephonyAppointmentLike & { startsAt: string } => typeof a.startsAt === "string" && a.startsAt >= nowIso)
 		.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
 
 	const nextAppt = upcoming[0];
@@ -105,7 +105,7 @@ export function resolvePatientNextVisit(
 		reason: nextAppt.reason || nextAppt.comment || null,
 		isToday,
 		isTomorrow,
-		startsAt: nextAppt.startsAt,
+		startsAt: nextAppt.startsAt ?? null,
 		fullTextRu,
 	};
 }

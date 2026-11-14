@@ -64,10 +64,10 @@ export function TelephonyDrawerLeadAndPatientCreate({
 				</div>
 			)}
 
-			{/* Unknown Caller: 5-second Quick Patient Creation */}
-			<div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 space-y-2">
-				<div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
-					<AlertCircle size={14} className="text-amber-500" />
+			{/* Unknown Caller: Quick Patient Creation (Secondary Action) */}
+			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5 shadow-xs">
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+					<AlertCircle size={14} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Быстрое создание нового пациента</span>
 				</div>
 				<div className="space-y-1.5">
@@ -84,7 +84,7 @@ export function TelephonyDrawerLeadAndPatientCreate({
 						type="button"
 						onClick={onQuickCreatePatient}
 						aria-busy={isCreatingPatient}
-						className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-bold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+						className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper)] dark:bg-white/5 border border-[var(--line)] text-[var(--ink)] text-xs font-bold hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 						data-testid="drawer-quick-create-patient-btn"
 						data-legacy-testid="popup-drawer-quick-create-patient-btn"
 					>

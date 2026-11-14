@@ -8,7 +8,8 @@ import { describe, test } from "node:test";
 import { MissedCallService } from "./missedCallService.js";
 import { defaultCopilotStreamManager } from "../agent/copilotService.js";
 import { db } from "../../db/client.js";
-import { organizations } from "../../db/schema.js";
+import { crmLeads, organizations, patients } from "../../db/schema.js";
+import { eq, and } from "drizzle-orm";
 
 async function getOrCreateTestOrg(): Promise<string> {
 	const existing = await db
@@ -29,9 +30,21 @@ async function getOrCreateTestOrg(): Promise<string> {
 }
 
 describe("MissedCallService — Telecom Interception & Urgent Task Engine", () => {
-	test("Missed call creates urgent task with 60-second callback SLA and proactive alert", async () => {
+	test("Missed call from known patient creates urgent task with 60s callback SLA and avoids duplicate lead", async () => {
 		const orgId = await getOrCreateTestOrg();
 		const testPhone = `+7999${Math.floor(1000000 + Math.random() * 9000000)}`;
+
+		// Create existing patient
+		const [createdPatient] = await db
+			.insert(patients)
+			.values({
+				organizationId: orgId,
+				fullName: "Иванов Иван Иванович",
+				phone: testPhone,
+				status: "active",
+			})
+			.returning();
+		assert.ok(createdPatient, "Patient must be created for test");
 
 		let capturedAlert: unknown = null;
 		const originalBroadcast = defaultCopilotStreamManager.broadcastProactiveAlert.bind(defaultCopilotStreamManager);
@@ -47,13 +60,14 @@ describe("MissedCallService — Telecom Interception & Urgent Task Engine", () =
 				organizationId: orgId,
 				phone: testPhone,
 				provider: "mango",
-				callId: `call_test_${Date.now()}`,
+				callId: `call_test_known_${Date.now()}`,
 				reason: "missed",
 			});
 
 			assert.strictEqual(result.success, true, "Should report success");
 			assert.ok(result.taskId, "Should return created task ID");
-			assert.ok(result.patientId, "Should return resolved patient ID");
+			assert.strictEqual(result.patientId, createdPatient.id, "Should match existing patient ID");
+			assert.strictEqual(result.isNewLead, false, "Known patient is not a new lead");
 			assert.strictEqual(result.phone, testPhone, "Should normalize phone");
 
 			// Verify alert generation
@@ -72,7 +86,7 @@ describe("MissedCallService — Telecom Interception & Urgent Task Engine", () =
 		}
 	});
 
-	test("Zero duration hangup is intercepted as a dropped call", async () => {
+	test("Unknown caller missed call creates CRM lead only, NEVER pollutes patients table", async () => {
 		const orgId = await getOrCreateTestOrg();
 		const testPhone = `+7916${Math.floor(1000000 + Math.random() * 9000000)}`;
 
@@ -85,7 +99,27 @@ describe("MissedCallService — Telecom Interception & Urgent Task Engine", () =
 		});
 
 		assert.strictEqual(result.success, true);
-		assert.ok(result.taskId);
 		assert.strictEqual(result.isNewLead, true);
+		assert.strictEqual(result.patientId, null, "Unknown caller must NOT have patientId");
+		assert.ok(result.taskId, "Should return task/lead reference ID");
+
+		// SANE INVARIANT: verify that NO fake patient was inserted into patients table
+		const foundPatients = await db
+			.select()
+			.from(patients)
+			.where(and(eq(patients.organizationId, orgId), eq(patients.phone, testPhone)));
+		assert.strictEqual(
+			foundPatients.length,
+			0,
+			"Unknown caller must NEVER create a patient record in patients table",
+		);
+
+		// Verify lead was created in crmLeads
+		const foundLeads = await db
+			.select()
+			.from(crmLeads)
+			.where(and(eq(crmLeads.organizationId, orgId), eq(crmLeads.phone, testPhone)));
+		assert.ok(foundLeads.length > 0, "Lead must be created in crmLeads");
+		assert.strictEqual(foundLeads[0]?.status, "new");
 	});
 });

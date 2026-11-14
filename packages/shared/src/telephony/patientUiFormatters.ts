@@ -71,28 +71,13 @@ export function generateWaveformBars(seed: string | null | undefined, count = 48
 		hash = (hash << 5) - hash + rawSeed.charCodeAt(i);
 		hash |= 0;
 	}
-	const baseOffset = Math.abs(hash) % 1000;
 
 	const bars: number[] = new Array(barCount);
+	const base = 0.35;
 	for (let i = 0; i < barCount; i++) {
-		const t = barCount > 1 ? i / (barCount - 1) : 0.5;
-
-		// Envelope: smooth bell-like curve with lively pauses and peaks
-		const envelope = Math.sin(Math.PI * t);
-
-		// 3 distinct frequency harmonics modulated by seed
-		const h1 = Math.sin(t * Math.PI * 4 + baseOffset * 0.05);
-		const h2 = Math.cos(t * Math.PI * 9 + baseOffset * 0.11);
-		const h3 = Math.sin(t * Math.PI * 17 + baseOffset * 0.23);
-
-		// Deterministic pseudo-random syllable jitter from index hash
-		const stepHash = Math.sin((i + baseOffset) * 12.9898) * 43758.5453;
-		const jitter = stepHash - Math.floor(stepHash); // 0..1
-
-		// Combined wave amplitude: baseline voice presence + harmonic modulation + jitter
-		const wave = 0.22 + 0.35 * Math.abs(h1 * 0.5 + h2 * 0.3 + h3 * 0.2) + 0.38 * jitter * envelope;
-
-		// Strictly clamp to [0.15, 0.95]
+		// Clean deterministic amplitude distribution without fake sinusoidal speech imitation
+		const sampleVal = Math.abs((hash ^ (i * 2654435761)) % 100) / 100;
+		const wave = base + sampleVal * 0.45;
 		const clamped = Math.max(0.15, Math.min(0.95, wave));
 		bars[i] = Math.round(clamped * 100) / 100;
 	}

@@ -29,11 +29,12 @@ export interface TelephonyInsuranceContractLike {
 
 export interface TelephonyAppointmentLike {
 	id: string;
-	patientId: string;
-	startsAt: string;
-	endsAt: string;
-	status: "planned" | "confirmed" | "completed" | "cancelled";
+	patientId?: string | null | undefined;
+	startsAt?: string | null | undefined;
+	endsAt?: string | null | undefined;
+	status?: "planned" | "confirmed" | "completed" | "cancelled" | "no_show" | "in_treatment" | "arrived" | string | null | undefined;
 	doctorUserId?: string | null | undefined;
+	doctorId?: string | null | undefined;
 	reason?: string | null | undefined;
 	comment?: string | null | undefined;
 }

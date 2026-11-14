@@ -28,13 +28,14 @@ export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) =>
 		}
 
 		if (!orgId) return;
+		const resolvedOrgId = orgId;
 
 		const phone = request.query.phone;
 		const patientId = request.query.patientId;
 
-		const result = await withTenantCtx(orgId, async () => {
+		const result = await withTenantCtx(resolvedOrgId, async () => {
 			return CallerLookupService.lookupCaller({
-				organizationId: orgId!,
+				organizationId: resolvedOrgId,
 				phone,
 				patientId,
 			});

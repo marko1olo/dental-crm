@@ -9,7 +9,7 @@ import {
 	type ShiftViewStats,
 	getDashboardRuntimeMeta,
 } from "./shiftViewTypes";
-import { getAppointmentDoctorId } from "../store/telephonyModules/telephonyClinicalVisitResolvers";
+import { getAppointmentDoctorId } from "@dental/shared";
 import { useShiftFinancialModeState } from "./useShiftFinancialModeState";
 
 export const DEFAULT_MAX_SHIFT_DURATION_HOURS = 12;

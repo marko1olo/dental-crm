@@ -5,6 +5,61 @@ import type {
 } from "./resolverTypes.js";
 
 /**
+ * Safely extracts startsAt date string from Appointment or legacy runtime object.
+ */
+export function getAppointmentStartsAt(appointment: unknown): string | null {
+	if (!appointment || typeof appointment !== "object") return null;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.startsAt === "string" && candidate.startsAt.trim()) {
+		return candidate.startsAt.trim();
+	}
+	if (typeof candidate.startIso === "string" && candidate.startIso.trim()) {
+		return candidate.startIso.trim();
+	}
+	if (typeof candidate.date === "string" && candidate.date.trim()) {
+		return candidate.date.trim();
+	}
+	return null;
+}
+
+/**
+ * Safely extracts endsAt date string from Appointment or legacy runtime object.
+ */
+export function getAppointmentEndsAt(appointment: unknown): string | null {
+	if (!appointment || typeof appointment !== "object") return null;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.endsAt === "string" && candidate.endsAt.trim()) {
+		return candidate.endsAt.trim();
+	}
+	if (typeof candidate.endIso === "string" && candidate.endIso.trim()) {
+		return candidate.endIso.trim();
+	}
+	return null;
+}
+
+/**
+ * Safely extracts doctor identifier from Appointment or legacy runtime object.
+ */
+export function getAppointmentDoctorId(appointment: unknown): string | null {
+	if (!appointment || typeof appointment !== "object") return null;
+	const candidate = appointment as Record<string, unknown>;
+	if (typeof candidate.doctorUserId === "string" && candidate.doctorUserId.trim()) {
+		return candidate.doctorUserId.trim();
+	}
+	if (typeof candidate.doctorId === "string" && candidate.doctorId.trim()) {
+		return candidate.doctorId.trim();
+	}
+	return null;
+}
+
+export function getAppointmentTimestamp(appointment: unknown): number {
+	const startsAt = getAppointmentStartsAt(appointment);
+	if (!startsAt) return 0;
+	const time = new Date(startsAt).getTime();
+	return Number.isFinite(time) ? time : 0;
+}
+
+/**
  * Resolves the last completed/past visit and attending doctor for a patient.
  */
 export function resolvePatientLastVisit(
@@ -26,8 +81,15 @@ export function resolvePatientLastVisit(
 
 	const patientAppointments = appointments
 		.filter((a) => a.patientId === patientId)
-		.filter((a) => a.status === "completed" || a.startsAt <= nowIso)
-		.sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+		.filter((a) => {
+			const dateStr = getAppointmentStartsAt(a);
+			return a.status === "completed" || Boolean(dateStr && dateStr <= nowIso);
+		})
+		.sort((a, b) => {
+			const timeA = getAppointmentTimestamp(a);
+			const timeB = getAppointmentTimestamp(b);
+			return timeB - timeA;
+		});
 
 	const latest = patientAppointments[0];
 	if (!latest) {
@@ -44,8 +106,9 @@ export function resolvePatientLastVisit(
 	let doctorName: string | null = null;
 	let doctorSpecialty: string | null = null;
 
-	if (latest.doctorUserId && staff) {
-		const doctor = staff.find((s) => s.id === latest.doctorUserId);
+	const doctorId = getAppointmentDoctorId(latest);
+	if (doctorId && staff) {
+		const doctor = staff.find((s) => s.id === doctorId);
 		if (doctor) {
 			doctorName = doctor.fullName;
 			if (doctor.specialties && doctor.specialties.length > 0) {
@@ -54,17 +117,22 @@ export function resolvePatientLastVisit(
 		}
 	}
 
-	const dateObj = new Date(latest.startsAt);
-	const formattedLastVisit = new Intl.DateTimeFormat("ru-RU", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	}).format(dateObj);
+	const rawDateStr = getAppointmentStartsAt(latest);
+	const dateObj = rawDateStr ? new Date(rawDateStr) : null;
+	const isValidDate = dateObj && !isNaN(dateObj.getTime());
+
+	const formattedLastVisit = isValidDate
+		? new Intl.DateTimeFormat("ru-RU", {
+				day: "numeric",
+				month: "short",
+				year: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
+			}).format(dateObj)
+		: "Первичный приём (визитов нет)";
 
 	return {
-		lastVisitDate: latest.startsAt,
+		lastVisitDate: rawDateStr || null,
 		formattedLastVisit,
 		doctorName,
 		doctorSpecialty,
