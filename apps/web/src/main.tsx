@@ -19,7 +19,7 @@ import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { initHardwareCapabilities } from "./lib/hardwareCapabilities";
 import { logger } from "./utils/logger";
 
-const PublicBookingWidget = React.lazy(() =>
+const PublicBookingPage = React.lazy(() =>
 	import("./pages/PublicBookingPage").then((m) => ({ default: m.PublicBookingPage })),
 );
 const PublicBudgetSignPage = React.lazy(() =>
@@ -111,6 +111,16 @@ const WaitlistStandaloneView = React.lazy(() =>
 const QuickBookingStandaloneView = React.lazy(() =>
 	import("./components/schedule/DirectQuickBookingLauncher").then((m) => ({
 		default: m.DirectQuickBookingLauncher,
+	})),
+);
+const CashboxStandaloneView = React.lazy(() =>
+	import("./components/cashbox/DirectCashboxLauncher").then((m) => ({
+		default: m.DirectCashboxLauncher,
+	})),
+);
+const EmrMedicalRecordStandaloneView = React.lazy(() =>
+	import("./components/appLayout/modalsContainerModules/standalone/clinical/StandaloneEmrMedicalRecordHost").then((m) => ({
+		default: m.StandaloneEmrMedicalRecordHost,
 	})),
 );
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
@@ -283,12 +293,12 @@ if (publicPortalRoute) {
 			<BootErrorBoundary audience="public">
 				<React.Suspense fallback={null}>
 					{publicPortalRoute.kind === "booking" ? (
-						<PublicBookingWidget
+						<PublicBookingPage
 							organizationId={publicPortalRoute.organizationId}
 							defaultMode="booking"
 						/>
 					) : publicPortalRoute.kind === "cabinet" ? (
-						<PublicBookingWidget
+						<PublicBookingPage
 							organizationId={publicPortalRoute.organizationId}
 							defaultMode="cabinet"
 						/>
@@ -637,6 +647,81 @@ if (publicPortalRoute) {
 					}
 				>
 					<OdontogramStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=cashbox") ||
+		window.location.search.includes("stand=checkout") ||
+		window.location.search.includes("standalone=cashbox") ||
+		window.location.search.includes("cashbox-studio=1") ||
+		window.location.search.includes("cashbox=1") ||
+		window.location.search.includes("checkout=1") ||
+		window.location.hash === "#stand-cashbox" ||
+		window.location.hash === "#cashbox" ||
+		window.location.hash === "#checkout" ||
+		window.location.hash.startsWith("#checkout?") ||
+		window.location.hash.startsWith("#cashbox?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка кассы...
+						</div>
+					}
+				>
+					<CashboxStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=emr") ||
+		window.location.search.includes("standalone=emr") ||
+		window.location.search.includes("emr=1") ||
+		window.location.search.includes("medical-card=1") ||
+		window.location.hash === "#emr" ||
+		window.location.hash === "#medical-card" ||
+		window.location.hash.startsWith("#emr?") ||
+		window.location.hash.startsWith("#medical-card?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка медицинской карты...
+						</div>
+					}
+				>
+					<EmrMedicalRecordStandaloneView onClose={() => {}} />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

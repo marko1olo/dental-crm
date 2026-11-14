@@ -35,7 +35,7 @@ export function ClinicalCatalogSpecialtyTabs({
 			)}
 
 			<div
-				ref={tabsRef as any}
+				ref={tabsRef}
 				className="dente-filter-chips overflow-x-auto no-scrollbar scroll-smooth px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full flex-nowrap"
 			>
 				{SPECIALTY_CATEGORIES_META.map((meta) => {

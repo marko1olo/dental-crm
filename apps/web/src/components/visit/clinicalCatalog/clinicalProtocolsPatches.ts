@@ -10,11 +10,11 @@ import type {
 } from "./clinicalProtocolsTypes";
 
 export function appendClinicalText(
-	existing: string | undefined | null,
+	existing: string | undefined | null | unknown,
 	addition: string,
 	separator = "\n",
 ): string {
-	const cur = (existing ?? "").trim();
+	const cur = (typeof existing === "string" ? existing : "").trim();
 	const add = addition.trim();
 	if (!add) return cur;
 	if (!cur) return add;
@@ -24,7 +24,7 @@ export function appendClinicalText(
 
 export function buildProcedureVisitNotePatch(
 	procedure: GroupedClinicalProcedure,
-	currentForm: Record<string, any> = {},
+	currentForm: Record<string, unknown> = {},
 	targetTooth?: number | null,
 ): VisitNoteFieldsPatch {
 	const toothPrefix = targetTooth ? `Зуб ${targetTooth}: ` : "";
@@ -57,7 +57,7 @@ export function buildProcedureVisitNotePatch(
 
 export function buildChunkVisitNotePatch(
 	chunk: ClinicalChunk1142,
-	currentForm: Record<string, any> = {},
+	currentForm: Record<string, unknown> = {},
 	targetTooth?: number | null,
 ): VisitNoteFieldsPatch {
 	const toothPrefix = targetTooth ? `Зуб ${targetTooth}: ` : "";

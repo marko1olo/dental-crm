@@ -15,7 +15,7 @@ export interface UseClinicalCatalogModalStateProps {
 	onClose: () => void;
 	activeTooth?: number | null;
 	onApplyPatch: (patch: VisitNoteFieldsPatch, successMessage: string) => void;
-	currentNoteForm?: Record<string, any>;
+	currentNoteForm?: Record<string, unknown>;
 	initialSpecialty?: SpecialtyCategoryKey;
 }
 

@@ -14,7 +14,7 @@ export interface ClinicalProtocolsCatalogModalProps {
 	readonly onClose: () => void;
 	readonly activeTooth?: number | null;
 	readonly onApplyPatch: (patch: VisitNoteFieldsPatch, successMessage: string) => void;
-	readonly currentNoteForm?: Record<string, any>;
+	readonly currentNoteForm?: Record<string, unknown>;
 	readonly initialSpecialty?: SpecialtyCategoryKey;
 }
 
@@ -37,7 +37,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 
 		return (
 			<div
-				className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+				className="fixed inset-0 z-[10060] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Каталог клинических протоколов и дневников приёма"

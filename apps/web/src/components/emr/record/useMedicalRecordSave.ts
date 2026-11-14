@@ -109,7 +109,9 @@ export function useMedicalRecordSave({
 								clientSavedAt: new Date().toISOString(),
 							}),
 						});
-					} catch {}
+					} catch (autosaveErr) {
+						console.warn("useMedicalRecordSave: некритичная ошибка фонового автосейва черновика", autosaveErr);
+					}
 
 					if (typeof window !== "undefined") {
 						window.dispatchEvent(
@@ -121,6 +123,10 @@ export function useMedicalRecordSave({
 						window.dispatchEvent(new CustomEvent("dente:visit-updated", { detail: { visitId: effectiveVisitId } }));
 					}
 					showToast("Медицинская карта приёма сохранена в базу данных", "success", 4000);
+				} else {
+					const errorPayload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+					const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить дневник";
+					showToast(errorMessage, "error", 4000);
 				}
 			} else {
 				if (typeof window !== "undefined") {

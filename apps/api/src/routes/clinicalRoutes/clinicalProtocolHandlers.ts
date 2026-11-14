@@ -158,56 +158,64 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 		}
 	});
 
-	app.patch("/api/clinical/rules/:ruleId", async (request, reply) => {
-		try {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"clinical rule update",
-				))
-			)
-				return;
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+	app.patch(
+		"/api/clinical/rules/:ruleId",
+		async (
+			request: FastifyRequest<{
+				Params: { ruleId: string };
+			}>,
+			reply: FastifyReply,
+		) => {
+			try {
+				if (
+					!(await requireClinicalMutationAccess(
+						request,
+						reply,
+						"clinical rule update",
+					))
+				)
+					return;
+				const orgId = requireOrganizationId(request, reply);
+				if (!orgId) return;
 
-			// 152-ФЗ / 323-ФЗ: Редактирование клинических противопоказаний разрешено только клиническому персоналу
-			const staffRole = resolveClinicalStaffRole(request);
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.rules.write",
-					role: staffRole,
-					message:
-						"Управление клиническими правилами ограничено 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+				// 152-ФЗ / 323-ФЗ: Редактирование клинических противопоказаний разрешено только клиническому персоналу
+				const staffRole = resolveClinicalStaffRole(request);
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "clinical.rules.write",
+						role: staffRole,
+						message:
+							"Управление клиническими правилами ограничено 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+					});
+				}
+
+				const { ruleId } = request.params;
+				const body =
+					request.body && typeof request.body === "object" ? request.body : {};
+				const input = parseClinicalPayload(updateClinicalRuleSchema, {
+					...body,
+					id: ruleId,
+				});
+				if (!input) {
+					return reply.code(400).send({
+						error: "ClinicalRuleValidationError",
+						message: clinicalRuleMutationValidationMessage,
+					});
+				}
+				return clinicalRuleSchema.parse(
+					await updateClinicalRuleInDb(orgId, input),
+				);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Внутренняя ошибка сервера при обновлении клинического правила.",
 				});
 			}
-
-			const params = request.params as { ruleId: string };
-			const body =
-				request.body && typeof request.body === "object" ? request.body : {};
-			const input = parseClinicalPayload(updateClinicalRuleSchema, {
-				...body,
-				id: params.ruleId,
-			});
-			if (!input) {
-				return reply.code(400).send({
-					error: "ClinicalRuleValidationError",
-					message: clinicalRuleMutationValidationMessage,
-				});
-			}
-			return clinicalRuleSchema.parse(
-				await updateClinicalRuleInDb(orgId, input),
-			);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при обновлении клинического правила.",
-			});
-		}
-	});
+		},
+	);
 
 	/**
 	 * Удаление клинического правила.
@@ -227,17 +235,24 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 	 * выше: clinical_rules.id имеет тип uuid, и строка «rule1» дошла бы до
 	 * PostgreSQL пятисоткой «invalid input syntax for type uuid».
 	 */
-	app.delete("/api/clinical/rules/:ruleId", async (request, reply) => {
-		try {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"clinical rule delete",
-				))
-			)
-				return;
-			const { ruleId } = request.params as { ruleId: string };
+	app.delete(
+		"/api/clinical/rules/:ruleId",
+		async (
+			request: FastifyRequest<{
+				Params: { ruleId: string };
+			}>,
+			reply: FastifyReply,
+		) => {
+			try {
+				if (
+					!(await requireClinicalMutationAccess(
+						request,
+						reply,
+						"clinical rule delete",
+					))
+				)
+					return;
+				const { ruleId } = request.params;
 			if (!ruleId || !UUID_PATTERN.test(ruleId)) {
 				return reply.code(400).send({
 					error: "ClinicalRuleValidationError",
@@ -279,116 +294,21 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 		}
 	});
 
-	// COMPETITOR FEATURE #57: кадры::блокировка_параллельного_входа_под_одной_учетной_записью
-	app.get("/api/system/single-session-enforcements", async (request, reply) => {
-		try {
-			// Организация берётся из подписанного токена, а не из заголовка клиента.
-			// Раньше здесь принимался x-organization-id без всякой аутентификации:
-			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
-			const { getSingleSessionEnforcementsFromDb } = await import(
-				"../../db/singleSessionEnforcementsQuery.js"
-			);
-			return reply
-				.status(200)
-				.send(await getSingleSessionEnforcementsFromDb(orgId));
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при проверке односессионного режима.",
-			});
-		}
-	});
-
-	// COMPETITOR FEATURE #60: интеграции::геокодирование_адресов_через_dadata
-	app.get("/api/integrations/dadata-addresses", async (request, reply) => {
-		try {
-			// Организация берётся из подписанного токена, а не из заголовка клиента.
-			// Раньше здесь принимался x-organization-id без всякой аутентификации:
-			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
-			const { getDadataGeocodedAddressesFromDb } = await import(
-				"../../db/dadataGeocodedAddressesQuery.js"
-			);
-			return reply
-				.status(200)
-				.send(await getDadataGeocodedAddressesFromDb(orgId));
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при геокодировании адресов через DaData.",
-			});
-		}
-	});
-
-	// COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм
-	app.get(
-		"/api/integrations/landing-field-mappings",
-		async (request, reply) => {
-			try {
-				// Организация берётся из подписанного токена, а не из заголовка клиента.
-				// Раньше здесь принимался x-organization-id без всякой аутентификации:
-				// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-				const orgId = requireOrganizationId(request, reply);
-				if (!orgId) return;
-				const { getLandingFieldMappingsFromDb } = await import(
-					"../../db/landingFieldMappingsQuery.js"
-				);
-				return reply
-					.status(200)
-					.send(await getLandingFieldMappingsFromDb(orgId));
-			} catch (error: unknown) {
-				request.log.error(error);
-				return reply.status(500).send({
-					error: "InternalServerError",
-					message: "Внутренняя ошибка сервера при получении маппинга полей лендингов.",
-				});
-			}
-		},
-	);
-
-	// COMPETITOR FEATURE #58: пациенты::геокодинг_адресов_через_dadata
-	app.get(
-		"/api/integrations/dadata-geocoded-addresses",
-		async (request, reply) => {
-			try {
-				// Организация берётся из подписанного токена, а не из заголовка клиента.
-				// Раньше здесь принимался x-organization-id без всякой аутентификации:
-				// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-				const orgId = requireOrganizationId(request, reply);
-				if (!orgId) return;
-				const { getDadataGeocodedAddressesFromDb } = await import(
-					"../../db/dadataGeocodedAddressesQuery.js"
-				);
-				return reply
-					.status(200)
-					.send(await getDadataGeocodedAddressesFromDb(orgId));
-			} catch (error: unknown) {
-				request.log.error(error);
-				return reply.status(500).send({
-					error: "InternalServerError",
-					message: "Внутренняя ошибка сервера при геокодировании адресов пациентов.",
-				});
-			}
-		},
-	);
-
 	app.get(
 		"/api/emr/templates",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const query = request.query as
-				| { q?: string; category?: string }
-				| undefined;
+		async (
+			request: FastifyRequest<{
+				Querystring: { q?: string; category?: string };
+			}>,
+			reply: FastifyReply,
+		) => {
+			const { q, category } = request.query ?? {};
 			const { getStatutoryEmrTemplates } = await import(
 				"../../services/clinical/statutoryCatalogs.js"
 			);
 			const items = getStatutoryEmrTemplates({
-				...(query?.q ? { q: query.q } : {}),
-				...(query?.category ? { category: query.category } : {}),
+				...(q ? { q } : {}),
+				...(category ? { category } : {}),
 			});
 			return reply.status(200).send(items);
 		},

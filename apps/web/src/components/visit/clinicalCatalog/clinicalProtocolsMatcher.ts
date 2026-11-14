@@ -56,7 +56,7 @@ function calculateProtocolScore(proc: GroupedClinicalProcedure, lower: string, p
 
 export function findBestClinicalProtocol(
 	rawQuery: string,
-	optionsOrTooth?: number | null | { specialty?: SpecialtyCategoryKey; toothNumber?: number | null; currentForm?: Record<string, any> },
+	optionsOrTooth?: number | null | { specialty?: SpecialtyCategoryKey; toothNumber?: number | null; currentForm?: Record<string, unknown> },
 ): ClinicalProtocolMatchResult | null {
 	const text = rawQuery.trim();
 	if (!text) return null;

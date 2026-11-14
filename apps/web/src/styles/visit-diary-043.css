@@ -1,6 +1,0 @@
-/**
- * visit-diary-043.css — Legacy Forwarder to visit-clinical-diary.css (Mandate 8x & 8ap)
- * Retained strictly for backwards-compatibility; all new code imports visit-clinical-diary.css.
- */
-
-@import "./visit-clinical-diary.css";

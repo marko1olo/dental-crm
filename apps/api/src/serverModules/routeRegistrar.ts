@@ -46,9 +46,10 @@ import { registerInvoiceRoutes } from "../routes/invoices.js";
 import { registerDiagnocatRoutes } from "../routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "../routes/integrations/flexbe.js";
 import { registerProdoctorovRoutes } from "../routes/integrations/prodoctorov.js";
+import { registerDadataLandingIntegrationRoutes } from "../routes/integrations/dadataLandingIntegrationRoutes.js";
 import { inventoryRoutes } from "../routes/inventory.js";
 import { warehouseRoutes } from "../routes/warehouse.js";
-import { registerLabRoutes } from "../routes/lab.js";
+import { registerLabRoutes } from "../routes/lab/index.js";
 import { registerLeadsRoutes } from "../routes/leads.js";
 import { registerLoyaltyRoutes } from "../routes/loyalty.js";
 import { registerExportRoutes } from "../routes/export.js";
@@ -242,6 +243,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await workspaceProfileRoutes(app);
 	await registerFlexbeRoutes(app);
 	await registerProdoctorovRoutes(app);
+	await registerDadataLandingIntegrationRoutes(app);
 
 	// Вторая партия ранее незарегистрированных модулей.
 	await registerDiaryRoutes(app);
