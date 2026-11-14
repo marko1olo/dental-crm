@@ -31,10 +31,8 @@ export async function analyzeImagingStudy(
 	imageBase64: string,
 	options?: RadiographAnalysisOptions,
 ): Promise<RadiographAnalysisResult> {
-	// biome-ignore lint/suspicious/noExplicitAny: provider check
-	const groqKeys = getProviderKeyCandidates(GROQ_PROVIDER_ID as any);
-	// biome-ignore lint/suspicious/noExplicitAny: provider check
-	const geminiKeys = getProviderKeyCandidates(GEMINI_PROVIDER_ID as any);
+	const groqKeys = getProviderKeyCandidates(GROQ_PROVIDER_ID);
+	const geminiKeys = getProviderKeyCandidates(GEMINI_PROVIDER_ID);
 
 	if (!groqKeys.length && !geminiKeys.length) {
 		throw new Error("Нет доступных ключей для AI-анализа (ни Groq, ни Gemini)");
@@ -75,8 +73,7 @@ export async function analyzeImagingStudy(
 		);
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: raw json
-	let pass1Parsed: any;
+	let pass1Parsed: Record<string, unknown>;
 	try {
 		pass1Parsed = extractJson(pass1.text);
 	} catch {
@@ -117,18 +114,26 @@ export async function analyzeImagingStudy(
 		100,
 	);
 
-	// biome-ignore lint/suspicious/noExplicitAny: response result
-	let finalResult: any = pass1Parsed;
+	let finalResult: Record<string, unknown> = pass1Parsed;
 	let pass2ModelName: string | null = null;
 
 	if (pass2) {
 		try {
 			const pass2Parsed = extractJson(pass2.text);
+			const pass2ToothUpdates = Array.isArray(pass2Parsed.toothUpdates)
+				? pass2Parsed.toothUpdates
+				: [];
+			const pass1ToothUpdates = Array.isArray(pass1Parsed.toothUpdates)
+				? pass1Parsed.toothUpdates
+				: [];
+			const pass2Summary =
+				typeof pass2Parsed.summary === "string" ? pass2Parsed.summary : "";
+			const pass1SummaryStr =
+				typeof pass1Parsed.summary === "string" ? pass1Parsed.summary : "";
+
 			if (
-				pass2Parsed.toothUpdates?.length >=
-					(pass1Parsed.toothUpdates?.length ?? 0) &&
-				(pass2Parsed.summary?.length ?? 0) >=
-					(pass1Parsed.summary?.length ?? 0) * 0.7
+				pass2ToothUpdates.length >= pass1ToothUpdates.length &&
+				pass2Summary.length >= pass1SummaryStr.length * 0.7
 			) {
 				finalResult = pass2Parsed;
 			}
@@ -141,16 +146,26 @@ export async function analyzeImagingStudy(
 	}
 
 	// 4. Normalise output
-	// biome-ignore lint/suspicious/noExplicitAny: normalizer
-	const toothUpdates: ToothFindingUpdate[] = Array.isArray(finalResult.toothUpdates)
-		? // biome-ignore lint/suspicious/noExplicitAny: mapper
-			finalResult.toothUpdates.map((u: any) => ({
+	const rawToothUpdates = Array.isArray(finalResult.toothUpdates)
+		? finalResult.toothUpdates
+		: [];
+	const toothUpdates: ToothFindingUpdate[] = rawToothUpdates.map(
+		(item: unknown) => {
+			const u =
+				item && typeof item === "object"
+					? (item as Record<string, unknown>)
+					: {};
+			const finding: ToothFindingUpdate = {
 				code: String(u.code ?? "unknown"),
 				state: String(u.state ?? "watch"),
 				diagnosisOrFinding: String(u.diagnosisOrFinding ?? ""),
-				notes: u.notes ? String(u.notes) : undefined,
-			}))
-		: [];
+			};
+			if (typeof u.notes === "string" && u.notes.trim()) {
+				finding.notes = u.notes.trim();
+			}
+			return finding;
+		},
+	);
 
 	return {
 		summary:

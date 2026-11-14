@@ -385,12 +385,6 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 						<span className="whitespace-nowrap font-bold">Режим осмотра [Esc]</span>
 					</button>
 				)}
-
-				{hasSelection && (
-					<span className="text-[11px] font-bold px-2.5 h-8 inline-flex items-center rounded-lg bg-teal-500/10 text-teal-800 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap shadow-2xs">
-						Выбрано: {selectedTeeth.length}
-					</span>
-				)}
 			</div>
 		</div>
 	);

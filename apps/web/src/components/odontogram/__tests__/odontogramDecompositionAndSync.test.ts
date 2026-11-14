@@ -51,9 +51,6 @@ import {
 	formatOdontogramToClinicalProtocolText,
 } from "../gost/gostHistoryTypes";
 import {
-	areClassicGostOdontogramPropsEqual,
-} from "../classicGostTypes";
-import {
 	mergeTeethWithLocalCache,
 } from "../syncModules/odontogramIndexedDbSync";
 
@@ -223,7 +220,7 @@ describe("State Synchronization & Conflict Resolution", () => {
 		assert.deepEqual(q1Teeth, [18, 17, 16, 15, 14, 13, 12, 11]);
 	});
 
-	test("memo comparisons areToothChartPropsEqual and areClassicGostOdontogramPropsEqual prevent redundant renders", () => {
+	test("memo comparisons areToothChartPropsEqual prevent redundant renders", () => {
 		const props1 = {
 			patientId: "patient-1",
 			teethData: [{ toothNumber: 11, state: "Healthy" as const }],
@@ -239,15 +236,5 @@ describe("State Synchronization & Conflict Resolution", () => {
 			teethData: [{ toothNumber: 11, state: "Caries" as const }],
 		};
 		assert.equal(areToothChartPropsEqual(props1, props3), false);
-
-		const gostProps1 = {
-			teethData: [{ toothNumber: 11, state: "Healthy" as const }],
-			onToothClick: () => {},
-		};
-		const gostProps2 = {
-			teethData: [{ toothNumber: 11, state: "Healthy" as const }],
-			onToothClick: () => {},
-		};
-		assert.equal(areClassicGostOdontogramPropsEqual(gostProps1, gostProps2), true);
 	});
 });

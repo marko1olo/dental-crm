@@ -11,12 +11,18 @@ export function isValidUuid(id: string): boolean {
 	);
 }
 
+interface RequestTenantProbe {
+	tenantId?: unknown;
+	user?: { organizationId?: unknown };
+	params?: Record<string, unknown>;
+	body?: Record<string, unknown>;
+}
+
 /**
  * Extracts organization/tenant ID from Fastify request identity.
  */
 export function extractTenantId(request: FastifyRequest): string | null {
-	// biome-ignore lint/suspicious/noExplicitAny: request decorations
-	const req = request as any;
+	const req = request as unknown as RequestTenantProbe;
 	if (typeof req.tenantId === "string" && req.tenantId.trim()) {
 		return req.tenantId.trim();
 	}

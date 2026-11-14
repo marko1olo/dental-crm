@@ -3,6 +3,7 @@
  * Zero runtime dependencies, pure interfaces and types.
  */
 
+import type { Ffd12VatRate, TaxDeductionCategory } from "@dental/shared";
 import type { Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
 import type {
 	KktDeviceStatus,
@@ -32,8 +33,8 @@ export interface FiscalCheckoutInput {
 		priceKopecks: number;
 		quantity: number;
 		amountKopecks: number;
-		vatRate?: string | undefined;
-		taxDeductionCode?: string | undefined;
+		vatRate?: Ffd12VatRate | string | undefined;
+		taxDeductionCode?: TaxDeductionCategory | string | undefined;
 	}> | undefined;
 	clientMutationId?: string | undefined;
 	kktConfig?: Partial<KktLanConfig> | undefined;

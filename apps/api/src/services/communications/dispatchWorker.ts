@@ -24,7 +24,49 @@ import {
 	completeFinishedCampaigns,
 	launchScheduledCampaigns,
 } from "./campaigns.js";
-import { type DispatchReport, dispatchDueMessages, enqueueMessage } from "./dispatcher.js";
+import type { CommunicationChannelCode } from "./channelRouter.js";
+import {
+	type CommunicationIntentCode,
+	type DispatchReport,
+	dispatchDueMessages,
+	enqueueMessage,
+} from "./dispatcher.js";
+
+const VALID_CHANNELS: ReadonlySet<string> = new Set<CommunicationChannelCode>([
+	"phone",
+	"sms",
+	"whatsapp",
+	"telegram",
+	"email",
+	"in_person",
+	"vk",
+	"max",
+]);
+
+const VALID_INTENTS: ReadonlySet<string> = new Set<CommunicationIntentCode>([
+	"appointment_confirmation",
+	"payment_reminder",
+	"post_visit_instruction",
+	"recall",
+	"document_ready",
+	"imaging_review",
+	"general",
+	"transactional_reply",
+]);
+
+function toChannelCode(channel: string | null | undefined): CommunicationChannelCode {
+	if (channel && VALID_CHANNELS.has(channel as CommunicationChannelCode)) {
+		return channel as CommunicationChannelCode;
+	}
+	return "telegram";
+}
+
+function toIntentCode(intent: string | null | undefined): CommunicationIntentCode {
+	if (intent && VALID_INTENTS.has(intent as CommunicationIntentCode)) {
+		return intent as CommunicationIntentCode;
+	}
+	return "post_visit_instruction";
+}
 
 export type DispatchWorkerLogger = {
 	info: (payload: Record<string, unknown>, message: string) => void;
@@ -89,8 +131,8 @@ export async function dispatchDueCareTasks(
 				clinicId: task.clinicId,
 				patientId: task.patientId,
 				taskId: task.id,
-				channel: (task.channel as any) || "telegram",
-				intent: (task.intent as any) || "post_visit_instruction",
+				channel: toChannelCode(task.channel),
+				intent: toIntentCode(task.intent),
 				body: task.body || task.title,
 				dedupeKey: `care_task:${task.id}`,
 				scheduledAt: now,

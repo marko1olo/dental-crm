@@ -28,9 +28,9 @@ export const PediatricQuadrantsButtons: React.FC<
 	};
 
 	const btnCls =
-		"flex-1 h-7 rounded text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center";
+		"flex-1 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 rounded-lg text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center flex items-center justify-center";
 	const frontCls =
-		"flex-1 h-7 rounded text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 transition-all cursor-pointer select-none text-center";
+		"flex-1 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 rounded-lg text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 transition-all cursor-pointer select-none text-center flex items-center justify-center";
 
 	return (
 		<>

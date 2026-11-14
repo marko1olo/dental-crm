@@ -6,19 +6,30 @@ import { mapImagingStudy } from "./imagingMappers.js";
 
 export { createImagingStudiesInDb } from "./imagingStudyBatchMutations.js";
 
+export function normalizeDbImagingSourceKind(
+	sourceKind: ImagingStudy["sourceKind"],
+): (typeof schema.imagingStudies.$inferInsert)["sourceKind"] {
+	switch (sourceKind) {
+		case "hot_folder":
+			return "folder_watch";
+		case "dicom_worklist":
+			return "dicomweb";
+		default:
+			return sourceKind;
+	}
+}
+
 export async function createImagingStudyInDb(
 	organizationId: string,
 	input: {
 		patientId: string;
 		visitId?: string | null | undefined;
 		doctorId?: string | null | undefined;
-		// biome-ignore lint/suspicious/noExplicitAny: domain schema contract
-		kind: any;
+		kind: ImagingStudy["kind"];
 		title: string;
 		toothCode?: string | null | undefined;
 		region?: string | null | undefined;
-		// biome-ignore lint/suspicious/noExplicitAny: domain schema contract
-		sourceKind: any;
+		sourceKind: ImagingStudy["sourceKind"];
 		sourceName: string;
 		storagePath?: string | null | undefined;
 		dicomStudyUid?: string | null | undefined;
@@ -62,7 +73,7 @@ export async function createImagingStudyInDb(
 			toothCode: input.toothCode || null,
 			region: input.region || null,
 			capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
-			sourceKind: input.sourceKind,
+			sourceKind: normalizeDbImagingSourceKind(input.sourceKind),
 			sourceName: input.sourceName.length > 160 ? input.sourceName.slice(0, 160) : input.sourceName,
 			storagePath: input.storagePath || null,
 			dicomStudyUid: input.dicomStudyUid || null,

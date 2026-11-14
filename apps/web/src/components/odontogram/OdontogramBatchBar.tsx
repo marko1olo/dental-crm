@@ -67,7 +67,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Healthy",
 		label: "Норма",
 		abbr: "Зд",
-		dotColor: "bg-[#10b981]",
+		dotColor: "bg-[var(--teal,#0d9488)]",
 		testId: "batch-apply-healthy-btn",
 		title: "Физиологическая норма: здоровые интактные зубы",
 	},
@@ -75,7 +75,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Caries",
 		label: "Кариес",
 		abbr: "К",
-		dotColor: "bg-[#f59e0b]",
+		dotColor: "bg-[var(--warning,#f59e0b)]",
 		testId: "batch-apply-caries-btn",
 		title: "Кариозное поражение (C)",
 	},
@@ -83,7 +83,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Filled",
 		label: "Пломба",
 		abbr: "П",
-		dotColor: "bg-[#0d9488]",
+		dotColor: "bg-[var(--teal,#0d9488)]",
 		testId: "batch-apply-filled-btn",
 		title: "Пломбированные зубы (Pl)",
 	},
@@ -91,7 +91,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Missing",
 		label: "Удален",
 		abbr: "0",
-		dotColor: "bg-[#64748b]",
+		dotColor: "bg-[var(--line-strong,#64748b)]",
 		testId: "batch-apply-missing-btn",
 		title: "Отсутствующие зубы / Адентия (0)",
 	},
@@ -99,7 +99,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Pulpitis",
 		label: "Пульпит",
 		abbr: "Пт",
-		dotColor: "bg-[#ef4444]",
+		dotColor: "bg-[var(--danger,#ef4444)]",
 		testId: "batch-apply-pulpitis-btn",
 		title: "Воспаление пульпы (P)",
 	},
@@ -107,7 +107,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Periodontitis",
 		label: "Периодонтит",
 		abbr: "Pt",
-		dotColor: "bg-[#ea580c]",
+		dotColor: "bg-[var(--warning-strong,#ea580c)]",
 		testId: "batch-apply-periodontitis-btn",
 		title: "Периодонтит (Pt)",
 	},
@@ -115,7 +115,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Crown",
 		label: "Коронка",
 		abbr: "Кр",
-		dotColor: "bg-[#2563eb]",
+		dotColor: "bg-[var(--primary,#0284c7)]",
 		testId: "batch-apply-crown-btn",
 		title: "Ортопедическая коронка (K)",
 	},
@@ -123,7 +123,7 @@ const BATCH_STATUS_OPTIONS: readonly BatchStatusOption[] = [
 		state: "Implant",
 		label: "Имплант",
 		abbr: "Им",
-		dotColor: "bg-[#7c3aed]",
+		dotColor: "bg-[var(--accent,#7c3aed)]",
 		testId: "batch-apply-implant-btn",
 		title: "Дентальный имплантат (I)",
 	},
@@ -293,7 +293,7 @@ export const OdontogramBatchBar: React.FC<OdontogramBatchBarProps> = React.memo(
 							<button
 								type="button"
 								onClick={onClearSelection}
-								className="min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1 whitespace-nowrap active:scale-[0.98]"
+								className="min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg border border-[var(--danger,#ef4444)]/30 bg-[var(--danger-soft,rgba(239,68,68,0.1))] hover:bg-[var(--danger-soft,rgba(239,68,68,0.2))] text-[var(--danger,#ef4444)] text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1 whitespace-nowrap active:scale-[0.98]"
 								title="Снять выделение со всех зубов"
 								data-testid="batch-clear-selection-btn"
 							>
@@ -323,7 +323,7 @@ export const OdontogramBatchBar: React.FC<OdontogramBatchBarProps> = React.memo(
 							onClick={() => handleApplyBatchState(opt.state, opt.label)}
 							className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg text-xs font-extrabold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 whitespace-nowrap active:scale-[0.98] ${
 								opt.state === "Healthy"
-									? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/15"
+									? "border-[var(--teal,#0d9488)]/40 text-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 hover:bg-[var(--teal,#0d9488)]/20"
 									: ""
 							}`}
 							title={`${opt.title} (применить к ${count} зубам)`}

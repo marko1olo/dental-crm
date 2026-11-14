@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { loadAdditionalServerEnv } from "../env/loadServerEnv.js";
@@ -93,25 +94,22 @@ let poolEnding: Promise<void> | undefined;
 export const endPool = (): Promise<void> => (poolEnding ??= pool.end());
 
 export const dbRaw = drizzle(pool, { schema });
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-type TenantDb = typeof dbRaw;
+export type TenantTransaction = Parameters<Parameters<typeof dbRaw.transaction>[0]>[0];
+export type TenantDb = NodePgDatabase<typeof schema> | TenantTransaction;
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export const transactionStorage = new AsyncLocalStorage<any>();
+export const transactionStorage = new AsyncLocalStorage<TenantDb>();
 
 export const db = new Proxy(dbRaw, {
 	get(target, prop, receiver) {
 		const currentTx = transactionStorage.getStore();
 		const delegate = currentTx || target;
 		if (prop === "transaction") {
-			// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction delegate typing
-			return (transactionFn: (tx: any) => Promise<any>, config?: any) => {
-				// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction delegate typing
-				return delegate.transaction(async (innerTx: any) => {
+			return (transactionFn: (tx: TenantDb) => Promise<unknown>, config?: unknown) => {
+				return (delegate as typeof dbRaw).transaction(async (innerTx) => {
 					return await transactionStorage.run(innerTx, () =>
 						transactionFn(innerTx),
 					);
-				}, config);
+				}, config as Parameters<typeof dbRaw.transaction>[1]);
 			};
 		}
 		if (currentTx) {

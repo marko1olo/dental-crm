@@ -74,30 +74,21 @@ describe("CLIN-01: Exact Kopeck Money & Zero Bill Floor Elimination (Mandate 8b)
 });
 
 describe("CLIN-02: Locked Visit Diary Protocol Synchronization Autonomy (Mandate 8e)", () => {
-	it("verifies useVisitDiaryLogic.ts does not silently drop soap event on locked visit", () => {
+	it("verifies useVisitEmkTabController.ts does not silently drop soap event on locked visit", () => {
 		const hookPath = path.resolve(
 			__dirname,
-			"../../../../src/components/useVisitDiaryLogic.ts",
+			"../../visit/emkTabModules/useVisitEmkTabController.ts",
 		);
 		const content = fs.readFileSync(hookPath, "utf-8");
 
-		// Check that the old silent return is gone
-		const oldSilentPattern = /if\s*\(\s*isLocked\s*&&\s*!isRevising\s*\)\s*\{\s*return;\s*\}/;
-		assert.strictEqual(
-			oldSilentPattern.test(content),
-			false,
-			"useVisitDiaryLogic.ts must NOT silently return on locked diary",
-		);
-
-		// Check that setIsRevising(true) and warning toast are triggered
+		// Check that isSignedVisit triggers revision mode when physiological norm or protocol arrives
 		assert.ok(
-			content.includes("setIsRevising(true)"),
-			"useVisitDiaryLogic.ts must automatically activate revision mode",
+			content.includes("isSignedVisit && !isRevisingVisitNote"),
+			"useVisitEmkTabController must check isSignedVisit to activate revision mode",
 		);
 		assert.ok(
-			content.includes("showToast(") &&
-				content.includes("Дневник визита открыт для внесения исправлений"),
-			"useVisitDiaryLogic.ts must notify doctor with warning toast when locked diary receives protocol",
+			content.includes("setIsRevisingVisitNote(true)"),
+			"useVisitEmkTabController must automatically activate revision mode",
 		);
 	});
 

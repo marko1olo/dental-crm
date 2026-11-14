@@ -13,10 +13,145 @@ import type {
 	RadiologyReferralPayload,
 } from "./types.js";
 import { escapeHtml, CLINICAL_DOCUMENT_PRINT_STYLES } from "./sharedStyles.js";
-import { renderGraphicalDentalFormulaHtml } from "../dentalFormulaRenderer.js";
+import {
+	renderGraphicalDentalFormulaHtml,
+	type ClinicalToothRowInput,
+	type DentalFormulaRecordInput,
+} from "../dentalFormulaRenderer.js";
+
+interface SoapDiaryLike {
+	readonly entryDate?: string | undefined;
+	readonly visitDate?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly clinicalDiagnosisIcd10?: string | undefined;
+	readonly assessmentDiagnosisText?: string | undefined;
+	readonly diagnosisDetailed?: string | undefined;
+	readonly assessmentDiagnosis?: string | undefined;
+	readonly subjectiveComplaints?: string | undefined;
+	readonly subjectiveComplaint?: string | undefined;
+	readonly objectiveStatusLocalis?: string | undefined;
+	readonly objectiveStatus?: string | undefined;
+	readonly treatmentProtocol804n?: string | undefined;
+	readonly procedureProtocol?: string | undefined;
+	readonly planAndTreatment?: string | undefined;
+	readonly usedMaterials?: string | undefined;
+	readonly homeCareRecommendations?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
+interface ExposureEntryLike {
+	readonly studyDate?: string | undefined;
+	readonly date?: string | undefined;
+	readonly studyType?: string | undefined;
+	readonly procedureName?: string | undefined;
+	readonly anatomicalArea?: string | undefined;
+	readonly toothNumber?: string | number | undefined;
+	readonly apparatusModel?: string | undefined;
+	readonly xrayApparatus?: string | undefined;
+	readonly tubeVoltageKv?: number | undefined;
+	readonly tubeCurrentMa?: number | undefined;
+	readonly exposureTimeSeconds?: number | undefined;
+	readonly effectiveDoseMsv?: number | undefined;
+	readonly effectiveDoseMicrosieverts?: number | undefined;
+	readonly radiologistFullName?: string | undefined;
+	readonly operatorName?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
+interface DmftStatsLike {
+	readonly totalDmft?: number | undefined;
+	readonly dmftTotal?: number | undefined;
+	readonly decayed?: number | undefined;
+	readonly filled?: number | undefined;
+	readonly missing?: number | undefined;
+	readonly totalDmfs?: number | undefined;
+	readonly intensityLevel?: string | undefined;
+	readonly intensityLevelLabel?: string | undefined;
+}
+
+export interface Form043uRenderPayload {
+	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly ogrn?: string; readonly inn?: string; readonly medicalLicenseNumber?: string } | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicMedicalLicenseNumber?: string | undefined;
+	readonly medicalLicenseNumber?: string | undefined;
+	readonly patient?: {
+		readonly medicalCardNumber?: string | undefined;
+		readonly cardOpenedAt?: string | undefined;
+		readonly fullName?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly gender?: string | undefined;
+		readonly phone?: string | undefined;
+		readonly address?: string | undefined;
+		readonly snils?: string | undefined;
+		readonly passport?: string | undefined;
+	} | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly cardOpenedDate?: string | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly patientSex?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientAddressRegistration?: string | undefined;
+	readonly patientAddressResidence?: string | undefined;
+	readonly snils?: string | undefined;
+	readonly passportDetails?: string | undefined;
+	readonly attendingDoctorFullName?: string | undefined;
+	readonly attendingDoctorSpecialty?: string | undefined;
+	readonly anamnesisAndHealth?: {
+		readonly mainComplaints?: string | undefined;
+		readonly anamnesisMorbi?: string | undefined;
+		readonly anamnesisVitae?: string | undefined;
+		readonly allergicHistory?: string | undefined;
+	} | undefined;
+	readonly chiefComplaint?: string | undefined;
+	readonly historyOfPresentIllness?: string | undefined;
+	readonly medicalHistory?: string | undefined;
+	readonly allergologicalHistory?: string | undefined;
+	readonly objectiveExamination?: {
+		readonly extraoralBite?: string | undefined;
+		readonly oralMucosaStatus?: string | undefined;
+	} | undefined;
+	readonly biteDescription?: string | undefined;
+	readonly dentalFormula?: {
+		readonly calculatedDmft?: {
+			readonly totalDmft?: number | undefined;
+			readonly dmftTotal?: number | undefined;
+			readonly decayed?: number | undefined;
+			readonly filled?: number | undefined;
+			readonly missing?: number | undefined;
+			readonly totalDmfs?: number | undefined;
+			readonly intensityLevel?: string | undefined;
+			readonly intensityLevelLabel?: string | undefined;
+		} | undefined;
+		readonly formula?: DentalFormulaRecordInput | Record<string, unknown> | undefined;
+		readonly teeth?: ClinicalToothRowInput[] | readonly Record<string, unknown>[] | undefined;
+		readonly [key: string]: unknown;
+	} | DentalFormulaRecordInput | Record<string, unknown> | undefined;
+	readonly dmftIndex?: {
+		readonly totalDmft?: number | undefined;
+		readonly dmftTotal?: number | undefined;
+		readonly decayed?: number | undefined;
+		readonly filled?: number | undefined;
+		readonly missing?: number | undefined;
+		readonly totalDmfs?: number | undefined;
+		readonly intensityLevel?: string | undefined;
+		readonly intensityLevelLabel?: string | undefined;
+	} | undefined;
+	readonly clinicalToothRows?: ClinicalToothRowInput[] | readonly Record<string, unknown>[] | undefined;
+	readonly soapDiaries?: readonly SoapDiaryLike[] | undefined;
+	readonly diaries?: readonly SoapDiaryLike[] | undefined;
+	readonly isClosed?: boolean | undefined;
+	readonly status?: string | undefined;
+	readonly watermarkText?: string | null | undefined;
+	readonly [key: string]: unknown;
+}
 
 /** 1. Рендерер — Медицинская карта стоматологического пациента */
-export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
+export function renderForm043uHtml(payload: Form043uRenderPayload): string {
 	const clinicName = payload.organization?.fullName || payload.clinicLegalName || "Стоматологическая клиника";
 	const clinicAddress = payload.organization?.address || payload.clinicAddress || "";
 	const clinicOgrn = payload.organization?.ogrn || payload.clinicOgrn || "—";
@@ -40,7 +175,9 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 	const bite = payload.objectiveExamination?.extraoralBite || payload.biteDescription || "Ортогнатический прикус, смыкание зубных рядов по I классу Энгля.";
 	const oralMucosa = payload.objectiveExamination?.oralMucosaStatus || "Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена, патологических элементов нет.";
 
-	const dmft = payload.dentalFormula?.calculatedDmft || payload.dmftIndex || {
+	const formulaObj = typeof payload.dentalFormula === "object" && payload.dentalFormula !== null ? (payload.dentalFormula as Record<string, unknown>) : undefined;
+	const calculatedDmft = formulaObj?.calculatedDmft as DmftStatsLike | undefined;
+	const dmft: DmftStatsLike = calculatedDmft || payload.dmftIndex || {
 		totalDmft: 2,
 		dmftTotal: 2,
 		decayed: 1,
@@ -52,7 +189,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 
 	const diaries = payload.soapDiaries || payload.diaries || [];
 	const diariesHtml = diaries.length > 0
-		? diaries.map((d: any, index: number) => `
+		? diaries.map((d: SoapDiaryLike, index: number) => `
       <div style="border:1px solid #cbd5e1; padding:8px 10px; margin-bottom:10px; border-radius:4px; page-break-inside:avoid; break-inside:avoid;">
         <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">
           <strong>Запись № ${index + 1} от ${escapeHtml(d.entryDate || d.visitDate || cardOpened)}</strong>
@@ -186,8 +323,90 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
 </html>`;
 }
 
+export interface OrthodonticCardRenderPayload {
+	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly ogrn?: string; readonly inn?: string } | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinic?: { readonly name?: string; readonly address?: string } | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly patient?: {
+		readonly medicalCardNumber?: string | undefined;
+		readonly cardOpenedAt?: string | undefined;
+		readonly fullName?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly gender?: string | undefined;
+		readonly phone?: string | undefined;
+		readonly address?: string | undefined;
+	} | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly cardOpenedDate?: string | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly patientSex?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientAddress?: string | undefined;
+	readonly treatingOrthodontist?: { readonly fullName?: string } | undefined;
+	readonly doctor?: { readonly fullName?: string } | undefined;
+	readonly orthodontistFullName?: string | undefined;
+	readonly treatmentPlan?: {
+		readonly applianceType?: string | undefined;
+		readonly applianceName?: string | undefined;
+		readonly diagnosis?: string | undefined;
+		readonly estimatedDurationMonths?: number | undefined;
+		readonly treatmentStages?: readonly string[] | string | undefined;
+		readonly retentionProtocol?: string | undefined;
+		readonly retentionPlan?: string | undefined;
+	} | undefined;
+	readonly appliancePlan?: {
+		readonly applianceType?: string | undefined;
+		readonly applianceName?: string | undefined;
+		readonly diagnosis?: string | undefined;
+		readonly estimatedDurationMonths?: number | undefined;
+		readonly treatmentStages?: readonly string[] | string | undefined;
+		readonly retentionProtocol?: string | undefined;
+		readonly retentionPlan?: string | undefined;
+	} | undefined;
+	readonly orthodonticDiagnosis?: string | undefined;
+	readonly morphometry?: {
+		readonly faceType?: string | undefined;
+		readonly facialType?: string | undefined;
+		readonly profile?: string | undefined;
+		readonly profileType?: string | undefined;
+		readonly smileLine?: string | undefined;
+	} | undefined;
+	readonly anthropometry?: {
+		readonly faceType?: string | undefined;
+		readonly facialType?: string | undefined;
+		readonly profile?: string | undefined;
+		readonly profileType?: string | undefined;
+		readonly smileLine?: string | undefined;
+	} | undefined;
+	readonly cephalometry?: {
+		readonly sna?: number | string | undefined;
+		readonly snaAngle?: number | string | undefined;
+		readonly snb?: number | string | undefined;
+		readonly snbAngle?: number | string | undefined;
+		readonly anb?: number | string | undefined;
+		readonly anbAngle?: number | string | undefined;
+		readonly wits?: number | string | undefined;
+		readonly witsAppraisalMm?: number | string | undefined;
+		readonly fma?: number | string | undefined;
+		readonly fmaAngle?: number | string | undefined;
+	} | undefined;
+	readonly indices?: {
+		readonly tonn?: { readonly ratio?: number | string | undefined; readonly interpretation?: string | undefined } | undefined;
+		readonly pont?: { readonly premolarsExpectedWidthMm?: number | string | undefined; readonly molarsExpectedWidthMm?: number | string | undefined; readonly interpretation?: string | undefined } | undefined;
+		readonly bolton?: { readonly anteriorRatio?: number | string | undefined; readonly interpretation?: string | undefined } | undefined;
+	} | undefined;
+	readonly isClosed?: boolean | undefined;
+	readonly status?: string | undefined;
+	readonly watermarkText?: string | null | undefined;
+	readonly [key: string]: unknown;
+}
+
 /** 2. Рендерер Формы № 043-1/у — Медицинская карта ортодонтического пациента */
-export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any): string {
+export function renderForm043_1uHtml(payload: OrthodonticCardRenderPayload): string {
 	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
 	const clinicAddress = payload.organization?.address || payload.clinicAddress || payload.clinic?.address || "";
 	const clinicOgrn = payload.organization?.ogrn || payload.clinicOgrn || "—";
@@ -334,12 +553,41 @@ export function renderForm043_1uHtml(payload: OrthodonticCard043_1uPayload | any
 </html>`;
 }
 
+export interface RadiationDoseSheetRenderPayload {
+	readonly organization?: { readonly fullName?: string; readonly address?: string } | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinic?: { readonly name?: string } | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly clinicLicenseNumber?: string | undefined;
+	readonly patient?: {
+		readonly fullName?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly gender?: string | undefined;
+		readonly medicalCardNumber?: string | undefined;
+	} | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly patientSex?: string | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly reportingYear?: number | string | undefined;
+	readonly year?: number | string | undefined;
+	readonly exposureEntries?: readonly ExposureEntryLike[] | undefined;
+	readonly exposures?: readonly ExposureEntryLike[] | undefined;
+	readonly radiationStudies?: readonly ExposureEntryLike[] | undefined;
+	readonly annualSummary?: { readonly totalDoseYearMsv?: number | undefined } | undefined;
+	readonly summaryAnnualDose?: { readonly totalDoseYearMsv?: number | undefined } | undefined;
+	readonly cumulativeDoseMsv?: number | undefined;
+	readonly responsibleOfficerFullName?: string | undefined;
+	readonly chiefSafetyOfficer?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
 /**
  * 6. Рендерер Листа учета дозовых нагрузок пациента при рентгенологических исследованиях
  * СанПиН 2.6.1.1192-03 / СанПиН 2.6.1.2523-09 (НРБ-99/2009)
  * Annual safety limit 1.0 mSv progress gauge + X-ray equipment log + modality breakdown + ALARA safety note
  */
-export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload | any): string {
+export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetRenderPayload): string {
 	const clinicName = payload.organization?.fullName || payload.clinicLegalName || payload.clinic?.name || "Стоматологическая клиника";
 	const clinicAddress = payload.organization?.address || payload.clinicAddress || "";
 	const licenseNumber = payload.clinicLicenseNumber || "ЛО-77-01-012345";
@@ -349,7 +597,7 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
 	const cardNum = payload.patient?.medicalCardNumber || payload.medicalCardNumber || "—";
 	const year = payload.reportingYear || payload.year || new Date().getFullYear();
 
-	const exposures: any[] = payload.exposureEntries || payload.exposures || payload.radiationStudies || [];
+	const exposures: readonly ExposureEntryLike[] = payload.exposureEntries || payload.exposures || payload.radiationStudies || [];
 	const annualSummary = payload.annualSummary || payload.summaryAnnualDose || {};
 
 	// Calculate cumulative annual dose
@@ -406,7 +654,7 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
 		film_intraoral_legacy: "Пленочная прицельная рентгенография",
 	};
 
-	const exposureRows = exposures.map((ex: any, idx: number) => {
+	const exposureRows = exposures.map((ex: ExposureEntryLike, idx: number) => {
 		const d = ex.studyDate || ex.date || "—";
 		const rawType = ex.studyType || ex.procedureName || "intraoral_radiovisiography";
 		const typeLabel = studyLabels[rawType] || rawType;
@@ -603,8 +851,34 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
 </html>`;
 }
 
+export interface RadiologyReferralRenderPayload {
+	readonly clinicLegalName?: string | undefined;
+	readonly organization?: { readonly fullName?: string; readonly address?: string; readonly phone?: string } | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly referralNumber?: string | undefined;
+	readonly referralDate?: string | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly patient?: { readonly fullName?: string; readonly birthDate?: string; readonly phone?: string; readonly medicalCardNumber?: string } | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly diagnosisIcd10Code?: string | undefined;
+	readonly diagnosisDetailed?: string | undefined;
+	readonly studyType?: string | undefined;
+	readonly studyGoal?: string | undefined;
+	readonly targetTeethFdi?: string | undefined;
+	readonly anatomicalArea?: string | undefined;
+	readonly clinicalJustification?: string | undefined;
+	readonly isPregnancyExcluded?: boolean | undefined;
+	readonly hasMetallicArtifacts?: boolean | undefined;
+	readonly [key: string]: unknown;
+}
+
 /** 8. Рендерер Направления на рентгенологическое исследование (КЛКТ / ОПТГ / ТРГ / Визио) */
-export function renderRadiologyReferralHtml(payload: RadiologyReferralPayload | any): string {
+export function renderRadiologyReferralHtml(payload: RadiologyReferralRenderPayload): string {
 	const clinicName = payload.clinicLegalName || payload.organization?.fullName || "Стоматологическая клиника";
 	const clinicAddress = payload.clinicAddress || payload.organization?.address || "—";
 	const clinicPhone = payload.clinicPhone || payload.organization?.phone || "—";

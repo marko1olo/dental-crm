@@ -1,7 +1,6 @@
 import type { OdontogramViewMode } from "@dental/shared";
 import type React from "react";
 import { WheelerToothArch } from "./WheelerToothArch";
-import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { OdontogramBatchBar } from "./OdontogramBatchBar";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
@@ -89,9 +88,6 @@ export const OdontogramActiveViewSlot: React.FC<
 						showPeriapicalHalos={true}
 						showPeriodontalBoneLoss={true}
 					/>
-				)}
-				{activeMode === "classic_gost" && (
-					<ClassicGostOdontogram {...sharedViewProps} teethData={teethData} />
 				)}
 
 				{onQuickStateChange && (

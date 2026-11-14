@@ -48,6 +48,12 @@ import type {
 	InMemoryRecord,
 } from "./idempotencyModules/idempotencyTypes.js";
 
+declare module "fastify" {
+	interface FastifyRequest {
+		_idempotencyContext?: IdempotencyContext;
+	}
+}
+
 export type { IdempotencyPluginOptions };
 export {
 	extractTenantId,
@@ -167,13 +173,12 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			}
 
 			// Store idempotency context on request
-			// biome-ignore lint/suspicious/noExplicitAny: request decoration
-			(request as any)._idempotencyContext = {
+			request._idempotencyContext = {
 				idempotencyKey,
 				organizationId: tenantId,
 				payloadHash,
 				useDatabase,
-			} as IdempotencyContext;
+			};
 		},
 	);
 
@@ -185,10 +190,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			reply: FastifyReply,
 			payload: unknown,
 		) => {
-			// biome-ignore lint/suspicious/noExplicitAny: request decoration
-			const ctx = (request as any)._idempotencyContext as
-				| IdempotencyContext
-				| undefined;
+			const ctx = request._idempotencyContext;
 
 			if (!ctx) {
 				return payload;
@@ -202,8 +204,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 					parsedJson = { text: payload };
 				}
 			} else if (payload && typeof payload === "object") {
-				// biome-ignore lint/suspicious/noExplicitAny: payload inspection
-				parsedJson = payload as any;
+				parsedJson = payload as Record<string, unknown>;
 			}
 
 			await persistResponseOrEvictOnFailure(
@@ -226,10 +227,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			_reply: FastifyReply,
 			_error: Error,
 		) => {
-			// biome-ignore lint/suspicious/noExplicitAny: request decoration
-			const ctx = (request as any)._idempotencyContext as
-				| IdempotencyContext
-				| undefined;
+			const ctx = request._idempotencyContext;
 
 			if (!ctx) return;
 			await cleanupOnUncaughtError(ctx);

@@ -11,7 +11,12 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { type FiscalReceiptDetails, rublesToKopecks } from "@dental/shared";
+import {
+	type Ffd12VatRate,
+	type FiscalReceiptDetails,
+	rublesToKopecks,
+	type TaxDeductionCategory,
+} from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -85,9 +90,9 @@ export class FiscalQueueManager {
 							amountKopecks: it.amountKopecks,
 							method: "full_payment" as const,
 							subject: "service" as const,
-							vatRate: (it.vatRate || "vat_none") as any,
+							vatRate: ((it.vatRate as Ffd12VatRate | undefined) || "vat_none") as Ffd12VatRate,
 							measure: "piece" as const,
-							taxDeductionCode: (it.taxDeductionCode || "code_1_standard") as any,
+							taxDeductionCode: ((it.taxDeductionCode as TaxDeductionCategory | undefined) || "code_1_standard") as TaxDeductionCategory,
 							medicalServiceCode804n: "A16.07.001",
 							isUpsell: false,
 							requiresAddendum: false,

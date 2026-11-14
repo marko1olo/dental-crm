@@ -26,7 +26,7 @@ export interface ToothFindingUpdate {
 	code: string;
 	state: string;
 	diagnosisOrFinding: string;
-	notes?: string;
+	notes?: string | undefined;
 }
 
 export interface RadiographAnalysisResult {

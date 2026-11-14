@@ -55,7 +55,7 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 		const batch = parseResult.items.map((it) => ({
 			toothNumber: it.toothNumber,
 			state: it.state as ToothState,
-			surfaces: it.surfaces ? [...it.surfaces] : undefined,
+			...(it.surfaces ? { surfaces: [...it.surfaces] } : {}),
 		}));
 
 		onApplyBatch(batch);
@@ -107,7 +107,7 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 						data-testid="odontogram-quick-input-field"
 						id="odontogram-quick-formula-input"
 						style={{ paddingLeft: "42px", paddingRight: "36px" }}
-						className="w-full h-9 sm:h-9 min-h-[36px] pl-12 pr-8 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-950 text-xs sm:text-sm font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-[var(--line,#e2e8f0)] dark:border-slate-800 focus:outline-hidden focus:border-teal-500 transition-all"
+						className="w-full min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 pl-12 pr-8 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-950 text-xs sm:text-sm font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-[var(--line,#e2e8f0)] dark:border-slate-800 focus:outline-hidden focus:border-teal-500 transition-all"
 					/>
 					{text && (
 						<button
@@ -125,7 +125,7 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 					type="button"
 					onClick={handleApply}
 					data-testid="odontogram-quick-input-apply-btn"
-					className="dente-btn dente-btn-secondary h-9 min-h-[36px] px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-98"
+					className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-98"
 					title={
 						parseResult.items.length > 0
 							? `Применить ${parseResult.items.length} зубных статусов [Enter]`

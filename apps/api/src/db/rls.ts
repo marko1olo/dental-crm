@@ -40,11 +40,11 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { dbRaw, transactionStorage } from "./client.js";
+import { dbRaw, transactionStorage, type TenantDb, type TenantTransaction } from "./client.js";
 import type * as schema from "./schema.js";
 
-/** Drizzle database type scoped to this project's schema. */
-export type TenantDb = NodePgDatabase<typeof schema>;
+/** Drizzle database and transaction type scoped to this project's schema. */
+export type { TenantDb, TenantTransaction };
 
 /**
  * Tracks whether a superuser-bypass scope is already active on the current
@@ -106,8 +106,7 @@ export async function withTenantCtx<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		// biome-ignore lint/suspicious/noExplicitAny: in-memory mock bypass
-		return callback({} as any);
+		return callback({} as unknown as TenantDb);
 	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
@@ -136,8 +135,7 @@ export async function withTenantCtx<T>(
 			// The transaction already carries exactly this tenant and no bypass to
 			// undo: set_config would write back the value that is already there, and
 			// the restore would write it a second time. Skip both.
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			return callback(existingTx as any);
+			return callback(existingTx);
 		}
 		if (bypassActive) {
 			await existingTx.execute(
@@ -150,8 +148,7 @@ export async function withTenantCtx<T>(
 			);
 		}
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			return await callback(existingTx as any);
+			return await callback(existingTx);
 		} finally {
 			// Each restore gets its own try/catch: on an aborted transaction every
 			// statement fails, and a throw from here would replace the original error
@@ -185,8 +182,7 @@ export async function withTenantCtx<T>(
 		await tx.execute(
 			sql`SELECT set_config('app.current_tenant', ${organizationId}, true), set_config('app.superuser_bypass', 'off', true)`,
 		);
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		return transactionStorage.run(tx as any, () => callback(tx as any));
+		return transactionStorage.run(tx, () => callback(tx));
 	});
 }
 
@@ -194,8 +190,7 @@ export async function withSuperuserBypass<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		// biome-ignore lint/suspicious/noExplicitAny: in-memory mock bypass
-		return callback({} as any);
+		return callback({} as unknown as TenantDb);
 	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
@@ -227,10 +222,8 @@ export async function withSuperuserBypass<T>(
 		await tx.execute(
 			sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
 		);
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		return transactionStorage.run(tx as any, () =>
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			bypassScope.run(true, () => callback(tx as any)),
+		return transactionStorage.run(tx, () =>
+			bypassScope.run(true, () => callback(tx)),
 		);
 	});
 }

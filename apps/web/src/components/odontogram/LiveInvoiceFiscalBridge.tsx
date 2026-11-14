@@ -1,5 +1,5 @@
 import React from "react";
-import { CashReceiptModal } from "../finance/CashReceiptModal.js";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 import { showToast } from "../GlobalToast";
 import type { LiveInvoiceItem } from "./odontogramLiveInvoiceCalculations";
 
@@ -17,30 +17,27 @@ export const LiveInvoiceFiscalBridge: React.FC<
 > = ({ isOpen, baseItems, patientId, patientName, netTotalPrice, onClose }) => {
 	if (!isOpen) return null;
 
+	const serviceTitle = baseItems.length > 0
+		? baseItems.map((b) => b.title).join(", ")
+		: undefined;
+
 	return (
-		<CashReceiptModal
+		<CashRegisterStudioModal
 			isOpen={isOpen}
-			items={baseItems.map((it, idx) => ({
-				id: `live-inv-${idx}-${it.toothNumber}`,
-				toothNumber: it.toothNumber,
-				code804n: it.code,
-				name: it.title,
-				category: it.category,
-				unitPriceRub: it.price,
-				priceRub: it.price * it.quantity - (it.discountRub || 0),
-				quantity: it.quantity,
-				discountRub: it.discountRub || 0,
-				phase: 1,
-				stageKind: "stage_1_therapy" as const,
-			}))}
+			mode="checkout"
+			initialTab="checkout"
+			totalDueRub={netTotalPrice}
+			amountRub={netTotalPrice}
 			patientId={patientId || "patient-001"}
 			patientName={patientName || "Пациент"}
+			serviceTitle={serviceTitle}
 			onClose={onClose}
-			onReceiptFiscalized={(receiptNum) => {
+			onSuccess={() => {
 				showToast(
-					`Чек №${receiptNum} на сумму ${netTotalPrice.toLocaleString("ru-RU")} ₽ успешно пробит`,
+					`Оплата на сумму ${netTotalPrice.toLocaleString("ru-RU")} ₽ успешно проведена`,
 					"success",
 				);
+				onClose();
 			}}
 		/>
 	);

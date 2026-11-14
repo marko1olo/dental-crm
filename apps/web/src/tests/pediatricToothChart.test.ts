@@ -26,7 +26,7 @@ import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
 } from "../components/odontogram/ToothChart";
-import { calculateDmft } from "../components/odontogram/ClassicGostOdontogram";
+import { calculateDmft } from "../components/odontogram/gost/gostHistoryTypes";
 import { calculateActivePatientCriticalBadges } from "../components/visit/view/visitCriticalBadges";
 
 describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {

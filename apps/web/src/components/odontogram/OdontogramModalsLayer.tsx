@@ -28,9 +28,9 @@ const PediatricMixedDentitionModal = React.lazy(() =>
 		default: m.PediatricMixedDentitionModal,
 	})),
 );
-const TreatmentEstimator = React.lazy(() =>
-	import("./TreatmentEstimator").then((m) => ({
-		default: m.TreatmentEstimator,
+const TreatmentPlanModule = React.lazy(() =>
+	import("../treatment-plans/TreatmentPlanModule").then((m) => ({
+		default: m.TreatmentPlanModule,
 	})),
 );
 const PerioStudioModal = React.lazy(() =>
@@ -186,7 +186,11 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 			{isEstimatorOpen && (
 				<div className="w-full flex flex-col gap-6 mt-2 animate-in fade-in duration-200">
 					<React.Suspense fallback={null}>
-						<TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
+						<TreatmentPlanModule
+							patientId={patientId}
+							patientName={activePatient?.name || activePatient?.fullName || "Пациент"}
+							teethData={teethData}
+						/>
 					</React.Suspense>
 				</div>
 			)}

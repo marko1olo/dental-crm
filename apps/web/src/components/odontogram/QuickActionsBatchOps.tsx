@@ -25,7 +25,7 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 
 	return (
 		<div>
-			<div className="text-xs font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
+			<div className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
 				Пакетные операции
 			</div>
 			<div className="flex items-center gap-1.5 mb-1.5">
@@ -35,7 +35,7 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 						closeDetails(e);
 						onSanitizeAll();
 					}}
-					className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
+					className="flex-1 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
 					title="Физиологическая норма: вся челюсть помечается здоровой"
 					data-testid="mark-intact-dentition-dropdown-btn"
 				>
@@ -52,7 +52,7 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 							closeDetails(e);
 							onWisdomMissing();
 						}}
-						className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
+						className="flex-1 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
 						title="Первичная адентия третьих моляров (18, 28, 38, 48)"
 						data-testid="mark-wisdom-missing-btn"
 					>
@@ -69,7 +69,7 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 							closeDetails(e);
 							onFrontalHygiene();
 						}}
-						className="w-full h-7 px-2 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5 active:scale-98"
+						className="w-full min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5 active:scale-98"
 						title={
 							pediatricMode
 								? "Пакетная профгигиена фронтального сектора (53–63, 83–73)"
@@ -92,9 +92,9 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 						closeDetails(e);
 						onInvert();
 					}}
-					className="flex-1 h-7 px-2 rounded-lg text-xs font-bold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-800 dark:text-indigo-200 border border-indigo-500/25 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
+					className="flex-1 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-lg text-xs font-bold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-800 dark:text-indigo-200 border border-indigo-500/25 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
 					title="Инвертировать выделение зубов"
-					data-testid="invert-selection-btn invert-selection-dropdown-btn"
+					data-testid="invert-selection-dropdown-btn"
 				>
 					<ArrowLeftRight
 						size={12}
@@ -108,7 +108,7 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 						closeDetails(e);
 						onClear();
 					}}
-					className="h-7 px-2.5 rounded-lg text-xs font-bold bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-700 dark:text-zinc-300 border border-zinc-500/20 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
+					className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-lg text-xs font-bold bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-700 dark:text-zinc-300 border border-zinc-500/20 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
 					title="Снять выделение со всех зубов"
 					data-testid="clear-selection-btn"
 				>

@@ -5,10 +5,8 @@
  * Compliant with Mandate 8b (<= 120 lines).
  */
 
-import {
-	getNextFocusedTooth,
-	getToothStateFromHotkey,
-} from "../ClassicGostOdontogram";
+import { getNextFocusedTooth } from "../gost/gostFormulaSymbols";
+import { getToothStateFromHotkey } from "../gost/gostPathologyCodes";
 import {
 	BOTTOM_TEETH,
 	MIXED_BOTTOM_TEETH,

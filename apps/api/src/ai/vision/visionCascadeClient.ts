@@ -17,6 +17,32 @@ import {
 	type ProviderSlot,
 } from "./visionTypes.js";
 
+export type VisionContentPart =
+	| { type: "text"; text: string }
+	| { type: "image_url"; image_url: { url: string } };
+
+export interface VisionChatCompletionPayload {
+	model: string;
+	temperature: number;
+	response_format?: { type: string };
+	messages: Array<{
+		role: string;
+		content: VisionContentPart[];
+	}>;
+}
+
+export interface VisionChatCompletionResponse {
+	choices?: Array<{
+		message?: {
+			content?: string | null;
+		};
+	}>;
+}
+
+export interface VisionHttpError extends Error {
+	statusCode?: number;
+}
+
 /**
  * Call a single vision model attempt with provider timeout.
  */
@@ -30,15 +56,13 @@ export async function callVisionModel(
 ): Promise<string> {
 	const baseUrl = slot.provider === "groq" ? GROQ_BASE_URL : GEMINI_BASE_URL;
 
-	// biome-ignore lint/suspicious/noExplicitAny: OpenAI-compat multi-modal payload
-	const userContent: any[] = [{ type: "text", text: prompt }];
+	const userContent: VisionContentPart[] = [{ type: "text", text: prompt }];
 	if (extraUserText) {
 		userContent.push({ type: "text", text: extraUserText });
 	}
 	userContent.push({ type: "image_url", image_url: { url: imageBase64 } });
 
-	// biome-ignore lint/suspicious/noExplicitAny: provider options
-	const body: any = {
+	const body: VisionChatCompletionPayload = {
 		model: slot.model,
 		temperature: 0.1,
 		...(slot.provider === "groq"
@@ -64,14 +88,12 @@ export async function callVisionModel(
 		const errText = await resp.text().catch(() => resp.statusText);
 		const err = new Error(
 			`${slot.provider.toUpperCase()} ${resp.status}: ${errText}`,
-		);
-		// biome-ignore lint/suspicious/noExplicitAny: attach status
-		(err as any).statusCode = resp.status;
+		) as VisionHttpError;
+		err.statusCode = resp.status;
 		throw err;
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: response parser
-	const data = (await resp.json()) as any;
+	const data = (await resp.json()) as VisionChatCompletionResponse;
 	const content: string = data?.choices?.[0]?.message?.content ?? "";
 	if (!content || content.length < 20) {
 		throw new Error(`${slot.provider.toUpperCase()} returned empty content`);
@@ -98,12 +120,10 @@ export async function runCascade(
 		const maxAttempts = Math.max(1, keyRetryLimit(providerId));
 
 		for (let attempt = 0; attempt < maxAttempts; attempt++) {
-			// biome-ignore lint/suspicious/noExplicitAny: provider key
-			const candidate = selectProviderKey(providerId as any, triedFingerprints);
+			const candidate = selectProviderKey(providerId, triedFingerprints);
 			if (!candidate) break;
 
-			// biome-ignore lint/suspicious/noExplicitAny: provider key value
-			const apiKey = (candidate as any).value ?? (candidate as any).key ?? "";
+			const apiKey = candidate.value || "";
 			if (!apiKey) {
 				triedFingerprints.add(candidate.fingerprint);
 				continue;
@@ -122,22 +142,21 @@ export async function runCascade(
 				);
 
 				if (text.length >= minLength) {
-					// biome-ignore lint/suspicious/noExplicitAny: key tracking
-					recordProviderKeySuccess(providerId as any, candidate);
+					recordProviderKeySuccess(providerId, candidate);
 					return { text, slotIdx };
 				}
 				console.warn(
 					`[visionAnalyzer] Response too short (${text.length} chars), trying next`,
 				);
-				// biome-ignore lint/suspicious/noExplicitAny: key error handling
-			} catch (err: any) {
-				const statusCode: number = err?.statusCode ?? 0;
-				// biome-ignore lint/suspicious/noExplicitAny: key failure
-				recordProviderKeyFailure(providerId as any, candidate, err);
+			} catch (err: unknown) {
+				const httpErr = err as VisionHttpError | undefined;
+				const statusCode: number = typeof httpErr?.statusCode === "number" ? httpErr.statusCode : 0;
+				const message = err instanceof Error ? err.message : String(err);
+				recordProviderKeyFailure(providerId, candidate, err);
 				triedFingerprints.add(candidate.fingerprint);
 
 				console.warn(
-					`[visionAnalyzer] ${slot.provider} key=${candidate.fingerprint} failed: ${err.message}`,
+					`[visionAnalyzer] ${slot.provider} key=${candidate.fingerprint} failed: ${message}`,
 				);
 
 				if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
@@ -156,12 +175,11 @@ export async function runCascade(
 /**
  * Extracts JSON from model response text, stripping reasoning tags and markdown fences.
  */
-// biome-ignore lint/suspicious/noExplicitAny: parsed JSON payload
-export function extractJson(text: string): any {
+export function extractJson(text: string): Record<string, unknown> {
 	const cleaned = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
 
 	try {
-		return JSON.parse(cleaned);
+		return JSON.parse(cleaned) as Record<string, unknown>;
 	} catch {
 		/* continue */
 	}
@@ -169,7 +187,7 @@ export function extractJson(text: string): any {
 	const match = cleaned.match(/\{[\s\S]*\}/);
 	if (match) {
 		try {
-			return JSON.parse(match[0]);
+			return JSON.parse(match[0]) as Record<string, unknown>;
 		} catch {
 			/* continue */
 		}

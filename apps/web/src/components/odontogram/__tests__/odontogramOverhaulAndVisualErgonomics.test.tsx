@@ -52,20 +52,20 @@ describe("CLIN-01: Exact Money & Zero Bill Invariant (Mandate 8b)", () => {
 });
 
 describe("CLIN-02: Autonomous Visit Diary Revision Mode (Mandate 8e)", () => {
-	it("verifies useVisitDiaryLogic activates revision mode when protocol arrives during locked state", () => {
+	it("verifies useVisitEmkTabController activates revision mode when protocol arrives during locked state", () => {
 		const hookPath = path.resolve(
 			__dirname,
-			"../../../../src/components/useVisitDiaryLogic.ts",
+			"../../visit/emkTabModules/useVisitEmkTabController.ts",
 		);
 		const content = fs.readFileSync(hookPath, "utf-8");
 
 		assert.ok(
-			content.includes("setIsRevising(true)"),
-			"useVisitDiaryLogic must set isRevising to true when locked",
+			content.includes("setIsRevisingVisitNote(true)"),
+			"useVisitEmkTabController must set isRevisingVisitNote to true when locked",
 		);
 		assert.ok(
-			content.includes("Дневник визита открыт для внесения исправлений (протокол одонтограммы применён)"),
-			"useVisitDiaryLogic must issue warning notification without dropping the protocol",
+			content.includes("isSignedVisit && !isRevisingVisitNote"),
+			"useVisitEmkTabController must check isSignedVisit to activate revision mode without dropping data",
 		);
 	});
 });

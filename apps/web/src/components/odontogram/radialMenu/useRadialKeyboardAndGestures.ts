@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { getToothStateFromHotkey } from "../ClassicGostOdontogram";
+import { getToothStateFromHotkey } from "../chart/toothChartTypes";
 import type { ToothState } from "../ToothChart";
 import type { RadialMenuItem } from "./radialMenuTypes";
 

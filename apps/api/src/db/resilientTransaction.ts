@@ -20,11 +20,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomInt } from "node:crypto";
 import { sql } from "drizzle-orm";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { dbRaw, transactionStorage } from "./client.js";
-import type * as schema from "./schema.js";
+import { dbRaw, transactionStorage, type TenantDb, type TenantTransaction } from "./client.js";
 
-export type TenantDb = NodePgDatabase<typeof schema>;
+export type { TenantDb, TenantTransaction };
 
 /**
  * Transient PostgreSQL error codes eligible for automatic transaction retry.
@@ -73,19 +71,31 @@ export interface ResilientTransactionOptions {
 	};
 }
 
+interface PgErrorLike {
+	code?: unknown;
+	message?: unknown;
+	cause?: { code?: unknown };
+	originalError?: { code?: unknown };
+	driverError?: { code?: unknown };
+}
+
 /**
  * Extracts standard PostgreSQL error code from an error or driver error hierarchy.
  */
 export function getPgErrorCode(error: unknown): string | undefined {
 	if (!error || typeof error !== "object") return undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: error property probing
-	const err = error as any;
-	return (
-		err.code ||
-		err.cause?.code ||
-		err.originalError?.code ||
-		err.driverError?.code
-	);
+	const err = error as PgErrorLike;
+	const code =
+		typeof err.code === "string"
+			? err.code
+			: typeof err.cause?.code === "string"
+				? err.cause.code
+				: typeof err.originalError?.code === "string"
+					? err.originalError.code
+					: typeof err.driverError?.code === "string"
+						? err.driverError.code
+						: undefined;
+	return code;
 }
 
 /**
@@ -99,9 +109,9 @@ export function isRetryablePgError(error: unknown): boolean {
 		return true;
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: error property probing
-	const err = error as any;
-	const message = (err.message || "").toLowerCase();
+	const err = typeof error === "object" ? (error as PgErrorLike) : null;
+	const message = typeof err?.message === "string" ? err.message.toLowerCase() : "";
+	const errCode = typeof err?.code === "string" ? err.code : undefined;
 
 	if (
 		message.includes("deadlock detected") ||
@@ -111,10 +121,10 @@ export function isRetryablePgError(error: unknown): boolean {
 		message.includes("admin shutdown") ||
 		message.includes("terminating connection due to administrator command") ||
 		message.includes("server closed the connection unexpectedly") ||
-		err.code === "ECONNRESET" ||
-		err.code === "ECONNREFUSED" ||
-		err.code === "EPIPE" ||
-		err.code === "ETIMEDOUT"
+		errCode === "ECONNRESET" ||
+		errCode === "ECONNREFUSED" ||
+		errCode === "EPIPE" ||
+		errCode === "ETIMEDOUT"
 	) {
 		return true;
 	}
@@ -200,10 +210,8 @@ export async function withResilientTransaction<T>(
 					}
 
 					// Bind transaction to transactionStorage for proxy queries
-					// biome-ignore lint/suspicious/noExplicitAny: Drizzle tx typing
-					return await transactionStorage.run(tx as any, () =>
-						// biome-ignore lint/suspicious/noExplicitAny: Drizzle tx typing
-						fn(tx as any),
+					return await transactionStorage.run(tx, () =>
+						fn(tx),
 					);
 				},
 				options.isolationLevel

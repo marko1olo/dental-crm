@@ -1,4 +1,4 @@
-import { globalDentalVoiceEngine } from "../../services/voice";
+import { UnifiedAudioClient } from "../../services/voice";
 import type { OdontogramViewContainerProps } from "./OdontogramViewTypes";
 import {
 	ADULT_FRONT,
@@ -57,7 +57,7 @@ export function buildToolbarProps(
 		setIsLiveInvoiceOpen: st.setIsLiveInvoiceOpen,
 		setIsPlanWizardOpen: st.setIsPlanWizardOpen,
 		onOpenVoiceDictation: props.onOpenVoiceDictation,
-		toggleVoiceEngine: () => globalDentalVoiceEngine.toggle(),
+		toggleVoiceEngine: () => void UnifiedAudioClient.getInstance().toggle(),
 		isVoiceListening: st.isVoiceListening,
 		handleBatchSelectGroup: batch.handleBatchSelectGroup,
 		setActiveJawModalTarget: st.setActiveJawModalTarget,

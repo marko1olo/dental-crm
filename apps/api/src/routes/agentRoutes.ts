@@ -45,12 +45,26 @@ const tolerantUuid = z.string().optional().transform((val) => {
 	return uuidRegex.test(trimmed) ? trimmed : undefined;
 });
 
+const agentToolCallSchema = z
+	.object({
+		id: z.string().optional(),
+		type: z.string().optional(),
+		function: z
+			.object({
+				name: z.string().optional(),
+				arguments: z.string().optional(),
+			})
+			.passthrough()
+			.optional(),
+	})
+	.passthrough();
+
 const chatMessageSchema = z.object({
 	role: z.enum(["system", "user", "assistant", "tool"]),
 	content: z.string().nullable().optional(),
 	name: z.string().optional(),
 	tool_call_id: z.string().optional(),
-	tool_calls: z.array(z.any()).optional(),
+	tool_calls: z.array(agentToolCallSchema).optional(),
 });
 
 const agentChatBodySchema = z.object({
@@ -282,7 +296,9 @@ export async function handleAgentChat(
 							organizationId: resolvedOrgId,
 							role: "assistant",
 							content: harnessResult.text.trim(),
-							toolCalls: harnessResult.toolCalls?.length ? (harnessResult.toolCalls as any) : null,
+							toolCalls: harnessResult.toolCalls?.length
+								? (harnessResult.toolCalls as unknown as Record<string, unknown>[])
+								: null,
 							autoCompact: body.enableAutoCompaction ?? true,
 						});
 					}
@@ -362,7 +378,9 @@ export async function handleAgentChat(
 						organizationId: resolvedOrgId,
 						role: "assistant",
 						content: result.text.trim(),
-						toolCalls: result.toolCalls?.length ? (result.toolCalls as any) : null,
+						toolCalls: result.toolCalls?.length
+							? (result.toolCalls as unknown as Record<string, unknown>[])
+							: null,
 						autoCompact: body.enableAutoCompaction ?? true,
 					});
 				}
@@ -501,7 +519,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			if (!resolvedOrgId) return;
 
 			const bodySchema = z.object({
-				memoryFacts: z.array(z.any()),
+				memoryFacts: z.array(z.string()),
 			});
 
 			const parseResult = bodySchema.safeParse(request.body ?? {});
@@ -568,6 +586,8 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 					args?: Record<string, unknown>;
 					arguments?: Record<string, unknown>;
 					runtimeMode?: string;
+					patientId?: string;
+					visitId?: string;
 				};
 
 				const identity = getRequestIdentity(request);
@@ -583,8 +603,8 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 						organizationId: resolvedOrgId,
 						userId,
 						doctorId: userId,
-						patientId: (effectiveArgs.patientId as string) || (body as any).patientId || undefined,
-						activeVisitId: (effectiveArgs.visitId as string) || (body as any).visitId || undefined,
+						patientId: (typeof effectiveArgs.patientId === "string" ? effectiveArgs.patientId : undefined) || body.patientId || undefined,
+						activeVisitId: (typeof effectiveArgs.visitId === "string" ? effectiveArgs.visitId : undefined) || body.visitId || undefined,
 						activeTooth: typeof effectiveArgs.toothNumber === "number"
 							? effectiveArgs.toothNumber
 							: typeof effectiveArgs.tooth === "number"
@@ -596,13 +616,17 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 
 					try {
 						const canonicalTool = normalizeToolName(directToolName);
-						const toolResult = (await executeDentalTool(canonicalTool, effectiveArgs, dentalContext)) as any;
-						const isSuccess = toolResult && typeof toolResult === "object" ? toolResult.success !== false : true;
+						const rawToolResult = await executeDentalTool(canonicalTool, effectiveArgs, dentalContext);
+						const toolResult = rawToolResult && typeof rawToolResult === "object"
+							? (rawToolResult as Record<string, unknown>)
+							: null;
+						const isSuccess = toolResult ? toolResult.success !== false : true;
+						const toolError = typeof toolResult?.error === "string" ? toolResult.error : undefined;
 						return reply.code(200).send({
 							ok: isSuccess,
-							result: toolResult,
-							data: toolResult,
-							error: toolResult?.error || undefined,
+							result: rawToolResult,
+							data: rawToolResult,
+							error: toolError,
 						});
 					} catch (err: unknown) {
 						return reply.code(200).send({
@@ -632,7 +656,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 							mode: "autonomous",
 							metadata: {
 								runtimeMode,
-								patientId: (body as any).patientId,
+								patientId: body.patientId,
 							},
 						},
 						callId,

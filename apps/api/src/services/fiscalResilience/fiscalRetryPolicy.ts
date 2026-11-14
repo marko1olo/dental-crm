@@ -23,6 +23,13 @@ import type { KktLanConfig, KktPrintResult } from "../hardware/types.js";
 import type { Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
 import type { RetryFiscalizeResult } from "./types.js";
 
+interface FiscalDocPayload {
+	fiscalDocumentNumber?: string | undefined;
+	fiscalSign?: string | undefined;
+	ofdVerificationUrl?: string | undefined;
+	fpd?: string | undefined;
+}
+
 export const FISCAL_RETRY_SCHEDULE_MS = [1000, 5000, 15000, 60000, 300000] as const;
 
 export class FiscalRetryPolicy {
@@ -102,8 +109,10 @@ export class FiscalRetryPolicy {
 
 			const targetPaymentId = matchedPayment?.id || queueItem?.paymentId;
 			if (!targetPaymentId) {
-				const notFoundErr = new Error("Payment or transaction not found for retry-fiscalize");
-				(notFoundErr as any).statusCode = 404;
+				const notFoundErr = Object.assign(
+					new Error("Payment or transaction not found for retry-fiscalize"),
+					{ statusCode: 404 },
+				);
 				throw notFoundErr;
 			}
 
@@ -112,6 +121,9 @@ export class FiscalRetryPolicy {
 				(matchedPayment && matchedPayment.fiscalReceiptNumber) ||
 				(queueItem && queueItem.status === "printed")
 			) {
+				const queuePayload = (queueItem?.payloadJson ?? null) as FiscalDocPayload | null;
+				const paymentReceipt = (matchedPayment?.fiscalReceipt ?? null) as FiscalReceiptDetails | null;
+
 				return {
 					success: true,
 					status: "already_fiscalized",
@@ -119,13 +131,13 @@ export class FiscalRetryPolicy {
 					queueItemId: queueItem?.id,
 					fiscalReceiptNumber:
 						matchedPayment?.fiscalReceiptNumber ||
-						(queueItem?.payloadJson as any)?.fiscalDocumentNumber,
+						queuePayload?.fiscalDocumentNumber,
 					fiscalSign:
-						(matchedPayment?.fiscalReceipt as any)?.fpd ||
-						(queueItem?.payloadJson as any)?.fiscalSign,
+						paymentReceipt?.fpd ||
+						queuePayload?.fiscalSign,
 					ofdUrl:
 						matchedPayment?.fiscalReceiptUrl ||
-						(queueItem?.payloadJson as any)?.ofdVerificationUrl,
+						queuePayload?.ofdVerificationUrl,
 					receiptIssuedAt:
 						matchedPayment?.fiscalReceiptIssuedAt ||
 						queueItem?.printedAt?.toISOString(),

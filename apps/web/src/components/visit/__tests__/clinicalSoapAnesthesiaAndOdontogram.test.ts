@@ -15,7 +15,7 @@ import { CLINICAL_PRESETS } from "../ClinicalQuickPresetsBar";
 import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
-} from "../../odontogram/ClassicGostOdontogram";
+} from "../../odontogram/chart/toothChartTypes";
 import {
 	TOP_TEETH,
 	BOTTOM_TEETH,

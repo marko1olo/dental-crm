@@ -3,6 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../client.js";
 import * as schema from "../schema.js";
 import { mapImagingStudy } from "./imagingMappers.js";
+import { normalizeDbImagingSourceKind } from "./imagingStudyMutations.js";
 
 export async function createImagingStudiesInDb(
 	organizationId: string,
@@ -10,13 +11,11 @@ export async function createImagingStudiesInDb(
 		patientId: string;
 		visitId?: string | null | undefined;
 		doctorId?: string | null | undefined;
-		// biome-ignore lint/suspicious/noExplicitAny: domain schema contract
-		kind: any;
+		kind: ImagingStudy["kind"];
 		title: string;
 		toothCode?: string | null | undefined;
 		region?: string | null | undefined;
-		// biome-ignore lint/suspicious/noExplicitAny: domain schema contract
-		sourceKind: any;
+		sourceKind: ImagingStudy["sourceKind"];
 		sourceName: string;
 		storagePath?: string | null | undefined;
 		dicomStudyUid?: string | null | undefined;
@@ -54,7 +53,7 @@ export async function createImagingStudiesInDb(
 				toothCode: input.toothCode || null,
 				region: input.region || null,
 				capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
-				sourceKind: input.sourceKind,
+				sourceKind: normalizeDbImagingSourceKind(input.sourceKind),
 				sourceName: input.sourceName.length > 160 ? input.sourceName.slice(0, 160) : input.sourceName,
 				storagePath: input.storagePath || null,
 				dicomStudyUid: input.dicomStudyUid || null,

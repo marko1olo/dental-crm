@@ -455,3 +455,67 @@ export function normalizeFdiToothList(
 
 	return validNumbers.join(", ");
 }
+
+/**
+ * Сменный прикус: постоянный зуб-преемник для молочного зуба (Мандат 8ar / 8bj).
+ * Например: молочный 85 (нижний правый второй моляр) -> постоянный 45 (второй премоляр).
+ */
+export function getLocusSuccessorToothNumber(
+	deciduousToothNumber: number,
+): number | null {
+	if (!isDeciduousTooth(deciduousToothNumber)) return null;
+	const quad = Math.floor(deciduousToothNumber / 10);
+	const pos = deciduousToothNumber % 10;
+	if (quad >= 5 && quad <= 8 && pos >= 1 && pos <= 5) {
+		return (quad - 4) * 10 + pos;
+	}
+	return null;
+}
+
+/**
+ * Сменный прикус: молочный зуб-предшественник для постоянного зуба (Мандат 8ar / 8bj).
+ * Например: постоянный 45 -> молочный 85 (+40).
+ * Постоянные моляры (16..18, 26..28, 36..38, 46..48) не имеют молочных предшественников.
+ */
+export function getLocusPredecessorToothNumber(
+	adultToothNumber: number,
+): number | null {
+	if (
+		!isValidFdiToothNumber(adultToothNumber) ||
+		isDeciduousTooth(adultToothNumber)
+	) {
+		return null;
+	}
+	const quad = Math.floor(adultToothNumber / 10);
+	const pos = adultToothNumber % 10;
+	if (quad >= 1 && quad <= 4 && pos >= 1 && pos <= 5) {
+		return (quad + 4) * 10 + pos;
+	}
+	return null;
+}
+
+/** Связанные номера зубов локуса в сменном прикусе (молочный + постоянный). */
+export function getRelatedLocusToothNumbers(toothNumber: number): number[] {
+	if (isDeciduousTooth(toothNumber)) {
+		const succ = getLocusSuccessorToothNumber(toothNumber);
+		return succ !== null ? [toothNumber, succ] : [toothNumber];
+	}
+	const pred = getLocusPredecessorToothNumber(toothNumber);
+	return pred !== null ? [toothNumber, pred] : [toothNumber];
+}
+
+/** Человеческое описание перехода сменного прикуса по локусу. */
+export function getLocusTransitionDescription(
+	toothNumber: number,
+): string | null {
+	if (isDeciduousTooth(toothNumber)) {
+		const succ = getLocusSuccessorToothNumber(toothNumber);
+		return succ !== null
+			? `Сменный локус: молочный зуб #${toothNumber} ➔ постоянный преемник #${succ}`
+			: null;
+	}
+	const pred = getLocusPredecessorToothNumber(toothNumber);
+	return pred !== null
+		? `Сменный локус: постоянный зуб #${toothNumber} (предшественник: молочный #${pred})`
+		: null;
+}

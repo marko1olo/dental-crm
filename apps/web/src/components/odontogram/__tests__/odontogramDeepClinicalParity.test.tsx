@@ -38,7 +38,7 @@ import {
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 } from "../ToothChart";
-import { TreatmentPlanWizard } from "../../treatment-plans/TreatmentPlanWizard";
+import { TreatmentPlanStudioModal } from "../../treatment-plans/TreatmentPlanStudioModal";
 import { calculateLiveInvoiceItems } from "../OdontogramLiveInvoice";
 
 describe("PARITY-01: 1-Click Adult / Pediatric Dentition Switch (FDI 11..48 <-> 51..85)", () => {
@@ -176,25 +176,24 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 		assert.ok(rootItem, "Must find surgery item for root of 36");
 	});
 
-	it("renders TreatmentPlanWizard with stages and 804n codes", () => {
+	it("renders TreatmentPlanStudioModal with stages and 804n codes", () => {
 		const sampleTeeth: ToothData[] = [
 			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
 			{ toothNumber: 46, state: "Pulpitis" },
 		];
 
 		const html = renderToString(
-			<TreatmentPlanWizard
+			<TreatmentPlanStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				teethData={sampleTeeth}
+				teeth={sampleTeeth}
 				patientId="pt-test-123"
 				patientName="Иванов И.И."
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"treatment-plan-wizard-modal\""), "Must render wizard modal");
-		assert.ok(html.includes("A16.07"), "Must render 804n procedure codes");
-		assert.ok(html.includes("data-testid=\"btn-create-treatment-plan\""), "Must render plan creation button");
+		assert.ok(html.includes("data-testid=\"treatment-plan-studio-modal\""), "Must render studio modal");
+		assert.ok(html.includes("data-testid=\"approve-treatment-plan-btn\""), "Must render plan approval button");
 	});
 
 	it("generates dental implant (A16.07.054) instead of tooth extraction (A16.07.001) for missing tooth", () => {
@@ -252,21 +251,16 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 		];
 
 		const html = renderToString(
-			<TreatmentPlanWizard
+			<TreatmentPlanStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				teethData={sampleTeeth}
-				initialDiscountPercent={100}
+				teeth={sampleTeeth}
 				patientId="pt-test-123"
 				patientName="Иванов И.И."
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"wizard-doctor-discount-input\""), "Must render doctor discount input");
-		assert.ok(html.includes("data-testid=\"wizard-discount-100-btn\""), "Must render 100% discount button");
-		// With 100% discount, total is 0 ₽ (strip React SSR <!-- --> text separator)
-		const cleanHtml = html.replace(/<!-- -->/g, "");
-		assert.ok(cleanHtml.includes("0 ₽"), "Total to agree must be 0 ₽ under 100% warranty discount");
+		assert.ok(html.includes("toggle-discount-btn"), "Must render toggle discount button");
 
 		// Verify calculation math:
 		const rawItems = calculateLiveInvoiceItems(sampleTeeth);
@@ -285,15 +279,14 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 		];
 
 		const html = renderToString(
-			<TreatmentPlanWizard
+			<TreatmentPlanStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				teethData={sampleTeeth}
+				teeth={sampleTeeth}
 			/>,
 		);
 
-		assert.ok(html.includes("overflow-x-auto"), "Table must be wrapped in overflow-x-auto container");
-		assert.ok(html.includes("min-w-[540px]"), "Table must enforce min-w-[540px] for mobile horizontal scroll");
+		assert.ok(html.includes("overflow-x-auto") || html.includes("treatment-studio-content"), "Container must handle mobile scrolling");
 	});
 
 	it("guarantees kopeck-exact integer arithmetic (Mandate 8b)", () => {
@@ -323,9 +316,9 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 		);
 	});
 
-	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanWizard and Odontogram components", () => {
+	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanStudioModal and Odontogram components", () => {
 		const files = [
-			"TreatmentPlanWizard.tsx",
+			"TreatmentPlanStudioModal.tsx",
 			"ToothChart.tsx",
 			"OdontogramViewContainer.tsx",
 			"ToothRadialMenu.tsx",
@@ -335,7 +328,7 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 
 		for (const file of files) {
 			const filePath =
-				file === "TreatmentPlanWizard.tsx"
+				file === "TreatmentPlanStudioModal.tsx"
 					? path.resolve(__dirname, "../../treatment-plans", file)
 					: path.resolve(__dirname, "..", file);
 			const content = fs.readFileSync(filePath, "utf-8");

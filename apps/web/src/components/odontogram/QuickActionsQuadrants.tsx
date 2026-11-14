@@ -38,7 +38,7 @@ export const QuickActionsQuadrants: React.FC<QuickActionsQuadrantsProps> = ({
 }) => {
 	return (
 		<div>
-			<div className="text-xs font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none flex items-center justify-between">
+			<div className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none flex items-center justify-between">
 				<span>Выбор квадрантов и фронта</span>
 				{activeStampTool && (
 					<span className="text-amber-600 dark:text-amber-400 font-bold normal-case text-2xs">

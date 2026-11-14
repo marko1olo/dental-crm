@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
-import { globalDentalVoiceEngine } from "../../services/voice";
+import {
+	UnifiedAudioClient,
+	parseDentalVoiceSpeech,
+	type DentalVoiceIntent,
+} from "../../services/voice";
 import { showToast } from "../GlobalToast";
 import type { OdontogramQuadrantId, ToothState } from "./ToothChart";
 import { getQuadrantTitle } from "./ToothChart";
@@ -35,54 +39,70 @@ export function useGlobalVoiceListener({
 	pediatricMode,
 }: UseGlobalVoiceListenerParams) {
 	useEffect(() => {
-		const unsub = globalDentalVoiceEngine.addListener({
-			onListeningChange: (isL) => {
+		const handleIntent = (intent: DentalVoiceIntent) => {
+			if (intent.targetQuadrant !== undefined && onQuadrantChange) {
+				onQuadrantChange(intent.targetQuadrant);
+				void SoundFeedbackService.getInstance().playActionSuccess();
+				showToast(
+					`Голос: ${getQuadrantTitle(intent.targetQuadrant, Boolean(pediatricMode))}`,
+					"info",
+				);
+			}
+
+			if (onQuickStateChange && intent.teethUpdates.length > 0) {
+				for (const t of intent.teethUpdates) {
+					onQuickStateChange([t.toothNumber], t.state, t.surfaces);
+				}
+				void SoundFeedbackService.getInstance().playActionSuccess();
+				const summary = intent.teethUpdates
+					.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
+					.join(", ");
+				showToast(`Голос: ${summary}`, "success");
+			}
+
+			if (
+				intent.type === "perio_measurement" ||
+				(intent.perioMeasurements && intent.perioMeasurements.length > 0)
+			) {
+				if (onTogglePerio && !isPerioOpen) onTogglePerio();
+				void SoundFeedbackService.getInstance().playActionSuccess();
+				showToast("Голос: Пародонтологическая карта", "info");
+			}
+
+			if (
+				intent.type === "ceph_landmark" ||
+				(intent.cephLandmarks && intent.cephLandmarks.length > 0)
+			) {
+				setIsOrthoCephOpen(true);
+				void SoundFeedbackService.getInstance().playActionSuccess();
+				showToast("Голос: Цефалометрия ТРГ", "info");
+			}
+		};
+
+		const client = UnifiedAudioClient.getInstance();
+		const unsub = client.subscribe({
+			onStateChange: (state) => {
+				const isL = state === "listening" || state === "connecting";
 				setIsVoiceListening(isL);
 				if (!isL) setVoiceInterimText("");
 			},
-			onTranscriptChange: (interim, final) => {
-				setVoiceInterimText(interim || final || "");
+			onInterimText: (interim) => {
+				setVoiceInterimText(interim || "");
+				if (interim && interim.trim()) {
+					const intent = parseDentalVoiceSpeech(interim.trim());
+					handleIntent(intent);
+				}
 			},
-			onIntentParsed: (intent) => {
-				if (intent.targetQuadrant !== undefined && onQuadrantChange) {
-					onQuadrantChange(intent.targetQuadrant);
-					void SoundFeedbackService.getInstance().playActionSuccess();
-					showToast(
-						`Голос: ${getQuadrantTitle(intent.targetQuadrant, Boolean(pediatricMode))}`,
-						"info",
-					);
-				}
-
-				if (onQuickStateChange && intent.teethUpdates.length > 0) {
-					for (const t of intent.teethUpdates) {
-						onQuickStateChange([t.toothNumber], t.state, t.surfaces);
-					}
-					void SoundFeedbackService.getInstance().playActionSuccess();
-					const summary = intent.teethUpdates
-						.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
-						.join(", ");
-					showToast(`Голос: ${summary}`, "success");
-				}
-
-				if (
-					intent.type === "perio_measurement" ||
-					(intent.perioMeasurements && intent.perioMeasurements.length > 0)
-				) {
-					if (onTogglePerio && !isPerioOpen) onTogglePerio();
-					void SoundFeedbackService.getInstance().playActionSuccess();
-					showToast("Голос: Пародонтологическая карта", "info");
-				}
-
-				if (
-					intent.type === "ceph_landmark" ||
-					(intent.cephLandmarks && intent.cephLandmarks.length > 0)
-				) {
-					setIsOrthoCephOpen(true);
-					void SoundFeedbackService.getInstance().playActionSuccess();
-					showToast("Голос: Цефалометрия ТРГ", "info");
+			onFinalText: (_final, accumulated) => {
+				const full = (accumulated || _final || "").trim();
+				setVoiceInterimText(full);
+				if (full) {
+					const intent = parseDentalVoiceSpeech(full);
+					handleIntent(intent);
 				}
 			},
 		});
+
 		return () => unsub();
 	}, [
 		onQuickStateChange,

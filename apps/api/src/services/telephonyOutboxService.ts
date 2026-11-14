@@ -42,6 +42,15 @@ import { wsBroker } from "./websocketBroker.js";
 
 export const TELEPHONY_OUTBOX_TOPIC = "telephony.webhook";
 
+export interface TelephonyHttpError extends Error {
+	statusCode: number;
+	code: string;
+}
+
+function createWebhookError(message: string, statusCode: number, code: string): TelephonyHttpError {
+	return Object.assign(new Error(message), { statusCode, code });
+}
+
 export const TELEPHONY_RETRY_SCHEDULE_MS = [
 	1000,   // Attempt 1 -> wait 1s
 	5000,   // Attempt 2 -> wait 5s
@@ -123,10 +132,7 @@ export class TelephonyOutboxService {
 			params.rawPayload === null ||
 			Array.isArray(params.rawPayload)
 		) {
-			const err = new Error("Request body must be a JSON object");
-			(err as any).statusCode = 400;
-			(err as any).code = "InvalidPayload";
-			throw err;
+			throw createWebhookError("Request body must be a JSON object", 400, "InvalidPayload");
 		}
 
 		const data = params.rawPayload as Record<string, unknown>;
@@ -186,12 +192,11 @@ export class TelephonyOutboxService {
 		const targetPhone = normalizePhoneNumber(targetRaw);
 
 		if (!callerPhone.isValid) {
-			const err = new Error(
+			throw createWebhookError(
 				"Missing or unparseable 'from' caller phone number in PBX payload",
+				400,
+				"MissingFromNumber",
 			);
-			(err as any).statusCode = 400;
-			(err as any).code = "MissingFromNumber";
-			throw err;
 		}
 
 		// Resolve tenant organization
@@ -221,12 +226,11 @@ export class TelephonyOutboxService {
 		}
 
 		if (!resolvedOrgId) {
-			const err = new Error(
+			throw createWebhookError(
 				"Could not identify tenant organization for this call webhook",
+				404,
+				"OrganizationNotFound",
 			);
-			(err as any).statusCode = 404;
-			(err as any).code = "OrganizationNotFound";
-			throw err;
 		}
 
 		const callId = String(

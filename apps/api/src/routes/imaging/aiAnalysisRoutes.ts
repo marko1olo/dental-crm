@@ -5,7 +5,7 @@ import {
 	PathTraversalError,
 	TenantIsolationError,
 } from "../../services/imaging/localPacsStorageService.js";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	parseImagingPayload,
@@ -19,6 +19,7 @@ import {
 import { withTenantCtx } from "../../db/rls.js";
 import { analyzeVisiographImage } from "../../ai/visiograph.js";
 import { analyzeImagingStudy } from "../../ai/visionAnalyzer.js";
+import type { ToothFindingUpdate } from "../../ai/vision/visionTypes.js";
 import {
 	getImagingStudyById,
 	updateImagingStudyAiSummaryInDb,
@@ -27,7 +28,7 @@ import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 
 export async function registerAiAnalysisRoutes(app: FastifyInstance) {
-	const aiAnalysisHandler = async (request: any, reply: any) => {
+	const aiAnalysisHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -79,7 +80,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			let report = "";
 			let summary = "";
 			let toothStates: Record<string, string> = {};
-			let toothUpdates: Array<{ code: string; state: string; diagnosisOrFinding: string; notes?: string }> = [];
+			let toothUpdates: ToothFindingUpdate[] = [];
 			let warnings: string[] = [];
 
 			try {
@@ -90,7 +91,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 				for (const u of analysis.toothUpdates) {
 					toothStates[u.code] = u.state;
 				}
-			} catch (primaryErr: any) {
+			} catch (primaryErr: unknown) {
 				// Secondary attempt: analyzeVisiographImage
 				try {
 					const visioRes = await analyzeVisiographImage(imageBase64);
@@ -105,7 +106,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 							diagnosisOrFinding: state === "sound" ? "Норма" : `Выявлено изменение: ${state}`,
 						});
 					}
-				} catch (fallbackErr: any) {
+				} catch (fallbackErr: unknown) {
 					// Honest fallback for offline/demo environments without API keys
 					const fdi = toothCode || "16";
 					report = `### Клинический анализ снимка (Зуб #${fdi})\n\n**Топография и качество:** Прицельная радиовизиография зуба ${fdi}. Анатомические ориентиры сохранены.\n\n**Периапикальные ткани:** Периодонтальная щель равномерная, кортикальная пластинка альвеолы интактна. Периапикальных очагов деструкции костной ткани не выявлено.\n\n**Корневые каналы:** Корневой канал прослеживается, обтурирован до рентгенологического апекса.\n\n**Заключение:**\nЗуб ${fdi}: признаков верхушечного периодонтита и скрытого кариеса не обнаружено. Рекомендовано динамическое наблюдение.`;
@@ -143,9 +144,10 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 				toothUpdates,
 				warnings,
 			});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("[Imaging AI Analysis] Error:", err);
-			return reply.code(500).send({ error: err.message || "Ошибка обработки снимка" });
+			const message = err instanceof Error ? err.message : "Ошибка обработки снимка";
+			return reply.code(500).send({ error: message });
 		}
 	};
 
@@ -268,9 +270,8 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 				);
 			}
 			return reply.code(200).send({ ok: true, analysisResult });
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
-			const message = err?.message ?? "Анализ завершился ошибкой";
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Анализ завершился ошибкой";
 			return reply.code(502).send({ ok: false, message });
 		}
 	});

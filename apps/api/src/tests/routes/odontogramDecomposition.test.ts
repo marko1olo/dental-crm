@@ -8,6 +8,7 @@ import {
 	normalizeClinicalToothState,
 	registerOdontogramRoutes,
 } from "../../routes/odontogram.js";
+import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
@@ -61,6 +62,7 @@ describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 	it("4. Fastify Route Registration: 100% of expected endpoints are mounted", async () => {
 		const app = createTenantTestApp();
 		await registerOdontogramRoutes(app);
+		await app.register(treatmentPlanRoutes);
 		await app.ready();
 
 		// Tooth States & Odontogram Status SSOT
@@ -76,10 +78,6 @@ describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 		// History
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states/:toothNumber/history" }), "GET /api/patients/:patientId/tooth-states/:toothNumber/history");
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states/history" }), "GET /api/patients/:patientId/tooth-states/history");
-
-		// Extended Tooth States
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/extended-tooth-states" }), "GET /api/patients/:patientId/extended-tooth-states");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/extended-tooth-states/batch" }), "POST /api/patients/:patientId/extended-tooth-states/batch");
 
 		// Treatment Plans Core
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/treatment-plans/:id" }), "GET /api/treatment-plans/:id");

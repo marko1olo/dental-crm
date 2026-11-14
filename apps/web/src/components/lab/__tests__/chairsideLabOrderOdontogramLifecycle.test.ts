@@ -14,16 +14,17 @@ import {
 	CANONICAL_STAMP_MATRIX,
 	normalizeToothState,
 	getGostAbbreviation,
+	type ToothState,
 } from "@dental/shared";
 import { getAnatomicalToothColors } from "../../odontogram/AnatomicalToothColors";
 import { getToothColors } from "../../odontogram/chart/ToothColors";
-import { GOST_ABBREVIATIONS, GOST_TOOTH_STATES, getToothStateFromHotkey } from "../../odontogram/classicGostTypes";
+import { GOST_ABBREVIATIONS, GOST_TOOTH_STATES, getToothStateFromHotkey } from "../../odontogram/gost/gostPathologyCodes";
 import { TOOTH_STATE_LABELS } from "../../odontogram/chart/toothChartTypes";
 describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () => {
 	describe("1. Канонический статус Planned_Crown (Коронка в изготовлении ЗТЛ)", () => {
 		test("Planned_Crown зарегистрирован в CANONICAL_TOOTH_STATES", () => {
 			assert.ok(
-				CANONICAL_TOOTH_STATES.includes("Planned_Crown" as any),
+				(CANONICAL_TOOTH_STATES as readonly string[]).includes("Planned_Crown"),
 				"Planned_Crown обязан присутствовать в CANONICAL_TOOTH_STATES",
 			);
 		});
@@ -52,7 +53,7 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 	describe("2. Визуализация одонтограммы для коронки в изготовлении (Planned_Crown)", () => {
 		test("AnatomicalToothColors возвращает пульсирующий синий контур для Planned_Crown", () => {
 			const colors = getAnatomicalToothColors({
-				state: "Planned_Crown" as any,
+				state: "Planned_Crown" as ToothState,
 			});
 			assert.equal(colors.isPulsing, true, "Коронка в изготовлении ЗТЛ обязана пульсировать (isPulsing)");
 			assert.equal(colors.stroke, "#3b82f6", "Цвет контура должен быть сигнальным синим (#3b82f6)");
@@ -63,7 +64,7 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 			assert.equal(colors.isPulsing, true, "Схематический зуб также обязан пульсировать");
 			assert.equal(colors.stroke, "#3b82f6");
 		});
-		test("ClassicGostOdontogram поддерживает Planned_Crown и хоткеи (к + п)", () => {
+		test("Odontogram SSOT поддерживает Planned_Crown и хоткеи (к + п)", () => {
 			assert.equal(GOST_ABBREVIATIONS["Кп"], "Planned_Crown");
 			assert.equal(GOST_TOOTH_STATES.Planned_Crown?.abbr, "Кп");
 			assert.equal(getToothStateFromHotkey("к", "п"), "Planned_Crown");
@@ -77,15 +78,15 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 	describe("3. Жизненный цикл наряда: От кресла до фиксации во рту (State Transition)", () => {
 		test("При создании наряда зуб переходит в Planned_Crown, а при фиксации — в Crown", () => {
 			// Симуляция жизненного цикла зуба 26
-			let toothState: string = "Healthy";
+			let toothState: ToothState = "Healthy";
 			// Шаг 1: Врач выбирает пресет коронки ЗТЛ у кресла
 			const labOrderStage = "sent_to_lab";
 			assert.ok(["sent_to_lab", "impression_scan"].includes(labOrderStage));
 			// Шаг 2: Наряд отправлен -> одонтограмма переводит зуб в Planned_Crown
-			toothState = normalizeToothState("Planned_Crown");
+			toothState = normalizeToothState("Planned_Crown") as ToothState;
 			assert.equal(toothState, "Planned_Crown");
 			const inProgressVisual = getAnatomicalToothColors({
-				state: toothState as any,
+				state: toothState,
 			});
 			assert.equal(inProgressVisual.isPulsing, true, "Зуб визуально индицирует процесс изготовления в лаборатории");
 			// Шаг 3: Конструкция прибыла из лаборатории и сдана пациенту (POST /api/lab-orders/:id/mark-installed)
@@ -95,10 +96,10 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 			};
 			assert.equal(markInstalledEvent.isLockedInstalled, true);
 			// Шаг 4: Зуб окончательно зафиксирован -> переход в постоянную Crown
-			toothState = normalizeToothState("Crown");
+			toothState = normalizeToothState("Crown") as ToothState;
 			assert.equal(toothState, "Crown");
 			const installedVisual = getAnatomicalToothColors({
-				state: toothState as any,
+				state: toothState,
 			});
 			assert.equal(installedVisual.isPulsing, undefined, "Зафиксированная постоянная коронка не пульсирует");
 			assert.equal(installedVisual.stroke, "#10b981", "Зафиксированная циркониевая коронка имеет статус нормы/установки");

@@ -2,7 +2,7 @@ import React from "react";
 import { BellPlus, X } from "lucide-react";
 import type { ToothState } from "../../odontogram/ToothChart";
 import { getToothStateLabelRu } from "../../odontogram/chart/toothChartTypes";
-import { getLocusTransitionDescription } from "../../odontogram/treatmentEstimatorPricing";
+import { getLocusTransitionDescription } from "@dental/shared";
 import type { SuggestedRecall } from "./toothDrawerTypes";
 
 interface ToothDrawerHeaderProps {
