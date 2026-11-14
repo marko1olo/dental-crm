@@ -8,6 +8,8 @@ import {
 	fetchPatientLatestPeriodontogram,
 	resolvePerioPatientId,
 	upsertPatientFullPeriodontogram,
+	type PatchToothInput,
+	type SiteItemInput,
 } from "../../services/periodontogramService.js";
 import {
 	getHygieneRecommendations,
@@ -34,8 +36,12 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		}
 
 		// Связка с рекомендациями гигиены по коду PSR
-		const psrCode = Number((data as any).indices?.psr ?? 0);
-		const hasAsterisk = Boolean((data as any).indices?.hasAsterisk);
+		const dataIndices =
+			data && typeof data === "object" && "indices" in data
+				? (data.indices as Record<string, unknown> | null)
+				: null;
+		const psrCode = Number(dataIndices?.psr ?? 0);
+		const hasAsterisk = Boolean(dataIndices?.hasAsterisk);
 		const hygieneRecommendations = getHygieneRecommendations(psrCode, hasAsterisk);
 		const hygienePlan = getHygienePlanText(psrCode, hasAsterisk);
 
@@ -72,21 +78,39 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		const identity = getRequestIdentity(request);
 		const recordedByUserId = identity.userId ?? null;
 
+		const rawIndices =
+			body.indices && typeof body.indices === "object"
+				? (body.indices as Record<string, unknown>)
+				: undefined;
+		const rawPsrData =
+			(rawIndices?.psrData as Record<string, unknown> | undefined) ??
+			(body.psrData && typeof body.psrData === "object"
+				? (body.psrData as Record<string, unknown>)
+				: undefined);
+
 		const result = await upsertPatientFullPeriodontogram({
 			orgId,
 			patientId,
 			recordedByUserId,
-			teeth: Array.isArray(body.teeth) ? (body.teeth as any) : undefined,
-			sites: Array.isArray(body.sites) ? (body.sites as any) : undefined,
+			teeth: Array.isArray(body.teeth)
+				? (body.teeth as PatchToothInput[])
+				: undefined,
+			sites: Array.isArray(body.sites)
+				? (body.sites as SiteItemInput[])
+				: undefined,
 			notes: typeof body.notes === "string" ? body.notes : undefined,
 			status: body.status === "closed" ? "closed" : "draft",
 			autoClose: Boolean(body.autoClose),
-			psrData: (body.indices as any)?.psrData ?? (body.psrData as any),
+			psrData: rawPsrData,
 		});
 
 		// Расчет рекомендаций гигиены
-		const psrCode = Number((result as any).indices?.psr ?? body.psrCode ?? 0);
-		const hasAsterisk = Boolean((result as any).indices?.hasAsterisk ?? body.hasAsterisk);
+		const resIndices =
+			result && typeof result === "object" && "indices" in result
+				? (result.indices as Record<string, unknown> | null)
+				: null;
+		const psrCode = Number(resIndices?.psr ?? body.psrCode ?? 0);
+		const hasAsterisk = Boolean(resIndices?.hasAsterisk ?? body.hasAsterisk);
 		const hygieneRecommendations = getHygieneRecommendations(psrCode, hasAsterisk);
 		const hygienePlan = getHygienePlanText(psrCode, hasAsterisk);
 

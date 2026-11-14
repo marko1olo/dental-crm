@@ -183,7 +183,8 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 
 		const { senderId } = request.params;
 		const channel = (request.body?.channel as BotChannel) || "telegram";
-		const operatorName = request.body?.operatorName || (request as any).user?.name || "Оператор клиники";
+		const user = request.user as { name?: string; fullName?: string } | undefined;
+		const operatorName = request.body?.operatorName || user?.name || user?.fullName || "Оператор клиники";
 
 		const result = handleTakeoverChat(channel, orgId, senderId, operatorName);
 		return reply.send(result);
@@ -275,7 +276,13 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		if (!orgId) return;
 
 		const { senderId } = request.params;
-		const res = await handleBookAppointment(orgId, senderId, request.body || ({} as any));
+		if (!request.body) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Не заполнены параметры записи на приём.",
+			});
+		}
+		const res = await handleBookAppointment(orgId, senderId, request.body);
 		if (!res.ok) {
 			return reply.code(res.statusCode || 400).send({ error: res.error, message: res.message });
 		}

@@ -5,7 +5,7 @@
 
 import { and, eq, lt, ne, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
-import { db } from "../../../db/client.js";
+import { db, type TenantDb } from "../../../db/client.js";
 import {
 	appointments,
 	chairs,
@@ -145,9 +145,8 @@ export async function resolveOrganizationId(
 	return "00000000-0000-0000-0000-000000000001";
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic drizzle transaction
 export async function syncProdoctorovExportStatus(
-	tx: any,
+	tx: TenantDb,
 	organizationId: string,
 	update: ProdoctorovSyncStatusUpdate,
 ): Promise<void> {
@@ -187,9 +186,8 @@ export async function syncProdoctorovExportStatus(
 	}
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic drizzle transaction
 export async function generatePricelistXml(
-	tx: any,
+	tx: TenantDb,
 	organizationId: string,
 ): Promise<string> {
 	const [org] = await tx
@@ -299,9 +297,8 @@ ${offersXml}
 	return xml;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic drizzle transaction
 export async function calculateAvailableSlots(
-	tx: any,
+	tx: TenantDb,
 	organizationId: string,
 	query: SlotsQueryParams,
 ): Promise<ProdoctorovSlotsResponse> {
@@ -429,20 +426,33 @@ export async function calculateAvailableSlots(
 
 			// Если у врача заданы персональные workingHours
 			if (Array.isArray(doctor.workingHours)) {
-				// biome-ignore lint/suspicious/noExplicitAny: generic parsed json
-				const dayConf = (doctor.workingHours as any[]).find(
+				interface DoctorWorkingHourDay {
+					weekday?: number;
+					enabled?: boolean;
+					start?: string;
+					end?: string;
+				}
+				const hoursList = doctor.workingHours as DoctorWorkingHourDay[];
+				const dayConf = hoursList.find(
 					(d) => d && typeof d === "object" && d.weekday === dayOfWeek,
 				);
 				if (dayConf) {
 					enabled = Boolean(dayConf.enabled);
 					if (dayConf.start && typeof dayConf.start === "string") {
-						const [h, m] = dayConf.start.split(":").map(Number);
-						if (!Number.isNaN(h) && !Number.isNaN(m))
+						const parts = dayConf.start.split(":").map(Number);
+						const h = parts[0];
+						const m = parts[1];
+						if (h !== undefined && m !== undefined && !Number.isNaN(h) && !Number.isNaN(m)) {
 							startMin = h * 60 + m;
+						}
 					}
 					if (dayConf.end && typeof dayConf.end === "string") {
-						const [h, m] = dayConf.end.split(":").map(Number);
-						if (!Number.isNaN(h) && !Number.isNaN(m)) endMin = h * 60 + m;
+						const parts = dayConf.end.split(":").map(Number);
+						const h = parts[0];
+						const m = parts[1];
+						if (h !== undefined && m !== undefined && !Number.isNaN(h) && !Number.isNaN(m)) {
+							endMin = h * 60 + m;
+						}
 					}
 				}
 			} else {

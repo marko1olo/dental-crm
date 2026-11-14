@@ -35,6 +35,8 @@ import {
 	ensureValidUuid,
 	UUID_REGEX,
 	type CopilotRole,
+	type CopilotSessionRecord,
+	type CopilotMessageRecord,
 } from "../ai/session/copilotSessionTypes.js";
 
 // Resilient in-memory fallback store when PostgreSQL constraint fails or during synthetic unit testing
@@ -124,7 +126,7 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				const query = parseResult.success ? parseResult.data : { limit: 50, offset: 0 };
 
 				try {
-					let sessions = await listSessionsFromDb(resolvedOrgId, {
+					let sessions: (CopilotSessionRecord | MemorySession)[] = await listSessionsFromDb(resolvedOrgId, {
 						patientId: query.patientId,
 						limit: query.limit,
 						offset: query.offset,
@@ -134,7 +136,7 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					if (sessions.length === 0) {
 						const memSessions = getMemorySessions(resolvedOrgId, query);
 						if (memSessions.length > 0) {
-							sessions = memSessions as any[];
+							sessions = memSessions;
 						}
 					}
 
@@ -348,9 +350,9 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				const query = parseResult.success ? parseResult.data : { limit: 100, offset: 0, order: "asc" as const };
 
 				try {
-					let messages = await getMessagesFromDb(id, resolvedOrgId, query);
+					let messages: (CopilotMessageRecord | MemoryMessage)[] = await getMessagesFromDb(id, resolvedOrgId, query);
 					if (messages.length === 0 && fallbackMessages.has(id)) {
-						messages = (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit) as any[];
+						messages = (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit);
 					}
 
 					return reply.code(200).send({
@@ -373,65 +375,63 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 		);
 
 		// ─── POST append message to session ────────────────────────────────────────
-		if (prefix !== "/api/v1/copilot/sessions") {
-			server.post(
-				`${prefix}/:id/messages`,
-				{ config: { tenantTxSelfManaged: true } },
-				async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-					const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "add session message");
-					if (!resolvedOrgId) return;
+		server.post(
+			`${prefix}/:id/messages`,
+			{ config: { tenantTxSelfManaged: true } },
+			async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "add session message");
+				if (!resolvedOrgId) return;
 
-					const { id } = request.params;
-					if (!UUID_REGEX.test(id)) {
-						return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
-					}
-
-					const parseResult = addMessageBodySchema.safeParse(request.body ?? {});
-					if (!parseResult.success) {
-						return reply.code(400).send({
-							error: "ValidationError",
-							message: "Некорректное сообщение для сессии",
-							details: parseResult.error.format(),
-						});
-					}
-
-					const body = parseResult.data;
-
-					try {
-						const message = await addMessageToDb({
-							sessionId: id,
-							organizationId: resolvedOrgId,
-							role: body.role as CopilotRole,
-							content: body.content,
-							toolCalls: body.toolCalls,
-							autoCompact: body.autoCompact,
-						});
-
-						return reply.code(201).send({ ok: true, data: message, ...message });
-					} catch {
-						const now = new Date();
-						const msgId = ensureValidUuid();
-						const memMsg: MemoryMessage = {
-							id: msgId,
-							sessionId: id,
-							role: body.role as CopilotRole,
-							content: body.content,
-							toolCalls: body.toolCalls ?? null,
-							createdAt: now,
-						};
-
-						const existingList = fallbackMessages.get(id) || [];
-						existingList.push(memMsg);
-						fallbackMessages.set(id, existingList);
-
-						// Touch session
-						const session = fallbackSessions.get(id);
-						if (session) session.updatedAt = now;
-
-						return reply.code(201).send({ ok: true, data: memMsg, ...memMsg });
-					}
+				const { id } = request.params;
+				if (!UUID_REGEX.test(id)) {
+					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
-			);
-		}
+
+				const parseResult = addMessageBodySchema.safeParse(request.body ?? {});
+				if (!parseResult.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректное сообщение для сессии",
+						details: parseResult.error.format(),
+					});
+				}
+
+				const body = parseResult.data;
+
+				try {
+					const message = await addMessageToDb({
+						sessionId: id,
+						organizationId: resolvedOrgId,
+						role: body.role as CopilotRole,
+						content: body.content,
+						toolCalls: body.toolCalls,
+						autoCompact: body.autoCompact,
+					});
+
+					return reply.code(201).send({ ok: true, data: message, ...message });
+				} catch {
+					const now = new Date();
+					const msgId = ensureValidUuid();
+					const memMsg: MemoryMessage = {
+						id: msgId,
+						sessionId: id,
+						role: body.role as CopilotRole,
+						content: body.content,
+						toolCalls: body.toolCalls ?? null,
+						createdAt: now,
+					};
+
+					const existingList = fallbackMessages.get(id) || [];
+					existingList.push(memMsg);
+					fallbackMessages.set(id, existingList);
+
+					// Touch session
+					const session = fallbackSessions.get(id);
+					if (session) session.updatedAt = now;
+
+					return reply.code(201).send({ ok: true, data: memMsg, ...memMsg });
+				}
+			}
+		);
 	}
 }

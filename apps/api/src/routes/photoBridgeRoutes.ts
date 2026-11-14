@@ -100,6 +100,26 @@ const createSessionSchema = z.object({
 	presetId: z.string().optional().default("express_6_slots"),
 });
 
+interface FastifyMultipartFilePart {
+	file: AsyncIterable<Buffer>;
+	filename?: string;
+	mimetype?: string;
+	fields?: Record<string, { value?: string }>;
+}
+
+interface FastifyWithMultipart {
+	file?: () => Promise<FastifyMultipartFilePart | undefined>;
+}
+
+interface JsonPhotoPayload {
+	dataUrl?: string;
+	imageUrl?: string;
+	imageBase64?: string;
+	slotId?: string | number;
+	fileName?: string;
+	filename?: string;
+}
+
 export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	// Добавляем поддержку бинарных тел запросов для фотопротокола без сбоев дублирования
 	const binaryTypes = [
@@ -280,11 +300,10 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		let slotId = query?.slotId || (request.headers["x-slot-id"] as string) || "frontal_smile";
 
 		// 1. Попытка через стандартный multipart stream, если доступен
-		// biome-ignore lint/suspicious/noExplicitAny: Fastify multipart method inspection
-		if (typeof (request as any).file === "function") {
+		const reqWithMultipart = request as FastifyRequest & FastifyWithMultipart;
+		if (typeof reqWithMultipart.file === "function") {
 			try {
-				// biome-ignore lint/suspicious/noExplicitAny: Fastify multipart call
-				const part = await (request as any).file();
+				const part = await reqWithMultipart.file();
 				if (part) {
 					const chunks: Buffer[] = [];
 					for await (const chunk of part.file) {
@@ -293,7 +312,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					fileBuffer = Buffer.concat(chunks);
 					filename = part.filename || filename;
 					mimeType = part.mimetype || mimeType;
-					const fields = part.fields as Record<string, { value?: string }> | undefined;
+					const fields = part.fields;
 					if (fields?.slotId?.value) slotId = fields.slotId.value;
 				}
 			} catch {
@@ -317,19 +336,18 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 
 		// 3. Если тело пришло как JSON (dataUrl или imageBase64)
 		if (!fileBuffer && request.body && typeof request.body === "object") {
-			// biome-ignore lint/suspicious/noExplicitAny: JSON payload extraction
-			const b = request.body as any;
+			const b = request.body as JsonPhotoPayload;
 			const dataUrl = b.dataUrl || b.imageUrl || b.imageBase64;
 			if (typeof dataUrl === "string") {
 				const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-				if (match) {
-					mimeType = match[1] || mimeType;
-					fileBuffer = Buffer.from(match[2]!, "base64");
+				if (match && match[1] && match[2]) {
+					mimeType = match[1];
+					fileBuffer = Buffer.from(match[2], "base64");
 				} else {
 					fileBuffer = Buffer.from(dataUrl, "base64");
 				}
 			}
-			if (b.slotId) slotId = String(b.slotId);
+			if (b.slotId !== undefined) slotId = String(b.slotId);
 			if (b.fileName || b.filename) filename = String(b.fileName || b.filename);
 		}
 

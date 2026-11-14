@@ -128,7 +128,9 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 			const romiChannels = aggregateCrmMarketingMetrics({
 				patients: allPatients.map((p) => ({
 					id: p.id,
-					administrativeProfile: p.administrativeProfile as any,
+					administrativeProfile: (p.administrativeProfile && typeof p.administrativeProfile === "object"
+						? (p.administrativeProfile as Record<string, unknown>)
+						: null),
 					notes: p.notes,
 				})),
 				appointments: allAppts.map((a) => ({
@@ -209,7 +211,9 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 			const romiChannels = aggregateCrmMarketingMetrics({
 				patients: allPatients.map((p) => ({
 					id: p.id,
-					administrativeProfile: p.administrativeProfile as any,
+					administrativeProfile: (p.administrativeProfile && typeof p.administrativeProfile === "object"
+						? (p.administrativeProfile as Record<string, unknown>)
+						: null),
 					notes: p.notes,
 				})),
 				appointments: allAppts.map((a) => ({

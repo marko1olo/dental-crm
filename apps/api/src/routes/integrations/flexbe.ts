@@ -14,7 +14,7 @@ const flexbePayloadSchema = z
 				name: z.string().optional(),
 			})
 			.optional(),
-		data: z.record(z.any()).optional(),
+		data: z.record(z.unknown()).optional(),
 	})
 	.passthrough();
 
@@ -49,13 +49,12 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 				return reply.status(400).send({ error: "Invalid payload format" });
 			}
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const data = payload.data.data || (req.body as any) || {};
-			const name = (data.name || "Лид с лендинга").toString();
-			const phone = data.phone ? data.phone.toString() : null;
+			const rawBody = (req.body && typeof req.body === "object" ? req.body : {}) as Record<string, unknown>;
+			const data: Record<string, unknown> = payload.data.data ?? rawBody;
+			const name = (typeof data["name"] === "string" && data["name"].trim().length > 0 ? data["name"] : "Лид с лендинга").toString();
+			const phone = typeof data["phone"] === "string" ? data["phone"].trim() : (data["phone"] != null ? String(data["phone"]) : null);
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const rawTs = data.timestamp ?? data.time ?? (req.body as any)?.timestamp;
+			const rawTs = data["timestamp"] ?? data["time"] ?? rawBody["timestamp"];
 			if (rawTs != null) {
 				const numTs =
 					typeof rawTs === "number" ? rawTs : Number.parseInt(String(rawTs), 10);
@@ -71,12 +70,11 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 			}
 
 			const subIdRaw =
-				data.id ??
-				data.submission_id ??
-				data.lead_id ??
-				data.req_id ??
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(req.body as any)?.id;
+				data["id"] ??
+				data["submission_id"] ??
+				data["lead_id"] ??
+				data["req_id"] ??
+				rawBody["id"];
 			const subId =
 				subIdRaw != null && String(subIdRaw).trim().length > 0
 					? String(subIdRaw).trim()

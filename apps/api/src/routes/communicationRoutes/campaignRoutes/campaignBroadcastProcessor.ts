@@ -65,7 +65,10 @@ export async function processBroadcastCampaign(
 				and(
 					eq(patientCommunicationConsents.organizationId, organizationId),
 					inArray(patientCommunicationConsents.patientId, allowedPatientIds),
-					eq(patientCommunicationConsents.channel, channel as any),
+					eq(
+						patientCommunicationConsents.channel,
+						channel as (typeof patientCommunicationConsents.$inferSelect)["channel"],
+					),
 					eq(patientCommunicationConsents.state, "revoked"),
 				),
 			);
@@ -79,7 +82,7 @@ export async function processBroadcastCampaign(
 	const eventsToInsert = allowedPatientIds.map((pId) => ({
 		organizationId,
 		patientId: pId,
-		channel: channel as any,
+		channel: channel as (typeof communicationEvents.$inferInsert)["channel"],
 		direction: "outbound" as const,
 		status: "queued" as const,
 		message: rawText,

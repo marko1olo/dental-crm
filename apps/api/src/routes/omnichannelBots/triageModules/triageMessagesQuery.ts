@@ -9,6 +9,15 @@ import { omnichannelBotEngine } from "../../../services/bots/OmnichannelBotEngin
 import type { BotChannel } from "../../../services/bots/types.js";
 import type { ChatMessageItem } from "../types.js";
 
+interface InboundMessageRawPayload {
+	user_name?: string;
+	from?: {
+		first_name?: string;
+		last_name?: string;
+	};
+	[key: string]: unknown;
+}
+
 /**
  * Хронологическая история сообщений для выбранного контакта.
  */
@@ -81,7 +90,7 @@ export async function fetchInboxMessages(
 	const messages: ChatMessageItem[] = [];
 
 	for (const ib of inbounds) {
-		const raw = (ib.rawPayload as Record<string, any>) || {};
+		const raw = (ib.rawPayload as InboundMessageRawPayload | null) || {};
 		const name =
 			raw.user_name ||
 			[raw.from?.first_name, raw.from?.last_name].filter(Boolean).join(" ") ||

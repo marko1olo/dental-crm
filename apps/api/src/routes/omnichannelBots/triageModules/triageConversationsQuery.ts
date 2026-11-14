@@ -10,6 +10,22 @@ import { omnichannelBotEngine } from "../../../services/bots/OmnichannelBotEngin
 import type { BotChannel } from "../../../services/bots/types.js";
 import type { InboxConversation } from "../types.js";
 
+interface InboundRawPayload {
+	sourceType?: string;
+	sourceKind?: string;
+	provider?: string;
+	isPersonal?: boolean;
+	user_name?: string;
+	from?: {
+		first_name?: string;
+		last_name?: string;
+	};
+	senderData?: {
+		senderName?: string;
+	};
+	[key: string]: unknown;
+}
+
 /**
  * Получение списка активных диалогов во всех мессенджерах (Telegram, VK, WhatsApp, MAX).
  */
@@ -76,7 +92,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 		const key = `${channel}:${senderId}`;
 
 		// Ищем пациента
-		const rawPayload = (evt.rawPayload as Record<string, any>) || {};
+		const rawPayload = (evt.rawPayload as InboundRawPayload | null) || {};
 		const rawSourceType = rawPayload.sourceType || rawPayload.sourceKind || rawPayload.provider;
 		let sourceBadge = "TG Бот";
 		let sourceType = "tg_bot";

@@ -13,6 +13,9 @@ import {
 	generateClinicalRiskReason,
 	generateReactivationScript,
 	isClinicalObservationPause,
+	type CrmDeclineReason,
+	type CrmLeakLeadItem,
+	type CrmLeadStatus,
 } from "@dental/shared";
 import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -348,11 +351,12 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				updatedCount,
 			});
 		});
-	} catch (err: any) {
+	} catch (err) {
 		req.log.error({ err }, "[CrmLeakDetector] Sync failed");
+		const message = err instanceof Error ? err.message : "Неизвестная ошибка синхронизации";
 		return reply.status(500).send({
 			error: "SyncError",
-			message: err.message,
+			message,
 		});
 	}
 });
@@ -539,7 +543,37 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				.from(crmLeakDetectorLeads)
 				.where(eq(crmLeakDetectorLeads.organizationId, orgId));
 
-			const metrics = calculateLeakFunnelMetrics(allLeads as any);
+			const mappedLeads: CrmLeakLeadItem[] = allLeads.map((l) => ({
+				id: l.id,
+				organizationId: l.organizationId,
+				patientId: l.patientId,
+				patientFullName: "Пациент",
+				phone: "",
+				daysSinceLastVisit: l.daysSinceLastVisit,
+				lastVisitDate: l.lastVisitDate ? l.lastVisitDate.toISOString() : "",
+				lastDoctorId: l.lastDoctorId,
+				lastDoctorName: l.lastDoctorName,
+				lastSpecialty: l.lastSpecialty,
+				uncompletedPlanSumRub: l.uncompletedPlanSumRub,
+				hasUncompletedPlan: l.hasUncompletedPlan,
+				clinicalRiskReason: l.clinicalRiskReason,
+				leadStatus: l.leadStatus as CrmLeadStatus,
+				assignedAdminUserId: l.assignedAdminUserId,
+				assignedAdminName: l.assignedAdminName,
+				contactAttemptsCount: l.contactAttemptsCount,
+				lastContactAt: l.lastContactAt ? l.lastContactAt.toISOString() : null,
+				lastContactChannel: l.lastContactChannel as "call" | "whatsapp" | "telegram" | "sms" | null,
+				lastContactNotes: l.lastContactNotes,
+				rebookedAppointmentId: l.rebookedAppointmentId,
+				rebookedDate: l.rebookedDate ? l.rebookedDate.toISOString() : null,
+				declineReason: l.declineReason as CrmDeclineReason | null,
+				declineComment: l.declineComment,
+				aiReactivationSuggestion: l.aiReactivationSuggestion ?? "",
+				createdAt: l.createdAt.toISOString(),
+				updatedAt: l.updatedAt.toISOString(),
+			}));
+
+			const metrics = calculateLeakFunnelMetrics(mappedLeads);
 			return reply.send({ data: metrics });
 		});
 	});

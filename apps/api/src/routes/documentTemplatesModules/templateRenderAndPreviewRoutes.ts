@@ -80,7 +80,19 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				org = defaultOrg;
 			}
 
-			const clinicOverride = (body.overrides?.clinic as Record<string, any>) || {};
+			interface ClinicOverride {
+				name?: string;
+				inn?: string;
+				kpp?: string;
+				address?: string;
+				phone?: string;
+				licenseNumber?: string;
+			}
+			const rawClinicOverride = body.overrides?.clinic;
+			const clinicOverride: ClinicOverride =
+				typeof rawClinicOverride === "object" && rawClinicOverride !== null
+					? (rawClinicOverride as ClinicOverride)
+					: {};
 			if (!org && Object.keys(clinicOverride).length === 0) {
 				return reply.status(401).send({
 					error: "Unauthorized",
@@ -179,6 +191,11 @@ export async function registerTemplateRenderAndPreviewRoutes(
 						adminProfile?.identityDocument,
 					);
 
+					const adminProfileRecord =
+						adminProfile && typeof adminProfile === "object"
+							? (adminProfile as Record<string, unknown>)
+							: null;
+
 					patientContextData = {
 						id: patientRecord.id,
 						fullName: patientRecord.fullName,
@@ -196,9 +213,17 @@ export async function registerTemplateRenderAndPreviewRoutes(
 						specialNotes: patientRecord.notes ?? "",
 						comment: patientRecord.notes ?? "",
 						somaticStatus:
-							(adminProfile as any)?.somaticStatus ?? patientRecord.notes ?? "",
-						allergyStatus: (adminProfile as any)?.allergyStatus ?? "",
-						drugIntolerance: (adminProfile as any)?.drugIntolerance ?? "",
+							(typeof adminProfileRecord?.["somaticStatus"] === "string"
+								? adminProfileRecord["somaticStatus"]
+								: null) ?? patientRecord.notes ?? "",
+						allergyStatus:
+							typeof adminProfileRecord?.["allergyStatus"] === "string"
+								? adminProfileRecord["allergyStatus"]
+								: "",
+						drugIntolerance:
+							typeof adminProfileRecord?.["drugIntolerance"] === "string"
+								? adminProfileRecord["drugIntolerance"]
+								: "",
 						gender: adminProfile?.gender,
 						passport: {
 							series: parsedPassport.series,
@@ -263,7 +288,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					: undefined;
 
 			let dentalFormulaContextData: TemplateExecutionContext["dentalFormula"] =
-				body.dentalFormula as any;
+				body.dentalFormula as TemplateExecutionContext["dentalFormula"];
 
 			if (body.visitId && UUID_REGEX.test(body.visitId)) {
 				const [visitRecord] = await db
@@ -299,13 +324,25 @@ export async function registerTemplateRenderAndPreviewRoutes(
 
 					// Извлечение зубной формулы из черновика визита при наличии
 					if (!dentalFormulaContextData && visitRecord.draftAutosave) {
-						const autosave = visitRecord.draftAutosave as Record<string, any>;
-						if (autosave.draft?.quality?.detectedToothStates) {
+						interface AutosaveDraftStructure {
+							draft?: {
+								quality?: {
+									detectedToothStates?: TemplateExecutionContext["dentalFormula"];
+								};
+							};
+							teeth?: TemplateExecutionContext["dentalFormula"];
+							dentalFormula?: TemplateExecutionContext["dentalFormula"];
+						}
+						const autosave =
+							typeof visitRecord.draftAutosave === "object" && visitRecord.draftAutosave !== null
+								? (visitRecord.draftAutosave as AutosaveDraftStructure)
+								: null;
+						if (autosave?.draft?.quality?.detectedToothStates) {
 							dentalFormulaContextData =
 								autosave.draft.quality.detectedToothStates;
-						} else if (autosave.teeth) {
+						} else if (autosave?.teeth) {
 							dentalFormulaContextData = autosave.teeth;
-						} else if (autosave.dentalFormula) {
+						} else if (autosave?.dentalFormula) {
 							dentalFormulaContextData = autosave.dentalFormula;
 						}
 					}
@@ -418,7 +455,9 @@ export async function registerTemplateRenderAndPreviewRoutes(
 			let currentUserContextData: TemplateExecutionContext["currentUser"] =
 				body.currentUser;
 			if (!currentUserContextData) {
-				const sessionUser = (request as any).user;
+				const sessionUser = request.user as
+					| { fullName?: string; role?: string }
+					| undefined;
 				if (sessionUser?.fullName) {
 					currentUserContextData = {
 						fullName: sessionUser.fullName,

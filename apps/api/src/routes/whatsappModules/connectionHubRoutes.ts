@@ -29,13 +29,22 @@ export function maskToken(raw: string): string {
 	return createHash("sha256").update(raw).digest("hex").slice(0, 12);
 }
 
-export function parseJsonSafe<T>(value: string, fallback: T): T {
-	try {
-		return JSON.parse(value) as T;
-	} catch (err) {
-		console.error("[Dente] parseJsonSafe failed:", err);
+export function parseJsonSafe<T>(value: unknown, fallback: T): T {
+	if (value === null || value === undefined) {
 		return fallback;
 	}
+	if (typeof value === "object") {
+		return value as T;
+	}
+	if (typeof value === "string") {
+		try {
+			return JSON.parse(value) as T;
+		} catch (err) {
+			console.error("[Dente] parseJsonSafe failed:", err);
+			return fallback;
+		}
+	}
+	return fallback;
 }
 
 /**
@@ -77,12 +86,10 @@ export async function registerConnectionHubRoutes(
 			hasToken: Boolean(config.tokenSecretRef),
 			webhookVerifyToken: config.webhookVerifyToken ?? null,
 			enabledFeatures: parseJsonSafe<string[]>(
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				config.enabledFeaturesJson as any,
+				config.enabledFeaturesJson,
 				[],
 			),
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			staffRouting: parseJsonSafe(config.staffRoutingJson as any, {
+			staffRouting: parseJsonSafe(config.staffRoutingJson, {
 				defaultUserId: null,
 				rules: [],
 			}),

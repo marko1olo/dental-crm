@@ -22,7 +22,8 @@ export async function handleSendOperatorMessage(
 	}
 
 	const body = parse.data;
-	const operatorName = body.operatorName || (request as any).user?.name || "Оператор клиники";
+	const user = request.user as { name?: string; fullName?: string } | undefined;
+	const operatorName = body.operatorName || user?.name || user?.fullName || "Оператор клиники";
 
 	const result = await omnichannelBotEngine.sendOperatorMessage({
 		channel: body.channel,

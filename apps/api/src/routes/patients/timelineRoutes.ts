@@ -191,7 +191,7 @@ export function registerPatientTimelineRoutes(app: FastifyInstance) {
 
 			// 152-ФЗ / Врачебная тайна: Защита от утечки служебных заметок врача/ресепшн
 			const { notes: _internalNotes, ...safePatient } = patientRow;
-			let safeAdminProfile = patientRow.administrativeProfile;
+			let safeAdminProfile: unknown = patientRow.administrativeProfile;
 			if (safeAdminProfile && typeof safeAdminProfile === "object") {
 				const {
 					curatorCommissionPercent: _comm,
@@ -199,7 +199,7 @@ export function registerPatientTimelineRoutes(app: FastifyInstance) {
 					dataProcessingBasisNote: _dpNote,
 					...cleanProfile
 				} = safeAdminProfile as Record<string, unknown>;
-				safeAdminProfile = cleanProfile as any;
+				safeAdminProfile = cleanProfile;
 			}
 			const sanitizedPatient = {
 				...safePatient,

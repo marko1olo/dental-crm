@@ -24,7 +24,7 @@ function isDbUnavailable(err: unknown): boolean {
 	const collect = (e: unknown): string => {
 		if (!e) return "";
 		if (e instanceof Error) {
-			const cause = (e as any).cause ? ` ${collect((e as any).cause)}` : "";
+			const cause = "cause" in e && e.cause ? ` ${collect(e.cause)}` : "";
 			return `${e.message}${cause}`;
 		}
 		return String(e);
@@ -185,7 +185,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			state: string;
 			surfaces: string[] | null;
 			notes: string | null;
-			canalMeasurements: any;
+			canalMeasurements: EndoToothClinicalData["canals"] | null;
 		} | undefined;
 		try {
 			const rows = await db
@@ -239,7 +239,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 				radiologyControl: resolvedClinicalData?.radiologyControl || "Рентген-контроль: гуттаперча до апекса",
 				apexLocator: resolvedClinicalData?.apexLocator || tooth.canalMeasurements[0]?.apexLocatorReading || "0.0 (Apex)",
 				notes: tooth.notes && !tooth.notes.startsWith("{") ? tooth.notes : (resolvedClinicalData?.notes || ""),
-				stageStamp: (tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED") as any,
+				stageStamp: tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED",
 				updatedAt: new Date().toISOString(),
 			};
 		}
