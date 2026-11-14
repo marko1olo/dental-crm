@@ -1,6 +1,10 @@
 import { and, asc, eq, gt, isNotNull, lte, sql } from "drizzle-orm";
+import { kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import { bonusTransactions, patientBonusBalances, patients } from "../../db/schema.js";
+
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0] | TenantDb;
 
 export interface AccruePointsParams {
 	readonly orgId: string;
@@ -54,17 +58,23 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 			.limit(1)
 			.for("update");
 
-		const currentActive = Number(existingBalance?.activePoints ?? 0);
-		const currentLifetime = Number(existingBalance?.lifetimeEarnedPoints ?? 0);
-		const newActive = Number((currentActive + amountPoints).toFixed(2));
-		const newLifetime = Number((currentLifetime + amountPoints).toFixed(2));
+		const currentActiveKop = parseKopecks(existingBalance?.activePoints ?? 0);
+		const currentLifetimeKop = parseKopecks(existingBalance?.lifetimeEarnedPoints ?? 0);
+		const amountPointsKop = parseKopecks(amountPoints);
+
+		const newActiveKop = sumKopecks([currentActiveKop, amountPointsKop]);
+		const newLifetimeKop = sumKopecks([currentLifetimeKop, amountPointsKop]);
+
+		const newActiveStr = kopecksToNumericString(newActiveKop);
+		const newLifetimeStr = kopecksToNumericString(newLifetimeKop);
+		const newActive = Number(newActiveStr);
 
 		if (existingBalance) {
 			await tx
 				.update(patientBonusBalances)
 				.set({
-					activePoints: String(newActive),
-					lifetimeEarnedPoints: String(newLifetime),
+					activePoints: newActiveStr,
+					lifetimeEarnedPoints: newLifetimeStr,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(patientBonusBalances.organizationId, orgId), eq(patientBonusBalances.patientId, patientId)));
@@ -72,8 +82,8 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 			await tx.insert(patientBonusBalances).values({
 				organizationId: orgId,
 				patientId,
-				activePoints: String(newActive),
-				lifetimeEarnedPoints: String(newLifetime),
+				activePoints: newActiveStr,
+				lifetimeEarnedPoints: newLifetimeStr,
 				lifetimeSpentPoints: "0.00",
 				lifetimeExpiredPoints: "0.00",
 			});
@@ -84,12 +94,12 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 			.values({
 				organizationId: orgId,
 				patientId,
-				amountPoints: String(amountPoints),
-				balanceAfterPoints: String(newActive),
+				amountPoints: kopecksToNumericString(amountPointsKop),
+				balanceAfterPoints: newActiveStr,
 				type: txType,
 				description,
 				expiresAt,
-				unspentPoints: String(amountPoints),
+				unspentPoints: kopecksToNumericString(amountPointsKop),
 				relatedPaymentId: relatedPaymentId || null,
 				relatedInvoiceId: relatedInvoiceId || null,
 				clientMutationId: clientMutationId || null,
@@ -116,7 +126,7 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
  * to ensure that patients do not lose fresh points when redeeming bonuses.
  */
 export async function deductUnspentPointsFifo(
-	tx: any,
+	tx: DatabaseTransaction,
 	params: {
 		readonly orgId: string;
 		readonly patientId: string;
@@ -140,30 +150,31 @@ export async function deductUnspentPointsFifo(
 		.orderBy(asc(bonusTransactions.expiresAt), asc(bonusTransactions.createdAt))
 		.for("update");
 
-	let remainingToDeduct = pointsToDeduct;
+	let remainingToDeductKop = parseKopecks(pointsToDeduct);
 
 	for (const accrual of activeAccruals) {
-		if (remainingToDeduct <= 0) break;
-		const unspent = Number(accrual.unspentPoints ?? 0);
-		if (unspent <= 0) continue;
+		if (remainingToDeductKop <= 0) break;
+		const unspentKop = parseKopecks(accrual.unspentPoints ?? 0);
+		if (unspentKop <= 0) continue;
 
-		if (unspent <= remainingToDeduct) {
-			remainingToDeduct = Number((remainingToDeduct - unspent).toFixed(2));
+		if (unspentKop <= remainingToDeductKop) {
+			remainingToDeductKop = remainingToDeductKop - unspentKop;
 			await tx
 				.update(bonusTransactions)
 				.set({ unspentPoints: "0.00" })
 				.where(and(eq(bonusTransactions.organizationId, orgId), eq(bonusTransactions.id, accrual.id)));
 		} else {
-			const newUnspent = Number((unspent - remainingToDeduct).toFixed(2));
-			remainingToDeduct = 0;
+			const newUnspentKop = unspentKop - remainingToDeductKop;
+			remainingToDeductKop = 0;
 			await tx
 				.update(bonusTransactions)
-				.set({ unspentPoints: String(newUnspent) })
+				.set({ unspentPoints: kopecksToNumericString(newUnspentKop) })
 				.where(and(eq(bonusTransactions.organizationId, orgId), eq(bonusTransactions.id, accrual.id)));
 		}
 	}
 
-	return { deductedPoints: Number((pointsToDeduct - remainingToDeduct).toFixed(2)) };
+	const totalDeductedKop = parseKopecks(pointsToDeduct) - remainingToDeductKop;
+	return { deductedPoints: Number(kopecksToNumericString(totalDeductedKop)) };
 }
 
 /**
@@ -171,7 +182,7 @@ export async function deductUnspentPointsFifo(
  * Moves expired points from activePoints to lifetimeExpiredPoints and writes an audit ledger entry.
  */
 export async function processPatientExpiredBonuses(
-	tx: any,
+	tx: DatabaseTransaction,
 	orgId: string,
 	patientId: string,
 	asOfDate: Date = new Date(),

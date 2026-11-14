@@ -23,7 +23,7 @@ const attributeReferralBodySchema = z.object({
 const rewardFirstVisitBodySchema = z.object({
 	refereePatientId: z.string().uuid(),
 	paymentId: z.string().uuid().optional(),
-	paidAmountRub: z.number().positive(),
+	paidAmountRub: z.number().positive().optional(),
 });
 
 function generateReferralCode(fullName: string): string {
@@ -252,7 +252,7 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 						});
 					}
 
-					let verifiedAmountRub = paidAmountRub;
+					let verifiedAmountRub: number;
 					if (paymentId) {
 						const [verifiedPayment] = await tx
 							.select()
@@ -280,6 +280,12 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 						}
 
 						verifiedAmountRub = Number(verifiedPayment.amountRub);
+					} else if (typeof paidAmountRub === "number" && paidAmountRub > 0) {
+						verifiedAmountRub = paidAmountRub;
+					} else {
+						return reply.status(400).send({
+							message: "Необходимо указать paymentId либо paidAmountRub",
+						});
 					}
 
 					const minSpend = 1500;
@@ -406,7 +412,7 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 						.set({
 							status: "rewarded",
 							qualifyingPaymentId: paymentId || null,
-							qualifyingAmountRub: String(paidAmountRub),
+							qualifyingAmountRub: String(verifiedAmountRub),
 							rewardedAt: new Date(),
 							updatedAt: new Date(),
 						})

@@ -3,8 +3,8 @@ import { z } from "zod";
 export const redeemPointsBodySchema = z.object({
 	patientId: z.string().uuid(),
 	invoiceId: z.string().uuid().optional().nullable(),
-	invoiceAmountRub: z.number().positive(),
-	pointsToRedeem: z.number().positive(),
+	invoiceAmountRub: z.number().positive().finite().multipleOf(0.01),
+	pointsToRedeem: z.number().positive().finite().multipleOf(0.01),
 	allowFullCoverage: z.boolean().optional().default(false),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Списание баллов в счет оплаты лечения"),
@@ -12,18 +12,18 @@ export const redeemPointsBodySchema = z.object({
 
 export const manualAccrueBodySchema = z.object({
 	patientId: z.string().uuid(),
-	amountPoints: z.number().positive(),
+	amountPoints: z.number().positive().finite().multipleOf(0.01),
 	description: z.string().min(1),
 	expiresInDays: z.number().int().positive().optional().default(180),
 });
 
 export const accrueCashbackBodySchema = z.object({
 	patientId: z.string().uuid(),
-	paidAmountRub: z.number().positive(),
+	paidAmountRub: z.number().positive().finite().multipleOf(0.01),
 	invoiceId: z.string().uuid().optional().nullable(),
 	paymentId: z.string().uuid().optional().nullable(),
-	cashbackPercent: z.number().nonnegative().optional().default(3.0),
-	pointRateRub: z.number().positive().optional().default(1.0),
+	cashbackPercent: z.number().nonnegative().finite().max(100).optional().default(3.0),
+	pointRateRub: z.number().positive().finite().multipleOf(0.01).optional().default(1.0),
 	description: z.string().optional().default("Кэшбэк за оплату стоматологических услуг"),
 	expiresInDays: z.number().int().positive().optional().default(180),
 });
@@ -31,7 +31,7 @@ export const accrueCashbackBodySchema = z.object({
 export const familyDebitBodySchema = z.object({
 	sponsorPatientId: z.string().uuid(),
 	targetPatientId: z.string().uuid(),
-	pointsToDebit: z.number().positive(),
+	pointsToDebit: z.number().positive().finite().multipleOf(0.01),
 	description: z.string().default("Списание из семейного кошелька"),
 });
 
@@ -39,15 +39,15 @@ export const referralRegisterBodySchema = z.object({
 	referrerPatientId: z.string().uuid(),
 	invitedPatientName: z.string().min(2),
 	invitedPatientPhone: z.string().optional(),
-	rewardRub: z.number().positive().default(1000),
+	rewardRub: z.number().positive().finite().multipleOf(0.01).default(1000),
 	note: z.string().optional(),
 });
 
 export const holdPointsBodySchema = z.object({
 	patientId: z.string().uuid(),
 	invoiceId: z.string().uuid().optional().nullable(),
-	invoiceAmountRub: z.number().positive(),
-	pointsToHold: z.number().positive(),
+	invoiceAmountRub: z.number().positive().finite().multipleOf(0.01),
+	pointsToHold: z.number().positive().finite().multipleOf(0.01),
 	allowFullCoverage: z.boolean().optional().default(false),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Холдирование баллов для кассового чека"),
@@ -67,4 +67,3 @@ export const releaseHoldBodySchema = z.object({
 export const processExpiredBodySchema = z.object({
 	asOfDate: z.string().datetime().optional(),
 });
-

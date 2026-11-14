@@ -1,6 +1,7 @@
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -96,6 +97,66 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 		const { sponsorPatientId, targetPatientId, pointsToDebit, description } = parsed.data;
 
 		return withTenantCtx(orgId, async () => {
+			// BOLA/IDOR Defense: verify kinship & family group authorization
+			if (sponsorPatientId !== targetPatientId) {
+				const [sponsor] = await db
+					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), eq(patients.id, sponsorPatientId)))
+					.limit(1);
+				if (!sponsor) return reply.status(404).send({ message: "Спонсор не найден" });
+
+				const [target] = await db
+					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), eq(patients.id, targetPatientId)))
+					.limit(1);
+				if (!target) return reply.status(404).send({ message: "Целевой пациент не найден" });
+
+				const sameFamily = Boolean(
+					sponsor.familyGroupId &&
+					target.familyGroupId &&
+					sponsor.familyGroupId === target.familyGroupId,
+				);
+
+				let hasSpendAuth = false;
+				if (!sameFamily) {
+					const [rel] = await db
+						.select({
+							canSpendFamilyWallet: patientRelationships.canSpendFamilyWallet,
+							isPrimaryPayer: patientRelationships.isPrimaryPayer,
+						})
+						.from(patientRelationships)
+						.where(
+							and(
+								eq(patientRelationships.organizationId, orgId),
+								or(
+									and(
+										eq(patientRelationships.patientId, sponsorPatientId),
+										eq(patientRelationships.relatedPatientId, targetPatientId),
+									),
+									and(
+										eq(patientRelationships.patientId, targetPatientId),
+										eq(patientRelationships.relatedPatientId, sponsorPatientId),
+									),
+								),
+							),
+						)
+						.limit(1);
+
+					if (rel && (rel.canSpendFamilyWallet === true || rel.isPrimaryPayer === true)) {
+						hasSpendAuth = true;
+					}
+				}
+
+				if (!sameFamily && !hasSpendAuth) {
+					return reply.status(403).send({
+						message: "Пациенты не состоят в одной семейной группе и не имеют подтвержденных прав на списание баллов",
+						code: "UNAUTHORIZED_FAMILY_SPEND",
+					});
+				}
+			}
+
 			const res = await executeBonusRedeem({
 				orgId, patientId: sponsorPatientId, invoiceAmountRub: pointsToDebit, pointsToRedeem: pointsToDebit,
 				allowFullCoverage: true, description: `${description} (в пользу ${targetPatientId})`,
@@ -161,7 +222,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 						organizationId: orgId,
 						name: `Семья ${primary.fullName.split(" ")[0]}`,
 						headPatientId: primary.id,
-						balance: "0.00",
+						balance: kopecksToNumericString(0),
 					})
 					.returning();
 				targetGroupId = newGroup?.id ?? null;
@@ -170,6 +231,19 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 						.update(patients)
 						.set({ familyGroupId: targetGroupId, updatedAt: new Date() })
 						.where(and(eq(patients.organizationId, orgId), eq(patients.id, primary.id)));
+				}
+			}
+
+			if (relative.familyGroupId && relative.familyGroupId !== targetGroupId) {
+				const [existingFam] = await db
+					.select({ balance: familyGroups.balance })
+					.from(familyGroups)
+					.where(and(eq(familyGroups.organizationId, orgId), eq(familyGroups.id, relative.familyGroupId)))
+					.limit(1);
+				if (existingFam && parseKopecks(existingFam.balance) > 0) {
+					return reply.status(409).send({
+						message: "Пациент уже состоит в другой семейной группе с активным балансом депозита",
+					});
 				}
 			}
 

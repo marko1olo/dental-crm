@@ -6,7 +6,7 @@ import {
 } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
-import { patientRelationships } from "../../../db/schema.js";
+import { patientRelationships, patients } from "../../../db/schema.js";
 import { FamilyWalletError, type FamilyGroupRow } from "../familyWalletTypes.js";
 
 /**
@@ -54,6 +54,7 @@ export async function verifyFamilySpendAuthorization(params: {
 
 	// Case 2: Family member spending from the wallet owner's deposit.
 	// BOLA/IDOR Fix [LOY-05]: Strict check in patient_relationships is MANDATORY.
+	// Client parameter `payerPatientId` cannot bypass verified kinship & canSpendFamilyWallet.
 	const [rel] = await tx
 		.select()
 		.from(patientRelationships)
@@ -78,7 +79,7 @@ export async function verifyFamilySpendAuthorization(params: {
 		throw new FamilyWalletError(
 			"Пациент не связан подтвержденным родством с владельцем семейного депозита",
 			403,
-			"UNAUTHORIZED_FAMILY_SPEND",
+			"NOT_AUTHORIZED_KINSHIP",
 		);
 	}
 
