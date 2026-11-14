@@ -281,20 +281,20 @@ describe("Wave 224 Inquisition: Real Diagnostic Engines, DICOM P10 & Outpatient 
 			);
 		});
 
-		it("4.3 PanoramicRendererWindow renders authentic CT unwrapping without synthetic tooth dioramas", () => {
+		it("4.3 Panoramic painting renders authentic CT unwrapping without synthetic tooth dioramas", () => {
 			const source = fs.readFileSync(
-				path.resolve(__dirname, "../PanoramicRendererWindow.tsx"),
+				path.resolve(__dirname, "../../radiology/cbctPanoramicCpuEngine.ts"),
 				"utf-8",
 			);
 
 			assert.equal(
 				source.includes("ctx.createRadialGradient"),
 				false,
-				"PanoramicRendererWindow must not simulate teeth with fake radial gradients",
+				"Panoramic CPU engine must not simulate teeth with fake radial gradients",
 			);
 			assert.ok(
-				source.includes("paintHuPixelsToCanvas"),
-				"Must paint genuine HU pixels from volume data",
+				source.includes("sampleVoxelTrilinearHU"),
+				"Must sample genuine HU voxels from volume data",
 			);
 		});
 

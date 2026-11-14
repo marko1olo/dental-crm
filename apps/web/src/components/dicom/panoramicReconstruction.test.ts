@@ -435,30 +435,29 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.ok(nullFallback.length >= 7);
 	});
 
-	it("10. PanoramicRendererWindow and BoneQualityPanel verify UI mounting contracts", () => {
-		const panRenderer = fs.readFileSync(
-			path.resolve(__dirname, "./PanoramicRendererWindow.tsx"),
+	it("10. CbctMprImplantStudioModal and Misch Bone Quality Engine verify UI mounting contracts", () => {
+		const cbctStudio = fs.readFileSync(
+			path.resolve(__dirname, "../radiology/CbctMprImplantStudioModal.tsx"),
 			"utf-8",
 		);
-		assert.ok(panRenderer.includes("ref={crossSectionCanvasRef}"));
-		assert.ok(panRenderer.includes("computeCrossSection"));
-		assert.ok(panRenderer.includes("Авто-дуга"));
+		assert.ok(cbctStudio.includes("handleAutoDetectArch"));
+		assert.ok(cbctStudio.includes("initialStudioMode"));
 
-		const bonePanel = fs.readFileSync(
-			path.resolve(__dirname, "./BoneQualityPanel.tsx"),
+		const boneMath = fs.readFileSync(
+			path.resolve(__dirname, "../radiology/boneDensityMischMath.ts"),
 			"utf-8",
 		);
 		assert.ok(
-			bonePanel.includes("classifyMischBoneDensity"),
-			"BoneQualityPanel must integrate classifyMischBoneDensity",
+			boneMath.includes("classifyHUToMisch"),
+			"boneDensityMischMath must integrate classifyHUToMisch",
 		);
 		assert.ok(
-			bonePanel.includes("D5"),
-			"BoneQualityPanel must support Misch D5 classification",
+			boneMath.includes("D5"),
+			"boneDensityMischMath must support Misch D5 classification",
 		);
 		assert.ok(
-			bonePanel.includes("clinicalAdvice"),
-			"BoneQualityPanel must render clinical advice for surgeon",
+			boneMath.includes("clinicalAdvice"),
+			"boneDensityMischMath must render clinical advice for surgeon",
 		);
 	});
 

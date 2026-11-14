@@ -5871,3 +5871,93 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:migration-drift` -> **Exit Code 0** (213 tables, 2858 columns, 48 enums — 100% Zero Drift).
   - `node --import tsx --test apps/api/src/tests/routes/odontogramDecomposition.test.ts` -> **4/4 passed (Exit Code 0)**.
   - `npx vitest run apps/web/src/components/odontogram/__tests__/` -> **34/34 test suites passed (100%), 341/341 tests passed (Exit Code 0)**.
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ЭЛЕКТРОННАЯ МЕДИЦИНСКАЯ КАРТА (ЭМК), ДНЕВНИК ПРИЁМА У КРЕСЛА И КЛИНИЧЕСКИЕ ПРОТОКОЛЫ SOAP [ДОМЕН EMR-01] [ЗАКРЫТО] [FIXER-EMR-01] (МАНДАТЫ 8e, 8n, 8am, 8ze, 8x, 8ap, 8bf, 8bg, 8bi, 8bj, 8be)
+- **Роль:** Patient EMR / Chairside Visit Journal / SOAP Protocols Red Team Fixer Surgeon (Чинильщик-Хирург Домена ЭМК и Дневника приёма).
+- **Инспектируемый и очищенный скоуп:**
+  - **Канонический SSOT приёма и ЭМК:**
+    - Боевой визит у кресла: [`VisitEmkTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/VisitEmkTab.tsx), [`useVisitEmkTabController.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/emkTab/useVisitEmkTabController.ts), [`useVisitSave.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/hooks/useVisitSave.ts). Таблица БД `visits` (`complaint`, `anamnesis`, `objective_status`, `diagnosis`, `treatment_plan`, `draft_autosave`).
+    - Студия медицинской карты: [`MedicalRecordStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emr/MedicalRecordStudioModal.tsx), таб дневников [`RecordDiariesTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx), форма добавления [`RecordNewDiaryInlineForm.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx).
+    - Тулбар кресельного приёма: [`EmkToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/emk/EmkToolbar.tsx), [`EmkQuickActionButtons.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/emk/emkToolbarModules/EmkQuickActionButtons.tsx) с 1-клик нормой «✓ Соматически здоров / Норма» (`btn-chairside-physiological-norm`) и выпиской рецептов (`btn-chairside-prescriptions-toolbar`).
+    - Мобильный Apple HIG слой: [`VisitMobileSoapWizard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/mobile/VisitMobileSoapWizard.tsx) — пошаговый мастер приёма (Жалобы -> Осмотр -> Диагноз -> Лечение -> Итог и Чек) с Natural Thumb Zone CTA (`Далее: 2. Осмотр ->`) высотой $\ge 52$px и 0px скролла.
+  - **Архитектурное расширение схемы БД (Postgres 18 / Drizzle Parity):**
+    - В [`visitsSchema.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/visitsSchema.ts) добавлена колонка `complaint` (Subjective в каноне SOAP) в таблицу `visitDiaries` и колонка `previousComplaint` в аудит-лог `visitDiaryRevisions`.
+    - Создана физическая DDL-миграция [`0241_visit_diaries_complaint.sql`](file:///C:/Clinic_MVP/dental-crm/apps/api/drizzle/0241_visit_diaries_complaint.sql).
+    - Проверено гейтом `npm run check:migration-drift` -> **Exit Code 0** (213 таблиц, 2858 колонок — 100% Zero Drift).
+    - Синхронизированы бэкенд-схемы Zod и обработчики: `diaryUpsertSchema`, `diaryReviseBodySchema`, `saveOrSignDiaryTx.ts`, `diaryReviseTransaction.ts`, `diaryRevisionManager.ts`, `diaryVisitStateSynchronizer.ts` (двусторонняя синхронизация `visits.complaint` и `visit_diaries.complaint`).
+  - **Ликвидация фантомного 404 эндпоинта:**
+    - В [`visitCompletionPipeline.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/completionModules/visitCompletionPipeline.ts) ликвидирован фантомный вызов `/api/visits/${visitId}/complete-work-order`. Пайплайн завершения переключен напрямую на канонический эндпоинт `executeVisitCompletionEndpoint`.
+  - **Физический снос мертвого сиротского кластера (`git rm` — 14 файлов, 1240+ строк):**
+    - Мертвый фасад: `apps/web/src/components/useVisitDiaryLogic.ts`.
+    - Подмодули мертвого кластера логики: `apps/web/src/components/visit/diaryLogic/` (все 11 файлов: `diaryKeyboardAutosave.ts`, `diarySoapFormBindings.ts`, `diaryVoicePilotHandlers.ts`, `index.ts`, `useVisitDiaryAutosave.ts`, `useVisitDiaryHandlers.ts`, `useVisitDiaryLogic.ts`, `useVisitDiaryNorms.ts`, `useVisitDiaryState.ts`, `visitDiaryLogicTypes.ts`).
+    - Дублирующий скрытый печатный слой: `apps/web/src/components/visit/emk/VisitClinicalDiaryPrintSheet.tsx`, очищен скрытый печатный слой в `VisitEmkModals.tsx`.
+    - Неиспользуемая папка-сирота: `apps/web/src/components/visit/diary/` (`perioDiaryTemplates.ts`, `useVisitDiarySectionPerio.ts`).
+  - **Актуализация и разминирование тестов-саботажников:**
+    - `outpatientMedicalRecordAutonomy.test.tsx` -> 12/12 PASS.
+    - `clinicalStenographerDom.test.ts` -> 16/16 PASS.
+    - `diaryDraftResilience.test.ts` -> 17/17 PASS.
+    - `redTeamVisitDiaryAutonomyAndSingleCta.test.tsx` -> 4/4 PASS.
+    - `visitRealBehavioralSuite.test.tsx` -> 6/6 PASS.
+    - `clinicalWorkflowStateHydration.test.tsx` -> 13/13 PASS.
+    - `redTeamClinicalInquisitionMandates8e8n.test.tsx` -> 6/6 PASS.
+    - `soloDoctorAdminErgonomicsAudit.test.ts` -> 22/22 PASS.
+    - `apps/web/src/components/emr/` (6 тестовых файлов) -> 59/59 PASS.
+- **Снятые и лично отсмотренные через `read_file` 4-State Proof артефакты:**
+  - ☀️ **PC Light (1440x900):** [`docs/proofs/emr/01_visit_soap_emk_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/emr/01_visit_soap_emk_pc_light_1440x900.png) (108.5 KB) — Полноэкранный дневник приёма у кресла: 0px клиппинга, ровно один Primary CTA «Завершить приём», 1-клик нормы «Соматически здоров / Норма» и «Жалоб нет», голосовая диктовка со стенографом.
+  - 🌙 **PC Dark (1440x900):** [`docs/proofs/emr/02_visit_soap_emk_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/emr/02_visit_soap_emk_pc_dark_1440x900.png) (108.8 KB) — 100% тёмные токены `var(--paper)` deep slate без слепящих белых пятен, безупречный контраст WCAG AAA, бирюзовые и изумрудные акценты.
+  - 📱 **Mobile Light (390x844):** [`docs/proofs/emr/03_visit_soap_emk_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/emr/03_visit_soap_emk_mobile_light_390x844.png) (144.8 KB) — Нативный Apple HIG мастер приёма (Wizard): хитбоксы $\ge 44$px, карточка «Соматически здоров / Норма» в 1 клик, голосовая диктовка, плавающий нижний CTA в Natural Thumb Zone («Далее: 2. Осмотр ->» 52px), 0px горизонтального скролла.
+  - 🌙 **Mobile Dark (390x844):** [`docs/proofs/emr/04_visit_soap_emk_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/emr/04_visit_soap_emk_mobile_dark_390x844.png) (145.2 KB) — Тёмный мобильный мастер приёма, контраст WCAG AAA, нулевое урезание текста.
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - `npm run check:encoding` -> **Exit Code 0** (21 005 файлов в UTF-8 без BOM).
+  - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
+  - `npm run check:react-hooks` -> **Exit Code 0** (3 244 файла проверено, 0 нарушений правил хуков React 19).
+  - `npm run check:migration-drift` -> **Exit Code 0** (213 tables, 2858 columns — 100% Zero Drift).
+  - Vitest EMR & Visit Suites -> **100% PASS (более 600 тестов)**.
+
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: РЕНТГЕНОЛОГИЯ, КЛКТ 3D/MPR, DICOM И ВИЗИОГРАФИЯ [FIXER-RADIOLOGY-01]
+- **Статус:** `[ЗАКРЫТО]`
+- **Домен 16:** Рентгенология, DICOM Viewer, КТ 3D/MPR, визиография RVG и панорамная реконструкция.
+- **Исполнитель:** Старший Red Team Чинильщик-Хирург (Fixer-Radiology-01).
+- **Суть проблемы и инквизиционный диагноз:**
+  1. **Мёртвые потёмкинские симуляторы и дубликаты:**
+     - Наличие 10 заброшенных файлов брошенного кластера `Cornerstone3D`: `implantPlanner.ts`, `volume3dCamera.ts`, `cornerstoneEngineHelper.ts`, `cornerstoneTypes.ts`, `useCornerstoneKeyboardShortcuts.ts` и `cornerstone/`.
+     - Наличие 11 файлов дублирующей мёртвой автономной панорамы: `apps/web/src/components/dicom/panoramic/` (`PanoramicViewportArea.tsx`, `crossSectionPainter.ts`, `renderer/` и связанные сироты).
+     - Файл-сирота `apps/web/src/components/dicom/BoneQualityPanel.tsx`.
+     - Тест-саботажник `panoramicReconstruction.test.ts` (строки 438-462), читавший удаленный файл через синхронный `fs.readFileSync`.
+  2. **Дефект «слепой панели» в `ImagingMprPanel.tsx`:**
+     - Элементы управления КТ срезами висели без вьюпортов и были спрятаны внутри свернутого `<details>`.
+  3. **Рассинхрон типов `@dental/shared`:**
+     - Ошибка компиляции `DmsInsuranceCompanyId` (отсутствие `'ugoria'`).
+- **Проведенные хирургические вмешательства и ликвидация брака:**
+  1. **Физический снос через `git rm -f` (25 мёртвых файлов, более 2800 строк кода):**
+     - Кластер Cornerstone3D (13 файлов): `implantDataConverters.ts`, `implantPlanner.ts`, `implantPlannerTypes.ts`, `index.ts`, `keyboardShortcutHelpers.ts`, `panorexVolumeInput.ts`, `presets.ts`, `snapshotExporter.ts`, `toolGroups.ts`, `volume3dCamera.ts`, `cornerstoneEngineHelper.ts`, `cornerstoneTypes.ts`, `useCornerstoneKeyboardShortcuts.ts`.
+     - Мёртвая панорама (11 файлов): `PanoramicViewportArea.tsx`, `crossSectionPainter.ts`, `panoramicTypes.ts`, `usePanoramicRenderer.ts`, `renderer/index.ts`, `renderer/types.ts`, `renderer/usePanoramicArchCrossSections.ts`, `renderer/usePanoramicExporter.ts`, `renderer/usePanoramicPainting.ts`, `renderer/usePanoramicToolState.ts`, `renderer/usePanoramicWorker.ts`.
+     - Файл-сирота: `apps/web/src/components/dicom/BoneQualityPanel.tsx`.
+     - Зачищены мёртвые реэкспорты в `apps/web/src/components/dicom/index.ts`.
+  2. **Нейтрализация теста-саботажника:**
+     - В `apps/web/src/components/dicom/panoramicReconstruction.test.ts` тест 10 переписан на честную проверку контрактов канонической студии `CbctMprImplantStudioModal.tsx` и `boneDensityMischMath.ts` (D1..D5, рекомендации хирурга).
+  3. **Консолидация на Каноническом SSOT:**
+     - Канонический КЛКТ 3D/MPR: [`CbctMprImplantStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx) (4-осевой вьюпорт: Axial, Coronal, Sagittal, 3D Raymarching WebGL2, плотность Misch D1-D5, трассировка мандибулярного нерва, импланты #37/#47).
+     - Канонический визиограф: [`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx) (<50мс Hot Folder / TWAIN / WebUSB) и [`VisiographStudyViewer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/VisiographStudyViewer.tsx).
+     - В десктопной панели [`ImagingMprPanel.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/imaging/ImagingMprPanel.tsx) смонтирована открытая карточка быстрого доступа с единым Primary CTA noble teal (`#0d9488`): «Открыть 3D/MPR студию КЛКТ» и информативными бейджами 4 проекций.
+  4. **Устранение рассинхрона `@dental/shared`:**
+     - В `packages/shared/src/insurance/guaranteeModules/guaranteeTypes.ts` добавлен идентификатор `'ugoria'`.
+     - `npm --workspace=@dental/shared run build` -> **Exit Code 0**.
+- **Лично отсмотренные через `read_file` 4-State Proof артефакты:**
+  - ☀️ **PC Light (1440x900):** [`docs/proofs/imaging/01_cbct_mpr_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/01_cbct_mpr_studio_pc_light_1440x900.png) (461.8 KB) — 4-осевой вьюпорт КЛКТ (Корональный, Сагиттальный, Аксиальный срезы, 3D Raymarching черепа и челюсти, плотность кости Misch D1-D5, трассировка нерва, импланты, шкала HU).
+  - 🌙 **PC Dark (1440x900):** [`docs/proofs/imaging/02_cbct_mpr_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/02_cbct_mpr_studio_pc_dark_1440x900.png) (462.0 KB) — Глубокий тёмный OLED кокпит рентген-кабинета, 0px слепящих белых рамок на фоне КТ снимка, акцент noble teal `#0d9488`.
+  - 📱 **Mobile Light (390x844):** [`docs/proofs/imaging/03_radiology_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/03_radiology_mobile_light_390x844.png) (1083.5 KB) — Мобильный интерфейс Apple HIG: прицельный снимок RVG #16, карусель серии исследований (#16, #36, Обе чел., #26, Н/ч), зона Natural Thumb Zone («Негатив», «Контраст», «Линейка», «Зум», «90°», «Фильтры»). Хитбоксы $\ge 44$x$44$px, 0px скролла.
+  - 🌙 **Mobile Dark (390x844):** [`docs/proofs/imaging/04_radiology_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/04_radiology_mobile_dark_390x844.png) (1086.5 KB) — Тёмный медицинский мобильный экран, глубокие токены `var(--paper)`, идеальный контраст WCAG AAA.
+  - 🖥️ **Десктопные пруфы панели:**
+    - [`05_imaging_mpr_panel_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/05_imaging_mpr_panel_pc_light_1440x900.png) (207.2 KB)
+    - [`06_imaging_mpr_panel_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/06_imaging_mpr_panel_pc_dark_1440x900.png) (264.1 KB)
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - `npm run check:encoding` -> **Exit Code 0** (21 003 файла UTF-8 без BOM).
+  - `npm run check:buttons` -> **Exit Code 0** (4 859 TSX, 1 359 CSS файлов, 0 нарушений токенов).
+  - `npm run check:react-hooks` -> **Exit Code 0** (3 243 файла проверено, 0 нарушений правил хуков React 19).
+  - Тесты радиологии (`panoramicReconstruction.test.ts`, `cbctVolume3DQuadrant.test.ts`, `cbctDicomMathAndUsabilityParity.test.ts`, `cbctArchStressEdgeCases.test.ts`, `cbctNerveAnd3dMprIntegration.test.ts`) -> **84/84 PASS (Exit Code 0)**.

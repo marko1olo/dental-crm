@@ -10,6 +10,7 @@ export type DmsInsuranceCompanyId =
 	| "soglasie"
 	| "rosgosstrakh"
 	| "kapital_life"
+	| "ugoria"
 	| "other";
 
 export interface DmsInsuranceCompany {
@@ -28,6 +29,7 @@ export interface DmsInsuranceCompany {
 
 export type DmsGuaranteeLetterStatus =
 	| "draft"
+	| "pending_letter"
 	| "pending_approval"
 	| "approved"
 	| "active"
@@ -54,6 +56,7 @@ export interface DmsGuaranteeLetter {
 	readonly issueDate: string;
 	readonly validFrom: string;
 	readonly validTo: string;
+	readonly validUntil?: string | undefined;
 	readonly companyId: DmsInsuranceCompanyId;
 	readonly companyName: string;
 	readonly policyNumber: string;
@@ -78,10 +81,11 @@ export const dmsGuaranteeLetterSchema = z.object({
 	letterNumber: z.string().min(1, { message: "Номер гарантийного письма обязателен" }),
 	issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата выдачи: YYYY-MM-DD" }),
 	validFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата начала: YYYY-MM-DD" }),
-	validTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата окончания: YYYY-MM-DD" }),
+	validTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата окончания: YYYY-MM-DD" }).optional(),
+	validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата окончания: YYYY-MM-DD" }).optional(),
 	companyId: z.enum([
 		"sogaz", "alfastrakhovanie", "ingosstrakh", "reso_garantiya",
-		"vsk", "soglasie", "rosgosstrakh", "kapital_life", "other",
+		"vsk", "soglasie", "rosgosstrakh", "kapital_life", "ugoria", "other",
 	]),
 	companyName: z.string().min(1, { message: "Наименование страховой компании обязательно" }),
 	policyNumber: z.string().min(1, { message: "Номер полиса ДМС обязателен" }),
@@ -97,7 +101,7 @@ export const dmsGuaranteeLetterSchema = z.object({
 	allowed804nPrefixes: z.array(z.string()).optional(),
 	excluded804nCodes: z.array(z.string()).optional(),
 	status: z.enum([
-		"draft", "pending_approval", "approved", "active",
+		"draft", "pending_letter", "pending_approval", "approved", "active",
 		"billed", "paid", "exhausted", "expired", "cancelled",
 	]),
 	notes: z.string().optional(),

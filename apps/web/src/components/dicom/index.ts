@@ -1,8 +1,6 @@
 /**
  * @dental/web dicom components re-exports
  */
-export * from "./PanoramicRendererWindow";
-export * from "./BoneQualityPanel";
 export * from "./DicomArchiveUploader";
 export * from "./dicomOfflineSync";
 export * from "./panoramicMprMath";
@@ -37,8 +35,3 @@ export {
 export * from "./implantCatalog";
 export * from "./sliceClippingMath";
 export * from "./sliceIntersectionMath";
-export type { Cornerstone3DViewerProps, ImplantData } from "./cornerstoneTypes";
-export {
-	MANDIBULAR_NERVE_DANGER_THRESHOLD_MM,
-	implantProtocolLog,
-} from "./cornerstoneTypes";
