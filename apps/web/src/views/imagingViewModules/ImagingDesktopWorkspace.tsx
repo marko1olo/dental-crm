@@ -2,25 +2,26 @@ import React from "react";
 import { ImagingHeader, Imaging2dViewerSection, ImagingMprPanel } from "../../components/imaging";
 import { ImagingSeriesGallery } from "./ImagingSeriesGallery";
 import { ImagingCbctActiveCard } from "./ImagingCbctActiveCard";
+import type { ImagingModalId, ImagingStudy, ImagingViewProps } from "./imagingViewTypes";
 
 export interface ImagingDesktopWorkspaceProps {
-	props: any;
-	activePatient: any;
-	activeAppointment: any;
-	activeImagingStudies: any[];
-	selectedImagingStudy: any;
-	selectedImagingViewerPlan: any;
+	props: ImagingViewProps;
+	activePatient: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null;
+	activeAppointment: unknown;
+	activeImagingStudies: ImagingStudy[];
+	selectedImagingStudy: ImagingStudy | null;
+	selectedImagingViewerPlan: unknown;
 	isBrowserImagingFolderPicking: boolean;
 	isCapturingCameraPhoto: boolean;
 	pickBrowserImagingFolder: () => void;
 	pickBrowserImagingFiles: () => void;
 	cameraCaptureInputRef: React.RefObject<HTMLInputElement | null>;
-	setActiveModal: (modal: any) => void;
+	setActiveModal: (modal: ImagingModalId) => void;
 	imagingKindFilter: string;
 	setImagingKindFilter: (val: string) => void;
 	imagingToothFilter: string;
 	setImagingToothFilter: (val: string) => void;
-	imagingKindOptions: any[];
+	imagingKindOptions: Array<{ value: string; label: string; [key: string]: unknown }>;
 	imagingKindLabels: Record<string, string>;
 	imagingSourceLabels: Record<string, string>;
 	isCbctActive: boolean;
@@ -29,13 +30,13 @@ export interface ImagingDesktopWorkspaceProps {
 	isDicomwebLoading: boolean;
 	dicomwebLoadProgress: string | null;
 	handleLoadFromDicomweb: () => void;
-	visibleImagingStudies: any[];
-	imagingPreviewSource?: any;
-	imagingViewerHref?: any;
+	visibleImagingStudies: ImagingStudy[];
+	imagingPreviewSource?: ((study: ImagingStudy) => string | undefined) | undefined;
+	imagingViewerHref?: ((study: ImagingStudy) => string) | undefined;
 	setSelectedImagingStudyId?: (id: string) => void;
-	formatShortDate?: any;
-	effectiveMprProps: any;
-	viewer2dProps: any;
+	formatShortDate?: ((date: string) => string) | undefined;
+	effectiveMprProps: Record<string, unknown>;
+	viewer2dProps: Record<string, unknown>;
 }
 
 export function ImagingDesktopWorkspace({

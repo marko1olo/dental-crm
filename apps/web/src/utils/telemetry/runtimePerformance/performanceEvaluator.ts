@@ -10,6 +10,7 @@ import type { PerformanceStateStore } from "./performanceStateStore.js";
 import type {
 	DynamicLoadState,
 	DynamicPerformanceMetrics,
+	RuntimePerformanceMonitorOptions,
 } from "./performanceTypes.js";
 
 export interface EvaluatorContext {
@@ -18,6 +19,8 @@ export interface EvaluatorContext {
 	candidateStableSince: number | null;
 	recoveryDurationMs: number;
 }
+
+export type ProcessBurstMetricsOptions = RuntimePerformanceMonitorOptions & EvaluatorContext;
 
 export interface EvaluationResult {
 	nextState: DynamicLoadState | null;
@@ -55,7 +58,7 @@ export function processBurstMetrics(
 	fpsSampler: FpsTelemetrySampler,
 	longTaskObs: LongTaskObserver,
 	store: PerformanceStateStore,
-	opts: any,
+	opts: ProcessBurstMetricsOptions,
 	now: number,
 	isTabVisible: boolean,
 ): { metrics: DynamicPerformanceMetrics; nextState: DynamicLoadState | null; candidate: { better: DynamicLoadState | null; since: number | null } } {

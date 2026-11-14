@@ -4,6 +4,7 @@
  */
 
 import type { Dispatch, SetStateAction } from "react";
+import type { StaffUser } from "../components/auth/staffPinPad/staffPinPadTypes";
 
 export interface AppHashRoutingState {
 	isPrescriptionBlankOpen: boolean;
@@ -76,8 +77,8 @@ export interface AppSessionAuthState {
 	setClinicAuthed: Dispatch<SetStateAction<boolean>>;
 	staffAuthed: boolean;
 	setStaffAuthed: Dispatch<SetStateAction<boolean>>;
-	activeStaffUser: any;
-	setActiveStaffUser: Dispatch<SetStateAction<any>>;
+	activeStaffUser: StaffUser | null;
+	setActiveStaffUser: Dispatch<SetStateAction<StaffUser | null>>;
 	showStaffPinPad: boolean;
 	setShowStaffPinPad: Dispatch<SetStateAction<boolean>>;
 	isSessionLocked: boolean;

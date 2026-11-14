@@ -5,6 +5,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { AppSessionAuthState } from "./appStateTypes";
+import type { StaffUser } from "../components/auth/staffPinPad/staffPinPadTypes";
+import type { StaffRole } from "../store/appStoreModules/types";
 import { isDemoUrlActive } from "./appRoutingHelpers";
 import { clearOfflineClinicCaches } from "../lib/offlineStorage";
 import {
@@ -18,11 +20,11 @@ import {
 	safeLocalStorageSetItem,
 } from "../lib/safeLocalStorage";
 
-export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: any) => void): AppSessionAuthState {
+export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => void): AppSessionAuthState {
 	const isDemo = isDemoUrlActive();
 	const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => isDemo || Boolean(readDenteClinicToken()));
 	const [staffAuthed, setStaffAuthed] = useState<boolean>(() => isDemo || Boolean(readDenteStaffToken()));
-	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
+	const [activeStaffUser, setActiveStaffUser] = useState<StaffUser | null>(null);
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
 	const [isSessionLocked, setIsSessionLocked] = useState<boolean>(
 		() => typeof window !== "undefined" && safeLocalStorageGetItem("dente_session_locked") === "true",
@@ -67,7 +69,9 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: any) => void): 
 							window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
 						}
 					})
-					.catch(() => {});
+					.catch((err: unknown) => {
+						console.warn("Failed to verify pairing token:", err);
+					});
 			}
 		}
 	}, [setSelectedWorkspaceRole]);

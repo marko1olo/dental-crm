@@ -5,18 +5,18 @@ import {
 	useImagingPreviewBlob, useImagingMeasurementsPersistence, type AiProposal,
 } from "../../components/imaging";
 import { useImagingDicomweb } from "./useImagingDicomweb";
-import type { ImagingViewProps } from "./imagingViewTypes";
+import type { ImagingModalId, ImagingViewProps } from "./imagingViewTypes";
 
 export function useImagingViewState(
 	props: ImagingViewProps,
-	appLogic: any,
+	appLogic: { auth?: { token?: string; [key: string]: unknown }; [key: string]: unknown } | null | undefined,
 	controller: {
 		localImageIds: string[];
 		setLocalImageIds: (ids: string[]) => void;
 		handleAttachTooth: (toothCode: string) => Promise<void>;
 		handleAttachVisit: (visitId: string) => Promise<void>;
 		pickBrowserImagingFiles: () => void;
-		setActiveModal: (modal: any) => void;
+		setActiveModal: (modal: ImagingModalId) => void;
 	},
 ) {
 	const auth = appLogic?.auth;

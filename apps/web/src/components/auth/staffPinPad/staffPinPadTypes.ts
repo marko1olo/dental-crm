@@ -1,5 +1,14 @@
 import type { StaffUnlockMember } from "../staffUnlockState";
 
+export type StaffUser = StaffUnlockMember & {
+	fullName?: string;
+	role?: string;
+	organizationId?: string;
+	email?: string;
+	phone?: string;
+	[key: string]: unknown;
+};
+
 export interface StaffPinPadProps {
 	/**
 	 * Список сотрудников КАК ПРИШЁЛ, без подстановок.
@@ -12,14 +21,8 @@ export interface StaffPinPadProps {
 	 * Код ответа, по которому не удалось прочитать список; `null` — до сервера не дошли вовсе.
 	 */
 	staffListStatus: number | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onUnlockSuccess: (user: any) => void;
+	onUnlockSuccess: (user: StaffUser) => void;
 	onClinicLogout: () => void;
 	/** Перечитать данные клиники: единственный способ повторить, кроме перезахода. */
 	onRetryStaffList: () => void;
 }
-
-export type StaffUser = StaffUnlockMember & {
-	// biome-ignore lint/suspicious/noExplicitAny: extensible user payload
-	[key: string]: any;
-};

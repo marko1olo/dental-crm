@@ -2,10 +2,12 @@ import type {
 	AiProposal,
 	ViewerRulerMeasurement,
 } from "../../components/imaging";
+import type { ImagingStudy } from "../../components/imaging/types";
 
 export type {
 	AiProposal,
 	ViewerRulerMeasurement,
+	ImagingStudy,
 };
 
 export type ImagingModality =
@@ -39,32 +41,37 @@ export type ImagingModalId =
 	| "comparison"
 	| "rvg_capture";
 
-// biome-ignore lint/suspicious/noExplicitAny: generic CRM views host props
-export type ImagingViewProps = Record<string, any>;
+export type ImagingViewProps = {
+	onStudyCreated?: (study: ImagingStudy) => void;
+	onStudyUpdated?: (study: ImagingStudy) => void;
+	selectedImagingStudy?: ImagingStudy | null;
+	activePatient?: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null;
+	activeAppointment?: unknown;
+	activeImagingStudies?: ImagingStudy[];
+	visibleImagingStudies?: ImagingStudy[];
+	setSelectedImagingStudyId?: (id: string) => void;
+	setImagingKindFilter?: (kind: string) => void;
+	[key: string]: unknown;
+};
 
 export interface ImagingStudyThumbnailProps {
-	// biome-ignore lint/suspicious/noExplicitAny: study item
-	study: any;
+	study: ImagingStudy;
 	previewSrc?: string | undefined;
 }
 
 export interface ImagingSeriesGalleryProps {
-	// biome-ignore lint/suspicious/noExplicitAny: studies list
-	visibleImagingStudies?: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: active studies
-	activeImagingStudies?: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: selected study
-	selectedImagingStudy?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: active patient
-	activePatient?: any;
+	visibleImagingStudies?: ImagingStudy[];
+	activeImagingStudies?: ImagingStudy[];
+	selectedImagingStudy?: ImagingStudy | null;
+	activePatient?: { id?: string; name?: string; fullName?: string; [key: string]: unknown } | null;
 	imagingKindFilter?: string;
 	setImagingKindFilter?: (kind: string) => void;
 	imagingToothFilter?: string;
 	setImagingToothFilter?: (tooth: string) => void;
 	imagingKindLabels?: Record<string, string>;
 	imagingSourceLabels?: Record<string, string>;
-	imagingPreviewSource?: string;
-	imagingViewerHref?: string;
+	imagingPreviewSource?: ((study: ImagingStudy) => string | undefined) | undefined;
+	imagingViewerHref?: ((study: ImagingStudy) => string) | undefined;
 	onSelectStudy?: (id: string) => void;
 	formatShortDate?: (date: string) => string;
 }

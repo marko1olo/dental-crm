@@ -56,7 +56,11 @@ export class PerformanceStateStore {
 		this.currentSnapshot = buildPerformanceSnapshot(state, prevState, stateChangedAt, metrics, isBatteryThrottling, now);
 		if (syncDom) syncDomAttributes(state, metrics.averageFps, isBatteryThrottling);
 		for (const l of this.listeners) {
-			try { l(this.currentSnapshot); } catch {}
+			try {
+				l(this.currentSnapshot);
+			} catch (err: unknown) {
+				console.warn("[PerformanceStateStore] Error in listener:", err);
+			}
 		}
 	}
 }

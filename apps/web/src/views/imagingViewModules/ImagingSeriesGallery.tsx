@@ -1,10 +1,11 @@
 import React from "react";
 import { ImagingStudyList } from "../../components/imaging";
+import type { ImagingSeriesGalleryProps } from "./imagingViewTypes.js";
 
 /**
  * Layer 4: Боковая галерея серий снимков пациента с датами, модальностями и миниатюрами.
  */
-export function ImagingSeriesGallery(props: any) {
+export function ImagingSeriesGallery(props: ImagingSeriesGalleryProps) {
 	const {
 		visibleImagingStudies = [],
 		activeImagingStudies = [],

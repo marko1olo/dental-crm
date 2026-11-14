@@ -5,24 +5,25 @@
 
 import { useMemo } from "react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import type { ImagingStudy } from "./imagingViewTypes";
 
 export function useResolvedImagingStudies(props: {
-	activeImagingStudies?: unknown[];
-	visibleImagingStudies?: unknown[];
-	dashboard?: { imagingStudies?: unknown[] };
+	activeImagingStudies?: ImagingStudy[];
+	visibleImagingStudies?: ImagingStudy[];
+	dashboard?: { imagingStudies?: ImagingStudy[] };
 	activePatient?: { id?: string } | null;
-}) {
+}): ImagingStudy[] {
 	const { activeImagingStudies, visibleImagingStudies, dashboard, activePatient } = props;
 
 	return useMemo(() => {
 		if (activeImagingStudies && activeImagingStudies.length > 0) {
-			return activeImagingStudies as any[];
+			return activeImagingStudies;
 		}
 		if (visibleImagingStudies && visibleImagingStudies.length > 0) {
-			return visibleImagingStudies as any[];
+			return visibleImagingStudies;
 		}
 		if (dashboard?.imagingStudies && dashboard.imagingStudies.length > 0) {
-			return dashboard.imagingStudies as any[];
+			return dashboard.imagingStudies;
 		}
 		if (isDemoShowcaseMode()) {
 			const pid = activePatient?.id || "sample_patient";
@@ -81,8 +82,8 @@ export function useResolvedImagingStudies(props: {
 					hasFile: true,
 					capturedAt: now,
 				},
-			] as any[];
+			];
 		}
-		return [] as any[];
+		return [];
 	}, [activeImagingStudies, visibleImagingStudies, dashboard?.imagingStudies, activePatient?.id]);
 }

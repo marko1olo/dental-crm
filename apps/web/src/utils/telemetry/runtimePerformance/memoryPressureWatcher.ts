@@ -11,14 +11,24 @@ export interface MemoryMetrics {
 	memoryPressureRatio: number | null;
 }
 
+interface ChromiumMemoryInfo {
+	usedJSHeapSize?: number;
+	totalJSHeapSize?: number;
+	jsHeapSizeLimit?: number;
+}
+
+declare global {
+	interface Performance {
+		memory?: ChromiumMemoryInfo;
+	}
+}
+
 export function sampleMemoryPressure(enabled: boolean = true): MemoryMetrics {
 	if (!enabled || typeof performance === "undefined") {
 		return { usedHeapMb: null, heapLimitMb: null, memoryPressureRatio: null };
 	}
 
-	const memory = (performance as unknown as {
-		memory?: { usedJSHeapSize?: number; totalJSHeapSize?: number; jsHeapSizeLimit?: number };
-	}).memory;
+	const memory = performance.memory;
 
 	if (memory && typeof memory.usedJSHeapSize === "number" && typeof memory.jsHeapSizeLimit === "number") {
 		const usedMb = Math.round(memory.usedJSHeapSize / (1024 * 1024));

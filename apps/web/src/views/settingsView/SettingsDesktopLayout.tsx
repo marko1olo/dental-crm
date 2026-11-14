@@ -10,7 +10,14 @@ import { type SettingsTabGroup, type SettingsTab as SettingsTabId } from "../../
 import { DoctorSettingsSection, type DoctorSubTab } from "../../components/settings/DoctorSettingsSection";
 import { AdminSettingsSection, type AdminSubTab } from "../../components/settings/AdminSettingsSection";
 import { OwnerSettingsSection, type OwnerSubTab } from "../../components/settings/OwnerSettingsSection";
-import { type SettingsRoleMode, DOCTOR_TABS, ADMIN_TABS, OWNER_TABS } from "./types.js";
+import {
+	type SettingsRoleMode,
+	type SettingsStaffUser,
+	type SettingsViewFeatureFlags,
+	DOCTOR_TABS,
+	ADMIN_TABS,
+	OWNER_TABS,
+} from "./types.js";
 import { SettingsNavigationSidebar } from "./SettingsNavigationSidebar.js";
 import { SettingsNavigationMenu } from "./settingsNavigationMenu.js";
 import { SettingsTabRenderer } from "./settingsTabRenderer.js";
@@ -23,17 +30,12 @@ export interface SettingsDesktopLayoutProps {
 	setRoleMode: (mode: SettingsRoleMode) => void;
 	selectSettingsTab: (tabId: SettingsTabId | string) => void;
 	reopenOnboarding?: (() => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: props bag unpacking
-	activeStaffUser?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: props bag unpacking
-	settingsProps: any;
+	activeStaffUser?: SettingsStaffUser | null;
+	settingsProps: Record<string, unknown>;
 	settingsTab: string;
-	// biome-ignore lint/suspicious/noExplicitAny: props bag unpacking
-	appLogic: any;
-	// biome-ignore lint/suspicious/noExplicitAny: props bag unpacking
-	logic: any;
-	// biome-ignore lint/suspicious/noExplicitAny: flags bag
-	flags: any;
+	appLogic: unknown;
+	logic: Record<string, unknown>;
+	flags: SettingsViewFeatureFlags;
 	typedSettingsTabs: Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }>;
 	handleSettingsTabKeyDown: (event: KeyboardEvent<HTMLButtonElement>, tabId: SettingsTabId) => void;
 	activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null> | undefined;

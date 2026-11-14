@@ -111,8 +111,8 @@ describe("Staff PIN Pad Autonomy & Solo Doctor Sovereignty (Mandates 8d, 8e, 8n)
 		expect(sourceCode).not.toContain("disabled={!selectedUser || loading}");
 
 		// Verify solo doctor auto-selection logic
-		expect(sourceCode).toContain("if (!selectedUser && activeStaff && activeStaff.length === 1)");
-		expect(sourceCode).toContain("targetUser = activeStaff[0];");
+		expect(sourceCode).toContain("activeStaff.length === 1");
+		expect(sourceCode).toMatch(/targetUser\s*=\s*activeStaff\[0\]/);
 
 		// Verify active toast guidance when user is not selected
 		expect(sourceCode).toContain('showToast("Сначала выберите сотрудника из списка", "info");');

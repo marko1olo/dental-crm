@@ -17,9 +17,26 @@ const StaffPinPad = lazyWithRetry(() =>
 	import("../components/auth/StaffPinPad").then((m) => ({ default: m.StaffPinPad })),
 );
 
+export interface AppBootScreensLogic {
+	dashboard: {
+		clinicSettings?: {
+			staff?: unknown;
+		};
+		[key: string]: unknown;
+	} | null;
+	error: string | null;
+	setError: (error: string | null) => void;
+	accessUnlockRequired: boolean;
+	accessUnlockMessage?: string | null;
+	clinicalAdminSecretDraft: string;
+	setClinicalAdminSecretDraft: (secret: string) => void;
+	unlockTelegramAdminSession: (scope: string) => void | Promise<void>;
+	loadDashboard: () => Promise<unknown> | void;
+}
+
 interface AppBootScreensProps {
 	sessionAuth: AppSessionAuthState;
-	appLogic: any;
+	appLogic: AppBootScreensLogic;
 }
 
 export function AppBootScreens({ sessionAuth, appLogic }: AppBootScreensProps) {

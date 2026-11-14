@@ -25,7 +25,8 @@ export function useOmnichannelOperatorDesk({
 	const [bookingDate, setBookingDate] = useState(() => {
 		const d = new Date();
 		d.setDate(d.getDate() + 1);
-		return d.toISOString().split("T")[0]!;
+		const iso = d.toISOString().split("T");
+		return iso[0] ?? "";
 	});
 	const [bookingTime, setBookingTime] = useState("11:00");
 	const [bookingReason, setBookingReason] = useState("Первичная консультация и осмотр");
@@ -43,21 +44,31 @@ export function useOmnichannelOperatorDesk({
 	const appLogic = useOptionalAppLogicContext();
 	const staffList = appLogic?.dashboard?.clinicSettings?.staff ?? [];
 
+	interface StaffMemberRecord {
+		id: string;
+		fullName?: string;
+		role?: string;
+		active?: boolean;
+		specialty?: string;
+		specialization?: string;
+	}
+
 	const doctorsList: DoctorOption[] = useMemo(() => {
-		const filtered = staffList.filter(
-			(s: any) => s.role === "doctor" || s.role === "owner" || (s.active && !s.role),
+		const rawStaff = Array.isArray(staffList) ? (staffList as StaffMemberRecord[]) : [];
+		const filtered = rawStaff.filter(
+			(s) => s.role === "doctor" || s.role === "owner" || (s.active && !s.role),
 		);
 		if (filtered.length > 0) {
-			return filtered.map((s: any) => ({
+			return filtered.map((s) => ({
 				id: s.id,
 				fullName: s.specialty || s.specialization
-					? `${s.fullName} (${s.specialty || s.specialization})`
-					: s.fullName,
+					? `${s.fullName ?? "Врач"} (${s.specialty || s.specialization})`
+					: (s.fullName ?? "Врач"),
 			}));
 		}
-		return staffList.map((s: any) => ({
+		return rawStaff.map((s) => ({
 			id: s.id,
-			fullName: s.fullName,
+			fullName: s.fullName ?? "Сотрудник",
 		}));
 	}, [staffList]);
 
@@ -325,14 +336,14 @@ export function useOmnichannelOperatorDesk({
 		}
 		try {
 			const randomChannels: BotChannel[] = ["telegram", "vk", "whatsapp", "max"];
-			const ch = randomChannels[Math.floor(Math.random() * randomChannels.length)]!;
+			const ch = randomChannels[Math.floor(Math.random() * randomChannels.length)] ?? "telegram";
 			const testNames = [
 				"Алексей Николаевич С.",
 				"Мария Дмитриевна В.",
 				"Сергей Павлович К.",
 				"Елена Александровна Т.",
 			];
-			const randomName = testNames[Math.floor(Math.random() * testNames.length)]!;
+			const randomName = testNames[Math.floor(Math.random() * testNames.length)] ?? "Тестовый Пациент";
 			const randomPhone = `79${Math.floor(100000000 + Math.random() * 900000000)}`;
 			const testPhrases = [
 				"Здравствуйте! Подскажите, есть ли свободное окно к терапевту на завтра?",
@@ -340,7 +351,7 @@ export function useOmnichannelOperatorDesk({
 				"Здравствуйте! Сильно разболелся зуб после пломбы, можно записаться на осмотр?",
 				"Добрый день! Хочу проконсультироваться по установке импланта.",
 			];
-			const randomText = testPhrases[Math.floor(Math.random() * testPhrases.length)]!;
+			const randomText = testPhrases[Math.floor(Math.random() * testPhrases.length)] ?? "Здравствуйте!";
 
 			const res = await fetch("/api/bots/test-incoming", {
 				method: "POST",
@@ -360,7 +371,8 @@ export function useOmnichannelOperatorDesk({
 				showToast(`Тестовое сообщение от ${randomName} (${ch.toUpperCase()}) создано!`, "success");
 				await fetchConversations();
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[OmnichannelOperatorDesk] Error simulating message:", err);
 			showToast("Ошибка симуляции сообщения", "error");
 		}
 	};
@@ -421,7 +433,8 @@ export function useOmnichannelOperatorDesk({
 			} else {
 				showToast(data.message || "Ошибка при создании записи", "error");
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[OmnichannelOperatorDesk] Error booking appointment:", err);
 			showToast("Сетевая ошибка при бронировании приёма", "error");
 		} finally {
 			setIsBookingSubmitting(false);
@@ -474,7 +487,8 @@ export function useOmnichannelOperatorDesk({
 			} else {
 				showToast(data.message || "Ошибка привязки карты", "error");
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[OmnichannelOperatorDesk] Error linking patient:", err);
 			showToast("Сетевая ошибка при создании пациента", "error");
 		} finally {
 			setIsLinkingSubmitting(false);
@@ -512,60 +526,17 @@ export function useOmnichannelOperatorDesk({
 	}, [activeConv]);
 
 	return {
-		conversations,
-		setConversations,
-		isLoadingList,
-		selectedKey,
-		setSelectedKey,
-		activeConv,
-		filteredConversations,
-		channelFilter,
-		setChannelFilter,
-		statusFilter,
-		setStatusFilter,
-		searchQuery,
-		setSearchQuery,
-		messages,
-		isLoadingMessages,
-		inputText,
-		setInputText,
-		isSending,
-		operatorName,
-		setOperatorName,
-		isMobileThreadOpen,
-		setIsMobileThreadOpen,
-		messagesEndRef,
-		isQuickBookingOpen,
-		setIsQuickBookingOpen,
-		bookingDate,
-		setBookingDate,
-		bookingTime,
-		setBookingTime,
-		bookingReason,
-		setBookingReason,
-		bookingDoctorId,
-		setBookingDoctorId,
-		bookingSendConfirmation,
-		setBookingSendConfirmation,
-		isBookingSubmitting,
-		doctorsList,
-		isLinkPatientModalOpen,
-		setIsLinkPatientModalOpen,
-		newPatientFullName,
-		setNewPatientFullName,
-		newPatientPhone,
-		setNewPatientPhone,
-		isLinkingSubmitting,
-		fetchConversations,
-		fetchMessages,
-		handleTakeover,
-		handleRelease,
-		handleSendMessage,
-		handleSimulateIncoming,
-		handleQuickBookingSubmit,
-		handleLinkPatientSubmit,
-		handleOpenQuickBooking,
-		handleOpenLinkPatient,
+		conversations, setConversations, isLoadingList, selectedKey, setSelectedKey,
+		activeConv, filteredConversations, channelFilter, setChannelFilter, statusFilter, setStatusFilter,
+		searchQuery, setSearchQuery, messages, isLoadingMessages, inputText, setInputText,
+		isSending, operatorName, setOperatorName, isMobileThreadOpen, setIsMobileThreadOpen,
+		messagesEndRef, isQuickBookingOpen, setIsQuickBookingOpen, bookingDate, setBookingDate,
+		bookingTime, setBookingTime, bookingReason, setBookingReason, bookingDoctorId, setBookingDoctorId,
+		bookingSendConfirmation, setBookingSendConfirmation, isBookingSubmitting, doctorsList,
+		isLinkPatientModalOpen, setIsLinkPatientModalOpen, newPatientFullName, setNewPatientFullName,
+		newPatientPhone, setNewPatientPhone, isLinkingSubmitting, fetchConversations, fetchMessages,
+		handleTakeover, handleRelease, handleSendMessage, handleSimulateIncoming,
+		handleQuickBookingSubmit, handleLinkPatientSubmit, handleOpenQuickBooking, handleOpenLinkPatient,
 	};
 }
 

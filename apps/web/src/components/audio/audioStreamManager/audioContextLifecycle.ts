@@ -4,12 +4,18 @@
 
 import { logger } from "../../../utils/logger";
 
+declare global {
+	interface Window {
+		webkitAudioContext?: typeof AudioContext;
+	}
+}
+
 export function getAudioContextClass(): typeof AudioContext {
-	return (
-		window.AudioContext ||
-		// biome-ignore lint/suspicious/noExplicitAny: WebKit AudioContext fallback
-		(window as any).webkitAudioContext
-	);
+	const AudioCtx = window.AudioContext || window.webkitAudioContext;
+	if (!AudioCtx) {
+		throw new Error("AudioContext is not supported in this browser environment");
+	}
+	return AudioCtx;
 }
 
 export function createAudioContext(): AudioContext {

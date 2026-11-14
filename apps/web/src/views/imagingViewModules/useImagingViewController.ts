@@ -2,10 +2,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { showToast } from "../../components/GlobalToast";
 import { processCameraPhotoCapture } from "../../components/imaging";
 import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
-import type { ImagingModalId, ImagingViewProps } from "./imagingViewTypes";
+import type { ImagingModalId, ImagingStudy, ImagingViewProps } from "./imagingViewTypes";
 import { useImagingStudyMetadataAttach } from "./useImagingStudyMetadataAttach";
 
-export function useImagingViewController(props: ImagingViewProps, appLogic: any) {
+export function useImagingViewController(
+	props: ImagingViewProps,
+	appLogic: { auth?: unknown; loadDashboard?: () => Promise<unknown> | void; [key: string]: unknown } | null | undefined,
+) {
 	const auth = appLogic?.auth;
 	const { activeAppointment, activePatient, selectedImagingStudy, setSelectedImagingStudyId, setImagingKindFilter } = props;
 	const [activeModal, setActiveModal] = useState<ImagingModalId>(null);
@@ -89,9 +92,9 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 		selectedImagingStudy, auth, props, appLogic,
 	);
 
-	const handleRvgSaveToEmr = useCallback((study: any) => {
+	const handleRvgSaveToEmr = useCallback((study: ImagingStudy) => {
 		if (study?.id && setSelectedImagingStudyId) setSelectedImagingStudyId(study.id);
-		if ((props as any).onStudyCreated) (props as any).onStudyCreated(study);
+		if (props.onStudyCreated) props.onStudyCreated(study);
 		if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 	}, [setSelectedImagingStudyId, props, appLogic]);
 

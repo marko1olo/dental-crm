@@ -1,10 +1,11 @@
 import React, { Suspense } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { DicomArchiveUploader } from "../../components/radiology/DicomArchiveUploader";
+import { DicomArchiveUploader } from "../../components/dicom/DicomArchiveUploader";
 import { NativeTomographyLaunchBar } from "./NativeTomographyLaunchBar";
+import type { ImagingStudy } from "./imagingViewTypes";
 
 export interface ImagingCbctActiveCardProps {
-	selectedImagingStudy: any;
+	selectedImagingStudy: ImagingStudy | null;
 	localImageIds: string[];
 	isDicomwebLoading: boolean;
 	dicomwebLoadProgress: string | null;

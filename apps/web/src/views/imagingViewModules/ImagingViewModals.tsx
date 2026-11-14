@@ -3,6 +3,7 @@ import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { CtSelectorModal } from "../../components/radiology/CtSelectorModal";
 import { DirectRvgCaptureModal } from "../../components/radiology/DirectRvgCaptureModal";
 import { ImagingAuxiliaryModals } from "../../components/imaging";
+import type { ImagingStudy } from "./imagingViewTypes";
 
 const CbctMprImplantStudioModal = lazyWithRetry(() =>
 	import("../../components/radiology/CbctMprImplantStudioModal.js").then((m) => ({
@@ -26,11 +27,12 @@ export interface ImagingViewModalsProps {
 	isRvgCaptureOpen?: boolean;
 	setIsRvgCaptureOpen?: (open: boolean) => void;
 	rvgInitialTooth?: string | null;
-	onRvgSaveToEmr?: (study: any) => void;
-	selectedImagingStudy: any;
-	activePatient: any;
-	activeAppointment: any;
-	activeImagingStudies: any[];
+	onRvgSaveToEmr?: (study: ImagingStudy) => void;
+	localImageIds?: string[];
+	selectedImagingStudy: ImagingStudy | null;
+	activePatient: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null;
+	activeAppointment: unknown;
+	activeImagingStudies: ImagingStudy[];
 	authClinicName?: string | null;
 	effectivePreviewUrl?: string | null;
 	selectedStudySummary?: string | null;
@@ -43,7 +45,7 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 		isCbctStudioOpen, setIsCbctStudioOpen, isCtSelectorOpen, setIsCtSelectorOpen,
 		isPanoramicWindowOpen, setIsPanoramicWindowOpen, isRadiologyModuleOpen, setIsRadiologyModuleOpen,
 		isExportModalOpen, setIsExportModalOpen, isComparisonOpen, setIsComparisonOpen,
-		isRvgCaptureOpen, setIsRvgCaptureOpen, rvgInitialTooth, onRvgSaveToEmr,
+		isRvgCaptureOpen, setIsRvgCaptureOpen, rvgInitialTooth, onRvgSaveToEmr, localImageIds,
 		selectedImagingStudy, activePatient, activeAppointment, activeImagingStudies,
 		authClinicName, effectivePreviewUrl, selectedStudySummary, setSelectedImagingStudyId, openPopoutStudio,
 	} = props;
@@ -73,6 +75,7 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 						study={selectedImagingStudy}
 						patientId={activePatient?.id ?? null}
 						patientName={activePatient?.name ?? activePatient?.fullName}
+						initialImageIds={localImageIds}
 					/>
 				</Suspense>
 			)}
@@ -107,6 +110,7 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 				authClinicName={authClinicName || undefined}
 				effectivePreviewUrl={effectivePreviewUrl || undefined}
 				selectedStudySummary={selectedStudySummary || undefined}
+				localImageIds={localImageIds}
 			/>
 		</>
 	);

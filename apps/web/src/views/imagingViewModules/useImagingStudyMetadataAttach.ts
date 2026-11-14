@@ -5,12 +5,13 @@
 
 import { useCallback } from "react";
 import { showToast } from "../../components/GlobalToast";
+import type { ImagingStudy } from "./imagingViewTypes";
 
 export function useImagingStudyMetadataAttach(
-	selectedImagingStudy: any,
-	auth: any,
-	props: any,
-	appLogic: any,
+	selectedImagingStudy: ImagingStudy | null,
+	auth: { denteClinicalMutationHeaders?: (headers?: Record<string, string>) => Record<string, string> } | null | undefined,
+	props: { onStudyUpdated?: (study: unknown) => void; [key: string]: unknown },
+	appLogic: { loadDashboard?: () => Promise<unknown> | void; [key: string]: unknown } | null | undefined,
 ) {
 	const handleAttachTooth = useCallback(async (toothCode: string) => {
 		if (!selectedImagingStudy?.id) return;
@@ -30,7 +31,8 @@ export function useImagingStudyMetadataAttach(
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast(toothCode ? `Снимок привязан к зубу ${toothCode}` : "Привязка к зубу снята", "success");
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[useImagingStudyMetadataAttach] Error attaching tooth:", err);
 			showToast("Не удалось обновить привязку к зубу", "error");
 		}
 	}, [selectedImagingStudy, auth, props, appLogic]);
@@ -52,7 +54,8 @@ export function useImagingStudyMetadataAttach(
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast("Снимок привязан к текущему приёму", "success");
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[useImagingStudyMetadataAttach] Error attaching visit:", err);
 			showToast("Не удалось обновить привязку к визиту", "error");
 		}
 	}, [selectedImagingStudy?.id, auth, props, appLogic]);

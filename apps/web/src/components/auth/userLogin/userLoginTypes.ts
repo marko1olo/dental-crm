@@ -1,6 +1,13 @@
+import type { StaffUser } from "../staffPinPad/staffPinPadTypes";
+
+export interface ClinicLoginProfile {
+	organizationId?: string;
+	name?: string;
+	[key: string]: unknown;
+}
+
 export interface UserLoginProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onSuccess: (clinicProfile: any, userProfile: any) => void;
+	onSuccess: (clinicProfile: ClinicLoginProfile | null, userProfile: StaffUser | null) => void;
 	onSwitchToRegister: () => void;
 	onSwitchToClinicMode?: () => void;
 	onSwitchToDemoTour?: () => void;

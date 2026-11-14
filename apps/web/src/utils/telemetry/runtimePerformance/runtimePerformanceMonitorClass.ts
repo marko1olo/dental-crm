@@ -10,8 +10,12 @@ import { PerformanceSamplerLoop } from "./performanceSamplerLoop.js";
 import { PerformanceStateStore, createInitialMetrics } from "./performanceStateStore.js";
 import { DEFAULT_MONITOR_OPTIONS, type DynamicLoadState, type DynamicPerformanceSnapshot, type RuntimePerformanceMonitorOptions } from "./performanceTypes.js";
 
+export type ResolvedRuntimePerformanceMonitorOptions = Required<Omit<RuntimePerformanceMonitorOptions, "onStateChange">> & {
+	onStateChange?: ((snapshot: DynamicPerformanceSnapshot) => void) | undefined;
+};
+
 export class RuntimePerformanceMonitor {
-	private readonly options: any;
+	private readonly options: ResolvedRuntimePerformanceMonitorOptions;
 	private isRunning = false;
 	private isTabVisible = true;
 	private isBatteryThrottling = false;
@@ -27,9 +31,25 @@ export class RuntimePerformanceMonitor {
 	private observers: LifecycleObservers = { visibilityListener: null, performanceObserver: null };
 
 	constructor(options: RuntimePerformanceMonitorOptions = {}) {
+		const timerMap = new Map<number, ReturnType<typeof setTimeout>>();
+		let timerSeq = 1;
 		const getNow = options.now ?? (typeof performance !== "undefined" && typeof performance.now === "function" ? () => performance.now() : () => Date.now());
-		const getRaf = options.requestAnimationFrame ?? (typeof requestAnimationFrame === "function" ? (cb) => requestAnimationFrame(cb) : (cb) => setTimeout(() => cb(getNow()), 16) as unknown as number);
-		const getCaf = options.cancelAnimationFrame ?? (typeof cancelAnimationFrame === "function" ? (id) => cancelAnimationFrame(id) : (id) => clearTimeout(id as unknown as ReturnType<typeof setTimeout>));
+		const getRaf = options.requestAnimationFrame ?? (typeof requestAnimationFrame === "function" ? (cb: (time: number) => void) => requestAnimationFrame(cb) : (cb: (time: number) => void) => {
+			const id = timerSeq++;
+			const timer = setTimeout(() => {
+				timerMap.delete(id);
+				cb(getNow());
+			}, 16);
+			timerMap.set(id, timer);
+			return id;
+		});
+		const getCaf = options.cancelAnimationFrame ?? (typeof cancelAnimationFrame === "function" ? (id: number) => cancelAnimationFrame(id) : (id: number) => {
+			const timer = timerMap.get(id);
+			if (timer) {
+				clearTimeout(timer);
+				timerMap.delete(id);
+			}
+		});
 
 		this.options = { ...DEFAULT_MONITOR_OPTIONS, ...options, onStateChange: options.onStateChange, now: getNow, requestAnimationFrame: getRaf, cancelAnimationFrame: getCaf };
 		this.fpsSampler = new FpsTelemetrySampler(this.options.sampleWindowFrames);
@@ -103,11 +123,17 @@ export class RuntimePerformanceMonitor {
 
 	private evaluateAfterBurst(now: number): void {
 		const ctx = { currentState: this.currentState, candidateBetterState: this.candidateBetterState, candidateStableSince: this.candidateStableSince, recoveryDurationMs: this.options.recoveryDurationMs };
-		const res = processBurstMetrics(this.fpsSampler, this.longTaskObs, this.store, ctx, now, this.isTabVisible);
+		const res = processBurstMetrics(this.fpsSampler, this.longTaskObs, this.store, { ...this.options, ...ctx }, now, this.isTabVisible);
 		this.candidateBetterState = res.candidate.better;
 		this.candidateStableSince = res.candidate.since;
 		if (res.nextState) { this.previousState = this.currentState; this.currentState = res.nextState; this.stateChangedAt = now; }
 		this.store.update(this.currentState, this.previousState, this.stateChangedAt, res.metrics, this.isBatteryThrottling, now, this.options.syncDomAttributes);
-		if (res.nextState) try { this.options.onStateChange?.(this.store.currentSnapshot); } catch {}
+		if (res.nextState) {
+			try {
+				this.options.onStateChange?.(this.store.currentSnapshot);
+			} catch (err: unknown) {
+				console.warn("[RuntimePerformanceMonitor] onStateChange error:", err);
+			}
+		}
 	}
 }

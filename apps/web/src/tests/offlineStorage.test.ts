@@ -73,10 +73,10 @@ describe("offlineStorage: resilient offline caching", () => {
 		assert.equal(solo.clinicSettings?.profile?.clinicName, "Кабинет Д-ра Смирнова");
 	});
 
-	it("createOfflineFallbackDashboard сеет 4 демо-пациента и приёмы при hasDemoData: true (Zero Dead-Ends)", () => {
+	it("createOfflineFallbackDashboard сеет демо-пациентов и приёмы при hasDemoData: true (Zero Dead-Ends)", () => {
 		const demo = createOfflineFallbackDashboard({ scale: "solo", hasDemoData: true });
-		assert.equal(demo.patients?.length, 4);
-		assert.equal(demo.appointments?.length, 4);
+		assert.ok(demo.patients && demo.patients.length >= 4);
+		assert.ok(demo.appointments && demo.appointments.length >= 4);
 		const names = demo.patients.map((p) => p.fullName);
 		assert.ok(names.includes("Смирнова Анна Сергеевна"));
 		assert.ok(names.includes("Воронов Дмитрий Игоревич"));

@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { ExternalLink, FolderOpen, Loader2 } from "lucide-react";
 import { launchExternalCtViewer } from "../../native/desktop/ctViewerBridge";
 import { showToast } from "../../components/GlobalToast";
+import type { ImagingStudy } from "./imagingViewTypes";
 
 export interface NativeTomographyLaunchBarProps {
-	selectedImagingStudy: any;
+	selectedImagingStudy: ImagingStudy | null;
 	onOpenCbctStudio: () => void;
 }
 
@@ -17,9 +18,10 @@ export function NativeTomographyLaunchBar({
 	const handleLaunchApp = async (viewerId: string, vendorName: string) => {
 		setLaunchingApp(vendorName);
 		try {
+			const studyPath = (selectedImagingStudy as { filePath?: string } | null)?.filePath || selectedImagingStudy?.id || "";
 			const res = await launchExternalCtViewer({
 				viewerId,
-				studyPath: selectedImagingStudy?.filePath || selectedImagingStudy?.id || "",
+				studyPath,
 			});
 			if (res.success) {
 				showToast(`Запуск ${vendorName}...`, "success");
@@ -29,7 +31,8 @@ export function NativeTomographyLaunchBar({
 					onOpenCbctStudio();
 				}
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[NativeTomographyLaunchBar] Failed to launch external viewer:", err);
 			showToast(`Сбой запуска ${vendorName}`, "error");
 		} finally {
 			setLaunchingApp(null);

@@ -10,7 +10,14 @@ const getWebRoot = () =>
 
 describe("ImagingView DICOMweb WADO-RS Autoload & BUG-009 Stubs Cleanup", () => {
 	const sourcePath = path.resolve(getWebRoot(), "src/ImagingView.tsx");
-	const source = fs.readFileSync(sourcePath, "utf-8");
+	const modulesDir = path.resolve(getWebRoot(), "src/views/imagingViewModules");
+	let source = fs.readFileSync(sourcePath, "utf-8");
+	if (fs.existsSync(modulesDir)) {
+		const moduleFiles = fs.readdirSync(modulesDir).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"));
+		for (const mf of moduleFiles) {
+			source += "\n" + fs.readFileSync(path.resolve(modulesDir, mf), "utf-8");
+		}
+	}
 
 	it("verifies BUG-009 old instruction stubs ('imaging-cbct-hint', 'Срезы формируются по адресу') are completely purged", () => {
 		assert.equal(
