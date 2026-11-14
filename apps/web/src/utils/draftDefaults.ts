@@ -24,7 +24,7 @@ export function emptyPatientCoreDraft(): PatientCoreDraft {
 	};
 }
 
-import type { PatientAdministrativeProfileDraft } from "../AppConstants";
+import type { PatientAdministrativeProfileDraft } from "../constants/onboardingConstants";
 export type { PatientAdministrativeProfileDraft };
 
 export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeProfileDraft {
@@ -56,7 +56,6 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		curatorNextContactDate: "",
 		isAnonymous: false,
 		anonymousCode: null,
-		decree659Compliance: null,
 		gender: "",
 		insuranceContractId: "",
 		dmsInsuranceCompany: "",

@@ -31,7 +31,7 @@ import {
 	closeShiftBodySchema,
 	openShiftBodySchema,
 } from "../cashboxSchemas.js";
-import type { CloseShiftResponseBody, OpenShiftResponseBody } from "../types.js";
+import type { CloseShiftResponseBody, OpenShiftResponseBody, ZReportDataPayload } from "../types.js";
 import { reconcileSingleShift } from "./shiftReconciliationEngine.js";
 import { checkAndAutoCloseExpiredShifts } from "../../shifts/shiftAutoCloseService.js";
 import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
@@ -287,10 +287,9 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 					reconciliationResult.fiscalDocNumber = kktZResult.fiscalDocumentNumber;
 					if (kktZResult.fiscalSign) reconciliationResult.fiscalSign = kktZResult.fiscalSign;
 					if (kktZResult.qrString) reconciliationResult.qrString = kktZResult.qrString;
-					// biome-ignore lint/suspicious/noExplicitAny: enrichment
-					(reconciliationResult.zReportData as any).fiscalDocNumber = kktZResult.fiscalDocumentNumber;
-					if (kktZResult.fiscalSign) (reconciliationResult.zReportData as any).fiscalSign = kktZResult.fiscalSign;
-					if (kktZResult.qrString) (reconciliationResult.zReportData as any).qrString = kktZResult.qrString;
+					reconciliationResult.zReportData.fiscalDocNumber = kktZResult.fiscalDocumentNumber;
+					if (kktZResult.fiscalSign) reconciliationResult.zReportData.fiscalSign = kktZResult.fiscalSign;
+					if (kktZResult.qrString) reconciliationResult.zReportData.qrString = kktZResult.qrString;
 				}
 
 				if (!primaryResult || box?.type === "main") {
@@ -340,6 +339,7 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 			message: `Все открытые кассовые смены успешно закрыты со снятием Z-отчетов (${closedShifts.length}).`,
 			closedShiftsCount: closedShifts.length,
 			shifts: closedShifts,
+			zReportData: primaryReconciliation?.zReportData,
 			reconciliation: primaryReconciliation
 				? {
 						countedCashRub: primaryReconciliation.zReportData.countedCashRub,
@@ -393,8 +393,10 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 				.limit(50);
 
 			return rows.map(({ shift, cashier }) => {
-				// biome-ignore lint/suspicious/noExplicitAny: json payload
-				const zData = (shift.zReportData as any) || {};
+				const zData: Partial<ZReportDataPayload> =
+					shift.zReportData && typeof shift.zReportData === "object"
+						? (shift.zReportData as Partial<ZReportDataPayload>)
+						: {};
 				return {
 					id: shift.id,
 					shiftNumber: shift.shiftNumber,

@@ -37,11 +37,12 @@ export const createFiscalReceiptPayloadSchema = z
 		operationType: ffd12OperationTypeSchema.default("income"),
 		taxationSystem: ffd12TaxationSystemSchema.default("usn_income"),
 		agentSign: ffd12AgentSignSchema.optional().nullable(),
+		isElectronicReceiptOnly: z.boolean().optional().default(false),
 		customerContact: z
-			.string()
-			.trim()
-			.min(5, "Укажите телефон или email для отправки чека")
-			.max(100, "Контакт клиента не может превышать 100 символов"),
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().max(100, "Контакт клиента не может превышать 100 символов").optional().nullable()
+			),
 		customerName: z
 			.preprocess(
 				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
@@ -98,6 +99,16 @@ export const createFiscalReceiptPayloadSchema = z
 	.superRefine((val, ctx) => {
 		// 54-FZ Tag 1228: Buyer INN enforcement for B2B (Legal Entities and Sole Proprietors / IP)
 		// For physical persons (Mandate 8e), INN is strictly optional and never blocking.
+		if (val.isElectronicReceiptOnly) {
+			if (!val.customerContact || val.customerContact.trim().length < 5) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Для отправки электронного чека (без печати бумажного) укажите телефон или email (от 5 символов)",
+					path: ["customerContact"],
+				});
+			}
+		}
+
 		if (val.payerType === "legal_entity") {
 			if (!val.customerInn) {
 				ctx.addIssue({

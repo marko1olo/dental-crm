@@ -11,7 +11,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 if (typeof document !== "undefined") { void import("./styles/dentalLabStudio.css"); }
 import { generateUuidV7 } from "@dental/shared";
 import {
-	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES,
+	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES, PARTNER_LABS,
 	UPPER_JAW_TEETH, LOWER_JAW_TEETH, SEED_LAB_ORDERS, type DentalLabOrderEntry, type DentalLabStage,
 	addWorkingDaysRu, formatKopecksToRubles, calcNetRevenueKopecks, getStageMeta, getMaterialMeta, isOrderOverdue,
 	mapDbStatusToStage, STAGE_TO_DB_STATUS,
@@ -31,7 +31,8 @@ export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue";
 export type LabStudioMainTab = "new_order" | "registry" | "print_blank";
 
 export { buildLabOrderMessengerSummary, type LabOrderMessengerParams } from "./dentalLabDefinitions";
-export * from "./dentalLabCatalogData"; export * from "./labMath";
+export * from "./dentalLabCatalogData";
+export * from "./labMath";
 
 export interface DentalLabStudioModalProps {
 	readonly isOpen: boolean; readonly onClose: () => void;
@@ -51,13 +52,14 @@ export type DentalLabOrderModalProps = DentalLabStudioModalProps; export type De
 export type { DentalLabOrderData } from "./labMath";
 
 export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
-	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, initialTab = "new_order",
+	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, doctorId, initialTab = "new_order",
 	onOrderCreated, onOrderSaved, onSaveOrder, initialTeeth, currentToothNumber,
 }) => {
 	const { hasDentalLab } = useWorkspaceProfile();
 	const storeActivePatientId = useAppStore((s) => s.activePatientId);
 	const storeSelectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const dashboard = useAppStore((s) => s.dashboard);
+	// Канонический ID врача: из пропсов или активного профиля ортопеда (Мандат 8e)
 	const effectivePatientId = patientId || storeActivePatientId || storeSelectedPatientId || undefined;
 	const activePatient = useMemo(() => {
 		if (!effectivePatientId || !dashboard?.patients) return null;
@@ -65,6 +67,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	}, [effectivePatientId, dashboard]);
 	const effectivePatientName = patientName || activePatient?.fullName || activePatient?.name || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "");
 	const effectiveDoctorName = doctorName || (isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : "");
+	const effectiveDoctorId = doctorId || (isDemoShowcaseMode() ? "doc_smirnova" : "doc_active");
 
 	const [patientInput, setPatientInput] = useState<string>(effectivePatientName);
 	useEffect(() => {
@@ -86,21 +89,10 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const currentPatientName = patientInput.trim() || effectivePatientName || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "Пациент");
 	const currentPatientId = matchedPatient?.id || effectivePatientId;
 
-	const [customLabs, setCustomLabs] = useState<string[]>(() => {
-		if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
-		try {
-			const stored = localStorage.getItem("dente_custom_lab_names");
-			return stored ? JSON.parse(stored) : [];
-		} catch (err: unknown) {
-			console.warn("Failed to parse custom lab names from localStorage:", err);
-			return [];
-		}
-	});
-	const [customLabInput, setCustomLabInput] = useState("");
-	const [isAddingCustomLab, setIsAddingCustomLab] = useState(false);
-
+	const [customLabs, setCustomLabs] = useState<string[]>([]);
 	const allLaboratories = useMemo(() => {
-		const set = new Set([...CLINIC_LABORATORIES, ...customLabs]);
+		const baseLabs = CLINIC_LABORATORIES.length > 0 ? CLINIC_LABORATORIES : PARTNER_LABS.map((p) => p.name);
+		const set = new Set([...baseLabs, ...customLabs]);
 		return Array.from(set);
 	}, [customLabs]);
 
@@ -121,12 +113,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const [selectedMaterialId, setSelectedMaterialId] = useState<string>("zirconia_multilayer");
 	const [selectedShade, setSelectedShade] = useState<string>("A2");
 	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб");
-	const [isUrgent, setIsUrgent] = useState(false); const [notes, setNotes] = useState(""); const [scanFileName, setScanFileName] = useState("");
+	const [isUrgent, setIsUrgent] = useState(false);
+	const [notes, setNotes] = useState("");
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		const savedShade = typeof localStorage !== "undefined" ? localStorage.getItem("dente_active_lab_shade_preset") : null;
-		if (savedShade) setSelectedShade(savedShade);
 		const handleShadeEvent = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
 			const shade = detail?.shade || detail?.shadeCode || detail?.color;
@@ -217,7 +208,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		try {
 			const payload = {
 				orderNumber: newEntry.orderNumber, patientId: effectiveId || undefined, patientName: effectiveName || undefined,
-				doctorId: "doc_current", doctorName: effectiveDoctorName || undefined, teethFdi: teethToSave, selectedTeeth: teethToSave,
+				doctorId: effectiveDoctorId, doctorName: effectiveDoctorName || undefined, teethFdi: teethToSave, selectedTeeth: teethToSave,
 				toothFdi: teethToSave[0] ?? undefined, materialId: selectedMaterialId, material: selectedMaterial.titleRu, workTypeId: selectedMaterialId,
 				shadeVita: selectedShade, shadeCode: selectedShade, colorVita: selectedShade, laboratoryName: selectedLab, labName: selectedLab,
 				dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks, isUrgent,
@@ -250,7 +241,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		} finally {
 			setTimeout(() => setFeedbackToast(null), 3500);
 		}
-	}, [selectedTeeth, orders.length, currentPatientName, effectiveDoctorName, currentPatientId, selectedMaterialId, selectedMaterial,
+	}, [selectedTeeth, orders.length, currentPatientName, effectiveDoctorName, currentPatientId, effectiveDoctorId, selectedMaterialId, selectedMaterial,
 		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, onOrderCreated, onOrderSaved, onSaveOrder]);
 
 	const handleAdvanceStage = useCallback(async (orderId: string) => {
@@ -298,7 +289,17 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		}
 	}, []);
 
-	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => { setFeedbackToast(`Вызов пациента на примерку: ${order.patientName}`); setTimeout(() => setFeedbackToast(null), 2500); }, []);
+	// Честный переход к связи с пациентом вместо симулированного таймера
+	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente-open-patient-card", {
+				detail: { patientName: order.patientName },
+			}));
+		}
+		setFeedbackToast(`Открыта карточка пациента для связи: ${order.patientName}`);
+		setTimeout(() => setFeedbackToast(null), 2500);
+	}, []);
+
 	const handlePrintOrder = useCallback((order: DentalLabOrderEntry) => { setSelectedOrderForPrint(order); setActiveMainTab("print_blank"); setFeedbackToast(`Печать заказ-наряда: ${order.orderNumber}`); setTimeout(() => setFeedbackToast(null), 2500); }, []);
 	const handlePrintA5Blank = useCallback(() => { setActiveMainTab("print_blank"); setFeedbackToast("Формирование бланка наряда А5 для лаборатории"); if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500); }, []);
 	const handleCourierBlank = useCallback(() => { setActiveMainTab("print_blank"); setFeedbackToast("Накладная курьеру для передачи в лабораторию"); if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500); }, []);
@@ -334,7 +335,6 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	return (
 		<div data-testid="dental-lab-studio-modal-root" className="dental-lab-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>
 			<div className="dental-lab-modal-container max-sm:rounded-t-[24px]" data-testid="dental-lab-order-drawer">
-				{/* Apple HIG Drag Handle 36x5px для мобильных */}
 				<div className="sm:hidden flex justify-center pt-2">
 					<div className="w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)]" />
 				</div>
@@ -369,11 +369,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					</div>
 				)}
 				{activeMainTab === "print_blank" ? (
-					<DentalLabStudioPrintTab
-						currentPrintOrder={currentPrintOrder}
-						printMaterial={printMaterial}
-						onBackToRegistry={() => setActiveMainTab("registry")}
-					/>
+					<DentalLabStudioPrintTab currentPrintOrder={currentPrintOrder} printMaterial={printMaterial} onBackToRegistry={() => setActiveMainTab("registry")} />
 				) : activeMainTab === "registry" ? (
 					<div className="w-full p-4 overflow-y-auto max-h-[78vh]">
 						<section className="dental-lab-right-column w-full border-0 p-0" data-testid="lab-orders-registry-panel">
@@ -403,12 +399,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 								) : (
 									filteredOrders.map((ord) => (
 										<DentalLabRegistryOrderCard
-											key={ord.id}
-											ord={ord}
-											onMarkInClinic={handleMarkInClinic}
-											onCallPatient={handleCallPatient}
-											onPrintOrder={handlePrintOrder}
-											onAdvanceStage={handleAdvanceStage}
+											key={ord.id} ord={ord}
+											onMarkInClinic={handleMarkInClinic} onCallPatient={handleCallPatient}
+											onPrintOrder={handlePrintOrder} onAdvanceStage={handleAdvanceStage}
 										/>
 									))
 								)}
@@ -461,12 +454,9 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 								) : (
 									filteredOrders.map((ord) => (
 										<DentalLabRegistryOrderCard
-											key={ord.id}
-											ord={ord}
-											onMarkInClinic={handleMarkInClinic}
-											onCallPatient={handleCallPatient}
-											onPrintOrder={handlePrintOrder}
-											onAdvanceStage={handleAdvanceStage}
+											key={ord.id} ord={ord}
+											onMarkInClinic={handleMarkInClinic} onCallPatient={handleCallPatient}
+											onPrintOrder={handlePrintOrder} onAdvanceStage={handleAdvanceStage}
 										/>
 									))
 								)}
@@ -479,9 +469,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	);
 };
 
-export const DentalLabOrderModal = DentalLabStudioModal;
-export const DentalLabOrdersModal = DentalLabStudioModal;
-export const DentalLabHubModal = DentalLabStudioModal;
-export const DentalLabOrdersHubModal = DentalLabStudioModal;
+export const DentalLabOrderModal = DentalLabStudioModal; export const DentalLabOrdersModal = DentalLabStudioModal;
+export const DentalLabHubModal = DentalLabStudioModal; export const DentalLabOrdersHubModal = DentalLabStudioModal;
 export const DentalLabOrderDrawer = DentalLabStudioModal;
 export default DentalLabStudioModal;

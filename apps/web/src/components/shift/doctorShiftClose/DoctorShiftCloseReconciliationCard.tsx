@@ -36,7 +36,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 					<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
-					Сверка кассы 54-ФЗ и фискальный Z-отчёт
+					Сверка кассы и фискальный Z-отчёт
 				</span>
 				<span className="text-[11px] font-mono text-[var(--muted,#64748b)] truncate max-w-[200px]" title={cashboxName}>
 					{cashboxName}
@@ -91,7 +91,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 						<span>{isCashBalanced ? "Сверено без расхождений (0 ₽):" : "Расхождение кассы:"}</span>
 					</div>
 					<span className="font-mono">
-						{isCashBalanced ? "Касса 54-ФЗ сходится (0 ₽)" : `${money(Math.abs(cashDifferenceRub))} (${cashDifferenceRub > 0 ? "излишек" : "недостача"})`}
+						{isCashBalanced ? "Касса сходится (0 ₽)" : `${money(Math.abs(cashDifferenceRub))} (${cashDifferenceRub > 0 ? "излишек" : "недостача"})`}
 					</span>
 				</div>
 				{!isCashBalanced && (

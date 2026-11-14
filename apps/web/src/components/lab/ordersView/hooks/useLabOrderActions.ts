@@ -111,5 +111,30 @@ export function useLabOrderActions(
 		copyLabPortalLink(token);
 	}, []);
 
-	return { handleStatusChange, handlePayFromCashbox, handleMarkInstalled, handleSaveAttachedFile, copyPortalLink };
+	const handleBatchStatusChange = useCallback(async (orderIds: string[], newStatus: string, notes?: string) => {
+		if (orderIds.length === 0) return;
+		try {
+			const res = await fetch("/api/clinical/lab-orders/batch-status", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				body: JSON.stringify({
+					orderIds,
+					status: newStatus,
+					stage: newStatus,
+					notes: notes ?? "Пакетная сдача нарядов курьеру лаборатории",
+				}),
+			});
+			if (!res.ok) throw new Error("Ошибка пакетного обновления статуса");
+			const data = await res.json() as { updatedCount?: number };
+			showToast(`Сдано курьеру нарядов: ${data.updatedCount ?? orderIds.length}`, "success");
+			void fetchOrders();
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-lab-orders-batch-updated", { detail: { orderIds, status: newStatus } }));
+			}
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : "Ошибка пакетного обновления", "error");
+		}
+	}, [fetchOrders]);
+
+	return { handleStatusChange, handleBatchStatusChange, handlePayFromCashbox, handleMarkInstalled, handleSaveAttachedFile, copyPortalLink };
 }

@@ -337,9 +337,9 @@ describe("Wave 7: Informed Consent & Treatment Plan Cryptographic Immutability &
 		assert.strictEqual(revoked.errorCode, "CertificateRevoked");
 	});
 
-	// ─── 5. БЛОКИРУЮЩИЕ ГЕЙТЫ НЕИЗМЕНЯЕМОСТИ В БАЗЕ ДАННЫХ (ПП РФ №659 И 63-ФЗ) ──
+	// ─── 5. БЛОКИРУЮЩИЕ ГЕЙТЫ НЕИЗМЕНЯЕМОСТИ В БАЗЕ ДАННЫХ (ПП РФ №736 И 63-ФЗ) ──
 
-	it("4.1 Simulates Decree No. 659 & Art. 16 ZoZPP gate: Approved or Signed treatment plan modification is strictly blocked", () => {
+	it("4.1 Simulates Art. 16 ZoZPP & PP RF No. 736 gate: Approved or Signed treatment plan modification is strictly blocked", () => {
 		// Имитация логики проверки из apps/api/src/routes/odontogram.ts:959
 		function attemptPlanModification(existingPlan: {
 			status: string;
@@ -347,7 +347,7 @@ describe("Wave 7: Informed Consent & Treatment Plan Cryptographic Immutability &
 		}) {
 			if (existingPlan.status === "Approved" || existingPlan.patientSignature) {
 				const err = new Error(
-					"Запрещено изменять утвержденный или подписанный план лечения. Согласно Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП любые изменения и дополнения платных услуг требуют оформления отдельного Дополнительного соглашения или создания нового плана лечения.",
+					"Запрещено изменять утвержденный или подписанный план лечения. Согласно ст. 16 Закона РФ «О защите прав потребителей» и ПП РФ № 736 любые изменения и дополнения платных услуг требуют оформления отдельного Дополнительного соглашения или создания нового плана лечения.",
 				);
 				// biome-ignore lint/suspicious/noExplicitAny: error mapping
 				(err as any).statusCode = 409;
@@ -371,7 +371,7 @@ describe("Wave 7: Informed Consent & Treatment Plan Cryptographic Immutability &
 				return (
 					err.statusCode === 409 &&
 					err.errorCode === "PlanLocked" &&
-					err.message.includes("Постановлению Правительства РФ №659")
+					err.message.includes("ст. 16 Закона РФ")
 				);
 			},
 		);
@@ -388,7 +388,7 @@ describe("Wave 7: Informed Consent & Treatment Plan Cryptographic Immutability &
 				return (
 					err.statusCode === 409 &&
 					err.errorCode === "PlanLocked" &&
-					err.message.includes("ст. 16 ЗоЗПП")
+					err.message.includes("ст. 16 Закона РФ")
 				);
 			},
 		);

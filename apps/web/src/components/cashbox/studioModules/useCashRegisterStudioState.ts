@@ -13,7 +13,10 @@ import { useState, useMemo, useCallback } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
-import { enqueueOfflinePayment } from "../../../offline/offlinePaymentQueue.js";
+import {
+	enqueueOfflinePayment,
+	type PaymentMethodKind,
+} from "../../../offline/offlinePaymentQueue.js";
 import {
 	type CashboxTenderType,
 	type ClientPayerType,
@@ -24,6 +27,18 @@ import {
 	generateFiscalTapeText,
 } from "../cashRegisterCatalogData.js";
 import type { CashRegisterStudioModalProps } from "../CashRegisterStudioModal.js";
+
+function resolveOfflinePaymentType(
+	tender: CashboxTenderType,
+	isWarranty: boolean,
+): PaymentMethodKind {
+	if (isWarranty || tender === "warranty") return "cash";
+	if (tender === "split" || tender === "installment") return "mixed";
+	if (tender === "card" || tender === "sbp" || tender === "deposit" || tender === "cash") {
+		return tender;
+	}
+	return "cash";
+}
 
 function isNetworkFailure(err: unknown, status?: number): boolean {
 	if (status && [502, 503, 504].includes(status)) return true;
@@ -239,7 +254,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 					visitId: effectiveVisitId,
 					invoiceId: props.invoiceId || undefined,
 					totalKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),
-					paymentType: isWarrantyCaseFinal ? "cash" : method === "split" ? "mixed" : (method as any),
+					paymentType: resolveOfflinePaymentType(method, isWarrantyCaseFinal),
 					splitDetails:
 						method === "split" && !isWarrantyCaseFinal
 							? {
@@ -284,7 +299,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				onClose();
 				return;
 			} catch (offlineErr) {
-				// Continue to network fetch if local queueing failed
+				console.warn("[CashRegisterStudio] Не удалось сохранить платёж в офлайн-очередь, переход к сетевому запросу:", offlineErr);
 			}
 		}
 
@@ -343,7 +358,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 						visitId: effectiveVisitId,
 						invoiceId: props.invoiceId || undefined,
 						totalKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),
-						paymentType: isWarrantyCaseFinal ? "cash" : method === "split" ? "mixed" : (method as any),
+						paymentType: resolveOfflinePaymentType(method, isWarrantyCaseFinal),
 						splitDetails:
 							method === "split" && !isWarrantyCaseFinal
 								? {
@@ -388,7 +403,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 					onClose();
 					return;
 				} catch (queueErr) {
-					// Fallthrough to standard error reporting if queueing fails
+					console.warn("[CashRegisterStudio] Не удалось сохранить офлайн-платёж при сбое сети:", queueErr);
 				}
 			}
 

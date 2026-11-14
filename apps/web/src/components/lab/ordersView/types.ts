@@ -78,6 +78,7 @@ export interface LabOrdersTableProps {
 	readonly onOpenEditOrder: (order: DentalLabOrderData) => void;
 	readonly copyPortalLink: (token?: string) => void;
 	readonly getStatusBadge: (status?: string) => ReactNode;
+	readonly onBatchStatusChange?: ((orderIds: string[], newStatus: string) => Promise<void>) | undefined;
 }
 
 export interface LabOrderCardsGridProps {

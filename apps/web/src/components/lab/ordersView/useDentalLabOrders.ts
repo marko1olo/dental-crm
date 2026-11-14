@@ -64,6 +64,7 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 		isHubModalOpen: modals.isHubModalOpen, setIsHubModalOpen: modals.setIsHubModalOpen,
 		handleView3DScan: (order: DentalLabOrderData) => modals.setView3DScanOrder(order),
 		handleStatusChange: actions.handleStatusChange,
+		handleBatchStatusChange: actions.handleBatchStatusChange,
 		handleOpenReadyInClinicPrompt: modals.handleOpenReadyInClinicPrompt,
 		copyPortalLink: actions.copyPortalLink,
 		handleOpenNewOrder: () => { modals.setSelectedOrderForEdit(null); modals.setModalInitialTab("main"); modals.setIsOrderDrawerOpen(true); },

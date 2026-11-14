@@ -5,6 +5,7 @@
  */
 
 import { and, eq, sql } from "drizzle-orm";
+import { normalizePaymentMethod } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -211,7 +212,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
 						documentId: linkedInvoice?.id || (linkedPayment?.documentId ?? null),
 						amountRub: -amountRub,
-						method: refundMethod as any,
+						method: normalizePaymentMethod(refundMethod),
 						status: "refunded",
 						paidAt: new Date(),
 						fiscalReceiptNumber: refundReceiptNumber,
@@ -291,10 +292,14 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					.where(eq(payments.id, linkedPayment.id));
 			}
 
+			if (!operation || !updatedBox) {
+				throw new Error("Не удалось зафиксировать операцию возврата из кассы");
+			}
+
 			return {
 				kind: "ok" as const,
-				operation: operation!,
-				cashBox: updatedBox!,
+				operation,
+				cashBox: updatedBox,
 				refundPaymentId,
 				queuedReceiptId,
 				fiscalReceiptNumber: refundReceiptNumber,

@@ -15,13 +15,15 @@ export interface LabOrdersTableRowProps extends Omit<LabOrderRowActionsMenuProps
 	readonly onOpenReadyInClinicPrompt: (order: DentalLabOrderData) => void;
 	readonly onOpenTracking: (order: DentalLabOrderData) => void;
 	readonly getStatusBadge: (status?: string) => React.ReactNode;
+	readonly isSelected?: boolean;
+	readonly onToggleSelect?: (orderId: string) => void;
 }
 
 export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Element {
 	const {
 		order, openMenuOrderId, setOpenMenuOrderId, onSelectTimelineOrder,
 		onOpenReadyInClinicPrompt, onOpenPrintOrder, onOpenTracking, onView3DScan,
-		getStatusBadge, ...menuHandlers
+		getStatusBadge, isSelected = false, onToggleSelect, ...menuHandlers
 	} = props;
 	const rawIdClean = order.id ? order.id.replace(/^lab-?/i, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
 	const num = order.orderNumber || (rawIdClean ? `ЗТЛ-${rawIdClean.slice(-4)}` : "ЗТЛ");
@@ -34,10 +36,21 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 	return (
 		<tr
 			key={order.id}
-			className="h-9 min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors text-xs text-[var(--ink)] cursor-pointer"
+			className={`h-9 min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors text-xs text-[var(--ink)] cursor-pointer ${isSelected ? "bg-teal-500/10" : ""}`}
 			data-testid={`lab-order-table-row-${order.id}`}
 			onClick={() => { if (order.id) onSelectTimelineOrder(order.id); }}
 		>
+			<td className="px-2 py-1.5 whitespace-nowrap align-middle w-[36px] text-center" onClick={(e) => e.stopPropagation()}>
+				{onToggleSelect && order.id ? (
+					<input
+						type="checkbox"
+						checked={isSelected}
+						onChange={() => onToggleSelect(order.id!)}
+						aria-label={`Выбрать наряд ${num}`}
+						className="rounded border-[var(--line)] text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] cursor-pointer w-3.5 h-3.5"
+					/>
+				) : null}
+			</td>
 			<td className="px-2.5 py-1.5 whitespace-nowrap align-middle w-[80px]">
 				<span className="font-mono font-bold text-[11px] text-teal-600 dark:text-teal-400">{num}</span>
 			</td>

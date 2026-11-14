@@ -149,10 +149,21 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 				"Idempotency-Key": clientMutationId,
 			});
 
-			const res = await fetch("/api/fiscal/refund", {
+			const isPaymentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(originalPaymentId || "");
+			const isInvoiceUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId || "");
+
+			const refundCashboxPayload = {
+				paymentId: isPaymentUuid ? originalPaymentId : undefined,
+				invoiceId: isInvoiceUuid ? invoiceId : undefined,
+				amountRub: calculation.totalRefundRub,
+				reasonText: reasonText.slice(0, 500),
+				cashierFullName: "Кассир-администратор",
+			};
+
+			const res = await fetch("/api/cashbox/refund", {
 				method: "POST",
 				headers,
-				body: JSON.stringify(refundPayload),
+				body: JSON.stringify(refundCashboxPayload),
 			});
 
 			if (res.ok) {
@@ -160,22 +171,26 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 					success?: boolean;
 					replayed?: boolean;
 					refundQueueId?: string;
+					fiscalReceiptQueueId?: string;
 					queueId?: string;
 					status?: string;
 					originalReceiptNumber?: string;
 					fnSerial?: string;
 					fiscalDocumentNumber?: string | number;
+					fiscalReceiptNumber?: string;
 					fiscalSign?: string;
 					ofdVerificationUrl?: string;
 					totalRefundRub?: string;
 				};
 				isOffline = resData.status === "hardware_offline";
-				finalQueueId = resData.refundQueueId || resData.queueId || clientMutationId;
+				finalQueueId = resData.fiscalReceiptQueueId || resData.refundQueueId || resData.queueId || clientMutationId;
 				if (resData.fnSerial) {
 					finalFnSerial = resData.fnSerial;
 				}
 				if (resData.fiscalDocumentNumber != null) {
 					finalDocNumber = String(resData.fiscalDocumentNumber);
+				} else if (resData.fiscalReceiptNumber != null) {
+					finalDocNumber = String(resData.fiscalReceiptNumber);
 				}
 				if (resData.fiscalSign != null) {
 					finalFiscalSign = String(resData.fiscalSign);

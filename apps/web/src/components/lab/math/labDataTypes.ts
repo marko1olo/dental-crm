@@ -21,6 +21,7 @@ export interface DentalLabOrderData {
 	jawScope?: JawScope | null;
 	constructionType?: string;
 	workType?: string | null | undefined;
+	materialId?: string | null | undefined;
 	material?: string | null;
 	impressionType?: string | null;
 	colorVita?: string | null;

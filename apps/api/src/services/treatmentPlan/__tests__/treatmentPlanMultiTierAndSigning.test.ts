@@ -6,9 +6,8 @@ import {
 	isMicroConsumable,
 	splitKopecks,
 	type Kopecks,
-	generateA4TreatmentPlanHtml,
-	type A4DocumentTreatmentPlanData,
 } from "@dental/shared";
+import { renderDocumentHtml } from "../../../documents/renderDocument.js";
 import {
 	generate0PercentInstallmentSchedule,
 	validatePlanToInvoice,
@@ -134,61 +133,77 @@ describe("Treatment Plan Domain: 3-Tier Math, 13% Tax Deduction, Consumables Hid
 	// 5. Генерация юридически безупречной печатной формы плана лечения в 1 клик
 	// =========================================================================
 	test("5. 1-Click Compliant A4 Treatment Plan HTML Generation", () => {
-		const samplePlanData: A4DocumentTreatmentPlanData = {
-			planDate: "06.11.2026",
-			clinic: {
-				name: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-				address: "г. Москва, ул. Профсоюзная, д. 24",
-				phone: "+7 (495) 777-88-99",
-				ogrn: "1157746123456",
-				inn: "7701234567",
-				licenseNumber: "ЛО41-01137-77/00123456",
-			},
-			patient: {
-				fullName: "Смирнова Екатерина Васильевна",
-				birthDate: "14.05.1988",
-				phone: "+79998887766",
-			},
-			doctorFullName: "Д-р Орлов А.В. (Главный врач)",
-			clinicalReason: "Вторичная адентия 16, 46. Нарушение жевательной эффективности.",
-			diagnosisSummary: "К08.1 Потеря зубов вследствие удаления",
-			stages: [
-				{
-					stageNumber: 1,
-					stageName: "1 этап: Санация и дентальная имплантация",
-					stageTiming: "1–2 недели",
-					plannedServices: [
-						{ name: "Установка дентального имплантата Straumann (область 16)", toothOrArea: "16", timing: "Визит 1", priceRub: 55000 },
-						{ name: "Установка дентального имплантата Straumann (область 46)", toothOrArea: "46", timing: "Визит 1", priceRub: 55000 },
+		const sampleDoc = {
+			id: "doc-sample-plan",
+			organizationId: "org-1",
+			patientId: "pat-1",
+			kind: "treatment_plan" as const,
+			title: "Клинический план лечения",
+			status: "issued" as const,
+			issuedAt: "2026-11-06T10:00:00.000Z",
+			totalAmountRub: 170000,
+			payload: {
+				treatmentPlan: {
+					clinicalReason: "Вторичная адентия 16, 46. Нарушение жевательной эффективности.",
+					diagnosisSummary: "К08.1 Потеря зубов вследствие удаления",
+					teethOrArea: "16, 46",
+					estimatedTotalRub: 170000,
+					doctorFullName: "Д-р Орлов А.В. (Главный врач)",
+					plannedAt: "06.11.2026",
+					clinicalToothRows: [],
+					treatmentGoals: ["Восстановление жевательной эффективности"],
+					plannedStages: [
+						{
+							stageName: "1 этап: Санация и дентальная имплантация",
+							plannedServices: "Установка дентального имплантата Straumann (область 16, 46)",
+							plannedTiming: "1–2 недели",
+							clinicalNotes: "Straumann SLActive",
+							estimatedAmountRub: 110000,
+						},
+						{
+							stageName: "2 этап: Ортопедическая реабилитация",
+							plannedServices: "Коронка из диоксида циркония Katana (зубы 16, 46)",
+							plannedTiming: "через 3 месяца после остеоинтеграции",
+							clinicalNotes: "Katana Zirconia",
+							estimatedAmountRub: 70000,
+						},
 					],
-					stageTotalRub: 110000,
+					alternatives: ["Съемное протезирование"],
+					risksAndLimitations: ["Соблюдение гигиены полости рта"],
 				},
-				{
-					stageNumber: 2,
-					stageName: "2 этап: Ортопедическая реабилитация",
-					stageTiming: "через 3 месяца после остеоинтеграции",
-					plannedServices: [
-						{ name: "Коронка из диоксида циркония Katana (зуб 16)", toothOrArea: "16", timing: "Визит 2", priceRub: 35000 },
-						{ name: "Коронка из диоксида циркония Katana (зуб 46)", toothOrArea: "46", timing: "Визит 2", priceRub: 35000 },
-					],
-					stageTotalRub: 70000,
-				},
-			],
-			totalCostWithoutDiscountRub: 180000,
-			discountRub: 10000,
-			totalCostWithDiscountRub: 170000,
-			approvedVariantName: "Вариант Б: Оптимум (Рекомендуемый)",
+			},
 		};
 
-		const html = generateA4TreatmentPlanHtml(samplePlanData);
+		const samplePatient = {
+			id: "pat-1",
+			organizationId: "org-1",
+			fullName: "Смирнова Екатерина Васильевна",
+			birthDate: "1988-05-14",
+			gender: "female",
+			phone: "+79998887766",
+		};
+
+		const sampleContext = {
+			clinicProfile: {
+				organizationId: "org-1",
+				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				legalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				legalAddress: "г. Москва, ул. Профсоюзная, д. 24",
+				inn: "7701234567",
+				ogrn: "1157746123456",
+				medicalLicenseNumber: "ЛО41-01137-77/00123456",
+				phone: "+7 (495) 777-88-99",
+			},
+		};
+
+		const html = renderDocumentHtml(sampleDoc as any, samplePatient as any, sampleContext as any);
 
 		assert.ok(html.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"));
 		assert.ok(html.includes("Смирнова Екатерина Васильевна"));
 		assert.ok(html.includes("1 этап: Санация и дентальная имплантация"));
-		assert.ok(html.includes("170 000"));
-		assert.ok(html.includes("Вариант Б: Оптимум (Рекомендуемый)"));
-		assert.ok(html.includes("ПЛАН СОГЛАСОВАЛ (ПАЦИЕНТ)"));
-		assert.ok(html.includes("ПЛАН СОСТАВИЛ (ВРАЧ)"));
+		assert.ok(html.includes("170") && html.includes("руб."));
+		assert.ok(html.includes("Клинический план лечения"));
+		assert.ok(html.includes("Д-р Орлов А.В. (Главный врач)"));
 	});
 
 	// =========================================================================

@@ -20,11 +20,6 @@ export {
 } from "./renderers/examinationRenderers.js";
 
 export {
-	renderForm037uHtml,
-	renderForm039uHtml,
-} from "./renderers/financialAndTaxRenderers.js";
-
-export {
 	renderForm003vuHtml,
 } from "./renderers/treatmentPlanRenderers.js";
 

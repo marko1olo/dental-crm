@@ -12,6 +12,7 @@ import { PricelistStudioModal } from "../catalog/PricelistStudioModal.js";
 import type { PricelistClinicalBundle, PricelistStudioItem } from "../catalog/pricelistCatalogData.js";
 import { showToast } from "../GlobalToast.js";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "./visitBillingTypes.js";
+import type { DmsGuaranteeLetter } from "@dental/shared";
 
 export interface VisitBillingModalsProps {
 	isPaymentModalOpen: boolean;
@@ -34,14 +35,14 @@ export interface VisitBillingModalsProps {
 	effectiveDmsCoverage: number;
 	initialSplitDmsRub?: number | undefined;
 	services: VisitBillingServiceItem[];
-	onPaymentSuccess?: ((res: any) => void) | undefined;
+	onPaymentSuccess?: ((res?: unknown) => void) | undefined;
 
 	selectedBomService: VisitBillingServiceItem | null;
 	onCloseBomModal: () => void;
 
 	isDmsModalOpen: boolean;
 	onCloseDmsModal: () => void;
-	onSaveDmsLetter: (savedLetter: any) => void;
+	onSaveDmsLetter: (savedLetter: DmsGuaranteeLetter) => void;
 
 	isPricelistOpen?: boolean | undefined;
 	onClosePricelist?: (() => void) | undefined;

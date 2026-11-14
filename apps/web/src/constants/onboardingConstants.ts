@@ -73,9 +73,18 @@ export type PatientAdministrativeProfileDraft = {
 		| "preferredAppointmentWeekdays"
 		| "isAnonymous"
 		| "anonymousCode"
-		| "decree659Compliance"
 		| "consentSignatures"
 		| "clinicalSafetyProfile"
+		| "curatorStageUpdatedAt"
+		| "curatorPlanStages"
+		| "portalSessionRevokedAt"
+		| "selectedTreatmentTier"
+		| "treatmentTierSelectedAt"
+		| "somaticQuestionnaire"
+		| "somaticRiskProfile"
+		| "somaticAlerts"
+		| "somaticRiskLevel"
+		| "somaticUpdatedAt"
 		| "utmSource"
 		| "utmMedium"
 		| "utmCampaign"
@@ -94,7 +103,6 @@ export type PatientAdministrativeProfileDraft = {
 	preferredAppointmentWeekdays: number[];
 	isAnonymous?: boolean | null;
 	anonymousCode?: string | null;
-	decree659Compliance?: Record<string, unknown> | null;
 	consentSignatures?: Record<string, unknown> | null;
 	clinicalSafetyProfile?: Record<string, unknown> | null;
 	dmsPolicyNumber?: string | null;

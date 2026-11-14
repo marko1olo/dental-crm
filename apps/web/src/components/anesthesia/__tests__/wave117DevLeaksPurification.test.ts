@@ -39,8 +39,8 @@ describe("Wave 117: Dev Leaks Purification (Mandates 8a–8q)", () => {
 		const content = fs.readFileSync(filePath, "utf-8");
 		assert.ok(!content.includes("Мандат 8e"), "chairsideConsentEngine must NOT contain prompt text 'Мандат 8e'");
 		assert.ok(
-			content.includes("ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)"),
-			"legalStampText must strictly follow official regulatory citation",
+			content.includes("ЛИЧНОЕ СОГЛАСИЕ ПАЦИЕНТА У КРЕСЛА"),
+			"legalStampText must strictly follow official clinical terminology",
 		);
 	});
 

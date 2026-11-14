@@ -12,18 +12,25 @@ export interface UseLabOrdersDataParams {
 }
 
 export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFromEvent }: UseLabOrdersDataParams) {
+	const isDemo = isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"));
 	const [orders, setOrders] = useState<DentalLabOrderData[]>(() =>
-		initialOrders ? [...initialOrders] : [],
+		initialOrders ? [...initialOrders] : isDemo ? [...CANONICAL_DEMO_LAB_ORDERS] : [],
 	);
-	const [isLoading, setIsLoading] = useState(!initialOrders);
+	const [isLoading, setIsLoading] = useState(!initialOrders && !isDemo);
 	const [error, setError] = useState<string | null>(null);
 	const labOrderStatuses = useAppStore((state) => (state as { labOrderStatuses?: unknown }).labOrderStatuses);
 
 	const fetchOrders = useCallback(async () => {
 		try {
-			setIsLoading(true);
+			setOrders((current) => {
+				if (current.length === 0) setIsLoading(true);
+				return current;
+			});
 			setError(null);
-			const res = await fetch("/api/lab/orders", { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch("/api/lab/orders", {
+				headers: denteAdminSecretRequestHeaders(),
+				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(2500) : undefined,
+			});
 			if (!res.ok) {
 				if (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"))) {
 					setOrders([...CANONICAL_DEMO_LAB_ORDERS]);

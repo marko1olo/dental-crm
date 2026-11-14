@@ -3,66 +3,62 @@
  */
 
 import type { DentalLabWorkflowOrder, LabWorkflowStatus, OrthopedicWorkTypeId } from "./dentalLabWorkflowEngine";
-import { checkLabDeadlineAndAlert } from "./workflowEngine/workflowDeadlineAlerts";
+import { checkLabDeadlineAndAlert } from "./dentalLabWorkflowEngine";
+import type { DentalLabOrderData } from "./labMath";
 
 export interface RawDentalLabOrderApiRecord {
-	readonly id?: string;
-	readonly orderNumber?: string;
-	readonly order_number?: string;
-	readonly patientId?: string;
-	readonly patient_id?: string;
-	readonly patientName?: string;
-	readonly patient_name?: string;
-	readonly doctorId?: string;
-	readonly doctor_id?: string;
-	readonly doctorName?: string;
-	readonly doctor_name?: string;
-	readonly clinicName?: string;
-	readonly clinic_name?: string;
-	readonly labName?: string;
-	readonly lab_name?: string;
-	readonly workTypeId?: string;
-	readonly constructionType?: string;
-	readonly materialName?: string;
-	readonly material?: string;
-	readonly toothFdi?: string | number;
-	readonly shadeSystem?: "classical" | "3d_master" | "bleach";
-	readonly shadeCode?: string;
-	readonly colorVita?: string;
-	readonly stumpShadeCode?: string;
-	readonly shadeStump?: string;
-	readonly translucency?: "HT" | "MT" | "LT" | "MO" | "HO";
-	readonly surfaceTexture?: "high_gloss" | "microtexture" | "matte";
-	readonly currentStage?: string;
-	readonly status?: string;
-	readonly stageHistory?: readonly {
-		readonly stage: LabWorkflowStatus;
-		readonly timestampIso: string;
-		readonly authorName: string;
-		readonly note?: string | undefined;
-	}[];
-	readonly createdAt?: string;
-	readonly updatedAt?: string;
-	readonly orderDateIso?: string;
-	readonly dueDate?: string;
-	readonly expectedLabDateIso?: string;
-	readonly scheduledVisitDateIso?: string;
-	readonly scheduledVisitDate?: string;
-	readonly fittingDate?: string;
-	readonly fittingDateIso?: string;
-	readonly appointmentId?: string;
-	readonly patientPriceRub?: number;
-	readonly priceRub?: number;
-	readonly patientPriceKopecks?: number | string;
-	readonly priceKopecks?: number | string;
-	readonly labCostRub?: number;
-	readonly costRub?: number;
-	readonly costKopecks?: number | string;
-	readonly labCostKopecks?: number | string;
-	readonly [key: string]: unknown;
+	readonly id?: string | null | undefined;
+	readonly orderNumber?: string | null | undefined;
+	readonly order_number?: string | null | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly patient_id?: string | null | undefined;
+	readonly patientName?: string | null | undefined;
+	readonly patient_name?: string | null | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctor_id?: string | null | undefined;
+	readonly doctorName?: string | null | undefined;
+	readonly doctor_name?: string | null | undefined;
+	readonly clinicName?: string | null | undefined;
+	readonly clinic_name?: string | null | undefined;
+	readonly labName?: string | null | undefined;
+	readonly lab_name?: string | null | undefined;
+	readonly workTypeId?: string | null | undefined;
+	readonly constructionType?: string | null | undefined;
+	readonly materialName?: string | null | undefined;
+	readonly materialId?: string | null | undefined;
+	readonly material?: string | null | undefined;
+	readonly toothFdi?: string | number | null | undefined;
+	readonly shadeSystem?: "classical" | "3d_master" | "bleach" | null | undefined;
+	readonly shadeCode?: string | null | undefined;
+	readonly colorVita?: string | null | undefined;
+	readonly stumpShadeCode?: string | null | undefined;
+	readonly shadeStump?: string | null | undefined;
+	readonly translucency?: "HT" | "MT" | "LT" | "MO" | "HO" | string | null | undefined;
+	readonly surfaceTexture?: "high_gloss" | "microtexture" | "matte" | string | null | undefined;
+	readonly currentStage?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly stageHistory?: readonly unknown[] | null | undefined;
+	readonly createdAt?: string | null | undefined;
+	readonly updatedAt?: string | null | undefined;
+	readonly orderDateIso?: string | null | undefined;
+	readonly dueDate?: string | null | undefined;
+	readonly expectedLabDateIso?: string | null | undefined;
+	readonly scheduledVisitDateIso?: string | null | undefined;
+	readonly scheduledVisitDate?: string | null | undefined;
+	readonly fittingDate?: string | null | undefined;
+	readonly fittingDateIso?: string | null | undefined;
+	readonly appointmentId?: string | null | undefined;
+	readonly patientPriceRub?: number | null | undefined;
+	readonly priceRub?: number | null | undefined;
+	readonly patientPriceKopecks?: number | string | null | undefined;
+	readonly priceKopecks?: number | string | null | undefined;
+	readonly labCostRub?: number | null | undefined;
+	readonly costRub?: number | null | undefined;
+	readonly costKopecks?: number | string | null | undefined;
+	readonly labCostKopecks?: number | string | null | undefined;
 }
 
-function normalizeWorkTypeId(rawId?: string): OrthopedicWorkTypeId {
+function normalizeWorkTypeId(rawId?: string | null): OrthopedicWorkTypeId {
 	switch (rawId) {
 		case "crown_zirconia":
 		case "crown_emax":
@@ -95,7 +91,7 @@ function normalizeWorkTypeId(rawId?: string): OrthopedicWorkTypeId {
 	}
 }
 
-function normalizeLabWorkflowStatus(rawStage?: string): LabWorkflowStatus {
+function normalizeLabWorkflowStatus(rawStage?: string | null): LabWorkflowStatus {
 	switch (rawStage) {
 		case "draft":
 		case "sent_to_lab":
@@ -136,8 +132,71 @@ function normalizeLabWorkflowStatus(rawStage?: string): LabWorkflowStatus {
 	}
 }
 
+function normalizeTranslucency(t?: string | null): "HT" | "MT" | "LT" | "MO" | "HO" {
+	switch (t) {
+		case "HT":
+		case "MT":
+		case "LT":
+		case "MO":
+		case "HO":
+			return t;
+		default:
+			return "MT";
+	}
+}
+
+function normalizeSurfaceTexture(s?: string | null): "high_gloss" | "microtexture" | "matte" {
+	switch (s) {
+		case "high_gloss":
+		case "microtexture":
+		case "matte":
+			return s;
+		default:
+			return "microtexture";
+	}
+}
+
+function normalizeStageHistory(
+	history: readonly unknown[] | null | undefined,
+	currentStage: LabWorkflowStatus,
+	createdAtIso: string,
+	doctorName: string,
+): DentalLabWorkflowOrder["stageHistory"] {
+	if (!Array.isArray(history) || history.length === 0) {
+		return [
+			{
+				stage: currentStage,
+				timestampIso: createdAtIso,
+				authorName: doctorName,
+				note: "Импортировано из медицинской карты",
+			},
+		];
+	}
+	return history.map((item) => {
+		if (item && typeof item === "object") {
+			const rec = item as Record<string, unknown>;
+			const rawStage = typeof rec.stage === "string" ? rec.stage : undefined;
+			const timestampIso = typeof rec.timestampIso === "string" ? rec.timestampIso : typeof rec.timestamp === "string" ? rec.timestamp : createdAtIso;
+			const authorName = typeof rec.authorName === "string" ? rec.authorName : doctorName;
+			const note = typeof rec.note === "string" ? rec.note : undefined;
+			return {
+				stage: normalizeLabWorkflowStatus(rawStage),
+				timestampIso,
+				authorName,
+				note,
+			};
+		}
+		return {
+			stage: currentStage,
+			timestampIso: createdAtIso,
+			authorName: doctorName,
+			note: undefined,
+		};
+	});
+}
+
 export function mapRawApiOrderToWorkflowOrder(
-	raw: RawDentalLabOrderApiRecord,
+	raw: RawDentalLabOrderApiRecord | DentalLabOrderData,
 	idx: number,
 	defaultPatientId?: string,
 	defaultPatientName?: string,
@@ -162,9 +221,9 @@ export function mapRawApiOrderToWorkflowOrder(
 		appointmentId: raw.appointmentId || undefined,
 		isInstalledOrCompleted: isCompleted,
 		orderNumber: raw.orderNumber || raw.order_number || `ЗТЛ-${1000 + idx}`,
-		patientName: raw.patientName || raw.patient_name || defaultPatientName,
-		doctorName: raw.doctorName || raw.doctor_name || defaultDoctorName,
-		labName: raw.labName || raw.lab_name,
+		patientName: (raw.patientName || raw.patient_name || defaultPatientName) ?? undefined,
+		doctorName: (raw.doctorName || raw.doctor_name || defaultDoctorName) ?? undefined,
+		labName: (raw.labName || raw.lab_name) ?? undefined,
 	});
 
 	const marginPercent = priceRub > 0 ? Math.round(((priceRub - costRub) / priceRub) * 1000) / 10 : 0;
@@ -184,19 +243,15 @@ export function mapRawApiOrderToWorkflowOrder(
 		shadeSystem: raw.shadeSystem || "classical",
 		shadeCode: raw.shadeCode || raw.colorVita || "A2",
 		stumpShadeCode: raw.stumpShadeCode || raw.shadeStump || undefined,
-		translucency: raw.translucency || "MT",
-		surfaceTexture: raw.surfaceTexture || "microtexture",
+		translucency: normalizeTranslucency(raw.translucency),
+		surfaceTexture: normalizeSurfaceTexture(raw.surfaceTexture),
 		currentStage: normalizeLabWorkflowStatus(raw.currentStage || raw.status),
-		stageHistory: Array.isArray(raw.stageHistory)
-			? (raw.stageHistory as DentalLabWorkflowOrder["stageHistory"])
-			: [
-					{
-						stage: normalizeLabWorkflowStatus(raw.currentStage || raw.status),
-						timestampIso: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
-						authorName: typeof raw.doctorName === "string" ? raw.doctorName : defaultDoctorName || "Врач-ортопед",
-						note: "Импортировано из медицинской карты",
-					},
-			  ],
+		stageHistory: normalizeStageHistory(
+			raw.stageHistory,
+			normalizeLabWorkflowStatus(raw.currentStage || raw.status),
+			typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
+			typeof raw.doctorName === "string" ? raw.doctorName : defaultDoctorName || "Врач-ортопед",
+		),
 		orderDateIso: (raw.orderDateIso || raw.createdAt || new Date().toISOString()).slice(0, 10),
 		expectedLabDateIso: (raw.expectedLabDateIso || raw.dueDate || new Date().toISOString()).slice(0, 10),
 		scheduledVisitDateIso: raw.scheduledVisitDateIso?.slice(0, 10),

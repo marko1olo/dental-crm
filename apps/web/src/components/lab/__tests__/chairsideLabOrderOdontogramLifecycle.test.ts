@@ -14,8 +14,8 @@ import {
 	CANONICAL_STAMP_MATRIX,
 	normalizeToothState,
 	getGostAbbreviation,
-	type ToothState,
 } from "@dental/shared";
+import type { ToothState } from "../../odontogram/chart/types/toothStateUnion";
 import { getAnatomicalToothColors } from "../../odontogram/AnatomicalToothColors";
 import { getToothColors } from "../../odontogram/chart/ToothColors";
 import { GOST_ABBREVIATIONS, GOST_TOOTH_STATES, getToothStateFromHotkey } from "../../odontogram/gost/gostPathologyCodes";

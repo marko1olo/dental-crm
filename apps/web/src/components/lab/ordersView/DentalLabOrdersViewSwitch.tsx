@@ -77,6 +77,7 @@ export function DentalLabOrdersViewSwitch({ logic }: DentalLabOrdersViewSwitchPr
 				onMarkInstalled={handleMarkInstalled} onAttach3DScan={handleAttach3DScan} onAttachBitePhoto={handleAttachBitePhoto}
 				onTechnicianComment={handleTechnicianComment} onRepeatFitting={handleRepeatFitting} onReclamation={handleReclamation}
 				onOpenEditOrder={handleOpenEditOrder} copyPortalLink={copyPortalLink} getStatusBadge={getStatusBadge}
+				onBatchStatusChange={logic.handleBatchStatusChange}
 			/>
 		);
 	}

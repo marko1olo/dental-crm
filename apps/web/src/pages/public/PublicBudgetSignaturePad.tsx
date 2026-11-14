@@ -263,7 +263,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 					className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-cyan-600 focus:ring-0 bg-white dark:bg-slate-950"
 				/>
 				<span>
-					Я подтверждаю согласие с предложенным планом лечения и стоимостью (ст. 20 323-ФЗ и ПП РФ №659).
+					Я подтверждаю согласие с предложенным планом лечения и стоимостью (ст. 20 323-ФЗ, ст. 16 ЗоЗПП и ПП РФ № 736).
 				</span>
 			</label>
 

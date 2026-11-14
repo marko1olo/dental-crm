@@ -200,7 +200,11 @@ export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
 
 export const createPaymentSchema = z
 	.object({
-		patientId: z.string().uuid(),
+		patientId: z
+			.preprocess(
+				(val) => (typeof val === "string" && (val.trim() === "" || val === "pat-walkin" || !val.includes("-")) ? null : val),
+				z.string().uuid().nullable().optional(),
+			),
 		visitId: z.string().uuid().nullable().optional(),
 		documentId: z.string().uuid().nullable().optional(),
 		serviceId: z.string().uuid().nullable().optional(),

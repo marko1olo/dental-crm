@@ -148,7 +148,7 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 			// 4. Cash reconciliation
 			assert.ok(html.includes("Сверка фактической наличности"), "Must show cash reconciliation title");
 			assert.ok(html.includes("В ящике должно быть"), "Must show expected drawer cash formula");
-			assert.ok(html.includes("Сходится ✓"), "Must show matched cash badge when balanced");
+			assert.ok(html.includes("Сходится"), "Must show matched cash badge when balanced");
 			assert.ok(html.includes("Сверка терминала эквайринга"), "Must show terminal reconciliation");
 
 			// 5. Encashment / withdrawal options

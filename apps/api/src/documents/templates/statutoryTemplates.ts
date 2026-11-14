@@ -4,8 +4,6 @@ import {
 	type Patient,
 	renderForm043uHtml,
 	renderForm043_1uHtml,
-	renderForm037uHtml,
-	renderForm039uHtml,
 	renderRadiationDoseSheetHtml,
 	renderGraphicalDentalFormulaHtml,
 } from "@dental/shared";
@@ -111,19 +109,11 @@ export function orthodonticMedicalCard043_1u(
 }
 
 export function dailyDentistDiary037u(document: GeneratedDocument): string {
-	const payload = document.payload?.dailyDentistDiary037u;
-	if (payload) {
-		return renderForm037uHtml(payload);
-	}
-	return `<section><h2>Листок ежедневного учета работы врача-стоматолога (форма 037/у-88)</h2><p>Данные ежедневного учета не заполнены.</p></section>`;
+	return `<section><h2>Листок ежедневного учета (форма 037/у-88)</h2><p class="notice">Советская форма 037/у-88 (УЕТ 1988 г.) выведена из эксплуатации в частной стоматологии. Вся медицинская деятельность ведется в цифровой ЭМК (форма 043/у).</p></section>`;
 }
 
 export function summaryDentistStatement039u(document: GeneratedDocument): string {
-	const payload = document.payload?.summaryDentistStatement039u;
-	if (payload) {
-		return renderForm039uHtml(payload);
-	}
-	return `<section><h2>Сводная ведомость учета работы врача-стоматолога (форма 039/у-88)</h2><p>Данные сводной ведомости не заполнены.</p></section>`;
+	return `<section><h2>Сводная ведомость (форма 039/у-88)</h2><p class="notice">Советская форма 039/у-88 (УЕТ 1988 г.) выведена из эксплуатации в частной стоматологии. Аналитика смен и выработки доступна в клинических отчетах CRM.</p></section>`;
 }
 
 export function radiationDoseSheet(

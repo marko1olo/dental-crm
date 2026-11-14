@@ -3,7 +3,6 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { db as dbType } from "../../../db/client.js";
 import { users } from "../../../db/schema/auth.js";
 import {
-	generatedDocuments,
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../db/schema/clinical.js";
@@ -68,23 +67,10 @@ export async function verifyGenerateInvoiceCompliance(params: {
 					.where(and(eq(treatmentPlanItemsNew.organizationId, orgId), inArray(treatmentPlanItemsNew.planId, approvedPlanIds)))
 			: [];
 
-	const [addendumDoc] = await db
-		.select({ id: generatedDocuments.id, totalAmountRub: generatedDocuments.totalAmountRub })
-		.from(generatedDocuments)
-		.where(and(eq(generatedDocuments.organizationId, orgId), eq(generatedDocuments.patientId, data.patientId), eq(generatedDocuments.kind, "treatment_plan_acceptance"), eq(generatedDocuments.status, "issued")))
-		.limit(1);
-
 	for (const item of data.items) {
 		const isApproved = isServiceApprovedInPlanItems(item, planItems);
 		if (!isApproved) {
-			if (!addendumDoc && data.allowUnplannedServices === false) {
-				reply.code(422).send({
-					error: "UpsellConsentShieldViolationError",
-					message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
-				});
-				return null;
-			}
-			request.log.info({ item: item.nameRu }, "[Invoices] Unplanned service added by doctor/staff at chairside without blocking (Mandates 8e/8n)");
+			request.log.info({ item: item.nameRu }, "[Invoices] Service added by doctor/staff at chairside without blocking (Mandates 8e/8n)");
 		}
 	}
 

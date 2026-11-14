@@ -151,5 +151,6 @@ export * from "./guestLabPortalHelpers";
 export * from "./dentalLabWorkflowEngine";
 export * from "./dentalLabApiMapper";
 export * from "./dentalLabEvents";
+export * from "./expressLabOrderHelper";
 export * from "./ordersView";
 export * from "./mobile/MobileLabOrdersTimeline";

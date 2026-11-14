@@ -8,7 +8,6 @@
 export * from "./types.js";
 export * from "./sharedStyles.js";
 export * from "./examinationRenderers.js";
-export * from "./financialAndTaxRenderers.js";
 export * from "./treatmentPlanRenderers.js";
 export * from "./prescriptionRenderers.js";
 export * from "./consentRenderers.js";

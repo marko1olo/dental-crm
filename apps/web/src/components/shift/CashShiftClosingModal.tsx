@@ -45,6 +45,9 @@ export interface ZReportData {
 	readonly force: boolean;
 	readonly allowUnfinishedVisits: boolean;
 	readonly idempotencyKey: string;
+	readonly fiscalDocNumber?: string | number | null | undefined;
+	readonly fiscalSign?: string | null | undefined;
+	readonly qrString?: string | null | undefined;
 	readonly [key: string]: unknown;
 }
 
@@ -53,6 +56,7 @@ export interface CashShiftClosingModalProps {
 	readonly onClose: () => void;
 	readonly shiftNumber?: number | undefined;
 	readonly cashierFullName?: string | undefined;
+	readonly cashierName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
 	readonly initialChangeFundRub?: number | undefined;
 	readonly cashInDrawerRub?: number | undefined;
@@ -67,7 +71,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	isOpen,
 	onClose,
 	shiftNumber = 1,
-	cashierFullName = "Администратор / Кассир",
+	cashierFullName: cashierFullNameProp,
+	cashierName,
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	initialChangeFundRub = 5000,
 	cashInDrawerRub,
@@ -77,6 +82,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	advanceOffsetRub = 0,
 	onShiftClosed,
 }) => {
+	const cashierFullName = cashierFullNameProp || cashierName || "Администратор / Кассир";
 	const titleId = useId();
 
 	// Revenue numbers in integer kopecks
@@ -167,7 +173,14 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			}
 
 			const json = await res.json().catch(() => null);
-			const zReport = (json?.reconciliation || payload) as ZReportData;
+			const rawReport = (json?.zReportData || json?.reconciliation || payload) as Record<string, unknown>;
+			const zReport: ZReportData = {
+				...payload,
+				...rawReport,
+				fiscalDocNumber: (rawReport.fiscalDocNumber ?? json?.reconciliation?.fiscalDocNumber ?? json?.zReportData?.fiscalDocNumber) as string | number | undefined,
+				fiscalSign: (rawReport.fiscalSign ?? json?.reconciliation?.fiscalSign ?? json?.zReportData?.fiscalSign) as string | undefined,
+				qrString: (rawReport.qrString ?? json?.reconciliation?.qrString ?? json?.zReportData?.qrString) as string | undefined,
+			};
 
 			setClosedSuccessData(zReport);
 			setIsSubmitting(false);
@@ -304,7 +317,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								{isCashMatched ? (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
 										<CheckCircle2 className="w-4 h-4 text-emerald-600" />
-										Сходится
+										Сходится ✓
 									</span>
 								) : (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold">

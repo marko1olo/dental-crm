@@ -56,20 +56,23 @@ export function getStatusBadge(status?: string): React.ReactNode {
 			);
 		case "sent":
 		case "sent_to_lab":
+		case "scan_sent":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
 					Отправлен в лабораторию
 				</span>
 			);
 		case "in_progress":
+		case "in_production":
 		case "cad_modeling":
 		case "model_cad_design":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-					На моделировании
+					В производстве
 				</span>
 			);
 		case "fitting":
+		case "fitting_scheduled":
 		case "refitting":
 		case "try_in":
 			return (
@@ -82,6 +85,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "shipped":
 		case "delivered":
 		case "received":
+		case "in_clinic":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
 					Готов в клинике
@@ -92,12 +96,19 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "fitted":
 		case "patient_fixation":
 		case "installed_completed":
+		case "seated":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
 					Установлен пациенту
 				</span>
 			);
 		case "warranty_rework":
+		case "rejected_remake":
+			return (
+				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+					Гарантия / Переделка
+				</span>
+			);
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
 					Гарантия / Переделка

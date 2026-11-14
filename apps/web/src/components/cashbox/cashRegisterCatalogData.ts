@@ -10,6 +10,8 @@
  * - Sweet Spot size: 280-350 lines.
  */
 
+import { rublesToKopecks, kopecksToRubles, formatRubles as formatRublesShared } from "@dental/shared";
+
 export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment";
 export type ClientPayerType = "physical_person" | "legal_entity" | "sole_proprietor";
 export type ReceiptDeliveryChannel = "print" | "sms" | "email" | "electronic_only";
@@ -72,16 +74,16 @@ export interface CashChangeResult {
 /* 1. EXACT INTEGER KOPECK FINANCIAL HELPERS (ZERO FLOAT DRIFT)              */
 /* ========================================================================= */
 
-/** Safely converts rubles to exact integer BigInt kopecks */
+/** Safely converts rubles to exact integer BigInt kopecks via canonical @dental/shared */
 export function rubToKopecks(rub: number): bigint {
 	if (!Number.isFinite(rub) || rub <= 0) return 0n;
-	return BigInt(Math.round(rub * 100));
+	return BigInt(rublesToKopecks(rub));
 }
 
-/** Converts integer kopecks to float rubles for display */
+/** Converts integer kopecks to float rubles for display via canonical @dental/shared */
 export function kopecksToRub(kopecks: bigint | number): number {
 	const kop = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
-	return Math.round(kop) / 100;
+	return kopecksToRubles(kop);
 }
 
 /** Formats integer kopecks into clean Russian rubles: "15 400 ₽" or "15 400,50 ₽" */
@@ -306,14 +308,14 @@ export function getDemoUnpaidInvoices() {
 export function generateFiscalTapeText(params: {
 	shiftNumber: number;
 	cashierFullName: string;
-	kktRegNumber?: string;
-	ofdName?: string;
-	netRevenueRub?: number;
-	cashInDrawerRub?: number;
-	cardSumRub?: number;
-	sbpSumRub?: number;
-	advanceOffsetRub?: number;
-	width?: "tape_80mm" | "tape_58mm";
+	kktRegNumber?: string | undefined;
+	ofdName?: string | undefined;
+	netRevenueRub?: number | undefined;
+	cashInDrawerRub?: number | undefined;
+	cardSumRub?: number | undefined;
+	sbpSumRub?: number | undefined;
+	advanceOffsetRub?: number | undefined;
+	width?: "tape_80mm" | "tape_58mm" | undefined;
 }): string {
 	const w = params.width === "tape_58mm" ? 32 : 42;
 	const div = "=".repeat(w);

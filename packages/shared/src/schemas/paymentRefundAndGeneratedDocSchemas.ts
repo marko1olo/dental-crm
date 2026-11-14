@@ -5,7 +5,7 @@ import { anesthesiaConsentPayloadSchema, clinicalToothRowsSchema, installmentPay
 import { completedWorksActPayloadSchema, paidMedicalServicesContractPayloadSchema, patientIntakeQuestionnairePayloadSchema, paymentInvoicePayloadSchema, paymentReceiptPayloadSchema, treatmentCostEstimatePayloadSchema } from "./telegramAndReceiptSchemas.js";
 import { nonNegativeMoneyRubSchema, positiveMoneyRubSchema } from "../money.js";
 import { procedureSpecificConsentProcedureSchema } from "../legal/legalContractsAndConsents.js";
-import { dailyDentistDiary037uPayloadSchema, type DocumentKind, documentKindSchema, fullForm043uPayloadSchema, legacyTaxDeductionCertificateMinYear, medicalCardExtract003vuPayloadSchema, orthodonticCard043_1uPayloadSchema, radiationDoseSheetPayloadSchema, summaryDentistStatement039uPayloadSchema } from "../documents/index.js";
+import { type DocumentKind, documentKindSchema, fullForm043uPayloadSchema, legacyTaxDeductionCertificateMinYear, medicalCardExtract003vuPayloadSchema, orthodonticCard043_1uPayloadSchema, radiationDoseSheetPayloadSchema } from "../documents/index.js";
 import { paymentSchema } from "../fiscal/index.js";
 import { patientSchema } from "../patients/index.js";
 
@@ -194,9 +194,9 @@ export const documentPayloadSchema = z
 		dentalMedicalCard043u: dentalMedicalCard043uPayloadSchema.optional(),
 		fullForm043u: fullForm043uPayloadSchema.optional(),
 		orthodonticCard043_1u: orthodonticCard043_1uPayloadSchema.optional(),
-		dailyDentistDiary037u: dailyDentistDiary037uPayloadSchema.optional(),
+		dailyDentistDiary037u: z.record(z.string(), z.unknown()).optional(),
 		summaryDentistStatement039u:
-			summaryDentistStatement039uPayloadSchema.optional(),
+			z.record(z.string(), z.unknown()).optional(),
 		medicalCardExtract003vu: medicalCardExtract003vuPayloadSchema.optional(),
 		radiationDoseSheet: radiationDoseSheetPayloadSchema.optional(),
 		medicalRecordExtract: medicalRecordExtractPayloadSchema.optional(),

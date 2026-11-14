@@ -81,6 +81,7 @@ export interface CloseShiftResponseBody {
 	message: string;
 	closedShiftsCount: number;
 	shifts: CashBoxShiftSelect[];
+	zReportData?: ZReportDataPayload | undefined;
 	reconciliation?: {
 		countedCashRub: number | null;
 		expectedCashInDrawerRub?: number | null | undefined;

@@ -65,6 +65,7 @@ export const cashWithdrawalBodySchema = z.object({
 export const xReportQueryOrBodySchema = z.object({
 	cashierFullName: z.string().trim().optional(),
 	shiftNumber: z.coerce.number().int().optional(),
+	print: z.coerce.boolean().optional(),
 });
 
 export const cashOperationListQuerySchema = z.object({
@@ -78,9 +79,9 @@ export const cashRefundBodySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
 	amountRub: positiveMoneyRubSchema,
 	reasonText: z.string().trim().max(500).optional().default("Возврат денежных средств покупателю"),
-	invoiceId: z.string().uuid().optional(),
-	paymentId: z.string().uuid().optional(),
-	operatorId: z.string().uuid().optional(),
+	invoiceId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
+	paymentId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
+	operatorId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
 	cashierFullName: z.string().trim().optional(),
 });
 
@@ -115,10 +116,16 @@ export const cashboxPaymentRequestSchema = z.object({
 		]).optional().default("card"),
 	),
 	isWarranty: z.boolean().optional(),
+	familyGroupId: z.string().uuid().optional(),
+	payerFullName: z.string().trim().max(256).optional(),
 	cashAmountKopecks: z.number().int().nonnegative().optional(),
 	electronicAmountKopecks: z.number().int().nonnegative().optional(),
 	depositAmountKopecks: z.number().int().nonnegative().optional(),
 	bonusAmountKopecks: z.number().int().nonnegative().optional(),
+	cashAmountRub: nonNegativeMoneyRubSchema.optional(),
+	electronicAmountRub: nonNegativeMoneyRubSchema.optional(),
+	depositAmountRub: nonNegativeMoneyRubSchema.optional(),
+	bonusAmountRub: nonNegativeMoneyRubSchema.optional(),
 	splitTenders: z.array(
 		z.object({
 			method: z.string(),

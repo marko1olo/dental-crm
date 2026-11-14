@@ -110,7 +110,7 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 			assert.ok(cleanHtml.includes("36 250"));
 
 			// Must warn about unsigned EMR
-			assert.ok(cleanHtml.includes("Не подписано электронных карт 043/у: 1"));
+			assert.ok(cleanHtml.includes("Не подписано электронных медкарт: 1"));
 
 			// Mandate 8d: Zero cartoon emojis
 			assert.equal(
@@ -160,9 +160,9 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 			);
 
 			const cleanHtml = cleanSsrHtml(html);
-			assert.ok(cleanHtml.includes("Сверка кассы 54-ФЗ и фискальный Z-отчёт"));
+			assert.ok(cleanHtml.includes("Сверка кассы и фискальный Z-отчёт"));
 			assert.ok(cleanHtml.includes("Сверено без расхождений (0 ₽)"));
-			assert.ok(cleanHtml.includes("Касса 54-ФЗ сходится (0 ₽)"));
+			assert.ok(cleanHtml.includes("Касса сходится (0 ₽)"));
 			assert.ok(cleanHtml.includes("Снять Z-отчёт с закрытием смены"));
 			assert.ok(cleanHtml.includes("Сформировать сводку смены врача"));
 			assert.ok(cleanHtml.includes("Завершить смену и рассчитать"));

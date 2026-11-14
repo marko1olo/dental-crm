@@ -8,8 +8,6 @@
 export * from "./documentKind.js";
 export * from "./forms043u.js";
 export * from "./forms043_1u.js";
-export * from "./forms037u.js";
-export * from "./forms039u.js";
 export * from "./forms003vu.js";
 export * from "./radiationDoseSheet.js";
 export * from "./informedConsent1051n.js";
@@ -24,5 +22,4 @@ export * from "./ndflXmlGenerator.js";
 export * from "./templateEngine.js";
 export * from "./templateVariablesRegistry.js";
 export * from "./templates/index.js";
-export * from "./professionalA4DocumentEngine.js";
 

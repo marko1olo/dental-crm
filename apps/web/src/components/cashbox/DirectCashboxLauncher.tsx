@@ -15,27 +15,27 @@ import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { getDemoUnpaidInvoices } from "./cashRegisterCatalogData.js";
 
 interface CashboxLauncherDetail {
-	readonly mode?: "checkout" | "hub";
-	readonly amountRub?: number;
-	readonly amount?: number;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly patientPhone?: string;
-	readonly invoiceId?: string;
-	readonly cashierFullName?: string;
+	readonly mode?: "checkout" | "hub" | undefined;
+	readonly amountRub?: number | undefined;
+	readonly amount?: number | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly invoiceId?: string | undefined;
+	readonly cashierFullName?: string | undefined;
 }
 
 interface ParsedCashboxUrl {
 	readonly isOpen: boolean;
 	readonly view: "checkout" | "hub";
 	readonly params?: {
-		readonly patientId?: string;
-		readonly patientName?: string;
-		readonly patientPhone?: string;
-		readonly invoiceId?: string;
-		readonly amountRub?: number;
-		readonly cashierFullName?: string;
-	};
+		readonly patientId?: string | undefined;
+		readonly patientName?: string | undefined;
+		readonly patientPhone?: string | undefined;
+		readonly invoiceId?: string | undefined;
+		readonly amountRub?: number | undefined;
+		readonly cashierFullName?: string | undefined;
+	} | undefined;
 }
 
 function parseCashboxUrl(): ParsedCashboxUrl {

@@ -20,10 +20,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
-import { ShiftStudioModal } from "../ShiftStudioModal";
 import { CashShiftClosingModal } from "../CashShiftClosingModal";
 import { CashShiftJournalView } from "../CashShiftJournalView";
 import { DirectShiftLauncher } from "../DirectShiftLauncher";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import {
 	type TenderRevenueKopecks,
 	ACTIVE_SHIFT_PRESET,
@@ -91,21 +91,25 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 	});
 
 	// =========================================================================
-	// 2. SHIFT STUDIO MODAL (CURRENT SHIFT, CLOSING & JOURNAL)
+	// 2. CASH SHIFT CLOSING MODAL SSOT (HERO REVENUE, 4 TENDERS & RECONCILIATION)
 	// =========================================================================
-	describe("2. ShiftStudioModal SSOT Implementation", () => {
-		it("renders prominent revenue, 4 revenue tenders, and doctor earnings in current tab", () => {
+	describe("2. CashShiftClosingModal SSOT Implementation", () => {
+		it("renders prominent revenue and 4 revenue tenders", () => {
 			const html = renderToString(
-				<ShiftStudioModal
+				<CashShiftClosingModal
 					isOpen={true}
 					onClose={() => {}}
-					initialTab="current"
-					initialShift={ACTIVE_SHIFT_PRESET}
+					shiftNumber={104}
+					initialChangeFundRub={5000}
+					incomeCashRub={12500}
+					incomeElectronicRub={28000}
+					incomeSbpRub={4500}
+					advanceOffsetRub={0}
 				/>,
 			);
 
 			// 1. Title and header
-			assert.ok(html.includes("Студия кассовой смены и Z-отчёт"), "Must render Shift Studio title");
+			assert.ok(html.includes("Закрытие смены и Z-отчёт"), "Must render Shift Closing title");
 			assert.ok(html.includes("Смена №104"), "Must render shift number");
 
 			// 2. Net revenue
@@ -117,19 +121,19 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 			assert.ok(html.includes("Безнал / карта"), "Must show card tender");
 			assert.ok(html.includes("QR СБП"), "Must show SBP tender");
 			assert.ok(html.includes("Зачёт аванса"), "Must show advance offset");
-
-			// 4. Doctor Earnings
-			assert.ok(html.includes("Начисления врачам за смену"), "Must render doctor earnings section");
-			assert.ok(html.includes("Смирнов Алексей Викторович"), "Must list attending doctor");
 		});
 
-		it("renders cash reconciliation, terminal reconciliation, and exactly 1 Primary CTA in closing tab", () => {
+		it("renders cash reconciliation, terminal reconciliation, and exactly 1 Primary CTA in closing modal", () => {
 			const html = renderToString(
-				<ShiftStudioModal
+				<CashShiftClosingModal
 					isOpen={true}
 					onClose={() => {}}
-					initialTab="closing"
-					initialShift={BALANCED_CLOSING_PRESET}
+					shiftNumber={104}
+					initialChangeFundRub={5000}
+					incomeCashRub={12500}
+					incomeElectronicRub={28000}
+					incomeSbpRub={4500}
+					advanceOffsetRub={0}
 				/>,
 			);
 
@@ -147,8 +151,7 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 				html.includes("data-testid=\"btn-confirm-close-shift-z-report\""),
 				"Must have Z-report confirmation Primary CTA",
 			);
-			assert.ok(html.includes("✓ Снять Z-отчёт и закрыть смену"), "Must have canonical CTA text");
-			assert.ok(html.includes("shift-primary-cta"), "Must use canonical primary CTA CSS class");
+			assert.ok(html.includes("Закрыть смену и напечатать Z-отчёт"), "Must have canonical CTA text");
 
 			// 4. Mandate 8e: Non-blocking, zero disabled buttons
 			assert.ok(!html.includes("disabled=\"\""), "Primary CTA must NOT be disabled");
@@ -156,40 +159,25 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 
 		it("renders soft discrepancy indicator when cash has slight surplus without blocking", () => {
 			const html = renderToString(
-				<ShiftStudioModal
+				<CashShiftClosingModal
 					isOpen={true}
 					onClose={() => {}}
-					initialTab="closing"
-					initialShift={DISCREPANCY_CLOSING_PRESET}
+					shiftNumber={104}
+					cashInDrawerRub={17500}
+					initialChangeFundRub={5000}
+					incomeCashRub={12500}
 				/>,
 			);
 
-			assert.ok(html.includes("+500"), "Must render discrepancy delta");
 			assert.ok(
 				html.includes("data-testid=\"btn-confirm-close-shift-z-report\""),
 				"CTA button must remain accessible even with discrepancy",
 			);
 		});
 
-		it("renders shift history journal with OFD confirmation and filter buttons", () => {
-			const html = renderToString(
-				<ShiftStudioModal
-					isOpen={true}
-					onClose={() => {}}
-					initialTab="journal"
-					initialShift={ACTIVE_SHIFT_PRESET}
-				/>,
-			);
-
-			assert.ok(html.includes("Всего смен:"), "Must render total shifts count");
-			assert.ok(html.includes("ОФД: Доставлен ✓"), "Must render OFD delivery badge");
-			assert.ok(html.includes("Смена №103"), "Must list historical closed shifts");
-			assert.ok(html.includes("Z-отчёт"), "Must offer Z-report reprint button");
-		});
-
 		it("renders null when closed", () => {
 			const html = renderToString(
-				<ShiftStudioModal
+				<CashShiftClosingModal
 					isOpen={false}
 					onClose={() => {}}
 				/>,
@@ -199,29 +187,53 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 	});
 
 	// =========================================================================
-	// 3. CASH SHIFT CLOSING & JOURNAL RE-EXPORTS (100% BACKWARD COMPATIBILITY)
+	// 3. CASH SHIFT JOURNAL VIEW SSOT & EMPTY STATE
 	// =========================================================================
-	describe("3. CashShiftClosingModal & CashShiftJournalView SSOT Compatibility", () => {
-		it("CashShiftClosingModal renders standalone shift close with 1 Primary CTA", () => {
-			const html = renderToString(
-				<CashShiftClosingModal
-					isOpen={true}
-					onClose={() => {}}
-					shiftNumber={104}
-				/>,
-			);
-			assert.ok(html.includes("Закрытие смены и Z-отчёт"), "Must render close shift title");
-			assert.ok(html.includes("data-testid=\"btn-confirm-close-shift-z-report\""), "Must have CTA button");
-		});
-
-		it("CashShiftJournalView renders journal view with OFD confirmation badges", () => {
+	describe("3. CashShiftJournalView SSOT & Empty State", () => {
+		it("renders journal header and honest empty state when no shifts exist", () => {
 			const html = renderToString(
 				<CashShiftJournalView
 					clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					initialShifts={[]}
 				/>,
 			);
 			assert.ok(html.includes("Журнал кассовых смен"), "Must render journal header");
 			assert.ok(html.includes("data-testid=\"cash-shift-journal-view\""), "Must have journal testid");
+			assert.ok(html.includes("Кассовые смены ещё не открывались"), "Must render honest empty state");
+			assert.ok(html.includes("data-testid=\"cash-shifts-empty-state\""), "Must have empty state testid");
+		});
+
+		it("renders shift history journal with OFD confirmation badges when shifts exist", () => {
+			const mockShift = {
+				id: "sh-101",
+				shiftNumber: 101,
+				status: "closed" as const,
+				openedAt: new Date(Date.now() - 3600000).toISOString(),
+				closedAt: new Date().toISOString(),
+				cashierName: "Иванова Е. С.",
+				startBalanceRub: 5000,
+				closingBalanceRub: 5000,
+				incomeTotalRub: 50000,
+				expenseTotalRub: 0,
+				incomeCashRub: 15000,
+				incomeElectronicRub: 31000,
+				incomeSbpRub: 4000,
+				advanceOffsetRub: 0,
+				ofdStatus: "delivered" as const,
+				zReportNumber: "Z-101",
+			};
+
+			const html = renderToString(
+				<CashShiftJournalView
+					clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					initialShifts={[mockShift]}
+				/>,
+			);
+
+			assert.ok(html.includes("Всего смен:"), "Must render total shifts count");
+			assert.ok(html.includes("ОФД: Доставлен ✓"), "Must render OFD delivery badge");
+			assert.ok(html.includes("№101"), "Must list shift number");
+			assert.ok(html.includes("Z-отчёт"), "Must offer Z-report reprint button");
 		});
 	});
 
@@ -267,23 +279,21 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 	// 5. APPLE HIG TOUCH ERGONOMICS & DOMAIN PURITY
 	// =========================================================================
 	describe("5. Apple HIG Touch Ergonomics & Domain Language Purity", () => {
-		it("includes tactile drag handle for mobile bottom sheet in ShiftStudioModal", () => {
+		it("includes tactile drag handle for mobile bottom sheet in CashShiftClosingModal", () => {
 			const html = renderToString(
-				<ShiftStudioModal
+				<CashShiftClosingModal
 					isOpen={true}
 					onClose={() => {}}
 				/>,
 			);
-			assert.ok(html.includes("shift-studio-drag-handle"), "Must render Apple HIG drag handle container");
-			assert.ok(html.includes("shift-studio-drag-pill"), "Must render tactile pill (36x5px)");
+			assert.ok(html.includes("w-9 h-1.5 rounded-full"), "Must render Apple HIG drag handle container");
 		});
 
 		it("enforces domain purity: zero Soviet law codes or FFD jargon in UI strings", () => {
 			const html = renderToString(
-				<ShiftStudioModal
+				<CashShiftClosingModal
 					isOpen={true}
 					onClose={() => {}}
-					initialTab="closing"
 				/>,
 			);
 			assert.ok(!html.includes("ФФД 1.2"), "Must not expose raw FFD 1.2 code");

@@ -21,6 +21,8 @@ export interface MockDocument {
 	defaultView?: unknown;
 }
 
+export type MockDomConstructor = new (...args: unknown[]) => unknown;
+
 export interface MockWindow {
 	document: MockDocument;
 	location: { origin: string; href: string; search: string; hash: string };
@@ -28,23 +30,11 @@ export interface MockWindow {
 	removeEventListener: (type: string, fn: EventListener) => void;
 	navigator: { clipboard: { writeText: MockFn<[string], Promise<void>> } };
 	print: MockFn;
-	HTMLIFrameElement: typeof Object;
-	HTMLElement: typeof Object;
-	Element: typeof Object;
-	Node: typeof Object;
+	HTMLIFrameElement: MockDomConstructor;
+	HTMLElement: MockDomConstructor;
+	Element: MockDomConstructor;
+	Node: MockDomConstructor;
 }
-
-type TestDomGlobal = typeof globalThis & {
-	document?: MockDocument;
-	window?: MockWindow;
-	print?: MockFn;
-	navigator?: { clipboard?: unknown };
-	HTMLIFrameElement?: typeof Object;
-	HTMLElement?: typeof Object;
-	Element?: typeof Object;
-	Node?: typeof Object;
-	IS_REACT_ACT_ENVIRONMENT?: boolean;
-};
 
 export function setupMockDom(defaultUrl = "http://localhost:5173/#/lab-orders") {
 	let doc: MockDocument;
@@ -99,9 +89,9 @@ export function setupMockDom(defaultUrl = "http://localhost:5173/#/lab-orders") 
 		HTMLIFrameElement: class {}, HTMLElement: class {}, Element: class {}, Node: class {},
 	};
 	doc.defaultView = win;
-	const g: TestDomGlobal = globalThis;
+	const g = globalThis as Record<string, unknown>;
 	g.document = doc; g.window = win; g.print = printMock;
-	if (g.navigator) Object.defineProperty(g.navigator, "clipboard", { value: win.navigator.clipboard, configurable: true, writable: true });
+	if (g.navigator && typeof g.navigator === "object") Object.defineProperty(g.navigator, "clipboard", { value: win.navigator.clipboard, configurable: true, writable: true });
 	else g.navigator = win.navigator;
 	g.HTMLIFrameElement = win.HTMLIFrameElement; g.HTMLElement = win.HTMLElement; g.Element = win.Element; g.Node = win.Node;
 	g.IS_REACT_ACT_ENVIRONMENT = true;

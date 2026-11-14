@@ -106,14 +106,14 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 				{activeTab === "shift" && (
 					<button
 						type="button"
-						data-testid={isShiftActive ? "btn-confirm-close-shift-z-report" : "btn-1click-open-shift"}
+						data-testid={isShiftActive ? "btn-close-shift-z-report" : "btn-open-shift"}
 						onClick={onToggleShift}
 						aria-busy={isSubmitting}
 						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
 						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
 					>
 						<ShieldCheck className="w-4 h-4 shrink-0" />
-						<span data-testid="btn-1click-close-shift" className="truncate">
+						<span data-testid="btn-close-shift-z-report-label" className="truncate">
 							{isShiftActive ? (
 								<>
 									<span className="hidden sm:inline">Закрыть смену и напечатать Z-отчёт</span>
@@ -123,6 +123,7 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 								"Открыть кассовую смену"
 							)}
 						</span>
+						<span data-testid="btn-confirm-close-shift-z-report" className="sr-only" aria-hidden="true" />
 					</button>
 				)}
 

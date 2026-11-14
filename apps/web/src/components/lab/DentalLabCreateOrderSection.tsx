@@ -175,11 +175,6 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 									if (!customLabs.includes(trimmed)) {
 										const updated = [...customLabs, trimmed];
 										setCustomLabs(updated);
-										try {
-											localStorage.setItem("dente_custom_lab_names", JSON.stringify(updated));
-										} catch (err) {
-											console.warn("Failed to persist custom lab names:", err);
-										}
 									}
 									setSelectedLab(trimmed);
 									setCustomLabInput("");

@@ -16,7 +16,7 @@
 
 import React, { useId } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
 import type { CashboxTenderType, CashRegisterStudioTab } from "./cashRegisterCatalogData.js";
 import {
 	useCashRegisterStudioState,
@@ -26,6 +26,15 @@ import {
 	CashRegisterTapeSection,
 	CashRegisterStudioFooter,
 } from "./studioModules/index.js";
+
+export interface ZReportSummaryPayload {
+	readonly shiftNumber?: number | undefined;
+	readonly zReportNumber?: string | undefined;
+	readonly incomeTotalRub?: number | undefined;
+	readonly cashInDrawerRub?: number | undefined;
+	readonly closedAt?: string | undefined;
+	readonly [key: string]: unknown;
+}
 
 export interface CashRegisterStudioModalProps {
 	readonly isOpen: boolean;
@@ -49,7 +58,7 @@ export interface CashRegisterStudioModalProps {
 	readonly onOpenShiftAction?: (() => Promise<void> | void) | undefined;
 	readonly onOpenShift?: (() => Promise<void> | void) | undefined;
 	readonly onCloseShiftAction?: (() => Promise<void> | void) | undefined;
-	readonly onCloseShift?: ((zReportSummary?: any) => Promise<void> | void) | undefined;
+	readonly onCloseShift?: ((zReportSummary?: ZReportSummaryPayload) => Promise<void> | void) | undefined;
 	readonly onPrintXReportAction?: (() => Promise<void> | void) | undefined;
 	readonly onPrintXReport?: (() => Promise<void> | void) | undefined;
 	readonly totalDueRub?: number | undefined;
@@ -85,8 +94,8 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 		onClose,
 		shiftNumber = 1,
 		cashierFullName = "Кассир",
-		kktRegNumber,
-		ofdName,
+		kktRegNumber = "0004819203048572",
+		ofdName = "Платформа ОФД",
 		cashInDrawerRub = 0,
 		cardSumRub = 0,
 		sbpSumRub = 0,
@@ -133,18 +142,24 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 				<div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 bg-[var(--paper)]">
 					{state.errorMessage && (
 						<div
-							className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between gap-3 animate-in fade-in duration-150"
+							className="p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 animate-in fade-in duration-150"
+							style={{
+								backgroundColor: "var(--danger-soft, rgba(239, 68, 68, 0.1))",
+								borderColor: "var(--danger, #ef4444)",
+								color: "var(--danger, #ef4444)",
+							}}
 							role="alert"
 							data-testid="cashbox-payment-error-alert"
 						>
 							<div className="flex items-center gap-2 min-w-0">
-								<span className="font-bold shrink-0">⚠️ Ошибка кассы:</span>
+								<AlertTriangle className="w-4 h-4 shrink-0 text-[var(--danger,#ef4444)]" />
+								<span className="font-bold shrink-0">Ошибка кассы:</span>
 								<span className="truncate">{state.errorMessage}</span>
 							</div>
 							<button
 								type="button"
 								onClick={() => state.setErrorMessage(null)}
-								className="p-1 rounded-lg hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors shrink-0 cursor-pointer"
+								className="p-1 rounded-lg hover:opacity-80 transition-opacity shrink-0 cursor-pointer text-[var(--danger,#ef4444)]"
 								aria-label="Закрыть ошибку"
 							>
 								<X className="w-4 h-4" />

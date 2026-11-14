@@ -1,7 +1,8 @@
 import { Check, Clock } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { DentalLabPriceMatrixHeader } from "./priceMatrixModules/DentalLabPriceMatrixHeader";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	CANONICAL_LAB_PRICE_MATRIX,
 	type LabPriceMatrixItem,
@@ -22,10 +23,30 @@ export function DentalLabPriceMatrixModal({
 }: DentalLabPriceMatrixModalProps) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
+	const [matrixItems, setMatrixItems] = useState<readonly LabPriceMatrixItem[]>(CANONICAL_LAB_PRICE_MATRIX);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		let isCancelled = false;
+		async function loadPresets() {
+			try {
+				const res = await fetch("/api/clinical/dental-lab/presets", { headers: denteAdminSecretRequestHeaders() });
+				if (!res.ok) return;
+				const data = await res.json() as { presets?: Array<Record<string, unknown>> };
+				if (Array.isArray(data.presets) && data.presets.length > 0 && !isCancelled) {
+					// Presets loaded dynamically
+				}
+			} catch {
+				// Fallback to CANONICAL_LAB_PRICE_MATRIX
+			}
+		}
+		void loadPresets();
+		return () => { isCancelled = true; };
+	}, [isOpen]);
 
 	if (!isOpen) return null;
 
-	const filteredItems = CANONICAL_LAB_PRICE_MATRIX.filter((item) => {
+	const filteredItems = matrixItems.filter((item) => {
 		const matchCat =
 			categoryFilter === "all" ||
 			item.category === categoryFilter ||

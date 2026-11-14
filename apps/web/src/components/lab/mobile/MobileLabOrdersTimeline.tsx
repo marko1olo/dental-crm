@@ -93,7 +93,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 				<div className="mobile-lab-thumb-bar">
 					<button type="button" onClick={onOpenNewOrder} className="mobile-lab-primary-cta" data-testid="mobile-lab-add-order-btn">
 						<Plus size={19} />
-						<span>+ Заказ в лабораторию</span>
+						<span>Заказ в лабораторию</span>
 					</button>
 				</div>
 

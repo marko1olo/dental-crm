@@ -88,14 +88,16 @@ export function staffScheduleDraftFromWorkingHours(
 	};
 }
 
-export function defaultAppointmentStartLocal(profile: ClinicProfile): string {
-	const schedule = profile.scheduleDefaults ?? {
+export function defaultAppointmentStartLocal(
+	profile?: Partial<ClinicProfile> | null,
+): string {
+	const schedule = profile?.scheduleDefaults ?? {
 		workdayStart: "09:00",
 		workdayEnd: "18:00",
 		workingDays: [1, 2, 3, 4, 5],
 		appointmentBufferMinutes: 10,
 	};
-	const timezone = profile.timezone || "Europe/Samara";
+	const timezone = profile?.timezone || "Europe/Samara";
 	const now = new Date();
 	for (let offset = 0; offset < 21; offset += 1) {
 		const candidateDate = new Date(now.getTime() + offset * 86_400_000);
@@ -256,7 +258,6 @@ export function patientAdministrativeProfileDraftFromPatient(
 		curatorNotes: safeProfileString(profile?.curatorNotes),
 		isAnonymous: profile?.isAnonymous === true,
 		anonymousCode: typeof profile?.anonymousCode === "string" ? profile.anonymousCode : null,
-		decree659Compliance: (profile?.decree659Compliance as Record<string, unknown> | null | undefined) ?? null,
 		gender: safeProfileString(profile?.gender),
 		insuranceContractId: safeProfileString(profile?.insuranceContractId),
 		utmSource: safeProfileString(profile?.utmSource),
@@ -380,7 +381,6 @@ export function buildPatientAdministrativeProfilePayload(
 				: null,
 		isAnonymous: draft.isAnonymous === true,
 		anonymousCode: draft.isAnonymous === true ? nullablePatientDraftValue(draft.anonymousCode ?? "") : null,
-		decree659Compliance: draft.decree659Compliance ?? null,
 		telegramUserId: nullablePatientDraftValue(draft.telegramUserId),
 		telegramUsername: nullablePatientDraftValue(draft.telegramUsername),
 		insuranceContractId: (() => {
