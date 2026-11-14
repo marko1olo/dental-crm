@@ -1,15 +1,17 @@
-export type MockFn = {
-	(...args: any[]): any;
-	calls: any[][];
-	mock: { calls: any[][] };
+export type MockFn<TArgs extends unknown[] = unknown[], TRet = unknown> = {
+	(...args: TArgs): TRet;
+	calls: TArgs[];
+	mock: { calls: TArgs[] };
 };
 
-export function createMockFn(impl?: (...args: any[]) => any): MockFn {
-	const calls: any[][] = [];
-	const fn = ((...args: any[]) => {
+export function createMockFn<TArgs extends unknown[] = unknown[], TRet = unknown>(
+	impl?: (...args: TArgs) => TRet,
+): MockFn<TArgs, TRet> {
+	const calls: TArgs[] = [];
+	const fn = ((...args: TArgs) => {
 		calls.push(args);
-		return impl ? impl(...args) : undefined;
-	}) as MockFn;
+		return impl ? impl(...args) : (undefined as unknown as TRet);
+	}) as MockFn<TArgs, TRet>;
 	fn.calls = calls;
 	fn.mock = { calls };
 	return fn;

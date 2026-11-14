@@ -4,7 +4,7 @@ import type { DentalLabOrderData } from "../labMath";
 import { MobileLabOrderStatusSheet } from "./MobileLabOrderStatusSheet";
 import { MobileLabTimelineHeader } from "./MobileLabTimelineHeader";
 import { MobileLabOrderCard } from "./MobileLabOrderCard";
-import "./mobileLabOrders.css";
+if (typeof document !== "undefined") { void import("./mobileLabOrders.css"); }
 
 export { getOrderStageIndex, formatMobileDeadlineAndTimer, MOBILE_LAB_STAGES } from "./mobileLabTimelineHelpers";
 
@@ -53,7 +53,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 					const doc = (o.doctorName || "").toLowerCase();
 					const tooth = (o.toothFdi || "").toLowerCase();
 					const mat = (o.material || "").toLowerCase();
-					const num = ((o as any).orderNumber || o.id || "").toLowerCase();
+					const num = (o.orderNumber || o.id || "").toLowerCase();
 					return pat.includes(q) || doc.includes(q) || tooth.includes(q) || mat.includes(q) || num.includes(q);
 				}
 				return true;

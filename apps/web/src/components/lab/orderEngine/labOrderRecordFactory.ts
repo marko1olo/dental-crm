@@ -5,7 +5,20 @@ import { calculateZtlWageFinancials } from "./labWageEngine";
 import { generateDeterministicLabOrderId, generateDeterministicLabOrderNumber } from "./labStatusTransitions";
 import type { DentalLabOrderRecord } from "./labOrderRecordTypes";
 
-export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
+export type PartialDentalLabOrderInput = Partial<DentalLabOrderRecord> & {
+	readonly teeth?: readonly (number | string)[] | undefined;
+	readonly teethFdi?: readonly (number | string)[] | string | undefined;
+	readonly vitaShade?: string | undefined;
+	readonly stumpShade?: string | undefined;
+	readonly translucency?: string | undefined;
+	readonly mamelons?: boolean | undefined;
+	readonly opalescence?: boolean | undefined;
+	readonly calcifications?: boolean | undefined;
+	readonly reworkReason?: string | undefined;
+	readonly deadlineDate?: string | undefined;
+};
+
+export function createDentalLabOrderRecord(partial: PartialDentalLabOrderInput = {}): DentalLabOrderRecord {
 	const construction = partial.constructionType || "crown_zirconia";
 	const def = DENTAL_LAB_CONSTRUCTIONS[construction];
 	const sentDate = partial.sentDate || toIsoDate(new Date());
@@ -14,7 +27,7 @@ export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 
 	const rawTeeth = partial.teethFdi || partial.teeth || [16];
 	const teeth: number[] = Array.isArray(rawTeeth)
-		? rawTeeth.map((t: any) => typeof t === "number" ? t : Number.parseInt(String(t), 10) || 16)
+		? rawTeeth.map((t: unknown) => typeof t === "number" ? t : Number.parseInt(String(t), 10) || 16)
 		: [16];
 
 	const totalPatientPriceKop = partial.patientPriceKopecks ?? (partial.priceRub != null ? partial.priceRub * 100 : (def?.defaultPatientPriceKopecks ?? 2400000) * teeth.length);
@@ -34,9 +47,16 @@ export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 	const shade = partial.vitaShade || partial.colorVita || "A2";
 	const now = new Date().toISOString();
 
+	const defaultOrderId = partial.patientId
+		? generateDeterministicLabOrderId({ patientId: partial.patientId, date: sentDate })
+		: generateDeterministicLabOrderId({ date: sentDate });
+	const defaultOrderNumber = partial.patientId
+		? generateDeterministicLabOrderNumber({ patientId: partial.patientId, date: sentDate })
+		: generateDeterministicLabOrderNumber({ date: sentDate });
+
 	return {
-		id: partial.id || generateDeterministicLabOrderId({ patientId: partial.patientId, date: sentDate }),
-		orderNumber: partial.orderNumber || generateDeterministicLabOrderNumber({ patientId: partial.patientId, date: sentDate }),
+		id: partial.id || defaultOrderId,
+		orderNumber: partial.orderNumber || defaultOrderNumber,
 		patientId: partial.patientId || "pat-default", patientName: partial.patientName || "Пациент",
 		doctorId: partial.doctorId || "doc-ortho", doctorName: partial.doctorName || "Врач-ортопед",
 		labName: partial.labName || "CAD/CAM Центр Дентал-Мастер", technicianName: partial.technicianName,

@@ -53,6 +53,20 @@ export async function insertLabOrderInDb(
 			.limit(1);
 		if (existingPatient) {
 			effectivePatientId = existingPatient.id;
+		} else {
+			// Автономия врача у кресла (Мандаты 8e, 8n): если пациент ещё не заведён в клинике,
+			// создаём запись пациента по ФИО на лету без блокировок и 404
+			const [newPatient] = await tx
+				.insert(patients)
+				.values({
+					organizationId: orgId,
+					fullName: trimmedName,
+					status: "active",
+				})
+				.returning({ id: patients.id });
+			if (newPatient) {
+				effectivePatientId = newPatient.id;
+			}
 		}
 	}
 
@@ -126,7 +140,7 @@ export async function insertLabOrderInDb(
 	// При гарантии пациент ВСЕГДА платит 0 ₽.
 	// При браке лаборатории (lab_defect) лаборатория переделывает бесплатно (labCostRub = 0).
 	// При гарантии клиники (clinic_warranty) клиника оплачивает ЗТЛ (labCostRub сохраняется).
-	const isWarranty = Boolean(data.isWarrantyRework || data.isWarranty);
+	const isWarranty = Boolean(data.isWarrantyRework || data.isWarranty || data.isWarrantyRemake);
 	const finalPriceRub = isWarranty ? 0 : effectivePriceRub;
 	const finalLabCostRub = isWarranty && data.warrantyLiabilityType === "lab_defect" ? 0 : effectiveLabCost;
 

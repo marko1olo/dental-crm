@@ -17,7 +17,7 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 			if (f.id === "all") continue;
 			counts[f.id] = orders.filter((o) => {
 				const status = o.status || "";
-				const stage = (o as any).stage || (o as any).currentStage || "";
+				const stage = o.stage || o.currentStage || "";
 				return f.statuses.includes(status) || f.id === stage || f.statuses.includes(stage);
 			}).length;
 		}
@@ -29,7 +29,7 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 		return orders.filter((o) => {
 			if (statusFilter !== "all" && matched) {
 				const status = o.status || "";
-				const stage = (o as any).stage || (o as any).currentStage || "";
+				const stage = o.stage || o.currentStage || "";
 				if (!matched.statuses.includes(status) && matched.id !== stage && !matched.statuses.includes(stage)) return false;
 			}
 			if (doctorFilter !== "all" && o.doctorId !== doctorFilter && o.doctorName !== doctorFilter) return false;
@@ -39,7 +39,7 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 				const d = (o.doctorName || "").toLowerCase();
 				const t = (o.toothFdi || "").toLowerCase();
 				const m = (o.material || "").toLowerCase();
-				const n = ((o as any).orderNumber || o.id || "").toLowerCase();
+				const n = (o.orderNumber || o.id || "").toLowerCase();
 				if (!p.includes(q) && !d.includes(q) && !t.includes(q) && !m.includes(q) && !n.includes(q)) return false;
 			}
 			return true;

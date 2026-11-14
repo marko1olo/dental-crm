@@ -24,12 +24,12 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 		getStatusBadge, ...menuHandlers
 	} = props;
 	const rawIdClean = order.id ? order.id.replace(/^lab-?/i, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
-	const num = (order as unknown as { orderNumber?: string }).orderNumber || (rawIdClean ? `ЗТЛ-${rawIdClean.slice(-4)}` : "ЗТЛ");
+	const num = order.orderNumber || (rawIdClean ? `ЗТЛ-${rawIdClean.slice(-4)}` : "ЗТЛ");
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
 	const title = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);
 	const displayMaterial = formatLabMaterial(order.material);
 	const showMaterial = Boolean(displayMaterial) && displayMaterial.trim().toLowerCase() !== title.trim().toLowerCase();
-	const isWarranty = (order as unknown as { isWarrantyRework?: boolean }).isWarrantyRework || order.status === "refitting" || order.priceRub === 0;
+	const isWarranty = Boolean(order.isWarrantyRework || order.isWarranty || order.isWarrantyRemake) || order.status === "refitting" || order.priceRub === 0;
 
 	return (
 		<tr
@@ -78,7 +78,7 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 				) : order.priceRub != null ? (
 					<div className="inline-flex items-center gap-1.5 justify-end">
 						<span>{money(order.priceRub)}</span>
-						{Boolean((order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId) && (
+						{Boolean(order.paidFromCashOperationId) && (
 							<span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
 								<CheckCircle2 className="w-2.5 h-2.5" />Оплачен
 							</span>

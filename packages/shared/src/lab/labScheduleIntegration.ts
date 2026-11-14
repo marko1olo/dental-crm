@@ -51,6 +51,7 @@ export interface MinimalLabOrderForSchedule {
 	readonly expectedDate?: string | Date | null;
 	readonly receivedDate?: string | Date | null;
 	readonly workType?: string | null;
+	readonly workTypeRu?: string | null;
 }
 
 /**
@@ -127,7 +128,7 @@ export function evaluateAppointmentLabStatus(
 	if (isReadyInClinic) {
 		const readinessText = formatLabReadinessIndicator({
 			workType: order.workType,
-			workTypeRu: (order as any).workTypeRu,
+			workTypeRu: order.workTypeRu,
 			material: order.material,
 			toothFdi: order.toothFdi,
 		});
@@ -143,7 +144,7 @@ export function evaluateAppointmentLabStatus(
 			orderId,
 			orderNumber,
 			toothFdi: order.toothFdi ?? null,
-			workTypeRu: order.workType ?? null,
+			workTypeRu: order.workTypeRu ?? order.workType ?? null,
 			materialRu: order.material ?? null,
 			colorVita: order.colorVita ?? null,
 			dueDateIso: order.dueDate ? new Date(order.dueDate).toISOString() : null,
@@ -174,7 +175,7 @@ export function evaluateAppointmentLabStatus(
 			orderId,
 			orderNumber,
 			toothFdi: order.toothFdi ?? null,
-			workTypeRu: order.workType ?? null,
+			workTypeRu: order.workTypeRu ?? order.workType ?? null,
 			materialRu: order.material ?? null,
 			colorVita: order.colorVita ?? null,
 			dueDateIso: rawDueDate ? new Date(rawDueDate).toISOString() : null,
@@ -195,7 +196,7 @@ export function evaluateAppointmentLabStatus(
 		orderId,
 		orderNumber,
 		toothFdi: order.toothFdi ?? null,
-		workTypeRu: order.workType ?? null,
+		workTypeRu: order.workTypeRu ?? order.workType ?? null,
 		materialRu: order.material ?? null,
 		colorVita: order.colorVita ?? null,
 		dueDateIso: rawDueDate ? new Date(rawDueDate).toISOString() : null,

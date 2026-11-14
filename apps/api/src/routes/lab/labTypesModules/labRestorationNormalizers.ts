@@ -36,7 +36,7 @@ export function normalizeRestorationType(val: unknown): string {
 		crown_layered_cutback: "crown_layered_cutback",
 		digital_waxup_mockup: "digital_waxup_mockup",
 	};
-	return map[clean] || (restorationTypeSchema.options.includes(val as any) ? val : "crown_monolithic");
+	return map[clean] || ((restorationTypeSchema.options as readonly string[]).includes(clean) ? clean : "crown_monolithic");
 }
 
 export function normalizeRestorationMaterial(val: unknown): string {
@@ -72,7 +72,7 @@ export function normalizeRestorationMaterial(val: unknown): string {
 		resin_3d_surgical_guide: "resin_3d_surgical_guide",
 		resin_3d_splint_biocompatible: "resin_3d_splint_biocompatible",
 	};
-	return map[clean] || (restorationMaterialSchema.options.includes(val as any) ? val : "zirconia_multilayer_gradient");
+	return map[clean] || ((restorationMaterialSchema.options as readonly string[]).includes(clean) ? clean : "zirconia_multilayer_gradient");
 }
 
 export function normalizeShadeSystem(val: unknown): "VITA_CLASSICAL" | "VITA_3D_MASTER" | "BLEACH" {
@@ -87,6 +87,6 @@ export function normalizeShadeSystem(val: unknown): "VITA_CLASSICAL" | "VITA_3D_
 export function normalizeStumpShade(val: unknown): string | null {
 	if (!val || typeof val !== "string") return null;
 	const clean = val.trim().toUpperCase();
-	if (stumpPreparationShadeSchema.options.includes(clean as any)) return clean;
+	if ((stumpPreparationShadeSchema.options as readonly string[]).includes(clean)) return clean;
 	return null;
 }

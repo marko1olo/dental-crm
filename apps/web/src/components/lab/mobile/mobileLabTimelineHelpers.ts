@@ -9,7 +9,7 @@ export const MOBILE_LAB_STAGES = [
 
 export function getOrderStageIndex(order: DentalLabOrderData): number {
 	const status = (order.status || "").toLowerCase();
-	const stage = ((order as any).stage || order.currentStage || "").toLowerCase();
+	const stage = (order.stage || order.currentStage || "").toLowerCase();
 
 	if (status === "completed" || status === "delivered_to_patient" || status === "installed_completed" || stage === "patient_fixation") {
 		return 3;

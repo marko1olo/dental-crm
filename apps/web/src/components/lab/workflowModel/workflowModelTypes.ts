@@ -91,6 +91,11 @@ export interface DentalLabWorkflowOrder {
 	readonly isWarrantyRework?: boolean | undefined;
 	readonly warrantyLiabilityType?: WarrantyLiabilityType | undefined;
 	readonly reworkReason?: string | undefined;
+	readonly toothFdi?: string | number | undefined;
+	readonly priceRub?: number | undefined;
+	readonly isPartialDelivery?: boolean | undefined;
+	readonly deliveredTeeth?: readonly (number | string)[] | undefined;
+	readonly reworkTeeth?: readonly (number | string)[] | undefined;
 	readonly dueDate?: string | undefined;
 	readonly expectedLabDate?: string | undefined;
 	readonly trialDate?: string | undefined;

@@ -88,14 +88,17 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 		return map;
 	}, [props.ordersByStage, props.orders]);
 
-	const resolved = useMemo(() => ({
-		draft: [],
-		sent_to_lab: [...(safeOrdersByStage.draft || []), ...(safeOrdersByStage.sent_to_lab || [])],
-		in_progress: [...((safeOrdersByStage as any).in_progress || []), ...((safeOrdersByStage as any).warranty_rework || [])],
-		fitting_scheduled: (safeOrdersByStage as any).fitting_scheduled || (safeOrdersByStage as any).fitting || [],
-		ready_in_clinic: (safeOrdersByStage as any).ready_in_clinic || (safeOrdersByStage as any).ready || (safeOrdersByStage as any).received || (safeOrdersByStage as any).in_clinic || [],
-		installed_completed: safeOrdersByStage.installed_completed || (safeOrdersByStage as any).completed || (safeOrdersByStage as any).seated || [],
-	}), [safeOrdersByStage]);
+	const resolved = useMemo(() => {
+		const stageMap = safeOrdersByStage as Record<string, DentalLabWorkflowOrder[] | undefined>;
+		return {
+			draft: [],
+			sent_to_lab: [...(stageMap.draft || []), ...(stageMap.sent_to_lab || [])],
+			in_progress: [...(stageMap.in_progress || []), ...(stageMap.warranty_rework || [])],
+			fitting_scheduled: stageMap.fitting_scheduled || stageMap.fitting || [],
+			ready_in_clinic: stageMap.ready_in_clinic || stageMap.ready || stageMap.received || stageMap.in_clinic || [],
+			installed_completed: stageMap.installed_completed || stageMap.completed || stageMap.seated || [],
+		};
+	}, [safeOrdersByStage]);
 
 	const stageCounts = useMemo(() => ({
 		draft: 0,

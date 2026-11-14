@@ -12,6 +12,7 @@ import {
 	vita3dMasterShadeSchema,
 	stumpNaturalDieShadeSchema,
 	labOrderSchema,
+	type LabOrder,
 	DEFAULT_LAB_TURNAROUND_DAYS,
 	addBusinessDays,
 	calculateExpectedDeliveryDate,
@@ -114,7 +115,7 @@ describe("Shared Dental Lab — Turnaround SLA & Business Days Math", () => {
 	});
 
 	test("isLabOrderDelayed accurately flags overdue orders", () => {
-		const order: any = {
+		const order: LabOrder = {
 			organizationId: "11111111-1111-1111-1111-111111111111",
 			patientId: "22222222-2222-2222-2222-222222222222",
 			labContactId: "33333333-3333-3333-3333-333333333333",
@@ -124,6 +125,7 @@ describe("Shared Dental Lab — Turnaround SLA & Business Days Math", () => {
 			sentDate: "2026-08-01",
 			expectedDate: "2026-08-10",
 			costKopecks: 650000,
+			isRemake: false,
 		};
 		const futureDate = new Date("2026-08-20");
 		assert.equal(isLabOrderDelayed(order, futureDate), true);
@@ -260,7 +262,7 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 	test("FORM_ZTL_1_METADATA defines statutory Form ZTL-1 and Mandate 8e invariants", () => {
 		assert.equal(FORM_ZTL_1_METADATA.code, "Форма № ЗТЛ-1");
 		assert.ok(FORM_ZTL_1_METADATA.titleRu.includes("Форма № ЗТЛ-1"));
-		assert.ok(FORM_ZTL_1_METADATA.mandate8eClauseRu.includes("подтвержден лечащим врачом"));
+		assert.ok(FORM_ZTL_1_METADATA.treatmentPlanTermsNoticeRu.includes("подтвержден лечащим врачом"));
 		assert.ok(FORM_ZTL_1_METADATA.sanpinClauseRu.includes("СанПиН 3.3686-21"));
 		assert.ok(FORM_ZTL_1_METADATA.warrantyGostRu.includes("ГОСТ Р 51087-97"));
 	});

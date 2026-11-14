@@ -53,31 +53,5 @@ export const updateLabOrderSchema = z.object({
 });
 export type UpdateLabOrderInput = z.infer<typeof updateLabOrderSchema>;
 
-/**
- * Zod schema for CAD/CAM crown orders: Zirconia, E.max, PFM, Custom Abutments, Vita 3D Master
- */
-export const cadCamCrownOrderSchema = z.object({
-	patientId: z.string().uuid({ message: "Некорректный UUID пациента" }),
-	doctorId: z.string().uuid().optional().nullable(),
-	toothFdi: toothFdiSchema,
-	material: z.enum([
-		"zirconia_ml",
-		"zirconia_high_translucent",
-		"emax_press",
-		"emax_cad",
-		"cocr_noritake",
-		"titanium_custom",
-		"pmma_cad",
-	]).default("zirconia_ml"),
-	colorVita: colorVitaSchema.default("A2"),
-	shadeSystem: z.enum(["VITA_CLASSICAL", "VITA_3D_MASTER", "BLEACH"]).default("VITA_CLASSICAL"),
-	stumpShade: z.string().trim().optional().nullable(),
-	occlusalClearanceMm: z.number().min(0.5).max(3.0).optional().default(1.5),
-	finishLineType: z.enum(["chamfer", "shoulder", "feather_edge"]).optional().default("chamfer"),
-	clinicalNotes: z.string().trim().optional().nullable(),
-	priceRub: labOrderPriceRubSchema,
-});
-export type CadCamCrownOrderInput = z.infer<typeof cadCamCrownOrderSchema>;
-
 export { createLabOrderSchema };
 export type CreateLabOrderInput = z.infer<typeof createLabOrderSchema>;

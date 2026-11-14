@@ -2,11 +2,13 @@ import type { FastifyInstance } from "fastify";
 import { labOrderMarkInstalledHandler } from "./labOrderMarkInstalledHandler.js";
 import { labOrderPayHandler } from "./labOrderPayHandler.js";
 
+const registeredLabPaymentApps = new WeakSet<FastifyInstance>();
+
 export async function registerLabPaymentRoutes(app: FastifyInstance) {
-	if ((app as any).__cashLabPaymentRoutesRegistered) {
+	if (registeredLabPaymentApps.has(app)) {
 		return;
 	}
-	(app as any).__cashLabPaymentRoutesRegistered = true;
+	registeredLabPaymentApps.add(app);
 
 	// 1. Оплата наряда ЗТЛ из кассы по статье 11 («Оплата услуг лаборатории»)
 	app.post("/api/lab-orders/:id/pay", labOrderPayHandler);

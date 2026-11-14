@@ -330,9 +330,9 @@ export function canTransitionLabOrderStatus(
 		shipped: ["received", "ready", "ready_in_clinic", "cancelled", "rejected_remake", "refitting"],
 		ready: ["received", "ready_in_clinic", "fitted", "completed", "cancelled", "rejected_remake"],
 		ready_in_clinic: ["received", "ready", "fitted", "completed", "cancelled", "rejected_remake", "refitting"],
-		received: ["fitted", "ready", "ready_in_clinic", "completed", "rejected_remake", "refitting", "cancelled"],
+		received: ["fitted", "in_progress", "ready", "ready_in_clinic", "completed", "rejected_remake", "refitting", "cancelled"],
 		refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
-		fitted: ["completed", "rejected_remake", "refitting", "cancelled"],
+		fitted: ["completed", "in_progress", "received", "rejected_remake", "refitting", "cancelled"],
 		completed: ["rejected_remake", "refitting"],
 		cancelled: ["draft", "sent"],
 		rejected_remake: ["draft", "sent", "cancelled"],
@@ -665,7 +665,6 @@ export const FORM_ZTL_1_METADATA = {
 	subtitleRu: "Официальное клиническое задание на изготовление зубных протезов (ГОСТ Р 51087-97 / Стандарты СтАР)",
 	clinicalDecisionRu: "Клинический регламент: Срок плана лечения актуален и подтвержден лечащим врачом.",
 	treatmentPlanTermsNoticeRu: "Клинический регламент: Срок плана лечения актуален и подтвержден лечащим врачом.",
-	mandate8eClauseRu: "Клинический регламент: Срок плана лечения актуален и подтвержден лечащим врачом.",
 	sanpinClauseRu: "СанПиН 3.3686-21: Дезинфекция оттисков, прикусных валиков и протезов проведена перед отправкой.",
 	warrantyGostRu: "2 года гарантии (ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Рекомендации СтАР)",
 } as const;
@@ -738,4 +737,321 @@ export function generateProstheticWarrantyPassport(params: {
 		sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
 	};
 }
+
+// ─── CANONICAL RUSSIAN LABELS & STATUTORY A4 PRESCRIPTION ENGINE ────────────
+
+export const LAB_WORK_TYPE_LABELS_RU: Record<LabWorkType, string> = {
+	crown: "Коронка",
+	bridge: "Мостовидный протез",
+	denture: "Съемный протез",
+	implant: "Протезирование на имплантате",
+	veneer: "Винир",
+	orthodontic: "Ортодонтический аппарат",
+	inlay_onlay: "Вкладка / Накладка",
+	splint_nightguard: "Каппа / Сплинт",
+	repair: "Ремонт протеза",
+	other: "Прочее",
+};
+
+export const LAB_ORDER_STATUS_LABELS_RU: Record<LabOrderStatus, string> = {
+	draft: "Черновик",
+	sent: "Отправлен в ЗТЛ",
+	in_progress: "В работе у техника",
+	shipped: "Отправлен лабораторией",
+	received: "Доставлен в клинику",
+	ready: "Готов в ЗТЛ",
+	ready_in_clinic: "Готов в клинике",
+	refitting: "На переделке / коррекции",
+	fitted: "Припасован / Сдан пациенту",
+	completed: "Завершен / Установлен",
+	cancelled: "Отменен",
+	rejected_remake: "Брак / На переделку",
+};
+
+export const labImpressionTypeSchema = impressionTypeSchema;
+export type LabImpressionType = ImpressionType;
+
+export const LAB_IMPRESSION_LABELS_RU: Record<ImpressionType, string> = {
+	digital_scan: "Цифровой скан IOS",
+	digital_scan_stl_ply: "Цифровой 3D-скан (STL/PLY)",
+	alginate: "Альгинатный слепок",
+	pvs_silicone: "А-Силикон / C-Силикон",
+	a_silicone: "А-силикон (VPS)",
+	c_silicone: "С-силикон",
+	polyether: "Полиэфирный оттиск",
+	hydrocolloid: "Гидроколлоидная масса",
+	other: "Прочее",
+};
+
+export const vitaShadeSchema = z.enum([
+	"A1",
+	"A2",
+	"A3",
+	"A3.5",
+	"A4",
+	"B1",
+	"B2",
+	"B3",
+	"B4",
+	"C1",
+	"C2",
+	"C3",
+	"C4",
+	"D2",
+	"D3",
+	"D4",
+	"bleach_1",
+	"bleach_2",
+	"bleach_3",
+	"bleach_4",
+	"BL1",
+	"BL2",
+	"BL3",
+	"BL4",
+	"0M1",
+	"0M2",
+	"0M3",
+	"OM1",
+	"OM2",
+	"OM3",
+	"1M1",
+	"1M2",
+	"2L1.5",
+	"2L2.5",
+	"2M1",
+	"2M2",
+	"2M3",
+	"2R1.5",
+	"2R2.5",
+	"3L1.5",
+	"3L2.5",
+	"3M1",
+	"3M2",
+	"3M3",
+	"3R1.5",
+	"3R2.5",
+	"4L1.5",
+	"4L2.5",
+	"4M1",
+	"4M2",
+	"4M3",
+	"4R1.5",
+	"4R2.5",
+	"5M1",
+	"5M2",
+	"5M3",
+]);
+export type VitaShade = z.infer<typeof vitaShadeSchema>;
+
+export const labOrderRecordSchema = z.object({
+	id: z.string().uuid().optional(),
+	patientId: z.string().min(1, "ID пациента обязателен"),
+	patientName: z.string().min(1, "ФИО пациента обязательно"),
+	labContactId: z.string().min(1, "ID контакта лаборатории обязателен"),
+	labName: z.string().min(1, "Наименование лаборатории обязательно"),
+	workType: labWorkTypeSchema,
+	toothReference: z.string().max(50).nullable().optional(),
+	impressionType: impressionTypeSchema.nullable().optional(),
+	antagonistInfo: z.string().max(500).nullable().optional(),
+	shade: anyVitaShadeSchema.nullable().optional(),
+	status: labOrderStatusSchema.default("sent"),
+	sentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Дата отправки должна быть в формате YYYY-MM-DD"),
+	expectedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Плановая дата должна быть в формате YYYY-MM-DD").nullable().optional(),
+	receivedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Дата доставки должна быть в формате YYYY-MM-DD").nullable().optional(),
+	priceRub: z.number().nonnegative("Стоимость не может быть отрицательной").nullable().optional(),
+	notes: z.string().max(2000).nullable().optional(),
+	createdAt: z.string().optional(),
+});
+export type LabOrderRecord = z.infer<typeof labOrderRecordSchema>;
+
+export function isLabOrderOverdue(
+	order: LabOrderRecord,
+	referenceDate: Date = new Date(),
+): boolean {
+	if (
+		order.status === "received" ||
+		order.status === "ready" ||
+		order.status === "ready_in_clinic" ||
+		order.status === "fitted" ||
+		order.status === "completed" ||
+		order.status === "cancelled"
+	) {
+		return false;
+	}
+
+	if (!order.expectedDate) {
+		return false;
+	}
+
+	const [expY, expM, expD] = order.expectedDate.split("-").map(Number);
+	if (!expY || !expM || !expD) {
+		return false;
+	}
+
+	const expectedEndOfDayUtc = Date.UTC(expY, expM - 1, expD, 23, 59, 59, 999);
+	return referenceDate.getTime() > expectedEndOfDayUtc;
+}
+
+export function calculateLabTurnaroundDays(
+	sentDate: string,
+	receivedDate: string,
+): number {
+	const [sY, sM, sD] = sentDate.split("-").map(Number);
+	const [rY, rM, rD] = receivedDate.split("-").map(Number);
+
+	if (!sY || !sM || !sD || !rY || !rM || !rD) {
+		return 0;
+	}
+
+	const sentUtc = Date.UTC(sY, sM - 1, sD);
+	const recvUtc = Date.UTC(rY, rM - 1, rD);
+
+	if (recvUtc < sentUtc) {
+		return 0;
+	}
+
+	const msPerDay = 24 * 60 * 60 * 1000;
+	return Math.round((recvUtc - sentUtc) / msPerDay);
+}
+
+export function formatLabOrderPrescriptionA4(
+	order: LabOrderRecord,
+	clinicName: string,
+	doctorName: string,
+): string {
+	const workLabel = LAB_WORK_TYPE_LABELS_RU[order.workType] || order.workType;
+	const statusLabel = LAB_ORDER_STATUS_LABELS_RU[order.status] || order.status;
+	const impressionLabel = order.impressionType
+		? LAB_IMPRESSION_LABELS_RU[order.impressionType]
+		: "Не указан / По согласованию";
+	const shadeLabel = order.shade ? `VITA ${order.shade}` : "Не указан / Индивидуально";
+	const priceFormatted =
+		typeof order.priceRub === "number" && order.priceRub >= 0
+			? `${order.priceRub.toLocaleString("ru-RU").replace(/\u00A0/g, " ")} руб.`
+			: "По прейскуранту ЗТЛ";
+
+	const orderNum = order.id ? `ЗТЛ-${order.id.slice(0, 8).toUpperCase()}` : "Б/Н";
+
+	return [
+		"================================================================================",
+		"            НАРЯД-ЗАКАЗ В ЗУБОТЕХНИЧЕСКУЮ ЛАБОРАТОРИЮ (ФОРМА № ЗТЛ-1)           ",
+		"             (Официальное клиническое задание на изготовление протеза)           ",
+		"================================================================================",
+		"",
+		`Клиника:     ${clinicName}`,
+		`Врач:        ${doctorName}`,
+		`Лаборатория: ${order.labName} (ID контакта: ${order.labContactId})`,
+		`Номер заказа: ${orderNum}`,
+		`Дата выдачи: ${order.sentDate}`,
+		"",
+		"--------------------------------------------------------------------------------",
+		"1. ДАННЫЕ ПАЦИЕНТА",
+		"--------------------------------------------------------------------------------",
+		`ФИО пациента:        ${order.patientName}`,
+		`Идентификатор (ID):  ${order.patientId}`,
+		"",
+		"--------------------------------------------------------------------------------",
+		"2. КЛИНИЧЕСКИЕ И ТЕХНИЧЕСКИЕ ПАРАМЕТРЫ КОНСТРУКЦИИ",
+		"--------------------------------------------------------------------------------",
+		`Вид конструкции:     ${workLabel} (${order.workType})`,
+		`Зубная формула (FDI): ${order.toothReference || "Не указана"}`,
+		`Расцветка / оттенок: ${shadeLabel}`,
+		`Тип оттиска / скана: ${impressionLabel}`,
+		`Антагонисты:         ${order.antagonistInfo || "Оттиск / цифровой скан антагонистов приложен"}`,
+		"",
+		"--------------------------------------------------------------------------------",
+		"3. СРОКИ ИЗГОТОВЛЕНИЯ И ФИНАНСОВЫЕ УСЛОВИЯ",
+		"--------------------------------------------------------------------------------",
+		`Дата отправки в ЗТЛ: ${order.sentDate}`,
+		`Плановая дата сдачи: ${order.expectedDate || "По согласованию"}`,
+		`Фактическая сдача:   ${order.receivedDate || "В производстве"}`,
+		`Текущий статус:      ${statusLabel}`,
+		`Оценочная стоимость: ${priceFormatted}`,
+		"",
+		"--------------------------------------------------------------------------------",
+		"4. ОСОБЫЕ КЛИНИЧЕСКИЕ УКАЗАНИЯ И ПРИМЕЧАНИЯ ТЕХНИКУ",
+		"--------------------------------------------------------------------------------",
+		order.notes && order.notes.trim().length > 0
+			? order.notes.trim()
+			: "Стандартный клинический протокол. Изготовление строго по анатомическим ориентирам.",
+		"",
+		"--------------------------------------------------------------------------------",
+		"5. РЕГЛАМЕНТНЫЕ ТРЕБОВАНИЯ И САНИТАРНЫЙ КОНТРОЛЬ",
+		"--------------------------------------------------------------------------------",
+		"- СанПиН 3.3686-21: Дезинфекция оттисков, прикусных валиков и регистратов окклюзии",
+		"  проведена в клинике перед отправкой в зуботехническую лабораторию.",
+		"- ГОСТ Р 51087-97 / ГОСТ 31576-2012: Требования к совместимости стоматологических материалов.",
+		"- Клинические рекомендации СтАР по ортопедической стоматологии.",
+		"- Клиническое решение: срок плана лечения (>30 дней) подтвержден врачом и не препятствует",
+		"  изготовлению наряда ЗТЛ, оказанию услуг или оплате.",
+		"",
+		"--------------------------------------------------------------------------------",
+		"6. ПОДПИСИ СТОРОН",
+		"--------------------------------------------------------------------------------",
+		`Врач-стоматолог-ортопед:     ____________________ / ${doctorName} /`,
+		"",
+		`Зубной техник / приемщик:    ____________________ / ${order.labName} /`,
+		"",
+		'Дата приемки работы в ЗТЛ:   "____" ____________ 20___ г.',
+		"================================================================================",
+	].join("\n");
+}
+
+export interface FormZtl1OrderInput {
+	id?: string | null | undefined;
+	patientId?: string | null | undefined;
+	patientFullName?: string | null | undefined;
+	patientName?: string | null | undefined;
+	labName?: string | null | undefined;
+	labId?: string | null | undefined;
+	labContactId?: string | null | undefined;
+	workType?: string | null | undefined;
+	toothNumbers?: readonly (string | number)[] | null | undefined;
+	toothReference?: string | null | undefined;
+	antagonistInfo?: string | null | undefined;
+	sentDate?: string | null | undefined;
+	expectedDate?: string | null | undefined;
+	receivedDate?: string | null | undefined;
+	labCostKopecks?: number | null | undefined;
+	priceRub?: number | null | undefined;
+	notes?: string | null | undefined;
+	doctorFullName?: string | null | undefined;
+}
+
+export const formatLabOrderFormZtl1A4Protocol = (
+	order: FormZtl1OrderInput | null | undefined,
+	clinicName?: string,
+): string => {
+	if (!order) return "";
+	const safeWorkType: LabWorkType =
+		order.workType && (labWorkTypeSchema.options as readonly string[]).includes(order.workType)
+			? (order.workType as LabWorkType)
+			: "other";
+	return formatLabOrderPrescriptionA4(
+		{
+			id: typeof order.id === "string" && order.id.length === 36 ? order.id : undefined,
+			patientId: String(order.patientId || "patient-1"),
+			patientName: String(order.patientFullName || order.patientName || "Пациент"),
+			labName: String(order.labName || "Зуботехническая лаборатория"),
+			labContactId: String(order.labId || order.labContactId || "lab-default"),
+			workType: safeWorkType,
+			toothReference: Array.isArray(order.toothNumbers) ? order.toothNumbers.join(", ") : (order.toothReference || undefined),
+			antagonistInfo: order.antagonistInfo || undefined,
+			impressionType: "digital_scan",
+			sentDate: order.sentDate || new Date().toISOString().slice(0, 10),
+			expectedDate: order.expectedDate || undefined,
+			receivedDate: order.receivedDate || undefined,
+			status: "sent",
+			priceRub: typeof order.labCostKopecks === "number" ? Math.round(order.labCostKopecks / 100) : (order.priceRub || undefined),
+			notes: order.notes || undefined,
+		},
+		clinicName || "Стоматологическая клиника DENTE",
+		String(order.doctorFullName || "Лечащий врач-ортопед")
+	);
+};
+
+export const labOrdersEngine = {
+	formatLabOrderPrescriptionA4,
+	formatLabOrderFormZtl1A4Protocol,
+};
 

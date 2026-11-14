@@ -104,7 +104,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 					))}
 				</datalist>
 			</div>
-			{/* Быстрые шаблоны ортопедии (1-клик пресеты) */}
+			{/* Быстрые шаблоны ортопедии (готовые пресеты) */}
 			<div className="space-y-1">
 				<div className="text-[10px] text-[var(--ink-muted)] font-semibold">Быстрые шаблоны ортопедии:</div>
 				<div className="flex flex-wrap gap-1">
@@ -141,7 +141,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 			<div className="space-y-0.5">
 				<label htmlFor="lab-material-select" className="text-xs font-semibold text-[var(--ink)] block">Вид конструкции</label>
 				<select id="lab-material-select" data-testid="lab-material-select" value={selectedMaterialId} onChange={(e) => setSelectedMaterialId(e.target.value)} className="w-full text-xs font-semibold p-2 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]">
-					{CANONICAL_LAB_MATERIALS.map((mat) => (<option key={mat.id} value={mat.id}>{mat.titleRu.split(" (")[0]} ({mat.defaultDurationDays} раб. дн.)</option>))}
+					{CANONICAL_LAB_MATERIALS.map((mat) => (<option key={mat.id} value={mat.id} data-testid={`quick-construction-${mat.id}`}>{mat.titleRu.split(" (")[0]} ({mat.defaultDurationDays} раб. дн.)</option>))}
 				</select>
 			</div>
 			<div className="space-y-1">
@@ -175,7 +175,11 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 									if (!customLabs.includes(trimmed)) {
 										const updated = [...customLabs, trimmed];
 										setCustomLabs(updated);
-										try { localStorage.setItem("dente_custom_lab_names", JSON.stringify(updated)); } catch {}
+										try {
+											localStorage.setItem("dente_custom_lab_names", JSON.stringify(updated));
+										} catch (err) {
+											console.warn("Failed to persist custom lab names:", err);
+										}
 									}
 									setSelectedLab(trimmed);
 									setCustomLabInput("");

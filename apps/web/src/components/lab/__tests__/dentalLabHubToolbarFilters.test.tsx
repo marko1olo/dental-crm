@@ -17,10 +17,10 @@ describe("Wave 239 — Canonical Lab Orders Toolbar Filters (SSOT)", () => {
 
 		let root: Root | null = null;
 		await act(async () => {
-			root = createRoot(container as any);
+			root = createRoot(container as unknown as HTMLElement);
 			root.render(
 				<LabOrdersFilterBar
-					metrics={{ total: 12, inProgress: 4, ready: 7, overdue: 1 }}
+					metrics={{ total: 12, inProgress: 4, ready: 7, overdue: 1, tryIn: 0, completed: 0 }}
 					searchQuery=""
 					onSearchChange={() => {}}
 					doctorFilter="all"

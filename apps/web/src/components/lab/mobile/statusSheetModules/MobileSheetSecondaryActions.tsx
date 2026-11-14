@@ -48,7 +48,7 @@ export function MobileSheetSecondaryActions({
 
 			<button
 				type="button"
-				onClick={() => { onClose(); copyPortalLink((order as any).portalToken || order.id); }}
+				onClick={() => { onClose(); copyPortalLink(order.portalToken || order.id); }}
 				className="mobile-lab-secondary-btn"
 				data-testid="mobile-sheet-portal-link-btn"
 			>

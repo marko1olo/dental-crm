@@ -1,7 +1,7 @@
 import { rubToKopecks } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { cashBoxes } from "../../../db/schema.js";
-import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
+import { ensureOrganizationCashBoxes, type DbExecutor } from "../../../db/seeds/seed_cash_and_reasons.js";
 import type { LabOrderPayInput } from "./labOrderPayDb.js";
 
 export function resolveAmountToPayKopecks(
@@ -14,11 +14,15 @@ export function resolveAmountToPayKopecks(
 	if (order.labCostRub !== null && order.labCostRub !== undefined && Number(order.labCostRub) > 0) {
 		return rubToKopecks(order.labCostRub);
 	}
+	// Fallback для нарядов, где себестоимость не была указана явно
+	if (order.priceRub !== null && order.priceRub !== undefined && Number(order.priceRub) > 0) {
+		return rubToKopecks(order.priceRub);
+	}
 	return 0;
 }
 
 export async function resolveTargetCashBox(
-	tx: any,
+	tx: DbExecutor,
 	orgId: string,
 	cashBoxId?: string,
 ): Promise<typeof cashBoxes.$inferSelect | undefined> {

@@ -49,7 +49,7 @@ import {
 	type LabWorkType,
 	vitaShadeSchema,
 	type VitaShade,
-} from "../labOrdersEngine.js";
+} from "../labOrders.js";
 import {
 	calculateLabTurnaroundDays as calcTurnaroundFromLabIndex,
 	canTransitionLabOrderStatus as canTransitionFromLabIndex,
@@ -129,15 +129,20 @@ describe("Wave 127: Dental Lab Orders & Prosthodontic Workflow Engine", () => {
 			assert.throws(() => labWorkTypeSchema.parse("invalid_work_type"));
 		});
 
-		it("labOrderStatusSchema validates all 7 lab order lifecycle statuses", () => {
+		it("labOrderStatusSchema validates all 12 lab order lifecycle statuses", () => {
 			const expectedStatuses: LabOrderStatus[] = [
 				"draft",
 				"sent",
 				"in_progress",
-				"ready",
+				"shipped",
 				"received",
+				"ready",
+				"ready_in_clinic",
+				"refitting",
 				"fitted",
+				"completed",
 				"cancelled",
+				"rejected_remake",
 			];
 
 			for (const status of expectedStatuses) {
@@ -145,7 +150,7 @@ describe("Wave 127: Dental Lab Orders & Prosthodontic Workflow Engine", () => {
 				assert.ok(LAB_ORDER_STATUS_LABELS_RU[status].length > 0);
 			}
 
-			assert.throws(() => labOrderStatusSchema.parse("completed_legacy"));
+			assert.throws(() => labOrderStatusSchema.parse("invalid_status_xyz"));
 		});
 
 		it("labImpressionTypeSchema validates all 5 impression and scanning modalities", () => {

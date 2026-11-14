@@ -26,8 +26,9 @@ export function useGuestLabPortalState(token: string) {
 				if (!res.ok) throw new Error(labOrderLoadFailureText(res.status));
 				const data = (await res.json()) as LabOrderData;
 				if (!cancelled) setOrder(data);
-			} catch (e) {
-				showToast(actionFailureToast("Ошибка выполнения операции", (e as { status?: number })?.status ?? null), "error");
+			} catch (e: unknown) {
+				const errStatus = typeof e === "object" && e !== null && "status" in e && typeof e.status === "number" ? e.status : null;
+				showToast(actionFailureToast("Ошибка выполнения операции", errStatus), "error");
 				if (!cancelled) setError(e instanceof Error ? e.message : NETWORK_FAILURE_TEXT);
 			} finally {
 				if (!cancelled) setIsLoading(false);
@@ -61,7 +62,7 @@ export function useGuestLabPortalState(token: string) {
 			} else {
 				showToast("Статус заказа сохранён, врач увидит его в расписании клиники", "success");
 			}
-		} catch (e) {
+		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : statusSaveFailureText(0), "error");
 		} finally {
 			setIsUpdating(false);
@@ -82,7 +83,10 @@ export function useGuestLabPortalState(token: string) {
 		try {
 			const dataUrl = await new Promise<string>((resolve, reject) => {
 				const reader = new FileReader();
-				reader.onload = () => resolve(reader.result as string);
+				reader.onload = () => {
+					if (typeof reader.result === "string") resolve(reader.result);
+					else reject(new Error("Не удалось прочитать изображение"));
+				};
 				reader.onerror = reject;
 				reader.readAsDataURL(file);
 			});
@@ -94,8 +98,8 @@ export function useGuestLabPortalState(token: string) {
 			if (!res.ok) throw new Error("Не удалось загрузить фото работы в клинику.");
 			setOrder({ ...order, attachedImageUrl: dataUrl });
 			showToast("Фотография работы успешно передана врачу в клинику!", "success");
-		} catch (err: any) {
-			showToast(err.message || "Ошибка загрузки фотографии", "error");
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : "Ошибка загрузки фотографии", "error");
 		} finally {
 			setIsUploadingPhoto(false);
 		}

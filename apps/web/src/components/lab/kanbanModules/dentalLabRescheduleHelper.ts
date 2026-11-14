@@ -25,6 +25,8 @@ export function triggerLabOrderReschedule(
 				}),
 			);
 			window.location.hash = "#schedule";
-		} catch {}
+		} catch (err) {
+			console.warn("Failed to trigger lab order reschedule draft:", err);
+		}
 	}
 }

@@ -8,7 +8,7 @@ export interface MobileSheetHeaderProps {
 }
 
 export function MobileSheetHeader({ order, onClose }: MobileSheetHeaderProps): React.JSX.Element {
-	const orderNumDisplay = (order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
+	const orderNumDisplay = order.orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
 	const toothDisplay = order.toothFdi
 		? `Зуб ${order.toothFdi}`
 		: order.selectedTeeth?.length

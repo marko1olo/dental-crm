@@ -25,8 +25,8 @@ export function getAttachmentFileName(url: string): string {
 		const parsed = new URL(url, window.location.origin);
 		const lastSegment = parsed.pathname.split("/").filter(Boolean).pop();
 		if (lastSegment) return decodeURIComponent(lastSegment);
-	} catch {
-		// fallback
+	} catch (err: unknown) {
+		console.warn("Failed to parse attachment filename from URL:", err);
 	}
 	const clean = url.split("?")[0]?.split("#")[0] ?? "";
 	const last = clean.split("/").pop();
@@ -44,8 +44,8 @@ export function getAttachmentFileSize(url: string): string {
 		const parsed = new URL(url, window.location.origin);
 		const sizeParam = parsed.searchParams.get("size");
 		if (sizeParam) return decodeURIComponent(sizeParam);
-	} catch {
-		// fallback
+	} catch (err: unknown) {
+		console.warn("Failed to parse attachment file size from URL:", err);
 	}
 	if (url.startsWith("data:")) {
 		const bytes = Math.round((url.length * 3) / 4);

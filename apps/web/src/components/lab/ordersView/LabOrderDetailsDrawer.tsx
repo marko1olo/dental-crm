@@ -6,8 +6,8 @@ import { DentalLabPriceMatrixModal } from "../DentalLabPriceMatrixModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
 import { LabTrackingDrawer } from "../LabTrackingDrawer";
 import { LabAttachScanModal } from "../LabAttachScanModal";
-import { DentalLabReadyInClinicModal } from "../DentalLabReadyInClinicModal";
-import { LabActionPromptModal } from "../LabActionPromptModal";
+import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "../DentalLabReadyInClinicModal";
+import { LabActionPromptModal, type LabPromptDialogState } from "../LabActionPromptModal";
 
 export interface LabOrderDetailsDrawerProps {
 	readonly isWorkOrderModalOpen?: boolean;
@@ -22,7 +22,7 @@ export interface LabOrderDetailsDrawerProps {
 	readonly onCloseTrackingDrawer?: () => void;
 	readonly selectedOrderForTracking?: DentalLabOrderData | null;
 	readonly onStageUpdate?: (orderId: string, newStage: string) => Promise<void>;
-	readonly promptState?: any;
+	readonly promptState?: LabPromptDialogState | null;
 	readonly onClosePromptState?: () => void;
 	readonly isScanModalOpen?: boolean;
 	readonly onCloseScanModal?: () => void;
@@ -33,7 +33,7 @@ export interface LabOrderDetailsDrawerProps {
 	readonly onCloseTrackerModal?: () => void;
 	readonly isReadyInClinicModalOpen?: boolean;
 	readonly onCloseReadyInClinicModal?: () => void;
-	readonly readyInClinicOrder?: any;
+	readonly readyInClinicOrder?: ReadyInClinicLabOrder | null;
 	readonly view3DScanOrder: DentalLabOrderData | null;
 	readonly onClose3DScanViewer: () => void;
 	readonly isHubModalOpen?: boolean;
@@ -140,7 +140,7 @@ export function LabOrderDetailsDrawer({
 					isOpen={Boolean(isScanModalOpen)}
 					onClose={onCloseScanModal || (() => {})}
 					order={scanAttachOrder}
-					initialType={scanAttachType}
+					initialType={scanAttachType ?? "stl"}
 					onSave={onSaveAttachedFile || (async () => {})}
 				/>
 			)}

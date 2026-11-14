@@ -90,8 +90,9 @@ export function DentalLabReadyInClinicModal({
 		try {
 			await navigator.clipboard.writeText(msgText);
 			showToast("Сообщение скопировано в буфер");
-		} catch {
-			showToast("Не удалось скопировать");
+		} catch (err: unknown) {
+			console.warn("Failed to copy lab ready notification to clipboard:", err);
+			showToast("Не удалось скопировать", "error");
 		}
 	};
 
@@ -119,7 +120,9 @@ export function DentalLabReadyInClinicModal({
 				window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(draft));
 				window.dispatchEvent(new CustomEvent("dente-quick-appointment-draft", { detail: draft }));
 				window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: draft }));
-			} catch {}
+			} catch (err) {
+				console.warn("Failed to dispatch quick booking draft:", err);
+			}
 		}
 		onScheduleAppointment?.(draft);
 		showToast("Открыта запись на примерку / фиксацию", "success");

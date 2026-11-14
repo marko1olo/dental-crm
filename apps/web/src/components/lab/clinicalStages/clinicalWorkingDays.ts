@@ -12,7 +12,7 @@ export interface WorkingDaysRemainingInfo {
 export function calculateMaterialTotalCostKopecks(materialId: string, teethCount = 1): number {
 	const count = Math.max(1, teethCount);
 	const mat = MATERIALS.find((m) => m.id === materialId);
-	const unitKopecks = (mat as any)?.baseCostKopecks ?? 650000;
+	const unitKopecks = mat?.baseCostKopecks ?? 650000;
 	return unitKopecks * count;
 }
 

@@ -105,6 +105,8 @@ export const createLabOrderSchema = z.object({
 	costKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
 	labCostKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
 	amountKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
+	isWarranty: z.boolean().optional().nullable(),
+	isWarrantyRemake: z.boolean().optional().nullable(),
 	isWarrantyRework: z.boolean().optional().nullable(),
 	warrantyLiabilityType: z.string().trim().optional().nullable(),
 	orderNumber: z.string().trim().optional().nullable(),

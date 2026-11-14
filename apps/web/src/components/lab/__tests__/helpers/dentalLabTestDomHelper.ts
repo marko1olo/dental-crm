@@ -7,8 +7,47 @@ import {
 
 export { type MockFn, createMockFn, type MockDomNode };
 
+export interface MockDocument {
+	nodeType: number;
+	createElement: (tag?: string) => MockDomNode;
+	createElementNS: (_ns: string, tag: string) => MockDomNode;
+	createTextNode: (text: string) => unknown;
+	createComment: () => unknown;
+	addEventListener: (type: string, fn: EventListener) => void;
+	removeEventListener: (type: string, fn: EventListener) => void;
+	documentElement: MockDomNode;
+	body: MockDomNode;
+	activeElement: unknown;
+	defaultView?: unknown;
+}
+
+export interface MockWindow {
+	document: MockDocument;
+	location: { origin: string; href: string; search: string; hash: string };
+	addEventListener: (type: string, fn: EventListener) => void;
+	removeEventListener: (type: string, fn: EventListener) => void;
+	navigator: { clipboard: { writeText: MockFn<[string], Promise<void>> } };
+	print: MockFn;
+	HTMLIFrameElement: typeof Object;
+	HTMLElement: typeof Object;
+	Element: typeof Object;
+	Node: typeof Object;
+}
+
+type TestDomGlobal = typeof globalThis & {
+	document?: MockDocument;
+	window?: MockWindow;
+	print?: MockFn;
+	navigator?: { clipboard?: unknown };
+	HTMLIFrameElement?: typeof Object;
+	HTMLElement?: typeof Object;
+	Element?: typeof Object;
+	Node?: typeof Object;
+	IS_REACT_ACT_ENVIRONMENT?: boolean;
+};
+
 export function setupMockDom(defaultUrl = "http://localhost:5173/#/lab-orders") {
-	let doc: any;
+	let doc: MockDocument;
 	function createMockElement(tag = "div"): MockDomNode {
 		const children: MockDomNode[] = [];
 		const listeners: Record<string, EventListener[]> = {};
@@ -53,14 +92,14 @@ export function setupMockDom(defaultUrl = "http://localhost:5173/#/lab-orders") 
 	};
 	doc.documentElement.ownerDocument = doc;
 	doc.body.ownerDocument = doc;
-	const win = {
+	const win: MockWindow = {
 		document: doc, location: { origin: "http://localhost:5173", href: defaultUrl, search: "", hash: defaultUrl.includes("#") ? defaultUrl.slice(defaultUrl.indexOf("#")) : "" },
 		addEventListener: () => {}, removeEventListener: () => {},
 		navigator: { clipboard: { writeText: clipboardWriteMock } }, print: printMock,
 		HTMLIFrameElement: class {}, HTMLElement: class {}, Element: class {}, Node: class {},
 	};
-	(doc as any).defaultView = win;
-	const g = globalThis as any;
+	doc.defaultView = win;
+	const g: TestDomGlobal = globalThis;
 	g.document = doc; g.window = win; g.print = printMock;
 	if (g.navigator) Object.defineProperty(g.navigator, "clipboard", { value: win.navigator.clipboard, configurable: true, writable: true });
 	else g.navigator = win.navigator;
@@ -98,9 +137,9 @@ export async function clickNode(node: MockDomNode) {
 		while (curr) {
 			const reactPropKey = Object.keys(curr).find((k) => k.startsWith("__reactProps$"));
 			if (reactPropKey) {
-				const props = (curr as any)[reactPropKey];
-				if (props && typeof props.onClick === "function") {
-					props.onClick({ type: "click", preventDefault: () => {}, stopPropagation: () => {} });
+				const props = (curr as Record<string, unknown>)[reactPropKey];
+				if (props && typeof props === "object" && "onClick" in props && typeof (props as { onClick?: unknown }).onClick === "function") {
+					(props as { onClick: (e: unknown) => void }).onClick({ type: "click", preventDefault: () => {}, stopPropagation: () => {} });
 					return;
 				}
 			}

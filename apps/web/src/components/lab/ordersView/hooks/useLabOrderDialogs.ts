@@ -5,7 +5,7 @@ export function createTechnicianCommentPrompt(
 	onSubmit: (comment: string) => Promise<void> | void,
 ) {
 	return {
-		title: `Комментарий зубному технику · ${(order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ")}`,
+		title: `Комментарий зубному технику · ${order.orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ")}`,
 		description: `Сообщение для техника ЗТЛ по наряду пациента ${order.patientName || "Пациент"}:`,
 		submitLabel: "Отправить технику",
 		submitVariant: "teal" as const,
@@ -26,7 +26,7 @@ export function createRepeatFittingPrompt(
 	onSubmit: (reason: string) => Promise<void> | void,
 ) {
 	return {
-		title: `Повторная примерка · ${(order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ")}`,
+		title: `Повторная примерка · ${order.orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ")}`,
 		description: "Укажите клинические замечания для повторной примерки конструкции:",
 		submitLabel: "Назначить примерку",
 		submitVariant: "teal" as const,
@@ -47,7 +47,7 @@ export function createReclamationPrompt(
 	onSubmit: (reason: string) => Promise<void> | void,
 ) {
 	return {
-		title: `Рекламация / Гарантийная переделка (0 ₽) · ${(order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ")}`,
+		title: `Рекламация / Гарантийная переделка (0 ₽) · ${order.orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ")}`,
 		description: "Укажите причину рекламации. Для пациента переделка бесплатна (0 ₽). Наряд передается технику без создания дубликата пациента.",
 		submitLabel: "Оформить рекламацию (0 ₽)",
 		submitVariant: "danger" as const,

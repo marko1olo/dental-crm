@@ -16,19 +16,22 @@ export interface LabScheduleSlotInfo {
  */
 export function buildLabAppointmentDraft(order: DentalLabOrderData | {
 	patientId: string;
-	patientName?: string;
+	patientName?: string | null | undefined;
 	doctorId?: string | null;
 	doctorName?: string | null;
 	toothFdi?: string | null;
 	material?: string | null;
 	dueDate?: string | null;
-	status?: string;
+	deliveryDate?: string | null;
+	ceramicTrialDate?: string | null;
+	frameworkTrialDate?: string | null;
+	status?: string | undefined;
 }): LabScheduleSlotInfo | null {
 	const targetDate =
 		order.dueDate ||
-		(order as any).deliveryDate ||
-		(order as any).ceramicTrialDate ||
-		(order as any).frameworkTrialDate;
+		order.deliveryDate ||
+		order.ceramicTrialDate ||
+		order.frameworkTrialDate;
 
 	if (!targetDate) return null;
 

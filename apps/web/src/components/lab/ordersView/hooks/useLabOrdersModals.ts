@@ -54,11 +54,11 @@ export function useLabOrdersModals() {
 	const isReadyInClinicModalOpen = activeLabModal === "ready_in_clinic";
 	const setIsReadyInClinicModalOpen = useCallback((open: boolean) => setActiveLabModal(open ? "ready_in_clinic" : "none"), []);
 
-	const handleOpenReadyInClinicPrompt = useCallback((order: DentalLabOrderData) => {
+	const handleOpenReadyInClinicPrompt = useCallback((order: Partial<DentalLabOrderData>) => {
 		setOpenMenuOrderId(null);
 		setReadyInClinicOrder({
 			id: order.id || "ztl-order",
-			orderNumber: (order as any).orderNumber || (order.id ? order.id.slice(0, 8) : "ЗТЛ-1"),
+			orderNumber: order.orderNumber || (order.id ? order.id.slice(0, 8) : "ЗТЛ-1"),
 			patientId: order.patientId ?? undefined,
 			patientName: order.patientName || "Пациент",
 			doctorName: order.doctorName ?? undefined,

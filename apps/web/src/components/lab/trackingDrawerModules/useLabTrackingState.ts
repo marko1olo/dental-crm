@@ -64,8 +64,8 @@ export function useLabTrackingState({
 			if (onStageUpdate) await onStageUpdate(order.id, stageToSet, stageNote.trim() || undefined);
 			setActiveStage(stageToSet); setStageNote("");
 			showToast(`Этап наряда ЗТЛ: ${LAB_ORDER_STAGES.find((s) => s.id === stageToSet)?.name}`, "success");
-		} catch (err: any) {
-			showToast(err.message || "Ошибка обновления этапа ЗТЛ", "error");
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : "Ошибка обновления этапа ЗТЛ", "error");
 		} finally { setIsUpdating(false); }
 	};
 
@@ -81,8 +81,8 @@ export function useLabTrackingState({
 				});
 			}
 			showToast("Даты клинических примерок сохранены", "success");
-		} catch (err: any) {
-			showToast(err.message || "Ошибка сохранения дат", "error");
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : "Ошибка сохранения дат", "error");
 		} finally { setIsUpdating(false); }
 	};
 

@@ -1,4 +1,5 @@
 import type { LabOrderStageKey } from "../labClinicalStages";
+import type { PartialDeliveryResult } from "../orderEngine/labPartialDeliveryEngine.js";
 
 export type JawScope = "upper" | "lower" | "both";
 
@@ -12,11 +13,14 @@ export interface DentalLabOrderData {
 	labName?: string | null;
 	technicianName?: string | null;
 	labPhone?: string | null;
+	technicianPhone?: string | null | undefined;
 	secureToken?: string;
+	portalToken?: string | null | undefined;
 	toothFdi?: string | null;
 	selectedTeeth?: number[];
 	jawScope?: JawScope | null;
 	constructionType?: string;
+	workType?: string | null | undefined;
 	material?: string | null;
 	impressionType?: string | null;
 	colorVita?: string | null;
@@ -34,6 +38,7 @@ export interface DentalLabOrderData {
 	surfaceTexture?: string;
 	cementGapMicrons?: number;
 	status?: string;
+	stage?: string | null | undefined;
 	scheduledVisitDate?: string | null;
 	fittingDate?: string | null;
 	fittingCollisionWarning?: string;
@@ -61,7 +66,10 @@ export interface DentalLabOrderData {
 	doctorDeductionRub?: number | null;
 	paidFromCashOperationId?: string | null;
 	isLockedInstalled?: boolean;
+	isWarranty?: boolean;
+	isWarrantyRemake?: boolean;
 	isWarrantyRework?: boolean;
+	warrantyLiabilityType?: string | null;
 	reworkReason?: string;
 	originalOrderId?: string;
 	originalOrderNumber?: string;
@@ -98,7 +106,7 @@ export interface DentalLabOrderModalProps {
 	readonly onOrderSaved?: ((order: DentalLabOrderData) => void) | undefined;
 	readonly onSaveOrder?: ((order: DentalLabOrderData) => void) | undefined;
 	readonly onRescheduleAppointment?: ((orderId: string, newDate: string) => void) | undefined;
-	readonly onPartialDelivery?: ((result: any) => void) | undefined;
+	readonly onPartialDelivery?: ((result: PartialDeliveryResult) => void) | undefined;
 	readonly clinicPhone?: string | undefined;
 	readonly clinicName?: string | undefined;
 }

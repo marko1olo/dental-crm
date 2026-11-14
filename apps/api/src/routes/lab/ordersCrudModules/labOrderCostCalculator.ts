@@ -79,8 +79,8 @@ export async function fetchLabPriceFromDb(
 				return { costRub: resolvedCost, priceRub: basePrice };
 			}
 		}
-	} catch {
-		// При сбоях запроса к serviceCatalogItems переходим к lab_items
+	} catch (err: unknown) {
+		console.warn("[labOrderCostCalculator] Failed to query serviceCatalogItems, falling back to lab_items:", err);
 	}
 
 	// 2. Поиск в исторических позициях lab_items по типу материала
@@ -109,8 +109,8 @@ export async function fetchLabPriceFromDb(
 				return { costRub: parsedPrice, priceRub: parsedPrice };
 			}
 		}
-	} catch {
-		// При сбоях запроса к lab_items переходим к каноническому фолбеку
+	} catch (err: unknown) {
+		console.warn("[labOrderCostCalculator] Failed to query lab_items, falling back to presets:", err);
 	}
 
 	// 3. Безопасный канонический фолбек по пресетам

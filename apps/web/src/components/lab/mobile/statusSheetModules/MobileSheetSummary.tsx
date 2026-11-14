@@ -11,9 +11,9 @@ export interface MobileSheetSummaryProps {
 export function MobileSheetSummary({ order }: MobileSheetSummaryProps): React.JSX.Element {
 	const constructionDisplay = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
-	const labNameDisplay = (order as any).labName || "Центральная CAD/CAM ЗТЛ";
-	const techNameDisplay = (order as any).technicianName || "Дежурный зубной техник";
-	const labPhoneDisplay = (order as any).labPhone || (order as any).technicianPhone || null;
+	const labNameDisplay = order.labName || "Центральная CAD/CAM ЗТЛ";
+	const techNameDisplay = order.technicianName || "Дежурный зубной техник";
+	const labPhoneDisplay = order.labPhone || order.technicianPhone || null;
 
 	return (
 		<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
