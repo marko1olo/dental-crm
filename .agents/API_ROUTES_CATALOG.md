@@ -264,7 +264,7 @@
 | `GET` | `/api/templates/:id` | [templates.ts:172](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/templates.ts#L172) | Clinical Mutation Secret | `templateCreateBodySchema` | 400, 403, 404 | `visitTemplates` |
 | `DELETE` | `/api/templates/:id` | [templates.ts:251](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/templates.ts#L251) | Clinical Mutation Secret | — | 403, 404 | `visitTemplates` |
 | `POST` | `/api/templates/seed` | [templates.ts:293](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/templates.ts#L293) | Clinical Mutation Secret | — | 403 | `visitTemplates` |
-| `PUT` | `/api/treatment-plans/:planId/signature` | [diary.ts:1682](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary.ts#L1682) | Clinical Mutation Secret | `diaryIdParamsSchema` | 403, 404 | `treatmentPlans, patients` |
+| `POST` | `/api/treatment-plans/:id/sign-pep` | [pepSigner.ts:12](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentPlan/pep/pepSigner.ts#L12) | Clinical Mutation Secret | `signTreatmentPlanPepSchema` | 400, 403, 404 | `treatmentPlans, patients, auditEvents` |
 | `POST` | `/api/visits/:visitId/apply-plan-items` | [visits.ts:673](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits.ts#L673) | Clinical Mutation Secret | `applyPlanItemsToVisitSchema` | 400, 500 | — |
 | `POST` | `/api/visits/:visitId/draft/accept` | [visits.ts:546](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits.ts#L546) | Clinical Mutation Secret | — | 500 | — |
 | `GET` | `/api/visits/:visitId/draft/autosave` | [visits.ts:458](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/visits.ts#L458) | Clinical Read Secret | `visitDraftAutosaveResponseSchema` | 404 | — |

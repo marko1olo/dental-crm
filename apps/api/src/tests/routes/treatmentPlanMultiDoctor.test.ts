@@ -13,6 +13,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
+import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -113,6 +114,7 @@ describe("Multi-Doctor Consortium in Treatment Plans (PostgreSQL 18 & Odontogram
 
 		app = createTenantTestApp();
 		await registerOdontogramRoutes(app);
+		await app.register(treatmentPlanRoutes);
 		await app.ready();
 	});
 

@@ -29,20 +29,20 @@ export async function confirmSignatureApi(
 	signatureBase64: string,
 ) {
 	if (!planId) return;
-	try {
-		await fetch(`/api/treatment-plans/${encodeURIComponent(planId)}/sign-pep`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				action: "confirm",
-				method: signMethod === "paper" ? "paper" : signMethod === "qr" ? "qr_touch" : "sms",
-				code: smsCode.trim() || "123456",
-				phone,
-				signerName: patientName,
-				signatureBase64,
-			}),
-		});
-	} catch {
-		// Оффлайн fallback
+	const res = await fetch(`/api/treatment-plans/${encodeURIComponent(planId)}/sign-pep`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			action: "confirm",
+			method: signMethod === "paper" ? "paper" : signMethod === "qr" ? "qr_touch" : "sms",
+			code: smsCode.trim(),
+			phone,
+			signerName: patientName,
+			signatureBase64,
+		}),
+	});
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}));
+		throw new Error(body.message || "Неверный код подтверждения");
 	}
 }

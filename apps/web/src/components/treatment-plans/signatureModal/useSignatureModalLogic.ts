@@ -70,21 +70,27 @@ export function useSignatureModalLogic({
 			effectiveSignature = signMethod === "sms" ? SMS_PEP_SIGNATURE_DATA_URL : signMethod === "qr" ? QR_PEP_SIGNATURE_DATA_URL : PAPER_SIGNATURE_DATA_URL;
 		}
 
-		await confirmSignatureApi(planId, signMethod, smsCode, phone, patientName, effectiveSignature);
+		try {
+			await confirmSignatureApi(planId, signMethod, smsCode, phone, patientName, effectiveSignature);
 
-		onSignedSuccess({
-			patientId,
-			patientName,
-			planTierId: tier.tierId,
-			planTitle: tier.title,
-			totalAmountRub: tier.totalRub,
-			signatureBase64: effectiveSignature,
-			agreedAtIso: new Date().toISOString(),
-			doctorFullName,
-			clinicName,
-			termsAccepted: true,
-		});
-		setIsSubmitting(false);
+			onSignedSuccess({
+				patientId,
+				patientName,
+				planTierId: tier.tierId,
+				planTitle: tier.title,
+				totalAmountRub: tier.totalRub,
+				signatureBase64: effectiveSignature,
+				agreedAtIso: new Date().toISOString(),
+				doctorFullName,
+				clinicName,
+				termsAccepted: true,
+			});
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Неверный код подтверждения";
+			setErrorText(message);
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	const handlePaperConfirm = () => {

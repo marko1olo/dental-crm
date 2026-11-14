@@ -9,11 +9,11 @@
  * Apple HIG: Сенсорная зона >= 44x44px, Drag Handle 36x5px, нативный Segmented Switcher на смартфонах (390x844).
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
 	Stethoscope, Percent, Printer, X, CheckCircle2,
 	FileText, BarChart3, Package, UserCheck, Zap,
-	ShieldCheck, Camera, Save, CreditCard,
+	ShieldCheck, Camera, Save, CreditCard, AlertCircle,
 } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage, TreatmentPlanItem } from "./treatmentPlanTypes";
 import { formatRubles } from "./treatmentPlanTypes";
@@ -100,6 +100,11 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
 	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(() => {
 		if (initialStages && initialStages.length > 0) return initialStages;
+		if (teeth && Array.isArray(teeth) && teeth.length > 0) {
+			const tiersFromTeeth = buildPresenterTiersFromTeeth(teeth);
+			const optTier = tiersFromTeeth.find((t) => t.tierId === "optimum") || tiersFromTeeth[0];
+			if (optTier && optTier.stages.length > 0) return optTier.stages;
+		}
 		return [];
 	});
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
@@ -109,11 +114,18 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		if (initialStages && initialStages.length > 0 && initialStages[0]?.id) {
 			return initialStages[0].id;
 		}
+		if (teeth && Array.isArray(teeth) && teeth.length > 0) {
+			const tiersFromTeeth = buildPresenterTiersFromTeeth(teeth);
+			const optTier = tiersFromTeeth.find((t) => t.tierId === "optimum") || tiersFromTeeth[0];
+			if (optTier && optTier.stages[0]?.id) return optTier.stages[0].id;
+		}
 		return "stage-1-hygiene";
 	});
 	const [approvedSuccessMessage, setApprovedSuccessMessage] = useState<string | null>(null);
+	const [approvalErrorMessage, setApprovalErrorMessage] = useState<string | null>(null);
 	const [draftSavedNotice, setDraftSavedNotice] = useState<string | null>(null);
 	const [exportSuccessNotice, setExportSuccessNotice] = useState<string | null>(null);
+	const mainRef = useRef<HTMLElement | null>(null);
 
 	// 0. Реактивная гидратация планов лечения пациента без F5 (Мандаты 8d, 8zq)
 	useEffect(() => {
@@ -128,8 +140,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				if (isCancelled) return;
 
 				if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+					type RemotePlanLike = {
+						status?: string | null;
+						items?: TreatmentPlanItem[];
+						stages?: Array<{ id: string; stageName: string; stageOrder: number }>;
+					};
 					// Находим активный, в процессе или самый свежий план лечения
-					const activePlan = data.plans.find((p: any) => p.status === "Approved" || p.status === "InProgress") || data.plans[0];
+					const plansList = data.plans as readonly RemotePlanLike[];
+					const activePlan = plansList.find((p) => p.status === "Approved" || p.status === "InProgress") || plansList[0];
 					if (activePlan && Array.isArray(activePlan.items) && activePlan.items.length > 0) {
 						const stageDefs = Array.isArray(activePlan.stages) ? activePlan.stages : [];
 						const stageDefMap = new Map<number, { id: string; stageName: string; stageOrder: number }>();
@@ -146,6 +164,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							phaseMap.get(phase)!.push({
 								id: it.id || `plan-item-${phase}-${Date.now()}`,
 								toothNumber: it.toothNumber,
+								priceId: it.priceId || undefined,
 								code804n: it.priceId || it.serviceCode || "",
 								serviceCode: it.serviceCode || it.priceId || "",
 								name: it.name || "Услуга",
@@ -263,12 +282,21 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 	const sanitizedActiveTitle = activeTier.title.replace(/^[^a-zA-Zа-яА-Я0-9]+/, "");
 
+	const resetScrollTop = useCallback(() => {
+		if (typeof window !== "undefined") {
+			window.requestAnimationFrame(() => {
+				if (mainRef.current) mainRef.current.scrollTop = 0;
+			});
+		}
+	}, []);
+
 	// 3. Быстрый выбор типового плана по коду диагноза МКБ-10 (Мандат 8n)
 	const handleSelectDiagnosisPreset = useCallback((diagCode: string) => {
 		const newStages = generateTreatmentPlanFromDiagnosis(diagCode);
 		setStages(newStages);
 		if (newStages.length > 0 && newStages[0]?.id) setExpandedStageId(newStages[0].id);
-	}, []);
+		resetScrollTop();
+	}, [resetScrollTop]);
 
 	// 3.1. Генерация плана из реальной зубной формулы пациента
 	const handleGenerateFromTeeth = useCallback(() => {
@@ -281,7 +309,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			setStages(CANONICAL_CLINICAL_STAGES);
 			if (CANONICAL_CLINICAL_STAGES[0]?.id) setExpandedStageId(CANONICAL_CLINICAL_STAGES[0].id);
 		}
-	}, [teeth]);
+		resetScrollTop();
+	}, [teeth, resetScrollTop]);
 
 	// 3.2. Добавление кастомного клинического этапа
 	const handleAddCustomStage = useCallback(() => {
@@ -323,6 +352,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		setStages((prevStages) => {
 			const newItems: TreatmentPlanItem[] = bundle.items.map((it, idx) => ({
 				id: `bundle-item-${Date.now()}-${idx}`,
+				priceId: it.serviceCode || it.code804n || (it.id && !it.id.startsWith("bundle-") ? it.id : undefined),
 				name: it.name,
 				category: it.category || "Общие",
 				code804n: it.code804n || "",
@@ -392,17 +422,114 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		);
 	}, []);
 
-	// 5. Утверждение плана (Мандат 8e: 0 disabled блокировок)
+	// 5. Утверждение плана (Мандат 8e: 0 disabled блокировок, честная контрактная обработка)
 	const handleApprove = useCallback(async () => {
+		setApprovalErrorMessage(null);
+
+		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+
+		// Сквозная интеграция с Fastify API POST /api/treatment-plans и событиями
+		if (typeof window !== "undefined" && typeof window.fetch === "function" && isValidUuid) {
+			try {
+				let planIdToApprove = currentPlanId;
+
+				// Если плана еще нет в базе — создаем его через канонический POST /api/treatment-plans
+				if (!planIdToApprove) {
+					const createRes = await fetch("/api/treatment-plans", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							patientId,
+							name: `Комплексный план: ${activeTier.title}`,
+							title: `Комплексный план: ${activeTier.title}`,
+							totalPriceRub: activeTier.totalRub,
+							planDiscountPercent: doctorDiscountPercent,
+							stages: activeTier.stages.map((stg, stgIdx) => ({
+								stageOrder: stg.stageNumber || stgIdx + 1,
+								stageName: stg.title || `Этап ${stgIdx + 1}`,
+								completionPercentage: 0,
+								items: stg.items.map((it, itIdx) => {
+									const isSynthetic =
+										!it.id ||
+										it.id.startsWith("bundle-item-") ||
+										it.id.startsWith("item-custom-") ||
+										it.id.startsWith("plan-item-") ||
+										it.id.startsWith("item-");
+									const resolvedPriceId =
+										(it.priceId && !it.priceId.startsWith("bundle-item-") && !it.priceId.startsWith("item-") ? it.priceId : null) ||
+										(it.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.id) ? it.id : null) ||
+										(it.code804n?.trim() || null) ||
+										(it.serviceCode?.trim() || null) ||
+										(!isSynthetic ? it.id : null) ||
+										`item-${stgIdx + 1}-${itIdx + 1}`;
+
+									return {
+										priceId: resolvedPriceId,
+										name: it.name || "Услуга",
+										price: it.priceRub || 0,
+										quantity: it.quantity || 1,
+										discount: it.discountRub || 0,
+										toothNumber: it.toothNumber ?? null,
+									};
+								}),
+							})),
+						}),
+					});
+					if (createRes.ok) {
+						const createdJson = await createRes.json().catch(() => ({}));
+						const createdId = createdJson?.treatmentPlan?.id || createdJson?.plan?.id || createdJson?.id;
+						if (createdId) {
+							planIdToApprove = createdId;
+							setCurrentPlanId(createdId);
+						}
+					} else {
+						const errJson = await createRes.json().catch(() => ({}));
+						const errMsg = errJson?.message || errJson?.error || "Ошибка сохранения плана лечения на сервере";
+						console.warn("[TreatmentPlanStudioModal] Ошибка сохранения плана лечения:", errJson);
+						setApprovalErrorMessage(errMsg);
+						return;
+					}
+				}
+
+				// Канонический вызов утверждения плана POST /api/treatment-plans/:id/approve без создания дубликата
+				if (planIdToApprove) {
+					const approveRes = await fetch(`/api/treatment-plans/${planIdToApprove}/approve`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							selectedTier: activeTier.tierId,
+						}),
+					});
+					if (!approveRes.ok) {
+						const errJson = await approveRes.json().catch(() => ({}));
+						const errMsg = errJson?.message || errJson?.error || "Ошибка утверждения плана лечения на сервере";
+						console.warn("[TreatmentPlanStudioModal] Ошибка утверждения плана лечения:", errJson);
+						setApprovalErrorMessage(errMsg);
+						return;
+					}
+
+					const resJson = await approveRes.json().catch(() => ({}));
+					if (resJson?.invoice || resJson?.createdInvoice) {
+						const inv = resJson.invoice || resJson.createdInvoice;
+						window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: inv, patientId } }));
+						window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
+					}
+				}
+			} catch (networkErr) {
+				console.warn("[TreatmentPlanStudioModal] Сетевой сбой при утверждении плана лечения:", networkErr);
+				setApprovalErrorMessage("Сетевая ошибка при обращении к серверу. Пожалуйста, повторите попытку.");
+				return;
+			}
+		}
+
 		if (onApprovePlan && activeTier) onApprovePlan(activeTier);
 		if (onConfirmSelection && activeTier) onConfirmSelection(activeTier);
 		if (onApproveAndSign && activeTier) onApproveAndSign(activeTier);
 		setApprovedSuccessMessage(`План «${activeTier?.title}» успешно утвержден и активирован в карте пациента!`);
 
-		// Сквозная интеграция с Fastify API POST /api/v1/treatment-plans и событиями
 		if (typeof window !== "undefined") {
 			const detailPayload = {
-				planId: "plan-approved-active",
+				planId: currentPlanId || "plan-approved-active",
 				status: "Approved",
 				selectedTier: activeTier.tierId,
 				totalRub: activeTier.totalRub,
@@ -414,76 +541,6 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 			window.dispatchEvent(new CustomEvent("dente:plan-status-changed", { detail: detailPayload }));
 			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
-
-			const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
-			if (typeof window.fetch === "function" && isValidUuid) {
-				try {
-					let planIdToApprove = currentPlanId;
-
-					// Если плана еще нет в базе — создаем его через канонический POST /api/treatment-plans (без /v1/)
-					if (!planIdToApprove) {
-						const createRes = await fetch("/api/treatment-plans", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								patientId,
-								name: `Комплексный план: ${activeTier.title}`,
-								title: `Комплексный план: ${activeTier.title}`,
-								totalPriceRub: activeTier.totalRub,
-								planDiscountPercent: doctorDiscountPercent,
-								stages: activeTier.stages.map((stg, stgIdx) => ({
-									stageOrder: stg.stageNumber || stgIdx + 1,
-									stageName: stg.title || `Этап ${stgIdx + 1}`,
-									completionPercentage: 0,
-									items: stg.items.map((it, itIdx) => ({
-										priceId: it.id || (it as any).code804n || `item-${stgIdx + 1}-${itIdx + 1}`,
-										name: it.name || "Услуга",
-										price: it.priceRub || 0,
-										quantity: it.quantity || 1,
-										discount: it.discountRub || 0,
-										toothNumber: it.toothNumber ?? null,
-									})),
-								})),
-							}),
-						});
-						if (createRes.ok) {
-							const createdJson = await createRes.json().catch(() => ({}));
-							const createdId = createdJson?.treatmentPlan?.id || createdJson?.plan?.id || createdJson?.id;
-							if (createdId) {
-								planIdToApprove = createdId;
-								setCurrentPlanId(createdId);
-							}
-						} else {
-							const errJson = await createRes.json().catch(() => ({}));
-							console.warn("[TreatmentPlanStudioModal] Ошибка сохранения плана лечения:", errJson);
-						}
-					}
-
-					// Канонический вызов утверждения плана POST /api/treatment-plans/:id/approve без создания дубликата
-					if (planIdToApprove) {
-						const approveRes = await fetch(`/api/treatment-plans/${planIdToApprove}/approve`, {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								selectedTier: activeTier.tierId,
-							}),
-						});
-						if (!approveRes.ok) {
-							const errJson = await approveRes.json().catch(() => ({}));
-							console.warn("[TreatmentPlanStudioModal] Ошибка утверждения плана лечения:", errJson);
-						} else {
-							const resJson = await approveRes.json().catch(() => ({}));
-							if (resJson?.invoice || resJson?.createdInvoice) {
-								const inv = resJson.invoice || resJson.createdInvoice;
-								window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: inv, patientId } }));
-								window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
-							}
-						}
-					}
-				} catch (networkErr) {
-					console.warn("[TreatmentPlanStudioModal] Сетевой сбой при утверждении плана лечения:", networkErr);
-				}
-			}
 		}
 
 		setTimeout(() => {
@@ -570,8 +627,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					</div>
 
 					<div className="flex items-center gap-2 shrink-0">
-						{/* Переключатель глубины: Экспресс vs Эксперт (Apple Segmented Control) */}
-						<div className="tp-depth-switch flex items-center p-0.5 bg-[var(--paper-soft)] border border-[var(--line-subtle)] rounded-xl" role="tablist">
+						{/* Переключатель глубины на десктопе: Экспресс vs Эксперт (Apple Segmented Control) */}
+						<div className="tp-depth-switch hidden sm:flex items-center p-0.5 bg-[var(--paper-soft)] border border-[var(--line-subtle)] rounded-xl" role="tablist">
 							<button
 								type="button"
 								role="tab"
@@ -611,7 +668,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={() => setIsDiscountBarOpen((prev) => !prev)}
-							className={`tp-studio-header-btn inline-flex min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer ${
+							className={`tp-studio-header-btn inline-flex min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 px-2.5 py-1.5 sm:py-1 rounded-xl border text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer ${
 								doctorDiscountPercent > 0 ? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line-subtle)]"
 							}`}
 							title="Скидка врача до 100%"
@@ -625,7 +682,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={handleExportPdf}
-							className="dente-btn dente-btn-secondary !hidden sm:!inline-flex min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
+							className="dente-btn dente-btn-secondary !hidden sm:!inline-flex sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 sm:py-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
 							title="Печать плана и договора"
 							data-testid="print-plan-btn"
 							id="print-plan-btn"
@@ -638,7 +695,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={onClose}
-							className="tp-studio-header-btn inline-flex min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] items-center justify-center transition-colors cursor-pointer"
+							className="tp-studio-header-btn inline-flex min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 sm:w-9 sm:min-w-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] items-center justify-center transition-colors cursor-pointer"
 							aria-label="Закрыть студию планов лечения"
 							data-testid="close-studio-btn"
 						>
@@ -646,6 +703,43 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						</button>
 					</div>
 				</header>
+
+				{/* 1.05. Мобильный компактный переключатель глубины (только на <640px) */}
+				<div className="sm:hidden flex items-center justify-between px-4 py-2 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] shrink-0">
+					<span className="text-xs font-medium text-[var(--muted)]">Режим сметы:</span>
+					<div className="flex items-center p-0.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl" role="tablist">
+						<button
+							type="button"
+							role="tab"
+							aria-selected={depthMode === "express"}
+							onClick={() => setDepthMode("express")}
+							className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								depthMode === "express"
+									? "bg-[var(--teal-soft)] text-[var(--teal,#0d9488)] font-bold shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="depth-mode-express-btn-mobile"
+						>
+							<Zap className="w-3.5 h-3.5 shrink-0" />
+							<span>Экспресс</span>
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={depthMode === "expert"}
+							onClick={() => setDepthMode("expert")}
+							className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								depthMode === "expert"
+									? "bg-[var(--teal-soft)] text-[var(--teal,#0d9488)] font-bold shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="depth-mode-expert-btn-mobile"
+						>
+							<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+							<span>Эксперт</span>
+						</button>
+					</div>
+				</div>
 
 				{/* 1.1. Вкладки студии (в режиме Эксперт — полная палитра; в Экспресс — всегда доступно) */}
 				<div className="flex items-center gap-1 p-1.5 bg-[var(--paper-soft)] border-b border-[var(--line)] px-3 sm:px-6 shrink-0 overflow-x-auto no-scrollbar" role="tablist">
@@ -762,7 +856,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 									type="button"
 									onClick={() => setDoctorDiscountPercent(pct)}
 									className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-										doctorDiscountPercent === pct ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line-subtle)]"
+										doctorDiscountPercent === pct ? "bg-[var(--teal-soft)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)] shadow-2xs font-bold" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--line-subtle)]"
 									}`}
 								>
 									{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
@@ -774,12 +868,20 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				)}
 
 				{/* 2. ОСНОВНОЕ ТЕЛО СТУДИИ */}
-				<main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-28 sm:pb-6 space-y-6">
+				<main ref={mainRef} className="flex-1 overflow-y-auto p-4 sm:p-5 pb-28 sm:pb-5 space-y-4">
 					{/* Индикатор успеха утверждения */}
 					{approvedSuccessMessage && (
 						<div className="p-3 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.15))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-2">
 							<CheckCircle2 className="w-4 h-4 shrink-0" />
 							<span>{approvedSuccessMessage}</span>
+						</div>
+					)}
+
+					{/* Индикатор ошибки утверждения */}
+					{approvalErrorMessage && (
+						<div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-2" role="alert">
+							<AlertCircle className="w-4 h-4 shrink-0" />
+							<span>{approvalErrorMessage}</span>
 						</div>
 					)}
 
@@ -809,7 +911,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							expandedStageId={expandedStageId}
 							onToggleExpandStage={(id) => setExpandedStageId(expandedStageId === id ? null : id)}
 							onSelectDiagnosisPreset={handleSelectDiagnosisPreset}
-							onResetToCanonical={() => setStages(CANONICAL_CLINICAL_STAGES)}
+							onResetToCanonical={() => {
+								setStages(CANONICAL_CLINICAL_STAGES);
+								resetScrollTop();
+							}}
 							isExpressMode={depthMode === "express"}
 							hideMicroConsumablesForPatient={true}
 							onAddItemToStage={handleAddItemToStage}
@@ -878,7 +983,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={handleApprove}
-							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] flex-1 sm:flex-initial w-full sm:w-auto px-3 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white whitespace-nowrap overflow-hidden"
+							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] flex-1 sm:flex-initial w-full sm:w-auto px-3 sm:px-8 py-2.5 text-xs sm:text-sm font-bold rounded-xl inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer whitespace-nowrap overflow-hidden"
 							data-testid="approve-treatment-plan-btn"
 						>
 							<CheckCircle2 className="w-5 h-5 shrink-0" />
@@ -891,8 +996,5 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		</div>
 	);
 };
-
-export type TreatmentPlanPresenterModalProps = TreatmentPlanStudioModalProps;
-export const TreatmentPlanPresenterModal = TreatmentPlanStudioModal;
 
 export default TreatmentPlanStudioModal;

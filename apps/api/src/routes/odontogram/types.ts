@@ -173,6 +173,16 @@ export const treatmentPlanUpsertSchema = z.object({
 	allowRevision: z.boolean().optional().default(false),
 	patientSignature: z.string().max(2_000_000).optional().nullable(),
 	items: z.array(treatmentPlanItemSchema).max(500).default([]),
+	stages: z
+		.array(
+			z.object({
+				id: z.string().uuid().optional(),
+				stageOrder: z.number().int().positive().default(1),
+				stageName: z.string().trim().min(1),
+				completionPercentage: z.number().int().min(0).max(100).default(0),
+			}),
+		)
+		.optional(),
 	planGroupId: z.string().uuid().optional().nullable(),
 	groupName: z.string().trim().max(300).optional().nullable(),
 	isAlternative: z.boolean().optional().default(false),

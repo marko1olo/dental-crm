@@ -5,6 +5,7 @@ import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	treatmentPlanItemsNew,
+	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
 import { debtNumericText, rublesFromKopecks } from "../../../../money/patientDebt.js";
@@ -247,21 +248,91 @@ export async function handleUpsertPatientTreatmentPlan(
 
 			if (!savedPlanId) return null;
 
+			// Синхронизация этапов treatment_plan_stages для сохранения stageId
+			const stageMap = new Map<number, string>();
+			const existingStages = await tx
+				.select()
+				.from(treatmentPlanStages)
+				.where(
+					and(
+						eq(treatmentPlanStages.planId, savedPlanId),
+						eq(treatmentPlanStages.organizationId, organizationId),
+					),
+				);
+			const existingByOrder = new Map(existingStages.map((s) => [s.stageOrder, s]));
+
+			// 1. Если явно переданы stages
+			if (input.stages && input.stages.length > 0) {
+				for (const stg of input.stages) {
+					const order = stg.stageOrder || 1;
+					const existing = existingByOrder.get(order);
+					if (existing) {
+						await tx
+							.update(treatmentPlanStages)
+							.set({
+								stageName: stg.stageName || existing.stageName,
+								completionPercentage: stg.completionPercentage ?? existing.completionPercentage,
+							})
+							.where(eq(treatmentPlanStages.id, existing.id));
+						stageMap.set(order, existing.id);
+					} else {
+						const [created] = await tx
+							.insert(treatmentPlanStages)
+							.values({
+								organizationId,
+								planId: savedPlanId,
+								stageOrder: order,
+								stageName: stg.stageName || `Этап ${order}`,
+								completionPercentage: stg.completionPercentage ?? 0,
+							})
+							.returning({ id: treatmentPlanStages.id });
+						if (created) stageMap.set(order, created.id);
+					}
+				}
+			}
+
+			// 2. Для всех фаз из элементов плана гарантируем наличие этапа в treatment_plan_stages
+			for (const item of input.items) {
+				const phaseNum = item.phase || 1;
+				if (!stageMap.has(phaseNum)) {
+					const existing = existingByOrder.get(phaseNum);
+					if (existing) {
+						stageMap.set(phaseNum, existing.id);
+					} else {
+						const [created] = await tx
+							.insert(treatmentPlanStages)
+							.values({
+								organizationId,
+								planId: savedPlanId,
+								stageOrder: phaseNum,
+								stageName: `Этап ${phaseNum}`,
+								completionPercentage: 0,
+							})
+							.returning({ id: treatmentPlanStages.id });
+						if (created) stageMap.set(phaseNum, created.id);
+					}
+				}
+			}
+
 			if (input.items.length > 0) {
 				await tx.insert(treatmentPlanItemsNew).values(
-					input.items.map((item) => ({
-						organizationId,
-						planId: savedPlanId,
-						toothNumber: item.toothNumber ?? null,
-						priceId: item.priceId,
-						name: item.name ?? null,
-						quantity: item.quantity,
-						price: item.price.toString(),
-						discount: item.discount.toString(),
-						phase: item.phase,
-						isBundle: Boolean(item.isAuto),
-						doctorId: item.doctorId ?? null,
-					})),
+					input.items.map((item) => {
+						const phaseNum = item.phase || 1;
+						return {
+							organizationId,
+							planId: savedPlanId,
+							stageId: stageMap.get(phaseNum) ?? null,
+							toothNumber: item.toothNumber ?? null,
+							priceId: item.priceId,
+							name: item.name ?? null,
+							quantity: item.quantity,
+							price: item.price.toString(),
+							discount: item.discount.toString(),
+							phase: phaseNum,
+							isBundle: Boolean(item.isAuto),
+							doctorId: item.doctorId ?? null,
+						};
+					}),
 				);
 			}
 

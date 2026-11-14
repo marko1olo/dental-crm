@@ -114,10 +114,23 @@ async function main() {
 
     await sleep(500);
 
+    // Гарантированное открытие Студии планов лечения
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("dente:open-treatment-plan", {
+          detail: {
+            patientName: "Смирнова Екатерина Васильевна",
+            doctorFullName: "Д-р Орлов А.В. (Главный врач)",
+            patientId: "00000000-0000-0000-0000-000000000001",
+          },
+        }),
+      );
+    });
+
     // Wait for studio modal container to be visible
     try {
       await page.waitForSelector('[data-testid="treatment-plan-studio-modal"]', { timeout: 6000 });
-      console.log("Found [data-testid=\"treatment-plan-studio-modal\"]!");
+      console.log('Found [data-testid="treatment-plan-studio-modal"]!');
     } catch {
       console.warn("Studio selector not found, capturing current screen state");
     }
