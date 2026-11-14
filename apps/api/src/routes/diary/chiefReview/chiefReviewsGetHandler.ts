@@ -19,7 +19,7 @@ export async function handleChiefReviewsGet(
 	if (!(await requireClinicalReadAccess(req, reply, "read chief physician reviews"))) return;
 
 	const identity = getRequestIdentity(req);
-	const staffRole = identity.role ?? (req as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+	const staffRole = identity.role ?? req.user?.role ?? null;
 	if (staffRole) {
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {

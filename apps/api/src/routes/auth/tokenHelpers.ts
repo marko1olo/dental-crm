@@ -40,10 +40,14 @@ export async function authFailureDelay(): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, 200));
 }
 
+export function isObjectRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 /** Raw body -> plain object for AUTH-first (adminKey) without throw on null/number. */
 export function authBodyRecord(value: unknown): Record<string, unknown> {
-	if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-		return value as Record<string, unknown>;
+	if (isObjectRecord(value)) {
+		return value;
 	}
 	return {};
 }
@@ -78,10 +82,11 @@ export function authSchemaMessage(
 ): string {
 	const texts = error.issues.map((issue) => issue.message);
 	for (const rule of priority) {
+		const match = rule.match;
 		const hit =
-			typeof rule.match === "string"
-				? texts.some((text) => text.includes(rule.match as string))
-				: texts.some((text) => (rule.match as RegExp).test(text));
+			typeof match === "string"
+				? texts.some((text) => text.includes(match))
+				: texts.some((text) => match.test(text));
 		if (hit) return rule.message;
 	}
 	// Обязательные поля (min) без custom-текста → fallback «заполните / введите».
@@ -104,12 +109,10 @@ export async function readUnderBypass<T>(
 		if (rows.length > 0) {
 			return { row: rows[0], bypassActive: true };
 		}
-		const probe = await tx.execute(
+		const probe = await tx.execute<{ flag: string | null }>(
 			sql`SELECT current_setting('app.superuser_bypass', true) AS flag`,
 		);
-		const flag =
-			(probe as unknown as { rows?: Array<{ flag: string | null }> }).rows?.[0]
-				?.flag ?? null;
+		const flag = probe.rows[0]?.flag ?? null;
 		return { row: undefined, bypassActive: flag === "on" };
 	});
 }

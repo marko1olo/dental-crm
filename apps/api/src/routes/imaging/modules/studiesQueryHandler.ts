@@ -18,11 +18,11 @@ const querySchema = z.object({
 	offset: z.coerce.number().int().nonnegative().optional(),
 });
 
-export async function getStudiesHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getStudiesHandler(request: FastifyRequest<{ Params: { patientId?: string } }>, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "imaging studies"))) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+	const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -38,7 +38,7 @@ export async function getStudiesHandler(request: FastifyRequest, reply: FastifyR
 		});
 	}
 
-	const effectivePatientId = (request.params as { patientId?: string })?.patientId ?? parsedQuery.data.patientId ?? parsedQuery.data.patient_id;
+	const effectivePatientId = request.params.patientId ?? parsedQuery.data.patientId ?? parsedQuery.data.patient_id;
 	const effectiveBindingStatus = parsedQuery.data.bindingStatus ?? parsedQuery.data.binding_status;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;

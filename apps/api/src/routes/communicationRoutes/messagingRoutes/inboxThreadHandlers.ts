@@ -7,14 +7,14 @@ import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 
 export function registerInboxThreadHandlers(app: FastifyInstance): void {
-	app.get("/api/communications/inbox/:patientId", async (request, reply) => {
+	app.get<{ Params: { patientId: string } }>("/api/communications/inbox/:patientId", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
 			"communications inbox thread",
 		);
 		if (!orgId) return;
-		const { patientId } = request.params as { patientId: string };
+		const { patientId } = request.params;
 
 		const identity = getRequestIdentity(request);
 		if (identity.role === "marketer" || identity.role === "marketing") {
@@ -43,8 +43,7 @@ export function registerInboxThreadHandlers(app: FastifyInstance): void {
 		}
 
 		if (patient.status === "archived") {
-			const reqAny = request as unknown as { user?: { role?: string | null } };
-			const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const staffRole = identity.role ?? request.user?.role ?? null;
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({

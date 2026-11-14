@@ -434,7 +434,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 				payloadJson: {
 					...fiscalReceiptPayload,
 					tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
-				} as unknown as Record<string, unknown>,
+				},
 				retryCount: 0,
 			});
 

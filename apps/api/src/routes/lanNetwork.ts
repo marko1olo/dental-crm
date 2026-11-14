@@ -76,6 +76,21 @@ const verifyPairSchema = z.object({
 	deviceName: z.string().optional(),
 });
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const lanPairingPayloadSchema = z.object({
+	type: z.literal("dente_lan_pairing"),
+	role: z.enum(["doctor", "assistant"]).default("doctor"),
+	organizationId: z.string(),
+	staffUserId: z.string().optional(),
+	serverId: z.string().optional(),
+	nonce: z.string(),
+	pin: z.string().optional(),
+	issuedAt: z.number().optional(),
+});
+
 export interface LanPairingPayload {
 	type: "dente_lan_pairing";
 	role: "doctor" | "assistant";
@@ -323,17 +338,12 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		} else {
 			// 2. Fallback to signed JWT pairing payload
 			const verified = verifyToken(token, authTokenSecret());
-			if (
-				verified &&
-				typeof verified === "object" &&
-				"type" in verified &&
-				verified.type === "dente_lan_pairing"
-			) {
-				const payload = verified as unknown as LanPairingPayload;
-				nonce = payload.nonce;
-				orgId = payload.organizationId;
-				role = payload.role || "doctor";
-				staffUserId = payload.staffUserId;
+			const parsedPayload = lanPairingPayloadSchema.safeParse(verified);
+			if (parsedPayload.success) {
+				nonce = parsedPayload.data.nonce;
+				orgId = parsedPayload.data.organizationId;
+				role = parsedPayload.data.role;
+				staffUserId = parsedPayload.data.staffUserId;
 			}
 		}
 
@@ -556,8 +566,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const firstMutation = parseRes.data.mutations[0];
 		const firstMutationPayload = firstMutation?.payload;
 		let payloadOrgId: string | undefined = undefined;
-		if (typeof firstMutationPayload === "object" && firstMutationPayload !== null) {
-			const candidateOrgId = (firstMutationPayload as Record<string, unknown>)["organizationId"];
+		if (isRecord(firstMutationPayload)) {
+			const candidateOrgId = firstMutationPayload["organizationId"];
 			if (typeof candidateOrgId === "string" && candidateOrgId.trim()) {
 				payloadOrgId = candidateOrgId.trim();
 			}
@@ -569,10 +579,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		// Transform QueuedMeshMutation to SyncMutationEnvelope
 		const envelopes: SyncMutationEnvelope[] = parseRes.data.mutations.map((m) => {
-			const payload: Record<string, unknown> =
-				typeof m.payload === "object" && m.payload !== null
-					? (m.payload as Record<string, unknown>)
-					: { value: m.payload };
+			const payload: Record<string, unknown> = isRecord(m.payload)
+				? m.payload
+				: { value: m.payload };
 			const action: "create" | "update" | "delete" =
 				m.action === "delete" ? "delete" : m.action === "create" ? "create" : "update";
 			return {

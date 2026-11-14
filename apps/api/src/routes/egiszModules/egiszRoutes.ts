@@ -7,6 +7,7 @@ import * as schema from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { canonicalizeCdaXml, egiszRemdPackageSchema, type EgiszRemdPackage } from "../../services/cda/index.js";
 import { createDemonstrationGostSignature } from "@dental/shared/cda";
+import { isValidUuid } from "@dental/shared";
 import { generateDentalCdaXml } from "../../services/egiszCdaGenerator.js";
 import { assembleVisitCdaParams } from "../egisz/visitCda/buildVisitCdaParams.js";
 import { fetchDiaryRow, fetchVisitRow, resolveDoctorFromAppointmentOrDiary } from "../egisz/visitCda/fetchVisitCdaData.js";
@@ -133,9 +134,17 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
+		const permissionId = request.params.id?.trim();
+		if (!permissionId || !isValidUuid(permissionId)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Идентификатор правила выгрузки бланка должен быть валидным UUID.",
+			});
+		}
+
 		const parsed = egiszBlankPermissionsPatchSchema.safeParse(request.body ?? {});
 		const body = parsed.success ? parsed.data : {};
-		const [existing] = await db.select().from(schema.egiszBlankPermissions).where(and(eq(schema.egiszBlankPermissions.id, request.params.id), eq(schema.egiszBlankPermissions.organizationId, orgId))).limit(1);
+		const [existing] = await db.select().from(schema.egiszBlankPermissions).where(and(eq(schema.egiszBlankPermissions.id, permissionId), eq(schema.egiszBlankPermissions.organizationId, orgId))).limit(1);
 		if (!existing) {
 			return reply.status(404).send({ error: "PermissionNotFound", message: "Правило выгрузки бланка ЕГИСЗ не найдено в вашей клинике." });
 		}
@@ -143,7 +152,7 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		const [updated] = await db.update(schema.egiszBlankPermissions).set({
 			...(typeof body.isExportAllowed === "boolean" && { isAllowed: body.isExportAllowed }),
 			...(typeof body.patientOptOutRespect === "boolean" && { patientOptOutRespect: body.patientOptOutRespect }),
-		}).where(and(eq(schema.egiszBlankPermissions.id, request.params.id), eq(schema.egiszBlankPermissions.organizationId, orgId))).returning();
+		}).where(and(eq(schema.egiszBlankPermissions.id, permissionId), eq(schema.egiszBlankPermissions.organizationId, orgId))).returning();
 
 		if (!updated) {
 			return reply.status(500).send({ error: "UpdateFailed", message: "Не удалось сохранить правило выгрузки бланка в ЕГИСЗ." });
@@ -212,7 +221,15 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		const dispatcher = new EgiszOutboxDispatcher();
 		let pkg: EgiszRemdPackage;
 		if (body.pkg) {
-			pkg = body.pkg as unknown as EgiszRemdPackage;
+			const parsedPkg = egiszRemdPackageSchema.safeParse(body.pkg);
+			if (!parsedPkg.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат пакета СЭМД РЭМД ЕГИСЗ (pkg)",
+					issues: parsedPkg.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+				});
+			}
+			pkg = parsedPkg.data;
 		} else {
 			const clinicOid = readGatewayConfig().clinicOid || "1.2.643.5.1.13.13.12.2.77.8432";
 			const patientSnilsDigits = readSnilsFromProfile(row.patient.administrativeProfile);

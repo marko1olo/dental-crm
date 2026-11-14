@@ -28,29 +28,13 @@
 import fastifyWebsocket from "@fastify/websocket";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { WebSocket } from "ws";
-import { getRequestIdentity } from "../security/identity.js";
+import {
+	getRequestIdentity,
+	resolveIdentityFromTokens,
+} from "../security/identity.js";
 import { recordMedicalRecordAccessAudit } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
-
-/**
- * Регистрация WebSocket-маршрута с приведением типа.
- *
- * @fastify/websocket 11 расширяет интерфейс RouteShorthandOptions, объявляя
- * его с ОДНИМ параметром типа, тогда как fastify 5.8 объявляет его с восемью.
- * Слияние объявлений при разном числе параметров не происходит, поэтому опция
- * `websocket: true` компилятору не видна, а обработчик он считает обычным
- * HTTP-обработчиком с (request, reply). Рантайм при этом полностью рабочий.
- *
- * Приведение локализовано здесь одной строкой, чтобы сам обработчик ниже
- * оставался типизированным (socket: WebSocket, request: FastifyRequest), а не
- * превращался в набор any.
- */
-type WebsocketRouteRegistrar = (
-	path: string,
-	options: { websocket: true },
-	handler: (socket: WebSocket, request: FastifyRequest) => void,
-) => void;
 
 /** Сколько ждать кадр AUTH перед закрытием соединения. */
 const AUTH_TIMEOUT_MS = 10_000;
@@ -62,7 +46,7 @@ const CLOSE_UNAUTHORIZED = 4401;
 /**
  * Определяет организацию по токенам из кадра AUTH.
  *
- * Переиспользуется getRequestIdentity, а не переписывается проверка подписи:
+ * Переиспользуется resolveIdentityFromTokens, а не переписывается проверка подписи:
  * там уже реализованы правила, которые легко потерять при копировании —
  * токен сотрудника обязан относиться к той же организации, что и токен
  * кабинета, а послабление x-organization-id включается только явным
@@ -70,14 +54,15 @@ const CLOSE_UNAUTHORIZED = 4401;
  * передаётся, поэтому этой лазейки у сокета нет даже в разработке.
  */
 function identityFromTokens(clinicToken: unknown, staffToken: unknown) {
-	const headers: Record<string, string> = {};
-	if (typeof clinicToken === "string" && clinicToken.trim()) {
-		headers["x-dente-clinic-token"] = clinicToken.trim();
-	}
-	if (typeof staffToken === "string" && staffToken.trim()) {
-		headers["x-dente-staff-token"] = staffToken.trim();
-	}
-	return getRequestIdentity({ headers } as unknown as FastifyRequest);
+	const cToken =
+		typeof clinicToken === "string" && clinicToken.trim()
+			? clinicToken.trim()
+			: null;
+	const sToken =
+		typeof staffToken === "string" && staffToken.trim()
+			? staffToken.trim()
+			: null;
+	return resolveIdentityFromTokens(cToken, sToken);
 }
 
 export async function registerWebsocketRoutes(app: FastifyInstance) {
@@ -90,12 +75,6 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 			},
 		});
 	}
-
-	// Приводится САМ app, а не вынимается app.get в переменную: fastify
-	// внутри route() читает this[kSupportedHTTPMethods], поэтому оторванный
-	// от объекта метод падает с «Cannot read properties of undefined
-	// (reading Symbol(fastify.acceptedHTTPMethods))».
-	const wsApp = app as unknown as { get: WebsocketRouteRegistrar };
 
 	const handleSecureWsConnection = (socket: WebSocket, request: FastifyRequest) => {
 		let authorized = false;
@@ -374,6 +353,6 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 		});
 	};
 
-	wsApp.get("/api/ws/schedule", { websocket: true }, handleSecureWsConnection);
-	wsApp.get("/api/ws/telephony", { websocket: true }, handleSecureWsConnection);
+	app.get("/api/ws/schedule", { websocket: true }, handleSecureWsConnection);
+	app.get("/api/ws/telephony", { websocket: true }, handleSecureWsConnection);
 }

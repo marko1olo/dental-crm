@@ -368,8 +368,7 @@ export async function saveSomaticHealthQuestionnaire(
 
 	if (!patientRow) return null;
 
-	const currentProfile =
-		(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+	const currentProfile = patientRow.administrativeProfile ?? {};
 
 	// Update administrative profile
 	await db
@@ -377,12 +376,12 @@ export async function saveSomaticHealthQuestionnaire(
 		.set({
 			administrativeProfile: {
 				...currentProfile,
-				somaticQuestionnaire: body,
+				somaticQuestionnaire: { ...body },
 				somaticRiskProfile: evaluated.somaticProfile,
 				somaticAlerts: evaluated.alerts,
 				somaticRiskLevel: evaluated.riskLevel,
 				somaticUpdatedAt: nowIso,
-			} as any,
+			},
 			updatedAt: now,
 		})
 		.where(

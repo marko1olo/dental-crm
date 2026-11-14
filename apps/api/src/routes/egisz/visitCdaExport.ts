@@ -26,7 +26,7 @@ export function registerVisitCdaExportRoute(app: FastifyInstance): void {
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({ ok: false, error: "PermissionDenied", message: `Отказ в выгрузке СЭМД CDA: ${evalAccess.reason}` });

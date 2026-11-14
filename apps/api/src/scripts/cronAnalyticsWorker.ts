@@ -18,13 +18,13 @@ import {
 	postgresKnowsTimeZone,
 } from "../services/reports/managerReports.js";
 
-export interface CohortLtvQueryRow {
+export interface CohortLtvQueryRow extends Record<string, unknown> {
 	readonly cohort: string | null;
 	readonly month_1_revenue: string | number | null;
 	readonly month_12_revenue: string | number | null;
 }
 
-export interface ChairUsageQueryRow {
+export interface ChairUsageQueryRow extends Record<string, unknown> {
 	readonly name: string | null;
 	readonly appointment_count: string | number | null;
 }
@@ -39,7 +39,7 @@ export interface ChairUsageQueryRow {
  *  - `SUM(numeric)` проходит через parseNumericMoney и обычно приходит числом,
  *    но при точности, которой числу JavaScript не хватает, остаётся строкой.
  */
-export interface DoctorProfitabilityQueryRow {
+export interface DoctorProfitabilityQueryRow extends Record<string, unknown> {
 	readonly name: string | null;
 	readonly revenue: string | number | null;
 	readonly total_appointments: string | number | null;
@@ -152,7 +152,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			const cohortMonth = sql`to_char(date_trunc('month', ${inClinicZone(sql.raw("created_at"), cohortZone)}), 'YYYY-MM')`;
 
 			// 1. Cohort LTV (Real Implementation)
-			const rawLtv = await tx.execute(sql`
+			const rawLtv = await tx.execute<CohortLtvQueryRow>(sql`
 				WITH cohorts AS (
 					SELECT
 						id as patient_id,
@@ -180,7 +180,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				LIMIT 6
 			`);
 
-			const cohortLtvJson = (rawLtv.rows as unknown as CohortLtvQueryRow[]).map((row) => ({
+			const cohortLtvJson = rawLtv.rows.map((row) => ({
 				cohort: row.cohort ?? "",
 				"Month 1": Number(row.month_1_revenue ?? 0),
 				"Month 12": Number(row.month_12_revenue ?? 0),
@@ -220,7 +220,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			const planFunnelJson = buildPlanFunnel(planCounts);
 
 			// 3. Chair Utilization Rate (Real Implementation)
-			const chairUsage = await tx.execute(sql`
+			const chairUsage = await tx.execute<ChairUsageQueryRow>(sql`
 				SELECT 
 					c.name,
 					COUNT(a.id) as appointment_count
@@ -232,7 +232,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			`);
 
 			const colors = ["#14b8a6", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444"];
-			const chairUtilizationJson = (chairUsage.rows as unknown as ChairUsageQueryRow[]).map(
+			const chairUtilizationJson = chairUsage.rows.map(
 				(row, idx) => ({
 					name: row.name ?? "Без названия",
 					value: Number(row.appointment_count ?? 0),
@@ -255,7 +255,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			// счетов, исчезал вместе со своей — вполне измеримой — успешностью.
 			// Ноль в выручке у такого врача не выдумка: оплаченных счетов у него
 			// действительно нет.
-			const doctorProf = await tx.execute(sql`
+			const doctorProf = await tx.execute<DoctorProfitabilityQueryRow>(sql`
 				WITH doctor_revenue AS (
 					SELECT
 						a.doctor_user_id AS doctor_id,
@@ -290,7 +290,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			`);
 
 			const doctorProfitabilityJson = doctorProf.rows.map(
-				(row: DoctorProfitabilityQueryRow) => buildDoctorProfitabilityRow(row),
+				(row) => buildDoctorProfitabilityRow(row),
 			);
 
 			// Insert new snapshot
@@ -311,7 +311,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				`[BI Analytics] Snapshot generated successfully for organization: ${orgId}`,
 			);
 		});
-	} catch (err) {
+	} catch (err: unknown) {
 		console.error(
 			`[BI Analytics] Failed to run aggregation for organization ${orgId}:`,
 			err,

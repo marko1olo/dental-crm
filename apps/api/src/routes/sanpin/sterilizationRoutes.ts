@@ -27,16 +27,13 @@ import {
 	handleUpdateSterilizerEquipment,
 } from "./sterilizationModules/sterilizerEquipmentHandlers.js";
 
-const STERILIZATION_ROUTES_GUARD = Symbol.for(
-	"dente.sterilization_routes_guard",
-);
+const registeredSterilizationApps = new WeakSet<FastifyInstance>();
 
 export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
-	const appStore = app as unknown as Record<symbol, boolean>;
-	if (appStore[STERILIZATION_ROUTES_GUARD]) {
+	if (registeredSterilizationApps.has(app)) {
 		return;
 	}
-	appStore[STERILIZATION_ROUTES_GUARD] = true;
+	registeredSterilizationApps.add(app);
 
 	// Журнал работы стерилизаторов
 	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);

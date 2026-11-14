@@ -41,6 +41,12 @@ export {
 	type ParsedWebhookAction,
 };
 
+declare module "fastify" {
+	interface FastifyRequest {
+		rawBody?: Buffer | string | undefined;
+	}
+}
+
 const DEFAULT_VERIFY_TOKEN =
 	process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || "dente_whatsapp_verify_token";
 
@@ -168,9 +174,10 @@ export async function registerWhatsappWebhookRoutes(
 			"application/json",
 			{ parseAs: "buffer" },
 			(request, body, done) => {
-				(request as unknown as { rawBody?: Buffer }).rawBody = body as Buffer;
+				const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as Uint8Array | string);
+				request.rawBody = buf;
 				try {
-					const text = (body as Buffer).toString("utf8");
+					const text = buf.toString("utf8");
 					done(null, text.length > 0 ? JSON.parse(text) : {});
 				} catch (err) {
 					done(err as Error, undefined);
@@ -199,7 +206,7 @@ export async function registerWhatsappWebhookRoutes(
 				}
 			} else {
 				const rawBody =
-					(request as unknown as { rawBody?: Buffer }).rawBody ??
+					request.rawBody ??
 					Buffer.from(
 						typeof request.body === "string"
 							? request.body
@@ -298,8 +305,7 @@ export async function registerWhatsappWebhookRoutes(
 						? (value.messages as unknown[])
 						: [];
 
-					// biome-ignore lint/suspicious/noExplicitAny: tenant batch insertion
-					const newEvents: any[] = [];
+					const newEvents: Array<typeof messengerInboundEvents.$inferInsert> = [];
 					await withTenantCtx(inboundOrganizationId, async (tx) => {
 						for (const msg of messages) {
 							if (!msg || typeof msg !== "object" || Array.isArray(msg)) {

@@ -48,10 +48,7 @@ export async function handleUpsertPatientTreatmentPlan(
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const access = verifyPlanWriteAccess(staffRole);
 	if (!access.allowed) {
 		return reply.code(403).send({

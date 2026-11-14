@@ -7,8 +7,8 @@
 
 export type { FullForm043uPayload } from "../forms043u.js";
 export type { OrthodonticCard043_1uPayload } from "../forms043_1u.js";
-export type { DailyDentistDiary037uPayload } from "../forms037u.js";
-export type { SummaryDentistStatement039uPayload } from "../forms039u.js";
+export type DailyDentistDiary037uPayload = Record<string, unknown>;
+export type SummaryDentistStatement039uPayload = Record<string, unknown>;
 export type { MedicalCardExtract003vuPayload } from "../forms003vu.js";
 export type { RadiationDoseSheetPayload } from "../radiationDoseSheet.js";
 export type {

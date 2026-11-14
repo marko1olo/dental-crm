@@ -34,11 +34,11 @@ const saveMeasurementsBodySchema = z.union([
 	),
 ]);
 
-export async function getMeasurementsHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getMeasurementsHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "imaging measurements read"))) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+	const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
@@ -47,7 +47,7 @@ export async function getMeasurementsHandler(request: FastifyRequest, reply: Fas
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -58,10 +58,10 @@ export async function getMeasurementsHandler(request: FastifyRequest, reply: Fas
 	return reply.code(200).send(measurements);
 }
 
-export async function saveMeasurementsHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function saveMeasurementsHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging measurements save"))) return;
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 

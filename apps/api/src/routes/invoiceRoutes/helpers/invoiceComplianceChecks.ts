@@ -31,7 +31,7 @@ export function evaluateOmsCompliance(
 
 	const adminProfile = (patient.administrativeProfile || {}) as Record<string, unknown>;
 	const isAnonPatient =
-		Boolean((patient as unknown as { isAnonymous?: boolean }).isAnonymous) ||
+		("isAnonymous" in patient && Boolean(patient.isAnonymous)) ||
 		Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
 		Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
 		adminProfile["isAnonymous"] === true;

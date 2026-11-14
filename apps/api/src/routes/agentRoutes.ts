@@ -297,7 +297,11 @@ export async function handleAgentChat(
 							role: "assistant",
 							content: harnessResult.text.trim(),
 							toolCalls: harnessResult.toolCalls?.length
-								? (harnessResult.toolCalls as unknown as Record<string, unknown>[])
+								? harnessResult.toolCalls.map((tc): Record<string, unknown> => ({
+										tool: tc.tool,
+										args: tc.args,
+										result: tc.result,
+								  }))
 								: null,
 							autoCompact: body.enableAutoCompaction ?? true,
 						});
@@ -379,7 +383,11 @@ export async function handleAgentChat(
 						role: "assistant",
 						content: result.text.trim(),
 						toolCalls: result.toolCalls?.length
-							? (result.toolCalls as unknown as Record<string, unknown>[])
+							? result.toolCalls.map((tc): Record<string, unknown> => ({
+									tool: tc.tool,
+									args: tc.args,
+									result: tc.result,
+							  }))
 							: null,
 						autoCompact: body.enableAutoCompaction ?? true,
 					});

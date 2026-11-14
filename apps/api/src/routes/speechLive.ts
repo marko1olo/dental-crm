@@ -34,13 +34,6 @@ import {
 } from "../speech/keyPool.js";
 import { getRequestIdentity } from "../security/identity.js";
 
-/** Type helper for Fastify WebSocket route registration */
-type WebsocketRouteRegistrar = (
-	path: string,
-	options: { websocket: true },
-	handler: (socket: WebSocket, request: FastifyRequest) => void,
-) => void;
-
 interface SpeechLiveQueryParams {
 	readonly specialty?: DentalSpecialty | undefined;
 	readonly sampleRate?: string | number | undefined;
@@ -100,8 +93,6 @@ export async function registerSpeechLiveRoutes(
 	);
 
 	// WebSocket Live Transcription Handler
-	const wsApp = app as unknown as { get: WebsocketRouteRegistrar };
-
 	const liveWsHandler = (clientSocket: WebSocket, request: FastifyRequest) => {
 			const query = (request.query || {}) as SpeechLiveQueryParams;
 			const specialty = query.specialty as DentalSpecialty | undefined;
@@ -332,6 +323,6 @@ export async function registerSpeechLiveRoutes(
 			});
 	};
 
-	wsApp.get("/api/v1/speech/live", { websocket: true }, liveWsHandler);
-	wsApp.get("/api/speech/live", { websocket: true }, liveWsHandler);
+	app.get("/api/v1/speech/live", { websocket: true }, liveWsHandler);
+	app.get("/api/speech/live", { websocket: true }, liveWsHandler);
 }

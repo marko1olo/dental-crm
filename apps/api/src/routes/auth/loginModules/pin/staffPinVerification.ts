@@ -115,13 +115,23 @@ export function resolveDemoUser(
 			organizationId: DEMO_SHOWCASE_ORG_ID,
 			fullName: "Д-р Соколов А. В.",
 			role: "doctor",
-			email: "doctor@clinic.com",
 			phone: "+7 (999) 111-22-33",
+			email: "doctor@clinic.com",
+			snils: null,
+			passwordHash: null,
 			pinCodeHash: null,
 			isActive: true,
+			canSignMedicalRecords: true,
+			canManageMoney: false,
+			canManageImports: false,
+			specialties: null,
+			uiPreferences: null,
+			workingHours: null,
+			currentSessionId: null,
+			yandexCalendarId: null,
+			yandexCalendarToken: null,
 			createdAt: new Date(),
-			updatedAt: new Date(),
-		} as unknown as typeof users.$inferSelect;
+		};
 	}
 	return undefined;
 }

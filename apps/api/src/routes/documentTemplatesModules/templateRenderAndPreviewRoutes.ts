@@ -100,7 +100,20 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				});
 			}
 
-			const currentOrg: typeof organizations.$inferSelect = org ?? ({
+			type RenderOrgContext = Pick<
+				typeof organizations.$inferSelect,
+				| "id"
+				| "name"
+				| "inn"
+				| "kpp"
+				| "legalAddress"
+				| "email"
+				| "medicalLicenseNumber"
+				| "medicalLicenseIssuedAt"
+				| "medicalLicenseIssuer"
+			>;
+
+			const currentOrg: RenderOrgContext = org ?? {
 				id: "00000000-0000-0000-0000-000000000000",
 				name: clinicOverride.name || "Стоматологическая клиника",
 				inn: clinicOverride.inn || "",
@@ -110,7 +123,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				medicalLicenseNumber: clinicOverride.licenseNumber || "",
 				medicalLicenseIssuedAt: "",
 				medicalLicenseIssuer: "Департамент здравоохранения",
-			} as unknown as typeof organizations.$inferSelect);
+			};
 
 			// 2. Поиск шаблона с учетом изоляции тенанта (системные либо принадлежащие данной клинике)
 			const templateConditions: SQL[] = [];
@@ -124,10 +137,11 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				templateConditions.push(eq(documentTemplates.systemAlias, identifier));
 			}
 
-			const tenantTemplateFilter = or(
-				eq(documentTemplates.organizationId, currentOrg.id),
-				isNull(documentTemplates.organizationId),
-			)!;
+			const tenantTemplateFilter =
+				or(
+					eq(documentTemplates.organizationId, currentOrg.id),
+					isNull(documentTemplates.organizationId),
+				) ?? eq(documentTemplates.organizationId, currentOrg.id);
 
 			const [templateRecord] = await db
 				.select()

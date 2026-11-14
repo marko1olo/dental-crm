@@ -325,13 +325,6 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	// 3. Book an appointment with strict working hour & collision enforcement
 	server.post<{
 		Params: { organizationId: string };
-		Body: {
-			doctorId: string;
-			startsAt: string;
-			endsAt: string;
-			patientName: string;
-			patientPhone: string;
-			comment?: string;
-		};
+		Body: BookAppointmentBody;
 	}>("/:organizationId/book", handleBookAppointment);
 };

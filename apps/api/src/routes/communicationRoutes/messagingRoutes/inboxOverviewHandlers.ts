@@ -1,9 +1,26 @@
 import { and, eq, ilike, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { patients } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
+
+const patientSearchQuerySchema = z.object({
+	q: z.string().optional(),
+});
+
+interface RawInboxEventRow extends Record<string, unknown> {
+	id: string;
+	patientId: string;
+	message: string;
+	channel: string;
+	direction: string;
+	status: string | null;
+	createdAt: string | Date;
+	patientName: string;
+	patientPhone: string | null;
+}
 
 export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 	app.get("/api/communications/patients/search", async (request, reply) => {
@@ -13,7 +30,8 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 			"communications patients search",
 		);
 		if (!orgId) return;
-		const { q } = request.query as { q?: string };
+		const queryParsed = patientSearchQuerySchema.safeParse(request.query ?? {});
+		const q = queryParsed.success ? queryParsed.data.q : undefined;
 		if (!q || q.length < 2) return reply.send([]);
 
 		const result = await db
@@ -53,7 +71,7 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 			});
 		}
 
-		const latestEvents = await db.execute(sql`
+		const latestEvents = await db.execute<RawInboxEventRow>(sql`
 			SELECT DISTINCT ON (e.patient_id)
 				e.id,
 				e.patient_id AS "patientId",
@@ -70,7 +88,8 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 			ORDER BY e.patient_id, e.created_at DESC
 		`);
 
-		const summaries = latestEvents.rows.map((row: any) => ({
+		const rawRows = latestEvents.rows;
+		const summaries = rawRows.map((row) => ({
 			id: row.id,
 			patientId: row.patientId,
 			message: row.message,

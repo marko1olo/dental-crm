@@ -41,10 +41,7 @@ export async function handleGetTreatmentPlanById(
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const access = verifyPlanReadAccess(staffRole);
 	if (!access.allowed) {
 		return reply.code(403).send({
@@ -55,7 +52,7 @@ export async function handleGetTreatmentPlanById(
 		});
 	}
 
-	const { id } = request.params as { id: string };
+	const { id } = request.params;
 	if (!UUID_SHAPE.test(id)) {
 		return reply.code(400).send({ error: "InvalidTreatmentPlanId" });
 	}
@@ -229,10 +226,7 @@ export async function handleListPatientTreatmentPlans(
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
-	const staffRole =
-		identity.role ??
-		(request as unknown as { user?: { role?: string | null } }).user?.role ??
-		null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const access = verifyPlanReadAccess(staffRole);
 	if (!access.allowed) {
 		return reply.code(403).send({
