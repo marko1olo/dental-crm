@@ -166,8 +166,7 @@ async function validateSpeechClinicalScope(
 		);
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let patient: any = null;
+	let patient: typeof patients.$inferSelect | null = null;
 	if (requestedPatientId) {
 		const patientScope = and(
 			eq(patients.id, requestedPatientId),
@@ -183,8 +182,7 @@ async function validateSpeechClinicalScope(
 			return speechScopeFailure(404, "Пациент для диктовки не найден.");
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let visit: any = null;
+	let visit: typeof visits.$inferSelect | null = null;
 	if (requestedVisitId) {
 		const visitScope = and(
 			eq(visits.id, requestedVisitId),
@@ -279,6 +277,27 @@ async function handleSpeechRecordingStrategy(
 	);
 }
 
+const speechChunksQuerySchema = z.object({
+	recordingId: z.string().optional(),
+	visitId: z.string().optional(),
+	patientId: z.string().optional(),
+});
+
+const speechRecoveryQuerySchema = z.object({
+	visitId: z.string().optional(),
+	patientId: z.string().optional(),
+	limit: z.string().optional(),
+});
+
+const speechAssembleParamsSchema = z.object({
+	recordingId: z.string().min(1),
+});
+
+const speechAssembleQuerySchema = z.object({
+	visitId: z.string().optional(),
+	patientId: z.string().optional(),
+});
+
 async function handleSpeechChunks(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -289,11 +308,7 @@ async function handleSpeechChunks(
 		"speech chunks",
 	);
 	if (!context) return;
-	const query = request.query as {
-		recordingId?: string;
-		visitId?: string;
-		patientId?: string;
-	};
+	const query = speechChunksQuerySchema.parse(request.query ?? {});
 	const recordingId = query.recordingId?.trim();
 	if (!recordingId) return [];
 
@@ -324,11 +339,7 @@ async function handleSpeechRecordingsRecovery(
 		"speech recording recovery",
 	);
 	if (!context) return;
-	const query = request.query as {
-		visitId?: string;
-		patientId?: string;
-		limit?: string;
-	};
+	const query = speechRecoveryQuerySchema.parse(request.query ?? {});
 	const scopeValidation = await validateSpeechClinicalScope(
 		{ patientId: query.patientId, visitId: query.visitId },
 		{ organizationId: context.organizationId, requirePatientOrVisit: true },
@@ -336,6 +347,7 @@ async function handleSpeechRecordingsRecovery(
 	if (!scopeValidation.ok)
 		return sendSpeechScopeValidationError(reply, scopeValidation);
 
+	const parsedLimit = query.limit ? Number(query.limit) : undefined;
 	const filters: {
 		organizationId: string;
 		visitId?: string | null;
@@ -344,7 +356,7 @@ async function handleSpeechRecordingsRecovery(
 	} = { organizationId: context.organizationId };
 	if (scopeValidation.visitId) filters.visitId = scopeValidation.visitId;
 	if (scopeValidation.patientId) filters.patientId = scopeValidation.patientId;
-	if (query.limit) filters.limit = Number(query.limit);
+	if (parsedLimit !== undefined && !Number.isNaN(parsedLimit)) filters.limit = parsedLimit;
 	return speechRecordingRecoveryListSchema.parse(
 		listSpeechRecordingRecoveries(filters),
 	);
@@ -360,8 +372,8 @@ async function handleSpeechRecordingAssemble(
 		"speech recording assemble",
 	);
 	if (!context) return;
-	const params = request.params as { recordingId: string };
-	const query = request.query as { visitId?: string; patientId?: string };
+	const params = speechAssembleParamsSchema.parse(request.params ?? {});
+	const query = speechAssembleQuerySchema.parse(request.query ?? {});
 	const scopeValidation = await validateSpeechClinicalScope(
 		{ patientId: query.patientId, visitId: query.visitId },
 		{ organizationId: context.organizationId, requirePatientOrVisit: true },

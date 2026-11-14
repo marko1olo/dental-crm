@@ -182,8 +182,7 @@ export const decodeHeicHandler = async (
 			originalSizeBytes: result.originalSizeBytes,
 			durationMs: result.durationMs,
 		});
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	} catch (error: any) {
+	} catch (error: unknown) {
 		request.log.error(error);
 		return reply.status(500).send({
 			error: "HeicDecodingFailed",

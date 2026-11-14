@@ -1,6 +1,6 @@
 import { kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
@@ -17,6 +17,8 @@ import {
 	updateFamilyPermissionsSchema,
 } from "./familyFinanceTypes.js";
 
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /**
  * ensureFamilyMemberSpendAuthorization
  *
@@ -26,7 +28,7 @@ import {
  * This guarantees that `familySpendAuthorization.ts` does NOT reject member debits with 403 Forbidden!
  */
 export async function ensureFamilyMemberSpendAuthorization(
-	tx: any,
+	tx: DatabaseTransaction,
 	organizationId: string,
 	walletOwnerId: string,
 	memberId: string,
@@ -271,7 +273,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 	});
 
 	// PATCH /api/finance/family/permissions — сохранение прав списания семейного аванса
-	const updatePermissionsHandler = async (req: any, reply: any) => {
+	const updatePermissionsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family permissions write");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;

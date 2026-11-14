@@ -306,8 +306,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		};
 
 		// 8. Обновление таблицы `users`
-		// biome-ignore lint/suspicious/noExplicitAny: Update payload object
-		const userUpdates: any = {
+		const userUpdates: Partial<typeof schema.users.$inferInsert> = {
 			uiPreferences: {
 				...existingUiPrefs,
 				hrProfile: updatedHrProfile,
@@ -356,8 +355,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			data.materialCostDeductionPct !== undefined ||
 			data.labCostDeductionPct !== undefined
 		) {
-			// biome-ignore lint/suspicious/noExplicitAny: Update commission payload
-			const commUpdates: any = {};
+			const commUpdates: Partial<typeof schema.doctorCommissions.$inferInsert> = {};
 			if (data.commissionPct !== undefined) {
 				commUpdates.commissionPct = String(data.commissionPct);
 				commUpdates.commissionPercent = String(data.commissionPct);
@@ -498,6 +496,14 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				),
 			)
 			.limit(1);
+
+		if (!updatedUser) {
+			reply.code(404);
+			return {
+				error: "StaffNotFound",
+				message: "Сотрудник не найден после обновления.",
+			};
+		}
 
 		return assembleStaffProfile(
 			updatedUser,

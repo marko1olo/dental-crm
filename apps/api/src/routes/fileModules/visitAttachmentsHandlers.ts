@@ -88,8 +88,7 @@ export const getVisitAttachmentsHandler = async (
 				type: a.mimeType,
 			})),
 		});
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	} catch (error: any) {
+	} catch (error: unknown) {
 		request.log.error(error);
 		return reply.status(500).send({
 			error: "InternalServerError",
@@ -218,8 +217,7 @@ export const postVisitAttachmentsHandler = async (
 				type: attachment.mimeType,
 			},
 		});
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	} catch (error: any) {
+	} catch (error: unknown) {
 		request.log.error(error);
 		return reply.status(500).send({
 			error: "InternalServerError",

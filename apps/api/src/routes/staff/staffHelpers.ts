@@ -15,7 +15,14 @@ import {
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { getRequestIdentity } from "../../security/identity.js";
 import { repairMojibakeDeep } from "../../text/repairMojibake.js";
+import type { doctorCommissions, users } from "../../db/schema.js";
 import type { ExtendedHrProfileStorage, StaffAuthContext } from "./types.js";
+
+export type StaffUserRow = typeof users.$inferSelect;
+export type StaffCommissionRow =
+	| Partial<typeof doctorCommissions.$inferSelect>
+	| null
+	| undefined;
 
 export async function resolveOrganizationId(
 	request: FastifyRequest,
@@ -57,10 +64,8 @@ export async function resolveOrganizationId(
 }
 
 export function assembleStaffProfile(
-	// biome-ignore lint/suspicious/noExplicitAny: DB row representation
-	user: any,
-	// biome-ignore lint/suspicious/noExplicitAny: DB commission row
-	commissionRow: any,
+	user: StaffUserRow,
+	commissionRow: StaffCommissionRow,
 	callerRole: string | null,
 	callerUserId?: string | null,
 ): StaffProfileExtended {

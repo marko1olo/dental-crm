@@ -15,6 +15,14 @@ import { familyPaymentSchema } from "./familyFinanceTypes.js";
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function extractHeaderKey(rawHeader: string | string[] | undefined): string | undefined {
+	if (typeof rawHeader === "string") return rawHeader.trim();
+	if (Array.isArray(rawHeader) && rawHeader.length > 0 && typeof rawHeader[0] === "string") {
+		return rawHeader[0].trim();
+	}
+	return undefined;
+}
+
 export function registerFamilyWalletRoutes(app: FastifyInstance) {
 	// GET /api/finance/family/:familyGroupId/history
 	app.get("/api/finance/family/:familyGroupId/history", async (req, reply) => {
@@ -51,8 +59,8 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const headerKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
-		const mutationId = payParsed.data.clientMutationId?.trim() || headerKey?.trim();
+		const headerKey = extractHeaderKey(req.headers["idempotency-key"] || req.headers["x-idempotency-key"]);
+		const mutationId = payParsed.data.clientMutationId?.trim() || headerKey;
 		if (!mutationId) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -81,9 +89,14 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
 				duplicate: result.duplicate,
 			};
-		} catch (err: any) {
-			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
-			const message = err.message || "Internal Server Error";
+		} catch (err: unknown) {
+			const statusCode =
+				typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"
+					? ((err as { statusCode: number }).statusCode)
+					: err instanceof FamilyWalletError
+						? err.statusCode
+						: 500;
+			const message = err instanceof Error ? err.message : "Internal Server Error";
 			return reply.code(statusCode).send({
 				error: statusCode === 402 ? "InsufficientFunds" : statusCode === 403 ? "Forbidden" : statusCode === 409 ? "IdempotencyConflict" : statusCode === 404 ? "NotFound" : "PaymentFailed",
 				message,

@@ -60,7 +60,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 				identity.userId || undefined,
 			);
 			return { channels };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -104,11 +104,15 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 				parsed.data.targetUserId,
 			);
 			return { channel };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
+			const message =
+				error instanceof Error
+					? error.message
+					: "Ошибка при создании личного чата.";
 			return reply.status(500).send({
 				error: "InternalServerError",
-				message: error.message || "Ошибка при создании личного чата.",
+				message,
 			});
 		}
 	});
@@ -146,7 +150,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			);
 
 			return { messages };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -227,7 +231,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			});
 
 			return reply.code(201).send({ message: createdMessage });
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -386,7 +390,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 				preset: preset.key,
 				channelSlug: targetSlug,
 			});
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -410,7 +414,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 
 			const locations = await listClinicIntercomLocations(organizationId);
 			return { locations };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -485,7 +489,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			});
 
 			return { message: updatedMessage };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -536,7 +540,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			});
 
 			return { ok: true, updatedCount };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",
@@ -597,7 +601,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			});
 
 			return { members };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
 				error: "InternalServerError",

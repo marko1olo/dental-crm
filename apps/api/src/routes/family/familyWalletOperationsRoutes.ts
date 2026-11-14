@@ -8,6 +8,14 @@ import {
 } from "../../services/familyWallet/FamilyWalletService.js";
 import { familyRefundSchema, familyTopupSchema } from "./familyFinanceTypes.js";
 
+function extractHeaderKey(rawHeader: string | string[] | undefined): string | undefined {
+	if (typeof rawHeader === "string") return rawHeader.trim();
+	if (Array.isArray(rawHeader) && rawHeader.length > 0 && typeof rawHeader[0] === "string") {
+		return rawHeader[0].trim();
+	}
+	return undefined;
+}
+
 export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 	// POST /api/finance/family/topup — пополнение кошелька
 	app.post("/api/finance/family/topup", async (req, reply) => {
@@ -19,8 +27,8 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 		if (!parsed.success) {
 			return reply.code(400).send({ error: "ValidationError", message: "Проверьте сумму пополнения (больше нуля, копейки)." });
 		}
-		const headerKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
-		const mutationId = parsed.data.clientMutationId?.trim() || headerKey?.trim();
+		const headerKey = extractHeaderKey(req.headers["idempotency-key"] || req.headers["x-idempotency-key"]);
+		const mutationId = parsed.data.clientMutationId?.trim() || headerKey;
 		if (!mutationId) {
 			return reply.code(400).send({ error: "ValidationError", message: "Ключ операции обязателен для предотвращения повторного пополнения." });
 		}
@@ -35,11 +43,17 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
 				duplicate: result.duplicate,
 			};
-		} catch (err: any) {
-			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
+		} catch (err: unknown) {
+			const statusCode =
+				typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"
+					? ((err as { statusCode: number }).statusCode)
+					: err instanceof FamilyWalletError
+						? err.statusCode
+						: 500;
+			const message = err instanceof Error ? err.message : "Не удалось пополнить семейный счёт";
 			return reply.code(statusCode).send({
 				error: statusCode === 404 ? "NotFound" : statusCode === 409 ? "IdempotencyConflict" : "TopupFailed",
-				message: err.message || "Не удалось пополнить семейный счёт",
+				message,
 			});
 		}
 	});
@@ -54,8 +68,8 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 		if (!parsed.success) {
 			return reply.code(400).send({ error: "ValidationError", message: "Проверьте параметры возврата.", details: parsed.error.issues });
 		}
-		const headerKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
-		const mutationId = parsed.data.clientMutationId?.trim() || headerKey?.trim();
+		const headerKey = extractHeaderKey(req.headers["idempotency-key"] || req.headers["x-idempotency-key"]);
+		const mutationId = parsed.data.clientMutationId?.trim() || headerKey;
 		if (!mutationId) {
 			return reply.code(400).send({ error: "ValidationError", message: "Ключ операции обязателен для предотвращения повторного возврата." });
 		}
@@ -73,11 +87,17 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 				duplicate: result.duplicate,
 				cashOperation: result.cashOperation,
 			};
-		} catch (err: any) {
-			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
+		} catch (err: unknown) {
+			const statusCode =
+				typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"
+					? ((err as { statusCode: number }).statusCode)
+					: err instanceof FamilyWalletError
+						? err.statusCode
+						: 500;
+			const message = err instanceof Error ? err.message : "Не удалось оформить возврат семейного депозита";
 			return reply.code(statusCode).send({
 				error: statusCode === 404 ? "NotFound" : statusCode === 409 ? "IdempotencyConflict" : statusCode === 400 ? "InvalidAmount" : "RefundFailed",
-				message: err.message || "Не удалось оформить возврат семейного депозита",
+				message,
 			});
 		}
 	});
