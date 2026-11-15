@@ -95,7 +95,7 @@ export interface PatientCardModalProps {
 	readonly initialIsChild?: boolean | undefined;
 }
 
-export function toCanonicalPatient(patientData: Partial<PatientGeneralInfo> & Record<string, unknown>): Patient {
+export function toCanonicalPatient(patientData: Partial<PatientGeneralInfo>): Patient {
 	return {
 		id: patientData.id || "",
 		fullName: patientData.fullName || "",

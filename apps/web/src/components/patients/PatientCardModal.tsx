@@ -87,6 +87,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		isChildPatient, safetyEvaluation, isDirty, setIsDirty, saveState,
 		isDiplomaModalOpen, setIsDiplomaModalOpen, isDmsLetterModalOpen, setIsDmsLetterModalOpen,
 		isTaxDeductionModalOpen, setIsTaxDeductionModalOpen,
+		initialTaxTab, handleOpenTaxCertificate,
 		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave,
 	} = cardState;
 
@@ -158,9 +159,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 									<span
 										data-testid="patient-studio-balance"
 										className={`font-mono font-bold text-xs px-2 py-0.5 rounded-lg border shrink-0 ${
-											(patientData.patientBalanceRub ?? 0) < 0
+											Number(patientData.patientBalanceRub ?? 0) < 0
 												? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-												: (patientData.patientBalanceRub ?? 0) > 0
+												: Number(patientData.patientBalanceRub ?? 0) > 0
 													? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
 													: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
 										}`}
@@ -260,7 +261,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								<span className="sr-only">Справка для вычета (13%)</span>
 							</button>
 						)}
-
 						{!isCreateMode && (
 							<button
 								type="button"
@@ -273,7 +273,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								<span>ЭМК</span>
 							</button>
 						)}
-
 						{isCreateMode ? (
 							<button
 								type="button"
@@ -453,7 +452,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							onUpdateBalance={(newBal) => handleUpdatePatientField("patientBalanceRub", newBal)}
 							onNavigateToVisit={onNavigateToVisit}
 							onNewAppointment={onNewAppointment}
-							onOpenTaxCertificate={() => setIsTaxDeductionModalOpen(true)}
+							onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
+							onOpenFamilyTaxCertificate={() => handleOpenTaxCertificate("family")}
 							disabled={disabled}
 						/>
 					) : activeTab === "documents" ? (
@@ -507,11 +507,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							onUpdateSafetyProfile={(s) => { setSafetyProfile(s); setIsDirty(true); }}
 							onApplySomaticNorm={handleApplyNorm}
 							disabled={disabled}
-							activeSection={activeTab === "family" ? "family" : activeTab === "visits" ? "visits" : activeTab === "anamnesis" ? "somatic" : "general"}
+							activeSection="general"
 							onNavigateToVisit={onNavigateToVisit}
 							onNewAppointment={onNewAppointment}
 							onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
-							onOpenTaxCertificate={() => setIsTaxDeductionModalOpen(true)}
+							onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
 						/>
 					)}
 				</div>
@@ -537,9 +537,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								type="button"
 								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-4 min-h-[44px] h-11 text-xs cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)]"
 								onClick={onClose}
-							>
-								Отмена
-							</button>
+							>Отмена</button>
 							<button
 								type="button"
 								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-4 min-h-[44px] h-11 text-xs cursor-pointer select-none transition-all hover:border-[var(--teal)] inline-flex items-center gap-1.5"
@@ -583,9 +581,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								type="button"
 								onClick={onClose}
 								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
-							>
-								Закрыть
-							</button>
+							>Закрыть</button>
 							{/* Ровно ОДНА Primary CTA кнопка var(--teal) (Мандат 8e, Мандат 8am) */}
 							<button
 								type="button"
@@ -604,25 +600,18 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				{!isCreateMode && (
 					<>
 						<PatientCardModalSubModals
-							isDiplomaModalOpen={isDiplomaModalOpen}
-							setIsDiplomaModalOpen={setIsDiplomaModalOpen}
-							isDmsLetterModalOpen={isDmsLetterModalOpen}
-							setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
-							isTaxDeductionModalOpen={isTaxDeductionModalOpen}
-							setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
-							patientData={patientData}
-							onUpdatePatientField={handleUpdatePatientField}
+							isDiplomaModalOpen={isDiplomaModalOpen} setIsDiplomaModalOpen={setIsDiplomaModalOpen}
+							isDmsLetterModalOpen={isDmsLetterModalOpen} setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
+							isTaxDeductionModalOpen={isTaxDeductionModalOpen} setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
+							initialTaxTab={initialTaxTab} patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
 						/>
 						<ClinicalPhotoProtocolModal
-							isOpen={isPhotoModalOpen}
-							onClose={() => setIsPhotoModalOpen(false)}
-							patientId={patientData.id ?? undefined}
-							patientName={patientData.fullName ?? undefined}
+							isOpen={isPhotoModalOpen} onClose={() => setIsPhotoModalOpen(false)}
+							patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined}
 							patientCardNumber={patientData.cardNumber || patientData.medicalCardNumber || undefined}
 						/>
 						<MedicalRecordStudioModal
-							isOpen={isMedicalRecordStudioOpen}
-							onClose={() => setIsMedicalRecordStudioOpen(false)}
+							isOpen={isMedicalRecordStudioOpen} onClose={() => setIsMedicalRecordStudioOpen(false)}
 							patientId={patientData.id ?? undefined}
 							onSave={async (updatedCard) => {
 								if (updatedCard.passport.patientPhone && updatedCard.passport.patientPhone !== patientData.phone) {

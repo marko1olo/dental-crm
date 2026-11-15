@@ -82,14 +82,14 @@ export interface PatientTreatmentPlanDto {
 
 export interface TreatmentPlansTabProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	patientId?: string;
-	items?: TreatmentPlanItem[];
-	plans?: PatientTreatmentPlanDto[];
-	tiers?: TreatmentTierOption[];
-	onOpenPlanPresenter?: (planId?: string) => void;
-	onSendToCheckout?: (tierId: string, amountRub: number) => void;
-	onPrintPlan?: (isDraft: boolean) => void;
-	className?: string;
+	patientId?: string | undefined;
+	items?: TreatmentPlanItem[] | undefined;
+	plans?: PatientTreatmentPlanDto[] | undefined;
+	tiers?: TreatmentTierOption[] | undefined;
+	onOpenPlanPresenter?: ((planId?: string | undefined) => void) | undefined;
+	onSendToCheckout?: ((tierId: string, amountRub: number) => void) | undefined;
+	onPrintPlan?: ((isDraft: boolean) => void) | undefined;
+	className?: string | undefined;
 }
 
 export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(

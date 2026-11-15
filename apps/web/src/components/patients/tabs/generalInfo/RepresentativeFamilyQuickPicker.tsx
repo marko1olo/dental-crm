@@ -1,13 +1,13 @@
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
 import type { FamilyRelationshipItem } from "./usePatientRepresentativesLogic";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface RepresentativeFamilyQuickPickerProps {
 	relationships: FamilyRelationshipItem[];
 	disabled?: boolean;
 	compact?: boolean;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 }
 
 export const RepresentativeFamilyQuickPicker: React.FC<RepresentativeFamilyQuickPickerProps> = ({

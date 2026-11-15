@@ -1,11 +1,11 @@
 import React from "react";
-import type { IdentityDocType, PatientGeneralInfo } from "./types";
+import type { IdentityDocType, PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 import { IDENTITY_DOCUMENT_TYPES } from "./constants";
 import { ForeignIdentityDocumentFields } from "./ForeignIdentityDocumentFields";
 
 interface IdentityDocumentFieldsProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 }
 

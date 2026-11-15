@@ -2,7 +2,7 @@ import React from "react";
 import { PediatricBraveryDiplomaModal } from "../../pediatric/PediatricBraveryDiplomaModal";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
+import type { PatientGeneralInfo, PatientGeneralInfoFieldValue } from "../tabs/PatientGeneralInfoTab";
 
 const DmsGuaranteeLetterModal = React.lazy(() =>
 	import("../../insurance/DmsGuaranteeLetterModal").then((m) => ({
@@ -17,8 +17,9 @@ interface PatientCardModalSubModalsProps {
 	readonly setIsDmsLetterModalOpen: (open: boolean) => void;
 	readonly isTaxDeductionModalOpen: boolean;
 	readonly setIsTaxDeductionModalOpen: (open: boolean) => void;
+	readonly initialTaxTab?: "form" | "checks" | "family" | "xml" | "registry" | undefined;
 	readonly patientData: PatientGeneralInfo;
-	readonly onUpdatePatientField: (field: keyof PatientGeneralInfo, value: unknown) => void;
+	readonly onUpdatePatientField: (field: keyof PatientGeneralInfo, value: PatientGeneralInfoFieldValue) => void;
 }
 
 export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps> = ({
@@ -28,6 +29,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 	setIsDmsLetterModalOpen,
 	isTaxDeductionModalOpen,
 	setIsTaxDeductionModalOpen,
+	initialTaxTab,
 	patientData,
 	onUpdatePatientField,
 }) => (
@@ -49,8 +51,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 						fullName: patientData.fullName || "",
 						birthDate: patientData.birthDate || undefined,
 						policyNumber: patientData.dmsPolicyNumber || undefined,
-						insuranceCompany: patientData.dmsInsuranceCompany || undefined,
-						phone: patientData.phone || undefined,
+						cardNumber: patientData.cardNumber || undefined,
 					}}
 					onSave={async (letter) => {
 						if (letter.policyNumber && !patientData.dmsPolicyNumber) {
@@ -85,10 +86,11 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 			<TaxDeductionCertificateModal
 				isOpen={isTaxDeductionModalOpen}
 				onClose={() => setIsTaxDeductionModalOpen(false)}
+				initialTab={initialTaxTab}
 				patientId={patientData.id || undefined}
 				patientName={patientData.fullName || ""}
 				patientBirthDate={patientData.birthDate || ""}
-				patientInn={patientData.inn || (patientData as { taxpayerInn?: string }).taxpayerInn || ""}
+				patientInn={patientData.inn || patientData.taxpayerInn || ""}
 				patientSnils={patientData.snils || ""}
 				autoFetchPayments={true}
 			/>

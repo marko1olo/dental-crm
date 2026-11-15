@@ -1,11 +1,11 @@
 import React from "react";
 import { Tag } from "lucide-react";
 import { REGISTRY_SERVICE_TAGS } from "./constants";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface RegistryNotesCardProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 	onToggleServiceTag: (tag: string) => void;
 }

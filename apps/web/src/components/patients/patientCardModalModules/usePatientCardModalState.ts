@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { type PatientClinicalSafetyProfile, createHealthySomaticNormProfile, evaluatePatientSafetyFlags } from "../safetyMath";
 import { mapPatientToGeneralInfo, resolveInitialSafetyProfile } from "../patientAutonomyActions";
-import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
+import type { PatientGeneralInfo, PatientGeneralInfoFieldValue } from "../tabs/PatientGeneralInfoTab";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import type { PatientSectionSaveState } from "../patientCardSavePill";
@@ -41,6 +41,7 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
 	const [isDmsLetterModalOpen, setIsDmsLetterModalOpen] = useState(false);
 	const [isTaxDeductionModalOpen, setIsTaxDeductionModalOpen] = useState(false);
+	const [initialTaxTab, setInitialTaxTab] = useState<"form" | "checks" | "family" | "xml" | "registry">("form");
 
 	useEffect(() => {
 		if (isOpen && effP.id) StaffActionAuditService.logEmrOpen({ patientId: effP.id, cardId: effP.id });
@@ -84,7 +85,7 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		isOpen, isDirty, setIsDirty, patientData, setPatientData, safetyProfile, setSafetyProfile, setSaveState, onSavePatient,
 	});
 
-	const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, val: any) => {
+	const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, val: PatientGeneralInfoFieldValue) => {
 		setIsDirty(true);
 		setPatientData((prev) => ({ ...prev, [field]: val }));
 	}, []);
@@ -104,11 +105,17 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		});
 	}, [patientData, safetyProfile, onSavePatient, onClose, inFlightRef]);
 
+	const handleOpenTaxCertificate = useCallback((tab?: "form" | "checks" | "family" | "xml" | "registry") => {
+		setInitialTaxTab(tab || "form");
+		setIsTaxDeductionModalOpen(true);
+	}, []);
+
 	return {
 		patientData, safetyProfile, setSafetyProfile, activeTab, setActiveTab,
 		isChildPatient, safetyEvaluation, isDirty, setIsDirty, saveState,
 		isDiplomaModalOpen, setIsDiplomaModalOpen, isDmsLetterModalOpen, setIsDmsLetterModalOpen,
 		isTaxDeductionModalOpen, setIsTaxDeductionModalOpen,
+		initialTaxTab, setInitialTaxTab, handleOpenTaxCertificate,
 		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave,
 	};
 }

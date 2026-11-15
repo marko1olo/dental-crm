@@ -16,4 +16,9 @@ export * from "./family/FamilyWalletModal";
 export * from "./tabs/PatientGeneralInfoTab";
 export * from "./safetyMath";
 export * from "./patientCatalogData";
+export type {
+	LegalRepresentativeType,
+	LegalRepresentativeTypeMeta,
+} from "./PatientCardModal";
+export { PATIENT_LEGAL_REPRESENTATIVE_CATALOG } from "./PatientCardModal";
 

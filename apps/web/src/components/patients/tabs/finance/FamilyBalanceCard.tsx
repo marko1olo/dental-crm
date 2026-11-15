@@ -1,14 +1,16 @@
 import React from "react";
-import { Users } from "lucide-react";
+import { FileCheck, Users } from "lucide-react";
 
 export interface FamilyBalanceCardProps {
 	readonly familyGroupName?: string | null | undefined;
 	readonly familyBalance: number;
+	readonly onOpenFamilyTaxCertificate?: (() => void) | undefined;
 }
 
 export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 	familyGroupName,
 	familyBalance,
+	onOpenFamilyTaxCertificate,
 }) => {
 	return (
 		<div
@@ -35,16 +37,31 @@ export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 				</span>
 			</div>
 
-			<div className="flex items-baseline gap-2 pt-1">
-				<span
-					className="text-2xl sm:text-3xl font-black tracking-tight text-indigo-600 dark:text-indigo-400"
-					data-testid="family-balance-amount-display"
-				>
-					{familyBalance.toLocaleString("ru-RU")} ₽
-				</span>
-				<span className="text-xs text-[var(--muted)] font-medium">
-					(единый баланс)
-				</span>
+			<div className="flex items-baseline gap-2 pt-1 flex-wrap sm:flex-nowrap justify-between">
+				<div className="flex items-baseline gap-2">
+					<span
+						className="text-2xl sm:text-3xl font-black tracking-tight text-indigo-600 dark:text-indigo-400"
+						data-testid="family-balance-amount-display"
+					>
+						{familyBalance.toLocaleString("ru-RU")} ₽
+					</span>
+					<span className="text-xs text-[var(--muted)] font-medium">
+						(единый баланс)
+					</span>
+				</div>
+
+				{onOpenFamilyTaxCertificate && (
+					<button
+						type="button"
+						onClick={onOpenFamilyTaxCertificate}
+						data-testid="btn-family-tax-certificate"
+						className="min-h-[34px] h-8 px-3 rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-indigo-500/20 transition-all self-start sm:self-auto"
+						title="Оформить единую справку ФНС на семью (КНД 1151156, вычет 13%)"
+					>
+						<FileCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+						<span>Справка ФНС на семью (13%)</span>
+					</button>
+				)}
 			</div>
 
 			<p className="text-[11px] text-[var(--muted)] m-0 leading-normal border-t border-[var(--glass-border)] pt-2.5">

@@ -13,7 +13,7 @@ export interface PatientCardDraftSyncProps {
 	safetyProfile: PatientClinicalSafetyProfile;
 	setSafetyProfile: React.Dispatch<React.SetStateAction<PatientClinicalSafetyProfile>>;
 	setSaveState: (v: PatientSectionSaveState) => void;
-	onSavePatient?: ((data: PatientGeneralInfo, safety: PatientClinicalSafetyProfile) => Promise<void>) | undefined;
+	onSavePatient?: ((data: PatientGeneralInfo, safety: PatientClinicalSafetyProfile) => void | Promise<void>) | undefined;
 }
 
 export function usePatientCardDraftSync({

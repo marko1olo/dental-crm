@@ -18,7 +18,7 @@ export async function savePatientCardModal({
 	inFlightRef: React.MutableRefObject<boolean>;
 	patientData: PatientGeneralInfo;
 	safetyProfile: PatientClinicalSafetyProfile;
-	onSavePatient?: ((data: PatientGeneralInfo, safety: PatientClinicalSafetyProfile) => Promise<void>) | undefined;
+	onSavePatient?: ((data: PatientGeneralInfo, safety: PatientClinicalSafetyProfile) => void | Promise<void>) | undefined;
 	onClose: () => void;
 	setIsDirty: (dirty: boolean) => void;
 	setSaveState: (state: PatientSectionSaveState) => void;
@@ -30,11 +30,11 @@ export async function savePatientCardModal({
 		if (onSavePatient) {
 			await onSavePatient(patientData, safetyProfile);
 		} else {
-			const targetId = patientData.id || (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.id : "");
+			const targetId = patientData.id || (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.id || "" : "");
 			if (!targetId) {
 				throw new Error("Идентификатор пациента не найден. Сохранение невозможно.");
 			}
-			await persistPatientCardModalToApi(patientData, safetyProfile, isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_PATIENT.id : "");
+			await persistPatientCardModalToApi(patientData, safetyProfile, targetId);
 		}
 		setIsDirty(false);
 		setSaveState("saved");
@@ -47,9 +47,10 @@ export async function savePatientCardModal({
 			}
 		}
 		onClose();
-	} catch (err: any) {
+	} catch (err: unknown) {
 		setSaveState("error");
-		showToast(err?.message || "Ошибка при сохранении карты", "error", 4000);
+		const message = err instanceof Error ? err.message : "Ошибка при сохранении карты";
+		showToast(message, "error", 4000);
 	} finally {
 		inFlightRef.current = false;
 	}

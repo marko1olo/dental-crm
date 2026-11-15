@@ -443,7 +443,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 );
 
 export const DEFAULT_CLINICAL_RECORD_DATA = DEFAULT_MEDICAL_CARD_DATA;
+export const DEFAULT_043_DATA = DEFAULT_MEDICAL_CARD_DATA;
 export type ClinicalRecordPrintModalProps = MedicalRecordStudioModalProps;
 export const ClinicalRecordPrintModal = MedicalRecordStudioModal;
+export type Form043PrintModalProps = MedicalRecordStudioModalProps;
+export const Form043PrintModal = MedicalRecordStudioModal;
 
 export default MedicalRecordStudioModal;

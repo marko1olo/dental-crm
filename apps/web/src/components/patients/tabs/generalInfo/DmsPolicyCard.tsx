@@ -1,11 +1,11 @@
 import React from "react";
 import { Shield } from "lucide-react";
 import { POPULAR_DMS_COMPANIES } from "./constants";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface DmsPolicyCardProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 	onOpenDmsLetters?: (() => void) | undefined;
 }

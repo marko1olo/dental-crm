@@ -37,9 +37,12 @@ export interface PatientGeneralInfo {
 	address?: string | null | undefined;
 	snils?: string | null | undefined;
 	inn?: string | null | undefined;
+	taxpayerInn?: string | null | undefined;
 	omsPolicyNumber?: string | null | undefined;
 	notes?: string | null | undefined;
 	acquisitionSource?: string | null | undefined;
+	createdAt?: string | null | undefined;
+	updatedAt?: string | null | undefined;
 
 	// 1. Паспортные данные (для договоров и чеков)
 	docType?: IdentityDocType | string | null | undefined;
@@ -90,10 +93,30 @@ export interface PatientGeneralInfo {
 	dataProcessingBasisNote?: string | null | undefined;
 }
 
+export type PatientGeneralInfoFieldValue =
+	| string
+	| number
+	| boolean
+	| string[]
+	| PatientVisitHistoryItem[]
+	| null
+	| undefined
+	| {
+			id?: string | null | undefined;
+			name?: string | null | undefined;
+			totalBalanceRub?: number | null | undefined;
+			totalBalanceKopecks?: number | null | undefined;
+	  };
+
+export type PatientGeneralInfoUpdateFn = (
+	field: keyof PatientGeneralInfo,
+	value: PatientGeneralInfoFieldValue,
+) => void;
+
 export interface PatientGeneralInfoTabProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
 	onApplySomaticNorm?: (() => void) | undefined;
 	disabled?: boolean | undefined;

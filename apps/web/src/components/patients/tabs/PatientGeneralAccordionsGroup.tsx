@@ -4,7 +4,7 @@ import { PatientIdentitySection } from "./generalInfo/PatientIdentitySection";
 import { PatientInsuranceSection } from "./generalInfo/PatientInsuranceSection";
 import { PatientTagsMarketingSection } from "./generalInfo/PatientTagsMarketingSection";
 import type { PatientClinicalSafetyProfile } from "../safetyMath";
-import type { PatientGeneralInfo } from "./generalInfo/types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./generalInfo/types";
 
 interface PatientGeneralAccordionsGroupProps {
 	patient?: PatientGeneralInfo | null | undefined;
@@ -17,7 +17,7 @@ interface PatientGeneralAccordionsGroupProps {
 	notesSummary: string;
 	addressesMatchState: boolean;
 	setAddressesMatchState: React.Dispatch<React.SetStateAction<boolean>>;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	onToggleAllergy: (field: "hasPenicillinAllergy" | "hasNsaidAllergy" | "hasLatexAllergy") => void;
 	onApplySomaticNorm?: (() => void) | undefined;
 	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;

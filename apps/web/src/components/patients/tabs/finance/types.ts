@@ -21,6 +21,7 @@ export interface PatientFinanceTabProps {
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
 	readonly onOpenTaxCertificate?: (() => void) | undefined;
+	readonly onOpenFamilyTaxCertificate?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
 }
 

@@ -1,11 +1,11 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
 import { formatOmsPolicy, formatSnils, formatTaxpayerInn } from "../../../../utils/inputSanitation";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface SnilsOmsFieldsProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 	onOpenTaxCertificate?: (() => void) | undefined;
 }

@@ -6,6 +6,7 @@ import type { PatientGeneralInfoTabProps } from "./generalInfoTabTypes";
 import { PatientSafetyBanner } from "./generalInfo/PatientSafetyBanner";
 import { usePatientGeneralInfoTabLogic } from "./generalInfo/usePatientGeneralInfoTabLogic";
 import { PatientGeneralAccordionsGroup } from "./PatientGeneralAccordionsGroup";
+import { toCanonicalPatient } from "../patientCardModalModules/patientCardModalTypes";
 import { PatientRepresentativesSection } from "./generalInfo/PatientRepresentativesSection";
 
 export * from "./generalInfoTabTypes";
@@ -33,6 +34,8 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 			onUpdatePatient,
 			onUpdateSafetyProfile,
 		});
+
+		const canonicalPatient = React.useMemo(() => toCanonicalPatient(patient ?? {}), [patient]);
 
 		return (
 			<div className="patient-general-info-tab flex flex-col gap-6 text-[var(--ink)]">
@@ -75,7 +78,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 				{(activeSection === "all" || activeSection === "family" || Boolean(patient?.representativeType)) && (
 					<div className="flex flex-col gap-4">
 						<PatientFamilyAndInsuranceWidget
-							patient={patient}
+							patient={canonicalPatient}
 							patientBalance={Number(patient?.patientBalanceRub ?? 0) || 0}
 							insurancePolicyNumber={patient?.omsPolicyNumber || undefined}
 							onUpdateInsurancePolicy={(policy) => onUpdatePatient?.("omsPolicyNumber", policy)}

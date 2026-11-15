@@ -1,11 +1,11 @@
 import React from "react";
 import { Stethoscope } from "lucide-react";
 import { DOCTOR_CLINICAL_TAGS } from "./constants";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface DoctorClinicalNotesCardProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 	onAppendDoctorTag: (tag: string) => void;
 }

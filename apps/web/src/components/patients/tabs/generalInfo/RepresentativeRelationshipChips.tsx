@@ -1,12 +1,12 @@
 import React from "react";
 import { Users } from "lucide-react";
 import { REPRESENTATIVE_RELATIONSHIP_CATALOG } from "./constants";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface RepresentativeRelationshipChipsProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	disabled?: boolean;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 }
 
 export const RepresentativeRelationshipChips: React.FC<RepresentativeRelationshipChipsProps> = ({

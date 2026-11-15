@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../../safetyMath";
 import type { PatientClinicalSafetyProfile } from "../../safetyMath";
-import type { PatientGeneralInfo, PatientVisitHistoryItem } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn, PatientVisitHistoryItem } from "./types";
 import { usePatientFamilyLoader } from "../../overview/usePatientFamilyLoader";
 import { computePassportSummary, computeInsuranceSummary, computeNotesSummary } from "./generalInfoSummaries";
 
@@ -9,7 +9,7 @@ interface UsePatientGeneralInfoTabParams {
 	patient?: PatientGeneralInfo | null | undefined;
 	safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
 	disabled?: boolean | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	onUpdateSafetyProfile?: ((profile: PatientClinicalSafetyProfile) => void) | undefined;
 }
 

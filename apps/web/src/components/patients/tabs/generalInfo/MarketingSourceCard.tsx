@@ -1,11 +1,11 @@
 import React from "react";
 import { Megaphone } from "lucide-react";
 import { MARKETING_SOURCES_CATALOG } from "@dental/shared";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface MarketingSourceCardProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 }
 

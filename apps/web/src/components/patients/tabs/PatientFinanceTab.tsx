@@ -22,6 +22,7 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 		onNavigateToVisit: _onNavigateToVisit,
 		onNewAppointment,
 		onOpenTaxCertificate,
+		onOpenFamilyTaxCertificate,
 		disabled = false,
 	}) {
 		const initialPersonalBalance = useMemo(() => {
@@ -78,6 +79,7 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 					<FamilyBalanceCard
 						familyGroupName={patient?.familyGroupName}
 						familyBalance={familyBalance}
+						onOpenFamilyTaxCertificate={onOpenFamilyTaxCertificate}
 					/>
 				</div>
 

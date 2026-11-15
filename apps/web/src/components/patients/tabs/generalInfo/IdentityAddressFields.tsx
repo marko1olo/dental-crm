@@ -1,10 +1,10 @@
 import React from "react";
 import { MapPin } from "lucide-react";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface IdentityAddressFieldsProps {
 	patient?: PatientGeneralInfo | null | undefined;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 	disabled?: boolean | undefined;
 	addressesMatchState: boolean;
 	setAddressesMatchState: React.Dispatch<React.SetStateAction<boolean>>;

@@ -1,7 +1,9 @@
 import type {
 	IdentityDocType,
 	PatientGeneralInfo,
+	PatientGeneralInfoFieldValue,
 	PatientGeneralInfoTabProps,
+	PatientGeneralInfoUpdateFn,
 	PatientVisitHistoryItem,
 	RepresentativeRelationshipType,
 	RepresentativeRelationshipMeta,
@@ -42,5 +44,7 @@ export type {
 	IdentityDocType,
 	PatientVisitHistoryItem,
 	PatientGeneralInfo,
+	PatientGeneralInfoFieldValue,
 	PatientGeneralInfoTabProps,
+	PatientGeneralInfoUpdateFn,
 };

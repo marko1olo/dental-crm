@@ -4,6 +4,26 @@ import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
 import { useDocumentStore } from "../../../../store/documentStore";
 import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
 
+export interface TabletSignatureData {
+	readonly signedAt?: string | undefined;
+	readonly recipientFullName?: string | undefined;
+	readonly recipientRole?: string | undefined;
+	readonly sha256Fingerprint?: string | undefined;
+	readonly signatureSvg?: string | undefined;
+	readonly pepCode?: string | undefined;
+}
+
+interface StoreWithOptionalDocuments {
+	readonly activeDocuments?: GeneratedDocument[] | undefined;
+}
+
+function extractActiveDocuments(store: unknown): GeneratedDocument[] | null {
+	if (store && typeof store === "object" && "activeDocuments" in store && Array.isArray((store as StoreWithOptionalDocuments).activeDocuments)) {
+		return (store as StoreWithOptionalDocuments).activeDocuments ?? null;
+	}
+	return null;
+}
+
 export function usePatientDocumentsLogic(patient: Patient) {
 	const appLogic = useAppLogicContext();
 	const docStore = useDocumentStore();
@@ -12,27 +32,27 @@ export function usePatientDocumentsLogic(patient: Patient) {
 	const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("medical_card");
 	const [tabletSignDoc, setTabletSignDoc] = useState<GeneratedDocument | null>(null);
 
-	const handleTabletSignatureConfirm = async (sigData: any) => {
+	const handleTabletSignatureConfirm = async (sigData: TabletSignatureData) => {
 		if (!tabletSignDoc) return;
 		docStore.setDocumentIssueConfirmationId(tabletSignDoc.id);
 		docStore.setDocumentIssueSignatureMode("simple_electronic_signature");
-		docStore.setDocumentIssueSignedAt(sigData.signedAt);
-		docStore.setDocumentIssueRecipientFullName(sigData.recipientFullName);
-		docStore.setDocumentIssueRecipientRole(sigData.recipientRole);
+		docStore.setDocumentIssueSignedAt(sigData.signedAt ?? new Date().toISOString());
+		docStore.setDocumentIssueRecipientFullName(sigData.recipientFullName ?? "");
+		docStore.setDocumentIssueRecipientRole(sigData.recipientRole ?? "patient");
 		docStore.setDocumentIssueIdentityChecked(true);
 		docStore.setDocumentIssueDocumentOpenedAndChecked(true);
 		docStore.setDocumentIssueRecipientSigned(true);
 		docStore.setDocumentIssueClinicSigned(true);
-		docStore.setDocumentIssueNote(`Подписано ПЭП на планшете. Хэш SHA-256: ${sigData.sha256Fingerprint?.slice(0, 16)}...`);
+		docStore.setDocumentIssueNote(`Подписано ПЭП на планшете. Хэш SHA-256: ${sigData.sha256Fingerprint?.slice(0, 16) ?? "N/A"}...`);
 		await appLogic.confirmDocumentIssue(true, sigData.signatureSvg, sigData.pepCode);
 		setTabletSignDoc(null);
 	};
 
 	const allDocs = useMemo(() => {
-		const fromStore = ((docStore as unknown as { activeDocuments?: GeneratedDocument[] }).activeDocuments ?? []) as GeneratedDocument[];
-		if (fromStore.length > 0) return fromStore;
+		const fromStore = extractActiveDocuments(docStore);
+		if (fromStore && fromStore.length > 0) return fromStore;
 		return (appLogic.dashboard?.documents ?? []) as GeneratedDocument[];
-	}, [(docStore as unknown as { activeDocuments?: GeneratedDocument[] }).activeDocuments, appLogic.dashboard?.documents]);
+	}, [docStore, appLogic.dashboard?.documents]);
 
 	const patientDocs = useMemo(() => {
 		return allDocs.filter((doc: GeneratedDocument) => doc && doc.patientId === patient.id);

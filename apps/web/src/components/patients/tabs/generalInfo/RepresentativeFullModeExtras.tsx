@@ -1,10 +1,10 @@
 import React from "react";
-import type { PatientGeneralInfo } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface RepresentativeFullModeExtrasProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	disabled?: boolean;
-	onUpdatePatient?: ((field: keyof PatientGeneralInfo, value: any) => void) | undefined;
+	onUpdatePatient?: PatientGeneralInfoUpdateFn | undefined;
 }
 
 export const RepresentativeFullModeExtras: React.FC<RepresentativeFullModeExtrasProps> = ({
