@@ -11,6 +11,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organizations, users } from "./auth.js";
+import { visits } from "./clinical/visitsSchema.js";
 import { patients } from "./patients.js";
 
 /**
@@ -35,6 +36,9 @@ export const periodontogramSnapshots = pgTable(
 		patientId: uuid("patient_id")
 			.notNull()
 			.references(() => patients.id),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
 		status: text("status").notNull().default("draft"), // 'draft' | 'closed'
 		recordedAt: timestamp("recorded_at", { withTimezone: true })
 			.notNull()
@@ -66,6 +70,9 @@ export const periodontogramSnapshots = pgTable(
 		patientStatusIdx: index("periodontogram_snapshots_patient_status_idx").on(
 			table.patientId,
 			table.status,
+		),
+		visitIdIdx: index("periodontogram_snapshots_visit_idx").on(
+			table.visitId,
 		),
 	}),
 );
@@ -161,6 +168,10 @@ export const periodontogramSnapshotsRelations = relations(
 		patient: one(patients, {
 			fields: [periodontogramSnapshots.patientId],
 			references: [patients.id],
+		}),
+		visit: one(visits, {
+			fields: [periodontogramSnapshots.visitId],
+			references: [visits.id],
 		}),
 		recordedByUser: one(users, {
 			fields: [periodontogramSnapshots.recordedByUserId],

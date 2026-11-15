@@ -133,19 +133,27 @@ export function EmkPerioMeasurements({
 
 		// 4. Диспатчим событие сметы для кассы и мягкого списания расходников
 		if (typeof window !== "undefined") {
+			const prophyKop = Math.round(prophyService.price * 100);
 			const allServices = [
-				{ serviceId: prophyService.code804n, title: prophyService.name, unitPriceRub: prophyService.price, quantity: 1, code804n: prophyService.code804n },
-				...curettageServices.map((cur) => ({
-					serviceId: cur.code804n, title: cur.name, unitPriceRub: cur.price, quantity: 1, code804n: cur.code804n, toothCode: String(cur.toothNumber),
-				})),
+				{
+					serviceId: prophyService.code804n, name: prophyService.name, title: prophyService.name,
+					code: prophyService.code804n, code804n: prophyService.code804n, unitPriceRub: prophyService.price,
+					unitPriceKopecks: prophyKop, priceKopecks: prophyKop, amountKopecks: prophyKop,
+					quantity: 1, category: "hygiene", stageKind: "hygiene",
+				},
+				...curettageServices.map((cur) => {
+					const curKop = Math.round(cur.price * 100);
+					return {
+						serviceId: cur.code804n, name: cur.name, title: cur.name,
+						code: cur.code804n, code804n: cur.code804n, unitPriceRub: cur.price,
+						unitPriceKopecks: curKop, priceKopecks: curKop, amountKopecks: curKop,
+						quantity: 1, category: "hygiene", stageKind: "hygiene",
+						toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
+					};
+				}),
 			];
 
-			window.dispatchEvent(
-				new CustomEvent("dente-add-services-to-invoice", {
-					detail: { services: allServices },
-				}),
-			);
-
+			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { services: allServices } }));
 			void deductPeriodontalConsumablesSoftOverdraft("curettage");
 		}
 

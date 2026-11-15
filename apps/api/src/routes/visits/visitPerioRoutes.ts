@@ -130,6 +130,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		const savedSnapshot = await upsertPatientFullPeriodontogram({
 			orgId: context.organizationId,
 			patientId: visit.patientId,
+			visitId: visit.id,
 			recordedByUserId: doctorUserId,
 			teeth,
 			sites,

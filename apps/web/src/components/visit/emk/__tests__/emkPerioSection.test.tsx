@@ -12,7 +12,7 @@
  *    with closed curettage A16.07.011 for affected teeth and prophy A16.07.051.
  * 6. Zero bird-language / raw "Форма 043/у" in UI strings.
  * 7. Zero disabled buttons on interactive screening actions (Mandate 8e).
- * 8. Clean export in index.ts and integration in VisitEmkInteractiveStage & VisitEmkModals.
+ * 8. Clean export in index.ts and runtime canonical event dispatch dente:open-perio-modal.
  */
 
 import assert from "node:assert/strict";
@@ -33,7 +33,6 @@ describe("RED TEAM INQUISITION: Periodontal Screening & Prophylaxis in EMK", () 
 		__dirname,
 		"../../emkTab/canvasModules/VisitEmkInteractiveStage.tsx",
 	);
-	const modalsPath = path.resolve(__dirname, "../../emkTab/VisitEmkModals.tsx");
 	const odontogramBarPath = path.resolve(
 		__dirname,
 		"../../emkTab/VisitEmkOdontogramBar.tsx",
@@ -157,7 +156,7 @@ describe("RED TEAM INQUISITION: Periodontal Screening & Prophylaxis in EMK", () 
 		}
 	});
 
-	it("8. Seamless export in emk/index.ts and mounting in Stage, Modals & OdontogramBar", () => {
+	it("8. Seamless export in emk/index.ts, mounting in Stage, and canonical dente:open-perio-modal dispatch", () => {
 		const indexSource = fs.readFileSync(indexPath, "utf8");
 		assert.ok(
 			indexSource.includes('export * from "./EmkPerioSection";'),
@@ -170,16 +169,24 @@ describe("RED TEAM INQUISITION: Periodontal Screening & Prophylaxis in EMK", () 
 			"EmkPerioSection must be mounted in VisitEmkInteractiveStage",
 		);
 
-		const modalsSource = fs.readFileSync(modalsPath, "utf8");
+		const sectionSource = fs.readFileSync(perioSectionPath, "utf8");
 		assert.ok(
-			modalsSource.includes("PerioStudioModal"),
-			"PerioStudioModal must be mounted in VisitEmkModals",
+			sectionSource.includes('data-testid="emk-perio-open-chart-btn"'),
+			"emk-perio-open-chart-btn must exist in EmkPerioSection",
+		);
+		assert.ok(
+			sectionSource.includes('"dente:open-perio-modal"'),
+			"EmkPerioSection must dispatch canonical 'dente:open-perio-modal' to launch global PerioStudioModal via DirectPerioLauncher",
 		);
 
 		const barSource = fs.readFileSync(odontogramBarPath, "utf8");
 		assert.ok(
 			barSource.includes('data-testid="btn-open-perio-modal"'),
 			"btn-open-perio-modal must exist in VisitEmkOdontogramBar",
+		);
+		assert.ok(
+			barSource.includes('"dente:open-perio-modal"'),
+			"VisitEmkOdontogramBar must dispatch canonical 'dente:open-perio-modal'",
 		);
 	});
 });

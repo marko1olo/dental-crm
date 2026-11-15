@@ -484,9 +484,9 @@ export function createProHygieneSepaPreset(): SepaToothValue[] {
 }
 
 /**
- * Генерация регламентного текста дневника Формы 043/у по данным SEPA пародонтограммы.
+ * Генерация клинического протокола обследования пародонта в медицинскую карту приёма.
  */
-export function generateSepaProtocol043Text(
+export function generateSepaPeriodontalProtocolText(
 	teeth: readonly SepaToothValue[],
 	indices?: PeriodontogramIndices | null,
 	options?: { presetName?: string; customNotes?: string },
@@ -548,4 +548,9 @@ export function generateSepaProtocol043Text(
 
 	return text;
 }
+
+/**
+ * @deprecated Используйте каноническую функцию generateSepaPeriodontalProtocolText (Мандат 8x).
+ */
+export const generateSepaProtocol043Text = generateSepaPeriodontalProtocolText;
 

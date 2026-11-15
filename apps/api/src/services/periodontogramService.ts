@@ -140,6 +140,7 @@ export async function createDraftWithInitialTeeth(
 	orgId: string,
 	patientId: string,
 	recordedByUserId: string | null,
+	visitId?: string | null,
 ) {
 	const validUserId = await resolveExistingPerioUserId(orgId, recordedByUserId);
 	const existingStates = await db
@@ -166,6 +167,7 @@ export async function createDraftWithInitialTeeth(
 			.values({
 				organizationId: orgId,
 				patientId,
+				visitId: visitId ?? null,
 				status: "draft",
 				recordedAt: new Date(),
 				recordedByUserId: validUserId,
@@ -423,6 +425,7 @@ export async function fetchPatientLatestPeriodontogram(
 export interface UpsertPatientFullPeriodontogramParams {
 	orgId: string;
 	patientId: string;
+	visitId?: string | null | undefined;
 	recordedByUserId: string | null;
 	teeth?: Array<z.infer<typeof patchToothBodySchema>> | undefined;
 	sites?: Array<SiteItemInput> | undefined;
@@ -437,12 +440,13 @@ export type PeriodontogramSnapshotWithTeeth = typeof periodontogramSnapshots.$in
 };
 
 /**
- * Upserts a full periodontogram draft or closed record for a patient (Форма 043/у).
+ * Upserts a full periodontogram draft or closed record for a patient (Медицинская карта приёма).
  * Creates draft if none exists, updates teeth, upserts sites, and calculates indices on close.
  */
 export async function upsertPatientFullPeriodontogram({
 	orgId,
 	patientId,
+	visitId,
 	recordedByUserId,
 	teeth = [],
 	sites = [],
@@ -475,10 +479,19 @@ export async function upsertPatientFullPeriodontogram({
 				orgId,
 				patientId,
 				validRecordedByUserId,
+				visitId,
 			);
 		}
 
 		return await db.transaction(async (tx) => {
+			// Update visitId if provided and different
+			if (visitId !== undefined && activeDraft.visitId !== visitId) {
+				await tx
+					.update(periodontogramSnapshots)
+					.set({ visitId: visitId ?? null, updatedAt: new Date() })
+					.where(eq(periodontogramSnapshots.id, activeDraft.id));
+				activeDraft.visitId = visitId ?? null;
+			}
 			// 1. Batch update teeth attributes if provided
 			if (teeth && teeth.length > 0) {
 				for (const t of teeth) {

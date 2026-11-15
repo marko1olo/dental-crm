@@ -5,7 +5,6 @@ import { InformedConsentModal } from "../../consents/InformedConsentModal";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
 import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { showToast } from "../../GlobalToast";
-import { PerioStudioModal } from "../../perio/PerioStudioModal";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { appendClinicalText } from "../emk";
 import type { VisitEmkModalsProps } from "./types";
@@ -32,16 +31,6 @@ export function VisitEmkModals({
 	const totalNetRub = completionResult?.totalNetRub ?? 0;
 	const receiptNumber = completionResult?.receiptNumber ?? "00001";
 	const patientName = activePatient?.fullName ?? "Пациент";
-
-	const [isLocalPerioModalOpen, setIsLocalPerioModalOpen] = React.useState(false);
-
-	React.useEffect(() => {
-		const handleOpenPerio = () => setIsLocalPerioModalOpen(true);
-		window.addEventListener("dente:open-perio-modal", handleOpenPerio);
-		return () => {
-			window.removeEventListener("dente:open-perio-modal", handleOpenPerio);
-		};
-	}, []);
 
 	const inFlightSbpRef = React.useRef(false);
 
@@ -394,22 +383,6 @@ export function VisitEmkModals({
 				isLocked={isSignedVisit}
 				status={isSignedVisit ? "signed" : "draft"}
 			/>
-
-			{/* Модальное окно полной пародонтограммы */}
-			{isLocalPerioModalOpen && (
-				<PerioStudioModal
-					isOpen={isLocalPerioModalOpen}
-					isModal={true}
-					onClose={() => setIsLocalPerioModalOpen(false)}
-					patientId={activePatient?.id}
-					patientName={patientName}
-					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
-					onInsertToProtocol={(text) => {
-						const current = visitNoteForm?.objectiveStatus || "";
-						updateVisitNoteField("objectiveStatus", current ? `${current}\n\n${text}` : text);
-					}}
-				/>
-			)}
 		</>
 	);
 }

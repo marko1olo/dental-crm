@@ -28,6 +28,7 @@ import {
 	createModeratePeriodontitisSepaPreset,
 	createSeverePeriodontitisSepaPreset,
 	createProHygieneSepaPreset,
+	generateSepaPeriodontalProtocolText,
 	generateSepaProtocol043Text,
 	computeCompletePerioIndices,
 } from "../index.js";
@@ -357,8 +358,14 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.equal(prophyIndices.bopPct, 0);
 	});
 
-	it("14. Form 043/u text generation from SEPA periodontogram (Mandates 8e, 8i)", () => {
-		// Healthy Form 043 text
+	it("14. Canonical periodontal protocol text generation from SEPA periodontogram (Mandates 8e, 8i, 8x)", () => {
+		// Canonical function check
+		const healthyCanonical = createHealthySepaPeriodontiumPreset();
+		const canonicalText = generateSepaPeriodontalProtocolText(healthyCanonical);
+		assert.ok(canonicalText.includes("Z01.2"));
+		assert.ok(canonicalText.includes("Интактный пародонт"));
+
+		// Backward-compatible alias check
 		const healthy = createHealthySepaPeriodontiumPreset();
 		const healthyText = generateSepaProtocol043Text(healthy);
 		assert.ok(healthyText.includes("Z01.2"));

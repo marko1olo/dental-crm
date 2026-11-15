@@ -81,16 +81,24 @@ export function EmkPerioSummary({
 		useVisitStore.getState().addCompletedService(prophyService);
 
 		if (typeof window !== "undefined") {
+			const kopecks = Math.round(prophyService.price * 100);
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
 						services: [
 							{
 								serviceId: prophyService.serviceId,
+								name: prophyService.name,
 								title: prophyService.name,
-								unitPriceRub: prophyService.priceRub,
-								quantity: 1,
+								code: prophyService.code804n,
 								code804n: prophyService.code804n,
+								unitPriceRub: prophyService.priceRub,
+								unitPriceKopecks: kopecks,
+								priceKopecks: kopecks,
+								amountKopecks: kopecks,
+								quantity: 1,
+								category: "hygiene",
+								stageKind: "hygiene",
 							},
 						],
 					},

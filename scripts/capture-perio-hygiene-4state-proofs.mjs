@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 const webRoot = path.resolve(__dirname, "../apps/web");
 const configFile = path.resolve(webRoot, "vite.config.ts");
 
-const CURRENT_CONV_ID = "5acbb5d9-0363-4f8f-a434-f7e9405d9412";
+const CURRENT_CONV_ID = "2f2d96af-ff4d-402a-a3cb-43448e188e39";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_PERIO = path.resolve(__dirname, "../docs/proofs/perio");
 
