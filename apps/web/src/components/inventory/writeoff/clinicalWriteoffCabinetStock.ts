@@ -1,12 +1,57 @@
+import { parseKopecks } from "@dental/shared";
 import type { CabinetStockBatch } from "./clinicalWriteoffPresets.js";
-import { CABINET_STOCK_SURGERY_PRESETS } from "./cabinetStock/cabinetStockSurgeryPresets.js";
-import { CABINET_STOCK_THERAPY_PRESETS } from "./cabinetStock/cabinetStockTherapyPresets.js";
-import { CABINET_STOCK_ENDO_PRESETS } from "./cabinetStock/cabinetStockEndoPresets.js";
-import { CABINET_STOCK_ANESTHESIA_PPE_PRESETS } from "./cabinetStock/cabinetStockAnesthesiaPpePresets.js";
 
 export const DENTAL_CABINET_STOCK_PRESETS: readonly CabinetStockBatch[] = [
-	...CABINET_STOCK_SURGERY_PRESETS,
-	...CABINET_STOCK_THERAPY_PRESETS,
-	...CABINET_STOCK_ENDO_PRESETS,
-	...CABINET_STOCK_ANESTHESIA_PPE_PRESETS,
+	{
+		batchId: "bat_art_01",
+		materialId: "mat_articaine_ultracain",
+		cabinetId: "cab-01",
+		cabinetNameRu: "Кабинет терапевтической стоматологии №1",
+		lotNumber: "LOT-ART-2026",
+		expirationDate: "2027-12-31",
+		manufactureDate: "2024-01-15",
+		quantityAvailable: 50,
+		criticalThreshold: 10,
+		unitCostKopecks: parseKopecks("145.00"),
+		supplierNameRu: "Дентал-Маркет",
+	},
+	{
+		batchId: "bat_needle_01",
+		materialId: "mat_dental_needle_30g",
+		cabinetId: "cab-01",
+		cabinetNameRu: "Кабинет терапевтической стоматологии №1",
+		lotNumber: "LOT-NDL-551",
+		expirationDate: "2028-06-30",
+		manufactureDate: "2024-06-01",
+		quantityAvailable: 100,
+		criticalThreshold: 20,
+		unitCostKopecks: parseKopecks("12.50"),
+		supplierNameRu: "МедСнаб Трейд",
+	},
+	{
+		batchId: "bat_gloves_01",
+		materialId: "mat_gloves_nitrile_m",
+		cabinetId: "cab-01",
+		cabinetNameRu: "Кабинет терапевтической стоматологии №1",
+		lotNumber: "LOT-GLV-882",
+		expirationDate: "2029-01-31",
+		manufactureDate: "2024-02-10",
+		quantityAvailable: 80,
+		criticalThreshold: 15,
+		unitCostKopecks: parseKopecks("18.00"),
+		supplierNameRu: "МедСнаб Трейд",
+	},
+	{
+		batchId: "bat_filtek_01",
+		materialId: "mat_composite_filtek_a2",
+		cabinetId: "cab-01",
+		cabinetNameRu: "Кабинет терапевтической стоматологии №1",
+		lotNumber: "LOT-FLT-339",
+		expirationDate: "2027-09-30",
+		manufactureDate: "2024-03-20",
+		quantityAvailable: 8,
+		criticalThreshold: 2,
+		unitCostKopecks: parseKopecks("3850.00"),
+		supplierNameRu: "СтомТорг Комплект",
+	},
 ];

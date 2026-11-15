@@ -11,7 +11,7 @@ import { useInventoryViewAudit } from "./inventory/viewModules/useInventoryViewA
 import { InventoryViewMobileLayout } from "./inventory/viewModules/InventoryViewMobileLayout.js";
 import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryViewContentRouter.js";
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
-import { SterilizationHubModal } from "./sanpin/SterilizationHubModal.js";
+import { SanpinStudioModal } from "./sanpin/SanpinStudioModal.js";
 import {
 	InboundWaybillModal,
 	WarehouseInboundInvoiceModal,
@@ -74,7 +74,6 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 
 	// Вспомогательные переключатели
-	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isSterilizationCycleOpen, setIsSterilizationCycleOpen] = useState(false);
 	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
@@ -106,8 +105,6 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 		onCloseProcedureDeduction: () => setIsBatchWriteoffOpen(false),
 		isWarehouseManagerOpen: false,
 		onCloseWarehouseManager: () => setIsBatchWriteoffOpen(false),
-		isWarehouseTransferOpen,
-		onCloseWarehouseTransfer: () => setIsWarehouseTransferOpen(false),
 		isInventoryAuditOpen,
 		onCloseInventoryAudit: () => setIsInventoryAuditOpen(false),
 		onOpenInventoryAudit: () => setIsInventoryAuditOpen(true),
@@ -183,7 +180,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsMdlpScanningOpen={() => setIsMdlpScanningOpen(true)}
 				setIsClinicalWriteoffOpen={() => setIsBatchWriteoffOpen(true)}
 				setIsProcedureDeductionOpen={() => setIsBatchWriteoffOpen(true)}
-				setIsWarehouseTransferOpen={setIsWarehouseTransferOpen}
+				setIsWarehouseTransferOpen={() => {}}
 				setIsInventoryAuditOpen={setIsInventoryAuditOpen}
 				setIsMdlpDisposalOpen={() => {}}
 				onOpenShiftDeductionModal={() => setIsBatchWriteoffOpen(true)}
@@ -284,7 +281,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsBatchWriteoffOpen={setIsBatchWriteoffOpen}
 			/>
 
-			<SterilizationHubModal
+			<SanpinStudioModal
 				isOpen={isSterilizationCycleOpen}
 				onClose={() => setIsSterilizationCycleOpen(false)}
 				onCycleCompleted={() => fetchItems()}

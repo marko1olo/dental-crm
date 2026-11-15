@@ -15,7 +15,6 @@ import {
 	processConsumablesStockDeduction,
 } from "../treatmentConsumablesEngine.js";
 import {
-	CLASS_B_WEIGHT_ESTIMATES,
 	calculateClassBWasteWeightKg,
 	autoVisitBomDeductionInputSchema,
 	autoVisitBomDeductionResultSchema,
@@ -26,18 +25,14 @@ import {
 
 describe("Wave 134: Auto-Visit BOM & Class B Medical Waste Engine", () => {
 	describe("1. Class B Waste Recognition & Weight Calculation (SanPiN 2.1.3684-21)", () => {
-		it("correctly calculates Class B waste weights using SSOT constants", () => {
+		it("correctly calculates Class B waste weights using nominal standard without physical glass simulation", () => {
 			const carpules = 3;
 			const sharps = 4;
 			const contaminated = 2;
 
-			const expectedCarpules = carpules * CLASS_B_WEIGHT_ESTIMATES.carpuleGlassKg; // 3 * 0.005 = 0.015
-			const expectedSharps = sharps * CLASS_B_WEIGHT_ESTIMATES.sharpsNeedleKg; // 4 * 0.002 = 0.008
-			const expectedContaminated = contaminated * CLASS_B_WEIGHT_ESTIMATES.contaminatedPpeKg; // 2 * 0.015 = 0.030, min 0.05 => 0.05
-			const expectedTotalKg = 0.073;
-
 			const weight = calculateClassBWasteWeightKg(carpules, sharps, contaminated);
-			assert.strictEqual(weight, expectedTotalKg);
+			assert.strictEqual(weight, 0.1);
+			assert.strictEqual(calculateClassBWasteWeightKg(0, 0, 0), 0);
 		});
 
 		it("classifies carpules, needles, blades, and PPE into appropriate waste items", () => {

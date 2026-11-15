@@ -1,5 +1,4 @@
 import {
-	CLASS_B_WEIGHT_ESTIMATES,
 	calculateClassBWasteWeightKg,
 	roundQuantity,
 } from "@dental/shared";
@@ -32,7 +31,7 @@ export async function executeShiftCloseClassBWasteDisposal(
 	const sharpsCount = Math.max(0, input.accumulatedSharpsCount ?? 0);
 	const contaminatedCount = Math.max(0, input.contaminatedItemsCount ?? 0);
 
-	const tareWeightKg = input.customTareKg !== undefined ? input.customTareKg : CLASS_B_WEIGHT_ESTIMATES.standardPunctureContainerTareKg;
+	const tareWeightKg = input.customTareKg !== undefined ? input.customTareKg : 0.15;
 	const netWeightKg = calculateClassBWasteWeightKg(carpulesCount, needlesCount + sharpsCount, contaminatedCount);
 	const grossWeightKg = roundQuantity(netWeightKg + tareWeightKg, 3);
 

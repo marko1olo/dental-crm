@@ -64,7 +64,7 @@ export const DirectWarehouseLauncher: React.FC = () => {
 					</button>
 				</div>
 				<div className="flex-1 min-h-0 overflow-hidden">
-					<InventoryView organizationId="org-main-01" />
+					<InventoryView organizationId="current" />
 				</div>
 			</div>
 		</div>

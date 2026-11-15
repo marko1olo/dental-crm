@@ -8,6 +8,7 @@ export interface MobileInventoryHeaderBarProps {
 	readonly onSearchChange: (q: string) => void;
 	readonly onClearSearch: () => void;
 	readonly onOpenMdlpScanning?: (() => void) | undefined;
+	readonly hideTitleText?: boolean | undefined;
 }
 
 /**
@@ -21,14 +22,17 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 	onSearchChange,
 	onClearSearch,
 	onOpenMdlpScanning,
+	hideTitleText,
 }) => {
 	return (
 		<div className="mobile-inventory-header-bar">
-			<div className="mobile-inventory-title-row">
-				<div className="mobile-inventory-title-wrap">
-					<Package size={20} className="mobile-inventory-title-icon" aria-hidden="true" />
-					<h1 className="mobile-inventory-title-text">Склад материалов</h1>
-				</div>
+			<div className={`mobile-inventory-title-row ${hideTitleText ? "justify-end" : ""}`}>
+				{!hideTitleText && (
+					<div className="mobile-inventory-title-wrap">
+						<Package size={20} className="mobile-inventory-title-icon" aria-hidden="true" />
+						<h1 className="mobile-inventory-title-text">Склад материалов</h1>
+					</div>
+				)}
 
 				<div className="flex items-center gap-1.5 shrink-0">
 					{onOpenMdlpScanning && (

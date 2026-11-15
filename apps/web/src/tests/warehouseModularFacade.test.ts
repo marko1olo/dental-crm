@@ -46,11 +46,11 @@ describe("Warehouse Modular Facade & Inventory Styles", () => {
 		}
 	});
 
-	it("verifies canonical SSOT exports WarehouseView and StockBalanceTable aliases", async () => {
+	it("verifies canonical SSOT exports WarehouseView and StockBalanceTable aliases", { timeout: 15000 }, async () => {
 		const mod = await import("../components/InventoryView.js");
 		assert.equal(typeof mod.WarehouseView, "object");
 		assert.equal(typeof mod.InventoryView, "object");
 		assert.equal(typeof mod.StockBalanceTable, "function");
 		assert.equal(typeof mod.InventoryStockTable, "function");
-	}, 15000);
+	});
 });

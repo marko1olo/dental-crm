@@ -53,6 +53,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 			<MobileInventoryGroupedList
 				items={items} organizationId={organizationId} searchQuery={searchQuery}
 				onSearchChange={setSearchQuery} onClearSearch={() => setSearchQuery("")}
+				hideTitleText={true}
 				selectedCategory={
 					selectedCategory === "therapy" || selectedCategory === "composite" ? "filling" : (selectedCategory as MobileInventoryCategoryType)
 				}

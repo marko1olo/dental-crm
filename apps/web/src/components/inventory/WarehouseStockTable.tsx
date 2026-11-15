@@ -41,6 +41,7 @@ export interface WarehouseStockItem {
 	currentQty?: number | string | null | undefined;
 	currentStock?: number | string | null | undefined;
 	unit?: string | null | undefined;
+	unitOfMeasure?: string | null | undefined;
 	unitCostRub?: string | number | null | undefined;
 	averageCostRub?: string | number | null | undefined;
 	unitCost?: string | number | null | undefined;
@@ -50,11 +51,12 @@ export interface WarehouseStockItem {
 	expirationDate?: string | null | undefined;
 	lotNumber?: string | null | undefined;
 	batchNumber?: string | null | undefined;
-	[key: string]: unknown;
+	updatedAt?: string | null | undefined;
+	supplier?: string | null | undefined;
 }
 
 export interface WarehouseStockTableProps {
-	items: readonly WarehouseStockItem[] | WarehouseStockItem[];
+	items: readonly WarehouseStockItem[];
 	isLoading?: boolean | undefined;
 	loadError?: string | null | undefined;
 	searchQuery?: string | undefined;
@@ -182,7 +184,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 	if (loadError && items.length === 0) {
 		return (
 			<div className="p-6 text-center bg-[var(--paper)] rounded-2xl border border-[var(--line)] text-[var(--ink)]">
-				<AlertTriangle className="mx-auto mb-2 text-amber-500" size={32} />
+				<AlertTriangle className="mx-auto mb-2 text-[var(--warning)]" size={32} />
 				<p className="text-sm text-[var(--muted)] mb-4">{loadError}</p>
 				{onRetry && <button type="button" onClick={onRetry} className="secondary-button px-4 py-2 text-xs">Повторить попытку</button>}
 			</div>
@@ -203,11 +205,11 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 				</div>
 				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
 					<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">Мало на складе</span>
-					<span className={`text-xl font-bold ${stats.low > 0 ? "text-amber-500" : "text-emerald-500"}`}>{stats.low} поз.</span>
+					<span className={`text-xl font-bold ${stats.low > 0 ? "text-[var(--warning)]" : "text-[var(--success)]"}`}>{stats.low} поз.</span>
 				</div>
 				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
 					<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">Мягкий овердрафт</span>
-					<span className={`text-xl font-bold ${stats.overdraft > 0 ? "text-amber-500" : "text-emerald-500"}`}>{stats.overdraft > 0 ? `${stats.overdraft} поз.` : "0 (дефицита нет)"}</span>
+					<span className={`text-xl font-bold ${stats.overdraft > 0 ? "text-[var(--warning)]" : "text-[var(--success)]"}`}>{stats.overdraft > 0 ? `${stats.overdraft} поз.` : "0 (дефицита нет)"}</span>
 				</div>
 			</div>
 
@@ -268,7 +270,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 
 			{/* Мягкий овердрафт предупреждение */}
 			{stats.overdraft > 0 && (
-				<div className="flex items-center justify-between gap-3 p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-600 dark:text-amber-400 text-xs shrink-0">
+				<div className="flex items-center justify-between gap-3 p-3 bg-[var(--warning-soft)] border border-[var(--warning-soft)] rounded-xl text-[var(--warning)] text-xs shrink-0">
 					<div className="flex items-center gap-2">
 						<AlertTriangle size={16} className="shrink-0" />
 						<span><strong>Мягкий овердрафт:</strong> {stats.overdraft} поз. списаны под приём до внесения накладной. Работа клиники не блокируется.</span>
@@ -305,7 +307,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 												)}
 											</div>
 										</div>
-										<span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${isOverdraft ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" : isLow ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"}`}>
+										<span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${isOverdraft ? "bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--warning-soft)]" : isLow ? "bg-[var(--warning-soft)] text-[var(--warning)]" : "bg-[var(--success-soft)] text-[var(--success)]"}`}>
 											{isOverdraft ? `⚠️ ${qty} ${unit}` : isLow ? `Мало (${qty})` : `В норме (${qty})`}
 										</span>
 									</div>
@@ -321,7 +323,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 												<button
 													type="button"
 													onClick={(e) => { e.stopPropagation(); onReceiveItem(item); }}
-													className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-95 transition-transform"
+													className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--success)] border border-[var(--success-soft)] bg-[var(--success-soft)] hover:opacity-90 active:scale-95 transition-transform"
 													title="Оприходовать партию"
 													aria-label={`Приход ${item.name}`}
 												>
@@ -331,7 +333,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 											<button
 												type="button"
 												onClick={(e) => { e.stopPropagation(); onDeductItem?.(item); }}
-												className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-amber-600 dark:text-amber-400 border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-transform"
+												className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--warning)] border border-[var(--warning-soft)] bg-[var(--warning-soft)] hover:opacity-90 active:scale-95 transition-transform"
 												title="Списать расходник (мягкий овердрафт)"
 												aria-label={`Списать ${item.name}`}
 											>
@@ -416,7 +418,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 											</td>
 											{/* 4. Остаток */}
 											<td className="py-2.5 px-3 text-right font-mono font-bold tabular-nums">
-												<span className={isOverdraft ? "text-amber-500" : isLow ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}>{qty}</span>
+												<span className={isOverdraft ? "text-[var(--warning)]" : isLow ? "text-[var(--warning)]" : "text-[var(--success)]"}>{qty}</span>
 											</td>
 											{/* 5. Ед. изм. */}
 											<td className="py-2.5 px-3 text-center text-xs text-[var(--muted)] font-medium">{unit}</td>
@@ -429,15 +431,15 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 														{item.unitCostRub ? `${Number(item.unitCostRub).toLocaleString("ru-RU")} ₽` : "—"}
 													</span>
 													{isOverdraft || qty === 0 ? (
-														<span data-testid={`soft-overdraft-badge-${item.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Списано под операцию (мягкий овердрафт)">
+														<span data-testid={`soft-overdraft-badge-${item.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--warning-soft)]" title="Списано под операцию (мягкий овердрафт)">
 															{qty < 0 ? `⚠️ Перерасход (${qty})` : "Ожидается поставка (мягкий овердрафт)"}
 														</span>
 													) : isLow ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">Мало</span>
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--warning-soft)] text-[var(--warning)]">Мало</span>
 													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">В норме</span>
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--success-soft)] text-[var(--success)]">В норме</span>
 													)}
-													<button type="button" onClick={(e) => { e.stopPropagation(); onDeductItem?.(item); }} className="secondary-button p-1 text-xs text-amber-600 dark:text-amber-400" title="Списать расходник">
+													<button type="button" onClick={(e) => { e.stopPropagation(); onDeductItem?.(item); }} className="secondary-button p-1 text-xs text-[var(--warning)] hover:opacity-80" title="Списать расходник">
 														<MinusCircle size={14} /><span className="sr-only">Списать (Овердрафт)</span>
 													</button>
 												</div>

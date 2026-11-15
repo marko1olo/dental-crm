@@ -48,8 +48,10 @@ import {
 	getShiftConsumablesSummary,
 	executeShiftBatchDeduction,
 } from "./shiftBatchWriteoffService.js";
+import { applyProcedureConsumablesDeduction } from "./applyProcedureConsumablesDeduction.js";
 
 export * from "./autoBomWriteoffService.js";
+export * from "./applyProcedureConsumablesDeduction.js";
 
 export class TreatmentConsumablesService {
 	static listLinks = listLinks;
@@ -64,6 +66,7 @@ export class TreatmentConsumablesService {
 	static deductForToothTreatment = deductForToothTreatment;
 	static deductManualItems = deductManualItems;
 	static executeAutoBomWriteoff = executeAutoBomWriteoff;
+	static applyDeduction = applyProcedureConsumablesDeduction;
 
 	static checkStockSufficiency = checkStockSufficiency;
 	static getInventoryAlerts = getInventoryAlerts;

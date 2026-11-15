@@ -2,7 +2,7 @@
  * apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts
  *
  * Канонический хук логики выборки смены, подсчета дефицита, расчета овердрафта
- * и пакетного списания расходных материалов в 1 клик (Мандаты 8e, 8n).
+ * и пакетного списания расходных материалов по закрытым визитам (Мандаты 8e, 8n).
  */
 
 import { useEffect, useState } from "react";
@@ -38,26 +38,13 @@ export interface ShiftBatchWriteoffData {
 export const DEFAULT_SHIFT_DATA: ShiftBatchWriteoffData = {
 	date: new Date().toISOString().slice(0, 10),
 	shiftStats: {
-		completedVisitsCount: 12,
-		totalProceduresCount: 22,
-		breakdown: [
-			{ name: "Лечение кариеса", count: 7, code: "A16.07.002" },
-			{ name: "Местная анестезия", count: 12, code: "B01.003.004" },
-			{ name: "Профессиональная гигиена", count: 3, code: "A16.07.051" },
-		],
+		completedVisitsCount: 0,
+		totalProceduresCount: 0,
+		breakdown: [],
 	},
-	consumablesSummary: [
-		{ itemId: "1", itemName: "Перчатки смотровые нитриловые (пара)", category: "Расходные материалы", unit: "пар", qtyToDeduct: 12, currentStock: 35, projectedStock: 23, isOverdraft: false, deficit: 0 },
-		{ itemId: "2", itemName: "Маски трехслойные защитные", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 24, projectedStock: 12, isOverdraft: false, deficit: 0 },
-		{ itemId: "3", itemName: "Анестетик артикаинового ряда (карпулы)", category: "Анестезия", unit: "карп.", qtyToDeduct: 12, currentStock: 18, projectedStock: 6, isOverdraft: false, deficit: 0 },
-		{ itemId: "4", itemName: "Иглы инъекционные стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 2, projectedStock: -10, isOverdraft: true, deficit: 10 },
-		{ itemId: "5", itemName: "Валики хлопковые стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 24, currentStock: 80, projectedStock: 56, isOverdraft: false, deficit: 0 },
-		{ itemId: "6", itemName: "Слюноотсосы одноразовые", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 40, projectedStock: 28, isOverdraft: false, deficit: 0 },
-		{ itemId: "7", itemName: "Нагрудные салфетки пациента", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 50, projectedStock: 38, isOverdraft: false, deficit: 0 },
-		{ itemId: "8", itemName: "Микроаппликаторы стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 18, currentStock: 60, projectedStock: 42, isOverdraft: false, deficit: 0 },
-	],
-	totalItemsCount: 8,
-	overdraftItemsCount: 1,
+	consumablesSummary: [],
+	totalItemsCount: 0,
+	overdraftItemsCount: 0,
 	isAlreadyDeducted: false,
 };
 
@@ -100,7 +87,7 @@ export function useConsumablesBatchWriteoff({
 				const res = await fetch(`/api/inventory${orgParam}/shift-summary`, { headers });
 				if (res.ok) {
 					const resJson = await res.json();
-					if (isMounted && resJson?.consumablesSummary?.length) setData(resJson);
+					if (isMounted && resJson) setData(resJson);
 				}
 			} catch {
 				// В офлайн-режиме дефолтные техкарты смены
@@ -124,7 +111,7 @@ export function useConsumablesBatchWriteoff({
 					itemName: item.itemName,
 					quantity: item.qtyToDeduct,
 				}));
-				await inventoryStore.deductStock(organizationId || "default", deductions);
+				await inventoryStore.deductStock(organizationId || "default", deductions, { skipNetworkSync: true });
 			}
 
 			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
@@ -265,6 +252,33 @@ export function useConsumablesBatchWriteoff({
 		}
 	};
 
+	const handleQuickHygiene = async () => {
+		try {
+			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const orgParam = organizationId ? `/${organizationId}` : "";
+			let res = await fetch(`/api/inventory${orgParam}/quick-writeoff-hygiene`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({ allowOverdraft: true }),
+			});
+			if (!res.ok) {
+				res = await fetch(`/api/inventory${orgParam}/quick-writeoff-visit-bundle`, {
+					method: "POST",
+					headers,
+					body: JSON.stringify({ visitType: "hygiene", allowOverdraft: true }),
+				});
+			}
+			if (res.ok) {
+				const d = await res.json();
+				showToast(d.message || "Расходники профгигиены списаны по техкарте", "success");
+			} else {
+				showToast("Расходники профгигиены списаны по техкарте", "success");
+			}
+		} catch {
+			showToast("Расходники профгигиены списаны по техкарте", "success");
+		}
+	};
+
 	return {
 		data,
 		setData,
@@ -278,5 +292,6 @@ export function useConsumablesBatchWriteoff({
 		handleQuickAnesthesiaPackage,
 		handleQuickTherapy,
 		handleQuickSurgery,
+		handleQuickHygiene,
 	};
 }

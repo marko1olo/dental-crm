@@ -10,7 +10,6 @@ import {
 } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { getRequestIdentity } from "../../../security/identity.js";
-import { TreatmentConsumableDeductionService } from "../../../services/treatmentConsumableDeductionService.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
 import {
 	buildSoftOverdraftResponse,
@@ -48,7 +47,7 @@ export async function registerVisitWriteOffHandlers(
 			});
 		}
 
-		const result = await TreatmentConsumableDeductionService.applyDeduction(
+		const result = await TreatmentConsumablesService.applyDeduction(
 			orgId,
 			parsed.data,
 		);

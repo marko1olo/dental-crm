@@ -1,13 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import type { WarehouseInventoryAuditDocument } from "../warehouseInventoryEngine.js";
 import type { ClinicalWriteoffDocument } from "../writeoff/clinicalWriteoffEngine.js";
-import type { WarehouseTransferDocument } from "../transfers/warehouseTransferEngine.js";
 
-const WarehouseTransferModal = lazy(() =>
-	import("../transfers/WarehouseTransferModal.js").then((module) => ({
-		default: module.WarehouseTransferModal,
-	})),
-);
 const ConsumablesBatchWriteoffModal = lazy(() =>
 	import("../ConsumablesBatchWriteoffModal.js").then((module) => ({
 		default: module.ConsumablesBatchWriteoffModal,
@@ -23,10 +17,6 @@ export interface InventoryClinicalModalsProps {
 	readonly isClinicalWriteoffOpen: boolean;
 	readonly onCloseClinicalWriteoff: () => void;
 	readonly onConfirmClinicalWriteoff: (doc: ClinicalWriteoffDocument) => Promise<void>;
-	readonly isWarehouseTransferOpen: boolean;
-	readonly onCloseWarehouseTransfer: () => void;
-	readonly onDocumentSavedWarehouseTransfer: () => Promise<void>;
-	readonly onConfirmWarehouseTransfer: (doc?: WarehouseTransferDocument) => Promise<void>;
 	readonly isInventoryAuditOpen: boolean;
 	readonly onCloseInventoryAudit: () => void;
 	readonly auditInitialDoc: WarehouseInventoryAuditDocument;
@@ -38,10 +28,6 @@ export const InventoryClinicalModals: React.FC<InventoryClinicalModalsProps> = (
 	isClinicalWriteoffOpen,
 	onCloseClinicalWriteoff,
 	onConfirmClinicalWriteoff,
-	isWarehouseTransferOpen,
-	onCloseWarehouseTransfer,
-	onDocumentSavedWarehouseTransfer,
-	onConfirmWarehouseTransfer,
 	isInventoryAuditOpen,
 	onCloseInventoryAudit,
 	auditInitialDoc,
@@ -55,18 +41,9 @@ export const InventoryClinicalModals: React.FC<InventoryClinicalModalsProps> = (
 					<ConsumablesBatchWriteoffModal
 						isOpen={isClinicalWriteoffOpen}
 						onClose={onCloseClinicalWriteoff}
-						onConfirmWriteoff={onConfirmClinicalWriteoff}
-					/>
-				</Suspense>
-			)}
-
-			{isWarehouseTransferOpen && (
-				<Suspense fallback={null}>
-					<WarehouseTransferModal
-						isOpen={isWarehouseTransferOpen}
-						onClose={onCloseWarehouseTransfer}
-						onDocumentSaved={onDocumentSavedWarehouseTransfer}
-						onConfirmTransfer={onConfirmWarehouseTransfer}
+						onConfirmWriteoff={(doc) => {
+							if (doc) return onConfirmClinicalWriteoff(doc as ClinicalWriteoffDocument);
+						}}
 					/>
 				</Suspense>
 			)}

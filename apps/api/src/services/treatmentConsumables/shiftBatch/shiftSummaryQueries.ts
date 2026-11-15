@@ -67,27 +67,13 @@ export async function getShiftConsumablesSummary(
 			else grouped.set(key, it.serviceId ? { name: key, count, code: it.serviceId } : { name: key, count });
 		}
 		for (const val of grouped.values()) breakdown.push(val);
-	} else {
-		breakdown.push(
-			{ name: "Лечение кариеса (A16.07.002)", count: 6, code: "A16.07.002" },
-			{ name: "Местная анестезия (B01.003.004)", count: 8, code: "B01.003.004" },
-			{ name: "Профгигиена полости рта (A16.07.051)", count: 2, code: "A16.07.051" },
-			{ name: "Удаление зуба (A16.07.001)", count: 1, code: "A16.07.001" },
-		);
 	}
 
 	const allOrgItems = await tx.select().from(inventoryItems).where(eq(inventoryItems.organizationId, organizationId));
 	const consumablesSummary: ShiftConsumableSummaryItem[] = [];
 
 	for (const preset of STANDARD_SHIFT_CONSUMABLE_PRESETS) {
-		let matched = allOrgItems.find((inv) => preset.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())));
-		if (!matched) {
-			const [created] = await tx.insert(inventoryItems).values({
-				organizationId, name: preset.defaultName, category: preset.category, unit: preset.unit,
-				stockQuantity: "0", currentQty: "0", criticalThreshold: "10", unitCostRub: preset.defaultCost,
-			}).returning();
-			if (created) { matched = created; allOrgItems.push(created); }
-		}
+		const matched = allOrgItems.find((inv) => preset.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())));
 		if (matched) {
 			const currentStock = Number(matched.stockQuantity ?? matched.currentQty ?? 0);
 			const projectedStock = Number((currentStock - preset.qty).toFixed(2));
@@ -97,12 +83,18 @@ export async function getShiftConsumablesSummary(
 				unit: matched.unit ?? preset.unit, qtyToDeduct: preset.qty, currentStock, projectedStock,
 				isOverdraft, deficit: isOverdraft ? Math.abs(projectedStock) : 0, defaultCostRub: matched.unitCostRub ?? preset.defaultCost,
 			});
+		} else {
+			consumablesSummary.push({
+				itemId: "", itemName: preset.defaultName, category: preset.category,
+				unit: preset.unit, qtyToDeduct: preset.qty, currentStock: 0, projectedStock: -preset.qty,
+				isOverdraft: true, deficit: preset.qty, defaultCostRub: preset.defaultCost,
+			});
 		}
 	}
 
 	return {
 		date: effectiveDate,
-		shiftStats: { completedVisitsCount: todaysVisits.length || 8, totalProceduresCount: todaysTreatmentItems.length || 17, breakdown },
+		shiftStats: { completedVisitsCount: todaysVisits.length, totalProceduresCount: todaysTreatmentItems.length, breakdown },
 		consumablesSummary, totalItemsCount: consumablesSummary.length,
 		overdraftItemsCount: consumablesSummary.filter((c) => c.isOverdraft).length,
 		isAlreadyDeducted,

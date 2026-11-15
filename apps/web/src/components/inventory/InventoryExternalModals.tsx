@@ -13,8 +13,6 @@ export interface InventoryExternalModalsProps {
 	readonly onCloseClinicalWriteoff: () => void;
 	readonly isProcedureDeductionOpen?: boolean;
 	readonly onCloseProcedureDeduction?: () => void;
-	readonly isWarehouseTransferOpen: boolean;
-	readonly onCloseWarehouseTransfer: () => void;
 	readonly isInventoryAuditOpen: boolean;
 	readonly onCloseInventoryAudit: () => void;
 	readonly onOpenInventoryAudit?: () => void;
@@ -47,8 +45,6 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 	auditInitialDoc,
 	isClinicalWriteoffOpen,
 	onCloseClinicalWriteoff,
-	isWarehouseTransferOpen,
-	onCloseWarehouseTransfer,
 	isInventoryAuditOpen,
 	onCloseInventoryAudit,
 	onOpenInventoryAudit,
@@ -73,15 +69,6 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 				isClinicalWriteoffOpen={isClinicalWriteoffOpen}
 				onCloseClinicalWriteoff={onCloseClinicalWriteoff}
 				onConfirmClinicalWriteoff={(doc) => handlers.handleClinicalWriteoff(doc, onCloseClinicalWriteoff)}
-				isWarehouseTransferOpen={isWarehouseTransferOpen}
-				onCloseWarehouseTransfer={onCloseWarehouseTransfer}
-				onDocumentSavedWarehouseTransfer={async () => {
-					onCloseWarehouseTransfer();
-					fetchItems();
-				}}
-				onConfirmWarehouseTransfer={async (doc) => {
-					if (doc) await handlers.handleWarehouseTransfer(doc);
-				}}
 				isInventoryAuditOpen={isInventoryAuditOpen}
 				onCloseInventoryAudit={onCloseInventoryAudit}
 				auditInitialDoc={auditInitialDoc}

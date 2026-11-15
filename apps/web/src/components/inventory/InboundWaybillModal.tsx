@@ -8,7 +8,8 @@
 
 import React, { useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, Plus, Trash2, X, Zap, Box } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, Plus, X, Zap, Box } from "lucide-react";
+import { InboundWaybillItemsTable } from "./InboundWaybillItemsTable.js";
 
 export interface InboundInvoiceItem {
 	id: string;
@@ -110,7 +111,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 
 	const handleRemoveLine = (id: string) => setLines((prev) => prev.filter((l) => l.id !== id));
 
-	const handleUpdateLine = (id: string, field: "name" | "quantity" | "priceRub", val: any) => {
+	const handleUpdateLine = (id: string, field: "name" | "quantity" | "priceRub" | "unit" | "lotNumber" | "expirationDate", val: string | number) => {
 		setLines((prev) => prev.map((l) => {
 			if (l.id !== id) return l;
 			const updated = { ...l, [field]: val };
@@ -118,6 +119,10 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				const rub = Math.max(0, Number(val) || 0);
 				updated.priceRub = rub;
 				updated.priceKopecks = Math.round(rub * 100);
+				updated.unitCostRub = rub;
+			}
+			if (field === "quantity") {
+				updated.quantity = Math.max(0, Number(val) || 0);
 			}
 			if (field === "name") {
 				const matched = inventoryItems.find((it) => it.name.toLowerCase() === String(val).toLowerCase());
@@ -128,6 +133,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 						const rub = Number(matched.unitCostRub);
 						updated.priceRub = rub;
 						updated.priceKopecks = Math.round(rub * 100);
+						updated.unitCostRub = rub;
 					}
 				}
 			}
@@ -290,13 +296,13 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				{/* Тело модалки */}
 				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
 					{errorBanner && (
-						<div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
+						<div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger-soft)] text-[var(--danger)] text-xs flex items-center gap-2">
 							<AlertTriangle size={16} className="shrink-0" /><span>{errorBanner}</span>
 						</div>
 					)}
 
 					{negativeItem && (
-						<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs flex items-center gap-2">
+						<div className="p-3 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning-soft)] text-[var(--warning)] text-xs flex items-center gap-2">
 							<AlertTriangle size={16} className="shrink-0" />
 							<span>Зафиксирован дефицит у кресла (мягкий овердрафт: {negativeItem.stockQuantity} ед.): оприходование накладной покроет дефицит.</span>
 						</div>
@@ -327,7 +333,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 							<span className="text-[11px] font-medium text-[var(--muted)] shrink-0">Шаблон:</span>
 							{PRESETS.map((p) => (
 								<button key={p.label} type="button" onClick={() => handleApplyPreset(p)} className="secondary-button px-2.5 py-1 text-xs rounded-lg flex items-center gap-1.5 shrink-0">
-									<Zap size={12} className="text-amber-500" /><span>{p.label}</span>
+									<Zap size={12} className="text-[var(--warning)]" /><span>{p.label}</span>
 								</button>
 							))}
 						</div>
@@ -380,39 +386,15 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 						</div>
 					)}
 
-					{/* Таблица позиций из каталога склада */}
-					<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
-						<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between text-xs font-semibold">
-							<span>Товары из каталога склада ({lines.length}) • FEFO контроль</span>
-							<button type="button" onClick={handleAddLine} className="secondary-button px-2.5 py-1 text-xs flex items-center gap-1 font-medium" data-testid="btn-add-invoice-line">
-								<Plus size={14} /><span>Добавить строку</span>
-							</button>
-						</div>
-						<div className="divide-y divide-[var(--line-subtle)] max-h-[260px] overflow-y-auto">
-							{lines.map((line, idx) => (
-								<div key={line.id} className="p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 text-xs hover:bg-[var(--paper-soft)]/50">
-									<div className="flex-1 min-w-[200px]">
-										<input type="text" value={line.name} onChange={(e) => handleUpdateLine(line.id, "name", e.target.value)} placeholder="Выберите наименование..." list={`cat-items-${defaultId}`} className="w-full px-2.5 py-1.5 text-xs bg-[var(--paper)] text-[var(--ink)] rounded-md border border-[var(--line)] focus:outline-hidden" data-testid={`invoice-item-name-${idx}`} />
-										<div className="text-[10px] text-[var(--muted)] mt-0.5 font-mono">Партия FEFO: {line.lotNumber || "LOT-NEW"} | Годен до: {line.expirationDate || "2028-12-31"}</div>
-									</div>
-									<div className="flex items-center gap-2">
-										<div className="w-20">
-											<input type="number" min={1} value={line.quantity} onChange={(e) => handleUpdateLine(line.id, "quantity", Number(e.target.value))} placeholder="Кол-во" className="w-full px-2 py-1.5 text-xs bg-[var(--paper)] text-[var(--ink)] rounded-md border border-[var(--line)] text-right font-mono" data-testid={`invoice-item-qty-${idx}`} />
-										</div>
-										<span className="w-10 text-[var(--muted)] text-center">{line.unit || "шт."}</span>
-										<div className="w-28 flex items-center gap-1">
-											<input type="number" min={0} value={line.priceRub} onChange={(e) => handleUpdateLine(line.id, "priceRub", Number(e.target.value))} placeholder="Цена ₽" className="w-full px-2 py-1.5 text-xs bg-[var(--paper)] text-[var(--ink)] rounded-md border border-[var(--line)] text-right font-mono font-bold" data-testid={`invoice-item-price-${idx}`} />
-											<span className="text-[var(--muted)]">₽</span>
-										</div>
-										<button type="button" onClick={() => handleRemoveLine(line.id)} className="secondary-button p-1.5 text-rose-500" title="Удалить строку">
-											<Trash2 size={14} />
-										</button>
-									</div>
-								</div>
-							))}
-						</div>
-						<datalist id={`cat-items-${defaultId}`}>{inventoryItems.map((it) => <option key={it.id} value={it.name}>{it.name}</option>)}</datalist>
-					</div>
+					{/* Таблица позиций из каталога склада (InboundWaybillItemsTable Мандат 8b/8aq) */}
+					<InboundWaybillItemsTable
+						lines={lines}
+						inventoryItems={inventoryItems}
+						onAddLine={handleAddLine}
+						onRemoveLine={handleRemoveLine}
+						onUpdateLine={handleUpdateLine}
+						datalistId={`cat-items-${defaultId}`}
+					/>
 				</div>
 
 				{/* Футер: ровно 1 Primary CTA кнопка var(--primary), остальные вторичные */}

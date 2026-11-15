@@ -65,7 +65,7 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 				<span>+ Оприходовать накладную</span>
 			</button>
 
-			{/* Вторичное действие в 1 клик: Списать расходники смены */}
+			{/* Вторичное действие: Пакетное списание расходников смены */}
 			{onOpenShiftDeductionModal && (
 				<button
 					type="button"

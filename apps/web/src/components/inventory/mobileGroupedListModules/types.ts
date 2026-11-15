@@ -19,7 +19,7 @@ export interface MobileInventoryCategory {
 export const MOBILE_INVENTORY_CATEGORIES: readonly MobileInventoryCategory[] = [
 	{ id: "all", label: "Все", icon: Package },
 	{ id: "anesthesia", label: "Анестезия", icon: Syringe },
-	{ id: "filling", label: "Пломбировочные", icon: Sparkles },
+	{ id: "filling", label: "Терапия", icon: Sparkles },
 	{ id: "endo", label: "Эндодонтия", icon: Target },
 	{ id: "impression", label: "Слепочные", icon: Layers },
 	{ id: "ppe", label: "СИЗ", icon: ShieldCheck },
@@ -89,4 +89,5 @@ export interface MobileInventoryGroupedListProps {
 	readonly onOpenMdlpScanning?: (() => void) | undefined;
 	readonly money?: ((amountRub: any) => string) | undefined;
 	readonly getHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
+	readonly hideTitleText?: boolean | undefined;
 }

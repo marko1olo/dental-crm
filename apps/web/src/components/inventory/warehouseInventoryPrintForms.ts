@@ -150,7 +150,7 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
 </head>
 <body>
   <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
-    Инвентаризационная ведомость остатков материалов (Опись ИНВ-3)<br>
+    Инвентаризационная ведомость остатков материалов клиники<br>
     Стоматологическая клиника DENTE
   </div>
   <div class="header-box">
@@ -170,8 +170,8 @@ export function generateInv3Html(doc: WarehouseInventoryAuditDocument): string {
   <h3>товарно-материальных ценностей № ${doc.documentNumber}</h3>
 
   <div class="receipt-box">
-    <b>Расписка:</b> К началу проведения инвентаризации все расходные и приходные документы на товарно-материальные ценности сданы, и все ценности, поступившие на мою ответственность, оприходованы, а выбывшие списаны.<br>
-    Материально ответственное лицо: ____________________ / <b>${doc.molFullName}</b> /
+    <b>Расписка:</b> К началу проведения инвентаризации фактические остатки проверены, списания по приёмам пациентов зафиксированы.<br>
+    Ответственное лицо (врач / медсестра): ____________________ / <b>${doc.molFullName}</b> /
   </div>
 
   <table>
@@ -258,7 +258,7 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 </head>
 <body>
   <div style="text-align: right; font-size: 8.5pt; color: #64748b;">
-    Акт сличительной ведомости (Сличительная ведомость инвентаризации материалов ИНВ-19)<br>
+    Сличительная ведомость инвентаризации материалов клиники<br>
     Стоматологическая клиника DENTE
   </div>
   <div class="header-box">

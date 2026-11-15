@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx
  *
- * Каноническая SSOT-модалка пакетного списания расходных материалов за смену/день в 1 клик.
+ * Каноническая SSOT-модалка пакетного списания расходных материалов за смену/день по техкартам процедур.
  * Декомпозированный фасад в соответствии с:
  * - Мандат 8e (Автономия врача: кнопка списания активна ВСЕГДА, ноль блокировок),
  * - Мандат 8n (Суверенитет соло-практики: пакетное списание, фоновый Soft Negative Stock при дефиците),
@@ -23,6 +23,7 @@ import {
 import { BatchWriteoffShiftStats } from "./writeoff/BatchWriteoffShiftStats.js";
 import { BatchWriteoffConsumablesTable } from "./writeoff/BatchWriteoffConsumablesTable.js";
 import { BatchWriteoffFooterActions } from "./writeoff/BatchWriteoffFooterActions.js";
+import type { ClinicalWriteoffDocument } from "./writeoff/clinicalWriteoffEngine.js";
 
 export type { ShiftConsumableItem, ShiftBatchWriteoffData };
 
@@ -43,7 +44,7 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly onWriteoffCompleted?: (() => void | Promise<void>) | undefined;
 	readonly onDeductionComplete?: ((items?: readonly ConsumablesDeductionModalItem[] | ShiftBatchWriteoffData) => void | Promise<void>) | undefined;
 	readonly onConfirmDeduction?: ((items?: readonly ConsumablesDeductionModalItem[] | ShiftBatchWriteoffData) => void | Promise<void>) | undefined;
-	readonly onConfirmWriteoff?: ((doc?: ShiftBatchWriteoffData | readonly ConsumablesDeductionModalItem[]) => void | Promise<void>) | undefined;
+	readonly onConfirmWriteoff?: ((doc?: ShiftBatchWriteoffData | readonly ConsumablesDeductionModalItem[] | ClinicalWriteoffDocument) => void | Promise<void>) | undefined;
 	readonly warehouseItems?: readonly unknown[] | undefined;
 	readonly currentStockMap?: Record<string, number> | undefined;
 	readonly getHeaders?: ((extra?: Record<string, string> | undefined) => Record<string, string>) | undefined;

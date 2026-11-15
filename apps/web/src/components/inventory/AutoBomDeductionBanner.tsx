@@ -42,49 +42,49 @@ export const AutoBomDeductionBanner: React.FC<AutoBomDeductionBannerProps> = ({
 	onDismiss,
 }) => (
 	<div
-		className="auto-bom-deduction-banner min-h-[38px] py-1 px-3 rounded-xl border border-teal-500/30 bg-teal-500/10 text-[var(--ink,#0f172a)] flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs transition-all"
+		className="auto-bom-deduction-banner min-h-[38px] py-1 px-3 rounded-xl border border-[var(--teal)]/30 bg-[var(--teal)]/10 text-[var(--ink)] flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs transition-all"
 		data-testid="auto-bom-deduction-banner"
 	>
 		<div className="flex items-center gap-2 flex-wrap min-w-0">
-			<div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-200 shrink-0">
+			<div className="flex items-center gap-1.5 font-bold text-[var(--teal)] shrink-0">
 				<CheckCircle2
 					size={15}
-					className="text-teal-600 dark:text-teal-400 shrink-0"
+					className="text-[var(--teal)] shrink-0"
 				/>
 				<span>Автоматическое списание материалов по приёму:</span>
 			</div>
-			<span className="text-[var(--ink,#0f172a)] font-medium truncate max-w-xs hidden sm:inline">
+			<span className="text-[var(--ink)] font-medium truncate max-w-xs hidden sm:inline">
 				«{procedureTitle}»
 			</span>
-			<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 shrink-0">
+			<span className="text-[11px] font-semibold text-[var(--teal)] shrink-0">
 				{itemsCount} поз. • {money(totalCostRub)}
 			</span>
 			<div className="hidden md:flex items-center gap-1 flex-wrap">
 				{previewMaterials.slice(0, 3).map((mat) => (
 					<span
 						key={mat}
-						className="text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--paper,#ffffff)]/80 border border-[var(--line-subtle,#e2e8f0)] text-[var(--muted,#64748b)] font-mono"
+						className="text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--paper)]/80 border border-[var(--line-subtle)] text-[var(--muted)] font-mono"
 					>
 						{mat}
 					</span>
 				))}
 				{previewMaterials.length > 3 && (
-					<span className="text-[10px] text-[var(--muted,#64748b)]">
+					<span className="text-[10px] text-[var(--muted)]">
 						+{previewMaterials.length - 3}
 					</span>
 				)}
 			</div>
 			{hasOverdraft && (
 				<span
-					className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0"
+					className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--warning-soft)] shrink-0"
 					title="Позиции с нулевым остатком будут списаны с мягким овердрафтом (накладная в пути). Приём не блокируется."
 					data-testid="banner-overdraft-pill"
 				>
 					<ShieldAlert
 						size={12}
-						className="text-amber-600 dark:text-amber-400"
+						className="text-[var(--warning)]"
 					/>
-					<span className="font-bold uppercase tracking-wider text-[9px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-950 dark:text-amber-100">
+					<span className="font-bold uppercase tracking-wider text-[9px] px-1.5 py-0.2 rounded bg-[var(--warning-soft)] text-[var(--warning)]">
 						Требуется закупка
 					</span>
 					<span>Ожидается поставка (мягкий овердрафт: {overdraftCount})</span>

@@ -177,7 +177,7 @@
 
 ## 🏛️ 8. Калиброванный каталог 7 колонок и упаковочные множители (Мандаты 8b, 8am, 8ze, 8al)
 
-* **Калиброванные 7 колонок десктопной номенклатуры (SSOT в `WarehouseCatalogView.tsx` и `WarehouseStudioModal.tsx`)**:
+* **Калиброванные 7 колонок десктопной номенклатуры (SSOT в `WarehouseStockTable.tsx` и `InventoryView.tsx`)**:
   1. **Наименование**: Клиническое название препарата/материала, поставщик, упаковочный множитель.
   2. **Категория**: Анестетики, Терапия, Хирургия, Ортопедия, СИЗ и дезинфекция.
   3. **Артикул**: Код номенклатуры / SKU поставщика.
@@ -218,7 +218,7 @@
   6. *Мертвый кластер `deductionModalModules/` (9 файлов)*: `DeductionModalContextBar.tsx`, `DeductionModalFooter.tsx`, `DeductionModalHeader.tsx`, `DeductionModalItemRow.tsx`, `deductionCalculationUtils.ts`, `deductionModalTypes.ts`, `standardTherapistKit.ts`, `useConsumablesConfirmation.ts`, `useConsumablesDeductionLogic.ts`.
   7. *Мертвый кластер `acceptanceWaybills/` (5 файлов)*: `acceptanceWaybillsPrintExport.ts`, `useAcceptanceWaybillsApiPoster.ts`, `useAcceptanceWaybillsItemsManager.ts`, `useAcceptanceWaybillsState.ts`, `waybillApiSender.ts`.
 * **Утвержденные единые канонические SSOT**:
-  * 🏛️ **Студия склада**: [`WarehouseStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseStudioModal.tsx) (476 строк, Sweet Spot 400–480 по Мандату 8b, FEFO, Soft Overdraft, Apple HIG).
+  * 🏛️ **Складской экран**: [`InventoryView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/InventoryView.tsx) и [`WarehouseStockTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseStockTable.tsx) (калиброванные 7 колонок, FEFO, Soft Overdraft, Apple HIG).
   * ⚡ **Списание расходников приёма и смены**: [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx) (270 строк, 1 клик по нормам техкарт, автономия врача, 0 блокировок).
   * 📋 **Приходные накладные поставщиков**: [`InboundWaybillModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/InboundWaybillModal.tsx) (458 строк, партионный учет FEFO, сканер кодов, автоприход).
   * 📊 **Таблица складских остатков**: [`WarehouseStockTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseStockTable.tsx) (калиброванные 7 колонок, подсветка сроков).
@@ -310,6 +310,26 @@
   * `npm run check:css-tokens`: Exit Code 0.
   * Полный пакет тестов склада (61 файл, 222 теста) в `apps/web/src/components/inventory/__tests__/`: Exit Code 0.
   * 4 скриншота высокого разрешения (Light/Dark x PC/Mobile) лично отсмотрены через `read_file`.
+
+---
+
+## ⚔️ 14. Red Team Fixer: Ликвидация двойного списания, галлюцинаций смены и снос межскладских грузовиков (Мандаты 8bd, 8bi, 8bj, 8e, 8n)
+
+* **Ликвидация 200% двойного списания расходников**:
+  * В `apps/web/src/store/inventoryStore.ts` добавлен параметр `skipNetworkSync?: boolean`.
+  * В `apps/web/src/components/inventory/deductionModules/bomDeductionNetworkSync.ts` вызов `deductStock` переведен на локальное оптимистичное обновление (`skipNetworkSync: true`), а единый сетевой вызов идет через `/api/inventory/:orgId/auto-bom-deduct`.
+* **Искоренение галлюцинаций смены и мутаций БД при чтении**:
+  * В `apps/api/src/services/treatmentConsumables/shiftBatch/shiftSummaryQueries.ts` удалены вымышленные процедуры и fallback `todaysVisits.length || 8`.
+  * Удалена мутация БД (`tx.insert`) из GET-запроса смены. При отсутствии визитов возвращается честный нулевой отчет (`completedVisitsCount: 0`, `breakdown: []`).
+  * В `apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts` мок с 12 визитами заменен на честный нулевой Empty State.
+* **Снос потемкинских грузовиков и сирот (`git rm`)**:
+  * Удалена симуляция межскладской логистики: `apps/web/src/components/inventory/transfers/` (33 файла, фальшивые статусы диспетчера и ТОРГ-13).
+  * Удален синтетический каталог-симулятор `warehouseCatalogData.ts` (327 строк моков).
+  * Удален сервис-дубликат `apps/api/src/services/treatmentConsumableDeductionService.ts` с объединением в канонический `TreatmentConsumablesService`.
+* **Искоренение микрофизики стекла и советских бланков**:
+  * В `packages/shared/src/warehouse/autoVisitBomEngine.ts` ликвидирован симулятор веса осколков стекла карпул (`calculateClassBWasteWeightKg`).
+  * Печатные формы очищены от бланков Госкомстата (ИНВ-3, ИНВ-19, ТОРГ-12, ТОРГ-16, М-11) и переведены на чистую медицинскую терминологию («Инвентаризационная ведомость остатков материалов», «Сличительная ведомость материалов клиники», «Приходная накладная материалов клиники»).
+
 
 
 

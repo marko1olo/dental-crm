@@ -28,9 +28,9 @@ export function syncAutoBomDeduction(
 			}),
 			{
 				visitId: options.visitId,
-				...(options.fetchFn ? { customFetch: options.fetchFn } : {}),
 				allowOverdraft: options.allowOverdraft ?? true,
 				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
+				skipNetworkSync: true, // Защита от двойного списания: сетевой вызов выполняется строго 1 раз через авто-BOM эндпоинт ниже
 			},
 		).catch(() => {});
 

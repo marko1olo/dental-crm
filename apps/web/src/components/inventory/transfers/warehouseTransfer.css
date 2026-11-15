@@ -1,8 +1,0 @@
-/**
- * ============================================================================
- * WAREHOUSE TRANSFER & TORG-13 STYLESHEET (FACADE)
- * ============================================================================
- */
-@import "./styles/transferModal.css";
-@import "./styles/transferButtons.css";
-@import "./styles/transferTable.css";

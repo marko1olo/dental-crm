@@ -14,7 +14,7 @@ export type {
 export { formatSupplierPurchaseOrderTextRu } from "./orders/inventorySupplierOrderFormatting.js";
 
 /**
- * 1-Кликовое формирование заказа поставщику на основе позиций списания с дефицитом или критическим остатком
+ * Автоматическое формирование заявки поставщику на основе позиций списания с дефицитом или критическим остатком
  */
 export function createSupplierPurchaseOrderFromLines(
 	lines: readonly DeductionLineItem[],

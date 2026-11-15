@@ -73,6 +73,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 				totalCount={items.length} lowStockCount={logic.lowStockCount}
 				searchQuery={searchQuery} onSearchChange={onSearchChange} onClearSearch={onClearSearch}
 				onOpenMdlpScanning={props.onOpenMdlpScanning}
+				hideTitleText={props.hideTitleText}
 			/>
 			<MobileInventoryCategoryChips
 				selectedCategory={selectedCategory} categoryCounts={logic.categoryCounts}

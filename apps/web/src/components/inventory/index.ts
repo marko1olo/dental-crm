@@ -33,10 +33,6 @@ export * from "./inventoryDataMappers.js";
 export * from "./inventoryMath.js";
 export * from "./MaterialBomsSettingsPanel.js";
 export * from "./mdlp/index.js";
-export {
-	WarehouseTransferModal,
-	type WarehouseTransferModalProps,
-} from "./transfers/WarehouseTransferModal.js";
 export * from "./useInventoryLogic.js";
 export * from "./useInventoryQuickWriteoff.js";
 export * from "./useInventoryRules.js";
@@ -56,7 +52,6 @@ export * from "./warehouseInventoryEngine.js";
 export * from "./warehousePackageWriteOffEngine.js";
 export * from "./warehouseStockAlertsEngine.js";
 export * from "./waybillsTab/index.js";
-export * from "./warehouseCatalogData.js";
 export * from "./DirectWarehouseLauncher.js";
 export {
 	ClinicalWriteoffModal,

@@ -68,6 +68,7 @@ export interface InventoryStoreState {
 			customFetch?: typeof fetch;
 			allowOverdraft?: boolean;
 			reason?: string;
+			skipNetworkSync?: boolean;
 		},
 	) => Promise<{ success: boolean; isOverdraft: boolean; deductedCount: number }>;
 	updateItemStock: (id: string, newStock: number) => void;
@@ -198,7 +199,7 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 		}));
 
 		// 2. ACID Backend Network Sync
-		if (organizationId) {
+		if (organizationId && !options?.skipNetworkSync) {
 			try {
 				const payload = {
 					organizationId,
