@@ -42,9 +42,9 @@ export const Tooth44CariesOverlay: React.FC<Tooth44CariesOverlayProps> = ({
 			clipPath="url(#tooth44-crown-clip)"
 		>
 			{/* Class I Snake-Eyes Occlusal Pits across Crista Transversa */}
-			{(cariesType === "class1" || cariesType === "destructive") && (
+			{cariesType === "class1" && (
 				<g id="tooth44-caries-class1">
-					{!isDestructive && cariesType !== "destructive" ? (
+					{!isDestructive ? (
 						<>
 							<path d={g.class1.mesial.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class1.mesial.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}

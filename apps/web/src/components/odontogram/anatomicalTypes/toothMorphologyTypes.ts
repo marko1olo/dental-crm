@@ -27,6 +27,7 @@ export type CanalObturationMaterial =
 	| "gutta_percha"
 	| "bioceramic"
 	| "calcium_hydroxide"
+	| "resorcinol_formalin"
 	| "fiber_post"
 	| "cast_core_post"
 	| "titanium_post"
@@ -42,7 +43,7 @@ export type RestorativeMaterialKey =
 	| "titanium_implant"
 	| "titanium";
 
-export type PostCoreType = "fiber" | "cast_core" | "titanium";
+export type PostCoreType = "fiber" | "cast" | "cast_core" | "titanium";
 
 export interface CanalDefinition {
 	readonly id: string;

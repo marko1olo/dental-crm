@@ -37,6 +37,11 @@ export const CANAL_OBTURATIONS: Record<
 		strokeColor: "#eab308",
 		coreColor: "#fef9c3",
 	},
+	resorcinol_formalin: {
+		nameRu: "Резорцин-формалиновая паста (розовое окрашивание)",
+		strokeColor: "#be123c",
+		coreColor: "#fecdd3",
+	},
 	fiber_post: {
 		nameRu: "Стекловолоконный штифт (Fiber Post)",
 		shaderId: "fiber-post-gradient",

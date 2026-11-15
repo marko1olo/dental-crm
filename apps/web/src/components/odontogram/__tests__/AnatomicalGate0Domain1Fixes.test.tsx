@@ -57,21 +57,21 @@ describe("Domain 1 Fixes — Odontogram, Wheeler 2.5D & Pediatric SSOT", () => {
 	it("generates unique dynamic status badge IDs per tooth", () => {
 		const html16 = renderToString(React.createElement(ToothStatusBadge, {
 			toothNumber: 16,
-			flags: { isCaries: true, cariesClasses: ["MOm"], hasCrown: false },
+			layers: { caries: true, cariesDepth: "media", crown: false },
 		}));
 		assert.ok(html16.includes("id=\"tooth-16-status-badge\""));
 		assert.ok(!html16.includes("id=\"tooth46-status-badge\""));
 
 		const html46 = renderToString(React.createElement(ToothStatusBadge, {
 			toothNumber: 46,
-			flags: { isCaries: true, cariesClasses: ["O"], hasCrown: false },
+			layers: { caries: true, cariesDepth: "media", crown: false },
 		}));
 		assert.ok(html46.includes("id=\"tooth-46-status-badge\""));
 	});
 
 	it("keeps QuickTextInput apply button enabled even when input is empty (Mandate 8e)", () => {
 		const html = renderToString(React.createElement(OdontogramQuickTextInput, {
-			onApplyCommands: () => {},
+			onApplyBatch: () => {},
 		}));
 
 		assert.ok(html.includes("data-testid=\"odontogram-quick-input-apply-btn\""));
@@ -85,12 +85,18 @@ describe("Domain 1 Fixes — Odontogram, Wheeler 2.5D & Pediatric SSOT", () => {
 		const htmlUpper = renderToString(React.createElement(AnatomicalGate0Cell, {
 			toothNumber: 16,
 			toothData: { toothNumber: 16, state: "Crown" },
+			isSelected: false,
+			isDark: false,
+			zoom: 1,
 		}));
 		assert.ok(htmlUpper.includes("cy=\"24\""), "Maxillary tooth 16 must have badge cy=24");
 
 		const htmlLower = renderToString(React.createElement(AnatomicalGate0Cell, {
 			toothNumber: 46,
 			toothData: { toothNumber: 46, state: "Crown" },
+			isSelected: false,
+			isDark: false,
+			zoom: 1,
 		}));
 		assert.ok(htmlLower.includes("cy=\"176\""), "Mandibular tooth 46 must have badge cy=176");
 	});

@@ -36,6 +36,8 @@ export interface Tooth46LayerFlags {
 	cariesChronicity?: CariesChronicity;
 	cariesDepth?: CariesDepth;
 	cariesSurface?: "mesial" | "distal" | "M" | "D" | undefined;
+	cervicalCaries?: boolean | undefined;
+	showCervical?: boolean | undefined;
 	composite?: boolean;
 	compositeCondition?: RestorationCondition;
 	inlayOnlay?: InlayOnlayType;
@@ -106,4 +108,5 @@ export interface Tooth46ContainerProps {
 	showBadge?: boolean | undefined;
 	toothNumber?: number | undefined;
 	isFlipped?: boolean | undefined;
+	onClick?: ((e: React.MouseEvent<SVGSVGElement>, toothNumber?: number) => void) | undefined;
 }

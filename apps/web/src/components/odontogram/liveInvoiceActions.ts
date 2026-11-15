@@ -74,6 +74,9 @@ export function exportLiveInvoiceToCashier({
 		grossTotalRub: grossTotalPrice,
 		discountRub: totalDiscountRub,
 		netTotalRub: netTotalPrice,
+		grossTotalKopecks: Math.round(grossTotalPrice * 100),
+		discountKopecks: Math.round(totalDiscountRub * 100),
+		netTotalKopecks: Math.round(netTotalPrice * 100),
 		discountPercent,
 		createdAtIso: new Date().toISOString(),
 	};

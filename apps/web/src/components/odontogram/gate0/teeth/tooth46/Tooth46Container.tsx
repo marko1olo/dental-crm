@@ -32,7 +32,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 	const cariesDepth = a.cariesDepth ?? "media";
 	const isDestruct = Boolean(a.caries && cariesDepth === "destructive");
 	const r = badgeRadius ?? 8.5;
-	const cy = badgeCy ?? (r > 10 ? 194.5 : 160);
+	const cy = badgeCy ?? (r > 14 ? 194.5 : (r > 10 ? 176.0 : 160));
 	const baseHeight = r > 10 ? 218 : 170;
 	const viewBox = r > 10 ? `0 0 100 ${baseHeight}` : TOOTH46_GEOMETRY.viewBox;
 

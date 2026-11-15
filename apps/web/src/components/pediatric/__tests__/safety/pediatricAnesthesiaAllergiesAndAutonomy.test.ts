@@ -32,7 +32,7 @@ describe("Pediatric Anesthesia Somatic Contraindications & Allergies", () => {
 		const check = checkPediatricAnesthesiaContraindications(undefined, textAllergies);
 		assert.strictEqual(check.isArticaineContraindicated, true);
 		assert.strictEqual(check.isMepivacaineContraindicated, false);
-		assert.ok(check.contraindicationReasonRu.includes("артикаин"));
+		assert.ok(check.contraindicationReasonRu && check.contraindicationReasonRu.includes("артикаин"));
 	});
 });
 

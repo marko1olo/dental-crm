@@ -42,9 +42,9 @@ export const Tooth47CariesOverlay: React.FC<Tooth47CariesOverlayProps> = ({
 			clipPath="url(#tooth47-crown-clip)"
 		>
 			{/* Class I Cruciform Molar Fissure Cavity */}
-			{(!cariesType || cariesType === "class1" || cariesType === "destructive") && (
+			{(!cariesType || cariesType === "class1") && (
 				<g id="tooth47-caries-cruciform" className="tooth47-caries-class1">
-					{!isDestructive && cariesType !== "destructive" ? (
+					{!isDestructive ? (
 						<>
 							<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class1.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}

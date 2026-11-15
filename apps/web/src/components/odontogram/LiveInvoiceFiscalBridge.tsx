@@ -1,5 +1,5 @@
 import React from "react";
-import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
+import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal";
 import { showToast } from "../GlobalToast";
 import type { LiveInvoiceItem } from "./odontogramLiveInvoiceCalculations";
 

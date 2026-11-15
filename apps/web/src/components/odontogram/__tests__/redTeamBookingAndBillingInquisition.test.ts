@@ -72,16 +72,16 @@ describe("Red Team Inquisition: SCH-02, CLN-02, CLN-01 Invariants", () => {
 
 			// ПРОВЕРКА: Ни одного счета на оплату выставлено быть не должно!
 			assert.equal(
-				capturedEvents["dente-add-services-to-invoice"].length,
+				(capturedEvents["dente-add-services-to-invoice"] ?? []).length,
 				0,
 				"За старые коронки, пломбы и отсутствующие зубы СТРОГО 0 ₽ начислений!",
 			);
 
 			// При этом клинический протокол SOAP и зубная формула обновлены корректно
-			assert.equal(capturedEvents["dente-apply-soap-protocol"].length, 3);
-			assert.equal(capturedEvents["dente-update-tooth-state"].length, 3);
+			assert.equal((capturedEvents["dente-apply-soap-protocol"] ?? []).length, 3);
+			assert.equal((capturedEvents["dente-update-tooth-state"] ?? []).length, 3);
 			assert.equal(
-				capturedEvents["dente-update-tooth-state"][0].isTreatmentPerformedToday,
+				capturedEvents["dente-update-tooth-state"]?.[0]?.isTreatmentPerformedToday,
 				false,
 			);
 		} finally {
@@ -116,8 +116,9 @@ describe("Red Team Inquisition: SCH-02, CLN-02, CLN-01 Invariants", () => {
 				isTreatmentPerformedToday: true, // Выполнено лечение сегодня!
 			});
 
-			assert.equal(capturedEvents["dente-add-services-to-invoice"].length, 1);
-			const inv = capturedEvents["dente-add-services-to-invoice"][0];
+			assert.equal((capturedEvents["dente-add-services-to-invoice"] ?? []).length, 1);
+			const inv = capturedEvents["dente-add-services-to-invoice"]?.[0];
+			assert.ok(inv, "Invoice event must exist");
 			assert.equal(inv.toothNumber, 46);
 			assert.equal(inv.bundleId, "caries");
 			assert.ok(inv.services.length > 0);

@@ -17,7 +17,7 @@ import { Tooth46Container } from "./teeth/tooth46/Tooth46Container";
 import { Tooth47Container } from "./teeth/tooth47/Tooth47Container";
 import { Tooth48Container } from "./teeth/tooth48/Tooth48Container";
 
-export interface AnatomicalToothProps extends Tooth46ContainerProps {
+export interface AnatomicalToothProps extends Omit<Tooth46ContainerProps, "onClick"> {
 	toothNumber: number;
 	onClick?: (e: React.MouseEvent<SVGSVGElement>, toothNumber: number) => void;
 }
@@ -74,11 +74,13 @@ export function areAnatomicalToothPropsEqual(prev: AnatomicalToothProps, next: A
 	if (prev.className !== next.className || prev.badgeRadius !== next.badgeRadius || prev.badgeCy !== next.badgeCy) return false;
 	if (prev.onClick !== next.onClick) return false;
 	if (prev.layers === next.layers) return true;
-	if (!prev.layers || !next.layers) return false;
-	const pK = Object.keys(prev.layers) as (keyof typeof prev.layers)[];
-	const nK = Object.keys(next.layers) as (keyof typeof next.layers)[];
+	const prevLayers = prev.layers;
+	const nextLayers = next.layers;
+	if (!prevLayers || !nextLayers) return false;
+	const pK = Object.keys(prevLayers) as (keyof typeof prevLayers)[];
+	const nK = Object.keys(nextLayers) as (keyof typeof nextLayers)[];
 	if (pK.length !== nK.length) return false;
-	return pK.every((k) => prev.layers![k] === next.layers![k]);
+	return pK.every((k) => prevLayers[k] === nextLayers[k]);
 }
 
 export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props) => {
@@ -90,17 +92,14 @@ export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props
 	const effectiveBadgeRadius = badgeRadius ?? 14;
 	const effectiveBadgeCy = badgeCy ?? (effectiveBadgeRadius > 14 ? 194.5 : (effectiveBadgeRadius > 10 ? 176.0 : 160));
 	const handleClick = onClick ? (e: React.MouseEvent<SVGSVGElement>) => onClick(e, toothNumber) : undefined;
-	const element = Component({
-		...rest,
-		toothNumber,
-		isFlipped,
-		badgeRadius: effectiveBadgeRadius,
-		badgeCy: effectiveBadgeCy,
-		...(handleClick ? { onClick: handleClick } : {}),
-	});
-
-	if (handleClick && React.isValidElement(element)) {
-		return React.cloneElement(element as React.ReactElement<{ onClick?: (e: React.MouseEvent<SVGSVGElement>) => void }>, { onClick: handleClick });
-	}
-	return element;
+	return (
+		<Component
+			{...rest}
+			toothNumber={toothNumber}
+			isFlipped={isFlipped}
+			badgeRadius={effectiveBadgeRadius}
+			badgeCy={effectiveBadgeCy}
+			onClick={handleClick}
+		/>
+	);
 }, areAnatomicalToothPropsEqual);

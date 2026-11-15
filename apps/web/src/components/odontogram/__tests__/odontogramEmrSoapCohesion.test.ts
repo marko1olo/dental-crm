@@ -76,7 +76,7 @@ describe("Red Team Inquisition: EMR & Odontogram Cohesion", () => {
 			assert.ok(soap.anamnesis.length > 15, `State '${state}' must have rich clinical anamnesis`);
 			assert.ok(soap.statusLocalis.length > 15, `State '${state}' must have detailed Status Localis`);
 			assert.ok(soap.treatmentDescription.length > 15, `State '${state}' must have treatment description`);
-			assert.ok(soap.recommendations.length > 5, `State '${state}' must have patient recommendations`);
+			assert.ok((soap.recommendations?.length ?? 0) > 5, `State '${state}' must have patient recommendations`);
 
 			if (state !== "Healthy") {
 				assert.equal(

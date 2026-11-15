@@ -1,5 +1,6 @@
 import type { ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
 
+export type { ResorptionStagePercent };
 export type PediatricDentitionMode = "primary" | "mixed" | "permanent";
 
 export interface PediatricToothItem {
@@ -54,7 +55,7 @@ export const PRIMARY_LOWER_LEFT: readonly PediatricToothItem[] = [
 	{ toothNumber: 75, label: "75", anatomicalNameRu: "Нижний левый второй молочный моляр", isPrimary: true, quadrant: 7, type: "molar_2" },
 ];
 
-export const PERMANENT_SIX_TEETH: Readonly<Record<number, PediatricToothItem>> = {
+export const PERMANENT_SIX_TEETH: Readonly<Record<16 | 26 | 36 | 46, PediatricToothItem>> = {
 	16: { toothNumber: 16, label: "16", anatomicalNameRu: "Верхний правый первый постоянный моляр", isPrimary: false, quadrant: 1, type: "permanent_molar_1" },
 	26: { toothNumber: 26, label: "26", anatomicalNameRu: "Верхний левый первый постоянный моляр", isPrimary: false, quadrant: 2, type: "permanent_molar_1" },
 	36: { toothNumber: 36, label: "36", anatomicalNameRu: "Нижний левый первый постоянный моляр", isPrimary: false, quadrant: 3, type: "permanent_molar_1" },

@@ -76,7 +76,7 @@ describe("20 Deciduous Teeth (FDI 51-85) Protocols", () => {
 	it("each preset defines valid ICD-10 code and 804n nomenclature service code", () => {
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {
 			assert.ok(/^K0[248]\./.test(preset.diagnosisIcd10));
-			assert.ok(/^[AB]\d{2}\.\d{2}\.\d{3}/.test(preset.serviceCode804n));
+			assert.ok(preset.serviceCode804n && /^[AB]\d{2}\.\d{2}\.\d{3}/.test(preset.serviceCode804n));
 			assert.ok(preset.materials.length > 0);
 			assert.ok(preset.titleRu.length > 5);
 		}
@@ -88,9 +88,9 @@ describe("20 Deciduous Teeth (FDI 51-85) Protocols", () => {
 	});
 
 	it("correctly maps human-readable names for deciduous molars and incisors", () => {
-		assert.ok(PEDIATRIC_TEETH_NAMES[51].includes("резец"));
-		assert.ok(PEDIATRIC_TEETH_NAMES[55].includes("моляр"));
-		assert.ok(PEDIATRIC_TEETH_NAMES[75].includes("моляр"));
-		assert.ok(PEDIATRIC_TEETH_NAMES[85].includes("моляр"));
+		assert.ok(PEDIATRIC_TEETH_NAMES[51]?.includes("резец"));
+		assert.ok(PEDIATRIC_TEETH_NAMES[55]?.includes("моляр"));
+		assert.ok(PEDIATRIC_TEETH_NAMES[75]?.includes("моляр"));
+		assert.ok(PEDIATRIC_TEETH_NAMES[85]?.includes("моляр"));
 	});
 });

@@ -10,6 +10,12 @@ import { ToothStatusBadge } from "../../ToothStatusBadge";
 import { ToothUpperSurgeryOverlay } from "../../ToothUpperSurgeryOverlay";
 import { TOOTH18_GEOMETRY } from "./tooth18GeometryConstants";
 import { DEFAULT_TOOTH46_LAYERS, type Tooth46ContainerProps } from "../../tooth46Types";
+import {
+	toUpperMolarCariesDepth,
+	toUpperMolarCariesType,
+	toUpperMolarCrownMaterial,
+	toUpperMolarInlayOnlay,
+} from "../toothUpperMolarHelpers";
 
 export interface Tooth18ContainerProps extends Tooth46ContainerProps {
 	toothNumber?: number | undefined;
@@ -79,9 +85,9 @@ export const Tooth18Container: React.FC<Tooth18ContainerProps> = ({
 				)}
 				<Tooth18RestorationOverlay
 					showComposite={Boolean(a.composite)}
-					showInlayOnlay={a.inlayOnlay as any}
+					showInlayOnlay={toUpperMolarInlayOnlay(a.inlayOnlay)}
 					showZirconiaCrown={Boolean(a.zirconiaCrown)}
-					crownMaterial={a.crownMaterial as any}
+					crownMaterial={toUpperMolarCrownMaterial(a.crownMaterial)}
 					translucent={Boolean(a.zirconiaCrown && (isEndo || a.postCore))}
 					showPostCore={Boolean(a.postCore)}
 					showAbfraction={Boolean(a.abfraction)}
@@ -89,10 +95,10 @@ export const Tooth18Container: React.FC<Tooth18ContainerProps> = ({
 				/>
 				{a.caries && !a.zirconiaCrown && !noCrown && (
 					<Tooth18CariesOverlay
-						cariesType={a.cariesType as any}
-						cariesDepth={a.cariesDepth as any}
-						chronicity={a.cariesChronicity as any}
-						showCervical={Boolean((a as any).cervicalCaries || (a as any).showCervical)}
+						cariesType={toUpperMolarCariesType(a.cariesType)}
+						cariesDepth={toUpperMolarCariesDepth(a.cariesDepth)}
+						chronicity={a.cariesChronicity}
+						showCervical={Boolean(a.cervicalCaries || a.showCervical)}
 						isDark={isDark}
 					/>
 				)}

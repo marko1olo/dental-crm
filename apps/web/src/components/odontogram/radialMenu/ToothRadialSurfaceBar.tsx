@@ -23,8 +23,8 @@ export const ToothRadialSurfaceBar: React.FC<ToothRadialSurfaceBarProps> = ({
 	return (
 		<div className="flex flex-col gap-1 px-2 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 			<div className="flex items-center justify-between">
-				<span className="text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
-					{isMobile ? "Поверхности (1 тап):" : "Поверхности:"}
+				<span className="text-[10px] font-bold tracking-wider text-[var(--muted)]">
+					Поверхности:
 				</span>
 				<span className="text-[10px] font-mono font-bold text-[var(--teal)]">
 					{selectedSurfaces.length > 0 ? selectedSurfaces.join("") : "вся коронка"}

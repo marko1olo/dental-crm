@@ -152,12 +152,14 @@ async function runCapture() {
 		await pcPage.waitForTimeout(400);
 		const pcLightBuf = await pcPage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(pcLightBuf, "01_odontogram_pc_light_1440x900.png", "Wheeler 2.5D Adult Formula (PC Light 1440x900)");
+		verifyAndSaveScreenshot(pcLightBuf, "01_odontogram_wheeler_pc_light_1440x900.png", "Wheeler 2.5D Adult Formula (PC Light 1440x900)");
 
 		// 1.2 PC Dark (1440x900) Adult Wheeler
 		await setTheme(pcPage, "dark");
 		await pcPage.waitForTimeout(400);
 		const pcDarkBuf = await pcPage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(pcDarkBuf, "02_odontogram_pc_dark_1440x900.png", "Wheeler 2.5D Adult Formula (PC Dark 1440x900)");
+		verifyAndSaveScreenshot(pcDarkBuf, "02_odontogram_wheeler_pc_dark_1440x900.png", "Wheeler 2.5D Adult Formula (PC Dark 1440x900)");
 
 		// Switch to Pediatric Dentition mode (FDI 51–85)
 		console.log("Switching to Pediatric Dentition Mode (51–85)...");
@@ -230,12 +232,14 @@ async function runCapture() {
 		await mobilePage.waitForTimeout(400);
 		const mobileLightBuf = await mobilePage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(mobileLightBuf, "03_odontogram_mobile_light_390x844.png", "Wheeler 2.5D Odontogram Apple HIG (Mobile Light 390x844)");
+		verifyAndSaveScreenshot(mobileLightBuf, "03_odontogram_wheeler_mobile_light_390x844.png", "Wheeler 2.5D Odontogram Apple HIG (Mobile Light 390x844)");
 
 		// 2.2 Mobile Dark Adult (390x844)
 		await setTheme(mobilePage, "dark");
 		await mobilePage.waitForTimeout(400);
 		const mobileDarkBuf = await mobilePage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(mobileDarkBuf, "04_odontogram_mobile_dark_390x844.png", "Wheeler 2.5D Odontogram Apple HIG (Mobile Dark 390x844)");
+		verifyAndSaveScreenshot(mobileDarkBuf, "04_odontogram_wheeler_mobile_dark_390x844.png", "Wheeler 2.5D Odontogram Apple HIG (Mobile Dark 390x844)");
 
 		// Switch to pediatric on mobile
 		try {

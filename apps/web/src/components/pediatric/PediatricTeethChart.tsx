@@ -3,6 +3,7 @@ import { getPermanentSuccessor, isPrimaryTooth } from "@dental/shared";
 import {
 	type PediatricDentitionMode,
 	type PediatricTeethChartProps,
+	type ResorptionStagePercent,
 	type ToothClinicalFinding,
 	PRIMARY_UPPER_RIGHT,
 	PRIMARY_UPPER_LEFT,
@@ -49,10 +50,10 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	const isPermanent = mode === "permanent";
 	const dentitionMode = isPermanent ? "adult" : isMixed ? "mixed" : "pediatric";
 
-	const q5 = useMemo(() => isPermanent ? PERMANENT_UPPER_RIGHT : isMixed ? [PERMANENT_SIX_TEETH[16]!, ...PRIMARY_UPPER_RIGHT] : PRIMARY_UPPER_RIGHT, [isMixed, isPermanent]);
-	const q6 = useMemo(() => isPermanent ? PERMANENT_UPPER_LEFT : isMixed ? [...PRIMARY_UPPER_LEFT, PERMANENT_SIX_TEETH[26]!] : PRIMARY_UPPER_LEFT, [isMixed, isPermanent]);
-	const q7 = useMemo(() => isPermanent ? PERMANENT_LOWER_LEFT : isMixed ? [...PRIMARY_LOWER_LEFT, PERMANENT_SIX_TEETH[36]!] : PRIMARY_LOWER_LEFT, [isMixed, isPermanent]);
-	const q8 = useMemo(() => isPermanent ? PERMANENT_LOWER_RIGHT : isMixed ? [PERMANENT_SIX_TEETH[46]!, ...PRIMARY_LOWER_RIGHT] : PRIMARY_LOWER_RIGHT, [isMixed, isPermanent]);
+	const q5 = useMemo(() => isPermanent ? PERMANENT_UPPER_RIGHT : isMixed ? [PERMANENT_SIX_TEETH[16], ...PRIMARY_UPPER_RIGHT] : PRIMARY_UPPER_RIGHT, [isMixed, isPermanent]);
+	const q6 = useMemo(() => isPermanent ? PERMANENT_UPPER_LEFT : isMixed ? [...PRIMARY_UPPER_LEFT, PERMANENT_SIX_TEETH[26]] : PRIMARY_UPPER_LEFT, [isMixed, isPermanent]);
+	const q7 = useMemo(() => isPermanent ? PERMANENT_LOWER_LEFT : isMixed ? [...PRIMARY_LOWER_LEFT, PERMANENT_SIX_TEETH[36]] : PRIMARY_LOWER_LEFT, [isMixed, isPermanent]);
+	const q8 = useMemo(() => isPermanent ? PERMANENT_LOWER_RIGHT : isMixed ? [PERMANENT_SIX_TEETH[46], ...PRIMARY_LOWER_RIGHT] : PRIMARY_LOWER_RIGHT, [isMixed, isPermanent]);
 
 	const teethData: ToothData[] = useMemo(() => {
 		const numbers = isMixed ? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH] : isPermanent ? [] : [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH];
@@ -78,10 +79,19 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 		});
 	}, [onToothFindingChange]);
 
-	const handleResorption = useCallback((targets: number[], stage: any) => {
-		const percent = typeof stage === "number" ? stage : stage === "complete" ? 100 : stage === "half" ? 50 : stage === "initial" ? 25 : 0;
+	const handleResorption = useCallback((targets: number[], stage: ResorptionStagePercent | number | string) => {
+		const percent: ResorptionStagePercent =
+			typeof stage === "number" && (stage === 0 || stage === 25 || stage === 50 || stage === 75 || stage === 100)
+				? stage
+				: stage === "complete"
+					? 100
+					: stage === "half"
+						? 50
+						: stage === "initial"
+							? 25
+							: 0;
 		targets.forEach((t) => {
-			onResorptionChange?.(t, percent as any);
+			onResorptionChange?.(t, percent);
 			if (percent === 100 && isPrimaryTooth(t)) {
 				const successor = getPermanentSuccessor(t);
 				if (successor) {

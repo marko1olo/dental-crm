@@ -25,7 +25,7 @@ export const Tooth41CariesOverlay: React.FC<Tooth41CariesOverlayProps> = ({
 	const isDistal = cariesSurface === "distal" || cariesSurface === "D";
 	const isClass4 = cariesType === "class4";
 	const isClass5 = cariesType === "class5";
-	const isDestructType = cariesType === "destructive";
+	const isDestructType = (cariesType as string) === "destructive";
 	const isClass3 = !isClass4 && !isClass5 && !isDestructType;
 	const c3 = isDistal ? g.class3.distal : g.class3.mesial;
 	const c4 = isDistal ? g.class4.distal : g.class4.mesial;

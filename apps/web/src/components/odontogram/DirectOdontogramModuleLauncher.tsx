@@ -46,7 +46,7 @@ export const DirectOdontogramModuleLauncher: React.FC = () => {
 		};
 	}, []);
 
-	const fallbackAppLogic = useMemo(() => ({
+	const fallbackAppLogic: Partial<AppLogicContextType> = useMemo(() => ({
 		odontogramUseSurfaces: true,
 		activePatient: {
 			id: "demo-patient-1",
@@ -61,7 +61,7 @@ export const DirectOdontogramModuleLauncher: React.FC = () => {
 		},
 		auth: { role: "owner" },
 		money: (rub: number) => `${rub.toLocaleString("ru-RU")} ₽`,
-	}) as unknown as AppLogicContextType, []);
+	}), []);
 
 	if (!isActive) return null;
 

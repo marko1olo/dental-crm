@@ -230,7 +230,7 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 				`${preset.id} has ICD-10 diagnosis code`,
 			);
 			assert.ok(
-				preset.serviceCode804n.startsWith("A"),
+				preset.serviceCode804n && preset.serviceCode804n.startsWith("A"),
 				`${preset.id} has Order 804n code starting with A`,
 			);
 			assert.ok(preset.materials.length > 0, `${preset.id} has materials list`);

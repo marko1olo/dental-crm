@@ -93,7 +93,7 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 				/>
 			)}
 
-			{(cariesType === "class1" || cariesType === "destructive") && (
+			{cariesType === "class1" && (
 				<Tooth46CariesClass1
 					cariesDepth={cariesDepth}
 					lesionFill={lesionFill}

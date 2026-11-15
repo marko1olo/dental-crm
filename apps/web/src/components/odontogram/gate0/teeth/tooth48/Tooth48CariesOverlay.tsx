@@ -42,9 +42,9 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 			clipPath="url(#tooth48-crown-clip)"
 		>
 			{/* Class I Crenulated Fissure Cavity */}
-			{(cariesType === "class1" || cariesType === "destructive") && (
+			{cariesType === "class1" && (
 				<g id="tooth48-caries-crenulated">
-					{!isDestructive && cariesType !== "destructive" ? (
+					{!isDestructive ? (
 						<>
 							<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class1.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}

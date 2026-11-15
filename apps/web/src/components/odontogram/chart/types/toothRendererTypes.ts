@@ -72,6 +72,7 @@ export interface ToothData {
 	hasFracture?: boolean;
 	hasApicoectomy?: boolean;
 	stageBadge?: string | undefined;
+	calculus?: boolean | undefined;
 	updatedAt?: string;
 	diagnosis?: string | undefined;
 	number?: number | undefined;

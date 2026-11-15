@@ -167,7 +167,7 @@ export function dispatchOdontogramSoapAndBundle(params: {
 
 		const shouldAddToInvoice =
 			isTreatmentPerformedToday === true ||
-			(isTreatmentPerformedToday === undefined && !isAnamnesisState && state !== "Healthy");
+			(isTreatmentPerformedToday === undefined && !isAnamnesisState);
 
 		// 2. Предварительная смета услуг по номенклатуре 804н (СТРОГО ПРИ ЛЕЧЕНИИ СЕГОДНЯ)
 		if (shouldAddToInvoice) {

@@ -51,6 +51,6 @@ describe("AnatomicalTooth - Full 32 Dentition & Bilateral Symmetry", () => {
 			layers: { caries: true, guttaPercha: true },
 		});
 		assert.ok(React.isValidElement(elem));
-		assert.equal(elem.props.toothNumber, 26);
+		assert.equal((elem.props as AnatomicalToothProps).toothNumber, 26);
 	});
 });

@@ -28,9 +28,9 @@ const PediatricMixedDentitionModal = React.lazy(() =>
 		default: m.PediatricMixedDentitionModal,
 	})),
 );
-const TreatmentPlanModule = React.lazy(() =>
-	import("../treatment-plans/TreatmentPlanModule").then((m) => ({
-		default: m.TreatmentPlanModule,
+const TreatmentPlanStudioModal = React.lazy(() =>
+	import("../treatment-plans/TreatmentPlanStudioModal").then((m) => ({
+		default: m.TreatmentPlanStudioModal,
 	})),
 );
 const PerioStudioModal = React.lazy(() =>
@@ -186,10 +186,16 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 			{isEstimatorOpen && (
 				<div className="w-full flex flex-col gap-6 mt-2 animate-in fade-in duration-200">
 					<React.Suspense fallback={null}>
-						<TreatmentPlanModule
+						<TreatmentPlanStudioModal
+							isOpen={true}
+							onClose={() => {
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(new CustomEvent("dente:toggle-estimator", { detail: { open: false } }));
+								}
+							}}
 							patientId={patientId}
 							patientName={activePatient?.name || activePatient?.fullName || "Пациент"}
-							teethData={teethData}
+							teeth={teethData}
 						/>
 					</React.Suspense>
 				</div>

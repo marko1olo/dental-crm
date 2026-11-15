@@ -20,22 +20,22 @@ describe("Wheeler 2.5D Odontogram SSOT Purification", () => {
 
 		// Lower central incisor 41: narrowest tooth w-[44px]
 		const cell41Match = html.match(/data-testid="anatomical-tooth-cell-41"[^>]*class="([^"]*)"/);
-		assert.ok(cell41Match, "Cell 41 must exist");
+		assert.ok(cell41Match && cell41Match[1], "Cell 41 must exist");
 		assert.ok(cell41Match[1].includes("w-[44px]"), `Cell 41 should have w-[44px], got: ${cell41Match[1]}`);
 
 		// Upper central incisor 11: shovel-shaped w-[58px]
 		const cell11Match = html.match(/data-testid="anatomical-tooth-cell-11"[^>]*class="([^"]*)"/);
-		assert.ok(cell11Match, "Cell 11 must exist");
+		assert.ok(cell11Match && cell11Match[1], "Cell 11 must exist");
 		assert.ok(cell11Match[1].includes("w-[58px]"), `Cell 11 should have w-[58px], got: ${cell11Match[1]}`);
 
 		// Premolar 14: bicuspid w-[56px]
 		const cell14Match = html.match(/data-testid="anatomical-tooth-cell-14"[^>]*class="([^"]*)"/);
-		assert.ok(cell14Match, "Cell 14 must exist");
+		assert.ok(cell14Match && cell14Match[1], "Cell 14 must exist");
 		assert.ok(cell14Match[1].includes("w-[56px]"), `Cell 14 should have w-[56px], got: ${cell14Match[1]}`);
 
 		// Molar 16: wide occlusal table w-[64px]
 		const cell16Match = html.match(/data-testid="anatomical-tooth-cell-16"[^>]*class="([^"]*)"/);
-		assert.ok(cell16Match, "Cell 16 must exist");
+		assert.ok(cell16Match && cell16Match[1], "Cell 16 must exist");
 		assert.ok(cell16Match[1].includes("w-[64px]"), `Cell 16 should have w-[64px], got: ${cell16Match[1]}`);
 	});
 
