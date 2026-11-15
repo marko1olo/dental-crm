@@ -22,11 +22,11 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(html.includes("Зуб #16"), "Renders tooth 16");
 	});
 
-	it("2. Lower molar (46) has anatomical canals MB, ML, DB, DL", () => {
+	it("2. Lower molar (46) has anatomical canals MB, ML, D", () => {
 		const canals46 = getChairsideDefaultCanals(46);
-		assert.deepEqual(canals46.map((c) => c.name), ["MB", "ML", "DB", "DL"], "Molar 46 has MB, ML, DB, DL");
+		assert.deepEqual(canals46.map((c) => c.name), ["MB", "ML", "D"], "Molar 46 has MB, ML, D");
 		const html = renderToStaticMarkup(createElement(ChairsideEndoQuickBar, { activeTooth: 46 }));
-		assert.ok(html.includes("Канал MB") && html.includes("Канал ML") && html.includes("Канал DB") && html.includes("Канал DL"), "Renders canals MB, ML, DB, DL");
+		assert.ok(html.includes("Канал MB") && html.includes("Канал ML") && html.includes("Канал D"), "Renders canals MB, ML, D");
 	});
 
 	it("3. Premolar (14) has B, P and incisor (21) has single main canal", () => {

@@ -7,7 +7,18 @@
  */
 
 import {
-	calculateEndoBillingAndMaterialsEstimate, type EndoCanalData, type EndoPatientMemoParams, type EndoToothClinicalData,
+	calculateEndoBillingAndMaterialsEstimate,
+	getDefaultCanalsForTooth,
+	getAnatomicalWorkingLength,
+	type EndoCanalData,
+	type EndoPatientMemoParams,
+	type EndoToothClinicalData,
+} from "@dental/shared";
+
+export type {
+	EndoCanalData,
+	EndoPatientMemoParams,
+	EndoToothClinicalData,
 } from "@dental/shared";
 
 export {
@@ -132,35 +143,23 @@ export function formatWorkingLengthDisplay(wl: unknown): string {
 }
 
 export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[] {
-	const isUpperMolar = (toothNumber >= 16 && toothNumber <= 18) || (toothNumber >= 26 && toothNumber <= 28);
-	const isLowerMolar = (toothNumber >= 36 && toothNumber <= 38) || (toothNumber >= 46 && toothNumber <= 48);
-	const isUpperPremolar = toothNumber === 14 || toothNumber === 24 || toothNumber === 15 || toothNumber === 25;
-
-	if (isUpperMolar) {
-		return [
-			{ id: `c-mb1-${Date.now()}-1`, name: "MB1", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-mb2-${Date.now()}-2`, name: "MB2", workingLengthMm: 20.0, masterApicalFile: "#20", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-db-${Date.now()}-3`, name: "DB", workingLengthMm: 20.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-p-${Date.now()}-4`, name: "P", workingLengthMm: 22.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-		];
-	}
-	if (isLowerMolar) {
-		return [
-			{ id: `c-mb-${Date.now()}-1`, name: "MB", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-ml-${Date.now()}-2`, name: "ML", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-db-${Date.now()}-3`, name: "DB", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-dl-${Date.now()}-4`, name: "DL", workingLengthMm: 21.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-		];
-	}
-	if (isUpperPremolar) {
-		return [
-			{ id: `c-b-${Date.now()}-1`, name: "B", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-			{ id: `c-p-${Date.now()}-2`, name: "P", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-		];
-	}
-	return [
-		{ id: `c-main-${Date.now()}-1`, name: "Основной", workingLengthMm: 22.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
-	];
+	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+	return defaultCanals.map((c, idx) => {
+		const rawLen = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
+		const safeLen = Number.isFinite(rawLen) && rawLen > 0 ? rawLen : getAnatomicalWorkingLength(toothNumber, c.canalName);
+		return {
+			id: c.id || `c-${c.canalName.toLowerCase()}-${Date.now()}-${idx + 1}`,
+			name: c.canalName,
+			workingLengthMm: Math.max(10, Math.min(35, Math.round(safeLen * 2) / 2)),
+			masterApicalFile: c.masterApicalFile || "#25",
+			taper: c.taper?.includes(".06") ? ".06" : ".04",
+			obturationType: "gutta_sealer",
+			sealer: "AH Plus",
+			isObliterated: Boolean(c.isObliterated),
+			apexLocatorReading: c.apexLocatorReading || "0.0 (Apex)",
+			referencePoint: c.referencePoint || "Бугор зуба",
+		};
+	});
 }
 
 export interface CanonicalEndoProtocolDefinition {

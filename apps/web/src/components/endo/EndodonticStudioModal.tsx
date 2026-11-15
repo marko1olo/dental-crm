@@ -88,7 +88,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		return () => { cancelled = true; };
 	}, [props.isOpen, props.patientId, activeTooth, props.initialCanals]);
 
-	const updateCanal = useCallback((id: string, field: keyof EndoCanalData, val: any) => {
+	const updateCanal = useCallback(<K extends keyof EndoCanalData>(id: string, field: K, val: EndoCanalData[K]) => {
 		setCanals((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: val } : c)));
 	}, []);
 
@@ -319,12 +319,22 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			}).catch(() => { /* Soft: фоновая сеть не блокирует работу врача у кресла */ });
 		}
 
-		if (props.onSaveCanals) { try { await props.onSaveCanals(sanitized, clinicalData); } catch { /* ignore */ } }
+		if (props.onSaveCanals) {
+			try {
+				await props.onSaveCanals(sanitized, clinicalData);
+			} catch (err) {
+				console.error("[EndoStudioModal] onSaveCanals handler failed:", err);
+				showToast("Предупреждение: локальный обработчик сохранения завершился с ошибкой", "warning", 3000);
+			}
+		}
 		if (props.patientId) {
 			fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
 				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ toothNumber: activeTooth, canals: sanitized, irrigation, rotarySystem, radiologyControl, apexLocator: dynamicApexLocator, stageStamp, notes: "" }),
-			}).catch(() => {});
+			}).catch((err) => {
+				console.error("[EndoStudioModal] Failed to persist endo state to backend:", err);
+				showToast("Сбой фоновой синхронизации каналов с сервером", "warning", 3000);
+			});
 		}
 		if (props.onInsertToProtocol) props.onInsertToProtocol(generatedProtocolText, sanitized);
 		if (props.onSave) props.onSave(sanitized, generatedProtocolText);
@@ -383,13 +393,13 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 						<div className="p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1.5">Машинная NiTi-система:</span>
-							<select value={rotarySystem} onChange={(e) => setRotarySystem(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs text-[var(--ink,#0f172a)] dark:text-white">
+							<select value={rotarySystem} onChange={(e) => setRotarySystem(e.target.value)} className="w-full min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs text-[var(--ink,#0f172a)] dark:text-white cursor-pointer">
 								{NITI_SYSTEM_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</select>
 						</div>
 						<div className="p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1.5">Ирригация и УЗ-активация:</span>
-							<select value={irrigation} onChange={(e) => setIrrigation(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs text-[var(--ink,#0f172a)] dark:text-white">
+							<select value={irrigation} onChange={(e) => setIrrigation(e.target.value)} className="w-full min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs text-[var(--ink,#0f172a)] dark:text-white cursor-pointer">
 								{CANONICAL_IRRIGATION_SOLUTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</select>
 						</div>

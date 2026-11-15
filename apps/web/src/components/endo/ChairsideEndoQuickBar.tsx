@@ -40,10 +40,9 @@ export function generateSoapEndoProtocol({
 	activeTooth?: number; toothNumber?: number; toothAnatomicalName?: string; currentCanals?: QuickCanalState[]; toothState?: string | undefined;
 }): string {
 	const toothNum = activeTooth ?? toothNumber ?? 46;
-	const canals = Array.isArray(currentCanals) && currentCanals.length > 0 ? currentCanals : [
-		{ name: "Дистальный", workingLengthMm: getAnatomicalWorkingLength(toothNum, "Дистальный"), masterApicalFile: "25", taper: "06", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
-		{ name: "Медиальный", workingLengthMm: getAnatomicalWorkingLength(toothNum, "Медиальный"), masterApicalFile: "25", taper: "04", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
-	];
+	const canals = Array.isArray(currentCanals) && currentCanals.length > 0
+		? currentCanals
+		: getChairsideDefaultCanals(toothNum);
 	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
 	const isBio = canals.some((c) => c.obturationType === "bioceramic");
 	const isPeriodontitis = Boolean(isBio || isTemp || (toothState && /периодонтит|periodontitis|k04\.5|k04\.4|k04\.6|гранулем|кист/i.test(toothState)));

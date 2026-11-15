@@ -19,7 +19,7 @@ export interface EndoCanalsTableSectionProps {
 	readonly activeTooth: number;
 	readonly canals: readonly EndoCanalData[];
 	readonly onApplyAllCanalsApex00: () => void;
-	readonly onUpdateCanal: (id: string, field: keyof EndoCanalData, val: any) => void;
+	readonly onUpdateCanal: <K extends keyof EndoCanalData>(id: string, field: K, val: EndoCanalData[K]) => void;
 	readonly onToggleObliteration: (id: string) => void;
 	readonly onAdjustLength: (id: string, delta: number) => void;
 	readonly onUpdateCanalLength: (id: string, rawVal: number | string) => void;
@@ -141,7 +141,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.masterApicalFile}
 										onChange={(e) => onUpdateCanal(c.id, "masterApicalFile", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[130px] truncate cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs min-w-[140px] cursor-pointer"
 									>
 										{CANONICAL_MAF_SIZES.map((opt) => (
 											<option key={opt.label} value={opt.label}>
@@ -159,7 +159,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.taper}
 										onChange={(e) => onUpdateCanal(c.id, "taper", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[110px] truncate cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs min-w-[100px] cursor-pointer"
 									>
 										<option value=".04 (Конусность 4%)">.04 (4%)</option>
 										<option value=".06 (Конусность 6%)">.06 (6%)</option>
@@ -170,7 +170,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.sealer || "AH Plus (эпоксидный герметик)"}
 										onChange={(e) => onUpdateCanal(c.id, "sealer", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[150px] truncate cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs min-w-[180px] cursor-pointer"
 									>
 										{CURATED_SEALERS.map((s) => (
 											<option key={s} value={s}>

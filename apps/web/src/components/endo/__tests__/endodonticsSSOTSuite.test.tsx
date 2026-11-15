@@ -180,12 +180,12 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 
 		it("Sanitizes invalid working length without crashing or blocking doctor", () => {
 			const dirtyCanals = [
-				{ id: "1", canalName: "MB", workingLengthMm: -5, masterApicalFile: "", taper: "", obturationTechnique: "" },
-				{ id: "2", canalName: "DB", workingLengthMm: 0, isObliterated: true, masterApicalFile: "", taper: "", obturationTechnique: "" },
+				{ id: "1", canalName: "MB", referencePoint: "Бугор", workingLengthMm: -5, masterApicalFile: "", taper: "", obturationTechnique: "" },
+				{ id: "2", canalName: "DB", referencePoint: "Бугор", workingLengthMm: 0, isObliterated: true, masterApicalFile: "", taper: "", obturationTechnique: "" },
 			];
 			const sanitized = sanitizeCanalsForSubmission(dirtyCanals, 16, "COMPLETED", getAnatomicalWorkingLength);
-			assert.ok(Number(sanitized[0].workingLengthMm) > 0, "Fallback to anatomical WL for invalid input");
-			assert.equal(sanitized[1].workingLengthMm, 0, "Obliterated canal stays 0 mm");
+			assert.ok(Number(sanitized[0]?.workingLengthMm) > 0, "Fallback to anatomical WL for invalid input");
+			assert.equal(sanitized[1]?.workingLengthMm, 0, "Obliterated canal stays 0 mm");
 		});
 	});
 

@@ -9,6 +9,13 @@ import {
 	getToothAnatomicalNameRu,
 	formatSurfacesRu,
 } from "./fdiAnatomy.js";
+import {
+	generateEndoCanalsTable043,
+	formatEndoClinicalDiaryProtocol,
+	type EndoCanalData,
+	ENDO_SEALER_OPTIONS,
+	OBTURATION_TECHNIQUE_OPTIONS,
+} from "@dental/shared";
 
 /** Конфигурация для расчета гарантийного срока реставрации */
 export interface RestorationWarrantyConfig {
@@ -97,8 +104,150 @@ export function appendCompositeWarrantyToSoap(
 	};
 }
 
-// Re-export specialized endodontic definitions from dedicated module
-export * from "./endoProtocols.js";
+// Canonical Endodontic Definitions from @dental/shared (Mandates 8e, 8x, 8ap)
+export { ENDO_SEALER_OPTIONS, OBTURATION_TECHNIQUE_OPTIONS };
+
+export interface EndoWorkingLengthEntry {
+	readonly id?: string | undefined;
+	readonly canalName: string;
+	readonly referencePoint?: string | undefined;
+	readonly workingLengthMm: number | string;
+	readonly masterApicalFile?: string | undefined;
+	readonly taper?: string | undefined;
+	readonly obturationTechnique?: string | undefined;
+	readonly sealer?: string | undefined;
+	readonly notes?: string | undefined;
+}
+
+export interface EndoSealerOption {
+	readonly id: string;
+	readonly name: string;
+	readonly brand: string;
+	readonly category: "epoxy" | "bioceramic" | "calcium_hydroxide" | "zinc_oxide";
+	readonly description: string;
+}
+
+export interface EndoObturationMethodOption {
+	readonly id: string;
+	readonly name: string;
+	readonly shortLabel: string;
+	readonly description: string;
+}
+
+export const ENDO_OBTURATION_METHOD_OPTIONS: readonly EndoObturationMethodOption[] = [
+	{
+		id: "lateral_compaction",
+		name: "Латеральная компакция холодной гуттаперчи",
+		shortLabel: "Латеральная компакция",
+		description: "Классический метод холодной латеральной конденсации",
+	},
+	{
+		id: "vertical_condensation",
+		name: "Вертикальная конденсация разогретой гуттаперчи",
+		shortLabel: "Вертикальная конденсация",
+		description: "Трёхмерная обтурация разогретой термопластифицированной гуттаперчей",
+	},
+	{
+		id: "single_cone_bioceramic",
+		name: "Метод одного калиброванного штифта + биокерамика (BioRoot RCS)",
+		shortLabel: "Моноштифт + Биокерамика",
+		description: "Гидравлическая обтурация биокерамическим силером",
+	},
+	{
+		id: "continuous_wave",
+		name: "Метод непрерывной волны (System B / Elements)",
+		shortLabel: "Непрерывная волна",
+		description: "Горячая вертикальная конденсация непрерывной волной",
+	},
+	{
+		id: "temporary_caoh2",
+		name: "Временное пломбирование гидроксидом кальция",
+		shortLabel: "Временная Ca(OH)2",
+		description: "Межсеансовое антисептическое лечение деструктивных периодонтитов",
+	},
+];
+
+/** Генерация таблицы учета рабочей длины корневых каналов для дневника приёма (без канцелярита, Zero-Clipping) */
+export function generateEndoWorkingLengthTable(canals: readonly EndoWorkingLengthEntry[]): string {
+	const header = [
+		"ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ (ДНЕВНИК ПРИЁМА):",
+		"┌──────────────┬─────────────────────────────┬─────────────┬─────────────┬──────────────────────────────────────────┐",
+		"│ Канал        │ Реперный ориентир           │ Длина (WL)  │ Мастер-файл │ Метод обтурации / Силер                  │",
+		"├──────────────┼─────────────────────────────┼─────────────┼─────────────┼──────────────────────────────────────────┤",
+	];
+
+	const rows = canals.map((c) => {
+		const mafMatch = String(c.masterApicalFile ?? "").match(/(?:ISO\s*\d+|#\d+|\d+)/i);
+		const mafClean = mafMatch ? mafMatch[0] : (c.masterApicalFile ?? "ISO 25");
+		const taperMatch = String(c.taper ?? "").match(/\.\d+/);
+		const taperClean = taperMatch ? taperMatch[0] : (c.taper ?? ".06");
+		const mafFormatted = `${mafClean}/${taperClean}`.trim();
+		let lengthStr = "—";
+		if (c.workingLengthMm !== undefined && c.workingLengthMm !== null && c.workingLengthMm !== "") {
+			const num = typeof c.workingLengthMm === "number" ? c.workingLengthMm : parseFloat(String(c.workingLengthMm));
+			lengthStr = !isNaN(num) ? `${num.toFixed(1)} мм` : `${c.workingLengthMm} мм`;
+		}
+		const obt = c.obturationTechnique
+			? `${c.obturationTechnique}${c.sealer ? ` + ${c.sealer}` : ""}`
+			: "Гуттаперча + AH Plus";
+
+		const colCanal = (c.canalName || "—").padEnd(12);
+		const colRef = (c.referencePoint || "Щечный бугор").slice(0, 27).padEnd(27);
+		const colWl = lengthStr.padEnd(11);
+		const colMaf = mafFormatted.padEnd(11);
+		const colObt = obt.slice(0, 40).padEnd(40);
+
+		return `│ ${colCanal} │ ${colRef} │ ${colWl} │ ${colMaf} │ ${colObt} │`;
+	});
+
+	const footer = "└──────────────┴─────────────────────────────┴─────────────┴─────────────┴──────────────────────────────────────────┘";
+	return [...header, ...rows, footer].join("\n");
+}
+
+/** Форматирование эндодонтического протокола с рабочей длиной каналов, апекслокатором и обтурацией */
+export function formatEndoProtocolQuickSnippet(params: {
+	readonly toothNumber?: number | string | undefined;
+	readonly canals: readonly EndoWorkingLengthEntry[];
+	readonly sealer?: string | undefined;
+	readonly obturationTechnique?: string | undefined;
+	readonly irrigation?: string | undefined;
+	readonly radiology?: string | undefined;
+}): string {
+	const toothNum = Number(params.toothNumber) || 46;
+	const sharedCanals: EndoCanalData[] = params.canals.map((c, i) => ({
+		id: c.id || `c-${i}`,
+		canalName: c.canalName,
+		referencePoint: c.referencePoint || "Бугор",
+		workingLengthMm: typeof c.workingLengthMm === "number" ? c.workingLengthMm : parseFloat(String(c.workingLengthMm)) || 21.0,
+		masterApicalFile: c.masterApicalFile || "ISO 25",
+		taper: c.taper || ".06",
+		obturationTechnique: c.obturationTechnique || params.obturationTechnique || "Латеральная компакция",
+		sealer: c.sealer || params.sealer || "AH Plus",
+	}));
+	return formatEndoClinicalDiaryProtocol({
+		toothNumber: toothNum,
+		canals: sharedCanals,
+		...(params.irrigation ? { irrigation: params.irrigation } : {}),
+		...(params.radiology ? { radiologyControl: params.radiology } : {}),
+	});
+}
+
+/** Добавление эндодонтического протокола в поле лечения */
+export function appendEndoProtocolToSoap(
+	diary: DiaryState,
+	endoSnippet: string,
+): DiaryState {
+	const cur = (diary.treatmentDescription ?? "").trim();
+	const endoTrim = (endoSnippet ?? "").trim();
+	if (!endoTrim) return diary;
+	if (cur.includes(endoTrim)) return diary;
+
+	const nextTreatment = cur ? `${cur}\n\n${endoTrim}` : endoTrim;
+	return {
+		...diary,
+		treatmentDescription: nextTreatment,
+	};
+}
 
 /** Генерация терапевтического протокола SOAP из находки одонтограммы */
 export function generateTherapySoap(
