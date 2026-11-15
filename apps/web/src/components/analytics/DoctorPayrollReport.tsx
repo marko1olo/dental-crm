@@ -163,7 +163,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							className={`flex-1 sm:flex-initial h-8 sm:h-7 px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
 								roleTab === "doctors"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							Врачи ({rows.length})
@@ -175,7 +175,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							className={`flex-1 sm:flex-initial h-8 sm:h-7 px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
 								roleTab === "assistants"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							Ассистенты ({assistantRows.length})
@@ -237,7 +237,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						type="button"
 						onClick={() => setIsStudioOpen(true)}
 						data-testid="payroll-open-studio-cta"
-						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-dark)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--teal-dark,#0f766e)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
 					>
 						<Calculator size={14} aria-hidden="true" />
 						<span className="hidden sm:inline">Открыть ведомость / закрыть период</span>
@@ -339,11 +339,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							{loading
 								? "..."
 								: formatRub(
-										totals?.totalAssistantPayoutKopecks
-											? Math.round(
-													((totals?.totalAssistantPayoutKopecks / 0.87) * 0.13) / 100,
-												)
-											: assistantRows.reduce((acc, r) => acc + r.ndflTaxRub, 0),
+										assistantRows.reduce((acc, r) => acc + r.ndflTaxRub, 0),
 									)}
 						</div>
 						<div className="text-[11px] text-[var(--muted)] mt-0.5">

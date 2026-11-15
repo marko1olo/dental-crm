@@ -30,8 +30,6 @@ import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLaunche
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
-import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
-import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramModuleLauncher } from "./components/odontogram/DirectOdontogramModuleLauncher";
@@ -388,8 +386,6 @@ export function AppShell() {
 			<DirectPerioLauncher />
 			<DirectRecallLauncher />
 			<DirectOrthodonticsLauncher />
-			<DirectPayrollLauncher />
-			<DirectDoctorPayrollReportLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramModuleLauncher />

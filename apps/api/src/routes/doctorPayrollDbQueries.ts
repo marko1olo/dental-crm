@@ -54,11 +54,11 @@ export interface DoctorPayrollProfileDto {
 	specialtyId: string;
 	specialtyTitleRu: string;
 	commissionPercent: number;
-	payoutModel: "percentage";
-	motivationScheme: "net_percentage";
+	payoutModel: "percentage" | "chair_rental";
+	motivationScheme: "net_percentage" | "chair_rental";
 	defaultShiftRateKop: number;
 	minGuaranteeMonthlyKop: number;
-	taxRegime: "employee";
+	taxRegime: "employee" | "self_employed";
 }
 
 export interface ClosedPayrollPeriodDto {
@@ -223,7 +223,50 @@ export async function fetchDoctorPayrollDataset(params: {
 		shiftsCount = 0;
 	}
 
-	// 2. Закрытые приемы за период
+	// 2. Закрытые приемы за период (по дате визита ЛИБО по кассовому методу — факт оплаты в периоде)
+	const paidInPeriodRows = await db
+		.select({
+			appointmentId: visits.appointmentId,
+		})
+		.from(payments)
+		.innerJoin(visits, eq(payments.visitId, visits.id))
+		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				eq(appointments.doctorUserId, resolvedDocId),
+				eq(payments.status, "paid"),
+				gte(payments.paidAt, fromDate),
+				lte(payments.paidAt, toDate),
+			),
+		);
+
+	const cashMethodApptIds = Array.from(
+		new Set(
+			paidInPeriodRows
+				.map((r) => r.appointmentId)
+				.filter((id): id is string => typeof id === "string" && id.length > 0),
+		),
+	);
+
+	const dateFilter = and(
+		gte(appointments.startsAt, fromDate),
+		lte(appointments.startsAt, toDate),
+	);
+
+	const appointmentWhere =
+		cashMethodApptIds.length > 0
+			? and(
+					eq(appointments.organizationId, orgId),
+					eq(appointments.doctorUserId, resolvedDocId),
+					or(dateFilter, inArray(appointments.id, cashMethodApptIds)),
+				)
+			: and(
+					eq(appointments.organizationId, orgId),
+					eq(appointments.doctorUserId, resolvedDocId),
+					dateFilter,
+				);
+
 	const cardNumSql = sql<string>`coalesce(
 		${patients.administrativeProfile}->>'cardNumber',
 		${patients.administrativeProfile}->>'medicalCardNumber',
@@ -241,14 +284,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		})
 		.from(appointments)
 		.leftJoin(patients, eq(appointments.patientId, patients.id))
-		.where(
-			and(
-				eq(appointments.organizationId, orgId),
-				eq(appointments.doctorUserId, resolvedDocId),
-				gte(appointments.startsAt, fromDate),
-				lte(appointments.startsAt, toDate),
-			),
-		);
+		.where(appointmentWhere);
 
 	const orders: PayrollOrderDto[] = [];
 	const completedServices: DoctorCompletedServiceItem[] = [];
@@ -379,7 +415,13 @@ export async function fetchDoctorPayrollDataset(params: {
 				and(
 					eq(inventoryTransactions.organizationId, orgId),
 					inArray(inventoryTransactions.visitId, visitIds),
-					eq(inventoryTransactions.transactionType, "auto_deduct"),
+					inArray(inventoryTransactions.transactionType, [
+						"auto_deduct",
+						"usage",
+						"write_off",
+						"emergency_overdraft",
+						"shift_batch_deduction",
+					]),
 				),
 			)
 		: [];

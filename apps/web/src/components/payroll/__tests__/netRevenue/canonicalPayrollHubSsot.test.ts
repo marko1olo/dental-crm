@@ -150,12 +150,12 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 		assert.ok(launcherLines <= 90, `DirectPayrollLauncher.tsx has ${launcherLines} lines (must be <= 90)`);
 	});
 
-	it("3.2 Verifies DirectPayrollLauncher is mounted in AppShell.tsx (Mandate 8aq)", () => {
-		const appShellPath = path.resolve(__dirname, "../../../../AppShell.tsx");
-		const appShellContent = fs.readFileSync(appShellPath, "utf8");
+	it("3.2 Verifies DirectPayrollLauncher is mounted in administrative registry (Mandate 8aq)", () => {
+		const registryPath = path.resolve(__dirname, "../../../appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
+		const registryContent = fs.readFileSync(registryPath, "utf8");
 
-		assert.ok(appShellContent.includes("DirectPayrollLauncher"), "AppShell.tsx must import and mount DirectPayrollLauncher");
-		assert.ok(appShellContent.includes("<DirectPayrollLauncher />"), "AppShell.tsx must render <DirectPayrollLauncher />");
+		assert.ok(registryContent.includes("DirectPayrollLauncher"), "administrativeLaunchersRegistry must import and mount DirectPayrollLauncher");
+		assert.ok(registryContent.includes("<DirectPayrollLauncher />"), "administrativeLaunchersRegistry must render <DirectPayrollLauncher />");
 	});
 
 	it("3.3 Components export cleanly without errors", () => {

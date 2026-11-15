@@ -6,7 +6,7 @@
  * - Differentiated doctor piece-rate commissions by medical specialty (Therapy, Orthopedics, Surgery, Orthodontics, Hygiene, Retail).
  * - Dynamic lab (ЗТЛ) and direct material cost deductions BEFORE applying doctor percentage (Net Revenue).
  * - Assistant shift rates + CBCT/OPTG diagnostic imaging percentage and surgical bonuses.
- * - 1C:ZUP 3.1 statutory gross accruals export in XML (EnterpriseData) and CSV formats.
+ * - Standard doctor and staff gross accruals export in CSV formats.
  */
 
 export * from "../finance/doctorPayrollEngine.js";

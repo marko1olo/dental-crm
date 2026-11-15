@@ -210,7 +210,7 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			assert.ok(!studioContent.includes("disabled={!"), "Primary CTA must never be permanently disabled by inputs");
 		});
 
-		it("4.3 Verifies DirectPayrollLauncher responds to #payroll and #doctor-payroll and is mounted in AppShell.tsx (Mandate 8aq)", () => {
+		it("4.3 Verifies DirectPayrollLauncher responds to #payroll and #doctor-payroll and is mounted in administrative registries (Mandate 8aq)", () => {
 			const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
 			const launcherContent = fs.readFileSync(launcherPath, "utf8");
 
@@ -218,10 +218,10 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			assert.ok(launcherContent.includes("#doctor-payroll"), "Must handle #doctor-payroll");
 			assert.ok(launcherContent.includes("DoctorPayrollStudioModal"), "Must render DoctorPayrollStudioModal");
 
-			const appShellPath = path.resolve(__dirname, "../../../AppShell.tsx");
-			const appShellContent = fs.readFileSync(appShellPath, "utf8");
-			assert.ok(appShellContent.includes("DirectPayrollLauncher"), "AppShell.tsx must import DirectPayrollLauncher");
-			assert.ok(appShellContent.includes("<DirectPayrollLauncher />"), "AppShell.tsx must render <DirectPayrollLauncher />");
+			const registryPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
+			const registryContent = fs.readFileSync(registryPath, "utf8");
+			assert.ok(registryContent.includes("DirectPayrollLauncher"), "administrativeLaunchersRegistry must import DirectPayrollLauncher");
+			assert.ok(registryContent.includes("<DirectPayrollLauncher />"), "administrativeLaunchersRegistry must render <DirectPayrollLauncher />");
 		});
 
 		it("4.4 Verifies clean exports of Studio and Launcher components", () => {

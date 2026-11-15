@@ -232,15 +232,11 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			assert.ok(content.includes("Закрытые периоды и выплаты"));
 		});
 
-		it("3.4 Verifies DirectPayrollLauncher is mounted in AppShell.tsx and administrative registries (Mandate 8aq)", () => {
-			const appShellPath = path.resolve(__dirname, "../../../AppShell.tsx");
-			const appShellContent = fs.readFileSync(appShellPath, "utf8");
-			assert.ok(appShellContent.includes("DirectPayrollLauncher"), "AppShell.tsx must import DirectPayrollLauncher");
-			assert.ok(appShellContent.includes("<DirectPayrollLauncher />"), "AppShell.tsx must render <DirectPayrollLauncher />");
-
+		it("3.4 Verifies DirectPayrollLauncher is mounted in administrative registries (Mandate 8aq)", () => {
 			const registryPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
 			const registryContent = fs.readFileSync(registryPath, "utf8");
 			assert.ok(registryContent.includes("DirectPayrollLauncher"), "administrativeLaunchersRegistry must include DirectPayrollLauncher");
+			assert.ok(registryContent.includes("<DirectPayrollLauncher />"), "administrativeLaunchersRegistry must render <DirectPayrollLauncher />");
 
 			const specializedPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx");
 			const specializedContent = fs.readFileSync(specializedPath, "utf8");

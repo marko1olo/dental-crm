@@ -7,7 +7,7 @@
  * - math.ts (Layer 1: decimal.js rounding & money percentages)
  * - formula.ts (Layer 1: pure payout & commission calculator)
  * - helpers.ts (Layer 1: medical card & ZTL restoration helpers)
- * - t51Payslip.ts (Layer 2: official T-51 payslip HTML renderer)
+ * - t51Payslip.ts (Layer 2: doctor payslip HTML renderer)
  * - queries.ts (Layer 3: CTE aggregation SQL query)
  * - drillDown.ts (Layer 3: visits, materials & ZTL orders fetcher)
  * - reportEngine.ts (Layer 3: master payouts report builder)
