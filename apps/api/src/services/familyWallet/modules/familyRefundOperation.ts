@@ -25,8 +25,21 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		const [family] = await tx.select().from(familyGroups).where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).limit(1).for("update");
 		if (!family) throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
 
-		const targetPatientId = params.patientId || family.headPatientId || family.primaryPatientId;
-		if (!targetPatientId) throw new FamilyWalletError("Не указан пациент-получатель возврата депозита", 400, "MISSING_PATIENT_ID");
+		const walletOwnerId = family.headPatientId || family.primaryPatientId;
+		if (!walletOwnerId) {
+			throw new FamilyWalletError("Семейный кошелек не имеет назначенного владельца (headPatientId)", 400, "MISSING_WALLET_OWNER");
+		}
+
+		// DEF-FAM-02: При расторжении договора возврат депозита возвращается строго владельцу счета (главе семьи)
+		if (params.patientId && params.patientId !== walletOwnerId) {
+			throw new FamilyWalletError(
+				"Возврат семейного депозита разрешен строго владельцу счета (главе семьи)",
+				403,
+				"UNAUTHORIZED_FAMILY_REFUND_RECIPIENT",
+			);
+		}
+
+		const targetPatientId = walletOwnerId;
 
 		const [existingPayment] = await tx.select().from(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.clientMutationId, clientMutationId.trim()))).limit(1);
 		if (existingPayment) {

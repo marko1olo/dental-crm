@@ -361,6 +361,7 @@ export function validateFamilyWalletSpend(params: {
 		canSpendFamilyWallet?: boolean;
 		isLegalRepresentative?: boolean;
 		relationshipType?: PatientRelationshipKind;
+		spendLimitKopecks?: number | null | undefined;
 	} | null;
 }): FamilyWalletSpendValidationResult {
 	const {
@@ -395,6 +396,26 @@ export function validateFamilyWalletSpend(params: {
 	}
 
 	// Case 2: Spender is a family member or legal representative
+	// 2.1 Explicit spending ban by administrator or account holder
+	if (relationship?.canSpendFamilyWallet === false) {
+		return {
+			isAuthorized: false,
+			remainingBalanceKopecks: currentBalanceKopecks,
+			failureReason:
+				"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
+		};
+	}
+
+	// 2.2 Spend limit check if configured on the relationship
+	const spendLimitKop = relationship?.spendLimitKopecks;
+	if (spendLimitKop !== undefined && spendLimitKop !== null && requiredAmountKopecks > spendLimitKop) {
+		return {
+			isAuthorized: false,
+			remainingBalanceKopecks: currentBalanceKopecks,
+			failureReason: `Превышен индивидуальный лимит списания с семейного кошелька (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, требуется: ${(requiredAmountKopecks / 100).toFixed(2)} ₽)`,
+		};
+	}
+
 	const hasSpendPermission =
 		relationship?.canSpendFamilyWallet === true ||
 		relationship?.isLegalRepresentative === true ||

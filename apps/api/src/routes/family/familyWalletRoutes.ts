@@ -142,12 +142,14 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				name: profile?.legalName || profile?.clinicName || "ООО ДЕНТЕ СТОМАТОЛОГИЯ",
 			};
 
-			const signatoryFioParts = (profile?.signatoryName || "Иванов Иван Иванович").trim().split(/\s+/);
+			const profileRecord = profile as (typeof profile & { chiefDoctorName?: string; directorName?: string }) | undefined;
+			const rawSignatory = (profile?.signatoryName || profileRecord?.chiefDoctorName || profileRecord?.directorName || "Главный врач").trim();
+			const signatoryFioParts = rawSignatory.split(/\s+/);
 			const signatory = {
 				signatoryRole: "1" as const,
 				fullName: {
-					family: signatoryFioParts[0] || "Иванов",
-					given: signatoryFioParts[1] || "Иван",
+					family: signatoryFioParts[0] || "Главный",
+					given: signatoryFioParts[1] || "врач",
 					...(signatoryFioParts[2] ? { patronymic: signatoryFioParts.slice(2).join(" ") } : {}),
 				},
 			};

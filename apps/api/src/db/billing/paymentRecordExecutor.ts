@@ -563,20 +563,31 @@ async function verifyFamilySpendPermission(
 			)
 			.limit(1);
 
-		const canSpend =
-			rel &&
-			(rel.canSpendFamilyWallet === true ||
-				rel.isPrimaryPayer === true ||
-				rel.isLegalRepresentative === true ||
-				rel.relationshipType === "parent" ||
-				rel.relationshipType === "child" ||
-				rel.relationshipType === "guardian" ||
-				rel.relationshipType === "ward" ||
-				rel.relationshipType === "spouse");
-
-		if (!canSpend) {
+		// [LOY-06] Члены семейной группы по умолчанию имеют право оплачивать лечение из семейного кошелька (Мандат 8n).
+		// Запрещено только если администратор явно выставил флаг запрета (canSpendFamilyWallet === false).
+		const isExplicitlyForbidden = rel && rel.canSpendFamilyWallet === false;
+		if (isExplicitlyForbidden) {
 			throw new Error(
 				`Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).`,
+			);
+		}
+
+		let spendLimitKop: number | undefined;
+		if ((rel as Record<string, unknown> | undefined)?.["spendLimitKopecks"] !== undefined) {
+			spendLimitKop = Number((rel as Record<string, unknown>)["spendLimitKopecks"]);
+		} else if (rel?.notes) {
+			try {
+				const parsed = JSON.parse(rel.notes);
+				if (typeof parsed?.spendLimitKopecks === "number") {
+					spendLimitKop = parsed.spendLimitKopecks;
+				}
+			} catch {
+				// plain text
+			}
+		}
+		if (spendLimitKop !== undefined && spendLimitKop >= 0 && deductionKop > spendLimitKop) {
+			throw new Error(
+				`Превышен установленный лимит списания с семейного депозита (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, запрошено: ${(deductionKop / 100).toFixed(2)} ₽).`,
 			);
 		}
 	}

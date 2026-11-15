@@ -22,6 +22,7 @@ import {
 	fiscalReceiptQueue,
 	patientBonusBalances,
 	patientInvoices,
+	patientRelationships,
 	payments,
 	patients,
 	treatmentItems,
@@ -43,6 +44,14 @@ export type CashboxPaymentOutcome =
 	  }
 	| {
 			statusCode: 400;
+			body: {
+				error: string;
+				message: string;
+				details?: unknown;
+			};
+	  }
+	| {
+			statusCode: 403;
 			body: {
 				error: string;
 				message: string;
@@ -497,6 +506,68 @@ export async function processCashboxPayment(
 
 			// Если осталась сумма для списания, списываем из семейного баланса familyGroups
 			if (remainingToDeductKop > 0n && lockedFamilyGroup) {
+				const walletOwnerId = lockedFamilyGroup.headPatientId || lockedFamilyGroup.primaryPatientId;
+				if (walletOwnerId && resolvedPatientId !== walletOwnerId) {
+					// DEF-FAM-01: Проверка полномочий списания семейного депозита (BOLA guard)
+					const [rel] = await tx
+						.select()
+						.from(patientRelationships)
+						.where(
+							and(
+								eq(patientRelationships.organizationId, orgId),
+								or(
+									and(
+										eq(patientRelationships.patientId, walletOwnerId),
+										eq(patientRelationships.relatedPatientId, resolvedPatientId),
+									),
+									and(
+										eq(patientRelationships.patientId, resolvedPatientId),
+										eq(patientRelationships.relatedPatientId, walletOwnerId),
+									),
+								),
+							),
+						)
+						.limit(1);
+
+					// 1. Явный запрет на списание семейного депозита
+					if (rel && rel.canSpendFamilyWallet === false) {
+						return {
+							kind: "unauthorized_family_spend" as const,
+							reason: "Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
+						};
+					}
+
+					// 2. Если нет родственной связи в patientRelationships, проверяем подтвержденное членство в группе
+					const isFamilyMember = patientRow.familyGroupId === lockedFamilyGroup.id;
+					if (!rel && !isFamilyMember) {
+						return {
+							kind: "unauthorized_family_spend" as const,
+							reason: "Пациент не связан подтвержденным родством или семейной группой с владельцем семейного депозита.",
+						};
+					}
+
+					// 3. Проверка установленного лимита списания spendLimitKopecks
+					let spendLimitKop: number | undefined;
+					if ((rel as Record<string, unknown> | undefined)?.["spendLimitKopecks"] !== undefined) {
+						spendLimitKop = Number((rel as Record<string, unknown>)["spendLimitKopecks"]);
+					} else if (rel?.notes) {
+						try {
+							const parsed = JSON.parse(rel.notes);
+							if (typeof parsed?.spendLimitKopecks === "number") {
+								spendLimitKop = parsed.spendLimitKopecks;
+							}
+						} catch {
+							// plain text note
+						}
+					}
+					if (spendLimitKop !== undefined && spendLimitKop >= 0 && Number(remainingToDeductKop) > spendLimitKop) {
+						return {
+							kind: "unauthorized_family_spend" as const,
+							reason: `Превышен установленный лимит списания с семейного депозита (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, запрошено: ${(Number(remainingToDeductKop) / 100).toFixed(2)} ₽).`,
+						};
+					}
+				}
+
 				const deductFromFamilyKop =
 					remainingToDeductKop <= familyBalanceKop
 						? remainingToDeductKop
@@ -603,9 +674,9 @@ export async function processCashboxPayment(
 			}
 		}
 
-		// Генерируем номер кассового чека (при гарантии 100% чек не пробивается)
-		const receiptNumber = isWarrantyPayment ? null : `ФД-${Date.now().toString().slice(-6)}`;
-		const issuedAt = isWarrantyPayment ? null : new Date().toISOString();
+		// До подтверждения от ККТ сохраняем null: реальный номер ФД присваивается только после фактической печати чека
+		const receiptNumber = null;
+		const issuedAt = null;
 
 		// 1. Фиксация платежа в таблице payments с обязательным visitId и documentId
 		const [newPayment] = await tx
@@ -820,7 +891,9 @@ export async function processCashboxPayment(
 				balanceAfterRub: newBal,
 				patientId: resolvedPatientId,
 				kkmDocNumber: receiptNumber,
-				reasonText: `Приход наличных в кассу: оплата стоматологических услуг (${receiptNumber})`,
+				reasonText: receiptNumber
+					? `Приход наличных в кассу: оплата стоматологических услуг (${receiptNumber})`
+					: "Приход наличных в кассу: оплата стоматологических услуг",
 				operatorName: body.cashierFullName || "Кассир",
 			});
 
@@ -846,7 +919,9 @@ export async function processCashboxPayment(
 				balanceAfterRub: newBal,
 				patientId: resolvedPatientId,
 				kkmDocNumber: receiptNumber,
-				reasonText: `Безналичное поступление: оплата стоматологических услуг (${receiptNumber})`,
+				reasonText: receiptNumber
+					? `Безналичное поступление: оплата стоматологических услуг (${receiptNumber})`
+					: "Безналичное поступление: оплата стоматологических услуг",
 				operatorName: body.cashierFullName || "Кассир",
 			});
 
@@ -964,6 +1039,16 @@ export async function processCashboxPayment(
 				error: "InvoiceAlreadyPaidConflict",
 				message: `Счёт ${result.invoiceId} уже был полностью оплачен. Повторное списание средств отклонено для исключения задвоения чеков.`,
 				invoiceId: result.invoiceId,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "unauthorized_family_spend") {
+		return {
+			statusCode: 403,
+			body: {
+				error: "UnauthorizedFamilySpend",
+				message: result.reason,
 			},
 		};
 	}
