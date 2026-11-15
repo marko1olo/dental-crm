@@ -3,8 +3,11 @@
  * Реализует 1-кликовую физиологическую норму и автономию хирурга (Мандаты 8e, 8n, 8x, 8ap).
  */
 
-export type MischDensity = "D1" | "D2" | "D3" | "D4";
-export type ImplantCapType = "fdm" | "plug";
+import type { FastImplantPassportData, MischBoneDensity, ImplantCapKind } from "@dental/shared";
+
+export type MischDensity = MischBoneDensity;
+export type ImplantCapType = ImplantCapKind;
+export type { FastImplantPassportData };
 
 export interface FastImplantSystemPreset {
 	readonly brand: string;
@@ -54,39 +57,6 @@ export interface ImplantConsumablesStock {
 	readonly sutures: readonly ImplantConsumableItem[];
 }
 
-export interface FastImplantPassportData {
-	readonly passportId: string;
-	readonly toothFdi: number;
-	readonly brand: string;
-	readonly model: string;
-	readonly catalogArticle: string;
-	readonly diameterMm: number;
-	readonly lengthMm: number;
-	readonly torqueNcm: number;
-	readonly lotNumber: string;
-	readonly serialNumber: string;
-	readonly boneDensity: MischDensity;
-	readonly isqDay0?: number | undefined;
-	readonly capType?: ImplantCapType | undefined;
-	readonly patientName?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly doctorId?: string | undefined;
-	readonly dateIso: string;
-	readonly isWarehouseOverdraft?: boolean | undefined;
-	readonly inventoryItemId?: string | undefined;
-	readonly expirationDate?: string | undefined;
-	readonly operationPriceRub?: number | undefined;
-	readonly implantCostRub?: number | undefined;
-	readonly consumablesCostRub?: number | undefined;
-	readonly doctorGrossMarginRub?: number | undefined;
-	readonly netDoctorIncomeRub?: number | undefined;
-	readonly isImmediateLoadingFeasible?: boolean | undefined;
-	readonly osteointegrationExpectedDate?: string | undefined;
-	readonly boneGraftMaterial?: string | undefined;
-	readonly membraneUsed?: string | undefined;
-	readonly sutureMaterial?: string | undefined;
-}
 
 export interface AnatomicalImplantDefaults {
 	readonly toothFdi: number;
@@ -117,6 +87,7 @@ export const MISCH_DENSITY_NOTES: Record<MischDensity, { labelRu: string; hint: 
 	D2: { labelRu: "D2 Плотная губчатая с толстым кортикалом", hint: "Боковой отдел нижней челюсти. Идеальная плотность для немедленной нагрузки." },
 	D3: { labelRu: "D3 Тонкий кортикал с пористой губчатой костью", hint: "Передний и боковой отдел верхней челюсти. Стандартное сверление." },
 	D4: { labelRu: "D4 Мягкая пористая кость", hint: "Бугор верхней челюсти. Рекомендуется недопрепарирование (under-drilling)." },
+	D5: { labelRu: "D5 Незрелая кость / выраженная резорбция", hint: "Зона после костной пластики или выраженная атрофия. Щадящий протокол." },
 };
 
 export function getBoneDensityByToothFdi(toothFdi: number): MischDensity {

@@ -1,4 +1,5 @@
 import React from "react";
+import type { SurgicalServiceItem } from "@dental/shared";
 import { VisitSurgeryExtractionBar } from "../VisitSurgeryExtractionBar";
 import { VisitSurgerySinusGbrBar } from "../VisitSurgerySinusGbrBar";
 import { VisitSurgeryImplantBar } from "../VisitSurgeryImplantBar";
@@ -8,7 +9,7 @@ interface VisitSurgeryCategoryCockpitProps {
 	s: ReturnType<typeof useVisitSurgeryState>;
 	patientName: string;
 	doctorName: string;
-	onAddToInvoice?: ((services: any) => void) | undefined;
+	onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
 }
 
 export const VisitSurgeryCategoryCockpit: React.FC<VisitSurgeryCategoryCockpitProps> = ({

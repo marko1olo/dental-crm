@@ -34,10 +34,18 @@ import { resolveEffectiveSurgeryPatientId } from "./resolveSurgeryPatient";
 import { SurgeryPostOpMemoSection } from "./SurgeryPostOpMemoSection";
 import { SurgeryImplantParametersSection } from "./SurgeryImplantParametersSection";
 import { ImplantPassportCard } from "../implants/ImplantPassportCard";
-import type { FastImplantPassportData } from "../implants/implantQuickPresets";
+import type { FastImplantPassportData } from "@dental/shared";
 import "./surgeryHub.css";
 
 export type SurgeryHubTab = "protocol" | "diary" | "passport" | "memo";
+
+export interface ChairsideSurgerySavedProtocolData {
+	readonly activeScenario: SurgeryScenarioType;
+	readonly toothFdi: number;
+	readonly passportData: FastImplantPassportData;
+	readonly diaryText: string;
+	readonly selectedTeeth: readonly number[];
+}
 
 interface StockImplantRecord {
 	readonly id: string;
@@ -71,7 +79,7 @@ export interface ChairsideSurgeryHubModalProps {
 	readonly initialMembrane?: string;
 	readonly initialSuture?: string;
 	readonly initialTeeth?: readonly number[];
-	readonly onSaveProtocol?: (data: any) => void;
+	readonly onSaveProtocol?: (data: ChairsideSurgerySavedProtocolData) => void;
 	readonly onInsertIntoDiary?: (diaryText: string) => void;
 	readonly className?: string;
 }
@@ -133,10 +141,13 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		if (appActiveDoctorName && appActiveDoctorName.trim()) {
 			return { id: propDoctorId || "DOC-ACTIVE", name: appActiveDoctorName.trim() };
 		}
-		if (appDashboard?.activeVisit?.doctorName?.trim()) {
+		const activeVisitCandidate = appDashboard?.activeVisit as Record<string, unknown> | null | undefined;
+		const visitDoctorName = typeof activeVisitCandidate?.doctorName === "string" ? activeVisitCandidate.doctorName.trim() : "";
+		if (visitDoctorName) {
+			const visitDoctorId = typeof activeVisitCandidate?.doctorId === "string" ? activeVisitCandidate.doctorId : propDoctorId || "DOC-VISIT";
 			return {
-				id: appDashboard.activeVisit.doctorId || propDoctorId || "DOC-VISIT",
-				name: appDashboard.activeVisit.doctorName.trim(),
+				id: visitDoctorId,
+				name: visitDoctorName,
 			};
 		}
 		return { id: propDoctorId || "DOC-SURG", name: "Врач-хирург" };
@@ -192,6 +203,73 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		void loadStock();
 		return () => { isCancelled = true; };
 	}, [isOpen]);
+
+	useEffect(() => {
+		if (!isOpen || typeof fetch !== "function") return;
+		const targetPatientId = effectivePatient.id;
+		if (!targetPatientId || targetPatientId === "PAT-BLANK" || targetPatientId === "PAT-CURRENT") return;
+		if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetPatientId)) return;
+
+		let isCancelled = false;
+		async function hydratePatientImplants() {
+			try {
+				const res = await fetch(`/api/clinical/implants/patient/${targetPatientId}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const body = await res.json();
+				if (isCancelled || !body?.success || !Array.isArray(body.installations) || body.installations.length === 0) return;
+
+				interface RawInstallation {
+					readonly toothNumberFdi?: number | null;
+					readonly implantBrand?: string | null;
+					readonly implantDiameterMm?: string | number | null;
+					readonly implantLengthMm?: string | number | null;
+					readonly finalInsertionTorqueNcm?: string | number | null;
+					readonly boneDensityClass?: string | null;
+					readonly lotNumber?: string | null;
+					readonly serialNumber?: string | null;
+					readonly catalogArticle?: string | null;
+				}
+
+				const installations = body.installations as readonly RawInstallation[];
+				const matched = installations.find((inst) => inst.toothNumberFdi === toothFdi) ?? installations[0];
+				if (!matched) return;
+
+				if (matched.implantBrand) {
+					const brandStr = String(matched.implantBrand).trim();
+					const matchedSystem = SURGERY_IMPLANT_SYSTEMS.find(
+						(s) => s.id.toLowerCase() === brandStr.toLowerCase() || s.brandName.toLowerCase() === brandStr.toLowerCase(),
+					);
+					if (matchedSystem) {
+						setSelectedBrand(matchedSystem.brandName);
+					}
+				}
+				if (matched.implantDiameterMm != null) {
+					const d = Number(matched.implantDiameterMm);
+					if (!Number.isNaN(d) && d > 0) setDiameterMm(d);
+				}
+				if (matched.implantLengthMm != null) {
+					const l = Number(matched.implantLengthMm);
+					if (!Number.isNaN(l) && l > 0) setLengthMm(l);
+				}
+				if (matched.finalInsertionTorqueNcm != null) {
+					const t = Number(matched.finalInsertionTorqueNcm);
+					if (!Number.isNaN(t) && t > 0) setTorqueNcm(t);
+				}
+				if (matched.boneDensityClass && ["D1", "D2", "D3", "D4"].includes(matched.boneDensityClass)) {
+					setBoneDensity(matched.boneDensityClass as MischBoneDensity);
+				}
+				if (matched.lotNumber) setLotNumber(String(matched.lotNumber));
+				if (matched.serialNumber) setSerialNumber(String(matched.serialNumber));
+				if (matched.catalogArticle) setCatalogArticle(String(matched.catalogArticle));
+			} catch {
+				/* Офлайн или первичный визит */
+			}
+		}
+		void hydratePatientImplants();
+		return () => { isCancelled = true; };
+	}, [isOpen, effectivePatient.id, toothFdi]);
 
 	const matchedStockItem = useMemo(() => {
 		const brandLower = selectedBrand.toLowerCase();
@@ -414,8 +492,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					showToast(saveError, "error");
 					return;
 				}
-			} catch (err: any) {
-				showToast(err?.message || "Ошибка связи с сервером при фиксации операции", "error");
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Ошибка связи с сервером при фиксации операции";
+				showToast(msg, "error");
 				return;
 			}
 		}

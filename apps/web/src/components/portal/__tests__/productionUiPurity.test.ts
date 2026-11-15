@@ -27,7 +27,7 @@ const SRC_DIR = path.resolve(__dirname, "../../..");
 const TARGET_FILES = {
 	publicBooking: path.join(SRC_DIR, "pages/PublicBookingPage.tsx"),
 	patientCabinet: path.join(SRC_DIR, "components/portal/patientCabinet/PatientCabinetModal.tsx"),
-	implantPassport: path.join(SRC_DIR, "components/implants/ImplantPassportModal.tsx"),
+	implantPassport: path.join(SRC_DIR, "components/surgery/ChairsideSurgeryHubModal.tsx"),
 	mdlpScanning: path.join(SRC_DIR, "components/mdlp/MdlpScanningModal.tsx"),
 	mdlpDisposalQueue: path.join(SRC_DIR, "components/inventory/mdlp/MdlpDisposalQueueModal.tsx"),
 } as const;
@@ -57,7 +57,7 @@ describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", ()
 		assert.ok(!content.includes('placeholder="7788"'), "Input placeholder must not reveal test code 7788");
 	});
 
-	it("3. ImplantPassportModal contains no 'Тест задержки накладной' interactive debug button", () => {
+	it("3. ChairsideSurgeryHubModal contains no 'Тест задержки накладной' interactive debug button", () => {
 		const content = fs.readFileSync(TARGET_FILES.implantPassport, "utf8");
 
 		assert.ok(!content.includes("Тест задержки накладной"), "Must not contain 'Тест задержки накладной'");

@@ -10,13 +10,14 @@ import {
 } from "./visitSurgeryActions";
 import { dispatchSurgicalServicesToInvoice } from "../../../surgery/surgeryCatalogData";
 import { showToast } from "../../../GlobalToast";
+import type { SurgicalServiceItem } from "@dental/shared";
 import type { useVisitSurgeryState } from "./useVisitSurgeryState";
 
 interface VisitSurgeryFooterActionsProps {
 	s: ReturnType<typeof useVisitSurgeryState>;
 	patientName: string;
 	doctorName: string;
-	onAddToInvoice?: ((services: any) => void) | undefined;
+	onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
 	onApplyToDiary?: ((text: string) => void) | undefined;
 }
 

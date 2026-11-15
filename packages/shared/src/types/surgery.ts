@@ -135,16 +135,17 @@ export type MischBoneDensity = "D1" | "D2" | "D3" | "D4" | "D5";
 export type ImplantCapKind = "fdm" | "plug";
 
 export interface FastImplantPassportData {
+	readonly passportId?: string | undefined;
 	readonly toothFdi: number;
 	readonly brand: string;
 	readonly model: string;
+	readonly catalogArticle?: string | undefined;
 	readonly diameterMm: number;
 	readonly lengthMm: number;
 	readonly torqueNcm: number;
 	readonly isqDay0?: number | undefined;
 	readonly boneDensity: MischBoneDensity;
-	readonly capType: ImplantCapKind;
-	readonly catalogArticle?: string | undefined;
+	readonly capType?: ImplantCapKind | undefined;
 	readonly lotNumber?: string | undefined;
 	readonly serialNumber?: string | undefined;
 	readonly dateIso?: string | undefined;
@@ -153,21 +154,38 @@ export interface FastImplantPassportData {
 	readonly doctorName?: string | undefined;
 	readonly doctorId?: string | undefined;
 	readonly isWarehouseOverdraft?: boolean | undefined;
+	readonly inventoryItemId?: string | undefined;
+	readonly expirationDate?: string | undefined;
+	readonly operationPriceRub?: number | undefined;
+	readonly implantCostRub?: number | undefined;
+	readonly consumablesCostRub?: number | undefined;
+	readonly doctorGrossMarginRub?: number | undefined;
+	readonly netDoctorIncomeRub?: number | undefined;
+	readonly operationPriceKopecks?: bigint | number | undefined;
+	readonly implantCostKopecks?: bigint | number | undefined;
+	readonly consumablesCostKopecks?: bigint | number | undefined;
+	readonly doctorGrossMarginKopecks?: bigint | number | undefined;
+	readonly netDoctorIncomeKopecks?: bigint | number | undefined;
+	readonly isImmediateLoadingFeasible?: boolean | undefined;
+	readonly osteointegrationExpectedDate?: string | undefined;
+	readonly boneGraftMaterial?: string | undefined;
+	readonly membraneUsed?: string | undefined;
+	readonly sutureMaterial?: string | undefined;
 	readonly notes?: string | undefined;
-	readonly passportId?: string | undefined;
 }
 
 export const fastImplantPassportDataSchema = z.object({
+	passportId: z.string().optional(),
 	toothFdi: z.number().int().min(11).max(48),
 	brand: z.string().min(1),
 	model: z.string().min(1),
+	catalogArticle: z.string().optional(),
 	diameterMm: z.number().positive(),
 	lengthMm: z.number().positive(),
 	torqueNcm: z.number().positive(),
 	isqDay0: z.number().int().positive().optional(),
 	boneDensity: z.enum(["D1", "D2", "D3", "D4", "D5"]),
-	capType: z.enum(["fdm", "plug"]),
-	catalogArticle: z.string().optional(),
+	capType: z.enum(["fdm", "plug"]).optional(),
 	lotNumber: z.string().optional(),
 	serialNumber: z.string().optional(),
 	dateIso: z.string().optional(),
@@ -176,8 +194,24 @@ export const fastImplantPassportDataSchema = z.object({
 	doctorName: z.string().optional(),
 	doctorId: z.string().optional(),
 	isWarehouseOverdraft: z.boolean().optional(),
+	inventoryItemId: z.string().optional(),
+	expirationDate: z.string().optional(),
+	operationPriceRub: z.number().optional(),
+	implantCostRub: z.number().optional(),
+	consumablesCostRub: z.number().optional(),
+	doctorGrossMarginRub: z.number().optional(),
+	netDoctorIncomeRub: z.number().optional(),
+	operationPriceKopecks: z.union([z.bigint(), z.number()]).optional(),
+	implantCostKopecks: z.union([z.bigint(), z.number()]).optional(),
+	consumablesCostKopecks: z.union([z.bigint(), z.number()]).optional(),
+	doctorGrossMarginKopecks: z.union([z.bigint(), z.number()]).optional(),
+	netDoctorIncomeKopecks: z.union([z.bigint(), z.number()]).optional(),
+	isImmediateLoadingFeasible: z.boolean().optional(),
+	osteointegrationExpectedDate: z.string().optional(),
+	boneGraftMaterial: z.string().optional(),
+	membraneUsed: z.string().optional(),
+	sutureMaterial: z.string().optional(),
 	notes: z.string().optional(),
-	passportId: z.string().optional(),
 });
 
 export interface StandardImplantationParams {

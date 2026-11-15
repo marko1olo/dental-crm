@@ -312,7 +312,8 @@ export const createDefaultPassportRecord = generateWarrantyPassportRecord;
  * Формирование клинического текста дневника приёма для медицинской карты.
  */
 export function buildImplantProtocolText(data: FastImplantPassportData): string {
-	const capLabel = CAP_TYPE_LABELS[data.capType] || "Формирователь десны (ФДМ)";
+	const capType: ImplantCapType = data.capType ?? "fdm";
+	const capLabel = CAP_TYPE_LABELS[capType] || "Формирователь десны (ФДМ)";
 	const boneLabel = MISCH_BONE_LABELS[data.boneDensity] || data.boneDensity;
 	const isqText = data.isqDay0 ? `. RFA стабильность ISQ: ${data.isqDay0}` : "";
 

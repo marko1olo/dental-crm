@@ -1,9 +1,10 @@
 import { Camera, Coins, FlaskConical } from "lucide-react";
 import type React from "react";
-import { DentalHandpiece, EndoFileCanal } from "../../icons/DentalIcons";
+import { DentalHandpiece, DentalImplant, EndoFileCanal } from "../../icons/DentalIcons";
 
 export interface ToothRadialFooterActionsProps {
 	readonly toothNumber?: number | undefined;
+	readonly currentState?: string | undefined;
 	readonly toothScanThumbnail?: { id: string; url: string; title: string } | null | undefined;
 	readonly onOpenRvg?: (() => void) | undefined;
 	readonly onOpenTherapy?: (() => void) | undefined;
@@ -15,6 +16,7 @@ export interface ToothRadialFooterActionsProps {
 
 export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> = ({
 	toothNumber,
+	currentState,
 	toothScanThumbnail,
 	onOpenRvg,
 	onOpenTherapy,
@@ -75,6 +77,31 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 				<FlaskConical size={13} className="shrink-0 text-[var(--ink-muted,#64748b)]" />
 				<span>Заказать в ЗТЛ</span>
 			</button>
+			{(currentState === "Implant" || currentState === "implant") && (
+				<button
+					type="button"
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente:open-surgery", {
+									detail: {
+										scenario: "implant",
+										toothFdi: toothNumber || 46,
+										tab: "passport",
+									},
+								}),
+							);
+						}
+						onClose();
+					}}
+					className="dente-btn dente-btn-secondary flex-1 min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-semibold text-[var(--teal,#0d9488)] bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.12))] border border-[var(--teal,#0d9488)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+					data-testid="radial-menu-footer-surgery-passport-btn"
+					title={`Паспорт имплантата #${toothNumber || 46} / Хирургия`}
+				>
+					<DentalImplant size={13} className="shrink-0 text-[var(--teal,#0d9488)]" />
+					<span>Паспорт имплантата</span>
+				</button>
+			)}
 			{onOpenTherapy && (
 				<button
 					type="button"

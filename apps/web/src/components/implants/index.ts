@@ -7,13 +7,7 @@
 export * from "./implantCatalogData";
 export * from "./implantQuickPresets";
 export * from "./ImplantPassportCard";
-export * from "./ImplantPassportModal";
-export * from "./ImplantProtocolTab";
-export * from "./passportModal";
-export * from "./ImplantEconomicsSection";
-export * from "./ImplantConsumablesSelector";
-export * from "./ImplantWarehouseSelector";
-export * from "./ImplantDiaryTab";
+export type { ImplantCapType } from "./implantCatalogData";
 
 import {
 	IMPLANT_BRANDS_METADATA,
@@ -34,13 +28,13 @@ export function getImplantPlatformById(brand: ImplantBrand, line?: string): Plat
 }
 
 export {
-	ImplantPassportModal as ImplantSurgicalPassportModal,
-	ImplantPassportModal as ImplantSurgeryProtocolModal,
-} from "./ImplantPassportModal";
-export type {
-	ImplantPassportModalProps as ImplantSurgeryProtocolModalProps,
-} from "./ImplantPassportModal";
-export { ImplantBatchSelector, type ImplantBatchSelectorProps } from "./ImplantWarehouseSelector";
+	ChairsideSurgeryHubModal as ImplantPassportModal,
+	ChairsideSurgeryHubModal as ImplantSurgicalPassportModal,
+	ChairsideSurgeryHubModal as ImplantSurgeryProtocolModal,
+	type ChairsideSurgeryHubModalProps as ImplantPassportModalProps,
+	type ChairsideSurgeryHubModalProps as ImplantSurgeryProtocolModalProps,
+} from "../surgery/ChairsideSurgeryHubModal";
+
 export type {
 	FastImplantPassportData as ImplantSurgicalPassportData,
 } from "./implantQuickPresets";

@@ -102,6 +102,7 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 			<ToothRadialResorptionBar isPrimary={isPrimary} iropz={iropz} currentState={currentState} onSelectState={onSelectState} onClose={onClose} />
 			<ToothRadialFooterActions
 				toothNumber={toothNumber}
+				currentState={currentState}
 				toothScanThumbnail={toothScanThumbnail}
 				onOpenRvg={onOpenRvg}
 				onOpenTherapy={onOpenTherapy}

@@ -33,8 +33,8 @@ describe("Implant Passport Defaults & Anatomical Norms", () => {
 		assert.equal(record.toothFdi, 46);
 		assert.equal(record.brand, "Osstem");
 		assert.equal(record.torqueNcm, 35);
-		assert.ok(record.lotNumber.includes("LOT-"));
-		assert.ok(record.serialNumber.includes("SN-"));
+		assert.ok(record.lotNumber?.includes("LOT-"));
+		assert.ok(record.serialNumber?.includes("SN-"));
 		assert.equal(record.patientName, "Сидоров А. В.");
 	});
 

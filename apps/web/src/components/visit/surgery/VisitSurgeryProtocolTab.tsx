@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import "../../surgery/surgery.css";
 import { SURGICAL_OPERATION_NORMS, COMMON_SURGERY_TEETH } from "../../surgery/surgeryCatalogData";
 import { ImplantPassportCard } from "../../implants/ImplantPassportCard";
-import { generateWarrantyPassportRecord } from "@dental/shared";
-import type { FastImplantPassportData } from "../../implants/implantQuickPresets";
+import { generateWarrantyPassportRecord, type SurgicalServiceItem } from "@dental/shared";
+import type { FastImplantPassportData } from "@dental/shared";
 import { X, FileText, Plus } from "lucide-react";
 import { useVisitSurgeryState } from "./modules/useVisitSurgeryState";
 import { VisitSurgeryHeader } from "./modules/VisitSurgeryHeader";
@@ -17,7 +17,7 @@ import { showToast } from "../../GlobalToast";
 export interface VisitSurgeryProtocolTabProps {
 	patientId?: string; patientName?: string; doctorId?: string; doctorName?: string;
 	activeTooth?: number | null; onSelectActiveTooth?: (tooth: number | null) => void;
-	onApplyToDiary?: ((text: string) => void) | undefined; onAddToInvoice?: ((service: unknown) => void) | undefined; className?: string | undefined;
+	onApplyToDiary?: ((text: string) => void) | undefined; onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined; className?: string | undefined;
 }
 
 export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = ({
@@ -136,12 +136,14 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 								<button
 									type="button"
 									onClick={() => {
-										onAddToInvoice?.({
-											code: "A16.07.054",
-											name: `Операция установки дентального имплантата ${passportData.brand} Ø${passportData.diameterMm}x${passportData.lengthMm}мм (Зуб #${passportData.toothFdi})`,
-											priceRub: 45000,
-											quantity: 1,
-										});
+										onAddToInvoice?.([
+											{
+												code: "A16.07.054",
+												name: `Операция установки дентального имплантата ${passportData.brand} Ø${passportData.diameterMm}x${passportData.lengthMm}мм (Зуб #${passportData.toothFdi})`,
+												priceRub: 45000,
+												quantity: 1,
+											},
+										]);
 										showToast(`Услуга имплантации #${passportData.toothFdi} добавлена в смету`, "success");
 									}}
 									className="px-3 py-2 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation transition-all"

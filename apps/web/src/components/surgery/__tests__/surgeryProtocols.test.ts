@@ -41,8 +41,8 @@ describe("Surgeon Autonomy & Clinical Operation Protocols (Mandates 8e, 8n, 8x)"
 		assert.equal(passport.torqueNcm, 35, "Default torque must be integer 35 N·cm");
 		assert.equal(Number.isInteger(passport.torqueNcm), true, "Torque must be an integer");
 		assert.equal(passport.capType, "fdm");
-		assert.ok(passport.lotNumber.length > 0);
-		assert.ok(passport.serialNumber.length > 0);
+		assert.ok((passport.lotNumber?.length ?? 0) > 0);
+		assert.ok((passport.serialNumber?.length ?? 0) > 0);
 	});
 
 	it("3. Clean clinical language of surgical protocols: SOAP diary without Soviet order numbers", () => {
@@ -81,8 +81,8 @@ describe("Surgeon Autonomy & Clinical Operation Protocols (Mandates 8e, 8n, 8x)"
 
 		assert.ok(passport.osteointegrationExpectedDate, "дата остеоинтеграции должна быть заполнена");
 		assert.ok(passport.expirationDate, "срок действия паспорта должен быть заполнен");
-		assert.ok(passport.catalogArticle.length > 0);
-		assert.ok(passport.passportId.startsWith("IMP-PASSPORT-36-"));
+		assert.ok((passport.catalogArticle?.length ?? 0) > 0);
+		assert.ok(passport.passportId?.startsWith("IMP-PASSPORT-36-"));
 
 		// Fast implant presets must all define canonical 35 N·cm torque
 		for (const preset of FAST_IMPLANT_SYSTEM_PRESETS) {

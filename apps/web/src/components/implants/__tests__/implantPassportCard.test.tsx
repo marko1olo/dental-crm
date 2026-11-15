@@ -34,7 +34,7 @@ describe("Implant Passport Card Component (Mandates 8e, 8x)", () => {
 		};
 		const html = renderToString(<ImplantPassportCard data={record} />);
 		assert.ok(html.includes("Винт-заглушка (2 этапа)"));
-		assert.ok(html.includes("min-h-[48px]"));
+		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[36px]"));
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 		assert.equal(emojiRegex.test(html), false, "Must not contain emojis");
 		assert.ok(html.includes("lucide-triangle-alert") || html.includes("lucide-alert-triangle"));

@@ -8,6 +8,24 @@ import {
 	type SurgicalOperationNorm,
 } from "../../../surgery/surgeryCatalogData";
 import { useVisitStore } from "../../../../store/visitStore";
+import type { useVisitSurgeryState } from "./useVisitSurgeryState";
+
+export interface PrintProtocolParams {
+	readonly patientName: string;
+	readonly doctorName: string;
+	readonly currentNorm: SurgicalOperationNorm;
+	readonly effectiveTooth: number;
+	readonly protocolText: string;
+	readonly implantDetails?: {
+		readonly implantBrand: string;
+		readonly diameterMm: number;
+		readonly lengthMm: number;
+		readonly torqueNcm: number;
+		readonly isq: number;
+		readonly capType: "fdm" | "plug";
+		readonly sutureMaterial: string;
+	} | undefined;
+}
 
 export function executeApplyToVisitDiary(protocolText: string, onApplyToDiary?: (text: string) => void) {
 	try {
@@ -23,22 +41,7 @@ export function executeApplyToVisitDiary(protocolText: string, onApplyToDiary?: 
 	showToast("Хирургический протокол внесён в медицинскую карту", "success");
 }
 
-export function executePrintProtocol(params: {
-	patientName: string;
-	doctorName: string;
-	currentNorm: SurgicalOperationNorm;
-	effectiveTooth: number;
-	protocolText: string;
-	implantDetails?: {
-		implantBrand: string;
-		diameterMm: number;
-		lengthMm: number;
-		torqueNcm: number;
-		isq: number;
-		capType: "fdm" | "plug";
-		sutureMaterial: string;
-	};
-}) {
+export function executePrintProtocol(params: PrintProtocolParams) {
 	printSurgicalOperationProtocol({
 		patient: { fullName: params.patientName },
 		doctorFullName: params.doctorName,
@@ -54,12 +57,12 @@ export function executePrintProtocol(params: {
 }
 
 export function executePrintProtocolTab(
-	first: any,
+	first: PrintProtocolParams | ReturnType<typeof useVisitSurgeryState>,
 	second?: string,
 	third?: string,
 ) {
 	if (first && typeof first === "object" && "currentNorm" in first && "protocolText" in first && !("patientName" in first)) {
-		const s = first;
+		const s = first as ReturnType<typeof useVisitSurgeryState>;
 		return executePrintProtocol({
 			patientName: second || "Пациент",
 			doctorName: third || "Врач-хирург",
@@ -77,7 +80,7 @@ export function executePrintProtocolTab(
 			} : undefined,
 		});
 	}
-	return executePrintProtocol(first);
+	return executePrintProtocol(first as PrintProtocolParams);
 }
 
 export function executePrintIds(patientName: string, doctorName: string, normTitle: string, effectiveTooth: number) {
