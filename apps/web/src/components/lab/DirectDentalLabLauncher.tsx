@@ -79,5 +79,5 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	);
 };
 
-export const DirectLabLauncher = DirectDentalLabLauncher; export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;
+export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;
 export default DirectDentalLabLauncher;

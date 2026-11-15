@@ -16,16 +16,16 @@ export function OrthopedicsChairsideLabOrderBanner({
 	return (
 		<div
 			data-testid="ortho-chairside-linked-lab-order-banner"
-			className="mb-2.5 p-2.5 sm:p-3 rounded-xl border border-teal-500/30 bg-teal-50/50 dark:bg-teal-950/20 flex flex-wrap items-center justify-between gap-2.5"
+			className="mb-2.5 p-2.5 sm:p-3 rounded-xl border border-[var(--teal-soft,rgba(13,148,136,0.25))] bg-[var(--teal-soft,rgba(13,148,136,0.06))] flex flex-wrap items-center justify-between gap-2.5"
 		>
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex items-center gap-2 flex-wrap">
-					<CheckCircle2 size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<CheckCircle2 size={16} className="text-[var(--primary,#0d9488)] shrink-0" />
 					<span data-testid="ortho-chairside-readiness-headline" className="text-xs font-bold text-[var(--ink)]">
 						{readinessHeadline}
 					</span>
-					<span className="px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[10px] font-mono font-bold">
-						A16.07.004
+					<span className="px-1.5 py-0.5 rounded bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--primary,#0d9488))] border border-[var(--primary,#0d9488)]/20 text-[10px] font-bold">
+						Примерка / фиксация
 					</span>
 				</div>
 				<div
@@ -52,10 +52,10 @@ export function OrthopedicsChairsideLabOrderBanner({
 						type="button"
 						data-testid="banner-orthopedic-passport-btn"
 						onClick={onOpenPassportA4}
-						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold inline-flex items-center gap-1.5 shrink-0"
+						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold inline-flex items-center gap-1.5 shrink-0 focus:outline-none"
 						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
 					>
-						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileText size={14} className="text-[var(--primary,#0d9488)] shrink-0" />
 						<span>Паспорт (А4)</span>
 					</button>
 				)}
@@ -63,23 +63,23 @@ export function OrthopedicsChairsideLabOrderBanner({
 					type="button"
 					data-testid="ortho-chairside-confirm-fitting-btn"
 					onClick={onConfirmFitting}
-					className={`min-h-[44px] sm:min-h-[34px] px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+					className={`min-h-[44px] sm:min-h-[34px] px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none ${
 						fittingConfirmed
-							? "bg-emerald-600 text-white shadow-xs"
-							: "bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
+							? "bg-[var(--success,#10b981)] text-white shadow-xs"
+							: "bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] text-white shadow-xs"
 					}`}
 				>
 					<Check size={15} />
 					<span>
 						{fittingConfirmed ? (
 							<>
-								<span className="hidden sm:inline">Примерка и фиксация подтверждены (A16.07.004)</span>
-								<span className="sm:hidden">Фиксация (A16.07.004)</span>
+								<span className="hidden sm:inline">Примерка и фиксация подтверждены</span>
+								<span className="sm:hidden">Фиксация</span>
 							</>
 						) : (
 							<>
-								<span className="hidden sm:inline">Подтвердить примерку / фиксацию (A16.07.004)</span>
-								<span className="sm:hidden">Фиксация (A16.07.004)</span>
+								<span className="hidden sm:inline">Подтвердить примерку / фиксацию</span>
+								<span className="sm:hidden">Примерка / фиксация</span>
 							</>
 						)}
 					</span>

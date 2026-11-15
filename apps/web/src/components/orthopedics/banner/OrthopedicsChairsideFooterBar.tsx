@@ -39,7 +39,7 @@ export function OrthopedicsChairsideFooterBar({
 						onChange={(e) => onChangeOverrideReason(e.target.value)}
 						placeholder="Причина оверрайда"
 						aria-label="Причина клинического оверрайда"
-						className="min-h-[44px] sm:min-h-[34px] flex-1 px-2.5 text-xs rounded-lg border border-emerald-500/40 bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden"
+						className="min-h-[44px] sm:min-h-[34px] flex-1 px-2.5 text-xs rounded-lg border border-[var(--primary,#0d9488)]/40 bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-none"
 					/>
 				)}
 			</div>
@@ -48,21 +48,21 @@ export function OrthopedicsChairsideFooterBar({
 				<button
 					type="button"
 					onClick={onToggleWarrantyRework}
-					className={`min-h-[44px] sm:min-h-[34px] px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border ${
-						isWarrantyRework ? "bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-700 dark:text-rose-300 ring-1 ring-rose-400 shadow-2xs" : "secondary-button"
+					className={`min-h-[44px] sm:min-h-[34px] px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border focus:outline-none ${
+						isWarrantyRework ? "bg-[var(--danger-soft,rgba(239,68,68,0.1))] border-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)] ring-1 ring-[var(--danger,#ef4444)] shadow-2xs" : "secondary-button"
 					}`}
 					data-testid="chairside-warranty-rework-toggle"
 					title="Повторное изготовление по гарантии: пациент 0 ₽"
 				>
-					<RotateCcw size={14} className={isWarrantyRework ? "text-rose-600 dark:text-rose-400" : "text-[var(--muted)]"} />
+					<RotateCcw size={14} className={isWarrantyRework ? "text-[var(--danger,#ef4444)]" : "text-[var(--muted)]"} />
 					<span>{isWarrantyRework ? "Гарантия: 0 ₽ с пациента" : "Гарантийная замена (0 ₽)"}</span>
 				</button>
 				{isWarrantyRework && (
-					<div className="flex items-center rounded-lg border border-rose-300 dark:border-rose-800 overflow-hidden text-xs">
-						<button type="button" onClick={() => onSelectWarrantyLiability("clinic_warranty")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors ${warrantyLiabilityType === "clinic_warranty" ? "dente-btn-secondary border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-300" : "dente-btn-secondary"}`} data-testid="chairside-liability-clinic">
+					<div className="flex items-center rounded-lg border border-[var(--danger,#ef4444)]/30 overflow-hidden text-xs">
+						<button type="button" onClick={() => onSelectWarrantyLiability("clinic_warranty")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors focus:outline-none ${warrantyLiabilityType === "clinic_warranty" ? "dente-btn-secondary border-[var(--danger,#ef4444)]/50 bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)]" : "dente-btn-secondary"}`} data-testid="chairside-liability-clinic">
 							Гарантия клиники
 						</button>
-						<button type="button" onClick={() => onSelectWarrantyLiability("lab_defect")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors border-l border-rose-300 dark:border-rose-800 ${warrantyLiabilityType === "lab_defect" ? "dente-btn-secondary border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-300" : "dente-btn-secondary"}`} data-testid="chairside-liability-lab">
+						<button type="button" onClick={() => onSelectWarrantyLiability("lab_defect")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors border-l border-[var(--danger,#ef4444)]/30 focus:outline-none ${warrantyLiabilityType === "lab_defect" ? "dente-btn-secondary border-[var(--danger,#ef4444)]/50 bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)]" : "dente-btn-secondary"}`} data-testid="chairside-liability-lab">
 							Брак ЗТЛ (0 ₽)
 						</button>
 					</div>
@@ -71,7 +71,7 @@ export function OrthopedicsChairsideFooterBar({
 
 			<div className="flex items-center gap-1.5 flex-wrap">
 				{labOrderSentNumber && (
-					<span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 inline-flex items-center gap-1">
+					<span className="text-[11px] font-mono text-[var(--success,#10b981)] font-bold px-2 py-0.5 rounded bg-[var(--success-soft,rgba(16,185,129,0.1))] border border-[var(--success,#10b981)]/30 inline-flex items-center gap-1">
 						<CheckCircle2 size={12} className="shrink-0" />
 						<span>Отправлен {labOrderSentNumber}</span>
 					</span>
@@ -80,18 +80,18 @@ export function OrthopedicsChairsideFooterBar({
 					<button
 						type="button"
 						onClick={onOpenPassportA4}
-						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold flex items-center gap-1.5 focus:outline-none"
 						data-testid="open-orthopedic-passport-btn"
 						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
 					>
-						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<FileText size={14} className="text-[var(--primary,#0d9488)] shrink-0" />
 						<span>Паспорт (А4)</span>
 					</button>
 				)}
 				<button
 					type="button"
 					onClick={onImmediateSendToLab}
-					className="primary-button min-h-[44px] sm:min-h-[34px] px-4 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+					className="primary-button min-h-[44px] sm:min-h-[34px] px-4 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer focus:outline-none"
 					data-testid="direct-send-lab-order-btn"
 					title="Отправить заказ-наряд в зуботехническую лабораторию"
 				>
@@ -102,7 +102,7 @@ export function OrthopedicsChairsideFooterBar({
 					<button
 						type="button"
 						onClick={onOpenLabOrder}
-						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold text-teal-700 dark:text-teal-300 flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold text-[var(--primary,#0d9488)] flex items-center gap-1.5 focus:outline-none"
 						data-testid="open-lab-order-constructor-btn"
 						title="Открыть конструктор заказ-нарядов"
 					>

@@ -220,7 +220,7 @@ export function mapRawApiOrderToWorkflowOrder(
 		fittingDate: raw.fittingDateIso || raw.fittingDate || null,
 		appointmentId: raw.appointmentId || undefined,
 		isInstalledOrCompleted: isCompleted,
-		orderNumber: raw.orderNumber || raw.order_number || `ЗТЛ-${1000 + idx}`,
+		orderNumber: String(raw.orderNumber || raw.order_number || `ЗТЛ-${1000 + idx}`),
 		patientName: (raw.patientName || raw.patient_name || defaultPatientName) ?? undefined,
 		doctorName: (raw.doctorName || raw.doctor_name || defaultDoctorName) ?? undefined,
 		labName: (raw.labName || raw.lab_name) ?? undefined,
@@ -230,7 +230,7 @@ export function mapRawApiOrderToWorkflowOrder(
 
 	return {
 		id: raw.id || `live-ztl-${idx}`,
-		orderNumber: raw.orderNumber || raw.order_number || `ЗТЛ-${1000 + idx}`,
+		orderNumber: String(raw.orderNumber || raw.order_number || `ЗТЛ-${1000 + idx}`),
 		patientId: raw.patientId || raw.patient_id || defaultPatientId || "pat",
 		patientName: raw.patientName || raw.patient_name || defaultPatientName || "Пациент",
 		doctorId: raw.doctorId || raw.doctor_id || "doc",

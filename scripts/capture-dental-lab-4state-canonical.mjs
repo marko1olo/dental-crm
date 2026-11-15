@@ -24,28 +24,28 @@ async function captureAllStates() {
 			width: 1440,
 			height: 900,
 			theme: "light",
-			aliases: ["01_lab_orders_pc_light_1440x900.png", "dental_lab_studio_pc_light.png", "01_dental_lab_orders_pc_light_1440x900.png"],
+			aliases: ["01_lab_orders_pc_light_1440x900.png", "dental_lab_studio_pc_light.png", "01_dental_lab_orders_pc_light_1440x900.png", "01_dental_lab_kanban_pc_light_1440x900.png"],
 		},
 		{
 			id: "02_dental_lab_studio_pc_dark_1440x900.png",
 			width: 1440,
 			height: 900,
 			theme: "dark",
-			aliases: ["02_lab_orders_pc_dark_1440x900.png", "dental_lab_studio_pc_dark.png", "02_dental_lab_orders_pc_dark_1440x900.png"],
+			aliases: ["02_lab_orders_pc_dark_1440x900.png", "dental_lab_studio_pc_dark.png", "02_dental_lab_orders_pc_dark_1440x900.png", "02_dental_lab_kanban_pc_dark_1440x900.png"],
 		},
 		{
 			id: "03_dental_lab_studio_mobile_light_390x844.png",
 			width: 390,
 			height: 844,
 			theme: "light",
-			aliases: ["03_lab_orders_mobile_light_390x844.png", "dental_lab_studio_mobile_light.png", "03_dental_lab_orders_mobile_light_390x844.png"],
+			aliases: ["03_lab_orders_mobile_light_390x844.png", "dental_lab_studio_mobile_light.png", "03_dental_lab_orders_mobile_light_390x844.png", "03_dental_lab_kanban_mobile_light_390x844.png"],
 		},
 		{
 			id: "04_dental_lab_studio_mobile_dark_390x844.png",
 			width: 390,
 			height: 844,
 			theme: "dark",
-			aliases: ["04_lab_orders_mobile_dark_390x844.png", "dental_lab_studio_mobile_dark.png", "04_dental_lab_orders_mobile_dark_390x844.png"],
+			aliases: ["04_lab_orders_mobile_dark_390x844.png", "dental_lab_studio_mobile_dark.png", "04_dental_lab_orders_mobile_dark_390x844.png", "04_dental_lab_kanban_mobile_dark_390x844.png"],
 		},
 	];
 

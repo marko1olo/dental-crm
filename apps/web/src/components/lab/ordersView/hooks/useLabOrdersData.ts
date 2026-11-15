@@ -33,7 +33,7 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 			try {
 				res = await fetch("/api/lab/orders", {
 					headers: denteAdminSecretRequestHeaders(),
-					signal: controller?.signal,
+					...(controller ? { signal: controller.signal } : {}),
 				});
 			} finally {
 				if (timeoutId) clearTimeout(timeoutId);

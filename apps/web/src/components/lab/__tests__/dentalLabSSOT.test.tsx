@@ -194,11 +194,11 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			assert.ok(content.includes("export const DentalLabOrderDrawer = DentalLabStudioModal;"));
 		});
 
-		it("3.3. DirectDentalLabLauncher directly exports DirectLabLauncher and DirectDentalLabOrderLauncher", () => {
+		it("3.3. DirectDentalLabLauncher exports DirectDentalLabOrderLauncher and eliminates dead alias DirectLabLauncher", () => {
 			const launcherFile = path.resolve(labDir, "DirectDentalLabLauncher.tsx");
 			assert.ok(fs.existsSync(launcherFile));
 			const content = fs.readFileSync(launcherFile, "utf-8");
-			assert.ok(content.includes("export const DirectLabLauncher = DirectDentalLabLauncher;"));
+			assert.ok(!content.includes("export const DirectLabLauncher"), "Must eliminate obsolete DirectLabLauncher alias");
 			assert.ok(content.includes("export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;"));
 		});
 

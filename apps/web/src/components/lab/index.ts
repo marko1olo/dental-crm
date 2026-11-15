@@ -64,7 +64,6 @@ export {
 export {
 	DirectDentalLabLauncher,
 	DirectDentalLabOrderLauncher,
-	DirectLabLauncher,
 } from "./DirectDentalLabLauncher";
 
 // SSOT 2: Clinical Kanban Board (5 Canonical Lifecycle Stages) & Cards

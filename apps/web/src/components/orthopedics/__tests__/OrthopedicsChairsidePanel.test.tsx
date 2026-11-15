@@ -50,9 +50,9 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 		assert.ok(html.includes("ЗТЛ-402"));
 		assert.ok(html.includes("Смирнов А.В."));
 		assert.ok(html.includes("ГП-ЗТЛ-402"));
-		assert.ok(html.includes("A16.07.004"));
+		assert.ok(html.includes("Примерка / фиксация"));
 		assert.ok(html.includes('data-testid="ortho-chairside-confirm-fitting-btn"'));
-		assert.ok(html.includes("Подтвердить примерку / фиксацию (A16.07.004)"));
+		assert.ok(html.includes("Подтвердить примерку / фиксацию"));
 	});
 
 	it("renders all canonical orthopedic protocols with 1-click action buttons", () => {

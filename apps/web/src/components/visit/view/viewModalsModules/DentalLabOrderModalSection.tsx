@@ -13,20 +13,87 @@ import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visitStore";
 import { showToast } from "../../../GlobalToast";
 
+export interface LabSectionPatient {
+	readonly id?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly medCardNumber?: string | undefined;
+	readonly cardNumber?: string | undefined;
+}
+
+export interface LabSectionDoctor {
+	readonly id?: string | undefined;
+	readonly userId?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+}
+
+export interface LabSectionAppointment {
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly startTime?: string | undefined;
+	readonly startAt?: string | undefined;
+	readonly date?: string | undefined;
+}
+
+export interface LabSectionCatalogService {
+	readonly code804n?: string | undefined;
+	readonly order804nCode?: string | undefined;
+	readonly code?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly price?: number | undefined;
+}
+
+export interface LabSectionDashboard {
+	readonly activeVisit?: {
+		readonly patientId?: string | undefined;
+	} | undefined;
+	readonly services?: readonly LabSectionCatalogService[] | undefined;
+	readonly pricelist?: readonly LabSectionCatalogService[] | undefined;
+	readonly catalogServices?: readonly LabSectionCatalogService[] | undefined;
+}
+
+export interface SavedLabOrderNotification {
+	readonly id?: string | undefined;
+	readonly orderNumber?: string | number | undefined;
+	readonly selectedTeeth?: readonly number[] | number[] | undefined;
+	readonly toothFdi?: string | number | null | undefined;
+	readonly teeth?: readonly number[] | undefined;
+	readonly material?: string | null | undefined;
+	readonly materialId?: string | null | undefined;
+	readonly colorVita?: string | null | undefined;
+	readonly patientPriceKopecks?: number | undefined;
+	readonly priceRub?: number | undefined;
+	readonly labCostKopecks?: number | undefined;
+	readonly doctorDeductionRub?: number | undefined;
+	readonly constructionType?: string | undefined;
+	readonly includeImpressionBilling?: boolean | undefined;
+	readonly impressionType?: string | null | undefined;
+	readonly impressionPriceRub?: number | undefined;
+	readonly impressionPriceKopecks?: number | undefined;
+	readonly treatmentPlanId?: string | null | undefined;
+	readonly stageNumber?: number | null | undefined;
+	readonly stageTitle?: string | null | undefined;
+	readonly stageId?: string | null | undefined;
+}
+
 export interface DentalLabOrderModalSectionProps {
 	isOpen: boolean;
 	onClose: () => void;
-	activePatient: any;
-	activeDoctor: any;
-	activeAppointment: any;
-	dashboard: any;
+	activePatient: LabSectionPatient | null | undefined;
+	activeDoctor: LabSectionDoctor | null | undefined;
+	activeAppointment: LabSectionAppointment | null | undefined;
+	dashboard: LabSectionDashboard | null | undefined;
 	effectiveTreatmentPlanId?: string | undefined;
 	effectiveStageId?: string | undefined;
 	effectiveStageNumber?: number | undefined;
 	effectiveStageTitle?: string | undefined;
 	labOrderModalToothNumber: string | number | null;
 	setLabOrderModalToothNumber: (v: string | number | null) => void;
-	setToothState: (code: string, state: any) => void;
+	setToothState: (code: string, state: string) => void;
 	appendToEMKField: (field: string, text: string) => void;
 }
 
@@ -111,11 +178,13 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 				activePatient?.cardNumber ||
 				undefined
 			}
-			onOrderSaved={(order) => {
+			onOrderSaved={(rawOrder) => {
+				const order = rawOrder as SavedLabOrderNotification | undefined;
 				if (!order) return;
+				let impressionPriceRub = 2500;
 				const targetTeeth =
 					Array.isArray(order.selectedTeeth) && order.selectedTeeth.length > 0
-						? order.selectedTeeth
+						? (order.selectedTeeth as number[])
 						: order.toothFdi
 							? String(order.toothFdi)
 									.split(/[\s,;-]+/)
@@ -222,7 +291,7 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 						}
 						const servicesList = dashboard?.services || dashboard?.pricelist || dashboard?.catalogServices;
 						if (Array.isArray(servicesList)) {
-							const found = servicesList.find((s: any) => s.code804n === "A02.07.010" || s.order804nCode === "A02.07.010" || s.code === "A02.07.010");
+							const found = servicesList.find((s: LabSectionCatalogService) => s.code804n === "A02.07.010" || s.order804nCode === "A02.07.010" || s.code === "A02.07.010");
 							if (found && typeof found.priceRub === "number" && found.priceRub > 0) {
 								return found.priceRub;
 							}
@@ -232,7 +301,7 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 						}
 						return 2500;
 					})();
-					const impressionPriceRub = catalogImpressionPrice;
+					impressionPriceRub = catalogImpressionPrice;
 
 					useVisitStore.getState().addCompletedService({
 						serviceId: `lab-order-impression-${order.id || Date.now()}`,
