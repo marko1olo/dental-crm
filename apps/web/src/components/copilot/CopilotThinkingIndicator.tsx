@@ -97,9 +97,9 @@ export function CopilotThinkingIndicator({
 			</button>
 
 			<div className="px-2.5 py-1 border-t border-[var(--line)]/40 bg-[var(--paper)]/60 flex items-center gap-1.5 text-[10px]">
-				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "thinking" ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "text-emerald-600 dark:text-emerald-400 font-semibold"}`}>{phaseType !== "thinking" ? <Check size={10} className="stroke-[2.5]" /> : <Brain size={10} />}<span>Размышление</span></span>
+				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "thinking" ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "text-[var(--teal,#0d9488)] font-semibold"}`}>{phaseType !== "thinking" ? <Check size={10} className="stroke-[2.5]" /> : <Brain size={10} />}<span>Размышление</span></span>
 				<span className="text-[var(--muted)]">›</span>
-				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "tool_call" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-emerald-600 dark:text-emerald-400 font-semibold"}`}><Wrench size={10} /><span>Инструменты</span></span>
+				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "tool_call" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-[var(--teal,#0d9488)] font-semibold"}`}><Wrench size={10} /><span>Инструменты</span></span>
 				<span className="text-[var(--muted)]">›</span>
 				<span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${phaseType === "synthesis" ? "bg-[var(--teal,#0d9488)] text-white font-bold animate-pulse" : "text-[var(--muted)]"}`}><Sparkles size={10} /><span>Синтез</span></span>
 				<span className="ml-auto font-mono text-[9px] text-[var(--muted)] flex items-center gap-1"><Terminal size={9} /><span>{durationText}</span></span>
@@ -107,13 +107,13 @@ export function CopilotThinkingIndicator({
 
 			<div className="px-2.5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px] border-t border-[var(--line)]/30">
 				{activeTooth ? (
-					<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--teal,#0d9488)] font-medium whitespace-nowrap flex items-center gap-1">
 						<Check size={9} className="stroke-[2.5]" />
 						<span>{`FDI ${activeTooth}`}</span>
 					</span>
 				) : null}
 				{icd10Code ? (
-					<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--teal,#0d9488)] font-medium whitespace-nowrap flex items-center gap-1">
 						<Check size={9} className="stroke-[2.5]" />
 						<span>{`МКБ-10 ${icd10Code}`}</span>
 					</span>

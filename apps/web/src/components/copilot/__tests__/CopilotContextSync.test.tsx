@@ -21,12 +21,12 @@ describe('CopilotContextSync Header Formatting & Parsing', () => {
       view: 'Odontogram',
       patientId: 'uuid-test-1234',
       activeTooth: 36,
-      activeDoctor: 'Dr. Иванов',
+      activeDoctor: 'Dr. Смирнов',
     });
 
     assert.equal(
       header,
-      "[UI Context: View='Odontogram', PatientId='uuid-test-1234', ActiveTooth=36, ActiveDoctor='Dr. Иванов']"
+      "[UI Context: View='Odontogram', PatientId='uuid-test-1234', ActiveTooth=36, ActiveDoctor='Dr. Смирнов']"
     );
   });
 
@@ -53,14 +53,14 @@ describe('CopilotContextSync Header Formatting & Parsing', () => {
   });
 
   it('correctly parses UI context header and separates clean text', () => {
-    const rawTurn = "[UI Context: View='Odontogram', PatientId='patient-uuid-42', ActiveTooth=36, ActiveDoctor='Dr. Иванов']\nУдали этот зуб";
+    const rawTurn = "[UI Context: View='Odontogram', PatientId='patient-uuid-42', ActiveTooth=36, ActiveDoctor='Dr. Смирнов']\nУдали этот зуб";
     const parsed = parseCopilotUiContextHeader(rawTurn);
 
     assert.ok(parsed.context !== null);
     assert.equal(parsed.context.view, 'Odontogram');
     assert.equal(parsed.context.patientId, 'patient-uuid-42');
     assert.equal(parsed.context.activeTooth, 36);
-    assert.equal(parsed.context.activeDoctor, 'Dr. Иванов');
+    assert.equal(parsed.context.activeDoctor, 'Dr. Смирнов');
     assert.equal(parsed.cleanText, 'Удали этот зуб');
   });
 
@@ -69,15 +69,15 @@ describe('CopilotContextSync Header Formatting & Parsing', () => {
       view: 'Odontogram',
       patientId: 'pat-999',
       activeTooth: 36,
-      activeDoctor: 'Dr. Иванов',
+      activeDoctor: 'Dr. Смирнов',
     });
 
-    assert.ok(enriched.includes("[UI Context: View='Odontogram', PatientId='pat-999', ActiveTooth=36, ActiveDoctor='Dr. Иванов']"));
+    assert.ok(enriched.includes("[UI Context: View='Odontogram', PatientId='pat-999', ActiveTooth=36, ActiveDoctor='Dr. Смирнов']"));
     assert.ok(enriched.includes('Удали этот зуб'));
   });
 
   it('is idempotent and does not double-wrap an already enriched message', () => {
-    const msg = "[UI Context: View='Odontogram', PatientId='pat-999', ActiveTooth=36, ActiveDoctor='Dr. Иванов']\nУдали этот зуб";
+    const msg = "[UI Context: View='Odontogram', PatientId='pat-999', ActiveTooth=36, ActiveDoctor='Dr. Смирнов']\nУдали этот зуб";
     const enriched = enrichMessageWithUiContext(msg);
     assert.equal(enriched, msg);
   });
@@ -105,7 +105,7 @@ describe('Copilot UI Two-Way Context Integration', () => {
     useAppStore.setState({
       currentView: 'visit',
       activeTooth: 36,
-      activeDoctorName: 'Dr. Иванов',
+      activeDoctorName: 'Dr. Смирнов',
       activePatientId: 'pat-uuid-888',
     });
 
@@ -125,7 +125,7 @@ describe('Copilot UI Two-Way Context Integration', () => {
   });
 
   it('renders CopilotMessage for user with context badge and clean message body', () => {
-    const rawMsg = "[UI Context: View='Odontogram', PatientId='uuid-123', ActiveTooth=36, ActiveDoctor='Dr. Иванов']\nУдали этот зуб";
+    const rawMsg = "[UI Context: View='Odontogram', PatientId='uuid-123', ActiveTooth=36, ActiveDoctor='Dr. Смирнов']\nУдали этот зуб";
     const html = renderToString(
       <CopilotMessage
         message={{

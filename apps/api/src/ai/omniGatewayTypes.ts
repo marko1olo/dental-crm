@@ -109,6 +109,7 @@ export interface ClinicAiSettings {
 export interface ChatOptions {
 	readonly system?: string | undefined;
 	readonly modelId?: string | undefined;
+	readonly model?: string | undefined;
 	readonly maxTokens?: number | undefined;
 	readonly temperature?: number | undefined;
 	readonly responseFormat?: { type: "text" | "json_object" } | undefined;
@@ -116,5 +117,6 @@ export interface ChatOptions {
 	readonly timeoutMs?: number | undefined;
 	readonly apiKey?: string | undefined;
 	readonly baseUrl?: string | undefined;
+	readonly signal?: AbortSignal | undefined;
 }
 

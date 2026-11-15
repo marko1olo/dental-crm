@@ -148,21 +148,6 @@ export const CopilotStudioActionsTab: React.FC<CopilotStudioActionsTabProps> = (
                 icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />,
                 fn: () => void executeApiTool("search_workstation_files", { query: "dicom", category: "xray_study" }),
               },
-              {
-                title: "Патчинг файла на ПК",
-                badge: "Файлы и дифф",
-                desc: "Точечное обновление протокола на ПК врача через инструмент replace_file_content.",
-                btn: "Применить патч файла",
-                icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />,
-                fn: () => {
-                  const targetProtocolFile = patientId ? `clinical_protocol_${patientId.slice(0, 8)}.txt` : (activeTooth ? `protocol_tooth_${activeTooth}.txt` : "clinical_protocol_draft.txt");
-                  void executeApiTool("replace_file_content", {
-                    targetFile: targetProtocolFile,
-                    targetContent: "Диагноз: первичный осмотр",
-                    replacementContent: activeTooth ? `Диагноз: Зуб ${activeTooth} K02.1 кариес дентина` : "Диагноз: Санация полости рта, норма СтАР",
-                  });
-                },
-              },
             ] : []),
           ].map((item, idx) => (
             <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">

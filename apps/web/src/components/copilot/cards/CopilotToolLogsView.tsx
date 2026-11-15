@@ -35,9 +35,9 @@ export const CopilotToolLogsView: React.FC<CopilotToolLogsViewProps> = ({
 			case "clinical":
 				return <Wrench size={13} className="text-[var(--teal,#0d9488)]" />;
 			case "workstation":
-				return <HardDrive size={13} className="text-blue-500" />;
+				return <HardDrive size={13} className="text-[var(--teal,#0d9488)]" />;
 			case "financial":
-				return <Receipt size={13} className="text-amber-500" />;
+				return <Receipt size={13} className="text-[var(--ink)]" />;
 			default:
 				return <Activity size={13} className="text-[var(--muted)]" />;
 		}
@@ -47,20 +47,20 @@ export const CopilotToolLogsView: React.FC<CopilotToolLogsViewProps> = ({
 		switch (status) {
 			case "success":
 				return (
-					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
 						<Check size={9} className="stroke-[3]" />
 						<span>Успех</span>
 					</span>
 				);
 			case "running":
 				return (
-					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 animate-pulse">
+					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 animate-pulse">
 						<span>Выполняется</span>
 					</span>
 				);
 			case "pending":
 				return (
-					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border border-[var(--line)]">
 						<Clock size={9} />
 						<span>Ожидание</span>
 					</span>
@@ -68,7 +68,7 @@ export const CopilotToolLogsView: React.FC<CopilotToolLogsViewProps> = ({
 			case "rejected":
 			default:
 				return (
-					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+					<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] border border-[var(--danger,#ef4444)]/30">
 						<XCircle size={9} />
 						<span>Отклонено</span>
 					</span>
@@ -152,7 +152,7 @@ export const CopilotToolLogsView: React.FC<CopilotToolLogsViewProps> = ({
 											<button
 												type="button"
 												onClick={() => onViewDiff(log)}
-												className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer bg-transparent"
+												className="inline-flex items-center gap-1 text-[var(--teal,#0d9488)] font-semibold hover:underline cursor-pointer bg-transparent"
 											>
 												<FileText size={10} />
 												<span>Дифф</span>

@@ -88,9 +88,9 @@ export interface ChairsideCopilotHUDProps {
   readonly onApplyToothState?: ((toothNumber: number, state: string, surfaces?: string[]) => void) | undefined;
   readonly onUpdateToothStatus?: ((toothNumber: number, status: string, surfaces?: string[]) => void) | undefined;
   readonly onApplyServices?: ((services: ChairsideServiceProposal[]) => void) | undefined;
-  readonly onAddBillingItem?: ((item: ChairsideServiceProposal | ChairsideServiceProposal[] | any) => void) | undefined;
+  readonly onAddBillingItem?: ((item: ChairsideServiceProposal | ChairsideServiceProposal[] | Record<string, unknown>) => void) | undefined;
   readonly onApplySoapNotes?: ((notes: Record<string, string>) => void) | undefined;
-  readonly onApplySoapDiary?: ((diary: any) => void) | undefined;
+  readonly onApplySoapDiary?: ((diary: Record<string, string> | ChairsideSoapProposal) => void) | undefined;
   readonly onDisposeCarpule?: ((drugName: string, carpulesCount: number) => void) | undefined;
   readonly onPrintInformedConsent?: ((consentCode: string) => void) | undefined;
   readonly onApplyAll?: (() => void) | undefined;

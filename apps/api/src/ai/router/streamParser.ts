@@ -82,7 +82,7 @@ export async function readSseStream(
 	});
 
 	try {
-		while (true) {
+		outerLoop: while (true) {
 			const { done, value } = await reader.read();
 			if (done) break;
 			if (!value) continue;
@@ -98,7 +98,12 @@ export async function readSseStream(
 
 				const dataStr = line.slice(5).trim();
 				if (dataStr === "[DONE]") {
-					break;
+					try {
+						await reader.cancel();
+					} catch {
+						// Reader might already be closed or cancelled
+					}
+					break outerLoop;
 				}
 
 				let parsedChunk: SseChatChunk | null = null;

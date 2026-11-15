@@ -20,6 +20,7 @@ export interface ChairsideHUDProposalsProps {
   onApplyTooth: () => void;
   onApplyServices: () => void;
   onApplySoap: () => void;
+  onEditSoap?: (() => void) | undefined;
   onApplyAll?: (() => void) | undefined;
   onDisposeCarpule?: ((drug: string, count: number) => void) | undefined;
   onPrintInformedConsent?: ((code: string) => void) | undefined;
@@ -37,6 +38,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
   onApplyTooth,
   onApplyServices,
   onApplySoap,
+  onEditSoap,
   onApplyAll,
   onDisposeCarpule,
   onPrintInformedConsent,
@@ -160,7 +162,14 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
             <span className="font-semibold text-xs text-[var(--ink)] shrink-0">Дневник приёма (SOAP)</span>
             <div className="flex items-center justify-between sm:justify-end gap-2 min-w-0">
               <span className="text-xs text-[var(--info,#3b82f6)] font-medium truncate">{soapDiagnosisLabel}</span>
-              <button type="button" className="btn-edit-soap text-xs text-[var(--muted)] hover:underline bg-transparent border-0 p-0 cursor-pointer shrink-0">Редактировать</button>
+              <button
+                type="button"
+                onClick={onEditSoap}
+                className="btn-edit-soap text-xs text-[var(--muted)] hover:underline bg-transparent border-0 p-0 cursor-pointer shrink-0"
+                data-testid="chairside-btn-edit-soap"
+              >
+                Редактировать
+              </button>
             </div>
           </div>
           <div className="text-xs text-[var(--muted)] space-y-1 mb-2">

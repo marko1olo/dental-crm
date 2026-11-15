@@ -74,3 +74,40 @@ export type ConfirmHandler = (
 	modifiedArgs?: Record<string, unknown> | undefined,
 	reason?: string | undefined,
 ) => void;
+
+export interface CopilotActionProposal {
+	id: string;
+	toolName: string;
+	description: string;
+	payload: Record<string, unknown>;
+}
+
+export interface DesktopHostWindow extends Window {
+	electron?: unknown;
+	__TAURI__?: unknown;
+}
+
+export function parseActionProposal(val: unknown): CopilotActionProposal | undefined {
+	if (typeof val === "object" && val !== null && "id" in val && "toolName" in val) {
+		const rec = val as { id: unknown; toolName: unknown; description?: unknown; payload?: unknown };
+		return {
+			id: String(rec.id),
+			toolName: String(rec.toolName),
+			description: typeof rec.description === "string" ? rec.description : "",
+			payload: typeof rec.payload === "object" && rec.payload !== null ? (rec.payload as Record<string, unknown>) : {},
+		};
+	}
+	return undefined;
+}
+
+export function parseJsonResponse(raw: unknown): { ok?: boolean; error?: string } {
+	if (typeof raw === "object" && raw !== null) {
+		const r = raw as Record<string, unknown>;
+		return {
+			ok: typeof r.ok === "boolean" ? r.ok : undefined,
+			error: typeof r.error === "string" ? r.error : undefined,
+		};
+	}
+	return {};
+}
+

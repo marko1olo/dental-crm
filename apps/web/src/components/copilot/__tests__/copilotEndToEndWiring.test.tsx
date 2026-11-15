@@ -197,79 +197,47 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(html).not.toMatch(/btn-chairside-apply-all[^>]*disabled/);
   });
 
-  it("4. verifies POST request payload and headers to /api/v1/copilot/agent/execute contract", async () => {
+  it("4. verifies POST request payload and headers to canonical /api/agent/chat contract", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => ({
-        ok: true,
-        data: {
-          thought: "Пациент с глубоким кариесом 36. Проверена безопасность.",
-          steps: [
-            { step: 1, action: "DDI check", observation: "Без конфликтов" },
-            { step: 2, action: "ICD-10", observation: "K02.1 Кариес дентина" },
-          ],
-          actions: [
-            {
-              id: "act-tooth",
-              type: "apply_tooth_status",
-              label: "Обновить статус зуба 36",
-              params: { toothNumber: 36, state: "Caries" },
+        text: "Пациент с глубоким кариесом 36. Проведена обработка и постановка светокомпозитной пломбы.",
+        toolCalls: [
+          {
+            id: "call-1",
+            function: {
+              name: "update_tooth_status",
+              arguments: JSON.stringify({ toothNumber: 36, state: "Caries" }),
             },
-            {
-              id: "act-services",
-              type: "apply_treatment_estimate",
-              label: "Добавить услуги в план лечения",
-              params: {
-                services: [
-                  { serviceCode: "A16.07.002.010", code804n: "A16.07.002.010", title: "Препарирование полости", priceRub: 2500, toothNumber: 36 },
-                  { serviceCode: "A16.07.002.011", code804n: "A16.07.002.011", title: "Пломба светового отверждения", priceRub: 4500, toothNumber: 36 },
-                ],
-              },
-            },
-            {
-              id: "act-soap",
-              type: "apply_soap_diary",
-              label: "Заполнить дневник приёма",
-              params: {
-                soap: {
-                  complaint: "Кратковременные боли от сладкого в зубе 36",
-                  anamnesis: "Зуб лечен 3 года назад",
-                  objectiveStatus: "Глубокая кариозная полость на жевательной поверхности 36",
-                  diagnosis: "K02.1 Кариес дентина (зуб 36)",
-                  treatmentPlan: "Препарирование, медобработка, пломбирование светокомпозитом",
-                  recommendations: "Ограничение твердой пищи 2 часа",
-                },
-              },
-            },
-          ],
-          verdict: {
-            approved: true,
-            summary: "Лечение кариеса 36 соответствует клиническим рекомендациям СтАР.",
-            warnings: [],
           },
-          safetyAlerts: [
-            {
-              id: "alert-1",
-              severity: "warning",
-              title: "Аллергический статус",
-              message: "Аллергия на пенициллины",
+          {
+            id: "call-2",
+            function: {
+              name: "generate_clinical_protocol_entry",
+              arguments: JSON.stringify({
+                complaint: "Кратковременные боли от сладкого в зубе 36",
+                diagnosis: "K02.1 Кариес дентина (зуб 36)",
+              }),
             },
-          ],
-        },
+          },
+        ],
+        steps: [
+          { step: 1, action: "DDI check", observation: "Без конфликтов" },
+          { step: 2, action: "ICD-10", observation: "K02.1 Кариес дентина" },
+        ],
+        runtimeMode: "web_browser",
       }),
     });
 
     globalThis.fetch = fetchMock as any;
 
-    // Simulate direct execution request through agent endpoint
-    const patientId = "pat-uuid-101";
-    const visitId = "vis-uuid-202";
-    const chairId = "chair-1";
-    const toothNumber = 36;
+    // Simulate direct execution request through canonical agent endpoint
+    const patientId = "11111111-1111-4111-8111-111111111111";
+    const visitId = "22222222-2222-4222-8222-222222222222";
     const prompt = "Кариес 36 зуба, выполнена пломба Estelite";
 
-    const res = await fetch("/api/v1/copilot/agent/execute", {
+    const res = await fetch("/api/agent/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -277,28 +245,24 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         "x-dente-staff-token": "demo-staff-token",
       },
       body: JSON.stringify({
+        messages: [{ role: "user", content: prompt }],
         patientId,
-        visitId,
-        chairId,
-        toothNumber,
-        prompt,
-        allergies: ["Пенициллин"],
-        somaticHistory: "Гипертония",
-        mode: "chairside_copilot",
+        activeVisitId: visitId,
+        runtimeMode: "web_browser",
       }),
     });
 
     expect(res.ok).toBe(true);
     const data = await res.json();
-    expect(data.ok).toBe(true);
-    expect(data.data.actions).toHaveLength(3);
-    expect(data.data.verdict.approved).toBe(true);
-    expect(data.data.safetyAlerts[0].title).toBe("Аллергический статус");
+    expect(data.text).toContain("глубоким кариесом 36");
+    expect(data.toolCalls).toHaveLength(2);
+    expect(data.toolCalls[0].function.name).toBe("update_tooth_status");
+    expect(data.runtimeMode).toBe("web_browser");
 
     // Verify fetch arguments directly on mock.calls
     expect(fetchMock).toHaveBeenCalled();
     const [callUrl, callInit] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
-    expect(callUrl).toBe("/api/v1/copilot/agent/execute");
+    expect(callUrl).toBe("/api/agent/chat");
     expect(callInit.method).toBe("POST");
     expect(callInit.headers["x-dente-clinic-token"]).toBe("demo-clinic-token");
     expect(callInit.headers["x-dente-staff-token"]).toBe("demo-staff-token");

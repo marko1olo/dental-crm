@@ -31,7 +31,6 @@ export function matchPresetFallback(
 
   if (presetIdx === null) {
     return {
-      activePresetIndex: undefined,
       thoughts: [],
       verdict: "Команда не распознана. Назовите зуб и диагноз (например, '16 кариес'), процедуру ('профгигиена') или действие ('расписание на сегодня').",
       toothProposal: null,
@@ -51,17 +50,22 @@ export function matchPresetFallback(
   const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
   const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || (preset.toothNumber || null);
 
-  return {
-    activePresetIndex: presetIdx,
-    thoughts: (preset.thoughts || []).map((t): ChairsideThoughtStep => ({
+  const rawThoughts: readonly unknown[] = Array.isArray(preset.thoughts) ? preset.thoughts : [];
+  const parsedThoughts: ChairsideThoughtStep[] = rawThoughts
+    .filter((t): t is ChairsideThoughtStep => typeof t === "object" && t !== null && "id" in t && "title" in t)
+    .map((t) => ({
       id: String(t.id),
       stepNumber: Number(t.stepNumber),
       title: String(t.title),
-      status: t.status === "in_progress" ? "running" : (t.status as "pending" | "running" | "done" | "warning"),
+      status: t.status,
       ...(t.detail !== undefined ? { detail: t.detail } : {}),
       ...(t.durationMs !== undefined ? { durationMs: t.durationMs } : {}),
-    })),
-    verdict: (preset as any).verdict || "",
+    }));
+
+  return {
+    activePresetIndex: presetIdx,
+    thoughts: parsedThoughts,
+    verdict: "verdict" in preset && typeof preset.verdict === "string" ? preset.verdict : "",
     toothProposal: targetTooth ? {
       toothNumber: targetTooth,
       state: preset.toothState,
@@ -79,10 +83,10 @@ export function matchPresetFallback(
       applied: false,
       drugName: preset.anesthetic.drugName,
       carpulesCount: preset.anesthetic.carpulesCount,
-      patientWeightKg: (preset.anesthetic as any).patientWeightKg ?? 70,
-      maxCarpules: (preset.anesthetic as any).maxCarpules ?? 4,
-      epinephrineMcg: (preset.anesthetic as any).epinephrineMcg ?? 18,
-      isCardiovascularRisk: Boolean((preset.anesthetic as any).isCardiovascularRisk),
+      patientWeightKg: preset.anesthetic.patientWeightKg ?? 70,
+      maxCarpules: preset.anesthetic.maxCarpules ?? 4,
+      epinephrineMcg: preset.anesthetic.epinephrineMcg ?? 18,
+      isCardiovascularRisk: Boolean(preset.anesthetic.isCardiovascularRisk),
       ...(preset.anesthetic.notes ? { notes: preset.anesthetic.notes } : {}),
     } : null,
     consentProposal: preset.consent
@@ -94,7 +98,7 @@ export function matchPresetFallback(
       : null,
     safetyAlert: preset.safetyAlert && "id" in preset.safetyAlert ? {
       id: preset.safetyAlert.id,
-      severity: (preset.safetyAlert.severity === "danger" ? "critical" : preset.safetyAlert.severity) as "critical" | "warning" | "info",
+      severity: preset.safetyAlert.severity,
       title: preset.safetyAlert.title,
       description: preset.safetyAlert.description,
       acknowledged: false,

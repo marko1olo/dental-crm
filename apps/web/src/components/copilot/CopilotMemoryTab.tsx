@@ -10,12 +10,12 @@ import { useCopilotStore, type AiMemoryFact } from "../../store/copilotStore";
 import { showToast } from "../GlobalToast";
 
 const CATEGORY_LABELS: Record<AiMemoryFact["category"], { label: string; badgeClass: string }> = {
-	materials: { label: "Материалы", badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/25" },
-	anesthesia: { label: "Анестезия", badgeClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/25" },
-	protocols: { label: "Протоколы", badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25" },
-	diagnosis: { label: "Диагнозы", badgeClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/25" },
-	equipment: { label: "Оборудование", badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/25" },
-	custom: { label: "Общее", badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25" },
+	materials: { label: "Материалы", badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/25" },
+	anesthesia: { label: "Анестезия", badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/25" },
+	protocols: { label: "Протоколы", badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/25" },
+	diagnosis: { label: "Диагнозы", badgeClass: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]" },
+	equipment: { label: "Оборудование", badgeClass: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]" },
+	custom: { label: "Общее", badgeClass: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]" },
 };
 
 export const MEMORY_QUICK_PRESETS: Array<{ category: AiMemoryFact["category"]; cat: AiMemoryFact["category"]; text: string; label: string }> = [
@@ -126,7 +126,7 @@ export function CopilotMemoryTab() {
 								{!isEditing && (
 									<div className="flex items-center gap-1 shrink-0">
 										<button type="button" onClick={() => { setEditingId(item.id); setEditingText(item.fact); }} className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer" title="Редактировать предпочтение"><Edit3 size={13} /></button>
-										<button type="button" onClick={() => { removeMemoryFact(item.id); showToast("Предпочтение удалено из памяти", "info"); }} className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer" title="Удалить из памяти"><Trash2 size={13} /></button>
+										<button type="button" onClick={() => { removeMemoryFact(item.id); showToast("Предпочтение удалено из памяти", "info"); }} className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--muted)] hover:text-[var(--danger,#ef4444)] transition-colors cursor-pointer" title="Удалить из памяти"><Trash2 size={13} /></button>
 									</div>
 								)}
 							</div>
@@ -139,12 +139,12 @@ export function CopilotMemoryTab() {
 				<div className="pt-2 flex justify-end">
 					{isConfirmingClear ? (
 						<div className="flex items-center gap-2">
-							<span className="text-rose-600 font-semibold text-[11px]">Очистить всю клиническую память?</span>
+							<span className="text-[var(--danger,#ef4444)] font-semibold text-[11px]">Очистить всю клиническую память?</span>
 							<button type="button" onClick={() => setIsConfirmingClear(false)} className="px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[10px] cursor-pointer">Отмена</button>
-							<button type="button" onClick={() => { clearMemory(); setIsConfirmingClear(false); showToast("Память ассистента очищена", "info"); }} className="px-2 py-1 rounded bg-rose-500 text-white font-bold text-[10px] cursor-pointer">Да, очистить</button>
+							<button type="button" onClick={() => { clearMemory(); setIsConfirmingClear(false); showToast("Память ассистента очищена", "info"); }} className="px-2 py-1 rounded bg-[var(--danger,#ef4444)] text-white font-bold text-[10px] cursor-pointer">Да, очистить</button>
 						</div>
 					) : (
-						<button type="button" onClick={() => setIsConfirmingClear(true)} className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline cursor-pointer bg-transparent">Очистить всю память</button>
+						<button type="button" onClick={() => setIsConfirmingClear(true)} className="text-[11px] text-[var(--danger,#ef4444)] hover:underline cursor-pointer bg-transparent">Очистить всю память</button>
 					)}
 				</div>
 			)}

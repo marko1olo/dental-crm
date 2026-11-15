@@ -4,6 +4,7 @@ export * from "./patientEmkTool.js";
 export * from "./servicePriceListTool.js";
 export * from "./updateToothStatusTool.js";
 export * from "./createAppointmentTool.js";
+export * from "./getAvailableSlotsTool.js";
 export * from "./createInvoiceDraftTool.js";
 export * from "./patientSearchTool.js";
 export * from "./treatmentRecordTool.js";

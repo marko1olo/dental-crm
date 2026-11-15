@@ -63,6 +63,63 @@ interface MemoryMessage {
 const fallbackSessions = new Map<string, MemorySession>();
 const fallbackMessages = new Map<string, MemoryMessage[]>();
 
+export const MAX_FALLBACK_SESSIONS = 500;
+export const MAX_FALLBACK_MESSAGES_PER_SESSION = 100;
+export const FALLBACK_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export function cleanupExpiredFallbackSessions(currentTime?: number): number {
+	const now = currentTime ?? Date.now();
+	let evicted = 0;
+
+	for (const [id, session] of fallbackSessions.entries()) {
+		if (now - session.updatedAt.getTime() > FALLBACK_SESSION_TTL_MS) {
+			fallbackSessions.delete(id);
+			fallbackMessages.delete(id);
+			evicted++;
+		}
+	}
+
+	while (fallbackSessions.size >= MAX_FALLBACK_SESSIONS) {
+		const oldestId = fallbackSessions.keys().next().value;
+		if (oldestId !== undefined) {
+			fallbackSessions.delete(oldestId);
+			fallbackMessages.delete(oldestId);
+			evicted++;
+		} else {
+			break;
+		}
+	}
+
+	return evicted;
+}
+
+export function saveFallbackSession(session: MemorySession): void {
+	cleanupExpiredFallbackSessions();
+	fallbackSessions.delete(session.id);
+	fallbackSessions.set(session.id, session);
+}
+
+export function appendFallbackMessage(sessionId: string, message: MemoryMessage): void {
+	const existingList = fallbackMessages.get(sessionId) || [];
+	existingList.push(message);
+	while (existingList.length > MAX_FALLBACK_MESSAGES_PER_SESSION) {
+		existingList.shift();
+	}
+	fallbackMessages.set(sessionId, existingList);
+
+	const session = fallbackSessions.get(sessionId);
+	if (session) {
+		session.updatedAt = message.createdAt;
+		fallbackSessions.delete(sessionId);
+		fallbackSessions.set(sessionId, session);
+	}
+}
+
+export function clearFallbackSessionsForTesting(): void {
+	fallbackSessions.clear();
+	fallbackMessages.clear();
+}
+
 const createSessionBodySchema = z.object({
 	id: z.string().optional(),
 	patientId: z.string().uuid().nullable().optional(),
@@ -216,7 +273,7 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						createdAt: now,
 						updatedAt: now,
 					};
-					fallbackSessions.set(sessionId, memSession);
+					saveFallbackSession(memSession);
 
 					return reply.code(201).send({ ok: true, data: memSession, ...memSession });
 				}
@@ -292,6 +349,8 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					if (body.summary !== undefined) memSession.summary = body.summary;
 					if (body.patientId !== undefined) memSession.patientId = body.patientId;
 					memSession.updatedAt = new Date();
+					fallbackSessions.delete(id);
+					fallbackSessions.set(id, memSession);
 					return reply.code(200).send({ data: memSession, ...memSession });
 				}
 
@@ -421,13 +480,7 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						createdAt: now,
 					};
 
-					const existingList = fallbackMessages.get(id) || [];
-					existingList.push(memMsg);
-					fallbackMessages.set(id, existingList);
-
-					// Touch session
-					const session = fallbackSessions.get(id);
-					if (session) session.updatedAt = now;
+					appendFallbackMessage(id, memMsg);
 
 					return reply.code(201).send({ ok: true, data: memMsg, ...memMsg });
 				}

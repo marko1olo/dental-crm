@@ -38,11 +38,11 @@ export const ActionConfirmDiffBox: React.FC<ActionConfirmDiffBoxProps> = ({
 
       {/* Contiguous Two-Phase Diff Inspector: зеленые строки + и красные строки - */}
       <div className="copilot-contiguous-diff mt-2 p-2 rounded-lg bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line,rgba(15,118,110,0.15))] font-mono text-[11px] space-y-1">
-        <div className="diff-line diff-del flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded">
+        <div className="diff-line diff-del flex items-center gap-1.5 text-[var(--danger,#ef4444)] bg-[var(--danger-soft,rgba(239,68,68,0.1))] px-2 py-0.5 rounded">
           <span className="font-bold select-none">-</span>
           <span className="line-through opacity-85">{clinicalDiff.from}</span>
         </div>
-        <div className="diff-line diff-add flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-medium">
+        <div className="diff-line diff-add flex items-center gap-1.5 text-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] px-2 py-0.5 rounded font-medium">
           <span className="font-bold select-none">+</span>
           <span>{clinicalDiff.to}</span>
         </div>

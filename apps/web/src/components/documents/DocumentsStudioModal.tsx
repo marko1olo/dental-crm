@@ -254,18 +254,35 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	// Адаптация переданных платежей для расчета справок ФНС
 	const paymentServices: readonly DocumentServiceItem[] = useMemo(() => {
 		if (Array.isArray(payments) && payments.length > 0) {
-			return payments.map((pmt: any, idx: number) => {
-				const amtKopecks = typeof pmt.amountKopecks === "number"
-					? pmt.amountKopecks
-					: Math.round((Number(pmt.amountRub || pmt.amount || 0)) * 100);
-				return {
-					code: pmt.code804n || `PAY-${idx + 1}`,
-					title: pmt.serviceName || pmt.description || `Оплата медицинских услуг (чек №${pmt.receiptNumber || idx + 1})`,
-					quantity: 1,
-					priceKopecks: amtKopecks,
-					amountKopecks: amtKopecks,
-				};
-			});
+			return payments.map(
+				(
+					pmt: {
+						amountKopecks?: number | null;
+						amountRub?: number | string | null;
+						amount?: number | string | null;
+						code804n?: string | null;
+						serviceName?: string | null;
+						description?: string | null;
+						receiptNumber?: string | null;
+					},
+					idx: number,
+				) => {
+					const amtKopecks =
+						typeof pmt.amountKopecks === "number"
+							? pmt.amountKopecks
+							: Math.round(Number(pmt.amountRub || pmt.amount || 0) * 100);
+					return {
+						code: pmt.code804n || `PAY-${idx + 1}`,
+						title:
+							pmt.serviceName ||
+							pmt.description ||
+							`Оплата медицинских услуг (чек №${pmt.receiptNumber || idx + 1})`,
+						quantity: 1,
+						priceKopecks: amtKopecks,
+						amountKopecks: amtKopecks,
+					};
+				},
+			);
 		}
 		return [];
 	}, [payments]);

@@ -76,6 +76,7 @@ export interface SpeechEngineHealthReport {
 export const CRM_FASTIFY_TOOLS_REGISTRY = {
   updateToothStatus: "update_tooth_status",
   createAppointmentSlot: "create_appointment",
+  getAvailableSlots: "get_available_slots",
   generateSoapDiary: "generate_clinical_protocol_entry",
   calcInvoiceKopecks: "search_clinic_services_and_prices",
   createInvoiceDraft: "create_invoice_draft",
@@ -83,6 +84,8 @@ export const CRM_FASTIFY_TOOLS_REGISTRY = {
   printConsentBlank: "print_document",
   captureScreen: "capture_workstation_screen",
   scanHotfolder: "search_workstation_files",
+  calculateAnesthesia: "calculate_anesthesia",
+  launchWorkstationApp: "launch_workstation_app",
 } as const;
 
 /** Реестр быстрых клинических промптов (Мандат 8e & Voice-First) */
@@ -125,7 +128,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         prompt: "Зафиксируй инфильтрационную анестезию Артикаин 1.7 мл и списание карпулы",
         description: "Автоматический учет анестетика с контролем сердечно-сосудистого риска",
         category: "Клинический приём у кресла", icon: "ShieldAlert", mode: "both",
-        requiresConfirmation: false, targetTool: "crmPharmacologyTools.registerAnesthesia",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.calculateAnesthesia,
         shortVoiceTrigger: "анестезия артикаин",
       },
       {
@@ -133,7 +136,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         prompt: "Установи норму: соматически здоров, интактные зубы без патологий",
         description: "Заполнение физиологической нормы без излишней бюрократии",
         category: "Клинический приём у кресла", icon: "ShieldCheck", mode: "both",
-        requiresConfirmation: false, targetTool: "crmClinicalOdontogramTools.setPhysiologicalNorm",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
         shortVoiceTrigger: "интактная норма",
       },
     ],
@@ -197,7 +200,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         prompt: "Открой 3D исследование пациента в Planmeca Romexis",
         description: "Нативный запуск десктопного просмотрщика томограмм с карточкой пациента",
         category: "Рабочая станция ОС и снимки", icon: "ExternalLink", mode: "desktop_native",
-        requiresConfirmation: false, targetTool: "workstationTools.launchViewer",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.launchWorkstationApp,
         shortVoiceTrigger: "открой ромексис",
       },
       {
@@ -205,7 +208,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         prompt: "Проверь статус фискального регистратора и состояние рабочей смены",
         description: "Прямой контроль печати чеков и соединения с кассовым регистратором",
         category: "Рабочая станция ОС и снимки", icon: "Receipt", mode: "desktop_native",
-        requiresConfirmation: false, targetTool: "workstationTools.checkFiscalPrinter",
+        requiresConfirmation: false,
         shortVoiceTrigger: "статус кассы",
       },
     ],
@@ -221,7 +224,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         prompt: "Покажи все свободные слоты у терапевта на сегодня",
         description: "Мгновенный обзор доступных окон для экстренной или плановой записи",
         category: "Расписание и запись", icon: "Clock", mode: "both",
-        requiresConfirmation: false, targetTool: "crmScheduleTools.getAvailableSlots",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.getAvailableSlots,
         shortVoiceTrigger: "свободные окна",
       },
       {
@@ -272,15 +275,24 @@ export function findCatalogItemById(id: string): CopilotCatalogItem | undefined 
   }
   return undefined;
 }
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: unknown;
+  webkitSpeechRecognition?: unknown;
+}
+
+interface HealthPayloadStructure {
+  health?: Record<string, { consecutiveFailures?: number; cooldownUntil?: number }>;
+}
+
+function isHealthPayloadStructure(payload: unknown): payload is HealthPayloadStructure {
+  return typeof payload === "object" && payload !== null && "health" in payload;
+}
+
 /** Честная проверка статуса голосовых и ИИ-движков (Zero Fake) */
 export function inspectSpeechEngineHealth(healthPayload?: Record<string, unknown>): SpeechEngineHealthReport {
-  const hasBrowserSpeech = typeof window !== "undefined" && Boolean(
-    (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
-    (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition
-  );
-  const healthObj = (healthPayload && typeof healthPayload === "object" && "health" in healthPayload)
-    ? (healthPayload as { health?: Record<string, { consecutiveFailures?: number; cooldownUntil?: number }> }).health
-    : null;
+  const speechWin = typeof window !== "undefined" ? (window as SpeechRecognitionWindow) : undefined;
+  const hasBrowserSpeech = Boolean(speechWin?.SpeechRecognition || speechWin?.webkitSpeechRecognition);
+  const healthObj = isHealthPayloadStructure(healthPayload) ? healthPayload.health : null;
 
   let hasCloudOperational = false;
   let activeProvider = "Web Speech API (Browser)";

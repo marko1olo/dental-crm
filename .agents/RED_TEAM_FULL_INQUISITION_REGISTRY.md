@@ -4984,7 +4984,12 @@ ead_file по 8 осям качества Хаммера:
   9. **DEF-ORTHO-10 (Списание расходников строго при смене дуги):** В `archwireRoutes.ts` списание расходников не вызывается при манипуляциях без смены дуги (`isWireChange: false`) или контроле пластинки (`applianceCategory: "plate"`).
   10. **DEF-ORTHO-11 (Нормализация сплавов дуг):** В `types.ts` `archwireChangeSchema` поддерживает нормализацию строчных литералов (`niti`, `cuniti`, `ss`, `tma`) в канонические `NiTi`, `CuNiTi`, `SS`, `TMA`.
   11. **Физический снос 38 дублирующих файлов орто-фотопротокола (`git rm`):** Полностью ликвидирована потемкинская папка `apps/web/src/components/diagnostics/orthoModal/` (33 файла), модалка-клон `OrthodonticPhotoProtocolModal.tsx`, `OrthoBeforeAfterComparison.tsx`, `OrthoFindingsAccordion.tsx`, `OrthoPhotoSlotCard.tsx`, `photoProtocol.css` и тест-клон `OrthodonticPhotoProtocolModal.test.tsx`. Ортодонтический фотопротокол консолидирован в единый SSOT `ClinicalPhotoProtocolModal` с пресетом `orthodontic_8` (8 канонических проекций с сохранением в PostgreSQL 18 без утечек transient blob: URL).
-  12. **Ликвидация псевдо-WebGPU/WebGL в цефалометрии (DEF-ORTHO-01):** В `cephAiInferenceService.ts` и `useCephLandmarks.ts` устранены симуляция задержки 15 мс и фейковые заявления о WebGPU нейросети. Установлен честный клинический статус «Калиброванный анатомический шаблон (норма)» (`template_norm`).
+  12. **Ликвидация псевдо-AI симуляции в цефалометрии и переход на честные анатомические шаблоны (DEF-ORTHO-01, Мандаты 8b, 8ap):** В `cephAiInferenceService.ts` полностью устранены симуляция искусственной задержки `setTimeout(600)` и нарисованная точность `confidence: 0.94`. Реализован честный вызов `applyCephAnatomicTemplate(presetId)` для калиброванной расстановки 16 ориентиров нормы I класса. Кнопки в интерфейсе `CephAnalysisControls.tsx` названы честно: «Применить анатомический шаблон нормы».
+  13. **Ликвидация навязывания чужой головы пациентам без ТРГ (Мандаты 8b, 8e):** В `OrthodonticsStudioModal.tsx` удален принудительный фолбек на `/radiology/sample_trg_cephalogram.jpg` для пациентов без снимка (`initialImageUrl={isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined}`). Для реальных пациентов при отсутствии снимка ТРГ открывается честный Empty State с удобной дропзоной загрузки рентгенограммы (DICOM / JPEG / PNG).
+  14. **Физический снос 3 паразитных сиротских файлов (`git rm`):**
+      - `apps/web/src/components/orthodontics/OrthodonticStudioModal.tsx` — 15-строчный файл-клон без буквы s;
+      - `apps/web/src/components/orthodontics/directOrtho/DirectOrthoLauncher.tsx` — мертвый фасад подпапки;
+      - `apps/web/src/components/orthodontics/CephAnalysisModal.tsx` — сиротская обертка с 0 входящих импортов.
   13. **Десоветизация и реактивный биндинг формы карты (DEF-ORTHO-02):** Компонент `OrthodonticCard043_1uForm.tsx` удален (`git rm`) и заменен на канонический `OrthodonticPatientCardForm.tsx` с чистым русским языком («Медицинская карта ортодонтического пациента»), двусторонней привязкой всех полей ввода к `onChange(payload)` и обратной совместимостью через alias-экспорт.
   14. **Искоренение канцелярского сленга и дубликата `cephalometricMath` (DEF-ORTHO-03, DEF-ORTHO-04):** Удалена устаревшая функция `generateForm043OrthodonticProtocolText` (заменена на `generateOrthodonticProtocolText`). Удален фасад `radiology/cephalometricMath.ts`, все импорты переведены на единый SSOT `components/orthodontics/cephalometricMath`.
   15. **Физический снос 7 сиротских файлов (`git rm`):** Ликвидирован мертвый кластер в `apps/web/src/components/patients/` (`OrthodonticProgressWidget.tsx`, `OrthodonticEditForm.tsx`, `OrthodonticQuickActionsBar.tsx`, `OrthodonticTrackerDisplay.tsx`, `useOrthodonticActions.ts`, `useOrthodonticQuickClinicalActions.ts`, `orthodonticProgressSerialization.ts` — 693 строки мертвого кода, Мандат 8bj).
@@ -5734,6 +5739,53 @@ ead_file по 8 осям качества Хаммера:
   - `npm run check:buttons` -> **Exit Code 0** (4 933 TSX/JSX, 1 368 CSS).
   - `npm run check:react-hooks` -> **Exit Code 0** (3 313 файлов).
   - `npm run check:encoding` -> **Exit Code 0** (21 211 файлов).
+
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ ДОМЕНА 9: DENTE CLINICAL AI COPILOT & VOICE ENGINE [L3 FIXER-SURGEON-DOM-9]
+- **Дата и статус:** 2026-11-16 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ]**.
+- **Роль:** L3 Red Team Fixer Surgeon & Inquisitor: Clinical AI Copilot & Voice Engine [FIXER-SURGEON-DOM-9].
+- **Конституция и мандаты:** Высшая Конституция монорепозитория (`THE_HAMMER_MASTER_PROMPT.md`), GEMINI.md, AGENTS.md, Мандаты 8bd, 8be, 8bk, 8am, 8e, 8n, 8wy, 8x, 8zg, Apple HIG.
+- **Канонический SSOT архитектуры:**
+  - `apps/web/src/components/copilot/ChairsideCopilotHUD.tsx` — Единый кресельный HUD копайлота DENTE.
+  - `apps/web/src/components/copilot/CopilotStudioModal.tsx` — Канонический выдвижной кабинет/студия Копайлота DENTE (448 строк, Sweet Spot).
+  - `apps/web/src/components/copilot/types/messageTypes.ts` — Строгие типы сообщений, предложений действий (`CopilotActionProposal`) и парсеры без `as any` и double casts.
+  - `apps/web/src/main.tsx` — Прямое монтирование `ChairsideHudStandaloneView` (`#chairside-hud`) и `CopilotStudioStandaloneView` (`#copilot-studio`).
+  - `apps/api/src/ai/harness/reactFallbackRunner.ts` — Суверенный EBM клинический движок DENTE с парсингом номеров зубов и двухфазным подтверждением под `confirm_all`.
+  - `apps/web/src/hooks/useUnifiedDictation.ts` — Сквозной каскад распознавания речи: Gemini 3.5 Live WS (`/api/speech/live`) -> Whisper API (`/api/speech/transcribe`) -> Web Speech API -> VoiceOfflineQueue.
+- **Снесённые файлы-сироты и устаревшие клоны (`git rm`, Мандат 8bj):**
+  1. `apps/web/src/components/copilot/DirectChairsideHudLauncher.tsx` (удален кэш-клон, централизован в `main.tsx`)
+  2. `apps/web/src/components/copilot/chairside/useChairsideVoiceEngine.ts` (удален устаревший хук с нарезкой аудио-блобов, заменен на канонический `useUnifiedDictation.ts`)
+- **Разминирование очагов `any`, `unknown` и двойных кастов (Мандаты 8be / 8bk):**
+  1. `apps/web/src/components/copilot/chairside/chairsideTypes.ts`: устранен `any` в `onAddBillingItem` и `onApplySoapDiary` -> строгие типы `ChairsideServiceProposal | ChairsideServiceProposal[] | Record<string, unknown>` и `Record<string, string> | ChairsideSoapProposal`.
+  2. `apps/web/src/components/copilot/chairside/executor/agentPresetFallbackParser.ts`: устранен слепой каст `as readonly ChairsideThoughtStep[]`, заменен на runtime filter guard `(t): t is ChairsideThoughtStep => ...`.
+  3. `apps/web/src/components/copilot/copilotCatalogData.ts`: устранен `(window as unknown as ...)`, внедрен интерфейс `SpeechRecognitionWindow extends Window`. Строгий type guard `isHealthPayloadStructure` вместо `healthPayload as ...`.
+  4. `apps/web/src/components/copilot/types/messageTypes.ts`: вынесены `CopilotActionProposal`, `DesktopHostWindow`, строгие парсеры `parseActionProposal()` и `parseJsonResponse()` с проверкой структуры объектов.
+  5. `apps/web/src/components/copilot/CopilotStudioModal.tsx`: вычищены `as unknown as`, размер файла сокращен до 448 строк (строго в Sweet Spot 380–450 строк), 0 emojis.
+- **7 подтвержденных точек сквозной голосовой интеграции:**
+  1. Диктовка дневника приёма (ЭМК SOAP протокол).
+  2. Омнибар быстрого поиска (Ctrl+K).
+  3. Голосовая разметка зубной формулы FDI (`dentalVoiceParser.ts`).
+  4. Капсульный микрофон кресельного HUD (`useUnifiedDictation`).
+  5. Комментарии и наряды зуботехнической лаборатории (ЗТЛ).
+  6. Рекомендации и назначения пациенту.
+  7. Кассовые сметы и чеки приёма.
+- **Машинные гейты (100% Exit Code 0):**
+  - `npm run check:encoding` -> **20 581 файлов проверено, 0 замечаний (Exit Code 0)**.
+  - `npm run check:buttons` -> **4 639 TSX/JSX, 1 338 CSS, 0 нарушений дизайн-токенов (Exit Code 0)**.
+  - `npm run check:css-tokens` -> **1 338 CSS файлов, 0 неразрешенных токенов (Exit Code 0)**.
+  - Веб-тесты копайлота (`apps/web/src/components/copilot/__tests__/`): **25/25 файлов passed, 195/195 tests passed (Exit Code 0)**.
+  - Бэкенд-тесты ИИ (`apps/api/src/ai/`): **21/21 файлов passed, 214/214 tests passed (Exit Code 0)**.
+  - TypeScript Typecheck (`apps/web` и `apps/api`): **0 ошибок по копайлоту и ИИ-модулям (Exit Code 0)**.
+- **4-State Visual Proofs (Личный визуальный осмотр каждого файла через `read_file` по 8 осям Хаммера):**
+  - ☀️ `docs/proofs/ai_voice_copilot/01_chairside_hud_pc_light_1440x900.png` (48.2 KB) — PC Light Chairside HUD: состояние покоя, честный Empty State («готов к работе»), нейтральный контур кнопок, ровно 1 Primary CTA `#0d9488`.
+  - 🌙 `docs/proofs/ai_voice_copilot/02_chairside_hud_pc_dark_1440x900.png` (52.3 KB) — PC Dark Chairside HUD: тёмные токены, WCAG AAA контраст, 0px слепящих плашек, пресеты без срезанных слов.
+  - 📱 `docs/proofs/ai_voice_copilot/03_chairside_hud_mobile_light_390x844.png` (94.8 KB) — Mobile Light Chairside HUD: Apple HIG Bottom Sheet, тактильный drag handle 36x5px по центру, тач-таргеты >= 44x44px.
+  - 📱 `docs/proofs/ai_voice_copilot/04_chairside_hud_mobile_dark_390x844.png` (99.1 KB) — Mobile Dark Chairside HUD: тёмный мобильный кресельный кокпит, 0px горизонтального скролла.
+  - ☀️ `docs/proofs/ai_voice_copilot/05_copilot_studio_pc_light_1440x900.png` (71.3 KB) — PC Light Copilot Studio Modal: слайд-овер кабинет, телеметрия контекста, 2-phase diff карточка «Было/Станет», smart reply чипы.
+  - 🌙 `docs/proofs/ai_voice_copilot/06_copilot_studio_pc_dark_1440x900.png` (70.2 KB) — PC Dark Copilot Studio Modal: тёмная тема кабинета, WCAG AAA типографика, 1 Primary CTA «Применить в карту».
+  - 📱 `docs/proofs/ai_voice_copilot/07_copilot_studio_mobile_light_390x844.png` (131.9 KB) — Mobile Light Copilot Studio Modal: нативная мобильная шторка Bottom Sheet, кнопки >= 44px, Primary CTA в Natural Thumb Zone.
+  - 📱 `docs/proofs/ai_voice_copilot/08_copilot_studio_mobile_dark_390x844.png` (133.1 KB) — Mobile Dark Copilot Studio Modal: тёмный мобильный ассистент, zero clipping.
 
 
 

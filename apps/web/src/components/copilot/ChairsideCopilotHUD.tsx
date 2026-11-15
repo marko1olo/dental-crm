@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import { AlertCircle } from "lucide-react";
 import { CLINICAL_PRESETS, type ClinicalPreset, defaultPreset } from "./chairside/chairsidePresets";
 import { mapToCanonicalToothState } from "./chairside/canonicalToothStateMapper";
-import { useChairsideVoiceEngine } from "./chairside/useChairsideVoiceEngine";
+import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { ChairsideHUDProposals } from "./chairside/ChairsideHUDProposals";
 import { ChairsideHUDCapsule } from "./chairside/ChairsideHUDCapsule";
 import { ChairsideThoughtStream } from "./chairside/ChairsideThoughtStream";
@@ -14,7 +14,7 @@ import type {
   ChairsideServiceProposal, ChairsideSoapProposal, ChairsideAnestheticProposal,
   ChairsideConsentProposal, ChairsideSafetyAlert,
 } from "./chairside/chairsideTypes";
-import type { DentalVoiceIntent } from "../../services/voice";
+import { type DentalVoiceIntent, parseDentalVoiceSpeech } from "../../services/voice";
 import { executeCopilotAgentRequest } from "./chairside/chairsideAgentExecutor";
 import { useCopilotStore } from "../../store/copilotStore";
 import "./ChairsideCopilotHUD.css";
@@ -246,17 +246,33 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     [activeTooth, props.patientId, patientAllergies]
   );
 
-  const { isListening, handleToggleVoice } = useChairsideVoiceEngine({
-    onTranscriptFinal: useCallback(
-      (text: string) => {
-        if (text) {
-          setPromptInput(text);
-          void handleExecutePrompt(text);
-        }
-      },
-      [handleExecutePrompt]
-    ),
-    onIntentParsed: handleIntentParsed,
+  const handleVoiceFinalText = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      setPromptInput(trimmed);
+      const intent = parseDentalVoiceSpeech(trimmed);
+      if (intent) handleIntentParsed(intent);
+      void handleExecutePrompt(trimmed);
+    },
+    [handleExecutePrompt, handleIntentParsed]
+  );
+
+  const handleVoiceInterimText = useCallback(
+    (interim: string) => {
+      const trimmed = interim.trim();
+      if (!trimmed) return;
+      const intent = parseDentalVoiceSpeech(trimmed);
+      if (intent) handleIntentParsed(intent);
+    },
+    [handleIntentParsed]
+  );
+
+  const { isRecording: isListening, toggleDictation: handleToggleVoice } = useUnifiedDictation({
+    context: "visit",
+    patientId: props.patientId,
+    onResult: handleVoiceFinalText,
+    onInterim: handleVoiceInterimText,
   });
 
   const handleApplyTooth = useCallback(() => {
@@ -471,7 +487,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
                 onClick={() => handleSelectPreset(0)}
                 className={`chairside-hud-preset-chip shrink-0 whitespace-nowrap btn-preset-caries-16 ${activePresetIndex === 0 ? "chairside-hud-preset-chip--active" : ""}`}
               >
-                Кариес 16 (пломба + анестезия)
+                {activeTooth ? `Кариес ${activeTooth} (пломба + анестезия)` : "Кариес 16 (пломба + анестезия)"}
               </button>
               <button
                 type="button"
@@ -503,6 +519,9 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               onApplyTooth={handleApplyTooth}
               onApplyServices={handleApplyServices}
               onApplySoap={handleApplySoap}
+              onEditSoap={() => {
+                useCopilotStore.getState().setStudioOpen(true);
+              }}
               onApplyAll={handleApplyAllActions}
               onDisposeCarpule={onDisposeCarpule}
               onPrintInformedConsent={onPrintInformedConsent}

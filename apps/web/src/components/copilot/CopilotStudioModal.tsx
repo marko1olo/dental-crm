@@ -13,7 +13,8 @@ import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode";
 import { CLINICAL_QUICK_PRESETS, CRM_FASTIFY_TOOLS_REGISTRY } from "./copilotCatalogData";
 import { SHOWCASE_INITIAL_MESSAGES } from "../../store/copilotShowcaseData";
 import { useCopilotStore } from "../../store/copilotStore";
-import type { CopilotUiMessage } from "./copilotTypes";
+import type { CopilotUiMessage, DesktopHostWindow } from "./copilotTypes";
+import { parseActionProposal, parseJsonResponse } from "./copilotTypes";
 import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
@@ -40,6 +41,9 @@ const parseChatMsgs = (list?: Array<CopilotChatMessage | CopilotUiMessage | Reco
   const raw = typeof mRec.text === "string" ? mRec.text : typeof mRec.content === "string" ? mRec.content : (mRec.kind === "tool" ? `Выполнен инструмент: ${String(mRec.name || "")}` : "");
   const { cleanText, suggestions } = extractSuggestions(raw);
   const mRole = mRec.role === "assistant" || mRec.kind === "tool" ? "assistant" : "user";
+  const replies = Array.isArray(mRec.suggestedReplies)
+    ? mRec.suggestedReplies.filter((s): s is string => typeof s === "string")
+    : suggestions;
   return {
     id: typeof mRec.id === "string" ? mRec.id : typeof mRec.callId === "string" ? mRec.callId : `msg-${i}`,
     role: mRole,
@@ -47,8 +51,8 @@ const parseChatMsgs = (list?: Array<CopilotChatMessage | CopilotUiMessage | Reco
     timestamp: typeof mRec.timestamp === "string" ? mRec.timestamp : "10:00",
     applied: Boolean(mRec.applied),
     citation: typeof mRec.citation === "string" ? mRec.citation : undefined,
-    actionProposal: typeof mRec.actionProposal === "object" && mRec.actionProposal !== null ? (mRec.actionProposal as CopilotChatMessage["actionProposal"]) : undefined,
-    suggestedReplies: Array.isArray(mRec.suggestedReplies) ? (mRec.suggestedReplies as string[]) : suggestions,
+    actionProposal: parseActionProposal(mRec.actionProposal),
+    suggestedReplies: replies,
     toolResult: mRec.toolResult,
     toolName: typeof mRec.toolName === "string" ? mRec.toolName : undefined,
   };
@@ -97,8 +101,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const isTouch = "ontouchstart" in window || (navigator.maxTouchPoints > 0) || window.matchMedia?.("(pointer: coarse)").matches;
-    const w = window as unknown as { electron?: unknown; __TAURI__?: unknown };
-    if (Boolean(w.electron || w.__TAURI__) && runtimeMode !== "desktop_native") setRuntimeMode("desktop_native");
+    const hostWin = window as DesktopHostWindow;
+    if (Boolean(hostWin.electron || hostWin.__TAURI__) && runtimeMode !== "desktop_native") setRuntimeMode("desktop_native");
     else if (isTouch && runtimeMode !== "chairside_tablet" && runtimeMode !== "mobile_tablet") setRuntimeMode("chairside_tablet");
   }, [runtimeMode, setRuntimeMode]);
 
@@ -255,7 +259,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
             method: "POST", headers: { "Content-Type": "application/json", "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             body: JSON.stringify({ callId: act.id, toolName: act.toolName, args: act.payload, confirmed: true, decision: "confirm", patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode }),
           });
-          const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+          const data = parseJsonResponse(await res.json().catch(() => ({})));
           if (res.ok && data?.ok !== false) addToolLog({ toolName: act.toolName, category: "clinical", status: "success", args: act.payload || {}, resultSummary: `Подтверждено действие: ${act.toolName}` });
         } catch (apiErr) {
           console.warn("[CopilotStudioModal] Confirm API non-blocking fallback:", apiErr);
@@ -287,7 +291,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         method: "POST", headers: { "Content-Type": "application/json", "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ toolName: toolKey, args: payload, patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode }),
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string }, ok = res.ok && data?.ok !== false;
+      const data = parseJsonResponse(await res.json().catch(() => ({}))), ok = res.ok && data.ok !== false;
       addToolLog({ toolName: toolKey, category: "clinical", status: ok ? "success" : "rejected", durationMs: Date.now() - startTime, args: payload, resultSummary: ok ? `Выполнен инструмент ${toolKey}` : `Сбой инструмента ${toolKey}: ${data?.error || res.statusText}` });
       showToast(ok ? "Действие успешно выполнено в системе" : `Сбой инструмента ${toolKey}: ${data?.error || ""}`, ok ? "success" : "error");
     } catch (err) {

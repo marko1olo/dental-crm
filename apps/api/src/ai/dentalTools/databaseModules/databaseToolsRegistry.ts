@@ -6,6 +6,7 @@
 import type { AnyDentalToolEntry } from "../types.js";
 import { configureClinicSetupTool } from "./configureClinicSetupTool.js";
 import { createAppointmentTool } from "./createAppointmentTool.js";
+import { getAvailableSlotsTool } from "./getAvailableSlotsTool.js";
 import { createInvoiceDraftTool } from "./createInvoiceDraftTool.js";
 import { importClinicDataFileTool } from "./importClinicDataFileTool.js";
 import { patientEmkTool, getPatientEmrTool } from "./patientEmkTool.js";
@@ -23,6 +24,7 @@ export const databaseToolsRegistry: readonly AnyDentalToolEntry[] = [
 	searchServicesTool,
 	updateToothStatusTool,
 	createAppointmentTool,
+	getAvailableSlotsTool,
 	createInvoiceDraftTool,
 	patientSearchTool,
 	treatmentRecordTool,
@@ -50,6 +52,7 @@ export {
 	searchServicesTool,
 	updateToothStatusTool,
 	createAppointmentTool,
+	getAvailableSlotsTool,
 	createInvoiceDraftTool,
 	patientSearchTool,
 	treatmentRecordTool,

@@ -29,6 +29,8 @@ export interface ParsedAgentResult {
   consentProposal?: ChairsideConsentProposal | null;
   matchedProtocol?: MatchedProtocolInfo | null;
   toastMessage?: { text: string; type: "info" | "success" | "warning" };
+  isLocalFallback?: boolean;
+  fallbackMessage?: string;
 }
 
 export function parseAgentApiResponse(

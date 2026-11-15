@@ -167,6 +167,31 @@ const ChairsideHudStandaloneView = React.lazy(() =>
 		},
 	})),
 );
+const CopilotStudioStandaloneView = React.lazy(() =>
+	import("./components/copilot/CopilotStudioModal").then((m) => ({
+		default: () => {
+			const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+			const toothFromQuery = searchParams?.get("tooth") ? Number(searchParams.get("tooth")) : undefined;
+			const patientNameFromQuery = searchParams?.get("patient");
+			return (
+				<div
+					className="direct-copilot-studio-standalone fixed inset-0 z-[9999] flex flex-col justify-end bg-[var(--paper)]/85 backdrop-blur-md pointer-events-auto overflow-y-auto"
+					data-testid="copilot-studio-standalone-host"
+				>
+					<m.CopilotStudioModal
+						isOpen={true}
+						onClose={() => {
+							if (typeof window !== "undefined") window.location.hash = "";
+						}}
+						patientName={patientNameFromQuery || "Кузнецов М.П."}
+						patientId="pat-36"
+						activeTooth={toothFromQuery ?? 36}
+					/>
+				</div>
+			);
+		},
+	})),
+);
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import type { StudioMode } from "./components/radiology/standaloneStudio/types";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -933,6 +958,38 @@ if (publicPortalRoute) {
 					}
 				>
 					<ChairsideHudStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=copilot-studio") ||
+		window.location.search.includes("standalone=copilot-studio") ||
+		window.location.hash === "#copilot-studio" ||
+		window.location.hash.startsWith("#copilot-studio?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка кабинета ИИ-копилота...
+						</div>
+					}
+				>
+					<CopilotStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

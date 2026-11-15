@@ -78,7 +78,7 @@ describe('CopilotActionConfirm Specialized 1-Click Medical Buttons', () => {
     const html = renderToString(
       <CopilotActionConfirm
         name="create_electronic_prescription"
-        args={{ patient_name: 'Иванов И.И.', drug_name: 'Нимесил', dosage: '100 мг' }}
+        args={{ patient_name: 'Кузнецов М.П.', drug_name: 'Нимесил', dosage: '100 мг' }}
       />
     );
     assert.ok(html.includes('Электронный рецептурный бланк'));

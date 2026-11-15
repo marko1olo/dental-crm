@@ -15,6 +15,7 @@ import {
 import {
 	configureClinicSetupTool,
 	createAppointmentTool,
+	getAvailableSlotsTool,
 	createInvoiceDraftTool,
 	getPatientEmrTool,
 	importClinicDataFileTool,
@@ -74,6 +75,7 @@ export const dentalToolsRegistry: readonly AnyDentalToolEntry[] = [
 	updateToothStatusTool,
 	treatmentRecordTool,
 	createAppointmentTool,
+	getAvailableSlotsTool,
 	createInvoiceDraftTool,
 	printDocumentTool,
 	configureClinicSetupTool,
@@ -125,10 +127,24 @@ export function normalizeToolName(toolName: string): string {
 		case "patch_local_file":
 			return "replace_file_content";
 		case "run_command":
+		case "run_workstation_command":
+		case "workstationTools.checkFiscalPrinter":
 			return "run_workstation_command";
 		case "launch_app":
 		case "launch_imaging_app":
+		case "launchApp":
+		case "workstationTools.launchApp":
+		case "workstationTools.launchViewer":
+		case "open_xray_viewer":
+		case "launchViewer":
 			return "launch_workstation_app";
+		case "calculate_anesthesia":
+		case "calculate_anesthesia_dosage":
+		case "calculateAnesthesia":
+		case "crmPharmacologyTools.registerAnesthesia":
+		case "crmPharmacologyTools.calculateAnesthesia":
+		case "registerAnesthesia":
+			return "calculate_anesthesia";
 		case "capture_screen":
 			return "capture_workstation_screen";
 		case "search_files":
@@ -153,6 +169,7 @@ export function normalizeToolName(toolName: string): string {
 		case "updateToothState":
 		case "updateToothStatus":
 		case "crmClinicalOdontogramTools.updateToothState":
+		case "crmClinicalOdontogramTools.setPhysiologicalNorm":
 		case "update_odontogram":
 			return "update_tooth_status";
 		case "recordTreatment":
@@ -163,6 +180,11 @@ export function normalizeToolName(toolName: string): string {
 		case "createAppointmentSlot":
 		case "crmScheduleTools.createAppointment":
 			return "create_appointment";
+		case "getAvailableSlots":
+		case "get_available_slots":
+		case "crmScheduleTools.getAvailableSlots":
+		case "schedule.getAvailableSlots":
+			return "get_available_slots";
 		case "createInvoiceDraft":
 		case "crmBillingTools.createInvoiceDraft":
 		case "applyDoctorDiscount":
@@ -303,6 +325,8 @@ export function getToolDescriptionRu(toolName: string): string {
 			return "Внесение выполненной процедуры в карту";
 		case "create_appointment":
 			return "Создание записи на приём в расписании";
+		case "get_available_slots":
+			return "Поиск свободных окон в расписании";
 		case "create_invoice_draft":
 			return "Формирование счёта на оплату";
 		case "print_document":

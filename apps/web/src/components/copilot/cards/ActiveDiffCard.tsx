@@ -36,7 +36,7 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 		<div
 			className={`copilot-active-diff-card p-3.5 rounded-2xl border transition-all text-xs space-y-3 ${
 				isApplied
-					? "border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20"
+					? "border-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,rgba(13,148,136,0.06))]"
 					: "border-[var(--teal,#0d9488)]/40 bg-[var(--paper-soft,#f8fafc)] shadow-xs"
 			}`}
 			data-testid="copilot-active-diff-card"
@@ -62,8 +62,8 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 				<span
 					className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${
 						isApplied
-							? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
-							: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800"
+							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30"
+							: "bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] border-[var(--line)]"
 					}`}
 				>
 					{isApplied ? "Применено" : "Требует согласования"}
@@ -73,8 +73,8 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 			{/* Область сравнения До / После */}
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-2 font-mono text-[11px] leading-relaxed">
 				{/* Блок Было */}
-				<div className="p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 space-y-1">
-					<div className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1">
+				<div className="p-2.5 rounded-xl border border-[var(--danger,#ef4444)]/30 bg-[var(--danger-soft,rgba(239,68,68,0.06))] text-[var(--ink)] space-y-1">
+					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--danger,#ef4444)] flex items-center gap-1">
 						<span>- Было</span>
 					</div>
 					<div className="whitespace-pre-wrap max-h-36 overflow-y-auto font-mono text-[11px] opacity-90">
@@ -83,8 +83,8 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 				</div>
 
 				{/* Блок Станет */}
-				<div className="p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 space-y-1">
-					<div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+				<div className="p-2.5 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] text-[var(--ink)] space-y-1">
+					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--teal,#0d9488)] flex items-center gap-1">
 						<span>+ Станет</span>
 					</div>
 					<div className="whitespace-pre-wrap max-h-36 overflow-y-auto font-mono text-[11px] font-medium">
@@ -100,7 +100,7 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 						type="button"
 						onClick={handleReject}
 						disabled={disabled}
-						className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 hover:border-rose-200 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+						className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger,#ef4444)] hover:border-[var(--danger,#ef4444)]/40 hover:bg-[var(--danger-soft,rgba(239,68,68,0.06))] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 						data-testid="active-diff-reject-btn"
 					>
 						<X size={14} />
@@ -114,7 +114,7 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 					disabled={disabled}
 					className={`h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
 						isApplied
-							? "bg-emerald-600 text-white shadow-xs"
+							? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
 							: "bg-[var(--primary,#0d9488)] text-white hover:opacity-95 shadow-xs"
 					}`}
 					data-testid="active-diff-apply-btn"
