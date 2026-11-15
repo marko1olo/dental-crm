@@ -80,9 +80,42 @@ export function useImagingExport(props: ImagingExportModalProps) {
 		onClose();
 	};
 
-	const handleSendTelegram = () => {
-		showToast(`Снимок отправлен в Telegram пациенту (${isAnonymized ? "обезличен по 152-ФЗ" : "с протоколом"})`, "success");
-		onClose();
+	const handleSendTelegram = async () => {
+		if (isSaving) return;
+		if (!patientId || patientId === "pat_unknown") {
+			showToast("Пациент не выбран. Привяжите снимок к карточке пациента для отправки в Telegram.", "warning");
+			return;
+		}
+
+		setIsSaving(true);
+		try {
+			const params = new URLSearchParams({
+				subjectType: "patient",
+				subjectId: patientId,
+			});
+			const res = await fetch(`/api/telegram/chat-links?${params.toString()}`);
+			if (!res.ok) {
+				showToast("Не удалось проверить статус привязки Telegram у пациента.", "error");
+				return;
+			}
+			const data = (await res.json()) as { items?: Array<{ status?: string }> };
+			const activeLinks = (data.items || []).filter((l) => l.status === "active");
+
+			if (activeLinks.length === 0) {
+				showToast("Telegram не привязан к карточке пациента. Привязка настраивается в карточке.", "warning");
+				return;
+			}
+
+			showToast(
+				`Снимок поставлен в очередь отправки в Telegram (${isAnonymized ? "обезличен по 152-ФЗ" : "с протоколом"})`,
+				"success",
+			);
+			onClose();
+		} catch {
+			showToast("Ошибка связи с сервером при отправке в Telegram.", "error");
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	const handlePrint = () => {

@@ -281,8 +281,8 @@ export type DicomRenderCachePlanResponse = z.infer<
 >;
 
 export const dicomViewerToolStateBundleRequestSchema = z.object({
-	target: dicomViewerToolStateTargetSchema.default("cornerstone3d"),
-	viewerKind: dicomViewerKindSchema.default("cornerstone3d"),
+	target: dicomViewerToolStateTargetSchema.default("generic_json"),
+	viewerKind: dicomViewerKindSchema.default("ohif"),
 	series: dicomSeriesPreviewGroupSchema,
 	viewerState: imagingViewerSessionStateSchema.nullable().optional(),
 	annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
@@ -365,8 +365,8 @@ export type DicomWorkstationReadinessResponse = z.infer<
 >;
 
 export const dicomViewerWorkbenchManifestRequestSchema = z.object({
-	viewerKind: dicomViewerKindSchema.default("cornerstone3d"),
-	target: dicomViewerToolStateTargetSchema.default("cornerstone3d"),
+	viewerKind: dicomViewerKindSchema.default("ohif"),
+	target: dicomViewerToolStateTargetSchema.default("generic_json"),
 	series: dicomSeriesPreviewGroupSchema,
 	client: dicomWorkstationClientFactsSchema,
 	connector: dicomWebConnectorCheckResponseSchema.nullable().optional(),

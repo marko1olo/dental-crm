@@ -19,26 +19,26 @@ export const ExportActionButtons: React.FC<ExportActionButtonsProps> = ({
 	onDownload,
 }) => {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#334155)]">
+		<div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--line)]">
 			<div className="flex items-center gap-2 flex-wrap">
 				<button
 					type="button"
 					onClick={onPrint}
-					className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors"
+					className="dente-btn-secondary min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] transition-colors"
 					data-testid="btn-print-imaging-report"
 					title="Печать медицинского бланка исследования"
 				>
-					<Printer size={15} />
+					<Printer className="w-4 h-4 text-current" />
 					<span>Печать бланка</span>
 				</button>
 				<button
 					type="button"
 					onClick={onSendTelegram}
-					className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors"
+					className="dente-btn-secondary min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] transition-colors"
 					data-testid="btn-export-telegram"
 					title="Отправить снимок пациенту в Telegram"
 				>
-					<Send size={15} className="text-[var(--teal)] shrink-0" />
+					<Send className="w-4 h-4 text-current shrink-0" />
 					<span>В Telegram</span>
 				</button>
 			</div>
@@ -47,21 +47,21 @@ export const ExportActionButtons: React.FC<ExportActionButtonsProps> = ({
 				<button
 					type="button"
 					onClick={() => onDownload(true)}
-					className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors"
+					className="dente-btn-secondary min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] transition-colors"
 					data-testid="btn-export-zip-archive"
 					title="Скачать полный архив исследования"
 				>
-					<Archive size={15} />
+					<Archive className="w-4 h-4 text-current" />
 					<span>В архив</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => onDownload(false)}
 					disabled={isSaving}
-					className="primary-button min-h-[44px] text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold cursor-pointer rounded-lg bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-xs transition-colors"
+					className="dente-btn-primary min-h-[44px] text-xs py-2 px-4 inline-flex items-center gap-1.5 font-bold cursor-pointer rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-sm transition-colors"
 					data-testid="btn-download-imaging-file"
 				>
-					<Download size={15} />
+					<Download className="w-4 h-4 text-current" />
 					<span>{isSaving ? "Экспорт..." : "Сохранить файл"}</span>
 				</button>
 			</div>

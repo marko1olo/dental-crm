@@ -4,7 +4,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { imagingStudies, xrayScans } from "../../db/schema.js";
+import { imagingInstances, imagingSeries, imagingStudies, xrayScans } from "../../db/schema.js";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -53,62 +53,103 @@ export async function registerXrayUploadRoute(app: FastifyInstance): Promise<voi
 		const studyTitle = data.originalFilename || (data.toothCode ? `Прицельный снимок зуба ${data.toothCode}` : "Прицельный снимок RVG");
 		const kindMapping = (data.kind === "bitewing" ? "bitewing" : data.kind === "opg" ? "opg" : data.kind === "other" ? "other" : "periapical") as "periapical" | "bitewing" | "opg" | "other";
 		const capturedTime = new Date();
+		const modality = data.kind === "opg" ? "PX" : "IO";
+		const studyUid = `1.2.840.10008.study.${scanId}`;
+		const seriesUid = `${studyUid}.1`;
+		const sopUid = `${seriesUid}.1`;
 
-		// 1. Первичная каноническая запись в imaging_studies (SSOT рентгенологии)
-		const [canonicalStudy] = await db.insert(imagingStudies).values({
-			id: scanId,
-			organizationId,
-			patientId: data.patientId,
-			visitId: data.visitId ?? null,
-			doctorId: identity?.userId ?? null,
-			kind: kindMapping,
-			title: studyTitle,
-			toothCode: data.toothCode ?? null,
-			region: data.toothCode ? `Зуб ${data.toothCode}` : null,
-			capturedAt: capturedTime,
-			sourceKind: "sensor_bridge",
-			sourceName: "Визиограф (RVG)",
-			status: "available",
-			aiSummary: inlineSummary,
-			storagePath: storedFile.storagePath,
-			modality: data.kind === "opg" ? "PX" : "IO",
-			seriesDescription: data.notes ?? studyTitle,
-			fileSizeBytes: storedFile.fileSizeBytes,
-			bindingStatus: "manual_bound",
-			bindingConfidence: 100,
-		}).onConflictDoUpdate({
-			target: [imagingStudies.id],
-			set: { storagePath: storedFile.storagePath, aiSummary: inlineSummary, fileSizeBytes: storedFile.fileSizeBytes },
-		}).returning();
+		// Атомарная транзакция: триада PACS (study -> series -> instance) + зеркало xray_scans
+		const inserted = await db.transaction(async (tx) => {
+			// 1. Первичная каноническая запись в imaging_studies (SSOT рентгенологии с DICOM UID)
+			const [canonicalStudy] = await tx.insert(imagingStudies).values({
+				id: scanId,
+				organizationId,
+				patientId: data.patientId,
+				visitId: data.visitId ?? null,
+				doctorId: identity?.userId ?? null,
+				kind: kindMapping,
+				title: studyTitle,
+				toothCode: data.toothCode ?? null,
+				region: data.toothCode ? `Зуб ${data.toothCode}` : null,
+				capturedAt: capturedTime,
+				sourceKind: "sensor_bridge",
+				sourceName: "Визиограф (RVG)",
+				status: "available",
+				aiSummary: inlineSummary,
+				storagePath: storedFile.storagePath,
+				dicomStudyUid: studyUid,
+				studyInstanceUid: studyUid,
+				seriesInstanceUid: seriesUid,
+				modality,
+				seriesDescription: data.notes ?? studyTitle,
+				fileSizeBytes: storedFile.fileSizeBytes,
+				bindingStatus: "manual_bound",
+				bindingConfidence: 100,
+			}).onConflictDoUpdate({
+				target: [imagingStudies.id],
+				set: {
+					storagePath: storedFile.storagePath,
+					aiSummary: inlineSummary,
+					fileSizeBytes: storedFile.fileSizeBytes,
+					dicomStudyUid: studyUid,
+					studyInstanceUid: studyUid,
+					seriesInstanceUid: seriesUid,
+				},
+			}).returning();
 
-		if (!canonicalStudy) {
-			reply.code(500);
-			return { error: "InsertError", message: "Не удалось сохранить исследование в реестр снимков." };
-		}
+			if (!canonicalStudy) {
+				throw new Error("Не удалось сохранить исследование в реестр снимков.");
+			}
 
-		// 2. Зеркальная запись в legacy xray_scans для обратной совместимости
-		const [inserted] = await db.insert(xrayScans).values({
-			id: scanId,
-			organizationId,
-			patientId: data.patientId,
-			visitId: data.visitId ?? null,
-			imageDataUri: null,
-			storagePath: storedFile.storagePath,
-			fileUrl: `/api/xray/scans/${scanId}/file`,
-			fileSizeBytes: storedFile.fileSizeBytes,
-			sha256: storedFile.sha256,
-			originalFilename: data.originalFilename ?? null,
-			mimeType: detectedMime,
-			kind: data.kind,
-			toothCode: data.toothCode ?? null,
-			notes: data.notes ?? null,
-			status: createStatus,
-			aiReport: data.aiReport ?? null,
-			aiSummary: inlineSummary,
-			aiToothStates: (data.aiToothStates ?? null) as Record<string, string> | null,
-			aiAnalyzedAt: hasInlineReport ? new Date() : null,
-			capturedAt: capturedTime,
-		}).returning();
+			// 2. Гарантированная серия DICOM в imaging_series для DICOMweb QIDO/WADO
+			const [seriesRecord] = await tx.insert(imagingSeries).values({
+				organizationId,
+				studyId: canonicalStudy.id,
+				dicomSeriesUid: seriesUid,
+				seriesNumber: 1,
+				modality,
+				seriesDescription: data.notes ?? studyTitle,
+			}).returning();
+
+			// 3. Инстанс снимка в imaging_instances для WADO-RS / WADO-URI
+			if (seriesRecord) {
+				await tx.insert(imagingInstances).values({
+					organizationId,
+					seriesId: seriesRecord.id,
+					dicomSopInstanceUid: sopUid,
+					sopInstanceUid: sopUid,
+					instanceNumber: 1,
+					storagePath: storedFile.storagePath,
+					fileSizeBytes: storedFile.fileSizeBytes,
+				});
+			}
+
+			// 4. Зеркальная запись в legacy xray_scans для обратной совместимости
+			const [scan] = await tx.insert(xrayScans).values({
+				id: scanId,
+				organizationId,
+				patientId: data.patientId,
+				visitId: data.visitId ?? null,
+				imageDataUri: null,
+				storagePath: storedFile.storagePath,
+				fileUrl: `/api/xray/scans/${scanId}/file`,
+				fileSizeBytes: storedFile.fileSizeBytes,
+				sha256: storedFile.sha256,
+				originalFilename: data.originalFilename ?? null,
+				mimeType: detectedMime,
+				kind: data.kind,
+				toothCode: data.toothCode ?? null,
+				notes: data.notes ?? null,
+				status: createStatus,
+				aiReport: data.aiReport ?? null,
+				aiSummary: inlineSummary,
+				aiToothStates: (data.aiToothStates ?? null) as Record<string, string> | null,
+				aiAnalyzedAt: hasInlineReport ? new Date() : null,
+				capturedAt: capturedTime,
+			}).returning();
+
+			return scan;
+		});
 
 		if (!inserted) {
 			reply.code(500);

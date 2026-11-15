@@ -1,12 +1,16 @@
 import {
+	type VisitDraftAutosave,
 	visitDraftAutosaveRequestSchema,
 	visitDraftAutosaveResponseSchema,
 } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import * as schema from "../../db/schema.js";
 import {
 	getVisitDraftAutosaveFromDb,
 	upsertVisitDraftAutosaveInDb,
@@ -64,18 +68,61 @@ export async function handleGetVisitDraft(
 			};
 		}
 		if (lookup.outcome === "no_draft") {
-			reply.code(404);
-			return {
-				error: "VisitDraftAbsent",
+			const [visit] = await db
+				.select()
+				.from(schema.visits)
+				.where(
+					and(
+						eq(schema.visits.id, trimmedVisitId),
+						eq(schema.visits.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			if (!visit) {
+				reply.code(404);
+				return {
+					error: "VisitNotFound",
+					reason: "visit_not_found",
+					message: visitDraftNotFoundMessage,
+				};
+			}
+
+			const existingDraft = visit.draftAutosave as VisitDraftAutosave | null;
+			const serverDraft: VisitDraftAutosave = existingDraft ?? {
+				visitId: visit.id,
+				patientId: visit.patientId,
+				selectedSpecialty: "therapist",
+				transcript: visit.transcript || "",
+				draft: {
+					warnings: [
+						lookup.status === "signed"
+							? "Приём подписан врачом (режим только для чтения)."
+							: "Приём аннулирован (режим только для чтения).",
+					],
+					complaint: visit.complaint || "",
+					anamnesis: visit.anamnesis || "",
+					objectiveStatus: visit.objectiveStatus || "",
+					diagnosis: visit.diagnosis || "",
+					treatmentPlan: visit.treatmentPlan || "",
+				},
+				baseRevision: visit.revision,
+				clientDraftId: null,
+				clientSavedAt: null,
+				serverSavedAt: (visit.signedAt ?? visit.updatedAt ?? new Date()).toISOString(),
+				transcriptHash: "",
+				hygieneIndices: (visit.hygieneIndices as Record<string, unknown> | null) ?? null,
+			};
+
+			return visitDraftAutosaveResponseSchema.parse({
+				serverDraft,
+				error: lookup.status === "signed" ? "VisitDraftSigned" : "VisitDraftVoided",
 				reason: lookup.status === "signed" ? "visit_signed" : "visit_voided",
-				visitId: lookup.visitId,
-				visitStatus: lookup.status,
-				signedAt: lookup.signedAt,
 				message:
 					lookup.status === "signed"
 						? visitDraftSignedNoDraftMessage
 						: visitDraftVoidedNoDraftMessage,
-			};
+			});
 		}
 		return visitDraftAutosaveResponseSchema.parse({
 			serverDraft: lookup.serverDraft,

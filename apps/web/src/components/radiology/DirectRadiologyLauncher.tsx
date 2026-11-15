@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { usePatientStore } from "../../store/patientStore";
 import { useVisitStore } from "../../store/visitStore";
-import { VisiographStudyViewer } from "./VisiographStudyViewer";
+import { SensorStudyViewer } from "./SensorStudyViewer";
 import { VisiographHotFolderToast } from "./VisiographHotFolderToast";
 
 export const DirectRadiologyLauncher: React.FC = () => {
@@ -94,11 +94,9 @@ export const DirectRadiologyLauncher: React.FC = () => {
 					data-testid="direct-radiology-launcher-root"
 				>
 					<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
-						<VisiographStudyViewer
-							studyTitle={studyTitle}
+						<SensorStudyViewer
 							patientName={patientName}
-							patientId={patientId}
-							initialTooth={initialTooth}
+							toothFdiCode={initialTooth}
 							onClose={handleClose}
 						/>
 					</div>

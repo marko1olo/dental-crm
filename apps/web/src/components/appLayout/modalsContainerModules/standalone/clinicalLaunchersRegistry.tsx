@@ -19,6 +19,7 @@ import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46Inspect
 import { DirectRadiologyLauncher } from "../../../radiology/DirectRadiologyLauncher";
 import { DirectRvgCaptureModal } from "../../../radiology/DirectRvgCaptureModal";
 import { IntraoralScan3DViewerModal } from "../../../radiology/IntraoralScan3DViewerModal";
+import { DicomViewerModal } from "../../../imaging/DicomViewerModal";
 import { DirectEndodonticsLauncher } from "../../../endo/DirectEndodonticsLauncher";
 import { DirectOrthopedicsLauncher } from "../../../orthopedics/DirectOrthopedicsLauncher";
 import { DirectOrthodonticsLauncher } from "../../../orthodontics/DirectOrthodonticsLauncher";
@@ -171,8 +172,32 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			id: "visiograph-rvg",
 			title: "Радиовизиограф и снимки RVG",
 			criteria: {
-				tokens: ["visiograph", "rvg", "rvg-studio"],
+				tokens: [
+					"visiograph",
+					"rvg",
+					"rvg-studio",
+					"radiology",
+					"radiology-standalone",
+					"visiograph-standalone",
+					"xray-viewer",
+					"study-viewer",
+				],
 				exclude: ["rvg-capture", "direct-rvg", "rvg-hardware"],
+				exactHashes: [
+					"#visiograph",
+					"#radiology",
+					"#radiology-standalone",
+					"#visiograph-standalone",
+					"#xray-viewer",
+					"#study-viewer",
+				],
+				searchIncludes: [
+					"radiology-standalone",
+					"radiology=1",
+					"visiograph=1",
+					"xray-viewer",
+					"study-viewer",
+				],
 			},
 			render: () => <DirectRadiologyLauncher />,
 		},
@@ -199,6 +224,33 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 						patientName={patientName}
 						toothCode="16"
 						scanTitle="Интраоральный 3D-скан челюсти (STL / PLY)"
+					/>
+				);
+			},
+		},
+
+		// 7d. Просмотрщик снимков DICOM / RVG (DicomViewerModal)
+		{
+			id: "dicom-viewer",
+			title: "Просмотрщик снимков DICOM / RVG",
+			criteria: {
+				tokens: ["dicom", "dicom-viewer", "dicom_viewer"],
+				exactHashes: ["#dicom", "#dicom-viewer", "#dicom_viewer"],
+				searchIncludes: ["stand=dicom", "dicom=1", "dicom-viewer=1"],
+			},
+			render: () => {
+				const patientState = usePatientStore.getState();
+				const patientName =
+					patientState.patientCoreDraft?.fullName?.trim() ||
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Захаров Иван Дмитриевич");
+				return (
+					<DicomViewerModal
+						isOpen={true}
+						onClose={() => clearUrlTokens(["dicom", "dicom-viewer", "dicom_viewer"])}
+						imageSrc="/radiology/sample_rvg_tooth16.jpg"
+						patientName={patientName}
+						toothFdiCode="16"
+						title="Прицельная радиовизиография RVG #16"
 					/>
 				);
 			},
