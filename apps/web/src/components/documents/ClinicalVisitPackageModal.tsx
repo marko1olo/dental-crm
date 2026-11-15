@@ -16,7 +16,7 @@
  * - Целевой размер оркестратора: 200–260 строк (Sweet Spot).
  */
 
-import type { DocumentKind, GeneratedDocument } from "@dental/shared";
+import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import React, { useMemo, useState } from "react";
 import { printClinicalPackage } from "./clinicalPackagePrintEngine";
 import {
@@ -35,7 +35,10 @@ import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
 import {
 	aggregatePatientPaymentsForTaxYear,
 	printTaxCertificate,
+	type TaxCertificateDocumentData,
+	type TaxPaymentRecord,
 } from "./taxCertificateEngine";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export type { ClinicalPackageTab, ClinicalItem, ClinicalVisitPackageModalProps };
 export { PRIMARY_STATUTORY_ITEMS, CLINICAL_STATUTORY_ITEMS };
@@ -84,16 +87,15 @@ export function ClinicalVisitPackageModal(
 
 	// Агрегация кассовых чеков для справки 13% НДФЛ
 	const taxAggregated = useMemo(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: payments aggregation
-		return aggregatePatientPaymentsForTaxYear(payments as any[], selectedTaxYear);
+		const paymentRecords = (payments ?? []) as readonly TaxPaymentRecord[];
+		return aggregatePatientPaymentsForTaxYear(paymentRecords, selectedTaxYear);
 	}, [payments, selectedTaxYear]);
 
 	if (!isOpen) return null;
 
 	const handlePrintPrimaryPackage = (isBlank = false) => {
 		printPrimaryIntakePackage({
-			// biome-ignore lint/suspicious/noExplicitAny: patient profile
-			patient: isBlank ? null : (patient as any),
+			patient: isBlank ? null : patient,
 			clinic: clinicProfileDraft,
 			doctorFullName: doctorFullName || "Врач-стоматолог-терапевт",
 			intakeNormApplied: isBlank ? false : isNormApplied,
@@ -102,25 +104,74 @@ export function ClinicalVisitPackageModal(
 
 	const handlePrintClinicalPackage = (isBlank = false) => {
 		printClinicalPackage({
-			// biome-ignore lint/suspicious/noExplicitAny: patient profile
-			patient: isBlank ? null : (patient as any),
+			patient: isBlank ? null : patient,
 			clinic: clinicProfileDraft,
 			doctorFullName: doctorFullName || "Врач-стоматолог-терапевт",
 		});
 	};
 
 	const handlePrintTaxCertificate = () => {
-		printTaxCertificate({
-			clinic: clinicProfileDraft,
-			// biome-ignore lint/suspicious/noExplicitAny: patient profile
-			patient: patient as any,
-			taxpayerFullName: patient?.fullName || "____________________",
-			// biome-ignore lint/suspicious/noExplicitAny: administrativeProfile
-			effectiveInn: (patient as any)?.inn || (patient as any)?.administrativeProfile?.inn || "",
-			relationship: "self",
-			selectedYear: selectedTaxYear,
-			aggregated: taxAggregated,
-		});
+		const isDemo = isDemoShowcaseMode();
+		type LegacyPatientDocFields = {
+			readonly cardNumber?: string | undefined;
+			readonly inn?: string | undefined;
+			readonly passport?: string | undefined;
+			readonly passportSeries?: string | undefined;
+			readonly passportNumber?: string | undefined;
+		};
+		const legacyPatient = patient as (Patient & LegacyPatientDocFields) | null;
+		const docNumber = `НДФЛ-${selectedTaxYear}-${legacyPatient?.cardNumber || patient?.id?.slice(0, 6) || "001"}`;
+		const defaultFullName = isDemo ? "Смирнов Алексей Петрович" : "___________";
+		const defaultBirthDate = isDemo ? "12.04.1988" : "___________";
+		const effectiveInn =
+			patient?.administrativeProfile?.taxpayerInn ||
+			legacyPatient?.inn ||
+			(isDemo ? "770123456789" : "");
+		const identityDoc =
+			patient?.administrativeProfile?.identityDocument ||
+			legacyPatient?.passport ||
+			"";
+		const passportParts = identityDoc ? identityDoc.split(" ") : [];
+		const series =
+			legacyPatient?.passportSeries ||
+			(passportParts.length >= 2 ? `${passportParts[0]} ${passportParts[1]}` : (isDemo ? "45 12" : "______"));
+		const number =
+			legacyPatient?.passportNumber ||
+			(passportParts.length >= 3 ? passportParts.slice(2).join(" ") : (isDemo ? "654321" : "________"));
+
+		const certificateData: TaxCertificateDocumentData = {
+			certificateNumber: docNumber,
+			issueDateIso: new Date().toISOString(),
+			taxYear: selectedTaxYear,
+			clinic: {
+				legalName: clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName || "Стоматологическая клиника",
+				inn: clinicProfileDraft?.inn || (isDemo ? "7701234567" : "0000000000"),
+				kpp: clinicProfileDraft?.kpp || (isDemo ? "770101001" : ""),
+				ogrn: clinicProfileDraft?.ogrn || (isDemo ? "1027700132195" : "0000000000000"),
+				address: clinicProfileDraft?.actualAddress || clinicProfileDraft?.address || "г. Москва",
+				licenseNumber: clinicProfileDraft?.licenseNumber || (isDemo ? "ЛО-77-01-021345" : "—"),
+				licenseDate: clinicProfileDraft?.licenseDate || (isDemo ? "14.02.2021" : ""),
+				chiefDoctorOrDirector: clinicProfileDraft?.directorFullName || doctorFullName || "Главный врач",
+			},
+			taxpayer: {
+				fullName: patient?.fullName || defaultFullName,
+				birthDate: patient?.birthDate || defaultBirthDate,
+				inn: effectiveInn,
+				passportSeries: series,
+				passportNumber: number,
+				relationship: "patient",
+			},
+			patient: {
+				fullName: patient?.fullName || defaultFullName,
+				birthDate: patient?.birthDate || defaultBirthDate,
+				inn: effectiveInn,
+				passportSeries: series,
+				passportNumber: number,
+			},
+			aggregation: taxAggregated,
+		};
+
+		printTaxCertificate(certificateData);
 	};
 
 	return (
