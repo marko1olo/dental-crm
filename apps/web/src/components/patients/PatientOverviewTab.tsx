@@ -18,14 +18,14 @@ export function PatientOverviewTab(_props: PatientOverviewTabProps = {}) {
 	const { selectedPatientId } = usePatientStore();
 	const { selectedPatient } = appLogic;
 
-	if (!selectedPatientId) return null;
+	if (!selectedPatientId || !selectedPatient) return null;
 
 	return (
 		<div data-testid="patient-overview-tab" className="flex flex-col gap-3">
 			<div className="patient-clinical-grid grid grid-cols-1 lg:grid-cols-2 gap-3">
 				<div className="flex flex-col gap-3">
 					<PatientFamilyAndInsuranceWidget
-						patient={selectedPatient as any}
+						patient={selectedPatient}
 						patientBalance={Number(selectedPatient?.patientBalanceRub ?? 0) || 0}
 						insurancePolicyNumber={selectedPatient?.omsPolicyNumber || undefined}
 						onUpdateInsurancePolicy={(policy) => appLogic?.updatePatient?.(selectedPatientId, { omsPolicyNumber: policy })}

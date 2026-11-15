@@ -10,8 +10,32 @@ export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
 	const admin = raw.administrativeProfile && typeof raw.administrativeProfile === "object"
 		? raw.administrativeProfile
 		: {};
+
+	let passportSeries = raw.passportSeries ?? "";
+	let passportNumber = raw.passportNumber ?? "";
+	const rawIdentityDoc = typeof admin.identityDocument === "string" ? admin.identityDocument.trim() : "";
+	if ((!passportSeries || !passportNumber) && rawIdentityDoc) {
+		const digitsOnly = rawIdentityDoc.replace(/\D/g, "");
+		if (digitsOnly.length >= 10) {
+			if (!passportSeries) passportSeries = digitsOnly.slice(0, 4);
+			if (!passportNumber) passportNumber = digitsOnly.slice(4, 10);
+		} else {
+			const parts = rawIdentityDoc.split(/\s+/);
+			if (parts.length >= 2) {
+				if (!passportSeries) passportSeries = parts[0] ?? "";
+				if (!passportNumber) passportNumber = parts.slice(1).join(" ");
+			} else if (!passportNumber) {
+				passportNumber = rawIdentityDoc;
+			}
+		}
+	}
+
+	const repDoc = raw.representativeDoc ?? admin.legalRepresentativeIdentityDocument ?? "";
+
 	return {
 		...raw,
+		passportSeries,
+		passportNumber,
 		snils: raw.snils ?? admin.snils ?? "",
 		inn: raw.inn ?? admin.taxpayerInn ?? "",
 		omsPolicyNumber: raw.omsPolicyNumber ?? admin.insurancePolicyNumber ?? "",
@@ -25,7 +49,10 @@ export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
 		representativeFullName: raw.representativeFullName ?? admin.legalRepresentativeFullName ?? "",
 		representativeType: raw.representativeType ?? admin.legalRepresentativeRelationship ?? "",
 		representativePhone: raw.representativePhone ?? admin.legalRepresentativePhone ?? "",
+		representativeDoc: repDoc,
 		representativePassportDetails: raw.representativePassportDetails ?? admin.legalRepresentativeIdentityDocument ?? "",
+		preferredDocumentRecipient: raw.preferredDocumentRecipient ?? admin.preferredDocumentRecipient ?? "",
+		dataProcessingBasisNote: raw.dataProcessingBasisNote ?? admin.dataProcessingBasisNote ?? "",
 		patientBalanceRub: typeof raw.patientBalanceRub === "number" ? raw.patientBalanceRub : (typeof raw.balanceRub === "number" ? raw.balanceRub : 0),
 		doctorClinicalNotes: raw.doctorClinicalNotes ?? raw.notes ?? "",
 		acquisitionSource: raw.acquisitionSource ?? (typeof admin.preferredAppointmentNote === "string" && admin.preferredAppointmentNote.startsWith("src:") ? admin.preferredAppointmentNote.slice(4) : ""),

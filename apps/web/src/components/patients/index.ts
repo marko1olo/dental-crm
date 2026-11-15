@@ -11,7 +11,7 @@ export * from "./TreatmentPlansList";
 export * from "./PatientAnamnesisTab";
 export * from "./PatientCreationModal";
 export * from "./MobilePatientProfileWorkspace";
-export * from "./MobilePatientsGroupedList";
+export * from "./mobile/MobilePatientsGroupedList";
 export * from "./family/FamilyWalletModal";
 export * from "./tabs/PatientGeneralInfoTab";
 export * from "./safetyMath";

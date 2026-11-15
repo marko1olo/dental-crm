@@ -1,8 +1,12 @@
 import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
-import type { Patient } from "@dental/shared";
+import type { Dashboard, Patient } from "@dental/shared";
 import type { UsePatientCreationFormOptions } from "../patientCreation/types";
+import type { PatientCoreDraft } from "../coreEditor/usePatientCoreDraftDebounce";
+import type { PatientFieldRequirements } from "../patientFieldRequirementsConfig";
+import type { ClinicalVisitItem } from "../patientHistory/types";
+import type { PatientAdministrativeProfileDraft } from "../../../constants/onboardingConstants";
 import {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
@@ -72,48 +76,49 @@ export interface PatientCardModalProps {
 	readonly initialMode?: "view" | "edit" | "create" | undefined;
 	readonly initialPatientId?: string | null | undefined;
 	readonly initialTab?: PatientCardTab | undefined;
-	readonly patient?: PatientGeneralInfo | any | null | undefined;
-	readonly patientData?: PatientGeneralInfo | any | null | undefined;
+	readonly patient?: PatientGeneralInfo | Patient | null | undefined;
+	readonly patientData?: PatientGeneralInfo | Patient | null | undefined;
 	readonly patientId?: string | null | undefined;
 	readonly initialSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
 	readonly safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
 	readonly onSavePatient?: ((patient: PatientGeneralInfo, safetyProfile: PatientClinicalSafetyProfile) => void | Promise<void>) | undefined;
-	readonly onSave?: ((patient: any, safety: any) => void) | undefined;
+	readonly onSave?: ((patient: PatientGeneralInfo, safety: PatientClinicalSafetyProfile) => void) | undefined;
 	readonly onApplySomaticNorm?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
-	readonly dashboard?: any | undefined;
-	readonly visits?: any[] | undefined;
+	readonly dashboard?: Dashboard | null | undefined;
+	readonly visits?: ClinicalVisitItem[] | undefined;
 	readonly className?: string | undefined;
 
 	// Поддержка режима создания (PatientCreationModal compatibility)
-	readonly createPatient?: ((options?: { allowDuplicate?: boolean }) => void | Promise<void | any>) | undefined;
-	readonly updatePatientCoreDraft?: ((field: any, value: string) => void) | undefined;
-	readonly customRequirements?: any | undefined;
+	readonly createPatient?: ((options?: { allowDuplicate?: boolean }) => void | Promise<void | Patient | null>) | undefined;
+	readonly updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
+	readonly updatePatientAdministrativeProfileDraft?: ((field: keyof PatientAdministrativeProfileDraft, value: string | number[]) => void) | undefined;
+	readonly customRequirements?: PatientFieldRequirements | undefined;
 	readonly initialBirthDate?: string | undefined;
 	readonly initialIsChild?: boolean | undefined;
 }
 
 export function toCanonicalPatient(patientData: Partial<PatientGeneralInfo>): Patient {
+	const now = new Date().toISOString();
 	return {
-		id: patientData.id || "",
-		fullName: patientData.fullName || "",
-		phone: patientData.phone || "",
-		birthDate: patientData.birthDate || "",
-		gender: patientData.gender === "female" ? "female" : "male",
-		cardNumber: (patientData.cardNumber || patientData.medicalCardNumber || "") as string,
-		medicalCardNumber: (patientData.cardNumber || patientData.medicalCardNumber || "") as string,
-		address: patientData.address || "",
-		snils: patientData.snils || "",
-		inn: patientData.inn || "",
-		email: patientData.email || "",
-		createdAt: patientData.createdAt ? String(patientData.createdAt) : new Date().toISOString(),
-		updatedAt: new Date().toISOString(),
-		isArchived: false,
+		id: patientData.id || "00000000-0000-0000-0000-000000000000",
+		organizationId: "00000000-0000-0000-0000-000000000000",
 		status: "active",
-		...patientData,
-	} as unknown as Patient;
+		fullName: patientData.fullName || "",
+		phone: patientData.phone ?? null,
+		birthDate: patientData.birthDate ?? null,
+		gender: patientData.gender === "female" ? "female" : patientData.gender === "other" ? "other" : "male",
+		email: patientData.email ?? null,
+		notes: patientData.notes ?? patientData.doctorClinicalNotes ?? null,
+		balanceRub: typeof patientData.balanceRub === "number" ? patientData.balanceRub : (typeof patientData.patientBalanceRub === "number" ? patientData.patientBalanceRub : 0),
+		balanceKopecks: patientData.balanceKopecks ?? 0,
+		familyGroupId: patientData.familyGroupId ?? null,
+		administrativeProfile: null,
+		createdAt: patientData.createdAt ? String(patientData.createdAt) : now,
+		updatedAt: patientData.updatedAt ? String(patientData.updatedAt) : now,
+	};
 }
 
 export function createPatientCreationOptions(

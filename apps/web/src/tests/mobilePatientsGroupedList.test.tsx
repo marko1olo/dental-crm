@@ -22,7 +22,7 @@ import {
 	formatAgeRu,
 	extractAllergy,
 	extractSomaticNote,
-} from "../components/patients/MobilePatientsGroupedList";
+} from "../components/patients/mobile/MobilePatientsGroupedList";
 import type { Patient } from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -81,6 +81,7 @@ test("Mobile Patients HIG — MobilePatientsGroupedList renders Apple Health Gro
 			email: null,
 			notes: "Аллергия на лидокаин. Острая реакция.",
 			balanceRub: 0,
+			balanceKopecks: 0,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		},
@@ -96,6 +97,7 @@ test("Mobile Patients HIG — MobilePatientsGroupedList renders Apple Health Gro
 			email: null,
 			notes: "Сахарный диабет 2 типа",
 			balanceRub: -3500,
+			balanceKopecks: -350000,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		},

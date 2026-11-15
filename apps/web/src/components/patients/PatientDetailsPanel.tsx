@@ -31,7 +31,7 @@ export function PatientDetailsPanel({
 	executePatientSomaticNorm,
 	executeBookAppointment,
 }: PatientDetailsPanelProps) {
-	const patientBalance = Number((selectedPatient as any)?.balanceRub ?? (selectedPatient as any)?.balance ?? 0);
+	const patientBalance = Number(selectedPatient?.balanceRub ?? 0);
 
 	return (
 		<section className="patient-admin-panel w-full min-w-0 flex flex-col gap-3.5 pb-6" aria-label="Карточка активного пациента">

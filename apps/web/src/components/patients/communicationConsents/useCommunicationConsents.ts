@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { operatorReadableErrorDetail } from "../../../AppHelpers";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { actionFailureToast, requestFailureCause } from "../../../lib/panelStateText";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
@@ -8,7 +9,7 @@ import { CHANNELS, SCOPES, cellKey, type Channel, type ConsentMatrix, type Conse
 import { buildMatrix, jsonObjectOrNull, parseConsentRows } from "./consentsApi";
 
 export function useCommunicationConsents(patientId?: string | null) {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 
 	const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ export function useCommunicationConsents(patientId?: string | null) {
 		if (!pid) { setMatrix({}); setBaseline({}); setLoaded(false); setError(null); return; }
 		setLoading(true); setError(null);
 		try {
-			const headers = auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : {};
+			const headers = auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : denteAdminSecretRequestHeaders();
 			const res = await fetch(`/api/communications/consents/${encodeURIComponent(pid)}`, { method: "GET", headers });
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
@@ -83,7 +84,7 @@ export function useCommunicationConsents(patientId?: string | null) {
 		}
 		setSaving(true); setError(null);
 		try {
-			const headers = auth && typeof auth.denteClinicalMutationHeaders === "function" ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers = auth && typeof auth.denteClinicalMutationHeaders === "function" ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
 			const res = await fetch(`/api/communications/consents/${encodeURIComponent(pid)}`, { method: "PUT", headers, body: JSON.stringify({ entries }) });
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);

@@ -20,7 +20,7 @@ import { PatientsFilterToolbar } from "./components/patients/PatientsFilterToolb
 import { PatientsMasterList } from "./components/patients/PatientsMasterList";
 import { PatientDetailsPanel } from "./components/patients/PatientDetailsPanel";
 import { MobilePatientProfileWorkspace } from "./components/patients/MobilePatientProfileWorkspace";
-import { MobilePatientsGroupedList } from "./components/patients/MobilePatientsGroupedList";
+import { MobilePatientsGroupedList } from "./components/patients/mobile/MobilePatientsGroupedList";
 import {
 	DEFAULT_TACTILE_FILTERS,
 	RadiologyPatientSearchModal,

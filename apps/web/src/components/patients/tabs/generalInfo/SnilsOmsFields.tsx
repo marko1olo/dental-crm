@@ -48,18 +48,18 @@ export const SnilsOmsFields: React.FC<SnilsOmsFieldsProps> = ({
 
 			<div className="flex flex-col gap-1">
 				<label className="text-[11px] font-bold text-[var(--muted)] flex items-center justify-between">
-					<span>ИНН (не требуется физлицам)</span>
-					<span className="text-[9px] text-[var(--muted)]">Необязательно</span>
+					<span>ИНН пациента</span>
+					<span className="text-[9px] text-[var(--muted)]">Необязательно (по желанию)</span>
 				</label>
 				<input
 					type="text"
 					className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
 					value={patient?.inn ?? ""}
 					onChange={(e) => onUpdatePatient?.("inn", formatTaxpayerInn(e.target.value))}
-					placeholder="Только при наличии (необязательно)"
+					placeholder="10 или 12 цифр (по желанию)"
 					disabled={disabled}
 					data-testid="input-inn"
-					title="Для пациентов-физлиц ИНН не требуется. Заполняется добровольно или для организаций и ИП"
+					title="ИНН пациента (заполняется добровольно при наличии)"
 				/>
 			</div>
 

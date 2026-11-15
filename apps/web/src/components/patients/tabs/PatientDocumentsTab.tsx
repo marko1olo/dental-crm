@@ -7,6 +7,7 @@ import { PatientDocumentsHeader } from "./documents/PatientDocumentsHeader";
 import { PatientDocumentItemCard } from "./documents/PatientDocumentItemCard";
 import { PatientDocumentsModalsWrapper } from "./documents/PatientDocumentsModalsWrapper";
 import { PatientAttachmentsPanel } from "../PatientAttachmentsPanel";
+import { PatientCommunicationConsentsPanel } from "../PatientCommunicationConsentsPanel";
 
 export interface PatientDocumentsTabProps {
 	patient: Patient;
@@ -50,15 +51,15 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 								<PatientDocumentItemCard
 									key={doc.id}
 									doc={doc}
-									documentLabels={appLogic.documentLabels}
-									documentStatusLabels={appLogic.documentStatusLabels}
-									formatShortDate={appLogic.formatShortDate}
-									money={appLogic.money}
-									onAuditDoc={(id) => void appLogic.loadDocumentAuditFacts(id)}
-									onOpenDocHtml={(id) => void appLogic.openIssuedDocumentHtml(id)}
-									onDownloadPdf={(id) => void appLogic.downloadIssuedDocumentPdf(id)}
+									documentLabels={appLogic?.documentLabels}
+									documentStatusLabels={appLogic?.documentStatusLabels}
+									formatShortDate={appLogic?.formatShortDate}
+									money={appLogic?.money}
+									onAuditDoc={(id) => void appLogic?.loadDocumentAuditFacts?.(id)}
+									onOpenDocHtml={(id) => void appLogic?.openIssuedDocumentHtml?.(id)}
+									onDownloadPdf={(id) => void appLogic?.downloadIssuedDocumentPdf?.(id)}
 									onTabletSign={(d) => logic.setTabletSignDoc(d)}
-									onRequestIssue={(d) => appLogic.requestDocumentIssue(d)}
+									onRequestIssue={(d) => appLogic?.requestDocumentIssue?.(d)}
 								/>
 							)}
 						/>
@@ -77,12 +78,15 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 					</div>
 				)}
 
+				{/* Матрица согласий пациента на каналы связи (152-ФЗ / 38-ФЗ) */}
+				<PatientCommunicationConsentsPanel patientId={patient.id} />
+
 				{/* Панель прикрепления документов, сканов и полисов в 1 клик (Мандат 8aq) */}
 				<PatientAttachmentsPanel patientId={patient.id} patientName={patient.fullName} />
 
 				<PatientDocumentsModalsWrapper
 					patient={patient}
-					appLogic={appLogic}
+					appLogic={appLogic ?? {}}
 					docStore={docStore}
 					isFastPrintOpen={logic.isFastPrintOpen}
 					setIsFastPrintOpen={logic.setIsFastPrintOpen}

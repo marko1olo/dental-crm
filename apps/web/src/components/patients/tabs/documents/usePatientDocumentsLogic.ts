@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { GeneratedDocument, Patient } from "@dental/shared";
-import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../../contexts/AppLogicContext";
 import { useDocumentStore } from "../../../../store/documentStore";
 import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
 
@@ -25,7 +25,7 @@ function extractActiveDocuments(store: unknown): GeneratedDocument[] | null {
 }
 
 export function usePatientDocumentsLogic(patient: Patient) {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const docStore = useDocumentStore();
 
 	const [isFastPrintOpen, setIsFastPrintOpen] = useState(false);
@@ -44,15 +44,15 @@ export function usePatientDocumentsLogic(patient: Patient) {
 		docStore.setDocumentIssueRecipientSigned(true);
 		docStore.setDocumentIssueClinicSigned(true);
 		docStore.setDocumentIssueNote(`Подписано ПЭП на планшете. Хэш SHA-256: ${sigData.sha256Fingerprint?.slice(0, 16) ?? "N/A"}...`);
-		await appLogic.confirmDocumentIssue(true, sigData.signatureSvg, sigData.pepCode);
+		await appLogic?.confirmDocumentIssue?.(true, sigData.signatureSvg, sigData.pepCode);
 		setTabletSignDoc(null);
 	};
 
 	const allDocs = useMemo(() => {
 		const fromStore = extractActiveDocuments(docStore);
 		if (fromStore && fromStore.length > 0) return fromStore;
-		return (appLogic.dashboard?.documents ?? []) as GeneratedDocument[];
-	}, [docStore, appLogic.dashboard?.documents]);
+		return (appLogic?.dashboard?.documents ?? []) as GeneratedDocument[];
+	}, [docStore, appLogic?.dashboard?.documents]);
 
 	const patientDocs = useMemo(() => {
 		return allDocs.filter((doc: GeneratedDocument) => doc && doc.patientId === patient.id);

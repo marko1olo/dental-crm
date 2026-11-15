@@ -1,3 +1,4 @@
+import type { Patient } from "@dental/shared";
 import { usePatientStore } from "../../../store/patientStore";
 import { formatPhoneNumber } from "../../../utils/inputSanitation";
 import { showToast } from "../../GlobalToast";
@@ -7,7 +8,26 @@ import {
 	TOAST_SPECIFY_NAME_OR_EMERGENCY,
 } from "./constants";
 
-export async function executePatientCreate(params: any, options?: { allowDuplicate?: boolean }) {
+export interface ExecutePatientCreateParams {
+	readonly isPatientCreating: boolean;
+	readonly newPatientName: string;
+	readonly newPatientPhone: string;
+	readonly advertisingSource: string;
+	readonly isEmergencyOrPrimary: boolean;
+	readonly isSomaticNorm: boolean;
+	readonly isChild: boolean;
+	readonly parentRole: string;
+	readonly parentName: string;
+	readonly parentPhone: string;
+	readonly createPatient: (options?: { allowDuplicate?: boolean }) => Promise<Patient | null | unknown>;
+	readonly onClose: () => void;
+	readonly setDuplicateConflict: (conflict: { message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean } | null) => void;
+	readonly validationResult: { missingRequiredLabels?: string[] };
+	readonly setNewPatientName: (name: string) => void;
+	readonly setNewPatientPhone: (phone: string) => void;
+}
+
+export async function executePatientCreate(params: ExecutePatientCreateParams, options?: { allowDuplicate?: boolean }) {
 	const {
 		isPatientCreating,
 		newPatientName,
@@ -57,22 +77,34 @@ export async function executePatientCreate(params: any, options?: { allowDuplica
 		if (created === null) return;
 		setDuplicateConflict(null);
 		onClose();
-		if (validationResult.missingRequiredLabels?.length > 0) {
+		if (validationResult.missingRequiredLabels && validationResult.missingRequiredLabels.length > 0) {
 			showToast(
 				`Пациент создан. Поля (${validationResult.missingRequiredLabels.join(", ")}) можно внести позже при оформлении договора`,
 				"info",
 				4000,
 			);
 		}
-	} catch (err: any) {
-		if (err?.status === 409 || err?.duplicateData) {
-			const dup = err.duplicateData;
-			setDuplicateConflict({
-				message: err.message || "Обнаружена похожая карта пациента в картотеке.",
-				existingPatientId: dup?.existingPatientId || dup?.existingPatient?.id,
+	} catch (err: unknown) {
+		const errorObj = err as {
+			status?: number;
+			message?: string;
+			duplicateData?: {
+				existingPatientId?: string;
+				existingPatient?: { id?: string };
+				error?: string;
+				isNameOnlyDuplicate?: boolean;
+			};
+		};
+		if (errorObj?.status === 409 || errorObj?.duplicateData) {
+			const dup = errorObj.duplicateData;
+			const conflictData: { message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean } = {
+				message: errorObj.message || "Обнаружена похожая карта пациента в картотеке.",
 				isNameOnlyDuplicate: dup?.error === "PatientNameDuplicateError" || Boolean(dup?.isNameOnlyDuplicate),
-			});
-			showToast(err.message || "Найден однофамилец или совпадение карты", "warning", 5000);
+			};
+			const existingId = dup?.existingPatientId || dup?.existingPatient?.id;
+			if (existingId) conflictData.existingPatientId = existingId;
+			setDuplicateConflict(conflictData);
+			showToast(errorObj.message || "Найден однофамилец или совпадение карты", "warning", 5000);
 		}
 	}
 }
