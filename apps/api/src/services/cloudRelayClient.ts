@@ -73,6 +73,7 @@ export const ALLOWED_TUNNEL_ROUTES: readonly { readonly path: string; readonly e
 	{ path: "/api/portal/lab-order", exact: false },
 	{ path: "/api/lab/portal", exact: false },
 	{ path: "/api/portal/scans", exact: false },
+	{ path: "/api/portal/direct-storage", exact: false },
 	{ path: "/api/portal/mock-storage", exact: false },
 	{ path: "/api/public/booking", exact: false },
 ];

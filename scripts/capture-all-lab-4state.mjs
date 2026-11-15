@@ -246,6 +246,18 @@ async function capture() {
 			console.log(`  -> copied alias: ${alias}`);
 		}
 
+		const brainDirs = [
+			"C:/Users/Admin/.gemini/antigravity/brain/2e26914e-fa5a-4892-8173-c6752860bc4c",
+			"C:/Users/Admin/.gemini/antigravity/brain/d67edf25-cf83-41d3-801a-2120253e5446"
+		];
+		for (const bDir of brainDirs) {
+			if (!fs.existsSync(bDir)) fs.mkdirSync(bDir, { recursive: true });
+			fs.copyFileSync(targetPath, path.join(bDir, cfg.filename));
+			for (const alias of cfg.aliases) {
+				fs.copyFileSync(targetPath, path.join(bDir, alias));
+			}
+		}
+
 		await context.close();
 	}
 

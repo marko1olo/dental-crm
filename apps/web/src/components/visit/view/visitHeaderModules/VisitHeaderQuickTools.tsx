@@ -1,3 +1,4 @@
+import React from "react";
 import { FlaskConical, Sparkles, UserCheck } from "lucide-react";
 import type { VisitPatientEntity } from "../VisitViewProps";
 
@@ -6,7 +7,7 @@ export interface VisitHeaderQuickToolsProps {
 	handleOpenLabOrder: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?: any;
+	appLogic?: { setSelectedPatientId?: (id: string | null) => void } | undefined;
 }
 
 export function VisitHeaderQuickTools({

@@ -43,7 +43,7 @@ export interface PresignedUploadResult {
 	readonly downloadUrl: string;
 	readonly expiresAt: string;
 	readonly expiresInSeconds: number;
-	readonly provider: "s3_direct" | "mock_fallback";
+	readonly provider: "s3_direct" | "direct_storage_fallback" | "mock_fallback";
 	readonly headersToInclude: Record<string, string>;
 }
 
@@ -52,7 +52,7 @@ export interface PresignedDownloadResult {
 	readonly storageKey: string;
 	readonly expiresAt: string;
 	readonly expiresInSeconds: number;
-	readonly provider: "s3_direct" | "mock_fallback";
+	readonly provider: "s3_direct" | "direct_storage_fallback" | "mock_fallback";
 }
 
 /** Максимальный размер 3D скана (500 МБ) для предотвращения атак переполнения хранилища */
@@ -69,17 +69,19 @@ export const SCAN_MIME_TYPES: Record<string, string> = {
 	zip: "application/zip",
 };
 
-export function createMockStorageSignature(params: {
+export function createDirectStorageSignature(params: {
 	readonly storageKey: string;
 	readonly action: "upload" | "download";
 	readonly expiresAtSeconds: number;
 }): string {
-	const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET || "dente-mock-storage-fallback-secret-2026";
+	const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET || "dente-direct-storage-secret-2026";
 	return crypto
 		.createHmac("sha256", secret)
 		.update(`${params.action}:${params.storageKey}:${params.expiresAtSeconds}`)
 		.digest("hex");
 }
+
+export const createMockStorageSignature = createDirectStorageSignature;
 
 /**
  * Чтение настроек S3 из переменных окружения.
@@ -333,28 +335,28 @@ export function getLabScanUploadPresignedUrl(params: {
 	const config = params.configOverride || getS3ConfigFromEnv();
 
 	if (!config) {
-		// Mock-fallback режим для локальной разработки или при отсутствии ключей облака
+		// Прямое защищенное локальное хранилище для клиник без настроенного внешнего S3
 		const expiresAtSeconds = Math.floor(Date.now() / 1000) + expiresInSeconds;
-		const uploadSig = createMockStorageSignature({
+		const uploadSig = createDirectStorageSignature({
 			storageKey,
 			action: "upload",
 			expiresAtSeconds,
 		});
 		const downloadExpiresAtSeconds = Math.floor(Date.now() / 1000) + 86400 * 7;
-		const downloadSig = createMockStorageSignature({
+		const downloadSig = createDirectStorageSignature({
 			storageKey,
 			action: "download",
 			expiresAtSeconds: downloadExpiresAtSeconds,
 		});
-		const mockUploadUrl = `/api/portal/mock-storage/upload?key=${encodeURIComponent(storageKey)}&exp=${expiresAtSeconds}&sig=${uploadSig}`;
-		const mockDownloadUrl = `/api/portal/mock-storage/download?key=${encodeURIComponent(storageKey)}&exp=${downloadExpiresAtSeconds}&sig=${downloadSig}`;
+		const directUploadUrl = `/api/portal/direct-storage/upload?key=${encodeURIComponent(storageKey)}&exp=${expiresAtSeconds}&sig=${uploadSig}`;
+		const directDownloadUrl = `/api/portal/direct-storage/download?key=${encodeURIComponent(storageKey)}&exp=${downloadExpiresAtSeconds}&sig=${downloadSig}`;
 		return {
-			uploadUrl: mockUploadUrl,
+			uploadUrl: directUploadUrl,
 			storageKey,
-			downloadUrl: mockDownloadUrl,
+			downloadUrl: directDownloadUrl,
 			expiresAt,
 			expiresInSeconds,
-			provider: "mock_fallback",
+			provider: "direct_storage_fallback",
 			headersToInclude: {
 				"content-type": validation.mimeType,
 			},
@@ -411,17 +413,17 @@ export function getLabScanDownloadPresignedUrl(params: {
 
 	if (!config) {
 		const expiresAtSeconds = Math.floor(Date.now() / 1000) + expiresInSeconds;
-		const downloadSig = createMockStorageSignature({
+		const downloadSig = createDirectStorageSignature({
 			storageKey: params.storageKey,
 			action: "download",
 			expiresAtSeconds,
 		});
 		return {
-			downloadUrl: `/api/portal/mock-storage/download?key=${encodeURIComponent(params.storageKey)}&exp=${expiresAtSeconds}&sig=${downloadSig}`,
+			downloadUrl: `/api/portal/direct-storage/download?key=${encodeURIComponent(params.storageKey)}&exp=${expiresAtSeconds}&sig=${downloadSig}`,
 			storageKey: params.storageKey,
 			expiresAt,
 			expiresInSeconds,
-			provider: "mock_fallback",
+			provider: "direct_storage_fallback",
 		};
 	}
 

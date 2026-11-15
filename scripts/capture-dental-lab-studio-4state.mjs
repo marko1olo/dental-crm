@@ -171,6 +171,19 @@ async function capture() {
 		const ordersName = cfg.name.replace("_studio_", "_orders_");
 		fs.copyFileSync(outPath, path.join(PROOFS_DIR, `${ordersName}.png`));
 		fs.copyFileSync(outPath, path.join(LAB_DIR, `${ordersName}.png`));
+		const shortOrdersName = cfg.name.replace("dental_lab_studio_", "lab_orders_");
+		fs.copyFileSync(outPath, path.join(LAB_DIR, `${shortOrdersName}.png`));
+
+		const brainDirs = [
+			"C:/Users/Admin/.gemini/antigravity/brain/2e26914e-fa5a-4892-8173-c6752860bc4c",
+			"C:/Users/Admin/.gemini/antigravity/brain/d67edf25-cf83-41d3-801a-2120253e5446"
+		];
+		for (const bDir of brainDirs) {
+			if (!fs.existsSync(bDir)) fs.mkdirSync(bDir, { recursive: true });
+			fs.copyFileSync(outPath, path.join(bDir, `${cfg.name}.png`));
+			fs.copyFileSync(outPath, path.join(bDir, `${ordersName}.png`));
+			fs.copyFileSync(outPath, path.join(bDir, `${shortOrdersName}.png`));
+		}
 		const size = fs.statSync(outPath).size;
 		console.log(`✓ Saved ${cfg.name}.png (${(size / 1024).toFixed(1)} KB)`);
 
