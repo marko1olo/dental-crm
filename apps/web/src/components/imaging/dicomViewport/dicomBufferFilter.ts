@@ -65,10 +65,10 @@ export function updateDicomFilteredBuffer(
 
 		const isWithinLimit = targetWidth <= 2600 && targetHeight <= 2600;
 		if (!isLowSpec && isWithinLimit) {
-			if ((viewportState as any).smooth) {
+			if (viewportState.smooth) {
 				imgData.data.set(apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, SMOOTH_KERNEL_3X3));
 			}
-			if ((viewportState as any).maxRes) {
+			if (viewportState.maxRes) {
 				imgData.data.set(apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, MAX_RES_KERNEL_3X3));
 			}
 			if (viewportState.sharpen > 0) {

@@ -14,6 +14,7 @@ import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEv
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
 import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
+import { DicomViewerModal } from "../imaging/DicomViewerModal";
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -29,10 +30,19 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 	const isEffectiveEmergencyOpen = Boolean(bridge.isEmergencyRescueOpen || isEmergencyFromStore);
 	const isPayrollFromStore = primaryModal?.id === "doctor_payroll" || primaryModal?.id === "payroll";
 	const isLabFromStore = primaryModal?.id === "lab_order" || primaryModal?.id === "dental_lab" || primaryModal?.id === "lab" || primaryModal?.id === "lab_hub";
+	const isDicomFromStore = primaryModal?.id === "dicom_viewer";
 
 	return (
 		<>
 			{renderStandaloneLaunchers(props)}
+
+			{isDicomFromStore && (
+				<DicomViewerModal
+					isOpen={true}
+					onClose={() => useUiSurfaceStore.getState().closePrimaryModal("dicom_viewer")}
+					{...((primaryModal?.payload as Record<string, unknown> | undefined) || {})}
+				/>
+			)}
 
 			{isPayrollFromStore && (
 				<DoctorPayrollStudioModal

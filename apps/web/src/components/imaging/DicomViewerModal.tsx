@@ -9,6 +9,22 @@ import { DicomToolboxRibbon } from "./DicomToolboxRibbon.js";
 import { planVisiographFindings } from "./visiographFindings.js";
 import type { RadiologyFilmstripItem } from "../radiology/RadiologyFilmstripDock.js";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
+import type { ImagingActiveTool } from "./rvgViewerEngine.js";
+
+const VALID_IMAGING_TOOLS = new Set<string>([
+	"pan",
+	"zoom",
+	"window_level",
+	"ruler",
+	"angle",
+	"root_canal_tracer",
+	"bone_caliper",
+	"roi_density",
+]);
+
+function toImagingActiveTool(tool: string): ImagingActiveTool {
+	return VALID_IMAGING_TOOLS.has(tool) ? (tool as ImagingActiveTool) : "pan";
+}
 
 const CtSelectorModal = React.lazy(() => import("../radiology/CtSelectorModal.js").then((m) => ({ default: m.CtSelectorModal })));
 
@@ -34,8 +50,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 	}, [studiesHistory, title, studyDate, toothFdiCode, activeImage]);
 
 	const quickFilterState = useMemo(() => ({
-		sharpness: ctrl.viewportState.sharpen > 0, maxSharpness: Boolean((ctrl.viewportState as any).maxRes),
-		invert: Boolean(ctrl.viewportState.invert), pseudoRelief: Boolean((ctrl.viewportState as any).emboss),
+		sharpness: ctrl.viewportState.sharpen > 0,
+		maxSharpness: ctrl.viewportState.sharpen >= 75,
+		invert: Boolean(ctrl.viewportState.invert),
+		pseudoRelief: Boolean(ctrl.viewportState.emboss),
 	}), [ctrl.viewportState]);
 
 	const plan = ctrl.ai.aiToothStates ? planVisiographFindings(ctrl.ai.aiToothStates) : null;
@@ -48,7 +66,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 	const modalContent = (
 		<div ref={ctrl.modalContainerRef} data-testid="dicom-viewer-modal" className="fixed inset-0 z-[9999] bg-slate-950/95 flex flex-col text-slate-100 font-sans">
 			{/* Canonical route contract: /tooth-states/batch */}
-			<input type="file" ref={ctrl.fileInputRef as any} accept="image/*,.dcm,.rvg,.png,.jpg,.jpeg,.tiff,.bmp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) ctrl.processFile(f); }} />
+			<input type="file" ref={ctrl.fileInputRef} accept="image/*,.dcm,.rvg,.png,.jpg,.jpeg,.tiff,.bmp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) ctrl.processFile(f); }} />
 
 			<DicomViewerModalHeader
 				title={title} toothFdiCode={toothFdiCode} patientName={patientName} studyDate={studyDate}
@@ -66,7 +84,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 			<DicomToolboxRibbon
 				activeTab={ctrl.viewMode === "3d_mpr" ? "MPR" : ctrl.viewMode === "sectioning" ? "SECTION" : "2D"}
 				onTabChange={(tab) => ctrl.handleSwitchViewMode(tab === "MPR" ? "3d_mpr" : tab === "SECTION" ? "sectioning" : "2d")}
-				activeTool={ctrl.viewportState.activeTool} onSelectTool={(t) => ctrl.setViewportState((p) => ({ ...p, activeTool: t as any }))}
+				activeTool={ctrl.viewportState.activeTool} onSelectTool={(t) => ctrl.setViewportState((p) => ({ ...p, activeTool: toImagingActiveTool(t) }))}
 				viewportState={ctrl.viewportState} onViewportChange={(next) => ctrl.setViewportState((p) => ({ ...p, ...next }))}
 				measurements={ctrl.measurements} onResetView={() => ctrl.setViewportState({ ...ctrl.viewportState, zoom: 1, panX: 0, panY: 0 })}
 				patientName={patientName} studyDate={studyDate} toothFdiCode={toothFdiCode} onInsertToProtocol={onInsertToProtocol}
@@ -105,7 +123,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 
 			{ctrl.isCtSelectorOpen && (
 				<Suspense fallback={null}>
-					<CtSelectorModal isOpen={ctrl.isCtSelectorOpen} onClose={() => ctrl.setIsCtSelectorOpen(false)} patientId={patientId} patientName={patientName} studies={filmstripStudies as any} />
+					<CtSelectorModal isOpen={ctrl.isCtSelectorOpen} onClose={() => ctrl.setIsCtSelectorOpen(false)} patientId={patientId} patientName={patientName} studies={filmstripStudies} />
 				</Suspense>
 			)}
 		</div>

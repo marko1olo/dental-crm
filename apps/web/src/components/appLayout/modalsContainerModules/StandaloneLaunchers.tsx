@@ -45,8 +45,10 @@ export function renderStandaloneLaunchers(
 		typeof window !== "undefined" &&
 		(window.location.search.includes("stand=") ||
 			window.location.search.includes("demo=true") ||
+			window.location.search.includes("dicom") ||
 			window.location.hash.includes("capture") ||
-			window.location.hash.includes("rvg"));
+			window.location.hash.includes("rvg") ||
+			window.location.hash.includes("dicom"));
 
 	if (!isStandOrDemo && !isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;

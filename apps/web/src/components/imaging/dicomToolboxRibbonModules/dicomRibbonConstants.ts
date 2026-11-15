@@ -38,6 +38,14 @@ export const DENTIN_PRESET = {
 	emboss: false,
 } as const;
 
+export const SOFT_TISSUE_PRESET = {
+	windowWidth: 400,
+	windowCenter: 40,
+	sharpen: 0,
+	invert: false,
+	emboss: false,
+} as const;
+
 export const RESET_WINDOW_PRESET = {
 	windowWidth: 2000,
 	windowCenter: 500,

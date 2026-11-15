@@ -51,6 +51,10 @@ export interface DicomViewportState {
 	readonly gamma: number;
 	readonly activeTool: ImagingActiveTool;
 	readonly calibrationMmPerPixel: number;
+	readonly smooth?: boolean | undefined;
+	readonly maxRes?: boolean | undefined;
+	readonly mip?: boolean | undefined;
+	readonly vr?: boolean | undefined;
 }
 
 export const DEFAULT_DICOM_VIEWPORT_STATE: DicomViewportState = {
@@ -135,11 +139,13 @@ export interface CalibratedRulerMeasurement {
 	readonly id: string;
 	readonly p1: Point2D;
 	readonly p2: Point2D;
+	readonly p3?: Point2D | undefined;
 	readonly lengthPx: number;
 	readonly lengthMm: number;
+	readonly angleDeg?: number | undefined;
 	readonly calibrationMmPerPixel: number;
 	readonly labelRu: string;
-	readonly clinicalType?: "bone_height" | "bone_width" | "root_canal_length" | "implant_site" | "general" | undefined;
+	readonly clinicalType?: "bone_height" | "bone_width" | "root_canal_length" | "implant_site" | "angle" | "calibration" | "general" | undefined;
 	readonly colorHex?: string | undefined;
 }
 
@@ -213,6 +219,24 @@ export function measureBoneHeightAndWidth(
 		widthMm: width,
 		isImplantCandidate,
 	};
+}
+
+export function measureAngleDegrees(
+	p1: Point2D,
+	vertex: Point2D,
+	p2: Point2D,
+): number {
+	const v1x = p1.x - vertex.x;
+	const v1y = p1.y - vertex.y;
+	const v2x = p2.x - vertex.x;
+	const v2y = p2.y - vertex.y;
+	const dot = v1x * v2x + v1y * v2y;
+	const mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
+	const mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
+	if (mag1 <= 0 || mag2 <= 0) return 0;
+	const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+	const rad = Math.acos(cosAngle);
+	return Number(((rad * 180) / Math.PI).toFixed(1));
 }
 
 /** ─── 3. ФИЛЬТРЫ: ИНВЕРСИЯ (НЕГАТИВ), РЕЗКОСТЬ (SHARPEN) И РЕЛЬЕФ (EMBOSS) ─── */

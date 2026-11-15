@@ -18,6 +18,7 @@ export {
 	measureBoneHeightAndWidth,
 	measureDistanceMm,
 	measureRootCanalWorkingLength,
+	measureAngleDegrees,
 	type CalibratedRulerMeasurement,
 	type DicomImageMetadata,
 	type DicomViewportState,

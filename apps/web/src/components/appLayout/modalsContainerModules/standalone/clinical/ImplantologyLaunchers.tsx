@@ -26,10 +26,28 @@ const CbctStandaloneStudioView = lazyWithRetry(() =>
 const CbctMprImplantStudioModal = lazyWithRetry(() =>
 	import("../../../../radiology/CbctMprImplantStudioModal").then((m) => ({ default: m.CbctMprImplantStudioModal })),
 );
+const DicomViewerModal = lazyWithRetry(() =>
+	import("../../../../imaging/DicomViewerModal").then((m) => ({ default: m.DicomViewerModal })),
+);
 
 export function renderImplantologyLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
 	const { isCbctTunerOpen, setIsCbctTunerOpen, isCbctDirectModalOpen, setIsCbctDirectModalOpen, isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen } = props;
 	if (typeof window === "undefined") return null;
+
+	if (hasUrlToken(["dicom", "dicom_viewer", "dicom-viewer"])) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка просмотрщика DICOM..." />}>
+				<DicomViewerModal
+					isOpen={true}
+					onClose={() => clearUrlTokens(["dicom", "dicom_viewer", "dicom-viewer"])}
+					imageSrc="/radiology/sample_rvg_tooth16.jpg"
+					patientName="Захаров Иван Дмитриевич"
+					patientId="pat-sample-16"
+					toothFdiCode="16"
+				/>
+			</Suspense>
+		);
+	}
 
 	if (hasUrlToken(["rvg", "radiology"])) {
 		return (

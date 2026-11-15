@@ -16,6 +16,8 @@ import {
 	measureBoneHeightAndWidth,
 	measureDistanceMm,
 	measureRootCanalWorkingLength,
+	measureAngleDegrees,
+	type CalibratedRulerMeasurement,
 } from "../imaging/index.js";
 
 describe("Clinical Dental DICOM / RVG Imaging Engine (Тач-жесты, калибровка, фильтры и утилизация WebGL)", () => {
@@ -191,5 +193,39 @@ describe("Clinical Dental DICOM / RVG Imaging Engine (Тач-жесты, кал�
 		assert.equal(deletedBuffers, 1);
 		assert.equal(deletedPrograms, 1);
 		assert.equal(lostContextCalled, true);
+	});
+
+	it("9. Vector Angle Measurement for Dental/Skeletal Assessments (Cobb/Gnathic Angle)", () => {
+		// Right triangle: apex at (0, 0), ray 1 to (100, 0), ray 2 to (0, 100) -> 90 degrees
+		const p1 = { x: 100, y: 0 };
+		const vertex = { x: 0, y: 0 };
+		const p2 = { x: 0, y: 100 };
+		const angleRight = measureAngleDegrees(p1, vertex, p2);
+		assert.equal(angleRight, 90.0);
+
+		// 45 degrees: apex at (0,0), ray 1 to (100, 0), ray 2 to (100, 100)
+		const p3 = { x: 100, y: 100 };
+		const angle45 = measureAngleDegrees(p1, vertex, p3);
+		assert.equal(angle45, 45.0);
+
+		// Degenerate zero magnitude
+		const angleZero = measureAngleDegrees(vertex, vertex, p1);
+		assert.equal(angleZero, 0);
+
+		// Calibrated measurement object with angle
+		const measurement: CalibratedRulerMeasurement = {
+			id: "angle-1",
+			p1,
+			p2: vertex,
+			p3,
+			lengthPx: 141.42,
+			lengthMm: 3.73,
+			angleDeg: angle45,
+			calibrationMmPerPixel: 0.0264,
+			labelRu: `${angle45}° (Cobb)`,
+			clinicalType: "angle",
+		};
+		assert.equal(measurement.clinicalType, "angle");
+		assert.equal(measurement.angleDeg, 45.0);
 	});
 });

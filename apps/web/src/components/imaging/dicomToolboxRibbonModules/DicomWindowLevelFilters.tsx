@@ -5,10 +5,11 @@
 
 import React from "react";
 import { checkboxLabelStyle } from "./dicomRibbonConstants.js";
+import type { DicomViewportState } from "./types.js";
 
 interface Props {
-	viewportState: any;
-	onViewportChange: (delta: any) => void;
+	viewportState: DicomViewportState;
+	onViewportChange: (delta: Partial<DicomViewportState>) => void;
 }
 
 export const DicomWindowLevelFilters: React.FC<Props> = ({

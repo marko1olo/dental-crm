@@ -42,12 +42,18 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			viewportState, measurements,
 			draftRulerStart: mouse.draftRulerStart, draftRulerCurrent: mouse.draftRulerCurrent,
 			draftCanalPoints: mouse.draftCanalPoints,
+			draftAnglePoints: mouse.draftAnglePoints,
 		});
-	}, [viewportState, measurements, mouse.draftRulerStart, mouse.draftRulerCurrent, mouse.draftCanalPoints]);
+	}, [viewportState, measurements, mouse.draftRulerStart, mouse.draftRulerCurrent, mouse.draftCanalPoints, mouse.draftAnglePoints]);
+
+	const {
+		windowWidth, windowCenter, invert, gamma, smooth, maxRes, sharpen, emboss,
+	} = viewportState;
 
 	const updateFilteredBuffer = useCallback(() => {
 		filteredCanvasRef.current = updateDicomFilteredBuffer(rawImageRef.current, filteredCanvasRef.current, viewportState);
-	}, [viewportState]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [windowWidth, windowCenter, invert, gamma, smooth, maxRes, sharpen, emboss]);
 
 	useEffect(() => {
 		if (!imageSrc) return;
@@ -66,9 +72,20 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		return () => { isCancelled = true; img.onload = null; };
 	}, [imageSrc, updateFilteredBuffer, renderScene]);
 
+	// Recompute heavy 16MB image filter buffer strictly when tonal/convolution filters change
 	useEffect(() => {
-		if (rawImageRef.current) { updateFilteredBuffer(); renderScene(); }
-	}, [updateFilteredBuffer, renderScene]);
+		if (rawImageRef.current) {
+			updateFilteredBuffer();
+			renderScene();
+		}
+	}, [updateFilteredBuffer]);
+
+	// Fast 2D transform render (pan, zoom, measurements) without touching pixel buffer
+	useEffect(() => {
+		if (rawImageRef.current) {
+			renderScene();
+		}
+	}, [renderScene]);
 
 	useEffect(() => {
 		return () => {

@@ -45,9 +45,10 @@ export function useDicomViewerModalAi(
 			setSelectedFindingCodes(new Set(plan.groups.flatMap((g) => g.teeth.map((t) => t.code))));
 			setShowFindingsDrawer(true);
 			showToast("ИИ-анализ снимка завершён", "success");
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.error("[DicomViewerModal] AI failed:", err);
-			showToast(err.message || "Не удалось выполнить ИИ-анализ снимка", "error");
+			const msg = err instanceof Error ? err.message : "Не удалось выполнить ИИ-анализ снимка";
+			showToast(msg, "error");
 		} finally {
 			analysisInFlightRef.current = false;
 			setIsAnalyzing(false);

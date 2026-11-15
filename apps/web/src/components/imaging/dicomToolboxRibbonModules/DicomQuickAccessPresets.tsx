@@ -6,7 +6,7 @@
 import React from "react";
 import { Crop, Sliders } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";
-import { BONE_PRESET, DENTIN_PRESET, ENAMEL_PRESET } from "./dicomRibbonConstants.js";
+import { BONE_PRESET, DENTIN_PRESET, ENAMEL_PRESET, SOFT_TISSUE_PRESET } from "./dicomRibbonConstants.js";
 import type { DicomViewportState } from "./types.js";
 
 interface DicomQuickAccessPresetsProps {
@@ -26,6 +26,7 @@ export const DicomQuickAccessPresets: React.FC<DicomQuickAccessPresetsProps> = (
 	const isBone = viewportState.windowWidth === 2000 && viewportState.windowCenter === 500 && !viewportState.invert;
 	const isEnamel = viewportState.windowWidth === 4000 && viewportState.windowCenter === 1500 && !viewportState.invert;
 	const isDentin = viewportState.windowWidth === 1500 && viewportState.windowCenter === 300 && !viewportState.invert;
+	const isSoftTissue = viewportState.windowWidth === 400 && viewportState.windowCenter === 40 && !viewportState.invert;
 
 	const presetBtnClass = (active: boolean, activeColor: string) =>
 		`secondary-button h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
@@ -36,6 +37,9 @@ export const DicomQuickAccessPresets: React.FC<DicomQuickAccessPresetsProps> = (
 		<div className="flex items-center gap-1 shrink-0 ml-1">
 			<button type="button" data-testid="btn-preset-bone" onClick={() => { onViewportChange(BONE_PRESET); showToast("Пресет «Кость»: WW 2000 / WL 500", "info"); }} className={presetBtnClass(isBone, "bg-teal-900/80 border-[var(--teal)] text-teal-200")} title="Костная ткань">
 				Кость
+			</button>
+			<button type="button" data-testid="btn-preset-soft-tissue" onClick={() => { onViewportChange(SOFT_TISSUE_PRESET); showToast("Пресет «Ткани»: WW 400 / WL 40", "info"); }} className={presetBtnClass(isSoftTissue, "bg-rose-900/80 border-rose-500 text-rose-200")} title="Мягкие ткани и периодонт">
+				Ткани
 			</button>
 			<button type="button" data-testid="btn-preset-enamel" onClick={() => { onViewportChange(ENAMEL_PRESET); showToast("Пресет «Эмаль»: WW 4000 / WL 1500", "info"); }} className={presetBtnClass(isEnamel, "bg-amber-900/80 border-amber-500 text-amber-200")} title="Эмаль и кариес">
 				Эмаль

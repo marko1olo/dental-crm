@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import {
 	calculate2FingerWindowLevel,
+	measureAngleDegrees,
 	measureDistanceMm,
 	type CalibratedRulerMeasurement,
 	type DicomViewportState,
@@ -31,6 +32,7 @@ export function useDicomViewportMouse({
 	const [draftRulerStart, setDraftRulerStart] = useState<Point2D | null>(null);
 	const [draftRulerCurrent, setDraftRulerCurrent] = useState<Point2D | null>(null);
 	const [draftCanalPoints, setDraftCanalPoints] = useState<Point2D[]>([]);
+	const [draftAnglePoints, setDraftAnglePoints] = useState<Point2D[]>([]);
 
 	const getCanvasPoint = useCallback((e: React.MouseEvent<HTMLCanvasElement>): Point2D => {
 		const canvas = canvasRef.current;
@@ -56,6 +58,38 @@ export function useDicomViewportMouse({
 			const pt = getCanvasPoint(e);
 			setDraftRulerStart(pt);
 			setDraftRulerCurrent(pt);
+		} else if (e.button === 0 && viewportState.activeTool === "angle") {
+			mouseDragModeRef.current = null;
+			const pt = getCanvasPoint(e);
+			if (draftAnglePoints.length === 0) {
+				setDraftAnglePoints([pt]);
+				setDraftRulerCurrent(pt);
+			} else if (draftAnglePoints.length === 1) {
+				setDraftAnglePoints((prev) => [...prev, pt]);
+				setDraftRulerCurrent(pt);
+			} else if (draftAnglePoints.length === 2) {
+				const p1 = draftAnglePoints[0]!;
+				const vertex = draftAnglePoints[1]!;
+				const p2 = pt;
+				const angleDeg = measureAngleDegrees(p1, vertex, p2);
+				if (onAddMeasurement) {
+					onAddMeasurement({
+						id: `angle-${Date.now()}`,
+						p1,
+						p2: vertex,
+						p3: p2,
+						lengthPx: 0,
+						lengthMm: 0,
+						angleDeg,
+						calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
+						clinicalType: "angle",
+						labelRu: `${angleDeg}°`,
+						colorHex: "#f59e0b",
+					});
+				}
+				setDraftAnglePoints([]);
+				setDraftRulerCurrent(null);
+			}
 		} else if (e.button === 0 && viewportState.activeTool === "root_canal_tracer") {
 			mouseDragModeRef.current = null;
 			setDraftCanalPoints((prev) => [...prev, getCanvasPoint(e)]);
@@ -74,7 +108,7 @@ export function useDicomViewportMouse({
 			}
 			return;
 		}
-		if (draftRulerStart || draftCanalPoints.length > 0) setDraftRulerCurrent(getCanvasPoint(e));
+		if (draftRulerStart || draftCanalPoints.length > 0 || draftAnglePoints.length > 0) setDraftRulerCurrent(getCanvasPoint(e));
 	};
 
 	const handleMouseUp = () => {
@@ -110,5 +144,5 @@ export function useDicomViewportMouse({
 		onViewportChange({ zoom: nextZoom });
 	};
 
-	return { draftRulerStart, draftRulerCurrent, draftCanalPoints, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel };
+	return { draftRulerStart, draftRulerCurrent, draftCanalPoints, draftAnglePoints, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel };
 }
