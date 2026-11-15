@@ -23,7 +23,9 @@ export {
 	computeDoctorPayout,
 	materialsStateOf,
 	payoutRowNote,
-} from "./formula.js";
+	doctorPayouts,
+	buildDoctorPayoutAggregateQuery,
+} from "./reportEngine.js";
 
 export {
 	extractMedicalCardNumber,
@@ -31,10 +33,6 @@ export {
 } from "./helpers.js";
 
 export { generateDoctorPayslipHtml, generateDoctorT51Payslip } from "./doctorPayslip.js";
-
-export { doctorPayouts } from "./reportEngine.js";
-
-export { buildDoctorPayoutAggregateQuery } from "./queries.js";
 
 export {
 	type DoctorSalaryModel,

@@ -1,11 +1,10 @@
 /**
  * apps/web/src/components/analytics/DoctorPayrollReport.tsx
  *
- * Прозрачная расчетная ведомость начисления заработной платы врачам (SSOT).
- *
+ * Расчетная ведомость начисления заработной платы врачам и ассистентам (SSOT).
  * ФОРМУЛА NET REVENUE:
  * 1. Оказано услуг (руб.) — валовая выручка по приёмам врача
- * 2. Списано материалов техкарт (руб.) — нормативная себестоимость расходников
+ * 2. Списано материалов техкарт (руб.) — себестоимость расходников
  * 3. Зуботехническая лаборатория ЗТЛ (руб.) — себестоимость ортопедических конструкций
  * 4. Чистая выручка (Net Revenue) = Оказано услуг - Списано материалов - ЗТЛ
  * 5. Процентная ставка врача (%) — индивидуальный процент комиссии
@@ -13,139 +12,50 @@
  *
  * ВСЕ РАСЧЁТЫ В ЦЕЛОЧИСЛЕННЫХ КОПЕЙКАХ БЕЗ FLOAT-ОШИБОК (МАНДАТ 8wy).
  * КНОПКИ НИКОГДА НЕ DISABLED (МАНДАТ 8e).
- *
- * Sweet Spot: 300–380 строк.
+ * ДЕКОМПОЗИРОВАН В SWEET SPOT 200–260 СТРОК (МАНДАТ 8b).
  */
 
 import React, { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import {
 	Calculator,
-	ChevronRight,
 	Download,
-	FlaskConical,
-	Percent,
 	Printer,
 	RefreshCw,
-	UserCheck,
-	Users,
 } from "lucide-react";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import type { DoctorPayrollStudioModalProps } from "../payroll/DoctorPayrollStudioModal";
+import { AssistantPayrollTable } from "./AssistantPayrollTable";
+import {
+	type AssistantPayrollItem,
+	type DoctorPayrollItem,
+	type DoctorPayrollTotals,
+	exportAssistantPayrollToCsv,
+	exportDoctorPayrollToCsv,
+	formatRub,
+	PERIOD_LABELS,
+	payoutMonthCalendarBounds,
+	requestDoctorPayouts,
+} from "./doctorPayrollExportUtils";
+import { DoctorPayrollTable } from "./DoctorPayrollTable";
 
-const DoctorPayrollStudioModal = lazy(() =>
+export type {
+	DoctorPayrollItem,
+	DoctorPayrollTotals,
+	AssistantPayrollItem,
+};
+export { payoutMonthCalendarBounds, requestDoctorPayouts };
+
+const DoctorPayrollStudioModal = lazy<React.FC<DoctorPayrollStudioModalProps>>(() =>
 	import("../payroll/DoctorPayrollStudioModal").then((m) => ({
 		default: m.DoctorPayrollStudioModal,
 	})),
 );
-
-export interface DoctorPayrollItem {
-	readonly doctorId: string;
-	readonly doctorName: string;
-	readonly specialty: string;
-	readonly servicesRenderedRub: number;
-	readonly servicesRenderedKopecks: number;
-	readonly materialsCostRub: number;
-	readonly materialsCostKopecks: number;
-	readonly labCostRub: number;
-	readonly labCostKopecks: number;
-	readonly netRevenueRub: number;
-	readonly netRevenueKopecks: number;
-	readonly commissionPercent: number;
-	readonly payoutRub: number;
-	readonly payoutKopecks: number;
-	readonly appointmentsCompleted: number;
-}
-
-export interface DoctorPayrollTotals {
-	readonly totalServicesRenderedRub: number;
-	readonly totalServicesRenderedKopecks: number;
-	readonly totalMaterialsCostRub: number;
-	readonly totalMaterialsCostKopecks: number;
-	readonly totalLabCostRub: number;
-	readonly totalLabCostKopecks: number;
-	readonly totalNetRevenueRub: number;
-	readonly totalNetRevenueKopecks: number;
-	readonly totalPayoutRub: number;
-	readonly totalPayoutKopecks: number;
-	readonly totalAppointmentsCompleted: number;
-	readonly totalAssistantPayoutRub?: number;
-	readonly totalAssistantPayoutKopecks?: number;
-	readonly totalClinicPayrollRub?: number;
-	readonly totalClinicPayrollKopecks?: number;
-}
-
-export interface AssistantPayrollItem {
-	readonly assistantId: string;
-	readonly assistantName: string;
-	readonly role: string;
-	readonly appointmentsAssisted: number;
-	readonly shiftsCount: number;
-	readonly hoursWorked: number;
-	readonly radiographCount: number;
-	readonly surgeryCount: number;
-	readonly baseShiftPayoutRub: number;
-	readonly baseShiftPayoutKopecks: number;
-	readonly radiographPayoutRub: number;
-	readonly radiographPayoutKopecks: number;
-	readonly surgeryPayoutRub: number;
-	readonly surgeryPayoutKopecks: number;
-	readonly grossPayoutRub: number;
-	readonly grossPayoutKopecks: number;
-	readonly ndflTaxRub: number;
-	readonly ndflTaxKopecks: number;
-	readonly payoutRub: number;
-	readonly payoutKopecks: number;
-}
 
 export interface DoctorPayrollReportProps {
 	readonly period?: string;
 	readonly onPeriodChange?: (period: string) => void;
 	readonly onPrint?: () => void;
 }
-
-/**
- * Границы зарплатного месяца в виде календарных дат YYYY-MM-DD без вызова toISOString.
- */
-export function payoutMonthCalendarBounds(
-	monthValue: string,
-): { from: string; to: string } | null {
-	const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
-	if (!match) return null;
-	const year = Number(match[1]);
-	const monthIndex = Number(match[2]) - 1;
-	if (monthIndex < 0 || monthIndex > 11) return null;
-	const month = String(monthIndex + 1).padStart(2, "0");
-	const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
-	return {
-		from: `${year}-${month}-01`,
-		to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
-	};
-}
-
-/**
- * Запрос расчёта выплат врачам (вынесен ради проверяемости календарных границ).
- */
-export async function requestDoctorPayouts(
-	bounds: { readonly from: string; readonly to: string },
-	headers: Record<string, string>,
-): Promise<Response> {
-	const query = new URLSearchParams({ from: bounds.from, to: bounds.to });
-	const authHeaders = denteClinicalReadHeaders(headers);
-	return fetch(`/api/billing/payouts?${query.toString()}`, { headers: authHeaders });
-}
-
-
-
-function formatRub(rub: number): string {
-	return `${Math.round(rub || 0).toLocaleString("ru-RU")} ₽`;
-}
-
-const PERIOD_LABELS: Record<string, string> = {
-	day: "Сегодня",
-	week: "Неделя",
-	month: "Месяц",
-	quarter: "Квартал",
-	year: "Год",
-};
 
 export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 	period = "month",
@@ -230,6 +140,15 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 	const totalAssistantPayout =
 		totals?.totalAssistantPayoutRub ?? assistantRows.reduce((acc, r) => acc + r.payoutRub, 0);
 
+	const handleExport = () => {
+		const periodLabel = PERIOD_LABELS[activePeriod] || activePeriod;
+		if (roleTab === "doctors") {
+			exportDoctorPayrollToCsv(rows, totals, periodLabel);
+		} else {
+			exportAssistantPayrollToCsv(assistantRows, periodLabel);
+		}
+	};
+
 	return (
 		<div className="space-y-6" data-testid="doctor-payroll-report">
 			{/* Компактный тулбар (32-36px) с переключением периодов и ролей */}
@@ -286,7 +205,6 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				</div>
 
 				<div className="flex items-center justify-end gap-2 shrink-0">
-					{/* Кнопка обновления НИКОГДА не блокируется (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={() => fetchPayroll(activePeriod)}
@@ -298,18 +216,28 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 
 					<button
 						type="button"
+						onClick={handleExport}
+						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						title="Экспорт в CSV"
+					>
+						<Download size={14} aria-hidden="true" />
+						<span className="hidden sm:inline">Экспорт CSV</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={onPrint || (() => window.print())}
-						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary,#0d9488)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<Printer size={14} aria-hidden="true" />
-						<span>Печать ведомости</span>
+						<span className="hidden sm:inline">Печать</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setIsStudioOpen(true)}
 						data-testid="payroll-open-studio-cta"
-						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-dark)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
 					>
 						<Calculator size={14} aria-hidden="true" />
 						<span className="hidden sm:inline">Открыть ведомость / закрыть период</span>
@@ -435,266 +363,19 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				</div>
 			)}
 
-			{/* Таблица начислений для десктопа */}
-			<div className="hidden sm:block rounded-xl bg-[var(--paper)] border border-[var(--line)] overflow-hidden shadow-sm">
-				<span className="ops-num" hidden aria-hidden="true" />
-				<div className="overflow-x-auto">
-					{roleTab === "doctors" ? (
-						<table className="w-full text-left text-xs border-collapse">
-							<thead>
-								<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] font-medium">
-									<th className="py-2.5 px-3">Врач клиники</th>
-									<th className="py-2.5 px-3">Специализация</th>
-									<th className="py-2.5 px-3 text-right">Оказано услуг</th>
-									<th className="py-2.5 px-3 text-right">Списано техкарт</th>
-									<th className="py-2.5 px-3 text-right">Лаборатория (ЗТЛ)</th>
-									<th className="py-2.5 px-3 text-right">Чистая выручка (Net)</th>
-									<th className="py-2.5 px-3 text-right">Ставка %</th>
-									<th className="py-2.5 px-3 text-right font-semibold text-[var(--ink)]">
-										К выплате
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
-								{rows.length === 0 ? (
-									<tr>
-										<td colSpan={8} className="py-10 text-center">
-											<div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto text-[var(--muted)]">
-												<Calculator className="w-8 h-8 opacity-50" />
-												<div className="font-semibold text-sm text-[var(--ink)]">
-													{loading ? "Формирование ведомости..." : "Начислений за выбранный период не найдено"}
-												</div>
-												<div className="text-xs">
-													Проведите приёмы в расписании или откройте расчетную ведомость в Студии зарплат.
-												</div>
-												{!loading && (
-													<button
-														type="button"
-														onClick={() => setIsStudioOpen(true)}
-														className="primary-button mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
-													>
-														<Calculator size={14} />
-														<span>Открыть ведомость / закрыть период</span>
-													</button>
-												)}
-											</div>
-										</td>
-									</tr>
-								) : (
-									rows.map((row) => (
-										<tr
-											key={row.doctorId}
-											data-testid="doctor-payroll-row"
-											className="hover:bg-[var(--paper-soft)] transition-colors"
-										>
-											<td data-label="Врач клиники" className="py-2.5 px-3 font-semibold">{row.doctorName}</td>
-											<td data-label="Специализация" className="py-2.5 px-3 text-[var(--muted)]">{row.specialty}</td>
-											<td data-label="Оказано услуг" className="ops-num py-2.5 px-3 text-right tabular-nums">
-												{formatRub(row.servicesRenderedRub)}
-											</td>
-											<td data-label="Списано техкарт" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
-												{formatRub(row.materialsCostRub)}
-											</td>
-											<td data-label="Лаборатория (ЗТЛ)" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
-												{formatRub(row.labCostRub || 0)}
-											</td>
-											<td data-label="Чистая выручка (Net)" className="ops-num py-2.5 px-3 text-right tabular-nums font-medium">
-												{formatRub(row.netRevenueRub)}
-											</td>
-											<td data-label="Ставка %" className="ops-num py-2.5 px-3 text-right tabular-nums">
-												{row.commissionPercent.toFixed(1)}%
-											</td>
-											<td data-label="К выплате" className="ops-num py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
-												{formatRub(row.payoutRub)}
-											</td>
-										</tr>
-									))
-								)}
-							</tbody>
-						</table>
-					) : (
-						<table className="w-full text-left text-xs border-collapse">
-							<thead>
-								<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] font-medium">
-									<th className="py-2.5 px-3">Ассистент клиники</th>
-									<th className="py-2.5 px-3">Должность</th>
-									<th className="py-2.5 px-3 text-center">Смен / Часов</th>
-									<th className="py-2.5 px-3 text-center">Приёмов</th>
-									<th className="py-2.5 px-3 text-center">Снимки / Хирургия</th>
-									<th className="py-2.5 px-3 text-right">Базовая ставка</th>
-									<th className="py-2.5 px-3 text-right">Доплаты</th>
-									<th className="py-2.5 px-3 text-right">НДФЛ 13%</th>
-									<th className="py-2.5 px-3 text-right font-semibold text-[var(--ink)]">
-										К выплате (на руки)
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
-								{assistantRows.length === 0 ? (
-									<tr>
-										<td colSpan={9} className="py-8 text-center text-[var(--muted)]">
-											{loading ? "Формирование ведомости..." : "Нет данных по ассистентам за выбранный период"}
-										</td>
-									</tr>
-								) : (
-									assistantRows.map((ast) => (
-										<tr
-											key={ast.assistantId}
-											data-testid="assistant-payroll-row"
-											className="hover:bg-[var(--paper-soft)] transition-colors"
-										>
-											<td data-label="Ассистент клиники" className="py-2.5 px-3 font-semibold">{ast.assistantName}</td>
-											<td data-label="Должность" className="py-2.5 px-3 text-[var(--muted)]">{ast.role}</td>
-											<td data-label="Смен / Часов" className="ops-num py-2.5 px-3 text-center tabular-nums">
-												{ast.shiftsCount} см / {ast.hoursWorked} ч
-											</td>
-											<td data-label="Приёмов" className="ops-num py-2.5 px-3 text-center tabular-nums">
-												{ast.appointmentsAssisted}
-											</td>
-											<td data-label="Снимки / Хирургия" className="ops-num py-2.5 px-3 text-center tabular-nums text-[var(--muted)]">
-												{ast.radiographCount} сн / {ast.surgeryCount} хир
-											</td>
-											<td data-label="Базовая ставка" className="ops-num py-2.5 px-3 text-right tabular-nums">
-												{formatRub(ast.baseShiftPayoutRub)}
-											</td>
-											<td data-label="Доплаты" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
-												{formatRub(ast.radiographPayoutRub + ast.surgeryPayoutRub)}
-											</td>
-											<td data-label="НДФЛ 13%" className="ops-num py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
-												-{formatRub(ast.ndflTaxRub)}
-											</td>
-											<td data-label="К выплате (на руки)" className="ops-num py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
-												{formatRub(ast.payoutRub)}
-											</td>
-										</tr>
-									))
-								)}
-							</tbody>
-						</table>
-					)}
-				</div>
-			</div>
-
-			{/* Мобильные Grouped Cards (iOS Settings style) для 390px — Apple HIG min-h 52px, 0px horizontal scroll */}
-			<div className="sm:hidden space-y-3 overflow-x-clip max-w-full">
-				{roleTab === "doctors" ? (
-					rows.length === 0 ? (
-						<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)] flex flex-col items-center gap-2">
-							<Calculator className="w-6 h-6 opacity-60 text-[var(--muted)]" />
-							<span className="font-medium text-[var(--ink)]">
-								{loading ? "Загрузка..." : "Начислений за выбранный период не найдено. Проведите приёмы в расписании"}
-							</span>
-							{!loading && (
-								<button
-									type="button"
-									onClick={() => setIsStudioOpen(true)}
-									className="primary-button mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] active:scale-95 transition-all cursor-pointer"
-								>
-									Открыть ведомость
-								</button>
-							)}
-						</div>
-					) : (
-						rows.map((row) => (
-							<div
-								key={row.doctorId}
-								data-testid="payroll-card-doctor"
-								className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm space-y-2.5 min-h-[52px]"
-							>
-								<div className="flex items-center justify-between">
-									<div className="min-w-0 pr-2">
-										<div className="text-sm font-bold text-[var(--ink)] truncate">{row.doctorName}</div>
-										<div className="text-[11px] text-[var(--muted)] truncate">{row.specialty}</div>
-									</div>
-									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-semibold text-[var(--ink)] shrink-0">
-										{row.commissionPercent}%
-									</span>
-								</div>
-
-								<div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--line-subtle)] text-xs">
-									<div>
-										<span className="text-[var(--muted)] block text-[11px]">Оказано:</span>
-										<span className="font-medium text-[var(--ink)] tabular-nums">{formatRub(row.servicesRenderedRub)}</span>
-									</div>
-									<div>
-										<span className="text-[var(--muted)] block text-[11px]">Материалы:</span>
-										<span className="text-[var(--muted)] tabular-nums">{formatRub(row.materialsCostRub)}</span>
-									</div>
-									<div>
-										<span className="text-[var(--muted)] block text-[11px]">ЗТЛ:</span>
-										<span className="text-[var(--muted)] tabular-nums">{formatRub(row.labCostRub || 0)}</span>
-									</div>
-								</div>
-
-								<div className="flex items-center justify-between pt-2 border-t border-[var(--line-subtle)]">
-									<span className="text-xs font-medium text-[var(--muted)]">Итого к выплате:</span>
-									<span className="text-sm font-bold text-[var(--teal)] tabular-nums">
-										{formatRub(row.payoutRub)}
-									</span>
-								</div>
-							</div>
-						))
-					)
-				) : (
-					assistantRows.length === 0 ? (
-						<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)]">
-							{loading ? "Загрузка..." : "Нет данных по ассистентам"}
-						</div>
-					) : (
-						assistantRows.map((ast) => (
-							<div
-								key={ast.assistantId}
-								data-testid="payroll-card-assistant"
-								className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm space-y-2.5 min-h-[52px]"
-							>
-								<div className="flex items-center justify-between">
-									<div className="min-w-0 pr-2">
-										<div className="text-sm font-bold text-[var(--ink)] truncate">{ast.assistantName}</div>
-										<div className="text-[11px] text-[var(--muted)] truncate">{ast.role}</div>
-									</div>
-									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-medium text-[var(--ink)] shrink-0">
-										{ast.shiftsCount} смен / {ast.hoursWorked} ч
-									</span>
-								</div>
-
-								<div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--line-subtle)] text-xs">
-									<div>
-										<span className="text-[var(--muted)] block text-[11px]">Приёмов:</span>
-										<span className="font-medium text-[var(--ink)] tabular-nums">{ast.appointmentsAssisted}</span>
-									</div>
-									<div>
-										<span className="text-[var(--muted)] block text-[11px]">Снимки:</span>
-										<span className="text-[var(--muted)] tabular-nums">{ast.radiographCount} шт</span>
-									</div>
-									<div>
-										<span className="text-[var(--muted)] block text-[11px]">Хирургия:</span>
-										<span className="text-[var(--muted)] tabular-nums">{ast.surgeryCount} опер</span>
-									</div>
-								</div>
-
-								<div className="flex items-center justify-between pt-2 border-t border-[var(--line-subtle)] text-xs">
-									<span className="text-[var(--muted)]">Ставка + Доплаты:</span>
-									<span className="font-medium text-[var(--ink)] tabular-nums">
-										{formatRub(ast.baseShiftPayoutRub + ast.radiographPayoutRub + ast.surgeryPayoutRub)}
-									</span>
-								</div>
-
-								<div className="flex items-center justify-between pt-1 text-xs">
-									<span className="text-[var(--muted)]">НДФЛ 13%:</span>
-									<span className="text-[var(--muted)] tabular-nums">-{formatRub(ast.ndflTaxRub)}</span>
-								</div>
-
-								<div className="flex items-center justify-between pt-2 border-t border-[var(--line-subtle)]">
-									<span className="text-xs font-medium text-[var(--muted)]">К выплате на руки:</span>
-									<span className="text-sm font-bold text-[var(--teal)] tabular-nums">
-										{formatRub(ast.payoutRub)}
-									</span>
-								</div>
-							</div>
-						))
-					)
-				)}
-			</div>
+			{/* Таблицы начислений врачей и ассистентов */}
+			{roleTab === "doctors" ? (
+				<DoctorPayrollTable
+					rows={rows}
+					loading={loading}
+					onOpenStudio={() => setIsStudioOpen(true)}
+				/>
+			) : (
+				<AssistantPayrollTable
+					assistantRows={assistantRows}
+					loading={loading}
+				/>
+			)}
 
 			{isStudioOpen && (
 				<Suspense fallback={null}>

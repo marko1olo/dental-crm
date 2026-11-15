@@ -1,14 +1,22 @@
 import { Decimal } from "decimal.js";
+import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import { db } from "../../../db/client.js";
+import {
+	appointments,
+	doctorCommissions,
+	inventoryItems,
+	inventoryTransactions,
+	labOrders,
+	payments,
+	users,
+	visits,
+} from "../../../db/schema.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	classifyServiceCategory,
 	DENTAL_SPECIALTY_NAMES_RU,
 	type DentalSpecialtyCategory,
 	type CategoryAccrualBreakdown,
-	generateDoctorT51Html,
-	type DoctorT51PrintPayload,
-	type DoctorT51VisitItem,
-	type DoctorT51LabItem,
 	isGeneralClinicOverheadConsumable,
 } from "@dental/shared";
 import type {
@@ -17,6 +25,10 @@ import type {
 	DoctorPayoutRow,
 	DoctorPayoutVisit,
 	DoctorPayoutLabOrder,
+	DoctorPayoutMaterialsState,
+	DoctorPayoutState,
+	PayoutFormulaInput,
+	PayoutFormulaResult,
 } from "./types.js";
 import {
 	roundMoney,
@@ -24,17 +36,527 @@ import {
 	isUsablePercent,
 } from "./math.js";
 import {
-	computeDoctorPayout,
-	materialsStateOf,
-	payoutRowNote,
-} from "./formula.js";
-import {
 	extractMedicalCardNumber,
 	humanizeRestorationType,
 } from "./helpers.js";
-import { buildDoctorPayoutAggregateQuery } from "./queries.js";
 import { fetchDoctorPayoutDrillDownDetails } from "./drillDown.js";
 import { moneyFromDb, percentFromDb } from "./dbParsers.js";
+
+/**
+ * Выплата врачу за период.
+ *
+ * Начислено = (касса − возвраты) × ставка. Удержано = себестоимость материалов × процент
+ * удержания + расходы ЗТЛ (кроме гарантийных переделок) × процент удержания.
+ * По ТК РФ выплата не может быть отрицательной (payout >= 0).
+ */
+export function computeDoctorPayout(
+	input: PayoutFormulaInput,
+): PayoutFormulaResult {
+	if (input.commissionPct === null) {
+		return {
+			state: "rate_missing",
+			accruedRub: null,
+			withheldMaterialRub: null,
+			withheldLabRub: null,
+			payoutRub: null,
+		};
+	}
+	if (!isUsablePercent(input.commissionPct)) {
+		return {
+			state: "rate_invalid",
+			accruedRub: null,
+			withheldMaterialRub: null,
+			withheldLabRub: null,
+			payoutRub: null,
+		};
+	}
+
+	const netRevenueRub = roundMoney(
+		new Decimal(input.revenueRub).minus(new Decimal(input.refundRub ?? 0)),
+	);
+	const refundClawbackRub = input.refundRub && input.refundRub > 0
+		? percentOfMoney(input.refundRub, input.commissionPct)
+		: 0;
+
+	// Вычет материалов
+	let withheldMaterialRub: number | null = 0;
+	const matMovements = input.materialMovements ?? 0;
+	const matCost = input.materialCostRub ?? 0;
+	if (matMovements > 0 && matCost > 0) {
+		if (!isUsablePercent(input.materialDeductionPct ?? null)) {
+			const legacyAccrued = percentOfMoney(netRevenueRub, input.commissionPct);
+			return {
+				state: "material_policy_missing",
+				accruedRub: legacyAccrued,
+				withheldMaterialRub: null,
+				withheldLabRub: null,
+				payoutRub: null,
+			};
+		}
+		withheldMaterialRub = percentOfMoney(
+			matCost,
+			input.materialDeductionPct ?? 100,
+		);
+	}
+
+	// Вычет ЗТЛ (лаборатория): при гарантии (isWarranty: true) расходы ЗТЛ с врача не удерживаются
+	const labOrdersCount = input.labOrdersCount ?? 0;
+	const isWarranty = Boolean(input.isWarranty);
+	const labCostRub = isWarranty ? 0 : (input.labCostRub ?? 0);
+	let withheldLabRub: number | null = 0;
+	if (!isWarranty && labOrdersCount > 0 && labCostRub > 0) {
+		const labPct = isUsablePercent(input.labDeductionPct ?? null)
+			? (input.labDeductionPct as number)
+			: 100;
+		withheldLabRub = percentOfMoney(labCostRub, labPct);
+	}
+
+	// Чистая база выручки = max(0, Revenue - Refund - WithheldMaterials - WithheldLab)
+	const directMaterialDeduction = new Decimal(withheldMaterialRub ?? 0);
+	const directLabDeduction = new Decimal(withheldLabRub ?? 0);
+	const netBaseRub = Decimal.max(
+		0,
+		new Decimal(netRevenueRub).minus(directMaterialDeduction).minus(directLabDeduction),
+	);
+	const accruedRub = percentOfMoney(netBaseRub.toNumber(), input.commissionPct);
+	const payoutRub = accruedRub;
+
+	return {
+		state: "computed",
+		accruedRub,
+		withheldMaterialRub,
+		withheldLabRub,
+		payoutRub,
+		refundClawbackRub,
+	};
+}
+
+/** Состояние себестоимости по числу строк списания. */
+export function materialsStateOf(
+	movements: number,
+	unpriced: number,
+): DoctorPayoutMaterialsState {
+	if (movements === 0) return "no_movements";
+	return unpriced > 0 ? "cost_missing" : "counted";
+}
+
+/**
+ * Текст строки: причина и действие.
+ */
+export function payoutRowNote(input: {
+	readonly state: DoctorPayoutState;
+	readonly materialsState: DoctorPayoutMaterialsState;
+	readonly materialMovementsUnpriced: number;
+	readonly commissionPct: number | null;
+	readonly rateRowCount: number;
+	readonly payoutRub: number | null;
+	readonly revenueRub: number;
+}): string {
+	const parts: string[] = [];
+
+	switch (input.state) {
+		case "rate_missing":
+			parts.push(
+				"Ставка врача не задана, поэтому сумму к выплате считать не из чего. " +
+					"Задайте процент врача — до этого показана только касса за период.",
+			);
+			break;
+		case "rate_invalid":
+			parts.push(
+				`Ставка врача в базе непригодна для расчёта: ${input.commissionPct ?? "—"} %. ` +
+					"Процент должен быть от 0 до 100. Исправьте ставку: по такому значению зарплата вышла бы неверной.",
+			);
+			break;
+		case "material_policy_missing":
+			parts.push(
+				"Процент удержания за материалы не задан, а списания по оплаченным визитам есть. " +
+					"Начислено показано, итог к выплате — нет: без процента удержания он был бы либо " +
+					"выплатой материалов клиники врачу, либо удержанием, о котором не договаривались.",
+			);
+			break;
+		case "computed":
+			parts.push(
+				"Начислено процентом от чистой базы выручки (за вычетом материалов и лаборатории ЗТЛ).",
+			);
+			break;
+	}
+
+	if (input.state !== "rate_missing" && input.state !== "rate_invalid") {
+		if (input.materialsState === "no_movements") {
+			parts.push(
+				"Списаний материалов по оплаченным визитам нет — удерживать нечего. " +
+					"Если материалы расходовались, включите их списание при подписании приёма: " +
+					"иначе себестоимость в зарплату не попадёт.",
+			);
+		} else if (input.materialsState === "cost_missing") {
+			parts.push(
+				`Списаний без цены или без количества: ${input.materialMovementsUnpriced}. ` +
+					"Себестоимость занижена, значит удержание меньше настоящего. Проставьте цену позиций склада.",
+			);
+		}
+	}
+
+	if (
+		input.state === "computed" &&
+		input.payoutRub !== null &&
+		input.revenueRub > 0
+	) {
+		if (input.payoutRub < 0) {
+			parts.push(
+				"Выплата отрицательная: материалы дороже начисленного процента. " +
+					"Это долг врача клинике, а не ноль — обнулять его нельзя.",
+			);
+		} else if (input.payoutRub === 0) {
+			parts.push(
+				"Удержания за материалы и ЗТЛ полностью покрыли начисленный процент. " +
+					"Отрицательная выплата по ТК РФ запрещена (минимальная выплата 0,00 ₽).",
+			);
+		}
+	}
+
+	if (input.revenueRub === 0) {
+		parts.push(
+			"Кассы за период нет: оплаты по приёмам этого врача не проходили либо оплата не привязана к приёму.",
+		);
+	}
+
+	if (input.rateRowCount > 1) {
+		parts.push(
+			`Активных ставок у врача найдено ${input.rateRowCount}; взята самая свежая по дате начала действия. ` +
+				"Уникальности в базе нет — лишние ставки лучше отключить, чтобы расчёт не зависел от порядка строк.",
+		);
+	}
+
+	return parts.join(" ");
+}
+
+/**
+ * Один агрегатный запрос для ведомости выплат врачам.
+ */
+export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
+	const { organizationId, from, to } = scope;
+
+	const paidVisits = db.$with("payout_paid_visits").as(
+		db
+			.select({ visitId: payments.visitId })
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+					isNotNull(payments.visitId),
+					gte(payments.paidAt, from),
+					lte(payments.paidAt, to),
+				),
+			)
+			.groupBy(payments.visitId),
+	);
+
+	const revenue = db.$with("payout_revenue").as(
+		db
+			.select({
+				doctorUserId: appointments.doctorUserId,
+				revenueRub:
+					sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as(
+						"revenue_rub",
+					),
+				paymentCount: sql<number>`count(*)::int`.as("payment_count"),
+			})
+			.from(payments)
+			.innerJoin(visits, eq(payments.visitId, visits.id))
+			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+					gte(payments.paidAt, from),
+					lte(payments.paidAt, to),
+					eq(visits.organizationId, organizationId),
+					eq(appointments.organizationId, organizationId),
+					isNotNull(appointments.doctorUserId),
+				),
+			)
+			.groupBy(appointments.doctorUserId),
+	);
+
+	const materials = db.$with("payout_materials").as(
+		db
+			.select({
+				doctorUserId: appointments.doctorUserId,
+				materialCostRub: sql<number>`
+					coalesce(
+						sum(
+							case
+								when coalesce(${inventoryItems}."is_overhead", false) = true
+								then 0
+								else coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
+							end
+						),
+						0
+					)::numeric(12,2)
+				`.as("material_cost_rub"),
+				overheadCostRub: sql<number>`
+					coalesce(
+						sum(
+							case
+								when coalesce(${inventoryItems}."is_overhead", false) = true
+								then coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
+								else 0
+							end
+						),
+						0
+					)::numeric(12,2)
+				`.as("overhead_cost_rub"),
+				movements: sql<number>`count(*)::int`.as("movements"),
+				movementsUnpriced: sql<number>`count(*) filter (
+					where (${inventoryTransactions}."unit_cost_rub" is null
+					   or ${inventoryTransactions}."unit_cost_rub" = 0
+					   or ${inventoryTransactions}."quantity_changed" is null
+					   or ${inventoryTransactions}."quantity_changed" = 0)
+					  and coalesce(${inventoryItems}."is_overhead", false) = false
+				)::int`.as("movements_unpriced"),
+			})
+			.from(inventoryTransactions)
+			.innerJoin(
+				paidVisits,
+				eq(inventoryTransactions.visitId, paidVisits.visitId),
+			)
+			.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
+			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+			.leftJoin(
+				inventoryItems,
+				and(
+					or(
+						eq(inventoryTransactions.itemId, inventoryItems.id),
+						eq(inventoryTransactions.inventoryItemId, inventoryItems.id),
+					),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, organizationId),
+					eq(inventoryTransactions.transactionType, "auto_deduct"),
+					eq(visits.organizationId, organizationId),
+					eq(appointments.organizationId, organizationId),
+					isNotNull(appointments.doctorUserId),
+				),
+			)
+			.groupBy(appointments.doctorUserId),
+	);
+
+	const labOrdersCte = db.$with("payout_lab_orders").as(
+		db
+			.select({
+				doctorUserId: labOrders.doctorId,
+				labCostRub:
+					sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)::numeric(12,2)`.as(
+						"lab_cost_rub",
+					),
+				labOrdersCount: sql<number>`count(*)::int`.as("lab_orders_count"),
+			})
+			.from(labOrders)
+			.where(
+				and(
+					eq(labOrders.organizationId, organizationId),
+					isNotNull(labOrders.doctorId),
+					inArray(labOrders.status, ["received", "ready", "ready_in_clinic", "fitted", "completed", "installed"]),
+					eq(labOrders.isWarranty, false),
+					gte(
+						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
+						from,
+					),
+					lte(
+						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
+						to,
+					),
+				),
+			)
+			.groupBy(labOrders.doctorId),
+	);
+
+	const rateCandidates = db.$with("payout_rate_candidates").as(
+		db
+			.select({
+				userId: doctorCommissions.userId,
+				commissionPct: doctorCommissions.commissionPct,
+				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
+				labDeductionPct: doctorCommissions.labCostDeductionPct,
+				effectiveFrom: doctorCommissions.effectiveFrom,
+				rowNumber: sql<number>`row_number() over (
+					partition by ${doctorCommissions}."user_id"
+					order by ${doctorCommissions}."effective_from" desc, ${doctorCommissions}."created_at" desc
+				)`.as("row_number"),
+				rateRowCount:
+					sql<number>`(count(*) over (partition by ${doctorCommissions}."user_id"))::int`.as(
+						"rate_row_count",
+					),
+			})
+			.from(doctorCommissions)
+			.where(
+				and(
+					eq(doctorCommissions.organizationId, organizationId),
+					eq(doctorCommissions.isActive, true),
+					lte(doctorCommissions.effectiveFrom, to),
+					isNotNull(doctorCommissions.userId),
+				),
+			),
+	);
+
+	const doctorFilter = scope.onlyDoctorUserId
+		? and(
+				eq(users.organizationId, organizationId),
+				eq(users.id, scope.onlyDoctorUserId),
+			)
+		: eq(users.organizationId, organizationId);
+
+	const periodRevenue = db.$with("payout_period_revenue").as(
+		db
+			.select({
+				totalRevenueRub:
+					sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`.as(
+						"total_revenue_rub",
+					),
+				totalPaymentCount: sql<number>`count(*)::int`.as("total_payment_count"),
+				attributableRevenueRub: sql<number>`coalesce(
+					sum(${payments.amountRub}) filter (where ${appointments.doctorUserId} is not null),
+					0
+				)::numeric(12,2)`.as("attributable_revenue_rub"),
+			})
+			.from(payments)
+			.leftJoin(
+				visits,
+				and(
+					eq(payments.visitId, visits.id),
+					eq(visits.organizationId, organizationId),
+				),
+			)
+			.leftJoin(
+				appointments,
+				and(
+					eq(visits.appointmentId, appointments.id),
+					eq(appointments.organizationId, organizationId),
+				),
+			)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+					gte(payments.paidAt, from),
+					lte(payments.paidAt, to),
+					scope.onlyDoctorUserId
+						? eq(appointments.doctorUserId, scope.onlyDoctorUserId)
+						: undefined,
+				),
+			),
+	);
+
+	const doctorRows = db.$with("payout_doctor_rows").as(
+		db
+			.select({
+				doctorUserId: users.id,
+				doctorName: users.fullName,
+				role: users.role,
+				isActive: users.isActive,
+				revenueRub:
+					sql<number>`coalesce(${revenue.revenueRub}, 0)::numeric(12,2)`.as(
+						"doctor_revenue_rub",
+					),
+				paymentCount: sql<number>`coalesce(${revenue.paymentCount}, 0)::int`.as(
+					"doctor_payment_count",
+				),
+				materialCostRub:
+					sql<number>`coalesce(${materials.materialCostRub}, 0)::numeric(12,2)`.as(
+						"doctor_material_cost_rub",
+					),
+				overheadCostRub:
+					sql<number>`coalesce(${materials.overheadCostRub}, 0)::numeric(12,2)`.as(
+						"doctor_overhead_cost_rub",
+					),
+				materialMovements:
+					sql<number>`coalesce(${materials.movements}, 0)::int`.as(
+						"doctor_material_movements",
+					),
+				materialMovementsUnpriced:
+					sql<number>`coalesce(${materials.movementsUnpriced}, 0)::int`.as(
+						"doctor_material_movements_unpriced",
+					),
+				labCostRub:
+					sql<number>`coalesce(${labOrdersCte.labCostRub}, 0)::numeric(12,2)`.as(
+						"doctor_lab_cost_rub",
+					),
+				labOrdersCount:
+					sql<number>`coalesce(${labOrdersCte.labOrdersCount}, 0)::int`.as(
+						"doctor_lab_orders_count",
+					),
+				commissionPct: rateCandidates.commissionPct,
+				materialDeductionPct: rateCandidates.materialDeductionPct,
+				labDeductionPct: rateCandidates.labDeductionPct,
+				rateEffectiveFrom: rateCandidates.effectiveFrom,
+				rateRowCount:
+					sql<number>`coalesce(${rateCandidates.rateRowCount}, 0)::int`.as(
+						"doctor_rate_row_count",
+					),
+			})
+			.from(users)
+			.leftJoin(revenue, eq(revenue.doctorUserId, users.id))
+			.leftJoin(materials, eq(materials.doctorUserId, users.id))
+			.leftJoin(labOrdersCte, eq(labOrdersCte.doctorUserId, users.id))
+			.leftJoin(
+				rateCandidates,
+				and(
+					eq(rateCandidates.userId, users.id),
+					eq(rateCandidates.rowNumber, 1),
+				),
+			)
+			.where(
+				and(
+					doctorFilter,
+					or(
+						eq(users.role, "doctor"),
+						isNotNull(revenue.doctorUserId),
+						isNotNull(materials.doctorUserId),
+						isNotNull(labOrdersCte.doctorUserId),
+					),
+				),
+			),
+	);
+
+	return db
+		.with(
+			paidVisits,
+			revenue,
+			materials,
+			labOrdersCte,
+			rateCandidates,
+			periodRevenue,
+			doctorRows,
+		)
+		.select({
+			doctorUserId: doctorRows.doctorUserId,
+			doctorName: doctorRows.doctorName,
+			role: doctorRows.role,
+			isActive: doctorRows.isActive,
+			revenueRub: doctorRows.revenueRub,
+			paymentCount: doctorRows.paymentCount,
+			materialCostRub: doctorRows.materialCostRub,
+			overheadCostRub: doctorRows.overheadCostRub,
+			materialMovements: doctorRows.materialMovements,
+			materialMovementsUnpriced: doctorRows.materialMovementsUnpriced,
+			labCostRub: doctorRows.labCostRub,
+			labOrdersCount: doctorRows.labOrdersCount,
+			commissionPct: doctorRows.commissionPct,
+			materialDeductionPct: doctorRows.materialDeductionPct,
+			labDeductionPct: doctorRows.labDeductionPct,
+			rateEffectiveFrom: doctorRows.rateEffectiveFrom,
+			rateRowCount: doctorRows.rateRowCount,
+			totalRevenueRub: periodRevenue.totalRevenueRub,
+			totalPaymentCount: periodRevenue.totalPaymentCount,
+			attributableRevenueRub: periodRevenue.attributableRevenueRub,
+		})
+		.from(periodRevenue)
+		.leftJoin(doctorRows, sql`true`);
+}
 
 const METHOD_NOTE =
 	"Касса — только платежи со статусом «оплачен», по дате оплаты в периоде. " +
@@ -57,11 +579,6 @@ export async function doctorPayouts(
 		},
 	);
 
-	/*
-	 * Контрольная сумма лежит в КАЖДОЙ строке ответа (левое соединение по `true`),
-	 * поэтому читается из первой. Строк всегда минимум одна: ведущая сторона —
-	 * агрегат без `group by`.
-	 */
 	const [snapshotHead] = snapshotRows;
 	const aggregateRows = snapshotRows.filter(
 		(
@@ -120,12 +637,10 @@ export async function doctorPayouts(
 		);
 		const rateRowCount = Number(row.rateRowCount ?? 0);
 
-		// Build visits registry for this doctor
 		const doctorVisitPayments = drillDown.paidVisitsDetails.filter(
 			(v) => v.doctorUserId === row.doctorUserId,
 		);
 
-		// Group payments by visitId
 		const visitsMap = new Map<string, DoctorPayoutVisit>();
 		for (const v of doctorVisitPayments) {
 			const paymentRub = moneyFromDb(v.paymentAmountRub, "сумма оплаты визита");
@@ -203,7 +718,6 @@ export async function doctorPayouts(
 			(a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime(),
 		);
 
-		// Build lab orders registry for this doctor
 		const doctorRawLabOrders = drillDown.rawLabOrders.filter(
 			(order) => order.doctorId === row.doctorUserId,
 		);
@@ -224,7 +738,6 @@ export async function doctorPayouts(
 				notesLower.includes("warranty") ||
 				notesLower.includes("переделк") ||
 				notesLower.includes("рекламац");
-			// Гарантийные переделки НЕ удерживаются с врача (0 ₽), а относятся на рекламационный фонд клиники
 			const withheld = isWarranty ? 0 : percentOfMoney(price, labPct);
 			const tooth = itemsForOrder.length > 0
 				? itemsForOrder.map((item) => String(item.toothFdi)).join(", ")
@@ -252,7 +765,6 @@ export async function doctorPayouts(
 			};
 		});
 
-		// Build specialty category breakdown
 		const doctorRates = drillDown.doctorSpecialtyRates.filter(
 			(r) => r.userId === row.doctorUserId,
 		);
@@ -295,65 +807,6 @@ export async function doctorPayouts(
 			});
 		}
 
-		const t51Visits: DoctorT51VisitItem[] = doctorVisitsList.flatMap((v) =>
-			v.services.map((srv) => {
-				const srvTotal = roundMoney(new Decimal(srv.priceRub).times(srv.quantity));
-				const srvAccrued = percentOfMoney(srvTotal, commissionPct ?? 0);
-				return {
-					visitId: v.visitId,
-					visitDate: v.visitDate,
-					patientName: v.patientName,
-					medicalCardNumber: v.medicalCardNumber,
-					serviceTitle: srv.title,
-					order804nCode: srv.order804nCode,
-					toothCode: srv.toothCode,
-					priceRub: srvTotal,
-					accruedRub: srvAccrued,
-				};
-			}),
-		);
-
-		const t51LabOrders: DoctorT51LabItem[] = doctorLabOrdersList.map((lo) => ({
-			orderNumber: lo.orderNumber,
-			patientName: lo.patientName,
-			restorationType: lo.restorationType,
-			toothFdi: lo.toothFdi,
-			priceRub: lo.priceRub,
-			withheldRub: lo.withheldRub,
-			isWarranty: Boolean(lo.isWarranty),
-		}));
-
-		const t51Payload: DoctorT51PrintPayload = {
-			organizationName: drillDown.organizationName,
-			organizationInn: drillDown.organizationInn ?? "",
-			doctorName: row.doctorName,
-			personnelNumber: row.doctorUserId.slice(0, 8).toUpperCase(),
-			specialtyTitle: row.role === "doctor" ? "Врач-стоматолог" : row.role,
-			periodFromIso: scope.from.toISOString(),
-			periodToIso: scope.to.toISOString(),
-			grossRevenueRub: revenueRub,
-			netBaseRevenueRub: roundMoney(
-				Decimal.max(
-					0,
-					new Decimal(revenueRub)
-						.minus(new Decimal(labCostRub))
-						.minus(new Decimal(materialCostRub)),
-				),
-			),
-			pieceworkAccruedRub: computed.accruedRub ?? 0,
-			totalAccruedRub: computed.accruedRub ?? 0,
-			ndflTaxRub: roundMoney(new Decimal(computed.accruedRub ?? 0).times(0.13)),
-			withheldLabRub: computed.withheldLabRub ?? 0,
-			withheldMaterialRub: computed.withheldMaterialRub ?? 0,
-			overheadConsumablesCoveredRub: overheadCostRub,
-			netPayoutRub: computed.payoutRub ?? 0,
-			...(categoryBreakdown.length > 0 ? { categoryBreakdown } : {}),
-			...(t51Visits.length > 0 ? { visits: t51Visits } : {}),
-			...(t51LabOrders.length > 0 ? { labOrders: t51LabOrders } : {}),
-		};
-
-		const t51Html = generateDoctorT51Html(t51Payload);
-
 		return {
 			doctorUserId: row.doctorUserId,
 			doctorName: row.doctorName,
@@ -380,7 +833,6 @@ export async function doctorPayouts(
 			withheldMaterialRub: computed.withheldMaterialRub,
 			payoutRub: computed.payoutRub,
 			...(categoryBreakdown.length > 0 ? { categoryBreakdown } : {}),
-			t51Html,
 			note: payoutRowNote({
 				state: computed.state,
 				materialsState,

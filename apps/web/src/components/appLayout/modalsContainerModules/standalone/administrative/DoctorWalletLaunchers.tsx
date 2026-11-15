@@ -11,6 +11,10 @@ import {
 	type DoctorPayoutReport,
 	DEMO_SHOWCASE_REPORT,
 } from "../../../../finance/doctorPayoutWallet/types";
+import {
+	canonicalPayrollToWalletReport,
+	type CanonicalPayrollApiResponse,
+} from "../../../../finance/doctorPayoutWallet/canonicalPayrollAdapter";
 
 const DoctorPayoutMobileWallet = lazyWithRetry(() =>
 	import("../../../../finance/doctorPayoutWallet/DoctorPayoutMobileWallet").then((m) => ({
@@ -42,9 +46,12 @@ const DoctorWalletStandaloneWorkspace: React.FC = () => {
 		setIsLoading(true);
 		try {
 			const { from, to } = getMonthBounds(selectedMonth);
-			const res = await fetch(`/api/billing/payouts?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-			if (!res.ok) throw new Error("Payouts api error");
-			const data = (await res.json()) as DoctorPayoutReport;
+			const startDate = from.slice(0, 10);
+			const endDate = to.slice(0, 10);
+			const res = await fetch(`/api/v1/payroll/calculations?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+			if (!res.ok) throw new Error("Payroll calculations api error");
+			const rawData = (await res.json()) as CanonicalPayrollApiResponse;
+			const data = canonicalPayrollToWalletReport(rawData, { from: startDate, to: endDate });
 			setReport(data);
 		} catch {
 			// Честный пустой отчет при отсутствии данных за месяц (Мандаты 8k, 8wy)

@@ -16,6 +16,7 @@ import {
 } from "./payrollCatalogData";
 import { printDoctorPayslip, copyPayslipToClipboard, exportDoctorPayrollToCsv, buildDoctorPayrollCalculation, calculateOrderNetAndFee, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
+import { PendingCashierOrdersSection } from "./PendingCashierOrdersSection";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./styles/doctorPayrollStudio.css";
 
@@ -111,6 +112,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	}, [selectedDoctor, effectiveOrders, customPercent, shiftsCount, advanceRub, payoutStatus, apiSummary, isDemo]);
 
 	const doctorOrders = useMemo(() => !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz), [selectedDoctor, effectiveOrders]);
+	const pendingPaymentOrders = useMemo(() => !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && !o.isPaid54Fz), [selectedDoctor, effectiveOrders]);
 
 	const allDoctorsSummaries = useMemo(() => doctors.map((doc) => ({
 		doctor: doc,
@@ -407,6 +409,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									})
 								)}
 							</div>
+
+							{/* Выполненные приемы, ожидающие оплаты в кассе (54-ФЗ) */}
+							<PendingCashierOrdersSection pendingOrders={pendingPaymentOrders} rub={rub} />
 						</div>
 					)}
 

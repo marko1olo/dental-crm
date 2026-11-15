@@ -27,6 +27,8 @@ const payrollCalculationsQuerySchema = z.object({
 	doctorId: z.string().optional(),
 	from: z.string().optional(),
 	to: z.string().optional(),
+	startDate: z.string().optional(),
+	endDate: z.string().optional(),
 	startDateIso: z.string().optional(),
 	endDateIso: z.string().optional(),
 	percent: z.union([z.string(), z.number()]).optional(),
@@ -147,8 +149,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const resolvedPct = activeComm?.commissionPct || activeComm?.commissionPercent;
 		const basePercent = Number(q.percent) || (resolvedPct ? Number(resolvedPct) : 25);
 
-		const fromStr = q.from || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-		const toStr = q.to || q.endDateIso || new Date().toISOString().slice(0, 10);
+		const fromStr = q.from || q.startDate || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+		const toStr = q.to || q.endDate || q.endDateIso || new Date().toISOString().slice(0, 10);
 		const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
 		const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
 

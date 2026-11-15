@@ -17,7 +17,7 @@ export interface DoctorWalletBalanceHeaderProps {
 
 export function DoctorWalletBalanceHeader({
 	monthLabel, month, monthInputId, onMonthChange,
-	availableDoctors, currentDoctor, onSelectDoctor, totalWithheld,
+	availableDoctors, currentDoctor, onSelectDoctor, totalWithheld, onRequestPayout,
 }: DoctorWalletBalanceHeaderProps) {
 	const payoutAmountRub = currentDoctor.payoutRub ?? currentDoctor.accruedRub ?? 0;
 

@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import {
 	doctorPayouts,
 	resolvePayoutPeriod,
-} from "../../../services/finance/doctorPayouts.js";
+} from "../../../services/finance/doctorPayouts/index.js";
 import { explainNegativePayouts } from "../../../services/finance/payoutNegativeExplain.js";
 import { clinicTimeZone } from "../../../services/reports/managerReports.js";
 import { resolvePeriodBoundary } from "../../reports.js";

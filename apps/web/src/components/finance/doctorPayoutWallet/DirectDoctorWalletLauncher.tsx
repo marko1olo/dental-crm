@@ -12,6 +12,10 @@ import { DoctorPayoutMobileWallet } from "./DoctorPayoutMobileWallet";
 import { DEMO_SHOWCASE_REPORT } from "./demoShowcaseData";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorPayoutReport } from "./types";
+import {
+	canonicalPayrollToWalletReport,
+	type CanonicalPayrollApiResponse,
+} from "./canonicalPayrollAdapter";
 
 function getMonthBounds(monthStr: string): { from: string; to: string } {
 	const [year, month] = monthStr.split("-").map(Number);
@@ -49,9 +53,12 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 		setIsLoading(true);
 		try {
 			const { from, to } = getMonthBounds(selectedMonth);
-			const res = await fetch(`/api/billing/payouts?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-			if (!res.ok) throw new Error("Payouts api error");
-			const data = (await res.json()) as DoctorPayoutReport;
+			const startDate = from.slice(0, 10);
+			const endDate = to.slice(0, 10);
+			const res = await fetch(`/api/v1/payroll/calculations?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+			if (!res.ok) throw new Error("Payroll calculations api error");
+			const rawData = (await res.json()) as CanonicalPayrollApiResponse;
+			const data = canonicalPayrollToWalletReport(rawData, { from: startDate, to: endDate });
 			setReport(data);
 		} catch (err: unknown) {
 			console.warn("[DirectDoctorWalletLauncher] Не удалось загрузить отчет по выплатам врачей:", err);

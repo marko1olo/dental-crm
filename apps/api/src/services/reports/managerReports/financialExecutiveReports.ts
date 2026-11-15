@@ -19,7 +19,10 @@ import {
 	inventoryTransactions,
 	invoices,
 	patientInvoices,
+	patients,
 	payments,
+	serviceCatalogItems,
+	treatmentItems,
 	users,
 	visits,
 } from "../../../db/schema.js";
@@ -28,7 +31,12 @@ import {
 	assistantPayrollReport,
 	type AssistantPayrollRow,
 } from "./assistantPayrollReports.js";
-import { DEFAULT_CATEGORY_COMMISSION_PERCENT, calculateDoctorPeriodPayroll } from "@dental/shared";
+import {
+	DEFAULT_CATEGORY_COMMISSION_PERCENT,
+	calculateDoctorPeriodPayroll,
+	type DoctorCompletedServiceItem,
+} from "@dental/shared";
+import { normalizeClinicalCategory } from "../../../routes/doctorPayrollDbQueries.js";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -294,6 +302,7 @@ export async function doctorPayrollReport(
 			id: users.id,
 			fullName: users.fullName,
 			role: users.role,
+			specialties: users.specialties,
 		})
 		.from(users)
 		.where(
@@ -304,13 +313,17 @@ export async function doctorPayrollReport(
 		);
 
 	const doctorsMap = new Map(
-		doctorUsers.map((d) => [
-			d.id,
-			{
-				name: d.fullName || "Врач клиники",
-				specialty: d.role === "owner" ? "Главный врач / Стоматолог" : "Врач-стоматолог",
-			},
-		]),
+		doctorUsers.map((d) => {
+			const spec = Array.isArray(d.specialties) && d.specialties[0] ? String(d.specialties[0]) : "therapy";
+			return [
+				d.id,
+				{
+					name: d.fullName || "Врач клиники",
+					specialty: d.role === "owner" ? "Главный врач / Стоматолог" : "Врач-стоматолог",
+					specialtyId: spec,
+				},
+			];
+		}),
 	);
 
 	// 2. Индивидуальные комиссии врачей из doctorCommissions [PAY-03: SEV-1 FIX]
@@ -459,6 +472,32 @@ export async function doctorPayrollReport(
 		materialUsageRows.map((m) => [m.doctorId, Number(m.totalCostRub || 0)]),
 	);
 
+	// 4d. Фактические оказанные услуги врачей за период для прозрачной детализации категорий
+	const doctorCompletedTreatments = await db
+		.select({
+			doctorId: appointments.doctorUserId,
+			title: treatmentItems.title,
+			category: serviceCatalogItems.category,
+			specialty: serviceCatalogItems.specialty,
+			priceRub: treatmentItems.priceRub,
+			quantity: treatmentItems.quantity,
+			startsAt: appointments.startsAt,
+			patientName: patients.fullName,
+		})
+		.from(treatmentItems)
+		.innerJoin(visits, eq(treatmentItems.visitId, visits.id))
+		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.leftJoin(patients, eq(appointments.patientId, patients.id))
+		.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
+		.where(
+			and(
+				eq(treatmentItems.organizationId, scope.organizationId),
+				gte(appointments.startsAt, scope.from),
+				lte(appointments.startsAt, scope.to),
+				isNotNull(appointments.doctorUserId),
+			),
+		);
+
 	// 5. Собираем всех уникальных врачей (из списка персонала + из выручки)
 	const allDoctorIds = Array.from(
 		new Set([
@@ -479,6 +518,7 @@ export async function doctorPayrollReport(
 		const docMeta = doctorsMap.get(docId) ?? {
 			name: "Специалист клиники",
 			specialty: "Стоматолог",
+			specialtyId: "therapy",
 		};
 		const revRow = doctorRevenues.find((r) => r.doctorId === docId);
 		const revRub = Math.max(0, Number(revRow?.revenueRub || 0));
@@ -507,27 +547,70 @@ export async function doctorPayrollReport(
 		const servicesRenderedKopecks = Math.round(revRub * 100);
 		const materialsCostKopecks = Math.round(materialsCostRub * 100);
 
+		const docTreatments = doctorCompletedTreatments.filter((t) => t.doctorId === docId);
+		const primaryCategory = normalizeClinicalCategory(null, docMeta.specialtyId);
+
+		const services: DoctorCompletedServiceItem[] = [];
+
+		if (docTreatments.length > 0) {
+			const totalTreatGrossKop = docTreatments.reduce((acc, t) => {
+				const qty = Math.max(1, Number(t.quantity || 1));
+				return acc + Math.round(Number(t.priceRub || 0) * 100 * qty);
+			}, 0);
+
+			let remainingLabKop = labCostKopecks;
+			let remainingMatKop = materialsCostKopecks;
+
+			for (let i = 0; i < docTreatments.length; i++) {
+				const treat = docTreatments[i]!;
+				const qty = Math.max(1, Number(treat.quantity || 1));
+				const gKop = Math.round(Number(treat.priceRub || 0) * 100 * qty);
+				const cat = normalizeClinicalCategory(treat.category, treat.specialty || docMeta.specialtyId);
+
+				const share = totalTreatGrossKop > 0 ? gKop / totalTreatGrossKop : 1 / docTreatments.length;
+				const allocatedLab = i === docTreatments.length - 1 ? remainingLabKop : Math.min(remainingLabKop, Math.round(labCostKopecks * share));
+				remainingLabKop = Math.max(0, remainingLabKop - allocatedLab);
+
+				const allocatedMat = i === docTreatments.length - 1 ? remainingMatKop : Math.min(remainingMatKop, Math.round(materialsCostKopecks * share));
+				remainingMatKop = Math.max(0, remainingMatKop - allocatedMat);
+
+				services.push({
+					id: `service-${docId}-${i}`,
+					dateIso: treat.startsAt ? treat.startsAt.toISOString().slice(0, 10) : scope.from.toISOString().slice(0, 10),
+					patientName: treat.patientName || "Пациент",
+					medicalCardNumber: "МК",
+					serviceNameRu: treat.title || "Стоматологическая услуга",
+					category: cat,
+					grossRevenueKop: gKop,
+					actuallyPaidGrossKop: gKop,
+					labCostKop: allocatedLab,
+					materialCostKop: allocatedMat,
+					isPaid: true,
+				});
+			}
+		} else {
+			services.push({
+				id: `order-${docId}`,
+				dateIso: scope.from.toISOString().slice(0, 10),
+				patientName: "Пациент клиники",
+				medicalCardNumber: "МК",
+				serviceNameRu: `${docMeta.name} — Приём (${docMeta.specialty})`,
+				category: primaryCategory,
+				grossRevenueKop: servicesRenderedKopecks,
+				actuallyPaidGrossKop: servicesRenderedKopecks,
+				labCostKop: labCostKopecks,
+				materialCostKop: materialsCostKopecks,
+				isPaid: true,
+			});
+		}
+
 		const periodPayroll = calculateDoctorPeriodPayroll({
 			doctorId: docId,
 			doctorName: docMeta.name,
-			specialtyId: "therapy",
+			specialtyId: primaryCategory,
 			periodStartIso: scope.from.toISOString().slice(0, 10),
 			periodEndIso: scope.to.toISOString().slice(0, 10),
-			services: [
-				{
-					id: `service-agg-${docId}`,
-					dateIso: scope.from.toISOString().slice(0, 10),
-					patientName: "Пациент",
-					medicalCardNumber: "МК-000",
-					serviceNameRu: "Стоматологический приём",
-					category: "therapy",
-					grossRevenueKop: servicesRenderedKopecks,
-					actuallyPaidGrossKop: servicesRenderedKopecks,
-					labCostKop: labCostKopecks,
-					materialCostKop: materialsCostKopecks,
-					isPaid: true,
-				},
-			],
+			services,
 			customBasePercentage: commissionPercent,
 		});
 
