@@ -16,8 +16,8 @@ import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPati
 const DirectRvgCaptureModal = lazyWithRetry(() =>
 	import("../../../../radiology/DirectRvgCaptureModal").then((m) => ({ default: m.DirectRvgCaptureModal })),
 );
-const VisiographStudyViewer = lazyWithRetry(() =>
-	import("../../../../radiology/VisiographStudyViewer").then((m) => ({ default: m.VisiographStudyViewer })),
+const SensorStudyViewer = lazyWithRetry(() =>
+	import("../../../../radiology/SensorStudyViewer").then((m) => ({ default: m.SensorStudyViewer })),
 );
 const CtSelectorModal = lazyWithRetry(() =>
 	import("../../../../radiology/CtSelectorModal").then((m) => ({ default: m.CtSelectorModal })),
@@ -68,11 +68,9 @@ export const StandaloneRvgHost: React.FC<{ onClose: () => void }> = ({ onClose }
 			data-testid="standalone-radiology-host"
 		>
 			<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
-				<VisiographStudyViewer
-					studyTitle="Прицельная радиовизиография RVG"
+				<SensorStudyViewer
 					patientName={patientName || "Захаров Иван Дмитриевич"}
-					patientId={patientId || "pat-walkin"}
-					initialTooth="16"
+					toothFdiCode="16"
 					onClose={onClose}
 				/>
 			</div>

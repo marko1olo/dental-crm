@@ -53,7 +53,7 @@ export async function analyzeVisiographImage(imageBase64: string): Promise<Visio
 			try {
 				const isGroq = provider === "groq_whisper";
 				const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-				const model = isGroq ? (process.env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct") : (process.env.GEMINI_VISION_MODEL || "gemini-3.5-flash");
+				const model = isGroq ? (process.env.GROQ_VISION_MODEL || "llama-3.2-11b-vision-preview") : (process.env.GEMINI_VISION_MODEL || "gemini-3.6-flash");
 
 				const requestBody = {
 					model,

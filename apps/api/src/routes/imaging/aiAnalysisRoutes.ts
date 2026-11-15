@@ -24,6 +24,7 @@ import {
 	getImagingStudyById,
 	updateImagingStudyAiSummaryInDb,
 } from "../../db/imagingQuery.js";
+import { saveImagingAiAnnotationsForStudy } from "../../db/imagingMeasurementsQuery.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 
@@ -116,14 +117,17 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 				}
 			}
 
-			// If studyId is present, persist aiSummary to db
+			// If studyId is present, persist aiSummary and toothUpdates annotations to db
 			if (studyId) {
 				const orgId = requireOrganizationId(request, reply);
 				if (orgId) {
 					try {
 						await updateImagingStudyAiSummaryInDb(orgId, studyId, summary || report);
+						if (patientId && toothUpdates.length > 0) {
+							await saveImagingAiAnnotationsForStudy(orgId, studyId, patientId, toothUpdates);
+						}
 					} catch (updateErr) {
-						request.log.warn({ updateErr }, "Failed to update study AI summary");
+						request.log.warn({ updateErr }, "Failed to update study AI summary or annotations");
 					}
 				}
 			}
@@ -246,19 +250,23 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			// вызов модели выполнялся заново. Функция сохранения была импортирована,
 			// но не вызывалась ни разу.
 			try {
-				// В базе под заключение отведена одна текстовая колонка ai_summary,
-				// поэтому сохраняется текст заключения. Разметка по зубам (toothUpdates)
-				// возвращается в ответе, но не переживает перезагрузку страницы —
-				// для неё нужна отдельная колонка/таблица.
 				await updateImagingStudyAiSummaryInDb(
 					orgId,
 					id,
 					analysisResult.summary,
 				);
+				if (study.patientId && Array.isArray(analysisResult.toothUpdates) && analysisResult.toothUpdates.length > 0) {
+					await saveImagingAiAnnotationsForStudy(
+						orgId,
+						id,
+						study.patientId,
+						analysisResult.toothUpdates,
+					);
+				}
 			} catch (persistError) {
 				request.log.error(
 					{ err: persistError },
-					"[imaging] Не удалось сохранить заключение ИИ",
+					"[imaging] Не удалось сохранить заключение ИИ и аннотации",
 				);
 			}
 			return reply.code(200).send({ ok: true, analysisResult });

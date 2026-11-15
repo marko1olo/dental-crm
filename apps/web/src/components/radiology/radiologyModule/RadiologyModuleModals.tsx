@@ -4,7 +4,6 @@ import { DicomViewerModal } from "../../imaging/DicomViewerModal.js";
 import { SensorStudyViewer } from "../SensorStudyViewer.js";
 import { RadiologyConsultationSplit } from "../RadiologyConsultationSplit.js";
 import { CbctMprImplantStudioModal } from "../CbctMprImplantStudioModal.js";
-import { CbctImplantModal } from "../CbctImplantModal.js";
 import { DirectRvgCaptureModal } from "../DirectRvgCaptureModal.js";
 import { RadiationSafetyRegistryModal } from "../RadiationSafetyRegistryModal.js";
 import { RadiologyReportStudioModal } from "../RadiologyReportStudioModal.js";
@@ -73,7 +72,7 @@ export function RadiologyModuleModals(p: RadiologyModuleModalsProps) {
 				<HotFolderIntakeModal isOpen={modals.showHotFolder} onClose={() => modals.setShowHotFolder(false)} patientId={patient?.id || undefined} patientName={patient?.fullName || undefined} patientCardNumber={patient?.medicalCardNumber || patient?.cardNumber || undefined} patientBirthDate={patient?.birthDate || undefined} />
 			)}
 			{modals.showImplant && (
-				<CbctImplantModal isOpen={modals.showImplant} onClose={() => modals.setShowImplant(false)} patientId={patient?.id || undefined} patientName={patientName} toothFdi={activeToothFdi ? Number(activeToothFdi) : undefined} />
+				<CbctMprImplantStudioModal isOpen={modals.showImplant} onClose={() => modals.setShowImplant(false)} study={p.selectedStudyForStudio ? convertImagingStudyToRadiologyStudy(p.selectedStudyForStudio) : undefined} patientName={p.selectedStudyForStudio?.patientFullName || patientName} patientId={p.selectedStudyForStudio?.patientId || patient?.id || undefined} />
 			)}
 			{modals.showConsultation && typeof document !== "undefined" && createPortal(
 				<div className="fixed inset-0 z-50 bg-[#020617] flex flex-col" data-testid="radiology-consultation-modal-portal">

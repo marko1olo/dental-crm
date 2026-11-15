@@ -1115,6 +1115,47 @@
   - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_visiograph_study_viewer_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_visiograph_study_viewer_mobile_light_390x844.png) (1.02 MB $\ge 20$KB) — Нативный Apple HIG Mobile Bottom Sheet, 0px горизонтального скролла, Zero-Clipping.
   - 🌙 Mobile Dark (390x844): [`docs/proofs/radiology/04_visiograph_study_viewer_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_visiograph_study_viewer_mobile_dark_390x844.png) (1.02 MB $\ge 20$KB) — Тёмный мобильный режим, идеальная калибровка линейки и пресетов окон.
 
+### [RAD-08] [SEV-1] [ИСПРАВЛЕНО] Ликвидация потёмкинского ИИ на датчике RVG, амнезии разметки зубов в БД, вымышленной модели Llama-4, замена инлайн HEX на CSS-токены темы и снос мёртвых клонов CbctImplantModal и VisiographStudyViewer (Мандаты 8e, 8bf, 8bj, 8am, 8be)
+- **Файлы:**
+  - [`apps/web/src/components/radiology/directRvgCapture/DirectRvgToothAssigner.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/directRvgCapture/DirectRvgToothAssigner.tsx)
+  - [`apps/web/src/components/radiology/directRvgCapture/useDirectRvgCapture.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/directRvgCapture/useDirectRvgCapture.ts)
+  - [`apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx)
+  - [`apps/api/src/ai/visiograph.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/visiograph.ts)
+  - [`apps/api/src/ai/vision/visionTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/vision/visionTypes.ts)
+  - [`apps/api/src/db/imagingMeasurementsQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/imagingMeasurementsQuery.ts)
+  - [`apps/api/src/routes/imaging/aiAnalysisRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging/aiAnalysisRoutes.ts)
+  - [`apps/web/src/components/imaging/DicomAiFindingsDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/imaging/DicomAiFindingsDrawer.tsx)
+  - [`apps/web/src/components/imaging/aiFindings/DicomAiFindingsList.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/imaging/aiFindings/DicomAiFindingsList.tsx)
+  - [`apps/web/src/components/imaging/aiFindings/DicomAiFindingsFooter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/imaging/aiFindings/DicomAiFindingsFooter.tsx)
+- **Суть дефектов:**
+  1. **Потёмкинский шаблон ИИ:** В `DirectRvgToothAssigner.tsx` клик «Запустить анализ ИИ» впечатывал захардкоженную строку `"ИИ анализ (EZ-Vision AI): Рентгенологические признаки кариеса дентина..."` без сетевого вызова, а `onTriggerAiAnalysis` даже не пробрасывался родителем.
+  2. **Несуществующая модель ИИ:** В `visiograph.ts` был зашит несуществующий идентификатор `"meta-llama/llama-4-scout-17b-16e-instruct"`.
+  3. **Амнезия разметки зубов:** Эндпоинты `/api/imaging/ai-analysis` и `/api/imaging/studies/:id/analyze` возвращали структурированный `toothUpdates`, но не сохраняли находки в таблицу `imaging_annotations`, из-за чего после перезагрузки F5 разметка терялась.
+  4. **Тотальный хардкод HEX цветов:** В `DicomAiFindingsDrawer.tsx`, `DicomAiFindingsList.tsx`, `DicomAiFindingsFooter.tsx` интерфейс был зашит инлайн HEX-стилями (`#0f172a`, `#1e293b`, `#2dd4bf`, `#cbd5e1`, `#334155`, `#fbbf24`, `#f87171`), нарушая Мандат 8am.
+  5. **Токсичные мёртвые дубликаты:** Устаревшие клоны `CbctImplantModal.tsx`, `CbctImplantSelectorControls.tsx`, `CbctImplantNerveInspectionCard.tsx` и `VisiographStudyViewer.tsx` (включая неактуальные тулбары и тесты) засоряли кодовую базу при наличии канонических `CbctMprImplantStudioModal.tsx` и `SensorStudyViewer.tsx`.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. **Сквозной боевой ИИ-контур:** В `useDirectRvgCapture.ts` реализован `handleTriggerAiAnalysis` с вызовом `/api/imaging/ai-analysis`, индикатором `isAnalyzingAi`, тостами ошибок и дополнением клинического заключения в `clinicalNotes`. `DirectRvgToothAssigner` вызывает реальный проп `onTriggerAiAnalysis` с блокировкой спиннером.
+  2. **Канонические Vision-модели:** `visiograph.ts` и `visionTypes.ts` переведены на реальные актуальные модели `"llama-3.2-11b-vision-preview"` и `"gemini-3.6-flash"`.
+  3. **Персистентность аннотаций:** В `imagingMeasurementsQuery.ts` создана функция `saveImagingAiAnnotationsForStudy()`, сохраняющая структурированные находки `toothUpdates` в таблицу `imaging_annotations` с типом `'ai_finding'` без стирания ручных врачебных измерений. Подключена в оба маршрута анализа.
+  4. **Семантические токены Мандата 8am:** В `DicomAiFindingsDrawer.tsx`, `DicomAiFindingsList.tsx` и `DicomAiFindingsFooter.tsx` все инлайн-цвета заменены на токены темы (`var(--paper)`, `var(--paper-soft)`, `var(--ink)`, `var(--line)`, `var(--primary)`, `var(--warning)`, `var(--danger)`). Размер файлов строго $\le 120$ строк.
+  5. **Очистка репозитория (`git rm`):** Удалены 10 мертвых дубликатов (`CbctImplantModal.tsx`, `VisiographStudyViewer.tsx` и вспомогательные модули), очищены импорты в `RadiologyModuleModals.tsx`, `VisiographViewport.tsx`, `DiagnosticDrawerImagingTab.tsx`, `StandaloneImplantologyHosts.tsx`, обновлены тесты `zeroBirdLanguagePurity.test.ts`, `cbctDarkCockpitInquisition.test.ts` и `captureConsoleAndHardwareGateways.test.ts`.
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - Целевые юнит- и интеграционные тесты рентгенологии:
+    * `apps/api/src/routes/xrayStorageAndDicomIndexing.test.ts` (9/9 PASS)
+    * `apps/api/src/tests/routes/imagingMeasurementsPersistence.test.ts` (4/4 PASS)
+    * `apps/web/src/components/radiology/__tests__/directRvgCaptureModal.test.tsx` (9/9 PASS)
+    * `apps/web/src/components/radiology/__tests__/sensorStudyViewer.test.tsx` (11/11 PASS)
+    * `apps/web/src/components/radiology/__tests__/sensorStudyClinicalTools.test.ts` (10/10 PASS)
+    * `apps/web/src/components/radiology/__tests__/cbctDarkCockpitInquisition.test.ts` (8/8 PASS)
+    * `apps/web/src/tests/zeroBirdLanguagePurity.test.ts` (21/21 PASS)
+    * `apps/web/src/components/radiology/__tests__/captureConsoleAndHardwareGateways.test.ts` (21/21 PASS)
+    * **ИТОГО: 93/93 тестов рентгена, КЛКТ и визиографа зелёные!**
+- **4-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
+  - ☀️ PC Light (1440x900): [`docs/proofs/imaging/01_dicom_viewer_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/01_dicom_viewer_pc_light_1440x900.png) (272.9 KB $\ge 20$KB) — Вьюпорт сенсора RVG, 5 мм калибровочная шкала, 1-клик «Норма: патологии нет», нижняя лента снимков, единый тиловый CTA `#0d9488`.
+  - 🌙 PC Dark (1440x900): [`docs/proofs/imaging/02_dicom_viewer_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/02_dicom_viewer_pc_dark_1440x900.png) (271.5 KB $\ge 20$KB) — Тёмный диагностический кокпит, 100% токены темы, нулевой клиппинг.
+  - 📱 Mobile Light (390x844): [`docs/proofs/imaging/03_dicom_viewer_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/03_dicom_viewer_mobile_light_390x844.png) (252.3 KB $\ge 20$KB) — Apple HIG Mobile Viewport, тач-таргеты $\ge 44\times 44$px, компактная нижняя лента.
+  - 🌙 Mobile Dark (390x844): [`docs/proofs/imaging/04_dicom_viewer_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/imaging/04_dicom_viewer_mobile_dark_390x844.png) (252.5 KB $\ge 20$KB) — Мобильный ночной режим, Natural Thumb Zone, отсутствие горизонтального скролла.
+
 
 ---
 

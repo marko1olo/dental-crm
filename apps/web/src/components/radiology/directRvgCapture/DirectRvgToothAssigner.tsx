@@ -47,11 +47,7 @@ export const DirectRvgToothAssigner: React.FC<DirectRvgToothAssignerProps> = ({
 	const handleAiClick = () => {
 		if (onTriggerAiAnalysis) {
 			onTriggerAiAnalysis();
-			return;
 		}
-		const aiSummary = `[ИИ-находки]: Зуб #${primaryTooth}. Периапикальная щель равномерна, костная ткань Misch ${boneAssessment.mischClass} (${boneHU} HU), корневые каналы обтурированы до рентгенологического апекса.`;
-		const nextNotes = clinicalNotes.trim() ? `${clinicalNotes.trim()}\n${aiSummary}` : aiSummary;
-		onChangeClinicalNotes(nextNotes);
 	};
 
 	const mischBadgeClass =

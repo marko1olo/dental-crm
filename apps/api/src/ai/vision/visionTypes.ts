@@ -3,7 +3,7 @@
  */
 
 export const GROQ_VISION_MODEL =
-	process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct";
+	process.env.GROQ_VISION_MODEL ?? "llama-3.2-11b-vision-preview";
 
 export const GEMINI_VISION_MODEL =
 	process.env.GEMINI_VISION_MODEL ?? "gemini-3.6-flash";

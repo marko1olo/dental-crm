@@ -14,6 +14,7 @@ import { useDirectRvgSensorAcquisition } from "./useDirectRvgSensorAcquisition";
 import { useDirectRvgEmrActions } from "./useDirectRvgEmrActions";
 import { useAppStore } from "../../../store/appStore";
 import { useVisitStore } from "../../../store/visitStore";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 
 export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const {
@@ -53,6 +54,51 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 
 	// Tooth & Projection
 	const [selectedTeeth, setSelectedTeeth] = useState<string[]>([effectiveInitialTooth]);
+	const [isAnalyzingAi, setIsAnalyzingAi] = useState<boolean>(false);
+
+	const handleTriggerAiAnalysis = async () => {
+		if (!sensorAcq.capturedImage) {
+			showToast("Сначала выполните захват или загрузите снимок для ИИ-анализа", "info");
+			return;
+		}
+		if (isAnalyzingAi) return;
+		setIsAnalyzingAi(true);
+		try {
+			const res = await fetch("/api/imaging/ai-analysis", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteClinicalReadHeaders(),
+				},
+				body: JSON.stringify({
+					imageBase64: sensorAcq.capturedImage,
+					toothCode: primaryTooth,
+					patientId,
+				}),
+			});
+			if (!res.ok) {
+				const errBody = (await res.json().catch(() => ({}))) as { message?: string };
+				throw new Error(errBody.message || `HTTP ${res.status}`);
+			}
+			const data = (await res.json()) as {
+				ok?: boolean;
+				summary?: string;
+				report?: string;
+				toothStates?: Record<string, string>;
+				toothUpdates?: Array<{ code: string; state: string; diagnosisOrFinding?: string }>;
+			};
+
+			const conclusionText = data.summary?.trim() || data.report?.trim() || `Зуб #${primaryTooth}: анализ выполнен успешно.`;
+			const aiSummary = `[ИИ-заключение]: Зуб #${primaryTooth}. ${conclusionText}`;
+			setClinicalNotes((prev) => (prev.trim() ? `${prev.trim()}\n${aiSummary}` : aiSummary));
+			showToast("ИИ-анализ снимка успешно выполнен", "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось выполнить ИИ-анализ снимка";
+			showToast(`Ошибка анализа: ${msg}`, "error");
+		} finally {
+			setIsAnalyzingAi(false);
+		}
+	};
 	useEffect(() => {
 		if (effectiveInitialTooth && effectiveInitialTooth !== "all") {
 			setSelectedTeeth([effectiveInitialTooth]);
@@ -265,6 +311,8 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 		handleSendToPlan: emrActions.handleSendToPlan,
 		handleExportDicom: emrActions.handleExportDicom,
 		handleSelectProjectionType,
+		handleTriggerAiAnalysis,
+		isAnalyzingAi,
 		cssFilterStyle,
 	};
 }

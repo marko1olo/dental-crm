@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProtocolModal";
 import { DirectRvgCaptureModal } from "../../radiology/DirectRvgCaptureModal";
-import { VisiographStudyViewer } from "../../radiology/VisiographStudyViewer";
+import { SensorStudyViewer } from "../../radiology/SensorStudyViewer";
 import { showToast } from "../../GlobalToast";
 import { detectConnectedSensors } from "../../radiology/sensorGateway/hardwareDetection";
 import { usePatientStore } from "../../../store/patientStore";
@@ -75,17 +75,10 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 					data-testid="modal-visiograph-study-viewer"
 				>
 					<div className="w-full max-w-4xl h-[620px] max-h-[90vh]">
-						<VisiographStudyViewer
-							studyTitle="Прицельная радиовизиография"
+						<SensorStudyViewer
 							patientName={patientName}
-							patientId={patientId}
-							initialTooth={activeTooth || "11"}
-							modality="rvg"
+							toothFdiCode={activeTooth || "11"}
 							onClose={() => setIsViewerOpen(false)}
-							onSaveToVisit={() => {
-								showToast("Снимок и доза 0.02 мЗв сохранены в дневник приёма", "success", 3000);
-								setIsViewerOpen(false);
-							}}
 						/>
 					</div>
 				</div>

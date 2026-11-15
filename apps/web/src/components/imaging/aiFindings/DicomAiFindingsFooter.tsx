@@ -19,8 +19,8 @@ export const DicomAiFindingsFooter: React.FC<Props> = ({
 		<div
 			style={{
 				padding: "14px 16px",
-				borderTop: "1px solid #1e293b",
-				backgroundColor: "#0f172a",
+				borderTop: "1px solid var(--line, #1e293b)",
+				backgroundColor: "var(--paper, #0f172a)",
 			}}
 		>
 			<button
@@ -34,7 +34,7 @@ export const DicomAiFindingsFooter: React.FC<Props> = ({
 					padding: "10px 16px",
 					borderRadius: "8px",
 					border: "none",
-					backgroundColor: isApplyingToChart ? "#334155" : "#0d9488",
+					backgroundColor: isApplyingToChart ? "var(--paper-soft, #334155)" : "var(--primary, #0d9488)",
 					color: "#ffffff",
 					fontSize: "13px",
 					fontWeight: 700,

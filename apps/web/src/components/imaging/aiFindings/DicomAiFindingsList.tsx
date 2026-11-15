@@ -23,7 +23,7 @@ export const DicomAiFindingsList: React.FC<Props> = ({
 }) => {
 	if (!plan || plan.groups.length === 0) {
 		return (
-			<div style={{ fontSize: "13px", color: "#94a3b8", textAlign: "center", padding: "16px 0" }}>
+			<div style={{ fontSize: "13px", color: "var(--ink-muted, #94a3b8)", textAlign: "center", padding: "16px 0" }}>
 				Патологических изменений, требующих изменения формулы, не обнаружено.
 			</div>
 		);
@@ -31,7 +31,7 @@ export const DicomAiFindingsList: React.FC<Props> = ({
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-			<div style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+			<div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink-muted, #94a3b8)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
 				Предлагаемые изменения в формулу:
 			</div>
 			{plan.groups.map((group) => {
@@ -39,9 +39,9 @@ export const DicomAiFindingsList: React.FC<Props> = ({
 				return (
 					<div
 						key={group.state}
-						style={{ backgroundColor: "#1e293b", borderRadius: "8px", padding: "10px", border: "1px solid #334155" }}
+						style={{ backgroundColor: "var(--paper-soft, #1e293b)", borderRadius: "8px", padding: "10px", border: "1px solid var(--line, #334155)" }}
 					>
-						<div style={{ fontSize: "13px", fontWeight: 700, color: "#f1f5f9", marginBottom: "8px" }}>
+						<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #f1f5f9)", marginBottom: "8px" }}>
 							{stateLabel}:
 						</div>
 						<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -57,7 +57,7 @@ export const DicomAiFindingsList: React.FC<Props> = ({
 											gap: "10px",
 											cursor: isApplied ? "default" : "pointer",
 											fontSize: "13px",
-											color: isApplied ? "#4ade80" : "#e2e8f0",
+											color: isApplied ? "var(--success, #4ade80)" : "var(--ink, #e2e8f0)",
 											userSelect: "none",
 										}}
 									>
@@ -71,7 +71,7 @@ export const DicomAiFindingsList: React.FC<Props> = ({
 												else next.delete(t.code);
 												setSelectedFindingCodes(next);
 											}}
-											style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#0d9488" }}
+											style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "var(--primary, #0d9488)" }}
 										/>
 										<span className="flex items-center gap-1">
 											<span>Зуб #{t.code} — {stateLabel}</span>

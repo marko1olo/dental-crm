@@ -179,11 +179,11 @@ describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СН�
 			expect(ssotSrc).toContain("HotFolderImageCanvas");
 		});
 
-		it("confirms components/radiology/VisiographStudyViewer.tsx exists as canonical 2D viewer", () => {
-			const ssotPath = "components/radiology/VisiographStudyViewer.tsx";
+		it("confirms components/radiology/SensorStudyViewer.tsx exists as canonical 2D viewer", () => {
+			const ssotPath = "components/radiology/SensorStudyViewer.tsx";
 			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
 			const ssotSrc = readSource(ssotPath);
-			expect(ssotSrc).toContain("VisiographStudyViewer");
+			expect(ssotSrc).toContain("SensorStudyViewer");
 		});
 
 		it("confirms components/hardware/HardwareSettingsModal.tsx exists and renders HardwareSettingsTab", () => {

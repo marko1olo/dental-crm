@@ -236,7 +236,6 @@ describe("CBCT Dark Cockpit & Anti-Blinding UI Inquisition", () => {
 			path.resolve(__dirname, "../tuner/studio/CbctSlidersPanel.tsx"),
 			path.resolve(__dirname, "../CbctViewportHud.tsx"),
 			path.resolve(__dirname, "../CbctHotkeysStatusBar.tsx"),
-			path.resolve(__dirname, "../CbctImplantModal.tsx"),
 			path.resolve(__dirname, "../CbctLeftToolDock.tsx"),
 		];
 

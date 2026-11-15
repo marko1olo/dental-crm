@@ -80,6 +80,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 						projectionType={logic.projectionType} onSelectProjectionType={logic.handleSelectProjectionType} patientCategory={logic.patientCategory} onChangePatientCategory={logic.setPatientCategory}
 						anatomicalZone={logic.anatomicalZone} onChangeAnatomicalZone={logic.setAnatomicalZone} clinicalNotes={logic.clinicalNotes} onChangeClinicalNotes={logic.setClinicalNotes}
 						capturedImage={logic.capturedImage}
+						onTriggerAiAnalysis={logic.handleTriggerAiAnalysis}
+						isAnalyzingAi={logic.isAnalyzingAi}
 						sensorStatus={logic.sensorStatus}
 						isSensorDetected={logic.selectedSensorModel !== "none" && logic.sensorStatus !== "not_detected"}
 					/>

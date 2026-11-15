@@ -35,51 +35,45 @@ export const DicomAiFindingsDrawer: React.FC<DicomAiFindingsDrawerProps> = ({
 		<div
 			data-testid="dicom-ai-findings-drawer"
 			style={{
-				width: "360px", backgroundColor: "#0f172a", borderLeft: "1px solid #1e293b",
-				display: "flex", flexDirection: "column", zIndex: 10,
-				boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.4)",
+				width: "360px", backgroundColor: "var(--paper, #0f172a)", borderLeft: "1px solid var(--line, #1e293b)",
+				display: "flex", flexDirection: "column", zIndex: 10, boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.4)",
 			}}
 		>
-			<div style={{ padding: "12px 16px", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#1e293b" }}>
+			<div style={{ padding: "12px 16px", borderBottom: "1px solid var(--line, #1e293b)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--paper-soft, #1e293b)" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<Sparkles size={16} color="#2dd4bf" />
-					<span style={{ fontWeight: 700, fontSize: "13px", color: "#f8fafc" }}>Находки ИИ (Предварительный разбор)</span>
+					<Sparkles size={16} color="var(--primary, #0d9488)" />
+					<span style={{ fontWeight: 700, fontSize: "13px", color: "var(--ink, #f8fafc)" }}>Находки ИИ (Предварительный разбор)</span>
 				</div>
-				<button type="button" onClick={onClose} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: "4px" }} title="Скрыть панель">
+				<button type="button" onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--ink-muted, #94a3b8)", cursor: "pointer", padding: "4px" }} title="Скрыть панель">
 					<X size={16} />
 				</button>
 			</div>
 
 			<div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
-				<div style={{ fontSize: "12px", color: "#cbd5e1", backgroundColor: "rgba(15, 23, 42, 0.6)", border: "1px solid #334155", borderRadius: "8px", padding: "10px", lineHeight: "1.4", display: "flex", alignItems: "flex-start", gap: "8px" }}>
-					<Info size={16} className="text-teal-400 shrink-0 mt-0.5" />
+				<div style={{ fontSize: "12px", color: "var(--ink, #cbd5e1)", backgroundColor: "var(--paper-soft, rgba(15, 23, 42, 0.6))", border: "1px solid var(--line, #334155)", borderRadius: "8px", padding: "10px", lineHeight: "1.4", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+					<Info size={16} className="text-[var(--primary,#0d9488)] shrink-0 mt-0.5" />
 					<span>Предварительный анализ. Данные <strong>не перезаписывают</strong> зубную формулу автоматически. Врач проверяет снимок и подтверждает внесение.</span>
 				</div>
 
-				<DicomAiFindingsList
-					plan={plan}
-					selectedFindingCodes={selectedFindingCodes}
-					setSelectedFindingCodes={setSelectedFindingCodes}
-					appliedToothCodes={appliedToothCodes}
-				/>
+				<DicomAiFindingsList plan={plan} selectedFindingCodes={selectedFindingCodes} setSelectedFindingCodes={setSelectedFindingCodes} appliedToothCodes={appliedToothCodes} />
 
 				{plan && plan.noFormulaStateCodes.length > 0 && (
-					<div style={{ fontSize: "12px", color: "#fbbf24", backgroundColor: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "8px", padding: "10px", lineHeight: "1.4", display: "flex", alignItems: "center", gap: "6px" }}>
+					<div style={{ fontSize: "12px", color: "var(--warning, #fbbf24)", backgroundColor: "var(--warning-soft, rgba(245, 158, 11, 0.1))", border: "1px solid var(--warning, rgba(245, 158, 11, 0.3))", borderRadius: "8px", padding: "10px", lineHeight: "1.4", display: "flex", alignItems: "center", gap: "6px" }}>
 						<AlertTriangle size={14} style={{ flexShrink: 0 }} />
 						<span>Зубы {plan.noFormulaStateCodes.join(", ")} требуют внимания/наблюдения. Отметьте их на одонтограмме вручную.</span>
 					</div>
 				)}
 
 				{formulaFailure && (
-					<div style={{ fontSize: "12px", color: "#f87171", backgroundColor: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "10px", lineHeight: "1.4" }}>
+					<div style={{ fontSize: "12px", color: "var(--danger, #f87171)", backgroundColor: "var(--danger-soft, rgba(239, 68, 68, 0.1))", border: "1px solid var(--danger, rgba(239, 68, 68, 0.3))", borderRadius: "8px", padding: "10px", lineHeight: "1.4" }}>
 						{formulaFailure}
 					</div>
 				)}
 
 				{aiReport && (
-					<details style={{ marginTop: "auto", fontSize: "12px", color: "#94a3b8" }}>
-						<summary style={{ cursor: "pointer", padding: "6px 0", color: "#cbd5e1", fontWeight: 600 }}>Полный отчёт модели</summary>
-						<div style={{ whiteSpace: "pre-wrap", backgroundColor: "#020617", padding: "10px", borderRadius: "6px", border: "1px solid #1e293b", marginTop: "6px", maxHeight: "160px", overflowY: "auto", fontFamily: "monospace", fontSize: "11px" }}>
+					<details style={{ marginTop: "auto", fontSize: "12px", color: "var(--ink-muted, #94a3b8)" }}>
+						<summary style={{ cursor: "pointer", padding: "6px 0", color: "var(--ink, #cbd5e1)", fontWeight: 600 }}>Полный отчёт модели</summary>
+						<div style={{ whiteSpace: "pre-wrap", backgroundColor: "var(--paper-soft, #020617)", color: "var(--ink, #f8fafc)", padding: "10px", borderRadius: "6px", border: "1px solid var(--line, #1e293b)", marginTop: "6px", maxHeight: "160px", overflowY: "auto", fontFamily: "monospace", fontSize: "11px" }}>
 							{aiReport}
 						</div>
 					</details>

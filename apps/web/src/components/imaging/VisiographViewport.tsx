@@ -1,4 +1,4 @@
-import { VisiographStudyViewer } from "../radiology/VisiographStudyViewer";
+import { SensorStudyViewer } from "../radiology/SensorStudyViewer";
 import { ClinicalImageViewer } from "./ClinicalImageViewer";
 import { RadiologyCalibratedScaleRuler } from "../radiology/RadiologyCalibratedScaleRuler";
 import type { XrayScan } from "./VisiographScanHelpers";
@@ -25,11 +25,23 @@ export function VisiographViewport({
 }: VisiographViewportProps) {
 	if (isStudioMode) {
 		return (
-			<VisiographStudyViewer
-				imageUrl={currentImageUrl}
-				patientId={effectivePatientId || undefined}
-				patientName={effectivePatientId ? `Пациент #${effectivePatientId}` : undefined}
-				initialTooth={currentScan?.toothCode || undefined}
+			<SensorStudyViewer
+				study={currentScan ? {
+					id: currentScan.id,
+					studyDate: currentScan.capturedAt || new Date().toISOString(),
+					studyType: "intraoral_radiovisiography",
+					modality: "intraoral_rvg",
+					modalityLabel: "RVG",
+					anatomicalArea: currentScan.toothCode ? `Зуб ${currentScan.toothCode}` : "RVG",
+					teethFdi: currentScan.toothCode ? [currentScan.toothCode] : ["16"],
+					effectiveDoseMicrosv: 20,
+					effectiveDoseMsv: 0.02,
+					doctorName: "Лечащий врач",
+					status: "completed",
+					imageUrl: currentImageUrl,
+				} : undefined}
+				patientName={effectivePatientId ? `Пациент #${effectivePatientId}` : "Пациент"}
+				toothFdiCode={currentScan?.toothCode || undefined}
 				onClose={onCloseStudio}
 			/>
 		);

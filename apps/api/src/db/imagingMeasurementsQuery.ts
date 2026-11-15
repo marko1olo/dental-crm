@@ -115,3 +115,67 @@ export async function saveImagingMeasurementsForStudy(
 		}));
 	});
 }
+
+export async function saveImagingAiAnnotationsForStudy(
+	organizationId: string,
+	studyId: string,
+	patientId: string,
+	toothUpdates: Array<{
+		code: string;
+		state: string;
+		diagnosisOrFinding?: string | undefined;
+		notes?: string | undefined;
+	}>,
+): Promise<ImagingMeasurementRecord[]> {
+	return withTenantCtx(organizationId, async () => {
+		// Only delete existing AI findings for this study, preserving doctor's manual annotations!
+		await db
+			.delete(schema.imagingAnnotations)
+			.where(
+				and(
+					eq(schema.imagingAnnotations.organizationId, organizationId),
+					eq(schema.imagingAnnotations.studyId, studyId),
+					eq(schema.imagingAnnotations.annotationType, "ai_finding"),
+				),
+			);
+
+		if (toothUpdates.length === 0) return [];
+
+		const now = new Date();
+		const inserted = await db
+			.insert(schema.imagingAnnotations)
+			.values(
+				toothUpdates.map((u) => ({
+					id: randomUUID(),
+					organizationId,
+					studyId,
+					patientId,
+					toothCode: u.code,
+					annotationType: "ai_finding",
+					coordinates: { source: "ai_vision_analysis", toothCode: u.code },
+					measurements: { state: u.state, finding: u.diagnosisOrFinding ?? u.state },
+					notes: u.diagnosisOrFinding
+						? `${u.diagnosisOrFinding}${u.notes ? ` (${u.notes})` : ""}`
+						: (u.notes ?? null),
+					createdAt: now,
+					updatedAt: now,
+				})),
+			)
+			.returning();
+
+		return inserted.map((r) => ({
+			id: r.id,
+			organizationId: r.organizationId,
+			studyId: r.studyId,
+			patientId: r.patientId,
+			toothCode: r.toothCode,
+			toothNumber: r.toothCode,
+			annotationType: r.annotationType,
+			coordinates: r.coordinates as Record<string, unknown>,
+			measurements: r.measurements as Record<string, unknown> | null,
+			notes: r.notes,
+			createdAt: r.createdAt.toISOString(),
+			updatedAt: r.updatedAt.toISOString(),
+		}));
+	});
+}

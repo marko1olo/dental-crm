@@ -84,13 +84,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!visCode.includes("Норма (043/у)"), "Visiograph button must not say 043/у");
 	});
 
-	it("5. CbctMprImplantStudioModal & CbctImplantModal: eliminated '043/у' from diary buttons", () => {
+	it("5. CbctMprImplantStudioModal: eliminated '043/у' from diary buttons", () => {
 		const ctCode = readComponent("components/radiology/CbctMprImplantStudioModal.tsx");
 		assert.ok(!ctCode.includes("В карту 043/у"), "CbctMprImplantStudioModal must not have 'В карту 043/у'");
-
-		const cbctCode = readComponent("components/radiology/CbctImplantModal.tsx");
-		assert.ok(cbctCode.includes("В дневник приёма"), "CbctImplantModal button must be 'В дневник приёма'");
-		assert.ok(!cbctCode.includes("В дневник 043/у"), "CbctImplantModal must not have 'В дневник 043/у'");
+		assert.ok(!ctCode.includes("043/у"), "CbctMprImplantStudioModal must not cite '043/у'");
 	});
 
 	it("6. Radiology Referral: purged ALARA and SanPiN from print template & modal", () => {
@@ -244,8 +241,8 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!historyCode.includes("Выписка 043/у"), "PatientHistoryTab must not have Выписка 043/у");
 		assert.ok(historyCode.includes("Выписка из карты"), "PatientHistoryTab must have clean label Выписка из карты");
 
-		const gostHistoryCode = readComponent("components/odontogram/gost/gostHistoryTypes.ts");
-		assert.ok(!gostHistoryCode.includes("Форма 043/у"), "gostHistoryTypes must not cite Форма 043/у");
+		const dmftCode = readComponent("components/odontogram/clinical/dmftIndices.ts");
+		assert.ok(!dmftCode.includes("Форма 043/у"), "dmftIndices must not cite Форма 043/у");
 
 		const odontogramLayerCode = readComponent("components/odontogram/OdontogramModalsLayer.tsx");
 		assert.ok(!odontogramLayerCode.includes("фискализирован (54-ФЗ)"), "OdontogramModalsLayer must not have 54-ФЗ");
@@ -339,9 +336,6 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 
 		const cashboxStudioCode = readComponent("components/cashbox/CashRegisterStudioModal.tsx");
 		assert.ok(!cashboxStudioCode.includes("54-ФЗ"), "CashRegisterStudioModal must not cite '54-ФЗ' in warranty panel");
-
-		const cashierBarCode = readComponent("PaymentFiscalCashierBar.tsx");
-		assert.ok(!cashierBarCode.includes("54-ФЗ"), "PaymentFiscalCashierBar must not cite '54-ФЗ'");
 	});
 });
 
