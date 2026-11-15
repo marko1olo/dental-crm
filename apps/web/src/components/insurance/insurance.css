@@ -680,12 +680,33 @@
 		flex: 1;
 	}
 
+	.dms-footer {
+		padding: 12px 16px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+
+	.dms-footer-summary {
+		text-align: center;
+		font-size: 13px;
+	}
+
 	.dms-footer-actions {
 		width: 100%;
+		display: flex;
+		gap: 8px;
 	}
 
 	.dms-table-container {
 		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		max-width: 100%;
+		display: block;
+	}
+
+	.dms-table {
+		min-width: 540px;
 	}
 
 	.dms-summary-grid {

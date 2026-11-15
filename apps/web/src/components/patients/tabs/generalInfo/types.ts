@@ -55,6 +55,7 @@ export interface PatientGeneralInfo {
 
 	// 2. Государственная и страховая идентификация
 	dmsInsuranceCompany?: string | null | undefined;
+	insuranceContractId?: string | null | undefined;
 	dmsPolicyNumber?: string | null | undefined;
 	dmsProgramName?: string | null | undefined;
 	dmsGuaranteeLetterNumber?: string | null | undefined;

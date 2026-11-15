@@ -629,14 +629,17 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 					};
 				}
 
-				const maxCoverage = Number(letter.maxCoverageRub);
-				const currentUsed = Number(letter.usedAmountRub);
-				const remainingBefore = Math.max(0, Math.round((maxCoverage - currentUsed) * 100) / 100);
+				const maxCoverageKop = Math.round(Number(letter.maxCoverageRub) * 100);
+				const currentUsedKop = Math.round(Number(letter.usedAmountRub) * 100);
+				const amountKop = Math.round(amountRub * 100);
+				const remainingBeforeKop = Math.max(0, maxCoverageKop - currentUsedKop);
+				const remainingBeforeRub = remainingBeforeKop / 100;
 
-				if (amountRub > remainingBefore) {
+				if (amountKop > remainingBeforeKop) {
 					if (isUrgentCare) {
 						// Мандат 8e: при острой боли превышение лимита не блокирует приём
-						const newUsedAmount = Math.round((currentUsed + amountRub) * 100) / 100;
+						const newUsedAmountKop = currentUsedKop + amountKop;
+						const newUsedAmount = newUsedAmountKop / 100;
 						const [updated] = await tx
 							.update(dmsGuaranteeLetters)
 							.set({
@@ -680,14 +683,15 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 						status: 400,
 						error: {
 							error: "LimitExceeded",
-							message: `Сумма списания (${amountRub} ₽) превышает остаток по гарантийному письму (${remainingBefore} ₽).`,
+							message: `Сумма списания (${amountRub} ₽) превышает остаток по гарантийному письму (${remainingBeforeRub} ₽).`,
 						},
 					};
 				}
 
-				const newUsedAmount = Math.round((currentUsed + amountRub) * 100) / 100;
+				const newUsedAmountKop = currentUsedKop + amountKop;
+				const newUsedAmount = newUsedAmountKop / 100;
 				let newStatus = letter.status;
-				if (newUsedAmount >= maxCoverage) {
+				if (newUsedAmountKop >= maxCoverageKop) {
 					newStatus = "exhausted";
 				}
 
@@ -716,6 +720,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 					};
 				}
 
+				const remainingCoverageKop = Math.max(0, maxCoverageKop - newUsedAmountKop);
+
 				return {
 					status: 200,
 					data: {
@@ -723,7 +729,7 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 						letterId: updated.id,
 						debitedAmountRub: amountRub,
 						usedAmountRub: Number(updated.usedAmountRub),
-						remainingCoverageRub: Math.max(0, Math.round((maxCoverage - newUsedAmount) * 100) / 100),
+						remainingCoverageRub: remainingCoverageKop / 100,
 						status: updated.status,
 					},
 				};

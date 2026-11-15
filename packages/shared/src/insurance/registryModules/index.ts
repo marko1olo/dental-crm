@@ -9,3 +9,4 @@ export * from "./registryAggregator.js";
 export * from "./registryHtmlStyles.js";
 export * from "./registryHtmlBuilder.js";
 export * from "./registryActBuilder.js";
+export * from "./registryLegacyAdapters.js";

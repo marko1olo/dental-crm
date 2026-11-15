@@ -12,6 +12,7 @@ import {
 	DMS_INSURANCE_COMPANIES_CATALOG,
 	getDmsInsuranceCompanyById,
 } from "./guaranteeModules/guaranteeCompanyCatalog.js";
+import { STANDARD_DMS_EXCLUDED_804N_SERVICES } from "./guaranteeModules/guaranteeMatcher.js";
 import type { DmsGuaranteeLetter } from "./guaranteeModules/guaranteeTypes.js";
 import type {
 	DmsBillableItem,
@@ -22,6 +23,10 @@ import {
 	formatCurrencyKopecks,
 } from "./dmsFranchiseEngine.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/index.js";
+import {
+	generateDmsLegacyRegistryXml,
+	generateDmsLegacyRegistryCsv,
+} from "./registryModules/index.js";
 import type { ClinicLegalInfo } from "../sanpin/index.js";
 import type {
 	DmsSplitCalculationResult,
@@ -615,24 +620,24 @@ export function isServiceCodeApprovedByLetter(
 
 export function isServiceExcludedByDmsRules(
 	code: string,
-	name: string,
+	_name: string,
 	_program = "base",
 	context?: { lastHygieneDate?: string | undefined; currentVisitDate?: string | undefined } | undefined,
 ): { isExcluded: boolean; reason?: string | undefined } {
-	const n = (name || "").toLowerCase();
-	if (code === "A16.07.006" || n.includes("имплант")) {
-		return { isExcluded: true, reason: "имплантация не покрывается" };
+	const normCode = (code || "").trim();
+	const excludedMatch = STANDARD_DMS_EXCLUDED_804N_SERVICES.find(
+		(ex) => normCode === ex.code804n || normCode.startsWith(ex.code804n),
+	);
+	if (excludedMatch) {
+		return { isExcluded: true, reason: excludedMatch.reasonRu };
 	}
-	if (code === "A16.07.050" || n.includes("отбеливание") || n.includes("zoom")) {
-		return { isExcluded: true, reason: "эстетическое отбеливание не покрывается" };
-	}
-	if (code === "A16.07.051" || n.includes("гигиена")) {
+	if (normCode.startsWith("A16.07.051")) {
 		if (context?.lastHygieneDate && context?.currentVisitDate) {
 			const d1 = new Date(context.lastHygieneDate).getTime();
 			const d2 = new Date(context.currentVisitDate).getTime();
 			const diffDays = Math.abs(d2 - d1) / (1000 * 60 * 60 * 24);
 			if (diffDays < 180) {
-				return { isExcluded: true, reason: "не чаще 1 раза в 6 месяцев" };
+				return { isExcluded: true, reason: "Профессиональная гигиена полости рта по ДМС проводится не чаще 1 раза в 6 месяцев" };
 			}
 		}
 	}
@@ -859,7 +864,11 @@ export function verifyServiceForDms(
 		return { status: "requires_letter", isCovered: false, dmsPayableKopecks: 0, patientPayableKopecks: price };
 	}
 
-	if (code.includes("050") || name.includes("отбеливание") || name.includes("zoom")) {
+	const normCode = code.trim();
+	const excludedMatch = STANDARD_DMS_EXCLUDED_804N_SERVICES.find(
+		(ex) => normCode === ex.code804n || normCode.startsWith(ex.code804n),
+	);
+	if (excludedMatch) {
 		return {
 			status: "rejected_exclusion",
 			isCovered: false,
@@ -948,9 +957,12 @@ export function buildDmsReconciliationRegistry(params: {
 		patRub += line?.patientCoPayRub ?? item.patientOutOfPocketRubles ?? (typeof item.patientOutOfPocketKopecks === "number" ? kopecksToRub(item.patientOutOfPocketKopecks) : (item.patientPaidRub || 0));
 	}
 
+	const todayIso = new Date().toISOString().slice(0, 10);
+	const fallbackRegistryNum = `РЕЕСТР-${todayIso.replace(/-/g, "")}`;
+
 	return {
-		registryNumber: params.registryNumber || "РЕЕСТР-001",
-		registryDate: params.registryDate || "2026-08-22",
+		registryNumber: params.registryNumber || fallbackRegistryNum,
+		registryDate: params.registryDate || todayIso,
 		items,
 		splitResults: items,
 		totalRegistryAmountRubles: Math.round(totRub * 100) / 100,
@@ -969,9 +981,11 @@ export function exportDmsRegistryToCsv(registry: {
 	totalDmsClaimedRubles?: number | undefined;
 	totalPatientCoPaymentRubles?: number | undefined;
 }): string {
+	const todayIso = new Date().toISOString().slice(0, 10);
+	const fallbackRegNum = `РЕЕСТР-${todayIso.replace(/-/g, "")}`;
 	const items = registry.splitResults || registry.items || [];
 	const lines = [
-		`# Реестр счетов ДМС;${registry.registryNumber || "РЕЕСТР-001"}`,
+		`# Реестр счетов ДМС;${registry.registryNumber || fallbackRegNum}`,
 		`№ п/п;Дата услуги;Ф.И.О. пациента;Номер полиса;Номер гарантийного письма;Код услуги;Наименование;Сумма;Покрыто ДМС;Доплата пациента`,
 	];
 
@@ -983,7 +997,7 @@ export function exportDmsRegistryToCsv(registry: {
 		const sCode = l?.serviceCode || item.serviceCode804n || item.serviceCode || "";
 		const sName = l?.serviceName || item.serviceName || "";
 		lines.push(
-			`${idx + 1};${item.serviceDate || item.visitDate || "2026-08-10"};${item.patientFullName || ""};${item.policyNumber || ""};${item.guaranteeLetterNumber || item.letterNumber || "—"};${sCode};${sName};${total};${dms};${patient}`,
+			`${idx + 1};${item.serviceDate || item.visitDate || todayIso};${item.patientFullName || ""};${item.policyNumber || ""};${item.guaranteeLetterNumber || item.letterNumber || "—"};${sCode};${sName};${total};${dms};${patient}`,
 		);
 	});
 
@@ -1067,12 +1081,18 @@ export function generateBilateralAcceptanceActHtml(params: {
 	registryNumber?: string | undefined;
 }): string {
 	if (params.registryNumber && !params.summary) {
-		return `<!DOCTYPE html><html><body><h1>АКТ СДАЧИ-ПРИЕМКИ</h1><p>№ ${params.registryNumber}</p><p>Страховщик: СОГАЗ</p><p>Освобождено от НДС (ст. 149 НК РФ)</p></body></html>`;
+		const insurerName = params.insurerInfo?.name || DEFAULT_STATUTORY_INSURANCE_CONTRACT.insurerShortName;
+		return `<!DOCTYPE html><html><body><h1>АКТ СДАЧИ-ПРИЕМКИ</h1><p>№ ${params.registryNumber}</p><p>Страховщик: ${insurerName}</p><p>Освобождено от НДС (ст. 149 НК РФ)</p></body></html>`;
 	}
 
 	const records = params.records || [];
 	const clinic = params.clinicInfo || DEFAULT_CLINIC_PROFILE;
-	const insurer = params.insurerInfo || { name: "АО «СОГАЗ»", representative: "Куратор", contractNumber: "ДМС-2026/01", contractDate: "10.01.2026" };
+	const insurer = params.insurerInfo || {
+		name: DEFAULT_STATUTORY_INSURANCE_CONTRACT.insurerShortName,
+		representative: "Куратор ДМС",
+		contractNumber: DEFAULT_STATUTORY_INSURANCE_CONTRACT.contractNumber,
+		contractDate: "10.01.2026",
+	};
 	const actNum = params.actNumber || "АКТ-001";
 	const summary = params.summary || calculateRegistryTotals(records, insurer.name);
 
@@ -1117,12 +1137,16 @@ export function generateDmsStatutoryRegistry(params: {
 	const dmsKop = services.reduce((acc: number, s) => acc + (s.dmsAcceptedKopecks ?? s.dmsCoveredKopecks ?? (s.dmsCoveredRub ? s.dmsCoveredRub * 100 : 0)), 0);
 	const patientKop = services.reduce((acc: number, s) => acc + (s.patientPaidKopecks ?? (s.patientPaidRub ? s.patientPaidRub * 100 : 0)), 0);
 
+	const todayIso = new Date().toISOString().slice(0, 10);
+	const monthStartIso = `${todayIso.slice(0, 7)}-01`;
+	const fallbackRegistryNum = `РЕЕСТР-${todayIso.replace(/-/g, "")}`;
+
 	return {
-		registryNumber: params.registryNumber || "РЕЕСТР-001",
+		registryNumber: params.registryNumber || fallbackRegistryNum,
 		registryId: `REG-${Date.now()}`,
 		insurerId: params.insurerId || "sogaz",
-		periodStart: params.periodStart || "2026-08-01",
-		periodEnd: params.periodEnd || "2026-08-31",
+		periodStart: params.periodStart || monthStartIso,
+		periodEnd: params.periodEnd || todayIso,
 		visitServices: services,
 		records: services,
 		totalVisitsCount: services.length,
@@ -1133,53 +1157,10 @@ export function generateDmsStatutoryRegistry(params: {
 	};
 }
 
-export function generateDmsLegacyRegistryXml(
-	records: readonly DmsRegistryServiceRecord[],
-	clinic: ClinicLegalInfo,
-	contract: StatutoryInsuranceContract,
-	period: string,
-	regNum: string,
-): string {
-	const recXml = records
-		.map(
-			(r) => `<Record>
-				<VisitDate>${r.visitDate}</VisitDate>
-				<Patient>${r.patientFullName}</Patient>
-				<PolicyNumber>${r.policyNumber}</PolicyNumber>
-				<ServiceCode804n>${r.serviceCode804n || r.serviceCode || ""}</ServiceCode804n>
-				<DmsCoveredKopecks>${r.dmsCoveredKopecks || (r.dmsCoveredRub ? r.dmsCoveredRub * 100 : 0)}</DmsCoveredKopecks>
-			</Record>`,
-		)
-		.join("\n");
-
-	return `<?xml version="1.0" encoding="UTF-8"?>
-<DmsReconciliationRegistry>
-	<RegistryNumber>${regNum}</RegistryNumber>
-	<Period>${period}</Period>
-	<Clinic>
-		<LegalName>${clinic.name}</LegalName>
-		<INN>${clinic.inn}</INN>
-	</Clinic>
-	<Insurer>
-		<Name>${contract.insurerShortName}</Name>
-	</Insurer>
-	<Records>${recXml}</Records>
-</DmsReconciliationRegistry>`;
-}
-
-export function generateDmsLegacyRegistryCsv(
-	records: readonly DmsRegistryServiceRecord[],
-	_clinic: ClinicLegalInfo,
-	_insurerName: string,
-	_period: string,
-): string {
-	const header = "№ п/п;Дата визита;Ф.И.О. Застрахованного;Полис;Код услуги;Наименование;Покрыто ДМС;Доплата пациента";
-	const rows = records.map(
-		(r, i) => `${i + 1};${r.visitDate};${r.patientFullName};${r.policyNumber};${r.serviceCode804n || r.serviceCode || ""};${r.serviceName};${r.dmsCoveredRub || (r.dmsCoveredKopecks ? kopecksToRub(r.dmsCoveredKopecks) : 0)};${r.patientPaidRub || (r.patientPaidKopecks ? kopecksToRub(r.patientPaidKopecks) : 0)}`,
-	);
-	const totalRow = "ИТОГО;;;;;Всего;;";
-	return `\uFEFF${[header, ...rows, totalRow].join("\r\n")}`;
-}
+export {
+	generateDmsLegacyRegistryXml,
+	generateDmsLegacyRegistryCsv,
+} from "./registryModules/registryLegacyAdapters.js";
 
 export function generateDmsA4PrintableHtml(
 	_records: readonly DmsRegistryServiceRecord[],
@@ -1205,12 +1186,14 @@ export function generateDmsClaimXml(params: {
 	clinic?: ClinicLegalInfo | undefined;
 	contract?: StatutoryInsuranceContract | undefined;
 }): string {
+	const currentYear = new Date().getFullYear().toString();
+	const regNum = `CLM-${Date.now().toString().slice(-6)}`;
 	return generateDmsLegacyRegistryXml(
 		params.records || [],
 		params.clinic || DEFAULT_CLINIC_PROFILE,
 		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACT,
-		"2026",
-		"CLM-001",
+		currentYear,
+		regNum,
 	);
 }
 
@@ -1220,7 +1203,8 @@ export function generateDmsClaimCsv(
 	insurer: string | { name: string },
 ): string {
 	const insurerTitle = typeof insurer === "string" ? insurer : insurer.name;
-	return generateDmsLegacyRegistryCsv(records, clinic, insurerTitle, "2026");
+	const currentYear = new Date().getFullYear().toString();
+	return generateDmsLegacyRegistryCsv(records, clinic, insurerTitle, currentYear);
 }
 
 export function generateDmsConsolidatedInvoiceHtml(params: {
@@ -1229,11 +1213,12 @@ export function generateDmsConsolidatedInvoiceHtml(params: {
 	contract?: StatutoryInsuranceContract | undefined;
 	actNumber?: string | undefined;
 }): string {
+	const currentYear = new Date().getFullYear().toString();
 	return generateDmsA4PrintableHtml(
 		params.records || [],
 		params.clinicInfo || DEFAULT_CLINIC_PROFILE,
 		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACT,
-		"2026",
-		params.actNumber || "АКТ-1",
+		currentYear,
+		params.actNumber || `АКТ-${Date.now().toString().slice(-4)}`,
 	);
 }

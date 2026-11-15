@@ -84,7 +84,7 @@ export const InsuranceGuaranteeLettersList: React.FC<InsuranceGuaranteeLettersLi
 							</div>
 							<div className="flex items-center gap-2 shrink-0 flex-wrap">
 								{letter.franchisePct > 0 && (
-									<span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+									<span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--amber-surface)] text-[var(--amber-ink)] border border-[var(--amber-ink)]/20">
 										Франшиза {letter.franchisePct}%
 									</span>
 								)}

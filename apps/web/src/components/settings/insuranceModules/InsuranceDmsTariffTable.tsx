@@ -121,7 +121,7 @@ export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = (
 									</td>
 									<td className="py-2.5 px-3 text-center">
 										{franchise > 0 ? (
-											<span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300">
+											<span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--amber-surface)] text-[var(--amber-ink)]">
 												{franchise}%
 											</span>
 										) : (

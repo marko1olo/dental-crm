@@ -100,7 +100,13 @@ export const DirectInsuranceLauncher: React.FC = () => {
 			onApplySplitToCashbox={(splitData) => {
 				// Применение сплита в кассу и оповещение кассового модуля
 				window.dispatchEvent(
-					new CustomEvent("dente:cashbox-apply-split", { detail: splitData }),
+					new CustomEvent("dente:cashbox-apply-split", {
+						detail: {
+							...splitData,
+							patientId: targetPatient?.id,
+							patientName: targetPatient?.fullName,
+						},
+					}),
 				);
 				handleClose();
 			}}

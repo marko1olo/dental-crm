@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Shield } from "lucide-react";
+import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
 import { POPULAR_DMS_COMPANIES } from "./constants";
 import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
@@ -13,6 +14,54 @@ interface DmsPolicyCardProps {
 export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 	patient, onUpdatePatient, disabled = false, onOpenDmsLetters,
 }) => {
+	const [contracts, setContracts] = useState<Array<{ id: string; companyName: string; insurerKey?: string | undefined }>>([]);
+
+	useEffect(() => {
+		let isMounted = true;
+		fetch("/api/insurance/contracts", {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data: unknown) => {
+				if (!isMounted || !Array.isArray(data)) return;
+				const list: Array<{ id: string; companyName: string; insurerKey?: string | undefined }> = [];
+				for (const item of data) {
+					if (typeof item === "object" && item !== null && "id" in item && "companyName" in item) {
+						list.push({
+							id: String((item as { id: unknown }).id),
+							companyName: String((item as { companyName: unknown }).companyName),
+							insurerKey: (item as { insurerKey?: unknown }).insurerKey ? String((item as { insurerKey?: unknown }).insurerKey) : undefined,
+						});
+					}
+				}
+				setContracts(list);
+			})
+			.catch(() => {});
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
+	const handleSelectCompany = (compName: string, contractId?: string) => {
+		onUpdatePatient?.("dmsInsuranceCompany", compName);
+		const matching = contractId
+			? contracts.find((c) => c.id === contractId)
+			: contracts.find(
+					(c) =>
+						c.companyName.toLowerCase().includes(compName.toLowerCase()) ||
+						(c.insurerKey && compName.toLowerCase().includes(c.insurerKey.toLowerCase())),
+				);
+		if (matching) {
+			onUpdatePatient?.("insuranceContractId", matching.id);
+		} else if (contractId) {
+			onUpdatePatient?.("insuranceContractId", contractId);
+		}
+	};
+
+	const availableCompanyChips = contracts.length > 0
+		? contracts.slice(0, 6).map((c) => ({ id: c.id, name: c.companyName }))
+		: POPULAR_DMS_COMPANIES.slice(0, 6).map((name) => ({ id: undefined, name }));
+
 	return (
 		<div className="rounded-xl p-3 sm:p-3.5 bg-[var(--paper-soft)] border border-[var(--teal)]/25 flex flex-col gap-3 shadow-2xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
@@ -22,7 +71,7 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 					</div>
 					<span className="text-xs sm:text-sm font-bold text-[var(--ink)]">Страховой полис ДМС</span>
 					{patient?.dmsInsuranceCompany && (
-						<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-[var(--teal)] border border-teal-500/20">
+						<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/20">
 							{patient.dmsInsuranceCompany}
 						</span>
 					)}
@@ -33,10 +82,10 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 						if (onOpenDmsLetters) onOpenDmsLetters();
 						else window.dispatchEvent(new CustomEvent("dente:open-dms-letters", { detail: { patientId: patient?.id, patientFullName: patient?.fullName } }));
 					}}
-					className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold hover:opacity-90 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)] bg-teal-500/10"
+					className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold hover:opacity-90 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)] bg-[var(--teal-surface)]"
 					title="Открыть гарантийные письма и согласованные услуги по ДМС" data-testid="btn-open-dms-letters-tab"
 				>
-					<Shield className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+					<Shield className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 					<span>Гарантийные письма</span>
 				</button>
 			</div>
@@ -48,15 +97,19 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 						type="text"
 						className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] flex-1 focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
 						value={patient?.dmsInsuranceCompany ?? ""}
-						onChange={(e) => onUpdatePatient?.("dmsInsuranceCompany", e.target.value)}
+						onChange={(e) => handleSelectCompany(e.target.value)}
 						placeholder="СОГАЗ, Ингосстрах, АльфаСтрахование..." disabled={disabled} data-testid="input-dms-company"
 					/>
 					<div className="flex items-center gap-1.5 flex-wrap">
-						{POPULAR_DMS_COMPANIES.slice(0, 6).map((comp) => {
-							const isSelected = patient?.dmsInsuranceCompany === comp;
+						{availableCompanyChips.map((chip) => {
+							const isSelected = chip.id
+								? patient?.insuranceContractId === chip.id || patient?.dmsInsuranceCompany === chip.name
+								: patient?.dmsInsuranceCompany === chip.name;
 							return (
 								<button
-									key={comp} type="button" onClick={() => onUpdatePatient?.("dmsInsuranceCompany", comp)}
+									key={chip.id || chip.name}
+									type="button"
+									onClick={() => handleSelectCompany(chip.name, chip.id)}
 									className="min-h-[44px] sm:min-h-[28px] h-7 text-xs px-2.5 rounded-lg font-semibold transition-colors cursor-pointer inline-flex items-center justify-center select-none"
 									style={{
 										border: isSelected ? "1px solid var(--teal)" : "1px solid var(--line-strong, var(--line, #cbd5e1))",
@@ -65,7 +118,7 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 										boxShadow: isSelected ? "0 1px 2px rgba(13, 148, 136, 0.25)" : "none",
 									}}
 								>
-									{comp}
+									{chip.name}
 								</button>
 							);
 						})}

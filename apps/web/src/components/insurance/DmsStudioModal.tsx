@@ -7,7 +7,7 @@
  * - 8am (Exactly ONE Primary CTA button var(--teal, #0d9488) per visible context)
  * - 8ze / Apple HIG (Touch targets >= 44x44px, native Bottom Sheet on mobile, 0px horizontal scroll)
  * - 8x / 8ap (Human Russian clinical language, zero raw law numbers)
- * - 8b (Healthy sweet spot: 350-450 lines)
+ * - 8b (Healthy sweet spot: modular subcomponents under components/insurance/studio/)
  * - 8be (Zero any / as any, strict types)
  */
 
@@ -15,10 +15,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
 	Building2,
 	Check,
-	Download,
 	FileSpreadsheet,
-	Plus,
-	Printer,
 	Shield,
 	Split,
 	X,
@@ -26,14 +23,13 @@ import {
 } from "lucide-react";
 import {
 	calculateDmsGuaranteeSplit,
+	calculateRegistryTotals,
 	DMS_INSURANCE_COMPANIES_CATALOG,
 	type DmsGuaranteeLetter,
 	type DmsSplitCalculationItem,
 	type DmsBillableItem,
 	type DmsRegistryServiceRecord,
 	type PatientPaymentMethod,
-} from "@dental/shared";
-import {
 	DEFAULT_CLINIC_PROFILE,
 	exportRegistryToCsv,
 	generateBilateralAcceptanceActHtml,
@@ -41,6 +37,11 @@ import {
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { showToast } from "../GlobalToast.js";
+import {
+	DmsSplitBillingTab,
+	DmsGuaranteeLettersTab,
+	DmsRegistryExportTab,
+} from "./studio/index.js";
 import "./insurance.css";
 
 export interface DmsStudioModalProps {
@@ -166,8 +167,9 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 
 	const [newLetterNumber, setNewLetterNumber] = useState<string>("ГП-2026-002");
 	const [newLetterLimitRub, setNewLetterLimitRub] = useState<number>(50000);
+	const [liveRegistryRecords, setLiveRegistryRecords] = useState<readonly DmsRegistryServiceRecord[]>([]);
 
-	// Fastify API Live Query for Clinic Contracts & Patient Guarantee Letters
+	// Fastify API Live Query for Clinic Contracts, Patient Guarantee Letters & Registry
 	useEffect(() => {
 		if (!isOpen) return;
 		let isMounted = true;
@@ -226,10 +228,26 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				if (isMounted && isDemo) setLetters(initialLetters);
 			});
 
+		// 3. Fetch insurance claims registry (live production mode)
+		const regQuery = selectedInsurerId ? `?insurerKey=${encodeURIComponent(selectedInsurerId)}` : "";
+		fetch(`/api/insurance/registry${regQuery}`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data: unknown) => {
+				if (!isMounted || !data || typeof data !== "object") return;
+				const parsed = data as { serviceRecords?: DmsRegistryServiceRecord[]; records?: DmsRegistryServiceRecord[] };
+				const recs = parsed.serviceRecords || parsed.records || [];
+				if (Array.isArray(recs) && recs.length > 0) {
+					setLiveRegistryRecords(recs);
+				}
+			})
+			.catch(() => {});
+
 		return () => {
 			isMounted = false;
 		};
-	}, [isOpen, patient?.id, isDemo, initialLetters]);
+	}, [isOpen, patient?.id, isDemo, initialLetters, selectedInsurerId]);
 
 	// Billable items: honest visit items or demo fallback
 	const effectiveBillItems = useMemo<readonly DmsBillableItem[]>(() => {
@@ -272,6 +290,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	const mixedCardRub = Math.max(0, patientDueRub - mixedCashRub);
 
 	const registryRecords: readonly DmsRegistryServiceRecord[] = useMemo(() => {
+		if (liveRegistryRecords.length > 0) return liveRegistryRecords;
 		if (!isDemo) return [];
 		const insurerTitle = selectedLetter?.insurerName || selectedLetter?.companyName || currentInsurerTitle;
 		const letNum = selectedLetter?.letterNumber;
@@ -281,7 +300,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 			{ id: "r-3", visitId: "v-2", visitDate: "20.08.2026", patientId: patient.id, patientFullName: patient.fullName, policyNumber: patient.policyNumber || "СГЗ-2026-998811", insurerName: insurerTitle, serviceCode804n: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", diagnosisCodeMkb10: "K05.0", quantity: 1, unitPriceRub: 6500, totalPriceRub: 6500, dmsCoveredRub: 5200, patientPaidRub: 1300, doctorFullName: "Д-р Смирнова Е.П.", isExcluded: false, exclusionReason: "Франшиза 20%", letterNumber: letNum },
 		];
 		return records;
-	}, [isDemo, patient, selectedLetter, currentInsurerTitle]);
+	}, [liveRegistryRecords, isDemo, patient, selectedLetter, currentInsurerTitle]);
 
 	if (!isOpen) return null;
 
@@ -381,19 +400,11 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 
 	const handlePrintAct = () => {
 		const insurerTitle = selectedLetter?.insurerName || selectedLetter?.companyName || currentInsurerTitle;
+		const actDate = new Date().toLocaleDateString("ru-RU");
+		const summary = calculateRegistryTotals(registryRecords, insurerTitle);
 		const html = generateBilateralAcceptanceActHtml({
 			records: registryRecords,
-			summary: {
-				totalServicesCount: registryRecords.length,
-				uniquePatientsCount: 1,
-				totalAmountRub: 16800,
-				totalDmsCoveredRub: 15500,
-				totalPatientPaidRub: 1300,
-				isBalanced: true,
-				insurerName: insurerTitle,
-				periodStart: "01.08.2026",
-				periodEnd: "31.08.2026",
-			},
+			summary,
 			clinicInfo: DEFAULT_CLINIC_PROFILE,
 			insurerInfo: {
 				name: insurerTitle,
@@ -401,8 +412,8 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				contractNumber: "ДМС-2026/01",
 				contractDate: "10.01.2026",
 			},
-			actNumber: "АКТ-2026/08",
-			actDate: new Date().toLocaleDateString("ru-RU"),
+			actNumber: `АКТ-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}`,
+			actDate,
 		});
 		const w = window.open("", "_blank");
 		if (w) {
@@ -491,247 +502,48 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				{/* Modal Body */}
 				<div className="dms-body">
 					{activeTab === "split" && (
-						<>
-							{/* Top Insurers Bar */}
-							<div className="dms-chips-bar">
-								<span className="dms-chips-label">Страховые компании:</span>
-								{DMS_INSURANCE_COMPANIES_CATALOG.slice(0, 6).map((ins) => (
-									<button
-										key={ins.id}
-										type="button"
-										onClick={() => setSelectedInsurerId(ins.id)}
-										className={`dms-chip-btn ${selectedInsurerId === ins.id ? "dms-chip-btn-active" : ""}`}
-									>
-										{ins.shortNameRu}
-									</button>
-								))}
-							</div>
-
-							{/* Franchise and Letter Limit bar */}
-							<div className="dms-limit-franchise-bar">
-								<div>
-									<div className="dms-limit-title">Остаток гарантийного письма</div>
-									<div className="dms-limit-value">
-										{letterRemainingLimitRub !== null ? formatDisplayRub(letterRemainingLimitRub) : "Не ограничен"}
-									</div>
-								</div>
-								<div className="dms-franchise-controls">
-									<span className="dms-franchise-label">Франшиза полиса:</span>
-									{[0, 10, 20, 30, 50].map((pct) => (
-										<button
-											key={pct}
-											type="button"
-											onClick={() => setFranchisePercent(pct)}
-											className={`dms-franchise-btn ${franchisePercent === pct ? "dms-franchise-btn-active" : ""}`}
-										>
-											{pct}%
-										</button>
-									))}
-								</div>
-							</div>
-
-							{effectiveBillItems.length === 0 && (
-								<div
-									data-testid="dms-empty-bill-items"
-									style={{
-										padding: "10px 14px",
-										borderRadius: "10px",
-										background: "var(--paper-soft, #f8fafc)",
-										color: "var(--muted, #64748b)",
-										fontSize: "13px",
-										textAlign: "center",
-									}}
-								>
-									Нет позиций для распределения счёта
-								</div>
-							)}
-
-							{/* Bill Items Breakdown Table */}
-							<div className="dms-table-container">
-								<table className="dms-table">
-									<thead>
-										<tr>
-											<th>Услуга</th>
-											<th style={{ width: "60px" }}>Зуб</th>
-											<th style={{ width: "70px" }}>Кол-во</th>
-											<th style={{ textAlign: "right", width: "100px" }}>Всего</th>
-											<th style={{ textAlign: "right", width: "110px", color: "var(--dms-teal)" }}>Страховая</th>
-											<th style={{ textAlign: "right", width: "110px", color: "var(--dms-amber-ink)" }}>Пациент</th>
-										</tr>
-									</thead>
-									<tbody>
-										{lineItems.length === 0 ? (
-											<tr>
-												<td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "var(--muted, #64748b)" }}>
-													Нет услуг в счёте текущего визита
-												</td>
-											</tr>
-										) : (
-											lineItems.map((item) => (
-												<tr key={item.serviceId}>
-													<td>
-														<div style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>{item.serviceName}</div>
-														<div style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>{item.splitReason}</div>
-													</td>
-													<td style={{ color: "var(--muted, #64748b)" }}>{item.toothNumber || "—"}</td>
-													<td>{item.quantity}</td>
-													<td style={{ textAlign: "right", fontWeight: 600 }}>{formatDisplayRub(item.totalPriceRub)}</td>
-													<td className="dms-col-dms">{formatDisplayRub(item.dmsCoveredRub)}</td>
-													<td className="dms-col-patient">{formatDisplayRub(item.patientCoPayRub)}</td>
-												</tr>
-											))
-										)}
-									</tbody>
-								</table>
-							</div>
-
-							{/* Summary Totals & Payment Method (Sentence Case) */}
-							<div className="dms-summary-grid">
-								<div className="dms-summary-card dms-summary-card-dms">
-									<div className="dms-summary-title-dms">Покрывается страховкой</div>
-									<div className="dms-summary-amount-dms">
-										{formatDisplayRub(totalDmsCoveredRub)}
-									</div>
-									<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "4px" }}>
-										Безналичное перечисление от {selectedLetter?.insurerName || selectedLetter?.companyName || "страховой компании"}
-									</div>
-								</div>
-
-								<div className="dms-summary-card dms-summary-card-patient">
-									<div className="dms-summary-title-patient">Доплата пациента на кассе</div>
-									<div className="dms-summary-amount-patient">
-										{formatDisplayRub(totalPatientCoPayRub)}
-									</div>
-									<div className="dms-payment-method-selector">
-										{(["card", "cash", "mixed"] as const).map((m) => (
-											<button
-												key={m}
-												type="button"
-												onClick={() => setPaymentMethod(m)}
-												className={`dms-payment-btn ${paymentMethod === m ? "dms-payment-btn-active" : ""}`}
-											>
-												{m === "card" ? "Карта" : m === "cash" ? "Наличные" : "Смешанная"}
-											</button>
-										))}
-									</div>
-									{paymentMethod === "mixed" && (
-										<div className="dms-mixed-input-row">
-											<span>Наличными (₽):</span>
-											<input
-												type="number"
-												min={0}
-												max={patientDueRub}
-												value={mixedCashRubInput}
-												onChange={(e) => setMixedCashRubInput(e.target.value)}
-												className="dms-mixed-input"
-											/>
-											<span style={{ color: "var(--muted, #64748b)" }}>
-												Картой: {formatDisplayRub(mixedCardRub)}
-											</span>
-										</div>
-									)}
-								</div>
-							</div>
-						</>
+						<DmsSplitBillingTab
+							availableInsurers={availableInsurers}
+							selectedInsurerId={selectedInsurerId}
+							onSelectInsurerId={setSelectedInsurerId}
+							letterRemainingLimitRub={letterRemainingLimitRub}
+							franchisePercent={franchisePercent}
+							onSelectFranchisePercent={setFranchisePercent}
+							effectiveBillItems={effectiveBillItems}
+							lineItems={lineItems}
+							totalDmsCoveredRub={totalDmsCoveredRub}
+							totalPatientCoPayRub={totalPatientCoPayRub}
+							paymentMethod={paymentMethod}
+							onSelectPaymentMethod={setPaymentMethod}
+							mixedCashRubInput={mixedCashRubInput}
+							onChangeMixedCashRubInput={setMixedCashRubInput}
+							mixedCardRub={mixedCardRub}
+							patientDueRub={patientDueRub}
+							selectedInsurerTitle={selectedLetter?.insurerName || selectedLetter?.companyName || "страховой компании"}
+							formatDisplayRub={formatDisplayRub}
+						/>
 					)}
 
 					{activeTab === "policies" && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-							<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-								Выберите страховую компанию РФ:
-							</div>
-							<div className="dms-chips-bar">
-								{DMS_INSURANCE_COMPANIES_CATALOG.slice(0, 6).map((ins) => (
-									<button
-										key={ins.id}
-										type="button"
-										onClick={() => setSelectedInsurerId(ins.id)}
-										className={`dms-chip-btn ${selectedInsurerId === ins.id ? "dms-chip-btn-active" : ""}`}
-									>
-										{ins.shortNameRu}
-									</button>
-								))}
-							</div>
-
-							<div className="dms-form-card">
-								<div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-									Прикрепить новое гарантийное письмо
-								</div>
-								<div className="dms-form-grid">
-									<div>
-										<label className="dms-form-label">Номер гарантийного письма</label>
-										<input
-											type="text"
-											value={newLetterNumber}
-											onChange={(e) => setNewLetterNumber(e.target.value)}
-											className="dms-input"
-										/>
-									</div>
-									<div>
-										<label className="dms-form-label">Лимит покрытия (₽)</label>
-										<input
-											type="number"
-											value={newLetterLimitRub}
-											onChange={(e) => setNewLetterLimitRub(Number(e.target.value) || 0)}
-											className="dms-input"
-										/>
-									</div>
-								</div>
-								<button
-									type="button"
-									onClick={handleAddLetter}
-									className="dms-btn-secondary dente-btn-secondary"
-									style={{ alignSelf: "flex-start", minHeight: "44px" }}
-								>
-									<Plus size={16} /> Прикрепить гарантийное письмо
-								</button>
-							</div>
-						</div>
+						<DmsGuaranteeLettersTab
+							availableInsurers={availableInsurers}
+							selectedInsurerId={selectedInsurerId}
+							onSelectInsurerId={setSelectedInsurerId}
+							newLetterNumber={newLetterNumber}
+							onChangeNewLetterNumber={setNewLetterNumber}
+							newLetterLimitRub={newLetterLimitRub}
+							onChangeNewLetterLimitRub={setNewLetterLimitRub}
+							onAddLetter={handleAddLetter}
+						/>
 					)}
 
 					{activeTab === "registry" && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-								<div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-									Оказанные услуги по ДМС за текущий период
-								</div>
-								<div style={{ display: "flex", gap: "8px" }}>
-									<button type="button" onClick={handleExportCsv} className="dms-btn-secondary dente-btn-secondary">
-										<Download size={15} /> Экспорт реестра в CSV
-									</button>
-									<button type="button" onClick={handlePrintAct} className="dms-btn-secondary dente-btn-secondary">
-										<Printer size={15} /> Печать акта для страховой
-									</button>
-								</div>
-							</div>
-
-							<div className="dms-table-container">
-								<table className="dms-table">
-									<thead>
-										<tr>
-											<th>Дата</th>
-											<th>Пациент</th>
-											<th>Услуга</th>
-											<th style={{ textAlign: "right" }}>Всего</th>
-											<th style={{ textAlign: "right", color: "var(--dms-teal)" }}>ДМС</th>
-											<th style={{ textAlign: "right", color: "var(--dms-amber-ink)" }}>Пациент</th>
-										</tr>
-									</thead>
-									<tbody>
-										{registryRecords.map((r) => (
-											<tr key={r.id}>
-												<td>{r.visitDate}</td>
-												<td style={{ fontWeight: 600 }}>{r.patientFullName}</td>
-												<td>{r.serviceName}</td>
-												<td style={{ textAlign: "right" }}>{formatDisplayRub(r.totalPriceRub || 0)}</td>
-												<td className="dms-col-dms">{formatDisplayRub(r.dmsCoveredRub || 0)}</td>
-												<td className="dms-col-patient">{formatDisplayRub(r.patientPaidRub || 0)}</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						</div>
+						<DmsRegistryExportTab
+							registryRecords={registryRecords}
+							onExportCsv={handleExportCsv}
+							onPrintAct={handlePrintAct}
+							formatDisplayRub={formatDisplayRub}
+						/>
 					)}
 				</div>
 

@@ -16,6 +16,7 @@
 import { z } from "zod";
 import type { Kopecks } from "../utils/money.js";
 import { formatKopecksRu } from "../utils/money.js";
+import { STANDARD_DMS_EXCLUDED_804N_SERVICES } from "./guaranteeModules/guaranteeMatcher.js";
 
 /**
  * Standard Russian DMS franchise rates applied by corporate health insurers (СОГАЗ, Ингосстрах, АльфаСтрахование, РЕСО).
@@ -484,12 +485,14 @@ export function calculateDmsCoPaymentSplit(
 		const qty = Math.max(1, item.quantity || 1);
 		const totalKopNum = unitPriceKop * qty;
 
-		const isExcluded = Boolean(
-			item.isExcluded ||
-				(item.serviceName &&
-					(item.serviceName.includes("отбеливание") ||
-						item.serviceName.includes("Zoom"))),
+		const serviceCode = (item.serviceCode804n || item.serviceCode || "").trim();
+		const isCodeExcluded = Boolean(
+			serviceCode &&
+				STANDARD_DMS_EXCLUDED_804N_SERVICES.some(
+					(ex) => serviceCode === ex.code804n || serviceCode.startsWith(ex.code804n),
+				),
 		);
+		const isExcluded = Boolean(item.isExcluded || isCodeExcluded);
 		if (isExcluded) hasExcludedServices = true;
 
 		let dmsKop = 0;

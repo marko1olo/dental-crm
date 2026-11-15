@@ -57,7 +57,7 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 							className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold hidden sm:inline-block truncate max-w-[260px] md:max-w-xs transition-colors ${
 								summary === "Не заполнено"
 									? "bg-[var(--paper-soft)] border border-[var(--glass-border)] text-[var(--muted)]"
-									: "bg-teal-500/10 text-[var(--teal)] border border-teal-500/20 font-bold"
+									: "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/20 font-bold"
 							}`}
 						>
 							{summary}
