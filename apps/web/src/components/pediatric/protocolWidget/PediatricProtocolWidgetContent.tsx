@@ -88,6 +88,7 @@ export const PediatricProtocolWidgetContent: React.FC<VisitPediatricProtocolWidg
 				setIsMemoModalOpen={state.setIsMemoModalOpen}
 				isDiplomaModalOpen={state.isDiplomaModalOpen}
 				setIsDiplomaModalOpen={state.setIsDiplomaModalOpen}
+				patientId={props.patientId}
 				patientName={props.patientName}
 				patientPhone={props.patientPhone}
 				patientAgeYears={props.patientAgeYears ?? 6}

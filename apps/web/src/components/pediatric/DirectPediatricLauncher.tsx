@@ -8,6 +8,14 @@ import React, { useEffect, useState, useCallback } from "react";
 import { PediatricMixedDentitionModal } from "../odontogram/PediatricMixedDentitionModal";
 import { PediatricBraveryDiplomaModal } from "./PediatricBraveryDiplomaModal";
 
+interface DiplomaLauncherDetails {
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientAgeYears?: number | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
+}
+
 export const DirectPediatricLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
@@ -35,9 +43,33 @@ export const DirectPediatricLauncher: React.FC = () => {
 		);
 	});
 
+	const [diplomaDetails, setDiplomaDetails] = useState<DiplomaLauncherDetails>(() => {
+		if (typeof window === "undefined") return {};
+		const p = new URLSearchParams(window.location.search);
+		return {
+			patientName: p.get("patientName") || p.get("name") || undefined,
+			patientId: p.get("patientId") || p.get("id") || undefined,
+			patientAgeYears: p.get("age") ? Number(p.get("age")) : undefined,
+			doctorName: p.get("doctorName") || p.get("doctor") || undefined,
+			clinicName: p.get("clinicName") || undefined,
+		};
+	});
+
 	useEffect(() => {
 		const handleOpen = () => setIsOpen(true);
-		const handleOpenDiploma = () => setIsDiplomaOpen(true);
+		const handleOpenDiploma = (e?: Event) => {
+			const detail = (e as CustomEvent<DiplomaLauncherDetails> | undefined)?.detail;
+			if (detail && typeof detail === "object") {
+				setDiplomaDetails((prev) => ({
+					patientName: detail.patientName ?? prev.patientName,
+					patientId: detail.patientId ?? prev.patientId,
+					patientAgeYears: detail.patientAgeYears ?? prev.patientAgeYears,
+					doctorName: detail.doctorName ?? prev.doctorName,
+					clinicName: detail.clinicName ?? prev.clinicName,
+				}));
+			}
+			setIsDiplomaOpen(true);
+		};
 		window.addEventListener("dente-open-pediatric", handleOpen);
 		window.addEventListener("dente:open-pediatric", handleOpen);
 		window.addEventListener("dente-open-bravery-diploma", handleOpenDiploma);
@@ -48,6 +80,14 @@ export const DirectPediatricLauncher: React.FC = () => {
 			const s = window.location.search || "";
 			const isDiploma = h.includes("diploma") || h.includes("bravery") || s.includes("diploma");
 			if (isDiploma) {
+				const p = new URLSearchParams(window.location.search);
+				setDiplomaDetails((prev) => ({
+					patientName: p.get("patientName") || p.get("name") || prev.patientName,
+					patientId: p.get("patientId") || p.get("id") || prev.patientId,
+					patientAgeYears: p.get("age") ? Number(p.get("age")) : prev.patientAgeYears,
+					doctorName: p.get("doctorName") || p.get("doctor") || prev.doctorName,
+					clinicName: p.get("clinicName") || prev.clinicName,
+				}));
 				setIsDiplomaOpen(true);
 				setIsOpen(false);
 			} else if (
@@ -102,10 +142,11 @@ export const DirectPediatricLauncher: React.FC = () => {
 			<PediatricBraveryDiplomaModal
 				isOpen={isDiplomaOpen}
 				onClose={handleCloseDiploma}
-				patientName="Маленький Герой"
-				patientAgeYears={6}
-				doctorName="Детский врач-стоматолог"
-				clinicName="Детское отделение DENTE"
+				patientId={diplomaDetails.patientId || undefined}
+				patientName={diplomaDetails.patientName || "Юный пациент"}
+				patientAgeYears={diplomaDetails.patientAgeYears ?? 6}
+				doctorName={diplomaDetails.doctorName || "Детский врач-стоматолог"}
+				clinicName={diplomaDetails.clinicName || "Детское отделение DENTE"}
 			/>
 		</>
 	);

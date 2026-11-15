@@ -9,6 +9,7 @@ interface PediatricProtocolWidgetModalsProps {
 	readonly setIsMemoModalOpen: (open: boolean) => void;
 	readonly isDiplomaModalOpen: boolean;
 	readonly setIsDiplomaModalOpen: (open: boolean) => void;
+	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientAgeYears: number;
@@ -25,6 +26,7 @@ export const PediatricProtocolWidgetModals: React.FC<PediatricProtocolWidgetModa
 	setIsMemoModalOpen,
 	isDiplomaModalOpen,
 	setIsDiplomaModalOpen,
+	patientId,
 	patientName,
 	patientPhone,
 	patientAgeYears,
@@ -58,6 +60,7 @@ export const PediatricProtocolWidgetModals: React.FC<PediatricProtocolWidgetModa
 				<PediatricBraveryDiplomaModal
 					isOpen={isDiplomaModalOpen}
 					onClose={() => setIsDiplomaModalOpen(false)}
+					patientId={patientId}
 					patientName={patientName}
 					patientPhone={patientPhone}
 					patientAgeYears={patientAgeYears}

@@ -126,6 +126,7 @@ export function SpecialtyProtocolDrawer({
 					onAddToInvoice={handleAddToInvoice}
 					initialFranklRating={franklRating}
 					onFranklChange={setFranklRating}
+					patientId={activePatient?.id}
 					patientName={activePatient?.fullName || activePatient?.name}
 					patientPhone={activePatient?.phone ?? undefined}
 					patientAgeYears={patientAgeYears}

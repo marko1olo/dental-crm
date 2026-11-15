@@ -51,7 +51,9 @@ export function CatalogUtilityModals({
 				<PediatricBraveryDiplomaModal
 					isOpen={isDiplomaModalOpen}
 					onClose={() => setIsDiplomaModalOpen(false)}
+					patientId={patient?.id}
 					patientName={effectivePatientName}
+					patientPhone={patient?.phone || undefined}
 					patientAgeYears={typeof patientAgeYears === "number" ? patientAgeYears : undefined}
 					doctorName={doctorName}
 					clinicName={clinicName}

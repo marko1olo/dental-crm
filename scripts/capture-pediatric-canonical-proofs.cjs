@@ -39,15 +39,30 @@ async function saveProof(page, filename, description) {
 
   // Canonical alias mappings for Red Team Mandate
   const aliases = {
-    "pediatric_pc_light_1440x900.png": "01_pediatric_workspace_pc_light_1440x900.png",
-    "pediatric_pc_dark_1440x900.png": "02_pediatric_workspace_pc_dark_1440x900.png",
-    "pediatric_mobile_light_390x844.png": "03_pediatric_workspace_mobile_light_390x844.png",
-    "pediatric_mobile_dark_390x844.png": "04_pediatric_workspace_mobile_dark_390x844.png",
+    "pediatric_pc_light_1440x900.png": [
+      "01_pediatric_workspace_pc_light_1440x900.png",
+      "01_pediatric_teeth_chart_pc_light_1440x900.png",
+    ],
+    "pediatric_pc_dark_1440x900.png": [
+      "02_pediatric_workspace_pc_dark_1440x900.png",
+      "02_pediatric_teeth_chart_pc_dark_1440x900.png",
+    ],
+    "pediatric_mobile_light_390x844.png": [
+      "03_pediatric_workspace_mobile_light_390x844.png",
+      "03_pediatric_teeth_chart_mobile_light_390x844.png",
+    ],
+    "pediatric_mobile_dark_390x844.png": [
+      "04_pediatric_workspace_mobile_dark_390x844.png",
+      "04_pediatric_teeth_chart_mobile_dark_390x844.png",
+    ],
   };
   if (aliases[filename]) {
-    const aliasPath = path.join(PROOFS_DIR, aliases[filename]);
-    fs.copyFileSync(primaryPath, aliasPath);
-    console.log(`[CANONICAL ALIAS] ${aliases[filename]} saved`);
+    const list = Array.isArray(aliases[filename]) ? aliases[filename] : [aliases[filename]];
+    for (const alias of list) {
+      const aliasPath = path.join(PROOFS_DIR, alias);
+      fs.copyFileSync(primaryPath, aliasPath);
+      console.log(`[CANONICAL ALIAS] ${alias} saved`);
+    }
   }
 }
 

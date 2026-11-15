@@ -1,6 +1,6 @@
 import React from "react";
 import { PediatricBraveryDiplomaModal } from "../../pediatric/PediatricBraveryDiplomaModal";
-import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../../documents/DocumentsStudioModal";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { PatientGeneralInfo, PatientGeneralInfoFieldValue } from "../tabs/PatientGeneralInfoTab";
 
@@ -38,7 +38,9 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 			<PediatricBraveryDiplomaModal
 				isOpen={isDiplomaModalOpen}
 				onClose={() => setIsDiplomaModalOpen(false)}
+				patientId={patientData.id || undefined}
 				patientName={patientData.fullName || undefined}
+				patientPhone={patientData.phone || undefined}
 			/>
 		)}
 		{isDmsLetterModalOpen && (

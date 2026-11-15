@@ -5,10 +5,12 @@ import { showToast } from "../GlobalToast";
 import { resolveBraveryDiplomaRequisites } from "../../utils/pediatric/braveryDiplomaGenerator";
 import { printBraveryDiploma } from "./diploma/diplomaPrint";
 import { PediatricBraveryDiplomaPreview } from "./diploma/PediatricBraveryDiplomaPreview";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface PediatricBraveryDiplomaModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientAgeYears?: number | undefined;
@@ -20,6 +22,7 @@ export interface PediatricBraveryDiplomaModalProps {
 export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModalProps> = ({
 	isOpen,
 	onClose,
+	patientId,
 	patientName,
 	patientPhone,
 	patientAgeYears = 6,
@@ -45,6 +48,28 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 
 	const praiseText = "Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приеме у врача-стоматолога!";
 
+	const persistBraveryDiploma = useCallback(async () => {
+		if (!patientId || !patientId.trim()) return;
+		try {
+			await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/bravery-diploma`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientName: heroName.trim() || resolved.patientName || "Юный пациент",
+					patientAgeYears,
+					doctorName: effectiveDoctorName,
+					clinicName: effectiveClinicName,
+					awardReasonRu: praiseText,
+					awardedDateIso: new Date().toISOString(),
+				}),
+			});
+		} catch {
+			// Offline-first graceful fallback per Mandate 8e
+		}
+	}, [patientId, heroName, resolved.patientName, patientAgeYears, effectiveDoctorName, effectiveClinicName, praiseText]);
+
 	const heroDisplay = useMemo(() => {
 		const t = heroName.trim();
 		return !t ? "Герой: Юный пациент" : t.startsWith("Герой:") ? t : `Герой: ${t}`;
@@ -68,21 +93,24 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 	}, [diplomaSummaryText]);
 
 	const handleWhatsApp = useCallback(() => {
+		void persistBraveryDiploma();
 		const cleanPhone = (patientPhone || "").replace(/\D/g, "");
 		const encoded = encodeURIComponent(diplomaSummaryText);
 		const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
 		if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
 		showToast("Диплом отправлен в WhatsApp!", "success");
-	}, [diplomaSummaryText, patientPhone]);
+	}, [persistBraveryDiploma, diplomaSummaryText, patientPhone]);
 
 	const handleTelegram = useCallback(() => {
+		void persistBraveryDiploma();
 		const encoded = encodeURIComponent(diplomaSummaryText);
 		const url = `https://t.me/share/url?url=&text=${encoded}`;
 		if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
 		showToast("Диплом подготовлен для отправки в Telegram!", "success");
-	}, [diplomaSummaryText]);
+	}, [persistBraveryDiploma, diplomaSummaryText]);
 
 	const handlePrint = useCallback(() => {
+		void persistBraveryDiploma();
 		printBraveryDiploma({
 			heroName,
 			effectiveDoctorName,
@@ -94,7 +122,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 			praiseText,
 			diplomaNumber: resolved.diplomaNumber,
 		});
-	}, [effectiveClinicName, effectiveDate, effectiveDoctorName, heroName, praiseText, resolved.diplomaNumber]);
+	}, [persistBraveryDiploma, effectiveClinicName, effectiveDate, effectiveDoctorName, heroName, praiseText, resolved.diplomaNumber]);
 
 	useEffect(() => {
 		if (!isOpen) return;

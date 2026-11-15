@@ -94,6 +94,8 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly initialFranklRating?: FranklRating | undefined;
 	/** Обработчик смены рейтинга Франкла */
 	readonly onFranklChange?: (rating: FranklRating) => void;
+	/** Идентификатор пациента для привязки документов в базе */
+	readonly patientId?: string | undefined;
 	/** Имя юного пациента */
 	readonly patientName?: string | undefined;
 	/** Телефон пациента / представителя для отправки памятки */

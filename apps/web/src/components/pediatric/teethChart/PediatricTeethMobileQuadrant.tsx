@@ -55,7 +55,13 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 		{ key: "q8" as const, label: isPermanent ? "Низ-Право (48–41)" : "Низ-Право (85–81)", short: isPermanent ? "Низ 48–41" : "Низ 85–81", teeth: q8Teeth },
 	], [isPermanent, q5Teeth, q6Teeth, q7Teeth, q8Teeth]);
 
-	const currentQuad = meta.find((m) => m.key === activeQuadrant) ?? meta[0]!;
+	const defaultQuadrantMeta = {
+		key: "q5" as const,
+		label: isPermanent ? "Верх-Право (18–11)" : "Верх-Право (55–51)",
+		short: isPermanent ? "Верх 18–11" : "Верх 55–51",
+		teeth: q5Teeth,
+	};
+	const currentQuad = meta.find((m) => m.key === activeQuadrant) ?? meta[0] ?? defaultQuadrantMeta;
 
 	return (
 		<div className="sm:hidden mb-2 overflow-x-clip" data-testid="pediatric-mobile-quadrant-view">
