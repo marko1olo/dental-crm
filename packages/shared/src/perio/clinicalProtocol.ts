@@ -28,8 +28,8 @@ export function generateComprehensivePerioProtocolText(
 	summary?: PerioChartSummary,
 	options?: GenerateClinicalPerioProtocolOptions,
 ): string {
-	const currentSummary = summary ?? calculatePerioIndices(teeth as PerioToothRecord[]);
-	const psr = calculatePsrSextants(teeth as PerioToothRecord[]);
+	const currentSummary = summary ?? calculatePerioIndices(teeth);
+	const psr = calculatePsrSextants(teeth);
 	const psrSummary = formatPsrSextantsSummary(psr);
 	const diagnosis = calculateAapEfpStagingAndGrading(teeth, currentSummary, options);
 

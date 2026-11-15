@@ -22,12 +22,15 @@ describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {
 			if (tooth.toothNumber !== 46) return tooth;
 			const copy = { ...tooth, mobility: 1 as const };
 			for (const k of PERIO_SITE_KEYS) {
-				copy[k] = {
-					...tooth[k]!,
-					probingDepthMm: 5,
-					bleedingOnProbing: true,
-					calMm: calculateClinicalAttachmentLevel(5, tooth[k]?.gingivalMarginMm ?? 0),
-				};
+				const existingSite = tooth[k];
+				if (existingSite) {
+					copy[k] = {
+						...existingSite,
+						probingDepthMm: 5,
+						bleedingOnProbing: true,
+						calMm: calculateClinicalAttachmentLevel(5, existingSite.gingivalMarginMm ?? 0),
+					};
+				}
 			}
 			return copy;
 		});
@@ -42,7 +45,9 @@ describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {
 			PERIO_SITE_KEYS.some((k) => (t[k]?.probingDepthMm ?? 0) >= 4 && t[k]?.bleedingOnProbing),
 		);
 		assert.strictEqual(affected.length, 1);
-		assert.strictEqual(affected[0]!.toothNumber, 46);
+		const firstAffected = affected[0];
+		assert.ok(firstAffected);
+		assert.strictEqual(firstAffected.toothNumber, 46);
 
 		const { planText, prophyService, curettageServices } = buildPeriodontalTreatmentPlanJustification(affected);
 		assert.ok(planText.includes("A16.07.051"));
@@ -50,7 +55,9 @@ describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {
 		assert.ok(planText.includes("#46"));
 		assert.strictEqual(prophyService.code804n, "A16.07.051");
 		assert.strictEqual(curettageServices.length, 1);
-		assert.strictEqual(curettageServices[0]!.toothNumber, 46);
-		assert.strictEqual(curettageServices[0]!.code804n, "A16.07.011");
+		const firstCurettage = curettageServices[0];
+		assert.ok(firstCurettage);
+		assert.strictEqual(firstCurettage.toothNumber, 46);
+		assert.strictEqual(firstCurettage.code804n, "A16.07.011");
 	});
 });

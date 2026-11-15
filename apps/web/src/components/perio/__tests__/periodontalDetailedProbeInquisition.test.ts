@@ -26,12 +26,15 @@ describe("12. Detailed Probing & Clinical Protocol Synthesis", () => {
 			if (tooth.toothNumber !== 16) return tooth;
 			const copy = { ...tooth };
 			for (const k of PERIO_SITE_KEYS) {
-				copy[k] = {
-					...tooth[k]!,
-					probingDepthMm: 4,
-					bleedingOnProbing: true,
-					calMm: calculateClinicalAttachmentLevel(4, tooth[k]?.gingivalMarginMm ?? 0),
-				};
+				const existingSite = tooth[k];
+				if (existingSite) {
+					copy[k] = {
+						...existingSite,
+						probingDepthMm: 4,
+						bleedingOnProbing: true,
+						calMm: calculateClinicalAttachmentLevel(4, existingSite.gingivalMarginMm ?? 0),
+					};
+				}
 			}
 			return copy;
 		});

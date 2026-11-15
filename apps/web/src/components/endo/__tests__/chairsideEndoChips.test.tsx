@@ -53,18 +53,30 @@ describe("ChairsideEndoChips & Invoice Bridge (Mandates 8e, 8n)", () => {
 	});
 
 	it("6. Seamless bridge to cashier: executeChairsideTransferToDiary dispatches invoice event", () => {
-		let capturedEvent: CustomEvent | null = null;
-		const originalWindow = globalThis.window;
+		interface DispatchedInvoiceItem {
+			readonly code804n?: string;
+			readonly nameRu?: string;
+			readonly category?: string;
+			readonly priceRub?: number;
+			readonly quantity?: number;
+			readonly toothNumber?: number;
+		}
+		interface DispatchedInvoiceDetail {
+			readonly toothNumber: number;
+			readonly teethNumbers?: readonly number[];
+			readonly services: readonly DispatchedInvoiceItem[];
+		}
+		let capturedEvent: CustomEvent<DispatchedInvoiceDetail> | null = null;
+		const originalWindow = Reflect.get(globalThis, "window");
 		const mockWindow = {
 			dispatchEvent: (ev: Event) => {
-				if ((ev as CustomEvent).type === "dente-add-services-to-invoice") {
-					capturedEvent = ev as CustomEvent;
+				if (ev.type === "dente-add-services-to-invoice") {
+					capturedEvent = ev as CustomEvent<DispatchedInvoiceDetail>;
 				}
 				return true;
 			},
 		};
-		// @ts-ignore
-		globalThis.window = mockWindow;
+		Reflect.set(globalThis, "window", mockWindow);
 
 		try {
 			const canals: QuickCanalState[] = [
@@ -79,12 +91,16 @@ describe("ChairsideEndoChips & Invoice Bridge (Mandates 8e, 8n)", () => {
 				patientId: "pat-123",
 			});
 			assert.ok(capturedEvent, "Event dente-add-services-to-invoice must be dispatched");
-			const detail = (capturedEvent as CustomEvent).detail;
+			const detail = (capturedEvent as CustomEvent<DispatchedInvoiceDetail>).detail;
 			assert.equal(detail.toothNumber, 16);
 			assert.ok(detail.services.length > 0, "Dispatched services to cashier");
-			assert.ok(detail.services.some((s: any) => s.category === "Эндодонтия"));
+			assert.ok(detail.services.some((s) => s.category === "Эндодонтия"));
 		} finally {
-			globalThis.window = originalWindow;
+			if (originalWindow === undefined) {
+				Reflect.deleteProperty(globalThis, "window");
+			} else {
+				Reflect.set(globalThis, "window", originalWindow);
+			}
 		}
 	});
 });

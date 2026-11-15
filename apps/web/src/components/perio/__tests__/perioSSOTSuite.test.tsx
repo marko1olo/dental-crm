@@ -29,15 +29,18 @@ describe("Канонический SSOT пародонтологии и эксп
 		const ids = PSR_SEXTANTS_CATALOG.map((s) => s.id);
 		assert.deepStrictEqual(ids, ["S1", "S2", "S3", "S4", "S5", "S6"]);
 
-		const s1 = PSR_SEXTANTS_CATALOG.find((s) => s.id === "S1")!;
+		const s1 = PSR_SEXTANTS_CATALOG.find((s) => s.id === "S1");
+		assert.ok(s1);
 		assert.strictEqual(s1.teethRange, "17–14");
 		assert.deepStrictEqual(s1.teeth, [17, 16, 15, 14]);
 
-		const s2 = PSR_SEXTANTS_CATALOG.find((s) => s.id === "S2")!;
+		const s2 = PSR_SEXTANTS_CATALOG.find((s) => s.id === "S2");
+		assert.ok(s2);
 		assert.strictEqual(s2.teethRange, "13–23");
 		assert.deepStrictEqual(s2.teeth, [13, 12, 11, 21, 22, 23]);
 
-		const s5 = PSR_SEXTANTS_CATALOG.find((s) => s.id === "S5")!;
+		const s5 = PSR_SEXTANTS_CATALOG.find((s) => s.id === "S5");
+		assert.ok(s5);
 		assert.strictEqual(s5.teethRange, "43–33");
 		assert.deepStrictEqual(s5.teeth, [43, 42, 41, 31, 32, 33]);
 	});
@@ -163,8 +166,7 @@ describe("Канонический SSOT пародонтологии и эксп
 	it("10. DirectPerioLauncher берёт активного пациента из patientStore/пропсов и не хардкодит demo_perio_patient", () => {
 		const prevSelectedId = usePatientStore.getState().selectedPatientId;
 		const prevDraft = usePatientStore.getState().patientCoreDraft;
-		const globalWithWindow = globalThis as unknown as { window?: unknown };
-		const prevWindow = globalWithWindow.window;
+		const prevWindow = Reflect.get(globalThis, "window");
 
 		try {
 			usePatientStore.setState({
@@ -183,11 +185,11 @@ describe("Канонический SSOT пародонтологии и эксп
 			assert.strictEqual(emptyCtx.patientId, undefined);
 			assert.strictEqual(emptyCtx.patientName, "Пациент приёма");
 
-			globalWithWindow.window = {
+			Reflect.set(globalThis, "window", {
 				location: { search: "?perio=1", hash: "#perio", pathname: "/" },
 				addEventListener: () => {},
 				removeEventListener: () => {},
-			};
+			});
 
 			const html = renderToString(
 				<DirectPerioLauncher patientId="patient-active-real-uuid" patientName="Смирнова Елена Викторовна" />,
@@ -196,7 +198,11 @@ describe("Канонический SSOT пародонтологии и эксп
 			assert.ok(html.includes("Смирнова Елена Викторовна"), "Лаунчер обязан отобразить ФИО активного пациента");
 			assert.strictEqual(html.includes("demo_perio_patient"), false, "demo_perio_patient запрещен в UI");
 		} finally {
-			globalWithWindow.window = prevWindow;
+			if (prevWindow === undefined) {
+				Reflect.deleteProperty(globalThis, "window");
+			} else {
+				Reflect.set(globalThis, "window", prevWindow);
+			}
 			usePatientStore.setState({ selectedPatientId: prevSelectedId, patientCoreDraft: prevDraft });
 		}
 	});

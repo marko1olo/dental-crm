@@ -14,7 +14,7 @@ import {
 } from "./types.js";
 import { calculateClinicalAttachmentLevel } from "./mathCal.js";
 
-export function calculatePerioIndices(teeth: PerioToothRecord[]): PerioChartSummary {
+export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): PerioChartSummary {
 	let examinedTeeth = 0, totalSites = 0, bopSites = 0, plaqueSites = 0;
 	let suppurationSites = 0, calculusSites = 0, deepPockets = 0, moderatePockets = 0;
 	let mobileTeeth = 0, furcationTeeth = 0, maxPd = 0, sumPd = 0, maxCal = 0, sumCal = 0;

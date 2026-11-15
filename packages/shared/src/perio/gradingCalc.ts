@@ -26,7 +26,7 @@ export function calculateAapEfpStagingAndGrading(
 	summary?: PerioChartSummary,
 	options?: AapClassificationOptions,
 ): PeriodontalDiagnosisDetail {
-	const currentSummary = summary ?? calculatePerioIndices(teeth as PerioToothRecord[]);
+	const currentSummary = summary ?? calculatePerioIndices(teeth);
 	const activeTeeth = teeth.filter((t) => !t.isMissing);
 	const examinedTeethCount = activeTeeth.length;
 	const missingTeethCount = teeth.filter((t) => t.isMissing).length;

@@ -21,6 +21,7 @@ export { getChairsideDefaultCanals, type QuickCanalState, type EndoStageStamp };
 
 export interface ChairsideEndoQuickBarProps {
 	readonly activeTooth?: number | undefined; readonly toothState?: string | undefined; readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly isLocked?: boolean | undefined; readonly onInsertToDiary?: ((soapText: string, canals: EndoCanalData[]) => void) | undefined;
 	readonly onOpenFullModal?: (() => void) | undefined; readonly className?: string | undefined;
 }
@@ -40,9 +41,7 @@ export function generateSoapEndoProtocol({
 	activeTooth?: number; toothNumber?: number; toothAnatomicalName?: string; currentCanals?: QuickCanalState[]; toothState?: string | undefined;
 }): string {
 	const toothNum = activeTooth ?? toothNumber ?? 46;
-	const canals = Array.isArray(currentCanals) && currentCanals.length > 0
-		? currentCanals
-		: getChairsideDefaultCanals(toothNum);
+	const canals = Array.isArray(currentCanals) && currentCanals.length > 0 ? currentCanals : getChairsideDefaultCanals(toothNum);
 	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
 	const isBio = canals.some((c) => c.obturationType === "bioceramic");
 	const isPeriodontitis = Boolean(isBio || isTemp || (toothState && /периодонтит|periodontitis|k04\.5|k04\.4|k04\.6|гранулем|кист/i.test(toothState)));
@@ -78,10 +77,10 @@ export function generateSoapEndoProtocol({
 
 /** Сохранение параметров каналов в Fastify API и списание расходников (Мандаты 8e, 8n) */
 export function executeChairsideTransferToDiary({
-	activeTooth, toothAnatomicalName, toothState, canals, patientId, onInsertToDiary,
+	activeTooth, toothAnatomicalName, toothState, canals, patientId, visitId, onInsertToDiary,
 }: {
 	activeTooth: number; toothAnatomicalName: string; toothState?: string | undefined;
-	canals: QuickCanalState[]; patientId?: string | undefined;
+	canals: QuickCanalState[]; patientId?: string | undefined; visitId?: string | undefined;
 	onInsertToDiary?: ((soapText: string, canals: EndoCanalData[]) => void) | undefined;
 }): void {
 	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
@@ -90,10 +89,10 @@ export function executeChairsideTransferToDiary({
 	const soapProtocol = generateSoapEndoProtocol({ activeTooth, toothAnatomicalName, currentCanals: canals, toothState });
 
 	try {
+		// Протокол направляется строго в treatmentPlan (дневник лечения) без засорения objectiveStatus
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
 			...prev,
-			objectiveStatus: prev.objectiveStatus?.trim() ? `${prev.objectiveStatus.trim()}\n\n${soapProtocol}` : soapProtocol,
-			treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\nЭндо зуба #${activeTooth}` : `Эндо зуба #${activeTooth}`,
+			treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\n\n${soapProtocol}` : soapProtocol,
 		}));
 	} catch { /* safe */ }
 
@@ -140,7 +139,11 @@ export function executeChairsideTransferToDiary({
 	if (patientId) {
 		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
 			method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			body: JSON.stringify({ toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi", radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, notes: "" }),
+			body: JSON.stringify({
+				toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией",
+				rotarySystem: "Машинная обработка NiTi", radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.",
+				apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),
+			}),
 		}).catch(() => {});
 	}
 
@@ -167,8 +170,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 		setCanals((prev) => prev.map((c) => {
 			if (c.id !== id) return c;
 			const curLen = c.workingLengthMm || getAnatomicalWorkingLength(activeTooth, c.name);
-			const next = Math.max(10, Math.min(35, Math.round((curLen + delta) * 2) / 2));
-			return { ...c, workingLengthMm: next, isObliterated: false };
+			return { ...c, workingLengthMm: Math.max(10, Math.min(35, Math.round((curLen + delta) * 2) / 2)), isObliterated: false };
 		}));
 	}, [activeTooth]);
 
@@ -205,13 +207,9 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 		const existingNames = new Set(canals.map((c) => c.name));
 		let suggestedName = `К${nextIdx}`;
 		if (isUpper) {
-			if (!existingNames.has("MB2")) suggestedName = "MB2";
-			else if (!existingNames.has("DB2")) suggestedName = "DB2";
+			suggestedName = !existingNames.has("MB2") ? "MB2" : !existingNames.has("DB2") ? "DB2" : suggestedName;
 		} else {
-			if (!existingNames.has("DL")) suggestedName = "DL";
-			else if (!existingNames.has("DB")) suggestedName = "DB";
-			else if (!existingNames.has("MM")) suggestedName = "MM";
-			else if (!existingNames.has("Radix")) suggestedName = "Radix";
+			suggestedName = !existingNames.has("DL") ? "DL" : !existingNames.has("DB") ? "DB" : !existingNames.has("MM") ? "MM" : !existingNames.has("Radix") ? "Radix" : suggestedName;
 		}
 		setCanals((prev) => [...prev, { id: `c-add-${Date.now()}-${nextIdx}`, name: suggestedName, workingLengthMm: getAnatomicalWorkingLength(activeTooth, suggestedName), masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
 	}, [activeTooth, canals]);
@@ -332,7 +330,10 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 					type="button"
 					onClick={() => {
 						const effToothState = props.toothState || (explicitProtocolType === "periodontitis_ahplus" || explicitProtocolType === "periodontitis_bio" || explicitProtocolType === "temp_caoh2" ? "Хронический апикальный периодонтит (K04.5)" : undefined);
-						executeChairsideTransferToDiary({ activeTooth, toothAnatomicalName, toothState: effToothState, canals, patientId: props.patientId, onInsertToDiary: props.onInsertToDiary });
+						executeChairsideTransferToDiary({
+							activeTooth, toothAnatomicalName, toothState: effToothState, canals,
+							patientId: props.patientId, visitId: props.visitId, onInsertToDiary: props.onInsertToDiary,
+						});
 					}}
 					className="btn-endo-transfer-to-diary min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-98 text-white flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
 					title="Перенести протокол эндодонтии в карту приёма и начислить услуги"

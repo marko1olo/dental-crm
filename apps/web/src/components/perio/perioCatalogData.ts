@@ -5,7 +5,7 @@
  * Норматив размера: 280–350 строк (Sweet Spot, Мандат 8b).
  */
 
-import type { PerioChartSummary, PerioToothRecord, PsrSextantResult } from "@dental/shared";
+import type { FurcationGrade, MobilityGrade, PerioChartSummary, PerioToothRecord, PsrSextantResult } from "@dental/shared";
 import {
 	ALL_PERIO_TEETH,
 	calculateClinicalAttachmentLevel,
@@ -134,7 +134,7 @@ export type PerioExpressPresetId = keyof typeof PERIO_EXPRESS_PRESETS;
 export type PerioExpressPreset = typeof PERIO_EXPRESS_PRESETS[PerioExpressPresetId];
 
 export function generateComprehensivePerioProtocolText(teeth: readonly PerioToothRecord[]): string {
-	const summary = calculatePerioIndices(teeth as PerioToothRecord[]);
+	const summary = calculatePerioIndices(teeth);
 	const deepCount = summary.deepPocketsCount;
 	const bop = summary.fmbsPercent;
 	return `Объективный пародонтальный статус (Медицинская карта приёма): обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость десневой борозды (BOP): ${bop}%. Глубоких патологических карманов (>= 4 мм): ${deepCount}.`;
@@ -242,7 +242,8 @@ export function applyZeroBopPreset(teeth: readonly PerioToothRecord[]): PerioToo
 		if (t.isMissing) return t;
 		const updated = { ...t };
 		for (const key of PERIO_SITE_KEYS) {
-			if (updated[key]) updated[key] = { ...updated[key]!, bleedingOnProbing: false };
+			const site = updated[key];
+			if (site) updated[key] = { ...site, bleedingOnProbing: false };
 		}
 		return updated;
 	});
@@ -253,7 +254,8 @@ export function applyZeroCalculusAndPlaquePreset(teeth: readonly PerioToothRecor
 		if (t.isMissing) return t;
 		const updated = { ...t };
 		for (const key of PERIO_SITE_KEYS) {
-			if (updated[key]) updated[key] = { ...updated[key]!, plaque: false, calculus: false };
+			const site = updated[key];
+			if (site) updated[key] = { ...site, plaque: false, calculus: false };
 		}
 		return updated;
 	});
@@ -282,11 +284,8 @@ export function applyPeriodontitisModeratePreset(teeth: readonly PerioToothRecor
 		const num = t.toothNumber;
 		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(num);
 		const s = makePerioSite(isMolar ? 5 : 4, true, 1, true, true);
-		return {
-			...t, mobility: [31, 32, 41, 42].includes(num) ? 1 : 0,
-			furcation: (isMolar && isFurcationEligibleTooth(num) ? 1 : 0) as 0 | 1 | 2 | 3 | 4,
-			...fillSixSites(s),
-		};
+		const furcation: FurcationGrade = isMolar && isFurcationEligibleTooth(num) ? 1 : 0;
+		return { ...t, mobility: [31, 32, 41, 42].includes(num) ? 1 : 0, furcation, ...fillSixSites(s) };
 	});
 }
 
@@ -297,11 +296,9 @@ export function applyPeriodontitisSeverePreset(teeth: readonly PerioToothRecord[
 		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(num);
 		const isLowerAnt = [31, 32, 41, 42].includes(num);
 		const s = makePerioSite(isMolar ? 7 : isLowerAnt ? 6 : 5, true, 2, true, true, isMolar || isLowerAnt);
-		return {
-			...t, mobility: (isLowerAnt || isMolar ? 2 : 1) as 0 | 1 | 2 | 3,
-			furcation: (isMolar && isFurcationEligibleTooth(num) ? 2 : 0) as 0 | 1 | 2 | 3 | 4,
-			...fillSixSites(s),
-		};
+		const mobility: MobilityGrade = isLowerAnt || isMolar ? 2 : 1;
+		const furcation: FurcationGrade = isMolar && isFurcationEligibleTooth(num) ? 2 : 0;
+		return { ...t, mobility, furcation, ...fillSixSites(s) };
 	});
 }
 
@@ -447,7 +444,7 @@ export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToP
 }
 
 export function generatePerioProtocolText(teeth: readonly PerioToothRecord[]): string {
-	const summary = calculatePerioIndices(teeth as PerioToothRecord[]);
+	const summary = calculatePerioIndices(teeth);
 	return `Пародонт: обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость BOP: ${summary.fmbsPercent}%. Глубоких карманов (>= 4 мм): ${summary.deepPocketsCount}.`;
 }
 
@@ -481,7 +478,8 @@ export function buildPeriodontalTreatmentPlanJustification(affectedTeeth: readon
 	const prophyService = { code804n: "A16.07.051", name: "Профессиональная гигиена полости рта и удаление зубных отложений (A16.07.051)", price: 5500 };
 	const curettageServices = affectedTeeth.map((t) => ({ toothNumber: t.toothNumber, code804n: "A16.07.011", name: `Закрытый кюретаж пародонтального кармана зуба #${t.toothNumber} (A16.07.011)`, price: 1800 }));
 	const teethList = affectedTeeth.map((t) => `#${t.toothNumber}`).join(", ");
-	const planText = `План пародонтологического лечения:\n1. Комплексная профгигиена (${prophyService.code804n})\n2. Закрытый кюретаж патологических зубодесневых карманов (${curettageServices.length ? curettageServices[0]!.code804n : "A16.07.011"}): ${teethList || "не требуется"}.`;
+	const firstCurettageCode = curettageServices[0]?.code804n ?? "A16.07.011";
+	const planText = `План пародонтологического лечения:\n1. Комплексная профгигиена (${prophyService.code804n})\n2. Закрытый кюретаж патологических зубодесневых карманов (${firstCurettageCode}): ${teethList || "не требуется"}.`;
 	return { planText, prophyService, curettageServices };
 }
 

@@ -35,10 +35,10 @@ export type PsrSextantResult = {
  * - Asterisk (*): Furcation involvement (>= Class I) or pathological mobility (>= Degree II)
  */
 export function calculatePsrSextants(
-	teeth: PerioToothRecord[],
+	teeth: readonly PerioToothRecord[],
 ): Record<string, PsrSextantResult> {
 	const results: Record<string, PsrSextantResult> = {};
-	const toothMap = new Map<number, PerioToothRecord>();
+	const toothMap = new Map<number, PerioToothRecord | (typeof teeth)[number]>();
 	for (const t of teeth) {
 		toothMap.set(t.toothNumber, t);
 	}

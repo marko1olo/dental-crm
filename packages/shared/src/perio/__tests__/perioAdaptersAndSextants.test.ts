@@ -77,7 +77,8 @@ describe("Periodontal Adapters & WHO 6-Sextant Hygiene Engine (SSOT — Mandates
 	describe("2. Full Tooth & Dentition Roundtrip (SSOT — Mandate 8za)", () => {
 		it("converts PerioToothRecord with pathological pocket, furcation and mobility to SepaToothValue", () => {
 			const teeth = createDefaultPerioTeeth(2);
-			const tooth16 = teeth.find((t) => t.toothNumber === 16)!;
+			const tooth16 = teeth.find((t) => t.toothNumber === 16);
+			assert.ok(tooth16);
 			tooth16.mobility = 2;
 			tooth16.furcation = 2; // Grade II
 			tooth16.isImplant = true;
@@ -100,7 +101,8 @@ describe("Periodontal Adapters & WHO 6-Sextant Hygiene Engine (SSOT — Mandates
 			assert.equal(sepa16.furcationLingual, "II");
 			assert.equal(sepa16.sites.length, 6);
 
-			const dvSite = sepa16.sites.find((s) => s.siteCode === "DV")!;
+			const dvSite = sepa16.sites.find((s) => s.siteCode === "DV");
+			assert.ok(dvSite);
 			assert.equal(dvSite.probingDepthMm, 6);
 			assert.equal(dvSite.gingivalMarginMm, 1);
 			assert.equal(dvSite.bleedingOnProbing, true);
@@ -129,10 +131,13 @@ describe("Periodontal Adapters & WHO 6-Sextant Hygiene Engine (SSOT — Mandates
 			assert.equal(restoredPerioTeeth.length, 32);
 
 			for (let i = 0; i < 32; i++) {
-				assert.equal(restoredPerioTeeth[i]!.toothNumber, perioTeeth[i]!.toothNumber);
-				assert.equal(restoredPerioTeeth[i]!.isMissing, perioTeeth[i]!.isMissing);
-				assert.equal(restoredPerioTeeth[i]!.midBuccal.probingDepthMm, 2);
-				assert.equal(restoredPerioTeeth[i]!.midBuccal.bleedingOnProbing, false);
+				const restored = restoredPerioTeeth[i];
+				const original = perioTeeth[i];
+				assert.ok(restored && original);
+				assert.equal(restored.toothNumber, original.toothNumber);
+				assert.equal(restored.isMissing, original.isMissing);
+				assert.equal(restored.midBuccal.probingDepthMm, 2);
+				assert.equal(restored.midBuccal.bleedingOnProbing, false);
 			}
 		});
 
@@ -141,7 +146,8 @@ describe("Periodontal Adapters & WHO 6-Sextant Hygiene Engine (SSOT — Mandates
 			const perioTeeth = convertSepaDentitionToPerio(sepaPreset);
 			assert.equal(perioTeeth.length, 32);
 
-			const t11 = perioTeeth.find((t) => t.toothNumber === 11)!;
+			const t11 = perioTeeth.find((t) => t.toothNumber === 11);
+			assert.ok(t11);
 			assert.equal(t11.isMissing, false);
 			assert.equal(t11.mobility, 0);
 			assert.equal(t11.furcation, 0);
@@ -222,7 +228,8 @@ describe("Periodontal Adapters & WHO 6-Sextant Hygiene Engine (SSOT — Mandates
 		it("derives WHO sextants directly from PerioToothRecord and SepaToothValue dentitions", () => {
 			const teeth = createDefaultPerioTeeth(2);
 			// Add calculus on tooth 26 midBuccal
-			const tooth26 = teeth.find((t) => t.toothNumber === 26)!;
+			const tooth26 = teeth.find((t) => t.toothNumber === 26);
+			assert.ok(tooth26);
 			tooth26.midBuccal.calculus = true;
 			tooth26.midBuccal.bleedingOnProbing = true;
 

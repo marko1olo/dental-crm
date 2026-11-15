@@ -79,12 +79,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
 
 	useEffect(() => {
-		if (!patientId?.trim()) return;
+		const cleanPatientId = patientId?.trim();
+		if (!cleanPatientId) return;
 		let isCancelled = false;
 
 		// 1. Быстрая гидратация из локального кэша для немедленного отклика (Zero-Flicker)
 		try {
-			const cached = localStorage.getItem(`dente_perio_cache_${patientId}`);
+			const cached = localStorage.getItem(`dente_perio_cache_${cleanPatientId}`);
 			if (cached) {
 				const parsed = JSON.parse(cached);
 				if (Array.isArray(parsed.teeth) && parsed.teeth.length === 32) {
@@ -100,7 +101,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 		async function fetchPerio() {
 			try {
-				const res = await fetch(`/api/perio/${encodeURIComponent(patientId!)}`, { headers: { ...denteAdminSecretRequestHeaders() } });
+				const res = await fetch(`/api/perio/${encodeURIComponent(cleanPatientId)}`, { headers: { ...denteAdminSecretRequestHeaders() } });
 				if (!res.ok) return;
 				const json = await res.json();
 				if (isCancelled || !json.success || !json.data) return;
@@ -253,15 +254,18 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			return { ...t, [selectedSiteKey]: { ...site, probingDepthMm: depth, calMm: calculateClinicalAttachmentLevel(depth, site.gingivalMarginMm || 0) } };
 		}));
 		const idx = SITES.findIndex((s) => s.key === selectedSiteKey);
-		if (idx < SITES.length - 1) {
-			setSelectedSiteKey(SITES[idx + 1]!.key);
+		const nextSite = idx >= 0 && idx < SITES.length - 1 ? SITES[idx + 1] : undefined;
+		if (nextSite) {
+			setSelectedSiteKey(nextSite.key);
 		} else {
 			setTeeth((currentTeeth) => {
 				const allNums = currentTeeth.map((t) => t.toothNumber);
 				const tIdx = allNums.indexOf(selectedToothNum);
-				if (tIdx >= 0 && tIdx < allNums.length - 1) {
-					setSelectedToothNum(allNums[tIdx + 1]!);
-					setSelectedSiteKey(SITES[0]!.key);
+				const nextToothNum = tIdx >= 0 && tIdx < allNums.length - 1 ? allNums[tIdx + 1] : undefined;
+				const firstSite = SITES[0];
+				if (nextToothNum !== undefined && firstSite) {
+					setSelectedToothNum(nextToothNum);
+					setSelectedSiteKey(firstSite.key);
 				}
 				return currentTeeth;
 			});
