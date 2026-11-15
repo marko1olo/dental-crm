@@ -19,8 +19,7 @@ export function generateDmsRegistryCsv(data: DmsRegistryData): string {
 
 	const rows: string[] = [headerColumns.map(escapeCsvCell).join(";")];
 
-	for (let i = 0; i < data.records.length; i++) {
-		const rec = data.records[i]!;
+	for (const [i, rec] of data.records.entries()) {
 		const rowValues = [
 			i + 1,
 			rec.serviceDate,

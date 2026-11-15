@@ -36,10 +36,15 @@ export function parseGuaranteeLetterText(rawText: string): ParsedGuaranteeLetter
 
 	const dateMatches = Array.from(rawText.matchAll(/(\d{4}-\d{2}-\d{2})|(\d{2}\.\d{2}\.\d{4})/g));
 	if (dateMatches.length >= 1) {
-		const parseDate = (dStr: string) => {
+		const parseDate = (dStr: string): string => {
 			if (dStr.includes(".")) {
-				const [d, m, y] = dStr.split(".");
-				return `${y}-${m}-${d}`;
+				const parts = dStr.split(".");
+				const d = parts[0];
+				const m = parts[1];
+				const y = parts[2];
+				if (d && m && y) {
+					return `${y}-${m}-${d}`;
+				}
 			}
 			return dStr;
 		};
@@ -89,7 +94,7 @@ export function createGuaranteeLetterFromDraft(
 		usedKopecks: 0,
 		remainingLimitKopecks: limit,
 		defaultFranchisePercent: draft.defaultFranchisePercent ?? 0,
-		status: "active" as DmsGuaranteeLetterStatus,
+		status: "active",
 		notes: draft.notes,
 	};
 }

@@ -36,7 +36,6 @@ import {
 import {
 	DEFAULT_CLINIC_PROFILE,
 	exportRegistryToCsv,
-	formatCurrencyRub,
 	generateBilateralAcceptanceActHtml,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
@@ -46,7 +45,7 @@ import "./insurance.css";
 
 export interface DmsStudioModalProps {
 	readonly isOpen: boolean;
-	readonly onClose: () => void;
+	readonly onClose?: (() => void) | undefined;
 	readonly patient?: {
 		id: string;
 		fullName: string;
@@ -77,9 +76,11 @@ const DEFAULT_DEMO_SERVICES: readonly DmsBillableItem[] = [
 	{ id: "b-5", serviceCode: "A16.07.051", serviceName: "Профессиональная гигиена полости рта (Air-Flow)", quantity: 1, unitPriceKopecks: 650000, isExcluded: false },
 ];
 
+const formatDisplayRub = (rub: number): string => `${Math.round(rub).toLocaleString("ru-RU")} ₽`;
+
 export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	isOpen,
-	onClose,
+	onClose = () => {},
 	patient: propPatient,
 	initialTab = "split",
 	billItems,
@@ -115,7 +116,20 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 
 	const initialLetters: DmsGuaranteeLetter[] = useMemo(() => {
 		if (!isDemo || !patient.fullName || patient.fullName === "Пациент") return [];
-		const ins = availableInsurers[0] || DMS_INSURANCE_COMPANIES_CATALOG[0]!;
+		const fallbackIns = DMS_INSURANCE_COMPANIES_CATALOG[0] ?? {
+			id: "sogaz",
+			shortNameRu: "АО «СОГАЗ»",
+			fullNameRu: "Акционерное общество «Страховое общество газовой промышленности»",
+			inn: "7736035485",
+			ogrn: "1027739820921",
+			kpp: "770801001",
+			phone: "8 800 333-08-88",
+			email: "dms@sogaz.ru",
+			websiteUrl: "https://www.sogaz.ru",
+			defaultFranchiseRates: [0, 10, 20, 30],
+			descriptionRu: "Крупнейший страховщик ДМС в РФ.",
+		};
+		const ins = availableInsurers[0] ?? fallbackIns;
 		return [
 			{
 				id: "g-let-1",
@@ -136,8 +150,10 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				franchiseFixedRub: 0,
 				programExclusions: [],
 				approvedServiceCodes: ["A16.07.002.001", "A16.07.030.002", "A11.07.010", "A06.07.012"],
+				approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.002", "A11.07.010", "A06.07.012"],
 				approvedTeethFdi: ["16"],
 				approvedDiagnosisCodes: ["K02.1", "K04.0"],
+				approvedDiagnosisMkb10: ["K02.1", "K04.0"],
 				status: "active",
 				notes: "Согласовано терапевтическое лечение зуба 16 и визиография",
 			},
@@ -164,10 +180,24 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 			.then((data: unknown) => {
 				if (!isMounted) return;
 				if (Array.isArray(data) && data.length > 0) {
-					const list = data as Array<{ id: string; companyName: string; insurerKey?: string }>;
+					const list: Array<{ id: string; companyName: string; insurerKey?: string }> = [];
+					for (const item of data) {
+						if (typeof item === "object" && item !== null && "id" in item && "companyName" in item) {
+							const rec = item as { id: unknown; companyName: unknown; insurerKey?: unknown };
+							const entry: { id: string; companyName: string; insurerKey?: string } = {
+								id: String(rec.id),
+								companyName: String(rec.companyName),
+							};
+							if (rec.insurerKey) {
+								entry.insurerKey = String(rec.insurerKey);
+							}
+							list.push(entry);
+						}
+					}
 					setContracts(list);
-					if (list[0]?.id) {
-						setSelectedInsurerId(list[0].id);
+					const firstContract = list[0];
+					if (firstContract?.id) {
+						setSelectedInsurerId(firstContract.id);
 					}
 				}
 			})
@@ -182,8 +212,10 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 			.then((data: unknown) => {
 				if (!isMounted) return;
 				if (Array.isArray(data) && data.length > 0) {
-					setLetters(data as DmsGuaranteeLetter[]);
-					if (data[0]?.id) setActiveLetterId(String(data[0].id));
+					const list = data as DmsGuaranteeLetter[];
+					setLetters(list);
+					const firstLetter = list[0];
+					if (firstLetter?.id) setActiveLetterId(String(firstLetter.id));
 				} else if (isDemo && initialLetters.length > 0) {
 					setLetters(initialLetters);
 				} else {
@@ -207,12 +239,12 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	}, [billItems]);
 
 	const calcItems: DmsSplitCalculationItem[] = useMemo(() => {
-		return effectiveBillItems.map((item) => ({
-			serviceId: item.id,
-			serviceCode: item.serviceCode,
-			serviceName: item.serviceName,
-			toothNumber: item.toothNumber,
-			quantity: item.quantity,
+		return effectiveBillItems.map((item, idx) => ({
+			serviceId: item.id || `srv-${idx + 1}`,
+			serviceCode: item.serviceCode || "",
+			serviceName: item.serviceName || "Медицинская услуга",
+			...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
+			quantity: Math.max(1, item.quantity ?? 1),
 			priceRub: item.unitPriceKopecks ? Math.round(item.unitPriceKopecks / 100) : 0,
 			discountRub: 0,
 			category: "therapy",
@@ -254,7 +286,20 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 	if (!isOpen) return null;
 
 	const handleAddLetter = async () => {
-		const company = availableInsurers.find((i) => i.id === selectedInsurerId) || availableInsurers[0] || DMS_INSURANCE_COMPANIES_CATALOG[0]!;
+		const fallbackCompany = DMS_INSURANCE_COMPANIES_CATALOG[0] ?? {
+			id: "sogaz",
+			shortNameRu: "АО «СОГАЗ»",
+			fullNameRu: "Акционерное общество «Страховое общество газовой промышленности»",
+			inn: "7736035485",
+			ogrn: "1027739820921",
+			kpp: "770801001",
+			phone: "8 800 333-08-88",
+			email: "dms@sogaz.ru",
+			websiteUrl: "https://www.sogaz.ru",
+			defaultFranchiseRates: [0, 10, 20, 30],
+			descriptionRu: "Крупнейший страховщик ДМС в РФ.",
+		};
+		const company = availableInsurers.find((i) => i.id === selectedInsurerId) ?? availableInsurers[0] ?? fallbackCompany;
 		const limitRub = Number(newLetterLimitRub || 50000);
 		const letNum = newLetterNumber.trim() || `ГП-${Date.now().toString().slice(-5)}`;
 
@@ -277,8 +322,10 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 			franchiseFixedRub: 0,
 			programExclusions: [],
 			approvedServiceCodes: ["A16.07.002.001", "A16.07.030.002", "A11.07.010", "A06.07.012"],
+			approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.002", "A11.07.010", "A06.07.012"],
 			approvedTeethFdi: ["16"],
 			approvedDiagnosisCodes: ["K02.1", "K04.0"],
+			approvedDiagnosisMkb10: ["K02.1", "K04.0"],
 			status: "active",
 			notes: "Согласовано стоматологическое лечение",
 		};
@@ -465,7 +512,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 								<div>
 									<div className="dms-limit-title">Остаток гарантийного письма</div>
 									<div className="dms-limit-value">
-										{letterRemainingLimitRub !== null ? formatCurrencyRub(letterRemainingLimitRub) : "Не ограничен"}
+										{letterRemainingLimitRub !== null ? formatDisplayRub(letterRemainingLimitRub) : "Не ограничен"}
 									</div>
 								</div>
 								<div className="dms-franchise-controls">
@@ -528,9 +575,9 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 													</td>
 													<td style={{ color: "var(--muted, #64748b)" }}>{item.toothNumber || "—"}</td>
 													<td>{item.quantity}</td>
-													<td style={{ textAlign: "right", fontWeight: 600 }}>{formatCurrencyRub(item.totalPriceRub)}</td>
-													<td className="dms-col-dms">{formatCurrencyRub(item.dmsCoveredRub)}</td>
-													<td className="dms-col-patient">{formatCurrencyRub(item.patientCoPayRub)}</td>
+													<td style={{ textAlign: "right", fontWeight: 600 }}>{formatDisplayRub(item.totalPriceRub)}</td>
+													<td className="dms-col-dms">{formatDisplayRub(item.dmsCoveredRub)}</td>
+													<td className="dms-col-patient">{formatDisplayRub(item.patientCoPayRub)}</td>
 												</tr>
 											))
 										)}
@@ -543,7 +590,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 								<div className="dms-summary-card dms-summary-card-dms">
 									<div className="dms-summary-title-dms">Покрывается страховкой</div>
 									<div className="dms-summary-amount-dms">
-										{formatCurrencyRub(totalDmsCoveredRub)}
+										{formatDisplayRub(totalDmsCoveredRub)}
 									</div>
 									<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "4px" }}>
 										Безналичное перечисление от {selectedLetter?.insurerName || selectedLetter?.companyName || "страховой компании"}
@@ -553,7 +600,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 								<div className="dms-summary-card dms-summary-card-patient">
 									<div className="dms-summary-title-patient">Доплата пациента на кассе</div>
 									<div className="dms-summary-amount-patient">
-										{formatCurrencyRub(totalPatientCoPayRub)}
+										{formatDisplayRub(totalPatientCoPayRub)}
 									</div>
 									<div className="dms-payment-method-selector">
 										{(["card", "cash", "mixed"] as const).map((m) => (
@@ -579,7 +626,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 												className="dms-mixed-input"
 											/>
 											<span style={{ color: "var(--muted, #64748b)" }}>
-												Картой: {formatCurrencyRub(mixedCardRub)}
+												Картой: {formatDisplayRub(mixedCardRub)}
 											</span>
 										</div>
 									)}
@@ -676,9 +723,9 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 												<td>{r.visitDate}</td>
 												<td style={{ fontWeight: 600 }}>{r.patientFullName}</td>
 												<td>{r.serviceName}</td>
-												<td style={{ textAlign: "right" }}>{formatCurrencyRub(r.totalPriceRub || 0)}</td>
-												<td className="dms-col-dms">{formatCurrencyRub(r.dmsCoveredRub || 0)}</td>
-												<td className="dms-col-patient">{formatCurrencyRub(r.patientPaidRub || 0)}</td>
+												<td style={{ textAlign: "right" }}>{formatDisplayRub(r.totalPriceRub || 0)}</td>
+												<td className="dms-col-dms">{formatDisplayRub(r.dmsCoveredRub || 0)}</td>
+												<td className="dms-col-patient">{formatDisplayRub(r.patientPaidRub || 0)}</td>
 											</tr>
 										))}
 									</tbody>
@@ -691,7 +738,7 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 				{/* Footer with EXACTLY ONE PRIMARY CTA BUTTON */}
 				<div className="dms-footer">
 					<div className="dms-footer-summary">
-						Итого к сплиту: <strong>{formatCurrencyRub(totalBillRub)}</strong> (Страховая: {formatCurrencyRub(totalDmsCoveredRub)} • Пациент: {formatCurrencyRub(totalPatientCoPayRub)})
+						Итого к сплиту: <strong>{formatDisplayRub(totalBillRub)}</strong> (Страховая: {formatDisplayRub(totalDmsCoveredRub)} • Пациент: {formatDisplayRub(totalPatientCoPayRub)})
 					</div>
 					<div className="dms-footer-actions">
 						<button type="button" onClick={onClose} className="dms-btn-secondary dente-btn-secondary">

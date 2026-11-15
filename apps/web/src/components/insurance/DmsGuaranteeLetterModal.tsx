@@ -120,8 +120,10 @@ export function mapBackendLetterToPatientGuaranteeLetter(raw: unknown): DmsGuara
 		franchiseFixedRub: 0,
 		programExclusions: [],
 		approvedServiceCodes: [],
+		approvedServiceCodes804n: [],
 		approvedTeethFdi: [],
 		approvedDiagnosisCodes: [],
+		approvedDiagnosisMkb10: [],
 		notes: String(r.notes || ""),
 		status,
 	};

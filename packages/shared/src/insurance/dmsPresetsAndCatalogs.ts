@@ -329,21 +329,66 @@ export const EXPRESS_GUARANTEE_LETTER_PRESETS = [
 	},
 ] as const;
 
+const STANDARD_THERAPY: DmsProgramDefinition = {
+	key: "standard_therapy",
+	id: "standard_therapy",
+	name: "Базовая терапия",
+	description: "Терапевтическое лечение",
+	coversImplantation: false,
+	coversVeneers: false,
+	coversBleaching: false,
+	maxHygienePerYear: 1,
+	defaultLimitKopecks: 5000000,
+};
+
+const VIP_FULL_COVERAGE: DmsProgramDefinition = {
+	key: "vip_full_coverage",
+	id: "vip_full_coverage",
+	name: "VIP Полное покрытие",
+	description: "Полный спектр",
+	coversImplantation: true,
+	coversVeneers: false,
+	coversBleaching: true,
+	coversCt3D: true,
+	maxHygienePerYear: 2,
+	defaultLimitKopecks: 30000000,
+};
+
+const EXTENDED_SURGERY_HYGIENE: DmsProgramDefinition = {
+	key: "extended_surgery_hygiene",
+	id: "extended_surgery_hygiene",
+	name: "Расширенная с хирургией",
+	description: "Терапия и хирургия",
+	coversImplantation: false,
+	coversVeneers: false,
+	coversBleaching: false,
+	maxHygienePerYear: 2,
+	defaultLimitKopecks: 10000000,
+};
+
+const ECONOMY_EMERGENCY_ONLY: DmsProgramDefinition = {
+	key: "economy_emergency_only",
+	id: "economy_emergency_only",
+	name: "Экстренная помощь",
+	description: "Только острая боль",
+	coversImplantation: false,
+	coversVeneers: false,
+	coversBleaching: false,
+	maxHygienePerYear: 0,
+	defaultLimitKopecks: 2000000,
+};
+
 const BASE_PROGRAM_LIST: readonly DmsProgramDefinition[] = [
-	{ key: "standard_therapy", id: "standard_therapy", name: "Базовая терапия", description: "Терапевтическое лечение", coversImplantation: false, coversVeneers: false, coversBleaching: false, maxHygienePerYear: 1, defaultLimitKopecks: 5000000 },
-	{ key: "vip_full_coverage", id: "vip_full_coverage", name: "VIP Полное покрытие", description: "Полный спектр", coversImplantation: true, coversVeneers: false, coversBleaching: true, coversCt3D: true, maxHygienePerYear: 2, defaultLimitKopecks: 30000000 },
-	{ key: "extended_surgery_hygiene", id: "extended_surgery_hygiene", name: "Расширенная с хирургией", description: "Терапия и хирургия", coversImplantation: false, coversVeneers: false, coversBleaching: false, maxHygienePerYear: 2, defaultLimitKopecks: 10000000 },
-	{ key: "economy_emergency_only", id: "economy_emergency_only", name: "Экстренная помощь", description: "Только острая боль", coversImplantation: false, coversVeneers: false, coversBleaching: false, maxHygienePerYear: 0, defaultLimitKopecks: 2000000 },
+	STANDARD_THERAPY,
+	VIP_FULL_COVERAGE,
+	EXTENDED_SURGERY_HYGIENE,
+	ECONOMY_EMERGENCY_ONLY,
 ];
 
-const standard_therapy = BASE_PROGRAM_LIST[0];
-const vip_full_coverage = BASE_PROGRAM_LIST[1];
-const extended_surgery_hygiene = BASE_PROGRAM_LIST[2];
-const economy_emergency_only = BASE_PROGRAM_LIST[3];
-
-if (!standard_therapy || !vip_full_coverage || !extended_surgery_hygiene || !economy_emergency_only) {
-	throw new Error("Invalid base program list configuration");
-}
+const standard_therapy = STANDARD_THERAPY;
+const vip_full_coverage = VIP_FULL_COVERAGE;
+const extended_surgery_hygiene = EXTENDED_SURGERY_HYGIENE;
+const economy_emergency_only = ECONOMY_EMERGENCY_ONLY;
 
 const programsRecord: Record<string, DmsProgramDefinition> = {
 	standard_therapy,
@@ -384,6 +429,13 @@ export const DEFAULT_STATUTORY_INSURANCE_CONTRACTS: readonly StatutoryInsuranceC
 ];
 
 export const STATUTORY_DMS_CONTRACTS_CATALOG = DEFAULT_STATUTORY_INSURANCE_CONTRACTS;
+export const DEFAULT_STATUTORY_INSURANCE_CONTRACT: StatutoryInsuranceContract = DEFAULT_STATUTORY_INSURANCE_CONTRACTS[0] ?? {
+	insurerKey: "sogaz",
+	insurerShortName: "АО «СОГАЗ»",
+	contractNumber: "ДМС-СОГ-2026/01",
+	defaultFranchisePct: 0,
+	inn: "7736035485",
+};
 
 export const DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS: readonly DmsRegistryServiceRecord[] = [
 	{
@@ -516,8 +568,23 @@ export function getDmsInsurerById(id: string): DmsInsurer | undefined {
 
 export const getStatutoryInsurerById = getDmsInsurerById;
 
+const DEFAULT_DMS_PROGRAM_FALLBACK: DmsProgramDefinition = {
+	key: "standard_therapy",
+	id: "standard_therapy",
+	name: "Базовая терапия",
+	description: "Терапевтическое лечение",
+	coversImplantation: false,
+	coversVeneers: false,
+	coversBleaching: false,
+	maxHygienePerYear: 1,
+	defaultLimitKopecks: 5000000,
+};
+
 export function getStatutoryProgramByKey(key: string): DmsProgramDefinition {
-	return STATUTORY_DMS_PROGRAMS[key] || BASE_PROGRAM_LIST.find((p) => p.key === key || p.id === key) || BASE_PROGRAM_LIST[0]!;
+	const found = STATUTORY_DMS_PROGRAMS[key] ?? BASE_PROGRAM_LIST.find((p) => p.key === key || p.id === key);
+	if (found) return found;
+	if (standard_therapy) return standard_therapy;
+	return DEFAULT_DMS_PROGRAM_FALLBACK;
 }
 
 export function getNomenclature804nByCode(code: string): Nomenclature804nItem | undefined {
@@ -699,7 +766,14 @@ export function calculateDmsSplitInvoice(
 	_policy?: DmsPolicy | unknown,
 	extraOptions?: { franchisePercent?: number | undefined; franchiseFixedKopecks?: number | undefined } | undefined,
 ): ExtendedDmsSplitCalculationResult {
-	const franchisePercent = extraOptions?.franchisePercent ?? (typeof programOrOptions === "object" && programOrOptions !== null && "franchisePercent" in programOrOptions ? Number((programOrOptions as { franchisePercent?: number }).franchisePercent) : 0);
+	let franchisePercent = extraOptions?.franchisePercent ?? 0;
+	if (franchisePercent === 0 && typeof programOrOptions === "object" && programOrOptions !== null && "franchisePercent" in programOrOptions) {
+		const rawPct = (programOrOptions as { franchisePercent?: unknown }).franchisePercent;
+		const parsed = typeof rawPct === "number" ? rawPct : Number(rawPct);
+		if (Number.isFinite(parsed)) {
+			franchisePercent = parsed;
+		}
+	}
 	const res = calculateDmsCoPaymentSplit(items, { franchisePercent });
 	const totalBillKopecks = res.totalBillKopecks;
 	let insuranceCoveredKopecks = res.insuranceCoveredKopecks;
@@ -714,8 +788,8 @@ export function calculateDmsSplitInvoice(
 	const lineItems: DmsSplitLineResult[] = res.splitResults.map((r) => ({
 		serviceId: r.lineItemId,
 		category: "therapy",
-		serviceCode804n: r.serviceCode804n,
-		serviceNameRu: r.serviceName,
+		serviceCode: r.serviceCode804n,
+		serviceName: r.serviceName,
 		quantity: r.quantity,
 		unitPriceRub: kopecksToRub(r.unitPriceKopecks),
 		discountRub: 0,
@@ -868,10 +942,10 @@ export function buildDmsReconciliationRegistry(params: {
 	let patRub = 0;
 
 	for (const item of items) {
-		const line = (item.lineItem || item) as Record<string, unknown>;
-		totRub += typeof line.totalRubles === "number" ? line.totalRubles : (typeof line.totalKopecks === "number" ? kopecksToRub(line.totalKopecks) : (item.totalPriceRub || 0));
-		dmsRub += typeof line.insuranceCoveredRubles === "number" ? line.insuranceCoveredRubles : (typeof line.insuranceCoveredKopecks === "number" ? kopecksToRub(line.insuranceCoveredKopecks) : (item.dmsCoveredRub || 0));
-		patRub += typeof line.patientOutOfPocketRubles === "number" ? line.patientOutOfPocketRubles : (typeof line.patientOutOfPocketKopecks === "number" ? kopecksToRub(line.patientOutOfPocketKopecks) : (item.patientPaidRub || 0));
+		const line = item.lineItem;
+		totRub += line?.totalPriceRub ?? item.totalRubles ?? (typeof item.totalKopecks === "number" ? kopecksToRub(item.totalKopecks) : (item.totalPriceRub || 0));
+		dmsRub += line?.dmsCoveredRub ?? item.insuranceCoveredRubles ?? (typeof item.insuranceCoveredKopecks === "number" ? kopecksToRub(item.insuranceCoveredKopecks) : (item.dmsCoveredRub || 0));
+		patRub += line?.patientCoPayRub ?? item.patientOutOfPocketRubles ?? (typeof item.patientOutOfPocketKopecks === "number" ? kopecksToRub(item.patientOutOfPocketKopecks) : (item.patientPaidRub || 0));
 	}
 
 	return {
@@ -902,12 +976,14 @@ export function exportDmsRegistryToCsv(registry: {
 	];
 
 	items.forEach((item, idx) => {
-		const l = (item.lineItem || item) as Record<string, unknown>;
-		const total = typeof l.totalKopecks === "number" ? l.totalKopecks / 100 : (item.totalPriceRub || 0);
-		const dms = typeof l.insuranceCoveredKopecks === "number" ? l.insuranceCoveredKopecks / 100 : (item.dmsCoveredRub || 0);
-		const patient = typeof l.patientOutOfPocketKopecks === "number" ? l.patientOutOfPocketKopecks / 100 : (item.patientPaidRub || 0);
+		const l = item.lineItem;
+		const total = l?.totalPriceRub ?? (typeof item.totalKopecks === "number" ? item.totalKopecks / 100 : (item.totalPriceRub || 0));
+		const dms = l?.dmsCoveredRub ?? (typeof item.insuranceCoveredKopecks === "number" ? item.insuranceCoveredKopecks / 100 : (item.dmsCoveredRub || 0));
+		const patient = l?.patientCoPayRub ?? (typeof item.patientOutOfPocketKopecks === "number" ? item.patientOutOfPocketKopecks / 100 : (item.patientPaidRub || 0));
+		const sCode = l?.serviceCode || item.serviceCode804n || item.serviceCode || "";
+		const sName = l?.serviceName || item.serviceName || "";
 		lines.push(
-			`${idx + 1};${item.serviceDate || item.visitDate || "2026-08-10"};${item.patientFullName || ""};${item.policyNumber || ""};${item.guaranteeLetterNumber || item.letterNumber || "—"};${String(l.serviceCode || item.serviceCode804n || "")};${String(l.serviceName || item.serviceName || "")};${total};${dms};${patient}`,
+			`${idx + 1};${item.serviceDate || item.visitDate || "2026-08-10"};${item.patientFullName || ""};${item.policyNumber || ""};${item.guaranteeLetterNumber || item.letterNumber || "—"};${sCode};${sName};${total};${dms};${patient}`,
 		);
 	});
 
@@ -1132,7 +1208,7 @@ export function generateDmsClaimXml(params: {
 	return generateDmsLegacyRegistryXml(
 		params.records || [],
 		params.clinic || DEFAULT_CLINIC_PROFILE,
-		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACTS[0]!,
+		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACT,
 		"2026",
 		"CLM-001",
 	);
@@ -1156,7 +1232,7 @@ export function generateDmsConsolidatedInvoiceHtml(params: {
 	return generateDmsA4PrintableHtml(
 		params.records || [],
 		params.clinicInfo || DEFAULT_CLINIC_PROFILE,
-		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACTS[0]!,
+		params.contract || DEFAULT_STATUTORY_INSURANCE_CONTRACT,
 		"2026",
 		params.actNumber || "АКТ-1",
 	);

@@ -50,8 +50,7 @@ export function generateDmsRegistryXml(data: DmsRegistryData): string {
 		'  <ЗаписиРеестра>',
 	];
 
-	for (let i = 0; i < data.records.length; i++) {
-		const rec = data.records[i]!;
+	for (const [i, rec] of data.records.entries()) {
 		xmlLines.push(
 			'    <Запись>',
 			`      <ПорядковыйНомер>${i + 1}</ПорядковыйНомер>`,

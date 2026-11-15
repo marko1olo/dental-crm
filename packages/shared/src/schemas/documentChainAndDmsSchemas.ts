@@ -208,6 +208,22 @@ export const auditEventSchema = z.object({
 
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 
+export const insuranceContractSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	companyName: z.string().trim().min(1),
+	policyNumberMask: z.string().trim().nullable().optional(),
+	coverageTherapyPct: z.number().min(0).max(100),
+	coverageSurgeryPct: z.number().min(0).max(100),
+	coverageOrthoPct: z.number().min(0).max(100),
+	coverageHygienePct: z.number().min(0).max(100),
+	annualLimitRub: z.number().min(0).nullable().optional(),
+	isActive: z.boolean().default(true),
+	createdAt: z.string().or(z.date()).optional(),
+});
+
+export type InsuranceContract = z.infer<typeof insuranceContractSchema>;
+
 export const dashboardSchema = z.object({
 	clinicName: z.string(),
 	todayIso: z.string(),
@@ -262,27 +278,11 @@ export const dashboardSchema = z.object({
 	speechProviders: z.array(speechProviderSchema),
 	auditEvents: z.array(auditEventSchema),
 	complianceWarnings: z.array(z.string()),
-	insuranceContracts: z.array(z.any()).optional(),
+	insuranceContracts: z.array(insuranceContractSchema).optional(),
 	invoices: z.array(invoiceSchema).optional(),
 });
 
 export type Dashboard = z.infer<typeof dashboardSchema>;
-
-export const insuranceContractSchema = z.object({
-	id: z.string().uuid(),
-	organizationId: z.string().uuid(),
-	companyName: z.string().trim().min(1),
-	policyNumberMask: z.string().trim().nullable().optional(),
-	coverageTherapyPct: z.number().min(0).max(100),
-	coverageSurgeryPct: z.number().min(0).max(100),
-	coverageOrthoPct: z.number().min(0).max(100),
-	coverageHygienePct: z.number().min(0).max(100),
-	annualLimitRub: z.number().min(0).nullable().optional(),
-	isActive: z.boolean().default(true),
-	createdAt: z.string().or(z.date()).optional(),
-});
-
-export type InsuranceContract = z.infer<typeof insuranceContractSchema>;
 
 export const insuranceCalculationItemSchema = z.object({
 	serviceId: z.string().uuid().or(z.string().min(1)),
